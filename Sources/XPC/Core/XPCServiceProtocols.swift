@@ -85,6 +85,9 @@ public protocol ModernCryptoXPCServiceProtocol: XPCServiceProtocol {
 }
 
 /// Extension to provide async/await wrappers for the Objective-C compatible methods
+#if swift(>=5.0)
+@available(*, deprecated, message: "Use XPCServiceProtocolComplete from XPCProtocolsCore instead")
+#endif
 extension ModernCryptoXPCServiceProtocol {
   /// Async wrapper for encrypt
   public func encrypt(
@@ -347,6 +350,9 @@ public class SecurityXPCServiceAdapter {
 }
 
 /// Extension adding support for Swift concurrency to the legacy objective-C compatible protocol
+#if swift(>=5.0)
+@available(*, deprecated, message: "Use XPCServiceProtocolComplete from XPCProtocolsCore instead")
+#endif
 extension SecurityXPCServiceProtocol {
   public func createBookmarkAsync(forPath path: String) async throws -> [UInt8] {
     try await withCheckedThrowingContinuation { continuation in
