@@ -10,8 +10,9 @@ final class TestErrorHandling_Protocols: XCTestCase {
     // Test a custom error type conforming to protocols
     let customError=CustomErrorType(code: "CUSTOM001", message: "Custom error message")
 
-    // Test conformance to Error protocol
-    XCTAssertTrue(customError is Error)
+    // Verify error properties instead of checking protocol conformance
+    // which is enforced by the compiler
+    XCTAssertEqual(customError.code, "CUSTOM001")
 
     // Test conformance to CustomStringConvertible
     XCTAssertEqual(customError.description, "Custom error message")
@@ -40,14 +41,14 @@ final class TestErrorHandling_Protocols: XCTestCase {
     // Test handler implementation
     Task {
       // Handle the error
-      await handler.handle(error, severity: .error)
+      handler.handle(error, severity: .error)
 
       // Verify the error was handled
       XCTAssertEqual(handler.handledErrors.count, 1)
       XCTAssertEqual(handler.handledSeverities.first, .error)
 
       // Test retrieving recovery options
-      let options=await handler.getRecoveryOptions(for: error)
+      let options=handler.getRecoveryOptions(for: error)
 
       // Verify recovery options were provided
       XCTAssertEqual(options.count, 2)

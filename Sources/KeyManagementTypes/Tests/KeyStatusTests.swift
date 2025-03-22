@@ -73,18 +73,18 @@ final class KeyStatusTests: XCTestCase {
     let timestamp: Int64=1_627_084_800
 
     // Test conversion to raw status
-    XCTAssertEqual(KeyStatus.active.toRawStatus(), .active)
-    XCTAssertEqual(KeyStatus.compromised.toRawStatus(), .compromised)
-    XCTAssertEqual(KeyStatus.retired.toRawStatus(), .retired)
-    XCTAssertEqual(KeyStatus.pendingDeletion(date).toRawStatus(), .pendingDeletion(date))
+    XCTAssertEqual(KeyManagementTypes.KeyStatus.active.toRawStatus(), .active)
+    XCTAssertEqual(KeyManagementTypes.KeyStatus.compromised.toRawStatus(), .compromised)
+    XCTAssertEqual(KeyManagementTypes.KeyStatus.retired.toRawStatus(), .retired)
+    XCTAssertEqual(KeyManagementTypes.KeyStatus.pendingDeletion(date).toRawStatus(), .pendingDeletion(date))
 
     // Test creation from raw status
-    XCTAssertEqual(KeyStatus.from(rawStatus: .active), .active)
-    XCTAssertEqual(KeyStatus.from(rawStatus: .compromised), .compromised)
-    XCTAssertEqual(KeyStatus.from(rawStatus: .retired), .retired)
-    XCTAssertEqual(KeyStatus.from(rawStatus: .pendingDeletion(date)), .pendingDeletion(date))
+    XCTAssertEqual(KeyManagementTypes.KeyStatus.from(rawStatus: .active), .active)
+    XCTAssertEqual(KeyManagementTypes.KeyStatus.from(rawStatus: .compromised), .compromised)
+    XCTAssertEqual(KeyManagementTypes.KeyStatus.from(rawStatus: .retired), .retired)
+    XCTAssertEqual(KeyManagementTypes.KeyStatus.from(rawStatus: .pendingDeletion(date)), .pendingDeletion(date))
     XCTAssertEqual(
-      KeyStatus.from(rawStatus: .pendingDeletionWithTimestamp(timestamp)),
+      KeyManagementTypes.KeyStatus.from(rawStatus: .pendingDeletionWithTimestamp(timestamp)),
       .pendingDeletionWithTimestamp(timestamp)
     )
   }
@@ -92,45 +92,48 @@ final class KeyStatusTests: XCTestCase {
   // MARK: - RawStatus Enum Tests
 
   func testRawStatusEquality() {
-    let date1=Date()
-    let date2=Date(timeIntervalSince1970: date1.timeIntervalSince1970)
-    let date3=Date(timeIntervalSince1970: date1.timeIntervalSince1970 + 100)
-    let timestamp1=Int64(date1.timeIntervalSince1970)
-    let timestamp2=Int64(date2.timeIntervalSince1970)
-    let timestamp3=Int64(date3.timeIntervalSince1970)
+    // Create explicit dates using a specific reference time to ensure equality
+    let referenceTime = 1616513654.0 // March 23, 2021 12:34:14 UTC
+    let date1 = Date(timeIntervalSince1970: referenceTime)
+    let date2 = Date(timeIntervalSince1970: referenceTime) // Should be identical to date1
+    let date3 = Date(timeIntervalSince1970: referenceTime + 100) // Different by 100 seconds
+    
+    let timestamp1 = Int64(referenceTime)
+    let timestamp2 = Int64(referenceTime)
+    let timestamp3 = Int64(referenceTime + 100)
 
     // Test equality for simple cases
-    XCTAssertEqual(KeyStatus.RawStatus.active, KeyStatus.RawStatus.active)
-    XCTAssertNotEqual(KeyStatus.RawStatus.active, KeyStatus.RawStatus.compromised)
+    XCTAssertEqual(KeyManagementTypes.KeyStatus.RawStatus.active, KeyManagementTypes.KeyStatus.RawStatus.active)
+    XCTAssertNotEqual(KeyManagementTypes.KeyStatus.RawStatus.active, KeyManagementTypes.KeyStatus.RawStatus.compromised)
 
     // Test equality for date-based cases
     XCTAssertEqual(
-      KeyStatus.RawStatus.pendingDeletion(date1),
-      KeyStatus.RawStatus.pendingDeletion(date2)
+      KeyManagementTypes.KeyStatus.RawStatus.pendingDeletion(date1),
+      KeyManagementTypes.KeyStatus.RawStatus.pendingDeletion(date2)
     )
     XCTAssertNotEqual(
-      KeyStatus.RawStatus.pendingDeletion(date1),
-      KeyStatus.RawStatus.pendingDeletion(date3)
+      KeyManagementTypes.KeyStatus.RawStatus.pendingDeletion(date1),
+      KeyManagementTypes.KeyStatus.RawStatus.pendingDeletion(date3)
     )
 
     // Test equality for timestamp-based cases
     XCTAssertEqual(
-      KeyStatus.RawStatus.pendingDeletionWithTimestamp(timestamp1),
-      KeyStatus.RawStatus.pendingDeletionWithTimestamp(timestamp2)
+      KeyManagementTypes.KeyStatus.RawStatus.pendingDeletionWithTimestamp(timestamp1),
+      KeyManagementTypes.KeyStatus.RawStatus.pendingDeletionWithTimestamp(timestamp2)
     )
     XCTAssertNotEqual(
-      KeyStatus.RawStatus.pendingDeletionWithTimestamp(timestamp1),
-      KeyStatus.RawStatus.pendingDeletionWithTimestamp(timestamp3)
+      KeyManagementTypes.KeyStatus.RawStatus.pendingDeletionWithTimestamp(timestamp1),
+      KeyManagementTypes.KeyStatus.RawStatus.pendingDeletionWithTimestamp(timestamp3)
     )
 
     // Test equality between date and timestamp cases
     XCTAssertEqual(
-      KeyStatus.RawStatus.pendingDeletion(date1),
-      KeyStatus.RawStatus.pendingDeletionWithTimestamp(timestamp1)
+      KeyManagementTypes.KeyStatus.RawStatus.pendingDeletion(date1),
+      KeyManagementTypes.KeyStatus.RawStatus.pendingDeletionWithTimestamp(timestamp1)
     )
     XCTAssertEqual(
-      KeyStatus.RawStatus.pendingDeletionWithTimestamp(timestamp1),
-      KeyStatus.RawStatus.pendingDeletion(date1)
+      KeyManagementTypes.KeyStatus.RawStatus.pendingDeletionWithTimestamp(timestamp1),
+      KeyManagementTypes.KeyStatus.RawStatus.pendingDeletion(date1)
     )
   }
 }

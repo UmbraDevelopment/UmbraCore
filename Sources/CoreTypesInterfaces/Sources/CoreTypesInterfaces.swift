@@ -2,6 +2,8 @@ import CoreErrors
 import ErrorHandlingDomains
 
 /// Type alias to support legacy code that uses BinaryData
+/// @deprecated Use SecureData directly instead.
+@available(*, deprecated, message: "Use SecureData directly instead")
 public typealias BinaryData=SecureData
 
 /// Module initialisation function
@@ -11,5 +13,6 @@ public func initialiseModule() {
 }
 
 /// Legacy type for compatibility with older code
-/// New code should use CoreSecurityError directly
+/// @deprecated Use CoreSecurityError directly instead.
+@available(*, deprecated, message: "Use CoreSecurityError directly instead")
 public typealias SecurityErrorBase=CoreSecurityError

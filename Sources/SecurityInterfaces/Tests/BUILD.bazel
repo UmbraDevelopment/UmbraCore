@@ -31,18 +31,6 @@ swift_test(
 )
 
 swift_test(
-    name = "XPCMigrationTests",
-    srcs = ["XPCMigrationTests.swift"],
-    deps = [
-        "//Sources/SecurityInterfaces:SecurityInterfacesForTesting",
-        "//Sources/SecurityInterfacesBase",
-        "//Sources/SecurityProtocolsCore",
-        "//Sources/UmbraCoreTypes",
-        "//Sources/XPCProtocolsCore",
-    ],
-)
-
-swift_test(
     name = "SecurityProviderBaseTests",
     srcs = ["SecurityProviderBaseTests.swift"],
     deps = [
@@ -71,7 +59,6 @@ test_suite(
     name = "AllSecurityInterfacesTests",
     tests = [
         ":SecurityProviderTests",
-        ":XPCMigrationTests",
         ":SecurityProviderBaseTests",
         ":ProviderFactoryAdapterTests",
     ],

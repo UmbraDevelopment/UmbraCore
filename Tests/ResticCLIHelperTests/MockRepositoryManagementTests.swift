@@ -16,18 +16,18 @@ final class MockRepositoryManagementTests: XCTestCase {
   private var helper: MockableResticCLIHelper!
 
   // Test repositories and paths
-  private let sourceRepo="/mock/source/repo"
-  private let targetRepo="/mock/target/repo"
-  private let sourcePath="/test/source"
-  private let targetPath="/test/target"
-  private let password="test-password"
+  private let sourceRepo = "/mock/source/repo"
+  private let targetRepo = "/mock/target/repo"
+  private let sourcePath = "/test/source"
+  private let targetPath = "/test/target"
+  private let password = "test-password"
 
   override func setUp() {
     super.setUp()
 
     // Set up the mock executor and helper
-    processExecutor=MockProcessExecutor()
-    helper=MockableResticCLIHelper(
+    processExecutor = MockProcessExecutor()
+    helper = MockableResticCLIHelper(
       executablePath: "/mock/path/to/restic",
       processExecutor: processExecutor
     )
@@ -37,8 +37,8 @@ final class MockRepositoryManagementTests: XCTestCase {
   }
 
   override func tearDown() {
-    processExecutor=nil
-    helper=nil
+    processExecutor = nil
+    helper = nil
     super.tearDown()
   }
 
@@ -106,28 +106,28 @@ final class MockRepositoryManagementTests: XCTestCase {
 
   func testInitAndCheck() throws {
     // Create a repository
-    let initCommand=InitCommand(
+    let initCommand = InitCommand(
       options: CommonOptions(
         repository: sourceRepo,
         password: password
       )
     )
 
-    let initOutput=try helper.execute(initCommand)
+    let initOutput = try helper.execute(initCommand)
     XCTAssertTrue(
       initOutput.contains("initialized"),
       "Init output should confirm repository was initialized"
     )
 
     // Check the repository
-    let checkCommand=CheckCommand(
+    let checkCommand = CheckCommand(
       options: CommonOptions(
         repository: sourceRepo,
         password: password
       )
     )
 
-    let checkOutput=try helper.execute(checkCommand)
+    let checkOutput = try helper.execute(checkCommand)
     XCTAssertTrue(checkOutput.contains("valid"), "Check output should confirm repository is valid")
 
     // Verify the correct commands were executed
@@ -146,14 +146,14 @@ final class MockRepositoryManagementTests: XCTestCase {
 
   func testBackupAndRestore() throws {
     // Create common options for the source repository
-    let sourceOptions=CommonOptions(
+    let sourceOptions = CommonOptions(
       repository: sourceRepo,
       password: password,
       jsonOutput: true
     )
 
     // Create a backup using our TestableBackupCommand via the helper
-    let backupCommand=ResticCommandTestHelpers.createTestBackupCommand(
+    let backupCommand = ResticCommandTestHelpers.createTestBackupCommand(
       paths: [sourcePath],
       options: sourceOptions,
       tags: ["test-tag"],
@@ -167,34 +167,34 @@ final class MockRepositoryManagementTests: XCTestCase {
     XCTAssertTrue(backupCommand.arguments.contains("--host=test-host"))
 
     // Execute the backup command
-    let backupOutput=try helper.execute(backupCommand)
+    let backupOutput = try helper.execute(backupCommand)
     XCTAssertTrue(backupOutput.contains("snapshot_id"), "Backup output should contain snapshot_id")
 
     // List snapshots
-    let snapshotCommand=ResticCommandTestHelpers.createTestSnapshotCommand(
+    let snapshotCommand = ResticCommandTestHelpers.createTestSnapshotCommand(
       options: sourceOptions,
       operation: .list
     )
 
     // Execute the snapshot command
-    let snapshotOutput=try helper.execute(snapshotCommand)
+    let snapshotOutput = try helper.execute(snapshotCommand)
     XCTAssertTrue(
       snapshotOutput.contains("abcdef1234567890"),
       "Snapshot output should contain the snapshot ID"
     )
 
     // Parse the snapshot ID (in a real test this would parse the JSON)
-    let snapshotID="abcdef1234567890"
+    let snapshotID = "abcdef1234567890"
 
     // Restore from the snapshot
-    let restoreCommand=RestoreCommand(
+    let restoreCommand = RestoreCommand(
       options: sourceOptions,
       snapshotID: snapshotID,
       targetPath: targetPath
     )
 
     // Execute the restore command
-    let restoreOutput=try helper.execute(restoreCommand)
+    let restoreOutput = try helper.execute(restoreCommand)
     XCTAssertTrue(restoreOutput.contains("restoring"), "Restore output should contain 'restoring'")
 
     // Verify the correct commands were executed
@@ -218,14 +218,14 @@ final class MockRepositoryManagementTests: XCTestCase {
 
   func testRepositoryCopy() throws {
     // Create common options for the repositories
-    let sourceOptions=CommonOptions(
+    let sourceOptions = CommonOptions(
       repository: sourceRepo,
       password: password,
       jsonOutput: true
     )
 
     // First create a backup to copy using our helper
-    let backupCommand=ResticCommandTestHelpers.createTestBackupCommand(
+    let backupCommand = ResticCommandTestHelpers.createTestBackupCommand(
       paths: ["/test/files"],
       options: sourceOptions,
       tags: ["test-tag"]
@@ -237,27 +237,27 @@ final class MockRepositoryManagementTests: XCTestCase {
     XCTAssertTrue(backupCommand.arguments.contains("--tag=test-tag"))
 
     // Execute the backup command
-    let backupOutput=try helper.execute(backupCommand)
+    let backupOutput = try helper.execute(backupCommand)
     XCTAssertTrue(backupOutput.contains("snapshot_id"), "Backup output should contain snapshot_id")
 
     // List snapshots
-    let snapshotCommand=ResticCommandTestHelpers.createTestSnapshotCommand(
+    let snapshotCommand = ResticCommandTestHelpers.createTestSnapshotCommand(
       options: sourceOptions,
       operation: .list
     )
 
     // Execute the snapshot command
-    let snapshotOutput=try helper.execute(snapshotCommand)
+    let snapshotOutput = try helper.execute(snapshotCommand)
     XCTAssertTrue(
       snapshotOutput.contains("abcdef1234567890"),
       "Snapshot output should contain the snapshot ID"
     )
 
     // Parse the snapshot ID (in a real test this would parse the JSON)
-    let snapshotID="abcdef1234567890"
+    let snapshotID = "abcdef1234567890"
 
     // Copy the snapshot to another repository
-    let copyCommand=CopyCommand(
+    let copyCommand = CopyCommand(
       options: sourceOptions,
       snapshotIDs: [snapshotID],
       targetRepository: targetRepo,
@@ -265,7 +265,7 @@ final class MockRepositoryManagementTests: XCTestCase {
     )
 
     // Execute the copy command
-    let copyOutput=try helper.execute(copyCommand)
+    let copyOutput = try helper.execute(copyCommand)
     XCTAssertTrue(copyOutput.contains("copy"), "Copy output should contain 'copy'")
 
     // Verify the correct commands were executed
