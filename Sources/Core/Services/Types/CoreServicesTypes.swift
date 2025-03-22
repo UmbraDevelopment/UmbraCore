@@ -108,17 +108,17 @@ extension CoreServices.LegacyServiceState {
   public func toStandardServiceState() -> ServiceState {
     switch self {
       case .healthy:
-        .ready
+        return .ready
       case .degraded:
-        .running
+        return .running
       case .unavailable:
-        .error
+        return .error
       case .starting:
-        .initializing
+        return .initializing
       case .shuttingDown:
-        .shuttingDown
+        return .shuttingDown
       case .maintenance:
-        .suspended
+        return .suspended
     }
   }
 }
@@ -127,9 +127,30 @@ extension CoreServices.LegacyServiceState {
 @available(*, deprecated, message: "Use ServiceState directly")
 public typealias CoreServicesTypesServiceState=CoreServices.LegacyServiceState
 
-/// Namespace for core services types
-/// This replaces the deprecated CoreServices enum
-public enum CoreServicesTypes {
-  // This enum is intentionally empty as all types are defined at module level
-  // It serves as a namespace for documentation purposes
-}
+/**
+ * MIGRATION GUIDE:
+ * 
+ * This migration guide explains how to properly handle ServiceState references:
+ * 
+ * 1. PREFERRED: Import CoreServicesTypes directly and use ServiceState
+ *    Example:
+ *    ```swift
+ *    import CoreServicesTypes
+ *    
+ *    func example() {
+ *      let state: ServiceState = .running
+ *    }
+ *    ```
+ *
+ * 2. TEMPORARY: If maintaining existing code patterns, continue using
+ *    CoreServicesTypes.ServiceState but add appropriate deprecation
+ *    warnings
+ *
+ * The CoreServicesTypes.ServiceState reference will be removed in
+ * a future version. Please migrate code to use the direct type.
+ */
+
+/// This namespace is maintained for backwards compatibility only.
+/// New code should directly import CoreServicesTypes and use those types.
+@available(*, deprecated, message: "Import CoreServicesTypes module directly instead")
+public enum CoreServicesTypes {}

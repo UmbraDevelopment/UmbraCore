@@ -46,16 +46,16 @@ public actor KeyManager: UmbraService {
   /// Last synchronisation time
   private var lastSyncTime: Date?
   /// Service state
-  private var _state: CoreServicesTypes.ServiceState = .uninitialized
+  private var _state: ServiceState = .uninitialized
 
   /// Public access to the service state
-  public nonisolated var state: CoreServicesTypes.ServiceState {
+  public nonisolated var state: ServiceState {
     // Return a safe default state as we can't access the isolated property directly
     .uninitialized
   }
 
   /// Get the state in an isolated context
-  nonisolated var isolatedState: CoreServicesTypes.ServiceState {
+  nonisolated var isolatedState: ServiceState {
     get async {
       await _state
     }
@@ -85,7 +85,7 @@ public actor KeyManager: UmbraService {
       return
     }
 
-    _state = .uninitialized
+    _state = .initializing
 
     // Create key storage directory if needed
     try FileManager.default.createDirectory(
@@ -98,7 +98,7 @@ public actor KeyManager: UmbraService {
     keyMetadata=try await loadKeyMetadata()
 
     // Now we're running
-    _state = .ready
+    _state = ServiceState.ready
   }
 
   /// Generate a new key with the specified parameters
@@ -204,11 +204,11 @@ public actor KeyManager: UmbraService {
     let currentState=_state
     if currentState == .running || currentState == .ready {
       // Perform shutdown operations here
-      _state = .shuttingDown
+      _state = ServiceState.shuttingDown
 
       // Close any open resources
 
-      _state = .shutdown
+      _state = ServiceState.shutdown
     }
   }
 
