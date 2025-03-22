@@ -42,13 +42,13 @@ public protocol XPCTransportableError: Error, Sendable {
 }
 
 /// Type alias for clarity when working with SecurityError from CoreErrors
-public typealias CoreSecurityError=CoreErrors.SecurityError
+public typealias CoreSecurityError = CoreErrors.SecurityError
 
 /// Custom result type with standard error handling
-public typealias SecurityResult < Success >= Result<Success, CoreSecurityError>
+public typealias SecurityResult<Success> = Result<Success, CoreSecurityError>
 
 /// Error domain identifier for core security errors
-public let coreSecurityErrorDomain="com.umbra.core.security"
+public let coreSecurityErrorDomain = "com.umbra.core.security"
 
 /// Base protocol for all security-related errors
 public protocol SecurityError: Error, Sendable, CustomStringConvertible {
