@@ -113,8 +113,8 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
     // Set up the listener delegate after initialization
     listener.delegate=self
 
-    // Initialize actor state
-    Task { @MainActor in
+    // Set up the exported object in the actor immediately after init
+    Task {
       await state.setExportedObject(exportedObject)
       await state.setListener(listener)
     }
@@ -131,8 +131,8 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
     // Set up the listener delegate after initialization
     listener.delegate=self
 
-    // Initialize actor state
-    Task { @MainActor in
+    // Set up the exported object in the actor immediately after init
+    Task {
       await state.setExportedObject(exportedObject)
       await state.setListener(listener)
     }

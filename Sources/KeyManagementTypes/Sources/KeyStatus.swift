@@ -47,7 +47,9 @@ public enum KeyStatus: Sendable, Equatable, Codable {
     case deletionDate
   }
 
-  private enum StatusType: String, Codable {
+  // Internal representation of the key status for encoding/decoding
+  // This is intentionally kept private to enforce the use of the public KeyStatus API
+  private enum StatusTypeInternal: String, Codable {
     case active
     case compromised
     case retired
@@ -58,7 +60,7 @@ public enum KeyStatus: Sendable, Equatable, Codable {
   @available(*, deprecated, message: "Will need to be refactored for Swift 6")
   public init(from decoder: Decoder) throws {
     let container=try decoder.container(keyedBy: CodingKeys.self)
-    let type=try container.decode(StatusType.self, forKey: .type)
+    let type=try container.decode(StatusTypeInternal.self, forKey: .type)
 
     switch type {
       case .active:
@@ -78,13 +80,13 @@ public enum KeyStatus: Sendable, Equatable, Codable {
 
     switch self {
       case .active:
-        try container.encode(StatusType.active, forKey: .type)
+        try container.encode(StatusTypeInternal.active, forKey: .type)
       case .compromised:
-        try container.encode(StatusType.compromised, forKey: .type)
+        try container.encode(StatusTypeInternal.compromised, forKey: .type)
       case .retired:
-        try container.encode(StatusType.retired, forKey: .type)
+        try container.encode(StatusTypeInternal.retired, forKey: .type)
       case let .pendingDeletion(date):
-        try container.encode(StatusType.pendingDeletion, forKey: .type)
+        try container.encode(StatusTypeInternal.pendingDeletion, forKey: .type)
         try container.encode(date, forKey: .deletionDate)
     }
   }

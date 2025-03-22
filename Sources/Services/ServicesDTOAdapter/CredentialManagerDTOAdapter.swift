@@ -8,21 +8,21 @@ public struct CredentialManagerDTOAdapter {
   // MARK: - Properties
 
   /// Access to the credential manager
-  private let credentialManager: any CredentialManaging
+  private let credentialManager: CredentialManaging
 
   // MARK: - Initialization
 
   /// Initialize the adapter with a credential manager
   /// - Parameter credentialManager: The credential manager to adapt
-  public init(credentialManager: any CredentialManaging) {
-    self.credentialManager=credentialManager
+  public init(credentialManager: CredentialManaging) {
+    self.credentialManager = credentialManager
   }
 
   /// Initialize the adapter with the shared credential manager
   public init() {
     // This assumes that CredentialManager conforms to CredentialManaging
     // If it doesn't, this will need to be modified
-    credentialManager=CredentialManager.shared
+    credentialManager = CredentialManager.shared
   }
 
   // MARK: - Public Methods
@@ -39,8 +39,8 @@ public struct CredentialManagerDTOAdapter {
     do {
       // Extract service and account from config options
       guard
-        let service=config.options["service"],
-        let account=config.options["account"]
+        let service = config.options["service"],
+        let account = config.options["account"]
       else {
         return .failure(
           errorCode: SecurityErrorDTO.storageError(
@@ -68,7 +68,7 @@ public struct CredentialManagerDTOAdapter {
       }
 
       // Convert [UInt8] to Data
-      let credentialData=Data(credential)
+      let credentialData = Data(credential)
 
       // Store the credential
       try await credentialManager.store(credentialData, service: service, account: account)
@@ -77,7 +77,7 @@ public struct CredentialManagerDTOAdapter {
       return .success(VoidEquatable())
     } catch let error as CredentialError {
       // Map CredentialError to SecurityErrorDTO
-      let securityError=mapCredentialError(error)
+      let securityError = mapCredentialError(error)
       return .failure(
         errorCode: securityError.code,
         errorMessage: securityError.message,
@@ -85,7 +85,7 @@ public struct CredentialManagerDTOAdapter {
       )
     } catch {
       // Map other errors to SecurityErrorDTO
-      let securityError=SecurityErrorDTO(
+      let securityError = SecurityErrorDTO(
         code: Int32(error._code),
         domain: "credential.unknown",
         message: "Unknown credential error: \(error.localizedDescription)",
@@ -108,8 +108,8 @@ public struct CredentialManagerDTOAdapter {
     do {
       // Extract service and account from config options
       guard
-        let service=config.options["service"],
-        let account=config.options["account"]
+        let service = config.options["service"],
+        let account = config.options["account"]
       else {
         return .failure(
           errorCode: SecurityErrorDTO.storageError(
@@ -137,16 +137,16 @@ public struct CredentialManagerDTOAdapter {
       }
 
       // Retrieve the credential
-      let data=try await credentialManager.retrieve(service: service, account: account)
+      let data = try await credentialManager.retrieve(service: service, account: account)
 
       // Convert Data to [UInt8]
-      let credential=[UInt8](data)
+      let credential = [UInt8](data)
 
       // Return success with the credential
       return .success(credential)
     } catch let error as CredentialError {
       // Map CredentialError to SecurityErrorDTO
-      let securityError=mapCredentialError(error)
+      let securityError = mapCredentialError(error)
       return .failure(
         errorCode: securityError.code,
         errorMessage: securityError.message,
@@ -154,7 +154,7 @@ public struct CredentialManagerDTOAdapter {
       )
     } catch {
       // Map other errors to SecurityErrorDTO
-      let securityError=SecurityErrorDTO(
+      let securityError = SecurityErrorDTO(
         code: Int32(error._code),
         domain: "credential.unknown",
         message: "Unknown credential error: \(error.localizedDescription)",
@@ -177,8 +177,8 @@ public struct CredentialManagerDTOAdapter {
     do {
       // Extract service and account from config options
       guard
-        let service=config.options["service"],
-        let account=config.options["account"]
+        let service = config.options["service"],
+        let account = config.options["account"]
       else {
         return .failure(
           errorCode: SecurityErrorDTO.storageError(
@@ -212,7 +212,7 @@ public struct CredentialManagerDTOAdapter {
       return .success(VoidEquatable())
     } catch let error as CredentialError {
       // Map CredentialError to SecurityErrorDTO
-      let securityError=mapCredentialError(error)
+      let securityError = mapCredentialError(error)
       return .failure(
         errorCode: securityError.code,
         errorMessage: securityError.message,
@@ -220,7 +220,7 @@ public struct CredentialManagerDTOAdapter {
       )
     } catch {
       // Map other errors to SecurityErrorDTO
-      let securityError=SecurityErrorDTO(
+      let securityError = SecurityErrorDTO(
         code: Int32(error._code),
         domain: "credential.unknown",
         message: "Unknown credential error: \(error.localizedDescription)",
@@ -286,7 +286,8 @@ extension SecurityConfigDTO {
 
 /// Protocol for credential management
 /// This allows us to abstract the CredentialManager for testing and dependency injection
-public protocol CredentialManaging: AnyActor {
+@available(*, deprecated, message: "Use SendableProtocol instead in Swift 6")
+public protocol CredentialManaging {
   /// Store a credential
   /// - Parameters:
   ///   - credential: The credential to store
@@ -340,7 +341,7 @@ public enum CredentialError: LocalizedError {
 /// Extend CredentialManager to conform to CredentialManaging
 public final actor CredentialManager: CredentialManaging {
   /// Shared instance of the credential manager
-  public static let shared=CredentialManager()
+  public static let shared = CredentialManager()
 
   private init() {}
 
@@ -350,14 +351,14 @@ public final actor CredentialManager: CredentialManaging {
   ///   - service: The service identifier
   ///   - account: The account identifier
   public func store(_ credential: Data, service: String, account: String) async throws {
-    let query: [String: Any]=[
+    let query: [String: Any] = [
       kSecClass as String: kSecClassGenericPassword,
       kSecAttrService as String: service,
       kSecAttrAccount as String: account,
       kSecValueData as String: credential
     ]
 
-    let status=SecItemAdd(query as CFDictionary, nil)
+    let status = SecItemAdd(query as CFDictionary, nil)
     guard status == errSecSuccess else {
       throw CredentialError.storeFailed(status)
     }
@@ -369,7 +370,7 @@ public final actor CredentialManager: CredentialManaging {
   ///   - account: The account identifier
   /// - Returns: The stored credential
   public func retrieve(service: String, account: String) async throws -> Data {
-    let query: [String: Any]=[
+    let query: [String: Any] = [
       kSecClass as String: kSecClassGenericPassword,
       kSecAttrService as String: service,
       kSecAttrAccount as String: account,
@@ -377,13 +378,13 @@ public final actor CredentialManager: CredentialManaging {
     ]
 
     var result: AnyObject?
-    let status=SecItemCopyMatching(query as CFDictionary, &result)
+    let status = SecItemCopyMatching(query as CFDictionary, &result)
 
     guard status == errSecSuccess else {
       throw CredentialError.retrieveFailed(status)
     }
 
-    guard let data=result as? Data else {
+    guard let data = result as? Data else {
       throw CredentialError.invalidData
     }
 
@@ -395,13 +396,13 @@ public final actor CredentialManager: CredentialManaging {
   ///   - service: The service identifier
   ///   - account: The account identifier
   public func delete(service: String, account: String) async throws {
-    let query: [String: Any]=[
+    let query: [String: Any] = [
       kSecClass as String: kSecClassGenericPassword,
       kSecAttrService as String: service,
       kSecAttrAccount as String: account
     ]
 
-    let status=SecItemDelete(query as CFDictionary)
+    let status = SecItemDelete(query as CFDictionary)
     guard status == errSecSuccess else {
       throw CredentialError.deleteFailed(status)
     }

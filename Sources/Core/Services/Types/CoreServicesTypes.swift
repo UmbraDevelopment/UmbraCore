@@ -126,3 +126,10 @@ extension CoreServices.LegacyServiceState {
 // For backwards compatibility, provide a direct typealias
 @available(*, deprecated, message: "Use ServiceState directly")
 public typealias CoreServicesTypesServiceState=CoreServices.LegacyServiceState
+
+/// Namespace for core services types
+/// This replaces the deprecated CoreServices enum
+public enum CoreServicesTypes {
+  // This enum is intentionally empty as all types are defined at module level
+  // It serves as a namespace for documentation purposes
+}

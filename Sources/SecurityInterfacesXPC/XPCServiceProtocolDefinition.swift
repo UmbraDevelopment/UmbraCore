@@ -4,6 +4,34 @@ import SecurityInterfacesBase
 import UmbraCoreTypes
 import XPCProtocolsCore
 
+// MARK: - Migration Note for XPC Protocol Consolidation
+/**
+ # XPC Protocol Migration Guide
+ 
+ This file contains a deprecated implementation (`XPCServiceProtocolDefinitionImpl`) that
+ should no longer be used for new code. Instead, use the modern implementations from 
+ XPCProtocolsCore as follows:
+ 
+ ```swift
+ // Old approach (deprecated)
+ let legacyImpl = XPCServiceProtocolDefinitionImpl.createInstance()
+ 
+ // New approach
+ import XPCProtocolsCore
+ 
+ let modernImpl = XPCProtocolMigrationFactory.createModernXPCService()
+ ```
+ 
+ ## Migration Steps
+ 
+ 1. Import XPCProtocolsCore instead of SecurityInterfacesXPC
+ 2. Use XPCProtocolMigrationFactory to create appropriate protocol adapters
+ 3. Update all function calls to use the modern async/await pattern
+ 4. Update error handling to use the new ErrorHandlingDomains approach
+ 
+ For questions about migration, refer to XPC_PROTOCOLS_MIGRATION_GUIDE.md
+ */
+
 /// Protocol defining the XPC service interface for key management using Objective-C compatible
 /// methods
 ///
@@ -60,6 +88,10 @@ public protocol XPCServiceProtocolDefinition: ObjCBridgingTypesFoundation
 @available(*, deprecated, message: "Use ModernXPCService from XPCProtocolsCore instead")
 public class XPCServiceProtocolDefinitionImpl: NSObject,
 ObjCBridgingTypesFoundation.XPCServiceProtocolBaseFoundation {
+  
+  /// Recommended modern replacement for this class
+  public typealias ModernReplacement = XPCProtocolsCore.ModernXPCService
+  
   /// Protocol identifier for XPC service registration
   public static var protocolIdentifier: String {
     "com.umbra.xpc.service.protocol"
