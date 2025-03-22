@@ -42,9 +42,13 @@ public protocol XPCTransportableError: Error, Sendable {
 }
 
 /// Type alias for clarity when working with SecurityError from CoreErrors
+/// @deprecated Use CoreErrors.SecurityError directly instead.
+@available(*, deprecated, message: "Use CoreErrors.SecurityError directly instead")
 public typealias CoreSecurityError = CoreErrors.SecurityError
 
 /// Custom result type with standard error handling
+/// @deprecated Consider using Result<Success, CoreErrors.SecurityError> directly instead.
+@available(*, deprecated, message: "Consider using Result<Success, CoreErrors.SecurityError> directly instead")
 public typealias SecurityResult<Success> = Result<Success, CoreSecurityError>
 
 /// Error domain identifier for core security errors

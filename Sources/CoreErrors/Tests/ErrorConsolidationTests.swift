@@ -51,7 +51,8 @@ final class ErrorConsolidationTests: XCTestCase {
 
     // Second conversion: attempt to map canonical to crypto domain error
     // This demonstrates cross-domain mapping capabilities
-    let errorDescription=String(describing: canonicalError)
+    // We'll assign to _ since we only want to ensure it doesn't crash
+    _ = String(describing: canonicalError)
 
     // Create a crypto error that would result from such a propagation
     let cryptoError=CryptoError.keyGenerationFailed
@@ -113,11 +114,12 @@ final class ErrorConsolidationTests: XCTestCase {
     let keyError=CoreErrors.SecurityError.invalidKey(reason: "Invalid format")
 
     // Test that they're part of the same error family
-    XCTAssertTrue(
-      operationError is CoreErrors.SecurityError,
-      "Operation error should be a SecurityError"
+    // Check domains directly instead of doing unnecessary type casting
+    XCTAssertEqual(
+      operationError.domain, "Security",
+      "Operation error should be in the Security domain"
     )
-    XCTAssertTrue(keyError is CoreErrors.SecurityError, "Key error should be a SecurityError")
+    XCTAssertEqual(keyError.domain, "Security", "Key error should be in the Security domain")
 
     // Test that they're distinguishable
     switch operationError {
@@ -168,8 +170,8 @@ final class ErrorConsolidationTests: XCTestCase {
   func testErrorSerialization() {
     // Test error encoding/decoding for persistence
 
-    // Create a serializable error
-    let securityError=CoreErrors.SecurityError.operationFailed(
+    // Create a serializable error (assigned to _ since we're only testing the serialization format itself)
+    _ = CoreErrors.SecurityError.operationFailed(
       operation: "key_generation",
       reason: "Insufficient entropy"
     )
@@ -204,8 +206,8 @@ final class ErrorConsolidationTests: XCTestCase {
     // In a real IPC scenario, errors would need to be encoded/decoded for transmission
     // This test demonstrates the concept by simulating an IPC boundary
 
-    // Create an error for test purposes
-    let securityError=CoreErrors.SecurityError.operationFailed(
+    // Create an error for test purposes (not directly used as we're simulating serialisation)
+    _ = CoreErrors.SecurityError.operationFailed(
       operation: "authentication",
       reason: "User not found"
     )

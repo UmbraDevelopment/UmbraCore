@@ -1,5 +1,5 @@
-import ErrorHandling
 import ErrorHandlingDomains
+import ErrorHandlingInterfaces
 import Foundation
 
 /// SecurityError represents security-related errors in the UmbraCore framework
@@ -76,5 +76,81 @@ public enum SecurityError: Error {
     }
 
     return error
+  }
+}
+
+// MARK: - UmbraError Protocol Conformance
+
+extension SecurityError: ErrorHandlingInterfaces.UmbraError, CustomStringConvertible {
+  // Required by CustomStringConvertible
+  public var description: String {
+    errorDescription
+  }
+  
+  public var domain: String {
+    "Security"
+  }
+  
+  public var code: String {
+    switch self {
+      case .invalidKey:
+        return "invalidKey"
+      case .invalidContext:
+        return "invalidContext"
+      case .invalidParameter:
+        return "invalidParameter"
+      case .operationFailed:
+        return "operationFailed"
+      case .unsupportedAlgorithm:
+        return "unsupportedAlgorithm"
+      case .missingImplementation:
+        return "missingImplementation"
+      case .internalError:
+        return "internalError"
+    }
+  }
+  
+  public var errorDescription: String {
+    switch self {
+      case let .invalidKey(reason):
+        return "Invalid key: \(reason)"
+      case let .invalidContext(reason):
+        return "Invalid context: \(reason)"
+      case let .invalidParameter(name, reason):
+        return "Invalid parameter '\(name)': \(reason)"
+      case let .operationFailed(operation, reason):
+        return "Operation failed [\(operation)]: \(reason)"
+      case let .unsupportedAlgorithm(name):
+        return "Unsupported algorithm: \(name)"
+      case let .missingImplementation(component):
+        return "Missing implementation: \(component)"
+      case let .internalError(description):
+        return "Internal error: \(description)"
+    }
+  }
+  
+  public var underlyingError: Error? { nil }
+  public var source: ErrorHandlingInterfaces.ErrorSource? { nil }
+  public var context: ErrorHandlingInterfaces.ErrorContext {
+    ErrorHandlingInterfaces.ErrorContext(
+      source: "CoreErrors",
+      operation: "SecurityOperation",
+      details: self.errorDescription
+    )
+  }
+  
+  public func with(context: ErrorHandlingInterfaces.ErrorContext) -> Self {
+    // This is a simple implementation for test compatibility
+    self
+  }
+  
+  public func with(underlyingError: Error) -> Self {
+    // This is a simple implementation for test compatibility
+    self
+  }
+  
+  public func with(source: ErrorHandlingInterfaces.ErrorSource) -> Self {
+    // This is a simple implementation for test compatibility
+    self
   }
 }
