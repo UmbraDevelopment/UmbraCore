@@ -1,6 +1,6 @@
 # UmbraCore
 
-[![Production Build](https://github.com/UmbraDevelopment/UmbraCore/actions/workflows/production-build.yml/badge.svg)](https://github.com/UmbraDevelopment/UmbraCore/actions/workflows/production-build.yml) [![UmbraCore Tests](https://github.com/UmbraDevelopment/UmbraCore/actions/workflows/run-tests.yml/badge.svg)](https://github.com/UmbraDevelopment/UmbraCore/actions/workflows/run-tests.yml) [![Documentation](https://img.shields.io/badge/Documentation-Latest-blue.svg)](https://UmbraDevelopment.github.io/UmbraCore/) [![codecov](https://codecov.io/gh/UmbraDevelopment/UmbraCore/branch/main/graph/badge.svg)](https://codecov.io/gh/UmbraDevelopment/UmbraCore)
+[![Production Build](https://github.com/UmbraDevelopment/UmbraCore/actions/workflows/production-build.yml/badge.svg)](https://github.com/UmbraDevelopment/UmbraCore/actions/workflows/production-build.yml) [![UmbraCore Tests](https://github.com/UmbraDevelopment/UmbraCore/actions/workflows/run-tests.yml/badge.svg)](https://github.com/UmbraDevelopment/UmbraCore/actions/workflows/run-tests.yml) [![Documentation](https://img.shields.io/badge/Documentation-Latest-blue.svg)](https://UmbraDevelopment.github.io/UmbraCore/)
 
 [![Platform](https://img.shields.io/badge/Platform-macOS%2014%2B-lightgrey.svg)](https://github.com/UmbraDevelopment/UmbraCore) [![Swift](https://img.shields.io/badge/Swift-5.9.2-orange.svg)](https://swift.org) [![Build](https://img.shields.io/badge/Build-Bazel%208.1.0-43A047.svg)](https://bazel.build)
 

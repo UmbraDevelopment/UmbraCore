@@ -40,14 +40,6 @@ jobs:
           mkdir -p coverage_reports
           cp $(bazelisk info output_path)/_coverage/_coverage_report.dat ./coverage_reports/lcov.info || echo "No coverage report generated"
           
-      - name: Upload Coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          files: ./coverage_reports/lcov.info
-          token: ${{ secrets.CODECOV_TOKEN }}
-          fail_ci_if_error: false
-          verbose: true
-        if: always()
       - name: Summarise Test Results
         run: |
           TEST_COUNT=$(wc -l < team-utils/test_targets.txt | xargs)
