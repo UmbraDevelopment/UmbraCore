@@ -2,11 +2,11 @@
 
 This document outlines a comprehensive plan for improving the test infrastructure of the UmbraCore project, focusing on three key areas:
 
-1. Reorganizing tests into a consistent structure
+1. Reorganising tests into a consistent structure
 2. Increasing test coverage across the project
 3. Integrating with Codecov for coverage reporting
 
-## 1. Reorganizing Tests into a Consistent Structure
+## 1. Reorganising Tests into a Consistent Structure
 
 The current test structure has tests split between a top-level `/Tests` directory and module-specific `/Sources/Module/Tests` directories. This mixed approach creates confusion and makes maintenance difficult.
 
@@ -77,8 +77,8 @@ The current test coverage appears to be inconsistent across modules, with some a
 #### 2.2 Establish coverage targets
 
 - Set initial coverage targets based on current state (e.g., 70%)
-- Gradually increase targets as you add tests (e.g., to 80% and then 90%)
-- Prioritize security-related modules for higher coverage targets
+- Gradually increase targets as tests are added (e.g., to 80% and then 90%)
+- Prioritise security-related modules for higher coverage targets
 
 #### 2.3 Add tests for untested components
 
@@ -194,23 +194,23 @@ Add a Codecov badge to your README.md file to display coverage status:
 
 ## 5. Implementation Timeline
 
-### Phase 1: Preparation (Week 1-2)
+### Phase 1: Preparation
 - Set up coverage measurement
 - Create Codecov integration
 - Update test_targets.txt file
 
-### Phase 2: Reorganization (Week 3-6)
+### Phase 2: Reorganisation
 - Migrate tests to the new directory structure
 - Update Bazel BUILD files
 - Ensure all tests still pass
 
-### Phase 3: Coverage Improvement (Week 7-12)
+### Phase 3: Coverage Improvement
 - Identify modules with lowest coverage
 - Create test plans for critical modules
 - Implement missing tests
 - Fix disabled tests
 
-### Phase 4: Documentation and Refinement (Week 13-14)
+### Phase 4: Documentation and Refinement
 - Create test documentation
 - Set up coverage targets and badges
 - Review and refine the test infrastructure
