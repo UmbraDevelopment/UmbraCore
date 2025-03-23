@@ -11,7 +11,7 @@ swift_library(
         "//Sources/UmbraErrors/Domains:UmbraErrorsDomains",
         "//Sources/UmbraErrors/Mapping:UmbraErrorsMapping",
         "//Sources/UmbraErrors/Utilities:UmbraErrorsUtilities",
-    ],
+    ]
 )
 
 # Uncomment if documentation generation is needed
@@ -22,6 +22,6 @@ swift_library(
 #     srcs = glob([
 #         "**/*.swift",
 #         "**/*.docc/**",
-#     ], allow_empty = True),
+#     ], allow_empty = True ),
 #     deps = ["//Sources/UmbraErrors"],
 # )

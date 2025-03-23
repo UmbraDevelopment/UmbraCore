@@ -1,9 +1,10 @@
+import CryptoTypes
+
 // CryptoKit removed - cryptography will be handled in ResticBar
 import ErrorHandlingCore
 import ErrorHandlingDomains
 import ErrorHandlingInterfaces
 import ErrorHandlingMapping
-import CryptoTypes
 import Foundation
 
 /// Service for performing cryptographic operations

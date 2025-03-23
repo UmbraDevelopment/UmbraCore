@@ -4,13 +4,12 @@ load("//:bazel/macros/swift.bzl", "umbra_swift_library")
 umbra_swift_library(
     name = "SecurityUtilsProtocols",
     srcs = glob(
-        ["**/*.swift"],
-        allow_empty = True,
+        ["**/*.swift"], allow_empty = True
     ),
     deps = [
         "//Sources/ErrorHandling",
         "//Sources/SecurityInterfaces",
         "//Sources/SecurityTypes",
         "//Sources/UmbraSecurity",
-    ],
+    ], 
 )

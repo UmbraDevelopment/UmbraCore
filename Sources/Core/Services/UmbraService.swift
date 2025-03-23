@@ -1,8 +1,8 @@
+import CoreServicesTypes
 import ErrorHandlingCore
 import ErrorHandlingDomains
 import ErrorHandlingInterfaces
 import ErrorHandlingMapping
-import CoreServicesTypes
 import Foundation
 import UmbraLogging
 
@@ -85,7 +85,8 @@ extension ErrorHandlingCore.ServiceError {
   /// Add a detailed message to initialisation failed error
   /// - Parameter message: The detailed error message
   /// - Returns: An initialisation failed error
-  public static func initialisationFailedWithMessage(_ message: String) -> ErrorHandlingCore.ServiceError {
+  public static func initialisationFailedWithMessage(_ message: String) -> ErrorHandlingCore
+  .ServiceError {
     print("Service initialisation failed: \(message)")
     return .initialisationFailed
   }
@@ -101,7 +102,8 @@ extension ErrorHandlingCore.ServiceError {
   /// Add a detailed message to configuration error
   /// - Parameter message: The detailed error message
   /// - Returns: A configuration error
-  public static func configurationErrorWithMessage(_ message: String) -> ErrorHandlingCore.ServiceError {
+  public static func configurationErrorWithMessage(_ message: String) -> ErrorHandlingCore
+  .ServiceError {
     print("Service configuration error: \(message)")
     return .configurationError
   }
@@ -109,7 +111,8 @@ extension ErrorHandlingCore.ServiceError {
   /// Add a detailed message to dependency error
   /// - Parameter message: The detailed error message
   /// - Returns: A dependency error
-  public static func dependencyErrorWithMessage(_ message: String) -> ErrorHandlingCore.ServiceError {
+  public static func dependencyErrorWithMessage(_ message: String) -> ErrorHandlingCore
+  .ServiceError {
     print("Service dependency error: \(message)")
     return .dependencyError
   }
@@ -117,7 +120,8 @@ extension ErrorHandlingCore.ServiceError {
   /// Add a detailed message to operation failed error
   /// - Parameter message: The detailed error message
   /// - Returns: An operation failed error
-  public static func operationFailedWithMessage(_ message: String) -> ErrorHandlingCore.ServiceError {
+  public static func operationFailedWithMessage(_ message: String) -> ErrorHandlingCore
+  .ServiceError {
     print("Operation failed: \(message)")
     return .operationFailed
   }

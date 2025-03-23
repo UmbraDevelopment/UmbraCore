@@ -1,5 +1,5 @@
-import Foundation
 import ErrorHandlingInterfaces
+import Foundation
 
 /// A generic implementation of UmbraError used for wrapping arbitrary errors
 /// and for creating simple errors without defining custom types
@@ -81,11 +81,11 @@ public struct GenericUmbraError: UmbraError {
       context: context
     )
   }
-  
+
   /// String description of the error
   public var description: String {
-    var desc = "\(domain).\(code): \(errorDescription)"
-    if let source = source {
+    var desc="\(domain).\(code): \(errorDescription)"
+    if let source {
       desc += " (source: \(source.identifier))"
     }
     return desc
@@ -111,7 +111,7 @@ extension GenericUmbraError {
     line: Int=#line,
     function: String=#function
   ) -> GenericUmbraError {
-    let source = ErrorSource(identifier: "\(file):\(line):\(function)")
+    let source=ErrorSource(identifier: "\(file):\(line):\(function)")
     return GenericUmbraError(
       domain: domain,
       code: code,
@@ -139,7 +139,7 @@ extension GenericUmbraError {
     line: Int=#line,
     function: String=#function
   ) -> GenericUmbraError {
-    let source = ErrorSource(identifier: "\(file):\(line):\(function)")
+    let source=ErrorSource(identifier: "\(file):\(line):\(function)")
     return GenericUmbraError(
       domain: domain,
       code: code,

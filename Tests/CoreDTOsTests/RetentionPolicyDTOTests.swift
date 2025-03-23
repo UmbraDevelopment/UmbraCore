@@ -5,7 +5,7 @@ final class RetentionPolicyDTOTests: XCTestCase {
   // Test initialization with valid values
   func testInitialization() {
     // Arrange & Act
-    let policy = RetentionPolicyDTO(
+    let policy=RetentionPolicyDTO(
       keepLastSnapshots: 5,
       keepDailySnapshots: 7,
       keepWeeklySnapshots: 4,
@@ -26,7 +26,7 @@ final class RetentionPolicyDTOTests: XCTestCase {
   // Test the default policy factory method
   func testDefaultPolicyCreation() {
     // Arrange & Act
-    let policy = RetentionPolicyDTO.defaultPolicy()
+    let policy=RetentionPolicyDTO.defaultPolicy()
 
     // Assert
     XCTAssertEqual(policy.keepLastSnapshots, 3)
@@ -40,7 +40,7 @@ final class RetentionPolicyDTOTests: XCTestCase {
   // Test the essential policy factory method
   func testEssentialPolicyCreation() {
     // Arrange & Act
-    let policy = RetentionPolicyDTO.essentialPolicy()
+    let policy=RetentionPolicyDTO.essentialPolicy()
 
     // Assert
     XCTAssertEqual(policy.keepLastSnapshots, 1)
@@ -54,7 +54,7 @@ final class RetentionPolicyDTOTests: XCTestCase {
   // Test the extended policy factory method
   func testExtendedPolicyCreation() {
     // Arrange & Act
-    let policy = RetentionPolicyDTO.extendedPolicy()
+    let policy=RetentionPolicyDTO.extendedPolicy()
 
     // Assert
     XCTAssertEqual(policy.keepLastSnapshots, 5)
@@ -68,7 +68,7 @@ final class RetentionPolicyDTOTests: XCTestCase {
   // Test the unlimited policy factory method
   func testUnlimitedPolicyCreation() {
     // Arrange & Act
-    let policy = RetentionPolicyDTO.unlimitedPolicy()
+    let policy=RetentionPolicyDTO.unlimitedPolicy()
 
     // Assert
     XCTAssertEqual(policy.keepLastSnapshots, -1)
@@ -82,9 +82,9 @@ final class RetentionPolicyDTOTests: XCTestCase {
   // Test the Equatable implementation
   func testEquality() {
     // Arrange
-    let policy1 = RetentionPolicyDTO.defaultPolicy()
-    let policy2 = RetentionPolicyDTO.defaultPolicy()
-    let policy3 = RetentionPolicyDTO.essentialPolicy()
+    let policy1=RetentionPolicyDTO.defaultPolicy()
+    let policy2=RetentionPolicyDTO.defaultPolicy()
+    let policy3=RetentionPolicyDTO.essentialPolicy()
 
     // Assert
     XCTAssertEqual(policy1, policy2)
@@ -94,7 +94,7 @@ final class RetentionPolicyDTOTests: XCTestCase {
   // Test with empty policy
   func testEmptyPolicy() {
     // Arrange & Act
-    let policy = RetentionPolicyDTO.empty()
+    let policy=RetentionPolicyDTO.empty()
 
     // Assert
     XCTAssertEqual(policy.keepLastSnapshots, 0)
@@ -108,7 +108,7 @@ final class RetentionPolicyDTOTests: XCTestCase {
   // Test the custom policy with validation
   func testCustomPolicyWithValidation() {
     // Arrange & Act
-    let policy = RetentionPolicyDTO.customPolicy(
+    let policy=RetentionPolicyDTO.customPolicy(
       keepLastSnapshots: -5, // Should be converted to 0
       keepDailySnapshots: 7,
       keepWeeklySnapshots: 4,
@@ -137,8 +137,8 @@ final class RetentionPolicyDTOTests: XCTestCase {
   // Test the isUnlimited property
   func testIsUnlimitedProperty() {
     // Arrange
-    let unlimitedPolicy = RetentionPolicyDTO.unlimitedPolicy()
-    let defaultPolicy = RetentionPolicyDTO.defaultPolicy()
+    let unlimitedPolicy=RetentionPolicyDTO.unlimitedPolicy()
+    let defaultPolicy=RetentionPolicyDTO.defaultPolicy()
 
     // Assert
     XCTAssertTrue(unlimitedPolicy.isUnlimited)
@@ -148,8 +148,8 @@ final class RetentionPolicyDTOTests: XCTestCase {
   // Test the isEmpty property
   func testIsEmptyProperty() {
     // Arrange
-    let emptyPolicy = RetentionPolicyDTO.empty()
-    let defaultPolicy = RetentionPolicyDTO.defaultPolicy()
+    let emptyPolicy=RetentionPolicyDTO.empty()
+    let defaultPolicy=RetentionPolicyDTO.defaultPolicy()
 
     // Assert
     XCTAssertTrue(emptyPolicy.isEmpty)

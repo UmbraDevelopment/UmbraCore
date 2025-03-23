@@ -3,15 +3,14 @@ load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 swift_library(
     name = "SecurityImplementation",
     srcs = glob(
-        ["Sources/**/*.swift"],
-        allow_empty = False,
+        ["Sources/**/*.swift"], allow_empty = True
     ),
     visibility = ["//visibility:public"],
     deps = [
         "//Sources/ErrorHandlingInterfaces",
         "//Sources/SecurityInterfaces",
         "//Sources/SecurityProtocolsCore",
-    ],
+    ], 
 )
 
 # Uncomment if documentation generation is needed
@@ -23,6 +22,6 @@ swift_library(
 #     srcs = glob([
 #         "**/*.swift",
 #         "**/*.docc/**",
-#     ], allow_empty = True),
+#     ], allow_empty = True ),
 #     deps = ["//Sources/SecurityImplementation"],
 # )

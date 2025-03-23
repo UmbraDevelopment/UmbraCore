@@ -3,18 +3,18 @@ import XCTest
 
 final class KeychainXPCServiceTests: XCTestCase {
   private var proxy: (any KeychainXPCProtocol)!
-  let testAccount = "test_account"
-  let testService = "test_service"
-  let testData = Data("test_data".utf8)
+  let testAccount="test_account"
+  let testService="test_service"
+  let testData=Data("test_data".utf8)
 
   override func setUp() async throws {
     try await super.setUp()
-    proxy = try await MockXPCServiceHelper.getServiceProxy()
+    proxy=try await MockXPCServiceHelper.getServiceProxy()
   }
 
   override func tearDown() async throws {
     await MockXPCServiceHelper.reset()
-    proxy = nil
+    proxy=nil
     try await super.tearDown()
   }
 
@@ -28,7 +28,7 @@ final class KeychainXPCServiceTests: XCTestCase {
     )
 
     // Test reading item
-    let retrievedData = try await proxy.retrieveItem(
+    let retrievedData=try await proxy.retrieveItem(
       account: testAccount,
       service: testService,
       accessGroup: nil as String?
@@ -36,7 +36,7 @@ final class KeychainXPCServiceTests: XCTestCase {
     XCTAssertEqual(retrievedData, testData)
 
     // Test updating item
-    let updatedData = Data("updated_data".utf8)
+    let updatedData=Data("updated_data".utf8)
     try await proxy.updateItem(
       account: testAccount,
       service: testService,
@@ -45,7 +45,7 @@ final class KeychainXPCServiceTests: XCTestCase {
     )
 
     // Verify update
-    let updatedRetrievedData = try await proxy.retrieveItem(
+    let updatedRetrievedData=try await proxy.retrieveItem(
       account: testAccount,
       service: testService,
       accessGroup: nil as String?
@@ -61,7 +61,7 @@ final class KeychainXPCServiceTests: XCTestCase {
 
     // Verify removal
     do {
-      _ = try await proxy.retrieveItem(
+      _=try await proxy.retrieveItem(
         account: testAccount,
         service: testService,
         accessGroup: nil as String?
@@ -73,15 +73,15 @@ final class KeychainXPCServiceTests: XCTestCase {
   }
 
   func testConcurrentOperations() async throws {
-    let iterations = 5
-    let testService = testService // Capture testService value
+    let iterations=5
+    let testService=testService // Capture testService value
 
     // Concurrent additions
     try await withThrowingTaskGroup(of: Void.self) { [testService] group in
       for iterationIndex in 0..<iterations {
         group.addTask {
-          let account = "concurrent_\(iterationIndex)"
-          let data = Data("data_\(iterationIndex)".utf8)
+          let account="concurrent_\(iterationIndex)"
+          let data=Data("data_\(iterationIndex)".utf8)
           try await self.proxy.addItem(
             account: account,
             service: testService,
@@ -95,9 +95,9 @@ final class KeychainXPCServiceTests: XCTestCase {
 
     // Verify all items
     for iterationIndex in 0..<iterations {
-      let account = "concurrent_\(iterationIndex)"
-      let expectedData = Data("data_\(iterationIndex)".utf8)
-      let retrievedData = try await proxy.retrieveItem(
+      let account="concurrent_\(iterationIndex)"
+      let expectedData=Data("data_\(iterationIndex)".utf8)
+      let retrievedData=try await proxy.retrieveItem(
         account: account,
         service: testService,
         accessGroup: nil as String?
@@ -109,8 +109,8 @@ final class KeychainXPCServiceTests: XCTestCase {
     try await withThrowingTaskGroup(of: Void.self) { [testService] group in
       for iterationIndex in 0..<iterations {
         group.addTask {
-          let account = "concurrent_\(iterationIndex)"
-          let updatedData = Data("updated_\(iterationIndex)".utf8)
+          let account="concurrent_\(iterationIndex)"
+          let updatedData=Data("updated_\(iterationIndex)".utf8)
           try await self.proxy.updateItem(
             account: account,
             service: testService,
@@ -124,9 +124,9 @@ final class KeychainXPCServiceTests: XCTestCase {
 
     // Verify updates
     for iterationIndex in 0..<iterations {
-      let account = "concurrent_\(iterationIndex)"
-      let expectedData = Data("updated_\(iterationIndex)".utf8)
-      let retrievedData = try await proxy.retrieveItem(
+      let account="concurrent_\(iterationIndex)"
+      let expectedData=Data("updated_\(iterationIndex)".utf8)
+      let retrievedData=try await proxy.retrieveItem(
         account: account,
         service: testService,
         accessGroup: nil as String?
@@ -136,7 +136,7 @@ final class KeychainXPCServiceTests: XCTestCase {
 
     // Clean up
     for iterationIndex in 0..<iterations {
-      let account = "concurrent_\(iterationIndex)"
+      let account="concurrent_\(iterationIndex)"
       try await proxy.removeItem(
         account: account,
         service: testService,
@@ -168,7 +168,7 @@ final class KeychainXPCServiceTests: XCTestCase {
 
     // Test item not found
     do {
-      _ = try await proxy.retrieveItem(
+      _=try await proxy.retrieveItem(
         account: "nonexistent",
         service: testService,
         accessGroup: nil as String?

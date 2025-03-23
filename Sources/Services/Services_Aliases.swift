@@ -1,10 +1,10 @@
 /**
  # Services Type Aliases
- 
+
  This file provides temporary type aliases to support the migration from the legacy
  error handling system to the new standardised error handling architecture in the
  ErrorHandling directory.
- 
+
  **Migration Notice:**
  These typealiases are being phased out as part of the broader initiative to remove
  indirection in the UmbraCore codebase. New code should use fully qualified types
@@ -26,7 +26,7 @@ import ErrorHandlingMapping
   deprecated,
   message: "Use UmbraErrors.Security.Core directly for improved type clarity"
 )
-public typealias SecurityError = UmbraErrors.Security.Core
+public typealias SecurityError=UmbraErrors.Security.Core
 
 /// @deprecated Use UmbraErrors.Crypto.Core directly
 @available(
@@ -34,7 +34,7 @@ public typealias SecurityError = UmbraErrors.Security.Core
   deprecated,
   message: "Use UmbraErrors.Crypto.Core directly for improved type clarity"
 )
-public typealias CryptoError = UmbraErrors.Crypto.Core
+public typealias CryptoError=UmbraErrors.Crypto.Core
 
 /// @deprecated Use UmbraErrors.Service.Core directly
 @available(
@@ -42,4 +42,4 @@ public typealias CryptoError = UmbraErrors.Crypto.Core
   deprecated,
   message: "Use UmbraErrors.Service.Core directly for improved type clarity"
 )
-public typealias ServiceError = UmbraErrors.Service.Core
+public typealias ServiceError=UmbraErrors.Service.Core

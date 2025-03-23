@@ -3,9 +3,9 @@ load("//:bazel/macros/swift.bzl", "umbra_swift_library")
 
 umbra_swift_library(
     name = "FeaturesLoggingErrors",
-    srcs = glob(["*.swift"], allow_empty = True),
+    srcs = glob(["*.swift"], allow_empty = True ),
     deps = [
         "//Sources/ErrorHandling",
         "//Sources/UmbraLogging",
-    ],
+    ], 
 )

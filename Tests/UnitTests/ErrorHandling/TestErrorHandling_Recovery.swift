@@ -6,7 +6,7 @@
 import XCTest
 
 /// A global setting to ensure security systems are disabled during tests
-private var isSecurityDisabled = true
+private var isSecurityDisabled=true
 
 /// Tests for the error recovery functionality
 ///
@@ -15,7 +15,7 @@ private var isSecurityDisabled = true
 @MainActor
 final class TestErrorHandling_Recovery: XCTestCase {
   /// The timeout for asynchronous operations
-  let asyncTimeout: TimeInterval = 15.0
+  let asyncTimeout: TimeInterval=15.0
 
   /// Set up test environment before each test
   override func setUp() async throws {
@@ -47,15 +47,15 @@ final class TestErrorHandling_Recovery: XCTestCase {
 
   /// A simple test recovery option implementation for testing purposes
   struct TestRecoveryOption: ErrorHandlingInterfaces.RecoveryOption {
-    let id = UUID()
+    let id=UUID()
     let title: String
     let description: String?
     let isDisruptive: Bool
 
-    init(title: String, description: String? = nil, isDisruptive: Bool = false) {
-      self.title = title
-      self.description = description
-      self.isDisruptive = isDisruptive
+    init(title: String, description: String?=nil, isDisruptive: Bool=false) {
+      self.title=title
+      self.description=description
+      self.isDisruptive=isDisruptive
     }
 
     func perform() async {
@@ -73,14 +73,14 @@ final class TestErrorHandling_Recovery: XCTestCase {
     private var underlying: Error?
 
     init(message: String) {
-      self.message = message
-      errorCtx = ErrorHandlingInterfaces.ErrorContext(
+      self.message=message
+      errorCtx=ErrorHandlingInterfaces.ErrorContext(
         source: "TestSource",
         operation: "TestOperation",
         details: "Test error: \(message)"
       )
-      errorSrc = nil
-      underlying = nil
+      errorSrc=nil
+      underlying=nil
     }
 
     // UmbraError protocol conformance
@@ -92,20 +92,20 @@ final class TestErrorHandling_Recovery: XCTestCase {
     var context: ErrorHandlingInterfaces.ErrorContext { errorCtx }
 
     func with(context: ErrorHandlingInterfaces.ErrorContext) -> Self {
-      var copy = self
-      copy.errorCtx = context
+      var copy=self
+      copy.errorCtx=context
       return copy
     }
 
     func with(underlyingError: any Error) -> Self {
-      var copy = self
-      copy.underlying = underlyingError
+      var copy=self
+      copy.underlying=underlyingError
       return copy
     }
 
     func with(source: ErrorHandlingInterfaces.ErrorSource) -> Self {
-      var copy = self
-      copy.errorSrc = source
+      var copy=self
+      copy.errorSrc=source
       return copy
     }
 
@@ -181,14 +181,14 @@ final class TestErrorHandling_Recovery: XCTestCase {
   @MainActor
   final class TestableRecoveryManager {
     /// Dictionary of domain-specific recovery providers that don't use security features
-    private var domainProviders: [String: DomainRecoveryProvider] = [:]
+    private var domainProviders: [String: DomainRecoveryProvider]=[:]
 
     /// Register a recovery provider for a specific error domain
     /// - Parameters:
     ///   - provider: The provider to register
     ///   - domain: The error domain to register for
     func register(provider: DomainRecoveryProvider, for domain: String) {
-      domainProviders[domain] = provider
+      domainProviders[domain]=provider
     }
 
     /// Test-specific method to get recovery options without triggering security code
@@ -197,22 +197,22 @@ final class TestErrorHandling_Recovery: XCTestCase {
     func getTestRecoveryOptions(for error: Error) async
     -> [any ErrorHandlingInterfaces.RecoveryOption] {
       // First check if error conforms to UmbraError and get its domain
-      if let umbraError = error as? (any ErrorHandlingInterfaces.UmbraError) {
-        let errorDomain = umbraError.domain
-        if let provider = domainProviders[errorDomain] {
+      if let umbraError=error as? (any ErrorHandlingInterfaces.UmbraError) {
+        let errorDomain=umbraError.domain
+        if let provider=domainProviders[errorDomain] {
           return provider.recoveryOptions(for: error)
         }
       }
 
       // If not UmbraError, check if it's an NSError
-      let nsErrorDomain = (error as NSError).domain
-      if let provider = domainProviders[nsErrorDomain] {
+      let nsErrorDomain=(error as NSError).domain
+      if let provider=domainProviders[nsErrorDomain] {
         return provider.recoveryOptions(for: error)
       }
 
       // Get the error type as fallback
-      let typeNameDomain = String(describing: type(of: error))
-      if let provider = domainProviders[typeNameDomain] {
+      let typeNameDomain=String(describing: type(of: error))
+      if let provider=domainProviders[typeNameDomain] {
         return provider.recoveryOptions(for: error)
       }
 
@@ -252,7 +252,7 @@ final class TestErrorHandling_Recovery: XCTestCase {
     let message: String
 
     init(message: String) {
-      self.message = message
+      self.message=message
     }
 
     // UmbraError protocol conformance

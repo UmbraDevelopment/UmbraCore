@@ -1,8 +1,8 @@
+import CoreTypesInterfaces
 import ErrorHandlingCore
 import ErrorHandlingDomains
 import ErrorHandlingInterfaces
 import ErrorHandlingMapping
-import CoreTypesInterfaces
 import UmbraCoreTypes
 
 // Since SecurityProtocolsCore and XPCProtocolsCore are namespaces rather than direct modules,
@@ -124,7 +124,7 @@ public func externalErrorToCoreError(_ error: Error) -> UmbraErrors.Security.Cor
 ///   - error: The error to map
 ///   - context: The context in which the error occurred
 /// - Returns: The mapped error
-public func adaptErrorForContext(_ error: Error, context: String) -> Error {
+public func adaptErrorForContext(_ error: Error, context _: String) -> Error {
   // Currently this is a simplified implementation
   // In a more complex system, we might use context to determine the mapping strategy
   mapExternalToCoreError(error)

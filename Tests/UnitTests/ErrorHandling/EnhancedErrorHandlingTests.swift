@@ -12,7 +12,7 @@ final class EnhancedErrorHandlingTests: XCTestCase {
   }
 
   func testErrorSourceCreation() {
-    let source = ErrorSource(file: "TestFile.swift", line: 42, function: "testFunction()")
+    let source=ErrorSource(file: "TestFile.swift", line: 42, function: "testFunction()")
 
     XCTAssertEqual(source.file, "TestFile.swift")
     XCTAssertEqual(source.line, 42)
@@ -21,7 +21,7 @@ final class EnhancedErrorHandlingTests: XCTestCase {
   }
 
   func testErrorContextCreation() {
-    let context = ErrorContext(
+    let context=ErrorContext(
       source: "TestSource",
       code: "test_error",
       message: "Test message",
@@ -37,14 +37,14 @@ final class EnhancedErrorHandlingTests: XCTestCase {
   }
 
   func testErrorContextManipulation() {
-    let context = ErrorContext(source: "TestSource", message: "Test message")
+    let context=ErrorContext(source: "TestSource", message: "Test message")
 
     // Add a single key-value pair
-    let context2 = context.adding(key: "key1", value: "value1")
+    let context2=context.adding(key: "key1", value: "value1")
     XCTAssertEqual(context2.typedValue(for: "key1", as: String.self), "value1")
 
     // Add multiple key-value pairs
-    let context3 = context2.adding(metadata: ["key2": 42, "key3": true])
+    let context3=context2.adding(metadata: ["key2": 42, "key3": true])
     XCTAssertEqual(context3.typedValue(for: "key2", as: Int.self), 42)
     XCTAssertEqual(context3.typedValue(for: "key3", as: Bool.self), true)
 
@@ -53,21 +53,21 @@ final class EnhancedErrorHandlingTests: XCTestCase {
   }
 
   func testErrorContextMerging() {
-    let context1 = ErrorContext(
+    let context1=ErrorContext(
       source: "Source1",
       code: "code1",
       message: "Message1",
       metadata: ["key1": "value1"]
     )
 
-    let context2 = ErrorContext(
+    let context2=ErrorContext(
       source: "Source2",
       code: "code2",
       message: "Message2",
       metadata: ["key2": "value2"]
     )
 
-    let merged = context1.merging(with: context2)
+    let merged=context1.merging(with: context2)
 
     XCTAssertEqual(merged.source, "Source2")
     XCTAssertEqual(merged.code, "code2")
@@ -77,7 +77,7 @@ final class EnhancedErrorHandlingTests: XCTestCase {
   }
 
   func testSecurityErrorCreation() {
-    let error = SecurityError.authenticationFailed("Invalid credentials")
+    let error=SecurityError.authenticationFailed("Invalid credentials")
 
     XCTAssertEqual(error.domain, "Security")
     XCTAssertEqual(error.code, "auth_failed")
@@ -87,8 +87,8 @@ final class EnhancedErrorHandlingTests: XCTestCase {
   }
 
   func testSecurityErrorWithSource() {
-    let source = ErrorSource(file: "TestFile.swift", line: 42, function: "testFunction()")
-    let error = SecurityError.authenticationFailed("Invalid credentials")
+    let source=ErrorSource(file: "TestFile.swift", line: 42, function: "testFunction()")
+    let error=SecurityError.authenticationFailed("Invalid credentials")
       .with(source: source)
 
     XCTAssertEqual(error.source?.file, "TestFile.swift")
@@ -97,14 +97,14 @@ final class EnhancedErrorHandlingTests: XCTestCase {
   }
 
   func testSecurityErrorWithContext() {
-    let context = ErrorContext(
+    let context=ErrorContext(
       source: "AuthService",
       code: "invalid_token",
       message: "Token expired",
       metadata: ["userId": "user123"]
     )
 
-    let error = SecurityError.authenticationFailed("Invalid credentials")
+    let error=SecurityError.authenticationFailed("Invalid credentials")
       .with(context: context)
 
     XCTAssertEqual(error.context.source, "AuthService")
@@ -118,12 +118,12 @@ final class EnhancedErrorHandlingTests: XCTestCase {
       let message: String
     }
 
-    let underlying = UnderlyingError(message: "Network timeout")
-    let error = SecurityError.connectionFailed("Connection failed")
+    let underlying=UnderlyingError(message: "Network timeout")
+    let error=SecurityError.connectionFailed("Connection failed")
       .with(underlyingError: underlying)
 
     XCTAssertNotNil(error.underlyingError)
-    if let underlyingError = error.underlyingError as? UnderlyingError {
+    if let underlyingError=error.underlyingError as? UnderlyingError {
       XCTAssertEqual(underlyingError.message, "Network timeout")
     } else {
       XCTFail("Underlying error not preserved correctly")
@@ -131,7 +131,7 @@ final class EnhancedErrorHandlingTests: XCTestCase {
   }
 
   func testGenericUmbraErrorCreation() {
-    let error = GenericUmbraError(
+    let error=GenericUmbraError(
       domain: "Test",
       code: "test_error",
       errorDescription: "Test error"
@@ -145,17 +145,17 @@ final class EnhancedErrorHandlingTests: XCTestCase {
   }
 
   func testErrorFactoryWithSource() {
-    let error = SecurityError.authenticationFailed("Invalid credentials")
-    let errorWithSource = ErrorFactory.makeError(error)
+    let error=SecurityError.authenticationFailed("Invalid credentials")
+    let errorWithSource=ErrorFactory.makeError(error)
 
     XCTAssertNotNil(errorWithSource.source)
     XCTAssertEqual(errorWithSource.source?.fileName, "EnhancedErrorHandlingTests.swift")
   }
 
   func testErrorFactoryWithUnderlyingError() {
-    let error = SecurityError.cryptoOperationFailed("Encryption failed")
-    let underlying = CoreError.systemError("Bad key")
-    let errorWithUnderlying = ErrorFactory.makeError(error, underlyingError: underlying)
+    let error=SecurityError.cryptoOperationFailed("Encryption failed")
+    let underlying=CoreError.systemError("Bad key")
+    let errorWithUnderlying=ErrorFactory.makeError(error, underlyingError: underlying)
 
     XCTAssertNotNil(errorWithUnderlying.source)
     XCTAssertNotNil(errorWithUnderlying.underlyingError)
@@ -170,8 +170,8 @@ final class EnhancedErrorHandlingTests: XCTestCase {
       let message: String
     }
 
-    let original = SimpleError(message: "Simple error")
-    let wrapped = ErrorFactory.wrapError(
+    let original=SimpleError(message: "Simple error")
+    let wrapped=ErrorFactory.wrapError(
       original,
       domain: "Test",
       code: "wrapped_error",
@@ -184,7 +184,7 @@ final class EnhancedErrorHandlingTests: XCTestCase {
     XCTAssertNotNil(wrapped.source)
     XCTAssertNotNil(wrapped.underlyingError)
 
-    if let underlying = wrapped.underlyingError as? SimpleError {
+    if let underlying=wrapped.underlyingError as? SimpleError {
       XCTAssertEqual(underlying.message, "Simple error")
     } else {
       XCTFail("Underlying error not preserved correctly")
@@ -192,16 +192,16 @@ final class EnhancedErrorHandlingTests: XCTestCase {
   }
 
   func testSecurityErrorToCoreErrorMapping() {
-    let securityError = SecurityError.authenticationFailed("Invalid credentials")
-    let coreError = ErrorRegistry.shared.map(securityError, to: CoreError.self)
+    let securityError=SecurityError.authenticationFailed("Invalid credentials")
+    let coreError=ErrorRegistry.shared.map(securityError, to: CoreError.self)
 
     XCTAssertNotNil(coreError)
     XCTAssertEqual(coreError, CoreError.authenticationFailed)
   }
 
   func testCoreErrorToSecurityErrorMapping() {
-    let coreError = CoreError.insufficientPermissions
-    let securityError = ErrorRegistry.shared.map(coreError, to: SecurityError.self)
+    let coreError=CoreError.insufficientPermissions
+    let securityError=ErrorRegistry.shared.map(coreError, to: SecurityError.self)
 
     XCTAssertNotNil(securityError)
     switch securityError {
@@ -214,10 +214,10 @@ final class EnhancedErrorHandlingTests: XCTestCase {
   }
 
   func testErrorDescription() {
-    let error = SecurityError.cryptoOperationFailed("Failed to encrypt data")
+    let error=SecurityError.cryptoOperationFailed("Failed to encrypt data")
       .with(source: ErrorSource(file: "TestFile.swift", line: 42, function: "testFunction()"))
 
-    let description = error.description
+    let description=error.description
     XCTAssertTrue(description.contains("[Security:crypto_failed]"))
     XCTAssertTrue(description.contains("Failed to encrypt data"))
     XCTAssertTrue(description.contains("testFunction()"))
@@ -225,7 +225,7 @@ final class EnhancedErrorHandlingTests: XCTestCase {
   }
 
   func testConvenienceFunctions() {
-    let error = authenticationFailedError("Invalid credentials")
+    let error=authenticationFailedError("Invalid credentials")
 
     XCTAssertEqual(error.code, "auth_failed")
     XCTAssertEqual(error.errorDescription, "Authentication failed: Invalid credentials")

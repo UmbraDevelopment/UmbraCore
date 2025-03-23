@@ -21,15 +21,15 @@ public struct MockSnapshotInfo {
     paths: [String],
     hostname: String,
     username: String,
-    parent: String? = nil
+    parent: String?=nil
   ) {
-    self.id = id
-    self.time = time
-    self.tree = tree
-    self.paths = paths
-    self.hostname = hostname
-    self.username = username
-    self.parent = parent
+    self.id=id
+    self.time=time
+    self.tree=tree
+    self.paths=paths
+    self.hostname=hostname
+    self.username=username
+    self.parent=parent
   }
 }
 
@@ -64,16 +64,16 @@ public final class MockResticRepository {
     cachePath: String,
     fileManager: FileManager = .default
   ) {
-    self.path = path
-    self.password = password
-    self.testFilesPath = testFilesPath
-    self.cachePath = cachePath
-    self.fileManager = fileManager
+    self.path=path
+    self.password=password
+    self.testFilesPath=testFilesPath
+    self.cachePath=cachePath
+    self.fileManager=fileManager
   }
 
   /// Create the necessary directory structure
   private func createDirectoryStructure() throws {
-    let paths = [path, cachePath, testFilesPath]
+    let paths=[path, cachePath, testFilesPath]
 
     for path in paths {
       try fileManager.createDirectory(
@@ -94,12 +94,12 @@ public final class MockResticRepository {
   public func createTestFile(
     name: String,
     content: String,
-    inDirectory directory: String? = nil
+    inDirectory directory: String?=nil
   ) throws -> String {
-    var targetPath = testFilesPath
+    var targetPath=testFilesPath
 
     if let directory {
-      targetPath = (targetPath as NSString).appendingPathComponent(directory)
+      targetPath=(targetPath as NSString).appendingPathComponent(directory)
       try fileManager.createDirectory(
         atPath: targetPath,
         withIntermediateDirectories: true,
@@ -107,7 +107,7 @@ public final class MockResticRepository {
       )
     }
 
-    let filePath = (targetPath as NSString).appendingPathComponent(name)
+    let filePath=(targetPath as NSString).appendingPathComponent(name)
     try content.write(toFile: filePath, atomically: true, encoding: .utf8)
 
     return filePath
@@ -118,7 +118,7 @@ public final class MockResticRepository {
   /// where keys are paths and values are file contents
   public func createDirectoryStructure(_ structure: [String: String]) throws {
     for (path, content) in structure {
-      let directory = (path as NSString).deletingLastPathComponent
+      let directory=(path as NSString).deletingLastPathComponent
       try createTestFile(
         name: (path as NSString).lastPathComponent,
         content: content,
@@ -131,28 +131,28 @@ public final class MockResticRepository {
   public func initialize() async throws {
     try createDirectoryStructure()
 
-    let process = Process()
-    process.executableURL = URL(fileURLWithPath: "/opt/homebrew/bin/restic")
-    process.arguments = [
+    let process=Process()
+    process.executableURL=URL(fileURLWithPath: "/opt/homebrew/bin/restic")
+    process.arguments=[
       "init",
       "--repo", path
     ]
-    process.environment = [
+    process.environment=[
       "RESTIC_PASSWORD": password,
       "PATH": ProcessInfo.processInfo.environment["PATH"] ?? ""
     ]
 
-    let outputPipe = Pipe()
-    let errorPipe = Pipe()
-    process.standardOutput = outputPipe
-    process.standardError = errorPipe
+    let outputPipe=Pipe()
+    let errorPipe=Pipe()
+    process.standardOutput=outputPipe
+    process.standardError=errorPipe
 
     try process.run()
     process.waitUntilExit()
 
     if process.terminationStatus != 0 {
-      let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
-      let errorMessage = String(data: errorData, encoding: .utf8) ?? "Unknown error"
+      let errorData=errorPipe.fileHandleForReading.readDataToEndOfFile()
+      let errorMessage=String(data: errorData, encoding: .utf8) ?? "Unknown error"
       throw NSError(
         domain: "ResticError",
         code: Int(process.terminationStatus),
@@ -193,7 +193,7 @@ public final class MockResticRepository {
 
   /// Clean up test repository and associated files
   public func cleanup() throws {
-    let paths = [path, cachePath, testFilesPath]
+    let paths=[path, cachePath, testFilesPath]
 
     for path in paths {
       try? fileManager.removeItem(atPath: path)
@@ -213,9 +213,9 @@ public final class MockResticRepository {
   /// - Parameter count: Number of snapshots to generate
   /// - Returns: Array of snapshot information
   public func generateRandomSnapshots(count: Int) -> [MockSnapshotInfo] {
-    var snapshots: [MockSnapshotInfo] = []
+    var snapshots: [MockSnapshotInfo]=[]
     for snapshotIndex in 0..<count {
-      let snapshot = MockSnapshotInfo(
+      let snapshot=MockSnapshotInfo(
         id: "snapshot_\(snapshotIndex)",
         time: Date(),
         tree: "tree_\(snapshotIndex)",

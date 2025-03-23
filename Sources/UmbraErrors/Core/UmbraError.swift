@@ -79,7 +79,7 @@ private let errorLogger=Logger(subsystem: "com.umbracorp.UmbraCore", category: "
 /// Extension to provide logging capabilities to UmbraError
 extension UmbraError {
   /// Logs this error with the appropriate log level
-  public func log(level: OSLogType = .error, privacy: OSLogPrivacy = .public) {
+  public func log(level: OSLogType = .error, privacy _: OSLogPrivacy = .public) {
     switch level {
       case .debug:
         errorLogger.debug("\(self, privacy: .public)")

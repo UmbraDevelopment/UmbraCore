@@ -9,7 +9,7 @@ final class TestErrorHandling_Domains: XCTestCase {
 
   func testGeneralErrors() {
     // Test general error creation with mock errors
-    let error = TestError(
+    let error=TestError(
       domain: "General",
       code: "invalidArgument",
       description: "Invalid argument: testParam = 'invalid'",
@@ -26,7 +26,7 @@ final class TestErrorHandling_Domains: XCTestCase {
     XCTAssertTrue(error.domain.contains("General"))
 
     // Test adding context
-    let context = ErrorHandlingInterfaces.ErrorContext(
+    let context=ErrorHandlingInterfaces.ErrorContext(
       source: "TestSource",
       operation: "testOperation",
       details: "Test details",
@@ -36,12 +36,12 @@ final class TestErrorHandling_Domains: XCTestCase {
       function: #function
     )
 
-    let errorWithContext = error.with(context: context)
+    let errorWithContext=error.with(context: context)
     XCTAssertEqual(errorWithContext.context.source, "TestSource")
     XCTAssertEqual(errorWithContext.context.operation, "testOperation")
 
     // Test other general error types
-    let notFoundError = TestError(
+    let notFoundError=TestError(
       domain: "General",
       code: "notFound",
       description: "Item not found: user with identifier 123"
@@ -49,7 +49,7 @@ final class TestErrorHandling_Domains: XCTestCase {
     XCTAssertTrue(notFoundError.errorDescription.contains("user"))
     XCTAssertTrue(notFoundError.errorDescription.contains("123"))
 
-    let timeoutError = TestError(
+    let timeoutError=TestError(
       domain: "General",
       code: "timeout",
       description: "Operation timed out: network request after 30 seconds"
@@ -62,7 +62,7 @@ final class TestErrorHandling_Domains: XCTestCase {
 
   func testSecurityErrors() {
     // Test security error creation with mock errors
-    let error = TestError(
+    let error=TestError(
       domain: "Security.Core",
       code: "encryptionFailed",
       description: "Encryption failed: Invalid key",
@@ -76,7 +76,7 @@ final class TestErrorHandling_Domains: XCTestCase {
     XCTAssertTrue(error.errorDescription.contains("Invalid key"))
 
     // Test protocol errors
-    let protocolError = TestError(
+    let protocolError=TestError(
       domain: "Security.Protocol",
       code: "handshakeFailed",
       description: "TLS handshake failed: Certificate validation error"
@@ -91,7 +91,7 @@ final class TestErrorHandling_Domains: XCTestCase {
 
   func testNetworkErrors() {
     // Test HTTP error creation
-    let httpError = TestError(
+    let httpError=TestError(
       domain: "Network.HTTP",
       code: "statusCode",
       description: "HTTP error: Status code 404 - Not Found",
@@ -106,7 +106,7 @@ final class TestErrorHandling_Domains: XCTestCase {
     XCTAssertTrue(httpError.errorDescription.contains("Not Found"))
 
     // Test connection error
-    let connectionError = TestError(
+    let connectionError=TestError(
       domain: "Network.Connection",
       code: "connectionFailed",
       description: "Connection failed: Host unreachable (example.com)"
@@ -120,7 +120,7 @@ final class TestErrorHandling_Domains: XCTestCase {
 
   func testResourceErrors() {
     // Test file error creation with mock errors
-    let fileError = TestError(
+    let fileError=TestError(
       domain: "Resource.File",
       code: "fileNotFound",
       description: "File not found: /path/to/file.txt"
@@ -132,7 +132,7 @@ final class TestErrorHandling_Domains: XCTestCase {
     XCTAssertTrue(fileError.errorDescription.contains("/path/to/file.txt"))
 
     // Test permission error
-    let permissionError = TestError(
+    let permissionError=TestError(
       domain: "Resource.File",
       code: "permissionDenied",
       description: "Permission denied for operation: write on /path/to/file.txt"
@@ -141,7 +141,7 @@ final class TestErrorHandling_Domains: XCTestCase {
     XCTAssertTrue(permissionError.errorDescription.contains("write"))
 
     // Test pool error
-    let poolError = TestError(
+    let poolError=TestError(
       domain: "Resource.Pool",
       code: "resourceExhausted",
       description: "Resource exhausted: database connections"
@@ -154,7 +154,7 @@ final class TestErrorHandling_Domains: XCTestCase {
 
   func testApplicationErrors() {
     // Test application error creation
-    let appError = ApplicationError.initializationError("Database: Connection failed")
+    let appError=ApplicationError.initializationError("Database: Connection failed")
 
     // Verify error properties
     XCTAssertTrue(appError.domain.contains("Application"))
@@ -163,13 +163,13 @@ final class TestErrorHandling_Domains: XCTestCase {
     XCTAssertTrue(appError.errorDescription.contains("Connection failed"))
 
     // Test lifecycle error
-    let lifecycleError = ApplicationError.lifecycleError("Cache startup failed: Disk full")
+    let lifecycleError=ApplicationError.lifecycleError("Cache startup failed: Disk full")
     XCTAssertTrue(lifecycleError.errorDescription.contains("Cache"))
     XCTAssertTrue(lifecycleError.errorDescription.contains("Disk full"))
     XCTAssertTrue(lifecycleError.errorDescription.contains("startup"))
 
     // Test UI error
-    let uiError = ApplicationError.renderingError("Chart rendering failed: Invalid data")
+    let uiError=ApplicationError.renderingError("Chart rendering failed: Invalid data")
     XCTAssertTrue(uiError.errorDescription.contains("Chart"))
     XCTAssertTrue(uiError.errorDescription.contains("Invalid data"))
     XCTAssertTrue(uiError.errorDescription.contains("rendering"))
@@ -189,38 +189,38 @@ final class TestErrorHandling_Domains: XCTestCase {
       domain: String,
       code: String,
       description: String,
-      source: ErrorHandlingInterfaces.ErrorSource? = nil,
-      underlyingError: Error? = nil
+      source: ErrorHandlingInterfaces.ErrorSource?=nil,
+      underlyingError: Error?=nil
     ) {
-      self.domain = domain
-      self.code = code
-      errorDescription = description
-      self.source = source
-      self.underlyingError = underlyingError
-      context = ErrorHandlingInterfaces.ErrorContext(source: domain, operation: "testOperation")
+      self.domain=domain
+      self.code=code
+      errorDescription=description
+      self.source=source
+      self.underlyingError=underlyingError
+      context=ErrorHandlingInterfaces.ErrorContext(source: domain, operation: "testOperation")
     }
 
     func with(context: ErrorHandlingInterfaces.ErrorContext) -> Self {
-      var copy = self
-      copy.context = context
+      var copy=self
+      copy.context=context
       return copy
     }
 
     func with(underlyingError: any Error) -> Self {
-      var copy = self
-      copy.underlyingError = underlyingError
+      var copy=self
+      copy.underlyingError=underlyingError
       return copy
     }
 
     func with(source: ErrorHandlingInterfaces.ErrorSource) -> Self {
-      var copy = self
-      copy.source = source
+      var copy=self
+      copy.source=source
       return copy
     }
 
     // CustomStringConvertible conformance
     var description: String {
-      var result = "[\(domain).\(code)] \(errorDescription)"
+      var result="[\(domain).\(code)] \(errorDescription)"
       if let source {
         result += " - Source: \(source.file):\(source.line) (\(source.function))"
       }

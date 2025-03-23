@@ -7,4 +7,4 @@ import Foundation
 // with testable access to internal members.
 
 // Re-export SecurityError for convenience in tests
-public typealias SecurityError = SecurityInterfaces.SecurityError
+public typealias SecurityError=SecurityInterfaces.SecurityError

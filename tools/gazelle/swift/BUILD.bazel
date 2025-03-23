@@ -3,7 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 gazelle(
     name = "gazelle",
-    prefix = "github.com/mpy-dev-ml/UmbraCore/tools/gazelle/swift",
+    prefix = "github.com/mpy-dev-ml/UmbraCore/tools/gazelle/swift"
 )
 
 go_library(
@@ -18,7 +18,7 @@ go_library(
         "@bazel_gazelle//repo",
         "@bazel_gazelle//resolve",
         "@bazel_gazelle//rule",
-    ],
+    ]
 )
 
 go_library(
@@ -33,5 +33,5 @@ go_library(
         "@bazel_gazelle//repo",
         "@bazel_gazelle//resolve",
         "@bazel_gazelle//rule",
-    ],
+    ]
 )

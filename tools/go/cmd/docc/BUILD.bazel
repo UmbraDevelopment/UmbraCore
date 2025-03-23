@@ -4,11 +4,11 @@ go_library(
     name = "docc_lib",
     srcs = ["main.go"],
     importpath = "dev.mpy.UmbraCore/tools/go/cmd/docc",
-    visibility = ["//visibility:private"],
+    visibility = ["//visibility:private"]
 )
 
 go_binary(
     name = "docc",
     embed = [":docc_lib"],
-    visibility = ["//visibility:public"],
+    visibility = ["//visibility:public"]
 )

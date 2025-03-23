@@ -8,7 +8,7 @@
  This is a transitional file to help with the migration away from typealiases to direct usage
  of fully qualified types as defined in the UmbraCore type policy. Most of these typealiases
  will be removed in the future once the codebase has been updated to use the original types.
- 
+
  ## Preferred Usage
  New code should avoid these typealiases and instead reference the original types directly
  from the XPCProtocolsCore module. This reduces indirection and improves code clarity.

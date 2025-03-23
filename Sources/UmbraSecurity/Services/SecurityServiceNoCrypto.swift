@@ -78,7 +78,8 @@ public actor SecurityServiceNoCrypto {
   /// - Parameter usesPrivilegedHelper: Whether to use the privileged helper for crypto
   /// - Returns: True if initialised successfully
   /// - Throws: SecurityError if initialisation fails
-  public func initialize(usesPrivilegedHelper: Bool = false) async -> Result<Bool, UmbraErrors.Security.Core> {
+  public func initialize(usesPrivilegedHelper _: Bool=false) async
+  -> Result<Bool, UmbraErrors.Security.Core> {
     // Minimal implementation - just update state
     _state = .initialized
     Self.updateNonIsolatedState(for: instanceID, newState: _state)

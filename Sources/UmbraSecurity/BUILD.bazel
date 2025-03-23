@@ -2,7 +2,7 @@ load("//:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
     name = "UmbraSecurity",
-    srcs = glob(["Sources/**/*.swift"], allow_empty = True),
+    srcs = glob(["Sources/**/*.swift"], allow_empty = True ),
         deps = [
         "//ErrorHandling/Core:ErrorHandlingCore",
         "//ErrorHandling/Domains:ErrorHandlingDomains",
@@ -16,7 +16,7 @@ umbra_swift_library(
         "//Sources/SecurityInterfacesProtocols:SecurityInterfacesProtocols",
         "//Sources/UmbraCoreTypes:UmbraCoreTypes",
         "//Sources/XPCProtocolsCore:XPCProtocolsCore",
-    ],
+    ], 
 )
 
 # Uncomment if documentation generation is needed
@@ -25,19 +25,19 @@ umbra_swift_library(
 #
 # swift_package(
 #     name = "docc_documentation",
-#     srcs = glob(["Sources/**/*.swift"], allow_empty = True),
+#     srcs = glob(["Sources/**/*.swift"], allow_empty = True ),
 #         deps = [
-        "//ErrorHandling/Core:ErrorHandlingCore",
-        "//ErrorHandling/Domains:ErrorHandlingDomains",
-        "//ErrorHandling/Interfaces:ErrorHandlingInterfaces",
-        "//ErrorHandling/Mapping:ErrorHandlingMapping",
-        "//Sources/CoreDTOs:CoreDTOs",
-        "//Sources/CoreTypesInterfaces:CoreTypesInterfaces",
-        "//Sources/SecurityBridgeTypes:SecurityBridgeTypes",
-        "//Sources/SecurityInterfaces:SecurityInterfaces",
-        "//Sources/SecurityInterfacesBase:SecurityInterfacesBase",
-        "//Sources/SecurityInterfacesProtocols:SecurityInterfacesProtocols",
-        "//Sources/UmbraCoreTypes:UmbraCoreTypes",
-        "//Sources/XPCProtocolsCore:XPCProtocolsCore",
-    ],
+# "//ErrorHandling/Core:ErrorHandlingCore",
+# "//ErrorHandling/Domains:ErrorHandlingDomains",
+# "//ErrorHandling/Interfaces:ErrorHandlingInterfaces",
+# "//ErrorHandling/Mapping:ErrorHandlingMapping",
+# "//Sources/CoreDTOs:CoreDTOs",
+# "//Sources/CoreTypesInterfaces:CoreTypesInterfaces",
+# "//Sources/SecurityBridgeTypes:SecurityBridgeTypes",
+# "//Sources/SecurityInterfaces:SecurityInterfaces",
+# "//Sources/SecurityInterfacesBase:SecurityInterfacesBase",
+# "//Sources/SecurityInterfacesProtocols:SecurityInterfacesProtocols",
+# "//Sources/UmbraCoreTypes:UmbraCoreTypes",
+# "//Sources/XPCProtocolsCore:XPCProtocolsCore",
+# ],
 # )

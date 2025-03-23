@@ -18,12 +18,12 @@ final class StatsCommandTests: XCTestCase {
   }
 
   func testStatsCommandBuilder() async throws {
-    let options = CommonOptions(
+    let options=CommonOptions(
       repository: "/tmp/repo",
       password: "test"
     )
 
-    let command = StatsCommand(options: options)
+    let command=StatsCommand(options: options)
       .mode(.restoreSize)
       .host("test-host")
       .tag("test-tag")
@@ -41,11 +41,11 @@ final class StatsCommandTests: XCTestCase {
   }
 
   func testStatsCommandExecution() async throws {
-    let mockRepository = try await TestRepository.create()
-    let helper = try ResticCLIHelper(executablePath: "/opt/homebrew/bin/restic")
+    let mockRepository=try await TestRepository.create()
+    let helper=try ResticCLIHelper(executablePath: "/opt/homebrew/bin/restic")
 
     // Backup some files first
-    let backupCommand = BackupCommand(
+    let backupCommand=BackupCommand(
       paths: [mockRepository.testFilesPath],
       options: CommonOptions(
         repository: mockRepository.path,
@@ -54,22 +54,22 @@ final class StatsCommandTests: XCTestCase {
       )
     )
 
-    _ = try await helper.execute(backupCommand)
+    _=try await helper.execute(backupCommand)
 
-    let options = CommonOptions(
+    let options=CommonOptions(
       repository: mockRepository.path,
       password: mockRepository.password,
       jsonOutput: true
     )
 
-    let statsCommand = StatsCommand(options: options)
-    let output = try await helper.execute(statsCommand)
+    let statsCommand=StatsCommand(options: options)
+    let output=try await helper.execute(statsCommand)
 
     XCTAssertFalse(output.isEmpty, "Stats command should produce output")
 
     // Parse JSON manually since we don't have access to the Decodable implementation
-    let jsonData = Data(output.utf8)
-    guard let json = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any] else {
+    let jsonData=Data(output.utf8)
+    guard let json=try JSONSerialization.jsonObject(with: jsonData) as? [String: Any] else {
       XCTFail("Failed to parse stats output as JSON")
       return
     }

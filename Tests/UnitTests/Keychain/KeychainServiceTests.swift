@@ -6,12 +6,12 @@ final class KeychainServiceTests: XCTestCase {
 
   override func setUp() async throws {
     try await super.setUp()
-    proxy = try await MockXPCServiceHelper.getServiceProxy()
+    proxy=try await MockXPCServiceHelper.getServiceProxy()
   }
 
   override func tearDown() async throws {
     await MockXPCServiceHelper.reset()
-    proxy = nil
+    proxy=nil
     try await super.tearDown()
   }
 
@@ -24,7 +24,7 @@ final class KeychainServiceTests: XCTestCase {
   }
 
   func testAddItem() async throws {
-    let testData = Data("test_data".utf8)
+    let testData=Data("test_data".utf8)
     try await proxy.addItem(
       account: "testAccount",
       service: "com.umbracore.tests",
@@ -32,7 +32,7 @@ final class KeychainServiceTests: XCTestCase {
       data: testData
     )
 
-    let retrievedData = try await proxy.retrieveItem(
+    let retrievedData=try await proxy.retrieveItem(
       account: "testAccount",
       service: "com.umbracore.tests",
       accessGroup: nil as String?
@@ -43,7 +43,7 @@ final class KeychainServiceTests: XCTestCase {
 
   func testRemoveItem() async throws {
     // First add an item
-    let testData = Data("test_data".utf8)
+    let testData=Data("test_data".utf8)
     try await proxy.addItem(
       account: "testAccount",
       service: "com.umbracore.tests",
@@ -60,7 +60,7 @@ final class KeychainServiceTests: XCTestCase {
 
     // Verify it's gone
     do {
-      _ = try await proxy.retrieveItem(
+      _=try await proxy.retrieveItem(
         account: "testAccount",
         service: "com.umbracore.tests",
         accessGroup: nil as String?
@@ -72,7 +72,7 @@ final class KeychainServiceTests: XCTestCase {
   }
 
   func testDuplicateItem() async throws {
-    let testData = Data("test_data".utf8)
+    let testData=Data("test_data".utf8)
 
     // Add item first time
     try await proxy.addItem(
@@ -97,8 +97,8 @@ final class KeychainServiceTests: XCTestCase {
   }
 
   func testUpdateItem() async throws {
-    let initialData = Data("initial_data".utf8)
-    let updatedData = Data("updated_data".utf8)
+    let initialData=Data("initial_data".utf8)
+    let updatedData=Data("updated_data".utf8)
 
     // Add initial item
     try await proxy.addItem(
@@ -117,7 +117,7 @@ final class KeychainServiceTests: XCTestCase {
     )
 
     // Verify update
-    let retrievedData = try await proxy.retrieveItem(
+    let retrievedData=try await proxy.retrieveItem(
       account: "testAccount",
       service: "com.umbracore.tests",
       accessGroup: nil as String?

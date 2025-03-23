@@ -4,12 +4,12 @@ load("//:bazel/macros/swift.bzl", "umbra_swift_library")
 umbra_swift_library(
     name = "CoreServicesTypes",
     srcs = glob(
-        ["**/*.swift"],
-        exclude = ["XPCServiceProtocol.swift"],
+        ["**/*.swift"], allow_empty = True,
+        exclude = ["XPCServiceProtocol.swift"], 
     ),
     deps = [
         "//Sources/Core/Services/TypeAliases:CoreServicesTypeAliases",
         "//Sources/ErrorHandling",
         "//Sources/KeyManagementTypes",
-    ],
+    ]
 )

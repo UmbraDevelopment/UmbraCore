@@ -55,7 +55,8 @@ extension URL {
   ///   - Invalid bookmark data
   ///   - File no longer exists
   ///   - Insufficient permissions
-  public static func resolveSecurityScopedBookmark(_ bookmarkData: Data) async throws -> (URL, Bool) {
+  public static func resolveSecurityScopedBookmark(_ bookmarkData: Data) async throws
+  -> (URL, Bool) {
     do {
       var isStale=false
       let url=try URL(
@@ -78,17 +79,22 @@ extension URL {
   ///   - URL: The resolved URL
   ///   - Bool: Whether the bookmark is stale and should be recreated
   /// - Throws: SecurityError.bookmarkError if bookmark resolution fails
-  public static func resolveSecurityScopedBookmark(_ bookmarkData: UmbraCoreTypes.SecureBytes) async throws
+  public static func resolveSecurityScopedBookmark(
+    _ bookmarkData: UmbraCoreTypes
+      .SecureBytes
+  ) async throws
   -> (URL, Bool) {
     try await resolveSecurityScopedBookmark(Data(bookmarkData.bytes))
   }
 
   /// Starts accessing a security-scoped resource represented by this URL.
-  /// This must be called before attempting to access the resource, and stopAccessingSecurityScopedResource
+  /// This must be called before attempting to access the resource, and
+  /// stopAccessingSecurityScopedResource
   /// must be called when done.
   /// - Returns: True if access was successfully started, false otherwise
-  public func startAccessingSecurityScopedResource() async -> Result<Bool, UmbraErrors.Security.Protocols> {
-    let result=self.startAccessingSecurityScopedResource()
+  public func startAccessingSecurityScopedResource() async
+  -> Result<Bool, UmbraErrors.Security.Protocols> {
+    let result=startAccessingSecurityScopedResource()
     if result {
       return .success(true)
     } else {
@@ -100,7 +106,7 @@ extension URL {
   /// startAccessingSecurityScopedResource.
   /// Must be called after access is no longer needed to release any resources.
   public func stopAccessingSecurityScopedResource() {
-    self.stopAccessingSecurityScopedResource()
+    stopAccessingSecurityScopedResource()
   }
 
   /// Executes an operation with temporary access to a security-scoped resource.
@@ -109,14 +115,14 @@ extension URL {
   /// - Returns: The result of the operation
   /// - Throws: SecurityError if access cannot be granted, or any error thrown by the operation
   public func withSecurityScopedAccess<T>(_ operation: () async throws -> T) async throws -> T {
-    let accessResult = await startAccessingSecurityScopedResource()
+    let accessResult=await startAccessingSecurityScopedResource()
     switch accessResult {
       case .success:
         defer { stopAccessingSecurityScopedResource() }
         return try await operation()
       case .failure:
         throw UmbraErrors.Security.Core.operationFailed(
-          reason: "Failed to access security-scoped resource: \(self.path)"
+          reason: "Failed to access security-scoped resource: \(path)"
         )
     }
   }

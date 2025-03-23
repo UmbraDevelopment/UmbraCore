@@ -4,8 +4,7 @@ load("//:bazel/macros/swift.bzl", "umbra_swift_library")
 swift_library(
     name = "FeaturesLoggingServices",
     srcs = glob(
-        ["**/*.swift"],
-        allow_empty = True,
+        ["**/*.swift"], allow_empty = True
     ),
     visibility = [
         "//Sources/Features:__pkg__",
@@ -24,5 +23,5 @@ swift_library(
         "//Sources/UmbraCoreTypes",
         "//Sources/XPCProtocolsCore",
         "@swiftpkg_swiftybeaver//:SwiftyBeaver",
-    ],
+    ], 
 )

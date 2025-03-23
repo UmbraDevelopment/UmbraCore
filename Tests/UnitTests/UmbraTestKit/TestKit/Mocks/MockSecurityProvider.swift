@@ -18,9 +18,9 @@ public actor MockSecurityProvider: SecurityProtocolsCore.SecurityProviderProtoco
   public nonisolated let keyManager: KeyManagementProtocol
 
   public init() {
-    bookmarks = [:]
-    accessedPaths = []
-    mockConfiguration = SecurityProtocolsCore.SecurityConfigDTO(
+    bookmarks=[:]
+    accessedPaths=[]
+    mockConfiguration=SecurityProtocolsCore.SecurityConfigDTO(
       algorithm: "AES-256",
       keySizeInBits: 256,
       initializationVector: nil,
@@ -34,8 +34,8 @@ public actor MockSecurityProvider: SecurityProtocolsCore.SecurityProviderProtoco
     )
 
     // Initialize the required services
-    cryptoService = MockSecurityCryptoService()
-    keyManager = MockKeyManagementService()
+    cryptoService=MockSecurityCryptoService()
+    keyManager=MockKeyManagementService()
   }
 
   // MARK: - SecurityProvider Protocol Implementation
@@ -44,7 +44,8 @@ public actor MockSecurityProvider: SecurityProtocolsCore.SecurityProviderProtoco
     -> Result<
       SecurityProtocolsCore.SecurityConfigDTO,
       ErrorHandlingDomains.UmbraErrors.Security.Protocols
-    > {
+    >
+  {
     .success(mockConfiguration)
   }
 
@@ -52,7 +53,7 @@ public actor MockSecurityProvider: SecurityProtocolsCore.SecurityProviderProtoco
     _ configuration: SecurityProtocolsCore
       .SecurityConfigDTO
   ) async -> Result<Void, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
-    mockConfiguration = configuration
+    mockConfiguration=configuration
     return .success(())
   }
 
@@ -87,8 +88,8 @@ public actor MockSecurityProvider: SecurityProtocolsCore.SecurityProviderProtoco
       )
     }
 
-    let bookmarkBytes: [UInt8] = Array(path.utf8)
-    bookmarks[path] = bookmarkBytes
+    let bookmarkBytes: [UInt8]=Array(path.utf8)
+    bookmarks[path]=bookmarkBytes
     return .success(UmbraCoreTypes.SecureBytes(bytes: bookmarkBytes))
   }
 
@@ -97,13 +98,13 @@ public actor MockSecurityProvider: SecurityProtocolsCore.SecurityProviderProtoco
     isStale: Bool
   ), ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
     // Convert SecureBytes to array for comparison
-    var bookmarkBytes = [UInt8]()
+    var bookmarkBytes=[UInt8]()
     for i in 0..<bookmarkData.count {
       bookmarkBytes.append(bookmarkData[i])
     }
 
     for (path, storedBytes) in bookmarks {
-      var storedBookmarkBytes = [UInt8]()
+      var storedBookmarkBytes=[UInt8]()
       for i in 0..<storedBytes.count {
         storedBookmarkBytes.append(storedBytes[i])
       }
@@ -222,8 +223,8 @@ public actor MockSecurityProvider: SecurityProtocolsCore.SecurityProviderProtoco
     }
 
     // Simple mock: just return first 8 bytes repeated
-    let sampleBytes = Array(data.prefix(8))
-    let hash = sampleBytes + sampleBytes + sampleBytes + sampleBytes
+    let sampleBytes=Array(data.prefix(8))
+    let hash=sampleBytes + sampleBytes + sampleBytes + sampleBytes
     return .success(UmbraCoreTypes.SecureBytes(bytes: hash))
   }
 
@@ -239,13 +240,13 @@ public actor MockSecurityProvider: SecurityProtocolsCore.SecurityProviderProtoco
     }
 
     // Simple mock: just return zeros
-    let data = Array(repeating: UInt8(0), count: length)
+    let data=Array(repeating: UInt8(0), count: length)
     return .success(UmbraCoreTypes.SecureBytes(bytes: data))
   }
 
   // Helper method that throws
   private func generateRandomDataThrowing(length: Int) async throws -> UmbraCoreTypes.SecureBytes {
-    let result = await generateRandomData(length: length)
+    let result=await generateRandomData(length: length)
     switch result {
       case let .success(data):
         return data
@@ -261,7 +262,7 @@ public actor MockSecurityProvider: SecurityProtocolsCore.SecurityProviderProtoco
 
   // Helper method that throws
   private func randomBytesThrowing(count: Int) async throws -> UmbraCoreTypes.SecureBytes {
-    let result = await randomBytes(count: count)
+    let result=await randomBytes(count: count)
     switch result {
       case let .success(data):
         return data
@@ -272,7 +273,7 @@ public actor MockSecurityProvider: SecurityProtocolsCore.SecurityProviderProtoco
 
   public func generateKey(length: Int) async
   -> Result<UmbraCoreTypes.SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
-    let result = await generateRandomData(length: length)
+    let result=await generateRandomData(length: length)
     switch result {
       case let .success(data):
         return .success(data)
@@ -283,8 +284,8 @@ public actor MockSecurityProvider: SecurityProtocolsCore.SecurityProviderProtoco
 
   public func generateKey(algorithm _: String, keySizeInBits: Int) async throws -> UmbraCoreTypes
   .SecureBytes {
-    let bytesLength = keySizeInBits / 8
-    let result = await generateRandomData(length: bytesLength)
+    let bytesLength=keySizeInBits / 8
+    let result=await generateRandomData(length: bytesLength)
     switch result {
       case let .success(data):
         return data
@@ -302,7 +303,7 @@ public actor MockSecurityProvider: SecurityProtocolsCore.SecurityProviderProtoco
       )
     }
 
-    let info: [String: AnyObject] = [
+    let info: [String: AnyObject]=[
       "keyId": keyID as NSString,
       "algorithm": "AES256" as NSString,
       "status": "active" as NSString,
@@ -325,7 +326,7 @@ public actor MockSecurityProvider: SecurityProtocolsCore.SecurityProviderProtoco
     parameters _: [String: String]
   ) async
   -> Result<MockSecurityOperationResult, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
-    let result = MockSecurityOperationResult(success: true, data: nil)
+    let result=MockSecurityOperationResult(success: true, data: nil)
     return .success(result)
   }
 
@@ -334,7 +335,7 @@ public actor MockSecurityProvider: SecurityProtocolsCore.SecurityProviderProtoco
     config _: SecurityProtocolsCore.SecurityConfigDTO
   ) async -> SecurityProtocolsCore.SecurityResultDTO {
     // Simple mock implementation
-    let emptyBytes = UmbraCoreTypes.SecureBytes(bytes: [])
+    let emptyBytes=UmbraCoreTypes.SecureBytes(bytes: [])
     return SecurityProtocolsCore.SecurityResultDTO(data: emptyBytes)
   }
 
@@ -380,8 +381,8 @@ public struct MockSecurityOperationResult: Sendable {
 
   /// Create a new security operation result
   public init(success: Bool, data: [UInt8]?) {
-    self.success = success
-    self.data = data
+    self.success=success
+    self.data=data
   }
 }
 
@@ -421,7 +422,7 @@ final class MockSecurityCryptoService: CryptoServiceProtocol {
   }
 
   func generateKey() async -> Result<UmbraCoreTypes.SecureBytes, UmbraErrors.Security.Protocols> {
-    let bytes = Array(repeating: UInt8(0), count: 32)
+    let bytes=Array(repeating: UInt8(0), count: 32)
     return .success(UmbraCoreTypes.SecureBytes(bytes: bytes))
   }
 
@@ -429,7 +430,7 @@ final class MockSecurityCryptoService: CryptoServiceProtocol {
     algorithm _: String,
     length: Int
   ) async -> Result<UmbraCoreTypes.SecureBytes, UmbraErrors.Security.Protocols> {
-    let bytes = Array(repeating: UInt8(0), count: length)
+    let bytes=Array(repeating: UInt8(0), count: length)
     return .success(UmbraCoreTypes.SecureBytes(bytes: bytes))
   }
 
@@ -438,7 +439,7 @@ final class MockSecurityCryptoService: CryptoServiceProtocol {
     algorithm _: String
   ) async
   -> Result<UmbraCoreTypes.SecureBytes, UmbraErrors.Security.Protocols> {
-    let bytes = Array(repeating: UInt8(0), count: 32)
+    let bytes=Array(repeating: UInt8(0), count: 32)
     return .success(UmbraCoreTypes.SecureBytes(bytes: bytes))
   }
 
@@ -446,7 +447,7 @@ final class MockSecurityCryptoService: CryptoServiceProtocol {
     data _: UmbraCoreTypes
       .SecureBytes
   ) async -> Result<UmbraCoreTypes.SecureBytes, UmbraErrors.Security.Protocols> {
-    let bytes = Array(repeating: UInt8(0), count: 32)
+    let bytes=Array(repeating: UInt8(0), count: 32)
     return .success(UmbraCoreTypes.SecureBytes(bytes: bytes))
   }
 
@@ -493,26 +494,26 @@ final class MockSecurityCryptoService: CryptoServiceProtocol {
     data _: UmbraCoreTypes.SecureBytes,
     config _: SecurityConfigDTO
   ) async -> Result<UmbraCoreTypes.SecureBytes, UmbraErrors.Security.Protocols> {
-    let bytes = Array(repeating: UInt8(0), count: 32)
+    let bytes=Array(repeating: UInt8(0), count: 32)
     return .success(UmbraCoreTypes.SecureBytes(bytes: bytes))
   }
 
   func generateRandomData(length: Int) async
   -> Result<UmbraCoreTypes.SecureBytes, UmbraErrors.Security.Protocols> {
-    let bytes = Array(repeating: UInt8(0), count: length)
+    let bytes=Array(repeating: UInt8(0), count: length)
     return .success(UmbraCoreTypes.SecureBytes(bytes: bytes))
   }
 }
 
 @preconcurrency
 final class MockKeyManagementService: KeyManagementProtocol, @unchecked Sendable {
-  private var storedKeys: [String: UmbraCoreTypes.SecureBytes] = [:]
+  private var storedKeys: [String: UmbraCoreTypes.SecureBytes]=[:]
 
   // Implementing KeyManagementProtocol
 
   func retrieveKey(withIdentifier identifier: String) async
   -> Result<UmbraCoreTypes.SecureBytes, UmbraErrors.Security.Protocols> {
-    guard let key = storedKeys[identifier] else {
+    guard let key=storedKeys[identifier] else {
       return .failure(
         UmbraErrors.Security.Protocols
           .makeServiceError(message: "Key not found: \(identifier)")
@@ -525,7 +526,7 @@ final class MockKeyManagementService: KeyManagementProtocol, @unchecked Sendable
     _ key: UmbraCoreTypes.SecureBytes,
     withIdentifier identifier: String
   ) async -> Result<Void, UmbraErrors.Security.Protocols> {
-    storedKeys[identifier] = key
+    storedKeys[identifier]=key
     return .success(())
   }
 
@@ -555,13 +556,13 @@ final class MockKeyManagementService: KeyManagementProtocol, @unchecked Sendable
     }
 
     // Generate a new key
-    let newKey = UmbraCoreTypes.SecureBytes(bytes: Array(repeating: UInt8(0), count: 32))
+    let newKey=UmbraCoreTypes.SecureBytes(bytes: Array(repeating: UInt8(0), count: 32))
 
     // Store the new key with the same identifier
-    storedKeys[identifier] = newKey
+    storedKeys[identifier]=newKey
 
     // If data was provided, "reencrypt" it (in this mock, we're just returning it as-is)
-    let reencryptedData = dataToReencrypt
+    let reencryptedData=dataToReencrypt
 
     return .success((newKey: newKey, reencryptedData: reencryptedData))
   }
@@ -585,7 +586,7 @@ final class MockKeyManagementService: KeyManagementProtocol, @unchecked Sendable
   }
 
   func storeKey(_ key: UmbraCoreTypes.SecureBytes, keyID: String) -> Bool {
-    storedKeys[keyID] = key
+    storedKeys[keyID]=key
     return true
   }
 
@@ -607,7 +608,7 @@ final class MockKeyManagementService: KeyManagementProtocol, @unchecked Sendable
 
   func createEncryptionKey() async
   -> Result<UmbraCoreTypes.SecureBytes, UmbraErrors.Security.Protocols> {
-    let bytes = Array(repeating: UInt8(0), count: 32)
+    let bytes=Array(repeating: UInt8(0), count: 32)
     return .success(UmbraCoreTypes.SecureBytes(bytes: bytes))
   }
 
@@ -617,7 +618,7 @@ final class MockKeyManagementService: KeyManagementProtocol, @unchecked Sendable
 
   func getKeyData(_ keyID: String) async
   -> Result<UmbraCoreTypes.SecureBytes, UmbraErrors.Security.Protocols> {
-    guard let key = storedKeys[keyID] else {
+    guard let key=storedKeys[keyID] else {
       return .failure(
         UmbraErrors.Security.Protocols
           .makeServiceError(message: "Key not found: \(keyID)")
@@ -633,9 +634,9 @@ final class MockKeyManagementService: KeyManagementProtocol, @unchecked Sendable
           .makeServiceError(message: "Key not found: \(keyID)")
       )
     }
-    let newKeyID = "rotated-\(keyID)"
-    let bytes = Array(repeating: UInt8(0), count: 32)
-    storedKeys[newKeyID] = UmbraCoreTypes.SecureBytes(bytes: bytes)
+    let newKeyID="rotated-\(keyID)"
+    let bytes=Array(repeating: UInt8(0), count: 32)
+    storedKeys[newKeyID]=UmbraCoreTypes.SecureBytes(bytes: bytes)
     return .success(newKeyID)
   }
 

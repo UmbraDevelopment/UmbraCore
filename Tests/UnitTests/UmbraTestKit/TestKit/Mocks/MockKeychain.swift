@@ -6,20 +6,20 @@ import SecurityTypesProtocols
 
 /// Mock implementation of the secure storage provider
 public actor MockKeychain: SecureStorageProvider {
-  private var storage: [String: Data] = [:]
-  private var metadata: [String: [String: String]] = [:]
+  private var storage: [String: Data]=[:]
+  private var metadata: [String: [String: String]]=[:]
 
   public init() {}
 
-  public func save(_ data: Data, forKey key: String, metadata: [String: String]? = nil) async throws {
-    storage[key] = data
+  public func save(_ data: Data, forKey key: String, metadata: [String: String]?=nil) async throws {
+    storage[key]=data
     if let metadata {
-      self.metadata[key] = metadata
+      self.metadata[key]=metadata
     }
   }
 
   public func load(forKey key: String) async throws -> Data {
-    guard let data = storage[key] else {
+    guard let data=storage[key] else {
       throw ErrorHandlingDomains.UmbraErrors.Security.Protocols
         .makeStorageOperationFailed(message: "No data found for key: \(key)")
     }
@@ -27,7 +27,7 @@ public actor MockKeychain: SecureStorageProvider {
   }
 
   public func loadWithMetadata(forKey key: String) async throws -> (Data, [String: String]?) {
-    guard let data = storage[key] else {
+    guard let data=storage[key] else {
       throw ErrorHandlingDomains.UmbraErrors.Security.Protocols
         .makeStorageOperationFailed(message: "No data found for key: \(key)")
     }
@@ -61,7 +61,7 @@ public actor MockKeychain: SecureStorageProvider {
       throw ErrorHandlingDomains.UmbraErrors.Security.Protocols
         .makeStorageOperationFailed(message: "No data found for key: \(key)")
     }
-    self.metadata[key] = metadata
+    self.metadata[key]=metadata
   }
 
   public func exists(forKey key: String) async -> Bool {

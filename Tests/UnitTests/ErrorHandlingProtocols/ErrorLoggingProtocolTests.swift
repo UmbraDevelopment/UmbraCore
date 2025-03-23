@@ -13,11 +13,11 @@ import XCTest
 final class ErrorLoggingProtocolTests: XCTestCase {
   // Mock implementation of ErrorLoggingProtocol for testing
   class MockErrorLogger: ErrorLoggingProtocol {
-    var loggedErrors: [Error] = []
-    var loggedInfo: [String] = []
-    var loggedWarnings: [String] = []
-    var loggedWithSeverity: [(error: Error, severity: ErrorSeverity)] = []
-    var recoveryActions: [String: ErrorHandlingRecovery.RecoveryAction] = [:]
+    var loggedErrors: [Error]=[]
+    var loggedInfo: [String]=[]
+    var loggedWarnings: [String]=[]
+    var loggedWithSeverity: [(error: Error, severity: ErrorSeverity)]=[]
+    var recoveryActions: [String: ErrorHandlingRecovery.RecoveryAction]=[:]
 
     // Required method from ErrorLoggingProtocol
     func log(error: some UmbraError, severity: ErrorSeverity) {
@@ -43,11 +43,11 @@ final class ErrorLoggingProtocolTests: XCTestCase {
       forErrorCode code: String,
       option: ErrorHandlingRecovery.RecoveryAction
     ) {
-      recoveryActions[code] = option
+      recoveryActions[code]=option
     }
 
     func getRecoveryOption(forError error: Error) -> ErrorHandlingRecovery.RecoveryAction? {
-      guard let umbraError = error as? UmbraError else { return nil }
+      guard let umbraError=error as? UmbraError else { return nil }
       return recoveryActions[umbraError.code]
     }
   }
@@ -69,7 +69,7 @@ final class ErrorLoggingProtocolTests: XCTestCase {
 
   override func setUp() {
     super.setUp()
-    errorLogger = MockErrorLogger()
+    errorLogger=MockErrorLogger()
   }
 
   /**
@@ -77,7 +77,7 @@ final class ErrorLoggingProtocolTests: XCTestCase {
    */
   func testErrorLogging() {
     // Given
-    let error = TestLoggingError(code: "L001", errorDescription: "Test logging error")
+    let error=TestLoggingError(code: "L001", errorDescription: "Test logging error")
 
     // When
     errorLogger.logError(error, file: "TestFile.swift", function: "testFunction", line: 42)
@@ -90,7 +90,7 @@ final class ErrorLoggingProtocolTests: XCTestCase {
     )
 
     // Verify the logged error properties
-    if let loggedError = errorLogger.loggedErrors[0] as? TestLoggingError {
+    if let loggedError=errorLogger.loggedErrors[0] as? TestLoggingError {
       XCTAssertEqual(loggedError.code, "L001", "Error code should match")
       XCTAssertEqual(
         loggedError.errorDescription,
@@ -105,7 +105,7 @@ final class ErrorLoggingProtocolTests: XCTestCase {
    */
   func testErrorLoggingWithSeverity() {
     // Given
-    let error = TestLoggingError(code: "L002", errorDescription: "Critical error")
+    let error=TestLoggingError(code: "L002", errorDescription: "Critical error")
 
     // When
     errorLogger.log(error: error, severity: .critical)
@@ -122,7 +122,7 @@ final class ErrorLoggingProtocolTests: XCTestCase {
       "Severity should be critical"
     )
 
-    if let loggedError = errorLogger.loggedWithSeverity[0].error as? TestLoggingError {
+    if let loggedError=errorLogger.loggedWithSeverity[0].error as? TestLoggingError {
       XCTAssertEqual(loggedError.code, "L002", "Error code should match")
     }
   }
@@ -170,11 +170,11 @@ final class ErrorLoggingProtocolTests: XCTestCase {
    */
   func testRecoveryOptions() {
     // Given
-    let errorCode = "R001"
-    let error = TestLoggingError(code: errorCode, errorDescription: "Recoverable error")
+    let errorCode="R001"
+    let error=TestLoggingError(code: errorCode, errorDescription: "Recoverable error")
 
     // Create a RecoveryAction (concrete implementation of RecoveryOption)
-    let recoveryAction = ErrorHandlingRecovery.RecoveryAction(
+    let recoveryAction=ErrorHandlingRecovery.RecoveryAction(
       id: "retry_connection",
       title: "Retry Connection",
       description: "Attempt to reconnect to the server",
@@ -186,7 +186,7 @@ final class ErrorLoggingProtocolTests: XCTestCase {
     errorLogger.registerRecoveryOption(forErrorCode: errorCode, option: recoveryAction)
 
     // Then - Verify we can retrieve it
-    let retrievedOption = errorLogger.getRecoveryOption(forError: error)
+    let retrievedOption=errorLogger.getRecoveryOption(forError: error)
     XCTAssertNotNil(retrievedOption, "Should retrieve a recovery option for this error")
 
     // Verify the recovery option properties
@@ -205,10 +205,10 @@ final class ErrorLoggingProtocolTests: XCTestCase {
    */
   func testRecoveryOptionForNonRegisteredError() {
     // Given
-    let error = TestLoggingError(code: "UNKNOWN", errorDescription: "Unknown error")
+    let error=TestLoggingError(code: "UNKNOWN", errorDescription: "Unknown error")
 
     // When/Then
-    let retrievedOption = errorLogger.getRecoveryOption(forError: error)
+    let retrievedOption=errorLogger.getRecoveryOption(forError: error)
     XCTAssertNil(retrievedOption, "Should not retrieve a recovery option for non-registered error")
   }
 
@@ -217,10 +217,10 @@ final class ErrorLoggingProtocolTests: XCTestCase {
    */
   func testRecoveryOptionForNonUmbraError() {
     // Given
-    let nonUmbraError = NSError(domain: "Test", code: 100, userInfo: nil)
+    let nonUmbraError=NSError(domain: "Test", code: 100, userInfo: nil)
 
     // When/Then
-    let retrievedOption = errorLogger.getRecoveryOption(forError: nonUmbraError)
+    let retrievedOption=errorLogger.getRecoveryOption(forError: nonUmbraError)
     XCTAssertNil(retrievedOption, "Should not retrieve a recovery option for non-UmbraError")
   }
 
@@ -229,8 +229,8 @@ final class ErrorLoggingProtocolTests: XCTestCase {
    */
   func testMultipleRecoveryOptions() {
     // Given
-    let errorCodes = ["NETWORK", "DISK", "PERMISSION"]
-    let options = [
+    let errorCodes=["NETWORK", "DISK", "PERMISSION"]
+    let options=[
       ErrorHandlingRecovery.RecoveryAction(
         id: "retry_network",
         title: "Retry Network",
@@ -258,8 +258,8 @@ final class ErrorLoggingProtocolTests: XCTestCase {
 
     // Then - Verify we can retrieve them individually
     for (index, code) in errorCodes.enumerated() {
-      let error = TestLoggingError(code: code, errorDescription: "Test error")
-      let retrievedOption = errorLogger.getRecoveryOption(forError: error)
+      let error=TestLoggingError(code: code, errorDescription: "Test error")
+      let retrievedOption=errorLogger.getRecoveryOption(forError: error)
 
       XCTAssertNotNil(retrievedOption, "Should retrieve recovery option for \(code)")
       XCTAssertEqual(

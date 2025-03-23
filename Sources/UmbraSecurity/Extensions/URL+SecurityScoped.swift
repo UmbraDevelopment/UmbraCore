@@ -78,7 +78,7 @@ extension URL {
   /// - Throws: SecurityError if access fails
   public func us_startAccessingSecurityScopedResource() async
   -> Result<Bool, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
-    let result=self.startAccessingSecurityScopedResource()
+    let result=startAccessingSecurityScopedResource()
     if result {
       return .success(true)
     } else {
@@ -90,6 +90,6 @@ extension URL {
 
   /// Stop accessing a security-scoped resource
   public func us_stopAccessingSecurityScopedResource() {
-    self.stopAccessingSecurityScopedResource()
+    stopAccessingSecurityScopedResource()
   }
 }

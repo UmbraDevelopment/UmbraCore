@@ -59,7 +59,11 @@ extension URLProvider {
     defer { url.stopAccessingSecurityScopedResource() }
 
     do {
-      let data=try url.bookmarkData(options: [], includingResourceValuesForKeys: nil, relativeTo: nil)
+      let data=try url.bookmarkData(
+        options: [],
+        includingResourceValuesForKeys: nil,
+        relativeTo: nil
+      )
       return .success(data)
     } catch {
       return .failure(.internalError("Failed to create bookmark: \(error.localizedDescription)"))

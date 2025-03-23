@@ -18,7 +18,7 @@ public protocol SecurityProviderBase: Sendable {
   /// - Returns: True if the provider is available, false otherwise
   /// - Throws: UmbraErrors.Security.Core if the check fails
   func isAvailable() async -> Result<Bool, UmbraErrors.XPC.SecurityError>
-  
+
   /// Get the provider's version information
   /// - Returns: Version string
   func getVersion() async -> String

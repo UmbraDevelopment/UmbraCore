@@ -63,7 +63,7 @@ extension UmbraErrors.Security.Core {
         .internalError(description: reason)
       default:
         // Default to internal error with description
-        .internalError(description: self.localizedDescription)
+        .internalError(description: localizedDescription)
     }
   }
 }
@@ -75,4 +75,4 @@ extension UmbraErrors.Security.Core {
   deprecated,
   message: "Use UmbraErrors.Security.Core directly instead of this typealias for improved type clarity"
 )
-public typealias SecurityError = UmbraErrors.Security.Core
+public typealias SecurityError=UmbraErrors.Security.Core

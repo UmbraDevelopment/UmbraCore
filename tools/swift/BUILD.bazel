@@ -15,7 +15,7 @@ pkg_tar(
         "docc_rules.bzl",
     ],
     mode = "0644",
-    package_dir = "tools/swift",
+    package_dir = "tools/swift"
 )
 
 # Export the Swift build rules as a Bazel module
@@ -27,24 +27,24 @@ filegroup(
         "compiler_options.bzl",
         "docc_rules.bzl",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//visibility:public"]
 )
 
 build_environment(
     name = "local_environment",
-    is_local = True,
+    is_local = True
 )
 
 build_environment(
     name = "ci_environment",
-    is_local = False,
+    is_local = False
 )
 
 # DocC generation executable
 sh_binary(
     name = "docc_gen",
     srcs = ["docc_gen.sh"],
-    visibility = ["//visibility:public"],
+    visibility = ["//visibility:public"]
 )
 
 # Export DocC scripts

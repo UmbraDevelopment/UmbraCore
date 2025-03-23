@@ -10,11 +10,11 @@ final class DTOConvertersTests: XCTestCase {
 
   func testOperationResultToSecurityResultDTOConversion() {
     // Arrange - Success case with data
-    let secureBytes = SecureBytes(bytes: [1, 2, 3, 4, 5])
-    let successResult = OperationResultDTO<SecureBytes>.success(secureBytes)
+    let secureBytes=SecureBytes(bytes: [1, 2, 3, 4, 5])
+    let successResult=OperationResultDTO<SecureBytes>.success(secureBytes)
 
     // Act
-    let securityResult = successResult.toSecurityResultDTO()
+    let securityResult=successResult.toSecurityResultDTO()
 
     // Assert
     XCTAssertTrue(securityResult.success)
@@ -23,28 +23,28 @@ final class DTOConvertersTests: XCTestCase {
     XCTAssertNil(securityResult.errorMessage)
 
     // Arrange - Failure case
-    let failureResult = OperationResultDTO<SecureBytes>.failure(
-      errorCode: 1_002,
+    let failureResult=OperationResultDTO<SecureBytes>.failure(
+      errorCode: 1002,
       errorMessage: "Operation failed"
     )
 
     // Act
-    let failureSecurityResult = failureResult.toSecurityResultDTO()
+    let failureSecurityResult=failureResult.toSecurityResultDTO()
 
     // Assert
     XCTAssertFalse(failureSecurityResult.success)
     XCTAssertNil(failureSecurityResult.data)
-    XCTAssertEqual(failureSecurityResult.errorCode, 1_002)
+    XCTAssertEqual(failureSecurityResult.errorCode, 1002)
     XCTAssertEqual(failureSecurityResult.errorMessage, "Operation failed")
   }
 
   func testSecurityResultDTOToOperationResultConversion() {
     // Arrange - Success case with data
-    let secureBytes = SecureBytes(bytes: [1, 2, 3, 4, 5])
-    let securityResult = SecurityProtocolsCore.SecurityResultDTO(data: secureBytes)
+    let secureBytes=SecureBytes(bytes: [1, 2, 3, 4, 5])
+    let securityResult=SecurityProtocolsCore.SecurityResultDTO(data: secureBytes)
 
     // Act
-    let operationResult = OperationResultDTO<SecureBytes>.fromSecurityResultDTO(securityResult)
+    let operationResult=OperationResultDTO<SecureBytes>.fromSecurityResultDTO(securityResult)
 
     // Assert
     XCTAssertEqual(operationResult.status, .success)
@@ -53,25 +53,25 @@ final class DTOConvertersTests: XCTestCase {
     XCTAssertNil(operationResult.errorMessage)
 
     // Arrange - Failure case
-    let failureSecurityResult = SecurityProtocolsCore.SecurityResultDTO(
-      errorCode: 1_002,
+    let failureSecurityResult=SecurityProtocolsCore.SecurityResultDTO(
+      errorCode: 1002,
       errorMessage: "Operation failed"
     )
 
     // Act
-    let failureOperationResult = OperationResultDTO<SecureBytes>
+    let failureOperationResult=OperationResultDTO<SecureBytes>
       .fromSecurityResultDTO(failureSecurityResult)
 
     // Assert
     XCTAssertEqual(failureOperationResult.status, .failure)
     XCTAssertNil(failureOperationResult.value)
-    XCTAssertEqual(failureOperationResult.errorCode, 1_002)
+    XCTAssertEqual(failureOperationResult.errorCode, 1002)
     XCTAssertEqual(failureOperationResult.errorMessage, "Operation failed")
   }
 
   func testSecurityConfigDTOConversion() {
     // Arrange
-    let securityConfig = SecurityConfigDTO(
+    let securityConfig=SecurityConfigDTO(
       options: [
         "algorithm": "AES-GCM",
         "keySizeInBits": "256",
@@ -82,27 +82,27 @@ final class DTOConvertersTests: XCTestCase {
     )
 
     // Act
-    let protocolsConfig = securityConfig.toSecurityProtocolsCoreConfig()
+    let protocolsConfig=securityConfig.toSecurityProtocolsCoreConfig()
 
     // Assert
     XCTAssertEqual(protocolsConfig.algorithm, "AES-GCM")
     XCTAssertEqual(protocolsConfig.keySizeInBits, 256)
     XCTAssertEqual(protocolsConfig.keyIdentifier, "test-key-id")
-    XCTAssertEqual(protocolsConfig.iterations, 10_000)
+    XCTAssertEqual(protocolsConfig.iterations, 10000)
 
     // Convert input data to SecureBytes for comparison
-    let secureBytes = SecureBytes(bytes: [1, 2, 3, 4, 5])
+    let secureBytes=SecureBytes(bytes: [1, 2, 3, 4, 5])
 
     // Compare bytes one by one as SecureBytes doesn't have direct equality
     XCTAssertEqual(protocolsConfig.inputData?.count, secureBytes.count)
-    if let inputData = protocolsConfig.inputData {
+    if let inputData=protocolsConfig.inputData {
       for i in 0..<inputData.count {
         XCTAssertEqual(inputData[i], secureBytes[i])
       }
     }
 
     // Convert back
-    let reconvertedConfig = SecurityConfigDTO.fromSecurityProtocolsCoreConfig(protocolsConfig)
+    let reconvertedConfig=SecurityConfigDTO.fromSecurityProtocolsCoreConfig(protocolsConfig)
 
     // Assert round-trip conversion
     XCTAssertEqual(reconvertedConfig.options["algorithm"], "AES-GCM")
@@ -114,11 +114,11 @@ final class DTOConvertersTests: XCTestCase {
 
   func testNotificationDTOForSecurityError() {
     // Arrange
-    let securityError = UmbraErrors.Security.Protocols.encryptionFailed("Test encryption error")
-    let timestamp: UInt64 = 1_625_000_000
+    let securityError=UmbraErrors.Security.Protocols.encryptionFailed("Test encryption error")
+    let timestamp: UInt64=1_625_000_000
 
     // Act
-    let notification = NotificationDTO.forSecurityError(
+    let notification=NotificationDTO.forSecurityError(
       securityError,
       details: "Detailed error message",
       timestamp: timestamp
@@ -139,7 +139,7 @@ final class DTOConvertersTests: XCTestCase {
 
   func testDateExtensions() {
     // Arrange
-    let date = Date(timeIntervalSince1970: 1_625_000_000)
+    let date=Date(timeIntervalSince1970: 1_625_000_000)
 
     // Act & Assert
     XCTAssertEqual(date.timestampInSeconds, 1_625_000_000)
@@ -148,22 +148,22 @@ final class DTOConvertersTests: XCTestCase {
 
   func testScheduleDTODateConversion() {
     // Arrange
-    let now = Date()
-    let calendar = Calendar.current
+    let now=Date()
+    let calendar=Calendar.current
 
     // Calculate 8 AM today
-    var components = calendar.dateComponents([.year, .month, .day], from: now)
-    components.hour = 8
-    components.minute = 0
-    components.second = 0
-    let eightAM = calendar.date(from: components)!
+    var components=calendar.dateComponents([.year, .month, .day], from: now)
+    components.hour=8
+    components.minute=0
+    components.second=0
+    let eightAM=calendar.date(from: components)!
 
     // Calculate 6 PM today
-    components.hour = 18
-    let sixPM = calendar.date(from: components)!
+    components.hour=18
+    let sixPM=calendar.date(from: components)!
 
     // Act
-    let schedule = ScheduleDTO.fromDates(
+    let schedule=ScheduleDTO.fromDates(
       frequencyType: .daily,
       startDate: now,
       windowStartTime: eightAM,
@@ -174,13 +174,13 @@ final class DTOConvertersTests: XCTestCase {
     XCTAssertEqual(schedule.startTimestamp, UInt64(now.timeIntervalSince1970))
 
     // Window start should be 8 AM = 8 hours * 3600 seconds = 28800 seconds from midnight
-    XCTAssertEqual(schedule.windowStartTime, 8 * 3_600)
+    XCTAssertEqual(schedule.windowStartTime, 8 * 3600)
 
     // Window end should be 6 PM = 18 hours * 3600 seconds = 64800 seconds from midnight
-    XCTAssertEqual(schedule.windowEndTime, 18 * 3_600)
+    XCTAssertEqual(schedule.windowEndTime, 18 * 3600)
 
     // Test conversion back to dates
-    let startDate = schedule.startDate()
+    let startDate=schedule.startDate()
     XCTAssertEqual(
       Int(startDate.timeIntervalSince1970),
       Int(now.timeIntervalSince1970),
@@ -188,15 +188,15 @@ final class DTOConvertersTests: XCTestCase {
     )
 
     // Verify window start/end time conversion
-    let windowStartDate = schedule.windowStartDate()
-    let windowEndDate = schedule.windowEndDate()
+    let windowStartDate=schedule.windowStartDate()
+    let windowEndDate=schedule.windowEndDate()
 
     XCTAssertNotNil(windowStartDate)
     XCTAssertNotNil(windowEndDate)
 
     if let windowStartDate, let windowEndDate {
-      let startComponents = calendar.dateComponents([.hour, .minute], from: windowStartDate)
-      let endComponents = calendar.dateComponents([.hour, .minute], from: windowEndDate)
+      let startComponents=calendar.dateComponents([.hour, .minute], from: windowStartDate)
+      let endComponents=calendar.dateComponents([.hour, .minute], from: windowEndDate)
 
       XCTAssertEqual(startComponents.hour, 8)
       XCTAssertEqual(endComponents.hour, 18)
@@ -205,16 +205,16 @@ final class DTOConvertersTests: XCTestCase {
 
   func testScheduledTaskDTODateConversion() {
     // Arrange
-    let now = Date()
-    let lastRun = now.addingTimeInterval(-86_400) // Yesterday
-    let nextRun = now.addingTimeInterval(86_400) // Tomorrow
+    let now=Date()
+    let lastRun=now.addingTimeInterval(-86400) // Yesterday
+    let nextRun=now.addingTimeInterval(86400) // Tomorrow
 
-    let schedule = ScheduleDTO.daily(
+    let schedule=ScheduleDTO.daily(
       startTimestamp: UInt64(now.timeIntervalSince1970 - 604_800) // A week ago
     )
 
     // Act
-    let task = ScheduledTaskDTO.fromDates(
+    let task=ScheduledTaskDTO.fromDates(
       taskID: "test-task",
       schedule: schedule,
       lastRunDate: lastRun,
@@ -249,7 +249,7 @@ final class DTOConvertersTests: XCTestCase {
 
   func testNetworkRequestDTOURLRequestConversion() {
     // Arrange
-    let originalRequest = NetworkRequestDTO(
+    let originalRequest=NetworkRequestDTO(
       requestID: "req-123",
       url: "https://api.example.com/test",
       httpMethod: "POST",
@@ -262,13 +262,13 @@ final class DTOConvertersTests: XCTestCase {
     )
 
     // Act
-    guard let urlRequest = originalRequest.toURLRequest() else {
+    guard let urlRequest=originalRequest.toURLRequest() else {
       XCTFail("Failed to convert to URLRequest")
       return
     }
 
     // Convert back
-    let roundTripRequest = NetworkRequestDTO.fromURLRequest(urlRequest)
+    let roundTripRequest=NetworkRequestDTO.fromURLRequest(urlRequest)
 
     // Assert roundtrip conversion retained important properties
     XCTAssertEqual(roundTripRequest.url, "https://api.example.com/test?param1=value1")
@@ -283,20 +283,20 @@ final class DTOConvertersTests: XCTestCase {
 
   func testNetworkResponseDTOURLResponseConversion() {
     // Arrange
-    let url = URL(string: "https://api.example.com/test")!
-    let urlRequest = URLRequest(url: url)
+    let url=URL(string: "https://api.example.com/test")!
+    let urlRequest=URLRequest(url: url)
 
-    let httpResponse = HTTPURLResponse(
+    let httpResponse=HTTPURLResponse(
       url: url,
       statusCode: 200,
       httpVersion: "HTTP/1.1",
       headerFields: ["Content-Type": "application/json"]
     )!
 
-    let responseData = Data(Array("{\"key\":\"value\"}".utf8))
+    let responseData=Data(Array("{\"key\":\"value\"}".utf8))
 
     // Act
-    let dto = NetworkResponseDTO.fromHTTPURLResponse(
+    let dto=NetworkResponseDTO.fromHTTPURLResponse(
       httpResponse,
       data: responseData,
       requestID: "req-123",
@@ -306,7 +306,7 @@ final class DTOConvertersTests: XCTestCase {
     )
 
     // Convert back to HTTPURLResponse
-    let convertedResponse = dto.toHTTPURLResponse(for: urlRequest)
+    let convertedResponse=dto.toHTTPURLResponse(for: urlRequest)
 
     // Assert
     XCTAssertNotNil(convertedResponse)
@@ -317,16 +317,16 @@ final class DTOConvertersTests: XCTestCase {
     )
 
     // Convert body to data
-    let bodyAsData = dto.bodyAsData()
+    let bodyAsData=dto.bodyAsData()
     XCTAssertEqual(bodyAsData, responseData)
   }
 
   func testOperationProgressDTOForNetworkOperation() {
     // Arrange
-    let timestamp: UInt64 = 1_625_000_000
+    let timestamp: UInt64=1_625_000_000
 
     // Act - Test upload progress
-    let uploadProgress = OperationProgressDTO.forNetworkOperation(
+    let uploadProgress=OperationProgressDTO.forNetworkOperation(
       bytesTransferred: 50,
       totalBytes: 100,
       requestID: "req-123",
@@ -345,7 +345,7 @@ final class DTOConvertersTests: XCTestCase {
     XCTAssertEqual(uploadProgress.metadata["isUpload"], "true")
 
     // Act - Test download progress
-    let downloadProgress = OperationProgressDTO.forNetworkOperation(
+    let downloadProgress=OperationProgressDTO.forNetworkOperation(
       bytesTransferred: 75,
       totalBytes: 150,
       requestID: "req-456",
@@ -363,7 +363,7 @@ final class DTOConvertersTests: XCTestCase {
     XCTAssertEqual(downloadProgress.metadata["isUpload"], "false")
 
     // Act - Test indeterminate progress
-    let indeterminateProgress = OperationProgressDTO.forNetworkOperation(
+    let indeterminateProgress=OperationProgressDTO.forNetworkOperation(
       bytesTransferred: 100,
       totalBytes: nil,
       requestID: "req-789",

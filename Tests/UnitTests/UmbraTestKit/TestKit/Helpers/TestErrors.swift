@@ -9,7 +9,7 @@ public enum SecTestError: Error, CustomStringConvertible, Equatable {
   case invalidData(String)
   case accessDenied(reason: String)
   case itemNotFound(String)
-  case invalidSecurityState(reason: String, state: String? = nil, expectedState: String? = nil)
+  case invalidSecurityState(reason: String, state: String?=nil, expectedState: String?=nil)
   case bookmarkError(String)
   case operationFailed(String)
   case accessError(String)

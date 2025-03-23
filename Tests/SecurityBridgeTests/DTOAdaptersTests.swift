@@ -10,10 +10,10 @@ final class DTOAdaptersTests: XCTestCase {
 
   func testErrorDTOConversion() {
     // Create a native error
-    let nativeError = UmbraErrors.Security.Protocols.invalidFormat(reason: "Test reason")
+    let nativeError=UmbraErrors.Security.Protocols.invalidFormat(reason: "Test reason")
 
     // Convert to DTO
-    let errorDTO = SecurityBridge.DTOAdapters.toErrorDTO(error: nativeError)
+    let errorDTO=SecurityBridge.DTOAdapters.toErrorDTO(error: nativeError)
 
     // Verify properties
     XCTAssertEqual(errorDTO.domain, "UmbraCore.Security.Protocols")
@@ -22,12 +22,12 @@ final class DTOAdaptersTests: XCTestCase {
     XCTAssertEqual(errorDTO.details["reason"], "Test reason")
 
     // Convert back
-    let convertedError = SecurityBridge.DTOAdapters.fromErrorDTO(dto: errorDTO)
+    let convertedError=SecurityBridge.DTOAdapters.fromErrorDTO(dto: errorDTO)
 
     // Verify the error type
     XCTAssertTrue(convertedError is NSError)
 
-    let nsError = convertedError as NSError
+    let nsError=convertedError as NSError
     XCTAssertEqual(nsError.domain, errorDTO.domain)
     XCTAssertEqual(nsError.code, Int(errorDTO.code))
     XCTAssertEqual(nsError.localizedDescription, errorDTO.message)
@@ -35,7 +35,7 @@ final class DTOAdaptersTests: XCTestCase {
 
   func testDirectErrorDTOCreation() {
     // Create DTO directly
-    let errorDTO = SecurityErrorDTO.keyError(
+    let errorDTO=SecurityErrorDTO.keyError(
       message: "Key error test",
       details: ["algorithm": "RSA", "keySize": "2048"]
     )
@@ -47,7 +47,7 @@ final class DTOAdaptersTests: XCTestCase {
     XCTAssertEqual(errorDTO.details["keySize"], "2048")
 
     // Convert to NSError
-    let nsError = FoundationConversions.toNSError(errorDTO: errorDTO)
+    let nsError=FoundationConversions.toNSError(errorDTO: errorDTO)
 
     // Verify properties
     XCTAssertEqual(nsError.domain, errorDTO.domain)
@@ -59,10 +59,10 @@ final class DTOAdaptersTests: XCTestCase {
 
   func testEncryptionConfigConversion() {
     // Create a native encryption config
-    let key = SecureBytes(bytes: Array(repeating: UInt8(1), count: 32))
-    let iv = SecureBytes(bytes: Array(repeating: UInt8(2), count: 12))
+    let key=SecureBytes(bytes: Array(repeating: UInt8(1), count: 32))
+    let iv=SecureBytes(bytes: Array(repeating: UInt8(2), count: 12))
 
-    let nativeConfig = SecurityProtocols.EncryptionConfig(
+    let nativeConfig=SecurityProtocols.EncryptionConfig(
       algorithm: .aes256GCM,
       keySizeInBits: 256,
       key: key,
@@ -72,7 +72,7 @@ final class DTOAdaptersTests: XCTestCase {
     )
 
     // Convert to DTO
-    let configDTO = SecurityBridge.DTOAdapters.toDTO(config: nativeConfig)
+    let configDTO=SecurityBridge.DTOAdapters.toDTO(config: nativeConfig)
 
     // Verify properties
     XCTAssertEqual(configDTO.algorithm, "AES-256-GCM")
@@ -82,7 +82,7 @@ final class DTOAdaptersTests: XCTestCase {
     XCTAssertTrue(configDTO.inputData != nil)
 
     // Convert back
-    let convertedConfig = SecurityBridge.DTOAdapters.fromDTO(config: configDTO)
+    let convertedConfig=SecurityBridge.DTOAdapters.fromDTO(config: configDTO)
 
     // Verify properties
     XCTAssertEqual(convertedConfig.algorithm, .aes256GCM)
@@ -93,37 +93,37 @@ final class DTOAdaptersTests: XCTestCase {
 
   func testKeyConfigConversion() {
     // Create a native key config
-    let nativeConfig = SecurityProtocols.KeyConfig(
+    let nativeConfig=SecurityProtocols.KeyConfig(
       algorithm: .rsa,
-      keySizeInBits: 2_048
+      keySizeInBits: 2048
     )
 
     // Convert to DTO
-    let configDTO = SecurityBridge.DTOAdapters.toDTO(config: nativeConfig)
+    let configDTO=SecurityBridge.DTOAdapters.toDTO(config: nativeConfig)
 
     // Verify properties
     XCTAssertEqual(configDTO.algorithm, "RSA")
-    XCTAssertEqual(configDTO.keySizeInBits, 2_048)
+    XCTAssertEqual(configDTO.keySizeInBits, 2048)
 
     // Convert back
-    let convertedConfig = SecurityBridge.DTOAdapters.keyConfigFromDTO(config: configDTO)
+    let convertedConfig=SecurityBridge.DTOAdapters.keyConfigFromDTO(config: configDTO)
 
     // Verify properties
     XCTAssertEqual(convertedConfig.algorithm, .rsa)
-    XCTAssertEqual(convertedConfig.keySizeInBits, 2_048)
+    XCTAssertEqual(convertedConfig.keySizeInBits, 2048)
   }
 
   // MARK: - XPC Conversion Tests
 
   func testErrorDTOXPCConversion() {
     // Create error DTO
-    let errorDTO = SecurityErrorDTO.encryptionError(
+    let errorDTO=SecurityErrorDTO.encryptionError(
       message: "Encryption failed",
       details: ["operation": "encrypt", "data": "sensitive"]
     )
 
     // Convert to XPC dictionary
-    let xpcDict = SecurityBridge.DTOAdapters.toXPC(error: errorDTO)
+    let xpcDict=SecurityBridge.DTOAdapters.toXPC(error: errorDTO)
 
     // Verify dictionary structure
     XCTAssertEqual(xpcDict["domain"] as? String, errorDTO.domain)
@@ -131,7 +131,7 @@ final class DTOAdaptersTests: XCTestCase {
     XCTAssertEqual(xpcDict["message"] as? String, errorDTO.message)
 
     // Convert back
-    let convertedDTO = SecurityBridge.DTOAdapters.errorFromXPC(dictionary: xpcDict)
+    let convertedDTO=SecurityBridge.DTOAdapters.errorFromXPC(dictionary: xpcDict)
 
     // Verify DTO properties
     XCTAssertEqual(convertedDTO.domain, errorDTO.domain)
@@ -143,7 +143,7 @@ final class DTOAdaptersTests: XCTestCase {
 
   func testConfigDTOXPCConversion() {
     // Create config DTO
-    let configDTO = SecurityConfigDTO(
+    let configDTO=SecurityConfigDTO(
       algorithm: "AES-256-GCM",
       keySizeInBits: 256,
       options: ["mode": "GCM", "padding": "PKCS7"],
@@ -151,7 +151,7 @@ final class DTOAdaptersTests: XCTestCase {
     )
 
     // Convert to XPC dictionary
-    let xpcDict = SecurityBridge.DTOAdapters.toXPC(config: configDTO)
+    let xpcDict=SecurityBridge.DTOAdapters.toXPC(config: configDTO)
 
     // Verify dictionary structure
     XCTAssertEqual(xpcDict["algorithm"] as? String, configDTO.algorithm)
@@ -160,7 +160,7 @@ final class DTOAdaptersTests: XCTestCase {
     XCTAssertNotNil(xpcDict["inputData"])
 
     // Convert back
-    let convertedDTO = SecurityBridge.DTOAdapters.configFromXPC(dictionary: xpcDict)
+    let convertedDTO=SecurityBridge.DTOAdapters.configFromXPC(dictionary: xpcDict)
 
     // Verify DTO properties
     XCTAssertEqual(convertedDTO.algorithm, configDTO.algorithm)
@@ -172,10 +172,10 @@ final class DTOAdaptersTests: XCTestCase {
 
   func testOperationResultDTOXPCConversion() {
     // Create success result
-    let successResult = OperationResultDTO<String>.success("Operation successful")
+    let successResult=OperationResultDTO<String>.success("Operation successful")
 
     // Convert to XPC
-    let successDict = SecurityBridge.DTOAdapters.toXPC(result: successResult)
+    let successDict=SecurityBridge.DTOAdapters.toXPC(result: successResult)
 
     // Verify dictionary structure
     XCTAssertEqual(successDict["status"] as? String, "success")
@@ -183,7 +183,7 @@ final class DTOAdaptersTests: XCTestCase {
     XCTAssertNotNil(successDict["value"])
 
     // Convert back
-    let convertedSuccess = SecurityBridge.DTOAdapters.operationResultFromXPC(
+    let convertedSuccess=SecurityBridge.DTOAdapters.operationResultFromXPC(
       dictionary: successDict,
       type: String.self
     )
@@ -194,11 +194,11 @@ final class DTOAdaptersTests: XCTestCase {
     XCTAssertEqual(convertedSuccess.value, "Operation successful")
 
     // Create failure result
-    let errorDTO = SecurityErrorDTO.generalError(message: "Test error")
-    let failureResult = OperationResultDTO<String>.failure(errorDTO)
+    let errorDTO=SecurityErrorDTO.generalError(message: "Test error")
+    let failureResult=OperationResultDTO<String>.failure(errorDTO)
 
     // Convert to XPC
-    let failureDict = SecurityBridge.DTOAdapters.toXPC(result: failureResult)
+    let failureDict=SecurityBridge.DTOAdapters.toXPC(result: failureResult)
 
     // Verify dictionary structure
     XCTAssertEqual(failureDict["status"] as? String, "failure")
@@ -206,7 +206,7 @@ final class DTOAdaptersTests: XCTestCase {
     XCTAssertNil(failureDict["value"])
 
     // Convert back
-    let convertedFailure = SecurityBridge.DTOAdapters.operationResultFromXPC(
+    let convertedFailure=SecurityBridge.DTOAdapters.operationResultFromXPC(
       dictionary: failureDict,
       type: String.self
     )

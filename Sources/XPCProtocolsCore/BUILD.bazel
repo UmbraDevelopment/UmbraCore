@@ -8,7 +8,7 @@ swift_library(
     deps = [
         "//Sources/UmbraCoreTypes",
         "//Sources/XPCProtocolsCore/Sources:XPCProtocolsCoreSources",
-    ],
+    ]
 )
 
 # A separate target for tests
@@ -16,15 +16,14 @@ swift_library(
     name = "XPCProtocolsCoreTests",
     testonly = True,
     srcs = glob(
-        ["Tests/**/*.swift"],
-        allow_empty = True,
+        ["Tests/**/*.swift"], allow_empty = True
     ),
     module_name = "XPCProtocolsCoreTests",
     visibility = ["//visibility:public"],
     deps = [
         ":XPCProtocolsCore",
         "//Sources/SecurityInterfacesBase",
-    ],
+    ], 
 )
 
 # Uncomment if documentation generation is needed

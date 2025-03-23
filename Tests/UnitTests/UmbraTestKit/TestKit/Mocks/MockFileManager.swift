@@ -20,19 +20,19 @@ public enum FilePermission {
 @objc
 public final class MockFileManager: FileManager {
   // Nonisolated storage
-  private let storage = Storage()
+  private let storage=Storage()
 
   private final class Storage: @unchecked Sendable {
-    var fileContents: [String: Data] = [:]
-    var fileAccess: [String: FilePermission] = [:]
-    var directories: Set<String> = []
-    var securityScopedAccess: Set<String> = [] // Track URLs with security-scoped access
-    var symlinks: [String: String] = [:]
+    var fileContents: [String: Data]=[:]
+    var fileAccess: [String: FilePermission]=[:]
+    var directories: Set<String>=[]
+    var securityScopedAccess: Set<String>=[] // Track URLs with security-scoped access
+    var symlinks: [String: String]=[:]
   }
 
   // MARK: - Mock Handlers
 
-  private let handlerStorage = HandlerStorage()
+  private let handlerStorage=HandlerStorage()
 
   private final class HandlerStorage: @unchecked Sendable {
     var startAccessingHandler: ((URL) -> Bool)?
@@ -41,18 +41,18 @@ public final class MockFileManager: FileManager {
 
   public var startAccessingHandler: ((URL) -> Bool)? {
     get { handlerStorage.startAccessingHandler }
-    set { handlerStorage.startAccessingHandler = newValue }
+    set { handlerStorage.startAccessingHandler=newValue }
   }
 
   public var stopAccessingHandler: ((URL) -> Void)? {
     get { handlerStorage.stopAccessingHandler }
-    set { handlerStorage.stopAccessingHandler = newValue }
+    set { handlerStorage.stopAccessingHandler=newValue }
   }
 
   // MARK: - File Operations
 
   public func simulateContents(atPath path: String) -> Data? {
-    guard let access = storage.fileAccess[path], access != .none else {
+    guard let access=storage.fileAccess[path], access != .none else {
       return nil
     }
     return storage.fileContents[path]
@@ -67,26 +67,26 @@ public final class MockFileManager: FileManager {
     setDefaultAccess(forPath: path, withPermissions: attr?[.posixPermissions] as? Int)
 
     if let data {
-      storage.fileContents[path] = data
+      storage.fileContents[path]=data
     } else {
-      storage.fileContents[path] = Data()
+      storage.fileContents[path]=Data()
     }
     return true
   }
 
-  private func setDefaultAccess(forPath path: String, withPermissions permissions: Int? = nil) {
+  private func setDefaultAccess(forPath path: String, withPermissions permissions: Int?=nil) {
     if let permissions {
       switch permissions {
         case 0o444: // Read-only
-          storage.fileAccess[path] = FilePermission.readOnly
+          storage.fileAccess[path]=FilePermission.readOnly
         case 0o666, 0o777: // Read-write
-          storage.fileAccess[path] = FilePermission.readWrite
+          storage.fileAccess[path]=FilePermission.readWrite
         default:
-          storage.fileAccess[path] = FilePermission.none
+          storage.fileAccess[path]=FilePermission.none
       }
     } else {
       // Default to read-write if no permissions specified
-      storage.fileAccess[path] = FilePermission.readWrite
+      storage.fileAccess[path]=FilePermission.readWrite
     }
   }
 
@@ -99,25 +99,25 @@ public final class MockFileManager: FileManager {
   // MARK: - URL-based File Operations
 
   public func simulateSetFileContent(_ content: String, at url: URL) {
-    let path = url.path
+    let path=url.path
     simulateCreateFile(atPath: path, contents: content.data(using: .utf8), attributes: nil)
   }
 
   @discardableResult
   public func simulateSetAccess(_ access: FilePermission, for url: URL) -> Bool {
-    storage.fileAccess[url.path] = access
+    storage.fileAccess[url.path]=access
     return true
   }
 
   public func simulateGetAccess(for url: URL) -> FilePermission {
     // Check each component of the path to ensure we have access to all parent directories
-    var currentPath = ""
+    var currentPath=""
     for component in url.pathComponents {
       if component == "/" {
-        currentPath = "/"
+        currentPath="/"
       } else {
-        currentPath = (currentPath as NSString).appendingPathComponent(component)
-        let access = storage.fileAccess[currentPath] ?? FilePermission.none
+        currentPath=(currentPath as NSString).appendingPathComponent(component)
+        let access=storage.fileAccess[currentPath] ?? FilePermission.none
         if !access.canRead, !hasSecurityScopedAccess(for: URL(fileURLWithPath: currentPath)) {
           return FilePermission.none
         }
@@ -125,7 +125,7 @@ public final class MockFileManager: FileManager {
     }
 
     // Return the actual file's permissions if we have access to all parent directories
-    let baseAccess = storage.fileAccess[url.path] ?? FilePermission.none
+    let baseAccess=storage.fileAccess[url.path] ?? FilePermission.none
     return hasSecurityScopedAccess(for: url) ? .readWrite : baseAccess
   }
 
@@ -136,8 +136,8 @@ public final class MockFileManager: FileManager {
   }
 
   public func simulateStartAccessingSecurityScopedResource(_ url: URL) -> Bool {
-    if let handler = startAccessingHandler {
-      let result = handler(url)
+    if let handler=startAccessingHandler {
+      let result=handler(url)
       if result {
         storage.securityScopedAccess.insert(url.path)
       }
@@ -161,19 +161,19 @@ public final class MockFileManager: FileManager {
   }
 
   public func simulateFileExists(atPath path: String, isDirectory: inout Bool) -> Bool {
-    isDirectory = storage.directories.contains(path)
+    isDirectory=storage.directories.contains(path)
     return storage.fileAccess[path] != nil || storage.directories.contains(path)
   }
 
   public func simulateIsReadableFile(atPath path: String) -> Bool {
-    guard let access = storage.fileAccess[path] else {
+    guard let access=storage.fileAccess[path] else {
       return false
     }
     return access == .readOnly || access == .readWrite
   }
 
   public func simulateIsWritableFile(atPath path: String) -> Bool {
-    if let access = storage.fileAccess[path] {
+    if let access=storage.fileAccess[path] {
       return access == .readWrite
     }
     return false
@@ -185,12 +185,12 @@ public final class MockFileManager: FileManager {
     attributes _: [FileAttributeKey: Any]?
   ) throws -> Bool {
     if createIntermediates {
-      var currentPath = ""
+      var currentPath=""
       for component in url.pathComponents {
         if component == "/" {
-          currentPath = "/"
+          currentPath="/"
         } else {
-          currentPath = (currentPath as NSString).appendingPathComponent(component)
+          currentPath=(currentPath as NSString).appendingPathComponent(component)
           setDefaultAccess(forPath: currentPath)
           storage.directories.insert(currentPath)
         }
@@ -211,16 +211,16 @@ public final class MockFileManager: FileManager {
     attributes _: [FileAttributeKey: Any]?
   ) throws -> Bool {
     if createIntermediates {
-      var currentPath = ""
+      var currentPath=""
       // Split the path manually instead of using pathComponents
-      let components = path.split(separator: "/").map(String.init)
+      let components=path.split(separator: "/").map(String.init)
       if path.hasPrefix("/") {
-        currentPath = "/"
+        currentPath="/"
       }
 
       for component in components {
         if !component.isEmpty {
-          currentPath = (currentPath as NSString).appendingPathComponent(component)
+          currentPath=(currentPath as NSString).appendingPathComponent(component)
           setDefaultAccess(forPath: currentPath)
           storage.directories.insert(currentPath)
         }
@@ -243,7 +243,7 @@ public final class MockFileManager: FileManager {
       throw NSError(domain: NSCocoaErrorDomain, code: NSFileNoSuchFileError)
     }
 
-    storage.symlinks[url.path] = destinationURL.path
+    storage.symlinks[url.path]=destinationURL.path
     return true
   }
 

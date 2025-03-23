@@ -6,12 +6,12 @@ final class KeyStatusTests: XCTestCase {
   // MARK: - Canonical Type Tests
 
   func testCanonicalKeyStatusEquality() {
-    let active1 = KeyManagementTypes.KeyStatus.active
-    let active2 = KeyManagementTypes.KeyStatus.active
-    let compromised = KeyManagementTypes.KeyStatus.compromised
-    let retired = KeyManagementTypes.KeyStatus.retired
-    let date = Date()
-    let pendingDeletion = KeyManagementTypes.KeyStatus.pendingDeletion(date)
+    let active1=KeyManagementTypes.KeyStatus.active
+    let active2=KeyManagementTypes.KeyStatus.active
+    let compromised=KeyManagementTypes.KeyStatus.compromised
+    let retired=KeyManagementTypes.KeyStatus.retired
+    let date=Date()
+    let pendingDeletion=KeyManagementTypes.KeyStatus.pendingDeletion(date)
 
     XCTAssertEqual(active1, active2)
     XCTAssertNotEqual(active1, compromised)
@@ -22,22 +22,22 @@ final class KeyStatusTests: XCTestCase {
     XCTAssertNotEqual(retired, pendingDeletion)
 
     // Test that pendingDeletion with the same date is equal
-    let pendingDeletion2 = KeyManagementTypes.KeyStatus.pendingDeletion(date)
+    let pendingDeletion2=KeyManagementTypes.KeyStatus.pendingDeletion(date)
     XCTAssertEqual(pendingDeletion, pendingDeletion2)
 
     // Test that pendingDeletion with different dates is not equal
-    let differentDate = Date(timeIntervalSince1970: date.timeIntervalSince1970 + 100)
-    let pendingDeletion3 = KeyManagementTypes.KeyStatus.pendingDeletion(differentDate)
+    let differentDate=Date(timeIntervalSince1970: date.timeIntervalSince1970 + 100)
+    let pendingDeletion3=KeyManagementTypes.KeyStatus.pendingDeletion(differentDate)
     XCTAssertNotEqual(pendingDeletion, pendingDeletion3)
   }
 
   func testCanonicalKeyStatusTimestampConversion() {
     // Test timestamp-based creation and conversion
-    let timestamp: Int64 = 1_627_084_800 // July 24, 2021 00:00:00 UTC
-    let status = KeyManagementTypes.KeyStatus.pendingDeletionWithTimestamp(timestamp)
+    let timestamp: Int64=1_627_084_800 // July 24, 2021 00:00:00 UTC
+    let status=KeyManagementTypes.KeyStatus.pendingDeletionWithTimestamp(timestamp)
 
     // Extract the timestamp and check that it matches the original
-    if let extractedTimestamp = status.getDeletionTimestamp() {
+    if let extractedTimestamp=status.getDeletionTimestamp() {
       XCTAssertEqual(extractedTimestamp, timestamp)
     } else {
       XCTFail("Failed to extract timestamp from pendingDeletion status")
@@ -51,26 +51,26 @@ final class KeyStatusTests: XCTestCase {
 
   func testCanonicalKeyStatusCodable() throws {
     // Test encoding and decoding simple status
-    let active = KeyManagementTypes.KeyStatus.active
-    let encoder = JSONEncoder()
-    let activeData = try encoder.encode(active)
-    let decoder = JSONDecoder()
-    let decodedActive = try decoder.decode(KeyManagementTypes.KeyStatus.self, from: activeData)
+    let active=KeyManagementTypes.KeyStatus.active
+    let encoder=JSONEncoder()
+    let activeData=try encoder.encode(active)
+    let decoder=JSONDecoder()
+    let decodedActive=try decoder.decode(KeyManagementTypes.KeyStatus.self, from: activeData)
     XCTAssertEqual(active, decodedActive)
 
     // Test encoding and decoding pendingDeletion with date
-    let date = Date()
-    let pendingDeletion = KeyManagementTypes.KeyStatus.pendingDeletion(date)
-    let pendingData = try encoder.encode(pendingDeletion)
-    let decodedPending = try decoder.decode(KeyManagementTypes.KeyStatus.self, from: pendingData)
+    let date=Date()
+    let pendingDeletion=KeyManagementTypes.KeyStatus.pendingDeletion(date)
+    let pendingData=try encoder.encode(pendingDeletion)
+    let decodedPending=try decoder.decode(KeyManagementTypes.KeyStatus.self, from: pendingData)
     XCTAssertEqual(pendingDeletion, decodedPending)
   }
 
   // MARK: - Raw Status Conversion Tests
 
   func testRawStatusConversion() {
-    let date = Date()
-    let timestamp: Int64 = 1_627_084_800
+    let date=Date()
+    let timestamp: Int64=1_627_084_800
 
     // Test conversion to raw status
     XCTAssertEqual(KeyManagementTypes.KeyStatus.active.toRawStatus(), .active)
@@ -99,14 +99,14 @@ final class KeyStatusTests: XCTestCase {
 
   func testRawStatusEquality() {
     // Create explicit dates using a specific reference time to ensure equality
-    let referenceTime = 1_616_513_654.0 // March 23, 2021 12:34:14 UTC
-    let date1 = Date(timeIntervalSince1970: referenceTime)
-    let date2 = Date(timeIntervalSince1970: referenceTime) // Should be identical to date1
-    let date3 = Date(timeIntervalSince1970: referenceTime + 100) // Different by 100 seconds
+    let referenceTime=1_616_513_654.0 // March 23, 2021 12:34:14 UTC
+    let date1=Date(timeIntervalSince1970: referenceTime)
+    let date2=Date(timeIntervalSince1970: referenceTime) // Should be identical to date1
+    let date3=Date(timeIntervalSince1970: referenceTime + 100) // Different by 100 seconds
 
-    let timestamp1 = Int64(referenceTime)
-    let timestamp2 = Int64(referenceTime)
-    let timestamp3 = Int64(referenceTime + 100)
+    let timestamp1=Int64(referenceTime)
+    let timestamp2=Int64(referenceTime)
+    let timestamp3=Int64(referenceTime + 100)
 
     // Test equality for simple cases
     XCTAssertEqual(

@@ -62,7 +62,7 @@
 /// This allows thorough testing of error handling paths in client code.
 public enum UmbraMocks {
   /// Current version of the UmbraMocks module
-  public static let version = "1.0.0"
+  public static let version="1.0.0"
 
   /// Initialise UmbraMocks with default configuration
   public static func initialize() {

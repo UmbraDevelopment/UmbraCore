@@ -21,18 +21,18 @@ private enum InternalKeychainXPCError: Error, CustomStringConvertible {
 
   var description: String {
     switch self {
-    case .duplicateItem:
-      return "Item already exists in the keychain"
-    case .itemNotFound:
-      return "Item not found in the keychain"
-    case .invalidItem:
-      return "Invalid item format or data"
-    case .accessDenied:
-      return "Access denied by keychain"
-    case .unsupportedOperation:
-      return "Operation not supported by this keychain implementation"
-    case let .unexpectedError(code):
-      return "Unexpected keychain error: \(code)"
+      case .duplicateItem:
+        "Item already exists in the keychain"
+      case .itemNotFound:
+        "Item not found in the keychain"
+      case .invalidItem:
+        "Invalid item format or data"
+      case .accessDenied:
+        "Access denied by keychain"
+      case .unsupportedOperation:
+        "Operation not supported by this keychain implementation"
+      case let .unexpectedError(code):
+        "Unexpected keychain error: \(code)"
     }
   }
 }
@@ -198,7 +198,8 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
 
   /// Synchronise keys with provided data
   /// - Parameter syncData: The data to synchronise with
-  /// - Throws: ErrorHandlingDomains.UmbraErrors.Security.Protocols.SecurityError if synchronization fails
+  /// - Throws: ErrorHandlingDomains.UmbraErrors.Security.Protocols.SecurityError if synchronization
+  /// fails
   public func synchroniseKeys(_ syncData: SecureBytes) async throws {
     do {
       // Get the exported object from actor state
@@ -693,18 +694,18 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
     operation: String
   ) -> ErrorHandlingDomains.UmbraErrors.Security.Protocols {
     switch error {
-    case .duplicateItem:
-      return .internalError("Duplicate item exists")
-    case .itemNotFound:
-      return .missingProtocolImplementation(protocolName: operation)
-    case .invalidItem:
-      return .invalidInput("Invalid item format or data")
-    case .accessDenied:
-      return .accessDenied("Access denied by keychain")
-    case .unsupportedOperation:
-      return .unsupportedOperation("Operation not supported by this keychain implementation")
-    case let .unexpectedError(code):
-      return .internalError("Unexpected keychain error: \(code)")
+      case .duplicateItem:
+        .internalError("Duplicate item exists")
+      case .itemNotFound:
+        .missingProtocolImplementation(protocolName: operation)
+      case .invalidItem:
+        .invalidInput("Invalid item format or data")
+      case .accessDenied:
+        .accessDenied("Access denied by keychain")
+      case .unsupportedOperation:
+        .unsupportedOperation("Operation not supported by this keychain implementation")
+      case let .unexpectedError(code):
+        .internalError("Unexpected keychain error: \(code)")
     }
   }
 

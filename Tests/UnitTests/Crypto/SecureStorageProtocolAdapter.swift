@@ -11,7 +11,7 @@ public final class SecureStorageProtocolAdapter: @unchecked Sendable {
   private let storage: UmbraMocks.SecureStorageProtocol
 
   public init(storage: UmbraMocks.SecureStorageProtocol) {
-    self.storage = storage
+    self.storage=storage
   }
 
   /// Store data securely
@@ -25,7 +25,7 @@ public final class SecureStorageProtocolAdapter: @unchecked Sendable {
     identifier: String,
     metadata _: [String: String]
   ) async -> Result<Void, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
-    let result = await storage.storeSecurely(data: data, identifier: identifier)
+    let result=await storage.storeSecurely(data: data, identifier: identifier)
 
     switch result {
       case .success:
@@ -54,13 +54,13 @@ public final class SecureStorageProtocolAdapter: @unchecked Sendable {
     identifier: String
   ) async
   -> Result<UmbraCoreTypes.SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
-    let result = await storage.retrieveSecurely(identifier: identifier)
+    let result=await storage.retrieveSecurely(identifier: identifier)
 
     switch result {
       case let .success(data):
         return .success(data)
       case let .failure(error):
-        if case .keyNotFound = error {
+        if case .keyNotFound=error {
           // Create a special error message that can be detected and mapped back to
           // CryptoError.keyNotFound
           return .failure(
@@ -92,13 +92,13 @@ public final class SecureStorageProtocolAdapter: @unchecked Sendable {
   public func deleteData(
     identifier: String
   ) async -> Result<Void, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
-    let result = await storage.deleteSecurely(identifier: identifier)
+    let result=await storage.deleteSecurely(identifier: identifier)
 
     switch result {
       case .success:
         return .success(())
       case let .failure(error):
-        if case .keyNotFound = error {
+        if case .keyNotFound=error {
           // Create a special error message that can be detected and mapped back to
           // CryptoError.keyNotFound
           return .failure(
@@ -126,7 +126,7 @@ public final class SecureStorageProtocolAdapter: @unchecked Sendable {
 
   /// Reset the storage
   public func reset() async {
-    if let mockKeychain = storage as? MockKeychain {
+    if let mockKeychain=storage as? MockKeychain {
       await mockKeychain.reset()
     }
   }

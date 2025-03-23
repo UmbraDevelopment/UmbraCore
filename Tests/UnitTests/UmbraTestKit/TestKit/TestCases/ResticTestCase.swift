@@ -9,7 +9,7 @@ open class ResticTestCase: XCTestCase {
     try await super.setUp()
 
     // Create temporary directory for test files
-    tempDirectoryURL = FileManager.default.temporaryDirectory
+    tempDirectoryURL=FileManager.default.temporaryDirectory
       .appendingPathComponent(UUID().uuidString)
     try FileManager.default.createDirectory(
       at: tempDirectoryURL,
@@ -17,7 +17,7 @@ open class ResticTestCase: XCTestCase {
     )
 
     // Initialize mock repository
-    mockRepository = MockResticRepository(
+    mockRepository=MockResticRepository(
       path: tempDirectoryURL.appendingPathComponent("repo").path,
       password: "test-password-123",
       testFilesPath: tempDirectoryURL.appendingPathComponent("test-files").path,
@@ -32,8 +32,8 @@ open class ResticTestCase: XCTestCase {
     if let tempDirectoryURL {
       try? FileManager.default.removeItem(at: tempDirectoryURL)
     }
-    mockRepository = nil
-    tempDirectoryURL = nil
+    mockRepository=nil
+    tempDirectoryURL=nil
 
     try await super.tearDown()
   }

@@ -14,11 +14,11 @@ open class SandboxHelperTestCase: XCTestCase {
     try await super.setUp()
 
     // Create temporary directory
-    tempDirectory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    tempDirectory=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
 
     // Initialize mock file manager
-    mockFileManager = MockFileManager()
-    _ = try FileManager.default.createDirectory(
+    mockFileManager=MockFileManager()
+    _=try FileManager.default.createDirectory(
       at: tempDirectory,
       withIntermediateDirectories: true,
       attributes: nil
@@ -29,8 +29,8 @@ open class SandboxHelperTestCase: XCTestCase {
   open override func tearDown() async throws {
     // Clean up temporary directory
     try? FileManager.default.removeItem(at: tempDirectory)
-    tempDirectory = nil
-    mockFileManager = nil
+    tempDirectory=nil
+    mockFileManager=nil
 
     try await super.tearDown()
   }
@@ -48,9 +48,9 @@ open class SandboxHelperTestCase: XCTestCase {
     content: String,
     access: FilePermission = .readWrite
   ) -> URL {
-    let fileURL = tempDirectory.appendingPathComponent(name)
+    let fileURL=tempDirectory.appendingPathComponent(name)
     mockFileManager.simulateSetFileContent(content, at: fileURL)
-    _ = mockFileManager.simulateSetAccess(access, for: fileURL)
+    _=mockFileManager.simulateSetAccess(access, for: fileURL)
     return fileURL
   }
 
@@ -63,13 +63,13 @@ open class SandboxHelperTestCase: XCTestCase {
     named name: String,
     access: FilePermission = .readWrite
   ) throws -> URL {
-    let dirURL = tempDirectory.appendingPathComponent(name)
-    _ = try FileManager.default.createDirectory(
+    let dirURL=tempDirectory.appendingPathComponent(name)
+    _=try FileManager.default.createDirectory(
       at: dirURL,
       withIntermediateDirectories: true,
       attributes: nil
     )
-    _ = mockFileManager.simulateSetAccess(access, for: dirURL)
+    _=mockFileManager.simulateSetAccess(access, for: dirURL)
     return dirURL
   }
 }

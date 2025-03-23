@@ -9,14 +9,14 @@ final class TestErrorHandling_Core: XCTestCase {
 
   func testErrorHandler() {
     // Create a test error handler
-    let handler = MockErrorHandler()
+    let handler=MockErrorHandler()
 
     // Create a mock logger to verify logging behavior
-    let mockLogger = MockErrorLogger()
+    let mockLogger=MockErrorLogger()
     handler.registerLogger(mockLogger)
 
     // Create a test error
-    let error = TestError(
+    let error=TestError(
       domain: "TestDomain",
       code: "TEST001",
       description: "Test error description"
@@ -55,14 +55,14 @@ final class TestErrorHandling_Core: XCTestCase {
   @MainActor
   func testRecoveryProvider() {
     // Create a test error handler
-    let handler = MockErrorHandler()
+    let handler=MockErrorHandler()
 
     // Create a mock recovery provider
-    let mockProvider = MockRecoveryProvider()
+    let mockProvider=MockRecoveryProvider()
     handler.registerRecoveryProvider(mockProvider)
 
     // Create a test error
-    let error = TestError(
+    let error=TestError(
       domain: "TestDomain",
       code: "TEST001",
       description: "Test error description"
@@ -70,7 +70,7 @@ final class TestErrorHandling_Core: XCTestCase {
 
     // Test recovery options retrieval
     Task {
-      let options = await handler.getRecoveryOptions(for: error)
+      let options=await handler.getRecoveryOptions(for: error)
 
       // Verify recovery options were provided
       XCTAssertEqual(options.count, 2)
@@ -86,21 +86,21 @@ final class TestErrorHandling_Core: XCTestCase {
 
   func testNotification() {
     // Create a test error handler
-    let handler = MockErrorHandler()
+    let handler=MockErrorHandler()
 
     // Create a mock notification handler
-    let mockNotifier = MockErrorNotifier()
+    let mockNotifier=MockErrorNotifier()
     handler.registerNotifier(mockNotifier)
 
     // Create a test error
-    let error = TestError(
+    let error=TestError(
       domain: "TestDomain",
       code: "TEST001",
       description: "Test error description"
     )
 
     // Create mock recovery options
-    let options = [
+    let options=[
       TestRecoveryOption(title: "Retry"),
       TestRecoveryOption(title: "Cancel")
     ]
@@ -132,32 +132,32 @@ final class TestErrorHandling_Core: XCTestCase {
       domain: String,
       code: String,
       description: String,
-      source: ErrorHandlingInterfaces.ErrorSource? = nil,
-      underlyingError: Error? = nil
+      source: ErrorHandlingInterfaces.ErrorSource?=nil,
+      underlyingError: Error?=nil
     ) {
-      self.domain = domain
-      self.code = code
-      errorDescription = description
-      self.source = source
-      self.underlyingError = underlyingError
-      context = ErrorHandlingInterfaces.ErrorContext(source: domain, operation: "testOperation")
+      self.domain=domain
+      self.code=code
+      errorDescription=description
+      self.source=source
+      self.underlyingError=underlyingError
+      context=ErrorHandlingInterfaces.ErrorContext(source: domain, operation: "testOperation")
     }
 
     func with(context: ErrorHandlingInterfaces.ErrorContext) -> Self {
-      var copy = self
-      copy.context = context
+      var copy=self
+      copy.context=context
       return copy
     }
 
     func with(underlyingError: Error) -> Self {
-      var copy = self
-      copy.underlyingError = underlyingError
+      var copy=self
+      copy.underlyingError=underlyingError
       return copy
     }
 
     func with(source: ErrorHandlingInterfaces.ErrorSource) -> Self {
-      var copy = self
-      copy.source = source
+      var copy=self
+      copy.source=source
       return copy
     }
 
@@ -167,8 +167,8 @@ final class TestErrorHandling_Core: XCTestCase {
   }
 
   class MockErrorLogger: ErrorLoggingProtocol {
-    var loggedErrors: [Error] = []
-    var loggedSeverities: [ErrorHandlingInterfaces.ErrorSeverity] = []
+    var loggedErrors: [Error]=[]
+    var loggedSeverities: [ErrorHandlingInterfaces.ErrorSeverity]=[]
 
     func log(error: some UmbraError, severity: ErrorHandlingInterfaces.ErrorSeverity) {
       loggedErrors.append(error)
@@ -178,7 +178,7 @@ final class TestErrorHandling_Core: XCTestCase {
 
   @MainActor
   final class MockRecoveryProvider: RecoveryOptionsProvider {
-    var canHandleCalledWithDomains: [String] = []
+    var canHandleCalledWithDomains: [String]=[]
 
     func canHandle(domain: String) -> Bool {
       canHandleCalledWithDomains.append(domain)
@@ -194,8 +194,8 @@ final class TestErrorHandling_Core: XCTestCase {
   }
 
   class MockErrorNotifier: ErrorNotificationProtocol {
-    var presentedErrors: [Error] = []
-    var presentedOptions: [[any RecoveryOption]] = []
+    var presentedErrors: [Error]=[]
+    var presentedOptions: [[any RecoveryOption]]=[]
 
     func presentError(_ error: some UmbraError, recoveryOptions: [any RecoveryOption]) {
       presentedErrors.append(error)
@@ -207,12 +207,12 @@ final class TestErrorHandling_Core: XCTestCase {
     var id: UUID = .init()
     var title: String
     var description: String?
-    var isDisruptive: Bool = false
+    var isDisruptive: Bool=false
 
-    init(title: String, description: String? = nil, isDisruptive: Bool = false) {
-      self.title = title
-      self.description = description
-      self.isDisruptive = isDisruptive
+    init(title: String, description: String?=nil, isDisruptive: Bool=false) {
+      self.title=title
+      self.description=description
+      self.isDisruptive=isDisruptive
     }
 
     func perform() async {
@@ -224,18 +224,18 @@ final class TestErrorHandling_Core: XCTestCase {
     var logger: MockErrorLogger?
     var recoveryProvider: MockRecoveryProvider?
     var notifier: MockErrorNotifier?
-    var handledErrors: [Error] = []
+    var handledErrors: [Error]=[]
 
     func registerLogger(_ logger: MockErrorLogger) {
-      self.logger = logger
+      self.logger=logger
     }
 
     func registerRecoveryProvider(_ provider: MockRecoveryProvider) {
-      recoveryProvider = provider
+      recoveryProvider=provider
     }
 
     func registerNotifier(_ notifier: MockErrorNotifier) {
-      self.notifier = notifier
+      self.notifier=notifier
     }
 
     func handle(
@@ -246,7 +246,7 @@ final class TestErrorHandling_Core: XCTestCase {
       line _: Int
     ) async {
       handledErrors.append(error)
-      if let umbraError = error as? (any UmbraError) {
+      if let umbraError=error as? (any UmbraError) {
         logger?.log(error: umbraError, severity: severity)
       }
     }
@@ -256,7 +256,7 @@ final class TestErrorHandling_Core: XCTestCase {
     }
 
     func presentError(_ error: Error, recoveryOptions: [any RecoveryOption]) async {
-      if let umbraError = error as? (any UmbraError) {
+      if let umbraError=error as? (any UmbraError) {
         notifier?.presentError(umbraError, recoveryOptions: recoveryOptions)
       }
     }

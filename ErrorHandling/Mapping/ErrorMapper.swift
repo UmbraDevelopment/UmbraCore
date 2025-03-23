@@ -1,5 +1,5 @@
-import Foundation
 import ErrorHandlingInterfaces
+import Foundation
 
 /// A protocol for mapping between error types
 public protocol ErrorMapper {
@@ -37,18 +37,18 @@ public struct AnyErrorMapper<Target: Error>: ErrorMapper {
   private let _canMap: (Error) -> Bool
 
   /// Source type is any Error
-  public typealias SourceError = Error
+  public typealias SourceError=Error
 
   /// Target type is specified by the generic parameter
-  public typealias TargetError = Target
+  public typealias TargetError=Target
 
   /// Creates a new AnyErrorMapper instance
   /// - Parameters:
   ///   - map: The mapping function
   ///   - canMap: The function that determines if this mapper can handle a given error
-  public init(map: @escaping (Error) -> Target, canMap: @escaping (Error) -> Bool = { _ in true }) {
-    _map = map
-    _canMap = canMap
+  public init(map: @escaping (Error) -> Target, canMap: @escaping (Error) -> Bool={ _ in true }) {
+    _map=map
+    _canMap=canMap
   }
 
   /// Maps an error from the source type to the target type
@@ -71,8 +71,10 @@ public struct AnyErrorMapper<Target: Error>: ErrorMapper {
 /// - Returns: A type-erased mapper with the same behavior
 public func anyMapper<M: ErrorMapper>(_ mapper: M) -> AnyErrorMapper<M.TargetError> {
   AnyErrorMapper { error in
-    guard let sourceError = error as? M.SourceError else {
-      fatalError("Cannot map error of type \(type(of: error)) with mapper for \(M.SourceError.self)")
+    guard let sourceError=error as? M.SourceError else {
+      fatalError(
+        "Cannot map error of type \(type(of: error)) with mapper for \(M.SourceError.self)"
+      )
     }
     return mapper.map(sourceError)
   } canMap: { error in
@@ -86,15 +88,15 @@ public struct CompositeErrorMapper<Target: Error>: ErrorMapper {
   private let mappers: [AnyErrorMapper<Target>]
 
   /// Source type is any Error
-  public typealias SourceError = Error
+  public typealias SourceError=Error
 
   /// Target type is specified by the generic parameter
-  public typealias TargetError = Target
+  public typealias TargetError=Target
 
   /// Creates a new CompositeErrorMapper instance
   /// - Parameter mappers: The mappers to use, in order
   public init(mappers: [AnyErrorMapper<Target>]) {
-    self.mappers = mappers
+    self.mappers=mappers
   }
 
   /// Maps an error using the first mapper that can handle it
@@ -107,7 +109,7 @@ public struct CompositeErrorMapper<Target: Error>: ErrorMapper {
         return mapper.map(error)
       }
     }
-    
+
     // If we reach here, no mapper could handle this error
     // We should ideally return a sensible default or throw an error
     fatalError("No mapper found for error: \(error)")

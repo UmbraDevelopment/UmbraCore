@@ -27,24 +27,24 @@ public class DefaultProcessExecutor: ProcessExecutorProtocol {
     arguments: [String],
     environment: [String: String]
   ) throws -> String {
-    let process = Process()
-    process.executableURL = URL(fileURLWithPath: executablePath)
-    process.arguments = arguments
-    process.environment = environment
+    let process=Process()
+    process.executableURL=URL(fileURLWithPath: executablePath)
+    process.arguments=arguments
+    process.environment=environment
 
-    let outputPipe = Pipe()
-    let errorPipe = Pipe()
-    process.standardOutput = outputPipe
-    process.standardError = errorPipe
+    let outputPipe=Pipe()
+    let errorPipe=Pipe()
+    process.standardOutput=outputPipe
+    process.standardError=errorPipe
 
     try process.run()
     process.waitUntilExit()
 
-    let outputData = try outputPipe.fileHandleForReading.readToEnd() ?? Data()
-    let errorData = try errorPipe.fileHandleForReading.readToEnd() ?? Data()
+    let outputData=try outputPipe.fileHandleForReading.readToEnd() ?? Data()
+    let errorData=try errorPipe.fileHandleForReading.readToEnd() ?? Data()
 
-    let output = String(data: outputData, encoding: .utf8) ?? ""
-    let stderr = String(data: errorData, encoding: .utf8) ?? ""
+    let output=String(data: outputData, encoding: .utf8) ?? ""
+    let stderr=String(data: errorData, encoding: .utf8) ?? ""
 
     if process.terminationStatus != 0 {
       if !stderr.isEmpty {
@@ -60,13 +60,13 @@ public class DefaultProcessExecutor: ProcessExecutorProtocol {
 
 /// Mock implementation of process executor for testing
 public class MockProcessExecutor: ProcessExecutorProtocol {
-  public var executionResults: [String: Result<String, Error>] = [:]
+  public var executionResults: [String: Result<String, Error>]=[:]
   public var executionHistory: [(
     executablePath: String,
     arguments: [String],
     environment: [String: String]
-  )] = []
-  public var bypassFileValidation: Bool = true
+  )]=[]
+  public var bypassFileValidation: Bool=true
 
   public init() {}
 
@@ -75,13 +75,13 @@ public class MockProcessExecutor: ProcessExecutorProtocol {
   ///   - commandKey: A key to identify the command (e.g. "backup", "restore")
   ///   - result: The result to return (either success with output or failure with error)
   public func configureResult(for commandKey: String, result: Result<String, Error>) {
-    executionResults[commandKey] = result
+    executionResults[commandKey]=result
   }
 
   /// Clear all configured results and execution history
   public func reset() {
-    executionResults = [:]
-    executionHistory = []
+    executionResults=[:]
+    executionHistory=[]
   }
 
   /// Execute a command, returning a pre-configured result or a default success
@@ -100,10 +100,10 @@ public class MockProcessExecutor: ProcessExecutorProtocol {
     executionHistory.append((executablePath, arguments, environment))
 
     // Determine the command key
-    let commandKey = arguments.first { $0 != "restic" } ?? "unknown"
+    let commandKey=arguments.first { $0 != "restic" } ?? "unknown"
 
     // Return the configured result or a default success
-    if let result = executionResults[commandKey] {
+    if let result=executionResults[commandKey] {
       switch result {
         case let .success(output):
           return output

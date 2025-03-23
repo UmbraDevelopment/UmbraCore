@@ -5,14 +5,14 @@ load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 # gazelle:prefix github.com/mpy-dev-ml/UmbraCore
 gazelle(
     name = "gazelle",
-    command = "fix",
+    command = "fix"
 )
 
 package(default_visibility = ["//visibility:public"])
 
 string_flag(
     name = "cpu",
-    build_setting_default = "darwin_arm64",
+    build_setting_default = "darwin_arm64"
 )
 
 platform(
@@ -20,5 +20,5 @@ platform(
     constraint_values = [
         "@platforms//os:macos",
         "@platforms//cpu:arm64",
-    ],
+    ]
 )

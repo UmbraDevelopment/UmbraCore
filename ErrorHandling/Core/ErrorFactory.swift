@@ -1,5 +1,5 @@
-import Foundation
 import ErrorHandlingInterfaces
+import Foundation
 
 /// Factory functions for creating errors with source attribution
 public enum ErrorFactory {
@@ -12,11 +12,11 @@ public enum ErrorFactory {
   /// - Returns: A new error with source information
   public static func makeError<E: UmbraError>(
     _ error: E,
-    file: String = #file,
-    line: Int = #line,
-    function: String = #function
+    file: String=#file,
+    line: Int=#line,
+    function: String=#function
   ) -> E {
-    let source = ErrorSource(identifier: "\(file):\(line):\(function)")
+    let source=ErrorSource(identifier: "\(file):\(line):\(function)")
     return error.with(source: source)
   }
 
@@ -31,11 +31,11 @@ public enum ErrorFactory {
   public static func makeError<E: UmbraError>(
     _ error: E,
     underlyingError: Error,
-    file: String = #file,
-    line: Int = #line,
-    function: String = #function
+    file: String=#file,
+    line: Int=#line,
+    function: String=#function
   ) -> E {
-    let source = ErrorSource(identifier: "\(file):\(line):\(function)")
+    let source=ErrorSource(identifier: "\(file):\(line):\(function)")
     return error
       .with(source: source)
       .with(underlyingError: underlyingError)
@@ -52,11 +52,11 @@ public enum ErrorFactory {
   public static func makeError<E: UmbraError>(
     _ error: E,
     context: ErrorContext,
-    file: String = #file,
-    line: Int = #line,
-    function: String = #function
+    file: String=#file,
+    line: Int=#line,
+    function: String=#function
   ) -> E {
-    let source = ErrorSource(identifier: "\(file):\(line):\(function)")
+    let source=ErrorSource(identifier: "\(file):\(line):\(function)")
     return error
       .with(source: source)
       .with(context: context)
@@ -75,11 +75,11 @@ public enum ErrorFactory {
     _ error: E,
     context: ErrorContext,
     underlyingError: Error,
-    file: String = #file,
-    line: Int = #line,
-    function: String = #function
+    file: String=#file,
+    line: Int=#line,
+    function: String=#function
   ) -> E {
-    let source = ErrorSource(identifier: "\(file):\(line):\(function)")
+    let source=ErrorSource(identifier: "\(file):\(line):\(function)")
     return error
       .with(source: source)
       .with(context: context)
@@ -99,11 +99,11 @@ public enum ErrorFactory {
     domain: String,
     code: String,
     description: String,
-    file: String = #file,
-    line: Int = #line,
-    function: String = #function
+    file: String=#file,
+    line: Int=#line,
+    function: String=#function
   ) -> GenericUmbraError {
-    let source = ErrorSource(identifier: "\(file):\(line):\(function)")
+    let source=ErrorSource(identifier: "\(file):\(line):\(function)")
     return GenericUmbraError(
       domain: domain,
       code: code,
@@ -127,11 +127,11 @@ public enum ErrorFactory {
     domain: String,
     code: String,
     description: String,
-    file: String = #file,
-    line: Int = #line,
-    function: String = #function
+    file: String=#file,
+    line: Int=#line,
+    function: String=#function
   ) -> GenericUmbraError {
-    let source = ErrorSource(identifier: "\(file):\(line):\(function)")
+    let source=ErrorSource(identifier: "\(file):\(line):\(function)")
     return GenericUmbraError(
       domain: domain,
       code: code,

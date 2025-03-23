@@ -18,17 +18,17 @@ final class RestoreCommandTests: XCTestCase {
    */
   func testRestoreCommandArguments() {
     // Given
-    let options = CommonOptions(repository: "/test/repo", password: "test")
+    let options=CommonOptions(repository: "/test/repo", password: "test")
 
     // When
-    let command = RestoreCommand(
+    let command=RestoreCommand(
       options: options,
       snapshotID: "abcdef123456",
       targetPath: "/restore/path"
     )
 
     // Then
-    let args = command.commandArguments
+    let args=command.commandArguments
     XCTAssertTrue(args.contains("abcdef123456"), "Command should include the snapshot ID")
     XCTAssertTrue(args.contains("--target"), "Command should include target flag")
     XCTAssertTrue(args.contains("/restore/path"), "Command should include target path")
@@ -39,19 +39,19 @@ final class RestoreCommandTests: XCTestCase {
    */
   func testRestoreCommandEnvironment() {
     // Given
-    let options = CommonOptions(
+    let options=CommonOptions(
       repository: "/test/repo",
       password: "testpassword",
       cachePath: "/test/cache"
     )
 
     // When
-    let command = RestoreCommand(
+    let command=RestoreCommand(
       options: options,
       snapshotID: "abcdef123456",
       targetPath: "/restore/path"
     )
-    let env = command.environment
+    let env=command.environment
 
     // Then
     XCTAssertEqual(
@@ -72,12 +72,12 @@ final class RestoreCommandTests: XCTestCase {
    */
   func testRestoreCommandWithIncludeExcludePaths() {
     // Given
-    let options = CommonOptions(repository: "/test/repo", password: "test")
-    let includePaths = ["/include/path1", "/include/path2"]
-    let excludePaths = ["/exclude/path"]
+    let options=CommonOptions(repository: "/test/repo", password: "test")
+    let includePaths=["/include/path1", "/include/path2"]
+    let excludePaths=["/exclude/path"]
 
     // When
-    let command = RestoreCommand(
+    let command=RestoreCommand(
       options: options,
       snapshotID: "abcdef123456",
       targetPath: "/restore/path",
@@ -86,7 +86,7 @@ final class RestoreCommandTests: XCTestCase {
     )
 
     // Then
-    let args = command.commandArguments
+    let args=command.commandArguments
     XCTAssertTrue(args.contains("--include"), "Should contain include flag")
     XCTAssertTrue(args.contains("/include/path1"), "Should contain first include path")
     XCTAssertTrue(args.contains("/include/path2"), "Should contain second include path")
@@ -99,10 +99,10 @@ final class RestoreCommandTests: XCTestCase {
    */
   func testRestoreCommandValidationWithValidInputs() throws {
     // Create a temporary directory for testing
-    let tempDirectory = FileManager.default.temporaryDirectory.path
+    let tempDirectory=FileManager.default.temporaryDirectory.path
 
     // Given
-    let validCommand = RestoreCommand(
+    let validCommand=RestoreCommand(
       options: CommonOptions(repository: "/test/repo", password: "test"),
       snapshotID: "abcdef123456",
       targetPath: tempDirectory
@@ -117,7 +117,7 @@ final class RestoreCommandTests: XCTestCase {
    */
   func testRestoreCommandValidationWithEmptySnapshot() {
     // Given
-    let emptySnapshotCommand = RestoreCommand(
+    let emptySnapshotCommand=RestoreCommand(
       options: CommonOptions(repository: "/test/repo", password: "test"),
       snapshotID: "",
       targetPath: "/restore/path"
@@ -126,7 +126,7 @@ final class RestoreCommandTests: XCTestCase {
     // Then
     XCTAssertThrowsError(try emptySnapshotCommand.validate()) { error in
       XCTAssertTrue(error is ResticTypes.ResticError, "Should throw ResticError")
-      guard let resticError = error as? ResticTypes.ResticError else {
+      guard let resticError=error as? ResticTypes.ResticError else {
         XCTFail("Expected ResticError")
         return
       }
@@ -143,7 +143,7 @@ final class RestoreCommandTests: XCTestCase {
    */
   func testRestoreCommandValidationWithInvalidTargetPath() {
     // Given
-    let invalidTargetCommand = RestoreCommand(
+    let invalidTargetCommand=RestoreCommand(
       options: CommonOptions(repository: "/test/repo", password: "test"),
       snapshotID: "abcdef123456",
       targetPath: ""
@@ -152,7 +152,7 @@ final class RestoreCommandTests: XCTestCase {
     // Then
     XCTAssertThrowsError(try invalidTargetCommand.validate()) { error in
       XCTAssertTrue(error is ResticTypes.ResticError, "Should throw ResticError")
-      guard let resticError = error as? ResticTypes.ResticError else {
+      guard let resticError=error as? ResticTypes.ResticError else {
         XCTFail("Expected ResticError")
         return
       }
@@ -169,7 +169,7 @@ final class RestoreCommandTests: XCTestCase {
    */
   func testRestoreCommandValidationWithInvalidRepository() {
     // Given
-    let invalidRepoCommand = RestoreCommand(
+    let invalidRepoCommand=RestoreCommand(
       options: CommonOptions(repository: "", password: "test"),
       snapshotID: "abcdef123456",
       targetPath: "/restore/path"
@@ -178,7 +178,7 @@ final class RestoreCommandTests: XCTestCase {
     // Then
     XCTAssertThrowsError(try invalidRepoCommand.validate()) { error in
       XCTAssertTrue(error is ResticTypes.ResticError, "Should throw ResticError")
-      guard let resticError = error as? ResticTypes.ResticError else {
+      guard let resticError=error as? ResticTypes.ResticError else {
         XCTFail("Expected ResticError")
         return
       }

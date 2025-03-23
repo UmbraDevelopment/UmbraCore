@@ -23,26 +23,26 @@ final class RepositoryManagementTests: XCTestCase {
     // Original implementation remains for reference
 
     // Set up a clean repository
-    let tempPath = NSTemporaryDirectory()
-    let repoPath = (tempPath as NSString).appendingPathComponent("clean-repo")
+    let tempPath=NSTemporaryDirectory()
+    let repoPath=(tempPath as NSString).appendingPathComponent("clean-repo")
     try FileManager.default.createDirectory(atPath: repoPath, withIntermediateDirectories: true)
 
-    let helper = try ResticCLIHelper(executablePath: "/opt/homebrew/bin/restic")
+    let helper=try ResticCLIHelper(executablePath: "/opt/homebrew/bin/restic")
 
     // Initialize a new repository
-    let options = CommonOptions(
+    let options=CommonOptions(
       repository: repoPath,
       password: "test-password",
       validateCredentials: true,
       jsonOutput: false
     )
 
-    let initCommand = InitCommand(options: options)
-    let output = try await helper.execute(initCommand)
+    let initCommand=InitCommand(options: options)
+    let output=try await helper.execute(initCommand)
     XCTAssertTrue(output.contains("created restic repository"), "Repository should be created")
 
     // Check repository structure
-    let repoFiles = try FileManager.default.contentsOfDirectory(atPath: repoPath)
+    let repoFiles=try FileManager.default.contentsOfDirectory(atPath: repoPath)
     XCTAssertTrue(repoFiles.contains("config"), "Repository should contain config file")
     XCTAssertTrue(repoFiles.contains("data"), "Repository should contain data directory")
     XCTAssertTrue(repoFiles.contains("index"), "Repository should contain index directory")
@@ -50,8 +50,8 @@ final class RepositoryManagementTests: XCTestCase {
     XCTAssertTrue(repoFiles.contains("snapshots"), "Repository should contain snapshots directory")
 
     // Verify repository exists and is valid
-    let checkCommand = CheckCommand(options: options)
-    let checkOutput = try await helper.execute(checkCommand)
+    let checkCommand=CheckCommand(options: options)
+    let checkOutput=try await helper.execute(checkCommand)
     XCTAssertTrue(checkOutput.contains("no errors were found"), "Repository check should pass")
   }
 

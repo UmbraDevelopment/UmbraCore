@@ -7,25 +7,25 @@ final class MockFileManagerTests: XCTestCase {
 
   override func setUp() async throws {
     try await super.setUp()
-    mockFileManager = MockFileManager()
-    tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    mockFileManager=MockFileManager()
+    tempURL=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
     try mockFileManager.simulateCreateDirectory(at: tempURL, withIntermediateDirectories: true)
   }
 
   override func tearDown() async throws {
-    mockFileManager = nil
+    mockFileManager=nil
     if let tempURL {
       try? FileManager.default.removeItem(at: tempURL)
     }
-    tempURL = nil
+    tempURL=nil
     try await super.tearDown()
   }
 
   func testFileCreationAndAccess() async throws {
     // Create test file
-    let testContent = "Test content"
-    let fileName = "test.txt"
-    let fileURL = tempURL.appendingPathComponent(fileName)
+    let testContent="Test content"
+    let fileName="test.txt"
+    let fileURL=tempURL.appendingPathComponent(fileName)
 
     mockFileManager.simulateSetFileContent(testContent, at: fileURL)
     XCTAssertTrue(mockFileManager.simulateSetAccess(.readWrite, for: fileURL))
@@ -36,8 +36,9 @@ final class MockFileManagerTests: XCTestCase {
 
     // Verify content
     if
-      let data = try await mockFileManager.simulateContentsAsync(atPath: fileURL.path),
-      let content = String(data: data, encoding: .utf8) {
+      let data=try await mockFileManager.simulateContentsAsync(atPath: fileURL.path),
+      let content=String(data: data, encoding: .utf8)
+    {
       XCTAssertEqual(content, testContent)
     } else {
       XCTFail("Failed to read file content")
@@ -46,9 +47,9 @@ final class MockFileManagerTests: XCTestCase {
 
   func testSecurityScopedAccess() async throws {
     // Create a test file in the temp directory
-    let fileName = "secure.txt"
-    let fileURL = tempURL.appendingPathComponent(fileName)
-    let testContent = "Secure content"
+    let fileName="secure.txt"
+    let fileURL=tempURL.appendingPathComponent(fileName)
+    let testContent="Secure content"
 
     // Set up initial file with no access
     mockFileManager.simulateSetFileContent(testContent, at: fileURL)

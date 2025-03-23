@@ -103,12 +103,18 @@ extension ModernCryptoXPCServiceProtocol {
           continuation.resume(returning: .failure(error))
         } else if let error {
           continuation
-            .resume(returning: .failure(ErrorHandlingCore.Error.internalError(description: error.localizedDescription)))
+            .resume(returning: .failure(
+              ErrorHandlingCore.Error
+                .internalError(description: error.localizedDescription)
+            ))
         } else if let data {
           continuation.resume(returning: .success(data))
         } else {
           continuation
-            .resume(returning: .failure(ErrorHandlingCore.Error.internalError(description: "Unknown error in encrypt")))
+            .resume(returning: .failure(
+              ErrorHandlingCore.Error
+                .internalError(description: "Unknown error in encrypt")
+            ))
         }
       }
     }
@@ -125,12 +131,18 @@ extension ModernCryptoXPCServiceProtocol {
           continuation.resume(returning: .failure(error))
         } else if let error {
           continuation
-            .resume(returning: .failure(ErrorHandlingCore.Error.internalError(description: error.localizedDescription)))
+            .resume(returning: .failure(
+              ErrorHandlingCore.Error
+                .internalError(description: error.localizedDescription)
+            ))
         } else if let data {
           continuation.resume(returning: .success(data))
         } else {
           continuation
-            .resume(returning: .failure(ErrorHandlingCore.Error.internalError(description: "Unknown error in decrypt")))
+            .resume(returning: .failure(
+              ErrorHandlingCore.Error
+                .internalError(description: "Unknown error in decrypt")
+            ))
         }
       }
     }
@@ -144,13 +156,19 @@ extension ModernCryptoXPCServiceProtocol {
           continuation.resume(returning: .failure(error))
         } else if let error {
           continuation
-            .resume(returning: .failure(ErrorHandlingCore.Error.internalError(description: error.localizedDescription)))
+            .resume(returning: .failure(
+              ErrorHandlingCore.Error
+                .internalError(description: error.localizedDescription)
+            ))
         } else if let data {
           continuation.resume(returning: .success(data))
         } else {
           continuation
             .resume(
-              returning: .failure(ErrorHandlingCore.Error.internalError(description: "Unknown error in generateKey"))
+              returning: .failure(
+                ErrorHandlingCore.Error
+                  .internalError(description: "Unknown error in generateKey")
+              )
             )
         }
       }
@@ -166,14 +184,18 @@ extension ModernCryptoXPCServiceProtocol {
           continuation.resume(returning: .failure(error))
         } else if let error {
           continuation
-            .resume(returning: .failure(ErrorHandlingCore.Error.internalError(description: error.localizedDescription)))
+            .resume(returning: .failure(
+              ErrorHandlingCore.Error
+                .internalError(description: error.localizedDescription)
+            ))
         } else if let data {
           continuation.resume(returning: .success(data))
         } else {
           continuation
             .resume(
               returning: .failure(
-                ErrorHandlingCore.Error.internalError(description: "Unknown error in generateSecureRandomData")
+                ErrorHandlingCore.Error
+                  .internalError(description: "Unknown error in generateSecureRandomData")
               )
             )
         }
@@ -192,7 +214,10 @@ extension ModernCryptoXPCServiceProtocol {
           continuation.resume(returning: .failure(error))
         } else if let error {
           continuation
-            .resume(returning: .failure(ErrorHandlingCore.Error.internalError(description: error.localizedDescription)))
+            .resume(returning: .failure(
+              ErrorHandlingCore.Error
+                .internalError(description: error.localizedDescription)
+            ))
         } else {
           continuation.resume(returning: .success(()))
         }
@@ -209,13 +234,19 @@ extension ModernCryptoXPCServiceProtocol {
           continuation.resume(returning: .failure(error))
         } else if let error {
           continuation
-            .resume(returning: .failure(ErrorHandlingCore.Error.internalError(description: error.localizedDescription)))
+            .resume(returning: .failure(
+              ErrorHandlingCore.Error
+                .internalError(description: error.localizedDescription)
+            ))
         } else if let data {
           continuation.resume(returning: .success(data))
         } else {
           continuation
             .resume(
-              returning: .failure(ErrorHandlingCore.Error.internalError(description: "Unknown error in retrieveSecurely"))
+              returning: .failure(
+                ErrorHandlingCore.Error
+                  .internalError(description: "Unknown error in retrieveSecurely")
+              )
             )
         }
       }
@@ -231,7 +262,10 @@ extension ModernCryptoXPCServiceProtocol {
           continuation.resume(returning: .failure(error))
         } else if let error {
           continuation
-            .resume(returning: .failure(ErrorHandlingCore.Error.internalError(description: error.localizedDescription)))
+            .resume(returning: .failure(
+              ErrorHandlingCore.Error
+                .internalError(description: error.localizedDescription)
+            ))
         } else {
           continuation.resume(returning: .success(()))
         }
@@ -247,7 +281,10 @@ extension ModernCryptoXPCServiceProtocol {
           continuation.resume(returning: .failure(error))
         } else if let error {
           continuation
-            .resume(returning: .failure(ErrorHandlingCore.Error.internalError(description: error.localizedDescription)))
+            .resume(returning: .failure(
+              ErrorHandlingCore.Error
+                .internalError(description: error.localizedDescription)
+            ))
         } else {
           continuation.resume(returning: .success(isValid))
         }
@@ -263,7 +300,10 @@ extension ModernCryptoXPCServiceProtocol {
           continuation.resume(returning: .failure(error))
         } else if let error {
           continuation
-            .resume(returning: .failure(ErrorHandlingCore.Error.internalError(description: error.localizedDescription)))
+            .resume(returning: .failure(
+              ErrorHandlingCore.Error
+                .internalError(description: error.localizedDescription)
+            ))
         } else {
           continuation.resume(returning: .success(version))
         }
