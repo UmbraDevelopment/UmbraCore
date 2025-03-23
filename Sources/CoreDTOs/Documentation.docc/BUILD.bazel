@@ -1,16 +1,21 @@
-load("//tools/swift:docc_rules.bzl", "docc_documentation")
+load("//:swift_rules.bzl", "umbra_swift_library")
 
-# DocC documentation for CoreDTOs
-docc_documentation(
-    name = "CoreDTOsDocC",
-    module_name = "CoreDTOs",
-    localonly = True,
-    srcs = glob([
-        "*.md",
-        "*.plist",
-        "**/*.md",
-        "**/*.docc",
-        "**/*.plist",
-    ], allow_empty = True),
-    visibility = ["//visibility:public"],
+umbra_swift_library(
+    name = "CoreDTOsDocumentation.docc",
+    srcs = glob(["**/*.swift"]),
+    deps = [
+    ],
 )
+
+# Uncomment if documentation generation is needed
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+#
+# swift_package(
+#     name = "docc_documentation",
+#     srcs = glob([
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
+#     deps = ["//Sources/CoreDTOsDocumentation.docc"],
+# )

@@ -5,9 +5,9 @@ import SecurityUtilsProtocols
 /// Actor for tracking accessed paths safely across all instances
 @globalActor
 public actor PathAccessTracker {
-  public static let shared = PathAccessTracker()
+  public static let shared=PathAccessTracker()
 
-  private var accessedPaths: Set<String> = []
+  private var accessedPaths: Set<String>=[]
 
   private init() {}
 
@@ -74,7 +74,7 @@ public struct PathURLProvider: URLProvider {
     in domain: FileManager.SearchPathDomainMask,
     pathComponents: [String]
   ) throws -> URL {
-    var url = try url(for: directory, in: domain)
+    var url=try url(for: directory, in: domain)
     for component in pathComponents {
       url.appendPathComponent(component)
     }
@@ -88,12 +88,12 @@ public struct PathURLProvider: URLProvider {
   /// - Returns: Result with bookmark data or error
   public func createBookmark(forPath path: String) async
   -> Result<Data, UmbraErrors.Security.Protocols> {
-    guard let url = URL(string: path) else {
+    guard let url=URL(string: path) else {
       return .failure(.invalidInput("Invalid URL path: \(path)"))
     }
 
     do {
-      let bookmarkData = try url.bookmarkData(
+      let bookmarkData=try url.bookmarkData(
         options: .securityScopeAllowOnlyReadAccess,
         includingResourceValuesForKeys: nil,
         relativeTo: nil
@@ -111,11 +111,11 @@ public struct PathURLProvider: URLProvider {
   /// - Returns: Result with path and staleness or error
   public func resolveBookmark(_ bookmarkData: [UInt8]) async
   -> Result<(path: String, isStale: Bool), UmbraErrors.Security.Protocols> {
-    let data = Data(bookmarkData)
+    let data=Data(bookmarkData)
 
     do {
-      var isStale = false
-      let url = try URL(
+      var isStale=false
+      let url=try URL(
         resolvingBookmarkData: data,
         options: .withSecurityScope,
         relativeTo: nil,
@@ -133,7 +133,7 @@ public struct PathURLProvider: URLProvider {
   /// - Parameter path: Path to access
   /// - Returns: Result with success status or error
   public func startAccessing(path: String) async -> Result<Bool, UmbraErrors.Security.Protocols> {
-    guard let url = URL(string: path) else {
+    guard let url=URL(string: path) else {
       return .failure(.invalidInput("Invalid URL path: \(path)"))
     }
 
@@ -154,7 +154,7 @@ public struct PathURLProvider: URLProvider {
   /// Stop accessing a path
   /// - Parameter path: Path to stop accessing
   public func stopAccessing(path: String) async {
-    guard let url = URL(string: path) else {
+    guard let url=URL(string: path) else {
       return
     }
 
@@ -178,9 +178,9 @@ public struct PathURLProvider: URLProvider {
 
   /// Stop accessing all resources
   public func stopAccessingAllResources() async {
-    let paths = await PathAccessTracker.shared.getAllPaths()
+    let paths=await PathAccessTracker.shared.getAllPaths()
     for path in paths {
-      if let url = URL(string: path) {
+      if let url=URL(string: path) {
         url.stopAccessingSecurityScopedResource()
       }
     }

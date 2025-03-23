@@ -1,34 +1,21 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
-load("//:bazel/macros/swift.bzl", "umbra_swift_library")
+load("//:swift_rules.bzl", "umbra_swift_library")
 
-# Create minimal service implementation without problematic dependencies
-swift_library(
-    name = "UmbraSecurityServicesCore",
-    srcs = [
-        "SecurityService.swift",
-        "UmbraSecurityServicesModule.swift",
-    ],
-    copts = [
-        "-target", "arm64-apple-macos14.7.4",
-    ],
+umbra_swift_library(
+    name = "UmbraSecurityServices",
+    srcs = glob(["**/*.swift"]),
     deps = [
-        "//Sources/CoreErrors",
-        "//Sources/CoreServicesTypesNoFoundation",
-        "//Sources/CryptoTypes",
-        "//Sources/CryptoTypes/Protocols:CryptoTypesProtocols",
-        "//Sources/CryptoTypes/Types:CryptoTypesTypes",
-        "//Sources/ErrorHandling",
-        "//ErrorHandling/Domains:ErrorHandlingDomains",
-        "//Sources/FoundationBridgeTypes",
-        "//Sources/ObjCBridgingTypesFoundation",
-        "//Sources/SecurityBridge",
-        "//Sources/SecurityBridgeTypes",
-        "//Sources/SecurityInterfacesProtocols",
-        "//Sources/SecurityProtocolsCore",
-        "//Sources/SecurityUtils",
-        "//Sources/UmbraCoreTypes",
-        "//Sources/UmbraLogging",
-        "//Sources/XPCProtocolsCore",
     ],
-    visibility = ["//visibility:public"],
 )
+
+# Uncomment if documentation generation is needed
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+#
+# swift_package(
+#     name = "docc_documentation",
+#     srcs = glob([
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
+#     deps = ["//Sources/UmbraSecurityServices"],
+# )

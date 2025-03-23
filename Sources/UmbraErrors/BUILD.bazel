@@ -2,6 +2,27 @@ load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 swift_library(
     name = "UmbraErrors",
-    srcs = glob(["**/*.swift"]),
+    srcs = glob([
+        "Core/**/*.swift",
+        "Domains/**/*.swift",
+        "Mapping/**/*.swift",
+        "Utilities/**/*.swift",
+    ]),
     visibility = ["//visibility:public"],
+    deps = [
+        "//Sources/ErrorHandlingInterfaces",
+        "//Sources/ErrorHandlingDomains",
+    ],
 )
+
+# Uncomment if documentation generation is needed
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+#
+# swift_package(
+#     name = "docc_documentation",
+#     srcs = glob([
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
+#     deps = ["//Sources/UmbraErrors"],
+# )

@@ -31,9 +31,9 @@ public actor KeyManager: UmbraService {
   /// Service identifier
   public static var serviceIdentifier: String { "com.umbracore.keymanager" }
   /// Service identifier
-  public nonisolated let identifier: String = serviceIdentifier
+  public nonisolated let identifier: String=serviceIdentifier
   /// Service version
-  public nonisolated let version: String = "1.0.0"
+  public nonisolated let version: String="1.0.0"
 
   /// Key storage location
   private let keyStorage: URL
@@ -68,13 +68,13 @@ public actor KeyManager: UmbraService {
   ///   - implementation: Crypto implementation to use
   public init(
     keyStorage: URL,
-    keyFormat: String = "json",
+    keyFormat: String="json",
     implementation: CryptoImplementation = .appleCrypto
   ) {
-    self.keyStorage = keyStorage
-    self.keyFormat = keyFormat
-    self.implementation = implementation
-    keyMetadata = [:]
+    self.keyStorage=keyStorage
+    self.keyFormat=keyFormat
+    self.implementation=implementation
+    keyMetadata=[:]
     _state = .uninitialized
   }
 
@@ -95,10 +95,10 @@ public actor KeyManager: UmbraService {
     )
 
     // Load existing keys
-    keyMetadata = try await loadKeyMetadata()
+    keyMetadata=try await loadKeyMetadata()
 
     // Now we're running
-    _state = ServiceState.ready
+    _state=ServiceState.ready
   }
 
   /// Generate a new key with the specified parameters
@@ -112,29 +112,29 @@ public actor KeyManager: UmbraService {
   /// - Returns: Identifier for the generated key
   /// - Throws: KeyManagerError if generation fails
   public func generateKey(
-    id: String? = nil,
+    id: String?=nil,
     type _: XPCProtocolsCore.XPCProtocolTypeDefs.KeyType = .symmetric,
-    algorithm: String = "AES",
-    size: Int = 256,
-    metadata: [String: String]? = nil,
-    strength: Int = 256
+    algorithm: String="AES",
+    size: Int=256,
+    metadata: [String: String]?=nil,
+    strength: Int=256
   ) async throws -> String {
-    let currentState = _state
+    let currentState=_state
     guard currentState == .ready || currentState == .running else {
       throw KeyManagerError.notInitialized
     }
 
     // Generate key ID if not provided
-    let keyID = id ?? UUID().uuidString
+    let keyID=id ?? UUID().uuidString
 
     // Create a new key (simplified placeholder implementation)
-    let key = try await generateRandomData(length: size)
+    let key=try await generateRandomData(length: size)
 
     // Use keychain as default storage location
-    let defaultStorageLocation = KeyManagementTypes.StorageLocation.keychain
+    let defaultStorageLocation=KeyManagementTypes.StorageLocation.keychain
 
     // Store key metadata
-    let keyMeta = KeyManagementTypes.KeyMetadata(
+    let keyMeta=KeyManagementTypes.KeyMetadata(
       status: .active,
       storageLocation: defaultStorageLocation,
       accessControls: .none,
@@ -150,7 +150,7 @@ public actor KeyManager: UmbraService {
       isProcessIsolated: false,
       customMetadata: metadata
     )
-    keyMetadata[keyID] = keyMeta
+    keyMetadata[keyID]=keyMeta
 
     // Save key to storage
     try await saveKey(key, for: keyID)
@@ -166,20 +166,20 @@ public actor KeyManager: UmbraService {
   /// - Returns: KeyValidationResult
   /// - Throws: KeyManagerError if validation fails
   public func validateKey(id: String) async throws -> KeyValidationResult {
-    let currentState = _state
+    let currentState=_state
     guard currentState == .ready || currentState == .running else {
       throw KeyManagerError.notInitialized
     }
 
     // Check if key exists
-    guard let metadata = keyMetadata[id] else {
+    guard let metadata=keyMetadata[id] else {
       throw KeyManagerError.keyNotFound(id)
     }
 
     // In a real implementation we would check key strength, age, etc.
     // This is a simplified version
-    let isValid = metadata.keySize >= 128
-    let warnings = isValid ? [] : ["Key strength below recommended minimum"]
+    let isValid=metadata.keySize >= 128
+    let warnings=isValid ? [] : ["Key strength below recommended minimum"]
 
     return KeyValidationResult(isValid: isValid, warnings: warnings)
   }
@@ -193,7 +193,7 @@ public actor KeyManager: UmbraService {
     print("KeyManager.synchroniseKeys: Placeholder implementation")
 
     // Update last sync time
-    lastSyncTime = Date()
+    lastSyncTime=Date()
 
     // Save key metadata to ensure it's up to date
     try await saveKeyMetadata()
@@ -201,14 +201,14 @@ public actor KeyManager: UmbraService {
 
   /// Gracefully shut down the service
   public func shutdown() async {
-    let currentState = _state
+    let currentState=_state
     if currentState == .running || currentState == .ready {
       // Perform shutdown operations here
-      _state = ServiceState.shuttingDown
+      _state=ServiceState.shuttingDown
 
       // Close any open resources
 
-      _state = ServiceState.shutdown
+      _state=ServiceState.shutdown
     }
   }
 
@@ -220,11 +220,11 @@ public actor KeyManager: UmbraService {
   /// - Throws: KeyManagerError if generation fails
   private func generateRandomData(length: Int) async throws -> SecureBytes {
     // In a real implementation, we would use a cryptographic random number generator
-    var bytes = [UInt8](repeating: 0, count: length)
+    var bytes=[UInt8](repeating: 0, count: length)
 
     // This is a placeholder - in production we would use a cryptographically secure RNG
     for i in 0..<length {
-      bytes[i] = UInt8.random(in: 0...255)
+      bytes[i]=UInt8.random(in: 0...255)
     }
 
     return SecureBytes(bytes: bytes)
@@ -236,12 +236,12 @@ public actor KeyManager: UmbraService {
   ///   - id: Key identifier
   /// - Throws: KeyManagerError if save fails
   private func saveKey(_ key: SecureBytes, for id: String) async throws {
-    let keyURL = keyStorage.appendingPathComponent("\(id).key")
+    let keyURL=keyStorage.appendingPathComponent("\(id).key")
 
     // Convert SecureBytes to Data for storage
-    var keyData = Data()
+    var keyData=Data()
     key.withUnsafeBytes { buffer in
-      keyData = Data(buffer)
+      keyData=Data(buffer)
     }
 
     // In a real implementation, we would encrypt the key data before writing
@@ -252,8 +252,8 @@ public actor KeyManager: UmbraService {
   /// - Returns: Dictionary of key metadata
   /// - Throws: KeyManagerError if load fails
   private func loadKeyMetadata() async throws -> [String: KeyManagementTypes.KeyMetadata] {
-    let fileManager = FileManager.default
-    let metadataURL = keyStorage.appendingPathComponent("metadata.\(keyFormat)")
+    let fileManager=FileManager.default
+    let metadataURL=keyStorage.appendingPathComponent("metadata.\(keyFormat)")
 
     // If metadata file doesn't exist, return empty dictionary
     if !fileManager.fileExists(atPath: metadataURL.path) {
@@ -261,15 +261,15 @@ public actor KeyManager: UmbraService {
     }
 
     // Load metadata from file - in a real implementation, this would be more robust
-    let data = try Data(contentsOf: metadataURL)
-    let decoder = JSONDecoder()
+    let data=try Data(contentsOf: metadataURL)
+    let decoder=JSONDecoder()
     decoder.dateDecodingStrategy = .iso8601
 
     // Convert to dictionary
-    let metadataArray = try decoder.decode([KeyManagementTypes.KeyMetadata].self, from: data)
-    var metadataDict: [String: KeyManagementTypes.KeyMetadata] = [:]
+    let metadataArray=try decoder.decode([KeyManagementTypes.KeyMetadata].self, from: data)
+    var metadataDict: [String: KeyManagementTypes.KeyMetadata]=[:]
     for meta in metadataArray {
-      metadataDict[meta.identifier] = meta
+      metadataDict[meta.identifier]=meta
     }
 
     return metadataDict
@@ -278,7 +278,7 @@ public actor KeyManager: UmbraService {
   /// Save key metadata to storage
   /// - Throws: KeyManagerError if save fails
   private func saveKeyMetadata() async throws {
-    let fileManager = FileManager.default
+    let fileManager=FileManager.default
 
     // Ensure storage directory exists
     if !fileManager.fileExists(atPath: keyStorage.path) {
@@ -290,17 +290,17 @@ public actor KeyManager: UmbraService {
     }
 
     // Convert dictionary to array for serialization
-    let metadataArray = Array(keyMetadata.values)
+    let metadataArray=Array(keyMetadata.values)
 
     // Serialize metadata
-    let encoder = JSONEncoder()
+    let encoder=JSONEncoder()
     encoder.dateEncodingStrategy = .iso8601
     encoder.outputFormatting = .prettyPrinted
 
-    let data = try encoder.encode(metadataArray)
+    let data=try encoder.encode(metadataArray)
 
     // Save to file
-    let metadataURL = keyStorage.appendingPathComponent("metadata.\(keyFormat)")
+    let metadataURL=keyStorage.appendingPathComponent("metadata.\(keyFormat)")
     try data.write(to: metadataURL)
   }
 }

@@ -7,8 +7,8 @@ public struct ErrorContext: Sendable, Equatable {
 
   /// Creates a new ErrorContext instance
   /// - Parameter context: Initial key-value pairs for the context
-  public init(_ context: [String: Any] = [:]) {
-    storage = context
+  public init(_ context: [String: Any]=[:]) {
+    storage=context
   }
 
   /// Gets a value from the context using the specified key
@@ -23,7 +23,7 @@ public struct ErrorContext: Sendable, Equatable {
   ///   - key: The key to look up
   ///   - type: The expected type of the value
   /// - Returns: The value cast to the specified type, or nil if not found or wrong type
-  public func typedValue<T>(for key: String, as _: T.Type = T.self) -> T? {
+  public func typedValue<T>(for key: String, as _: T.Type=T.self) -> T? {
     storage[key] as? T
   }
 
@@ -33,8 +33,8 @@ public struct ErrorContext: Sendable, Equatable {
   ///   - value: The value to associate with the key
   /// - Returns: A new ErrorContext instance with the added key-value pair
   public func adding(key: String, value: Any) -> ErrorContext {
-    var newContext = self
-    newContext.storage[key] = value
+    var newContext=self
+    newContext.storage[key]=value
     return newContext
   }
 
@@ -42,9 +42,9 @@ public struct ErrorContext: Sendable, Equatable {
   /// - Parameter context: Dictionary of key-value pairs to add
   /// - Returns: A new ErrorContext instance with the added key-value pairs
   public func adding(context: [String: Any]) -> ErrorContext {
-    var newContext = self
+    var newContext=self
     for (key, value) in context {
-      newContext.storage[key] = value
+      newContext.storage[key]=value
     }
     return newContext
   }
@@ -73,8 +73,8 @@ public struct ErrorContext: Sendable, Equatable {
     }
 
     for key in lhs.keys {
-      let lhsValue = lhs.storage[key]
-      let rhsValue = rhs.storage[key]
+      let lhsValue=lhs.storage[key]
+      let rhsValue=rhs.storage[key]
 
       // Compare string representations as a best effort
       if String(describing: lhsValue) != String(describing: rhsValue) {
@@ -104,9 +104,9 @@ extension ErrorContext {
   /// - Returns: A new ErrorContext with error details
   public static func withDetails(
     message: String,
-    file: String = #file,
-    line: Int = #line,
-    function: String = #function
+    file: String=#file,
+    line: Int=#line,
+    function: String=#function
   ) -> ErrorContext {
     ErrorContext([
       "message": message,

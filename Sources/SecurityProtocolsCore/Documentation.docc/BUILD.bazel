@@ -1,14 +1,21 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+load("//:swift_rules.bzl", "umbra_swift_library")
 
-# Documentation for the SecurityProtocolsCore module
-filegroup(
-    name = "docc_resources",
-    srcs = glob(["Resources/**"], allow_empty = True),
-    visibility = ["//visibility:public"],
+umbra_swift_library(
+    name = "SecurityProtocolsCoreDocumentation.docc",
+    srcs = glob(["**/*.swift"]),
+    deps = [
+    ],
 )
 
-filegroup(
-    name = "docc_sources",
-    srcs = glob(["**/*.md"]) + ["Info.plist"],
-    visibility = ["//visibility:public"],
-)
+# Uncomment if documentation generation is needed
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+#
+# swift_package(
+#     name = "docc_documentation",
+#     srcs = glob([
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
+#     deps = ["//Sources/SecurityProtocolsCoreDocumentation.docc"],
+# )

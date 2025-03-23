@@ -32,15 +32,15 @@ public struct SecurityKeyInformationDTO: Sendable, Equatable {
     keyID: String,
     algorithm: String,
     creationDate: Date,
-    expiryDate: Date? = nil,
+    expiryDate: Date?=nil,
     status: String,
-    metadata: [String: String] = [:]
+    metadata: [String: String]=[:]
   ) {
-    self.keyID = keyID
-    self.algorithm = algorithm
-    self.creationDate = creationDate
-    self.expiryDate = expiryDate
-    self.status = status
-    self.metadata = metadata
+    self.keyID=keyID
+    self.algorithm=algorithm
+    self.creationDate=creationDate
+    self.expiryDate=expiryDate
+    self.status=status
+    self.metadata=metadata
   }
 }

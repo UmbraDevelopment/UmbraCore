@@ -6,11 +6,11 @@ import Foundation
 /// Error domain namespace
 public enum ErrorDomain {
   /// Security domain
-  public static let security = "Security"
+  public static let security="Security"
   /// Crypto domain
-  public static let crypto = "Crypto"
+  public static let crypto="Crypto"
   /// Application domain
-  public static let application = "Application"
+  public static let application="Application"
 }
 
 /// Error context protocol
@@ -34,9 +34,9 @@ public struct BaseErrorContext: ErrorContext {
 
   /// Initialise with domain, code and description
   public init(domain: String, code: Int, description: String) {
-    self.domain = domain
-    self.code = code
-    self.description = description
+    self.domain=domain
+    self.code=code
+    self.description=description
   }
 }
 
@@ -77,16 +77,16 @@ public struct GenericUmbraError: ErrorHandlingInterfaces.UmbraError, CustomStrin
     domain: String,
     code: String,
     errorDescription: String,
-    underlyingError: Error? = nil,
-    source: ErrorHandlingInterfaces.ErrorSource? = nil,
-    context: ErrorHandlingInterfaces.ErrorContext? = nil
+    underlyingError: Error?=nil,
+    source: ErrorHandlingInterfaces.ErrorSource?=nil,
+    context: ErrorHandlingInterfaces.ErrorContext?=nil
   ) {
-    self.domain = domain
-    self.code = code
-    self.errorDescription = errorDescription
-    self.underlyingError = underlyingError
-    self.source = source
-    self.context = context ?? ErrorHandlingInterfaces.ErrorContext(
+    self.domain=domain
+    self.code=code
+    self.errorDescription=errorDescription
+    self.underlyingError=underlyingError
+    self.source=source
+    self.context=context ?? ErrorHandlingInterfaces.ErrorContext(
       source: domain,
       operation: "unknown",
       details: errorDescription
@@ -146,9 +146,9 @@ extension GenericUmbraError {
     domain: String,
     code: String,
     description: String,
-    file: String = #file,
-    function: String = #function,
-    line: Int = #line
+    file: String=#file,
+    function: String=#function,
+    line: Int=#line
   ) -> GenericUmbraError {
     GenericUmbraError(
       domain: domain,
@@ -169,7 +169,7 @@ extension GenericUmbraError {
   /// - Returns: A new GenericUmbraError
   public static func validationError(
     message: String,
-    code: String = "validation_error"
+    code: String="validation_error"
   ) -> GenericUmbraError {
     GenericUmbraError(
       domain: "Validation",
@@ -185,7 +185,7 @@ extension GenericUmbraError {
   /// - Returns: A new GenericUmbraError
   public static func internalError(
     message: String,
-    code: String = "internal_error"
+    code: String="internal_error"
   ) -> GenericUmbraError {
     GenericUmbraError(
       domain: "Internal",
@@ -201,7 +201,7 @@ extension GenericUmbraError {
   /// - Returns: A new GenericUmbraError
   public static func wrapped(
     _ error: Error,
-    errorDescription: String = "Wrapped error"
+    errorDescription: String="Wrapped error"
   ) -> GenericUmbraError {
     GenericUmbraError(
       domain: "Wrapped",

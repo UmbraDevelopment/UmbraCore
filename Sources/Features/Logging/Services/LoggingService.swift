@@ -21,7 +21,7 @@ public actor LoggingService {
   /// Initialises the logging service with a security provider
   /// - Parameter securityProvider: The security provider to use for bookmark operations
   public init(securityProvider: DefaultSecurityProvider) {
-    self.securityProvider = securityProvider
+    self.securityProvider=securityProvider
   }
 
   /// Creates a log file bookmark for the provided path
@@ -29,7 +29,7 @@ public actor LoggingService {
   /// - Returns: Result with bookmark data or error
   public func createLogBookmark(path: String) async
   -> Result<[UInt8], ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
-    let result = await securityProvider.createBookmark(for: path)
+    let result=await securityProvider.createBookmark(for: path)
 
     switch result {
       case let .success(bookmark):
@@ -44,12 +44,12 @@ public actor LoggingService {
   /// - Returns: Result with resolved path or error
   public func resolveLogBookmark(_ bookmarkData: [UInt8]) async
   -> Result<String, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
-    let secureBytes = SecureBytes(bytes: bookmarkData)
-    let result = await securityProvider.resolveBookmark(secureBytes)
+    let secureBytes=SecureBytes(bytes: bookmarkData)
+    let result=await securityProvider.resolveBookmark(secureBytes)
 
     switch result {
       case let .success(resolve):
-        let (identifier, isStale) = resolve
+        let (identifier, isStale)=resolve
         if isStale {
           // TODO: Handle stale bookmarks properly
           print("Warning: Bookmark is stale and may need to be recreated")
@@ -65,8 +65,8 @@ public actor LoggingService {
   /// - Returns: Result with validation status or error
   public func validateLogBookmark(_ bookmarkData: [UInt8]) async
   -> Result<Bool, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
-    let secureBytes = SecureBytes(bytes: bookmarkData)
-    let result = await securityProvider.validateBookmark(secureBytes)
+    let secureBytes=SecureBytes(bytes: bookmarkData)
+    let result=await securityProvider.validateBookmark(secureBytes)
 
     switch result {
       case let .success(isValid):
@@ -81,7 +81,7 @@ public actor LoggingService {
   /// - Returns: Result with access status or error
   public func startAccessingLogResource(_ path: String) async
   -> Result<Bool, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
-    let result = await securityProvider.startAccessingResource(identifier: path)
+    let result=await securityProvider.startAccessingResource(identifier: path)
 
     switch result {
       case let .success(success):

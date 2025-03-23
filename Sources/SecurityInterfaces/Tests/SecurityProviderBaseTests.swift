@@ -10,10 +10,10 @@ class SecurityProviderBaseTests: XCTestCase {
 
   func testAdapterCreation() {
     // Create a mock base provider
-    let baseProvider = MockSecurityProviderBase()
+    let baseProvider=MockSecurityProviderBase()
 
     // Convert to the modern provider interface
-    let modernProvider = baseProvider.asModernProvider()
+    let modernProvider=baseProvider.asModernProvider()
 
     // Verify we got a valid provider
     XCTAssertNotNil(modernProvider)

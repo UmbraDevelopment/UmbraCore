@@ -1,33 +1,21 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
-load("//:bazel/macros/swift.bzl", "umbra_swift_library")
+load("//:swift_rules.bzl", "umbra_swift_library")
 
-# Foundation-dependent adapters for security interfaces
 umbra_swift_library(
     name = "SecurityInterfacesFoundation",
     srcs = glob(["**/*.swift"]),
     deps = [
-        "//Sources/CoreTypesInterfaces",
-        "//Sources/ErrorHandling",
-        "//Sources/SecurityInterfacesProtocols",
-        "//Sources/ObjCBridgingTypesFoundation",
     ],
 )
 
-# Test version for @testable import
-swift_library(
-    name = "SecurityInterfacesFoundationForTesting",
-    testonly = True,
-    srcs = glob(["**/*.swift"]),
-    copts = [
-        "-target",
-        "arm64-apple-macos14.0",
-        "-enable-testing",
-    ],
-    deps = [
-        "//Sources/CoreTypesInterfaces",
-        "//Sources/ErrorHandling",
-        "//Sources/SecurityInterfacesProtocols",
-        "//Sources/ObjCBridgingTypesFoundation",
-    ],
-    visibility = ["//visibility:public"],
-)
+# Uncomment if documentation generation is needed
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+#
+# swift_package(
+#     name = "docc_documentation",
+#     srcs = glob([
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
+#     deps = ["//Sources/SecurityInterfacesFoundation"],
+# )

@@ -12,10 +12,10 @@ class ProviderFactoryTests: XCTestCase {
 
   func testCreateDefaultSecurityProvider() {
     // Create the factory
-    let factory = StandardSecurityProviderFactory()
+    let factory=StandardSecurityProviderFactory()
 
     // Get a provider using default configuration
-    let provider = factory.createDefaultSecurityProvider()
+    let provider=factory.createDefaultSecurityProvider()
 
     // Verify we got a valid provider
     XCTAssertNotNil(provider)
@@ -25,10 +25,10 @@ class ProviderFactoryTests: XCTestCase {
 
   func testCreateSecurityProviderWithConfig() {
     // Create the factory
-    let factory = StandardSecurityProviderFactory()
+    let factory=StandardSecurityProviderFactory()
 
     // Create a custom configuration
-    let config = SecurityConfiguration(
+    let config=SecurityConfiguration(
       securityLevel: .advanced,
       encryptionAlgorithm: "AES-GCM-256",
       hashAlgorithm: "SHA-512",
@@ -36,7 +36,7 @@ class ProviderFactoryTests: XCTestCase {
     )
 
     // Get a provider using the custom configuration
-    let provider = factory.createSecurityProvider(config: config)
+    let provider=factory.createSecurityProvider(config: config)
 
     // Verify we got a valid provider
     XCTAssertNotNil(provider)
@@ -47,7 +47,7 @@ class ProviderFactoryTests: XCTestCase {
   func testStaticCreateProvider() {
     do {
       // Use the static factory method
-      let provider = try StandardSecurityProviderFactory.createProvider(ofType: "default")
+      let provider=try StandardSecurityProviderFactory.createProvider(ofType: "default")
 
       // Verify we got a valid provider
       XCTAssertNotNil(provider)
@@ -62,7 +62,7 @@ class ProviderFactoryTests: XCTestCase {
   func testProtocolExtensionCreateProvider() {
     do {
       // Use the protocol extension static method
-      let provider = try SecurityProviderFactory.createProvider(ofType: "default")
+      let provider=try SecurityProviderFactory.createProvider(ofType: "default")
 
       // Verify we got a valid provider
       XCTAssertNotNil(provider)
@@ -79,10 +79,10 @@ class ProviderFactoryTests: XCTestCase {
   func testProviderOperations() async {
     do {
       // Use the static factory method
-      let provider = try StandardSecurityProviderFactory.createProvider(ofType: "default")
+      let provider=try StandardSecurityProviderFactory.createProvider(ofType: "default")
 
       // Perform a basic operation
-      let result = await provider.performSecureOperation(
+      let result=await provider.performSecureOperation(
         operationName: "test",
         options: ["key": "test_key"]
       )
@@ -96,11 +96,11 @@ class ProviderFactoryTests: XCTestCase {
 
   func testDummyProviderImplementation() async {
     // Get a provider via the factory
-    let factory = StandardSecurityProviderFactory()
-    let provider = factory.createDefaultSecurityProvider()
+    let factory=StandardSecurityProviderFactory()
+    let provider=factory.createDefaultSecurityProvider()
 
     // Test the crypto service
-    let keyResult = await provider.cryptoService.generateKey()
+    let keyResult=await provider.cryptoService.generateKey()
 
     switch keyResult {
       case let .success(key):
@@ -111,8 +111,8 @@ class ProviderFactoryTests: XCTestCase {
     }
 
     // Test performing an operation
-    let operationConfig = provider.createSecureConfig(options: nil)
-    let operationResult = await provider.performSecureOperation(
+    let operationConfig=provider.createSecureConfig(options: nil)
+    let operationResult=await provider.performSecureOperation(
       operation: .hash,
       config: operationConfig
     )
@@ -125,10 +125,10 @@ class ProviderFactoryTests: XCTestCase {
   func testCreateDifferentProviderTypes() {
     // Try creating providers with different type strings
     do {
-      let provider1 = try StandardSecurityProviderFactory.createProvider(ofType: "default")
+      let provider1=try StandardSecurityProviderFactory.createProvider(ofType: "default")
       XCTAssertNotNil(provider1)
 
-      let provider2 = try StandardSecurityProviderFactory.createProvider(ofType: "test")
+      let provider2=try StandardSecurityProviderFactory.createProvider(ofType: "test")
       XCTAssertNotNil(provider2)
 
       // In the current implementation, these would be the same type of provider
@@ -144,11 +144,11 @@ class ProviderFactoryTests: XCTestCase {
   func testProviderOperationErrorHandling() async {
     do {
       // Use the static factory method
-      let provider = try StandardSecurityProviderFactory.createProvider(ofType: "default")
+      let provider=try StandardSecurityProviderFactory.createProvider(ofType: "default")
 
       // Perform an operation that might fail (in this case it won't since we're using a dummy)
       // but we're testing the error handling pattern
-      let result = await provider.performSecureOperation(
+      let result=await provider.performSecureOperation(
         operationName: "invalid_operation",
         options: [:]
       )
@@ -164,9 +164,9 @@ class ProviderFactoryTests: XCTestCase {
 // MARK: - Helpers
 
 extension XCTest {
-  func XCTAssertNotThrows(_ expression: @autoclosure () throws -> some Any, _ message: String = "") {
+  func XCTAssertNotThrows(_ expression: @autoclosure () throws -> some Any, _ message: String="") {
     do {
-      _ = try expression()
+      _=try expression()
     } catch {
       XCTFail("\(message): \(error)")
     }

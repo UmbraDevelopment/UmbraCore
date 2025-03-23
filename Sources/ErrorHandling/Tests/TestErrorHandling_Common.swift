@@ -12,7 +12,7 @@ final class TestErrorHandling_Common: XCTestCase {
 
   func testErrorContextCreation() {
     // Test creation with minimal parameters
-    let context = ErrorHandlingCommon.ErrorContext(
+    let context=ErrorHandlingCommon.ErrorContext(
       source: "TestSource",
       operation: "testOperation"
     )
@@ -23,8 +23,8 @@ final class TestErrorHandling_Common: XCTestCase {
     XCTAssertNil(context.underlyingError)
 
     // Test creation with all parameters
-    let underlyingError = NSError(domain: "TestDomain", code: 123, userInfo: nil)
-    let fullContext = ErrorHandlingCommon.ErrorContext(
+    let underlyingError=NSError(domain: "TestDomain", code: 123, userInfo: nil)
+    let fullContext=ErrorHandlingCommon.ErrorContext(
       source: "TestSource",
       operation: "testOperation",
       details: "Test details",
@@ -43,7 +43,7 @@ final class TestErrorHandling_Common: XCTestCase {
     XCTAssertEqual(fullContext.function, "testFunction()")
 
     // Verify the underlying error is correct
-    if let error = fullContext.underlyingError as? NSError {
+    if let error=fullContext.underlyingError as? NSError {
       XCTAssertEqual(error.domain, "TestDomain")
       XCTAssertEqual(error.code, 123)
     } else {
@@ -55,7 +55,7 @@ final class TestErrorHandling_Common: XCTestCase {
 
   func testErrorSourceCreation() {
     // Test creation with explicit parameters
-    let source = ErrorHandlingCommon.ErrorSource(
+    let source=ErrorHandlingCommon.ErrorSource(
       file: "TestFile.swift",
       function: "testFunction()",
       line: 42
@@ -69,7 +69,7 @@ final class TestErrorHandling_Common: XCTestCase {
     XCTAssertEqual(source.shortFile, "TestFile.swift")
 
     // Test creation with default parameters
-    let defaultSource = ErrorHandlingCommon.ErrorSource()
+    let defaultSource=ErrorHandlingCommon.ErrorSource()
 
     // Verify the current file, function, and line are captured
     XCTAssertTrue(defaultSource.file.hasSuffix("TestErrorHandling_Common.swift"))
@@ -80,13 +80,13 @@ final class TestErrorHandling_Common: XCTestCase {
 
   func testErrorExtensions() {
     // Define the expected values
-    let expectedDescription = "Test description"
-    let expectedFailureReason = "Test failure reason"
-    let expectedRecoverySuggestion = "Test recovery suggestion"
-    let expectedHelpAnchor = "Test help anchor"
+    let expectedDescription="Test description"
+    let expectedFailureReason="Test failure reason"
+    let expectedRecoverySuggestion="Test recovery suggestion"
+    let expectedHelpAnchor="Test help anchor"
 
     // Create a test error with the required userInfo
-    let testError = NSError(
+    let testError=NSError(
       domain: "TestDomain",
       code: 456,
       userInfo: [
@@ -113,7 +113,7 @@ final class TestErrorHandling_Common: XCTestCase {
     XCTAssertEqual(testError.code, 456)
 
     // Test underlying error access
-    guard let underlyingError = testError.userInfo[NSUnderlyingErrorKey] as? NSError else {
+    guard let underlyingError=testError.userInfo[NSUnderlyingErrorKey] as? NSError else {
       XCTFail("Unable to access underlying error")
       return
     }

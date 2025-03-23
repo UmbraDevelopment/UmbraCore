@@ -6,12 +6,14 @@ swift_library(
         "XPCServiceDTOAdapter.swift",
         "XPCServiceDTOFactory.swift",
     ],
-    module_name = "XPCBridge",
     copts = [
-        "-target", "arm64-apple-macos14.7.4",
+        "-target",
+        "arm64-apple-macos14.7.4",
         "-g",
-        "-swift-version", "5",
+        "-swift-version",
+        "5",
     ],
+    module_name = "XPCBridge",
     visibility = ["//visibility:public"],
     deps = [
         "//Sources/CoreDTOs",

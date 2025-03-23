@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "typealias_lib",
+    srcs = ["main.go"],
+    importpath = "dev.mpy.UmbraCore/tools/go/cmd/typealias",
+    visibility = ["//visibility:private"],
+)
+
+go_binary(
+    name = "typealias",
+    embed = [":typealias_lib"],
+    visibility = ["//visibility:public"],
+)

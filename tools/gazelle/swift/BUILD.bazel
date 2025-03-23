@@ -20,3 +20,18 @@ go_library(
         "@bazel_gazelle//rule",
     ],
 )
+
+go_library(
+    name = "swift",
+    srcs = ["swift.go"],
+    importpath = "dev.mpy.UmbraCore/tools/gazelle/swift",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@bazel_gazelle//config",
+        "@bazel_gazelle//label",
+        "@bazel_gazelle//language",
+        "@bazel_gazelle//repo",
+        "@bazel_gazelle//resolve",
+        "@bazel_gazelle//rule",
+    ],
+)

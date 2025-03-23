@@ -96,7 +96,7 @@ extension ModernCryptoXPCServiceProtocol {
   ) async -> Result<Data, CoreErrors.XPCErrors.SecurityError> {
     await withCheckedContinuation { continuation in
       encrypt(data, key: key) { data, error in
-        if let error = error as? CoreErrors.XPCErrors.SecurityError {
+        if let error=error as? CoreErrors.XPCErrors.SecurityError {
           continuation.resume(returning: .failure(error))
         } else if let error {
           continuation
@@ -118,7 +118,7 @@ extension ModernCryptoXPCServiceProtocol {
   ) async -> Result<Data, CoreErrors.XPCErrors.SecurityError> {
     await withCheckedContinuation { continuation in
       decrypt(data, key: key) { data, error in
-        if let error = error as? CoreErrors.XPCErrors.SecurityError {
+        if let error=error as? CoreErrors.XPCErrors.SecurityError {
           continuation.resume(returning: .failure(error))
         } else if let error {
           continuation
@@ -137,7 +137,7 @@ extension ModernCryptoXPCServiceProtocol {
   public func generateKey(bits: Int) async -> Result<Data, CoreErrors.XPCErrors.SecurityError> {
     await withCheckedContinuation { continuation in
       generateKey(bits: bits) { data, error in
-        if let error = error as? CoreErrors.XPCErrors.SecurityError {
+        if let error=error as? CoreErrors.XPCErrors.SecurityError {
           continuation.resume(returning: .failure(error))
         } else if let error {
           continuation
@@ -159,7 +159,7 @@ extension ModernCryptoXPCServiceProtocol {
   -> Result<Data, CoreErrors.XPCErrors.SecurityError> {
     await withCheckedContinuation { continuation in
       generateSecureRandomData(length: length) { data, error in
-        if let error = error as? CoreErrors.XPCErrors.SecurityError {
+        if let error=error as? CoreErrors.XPCErrors.SecurityError {
           continuation.resume(returning: .failure(error))
         } else if let error {
           continuation
@@ -185,7 +185,7 @@ extension ModernCryptoXPCServiceProtocol {
   ) async -> Result<Void, CoreErrors.XPCErrors.SecurityError> {
     await withCheckedContinuation { continuation in
       storeSecurely(credential, identifier: identifier) { error in
-        if let error = error as? CoreErrors.XPCErrors.SecurityError {
+        if let error=error as? CoreErrors.XPCErrors.SecurityError {
           continuation.resume(returning: .failure(error))
         } else if let error {
           continuation
@@ -202,7 +202,7 @@ extension ModernCryptoXPCServiceProtocol {
   -> Result<Data, CoreErrors.XPCErrors.SecurityError> {
     await withCheckedContinuation { continuation in
       retrieveSecurely(identifier: identifier) { data, error in
-        if let error = error as? CoreErrors.XPCErrors.SecurityError {
+        if let error=error as? CoreErrors.XPCErrors.SecurityError {
           continuation.resume(returning: .failure(error))
         } else if let error {
           continuation
@@ -224,7 +224,7 @@ extension ModernCryptoXPCServiceProtocol {
   -> Result<Void, CoreErrors.XPCErrors.SecurityError> {
     await withCheckedContinuation { continuation in
       deleteSecurely(identifier: identifier) { error in
-        if let error = error as? CoreErrors.XPCErrors.SecurityError {
+        if let error=error as? CoreErrors.XPCErrors.SecurityError {
           continuation.resume(returning: .failure(error))
         } else if let error {
           continuation
@@ -240,7 +240,7 @@ extension ModernCryptoXPCServiceProtocol {
   public func validateConnection() async -> Result<Bool, CoreErrors.XPCErrors.SecurityError> {
     await withCheckedContinuation { continuation in
       validateConnection { isValid, error in
-        if let error = error as? CoreErrors.XPCErrors.SecurityError {
+        if let error=error as? CoreErrors.XPCErrors.SecurityError {
           continuation.resume(returning: .failure(error))
         } else if let error {
           continuation
@@ -256,7 +256,7 @@ extension ModernCryptoXPCServiceProtocol {
   public func getServiceVersion() async -> Result<String, CoreErrors.XPCErrors.SecurityError> {
     await withCheckedContinuation { continuation in
       getServiceVersion { version, error in
-        if let error = error as? CoreErrors.XPCErrors.SecurityError {
+        if let error=error as? CoreErrors.XPCErrors.SecurityError {
           continuation.resume(returning: .failure(error))
         } else if let error {
           continuation
@@ -335,14 +335,14 @@ public class SecurityXPCServiceAdapter {
   private let standardService: any XPCServiceProtocolStandard
 
   public init(standardService: any XPCServiceProtocolStandard) {
-    self.standardService = standardService
+    self.standardService=standardService
   }
 
   /// Creates a modern service implementation using the factory
   ///
   /// This is the recommended way to create a new instance for migration
   public static func createModernServiceAdapter() -> SecurityXPCServiceAdapter {
-    let modernService = XPCProtocolMigrationFactory.createStandardAdapter()
+    let modernService=XPCProtocolMigrationFactory.createStandardAdapter()
     return SecurityXPCServiceAdapter(standardService: modernService)
   }
 

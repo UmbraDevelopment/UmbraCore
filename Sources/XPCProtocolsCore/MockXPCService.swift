@@ -28,9 +28,9 @@ public final class MockXPCService: XPCServiceProtocolStandard, XPCServiceProtoco
 
   public func generateRandomBytes(count: Int) async -> Result<Data, SecurityError> {
     // Generate random bytes for testing
-    var bytes = [UInt8](repeating: 0, count: count)
+    var bytes=[UInt8](repeating: 0, count: count)
     for i in 0..<count {
-      bytes[i] = UInt8.random(in: 0...255)
+      bytes[i]=UInt8.random(in: 0...255)
     }
     return .success(Data(bytes))
   }
@@ -38,7 +38,7 @@ public final class MockXPCService: XPCServiceProtocolStandard, XPCServiceProtoco
   // MARK: - XPCServiceProtocolStandard Implementation
 
   public func status() async -> Result<[String: Any], SecurityError> {
-    let statusDict: [String: Any] = [
+    let statusDict: [String: Any]=[
       "status": "active",
       "version": "1.0.0"
     ]
@@ -46,7 +46,7 @@ public final class MockXPCService: XPCServiceProtocolStandard, XPCServiceProtoco
   }
 
   public func getHardwareIdentifier() async -> Result<String, SecurityError> {
-    let hardwareID = "TEST-HARDWARE-ID-\(UUID().uuidString)"
+    let hardwareID="TEST-HARDWARE-ID-\(UUID().uuidString)"
     return .success(hardwareID)
   }
 
@@ -70,7 +70,7 @@ public final class MockXPCService: XPCServiceProtocolStandard, XPCServiceProtoco
 
   public func retrieveSecureData(key: String) async -> Result<Data, SecurityError> {
     // Return some mock data
-    let mockData = "MockSecureData-\(key)".data(using: .utf8) ?? Data()
+    let mockData="MockSecureData-\(key)".data(using: .utf8) ?? Data()
     return .success(mockData)
   }
 
@@ -96,7 +96,7 @@ public final class MockXPCService: XPCServiceProtocolStandard, XPCServiceProtoco
 
   public func sign(_: Data, keyIdentifier _: String) async -> Result<Data, SecurityError> {
     // Return some mock signature
-    let mockSignature = Data([0x01, 0x02, 0x03, 0x04])
+    let mockSignature=Data([0x01, 0x02, 0x03, 0x04])
     return .success(mockSignature)
   }
 
@@ -114,7 +114,7 @@ public final class MockXPCService: XPCServiceProtocolStandard, XPCServiceProtoco
     keyIdentifier: String?,
     metadata _: [String: Any]?
   ) async -> Result<String, SecurityError> {
-    let identifier = keyIdentifier ?? "generated-\(UUID().uuidString)"
+    let identifier=keyIdentifier ?? "generated-\(UUID().uuidString)"
     return .success(identifier)
   }
 
@@ -123,7 +123,7 @@ public final class MockXPCService: XPCServiceProtocolStandard, XPCServiceProtoco
     format _: String
   ) async -> Result<Data, SecurityError> {
     // Return some mock key data
-    let mockKeyData = Data([0x10, 0x20, 0x30, 0x40])
+    let mockKeyData=Data([0x10, 0x20, 0x30, 0x40])
     return .success(mockKeyData)
   }
 

@@ -6,11 +6,11 @@ import Foundation
 /// Error domain namespace
 public enum ErrorDomain {
   /// Security domain
-  public static let security = "Security"
+  public static let security="Security"
   /// Crypto domain
-  public static let crypto = "Crypto"
+  public static let crypto="Crypto"
   /// Application domain
-  public static let application = "Application"
+  public static let application="Application"
 }
 
 /// Error context protocol
@@ -34,9 +34,9 @@ public struct BaseErrorContext: ErrorContext {
 
   /// Initialise with domain, code and description
   public init(domain: String, code: Int, description: String) {
-    self.domain = domain
-    self.code = code
-    self.description = description
+    self.domain=domain
+    self.code=code
+    self.description=description
   }
 }
 
@@ -335,9 +335,9 @@ extension UmbraErrors.Crypto.Core {
   public static func makeEncryptionFailedError(
     algorithm: String,
     reason: String,
-    file _: String = #file,
-    line _: Int = #line,
-    function _: String = #function
+    file _: String=#file,
+    line _: Int=#line,
+    function _: String=#function
   ) -> Self {
     .encryptionFailed(algorithm: algorithm, reason: reason)
   }
@@ -346,9 +346,9 @@ extension UmbraErrors.Crypto.Core {
   public static func makeDecryptionFailedError(
     algorithm: String,
     reason: String,
-    file _: String = #file,
-    line _: Int = #line,
-    function _: String = #function
+    file _: String=#file,
+    line _: Int=#line,
+    function _: String=#function
   ) -> Self {
     .decryptionFailed(algorithm: algorithm, reason: reason)
   }
@@ -357,9 +357,9 @@ extension UmbraErrors.Crypto.Core {
   public static func makeKeyGenerationFailedError(
     keyType: String,
     reason: String,
-    file _: String = #file,
-    line _: Int = #line,
-    function _: String = #function
+    file _: String=#file,
+    line _: Int=#line,
+    function _: String=#function
   ) -> Self {
     .keyGenerationFailed(keyType: keyType, reason: reason)
   }
@@ -368,9 +368,9 @@ extension UmbraErrors.Crypto.Core {
   public static func makeInvalidKeyError(
     keyType: String,
     reason: String,
-    file _: String = #file,
-    line _: Int = #line,
-    function _: String = #function
+    file _: String=#file,
+    line _: Int=#line,
+    function _: String=#function
   ) -> Self {
     .invalidKey(keyType: keyType, reason: reason)
   }
@@ -378,9 +378,9 @@ extension UmbraErrors.Crypto.Core {
   /// Create an error for a key that was not found
   public static func makeKeyNotFoundError(
     keyIdentifier: String,
-    file _: String = #file,
-    line _: Int = #line,
-    function _: String = #function
+    file _: String=#file,
+    line _: Int=#line,
+    function _: String=#function
   ) -> Self {
     .keyNotFound(keyIdentifier: keyIdentifier)
   }
@@ -388,9 +388,9 @@ extension UmbraErrors.Crypto.Core {
   /// Create an error for an unsupported algorithm
   public static func makeUnsupportedAlgorithmError(
     algorithm: String,
-    file _: String = #file,
-    line _: Int = #line,
-    function _: String = #function
+    file _: String=#file,
+    line _: Int=#line,
+    function _: String=#function
   ) -> Self {
     .unsupportedAlgorithm(algorithm: algorithm)
   }

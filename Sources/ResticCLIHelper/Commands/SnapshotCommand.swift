@@ -46,17 +46,17 @@ public struct SnapshotCommand: ResticCommand {
   public init(
     options: CommonOptions,
     operation: Operation,
-    paths: [String] = [],
-    tags: [String] = [],
-    host: String? = nil,
-    groupBy: GroupBy? = nil
+    paths: [String]=[],
+    tags: [String]=[],
+    host: String?=nil,
+    groupBy: GroupBy?=nil
   ) {
-    self.options = options
-    self.operation = operation
-    self.paths = paths
-    self.tags = tags
-    self.host = host
-    self.groupBy = groupBy
+    self.options=options
+    self.operation=operation
+    self.paths=paths
+    self.tags=tags
+    self.host=host
+    self.groupBy=groupBy
   }
 
   public var commandName: String {
@@ -64,14 +64,14 @@ public struct SnapshotCommand: ResticCommand {
   }
 
   public var environment: [String: String] {
-    var env = options.environmentVariables
-    env["RESTIC_PASSWORD"] = options.password
-    env["RESTIC_REPOSITORY"] = options.repository
+    var env=options.environmentVariables
+    env["RESTIC_PASSWORD"]=options.password
+    env["RESTIC_REPOSITORY"]=options.repository
     return env
   }
 
   public var commandArguments: [String] {
-    var args: [String] = []
+    var args: [String]=[]
 
     if !options.validateCredentials, options.password.isEmpty {
       args.append("--insecure-no-password")
@@ -131,7 +131,7 @@ public struct SnapshotCommand: ResticCommand {
     }
 
     // Validate snapshot IDs for delete operation
-    if case let .delete(ids) = operation {
+    if case let .delete(ids)=operation {
       guard !ids.isEmpty else {
         throw ResticError
           .missingParameter("At least one snapshot ID is required for delete operation")
@@ -149,13 +149,13 @@ public struct SnapshotCommand: ResticCommand {
 public class SnapshotCommandBuilder {
   private var options: CommonOptions
   private var operation: SnapshotCommand.Operation = .list
-  private var paths: [String] = []
-  private var tags: [String] = []
+  private var paths: [String]=[]
+  private var tags: [String]=[]
   private var host: String?
   private var groupBy: SnapshotCommand.GroupBy?
 
   public init(options: CommonOptions) {
-    self.options = options
+    self.options=options
   }
 
   /// Set operation to list snapshots
@@ -203,14 +203,14 @@ public class SnapshotCommandBuilder {
   /// Set host to filter by
   @discardableResult
   public func setHost(_ host: String) -> Self {
-    self.host = host
+    self.host=host
     return self
   }
 
   /// Set group by option
   @discardableResult
   public func setGroupBy(_ groupBy: SnapshotCommand.GroupBy) -> Self {
-    self.groupBy = groupBy
+    self.groupBy=groupBy
     return self
   }
 

@@ -104,7 +104,7 @@
 /// - Atomic operations
 public enum Repositories {
   /// Current version of the Repositories module
-  public static let version = "1.0.0"
+  public static let version="1.0.0"
 
   /// Initialise Repositories with default configuration
   public static func initialize() {

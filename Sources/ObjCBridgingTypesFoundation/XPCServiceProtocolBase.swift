@@ -64,7 +64,7 @@ extension XPCServiceProtocolBaseFoundation {
   public func ping() async -> Result<Bool, CoreErrors.XPCErrors.SecurityError> {
     await withCheckedContinuation { continuation in
       ping { success, error in
-        if let error = error as? CoreErrors.XPCErrors.SecurityError {
+        if let error=error as? CoreErrors.XPCErrors.SecurityError {
           continuation.resume(returning: .failure(error))
         } else if let error {
           continuation
@@ -78,10 +78,10 @@ extension XPCServiceProtocolBaseFoundation {
 
   /// Async implementation for synchronising keys with byte array
   public func synchroniseKeys(_ bytes: [UInt8]) async throws {
-    let data = Data(bytes) as NSData
+    let data=Data(bytes) as NSData
 
     return try await withCheckedThrowingContinuation { continuation in
-      guard let synchroniseKeysRaw = self.synchroniseKeysRaw else {
+      guard let synchroniseKeysRaw=self.synchroniseKeysRaw else {
         continuation
           .resume(
             throwing: FoundationBridgingError

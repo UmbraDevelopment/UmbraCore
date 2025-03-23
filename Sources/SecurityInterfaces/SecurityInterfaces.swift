@@ -7,8 +7,10 @@
 /// SecurityInterfacesProtocols (foundation-free) at the base, SecurityInterfacesBase building on
 /// top,
 /// and SecurityInterfaces providing the high-level interfaces.
-@_exported import ErrorHandling
+@_exported import ErrorHandlingCore
 @_exported import ErrorHandlingDomains
+@_exported import ErrorHandlingInterfaces
+@_exported import ErrorHandlingMapping
 @_exported import SecurityInterfacesBase
 @_exported import SecurityInterfacesProtocols
 import UmbraCoreTypes

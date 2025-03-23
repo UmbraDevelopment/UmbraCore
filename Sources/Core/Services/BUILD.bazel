@@ -1,30 +1,21 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
-load("//:bazel/macros/swift.bzl", "umbra_swift_library")
+load("//:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
     name = "CoreServices",
-    srcs = glob(
-        ["*.swift"],
-        exclude = ["Types/**/*.swift"],
-    ),
-    additional_copts = [
-        "-DUSE_FOUNDATION_CRYPTO",  # Define flag to use Foundation crypto instead of CryptoSwift where possible
-    ],
+    srcs = glob(["**/*.swift"]),
     deps = [
-        "//Sources/Core/Services/TypeAliases:CoreServicesTypeAliases",
-        "//Sources/Core/Services/TypeAliases:CoreServicesSecurityTypeAliases",
-        "//Sources/Core/Services/Types:CoreServicesTypes",
-        "//Sources/CoreTypesInterfaces",
-        "//Sources/CryptoTypes",
-        "//Sources/ErrorHandling",
-        "//Sources/ObjCBridgingTypes",
-        "//Sources/ObjCBridgingTypesFoundation",
-        "//Sources/SecurityInterfaces",
-        "//Sources/SecurityTypes",
-        "//Sources/SecurityTypes/Protocols:SecurityTypesProtocols",
-        "//Sources/UmbraSecurity",
-        "//Sources/UmbraXPC",
-        "@swiftpkg_cryptoswift//:CryptoSwift",
-        "//Sources/UmbraLogging",
     ],
 )
+
+# Uncomment if documentation generation is needed
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+#
+# swift_package(
+#     name = "docc_documentation",
+#     srcs = glob([
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
+#     deps = ["//Sources/CoreServices"],
+# )

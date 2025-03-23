@@ -13,7 +13,7 @@ public final class RestoreCommand: ResticCommand, @unchecked Sendable {
   public var commandName: String { "restore" }
 
   public var commandArguments: [String] {
-    var args = [String]()
+    var args=[String]()
 
     // Add snapshot ID first
     args.append(snapshotID)
@@ -27,7 +27,7 @@ public final class RestoreCommand: ResticCommand, @unchecked Sendable {
     for path in includePaths where !path.isEmpty {
       args.append("--include")
       // Strip any trailing slashes to match backup format
-      let normalizedPath = path.hasSuffix("/") ? String(path.dropLast()) : path
+      let normalizedPath=path.hasSuffix("/") ? String(path.dropLast()) : path
       args.append(normalizedPath)
     }
 
@@ -35,7 +35,7 @@ public final class RestoreCommand: ResticCommand, @unchecked Sendable {
     for path in excludePaths where !path.isEmpty {
       args.append("--exclude")
       // Strip any trailing slashes to match backup format
-      let normalizedPath = path.hasSuffix("/") ? String(path.dropLast()) : path
+      let normalizedPath=path.hasSuffix("/") ? String(path.dropLast()) : path
       args.append(normalizedPath)
     }
 
@@ -51,24 +51,24 @@ public final class RestoreCommand: ResticCommand, @unchecked Sendable {
     options: CommonOptions,
     snapshotID: String,
     targetPath: String,
-    includePaths: [String] = [],
-    excludePaths: [String] = [],
-    verify: Bool = false
+    includePaths: [String]=[],
+    excludePaths: [String]=[],
+    verify: Bool=false
   ) {
-    self.options = options
-    self.snapshotID = snapshotID
-    self.targetPath = targetPath
-    self.includePaths = includePaths
-    self.excludePaths = excludePaths
-    self.verify = verify
+    self.options=options
+    self.snapshotID=snapshotID
+    self.targetPath=targetPath
+    self.includePaths=includePaths
+    self.excludePaths=excludePaths
+    self.verify=verify
   }
 
   public var environment: [String: String] {
-    var env = options.environmentVariables
-    env["RESTIC_REPOSITORY"] = options.repository
-    env["RESTIC_PASSWORD"] = options.password
-    if let cachePath = options.cachePath {
-      env["RESTIC_CACHE_DIR"] = cachePath
+    var env=options.environmentVariables
+    env["RESTIC_REPOSITORY"]=options.repository
+    env["RESTIC_PASSWORD"]=options.password
+    if let cachePath=options.cachePath {
+      env["RESTIC_CACHE_DIR"]=cachePath
     }
     return env
   }

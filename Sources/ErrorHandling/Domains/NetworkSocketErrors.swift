@@ -6,11 +6,11 @@ import Foundation
 /// Error domain namespace
 public enum ErrorDomain {
   /// Security domain
-  public static let security = "Security"
+  public static let security="Security"
   /// Crypto domain
-  public static let crypto = "Crypto"
+  public static let crypto="Crypto"
   /// Application domain
-  public static let application = "Application"
+  public static let application="Application"
 }
 
 /// Error context protocol
@@ -34,9 +34,9 @@ public struct BaseErrorContext: ErrorContext {
 
   /// Initialise with domain, code and description
   public init(domain: String, code: Int, description: String) {
-    self.domain = domain
-    self.code = code
-    self.description = description
+    self.domain=domain
+    self.code=code
+    self.description=description
   }
 }
 
@@ -221,9 +221,9 @@ extension UmbraErrors.Network.Socket {
   public static func makeConnectionRefused(
     host: String,
     port: Int,
-    file _: String = #file,
-    line _: Int = #line,
-    function _: String = #function
+    file _: String=#file,
+    line _: Int=#line,
+    function _: String=#function
   ) -> Self {
     .connectionRefused(host: host, port: port)
   }
@@ -231,9 +231,9 @@ extension UmbraErrors.Network.Socket {
   /// Create a socket read error
   public static func makeReadError(
     reason: String,
-    file _: String = #file,
-    line _: Int = #line,
-    function _: String = #function
+    file _: String=#file,
+    line _: Int=#line,
+    function _: String=#function
   ) -> Self {
     .readFailed(reason: reason)
   }
@@ -241,9 +241,9 @@ extension UmbraErrors.Network.Socket {
   /// Create a socket write error
   public static func makeWriteError(
     reason: String,
-    file _: String = #file,
-    line _: Int = #line,
-    function _: String = #function
+    file _: String=#file,
+    line _: Int=#line,
+    function _: String=#function
   ) -> Self {
     .writeFailed(reason: reason)
   }

@@ -33,14 +33,13 @@ extension UmbraService {
 /// Errors that can occur during service operations
 /// @deprecated This will be replaced by CoreErrors.ServiceError in a future version.
 /// New code should use CoreErrors.ServiceError directly.
+/// Protocol for services that require cleanup of resources
 @available(
   *,
   deprecated,
   message: "This will be replaced by CoreErrors.ServiceError in a future version. Use CoreErrors.ServiceError directly."
 )
-public typealias ServiceError = CoreErrors.ServiceError
 
-/// Protocol for services that require cleanup of resources
 public protocol CleanupCapable {
   /// Clean up any resources used by the service
   /// - Parameter force: If true, forcefully clean up resources even if in use

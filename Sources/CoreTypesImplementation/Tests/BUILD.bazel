@@ -1,16 +1,21 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_test")
-load("//:bazel/macros/swift.bzl", "umbra_swift_test")
+load("//:swift_rules.bzl", "umbra_swift_library")
 
-# Temporarily disabled due to security error type reference issues
-# Error: missing argument label 'reason:' in call to CoreErrors.SecurityError.internalError
-# 
-# umbra_swift_test(
-#     name = "CoreTypesImplementationTests_disabled",
-#     srcs = glob(["**/*.swift"]),
-#     deps = [
-#         "//Sources/CoreTypesImplementation",
-#         "//Sources/CoreTypesInterfaces",
-#         "//Sources/CoreErrors",
-#         "//Sources/UmbraCoreTypes",
-#     ],
+umbra_swift_library(
+    name = "CoreTypesImplementationTests",
+    srcs = glob(["**/*.swift"]),
+    deps = [
+    ],
+)
+
+# Uncomment if documentation generation is needed
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+#
+# swift_package(
+#     name = "docc_documentation",
+#     srcs = glob([
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
+#     deps = ["//Sources/CoreTypesImplementationTests"],
 # )

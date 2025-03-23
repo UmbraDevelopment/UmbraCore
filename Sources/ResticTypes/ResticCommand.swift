@@ -21,7 +21,7 @@ public protocol ResticCommand: Sendable {
 extension ResticCommand {
   /// Default implementation of command arguments
   public var arguments: [String] {
-    var args = [String]()
+    var args=[String]()
     args.append(commandName)
 
     if options.quiet {
@@ -37,11 +37,11 @@ extension ResticCommand {
 
   /// Default implementation of environment variables
   public var environment: [String: String] {
-    var env = options.environmentVariables
-    env["RESTIC_REPOSITORY"] = options.repository
-    env["RESTIC_PASSWORD"] = options.password
-    if let cachePath = options.cachePath {
-      env["RESTIC_CACHE_DIR"] = cachePath
+    var env=options.environmentVariables
+    env["RESTIC_REPOSITORY"]=options.repository
+    env["RESTIC_PASSWORD"]=options.password
+    if let cachePath=options.cachePath {
+      env["RESTIC_CACHE_DIR"]=cachePath
     }
     return env
   }

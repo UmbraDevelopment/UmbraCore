@@ -1,6 +1,8 @@
 import CryptoSwiftFoundationIndependent
-import ErrorHandling
+import ErrorHandlingCore
+import ErrorHandlingInterfaces
 import ErrorHandlingDomains
+import ErrorHandlingMapping
 import Foundation
 import SecurityProtocolsCore
 import UmbraCoreTypes
@@ -26,7 +28,7 @@ public final class CryptoServiceImpl: CryptoServiceProtocol {
   /// Service for key generation
   private let keyGenerator: KeyGenerator
 
-  // MARK: - Initialization
+  // MARK: - Initialisation
 
   public init() {
     symmetricCrypto = SymmetricCrypto()
@@ -39,7 +41,7 @@ public final class CryptoServiceImpl: CryptoServiceProtocol {
   public func encrypt(
     data: SecureBytes,
     using key: SecureBytes
-  ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
+  ) async -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
     // Use the symmetric crypto service with default configuration
     let result = await symmetricCrypto.encryptData(
       data: data,
@@ -58,7 +60,7 @@ public final class CryptoServiceImpl: CryptoServiceProtocol {
   public func decrypt(
     data: SecureBytes,
     using key: SecureBytes
-  ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
+  ) async -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
     // Use the symmetric crypto service with default configuration
     let result = await symmetricCrypto.decryptData(
       data: data,
@@ -74,12 +76,12 @@ public final class CryptoServiceImpl: CryptoServiceProtocol {
     }
   }
 
-  public func hash(data: SecureBytes) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
+  public func hash(data: SecureBytes) async -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
     // Use SHA-256 as the default algorithm
     await hash(data: data, config: SecurityConfigDTO(algorithm: "SHA-256", keySizeInBits: 256))
   }
 
-  public func generateKey() async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
+  public func generateKey() async -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
     // Generate a secure random key with 256-bit size for AES
     let result = await keyGenerator.generateKey(bits: 256, algorithm: "AES")
 
@@ -93,7 +95,7 @@ public final class CryptoServiceImpl: CryptoServiceProtocol {
   public func verify(
     data: SecureBytes,
     against hash: SecureBytes
-  ) async -> Result<Bool, UmbraErrors.Security.Protocols> {
+  ) async -> Result<Bool, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
     // Hash the data using SHA-256
     let hashResult = await self.hash(data: data)
 
@@ -112,7 +114,7 @@ public final class CryptoServiceImpl: CryptoServiceProtocol {
   // MARK: - Extended Protocol Methods
 
   public func generateRandomData(length: Int) async
-  -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
+  -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
     // Generate secure random data of specified length
     var randomBytes = [UInt8](repeating: 0, count: length)
     let status = SecRandomCopyBytes(kSecRandomDefault, length, &randomBytes)
@@ -130,7 +132,7 @@ public final class CryptoServiceImpl: CryptoServiceProtocol {
     data: SecureBytes,
     key: SecureBytes,
     config: SecurityConfigDTO
-  ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
+  ) async -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
     // Use the symmetric crypto service with the provided configuration
     let result = await symmetricCrypto.encryptData(
       data: data,
@@ -150,7 +152,7 @@ public final class CryptoServiceImpl: CryptoServiceProtocol {
     data: SecureBytes,
     key: SecureBytes,
     config: SecurityConfigDTO
-  ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
+  ) async -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
     // Use the symmetric crypto service with the provided configuration
     let result = await symmetricCrypto.decryptData(
       data: data,
@@ -172,7 +174,7 @@ public final class CryptoServiceImpl: CryptoServiceProtocol {
     data _: SecureBytes,
     publicKey _: SecureBytes,
     config _: SecurityConfigDTO
-  ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
+  ) async -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
     // For now, return unsupported operation as we focus on symmetric operations
     .failure(.unsupportedOperation(name: "Asymmetric encryption not implemented"))
   }
@@ -181,7 +183,7 @@ public final class CryptoServiceImpl: CryptoServiceProtocol {
     data _: SecureBytes,
     privateKey _: SecureBytes,
     config _: SecurityConfigDTO
-  ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
+  ) async -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
     // For now, return unsupported operation as we focus on symmetric operations
     .failure(.unsupportedOperation(name: "Asymmetric decryption not implemented"))
   }
@@ -191,7 +193,7 @@ public final class CryptoServiceImpl: CryptoServiceProtocol {
   public func hash(
     data: SecureBytes,
     config: SecurityConfigDTO
-  ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
+  ) async -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
     // Use the hashing service with the provided algorithm
     let result = await hashingService.hashData(
       data: data,

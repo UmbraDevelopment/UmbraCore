@@ -96,7 +96,7 @@
 /// - Migration guides
 public enum API {
   /// Current version of the API module
-  public static let version = "1.0.0"
+  public static let version="1.0.0"
 
   /// Initialise API with default configuration
   public static func initialize() {

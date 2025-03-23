@@ -28,12 +28,12 @@ SecurityProviderFoundationImpl {
         )
       }
 
-      let symmetricKey = SymmetricKey(data: key)
-      let nonce = AES.GCM.Nonce()
-      let sealedBox = try AES.GCM.seal(data, using: symmetricKey, nonce: nonce)
+      let symmetricKey=SymmetricKey(data: key)
+      let nonce=AES.GCM.Nonce()
+      let sealedBox=try AES.GCM.seal(data, using: symmetricKey, nonce: nonce)
 
       // Combine nonce and ciphertext
-      var combinedData = Data()
+      var combinedData=Data()
       combinedData.append(nonce.withUnsafeBytes { Data($0) })
       combinedData.append(sealedBox.ciphertext)
       combinedData.append(sealedBox.tag)
@@ -64,8 +64,8 @@ SecurityProviderFoundationImpl {
       }
 
       // Extract nonce, ciphertext, and tag
-      let nonceSize = 12 // AES.GCM.Nonce size
-      let tagSize = 16 // AES.GCM tag size
+      let nonceSize=12 // AES.GCM.Nonce size
+      let tagSize=16 // AES.GCM tag size
 
       guard data.count > nonceSize + tagSize else {
         throw NSError(
@@ -75,15 +75,15 @@ SecurityProviderFoundationImpl {
         )
       }
 
-      let nonceData = data.prefix(nonceSize)
-      let ciphertextData = data.dropFirst(nonceSize).dropLast(tagSize)
-      let tagData = data.suffix(tagSize)
+      let nonceData=data.prefix(nonceSize)
+      let ciphertextData=data.dropFirst(nonceSize).dropLast(tagSize)
+      let tagData=data.suffix(tagSize)
 
-      let nonce = try AES.GCM.Nonce(data: nonceData)
-      let symmetricKey = SymmetricKey(data: key)
+      let nonce=try AES.GCM.Nonce(data: nonceData)
+      let symmetricKey=SymmetricKey(data: key)
 
-      let sealedBox = try AES.GCM.SealedBox(nonce: nonce, ciphertext: ciphertextData, tag: tagData)
-      let decryptedData = try AES.GCM.open(sealedBox, using: symmetricKey)
+      let sealedBox=try AES.GCM.SealedBox(nonce: nonce, ciphertext: ciphertextData, tag: tagData)
+      let decryptedData=try AES.GCM.open(sealedBox, using: symmetricKey)
 
       return decryptedData
     } catch {
@@ -99,8 +99,8 @@ SecurityProviderFoundationImpl {
   public func generateDataKey(length: Int) async throws -> Foundation.Data {
     do {
       // Generate a random key using CryptoKit
-      var keyData = Data(count: length)
-      let result = keyData.withUnsafeMutableBytes {
+      var keyData=Data(count: length)
+      let result=keyData.withUnsafeMutableBytes {
         SecRandomCopyBytes(kSecRandomDefault, length, $0.baseAddress!)
       }
 
@@ -127,7 +127,7 @@ SecurityProviderFoundationImpl {
   @objc
   public func hashData(_ data: Foundation.Data) async throws -> Foundation.Data {
     // Use CryptoKit for hashing
-    let hash = SHA256.hash(data: data)
+    let hash=SHA256.hash(data: data)
     return Data(hash)
   }
 
@@ -137,7 +137,7 @@ SecurityProviderFoundationImpl {
   public func createBookmark(for url: URL) async throws -> Data {
     do {
       // Create a security-scoped bookmark
-      let bookmarkData = try url.bookmarkData(
+      let bookmarkData=try url.bookmarkData(
         options: .withSecurityScope,
         includingResourceValuesForKeys: nil,
         relativeTo: nil
@@ -159,8 +159,8 @@ SecurityProviderFoundationImpl {
   -> (url: URL, isStale: Bool) {
     do {
       // Resolve a security-scoped bookmark
-      var isStale = false
-      let url = try URL(
+      var isStale=false
+      let url=try URL(
         resolvingBookmarkData: bookmarkData,
         options: .withSecurityScope,
         relativeTo: nil,
@@ -182,8 +182,8 @@ SecurityProviderFoundationImpl {
   public func validateBookmark(_ bookmarkData: Data) async throws -> Bool {
     do {
       // Validate a security-scoped bookmark
-      var isStale = false
-      let url = try URL(
+      var isStale=false
+      let url=try URL(
         resolvingBookmarkData: bookmarkData,
         options: .withSecurityScope,
         relativeTo: nil,
@@ -191,7 +191,7 @@ SecurityProviderFoundationImpl {
       )
 
       // Try to start accessing the resource
-      let canAccess = url.startAccessingSecurityScopedResource()
+      let canAccess=url.startAccessingSecurityScopedResource()
 
       // Stop accessing if we started
       if canAccess {

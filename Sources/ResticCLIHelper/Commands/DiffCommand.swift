@@ -12,7 +12,7 @@ public final class DiffCommand: ResticCommand, @unchecked Sendable {
   public var commandName: String { "diff" }
 
   public var commandArguments: [String] {
-    var args = [String]()
+    var args=[String]()
 
     // Add snapshot IDs
     args.append(snapshotID1)
@@ -35,22 +35,22 @@ public final class DiffCommand: ResticCommand, @unchecked Sendable {
     options: CommonOptions,
     snapshotID1: String,
     snapshotID2: String,
-    path: String? = nil,
-    metadata: Bool = false
+    path: String?=nil,
+    metadata: Bool=false
   ) {
-    self.options = options
-    self.snapshotID1 = snapshotID1
-    self.snapshotID2 = snapshotID2
-    self.path = path
-    self.metadata = metadata
+    self.options=options
+    self.snapshotID1=snapshotID1
+    self.snapshotID2=snapshotID2
+    self.path=path
+    self.metadata=metadata
   }
 
   public var environment: [String: String] {
-    var env = options.environmentVariables
-    env["RESTIC_REPOSITORY"] = options.repository
-    env["RESTIC_PASSWORD"] = options.password
-    if let cachePath = options.cachePath {
-      env["RESTIC_CACHE_DIR"] = cachePath
+    var env=options.environmentVariables
+    env["RESTIC_REPOSITORY"]=options.repository
+    env["RESTIC_PASSWORD"]=options.password
+    if let cachePath=options.cachePath {
+      env["RESTIC_CACHE_DIR"]=cachePath
     }
     return env
   }

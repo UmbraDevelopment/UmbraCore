@@ -60,15 +60,15 @@ final class HashingService: Sendable {
       // Implement SHA-256 hashing using CommonCrypto
       if algorithm == "SHA-256" {
         // Allocate buffer for SHA-256 result (32 bytes)
-        var hashBytes = [UInt8](repeating: 0, count: 32)
+        var hashBytes=[UInt8](repeating: 0, count: 32)
 
         // Use CC_SHA256 from CommonCrypto
         data.withUnsafeBytes { dataPtr in
-          let dataCount = CC_LONG(data.count)
-          _ = CC_SHA256(dataPtr.baseAddress, dataCount, &hashBytes)
+          let dataCount=CC_LONG(data.count)
+          _=CC_SHA256(dataPtr.baseAddress, dataCount, &hashBytes)
         }
 
-        let hashedData = SecureBytes(bytes: hashBytes)
+        let hashedData=SecureBytes(bytes: hashBytes)
         return SecurityResultDTO(data: hashedData)
       } else {
         // For now, return an unsupported operation error for other algorithms
@@ -96,7 +96,7 @@ final class HashingService: Sendable {
   /// - Returns: True if supported, false otherwise
   private func isSupportedHashAlgorithm(_ algorithm: String) -> Bool {
     // For now, only SHA-256 is fully implemented
-    let supportedAlgorithms = [
+    let supportedAlgorithms=[
       "SHA-256"
     ]
 

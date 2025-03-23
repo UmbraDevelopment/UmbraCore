@@ -4,10 +4,10 @@ import Foundation
 @MainActor
 public final class ErrorRegistry {
   /// Shared instance of the error registry
-  public static let shared = ErrorRegistry()
+  public static let shared=ErrorRegistry()
 
   /// Storage for the error mappers
-  private var mappers: [String: Any] = [:]
+  private var mappers: [String: Any]=[:]
 
   /// Private initialiser to enforce singleton pattern
   private init() {}
@@ -28,11 +28,11 @@ public final class ErrorRegistry {
   ///   - targetType: The target error type
   public func register<M: ErrorMapper>(
     mapper: M,
-    sourceType: M.SourceType.Type = M.SourceType.self,
-    targetType: M.TargetType.Type = M.TargetType.self
+    sourceType: M.SourceType.Type=M.SourceType.self,
+    targetType: M.TargetType.Type=M.TargetType.self
   ) {
-    let key = key(sourceType: sourceType, targetType: targetType)
-    mappers[key] = AnyErrorMapper(mapper: mapper)
+    let key=key(sourceType: sourceType, targetType: targetType)
+    mappers[key]=AnyErrorMapper(mapper: mapper)
   }
 
   /// Registers a bidirectional mapper for mapping between two error types
@@ -42,16 +42,16 @@ public final class ErrorRegistry {
   ///   - typeB: The second error type
   public func register<M: BidirectionalErrorMapper>(
     mapper: M,
-    typeA: M.ErrorTypeA.Type = M.ErrorTypeA.self,
-    typeB: M.ErrorTypeB.Type = M.ErrorTypeB.self
+    typeA: M.ErrorTypeA.Type=M.ErrorTypeA.self,
+    typeB: M.ErrorTypeB.Type=M.ErrorTypeB.self
   ) {
     // Register A->B mapping
-    let keyAB = key(sourceType: typeA, targetType: typeB)
-    mappers[keyAB] = AnyErrorMapper(mapper: mapper)
+    let keyAB=key(sourceType: typeA, targetType: typeB)
+    mappers[keyAB]=AnyErrorMapper(mapper: mapper)
 
     // Register B->A mapping
-    let keyBA = key(sourceType: typeB, targetType: typeA)
-    mappers[keyBA] = AnyErrorMapper(mapper: BtoAAdapter(mapper: mapper))
+    let keyBA=key(sourceType: typeB, targetType: typeA)
+    mappers[keyBA]=AnyErrorMapper(mapper: BtoAAdapter(mapper: mapper))
   }
 
   /// Gets a mapper for mapping from source to target error types
@@ -60,10 +60,10 @@ public final class ErrorRegistry {
   ///   - targetType: The target error type
   /// - Returns: A mapper if registered, or nil if no mapper is found
   public func mapper<Source: Error, Target: Error>(
-    sourceType: Source.Type = Source.self,
-    targetType: Target.Type = Target.self
+    sourceType: Source.Type=Source.self,
+    targetType: Target.Type=Target.self
   ) -> AnyErrorMapper<Source, Target>? {
-    let key = key(sourceType: sourceType, targetType: targetType)
+    let key=key(sourceType: sourceType, targetType: targetType)
     return mappers[key] as? AnyErrorMapper<Source, Target>
   }
 
@@ -74,9 +74,9 @@ public final class ErrorRegistry {
   /// - Returns: The mapped error, or nil if no mapper is found
   public func map<Source: Error, Target: Error>(
     _ error: Source,
-    to targetType: Target.Type = Target.self
+    to targetType: Target.Type=Target.self
   ) -> Target? {
-    guard let mapper = mapper(sourceType: Source.self, targetType: targetType) else {
+    guard let mapper=mapper(sourceType: Source.self, targetType: targetType) else {
       return nil
     }
 
@@ -91,7 +91,7 @@ public final class ErrorRegistry {
   /// - Returns: The mapped error, or the default value if no mapper is found
   public func map<Target: Error>(
     _ error: some Error,
-    to targetType: Target.Type = Target.self,
+    to targetType: Target.Type=Target.self,
     default defaultValue: @autoclosure () -> Target
   ) -> Target {
     map(error, to: targetType) ?? defaultValue()
@@ -105,13 +105,13 @@ public final class ErrorRegistry {
 
 /// Private adapter to create an ErrorMapper from the B->A direction of a BidirectionalErrorMapper
 private struct BtoAAdapter<M: BidirectionalErrorMapper>: ErrorMapper {
-  typealias SourceType = M.ErrorTypeB
-  typealias TargetType = M.ErrorTypeA
+  typealias SourceType=M.ErrorTypeB
+  typealias TargetType=M.ErrorTypeA
 
   private let mapper: M
 
   init(mapper: M) {
-    self.mapper = mapper
+    self.mapper=mapper
   }
 
   func mapError(_ error: M.ErrorTypeB) -> M.ErrorTypeA {

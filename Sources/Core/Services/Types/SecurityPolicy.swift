@@ -15,13 +15,13 @@ public struct SecurityPolicy: Sendable, Equatable {
   /// Authentication levels supported by the policy
   public enum AuthenticationLevel: Int, Sendable, Equatable, Comparable {
     /// No authentication required
-    case none = 0
+    case none=0
     /// Basic authentication (e.g., password)
-    case basic = 1
+    case basic=1
     /// Two-factor authentication
-    case twoFactor = 2
+    case twoFactor=2
     /// Biometric authentication
-    case biometric = 3
+    case biometric=3
 
     public static func < (lhs: AuthenticationLevel, rhs: AuthenticationLevel) -> Bool {
       lhs.rawValue < rhs.rawValue
@@ -35,12 +35,12 @@ public struct SecurityPolicy: Sendable, Equatable {
   ///   - requiredKeyStatus: Required key status
   public init(
     requiredAuthentication: AuthenticationLevel = .none,
-    requiredStorageLocation: KeyManagementTypes.StorageLocation? = nil,
+    requiredStorageLocation: KeyManagementTypes.StorageLocation?=nil,
     requiredKeyStatus: KeyManagementTypes.KeyStatus = .active
   ) {
-    self.requiredAuthentication = requiredAuthentication
-    self.requiredStorageLocation = requiredStorageLocation
-    self.requiredKeyStatus = requiredKeyStatus
+    self.requiredAuthentication=requiredAuthentication
+    self.requiredStorageLocation=requiredStorageLocation
+    self.requiredKeyStatus=requiredKeyStatus
   }
 
   public static func == (lhs: SecurityPolicy, rhs: SecurityPolicy) -> Bool {

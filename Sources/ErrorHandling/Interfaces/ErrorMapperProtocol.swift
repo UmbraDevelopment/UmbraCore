@@ -26,12 +26,12 @@ public protocol ErrorMapper {
 extension ErrorMapper {
   public func mapAnyError(_ error: Error) -> TargetError? {
     // If the error is already the right type, just cast it
-    if let targetError = error as? TargetError {
+    if let targetError=error as? TargetError {
       return targetError
     }
 
     // If the error is the source type, map it
-    if let sourceError = error as? SourceError {
+    if let sourceError=error as? SourceError {
       return map(sourceError)
     }
 
@@ -57,12 +57,12 @@ public protocol BidirectionalErrorMapper: ErrorMapper {
 extension BidirectionalErrorMapper {
   public func mapAnyErrorReverse(_ error: Error) -> SourceError? {
     // If the error is already the right type, just cast it
-    if let sourceError = error as? SourceError {
+    if let sourceError=error as? SourceError {
       return sourceError
     }
 
     // If the error is the target type, map it
-    if let targetError = error as? TargetError {
+    if let targetError=error as? TargetError {
       return mapReverse(targetError)
     }
 

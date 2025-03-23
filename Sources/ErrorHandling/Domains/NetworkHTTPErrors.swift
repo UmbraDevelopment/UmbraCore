@@ -6,11 +6,11 @@ import Foundation
 /// Error domain namespace
 public enum ErrorDomain {
   /// Security domain
-  public static let security = "Security"
+  public static let security="Security"
   /// Crypto domain
-  public static let crypto = "Crypto"
+  public static let crypto="Crypto"
   /// Application domain
-  public static let application = "Application"
+  public static let application="Application"
 }
 
 /// Error context protocol
@@ -34,9 +34,9 @@ public struct BaseErrorContext: ErrorContext {
 
   /// Initialise with domain, code and description
   public init(domain: String, code: Int, description: String) {
-    self.domain = domain
-    self.code = code
-    self.description = description
+    self.domain=domain
+    self.code=code
+    self.description=description
   }
 }
 
@@ -178,7 +178,7 @@ extension UmbraErrors.Network {
         case let .badGateway(reason):
           return "Bad gateway (502): \(reason)"
         case let .serviceUnavailable(reason, retryAfterMs):
-          let retryText = retryAfterMs.map { " Retry after \($0)ms" } ?? ""
+          let retryText=retryAfterMs.map { " Retry after \($0)ms" } ?? ""
           return "Service unavailable (503): \(reason).\(retryText)"
         case let .gatewayTimeout(reason):
           return "Gateway timeout (504): \(reason)"
@@ -277,10 +277,10 @@ extension UmbraErrors.Network.HTTP {
   public static func makeFromStatusCode(
     _ statusCode: Int,
     reason: String,
-    resource: String? = nil,
-    file _: String = #file,
-    line _: Int = #line,
-    function _: String = #function
+    resource: String?=nil,
+    file _: String=#file,
+    line _: Int=#line,
+    function _: String=#function
   ) -> Self? {
     switch statusCode {
       case 400:
@@ -292,13 +292,13 @@ extension UmbraErrors.Network.HTTP {
       case 404:
         .notFound(resource: resource ?? "unknown")
       case 408:
-        .requestTimeout(timeoutMs: 30_000) // Default timeout
+        .requestTimeout(timeoutMs: 30000) // Default timeout
       case 409:
         .conflict(resource: resource ?? "unknown", reason: reason)
       case 413:
         .payloadTooLarge(sizeBytes: 0, maxSizeBytes: 0) // Would need actual size info
       case 429:
-        .tooManyRequests(retryAfterMs: 60_000) // Default retry after 1 minute
+        .tooManyRequests(retryAfterMs: 60000) // Default retry after 1 minute
       case 500:
         .internalServerError(reason: reason)
       case 501:
@@ -317,9 +317,9 @@ extension UmbraErrors.Network.HTTP {
   /// Create an error for a not found resource
   public static func makeNotFound(
     resource: String,
-    file _: String = #file,
-    line _: Int = #line,
-    function _: String = #function
+    file _: String=#file,
+    line _: Int=#line,
+    function _: String=#function
   ) -> Self {
     .notFound(resource: resource)
   }
@@ -327,9 +327,9 @@ extension UmbraErrors.Network.HTTP {
   /// Create an unauthorised error
   public static func makeUnauthorised(
     reason: String,
-    file _: String = #file,
-    line _: Int = #line,
-    function _: String = #function
+    file _: String=#file,
+    line _: Int=#line,
+    function _: String=#function
   ) -> Self {
     .unauthorised(reason: reason)
   }

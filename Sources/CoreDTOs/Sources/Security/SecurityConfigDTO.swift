@@ -29,22 +29,22 @@ public struct SecurityConfigDTO: Sendable, Equatable {
   public init(
     algorithm: String,
     keySizeInBits: Int,
-    options: [String: String] = [:],
-    inputData: [UInt8]? = nil
+    options: [String: String]=[:],
+    inputData: [UInt8]?=nil
   ) {
-    self.algorithm = algorithm
-    self.keySizeInBits = keySizeInBits
-    self.options = options
-    self.inputData = inputData
+    self.algorithm=algorithm
+    self.keySizeInBits=keySizeInBits
+    self.options=options
+    self.inputData=inputData
   }
 
   /// Create a new instance with updated options
   /// - Parameter newOptions: Additional options to merge with existing ones
   /// - Returns: A new SecurityConfigDTO with updated options
   public func withOptions(_ newOptions: [String: String]) -> SecurityConfigDTO {
-    var mergedOptions = options
+    var mergedOptions=options
     for (key, value) in newOptions {
-      mergedOptions[key] = value
+      mergedOptions[key]=value
     }
 
     return SecurityConfigDTO(
@@ -71,7 +71,7 @@ public struct SecurityConfigDTO: Sendable, Equatable {
   /// - Parameter data: The SecureBytes input data to use
   /// - Returns: A new SecurityConfigDTO with the specified input data
   public func withInputData(_ data: SecureBytes) -> SecurityConfigDTO {
-    var bytes = [UInt8]()
+    var bytes=[UInt8]()
     for i in 0..<data.count {
       bytes.append(data[i])
     }
@@ -82,36 +82,36 @@ public struct SecurityConfigDTO: Sendable, Equatable {
   /// - Parameter key: The key as SecureBytes
   /// - Returns: A new SecurityConfigDTO with the key stored in options
   public func withKey(_ key: SecureBytes) -> SecurityConfigDTO {
-    var bytes = [UInt8]()
+    var bytes=[UInt8]()
     for i in 0..<key.count {
       bytes.append(key[i])
     }
 
     // Store the key in the options as a Base64 encoded string
-    let base64Key = encodeBase64(bytes)
+    let base64Key=encodeBase64(bytes)
 
     return withOptions(["key": base64Key])
   }
 
   // Helper method to Base64 encode bytes without Foundation
   private func encodeBase64(_ bytes: [UInt8]) -> String {
-    let base64Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
-    var result = ""
+    let base64Chars="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+    var result=""
 
-    var i = 0
+    var i=0
     while i < bytes.count {
-      let remaining = bytes.count - i
+      let remaining=bytes.count - i
 
       // Process 3 bytes at a time, or whatever remains
-      let byte1 = bytes[i]
-      let byte2 = remaining > 1 ? bytes[i + 1] : 0
-      let byte3 = remaining > 2 ? bytes[i + 2] : 0
+      let byte1=bytes[i]
+      let byte2=remaining > 1 ? bytes[i + 1] : 0
+      let byte3=remaining > 2 ? bytes[i + 2] : 0
 
       // Extract 4 6-bit values
-      let char1 = byte1 >> 2
-      let char2 = ((byte1 & 0x3) << 4) | (byte2 >> 4)
-      let char3 = remaining > 1 ? ((byte2 & 0xF) << 2) | (byte3 >> 6) : 64 // 64 = padding
-      let char4 = remaining > 2 ? byte3 & 0x3F : 64 // 64 = padding
+      let char1=byte1 >> 2
+      let char2=((byte1 & 0x3) << 4) | (byte2 >> 4)
+      let char3=remaining > 1 ? ((byte2 & 0xF) << 2) | (byte3 >> 6) : 64 // 64 = padding
+      let char4=remaining > 2 ? byte3 & 0x3F : 64 // 64 = padding
 
       // Map to Base64 characters
       result.append(base64Chars[String.Index(utf16Offset: Int(char1), in: base64Chars)])
@@ -153,7 +153,7 @@ extension SecurityConfigDTO {
   public static func rsa() -> SecurityConfigDTO {
     SecurityConfigDTO(
       algorithm: "RSA",
-      keySizeInBits: 2_048
+      keySizeInBits: 2048
     )
   }
 
@@ -161,7 +161,7 @@ extension SecurityConfigDTO {
   /// - Parameters:
   ///   - iterations: Number of iterations for key derivation
   /// - Returns: A SecurityConfigDTO configured for PBKDF2
-  public static func pbkdf2(iterations: Int = 10_000) -> SecurityConfigDTO {
+  public static func pbkdf2(iterations: Int=10000) -> SecurityConfigDTO {
     SecurityConfigDTO(
       algorithm: "PBKDF2",
       keySizeInBits: 256,

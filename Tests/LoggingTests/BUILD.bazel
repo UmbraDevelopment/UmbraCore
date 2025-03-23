@@ -4,8 +4,8 @@ umbra_swift_test(
     name = "LoggingTests",
     srcs = glob(["**/*.swift"]),
     deps = [
-        "//Sources/UmbraLogging",
         "//Sources/SecurityTypes",
+        "//Sources/UmbraLogging",
         "@swiftpkg_swiftybeaver//:SwiftyBeaver",
     ],
 )

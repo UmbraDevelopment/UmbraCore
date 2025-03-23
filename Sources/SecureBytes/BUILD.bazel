@@ -1,22 +1,23 @@
-load("//tools/build_defs:umbracore_module.bzl", "umbracore_foundation_free_module")
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library", "swift_test")
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 swift_library(
     name = "SecureBytes",
-    srcs = glob(["Sources/**/*.swift"]),
-    module_name = "SecureBytes",
+    srcs = glob(["Sources/**/*.swift"], allow_empty = False),
     visibility = ["//visibility:public"],
-    copts = [
-        "-target", "arm64-apple-macos14.7.4",
-        "-g",
-        "-swift-version", "5",
-        "-Xfrontend", "-enable-library-evolution",
+    deps = [
+        "//Sources/ErrorHandlingInterfaces",
     ],
 )
 
-swift_test(
-    name = "SecureBytesTests",
-    srcs = glob(["Tests/*.swift"]),
-    deps = [":SecureBytes"],
-    tags = ["manual"],
-)
+# Uncomment if documentation generation is needed
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+#
+# swift_package(
+#     name = "docc_documentation",
+#     srcs = glob([
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
+#     deps = ["//Sources/SecureBytes"],
+# )

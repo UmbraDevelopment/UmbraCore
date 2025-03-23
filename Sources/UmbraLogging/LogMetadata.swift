@@ -6,14 +6,14 @@ public struct LogMetadata: Sendable {
 
   /// Initialize a new LogMetadata instance
   /// - Parameter dictionary: Initial metadata key-value pairs
-  public init(_ dictionary: [String: String] = [:]) {
-    storage = dictionary
+  public init(_ dictionary: [String: String]=[:]) {
+    storage=dictionary
   }
 
   /// Access metadata values by key
   public subscript(_ key: String) -> String? {
     get { storage[key] }
-    set { storage[key] = newValue }
+    set { storage[key]=newValue }
   }
 
   /// Get all metadata as a dictionary
@@ -28,7 +28,7 @@ extension LogMetadata {
   /// - Returns: New LogMetadata instance with string values
   public static func from(_ dictionary: [String: Any]?) -> LogMetadata? {
     guard let dictionary else { return nil }
-    let stringDict = dictionary.compactMapValues { "\($0)" }
+    let stringDict=dictionary.compactMapValues { "\($0)" }
     return LogMetadata(stringDict)
   }
 

@@ -19,16 +19,16 @@ extension RepositoryService {
   /// is false
   public func unlockRepository(
     _ identifier: String,
-    force: Bool = false
+    force: Bool=false
   ) async throws {
-    let metadata = LogMetadata([
+    let metadata=LogMetadata([
       "repository_id": identifier,
       "force": String(force)
     ])
 
     await logger.info("Unlocking repository", metadata: metadata)
 
-    guard let repository = repositories[identifier] else {
+    guard let repository=repositories[identifier] else {
       await logger.error("Repository not found", metadata: metadata)
       throw UmbraErrors.Repository.Core.repositoryNotFound(resource: identifier)
     }
@@ -55,17 +55,17 @@ extension RepositoryService {
   /// - Parameter force: Whether to continue on errors (default: false)
   /// - Throws: `UmbraErrors.Repository.Core.internalError` if any unlock operation fails and force
   /// is false
-  public func unlockAllRepositories(force: Bool = false) async throws {
-    let metadata = LogMetadata([
+  public func unlockAllRepositories(force: Bool=false) async throws {
+    let metadata=LogMetadata([
       "force": String(force)
     ])
 
     await logger.info("Unlocking all repositories", metadata: metadata)
 
-    var failedRepositories: [String] = []
+    var failedRepositories: [String]=[]
 
     for (identifier, repository) in repositories {
-      let repositoryMetadata = LogMetadata([
+      let repositoryMetadata=LogMetadata([
         "repository_id": identifier,
         "force": String(force)
       ])
@@ -90,7 +90,7 @@ extension RepositoryService {
     }
 
     if !failedRepositories.isEmpty {
-      let failedList = failedRepositories.joined(separator: ", ")
+      let failedList=failedRepositories.joined(separator: ", ")
       await logger.warning("Failed to unlock repositories: \(failedList)", metadata: metadata)
     }
   }

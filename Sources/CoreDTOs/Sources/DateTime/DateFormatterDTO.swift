@@ -111,11 +111,11 @@ public struct DateFormatterDTO: Sendable, Equatable, Hashable {
   public init(
     dateStyle: FormatStyle = .medium,
     timeStyle: TimeStyle = .medium,
-    localeIdentifier: String? = nil
+    localeIdentifier: String?=nil
   ) {
-    self.dateStyle = dateStyle
-    self.timeStyle = timeStyle
-    self.localeIdentifier = localeIdentifier
+    self.dateStyle=dateStyle
+    self.timeStyle=timeStyle
+    self.localeIdentifier=localeIdentifier
   }
 
   // MARK: - Formatting Methods
@@ -129,24 +129,24 @@ public struct DateFormatterDTO: Sendable, Equatable, Hashable {
   /// representation of the provided date and time.
   public func format(_ date: DateTimeDTO) -> String {
     // Convert to Foundation Date for formatting
-    let timestamp = date.timestamp
-    let foundationDate = Date(timeIntervalSince1970: timestamp)
+    let timestamp=date.timestamp
+    let foundationDate=Date(timeIntervalSince1970: timestamp)
 
     // Create DateFormatter
-    let formatter = DateFormatter()
+    let formatter=DateFormatter()
 
     // Set locale if provided
     if let localeIdentifier {
-      formatter.locale = Locale(identifier: localeIdentifier)
+      formatter.locale=Locale(identifier: localeIdentifier)
     }
 
     // Set time zone
-    formatter.timeZone = TimeZone(secondsFromGMT: date.timeZoneOffset.totalMinutes * 60)
+    formatter.timeZone=TimeZone(secondsFromGMT: date.timeZoneOffset.totalMinutes * 60)
 
     // Configure date style
     switch dateStyle {
       case .none:
-        formatter.dateFormat = ""
+        formatter.dateFormat=""
       case .short:
         formatter.dateStyle = .short
       case .medium:
@@ -157,11 +157,11 @@ public struct DateFormatterDTO: Sendable, Equatable, Hashable {
         formatter.dateStyle = .full
       case let .custom(format):
         // Custom format for date part
-        formatter.dateFormat = format
+        formatter.dateFormat=format
     }
 
     // Configure time style if using predefined styles
-    if case .custom = dateStyle {
+    if case .custom=dateStyle {
       // Already handled in date format
     } else {
       switch timeStyle {
@@ -178,8 +178,8 @@ public struct DateFormatterDTO: Sendable, Equatable, Hashable {
         case let .custom(format):
           // For custom time format with predefined date format,
           // we need to combine them
-          let dateFormat = formatter.dateFormat ?? ""
-          formatter.dateFormat = "\(dateFormat) \(format)"
+          let dateFormat=formatter.dateFormat ?? ""
+          formatter.dateFormat="\(dateFormat) \(format)"
       }
     }
 
@@ -197,7 +197,7 @@ public struct DateFormatterDTO: Sendable, Equatable, Hashable {
   /// Creates a formatter configured for date-only formatting.
   public static func dateOnly(
     style: FormatStyle = .medium,
-    localeIdentifier: String? = nil
+    localeIdentifier: String?=nil
   ) -> DateFormatterDTO {
     DateFormatterDTO(
       dateStyle: style,
@@ -215,7 +215,7 @@ public struct DateFormatterDTO: Sendable, Equatable, Hashable {
   /// Creates a formatter configured for time-only formatting.
   public static func timeOnly(
     style: TimeStyle = .medium,
-    localeIdentifier: String? = nil
+    localeIdentifier: String?=nil
   ) -> DateFormatterDTO {
     DateFormatterDTO(
       dateStyle: .none,
@@ -243,7 +243,7 @@ public struct DateFormatterDTO: Sendable, Equatable, Hashable {
   /// Creates a formatter with the specified custom format.
   public static func custom(
     format: String,
-    localeIdentifier: String? = nil
+    localeIdentifier: String?=nil
   ) -> DateFormatterDTO {
     DateFormatterDTO(
       dateStyle: .custom(format),

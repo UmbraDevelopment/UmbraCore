@@ -4,7 +4,7 @@ import XPCProtocolsCore
 /// UmbraCore provides the foundational types and protocols for the Umbra security framework.
 public enum UmbraCore {
   /// The current version of the UmbraCore framework
-  public static let version = "1.0.0"
+  public static let version="1.0.0"
 
   /// Configuration options for the UmbraCore framework
   public struct Configuration {
@@ -15,11 +15,11 @@ public enum UmbraCore {
     public var defaultSecurityLevel: XPCProtocolTypeDefs.SecurityLevel
 
     public init(
-      verboseLogging: Bool = false,
+      verboseLogging: Bool=false,
       defaultSecurityLevel: XPCProtocolTypeDefs.SecurityLevel = .standard
     ) {
-      self.verboseLogging = verboseLogging
-      self.defaultSecurityLevel = defaultSecurityLevel
+      self.verboseLogging=verboseLogging
+      self.defaultSecurityLevel=defaultSecurityLevel
     }
   }
 

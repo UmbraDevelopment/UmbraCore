@@ -1,13 +1,21 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_test")
+load("//:swift_rules.bzl", "umbra_swift_library")
 
-swift_test(
+umbra_swift_library(
     name = "KeyManagementTypesTests",
     srcs = glob(["**/*.swift"]),
     deps = [
-        "//Sources/KeyManagementTypes",
-        "//Sources/CoreErrors",
-        "//Sources/CoreServicesTypes",
-        "//Sources/CoreServicesTypesNoFoundation",
-        # Removed duplicate dependency: "//Sources/Core/Services/Types:CoreServicesTypes"
     ],
 )
+
+# Uncomment if documentation generation is needed
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+#
+# swift_package(
+#     name = "docc_documentation",
+#     srcs = glob([
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
+#     deps = ["//Sources/KeyManagementTypesTests"],
+# )

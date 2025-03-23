@@ -1,49 +1,21 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
-load("//:bazel/macros/swift.bzl", "umbra_swift_library")
-load("//tools/swift:build_rules.bzl", "umbracore_swift_library", "umbracore_swift_test_library")
+load("//:swift_rules.bzl", "umbra_swift_library")
 
-# Security interfaces module using Swift 6 compatibility options
-umbracore_swift_library(
+umbra_swift_library(
     name = "SecurityInterfaces",
-    srcs = glob(["**/*.swift"], exclude=["Tests/**", "SecurityInterfacesEmptyTest.swift"]),
+    srcs = glob(["**/*.swift"]),
     deps = [
-        "//Sources/CoreDTOs",
-        "//Sources/CoreTypesInterfaces",
-        "//Sources/FoundationBridgeTypes",
-        "//Sources/SecurityBridgeTypes",
-        "//Sources/SecurityInterfacesBase",
-        "//Sources/SecurityInterfacesProtocols",
-        "//Sources/SecurityProtocolsCore",
-        "//Sources/XPCProtocolsCore",
-        "//Sources/XPC",
     ],
-    swift_mode = "default",
-    visibility = ["//visibility:public"],
 )
 
-# Test version for @testable import
-umbracore_swift_test_library(
-    name = "SecurityInterfacesForTesting",
-    srcs = glob(["**/*.swift"], exclude=["Tests/**", "SecurityInterfacesEmptyTest.swift"]),
-    deps = [
-        "//Sources/CoreDTOs",
-        "//Sources/CoreTypesInterfaces",
-        "//Sources/FoundationBridgeTypes",
-        "//Sources/SecurityInterfacesBase",
-        "//Sources/SecurityInterfacesProtocols", 
-        "//Sources/SecurityProtocolsCore",
-        "//Sources/XPCProtocolsCore",
-    ],
-    module_name = "SecurityInterfaces",
-    visibility = ["//visibility:public"],
-)
-
-# Tests for SecurityInterfaces
-umbracore_swift_test_library(
-    name = "SecurityInterfacesTests",
-    srcs = ["SecurityInterfacesEmptyTest.swift"],
-    deps = [
-        ":SecurityInterfacesForTesting",
-    ],
-    visibility = ["//visibility:public"],
-)
+# Uncomment if documentation generation is needed
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+#
+# swift_package(
+#     name = "docc_documentation",
+#     srcs = glob([
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
+#     deps = ["//Sources/SecurityInterfaces"],
+# )

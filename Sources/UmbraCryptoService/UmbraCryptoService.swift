@@ -105,7 +105,7 @@
 /// - Resource protection
 public enum UmbraCryptoService {
   /// Current version of the UmbraCryptoService module
-  public static let version = "1.0.0"
+  public static let version="1.0.0"
 
   /// Initialise UmbraCryptoService with default configuration
   public static func initialize() {

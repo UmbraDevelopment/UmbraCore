@@ -18,7 +18,7 @@ extension CryptoServiceProtocol {
     key: SecureBytes,
     config: SecurityConfigDTO
   ) async -> SecurityResultDTO {
-    let result = await encryptSymmetric(
+    let result=await encryptSymmetric(
       data: data,
       key: key,
       config: config
@@ -43,7 +43,7 @@ extension CryptoServiceProtocol {
     key: SecureBytes,
     config: SecurityConfigDTO
   ) async -> SecurityResultDTO {
-    let result = await decryptSymmetric(
+    let result=await decryptSymmetric(
       data: data,
       key: key,
       config: config
@@ -66,7 +66,7 @@ extension CryptoServiceProtocol {
     data: SecureBytes,
     config: SecurityConfigDTO
   ) async -> SecurityResultDTO {
-    let result = await hash(
+    let result=await hash(
       data: data,
       config: config
     )

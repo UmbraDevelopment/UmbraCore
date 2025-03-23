@@ -1,22 +1,21 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
-load("//:bazel/macros/swift.bzl", "umbra_swift_library")
+load("//:swift_rules.bzl", "umbra_swift_library")
 
-# Foundation-free base module with pure Swift types and protocols
 umbra_swift_library(
     name = "CoreTypesInterfaces",
-    srcs = glob(["Sources/**/*.swift"]),
-    deps = [],
-    additional_copts = [
-        "-Xfrontend", "-enable-library-evolution",
+    srcs = glob(["**/*.swift"]),
+    deps = [
     ],
 )
 
-# Test library
-swift_library(
-    name = "CoreTypesInterfacesTests",
-    testonly = True,
-    srcs = glob(["Tests/**/*.swift"]),
-    deps = [
-        ":CoreTypesInterfaces",
-    ],
-)
+# Uncomment if documentation generation is needed
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+#
+# swift_package(
+#     name = "docc_documentation",
+#     srcs = glob([
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
+#     deps = ["//Sources/CoreTypesInterfaces"],
+# )

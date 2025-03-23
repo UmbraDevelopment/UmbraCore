@@ -1,33 +1,21 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
-load("//:bazel/macros/swift.bzl", "umbra_swift_library")
+load("//:swift_rules.bzl", "umbra_swift_library")
 
-# NOTE: UmbraCryptoService is temporarily disabled due to dependency issues
-# with CryptoTypesServices which is undergoing significant refactoring
-# filegroup(
-#     name = "UmbraCryptoService",
-#     srcs = glob(["*.swift"]),
-#     visibility = ["//visibility:public"],
-# )
-
-swift_library(
+umbra_swift_library(
     name = "UmbraCryptoService",
-    srcs = glob(["*.swift"]),
-    # Disable library evolution support to fix dependency issues
-    # copts = ["-enable-library-evolution"],
-    module_name = "UmbraCryptoService",
+    srcs = glob(["**/*.swift"]),
     deps = [
-        "//Sources/Core",
-        "//Sources/CoreDTOs",
-        "//Sources/CoreErrors",
-        "//Sources/CryptoSwiftFoundationIndependent",
-        "//Sources/CryptoTypes",
-        "//Sources/LoggingWrapper",
-        "//Sources/SecurityImplementation",
-        "//Sources/SecurityInterfaces",
-        "//Sources/SecurityTypes",
-        "//Sources/SecurityUtils",
-        "//Sources/UmbraKeychainService",
-        "//Sources/XPC/Core:XPCCore",
     ],
-    visibility = ["//visibility:public"],
 )
+
+# Uncomment if documentation generation is needed
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+#
+# swift_package(
+#     name = "docc_documentation",
+#     srcs = glob([
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
+#     deps = ["//Sources/UmbraCryptoService"],
+# )

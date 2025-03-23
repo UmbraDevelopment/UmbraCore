@@ -16,10 +16,10 @@ public enum RecoveryLikelihood: Comparable, Sendable {
 
   /// Comparison implementation for Comparable protocol
   public static func < (lhs: RecoveryLikelihood, rhs: RecoveryLikelihood) -> Bool {
-    let order: [RecoveryLikelihood] = [.unknown, .low, .medium, .high]
+    let order: [RecoveryLikelihood]=[.unknown, .low, .medium, .high]
     guard
-      let lhsIndex = order.firstIndex(of: lhs),
-      let rhsIndex = order.firstIndex(of: rhs)
+      let lhsIndex=order.firstIndex(of: lhs),
+      let rhsIndex=order.firstIndex(of: rhs)
     else {
       return false
     }

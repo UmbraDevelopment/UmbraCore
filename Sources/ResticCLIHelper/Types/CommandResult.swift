@@ -32,9 +32,9 @@ public struct CommandResult: Sendable, Equatable, CustomDebugStringConvertible {
   ///   - stdout: The command's standard output
   ///   - stderr: The command's standard error output
   public init(exitCode: Int, stdout: String, stderr: String) {
-    self.exitCode = exitCode
-    self.stdout = stdout
-    self.stderr = stderr
+    self.exitCode=exitCode
+    self.stdout=stdout
+    self.stderr=stderr
   }
 
   /// A debug description of the command result, useful for logging.

@@ -6,11 +6,11 @@ import Foundation
 /// Error domain namespace
 public enum ErrorDomain {
   /// Security domain
-  public static let security = "Security"
+  public static let security="Security"
   /// Crypto domain
-  public static let crypto = "Crypto"
+  public static let crypto="Crypto"
   /// Application domain
-  public static let application = "Application"
+  public static let application="Application"
 }
 
 /// Error context protocol
@@ -34,9 +34,9 @@ public struct BaseErrorContext: ErrorContext {
 
   /// Initialise with domain, code and description
   public init(domain: String, code: Int, description: String) {
-    self.domain = domain
-    self.code = code
-    self.description = description
+    self.domain=domain
+    self.code=code
+    self.description=description
   }
 }
 
@@ -71,29 +71,29 @@ public struct ErrorContext: Sendable, Equatable {
   ///   - boolValues: Optional boolean metadata
   public init(
     source: String,
-    code: String? = nil,
+    code: String?=nil,
     message: String,
-    metadata: [String: String] = [:],
-    numberValues: [String: Double] = [:],
-    boolValues: [String: Bool] = [:]
+    metadata: [String: String]=[:],
+    numberValues: [String: Double]=[:],
+    boolValues: [String: Bool]=[:]
   ) {
-    self.source = source
-    self.code = code
-    self.message = message
-    self.metadata = metadata
-    self.numberValues = numberValues
-    self.boolValues = boolValues
+    self.source=source
+    self.code=code
+    self.message=message
+    self.metadata=metadata
+    self.numberValues=numberValues
+    self.boolValues=boolValues
   }
 
   /// Creates a new ErrorContext by copying this context and adding additional metadata
   /// - Parameter metadata: Additional string metadata to add to the context
   /// - Returns: A new ErrorContext instance with combined metadata
   public func with(metadata additionalMetadata: [String: String]) -> ErrorContext {
-    var combinedMetadata = metadata
+    var combinedMetadata=metadata
 
     // Add the new metadata
     for (key, value) in additionalMetadata {
-      combinedMetadata[key] = value
+      combinedMetadata[key]=value
     }
 
     return ErrorContext(
@@ -110,11 +110,11 @@ public struct ErrorContext: Sendable, Equatable {
   /// - Parameter values: Additional numeric values to add to the context
   /// - Returns: A new ErrorContext instance with combined values
   public func with(numberValues additionalValues: [String: Double]) -> ErrorContext {
-    var combinedValues = numberValues
+    var combinedValues=numberValues
 
     // Add the new values
     for (key, value) in additionalValues {
-      combinedValues[key] = value
+      combinedValues[key]=value
     }
 
     return ErrorContext(
@@ -131,11 +131,11 @@ public struct ErrorContext: Sendable, Equatable {
   /// - Parameter values: Additional boolean values to add to the context
   /// - Returns: A new ErrorContext instance with combined values
   public func with(boolValues additionalValues: [String: Bool]) -> ErrorContext {
-    var combinedValues = boolValues
+    var combinedValues=boolValues
 
     // Add the new values
     for (key, value) in additionalValues {
-      combinedValues[key] = value
+      combinedValues[key]=value
     }
 
     return ErrorContext(
@@ -150,7 +150,7 @@ public struct ErrorContext: Sendable, Equatable {
 
   /// A human-readable description of the error context
   public var description: String {
-    var result = "[\(source)]"
+    var result="[\(source)]"
 
     if let code {
       result += " [\(code)]"
@@ -194,12 +194,12 @@ public struct ErrorContext: Sendable, Equatable {
   ///   - key: The key to look up
   ///   - type: The expected type of the value
   /// - Returns: The value cast to the specified type, or nil if not found or wrong type
-  public func typedValue<T>(for key: String, as _: T.Type = T.self) -> T? {
-    if let value = metadata[key] as? T {
+  public func typedValue<T>(for key: String, as _: T.Type=T.self) -> T? {
+    if let value=metadata[key] as? T {
       return value
-    } else if let value = numberValues[key] as? T {
+    } else if let value=numberValues[key] as? T {
       return value
-    } else if let value = boolValues[key] as? T {
+    } else if let value=boolValues[key] as? T {
       return value
     }
     return nil
@@ -211,11 +211,11 @@ public struct ErrorContext: Sendable, Equatable {
   ///   - value: The value to associate with the key
   /// - Returns: A new ErrorContext instance with the added key-value pair
   public func adding(key: String, value: Any) -> ErrorContext {
-    if let value = value as? String {
+    if let value=value as? String {
       return with(metadata: [key: value])
-    } else if let value = value as? Double {
+    } else if let value=value as? Double {
       return with(numberValues: [key: value])
-    } else if let value = value as? Bool {
+    } else if let value=value as? Bool {
       return with(boolValues: [key: value])
     }
     return self
@@ -225,17 +225,17 @@ public struct ErrorContext: Sendable, Equatable {
   /// - Parameter additionalMetadata: Dictionary of key-value pairs to add
   /// - Returns: A new ErrorContext instance with the added key-value pairs
   public func adding(metadata additionalMetadata: [String: Any]) -> ErrorContext {
-    var newMetadata = metadata
-    var newNumberValues = numberValues
-    var newBoolValues = boolValues
+    var newMetadata=metadata
+    var newNumberValues=numberValues
+    var newBoolValues=boolValues
 
     for (key, value) in additionalMetadata {
-      if let value = value as? String {
-        newMetadata[key] = value
-      } else if let value = value as? Double {
-        newNumberValues[key] = value
-      } else if let value = value as? Bool {
-        newBoolValues[key] = value
+      if let value=value as? String {
+        newMetadata[key]=value
+      } else if let value=value as? Double {
+        newNumberValues[key]=value
+      } else if let value=value as? Bool {
+        newBoolValues[key]=value
       }
     }
 
@@ -255,9 +255,9 @@ public struct ErrorContext: Sendable, Equatable {
   /// precedence)
   public func merging(with other: ErrorContext) -> ErrorContext {
     // For a merged context, we keep our source/code/message unless the other one has non-nil values
-    let mergedSource = other.source.isEmpty ? source : other.source
-    let mergedCode = other.code ?? code
-    let mergedMessage = other.message.isEmpty ? message : other.message
+    let mergedSource=other.source.isEmpty ? source : other.source
+    let mergedCode=other.code ?? code
+    let mergedMessage=other.message.isEmpty ? message : other.message
 
     return ErrorContext(
       source: mergedSource,

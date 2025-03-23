@@ -20,7 +20,7 @@ extension SecureData {
   /// - Parameter secureBytes: SecureBytes instance
   public init(secureBytes: UmbraCoreTypes.SecureBytes) {
     // Convert SecureBytes to [UInt8] array using iteration and subscript access
-    var bytes = [UInt8]()
+    var bytes=[UInt8]()
     for i in 0..<secureBytes.count {
       bytes.append(secureBytes[i])
     }

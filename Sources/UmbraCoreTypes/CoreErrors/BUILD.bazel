@@ -1,18 +1,22 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+load("//:swift_rules.bzl", "umbra_swift_library")
 
-# CoreErrors isolated subpackage for UmbraCoreTypes
-# This prevents namespace conflicts by isolating imports
-swift_library(
-    name = "UmbraCoreTypesCoreErrors",
+umbra_swift_library(
+    name = "UmbraCoreTypes_CoreErrors",
     srcs = glob(["Sources/**/*.swift"]),
-    module_name = "UmbraCoreTypes_CoreErrors",
-    copts = [
-        "-target", "arm64-apple-macos14.7.4",
-        # Enabling library evolution for binary compatibility
-        "-Xfrontend", "-enable-library-evolution",
-    ],
-    visibility = [
-        "//Sources/UmbraCoreTypes:__pkg__",  # Only visible to the main module
-        "//Sources/UmbraCoreTypes/Tests:__pkg__",  # Also visible to tests
+    visibility = ["//visibility:public"],
+    deps = [
     ],
 )
+
+# Uncomment if documentation generation is needed
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+#
+# swift_package(
+#     name = "docc_documentation",
+#     srcs = glob([
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
+#     deps = ["//Sources/UmbraCoreTypesCoreErrors"],
+# )

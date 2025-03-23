@@ -9,4 +9,3 @@ import KeyManagementTypes
   deprecated,
   message: "This will be replaced by KeyManagementTypes.KeyStatus in a future version. Use KeyManagementTypes.KeyStatus directly."
 )
-public typealias KeyStatus = KeyManagementTypes.KeyStatus

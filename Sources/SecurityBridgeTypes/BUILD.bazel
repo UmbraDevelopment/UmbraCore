@@ -1,18 +1,22 @@
-load("//tools/build_defs:umbracore_module.bzl", "umbracore_foundation_free_module")
+load("//:swift_rules.bzl", "umbra_swift_library")
 
-umbracore_foundation_free_module(
+umbra_swift_library(
     name = "SecurityBridgeTypes",
     srcs = glob(["Sources/**/*.swift"]),
     visibility = ["//visibility:public"],
     deps = [
-        "//Sources/UmbraCoreTypes",
-        "//Sources/CoreErrors",
-    ],
-    copts = [
-        "-target", "arm64-apple-macos14.7.4",
-        # Enabling library evolution for binary compatibility
-        "-Xfrontend", "-enable-library-evolution",
-        "-g",
-        "-swift-version", "5",
     ],
 )
+
+# Uncomment if documentation generation is needed
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+#
+# swift_package(
+#     name = "docc_documentation",
+#     srcs = glob([
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
+#     deps = ["//Sources/SecurityBridgeTypes"],
+# )

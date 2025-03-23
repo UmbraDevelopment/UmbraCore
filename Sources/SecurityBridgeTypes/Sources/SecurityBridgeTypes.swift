@@ -6,11 +6,11 @@ import Foundation
 /// Error domain namespace
 public enum ErrorDomain {
   /// Security domain
-  public static let security = "Security"
+  public static let security="Security"
   /// Crypto domain
-  public static let crypto = "Crypto"
+  public static let crypto="Crypto"
   /// Application domain
-  public static let application = "Application"
+  public static let application="Application"
 }
 
 /// Error context protocol
@@ -34,9 +34,9 @@ public struct BaseErrorContext: ErrorContext {
 
   /// Initialise with domain, code and description
   public init(domain: String, code: Int, description: String) {
-    self.domain = domain
-    self.code = code
-    self.description = description
+    self.domain=domain
+    self.code=code
+    self.description=description
   }
 }
 
@@ -50,19 +50,19 @@ public struct SecurityProtocolsErrorDTO: Error, Sendable, Equatable, CustomStrin
   /// Enumeration of XPC security error codes
   public enum ErrorCode: Int32, Sendable, Equatable, CustomStringConvertible {
     /// Unknown error
-    case unknown = 0
+    case unknown=0
     /// Invalid input data or parameters
-    case invalidInput = 1_001
+    case invalidInput=1001
     /// Cryptographic operation failed
-    case cryptographicError = 1_002
+    case cryptographicError=1002
     /// Key not found
-    case keyNotFound = 1_003
+    case keyNotFound=1003
     /// Service is unavailable
-    case serviceUnavailable = 1_004
+    case serviceUnavailable=1004
     /// Operation not supported
-    case unsupportedOperation = 1_005
+    case unsupportedOperation=1005
     /// Permission denied
-    case permissionDenied = 1_007
+    case permissionDenied=1007
 
     /// String description of the error code
     public var description: String {
@@ -104,9 +104,9 @@ public struct SecurityProtocolsErrorDTO: Error, Sendable, Equatable, CustomStrin
   /// - Parameters:
   ///   - code: Error code
   ///   - details: Additional details
-  public init(code: ErrorCode, details: [String: String] = [:]) {
-    self.code = code
-    self.details = details
+  public init(code: ErrorCode, details: [String: String]=[:]) {
+    self.code=code
+    self.details=details
   }
 
   // MARK: - CustomStringConvertible
@@ -124,10 +124,10 @@ public struct SecurityProtocolsErrorDTO: Error, Sendable, Equatable, CustomStrin
   /// Create an unknown error
   /// - Parameter details: Optional error details
   /// - Returns: A SecurityProtocolsErrorDTO
-  public static func unknown(details: String? = nil) -> SecurityProtocolsErrorDTO {
-    var detailsDict: [String: String] = [:]
+  public static func unknown(details: String?=nil) -> SecurityProtocolsErrorDTO {
+    var detailsDict: [String: String]=[:]
     if let details {
-      detailsDict["message"] = details
+      detailsDict["message"]=details
     }
     return SecurityProtocolsErrorDTO(code: .unknown, details: detailsDict)
   }
@@ -176,8 +176,8 @@ public struct SecurityProtocolsErrorDTO: Error, Sendable, Equatable, CustomStrin
   ///   - reason: Reason for unavailability
   /// - Returns: A SecurityProtocolsErrorDTO
   public static func serviceUnavailable(
-    service: String = "XPC Service",
-    reason: String = "Service is not available"
+    service: String="XPC Service",
+    reason: String="Service is not available"
   ) -> SecurityProtocolsErrorDTO {
     SecurityProtocolsErrorDTO(
       code: .serviceUnavailable,
@@ -232,13 +232,13 @@ public struct ServiceStatusDTO: Equatable {
   public init(
     status: String,
     version: String,
-    stringInfo: [String: String] = [:],
-    intInfo: [String: Int] = [:]
+    stringInfo: [String: String]=[:],
+    intInfo: [String: Int]=[:]
   ) {
-    self.status = status
-    self.version = version
-    self.stringInfo = stringInfo
-    self.intInfo = intInfo
+    self.status=status
+    self.version=version
+    self.stringInfo=stringInfo
+    self.intInfo=intInfo
   }
 }
 
@@ -265,13 +265,13 @@ public struct KeyInfoDTO: Equatable {
   public init(
     identifier: String,
     type: KeyTypeDTO,
-    isSecureEnclaveProtected: Bool = false,
-    attributes: [String: String] = [:]
+    isSecureEnclaveProtected: Bool=false,
+    attributes: [String: String]=[:]
   ) {
-    self.identifier = identifier
-    self.type = type
-    self.isSecureEnclaveProtected = isSecureEnclaveProtected
-    self.attributes = attributes
+    self.identifier=identifier
+    self.type=type
+    self.isSecureEnclaveProtected=isSecureEnclaveProtected
+    self.attributes=attributes
   }
 }
 

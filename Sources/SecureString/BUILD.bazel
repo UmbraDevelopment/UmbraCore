@@ -1,30 +1,24 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library", "swift_test")
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 swift_library(
     name = "SecureString",
-    srcs = glob([
-        "Sources/**/*.swift",
-    ]),
-    module_name = "SecureString",
-    copts = [
-        "-target", "arm64-apple-macos14.7.4",
-        "-Xfrontend", "-enable-library-evolution",
-        "-g",
-        "-swift-version", "5",
-    ],
+    srcs = glob(["Sources/**/*.swift"], allow_empty = False),
     visibility = ["//visibility:public"],
     deps = [
-        # Add foundation-free dependencies here
+        "//Sources/ErrorHandlingInterfaces",
+        "//Sources/UmbraErrors",
     ],
 )
 
-swift_test(
-    name = "SecureStringTests",
-    srcs = glob([
-        "Tests/**/*.swift",
-    ]),
-    deps = [
-        ":SecureString",
-        # Add test dependencies here
-    ],
-)
+# Uncomment if documentation generation is needed
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+#
+# swift_package(
+#     name = "docc_documentation",
+#     srcs = glob([
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
+#     deps = ["//Sources/SecureString"],
+# )

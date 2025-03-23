@@ -9,6 +9,6 @@ go_binary(
 go_library(
     name = "deprecation_remover_lib",
     srcs = ["main.go"],
-    importpath = "github.com/umbracore/tools/go/cmd/deprecation_remover",
+    importpath = "dev.mpy.UmbraCore/tools/go/cmd/deprecation_remover",
     visibility = ["//visibility:private"],
 )

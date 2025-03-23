@@ -6,11 +6,11 @@ import Foundation
 /// Error domain namespace
 public enum ErrorDomain {
   /// Security domain
-  public static let security = "Security"
+  public static let security="Security"
   /// Crypto domain
-  public static let crypto = "Crypto"
+  public static let crypto="Crypto"
   /// Application domain
-  public static let application = "Application"
+  public static let application="Application"
 }
 
 /// Error context protocol
@@ -34,9 +34,9 @@ public struct BaseErrorContext: ErrorContext {
 
   /// Initialise with domain, code and description
   public init(domain: String, code: Int, description: String) {
-    self.domain = domain
-    self.code = code
-    self.description = description
+    self.domain=domain
+    self.code=code
+    self.description=description
   }
 }
 
@@ -141,7 +141,7 @@ public struct RepositoryError: Error, UmbraError, Sendable, CustomStringConverti
   public let errorType: RepositoryErrorType
 
   /// The domain for repository errors
-  public let domain: String = "Repository"
+  public let domain: String="Repository"
 
   /// The error code
   public var code: String {
@@ -170,14 +170,14 @@ public struct RepositoryError: Error, UmbraError, Sendable, CustomStringConverti
   /// Initialize a new repository error
   public init(
     errorType: RepositoryErrorType,
-    source: ErrorHandlingInterfaces.ErrorSource? = nil,
-    underlyingError: Error? = nil,
-    context: ErrorHandlingInterfaces.ErrorContext? = nil
+    source: ErrorHandlingInterfaces.ErrorSource?=nil,
+    underlyingError: Error?=nil,
+    context: ErrorHandlingInterfaces.ErrorContext?=nil
   ) {
-    self.errorType = errorType
-    self.source = source
-    self.underlyingError = underlyingError
-    self.context = context ?? ErrorHandlingInterfaces.ErrorContext(
+    self.errorType=errorType
+    self.source=source
+    self.underlyingError=underlyingError
+    self.context=context ?? ErrorHandlingInterfaces.ErrorContext(
       source: "Repository",
       operation: "repository_operation",
       details: errorType.message
@@ -217,9 +217,9 @@ public struct RepositoryError: Error, UmbraError, Sendable, CustomStringConverti
   /// Create a repository error with the specified type and message
   public static func create(
     _ type: RepositoryErrorType,
-    file: String = #file,
-    function: String = #function,
-    line: Int = #line
+    file: String=#file,
+    function: String=#function,
+    line: Int=#line
   ) -> RepositoryError {
     RepositoryError(
       errorType: type,
@@ -234,18 +234,18 @@ public struct RepositoryError: Error, UmbraError, Sendable, CustomStringConverti
   /// Convenience initializers for specific error types
   public static func notFound(
     _ message: String,
-    file: String = #file,
-    function: String = #function,
-    line: Int = #line
+    file: String=#file,
+    function: String=#function,
+    line: Int=#line
   ) -> RepositoryError {
     create(.repositoryNotFound(message), file: file, function: function, line: line)
   }
 
   public static func openFailed(
     _ message: String,
-    file: String = #file,
-    function: String = #function,
-    line: Int = #line
+    file: String=#file,
+    function: String=#function,
+    line: Int=#line
   ) -> RepositoryError {
     create(.repositoryOpenFailed(message), file: file, function: function, line: line)
   }

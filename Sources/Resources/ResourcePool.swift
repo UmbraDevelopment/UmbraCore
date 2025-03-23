@@ -43,8 +43,8 @@ public actor ResourcePool<Resource: BasicManagedResource> {
   /// - Precondition: maxSize > 0
   public init(maxSize: Int) {
     precondition(maxSize > 0, "Pool size must be greater than zero")
-    self.maxSize = maxSize
-    resources = []
+    self.maxSize=maxSize
+    resources=[]
   }
 
   /// Adds a resource to the pool.
@@ -77,13 +77,13 @@ public actor ResourcePool<Resource: BasicManagedResource> {
   /// - Throws: `ResourcesTypes.ResourceError.acquisitionFailed` if no resources are available,
   ///          or if the resource cannot be acquired.
   public func acquire() async throws -> Resource {
-    guard let index = resources.firstIndex(where: { $0.state == .ready }) else {
+    guard let index=resources.firstIndex(where: { $0.state == .ready }) else {
       throw ResourcesTypes.ResourceError.acquisitionFailed(
         "No available resources (pool size: \(resources.count), max: \(maxSize))"
       )
     }
 
-    let resource = resources[index]
+    let resource=resources[index]
     try await resource.acquire()
     return resource
   }
@@ -92,8 +92,8 @@ public actor ResourcePool<Resource: BasicManagedResource> {
   ///
   /// - Parameter resource: The resource to release.
   public func release(_ resource: Resource) async {
-    if let index = resources.firstIndex(where: { $0.id == resource.id }) {
-      let resource = resources[index]
+    if let index=resources.firstIndex(where: { $0.id == resource.id }) {
+      let resource=resources[index]
       do {
         try await resource.release()
       } catch {

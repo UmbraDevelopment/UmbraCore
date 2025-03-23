@@ -1,32 +1,21 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library", "swift_test")
+load("//:swift_rules.bzl", "umbra_swift_library")
 
-swift_library(
+umbra_swift_library(
     name = "SecurityBridge",
-    srcs = glob([
-        "Sources/**/*.swift",
-    ], exclude = [
-        "Sources/ProviderBridge/SecurityProviderFoundationBridge.swift",
-        "Sources/XPCBridge/*.swift",  # Temporarily exclude all XPCBridge files until we can fix them individually
-    ]),
-    module_name = "SecurityBridge",
-    copts = [
-        "-target", "arm64-apple-macos14.7.4",
-        # Library evolution enabled to support binary compatibility in dependent modules
-        "-Xfrontend", "-enable-library-evolution",
-        "-g",
-        "-swift-version", "5",
-    ],
-    visibility = ["//visibility:public"],
+    srcs = glob(["**/*.swift"]),
     deps = [
-        # Foundation-free dependencies
-        "//Sources/CoreDTOs",
-        "//Sources/SecureBytes",
-        "//Sources/SecurityProtocolsCore",
-        "//Sources/UmbraCoreTypes",
-        "//Sources/CoreTypesInterfaces",
-        "//Sources/FoundationBridgeTypes",
-        "//Sources/ObjCBridgingTypesFoundation",
-        "//Sources/XPCProtocolsCore",
-        # Foundation is an implicit dependency, imported directly in source files
     ],
 )
+
+# Uncomment if documentation generation is needed
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+#
+# swift_package(
+#     name = "docc_documentation",
+#     srcs = glob([
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
+#     deps = ["//Sources/SecurityBridge"],
+# )

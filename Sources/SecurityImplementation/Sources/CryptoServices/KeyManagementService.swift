@@ -36,7 +36,7 @@ public struct KeyManagementService: Sendable {
   /// - Returns: A new cryptographic key as `SecureBytes` or an error.
   public func generateKey() async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     // Generate a random 256-bit (32-byte) key
-    let key = CryptoWrapper.generateRandomKeySecure()
+    let key=CryptoWrapper.generateRandomKeySecure()
     return .success(key)
   }
 
@@ -51,15 +51,15 @@ public struct KeyManagementService: Sendable {
       return .failure(.invalidInput(reason: "Random data length must be greater than zero"))
     }
 
-    guard length <= 1_024 * 1_024 else {
+    guard length <= 1024 * 1024 else {
       return .failure(.invalidInput(
         reason: "Random data length exceeds maximum allowed (1MB)"
       ))
     }
 
     // Generate random data
-    var randomBytes = [UInt8](repeating: 0, count: length)
-    let status = SecRandomCopyBytes(kSecRandomDefault, length, &randomBytes)
+    var randomBytes=[UInt8](repeating: 0, count: length)
+    let status=SecRandomCopyBytes(kSecRandomDefault, length, &randomBytes)
 
     if status == errSecSuccess {
       return .success(SecureBytes(bytes: randomBytes))
@@ -78,15 +78,15 @@ public struct KeyManagementService: Sendable {
   public func deriveKey(
     from password: SecureBytes,
     salt: SecureBytes,
-    iterations: Int = 10_000,
-    keyLength: Int = 32
+    iterations: Int=10000,
+    keyLength: Int=32
   ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     // Input validation
     guard !password.isEmpty, !salt.isEmpty else {
       return .failure(.invalidInput(reason: "Password or salt is empty"))
     }
 
-    guard iterations >= 1_000 else {
+    guard iterations >= 1000 else {
       return .failure(.invalidInput(
         reason: "Iteration count too low, minimum 1000 required"
       ))
@@ -100,7 +100,7 @@ public struct KeyManagementService: Sendable {
 
     do {
       // Use PBKDF2 via CryptoWrapper
-      let derivedKey = try CryptoWrapper.deriveKey(
+      let derivedKey=try CryptoWrapper.deriveKey(
         password: password,
         salt: salt,
         iterations: iterations,

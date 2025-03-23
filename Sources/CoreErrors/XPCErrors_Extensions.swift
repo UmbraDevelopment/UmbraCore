@@ -27,7 +27,7 @@ public enum SecurityErrorConversion {
   /// - Parameter error: The core error as Any
   /// - Returns: The XPC error as Any or nil if conversion is not possible
   public static func coreToXPC(_ error: Any) -> Any? {
-    if let secError = error as? SecurityError {
+    if let secError=error as? SecurityError {
       return XPCErrors.SecurityError.withDescription(secError.description)
     }
     return nil
@@ -37,7 +37,7 @@ public enum SecurityErrorConversion {
   /// - Parameter error: The XPC error as Any
   /// - Returns: The core error as Any or nil if conversion is not possible
   public static func xpcToCore(_ error: Any) -> Any? {
-    if let xpcError = error as? XPCErrors.SecurityError {
+    if let xpcError=error as? XPCErrors.SecurityError {
       switch xpcError {
         case let .communicationError(description),
              let .serviceError(description),

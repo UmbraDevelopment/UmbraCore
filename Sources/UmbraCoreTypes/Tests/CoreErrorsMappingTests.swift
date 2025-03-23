@@ -7,24 +7,24 @@ final class CoreErrorsMappingTests: XCTestCase {
   // MARK: - Test Constants
 
   private enum Constants {
-    static let testReason = "Test error reason"
+    static let testReason="Test error reason"
   }
 
   // MARK: - SecureBytesError Mapping Tests
 
   func testSecureBytesErrorMapping() {
     // Test mapping to CoreErrors
-    let originalError = SecureBytesError.invalidHexString
-    let mappedError = mapToCoreErrors(originalError)
+    let originalError=SecureBytesError.invalidHexString
+    let mappedError=mapToCoreErrors(originalError)
 
     // Verify the mapped error
-    guard let resourceError = mappedError as? CEResourceError else {
+    guard let resourceError=mappedError as? CEResourceError else {
       XCTFail("Expected CEResourceError but got \(type(of: mappedError))")
       return
     }
 
     // Check specific case
-    if case .operationFailed = resourceError {
+    if case .operationFailed=resourceError {
       // Correct mapping
     } else {
       XCTFail("Expected operationFailed but got \(resourceError)")
@@ -35,17 +35,17 @@ final class CoreErrorsMappingTests: XCTestCase {
 
   func testResourceLocatorErrorMapping() {
     // Test mapping to CoreErrors
-    let originalError = ResourceLocatorError.resourceNotFound
-    let mappedError = mapToCoreErrors(originalError)
+    let originalError=ResourceLocatorError.resourceNotFound
+    let mappedError=mapToCoreErrors(originalError)
 
     // Verify the mapped error
-    guard let resourceError = mappedError as? CEResourceError else {
+    guard let resourceError=mappedError as? CEResourceError else {
       XCTFail("Expected CEResourceError but got \(type(of: mappedError))")
       return
     }
 
     // Check specific case
-    if case .resourceNotFound = resourceError {
+    if case .resourceNotFound=resourceError {
       // Correct mapping
     } else {
       XCTFail("Expected resourceNotFound but got \(resourceError)")
@@ -56,10 +56,10 @@ final class CoreErrorsMappingTests: XCTestCase {
 
   func testBidirectionalMapping() {
     // Create a CoreErrors error
-    let coreError = CEResourceError.invalidState
+    let coreError=CEResourceError.invalidState
 
     // Map to UmbraCoreTypes
-    let umbralError = mapFromCoreErrors(coreError)
+    let umbralError=mapFromCoreErrors(coreError)
 
     // Verify the mapped error
     XCTAssertTrue(
@@ -68,7 +68,7 @@ final class CoreErrorsMappingTests: XCTestCase {
     )
 
     // Map back to CoreErrors
-    let remappedError = mapToCoreErrors(umbralError)
+    let remappedError=mapToCoreErrors(umbralError)
 
     // Verify the re-mapped error
     XCTAssertTrue(
@@ -81,7 +81,7 @@ final class CoreErrorsMappingTests: XCTestCase {
 
   func testErrorContainer() {
     // Create an error container
-    let container = ErrorContainer(
+    let container=ErrorContainer(
       domain: "test.domain",
       code: 123,
       userInfo: ["key": "value" as Any]
@@ -100,8 +100,8 @@ final class CoreErrorsMappingTests: XCTestCase {
     // without namespace conflicts
 
     // Create types from different modules
-    let coreError = CEResourceError.invalidState
-    let localError = SecureBytesError.invalidHexString
+    let coreError=CEResourceError.invalidState
+    let localError=SecureBytesError.invalidHexString
 
     // Verify they're distinct types with proper namespace resolution
     XCTAssertTrue(type(of: coreError) == CEResourceError.self, "Expected CEResourceError")

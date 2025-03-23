@@ -9,11 +9,11 @@ import UmbraLogging
 /// Error domain namespace
 public enum ErrorDomain {
   /// Security domain
-  public static let security = "Security"
+  public static let security="Security"
   /// Crypto domain
-  public static let crypto = "Crypto"
+  public static let crypto="Crypto"
   /// Application domain
-  public static let application = "Application"
+  public static let application="Application"
 }
 
 /// Error context protocol
@@ -37,9 +37,9 @@ public struct BaseErrorContext: ErrorContext {
 
   /// Initialise with domain, code and description
   public init(domain: String, code: Int, description: String) {
-    self.domain = domain
-    self.code = code
-    self.description = description
+    self.domain=domain
+    self.code=code
+    self.description=description
   }
 }
 
@@ -62,15 +62,15 @@ public final class ErrorHandlingExamples {
   @MainActor
   public func errorMappingExample() {
     // Get an instance of GeneralSecurity.Core error
-    _ = authenticationFailedError("Invalid credentials")
+    _=authenticationFailedError("Invalid credentials")
 
     // Map to different error type using the mapper
     // Since we don't have mapCoreToXPC, we'll create the XPC error directly
-    let xpcError = UmbraErrors.GeneralSecurity.XPC.connectionFailed(reason: "Mapped from core error")
+    let xpcError=UmbraErrors.GeneralSecurity.XPC.connectionFailed(reason: "Mapped from core error")
     print("Created XPC error: \(xpcError)")
 
     // Create a network error
-    let networkError = UmbraErrors.Network.Core.connectionFailed(reason: "Connection timeout")
+    let networkError=UmbraErrors.Network.Core.connectionFailed(reason: "Connection timeout")
 
     // Log the network error
     print("Network error: \(networkError)")
@@ -85,7 +85,7 @@ public final class ErrorHandlingExamples {
       // This is a simplified example
       print("Operation failed: \(error)")
 
-      if let securityError = error as? UmbraErrors.GeneralSecurity.Core {
+      if let securityError=error as? UmbraErrors.GeneralSecurity.Core {
         // Handle specific security error
         print("Security error: \(securityError)")
       }
@@ -99,7 +99,7 @@ public final class ErrorHandlingExamples {
     } catch {
       // With the new error system, we'd wrap errors differently
       // This is a simplified example
-      let networkError = error as? UmbraErrors.Network.Core ??
+      let networkError=error as? UmbraErrors.Network.Core ??
         UmbraErrors.Network.Core
         .connectionFailed(reason: "Unknown error: \(error.localizedDescription)")
 
@@ -110,16 +110,16 @@ public final class ErrorHandlingExamples {
   /// Example of using logging with errors
   public func loggingExample() {
     // Create errors with different severity levels
-    let debugError = UmbraErrors.GeneralSecurity.Core.internalError("This is a debug-level issue")
+    let debugError=UmbraErrors.GeneralSecurity.Core.internalError("This is a debug-level issue")
 
-    let infoError = UmbraErrors.Network.Core
+    let infoError=UmbraErrors.Network.Core
       .connectionFailed(reason: "Connection temporarily unavailable")
 
-    let warningError = UmbraErrors.GeneralSecurity.Core
+    let warningError=UmbraErrors.GeneralSecurity.Core
       .invalidInput(reason: "Permissions will expire soon")
 
     // Create a map for details
-    let _: [String: String] = [
+    let _: [String: String]=[
       "expectedHash": "a1b2c3d4e5f6",
       "actualHash": "a1b2c3d4e5f7",
       "userID": "user123",
@@ -127,7 +127,7 @@ public final class ErrorHandlingExamples {
     ]
 
     // Use hashVerificationFailed which is appropriate for integrity violations
-    let criticalError = UmbraErrors.GeneralSecurity.Core
+    let criticalError=UmbraErrors.GeneralSecurity.Core
       .hashVerificationFailed(reason: "Data integrity violation detected")
 
     // Simple logging (no adapters)

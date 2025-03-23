@@ -6,10 +6,10 @@ final class KeyMetadataTests: XCTestCase {
   // MARK: - Canonical Type Tests
 
   func testCanonicalKeyMetadataCreation() {
-    let createdAt = Date()
-    let expiryDate = Date(timeIntervalSinceNow: 86_400 * 30) // 30 days
+    let createdAt=Date()
+    let expiryDate=Date(timeIntervalSinceNow: 86400 * 30) // 30 days
 
-    let metadata = KeyManagementTypes.KeyMetadata(
+    let metadata=KeyManagementTypes.KeyMetadata(
       status: .active,
       storageLocation: .secureEnclave,
       accessControls: .requiresBiometric,
@@ -44,11 +44,11 @@ final class KeyMetadataTests: XCTestCase {
   }
 
   func testCanonicalKeyMetadataWithTimestamps() {
-    let createdTimestamp: Int64 = 1_627_084_800 // July 24, 2021 00:00:00 UTC
-    let modifiedTimestamp: Int64 = 1_627_171_200 // July 25, 2021 00:00:00 UTC
-    let expiryTimestamp: Int64 = 1_635_120_000 // October 24, 2021 00:00:00 UTC
+    let createdTimestamp: Int64=1_627_084_800 // July 24, 2021 00:00:00 UTC
+    let modifiedTimestamp: Int64=1_627_171_200 // July 25, 2021 00:00:00 UTC
+    let expiryTimestamp: Int64=1_635_120_000 // October 24, 2021 00:00:00 UTC
 
-    let metadata = KeyManagementTypes.KeyMetadata.withTimestamps(
+    let metadata=KeyManagementTypes.KeyMetadata.withTimestamps(
       status: .active,
       storageLocation: .secureEnclave,
       accessControls: .requiresBiometric,
@@ -77,8 +77,8 @@ final class KeyMetadataTests: XCTestCase {
   }
 
   func testCanonicalKeyMetadataCodable() throws {
-    let createdAt = Date()
-    let metadata = KeyManagementTypes.KeyMetadata(
+    let createdAt=Date()
+    let metadata=KeyManagementTypes.KeyMetadata(
       status: .active,
       storageLocation: .secureEnclave,
       accessControls: .requiresBiometric,
@@ -90,10 +90,10 @@ final class KeyMetadataTests: XCTestCase {
     )
 
     // Test encoding and decoding
-    let encoder = JSONEncoder()
-    let data = try encoder.encode(metadata)
-    let decoder = JSONDecoder()
-    let decodedMetadata = try decoder.decode(KeyManagementTypes.KeyMetadata.self, from: data)
+    let encoder=JSONEncoder()
+    let data=try encoder.encode(metadata)
+    let decoder=JSONDecoder()
+    let decodedMetadata=try decoder.decode(KeyManagementTypes.KeyMetadata.self, from: data)
 
     // Compare properties
     XCTAssertEqual(decodedMetadata.status, metadata.status)
@@ -111,7 +111,7 @@ final class KeyMetadataTests: XCTestCase {
   }
 
   func testSimplifiedMetadata() {
-    let metadata = KeyManagementTypes.KeyMetadata(
+    let metadata=KeyManagementTypes.KeyMetadata(
       status: .active,
       storageLocation: .secureEnclave,
       accessControls: .requiresBiometric,
@@ -121,7 +121,7 @@ final class KeyMetadataTests: XCTestCase {
       customMetadata: ["purpose": "testing"]
     )
 
-    let simplified = metadata.simplified()
+    let simplified=metadata.simplified()
 
     // The simplified version should be identical except for customMetadata
     XCTAssertEqual(simplified.status, metadata.status)
@@ -137,10 +137,10 @@ final class KeyMetadataTests: XCTestCase {
 
   func testIsExpired() {
     // Not expired (future date)
-    let notExpired = KeyManagementTypes.KeyMetadata(
+    let notExpired=KeyManagementTypes.KeyMetadata(
       status: .active,
       storageLocation: .secureEnclave,
-      expiryDate: Date(timeIntervalSinceNow: 86_400), // 1 day in future
+      expiryDate: Date(timeIntervalSinceNow: 86400), // 1 day in future
       algorithm: "AES-256-GCM",
       keySize: 256,
       identifier: "test-key-123"
@@ -148,10 +148,10 @@ final class KeyMetadataTests: XCTestCase {
     XCTAssertFalse(notExpired.isExpired())
 
     // Expired (past date)
-    let expired = KeyManagementTypes.KeyMetadata(
+    let expired=KeyManagementTypes.KeyMetadata(
       status: .active,
       storageLocation: .secureEnclave,
-      expiryDate: Date(timeIntervalSinceNow: -86_400), // 1 day in past
+      expiryDate: Date(timeIntervalSinceNow: -86400), // 1 day in past
       algorithm: "AES-256-GCM",
       keySize: 256,
       identifier: "test-key-123"
@@ -159,7 +159,7 @@ final class KeyMetadataTests: XCTestCase {
     XCTAssertTrue(expired.isExpired())
 
     // No expiry date
-    let noExpiry = KeyManagementTypes.KeyMetadata(
+    let noExpiry=KeyManagementTypes.KeyMetadata(
       status: .active,
       storageLocation: .secureEnclave,
       algorithm: "AES-256-GCM",
@@ -170,7 +170,7 @@ final class KeyMetadataTests: XCTestCase {
   }
 
   func testWithStatus() {
-    let original = KeyManagementTypes.KeyMetadata(
+    let original=KeyManagementTypes.KeyMetadata(
       status: .active,
       storageLocation: .secureEnclave,
       algorithm: "AES-256-GCM",
@@ -179,9 +179,9 @@ final class KeyMetadataTests: XCTestCase {
     )
 
     // Add small delay to ensure timestamps are different
-    usleep(1_000) // Sleep for 1 millisecond
+    usleep(1000) // Sleep for 1 millisecond
 
-    let updated = original.withStatus(.compromised)
+    let updated=original.withStatus(.compromised)
 
     // Status should be updated
     XCTAssertEqual(updated.status, .compromised)
@@ -199,11 +199,11 @@ final class KeyMetadataTests: XCTestCase {
   // MARK: - Raw Metadata Conversion Tests
 
   func testRawMetadataConversion() {
-    let createdAt = Date()
-    let expiryDate = Date(timeIntervalSinceNow: 86_400 * 30) // 30 days
+    let createdAt=Date()
+    let expiryDate=Date(timeIntervalSinceNow: 86400 * 30) // 30 days
 
     // Create original metadata
-    let original = KeyManagementTypes.KeyMetadata(
+    let original=KeyManagementTypes.KeyMetadata(
       status: .active,
       storageLocation: .secureEnclave,
       accessControls: .requiresBiometric,
@@ -221,7 +221,7 @@ final class KeyMetadataTests: XCTestCase {
     )
 
     // Convert to raw metadata
-    let rawMetadata = original.toRawMetadata()
+    let rawMetadata=original.toRawMetadata()
 
     // Test raw metadata values
     XCTAssertEqual(rawMetadata.status, KeyStatus.active.toRawStatus())
@@ -240,7 +240,7 @@ final class KeyMetadataTests: XCTestCase {
     XCTAssertEqual(rawMetadata.customMetadata?["purpose"], "testing")
 
     // Convert back from raw metadata
-    let converted = KeyManagementTypes.KeyMetadata.from(rawMetadata: rawMetadata)
+    let converted=KeyManagementTypes.KeyMetadata.from(rawMetadata: rawMetadata)
 
     // Compare original and round-trip converted
     XCTAssertEqual(converted.status, original.status)
@@ -269,12 +269,12 @@ final class KeyMetadataTests: XCTestCase {
   }
 
   func testRawMetadataTimestampConversion() {
-    let createdTimestamp: Int64 = 1_627_084_800 // July 24, 2021 00:00:00 UTC
-    let modifiedTimestamp: Int64 = 1_627_171_200 // July 25, 2021 00:00:00 UTC
-    let expiryTimestamp: Int64 = 1_635_120_000 // October 24, 2021 00:00:00 UTC
+    let createdTimestamp: Int64=1_627_084_800 // July 24, 2021 00:00:00 UTC
+    let modifiedTimestamp: Int64=1_627_171_200 // July 25, 2021 00:00:00 UTC
+    let expiryTimestamp: Int64=1_635_120_000 // October 24, 2021 00:00:00 UTC
 
     // Create raw metadata with timestamps
-    let rawMetadata = KeyMetadata.RawMetadata(
+    let rawMetadata=KeyMetadata.RawMetadata(
       status: .active,
       storageLocation: .secureEnclave,
       accessControls: .requiresBiometric,
@@ -292,7 +292,7 @@ final class KeyMetadataTests: XCTestCase {
     )
 
     // Create KeyMetadata from raw metadata
-    let metadata = KeyManagementTypes.KeyMetadata.from(rawMetadata: rawMetadata)
+    let metadata=KeyManagementTypes.KeyMetadata.from(rawMetadata: rawMetadata)
 
     // Test that timestamps were properly converted to Dates
     XCTAssertEqual(metadata.createdAtTimestamp, createdTimestamp)
@@ -303,7 +303,7 @@ final class KeyMetadataTests: XCTestCase {
     XCTAssertEqual(metadata.expiryDate?.timeIntervalSince1970, Double(expiryTimestamp))
 
     // Convert back to raw metadata and verify timestamps
-    let convertedRaw = metadata.toRawMetadata()
+    let convertedRaw=metadata.toRawMetadata()
     XCTAssertEqual(convertedRaw.createdAtTimestamp, createdTimestamp)
     XCTAssertEqual(convertedRaw.lastModifiedTimestamp, modifiedTimestamp)
     XCTAssertEqual(convertedRaw.expiryTimestamp, expiryTimestamp)

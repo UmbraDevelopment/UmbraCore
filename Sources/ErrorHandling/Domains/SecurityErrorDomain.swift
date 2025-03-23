@@ -6,11 +6,11 @@ import Foundation
 /// Error domain namespace
 public enum ErrorDomain {
   /// Security domain
-  public static let security = "Security"
+  public static let security="Security"
   /// Crypto domain
-  public static let crypto = "Crypto"
+  public static let crypto="Crypto"
   /// Application domain
-  public static let application = "Application"
+  public static let application="Application"
 }
 
 /// Error context protocol
@@ -34,9 +34,9 @@ public struct BaseErrorContext: ErrorContext {
 
   /// Initialise with domain, code and description
   public init(domain: String, code: Int, description: String) {
-    self.domain = domain
-    self.code = code
-    self.description = description
+    self.domain=domain
+    self.code=code
+    self.description=description
   }
 }
 
@@ -112,7 +112,7 @@ public struct UmbraSecurityError: Error, UmbraError, Sendable, CustomStringConve
   public let errorType: SecurityErrorType
 
   /// The domain for security errors
-  public let domain: String = "Security"
+  public let domain: String="Security"
 
   /// The error code
   public var code: String {
@@ -141,14 +141,14 @@ public struct UmbraSecurityError: Error, UmbraError, Sendable, CustomStringConve
   /// Initialize a new security error
   public init(
     errorType: SecurityErrorType,
-    source: ErrorHandlingInterfaces.ErrorSource? = nil,
-    underlyingError: Error? = nil,
-    context: ErrorHandlingInterfaces.ErrorContext? = nil
+    source: ErrorHandlingInterfaces.ErrorSource?=nil,
+    underlyingError: Error?=nil,
+    context: ErrorHandlingInterfaces.ErrorContext?=nil
   ) {
-    self.errorType = errorType
-    self.source = source
-    self.underlyingError = underlyingError
-    self.context = context ?? ErrorHandlingInterfaces.ErrorContext(
+    self.errorType=errorType
+    self.source=source
+    self.underlyingError=underlyingError
+    self.context=context ?? ErrorHandlingInterfaces.ErrorContext(
       source: "Security",
       operation: "securityOperation",
       details: errorType.message
@@ -188,9 +188,9 @@ public struct UmbraSecurityError: Error, UmbraError, Sendable, CustomStringConve
   /// Create a security error with the specified type and message
   public static func create(
     _ type: SecurityErrorType,
-    file: String = #file,
-    function: String = #function,
-    line: Int = #line
+    file: String=#file,
+    function: String=#function,
+    line: Int=#line
   ) -> UmbraSecurityError {
     UmbraSecurityError(
       errorType: type,
@@ -213,9 +213,9 @@ public struct UmbraSecurityError: Error, UmbraError, Sendable, CustomStringConve
   /// - Returns: A UmbraSecurityError with authenticationFailed type
   public static func authenticationFailed(
     _ message: String,
-    file: String = #file,
-    function: String = #function,
-    line: Int = #line
+    file: String=#file,
+    function: String=#function,
+    line: Int=#line
   ) -> UmbraSecurityError {
     create(.authenticationFailed(message), file: file, function: function, line: line)
   }
@@ -229,9 +229,9 @@ public struct UmbraSecurityError: Error, UmbraError, Sendable, CustomStringConve
   /// - Returns: A UmbraSecurityError with authorizationFailed type
   public static func authorizationFailed(
     _ message: String,
-    file: String = #file,
-    function: String = #function,
-    line: Int = #line
+    file: String=#file,
+    function: String=#function,
+    line: Int=#line
   ) -> UmbraSecurityError {
     create(.authorizationFailed(message), file: file, function: function, line: line)
   }

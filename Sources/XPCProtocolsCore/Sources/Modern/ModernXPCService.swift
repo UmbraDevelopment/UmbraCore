@@ -11,11 +11,11 @@ return .failure(.invalidInput("Cannot import empty key data"))
 /// Error domain namespace
 public enum ErrorDomain {
   /// Security domain
-  public static let security = "Security"
+  public static let security="Security"
   /// Crypto domain
-  public static let crypto = "Crypto"
+  public static let crypto="Crypto"
   /// Application domain
-  public static let application = "Application"
+  public static let application="Application"
 }
 
 /// Error context protocol
@@ -39,9 +39,9 @@ public struct BaseErrorContext: ErrorContext {
 
   /// Initialise with domain, code and description
   public init(domain: String, code: Int, description: String) {
-    self.domain = domain
-    self.code = code
-    self.description = description
+    self.domain=domain
+    self.code=code
+    self.description=description
   }
 }
 
@@ -131,7 +131,7 @@ public class ModernXPCService: XPCServiceProtocolComplete, @unchecked Sendable {
       return .failure(.invalidInput("Length must be positive"))
     }
 
-    let bytes = (0..<length).map { _ in UInt8.random(in: 0...255) }
+    let bytes=(0..<length).map { _ in UInt8.random(in: 0...255) }
     return .success(SecureBytes(bytes: bytes))
   }
 
@@ -172,7 +172,7 @@ public class ModernXPCService: XPCServiceProtocolComplete, @unchecked Sendable {
     }
 
     // In a real implementation, would perform cryptographic signing
-    let signatureBytes = [UInt8](repeating: 0x1, count: 64)
+    let signatureBytes=[UInt8](repeating: 0x1, count: 64)
     return .success(SecureBytes(bytes: signatureBytes))
   }
 
@@ -230,9 +230,9 @@ public class ModernXPCService: XPCServiceProtocolComplete, @unchecked Sendable {
 
     // In a real implementation, would use proper cryptographic algorithms
     // This is just a placeholder implementation
-    var encryptedBytes = [UInt8](repeating: 0, count: data.count)
+    var encryptedBytes=[UInt8](repeating: 0, count: data.count)
     for i in 0..<data.count {
-      encryptedBytes[i] = data[i] ^ 0x55 // Simple XOR encryption for demo
+      encryptedBytes[i]=data[i] ^ 0x55 // Simple XOR encryption for demo
     }
 
     return .success(SecureBytes(bytes: encryptedBytes))
@@ -247,9 +247,9 @@ public class ModernXPCService: XPCServiceProtocolComplete, @unchecked Sendable {
 
     // In a real implementation, would use proper cryptographic algorithms
     // The demo implementation just uses the same XOR operation as encryption
-    var decryptedBytes = [UInt8](repeating: 0, count: data.count)
+    var decryptedBytes=[UInt8](repeating: 0, count: data.count)
     for i in 0..<data.count {
-      decryptedBytes[i] = data[i] ^ 0x55 // Simple XOR decryption for demo
+      decryptedBytes[i]=data[i] ^ 0x55 // Simple XOR decryption for demo
     }
 
     return .success(SecureBytes(bytes: decryptedBytes))
@@ -259,11 +259,11 @@ public class ModernXPCService: XPCServiceProtocolComplete, @unchecked Sendable {
   public func generateKey() async
   -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
     // In a real implementation, would use secure random generation
-    let keyLength = 32 // 256 bits
-    var keyBytes = [UInt8](repeating: 0, count: keyLength)
+    let keyLength=32 // 256 bits
+    var keyBytes=[UInt8](repeating: 0, count: keyLength)
 
     for i in 0..<keyLength {
-      keyBytes[i] = UInt8.random(in: 0...255)
+      keyBytes[i]=UInt8.random(in: 0...255)
     }
 
     return .success(SecureBytes(bytes: keyBytes))
@@ -278,15 +278,15 @@ public class ModernXPCService: XPCServiceProtocolComplete, @unchecked Sendable {
 
     // In a real implementation, would use a cryptographic hash function
     // This is just a simple demonstration
-    var hashValue: UInt64 = 0
+    var hashValue: UInt64=0
     for byte in data {
-      hashValue = hashValue &+ UInt64(byte)
-      hashValue = (hashValue << 7) | (hashValue >> 57) // Simple rotation
+      hashValue=hashValue &+ UInt64(byte)
+      hashValue=(hashValue << 7) | (hashValue >> 57) // Simple rotation
     }
 
-    var hashBytes = [UInt8](repeating: 0, count: 8)
+    var hashBytes=[UInt8](repeating: 0, count: 8)
     for i in 0..<8 {
-      hashBytes[i] = UInt8((hashValue >> (i * 8)) & 0xFF)
+      hashBytes[i]=UInt8((hashValue >> (i * 8)) & 0xFF)
     }
 
     return .success(SecureBytes(bytes: hashBytes))
@@ -298,7 +298,7 @@ public class ModernXPCService: XPCServiceProtocolComplete, @unchecked Sendable {
     keyIdentifier: String?,
     metadata _: [String: String]?
   ) async -> Result<String, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
-    let identifier = keyIdentifier ?? "key-\(UUID().uuidString)"
+    let identifier=keyIdentifier ?? "key-\(UUID().uuidString)"
 
     // In a real implementation, would generate an appropriate key based on the type
     // and store it securely with the provided identifier and metadata
@@ -315,7 +315,7 @@ public class ModernXPCService: XPCServiceProtocolComplete, @unchecked Sendable {
   ) async -> Result<String, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
     if keyData.isEmpty {}
 
-    let identifier = keyIdentifier ?? "imported-\(UUID().uuidString)"
+    let identifier=keyIdentifier ?? "imported-\(UUID().uuidString)"
 
     // then store it securely with the provided identifier and metadata
 
@@ -331,7 +331,7 @@ public class ModernXPCService: XPCServiceProtocolComplete, @unchecked Sendable {
 
     // In a real implementation, would retrieve the key from secure storage
     // This is just a placeholder implementation
-    let keyBytes = [UInt8](repeating: 0xAA, count: 32)
+    let keyBytes=[UInt8](repeating: 0xAA, count: 32)
 
     return .success(SecureBytes(bytes: keyBytes))
   }
@@ -361,11 +361,11 @@ public class ModernXPCService: XPCServiceProtocolComplete, @unchecked Sendable {
 
     // In a real implementation, would validate the type and generate an appropriate key
     // This is just a placeholder implementation
-    let byteCount = (bits + 7) / 8 // Convert bits to bytes, rounding up
-    var keyBytes = [UInt8](repeating: 0, count: byteCount)
+    let byteCount=(bits + 7) / 8 // Convert bits to bytes, rounding up
+    var keyBytes=[UInt8](repeating: 0, count: byteCount)
 
     for i in 0..<byteCount {
-      keyBytes[i] = UInt8.random(in: 0...255)
+      keyBytes[i]=UInt8.random(in: 0...255)
     }
 
     return .success(SecureBytes(bytes: keyBytes))
@@ -375,8 +375,8 @@ public class ModernXPCService: XPCServiceProtocolComplete, @unchecked Sendable {
   public func getServiceStatus() async
   -> Result<XPCServiceStatus, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
     // In a real implementation, would collect actual service metrics
-    let isActive = await ping()
-    let status = XPCServiceStatus(
+    let isActive=await ping()
+    let status=XPCServiceStatus(
       timestamp: Date(),
       protocolVersion: Self.protocolIdentifier,
       serviceVersion: "1.0.0",
@@ -421,7 +421,7 @@ public class ModernXPCService: XPCServiceProtocolComplete, @unchecked Sendable {
     // 2. Perform key derivation (PBKDF2, HKDF, etc.)
     // 3. Store the derived key with the target identifier
 
-    let identifier = targetKeyIdentifier ?? "derived-\(UUID().uuidString)"
+    let identifier=targetKeyIdentifier ?? "derived-\(UUID().uuidString)"
     return .success(identifier)
   }
 
@@ -447,7 +447,7 @@ public class ModernXPCService: XPCServiceProtocolComplete, @unchecked Sendable {
     keySize: Int,
     purpose: String
   ) async -> Result<String, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
-    let identifier = "generated-key-\(algorithm)-\(keySize)-\(purpose)"
+    let identifier="generated-key-\(algorithm)-\(keySize)-\(purpose)"
 
     // In a real implementation, would generate an appropriate key based on the algorithm,
     // key size, and purpose, then store it securely with the provided identifier

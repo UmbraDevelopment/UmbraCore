@@ -9,7 +9,7 @@ public struct ResourceError: Error, Equatable {
 
   /// Initialize with a description
   public init(description: String) {
-    self.description = description
+    self.description=description
   }
 
   /// Compare two ResourceErrors
@@ -25,7 +25,7 @@ public struct SecurityError: Error, Equatable {
 
   /// Initialize with a description
   public init(description: String) {
-    self.description = description
+    self.description=description
   }
 
   /// Compare two SecurityErrors

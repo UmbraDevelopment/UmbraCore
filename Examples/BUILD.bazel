@@ -1,3 +1,5 @@
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_binary", "swift_library")
+
 package(default_visibility = ["//visibility:public"])
 
 # This directory contains example code that is not meant to be built
@@ -7,8 +9,6 @@ package(default_visibility = ["//visibility:public"])
 # If you need to build or test these examples, you can do so explicitly:
 # bazel build //Examples/...
 # bazel test //Examples/...
-
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_binary", "swift_library")
 
 # IMPORTANT: Examples are disabled from main build due to dependency changes
 # When you need to build them, update the dependencies and re-enable.

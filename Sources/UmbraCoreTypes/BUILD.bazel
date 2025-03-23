@@ -1,36 +1,23 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library", "swift_test")
+load("//:swift_rules.bzl", "umbra_swift_library")
 
-swift_library(
+umbra_swift_library(
     name = "UmbraCoreTypes",
     srcs = glob(["Sources/**/*.swift"]),
-    module_name = "UmbraCoreTypes",
     visibility = ["//visibility:public"],
     deps = [
-        # Add dependency on our subpackage for CoreErrors
-        "//Sources/UmbraCoreTypes/CoreErrors:UmbraCoreTypesCoreErrors",
-    ],
-    copts = [
-        "-target", "arm64-apple-macos14.7.4",
-        # Enabling library evolution for binary compatibility
-        "-Xfrontend", "-enable-library-evolution",
+        "//Sources/UmbraCoreTypes/CoreErrors:UmbraCoreTypes_CoreErrors",
     ],
 )
 
-# No need for a separate test library with the same sources
-# Instead create tests that depend on the main library
-
-# Temporarily disabled due to security error type reference issues
-# Error: type '_ErrorCodeProtocol' has no member 'invalidInput'
-# 
-# swift_test(
-#     name = "UmbraCoreTypesTests_disabled",
-#     srcs = glob(["Tests/**/*.swift"]),
-#     deps = [
-#         ":UmbraCoreTypes",
-#         "//Sources/UmbraCoreTypes/CoreErrors:UmbraCoreTypesCoreErrors",
-#         "//Sources/CoreErrors",
-#     ],
-#     copts = [
-#         "-target", "arm64-apple-macos14.7.4",
-#     ],
+# Uncomment if documentation generation is needed
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+#
+# swift_package(
+#     name = "docc_documentation",
+#     srcs = glob([
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
+#     deps = ["//Sources/UmbraCoreTypes"],
 # )

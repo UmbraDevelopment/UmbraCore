@@ -39,20 +39,20 @@ public struct CommonOptions: Sendable {
   public init(
     repository: String,
     password: String,
-    cachePath: String? = nil,
-    validateCredentials: Bool = true,
-    quiet: Bool = false,
-    jsonOutput: Bool = false,
-    environmentVariables: [String: String] = [:],
-    arguments: [String] = []
+    cachePath: String?=nil,
+    validateCredentials: Bool=true,
+    quiet: Bool=false,
+    jsonOutput: Bool=false,
+    environmentVariables: [String: String]=[:],
+    arguments: [String]=[]
   ) {
-    self.repository = repository
-    self.password = password
-    self.cachePath = cachePath
-    self.validateCredentials = validateCredentials
-    self.quiet = quiet
-    self.jsonOutput = jsonOutput
-    self.environmentVariables = environmentVariables
-    self.arguments = arguments
+    self.repository=repository
+    self.password=password
+    self.cachePath=cachePath
+    self.validateCredentials=validateCredentials
+    self.quiet=quiet
+    self.jsonOutput=jsonOutput
+    self.environmentVariables=environmentVariables
+    self.arguments=arguments
   }
 }

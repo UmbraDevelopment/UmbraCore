@@ -2,8 +2,8 @@ import Foundation
 
 // Extension to make SecureBytes conform to Sequence protocol
 extension SecureBytes: Sequence {
-  public typealias Element = UInt8
-  public typealias Iterator = SecureBytesIterator
+  public typealias Element=UInt8
+  public typealias Iterator=SecureBytesIterator
 
   public func makeIterator() -> SecureBytesIterator {
     SecureBytesIterator(bytes: self)
@@ -12,13 +12,13 @@ extension SecureBytes: Sequence {
 
 // Iterator for SecureBytes
 public struct SecureBytesIterator: IteratorProtocol {
-  public typealias Element = UInt8
+  public typealias Element=UInt8
 
   private let bytes: SecureBytes
-  private var index: Int = 0
+  private var index: Int=0
 
   init(bytes: SecureBytes) {
-    self.bytes = bytes
+    self.bytes=bytes
   }
 
   public mutating func next() -> UInt8? {
@@ -26,7 +26,7 @@ public struct SecureBytesIterator: IteratorProtocol {
       return nil
     }
 
-    let element = bytes[index]
+    let element=bytes[index]
     index += 1
     return element
   }
@@ -35,8 +35,8 @@ public struct SecureBytesIterator: IteratorProtocol {
 // Extension to add prefix and dropFirst functionality
 extension SecureBytes {
   public func prefix(_ maxLength: Int) -> [UInt8] {
-    let count = Swift.min(count, maxLength)
-    var result = [UInt8]()
+    let count=Swift.min(count, maxLength)
+    var result=[UInt8]()
     result.reserveCapacity(count)
 
     for i in 0..<count {
@@ -46,12 +46,12 @@ extension SecureBytes {
     return result
   }
 
-  public func dropFirst(_ n: Int = 1) -> [UInt8] {
+  public func dropFirst(_ n: Int=1) -> [UInt8] {
     guard n < count else {
       return []
     }
 
-    var result = [UInt8]()
+    var result=[UInt8]()
     result.reserveCapacity(count - n)
 
     for i in n..<count {

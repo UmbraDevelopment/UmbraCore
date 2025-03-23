@@ -1,60 +1,28 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library", "swift_test")
-load("//:bazel/macros/swift.bzl", "umbra_swift_library")
-load("//tools/swift:build_rules.bzl", "umbracore_swift_library", "umbracore_swift_test_library")
-load("//tools/swift:docc_rules.bzl", "docc_documentation", "docc_serve")
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
-package(default_visibility = ["//visibility:public"])
-
-# DocC documentation for CoreDTOs
-docc_documentation(
-    name = "CoreDTOsDocC",
-    module_name = "CoreDTOs",
-    localonly = True,
-    srcs = glob(
-        [
-            "Documentation.docc/**/*.md",
-            "Documentation.docc/**/*.docc",
-            "Documentation.docc/**/*.plist",
-            "Sources/**/*.swift",
-        ],
-        allow_empty = True,
-    ),
-    visibility = ["//visibility:public"],
-)
-
-# Simple shell script to serve the documentation 
-sh_binary(
-    name = "serve_docs",
-    srcs = ["//tools/swift:serve_docc.sh"],
-    args = ["$(location :CoreDTOsDocC)"],
-    data = [":CoreDTOsDocC"],
-)
-
-# Preview documentation 
-sh_binary(
-    name = "preview_docs",
-    srcs = ["//tools/swift:preview_docc.sh"],
-    args = ["$(location :CoreDTOsDocC)"],
-    data = [":CoreDTOsDocC"],
-)
-
-umbracore_swift_library(
+swift_library(
     name = "CoreDTOs",
-    srcs = glob(
-        ["Sources/**/*.swift"],
-        allow_empty = True,
-    ),
-    deps = [
-        "//Sources/UmbraCoreTypes",
-        "//Sources/ErrorHandling",
-        "//ErrorHandling/Domains:ErrorHandlingDomains",
-        "//Sources/SecurityBridgeTypes",
-        "//Sources/CoreErrors",
-        # Removed dependency on XPCProtocolsCore to break the cycle
-    ],
-    module_name = "CoreDTOs",
+    srcs = glob(["Sources/**/*.swift"]),
     visibility = ["//visibility:public"],
-    data = [
-        ":CoreDTOsDocC",
+    deps = [
+        "//Sources/ErrorHandling",
+        "//Sources/ErrorHandlingDomains",
+        "//Sources/ErrorHandlingInterfaces",
+        "//Sources/SecurityBridgeTypes",
+        "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraErrors",
+        "//Sources/UmbraLogging",
     ],
 )
+
+# Uncomment if documentation generation is needed
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+#
+# swift_package(
+#     name = "docc_documentation",
+#     srcs = glob([
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
+#     deps = ["//Sources/CoreDTOs"],
+# )

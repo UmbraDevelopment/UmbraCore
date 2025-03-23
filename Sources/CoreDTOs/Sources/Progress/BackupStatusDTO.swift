@@ -99,29 +99,29 @@ public struct BackupStatusDTO: Sendable, Equatable {
   public init(
     status: Status,
     repositoryID: String,
-    snapshotID: String? = nil,
-    filesProcessed: Int = 0,
-    filesAdded: Int = 0,
-    filesChanged: Int = 0,
-    filesUnchanged: Int = 0,
-    dataAdded: UInt64 = 0,
-    totalDuration: UInt64 = 0,
-    errors: [String] = [],
+    snapshotID: String?=nil,
+    filesProcessed: Int=0,
+    filesAdded: Int=0,
+    filesChanged: Int=0,
+    filesUnchanged: Int=0,
+    dataAdded: UInt64=0,
+    totalDuration: UInt64=0,
+    errors: [String]=[],
     startTimestamp: UInt64,
-    endTimestamp: UInt64? = nil
+    endTimestamp: UInt64?=nil
   ) {
-    self.status = status
-    self.repositoryID = repositoryID
-    self.snapshotID = snapshotID
-    self.filesProcessed = filesProcessed
-    self.filesAdded = filesAdded
-    self.filesChanged = filesChanged
-    self.filesUnchanged = filesUnchanged
-    self.dataAdded = dataAdded
-    self.totalDuration = totalDuration
-    self.errors = errors
-    self.startTimestamp = startTimestamp
-    self.endTimestamp = endTimestamp
+    self.status=status
+    self.repositoryID=repositoryID
+    self.snapshotID=snapshotID
+    self.filesProcessed=filesProcessed
+    self.filesAdded=filesAdded
+    self.filesChanged=filesChanged
+    self.filesUnchanged=filesUnchanged
+    self.dataAdded=dataAdded
+    self.totalDuration=totalDuration
+    self.errors=errors
+    self.startTimestamp=startTimestamp
+    self.endTimestamp=endTimestamp
   }
 
   // MARK: - Factory Methods
@@ -195,7 +195,7 @@ public struct BackupStatusDTO: Sendable, Equatable {
   public static func failed(
     repositoryID: String,
     errors: [String],
-    filesProcessed: Int = 0,
+    filesProcessed: Int=0,
     totalDuration: UInt64,
     startTimestamp: UInt64,
     endTimestamp: UInt64
@@ -221,7 +221,7 @@ public struct BackupStatusDTO: Sendable, Equatable {
   /// - Returns: A BackupStatusDTO for a cancelled operation
   public static func cancelled(
     repositoryID: String,
-    filesProcessed: Int = 0,
+    filesProcessed: Int=0,
     totalDuration: UInt64,
     startTimestamp: UInt64,
     endTimestamp: UInt64
@@ -374,7 +374,7 @@ public struct BackupStatusDTO: Sendable, Equatable {
   /// - Parameter messages: Error messages to add
   /// - Returns: A new BackupStatusDTO with added error messages
   public func withAddedErrors(_ messages: [String]) -> BackupStatusDTO {
-    var newErrors = errors
+    var newErrors=errors
     newErrors.append(contentsOf: messages)
 
     return BackupStatusDTO(

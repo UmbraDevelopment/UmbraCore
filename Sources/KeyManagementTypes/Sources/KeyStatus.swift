@@ -25,7 +25,7 @@ public enum KeyStatus: Sendable, Equatable, Codable {
   /// - Parameter timestamp: Unix timestamp (seconds since 1970)
   /// - Returns: A KeyStatus.pendingDeletion instance with the equivalent Date
   public static func pendingDeletionWithTimestamp(_ timestamp: Int64) -> KeyStatus {
-    let date = Date(timeIntervalSince1970: TimeInterval(timestamp))
+    let date=Date(timeIntervalSince1970: TimeInterval(timestamp))
     return .pendingDeletion(date)
   }
 
@@ -59,8 +59,8 @@ public enum KeyStatus: Sendable, Equatable, Codable {
   @preconcurrency
   @available(*, deprecated, message: "Will need to be refactored for Swift 6")
   public init(from decoder: Decoder) throws {
-    let container = try decoder.container(keyedBy: CodingKeys.self)
-    let type = try container.decode(StatusTypeInternal.self, forKey: .type)
+    let container=try decoder.container(keyedBy: CodingKeys.self)
+    let type=try container.decode(StatusTypeInternal.self, forKey: .type)
 
     switch type {
       case .active:
@@ -70,13 +70,13 @@ public enum KeyStatus: Sendable, Equatable, Codable {
       case .retired:
         self = .retired
       case .pendingDeletion:
-        let date = try container.decode(Date.self, forKey: .deletionDate)
+        let date=try container.decode(Date.self, forKey: .deletionDate)
         self = .pendingDeletion(date)
     }
   }
 
   public func encode(to encoder: Encoder) throws {
-    var container = encoder.container(keyedBy: CodingKeys.self)
+    var container=encoder.container(keyedBy: CodingKeys.self)
 
     switch self {
       case .active:
@@ -108,7 +108,7 @@ extension KeyStatus {
       case .retired:
         return "retired"
       case let .pendingDeletion(date):
-        let timestamp = Int64(date.timeIntervalSince1970)
+        let timestamp=Int64(date.timeIntervalSince1970)
         // We pass a tuple with type "pendingDeletion" and the timestamp value
         return ("pendingDeletion", timestamp)
     }
@@ -124,13 +124,14 @@ extension KeyStatus {
 
     // Handle tuple representation for pendingDeletion
     if
-      let tuple = coreServicesNoFoundation as? (String, Int64),
-      tuple.0 == "pendingDeletion" {
+      let tuple=coreServicesNoFoundation as? (String, Int64),
+      tuple.0 == "pendingDeletion"
+    {
       return .pendingDeletionWithTimestamp(tuple.1)
     }
 
     // Handle simple string values
-    let rawValue = String(describing: coreServicesNoFoundation)
+    let rawValue=String(describing: coreServicesNoFoundation)
     switch rawValue {
       case "active":
         return .active

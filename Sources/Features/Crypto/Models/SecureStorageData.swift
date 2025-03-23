@@ -15,7 +15,7 @@ public struct SecureStorageData: Codable, Sendable {
   public let version: Int
 
   /// Current version of the storage format
-  public static let currentVersion = 1
+  public static let currentVersion=1
 
   /// Initialises new secure storage data
   /// - Parameters:
@@ -27,14 +27,14 @@ public struct SecureStorageData: Codable, Sendable {
   public init(
     encryptedData: Data,
     initializationVector: Data,
-    salt: Data? = nil,
-    timestamp: Date = Date(),
-    version: Int = SecureStorageData.currentVersion
+    salt: Data?=nil,
+    timestamp: Date=Date(),
+    version: Int=SecureStorageData.currentVersion
   ) {
-    self.encryptedData = encryptedData
-    self.initializationVector = initializationVector
-    self.salt = salt
-    self.timestamp = timestamp
-    self.version = version
+    self.encryptedData=encryptedData
+    self.initializationVector=initializationVector
+    self.salt=salt
+    self.timestamp=timestamp
+    self.version=version
   }
 }

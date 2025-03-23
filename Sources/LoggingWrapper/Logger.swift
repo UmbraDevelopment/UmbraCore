@@ -4,7 +4,7 @@ import LoggingWrapperInterfaces
 
 /// A simple logging facade that wraps SwiftyBeaver
 public class Logger: LoggerProtocol {
-  private static let logger = SwiftyBeaver.self
+  private static let logger=SwiftyBeaver.self
 
   /// Configuration manager to handle thread-safe setup
   ///
@@ -13,13 +13,13 @@ public class Logger: LoggerProtocol {
   @MainActor
   private final class ConfigurationManager {
     /// Whether the logger has been configured
-    private var isConfigured = false
+    private var isConfigured=false
 
     /// Configure the logger if it hasn't been configured yet
     /// - Returns: True if this is the first configuration, false if already configured
     func configure() -> Bool {
       if !isConfigured {
-        isConfigured = true
+        isConfigured=true
         return true
       }
       return false
@@ -27,7 +27,7 @@ public class Logger: LoggerProtocol {
   }
 
   /// Shared configuration manager
-  private static let configManager = ConfigurationManager()
+  private static let configManager=ConfigurationManager()
 
   /// Configure the logger with a default console destination
   ///
@@ -35,8 +35,8 @@ public class Logger: LoggerProtocol {
   /// It is safe to call this method multiple times; only the first call will have an effect.
   public static func configure() {
     // Create a default console destination
-    let console = ConsoleDestination()
-    console.format = "$DHH:mm:ss.SSS$d $L $M"
+    let console=ConsoleDestination()
+    console.format="$DHH:mm:ss.SSS$d $L $M"
 
     // Configure with the console destination
     configure(with: console)
@@ -52,19 +52,19 @@ public class Logger: LoggerProtocol {
   ///   - includeFunctionName: Whether to include function names, defaults to false
   public static func configureWithConsole(
     minimumLevel: LogLevel = .info,
-    includeTimestamp: Bool = true,
-    includeFileInfo: Bool = false,
-    includeLineNumber: Bool = false,
-    includeFunctionName: Bool = false
+    includeTimestamp: Bool=true,
+    includeFileInfo: Bool=false,
+    includeLineNumber: Bool=false,
+    includeFunctionName: Bool=false
   ) {
     // Create a console destination with the specified configuration
-    let console = ConsoleDestination()
+    let console=ConsoleDestination()
 
     // Apply minimum level
-    console.minLevel = toSwiftyBeaverLevel(minimumLevel)
+    console.minLevel=toSwiftyBeaverLevel(minimumLevel)
 
     // Configure format options
-    console.format = ""
+    console.format=""
 
     if includeTimestamp {
       console.format += "$DHH:mm:ss.SSS$d "
@@ -104,22 +104,22 @@ public class Logger: LoggerProtocol {
     // to isolate its use to a specific thread/context.
 
     // First, capture any configuration properties needed from the destination
-    let format = destination.format
-    let minLevel = destination.minLevel
+    let format=destination.format
+    let minLevel=destination.minLevel
 
     // Also capture the destination type
-    let isConsoleDestination = destination is ConsoleDestination
-    let isFileDestination = destination is FileDestination
+    let isConsoleDestination=destination is ConsoleDestination
+    let isFileDestination=destination is FileDestination
 
     // This task will properly isolate the destination handling
     Task { @MainActor [self] in
       // ConfigurationManager is already MainActor-isolated, but this task runs on MainActor
       // so we can access it directly
-      let shouldConfigure = configManager.configure()
+      let shouldConfigure=configManager.configure()
 
       // Create a new destination instance on the main actor
       // This avoids sending non-Sendable types across task boundaries
-      let mainActorDestination: BaseDestination = if isConsoleDestination {
+      let mainActorDestination: BaseDestination=if isConsoleDestination {
         ConsoleDestination()
       } else if isFileDestination {
         FileDestination()
@@ -129,8 +129,8 @@ public class Logger: LoggerProtocol {
       }
 
       // Apply captured configuration
-      mainActorDestination.format = format
-      mainActorDestination.minLevel = minLevel
+      mainActorDestination.format=format
+      mainActorDestination.minLevel=minLevel
 
       // Now add the destination to the logger
       if shouldConfigure || true { // Always add the destination
@@ -154,21 +154,21 @@ public class Logger: LoggerProtocol {
   public static func log(
     _ level: LogLevel,
     _ message: @autoclosure () -> Any,
-    file: String = #file,
-    function: String = #function,
-    line: Int = #line
+    file: String=#file,
+    function: String=#function,
+    line: Int=#line
   ) {
     // Evaluate the message before passing to Task to avoid capturing non-escaping parameter
-    let messageValue = message()
+    let messageValue=message()
 
     Task {
       // Since we're not on the MainActor, we need to use await
-      let configured = await configManager.configure()
+      let configured=await configManager.configure()
       if !configured {
         // Since we're not on the MainActor, we need to use await
-        _ = await configManager.configure() // Capture the result to address warning
-        let console = ConsoleDestination()
-        console.format = "$DHH:mm:ss.SSS$d $L $M"
+        _=await configManager.configure() // Capture the result to address warning
+        let console=ConsoleDestination()
+        console.format="$DHH:mm:ss.SSS$d $L $M"
         logger.addDestination(console)
       }
 
@@ -199,9 +199,9 @@ public class Logger: LoggerProtocol {
   ///   - line: The line from which the log is sent
   public static func critical(
     _ message: @autoclosure () -> Any,
-    file: String = #file,
-    function: String = #function,
-    line: Int = #line
+    file: String=#file,
+    function: String=#function,
+    line: Int=#line
   ) {
     log(.critical, message(), file: file, function: function, line: line)
   }
@@ -218,9 +218,9 @@ public class Logger: LoggerProtocol {
   ///   - line: The line from which the log is sent
   public static func error(
     _ message: @autoclosure () -> Any,
-    file: String = #file,
-    function: String = #function,
-    line: Int = #line
+    file: String=#file,
+    function: String=#function,
+    line: Int=#line
   ) {
     log(.error, message(), file: file, function: function, line: line)
   }
@@ -237,9 +237,9 @@ public class Logger: LoggerProtocol {
   ///   - line: The line from which the log is sent
   public static func warning(
     _ message: @autoclosure () -> Any,
-    file: String = #file,
-    function: String = #function,
-    line: Int = #line
+    file: String=#file,
+    function: String=#function,
+    line: Int=#line
   ) {
     log(.warning, message(), file: file, function: function, line: line)
   }
@@ -256,9 +256,9 @@ public class Logger: LoggerProtocol {
   ///   - line: The line from which the log is sent
   public static func info(
     _ message: @autoclosure () -> Any,
-    file: String = #file,
-    function: String = #function,
-    line: Int = #line
+    file: String=#file,
+    function: String=#function,
+    line: Int=#line
   ) {
     log(.info, message(), file: file, function: function, line: line)
   }
@@ -275,9 +275,9 @@ public class Logger: LoggerProtocol {
   ///   - line: The line from which the log is sent
   public static func debug(
     _ message: @autoclosure () -> Any,
-    file: String = #file,
-    function: String = #function,
-    line: Int = #line
+    file: String=#file,
+    function: String=#function,
+    line: Int=#line
   ) {
     log(.debug, message(), file: file, function: function, line: line)
   }
@@ -294,9 +294,9 @@ public class Logger: LoggerProtocol {
   ///   - line: The line from which the log is sent
   public static func trace(
     _ message: @autoclosure () -> Any,
-    file: String = #file,
-    function: String = #function,
-    line: Int = #line
+    file: String=#file,
+    function: String=#function,
+    line: Int=#line
   ) {
     log(.trace, message(), file: file, function: function, line: line)
   }

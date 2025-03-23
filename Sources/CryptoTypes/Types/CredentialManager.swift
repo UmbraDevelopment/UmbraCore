@@ -13,8 +13,8 @@ public actor CredentialManager {
   private let config: CryptoConfig
 
   public init(service: String, config: CryptoConfig) {
-    keychain = KeychainAccess(service: service)
-    self.config = config
+    keychain=KeychainAccess(service: service)
+    self.config=config
   }
 
   /// Save a credential securely
@@ -22,8 +22,8 @@ public actor CredentialManager {
   ///   - identifier: Identifier for the credential
   ///   - data: Data to store
   public func save(_ data: Data, forIdentifier identifier: String) async throws {
-    let secureBytes = SecureBytes(bytes: [UInt8](data))
-    let result = await keychain.storeSecurely(data: secureBytes, identifier: identifier)
+    let secureBytes=SecureBytes(bytes: [UInt8](data))
+    let result=await keychain.storeSecurely(data: secureBytes, identifier: identifier)
 
     switch result {
       case .success:
@@ -42,7 +42,7 @@ public actor CredentialManager {
   /// - Parameter identifier: Identifier for the credential
   /// - Returns: Stored data
   public func retrieve(forIdentifier identifier: String) async throws -> Data {
-    let result = await keychain.retrieveSecurely(identifier: identifier)
+    let result=await keychain.retrieveSecurely(identifier: identifier)
 
     switch result {
       case let .success(secureBytes):
@@ -61,7 +61,7 @@ public actor CredentialManager {
   /// Delete a credential
   /// - Parameter identifier: Identifier for the credential
   public func delete(forIdentifier identifier: String) async throws {
-    let result = await keychain.deleteSecurely(identifier: identifier)
+    let result=await keychain.deleteSecurely(identifier: identifier)
 
     switch result {
       case .success:
@@ -162,19 +162,19 @@ public actor CredentialManager {
 /// Access to the system keychain
 private actor KeychainAccess: SecureStorageProtocol {
   private let service: String
-  private var items: [String: (data: SecureBytes, metadata: [String: String]?)] = [:]
+  private var items: [String: (data: SecureBytes, metadata: [String: String]?)]=[:]
 
   init(service: String) {
-    self.service = service
+    self.service=service
   }
 
   func storeSecurely(data: SecureBytes, identifier: String) async -> KeyStorageResult {
-    items[identifier] = (data: data, metadata: nil)
+    items[identifier]=(data: data, metadata: nil)
     return .success
   }
 
   func retrieveSecurely(identifier: String) async -> KeyRetrievalResult {
-    guard let item = items[identifier] else {
+    guard let item=items[identifier] else {
       return .failure(.keyNotFound)
     }
     return .success(item.data)

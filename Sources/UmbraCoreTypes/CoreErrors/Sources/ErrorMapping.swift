@@ -27,11 +27,11 @@ public func mapToDomainErrors(_ error: Error) -> Error {
 @Sendable
 public func mapFromDomainErrors(_ error: Error) -> Error {
   // For specific error types, we need to handle the translation explicitly
-  if let resourceError = error as? ResourceError {
+  if let resourceError=error as? ResourceError {
     return mapFromDomainResourceError(resourceError)
   }
 
-  if let securityError = error as? SecurityError {
+  if let securityError=error as? SecurityError {
     return mapFromDomainSecurityError(securityError)
   }
 
@@ -73,8 +73,8 @@ public struct ErrorContainer: Error {
   public let userInfo: [String: Any]
 
   public init(domain: String, code: Int, userInfo: [String: Any]) {
-    self.domain = domain
-    self.code = code
-    self.userInfo = userInfo
+    self.domain=domain
+    self.code=code
+    self.userInfo=userInfo
   }
 }

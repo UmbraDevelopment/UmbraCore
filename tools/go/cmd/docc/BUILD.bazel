@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "docc_lib",
+    srcs = ["main.go"],
+    importpath = "dev.mpy.UmbraCore/tools/go/cmd/docc",
+    visibility = ["//visibility:private"],
+)
+
+go_binary(
+    name = "docc",
+    embed = [":docc_lib"],
+    visibility = ["//visibility:public"],
+)

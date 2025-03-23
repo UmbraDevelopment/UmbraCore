@@ -23,7 +23,7 @@ extension CoreTypesInterfaces.BinaryData {
   public static func from(secureBytes: UmbraCoreTypes.SecureBytes) -> CoreTypesInterfaces
   .BinaryData {
     // Access each byte in the secure bytes and create a new array
-    var bytes = [UInt8]()
+    var bytes=[UInt8]()
     for i in 0..<secureBytes.count {
       bytes.append(secureBytes[i])
     }
@@ -45,7 +45,7 @@ extension UmbraCoreTypes.SecureBytes {
   /// - Returns: BinaryData representation of these bytes
   public func toBinaryData() -> CoreTypesInterfaces.BinaryData {
     // Access each byte in the secure bytes and create a new array
-    var bytes = [UInt8]()
+    var bytes=[UInt8]()
     for i in 0..<count {
       bytes.append(self[i])
     }
@@ -56,7 +56,7 @@ extension UmbraCoreTypes.SecureBytes {
   /// - Returns: DataBridge representation of these bytes
   public func toDataBridge() -> DataBridge {
     // Access each byte in the secure bytes and create a new array
-    var bytes = [UInt8]()
+    var bytes=[UInt8]()
     for i in 0..<count {
       bytes.append(self[i])
     }

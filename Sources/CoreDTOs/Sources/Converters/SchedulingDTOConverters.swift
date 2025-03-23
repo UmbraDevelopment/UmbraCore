@@ -37,31 +37,31 @@ extension ScheduleDTO {
   public static func fromCalendarComponents(
     calendar: Calendar,
     startDate _: Date,
-    endDate _: Date? = nil,
+    endDate _: Date?=nil,
     repeatType: Frequency,
-    repeatInterval: Int = 1,
-    daysOfWeek: [DayOfWeek]? = nil,
-    daysOfMonth: [Int]? = nil,
-    windowStartTime: Date? = nil,
-    windowEndTime: Date? = nil,
-    enabled: Bool = true,
-    maxRuns: Int? = nil
+    repeatInterval: Int=1,
+    daysOfWeek: [DayOfWeek]?=nil,
+    daysOfMonth: [Int]?=nil,
+    windowStartTime: Date?=nil,
+    windowEndTime: Date?=nil,
+    enabled: Bool=true,
+    maxRuns: Int?=nil
   ) -> ScheduleDTO {
     // Convert window times to seconds since midnight
     var windowStart: Int?
     if let windowStartTime {
-      let components = calendar.dateComponents([.hour, .minute, .second], from: windowStartTime)
-      let seconds = (components.hour ?? 0) * 3_600 + (components.minute ?? 0) * 60 +
+      let components=calendar.dateComponents([.hour, .minute, .second], from: windowStartTime)
+      let seconds=(components.hour ?? 0) * 3600 + (components.minute ?? 0) * 60 +
         (components.second ?? 0)
-      windowStart = seconds
+      windowStart=seconds
     }
 
     var windowEnd: Int?
     if let windowEndTime {
-      let components = calendar.dateComponents([.hour, .minute, .second], from: windowEndTime)
-      let seconds = (components.hour ?? 0) * 3_600 + (components.minute ?? 0) * 60 +
+      let components=calendar.dateComponents([.hour, .minute, .second], from: windowEndTime)
+      let seconds=(components.hour ?? 0) * 3600 + (components.minute ?? 0) * 60 +
         (components.second ?? 0)
-      windowEnd = seconds
+      windowEnd=seconds
     }
 
     return ScheduleDTO(
@@ -88,10 +88,10 @@ extension ScheduleDTO {
   /// Convert the timestamps in this DTO to Foundation Date objects
   /// - Returns: A tuple containing dates derived from timestamps
   public func toDates() -> (start: Date, end: Date?, lastRun: Date?, nextRun: Date?) {
-    let start = Date(timeIntervalSince1970: TimeInterval(createdAt))
-    let end = nextRunTime.map { Date(timeIntervalSince1970: TimeInterval($0)) }
-    let lastRun = lastRunTime.map { Date(timeIntervalSince1970: TimeInterval($0)) }
-    let nextRun = nextRunTime.map { Date(timeIntervalSince1970: TimeInterval($0)) }
+    let start=Date(timeIntervalSince1970: TimeInterval(createdAt))
+    let end=nextRunTime.map { Date(timeIntervalSince1970: TimeInterval($0)) }
+    let lastRun=lastRunTime.map { Date(timeIntervalSince1970: TimeInterval($0)) }
+    let nextRun=nextRunTime.map { Date(timeIntervalSince1970: TimeInterval($0)) }
 
     return (start, end, lastRun, nextRun)
   }
@@ -109,13 +109,13 @@ extension ScheduledTaskDTO {
   /// - Returns: A ScheduledTaskDTO
   static func fromSchedule(
     _ schedule: ScheduleDTO,
-    taskID: String? = nil,
+    taskID: String?=nil,
     status: TaskStatus = .pending,
-    configData: String = "{}",
-    lastRunTimestamp _: UInt64? = nil,
-    nextRunTimestamp _: UInt64? = nil
+    configData: String="{}",
+    lastRunTimestamp _: UInt64?=nil,
+    nextRunTimestamp _: UInt64?=nil
   ) -> ScheduledTaskDTO {
-    let id = taskID ?? UUID().uuidString
+    let id=taskID ?? UUID().uuidString
 
     return ScheduledTaskDTO(
       id: id,
@@ -150,20 +150,20 @@ extension ScheduledTaskDTO {
   ///   - errorMessage: Error message if failed
   /// - Returns: A new ScheduledTaskDTO
   static func create(
-    id: String? = nil,
+    id: String?=nil,
     scheduleID: String,
     name: String,
     type: TaskType,
     status: TaskStatus = .pending,
-    configData: String = "{}",
-    lastRun _: UInt64? = nil,
-    nextRun _: UInt64? = nil,
-    startedAt: UInt64? = nil,
-    completedAt: UInt64? = nil,
-    duration: UInt64? = nil,
-    errorMessage: String? = nil
+    configData: String="{}",
+    lastRun _: UInt64?=nil,
+    nextRun _: UInt64?=nil,
+    startedAt: UInt64?=nil,
+    completedAt: UInt64?=nil,
+    duration: UInt64?=nil,
+    errorMessage: String?=nil
   ) -> ScheduledTaskDTO {
-    let taskID = id ?? UUID().uuidString
+    let taskID=id ?? UUID().uuidString
 
     return ScheduledTaskDTO(
       id: taskID,
@@ -195,11 +195,11 @@ extension ScheduledTaskDTO {
   func updateStatus(
     status: TaskStatus,
     scheduleDTO: ScheduleDTO,
-    startedAt: UInt64? = nil,
-    completedAt: UInt64? = nil,
-    duration: UInt64? = nil,
-    errorMessage: String? = nil,
-    configData: String? = nil
+    startedAt: UInt64?=nil,
+    completedAt: UInt64?=nil,
+    duration: UInt64?=nil,
+    errorMessage: String?=nil,
+    configData: String?=nil
   ) -> ScheduledTaskDTO {
     ScheduledTaskDTO(
       id: id,

@@ -5,9 +5,9 @@ final class StorageLocationTests: XCTestCase {
   // MARK: - Canonical Type Tests
 
   func testCanonicalStorageLocationEquality() {
-    let secureEnclave = KeyManagementTypes.StorageLocation.secureEnclave
-    let keychain = KeyManagementTypes.StorageLocation.keychain
-    let memory = KeyManagementTypes.StorageLocation.memory
+    let secureEnclave=KeyManagementTypes.StorageLocation.secureEnclave
+    let keychain=KeyManagementTypes.StorageLocation.keychain
+    let memory=KeyManagementTypes.StorageLocation.memory
 
     XCTAssertEqual(secureEnclave, secureEnclave)
     XCTAssertEqual(keychain, keychain)
@@ -19,9 +19,9 @@ final class StorageLocationTests: XCTestCase {
   }
 
   func testCanonicalStorageLocationRawValue() {
-    let secureEnclave = KeyManagementTypes.StorageLocation.secureEnclave
-    let keychain = KeyManagementTypes.StorageLocation.keychain
-    let memory = KeyManagementTypes.StorageLocation.memory
+    let secureEnclave=KeyManagementTypes.StorageLocation.secureEnclave
+    let keychain=KeyManagementTypes.StorageLocation.keychain
+    let memory=KeyManagementTypes.StorageLocation.memory
 
     XCTAssertEqual(secureEnclave.rawValue, "secureEnclave")
     XCTAssertEqual(keychain.rawValue, "keychain")
@@ -29,13 +29,13 @@ final class StorageLocationTests: XCTestCase {
   }
 
   func testCanonicalStorageLocationCodable() throws {
-    let original = KeyManagementTypes.StorageLocation.secureEnclave
+    let original=KeyManagementTypes.StorageLocation.secureEnclave
 
-    let encoder = JSONEncoder()
-    let data = try encoder.encode(original)
+    let encoder=JSONEncoder()
+    let data=try encoder.encode(original)
 
-    let decoder = JSONDecoder()
-    let decoded = try decoder.decode(KeyManagementTypes.StorageLocation.self, from: data)
+    let decoder=JSONDecoder()
+    let decoded=try decoder.decode(KeyManagementTypes.StorageLocation.self, from: data)
 
     XCTAssertEqual(original, decoded)
   }
@@ -44,9 +44,9 @@ final class StorageLocationTests: XCTestCase {
 
   func testRawLocationConversion() {
     // Test conversion to raw locations
-    let secureEnclave = KeyManagementTypes.StorageLocation.secureEnclave
-    let keychain = KeyManagementTypes.StorageLocation.keychain
-    let memory = KeyManagementTypes.StorageLocation.memory
+    let secureEnclave=KeyManagementTypes.StorageLocation.secureEnclave
+    let keychain=KeyManagementTypes.StorageLocation.keychain
+    let memory=KeyManagementTypes.StorageLocation.memory
 
     XCTAssertEqual(secureEnclave.toRawLocation(), .secureEnclave)
     XCTAssertEqual(keychain.toRawLocation(), .keychain)

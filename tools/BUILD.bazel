@@ -1,3 +1,4 @@
+load("@rules_python//python:defs.bzl", "py_binary")
 load("//tools/build_defs:umbracore_gen_module.bzl", "umbracore_gen_module")
 
 package(default_visibility = ["//visibility:public"])
@@ -18,4 +19,13 @@ umbracore_gen_module(
 umbracore_gen_module(
     name = "gen_time_types",
     module_name = "TimeTypes",
+)
+
+# Code Quality Manager tool
+py_binary(
+    name = "code_quality_manager",
+    srcs = ["code_quality_manager.py"],
+    main = "code_quality_manager.py",
+    python_version = "PY3",
+    deps = [],
 )

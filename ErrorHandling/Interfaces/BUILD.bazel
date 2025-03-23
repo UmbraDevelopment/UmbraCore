@@ -1,0 +1,11 @@
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+
+swift_library(
+    name = "ErrorHandlingInterfaces",
+    srcs = glob(["*.swift"]),
+    copts = [
+        "-enable-library-evolution",
+    ],
+    module_name = "ErrorHandlingInterfaces",
+    visibility = ["//visibility:public"],
+)

@@ -5,7 +5,7 @@ import OSLog
 /// Example class demonstrating best practices for error handling with the new system
 public class ErrorHandlingExamples {
   /// Logger for this class
-  private let logger = Logger(subsystem: "com.umbracorp.UmbraCore", category: "ErrorExamples")
+  private let logger=Logger(subsystem: "com.umbracorp.UmbraCore", category: "ErrorExamples")
 
   /// Demonstrates creating and throwing a simple error
   /// - Parameter shouldFail: Whether the operation should fail
@@ -26,7 +26,7 @@ public class ErrorHandlingExamples {
       // Simulate encryption operation
       if data.isEmpty {
         // Create an error with additional context
-        let context = ErrorContext().adding(key: "dataLength", value: data.count)
+        let context=ErrorContext().adding(key: "dataLength", value: data.count)
           .adding(key: "operation", value: "encryption")
 
         throw SecurityError.encryptionFailed(
@@ -78,13 +78,13 @@ public class ErrorHandlingExamples {
     registerSecurityErrorMappers()
 
     // Use the ErrorRegistry to map the error
-    if let securityError = error.mapped(to: SecurityError.self) {
+    if let securityError=error.mapped(to: SecurityError.self) {
       // We successfully mapped to our new SecurityError type
       return securityError
-    } else if let legacyError = error.mapped(to: CoreErrors.SecurityError.self) {
+    } else if let legacyError=error.mapped(to: CoreErrors.SecurityError.self) {
       // We mapped to the legacy SecurityError type
       // Now map it to our enhanced type
-      let enhancedError = securityErrorMapper.mapReverse(legacyError)
+      let enhancedError=securityErrorMapper.mapReverse(legacyError)
 
       // Add context information during mapping
       return enhancedError.with(
@@ -148,10 +148,10 @@ public class ErrorHandlingExamples {
   extension SecurityError {
     /// Creates an unauthorised access error
     fileprivate static func unauthorisedAccess(
-      message: String? = nil,
-      file: String = #file,
-      line: Int = #line,
-      function: String = #function
+      message: String?=nil,
+      file: String=#file,
+      line: Int=#line,
+      function: String=#function
     ) -> SecurityError {
       makeError(
         SecurityError(

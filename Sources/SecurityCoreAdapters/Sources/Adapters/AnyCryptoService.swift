@@ -3,7 +3,7 @@ import SecurityProtocolsCore
 import UmbraCoreTypes
 
 // Alias UmbraErrors.Security.Protocols as SecurityError to match the existing code expectations
-public typealias SecurityError = UmbraErrors.Security.Protocols
+public typealias SecurityError=UmbraErrors.Security.Protocols
 
 /// Type-erased wrapper for CryptoServiceProtocol
 /// This allows for cleaner interfaces without exposing implementation details
@@ -43,27 +43,27 @@ public final class AnyCryptoService: CryptoServiceProtocol {
   /// - Parameter service: The crypto service to wrap
   public init(_ service: some CryptoServiceProtocol & Sendable) {
     // Fixed Sendable warning by explicitly capturing methods as @Sendable functions
-    _encrypt = { @Sendable [service] in await service.encrypt(data: $0, using: $1) }
-    _decrypt = { @Sendable [service] in await service.decrypt(data: $0, using: $1) }
-    _hash = { @Sendable [service] in await service.hash(data: $0) }
-    _generateKey = { @Sendable [service] in await service.generateKey() }
-    _generateRandomData = { @Sendable [service] in await service.generateRandomData(length: $0) }
+    _encrypt={ @Sendable [service] in await service.encrypt(data: $0, using: $1) }
+    _decrypt={ @Sendable [service] in await service.decrypt(data: $0, using: $1) }
+    _hash={ @Sendable [service] in await service.hash(data: $0) }
+    _generateKey={ @Sendable [service] in await service.generateKey() }
+    _generateRandomData={ @Sendable [service] in await service.generateRandomData(length: $0) }
 
     // New property initializations with correct return types
-    _verify = { @Sendable [service] in await service.verify(data: $0, against: $1) }
-    _encryptSymmetric = { @Sendable [service] in
+    _verify={ @Sendable [service] in await service.verify(data: $0, against: $1) }
+    _encryptSymmetric={ @Sendable [service] in
       await service.encryptSymmetric(data: $0, key: $1, config: $2)
     }
-    _decryptSymmetric = { @Sendable [service] in
+    _decryptSymmetric={ @Sendable [service] in
       await service.decryptSymmetric(data: $0, key: $1, config: $2)
     }
-    _encryptAsymmetric = { @Sendable [service] in
+    _encryptAsymmetric={ @Sendable [service] in
       await service.encryptAsymmetric(data: $0, publicKey: $1, config: $2)
     }
-    _decryptAsymmetric = { @Sendable [service] in
+    _decryptAsymmetric={ @Sendable [service] in
       await service.decryptAsymmetric(data: $0, privateKey: $1, config: $2)
     }
-    _hashWithConfig = { @Sendable [service] in await service.hash(data: $0, config: $1) }
+    _hashWithConfig={ @Sendable [service] in await service.hash(data: $0, config: $1) }
   }
 
   // MARK: - CryptoServiceProtocol Implementation

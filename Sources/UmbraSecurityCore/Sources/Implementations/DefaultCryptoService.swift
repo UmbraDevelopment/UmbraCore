@@ -13,13 +13,13 @@ public final class DefaultCryptoService: CryptoServiceProtocol {
   // MARK: - Constants
 
   /// Standard key size in bytes
-  private static let standardKeySize = 32 // 256 bits
+  private static let standardKeySize=32 // 256 bits
 
   /// Standard hash size in bytes
-  private static let standardHashSize = 32 // SHA-256
+  private static let standardHashSize=32 // SHA-256
 
   /// Header size for mock encrypted data
-  private static let headerSize = 16
+  private static let headerSize=16
 
   // MARK: - Initialization
 
@@ -51,9 +51,9 @@ public final class DefaultCryptoService: CryptoServiceProtocol {
 
     // Create a mock header for the encrypted data (16 bytes)
     // In a real implementation, this would include IV, mode, etc.
-    let randomDataResult = await generateRandomData(length: Self.headerSize)
-    guard case let .success(headerData) = randomDataResult else {
-      if case let .failure(error) = randomDataResult {
+    let randomDataResult=await generateRandomData(length: Self.headerSize)
+    guard case let .success(headerData)=randomDataResult else {
+      if case let .failure(error)=randomDataResult {
         return .failure(error)
       }
       return .failure(
@@ -62,28 +62,28 @@ public final class DefaultCryptoService: CryptoServiceProtocol {
       )
     }
 
-    var header = [UInt8]()
+    var header=[UInt8]()
     headerData.withUnsafeBytes { headerBytes in
-      header = [UInt8](headerBytes)
+      header=[UInt8](headerBytes)
     }
 
     // Simple XOR operation with key cycling
-    var result = [UInt8]()
+    var result=[UInt8]()
     result.append(contentsOf: header) // Add header
 
-    var keyBytes = [UInt8]()
+    var keyBytes=[UInt8]()
     key.withUnsafeBytes { keyBytesPtr in
-      keyBytes = [UInt8](keyBytesPtr)
+      keyBytes=[UInt8](keyBytesPtr)
     }
 
-    var dataBytes = [UInt8]()
+    var dataBytes=[UInt8]()
     data.withUnsafeBytes { dataBytesPtr in
-      dataBytes = [UInt8](dataBytesPtr)
+      dataBytes=[UInt8](dataBytesPtr)
     }
 
     for (index, byte) in dataBytes.enumerated() {
-      let keyIndex = index % keyBytes.count
-      let keyByte = keyBytes[keyIndex]
+      let keyIndex=index % keyBytes.count
+      let keyByte=keyBytes[keyIndex]
       result.append(byte ^ keyByte)
     }
 
@@ -116,23 +116,23 @@ public final class DefaultCryptoService: CryptoServiceProtocol {
     }
 
     // Extract the encrypted content (skip header)
-    var dataBytes = [UInt8]()
+    var dataBytes=[UInt8]()
     data.withUnsafeBytes { dataBytesPtr in
-      dataBytes = [UInt8](dataBytesPtr)
+      dataBytes=[UInt8](dataBytesPtr)
     }
 
-    let encryptedContent = Array(dataBytes[Self.headerSize..<dataBytes.count])
+    let encryptedContent=Array(dataBytes[Self.headerSize..<dataBytes.count])
 
     // Simple XOR operation with key cycling to decrypt
-    var result = [UInt8]()
-    var keyBytes = [UInt8]()
+    var result=[UInt8]()
+    var keyBytes=[UInt8]()
     key.withUnsafeBytes { keyBytesPtr in
-      keyBytes = [UInt8](keyBytesPtr)
+      keyBytes=[UInt8](keyBytesPtr)
     }
 
     for (index, byte) in encryptedContent.enumerated() {
-      let keyIndex = index % keyBytes.count
-      let keyByte = keyBytes[keyIndex]
+      let keyIndex=index % keyBytes.count
+      let keyByte=keyBytes[keyIndex]
       result.append(byte ^ keyByte)
     }
 
@@ -150,26 +150,26 @@ public final class DefaultCryptoService: CryptoServiceProtocol {
       )
     }
 
-    var hashResult = [UInt8](repeating: 0, count: Self.standardHashSize)
+    var hashResult=[UInt8](repeating: 0, count: Self.standardHashSize)
 
     // Very simple mock hash algorithm (NOT secure, just for placeholder)
     data.withUnsafeBytes { dataBytes in
       for i in 0..<min(dataBytes.count, Self.standardHashSize) {
-        hashResult[i] = dataBytes[i]
+        hashResult[i]=dataBytes[i]
       }
 
       // Mix the remaining bytes (if any)
       if dataBytes.count > Self.standardHashSize {
         for i in Self.standardHashSize..<dataBytes.count {
-          let index = i % Self.standardHashSize
-          hashResult[index] = hashResult[index] ^ dataBytes[i]
+          let index=i % Self.standardHashSize
+          hashResult[index]=hashResult[index] ^ dataBytes[i]
         }
       }
     }
 
     // Finalize the hash with a simple transformation
     for i in 0..<Self.standardHashSize {
-      hashResult[i] = (hashResult[i] &+ 0x5A) & 0xFF
+      hashResult[i]=(hashResult[i] &+ 0x5A) & 0xFF
     }
 
     return .success(SecureBytes(bytes: hashResult))
@@ -184,10 +184,10 @@ public final class DefaultCryptoService: CryptoServiceProtocol {
     against hash: SecureBytes
   ) async -> Result<Bool, UmbraErrors.Security.Protocols> {
     // Compute the hash of the data
-    let computedHashResult = await self.hash(data: data)
+    let computedHashResult=await self.hash(data: data)
 
-    guard case let .success(computedHash) = computedHashResult else {
-      if case let .failure(error) = computedHashResult {
+    guard case let .success(computedHash)=computedHashResult else {
+      if case let .failure(error)=computedHashResult {
         return .failure(error)
       }
       return .failure(
@@ -212,15 +212,15 @@ public final class DefaultCryptoService: CryptoServiceProtocol {
       )
     }
 
-    var result = [UInt8](repeating: 0, count: length)
+    var result=[UInt8](repeating: 0, count: length)
 
     // Fill with "random" data (not secure, just for placeholder)
     for i in 0..<length {
       // Mix multiple simple patterns to create pseudo-random data
-      let value1 = UInt8((i * 41 + 7) & 0xFF)
-      let value2 = UInt8((i * 93 + 18) & 0xFF)
-      let value3 = UInt8((i * i * 11 + 7) & 0xFF)
-      result[i] = value1 ^ value2 ^ value3
+      let value1=UInt8((i * 41 + 7) & 0xFF)
+      let value2=UInt8((i * 93 + 18) & 0xFF)
+      let value3=UInt8((i * i * 11 + 7) & 0xFF)
+      result[i]=value1 ^ value2 ^ value3
     }
 
     return .success(SecureBytes(bytes: result))
@@ -234,18 +234,18 @@ public final class DefaultCryptoService: CryptoServiceProtocol {
     config _: SecurityConfigDTO
   ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     // Generate a random IV
-    let randomDataResult = await generateRandomData(length: 16)
-    guard case let .success(ivData) = randomDataResult else {
-      if case let .failure(error) = randomDataResult {
+    let randomDataResult=await generateRandomData(length: 16)
+    guard case let .success(ivData)=randomDataResult else {
+      if case let .failure(error)=randomDataResult {
         return .failure(error)
       }
       return .failure(UmbraErrors.Security.Protocols.encryptionFailed("Failed to generate IV"))
     }
 
-    let iv = ivData
+    let iv=ivData
 
     // Simple mock implementation (would be real AES in production)
-    let result = SecureBytes(bytes: [UInt8](repeating: 0, count: data.count))
+    let result=SecureBytes(bytes: [UInt8](repeating: 0, count: data.count))
 
     // Return the result with the IV prepended
     return .success(iv + result)

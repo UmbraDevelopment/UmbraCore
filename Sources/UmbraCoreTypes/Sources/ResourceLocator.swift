@@ -35,15 +35,15 @@ public struct ResourceLocator: Sendable, Equatable, Hashable {
   ///   - query: Optional query parameters
   ///   - fragment: Optional fragment identifier
   /// - Throws: ResourceLocatorError.invalidPath if the path is empty
-  public init(scheme: String, path: String, query: String? = nil, fragment: String? = nil) throws {
+  public init(scheme: String, path: String, query: String?=nil, fragment: String?=nil) throws {
     guard !path.isEmpty else {
       throw ResourceLocatorError.invalidPath
     }
 
-    self.scheme = scheme
-    self.path = path
-    self.query = query
-    self.fragment = fragment
+    self.scheme=scheme
+    self.path=path
+    self.query=query
+    self.fragment=fragment
   }
 
   /// Create a file system ResourceLocator
@@ -64,13 +64,13 @@ public struct ResourceLocator: Sendable, Equatable, Hashable {
   public static func httpLocator(
     host: String,
     path: String,
-    query: String? = nil
+    query: String?=nil
   ) throws -> ResourceLocator {
     guard !host.isEmpty else {
       throw ResourceLocatorError.invalidPath
     }
 
-    let fullPath = host + (path.hasPrefix("/") ? path : "/" + path)
+    let fullPath=host + (path.hasPrefix("/") ? path : "/" + path)
     return try ResourceLocator(scheme: "http", path: fullPath, query: query)
   }
 
@@ -84,13 +84,13 @@ public struct ResourceLocator: Sendable, Equatable, Hashable {
   public static func httpsLocator(
     host: String,
     path: String,
-    query: String? = nil
+    query: String?=nil
   ) throws -> ResourceLocator {
     guard !host.isEmpty else {
       throw ResourceLocatorError.invalidPath
     }
 
-    let fullPath = host + (path.hasPrefix("/") ? path : "/" + path)
+    let fullPath=host + (path.hasPrefix("/") ? path : "/" + path)
     return try ResourceLocator(scheme: "https", path: fullPath, query: query)
   }
 
@@ -99,7 +99,7 @@ public struct ResourceLocator: Sendable, Equatable, Hashable {
   /// Returns a string representation of the ResourceLocator
   /// - Returns: String representation in the format "scheme://path?query#fragment"
   public func toString() -> String {
-    var result = "\(scheme)://\(path)"
+    var result="\(scheme)://\(path)"
 
     if let query, !query.isEmpty {
       result += "?\(query)"

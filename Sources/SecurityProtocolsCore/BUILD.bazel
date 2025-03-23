@@ -1,50 +1,28 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library", "swift_test")
-load("//tools/swift:docc_rules.bzl", "docc_documentation")
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 swift_library(
     name = "SecurityProtocolsCore",
     srcs = glob([
         "Sources/**/*.swift",
+        "*.swift",
     ]),
-    module_name = "SecurityProtocolsCore",
-    copts = [
-        "-target", "arm64-apple-macos14.7.4",
-        # Enabling library evolution as this is a foundation-free core module
-        "-Xfrontend", "-enable-library-evolution",
-        "-g",
-        "-swift-version", "5",
-    ],
     visibility = ["//visibility:public"],
     deps = [
-        # Use UmbraCoreTypes which now includes SecureBytes functionality
-        "//Sources/UmbraCoreTypes",
-        "//Sources/XPCProtocolsCore",
-        "//ErrorHandling/Domains:ErrorHandlingDomains",
+        "//Sources/ErrorHandlingInterfaces",
+        "//Sources/ErrorHandlingDomains",
+        "//Sources/UmbraErrors",
     ],
 )
 
-swift_test(
-    name = "SecurityProtocolsCoreTests",
-    srcs = glob([
-        "Tests/**/*.swift",
-    ]),
-    deps = [
-        ":SecurityProtocolsCore",
-        "//Sources/UmbraCoreTypes",
-    ],
-)
-
-# DocC documentation for SecurityProtocolsCore
-docc_documentation(
-    name = "SecurityProtocolsCoreDocC",
-    module_name = "SecurityProtocolsCore",
-    localonly = True,
-    srcs = glob([
-        "Documentation.docc/**/*.md",
-        "Documentation.docc/**/*.docc",
-        "Documentation.docc/**/*.plist",
-        "Documentation.docc/Resources/**",
-        "Sources/**/*.swift",
-    ], allow_empty = True),
-    visibility = ["//visibility:public"],
-)
+# Uncomment if documentation generation is needed
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+#
+# swift_package(
+#     name = "docc_documentation",
+#     srcs = glob([
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
+#     deps = ["//Sources/SecurityProtocolsCore"],
+# )

@@ -56,52 +56,52 @@ public struct SnapshotInfo: Codable, Sendable {
     case gid
     case excludes
     case tags
-    case programVersion = "program_version"
+    case programVersion="program_version"
     case summary
     case id
-    case shortID = "short_id"
+    case shortID="short_id"
   }
 
   @preconcurrency
   @available(*, deprecated, message: "Will need to be refactored for Swift 6")
   public init(from decoder: Decoder) throws {
-    let container = try decoder.container(keyedBy: CodingKeys.self)
+    let container=try decoder.container(keyedBy: CodingKeys.self)
 
     // Custom date decoding for ISO8601 format with fractional seconds
-    let timeString = try container.decode(String.self, forKey: .time)
-    let formatter = ISO8601DateFormatter()
+    let timeString=try container.decode(String.self, forKey: .time)
+    let formatter=ISO8601DateFormatter()
 
     // Try with fractional seconds first
-    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-    if let timeDate = formatter.date(from: timeString) {
-      time = timeDate
+    formatter.formatOptions=[.withInternetDateTime, .withFractionalSeconds]
+    if let timeDate=formatter.date(from: timeString) {
+      time=timeDate
     } else {
       // Try without fractional seconds
-      formatter.formatOptions = [.withInternetDateTime]
-      guard let timeDate = formatter.date(from: timeString) else {
+      formatter.formatOptions=[.withInternetDateTime]
+      guard let timeDate=formatter.date(from: timeString) else {
         throw DecodingError.dataCorruptedError(
           forKey: .time,
           in: container,
           debugDescription: "Invalid date format"
         )
       }
-      time = timeDate
+      time=timeDate
     }
 
     // Decode other properties
-    parent = try container.decodeIfPresent(String.self, forKey: .parent)
-    tree = try container.decode(String.self, forKey: .tree)
-    paths = try container.decode([String].self, forKey: .paths)
-    hostname = try container.decode(String.self, forKey: .hostname)
-    username = try container.decode(String.self, forKey: .username)
-    uid = try container.decode(Int.self, forKey: .uid)
-    gid = try container.decode(Int.self, forKey: .gid)
-    excludes = try container.decodeIfPresent([String].self, forKey: .excludes)
-    tags = try container.decodeIfPresent([String].self, forKey: .tags)
-    programVersion = try container.decode(String.self, forKey: .programVersion)
-    summary = try container.decodeIfPresent(SnapshotSummary.self, forKey: .summary)
-    id = try container.decode(String.self, forKey: .id)
-    shortID = try container.decode(String.self, forKey: .shortID)
+    parent=try container.decodeIfPresent(String.self, forKey: .parent)
+    tree=try container.decode(String.self, forKey: .tree)
+    paths=try container.decode([String].self, forKey: .paths)
+    hostname=try container.decode(String.self, forKey: .hostname)
+    username=try container.decode(String.self, forKey: .username)
+    uid=try container.decode(Int.self, forKey: .uid)
+    gid=try container.decode(Int.self, forKey: .gid)
+    excludes=try container.decodeIfPresent([String].self, forKey: .excludes)
+    tags=try container.decodeIfPresent([String].self, forKey: .tags)
+    programVersion=try container.decode(String.self, forKey: .programVersion)
+    summary=try container.decodeIfPresent(SnapshotSummary.self, forKey: .summary)
+    id=try container.decode(String.self, forKey: .id)
+    shortID=try container.decode(String.self, forKey: .shortID)
   }
 }
 
@@ -150,79 +150,79 @@ public struct SnapshotSummary: Codable, Sendable {
   public let totalBytesProcessed: Int64
 
   private enum CodingKeys: String, CodingKey {
-    case backupStart = "backup_start"
-    case backupEnd = "backup_end"
-    case filesNew = "files_new"
-    case filesChanged = "files_changed"
-    case filesUnmodified = "files_unmodified"
-    case dirsNew = "dirs_new"
-    case dirsChanged = "dirs_changed"
-    case dirsUnmodified = "dirs_unmodified"
-    case dataBlobs = "data_blobs"
-    case treeBlobs = "tree_blobs"
-    case dataAdded = "data_added"
-    case dataAddedPacked = "data_added_packed"
-    case totalFilesProcessed = "total_files_processed"
-    case totalBytesProcessed = "total_bytes_processed"
+    case backupStart="backup_start"
+    case backupEnd="backup_end"
+    case filesNew="files_new"
+    case filesChanged="files_changed"
+    case filesUnmodified="files_unmodified"
+    case dirsNew="dirs_new"
+    case dirsChanged="dirs_changed"
+    case dirsUnmodified="dirs_unmodified"
+    case dataBlobs="data_blobs"
+    case treeBlobs="tree_blobs"
+    case dataAdded="data_added"
+    case dataAddedPacked="data_added_packed"
+    case totalFilesProcessed="total_files_processed"
+    case totalBytesProcessed="total_bytes_processed"
   }
 
   @preconcurrency
   @available(*, deprecated, message: "Will need to be refactored for Swift 6")
   public init(from decoder: Decoder) throws {
-    let container = try decoder.container(keyedBy: CodingKeys.self)
+    let container=try decoder.container(keyedBy: CodingKeys.self)
 
     // Custom date decoding for ISO8601 format with fractional seconds
-    let formatter = ISO8601DateFormatter()
+    let formatter=ISO8601DateFormatter()
 
-    let startString = try container.decode(String.self, forKey: .backupStart)
+    let startString=try container.decode(String.self, forKey: .backupStart)
     // Try with fractional seconds first
-    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-    if let startDate = formatter.date(from: startString) {
-      backupStart = startDate
+    formatter.formatOptions=[.withInternetDateTime, .withFractionalSeconds]
+    if let startDate=formatter.date(from: startString) {
+      backupStart=startDate
     } else {
       // Try without fractional seconds
-      formatter.formatOptions = [.withInternetDateTime]
-      guard let startDate = formatter.date(from: startString) else {
+      formatter.formatOptions=[.withInternetDateTime]
+      guard let startDate=formatter.date(from: startString) else {
         throw DecodingError.dataCorruptedError(
           forKey: .backupStart,
           in: container,
           debugDescription: "Invalid date format"
         )
       }
-      backupStart = startDate
+      backupStart=startDate
     }
 
-    let endString = try container.decode(String.self, forKey: .backupEnd)
+    let endString=try container.decode(String.self, forKey: .backupEnd)
     // Try with fractional seconds first
-    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-    if let endDate = formatter.date(from: endString) {
-      backupEnd = endDate
+    formatter.formatOptions=[.withInternetDateTime, .withFractionalSeconds]
+    if let endDate=formatter.date(from: endString) {
+      backupEnd=endDate
     } else {
       // Try without fractional seconds
-      formatter.formatOptions = [.withInternetDateTime]
-      guard let endDate = formatter.date(from: endString) else {
+      formatter.formatOptions=[.withInternetDateTime]
+      guard let endDate=formatter.date(from: endString) else {
         throw DecodingError.dataCorruptedError(
           forKey: .backupEnd,
           in: container,
           debugDescription: "Invalid date format"
         )
       }
-      backupEnd = endDate
+      backupEnd=endDate
     }
 
     // Decode other properties
-    filesNew = try container.decode(Int.self, forKey: .filesNew)
-    filesChanged = try container.decode(Int.self, forKey: .filesChanged)
-    filesUnmodified = try container.decode(Int.self, forKey: .filesUnmodified)
-    dirsNew = try container.decode(Int.self, forKey: .dirsNew)
-    dirsChanged = try container.decode(Int.self, forKey: .dirsChanged)
-    dirsUnmodified = try container.decode(Int.self, forKey: .dirsUnmodified)
-    dataBlobs = try container.decode(Int.self, forKey: .dataBlobs)
-    treeBlobs = try container.decode(Int.self, forKey: .treeBlobs)
-    dataAdded = try container.decode(Int64.self, forKey: .dataAdded)
-    dataAddedPacked = try container.decode(Int64.self, forKey: .dataAddedPacked)
-    totalFilesProcessed = try container.decode(Int.self, forKey: .totalFilesProcessed)
-    totalBytesProcessed = try container.decode(Int64.self, forKey: .totalBytesProcessed)
+    filesNew=try container.decode(Int.self, forKey: .filesNew)
+    filesChanged=try container.decode(Int.self, forKey: .filesChanged)
+    filesUnmodified=try container.decode(Int.self, forKey: .filesUnmodified)
+    dirsNew=try container.decode(Int.self, forKey: .dirsNew)
+    dirsChanged=try container.decode(Int.self, forKey: .dirsChanged)
+    dirsUnmodified=try container.decode(Int.self, forKey: .dirsUnmodified)
+    dataBlobs=try container.decode(Int.self, forKey: .dataBlobs)
+    treeBlobs=try container.decode(Int.self, forKey: .treeBlobs)
+    dataAdded=try container.decode(Int64.self, forKey: .dataAdded)
+    dataAddedPacked=try container.decode(Int64.self, forKey: .dataAddedPacked)
+    totalFilesProcessed=try container.decode(Int.self, forKey: .totalFilesProcessed)
+    totalBytesProcessed=try container.decode(Int64.self, forKey: .totalBytesProcessed)
   }
 }
 
@@ -232,10 +232,10 @@ extension SnapshotInfo {
   /// - Returns: Array of decoded snapshots
   /// - Throws: DecodingError if JSON is invalid
   public static func decodeList(from jsonString: String) throws -> [SnapshotInfo] {
-    let decoder = JSONDecoder()
+    let decoder=JSONDecoder()
     decoder.dateDecodingStrategy = .iso8601
 
-    guard let data = jsonString.data(using: .utf8) else {
+    guard let data=jsonString.data(using: .utf8) else {
       throw ResticError.invalidData("Failed to convert string to data")
     }
 

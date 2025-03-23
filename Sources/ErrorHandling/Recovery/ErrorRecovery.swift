@@ -6,11 +6,11 @@ import Foundation
 /// Error domain namespace
 public enum ErrorDomain {
   /// Security domain
-  public static let security = "Security"
+  public static let security="Security"
   /// Crypto domain
-  public static let crypto = "Crypto"
+  public static let crypto="Crypto"
   /// Application domain
-  public static let application = "Application"
+  public static let application="Application"
 }
 
 /// Error context protocol
@@ -34,9 +34,9 @@ public struct BaseErrorContext: ErrorContext {
 
   /// Initialise with domain, code and description
   public init(domain: String, code: Int, description: String) {
-    self.domain = domain
-    self.code = code
-    self.description = description
+    self.domain=domain
+    self.code=code
+    self.description=description
   }
 }
 
@@ -69,24 +69,24 @@ public struct ErrorRecoveryOption: RecoveryOption, Sendable {
   ///   - isDisruptive: Whether this recovery interrupts workflow
   ///   - recoveryAction: The action to perform for this recovery
   public init(
-    id: UUID? = nil,
+    id: UUID?=nil,
     title: String,
-    description: String? = nil,
+    description: String?=nil,
     successLikelihood: RecoveryLikelihood = .medium,
-    isDisruptive: Bool = false,
+    isDisruptive: Bool=false,
     recoveryAction: @escaping @Sendable () async throws -> Void
   ) {
-    self.id = id ?? UUID()
-    self.title = title
-    self.description = description
-    self.successLikelihood = successLikelihood
-    self.isDisruptive = isDisruptive
-    self.recoveryAction = recoveryAction
+    self.id=id ?? UUID()
+    self.title=title
+    self.description=description
+    self.successLikelihood=successLikelihood
+    self.isDisruptive=isDisruptive
+    self.recoveryAction=recoveryAction
   }
 
   /// Perform the recovery action as required by RecoveryOption protocol
   public func perform() async {
-    _ = await execute()
+    _=await execute()
   }
 
   /// Execute the recovery action
@@ -105,10 +105,10 @@ public struct ErrorRecoveryOption: RecoveryOption, Sendable {
 
 /// How likely a recovery option is to succeed
 public enum RecoveryLikelihood: String, CaseIterable, Sendable {
-  case high = "High"
-  case medium = "Medium"
-  case low = "Low"
-  case unknown = "Unknown"
+  case high="High"
+  case medium="Medium"
+  case low="Low"
+  case unknown="Unknown"
 
   /// Gets a numerical value representing the likelihood (0-1)
   public var probability: Double {
@@ -136,7 +136,7 @@ public protocol RecoverableError: ErrorHandlingInterfaces.UmbraError {
 extension RecoverableError {
   /// Default implementation attempts each recovery option in order
   public func attemptRecovery() async -> Bool {
-    let options = recoveryOptions()
+    let options=recoveryOptions()
     for option in options {
       if await option.execute() {
         return true
@@ -151,15 +151,15 @@ extension RecoverableError {
 public final class RecoveryManager: RecoveryOptionsProvider, Sendable {
   /// The shared instance
   @MainActor
-  public static let shared = RecoveryManager()
+  public static let shared=RecoveryManager()
 
   /// Debug mode flag
-  private let verbose = false
+  private let verbose=false
 
   /// Dictionary of domain-specific recovery providers
   /// Using actor isolation to ensure thread safety
   @MainActor
-  private var domainProviders: [String: DomainRecoveryProvider] = [:]
+  private var domainProviders: [String: DomainRecoveryProvider]=[:]
 
   /// Create a new recovery manager
   @MainActor
@@ -174,7 +174,7 @@ public final class RecoveryManager: RecoveryOptionsProvider, Sendable {
   ///   - domain: The error domain to register for
   @MainActor
   public func register(provider: DomainRecoveryProvider, for domain: String) {
-    domainProviders[domain] = provider
+    domainProviders[domain]=provider
   }
 
   /// Register the default providers
@@ -193,7 +193,7 @@ public final class RecoveryManager: RecoveryOptionsProvider, Sendable {
   @MainActor
   public func recoveryOptions(for error: Error) async -> [RecoveryOption] {
     // Get the error domain
-    let domain = String(describing: type(of: error))
+    let domain=String(describing: type(of: error))
 
     // Print debug information if enabled
     if verbose {
@@ -201,7 +201,7 @@ public final class RecoveryManager: RecoveryOptionsProvider, Sendable {
     }
 
     // Look for a provider for this error domain
-    if let provider = domainProviders[domain] {
+    if let provider=domainProviders[domain] {
       if verbose {
         print("Using provider: \(type(of: provider)) for domain: \(domain)")
       }
@@ -220,7 +220,7 @@ public final class RecoveryManager: RecoveryOptionsProvider, Sendable {
   @MainActor
   private func createDefaultRecoveryOptions(for _: Error) -> [RecoveryOption] {
     // Create default options based on the error type
-    var options: [RecoveryOption] = []
+    var options: [RecoveryOption]=[]
 
     // Add retry option
     options.append(

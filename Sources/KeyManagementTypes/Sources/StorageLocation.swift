@@ -37,7 +37,7 @@ extension StorageLocation {
   -> StorageLocation {
     // This is a type-erased conversion to avoid direct import
     // The actual type is CoreServicesTypesNoFoundation.StorageLocation
-    let rawValue = String(describing: coreServicesNoFoundation)
+    let rawValue=String(describing: coreServicesNoFoundation)
     switch rawValue {
       case "secureEnclave": return .secureEnclave
       case "keychain": return .keychain

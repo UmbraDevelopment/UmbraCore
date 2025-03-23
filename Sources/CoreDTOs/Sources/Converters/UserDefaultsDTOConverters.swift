@@ -29,9 +29,9 @@ extension UserDefaultsValueDTO {
         return .stringArray(value)
       case let value as [Any]:
         // Convert array elements recursively
-        var convertedArray: [UserDefaultsValueDTO] = []
+        var convertedArray: [UserDefaultsValueDTO]=[]
         for item in value {
-          if let converted = UserDefaultsValueDTO.from(object: item) {
+          if let converted=UserDefaultsValueDTO.from(object: item) {
             convertedArray.append(converted)
           } else {
             // If any element can't be converted, return nil
@@ -41,10 +41,10 @@ extension UserDefaultsValueDTO {
         return .array(convertedArray)
       case let value as [String: Any]:
         // Convert dictionary values recursively
-        var convertedDict: [String: UserDefaultsValueDTO] = [:]
+        var convertedDict: [String: UserDefaultsValueDTO]=[:]
         for (key, dictValue) in value {
-          if let converted = UserDefaultsValueDTO.from(object: dictValue) {
-            convertedDict[key] = converted
+          if let converted=UserDefaultsValueDTO.from(object: dictValue) {
+            convertedDict[key]=converted
           } else {
             // If any value can't be converted, skip it
             continue
@@ -81,18 +81,18 @@ extension UserDefaultsValueDTO {
         return value
       case let .dictionary(value):
         // Convert dictionary values recursively
-        var convertedDict: [String: Any] = [:]
+        var convertedDict: [String: Any]=[:]
         for (key, dictValue) in value {
-          if let converted = dictValue.toFoundationObject() {
-            convertedDict[key] = converted
+          if let converted=dictValue.toFoundationObject() {
+            convertedDict[key]=converted
           }
         }
         return convertedDict
       case let .array(value):
         // Convert array elements recursively
-        var convertedArray: [Any] = []
+        var convertedArray: [Any]=[]
         for item in value {
-          if let converted = item.toFoundationObject() {
+          if let converted=item.toFoundationObject() {
             convertedArray.append(converted)
           }
         }

@@ -2,10 +2,10 @@ import CoreDTOs
 import Foundation
 
 /// Observer ID type for notification observers
-public typealias NotificationObserverID = String
+public typealias NotificationObserverID=String
 
 /// Notification handler type
-public typealias NotificationHandler = (NotificationDTO) -> Void
+public typealias NotificationHandler=(NotificationDTO) -> Void
 
 /// Protocol defining a Foundation-independent interface for notification operations
 public protocol NotificationServiceDTOProtocol: Sendable {

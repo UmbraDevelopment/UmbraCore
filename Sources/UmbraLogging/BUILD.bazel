@@ -4,9 +4,9 @@ umbra_swift_library(
     name = "UmbraLogging",
     srcs = glob(["**/*.swift"]),
     deps = [
-        "@swiftpkg_swiftybeaver//:SwiftyBeaver",
         "//Sources/CoreErrors",
         "//Sources/ErrorHandlingDomains",
+        "@swiftpkg_swiftybeaver//:SwiftyBeaver",
     ],
 )
 

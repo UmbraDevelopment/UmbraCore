@@ -51,13 +51,13 @@ public struct SymmetricCrypto: Sendable {
   ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     do {
       // Generate a random IV
-      let iv = CryptoWrapper.generateRandomIVSecure()
+      let iv=CryptoWrapper.generateRandomIVSecure()
 
       // Encrypt the data with AES-GCM
-      let encryptedData = try CryptoWrapper.aesEncrypt(data: data, key: key, iv: iv)
+      let encryptedData=try CryptoWrapper.aesEncrypt(data: data, key: key, iv: iv)
 
       // Prepend the IV to the encrypted data
-      let result = SecureBytes.combine(iv, encryptedData)
+      let result=SecureBytes.combine(iv, encryptedData)
 
       return .success(result)
     } catch {
@@ -86,12 +86,12 @@ public struct SymmetricCrypto: Sendable {
       }
 
       // Extract the IV and ciphertext
-      let splitResult = try data.split(at: 12)
-      let iv = splitResult.0
-      let encryptedData = splitResult.1
+      let splitResult=try data.split(at: 12)
+      let iv=splitResult.0
+      let encryptedData=splitResult.1
 
       // Decrypt the data
-      let decryptedData = try CryptoWrapper.aesDecrypt(data: encryptedData, key: key, iv: iv)
+      let decryptedData=try CryptoWrapper.aesDecrypt(data: encryptedData, key: key, iv: iv)
 
       return .success(decryptedData)
     } catch {
@@ -114,13 +114,13 @@ public struct SymmetricCrypto: Sendable {
   ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     do {
       // Use IV from config or generate a random one
-      let iv = config.initializationVector ?? CryptoWrapper.generateRandomIVSecure()
+      let iv=config.initializationVector ?? CryptoWrapper.generateRandomIVSecure()
 
       // Encrypt the data with the provided or random IV
-      let encryptedData = try CryptoWrapper.aesEncrypt(data: data, key: key, iv: iv)
+      let encryptedData=try CryptoWrapper.aesEncrypt(data: data, key: key, iv: iv)
 
       // If IV was not in config, we need to prepend it to the result
-      let result = config.initializationVector != nil ?
+      let result=config.initializationVector != nil ?
         encryptedData :
         SecureBytes.combine(iv, encryptedData)
 
@@ -147,23 +147,23 @@ public struct SymmetricCrypto: Sendable {
       let iv: SecureBytes
       let dataToDecrypt: SecureBytes
 
-      if let providedIv = config.initializationVector {
+      if let providedIv=config.initializationVector {
         // If IV is provided in config, use it
-        iv = providedIv
-        dataToDecrypt = data
+        iv=providedIv
+        dataToDecrypt=data
       } else {
         // Extract IV from data (first 12 bytes)
         guard data.count > 12 else {
           return .failure(.invalidInput(reason: "Encrypted data too short"))
         }
 
-        let splitResult = try data.split(at: 12)
-        iv = splitResult.0
-        dataToDecrypt = splitResult.1
+        let splitResult=try data.split(at: 12)
+        iv=splitResult.0
+        dataToDecrypt=splitResult.1
       }
 
       // Decrypt the data
-      let decryptedData = try CryptoWrapper.aesDecrypt(data: dataToDecrypt, key: key, iv: iv)
+      let decryptedData=try CryptoWrapper.aesDecrypt(data: dataToDecrypt, key: key, iv: iv)
 
       return .success(decryptedData)
     } catch {

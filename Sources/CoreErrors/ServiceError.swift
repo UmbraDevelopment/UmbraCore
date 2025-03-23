@@ -7,7 +7,7 @@ public struct ServiceError: Error, Equatable {
 
   /// Initialize with a description
   public init(description: String) {
-    self.description = description
+    self.description=description
   }
 
   /// Compare two ServiceErrors

@@ -6,7 +6,8 @@ import Foundation
 public protocol SecurityErrorConvertible: Error, Sendable {
   /// Convert this error to a SecurityError
   ///
-  /// When implementing this method, ensure consistent error mapping behaviour throughout the application.
+  /// When implementing this method, ensure consistent error mapping behaviour throughout the
+  /// application.
   func toSecurityError() -> SecurityError
 
   /// Create an instance of this error type from a SecurityError
@@ -22,7 +23,8 @@ public protocol SecurityErrorConvertible: Error, Sendable {
 public protocol XPCTransportableError: Error, Sendable {
   /// Convert to a standard error representation for XPC transport
   ///
-  /// When implementing this method, ensure consistent error mapping behaviour throughout the application.
+  /// When implementing this method, ensure consistent error mapping behaviour throughout the
+  /// application.
   func toTransportableError() -> SecurityError
 
   /// Create from a standard error representation received via XPC
@@ -33,7 +35,7 @@ public protocol XPCTransportableError: Error, Sendable {
 }
 
 /// Error domain identifier for core security errors
-public let coreSecurityErrorDomain = "com.umbra.core.security"
+public let coreSecurityErrorDomain="com.umbra.core.security"
 
 /// Base protocol for all security-related errors
 public protocol SecurityError: Error, Sendable, CustomStringConvertible {

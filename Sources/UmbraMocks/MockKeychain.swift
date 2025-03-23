@@ -9,11 +9,11 @@ import XPCProtocolsCore
 /// Error domain namespace
 public enum ErrorDomain {
   /// Security domain
-  public static let security = "Security"
+  public static let security="Security"
   /// Crypto domain
-  public static let crypto = "Crypto"
+  public static let crypto="Crypto"
   /// Application domain
-  public static let application = "Application"
+  public static let application="Application"
 }
 
 /// Error context protocol
@@ -37,9 +37,9 @@ public struct BaseErrorContext: ErrorContext {
 
   /// Initialise with domain, code and description
   public init(domain: String, code: Int, description: String) {
-    self.domain = domain
-    self.code = code
-    self.description = description
+    self.domain=domain
+    self.code=code
+    self.description=description
   }
 }
 
@@ -91,8 +91,8 @@ public enum KeyDeletionError: Error {
 /// Mock implementation of a secure storage service for testing
 public final class MockKeychain: @unchecked Sendable, SecureStorageProtocol {
   /// Storage for the mock keychain
-  private let storageQueue = DispatchQueue(label: "com.umbra.mock-keychain", attributes: .concurrent)
-  private var storageDict: [String: (SecureBytes, [String: String]?)] = [:]
+  private let storageQueue=DispatchQueue(label: "com.umbra.mock-keychain", attributes: .concurrent)
+  private var storageDict: [String: (SecureBytes, [String: String]?)]=[:]
 
   public init() {}
 
@@ -103,7 +103,7 @@ public final class MockKeychain: @unchecked Sendable, SecureStorageProtocol {
   /// - Returns: Result of the storage operation
   public func storeSecurely(data: SecureBytes, identifier: String) async -> KeyStorageResult {
     storageQueue.async(flags: .barrier) { [self] in
-      storageDict[identifier] = (data, nil)
+      storageDict[identifier]=(data, nil)
     }
     return .success
   }
@@ -115,7 +115,7 @@ public final class MockKeychain: @unchecked Sendable, SecureStorageProtocol {
     var result: KeyRetrievalResult = .failure(.keyNotFound)
 
     storageQueue.sync { [self] in
-      if let (data, _) = storageDict[identifier] {
+      if let (data, _)=storageDict[identifier] {
         result = .success(data)
       }
     }
@@ -136,7 +136,7 @@ public final class MockKeychain: @unchecked Sendable, SecureStorageProtocol {
       }
     }
 
-    if case .success = result {
+    if case .success=result {
       storageQueue.async(flags: .barrier) { [self] in
         storageDict.removeValue(forKey: identifier)
       }
@@ -166,7 +166,7 @@ public final class MockKeychain: @unchecked Sendable, SecureStorageProtocol {
     metadata: [String: String]?
   ) async -> Result<Void, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
     storageQueue.async(flags: .barrier) { [self] in
-      storageDict[identifier] = (data, metadata)
+      storageDict[identifier]=(data, metadata)
     }
     return .success(())
   }
@@ -184,7 +184,7 @@ public final class MockKeychain: @unchecked Sendable, SecureStorageProtocol {
     )
 
     storageQueue.sync { [self] in
-      if let (data, _) = storageDict[identifier] {
+      if let (data, _)=storageDict[identifier] {
         result = .success(data)
       }
     }
@@ -208,10 +208,10 @@ public final class MockKeychain: @unchecked Sendable, SecureStorageProtocol {
   /// - Returns: Array of data identifiers
   public func listDataIdentifiers() async
   -> Result<[String], ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
-    var keys: [String] = []
+    var keys: [String]=[]
 
     storageQueue.sync { [self] in
-      keys = Array(storageDict.keys)
+      keys=Array(storageDict.keys)
     }
 
     return .success(keys)
@@ -231,7 +231,7 @@ public final class MockKeychain: @unchecked Sendable, SecureStorageProtocol {
       )
 
     storageQueue.sync { [self] in
-      if let (_, metadata) = storageDict[identifier] {
+      if let (_, metadata)=storageDict[identifier] {
         result = .success(metadata)
       }
     }

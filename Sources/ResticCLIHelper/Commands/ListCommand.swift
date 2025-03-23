@@ -27,14 +27,14 @@ public struct ListCommand: ResticCommand {
   public var commandName: String { "list" }
 
   public var environment: [String: String] {
-    var env = options.environmentVariables
-    env["RESTIC_PASSWORD"] = options.password
-    env["RESTIC_REPOSITORY"] = options.repository
+    var env=options.environmentVariables
+    env["RESTIC_PASSWORD"]=options.password
+    env["RESTIC_REPOSITORY"]=options.repository
     return env
   }
 
   public var commandArguments: [String] {
-    var args = options.arguments
+    var args=options.arguments
     args.append("--json")
 
     // Add snapshot ID
@@ -97,15 +97,15 @@ public struct ListCommand: ResticCommand {
 public class ListCommandBuilder {
   private var options: CommonOptions
   private var snapshotID: String
-  private var paths: [String] = []
-  private var recursive: Bool = false
-  private var longFormat: Bool = false
-  private var ncduFormat: Bool = false
+  private var paths: [String]=[]
+  private var recursive: Bool=false
+  private var longFormat: Bool=false
+  private var ncduFormat: Bool=false
   private var host: String?
 
   public init(repository: String, password: String, snapshotID: String) {
-    options = CommonOptions(repository: repository, password: password)
-    self.snapshotID = snapshotID
+    options=CommonOptions(repository: repository, password: password)
+    self.snapshotID=snapshotID
   }
 
   /// Add a path to filter by
@@ -125,35 +125,35 @@ public class ListCommandBuilder {
   /// Set whether to list files recursively
   @discardableResult
   public func setRecursive(_ recursive: Bool) -> Self {
-    self.recursive = recursive
+    self.recursive=recursive
     return self
   }
 
   /// Set whether to use long format
   @discardableResult
   public func setLongFormat(_ longFormat: Bool) -> Self {
-    self.longFormat = longFormat
+    self.longFormat=longFormat
     return self
   }
 
   /// Set whether to use NCDU format
   @discardableResult
   public func setNcduFormat(_ ncduFormat: Bool) -> Self {
-    self.ncduFormat = ncduFormat
+    self.ncduFormat=ncduFormat
     return self
   }
 
   /// Set host to filter by (only applies when using 'latest' as snapshotID)
   @discardableResult
   public func setHost(_ host: String) -> Self {
-    self.host = host
+    self.host=host
     return self
   }
 
   /// Set the cache directory
   @discardableResult
   public func setCachePath(_ path: String) -> Self {
-    options = CommonOptions(
+    options=CommonOptions(
       repository: options.repository,
       password: options.password,
       cachePath: path,
@@ -166,7 +166,7 @@ public class ListCommandBuilder {
   /// Enable or disable quiet mode
   @discardableResult
   public func setQuiet(_ quiet: Bool) -> Self {
-    options = CommonOptions(
+    options=CommonOptions(
       repository: options.repository,
       password: options.password,
       cachePath: options.cachePath,
@@ -179,7 +179,7 @@ public class ListCommandBuilder {
   /// Enable or disable JSON output
   @discardableResult
   public func setJsonOutput(_ enabled: Bool) -> Self {
-    options = CommonOptions(
+    options=CommonOptions(
       repository: options.repository,
       password: options.password,
       cachePath: options.cachePath,

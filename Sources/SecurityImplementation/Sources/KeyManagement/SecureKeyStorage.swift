@@ -43,7 +43,7 @@ public final class SecureKeyStorage: SafeStorage, Sendable {
   /// Actor to provide thread-safe access to the underlying storage
   private actor StorageActor {
     /// The internal storage, mapping identifiers to keys
-    private var storage: [String: SecureBytes] = [:]
+    private var storage: [String: SecureBytes]=[:]
 
     /// Get a key by identifier
     func get(identifier: String) -> SecureBytes? {
@@ -52,7 +52,7 @@ public final class SecureKeyStorage: SafeStorage, Sendable {
 
     /// Store a key with the given identifier
     func set(key: SecureBytes, identifier: String) {
-      storage[identifier] = key
+      storage[identifier]=key
     }
 
     /// Delete a key with the given identifier
@@ -72,7 +72,7 @@ public final class SecureKeyStorage: SafeStorage, Sendable {
   }
 
   /// The actor that manages storage access
-  private let actor = StorageActor()
+  private let actor=StorageActor()
 
   /// Create a new instance of SecureKeyStorage
   public init() {}
@@ -120,7 +120,7 @@ public final class SecureKeyStorage: SafeStorage, Sendable {
   /// - Returns: A result containing the key or an error
   public func retrieveKey(withIdentifier identifier: String) async
   -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
-    if let key = await get(identifier: identifier) {
+    if let key=await get(identifier: identifier) {
       .success(key)
     } else {
       .failure(.keyNotFound(identifier: identifier, innerError: nil))
@@ -161,7 +161,7 @@ public final class SecureKeyStorage: SafeStorage, Sendable {
   /// List all key identifiers
   /// - Returns: A result containing an array of key identifiers or an error
   public func listKeyIdentifiers() async -> Result<[String], UmbraErrors.Security.Protocols> {
-    let identifiers = await allIdentifiers()
+    let identifiers=await allIdentifiers()
     return .success(identifiers)
   }
 

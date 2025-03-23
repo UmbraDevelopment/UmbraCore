@@ -6,11 +6,11 @@ import Foundation
 /// Error domain namespace
 public enum ErrorDomain {
   /// Security domain
-  public static let security = "Security"
+  public static let security="Security"
   /// Crypto domain
-  public static let crypto = "Crypto"
+  public static let crypto="Crypto"
   /// Application domain
-  public static let application = "Application"
+  public static let application="Application"
 }
 
 /// Error context protocol
@@ -34,9 +34,9 @@ public struct BaseErrorContext: ErrorContext {
 
   /// Initialise with domain, code and description
   public init(domain: String, code: Int, description: String) {
-    self.domain = domain
-    self.code = code
-    self.description = description
+    self.domain=domain
+    self.code=code
+    self.description=description
   }
 }
 
@@ -138,8 +138,8 @@ extension ErrorHandlingDomains.UmbraErrors.XPC {
         case let .messageDecodingFailed(protocolName, reason):
           return "Failed to decode message from protocol '\(protocolName)': \(reason)"
         case let .unsupportedMessageType(type, protocolName, supportedVersion):
-          var message = "Message type '\(type)' is not supported by protocol '\(protocolName)'"
-          if let version = supportedVersion {
+          var message="Message type '\(type)' is not supported by protocol '\(protocolName)'"
+          if let version=supportedVersion {
             message += " (supported in version: \(version))"
           }
           return message
@@ -229,9 +229,9 @@ extension ErrorHandlingDomains.UmbraErrors.XPC.Protocols {
   /// Create an error for a missing protocol implementation
   public static func makeMissingImplementation(
     protocolName: String,
-    file _: String = #file,
-    line _: Int = #line,
-    function _: String = #function
+    file _: String=#file,
+    line _: Int=#line,
+    function _: String=#function
   ) -> Self {
     .missingProtocolImplementation(protocolName: protocolName)
   }
@@ -239,9 +239,9 @@ extension ErrorHandlingDomains.UmbraErrors.XPC.Protocols {
   /// Create an error for an invalid format
   public static func makeInvalidFormat(
     reason: String,
-    file _: String = #file,
-    line _: Int = #line,
-    function _: String = #function
+    file _: String=#file,
+    line _: Int=#line,
+    function _: String=#function
   ) -> Self {
     .invalidFormat(reason: reason)
   }
@@ -249,9 +249,9 @@ extension ErrorHandlingDomains.UmbraErrors.XPC.Protocols {
   /// Create an error for an unsupported operation
   public static func makeUnsupportedOperation(
     name: String,
-    file _: String = #file,
-    line _: Int = #line,
-    function _: String = #function
+    file _: String=#file,
+    line _: Int=#line,
+    function _: String=#function
   ) -> Self {
     .unsupportedOperation(name: name)
   }
@@ -259,9 +259,9 @@ extension ErrorHandlingDomains.UmbraErrors.XPC.Protocols {
   /// Create an error for an incompatible version
   public static func makeIncompatibleVersion(
     version: String,
-    file _: String = #file,
-    line _: Int = #line,
-    function _: String = #function
+    file _: String=#file,
+    line _: Int=#line,
+    function _: String=#function
   ) -> Self {
     .incompatibleVersion(version: version)
   }
@@ -270,9 +270,9 @@ extension ErrorHandlingDomains.UmbraErrors.XPC.Protocols {
   public static func makeInvalidState(
     state: String,
     expectedState: String,
-    file _: String = #file,
-    line _: Int = #line,
-    function _: String = #function
+    file _: String=#file,
+    line _: Int=#line,
+    function _: String=#function
   ) -> Self {
     .invalidState(state: state, expectedState: expectedState)
   }
@@ -280,9 +280,9 @@ extension ErrorHandlingDomains.UmbraErrors.XPC.Protocols {
   /// Create an error for an internal error
   public static func makeInternalError(
     _ message: String,
-    file _: String = #file,
-    line _: Int = #line,
-    function _: String = #function
+    file _: String=#file,
+    line _: Int=#line,
+    function _: String=#function
   ) -> Self {
     .internalError(message)
   }

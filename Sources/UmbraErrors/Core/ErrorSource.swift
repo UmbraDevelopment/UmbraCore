@@ -16,10 +16,10 @@ public struct ErrorSource: Sendable, Equatable, Codable {
   ///   - file: Source file where the error occurred
   ///   - line: Line number in the source file
   ///   - function: Function name where the error occurred
-  public init(file: String = #file, line: Int = #line, function: String = #function) {
-    self.file = file
-    self.line = line
-    self.function = function
+  public init(file: String=#file, line: Int=#line, function: String=#function) {
+    self.file=file
+    self.line=line
+    self.function=function
   }
 
   /// A shortened version of the file path, showing only the file name
@@ -35,9 +35,9 @@ public struct ErrorSource: Sendable, Equatable, Codable {
 ///   - function: Function name (auto-filled by the compiler)
 /// - Returns: An ErrorSource instance
 public func makeErrorSource(
-  file: String = #file,
-  line: Int = #line,
-  function: String = #function
+  file: String=#file,
+  line: Int=#line,
+  function: String=#function
 ) -> ErrorSource {
   ErrorSource(file: file, line: line, function: function)
 }

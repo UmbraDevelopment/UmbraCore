@@ -9,11 +9,11 @@ import XPCProtocolsCore
 /// Error domain namespace
 public enum ErrorDomain {
   /// Security domain
-  public static let security = "Security"
+  public static let security="Security"
   /// Crypto domain
-  public static let crypto = "Crypto"
+  public static let crypto="Crypto"
   /// Application domain
-  public static let application = "Application"
+  public static let application="Application"
 }
 
 /// Error context protocol
@@ -37,9 +37,9 @@ public struct BaseErrorContext: ErrorContext {
 
   /// Initialise with domain, code and description
   public init(domain: String, code: Int, description: String) {
-    self.domain = domain
-    self.code = code
-    self.description = description
+    self.domain=domain
+    self.code=code
+    self.description=description
   }
 }
 
@@ -62,11 +62,11 @@ public enum KeychainXPCDTO {
     ///   - identifier: Data identifier
     ///   - accessGroup: Access group (optional for testing)
     ///   - data: Data to store
-    public init(service: String, identifier: String, accessGroup: String? = nil, data: SecureBytes) {
-      self.service = service
-      self.identifier = identifier
-      self.accessGroup = accessGroup
-      self.data = data
+    public init(service: String, identifier: String, accessGroup: String?=nil, data: SecureBytes) {
+      self.service=service
+      self.identifier=identifier
+      self.accessGroup=accessGroup
+      self.data=data
     }
   }
 
@@ -84,10 +84,10 @@ public enum KeychainXPCDTO {
     ///   - service: Service identifier
     ///   - identifier: Data identifier
     ///   - accessGroup: Access group (optional for testing)
-    public init(service: String, identifier: String, accessGroup: String? = nil) {
-      self.service = service
-      self.identifier = identifier
-      self.accessGroup = accessGroup
+    public init(service: String, identifier: String, accessGroup: String?=nil) {
+      self.service=service
+      self.identifier=identifier
+      self.accessGroup=accessGroup
     }
   }
 
@@ -105,10 +105,10 @@ public enum KeychainXPCDTO {
     ///   - service: Service identifier
     ///   - identifier: Data identifier
     ///   - accessGroup: Access group (optional for testing)
-    public init(service: String, identifier: String, accessGroup: String? = nil) {
-      self.service = service
-      self.identifier = identifier
-      self.accessGroup = accessGroup
+    public init(service: String, identifier: String, accessGroup: String?=nil) {
+      self.service=service
+      self.identifier=identifier
+      self.accessGroup=accessGroup
     }
   }
 
