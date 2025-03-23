@@ -1,14 +1,24 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
-load("//:bazel/macros/swift.bzl", "umbra_swift_library")
+load("//:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
     name = "UmbraLogging",
-    srcs = [
-        "LogEntry.swift",
-        "LogLevel.swift",
-        "LogMetadata.swift",
-        "LoggingProtocol.swift",
-        "UmbraLogging.swift",
+    srcs = glob(["**/*.swift"]),
+    deps = [
+        "@swiftpkg_swiftybeaver//:SwiftyBeaver",
+        "//Sources/CoreErrors",
+        "//Sources/ErrorHandlingDomains",
     ],
-    deps = [],  # Core module has no dependencies
 )
+
+# Uncomment if documentation generation is needed
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+#
+# swift_package(
+#     name = "docc_documentation",
+#     srcs = glob([
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
+#     deps = ["//Sources/UmbraLogging"],
+# )
