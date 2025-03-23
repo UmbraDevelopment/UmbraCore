@@ -2,6 +2,10 @@
 
 [![Production Build](https://github.com/UmbraDevelopment/UmbraCore/actions/workflows/production-build.yml/badge.svg)](https://github.com/UmbraDevelopment/UmbraCore/actions/workflows/production-build.yml) [![UmbraCore Tests](https://github.com/UmbraDevelopment/UmbraCore/actions/workflows/run-tests.yml/badge.svg)](https://github.com/UmbraDevelopment/UmbraCore/actions/workflows/run-tests.yml) [![Documentation](https://img.shields.io/badge/Documentation-Latest-blue.svg)](https://UmbraDevelopment.github.io/UmbraCore/)
 
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=UmbraDevelopment_UmbraCore&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=UmbraDevelopment_UmbraCore)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=UmbraDevelopment_UmbraCore&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=UmbraDevelopment_UmbraCore)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=UmbraDevelopment_UmbraCore&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=UmbraDevelopment_UmbraCore)
+
 [![Platform](https://img.shields.io/badge/Platform-macOS%2014%2B-lightgrey.svg)](https://github.com/UmbraDevelopment/UmbraCore) [![Swift](https://img.shields.io/badge/Swift-5.9.2-orange.svg)](https://swift.org) [![Build](https://img.shields.io/badge/Build-Bazel%208.1.0-43A047.svg)](https://bazel.build)
 
 [![Known Vulnerabilities](https://snyk.io/test/github/UmbraDevelopment/UmbraCore/badge.svg)](https://snyk.io/test/github/UmbraDevelopment/UmbraCore) [![Made with ❤️ in London](https://img.shields.io/badge/Made%20with%20%E2%9D%A4%EF%B8%8F%20in-London-D40000.svg)](https://github.com/UmbraDevelopment/UmbraCore) [![Stand With Ukraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/badges/StandWithUkraine.svg)](https://stand-with-ukraine.pp.ua)
