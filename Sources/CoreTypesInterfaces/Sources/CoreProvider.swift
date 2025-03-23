@@ -36,26 +36,26 @@ public protocol CoreProvider: Sendable {
 /// Capability identifiers for common security provider capabilities
 public enum CoreCapability {
   /// Provider supports encryption operations
-  public static let encryption = "encryption"
+  public static let encryption="encryption"
 
   /// Provider supports decryption operations
-  public static let decryption = "decryption"
+  public static let decryption="decryption"
 
   /// Provider supports key generation
-  public static let keyGeneration = "key.generation"
+  public static let keyGeneration="key.generation"
 
   /// Provider supports key storage
-  public static let keyStorage = "key.storage"
+  public static let keyStorage="key.storage"
 
   /// Provider supports random number generation
-  public static let randomGeneration = "random.generation"
+  public static let randomGeneration="random.generation"
 
   /// Provider supports hashing operations
-  public static let hashing = "hashing"
+  public static let hashing="hashing"
 
   /// Provider supports message authentication
-  public static let messageAuthentication = "message.authentication"
+  public static let messageAuthentication="message.authentication"
 
   /// Provider supports secure storage
-  public static let secureStorage = "secure.storage"
+  public static let secureStorage="secure.storage"
 }

@@ -13,9 +13,9 @@ extension Error {
   ///   - details: Additional details about the error
   /// - Returns: The error with context information
   public func withContext(
-    source _: String? = nil,
-    operation _: String? = nil,
-    details _: String? = nil
+    source _: String?=nil,
+    operation _: String?=nil,
+    details _: String?=nil
   ) -> Error {
     self
   }
@@ -28,10 +28,10 @@ extension Error {
   ///   - function: Function name
   /// - Returns: The error with source information
   public func withSource(
-    module _: String? = nil,
-    file _: String = #file,
-    line _: Int = #line,
-    function _: String = #function
+    module _: String?=nil,
+    file _: String=#file,
+    line _: Int=#line,
+    function _: String=#function
   ) -> Error {
     self
   }

@@ -11,13 +11,13 @@ final class SecureBytesTests: XCTestCase {
 
   override func setUp() {
     super.setUp()
-    emptyBytes = SecureBytes()
-    sampleBytes = SecureBytes([0x01, 0x02, 0x03, 0x04, 0x05])
+    emptyBytes=SecureBytes()
+    sampleBytes=SecureBytes([0x01, 0x02, 0x03, 0x04, 0x05])
   }
 
   override func tearDown() {
-    emptyBytes = nil
-    sampleBytes = nil
+    emptyBytes=nil
+    sampleBytes=nil
     super.tearDown()
   }
 
@@ -35,7 +35,7 @@ final class SecureBytesTests: XCTestCase {
   }
 
   func testCountInitialization() {
-    let countBytes = SecureBytes(count: 10)
+    let countBytes=SecureBytes(count: 10)
     XCTAssertEqual(countBytes.count, 10)
 
     // Should be initialized with zeros
@@ -45,7 +45,7 @@ final class SecureBytesTests: XCTestCase {
   }
 
   func testRepeatingValueInitialization() {
-    let repeatingBytes = SecureBytes(repeating: 0xFF, count: 5)
+    let repeatingBytes=SecureBytes(repeating: 0xFF, count: 5)
     XCTAssertEqual(repeatingBytes.count, 5)
 
     for i in 0..<5 {
@@ -54,7 +54,7 @@ final class SecureBytesTests: XCTestCase {
   }
 
   func testArrayLiteralInitialization() {
-    let literalBytes: SecureBytes = [0xAA, 0xBB, 0xCC]
+    let literalBytes: SecureBytes=[0xAA, 0xBB, 0xCC]
     XCTAssertEqual(literalBytes.count, 3)
     XCTAssertEqual(literalBytes[0], 0xAA)
     XCTAssertEqual(literalBytes[1], 0xBB)
@@ -69,7 +69,7 @@ final class SecureBytesTests: XCTestCase {
   }
 
   func testRangeSubscript() {
-    let subBytes = sampleBytes[1..<4]
+    let subBytes=sampleBytes[1..<4]
     XCTAssertEqual(subBytes.count, 3)
     XCTAssertEqual(subBytes[0], 0x02)
     XCTAssertEqual(subBytes[1], 0x03)
@@ -79,28 +79,28 @@ final class SecureBytesTests: XCTestCase {
   // MARK: - Methods Tests
 
   func testBytesMethod() {
-    let bytes = sampleBytes.bytes()
+    let bytes=sampleBytes.bytes()
     XCTAssertEqual(bytes, [0x01, 0x02, 0x03, 0x04, 0x05])
   }
 
   func testAppending() {
-    let bytes1: SecureBytes = [0x01, 0x02, 0x03]
-    let bytes2: SecureBytes = [0x04, 0x05]
+    let bytes1: SecureBytes=[0x01, 0x02, 0x03]
+    let bytes2: SecureBytes=[0x04, 0x05]
 
-    let combined = bytes1.appending(bytes2)
+    let combined=bytes1.appending(bytes2)
     XCTAssertEqual(combined.count, 5)
     XCTAssertEqual(combined[0], 0x01)
     XCTAssertEqual(combined[4], 0x05)
   }
 
   func testHexString() {
-    let bytes: SecureBytes = [0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF]
+    let bytes: SecureBytes=[0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF]
     XCTAssertEqual(bytes.hexString(), "0123456789abcdef")
   }
 
   func testFromHexString() {
-    let hex = "0123456789abcdef"
-    let bytes = SecureBytes.fromHexString(hex)
+    let hex="0123456789abcdef"
+    let bytes=SecureBytes.fromHexString(hex)
 
     XCTAssertNotNil(bytes)
     if let bytes {
@@ -121,46 +121,46 @@ final class SecureBytesTests: XCTestCase {
   // MARK: - Protocol Conformance Tests
 
   func testEquatable() {
-    let bytes1: SecureBytes = [0x01, 0x02, 0x03]
-    let bytes2: SecureBytes = [0x01, 0x02, 0x03]
-    let bytes3: SecureBytes = [0x03, 0x02, 0x01]
+    let bytes1: SecureBytes=[0x01, 0x02, 0x03]
+    let bytes2: SecureBytes=[0x01, 0x02, 0x03]
+    let bytes3: SecureBytes=[0x03, 0x02, 0x01]
 
     XCTAssertEqual(bytes1, bytes2)
     XCTAssertNotEqual(bytes1, bytes3)
   }
 
   func testHashable() {
-    let bytes1: SecureBytes = [0x01, 0x02, 0x03]
-    let bytes2: SecureBytes = [0x01, 0x02, 0x03]
-    let bytes3: SecureBytes = [0x03, 0x02, 0x01]
+    let bytes1: SecureBytes=[0x01, 0x02, 0x03]
+    let bytes2: SecureBytes=[0x01, 0x02, 0x03]
+    let bytes3: SecureBytes=[0x03, 0x02, 0x01]
 
-    var hasher1 = Hasher()
-    var hasher2 = Hasher()
-    var hasher3 = Hasher()
+    var hasher1=Hasher()
+    var hasher2=Hasher()
+    var hasher3=Hasher()
 
     bytes1.hash(into: &hasher1)
     bytes2.hash(into: &hasher2)
     bytes3.hash(into: &hasher3)
 
-    let hash1 = hasher1.finalize()
-    let hash2 = hasher2.finalize()
-    let hash3 = hasher3.finalize()
+    let hash1=hasher1.finalize()
+    let hash2=hasher2.finalize()
+    let hash3=hasher3.finalize()
 
     XCTAssertEqual(hash1, hash2)
     XCTAssertNotEqual(hash1, hash3)
   }
 
   func testStringDescription() {
-    let bytes = SecureBytes(count: 10)
+    let bytes=SecureBytes(count: 10)
     XCTAssertEqual(bytes.description, "SecureBytes(10 bytes)")
   }
 
   func testDebugDescription() {
-    let smallBytes: SecureBytes = [0x01, 0x02, 0x03]
+    let smallBytes: SecureBytes=[0x01, 0x02, 0x03]
     XCTAssertEqual(smallBytes.debugDescription, "SecureBytes(3 bytes: 010203)")
 
     // Test truncation for larger data
-    let largeBytes = SecureBytes(repeating: 0xAA, count: 100)
+    let largeBytes=SecureBytes(repeating: 0xAA, count: 100)
     XCTAssertTrue(largeBytes.debugDescription.contains("..."))
   }
 }

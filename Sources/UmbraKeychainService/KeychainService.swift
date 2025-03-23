@@ -24,7 +24,7 @@ public actor KeychainService: KeychainServiceProtocol {
 
   /// Creates a new keychain service instance.
   public init(logger: LoggingProtocol) {
-    self.logger = logger
+    self.logger=logger
   }
 
   // MARK: - KeychainServiceProtocol Implementation
@@ -46,7 +46,7 @@ public actor KeychainService: KeychainServiceProtocol {
     accessibility: CFString,
     flags _: SecAccessControlCreateFlags
   ) async throws {
-    var query: [String: Any] = [
+    var query: [String: Any]=[
       kSecClass as String: kSecClassGenericPassword,
       kSecAttrAccount as String: account,
       kSecAttrService as String: service,
@@ -55,13 +55,13 @@ public actor KeychainService: KeychainServiceProtocol {
     ]
 
     if let accessGroup {
-      query[kSecAttrAccessGroup as String] = accessGroup
+      query[kSecAttrAccessGroup as String]=accessGroup
     }
 
-    let status = SecItemAdd(query as CFDictionary, nil)
+    let status=SecItemAdd(query as CFDictionary, nil)
     guard status == errSecSuccess else {
-      let error = convertError(status)
-      let metadata = LogMetadata([
+      let error=convertError(status)
+      let metadata=LogMetadata([
         "error": String(describing: error),
         "status": String(status),
         "operation": "addItem",
@@ -73,7 +73,7 @@ public actor KeychainService: KeychainServiceProtocol {
       throw error
     }
 
-    let metadata = LogMetadata([
+    let metadata=LogMetadata([
       "operation": "addItem",
       "account": account,
       "service": service,
@@ -95,24 +95,24 @@ public actor KeychainService: KeychainServiceProtocol {
     service: String,
     accessGroup: String?
   ) async throws {
-    var query: [String: Any] = [
+    var query: [String: Any]=[
       kSecClass as String: kSecClassGenericPassword,
       kSecAttrAccount as String: account,
       kSecAttrService as String: service
     ]
 
     if let accessGroup {
-      query[kSecAttrAccessGroup as String] = accessGroup
+      query[kSecAttrAccessGroup as String]=accessGroup
     }
 
-    let attributes: [String: Any] = [
+    let attributes: [String: Any]=[
       kSecValueData as String: data
     ]
 
-    let status = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
+    let status=SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
     guard status == errSecSuccess else {
-      let error = convertError(status)
-      let metadata = LogMetadata([
+      let error=convertError(status)
+      let metadata=LogMetadata([
         "error": String(describing: error),
         "status": String(status),
         "operation": "updateItem",
@@ -124,7 +124,7 @@ public actor KeychainService: KeychainServiceProtocol {
       throw error
     }
 
-    let metadata = LogMetadata([
+    let metadata=LogMetadata([
       "operation": "updateItem",
       "account": account,
       "service": service,
@@ -144,20 +144,20 @@ public actor KeychainService: KeychainServiceProtocol {
     service: String,
     accessGroup: String?
   ) async throws {
-    var query: [String: Any] = [
+    var query: [String: Any]=[
       kSecClass as String: kSecClassGenericPassword,
       kSecAttrAccount as String: account,
       kSecAttrService as String: service
     ]
 
     if let accessGroup {
-      query[kSecAttrAccessGroup as String] = accessGroup
+      query[kSecAttrAccessGroup as String]=accessGroup
     }
 
-    let status = SecItemDelete(query as CFDictionary)
+    let status=SecItemDelete(query as CFDictionary)
     guard status == errSecSuccess else {
-      let error = convertError(status)
-      let metadata = LogMetadata([
+      let error=convertError(status)
+      let metadata=LogMetadata([
         "error": String(describing: error),
         "status": String(status),
         "operation": "deleteItem",
@@ -169,7 +169,7 @@ public actor KeychainService: KeychainServiceProtocol {
       throw error
     }
 
-    let metadata = LogMetadata([
+    let metadata=LogMetadata([
       "operation": "deleteItem",
       "account": account,
       "service": service,
@@ -190,7 +190,7 @@ public actor KeychainService: KeychainServiceProtocol {
     service: String,
     accessGroup: String?
   ) async throws -> Data {
-    var query: [String: Any] = [
+    var query: [String: Any]=[
       kSecClass as String: kSecClassGenericPassword,
       kSecAttrAccount as String: account,
       kSecAttrService as String: service,
@@ -198,14 +198,14 @@ public actor KeychainService: KeychainServiceProtocol {
     ]
 
     if let accessGroup {
-      query[kSecAttrAccessGroup as String] = accessGroup
+      query[kSecAttrAccessGroup as String]=accessGroup
     }
 
     var result: AnyObject?
-    let status = SecItemCopyMatching(query as CFDictionary, &result)
+    let status=SecItemCopyMatching(query as CFDictionary, &result)
     guard status == errSecSuccess else {
-      let error = convertError(status)
-      let metadata = LogMetadata([
+      let error=convertError(status)
+      let metadata=LogMetadata([
         "error": String(describing: error),
         "status": String(status),
         "operation": "readItem",
@@ -217,8 +217,8 @@ public actor KeychainService: KeychainServiceProtocol {
       throw error
     }
 
-    guard let data = result as? Data else {
-      let metadata = LogMetadata([
+    guard let data=result as? Data else {
+      let metadata=LogMetadata([
         "operation": "readItem",
         "account": account,
         "service": service,
@@ -229,7 +229,7 @@ public actor KeychainService: KeychainServiceProtocol {
       throw KeychainError.unexpectedData
     }
 
-    let metadata = LogMetadata([
+    let metadata=LogMetadata([
       "operation": "readItem",
       "account": account,
       "service": service,
@@ -250,7 +250,7 @@ public actor KeychainService: KeychainServiceProtocol {
     service: String,
     accessGroup: String?
   ) async -> Bool {
-    var query: [String: Any] = [
+    var query: [String: Any]=[
       kSecClass as String: kSecClassGenericPassword,
       kSecAttrAccount as String: account,
       kSecAttrService as String: service,
@@ -258,10 +258,10 @@ public actor KeychainService: KeychainServiceProtocol {
     ]
 
     if let accessGroup {
-      query[kSecAttrAccessGroup as String] = accessGroup
+      query[kSecAttrAccessGroup as String]=accessGroup
     }
 
-    let status = SecItemCopyMatching(query as CFDictionary, nil)
+    let status=SecItemCopyMatching(query as CFDictionary, nil)
 
     // Most important: don't throw, just return a boolean
     return status == errSecSuccess

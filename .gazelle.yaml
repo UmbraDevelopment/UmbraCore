@@ -1,0 +1,34 @@
+# UmbraCore Gazelle Configuration
+# Controls how Gazelle generates BUILD files for the project
+
+# Global configuration
+common:
+  sdk: "//tools/sdk:macosx" # If this doesn't exist, remove this line
+  minimum_os_version: "macosx_13.0"
+
+# Swift-specific configuration
+swift:
+  # Use custom umbra_swift_library macro instead of standard swift_library
+  library_rule: "umbra_swift_library"
+  
+  # Source file patterns
+  source_extensions:
+    - .swift
+  
+  # Import path replacements (adjust based on project needs)
+  prefix_rewrites:
+    - prefix: ""
+      replace_with: "//Sources/"
+  
+  # Test configuration
+  test_rule: "swift_test"
+  test_tags:
+    - "swift"
+  
+  # Custom attributes to add to generated rules
+  rule_attrs:
+    swift_library:
+      copts:
+        - "-enable-library-evolution"
+      visibility:
+        - "//visibility:public"

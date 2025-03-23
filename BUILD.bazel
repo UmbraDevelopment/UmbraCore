@@ -1,3 +1,6 @@
+load("@bazel_gazelle//:def.bzl", "gazelle", "gazelle_test")
+load("@rules_python//python:defs.bzl", "py_test")
+
 package(default_visibility = ["//visibility:public"])
 
 platform(
@@ -6,4 +9,34 @@ platform(
         "@platforms//os:macos",
         "@platforms//cpu:arm64",
     ],
+)
+
+# gazelle:prefix dev.mpy.UmbraCore
+
+gazelle(
+    name = "gazelle",
+    command = "fix",
+)
+
+# Test that BUILD files are up-to-date
+gazelle_test(
+    name = "gazelle_test",
+    workspace = "//:BUILD.bazel",
+)
+
+# Code quality targets
+alias(
+    name = "format",
+    actual = "//tools:code_quality_manager",
+)
+
+# Production-only targets
+sh_binary(
+    name = "format_production",
+    srcs = ["format_production.sh"],
+    args = [
+        "$(location //tools:code_quality_manager)",
+        "--production-only",
+    ],
+    data = ["//tools:code_quality_manager"],
 )

@@ -1,29 +1,21 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
-load("//:bazel/macros/swift.bzl", "umbra_swift_library")
+load("//:swift_rules.bzl", "umbra_swift_library")
 
-# Temporarily commented out due to swift-syntax dependency issues
-# umbra_swift_library(
-#     name = "TestingMacros",
-#     srcs = glob(["*.swift"]),
-#     copts = [
-#         "-target",
-#         "arm64-apple-macos14.0",
-#         "-strict-concurrency=complete",
-#         "-enable-actor-data-race-checks",
-#         "-warn-concurrency",
-#     ],
-# # #     deps = [
-#         "@swiftpkg_swift_syntax//:SwiftCompilerPlugin",
-#         "@swiftpkg_swift_syntax//:SwiftSyntax",
-#         "@swiftpkg_swift_syntax//:SwiftSyntaxMacros",
-#     ],
-# )
-
-# Empty package to avoid build errors
-package(default_visibility = ["//visibility:public"])
-
-# Provide a dummy target to satisfy dependencies
-filegroup(
+umbra_swift_library(
     name = "TestingMacros",
-    srcs = [],
+    srcs = glob(["**/*.swift"]),
+    deps = [
+    ],
 )
+
+# Uncomment if documentation generation is needed
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+#
+# swift_package(
+#     name = "docc_documentation",
+#     srcs = glob([
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
+#     deps = ["//Sources/TestingMacros"],
+# )

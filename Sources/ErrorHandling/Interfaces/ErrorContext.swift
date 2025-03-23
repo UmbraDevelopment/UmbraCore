@@ -55,19 +55,19 @@ public struct ErrorContext: Sendable {
   public init(
     source: String,
     operation: String,
-    details: String? = nil,
-    underlyingError: Error? = nil,
-    file: String = #file,
-    line: Int = #line,
-    function: String = #function
+    details: String?=nil,
+    underlyingError: Error?=nil,
+    file: String=#file,
+    line: Int=#line,
+    function: String=#function
   ) {
-    self.source = source
-    self.operation = operation
-    self.details = details
-    self.underlyingError = underlyingError
-    self.file = file
-    self.line = line
-    self.function = function
+    self.source=source
+    self.operation=operation
+    self.details=details
+    self.underlyingError=underlyingError
+    self.file=file
+    self.line=line
+    self.function=function
   }
 }
 
@@ -98,12 +98,12 @@ public struct ErrorSource: Sendable {
   ///   - line: The line where the error occurred (defaults to current line)
   ///   - function: The function where the error occurred (defaults to current function)
   public init(
-    file: String = #file,
-    line: Int = #line,
-    function: String = #function
+    file: String=#file,
+    line: Int=#line,
+    function: String=#function
   ) {
-    self.file = file
-    self.line = line
-    self.function = function
+    self.file=file
+    self.line=line
+    self.function=function
   }
 }

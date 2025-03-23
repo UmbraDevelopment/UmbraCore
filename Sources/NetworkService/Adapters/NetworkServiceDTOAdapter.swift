@@ -9,22 +9,22 @@ public final class NetworkServiceDTOAdapter: NetworkServiceDTOProtocol {
   // MARK: - Private Properties
 
   private let session: URLSession
-  private let errorDomain = ErrorHandlingDomains.UmbraErrors.Network.self
+  private let errorDomain=ErrorHandlingDomains.UmbraErrors.Network.self
 
   // MARK: - Initialization
 
   /// Initialize a new NetworkServiceDTOAdapter with a custom URLSession
   /// - Parameter session: The URLSession to use for network operations
   public init(session: URLSession) {
-    self.session = session
+    self.session=session
   }
 
   /// Initialize a new NetworkServiceDTOAdapter with default URLSession configuration
   public init() {
-    let config = URLSessionConfiguration.default
-    config.timeoutIntervalForRequest = 30.0
-    config.timeoutIntervalForResource = 60.0
-    session = URLSession(configuration: config)
+    let config=URLSessionConfiguration.default
+    config.timeoutIntervalForRequest=30.0
+    config.timeoutIntervalForResource=60.0
+    session=URLSession(configuration: config)
   }
 
   // MARK: - NetworkServiceDTOProtocol Implementation
@@ -34,7 +34,7 @@ public final class NetworkServiceDTOAdapter: NetworkServiceDTOProtocol {
   /// - Returns: A result containing either the response or an error
   public func sendRequest(_ request: NetworkRequestDTO) async
   -> OperationResultDTO<NetworkResponseDTO> {
-    guard let urlRequest = request.toURLRequest() else {
+    guard let urlRequest=request.toURLRequest() else {
       return .failure(SecurityErrorDTO(
         code: errorDomain.invalidURL.code,
         domain: errorDomain.invalidURL.domain,
@@ -43,11 +43,11 @@ public final class NetworkServiceDTOAdapter: NetworkServiceDTOProtocol {
     }
 
     do {
-      let startTime = Date()
-      let (data, response) = try await session.data(for: urlRequest)
-      let duration = Date().timeIntervalSince(startTime)
+      let startTime=Date()
+      let (data, response)=try await session.data(for: urlRequest)
+      let duration=Date().timeIntervalSince(startTime)
 
-      guard let httpResponse = response as? HTTPURLResponse else {
+      guard let httpResponse=response as? HTTPURLResponse else {
         return .failure(SecurityErrorDTO(
           code: errorDomain.invalidResponse.code,
           domain: errorDomain.invalidResponse.domain,
@@ -56,15 +56,15 @@ public final class NetworkServiceDTOAdapter: NetworkServiceDTOProtocol {
       }
 
       // Create headers dictionary
-      var headers = [String: String]()
+      var headers=[String: String]()
       for (key, value) in httpResponse.allHeaderFields {
-        if let keyStr = key as? String, let valueStr = value as? String {
-          headers[keyStr] = valueStr
+        if let keyStr=key as? String, let valueStr=value as? String {
+          headers[keyStr]=valueStr
         }
       }
 
       // Create the response DTO
-      let responseDTO = NetworkResponseDTO(
+      let responseDTO=NetworkResponseDTO(
         requestID: request.id,
         statusCode: httpResponse.statusCode,
         statusMessage: HTTPURLResponse.localizedString(forStatusCode: httpResponse.statusCode),
@@ -98,10 +98,10 @@ public final class NetworkServiceDTOAdapter: NetworkServiceDTOProtocol {
   /// - Returns: A result containing either the downloaded data or an error
   public func downloadData(
     from urlString: String,
-    headers: [String: String]? = nil
+    headers: [String: String]?=nil
   ) async -> OperationResultDTO<[UInt8]> {
     // Create a GET request
-    let request = NetworkRequestDTO.get(
+    let request=NetworkRequestDTO.get(
       id: UUID().uuidString,
       urlString: urlString,
       headers: headers ?? [:],
@@ -109,7 +109,7 @@ public final class NetworkServiceDTOAdapter: NetworkServiceDTOProtocol {
     )
 
     // Send the request
-    let response = await sendRequest(request)
+    let response=await sendRequest(request)
 
     // Process the response
     switch response {
@@ -137,10 +137,10 @@ public final class NetworkServiceDTOAdapter: NetworkServiceDTOProtocol {
   /// - Returns: A result containing either the downloaded data or an error
   public func downloadData(
     from urlString: String,
-    headers: [String: String]? = nil,
+    headers: [String: String]?=nil,
     progressHandler: @escaping (Double) -> Void
   ) async -> OperationResultDTO<[UInt8]> {
-    guard let url = URL(string: urlString) else {
+    guard let url=URL(string: urlString) else {
       return .failure(SecurityErrorDTO(
         code: errorDomain.invalidURL.code,
         domain: errorDomain.invalidURL.domain,
@@ -149,7 +149,7 @@ public final class NetworkServiceDTOAdapter: NetworkServiceDTOProtocol {
     }
 
     // Create the request
-    var request = URLRequest(url: url)
+    var request=URLRequest(url: url)
 
     // Add headers if provided
     if let headers {
@@ -159,12 +159,12 @@ public final class NetworkServiceDTOAdapter: NetworkServiceDTOProtocol {
     }
 
     // Use a delegate-based approach for progress tracking
-    let delegate = ProgressTrackingDelegate(progressHandler: progressHandler)
-    let progressSession = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
+    let delegate=ProgressTrackingDelegate(progressHandler: progressHandler)
+    let progressSession=URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
 
     do {
-      let (downloadLocation, _) = try await progressSession.download(for: request)
-      let data = try Data(contentsOf: downloadLocation)
+      let (downloadLocation, _)=try await progressSession.download(for: request)
+      let data=try Data(contentsOf: downloadLocation)
       return .success([UInt8](data))
     } catch let urlError as URLError {
       return .failure(convertURLError(urlError, requestID: UUID().uuidString))
@@ -188,10 +188,10 @@ public final class NetworkServiceDTOAdapter: NetworkServiceDTOProtocol {
     _ data: [UInt8],
     to urlString: String,
     method: NetworkRequestDTO.HTTPMethod = .post,
-    headers: [String: String]? = nil
+    headers: [String: String]?=nil
   ) async -> OperationResultDTO<NetworkResponseDTO> {
     // Create the request DTO
-    let request = NetworkRequestDTO(
+    let request=NetworkRequestDTO(
       id: UUID().uuidString,
       urlString: urlString,
       method: method,
@@ -220,10 +220,10 @@ public final class NetworkServiceDTOAdapter: NetworkServiceDTOProtocol {
     _ data: [UInt8],
     to urlString: String,
     method: NetworkRequestDTO.HTTPMethod = .post,
-    headers: [String: String]? = nil,
+    headers: [String: String]?=nil,
     progressHandler: @escaping (Double) -> Void
   ) async -> OperationResultDTO<NetworkResponseDTO> {
-    guard let url = URL(string: urlString) else {
+    guard let url=URL(string: urlString) else {
       return .failure(SecurityErrorDTO(
         code: errorDomain.invalidURL.code,
         domain: errorDomain.invalidURL.domain,
@@ -232,8 +232,8 @@ public final class NetworkServiceDTOAdapter: NetworkServiceDTOProtocol {
     }
 
     // Create the request
-    var request = URLRequest(url: url)
-    request.httpMethod = method.rawValue
+    var request=URLRequest(url: url)
+    request.httpMethod=method.rawValue
 
     // Add headers if provided
     if let headers {
@@ -243,18 +243,18 @@ public final class NetworkServiceDTOAdapter: NetworkServiceDTOProtocol {
     }
 
     // Create Data from bytes
-    let uploadData = Data(data)
+    let uploadData=Data(data)
 
     // Use a delegate-based approach for progress tracking
-    let delegate = ProgressTrackingDelegate(progressHandler: progressHandler)
-    let progressSession = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
+    let delegate=ProgressTrackingDelegate(progressHandler: progressHandler)
+    let progressSession=URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
 
     do {
-      let requestStartTime = Date()
-      let (responseData, response) = try await progressSession.upload(for: request, from: uploadData)
-      let duration = Date().timeIntervalSince(requestStartTime)
+      let requestStartTime=Date()
+      let (responseData, response)=try await progressSession.upload(for: request, from: uploadData)
+      let duration=Date().timeIntervalSince(requestStartTime)
 
-      guard let httpResponse = response as? HTTPURLResponse else {
+      guard let httpResponse=response as? HTTPURLResponse else {
         return .failure(SecurityErrorDTO(
           code: errorDomain.invalidResponse.code,
           domain: errorDomain.invalidResponse.domain,
@@ -263,15 +263,15 @@ public final class NetworkServiceDTOAdapter: NetworkServiceDTOProtocol {
       }
 
       // Create headers dictionary
-      var responseHeaders = [String: String]()
+      var responseHeaders=[String: String]()
       for (key, value) in httpResponse.allHeaderFields {
-        if let keyStr = key as? String, let valueStr = value as? String {
-          responseHeaders[keyStr] = valueStr
+        if let keyStr=key as? String, let valueStr=value as? String {
+          responseHeaders[keyStr]=valueStr
         }
       }
 
       // Create the response DTO
-      let responseDTO = NetworkResponseDTO(
+      let responseDTO=NetworkResponseDTO(
         requestID: UUID().uuidString,
         statusCode: httpResponse.statusCode,
         statusMessage: HTTPURLResponse.localizedString(forStatusCode: httpResponse.statusCode),
@@ -302,14 +302,14 @@ public final class NetworkServiceDTOAdapter: NetworkServiceDTOProtocol {
   /// - Returns: A result containing either a boolean indicating reachability or an error
   public func isReachable(urlString: String) async -> OperationResultDTO<Bool> {
     // Create a HEAD request which is lightweight
-    let request = NetworkRequestDTO.head(
+    let request=NetworkRequestDTO.head(
       id: UUID().uuidString,
       urlString: urlString,
       timeout: 10.0
     )
 
     // Send the request
-    let response = await sendRequest(request)
+    let response=await sendRequest(request)
 
     switch response {
       case let .success(responseDTO):
@@ -320,7 +320,8 @@ public final class NetworkServiceDTOAdapter: NetworkServiceDTOProtocol {
         if
           error.error.code == errorDomain.notConnected.code ||
           error.error.code == errorDomain.cannotConnectToHost.code ||
-          error.error.code == errorDomain.networkConnectionLost.code {
+          error.error.code == errorDomain.networkConnectionLost.code
+        {
           return .success(false)
         }
 
@@ -338,33 +339,33 @@ public final class NetworkServiceDTOAdapter: NetworkServiceDTOProtocol {
 
     switch error.code {
       case .badURL:
-        code = errorDomain.invalidURL.code
-        domain = errorDomain.invalidURL.domain
-        message = "Invalid URL"
+        code=errorDomain.invalidURL.code
+        domain=errorDomain.invalidURL.domain
+        message="Invalid URL"
       case .unsupportedURL:
-        code = errorDomain.invalidURL.code
-        domain = errorDomain.invalidURL.domain
-        message = "Unsupported URL"
+        code=errorDomain.invalidURL.code
+        domain=errorDomain.invalidURL.domain
+        message="Unsupported URL"
       case .cannotFindHost, .cannotConnectToHost:
-        code = errorDomain.cannotConnectToHost.code
-        domain = errorDomain.cannotConnectToHost.domain
-        message = "Cannot connect to host"
+        code=errorDomain.cannotConnectToHost.code
+        domain=errorDomain.cannotConnectToHost.domain
+        message="Cannot connect to host"
       case .timedOut:
-        code = errorDomain.timeout.code
-        domain = errorDomain.timeout.domain
-        message = "Request timed out"
+        code=errorDomain.timeout.code
+        domain=errorDomain.timeout.domain
+        message="Request timed out"
       case .networkConnectionLost:
-        code = errorDomain.networkConnectionLost.code
-        domain = errorDomain.networkConnectionLost.domain
-        message = "Network connection lost"
+        code=errorDomain.networkConnectionLost.code
+        domain=errorDomain.networkConnectionLost.domain
+        message="Network connection lost"
       case .notConnectedToInternet:
-        code = errorDomain.notConnected.code
-        domain = errorDomain.notConnected.domain
-        message = "Not connected to the internet"
+        code=errorDomain.notConnected.code
+        domain=errorDomain.notConnected.domain
+        message="Not connected to the internet"
       default:
-        code = errorDomain.networkError.code
-        domain = errorDomain.networkError.domain
-        message = "Network error: \(error.localizedDescription)"
+        code=errorDomain.networkError.code
+        domain=errorDomain.networkError.domain
+        message="Network error: \(error.localizedDescription)"
     }
 
     return SecurityErrorDTO(
@@ -381,7 +382,7 @@ URLSessionDownloadDelegate {
   let progressHandler: (Double) -> Void
 
   init(progressHandler: @escaping (Double) -> Void) {
-    self.progressHandler = progressHandler
+    self.progressHandler=progressHandler
     super.init()
   }
 
@@ -393,7 +394,7 @@ URLSessionDownloadDelegate {
     totalBytesExpectedToSend: Int64
   ) {
     if totalBytesExpectedToSend > 0 {
-      let progress = Double(totalBytesSent) / Double(totalBytesExpectedToSend)
+      let progress=Double(totalBytesSent) / Double(totalBytesExpectedToSend)
       progressHandler(progress)
     }
   }
@@ -406,7 +407,7 @@ URLSessionDownloadDelegate {
     totalBytesExpectedToWrite: Int64
   ) {
     if totalBytesExpectedToWrite > 0 {
-      let progress = Double(totalBytesWritten) / Double(totalBytesExpectedToWrite)
+      let progress=Double(totalBytesWritten) / Double(totalBytesExpectedToWrite)
       progressHandler(progress)
     } else {
       // When we don't know the total size, just report bytes downloaded

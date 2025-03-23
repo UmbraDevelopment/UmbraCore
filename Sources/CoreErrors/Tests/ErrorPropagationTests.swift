@@ -9,18 +9,19 @@ final class ErrorPropagationTests: XCTestCase {
     // when errors cross module boundaries
 
     // Create original error
-    let originalError = CryptoError.invalidKeyLength(expected: 32, got: 16)
+    let originalError=CryptoError.invalidKeyLength(expected: 32, got: 16)
 
     // Convert to canonical form (as would happen at module boundary)
-    let canonicalError = originalError.toCanonical()
+    let canonicalError=originalError.toCanonical()
 
     // Simulate passing through a boundary by type erasure and recovery
-    let anyError = canonicalError as Any
+    let anyError=canonicalError as Any
 
     // Different module recovers the error
     if
-      let recoveredError = anyError as? UmbraErrors.Crypto.Core,
-      case let .invalidParameters(_, parameter, reason) = recoveredError {
+      let recoveredError=anyError as? UmbraErrors.Crypto.Core,
+      case let .invalidParameters(_, parameter, reason)=recoveredError
+    {
       // Verify essential information was preserved
       XCTAssertEqual(parameter, "keyLength", "Parameter name should be preserved")
       XCTAssertTrue(
@@ -37,25 +38,25 @@ final class ErrorPropagationTests: XCTestCase {
     // into a consistent format for uniform error handling
 
     // Create errors from different domains
-    let cryptoError = CryptoError.encryptionFailed(reason: "Bad key")
-    let securityError = CoreErrors.SecurityError.invalidKey(reason: "Malformed key")
+    let cryptoError=CryptoError.encryptionFailed(reason: "Bad key")
+    let securityError=CoreErrors.SecurityError.invalidKey(reason: "Malformed key")
 
     // Convert both to canonical formats
-    let canonicalCryptoError = cryptoError.toCanonical()
-    let canonicalSecurityError = securityError.toCanonicalError()
+    let canonicalCryptoError=cryptoError.toCanonical()
+    let canonicalSecurityError=securityError.toCanonicalError()
 
     // Verify we can extract consistent information regardless of source
     func extractErrorInfo(_ error: Any) -> (domain: String, message: String)? {
-      if let error = error as? UmbraErrors.Crypto.Core {
+      if let error=error as? UmbraErrors.Crypto.Core {
         return ("Crypto", String(describing: error))
-      } else if let error = error as? ErrorHandlingDomains.UmbraErrors.GeneralSecurity.Core {
+      } else if let error=error as? ErrorHandlingDomains.UmbraErrors.GeneralSecurity.Core {
         return ("Security", String(describing: error))
       }
       return nil
     }
 
-    let cryptoInfo = extractErrorInfo(canonicalCryptoError)
-    let securityInfo = extractErrorInfo(canonicalSecurityError)
+    let cryptoInfo=extractErrorInfo(canonicalCryptoError)
+    let securityInfo=extractErrorInfo(canonicalSecurityError)
 
     XCTAssertNotNil(cryptoInfo, "Should extract information from crypto error")
     XCTAssertNotNil(securityInfo, "Should extract information from security error")
@@ -67,7 +68,7 @@ final class ErrorPropagationTests: XCTestCase {
     // Test that errors maintain proper localisation across boundaries
 
     // Create an error with a specific message
-    let originalError = CryptoError.invalidKeyLength(expected: 32, got: 16)
+    let originalError=CryptoError.invalidKeyLength(expected: 32, got: 16)
 
     // Verify the error is properly localised
     XCTAssertNotNil(originalError.errorDescription, "Error should have localised description")
@@ -81,11 +82,12 @@ final class ErrorPropagationTests: XCTestCase {
     )
 
     // Convert to canonical form and check localisation is maintained
-    let canonicalError = originalError.toCanonical()
+    let canonicalError=originalError.toCanonical()
 
     if
-      let canonicalError = canonicalError as? UmbraErrors.Crypto.Core,
-      case let .invalidParameters(_, _, reason) = canonicalError {
+      let canonicalError=canonicalError as? UmbraErrors.Crypto.Core,
+      case let .invalidParameters(_, _, reason)=canonicalError
+    {
       XCTAssertTrue(
         reason.contains("32") && reason.contains("16"),
         "Canonical error should maintain numerical parameters"

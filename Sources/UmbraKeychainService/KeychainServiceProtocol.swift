@@ -5,20 +5,20 @@ public struct KeychainAccessOptions: OptionSet, Sendable {
   public let rawValue: UInt
 
   public init(rawValue: UInt) {
-    self.rawValue = rawValue
+    self.rawValue=rawValue
   }
 
   /// Item data can only be accessed while the device is unlocked
-  public static let whenUnlocked = KeychainAccessOptions(rawValue: 1 << 0)
+  public static let whenUnlocked=KeychainAccessOptions(rawValue: 1 << 0)
 
   /// Item data can only be accessed once per unlock
-  public static let whenPasscodeSetThisDeviceOnly = KeychainAccessOptions(rawValue: 1 << 1)
+  public static let whenPasscodeSetThisDeviceOnly=KeychainAccessOptions(rawValue: 1 << 1)
 
   /// Item data can only be accessed while the application is in the foreground
-  public static let accessibleWhenUnlockedThisDeviceOnly = KeychainAccessOptions(rawValue: 1 << 2)
+  public static let accessibleWhenUnlockedThisDeviceOnly=KeychainAccessOptions(rawValue: 1 << 2)
 
   /// Item data cannot be synchronized to other devices
-  public static let thisDeviceOnly = KeychainAccessOptions(rawValue: 1 << 3)
+  public static let thisDeviceOnly=KeychainAccessOptions(rawValue: 1 << 3)
 }
 
 /// Protocol defining operations for secure keychain access

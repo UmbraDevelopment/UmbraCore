@@ -45,9 +45,9 @@ public struct RotationConfig: Sendable {
   /// - Parameters:
   ///   - keyIdentifier: Identifier of the key to rotate
   ///   - dataToReencrypt: Optional data to re-encrypt with the new key
-  public init(keyIdentifier: String, dataToReencrypt: SecureBytes? = nil) {
-    self.keyIdentifier = keyIdentifier
-    self.dataToReencrypt = dataToReencrypt
+  public init(keyIdentifier: String, dataToReencrypt: SecureBytes?=nil) {
+    self.keyIdentifier=keyIdentifier
+    self.dataToReencrypt=dataToReencrypt
   }
 }
 
@@ -69,13 +69,13 @@ public final class KeyManager: KeyManagementProtocol {
 
   /// Creates a new KeyManager with default implementations
   public init() {
-    keyStore = SecureKeyStorage()
-    keyGenerator = KeyGenerator()
+    keyStore=SecureKeyStorage()
+    keyGenerator=KeyGenerator()
 
     // Create an adaptor to bridge between SecurityUtils and KeyManager.SecurityUtilsProtocol
     // This adaptor pattern allows KeyManager to use SecurityUtils while maintaining
     // its own protocol definition for better encapsulation
-    keyUtils = SecurityUtilsAdapter()
+    keyUtils=SecurityUtilsAdapter()
   }
 
   /// Creates a new KeyManager with the specified components
@@ -88,9 +88,9 @@ public final class KeyManager: KeyManagementProtocol {
     keyGenerator: KeyGenerator,
     keyUtils: KeyManager.SecurityUtilsProtocol
   ) {
-    self.keyStore = keyStore
-    self.keyGenerator = keyGenerator
-    self.keyUtils = keyUtils
+    self.keyStore=keyStore
+    self.keyGenerator=keyGenerator
+    self.keyUtils=keyUtils
   }
 
   // MARK: - KeyManagementProtocol Implementation
@@ -111,22 +111,22 @@ public final class KeyManager: KeyManagementProtocol {
 
     switch keyType {
       case .symmetric:
-        algorithm = "AES"
+        algorithm="AES"
       case .asymmetric:
-        algorithm = "RSA"
+        algorithm="RSA"
       case .hmac:
-        algorithm = "HMAC-SHA256"
+        algorithm="HMAC-SHA256"
       default:
         return .failure(.invalidInput("Unsupported key type: \(keyType)"))
     }
 
     // Generate the key
-    let generateResult = await keyGenerator.generateKey(
+    let generateResult=await keyGenerator.generateKey(
       bits: bits,
       algorithm: algorithm
     )
 
-    guard generateResult.success, let key = generateResult.data else {
+    guard generateResult.success, let key=generateResult.data else {
       return .failure(.serviceError("Key generation failed (code: 500)"))
     }
 
@@ -181,20 +181,20 @@ public final class KeyManager: KeyManagementProtocol {
     reencryptedData: SecureBytes?
   ), UmbraErrors.Security.Protocols> {
     // First, retrieve the old key
-    let retrieveResult = await keyStore.retrieveKey(withIdentifier: identifier)
+    let retrieveResult=await keyStore.retrieveKey(withIdentifier: identifier)
 
     switch retrieveResult {
       case let .success(oldKey):
         // Generate a new key of the same size
-        let keySize = oldKey.count * 8
+        let keySize=oldKey.count * 8
 
         // Generate key using the internal key generator
-        let generateResult = await keyGenerator.generateKey(
+        let generateResult=await keyGenerator.generateKey(
           bits: keySize,
           algorithm: "AES"
         )
 
-        guard generateResult.success, let newKey = generateResult.data else {
+        guard generateResult.success, let newKey=generateResult.data else {
           return .failure(.serviceError("Failed to generate new key for rotation (code: 500)"))
         }
 
@@ -202,8 +202,8 @@ public final class KeyManager: KeyManagementProtocol {
         var reencryptedData: SecureBytes?
         if let dataToReencrypt {
           // For re-encryption, we need to decrypt with the old key and encrypt with the new key
-          let retrieveConfig = SecurityConfigDTO(algorithm: "AES-GCM", keySizeInBits: 256)
-          let decryptResult = try? await keyUtils.decryptSymmetricDTO(
+          let retrieveConfig=SecurityConfigDTO(algorithm: "AES-GCM", keySizeInBits: 256)
+          let decryptResult=try? await keyUtils.decryptSymmetricDTO(
             data: dataToReencrypt,
             key: oldKey,
             config: retrieveConfig
@@ -217,12 +217,12 @@ public final class KeyManager: KeyManagementProtocol {
 
           switch decryptResult {
             case let .success(decryptedData):
-              reencryptedData = decryptedData
+              reencryptedData=decryptedData
             case let .failure(error):
               return .failure(error)
           }
 
-          let encryptResult = try? await keyUtils.encryptSymmetricDTO(
+          let encryptResult=try? await keyUtils.encryptSymmetricDTO(
             data: reencryptedData!,
             key: newKey,
             config: retrieveConfig
@@ -236,14 +236,14 @@ public final class KeyManager: KeyManagementProtocol {
 
           switch encryptResult {
             case let .success(encryptedData):
-              reencryptedData = encryptedData
+              reencryptedData=encryptedData
             case let .failure(error):
               return .failure(error)
           }
         }
 
         // Store the new key
-        let storeResult = await keyStore.storeKey(newKey, withIdentifier: identifier)
+        let storeResult=await keyStore.storeKey(newKey, withIdentifier: identifier)
 
         switch storeResult {
           case .success:
@@ -266,15 +266,15 @@ public final class KeyManager: KeyManagementProtocol {
     purpose _: KeyPurpose
   ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     // First retrieve the old key
-    let retrieveResult = await retrieveKey(withIdentifier: config.keyIdentifier)
+    let retrieveResult=await retrieveKey(withIdentifier: config.keyIdentifier)
 
     switch retrieveResult {
       case let .success(oldKey):
         var reencryptedData: SecureBytes?
-        if let dataToReencrypt = config.dataToReencrypt {
+        if let dataToReencrypt=config.dataToReencrypt {
           // For re-encryption, we need to decrypt with the old key and encrypt with the new key
-          let retrieveConfig = SecurityConfigDTO(algorithm: "AES-GCM", keySizeInBits: 256)
-          let decryptResult = try? await keyUtils.decryptSymmetricDTO(
+          let retrieveConfig=SecurityConfigDTO(algorithm: "AES-GCM", keySizeInBits: 256)
+          let decryptResult=try? await keyUtils.decryptSymmetricDTO(
             data: dataToReencrypt,
             key: oldKey,
             config: retrieveConfig
@@ -288,26 +288,26 @@ public final class KeyManager: KeyManagementProtocol {
 
           switch decryptResult {
             case let .success(decryptedData):
-              reencryptedData = decryptedData
+              reencryptedData=decryptedData
             case let .failure(error):
               return .failure(error)
           }
         }
 
         // Generate a new key of the same size
-        let keySize = oldKey.count * 8
-        let config = SecurityConfigDTO(algorithm: "AES", keySizeInBits: keySize)
-        let generateResult = await keyGenerator.generateKey(
+        let keySize=oldKey.count * 8
+        let config=SecurityConfigDTO(algorithm: "AES", keySizeInBits: keySize)
+        let generateResult=await keyGenerator.generateKey(
           bits: keySize,
           algorithm: "AES"
         )
 
-        guard generateResult.success, let newKey = generateResult.data else {
+        guard generateResult.success, let newKey=generateResult.data else {
           return .failure(.serviceError("Failed to generate new key for rotation (code: 500)"))
         }
 
         // Store the new key
-        let storeResult = await keyStore.storeKey(newKey, withIdentifier: config.keyIdentifier!)
+        let storeResult=await keyStore.storeKey(newKey, withIdentifier: config.keyIdentifier!)
 
         switch storeResult {
           case .success:
@@ -351,8 +351,8 @@ private final class SecurityUtilsAdapter: KeyManager.SecurityUtilsProtocol {
 
   init() {
     // Create a CryptoServiceCore instance to pass to SecurityUtils
-    let cryptoService = CryptoServiceCore()
-    utils = SecurityUtils(cryptoService: cryptoService)
+    let cryptoService=CryptoServiceCore()
+    utils=SecurityUtils(cryptoService: cryptoService)
   }
 
   func decryptSymmetricDTO(
@@ -360,10 +360,10 @@ private final class SecurityUtilsAdapter: KeyManager.SecurityUtilsProtocol {
     key: SecureBytes,
     config: SecurityConfigDTO
   ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
-    let result = await utils.decryptSymmetricDTO(data: data, key: key, config: config)
+    let result=await utils.decryptSymmetricDTO(data: data, key: key, config: config)
 
     // Convert SecurityResultDTO to Result<SecureBytes, UmbraErrors.Security.Protocols>
-    if result.success, let data = result.data {
+    if result.success, let data=result.data {
       return .success(data)
     } else {
       return .failure(.serviceError(
@@ -378,10 +378,10 @@ private final class SecurityUtilsAdapter: KeyManager.SecurityUtilsProtocol {
     key: SecureBytes,
     config: SecurityConfigDTO
   ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
-    let result = await utils.encryptSymmetricDTO(data: data, key: key, config: config)
+    let result=await utils.encryptSymmetricDTO(data: data, key: key, config: config)
 
     // Convert SecurityResultDTO to Result<SecureBytes, UmbraErrors.Security.Protocols>
-    if result.success, let data = result.data {
+    if result.success, let data=result.data {
       return .success(data)
     } else {
       return .failure(.serviceError(
@@ -401,8 +401,8 @@ extension UmbraErrors.Security.Protocols {
   ///   - identifier: The identifier that was searched for
   ///   - innerError: Optional underlying error
   /// - Returns: A keyNotFound error
-  static func keyNotFound(identifier: String, innerError: Error? = nil) -> Self {
-    let details = "Key with identifier '\(identifier)' not found"
+  static func keyNotFound(identifier: String, innerError: Error?=nil) -> Self {
+    let details="Key with identifier '\(identifier)' not found"
     if let innerError {
       return .internalError("Key retrieval failed: \(details). Error: \(innerError)")
     } else {

@@ -10,11 +10,11 @@ print("Opening key import dialog...")
 /// Error domain namespace
 public enum ErrorDomain {
   /// Security domain
-  public static let security = "Security"
+  public static let security="Security"
   /// Crypto domain
-  public static let crypto = "Crypto"
+  public static let crypto="Crypto"
   /// Application domain
-  public static let application = "Application"
+  public static let application="Application"
 }
 
 /// Error context protocol
@@ -38,9 +38,9 @@ public struct BaseErrorContext: ErrorContext {
 
   /// Initialise with domain, code and description
   public init(domain: String, code: Int, description: String) {
-    self.domain = domain
-    self.code = code
-    self.description = description
+    self.domain=domain
+    self.code=code
+    self.description=description
   }
 }
 
@@ -130,14 +130,14 @@ public final class ComprehensiveErrorHandlingExample {
     print("SECURITY ERROR: \(error)")
 
     // 2. Try to automatically recover
-    let recovered = await attemptAutomaticRecovery(from: error)
+    let recovered=await attemptAutomaticRecovery(from: error)
     if recovered {
       print("Successfully recovered from security error")
       return
     }
 
     // 3. If automatic recovery failed, present options to the user
-    let recoveryOptions = getRecoveryOptionsForSecurityError(error)
+    let recoveryOptions=getRecoveryOptionsForSecurityError(error)
     presentRecoveryOptions(for: error, options: recoveryOptions)
   }
 
@@ -149,14 +149,14 @@ public final class ComprehensiveErrorHandlingExample {
     print("NETWORK ERROR: \(error)")
 
     // 2. Try to automatically recover
-    let recovered = await attemptAutomaticRecovery(from: error)
+    let recovered=await attemptAutomaticRecovery(from: error)
     if recovered {
       print("Successfully recovered from network error")
       return
     }
 
     // 3. If automatic recovery failed, present options to the user
-    let recoveryOptions = getRecoveryOptionsForNetworkError(error)
+    let recoveryOptions=getRecoveryOptionsForNetworkError(error)
     presentRecoveryOptions(for: error, options: recoveryOptions)
   }
 
@@ -168,14 +168,14 @@ public final class ComprehensiveErrorHandlingExample {
     print("FILE SYSTEM ERROR: \(error.localizedDescription)")
 
     // 2. Try to automatically recover
-    let recovered = await attemptAutomaticRecovery(from: error)
+    let recovered=await attemptAutomaticRecovery(from: error)
     if recovered {
       print("Successfully recovered from file system error")
       return
     }
 
     // 3. If automatic recovery failed, present options to the user
-    let recoveryOptions = getRecoveryOptionsForFileSystemError(error)
+    let recoveryOptions=getRecoveryOptionsForFileSystemError(error)
     presentRecoveryOptions(for: error, options: recoveryOptions)
   }
 
@@ -238,9 +238,9 @@ public final class ComprehensiveErrorHandlingExample {
     print("\nPlease select an option (simulated user would choose here)")
 
     // Simulate user selecting the first option
-    if let firstOption = options.first {
+    if let firstOption=options.first {
       print("Selected: \(firstOption.title)")
-      let recoverySuccessful = firstOption.perform()
+      let recoverySuccessful=firstOption.perform()
       print("Recovery action \(recoverySuccessful ? "succeeded" : "failed")")
     } else {
       print("No recovery options available")
@@ -370,11 +370,11 @@ struct RecoveryAction: RecoveryOption {
   let isDefault: Bool
   private let handler: () -> Bool
 
-  init(id: String, title: String, isDefault: Bool = false, handler: @escaping () -> Bool) {
-    self.id = id
-    self.title = title
-    self.isDefault = isDefault
-    self.handler = handler
+  init(id: String, title: String, isDefault: Bool=false, handler: @escaping () -> Bool) {
+    self.id=id
+    self.title=title
+    self.isDefault=isDefault
+    self.handler=handler
   }
 
   func perform() -> Bool {

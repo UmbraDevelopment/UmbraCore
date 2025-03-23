@@ -6,11 +6,11 @@ import Foundation
 /// Error domain namespace
 public enum ErrorDomain {
   /// Security domain
-  public static let security = "Security"
+  public static let security="Security"
   /// Crypto domain
-  public static let crypto = "Crypto"
+  public static let crypto="Crypto"
   /// Application domain
-  public static let application = "Application"
+  public static let application="Application"
 }
 
 /// Error context protocol
@@ -34,9 +34,9 @@ public struct BaseErrorContext: ErrorContext {
 
   /// Initialise with domain, code and description
   public init(domain: String, code: Int, description: String) {
-    self.domain = domain
-    self.code = code
-    self.description = description
+    self.domain=domain
+    self.code=code
+    self.description=description
   }
 }
 
@@ -60,13 +60,13 @@ private struct GenericError: ErrorHandlingInterfaces.UmbraError {
     underlyingError: Error?,
     context: ErrorHandlingInterfaces.ErrorContext
   ) {
-    self.domain = domain
-    self.code = code
-    self.message = message
-    self.details = details
-    self.source = source
-    self.underlyingError = underlyingError
-    self.context = context
+    self.domain=domain
+    self.code=code
+    self.message=message
+    self.details=details
+    self.source=source
+    self.underlyingError=underlyingError
+    self.context=context
   }
 
   /// Conform to CustomStringConvertible
@@ -81,15 +81,15 @@ private struct GenericError: ErrorHandlingInterfaces.UmbraError {
 
   /// Create a new instance with additional context
   func with(context: ErrorHandlingInterfaces.ErrorContext) -> Self {
-    var newError = self
-    newError.context = context
+    var newError=self
+    newError.context=context
     return newError
   }
 
   /// Create a new instance with an underlying error
   func with(underlyingError: Error) -> Self {
-    var newError = self
-    newError.underlyingError = underlyingError
+    var newError=self
+    newError.underlyingError=underlyingError
     return newError
   }
 
@@ -108,9 +108,9 @@ private struct GenericError: ErrorHandlingInterfaces.UmbraError {
 
   /// Create a new instance with additional user info
   func with(userInfo: [String: Any]) -> Self {
-    var updatedDetails = details
+    var updatedDetails=details
     for (key, value) in userInfo {
-      updatedDetails[key] = String(describing: value)
+      updatedDetails[key]=String(describing: value)
     }
 
     return GenericError(
@@ -129,10 +129,10 @@ private struct GenericError: ErrorHandlingInterfaces.UmbraError {
 @MainActor
 public final class SecurityErrorHandler: @unchecked Sendable {
   /// The shared instance for the handler
-  public static let shared = SecurityErrorHandler()
+  public static let shared=SecurityErrorHandler()
 
   /// The error mapper used to transform errors
-  private let errorMapper = SecurityErrorMapper()
+  private let errorMapper=SecurityErrorMapper()
 
   /// Private initialiser to enforce singleton pattern
   private init() {}
@@ -148,39 +148,39 @@ public final class SecurityErrorHandler: @unchecked Sendable {
   public func handle(
     _ error: Error,
     severity: ErrorHandlingInterfaces.ErrorSeverity,
-    file: String = #file,
-    function: String = #function,
-    line: Int = #line,
-    userInfo _: [String: Any]? = nil
+    file: String=#file,
+    function: String=#function,
+    line: Int=#line,
+    userInfo _: [String: Any]?=nil
   ) {
     // Create error context
-    let commonSource = ErrorHandlingCommon.ErrorSource(
+    let commonSource=ErrorHandlingCommon.ErrorSource(
       file: file,
       function: function,
       line: line
     )
 
-    let commonContext = ErrorHandlingCommon.ErrorContext(
+    let commonContext=ErrorHandlingCommon.ErrorContext(
       source: "SecurityErrorHandler",
       operation: "handle",
       details: "Handling security error"
     )
 
     // Convert to interface types
-    let interfaceSource = ErrorHandlingInterfaces.ErrorSource(
+    let interfaceSource=ErrorHandlingInterfaces.ErrorSource(
       file: commonSource.file,
       line: commonSource.line,
       function: commonSource.function
     )
 
-    let interfaceContext = ErrorHandlingInterfaces.ErrorContext(
+    let interfaceContext=ErrorHandlingInterfaces.ErrorContext(
       source: commonContext.source,
       operation: commonContext.operation,
       details: commonContext.details ?? ""
     )
 
     // Map our severity to the core severity type
-    let mappedSeverity: ErrorHandlingCommon.ErrorSeverity = switch severity {
+    let mappedSeverity: ErrorHandlingCommon.ErrorSeverity=switch severity {
       case .critical:
         .critical
       case .error:
@@ -198,7 +198,7 @@ public final class SecurityErrorHandler: @unchecked Sendable {
     }
 
     // Create a generic error with our context
-    let genericError = GenericError(
+    let genericError=GenericError(
       domain: "Security",
       code: "SECURITY_ERROR",
       message: "An error occurred in the security module",
@@ -220,24 +220,24 @@ public final class SecurityErrorHandler: @unchecked Sendable {
 
   /// Log an error with the specified severity
   private func log(error: Error, severity: ErrorHandlingInterfaces.ErrorSeverity) {
-    var code = "UNKNOWN"
-    var message = "Unknown error"
+    var code="UNKNOWN"
+    var message="Unknown error"
 
     // Try to map the error using our error mapper
-    if let securityError = error as? SecurityCoreErrorWrapper {
+    if let securityError=error as? SecurityCoreErrorWrapper {
       // Extract code and message from the error
-      let (errorCode, errorMessage) = getErrorCodeAndMessage(securityError.wrappedError)
-      code = errorCode
-      message = errorMessage
-    } else if let securityCoreError = error as? UmbraErrors.Security.Core {
+      let (errorCode, errorMessage)=getErrorCodeAndMessage(securityError.wrappedError)
+      code=errorCode
+      message=errorMessage
+    } else if let securityCoreError=error as? UmbraErrors.Security.Core {
       // Direct mapping from core error
-      let (errorCode, errorMessage) = getErrorCodeAndMessage(securityCoreError)
-      code = errorCode
-      message = errorMessage
+      let (errorCode, errorMessage)=getErrorCodeAndMessage(securityCoreError)
+      code=errorCode
+      message=errorMessage
     } else {
       // Generic fallback for unknown errors
-      code = "UNKNOWN_SECURITY_ERROR"
-      message = String(describing: error)
+      code="UNKNOWN_SECURITY_ERROR"
+      message=String(describing: error)
     }
 
     // Log the error with the specified severity
@@ -262,17 +262,17 @@ public final class SecurityErrorHandler: @unchecked Sendable {
   /// Extract error code and message from a security error
   private func getErrorCodeAndMessage(_ error: Error) -> (String, String) {
     // Default values
-    var code = "UNKNOWN"
-    var message = "Unknown error"
+    var code="UNKNOWN"
+    var message="Unknown error"
 
     // Try to extract from security core error
-    if let securityError = error as? UmbraErrors.Security.Core {
-      code = String(describing: securityError).components(separatedBy: "(").first ?? "UNKNOWN"
-      message = String(describing: securityError)
+    if let securityError=error as? UmbraErrors.Security.Core {
+      code=String(describing: securityError).components(separatedBy: "(").first ?? "UNKNOWN"
+      message=String(describing: securityError)
     } else {
       // Generic fallback
-      code = "SECURITY_ERROR"
-      message = String(describing: error)
+      code="SECURITY_ERROR"
+      message=String(describing: error)
     }
 
     return (code, message)

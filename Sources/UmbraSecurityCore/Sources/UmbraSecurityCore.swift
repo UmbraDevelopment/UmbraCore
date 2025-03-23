@@ -13,7 +13,7 @@ import UmbraCoreTypes
 /// to be used at any level of the dependency graph.
 public enum UmbraSecurityCore {
   /// Current module version
-  public static let version = "1.0.0"
+  public static let version="1.0.0"
 
   /// Create a default foundation-free crypto service
   /// - Returns: A CryptoServiceProtocol implementation
@@ -36,7 +36,7 @@ public enum UmbraSecurityCore {
   /// - Returns: An adapter that applies the specified transformations
   public static func createCryptoServiceAdapter<T: CryptoServiceProtocol & Sendable>(
     _ service: T,
-    transformations: CryptoServiceTypeAdapter<T>.Transformations = CryptoServiceTypeAdapter<T>
+    transformations: CryptoServiceTypeAdapter<T>.Transformations=CryptoServiceTypeAdapter<T>
       .Transformations()
   ) -> CryptoServiceTypeAdapter<T> {
     SecurityCoreAdapters.createCryptoServiceAdapter(

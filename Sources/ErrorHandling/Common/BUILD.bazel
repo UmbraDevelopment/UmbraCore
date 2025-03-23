@@ -1,12 +1,21 @@
-load("//:bazel/macros/swift.bzl", "umbra_swift_library")
+load("//:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
     name = "ErrorHandlingCommon",
-    srcs = glob(["*.swift"]),
-    # We can now enable library evolution again since we're using the interfaces module
-    enable_library_evolution = True,
+    srcs = glob(["**/*.swift"]),
     deps = [
-        "//Sources/ErrorHandling/Interfaces:ErrorHandlingInterfaces",
-        "//Sources/LoggingWrapperInterfaces:LoggingWrapperInterfaces",
     ],
 )
+
+# Uncomment if documentation generation is needed
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+#
+# swift_package(
+#     name = "docc_documentation",
+#     srcs = glob([
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
+#     deps = ["//Sources/ErrorHandlingCommon"],
+# )

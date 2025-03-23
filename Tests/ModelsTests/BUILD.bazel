@@ -1,4 +1,10 @@
+load("//:swift_rules.bzl", "umbra_swift_test")
+
+umbra_swift_test(
+    name = "ModelsTests",
+    srcs = glob(["**/*.swift"]),
     deps = [
-        "//Sources/ErrorHandling/Models:ErrorHandlingModels",
+        "//Sources/Models",
+        "//Tests/TestKit",
     ],
 )

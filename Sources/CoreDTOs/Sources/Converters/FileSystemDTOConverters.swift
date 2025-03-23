@@ -10,14 +10,14 @@ extension FilePathDTO {
   ///   - url: The URL to convert
   ///   - resourceType: Optional resource type, otherwise inferred
   /// - Returns: A FilePathDTO representing the URL
-  public static func from(url: URL, resourceType: ResourceType? = nil) -> FilePathDTO {
-    var type = resourceType
+  public static func from(url: URL, resourceType: ResourceType?=nil) -> FilePathDTO {
+    var type=resourceType
 
     // Try to determine resource type if not provided
     if type == nil {
-      var isDirectory: ObjCBool = false
+      var isDirectory: ObjCBool=false
       if FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory) {
-        type = isDirectory.boolValue ? .directory : .file
+        type=isDirectory.boolValue ? .directory : .file
       } else {
         type = .unknown
       }
@@ -49,7 +49,7 @@ extension BookmarkDTO {
   public static func from(
     data: Data,
     displayPath: String,
-    hasSecurityScope: Bool = false
+    hasSecurityScope: Bool=false
   ) -> BookmarkDTO {
     BookmarkDTO(
       data: [UInt8](data),
@@ -71,34 +71,34 @@ extension FilePathDTO {
   /// Get the home directory path
   /// - Returns: A FilePathDTO representing the user's home directory
   public static func homeDirectory() -> FilePathDTO {
-    let homePath = NSHomeDirectory()
+    let homePath=NSHomeDirectory()
     return FilePathDTO.fromString(homePath).withResourceType(.directory)
   }
 
   /// Get the temporary directory path
   /// - Returns: A FilePathDTO representing the temporary directory
   public static func temporaryDirectory() -> FilePathDTO {
-    let tempPath = NSTemporaryDirectory()
+    let tempPath=NSTemporaryDirectory()
     return FilePathDTO.fromString(tempPath).withResourceType(.directory)
   }
 
   /// Get the documents directory path
   /// - Returns: A FilePathDTO representing the documents directory
   public static func documentsDirectory() -> FilePathDTO {
-    let paths = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)
-    let documentsPath = paths.first ?? ""
+    let paths=NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)
+    let documentsPath=paths.first ?? ""
     return FilePathDTO.fromString(documentsPath).withResourceType(.directory)
   }
 
   /// Get the application support directory path
   /// - Returns: A FilePathDTO representing the application support directory
   public static func applicationSupportDirectory() -> FilePathDTO {
-    let paths = NSSearchPathForDirectoriesInDomains(
+    let paths=NSSearchPathForDirectoriesInDomains(
       .applicationSupportDirectory,
       .userDomainMask,
       true
     )
-    let appSupportPath = paths.first ?? ""
+    let appSupportPath=paths.first ?? ""
     return FilePathDTO.fromString(appSupportPath).withResourceType(.directory)
   }
 }

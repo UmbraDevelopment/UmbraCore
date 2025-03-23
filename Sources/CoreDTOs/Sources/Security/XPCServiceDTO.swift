@@ -31,13 +31,13 @@ public struct XPCServiceDTO: Sendable, Equatable {
     public init(
       status: String,
       version: String,
-      metrics: [String: Double] = [:],
-      stringInfo: [String: String] = [:]
+      metrics: [String: Double]=[:],
+      stringInfo: [String: String]=[:]
     ) {
-      self.status = status
-      self.version = version
-      self.metrics = metrics
-      self.stringInfo = stringInfo
+      self.status=status
+      self.version=version
+      self.metrics=metrics
+      self.stringInfo=stringInfo
     }
 
     /// Create a status DTO representing a healthy service
@@ -119,14 +119,14 @@ public struct XPCServiceDTO: Sendable, Equatable {
       keySizeInBits: Int,
       keyUsage: String,
       createdAt: Int64,
-      metadata: [String: String] = [:]
+      metadata: [String: String]=[:]
     ) {
-      self.keyID = keyID
-      self.algorithm = algorithm
-      self.keySizeInBits = keySizeInBits
-      self.keyUsage = keyUsage
-      self.createdAt = createdAt
-      self.metadata = metadata
+      self.keyID=keyID
+      self.algorithm=algorithm
+      self.keySizeInBits=keySizeInBits
+      self.keyUsage=keyUsage
+      self.createdAt=createdAt
+      self.metadata=metadata
     }
   }
 
@@ -179,14 +179,14 @@ extension XPCServiceDTO {
   /// - Returns: A key info DTO
   public static func symmetricKeyInfo(
     keyID: String,
-    algorithm: String = "AES",
-    keySizeInBits: Int = 256
+    algorithm: String="AES",
+    keySizeInBits: Int=256
   ) -> XPCServiceDTO.KeyInfoDTO {
     let timestamp: Int64
     do {
-      timestamp = try Int64(currentTimestamp())
+      timestamp=try Int64(currentTimestamp())
     } catch {
-      timestamp = 0
+      timestamp=0
     }
 
     return XPCServiceDTO.KeyInfoDTO(
@@ -206,14 +206,14 @@ extension XPCServiceDTO {
   /// - Returns: A key info DTO
   public static func signingKeyInfo(
     keyID: String,
-    algorithm: String = "ED25519",
-    keySizeInBits: Int = 256
+    algorithm: String="ED25519",
+    keySizeInBits: Int=256
   ) -> XPCServiceDTO.KeyInfoDTO {
     let timestamp: Int64
     do {
-      timestamp = try Int64(currentTimestamp())
+      timestamp=try Int64(currentTimestamp())
     } catch {
-      timestamp = 0
+      timestamp=0
     }
 
     return XPCServiceDTO.KeyInfoDTO(
@@ -228,7 +228,7 @@ extension XPCServiceDTO {
   /// Helper function to get current timestamp
   private static func currentTimestamp() throws -> Int {
     #if canImport(Darwin)
-      var tv = timeval()
+      var tv=timeval()
       guard gettimeofday(&tv, nil) == 0 else {
         throw TimestampError.notAvailable
       }

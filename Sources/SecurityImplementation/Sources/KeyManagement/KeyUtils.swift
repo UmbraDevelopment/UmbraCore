@@ -26,12 +26,12 @@ import UmbraCoreTypes
 
 /// Key type enumeration
 public enum KeyType: String, Sendable, Equatable, CaseIterable {
-  case symmetric = "Symmetric"
-  case asymmetric = "Asymmetric"
-  case hmac = "HMAC"
-  case rsa = "RSA"
-  case ec = "EC"
-  case unknown = "Unknown"
+  case symmetric="Symmetric"
+  case asymmetric="Asymmetric"
+  case hmac="HMAC"
+  case rsa="RSA"
+  case ec="EC"
+  case unknown="Unknown"
 }
 
 /// Provides utility functions for working with cryptographic keys
@@ -61,7 +61,7 @@ final class KeyUtils {
     minBits: Int
   ) -> Bool {
     // Check key length
-    let keyLengthBits = key.count * 8
+    let keyLengthBits=key.count * 8
     guard keyLengthBits >= minBits else {
       return false
     }
@@ -96,7 +96,7 @@ final class KeyUtils {
       return .failure(.invalidInput("Salt must be at least 16 bytes"))
     }
 
-    guard iterations >= 10_000 else {
+    guard iterations >= 10000 else {
       return .failure(.invalidInput("Iterations must be at least 10,000"))
     }
 
@@ -108,10 +108,10 @@ final class KeyUtils {
     // In a real implementation, this would use PBKDF2, HKDF, or another KDF
 
     // Convert password to bytes
-    let passwordBytes = Array(password.utf8)
+    let passwordBytes=Array(password.utf8)
 
     // Create a new SecureBytes object to combine password and salt
-    var combinedBytes = [UInt8]()
+    var combinedBytes=[UInt8]()
     combinedBytes.append(contentsOf: passwordBytes)
 
     // Access salt bytes and append
@@ -121,17 +121,17 @@ final class KeyUtils {
 
     // Simple "stretching" for demonstration (not cryptographically secure)
     // In a real implementation, this would use a proper KDF
-    var derivedKey = combinedBytes
+    var derivedKey=combinedBytes
 
     // Apply iterations (simplified for demonstration)
     for _ in 0..<iterations % 100 { // Just do a few rounds for demo
       // Hash the current value
-      let hashedData = sha256(derivedKey)
-      derivedKey = Array(hashedData.prefix(keyLengthBytes))
+      let hashedData=sha256(derivedKey)
+      derivedKey=Array(hashedData.prefix(keyLengthBytes))
     }
 
     // Create the key with the specified length
-    let result = SecureBytes(bytes: Array(derivedKey.prefix(keyLengthBytes)))
+    let result=SecureBytes(bytes: Array(derivedKey.prefix(keyLengthBytes)))
     return .success(result)
   }
 
@@ -150,10 +150,10 @@ final class KeyUtils {
     // In a real implementation, this would create a proper PEM format
 
     // Convert to base64
-    var base64 = ""
+    var base64=""
     key.withUnsafeBytes { keyBytes in
-      let data = Data(keyBytes)
-      base64 = data.base64EncodedString()
+      let data=Data(keyBytes)
+      base64=data.base64EncodedString()
     }
 
     return .success("""
@@ -173,7 +173,7 @@ final class KeyUtils {
     // In a real implementation, this would properly parse PEM format
 
     // Check for key type
-    let keyType: KeyType? = if pemString.contains("BEGIN SYMMETRIC KEY") {
+    let keyType: KeyType?=if pemString.contains("BEGIN SYMMETRIC KEY") {
       .symmetric
     } else if pemString.contains("BEGIN ASYMMETRIC KEY") {
       .asymmetric
@@ -188,16 +188,16 @@ final class KeyUtils {
     }
 
     // Extract base64 content
-    let lines = pemString.split(separator: "\n").map { String($0) }
-    var base64Content = ""
+    let lines=pemString.split(separator: "\n").map { String($0) }
+    var base64Content=""
 
-    var inContent = false
+    var inContent=false
     for line in lines {
       if line.contains("BEGIN") {
-        inContent = true
+        inContent=true
         continue
       } else if line.contains("END") {
-        inContent = false
+        inContent=false
         break
       }
 
@@ -207,12 +207,12 @@ final class KeyUtils {
     }
 
     // Decode base64
-    guard let data = Data(base64Encoded: base64Content) else {
+    guard let data=Data(base64Encoded: base64Content) else {
       return .failure(.invalidInput("Invalid base64 encoding"))
     }
 
     // Create the key
-    let key = SecureBytes(bytes: [UInt8](data))
+    let key=SecureBytes(bytes: [UInt8](data))
     return .success((key: key, keyType: keyType!))
   }
 
@@ -222,7 +222,7 @@ final class KeyUtils {
   private func sha256(_ input: [UInt8]) -> [UInt8] {
     // This is a placeholder. In a real implementation, this would use a crypto library
     // For now, we'll just return the input with some modifications
-    var result = input
+    var result=input
     if !result.isEmpty {
       result[0] = ~result[0] // Flip the first byte
     }

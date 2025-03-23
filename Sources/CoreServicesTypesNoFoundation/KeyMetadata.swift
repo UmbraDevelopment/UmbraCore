@@ -12,14 +12,13 @@ public struct KeyMetadata: Sendable, Codable {
   public let storageLocation: KeyManagementTypes.StorageLocation
 
   /// Access control settings for the key
+  /// Access controls applied to the key
   @available(
     *,
     deprecated,
     message: "Please use KeyManagementTypes.KeyMetadata.AccessControls instead"
   )
-  public typealias AccessControls = KeyManagementTypes.KeyMetadata.AccessControls
 
-  /// Access controls applied to the key
   public let accessControls: AccessControls
 
   /// Creation date of the key (Unix timestamp)
@@ -60,17 +59,17 @@ public struct KeyMetadata: Sendable, Codable {
     exportable: Bool,
     isSystemKey: Bool
   ) {
-    self.status = status
-    self.storageLocation = storageLocation
-    self.accessControls = accessControls
-    self.createdAtTimestamp = createdAtTimestamp
-    self.lastModifiedTimestamp = lastModifiedTimestamp
-    self.identifier = identifier
-    self.version = version
-    self.algorithm = algorithm
-    self.keyLengthBits = keyLengthBits
-    self.exportable = exportable
-    self.isSystemKey = isSystemKey
+    self.status=status
+    self.storageLocation=storageLocation
+    self.accessControls=accessControls
+    self.createdAtTimestamp=createdAtTimestamp
+    self.lastModifiedTimestamp=lastModifiedTimestamp
+    self.identifier=identifier
+    self.version=version
+    self.algorithm=algorithm
+    self.keyLengthBits=keyLengthBits
+    self.exportable=exportable
+    self.isSystemKey=isSystemKey
   }
 
   /// Convert to the canonical KeyMetadata type

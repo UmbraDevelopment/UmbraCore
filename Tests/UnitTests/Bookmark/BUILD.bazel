@@ -1,9 +1,9 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_test")
+load("//:swift_rules.bzl", "umbra_swift_test")
 
-swift_test(
-    name = "BookmarkTests",
+umbra_swift_test(
+    name = "Bookmark",
+    srcs = glob(["**/*.swift"]),
     deps = [
         "//Tests/TestKit",
     ],
-    visibility = ["//visibility:public"],
 )

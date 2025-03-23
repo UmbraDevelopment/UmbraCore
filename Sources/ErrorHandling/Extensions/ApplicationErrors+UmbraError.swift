@@ -7,6 +7,6 @@ public struct ApplicationCoreErrorWrapper: Error, CustomStringConvertible {
 
   /// Initialize with a description
   public init(description: String) {
-    self.description = description
+    self.description=description
   }
 }

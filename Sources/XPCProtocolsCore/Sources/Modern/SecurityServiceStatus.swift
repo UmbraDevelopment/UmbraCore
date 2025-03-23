@@ -18,9 +18,9 @@ public struct SecurityServiceStatus: Sendable, Equatable, Hashable {
   ///   - version: The service version
   ///   - info: Additional service information
   public init(status: String, version: String, info: [String: Any]) {
-    self.status = status
-    self.version = version
-    self.info = info
+    self.status=status
+    self.version=version
+    self.info=info
   }
 
   // Required for Equatable/Hashable due to info containing Any

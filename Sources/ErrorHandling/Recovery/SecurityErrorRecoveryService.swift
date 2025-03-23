@@ -6,11 +6,11 @@ import Foundation
 /// Error domain namespace
 public enum ErrorDomain {
   /// Security domain
-  public static let security = "Security"
+  public static let security="Security"
   /// Crypto domain
-  public static let crypto = "Crypto"
+  public static let crypto="Crypto"
   /// Application domain
-  public static let application = "Application"
+  public static let application="Application"
 }
 
 /// Error context protocol
@@ -34,9 +34,9 @@ public struct BaseErrorContext: ErrorContext {
 
   /// Initialise with domain, code and description
   public init(domain: String, code: Int, description: String) {
-    self.domain = domain
-    self.code = code
-    self.description = description
+    self.domain=domain
+    self.code=code
+    self.description=description
   }
 }
 
@@ -44,11 +44,11 @@ public struct BaseErrorContext: ErrorContext {
 @preconcurrency // Defer isolation checking to runtime
 public final class SecurityErrorRecoveryService {
   /// Shared instance
-  public static let shared = SecurityErrorRecoveryService()
+  public static let shared=SecurityErrorRecoveryService()
 
   /// Recovery providers registered with this service
   /// Made private(set) to maintain Sendable conformance
-  private let providers = AtomicArray<any ErrorHandlingInterfaces.RecoveryOptionsProvider>()
+  private let providers=AtomicArray<any ErrorHandlingInterfaces.RecoveryOptionsProvider>()
 
   /// Private initialiser to enforce singleton pattern
   private init() {
@@ -82,7 +82,7 @@ extension SecurityErrorRecoveryService: ErrorRecoveryService {
     }
 
     // Collect options from all providers
-    var allOptions: [any RecoveryOption] = []
+    var allOptions: [any RecoveryOption]=[]
 
     // Add options from registered providers
     for provider in providers.values {
@@ -91,7 +91,7 @@ extension SecurityErrorRecoveryService: ErrorRecoveryService {
 
     // If no providers handled it, use built-in recovery options
     if allOptions.isEmpty {
-      allOptions = defaultRecoveryOptions(for: error)
+      allOptions=defaultRecoveryOptions(for: error)
     }
 
     return allOptions
@@ -109,7 +109,7 @@ extension SecurityErrorRecoveryService: ErrorRecoveryService {
     }
 
     // Get recovery options
-    let options = getRecoveryOptions(for: error)
+    let options=getRecoveryOptions(for: error)
 
     // Try each option in order
     for option in options {
@@ -143,8 +143,8 @@ extension SecurityErrorRecoveryService: ErrorHandlingInterfaces.RecoveryOptionsP
     }
 
     // Map strings to recovery options
-    let errorString = String(describing: error).lowercased()
-    var options: [any RecoveryOption] = []
+    let errorString=String(describing: error).lowercased()
+    var options: [any RecoveryOption]=[]
 
     if errorString.contains("authentication") {
       options.append(
@@ -202,15 +202,15 @@ extension SecurityErrorRecoveryService: RecoveryOptionsProvider {
     }
 
     // Convert from individual options to a RecoveryOptions structure
-    let errorString = String(describing: error).lowercased()
-    var actions: [RecoveryAction] = []
+    let errorString=String(describing: error).lowercased()
+    var actions: [RecoveryAction]=[]
     var title: String?
     var message: String?
 
     if errorString.contains("authentication") {
-      title = "Authentication Failed"
-      message = "You need to re-authenticate to continue"
-      actions = [
+      title="Authentication Failed"
+      message="You need to re-authenticate to continue"
+      actions=[
         RecoveryAction(
           id: "retry-auth",
           title: "Try Again",
@@ -220,9 +220,9 @@ extension SecurityErrorRecoveryService: RecoveryOptionsProvider {
         )
       ]
     } else if errorString.contains("certificate") {
-      title = "Certificate Issue"
-      message = "There's a problem with the security certificate"
-      actions = [
+      title="Certificate Issue"
+      message="There's a problem with the security certificate"
+      actions=[
         RecoveryAction(
           id: "trust-cert",
           title: "Trust Certificate",
@@ -233,9 +233,9 @@ extension SecurityErrorRecoveryService: RecoveryOptionsProvider {
       ]
     } else {
       // Generic security error
-      title = "Security Error"
-      message = "A security error has occurred"
-      actions = [
+      title="Security Error"
+      message="A security error has occurred"
+      actions=[
         RecoveryAction(
           id: "retry",
           title: "Retry",
@@ -269,7 +269,7 @@ extension SecurityErrorRecoveryService {
   /// - Returns: Whether the error is a security error
   private func checkIsSecurity(error: some Error) -> Bool {
     // Check for common security error types
-    let nsError = error as NSError
+    let nsError=error as NSError
     return nsError.domain.contains("Security") ||
       String(describing: error).contains("Security")
   }
@@ -278,7 +278,7 @@ extension SecurityErrorRecoveryService {
   /// - Parameter error: The error to get recovery options for
   /// - Returns: The default recovery options
   private func defaultRecoveryOptions(for error: some Error) -> [any RecoveryOption] {
-    let errorString = String(describing: error).lowercased()
+    let errorString=String(describing: error).lowercased()
 
     if errorString.contains("authentication") || errorString.contains("unauthorised") {
       return [createRetryAuthenticationOption()]
@@ -328,8 +328,8 @@ extension SecurityErrorRecoveryService {
 
 /// A thread-safe array wrapper for Sendable conformance
 final class AtomicArray<Element>: @unchecked Sendable {
-  private let lock = NSLock()
-  private var _values: [Element] = []
+  private let lock=NSLock()
+  private var _values: [Element]=[]
 
   var values: [Element] {
     lock.lock()

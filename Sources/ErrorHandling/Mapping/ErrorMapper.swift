@@ -40,7 +40,7 @@ public struct AnyErrorMapper<Source: Error, Target: Error>: ErrorMapper {
   /// Initialises with any mapper that can map from Source to Target
   /// - Parameter mapper: The mapper to use
   public init<M: ErrorMapper>(mapper: M) where M.SourceType == Source, M.TargetType == Target {
-    _mapError = mapper.mapError
+    _mapError=mapper.mapError
   }
 
   /// Maps from the source error type to the target error type
@@ -59,8 +59,8 @@ public struct AnyBidirectionalErrorMapper<A: Error, B: Error>: BidirectionalErro
   /// Initialises with any bidirectional mapper between A and B
   /// - Parameter mapper: The bidirectional mapper to use
   public init<M: BidirectionalErrorMapper>(mapper: M) where M.ErrorTypeA == A, M.ErrorTypeB == B {
-    _mapAtoB = mapper.mapAtoB
-    _mapBtoA = mapper.mapBtoA
+    _mapAtoB=mapper.mapAtoB
+    _mapBtoA=mapper.mapBtoA
   }
 
   /// Maps from ErrorTypeA to ErrorTypeB

@@ -6,11 +6,11 @@ import Foundation
 /// Error domain namespace
 public enum ErrorDomain {
   /// Security domain
-  public static let security = "Security"
+  public static let security="Security"
   /// Crypto domain
-  public static let crypto = "Crypto"
+  public static let crypto="Crypto"
   /// Application domain
-  public static let application = "Application"
+  public static let application="Application"
 }
 
 /// Error context protocol
@@ -34,9 +34,9 @@ public struct BaseErrorContext: ErrorContext {
 
   /// Initialise with domain, code and description
   public init(domain: String, code: Int, description: String) {
-    self.domain = domain
-    self.code = code
-    self.description = description
+    self.domain=domain
+    self.code=code
+    self.description=description
   }
 }
 
@@ -170,7 +170,7 @@ extension UmbraErrors.XPC {
             "XPC service '\(serviceName)' terminated unexpectedly"
           }
         case let .serviceCrashed(serviceName, exitCode):
-          if let code = exitCode {
+          if let code=exitCode {
             "XPC service '\(serviceName)' crashed with exit code \(code)"
           } else {
             "XPC service '\(serviceName)' crashed"
@@ -258,9 +258,9 @@ extension UmbraErrors.XPC.Core {
   public static func makeConnectionFailed(
     serviceName: String,
     reason: String,
-    file _: String = #file,
-    line _: Int = #line,
-    function _: String = #function
+    file _: String=#file,
+    line _: Int=#line,
+    function _: String=#function
   ) -> Self {
     .connectionFailed(serviceName: serviceName, reason: reason)
   }
@@ -268,9 +268,9 @@ extension UmbraErrors.XPC.Core {
   /// Create an error for an unavailable XPC service
   public static func makeServiceUnavailable(
     serviceName: String,
-    file _: String = #file,
-    line _: Int = #line,
-    function _: String = #function
+    file _: String=#file,
+    line _: Int=#line,
+    function _: String=#function
   ) -> Self {
     .serviceUnavailable(serviceName: serviceName)
   }
@@ -279,9 +279,9 @@ extension UmbraErrors.XPC.Core {
   public static func makeMessageSendFailed(
     serviceName: String,
     reason: String,
-    file _: String = #file,
-    line _: Int = #line,
-    function _: String = #function
+    file _: String=#file,
+    line _: Int=#line,
+    function _: String=#function
   ) -> Self {
     .messageSendFailed(serviceName: serviceName, reason: reason)
   }
@@ -290,9 +290,9 @@ extension UmbraErrors.XPC.Core {
   public static func makeTimeout(
     serviceName: String,
     timeoutMs: Int,
-    file _: String = #file,
-    line _: Int = #line,
-    function _: String = #function
+    file _: String=#file,
+    line _: Int=#line,
+    function _: String=#function
   ) -> Self {
     .messageTimeout(serviceName: serviceName, timeoutMs: timeoutMs)
   }
@@ -301,9 +301,9 @@ extension UmbraErrors.XPC.Core {
   public static func makeSecurityViolation(
     serviceName: String,
     reason: String,
-    file _: String = #file,
-    line _: Int = #line,
-    function _: String = #function
+    file _: String=#file,
+    line _: Int=#line,
+    function _: String=#function
   ) -> Self {
     .securityViolation(serviceName: serviceName, reason: reason)
   }

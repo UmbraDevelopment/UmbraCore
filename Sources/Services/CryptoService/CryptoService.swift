@@ -14,7 +14,7 @@ import Foundation
 )
 public actor CryptoService {
   /// Shared instance of the crypto service
-  public static let shared = CryptoService()
+  public static let shared=CryptoService()
 
   private init() {}
 
@@ -63,4 +63,3 @@ public actor CryptoService {
   deprecated,
   message: "This will be replaced by CoreErrors.CryptoError in a future version. Use CoreErrors.CryptoError directly."
 )
-public typealias CryptoError = CoreErrors.CryptoError

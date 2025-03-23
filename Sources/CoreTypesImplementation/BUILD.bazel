@@ -1,18 +1,21 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
-load("//:bazel/macros/swift.bzl", "umbra_swift_library")
+load("//:swift_rules.bzl", "umbra_swift_library")
 
-# Implementation module for CoreTypes that handles adapters and implementation details
 umbra_swift_library(
     name = "CoreTypesImplementation",
-    srcs = glob(["Sources/**/*.swift"]),
+    srcs = glob(["**/*.swift"]),
     deps = [
-        "//Sources/CoreTypesInterfaces",
-        "//Sources/CoreErrors",
-        "//Sources/UmbraCoreTypes",
-    ],
-    additional_copts = [
-        "-Xfrontend", "-enable-library-evolution",
     ],
 )
 
-# Note: Tests are now defined in the Tests directory's own BUILD.bazel file
+# Uncomment if documentation generation is needed
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+#
+# swift_package(
+#     name = "docc_documentation",
+#     srcs = glob([
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
+#     deps = ["//Sources/CoreTypesImplementation"],
+# )

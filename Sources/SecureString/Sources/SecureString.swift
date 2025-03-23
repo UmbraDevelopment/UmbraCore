@@ -5,7 +5,7 @@ import Darwin
 @frozen
 public struct SecureString: @unchecked Sendable {
   /// Module version
-  public static let version = "1.0.0"
+  public static let version="1.0.0"
 
   // Internal storage - we use a byte array to avoid String memory management
   private var _storage: [UInt8]
@@ -17,22 +17,22 @@ public struct SecureString: @unchecked Sendable {
   /// - Parameter string: The string to secure
   public init(_ string: String) {
     // Convert the string to UTF-8 bytes
-    let bytes = Array(string.utf8)
+    let bytes=Array(string.utf8)
 
     // Store the bytes
-    _storage = SecureString.scramble(bytes: bytes)
-    _lock = Lock()
+    _storage=SecureString.scramble(bytes: bytes)
+    _lock=Lock()
 
     // Overwrite the incoming string memory if possible
-    _ = string
+    _=string
   }
 
   /// Creates a secure string from raw UTF-8 bytes
   ///
   /// - Parameter bytes: The UTF-8 bytes to store securely
   public init(bytes: [UInt8]) {
-    _storage = SecureString.scramble(bytes: bytes)
-    _lock = Lock()
+    _storage=SecureString.scramble(bytes: bytes)
+    _lock=Lock()
   }
 
   /// Access the string value in a secure manner by providing a closure that receives
@@ -43,10 +43,10 @@ public struct SecureString: @unchecked Sendable {
   public func access<T>(_ accessor: (String) throws -> T) rethrows -> T {
     try _lock.withLock {
       // Decrypt the bytes
-      let decryptedBytes = SecureString.unscramble(bytes: _storage)
+      let decryptedBytes=SecureString.unscramble(bytes: _storage)
 
       // Create a temporary string
-      let tempString = String(decoding: decryptedBytes, as: UTF8.self)
+      let tempString=String(decoding: decryptedBytes, as: UTF8.self)
 
       // Execute the accessor and return the result
       return try accessor(tempString)
@@ -74,11 +74,11 @@ public struct SecureString: @unchecked Sendable {
     }
 
     return _lock.withLock {
-      let selfBytes = SecureString.unscramble(bytes: _storage)
-      let otherBytes = SecureString.unscramble(bytes: other._storage)
+      let selfBytes=SecureString.unscramble(bytes: _storage)
+      let otherBytes=SecureString.unscramble(bytes: other._storage)
 
       // Constant-time comparison to avoid timing attacks
-      var result: UInt8 = 0
+      var result: UInt8=0
       for i in 0..<selfBytes.count {
         result |= selfBytes[i] ^ otherBytes[i]
       }
@@ -91,11 +91,11 @@ public struct SecureString: @unchecked Sendable {
   /// Note: This is a basic implementation - a real implementation would use
   /// a more sophisticated encryption approach
   private static func scramble(bytes: [UInt8]) -> [UInt8] {
-    let key: [UInt8] = [0x82, 0x45, 0x7D, 0x39, 0xF2, 0x67, 0x9B, 0x25]
-    var result = [UInt8](repeating: 0, count: bytes.count)
+    let key: [UInt8]=[0x82, 0x45, 0x7D, 0x39, 0xF2, 0x67, 0x9B, 0x25]
+    var result=[UInt8](repeating: 0, count: bytes.count)
 
     for i in 0..<bytes.count {
-      result[i] = bytes[i] ^ key[i % key.count]
+      result[i]=bytes[i] ^ key[i % key.count]
     }
 
     return result
@@ -148,11 +148,11 @@ extension SecureString: CustomDebugStringConvertible {
 @usableFromInline
 final class Lock {
   @usableFromInline
-  var _mutex = UnsafeMutablePointer<pthread_mutex_t>.allocate(capacity: 1)
+  var _mutex=UnsafeMutablePointer<pthread_mutex_t>.allocate(capacity: 1)
 
   @usableFromInline
   init() {
-    let err = pthread_mutex_init(_mutex, nil)
+    let err=pthread_mutex_init(_mutex, nil)
     precondition(err == 0, "Failed to initialize mutex with error \(err)")
   }
 
@@ -162,12 +162,12 @@ final class Lock {
   }
 
   func lock() {
-    let err = pthread_mutex_lock(_mutex)
+    let err=pthread_mutex_lock(_mutex)
     precondition(err == 0, "Failed to lock mutex with error \(err)")
   }
 
   func unlock() {
-    let err = pthread_mutex_unlock(_mutex)
+    let err=pthread_mutex_unlock(_mutex)
     precondition(err == 0, "Failed to unlock mutex with error \(err)")
   }
 

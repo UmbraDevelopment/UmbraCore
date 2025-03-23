@@ -11,9 +11,9 @@ public struct ErrorContext: Equatable {
 
   /// Initialize with domain, code and description
   public init(domain: String, code: Int, description: String) {
-    self.domain = domain
-    self.code = code
-    self.description = description
+    self.domain=domain
+    self.code=code
+    self.description=description
   }
 
   /// Compare two error contexts

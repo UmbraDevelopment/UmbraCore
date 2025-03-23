@@ -11,11 +11,11 @@ import XPCProtocolsCore
 /// Error domain namespace
 public enum ErrorDomain {
   /// Security domain
-  public static let security = "Security"
+  public static let security="Security"
   /// Crypto domain
-  public static let crypto = "Crypto"
+  public static let crypto="Crypto"
   /// Application domain
-  public static let application = "Application"
+  public static let application="Application"
 }
 
 /// Error context protocol
@@ -39,9 +39,9 @@ public struct BaseErrorContext: ErrorContext {
 
   /// Initialise with domain, code and description
   public init(domain: String, code: Int, description: String) {
-    self.domain = domain
-    self.code = code
-    self.description = description
+    self.domain=domain
+    self.code=code
+    self.description=description
   }
 }
 
@@ -77,7 +77,7 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
   // MARK: - Properties
 
   /// Static protocol identifier for the service
-  public static let protocolIdentifier: String = "com.umbra.xpc.keychain"
+  public static let protocolIdentifier: String="com.umbra.xpc.keychain"
 
   /// The underlying XPC listener
   @available(*, deprecated, message: "Will be replaced with Swift Concurrency in Swift 6")
@@ -87,22 +87,22 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
   private let exportedObject: KeychainXPCProtocol
 
   @available(*, deprecated, message: "Will be replaced with Swift Concurrency in Swift 6")
-  private let startupSemaphore = DispatchSemaphore(value: 0)
+  private let startupSemaphore=DispatchSemaphore(value: 0)
 
   @available(*, deprecated, message: "Will be replaced with Swift Concurrency in Swift 6")
-  private let stateQueue = DispatchQueue(label: "com.umbracore.xpc.state")
+  private let stateQueue=DispatchQueue(label: "com.umbracore.xpc.state")
 
   /// Service identifier for the keychain service
   private let serviceIdentifier: String
 
   /// Thread safety actor for mutable state management in Swift 6
   private actor ServiceState {
-    var isStarted = false
+    var isStarted=false
     var exportedObjectRef: (any KeychainXPCProtocol)?
     var listenerRef: NSXPCListener?
 
     func setExportedObject(_ obj: KeychainXPCProtocol) {
-      exportedObjectRef = obj
+      exportedObjectRef=obj
     }
 
     func getExportedObject() -> (any KeychainXPCProtocol)? {
@@ -110,7 +110,7 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
     }
 
     func setListener(_ listener: NSXPCListener) {
-      listenerRef = listener
+      listenerRef=listener
     }
 
     func getListener() -> NSXPCListener? {
@@ -118,7 +118,7 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
     }
 
     func setStarted(_ started: Bool) {
-      isStarted = started
+      isStarted=started
     }
 
     func isStartedState() -> Bool {
@@ -127,7 +127,7 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
   }
 
   /// State actor for managing mutable state
-  private let state = ServiceState()
+  private let state=ServiceState()
 
   // Legacy property that will be removed in Swift 6
   @available(
@@ -135,22 +135,22 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
     deprecated,
     message: "This will be replaced with an actor-based implementation in Swift 6"
   )
-  private var _isStarted = false
+  private var _isStarted=false
 
   // MARK: - Initialization
 
   /// Initialize the keychain XPC service with a custom service identifier
   /// - Parameter serviceIdentifier: The service identifier to use for keychain operations
   public init(serviceIdentifier: String) {
-    self.serviceIdentifier = serviceIdentifier
-    listener = NSXPCListener.anonymous()
-    exportedObject = InternalKeychainImplementation()
+    self.serviceIdentifier=serviceIdentifier
+    listener=NSXPCListener.anonymous()
+    exportedObject=InternalKeychainImplementation()
 
     // Call super.init() since NSObject requires it
     super.init()
 
     // Set up the listener delegate after initialization
-    listener.delegate = self
+    listener.delegate=self
 
     // Set up the exported object in the actor immediately after init
     Task {
@@ -161,14 +161,14 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
 
   /// Default initializer
   public override init() {
-    serviceIdentifier = "com.umbracore.securexpc"
-    listener = NSXPCListener.anonymous()
-    exportedObject = InternalKeychainImplementation()
+    serviceIdentifier="com.umbracore.securexpc"
+    listener=NSXPCListener.anonymous()
+    exportedObject=InternalKeychainImplementation()
 
     super.init()
 
     // Set up the listener delegate after initialization
-    listener.delegate = self
+    listener.delegate=self
 
     // Set up the exported object in the actor immediately after init
     Task {
@@ -182,9 +182,9 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
   func start() async {
     guard await !(state.isStartedState()) else { return }
     await state.setStarted(true)
-    _isStarted = true
+    _isStarted=true
 
-    if let listener = await state.getListener() {
+    if let listener=await state.getListener() {
       listener.resume()
     }
 
@@ -196,10 +196,10 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
     await state.setStarted(false)
 
     // Keep using the deprecated property until Swift 6 migration is complete
-    _isStarted = false
+    _isStarted=false
 
     // Invalidate the listener through the actor
-    if let listener = await state.getListener() {
+    if let listener=await state.getListener() {
       listener.invalidate()
     }
   }
@@ -213,7 +213,7 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
   /// - Returns: The NSXPCListenerEndpoint of the service listener
   @available(*, deprecated, message: "For testing purposes only")
   public func getListenerEndpoint() async -> NSXPCListenerEndpoint? {
-    if let listener = await state.getListener() {
+    if let listener=await state.getListener() {
       return listener.endpoint
     }
     return nil
@@ -234,7 +234,7 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
   public func synchroniseKeys(_ syncData: SecureBytes) async throws {
     do {
       // Get the exported object from actor state
-      if let obj = await state.getExportedObject() {
+      if let obj=await state.getExportedObject() {
         try await obj.synchroniseKeys(
           syncData.withUnsafeBytes { ptr in
             Data(bytes: ptr.baseAddress!, count: ptr.count)
@@ -258,8 +258,8 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
   /// - Returns: Result with SecureBytes on success or error on failure
   public func generateRandomData(length: Int) async
   -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
-    var bytes = [UInt8](repeating: 0, count: length)
-    let status = SecRandomCopyBytes(kSecRandomDefault, length, &bytes)
+    var bytes=[UInt8](repeating: 0, count: length)
+    let status=SecRandomCopyBytes(kSecRandomDefault, length, &bytes)
 
     if status == errSecSuccess {
       return .success(SecureBytes(bytes: bytes))
@@ -311,7 +311,7 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
       >) in
         Task {
           // Get the exported object
-          if let obj = await self.state.getExportedObject() {
+          if let obj=await self.state.getExportedObject() {
             obj.addItem(
               account: key,
               service: serviceIdentifier,
@@ -321,7 +321,7 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
               },
               reply: { [self] error in
                 if let error {
-                  let mappedError = (error as? InternalKeychainXPCError).map {
+                  let mappedError=(error as? InternalKeychainXPCError).map {
                     self.mapKeychainErrorToProtocolsError($0, operation: "store")
                   } ?? ErrorHandlingDomains.UmbraErrors.Security.Protocols
                     .internalError("Failed to store secure data: \(error.localizedDescription)")
@@ -364,14 +364,14 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
       >) in
         Task {
           // Get the exported object
-          if let obj = await self.state.getExportedObject() {
+          if let obj=await self.state.getExportedObject() {
             obj.getItem(
               account: key,
               service: serviceIdentifier,
               accessGroup: nil,
               reply: { [self] data, error in
                 if let error {
-                  let mappedError = (error as? InternalKeychainXPCError).map {
+                  let mappedError=(error as? InternalKeychainXPCError).map {
                     self.mapKeychainErrorToProtocolsError($0, operation: "retrieve")
                   } ?? ErrorHandlingDomains.UmbraErrors.Security.Protocols
                     .internalError("Failed to retrieve secure data: \(error.localizedDescription)")
@@ -420,14 +420,14 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
       >) in
         Task {
           // Get the exported object
-          if let obj = await self.state.getExportedObject() {
+          if let obj=await self.state.getExportedObject() {
             obj.deleteItem(
               account: key,
               service: serviceIdentifier,
               accessGroup: nil,
               reply: { [self] error in
                 if let error {
-                  let mappedError = (error as? InternalKeychainXPCError).map {
+                  let mappedError=(error as? InternalKeychainXPCError).map {
                     self.mapKeychainErrorToProtocolsError($0, operation: "delete")
                   } ?? ErrorHandlingDomains.UmbraErrors.Security.Protocols
                     .internalError("Failed to delete secure data: \(error.localizedDescription)")
@@ -461,7 +461,7 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
   /// - Returns: Result with status dictionary or error
   public func status() async
   -> Result<[String: Any], ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
-    let statusInfo: [String: Any] = await [
+    let statusInfo: [String: Any]=await [
       "available": state.isStartedState(),
       "version": "1.0.0",
       "protocol": Self.protocolIdentifier
@@ -483,11 +483,11 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
   -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
     // This is a placeholder implementation - in a real implementation, we would
     // use the actual keychain to perform encryption
-    let encryptedData = data.withUnsafeBytes { bytes in
+    let encryptedData=data.withUnsafeBytes { bytes in
       // Simple placeholder encryption - in a real implementation we'd use proper encryption
-      var encrypted = [UInt8](repeating: 0, count: bytes.count)
+      var encrypted=[UInt8](repeating: 0, count: bytes.count)
       for i in 0..<bytes.count {
-        encrypted[i] = bytes[i] ^ 0xFF // Simple XOR "encryption" for demonstration
+        encrypted[i]=bytes[i] ^ 0xFF // Simple XOR "encryption" for demonstration
       }
       return encrypted
     }
@@ -506,11 +506,11 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
   -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
     // This is a placeholder implementation - in a real implementation, we would
     // use the actual keychain to perform decryption
-    let decryptedData = data.withUnsafeBytes { bytes in
+    let decryptedData=data.withUnsafeBytes { bytes in
       // Simple placeholder decryption - in a real implementation we'd use proper decryption
-      var decrypted = [UInt8](repeating: 0, count: bytes.count)
+      var decrypted=[UInt8](repeating: 0, count: bytes.count)
       for i in 0..<bytes.count {
-        decrypted[i] = bytes[i] ^ 0xFF // Simple XOR "decryption" for demonstration
+        decrypted[i]=bytes[i] ^ 0xFF // Simple XOR "decryption" for demonstration
       }
       return decrypted
     }
@@ -529,11 +529,11 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
   -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
     // This is a placeholder implementation - in a real implementation, we would
     // use the actual keychain to generate a signature
-    let signature = data.withUnsafeBytes { bytes in
+    let signature=data.withUnsafeBytes { bytes in
       // Simple placeholder signature - in a real implementation we'd use proper signing
-      var sig = [UInt8](repeating: 0, count: 32) // Create a 32-byte "signature"
+      var sig=[UInt8](repeating: 0, count: 32) // Create a 32-byte "signature"
       for i in 0..<min(bytes.count, 32) {
-        sig[i] = bytes[i] // Simple copy for demonstration
+        sig[i]=bytes[i] // Simple copy for demonstration
       }
       return sig
     }
@@ -554,7 +554,7 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
   -> Result<Bool, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
     // This is a placeholder implementation - in a real implementation, we would
     // use the actual keychain to verify the signature
-    let isValid = signature.withUnsafeBytes { sigBytes in
+    let isValid=signature.withUnsafeBytes { sigBytes in
       data.withUnsafeBytes { dataBytes in
         // Simple placeholder verification - in a real implementation we'd use proper verification
         if sigBytes.count != 32 {
@@ -582,7 +582,7 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
     reply: @escaping @Sendable (Error?) -> Void
   ) {
     Task.detached {
-      if let obj = await self.state.getExportedObject() {
+      if let obj=await self.state.getExportedObject() {
         obj.addItem(
           account: account,
           service: service,
@@ -605,7 +605,7 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
     reply: @escaping @Sendable (Error?) -> Void
   ) {
     Task.detached {
-      if let obj = await self.state.getExportedObject() {
+      if let obj=await self.state.getExportedObject() {
         obj.updateItem(
           account: account,
           service: service,
@@ -627,7 +627,7 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
     reply: @escaping @Sendable (Data?, Error?) -> Void
   ) {
     Task.detached {
-      if let obj = await self.state.getExportedObject() {
+      if let obj=await self.state.getExportedObject() {
         obj.getItem(
           account: account,
           service: service,
@@ -648,7 +648,7 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
     reply: @escaping @Sendable (Error?) -> Void
   ) {
     Task.detached {
-      if let obj = await self.state.getExportedObject() {
+      if let obj=await self.state.getExportedObject() {
         obj.deleteItem(
           account: account,
           service: service,
@@ -749,11 +749,11 @@ extension KeychainXPCService: NSXPCListenerDelegate {
   ) -> Bool {
     // Need to check using the deprecated property for now during the transition to Swift 6
     // In Swift 6, we would refactor this to be fully actor-based
-    let shouldAccept = _isStarted
+    let shouldAccept=_isStarted
 
     if shouldAccept {
-      newConnection.exportedInterface = NSXPCInterface(with: KeychainXPCProtocol.self)
-      newConnection.exportedObject = exportedObject
+      newConnection.exportedInterface=NSXPCInterface(with: KeychainXPCProtocol.self)
+      newConnection.exportedObject=exportedObject
       newConnection.resume()
     }
 
@@ -769,14 +769,14 @@ extension KeychainXPCService: NSXPCListenerDelegate {
   ) async -> Bool {
     // This is called on the main thread by XPC
     // We need to check state synchronously, so we'll use the actor state
-    let shouldAccept = await state.isStartedState()
+    let shouldAccept=await state.isStartedState()
 
     // If we should accept, set up the connection
     if shouldAccept {
-      newConnection.exportedInterface = NSXPCInterface(with: KeychainXPCProtocol.self)
+      newConnection.exportedInterface=NSXPCInterface(with: KeychainXPCProtocol.self)
 
-      if let exportedObj = await state.getExportedObject() {
-        newConnection.exportedObject = exportedObj
+      if let exportedObj=await state.getExportedObject() {
+        newConnection.exportedObject=exportedObj
         newConnection.resume()
       } else {
         return false
@@ -789,10 +789,10 @@ extension KeychainXPCService: NSXPCListenerDelegate {
 
 private final class AtomicBool {
   private var _value: Bool
-  private let lock = NSLock()
+  private let lock=NSLock()
 
   init(_ value: Bool) {
-    _value = value
+    _value=value
   }
 
   var value: Bool {
@@ -804,6 +804,6 @@ private final class AtomicBool {
   func setValue(_ newValue: Bool) {
     lock.lock()
     defer { lock.unlock() }
-    _value = newValue
+    _value=newValue
   }
 }

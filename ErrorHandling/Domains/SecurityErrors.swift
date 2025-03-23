@@ -11,15 +11,20 @@ extension UmbraErrors {
             case invalidToken(reason: String)
             case accessDenied(reason: String)
             
-            // Encryption errors
-            case encryptionFailed(reason: String)
-            case decryptionFailed(reason: String)
-            case integrityCheckFailed(reason: String)
+            // Security operation errors
+            case operationFailed(reason: String)
+            case invalidParameter(name: String, reason: String)
+            case internalError(description: String)
             
-            // Key management errors
-            case keyGenerationFailed(reason: String)
-            case keyDerivationFailed(reason: String)
-            case keyRetrievalFailed(reason: String)
+            // Key and certificate errors
+            case invalidKey(reason: String)
+            case invalidCertificate(reason: String)
+            case invalidSignature(reason: String)
+            case invalidContext(reason: String)
+            
+            // Authorization errors
+            case missingEntitlement(reason: String)
+            case notAuthorized(reason: String)
             
             // MARK: - UmbraError Protocol Implementation
             
@@ -33,12 +38,15 @@ extension UmbraErrors {
                 case .authenticationFailed: intCode = 1001
                 case .invalidToken: intCode = 1002
                 case .accessDenied: intCode = 1003
-                case .encryptionFailed: intCode = 1011
-                case .decryptionFailed: intCode = 1012
-                case .integrityCheckFailed: intCode = 1013
-                case .keyGenerationFailed: intCode = 1021
-                case .keyDerivationFailed: intCode = 1022
-                case .keyRetrievalFailed: intCode = 1023
+                case .operationFailed: intCode = 1004
+                case .invalidParameter: intCode = 1005
+                case .internalError: intCode = 1006
+                case .invalidKey: intCode = 1007
+                case .invalidCertificate: intCode = 1008
+                case .invalidSignature: intCode = 1009
+                case .invalidContext: intCode = 1010
+                case .missingEntitlement: intCode = 1011
+                case .notAuthorized: intCode = 1012
                 }
                 return String(intCode)
             }
@@ -51,18 +59,24 @@ extension UmbraErrors {
                     return "Invalid token: \(reason)"
                 case let .accessDenied(reason):
                     return "Access denied: \(reason)"
-                case let .encryptionFailed(reason):
-                    return "Encryption failed: \(reason)"
-                case let .decryptionFailed(reason):
-                    return "Decryption failed: \(reason)"
-                case let .integrityCheckFailed(reason):
-                    return "Integrity check failed: \(reason)"
-                case let .keyGenerationFailed(reason):
-                    return "Key generation failed: \(reason)"
-                case let .keyDerivationFailed(reason):
-                    return "Key derivation failed: \(reason)"
-                case let .keyRetrievalFailed(reason):
-                    return "Key retrieval failed: \(reason)"
+                case let .operationFailed(reason):
+                    return "Operation failed: \(reason)"
+                case let .invalidParameter(name, reason):
+                    return "Invalid parameter '\(name)': \(reason)"
+                case let .internalError(description):
+                    return "Internal error: \(description)"
+                case let .invalidKey(reason):
+                    return "Invalid key: \(reason)"
+                case let .invalidCertificate(reason):
+                    return "Invalid certificate: \(reason)"
+                case let .invalidSignature(reason):
+                    return "Invalid signature: \(reason)"
+                case let .invalidContext(reason):
+                    return "Invalid context: \(reason)"
+                case let .missingEntitlement(reason):
+                    return "Missing entitlement: \(reason)"
+                case let .notAuthorized(reason):
+                    return "Not authorized: \(reason)"
                 }
             }
             
@@ -84,14 +98,6 @@ extension UmbraErrors {
                     operation: "security_operation",
                     details: errorDescription
                 )
-            }
-            
-            public var errorDomain: String {
-                return domain
-            }
-            
-            public var errorCode: Int {
-                return Int(code) ?? 0
             }
             
             public func with(context: ErrorContext) -> Self {

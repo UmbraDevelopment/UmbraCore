@@ -1,9 +1,10 @@
+load("//:swift_rules.bzl", "umbra_swift_test")
+
+umbra_swift_test(
+    name = "SecurityImplementationTests",
+    srcs = glob(["**/*.swift"]),
     deps = [
         "//Sources/SecurityImplementation",
-        "//Sources/SecurityProtocolsCore",
-        "//Sources/SecureBytes",
-        "//Sources/CryptoSwiftFoundationIndependent",
+        "//Tests/TestKit",
     ],
-    # Ensure tests run on the same architecture as the build
-    target_compatible_with = ["@platforms//os:macos"],
 )

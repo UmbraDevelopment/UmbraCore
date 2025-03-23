@@ -51,7 +51,7 @@ public final class ResticCLIHelper {
   /// The current version of the ResticCLIHelper module.
   ///
   /// This version follows semantic versioning (MAJOR.MINOR.PATCH).
-  public static let version = "1.0.0"
+  public static let version="1.0.0"
 
   /// The absolute path to the Restic executable.
   ///
@@ -80,23 +80,23 @@ public final class ResticCLIHelper {
   /// - Throws: `ResticError.invalidConfiguration` if the executable cannot be found or accessed.
   public init(
     executablePath: String,
-    logger: LoggingProtocol = UmbraLogging.createLogger(),
-    progressDelegate: ResticProgressReporting? = nil
+    logger: LoggingProtocol=UmbraLogging.createLogger(),
+    progressDelegate: ResticProgressReporting?=nil
   ) throws {
-    self.executablePath = executablePath
-    self.logger = logger
-    self.progressDelegate = progressDelegate
-    progressParser = progressDelegate.map { ProgressParser(delegate: $0) }
+    self.executablePath=executablePath
+    self.logger=logger
+    self.progressDelegate=progressDelegate
+    progressParser=progressDelegate.map { ProgressParser(delegate: $0) }
 
     // Validate executable
-    let fileManager = FileManager.default
+    let fileManager=FileManager.default
     guard fileManager.fileExists(atPath: executablePath) else {
       throw ResticError.invalidConfiguration(
         "Restic executable not found at \(executablePath)"
       )
     }
 
-    var isDirectory: ObjCBool = false
+    var isDirectory: ObjCBool=false
     guard
       fileManager.fileExists(atPath: executablePath, isDirectory: &isDirectory),
       !isDirectory.boolValue
@@ -113,15 +113,15 @@ public final class ResticCLIHelper {
   }
 
   private func setupProcess(for command: ResticCommand) -> ProcessSetup {
-    let outputPipe = Pipe()
-    let errorPipe = Pipe()
+    let outputPipe=Pipe()
+    let errorPipe=Pipe()
 
-    let process = Process()
-    process.executableURL = URL(fileURLWithPath: executablePath)
-    process.arguments = command.arguments
-    process.environment = command.environment
-    process.standardOutput = outputPipe
-    process.standardError = errorPipe
+    let process=Process()
+    process.executableURL=URL(fileURLWithPath: executablePath)
+    process.arguments=command.arguments
+    process.environment=command.environment
+    process.standardOutput=outputPipe
+    process.standardError=errorPipe
 
     return ProcessSetup(
       process: process,
@@ -131,7 +131,7 @@ public final class ResticCLIHelper {
   }
 
   private func handleProcessError(_ error: Error, stderr: String) throws -> Never {
-    if let error = error as? POSIXError {
+    if let error=error as? POSIXError {
       switch error.code {
         case .ENOENT:
           throw ResticError
@@ -176,25 +176,25 @@ public final class ResticCLIHelper {
   public func execute(_ command: ResticCommand) async throws -> String {
     try command.validate()
 
-    let setup = setupProcess(for: command)
+    let setup=setupProcess(for: command)
 
     do {
       try setup.process.run()
 
-      let outputData = try await setup.outputPipe.fileHandleForReading.bytes
+      let outputData=try await setup.outputPipe.fileHandleForReading.bytes
         .reduce(into: Data()) { $0.append($1) }
-      let errorData = try await setup.errorPipe.fileHandleForReading.bytes
+      let errorData=try await setup.errorPipe.fileHandleForReading.bytes
         .reduce(into: Data()) { $0.append($1) }
 
       setup.process.waitUntilExit()
 
-      let output = String(data: outputData, encoding: .utf8) ?? ""
-      let stderr = String(data: errorData, encoding: .utf8) ?? ""
+      let output=String(data: outputData, encoding: .utf8) ?? ""
+      let stderr=String(data: errorData, encoding: .utf8) ?? ""
 
       return try processOutput(output, stderr)
     } catch {
-      let errorData = try? setup.errorPipe.fileHandleForReading.readToEnd()
-      let stderr = errorData.flatMap { String(data: $0, encoding: .utf8) } ?? ""
+      let errorData=try? setup.errorPipe.fileHandleForReading.readToEnd()
+      let stderr=errorData.flatMap { String(data: $0, encoding: .utf8) } ?? ""
       try handleProcessError(error, stderr: stderr)
     }
   }
@@ -202,6 +202,6 @@ public final class ResticCLIHelper {
   /// Set the progress delegate
   /// - Parameter delegate: The delegate to receive progress updates
   public func setProgressDelegate(_ delegate: ResticProgressReporting?) {
-    progressDelegate = delegate
+    progressDelegate=delegate
   }
 }

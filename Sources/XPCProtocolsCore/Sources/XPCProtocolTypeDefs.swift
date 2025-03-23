@@ -59,7 +59,7 @@ public enum XPCProtocolTypeDefs {
     public var defaultBitLength: Int {
       switch self {
         case .symmetric: 256
-        case .asymmetric: 2_048
+        case .asymmetric: 2048
         case .hmac: 256
       }
     }
@@ -96,7 +96,7 @@ public enum XPCProtocolTypeDefs {
     public var bitLength: Int {
       switch self {
         case .aes: 128
-        case .rsa: 2_048
+        case .rsa: 2048
         case .ecc: 256
         case .hmac: 256
         case .chacha20: 256
@@ -164,16 +164,16 @@ public enum XPCProtocolTypeDefs {
     /// Initialise with default values
     public init(
       serviceID: String,
-      version: String = "1.0.0",
-      secureLogging: Bool = false,
-      maxKeyLifetime: TimeInterval = 0,
+      version: String="1.0.0",
+      secureLogging: Bool=false,
+      maxKeyLifetime: TimeInterval=0,
       defaultSecurityLevel: SecurityLevel = .standard
     ) {
-      self.serviceID = serviceID
-      self.version = version
-      self.secureLogging = secureLogging
-      self.maxKeyLifetime = maxKeyLifetime
-      self.defaultSecurityLevel = defaultSecurityLevel
+      self.serviceID=serviceID
+      self.version=version
+      self.secureLogging=secureLogging
+      self.maxKeyLifetime=maxKeyLifetime
+      self.defaultSecurityLevel=defaultSecurityLevel
     }
   }
 
@@ -222,12 +222,12 @@ public enum XPCProtocolTypeDefs {
     ///   - timeoutSeconds: Operation timeout in seconds (0 = default)
     public init(
       operationType: OperationType,
-      parameters: [String: String] = [:],
-      timeoutSeconds: Double = 0
+      parameters: [String: String]=[:],
+      timeoutSeconds: Double=0
     ) {
-      self.operationType = operationType
-      self.parameters = parameters
-      self.timeoutSeconds = timeoutSeconds
+      self.operationType=operationType
+      self.parameters=parameters
+      self.timeoutSeconds=timeoutSeconds
     }
   }
 
@@ -249,22 +249,22 @@ public enum XPCProtocolTypeDefs {
     ///   - protocolVersion: Protocol version supported by the service
     public init(
       status: String,
-      details: String? = nil,
+      details: String?=nil,
       protocolVersion: String
     ) {
-      self.status = status
-      self.details = details
-      self.protocolVersion = protocolVersion
+      self.status=status
+      self.details=details
+      self.protocolVersion=protocolVersion
     }
   }
 
   /// Protocol versioning information
   public enum ProtocolVersion {
     /// Current protocol version
-    public static let current = "2.0.0"
+    public static let current="2.0.0"
 
     /// Minimum supported protocol version
-    public static let minimumSupported = "1.0.0"
+    public static let minimumSupported="1.0.0"
 
     /// Check if a protocol version is supported
     /// - Parameter version: The version to check

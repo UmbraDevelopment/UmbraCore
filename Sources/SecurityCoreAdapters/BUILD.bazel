@@ -1,25 +1,21 @@
-load(
-    "@build_bazel_rules_swift//swift:swift.bzl",
-    "swift_library",
+load("//:swift_rules.bzl", "umbra_swift_library")
+
+umbra_swift_library(
+    name = "SecurityCoreAdapters",
+    srcs = glob(["**/*.swift"]),
+    deps = [
+    ],
 )
 
-# SecurityCoreAdapters - Adapter patterns for SecurityCore components
-swift_library(
-    name = "SecurityCoreAdapters",
-    srcs = glob(["Sources/**/*.swift"]),
-    module_name = "SecurityCoreAdapters",
-    target_compatible_with = ["@platforms//os:macos"],
-    copts = [
-        "-target", "arm64-apple-macos14.7.4",
-        # Enabling library evolution as this is a foundation-free core module
-        "-Xfrontend", "-enable-library-evolution",
-        "-g",
-        "-swift-version", "5",
-    ],
-    visibility = ["//visibility:public"],
-    deps = [
-        "//Sources/SecureBytes",
-        "//Sources/SecurityProtocolsCore",
-        "//Sources/UmbraCoreTypes",
-    ],
-)
+# Uncomment if documentation generation is needed
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+#
+# swift_package(
+#     name = "docc_documentation",
+#     srcs = glob([
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
+#     deps = ["//Sources/SecurityCoreAdapters"],
+# )

@@ -1,77 +1,21 @@
-load("//tools/build_defs:umbracore_module.bzl", "umbracore_foundation_free_module")
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_test")
-load("//:bazel/macros/swift.bzl", "umbra_swift_test")
+load("//:swift_rules.bzl", "umbra_swift_library")
 
-umbracore_foundation_free_module(
+umbra_swift_library(
     name = "XPCProtocolsCore",
-    srcs = [
-        # Core module definition
-        "Sources/XPCProtocolsCore.swift",
-        
-        # Protocol hierarchy
-        "Sources/XPCServiceProtocolBasic.swift",
-        "Sources/XPCServiceProtocolStandard.swift",
-        "Sources/XPCServiceProtocolComplete.swift",
-        
-        # New unified protocols
-        "Sources/Protocols/XPCErrorHandlingProtocol.swift",
-        "Sources/Protocols/XPCDataHandlingProtocol.swift",
-        "Sources/Protocols/XPCDataHandlingProtocolExtensions.swift",
-        
-        # Error handling and utilities
-        "Sources/XPCErrorHandling.swift",
-        "Sources/XPCProtocolTypeDefs.swift",
-        "Sources/XPCProtocolExtensions.swift",
-        "Sources/XPCProtocolMigrationFactory.swift",
-        "Sources/SecureBytes+NSData.swift",
-        "Sources/XPCServiceStatus.swift",
-        "Sources/SecureBytesExtensions.swift",
-        
-        # Migration guide and deprecation strategy
-        "Sources/XPCProtocolMigrationGuide.swift",
-        
-        # Adapters
-        "Sources/Adapters/CryptoXPCServiceAdapter.swift",
-        
-        # Modern implementations
-        "Sources/Modern/ModernXPCService.swift",
-        
-        # DTO-based protocols and implementations
-        "Sources/XPCProtocolDTOs.swift",
-        "Sources/XPCServiceProtocolDTO.swift",
-        "Sources/XPCServiceProtocolDTOAdapter.swift",
-        "Sources/XPCServiceProtocolCompleteDTOAdapter.swift",
-        "Sources/KeyExchangeDTOAdapter.swift",
-    ],
-    visibility = ["//visibility:public"],
+    srcs = glob(["**/*.swift"]),
     deps = [
-        "//Sources/UmbraCoreTypes",
-        "//Sources/CoreErrors",           # Required for error handling
-        "//Sources/ErrorHandling",        # Required for error handling
-        "//ErrorHandling/Domains:ErrorHandlingDomains", # Required for error domains
-        "//Sources/SecurityBridgeTypes",  # Common types shared with CoreDTOs
-        "//Sources/CoreDTOs",            # Required for DTO-based protocols
-    ],
-    copts = [
-        "-target", "arm64-apple-macos14.7.4",
-        # Enabling library evolution for binary compatibility
-        "-Xfrontend", "-enable-library-evolution",
-        "-g",
-        "-swift-version", "5",
     ],
 )
 
-# Test target for XPCProtocolsCore
-umbra_swift_test(
-    name = "XPCProtocolsCoreTests",
-    srcs = glob(["Tests/**/*.swift"]),
-    module_name = "XPCProtocolsCoreTests",
-    deps = [
-        ":XPCProtocolsCore",
-        "//Sources/UmbraCoreTypes",  # Using SecureBytes from UmbraCoreTypes, not the standalone module
-        "//Sources/CoreErrors",      # Required for testing error conversions
-        "//Sources/ErrorHandling",   # Required for error handling
-        "//ErrorHandling/Domains:ErrorHandlingDomains", # Required for error domains
-        "//Sources/SecurityProtocolsCore", # Required for test mocks
-    ],
-)
+# Uncomment if documentation generation is needed
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+#
+# swift_package(
+#     name = "docc_documentation",
+#     srcs = glob([
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
+#     deps = ["//Sources/XPCProtocolsCore"],
+# )

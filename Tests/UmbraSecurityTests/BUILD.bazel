@@ -1,18 +1,10 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_test")
+load("//:swift_rules.bzl", "umbra_swift_test")
 
-swift_test(
+umbra_swift_test(
     name = "UmbraSecurityTests",
     srcs = glob(["**/*.swift"]),
     deps = [
-        "//Sources/ErrorHandling",
-        "//Sources/UmbraLogging",
-        "//Tests/UmbraTestKit:UmbraTestKit",
         "//Sources/UmbraSecurity",
-        "//Sources/UmbraSecurity/Services:UmbraSecurityServicesCore",
-        "//Sources/SecurityInterfaces:SecurityInterfacesForTesting",
-        "//Sources/SecurityInterfacesBase:SecurityInterfacesBaseForTesting",
-        "//Sources/SecurityInterfacesProtocols:SecurityInterfacesProtocolsForTesting",
-        "//Sources/SecurityBridge",
-        "//Sources/FoundationBridgeTypes",
+        "//Tests/TestKit",
     ],
 )

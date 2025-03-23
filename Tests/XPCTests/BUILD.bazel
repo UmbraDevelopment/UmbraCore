@@ -1,7 +1,10 @@
+load("//:swift_rules.bzl", "umbra_swift_test")
+
+umbra_swift_test(
+    name = "XPCTests",
+    srcs = glob(["**/*.swift"]),
     deps = [
-        "//Sources/Testing",
-        "//Sources/UmbraCryptoService",
-        "//Sources/UmbraXPC",
-        "//Sources/XPC/Core:XPCCore",
+        "//Sources/XPC",
+        "//Tests/TestKit",
     ],
 )

@@ -55,18 +55,18 @@ public struct ErrorContext: Sendable {
   public init(
     source: String,
     operation: String,
-    details: String? = nil,
-    underlyingError: Error? = nil,
-    file: String = #file,
-    line: Int = #line,
-    function: String = #function
+    details: String?=nil,
+    underlyingError: Error?=nil,
+    file: String=#file,
+    line: Int=#line,
+    function: String=#function
   ) {
-    self.source = source
-    self.operation = operation
-    self.details = details
-    self.underlyingError = underlyingError
-    self.file = file
-    self.line = line
-    self.function = function
+    self.source=source
+    self.operation=operation
+    self.details=details
+    self.underlyingError=underlyingError
+    self.file=file
+    self.line=line
+    self.function=function
   }
 }

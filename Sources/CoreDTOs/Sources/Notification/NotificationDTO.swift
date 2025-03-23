@@ -74,14 +74,14 @@ public struct NotificationDTO: @unchecked Sendable, Equatable, Hashable {
   /// the current time is used automatically.
   public init(
     name: String,
-    sender: String? = nil,
-    userInfo: [String: String] = [:],
-    timestamp: Double = Date().timeIntervalSince1970
+    sender: String?=nil,
+    userInfo: [String: String]=[:],
+    timestamp: Double=Date().timeIntervalSince1970
   ) {
-    self.name = name
-    self.sender = sender
-    self.userInfo = userInfo
-    self.timestamp = timestamp
+    self.name=name
+    self.sender=sender
+    self.userInfo=userInfo
+    self.timestamp=timestamp
   }
 
   // MARK: - Accessing User Info
@@ -99,7 +99,7 @@ public struct NotificationDTO: @unchecked Sendable, Equatable, Hashable {
   /// - Parameter key: Key to look up
   /// - Returns: Integer value or nil if not found or wrong type
   public func intValue(for key: String) -> Int? {
-    guard let stringValue = userInfo[key] else { return nil }
+    guard let stringValue=userInfo[key] else { return nil }
     return Int(stringValue)
   }
 
@@ -108,7 +108,7 @@ public struct NotificationDTO: @unchecked Sendable, Equatable, Hashable {
   /// - Parameter key: Key to look up
   /// - Returns: Double value or nil if not found or wrong type
   public func doubleValue(for key: String) -> Double? {
-    guard let stringValue = userInfo[key] else { return nil }
+    guard let stringValue=userInfo[key] else { return nil }
     return Double(stringValue)
   }
 
@@ -117,7 +117,7 @@ public struct NotificationDTO: @unchecked Sendable, Equatable, Hashable {
   /// - Parameter key: Key to look up
   /// - Returns: Boolean value or nil if not found or wrong type
   public func boolValue(for key: String) -> Bool? {
-    guard let stringValue = userInfo[key] else { return nil }
+    guard let stringValue=userInfo[key] else { return nil }
     return stringValue.lowercased() == "true"
   }
 
@@ -126,7 +126,7 @@ public struct NotificationDTO: @unchecked Sendable, Equatable, Hashable {
   /// - Parameter key: Key to look up
   /// - Returns: Date value or nil if not found or wrong type
   public func dateValue(for key: String) -> Date? {
-    guard let doubleValue = doubleValue(for: key) else { return nil }
+    guard let doubleValue=doubleValue(for: key) else { return nil }
     return Date(timeIntervalSince1970: doubleValue)
   }
 
@@ -137,8 +137,8 @@ public struct NotificationDTO: @unchecked Sendable, Equatable, Hashable {
   ///
   /// This method attempts to decode a Base64 string to retrieve binary data.
   public func dataValue(for key: String) -> [UInt8]? {
-    guard let base64String = userInfo[key] else { return nil }
-    guard let data = Data(base64Encoded: base64String) else { return nil }
+    guard let base64String=userInfo[key] else { return nil }
+    guard let data=Data(base64Encoded: base64String) else { return nil }
     return [UInt8](data)
   }
 
@@ -153,9 +153,9 @@ public struct NotificationDTO: @unchecked Sendable, Equatable, Hashable {
   /// but with additional key-value pairs in the user info dictionary. If there are
   /// duplicate keys, the values from `additionalInfo` will override the original values.
   public func withAdditionalUserInfo(_ additionalInfo: [String: String]) -> NotificationDTO {
-    var newUserInfo = userInfo
+    var newUserInfo=userInfo
     for (key, value) in additionalInfo {
-      newUserInfo[key] = value
+      newUserInfo[key]=value
     }
 
     return NotificationDTO(

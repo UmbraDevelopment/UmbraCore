@@ -1,36 +1,24 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
-load("//:bazel/macros/swift.bzl", "umbra_swift_library")
+load("//:swift_rules.bzl", "umbra_swift_library")
 
-# ObjC bridging types that depend on Foundation
 umbra_swift_library(
     name = "ObjCBridgingTypesFoundation",
     srcs = glob(["**/*.swift"]),
     deps = [
         "//Sources/CoreErrors",
-        "//Sources/CoreTypesInterfaces",
-        "//Sources/XPCProtocolsCore",  # Added for XPCSecurityError
-        # Removed dependency on ObjCBridgingTypes to break circular dependency
+        "//Sources/ErrorHandlingDomains",
+        "//Sources/XPCProtocolsCore",
     ],
 )
 
-# Test version for @testable import
-swift_library(
-    name = "ObjCBridgingTypesFoundationForTesting",
-    testonly = True,
-    srcs = glob(["**/*.swift"]),
-    copts = [
-        "-target",
-        "arm64-apple-macos14.0",
-        "-strict-concurrency=complete",
-        "-enable-actor-data-race-checks",
-        "-warn-concurrency",
-    ],
-    module_name = "ObjCBridgingTypesFoundationTest",
-    visibility = ["//visibility:public"],
-    deps = [
-        "//Sources/CoreErrors",
-        "//Sources/CoreTypesInterfaces",
-        "//Sources/XPCProtocolsCore",  # Added for XPCSecurityError
-        # Removed dependency on ObjCBridgingTypes to break circular dependency
-    ],
-)
+# Uncomment if documentation generation is needed
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+#
+# swift_package(
+#     name = "docc_documentation",
+#     srcs = glob([
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
+#     deps = ["//Sources/ObjCBridgingTypesFoundation"],
+# )

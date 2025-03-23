@@ -6,11 +6,11 @@ import Foundation
 /// Error domain namespace
 public enum ErrorDomain {
   /// Security domain
-  public static let security = "Security"
+  public static let security="Security"
   /// Crypto domain
-  public static let crypto = "Crypto"
+  public static let crypto="Crypto"
   /// Application domain
-  public static let application = "Application"
+  public static let application="Application"
 }
 
 /// Error context protocol
@@ -34,9 +34,9 @@ public struct BaseErrorContext: ErrorContext {
 
   /// Initialise with domain, code and description
   public init(domain: String, code: Int, description: String) {
-    self.domain = domain
-    self.code = code
-    self.description = description
+    self.domain=domain
+    self.code=code
+    self.description=description
   }
 }
 
@@ -239,9 +239,9 @@ extension UmbraErrors.Logging.Core {
   /// Create an error for a failed logging system initialisation
   public static func makeInitialisationFailedError(
     reason: String,
-    file _: String = #file,
-    line _: Int = #line,
-    function _: String = #function
+    file _: String=#file,
+    line _: Int=#line,
+    function _: String=#function
   ) -> Self {
     .initialisationFailed(reason: reason)
   }
@@ -249,9 +249,9 @@ extension UmbraErrors.Logging.Core {
   /// Create an error for a failed log write operation
   public static func makeWriteFailedError(
     reason: String,
-    file _: String = #file,
-    line _: Int = #line,
-    function _: String = #function
+    file _: String=#file,
+    line _: Int=#line,
+    function _: String=#function
   ) -> Self {
     .writeFailed(reason: reason)
   }
@@ -259,9 +259,9 @@ extension UmbraErrors.Logging.Core {
   /// Create an error for an invalid configuration
   public static func makeInvalidConfigError(
     reason: String,
-    file _: String = #file,
-    line _: Int = #line,
-    function _: String = #function
+    file _: String=#file,
+    line _: Int=#line,
+    function _: String=#function
   ) -> Self {
     .invalidConfiguration(reason: reason)
   }
@@ -270,9 +270,9 @@ extension UmbraErrors.Logging.Core {
   public static func makeRotationFailedError(
     filePath: String,
     reason: String,
-    file _: String = #file,
-    line _: Int = #line,
-    function _: String = #function
+    file _: String=#file,
+    line _: Int=#line,
+    function _: String=#function
   ) -> Self {
     .rotationFailed(filePath: filePath, reason: reason)
   }

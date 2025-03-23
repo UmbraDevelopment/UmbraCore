@@ -18,9 +18,9 @@ public final class DummyXPCService {
   /// - Parameters:
   ///   - shouldSucceed: Whether operations should succeed (default: true)
   ///   - hostIdentifier: The host identifier to return (default: "test-host-12345")
-  public init(shouldSucceed: Bool = true, hostIdentifier: String = "test-host-12345") {
-    self.shouldSucceed = shouldSucceed
-    self.hostIdentifier = hostIdentifier
+  public init(shouldSucceed: Bool=true, hostIdentifier: String="test-host-12345") {
+    self.shouldSucceed=shouldSucceed
+    self.hostIdentifier=hostIdentifier
   }
 
   /// Ping the service to check if it's responsive
@@ -50,8 +50,8 @@ public final class DummyXPCService {
   public func getServiceStatus() async -> [String: Any]? {
     [
       "status": "running",
-      "uptime": 3_600,
-      "memoryUsage": 1_024 * 1_024
+      "uptime": 3600,
+      "memoryUsage": 1024 * 1024
     ]
   }
 
@@ -79,10 +79,10 @@ public final class DummyXPCService {
     completion: @escaping (Bool, Data?, Error?) -> Void
   ) {
     if shouldSucceed {
-      let responseData = config["data"] as? Data ?? Data("Test result".utf8)
+      let responseData=config["data"] as? Data ?? Data("Test result".utf8)
       completion(true, responseData, nil)
     } else {
-      let error = NSError(domain: "com.umbracore.test", code: 500, userInfo: [
+      let error=NSError(domain: "com.umbracore.test", code: 500, userInfo: [
         NSLocalizedDescriptionKey: "Mock operation failure"
       ])
       completion(false, nil, error)
@@ -95,7 +95,7 @@ public final class DummyXPCService {
     if shouldSucceed {
       completion(.success(hostIdentifier))
     } else {
-      let error = NSError(domain: "com.umbracore.test", code: 501, userInfo: [
+      let error=NSError(domain: "com.umbracore.test", code: 501, userInfo: [
         NSLocalizedDescriptionKey: "Failed to get host identifier"
       ])
       completion(.failure(error))
@@ -113,7 +113,7 @@ public final class DummyXPCService {
     if shouldSucceed {
       completion(.success(true))
     } else {
-      let error = NSError(domain: "com.umbracore.test", code: 502, userInfo: [
+      let error=NSError(domain: "com.umbracore.test", code: 502, userInfo: [
         NSLocalizedDescriptionKey: "Failed to register client"
       ])
       completion(.failure(error))

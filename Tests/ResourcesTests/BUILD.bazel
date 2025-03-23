@@ -1,12 +1,10 @@
+load("//:swift_rules.bzl", "umbra_swift_test")
+
+umbra_swift_test(
+    name = "ResourcesTests",
+    srcs = glob(["**/*.swift"]),
     deps = [
-        "//Sources/CoreTypesInterfaces",
-        "//Sources/ErrorHandling",
         "//Sources/Resources",
-        "//Sources/Resources/Protocols:ResourcesProtocols",
-        "//Sources/Resources/Types:ResourcesTypes",
-    ],
-    linkopts = [
-        "-target",
-        "arm64-apple-macos14.0",
+        "//Tests/TestKit",
     ],
 )

@@ -31,7 +31,7 @@ public struct RepositoryObject: Codable, Sendable {
     case type
     case id
     case size
-    case packedSize = "packed_size"
+    case packedSize="packed_size"
     case time
   }
 }

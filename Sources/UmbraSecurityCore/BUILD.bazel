@@ -1,45 +1,25 @@
-load(
-    "@build_bazel_rules_swift//swift:swift.bzl",
-    "swift_library",
-    "swift_test",
-)
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
-# UmbraSecurityCore - Foundation-free security implementation
 swift_library(
     name = "UmbraSecurityCore",
-    srcs = glob(["Sources/**/*.swift"]),
-    module_name = "UmbraSecurityCore",
-    target_compatible_with = ["@platforms//os:macos"],
-    copts = [
-        "-target", "arm64-apple-macos14.7.4",
-        # Enabling library evolution as this is a foundation-free core module
-        "-Xfrontend", "-enable-library-evolution",
-        "-g",
-        "-swift-version", "5",
-    ],
+    srcs = glob(["Sources/**/*.swift"], allow_empty = False),
     visibility = ["//visibility:public"],
     deps = [
-        "//Sources/SecureBytes",
-        "//Sources/SecurityCoreAdapters",
+        "//Sources/ErrorHandlingInterfaces",
+        "//Sources/UmbraErrors",
         "//Sources/SecurityProtocolsCore",
-        "//Sources/UmbraCoreTypes",
     ],
 )
 
-swift_test(
-    name = "UmbraSecurityCoreTests",
-    srcs = glob(["Tests/**/*.swift"]),
-    target_compatible_with = ["@platforms//os:macos"],
-    copts = [
-        "-target", "arm64-apple-macos14.7.4",
-        "-g",
-        "-swift-version", "5",
-    ],
-    deps = [
-        ":UmbraSecurityCore",
-        "//Sources/SecureBytes",
-        "//Sources/SecurityCoreAdapters",
-        "//Sources/SecurityProtocolsCore",
-        "//Sources/UmbraCoreTypes",
-    ],
-)
+# Uncomment if documentation generation is needed
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+#
+# swift_package(
+#     name = "docc_documentation",
+#     srcs = glob([
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
+#     deps = ["//Sources/UmbraSecurityCore"],
+# )

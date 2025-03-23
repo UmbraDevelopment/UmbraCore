@@ -72,34 +72,34 @@ public struct FileSystemMetadataDTO: Sendable, Equatable {
     fileSize: UInt64,
     creationDate: UInt64,
     modificationDate: UInt64,
-    accessDate: UInt64? = nil,
-    ownerID: UInt32? = nil,
-    groupID: UInt32? = nil,
-    permissions: UInt16? = nil,
-    fileExtension: String? = nil,
-    mimeType: String? = nil,
+    accessDate: UInt64?=nil,
+    ownerID: UInt32?=nil,
+    groupID: UInt32?=nil,
+    permissions: UInt16?=nil,
+    fileExtension: String?=nil,
+    mimeType: String?=nil,
     isHidden: Bool,
     isReadable: Bool,
     isWritable: Bool,
     isExecutable: Bool,
     resourceType: FilePathDTO.ResourceType,
-    attributes: [String: String] = [:]
+    attributes: [String: String]=[:]
   ) {
-    self.fileSize = fileSize
-    self.creationDate = creationDate
-    self.modificationDate = modificationDate
-    self.accessDate = accessDate
-    self.ownerID = ownerID
-    self.groupID = groupID
-    self.permissions = permissions
-    self.fileExtension = fileExtension
-    self.mimeType = mimeType
-    self.isHidden = isHidden
-    self.isReadable = isReadable
-    self.isWritable = isWritable
-    self.isExecutable = isExecutable
-    self.resourceType = resourceType
-    self.attributes = attributes
+    self.fileSize=fileSize
+    self.creationDate=creationDate
+    self.modificationDate=modificationDate
+    self.accessDate=accessDate
+    self.ownerID=ownerID
+    self.groupID=groupID
+    self.permissions=permissions
+    self.fileExtension=fileExtension
+    self.mimeType=mimeType
+    self.isHidden=isHidden
+    self.isReadable=isReadable
+    self.isWritable=isWritable
+    self.isExecutable=isExecutable
+    self.resourceType=resourceType
+    self.attributes=attributes
   }
 
   /// Create an empty metadata object for a file that doesn't exist or can't be accessed
@@ -143,8 +143,8 @@ extension FileSystemMetadataDTO {
 
   /// Get a human-readable size string
   public var readableSize: String {
-    let formatter = ByteCountFormatter()
-    formatter.allowedUnits = [.useAll]
+    let formatter=ByteCountFormatter()
+    formatter.allowedUnits=[.useAll]
     formatter.countStyle = .file
     return formatter.string(fromByteCount: Int64(fileSize))
   }
@@ -156,9 +156,9 @@ extension FileSystemMetadataDTO {
   ///   - isExecutable: New isExecutable value
   /// - Returns: Updated metadata
   public func withPermissions(
-    isReadable: Bool? = nil,
-    isWritable: Bool? = nil,
-    isExecutable: Bool? = nil
+    isReadable: Bool?=nil,
+    isWritable: Bool?=nil,
+    isExecutable: Bool?=nil
   ) -> FileSystemMetadataDTO {
     FileSystemMetadataDTO(
       fileSize: fileSize,

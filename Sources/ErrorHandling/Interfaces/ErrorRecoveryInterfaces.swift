@@ -29,17 +29,17 @@ public struct ErrorRecoveryOption: RecoveryOption, Sendable, Equatable, Identifi
   ///   - isDisruptive: Whether this recovery option might disrupt the user's workflow
   ///   - handler: The action to perform when this option is selected
   public init(
-    id: UUID = UUID(),
+    id: UUID=UUID(),
     title: String,
-    description: String? = nil,
-    isDisruptive: Bool = false,
+    description: String?=nil,
+    isDisruptive: Bool=false,
     handler: @escaping @Sendable () async -> Void
   ) {
-    self.id = id
-    self.title = title
-    self.description = description
-    self.isDisruptive = isDisruptive
-    actionHandler = handler
+    self.id=id
+    self.title=title
+    self.description=description
+    self.isDisruptive=isDisruptive
+    actionHandler=handler
   }
 
   /// Perform the recovery action
@@ -95,9 +95,9 @@ public struct RecoveryOptions: Sendable {
   ///   - message: Descriptive message about the error
   ///   - actions: Available recovery actions
   public init(title: String, message: String, actions: [RecoveryAction]) {
-    self.title = title
-    self.message = message
-    self.actions = actions
+    self.title=title
+    self.message=message
+    self.actions=actions
   }
 }
 
@@ -118,9 +118,9 @@ public struct RecoveryAction: Sendable, Identifiable {
   ///   - title: User-facing title for this action
   ///   - handler: Action to perform when selected
   public init(id: String, title: String, handler: @escaping @Sendable () -> Bool) {
-    self.id = id
-    self.title = title
-    self.handler = handler
+    self.id=id
+    self.title=title
+    self.handler=handler
   }
 
   /// Perform the recovery action

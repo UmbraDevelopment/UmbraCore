@@ -11,13 +11,13 @@ public final class SecurityProviderFactory {
   /// - Returns: A fully configured SecurityProvider instance
   public static func createDefaultProvider() -> SecurityProtocolsCore.SecurityProvider {
     // Create the Foundation implementation
-    let foundationImpl = DefaultSecurityProviderFoundationImpl()
+    let foundationImpl=DefaultSecurityProviderFoundationImpl()
 
     // Create the adapter to convert between Foundation and bridge types
-    let foundationAdapter = SecurityBridge.SecurityProviderFoundationAdapter(impl: foundationImpl)
+    let foundationAdapter=SecurityBridge.SecurityProviderFoundationAdapter(impl: foundationImpl)
 
     // Create the bridge that implements SecurityProviderBridge
-    let bridge = DefaultSecurityProviderBridge(adapter: foundationAdapter)
+    let bridge=DefaultSecurityProviderBridge(adapter: foundationAdapter)
 
     // Create the final adapter that implements SecurityProvider
     return SecurityProtocolsCore.SecurityProviderAdapter(bridge: bridge)
@@ -27,8 +27,8 @@ public final class SecurityProviderFactory {
   /// - Returns: A security provider bridged through our internal implementation
   public static func createSimpleProvider() -> SecurityProtocolsCore.SecurityProvider {
     // Use our internal implementation directly
-    let securityService = SecurityService.shared
-    let bridge = DefaultSecurityProviderBridge(adapter: securityService.securityProviderAdapter)
+    let securityService=SecurityService.shared
+    let bridge=DefaultSecurityProviderBridge(adapter: securityService.securityProviderAdapter)
 
     // Create the final adapter that implements SecurityProvider
     return SecurityProtocolsCore.SecurityProviderAdapter(bridge: bridge)
@@ -41,7 +41,7 @@ final class DefaultSecurityProviderBridge: SecurityProviderBridge.SecurityProvid
   private let adapter: SecurityBridge.SecurityProviderFoundationAdapter
 
   init(adapter: SecurityBridge.SecurityProviderFoundationAdapter) {
-    self.adapter = adapter
+    self.adapter=adapter
   }
 
   static var protocolIdentifier: String {

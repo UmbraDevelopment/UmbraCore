@@ -19,9 +19,9 @@ public enum UserDefaultsServiceDTOFactory {
   /// Create a UserDefaultsServiceDTOAdapter for testing with an isolated UserDefaults
   /// - Parameter suiteName: Suite name for the UserDefaults
   /// - Returns: A UserDefaultsServiceDTOAdapter with isolated UserDefaults
-  public static func createForTesting(suiteName: String = "com.umbra.testing")
+  public static func createForTesting(suiteName: String="com.umbra.testing")
   -> UserDefaultsServiceDTOAdapter? {
-    guard let userDefaults = UserDefaults(suiteName: suiteName) else {
+    guard let userDefaults=UserDefaults(suiteName: suiteName) else {
       return nil
     }
 

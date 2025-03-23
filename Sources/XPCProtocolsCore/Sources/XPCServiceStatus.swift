@@ -45,15 +45,15 @@ public struct XPCServiceStatus: Codable, Hashable, Sendable {
   public init(
     timestamp: Date,
     protocolVersion: String,
-    serviceVersion: String? = nil,
-    deviceIdentifier: String? = nil,
-    additionalInfo: [String: String]? = nil
+    serviceVersion: String?=nil,
+    deviceIdentifier: String?=nil,
+    additionalInfo: [String: String]?=nil
   ) {
-    self.timestamp = timestamp
-    self.protocolVersion = protocolVersion
-    self.serviceVersion = serviceVersion
-    self.deviceIdentifier = deviceIdentifier
-    self.additionalInfo = additionalInfo
+    self.timestamp=timestamp
+    self.protocolVersion=protocolVersion
+    self.serviceVersion=serviceVersion
+    self.deviceIdentifier=deviceIdentifier
+    self.additionalInfo=additionalInfo
   }
 
   /// Creates a status with common failure information
@@ -82,11 +82,11 @@ public struct XPCServiceStatus: Codable, Hashable, Sendable {
     isActive: Bool,
     version: String,
     serviceType: String,
-    additionalInfo: [String: String] = [:]
+    additionalInfo: [String: String]=[:]
   ) {
-    var info = additionalInfo
-    info["isActive"] = isActive ? "true" : "false"
-    info["serviceType"] = serviceType
+    var info=additionalInfo
+    info["isActive"]=isActive ? "true" : "false"
+    info["serviceType"]=serviceType
 
     self.init(
       timestamp: Date(),

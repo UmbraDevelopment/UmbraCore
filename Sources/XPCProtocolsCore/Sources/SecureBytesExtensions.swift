@@ -16,12 +16,12 @@ import UmbraCoreTypes
 /// Extensions to SecureBytes for handling text encoding/decoding
 extension SecureBytes {
   /// ASCII encoding table for converting between bytes and ASCII characters
-  private static let asciiTable: [UInt8: Character] = {
-    var table: [UInt8: Character] = [:]
+  private static let asciiTable: [UInt8: Character]={
+    var table: [UInt8: Character]=[:]
     // ASCII printable characters (32-126)
     for byte in 32...126 {
-      if let scalar = UnicodeScalar(byte) {
-        table[UInt8(byte)] = Character(scalar)
+      if let scalar=UnicodeScalar(byte) {
+        table[UInt8(byte)]=Character(scalar)
       }
     }
     return table
@@ -30,9 +30,9 @@ extension SecureBytes {
   /// Convert SecureBytes to a string using ASCII encoding
   /// - Returns: ASCII string representation or nil if data contains non-ASCII bytes
   public func toASCIIString() -> String? {
-    var result = ""
+    var result=""
     for byte in self {
-      guard let char = Self.asciiTable[byte] else {
+      guard let char=Self.asciiTable[byte] else {
         return nil // Non-ASCII byte found
       }
       result.append(char)
@@ -44,12 +44,12 @@ extension SecureBytes {
   /// - Parameter string: ASCII string to convert
   /// - Returns: New SecureBytes containing the encoded string data
   public static func fromASCIIString(_ string: String) -> SecureBytes? {
-    var bytes: [UInt8] = []
+    var bytes: [UInt8]=[]
     for char in string {
       guard
-        let scalar = char.unicodeScalars.first,
+        let scalar=char.unicodeScalars.first,
         scalar.value <= 127, // ASCII range
-        let byte = UInt8(exactly: scalar.value)
+        let byte=UInt8(exactly: scalar.value)
       else {
         return nil // Non-ASCII character found
       }
@@ -67,7 +67,7 @@ extension SecureBytes {
     guard start >= 0, length > 0, start + length <= count else {
       return SecureBytes()
     }
-    var result = [UInt8]()
+    var result=[UInt8]()
     for i in start..<(start + length) {
       result.append(self[i])
     }

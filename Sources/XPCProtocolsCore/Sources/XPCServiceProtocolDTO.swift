@@ -10,11 +10,11 @@ import UmbraCoreTypes
 /// Error domain namespace
 public enum ErrorDomain {
   /// Security domain
-  public static let security = "Security"
+  public static let security="Security"
   /// Crypto domain
-  public static let crypto = "Crypto"
+  public static let crypto="Crypto"
   /// Application domain
-  public static let application = "Application"
+  public static let application="Application"
 }
 
 /// Error context protocol
@@ -38,9 +38,9 @@ public struct BaseErrorContext: ErrorContext {
 
   /// Initialise with domain, code and description
   public init(domain: String, code: Int, description: String) {
-    self.domain = domain
-    self.code = code
-    self.description = description
+    self.domain=domain
+    self.code=code
+    self.description=description
   }
 }
 
@@ -128,7 +128,7 @@ extension XPCServiceProtocolDTO {
     // Default implementation just returns a failure
     OperationResultDTO(
       status: .failure,
-      errorCode: 1_000,
+      errorCode: 1000,
       errorMessage: "Random bytes generation not implemented",
       details: ["requestedLength": "\(length)"]
     )
@@ -136,7 +136,7 @@ extension XPCServiceProtocolDTO {
 
   /// Get status with current timestamp and protocol version
   public func getStatusWithDTO() async -> OperationResultDTO<XPCProtocolDTOs.ServiceStatusDTO> {
-    let status = XPCProtocolDTOs.ServiceStatusDTO.current(
+    let status=XPCProtocolDTOs.ServiceStatusDTO.current(
       protocolVersion: Self.protocolIdentifier,
       serviceVersion: "1.0.0",
       details: ["serviceType": "XPC"]

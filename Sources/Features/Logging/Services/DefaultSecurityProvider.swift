@@ -10,10 +10,10 @@ import XPCProtocolsCore
 @available(macOS 14.0, *)
 public class DefaultSecurityProvider {
   /// Dictionary to track accessed URLs and their bookmark data
-  private var accessedURLs: [String: (URL, Data)] = [:]
+  private var accessedURLs: [String: (URL, Data)]=[:]
 
   /// Keeping track of security-scoped resources
-  private var securityScopedResources: Set<URL> = []
+  private var securityScopedResources: Set<URL>=[]
 
   public init() {}
 
@@ -21,8 +21,8 @@ public class DefaultSecurityProvider {
 
   public func startAccessingResource(identifier: String) async
   -> Result<Bool, ErrorHandlingDomains.UmbraErrors.GeneralSecurity.Core> {
-    let url = URL(fileURLWithPath: identifier)
-    let success = url.startAccessingSecurityScopedResource()
+    let url=URL(fileURLWithPath: identifier)
+    let success=url.startAccessingSecurityScopedResource()
     if success {
       securityScopedResources.insert(url)
     }
@@ -30,7 +30,7 @@ public class DefaultSecurityProvider {
   }
 
   public func stopAccessingResource(identifier: String) async {
-    let url = URL(fileURLWithPath: identifier)
+    let url=URL(fileURLWithPath: identifier)
     url.stopAccessingSecurityScopedResource()
     securityScopedResources.remove(url)
   }
@@ -43,16 +43,16 @@ public class DefaultSecurityProvider {
 
   public func createBookmark(for identifier: String) async
   -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.GeneralSecurity.Core> {
-    let url = URL(fileURLWithPath: identifier)
+    let url=URL(fileURLWithPath: identifier)
     do {
-      let bookmarkData = try url.bookmarkData(
+      let bookmarkData=try url.bookmarkData(
         options: .withSecurityScope,
         includingResourceValuesForKeys: nil,
         relativeTo: nil
       )
 
       // Remember this URL and its bookmark data
-      accessedURLs[url.path] = (url, bookmarkData)
+      accessedURLs[url.path]=(url, bookmarkData)
 
       return .success(SecureBytes(bytes: Array(bookmarkData)))
     } catch {
@@ -67,9 +67,9 @@ public class DefaultSecurityProvider {
     isStale: Bool
   ), ErrorHandlingDomains.UmbraErrors.GeneralSecurity.Core> {
     do {
-      var isStale = false
-      let data = Data(bookmarkData.toArray())
-      let url = try URL(
+      var isStale=false
+      let data=Data(bookmarkData.toArray())
+      let url=try URL(
         resolvingBookmarkData: data,
         options: .withSecurityScope,
         relativeTo: nil,
@@ -86,7 +86,7 @@ public class DefaultSecurityProvider {
 
   public func validateBookmark(_ bookmarkData: SecureBytes) async
   -> Result<Bool, ErrorHandlingDomains.UmbraErrors.GeneralSecurity.Core> {
-    let result = await resolveBookmark(bookmarkData)
+    let result=await resolveBookmark(bookmarkData)
     switch result {
       case .success:
         return .success(true)
@@ -98,7 +98,7 @@ public class DefaultSecurityProvider {
   // MARK: - Resource Access Control
 
   public func isAccessingResource(identifier: String) async -> Bool {
-    let url = URL(fileURLWithPath: identifier)
+    let url=URL(fileURLWithPath: identifier)
     return securityScopedResources.contains(url)
   }
 

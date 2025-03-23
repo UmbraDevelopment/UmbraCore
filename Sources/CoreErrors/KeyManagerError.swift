@@ -2,16 +2,16 @@ import Foundation
 
 /// Key manager error type for CoreErrors module
 public struct KeyManagerError: Error, Equatable {
-    /// Error description
-    public let description: String
+  /// Error description
+  public let description: String
 
-    /// Initialize with a description
-    public init(description: String) {
-        self.description = description
-    }
+  /// Initialize with a description
+  public init(description: String) {
+    self.description=description
+  }
 
-    /// Compare two KeyManagerErrors
-    public static func == (lhs: KeyManagerError, rhs: KeyManagerError) -> Bool {
-        return lhs.description == rhs.description
-    }
+  /// Compare two KeyManagerErrors
+  public static func == (lhs: KeyManagerError, rhs: KeyManagerError) -> Bool {
+    lhs.description == rhs.description
+  }
 }

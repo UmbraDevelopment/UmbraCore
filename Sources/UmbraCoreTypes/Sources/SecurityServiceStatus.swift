@@ -28,15 +28,15 @@ public struct SecurityServiceStatus: Sendable, Equatable, Hashable {
   public init(
     status: String,
     version: String,
-    timestamp: TimeInterval = Date().timeIntervalSince1970,
-    metrics: [String: Double] = [:],
-    stringInfo: [String: String] = [:]
+    timestamp: TimeInterval=Date().timeIntervalSince1970,
+    metrics: [String: Double]=[:],
+    stringInfo: [String: String]=[:]
   ) {
-    self.status = status
-    self.version = version
-    self.timestamp = timestamp
-    self.metrics = metrics
-    self.stringInfo = stringInfo
+    self.status=status
+    self.version=version
+    self.timestamp=timestamp
+    self.metrics=metrics
+    self.stringInfo=stringInfo
   }
 
   /// Legacy initializer to support migration from dictionary-based approach
@@ -45,30 +45,30 @@ public struct SecurityServiceStatus: Sendable, Equatable, Hashable {
   ///   - version: The service version
   ///   - info: Additional service information in dictionary format
   public init(status: String, version: String, info: [String: Any]) {
-    self.status = status
-    self.version = version
-    timestamp = (info["timestamp"] as? TimeInterval) ?? Date().timeIntervalSince1970
+    self.status=status
+    self.version=version
+    timestamp=(info["timestamp"] as? TimeInterval) ?? Date().timeIntervalSince1970
 
     // Extract metrics
-    var extractedMetrics: [String: Double] = [:]
+    var extractedMetrics: [String: Double]=[:]
     for (key, value) in info {
-      if let numericValue = value as? Double {
-        extractedMetrics[key] = numericValue
+      if let numericValue=value as? Double {
+        extractedMetrics[key]=numericValue
       }
     }
-    metrics = extractedMetrics
+    metrics=extractedMetrics
 
     // Extract string info
-    var extractedStringInfo: [String: String] = [:]
+    var extractedStringInfo: [String: String]=[:]
     for (key, value) in info {
-      if let stringValue = value as? String {
-        extractedStringInfo[key] = stringValue
+      if let stringValue=value as? String {
+        extractedStringInfo[key]=stringValue
       } else if !(value is Double) {
         // Convert non-string, non-double values to strings
-        extractedStringInfo[key] = String(describing: value)
+        extractedStringInfo[key]=String(describing: value)
       }
     }
-    stringInfo = extractedStringInfo
+    stringInfo=extractedStringInfo
   }
 
   // Required for Equatable/Hashable

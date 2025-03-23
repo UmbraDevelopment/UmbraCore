@@ -1,15 +1,12 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+load("//:swift_rules.bzl", "umbra_swift_test")
 
-swift_library(
+umbra_swift_test(
     name = "TestKit",
     srcs = glob(["**/*.swift"]),
-    visibility = ["//visibility:public"],
     deps = [
-        "//Sources/ResticCLIHelper:ResticCLIHelper",
-        "//Sources/ResticCLIHelperCommands:ResticCLIHelperCommands",
-        "//Sources/ResticTypes:ResticTypes",
-        "//Sources/SecurityInterfaces:SecurityInterfaces",
-        "//Sources/SecurityProtocolsCore:SecurityProtocolsCore",
-        "//Sources/SecurityTypes:SecurityTypes",
+        "//Sources/CoreDTOs",
+        "//Sources/ResticCLIHelper/Commands:ResticCLIHelperCommands",
+        "//Sources/UmbraLogging",
+        "@swiftpkg_swiftybeaver//:SwiftyBeaver",
     ],
 )

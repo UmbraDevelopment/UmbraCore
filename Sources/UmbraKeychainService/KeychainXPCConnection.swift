@@ -5,10 +5,10 @@ final class KeychainXPCConnection: @unchecked Sendable {
   // Using actor to make this thread-safe
   private actor ConnectionState {
     var connection: NSXPCConnection?
-    var isInvalidated = false
+    var isInvalidated=false
 
     func setConnection(_ newConnection: NSXPCConnection?) {
-      connection = newConnection
+      connection=newConnection
     }
 
     func getConnection() -> NSXPCConnection? {
@@ -16,9 +16,9 @@ final class KeychainXPCConnection: @unchecked Sendable {
     }
 
     func invalidate() {
-      isInvalidated = true
+      isInvalidated=true
       connection?.invalidate()
-      connection = nil
+      connection=nil
     }
 
     func isInvalidatedState() -> Bool {
@@ -37,15 +37,15 @@ final class KeychainXPCConnection: @unchecked Sendable {
     }
   }
 
-  private let state = ConnectionState()
-  private let queue = DispatchQueue(
+  private let state=ConnectionState()
+  private let queue=DispatchQueue(
     label: "com.umbracore.keychain.connection",
     qos: .userInitiated
   )
   private let listener: NSXPCListener?
 
-  init(listener: NSXPCListener? = nil) {
-    self.listener = listener
+  init(listener: NSXPCListener?=nil) {
+    self.listener=listener
   }
 
   func connect() async throws -> any KeychainXPCProtocol {
@@ -59,7 +59,7 @@ final class KeychainXPCConnection: @unchecked Sendable {
       }
 
       // Try to get proxy from existing connection
-      if let proxy = await state.getProxyFromConnection() {
+      if let proxy=await state.getProxyFromConnection() {
         return proxy
       }
 
@@ -72,11 +72,11 @@ final class KeychainXPCConnection: @unchecked Sendable {
         ])
       } else {
         // Create connection to service
-        newConnection = NSXPCConnection(serviceName: "com.umbracore.keychain")
+        newConnection=NSXPCConnection(serviceName: "com.umbracore.keychain")
       }
 
-      newConnection.remoteObjectInterface = NSXPCInterface(with: KeychainXPCProtocol.self)
-      newConnection.invalidationHandler = { [weak self] in
+      newConnection.remoteObjectInterface=NSXPCInterface(with: KeychainXPCProtocol.self)
+      newConnection.invalidationHandler={ [weak self] in
         Task { [weak self] in
           if let self {
             await state.invalidate()
@@ -89,7 +89,7 @@ final class KeychainXPCConnection: @unchecked Sendable {
       await state.setConnection(newConnection)
 
       // Get proxy using the actor-isolated method
-      guard let proxy = await state.getProxyFromConnection() else {
+      guard let proxy=await state.getProxyFromConnection() else {
         throw NSError(domain: "com.umbracore.keychain", code: -1, userInfo: [
           NSLocalizedDescriptionKey: "Failed to get remote proxy"
         ])

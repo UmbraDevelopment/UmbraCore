@@ -1,5 +1,8 @@
 load("@rules_pkg//pkg:pkg.bzl", "pkg_tar")
 
+# Build environment configuration
+load(":build_settings.bzl", "build_environment")
+
 package(default_visibility = ["//visibility:public"])
 
 # Package the Swift build rules for distribution
@@ -7,9 +10,9 @@ pkg_tar(
     name = "swift_rules_pkg",
     srcs = [
         "build_rules.bzl",
+        "build_settings.bzl",
         "compiler_options.bzl",
         "docc_rules.bzl",
-        "build_settings.bzl",
     ],
     mode = "0644",
     package_dir = "tools/swift",
@@ -20,15 +23,12 @@ filegroup(
     name = "swift_rules",
     srcs = [
         "build_rules.bzl",
+        "build_settings.bzl",
         "compiler_options.bzl",
         "docc_rules.bzl",
-        "build_settings.bzl",
     ],
     visibility = ["//visibility:public"],
 )
-
-# Build environment configuration
-load(":build_settings.bzl", "build_environment")
 
 build_environment(
     name = "local_environment",

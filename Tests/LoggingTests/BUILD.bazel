@@ -1,7 +1,11 @@
+load("//:swift_rules.bzl", "umbra_swift_test")
+
+umbra_swift_test(
+    name = "LoggingTests",
+    srcs = glob(["**/*.swift"]),
     deps = [
-        "//Sources/ErrorHandling",
+        "//Sources/SecurityTypes",
         "//Sources/UmbraLogging",
-        "//Sources/UmbraLoggingAdapters",
-        "//Tests/UmbraTestKit:UmbraTestKit",
+        "@swiftpkg_swiftybeaver//:SwiftyBeaver",
     ],
 )

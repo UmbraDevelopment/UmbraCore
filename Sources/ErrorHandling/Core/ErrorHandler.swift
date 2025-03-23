@@ -6,11 +6,11 @@ import Foundation
 /// Error domain namespace
 public enum ErrorDomain {
   /// Security domain
-  public static let security = "Security"
+  public static let security="Security"
   /// Crypto domain
-  public static let crypto = "Crypto"
+  public static let crypto="Crypto"
   /// Application domain
-  public static let application = "Application"
+  public static let application="Application"
 }
 
 /// Error context protocol
@@ -34,9 +34,9 @@ public struct BaseErrorContext: ErrorContext {
 
   /// Initialise with domain, code and description
   public init(domain: String, code: Int, description: String) {
-    self.domain = domain
-    self.code = code
-    self.description = description
+    self.domain=domain
+    self.code=code
+    self.description=description
   }
 }
 
@@ -45,7 +45,7 @@ public struct BaseErrorContext: ErrorContext {
 public final class ErrorHandler {
   /// Shared instance of the error handler
   @MainActor
-  public static let shared = ErrorHandler()
+  public static let shared=ErrorHandler()
 
   /// The logger used for error logging
   private var logger: ErrorLoggingProtocol?
@@ -58,19 +58,19 @@ public final class ErrorHandler {
 
   /// Private initialiser to enforce singleton pattern
   private init() {
-    recoveryProviders = []
+    recoveryProviders=[]
   }
 
   /// Set the logger to use for error logging
   /// - Parameter logger: The logger to use
   public func setLogger(_ logger: ErrorLoggingProtocol) {
-    self.logger = logger
+    self.logger=logger
   }
 
   /// Set the notification handler to use for presenting errors
   /// - Parameter handler: The notification handler to use
   public func setNotificationHandler(_ handler: ErrorNotificationProtocol) {
-    notificationHandler = handler
+    notificationHandler=handler
   }
 
   /// Register a recovery options provider
@@ -89,21 +89,21 @@ public final class ErrorHandler {
   public func handle(
     _ error: some UmbraError,
     severity: ErrorHandlingCommon.ErrorSeverity = .error,
-    file: String = #file,
-    function: String = #function,
-    line: Int = #line
+    file: String=#file,
+    function: String=#function,
+    line: Int=#line
   ) {
     // Convert the types to the interfaces version to avoid type conflicts
-    let interfaceSource = ErrorHandlingInterfaces.ErrorSource(
+    let interfaceSource=ErrorHandlingInterfaces.ErrorSource(
       file: file,
       line: line,
       function: function
     )
-    let interfaceSeverity = ErrorHandlingInterfaces
+    let interfaceSeverity=ErrorHandlingInterfaces
       .ErrorSeverity(rawValue: severity.rawValue) ?? .error
 
     // Enrich the error with source information
-    let enrichedError = error.with(source: interfaceSource)
+    let enrichedError=error.with(source: interfaceSource)
 
     // Log the error
     logger?.log(error: enrichedError, severity: interfaceSeverity)
@@ -111,7 +111,7 @@ public final class ErrorHandler {
     // Present error to the user if appropriate and notification handler is set
     if interfaceSeverity.shouldNotify, let notificationHandler {
       // Collect recovery options from all providers
-      let recoveryOptions = recoveryProviders.flatMap {
+      let recoveryOptions=recoveryProviders.flatMap {
         $0.recoveryOptions(for: enrichedError)
       }
 
@@ -142,9 +142,9 @@ extension ErrorHandler {
   public func handleSecurity(
     _ error: ErrorHandlingDomains.SecurityError,
     severity: ErrorHandlingCommon.ErrorSeverity = .error,
-    file: String = #file,
-    function: String = #function,
-    line: Int = #line
+    file: String=#file,
+    function: String=#function,
+    line: Int=#line
   ) {
     handle(error, severity: severity, file: file, function: function, line: line)
   }
@@ -159,9 +159,9 @@ extension ErrorHandler {
   public func handleRepository(
     _ error: ErrorHandlingDomains.RepositoryError,
     severity: ErrorHandlingCommon.ErrorSeverity = .error,
-    file: String = #file,
-    function: String = #function,
-    line: Int = #line
+    file: String=#file,
+    function: String=#function,
+    line: Int=#line
   ) {
     handle(error, severity: severity, file: file, function: function, line: line)
   }

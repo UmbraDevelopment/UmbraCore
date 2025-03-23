@@ -1,22 +1,22 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
-load("//:bazel/macros/swift.bzl", "umbra_swift_library")
+load("//:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
     name = "Core",
     srcs = glob(["**/*.swift"]),
     deps = [
-        "//Sources/CryptoTypes",
-        "//Sources/CryptoTypes/Protocols:CryptoTypesProtocols",
-        "//Sources/CryptoTypes/Types:CryptoTypesTypes",
-        "//Sources/ErrorHandling",
-        "//Sources/ErrorHandling/Common:ErrorHandlingCommon",
-        "//Sources/ErrorHandling/Models:ErrorHandlingModels",
-        "//Sources/ErrorHandling/Protocols:ErrorHandlingProtocols",
         "//Sources/ObjCBridgingTypesFoundation",
-        "//Sources/SecurityInterfaces",
-        "//Sources/SecurityTypes",
-        "//Sources/SecurityTypes/Protocols:SecurityTypesProtocols",
-        "//Sources/SecurityTypes/Types:SecurityTypesTypes",
-        "//Sources/UmbraLogging",
     ],
 )
+
+# Uncomment if documentation generation is needed
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+#
+# swift_package(
+#     name = "docc_documentation",
+#     srcs = glob([
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
+#     deps = ["//Sources/Core"],
+# )

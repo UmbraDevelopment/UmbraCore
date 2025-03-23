@@ -6,11 +6,11 @@ import Foundation
 /// Error domain namespace
 public enum ErrorDomain {
   /// Security domain
-  public static let security = "Security"
+  public static let security="Security"
   /// Crypto domain
-  public static let crypto = "Crypto"
+  public static let crypto="Crypto"
   /// Application domain
-  public static let application = "Application"
+  public static let application="Application"
 }
 
 /// Error context protocol
@@ -34,9 +34,9 @@ public struct BaseErrorContext: ErrorContext {
 
   /// Initialise with domain, code and description
   public init(domain: String, code: Int, description: String) {
-    self.domain = domain
-    self.code = code
-    self.description = description
+    self.domain=domain
+    self.code=code
+    self.description=description
   }
 }
 
@@ -267,10 +267,10 @@ extension UmbraErrors.Network.Core {
   /// Create a timeout error
   public static func makeTimeout(
     operation: String,
-    timeoutMs: Int = 30_000,
-    file _: String = #file,
-    line _: Int = #line,
-    function _: String = #function
+    timeoutMs: Int=30000,
+    file _: String=#file,
+    line _: Int=#line,
+    function _: String=#function
   ) -> Self {
     .timeout(operation: operation, timeoutMs: timeoutMs)
   }
@@ -278,9 +278,9 @@ extension UmbraErrors.Network.Core {
   /// Create a data corruption error
   public static func makeDataCorruption(
     reason: String,
-    file _: String = #file,
-    line _: Int = #line,
-    function _: String = #function
+    file _: String=#file,
+    line _: Int=#line,
+    function _: String=#function
   ) -> Self {
     .dataCorruption(reason: reason)
   }
@@ -288,9 +288,9 @@ extension UmbraErrors.Network.Core {
   /// Create a transmission error
   public static func makeTransmission(
     reason: String,
-    file _: String = #file,
-    line _: Int = #line,
-    function _: String = #function
+    file _: String=#file,
+    line _: Int=#line,
+    function _: String=#function
   ) -> Self {
     .transmissionError(reason: reason)
   }

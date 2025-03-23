@@ -3,4 +3,4 @@
 /// This module provides cryptographic service implementations.
 
 // Export DefaultCryptoService
-public typealias DefaultCryptoService = DefaultCryptoServiceImpl
+public typealias DefaultCryptoService=DefaultCryptoServiceImpl

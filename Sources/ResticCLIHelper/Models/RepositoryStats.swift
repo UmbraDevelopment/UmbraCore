@@ -28,13 +28,13 @@ public struct RepositoryStats: Repositories.RepositoryStats, Codable {
   public let compressionSpaceSaving: Double
 
   private enum CodingKeys: String, CodingKey {
-    case totalSize = "total_size"
-    case totalFileCount = "total_file_count"
-    case totalBlobCount = "total_blob_count"
-    case snapshotsCount = "snapshots_count"
-    case totalUncompressedSize = "total_uncompressed_size"
-    case compressionRatio = "compression_ratio"
-    case compressionProgress = "compression_progress"
-    case compressionSpaceSaving = "compression_space_saving"
+    case totalSize="total_size"
+    case totalFileCount="total_file_count"
+    case totalBlobCount="total_blob_count"
+    case snapshotsCount="snapshots_count"
+    case totalUncompressedSize="total_uncompressed_size"
+    case compressionRatio="compression_ratio"
+    case compressionProgress="compression_progress"
+    case compressionSpaceSaving="compression_space_saving"
   }
 }

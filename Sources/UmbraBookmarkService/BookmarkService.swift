@@ -6,11 +6,11 @@ public final class BookmarkService: NSObject, BookmarkServiceProtocol, NSXPCList
 @unchecked Sendable {
   /// Set of URLs currently being accessed
   @MainActor
-  private var activeAccessURLs: Set<URL> = []
+  private var activeAccessURLs: Set<URL>=[]
 
   // Thread-safe storage for connections
-  private let connectionLock = NSLock()
-  private var connections: [UUID: NSXPCConnection] = [:]
+  private let connectionLock=NSLock()
+  private var connections: [UUID: NSXPCConnection]=[:]
 
   public override init() {
     super.init()
@@ -20,7 +20,7 @@ public final class BookmarkService: NSObject, BookmarkServiceProtocol, NSXPCList
   private func storeConnection(_ connection: NSXPCConnection, forID id: UUID) {
     connectionLock.lock()
     defer { connectionLock.unlock() }
-    connections[id] = connection
+    connections[id]=connection
   }
 
   private func getConnection(forID id: UUID) -> NSXPCConnection? {
@@ -40,11 +40,11 @@ public final class BookmarkService: NSObject, BookmarkServiceProtocol, NSXPCList
   @MainActor
   public func createBookmark(
     for url: URL,
-    options: URL.BookmarkCreationOptions = [.withSecurityScope]
+    options: URL.BookmarkCreationOptions=[.withSecurityScope]
   ) async throws -> Data {
     do {
       // Create a security-scoped bookmark
-      let bookmarkData = try url.bookmarkData(
+      let bookmarkData=try url.bookmarkData(
         options: options,
         includingResourceValuesForKeys: nil,
         relativeTo: nil
@@ -58,12 +58,12 @@ public final class BookmarkService: NSObject, BookmarkServiceProtocol, NSXPCList
   @MainActor
   public func resolveBookmark(
     _ bookmarkData: Data,
-    options: URL.BookmarkResolutionOptions = [.withSecurityScope]
+    options: URL.BookmarkResolutionOptions=[.withSecurityScope]
   ) async throws -> (URL, Bool) {
-    var isStale = false
+    var isStale=false
     do {
       // Resolve a security-scoped bookmark
-      let url = try URL(
+      let url=try URL(
         resolvingBookmarkData: bookmarkData,
         options: options,
         relativeTo: nil,
@@ -124,14 +124,14 @@ public final class BookmarkService: NSObject, BookmarkServiceProtocol, NSXPCList
     shouldAcceptNewConnection newConnection: NSXPCConnection
   ) -> Bool {
     // Configure the connection immediately
-    let exportedInterface = NSXPCInterface(with: BookmarkServiceProtocol.self)
-    newConnection.exportedInterface = exportedInterface
+    let exportedInterface=NSXPCInterface(with: BookmarkServiceProtocol.self)
+    newConnection.exportedInterface=exportedInterface
 
     // Generate a UUID to track this connection
-    let connectionID = UUID()
+    let connectionID=UUID()
 
     // Set up connection handler for invalidation
-    newConnection.invalidationHandler = { [weak self] in
+    newConnection.invalidationHandler={ [weak self] in
       self?.removeConnection(forID: connectionID)
     }
 
@@ -144,9 +144,9 @@ public final class BookmarkService: NSObject, BookmarkServiceProtocol, NSXPCList
 
       // Now we're on the main thread
       Task { @MainActor [self] in
-        if let connection = getConnection(forID: connectionID) {
+        if let connection=getConnection(forID: connectionID) {
           // Configure the connection object
-          connection.exportedObject = self
+          connection.exportedObject=self
           connection.resume()
         }
       }

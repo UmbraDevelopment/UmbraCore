@@ -2,10 +2,10 @@ import Foundation
 
 /// Log level for entries
 public enum LogLevel: String, Sendable {
-  case debug = "DEBUG"
-  case info = "INFO"
-  case warning = "WARNING"
-  case error = "ERROR"
+  case debug="DEBUG"
+  case info="INFO"
+  case warning="WARNING"
+  case error="ERROR"
 }
 
 /// A log entry with message and metadata
@@ -40,9 +40,9 @@ public struct LogEntry: Sendable, Identifiable {
 
   /// Formatted message including metadata
   public var formattedMessage: String {
-    var result = message
+    var result=message
     if let metadata, !metadata.isEmpty {
-      let metadataString = metadata.map { "\($0.key)=\($0.value)" }.joined(separator: ", ")
+      let metadataString=metadata.map { "\($0.key)=\($0.value)" }.joined(separator: ", ")
       result += " {\(metadataString)}"
     }
     return result
@@ -66,31 +66,31 @@ public struct LogEntry: Sendable, Identifiable {
   ///   - function: Source function
   ///   - line: Source line
   public init(
-    id: String = String(Int.random(in: 0..<Int.max)),
-    timestamp: Int = Int(Date().timeIntervalSince1970),
+    id: String=String(Int.random(in: 0..<Int.max)),
+    timestamp: Int=Int(Date().timeIntervalSince1970),
     level: LogLevel,
     message: String,
-    metadata: [String: String]? = nil,
-    file: String = #file,
-    function: String = #function,
-    line: Int = #line
+    metadata: [String: String]?=nil,
+    file: String=#file,
+    function: String=#function,
+    line: Int=#line
   ) {
-    self.id = id
-    self.timestamp = timestamp
-    self.level = level
-    self.message = message
-    self.metadata = metadata
-    self.file = file
-    self.function = function
-    self.line = line
+    self.id=id
+    self.timestamp=timestamp
+    self.level=level
+    self.message=message
+    self.metadata=metadata
+    self.file=file
+    self.function=function
+    self.line=line
   }
 
   /// Create a copy of this entry with updated metadata
   /// - Parameter metadata: New metadata to merge with existing
   /// - Returns: New log entry with updated metadata
   public func with(metadata: [String: String]) -> LogEntry {
-    var newMetadata = self.metadata ?? [:]
-    metadata.forEach { newMetadata[$0.key] = $0.value }
+    var newMetadata=self.metadata ?? [:]
+    metadata.forEach { newMetadata[$0.key]=$0.value }
 
     return LogEntry(
       id: id,

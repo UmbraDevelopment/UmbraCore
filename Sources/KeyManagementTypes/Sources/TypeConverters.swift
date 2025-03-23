@@ -105,32 +105,32 @@ public enum TypeConverters {
       status: RawStatus = .active,
       storageLocation: RawLocations,
       accessControls: KeyMetadata.AccessControls = .none,
-      createdAt: Date = Date(),
-      lastModified: Date = Date(),
-      expiryDate: Date? = nil,
+      createdAt: Date=Date(),
+      lastModified: Date=Date(),
+      expiryDate: Date?=nil,
       algorithm: String,
       keySize: Int,
       identifier: String,
-      version: Int = 1,
-      exportable: Bool = false,
-      isSystemKey: Bool = false,
-      isProcessIsolated: Bool = false,
-      customMetadata: [String: String]? = nil
+      version: Int=1,
+      exportable: Bool=false,
+      isSystemKey: Bool=false,
+      isProcessIsolated: Bool=false,
+      customMetadata: [String: String]?=nil
     ) {
-      self.status = status
-      self.storageLocation = storageLocation
-      self.accessControls = accessControls
-      self.createdAt = createdAt
-      self.lastModified = lastModified
-      self.expiryDate = expiryDate
-      self.algorithm = algorithm
-      self.keySize = keySize
-      self.identifier = identifier
-      self.version = version
-      self.exportable = exportable
-      self.isSystemKey = isSystemKey
-      self.isProcessIsolated = isProcessIsolated
-      self.customMetadata = customMetadata
+      self.status=status
+      self.storageLocation=storageLocation
+      self.accessControls=accessControls
+      self.createdAt=createdAt
+      self.lastModified=lastModified
+      self.expiryDate=expiryDate
+      self.algorithm=algorithm
+      self.keySize=keySize
+      self.identifier=identifier
+      self.version=version
+      self.exportable=exportable
+      self.isSystemKey=isSystemKey
+      self.isProcessIsolated=isProcessIsolated
+      self.customMetadata=customMetadata
     }
 
     public init(
@@ -139,34 +139,34 @@ public enum TypeConverters {
       accessControls: KeyMetadata.AccessControls = .none,
       createdAtTimestamp: Int64,
       lastModifiedTimestamp: Int64,
-      expiryTimestamp: Int64? = nil,
+      expiryTimestamp: Int64?=nil,
       algorithm: String,
       keySize: Int,
       identifier: String,
-      version: Int = 1,
-      exportable: Bool = false,
-      isSystemKey: Bool = false,
-      isProcessIsolated: Bool = false,
-      customMetadata: [String: String]? = nil
+      version: Int=1,
+      exportable: Bool=false,
+      isSystemKey: Bool=false,
+      isProcessIsolated: Bool=false,
+      customMetadata: [String: String]?=nil
     ) {
-      self.status = status
-      self.storageLocation = storageLocation
-      self.accessControls = accessControls
-      createdAt = Date(timeIntervalSince1970: TimeInterval(createdAtTimestamp))
-      lastModified = Date(timeIntervalSince1970: TimeInterval(lastModifiedTimestamp))
+      self.status=status
+      self.storageLocation=storageLocation
+      self.accessControls=accessControls
+      createdAt=Date(timeIntervalSince1970: TimeInterval(createdAtTimestamp))
+      lastModified=Date(timeIntervalSince1970: TimeInterval(lastModifiedTimestamp))
       if let expiryTimestamp {
-        expiryDate = Date(timeIntervalSince1970: TimeInterval(expiryTimestamp))
+        expiryDate=Date(timeIntervalSince1970: TimeInterval(expiryTimestamp))
       } else {
-        expiryDate = nil
+        expiryDate=nil
       }
-      self.algorithm = algorithm
-      self.keySize = keySize
-      self.identifier = identifier
-      self.version = version
-      self.exportable = exportable
-      self.isSystemKey = isSystemKey
-      self.isProcessIsolated = isProcessIsolated
-      self.customMetadata = customMetadata
+      self.algorithm=algorithm
+      self.keySize=keySize
+      self.identifier=identifier
+      self.version=version
+      self.exportable=exportable
+      self.isSystemKey=isSystemKey
+      self.isProcessIsolated=isProcessIsolated
+      self.customMetadata=customMetadata
     }
   }
 
@@ -272,15 +272,12 @@ extension KeyMetadata {
 
 extension StorageLocation {
   /// Type alias for raw locations type
-  public typealias RawLocations = TypeConverters.RawLocations
 }
 
 extension KeyStatus {
   /// Type alias for raw status type
-  public typealias RawStatus = TypeConverters.RawStatus
 }
 
 extension KeyMetadata {
   /// Type alias for raw metadata type
-  public typealias RawMetadata = TypeConverters.RawMetadata
 }

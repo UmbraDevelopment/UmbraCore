@@ -17,9 +17,9 @@ public struct CryptoConfig: Sendable {
   public let ivLength: Int
 
   public init(algorithm: String, keySize: Int, ivLength: Int) {
-    self.algorithm = algorithm
-    self.keySize = keySize
-    self.ivLength = ivLength
+    self.algorithm=algorithm
+    self.keySize=keySize
+    self.ivLength=ivLength
   }
 }
 
@@ -55,9 +55,9 @@ public actor CredentialManager {
     xpcService: any(XPCServiceProtocolComplete & Sendable),
     config: CryptoConfig
   ) {
-    keychain = KeychainAccess(service: service)
-    self.xpcService = xpcService
-    self.config = config
+    keychain=KeychainAccess(service: service)
+    self.xpcService=xpcService
+    self.config=config
   }
 
   /// Store a credential securely in the keychain
@@ -65,12 +65,12 @@ public actor CredentialManager {
   ///   - credential: The credential data to store
   ///   - identifier: Unique identifier for the credential
   public func store(credential: Data, withIdentifier identifier: String) async throws {
-    let key = try await getMasterKey()
+    let key=try await getMasterKey()
 
     // Generate random IV using the XPC service
-    let ivResult = await xpcService.generateRandomData(length: config.ivLength)
-    guard case let .success(iv) = ivResult else {
-      if case let .failure(error) = ivResult {
+    let ivResult=await xpcService.generateRandomData(length: config.ivLength)
+    guard case let .success(iv)=ivResult else {
+      if case let .failure(error)=ivResult {
         throw error
       }
       throw UmbraErrors.GeneralSecurity.Core
@@ -79,11 +79,11 @@ public actor CredentialManager {
 
     // Encrypt the credential
     // Convert Data to SecureBytes using array initializer
-    let credentialBytes = SecureBytes(bytes: [UInt8](credential))
-    let keyBytes = SecureBytes(bytes: [UInt8](key))
-    let ivBytes = SecureBytes(bytes: [UInt8](iv))
+    let credentialBytes=SecureBytes(bytes: [UInt8](credential))
+    let keyBytes=SecureBytes(bytes: [UInt8](key))
+    let ivBytes=SecureBytes(bytes: [UInt8](iv))
 
-    let encryptResult = await encrypt(
+    let encryptResult=await encrypt(
       data: credentialBytes,
       using: keyBytes,
       iv: ivBytes,
@@ -93,19 +93,19 @@ public actor CredentialManager {
     switch encryptResult {
       case let .success(encrypted):
         // Convert SecureBytes to Data for storage
-        var encryptedData = Data()
+        var encryptedData=Data()
         encrypted.withUnsafeBytes { buffer in
-          encryptedData = Data(buffer)
+          encryptedData=Data(buffer)
         }
 
         // Convert SecureBytes IV to Data
-        var dataIV = Data()
+        var dataIV=Data()
         iv.withUnsafeBytes { buffer in
-          dataIV = Data(buffer)
+          dataIV=Data(buffer)
         }
 
-        let storageData = SecureStorageData(encryptedData: encryptedData, iv: dataIV)
-        let encodedData = try JSONEncoder().encode(storageData)
+        let storageData=SecureStorageData(encryptedData: encryptedData, iv: dataIV)
+        let encodedData=try JSONEncoder().encode(storageData)
         try await keychain.save(encodedData, forKey: identifier, metadata: nil)
       case let .failure(error):
         throw error
@@ -116,15 +116,15 @@ public actor CredentialManager {
   /// - Parameter identifier: Unique identifier for the credential
   /// - Returns: The decrypted credential data
   public func retrieve(withIdentifier identifier: String) async throws -> Data {
-    let key = try await getMasterKey()
-    let (encodedData, _) = try await keychain.loadWithMetadata(forKey: identifier)
-    let storageData = try JSONDecoder().decode(SecureStorageData.self, from: encodedData)
+    let key=try await getMasterKey()
+    let (encodedData, _)=try await keychain.loadWithMetadata(forKey: identifier)
+    let storageData=try JSONDecoder().decode(SecureStorageData.self, from: encodedData)
 
-    let keyBytes = SecureBytes(bytes: [UInt8](key))
-    let encryptedBytes = SecureBytes(bytes: [UInt8](storageData.encryptedData))
-    let ivBytes = SecureBytes(bytes: [UInt8](storageData.iv))
+    let keyBytes=SecureBytes(bytes: [UInt8](key))
+    let encryptedBytes=SecureBytes(bytes: [UInt8](storageData.encryptedData))
+    let ivBytes=SecureBytes(bytes: [UInt8](storageData.iv))
 
-    let decryptResult = await decrypt(
+    let decryptResult=await decrypt(
       data: encryptedBytes,
       using: keyBytes,
       iv: ivBytes,
@@ -134,9 +134,9 @@ public actor CredentialManager {
     switch decryptResult {
       case let .success(decrypted):
         // Convert SecureBytes to Data
-        var resultData = Data()
+        var resultData=Data()
         decrypted.withUnsafeBytes { buffer in
-          resultData = Data(buffer)
+          resultData=Data(buffer)
         }
         return resultData
       case let .failure(error):
@@ -155,7 +155,7 @@ public actor CredentialManager {
   /// - Returns: True if the credential exists, false otherwise
   public func exists(withIdentifier identifier: String) async -> Bool {
     do {
-      _ = try await keychain.loadWithMetadata(forKey: identifier)
+      _=try await keychain.loadWithMetadata(forKey: identifier)
       return true
     } catch {
       return false
@@ -177,18 +177,18 @@ public actor CredentialManager {
   /// - Returns: The master encryption key data
   private func getMasterKey() async throws -> Data {
     do {
-      let (key, _) = try await keychain.loadWithMetadata(forKey: "master_key")
+      let (key, _)=try await keychain.loadWithMetadata(forKey: "master_key")
       return key
     } catch {
       // Master key doesn't exist, generate a new one
     }
 
     // Generate a secure random key using the XPC service
-    let keyLength = config.keySize / 8
+    let keyLength=config.keySize / 8
 
-    let randomDataResult = await xpcService.generateRandomData(length: keyLength)
-    guard case let .success(key) = randomDataResult else {
-      if case let .failure(error) = randomDataResult {
+    let randomDataResult=await xpcService.generateRandomData(length: keyLength)
+    guard case let .success(key)=randomDataResult else {
+      if case let .failure(error)=randomDataResult {
         throw error
       }
       throw UmbraErrors.GeneralSecurity.Core
@@ -196,9 +196,9 @@ public actor CredentialManager {
     }
 
     // Convert SecureBytes to Data first
-    var keyData = Data()
+    var keyData=Data()
     key.withUnsafeBytes { buffer in
-      keyData = Data(buffer)
+      keyData=Data(buffer)
     }
 
     try await keychain.save(keyData, forKey: "master_key", metadata: nil)
@@ -217,7 +217,7 @@ public actor CredentialManager {
     // No conversion needed since the interface now expects SecureBytes
 
     // Using the provided service reference instead of accessing the actor property
-    let result = await service.encryptSecureData(data, keyIdentifier: nil)
+    let result=await service.encryptSecureData(data, keyIdentifier: nil)
 
     // Result is already in the correct type
     return result
@@ -231,7 +231,7 @@ public actor CredentialManager {
     service: any (XPCServiceProtocolComplete & Sendable)
   ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     // Using the provided service reference
-    let result = await service.decryptSecureData(data, keyIdentifier: nil)
+    let result=await service.decryptSecureData(data, keyIdentifier: nil)
 
     // No need to convert back as the result is already SecureBytes
     return result
@@ -241,18 +241,18 @@ public actor CredentialManager {
 /// Access to the system keychain
 private actor KeychainAccess: SecureStorageProvider {
   private let service: String
-  private var items: [String: (data: Data, metadata: [String: String]?)] = [:]
+  private var items: [String: (data: Data, metadata: [String: String]?)]=[:]
 
   init(service: String) {
-    self.service = service
+    self.service=service
   }
 
   func save(_ data: Data, forKey key: String, metadata: [String: String]?) async throws {
-    items[key] = (data: data, metadata: metadata)
+    items[key]=(data: data, metadata: metadata)
   }
 
   func loadWithMetadata(forKey key: String) async throws -> (Data, [String: String]?) {
-    guard let item = items[key] else {
+    guard let item=items[key] else {
       throw UmbraErrors.GeneralSecurity.Core.storageOperationFailed(reason: "Item not found")
     }
     return (item.data, item.metadata)
@@ -276,7 +276,7 @@ private actor KeychainAccess: SecureStorageProvider {
     if preserveKeys {
       // Only clear data but preserve keys
       for key in items.keys {
-        items[key] = (data: Data(), metadata: nil)
+        items[key]=(data: Data(), metadata: nil)
       }
     } else {
       items.removeAll()

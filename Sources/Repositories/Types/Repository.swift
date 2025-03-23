@@ -4,7 +4,7 @@ import Foundation
 /// Deprecated: Use CompleteRepository typealias from RepositoryProtocols.swift instead.
 ///
 /// A complete repository that implements all repository functionality.
-public typealias Repository = RepositoryCore & RepositoryLocking & RepositoryMaintenance &
+public typealias Repository=RepositoryCore & RepositoryLocking & RepositoryMaintenance &
   RepositoryStats
 
 /// Repository statistics data structure.
@@ -51,22 +51,22 @@ public struct RepositoryStatistics: RepositoryStats, Codable, Equatable, Sendabl
     totalSize: UInt64,
     snapshotCount: UInt,
     lastCheck: Date,
-    totalFileCount: Int = 0,
-    totalBlobCount: Int = 0,
-    totalUncompressedSize: Int64 = 0,
-    compressionRatio: Double = 1.0,
-    compressionProgress: Double = 0.0,
-    compressionSpaceSaving: Double = 0.0
+    totalFileCount: Int=0,
+    totalBlobCount: Int=0,
+    totalUncompressedSize: Int64=0,
+    compressionRatio: Double=1.0,
+    compressionProgress: Double=0.0,
+    compressionSpaceSaving: Double=0.0
   ) {
-    storedTotalSize = totalSize
-    self.snapshotCount = snapshotCount
-    self.lastCheck = lastCheck
-    self.totalFileCount = totalFileCount
-    self.totalBlobCount = totalBlobCount
-    self.totalUncompressedSize = totalUncompressedSize
-    self.compressionRatio = compressionRatio
-    self.compressionProgress = compressionProgress
-    self.compressionSpaceSaving = compressionSpaceSaving
+    storedTotalSize=totalSize
+    self.snapshotCount=snapshotCount
+    self.lastCheck=lastCheck
+    self.totalFileCount=totalFileCount
+    self.totalBlobCount=totalBlobCount
+    self.totalUncompressedSize=totalUncompressedSize
+    self.compressionRatio=compressionRatio
+    self.compressionProgress=compressionProgress
+    self.compressionSpaceSaving=compressionSpaceSaving
   }
 
   // MARK: - RepositoryStats Protocol Conformance
@@ -82,7 +82,7 @@ public struct RepositoryStatistics: RepositoryStats, Codable, Equatable, Sendabl
   // MARK: - Codable Implementation
 
   private enum CodingKeys: String, CodingKey {
-    case storedTotalSize = "totalSize"
+    case storedTotalSize="totalSize"
     case snapshotCount
     case lastCheck
     case totalFileCount

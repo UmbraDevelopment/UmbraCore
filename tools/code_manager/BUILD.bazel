@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "code_manager_lib",
+    srcs = ["main.go"],
+    importpath = "dev.mpy.UmbraCore/tools/code_manager",
+    visibility = ["//visibility:private"],
+)
+
+go_binary(
+    name = "code_manager",
+    embed = [":code_manager_lib"],
+    visibility = ["//visibility:public"],
+)

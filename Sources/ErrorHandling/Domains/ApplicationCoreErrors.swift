@@ -6,11 +6,11 @@ import Foundation
 /// Error domain namespace
 public enum ErrorDomain {
   /// Security domain
-  public static let security = "Security"
+  public static let security="Security"
   /// Crypto domain
-  public static let crypto = "Crypto"
+  public static let crypto="Crypto"
   /// Application domain
-  public static let application = "Application"
+  public static let application="Application"
 }
 
 /// Error context protocol
@@ -34,9 +34,9 @@ public struct BaseErrorContext: ErrorContext {
 
   /// Initialise with domain, code and description
   public init(domain: String, code: Int, description: String) {
-    self.domain = domain
-    self.code = code
-    self.description = description
+    self.domain=domain
+    self.code=code
+    self.description=description
   }
 }
 
@@ -218,9 +218,9 @@ extension UmbraErrors.Application.Core {
   /// Create an application error with the specified type and message
   public static func create(
     _ message: String,
-    file _: String = #file,
-    line _: Int = #line,
-    function _: String = #function
+    file _: String=#file,
+    line _: Int=#line,
+    function _: String=#function
   ) -> UmbraErrors.Application.Core {
     .unknown(message)
   }
@@ -228,9 +228,9 @@ extension UmbraErrors.Application.Core {
   /// Create a configuration error with the specified message
   public static func makeConfiguration(
     _ message: String,
-    file _: String = #file,
-    line _: Int = #line,
-    function _: String = #function
+    file _: String=#file,
+    line _: Int=#line,
+    function _: String=#function
   ) -> UmbraErrors.Application.Core {
     .configurationError(message)
   }
@@ -238,9 +238,9 @@ extension UmbraErrors.Application.Core {
   /// Create a resource not found error with the specified message
   public static func makeResourceNotFound(
     _ message: String,
-    file _: String = #file,
-    line _: Int = #line,
-    function _: String = #function
+    file _: String=#file,
+    line _: Int=#line,
+    function _: String=#function
   ) -> UmbraErrors.Application.Core {
     .resourceNotFound(message)
   }

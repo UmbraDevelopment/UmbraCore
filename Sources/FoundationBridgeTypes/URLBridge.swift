@@ -21,12 +21,12 @@ public struct URLBridge: Sendable {
     guard string.contains("://") || string.hasPrefix("/") else {
       return nil
     }
-    stringValue = string
+    stringValue=string
   }
 
   /// Initialize with a file path
   public init(fileURLWithPath path: String) {
-    stringValue = "file://" + path
+    stringValue="file://" + path
   }
 }
 
@@ -34,19 +34,19 @@ public struct URLBridge: Sendable {
 extension URLBridge {
   /// Get the last path component
   public var lastPathComponent: String {
-    let components = stringValue.split(separator: "/")
+    let components=stringValue.split(separator: "/")
     return components.last.map(String.init) ?? ""
   }
 
   /// Get the path extension
   public var pathExtension: String {
-    let components = lastPathComponent.split(separator: ".")
+    let components=lastPathComponent.split(separator: ".")
     return components.count > 1 ? String(components.last!) : ""
   }
 
   /// Append a path component
   public func appendingPathComponent(_ pathComponent: String) -> URLBridge {
-    var newString = stringValue
+    var newString=stringValue
     if !newString.hasSuffix("/") {
       newString += "/"
     }

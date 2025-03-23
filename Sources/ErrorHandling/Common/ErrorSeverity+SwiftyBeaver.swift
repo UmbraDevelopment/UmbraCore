@@ -42,9 +42,9 @@ extension ErrorSeverity {
   ///   - line: The line where the log is called from
   public func log(
     _ message: @autoclosure () -> Any,
-    file: String = #file,
-    function _: String = #function,
-    line: Int = #line
+    file: String=#file,
+    function _: String=#function,
+    line: Int=#line
   ) {
     // Forward to a logging implementation that will be provided at runtime
     // This doesn't directly log, but relies on the app having a configured logging system

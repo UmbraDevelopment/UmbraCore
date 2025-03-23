@@ -90,7 +90,7 @@
 /// - Concurrent evaluation
 public enum Features {
   /// Current version of the Features module
-  public static let version = "1.0.0"
+  public static let version="1.0.0"
 
   /// Initialise Features with default configuration
   public static func initialize() {

@@ -136,8 +136,8 @@ public final class SecurityServiceDTOAdapter: SecurityServiceDTOProtocol {
 
   /// Initialize with a security service
   /// - Parameter securityService: The security service to adapt
-  public init(securityService: SecurityService = DefaultSecurityService.shared) {
-    self.securityService = securityService
+  public init(securityService: SecurityService=DefaultSecurityService.shared) {
+    self.securityService=securityService
   }
 
   // MARK: - SecurityServiceDTOProtocol Implementation
@@ -147,7 +147,7 @@ public final class SecurityServiceDTOAdapter: SecurityServiceDTOProtocol {
   /// - Returns: A result containing the random bytes or an error
   public func generateRandomBytes(count: Int) -> OperationResultDTO<[UInt8]> {
     do {
-      let bytes = try securityService.generateRandomBytes(count: count)
+      let bytes=try securityService.generateRandomBytes(count: count)
       return .success(bytes)
     } catch {
       return .failure(
@@ -162,7 +162,7 @@ public final class SecurityServiceDTOAdapter: SecurityServiceDTOProtocol {
   /// - Returns: A result containing the token as a hex string or an error
   public func generateSecureToken(byteCount: Int) -> OperationResultDTO<String> {
     do {
-      let token = try securityService.generateSecureToken(byteCount: byteCount)
+      let token=try securityService.generateSecureToken(byteCount: byteCount)
       return .success(token)
     } catch {
       return .failure(
@@ -179,8 +179,8 @@ public final class SecurityServiceDTOAdapter: SecurityServiceDTOProtocol {
   /// - Returns: A result containing the hash or an error
   public func hashData(_ data: [UInt8], config: SecurityConfigDTO) -> OperationResultDTO<[UInt8]> {
     do {
-      let algorithm = mapHashAlgorithm(from: config)
-      let hash = try securityService.hashData(Data(data), algorithm: algorithm)
+      let algorithm=mapHashAlgorithm(from: config)
+      let hash=try securityService.hashData(Data(data), algorithm: algorithm)
       return .success([UInt8](hash))
     } catch {
       return .failure(
@@ -202,7 +202,7 @@ public final class SecurityServiceDTOAdapter: SecurityServiceDTOProtocol {
     config _: SecurityConfigDTO
   ) -> OperationResultDTO<[UInt8]> {
     do {
-      let encryptedData = try securityService.encrypt(data, key: key)
+      let encryptedData=try securityService.encrypt(data, key: key)
       return .success(encryptedData)
     } catch {
       return .failure(
@@ -224,7 +224,7 @@ public final class SecurityServiceDTOAdapter: SecurityServiceDTOProtocol {
     config _: SecurityConfigDTO
   ) -> OperationResultDTO<[UInt8]> {
     do {
-      let decryptedData = try securityService.decrypt(data, key: key)
+      let decryptedData=try securityService.decrypt(data, key: key)
       return .success(decryptedData)
     } catch {
       return .failure(
@@ -241,7 +241,7 @@ public final class SecurityServiceDTOAdapter: SecurityServiceDTOProtocol {
   /// - Returns: The hash algorithm
   private func mapHashAlgorithm(from config: SecurityConfigDTO) -> HashAlgorithm {
     // Default to SHA256 if not specified
-    guard let algorithmName = config.options["algorithm"] else {
+    guard let algorithmName=config.options["algorithm"] else {
       return .sha256
     }
 
@@ -260,8 +260,8 @@ public final class SecurityServiceDTOAdapter: SecurityServiceDTOProtocol {
   /// - Returns: An operation failure
   private func mapError(_ error: Error)
   -> (code: Int32, message: String, details: [String: String]) {
-    if let securityError = error as? UmbraErrors.Security.Core {
-      let errorDTO = mapSecurityError(securityError)
+    if let securityError=error as? UmbraErrors.Security.Core {
+      let errorDTO=mapSecurityError(securityError)
       return (Int32(errorDTO.code), errorDTO.message, errorDTO.details)
     } else {
       return (
@@ -277,8 +277,8 @@ public final class SecurityServiceDTOAdapter: SecurityServiceDTOProtocol {
   /// - Returns: A security error DTO
   private func mapSecurityError(_ error: UmbraErrors.Security.Core) -> SecurityErrorDTO {
     // Handle all possible security errors with appropriate mappings
-    let errorDTO = SecurityErrorDTO(
-      code: 1_001,
+    let errorDTO=SecurityErrorDTO(
+      code: 1001,
       domain: "security.service",
       message: "Security operation failed",
       details: ["error": "\(error)"]

@@ -1,8 +1,9 @@
 import CommonCrypto
-import CoreErrors
 import CoreServicesTypesNoFoundation
-import ErrorHandling
+import ErrorHandlingCore
 import ErrorHandlingDomains
+import ErrorHandlingInterfaces
+import ErrorHandlingMapping
 import Foundation
 import FoundationBridgeTypes
 import SecurityBridge
@@ -43,11 +44,11 @@ public final class SecurityService {
   private let securityProvider: DefaultSecurityProviderImpl
   private let bookmarkService: BookmarkServiceType
 
-  /// Initialize the service
+  /// Initialise the service
   public init() {
     bookmarkService = DefaultBookmarkService()
     securityProvider = DefaultSecurityProviderImpl()
-    print("SecurityService initialized with DefaultBookmarkService")
+    print("SecurityService initialised with DefaultBookmarkService")
   }
 
   /// Create a security-scoped bookmark for a URL

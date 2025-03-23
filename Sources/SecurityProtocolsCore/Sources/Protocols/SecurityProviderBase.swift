@@ -41,7 +41,7 @@ public final class SecurityProviderBaseAdapter: SecurityProviderBase {
   private let provider: any SecurityProviderProtocol
 
   public init(provider: any SecurityProviderProtocol) {
-    self.provider = provider
+    self.provider=provider
   }
 
   public static var protocolIdentifier: String {

@@ -102,9 +102,9 @@ public final class SecurityProvider: SecurityProviderProtocol {
 
   /// Creates a new instance with default services
   public init() {
-    cryptoService = CryptoService()
-    keyManager = KeyManager()
-    providerCore = SecurityProviderCore(cryptoService: cryptoService, keyManager: keyManager)
+    cryptoService=CryptoService()
+    keyManager=KeyManager()
+    providerCore=SecurityProviderCore(cryptoService: cryptoService, keyManager: keyManager)
   }
 
   /// Creates a new instance with the specified services
@@ -112,9 +112,9 @@ public final class SecurityProvider: SecurityProviderProtocol {
   ///   - cryptoService: The crypto service to use
   ///   - keyManager: The key manager to use
   public init(cryptoService: CryptoServiceProtocol, keyManager: KeyManagementProtocol) {
-    self.cryptoService = cryptoService
-    self.keyManager = keyManager
-    providerCore = SecurityProviderCore(cryptoService: cryptoService, keyManager: keyManager)
+    self.cryptoService=cryptoService
+    self.keyManager=keyManager
+    providerCore=SecurityProviderCore(cryptoService: cryptoService, keyManager: keyManager)
   }
 
   // MARK: - SecurityProviderProtocol

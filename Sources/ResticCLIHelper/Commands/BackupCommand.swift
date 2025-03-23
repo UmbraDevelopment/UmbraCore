@@ -16,18 +16,18 @@ import ResticTypes
 ///     .withProgress()
 /// ```
 public final class BackupCommand: ResticCommand, @unchecked Sendable {
-  private var paths: [String] = []
-  private var tags: [String] = []
+  private var paths: [String]=[]
+  private var tags: [String]=[]
   private var host: String?
-  private var excludePatterns: [String] = []
-  public private(set) var enableProgress: Bool = false
+  private var excludePatterns: [String]=[]
+  public private(set) var enableProgress: Bool=false
   private var parentPID: Int?
   public private(set) var options: CommonOptions
 
   public var commandName: String { "backup" }
 
   public var commandArguments: [String] {
-    var args = [String]()
+    var args=[String]()
 
     // Add paths
     args.append(contentsOf: paths)
@@ -57,7 +57,7 @@ public final class BackupCommand: ResticCommand, @unchecked Sendable {
     }
 
     // Add parent process ID for proper cancellation handling
-    if let pid = parentPID {
+    if let pid=parentPID {
       args.append("--parent")
       args.append(String(pid))
     }
@@ -74,14 +74,14 @@ public final class BackupCommand: ResticCommand, @unchecked Sendable {
   ///   - options: Common options for the command
   public init(
     paths: [String],
-    excludes: [String] = [],
-    tags: [String] = [],
+    excludes: [String]=[],
+    tags: [String]=[],
     options: CommonOptions
   ) {
-    self.paths = paths
-    excludePatterns = excludes
-    self.tags = tags
-    self.options = options
+    self.paths=paths
+    excludePatterns=excludes
+    self.tags=tags
+    self.options=options
   }
 
   /// Add a path to backup
@@ -108,7 +108,7 @@ public final class BackupCommand: ResticCommand, @unchecked Sendable {
   /// Set the host
   @discardableResult
   public func host(_ host: String) -> Self {
-    self.host = host
+    self.host=host
     return self
   }
 
@@ -129,16 +129,16 @@ public final class BackupCommand: ResticCommand, @unchecked Sendable {
   /// Enable progress reporting
   @discardableResult
   public func withProgress() -> Self {
-    enableProgress = true
+    enableProgress=true
     return self
   }
 
   /// Set the cache path
   @discardableResult
   public func setCachePath(_ path: String) -> Self {
-    var env = options.environmentVariables
-    env["RESTIC_CACHE_DIR"] = path
-    options = CommonOptions(
+    var env=options.environmentVariables
+    env["RESTIC_CACHE_DIR"]=path
+    options=CommonOptions(
       repository: options.repository,
       password: options.password,
       cachePath: options.cachePath,
@@ -156,16 +156,16 @@ public final class BackupCommand: ResticCommand, @unchecked Sendable {
   /// This helps Restic properly handle cancellation when the parent process is terminated.
   @discardableResult
   public func setParentPID(_ pid: Int) -> Self {
-    parentPID = pid
+    parentPID=pid
     return self
   }
 
   public var environment: [String: String] {
-    var env = options.environmentVariables
-    env["RESTIC_REPOSITORY"] = options.repository
-    env["RESTIC_PASSWORD"] = options.password
-    if let cachePath = options.cachePath {
-      env["RESTIC_CACHE_DIR"] = cachePath
+    var env=options.environmentVariables
+    env["RESTIC_REPOSITORY"]=options.repository
+    env["RESTIC_PASSWORD"]=options.password
+    if let cachePath=options.cachePath {
+      env["RESTIC_CACHE_DIR"]=cachePath
     }
     return env
   }
@@ -211,21 +211,21 @@ public final class BackupCommand: ResticCommand, @unchecked Sendable {
   ///
   /// - Throws: ResticError if the command fails
   public func execute() throws {
-    let process = Process()
-    process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-    process.arguments = ["restic", commandName] + commandArguments
-    process.environment = environment
+    let process=Process()
+    process.executableURL=URL(fileURLWithPath: "/usr/bin/env")
+    process.arguments=["restic", commandName] + commandArguments
+    process.environment=environment
 
-    let pipe = Pipe()
-    process.standardOutput = pipe
-    process.standardError = pipe
+    let pipe=Pipe()
+    process.standardOutput=pipe
+    process.standardError=pipe
 
     try process.run()
     process.waitUntilExit()
 
     if process.terminationStatus != 0 {
-      let data = try pipe.fileHandleForReading.readToEnd() ?? Data()
-      let output = String(data: data, encoding: .utf8) ?? ""
+      let data=try pipe.fileHandleForReading.readToEnd() ?? Data()
+      let output=String(data: data, encoding: .utf8) ?? ""
       throw ResticError.executionFailed(output)
     }
   }

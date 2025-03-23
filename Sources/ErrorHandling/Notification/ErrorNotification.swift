@@ -6,11 +6,11 @@ import Foundation
 /// Error domain namespace
 public enum ErrorDomain {
   /// Security domain
-  public static let security = "Security"
+  public static let security="Security"
   /// Crypto domain
-  public static let crypto = "Crypto"
+  public static let crypto="Crypto"
   /// Application domain
-  public static let application = "Application"
+  public static let application="Application"
 }
 
 /// Error context protocol
@@ -34,16 +34,16 @@ public struct BaseErrorContext: ErrorContext {
 
   /// Initialise with domain, code and description
   public init(domain: String, code: Int, description: String) {
-    self.domain = domain
-    self.code = code
-    self.description = description
+    self.domain=domain
+    self.code=code
+    self.description=description
   }
 }
 
 /// A recovery option that wraps a closure
 public struct ClosureRecoveryOption: RecoveryOption, Identifiable {
   /// Unique identifier
-  public let id = UUID()
+  public let id=UUID()
 
   /// The title of the recovery option
   public let title: String
@@ -65,14 +65,14 @@ public struct ClosureRecoveryOption: RecoveryOption, Identifiable {
   ///   - action: Action to perform
   public init(
     title: String,
-    description: String? = nil,
-    isDisruptive: Bool = false,
+    description: String?=nil,
+    isDisruptive: Bool=false,
     action: @escaping @Sendable () async throws -> Void
   ) {
-    self.title = title
-    self.description = description
-    self.isDisruptive = isDisruptive
-    self.action = action
+    self.title=title
+    self.description=description
+    self.isDisruptive=isDisruptive
+    self.action=action
   }
 
   /// Perform the recovery action
@@ -113,13 +113,13 @@ public struct ErrorNotification: Sendable, Identifiable {
     error: Error,
     title: String,
     message: String,
-    recoveryOptions: [any RecoveryOption] = []
+    recoveryOptions: [any RecoveryOption]=[]
   ) {
-    id = UUID()
-    self.error = error
-    self.title = title
-    self.message = message
-    self.recoveryOptions = recoveryOptions
+    id=UUID()
+    self.error=error
+    self.title=title
+    self.message=message
+    self.recoveryOptions=recoveryOptions
   }
 }
 
@@ -148,11 +148,11 @@ public protocol ErrorNotificationManager: Sendable {
 /// Default implementation of the error notification manager
 public final class DefaultErrorNotificationManager: ErrorNotificationManager {
   /// The shared instance
-  public static let shared = DefaultErrorNotificationManager()
+  public static let shared=DefaultErrorNotificationManager()
 
   /// Currently active notifications
   @MainActor
-  private var activeNotifications: [UUID: ErrorNotification] = [:]
+  private var activeNotifications: [UUID: ErrorNotification]=[:]
 
   /// Creates a new notification manager
   public init() {}
@@ -184,22 +184,22 @@ public final class DefaultErrorNotificationManager: ErrorNotificationManager {
     // Extract domain from error - Error objects are already bridged to NSError
     // so casting is redundant in Swift
     let domain: String
-    if let umbraError = error as? UmbraError {
-      domain = umbraError.domain
+    if let umbraError=error as? UmbraError {
+      domain=umbraError.domain
     } else {
       // Access NSError properties directly through the bridged Error
-      let nsError = error as NSError
-      domain = nsError.domain
+      let nsError=error as NSError
+      domain=nsError.domain
     }
 
-    let notification = ErrorNotification(
+    let notification=ErrorNotification(
       error: error,
       title: "Error: \(domain)",
       message: error.localizedDescription,
       recoveryOptions: recoveryOptions
     )
 
-    activeNotifications[notification.id] = notification
+    activeNotifications[notification.id]=notification
 
     // TODO: Present UI for the notification
   }
@@ -222,7 +222,7 @@ public final class DefaultErrorNotificationManager: ErrorNotificationManager {
   /// - Returns: Whether recovery was successful
   @MainActor
   public func recoverWithOption(id optionID: UUID) async -> Bool {
-    guard let option = getRecoveryOption(withID: optionID) else {
+    guard let option=getRecoveryOption(withID: optionID) else {
       return false
     }
 
@@ -238,7 +238,7 @@ public final class DefaultErrorNotificationManager: ErrorNotificationManager {
     notificationID _: UUID,
     recoveryOptionID: UUID
   ) async throws {
-    let success = await recoverWithOption(id: recoveryOptionID)
+    let success=await recoverWithOption(id: recoveryOptionID)
     if !success {
       throw NSError(
         domain: "ErrorNotification",
@@ -252,7 +252,7 @@ public final class DefaultErrorNotificationManager: ErrorNotificationManager {
   /// - Parameter notificationId: ID of the notification to dismiss
   public func dismissError(notificationID: UUID) {
     Task { @MainActor [self] in
-      activeNotifications[notificationID] = nil
+      activeNotifications[notificationID]=nil
     }
   }
 }

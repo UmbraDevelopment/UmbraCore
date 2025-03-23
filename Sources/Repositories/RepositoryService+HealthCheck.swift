@@ -19,18 +19,18 @@ extension RepositoryService {
     public let checkUnused: Bool
 
     public init(readData: Bool, checkUnused: Bool) {
-      self.readData = readData
-      self.checkUnused = checkUnused
+      self.readData=readData
+      self.checkUnused=checkUnused
     }
 
     /// Default options with basic integrity check
-    public static let basic = HealthCheckOptions(
+    public static let basic=HealthCheckOptions(
       readData: false,
       checkUnused: false
     )
 
     /// Full verification including data blobs
-    public static let full = HealthCheckOptions(
+    public static let full=HealthCheckOptions(
       readData: true,
       checkUnused: true
     )
@@ -50,7 +50,7 @@ extension RepositoryService {
     of identifier: String,
     options: HealthCheckOptions = .basic
   ) async throws {
-    let metadata = LogMetadata([
+    let metadata=LogMetadata([
       "repository_id": identifier,
       "read_data": String(options.readData),
       "check_unused": String(options.checkUnused)
@@ -58,13 +58,13 @@ extension RepositoryService {
 
     await logger.info("Starting repository health check", metadata: metadata)
 
-    guard let repository = repositories[identifier] else {
+    guard let repository=repositories[identifier] else {
       await logger.error("Repository not found", metadata: metadata)
       throw UmbraErrors.Repository.Core.repositoryNotFound(resource: identifier)
     }
 
     do {
-      _ = try await repository.check(
+      _=try await repository.check(
         readData: options.readData,
         checkUnused: options.checkUnused
       )
@@ -92,9 +92,9 @@ extension RepositoryService {
   /// and force is false
   public func checkHealthAll(
     options: HealthCheckOptions = .basic,
-    force: Bool = false
+    force: Bool=false
   ) async throws {
-    let metadata = LogMetadata([
+    let metadata=LogMetadata([
       "repository_count": String(repositories.count),
       "read_data": String(options.readData),
       "check_unused": String(options.checkUnused),
@@ -106,15 +106,15 @@ extension RepositoryService {
       metadata: metadata
     )
 
-    var errors: [String: Error] = [:]
+    var errors: [String: Error]=[:]
 
     for (identifier, repository) in repositories {
-      let repoMetadata = LogMetadata([
+      let repoMetadata=LogMetadata([
         "repository_id": identifier
       ])
 
       do {
-        _ = try await repository.check(
+        _=try await repository.check(
           readData: options.readData,
           checkUnused: options.checkUnused
         )
@@ -123,7 +123,7 @@ extension RepositoryService {
           metadata: repoMetadata
         )
       } catch {
-        errors[identifier] = error
+        errors[identifier]=error
         await logger.error(
           "Health check failed for repository: \(error.localizedDescription)",
           metadata: repoMetadata
@@ -137,7 +137,7 @@ extension RepositoryService {
     }
 
     if !errors.isEmpty {
-      let errorSummary = errors.map {
+      let errorSummary=errors.map {
         "'\($0)': \($1.localizedDescription)"
       }.joined(separator: ", ")
 

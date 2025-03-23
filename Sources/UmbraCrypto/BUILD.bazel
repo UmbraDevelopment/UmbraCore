@@ -1,13 +1,21 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
-load("//:bazel/macros/swift.bzl", "umbra_swift_library")
+load("//:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
     name = "UmbraCrypto",
-    testonly = True,
-    srcs = [
-        "UmbraCrypto.swift",
-    ],
+    srcs = glob(["**/*.swift"]),
     deps = [
-        "//Sources/CryptoTypes",
     ],
 )
+
+# Uncomment if documentation generation is needed
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+#
+# swift_package(
+#     name = "docc_documentation",
+#     srcs = glob([
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
+#     deps = ["//Sources/UmbraCrypto"],
+# )

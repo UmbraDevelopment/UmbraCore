@@ -3,11 +3,11 @@ import Foundation
 /// Error domain constants - NOT using typealiases
 public struct ErrorDomains {
   /// Security domain
-  public static let security = "Security"
+  public static let security="Security"
   /// Crypto domain
-  public static let crypto = "Crypto"
+  public static let crypto="Crypto"
   /// Application domain
-  public static let application = "Application"
+  public static let application="Application"
 
   // Private initializer to prevent instantiation
   private init() {}

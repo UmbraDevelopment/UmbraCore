@@ -73,12 +73,12 @@ final class SymmetricCrypto: Sendable {
     // Use CryptoWrapper for real encryption
     do {
       // Generate IV if not provided
-      let iv = initialIV ?? CryptoWrapper.generateRandomIVSecure()
+      let iv=initialIV ?? CryptoWrapper.generateRandomIVSecure()
 
       // Encrypt data using the CryptoWrapper
       // For AES-GCM, the IV is typically 12 bytes and is used for nonce
       if algorithm == "AES-GCM" {
-        let encryptedData = try CryptoWrapper.encryptAES_GCM(
+        let encryptedData=try CryptoWrapper.encryptAES_GCM(
           data: data,
           key: key,
           iv: iv
@@ -86,7 +86,7 @@ final class SymmetricCrypto: Sendable {
 
         // Combine IV and encrypted data for proper decryption later
         // Format: IV + EncryptedData
-        let combinedData = SecureBytes.combine(iv, encryptedData)
+        let combinedData=SecureBytes.combine(iv, encryptedData)
 
         return SecurityResultDTO(data: combinedData)
       } else {
@@ -151,8 +151,8 @@ final class SymmetricCrypto: Sendable {
       // For AES-GCM decryption
       if algorithm == "AES-GCM" {
         // If we have explicit IV, use it and the data as is
-        if let iv = explicitIV {
-          let decryptedData = try CryptoWrapper.decryptAES_GCM(
+        if let iv=explicitIV {
+          let decryptedData=try CryptoWrapper.decryptAES_GCM(
             data: data,
             key: key,
             iv: iv
@@ -162,11 +162,11 @@ final class SymmetricCrypto: Sendable {
         // Otherwise, extract IV from the combined data
         else if data.count > 12 { // Minimum size for IV + any data
           // Extract IV (first 12 bytes) and encrypted data
-          let iv = data[0..<12]
-          let encryptedData = data[12..<data.count]
+          let iv=data[0..<12]
+          let encryptedData=data[12..<data.count]
 
           // Decrypt using the extracted IV
-          let decryptedData = try CryptoWrapper.decryptAES_GCM(
+          let decryptedData=try CryptoWrapper.decryptAES_GCM(
             data: encryptedData,
             key: key,
             iv: iv
@@ -204,9 +204,9 @@ final class SymmetricCrypto: Sendable {
     var ivSize: Int
 
     if algorithm.starts(with: "AES-GCM") {
-      ivSize = 12 // 96 bits for GCM mode
+      ivSize=12 // 96 bits for GCM mode
     } else if algorithm.starts(with: "AES-CBC") || algorithm.starts(with: "AES-CTR") {
-      ivSize = 16 // 128 bits for CBC and CTR modes
+      ivSize=16 // 128 bits for CBC and CTR modes
     } else {
       // No IV needed or unknown algorithm
       return nil

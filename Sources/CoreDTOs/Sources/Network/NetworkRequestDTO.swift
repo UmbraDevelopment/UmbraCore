@@ -8,13 +8,13 @@ public struct NetworkRequestDTO: Sendable, Equatable {
 
   /// The HTTP method for the request
   public enum HTTPMethod: String, Sendable, Equatable {
-    case get = "GET"
-    case post = "POST"
-    case put = "PUT"
-    case delete = "DELETE"
-    case head = "HEAD"
-    case options = "OPTIONS"
-    case patch = "PATCH"
+    case get="GET"
+    case post="POST"
+    case put="PUT"
+    case delete="DELETE"
+    case head="HEAD"
+    case options="OPTIONS"
+    case patch="PATCH"
   }
 
   /// Authentication type for the request
@@ -89,28 +89,28 @@ public struct NetworkRequestDTO: Sendable, Equatable {
     id: String,
     urlString: String,
     method: HTTPMethod = .get,
-    headers: [String: String] = [:],
-    queryParams: [String: String] = [:],
-    bodyData: [UInt8]? = nil,
-    timeoutInterval: Double = 60.0,
+    headers: [String: String]=[:],
+    queryParams: [String: String]=[:],
+    bodyData: [UInt8]?=nil,
+    timeoutInterval: Double=60.0,
     authentication: AuthType = .none,
-    useCache: Bool = true,
-    followRedirects: Bool = true,
+    useCache: Bool=true,
+    followRedirects: Bool=true,
     createdAt: UInt64,
-    metadata: [String: String] = [:]
+    metadata: [String: String]=[:]
   ) {
-    self.id = id
-    self.urlString = urlString
-    self.method = method
-    self.headers = headers
-    self.queryParams = queryParams
-    self.bodyData = bodyData
-    self.timeoutInterval = max(1.0, timeoutInterval) // Ensure timeout is at least 1 second
-    self.authentication = authentication
-    self.useCache = useCache
-    self.followRedirects = followRedirects
-    self.createdAt = createdAt
-    self.metadata = metadata
+    self.id=id
+    self.urlString=urlString
+    self.method=method
+    self.headers=headers
+    self.queryParams=queryParams
+    self.bodyData=bodyData
+    self.timeoutInterval=max(1.0, timeoutInterval) // Ensure timeout is at least 1 second
+    self.authentication=authentication
+    self.useCache=useCache
+    self.followRedirects=followRedirects
+    self.createdAt=createdAt
+    self.metadata=metadata
   }
 
   // MARK: - Factory Methods
@@ -127,8 +127,8 @@ public struct NetworkRequestDTO: Sendable, Equatable {
   public static func get(
     id: String,
     urlString: String,
-    queryParams: [String: String] = [:],
-    headers: [String: String] = [:],
+    queryParams: [String: String]=[:],
+    headers: [String: String]=[:],
     authentication: AuthType = .none,
     createdAt: UInt64
   ) -> NetworkRequestDTO {
@@ -156,7 +156,7 @@ public struct NetworkRequestDTO: Sendable, Equatable {
     id: String,
     urlString: String,
     bodyData: [UInt8]?,
-    headers: [String: String] = [:],
+    headers: [String: String]=[:],
     authentication: AuthType = .none,
     createdAt: UInt64
   ) -> NetworkRequestDTO {
@@ -244,9 +244,9 @@ public struct NetworkRequestDTO: Sendable, Equatable {
   /// - Parameter newHeaders: The headers to add or update
   /// - Returns: A new NetworkRequestDTO with updated headers
   public func withUpdatedHeaders(_ newHeaders: [String: String]) -> NetworkRequestDTO {
-    var updatedHeaders = headers
+    var updatedHeaders=headers
     for (key, value) in newHeaders {
-      updatedHeaders[key] = value
+      updatedHeaders[key]=value
     }
 
     return NetworkRequestDTO(
@@ -269,9 +269,9 @@ public struct NetworkRequestDTO: Sendable, Equatable {
   /// - Parameter newParams: The query parameters to add or update
   /// - Returns: A new NetworkRequestDTO with updated query parameters
   public func withUpdatedQueryParams(_ newParams: [String: String]) -> NetworkRequestDTO {
-    var updatedParams = queryParams
+    var updatedParams=queryParams
     for (key, value) in newParams {
-      updatedParams[key] = value
+      updatedParams[key]=value
     }
 
     return NetworkRequestDTO(
@@ -334,9 +334,9 @@ public struct NetworkRequestDTO: Sendable, Equatable {
   /// - Parameter additionalMetadata: The metadata to add or update
   /// - Returns: A new NetworkRequestDTO with updated metadata
   public func withUpdatedMetadata(_ additionalMetadata: [String: String]) -> NetworkRequestDTO {
-    var newMetadata = metadata
+    var newMetadata=metadata
     for (key, value) in additionalMetadata {
-      newMetadata[key] = value
+      newMetadata[key]=value
     }
 
     return NetworkRequestDTO(

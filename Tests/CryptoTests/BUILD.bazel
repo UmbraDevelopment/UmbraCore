@@ -1,17 +1,10 @@
+load("//:swift_rules.bzl", "umbra_swift_test")
+
+umbra_swift_test(
+    name = "CryptoTests",
+    srcs = glob(["**/*.swift"]),
     deps = [
-        "//Sources/CoreErrors",
-        "//Sources/CryptoTypes",
-        "//Sources/CryptoTypes/Protocols:CryptoTypesProtocols",
-        "//Sources/CryptoTypes/Services:CryptoTypesServices",
-        "//Sources/CryptoTypes/Types:CryptoTypesTypes",
-        "//ErrorHandling/Domains:ErrorHandlingDomains",
-        "//Sources/SecurityImplementation",
-        "//Sources/SecurityProtocolsCore",
-        "//Sources/SecurityTypes",
-        "//Sources/UmbraCoreTypes",
-        "//Sources/UmbraCryptoService",
-        "//Sources/UmbraMocks",
-        "//Sources/XPCProtocolsCore",
-        "//Tests/UmbraTestKit:UmbraTestKit",
+        "//Sources/Crypto",
+        "//Tests/TestKit",
     ],
 )

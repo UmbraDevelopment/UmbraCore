@@ -4,8 +4,7 @@ import Foundation
 
 /// Mapper from the enhanced SecurityError to CoreErrors.SecurityError
 public struct EnhancedToCoreSecurityErrorMapper: ErrorMapper {
-  public typealias SourceError = SecurityError
-  public typealias TargetError = CoreErrors.SecurityError
+  public typealias SourceError=SecurityError
 
   public init() {}
 
@@ -39,8 +38,8 @@ public struct EnhancedToCoreSecurityErrorMapper: ErrorMapper {
 
 /// Mapper from CoreErrors.SecurityError to the enhanced SecurityError
 public struct CoreToEnhancedSecurityErrorMapper: ErrorMapper {
-  public typealias SourceError = CoreErrors.SecurityError
-  public typealias TargetError = SecurityError
+
+  public typealias TargetError=SecurityError
 
   public init() {}
 
@@ -62,14 +61,14 @@ public struct CoreToEnhancedSecurityErrorMapper: ErrorMapper {
 }
 
 /// Bidirectional mapper between enhanced SecurityError and CoreErrors.SecurityError
-public let securityErrorMapper = BidirectionalErrorMapper<SecurityError, CoreErrors.SecurityError>(
+public let securityErrorMapper=BidirectionalErrorMapper<SecurityError, CoreErrors.SecurityError>(
   forwardMap: { EnhancedToCoreSecurityErrorMapper().map($0) },
   reverseMap: { CoreToEnhancedSecurityErrorMapper().map($0) }
 )
 
 /// Function to register the SecurityError mapper with the ErrorRegistry
 public func registerSecurityErrorMappers() {
-  let registry = ErrorRegistry.shared
+  let registry=ErrorRegistry.shared
 
   // Register mapper from enhanced to CoreErrors
   registry.register(

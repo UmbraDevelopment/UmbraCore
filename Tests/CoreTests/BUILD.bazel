@@ -1,24 +1,10 @@
+load("//:swift_rules.bzl", "umbra_swift_test")
+
+umbra_swift_test(
+    name = "CoreTests",
+    srcs = glob(["**/*.swift"]),
     deps = [
         "//Sources/Core",
-        "//Sources/CoreErrors",
-        "//Sources/CoreServicesTypes",
-        "//Sources/CoreTypesInterfaces",
-        "//Sources/CryptoTypes",
-        "//Sources/ErrorHandling",
-        "//Sources/KeyManagementTypes",
-        "//Sources/SecurityTypes",
-        "//Sources/ServiceTypes",
-        ":TestMocks",
-        # Removing CoreServices dependency as it causes circular dependency with CoreErrors,
-        # "//Sources/Core/Services:CoreServices",
-        "//Sources/CoreTypesImplementation",
-        "//ErrorHandling/Domains:ErrorHandlingDomains",
-        "//Sources/ResticCLIHelper",
-        "//Sources/SecurityInterfaces",
-        "//Sources/SecurityUtils",
-        "//Sources/Services",
-        "//Sources/UmbraCoreTypes",
-        "//Sources/UmbraCryptoService",
-        "//Sources/UmbraKeychainService",
+        "//Tests/TestKit",
     ],
 )

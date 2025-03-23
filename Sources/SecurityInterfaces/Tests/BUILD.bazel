@@ -1,65 +1,21 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library", "swift_test")
-load("//:bazel/macros/swift.bzl", "umbra_test_library")
+load("//:swift_rules.bzl", "umbra_swift_library")
 
-# Test helpers library containing isolated module interactions
-swift_library(
-    name = "SecurityTestHelpers",
-    srcs = glob(["TestHelpers/*.swift"]),
-    module_name = "SecurityTestHelpers",  # Explicitly set the module name
-    visibility = ["//visibility:public"],
+umbra_swift_library(
+    name = "SecurityInterfacesTests",
+    srcs = glob(["**/*.swift"]),
     deps = [
-        "//Sources/SecurityProtocolsCore",
-        "//ErrorHandling/Domains:ErrorHandlingDomains",
-        "//Sources/CoreErrors",
-        "//Sources/SecurityInterfaces",
-        "//Sources/UmbraCoreTypes",  # Added for SecureBytes
     ],
 )
 
-swift_test(
-    name = "SecurityProviderTests",
-    srcs = ["SecurityProviderBaseTests.swift"],
-    deps = [
-        "//Sources/SecurityInterfaces:SecurityInterfacesForTesting",
-        "//Sources/SecurityInterfacesBase",
-        ":SecurityTestHelpers",  # Use our test helpers instead of direct dependencies
-        "//Sources/CoreErrors",
-        "//ErrorHandling/Domains:ErrorHandlingDomains",
-        "//Sources/UmbraCoreTypes",
-        "//Sources/XPCProtocolsCore",
-    ],
-)
-
-swift_test(
-    name = "SecurityProviderBaseTests",
-    srcs = ["SecurityProviderBaseTests.swift"],
-    deps = [
-        "//Sources/SecurityInterfaces:SecurityInterfacesForTesting",
-        "//Sources/SecurityProtocolsCore",
-        "//ErrorHandling/Domains:ErrorHandlingDomains",
-        "//Sources/UmbraCoreTypes",
-    ],
-)
-
-swift_test(
-    name = "ProviderFactoryAdapterTests",
-    srcs = ["ProviderFactoryAdapterTests.swift"],
-    deps = [
-        "//Sources/SecurityInterfaces:SecurityInterfacesForTesting",
-        "//Sources/SecurityBridge",
-        "//Sources/SecurityInterfacesBase",
-        "//Sources/SecurityProtocolsCore",
-        "//Sources/UmbraCoreTypes",
-        "//Sources/XPCProtocolsCore",
-    ],
-)
-
-# Meta-target that runs all SecurityInterfaces tests
-test_suite(
-    name = "AllSecurityInterfacesTests",
-    tests = [
-        ":SecurityProviderTests",
-        ":SecurityProviderBaseTests",
-        ":ProviderFactoryAdapterTests",
-    ],
-)
+# Uncomment if documentation generation is needed
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+#
+# swift_package(
+#     name = "docc_documentation",
+#     srcs = glob([
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
+#     deps = ["//Sources/SecurityInterfacesTests"],
+# )

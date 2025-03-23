@@ -1,0 +1,10 @@
+load("//:swift_rules.bzl", "umbra_swift_test")
+
+umbra_swift_test(
+    name = "UmbraCoreTests",
+    srcs = glob(["**/*.swift"]),
+    deps = [
+        "//Sources/UmbraCore",
+        "//Tests/TestKit",
+    ],
+)

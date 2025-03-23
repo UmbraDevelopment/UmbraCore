@@ -63,29 +63,29 @@ final class ConfigBuilder {
    */
   func createConfig(options: [String: Any]?) -> SecurityConfigDTO {
     // Extract options from the dictionary or use defaults
-    let algorithm = options?["algorithm"] as? String ?? "AES-GCM"
-    let keySize = options?["keySize"] as? Int ?? 256
+    let algorithm=options?["algorithm"] as? String ?? "AES-GCM"
+    let keySize=options?["keySize"] as? Int ?? 256
 
     // Create a basic configuration
-    var config = SecurityConfigDTO(
+    var config=SecurityConfigDTO(
       algorithm: algorithm,
       keySizeInBits: keySize
     )
 
     // Add any additional options that were provided
-    if let ivHex = options?["iv"] as? String {
-      if let ivData = Utilities.hexStringToData(ivHex) {
-        config = config.withInitializationVector(SecureBytes(bytes: ivData))
+    if let ivHex=options?["iv"] as? String {
+      if let ivData=Utilities.hexStringToData(ivHex) {
+        config=config.withInitializationVector(SecureBytes(bytes: ivData))
       }
     }
 
-    if let keyID = options?["keyIdentifier"] as? String {
-      config = config.withKeyIdentifier(keyID)
+    if let keyID=options?["keyIdentifier"] as? String {
+      config=config.withKeyIdentifier(keyID)
     }
 
-    if let inputBase64 = options?["inputData"] as? String {
-      if let inputData = Utilities.base64StringToData(inputBase64) {
-        config = config.withInputData(SecureBytes(bytes: inputData))
+    if let inputBase64=options?["inputData"] as? String {
+      if let inputData=Utilities.base64StringToData(inputBase64) {
+        config=config.withInputData(SecureBytes(bytes: inputData))
       }
     }
 

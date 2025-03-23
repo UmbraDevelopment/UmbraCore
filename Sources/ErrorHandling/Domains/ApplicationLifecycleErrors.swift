@@ -6,11 +6,11 @@ import Foundation
 /// Error domain namespace
 public enum ErrorDomain {
   /// Security domain
-  public static let security = "Security"
+  public static let security="Security"
   /// Crypto domain
-  public static let crypto = "Crypto"
+  public static let crypto="Crypto"
   /// Application domain
-  public static let application = "Application"
+  public static let application="Application"
 }
 
 /// Error context protocol
@@ -34,9 +34,9 @@ public struct BaseErrorContext: ErrorContext {
 
   /// Initialise with domain, code and description
   public init(domain: String, code: Int, description: String) {
-    self.domain = domain
-    self.code = code
-    self.description = description
+    self.domain=domain
+    self.code=code
+    self.description=description
   }
 }
 
@@ -177,9 +177,9 @@ extension UmbraErrors.Application.Lifecycle {
   /// Create a startup error with the specified message
   public static func startup(
     _ message: String,
-    file _: String = #file,
-    line _: Int = #line,
-    function _: String = #function
+    file _: String=#file,
+    line _: Int=#line,
+    function _: String=#function
   ) -> UmbraErrors.Application.Lifecycle {
     .startupError(message)
   }
@@ -187,9 +187,9 @@ extension UmbraErrors.Application.Lifecycle {
   /// Create a settings error with the specified message
   public static func settings(
     _ message: String,
-    file _: String = #file,
-    line _: Int = #line,
-    function _: String = #function
+    file _: String=#file,
+    line _: Int=#line,
+    function _: String=#function
   ) -> UmbraErrors.Application.Lifecycle {
     .settingsError(message)
   }
@@ -199,9 +199,9 @@ extension UmbraErrors.Application.Lifecycle {
     _ message: String,
     fromState: String,
     toState: String,
-    file _: String = #file,
-    line _: Int = #line,
-    function _: String = #function
+    file _: String=#file,
+    line _: Int=#line,
+    function _: String=#function
   ) -> UmbraErrors.Application.Lifecycle {
     .stateTransitionError(message, fromState: fromState, toState: toState)
   }

@@ -33,16 +33,16 @@ public struct GenericUmbraError: UmbraError {
     domain: String,
     code: String,
     errorDescription: String,
-    underlyingError: Error? = nil,
-    source: ErrorSource? = nil,
-    context: ErrorContext = ErrorContext()
+    underlyingError: Error?=nil,
+    source: ErrorSource?=nil,
+    context: ErrorContext=ErrorContext()
   ) {
-    self.domain = domain
-    self.code = code
-    self.errorDescription = errorDescription
-    self.underlyingError = underlyingError
-    self.source = source
-    self.context = context
+    self.domain=domain
+    self.code=code
+    self.errorDescription=errorDescription
+    self.underlyingError=underlyingError
+    self.source=source
+    self.context=context
   }
 
   /// Creates a new instance with the specified context
@@ -97,11 +97,11 @@ extension GenericUmbraError {
     domain: String,
     code: String,
     description: String,
-    file: String = #file,
-    line: Int = #line,
-    function: String = #function
+    file: String=#file,
+    line: Int=#line,
+    function: String=#function
   ) -> GenericUmbraError {
-    let source = ErrorSource(file: file, line: line, function: function)
+    let source=ErrorSource(file: file, line: line, function: function)
     return GenericUmbraError(
       domain: domain,
       code: code,
@@ -125,11 +125,11 @@ extension GenericUmbraError {
     code: String,
     description: String,
     underlyingError: Error,
-    file: String = #file,
-    line: Int = #line,
-    function: String = #function
+    file: String=#file,
+    line: Int=#line,
+    function: String=#function
   ) -> GenericUmbraError {
-    let source = ErrorSource(file: file, line: line, function: function)
+    let source=ErrorSource(file: file, line: line, function: function)
     return GenericUmbraError(
       domain: domain,
       code: code,

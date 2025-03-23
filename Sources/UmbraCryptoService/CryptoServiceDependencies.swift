@@ -16,7 +16,7 @@ public struct DefaultCryptoXPCServiceDependencies: CryptoXPCServiceDependencies 
   public let keychain: UmbraKeychainService
 
   public init(securityUtils: SecurityUtils, keychain: UmbraKeychainService) {
-    self.securityUtils = securityUtils
-    self.keychain = keychain
+    self.securityUtils=securityUtils
+    self.keychain=keychain
   }
 }

@@ -11,8 +11,8 @@ public struct SuiteMacro: MemberMacro {
     in _: some MacroExpansionContext
   ) throws -> [DeclSyntax] {
     guard
-      let argument = node.arguments?.as(LabeledExprListSyntax.self)?.first?.expression,
-      let stringLiteral = argument.as(StringLiteralExprSyntax.self)?.segments.first?
+      let argument=node.arguments?.as(LabeledExprListSyntax.self)?.first?.expression,
+      let stringLiteral=argument.as(StringLiteralExprSyntax.self)?.segments.first?
         .as(StringSegmentSyntax.self)?.content
     else {
       throw TestingMacroError.invalidArgument
@@ -34,8 +34,8 @@ public struct TestMacro: PeerMacro {
     in _: some MacroExpansionContext
   ) throws -> [DeclSyntax] {
     guard
-      let argument = node.arguments?.as(LabeledExprListSyntax.self)?.first?.expression,
-      let stringLiteral = argument.as(StringLiteralExprSyntax.self)?.segments.first?
+      let argument=node.arguments?.as(LabeledExprListSyntax.self)?.first?.expression,
+      let stringLiteral=argument.as(StringLiteralExprSyntax.self)?.segments.first?
         .as(StringSegmentSyntax.self)?.content
     else {
       throw TestingMacroError.invalidArgument
@@ -51,7 +51,7 @@ public struct ExpectMacro: ExpressionMacro {
     of node: some FreestandingMacroExpansionSyntax,
     in _: some MacroExpansionContext
   ) throws -> ExprSyntax {
-    guard let argument = node.argumentList.first?.expression else {
+    guard let argument=node.argumentList.first?.expression else {
       throw TestingMacroError.invalidArgument
     }
 
@@ -65,7 +65,7 @@ enum TestingMacroError: Error {
 
 @main
 struct TestingMacrosPlugin: CompilerPlugin {
-  let providingMacros: [Macro.Type] = [
+  let providingMacros: [Macro.Type]=[
     SuiteMacro.self,
     TestMacro.self,
     ExpectMacro.self

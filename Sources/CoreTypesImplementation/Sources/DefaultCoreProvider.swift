@@ -5,13 +5,13 @@ import UmbraCoreTypes
 /// Default implementation of the CoreProvider protocol
 public final class DefaultCoreProvider: CoreProvider {
   /// The unique identifier for this provider
-  public let providerID: String = "com.umbra.core.default.provider"
+  public let providerID: String="com.umbra.core.default.provider"
 
   /// A human-readable name for this provider
-  public let providerName: String = "Umbra Default Security Provider"
+  public let providerName: String="Umbra Default Security Provider"
 
   /// The version of this provider
-  public let providerVersion: String = "1.0.0"
+  public let providerVersion: String="1.0.0"
 
   /// Default initialiser
   public init() {}
@@ -51,7 +51,7 @@ public final class ConfigurableCoreProvider: CoreProvider {
   /// Create a new configurable provider
   /// - Parameter configuration: Provider configuration
   public init(configuration: ProviderConfiguration) {
-    self.configuration = configuration
+    self.configuration=configuration
   }
 
   /// The unique identifier for this provider

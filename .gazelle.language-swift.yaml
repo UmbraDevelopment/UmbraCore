@@ -1,0 +1,39 @@
+# Swift-specific Gazelle configuration for UmbraCore
+# This configures how Gazelle processes Swift files and generates BUILD rules
+
+# Project prefix for Swift module naming
+prefix: dev.mpy.UmbraCore
+
+# Configure custom rule replacement to use the project's umbra_swift_library macro
+directives:
+  # Configure prefixes and suffixes for module naming
+  - prefix: gazelle:map_kind swift_library umbra_swift_library //:bazel/macros/swift.bzl
+  - prefix: gazelle:map_kind swift_test swift_test @build_bazel_rules_swift//swift:swift.bzl
+
+  # Configure well-known macros
+  - prefix: gazelle:resolve go github.com/bazelbuild/rules_swift//tools/gazelle/gazelle-swift:go_default_library @com_github_bazelbuild_rules_swift//tools/gazelle/gazelle-swift:go_default_library
+
+# Configure naming patterns and visibility options
+build_tags: []
+build_file_generation: "on"
+go_prefix: ""
+
+# Configure standard attributes for Swift rules
+rule_attrs:
+  # Common attributes for all Swift library rules
+  swift_library:
+    # Set default visibility to public for libraries
+    visibility:
+      - "//visibility:public"
+    # Enable library evolution for binary stability
+    copts:
+      - "-enable-library-evolution"
+
+  # Common attributes for Swift test rules  
+  swift_test:
+    # Set proper test dependencies
+    deps:
+      - "//Tests/UmbraTestKit:UmbraTestKit"
+    # Set visibility for tests
+    visibility:
+      - "//visibility:public"

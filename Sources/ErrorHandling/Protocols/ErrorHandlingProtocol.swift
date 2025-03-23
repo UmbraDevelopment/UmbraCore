@@ -40,7 +40,7 @@ public protocol UmbraError: Error, Sendable, CustomStringConvertible {
 /// Default implementation for UmbraError
 extension UmbraError {
   public var description: String {
-    var desc = "[\(domain):\(code)] \(errorDescription)"
+    var desc="[\(domain):\(code)] \(errorDescription)"
 
     if let source {
       desc += " (at \(source.function) in \(source.file):\(source.line))"
@@ -78,7 +78,7 @@ extension UmbraError {
   ///   - line: The line where the error occurred (defaults to current line)
   ///   - function: The function where the error occurred (defaults to current function)
   /// - Returns: A new instance of the error with source information
-  public func withSource(file: String = #file, function: String = #function, line: Int = #line) -> Self {
+  public func withSource(file: String=#file, function: String=#function, line: Int=#line) -> Self {
     with(source: ErrorSource(file: file, function: function, line: line))
   }
 }

@@ -12,7 +12,7 @@ public actor EncryptedBookmarkService {
   private let bookmarkService: SecurityBookmarkService
   private let credentialManager: CryptoTypesProtocols.CredentialManagerProtocol
   private let config: CryptoConfiguration
-  private let bookmarkKeyIdentifier = "bookmark_encryption_key"
+  private let bookmarkKeyIdentifier="bookmark_encryption_key"
 
   /// Initialises a new encrypted bookmark service
   /// - Parameters:
@@ -26,10 +26,10 @@ public actor EncryptedBookmarkService {
     credentialManager: CryptoTypesProtocols.CredentialManagerProtocol,
     config: CryptoConfiguration = .default
   ) {
-    self.cryptoService = cryptoService
-    self.bookmarkService = bookmarkService
-    self.credentialManager = credentialManager
-    self.config = config
+    self.cryptoService=cryptoService
+    self.bookmarkService=bookmarkService
+    self.credentialManager=credentialManager
+    self.config=config
   }
 
   /// Create an encrypted security-scoped bookmark for a URL
@@ -37,9 +37,9 @@ public actor EncryptedBookmarkService {
   /// - Returns: Encrypted bookmark data
   /// - Throws: SecurityError or CryptoError if bookmark creation fails
   public func createBookmark(for url: URL) async throws -> Data {
-    let bookmarkData = try await bookmarkService.createBookmark(for: url)
-    let key = try await generateKey()
-    let iv = try await cryptoService.generateSecureRandomKey(length: config.ivLength)
+    let bookmarkData=try await bookmarkService.createBookmark(for: url)
+    let key=try await generateKey()
+    let iv=try await cryptoService.generateSecureRandomKey(length: config.ivLength)
     return try await cryptoService.encrypt(bookmarkData, using: key, iv: iv)
   }
 
@@ -48,11 +48,11 @@ public actor EncryptedBookmarkService {
   /// - Returns: Resolved URL
   /// - Throws: SecurityError or CryptoError if bookmark resolution fails
   public func resolveBookmark(_ encryptedData: Data) async throws -> URL {
-    let key = try await getKey()
+    let key=try await getKey()
     // Generate a new IV for decryption - this should be stored with the encrypted data in a real
     // implementation
-    let iv = try await cryptoService.generateSecureRandomKey(length: config.ivLength)
-    let bookmarkData = try await cryptoService.decrypt(encryptedData, using: key, iv: iv)
+    let iv=try await cryptoService.generateSecureRandomKey(length: config.ivLength)
+    let bookmarkData=try await cryptoService.decrypt(encryptedData, using: key, iv: iv)
     return try await bookmarkService.resolveBookmark(bookmarkData)
   }
 
@@ -61,16 +61,16 @@ public actor EncryptedBookmarkService {
   /// - Returns: Resolved URL
   /// - Throws: SecurityError or CryptoError if bookmark resolution fails
   public func resolveBookmark(withIdentifier identifier: String) async throws -> URL {
-    let encryptedData = try await credentialManager.retrieve(forIdentifier: identifier)
-    let key = try await getKey()
+    let encryptedData=try await credentialManager.retrieve(forIdentifier: identifier)
+    let key=try await getKey()
     // Generate a new IV for decryption - this should be stored with the encrypted data in a real
     // implementation to enable proper decryption
-    let ivLen = config.ivLength
-    let dataLen = encryptedData.count - ivLen
-    let iv = encryptedData.prefix(ivLen)
-    let encryptedBookmark = encryptedData.suffix(dataLen)
+    let ivLen=config.ivLength
+    let dataLen=encryptedData.count - ivLen
+    let iv=encryptedData.prefix(ivLen)
+    let encryptedBookmark=encryptedData.suffix(dataLen)
 
-    let bookmarkData = try await cryptoService.decrypt(encryptedBookmark, using: key, iv: iv)
+    let bookmarkData=try await cryptoService.decrypt(encryptedBookmark, using: key, iv: iv)
     return try await bookmarkService.resolveBookmark(bookmarkData)
   }
 
@@ -80,7 +80,7 @@ public actor EncryptedBookmarkService {
   ///   - identifier: Identifier to store the bookmark under
   /// - Throws: SecurityError or CryptoError if bookmark creation fails
   public func storeBookmark(for url: URL, withIdentifier identifier: String) async throws {
-    let encryptedBookmark = try await createBookmark(for: url)
+    let encryptedBookmark=try await createBookmark(for: url)
     try await credentialManager.save(encryptedBookmark, forIdentifier: identifier)
   }
 
@@ -103,7 +103,7 @@ public actor EncryptedBookmarkService {
       return try await getKey()
     } catch {
       // Generate new key if it doesn't exist
-      let key = try await cryptoService.generateSecureRandomKey(length: config.keyLength)
+      let key=try await cryptoService.generateSecureRandomKey(length: config.keyLength)
       try await credentialManager.save(key, forIdentifier: bookmarkKeyIdentifier)
       return key
     }

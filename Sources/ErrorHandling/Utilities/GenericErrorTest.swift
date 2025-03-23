@@ -6,11 +6,11 @@ import Foundation
 /// Error domain namespace
 public enum ErrorDomain {
   /// Security domain
-  public static let security = "Security"
+  public static let security="Security"
   /// Crypto domain
-  public static let crypto = "Crypto"
+  public static let crypto="Crypto"
   /// Application domain
-  public static let application = "Application"
+  public static let application="Application"
 }
 
 /// Error context protocol
@@ -34,9 +34,9 @@ public struct BaseErrorContext: ErrorContext {
 
   /// Initialise with domain, code and description
   public init(domain: String, code: Int, description: String) {
-    self.domain = domain
-    self.code = code
-    self.description = description
+    self.domain=domain
+    self.code=code
+    self.description=description
   }
 }
 
@@ -44,21 +44,21 @@ public struct BaseErrorContext: ErrorContext {
 @MainActor
 public func testGenericErrorConformance() {
   // Create an interface error source
-  let source = ErrorHandlingInterfaces.ErrorSource(
+  let source=ErrorHandlingInterfaces.ErrorSource(
     file: #file,
     line: #line,
     function: #function
   )
 
   // Create an interface error context
-  let context = ErrorHandlingInterfaces.ErrorContext(
+  let context=ErrorHandlingInterfaces.ErrorContext(
     source: "TestModule",
     operation: "testOperation",
     details: "Testing GenericError conformance"
   )
 
   // Create a generic error
-  let error = GenericError(
+  let error=GenericError(
     domain: "Test",
     code: "TEST_ERROR",
     message: "Test error message",
@@ -69,19 +69,19 @@ public func testGenericErrorConformance() {
   )
 
   // Test the with methods
-  let errorWithNewContext = error.with(context: ErrorHandlingInterfaces.ErrorContext(
+  let errorWithNewContext=error.with(context: ErrorHandlingInterfaces.ErrorContext(
     source: "NewSource",
     operation: "newOperation",
     details: "New details"
   ))
 
-  let errorWithUnderlyingError = error.with(underlyingError: NSError(
+  let errorWithUnderlyingError=error.with(underlyingError: NSError(
     domain: "NSError",
     code: 123,
     userInfo: nil
   ))
 
-  let errorWithSource = error.with(source: ErrorHandlingInterfaces.ErrorSource(
+  let errorWithSource=error.with(source: ErrorHandlingInterfaces.ErrorSource(
     file: "NewFile.swift",
     line: 42,
     function: "newFunction()"
@@ -115,13 +115,13 @@ private struct GenericError: ErrorHandlingInterfaces.UmbraError {
     underlyingError: Error?,
     context: ErrorHandlingInterfaces.ErrorContext
   ) {
-    self.domain = domain
-    self.code = code
-    self.message = message
-    self.details = details
-    self.source = source
-    self.underlyingError = underlyingError
-    self.context = context
+    self.domain=domain
+    self.code=code
+    self.message=message
+    self.details=details
+    self.source=source
+    self.underlyingError=underlyingError
+    self.context=context
   }
 
   /// Conform to CustomStringConvertible
@@ -136,15 +136,15 @@ private struct GenericError: ErrorHandlingInterfaces.UmbraError {
 
   /// Create a new instance with additional context
   func with(context: ErrorHandlingInterfaces.ErrorContext) -> Self {
-    var newError = self
-    newError.context = context
+    var newError=self
+    newError.context=context
     return newError
   }
 
   /// Create a new instance with an underlying error
   func with(underlyingError: Error) -> Self {
-    var newError = self
-    newError.underlyingError = underlyingError
+    var newError=self
+    newError.underlyingError=underlyingError
     return newError
   }
 
@@ -163,10 +163,10 @@ private struct GenericError: ErrorHandlingInterfaces.UmbraError {
 
   /// Create a new instance with additional user info
   func with(userInfo: [String: Any]) -> Self {
-    var updatedDetails = details
+    var updatedDetails=details
     for (key, value) in userInfo {
       // Convert Any values to String for Sendable compatibility
-      updatedDetails[key] = String(describing: value)
+      updatedDetails[key]=String(describing: value)
     }
 
     return GenericError(

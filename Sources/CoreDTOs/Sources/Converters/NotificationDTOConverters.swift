@@ -7,18 +7,18 @@ extension NotificationDTO {
   /// - Returns: A NotificationDTO representation
   public static func from(notification: Notification) -> NotificationDTO {
     // Convert user info dictionary
-    var userInfoDict = [String: String]()
-    if let userInfo = notification.userInfo {
+    var userInfoDict=[String: String]()
+    if let userInfo=notification.userInfo {
       for (key, value) in userInfo {
-        if let keyString = key as? String {
+        if let keyString=key as? String {
           // Convert all values to string representation for Sendable compliance
-          userInfoDict[keyString] = String(describing: value)
+          userInfoDict[keyString]=String(describing: value)
         }
       }
     }
 
     // Convert sender to string representation
-    let senderString: String? = notification
+    let senderString: String?=notification
       .object != nil ? String(describing: notification.object!) : nil
 
     return NotificationDTO(
@@ -32,7 +32,7 @@ extension NotificationDTO {
   /// Convert to a Foundation Notification
   /// - Returns: A Foundation Notification
   public func toNotification() -> Notification {
-    let notificationName = Notification.Name(name)
+    let notificationName=Notification.Name(name)
     // Convert string-based userInfo to proper types if needed
     return Notification(
       name: notificationName,

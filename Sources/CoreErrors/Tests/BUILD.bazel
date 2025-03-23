@@ -1,12 +1,21 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_test")
+load("//:swift_rules.bzl", "umbra_swift_library")
 
-swift_test(
+umbra_swift_library(
     name = "CoreErrorsTests",
     srcs = glob(["**/*.swift"]),
     deps = [
-        "//Sources/CoreErrors",
-        "//Sources/ErrorHandling",
-        "//Sources/UmbraCoreTypes",
     ],
-    visibility = ["//visibility:public"],
 )
+
+# Uncomment if documentation generation is needed
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+#
+# swift_package(
+#     name = "docc_documentation",
+#     srcs = glob([
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
+#     deps = ["//Sources/CoreErrorsTests"],
+# )

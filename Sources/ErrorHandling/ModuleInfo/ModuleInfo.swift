@@ -28,19 +28,19 @@ public struct SemanticVersion: Equatable, Comparable, Sendable {
     major: Int,
     minor: Int,
     patch: Int,
-    buildMetadata: String? = nil,
-    preRelease: String? = nil
+    buildMetadata: String?=nil,
+    preRelease: String?=nil
   ) {
-    self.major = major
-    self.minor = minor
-    self.patch = patch
-    self.buildMetadata = buildMetadata
-    self.preRelease = preRelease
+    self.major=major
+    self.minor=minor
+    self.patch=patch
+    self.buildMetadata=buildMetadata
+    self.preRelease=preRelease
   }
 
   /// String representation of the version (e.g., "1.2.3-beta+exp.sha.5114f85")
   public var versionString: String {
-    var result = "\(major).\(minor).\(patch)"
+    var result="\(major).\(minor).\(patch)"
     if let preRelease {
       result += "-\(preRelease)"
     }
@@ -123,7 +123,7 @@ extension ModuleInformation {
   ///   - version: The version of the module to check
   /// - Returns: True if compatible, false otherwise
   public static func isCompatible(with moduleName: String, version: SemanticVersion) -> Bool {
-    guard let compatibleRange = compatibleVersions[moduleName] else {
+    guard let compatibleRange=compatibleVersions[moduleName] else {
       return true // No compatibility requirements specified
     }
 
@@ -140,7 +140,7 @@ extension ModuleInformation {
     version: SemanticVersion
   ) throws {
     if !isCompatible(with: moduleName, version: version) {
-      guard let expectedRange = compatibleVersions[moduleName] else {
+      guard let expectedRange=compatibleVersions[moduleName] else {
         return // No compatibility requirements
       }
 

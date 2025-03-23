@@ -7,9 +7,9 @@ import SwiftyBeaver
 
 /// A logging service implementation using SwiftyBeaver
 public actor LoggingWrapperService: LoggingProtocol {
-  private var isInitialized = false
+  private var isInitialized=false
   private var logFilePath: String?
-  private let logger = SwiftyBeaver.self
+  private let logger=SwiftyBeaver.self
 
   public init() {}
 
@@ -19,7 +19,7 @@ public actor LoggingWrapperService: LoggingProtocol {
     guard !isInitialized else { return }
 
     // Create log directory if it doesn't exist
-    let directoryPath = (path as NSString).deletingLastPathComponent
+    let directoryPath=(path as NSString).deletingLastPathComponent
     do {
       try FileManager.default.createDirectory(
         atPath: directoryPath,
@@ -31,21 +31,21 @@ public actor LoggingWrapperService: LoggingProtocol {
     }
 
     // Configure SwiftyBeaver logger with console and file destinations
-    let console = ConsoleDestination()
-    console.format = "$DHH:mm:ss.SSS$d $L $M"
+    let console=ConsoleDestination()
+    console.format="$DHH:mm:ss.SSS$d $L $M"
     logger.addDestination(console)
 
     // Add file destination if path is provided
-    let file = FileDestination()
-    file.logFileURL = URL(fileURLWithPath: path)
-    file.format = "$Dyyyy-MM-dd HH:mm:ss.SSS$d [$L] $M"
-    file.logFileMaxSize = 10 * 1_024 * 1_024 // 10MB
-    file.logFileAmount = 10 // Keep up to 10 log files
+    let file=FileDestination()
+    file.logFileURL=URL(fileURLWithPath: path)
+    file.format="$Dyyyy-MM-dd HH:mm:ss.SSS$d [$L] $M"
+    file.logFileMaxSize=10 * 1024 * 1024 // 10MB
+    file.logFileAmount=10 // Keep up to 10 log files
     logger.addDestination(file)
 
     // Store the path for reference
-    logFilePath = path
-    isInitialized = true
+    logFilePath=path
+    isInitialized=true
 
     // Log initialization success
     logger.info("Logging initialized to path: \(path)")
@@ -60,7 +60,7 @@ public actor LoggingWrapperService: LoggingProtocol {
       throw LoggingError.writeError(reason: "Log message cannot be empty")
     }
 
-    let message = entry.metadata?.isEmpty == false ? "\(entry.message) | \(entry.metadata!)" : entry
+    let message=entry.metadata?.isEmpty == false ? "\(entry.message) | \(entry.metadata!)" : entry
       .message
 
     switch entry.level {
@@ -85,7 +85,7 @@ public actor LoggingWrapperService: LoggingProtocol {
   public func stop() async {
     // Remove all destinations
     logger.removeAllDestinations()
-    isInitialized = false
-    logFilePath = nil
+    isInitialized=false
+    logFilePath=nil
   }
 }

@@ -8,11 +8,11 @@ import UmbraCoreTypes
 /// Error domain namespace
 public enum ErrorDomain {
   /// Security domain
-  public static let security = "Security"
+  public static let security="Security"
   /// Crypto domain
-  public static let crypto = "Crypto"
+  public static let crypto="Crypto"
   /// Application domain
-  public static let application = "Application"
+  public static let application="Application"
 }
 
 /// Error context protocol
@@ -36,9 +36,9 @@ public struct BaseErrorContext: ErrorContext {
 
   /// Initialise with domain, code and description
   public init(domain: String, code: Int, description: String) {
-    self.domain = domain
-    self.code = code
-    self.description = description
+    self.domain=domain
+    self.code=code
+    self.description=description
   }
 }
 
@@ -87,9 +87,9 @@ extension XPCServiceProtocolBasic {
   /// - Parameter secureBytes: SecureBytes to convert
   /// - Returns: Data representation
   public func convertSecureBytesToData(_ secureBytes: SecureBytes) -> Data {
-    var data = Data()
+    var data=Data()
     secureBytes.withUnsafeBytes { rawBuffer in
-      data = Data(rawBuffer)
+      data=Data(rawBuffer)
     }
     return data
   }
@@ -105,9 +105,9 @@ extension XPCServiceProtocolBasic {
   /// - Parameter secureBytes: SecureBytes to convert
   /// - Returns: A byte array containing the bytes
   public func convertSecureBytesToBytes(_ secureBytes: SecureBytes) -> [UInt8] {
-    var bytes = [UInt8]()
+    var bytes=[UInt8]()
     secureBytes.withUnsafeBytes { rawBuffer in
-      bytes = Array(rawBuffer)
+      bytes=Array(rawBuffer)
     }
     return bytes
   }
@@ -129,7 +129,7 @@ extension XPCServiceProtocolStandard {
   /// - Parameter length: Length in bytes
   /// - Returns: SecureBytes containing random data
   public func generateRandomSecureBytes(length: Int) -> SecureBytes {
-    let bytes = (0..<length).map { _ in UInt8.random(in: 0...255) }
+    let bytes=(0..<length).map { _ in UInt8.random(in: 0...255) }
     return SecureBytes(bytes: bytes)
   }
 }

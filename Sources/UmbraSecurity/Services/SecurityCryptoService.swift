@@ -1,5 +1,7 @@
 import CryptoSwiftFoundationIndependent
-import ErrorHandling
+import ErrorHandlingCore
+import ErrorHandlingDomains
+import ErrorHandlingInterfaces
 import SecurityProtocolsCore
 
 /// Error types for security operations

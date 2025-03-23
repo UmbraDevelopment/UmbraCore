@@ -7,7 +7,7 @@ public class UserDefaultsServiceDTOAdapter: UserDefaultsServiceDTOProtocol {
   // MARK: - Private Properties
 
   private let userDefaults: UserDefaults
-  private let logger = Logger(
+  private let logger=Logger(
     subsystem: "com.umbra.userDefaultsService",
     category: "UserDefaultsServiceDTOAdapter"
   )
@@ -17,7 +17,7 @@ public class UserDefaultsServiceDTOAdapter: UserDefaultsServiceDTOProtocol {
   /// Initialize with specific UserDefaults
   /// - Parameter userDefaults: The UserDefaults to use
   public init(userDefaults: UserDefaults = .standard) {
-    self.userDefaults = userDefaults
+    self.userDefaults=userDefaults
   }
 
   // MARK: - UserDefaultsServiceDTOProtocol Implementation
@@ -40,7 +40,7 @@ public class UserDefaultsServiceDTOAdapter: UserDefaultsServiceDTOProtocol {
     }
 
     // Convert to Foundation object
-    if let object = value.toFoundationObject() {
+    if let object=value.toFoundationObject() {
       userDefaults.set(object, forKey: key)
       return true
     } else {
@@ -58,7 +58,7 @@ public class UserDefaultsServiceDTOAdapter: UserDefaultsServiceDTOProtocol {
       return .null
     }
 
-    let object = userDefaults.object(forKey: key)
+    let object=userDefaults.object(forKey: key)
     return UserDefaultsValueDTO.from(object: object) ?? .null
   }
 
@@ -88,7 +88,7 @@ public class UserDefaultsServiceDTOAdapter: UserDefaultsServiceDTOProtocol {
   /// Get all keys
   /// - Returns: Array of all keys
   public func allKeys() -> [String] {
-    guard let dictionary = userDefaults.dictionaryRepresentation() as? [String: Any] else {
+    guard let dictionary=userDefaults.dictionaryRepresentation() as? [String: Any] else {
       return []
     }
 

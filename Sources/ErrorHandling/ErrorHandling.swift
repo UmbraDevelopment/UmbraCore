@@ -3,7 +3,7 @@ import Foundation
 /// Error handling framework
 public enum ErrorHandling {
   /// Current version
-  public static let version = "1.0.0"
+  public static let version="1.0.0"
 
   /// Initialisation
   public static func initialize() {
@@ -13,12 +13,12 @@ public enum ErrorHandling {
   /// Error domains
   public enum Domains {
     /// General error domain
-    public static let general = "General"
+    public static let general="General"
 
     /// Security error domain
-    public static let security = "Security"
+    public static let security="Security"
 
     /// Crypto error domain
-    public static let crypto = "Crypto"
+    public static let crypto="Crypto"
   }
 }

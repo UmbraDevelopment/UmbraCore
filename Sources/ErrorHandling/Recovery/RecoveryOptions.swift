@@ -6,11 +6,11 @@ import Foundation
 /// Error domain namespace
 public enum ErrorDomain {
   /// Security domain
-  public static let security = "Security"
+  public static let security="Security"
   /// Crypto domain
-  public static let crypto = "Crypto"
+  public static let crypto="Crypto"
   /// Application domain
-  public static let application = "Application"
+  public static let application="Application"
 }
 
 /// Error context protocol
@@ -34,9 +34,9 @@ public struct BaseErrorContext: ErrorContext {
 
   /// Initialise with domain, code and description
   public init(domain: String, code: Int, description: String) {
-    self.domain = domain
-    self.code = code
-    self.description = description
+    self.domain=domain
+    self.code=code
+    self.description=description
   }
 }
 
@@ -58,12 +58,12 @@ public struct RecoveryOptions: Sendable, Equatable {
   ///   - message: Optional message explaining the error and recovery options
   public init(
     actions: [RecoveryAction],
-    title: String? = nil,
-    message: String? = nil
+    title: String?=nil,
+    message: String?=nil
   ) {
-    self.actions = actions
-    self.title = title
-    self.message = message
+    self.actions=actions
+    self.title=title
+    self.message=message
   }
 
   /// Find the default recovery action, if one exists
@@ -105,8 +105,8 @@ extension RecoveryOptions {
   ///   - cancelHandler: The action to perform when cancelling
   /// - Returns: RecoveryOptions with retry and cancel actions
   public static func retryCancel(
-    title: String? = nil,
-    message: String? = nil,
+    title: String?=nil,
+    message: String?=nil,
     retryHandler: @escaping @Sendable () -> Void,
     cancelHandler: @escaping @Sendable () -> Void
   ) -> RecoveryOptions {
@@ -129,8 +129,8 @@ extension RecoveryOptions {
   ///   - cancelHandler: The action to perform when cancelling
   /// - Returns: RecoveryOptions with retry, ignore, and cancel actions
   public static func retryIgnoreCancel(
-    title: String? = nil,
-    message: String? = nil,
+    title: String?=nil,
+    message: String?=nil,
     retryHandler: @escaping @Sendable () -> Void,
     ignoreHandler: @escaping @Sendable () -> Void,
     cancelHandler: @escaping @Sendable () -> Void

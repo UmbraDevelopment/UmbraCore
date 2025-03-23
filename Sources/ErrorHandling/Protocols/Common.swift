@@ -3,11 +3,11 @@ import Foundation
 /// Error domain namespace
 public enum ErrorDomain {
   /// Security domain
-  public static let security = "Security"
+  public static let security="Security"
   /// Crypto domain
-  public static let crypto = "Crypto"
+  public static let crypto="Crypto"
   /// Application domain
-  public static let application = "Application"
+  public static let application="Application"
 }
 
 /// Error context protocol
@@ -31,9 +31,9 @@ public struct BaseErrorContext: ErrorContext {
 
   /// Initialise with domain, code and description
   public init(domain: String, code: Int, description: String) {
-    self.domain = domain
-    self.code = code
-    self.description = description
+    self.domain=domain
+    self.code=code
+    self.description=description
   }
 }
 
@@ -48,9 +48,9 @@ public struct ErrorSource: Sendable, Equatable {
 
   /// Initialize with file, function and line
   public init(file: String, function: String, line: Int) {
-    self.file = file
-    self.function = function
-    self.line = line
+    self.file=file
+    self.function=function
+    self.line=line
   }
 }
 
@@ -75,10 +75,15 @@ public struct ErrorDetailContext: Sendable {
   public let underlyingError: Error?
 
   /// Initialize with source, operation, details, and optional underlyingError
-  public init(source: String, operation: String, details: String? = nil, underlyingError: Error? = nil) {
-    self.source = source
-    self.operation = operation
-    self.details = details
-    self.underlyingError = underlyingError
+  public init(
+    source: String,
+    operation: String,
+    details: String?=nil,
+    underlyingError: Error?=nil
+  ) {
+    self.source=source
+    self.operation=operation
+    self.details=details
+    self.underlyingError=underlyingError
   }
 }

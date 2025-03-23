@@ -1,7 +1,10 @@
-#     deps = [
-        #         "//Sources/ErrorHandling",
-        #         "//Sources/SecurityUtils",
-        #         "//Sources/UmbraLogging",
-        #         "//Tests/UmbraTestKit:UmbraTestKit",
-#     ],
-# )
+load("//:swift_rules.bzl", "umbra_swift_test")
+
+umbra_swift_test(
+    name = "BookmarkTests",
+    srcs = glob(["**/*.swift"]),
+    deps = [
+        "//Sources/Bookmark",
+        "//Tests/TestKit",
+    ],
+)

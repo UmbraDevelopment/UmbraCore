@@ -1,15 +1,10 @@
-#     deps = [
-        #         "//Sources/CoreTypesInterfaces",
-        #         "//Sources/ErrorHandling",
-        #         "//Sources/ErrorHandling/Common:ErrorHandlingCommon",
-        #         "//Sources/ErrorHandling/Core:ErrorHandlingCore",
-        #         "//ErrorHandling/Domains:ErrorHandlingDomains",
-        #         "//Sources/ErrorHandling/Logging:ErrorHandlingLogging",
-        #         "//Sources/ErrorHandling/Mapping:ErrorHandlingMapping",
-        #         "//Sources/ErrorHandling/Models:ErrorHandlingModels",
-        #         "//Sources/ErrorHandling/Notification:ErrorHandlingNotification",
-        #         "//Sources/ErrorHandling/Protocols:ErrorHandlingProtocols",
-        #         "//Sources/ErrorHandling/Recovery:ErrorHandlingRecovery",
-        #         "//Sources/ErrorHandling/Utilities:ErrorHandlingUtilities",
-#     ],
-# )
+load("//:swift_rules.bzl", "umbra_swift_test")
+
+umbra_swift_test(
+    name = "ErrorHandlingTests",
+    srcs = glob(["**/*.swift"]),
+    deps = [
+        "//Sources/ErrorHandling",
+        "//Tests/TestKit",
+    ],
+)

@@ -1,12 +1,21 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
-load("//:bazel/macros/swift.bzl", "umbra_swift_library")
+load("//:swift_rules.bzl", "umbra_swift_library")
 
-# Foundation-free version of CoreServicesTypes
-# This module has NO Foundation dependencies to break circular dependencies
 umbra_swift_library(
     name = "CoreServicesTypesNoFoundation",
     srcs = glob(["**/*.swift"]),
     deps = [
-        "//Sources/KeyManagementTypes",
     ],
 )
+
+# Uncomment if documentation generation is needed
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+#
+# swift_package(
+#     name = "docc_documentation",
+#     srcs = glob([
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
+#     deps = ["//Sources/CoreServicesTypesNoFoundation"],
+# )

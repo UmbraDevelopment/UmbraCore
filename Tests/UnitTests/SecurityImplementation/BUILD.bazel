@@ -1,10 +1,9 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_test")
+load("//:swift_rules.bzl", "umbra_swift_test")
 
-swift_test(
-    name = "SecurityImplementationTests",
+umbra_swift_test(
+    name = "SecurityImplementation",
+    srcs = glob(["**/*.swift"]),
     deps = [
-        "//Sources/SecurityImplementation",
         "//Tests/TestKit",
     ],
-    visibility = ["//visibility:public"],
 )

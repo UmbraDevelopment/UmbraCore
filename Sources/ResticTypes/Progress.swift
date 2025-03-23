@@ -57,13 +57,13 @@ public struct BackupProgress: Codable, Sendable {
   }
 
   private enum CodingKeys: String, CodingKey {
-    case status = "message_type"
-    case totalFiles = "total_files"
-    case totalBytes = "total_bytes"
-    case processedFiles = "files_done"
-    case processedBytes = "bytes_done"
-    case currentFile = "current_file"
-    case secondsElapsed = "seconds_elapsed"
+    case status="message_type"
+    case totalFiles="total_files"
+    case totalBytes="total_bytes"
+    case processedFiles="files_done"
+    case processedBytes="bytes_done"
+    case currentFile="current_file"
+    case secondsElapsed="seconds_elapsed"
   }
 }
 
@@ -124,13 +124,13 @@ public struct RestoreProgress: Codable, Sendable {
   }
 
   private enum CodingKeys: String, CodingKey {
-    case status = "message_type"
-    case totalFiles = "total_files"
-    case totalBytes = "total_bytes"
-    case restoredFiles = "files_done"
-    case restoredBytes = "bytes_done"
-    case currentFile = "current_file"
-    case secondsElapsed = "seconds_elapsed"
+    case status="message_type"
+    case totalFiles="total_files"
+    case totalBytes="total_bytes"
+    case restoredFiles="files_done"
+    case restoredBytes="bytes_done"
+    case currentFile="current_file"
+    case secondsElapsed="seconds_elapsed"
   }
 }
 

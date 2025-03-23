@@ -1,12 +1,13 @@
+load("//:swift_rules.bzl", "umbra_swift_test")
+
+umbra_swift_test(
+    name = "Tests",
+    srcs = glob(
+        ["**/*.swift"],
+        allow_empty = True,
+    ),
     deps = [
-        "//Tests/UmbraTestKit/TestKit",
-        "//Sources/Core",
-        "//Tests/SecurityInterfacesTest",
-        "//Sources/SecurityInterfaces:SecurityInterfacesForTesting",
-        "//Sources/SecurityInterfacesBase:SecurityInterfacesBaseForTesting",
-        "//Sources/SecurityInterfacesProtocols:SecurityInterfacesProtocolsForTesting",
-        "//Sources/SecurityProtocolsCore",
-        "//Sources/UmbraCoreTypes",
-        "//Sources/ErrorHandling",
+        "//Sources/UmbraTestKit",
+        "//Tests/TestKit",
     ],
 )

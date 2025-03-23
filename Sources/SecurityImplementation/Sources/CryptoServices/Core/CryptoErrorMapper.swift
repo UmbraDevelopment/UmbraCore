@@ -1,6 +1,7 @@
-import CoreErrors
-import ErrorHandling
+import ErrorHandlingCore
+import ErrorHandlingInterfaces
 import ErrorHandlingDomains
+import ErrorHandlingMapping
 import Foundation
 
 /// Provides mapping functions between SecurityImplementation's CryptoError and
@@ -14,8 +15,7 @@ public enum CryptoErrorMapper {
   ///
   /// - Parameter error: Implementation-specific CryptoError to map
   /// - Returns: Equivalent UmbraErrors.Crypto.Core instance
-  public static func mapToCanonicalError(_ error: CoreErrors.CryptoError) -> UmbraErrors.Crypto
-  .Core {
+  public static func mapToCanonicalError(_ error: CryptoError) -> UmbraErrors.Crypto.Core {
     switch error {
       case let .encryptionError(reason):
         .encryptionFailed(
@@ -99,8 +99,7 @@ public enum CryptoErrorMapper {
   ///
   /// - Parameter error: Canonical UmbraErrors.Crypto.Core error to map
   /// - Returns: Best-fit equivalent CryptoError instance for the SecurityImplementation module
-  public static func mapToImplementationError(_ error: UmbraErrors.Crypto.Core) -> CoreErrors
-  .CryptoError {
+  public static func mapToImplementationError(_ error: UmbraErrors.Crypto.Core) -> CryptoError {
     switch error {
       case let .encryptionFailed(algorithm, reason):
         if algorithm.contains("asymmetric") {
@@ -177,7 +176,7 @@ public enum CryptoErrorMapper {
   }
 }
 
-extension CoreErrors.CryptoError {
+extension CryptoError {
   /// Converts this implementation-specific CryptoError to the canonical UmbraErrors.Crypto.Core
   /// type
   ///
@@ -193,7 +192,7 @@ extension UmbraErrors.Crypto.Core {
   /// Note: This is lossy conversion and should only be used where necessary.
   ///
   /// - Returns: Best-fit equivalent CryptoError instance for the SecurityImplementation module
-  public func toImplementation() -> CoreErrors.CryptoError {
+  public func toImplementation() -> CryptoError {
     CryptoErrorMapper.mapToImplementationError(self)
   }
 }

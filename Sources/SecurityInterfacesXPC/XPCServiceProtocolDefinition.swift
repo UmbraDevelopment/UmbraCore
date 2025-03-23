@@ -91,7 +91,6 @@ public class XPCServiceProtocolDefinitionImpl: NSObject,
 ObjCBridgingTypesFoundation.XPCServiceProtocolBaseFoundation {
 
   /// Recommended modern replacement for this class
-  public typealias ModernReplacement = XPCProtocolsCore.ModernXPCService
 
   /// Protocol identifier for XPC service registration
   public static var protocolIdentifier: String {

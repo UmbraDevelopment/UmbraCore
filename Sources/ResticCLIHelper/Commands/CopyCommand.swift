@@ -12,7 +12,7 @@ public final class CopyCommand: ResticCommand, @unchecked Sendable {
   public var commandName: String { "copy" }
 
   public var commandArguments: [String] {
-    var args = [String]()
+    var args=[String]()
 
     // Add snapshot IDs
     args.append(contentsOf: snapshotIDs)
@@ -34,23 +34,23 @@ public final class CopyCommand: ResticCommand, @unchecked Sendable {
     snapshotIDs: [String],
     targetRepository: String,
     targetPassword: String,
-    validateTargetCredentials: Bool = true
+    validateTargetCredentials: Bool=true
   ) {
-    self.options = options
-    self.snapshotIDs = snapshotIDs
-    self.targetRepository = targetRepository
-    self.targetPassword = targetPassword
-    self.validateTargetCredentials = validateTargetCredentials
+    self.options=options
+    self.snapshotIDs=snapshotIDs
+    self.targetRepository=targetRepository
+    self.targetPassword=targetPassword
+    self.validateTargetCredentials=validateTargetCredentials
   }
 
   public var environment: [String: String] {
-    var env = options.environmentVariables
-    env["RESTIC_REPOSITORY"] = options.repository
-    env["RESTIC_PASSWORD"] = options.password
-    env["RESTIC_REPOSITORY2"] = targetRepository
-    env["RESTIC_PASSWORD2"] = targetPassword
-    if let cachePath = options.cachePath {
-      env["RESTIC_CACHE_DIR"] = cachePath
+    var env=options.environmentVariables
+    env["RESTIC_REPOSITORY"]=options.repository
+    env["RESTIC_PASSWORD"]=options.password
+    env["RESTIC_REPOSITORY2"]=targetRepository
+    env["RESTIC_PASSWORD2"]=targetPassword
+    if let cachePath=options.cachePath {
+      env["RESTIC_CACHE_DIR"]=cachePath
     }
     return env
   }
@@ -78,7 +78,7 @@ public final class CopyCommand: ResticCommand, @unchecked Sendable {
   /// Set quiet mode
   @discardableResult
   public func setQuiet(_ quiet: Bool) -> Self {
-    options = CommonOptions(
+    options=CommonOptions(
       repository: options.repository,
       password: options.password,
       cachePath: options.cachePath,
@@ -91,7 +91,7 @@ public final class CopyCommand: ResticCommand, @unchecked Sendable {
   /// Enable or disable JSON output
   @discardableResult
   public func setJsonOutput(_ jsonOutput: Bool) -> Self {
-    options = CommonOptions(
+    options=CommonOptions(
       repository: options.repository,
       password: options.password,
       cachePath: options.cachePath,
@@ -105,15 +105,15 @@ public final class CopyCommand: ResticCommand, @unchecked Sendable {
 /// Builder for CopyCommand
 public class CopyCommandBuilder {
   private var options: CommonOptions
-  private var snapshotIDs: [String] = []
+  private var snapshotIDs: [String]=[]
   private var targetRepository: String
   private var targetPassword: String
-  private var validateTargetCredentials: Bool = true
+  private var validateTargetCredentials: Bool=true
 
   public init(options: CommonOptions, targetRepository: String, targetPassword: String) {
-    self.options = options
-    self.targetRepository = targetRepository
-    self.targetPassword = targetPassword
+    self.options=options
+    self.targetRepository=targetRepository
+    self.targetPassword=targetPassword
   }
 
   /// Add a snapshot ID to copy
@@ -133,7 +133,7 @@ public class CopyCommandBuilder {
   /// Disable password validation
   @discardableResult
   public func disablePasswordValidation() -> Self {
-    validateTargetCredentials = false
+    validateTargetCredentials=false
     return self
   }
 

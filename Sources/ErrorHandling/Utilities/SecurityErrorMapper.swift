@@ -6,11 +6,11 @@ import Foundation
 /// Error domain namespace
 public enum ErrorDomain {
   /// Security domain
-  public static let security = "Security"
+  public static let security="Security"
   /// Crypto domain
-  public static let crypto = "Crypto"
+  public static let crypto="Crypto"
   /// Application domain
-  public static let application = "Application"
+  public static let application="Application"
 }
 
 /// Error context protocol
@@ -34,9 +34,9 @@ public struct BaseErrorContext: ErrorContext {
 
   /// Initialise with domain, code and description
   public init(domain: String, code: Int, description: String) {
-    self.domain = domain
-    self.code = code
-    self.description = description
+    self.domain=domain
+    self.code=code
+    self.description=description
   }
 }
 
@@ -50,14 +50,14 @@ public class LegacySecurityErrorMapper {
   /// - Returns: A mapped security core error, or nil if mapping is not possible
   public func mapToCoreError(_ error: Error) -> UmbraErrors.GeneralSecurity.Core? {
     // Check if the error is already a security error
-    if let securityError = error as? UmbraErrors.GeneralSecurity.Core {
+    if let securityError=error as? UmbraErrors.GeneralSecurity.Core {
       return securityError
     }
 
     // Extract error information from the external error
-    let nsError = error as NSError
-    let domain = nsError.domain
-    let code = nsError.code
+    let nsError=error as NSError
+    let domain=nsError.domain
+    let code=nsError.code
 
     // Map common error patterns to security core errors
 
@@ -106,13 +106,13 @@ public class LegacySecurityErrorMapper {
     _ error: UmbraErrors.GeneralSecurity
       .Core
   ) -> ErrorHandlingInterfaces.UmbraError {
-    let source = ErrorHandlingInterfaces.ErrorSource(
+    let source=ErrorHandlingInterfaces.ErrorSource(
       file: #file,
       line: #line,
       function: #function
     )
 
-    let context = ErrorHandlingInterfaces.ErrorContext(
+    let context=ErrorHandlingInterfaces.ErrorContext(
       source: "SecurityModule",
       operation: "SecurityOperation",
       details: "Mapped from security core error"
@@ -185,13 +185,13 @@ private struct SecurityGenericError: ErrorHandlingInterfaces.UmbraError, Sendabl
     underlyingError: Error?,
     context: ErrorHandlingInterfaces.ErrorContext
   ) {
-    self.domain = domain
-    self.code = code
-    self.message = message
-    self.details = details
-    self.source = source
-    self.underlyingError = underlyingError
-    self.context = context
+    self.domain=domain
+    self.code=code
+    self.message=message
+    self.details=details
+    self.source=source
+    self.underlyingError=underlyingError
+    self.context=context
   }
 
   /// Conform to CustomStringConvertible
@@ -206,15 +206,15 @@ private struct SecurityGenericError: ErrorHandlingInterfaces.UmbraError, Sendabl
 
   /// Create a new instance with additional context
   func with(context: ErrorHandlingInterfaces.ErrorContext) -> Self {
-    var newError = self
-    newError.context = context
+    var newError=self
+    newError.context=context
     return newError
   }
 
   /// Create a new instance with an underlying error
   func with(underlyingError: Error) -> Self {
-    var newError = self
-    newError.underlyingError = underlyingError
+    var newError=self
+    newError.underlyingError=underlyingError
     return newError
   }
 

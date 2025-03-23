@@ -106,7 +106,7 @@
 /// - Resource locking
 public enum UmbraBookmarkService {
   /// Current version of the UmbraBookmarkService module
-  public static let version = "1.0.0"
+  public static let version="1.0.0"
 
   /// Initialise UmbraBookmarkService with default configuration
   public static func initialize() {

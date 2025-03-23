@@ -1,21 +1,21 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_test")
+load("//:swift_rules.bzl", "umbra_swift_library")
 
-swift_test(
+umbra_swift_library(
     name = "ErrorHandlingTests",
     srcs = glob(["**/*.swift"]),
     deps = [
-        "//Sources/ErrorHandling",
-        "//Sources/ErrorHandling/Common:ErrorHandlingCommon",
-        "//Sources/ErrorHandling/Core:ErrorHandlingCore",
-        "//ErrorHandling/Domains:ErrorHandlingDomains",
-        "//Sources/ErrorHandling/Logging:ErrorHandlingLogging",
-        "//Sources/ErrorHandling/Mapping:ErrorHandlingMapping",
-        "//Sources/ErrorHandling/Models:ErrorHandlingModels",
-        "//Sources/ErrorHandling/Notification:ErrorHandlingNotification",
-        "//Sources/ErrorHandling/Protocols:ErrorHandlingProtocols",
-        "//Sources/ErrorHandling/Recovery:ErrorHandlingRecovery",
-        "//Sources/ErrorHandling/Utilities:ErrorHandlingUtilities",
-        "//Sources/UmbraCoreTypes",
     ],
-    visibility = ["//visibility:public"],
 )
+
+# Uncomment if documentation generation is needed
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+#
+# swift_package(
+#     name = "docc_documentation",
+#     srcs = glob([
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
+#     deps = ["//Sources/ErrorHandlingTests"],
+# )

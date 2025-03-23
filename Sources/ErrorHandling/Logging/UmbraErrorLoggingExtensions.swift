@@ -7,11 +7,11 @@ import UmbraLogging
 /// Error domain namespace
 public enum ErrorDomain {
   /// Security domain
-  public static let security = "Security"
+  public static let security="Security"
   /// Crypto domain
-  public static let crypto = "Crypto"
+  public static let crypto="Crypto"
   /// Application domain
-  public static let application = "Application"
+  public static let application="Application"
 }
 
 /// Error context protocol
@@ -35,9 +35,9 @@ public struct BaseErrorContext: ErrorContext {
 
   /// Initialise with domain, code and description
   public init(domain: String, code: Int, description: String) {
-    self.domain = domain
-    self.code = code
-    self.description = description
+    self.domain=domain
+    self.code=code
+    self.description=description
   }
 }
 
@@ -53,19 +53,19 @@ extension ErrorHandlingInterfaces.UmbraError {
   ///   - function: Function name (autofilled by compiler)
   ///   - line: Line number (autofilled by compiler)
   public func logAsError(
-    additionalMessage _: String? = nil,
-    file: String = #file,
-    function: String = #function,
-    line: Int = #line
+    additionalMessage _: String?=nil,
+    file: String=#file,
+    function: String=#function,
+    line: Int=#line
   ) async {
     // Create metadata
-    var metadata = createBasicMetadata()
+    var metadata=createBasicMetadata()
 
     // Add source information if available
     if let source {
-      metadata["sourceFile"] = source.file
-      metadata["sourceLine"] = String(source.line)
-      metadata["sourceFunction"] = source.function
+      metadata["sourceFile"]=source.file
+      metadata["sourceLine"]=String(source.line)
+      metadata["sourceFunction"]=source.function
     }
 
     await ErrorLogger.shared.logError(
@@ -84,16 +84,16 @@ extension ErrorHandlingInterfaces.UmbraError {
   ///   - function: Function name (autofilled by compiler)
   ///   - line: Line number (autofilled by compiler)
   public func logAsWarning(
-    additionalMessage: String? = nil,
-    file: String = #file,
-    function: String = #function,
-    line: Int = #line
+    additionalMessage: String?=nil,
+    file: String=#file,
+    function: String=#function,
+    line: Int=#line
   ) async {
     // Create description for the error with additional context
-    let warningMessage = formatErrorDescription(additionalMessage: additionalMessage)
+    let warningMessage=formatErrorDescription(additionalMessage: additionalMessage)
 
     // Create metadata
-    let metadata = createBasicMetadata()
+    let metadata=createBasicMetadata()
 
     await ErrorLogger.shared.logWarning(
       warningMessage,
@@ -111,16 +111,16 @@ extension ErrorHandlingInterfaces.UmbraError {
   ///   - function: Function name (autofilled by compiler)
   ///   - line: Line number (autofilled by compiler)
   public func logAsInfo(
-    additionalMessage: String? = nil,
-    file: String = #file,
-    function: String = #function,
-    line: Int = #line
+    additionalMessage: String?=nil,
+    file: String=#file,
+    function: String=#function,
+    line: Int=#line
   ) async {
     // Create description for the error with additional context
-    let infoMessage = formatErrorDescription(additionalMessage: additionalMessage)
+    let infoMessage=formatErrorDescription(additionalMessage: additionalMessage)
 
     // Create metadata
-    let metadata = createBasicMetadata()
+    let metadata=createBasicMetadata()
 
     await ErrorLogger.shared.logInfo(
       infoMessage,
@@ -138,16 +138,16 @@ extension ErrorHandlingInterfaces.UmbraError {
   ///   - function: Function name (autofilled by compiler)
   ///   - line: Line number (autofilled by compiler)
   public func logAsDebug(
-    additionalMessage: String? = nil,
-    file: String = #file,
-    function: String = #function,
-    line: Int = #line
+    additionalMessage: String?=nil,
+    file: String=#file,
+    function: String=#function,
+    line: Int=#line
   ) async {
     // Create description for the error with additional context
-    let debugMessage = formatErrorDescription(additionalMessage: additionalMessage)
+    let debugMessage=formatErrorDescription(additionalMessage: additionalMessage)
 
     // Create metadata
-    let metadata = createBasicMetadata()
+    let metadata=createBasicMetadata()
 
     await ErrorLogger.shared.logDebug(
       debugMessage,
@@ -163,9 +163,9 @@ extension ErrorHandlingInterfaces.UmbraError {
   /// Creates the basic metadata for this error
   /// - Returns: LogMetadata with error information
   private func createBasicMetadata() -> LogMetadata {
-    var metadata = LogMetadata()
-    metadata["domain"] = domain
-    metadata["code"] = code
+    var metadata=LogMetadata()
+    metadata["domain"]=domain
+    metadata["code"]=code
     return metadata
   }
 

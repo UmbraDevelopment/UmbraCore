@@ -5,14 +5,14 @@ import ResticTypes
 public final class StatsCommand: ResticCommand, @unchecked Sendable {
   /// Mode for stats command
   public enum Mode: String, Sendable {
-    case restoreSize = "restore-size"
-    case rawData = "raw-data"
+    case restoreSize="restore-size"
+    case rawData="raw-data"
     case blobs
   }
 
   private var mode: Mode?
   private var tag: String?
-  private var paths: [String] = []
+  private var paths: [String]=[]
   private var snapshotID: String?
   public private(set) var options: CommonOptions
   private var host: String?
@@ -21,7 +21,7 @@ public final class StatsCommand: ResticCommand, @unchecked Sendable {
 
   /// Command-specific arguments
   public var commandArguments: [String] {
-    var args = [String]()
+    var args=[String]()
 
     if let snapshotID {
       args.append(snapshotID)
@@ -47,7 +47,7 @@ public final class StatsCommand: ResticCommand, @unchecked Sendable {
 
   /// Override the arguments property to include both common and command-specific arguments
   public var arguments: [String] {
-    var args = [String]()
+    var args=[String]()
 
     // Add command-specific arguments
     args.append(contentsOf: commandArguments)
@@ -65,43 +65,43 @@ public final class StatsCommand: ResticCommand, @unchecked Sendable {
   }
 
   public init(options: CommonOptions) {
-    self.options = options
+    self.options=options
   }
 
   /// Set the mode for the stats command
   @discardableResult
   public func mode(_ mode: Mode) -> Self {
-    self.mode = mode
+    self.mode=mode
     return self
   }
 
   /// Set the host filter
   @discardableResult
   public func host(_ host: String) -> Self {
-    self.host = host
+    self.host=host
     return self
   }
 
   /// Set the tag filter
   @discardableResult
   public func tag(_ tag: String) -> Self {
-    self.tag = tag
+    self.tag=tag
     return self
   }
 
   /// Add a path filter
   @discardableResult
   public func path(_ path: String) -> Self {
-    var newPaths = paths
+    var newPaths=paths
     newPaths.append(path)
 
     // Since this is a final class, we can use self.init to create a new instance
-    let newCommand = StatsCommand(options: options)
-    newCommand.mode = mode
-    newCommand.tag = tag
-    newCommand.host = host
-    newCommand.snapshotID = snapshotID
-    newCommand.paths = newPaths
+    let newCommand=StatsCommand(options: options)
+    newCommand.mode=mode
+    newCommand.tag=tag
+    newCommand.host=host
+    newCommand.snapshotID=snapshotID
+    newCommand.paths=newPaths
 
     // Use 'as! Self' to satisfy the return type
     return newCommand as! Self
@@ -110,16 +110,16 @@ public final class StatsCommand: ResticCommand, @unchecked Sendable {
   /// Set the snapshot ID
   @discardableResult
   public func snapshot(_ id: String) -> Self {
-    snapshotID = id
+    snapshotID=id
     return self
   }
 
   /// Set the cache path
   @discardableResult
   public func setCachePath(_ path: String) -> Self {
-    var env = options.environmentVariables
-    env["RESTIC_CACHE_DIR"] = path
-    options = CommonOptions(
+    var env=options.environmentVariables
+    env["RESTIC_CACHE_DIR"]=path
+    options=CommonOptions(
       repository: options.repository,
       password: options.password,
       cachePath: options.cachePath,
@@ -133,11 +133,11 @@ public final class StatsCommand: ResticCommand, @unchecked Sendable {
   }
 
   public var environment: [String: String] {
-    var env = options.environmentVariables
-    env["RESTIC_REPOSITORY"] = options.repository
-    env["RESTIC_PASSWORD"] = options.password
-    if let cachePath = options.cachePath {
-      env["RESTIC_CACHE_DIR"] = cachePath
+    var env=options.environmentVariables
+    env["RESTIC_REPOSITORY"]=options.repository
+    env["RESTIC_PASSWORD"]=options.password
+    if let cachePath=options.cachePath {
+      env["RESTIC_CACHE_DIR"]=cachePath
     }
     return env
   }

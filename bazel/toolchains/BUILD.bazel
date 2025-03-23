@@ -2,8 +2,8 @@
 Toolchain definitions for UmbraCore test targets
 """
 
-load("@bazel_tools//tools/cpp:cc_toolchain_config_lib.bzl", "tool_path")
 load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
+load("@bazel_tools//tools/cpp:cc_toolchain_config_lib.bzl", "tool_path")
 load("//bazel/toolchains:macos_arm64_toolchain_config.bzl", "macos_arm64_toolchain_config")
 
 package(default_visibility = ["//visibility:public"])

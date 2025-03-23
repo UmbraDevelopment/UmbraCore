@@ -1,18 +1,21 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
-load("//:bazel/macros/swift.bzl", "umbra_swift_library")
+load("//:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
     name = "UmbraLoggingAdapters",
-    srcs = glob([
-        "Sources/**/*.swift",
-    ]),
-    additional_copts = [],
-    swift_mode = "default",
-    enable_library_evolution = False,  # Disable library evolution for compatibility with LoggingWrapper
+    srcs = glob(["**/*.swift"]),
     deps = [
-        "//Sources/LoggingWrapper:LoggingWrapper",
-        "//Sources/LoggingWrapperInterfaces:LoggingWrapperInterfaces",
-        "//Sources/UmbraLogging",
-        "@swiftpkg_swiftybeaver//:SwiftyBeaver",
     ],
 )
+
+# Uncomment if documentation generation is needed
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+#
+# swift_package(
+#     name = "docc_documentation",
+#     srcs = glob([
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
+#     deps = ["//Sources/UmbraLoggingAdapters"],
+# )

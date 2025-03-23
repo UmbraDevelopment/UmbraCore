@@ -1,59 +1,25 @@
-load("//tools/build_defs:umbracore_module.bzl", "umbracore_foundation_free_module", "umbracore_module_test")
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_test")
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
-umbracore_foundation_free_module(
+swift_library(
     name = "SecurityImplementation",
+    srcs = glob(["Sources/**/*.swift"], allow_empty = False),
     visibility = ["//visibility:public"],
     deps = [
+        "//Sources/ErrorHandlingInterfaces",
+        "//Sources/SecurityInterfaces",
         "//Sources/SecurityProtocolsCore",
-        "//Sources/SecureBytes",
-        "//Sources/CryptoSwiftFoundationIndependent",
-        "//Sources/CoreErrors",
-        "//ErrorHandling/Domains:ErrorHandlingDomains",
-        "//Sources/UmbraCoreTypes",
-    ],
-    copts = [
-        "-target", "arm64-apple-macos14.7.4",
-        "-swift-version", "6",
-        "-g",
-        "-O", # Enable optimizations
-        "-cross-module-optimization", # Enable cross-module optimization
-    ],
-    srcs = glob(
-        [
-            "Sources/*.swift",
-            "Sources/CryptoService/*.swift",
-            "Sources/CryptoServices/Core/*.swift",
-            "Sources/CryptoServices/Asymmetric/*.swift",
-            "Sources/CryptoServices/Symmetric/*.swift",
-            "Sources/CryptoServices/Hashing/*.swift",
-            "Sources/Provider/*.swift",
-            "Sources/KeyManagement/*.swift",
-            "Sources/Utils/*.swift",
-        ],
-        # Exclude the top-level duplicates in favor of the organized structure
-        exclude = [
-            "Sources/CryptoServices/*.swift",
-        ],
-    ),
-)
-
-umbracore_module_test(
-    name = "SecurityImplementationTests",
-    deps = [
-        ":SecurityImplementation",
-        "//Sources/SecurityProtocolsCore",
-        "//Sources/SecureBytes",
-    ],
-    copts = [
-        "-target", "arm64-apple-macos14.7.4",
-        "-swift-version", "6",
-        "-g",
     ],
 )
 
-swift_test(
-    name = "SecurityImplementationTests_runner",
-    deps = [":SecurityImplementationTests"],
-    visibility = ["//visibility:public"],
-)
+# Uncomment if documentation generation is needed
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+#
+# swift_package(
+#     name = "docc_documentation",
+#     srcs = glob([
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
+#     deps = ["//Sources/SecurityImplementation"],
+# )

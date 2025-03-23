@@ -47,7 +47,7 @@ public protocol URLProvider: Sendable {
 extension URLProvider {
   public func createBookmark(forPath path: String) async
   -> Result<Data, UmbraErrors.Security.Protocols> {
-    guard let url = URL(string: path) else {
+    guard let url=URL(string: path) else {
       return .failure(.internalError("Invalid URL path: \(path)"))
     }
 
@@ -56,13 +56,13 @@ extension URLProvider {
 
   public func resolveBookmark(_ bookmarkData: [UInt8]) async throws
   -> (path: String, isStale: Bool) {
-    let data = Data(bookmarkData)
-    let (url, isStale) = try await URL.resolveSecurityScopedBookmark(data)
+    let data=Data(bookmarkData)
+    let (url, isStale)=try await URL.resolveSecurityScopedBookmark(data)
     return (url.path, isStale)
   }
 
   public func stopAccessing(path: String) async {
-    guard let url = URL(string: path) else {
+    guard let url=URL(string: path) else {
       return
     }
 
@@ -76,7 +76,7 @@ extension URLProvider {
   }
 
   public func startAccessing(path: String) async -> Result<Bool, UmbraErrors.Security.Protocols> {
-    guard let url = URL(string: path) else {
+    guard let url=URL(string: path) else {
       return .failure(.internalError("Invalid URL path: \(path)"))
     }
 
