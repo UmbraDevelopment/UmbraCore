@@ -1,5 +1,8 @@
 // CryptoKit removed - cryptography will be handled in ResticBar
-import CoreErrors
+import ErrorHandlingCore
+import ErrorHandlingDomains
+import ErrorHandlingInterfaces
+import ErrorHandlingMapping
 import CryptoTypes
 import Foundation
 
@@ -25,9 +28,10 @@ public actor CryptoService {
   /// - Returns: The generated key data
   public func generateSymmetricKey(algorithm _: String, keySize _: Int) throws -> Data {
     // Placeholder implementation - will be replaced by ResticBar
-    throw NSError(domain: "CryptoService", code: -1, userInfo: [
-      NSLocalizedDescriptionKey: "Cryptography functionality has been moved to ResticBar"
-    ])
+    throw UmbraErrors.Crypto.Core.operationNotSupported(
+      operation: "generateSymmetricKey",
+      reason: "Cryptography functionality has been moved to ResticBar"
+    )
   }
 
   /// Encrypt data using a symmetric key
@@ -37,9 +41,10 @@ public actor CryptoService {
   /// - Returns: Encrypted data
   public func encrypt(_: Data, using _: Data) throws -> Data {
     // Placeholder implementation - will be replaced by ResticBar
-    throw NSError(domain: "CryptoService", code: -1, userInfo: [
-      NSLocalizedDescriptionKey: "Cryptography functionality has been moved to ResticBar"
-    ])
+    throw UmbraErrors.Crypto.Core.operationNotSupported(
+      operation: "encrypt",
+      reason: "Cryptography functionality has been moved to ResticBar"
+    )
   }
 
   /// Decrypt data using a symmetric key
@@ -49,9 +54,10 @@ public actor CryptoService {
   /// - Returns: Decrypted data
   public func decrypt(_: Data, using _: Data) throws -> Data {
     // Placeholder implementation - will be replaced by ResticBar
-    throw NSError(domain: "CryptoService", code: -1, userInfo: [
-      NSLocalizedDescriptionKey: "Cryptography functionality has been moved to ResticBar"
-    ])
+    throw UmbraErrors.Crypto.Core.operationNotSupported(
+      operation: "decrypt",
+      reason: "Cryptography functionality has been moved to ResticBar"
+    )
   }
 }
 

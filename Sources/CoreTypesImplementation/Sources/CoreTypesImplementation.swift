@@ -1,4 +1,7 @@
-import CoreErrors
+import ErrorHandlingCore
+import ErrorHandlingDomains
+import ErrorHandlingInterfaces
+import ErrorHandlingMapping
 import CoreTypesInterfaces
 import UmbraCoreTypes
 

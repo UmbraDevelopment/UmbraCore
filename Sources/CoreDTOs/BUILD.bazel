@@ -2,7 +2,7 @@ load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 swift_library(
     name = "CoreDTOs",
-    srcs = glob(["Sources/**/*.swift"]),
+    srcs = glob(["Sources/**/*.swift"], allow_empty = True),
     visibility = ["//visibility:public"],
     deps = [
         "//Sources/ErrorHandling",
@@ -20,9 +20,6 @@ swift_library(
 #
 # swift_package(
 #     name = "docc_documentation",
-#     srcs = glob([
-#         "**/*.swift",
-#         "**/*.docc/**",
-#     ]),
+#     srcs = glob(["Sources/**/*.swift"], allow_empty = True),
 #     deps = ["//Sources/CoreDTOs"],
 # )

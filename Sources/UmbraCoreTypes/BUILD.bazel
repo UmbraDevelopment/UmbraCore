@@ -2,7 +2,7 @@ load("//:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
     name = "UmbraCoreTypes",
-    srcs = glob(["Sources/**/*.swift"]),
+    srcs = glob(["Sources/**/*.swift"], allow_empty = True),
     visibility = ["//visibility:public"],
     deps = [
         "//Sources/UmbraCoreTypes/CoreErrors:UmbraCoreTypes_CoreErrors",
@@ -15,9 +15,6 @@ umbra_swift_library(
 #
 # swift_package(
 #     name = "docc_documentation",
-#     srcs = glob([
-#         "**/*.swift",
-#         "**/*.docc/**",
-#     ]),
+#     srcs = glob(["Sources/**/*.swift"], allow_empty = True),
 #     deps = ["//Sources/UmbraCoreTypes"],
 # )

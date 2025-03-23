@@ -1,4 +1,7 @@
-import CoreErrors
+import ErrorHandlingCore
+import ErrorHandlingDomains
+import ErrorHandlingInterfaces
+import ErrorHandlingMapping
 import Foundation
 import UmbraCoreTypes
 import UmbraLogging
@@ -206,7 +209,7 @@ extension KeychainXPCProtocol {
 extension KeychainXPCProtocol {
   func synchroniseKeys(_: Data) async throws {
     // This is a placeholder implementation - in a real implementation, we would
-    // use the actual keychain to perform key synchronization
+    // use the actual keychain to perform key synchronisation
   }
 }
 

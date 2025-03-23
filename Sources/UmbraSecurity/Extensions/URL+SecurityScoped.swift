@@ -1,5 +1,7 @@
-import CoreErrors
+import ErrorHandlingCore
 import ErrorHandlingDomains
+import ErrorHandlingInterfaces
+import ErrorHandlingMapping
 import Foundation
 import SecurityBridgeTypes
 import SecurityTypes
@@ -44,8 +46,7 @@ extension URL {
       )
       return (url, isStale)
     } catch {
-      throw CoreErrors.SecurityError.operationFailed(
-        operation: "bookmark resolution",
+      throw UmbraErrors.Security.Core.operationFailed(
         reason: "Failed to resolve bookmark"
       )
     }
@@ -62,9 +63,8 @@ extension URL {
   /// - Returns: Result of the operation
   /// - Throws: SecurityError if access fails, or any error thrown by the operation
   public func us_withSecurityScopedAccess<T>(_ operation: () async throws -> T) async throws -> T {
-    guard us_startAccessingSecurityScopedResource() else {
-      throw CoreErrors.SecurityError.operationFailed(
-        operation: "access security-scoped resource",
+    guard us_startAccessingSecurityScopedResource().get() else {
+      throw UmbraErrors.Security.Core.operationFailed(
         reason: "Failed to access: \(path)"
       )
     }
@@ -74,13 +74,22 @@ extension URL {
   }
 
   /// Start accessing a security-scoped resource
-  /// - Returns: True if successful
-  public func us_startAccessingSecurityScopedResource() -> Bool {
-    startAccessingSecurityScopedResource()
+  /// - Returns: True if started successfully
+  /// - Throws: SecurityError if access fails
+  public func us_startAccessingSecurityScopedResource() async
+  -> Result<Bool, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+    let result=self.startAccessingSecurityScopedResource()
+    if result {
+      return .success(true)
+    } else {
+      return .failure(
+        .operationFailed("Failed to start accessing security-scoped resource")
+      )
+    }
   }
 
   /// Stop accessing a security-scoped resource
   public func us_stopAccessingSecurityScopedResource() {
-    stopAccessingSecurityScopedResource()
+    self.stopAccessingSecurityScopedResource()
   }
 }

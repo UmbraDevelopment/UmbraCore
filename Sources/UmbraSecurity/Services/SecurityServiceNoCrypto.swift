@@ -1,15 +1,19 @@
-import CoreErrors
 import CoreServices
 import CoreServicesTypesNoFoundation
-import ErrorHandlingDomains SecurityInterfacesBase
+import ErrorHandlingCore
+import ErrorHandlingDomains
+import ErrorHandlingInterfaces
+import ErrorHandlingMapping
 import Foundation
 import FoundationBridgeTypes
 import SecurityInterfaces
-import UmbraCoreTypesimport SecurityUtils
-import UmbraCoreTypesimport XPCProtocolsCoreimport XPCProtocolsCoreimport SecurityInterfacesProtocols
-import UmbraCoreTypesimport XPCProtocolsCoreimport XPCProtocolsCoreimport SecurityTypes
+import SecurityInterfacesBase
+import SecurityInterfacesProtocols
+import SecurityTypes
+import SecurityUtils
+import UmbraCoreTypes
 import UmbraLogging
-import XPCProtocolsCoreimport
+import XPCProtocolsCore
 
 /// A minimal implementation of the security service that doesn't depend on CryptoSwift
 /// This helps break circular dependencies between Foundation and CryptoSwift
@@ -53,72 +57,57 @@ public actor SecurityServiceNoCrypto {
     }
   }
 
-  // MARK: - Initialization
+  // MARK: - Lifecycle
 
-  /// Initialize a new security service
-  public init() {
-    _state = .ready
-    SecurityServiceNoCrypto.updateNonIsolatedState(for: instanceID, newState: .ready)
-  }
+  /// Initialise the service with default parameters
+  public init() {}
 
   deinit {
-    SecurityServiceNoCrypto.removeNonIsolatedState(for: instanceID)
+    Self.removeNonIsolatedState(for: instanceID)
   }
 
-  // MARK: - Service Lifecycle
-
-  /// Initialize the security service
-  public func initialize() async throws {
-    _state = .initializing
-    SecurityServiceNoCrypto.updateNonIsolatedState(for: instanceID, newState: .initializing)
-
-    // Perform any initialization tasks
-
-    _state = .ready
-    SecurityServiceNoCrypto.updateNonIsolatedState(for: instanceID, newState: .ready)
-  }
-
-  /// Shut down the security service
-  public func shutdown() async throws {
-    _state = .shuttingDown
-    SecurityServiceNoCrypto.updateNonIsolatedState(for: instanceID, newState: .shuttingDown)
-
-    // Perform any cleanup tasks
-
+  /// Reset the service state
+  public func reset() async {
     _state = .uninitialized
-    SecurityServiceNoCrypto.updateNonIsolatedState(for: instanceID, newState: .uninitialized)
+    Self.updateNonIsolatedState(for: instanceID, newState: _state)
   }
 
-  // MARK: - Security Operations
+  // MARK: - Service State Management
 
-  /// Placeholder for encrypt operation
-  /// In a real implementation, this would use a security provider
-  public func encrypt(
-    data: Data,
-    key _: Data
-  ) async -> Result<Data, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
-    // This is just a placeholder implementation to satisfy the compiler
-    // In a real implementation, this would use a security provider
-    data
+  /// Initialise the security service
+  /// - Parameter usesPrivilegedHelper: Whether to use the privileged helper for crypto
+  /// - Returns: True if initialised successfully
+  /// - Throws: SecurityError if initialisation fails
+  public func initialize(usesPrivilegedHelper: Bool = false) async -> Result<Bool, UmbraErrors.Security.Core> {
+    // Minimal implementation - just update state
+    _state = .initialized
+    Self.updateNonIsolatedState(for: instanceID, newState: _state)
+    return .success(true)
   }
 
-  /// Placeholder for decrypt operation
-  /// In a real implementation, this would use a security provider
-  public func decrypt(
-    data: Data,
-    key _: Data
-  ) async -> Result<Data, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
-    // This is just a placeholder implementation to satisfy the compiler
-    // In a real implementation, this would use a security provider
-    data
+  /// Start the security service
+  /// - Returns: True if started successfully
+  /// - Throws: SecurityError if startup fails
+  public func start() async -> Result<Bool, UmbraErrors.Security.Core> {
+    guard _state == .initialized else {
+      return .failure(.operationFailed(reason: "Cannot start: service not initialised"))
+    }
+
+    _state = .running
+    Self.updateNonIsolatedState(for: instanceID, newState: _state)
+    return .success(true)
   }
 
-  /// Placeholder for key generation
-  /// In a real implementation, this would use a security provider
-  public func generateKey(size: Int=32) async
-  -> Result<Data, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
-    // This is just a placeholder implementation to satisfy the compiler
-    // In a real implementation, this would use a security provider
-    Data(count: size)
+  /// Stop the security service
+  /// - Returns: True if stopped successfully
+  /// - Throws: SecurityError if stopping fails
+  public func stop() async -> Result<Bool, UmbraErrors.Security.Core> {
+    guard _state == .running else {
+      return .failure(.operationFailed(reason: "Cannot stop: service not running"))
+    }
+
+    _state = .stopped
+    Self.updateNonIsolatedState(for: instanceID, newState: _state)
+    return .success(true)
   }
 }

@@ -1,19 +1,27 @@
-import CoreErrors
+import ErrorHandlingCore
 import ErrorHandlingDomains
+import ErrorHandlingInterfaces
+import ErrorHandlingMapping
 import SecurityBridgeTypes
 import SecurityInterfacesProtocols
 import UmbraCoreTypes
 import XPCProtocolsCore
 
-/// This file was previously defining a duplicated SecurityError enum
-/// It now uses the canonical UmbraErrors.Security.Core type directly
-/// and provides mapping functions to/from CoreErrors.XPCErrors.SecurityError for compatibility
+/**
+ * This file was previously defining a duplicated SecurityError enum.
+ * It now uses the canonical UmbraErrors.Security.Core type directly
+ * and provides mapping functions to/from ErrorHandlingDomains.UmbraErrors.XPC.SecurityError
+ * for compatibility during migration.
+ *
+ * Note: These mappings are provided for backwards compatibility and will be
+ * phased out when the migration is complete.
+ */
 
 /// Mapping functions for converting between UmbraErrors.Security.Core and
-/// CoreErrors.XPCErrors.SecurityError
+/// UmbraErrors.XPC.SecurityError
 extension UmbraErrors.Security.Core {
-  /// Initialize from a protocol error
-  public init(from protocolError: CoreErrors.XPCErrors.SecurityError) {
+  /// Initialise from a protocol error
+  public init(from protocolError: UmbraErrors.XPC.SecurityError) {
     // Map from XPC error to core error
     switch protocolError {
       case let .serverUnavailable(serviceName):
@@ -25,7 +33,7 @@ extension UmbraErrors.Security.Core {
       case let .authenticationFailed(reason):
         self = .authenticationFailed(reason: reason)
       case let .permissionDenied(operation):
-        self = .authorizationFailed(reason: "XPC authorization denied for operation: \(operation)")
+        self = .authorizationFailed(reason: "XPC authorisation denied for operation: \(operation)")
       case let .invalidRequest(reason):
         self = .internalError(reason: "XPC invalid request: \(reason)")
       case let .incompatibleProtocolVersion(clientVersion, serverVersion):
@@ -42,31 +50,29 @@ extension UmbraErrors.Security.Core {
 
   /// Convert to a protocol error
   /// - Returns: A protocol error representation of this error, or nil if no good match
-  public func toProtocolError() -> CoreErrors.XPCErrors.SecurityError? {
+  public func toProtocolError() -> UmbraErrors.XPC.SecurityError? {
     // Map from core error to XPC error
     switch self {
       case let .authenticationFailed(reason):
         .authenticationFailed(reason: reason)
       case let .authorizationFailed(reason):
         .permissionDenied(operation: reason)
-      case .secureConnectionFailed:
-        .serverUnavailable(serviceName: "unknown")
-      case let .internalError(reason) where reason.contains("timed out"):
-        .internalError(description: "Operation timed out")
+      case let .secureConnectionFailed(reason):
+        .connectionFailed(reason: reason)
       case let .internalError(reason):
         .internalError(description: reason)
       default:
-        .internalError(description: localizedDescription)
+        // Default to internal error with description
+        .internalError(description: self.localizedDescription)
     }
   }
 }
 
-/// Extension on CoreErrors.XPCErrors.SecurityError to provide mapping back to
-/// UmbraErrors.Security.Core
-extension CoreErrors.XPCErrors.SecurityError {
-  /// Convert to a core error
-  /// - Returns: A core error representation of this protocol error
-  public func toCoreError() -> UmbraErrors.Security.Core {
-    UmbraErrors.Security.Core(from: self)
-  }
-}
+/// Deprecated typealias for backwards compatibility
+/// @deprecated Use UmbraErrors.Security.Core directly
+@available(
+  *,
+  deprecated,
+  message: "Use UmbraErrors.Security.Core directly instead of this typealias for improved type clarity"
+)
+public typealias SecurityError = UmbraErrors.Security.Core

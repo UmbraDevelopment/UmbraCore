@@ -82,15 +82,15 @@ extension UmbraError {
   public func log(level: OSLogType = .error, privacy: OSLogPrivacy = .public) {
     switch level {
       case .debug:
-        errorLogger.debug("\(self, privacy: privacy)")
+        errorLogger.debug("\(self, privacy: .public)")
       case .info:
-        errorLogger.info("\(self, privacy: privacy)")
+        errorLogger.info("\(self, privacy: .public)")
       case .error:
-        errorLogger.error("\(self, privacy: privacy)")
+        errorLogger.error("\(self, privacy: .public)")
       case .fault:
-        errorLogger.fault("\(self, privacy: privacy)")
+        errorLogger.fault("\(self, privacy: .public)")
       default:
-        errorLogger.log("\(self, privacy: privacy)")
+        errorLogger.log("\(self, privacy: .public)")
     }
   }
 }

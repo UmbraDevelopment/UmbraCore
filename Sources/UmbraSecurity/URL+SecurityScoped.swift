@@ -1,6 +1,8 @@
-import CoreErrors
 import CoreTypesInterfaces
+import ErrorHandlingCore
 import ErrorHandlingDomains
+import ErrorHandlingInterfaces
+import ErrorHandlingMapping
 import Foundation
 import SecurityTypes
 import SecurityTypesProtocols
@@ -53,59 +55,69 @@ extension URL {
   ///   - Invalid bookmark data
   ///   - File no longer exists
   ///   - Insufficient permissions
-  public static func resolveSecurityScopedBookmark(_ bookmarkData: Data) async throws
+  public static func resolveSecurityScopedBookmark(_ bookmarkData: Data) async throws -> (URL, Bool) {
+    do {
+      var isStale=false
+      let url=try URL(
+        resolvingBookmarkData: bookmarkData,
+        options: .withSecurityScope,
+        relativeTo: nil,
+        bookmarkDataIsStale: &isStale
+      )
+      return (url, isStale)
+    } catch {
+      throw UmbraErrors.Security.Core.operationFailed(
+        reason: "Failed to resolve security-scoped bookmark"
+      )
+    }
+  }
+
+  /// Resolves a security-scoped bookmark stored as SecureBytes to its URL.
+  /// - Parameter bookmarkData: The SecureBytes containing the bookmark data
+  /// - Returns: A tuple containing:
+  ///   - URL: The resolved URL
+  ///   - Bool: Whether the bookmark is stale and should be recreated
+  /// - Throws: SecurityError.bookmarkError if bookmark resolution fails
+  public static func resolveSecurityScopedBookmark(_ bookmarkData: UmbraCoreTypes.SecureBytes) async throws
   -> (URL, Bool) {
-    var isStale=false
-    let url=try URL(
-      resolvingBookmarkData: bookmarkData,
-      options: .withSecurityScope,
-      relativeTo: nil,
-      bookmarkDataIsStale: &isStale
-    )
-    return (url, isStale)
+    try await resolveSecurityScopedBookmark(Data(bookmarkData.bytes))
   }
 
-  /// Starts accessing a security-scoped resource.
-  /// This must be called before accessing the resource and paired with a call to
-  /// stopSecurityScopedAccess.
-  /// - Returns: True if access was granted, false otherwise
-  public func startSecurityScopedAccess() -> Bool {
-    startAccessingSecurityScopedResource()
-  }
-
-  /// Stops accessing a security-scoped resource.
-  /// This should be called after you are done accessing the resource to release system resources.
-  public func stopSecurityScopedAccess() {
-    stopAccessingSecurityScopedResource()
-  }
-
-  /// Performs an operation with security-scoped access to this URL.
-  /// Automatically handles starting and stopping security-scoped access.
-  /// - Parameter operation: The operation to perform while access is granted
-  /// - Returns: The result of the operation
-  /// - Throws: Any error thrown by the operation
-  public func withSecurityScopedAccess<T: Sendable>(
-    _ operation: @Sendable () throws -> T
-  ) throws -> T {
-    guard startSecurityScopedAccess() else {
-      throw UmbraErrors.Security.Protocols.internalError("Failed to access: \(path)")
+  /// Starts accessing a security-scoped resource represented by this URL.
+  /// This must be called before attempting to access the resource, and stopAccessingSecurityScopedResource
+  /// must be called when done.
+  /// - Returns: True if access was successfully started, false otherwise
+  public func startAccessingSecurityScopedResource() async -> Result<Bool, UmbraErrors.Security.Protocols> {
+    let result=self.startAccessingSecurityScopedResource()
+    if result {
+      return .success(true)
+    } else {
+      return .failure(.operationFailed("Failed to start accessing security-scoped resource"))
     }
-    defer { stopSecurityScopedAccess() }
-    return try operation()
   }
 
-  /// Performs an async operation with security-scoped access to this URL.
-  /// Automatically handles starting and stopping security-scoped access.
-  /// - Parameter operation: The async operation to perform while access is granted
+  /// Stops accessing a security-scoped resource that was previously accessed with
+  /// startAccessingSecurityScopedResource.
+  /// Must be called after access is no longer needed to release any resources.
+  public func stopAccessingSecurityScopedResource() {
+    self.stopAccessingSecurityScopedResource()
+  }
+
+  /// Executes an operation with temporary access to a security-scoped resource.
+  /// This method automatically handles starting and stopping access to the resource.
+  /// - Parameter operation: The operation to perform while the resource is accessible
   /// - Returns: The result of the operation
-  /// - Throws: Any error thrown by the operation
-  public func withSecurityScopedAccess<T: Sendable>(
-    _ operation: @Sendable () async throws -> T
-  ) async throws -> T {
-    guard startSecurityScopedAccess() else {
-      throw UmbraErrors.Security.Protocols.internalError("Failed to access: \(path)")
+  /// - Throws: SecurityError if access cannot be granted, or any error thrown by the operation
+  public func withSecurityScopedAccess<T>(_ operation: () async throws -> T) async throws -> T {
+    let accessResult = await startAccessingSecurityScopedResource()
+    switch accessResult {
+      case .success:
+        defer { stopAccessingSecurityScopedResource() }
+        return try await operation()
+      case .failure:
+        throw UmbraErrors.Security.Core.operationFailed(
+          reason: "Failed to access security-scoped resource: \(self.path)"
+        )
     }
-    defer { stopSecurityScopedAccess() }
-    return try await operation()
   }
 }

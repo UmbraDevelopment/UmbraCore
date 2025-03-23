@@ -1,5 +1,7 @@
-import CoreErrors
+import ErrorHandlingCore
 import ErrorHandlingDomains
+import ErrorHandlingInterfaces
+import ErrorHandlingMapping
 import SecurityInterfacesProtocols
 import UmbraCoreTypes
 import XPCProtocolsCore
@@ -14,8 +16,9 @@ public protocol SecurityProviderBase: Sendable {
 
   /// Test if the security provider is available
   /// - Returns: True if the provider is available, false otherwise
-  /// - Throws: SecurityError if the check fails
-  func isAvailable() async -> Result<Bool, CoreErrors.XPCErrors.SecurityError>
+  /// - Throws: UmbraErrors.Security.Core if the check fails
+  func isAvailable() async -> Result<Bool, UmbraErrors.XPC.SecurityError>
+  
   /// Get the provider's version information
   /// - Returns: Version string
   func getVersion() async -> String
@@ -29,7 +32,7 @@ extension SecurityProviderBase {
   }
 
   /// Default implementation that assumes the provider is available
-  public func isAvailable() async -> Result<Bool, CoreErrors.XPCErrors.SecurityError> {
+  public func isAvailable() async -> Result<Bool, UmbraErrors.XPC.SecurityError> {
     .success(true)
   }
 
@@ -43,6 +46,8 @@ extension SecurityProviderBase {
 public final class SecurityProviderBaseAdapter: SecurityProviderBase {
   private let provider: any SecurityProviderProtocol
 
+  /// Initialise with a security provider
+  /// - Parameter provider: The provider to adapt
   public init(provider: any SecurityProviderProtocol) {
     self.provider=provider
   }
@@ -51,15 +56,23 @@ public final class SecurityProviderBaseAdapter: SecurityProviderBase {
     "com.umbra.security.provider.base.adapter"
   }
 
-  public func isAvailable() async -> Result<Bool, CoreErrors.XPCErrors.SecurityError> {
-    // This is a simple implementation that assumes the provider is available
-    // In a real implementation, you might want to perform some checks
-    .success(true)
+  public func isAvailable() async -> Result<Bool, UmbraErrors.XPC.SecurityError> {
+    do {
+      let available=try await provider.isAvailable()
+      return .success(available)
+    } catch {
+      if let securityError=error as? UmbraErrors.Security.Core {
+        // Convert core error to protocol error
+        if let protocolError=securityError.toProtocolError() {
+          return .failure(protocolError)
+        }
+      }
+      // Default mapping for other errors
+      return .failure(.internalError(description: error.localizedDescription))
+    }
   }
 
   public func getVersion() async -> String {
-    // This is a simple implementation that returns a fixed version
-    // In a real implementation, you might want to get the version from the provider
-    "1.0.0"
+    await provider.getVersion()
   }
 }

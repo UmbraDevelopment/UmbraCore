@@ -1,5 +1,7 @@
-import CoreErrors
+import ErrorHandlingCore
 import ErrorHandlingDomains
+import ErrorHandlingInterfaces
+import ErrorHandlingMapping
 import Foundation
 import UmbraCoreTypes
 import UmbraSecurity
@@ -51,7 +53,17 @@ extension URLProvider {
       return .failure(.internalError("Invalid URL path: \(path)"))
     }
 
-    return await url.createSecurityScopedBookmark()
+    guard url.startAccessingSecurityScopedResource() else {
+      return .failure(.accessDenied("Could not access security-scoped resource"))
+    }
+    defer { url.stopAccessingSecurityScopedResource() }
+
+    do {
+      let data=try url.bookmarkData(options: [], includingResourceValuesForKeys: nil, relativeTo: nil)
+      return .success(data)
+    } catch {
+      return .failure(.internalError("Failed to create bookmark: \(error.localizedDescription)"))
+    }
   }
 
   public func resolveBookmark(_ bookmarkData: [UInt8]) async throws

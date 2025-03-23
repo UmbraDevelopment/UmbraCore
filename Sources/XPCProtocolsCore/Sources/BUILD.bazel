@@ -4,6 +4,7 @@ umbra_swift_library(
     name = "XPCProtocolsCoreSources",
     srcs = glob(["**/*.swift"]),
     deps = [
+        "//Sources/CoreDTOs:CoreDTOs",
     ],
 )
 

@@ -1,21 +1,24 @@
-load("//:swift_rules.bzl", "umbra_swift_library")
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
-umbra_swift_library(
+swift_library(
     name = "SecurityInterfacesProtocols",
-    srcs = glob(["**/*.swift"]),
+    srcs = glob(["*.swift"]),
+    module_name = "SecurityInterfacesProtocols",
+    visibility = ["//visibility:public"],
     deps = [
+        "//Sources/CoreTypesInterfaces:CoreTypesInterfaces",
+        "//Sources/XPCProtocolsCore:XPCProtocolsCore",
     ],
 )
 
 # Uncomment if documentation generation is needed
-# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 # load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
 #
 # swift_package(
 #     name = "docc_documentation",
-#     srcs = glob([
-#         "**/*.swift",
-#         "**/*.docc/**",
-#     ]),
-#     deps = ["//Sources/SecurityInterfacesProtocols"],
+#     srcs = glob(["*.swift"]),
+#     deps = [
+#         "//Sources/CoreTypesInterfaces:CoreTypesInterfaces",
+#         "//Sources/XPCProtocolsCore:XPCProtocolsCore",
+#     ],
 # )

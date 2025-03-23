@@ -2,8 +2,20 @@ load("//:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
     name = "UmbraSecurity",
-    srcs = glob(["**/*.swift"]),
-    deps = [
+    srcs = glob(["Sources/**/*.swift"], allow_empty = True),
+        deps = [
+        "//ErrorHandling/Core:ErrorHandlingCore",
+        "//ErrorHandling/Domains:ErrorHandlingDomains",
+        "//ErrorHandling/Interfaces:ErrorHandlingInterfaces",
+        "//ErrorHandling/Mapping:ErrorHandlingMapping",
+        "//Sources/CoreDTOs:CoreDTOs",
+        "//Sources/CoreTypesInterfaces:CoreTypesInterfaces",
+        "//Sources/SecurityBridgeTypes:SecurityBridgeTypes",
+        "//Sources/SecurityInterfaces:SecurityInterfaces",
+        "//Sources/SecurityInterfacesBase:SecurityInterfacesBase",
+        "//Sources/SecurityInterfacesProtocols:SecurityInterfacesProtocols",
+        "//Sources/UmbraCoreTypes:UmbraCoreTypes",
+        "//Sources/XPCProtocolsCore:XPCProtocolsCore",
     ],
 )
 
@@ -13,9 +25,19 @@ umbra_swift_library(
 #
 # swift_package(
 #     name = "docc_documentation",
-#     srcs = glob([
-#         "**/*.swift",
-#         "**/*.docc/**",
-#     ]),
-#     deps = ["//Sources/UmbraSecurity"],
+#     srcs = glob(["Sources/**/*.swift"], allow_empty = True),
+#         deps = [
+        "//ErrorHandling/Core:ErrorHandlingCore",
+        "//ErrorHandling/Domains:ErrorHandlingDomains",
+        "//ErrorHandling/Interfaces:ErrorHandlingInterfaces",
+        "//ErrorHandling/Mapping:ErrorHandlingMapping",
+        "//Sources/CoreDTOs:CoreDTOs",
+        "//Sources/CoreTypesInterfaces:CoreTypesInterfaces",
+        "//Sources/SecurityBridgeTypes:SecurityBridgeTypes",
+        "//Sources/SecurityInterfaces:SecurityInterfaces",
+        "//Sources/SecurityInterfacesBase:SecurityInterfacesBase",
+        "//Sources/SecurityInterfacesProtocols:SecurityInterfacesProtocols",
+        "//Sources/UmbraCoreTypes:UmbraCoreTypes",
+        "//Sources/XPCProtocolsCore:XPCProtocolsCore",
+    ],
 # )
