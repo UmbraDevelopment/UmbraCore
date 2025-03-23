@@ -1,3 +1,47 @@
+import CoreErrors
+import Foundation
+import UmbraCoreTypes
+
+// Local type declarations to replace imports
+// These replace the removed ErrorHandling and ErrorHandlingDomains imports
+
+/// Error domain namespace
+public enum ErrorDomain {
+  /// Security domain
+  public static let security = "Security"
+  /// Crypto domain
+  public static let crypto = "Crypto"
+  /// Application domain
+  public static let application = "Application"
+}
+
+/// Error context protocol
+public protocol ErrorContext {
+  /// Domain of the error
+  var domain: String { get }
+  /// Code of the error
+  var code: Int { get }
+  /// Description of the error
+  var description: String { get }
+}
+
+/// Base error context implementation
+public struct BaseErrorContext: ErrorContext {
+  /// Domain of the error
+  public let domain: String
+  /// Code of the error
+  public let code: Int
+  /// Description of the error
+  public let description: String
+
+  /// Initialise with domain, code and description
+  public init(domain: String, code: Int, description: String) {
+    self.domain = domain
+    self.code = code
+    self.description = description
+  }
+}
+
 /**
  # Standard XPC Service Protocol
 
@@ -17,11 +61,6 @@
  Services can choose to implement this protocol if they need to provide standard
  cryptographic capabilities.
  */
-
-import CoreErrors
-import ErrorHandlingDomains
-import Foundation
-import UmbraCoreTypes
 
 /// Protocol defining a standard set of cryptographic operations for XPC services
 public protocol XPCServiceProtocolStandard: XPCServiceProtocolBasic {
@@ -101,22 +140,22 @@ extension XPCServiceProtocolStandard {
   public func pingStandard() async
   -> Result<Bool, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
     // Simple implementation that doesn't throw
-    let pingResult=await ping()
+    let pingResult = await ping()
     return .success(pingResult)
   }
 
   /// Default service status implementation
   public func status() async
   -> Result<[String: Any], ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
-    let versionResult=await getServiceVersion()
+    let versionResult = await getServiceVersion()
 
-    var statusDict: [String: Any]=[
+    var statusDict: [String: Any] = [
       "timestamp": Date().timeIntervalSince1970,
       "protocol": Self.protocolIdentifier
     ]
 
-    if case let .success(version)=versionResult {
-      statusDict["version"]=version
+    if case let .success(version) = versionResult {
+      statusDict["version"] = version
     }
 
     return .success(statusDict)

@@ -1,31 +1,15 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_test")
-load("//:bazel/macros/swift.bzl", "umbra_swift_test")
-
-# Temporarily disabled due to architectural issues that need more comprehensive fixes
-# The "enable_library_evolution" attribute is not supported in swift_test
-# To re-enable, remove comments and address library evolution setting
-# 
-# umbra_swift_test(
-#     name = "ErrorHandlingTests_disabled",
-#     srcs = [
-#         "CommonErrorTests.swift",
-#         "CoreErrorTests.swift",
-#         "ErrorHandlingSystemTests.swift",
-#     ],
-#     module_name = "ErrorHandlingTests",
-#     # enable_library_evolution attribute removed as it's not supported
 #     deps = [
-#         "//Sources/CoreTypesInterfaces",
-#         "//Sources/ErrorHandling",
-#         "//Sources/ErrorHandling/Common:ErrorHandlingCommon",
-#         "//Sources/ErrorHandling/Core:ErrorHandlingCore",
-#         "//Sources/ErrorHandling/Domains:ErrorHandlingDomains",
-#         "//Sources/ErrorHandling/Logging:ErrorHandlingLogging",
-#         "//Sources/ErrorHandling/Mapping:ErrorHandlingMapping",
-#         "//Sources/ErrorHandling/Models:ErrorHandlingModels",
-#         "//Sources/ErrorHandling/Notification:ErrorHandlingNotification",
-#         "//Sources/ErrorHandling/Protocols:ErrorHandlingProtocols",
-#         "//Sources/ErrorHandling/Recovery:ErrorHandlingRecovery",
-#         "//Sources/ErrorHandling/Utilities:ErrorHandlingUtilities",
+        #         "//Sources/CoreTypesInterfaces",
+        #         "//Sources/ErrorHandling",
+        #         "//Sources/ErrorHandling/Common:ErrorHandlingCommon",
+        #         "//Sources/ErrorHandling/Core:ErrorHandlingCore",
+        #         "//ErrorHandling/Domains:ErrorHandlingDomains",
+        #         "//Sources/ErrorHandling/Logging:ErrorHandlingLogging",
+        #         "//Sources/ErrorHandling/Mapping:ErrorHandlingMapping",
+        #         "//Sources/ErrorHandling/Models:ErrorHandlingModels",
+        #         "//Sources/ErrorHandling/Notification:ErrorHandlingNotification",
+        #         "//Sources/ErrorHandling/Protocols:ErrorHandlingProtocols",
+        #         "//Sources/ErrorHandling/Recovery:ErrorHandlingRecovery",
+        #         "//Sources/ErrorHandling/Utilities:ErrorHandlingUtilities",
 #     ],
 # )

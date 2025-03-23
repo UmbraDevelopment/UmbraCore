@@ -1,5 +1,44 @@
-import ErrorHandlingInterfaces
 import Foundation
+
+// Local type declarations to replace imports
+// These replace the removed ErrorHandling and ErrorHandlingDomains imports
+
+/// Error domain namespace
+public enum ErrorDomain {
+  /// Security domain
+  public static let security = "Security"
+  /// Crypto domain
+  public static let crypto = "Crypto"
+  /// Application domain
+  public static let application = "Application"
+}
+
+/// Error context protocol
+public protocol ErrorContext {
+  /// Domain of the error
+  var domain: String { get }
+  /// Code of the error
+  var code: Int { get }
+  /// Description of the error
+  var description: String { get }
+}
+
+/// Base error context implementation
+public struct BaseErrorContext: ErrorContext {
+  /// Domain of the error
+  public let domain: String
+  /// Code of the error
+  public let code: Int
+  /// Description of the error
+  public let description: String
+
+  /// Initialise with domain, code and description
+  public init(domain: String, code: Int, description: String) {
+    self.domain = domain
+    self.code = code
+    self.description = description
+  }
+}
 
 extension UmbraErrors.Logging {
   /// Core logging errors related to logging operations and management
@@ -200,9 +239,9 @@ extension UmbraErrors.Logging.Core {
   /// Create an error for a failed logging system initialisation
   public static func makeInitialisationFailedError(
     reason: String,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .initialisationFailed(reason: reason)
   }
@@ -210,9 +249,9 @@ extension UmbraErrors.Logging.Core {
   /// Create an error for a failed log write operation
   public static func makeWriteFailedError(
     reason: String,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .writeFailed(reason: reason)
   }
@@ -220,9 +259,9 @@ extension UmbraErrors.Logging.Core {
   /// Create an error for an invalid configuration
   public static func makeInvalidConfigError(
     reason: String,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .invalidConfiguration(reason: reason)
   }
@@ -231,9 +270,9 @@ extension UmbraErrors.Logging.Core {
   public static func makeRotationFailedError(
     filePath: String,
     reason: String,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .rotationFailed(filePath: filePath, reason: reason)
   }

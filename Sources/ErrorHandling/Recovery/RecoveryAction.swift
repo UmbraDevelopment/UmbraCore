@@ -1,5 +1,44 @@
-import ErrorHandlingInterfaces
 import Foundation
+
+// Local type declarations to replace imports
+// These replace the removed ErrorHandling and ErrorHandlingDomains imports
+
+/// Error domain namespace
+public enum ErrorDomain {
+  /// Security domain
+  public static let security = "Security"
+  /// Crypto domain
+  public static let crypto = "Crypto"
+  /// Application domain
+  public static let application = "Application"
+}
+
+/// Error context protocol
+public protocol ErrorContext {
+  /// Domain of the error
+  var domain: String { get }
+  /// Code of the error
+  var code: Int { get }
+  /// Description of the error
+  var description: String { get }
+}
+
+/// Base error context implementation
+public struct BaseErrorContext: ErrorContext {
+  /// Domain of the error
+  public let domain: String
+  /// Code of the error
+  public let code: Int
+  /// Description of the error
+  public let description: String
+
+  /// Initialise with domain, code and description
+  public init(domain: String, code: Int, description: String) {
+    self.domain = domain
+    self.code = code
+    self.description = description
+  }
+}
 
 /// Represents an action that can be taken to recover from an error
 public struct RecoveryAction: Sendable, Equatable {
@@ -29,15 +68,15 @@ public struct RecoveryAction: Sendable, Equatable {
   public init(
     id: String,
     title: String,
-    description: String?=nil,
-    isDefault: Bool=false,
+    description: String? = nil,
+    isDefault: Bool = false,
     handler: @Sendable @escaping () -> Void
   ) {
-    self.id=id
-    self.title=title
-    self.description=description
-    self.isDefault=isDefault
-    actionHandler=handler
+    self.id = id
+    self.title = title
+    self.description = description
+    self.isDefault = isDefault
+    actionHandler = handler
   }
 
   /// Execute the recovery action
@@ -65,8 +104,8 @@ extension RecoveryAction {
   ///   - handler: The action to perform when retrying
   /// - Returns: A new RecoveryAction for retrying
   public static func retry(
-    title: String="Retry",
-    description: String?=nil,
+    title: String = "Retry",
+    description: String? = nil,
     handler: @Sendable @escaping () -> Void
   ) -> RecoveryAction {
     RecoveryAction(
@@ -85,8 +124,8 @@ extension RecoveryAction {
   ///   - handler: The action to perform when cancelling
   /// - Returns: A new RecoveryAction for cancelling
   public static func cancel(
-    title: String="Cancel",
-    description: String?=nil,
+    title: String = "Cancel",
+    description: String? = nil,
     handler: @Sendable @escaping () -> Void
   ) -> RecoveryAction {
     RecoveryAction(
@@ -104,8 +143,8 @@ extension RecoveryAction {
   ///   - handler: The action to perform when ignoring
   /// - Returns: A new RecoveryAction for ignoring
   public static func ignore(
-    title: String="Ignore",
-    description: String?=nil,
+    title: String = "Ignore",
+    description: String? = nil,
     handler: @Sendable @escaping () -> Void
   ) -> RecoveryAction {
     RecoveryAction(

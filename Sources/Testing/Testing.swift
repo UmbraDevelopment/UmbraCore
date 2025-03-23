@@ -43,10 +43,10 @@ public enum TestError: Error {
 /// Testing module configuration and utilities
 public enum Testing {
   /// Version of the Testing module
-  public static let version="1.0.0"
+  public static let version = "1.0.0"
 
   /// Configure test environment
-  public static func configure(options _: [String: Any]=[:]) {
+  public static func configure(options _: [String: Any] = [:]) {
     // Add configuration logic here
   }
 

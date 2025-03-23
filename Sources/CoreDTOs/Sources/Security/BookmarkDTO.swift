@@ -24,11 +24,11 @@ public struct BookmarkDTO: Sendable, Equatable {
   public init(
     data: [UInt8],
     displayPath: String,
-    hasSecurityScope: Bool=false
+    hasSecurityScope: Bool = false
   ) {
-    self.data=data
-    self.displayPath=displayPath
-    self.hasSecurityScope=hasSecurityScope
+    self.data = data
+    self.displayPath = displayPath
+    self.hasSecurityScope = hasSecurityScope
   }
 
   // MARK: - Factory Methods

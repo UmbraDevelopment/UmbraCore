@@ -189,7 +189,7 @@ public enum UserDefaultsValueDTO: Sendable, Equatable, Hashable {
   ///
   /// - Returns: The byte array, or nil if the value isn't a data type
   public var dataValue: [UInt8]? {
-    if case let .data(value)=self {
+    if case let .data(value) = self {
       return value
     }
     return nil
@@ -218,7 +218,7 @@ public enum UserDefaultsValueDTO: Sendable, Equatable, Hashable {
   ///
   /// - Returns: The date representation, or nil if the value isn't a date type
   public var dateValue: Date? {
-    if case let .date(value)=self {
+    if case let .date(value) = self {
       return Date(timeIntervalSince1970: value)
     }
     return nil
@@ -236,9 +236,9 @@ public enum UserDefaultsValueDTO: Sendable, Equatable, Hashable {
         return value
       case let .array(array):
         // Attempt to convert each element to string
-        var strings: [String]=[]
+        var strings: [String] = []
         for item in array {
-          if let string=item.stringValue {
+          if let string = item.stringValue {
             strings.append(string)
           } else {
             return nil // Return nil if any element isn't convertible to string
@@ -256,7 +256,7 @@ public enum UserDefaultsValueDTO: Sendable, Equatable, Hashable {
   ///
   /// - Returns: The dictionary representation, or nil if the value isn't a dictionary type
   public var dictionaryValue: [String: UserDefaultsValueDTO]? {
-    if case let .dictionary(value)=self {
+    if case let .dictionary(value) = self {
       return value
     }
     return nil
@@ -285,7 +285,7 @@ public enum UserDefaultsValueDTO: Sendable, Equatable, Hashable {
   ///
   /// - Returns: True if the value is null, false otherwise
   public var isNull: Bool {
-    if case .null=self {
+    if case .null = self {
       return true
     }
     return false

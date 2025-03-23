@@ -1,3 +1,47 @@
+import CoreErrors
+import Foundation
+import UmbraCoreTypes
+
+// Local type declarations to replace imports
+// These replace the removed ErrorHandling and ErrorHandlingDomains imports
+
+/// Error domain namespace
+public enum ErrorDomain {
+  /// Security domain
+  public static let security = "Security"
+  /// Crypto domain
+  public static let crypto = "Crypto"
+  /// Application domain
+  public static let application = "Application"
+}
+
+/// Error context protocol
+public protocol ErrorContext {
+  /// Domain of the error
+  var domain: String { get }
+  /// Code of the error
+  var code: Int { get }
+  /// Description of the error
+  var description: String { get }
+}
+
+/// Base error context implementation
+public struct BaseErrorContext: ErrorContext {
+  /// Domain of the error
+  public let domain: String
+  /// Code of the error
+  public let code: Int
+  /// Description of the error
+  public let description: String
+
+  /// Initialise with domain, code and description
+  public init(domain: String, code: Int, description: String) {
+    self.domain = domain
+    self.code = code
+    self.description = description
+  }
+}
+
 /**
  # Basic XPC Service Protocol
 
@@ -16,12 +60,6 @@
  This protocol serves as the base for all XPC service implementations in UmbraCore
  and ensures a consistent minimum API across all services.
  */
-
-import CoreErrors
-import ErrorHandling
-import ErrorHandlingDomains
-import Foundation
-import UmbraCoreTypes
 
 /// Protocol defining the base XPC service interface without Foundation dependencies.
 /// This protocol serves as the foundation for all XPC services in UmbraCore and
@@ -61,7 +99,7 @@ extension XPCServiceProtocolBasic {
   public func pingBasic() async
   -> Result<Bool, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
     // Simple implementation that doesn't throw
-    let pingResult=await ping()
+    let pingResult = await ping()
     return .success(pingResult)
   }
 

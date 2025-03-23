@@ -48,7 +48,7 @@ umbracore_foundation_free_module(
         "//Sources/UmbraCoreTypes",
         "//Sources/CoreErrors",           # Required for error handling
         "//Sources/ErrorHandling",        # Required for error handling
-        "//Sources/ErrorHandling/Domains:ErrorHandlingDomains", # Required for error domains
+        "//ErrorHandling/Domains:ErrorHandlingDomains", # Required for error domains
         "//Sources/SecurityBridgeTypes",  # Common types shared with CoreDTOs
         "//Sources/CoreDTOs",            # Required for DTO-based protocols
     ],
@@ -71,7 +71,7 @@ umbra_swift_test(
         "//Sources/UmbraCoreTypes",  # Using SecureBytes from UmbraCoreTypes, not the standalone module
         "//Sources/CoreErrors",      # Required for testing error conversions
         "//Sources/ErrorHandling",   # Required for error handling
-        "//Sources/ErrorHandling/Domains:ErrorHandlingDomains", # Required for error domains
+        "//ErrorHandling/Domains:ErrorHandlingDomains", # Required for error domains
         "//Sources/SecurityProtocolsCore", # Required for test mocks
     ],
 )

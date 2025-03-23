@@ -1,24 +1,7 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_test")
-load("//:bazel/macros/swift.bzl", "umbra_swift_test")
-
-# NOTE: Bookmark tests are disabled due to dependency issues
-# with SecurityUtils module. They will need to be updated
-# after the security module refactoring is complete.
-filegroup(
-    name = "BookmarkTests",
-    srcs = glob(["*.swift"]),
-    visibility = ["//visibility:public"],
-)
-
-# Original test configuration that will be restored after refactoring:
-# umbra_swift_test(
-#     name = "BookmarkTests",
-#     srcs = glob(["*.swift"]),
-#     module_name = "BookmarkTests",
 #     deps = [
-#         "//Sources/ErrorHandling",
-#         "//Sources/SecurityUtils",  # This module needs to be fixed
-#         "//Sources/UmbraLogging",
-#         "//Tests/UmbraTestKit:UmbraTestKit",
+        #         "//Sources/ErrorHandling",
+        #         "//Sources/SecurityUtils",
+        #         "//Sources/UmbraLogging",
+        #         "//Tests/UmbraTestKit:UmbraTestKit",
 #     ],
 # )

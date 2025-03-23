@@ -23,7 +23,7 @@ import XPCProtocolsCore
  */
 public actor ServiceContainer {
   /// Shared instance of the service container
-  public static let shared=ServiceContainer()
+  public static let shared = ServiceContainer()
 
   /// XPC service for inter-process communication
   public private(set) var xpcService: (any XPCServiceProtocol)?
@@ -39,16 +39,16 @@ public actor ServiceContainer {
 
   /// Initialise a new service container
   public init() {
-    services=[:]
-    dependencyGraph=[:]
-    serviceStates=[:]
-    xpcService=nil
+    services = [:]
+    dependencyGraph = [:]
+    serviceStates = [:]
+    xpcService = nil
   }
 
   /// Set the XPC service for inter-process communication
   /// - Parameter service: The XPC service to use
   public func setXPCService(_ service: any XPCServiceProtocol) {
-    xpcService=service
+    xpcService = service
   }
 
   /// Register a service with the container
@@ -56,16 +56,16 @@ public actor ServiceContainer {
   ///   - service: Service to register
   ///   - dependencies: Optional array of service identifiers that this service depends on
   /// - Throws: ServiceError if registration fails.
-  public func register<T: UmbraService>(_ service: T, dependencies: [String]=[]) async throws {
-    let identifier=T.serviceIdentifier
+  public func register<T: UmbraService>(_ service: T, dependencies: [String] = []) async throws {
+    let identifier = T.serviceIdentifier
 
     guard services[identifier] == nil else {
       throw CoreErrors.ServiceError.configurationError
     }
 
     // Store the service and its dependencies
-    services[identifier]=service
-    dependencyGraph[identifier]=Set(dependencies)
+    services[identifier] = service
+    dependencyGraph[identifier] = Set(dependencies)
 
     // Set initial state
     await updateServiceState(identifier, newState: ServiceState.uninitialized)
@@ -75,13 +75,13 @@ public actor ServiceContainer {
   /// - Returns: The requested service instance.
   /// - Throws: ServiceError if service not found or unusable.
   public func resolve<T: UmbraService>(_: T.Type) async throws -> T {
-    let identifier=T.serviceIdentifier
+    let identifier = T.serviceIdentifier
 
-    guard let service=services[identifier] else {
+    guard let service = services[identifier] else {
       throw CoreErrors.ServiceError.initialisationFailed
     }
 
-    guard let typedService=service as? T else {
+    guard let typedService = service as? T else {
       throw CoreErrors.ServiceError.invalidState
     }
 
@@ -97,7 +97,7 @@ public actor ServiceContainer {
   /// - Returns: The requested service
   /// - Throws: ServiceError if service not found or unusable
   public func resolveByID(_ identifier: String) async throws -> any UmbraService {
-    guard let service=services[identifier] else {
+    guard let service = services[identifier] else {
       throw CoreErrors.ServiceError.initialisationFailed
     }
 
@@ -111,14 +111,14 @@ public actor ServiceContainer {
   /// Initialise all registered services.
   /// - Throws: ServiceError if any service fails to initialise.
   public func initialiseAllServices() async throws {
-    let serviceIDs=try topologicalSort()
+    let serviceIDs = try topologicalSort()
 
     // Initialise services in order
     for serviceID in serviceIDs {
-      guard let service=services[serviceID] else { continue }
+      guard let service = services[serviceID] else { continue }
       guard service.state == ServiceState.uninitialized else { continue }
 
-      let initializer: () async throws -> Void={ [weak self] in
+      let initializer: () async throws -> Void = { [weak self] in
         do {
           await self?.updateServiceState(
             serviceID,
@@ -140,7 +140,7 @@ public actor ServiceContainer {
   /// - Parameter identifier: Service identifier
   /// - Throws: ServiceError if initialisation fails
   public func initialiseService(_ identifier: String) async throws {
-    guard let service=services[identifier] else {
+    guard let service = services[identifier] else {
       throw CoreErrors.ServiceError.initialisationFailed
     }
 
@@ -168,10 +168,10 @@ public actor ServiceContainer {
   /// Shut down all registered services
   public func shutdownAllServices() async {
     // Shut down in reverse topological order (dependencies last)
-    let serviceIDs=(try? topologicalSort().reversed()) ?? Array(services.keys)
+    let serviceIDs = (try? topologicalSort().reversed()) ?? Array(services.keys)
 
     for serviceID in serviceIDs {
-      guard let service=services[serviceID] else { continue }
+      guard let service = services[serviceID] else { continue }
 
       await updateServiceState(serviceID, newState: ServiceState.shuttingDown)
       await service.shutdown()
@@ -182,7 +182,7 @@ public actor ServiceContainer {
   /// Shut down a specific service by identifier
   /// - Parameter identifier: Service identifier
   public func shutdownService(_ identifier: String) async {
-    guard let service=services[identifier] else { return }
+    guard let service = services[identifier] else { return }
 
     // Shut down service
     await updateServiceState(identifier, newState: ServiceState.shuttingDown)
@@ -201,7 +201,7 @@ public actor ServiceContainer {
     guard services[identifier] != nil else { return }
 
     // Update the state
-    serviceStates[identifier]=newState
+    serviceStates[identifier] = newState
 
     // Notify XPC service if available
     if xpcService != nil {
@@ -218,9 +218,9 @@ public actor ServiceContainer {
   /// - Returns: Array of service identifiers in dependency order
   /// - Throws: ServiceError if circular dependency detected
   private func topologicalSort() throws -> [String] {
-    var visited=Set<String>()
-    var visiting=Set<String>()
-    var sorted=[String]()
+    var visited = Set<String>()
+    var visiting = Set<String>()
+    var sorted = [String]()
 
     // Visit each service node in the dependency graph
     for serviceID in services.keys {
@@ -256,7 +256,7 @@ public actor ServiceContainer {
 
     visiting.insert(serviceID)
 
-    let deps=dependencyGraph[serviceID] ?? []
+    let deps = dependencyGraph[serviceID] ?? []
     for depID in deps {
       if !services.keys.contains(depID) {
         throw CoreErrors.ServiceError.dependencyError

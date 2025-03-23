@@ -1,55 +1,36 @@
-import CoreErrors
-import ErrorHandlingDomains
+import Foundation
 
 /// Protocol for error types that can be converted to SecurityError
 ///
-/// Implementations of this protocol should consider using
-/// `CoreErrors.SecurityErrorMapper.mapToCoreError`
-/// in their implementations to ensure consistent error handling across the codebase.
+/// Implementations of this protocol should ensure consistent error handling across the codebase.
 public protocol SecurityErrorConvertible: Error, Sendable {
   /// Convert this error to a SecurityError
   ///
-  /// When implementing this method, consider delegating to
-  /// `CoreErrors.SecurityErrorMapper.mapToCoreError`
-  /// to ensure consistent error mapping behaviour throughout the application.
-  func toSecurityError() -> CoreErrors.SecurityError
+  /// When implementing this method, ensure consistent error mapping behaviour throughout the application.
+  func toSecurityError() -> SecurityError
 
   /// Create an instance of this error type from a SecurityError
   ///
   /// When implementing this method, consider using standardised error mapping patterns
   /// to ensure consistent behaviour across the codebase.
-  static func fromSecurityError(_ error: CoreErrors.SecurityError) -> Self
+  static func fromSecurityError(_ error: SecurityError) -> Self
 }
 
 /// Protocol for error types that can be serialized for XPC transport
 ///
-/// Implementations of this protocol should consider using
-/// `CoreErrors.SecurityErrorMapper.mapToXPCError`
-/// in their implementations to ensure consistent error handling across the codebase.
+/// Implementations of this protocol should ensure consistent error handling across the codebase.
 public protocol XPCTransportableError: Error, Sendable {
   /// Convert to a standard error representation for XPC transport
   ///
-  /// When implementing this method, consider delegating to
-  /// `CoreErrors.SecurityErrorMapper.mapToXPCError`
-  /// to ensure consistent error mapping behaviour throughout the application.
-  func toTransportableError() -> CoreErrors.SecurityError
+  /// When implementing this method, ensure consistent error mapping behaviour throughout the application.
+  func toTransportableError() -> SecurityError
 
   /// Create from a standard error representation received via XPC
   ///
   /// When implementing this method, consider using standardised error mapping patterns
   /// to ensure consistent behaviour across the codebase.
-  static func fromTransportableError(_ error: CoreErrors.SecurityError) -> Self
+  static func fromTransportableError(_ error: SecurityError) -> Self
 }
-
-/// Type alias for clarity when working with SecurityError from CoreErrors
-/// @deprecated Use CoreErrors.SecurityError directly instead.
-@available(*, deprecated, message: "Use CoreErrors.SecurityError directly instead")
-public typealias CoreSecurityError = CoreErrors.SecurityError
-
-/// Custom result type with standard error handling
-/// @deprecated Consider using Result<Success, CoreErrors.SecurityError> directly instead.
-@available(*, deprecated, message: "Consider using Result<Success, CoreErrors.SecurityError> directly instead")
-public typealias SecurityResult<Success> = Result<Success, CoreSecurityError>
 
 /// Error domain identifier for core security errors
 public let coreSecurityErrorDomain = "com.umbra.core.security"

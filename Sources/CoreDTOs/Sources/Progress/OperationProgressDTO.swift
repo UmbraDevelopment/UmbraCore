@@ -97,28 +97,28 @@ public struct OperationProgressDTO: Sendable, Equatable {
   public init(
     operationType: OperationType,
     progress: Double,
-    bytesProcessed: UInt64?=nil,
-    totalBytes: UInt64?=nil,
-    itemsProcessed: Int?=nil,
-    totalItems: Int?=nil,
-    currentItem: String?=nil,
-    isIndeterminate: Bool=false,
+    bytesProcessed: UInt64? = nil,
+    totalBytes: UInt64? = nil,
+    itemsProcessed: Int? = nil,
+    totalItems: Int? = nil,
+    currentItem: String? = nil,
+    isIndeterminate: Bool = false,
     startTimestamp: UInt64,
-    estimatedTimeRemaining: UInt64?=nil,
-    statusMessage: String?=nil
+    estimatedTimeRemaining: UInt64? = nil,
+    statusMessage: String? = nil
   ) {
-    self.operationType=operationType
+    self.operationType = operationType
     // Clamp progress between 0.0 and 1.0
-    self.progress=min(1.0, max(0.0, progress))
-    self.bytesProcessed=bytesProcessed
-    self.totalBytes=totalBytes
-    self.itemsProcessed=itemsProcessed
-    self.totalItems=totalItems
-    self.currentItem=currentItem
-    self.isIndeterminate=isIndeterminate
-    self.startTimestamp=startTimestamp
-    self.estimatedTimeRemaining=estimatedTimeRemaining
-    self.statusMessage=statusMessage
+    self.progress = min(1.0, max(0.0, progress))
+    self.bytesProcessed = bytesProcessed
+    self.totalBytes = totalBytes
+    self.itemsProcessed = itemsProcessed
+    self.totalItems = totalItems
+    self.currentItem = currentItem
+    self.isIndeterminate = isIndeterminate
+    self.startTimestamp = startTimestamp
+    self.estimatedTimeRemaining = estimatedTimeRemaining
+    self.statusMessage = statusMessage
   }
 
   // MARK: - Factory Methods
@@ -132,9 +132,9 @@ public struct OperationProgressDTO: Sendable, Equatable {
   /// - Returns: An OperationProgressDTO with indeterminate progress
   public static func indeterminate(
     operationType: OperationType,
-    currentItem: String?=nil,
+    currentItem: String? = nil,
     startTimestamp: UInt64,
-    statusMessage: String?=nil
+    statusMessage: String? = nil
   ) -> OperationProgressDTO {
     OperationProgressDTO(
       operationType: operationType,
@@ -232,13 +232,13 @@ public struct OperationProgressDTO: Sendable, Equatable {
   ///   - processed: The new bytes processed value
   ///   - total: The new total bytes value (optional)
   /// - Returns: A new OperationProgressDTO with updated bytes
-  public func withBytes(processed: UInt64, total: UInt64?=nil) -> OperationProgressDTO {
-    let totalToUse=total ?? totalBytes
+  public func withBytes(processed: UInt64, total: UInt64? = nil) -> OperationProgressDTO {
+    let totalToUse = total ?? totalBytes
 
     // Calculate new progress if we have total bytes
-    var newProgress=progress
+    var newProgress = progress
     if let totalToUse, totalToUse > 0 {
-      newProgress=min(1.0, Double(processed) / Double(totalToUse))
+      newProgress = min(1.0, Double(processed) / Double(totalToUse))
     }
 
     return OperationProgressDTO(
@@ -261,13 +261,13 @@ public struct OperationProgressDTO: Sendable, Equatable {
   ///   - processed: The new items processed value
   ///   - total: The new total items value (optional)
   /// - Returns: A new OperationProgressDTO with updated items
-  public func withItems(processed: Int, total: Int?=nil) -> OperationProgressDTO {
-    let totalToUse=total ?? totalItems
+  public func withItems(processed: Int, total: Int? = nil) -> OperationProgressDTO {
+    let totalToUse = total ?? totalItems
 
     // Calculate new progress if we have total items
-    var newProgress=progress
+    var newProgress = progress
     if let totalToUse, totalToUse > 0 {
-      newProgress=min(1.0, Double(processed) / Double(totalToUse))
+      newProgress = min(1.0, Double(processed) / Double(totalToUse))
     }
 
     return OperationProgressDTO(
@@ -345,8 +345,8 @@ public struct OperationProgressDTO: Sendable, Equatable {
   /// Create a copy of this progress with complete status (100%)
   /// - Parameter message: Optional completion message
   /// - Returns: A new OperationProgressDTO marked as complete
-  public func completed(message: String?=nil) -> OperationProgressDTO {
-    let completionMessage=message ?? "Operation completed successfully"
+  public func completed(message: String? = nil) -> OperationProgressDTO {
+    let completionMessage = message ?? "Operation completed successfully"
 
     return OperationProgressDTO(
       operationType: operationType,

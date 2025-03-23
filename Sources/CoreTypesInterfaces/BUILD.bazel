@@ -5,9 +5,7 @@ load("//:bazel/macros/swift.bzl", "umbra_swift_library")
 umbra_swift_library(
     name = "CoreTypesInterfaces",
     srcs = glob(["Sources/**/*.swift"]),
-    deps = [
-        "//Sources/CoreErrors",
-    ],
+    deps = [],
     additional_copts = [
         "-Xfrontend", "-enable-library-evolution",
     ],
@@ -20,6 +18,5 @@ swift_library(
     srcs = glob(["Tests/**/*.swift"]),
     deps = [
         ":CoreTypesInterfaces",
-        "//Sources/CoreErrors",
     ],
 )

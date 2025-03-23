@@ -106,7 +106,7 @@
 /// - Atomic operations
 public enum Snapshots {
   /// Current version of the Snapshots module
-  public static let version="1.0.0"
+  public static let version = "1.0.0"
 
   /// Initialise Snapshots with default configuration
   public static func initialize() {

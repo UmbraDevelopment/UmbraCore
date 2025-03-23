@@ -37,7 +37,7 @@ protocol BookmarkServiceType {
 @MainActor
 public final class SecurityService {
   /// Shared instance of the security service
-  public static let shared=SecurityService()
+  public static let shared = SecurityService()
 
   // Dependencies
   private let securityProvider: DefaultSecurityProviderImpl
@@ -45,8 +45,8 @@ public final class SecurityService {
 
   /// Initialize the service
   public init() {
-    bookmarkService=DefaultBookmarkService()
-    securityProvider=DefaultSecurityProviderImpl()
+    bookmarkService = DefaultBookmarkService()
+    securityProvider = DefaultSecurityProviderImpl()
     print("SecurityService initialized with DefaultBookmarkService")
   }
 
@@ -54,7 +54,7 @@ public final class SecurityService {
   /// - Parameter path: The path to create a bookmark for
   /// - Returns: Bookmark data as bytes
   public func createBookmark(for path: String) async throws -> [UInt8] {
-    let url=URL(fileURLWithPath: path)
+    let url = URL(fileURLWithPath: path)
     return try bookmarkService.createBookmark(for: url)
   }
 
@@ -62,7 +62,7 @@ public final class SecurityService {
   /// - Parameter bookmarkData: The bookmark data to resolve
   /// - Returns: The resolved URL and whether the bookmark is stale
   public func resolveBookmark(_ bookmarkData: [UInt8]) async throws -> (String, Bool) {
-    let (url, isStale)=try bookmarkService.resolveBookmark(bookmarkData)
+    let (url, isStale) = try bookmarkService.resolveBookmark(bookmarkData)
     return (url.path, isStale)
   }
 
@@ -70,14 +70,14 @@ public final class SecurityService {
   /// - Parameter path: The path to the security-scoped resource
   /// - Returns: Whether access was granted
   public func startAccess(to path: String) async throws -> Bool {
-    let url=URL(fileURLWithPath: path)
+    let url = URL(fileURLWithPath: path)
     return try bookmarkService.startAccess(to: url)
   }
 
   /// Stop accessing a security-scoped resource
   /// - Parameter path: The path to the security-scoped resource
   public func stopAccess(to path: String) async throws {
-    let url=URL(fileURLWithPath: path)
+    let url = URL(fileURLWithPath: path)
     try bookmarkService.stopAccess(to: url)
   }
 
@@ -158,7 +158,7 @@ private final class DefaultSecurityProviderImpl: NSObject, RandomDataGenerating 
   // MARK: - Initialization
 
   override init() {
-    randomGenerator=RandomDataGenerator()
+    randomGenerator = RandomDataGenerator()
     super.init()
     // Setup can be done here if needed
   }
@@ -201,16 +201,16 @@ private final class DefaultSecurityProviderImpl: NSObject, RandomDataGenerating 
     derivedKeyLength: Int
   ) async throws -> [UInt8] {
     // Convert salt to Data
-    let saltData=Data(salt)
+    let saltData = Data(salt)
 
     // Use CommonCrypto for key derivation
-    guard let passwordData=password.data(using: .utf8) else {
+    guard let passwordData = password.data(using: .utf8) else {
       throw UmbraErrors.Security.Core.internalError(reason: "Failed to convert password to data")
     }
 
-    var derivedKeyData=Data(count: derivedKeyLength)
+    var derivedKeyData = Data(count: derivedKeyLength)
 
-    let derivationStatus=derivedKeyData.withUnsafeMutableBytes { derivedKeyBytes in
+    let derivationStatus = derivedKeyData.withUnsafeMutableBytes { derivedKeyBytes in
       passwordData.withUnsafeBytes { passwordBytes in
         saltData.withUnsafeBytes { saltBytes in
           CCKeyDerivationPBKDF(
@@ -240,13 +240,13 @@ private final class DefaultSecurityProviderImpl: NSObject, RandomDataGenerating 
   /// - Returns: Encrypted data
   func encrypt(_ data: [UInt8], key: [UInt8]) async throws -> [UInt8] {
     // Implementation using CommonCrypto
-    let keyData=Data(key)
+    let keyData = Data(key)
 
     // Prepare for encryption
-    var encryptedData=Data(count: data.count + kCCBlockSizeAES128)
-    var encryptedDataLength=0
+    var encryptedData = Data(count: data.count + kCCBlockSizeAES128)
+    var encryptedDataLength = 0
 
-    let result=keyData.withUnsafeBytes { keyBytes in
+    let result = keyData.withUnsafeBytes { keyBytes in
       encryptedData.withUnsafeMutableBytes { encryptedBytes in
         CCCrypt(
           CCOperation(kCCEncrypt),
@@ -267,7 +267,7 @@ private final class DefaultSecurityProviderImpl: NSObject, RandomDataGenerating 
     }
 
     // Resize to actual encrypted data length
-    encryptedData.count=encryptedDataLength
+    encryptedData.count = encryptedDataLength
 
     return [UInt8](encryptedData)
   }
@@ -279,13 +279,13 @@ private final class DefaultSecurityProviderImpl: NSObject, RandomDataGenerating 
   /// - Returns: Decrypted data
   func decrypt(_ data: [UInt8], key: [UInt8]) async throws -> [UInt8] {
     // Implementation using CommonCrypto
-    let keyData=Data(key)
+    let keyData = Data(key)
 
     // Prepare for decryption
-    var decryptedData=Data(count: data.count + kCCBlockSizeAES128)
-    var decryptedDataLength=0
+    var decryptedData = Data(count: data.count + kCCBlockSizeAES128)
+    var decryptedDataLength = 0
 
-    let result=keyData.withUnsafeBytes { keyBytes in
+    let result = keyData.withUnsafeBytes { keyBytes in
       decryptedData.withUnsafeMutableBytes { decryptedBytes in
         CCCrypt(
           CCOperation(kCCDecrypt),
@@ -306,7 +306,7 @@ private final class DefaultSecurityProviderImpl: NSObject, RandomDataGenerating 
     }
 
     // Resize to actual decrypted data length
-    decryptedData.count=decryptedDataLength
+    decryptedData.count = decryptedDataLength
 
     return [UInt8](decryptedData)
   }
@@ -317,9 +317,9 @@ private final class DefaultSecurityProviderImpl: NSObject, RandomDataGenerating 
   func hashData(_ data: [UInt8]) async throws -> [UInt8] {
     // Implementation using CommonCrypto
     // Use SHA-256 hash
-    var hashData=Data(count: Int(CC_SHA256_DIGEST_LENGTH))
+    var hashData = Data(count: Int(CC_SHA256_DIGEST_LENGTH))
 
-    _=hashData.withUnsafeMutableBytes { hashBytes in
+    _ = hashData.withUnsafeMutableBytes { hashBytes in
       CC_SHA256(
         data,
         CC_LONG(data.count),
@@ -343,8 +343,8 @@ private class RandomDataGenerator {
   /// - Parameter count: Number of bytes to generate
   /// - Returns: Random bytes
   func generateRandomBytes(count: Int) -> [UInt8] {
-    var bytes=[UInt8](repeating: 0, count: count)
-    let status=SecRandomCopyBytes(kSecRandomDefault, count, &bytes)
+    var bytes = [UInt8](repeating: 0, count: count)
+    let status = SecRandomCopyBytes(kSecRandomDefault, count, &bytes)
     guard status == errSecSuccess else {
       // Fallback to less secure method if SecRandomCopyBytes fails
       return (0..<count).map { _ in UInt8.random(in: UInt8.min...UInt8.max) }
@@ -356,7 +356,7 @@ private class RandomDataGenerator {
   /// - Parameter byteCount: Number of bytes (before hex encoding)
   /// - Returns: Hexadecimal string
   func generateSecureToken(byteCount: Int) -> String {
-    let bytes=generateRandomBytes(count: byteCount)
+    let bytes = generateRandomBytes(count: byteCount)
     return bytes.map { String(format: "%02hhx", $0) }.joined()
   }
 }
@@ -364,7 +364,7 @@ private class RandomDataGenerator {
 /// Default implementation of the bookmark service
 private final class DefaultBookmarkService: BookmarkServiceType {
   func createBookmark(for url: URL) throws -> [UInt8] {
-    let bookmark=try url.bookmarkData(
+    let bookmark = try url.bookmarkData(
       options: .withSecurityScope,
       includingResourceValuesForKeys: nil,
       relativeTo: nil
@@ -373,9 +373,9 @@ private final class DefaultBookmarkService: BookmarkServiceType {
   }
 
   func resolveBookmark(_ bookmark: [UInt8]) throws -> (URL, Bool) {
-    let bookmarkData=Data(bookmark)
-    var isStale=false
-    let url=try URL(
+    let bookmarkData = Data(bookmark)
+    var isStale = false
+    let url = try URL(
       resolvingBookmarkData: bookmarkData,
       options: .withSecurityScope,
       relativeTo: nil,
@@ -385,7 +385,7 @@ private final class DefaultBookmarkService: BookmarkServiceType {
   }
 
   func startAccess(to url: URL) throws -> Bool {
-    let granted=url.startAccessingSecurityScopedResource()
+    let granted = url.startAccessingSecurityScopedResource()
     if !granted {
       throw UmbraErrors.Security.Core.internalError(reason: "Access not granted to \(url.path)")
     }

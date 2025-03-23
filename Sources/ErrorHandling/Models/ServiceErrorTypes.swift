@@ -1,5 +1,44 @@
-import ErrorHandlingCommon
 import Foundation
+
+// Local type declarations to replace imports
+// These replace the removed ErrorHandling and ErrorHandlingDomains imports
+
+/// Error domain namespace
+public enum ErrorDomain {
+  /// Security domain
+  public static let security = "Security"
+  /// Crypto domain
+  public static let crypto = "Crypto"
+  /// Application domain
+  public static let application = "Application"
+}
+
+/// Error context protocol
+public protocol ErrorContext {
+  /// Domain of the error
+  var domain: String { get }
+  /// Code of the error
+  var code: Int { get }
+  /// Description of the error
+  var description: String { get }
+}
+
+/// Base error context implementation
+public struct BaseErrorContext: ErrorContext {
+  /// Domain of the error
+  public let domain: String
+  /// Code of the error
+  public let code: Int
+  /// Description of the error
+  public let description: String
+
+  /// Initialise with domain, code and description
+  public init(domain: String, code: Int, description: String) {
+    self.domain = domain
+    self.code = code
+    self.description = description
+  }
+}
 
 /// Severity level for service errors
 @frozen
@@ -18,29 +57,29 @@ public enum ServiceErrorSeverity: String, Codable, Sendable {
 @frozen
 public enum ServiceErrorType: String, Sendable, CaseIterable {
   /// Configuration-related errors
-  case configuration="Configuration"
+  case configuration = "Configuration"
   /// Operation-related errors
-  case operation="Operation"
+  case operation = "Operation"
   /// State-related errors
-  case state="State"
+  case state = "State"
   /// Resource-related errors
-  case resource="Resource"
+  case resource = "Resource"
   /// Dependency-related errors
-  case dependency="Dependency"
+  case dependency = "Dependency"
   /// Network-related errors
-  case network="Network"
+  case network = "Network"
   /// Authentication-related errors
-  case authentication="Authentication"
+  case authentication = "Authentication"
   /// Timeout-related errors
-  case timeout="Timeout"
+  case timeout = "Timeout"
   /// Initialization-related errors
-  case initialization="Initialization"
+  case initialization = "Initialization"
   /// Lifecycle-related errors
-  case lifecycle="Lifecycle"
+  case lifecycle = "Lifecycle"
   /// Permission-related errors
-  case permission="Permission"
+  case permission = "Permission"
   /// Unknown errors
-  case unknown="Unknown"
+  case unknown = "Unknown"
 
   /// User-friendly description of the error type
   public var description: String {

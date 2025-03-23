@@ -52,7 +52,7 @@ extension KeyManagementTypes.KeyStatus {
   }
 
   public func encode(to encoder: Encoder) throws {
-    var container=encoder.container(keyedBy: CodingKeys.self)
+    var container = encoder.container(keyedBy: CodingKeys.self)
 
     switch self {
       case .active:
@@ -70,8 +70,8 @@ extension KeyManagementTypes.KeyStatus {
   @preconcurrency
   @available(*, deprecated, message: "Will need to be refactored for Swift 6")
   public init(from decoder: Decoder) throws {
-    let container=try decoder.container(keyedBy: CodingKeys.self)
-    let type=try container.decode(KeyManagementTypes.KeyStatus.StatusType.self, forKey: .type)
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    let type = try container.decode(KeyManagementTypes.KeyStatus.StatusType.self, forKey: .type)
 
     switch type {
       case .active:
@@ -81,7 +81,7 @@ extension KeyManagementTypes.KeyStatus {
       case .retired:
         self = .retired
       case .pendingDeletion:
-        let date=try container.decode(Date.self, forKey: .deletionDate)
+        let date = try container.decode(Date.self, forKey: .deletionDate)
         self = .pendingDeletion(date)
     }
   }

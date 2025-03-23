@@ -13,7 +13,7 @@ swift_library(
     ],
     deps = [
         "//Sources/ErrorHandling",
-        "//Sources/ErrorHandling/Domains:ErrorHandlingDomains",  # Add this direct dependency for UmbraErrors
+        "//ErrorHandling/Domains:ErrorHandlingDomains",  # Add this direct dependency for UmbraErrors
         "//Sources/Features/Logging/Errors:FeaturesLoggingErrors",
         "//Sources/Features/Logging/Models:FeaturesLoggingModels",
         "//Sources/Features/Logging/Protocols:FeaturesLoggingProtocols",

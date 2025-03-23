@@ -18,7 +18,7 @@ extension URL {
   ///   - Insufficient permissions
   ///   - File system errors
   public func createSecurityScopedBookmark() async -> Result<Data, UmbraErrors.Security.Protocols> {
-    let path=path
+    let path = path
     do {
       return try .success(bookmarkData(
         options: [.withSecurityScope, .securityScopeAllowOnlyReadAccess],
@@ -35,7 +35,7 @@ extension URL {
   /// - Throws: SecurityError.bookmarkError if bookmark creation fails
   public func createSecurityScopedBookmarkData() async
   -> Result<UmbraCoreTypes.SecureBytes, UmbraErrors.Security.Protocols> {
-    let result=await createSecurityScopedBookmark()
+    let result = await createSecurityScopedBookmark()
     switch result {
       case let .success(data):
         return .success(UmbraCoreTypes.SecureBytes(bytes: [UInt8](data)))
@@ -55,8 +55,8 @@ extension URL {
   ///   - Insufficient permissions
   public static func resolveSecurityScopedBookmark(_ bookmarkData: Data) async throws
   -> (URL, Bool) {
-    var isStale=false
-    let url=try URL(
+    var isStale = false
+    let url = try URL(
       resolvingBookmarkData: bookmarkData,
       options: .withSecurityScope,
       relativeTo: nil,

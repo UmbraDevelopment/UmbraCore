@@ -51,17 +51,17 @@ extension CoreServices.LegacyServiceState: Codable {
   }
 
   public init(from decoder: Decoder) throws {
-    let container=try decoder.container(keyedBy: CodingKeys.self)
-    let type=try container.decode(String.self, forKey: .type)
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    let type = try container.decode(String.self, forKey: .type)
 
     switch type {
       case "healthy":
         self = .healthy
       case "degraded":
-        let reason=try container.decode(String.self, forKey: .reason)
+        let reason = try container.decode(String.self, forKey: .reason)
         self = .degraded(reason: reason)
       case "unavailable":
-        let reason=try container.decode(String.self, forKey: .reason)
+        let reason = try container.decode(String.self, forKey: .reason)
         self = .unavailable(reason: reason)
       case "starting":
         self = .starting
@@ -80,7 +80,7 @@ extension CoreServices.LegacyServiceState: Codable {
   }
 
   public func encode(to encoder: Encoder) throws {
-    var container=encoder.container(keyedBy: CodingKeys.self)
+    var container = encoder.container(keyedBy: CodingKeys.self)
 
     switch self {
       case .healthy:
@@ -108,35 +108,35 @@ extension CoreServices.LegacyServiceState {
   public func toStandardServiceState() -> ServiceState {
     switch self {
       case .healthy:
-        return .ready
+        .ready
       case .degraded:
-        return .running
+        .running
       case .unavailable:
-        return .error
+        .error
       case .starting:
-        return .initializing
+        .initializing
       case .shuttingDown:
-        return .shuttingDown
+        .shuttingDown
       case .maintenance:
-        return .suspended
+        .suspended
     }
   }
 }
 
 // For backwards compatibility, provide a direct typealias
 @available(*, deprecated, message: "Use ServiceState directly")
-public typealias CoreServicesTypesServiceState=CoreServices.LegacyServiceState
+public typealias CoreServicesTypesServiceState = CoreServices.LegacyServiceState
 
 /**
  * MIGRATION GUIDE:
- * 
+ *
  * This migration guide explains how to properly handle ServiceState references:
- * 
+ *
  * 1. PREFERRED: Import CoreServicesTypes directly and use ServiceState
  *    Example:
  *    ```swift
  *    import CoreServicesTypes
- *    
+ *
  *    func example() {
  *      let state: ServiceState = .running
  *    }

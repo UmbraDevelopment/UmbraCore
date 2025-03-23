@@ -1,7 +1,44 @@
-import ErrorHandlingDomains
-import ErrorHandlingInterfaces
-import ErrorHandlingTypes
 import Foundation
+
+// Local type declarations to replace imports
+// These replace the removed ErrorHandling and ErrorHandlingDomains imports
+
+/// Error domain namespace
+public enum ErrorDomain {
+  /// Security domain
+  public static let security = "Security"
+  /// Crypto domain
+  public static let crypto = "Crypto"
+  /// Application domain
+  public static let application = "Application"
+}
+
+/// Error context protocol
+public protocol ErrorContext {
+  /// Domain of the error
+  var domain: String { get }
+  /// Code of the error
+  var code: Int { get }
+  /// Description of the error
+  var description: String { get }
+}
+
+/// Base error context implementation
+public struct BaseErrorContext: ErrorContext {
+  /// Domain of the error
+  public let domain: String
+  /// Code of the error
+  public let code: Int
+  /// Description of the error
+  public let description: String
+
+  /// Initialise with domain, code and description
+  public init(domain: String, code: Int, description: String) {
+    self.domain = domain
+    self.code = code
+    self.description = description
+  }
+}
 
 /// A bidirectional mapper for converting between `SecurityError` and
 /// `UmbraErrors.GeneralSecurity.Core` error types.
@@ -29,10 +66,10 @@ import Foundation
 /// - Use descriptive reasons when mapping to provide context for the error
 public struct SecurityErrorMapper: ErrorMapper {
   /// The source error type
-  public typealias SourceType=UmbraErrors.GeneralSecurity.Core
+  public typealias SourceType = UmbraErrors.GeneralSecurity.Core
 
   /// The target error type
-  public typealias TargetType=ErrorHandlingTypes.SecurityError
+  public typealias TargetType = ErrorHandlingTypes.SecurityError
 
   /// Initialises a new mapper
   public init() {}
@@ -48,20 +85,20 @@ public struct SecurityErrorMapper: ErrorMapper {
   /// - Parameter error: The source error
   /// - Returns: The mapped SecurityError if applicable, or nil if not mappable
   public func mapToSecurityError(_ error: Error) -> ErrorHandlingTypes.SecurityError? {
-    if let securityCoreError=error as? UmbraErrors.GeneralSecurity.Core {
+    if let securityCoreError = error as? UmbraErrors.GeneralSecurity.Core {
       return .domainCoreError(securityCoreError)
     }
 
-    if let protocolsError=error as? UmbraErrors.Security.Protocols {
+    if let protocolsError = error as? UmbraErrors.Security.Protocols {
       return .domainProtocolError(protocolsError)
     }
 
-    if let xpcError=error as? UmbraErrors.Security.XPC {
+    if let xpcError = error as? UmbraErrors.Security.XPC {
       return .domainXPCError(xpcError)
     }
 
     // Attempt to map special cases based on error description
-    let errorDescription=String(describing: error)
+    let errorDescription = String(describing: error)
 
     if errorDescription.contains("authentication") {
       return .authenticationFailed(reason: "Authentication failed: \(errorDescription)")
@@ -69,8 +106,7 @@ public struct SecurityErrorMapper: ErrorMapper {
       return .permissionDenied(reason: "Permission denied: \(errorDescription)")
     } else if
       errorDescription.contains("unauthorized") || errorDescription
-        .contains("unauthorised")
-    {
+        .contains("unauthorised") {
       return .unauthorizedAccess(reason: "Unauthorized access: \(errorDescription)")
     } else if errorDescription.contains("encrypt") {
       return .encryptionFailed(reason: "Encryption failed: \(errorDescription)")
@@ -91,12 +127,12 @@ public struct SecurityErrorMapper: ErrorMapper {
   /// - Returns: The mapped core error if applicable, or nil if not mappable
   public func mapToCoreError(_ error: Error) -> UmbraErrors.GeneralSecurity.Core? {
     // Direct mapping if already a core error
-    if let coreError=error as? UmbraErrors.GeneralSecurity.Core {
+    if let coreError = error as? UmbraErrors.GeneralSecurity.Core {
       return coreError
     }
 
     // Map via SecurityError if possible
-    if let securityError=mapToSecurityError(error) {
+    if let securityError = mapToSecurityError(error) {
       switch securityError {
         case let .domainCoreError(coreError):
           return coreError
@@ -117,7 +153,7 @@ public struct SecurityErrorMapper: ErrorMapper {
         case let .signatureInvalid(reason):
           return .hashVerificationFailed(reason: reason)
         case .domainProtocolError, .domainXPCError:
-          return .serviceError(code: 1001, reason: "Protocol or XPC error: \(securityError)")
+          return .serviceError(code: 1_001, reason: "Protocol or XPC error: \(securityError)")
         case let .internalError(reason):
           return .internalError(reason)
         default:
@@ -127,7 +163,7 @@ public struct SecurityErrorMapper: ErrorMapper {
     }
 
     // Attempt to map based on error description
-    let errorDescription=String(describing: error)
+    let errorDescription = String(describing: error)
 
     if errorDescription.contains("authentication") || errorDescription.contains("login") {
       return .invalidInput(reason: "Authentication failed: \(errorDescription)")
@@ -184,7 +220,7 @@ extension SecurityErrorMapper: BidirectionalErrorMapper {
       case let .certificateInvalid(reason):
         .invalidInput(reason: reason)
       case let .secureChannelFailed(reason):
-        .serviceError(code: 1002, reason: reason)
+        .serviceError(code: 1_002, reason: reason)
       case let .securityConfigurationError(reason):
         .internalError("Configuration error: \(reason)")
       case let .internalError(reason):

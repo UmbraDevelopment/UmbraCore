@@ -38,16 +38,16 @@ public struct RepositoryInfoDTO: Sendable, Equatable {
     id: String,
     path: String,
     isInitialised: Bool,
-    lastAccessed: UInt64?=nil,
+    lastAccessed: UInt64? = nil,
     isRemote: Bool,
-    metadata: [String: String]=[:]
+    metadata: [String: String] = [:]
   ) {
-    self.id=id
-    self.path=path
-    self.isInitialised=isInitialised
-    self.lastAccessed=lastAccessed
-    self.isRemote=isRemote
-    self.metadata=metadata
+    self.id = id
+    self.path = path
+    self.isInitialised = isInitialised
+    self.lastAccessed = lastAccessed
+    self.isRemote = isRemote
+    self.metadata = metadata
   }
 
   // MARK: - Factory Methods
@@ -64,8 +64,8 @@ public struct RepositoryInfoDTO: Sendable, Equatable {
     id: String,
     path: String,
     isInitialised: Bool,
-    lastAccessed: UInt64?=nil,
-    metadata: [String: String]=[:]
+    lastAccessed: UInt64? = nil,
+    metadata: [String: String] = [:]
   ) -> RepositoryInfoDTO {
     RepositoryInfoDTO(
       id: id,
@@ -89,8 +89,8 @@ public struct RepositoryInfoDTO: Sendable, Equatable {
     id: String,
     path: String,
     isInitialised: Bool,
-    lastAccessed: UInt64?=nil,
-    metadata: [String: String]=[:]
+    lastAccessed: UInt64? = nil,
+    metadata: [String: String] = [:]
   ) -> RepositoryInfoDTO {
     RepositoryInfoDTO(
       id: id,
@@ -108,9 +108,9 @@ public struct RepositoryInfoDTO: Sendable, Equatable {
   /// - Parameter additionalMetadata: The metadata to add or update
   /// - Returns: A new RepositoryInfoDTO with updated metadata
   public func withUpdatedMetadata(_ additionalMetadata: [String: String]) -> RepositoryInfoDTO {
-    var newMetadata=metadata
+    var newMetadata = metadata
     for (key, value) in additionalMetadata {
-      newMetadata[key]=value
+      newMetadata[key] = value
     }
 
     return RepositoryInfoDTO(

@@ -1,42 +1,13 @@
-/// CoreErrors module extensions and namespace definitions
-///
-/// This file provides namespace support for the CoreErrors module to avoid type ambiguity.
+import Foundation
 
-import ErrorHandlingDomains
+/// Namespace for CoreErrors
+public enum CoreErrors {
+    /// Represents security errors
+    public typealias Security = SecurityError
 
-/// CoreErrors namespace container
-/// Use this when you need to explicitly reference error types from this module
-public enum CE {
-  // This is a namespace container only
-}
+    /// Represents crypto errors
+    public typealias Crypto = CryptoError
 
-/// Extension for SecurityError type with namespace support
-extension ErrorHandlingDomains.SecurityError {
-  /// Type alias for accessing this type through the namespace
-  public typealias CE=ErrorHandlingDomains.SecurityError
-}
-
-// Note: The following extensions were removed as the types don't exist in ErrorHandlingDomains
-// - CryptoError
-// - KeyManagerError
-// - LoggingError
-// - ResourceError
-// - ServiceError
-
-/// Extension for RepositoryError type with namespace support
-extension ErrorHandlingDomains.RepositoryErrorType {
-  /// Type alias for accessing this type through the namespace
-  public typealias CE=ErrorHandlingDomains.RepositoryErrorType
-}
-
-/// Extension for ApplicationError type with namespace support
-extension ErrorHandlingDomains.ApplicationError {
-  /// Type alias for accessing this type through the namespace
-  public typealias CE=ErrorHandlingDomains.ApplicationError
-}
-
-/// Module initialisation function
-/// This ensures all components are properly registered
-public func initialiseModule() {
-  // Reserved for future registration logic
+    /// Represents key manager errors
+    public typealias KeyManager = KeyManagerError
 }

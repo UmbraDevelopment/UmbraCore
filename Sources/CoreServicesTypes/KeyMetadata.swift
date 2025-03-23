@@ -18,7 +18,7 @@ public struct KeyMetadata: Sendable, Codable {
     deprecated,
     message: "Please use KeyManagementTypes.KeyMetadata.AccessControls instead"
   )
-  public typealias AccessControls=KeyManagementTypes.KeyMetadata.AccessControls
+  public typealias AccessControls = KeyManagementTypes.KeyMetadata.AccessControls
 
   /// Access controls applied to the key
   public let accessControls: AccessControls
@@ -58,19 +58,19 @@ public struct KeyMetadata: Sendable, Codable {
     accessControls: AccessControls = .none,
     algorithm: String,
     keySize: Int,
-    expiryDate: Date?=nil,
-    isProcessIsolated: Bool=false,
-    customMetadata: [String: String]?=nil
+    expiryDate: Date? = nil,
+    isProcessIsolated: Bool = false,
+    customMetadata: [String: String]? = nil
   ) {
-    status=KeyManagementTypes.KeyStatus.active
-    self.storageLocation=storageLocation
-    self.accessControls=accessControls
-    self.algorithm=algorithm
-    self.keySize=keySize
-    createdAt=Date()
-    lastModified=Date()
-    self.expiryDate=expiryDate
-    self.isProcessIsolated=isProcessIsolated
-    self.customMetadata=customMetadata
+    status = KeyManagementTypes.KeyStatus.active
+    self.storageLocation = storageLocation
+    self.accessControls = accessControls
+    self.algorithm = algorithm
+    self.keySize = keySize
+    createdAt = Date()
+    lastModified = Date()
+    self.expiryDate = expiryDate
+    self.isProcessIsolated = isProcessIsolated
+    self.customMetadata = customMetadata
   }
 }

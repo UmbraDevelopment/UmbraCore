@@ -8,7 +8,7 @@ swift_library(
     deps = [
         "//Sources/CoreDTOs",
         "//Sources/ErrorHandling",
-        "//Sources/ErrorHandling/Domains:ErrorHandlingDomains",
+        "//ErrorHandling/Domains:ErrorHandlingDomains",
         "//Sources/SecurityBridgeTypes",
         "//Sources/UmbraCoreTypes",
         # Removing dependency on UmbraSecurity to break circular dependency

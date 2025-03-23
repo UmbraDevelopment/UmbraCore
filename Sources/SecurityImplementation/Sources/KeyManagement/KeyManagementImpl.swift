@@ -13,14 +13,14 @@ public actor KeyManagementImpl: KeyManagementProtocol {
   private let secureStorage: SecureStorageProtocol?
 
   /// In-memory storage of keys (used as fallback when secureStorage is nil)
-  private var keyStore: [String: SecureBytes]=[:]
+  private var keyStore: [String: SecureBytes] = [:]
 
   // MARK: - Initialization
 
   /// Initialize with a specific secure storage implementation
   /// - Parameter secureStorage: Implementation of SecureStorageProtocol
-  public init(secureStorage: SecureStorageProtocol?=nil) {
-    self.secureStorage=secureStorage
+  public init(secureStorage: SecureStorageProtocol? = nil) {
+    self.secureStorage = secureStorage
   }
 
   // MARK: - KeyManagementProtocol Implementation
@@ -29,7 +29,7 @@ public actor KeyManagementImpl: KeyManagementProtocol {
   -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     // If secure storage is available, use it
     if let secureStorage {
-      let result=await secureStorage.retrieveSecurely(identifier: identifier)
+      let result = await secureStorage.retrieveSecurely(identifier: identifier)
       switch result {
         case let .success(data):
           return .success(data)
@@ -46,7 +46,7 @@ public actor KeyManagementImpl: KeyManagementProtocol {
     }
 
     // Fallback to in-memory storage
-    guard let key=keyStore[identifier] else {
+    guard let key = keyStore[identifier] else {
       return .failure(.invalidInput("Key not found: \(identifier)"))
     }
     return .success(key)
@@ -58,7 +58,7 @@ public actor KeyManagementImpl: KeyManagementProtocol {
   ) async -> Result<Void, UmbraErrors.Security.Protocols> {
     // If secure storage is available, use it
     if let secureStorage {
-      let result=await secureStorage.storeSecurely(data: key, identifier: identifier)
+      let result = await secureStorage.storeSecurely(data: key, identifier: identifier)
       switch result {
         case .success:
           return .success(())
@@ -70,7 +70,7 @@ public actor KeyManagementImpl: KeyManagementProtocol {
     }
 
     // Fallback to in-memory storage
-    keyStore[identifier]=key
+    keyStore[identifier] = key
     return .success(())
   }
 
@@ -78,7 +78,7 @@ public actor KeyManagementImpl: KeyManagementProtocol {
   -> Result<Void, UmbraErrors.Security.Protocols> {
     // If secure storage is available, use it
     if let secureStorage {
-      let result=await secureStorage.deleteSecurely(identifier: identifier)
+      let result = await secureStorage.deleteSecurely(identifier: identifier)
       switch result {
         case .success:
           return .success(())
@@ -116,9 +116,9 @@ public actor KeyManagementImpl: KeyManagementProtocol {
     reencryptedData: SecureBytes?
   ), UmbraErrors.Security.Protocols> {
     // Retrieve the old key
-    let oldKeyResult=await retrieveKey(withIdentifier: identifier)
-    guard case let .success(oldKey)=oldKeyResult else {
-      if case let .failure(error)=oldKeyResult {
+    let oldKeyResult = await retrieveKey(withIdentifier: identifier)
+    guard case let .success(oldKey) = oldKeyResult else {
+      if case let .failure(error) = oldKeyResult {
         return .failure(error)
       }
       return .failure(.invalidInput("Failed to retrieve old key"))
@@ -126,13 +126,13 @@ public actor KeyManagementImpl: KeyManagementProtocol {
 
     do {
       // Generate a new key
-      let keyResult=await KeyGenerator().generateKey(
+      let keyResult = await KeyGenerator().generateKey(
         bits: 256,
         keyType: .symmetric,
         purpose: .encryption
       )
-      guard case let .success(newKey)=keyResult else {
-        if case let .failure(error)=keyResult {
+      guard case let .success(newKey) = keyResult else {
+        if case let .failure(error) = keyResult {
           return .failure(error)
         }
         return .failure(.internalError("Unknown key generation error"))
@@ -140,41 +140,41 @@ public actor KeyManagementImpl: KeyManagementProtocol {
 
       // Re-encrypt data if provided
       var reencryptedData: SecureBytes?
-      if let existingCiphertext=dataToReencrypt {
+      if let existingCiphertext = dataToReencrypt {
         // First decrypt with old key
-        let cryptoService=CryptoServiceCore()
-        let decryptResult=await cryptoService.decryptSymmetric(
+        let cryptoService = CryptoServiceCore()
+        let decryptResult = await cryptoService.decryptSymmetric(
           data: existingCiphertext,
           key: oldKey,
           config: SecurityConfigDTO(algorithm: "AES-GCM", keySizeInBits: 256)
         )
-        guard case let .success(decryptedData)=decryptResult else {
-          if case let .failure(error)=decryptResult {
+        guard case let .success(decryptedData) = decryptResult else {
+          if case let .failure(error) = decryptResult {
             return .failure(error)
           }
           return .failure(.decryptionFailed("Failed to decrypt with old key"))
         }
 
         // Then encrypt with new key
-        let encryptResult=await cryptoService.encryptSymmetric(
+        let encryptResult = await cryptoService.encryptSymmetric(
           data: decryptedData,
           key: newKey,
           config: SecurityConfigDTO(algorithm: "AES-GCM", keySizeInBits: 256)
         )
-        guard case let .success(encryptedData)=encryptResult else {
-          if case let .failure(error)=encryptResult {
+        guard case let .success(encryptedData) = encryptResult else {
+          if case let .failure(error) = encryptResult {
             return .failure(error)
           }
           return .failure(.encryptionFailed("Failed to encrypt with new key"))
         }
 
-        reencryptedData=encryptedData
+        reencryptedData = encryptedData
       }
 
       // Store the new key
-      let storeResult=await storeKey(newKey, withIdentifier: identifier)
-      guard case .success=storeResult else {
-        if case let .failure(error)=storeResult {
+      let storeResult = await storeKey(newKey, withIdentifier: identifier)
+      guard case .success = storeResult else {
+        if case let .failure(error) = storeResult {
           return .failure(error)
         }
         return .failure(.storageOperationFailed("Failed to store new key"))

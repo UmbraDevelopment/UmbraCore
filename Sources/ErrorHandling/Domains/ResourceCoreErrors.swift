@@ -1,5 +1,44 @@
-import ErrorHandlingInterfaces
 import Foundation
+
+// Local type declarations to replace imports
+// These replace the removed ErrorHandling and ErrorHandlingDomains imports
+
+/// Error domain namespace
+public enum ErrorDomain {
+  /// Security domain
+  public static let security = "Security"
+  /// Crypto domain
+  public static let crypto = "Crypto"
+  /// Application domain
+  public static let application = "Application"
+}
+
+/// Error context protocol
+public protocol ErrorContext {
+  /// Domain of the error
+  var domain: String { get }
+  /// Code of the error
+  var code: Int { get }
+  /// Description of the error
+  var description: String { get }
+}
+
+/// Base error context implementation
+public struct BaseErrorContext: ErrorContext {
+  /// Domain of the error
+  public let domain: String
+  /// Code of the error
+  public let code: Int
+  /// Description of the error
+  public let description: String
+
+  /// Initialise with domain, code and description
+  public init(domain: String, code: Int, description: String) {
+    self.domain = domain
+    self.code = code
+    self.description = description
+  }
+}
 
 extension UmbraErrors.Resource {
   /// Core resource errors related to resource acquisition and management
@@ -80,7 +119,7 @@ extension UmbraErrors.Resource {
         case let .acquisitionFailed(resource, reason):
           "Failed to acquire resource '\(resource)': \(reason)"
         case let .invalidState(resource, currentState, requiredState):
-          if let required=requiredState {
+          if let required = requiredState {
             "Resource '\(resource)' is in invalid state: current '\(currentState)', required '\(required)'"
           } else {
             "Resource '\(resource)' is in invalid state: '\(currentState)'"
@@ -194,9 +233,9 @@ extension UmbraErrors.Resource.Core {
   public static func makeAcquisitionFailedError(
     resource: String,
     reason: String,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .acquisitionFailed(resource: resource, reason: reason)
   }
@@ -204,10 +243,10 @@ extension UmbraErrors.Resource.Core {
   /// Create an error for an exhausted resource pool
   public static func makePoolExhaustedError(
     poolName: String,
-    limit: Int=0,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    limit: Int = 0,
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .poolExhausted(poolName: poolName, limit: limit)
   }
@@ -217,9 +256,9 @@ extension UmbraErrors.Resource.Core {
     resource: String,
     operation: String,
     reason: String,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .operationFailed(resource: resource, operation: operation, reason: reason)
   }
@@ -228,9 +267,9 @@ extension UmbraErrors.Resource.Core {
   public static func makeResourceInvalidFormatError(
     resource: String,
     reason: String,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .resourceCorrupt(resource: resource, reason: reason)
   }
@@ -238,9 +277,9 @@ extension UmbraErrors.Resource.Core {
   /// Creates an error for a missing resource
   public static func makeResourceNotFoundError(
     resource: String,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .resourceNotFound(resource: resource)
   }
@@ -248,9 +287,9 @@ extension UmbraErrors.Resource.Core {
   /// Creates an error for a resource that already exists
   public static func makeResourceAlreadyExistsError(
     resource: String,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .resourceAlreadyExists(resource: resource)
   }

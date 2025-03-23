@@ -20,16 +20,16 @@ extension RepositoryService {
   ///           `UmbraErrors.Repository.Core.internalError` if the operation fails
   public func maintain(
     _ identifier: String,
-    rebuildIndex: Bool=false
+    rebuildIndex: Bool = false
   ) async throws {
-    let metadata=LogMetadata([
+    let metadata = LogMetadata([
       "repository_id": identifier,
       "rebuild_index": String(rebuildIndex)
     ])
 
     await logger.info("Starting repository maintenance", metadata: metadata)
 
-    guard let repository=repositories[identifier] else {
+    guard let repository = repositories[identifier] else {
       await logger.error("Repository not found", metadata: metadata)
       throw UmbraErrors.Repository.Core.repositoryNotFound(resource: identifier)
     }
@@ -63,13 +63,13 @@ extension RepositoryService {
   /// - Throws: `UmbraErrors.Repository.Core.repositoryNotFound` if the repository does not exist,
   ///           `UmbraErrors.Repository.Core.internalError` if the compact operation fails
   public func compactRepository(_ identifier: String) async throws {
-    let metadata=LogMetadata([
+    let metadata = LogMetadata([
       "repository_id": identifier
     ])
 
     await logger.info("Compacting repository", metadata: metadata)
 
-    guard let repository=repositories[identifier] else {
+    guard let repository = repositories[identifier] else {
       await logger.error("Repository not found", metadata: metadata)
       throw UmbraErrors.Repository.Core.repositoryNotFound(resource: identifier)
     }
@@ -95,20 +95,20 @@ extension RepositoryService {
   /// - Throws: `UmbraErrors.Repository.Core.repositoryNotFound` if the repository does not exist,
   ///           `UmbraErrors.Repository.Core.internalError` if the repair operation fails
   public func repairRepository(_ identifier: String) async throws {
-    let metadata=LogMetadata([
+    let metadata = LogMetadata([
       "repository_id": identifier
     ])
 
     await logger.info("Repairing repository", metadata: metadata)
 
-    guard let repository=repositories[identifier] else {
+    guard let repository = repositories[identifier] else {
       await logger.error("Repository not found", metadata: metadata)
       throw UmbraErrors.Repository.Core.repositoryNotFound(resource: identifier)
     }
 
     do {
       // Store the result to avoid the warning
-      let repairResult=try await repository.repair()
+      let repairResult = try await repository.repair()
       await logger.info("Repository repaired successfully: \(repairResult)", metadata: metadata)
     } catch {
       await logger.error(
@@ -127,13 +127,13 @@ extension RepositoryService {
   /// - Throws: `UmbraErrors.Repository.Core.repositoryNotFound` if the repository does not exist,
   ///           `UmbraErrors.Repository.Core.internalError` if the optimize operation fails
   public func optimizeRepository(_ identifier: String) async throws {
-    let metadata=LogMetadata([
+    let metadata = LogMetadata([
       "repository_id": identifier
     ])
 
     await logger.info("Optimizing repository", metadata: metadata)
 
-    guard let repository=repositories[identifier] else {
+    guard let repository = repositories[identifier] else {
       await logger.error("Repository not found", metadata: metadata)
       throw UmbraErrors.Repository.Core.repositoryNotFound(resource: identifier)
     }
@@ -158,18 +158,18 @@ extension RepositoryService {
   /// - Parameter force: Whether to continue after failures (default: false)
   /// - Throws: `UmbraErrors.Repository.Core.internalError` if any maintain operation fails and
   /// force is false
-  public func maintainAllRepositories(force: Bool=false) async throws {
-    let metadata=LogMetadata([
+  public func maintainAllRepositories(force: Bool = false) async throws {
+    let metadata = LogMetadata([
       "force": String(force),
       "repository_count": String(repositories.count)
     ])
 
     await logger.info("Maintaining all repositories", metadata: metadata)
 
-    var failedRepositories: [String]=[]
+    var failedRepositories: [String] = []
 
     for (identifier, repository) in repositories {
-      let repoMetadata=LogMetadata([
+      let repoMetadata = LogMetadata([
         "repository_id": identifier
       ])
 
@@ -194,7 +194,7 @@ extension RepositoryService {
     }
 
     if !failedRepositories.isEmpty {
-      let failedList=failedRepositories.joined(separator: ", ")
+      let failedList = failedRepositories.joined(separator: ", ")
       await logger.warning("Failed to maintain repositories: \(failedList)", metadata: metadata)
     }
   }
@@ -204,18 +204,18 @@ extension RepositoryService {
   /// - Parameter force: Whether to continue after failures (default: false)
   /// - Throws: `UmbraErrors.Repository.Core.internalError` if any compact operation fails and force
   /// is false
-  public func compactAllRepositories(force: Bool=false) async throws {
-    let metadata=LogMetadata([
+  public func compactAllRepositories(force: Bool = false) async throws {
+    let metadata = LogMetadata([
       "force": String(force),
       "repository_count": String(repositories.count)
     ])
 
     await logger.info("Compacting all repositories", metadata: metadata)
 
-    var failedRepositories: [String]=[]
+    var failedRepositories: [String] = []
 
     for (identifier, repository) in repositories {
-      let repoMetadata=LogMetadata([
+      let repoMetadata = LogMetadata([
         "repository_id": identifier
       ])
 
@@ -240,7 +240,7 @@ extension RepositoryService {
     }
 
     if !failedRepositories.isEmpty {
-      let failedList=failedRepositories.joined(separator: ", ")
+      let failedList = failedRepositories.joined(separator: ", ")
       await logger.warning("Failed to compact repositories: \(failedList)", metadata: metadata)
     }
   }
@@ -250,18 +250,18 @@ extension RepositoryService {
   /// - Parameter force: Whether to continue after failures (default: false)
   /// - Throws: `UmbraErrors.Repository.Core.internalError` if any optimize operation fails and
   /// force is false
-  public func optimizeAllRepositories(force: Bool=false) async throws {
-    let metadata=LogMetadata([
+  public func optimizeAllRepositories(force: Bool = false) async throws {
+    let metadata = LogMetadata([
       "force": String(force),
       "repository_count": String(repositories.count)
     ])
 
     await logger.info("Optimizing all repositories", metadata: metadata)
 
-    var failedRepositories: [String]=[]
+    var failedRepositories: [String] = []
 
     for (identifier, repository) in repositories {
-      let repoMetadata=LogMetadata([
+      let repoMetadata = LogMetadata([
         "repository_id": identifier
       ])
 
@@ -286,7 +286,7 @@ extension RepositoryService {
     }
 
     if !failedRepositories.isEmpty {
-      let failedList=failedRepositories.joined(separator: ", ")
+      let failedList = failedRepositories.joined(separator: ", ")
       await logger.warning("Failed to optimize repositories: \(failedList)", metadata: metadata)
     }
   }
@@ -297,18 +297,18 @@ extension RepositoryService {
   /// - Returns: Whether the repository was successfully repaired
   /// - Throws: `UmbraErrors.Repository.Core.repositoryNotFound` if the repository is not found
   public func repairRepository(at url: URL) async throws -> Bool {
-    let metadata=LogMetadataBuilder.forRepository(
+    let metadata = LogMetadataBuilder.forRepository(
       path: url.path
     )
     await logger.info("Starting repository repair", metadata: metadata)
 
-    guard let repository=await getRepository(at: url) else {
+    guard let repository = await getRepository(at: url) else {
       await logger.error("Repository not found", metadata: metadata)
       throw UmbraErrors.Repository.Core.repositoryNotFound(resource: url.path)
     }
 
     do {
-      let result=try await repository.repair()
+      let result = try await repository.repair()
       if result {
         await logger.info(
           "Repository repair completed successfully",
@@ -338,13 +338,13 @@ extension RepositoryService {
   /// - Throws: `UmbraErrors.Repository.Core.repositoryNotFound` if the repository does not exist,
   ///           `UmbraErrors.Repository.Core.internalError` if compaction fails
   public func compactRepository(at url: URL) async throws {
-    let metadata=LogMetadata([
+    let metadata = LogMetadata([
       "path": url.path
     ])
 
     await logger.info("Compacting repository", metadata: metadata)
 
-    guard let repository=await getRepository(at: url) else {
+    guard let repository = await getRepository(at: url) else {
       await logger.error("Repository not found", metadata: metadata)
       throw UmbraErrors.Repository.Core.repositoryNotFound(resource: url.path)
     }
@@ -370,13 +370,13 @@ extension RepositoryService {
   /// - Throws: `UmbraErrors.Repository.Core.repositoryNotFound` if the repository does not exist,
   ///           `UmbraErrors.Repository.Core.internalError` if optimization fails
   public func optimizeRepository(at url: URL) async throws {
-    let metadata=LogMetadata([
+    let metadata = LogMetadata([
       "path": url.path
     ])
 
     await logger.info("Optimizing repository", metadata: metadata)
 
-    guard let repository=await getRepository(at: url) else {
+    guard let repository = await getRepository(at: url) else {
       await logger.error("Repository not found", metadata: metadata)
       throw UmbraErrors.Repository.Core.repositoryNotFound(resource: url.path)
     }

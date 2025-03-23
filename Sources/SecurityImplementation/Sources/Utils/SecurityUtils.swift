@@ -101,7 +101,7 @@ public final class SecurityUtils: SecurityUtilsProtocol {
 
   /// Creates a new security utilities service
   public init(cryptoService: CryptoServiceProtocol) {
-    self.cryptoService=cryptoService
+    self.cryptoService = cryptoService
   }
 
   // MARK: - SecurityUtilsProtocol Implementation
@@ -117,7 +117,7 @@ public final class SecurityUtils: SecurityUtilsProtocol {
     key: SecureBytes,
     config: SecurityConfigDTO
   ) async -> SecurityResultDTO {
-    let result=await cryptoService.encryptSymmetric(
+    let result = await cryptoService.encryptSymmetric(
       data: data,
       key: key,
       config: config
@@ -146,7 +146,7 @@ public final class SecurityUtils: SecurityUtilsProtocol {
     key: SecureBytes,
     config: SecurityConfigDTO
   ) async -> SecurityResultDTO {
-    let result=await cryptoService.decryptSymmetric(
+    let result = await cryptoService.decryptSymmetric(
       data: data,
       key: key,
       config: config
@@ -175,7 +175,7 @@ public final class SecurityUtils: SecurityUtilsProtocol {
     key: SecureBytes,
     config: SecurityConfigDTO
   ) async -> SecurityResultDTO {
-    let result=await cryptoService.encryptAsymmetric(
+    let result = await cryptoService.encryptAsymmetric(
       data: data,
       publicKey: key,
       config: config
@@ -204,7 +204,7 @@ public final class SecurityUtils: SecurityUtilsProtocol {
     key: SecureBytes,
     config: SecurityConfigDTO
   ) async -> SecurityResultDTO {
-    let result=await cryptoService.decryptAsymmetric(
+    let result = await cryptoService.decryptAsymmetric(
       data: data,
       privateKey: key,
       config: config
@@ -231,7 +231,7 @@ public final class SecurityUtils: SecurityUtilsProtocol {
     data: SecureBytes,
     config: SecurityConfigDTO
   ) async -> SecurityResultDTO {
-    let result=await cryptoService.hash(
+    let result = await cryptoService.hash(
       data: data,
       config: config
     )
@@ -263,25 +263,25 @@ public final class SecurityUtils: SecurityUtilsProtocol {
     // For now, we'll use a combination of hash and the salt to simulate key derivation
 
     // Get raw bytes from SecureBytes objects
-    var dataBytes=[UInt8]()
+    var dataBytes = [UInt8]()
     for i in 0..<data.count {
       dataBytes.append(data[i])
     }
 
-    var saltBytes=[UInt8]()
+    var saltBytes = [UInt8]()
     for i in 0..<salt.count {
       saltBytes.append(salt[i])
     }
 
     // Combine the bytes
-    var combinedBytes=dataBytes
+    var combinedBytes = dataBytes
     combinedBytes.append(contentsOf: saltBytes)
 
     // Create a new SecureBytes object with the combined data
-    let saltedData=SecureBytes(bytes: combinedBytes)
+    let saltedData = SecureBytes(bytes: combinedBytes)
 
     // Hash the combined data
-    let result=await cryptoService.hash(
+    let result = await cryptoService.hash(
       data: saltedData,
       config: config
     )

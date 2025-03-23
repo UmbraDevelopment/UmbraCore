@@ -4,7 +4,7 @@ import Foundation
 extension Error {
   /// Get a localized description of the error
   public var localizedDescription: String {
-    if let customError=self as? LocalizedError {
+    if let customError = self as? LocalizedError {
       return customError.errorDescription ?? String(describing: self)
     }
     return String(describing: self)
@@ -32,7 +32,7 @@ extension Error {
 
   /// Get the error domain
   public var domain: String {
-    if let customError=self as? CustomNSError {
+    if let customError = self as? CustomNSError {
       return type(of: customError).errorDomain
     }
     return String(describing: type(of: self))

@@ -29,22 +29,22 @@ import UmbraCoreTypes
 /// Defines the intended purpose for cryptographic keys
 public enum KeyPurpose: String, Sendable, Equatable, CaseIterable {
   /// Encryption key
-  case encryption="Encryption"
+  case encryption = "Encryption"
 
   /// Signing key
-  case signing="Signing"
+  case signing = "Signing"
 
   /// Verification key
-  case verification="Verification"
+  case verification = "Verification"
 
   /// Authentication key
-  case authentication="Authentication"
+  case authentication = "Authentication"
 
   /// Key derivation key
-  case derivation="Derivation"
+  case derivation = "Derivation"
 
   /// Multi-purpose key
-  case general="General"
+  case general = "General"
 
   /// Unknown purpose
   case unknown
@@ -109,12 +109,12 @@ public final class KeyGenerator: Sendable {
     }
 
     // Create a buffer for the random data
-    var randomBytes=[UInt8](repeating: 0, count: length)
+    var randomBytes = [UInt8](repeating: 0, count: length)
 
     // In a real implementation, we would use a secure random number generator
     // For demo purposes, we'll use a simple approach
     for i in 0..<length {
-      randomBytes[i]=UInt8.random(in: 0...255)
+      randomBytes[i] = UInt8.random(in: 0...255)
     }
 
     return .success(SecureBytes(bytes: randomBytes))
@@ -162,13 +162,13 @@ public final class KeyGenerator: Sendable {
     switch algorithm.lowercased() {
       case "aes":
         // AES supports 128, 192, and 256 bit keys
-        validSize=[128, 192, 256].contains(bits)
+        validSize = [128, 192, 256].contains(bits)
       case "rsa":
         // RSA typically uses 2048, 3072, or 4096 bit keys
-        validSize=bits >= 2048 && bits % 64 == 0
+        validSize = bits >= 2_048 && bits % 64 == 0
       case "hmac-sha256":
         // HMAC-SHA256 can use variable key sizes, but we'll limit to common ones
-        validSize=bits >= 128 && bits % 8 == 0
+        validSize = bits >= 128 && bits % 8 == 0
       default:
         return SecurityResultDTO(
           success: false,
@@ -190,11 +190,11 @@ public final class KeyGenerator: Sendable {
     do {
       // For AES, we generate a random key using secure random bytes
       if algorithm.lowercased() == "aes" {
-        var keyBytes=[UInt8](repeating: 0, count: 32) // 256-bit key
-        let status=SecRandomCopyBytes(kSecRandomDefault, keyBytes.count, &keyBytes)
+        var keyBytes = [UInt8](repeating: 0, count: 32) // 256-bit key
+        let status = SecRandomCopyBytes(kSecRandomDefault, keyBytes.count, &keyBytes)
 
         if status == errSecSuccess {
-          let secureKeyBytes=SecureBytes(bytes: keyBytes)
+          let secureKeyBytes = SecureBytes(bytes: keyBytes)
           return SecurityResultDTO(success: true, data: secureKeyBytes)
         } else {
           return SecurityResultDTO(
@@ -205,8 +205,8 @@ public final class KeyGenerator: Sendable {
         }
       } else {
         // For other algorithms, generate appropriate random bytes
-        let byteCount=bits / 8
-        let randomBytes=try secureRandomBytes(count: byteCount)
+        let byteCount = bits / 8
+        let randomBytes = try secureRandomBytes(count: byteCount)
         return SecurityResultDTO(success: true, data: SecureBytes(bytes: randomBytes))
       }
     } catch {
@@ -229,7 +229,7 @@ public final class KeyGenerator: Sendable {
     }
 
     do {
-      let randomBytes=try secureRandomBytes(count: length)
+      let randomBytes = try secureRandomBytes(count: length)
       return .success(SecureBytes(bytes: randomBytes))
     } catch {
       return .failure(.randomGenerationFailed(error.localizedDescription))
@@ -245,7 +245,7 @@ public final class KeyGenerator: Sendable {
     bits: Int
   ) -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     // Calculate byte length (bits ÷ 8)
-    let byteLength=bits / 8
+    let byteLength = bits / 8
 
     // Generate random data for the key
     return generateRandomData(length: byteLength)
@@ -289,7 +289,7 @@ public final class KeyGenerator: Sendable {
       case .asymmetric:
         // RSA typically uses 2048, 3072, or 4096-bit keys
         // ECC typically uses 256, 384, or 521-bit keys
-        [2048, 3072, 4096, 256, 384, 521].contains(bits)
+        [2_048, 3_072, 4_096, 256, 384, 521].contains(bits)
 
       case .hmac:
         // HMAC typically uses 256, 384, or 512-bit keys
@@ -302,8 +302,8 @@ public final class KeyGenerator: Sendable {
 
   private func secureRandomBytes(count: Int) throws -> [UInt8] {
     // Use secure random generation to ensure cryptographic security
-    var randomBytes=[UInt8](repeating: 0, count: count)
-    let status=SecRandomCopyBytes(kSecRandomDefault, count, &randomBytes)
+    var randomBytes = [UInt8](repeating: 0, count: count)
+    let status = SecRandomCopyBytes(kSecRandomDefault, count, &randomBytes)
 
     if status == errSecSuccess {
       return randomBytes

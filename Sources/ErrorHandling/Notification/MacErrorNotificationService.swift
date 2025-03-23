@@ -1,8 +1,48 @@
+import AppKit
 import Foundation
+
+// Local type declarations to replace imports
+// These replace the removed ErrorHandling and ErrorHandlingDomains imports
+
+/// Error domain namespace
+public enum ErrorDomain {
+  /// Security domain
+  public static let security = "Security"
+  /// Crypto domain
+  public static let crypto = "Crypto"
+  /// Application domain
+  public static let application = "Application"
+}
+
+/// Error context protocol
+public protocol ErrorContext {
+  /// Domain of the error
+  var domain: String { get }
+  /// Code of the error
+  var code: Int { get }
+  /// Description of the error
+  var description: String { get }
+}
+
+/// Base error context implementation
+public struct BaseErrorContext: ErrorContext {
+  /// Domain of the error
+  public let domain: String
+  /// Code of the error
+  public let code: Int
+  /// Description of the error
+  public let description: String
+
+  /// Initialise with domain, code and description
+  public init(domain: String, code: Int, description: String) {
+    self.domain = domain
+    self.code = code
+    self.description = description
+  }
+}
+
 #if os(macOS)
-  import AppKit
 #endif
-import ErrorHandlingInterfaces
 
 /// A macOS implementation of the ErrorNotificationService
 @MainActor
@@ -18,11 +58,11 @@ public final class MacErrorNotificationService: ErrorNotificationService {
   ///   - supportedDomains: Domains this service can handle (or nil for all)
   ///   - supportedLevels: Levels this service can handle
   public init(
-    supportedDomains: [String]?=nil,
-    supportedLevels: [ErrorNotificationLevel]=[.warning, .error, .critical]
+    supportedDomains: [String]? = nil,
+    supportedLevels: [ErrorNotificationLevel] = [.warning, .error, .critical]
   ) {
-    supportedErrorDomains=supportedDomains ?? []
-    self.supportedLevels=supportedLevels
+    supportedErrorDomains = supportedDomains ?? []
+    self.supportedLevels = supportedLevels
   }
 
   /// Creates a notification service that handles all domains
@@ -49,14 +89,14 @@ public final class MacErrorNotificationService: ErrorNotificationService {
 
     #if os(macOS)
       // Get error information
-      let domain=getDomain(for: error)
-      let title=getTitle(for: error, domain: domain)
-      let message=getMessage(for: error)
+      let domain = getDomain(for: error)
+      let title = getTitle(for: error, domain: domain)
+      let message = getMessage(for: error)
 
       // Setup alert with error information
-      let alert=NSAlert()
-      alert.messageText=title
-      alert.informativeText=message
+      let alert = NSAlert()
+      alert.messageText = title
+      alert.informativeText = message
 
       // Configure alert style based on level
       switch level {
@@ -72,15 +112,15 @@ public final class MacErrorNotificationService: ErrorNotificationService {
 
       // Add recovery options to alert
       for option in recoveryOptions {
-        let buttonTitle=option.title
+        let buttonTitle = option.title
         alert.addButton(withTitle: buttonTitle)
       }
 
       // Show alert and get user response
-      let response=alert.runModal()
+      let response = alert.runModal()
 
       // Determine which button was clicked (first button is NSAlertFirstButtonReturn)
-      let buttonIndex=Int(response.rawValue) - NSApplication.ModalResponse.alertFirstButtonReturn
+      let buttonIndex = Int(response.rawValue) - NSApplication.ModalResponse.alertFirstButtonReturn
         .rawValue
 
       // Return ID of selected recovery option if valid
@@ -105,7 +145,7 @@ public final class MacErrorNotificationService: ErrorNotificationService {
     }
 
     // Check if error domain is supported
-    let domain=getDomain(for: error)
+    let domain = getDomain(for: error)
     return supportedErrorDomains.contains(domain)
   }
 
@@ -116,9 +156,9 @@ public final class MacErrorNotificationService: ErrorNotificationService {
     ///   - error: The error to display
     ///   - level: The notification level
     private func configureAlert(_ alert: NSAlert, for error: Error, level: ErrorNotificationLevel) {
-      let domain=getDomain(for: error)
-      alert.messageText=getTitle(for: error, domain: domain)
-      alert.informativeText=getMessage(for: error)
+      let domain = getDomain(for: error)
+      alert.messageText = getTitle(for: error, domain: domain)
+      alert.informativeText = getMessage(for: error)
 
       // Configure alert style based on level
       switch level {
@@ -138,11 +178,11 @@ public final class MacErrorNotificationService: ErrorNotificationService {
   /// - Parameter error: The error to get the domain for
   /// - Returns: The error domain
   private func getDomain(for error: Error) -> String {
-    if let umbraError=error as? UmbraError {
+    if let umbraError = error as? UmbraError {
       return umbraError.domain
     } else {
       // Access NSError properties directly through the bridged Error
-      let nsError=error as NSError
+      let nsError = error as NSError
       return nsError.domain
     }
   }
@@ -153,7 +193,7 @@ public final class MacErrorNotificationService: ErrorNotificationService {
   ///   - domain: The error domain
   /// - Returns: A user-friendly title
   private func getTitle(for error: Error, domain: String) -> String {
-    if let umbraError=error as? UmbraError {
+    if let umbraError = error as? UmbraError {
       "Error in \(domain): \(umbraError.code)"
     } else {
       "Error in \(domain)"
@@ -164,7 +204,7 @@ public final class MacErrorNotificationService: ErrorNotificationService {
   /// - Parameter error: The error
   /// - Returns: A user-friendly message
   private func getMessage(for error: Error) -> String {
-    if let umbraError=error as? UmbraError {
+    if let umbraError = error as? UmbraError {
       umbraError.errorDescription
     } else {
       error.localizedDescription

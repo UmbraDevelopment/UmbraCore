@@ -30,18 +30,18 @@ public struct SecureBytes: Sendable, Equatable, Hashable {
   /// Creates a new instance from an array of bytes
   /// - Parameter bytes: The bytes to store
   public init(_ bytes: [UInt8]) {
-    storage=bytes
+    storage = bytes
   }
 
   /// Creates an empty instance
   public init() {
-    storage=[]
+    storage = []
   }
 
   /// Creates a new instance with the specified size, filled with zeros
   /// - Parameter count: The size in bytes
   public init(count: Int) {
-    storage=[UInt8](repeating: 0, count: count)
+    storage = [UInt8](repeating: 0, count: count)
   }
 
   /// Creates a new instance with the specified size, filled with the given value
@@ -49,7 +49,7 @@ public struct SecureBytes: Sendable, Equatable, Hashable {
   ///   - repeating: The value to fill the data with
   ///   - count: The number of bytes
   public init(repeating: UInt8, count: Int) {
-    storage=[UInt8](repeating: repeating, count: count)
+    storage = [UInt8](repeating: repeating, count: count)
   }
 
   // MARK: - Subscript Access
@@ -81,7 +81,7 @@ public struct SecureBytes: Sendable, Equatable, Hashable {
   /// - Parameter other: The instance to append
   /// - Returns: A new combined instance
   public func appending(_ other: SecureBytes) -> SecureBytes {
-    var newBytes=bytes()
+    var newBytes = bytes()
     newBytes.append(contentsOf: other.bytes())
     return SecureBytes(newBytes)
   }
@@ -104,8 +104,8 @@ public struct SecureBytes: Sendable, Equatable, Hashable {
       throw SecureBytesError.invalidRange
     }
 
-    let firstPart=self[0..<position]
-    let secondPart=self[position..<count]
+    let firstPart = self[0..<position]
+    let secondPart = self[position..<count]
 
     return (firstPart, secondPart)
   }
@@ -120,9 +120,9 @@ public struct SecureBytes: Sendable, Equatable, Hashable {
   /// - Parameter byte: The byte to convert
   /// - Returns: Two-character hex string
   private func byteToHexString(_ byte: UInt8) -> String {
-    let digits=["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"]
-    let highIndex=Int(byte >> 4)
-    let lowIndex=Int(byte & 0x0F)
+    let digits = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"]
+    let highIndex = Int(byte >> 4)
+    let lowIndex = Int(byte & 0x0F)
     return digits[highIndex] + digits[lowIndex]
   }
 
@@ -132,18 +132,18 @@ public struct SecureBytes: Sendable, Equatable, Hashable {
   public static func fromHexString(_ hex: String) -> SecureBytes? {
     guard hex.count % 2 == 0 else { return nil }
 
-    var bytes=[UInt8]()
+    var bytes = [UInt8]()
     bytes.reserveCapacity(hex.count / 2)
 
-    var index=hex.startIndex
+    var index = hex.startIndex
     while index < hex.endIndex {
-      let nextIndex=hex.index(index, offsetBy: 2)
-      let byteString=hex[index..<nextIndex]
+      let nextIndex = hex.index(index, offsetBy: 2)
+      let byteString = hex[index..<nextIndex]
 
-      guard let byte=UInt8(String(byteString), radix: 16) else { return nil }
+      guard let byte = UInt8(String(byteString), radix: 16) else { return nil }
       bytes.append(byte)
 
-      index=nextIndex
+      index = nextIndex
     }
 
     return SecureBytes(bytes)
@@ -171,7 +171,7 @@ public enum SecureBytesError: Error {
 // MARK: - ExpressibleByArrayLiteral
 
 extension SecureBytes: ExpressibleByArrayLiteral {
-  public typealias ArrayLiteralElement=UInt8
+  public typealias ArrayLiteralElement = UInt8
 
   public init(arrayLiteral elements: UInt8...) {
     self.init(elements)
@@ -190,7 +190,7 @@ extension SecureBytes: CustomStringConvertible {
 
 extension SecureBytes: CustomDebugStringConvertible {
   public var debugDescription: String {
-    let prefix=count <= 16 ? hexString() : hexString().prefix(32) + "..."
+    let prefix = count <= 16 ? hexString() : hexString().prefix(32) + "..."
     return "SecureBytes(\(count) bytes: \(prefix))"
   }
 }

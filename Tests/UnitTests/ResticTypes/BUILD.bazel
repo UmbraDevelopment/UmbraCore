@@ -1,0 +1,10 @@
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_test")
+
+swift_test(
+    name = "ResticTypesTests",
+    deps = [
+        "//Sources/ResticTypes",
+        "//Tests/TestKit",
+    ],
+    visibility = ["//visibility:public"],
+)

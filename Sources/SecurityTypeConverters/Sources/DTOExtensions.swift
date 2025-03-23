@@ -1,13 +1,52 @@
 import CoreErrors
 import CoreTypesInterfaces
-import ErrorHandlingDomains
 import FoundationBridgeTypes
 import SecurityProtocolsCore
 import UmbraCoreTypes
 import XPCProtocolsCore
 
+// Local type declarations to replace imports
+// These replace the removed ErrorHandling and ErrorHandlingDomains imports
+
+/// Error domain namespace
+public enum ErrorDomain {
+  /// Security domain
+  public static let security = "Security"
+  /// Crypto domain
+  public static let crypto = "Crypto"
+  /// Application domain
+  public static let application = "Application"
+}
+
+/// Error context protocol
+public protocol ErrorContext {
+  /// Domain of the error
+  var domain: String { get }
+  /// Code of the error
+  var code: Int { get }
+  /// Description of the error
+  var description: String { get }
+}
+
+/// Base error context implementation
+public struct BaseErrorContext: ErrorContext {
+  /// Domain of the error
+  public let domain: String
+  /// Code of the error
+  public let code: Int
+  /// Description of the error
+  public let description: String
+
+  /// Initialise with domain, code and description
+  public init(domain: String, code: Int, description: String) {
+    self.domain = domain
+    self.code = code
+    self.description = description
+  }
+}
+
 // Type alias to disambiguate SecurityError types
-typealias SPCSecurityError=UmbraErrors.Security.Protocols
+typealias SPCSecurityError = UmbraErrors.Security.Protocols
 
 // MARK: - SecurityConfigDTO Extensions
 
@@ -17,7 +56,7 @@ extension SecurityConfigDTO {
   public func toBinaryData() -> CoreTypesInterfaces.BinaryData {
     // Simply encode the algorithm name as a fallback - actual serialization implementation
     // would need to be added separately based on actual required format
-    let algorithmBytes=Array(algorithm.utf8)
+    let algorithmBytes = Array(algorithm.utf8)
     return CoreTypesInterfaces.BinaryData(bytes: algorithmBytes)
   }
 
@@ -25,7 +64,7 @@ extension SecurityConfigDTO {
   /// - Parameter data: BinaryData to use as input
   /// - Returns: New config with updated input data
   public func withBinaryInputData(_ data: CoreTypesInterfaces.BinaryData) -> SecurityConfigDTO {
-    let secureBytes=SecureBytes(bytes: data.rawBytes)
+    let secureBytes = SecureBytes(bytes: data.rawBytes)
     return withInputData(secureBytes)
   }
 
@@ -33,7 +72,7 @@ extension SecurityConfigDTO {
   /// - Parameter key: BinaryData key
   /// - Returns: New config with updated key
   public func withBinaryKey(_ key: CoreTypesInterfaces.BinaryData) -> SecurityConfigDTO {
-    let secureBytes=SecureBytes(bytes: key.rawBytes)
+    let secureBytes = SecureBytes(bytes: key.rawBytes)
     return withKey(secureBytes)
   }
 }
@@ -47,7 +86,7 @@ extension SecurityResultDTO {
     guard let data else { return nil }
 
     // Access each byte in the secure bytes and create a new array
-    var bytes=[UInt8]()
+    var bytes = [UInt8]()
     for i in 0..<data.count {
       bytes.append(data[i])
     }
@@ -59,7 +98,7 @@ extension SecurityResultDTO {
   public func toCoreResult() -> Result<CoreTypesInterfaces.BinaryData?, UmbraErrors.Security.Core> {
     // Handle error case
     if let error {
-      let mappedError=SecurityErrorMapper.toCoreError(error)
+      let mappedError = SecurityErrorMapper.toCoreError(error)
       return .failure(mappedError)
     }
 
@@ -74,12 +113,12 @@ extension SecurityResultDTO {
   -> Result<T, UmbraErrors.Security.Core> {
     // Handle error case
     if let error {
-      let mappedError=SecurityErrorMapper.toCoreError(error)
+      let mappedError = SecurityErrorMapper.toCoreError(error)
       return .failure(mappedError)
     }
 
     // Transform the result data
-    if let transformed=transform(self) {
+    if let transformed = transform(self) {
       return .success(transformed)
     }
 

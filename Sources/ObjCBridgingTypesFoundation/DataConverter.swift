@@ -13,7 +13,7 @@ public class DataConverter {
   /// - Parameter nsData: The NSData object to convert
   /// - Returns: Array of bytes
   public static func convertToBytes(fromNSData nsData: NSData) -> [UInt8] {
-    let data=nsData as Data
+    let data = nsData as Data
     return [UInt8](data)
   }
 

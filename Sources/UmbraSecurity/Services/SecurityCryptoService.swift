@@ -18,8 +18,8 @@ public final class SecurityCryptoService: Sendable {
   ///   - key: Encryption key
   /// - Returns: Encrypted data with IV prepended
   public func encrypt(data: [UInt8], key: [UInt8]) throws -> [UInt8] {
-    let iv=CryptoWrapper.generateRandomIV()
-    let encrypted=try CryptoWrapper.encryptAES_GCM(data: data, key: key, iv: iv)
+    let iv = CryptoWrapper.generateRandomIV()
+    let encrypted = try CryptoWrapper.encryptAES_GCM(data: data, key: key, iv: iv)
 
     // Prepend IV to the encrypted data
     return iv + encrypted
@@ -36,8 +36,8 @@ public final class SecurityCryptoService: Sendable {
     }
 
     // Extract IV from the beginning of the data
-    let iv=Array(data.prefix(12))
-    let encryptedData=Array(data.dropFirst(12))
+    let iv = Array(data.prefix(12))
+    let encryptedData = Array(data.dropFirst(12))
 
     return try CryptoWrapper.decryptAES_GCM(data: encryptedData, key: key, iv: iv)
   }
@@ -45,7 +45,7 @@ public final class SecurityCryptoService: Sendable {
   /// Generate a random key
   /// - Parameter size: Size of the key in bytes
   /// - Returns: Random key bytes
-  public func generateKey(size: Int=32) -> [UInt8] {
+  public func generateKey(size: Int = 32) -> [UInt8] {
     CryptoWrapper.generateRandomKey(size: size)
   }
 

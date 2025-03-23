@@ -8,6 +8,6 @@ public struct ValidationResult: Sendable {
   /// Initialize a new validation result
   /// - Parameter isValid: Whether the validation was successful
   public init(isValid: Bool) {
-    self.isValid=isValid
+    self.isValid = isValid
   }
 }

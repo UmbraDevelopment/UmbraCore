@@ -7,8 +7,8 @@ public enum TestUtils {
   /// - Parameter size: Size in bytes
   /// - Returns: Random data
   public static func generateRandomData(size: Int) -> Data {
-    var data=Data(count: size)
-    _=data.withUnsafeMutableBytes { bytes in
+    var data = Data(count: size)
+    _ = data.withUnsafeMutableBytes { bytes in
       SecRandomCopyBytes(kSecRandomDefault, size, bytes.baseAddress!)
     }
     return data
@@ -17,17 +17,17 @@ public enum TestUtils {
   /// Generate a temporary file URL
   /// - Parameter prefix: Optional prefix for the filename
   /// - Returns: URL to a temporary file
-  public static func temporaryFileURL(prefix: String="") -> URL {
-    let fileName="\(prefix)\(UUID().uuidString)"
+  public static func temporaryFileURL(prefix: String = "") -> URL {
+    let fileName = "\(prefix)\(UUID().uuidString)"
     return FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
   }
 
   /// Create a temporary directory
   /// - Parameter prefix: Optional prefix for the directory name
   /// - Returns: URL to the temporary directory
-  public static func createTemporaryDirectory(prefix: String="") throws -> URL {
-    let dirName="\(prefix)\(UUID().uuidString)"
-    let url=FileManager.default.temporaryDirectory.appendingPathComponent(dirName)
+  public static func createTemporaryDirectory(prefix: String = "") throws -> URL {
+    let dirName = "\(prefix)\(UUID().uuidString)"
+    let url = FileManager.default.temporaryDirectory.appendingPathComponent(dirName)
     try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
     return url
   }
@@ -39,12 +39,12 @@ public enum TestUtils {
   ///   - description: Description of what we're waiting for
   ///   - condition: Condition to check
   public static func wait(
-    timeout: TimeInterval=5,
-    interval: TimeInterval=0.1,
+    timeout: TimeInterval = 5,
+    interval: TimeInterval = 0.1,
     description: String,
     condition: () -> Bool
   ) throws {
-    let start=Date()
+    let start = Date()
     while !condition() {
       if Date().timeIntervalSince(start) > timeout {
         throw TestError.timeout(description)
@@ -60,12 +60,12 @@ public enum TestUtils {
   ///   - description: Description of what we're waiting for
   ///   - condition: Async condition to check
   public static func wait(
-    timeout: TimeInterval=5,
-    interval: TimeInterval=0.1,
+    timeout: TimeInterval = 5,
+    interval: TimeInterval = 0.1,
     description: String,
     condition: () async throws -> Bool
   ) async throws {
-    let start=Date()
+    let start = Date()
     while try await !condition() {
       if Date().timeIntervalSince(start) > timeout {
         throw TestError.timeout(description)

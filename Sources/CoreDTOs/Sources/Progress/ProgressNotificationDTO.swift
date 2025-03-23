@@ -19,7 +19,7 @@ public struct ProgressNotificationDTO: Sendable, Equatable {
 
     /// Order for comparing severity levels
     public static func < (lhs: Level, rhs: Level) -> Bool {
-      let order: [Level: Int]=[
+      let order: [Level: Int] = [
         .info: 0,
         .success: 1,
         .warning: 2,
@@ -83,21 +83,21 @@ public struct ProgressNotificationDTO: Sendable, Equatable {
     title: String,
     message: String,
     source: String,
-    isRead: Bool=false,
-    isActionable: Bool=false,
-    actionTitle: String?=nil,
-    metadata: [String: String]=[:]
+    isRead: Bool = false,
+    isActionable: Bool = false,
+    actionTitle: String? = nil,
+    metadata: [String: String] = [:]
   ) {
-    self.id=id
-    self.timestamp=timestamp
-    self.level=level
-    self.title=title
-    self.message=message
-    self.source=source
-    self.isRead=isRead
-    self.isActionable=isActionable
-    self.actionTitle=actionTitle
-    self.metadata=metadata
+    self.id = id
+    self.timestamp = timestamp
+    self.level = level
+    self.title = title
+    self.message = message
+    self.source = source
+    self.isRead = isRead
+    self.isActionable = isActionable
+    self.actionTitle = actionTitle
+    self.metadata = metadata
   }
 
   // MARK: - Factory Methods
@@ -115,9 +115,9 @@ public struct ProgressNotificationDTO: Sendable, Equatable {
     message: String,
     source: String,
     timestamp: UInt64,
-    id: String?=nil
+    id: String? = nil
   ) -> ProgressNotificationDTO {
-    let notificationID=id ?? generateID(prefix: "info")
+    let notificationID = id ?? generateID(prefix: "info")
 
     return ProgressNotificationDTO(
       id: notificationID,
@@ -142,9 +142,9 @@ public struct ProgressNotificationDTO: Sendable, Equatable {
     message: String,
     source: String,
     timestamp: UInt64,
-    id: String?=nil
+    id: String? = nil
   ) -> ProgressNotificationDTO {
-    let notificationID=id ?? generateID(prefix: "warn")
+    let notificationID = id ?? generateID(prefix: "warn")
 
     return ProgressNotificationDTO(
       id: notificationID,
@@ -169,9 +169,9 @@ public struct ProgressNotificationDTO: Sendable, Equatable {
     message: String,
     source: String,
     timestamp: UInt64,
-    id: String?=nil
+    id: String? = nil
   ) -> ProgressNotificationDTO {
-    let notificationID=id ?? generateID(prefix: "err")
+    let notificationID = id ?? generateID(prefix: "err")
 
     return ProgressNotificationDTO(
       id: notificationID,
@@ -196,9 +196,9 @@ public struct ProgressNotificationDTO: Sendable, Equatable {
     message: String,
     source: String,
     timestamp: UInt64,
-    id: String?=nil
+    id: String? = nil
   ) -> ProgressNotificationDTO {
-    let notificationID=id ?? generateID(prefix: "succ")
+    let notificationID = id ?? generateID(prefix: "succ")
 
     return ProgressNotificationDTO(
       id: notificationID,
@@ -227,9 +227,9 @@ public struct ProgressNotificationDTO: Sendable, Equatable {
     source: String,
     actionTitle: String,
     timestamp: UInt64,
-    id: String?=nil
+    id: String? = nil
   ) -> ProgressNotificationDTO {
-    let notificationID=id ?? generateID(prefix: "act")
+    let notificationID = id ?? generateID(prefix: "act")
 
     return ProgressNotificationDTO(
       id: notificationID,
@@ -257,9 +257,9 @@ public struct ProgressNotificationDTO: Sendable, Equatable {
     title: String,
     message: String,
     timestamp: UInt64,
-    id: String?=nil
+    id: String? = nil
   ) -> ProgressNotificationDTO {
-    let notificationID=id ?? generateID(prefix: "sec")
+    let notificationID = id ?? generateID(prefix: "sec")
 
     return ProgressNotificationDTO(
       id: notificationID,
@@ -277,12 +277,12 @@ public struct ProgressNotificationDTO: Sendable, Equatable {
   /// Generate a unique ID for notifications
   /// - Parameter prefix: Optional prefix for the ID
   /// - Returns: A unique ID string
-  private static func generateID(prefix: String?=nil) -> String {
+  private static func generateID(prefix: String? = nil) -> String {
     // Use simple random numbers for ID generation without Foundation
-    let rand1=UInt32.random(in: 0...UInt32.max)
-    let rand2=UInt32.random(in: 0...UInt32.max)
-    let rand3=UInt32.random(in: 0...UInt32.max)
-    let randomPart=String(format: "%08x%08x%08x", rand1, rand2, rand3)
+    let rand1 = UInt32.random(in: 0...UInt32.max)
+    let rand2 = UInt32.random(in: 0...UInt32.max)
+    let rand3 = UInt32.random(in: 0...UInt32.max)
+    let randomPart = String(format: "%08x%08x%08x", rand1, rand2, rand3)
     if let prefix {
       return "\(prefix)_\(randomPart)"
     }
@@ -313,9 +313,9 @@ public struct ProgressNotificationDTO: Sendable, Equatable {
   /// - Returns: A new ProgressNotificationDTO with updated metadata
   public func withUpdatedMetadata(_ additionalMetadata: [String: String])
   -> ProgressNotificationDTO {
-    var newMetadata=metadata
+    var newMetadata = metadata
     for (key, value) in additionalMetadata {
-      newMetadata[key]=value
+      newMetadata[key] = value
     }
 
     return ProgressNotificationDTO(

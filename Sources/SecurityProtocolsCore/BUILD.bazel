@@ -19,7 +19,7 @@ swift_library(
         # Use UmbraCoreTypes which now includes SecureBytes functionality
         "//Sources/UmbraCoreTypes",
         "//Sources/XPCProtocolsCore",
-        "//Sources/ErrorHandling/Domains:ErrorHandlingDomains",
+        "//ErrorHandling/Domains:ErrorHandlingDomains",
     ],
 )
 

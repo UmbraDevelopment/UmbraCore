@@ -1,22 +1,10 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_test")
-load("//:bazel/macros/swift.bzl", "umbra_swift_test")
-
-umbra_swift_test(
-    name = "CryptoTests",
-    srcs = [
-        "CredentialManagerTests.swift",
-        "CryptoServiceTests.swift",
-        "SecureStorageProtocolAdapter.swift",
-        "TestHelpers.swift",
-    ],
-    module_name = "CryptoTests",
     deps = [
         "//Sources/CoreErrors",
         "//Sources/CryptoTypes",
         "//Sources/CryptoTypes/Protocols:CryptoTypesProtocols",
         "//Sources/CryptoTypes/Services:CryptoTypesServices",
         "//Sources/CryptoTypes/Types:CryptoTypesTypes",
-        "//Sources/ErrorHandling/Domains:ErrorHandlingDomains",
+        "//ErrorHandling/Domains:ErrorHandlingDomains",
         "//Sources/SecurityImplementation",
         "//Sources/SecurityProtocolsCore",
         "//Sources/SecurityTypes",

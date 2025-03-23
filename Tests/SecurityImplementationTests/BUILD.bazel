@@ -1,16 +1,3 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_test")
-
-swift_test(
-    name = "SecurityImplementationTests",
-    srcs = glob(["*.swift"]),
-    copts = [
-        "-target",
-        "arm64-apple-macos14.7.4",
-        "-strict-concurrency=complete",
-        "-enable-actor-data-race-checks",
-        "-warn-concurrency",
-    ],
-    module_name = "SecurityImplementationTests",
     deps = [
         "//Sources/SecurityImplementation",
         "//Sources/SecurityProtocolsCore",

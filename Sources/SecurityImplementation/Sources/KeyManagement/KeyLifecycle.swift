@@ -47,11 +47,11 @@ final class KeyLifecycle {
     init(
       keyIdentifier: String,
       newIdentifier: String,
-      preserveOldKey: Bool=true
+      preserveOldKey: Bool = true
     ) {
-      self.keyIdentifier=keyIdentifier
-      self.newIdentifier=newIdentifier
-      self.preserveOldKey=preserveOldKey
+      self.keyIdentifier = keyIdentifier
+      self.newIdentifier = newIdentifier
+      self.preserveOldKey = preserveOldKey
     }
   }
 
@@ -70,8 +70,8 @@ final class KeyLifecycle {
   ///   - keyStore: The key store to use
   ///   - keyGenerator: The key generator to use
   init(keyStore: KeyStore, keyGenerator: KeyGenerator) {
-    self.keyStore=keyStore
-    self.keyGenerator=keyGenerator
+    self.keyStore = keyStore
+    self.keyGenerator = keyGenerator
   }
 
   // MARK: - Key Lifecycle Operations
@@ -90,17 +90,17 @@ final class KeyLifecycle {
     purpose: KeyPurpose
   ) -> Result<Void, UmbraErrors.Security.Protocols> {
     // First, check if the old key exists
-    let retrieveResult=keyStore.retrieveKey(withIdentifier: config.keyIdentifier)
+    let retrieveResult = keyStore.retrieveKey(withIdentifier: config.keyIdentifier)
 
     switch retrieveResult {
       case .success:
         // Generate a new key
-        let generateResult=keyGenerator.generateKey(bits: bits, keyType: keyType, purpose: purpose)
+        let generateResult = keyGenerator.generateKey(bits: bits, keyType: keyType, purpose: purpose)
 
         switch generateResult {
           case let .success(newKey):
             // Store the new key
-            let storeResult=keyStore.storeKey(
+            let storeResult = keyStore.storeKey(
               newKey,
               withIdentifier: config.newIdentifier
             )
@@ -109,7 +109,7 @@ final class KeyLifecycle {
               case .success:
                 // If we're not preserving the old key, delete it
                 if !config.preserveOldKey {
-                  _=keyStore.deleteKey(withIdentifier: config.keyIdentifier)
+                  _ = keyStore.deleteKey(withIdentifier: config.keyIdentifier)
                 }
                 return .success(())
 

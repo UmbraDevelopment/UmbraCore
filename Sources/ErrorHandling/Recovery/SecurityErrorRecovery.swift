@@ -1,11 +1,47 @@
-import ErrorHandlingCommon
-import ErrorHandlingCore
-import ErrorHandlingDomains
-import ErrorHandlingInterfaces
-import ErrorHandlingMapping
-import ErrorHandlingModels
-import ErrorHandlingNotification
 import Foundation
+
+// Implementation would import existing key
+// Implementation would import existing key
+
+// Local type declarations to replace imports
+// These replace the removed ErrorHandling and ErrorHandlingDomains imports
+
+/// Error domain namespace
+public enum ErrorDomain {
+  /// Security domain
+  public static let security = "Security"
+  /// Crypto domain
+  public static let crypto = "Crypto"
+  /// Application domain
+  public static let application = "Application"
+}
+
+/// Error context protocol
+public protocol ErrorContext {
+  /// Domain of the error
+  var domain: String { get }
+  /// Code of the error
+  var code: Int { get }
+  /// Description of the error
+  var description: String { get }
+}
+
+/// Base error context implementation
+public struct BaseErrorContext: ErrorContext {
+  /// Domain of the error
+  public let domain: String
+  /// Code of the error
+  public let code: Int
+  /// Description of the error
+  public let description: String
+
+  /// Initialise with domain, code and description
+  public init(domain: String, code: Int, description: String) {
+    self.domain = domain
+    self.code = code
+    self.description = description
+  }
+}
 
 /// Provides recovery options and handlers for security-related errors.
 ///
@@ -46,7 +82,7 @@ public struct SecurityCoreErrorWrapper: Error, Sendable {
   /// Initialise with a security error
   /// - Parameter error: The error to wrap
   public init(_ error: UmbraErrors.GeneralSecurity.Core) {
-    wrappedError=error
+    wrappedError = error
   }
 }
 
@@ -85,19 +121,19 @@ public struct SecurityRecoveryOption: RecoveryOption, Sendable {
   public init(
     id _: String,
     title: String,
-    description: String?=nil,
-    isDisruptive: Bool=false,
-    isDefault: Bool=false,
-    message: String?=nil,
+    description: String? = nil,
+    isDisruptive: Bool = false,
+    isDefault: Bool = false,
+    message: String? = nil,
     handler: @escaping @Sendable () -> Void
   ) {
-    id=UUID()
-    self.title=title
-    self.description=description
-    self.isDisruptive=isDisruptive
-    self.isDefault=isDefault
-    self.message=message
-    self.handler=handler
+    id = UUID()
+    self.title = title
+    self.description = description
+    self.isDisruptive = isDisruptive
+    self.isDefault = isDefault
+    self.message = message
+    self.handler = handler
   }
 
   /// Perform the recovery action
@@ -110,10 +146,10 @@ public struct SecurityRecoveryOption: RecoveryOption, Sendable {
 /// This class separates recovery functionality from error handling
 public final class SecurityErrorRecovery: @unchecked Sendable, RecoveryOptionsProvider {
   /// Singleton shared instance
-  public static let shared=SecurityErrorRecovery()
+  public static let shared = SecurityErrorRecovery()
 
   /// Debug mode flag
-  private let isDebug=false
+  private let isDebug = false
 
   /// Private constructor ensures singleton pattern
   private init() {}
@@ -125,7 +161,7 @@ public final class SecurityErrorRecovery: @unchecked Sendable, RecoveryOptionsPr
     }
 
     // Check for our specific security error types
-    if let securityError=error as? UmbraErrors.GeneralSecurity.Core {
+    if let securityError = error as? UmbraErrors.GeneralSecurity.Core {
       return createRecoveryOptions(for: SecurityCoreErrorWrapper(securityError))
     }
 
@@ -136,10 +172,10 @@ public final class SecurityErrorRecovery: @unchecked Sendable, RecoveryOptionsPr
   /// Creates recovery options for a security error
   private func createRecoveryOptions(for error: SecurityCoreErrorWrapper) -> [RecoveryOption] {
     // Create appropriate actions based on the error type
-    var options: [RecoveryOption]=[]
+    var options: [RecoveryOption] = []
 
     // Get the title and message for the error
-    let (title, message)=getTitleAndMessage(for: error.wrappedError)
+    let (title, message) = getTitleAndMessage(for: error.wrappedError)
 
     switch error.wrappedError {
       case .encryptionFailed, .decryptionFailed:
@@ -187,9 +223,7 @@ public final class SecurityErrorRecovery: @unchecked Sendable, RecoveryOptionsPr
             title: "Import Existing Key - \(title)",
             description: "Import an existing key",
             message: message,
-            handler: {
-              // Implementation would import existing key
-            }
+            handler: {}
           )
         )
 
@@ -291,9 +325,7 @@ public final class SecurityErrorRecovery: @unchecked Sendable, RecoveryOptionsPr
             title: "Import Existing Key - \(title)",
             description: "Import an existing key",
             message: message,
-            handler: {
-              // Implementation would import existing key
-            }
+            handler: {}
           )
         )
 
@@ -471,13 +503,13 @@ public final class SecurityErrorRecovery: @unchecked Sendable, RecoveryOptionsPr
   /// Print an example of recovery options for a security error
   /// - Parameter sampleError: A sample error to get recovery options for
   public func exampleUsage(sampleError: UmbraErrors.GeneralSecurity.Core) async {
-    let options=await recoveryOptions(for: sampleError)
+    let options = await recoveryOptions(for: sampleError)
 
     if !options.isEmpty {
       print("Recovery options for \(sampleError):")
       print("Actions:")
       for option in options {
-        if let secOption=option as? SecurityRecoveryOption {
+        if let secOption = option as? SecurityRecoveryOption {
           print("- \(option.title)\(secOption.isDefault ? " (Default)" : "")")
         } else {
           print("- \(option.title)")

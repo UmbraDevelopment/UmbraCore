@@ -171,7 +171,7 @@ extension KeychainXPCProtocol {
       ) { data, error in
         if let error {
           continuation.resume(throwing: error)
-        } else if let _=data {
+        } else if let _ = data {
           continuation.resume(returning: true)
         } else {
           continuation.resume(returning: false)

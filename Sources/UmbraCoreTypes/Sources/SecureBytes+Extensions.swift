@@ -13,7 +13,7 @@ extension SecureBytes {
     _ second: SecureBytes,
     _ additional: SecureBytes...
   ) -> SecureBytes {
-    var combined=[UInt8]()
+    var combined = [UInt8]()
 
     // Since we can't access private storage directly, we'll convert to array and access elements
     for i in 0..<first.count {
@@ -42,8 +42,8 @@ extension SecureBytes {
       throw SecureBytesError.outOfBounds
     }
 
-    var firstPart=[UInt8]()
-    var secondPart=[UInt8]()
+    var firstPart = [UInt8]()
+    var secondPart = [UInt8]()
 
     for i in 0..<position {
       firstPart.append(self[i])
@@ -59,7 +59,7 @@ extension SecureBytes {
   /// Converts SecureBytes to an array of UInt8
   /// - Returns: Array of UInt8 bytes
   public func toArray() -> [UInt8] {
-    var result=[UInt8]()
+    var result = [UInt8]()
     for i in 0..<count {
       result.append(self[i])
     }

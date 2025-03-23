@@ -1,38 +1,8 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_test")
-
-swift_test(
-    name = "ResticCLIHelperTests",
-    srcs = glob([
-        "**/*.swift",
-    ]),
-    copts = [
-        "-target",
-        "arm64-apple-macos14.0",
-        "-strict-concurrency=complete",
-        "-warn-concurrency",
-        "-enable-actor-data-race-checks",
-        "-enable-testing", # Ensure @testable imports work properly
-    ],
-    env = {
-        "MACOS_DEPLOYMENT_TARGET": "14.0",
-        "SWIFT_DETERMINISTIC_HASHING": "1",
-        "DEVELOPER_DIR": "/Applications/Xcode.app/Contents/Developer",
-        "ARCH": "arm64",
-        "XCODE_VERSION_OVERRIDE": "16.2.0",
-    },
-    module_name = "ResticCLIHelperTests",
-    target_compatible_with = [
-        "@platforms//os:macos",
-        "@platforms//cpu:arm64",
-    ],
-    timeout = "moderate", # Test timeout to ensure Bazel doesn't kill tests prematurely
-    flaky = True, # Correctly process XCTest's nonzero exit code
-    tags = ["problematic"], # Mark this test as problematic so it can be excluded in CI
     deps = [
         "//Sources/ResticCLIHelper",
-        "//Sources/ResticCLIHelper/Commands:ResticCLIHelperCommands", 
-        "//Sources/ResticCLIHelper/Models:ResticCLIHelperModels", 
-        "//Sources/ResticCLIHelper/Protocols:ResticCLIHelperProtocols", 
+        "//Sources/ResticCLIHelper/Commands:ResticCLIHelperCommands",
+        "//Sources/ResticCLIHelper/Models:ResticCLIHelperModels",
+        "//Sources/ResticCLIHelper/Protocols:ResticCLIHelperProtocols",
         "//Sources/ResticCLIHelper/Types:ResticCLIHelperTypes",
         "//Sources/ResticTypes",
         "//Sources/UmbraLogging",

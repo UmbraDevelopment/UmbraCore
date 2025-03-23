@@ -7,8 +7,8 @@ extension SecureBytes {
   /// - Parameter nsData: NSData to convert
   /// - Returns: SecureBytes instance
   public init(nsData: NSData) {
-    let bytes=nsData.bytes.bindMemory(to: UInt8.self, capacity: nsData.length)
-    let buffer=UnsafeBufferPointer(start: bytes, count: nsData.length)
+    let bytes = nsData.bytes.bindMemory(to: UInt8.self, capacity: nsData.length)
+    let buffer = UnsafeBufferPointer(start: bytes, count: nsData.length)
     self.init(bytes: Array(buffer))
   }
 

@@ -4,7 +4,7 @@ import Security
 /// Service for managing credentials in the keychain
 public actor CredentialManager {
   /// Shared instance of the credential manager
-  public static let shared=CredentialManager()
+  public static let shared = CredentialManager()
 
   private init() {}
 
@@ -14,14 +14,14 @@ public actor CredentialManager {
   ///   - service: The service identifier
   ///   - account: The account identifier
   public func store(_ credential: Data, service: String, account: String) throws {
-    let query: [String: Any]=[
+    let query: [String: Any] = [
       kSecClass as String: kSecClassGenericPassword,
       kSecAttrService as String: service,
       kSecAttrAccount as String: account,
       kSecValueData as String: credential
     ]
 
-    let status=SecItemAdd(query as CFDictionary, nil)
+    let status = SecItemAdd(query as CFDictionary, nil)
     guard status == errSecSuccess else {
       throw CredentialError.storeFailed(status)
     }
@@ -33,7 +33,7 @@ public actor CredentialManager {
   ///   - account: The account identifier
   /// - Returns: The stored credential
   public func retrieve(service: String, account: String) throws -> Data {
-    let query: [String: Any]=[
+    let query: [String: Any] = [
       kSecClass as String: kSecClassGenericPassword,
       kSecAttrService as String: service,
       kSecAttrAccount as String: account,
@@ -41,13 +41,13 @@ public actor CredentialManager {
     ]
 
     var result: AnyObject?
-    let status=SecItemCopyMatching(query as CFDictionary, &result)
+    let status = SecItemCopyMatching(query as CFDictionary, &result)
 
     guard status == errSecSuccess else {
       throw CredentialError.retrieveFailed(status)
     }
 
-    guard let data=result as? Data else {
+    guard let data = result as? Data else {
       throw CredentialError.invalidData
     }
 
@@ -59,13 +59,13 @@ public actor CredentialManager {
   ///   - service: The service identifier
   ///   - account: The account identifier
   public func delete(service: String, account: String) throws {
-    let query: [String: Any]=[
+    let query: [String: Any] = [
       kSecClass as String: kSecClassGenericPassword,
       kSecAttrService as String: service,
       kSecAttrAccount as String: account
     ]
 
-    let status=SecItemDelete(query as CFDictionary)
+    let status = SecItemDelete(query as CFDictionary)
     guard status == errSecSuccess else {
       throw CredentialError.deleteFailed(status)
     }

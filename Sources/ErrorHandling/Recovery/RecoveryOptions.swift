@@ -1,5 +1,44 @@
-import ErrorHandlingInterfaces
 import Foundation
+
+// Local type declarations to replace imports
+// These replace the removed ErrorHandling and ErrorHandlingDomains imports
+
+/// Error domain namespace
+public enum ErrorDomain {
+  /// Security domain
+  public static let security = "Security"
+  /// Crypto domain
+  public static let crypto = "Crypto"
+  /// Application domain
+  public static let application = "Application"
+}
+
+/// Error context protocol
+public protocol ErrorContext {
+  /// Domain of the error
+  var domain: String { get }
+  /// Code of the error
+  var code: Int { get }
+  /// Description of the error
+  var description: String { get }
+}
+
+/// Base error context implementation
+public struct BaseErrorContext: ErrorContext {
+  /// Domain of the error
+  public let domain: String
+  /// Code of the error
+  public let code: Int
+  /// Description of the error
+  public let description: String
+
+  /// Initialise with domain, code and description
+  public init(domain: String, code: Int, description: String) {
+    self.domain = domain
+    self.code = code
+    self.description = description
+  }
+}
 
 /// Container for recovery actions that can be presented to the user
 public struct RecoveryOptions: Sendable, Equatable {
@@ -19,12 +58,12 @@ public struct RecoveryOptions: Sendable, Equatable {
   ///   - message: Optional message explaining the error and recovery options
   public init(
     actions: [RecoveryAction],
-    title: String?=nil,
-    message: String?=nil
+    title: String? = nil,
+    message: String? = nil
   ) {
-    self.actions=actions
-    self.title=title
-    self.message=message
+    self.actions = actions
+    self.title = title
+    self.message = message
   }
 
   /// Find the default recovery action, if one exists
@@ -66,8 +105,8 @@ extension RecoveryOptions {
   ///   - cancelHandler: The action to perform when cancelling
   /// - Returns: RecoveryOptions with retry and cancel actions
   public static func retryCancel(
-    title: String?=nil,
-    message: String?=nil,
+    title: String? = nil,
+    message: String? = nil,
     retryHandler: @escaping @Sendable () -> Void,
     cancelHandler: @escaping @Sendable () -> Void
   ) -> RecoveryOptions {
@@ -90,8 +129,8 @@ extension RecoveryOptions {
   ///   - cancelHandler: The action to perform when cancelling
   /// - Returns: RecoveryOptions with retry, ignore, and cancel actions
   public static func retryIgnoreCancel(
-    title: String?=nil,
-    message: String?=nil,
+    title: String? = nil,
+    message: String? = nil,
     retryHandler: @escaping @Sendable () -> Void,
     ignoreHandler: @escaping @Sendable () -> Void,
     cancelHandler: @escaping @Sendable () -> Void

@@ -13,17 +13,17 @@ public struct CryptoConfiguration: Sendable {
   public let minimumPBKDF2Iterations: Int
 
   public init(
-    keyLength: Int=256,
-    ivLength: Int=12,
-    saltLength: Int=32,
-    minimumPBKDF2Iterations: Int=10000
+    keyLength: Int = 256,
+    ivLength: Int = 12,
+    saltLength: Int = 32,
+    minimumPBKDF2Iterations: Int = 10_000
   ) {
-    self.keyLength=keyLength
-    self.ivLength=ivLength
-    self.saltLength=saltLength
-    self.minimumPBKDF2Iterations=minimumPBKDF2Iterations
+    self.keyLength = keyLength
+    self.ivLength = ivLength
+    self.saltLength = saltLength
+    self.minimumPBKDF2Iterations = minimumPBKDF2Iterations
   }
 
   /// Default configuration
-  public static let `default`=CryptoConfiguration()
+  public static let `default` = CryptoConfiguration()
 }

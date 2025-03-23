@@ -9,7 +9,7 @@ swift_library(
     visibility = ["//visibility:public"],
     deps = [
         "//Sources/SecurityProtocolsCore",
-        "//Sources/ErrorHandling/Domains:ErrorHandlingDomains",
+        "//ErrorHandling/Domains:ErrorHandlingDomains",
         "//Sources/CoreErrors",
         "//Sources/SecurityInterfaces",
         "//Sources/UmbraCoreTypes",  # Added for SecureBytes
@@ -24,7 +24,7 @@ swift_test(
         "//Sources/SecurityInterfacesBase",
         ":SecurityTestHelpers",  # Use our test helpers instead of direct dependencies
         "//Sources/CoreErrors",
-        "//Sources/ErrorHandling/Domains:ErrorHandlingDomains",
+        "//ErrorHandling/Domains:ErrorHandlingDomains",
         "//Sources/UmbraCoreTypes",
         "//Sources/XPCProtocolsCore",
     ],
@@ -36,7 +36,7 @@ swift_test(
     deps = [
         "//Sources/SecurityInterfaces:SecurityInterfacesForTesting",
         "//Sources/SecurityProtocolsCore",
-        "//Sources/ErrorHandling/Domains:ErrorHandlingDomains",
+        "//ErrorHandling/Domains:ErrorHandlingDomains",
         "//Sources/UmbraCoreTypes",
     ],
 )

@@ -30,5 +30,5 @@ public enum MaintenanceType: String {
   case check
 
   /// Rebuild repository index
-  case rebuildIndex="rebuild-index"
+  case rebuildIndex = "rebuild-index"
 }

@@ -100,7 +100,7 @@ extension KeyManagementTypes.KeyMetadata {
 /// Provides guidance for transitioning from deprecated to canonical types
 public enum MigrationGuidance {
   /// Basic migration steps for codebase
-  public static let steps="""
+  public static let steps = """
     Swift 6 Migration for Key Management Types:
 
     1. Use the fully qualified types from KeyManagementTypes module directly.

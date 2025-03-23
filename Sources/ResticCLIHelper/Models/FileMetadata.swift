@@ -54,9 +54,9 @@ public struct FileMetadata: Codable, Sendable {
     case name
     case type
     case mode
-    case modTime="mod_time"
-    case accessTime="access_time"
-    case changeTime="change_time"
+    case modTime = "mod_time"
+    case accessTime = "access_time"
+    case changeTime = "change_time"
     case uid
     case gid
     case user
@@ -64,8 +64,8 @@ public struct FileMetadata: Codable, Sendable {
     case inode
     case size
     case links
-    case linkTarget="link_target"
+    case linkTarget = "link_target"
     case device
-    case extendedAttributes="extended_attributes"
+    case extendedAttributes = "extended_attributes"
   }
 }

@@ -1,15 +1,3 @@
-import ErrorHandling // Add this import to access the wrapper types
-import ErrorHandlingCommon
-import ErrorHandlingCore
-import ErrorHandlingDomains
-import ErrorHandlingInterfaces
-import ErrorHandlingMapping
-import ErrorHandlingModels
-import ErrorHandlingNotification
-
-// Use the direct protocol name from ErrorHandling.Interfaces
-// Define the full type name instead of using a typealias
-
 /// Example class demonstrating the usage of the error handling system
 ///
 /// This class provides sample implementations and usage patterns for:
@@ -47,7 +35,7 @@ public class ErrorHandlingExample {
     public func recoveryOptions(for error: some Error)
     -> [any ErrorHandlingInterfaces.RecoveryOption] {
       // Map to security error if possible
-      if let securityError=error as? SecurityCoreErrorWrapper {
+      if let securityError = error as? SecurityCoreErrorWrapper {
         // Provide different recovery options based on error type
         switch securityError.wrappedError {
           case .encryptionFailed, .decryptionFailed:
@@ -139,17 +127,17 @@ public class ErrorHandlingExample {
   @MainActor
   public func run() {
     // Set up the error handler
-    let errorHandler=ErrorHandler.shared
+    let errorHandler = ErrorHandler.shared
     errorHandler.setNotificationHandler(SampleNotificationHandler())
     errorHandler.registerRecoveryProvider(SampleRecoveryProvider())
 
     print("Starting error handling demonstration...")
 
     // Create a security error for demonstration
-    let securityError=UmbraErrors.GeneralSecurity.Core.invalidKey(reason: "Missing encryption key")
+    let securityError = UmbraErrors.GeneralSecurity.Core.invalidKey(reason: "Missing encryption key")
 
     // Manually create a wrapped error
-    let wrappedError=SecurityCoreErrorWrapper(securityError)
+    let wrappedError = SecurityCoreErrorWrapper(securityError)
 
     // Report the error
     Task {
@@ -171,20 +159,20 @@ public class ErrorHandlingExample {
       var description: String { message }
     }
 
-    let externalError=ExternalError(message: "External API connection failed")
+    let externalError = ExternalError(message: "External API connection failed")
 
     // Try to map to security error
-    let securityMapper=SecurityErrorMapper()
+    let securityMapper = SecurityErrorMapper()
 
     // Map external error to core error
-    if let mappedError=securityMapper.mapToCoreError(externalError) {
+    if let mappedError = securityMapper.mapToCoreError(externalError) {
       print("Successfully mapped to security error: \(mappedError)")
     } else {
       // Handle unmapped errors with an application error
-      let coreAppError=UmbraErrors.Application.Core.externalServiceError(
+      let coreAppError = UmbraErrors.Application.Core.externalServiceError(
         "External API authentication required"
       )
-      let wrappedAppError=ApplicationCoreErrorWrapper(coreAppError)
+      let wrappedAppError = ApplicationCoreErrorWrapper(coreAppError)
       print("Mapped to application error: \(wrappedAppError.errorDescription)")
     }
   }
@@ -192,10 +180,10 @@ public class ErrorHandlingExample {
   /// Demonstrate direct usage of error mapping and handling
   public func demonstrateDirectUsage() {
     // Create a sample security error
-    let coreError=UmbraErrors.GeneralSecurity.Core.invalidKey(reason: "Key has expired")
+    let coreError = UmbraErrors.GeneralSecurity.Core.invalidKey(reason: "Key has expired")
 
     // Wrap the error in our conforming wrapper
-    let securityError=SecurityCoreErrorWrapper(coreError)
+    let securityError = SecurityCoreErrorWrapper(coreError)
 
     // Handle the wrapped error
     print("\nDemonstrating direct error handling...")
@@ -205,7 +193,7 @@ public class ErrorHandlingExample {
     print("Recovery suggestion: \(securityError.recoverySuggestion ?? "None available")")
 
     // Add context to the error
-    let contextualError=securityError.with(
+    let contextualError = securityError.with(
       context: ErrorHandlingInterfaces.ErrorContext(
         source: "KeyManager",
         operation: "validateKey",
@@ -225,7 +213,7 @@ public class ErrorHandlingExample {
 extension ErrorHandlingExample {
   /// Create an example notification for demonstration
   private func createDemoNotification() -> ErrorHandlingNotification.ErrorNotification {
-    let securityError=SecurityCoreErrorWrapper(
+    let securityError = SecurityCoreErrorWrapper(
       UmbraErrors.GeneralSecurity.Core.invalidKey(reason: "Expired key")
     )
 

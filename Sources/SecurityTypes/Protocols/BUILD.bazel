@@ -1,15 +1,7 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
-load("//:bazel/macros/swift.bzl", "umbra_swift_library")
 
-umbra_swift_library(
+swift_library(
     name = "SecurityTypesProtocols",
-    srcs = glob(
-        ["**/*.swift"],
-        allow_empty = True,
-    ),
-    deps = [
-        "//Sources/ErrorHandling",
-        "//Sources/SecurityTypes/Types:SecurityTypesTypes",
-        "//Sources/UmbraLogging",
-    ],
+    srcs = glob(["**/*.swift"]),
+    visibility = ["//visibility:public"],
 )

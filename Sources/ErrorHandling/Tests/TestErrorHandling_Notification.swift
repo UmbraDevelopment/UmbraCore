@@ -1,7 +1,3 @@
-@testable import ErrorHandling
-@testable import ErrorHandlingCommon
-@testable import ErrorHandlingCore
-@testable import ErrorHandlingInterfaces
 import XCTest
 
 final class TestErrorHandling_Notification: XCTestCase {
@@ -9,10 +5,10 @@ final class TestErrorHandling_Notification: XCTestCase {
 
   func testErrorNotificationCentre() {
     // Create an error notification centre
-    let notificationCentre=TestErrorNotificationCentre()
+    let notificationCentre = TestErrorNotificationCentre()
 
     // Create a test error with context
-    let error=TestError(
+    let error = TestError(
       domain: "TestDomain",
       code: "TEST001",
       description: "Test error description",
@@ -24,7 +20,7 @@ final class TestErrorHandling_Notification: XCTestCase {
     )
 
     // Create a mock observer to receive notifications
-    let mockObserver=MockErrorObserver()
+    let mockObserver = MockErrorObserver()
 
     // Register the observer
     notificationCentre.addObserver(mockObserver, forDomains: ["TestDomain"])
@@ -34,7 +30,7 @@ final class TestErrorHandling_Notification: XCTestCase {
 
     // Verify the observer received the notification
     XCTAssertEqual(mockObserver.receivedErrors.count, 1)
-    if let receivedError=mockObserver.receivedErrors.first as? TestError {
+    if let receivedError = mockObserver.receivedErrors.first as? TestError {
       XCTAssertEqual(receivedError.domain, "TestDomain")
       XCTAssertEqual(receivedError.code, "TEST001")
       XCTAssertEqual(receivedError.errorDescription, "Test error description")
@@ -54,25 +50,25 @@ final class TestErrorHandling_Notification: XCTestCase {
 
   func testDomainSpecificObservers() {
     // Create an error notification centre
-    let notificationCentre=TestErrorNotificationCentre()
+    let notificationCentre = TestErrorNotificationCentre()
 
     // Create test errors with different domains
-    let securityError=TestError(
+    let securityError = TestError(
       domain: "Security",
       code: "SEC001",
       description: "Security error"
     )
 
-    let networkError=TestError(
+    let networkError = TestError(
       domain: "Network",
       code: "NET001",
       description: "Network error"
     )
 
     // Create domain-specific observers
-    let securityObserver=MockErrorObserver()
-    let networkObserver=MockErrorObserver()
-    let allDomainsObserver=MockErrorObserver()
+    let securityObserver = MockErrorObserver()
+    let networkObserver = MockErrorObserver()
+    let allDomainsObserver = MockErrorObserver()
 
     // Register observers for specific domains
     notificationCentre.addObserver(securityObserver, forDomains: ["Security"])
@@ -85,14 +81,14 @@ final class TestErrorHandling_Notification: XCTestCase {
 
     // Verify domain-specific observers only received relevant errors
     XCTAssertEqual(securityObserver.receivedErrors.count, 1)
-    if let receivedError=securityObserver.receivedErrors.first as? TestError {
+    if let receivedError = securityObserver.receivedErrors.first as? TestError {
       XCTAssertEqual(receivedError.domain, "Security")
     } else {
       XCTFail("Security observer received wrong error type")
     }
 
     XCTAssertEqual(networkObserver.receivedErrors.count, 1)
-    if let receivedError=networkObserver.receivedErrors.first as? TestError {
+    if let receivedError = networkObserver.receivedErrors.first as? TestError {
       XCTAssertEqual(receivedError.domain, "Network")
     } else {
       XCTFail("Network observer received wrong error type")
@@ -104,17 +100,17 @@ final class TestErrorHandling_Notification: XCTestCase {
 
   func testErrorNotificationFiltering() {
     // Create an error notification centre
-    let notificationCentre=TestErrorNotificationCentre()
+    let notificationCentre = TestErrorNotificationCentre()
 
     // Create a test error
-    let error=TestError(
+    let error = TestError(
       domain: "TestDomain",
       code: "TEST001",
       description: "Test error description"
     )
 
     // Create an observer with a filter
-    let filteredObserver=FilteredErrorObserver(allowedCodes: ["TEST002"])
+    let filteredObserver = FilteredErrorObserver(allowedCodes: ["TEST002"])
 
     // Register the filtered observer
     notificationCentre.addObserver(filteredObserver, forDomains: ["TestDomain"])
@@ -126,7 +122,7 @@ final class TestErrorHandling_Notification: XCTestCase {
     XCTAssertEqual(filteredObserver.receivedErrors.count, 0)
 
     // Create an error that should pass the filter
-    let acceptedError=TestError(
+    let acceptedError = TestError(
       domain: "TestDomain",
       code: "TEST002",
       description: "Accepted error description"
@@ -137,7 +133,7 @@ final class TestErrorHandling_Notification: XCTestCase {
 
     // Verify the observer received the notification
     XCTAssertEqual(filteredObserver.receivedErrors.count, 1)
-    if let receivedError=filteredObserver.receivedErrors.first as? TestError {
+    if let receivedError = filteredObserver.receivedErrors.first as? TestError {
       XCTAssertEqual(receivedError.code, "TEST002")
     } else {
       XCTFail("Observer did not receive the expected error")
@@ -158,32 +154,32 @@ final class TestErrorHandling_Notification: XCTestCase {
       domain: String,
       code: String,
       description: String,
-      source: ErrorHandlingInterfaces.ErrorSource?=nil,
-      underlyingError: Error?=nil
+      source: ErrorHandlingInterfaces.ErrorSource? = nil,
+      underlyingError: Error? = nil
     ) {
-      self.domain=domain
-      self.code=code
-      errorDescription=description
-      self.source=source
-      self.underlyingError=underlyingError
-      context=ErrorHandlingInterfaces.ErrorContext(source: domain, operation: "testOperation")
+      self.domain = domain
+      self.code = code
+      errorDescription = description
+      self.source = source
+      self.underlyingError = underlyingError
+      context = ErrorHandlingInterfaces.ErrorContext(source: domain, operation: "testOperation")
     }
 
     func with(context: ErrorHandlingInterfaces.ErrorContext) -> Self {
-      var copy=self
-      copy.context=context
+      var copy = self
+      copy.context = context
       return copy
     }
 
     func with(underlyingError: Error) -> Self {
-      var copy=self
-      copy.underlyingError=underlyingError
+      var copy = self
+      copy.underlyingError = underlyingError
       return copy
     }
 
     func with(source: ErrorHandlingInterfaces.ErrorSource) -> Self {
-      var copy=self
-      copy.source=source
+      var copy = self
+      copy.source = source
       return copy
     }
 
@@ -193,7 +189,7 @@ final class TestErrorHandling_Notification: XCTestCase {
   }
 
   class MockErrorObserver: ErrorObserver {
-    var receivedErrors: [Error]=[]
+    var receivedErrors: [Error] = []
 
     func onError(_ error: UmbraError) {
       receivedErrors.append(error)
@@ -201,11 +197,11 @@ final class TestErrorHandling_Notification: XCTestCase {
   }
 
   class FilteredErrorObserver: ErrorObserver {
-    var receivedErrors: [Error]=[]
+    var receivedErrors: [Error] = []
     var allowedCodes: [String]
 
     init(allowedCodes: [String]) {
-      self.allowedCodes=allowedCodes
+      self.allowedCodes = allowedCodes
     }
 
     func onError(_ error: UmbraError) {
@@ -216,7 +212,7 @@ final class TestErrorHandling_Notification: XCTestCase {
   }
 
   class TestErrorNotificationCentre {
-    private var observers: [(observer: ErrorObserver, domains: [String])]=[]
+    private var observers: [(observer: ErrorObserver, domains: [String])] = []
 
     func addObserver(_ observer: ErrorObserver, forDomains domains: [String]) {
       observers.append((observer: observer, domains: domains))

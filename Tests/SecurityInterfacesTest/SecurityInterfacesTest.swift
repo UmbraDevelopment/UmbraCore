@@ -1,10 +1,11 @@
-import ErrorHandlingDomains
+import ErrorHandling
 import Foundation
-@testable import SecurityInterfaces
+import SecurityInterfaces
 
-// This module exists to provide @testable access to SecurityInterfaces
-// for use in test targets. It re-exports the SecurityInterfaces module
-// with testable access to internal members.
-
-// Re-export SecurityError for convenience in tests
-public typealias SecurityError=SecurityInterfaces.SecurityError
+/// Test utilities for security interfaces
+public enum SecurityInterfacesTest {
+  /// Test utility function
+  public static func testUtility() -> Bool {
+    true
+  }
+}

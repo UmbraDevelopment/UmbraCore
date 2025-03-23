@@ -51,8 +51,8 @@ final class OperationsHandler {
   ///   - cryptoService: The crypto service to use
   ///   - keyManager: The key manager to use
   init(cryptoService: CryptoServiceProtocol, keyManager: KeyManagementProtocol) {
-    self.cryptoService=cryptoService
-    self.keyManager=keyManager
+    self.cryptoService = cryptoService
+    self.keyManager = keyManager
   }
 
   // MARK: - Operation Handling
@@ -113,12 +113,12 @@ final class OperationsHandler {
     config: SecurityConfigDTO
   ) async -> SecurityResultDTO {
     // First check if we need to retrieve a key
-    let keyResult=await retrieveKeyIfNeeded(config: config)
+    let keyResult = await retrieveKeyIfNeeded(config: config)
 
     switch keyResult {
       case let .success(key):
         // Check if we have input data
-        guard let inputData=config.inputData else {
+        guard let inputData = config.inputData else {
           return SecurityResultDTO.failure(
             error: .invalidInput("No input data provided for encryption")
           )
@@ -143,12 +143,12 @@ final class OperationsHandler {
     config: SecurityConfigDTO
   ) async -> SecurityResultDTO {
     // First check if we need to retrieve a key
-    let keyResult=await retrieveKeyIfNeeded(config: config)
+    let keyResult = await retrieveKeyIfNeeded(config: config)
 
     switch keyResult {
       case let .success(key):
         // Check if we have input data
-        guard let inputData=config.inputData else {
+        guard let inputData = config.inputData else {
           return SecurityResultDTO.failure(
             error: .invalidInput("No input data provided for decryption")
           )
@@ -173,7 +173,7 @@ final class OperationsHandler {
     config: SecurityConfigDTO
   ) async -> SecurityResultDTO {
     // Check if we have input data
-    guard let inputData=config.inputData else {
+    guard let inputData = config.inputData else {
       return SecurityResultDTO.failure(
         error: .invalidInput("No input data provided for hashing")
       )
@@ -284,14 +284,14 @@ final class OperationsHandler {
     config: SecurityConfigDTO
   ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     // Check if a key is already provided in the config
-    if let key=config.key {
+    if let key = config.key {
       return .success(key)
     }
 
     // Check if a key identifier is provided
-    if let keyID=config.keyIdentifier {
+    if let keyID = config.keyIdentifier {
       // Retrieve the key from the key manager
-      let keyResult=await keyManager.retrieveKey(withIdentifier: keyID)
+      let keyResult = await keyManager.retrieveKey(withIdentifier: keyID)
 
       switch keyResult {
         case let .success(key):

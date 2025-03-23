@@ -9,7 +9,7 @@ umbracore_foundation_free_module(
         "//Sources/SecureBytes",
         "//Sources/CryptoSwiftFoundationIndependent",
         "//Sources/CoreErrors",
-        "//Sources/ErrorHandling/Domains:ErrorHandlingDomains",
+        "//ErrorHandling/Domains:ErrorHandlingDomains",
         "//Sources/UmbraCoreTypes",
     ],
     copts = [

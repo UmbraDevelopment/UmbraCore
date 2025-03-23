@@ -4,24 +4,24 @@ import Foundation
 public actor XPCConnectionManager {
   /// Dictionary of connections marked as unchecked Sendable because NSXPCConnection is thread-safe
   /// for invalidation operations but doesn't conform to Sendable protocol
-  private var connections: [String: NSXPCConnection]=[:]
+  private var connections: [String: NSXPCConnection] = [:]
 
   /// Nonisolated collection of connections for use in deinit
   /// This is safe because:
   /// 1. NSXPCConnection is thread-safe for invalidation
   /// 2. We're only using this for thread-safe operations in deinit
-  private nonisolated let deinitConnectionHandler=DeinitConnectionHandler()
+  private nonisolated let deinitConnectionHandler = DeinitConnectionHandler()
 
   private let serviceName: String
   private let interfaceProtocol: Protocol
 
   public init(serviceName: String, interfaceProtocol: Protocol) {
-    self.serviceName=serviceName
-    self.interfaceProtocol=interfaceProtocol
+    self.serviceName = serviceName
+    self.interfaceProtocol = interfaceProtocol
   }
 
   public func connection() async throws -> NSXPCConnection {
-    if let existingConnection=connections[serviceName] {
+    if let existingConnection = connections[serviceName] {
       return existingConnection
     }
 
@@ -29,27 +29,27 @@ public actor XPCConnectionManager {
   }
 
   private func createNewConnection() async throws -> NSXPCConnection {
-    let connection=NSXPCConnection(serviceName: serviceName)
+    let connection = NSXPCConnection(serviceName: serviceName)
 
     // Configure the connection
-    connection.remoteObjectInterface=NSXPCInterface(with: interfaceProtocol)
+    connection.remoteObjectInterface = NSXPCInterface(with: interfaceProtocol)
 
     // Set up error handling
-    let serviceName=serviceName // Capture in local variable
-    let weakSelf=self as XPCConnectionManager? // Capture as optional for weak reference
-    connection.invalidationHandler={ [serviceName] in
+    let serviceName = serviceName // Capture in local variable
+    let weakSelf = self as XPCConnectionManager? // Capture as optional for weak reference
+    connection.invalidationHandler = { [serviceName] in
       // Create a new detached task to avoid potential data races
       Task.detached {
-        if let strongSelf=weakSelf {
+        if let strongSelf = weakSelf {
           await strongSelf.handleInvalidation(for: serviceName)
         }
       }
     }
 
-    connection.interruptionHandler={ [serviceName] in
+    connection.interruptionHandler = { [serviceName] in
       // Create a new detached task to avoid potential data races
       Task.detached {
-        if let strongSelf=weakSelf {
+        if let strongSelf = weakSelf {
           await strongSelf.handleInterruption(for: serviceName)
         }
       }
@@ -59,7 +59,7 @@ public actor XPCConnectionManager {
     connection.resume()
 
     // Store the connection
-    connections[serviceName]=connection
+    connections[serviceName] = connection
 
     // Also store in our deinit handler
     deinitConnectionHandler.addConnection(connection)
@@ -68,20 +68,20 @@ public actor XPCConnectionManager {
   }
 
   private func handleInvalidation(for serviceName: String) {
-    if let connection=connections.removeValue(forKey: serviceName) {
+    if let connection = connections.removeValue(forKey: serviceName) {
       deinitConnectionHandler.removeConnection(connection)
     }
   }
 
   private func handleInterruption(for serviceName: String) {
     // Handle interruption - could implement retry logic here
-    if let connection=connections.removeValue(forKey: serviceName) {
+    if let connection = connections.removeValue(forKey: serviceName) {
       deinitConnectionHandler.removeConnection(connection)
     }
   }
 
   public func invalidateConnection(for serviceName: String) {
-    if let connection=connections.removeValue(forKey: serviceName) {
+    if let connection = connections.removeValue(forKey: serviceName) {
       deinitConnectionHandler.removeConnection(connection)
       connection.invalidate()
     }
@@ -89,7 +89,7 @@ public actor XPCConnectionManager {
 
   public func invalidateAll() {
     // Take a snapshot of the connections to avoid mutation during iteration
-    let connectionsToInvalidate=connections
+    let connectionsToInvalidate = connections
     connections.removeAll()
 
     // Update deinit handler
@@ -113,8 +113,8 @@ public actor XPCConnectionManager {
 @available(macOS 14.0, *)
 private final class DeinitConnectionHandler: @unchecked Sendable {
   // Using NSMutableSet for thread-safe operations
-  private let connections=NSMutableSet()
-  private let lock=NSLock()
+  private let connections = NSMutableSet()
+  private let lock = NSLock()
 
   func addConnection(_ connection: NSXPCConnection) {
     lock.lock()
@@ -136,7 +136,7 @@ private final class DeinitConnectionHandler: @unchecked Sendable {
 
   func invalidateAllConnections() {
     lock.lock()
-    let connectionsCopy=connections.copy() as! NSSet
+    let connectionsCopy = connections.copy() as! NSSet
     connections.removeAllObjects()
     lock.unlock()
 

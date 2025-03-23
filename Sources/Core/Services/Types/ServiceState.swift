@@ -25,22 +25,22 @@ public enum ServiceState: String, Sendable, Codable {
 @available(*, deprecated, message: "Use ServiceState directly")
 public enum LegacyServiceState: Int, Sendable {
   /// Service has not been initialized yet
-  case uninitialized=0
+  case uninitialized = 0
 
   /// Service is in the process of initializing
-  case initializing=1
+  case initializing = 1
 
   /// Service is ready for use
-  case ready=2
+  case ready = 2
 
   /// Service is in the process of shutting down
-  case shuttingDown=3
+  case shuttingDown = 3
 
   /// Service has been shut down and is no longer available
-  case shutdown=4
+  case shutdown = 4
 
   /// Service has encountered an error and is in an undefined state
-  case error=5
+  case error = 5
 }
 
 /// Extension for LegacyServiceState to convert to standard service state

@@ -1,26 +1,7 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
-load("//:bazel/macros/swift.bzl", "umbra_swift_library")
 
-umbra_swift_library(
+swift_library(
     name = "ErrorHandling",
-    srcs = glob(
-        [
-            "*.swift",
-            "Extensions/*.swift",
-        ],
-        allow_empty = True,
-    ),
-    deps = [
-        "//Sources/ErrorHandling/Common:ErrorHandlingCommon",
-        "//Sources/ErrorHandling/Core:ErrorHandlingCore",
-        "//Sources/ErrorHandling/Domains:ErrorHandlingDomains",
-        "//Sources/ErrorHandling/Interfaces:ErrorHandlingInterfaces",
-        "//Sources/ErrorHandling/Logging:ErrorHandlingLogging",
-        "//Sources/ErrorHandling/Mapping:ErrorHandlingMapping",
-        "//Sources/ErrorHandling/ModuleInfo:ErrorHandlingModuleInfo",
-        "//Sources/ErrorHandling/Models:ErrorHandlingModels",
-        "//Sources/ErrorHandling/Notification:ErrorHandlingNotification",
-        "//Sources/ErrorHandling/Protocols:ErrorHandlingProtocols",
-        "//Sources/ErrorHandling/Recovery:ErrorHandlingRecovery",
-    ],
+    srcs = glob(["**/*.swift"]),
+    visibility = ["//visibility:public"],
 )

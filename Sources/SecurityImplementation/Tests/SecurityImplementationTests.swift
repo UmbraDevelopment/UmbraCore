@@ -20,10 +20,10 @@ class SecurityImplementationTests: XCTestCase {
 
   func testKeyManagerGeneration() async {
     // Test key generation with KeyManager
-    let keyManager=KeyManager()
+    let keyManager = KeyManager()
 
     // Generate a key
-    let result=await keyManager.generateKey(
+    let result = await keyManager.generateKey(
       bits: 256,
       keyType: .symmetric,
       purpose: .encryption
@@ -40,7 +40,7 @@ class SecurityImplementationTests: XCTestCase {
     // Store the key for later retrieval
     switch result {
       case let .success(key):
-        let storeResult=await keyManager.storeKey(key, withIdentifier: "testKey")
+        let storeResult = await keyManager.storeKey(key, withIdentifier: "testKey")
         switch storeResult {
           case let .failure(error: error):
             XCTFail("Failed to store generated key: \(error)")
@@ -52,7 +52,7 @@ class SecurityImplementationTests: XCTestCase {
     }
 
     // Retrieve the key to verify it was stored
-    let retrieveResult=await keyManager.retrieveKey(withIdentifier: "testKey")
+    let retrieveResult = await keyManager.retrieveKey(withIdentifier: "testKey")
 
     // Verify key retrieval
     switch retrieveResult {
@@ -68,10 +68,10 @@ class SecurityImplementationTests: XCTestCase {
     // Since the real KeyManager implementation doesn't support actual key rotation
     // in this test environment, we'll make a simpler test that verifies the basic functionality
 
-    let keyManager=KeyManager()
+    let keyManager = KeyManager()
 
     // Generate a new key
-    let generateResult=await keyManager.generateKey(
+    let generateResult = await keyManager.generateKey(
       bits: 256,
       keyType: .symmetric,
       purpose: .encryption
@@ -91,11 +91,11 @@ class SecurityImplementationTests: XCTestCase {
     // Since the real KeyManager implementation doesn't support key rotation
     // in this test environment, we'll make a simpler test that verifies encryption works
 
-    let keyManager=KeyManager()
-    let cryptoService=CryptoService()
+    let keyManager = KeyManager()
+    let cryptoService = CryptoService()
 
     // Generate a key
-    let genResult=await keyManager.generateKey(
+    let genResult = await keyManager.generateKey(
       bits: 256,
       keyType: .symmetric,
       purpose: .encryption
@@ -104,15 +104,15 @@ class SecurityImplementationTests: XCTestCase {
     switch genResult {
       case let .success(key):
         // We have a key, try to encrypt and decrypt with it
-        let testData=SecureBytes(bytes: [0x01, 0x02, 0x03, 0x04, 0x05])
+        let testData = SecureBytes(bytes: [0x01, 0x02, 0x03, 0x04, 0x05])
 
         // Encrypt data with the generated key
-        let encryptResult=await cryptoService.encrypt(data: testData, using: key)
+        let encryptResult = await cryptoService.encrypt(data: testData, using: key)
 
         switch encryptResult {
           case let .success(encryptedData):
             // Now decrypt the data with the same key
-            let decryptResult=await cryptoService.decrypt(data: encryptedData, using: key)
+            let decryptResult = await cryptoService.decrypt(data: encryptedData, using: key)
 
             switch decryptResult {
               case let .success(decryptedData):
@@ -133,10 +133,10 @@ class SecurityImplementationTests: XCTestCase {
     // Since the KeyManager implementation doesn't properly support key storage
     // in this test environment, we'll verify that key generation works
 
-    let keyManager=KeyManager()
+    let keyManager = KeyManager()
 
     // Generate a key with specific parameters for testing
-    let generateResult=await keyManager.generateKey(
+    let generateResult = await keyManager.generateKey(
       bits: 256,
       keyType: .symmetric,
       purpose: .encryption
@@ -157,8 +157,8 @@ class SecurityImplementationTests: XCTestCase {
 
   func testCryptoServiceEncryptDecrypt() async {
     // Test encryption and decryption with CryptoService
-    let cryptoService=CryptoService()
-    let testKey=SecureBytes(bytes: [
+    let cryptoService = CryptoService()
+    let testKey = SecureBytes(bytes: [
       0x00,
       0x01,
       0x02,
@@ -192,10 +192,10 @@ class SecurityImplementationTests: XCTestCase {
       0x1E,
       0x1F
     ])
-    let testData=SecureBytes(bytes: [0x01, 0x02, 0x03, 0x04, 0x05])
+    let testData = SecureBytes(bytes: [0x01, 0x02, 0x03, 0x04, 0x05])
 
     // Encrypt data
-    let encryptResult=await cryptoService.encrypt(data: testData, using: testKey)
+    let encryptResult = await cryptoService.encrypt(data: testData, using: testKey)
 
     switch encryptResult {
       case let .failure(error: error):
@@ -206,7 +206,7 @@ class SecurityImplementationTests: XCTestCase {
         XCTAssertNotEqual(encryptedData, testData)
 
         // Decrypt data
-        let decryptResult=await cryptoService.decrypt(data: encryptedData, using: testKey)
+        let decryptResult = await cryptoService.decrypt(data: encryptedData, using: testKey)
 
         switch decryptResult {
           case let .failure(error: error):
@@ -221,28 +221,28 @@ class SecurityImplementationTests: XCTestCase {
 
   func testSecurityProviderBasicOperations() async {
     // Create a security provider with the implementations we want to test
-    let cryptoService=CryptoService()
-    let keyManager=KeyManager()
-    let provider=SecurityProviderImpl(cryptoService: cryptoService, keyManager: keyManager)
+    let cryptoService = CryptoService()
+    let keyManager = KeyManager()
+    let provider = SecurityProviderImpl(cryptoService: cryptoService, keyManager: keyManager)
 
     // Verify the provider has the correct implementations
     XCTAssertTrue(provider.cryptoService is CryptoService)
     XCTAssertTrue(provider.keyManager is KeyManager)
 
     // Test creating config
-    let config=provider.createSecureConfig(options: ["algorithm": "AES-GCM"])
+    let config = provider.createSecureConfig(options: ["algorithm": "AES-GCM"])
     XCTAssertEqual(config.algorithm, "AES-GCM")
   }
 
   // Test performing security operations through the provider
   func testSecurityProviderOperations() async {
     // Setup provider
-    let cryptoService=CryptoService()
-    let keyManager=KeyManager()
-    let provider=SecurityProviderImpl(cryptoService: cryptoService, keyManager: keyManager)
+    let cryptoService = CryptoService()
+    let keyManager = KeyManager()
+    let provider = SecurityProviderImpl(cryptoService: cryptoService, keyManager: keyManager)
 
     // Generate a key directly with key manager
-    let keyResult=await keyManager.generateKey(
+    let keyResult = await keyManager.generateKey(
       bits: 256,
       keyType: .symmetric,
       purpose: .encryption
@@ -252,7 +252,7 @@ class SecurityImplementationTests: XCTestCase {
         XCTFail("Failed to generate key: \(error)")
         return
       case let .success(key):
-        let storeResult=await keyManager.storeKey(key, withIdentifier: "providerTest")
+        let storeResult = await keyManager.storeKey(key, withIdentifier: "providerTest")
         switch storeResult {
           case let .failure(error: error):
             XCTFail("Failed to store key: \(error)")
@@ -262,10 +262,10 @@ class SecurityImplementationTests: XCTestCase {
         }
 
         // Test data
-        let testData=SecureBytes(bytes: [0x01, 0x02, 0x03, 0x04, 0x05])
+        let testData = SecureBytes(bytes: [0x01, 0x02, 0x03, 0x04, 0x05])
 
         // Create a config for encryption
-        let encryptConfig=SecurityConfigDTO(
+        let encryptConfig = SecurityConfigDTO(
           algorithm: "AES-GCM",
           keySizeInBits: 256,
           initializationVector: nil,
@@ -274,7 +274,7 @@ class SecurityImplementationTests: XCTestCase {
         )
 
         // Test performing an operation through the provider
-        let operationResult=await provider.performSecureOperation(
+        let operationResult = await provider.performSecureOperation(
           operation: .symmetricEncryption,
           config: encryptConfig
         )
@@ -291,11 +291,11 @@ class SecurityImplementationTests: XCTestCase {
     // Since CryptoService doesn't have a direct generateAsymmetricKeyPair method,
     // we'll simulate it by creating dummy keys for testing purposes
 
-    let cryptoService=CryptoService()
+    let cryptoService = CryptoService()
 
     // Create a simple test key for verification
-    let publicKey=SecureBytes(bytes: Array(repeating: 0xBB, count: 256))
-    let privateKey=SecureBytes(bytes: Array(repeating: 0xAA, count: 512))
+    let publicKey = SecureBytes(bytes: Array(repeating: 0xBB, count: 256))
+    let privateKey = SecureBytes(bytes: Array(repeating: 0xAA, count: 512))
 
     // Verify the keys have proper sizes
     XCTAssertEqual(publicKey.count, 256, "Public key should be 256 bytes")
@@ -312,25 +312,25 @@ class SecurityImplementationTests: XCTestCase {
     // Create a manually constructed dummy key pair to test encryption/decryption
     // For our simplified test implementation, we'll use the same key for both operations
     print("Creating dummy key pair")
-    let keyBytes=[UInt8](repeating: 0xAA, count: 32)
+    let keyBytes = [UInt8](repeating: 0xAA, count: 32)
 
-    let publicKey=SecureBytes(bytes: keyBytes)
-    let privateKey=SecureBytes(bytes: keyBytes) // Using same key for both operations in test
+    let publicKey = SecureBytes(bytes: keyBytes)
+    let privateKey = SecureBytes(bytes: keyBytes) // Using same key for both operations in test
 
     print("Public key length: \(publicKey.count)")
     print("Private key length: \(privateKey.count)")
 
     // Test data to encrypt
-    let testData=SecureBytes(bytes: [0x01, 0x02, 0x03, 0x04, 0x05])
+    let testData = SecureBytes(bytes: [0x01, 0x02, 0x03, 0x04, 0x05])
     print("Test data to encrypt: \(Array(testData))")
 
     // Instantiate the crypto service
-    let cryptoService=CryptoService()
-    let config=SecurityConfigDTO(algorithm: "RSA", keySizeInBits: 2048)
+    let cryptoService = CryptoService()
+    let config = SecurityConfigDTO(algorithm: "RSA", keySizeInBits: 2_048)
 
     // Simple encrypt test with direct keys
     print("Encrypting data")
-    let encryptResult=await cryptoService.encryptAsymmetric(
+    let encryptResult = await cryptoService.encryptAsymmetric(
       data: testData,
       publicKey: publicKey,
       config: config
@@ -343,14 +343,14 @@ class SecurityImplementationTests: XCTestCase {
         print("Encrypted data length: \(encryptedData.count)")
 
         // Print the first few bytes of encrypted data for debugging
-        let encBytes=Array(encryptedData)
+        let encBytes = Array(encryptedData)
         if encBytes.count >= 8 {
           print("First 8 bytes of encrypted data: \(Array(encBytes.prefix(8)))")
         }
 
         // Decrypt test
         print("Decrypting data")
-        let decryptResult=await cryptoService.decryptAsymmetric(
+        let decryptResult = await cryptoService.decryptAsymmetric(
           data: encryptedData,
           privateKey: privateKey,
           config: config
@@ -372,25 +372,25 @@ class SecurityImplementationTests: XCTestCase {
 
   func testAsymmetricEncryptionWithLargeData() async {
     // Test encrypting data larger than RSA block size
-    let cryptoService=CryptoService()
-    let config=SecurityConfigDTO(algorithm: "RSA", keySizeInBits: 2048)
+    let cryptoService = CryptoService()
+    let config = SecurityConfigDTO(algorithm: "RSA", keySizeInBits: 2_048)
 
     // Create a manually constructed dummy key pair for our simplified testing
     print("Creating dummy key pair for large data test")
-    let keyBytes=[UInt8](repeating: 0xAA, count: 32)
-    let publicKey=SecureBytes(bytes: keyBytes)
-    let privateKey=SecureBytes(bytes: keyBytes) // Using same key for both operations in test
+    let keyBytes = [UInt8](repeating: 0xAA, count: 32)
+    let publicKey = SecureBytes(bytes: keyBytes)
+    let privateKey = SecureBytes(bytes: keyBytes) // Using same key for both operations in test
 
     // Create large test data (4 KB)
-    var largeData=[UInt8]()
-    for i in 0..<4096 {
+    var largeData = [UInt8]()
+    for i in 0..<4_096 {
       largeData.append(UInt8(i % 256))
     }
-    let testData=SecureBytes(bytes: largeData)
+    let testData = SecureBytes(bytes: largeData)
 
     // Encrypt large data using public key
     print("Encrypting large data")
-    let encryptResult=await cryptoService.encryptAsymmetric(
+    let encryptResult = await cryptoService.encryptAsymmetric(
       data: testData,
       publicKey: publicKey,
       config: config
@@ -402,13 +402,13 @@ class SecurityImplementationTests: XCTestCase {
         print("Encrypted data size: \(encryptedData.count)")
 
         // Debug info
-        let encryptedBytes=Array(encryptedData)
+        let encryptedBytes = Array(encryptedData)
         if encryptedBytes.count >= 8 {
           print("First 8 bytes of encrypted data: \(Array(encryptedBytes.prefix(8)))")
         }
 
         // Decrypt the data
-        let decryptResult=await cryptoService.decryptAsymmetric(
+        let decryptResult = await cryptoService.decryptAsymmetric(
           data: encryptedData,
           privateKey: privateKey,
           config: config
@@ -431,18 +431,18 @@ class SecurityImplementationTests: XCTestCase {
     // This test is designed for the real hybrid encryption format
     // We're using a simplified implementation for debugging, so we'll adapt this test
 
-    let cryptoService=CryptoService()
-    let config=SecurityConfigDTO(algorithm: "RSA", keySizeInBits: 2048)
+    let cryptoService = CryptoService()
+    let config = SecurityConfigDTO(algorithm: "RSA", keySizeInBits: 2_048)
 
     // Create a dummy key for testing
-    let keyBytes=[UInt8](repeating: 0xAA, count: 32)
-    let publicKey=SecureBytes(bytes: keyBytes)
+    let keyBytes = [UInt8](repeating: 0xAA, count: 32)
+    let publicKey = SecureBytes(bytes: keyBytes)
 
     // Test data to encrypt - using larger data to ensure substantial encrypted output
-    let testData=SecureBytes(bytes: [UInt8](repeating: 0x42, count: 100))
+    let testData = SecureBytes(bytes: [UInt8](repeating: 0x42, count: 100))
 
     // Encrypt data
-    let encryptResult=await cryptoService.encryptAsymmetric(
+    let encryptResult = await cryptoService.encryptAsymmetric(
       data: testData,
       publicKey: publicKey,
       config: config
@@ -460,7 +460,7 @@ class SecurityImplementationTests: XCTestCase {
         )
 
         // The header should consist of at least our format identifier
-        let bytes=Array(encryptedData)
+        let bytes = Array(encryptedData)
         XCTAssertGreaterThan(bytes.count, 8, "Should have enough bytes for format analysis")
 
         // Debug info
@@ -480,13 +480,13 @@ class SecurityImplementationTests: XCTestCase {
     // random elements that cause the same input to generate different hash values
     // across different calls. Therefore, we test basic functionality rather than exact equality.
 
-    let cryptoService=CryptoService()
+    let cryptoService = CryptoService()
 
     // Use fixed test vectors for predictable behaviour
-    let testData=SecureBytes(bytes: [0x01, 0x02, 0x03, 0x04, 0x05])
+    let testData = SecureBytes(bytes: [0x01, 0x02, 0x03, 0x04, 0x05])
 
     // Test that we can generate a hash without errors
-    let hashResult=await cryptoService.hash(data: testData)
+    let hashResult = await cryptoService.hash(data: testData)
 
     switch hashResult {
       case let .success(hash):
@@ -495,8 +495,8 @@ class SecurityImplementationTests: XCTestCase {
         print("Generated hash: \(Array(hash))")
 
         // Create different data and verify we can hash it too
-        let differentData=SecureBytes(bytes: [0x05, 0x04, 0x03, 0x02, 0x01])
-        let differentHashResult=await cryptoService.hash(data: differentData)
+        let differentData = SecureBytes(bytes: [0x05, 0x04, 0x03, 0x02, 0x01])
+        let differentHashResult = await cryptoService.hash(data: differentData)
 
         switch differentHashResult {
           case let .success(differentHash):
@@ -506,7 +506,7 @@ class SecurityImplementationTests: XCTestCase {
 
             // Test basic verification functionality
             // Note: We're not testing the result of verification, just that it runs without errors
-            let verifyResult=await cryptoService.verify(data: testData, against: hash)
+            let verifyResult = await cryptoService.verify(data: testData, against: hash)
             switch verifyResult {
               case .success:
                 // Successfully ran verification, which is what we're testing
@@ -527,23 +527,23 @@ class SecurityImplementationTests: XCTestCase {
 
   func testEncryptionDecryptionPerformance() async {
     // Test the performance of encryption and decryption with different data sizes
-    let cryptoService=CryptoService()
+    let cryptoService = CryptoService()
 
     // Data sizes to test (in KB)
-    let dataSizes=[1, 10, 100, 1000, 4096]
+    let dataSizes = [1, 10, 100, 1_000, 4_096]
 
     // For each data size, measure encryption and decryption time
     for size in dataSizes {
       // Create test data of the specified size (in KB)
-      let sizeInBytes=size * 1024
-      var testData=[UInt8]()
+      let sizeInBytes = size * 1_024
+      var testData = [UInt8]()
       for i in 0..<sizeInBytes {
         testData.append(UInt8(i % 256))
       }
-      let secureData=SecureBytes(bytes: testData)
+      let secureData = SecureBytes(bytes: testData)
 
       // Generate a key
-      let keyResult=await cryptoService.generateKey()
+      let keyResult = await cryptoService.generateKey()
       switch keyResult {
         case let .failure(error: error):
           XCTFail("Failed to generate key: \(error)")
@@ -552,29 +552,29 @@ class SecurityImplementationTests: XCTestCase {
           print("--- Performance Test: \(size) KB ---")
 
           // Measure encryption time
-          let encryptStartTime=Date()
-          let encryptResult=await cryptoService.encrypt(data: secureData, using: key)
-          let encryptEndTime=Date()
-          let encryptionTime=encryptEndTime.timeIntervalSince(encryptStartTime)
+          let encryptStartTime = Date()
+          let encryptResult = await cryptoService.encrypt(data: secureData, using: key)
+          let encryptEndTime = Date()
+          let encryptionTime = encryptEndTime.timeIntervalSince(encryptStartTime)
 
           print("Encryption time for \(size) KB: \(encryptionTime) seconds")
           switch encryptResult {
             case let .success(encryptedData):
               // Record encryption throughput
-              let encryptThroughput=Double(sizeInBytes) / encryptionTime / 1024.0 / 1024.0
+              let encryptThroughput = Double(sizeInBytes) / encryptionTime / 1_024.0 / 1_024.0
               print("Encryption throughput: \(encryptThroughput) MB/s")
 
               // Measure decryption time
-              let decryptStartTime=Date()
-              let decryptResult=await cryptoService.decrypt(data: encryptedData, using: key)
-              let decryptEndTime=Date()
-              let decryptionTime=decryptEndTime.timeIntervalSince(decryptStartTime)
+              let decryptStartTime = Date()
+              let decryptResult = await cryptoService.decrypt(data: encryptedData, using: key)
+              let decryptEndTime = Date()
+              let decryptionTime = decryptEndTime.timeIntervalSince(decryptStartTime)
 
               print("Decryption time for \(size) KB: \(decryptionTime) seconds")
               switch decryptResult {
                 case let .success(decryptedData):
                   // Record decryption throughput
-                  let decryptThroughput=Double(sizeInBytes) / decryptionTime / 1024.0 / 1024.0
+                  let decryptThroughput = Double(sizeInBytes) / decryptionTime / 1_024.0 / 1_024.0
                   print("Decryption throughput: \(decryptThroughput) MB/s")
 
                   // Verify decrypted data matches original
@@ -591,62 +591,62 @@ class SecurityImplementationTests: XCTestCase {
 
   func testAsymmetricEncryptionPerformance() async {
     // Test the performance of asymmetric encryption and decryption with different data sizes
-    let cryptoService=CryptoService()
-    let config=SecurityConfigDTO(algorithm: "RSA", keySizeInBits: 2048)
+    let cryptoService = CryptoService()
+    let config = SecurityConfigDTO(algorithm: "RSA", keySizeInBits: 2_048)
 
     // Create a key for our simplified implementation
-    let keyBytes=[UInt8](repeating: 0xAA, count: 32)
-    let publicKey=SecureBytes(bytes: keyBytes)
-    let privateKey=SecureBytes(bytes: keyBytes)
+    let keyBytes = [UInt8](repeating: 0xAA, count: 32)
+    let publicKey = SecureBytes(bytes: keyBytes)
+    let privateKey = SecureBytes(bytes: keyBytes)
 
     // Data sizes to test (in KB)
     // For asymmetric encryption, we use smaller sizes as it's typically slower
-    let dataSizes=[1, 10, 100, 1000]
+    let dataSizes = [1, 10, 100, 1_000]
 
     // For each data size, measure encryption and decryption time
     for size in dataSizes {
       // Create test data of the specified size (in KB)
-      let sizeInBytes=size * 1024
-      var testData=[UInt8]()
+      let sizeInBytes = size * 1_024
+      var testData = [UInt8]()
       for i in 0..<sizeInBytes {
         testData.append(UInt8(i % 256))
       }
-      let secureData=SecureBytes(bytes: testData)
+      let secureData = SecureBytes(bytes: testData)
 
       print("--- Asymmetric Performance Test: \(size) KB ---")
 
       // Measure encryption time
-      let encryptStartTime=Date()
-      let encryptResult=await cryptoService.encryptAsymmetric(
+      let encryptStartTime = Date()
+      let encryptResult = await cryptoService.encryptAsymmetric(
         data: secureData,
         publicKey: publicKey,
         config: config
       )
-      let encryptEndTime=Date()
-      let encryptionTime=encryptEndTime.timeIntervalSince(encryptStartTime)
+      let encryptEndTime = Date()
+      let encryptionTime = encryptEndTime.timeIntervalSince(encryptStartTime)
 
       print("Asymmetric encryption time for \(size) KB: \(encryptionTime) seconds")
       switch encryptResult {
         case let .success(encryptedData):
           // Record encryption throughput
-          let encryptThroughput=Double(sizeInBytes) / encryptionTime / 1024.0 / 1024.0
+          let encryptThroughput = Double(sizeInBytes) / encryptionTime / 1_024.0 / 1_024.0
           print("Asymmetric encryption throughput: \(encryptThroughput) MB/s")
 
           // Measure decryption time
-          let decryptStartTime=Date()
-          let decryptResult=await cryptoService.decryptAsymmetric(
+          let decryptStartTime = Date()
+          let decryptResult = await cryptoService.decryptAsymmetric(
             data: encryptedData,
             privateKey: privateKey,
             config: config
           )
-          let decryptEndTime=Date()
-          let decryptionTime=decryptEndTime.timeIntervalSince(decryptStartTime)
+          let decryptEndTime = Date()
+          let decryptionTime = decryptEndTime.timeIntervalSince(decryptStartTime)
 
           print("Asymmetric decryption time for \(size) KB: \(decryptionTime) seconds")
           switch decryptResult {
             case let .success(decryptedData):
               // Record decryption throughput
-              let decryptThroughput=Double(sizeInBytes) / decryptionTime / 1024.0 / 1024.0
+              let decryptThroughput = Double(sizeInBytes) / decryptionTime / 1_024.0 / 1_024.0
               print("Asymmetric decryption throughput: \(decryptThroughput) MB/s")
 
               // Verify decrypted data matches original

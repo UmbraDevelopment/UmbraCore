@@ -1,0 +1,18 @@
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_test")
+
+swift_test(
+    name = "SecurityInterfacesTests",
+    deps = [
+        "//Sources/CoreErrors",
+        "//ErrorHandling/Domains:ErrorHandlingDomains",
+        "//Sources/SecurityBridge",
+        "//Sources/SecurityInterfaces",
+        "//Sources/SecurityInterfaces:SecurityInterfacesForTesting",
+        "//Sources/SecurityInterfacesBase",
+        "//Sources/SecurityProtocolsCore",
+        "//Sources/UmbraCoreTypes",
+        "//Sources/XPCProtocolsCore",
+        "//Tests/TestKit",
+    ],
+    visibility = ["//visibility:public"],
+)

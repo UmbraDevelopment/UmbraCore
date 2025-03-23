@@ -1,10 +1,49 @@
 import CoreErrors
 import CoreServicesTypes
-import ErrorHandlingDomains
 import Foundation
 import SecurityProtocolsCore
 import SecurityTypes
 import UmbraCoreTypes
+
+// Local type declarations to replace imports
+// These replace the removed ErrorHandling and ErrorHandlingDomains imports
+
+/// Error domain namespace
+public enum ErrorDomain {
+  /// Security domain
+  public static let security = "Security"
+  /// Crypto domain
+  public static let crypto = "Crypto"
+  /// Application domain
+  public static let application = "Application"
+}
+
+/// Error context protocol
+public protocol ErrorContext {
+  /// Domain of the error
+  var domain: String { get }
+  /// Code of the error
+  var code: Int { get }
+  /// Description of the error
+  var description: String { get }
+}
+
+/// Base error context implementation
+public struct BaseErrorContext: ErrorContext {
+  /// Domain of the error
+  public let domain: String
+  /// Code of the error
+  public let code: Int
+  /// Description of the error
+  public let description: String
+
+  /// Initialise with domain, code and description
+  public init(domain: String, code: Int, description: String) {
+    self.domain = domain
+    self.code = code
+    self.description = description
+  }
+}
 
 // Remove typealias since it's causing conflicts
 
@@ -17,7 +56,7 @@ import UmbraCoreTypes
   message: "This will be replaced by UmbraSecurity.SecurityService in a future version. Use UmbraSecurity.SecurityService instead."
 )
 public actor SecurityService: UmbraService, SecurityProtocolsCore.SecurityProviderProtocol {
-  public static let serviceIdentifier="com.umbracore.security"
+  public static let serviceIdentifier = "com.umbracore.security"
 
   private var _state: ServiceState = .uninitialized
   public private(set) nonisolated(unsafe) var state: ServiceState = .uninitialized
@@ -41,9 +80,9 @@ public actor SecurityService: UmbraService, SecurityProtocolsCore.SecurityProvid
   /// Initialize security service
   /// - Parameter container: Service container for dependencies
   public init(container: ServiceContainer) {
-    self.container=container
-    accessedPaths=[]
-    bookmarks=[:]
+    self.container = container
+    accessedPaths = []
+    bookmarks = [:]
     _state = .uninitialized
   }
 
@@ -59,7 +98,7 @@ public actor SecurityService: UmbraService, SecurityProtocolsCore.SecurityProvid
     _state = .initializing
 
     // Resolve dependencies
-    _cryptoService=try await container.resolve(CryptoService.self)
+    _cryptoService = try await container.resolve(CryptoService.self)
 
     _state = .ready
     state = .ready
@@ -115,15 +154,15 @@ public actor SecurityService: UmbraService, SecurityProtocolsCore.SecurityProvid
     }
 
     // Extract token parameters with defaults
-    let expirationInterval=options["expirationInterval"] as? TimeInterval ?? 3600
-    let scope=options["scope"] as? String ?? "default"
+    let expirationInterval = options["expirationInterval"] as? TimeInterval ?? 3_600
+    let scope = options["scope"] as? String ?? "default"
 
     // Generate token data (simplified implementation)
-    let timestamp=Date().timeIntervalSince1970
-    let expirationTime=timestamp + expirationInterval
+    let timestamp = Date().timeIntervalSince1970
+    let expirationTime = timestamp + expirationInterval
 
     // In a real implementation, we would include signatures, proper encryption, etc.
-    let tokenData: [String: Any]=[
+    let tokenData: [String: Any] = [
       "timestamp": timestamp,
       "expiration": expirationTime,
       "scope": scope,
@@ -131,7 +170,7 @@ public actor SecurityService: UmbraService, SecurityProtocolsCore.SecurityProvid
     ]
 
     // Convert to JSON
-    let jsonData=try JSONSerialization.data(withJSONObject: tokenData)
+    let jsonData = try JSONSerialization.data(withJSONObject: tokenData)
 
     // Convert to SecureBytes
     return SecureBytes(bytes: [UInt8](jsonData))
@@ -146,7 +185,7 @@ public actor SecurityService: UmbraService, SecurityProtocolsCore.SecurityProvid
       throw CoreErrors.ServiceError.invalidState
     }
 
-    guard let cryptoService=_cryptoService else {
+    guard let cryptoService = _cryptoService else {
       throw CoreErrors.SecurityError.operationFailed(
         operation: "generateRandomBytes",
         reason: "Crypto service unavailable"
@@ -154,7 +193,7 @@ public actor SecurityService: UmbraService, SecurityProtocolsCore.SecurityProvid
     }
 
     // Use crypto service to generate random bytes
-    let randomBytes=try await cryptoService.generateRandomBytes(count: count)
+    let randomBytes = try await cryptoService.generateRandomBytes(count: count)
     return SecureBytes(bytes: randomBytes)
   }
 
@@ -180,7 +219,7 @@ public actor SecurityService: UmbraService, SecurityProtocolsCore.SecurityProvid
     }
 
     // Otherwise, try to gain access directly (simplified implementation)
-    let fileManager=FileManager.default
+    let fileManager = FileManager.default
     if fileManager.fileExists(atPath: path) {
       accessedPaths.insert(path)
       return true
@@ -215,8 +254,8 @@ public actor SecurityService: UmbraService, SecurityProtocolsCore.SecurityProvid
     }
 
     // Create a new bookmark (simplified implementation)
-    let bookmarkData: [UInt8]=[ /* bookmark data would go here */ ]
-    bookmarks[path]=bookmarkData
+    let bookmarkData: [UInt8] = [ /* bookmark data would go here */ ]
+    bookmarks[path] = bookmarkData
     return true
   }
 
@@ -264,7 +303,7 @@ public actor SecurityService: UmbraService, SecurityProtocolsCore.SecurityProvid
       throw CoreErrors.ServiceError.invalidState
     }
 
-    guard let cryptoService=_cryptoService else {
+    guard let cryptoService = _cryptoService else {
       throw CoreErrors.SecurityError.operationFailed(
         operation: "encryption",
         reason: "Service unavailable"
@@ -272,7 +311,7 @@ public actor SecurityService: UmbraService, SecurityProtocolsCore.SecurityProvid
     }
 
     // Use crypto service to perform encryption
-    let encryptionResult=try await cryptoService.encrypt(data, using: key)
+    let encryptionResult = try await cryptoService.encrypt(data, using: key)
     return encryptionResult.encrypted
   }
 
@@ -287,7 +326,7 @@ public actor SecurityService: UmbraService, SecurityProtocolsCore.SecurityProvid
       throw CoreErrors.ServiceError.invalidState
     }
 
-    guard let cryptoService=_cryptoService else {
+    guard let cryptoService = _cryptoService else {
       throw CoreErrors.SecurityError.operationFailed(
         operation: "decryption",
         reason: "Service unavailable"
@@ -297,9 +336,9 @@ public actor SecurityService: UmbraService, SecurityProtocolsCore.SecurityProvid
     // Create an encryption result to pass to the decrypt method
     // In a real implementation, we would need to extract the IV and tag from the data
     // This is a simplified implementation that should be enhanced
-    let iv=try await cryptoService.generateIV()
-    let tag=[UInt8](repeating: 0, count: 16) // Placeholder for tag
-    let encryptionResult=EncryptionResult(encrypted: data, initializationVector: iv, tag: tag)
+    let iv = try await cryptoService.generateIV()
+    let tag = [UInt8](repeating: 0, count: 16) // Placeholder for tag
+    let encryptionResult = EncryptionResult(encrypted: data, initializationVector: iv, tag: tag)
 
     // Use crypto service to perform decryption
     return try await cryptoService.decrypt(encryptionResult, using: key)
@@ -314,7 +353,7 @@ public actor SecurityService: UmbraService, SecurityProtocolsCore.SecurityProvid
       throw CoreErrors.ServiceError.invalidState
     }
 
-    guard let cryptoService=_cryptoService else {
+    guard let cryptoService = _cryptoService else {
       throw CoreErrors.SecurityError.operationFailed(
         operation: "hash",
         reason: "Crypto service unavailable"

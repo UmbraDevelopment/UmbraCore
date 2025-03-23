@@ -1,11 +1,49 @@
 import CoreErrors
-import ErrorHandling
-import ErrorHandlingDomains
 import Foundation
 import UmbraCoreTypes
 
+// Local type declarations to replace imports
+// These replace the removed ErrorHandling and ErrorHandlingDomains imports
+
+/// Error domain namespace
+public enum ErrorDomain {
+  /// Security domain
+  public static let security = "Security"
+  /// Crypto domain
+  public static let crypto = "Crypto"
+  /// Application domain
+  public static let application = "Application"
+}
+
+/// Error context protocol
+public protocol ErrorContext {
+  /// Domain of the error
+  var domain: String { get }
+  /// Code of the error
+  var code: Int { get }
+  /// Description of the error
+  var description: String { get }
+}
+
+/// Base error context implementation
+public struct BaseErrorContext: ErrorContext {
+  /// Domain of the error
+  public let domain: String
+  /// Code of the error
+  public let code: Int
+  /// Description of the error
+  public let description: String
+
+  /// Initialise with domain, code and description
+  public init(domain: String, code: Int, description: String) {
+    self.domain = domain
+    self.code = code
+    self.description = description
+  }
+}
+
 // Type alias to disambiguate SecurityError types
-typealias SPCSecurityError=UmbraErrors.Security.Protocols
+typealias SPCSecurityError = UmbraErrors.Security.Protocols
 
 /// Factory class that provides convenience methods for creating protocol adapters
 /// during the migration from legacy protocols to the new XPCProtocolsCore protocols.
@@ -46,12 +84,12 @@ public enum XPCProtocolMigrationFactory {
   public static func convertLegacyError(_ error: Error) -> ErrorHandlingDomains.UmbraErrors.Security
   .Protocols {
     // First check if it's already the right type
-    if let securityError=error as? CoreErrors.SecurityError {
+    if let securityError = error as? CoreErrors.SecurityError {
       return convertErrorToSecurityProtocolError(securityError)
     }
 
     // Convert to CoreErrors.SecurityError with appropriate mapping
-    let nsError=error as NSError
+    let nsError = error as NSError
 
     // Try to create a more specific error based on domain and code
     return .internalError(nsError.localizedDescription)
@@ -64,7 +102,7 @@ public enum XPCProtocolMigrationFactory {
   public static func anyErrorToXPCError(_ error: Error) -> ErrorHandlingDomains.UmbraErrors.Security
   .Protocols {
     // If the error is already an CoreErrors.SecurityError, return it directly
-    if let xpcError=error as? CoreErrors.SecurityError {
+    if let xpcError = error as? CoreErrors.SecurityError {
       return convertErrorToSecurityProtocolError(xpcError)
     }
 
@@ -78,13 +116,13 @@ public enum XPCProtocolMigrationFactory {
   public static func mapFoundationError(_ error: Error) -> ErrorHandlingDomains.UmbraErrors.Security
   .Protocols {
     // First check if it's already the right type
-    if let securityError=error as? ErrorHandlingDomains.UmbraErrors.Security.Protocols {
+    if let securityError = error as? ErrorHandlingDomains.UmbraErrors.Security.Protocols {
       return securityError
     }
 
     // Convert to NSError and extract domain and code
-    let nsError=error as NSError
-    let domain=nsError.domain
+    let nsError = error as NSError
+    let domain = nsError.domain
 
     // Map specific error domains
     if domain == NSURLErrorDomain {
@@ -100,8 +138,8 @@ public enum XPCProtocolMigrationFactory {
   public static func mapError(_ error: Error) -> ErrorHandlingDomains.UmbraErrors.Security
   .Protocols {
     // NSError properties
-    let nsError=error as NSError
-    let domain=nsError.domain
+    let nsError = error as NSError
+    let domain = nsError.domain
 
     // Map specific error domains
     if domain == NSURLErrorDomain {
@@ -117,7 +155,7 @@ public enum XPCProtocolMigrationFactory {
   public static func mapGenericError(_ error: Error) -> ErrorHandlingDomains.UmbraErrors.Security
   .Protocols {
     // If the error is already an CoreErrors.SecurityError, convert it
-    if let xpcError=error as? CoreErrors.SecurityError {
+    if let xpcError = error as? CoreErrors.SecurityError {
       return convertErrorToSecurityProtocolError(xpcError)
     }
 
@@ -142,7 +180,7 @@ public enum XPCProtocolMigrationFactory {
   /// - Parameter mockResponses: Dictionary of method names to mock responses
   /// - Returns: A mock XPCServiceProtocolComplete implementation
   public static func createMockService(
-    mockResponses _: [String: Any]=[:]
+    mockResponses _: [String: Any] = [:]
   ) -> any XPCServiceProtocolComplete {
     // This could be expanded in the future to provide a more sophisticated mock
     ModernXPCService()
@@ -182,12 +220,12 @@ public enum XPCProtocolMigrationFactory {
     _ error: Error
   ) -> ErrorHandlingDomains.UmbraErrors.Security.Protocols {
     // First check if it's already the right type
-    if let securityError=error as? ErrorHandlingDomains.UmbraErrors.Security.Protocols {
+    if let securityError = error as? ErrorHandlingDomains.UmbraErrors.Security.Protocols {
       return securityError
     }
 
     // Convert NSError
-    let nsError=error as NSError
+    let nsError = error as NSError
     // Try to create a more specific error based on domain and code
     return .internalError(nsError.localizedDescription)
   }
