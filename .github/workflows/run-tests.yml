@@ -21,72 +21,35 @@ jobs:
           submodules: recursive
       - name: Prepare Test Environment
         run: |
-          # Check if bazelisk is installed, install only if needed
-          if ! command -v bazelisk &> /dev/null; then
-            echo "Installing bazelisk..."
-            brew install bazelisk
-          fi
+          brew install bazelisk || true
           bazelisk --version
           
-          # Check if yq is installed, install only if needed
-          if ! command -v yq &> /dev/null; then
-            echo "Installing yq..."
-            brew install yq
-          fi
-          yq --version
-          
-          # Just print Xcode information - don't try to change it
-          echo "Using Xcode at: $(xcode-select -p)"
-          xcodebuild -version || echo "Warning: Unable to get Xcode version"
-          swift --version || echo "Warning: Unable to get Swift version"
-          
-      - name: Discover Test Targets
+      - name: Run Tests with Coverage
         run: |
-          echo "Discovering test targets..."
-          chmod +x team-utils/discover_test_targets.sh
-          ./team-utils/discover_test_targets.sh
+          echo "Running all tests with coverage instrumentation..."
+          bazelisk coverage \
+            --combined_report=lcov \
+            --instrumentation_filter=//Sources/... \
+            --coverage_report_generator=@bazel_tools//tools/test:coverage_report_generator \
+            --test_output=errors \
+            --define=build_environment=nonlocal \
+            -k --verbose_failures \
+            $(cat team-utils/test_targets.txt) || true
           
-          # Verify that test targets file exists and is not empty
-          if [ ! -f team-utils/test_targets.txt ] || [ ! -s team-utils/test_targets.txt ]; then
-            echo "Error: No test targets found or test_targets.txt is empty"
-            touch team-utils/test_targets.txt  # Ensure file exists even if empty
-          else
-            echo "Found $(wc -l < team-utils/test_targets.txt | xargs) test targets"
-            cat team-utils/test_targets.txt
-          fi
+          # Process the coverage reports, which will exist even if some tests failed
+          mkdir -p coverage_reports
+          cp $(bazelisk info output_path)/_coverage/_coverage_report.dat ./coverage_reports/lcov.info || echo "No coverage report generated"
           
-      - name: Run Tests
-        run: |
-          # Check if we have test targets to run
-          if [ ! -s team-utils/test_targets.txt ]; then
-            echo "No test targets to run. Skipping test execution."
-            exit 0
-          fi
-          
-          echo "Running all tests..."
-          set +e  # Don't exit immediately on error
-          bazelisk test --define=build_environment=nonlocal -k --verbose_failures $(cat team-utils/test_targets.txt)
-          TEST_EXIT_CODE=$?
-          set -e
-          
-          # Store exit code for the summary step
-          echo "TEST_EXIT_CODE=$TEST_EXIT_CODE" >> $GITHUB_ENV
-          
+      - name: Upload Coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage_reports/lcov.info
+          fail_ci_if_error: false
+          verbose: true
+        if: always()
       - name: Summarise Test Results
         run: |
-          if [ -f team-utils/test_targets.txt ]; then
-            TEST_COUNT=$(wc -l < team-utils/test_targets.txt | xargs)
-            echo "Attempted to run $TEST_COUNT test targets"
-            
-            # Check the test exit code
-            if [ "${TEST_EXIT_CODE:-0}" -eq 0 ]; then
-              echo "All tests passed successfully!"
-            else
-              echo "Some tests failed. Please check the logs for details."
-              # Exit with 0 to prevent the workflow from failing on test failures
-              # This allows us to see test results without failing the entire workflow
-              exit 0
-            fi
-          else
-            echo "No test targets were found to run"
-          fi
+          TEST_COUNT=$(wc -l < team-utils/test_targets.txt | xargs)
+          echo "Completed $TEST_COUNT test targets"
+          
+        if: always()

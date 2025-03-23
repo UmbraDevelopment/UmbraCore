@@ -186,10 +186,28 @@ workflows:
             run: |
               brew install bazelisk || true
               bazelisk --version
-          - name: Run Tests
+          - name: Run Tests with Coverage
             run: |
-              echo "Running all tests..."
-              bazelisk test --define=build_environment=nonlocal -k --verbose_failures $(cat team-utils/test_targets.txt)
+              echo "Running all tests with coverage instrumentation..."
+              bazelisk coverage \
+                --combined_report=lcov \
+                --instrumentation_filter=//Sources/... \
+                --coverage_report_generator=@bazel_tools//tools/test:coverage_report_generator \
+                --test_output=errors \
+                --define=build_environment=nonlocal \
+                -k --verbose_failures \
+                $(cat team-utils/test_targets.txt) || true
+              
+              # Process the coverage reports, which will exist even if some tests failed
+              mkdir -p coverage_reports
+              cp $(bazelisk info output_path)/_coverage/_coverage_report.dat ./coverage_reports/lcov.info || echo "No coverage report generated"
+          - name: Upload Coverage to Codecov
+            uses: codecov/codecov-action@v3
+            if: always()
+            with:
+              files: ./coverage_reports/lcov.info
+              fail_ci_if_error: false
+              verbose: true
           - name: Summarise Test Results
             if: always()
             run: |

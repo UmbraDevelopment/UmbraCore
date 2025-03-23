@@ -1,0 +1,49 @@
+codecov:
+  require_ci_to_pass: no
+  notify:
+    after_n_builds: 1
+    wait_for_ci: no
+
+coverage:
+  precision: 2
+  round: down
+  range: "70...90"
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 1%
+        base: auto
+        if_ci_failed: success
+        informational: true
+        only_pulls: false
+    patch:
+      default:
+        target: 75%
+        threshold: 1%
+        base: auto
+        if_ci_failed: success
+        informational: true
+        only_pulls: true
+
+parsers:
+  gcov:
+    branch_detection:
+      conditional: yes
+      loop: yes
+      method: no
+      macro: no
+
+comment:
+  layout: "reach,diff,flags,files,footer"
+  behavior: default
+  require_changes: false
+  require_base: no
+  require_head: yes
+
+ignore:
+  - "Tests/**/*"
+  - "**/*.generated.swift"
+  - "Examples/**/*"
+  - "Sources/UmbraTestKit/**/*"
+  - "team-utils/**/*"

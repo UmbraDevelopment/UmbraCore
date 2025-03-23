@@ -1,152 +1,51 @@
-name: DocC Documentation Build
+name: DocC Build
 
 on:
   push:
     branches:
       - main
     paths:
-      - 'Sources/**/*.swift'
-      - 'Sources/**/*.docc/**'
-      - 'tools/swift/docc_*.sh'
-      - 'tools/swift/docc_rules.bzl'
-      - '.github/workflows/docc-build.yml'
-      - 'docc_config.yml'
+      - **.swift
+      - docc_config.yml
+      - .github/workflows/docc-build.yml
   pull_request:
+    branches:
+      - main
     paths:
-      - 'Sources/**/*.swift'
-      - 'Sources/**/*.docc/**'
-      - 'tools/swift/docc_*.sh'
-      - 'tools/swift/docc_rules.bzl'
-      - '.github/workflows/docc-build.yml'
-      - 'docc_config.yml'
-  workflow_dispatch:  # Allow manual triggering
+      - **.swift
+      - docc_config.yml
+      - .github/workflows/docc-build.yml
+  workflow_dispatch:
 
-env:
-  BAZEL_VERSION: 6.0.0
 
 jobs:
-  build-documentation:
-    name: Build DocC Documentation
+  build:
     runs-on: [self-hosted, macos]
-    
     steps:
-      - name: Checkout Repository
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Fetch all history for proper versioning
+          fetch-depth: 0
           submodules: recursive
-      
-      - name: Prepare Build Environment
+      - name: Setup Bazelisk
         run: |
-          # Check if bazelisk is installed, install only if needed
-          if ! command -v bazelisk &> /dev/null; then
-            echo "Installing bazelisk..."
-            brew install bazelisk
-          fi
+          brew install bazelisk || true
           bazelisk --version
           
-          # Check if yq is installed, install only if needed
-          if ! command -v yq &> /dev/null; then
-            echo "Installing yq..."
-            brew install yq
-          fi
+      - name: Install yq
+        run: |
+          brew install yq || true
           yq --version
           
-          # Just print Xcode information - don't try to change it
-          echo "Using Xcode at: $(xcode-select -p)"
-          xcodebuild -version || echo "Warning: Unable to get Xcode version"
-          swift --version || echo "Warning: Unable to get Swift version"
-          
-      - name: Set up DocC environment
+      - name: Build DocC Documentation
         run: |
-          echo "Building documentation environment..."
-          mkdir -p docs
-          echo "DOCC_OUTPUT_DIR=$GITHUB_WORKSPACE/docs" >> $GITHUB_ENV
-      
-      - name: Discover Production Targets
-        run: |
-          echo "Setting up for DocC documentation build..."
-          chmod +x team-utils/discover_production_targets.sh
-          ./team-utils/discover_production_targets.sh
+          echo "Building DocC documentation for all targets..."
+          # Use the docc_manager.sh script to build documentation
+          ./docc_manager.sh build
           
-      - name: Generate documentation targets list
-        run: |
-          # First generate a list of potential documentation targets
-          bazelisk query 'kind("swift_library rule", //Sources/...)' | \
-          grep -v "Tests" | \
-          awk -F: '{print $1":DocC"}' > potential_docc_targets.txt
-          
-          # Now filter to only include targets that actually exist
-          touch docc_targets.txt
-          while IFS= read -r target; do
-            if bazelisk query "$target" &>/dev/null; then
-              echo "$target" >> docc_targets.txt
-            fi
-          done < potential_docc_targets.txt
-          
-          echo "Found $(wc -l < docc_targets.txt) valid documentation targets"
-          cat docc_targets.txt
-      
-      - name: Build documentation
-        run: |
-          # Use local build environment for documentation generation
-          bazelisk build --define=build_environment=local $(cat docc_targets.txt) || true
-          
-          # Create output directory
-          mkdir -p $DOCC_OUTPUT_DIR/archives
-          
-          # Copy documentation archives to output directory
-          find bazel-bin -name "*.doccarchive" -type d -exec cp -R {} $DOCC_OUTPUT_DIR/archives/ \;
-      
-      - name: Create index page
-        run: |
-          cat > $DOCC_OUTPUT_DIR/index.html << EOF
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>UmbraCore Documentation</title>
-            <style>
-              body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-              h1 { color: #333; }
-              ul { list-style-type: none; padding: 0; }
-              li { margin: 10px 0; padding: 10px; background-color: #f5f5f5; border-radius: 5px; }
-              a { color: #0366d6; text-decoration: none; }
-              a:hover { text-decoration: underline; }
-            </style>
-          </head>
-          <body>
-            <h1>UmbraCore Documentation</h1>
-            <p>Select a module to view its documentation:</p>
-            <ul>
-          EOF
-          
-          # Add links to each documentation archive
-          for archive in $DOCC_OUTPUT_DIR/archives/*.doccarchive; do
-            module_name=$(basename "$archive" .doccarchive)
-            echo "    <li><a href=\"archives/$module_name.doccarchive/index.html\">$module_name</a></li>" >> $DOCC_OUTPUT_DIR/index.html
-          done
-          
-          cat >> $DOCC_OUTPUT_DIR/index.html << EOF
-            </ul>
-            <p><small>Generated on $(date)</small></p>
-          </body>
-          </html>
-          EOF
-      
-      - name: Upload documentation
-        uses: actions/upload-artifact@v4
+      - name: Upload Documentation Artifacts
+        uses: actions/upload-artifact@v3
         with:
           name: docc-documentation
-          path: ${{ env.DOCC_OUTPUT_DIR }}
+          path: docs/.docc-build
           retention-days: 7
-          
-      # Optional: Deploy to GitHub Pages if this is a main branch push
-      - name: Deploy to GitHub Pages
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          folder: ${{ env.DOCC_OUTPUT_DIR }}
-          branch: gh-pages
-          clean: true
