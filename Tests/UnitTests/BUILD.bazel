@@ -6,7 +6,6 @@ umbra_swift_test(
         ["**/*.swift"], allow_empty = True
     ),
     deps = [
-        "//Sources/Unit",
         "//Tests/TestKit",
     ], 
 )

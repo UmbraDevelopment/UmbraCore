@@ -4,7 +4,7 @@ umbra_swift_test(
     name = "ModelsTests",
     srcs = glob(["**/*.swift"], allow_empty = True ),
     deps = [
-        "//Sources/Models",
+        "//Sources/ErrorHandlingModels",
         "//Tests/TestKit",
     ], 
 )
