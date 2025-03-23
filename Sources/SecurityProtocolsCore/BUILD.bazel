@@ -5,11 +5,11 @@ swift_library(
     srcs = glob([
         "Sources/**/*.swift",
         "*.swift",
-    ]),
+    ], allow_empty = True),
     visibility = ["//visibility:public"],
     deps = [
-        "//Sources/ErrorHandlingInterfaces",
         "//Sources/ErrorHandlingDomains",
+        "//Sources/ErrorHandlingInterfaces",
         "//Sources/UmbraErrors",
     ],
 )
@@ -23,6 +23,6 @@ swift_library(
 #     srcs = glob([
 #         "**/*.swift",
 #         "**/*.docc/**",
-#     ]),
+#     ], allow_empty = True),
 #     deps = ["//Sources/SecurityProtocolsCore"],
 # )

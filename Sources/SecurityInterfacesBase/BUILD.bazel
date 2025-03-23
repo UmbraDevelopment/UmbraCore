@@ -2,7 +2,7 @@ load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 swift_library(
     name = "SecurityInterfacesBase",
-    srcs = glob(["*.swift"]),
+    srcs = glob(["*.swift"], allow_empty = True),
     module_name = "SecurityInterfacesBase",
     visibility = ["//visibility:public"],
     deps = [
@@ -10,9 +10,9 @@ swift_library(
         "//ErrorHandling/Domains:ErrorHandlingDomains",
         "//ErrorHandling/Interfaces:ErrorHandlingInterfaces",
         "//ErrorHandling/Mapping:ErrorHandlingMapping",
-        "//Sources/SecurityInterfacesProtocols:SecurityInterfacesProtocols",
-        "//Sources/UmbraCoreTypes:UmbraCoreTypes",
-        "//Sources/XPCProtocolsCore:XPCProtocolsCore",
+        "//Sources/SecurityInterfacesProtocols",
+        "//Sources/UmbraCoreTypes",
+        "//Sources/XPCProtocolsCore",
     ],
 )
 
@@ -21,7 +21,7 @@ swift_library(
 #
 # swift_package(
 #     name = "docc_documentation",
-#     srcs = glob(["*.swift"]),
+#     srcs = glob(["*.swift"], allow_empty = True),
 #     deps = [
 #         "//ErrorHandling/Core:ErrorHandlingCore",
 #         "//ErrorHandling/Domains:ErrorHandlingDomains",

@@ -6,8 +6,8 @@ swift_library(
     module_name = "XPCProtocolsCore",
     visibility = ["//visibility:public"],
     deps = [
+        "//Sources/UmbraCoreTypes",
         "//Sources/XPCProtocolsCore/Sources:XPCProtocolsCoreSources",
-        "//Sources/UmbraCoreTypes:UmbraCoreTypes",
     ],
 )
 
@@ -15,12 +15,15 @@ swift_library(
 swift_library(
     name = "XPCProtocolsCoreTests",
     testonly = True,
-    srcs = glob(["Tests/**/*.swift"], allow_empty = True),
+    srcs = glob(
+        ["Tests/**/*.swift"],
+        allow_empty = True,
+    ),
     module_name = "XPCProtocolsCoreTests",
     visibility = ["//visibility:public"],
     deps = [
         ":XPCProtocolsCore",
-        "//Sources/SecurityInterfacesBase:SecurityInterfacesBase",
+        "//Sources/SecurityInterfacesBase",
     ],
 )
 

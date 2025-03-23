@@ -7,7 +7,7 @@ load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 # Disabled example - use filegroup instead of swift_library
 filegroup(
     name = "UmbraErrorsExample",
-    srcs = glob(["*.swift"]),
+    srcs = glob(["*.swift"], allow_empty = True),
     visibility = ["//visibility:public"],
 )
 

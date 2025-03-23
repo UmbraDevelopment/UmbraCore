@@ -2,7 +2,7 @@ load("//:swift_rules.bzl", "umbra_swift_test")
 
 umbra_swift_test(
     name = "SecurityInterfacesTest",
-    srcs = glob(["**/*.swift"]),
+    srcs = glob(["**/*.swift"], allow_empty = True),
     deps = [
         "//Tests/TestKit",
     ],

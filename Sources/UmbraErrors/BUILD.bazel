@@ -5,12 +5,12 @@ swift_library(
     srcs = ["Exports.swift"],  # We'll create an exports file to re-export symbols from subpackages
     visibility = ["//visibility:public"],
     deps = [
+        "//Sources/ErrorHandlingDomains",
+        "//Sources/ErrorHandlingInterfaces",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
         "//Sources/UmbraErrors/Domains:UmbraErrorsDomains",
         "//Sources/UmbraErrors/Mapping:UmbraErrorsMapping",
         "//Sources/UmbraErrors/Utilities:UmbraErrorsUtilities",
-        "//Sources/ErrorHandlingInterfaces",
-        "//Sources/ErrorHandlingDomains",
     ],
 )
 
@@ -22,6 +22,6 @@ swift_library(
 #     srcs = glob([
 #         "**/*.swift",
 #         "**/*.docc/**",
-#     ]),
+#     ], allow_empty = True),
 #     deps = ["//Sources/UmbraErrors"],
 # )
