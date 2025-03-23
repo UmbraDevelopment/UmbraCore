@@ -100,7 +100,7 @@ import UmbraLogging
 /// secure credentials in the system keychain.
 public final class UmbraKeychainService: @unchecked Sendable {
   /// Current version of the UmbraKeychainService module
-  public static let version="1.0.0"
+  public static let version = "1.0.0"
 
   /// Service identifier used for keychain items
   public let identifier: String
@@ -111,8 +111,8 @@ public final class UmbraKeychainService: @unchecked Sendable {
   /// Initialize a keychain service with the given identifier
   /// - Parameter identifier: Service identifier used for keychain items
   public init(identifier: String) {
-    self.identifier=identifier
-    logger=UmbraLogging.createLogger()
+    self.identifier = identifier
+    logger = UmbraLogging.createLogger()
     Task {
       await logger.debug(
         "Initialized UmbraKeychainService with identifier: \(identifier)",
@@ -127,7 +127,7 @@ public final class UmbraKeychainService: @unchecked Sendable {
   ///   - account: Account identifier
   /// - Throws: KeychainError if storage fails
   public func storePassword(_ password: String, for account: String) throws {
-    guard let passwordData=password.data(using: .utf8) else {
+    guard let passwordData = password.data(using: .utf8) else {
       Task {
         await logger.error("Failed to convert password to data", metadata: nil)
       }
@@ -138,7 +138,7 @@ public final class UmbraKeychainService: @unchecked Sendable {
       await logger.debug("Storing password for account: \(account)", metadata: nil)
     }
 
-    let query: [String: Any]=[
+    let query: [String: Any] = [
       kSecClass as String: kSecClassGenericPassword,
       kSecAttrService as String: identifier,
       kSecAttrAccount as String: account,
@@ -147,7 +147,7 @@ public final class UmbraKeychainService: @unchecked Sendable {
 
     // Check if item already exists
     var existingItem: CFTypeRef?
-    let checkStatus=SecItemCopyMatching([
+    let checkStatus = SecItemCopyMatching([
       kSecClass as String: kSecClassGenericPassword,
       kSecAttrService as String: identifier,
       kSecAttrAccount as String: account,
@@ -156,7 +156,7 @@ public final class UmbraKeychainService: @unchecked Sendable {
 
     if checkStatus == errSecSuccess {
       // Item exists, update it
-      let updateStatus=SecItemUpdate([
+      let updateStatus = SecItemUpdate([
         kSecClass as String: kSecClassGenericPassword,
         kSecAttrService as String: identifier,
         kSecAttrAccount as String: account
@@ -186,7 +186,7 @@ public final class UmbraKeychainService: @unchecked Sendable {
       }
     }
 
-    let status=SecItemAdd(query as CFDictionary, nil)
+    let status = SecItemAdd(query as CFDictionary, nil)
     guard status == errSecSuccess else {
       Task {
         await logger.error("Failed to store password: \(status)", metadata: nil)
@@ -206,7 +206,7 @@ public final class UmbraKeychainService: @unchecked Sendable {
   /// - Returns: Retrieved password
   /// - Throws: KeychainError if retrieval fails
   public func retrievePassword(for account: String) throws -> String {
-    let query: [String: Any]=[
+    let query: [String: Any] = [
       kSecClass as String: kSecClassGenericPassword,
       kSecAttrService as String: identifier,
       kSecAttrAccount as String: account,
@@ -214,12 +214,12 @@ public final class UmbraKeychainService: @unchecked Sendable {
     ]
 
     var item: CFTypeRef?
-    let status=SecItemCopyMatching(query as CFDictionary, &item)
+    let status = SecItemCopyMatching(query as CFDictionary, &item)
 
     guard
       status == errSecSuccess,
-      let data=item as? Data,
-      let password=String(data: data, encoding: .utf8)
+      let data = item as? Data,
+      let password = String(data: data, encoding: .utf8)
     else {
       Task {
         await logger.error("Failed to retrieve password: \(status)", metadata: nil)
@@ -239,13 +239,13 @@ public final class UmbraKeychainService: @unchecked Sendable {
   /// - Parameter account: Account identifier
   /// - Throws: KeychainError if deletion fails
   public func deletePassword(for account: String) throws {
-    let query: [String: Any]=[
+    let query: [String: Any] = [
       kSecClass as String: kSecClassGenericPassword,
       kSecAttrService as String: identifier,
       kSecAttrAccount as String: account
     ]
 
-    let status=SecItemDelete(query as CFDictionary)
+    let status = SecItemDelete(query as CFDictionary)
     guard status == errSecSuccess else {
       Task {
         await logger.error("Failed to delete password: \(status)", metadata: nil)

@@ -10,7 +10,7 @@ public final class CheckCommand: ResticCommand, @unchecked Sendable {
   public var commandName: String { "check" }
 
   public var commandArguments: [String] {
-    var args=[String]()
+    var args = [String]()
 
     if readData {
       args.append("--read-data")
@@ -25,20 +25,20 @@ public final class CheckCommand: ResticCommand, @unchecked Sendable {
 
   public init(
     options: CommonOptions,
-    readData: Bool=false,
-    checkUnused: Bool=false
+    readData: Bool = false,
+    checkUnused: Bool = false
   ) {
-    self.options=options
-    self.readData=readData
-    self.checkUnused=checkUnused
+    self.options = options
+    self.readData = readData
+    self.checkUnused = checkUnused
   }
 
   public var environment: [String: String] {
-    var env=options.environmentVariables
-    env["RESTIC_REPOSITORY"]=options.repository
-    env["RESTIC_PASSWORD"]=options.password
-    if let cachePath=options.cachePath {
-      env["RESTIC_CACHE_DIR"]=cachePath
+    var env = options.environmentVariables
+    env["RESTIC_REPOSITORY"] = options.repository
+    env["RESTIC_PASSWORD"] = options.password
+    if let cachePath = options.cachePath {
+      env["RESTIC_CACHE_DIR"] = cachePath
     }
     return env
   }

@@ -16,9 +16,9 @@ public actor SecurityBookmarkService {
 
   /// Initialize a new security bookmark service
   /// - Parameter urlProvider: Provider for URL operations
-  public init(urlProvider: URLProvider=PathURLProvider()) {
-    self.urlProvider=urlProvider
-    activeResources=[]
+  public init(urlProvider: URLProvider = PathURLProvider()) {
+    self.urlProvider = urlProvider
+    activeResources = []
   }
 
   /// Create a security-scoped bookmark for a URL
@@ -28,9 +28,9 @@ public actor SecurityBookmarkService {
   /// - Returns: Bookmark data that can be stored and later used to access the resource
   public func createBookmark(
     for url: URL,
-    options: BookmarkOptions=BookmarkDefaultOptions
+    options: BookmarkOptions = BookmarkDefaultOptions
   ) async throws -> Data {
-    let fileURL=url.standardized
+    let fileURL = url.standardized
 
     // Start accessing the resource before creating bookmark
     guard fileURL.startAccessingSecurityScopedResource() else {
@@ -61,12 +61,12 @@ public actor SecurityBookmarkService {
   /// - Returns: URL to the bookmarked resource
   public func resolveBookmark(
     _ data: Data,
-    options: BookmarkOptions=BookmarkDefaultOptions
+    options: BookmarkOptions = BookmarkDefaultOptions
   ) async throws -> URL {
     do {
       // Use standard Foundation API since URLProvider doesn't have resolveBookmarkData
-      var isStale=false
-      let url=try URL(
+      var isStale = false
+      let url = try URL(
         resolvingBookmarkData: data,
         options: getSystemBookmarkResolutionOptions(from: options),
         relativeTo: nil,
@@ -92,7 +92,7 @@ public actor SecurityBookmarkService {
   /// - Parameter url: URL to the security-scoped resource
   /// - Returns: True if access was started successfully
   public func startAccessingResource(_ url: URL) async throws -> Bool {
-    let fileURL=url.standardized
+    let fileURL = url.standardized
 
     // Start accessing the resource
     guard fileURL.startAccessingSecurityScopedResource() else {
@@ -110,7 +110,7 @@ public actor SecurityBookmarkService {
   /// Stop accessing a security-scoped resource
   /// - Parameter url: URL to the security-scoped resource
   public func stopAccessingResource(_ url: URL) {
-    let fileURL=url.standardized
+    let fileURL = url.standardized
     fileURL.stopAccessingSecurityScopedResource()
     activeResources.remove(fileURL)
   }
@@ -128,7 +128,7 @@ public actor SecurityBookmarkService {
   /// Convert BookmarkOptions to NSURL.BookmarkCreationOptions
   private func getSystemBookmarkOptions(from options: BookmarkOptions) -> NSURL
   .BookmarkCreationOptions {
-    var systemOptions: NSURL.BookmarkCreationOptions=[]
+    var systemOptions: NSURL.BookmarkCreationOptions = []
 
     if options.contains(.securityScoped) {
       systemOptions.insert(.withSecurityScope)
@@ -144,7 +144,7 @@ public actor SecurityBookmarkService {
   /// Convert BookmarkOptions to NSURL.BookmarkResolutionOptions
   private func getSystemBookmarkResolutionOptions(from options: BookmarkOptions) -> NSURL
   .BookmarkResolutionOptions {
-    var systemOptions: NSURL.BookmarkResolutionOptions=[]
+    var systemOptions: NSURL.BookmarkResolutionOptions = []
 
     if options.contains(.securityScoped) {
       systemOptions.insert(.withSecurityScope)
@@ -163,20 +163,20 @@ public struct BookmarkOptions: OptionSet, Sendable {
   public let rawValue: Int
 
   public init(rawValue: Int) {
-    self.rawValue=rawValue
+    self.rawValue = rawValue
   }
 
   /// Bookmark should be appropriate for storage in iCloud and may include path components that are
   /// portable across users
-  public static let iCloudCompatible=BookmarkOptions(rawValue: 1 << 0)
+  public static let iCloudCompatible = BookmarkOptions(rawValue: 1 << 0)
 
   /// Created bookmark data should include properties required to create a security-scoped bookmark
-  public static let securityScoped=BookmarkOptions(rawValue: 1 << 1)
+  public static let securityScoped = BookmarkOptions(rawValue: 1 << 1)
 
   /// Resolving the bookmark data should not trigger user interaction, such as prompting for
   /// credentials
-  public static let withoutUI=BookmarkOptions(rawValue: 1 << 2)
+  public static let withoutUI = BookmarkOptions(rawValue: 1 << 2)
 }
 
 /// Default bookmark options with security scoping enabled
-public let BookmarkDefaultOptions: BookmarkOptions=[.securityScoped]
+public let BookmarkDefaultOptions: BookmarkOptions = [.securityScoped]

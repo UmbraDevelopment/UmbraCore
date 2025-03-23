@@ -25,13 +25,13 @@ public struct ServiceStatusDTO: Sendable, Equatable {
   public init(
     status: String,
     version: String,
-    stringInfo: [String: String]=[:],
-    intInfo: [String: Int]=[:]
+    stringInfo: [String: String] = [:],
+    intInfo: [String: Int] = [:]
   ) {
-    self.status=status
-    self.version=version
-    self.stringInfo=stringInfo
-    self.intInfo=intInfo
+    self.status = status
+    self.version = version
+    self.stringInfo = stringInfo
+    self.intInfo = intInfo
   }
 
   /// Returns whether the current service is available
@@ -50,7 +50,7 @@ extension ServiceStatusDTO {
   /// Returns a service status indicating the service is available
   /// - Parameter version: Service version
   /// - Returns: A service status DTO
-  public static func available(version: String="1.0.0") -> ServiceStatusDTO {
+  public static func available(version: String = "1.0.0") -> ServiceStatusDTO {
     ServiceStatusDTO(
       status: "Available",
       version: version,
@@ -72,10 +72,10 @@ extension ServiceStatusDTO {
   /// Returns a service status indicating the service is in maintenance
   /// - Parameter estimatedCompletionTime: Estimated completion time
   /// - Returns: A service status DTO
-  public static func maintenance(estimatedCompletionTime: String?=nil) -> ServiceStatusDTO {
-    var info=["state": "maintenance"]
-    if let time=estimatedCompletionTime {
-      info["estimatedCompletion"]=time
+  public static func maintenance(estimatedCompletionTime: String? = nil) -> ServiceStatusDTO {
+    var info = ["state": "maintenance"]
+    if let time = estimatedCompletionTime {
+      info["estimatedCompletion"] = time
     }
 
     return ServiceStatusDTO(

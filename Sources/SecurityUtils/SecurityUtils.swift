@@ -20,7 +20,7 @@ import XPCProtocolsCore
 /// such as generating secure random data and hashing.
 public final class SecurityUtils: @unchecked Sendable {
   /// Shared instance of SecurityUtils
-  public static let shared=SecurityUtils()
+  public static let shared = SecurityUtils()
 
   /// Private initializer to enforce singleton pattern
   private init() {}
@@ -30,8 +30,8 @@ public final class SecurityUtils: @unchecked Sendable {
   /// - Returns: Random data of specified length
   /// - Throws: UmbraErrors.Security.Protocols if random generation fails
   public func generateRandomData(_ length: Int) throws -> Data {
-    var data=Data(count: length)
-    let result=data.withUnsafeMutableBytes { bytes in
+    var data = Data(count: length)
+    let result = data.withUnsafeMutableBytes { bytes in
       SecRandomCopyBytes(kSecRandomDefault, length, bytes.baseAddress!)
     }
 
@@ -52,8 +52,8 @@ public final class SecurityUtils: @unchecked Sendable {
   public func hash(_ data: Data, using algorithm: SecurityTypesTypes.HashAlgorithm) throws -> Data {
     switch algorithm {
       case .sha256:
-        var hashData=Data(count: Int(CC_SHA256_DIGEST_LENGTH))
-        _=hashData.withUnsafeMutableBytes { hashBytes in
+        var hashData = Data(count: Int(CC_SHA256_DIGEST_LENGTH))
+        _ = hashData.withUnsafeMutableBytes { hashBytes in
           data.withUnsafeBytes { dataBytes in
             CC_SHA256(
               dataBytes.baseAddress,
@@ -65,8 +65,8 @@ public final class SecurityUtils: @unchecked Sendable {
         return hashData
 
       case .sha512:
-        var hashData=Data(count: Int(CC_SHA512_DIGEST_LENGTH))
-        _=hashData.withUnsafeMutableBytes { hashBytes in
+        var hashData = Data(count: Int(CC_SHA512_DIGEST_LENGTH))
+        _ = hashData.withUnsafeMutableBytes { hashBytes in
           data.withUnsafeBytes { dataBytes in
             CC_SHA512(
               dataBytes.baseAddress,

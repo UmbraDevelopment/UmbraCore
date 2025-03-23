@@ -32,17 +32,17 @@ public struct BackupConfigDTO: Sendable, Equatable {
   ///   - retentionPolicy: Retention policy for this backup
   public init(
     sourceDirectories: [String],
-    excludePatterns: [String]=[],
-    tagList: [String]=[],
-    compressionLevel: Int=6,
+    excludePatterns: [String] = [],
+    tagList: [String] = [],
+    compressionLevel: Int = 6,
     retentionPolicy: RetentionPolicyDTO
   ) {
-    self.sourceDirectories=sourceDirectories
-    self.excludePatterns=excludePatterns
-    self.tagList=tagList
+    self.sourceDirectories = sourceDirectories
+    self.excludePatterns = excludePatterns
+    self.tagList = tagList
     // Clamp compression level between 0 and 9
-    self.compressionLevel=min(9, max(0, compressionLevel))
-    self.retentionPolicy=retentionPolicy
+    self.compressionLevel = min(9, max(0, compressionLevel))
+    self.retentionPolicy = retentionPolicy
   }
 
   // MARK: - Factory Methods
@@ -54,7 +54,7 @@ public struct BackupConfigDTO: Sendable, Equatable {
   /// - Returns: A BackupConfigDTO with default settings
   public static func defaultConfig(
     sourceDirectories: [String],
-    tagList: [String]=[]
+    tagList: [String] = []
   ) -> BackupConfigDTO {
     BackupConfigDTO(
       sourceDirectories: sourceDirectories,
@@ -92,7 +92,7 @@ public struct BackupConfigDTO: Sendable, Equatable {
   /// - Parameter directories: Additional source directories to add
   /// - Returns: A new BackupConfigDTO with additional source directories
   public func addingSourceDirectories(_ directories: [String]) -> BackupConfigDTO {
-    var newDirectories=sourceDirectories
+    var newDirectories = sourceDirectories
     for directory in directories {
       if !newDirectories.contains(directory) {
         newDirectories.append(directory)

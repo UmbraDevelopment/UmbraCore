@@ -1,4 +1,3 @@
-import ErrorHandlingCommon
 import Foundation
 
 /// Error Handling Protocol
@@ -20,28 +19,28 @@ public protocol UmbraError: Error, Sendable, CustomStringConvertible {
   var errorDescription: String { get }
 
   /// Optional source information about where the error occurred
-  var source: ErrorHandlingCommon.ErrorSource? { get }
+  var source: ErrorSource? { get }
 
   /// Optional underlying error that caused this error
   var underlyingError: Error? { get }
 
   /// Additional context information about the error
-  var context: ErrorHandlingCommon.ErrorContext { get }
+  var context: ErrorDetailContext { get }
 
   /// Creates a new instance of the error with additional context
-  func with(context: ErrorHandlingCommon.ErrorContext) -> Self
+  func with(context: ErrorDetailContext) -> Self
 
   /// Creates a new instance of the error with a specified underlying error
   func with(underlyingError: Error) -> Self
 
   /// Creates a new instance of the error with source information
-  func with(source: ErrorHandlingCommon.ErrorSource) -> Self
+  func with(source: ErrorSource) -> Self
 }
 
 /// Default implementation for UmbraError
 extension UmbraError {
   public var description: String {
-    var desc="[\(domain):\(code)] \(errorDescription)"
+    var desc = "[\(domain):\(code)] \(errorDescription)"
 
     if let source {
       desc += " (at \(source.function) in \(source.file):\(source.line))"
@@ -51,8 +50,8 @@ extension UmbraError {
   }
 
   /// Default implementation returns an empty context
-  public var context: ErrorHandlingCommon.ErrorContext {
-    ErrorHandlingCommon.ErrorContext(
+  public var context: ErrorDetailContext {
+    ErrorDetailContext(
       source: domain,
       operation: "unknown",
       details: errorDescription
@@ -65,7 +64,7 @@ extension UmbraError {
   }
 
   /// Default implementation returns nil
-  public var source: ErrorHandlingCommon.ErrorSource? {
+  public var source: ErrorSource? {
     nil
   }
 }
@@ -79,8 +78,8 @@ extension UmbraError {
   ///   - line: The line where the error occurred (defaults to current line)
   ///   - function: The function where the error occurred (defaults to current function)
   /// - Returns: A new instance of the error with source information
-  public func withSource(file: String=#file, function: String=#function, line: Int=#line) -> Self {
-    with(source: ErrorHandlingCommon.ErrorSource(file: file, function: function, line: line))
+  public func withSource(file: String = #file, function: String = #function, line: Int = #line) -> Self {
+    with(source: ErrorSource(file: file, function: function, line: line))
   }
 }
 
@@ -96,9 +95,6 @@ extension DomainError {
     Self.domain
   }
 }
-
-/// Error severity levels for classification and logging
-public typealias ErrorSeverity=ErrorHandlingCommon.ErrorSeverity
 
 /// Protocol for recovery options that can be presented to the user
 public protocol RecoveryOption: Sendable {

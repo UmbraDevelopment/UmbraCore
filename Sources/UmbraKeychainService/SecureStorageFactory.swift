@@ -7,14 +7,14 @@ import UmbraLogging
 /// Factory for creating SecureStorageProtocol implementations
 public enum SecureStorageFactory {
   /// Service name for the keychain in the system keychain
-  public static let systemKeychainServiceName="UmbraSystemKeychain"
+  public static let systemKeychainServiceName = "UmbraSystemKeychain"
 
   /// A simple implementation of LoggingProtocol that uses OSLog internally
   private final class SimpleLogger: LoggingProtocol {
     private let osLog: OSLog
 
     init(category: String) {
-      osLog=OSLog(subsystem: "dev.mpy.UmbraCore", category: category)
+      osLog = OSLog(subsystem: "dev.mpy.UmbraCore", category: category)
     }
 
     func debug(_ message: String, metadata _: LogMetadata?) async {
@@ -38,8 +38,8 @@ public enum SecureStorageFactory {
   /// - Returns: A SecureStorageProtocol implementation
   @available(macOS 14.0, *)
   public static func createKeychainStorage() -> any SecureStorageProtocol {
-    let logger=SimpleLogger(category: "KeychainStorage")
-    let keychainService=KeychainService(logger: logger)
+    let logger = SimpleLogger(category: "KeychainStorage")
+    let keychainService = KeychainService(logger: logger)
     return KeychainSecureStorage(keychainService: keychainService)
   }
 
@@ -54,10 +54,10 @@ public enum SecureStorageFactory {
 private final class InMemorySecureStorage: SecureStorageProtocol {
   // Using an actor to make this thread-safe for Swift 6
   private actor StorageActor {
-    var storage: [String: SecureBytes]=[:]
+    var storage: [String: SecureBytes] = [:]
 
     func store(_ data: SecureBytes, for identifier: String) {
-      storage[identifier]=data
+      storage[identifier] = data
     }
 
     func retrieve(for identifier: String) -> SecureBytes? {
@@ -69,7 +69,7 @@ private final class InMemorySecureStorage: SecureStorageProtocol {
     }
   }
 
-  private let storage=StorageActor()
+  private let storage = StorageActor()
 
   func storeSecurely(data: SecureBytes, identifier: String) async -> KeyStorageResult {
     await storage.store(data, for: identifier)
@@ -77,7 +77,7 @@ private final class InMemorySecureStorage: SecureStorageProtocol {
   }
 
   func retrieveSecurely(identifier: String) async -> KeyRetrievalResult {
-    if let data=await storage.retrieve(for: identifier) {
+    if let data = await storage.retrieve(for: identifier) {
       .success(data)
     } else {
       .failure(.keyNotFound)

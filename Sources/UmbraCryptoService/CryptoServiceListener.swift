@@ -22,7 +22,7 @@ public final class CryptoServiceListener: NSObject, NSXPCListenerDelegate {
   private let dependencies: CryptoXPCServiceDependencies
 
   /// Shared instance
-  public static let shared=CryptoServiceListener()
+  public static let shared = CryptoServiceListener()
 
   /// Machservice name for the XPC service
   @objc
@@ -41,19 +41,19 @@ public final class CryptoServiceListener: NSObject, NSXPCListenerDelegate {
     // Initialize dependencies for the XPC service
 
     // Create keychain service with default logger
-    let keychain=UmbraKeychainService(
+    let keychain = UmbraKeychainService(
       identifier: "com.umbracore.xpc.crypto"
     )
 
-    dependencies=DefaultCryptoXPCServiceDependencies(
+    dependencies = DefaultCryptoXPCServiceDependencies(
       securityUtils: SecurityUtils.shared,
       keychain: keychain
     )
 
     // Use string literal instead of accessing MainActor isolated property
-    listener=NSXPCListener(machServiceName: "com.umbracore.xpc.crypto")
+    listener = NSXPCListener(machServiceName: "com.umbracore.xpc.crypto")
     super.init()
-    listener.delegate=self
+    listener.delegate = self
   }
 
   /// Start the XPC listener
@@ -72,25 +72,25 @@ public final class CryptoServiceListener: NSObject, NSXPCListenerDelegate {
     Logger.info("Received connection request")
 
     // Configure the connection
-    let interfaceName="ModernCryptoXPCServiceProtocol"
-    guard let proto=NSProtocolFromString(interfaceName) else {
+    let interfaceName = "ModernCryptoXPCServiceProtocol"
+    guard let proto = NSProtocolFromString(interfaceName) else {
       Logger.error("Failed to find protocol: \(interfaceName)")
       return false
     }
 
     // Create the interface with the protocol
-    newConnection.exportedInterface=NSXPCInterface(with: proto)
+    newConnection.exportedInterface = NSXPCInterface(with: proto)
 
     // Set the exported object
-    let service=CryptoXPCService(dependencies: dependencies)
-    newConnection.exportedObject=service
+    let service = CryptoXPCService(dependencies: dependencies)
+    newConnection.exportedObject = service
 
     // Save the connection reference in the service
-    service.connection=newConnection
+    service.connection = newConnection
 
     // Handle invalidation
-    newConnection.invalidationHandler={ [weak service] in
-      service?.connection=nil
+    newConnection.invalidationHandler = { [weak service] in
+      service?.connection = nil
       Logger.info("Connection invalidated")
     }
 
@@ -128,7 +128,7 @@ public func startService() {
   Logger.configure()
 
   // Create and start the listener
-  let listener=CryptoServiceListener.shared
+  let listener = CryptoServiceListener.shared
   listener.start()
 
   Logger.info("Crypto XPC Service started")

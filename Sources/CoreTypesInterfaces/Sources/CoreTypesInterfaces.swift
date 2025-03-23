@@ -1,18 +1,11 @@
-import CoreErrors
-import ErrorHandlingDomains
+import Foundation
 
-/// Type alias to support legacy code that uses BinaryData
-/// @deprecated Use SecureData directly instead.
-@available(*, deprecated, message: "Use SecureData directly instead")
-public typealias BinaryData=SecureData
+// This file serves as the main entry point for the CoreTypesInterfaces module
+// The actual type implementations have been moved to dedicated files
 
 /// Module initialisation function
 /// Call this to ensure all components are properly registered
 public func initialiseModule() {
-  CoreTypesExtensions.registerModule()
+  // Module registration is now handled by the specific module extension
+  CoreTypesInterfacesExtensions.registerModule()
 }
-
-/// Legacy type for compatibility with older code
-/// @deprecated Use CoreSecurityError directly instead.
-@available(*, deprecated, message: "Use CoreSecurityError directly instead")
-public typealias SecurityErrorBase=CoreSecurityError

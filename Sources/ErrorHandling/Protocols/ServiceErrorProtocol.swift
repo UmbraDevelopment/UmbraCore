@@ -1,4 +1,3 @@
-import ErrorHandlingCommon
 import Foundation
 
 /// Protocol for service-specific errors that provide detailed context
@@ -22,7 +21,7 @@ public protocol ServiceErrorProtocol: LocalizedError {
   var recoverySteps: [String]? { get }
 
   /// Creates an error context from this service error
-  var context: ErrorContext { get }
+  var context: ErrorDetailContext { get }
 }
 
 extension ServiceErrorProtocol {
@@ -33,9 +32,9 @@ extension ServiceErrorProtocol {
   public var recoverySteps: [String]? { nil }
 
   /// Default implementation creating an error context
-  public var context: ErrorContext {
+  public var context: ErrorDetailContext {
     // Create the error context with the required parameters
-    ErrorContext(
+    ErrorDetailContext(
       source: serviceName,
       operation: operation,
       details: details,

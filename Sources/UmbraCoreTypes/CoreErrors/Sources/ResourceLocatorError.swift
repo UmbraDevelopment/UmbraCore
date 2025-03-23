@@ -37,32 +37,32 @@ public enum ResourceLocatorError: Error, Sendable, Equatable, Hashable {
   // MARK: - NSError Conversion
 
   /// The error domain for ResourceLocatorError
-  public static let errorDomain="com.umbra.umbracore.resourcelocator"
+  public static let errorDomain = "com.umbra.umbracore.resourcelocator"
 
   /// Get the error code for this error
   public var errorCode: Int {
     switch self {
       case .invalidPath:
-        1001
+        1_001
       case .resourceNotFound:
-        1002
+        1_002
       case .accessDenied:
-        1003
+        1_003
       case .unsupportedScheme:
-        1004
+        1_004
       case .generalError:
-        1099
+        1_099
     }
   }
 
   /// Get the user info dictionary for this error when converted to NSError
   public var userInfo: [String: Any] {
-    var info: [String: Any]=[
+    var info: [String: Any] = [
       "NSLocalizedDescription": errorDescription
     ]
 
-    if case let .generalError(message)=self {
-      info["ErrorMessage"]=message
+    if case let .generalError(message) = self {
+      info["ErrorMessage"] = message
     }
 
     return info

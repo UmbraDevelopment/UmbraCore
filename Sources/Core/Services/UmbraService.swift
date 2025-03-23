@@ -38,7 +38,7 @@ extension UmbraService {
   deprecated,
   message: "This will be replaced by CoreErrors.ServiceError in a future version. Use CoreErrors.ServiceError directly."
 )
-public typealias ServiceError=CoreErrors.ServiceError
+public typealias ServiceError = CoreErrors.ServiceError
 
 /// Protocol for services that require cleanup of resources
 public protocol CleanupCapable {

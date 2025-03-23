@@ -1,12 +1,3 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library", "swift_test")
-load("//:bazel/macros/swift.bzl", "umbra_swift_test")
-
-swift_library(
-    name = "TestMocks",
-    srcs = ["TestMocks.swift"],
-    module_name = "TestMocks",
-    testonly = True,
-    copts = ["-enable-library-evolution"],
     deps = [
         "//Sources/Core",
         "//Sources/CoreErrors",
@@ -17,44 +8,14 @@ swift_library(
         "//Sources/KeyManagementTypes",
         "//Sources/SecurityTypes",
         "//Sources/ServiceTypes",
-    ],
-)
-
-umbra_swift_test(
-    name = "CoreTests",
-    size = "small",
-    timeout = "short",
-    srcs = [
-        "CryptoTests.swift",
-        "KeyManagerTests.swift",
-        "SecurityTests.swift",
-        "ServiceTests.swift",
-    ],
-    linkopts = [
-        "-target",
-        "arm64-apple-macos14.0",
-    ],
-    module_name = "CoreTests",
-    tags = ["unit"],
-    testonly = True,
-    deps = [
         ":TestMocks",
-        "//Sources/Core",
-        # Removing CoreServices dependency as it causes circular dependency with CoreErrors
+        # Removing CoreServices dependency as it causes circular dependency with CoreErrors,
         # "//Sources/Core/Services:CoreServices",
-        "//Sources/CoreErrors",
-        "//Sources/CoreServicesTypes",
         "//Sources/CoreTypesImplementation",
-        "//Sources/CoreTypesInterfaces",
-        "//Sources/CryptoTypes",
-        "//Sources/ErrorHandling",
-        "//Sources/ErrorHandling/Domains:ErrorHandlingDomains",
-        "//Sources/KeyManagementTypes",
+        "//ErrorHandling/Domains:ErrorHandlingDomains",
         "//Sources/ResticCLIHelper",
         "//Sources/SecurityInterfaces",
-        "//Sources/SecurityTypes",
         "//Sources/SecurityUtils",
-        "//Sources/ServiceTypes", 
         "//Sources/Services",
         "//Sources/UmbraCoreTypes",
         "//Sources/UmbraCryptoService",

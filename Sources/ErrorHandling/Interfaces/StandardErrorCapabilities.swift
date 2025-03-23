@@ -26,12 +26,12 @@ extension StandardErrorCapabilities {
   }
 
   /// Formats an error message with optional context
-  public func formatErrorMessage(_ message: String, context: [String: Any]?=nil) -> String {
+  public func formatErrorMessage(_ message: String, context: [String: Any]? = nil) -> String {
     guard let context, !context.isEmpty else {
       return message
     }
 
-    let contextString=context.map { key, value in "\(key): \(value)" }.joined(separator: ", ")
+    let contextString = context.map { key, value in "\(key): \(value)" }.joined(separator: ", ")
     return "\(message) (Context: \(contextString))"
   }
 }

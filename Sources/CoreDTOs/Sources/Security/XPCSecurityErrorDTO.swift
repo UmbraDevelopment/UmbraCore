@@ -1,4 +1,3 @@
-import ErrorHandlingDomains
 import SecurityBridgeTypes
 
 /// This file previously contained a typealias UmbraErrorsSecurityProtocolsDTO.

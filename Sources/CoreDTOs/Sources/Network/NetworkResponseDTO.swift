@@ -58,26 +58,26 @@ public struct NetworkResponseDTO: Sendable, Equatable {
     requestID: String,
     statusCode: Int,
     statusMessage: String,
-    headers: [String: String]=[:],
-    bodyData: [UInt8]=[],
-    mimeType: String?=nil,
-    textEncodingName: String?=nil,
-    isFromCache: Bool=false,
-    duration: Double=0.0,
+    headers: [String: String] = [:],
+    bodyData: [UInt8] = [],
+    mimeType: String? = nil,
+    textEncodingName: String? = nil,
+    isFromCache: Bool = false,
+    duration: Double = 0.0,
     timestamp: UInt64,
-    metadata: [String: String]=[:]
+    metadata: [String: String] = [:]
   ) {
-    self.requestID=requestID
-    self.statusCode=statusCode
-    self.statusMessage=statusMessage
-    self.headers=headers
-    self.bodyData=bodyData
-    self.mimeType=mimeType
-    self.textEncodingName=textEncodingName
-    self.isFromCache=isFromCache
-    self.duration=max(0.0, duration)
-    self.timestamp=timestamp
-    self.metadata=metadata
+    self.requestID = requestID
+    self.statusCode = statusCode
+    self.statusMessage = statusMessage
+    self.headers = headers
+    self.bodyData = bodyData
+    self.mimeType = mimeType
+    self.textEncodingName = textEncodingName
+    self.isFromCache = isFromCache
+    self.duration = max(0.0, duration)
+    self.timestamp = timestamp
+    self.metadata = metadata
   }
 
   // MARK: - Factory Methods
@@ -93,10 +93,10 @@ public struct NetworkResponseDTO: Sendable, Equatable {
   /// - Returns: A NetworkResponseDTO with HTTP 200 status
   public static func success(
     requestID: String,
-    bodyData: [UInt8]=[],
-    headers: [String: String]=[:],
-    mimeType: String?=nil,
-    duration: Double=0.0,
+    bodyData: [UInt8] = [],
+    headers: [String: String] = [:],
+    mimeType: String? = nil,
+    duration: Double = 0.0,
     timestamp: UInt64
   ) -> NetworkResponseDTO {
     NetworkResponseDTO(
@@ -124,8 +124,8 @@ public struct NetworkResponseDTO: Sendable, Equatable {
     requestID: String,
     statusCode: Int,
     statusMessage: String,
-    errorData: [UInt8]=[],
-    duration: Double=0.0,
+    errorData: [UInt8] = [],
+    duration: Double = 0.0,
     timestamp: UInt64
   ) -> NetworkResponseDTO {
     NetworkResponseDTO(
@@ -149,7 +149,7 @@ public struct NetworkResponseDTO: Sendable, Equatable {
   public static func networkFailure(
     requestID: String,
     errorMessage: String,
-    duration: Double=0.0,
+    duration: Double = 0.0,
     timestamp: UInt64
   ) -> NetworkResponseDTO {
     NetworkResponseDTO(
@@ -205,7 +205,7 @@ public struct NetworkResponseDTO: Sendable, Equatable {
   /// - Returns: Header value, or nil if not found
   public func getHeader(_ name: String) -> String? {
     // Headers are often case-insensitive, so we'll check in a case-insensitive way
-    let lowercaseName=name.lowercased()
+    let lowercaseName = name.lowercased()
 
     for (key, value) in headers {
       if key.lowercased() == lowercaseName {
@@ -220,9 +220,9 @@ public struct NetworkResponseDTO: Sendable, Equatable {
   /// - Parameter additionalMetadata: The metadata to add or update
   /// - Returns: A new NetworkResponseDTO with updated metadata
   public func withUpdatedMetadata(_ additionalMetadata: [String: String]) -> NetworkResponseDTO {
-    var newMetadata=metadata
+    var newMetadata = metadata
     for (key, value) in additionalMetadata {
-      newMetadata[key]=value
+      newMetadata[key] = value
     }
 
     return NetworkResponseDTO(

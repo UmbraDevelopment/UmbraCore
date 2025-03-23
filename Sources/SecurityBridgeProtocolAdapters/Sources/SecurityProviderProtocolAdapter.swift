@@ -1,6 +1,4 @@
-import CoreErrors
 import CoreTypesInterfaces
-import ErrorHandlingDomains
 import FoundationBridgeTypes
 import SecurityInterfacesProtocols
 import SecurityProtocolsCore
@@ -9,7 +7,7 @@ import UmbraCoreTypes
 import XPCProtocolsCore
 
 // Type alias to disambiguate SecurityError types
-typealias SPCSecurityError=UmbraErrors.Security.Protocols
+typealias SPCSecurityError = UmbraErrors.Security.Protocols
 
 /// Bridge protocol that connects security providers to Foundation-free interfaces
 /// This helps break circular dependencies between security modules
@@ -48,8 +46,7 @@ public protocol SecurityProviderBridge: Sendable {
 
 /// Adapter that connects a foundation-free security provider to a Foundation-based interface
 /// Implementing the SecurityProviderProtocol while delegating to a foundation-free bridge
-public final class SecurityProviderProtocolAdapter: SecurityInterfacesProtocols
-.SecurityProviderProtocol {
+public final class SecurityProviderProtocolAdapter: SecurityInterfacesProtocols.SecurityProviderProtocol {
   /// The underlying bridge implementation
   private let adapter: any SecurityProviderBridge
 
@@ -60,10 +57,8 @@ public final class SecurityProviderProtocolAdapter: SecurityInterfacesProtocols
 
   /// Wrap any error into a SecurityProtocolError
   private func wrapError(_ error: Error) throws -> Never {
-    // Use our centralised CoreErrors.SecurityErrorMapper to get a consistent error description
-    let mappedError=CoreErrors.SecurityErrorMapper.mapToProtocolError(error)
-
-    let errorDescription="Security operation failed: \(mappedError)"
+    // Use our centralised error mapping to get a consistent error description
+    let errorDescription = "Security operation failed: \(error)"
     throw UmbraErrors.Security.Protocols
       .missingProtocolImplementation(protocolName: errorDescription)
   }
@@ -71,7 +66,7 @@ public final class SecurityProviderProtocolAdapter: SecurityInterfacesProtocols
   /// Create a new adapter with the given bridge
   /// - Parameter bridge: The security provider bridge implementation
   public init(bridge: any SecurityProviderBridge) {
-    adapter=bridge
+    adapter = bridge
   }
 
   /// Encrypt data using the provider's encryption
@@ -81,16 +76,16 @@ public final class SecurityProviderProtocolAdapter: SecurityInterfacesProtocols
   /// - Returns: Encrypted data
   /// - Throws: UmbraErrors.Security.Protocols if encryption fails
   public func encrypt(
-    _ data: CoreTypesInterfaces.BinaryData,
-    key: CoreTypesInterfaces.BinaryData
-  ) async throws -> CoreTypesInterfaces.BinaryData {
+    _ data: CoreTypesInterfaces.SecureData,
+    key: CoreTypesInterfaces.SecureData
+  ) async throws -> CoreTypesInterfaces.SecureData {
     do {
       // Use the standardised converter from SecurityTypeConverters
-      let bridgeData=data.toDataBridge()
-      let bridgeKey=key.toDataBridge()
+      let bridgeData = data.toDataBridge()
+      let bridgeKey = key.toDataBridge()
 
-      let result=try await adapter.encrypt(bridgeData, key: bridgeKey)
-      return CoreTypesInterfaces.BinaryData.from(bridge: result)
+      let result = try await adapter.encrypt(bridgeData, key: bridgeKey)
+      return CoreTypesInterfaces.SecureData.from(bridge: result)
     } catch {
       try wrapError(error)
     }
@@ -103,16 +98,16 @@ public final class SecurityProviderProtocolAdapter: SecurityInterfacesProtocols
   /// - Returns: Decrypted data
   /// - Throws: UmbraErrors.Security.Protocols if decryption fails
   public func decrypt(
-    _ data: CoreTypesInterfaces.BinaryData,
-    key: CoreTypesInterfaces.BinaryData
-  ) async throws -> CoreTypesInterfaces.BinaryData {
+    _ data: CoreTypesInterfaces.SecureData,
+    key: CoreTypesInterfaces.SecureData
+  ) async throws -> CoreTypesInterfaces.SecureData {
     do {
       // Use the standardised converter from SecurityTypeConverters
-      let bridgeData=data.toDataBridge()
-      let bridgeKey=key.toDataBridge()
+      let bridgeData = data.toDataBridge()
+      let bridgeKey = key.toDataBridge()
 
-      let result=try await adapter.decrypt(bridgeData, key: bridgeKey)
-      return CoreTypesInterfaces.BinaryData.from(bridge: result)
+      let result = try await adapter.decrypt(bridgeData, key: bridgeKey)
+      return CoreTypesInterfaces.SecureData.from(bridge: result)
     } catch {
       try wrapError(error)
     }
@@ -122,10 +117,10 @@ public final class SecurityProviderProtocolAdapter: SecurityInterfacesProtocols
   /// - Parameter length: Size of the key to generate in bytes
   /// - Returns: Generated key
   /// - Throws: UmbraErrors.Security.Protocols if key generation fails
-  public func generateKey(length: Int) async throws -> CoreTypesInterfaces.BinaryData {
+  public func generateKey(length: Int) async throws -> CoreTypesInterfaces.SecureData {
     do {
-      let result=try await adapter.generateKey(sizeInBytes: length)
-      return CoreTypesInterfaces.BinaryData.from(bridge: result)
+      let result = try await adapter.generateKey(sizeInBytes: length)
+      return CoreTypesInterfaces.SecureData.from(bridge: result)
     } catch {
       try wrapError(error)
     }
@@ -135,14 +130,13 @@ public final class SecurityProviderProtocolAdapter: SecurityInterfacesProtocols
   /// - Parameter data: Data to hash
   /// - Returns: Hash of the data
   /// - Throws: UmbraErrors.Security.Protocols if hashing fails
-  public func hash(_ data: CoreTypesInterfaces.BinaryData) async throws -> CoreTypesInterfaces
-  .BinaryData {
+  public func hash(_ data: CoreTypesInterfaces.SecureData) async throws -> CoreTypesInterfaces.SecureData {
     do {
       // Use the standardised converter from SecurityTypeConverters
-      let bridgeData=data.toDataBridge()
+      let bridgeData = data.toDataBridge()
 
-      let result=try await adapter.hash(bridgeData)
-      return CoreTypesInterfaces.BinaryData.from(bridge: result)
+      let result = try await adapter.hash(bridgeData)
+      return CoreTypesInterfaces.SecureData.from(bridge: result)
     } catch {
       try wrapError(error)
     }

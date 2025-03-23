@@ -5,7 +5,7 @@ import UmbraLogging
 /// A thread-safe logging service implementation that wraps LoggingWrapper
 public actor LoggerImplementation: LoggingProtocol {
   /// The shared logger instance
-  public static let shared=LoggerImplementation()
+  public static let shared = LoggerImplementation()
 
   /// Initialise the logger with default configuration
   public init() {
@@ -26,7 +26,7 @@ public actor LoggerImplementation: LoggingProtocol {
   public static func withDestinations(_: [some Sendable]) -> LoggerImplementation {
     // Create a new logger instance with default configuration
     // LoggingWrapper doesn't expose destination configuration in the same way as SwiftyBeaver
-    let logger=LoggerImplementation()
+    let logger = LoggerImplementation()
 
     // Configure the logger
     Logger.configure()
@@ -37,9 +37,9 @@ public actor LoggerImplementation: LoggingProtocol {
   /// Log a message at the specified level
   /// - Parameter entry: The log entry to record
   private func log(_ entry: LogEntry) {
-    let logLevel=mapToLogLevel(entry.level)
+    let logLevel = mapToLogLevel(entry.level)
 
-    if let metadata=entry.metadata {
+    if let metadata = entry.metadata {
       // If we have metadata, include it in the message
       Logger.log(logLevel, "\(entry.message) | \(metadata)")
     } else {

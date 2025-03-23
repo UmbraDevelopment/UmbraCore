@@ -1,14 +1,17 @@
 import Foundation
 
-/// KeyManagerError error type
-public enum KeyManagerError: Error {
-  case keyNotFound(String)
-  case unsupportedStorageLocation
-  case synchronisationError(String)
-  case operationFailed
-  case keyExpired
-  case notInitialized
-  case securityBoundaryViolation(String)
-  case storageError(String)
-  case metadataError(String)
+/// Key manager error type for CoreErrors module
+public struct KeyManagerError: Error, Equatable {
+    /// Error description
+    public let description: String
+
+    /// Initialize with a description
+    public init(description: String) {
+        self.description = description
+    }
+
+    /// Compare two KeyManagerErrors
+    public static func == (lhs: KeyManagerError, rhs: KeyManagerError) -> Bool {
+        return lhs.description == rhs.description
+    }
 }

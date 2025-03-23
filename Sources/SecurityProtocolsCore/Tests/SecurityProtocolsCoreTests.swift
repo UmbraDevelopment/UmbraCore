@@ -1,5 +1,3 @@
-import ErrorHandling
-import ErrorHandlingDomains
 @testable import SecurityProtocolsCore
 import UmbraCoreTypes
 import XCTest
@@ -13,9 +11,9 @@ class SecurityProtocolsCoreTests: XCTestCase {
 
   func testSecurityProtocolErrorEquatable() {
     // Test that the errors are equatable
-    let error1=UmbraErrors.Security.Protocols.internalError("Encryption failed: " + "test")
-    let error2=UmbraErrors.Security.Protocols.internalError("Encryption failed: " + "test")
-    let error3=UmbraErrors.Security.Protocols.internalError("Decryption failed: " + "test")
+    let error1 = UmbraErrors.Security.Protocols.internalError("Encryption failed: " + "test")
+    let error2 = UmbraErrors.Security.Protocols.internalError("Encryption failed: " + "test")
+    let error3 = UmbraErrors.Security.Protocols.internalError("Decryption failed: " + "test")
 
     XCTAssertEqual(error1, error2)
     XCTAssertNotEqual(error1, error3)
@@ -23,8 +21,8 @@ class SecurityProtocolsCoreTests: XCTestCase {
 
   func testSecurityProtocolErrorDescription() {
     // Test that the errors have descriptions
-    let error1=UmbraErrors.Security.Protocols.internalError("Encryption failed: " + "test")
-    let error2=UmbraErrors.Security.Protocols.invalidFormat(reason: "Invalid key")
+    let error1 = UmbraErrors.Security.Protocols.internalError("Encryption failed: " + "test")
+    let error2 = UmbraErrors.Security.Protocols.invalidFormat(reason: "Invalid key")
 
     XCTAssertEqual(
       String(describing: error1),
@@ -47,9 +45,9 @@ class SecurityProtocolsCoreTests: XCTestCase {
 
   func testSecurityOperationEquatable() {
     // Test operations are equatable
-    let op1=SecurityOperation.asymmetricEncryption
-    let op2=SecurityOperation.asymmetricEncryption
-    let op3=SecurityOperation.symmetricDecryption
+    let op1 = SecurityOperation.asymmetricEncryption
+    let op2 = SecurityOperation.asymmetricEncryption
+    let op3 = SecurityOperation.symmetricDecryption
 
     XCTAssertEqual(op1, op2)
     XCTAssertNotEqual(op1, op3)
@@ -59,7 +57,7 @@ class SecurityProtocolsCoreTests: XCTestCase {
 
   func testSecurityConfigDTODefaults() {
     // Test default configuration
-    let config=SecurityConfigDTO.aesGCM()
+    let config = SecurityConfigDTO.aesGCM()
 
     XCTAssertEqual(config.algorithm, "AES-GCM")
     XCTAssertEqual(config.keySizeInBits, 256)
@@ -68,9 +66,9 @@ class SecurityProtocolsCoreTests: XCTestCase {
 
   func testSecurityConfigDTOEquatable() {
     // Test configurations are equatable
-    let config1=SecurityConfigDTO(algorithm: "AES", keySizeInBits: 256)
-    let config2=SecurityConfigDTO(algorithm: "AES", keySizeInBits: 256)
-    let config3=SecurityConfigDTO(algorithm: "RSA", keySizeInBits: 2048)
+    let config1 = SecurityConfigDTO(algorithm: "AES", keySizeInBits: 256)
+    let config2 = SecurityConfigDTO(algorithm: "AES", keySizeInBits: 256)
+    let config3 = SecurityConfigDTO(algorithm: "RSA", keySizeInBits: 2_048)
 
     XCTAssertEqual(config1, config2)
     XCTAssertNotEqual(config1, config3)
@@ -80,8 +78,8 @@ class SecurityProtocolsCoreTests: XCTestCase {
 
   func testSuccessResultCreation() {
     // Test successful result creation
-    let data=SecureBytes(bytes: [1, 2, 3])
-    let result=SecurityResultDTO.success(data: data)
+    let data = SecureBytes(bytes: [1, 2, 3])
+    let result = SecurityResultDTO.success(data: data)
 
     XCTAssertTrue(result.success)
     XCTAssertEqual(result.data, data)
@@ -90,8 +88,8 @@ class SecurityProtocolsCoreTests: XCTestCase {
 
   func testFailureResultCreation() {
     // Test failure result creation
-    let error=UmbraErrors.Security.Protocols.internalError("Encryption failed: " + "test")
-    let result=SecurityResultDTO.failure(error: error, details: "Operation failed")
+    let error = UmbraErrors.Security.Protocols.internalError("Encryption failed: " + "test")
+    let result = SecurityResultDTO.failure(error: error, details: "Operation failed")
 
     XCTAssertFalse(result.success)
     XCTAssertNil(result.data)

@@ -1,6 +1,44 @@
-import ErrorHandlingDomains
-import ErrorHandlingTypes
 import Foundation
+
+// Local type declarations to replace imports
+// These replace the removed ErrorHandling and ErrorHandlingDomains imports
+
+/// Error domain namespace
+public enum ErrorDomain {
+  /// Security domain
+  public static let security = "Security"
+  /// Crypto domain
+  public static let crypto = "Crypto"
+  /// Application domain
+  public static let application = "Application"
+}
+
+/// Error context protocol
+public protocol ErrorContext {
+  /// Domain of the error
+  var domain: String { get }
+  /// Code of the error
+  var code: Int { get }
+  /// Description of the error
+  var description: String { get }
+}
+
+/// Base error context implementation
+public struct BaseErrorContext: ErrorContext {
+  /// Domain of the error
+  public let domain: String
+  /// Code of the error
+  public let code: Int
+  /// Description of the error
+  public let description: String
+
+  /// Initialise with domain, code and description
+  public init(domain: String, code: Int, description: String) {
+    self.domain = domain
+    self.code = code
+    self.description = description
+  }
+}
 
 /// Central error mapper for the UmbraCore framework
 ///
@@ -9,10 +47,10 @@ import Foundation
 public final class UmbraErrorMapper: @unchecked Sendable {
   /// Shared instance for convenient access
   @MainActor
-  public static let shared=UmbraErrorMapper()
+  public static let shared = UmbraErrorMapper()
 
   /// Security error mapper instance
-  private let securityMapper=SecurityErrorMapper()
+  private let securityMapper = SecurityErrorMapper()
 
   /// Private initialiser to enforce singleton pattern
   private init() {}
@@ -136,14 +174,14 @@ public final class UmbraErrorMapper: @unchecked Sendable {
   public func mapNetworkError(_ error: UmbraErrors.Network.Core) -> ErrorHandlingTypes
   .NetworkError {
     // Use string descriptions to avoid pattern matching errors with non-existent enum members
-    let errorDescription=String(describing: error)
+    let errorDescription = String(describing: error)
 
     if errorDescription.contains("connectionFailed") {
       return .connectionFailed(reason: "Connection failed: \(errorDescription)")
     } else if errorDescription.contains("hostUnreachable") {
       return .connectionFailed(reason: "Host unreachable: \(errorDescription)")
     } else if errorDescription.contains("timeout") {
-      return .timeout(operation: "Network operation", durationMs: 30000)
+      return .timeout(operation: "Network operation", durationMs: 30_000)
     } else if errorDescription.contains("interrupted") {
       return .interrupted(reason: "Connection interrupted: \(errorDescription)")
     } else if errorDescription.contains("invalidRequest") {
@@ -165,40 +203,40 @@ public final class UmbraErrorMapper: @unchecked Sendable {
     let description: String
 
     // Simplify the conditional statements by using a direct string description
-    let errorDescription=String(describing: error)
+    let errorDescription = String(describing: error)
 
     if errorDescription.contains("connectionFailed") {
-      description="Connection failed: \(errorDescription)"
+      description = "Connection failed: \(errorDescription)"
     } else if errorDescription.contains("timeout") {
-      description="Operation timed out: \(errorDescription)"
+      description = "Operation timed out: \(errorDescription)"
     } else if errorDescription.contains("interrupted") {
-      description="Connection interrupted: \(errorDescription)"
+      description = "Connection interrupted: \(errorDescription)"
     } else if errorDescription.contains("invalidRequest") {
-      description="Invalid request: \(errorDescription)"
+      description = "Invalid request: \(errorDescription)"
     } else if errorDescription.contains("requestRejected") {
-      description="Request rejected: \(errorDescription)"
+      description = "Request rejected: \(errorDescription)"
     } else if errorDescription.contains("invalidResponse") {
-      description="Invalid response: \(errorDescription)"
+      description = "Invalid response: \(errorDescription)"
     } else if errorDescription.contains("parsingFailed") {
-      description="Parsing failed: \(errorDescription)"
+      description = "Parsing failed: \(errorDescription)"
     } else if errorDescription.contains("certificateError") {
-      description="Certificate error: \(errorDescription)"
+      description = "Certificate error: \(errorDescription)"
     } else if errorDescription.contains("serviceUnavailable") {
-      description="Service unavailable: \(errorDescription)"
+      description = "Service unavailable: \(errorDescription)"
     } else if errorDescription.contains("requestTooLarge") {
-      description="Request too large: \(errorDescription)"
+      description = "Request too large: \(errorDescription)"
     } else if errorDescription.contains("responseTooLarge") {
-      description="Response too large: \(errorDescription)"
+      description = "Response too large: \(errorDescription)"
     } else if errorDescription.contains("rateLimitExceeded") {
-      description="Rate limit exceeded: \(errorDescription)"
+      description = "Rate limit exceeded: \(errorDescription)"
     } else if errorDescription.contains("dataCorruption") {
-      description="Data corruption: \(errorDescription)"
+      description = "Data corruption: \(errorDescription)"
     } else if errorDescription.contains("untrustedHost") {
-      description="Untrusted host: \(errorDescription)"
+      description = "Untrusted host: \(errorDescription)"
     } else if errorDescription.contains("internalError") {
-      description="Internal error: \(errorDescription)"
+      description = "Internal error: \(errorDescription)"
     } else {
-      description="Unknown network error: \(errorDescription)"
+      description = "Unknown network error: \(errorDescription)"
     }
 
     return NSError(
@@ -213,7 +251,7 @@ public final class UmbraErrorMapper: @unchecked Sendable {
   /// - Returns: The mapped error
   public func mapNetworkBaseError(_ error: ErrorHandlingTypes.NetworkError) -> Error {
     // Return a generic error to avoid issues with UmbraErrors.Network.Base members
-    let description=String(describing: error)
+    let description = String(describing: error)
     return NSError(
       domain: "UmbraCore.NetworkError.Base",
       code: 0,
@@ -228,7 +266,7 @@ public final class UmbraErrorMapper: @unchecked Sendable {
   /// - Returns: The mapped error
   public func mapHTTPError(_ error: UmbraErrors.Network.HTTP) -> ErrorHandlingTypes.NetworkError {
     // Convert HTTP domain errors to network errors using string descriptions
-    let errorDescription=String(describing: error)
+    let errorDescription = String(describing: error)
 
     if errorDescription.contains("badRequest") {
       return .invalidRequest(reason: "Bad request: \(errorDescription)")
@@ -239,7 +277,7 @@ public final class UmbraErrorMapper: @unchecked Sendable {
     } else if errorDescription.contains("notFound") {
       return .requestRejected(code: 404, reason: "Not found: \(errorDescription)")
     } else if errorDescription.contains("timeout") || errorDescription.contains("requestTimeout") {
-      return .timeout(operation: "HTTP request", durationMs: 30000)
+      return .timeout(operation: "HTTP request", durationMs: 30_000)
     } else {
       return .invalidRequest(reason: "HTTP error: \(errorDescription)")
     }
@@ -251,41 +289,41 @@ public final class UmbraErrorMapper: @unchecked Sendable {
   public func mapToHTTPError(_ error: ErrorHandlingTypes.NetworkError) -> Error {
     // Return a generic error since we're having issues with HTTP error types
     let description: String
-    let errorDescription=String(describing: error)
+    let errorDescription = String(describing: error)
 
     // Handle all possible NetworkError cases
     if errorDescription.contains("connectionFailed") {
-      description="Connection failed: \(errorDescription)"
+      description = "Connection failed: \(errorDescription)"
     } else if errorDescription.contains("timeout") {
-      description="Timeout: \(errorDescription)"
+      description = "Timeout: \(errorDescription)"
     } else if errorDescription.contains("interrupted") {
-      description="Connection interrupted: \(errorDescription)"
+      description = "Connection interrupted: \(errorDescription)"
     } else if errorDescription.contains("invalidRequest") {
-      description="Invalid request: \(errorDescription)"
+      description = "Invalid request: \(errorDescription)"
     } else if errorDescription.contains("requestRejected") {
-      description="Request rejected: \(errorDescription)"
+      description = "Request rejected: \(errorDescription)"
     } else if errorDescription.contains("invalidResponse") {
-      description="Invalid response: \(errorDescription)"
+      description = "Invalid response: \(errorDescription)"
     } else if errorDescription.contains("parsingFailed") {
-      description="Parsing failed: \(errorDescription)"
+      description = "Parsing failed: \(errorDescription)"
     } else if errorDescription.contains("certificateError") {
-      description="Certificate error: \(errorDescription)"
+      description = "Certificate error: \(errorDescription)"
     } else if errorDescription.contains("serviceUnavailable") {
-      description="Service unavailable: \(errorDescription)"
+      description = "Service unavailable: \(errorDescription)"
     } else if errorDescription.contains("requestTooLarge") {
-      description="Request too large: \(errorDescription)"
+      description = "Request too large: \(errorDescription)"
     } else if errorDescription.contains("responseTooLarge") {
-      description="Response too large: \(errorDescription)"
+      description = "Response too large: \(errorDescription)"
     } else if errorDescription.contains("rateLimitExceeded") {
-      description="Rate limit exceeded: \(errorDescription)"
+      description = "Rate limit exceeded: \(errorDescription)"
     } else if errorDescription.contains("dataCorruption") {
-      description="Data corruption: \(errorDescription)"
+      description = "Data corruption: \(errorDescription)"
     } else if errorDescription.contains("untrustedHost") {
-      description="Untrusted host: \(errorDescription)"
+      description = "Untrusted host: \(errorDescription)"
     } else if errorDescription.contains("internalError") {
-      description="Internal error: \(errorDescription)"
+      description = "Internal error: \(errorDescription)"
     } else {
-      description="Unknown network error: \(errorDescription)"
+      description = "Unknown network error: \(errorDescription)"
     }
 
     return NSError(
@@ -302,7 +340,7 @@ public final class UmbraErrorMapper: @unchecked Sendable {
   /// - Returns: The mapped error
   public func mapApplicationError(_ error: UmbraErrors.Application.Core) -> ErrorHandlingTypes
   .ApplicationError {
-    let errorDescription=String(describing: error)
+    let errorDescription = String(describing: error)
 
     if errorDescription.contains("configurationError") {
       return .invalidConfiguration(reason: "Configuration error: \(errorDescription)")
@@ -327,7 +365,7 @@ public final class UmbraErrorMapper: @unchecked Sendable {
   public func mapUIApplicationError(_ error: UmbraErrors.Application.UI) -> ErrorHandlingTypes
   .ApplicationError {
     // Use string descriptions to avoid pattern matching errors
-    let errorDescription=String(describing: error)
+    let errorDescription = String(describing: error)
 
     if errorDescription.contains("viewNotFound") {
       return .resourceMissing(resource: "View not found: \(errorDescription)")
@@ -350,7 +388,7 @@ public final class UmbraErrorMapper: @unchecked Sendable {
     _ error: UmbraErrors.Application
       .Lifecycle
   ) -> ErrorHandlingTypes.ApplicationError {
-    let errorDescription=String(describing: error)
+    let errorDescription = String(describing: error)
     return .internalError(reason: "Lifecycle error: \(errorDescription)")
   }
 
@@ -463,7 +501,7 @@ public final class UmbraErrorMapper: @unchecked Sendable {
   /// - Returns: The mapped error
   public func mapFromNetworkError(_ error: ErrorHandlingTypes.NetworkError) -> Error {
     // Return a generic error instead of a specific SecurityError type to avoid ambiguity
-    let description=switch error {
+    let description = switch error {
       case let .connectionFailed(reason):
         "Connection failed: \(reason)"
       case let .serviceUnavailable(service, reason):

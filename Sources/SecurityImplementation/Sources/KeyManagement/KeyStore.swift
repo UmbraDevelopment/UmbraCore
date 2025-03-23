@@ -59,8 +59,8 @@ final class KeyStore {
 
   /// Creates a new KeyStore
   init() {
-    keyStore=[:]
-    queue=DispatchQueue(label: "com.umbra.keystore", attributes: .concurrent)
+    keyStore = [:]
+    queue = DispatchQueue(label: "com.umbra.keystore", attributes: .concurrent)
   }
 
   // MARK: - Key Store Operations
@@ -89,7 +89,7 @@ final class KeyStore {
       }
 
       // Store the key
-      self.keyStore[identifier]=StoredKey(
+      self.keyStore[identifier] = StoredKey(
         key: key,
         createdAt: Date(),
         keyType: .unknown,
@@ -111,7 +111,7 @@ final class KeyStore {
 
     queue.sync {
       // Look up the key
-      if let storedKey=self.keyStore[identifier] {
+      if let storedKey = self.keyStore[identifier] {
         result = .success(storedKey.key)
       }
     }
@@ -143,10 +143,10 @@ final class KeyStore {
   /// Lists all key identifiers stored in the key store
   /// - Returns: An array of key identifiers
   func listKeyIdentifiers() -> Result<[String], UmbraErrors.Security.Protocols> {
-    var identifiers: [String]=[]
+    var identifiers: [String] = []
 
     queue.sync {
-      identifiers=Array(self.keyStore.keys)
+      identifiers = Array(self.keyStore.keys)
     }
 
     return .success(identifiers)
@@ -156,10 +156,10 @@ final class KeyStore {
   /// - Parameter identifier: The identifier to check
   /// - Returns: True if the key exists, false otherwise
   func hasKey(withIdentifier identifier: String) -> Bool {
-    var exists=false
+    var exists = false
 
     queue.sync {
-      exists=keyStore[identifier] != nil
+      exists = keyStore[identifier] != nil
     }
 
     return exists

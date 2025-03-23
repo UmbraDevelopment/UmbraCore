@@ -16,7 +16,7 @@ public final class ForgetCommand: ResticCommand, @unchecked Sendable {
   public var commandName: String { "forget" }
 
   public var commandArguments: [String] {
-    var args=[String]()
+    var args = [String]()
 
     // Add snapshot IDs if specified
     args.append(contentsOf: snapshotIDs)
@@ -61,32 +61,32 @@ public final class ForgetCommand: ResticCommand, @unchecked Sendable {
 
   public init(
     options: CommonOptions,
-    snapshotIDs: [String]=[],
-    keepLast: Int?=nil,
-    keepHourly: Int?=nil,
-    keepDaily: Int?=nil,
-    keepWeekly: Int?=nil,
-    keepMonthly: Int?=nil,
-    keepYearly: Int?=nil,
-    prune: Bool=false
+    snapshotIDs: [String] = [],
+    keepLast: Int? = nil,
+    keepHourly: Int? = nil,
+    keepDaily: Int? = nil,
+    keepWeekly: Int? = nil,
+    keepMonthly: Int? = nil,
+    keepYearly: Int? = nil,
+    prune: Bool = false
   ) {
-    self.options=options
-    self.snapshotIDs=snapshotIDs
-    self.keepLast=keepLast
-    self.keepHourly=keepHourly
-    self.keepDaily=keepDaily
-    self.keepWeekly=keepWeekly
-    self.keepMonthly=keepMonthly
-    self.keepYearly=keepYearly
-    self.prune=prune
+    self.options = options
+    self.snapshotIDs = snapshotIDs
+    self.keepLast = keepLast
+    self.keepHourly = keepHourly
+    self.keepDaily = keepDaily
+    self.keepWeekly = keepWeekly
+    self.keepMonthly = keepMonthly
+    self.keepYearly = keepYearly
+    self.prune = prune
   }
 
   public var environment: [String: String] {
-    var env=options.environmentVariables
-    env["RESTIC_REPOSITORY"]=options.repository
-    env["RESTIC_PASSWORD"]=options.password
-    if let cachePath=options.cachePath {
-      env["RESTIC_CACHE_DIR"]=cachePath
+    var env = options.environmentVariables
+    env["RESTIC_REPOSITORY"] = options.repository
+    env["RESTIC_PASSWORD"] = options.password
+    if let cachePath = options.cachePath {
+      env["RESTIC_CACHE_DIR"] = cachePath
     }
     return env
   }
@@ -100,7 +100,7 @@ public final class ForgetCommand: ResticCommand, @unchecked Sendable {
     }
 
     // Ensure at least one keep policy or snapshot ID is specified
-    let hasKeepPolicy=keepLast != nil || keepHourly != nil || keepDaily != nil ||
+    let hasKeepPolicy = keepLast != nil || keepHourly != nil || keepDaily != nil ||
       keepWeekly != nil || keepMonthly != nil || keepYearly != nil
     guard hasKeepPolicy || !snapshotIDs.isEmpty else {
       throw ResticError.missingParameter("Must specify either snapshot IDs or a keep policy")

@@ -24,6 +24,4 @@
  */
 
 @_exported import CoreErrors
-@_exported import ErrorHandling
-@_exported import ErrorHandlingDomains
 @_exported import UmbraCoreTypes

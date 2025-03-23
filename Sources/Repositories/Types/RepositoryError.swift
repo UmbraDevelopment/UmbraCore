@@ -104,7 +104,7 @@ public enum RepositoryError: LocalizedError, Equatable, Sendable, Codable {
   }
 
   public func encode(to encoder: Encoder) throws {
-    var container=encoder.container(keyedBy: CodingKeys.self)
+    var container = encoder.container(keyedBy: CodingKeys.self)
     switch self {
       case let .notFound(identifier):
         try container.encode("notFound", forKey: .type)
@@ -139,35 +139,35 @@ public enum RepositoryError: LocalizedError, Equatable, Sendable, Codable {
   @preconcurrency
   @available(*, deprecated, message: "Will need to be refactored for Swift 6")
   public init(from decoder: Decoder) throws {
-    let container=try decoder.container(keyedBy: CodingKeys.self)
-    let type=try container.decode(String.self, forKey: .type)
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    let type = try container.decode(String.self, forKey: .type)
     switch type {
       case "notFound":
-        let identifier=try container.decode(String.self, forKey: .identifier)
+        let identifier = try container.decode(String.self, forKey: .identifier)
         self = .notFound(identifier: identifier)
       case "repositoryNotFound":
-        let message=try container.decode(String.self, forKey: .message)
+        let message = try container.decode(String.self, forKey: .message)
         self = .repositoryNotFound(message)
       case "locked":
-        let reason=try container.decode(String.self, forKey: .reason)
+        let reason = try container.decode(String.self, forKey: .reason)
         self = .locked(reason: reason)
       case "notAccessible":
-        let reason=try container.decode(String.self, forKey: .reason)
+        let reason = try container.decode(String.self, forKey: .reason)
         self = .notAccessible(reason: reason)
       case "invalidConfiguration":
-        let reason=try container.decode(String.self, forKey: .reason)
+        let reason = try container.decode(String.self, forKey: .reason)
         self = .invalidConfiguration(reason: reason)
       case "operationFailed":
-        let reason=try container.decode(String.self, forKey: .reason)
+        let reason = try container.decode(String.self, forKey: .reason)
         self = .operationFailed(reason: reason)
       case "maintenanceFailed":
-        let reason=try container.decode(String.self, forKey: .reason)
+        let reason = try container.decode(String.self, forKey: .reason)
         self = .maintenanceFailed(reason: reason)
       case "validationFailed":
-        let reason=try container.decode(String.self, forKey: .reason)
+        let reason = try container.decode(String.self, forKey: .reason)
         self = .validationFailed(reason: reason)
       case "healthCheckFailed":
-        let reason=try container.decode(String.self, forKey: .reason)
+        let reason = try container.decode(String.self, forKey: .reason)
         self = .healthCheckFailed(reason: reason)
       default:
         throw DecodingError.dataCorruptedError(

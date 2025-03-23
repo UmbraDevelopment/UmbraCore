@@ -44,23 +44,23 @@ enum Utilities {
    */
   static func hexStringToData(_ hexString: String) -> [UInt8]? {
     // Remove any spaces from the string
-    let hex=hexString.replacingOccurrences(of: " ", with: "")
+    let hex = hexString.replacingOccurrences(of: " ", with: "")
 
     // Check for even number of characters
     guard hex.count % 2 == 0 else {
       return nil
     }
 
-    var bytes=[UInt8]()
+    var bytes = [UInt8]()
     bytes.reserveCapacity(hex.count / 2)
 
     // Process two characters at a time (one byte)
     for i in stride(from: 0, to: hex.count, by: 2) {
-      let start=hex.index(hex.startIndex, offsetBy: i)
-      let end=hex.index(start, offsetBy: 2)
-      let byteString=String(hex[start..<end])
+      let start = hex.index(hex.startIndex, offsetBy: i)
+      let end = hex.index(start, offsetBy: 2)
+      let byteString = String(hex[start..<end])
 
-      guard let byte=UInt8(byteString, radix: 16) else {
+      guard let byte = UInt8(byteString, radix: 16) else {
         return nil
       }
 
@@ -87,7 +87,7 @@ enum Utilities {
    */
   static func base64StringToData(_ base64String: String) -> [UInt8]? {
     // Convert to Data then to [UInt8]
-    guard let data=Data(base64Encoded: base64String) else {
+    guard let data = Data(base64Encoded: base64String) else {
       return nil
     }
 
@@ -116,11 +116,11 @@ enum Utilities {
    */
   static func dataToHexString(
     _ data: [UInt8],
-    uppercase: Bool=true,
-    separator: String?=nil
+    uppercase: Bool = true,
+    separator: String? = nil
   ) -> String {
-    let format=uppercase ? "%02X" : "%02x"
-    let hexChars=data.map { String(format: format, $0) }
+    let format = uppercase ? "%02X" : "%02x"
+    let hexChars = data.map { String(format: format, $0) }
 
     if let separator {
       return hexChars.joined(separator: separator)
@@ -146,9 +146,9 @@ enum Utilities {
    */
   static func dataToBase64String(
     _ data: [UInt8],
-    options: Data.Base64EncodingOptions=[]
+    options: Data.Base64EncodingOptions = []
   ) -> String {
-    let data=Data(data)
+    let data = Data(data)
     return data.base64EncodedString(options: options)
   }
 }

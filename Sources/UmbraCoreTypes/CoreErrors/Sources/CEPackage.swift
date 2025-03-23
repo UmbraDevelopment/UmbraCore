@@ -1,13 +1,38 @@
-import CoreErrors
-import ErrorHandlingDomains
+import Foundation
 
-// MARK: - Type Aliases for CoreErrors Types
+// MARK: - Concrete Error Types (No Type Aliases)
 
-/// Type alias for CoreErrors.ResourceError
-public typealias CEResourceError=CoreErrors.ResourceError
+/// Resource error implementation - replaces typealias with concrete type
+public struct ResourceError: Error, Equatable {
+  /// Error description
+  public let description: String
 
-/// Type alias for CoreErrors.SecurityError
-public typealias CESecurityError=CoreErrors.SecurityError
+  /// Initialize with a description
+  public init(description: String) {
+    self.description = description
+  }
+
+  /// Compare two ResourceErrors
+  public static func == (lhs: ResourceError, rhs: ResourceError) -> Bool {
+    lhs.description == rhs.description
+  }
+}
+
+/// Security error implementation - replaces typealias with concrete type
+public struct SecurityError: Error, Equatable {
+  /// Error description
+  public let description: String
+
+  /// Initialize with a description
+  public init(description: String) {
+    self.description = description
+  }
+
+  /// Compare two SecurityErrors
+  public static func == (lhs: SecurityError, rhs: SecurityError) -> Bool {
+    lhs.description == rhs.description
+  }
+}
 
 // MARK: - Error Types Definition
 

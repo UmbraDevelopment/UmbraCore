@@ -39,21 +39,21 @@ public struct RetentionPolicyDTO: Sendable, Equatable {
   ///   - keepYearly: Number of yearly snapshots to keep
   ///   - keepWithinDuration: Keep snapshots within this duration (seconds)
   public init(
-    keepLast: Int?=nil,
-    keepHourly: Int?=nil,
-    keepDaily: Int?=nil,
-    keepWeekly: Int?=nil,
-    keepMonthly: Int?=nil,
-    keepYearly: Int?=nil,
-    keepWithinDuration: UInt64?=nil
+    keepLast: Int? = nil,
+    keepHourly: Int? = nil,
+    keepDaily: Int? = nil,
+    keepWeekly: Int? = nil,
+    keepMonthly: Int? = nil,
+    keepYearly: Int? = nil,
+    keepWithinDuration: UInt64? = nil
   ) {
-    self.keepLast=keepLast.map { max(0, $0) }
-    self.keepHourly=keepHourly.map { max(0, $0) }
-    self.keepDaily=keepDaily.map { max(0, $0) }
-    self.keepWeekly=keepWeekly.map { max(0, $0) }
-    self.keepMonthly=keepMonthly.map { max(0, $0) }
-    self.keepYearly=keepYearly.map { max(0, $0) }
-    self.keepWithinDuration=keepWithinDuration
+    self.keepLast = keepLast.map { max(0, $0) }
+    self.keepHourly = keepHourly.map { max(0, $0) }
+    self.keepDaily = keepDaily.map { max(0, $0) }
+    self.keepWeekly = keepWeekly.map { max(0, $0) }
+    self.keepMonthly = keepMonthly.map { max(0, $0) }
+    self.keepYearly = keepYearly.map { max(0, $0) }
+    self.keepWithinDuration = keepWithinDuration
   }
 
   // MARK: - Factory Methods

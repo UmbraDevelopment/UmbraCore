@@ -2,11 +2,11 @@ import Foundation
 
 /// Represents the level of notification for an error
 public enum ErrorNotificationLevel: Int, Comparable, Sendable {
-  case debug=0 // Developer-focused, typically not shown to end users
-  case info=1 // Informational, non-critical
-  case warning=2 // Warning that might need attention
-  case error=3 // Error that needs attention
-  case critical=4 // Critical error that requires immediate attention
+  case debug = 0 // Developer-focused, typically not shown to end users
+  case info = 1 // Informational, non-critical
+  case warning = 2 // Warning that might need attention
+  case error = 3 // Error that needs attention
+  case critical = 4 // Critical error that requires immediate attention
 
   public static func < (lhs: ErrorNotificationLevel, rhs: ErrorNotificationLevel) -> Bool {
     lhs.rawValue < rhs.rawValue

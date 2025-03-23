@@ -58,22 +58,22 @@ public struct AsymmetricCrypto: Sendable {
     }
 
     // Generate a random symmetric key for the actual data encryption
-    let symmetricKey=CryptoWrapper.generateRandomKeySecure()
+    let symmetricKey = CryptoWrapper.generateRandomKeySecure()
 
     do {
       // Encrypt the data with the symmetric key
-      let iv=CryptoWrapper.generateRandomIVSecure()
-      let encryptedData=try CryptoWrapper.aesEncrypt(data: data, key: symmetricKey, iv: iv)
+      let iv = CryptoWrapper.generateRandomIVSecure()
+      let encryptedData = try CryptoWrapper.aesEncrypt(data: data, key: symmetricKey, iv: iv)
 
       // Encrypt the symmetric key with the public key (simplified approach for testing)
-      let encryptedKey=encryptKeyWithPseudoRSA(symmetricKey, publicKey: publicKey)
+      let encryptedKey = encryptKeyWithPseudoRSA(symmetricKey, publicKey: publicKey)
 
       // Format: [Encrypted Key Length (4 bytes)][Encrypted Key][IV (12 bytes)][Encrypted Data]
-      let keyLengthBytes=withUnsafeBytes(of: UInt32(encryptedKey.count).bigEndian) {
+      let keyLengthBytes = withUnsafeBytes(of: UInt32(encryptedKey.count).bigEndian) {
         SecureBytes(bytes: Array($0))
       }
 
-      let result=SecureBytes.combine(
+      let result = SecureBytes.combine(
         keyLengthBytes,
         encryptedKey,
         iv,
@@ -119,8 +119,8 @@ public struct AsymmetricCrypto: Sendable {
 
     do {
       // Extract key length (first 4 bytes)
-      let keyLengthBytes=try data.slice(from: 0, length: 4)
-      let keyLength=keyLengthBytes.withUnsafeBytes {
+      let keyLengthBytes = try data.slice(from: 0, length: 4)
+      let keyLength = keyLengthBytes.withUnsafeBytes {
         $0.load(as: UInt32.self).bigEndian
       }
 
@@ -132,22 +132,22 @@ public struct AsymmetricCrypto: Sendable {
       }
 
       // Extract encrypted key
-      let encryptedKey=try data.slice(from: 4, length: Int(keyLength))
+      let encryptedKey = try data.slice(from: 4, length: Int(keyLength))
 
       // Extract IV (12 bytes after the encrypted key)
-      let ivOffset=4 + Int(keyLength)
-      let iv=try data.slice(from: ivOffset, length: 12)
+      let ivOffset = 4 + Int(keyLength)
+      let iv = try data.slice(from: ivOffset, length: 12)
 
       // Extract encrypted data (everything after the IV)
-      let encryptedDataOffset=ivOffset + 12
-      let encryptedDataLength=data.count - encryptedDataOffset
-      let encryptedData=try data.slice(from: encryptedDataOffset, length: encryptedDataLength)
+      let encryptedDataOffset = ivOffset + 12
+      let encryptedDataLength = data.count - encryptedDataOffset
+      let encryptedData = try data.slice(from: encryptedDataOffset, length: encryptedDataLength)
 
       // Decrypt the symmetric key with the private key
-      let symmetricKey=decryptKeyWithPseudoRSA(encryptedKey, privateKey: privateKey)
+      let symmetricKey = decryptKeyWithPseudoRSA(encryptedKey, privateKey: privateKey)
 
       // Decrypt the data with the symmetric key
-      let decryptedData=try CryptoWrapper.aesDecrypt(
+      let decryptedData = try CryptoWrapper.aesDecrypt(
         data: encryptedData,
         key: symmetricKey,
         iv: iv
@@ -183,13 +183,13 @@ public struct AsymmetricCrypto: Sendable {
     }
 
     // Derive a secret from the public key using HMAC
-    let hmacKey=SecureBytes(bytes: [0x42, 0x13, 0x37])
-    let secret=CryptoWrapper.hmacSHA256(data: publicKey, key: hmacKey)
+    let hmacKey = SecureBytes(bytes: [0x42, 0x13, 0x37])
+    let secret = CryptoWrapper.hmacSHA256(data: publicKey, key: hmacKey)
 
     // XOR the key with the derived secret (with wrapping)
-    var resultBytes=[UInt8](repeating: 0, count: key.count)
+    var resultBytes = [UInt8](repeating: 0, count: key.count)
     for i in 0..<key.count {
-      resultBytes[i]=key[i] ^ secret[i % secret.count]
+      resultBytes[i] = key[i] ^ secret[i % secret.count]
     }
 
     return SecureBytes(bytes: resultBytes)
@@ -216,13 +216,13 @@ public struct AsymmetricCrypto: Sendable {
 
     // Derive the same secret from the private key
     // (in reality, a different operation would be used)
-    let hmacKey=SecureBytes(bytes: [0x42, 0x13, 0x37])
-    let secret=CryptoWrapper.hmacSHA256(data: privateKey, key: hmacKey)
+    let hmacKey = SecureBytes(bytes: [0x42, 0x13, 0x37])
+    let secret = CryptoWrapper.hmacSHA256(data: privateKey, key: hmacKey)
 
     // XOR the encrypted key with the derived secret to reverse the encryption
-    var resultBytes=[UInt8](repeating: 0, count: encryptedKey.count)
+    var resultBytes = [UInt8](repeating: 0, count: encryptedKey.count)
     for i in 0..<encryptedKey.count {
-      resultBytes[i]=encryptedKey[i] ^ secret[i % secret.count]
+      resultBytes[i] = encryptedKey[i] ^ secret[i % secret.count]
     }
 
     return SecureBytes(bytes: resultBytes)

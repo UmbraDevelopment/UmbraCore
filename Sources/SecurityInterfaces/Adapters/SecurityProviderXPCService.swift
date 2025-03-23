@@ -42,11 +42,11 @@ public final class SecurityProviderXPCService: XPCServiceProtocolBasic {
   public func status() async
   -> Result<[String: Any], ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
     // In a real implementation, we would collect actual status information
-    let statusDict: [String: Any]=[
+    let statusDict: [String: Any] = [
       "name": "SecurityProviderXPCService",
       "version": "1.0.0",
       "status": "operational",
-      "uptime": 3600
+      "uptime": 3_600
     ]
 
     return .success(statusDict)

@@ -28,14 +28,14 @@ public struct SecurityErrorDTO: Error, Sendable, Equatable, CustomStringConverti
   ///   - details: Additional details
   public init(
     code: Int32,
-    domain: String="security",
+    domain: String = "security",
     message: String,
-    details: [String: String]=[:]
+    details: [String: String] = [:]
   ) {
-    self.code=code
-    self.domain=domain
-    self.message=message
-    self.details=details
+    self.code = code
+    self.domain = domain
+    self.message = message
+    self.details = details
   }
 
   // MARK: - CustomStringConvertible
@@ -54,10 +54,10 @@ public struct SecurityErrorDTO: Error, Sendable, Equatable, CustomStringConverti
   /// - Returns: A SecurityErrorDTO
   public static func encryptionError(
     message: String,
-    details: [String: String]=[:]
+    details: [String: String] = [:]
   ) -> SecurityErrorDTO {
     SecurityErrorDTO(
-      code: 1001,
+      code: 1_001,
       message: message,
       details: details
     )
@@ -70,10 +70,10 @@ public struct SecurityErrorDTO: Error, Sendable, Equatable, CustomStringConverti
   /// - Returns: A SecurityErrorDTO
   public static func decryptionError(
     message: String,
-    details: [String: String]=[:]
+    details: [String: String] = [:]
   ) -> SecurityErrorDTO {
     SecurityErrorDTO(
-      code: 1002,
+      code: 1_002,
       message: message,
       details: details
     )
@@ -86,10 +86,10 @@ public struct SecurityErrorDTO: Error, Sendable, Equatable, CustomStringConverti
   /// - Returns: A SecurityErrorDTO
   public static func keyError(
     message: String,
-    details: [String: String]=[:]
+    details: [String: String] = [:]
   ) -> SecurityErrorDTO {
     SecurityErrorDTO(
-      code: 1003,
+      code: 1_003,
       message: message,
       details: details
     )
@@ -102,10 +102,10 @@ public struct SecurityErrorDTO: Error, Sendable, Equatable, CustomStringConverti
   /// - Returns: A SecurityErrorDTO
   public static func storageError(
     message: String,
-    details: [String: String]=[:]
+    details: [String: String] = [:]
   ) -> SecurityErrorDTO {
     SecurityErrorDTO(
-      code: 1004,
+      code: 1_004,
       message: message,
       details: details
     )
@@ -118,10 +118,10 @@ public struct SecurityErrorDTO: Error, Sendable, Equatable, CustomStringConverti
   /// - Returns: A SecurityErrorDTO
   public static func accessError(
     message: String,
-    details: [String: String]=[:]
+    details: [String: String] = [:]
   ) -> SecurityErrorDTO {
     SecurityErrorDTO(
-      code: 1005,
+      code: 1_005,
       message: message,
       details: details
     )
@@ -134,10 +134,10 @@ public struct SecurityErrorDTO: Error, Sendable, Equatable, CustomStringConverti
   /// - Returns: A SecurityErrorDTO
   public static func internalError(
     message: String,
-    details: [String: String]=[:]
+    details: [String: String] = [:]
   ) -> SecurityErrorDTO {
     SecurityErrorDTO(
-      code: 1006,
+      code: 1_006,
       message: message,
       details: details
     )
@@ -150,10 +150,10 @@ public struct SecurityErrorDTO: Error, Sendable, Equatable, CustomStringConverti
   /// - Returns: A SecurityErrorDTO
   public static func unknown(
     message: String,
-    details: [String: String]=[:]
+    details: [String: String] = [:]
   ) -> SecurityErrorDTO {
     SecurityErrorDTO(
-      code: 9999,
+      code: 9_999,
       message: message,
       details: details
     )
@@ -166,12 +166,12 @@ public struct SecurityErrorDTO: Error, Sendable, Equatable, CustomStringConverti
   /// - Returns: A SecurityErrorDTO
   public static func invalidPath(
     path: String,
-    details: [String: String]=[:]
+    details: [String: String] = [:]
   ) -> SecurityErrorDTO {
-    var allDetails=details
-    allDetails["path"]=path
+    var allDetails = details
+    allDetails["path"] = path
     return SecurityErrorDTO(
-      code: 1007,
+      code: 1_007,
       domain: "security.bookmark",
       message: "Invalid path: \(path)",
       details: allDetails
@@ -185,12 +185,12 @@ public struct SecurityErrorDTO: Error, Sendable, Equatable, CustomStringConverti
   /// - Returns: A SecurityErrorDTO
   public static func bookmarkCreationFailed(
     path: String,
-    details: [String: String]=[:]
+    details: [String: String] = [:]
   ) -> SecurityErrorDTO {
-    var allDetails=details
-    allDetails["path"]=path
+    var allDetails = details
+    allDetails["path"] = path
     return SecurityErrorDTO(
-      code: 1008,
+      code: 1_008,
       message: "Failed to create bookmark",
       details: allDetails
     )
@@ -201,15 +201,15 @@ public struct SecurityErrorDTO: Error, Sendable, Equatable, CustomStringConverti
   ///   - details: Error details
   /// - Returns: A SecurityErrorDTO
   public static func bookmarkResolutionFailed(
-    details: [String: String]=[:]
+    details: [String: String] = [:]
   ) -> SecurityErrorDTO {
     SecurityErrorDTO(
-      code: 1009,
+      code: 1_009,
       message: "Failed to resolve bookmark",
       details: details
     )
   }
 
   /// Default general error code
-  public static let generalErrorCode: Int32=9999
+  public static let generalErrorCode: Int32 = 9_999
 }

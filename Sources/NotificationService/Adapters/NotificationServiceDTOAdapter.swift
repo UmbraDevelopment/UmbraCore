@@ -7,12 +7,12 @@ public class NotificationServiceDTOAdapter: NotificationServiceDTOProtocol {
   // MARK: - Private Properties
 
   private let notificationCenter: NotificationCenter
-  private var observers: [NotificationObserverID: NSObjectProtocol]=[:]
-  private let observerQueue=DispatchQueue(
+  private var observers: [NotificationObserverID: NSObjectProtocol] = [:]
+  private let observerQueue = DispatchQueue(
     label: "com.umbra.notificationAdapter.observerQueue",
     attributes: .concurrent
   )
-  private let logger=Logger(
+  private let logger = Logger(
     subsystem: "com.umbra.notificationService",
     category: "NotificationServiceDTOAdapter"
   )
@@ -22,7 +22,7 @@ public class NotificationServiceDTOAdapter: NotificationServiceDTOProtocol {
   /// Initialize with a specific NotificationCenter
   /// - Parameter notificationCenter: The NotificationCenter to use
   public init(notificationCenter: NotificationCenter = .default) {
-    self.notificationCenter=notificationCenter
+    self.notificationCenter = notificationCenter
   }
 
   // MARK: - NotificationServiceDTOProtocol Implementation
@@ -31,7 +31,7 @@ public class NotificationServiceDTOAdapter: NotificationServiceDTOProtocol {
   /// - Parameter notification: The notification to post
   public func post(notification: NotificationDTO) {
     // Convert to Foundation notification
-    let foundationNotification=notification.toNotification()
+    let foundationNotification = notification.toNotification()
 
     // Post to notification center
     notificationCenter.post(foundationNotification)
@@ -42,9 +42,9 @@ public class NotificationServiceDTOAdapter: NotificationServiceDTOProtocol {
   ///   - name: The name of the notification
   ///   - sender: The sender of the notification (optional)
   ///   - userInfo: User info dictionary (optional)
-  public func post(name: String, sender: AnyHashable?=nil, userInfo: [String: AnyHashable]?=nil) {
+  public func post(name: String, sender: AnyHashable? = nil, userInfo: [String: AnyHashable]? = nil) {
     // Create DTO
-    let notification=NotificationDTO(
+    let notification = NotificationDTO(
       name: name,
       sender: sender,
       userInfo: userInfo ?? [:]
@@ -62,14 +62,14 @@ public class NotificationServiceDTOAdapter: NotificationServiceDTOProtocol {
   /// - Returns: An observer ID that can be used to remove the observer
   public func addObserver(
     for name: String,
-    sender: AnyHashable?=nil,
+    sender: AnyHashable? = nil,
     handler: @escaping NotificationHandler
   ) -> NotificationObserverID {
     // Create notification name
-    let notificationName=Notification.Name(name)
+    let notificationName = Notification.Name(name)
 
     // Add observer
-    let observer=notificationCenter.addObserver(
+    let observer = notificationCenter.addObserver(
       forName: notificationName,
       object: sender,
       queue: .main
@@ -77,19 +77,19 @@ public class NotificationServiceDTOAdapter: NotificationServiceDTOProtocol {
       guard let self else { return }
 
       // Convert to DTO
-      let notificationDTO=NotificationDTO.from(notification: notification)
+      let notificationDTO = NotificationDTO.from(notification: notification)
 
       // Call handler
       handler(notificationDTO)
     }
 
     // Generate unique ID
-    let observerID=UUID().uuidString
+    let observerID = UUID().uuidString
 
     // Store observer
     observerQueue.async(flags: .barrier) { [weak self] in
       guard let self else { return }
-      observers[observerID]=observer
+      observers[observerID] = observer
     }
 
     return observerID
@@ -103,16 +103,16 @@ public class NotificationServiceDTOAdapter: NotificationServiceDTOProtocol {
   /// - Returns: An observer ID that can be used to remove the observer
   public func addObserver(
     for names: [String],
-    sender: AnyHashable?=nil,
+    sender: AnyHashable? = nil,
     handler: @escaping NotificationHandler
   ) -> NotificationObserverID {
     // Generate a group ID
-    let groupObserverID="group_\(UUID().uuidString)"
-    var individualObserverIDs: [NotificationObserverID]=[]
+    let groupObserverID = "group_\(UUID().uuidString)"
+    var individualObserverIDs: [NotificationObserverID] = []
 
     // Add observer for each name
     for name in names {
-      let observer=notificationCenter.addObserver(
+      let observer = notificationCenter.addObserver(
         forName: Notification.Name(name),
         object: sender,
         queue: .main
@@ -120,28 +120,28 @@ public class NotificationServiceDTOAdapter: NotificationServiceDTOProtocol {
         guard let self else { return }
 
         // Convert to DTO
-        let notificationDTO=NotificationDTO.from(notification: notification)
+        let notificationDTO = NotificationDTO.from(notification: notification)
 
         // Call handler
         handler(notificationDTO)
       }
 
       // Generate unique ID for this individual observer
-      let observerID="\(groupObserverID)_\(name)_\(UUID().uuidString)"
+      let observerID = "\(groupObserverID)_\(name)_\(UUID().uuidString)"
       individualObserverIDs.append(observerID)
 
       // Store observer
       observerQueue.async(flags: .barrier) { [weak self] in
         guard let self else { return }
-        observers[observerID]=observer
+        observers[observerID] = observer
       }
     }
 
     // Store the mapping from group ID to individual IDs
     observerQueue.async(flags: .barrier) { [weak self] in
       guard let self else { return }
-      let groupInfo=GroupObserverInfo(individualObserverIDs: individualObserverIDs)
-      observers[groupObserverID]=groupInfo
+      let groupInfo = GroupObserverInfo(individualObserverIDs: individualObserverIDs)
+      observers[groupObserverID] = groupInfo
     }
 
     return groupObserverID
@@ -153,16 +153,16 @@ public class NotificationServiceDTOAdapter: NotificationServiceDTOProtocol {
     observerQueue.async(flags: .barrier) { [weak self] in
       guard let self else { return }
 
-      if let observer=observers[observerID] {
+      if let observer = observers[observerID] {
         // Handle different types of observers
-        if let notificationObserver=observer as? NSObjectProtocol {
+        if let notificationObserver = observer as? NSObjectProtocol {
           // Individual observer
           notificationCenter.removeObserver(notificationObserver)
           observers.removeValue(forKey: observerID)
-        } else if let groupInfo=observer as? GroupObserverInfo {
+        } else if let groupInfo = observer as? GroupObserverInfo {
           // Group observer - remove all individual observers
           for individualID in groupInfo.individualObserverIDs {
-            if let individualObserver=observers[individualID] as? NSObjectProtocol {
+            if let individualObserver = observers[individualID] as? NSObjectProtocol {
               notificationCenter.removeObserver(individualObserver)
               observers.removeValue(forKey: individualID)
             }
@@ -180,7 +180,7 @@ public class NotificationServiceDTOAdapter: NotificationServiceDTOProtocol {
 
       // Remove all individual observers
       for (_, observer) in observers {
-        if let notificationObserver=observer as? NSObjectProtocol {
+        if let notificationObserver = observer as? NSObjectProtocol {
           notificationCenter.removeObserver(notificationObserver)
         }
       }
@@ -202,7 +202,7 @@ private class GroupObserverInfo: NSObject {
   let individualObserverIDs: [NotificationObserverID]
 
   init(individualObserverIDs: [NotificationObserverID]) {
-    self.individualObserverIDs=individualObserverIDs
+    self.individualObserverIDs = individualObserverIDs
     super.init()
   }
 }

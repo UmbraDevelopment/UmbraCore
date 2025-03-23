@@ -16,5 +16,5 @@ filegroup(
 # Original dependencies that would be needed when re-enabling:
 # deps = [
 #     "//Sources/ErrorHandling",
-#     "//Sources/ErrorHandling/Domains:ErrorHandlingDomains",
+#     "//ErrorHandling/Domains:ErrorHandlingDomains",
 # ]

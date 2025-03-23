@@ -24,18 +24,18 @@ public struct DataBridge: Sendable {
 
   /// Initialize with bytes
   public init(_ bytes: [UInt8]) {
-    self.bytes=bytes
+    self.bytes = bytes
   }
 
-  /// Initialize with BinaryData (SecureBytes)
-  public init(_ binaryData: CoreTypesInterfaces.BinaryData) {
+  /// Initialize with SecureData
+  public init(_ secureData: CoreTypesInterfaces.SecureData) {
     // Access the raw bytes directly from the SecureData
-    bytes=binaryData.rawBytes
+    bytes = secureData.rawBytes
   }
 
-  /// Convert to BinaryData (SecureBytes)
-  public func toBinaryData() -> CoreTypesInterfaces.BinaryData {
-    CoreTypesInterfaces.BinaryData(bytes: bytes)
+  /// Convert to SecureData
+  public func toSecureData() -> CoreTypesInterfaces.SecureData {
+    CoreTypesInterfaces.SecureData(bytes: bytes)
   }
 }
 
@@ -48,7 +48,7 @@ extension DataBridge {
 
   /// Get a subset of the data
   public func subdata(in range: Range<Int>) -> DataBridge {
-    let subBytes=Array(bytes[range])
+    let subBytes = Array(bytes[range])
     return DataBridge(subBytes)
   }
 }

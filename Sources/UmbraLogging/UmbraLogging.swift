@@ -86,7 +86,7 @@
 /// - Queue isolation
 public enum UmbraLogging {
   /// Current version of the UmbraLogging module
-  public static let version="1.0.0"
+  public static let version = "1.0.0"
 
   /// Initialise UmbraLogging with default configuration
   public static func initialise() {

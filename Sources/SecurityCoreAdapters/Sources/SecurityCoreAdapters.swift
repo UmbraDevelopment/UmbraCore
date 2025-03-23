@@ -19,7 +19,7 @@ public enum SecurityCoreAdapters {
   /// - Returns: A type adapter for the crypto service
   public static func createCryptoServiceAdapter<T: CryptoServiceProtocol & Sendable>(
     service: T,
-    transformations: CryptoServiceTypeAdapter<T>.Transformations=CryptoServiceTypeAdapter<T>
+    transformations: CryptoServiceTypeAdapter<T>.Transformations = CryptoServiceTypeAdapter<T>
       .Transformations()
   ) -> CryptoServiceTypeAdapter<T> {
     CryptoServiceTypeAdapter(adaptee: service, transformations: transformations)

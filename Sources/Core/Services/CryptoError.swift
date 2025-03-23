@@ -12,4 +12,4 @@ import CoreErrors
   deprecated,
   message: "This will be replaced by CoreErrors.CryptoError in a future version. Use CoreErrors.CryptoError directly."
 )
-public typealias CryptoError=CoreErrors.CryptoError
+public typealias CryptoError = CoreErrors.CryptoError

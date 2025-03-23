@@ -1,6 +1,45 @@
-import ErrorHandlingInterfaces
 import Foundation
 import UmbraLogging
+
+// Local type declarations to replace imports
+// These replace the removed ErrorHandling and ErrorHandlingDomains imports
+
+/// Error domain namespace
+public enum ErrorDomain {
+  /// Security domain
+  public static let security = "Security"
+  /// Crypto domain
+  public static let crypto = "Crypto"
+  /// Application domain
+  public static let application = "Application"
+}
+
+/// Error context protocol
+public protocol ErrorContext {
+  /// Domain of the error
+  var domain: String { get }
+  /// Code of the error
+  var code: Int { get }
+  /// Description of the error
+  var description: String { get }
+}
+
+/// Base error context implementation
+public struct BaseErrorContext: ErrorContext {
+  /// Domain of the error
+  public let domain: String
+  /// Code of the error
+  public let code: Int
+  /// Description of the error
+  public let description: String
+
+  /// Initialise with domain, code and description
+  public init(domain: String, code: Int, description: String) {
+    self.domain = domain
+    self.code = code
+    self.description = description
+  }
+}
 
 // MARK: - Domain-Specific Filters
 
@@ -17,11 +56,11 @@ extension ErrorLogger {
   ) -> ErrorLogger {
     configure { config in
       // Capture the minimum log level value
-      _=config.minimumSeverity
+      _ = config.minimumSeverity
 
       // Create a filter that checks domain and applies level-based filtering
-      let domainFilter: (Error) -> Bool={ error in
-        guard let umbraError=error as? ErrorHandlingInterfaces.UmbraError else {
+      let domainFilter: (Error) -> Bool = { error in
+        guard let umbraError = error as? ErrorHandlingInterfaces.UmbraError else {
           return false
         }
 
@@ -54,11 +93,11 @@ extension ErrorLogger {
   ) -> ErrorLogger {
     configure { config in
       // Capture the minimum log level value
-      _=config.minimumSeverity
+      _ = config.minimumSeverity
 
       // Create a filter that checks error code and applies level-based filtering
-      let codeFilter: (Error) -> Bool={ error in
-        guard let umbraError=error as? ErrorHandlingInterfaces.UmbraError else {
+      let codeFilter: (Error) -> Bool = { error in
+        guard let umbraError = error as? ErrorHandlingInterfaces.UmbraError else {
           return false
         }
 
@@ -92,12 +131,12 @@ extension ErrorLogger {
   ) -> ErrorLogger {
     configure { config in
       // Capture the minimum log level value
-      _=config.minimumSeverity
+      _ = config.minimumSeverity
 
-      let sourceFilter: (Error) -> Bool={ error in
+      let sourceFilter: (Error) -> Bool = { error in
         guard
-          let umbraError=error as? ErrorHandlingInterfaces.UmbraError,
-          let source=umbraError.source
+          let umbraError = error as? ErrorHandlingInterfaces.UmbraError,
+          let source = umbraError.source
         else {
           return false
         }
@@ -125,14 +164,14 @@ extension ErrorLogger {
   public func setupSystemInfoLogging() -> ErrorLogger {
     configure { config in
       // Add system information as metadata
-      let systemInfoFilter: (Error) -> Bool={ _ in
+      let systemInfoFilter: (Error) -> Bool = { _ in
         // Return false to never filter out errors based on system info
         // This is just used to add system info as metadata
         false
       }
 
       // Set the filter
-      config.filters=[systemInfoFilter]
+      config.filters = [systemInfoFilter]
     }
   }
 }

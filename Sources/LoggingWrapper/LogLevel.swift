@@ -28,4 +28,4 @@ import LoggingWrapperInterfaces
 ///
 /// func logAtLevel(level: LogLevel) { ... }
 /// ```
-public typealias LogLevel=LoggingWrapperInterfaces.LogLevel
+public typealias LogLevel = LoggingWrapperInterfaces.LogLevel

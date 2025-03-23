@@ -124,26 +124,26 @@ public struct ScheduledTaskDTO: Sendable, Equatable {
     status: TaskStatus = .pending,
     configData: String,
     createdAt: UInt64,
-    startedAt: UInt64?=nil,
-    completedAt: UInt64?=nil,
-    duration: UInt64?=nil,
-    errorMessage: String?=nil,
-    resultData: String?=nil,
-    metadata: [String: String]=[:]
+    startedAt: UInt64? = nil,
+    completedAt: UInt64? = nil,
+    duration: UInt64? = nil,
+    errorMessage: String? = nil,
+    resultData: String? = nil,
+    metadata: [String: String] = [:]
   ) {
-    self.id=id
-    self.scheduleID=scheduleID
-    self.name=name
-    self.taskType=taskType
-    self.status=status
-    self.configData=configData
-    self.createdAt=createdAt
-    self.startedAt=startedAt
-    self.completedAt=completedAt
-    self.duration=duration
-    self.errorMessage=errorMessage
-    self.resultData=resultData
-    self.metadata=metadata
+    self.id = id
+    self.scheduleID = scheduleID
+    self.name = name
+    self.taskType = taskType
+    self.status = status
+    self.configData = configData
+    self.createdAt = createdAt
+    self.startedAt = startedAt
+    self.completedAt = completedAt
+    self.duration = duration
+    self.errorMessage = errorMessage
+    self.resultData = resultData
+    self.metadata = metadata
   }
 
   // MARK: - Factory Methods
@@ -245,9 +245,9 @@ public struct ScheduledTaskDTO: Sendable, Equatable {
   /// - Returns: A new ScheduledTaskDTO marked as completed
   public func markAsCompleted(
     at endTime: UInt64,
-    result: String?=nil
+    result: String? = nil
   ) -> ScheduledTaskDTO {
-    let calculatedDuration: UInt64=if let startedAt {
+    let calculatedDuration: UInt64 = if let startedAt {
       endTime > startedAt ? endTime - startedAt : 0
     } else {
       0
@@ -279,7 +279,7 @@ public struct ScheduledTaskDTO: Sendable, Equatable {
     at endTime: UInt64,
     error: String
   ) -> ScheduledTaskDTO {
-    let calculatedDuration: UInt64=if let startedAt {
+    let calculatedDuration: UInt64 = if let startedAt {
       endTime > startedAt ? endTime - startedAt : 0
     } else {
       0
@@ -306,7 +306,7 @@ public struct ScheduledTaskDTO: Sendable, Equatable {
   /// - Parameter endTime: Cancellation time as Unix timestamp
   /// - Returns: A new ScheduledTaskDTO marked as cancelled
   public func markAsCancelled(at endTime: UInt64) -> ScheduledTaskDTO {
-    let calculatedDuration: UInt64=if let startedAt {
+    let calculatedDuration: UInt64 = if let startedAt {
       endTime > startedAt ? endTime - startedAt : 0
     } else {
       0
@@ -333,9 +333,9 @@ public struct ScheduledTaskDTO: Sendable, Equatable {
   /// - Parameter additionalMetadata: The metadata to add or update
   /// - Returns: A new ScheduledTaskDTO with updated metadata
   public func withUpdatedMetadata(_ additionalMetadata: [String: String]) -> ScheduledTaskDTO {
-    var newMetadata=metadata
+    var newMetadata = metadata
     for (key, value) in additionalMetadata {
-      newMetadata[key]=value
+      newMetadata[key] = value
     }
 
     return ScheduledTaskDTO(

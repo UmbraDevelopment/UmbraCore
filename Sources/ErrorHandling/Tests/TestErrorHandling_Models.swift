@@ -1,7 +1,3 @@
-@testable import ErrorHandling
-@testable import ErrorHandlingCommon
-@testable import ErrorHandlingInterfaces
-@testable import ErrorHandlingModels
 import XCTest
 
 final class TestErrorHandling_Models: XCTestCase {
@@ -9,7 +5,7 @@ final class TestErrorHandling_Models: XCTestCase {
 
   func testErrorModel() {
     // Create a test error model
-    let errorModel=MockErrorModel(
+    let errorModel = MockErrorModel(
       domain: "TestDomain",
       code: "TEST001",
       description: "Test error description",
@@ -29,20 +25,20 @@ final class TestErrorHandling_Models: XCTestCase {
 
   func testErrorHierarchyModel() {
     // Create a nested set of errors
-    let rootError=NSError(
+    let rootError = NSError(
       domain: "RootDomain",
       code: 100,
       userInfo: [NSLocalizedDescriptionKey: "Root error"]
     )
 
-    let middleError=TestError(
+    let middleError = TestError(
       domain: "MiddleDomain",
       code: "MID001",
       description: "Middle error",
       underlyingError: rootError
     )
 
-    let topError=TestError(
+    let topError = TestError(
       domain: "TopDomain",
       code: "TOP001",
       description: "Top error",
@@ -50,7 +46,7 @@ final class TestErrorHandling_Models: XCTestCase {
     )
 
     // Create a hierarchy model
-    let hierarchyModel=MockErrorHierarchyModel(error: topError)
+    let hierarchyModel = MockErrorHierarchyModel(error: topError)
 
     // Test hierarchy structure
     XCTAssertEqual(hierarchyModel.errors.count, 1)
@@ -63,7 +59,7 @@ final class TestErrorHandling_Models: XCTestCase {
 
   func testErrorPresentation() {
     // Create a test error
-    let error=TestError(
+    let error = TestError(
       domain: "TestDomain",
       code: "TEST001",
       description: "Test error description",
@@ -75,7 +71,7 @@ final class TestErrorHandling_Models: XCTestCase {
     )
 
     // Create a presentation model
-    let presentationModel=MockErrorPresentationModel(
+    let presentationModel = MockErrorPresentationModel(
       error: error,
       title: "Error Occurred",
       message: "There was a problem with the operation",
@@ -104,8 +100,8 @@ final class TestErrorHandling_Models: XCTestCase {
 
     // Test recovery action execution
     Task {
-      _=await presentationModel.recoveryOptions[0].perform()
-      _=await presentationModel.recoveryOptions[1].perform()
+      _ = await presentationModel.recoveryOptions[0].perform()
+      _ = await presentationModel.recoveryOptions[1].perform()
     }
   }
 
@@ -113,7 +109,7 @@ final class TestErrorHandling_Models: XCTestCase {
 
   func testCreateFromError() {
     // Create an error for testing
-    let error=TestError(
+    let error = TestError(
       domain: "FromErrorDomain",
       code: "ERR002",
       description: "From error description",
@@ -124,14 +120,14 @@ final class TestErrorHandling_Models: XCTestCase {
       )
     )
 
-    let modelFromError=MockErrorModel(error: error)
+    let modelFromError = MockErrorModel(error: error)
 
     XCTAssertEqual(modelFromError.domain, "FromErrorDomain")
     XCTAssertEqual(modelFromError.code, "ERR002")
     XCTAssertEqual(modelFromError.message, "From error description")
 
     // Check source properties individually instead of direct comparison
-    if let modelSource=modelFromError.source, let errorSource=error.source {
+    if let modelSource = modelFromError.source, let errorSource = error.source {
       XCTAssertEqual(modelSource.file, errorSource.file)
       XCTAssertEqual(modelSource.line, errorSource.line)
       XCTAssertEqual(modelSource.function, errorSource.function)
@@ -156,32 +152,32 @@ final class TestErrorHandling_Models: XCTestCase {
       domain: String,
       code: String,
       description: String,
-      source: ErrorHandlingInterfaces.ErrorSource?=nil,
-      underlyingError: Error?=nil
+      source: ErrorHandlingInterfaces.ErrorSource? = nil,
+      underlyingError: Error? = nil
     ) {
-      self.domain=domain
-      self.code=code
-      errorDescription=description
-      self.source=source
-      self.underlyingError=underlyingError
-      context=ErrorHandlingInterfaces.ErrorContext(source: domain, operation: "testOperation")
+      self.domain = domain
+      self.code = code
+      errorDescription = description
+      self.source = source
+      self.underlyingError = underlyingError
+      context = ErrorHandlingInterfaces.ErrorContext(source: domain, operation: "testOperation")
     }
 
     func with(context: ErrorHandlingInterfaces.ErrorContext) -> Self {
-      var copy=self
-      copy.context=context
+      var copy = self
+      copy.context = context
       return copy
     }
 
     func with(underlyingError: Error) -> Self {
-      var copy=self
-      copy.underlyingError=underlyingError
+      var copy = self
+      copy.underlyingError = underlyingError
       return copy
     }
 
     func with(source: ErrorHandlingInterfaces.ErrorSource) -> Self {
-      var copy=self
-      copy.source=source
+      var copy = self
+      copy.source = source
       return copy
     }
 
@@ -194,23 +190,23 @@ final class TestErrorHandling_Models: XCTestCase {
     var id: UUID = .init()
     var title: String
     var description: String?
-    var isDisruptive: Bool=false
+    var isDisruptive: Bool = false
     private var action: @Sendable () -> Bool
 
     init(
       title: String,
-      description: String?=nil,
-      isDisruptive: Bool=false,
+      description: String? = nil,
+      isDisruptive: Bool = false,
       action: @escaping @Sendable () -> Bool
     ) {
-      self.title=title
-      self.description=description
-      self.isDisruptive=isDisruptive
-      self.action=action
+      self.title = title
+      self.description = description
+      self.isDisruptive = isDisruptive
+      self.action = action
     }
 
     func perform() async {
-      _=action()
+      _ = action()
     }
   }
 
@@ -224,24 +220,24 @@ final class TestErrorHandling_Models: XCTestCase {
     let source: ErrorHandlingInterfaces.ErrorSource?
 
     init(error: some UmbraError) {
-      domain=error.domain
-      code=error.code
-      message=error.errorDescription
+      domain = error.domain
+      code = error.code
+      message = error.errorDescription
       severity = .error
-      source=error.source
+      source = error.source
     }
 
     init(
       domain: String,
       code: String,
       description: String,
-      source: ErrorHandlingInterfaces.ErrorSource?=nil
+      source: ErrorHandlingInterfaces.ErrorSource? = nil
     ) {
-      self.domain=domain
-      self.code=code
-      message=description
+      self.domain = domain
+      self.code = code
+      message = description
       severity = .error
-      self.source=source
+      self.source = source
     }
   }
 
@@ -250,21 +246,21 @@ final class TestErrorHandling_Models: XCTestCase {
     let rootCause: MockErrorModel
 
     init(error: Error) {
-      if let umbraError=error as? (any UmbraError) {
-        let rootModel=MockErrorModel(error: umbraError)
-        errors=[rootModel]
-        rootCause=rootModel
+      if let umbraError = error as? (any UmbraError) {
+        let rootModel = MockErrorModel(error: umbraError)
+        errors = [rootModel]
+        rootCause = rootModel
       } else {
-        let nsError=error as NSError
-        let rootModel=MockErrorModel(
+        let nsError = error as NSError
+        let rootModel = MockErrorModel(
           error: TestError(
             domain: nsError.domain,
             code: nsError.code.description,
             description: nsError.localizedDescription
           )
         )
-        errors=[rootModel]
-        rootCause=rootModel
+        errors = [rootModel]
+        rootCause = rootModel
       }
     }
   }

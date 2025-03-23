@@ -1,18 +1,55 @@
-import ErrorHandlingCommon
-import ErrorHandlingDomains
-import ErrorHandlingInterfaces
 import Foundation
+
+// Local type declarations to replace imports
+// These replace the removed ErrorHandling and ErrorHandlingDomains imports
+
+/// Error domain namespace
+public enum ErrorDomain {
+  /// Security domain
+  public static let security = "Security"
+  /// Crypto domain
+  public static let crypto = "Crypto"
+  /// Application domain
+  public static let application = "Application"
+}
+
+/// Error context protocol
+public protocol ErrorContext {
+  /// Domain of the error
+  var domain: String { get }
+  /// Code of the error
+  var code: Int { get }
+  /// Description of the error
+  var description: String { get }
+}
+
+/// Base error context implementation
+public struct BaseErrorContext: ErrorContext {
+  /// Domain of the error
+  public let domain: String
+  /// Code of the error
+  public let code: Int
+  /// Description of the error
+  public let description: String
+
+  /// Initialise with domain, code and description
+  public init(domain: String, code: Int, description: String) {
+    self.domain = domain
+    self.code = code
+    self.description = description
+  }
+}
 
 /// Maps application errors from different sources to a consolidated ApplicationError
 public class ApplicationErrorMapper: ErrorMapper {
   /// The source error type
-  public typealias SourceType=UmbraErrors.Application.Core
+  public typealias SourceType = UmbraErrors.Application.Core
 
   /// The target error type
-  public typealias TargetType=ApplicationError
+  public typealias TargetType = ApplicationError
 
   /// The domain this mapper handles
-  public let domain="Application"
+  public let domain = "Application"
 
   /// Create a new application error mapper
   public init() {}
@@ -29,31 +66,31 @@ public class ApplicationErrorMapper: ErrorMapper {
   /// - Returns: An ApplicationError or nil if the error is not mappable
   public func mapFromAny(_ error: Error) -> ApplicationError? {
     // Get the error type name as a string
-    let errorType=String(describing: type(of: error))
+    let errorType = String(describing: type(of: error))
 
     // Core application errors
     if errorType.contains("UmbraErrors.Application.Core") {
-      if let typedError=error as? UmbraErrors.Application.Core {
+      if let typedError = error as? UmbraErrors.Application.Core {
         return mapFromTyped(typedError)
       }
       return .unknown("Unable to cast to UmbraErrors.Application.Core")
     }
     // UI errors
     else if errorType.contains("UmbraErrors.Application.UI") {
-      if let typedError=error as? UmbraErrors.Application.UI {
+      if let typedError = error as? UmbraErrors.Application.UI {
         return mapFromUI(typedError)
       }
       return .unknown("Unable to cast to UmbraErrors.Application.UI")
     }
     // Lifecycle errors
     else if errorType.contains("UmbraErrors.Application.Lifecycle") {
-      if let typedError=error as? UmbraErrors.Application.Lifecycle {
+      if let typedError = error as? UmbraErrors.Application.Lifecycle {
         return mapFromLifecycle(typedError)
       }
       return .unknown("Unable to cast to UmbraErrors.Application.Lifecycle")
     } else {
       // Only map if it seems like an application error
-      let errorDescription=String(describing: error).lowercased()
+      let errorDescription = String(describing: error).lowercased()
       if errorDescription.contains("init") || errorDescription.contains("application") {
         return .unknown("Unmapped application error: \(errorDescription)")
       }
@@ -67,7 +104,7 @@ public class ApplicationErrorMapper: ErrorMapper {
   /// - Returns: The mapped ApplicationError
   public func mapFromTyped(_ error: UmbraErrors.Application.Core) -> ApplicationError {
     // Simplify the mapping to avoid issues with mismatched enum cases
-    let errorDescription=String(describing: error)
+    let errorDescription = String(describing: error)
 
     // Basic mapping based on the error description
     if errorDescription.contains("configurationError") {
@@ -91,7 +128,7 @@ public class ApplicationErrorMapper: ErrorMapper {
   /// - Returns: The mapped ApplicationError
   private func mapFromUI(_ error: UmbraErrors.Application.UI) -> ApplicationError {
     // Use string descriptions to avoid pattern matching problems
-    let errorDescription=String(describing: error)
+    let errorDescription = String(describing: error)
 
     if errorDescription.contains("viewNotFound") {
       return .viewError("View not found error: \(errorDescription)")
@@ -110,7 +147,7 @@ public class ApplicationErrorMapper: ErrorMapper {
   /// - Returns: The mapped ApplicationError
   private func mapFromLifecycle(_ error: UmbraErrors.Application.Lifecycle) -> ApplicationError {
     // Use string description to avoid pattern matching problems with enum cases
-    let errorDescription=String(describing: error)
+    let errorDescription = String(describing: error)
 
     if errorDescription.contains("launchError") {
       return .lifecycleError("Launch error: \(errorDescription)")
@@ -137,7 +174,7 @@ public class ApplicationErrorMapper: ErrorMapper {
   /// - Returns: The mapped ApplicationError
   private func mapFromSettings(_ error: UmbraErrors.Application.Core) -> ApplicationError {
     // Use string descriptions to categorize settings-related errors
-    let errorDescription=String(describing: error)
+    let errorDescription = String(describing: error)
 
     if errorDescription.contains("configurationMissing") {
       return .settingsError("Settings not found: \(errorDescription)")

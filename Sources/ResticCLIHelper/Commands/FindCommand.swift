@@ -12,7 +12,7 @@ public final class FindCommand: ResticCommand, @unchecked Sendable {
   public var commandName: String { "find" }
 
   public var commandArguments: [String] {
-    var args=[String]()
+    var args = [String]()
 
     // Add patterns
     args.append(contentsOf: patterns)
@@ -38,23 +38,23 @@ public final class FindCommand: ResticCommand, @unchecked Sendable {
   public init(
     options: CommonOptions,
     patterns: [String],
-    snapshotID: String?=nil,
-    ignoreCase: Bool=false,
-    longFormat: Bool=false
+    snapshotID: String? = nil,
+    ignoreCase: Bool = false,
+    longFormat: Bool = false
   ) {
-    self.options=options
-    self.patterns=patterns
-    self.snapshotID=snapshotID
-    self.ignoreCase=ignoreCase
-    self.longFormat=longFormat
+    self.options = options
+    self.patterns = patterns
+    self.snapshotID = snapshotID
+    self.ignoreCase = ignoreCase
+    self.longFormat = longFormat
   }
 
   public var environment: [String: String] {
-    var env=options.environmentVariables
-    env["RESTIC_REPOSITORY"]=options.repository
-    env["RESTIC_PASSWORD"]=options.password
-    if let cachePath=options.cachePath {
-      env["RESTIC_CACHE_DIR"]=cachePath
+    var env = options.environmentVariables
+    env["RESTIC_REPOSITORY"] = options.repository
+    env["RESTIC_PASSWORD"] = options.password
+    if let cachePath = options.cachePath {
+      env["RESTIC_CACHE_DIR"] = cachePath
     }
     return env
   }

@@ -51,13 +51,13 @@ public struct FilePathDTO: Sendable, Equatable {
     fileName: String,
     directoryPath: String,
     resourceType: ResourceType = .unknown,
-    isAbsolute: Bool=true
+    isAbsolute: Bool = true
   ) {
-    self.path=path
-    self.fileName=fileName
-    self.directoryPath=directoryPath
-    self.resourceType=resourceType
-    self.isAbsolute=isAbsolute
+    self.path = path
+    self.fileName = fileName
+    self.directoryPath = directoryPath
+    self.resourceType = resourceType
+    self.isAbsolute = isAbsolute
   }
 
   // MARK: - Factory Methods
@@ -67,10 +67,10 @@ public struct FilePathDTO: Sendable, Equatable {
   /// - Returns: A new FilePathDTO
   public static func fromString(_ path: String) -> FilePathDTO {
     // Simple path component extraction
-    let components=path.split(separator: "/")
-    let fileName=components.last.map(String.init) ?? ""
-    let directoryPath=components.dropLast().joined(separator: "/")
-    let fullDirectoryPath=path.hasPrefix("/") ? "/\(directoryPath)" : directoryPath
+    let components = path.split(separator: "/")
+    let fileName = components.last.map(String.init) ?? ""
+    let directoryPath = components.dropLast().joined(separator: "/")
+    let fullDirectoryPath = path.hasPrefix("/") ? "/\(directoryPath)" : directoryPath
 
     return FilePathDTO(
       path: path,
@@ -84,8 +84,8 @@ public struct FilePathDTO: Sendable, Equatable {
   /// Create a temporary file path
   /// - Parameter prefix: Optional file name prefix
   /// - Returns: A path to a temporary location
-  public static func temporary(prefix: String="tmp") -> FilePathDTO {
-    let uniqueName="\(prefix)_\(UUID().uuidString)"
+  public static func temporary(prefix: String = "tmp") -> FilePathDTO {
+    let uniqueName = "\(prefix)_\(UUID().uuidString)"
     return FilePathDTO(
       path: "/tmp/\(uniqueName)",
       fileName: uniqueName,
@@ -102,7 +102,7 @@ extension FilePathDTO {
   /// - Parameter component: Component to append
   /// - Returns: A new path with the component appended
   public func appendingComponent(_ component: String) -> FilePathDTO {
-    let newPath="\(path)/\(component)"
+    let newPath = "\(path)/\(component)"
     return FilePathDTO.fromString(newPath)
   }
 

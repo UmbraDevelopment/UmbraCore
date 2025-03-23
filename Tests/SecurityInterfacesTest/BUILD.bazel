@@ -1,21 +1,11 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
-load("//:bazel/macros/swift.bzl", "umbra_swift_library")
 
 swift_library(
     name = "SecurityInterfacesTest",
-    testonly = True,
-    srcs = glob(["**/*.swift"], allow_empty = True),
-    copts = [
-        "-target",
-        "arm64-apple-macos14.0",
-        "-strict-concurrency=complete",
-        "-enable-actor-data-race-checks",
-        "-warn-concurrency",
-    ],
-    module_name = "SecurityInterfacesTest",
-    visibility = ["//visibility:public"],
+    srcs = glob(["**/*.swift"]),
     deps = [
         "//Sources/SecurityInterfaces",
-        "//Sources/SecurityInterfacesBase",
+        "//Sources/ErrorHandling",
     ],
+    visibility = ["//visibility:public"],
 )

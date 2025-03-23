@@ -19,10 +19,10 @@ public struct SecurityOperationResult: Sendable, Equatable {
   /// Create a successful result with data
   /// - Parameter data: The result data
   public init(data: SecureBytes) {
-    self.data=data
-    errorCode=nil
-    errorMessage=nil
-    success=true
+    self.data = data
+    errorCode = nil
+    errorMessage = nil
+    success = true
   }
 
   /// Create a failure result with error details
@@ -30,10 +30,10 @@ public struct SecurityOperationResult: Sendable, Equatable {
   ///   - code: Error code
   ///   - message: Error message
   public init(errorCode: Int, errorMessage: String) {
-    data=nil
-    self.errorCode=errorCode
-    self.errorMessage=errorMessage
-    success=false
+    data = nil
+    self.errorCode = errorCode
+    self.errorMessage = errorMessage
+    success = false
   }
 
   /// Convert to a DTO

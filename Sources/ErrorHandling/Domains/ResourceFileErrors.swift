@@ -1,5 +1,44 @@
-import ErrorHandlingInterfaces
 import Foundation
+
+// Local type declarations to replace imports
+// These replace the removed ErrorHandling and ErrorHandlingDomains imports
+
+/// Error domain namespace
+public enum ErrorDomain {
+  /// Security domain
+  public static let security = "Security"
+  /// Crypto domain
+  public static let crypto = "Crypto"
+  /// Application domain
+  public static let application = "Application"
+}
+
+/// Error context protocol
+public protocol ErrorContext {
+  /// Domain of the error
+  var domain: String { get }
+  /// Code of the error
+  var code: Int { get }
+  /// Description of the error
+  var description: String { get }
+}
+
+/// Base error context implementation
+public struct BaseErrorContext: ErrorContext {
+  /// Domain of the error
+  public let domain: String
+  /// Code of the error
+  public let code: Int
+  /// Description of the error
+  public let description: String
+
+  /// Initialise with domain, code and description
+  public init(domain: String, code: Int, description: String) {
+    self.domain = domain
+    self.code = code
+    self.description = description
+  }
+}
 
 extension UmbraErrors.Resource {
   /// File system specific resource errors
@@ -126,7 +165,7 @@ extension UmbraErrors.Resource {
         case let .copyFailed(sourcePath, destinationPath, reason):
           return "Failed to copy file from '\(sourcePath)' to '\(destinationPath)': \(reason)"
         case let .fileInUse(path, processName):
-          if let process=processName {
+          if let process = processName {
             return "File '\(path)' is in use by process: \(process)"
           } else {
             return "File '\(path)' is in use by another process"
@@ -134,8 +173,8 @@ extension UmbraErrors.Resource {
         case let .readOnlyFileSystem(path):
           return "File system is read-only for path: \(path)"
         case let .diskFull(path, requiredBytes, availableBytes):
-          var message="Disk is full for path: \(path)"
-          if let required=requiredBytes, let available=availableBytes {
+          var message = "Disk is full for path: \(path)"
+          if let required = requiredBytes, let available = availableBytes {
             message += " (required: \(required) bytes, available: \(available) bytes)"
           }
           return message
@@ -225,9 +264,9 @@ extension UmbraErrors.Resource.File {
   /// Create an error for a file that could not be found
   public static func makeFileNotFound(
     path: String,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .fileNotFound(path: path)
   }
@@ -235,9 +274,9 @@ extension UmbraErrors.Resource.File {
   /// Create an error for a directory that could not be found
   public static func makeDirectoryNotFound(
     path: String,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .directoryNotFound(path: path)
   }
@@ -246,9 +285,9 @@ extension UmbraErrors.Resource.File {
   public static func makeReadError(
     path: String,
     reason: String,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .readFailed(path: path, reason: reason)
   }
@@ -257,9 +296,9 @@ extension UmbraErrors.Resource.File {
   public static func makeWriteError(
     path: String,
     reason: String,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .writeFailed(path: path, reason: reason)
   }
@@ -268,9 +307,9 @@ extension UmbraErrors.Resource.File {
   public static func makePermissionError(
     path: String,
     operation: String,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .permissionDenied(path: path, operation: operation)
   }
@@ -278,9 +317,9 @@ extension UmbraErrors.Resource.File {
   /// Create an error for a file that already exists
   public static func makeFileAlreadyExists(
     path: String,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .fileAlreadyExists(path: path)
   }
@@ -288,9 +327,9 @@ extension UmbraErrors.Resource.File {
   /// Create an error for a directory that already exists
   public static func makeDirectoryAlreadyExists(
     path: String,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .directoryAlreadyExists(path: path)
   }
@@ -299,9 +338,9 @@ extension UmbraErrors.Resource.File {
   public static func makeDeleteError(
     path: String,
     reason: String,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .deleteFailed(path: path, reason: reason)
   }
@@ -310,9 +349,9 @@ extension UmbraErrors.Resource.File {
   public static func makeCreateDirectoryError(
     path: String,
     reason: String,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .createDirectoryFailed(path: path, reason: reason)
   }
@@ -322,9 +361,9 @@ extension UmbraErrors.Resource.File {
     sourcePath: String,
     destinationPath: String,
     reason: String,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .moveFailed(sourcePath: sourcePath, destinationPath: destinationPath, reason: reason)
   }
@@ -334,9 +373,9 @@ extension UmbraErrors.Resource.File {
     sourcePath: String,
     destinationPath: String,
     reason: String,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .copyFailed(sourcePath: sourcePath, destinationPath: destinationPath, reason: reason)
   }
@@ -344,10 +383,10 @@ extension UmbraErrors.Resource.File {
   /// Create an error for a file in use scenario
   public static func makeFileInUseError(
     path: String,
-    processName: String?=nil,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    processName: String? = nil,
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .fileInUse(path: path, processName: processName)
   }
@@ -355,9 +394,9 @@ extension UmbraErrors.Resource.File {
   /// Create an error for a read-only file system scenario
   public static func makeReadOnlyFileSystemError(
     path: String,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .readOnlyFileSystem(path: path)
   }
@@ -365,11 +404,11 @@ extension UmbraErrors.Resource.File {
   /// Create an error for a disk full scenario
   public static func makeDiskFullError(
     path: String,
-    requiredBytes: Int64?=nil,
-    availableBytes: Int64?=nil,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    requiredBytes: Int64? = nil,
+    availableBytes: Int64? = nil,
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .diskFull(path: path, requiredBytes: requiredBytes, availableBytes: availableBytes)
   }
@@ -378,9 +417,9 @@ extension UmbraErrors.Resource.File {
   public static func makeFileCorruptError(
     path: String,
     reason: String,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .fileCorrupt(path: path, reason: reason)
   }
@@ -389,9 +428,9 @@ extension UmbraErrors.Resource.File {
   public static func makeInvalidPathError(
     path: String,
     reason: String,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .invalidPath(path: path, reason: reason)
   }

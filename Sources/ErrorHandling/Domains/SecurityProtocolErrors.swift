@@ -1,5 +1,44 @@
-import ErrorHandlingInterfaces
 import Foundation
+
+// Local type declarations to replace imports
+// These replace the removed ErrorHandling and ErrorHandlingDomains imports
+
+/// Error domain namespace
+public enum ErrorDomain {
+  /// Security domain
+  public static let security = "Security"
+  /// Crypto domain
+  public static let crypto = "Crypto"
+  /// Application domain
+  public static let application = "Application"
+}
+
+/// Error context protocol
+public protocol ErrorContext {
+  /// Domain of the error
+  var domain: String { get }
+  /// Code of the error
+  var code: Int { get }
+  /// Description of the error
+  var description: String { get }
+}
+
+/// Base error context implementation
+public struct BaseErrorContext: ErrorContext {
+  /// Domain of the error
+  public let domain: String
+  /// Code of the error
+  public let code: Int
+  /// Description of the error
+  public let description: String
+
+  /// Initialise with domain, code and description
+  public init(domain: String, code: Int, description: String) {
+    self.domain = domain
+    self.code = code
+    self.description = description
+  }
+}
 
 extension UmbraErrors.Security {
   /// Protocol implementation errors in the security domain
@@ -187,9 +226,9 @@ extension UmbraErrors.Security.Protocols {
   /// Create a missing protocol implementation error
   public static func makeMissingImplementation(
     protocolName: String,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .missingProtocolImplementation(protocolName: protocolName)
   }
@@ -197,9 +236,9 @@ extension UmbraErrors.Security.Protocols {
   /// Create an invalid format error
   public static func makeInvalidFormat(
     reason: String,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .invalidFormat(reason: reason)
   }
@@ -207,9 +246,9 @@ extension UmbraErrors.Security.Protocols {
   /// Create an unsupported operation error
   public static func makeUnsupportedOperation(
     name: String,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .unsupportedOperation(name: name)
   }
@@ -218,9 +257,9 @@ extension UmbraErrors.Security.Protocols {
   public static func makeInvalidState(
     state: String,
     expectedState: String,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .invalidState(state: state, expectedState: expectedState)
   }
@@ -228,9 +267,9 @@ extension UmbraErrors.Security.Protocols {
   /// Create an incompatible version error
   public static func makeIncompatibleVersion(
     version: String,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .incompatibleVersion(version: version)
   }
@@ -238,9 +277,9 @@ extension UmbraErrors.Security.Protocols {
   /// Create an internal error
   public static func makeInternalError(
     message: String,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .internalError(message)
   }
@@ -248,9 +287,9 @@ extension UmbraErrors.Security.Protocols {
   /// Create an invalid input error
   public static func makeInvalidInput(
     message: String,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .invalidInput(message)
   }
@@ -258,9 +297,9 @@ extension UmbraErrors.Security.Protocols {
   /// Create an encryption failed error
   public static func makeEncryptionFailed(
     message: String,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .encryptionFailed(message)
   }
@@ -268,9 +307,9 @@ extension UmbraErrors.Security.Protocols {
   /// Create a decryption failed error
   public static func makeDecryptionFailed(
     message: String,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .decryptionFailed(message)
   }
@@ -278,9 +317,9 @@ extension UmbraErrors.Security.Protocols {
   /// Create a random generation failed error
   public static func makeRandomGenerationFailed(
     message: String,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .randomGenerationFailed(message)
   }
@@ -288,9 +327,9 @@ extension UmbraErrors.Security.Protocols {
   /// Create a storage operation failed error
   public static func makeStorageOperationFailed(
     message: String,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .storageOperationFailed(message)
   }
@@ -298,9 +337,9 @@ extension UmbraErrors.Security.Protocols {
   /// Create a service error
   public static func makeServiceError(
     message: String,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .serviceError(message)
   }
@@ -308,9 +347,9 @@ extension UmbraErrors.Security.Protocols {
   /// Create a not implemented error
   public static func makeNotImplemented(
     message: String,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .notImplemented(message)
   }

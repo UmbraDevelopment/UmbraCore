@@ -7,12 +7,12 @@ import UmbraCoreTypes
 public final class KeychainSecureStorage: SecureStorageProtocol {
   // This acts as a simple wrapper around the KeychainService
   private let keychain: KeychainServiceProtocol
-  private let serviceName="UmbraKeychainStorage"
+  private let serviceName = "UmbraKeychainStorage"
 
   /// Initialize with a keychain service
   /// - Parameter keychainService: The keychain service to use
   public init(keychainService: KeychainServiceProtocol) {
-    keychain=keychainService
+    keychain = keychainService
   }
 
   /// Stores data securely with the given identifier
@@ -23,7 +23,7 @@ public final class KeychainSecureStorage: SecureStorageProtocol {
   public func storeSecurely(data: SecureBytes, identifier: String) async -> KeyStorageResult {
     do {
       // Convert SecureBytes to Data
-      let dataToStore=Data(data.withUnsafeBytes { Array($0) })
+      let dataToStore = Data(data.withUnsafeBytes { Array($0) })
       try await keychain.addItem(
         dataToStore,
         account: identifier,
@@ -43,15 +43,15 @@ public final class KeychainSecureStorage: SecureStorageProtocol {
   /// - Returns: The retrieved data or an error
   public func retrieveSecurely(identifier: String) async -> KeyRetrievalResult {
     do {
-      let data=try await keychain.readItem(
+      let data = try await keychain.readItem(
         account: identifier,
         service: serviceName,
         accessGroup: nil
       )
-      let bytes=[UInt8](data)
+      let bytes = [UInt8](data)
       return .success(SecureBytes(bytes: bytes))
     } catch {
-      if let keychainError=error as? KeychainError, case .itemNotFound=keychainError {
+      if let keychainError = error as? KeychainError, case .itemNotFound = keychainError {
         return .failure(.keyNotFound)
       }
       return .failure(.storageFailure)

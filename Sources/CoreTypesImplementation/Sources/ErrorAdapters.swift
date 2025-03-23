@@ -7,7 +7,7 @@ import UmbraCoreTypes
 // we need to use the correct type paths to avoid ambiguity issues
 
 /// Type alias for UmbraErrors.Security.Core - our target error type
-public typealias CESecurityError=UmbraErrors.Security.Core
+public typealias CESecurityError = UmbraErrors.Security.Core
 
 /// Create a local SecureBytesError enum that mirrors the one in UmbraCoreTypes.CoreErrors
 public enum SecureBytesError: Error, Equatable {
@@ -23,7 +23,7 @@ public struct ExternalError: Error, Equatable {
 
   /// Initialize with a reason
   public init(reason: String) {
-    self.reason=reason
+    self.reason = reason
   }
 }
 
@@ -37,7 +37,7 @@ public struct ExternalError: Error, Equatable {
 /// - Returns: The equivalent UmbraErrors.Security.Core
 public func mapExternalToCoreError(_ error: Error) -> CESecurityError {
   // If already the correct type, return as is
-  if let securityError=error as? CESecurityError {
+  if let securityError = error as? CESecurityError {
     return securityError
   }
 
@@ -89,12 +89,12 @@ public func mapToSecurityResult<T>(_ result: Result<T, Error>)
 /// - Parameter error: The external error to map
 /// - Returns: A CoreErrors.SecurityError
 public func externalErrorToCoreError(_ error: Error) -> CESecurityError {
-  if let securityError=error as? CESecurityError {
+  if let securityError = error as? CESecurityError {
     return securityError
   }
 
   // Map based on error type
-  if let externalError=error as? ExternalError {
+  if let externalError = error as? ExternalError {
     return CESecurityError.internalError(reason: externalError.reason)
   }
 

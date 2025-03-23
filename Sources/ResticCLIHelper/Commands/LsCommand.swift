@@ -12,7 +12,7 @@ public final class LsCommand: ResticCommand, @unchecked Sendable {
   public var commandName: String { "ls" }
 
   public var commandArguments: [String] {
-    var args=[String]()
+    var args = [String]()
 
     // Add snapshot ID
     args.append(snapshotID)
@@ -37,23 +37,23 @@ public final class LsCommand: ResticCommand, @unchecked Sendable {
   public init(
     options: CommonOptions,
     snapshotID: String,
-    path: String?=nil,
-    longFormat: Bool=false,
-    recursive: Bool=false
+    path: String? = nil,
+    longFormat: Bool = false,
+    recursive: Bool = false
   ) {
-    self.options=options
-    self.snapshotID=snapshotID
-    self.path=path
-    self.longFormat=longFormat
-    self.recursive=recursive
+    self.options = options
+    self.snapshotID = snapshotID
+    self.path = path
+    self.longFormat = longFormat
+    self.recursive = recursive
   }
 
   public var environment: [String: String] {
-    var env=options.environmentVariables
-    env["RESTIC_REPOSITORY"]=options.repository
-    env["RESTIC_PASSWORD"]=options.password
-    if let cachePath=options.cachePath {
-      env["RESTIC_CACHE_DIR"]=cachePath
+    var env = options.environmentVariables
+    env["RESTIC_REPOSITORY"] = options.repository
+    env["RESTIC_PASSWORD"] = options.password
+    if let cachePath = options.cachePath {
+      env["RESTIC_CACHE_DIR"] = cachePath
     }
     return env
   }

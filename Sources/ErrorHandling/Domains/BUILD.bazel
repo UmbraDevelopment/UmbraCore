@@ -3,8 +3,8 @@ load("//:bazel/macros/swift.bzl", "umbra_swift_library")
 umbra_swift_library(
     name = "ErrorHandlingDomains",
     srcs = glob(["*.swift"]),
+    enable_library_evolution = True,
     deps = [
-        "//Sources/ErrorHandling/Common:ErrorHandlingCommon",
         "//Sources/ErrorHandling/Interfaces:ErrorHandlingInterfaces",
     ],
 )

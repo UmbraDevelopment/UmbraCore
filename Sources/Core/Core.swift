@@ -92,11 +92,11 @@ import ObjCBridgingTypesFoundation
 /// Core framework initialisation and management
 public enum Core {
   /// Current version of the Core module
-  public static let version="1.0.0"
+  public static let version = "1.0.0"
 
   /// Flag indicating whether the Core framework has been initialised
   @MainActor
-  private static var isInitialized=false
+  private static var isInitialized = false
 
   /// Initialises the core framework and its essential services.
   /// - Throws: CoreError if framework is already initialised or if service initialisation fails
@@ -108,7 +108,7 @@ public enum Core {
     }
 
     // Mark framework as initialized
-    isInitialized=true
+    isInitialized = true
 
     // Note: When ServiceContainer is implemented, add:
     // try await ServiceContainer.shared.initialize()

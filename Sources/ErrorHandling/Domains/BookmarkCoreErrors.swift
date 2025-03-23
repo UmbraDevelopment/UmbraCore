@@ -1,5 +1,44 @@
-import ErrorHandlingInterfaces
 import Foundation
+
+// Local type declarations to replace imports
+// These replace the removed ErrorHandling and ErrorHandlingDomains imports
+
+/// Error domain namespace
+public enum ErrorDomain {
+  /// Security domain
+  public static let security = "Security"
+  /// Crypto domain
+  public static let crypto = "Crypto"
+  /// Application domain
+  public static let application = "Application"
+}
+
+/// Error context protocol
+public protocol ErrorContext {
+  /// Domain of the error
+  var domain: String { get }
+  /// Code of the error
+  var code: Int { get }
+  /// Description of the error
+  var description: String { get }
+}
+
+/// Base error context implementation
+public struct BaseErrorContext: ErrorContext {
+  /// Domain of the error
+  public let domain: String
+  /// Code of the error
+  public let code: Int
+  /// Description of the error
+  public let description: String
+
+  /// Initialise with domain, code and description
+  public init(domain: String, code: Int, description: String) {
+    self.domain = domain
+    self.code = code
+    self.description = description
+  }
+}
 
 extension UmbraErrors.Bookmark {
   /// Core bookmark errors related to bookmark creation, resolution, and access
@@ -89,45 +128,45 @@ extension UmbraErrors.Bookmark {
     public var errorDescription: String {
       switch self {
         case let .creationFailed(url, reason):
-          let baseMessage="Failed to create bookmark for file at \(url.path)"
+          let baseMessage = "Failed to create bookmark for file at \(url.path)"
           return reason.map { "\(baseMessage): \($0)" } ?? baseMessage
         case let .resolutionFailed(reason, underlyingError):
-          var baseMessage="Failed to resolve bookmark"
+          var baseMessage = "Failed to resolve bookmark"
           if let reason {
             baseMessage += ": \(reason)"
           }
-          if let error=underlyingError {
+          if let error = underlyingError {
             baseMessage += " (\(error.localizedDescription))"
           }
           return baseMessage
         case let .staleBookmark(url):
           return "Bookmark is stale for file at \(url.path)"
         case let .invalidBookmarkData(reason):
-          let baseMessage="Invalid bookmark data format"
+          let baseMessage = "Invalid bookmark data format"
           return reason.map { "\(baseMessage): \($0)" } ?? baseMessage
         case let .accessDenied(url, reason):
-          let baseMessage="Access denied to file at \(url.path)"
+          let baseMessage = "Access denied to file at \(url.path)"
           return reason.map { "\(baseMessage): \($0)" } ?? baseMessage
         case let .startAccessFailed(url, reason):
-          let baseMessage="Failed to start security-scoped access for \(url.path)"
+          let baseMessage = "Failed to start security-scoped access for \(url.path)"
           return reason.map { "\(baseMessage): \($0)" } ?? baseMessage
         case let .stopAccessFailed(url, reason):
-          let baseMessage="Failed to stop security-scoped access for \(url.path)"
+          let baseMessage = "Failed to stop security-scoped access for \(url.path)"
           return reason.map { "\(baseMessage): \($0)" } ?? baseMessage
         case let .fileNotFound(url):
           return "File does not exist at \(url.path)"
         case let .permissionDenied(url):
           return "Permission denied for file at \(url.path)"
         case let .fileRelocated(originalURL, currentURL):
-          let baseMessage="File relocated from \(originalURL.path)"
+          let baseMessage = "File relocated from \(originalURL.path)"
           return currentURL.map { "\(baseMessage) to \($0.path)" } ?? baseMessage
         case let .unsupportedFileType(url, fileType):
           return "Unsupported file type '\(fileType)' for bookmarking at \(url.path)"
         case let .serialisationFailed(reason):
-          let baseMessage="Failed to serialise bookmark data"
+          let baseMessage = "Failed to serialise bookmark data"
           return reason.map { "\(baseMessage): \($0)" } ?? baseMessage
         case let .deserialisationFailed(reason):
-          let baseMessage="Failed to deserialise bookmark data"
+          let baseMessage = "Failed to deserialise bookmark data"
           return reason.map { "\(baseMessage): \($0)" } ?? baseMessage
       }
     }
@@ -139,7 +178,7 @@ extension UmbraErrors.Bookmark {
 
     /// The underlying error, if any
     public var underlyingError: Error? {
-      if case let .resolutionFailed(_, error)=self {
+      if case let .resolutionFailed(_, error) = self {
         return error
       }
       return nil // Underlying error is typically set when the error is created with context
@@ -191,7 +230,7 @@ extension UmbraErrors.Bookmark {
     /// Creates a new instance of the error with a specified underlying error
     public func with(underlyingError: Error) -> Self {
       // Since only resolutionFailed supports an underlying error directly
-      if case let .resolutionFailed(reason, _)=self {
+      if case let .resolutionFailed(reason, _) = self {
         return .resolutionFailed(reason: reason, underlyingError: underlyingError)
       }
       // For other cases, we would need a more complex implementation to store the error
@@ -212,21 +251,21 @@ extension UmbraErrors.Bookmark.Core {
   /// Create an error for a failed bookmark creation
   public static func makeCreationFailedError(
     url: URL,
-    reason: String?=nil,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    reason: String? = nil,
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .creationFailed(url: url, reason: reason)
   }
 
   /// Create an error for a failed bookmark resolution
   public static func makeResolutionFailedError(
-    reason: String?=nil,
-    underlyingError: Error?=nil,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    reason: String? = nil,
+    underlyingError: Error? = nil,
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .resolutionFailed(reason: reason, underlyingError: underlyingError)
   }
@@ -234,9 +273,9 @@ extension UmbraErrors.Bookmark.Core {
   /// Create an error for a stale bookmark
   public static func makeStaleBookmarkError(
     url: URL,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .staleBookmark(url: url)
   }
@@ -244,9 +283,9 @@ extension UmbraErrors.Bookmark.Core {
   /// Create an error for a file not found
   public static func makeFileNotFoundError(
     url: URL,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .fileNotFound(url: url)
   }
@@ -254,10 +293,10 @@ extension UmbraErrors.Bookmark.Core {
   /// Create an error for access denied
   public static func makeAccessDeniedError(
     url: URL,
-    reason: String?=nil,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    reason: String? = nil,
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .accessDenied(url: url, reason: reason)
   }

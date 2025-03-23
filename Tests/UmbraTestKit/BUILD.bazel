@@ -1,13 +1,10 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
-load("//:bazel/macros/swift.bzl", "umbra_swift_library")
 
-# This is an umbrella target for the TestKit and its Tests
-# Add a placeholder file to satisfy the non-empty srcs requirement
-umbra_swift_library(
+swift_library(
     name = "UmbraTestKit",
-    testonly = True,
-    srcs = ["placeholder.swift"],
+    srcs = glob(["**/*.swift"]),
     deps = [
         "//Tests/UmbraTestKit/TestKit",
     ],
+    visibility = ["//visibility:public"],
 )

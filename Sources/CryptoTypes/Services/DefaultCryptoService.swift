@@ -19,8 +19,8 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
   public init() {}
 
   public func generateSecureRandomKey(length: Int) async throws -> Data {
-    var bytes=[UInt8](repeating: 0, count: length)
-    let status=SecRandomCopyBytes(kSecRandomDefault, length, &bytes)
+    var bytes = [UInt8](repeating: 0, count: length)
+    let status = SecRandomCopyBytes(kSecRandomDefault, length, &bytes)
     guard status == errSecSuccess else {
       throw UmbraErrors.Crypto.Core
         .randomGenerationFailed(reason: "Random generation failed with status: \(status)")
@@ -29,8 +29,8 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
   }
 
   public func generateSecureRandomBytes(length: Int) async throws -> Data {
-    var bytes=[UInt8](repeating: 0, count: length)
-    let status=SecRandomCopyBytes(kSecRandomDefault, length, &bytes)
+    var bytes = [UInt8](repeating: 0, count: length)
+    let status = SecRandomCopyBytes(kSecRandomDefault, length, &bytes)
     guard status == errSecSuccess else {
       throw UmbraErrors.Crypto.Core
         .randomGenerationFailed(reason: "Random generation failed with status: \(status)")

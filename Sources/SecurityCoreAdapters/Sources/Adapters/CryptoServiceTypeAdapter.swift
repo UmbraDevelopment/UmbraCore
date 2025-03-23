@@ -25,10 +25,10 @@ public struct CryptoServiceTypeAdapter<
   ///   - transformations: Optional custom transformations for adapting types
   public init(
     adaptee: Adaptee,
-    transformations: Transformations=Transformations()
+    transformations: Transformations = Transformations()
   ) {
-    self.adaptee=adaptee
-    self.transformations=transformations
+    self.adaptee = adaptee
+    self.transformations = transformations
   }
 
   // MARK: - CryptoServiceProtocol Implementation
@@ -37,10 +37,10 @@ public struct CryptoServiceTypeAdapter<
     data: SecureBytes,
     using key: SecureBytes
   ) async -> Result<SecureBytes, SecurityError> {
-    let transformedData=transformations.transformInputData?(data) ?? data
-    let transformedKey=transformations.transformInputKey?(key) ?? key
+    let transformedData = transformations.transformInputData?(data) ?? data
+    let transformedKey = transformations.transformInputKey?(key) ?? key
 
-    let result=await adaptee.encrypt(data: transformedData, using: transformedKey)
+    let result = await adaptee.encrypt(data: transformedData, using: transformedKey)
 
     return result.map { transformations.transformOutputData?($0) ?? $0 }
   }
@@ -49,24 +49,24 @@ public struct CryptoServiceTypeAdapter<
     data: SecureBytes,
     using key: SecureBytes
   ) async -> Result<SecureBytes, SecurityError> {
-    let transformedData=transformations.transformInputData?(data) ?? data
-    let transformedKey=transformations.transformInputKey?(key) ?? key
+    let transformedData = transformations.transformInputData?(data) ?? data
+    let transformedKey = transformations.transformInputKey?(key) ?? key
 
-    let result=await adaptee.decrypt(data: transformedData, using: transformedKey)
+    let result = await adaptee.decrypt(data: transformedData, using: transformedKey)
 
     return result.map { transformations.transformOutputData?($0) ?? $0 }
   }
 
   public func hash(data: SecureBytes) async -> Result<SecureBytes, SecurityError> {
-    let transformedData=transformations.transformInputData?(data) ?? data
+    let transformedData = transformations.transformInputData?(data) ?? data
 
-    let result=await adaptee.hash(data: transformedData)
+    let result = await adaptee.hash(data: transformedData)
 
     return result.map { transformations.transformOutputData?($0) ?? $0 }
   }
 
   public func generateKey() async -> Result<SecureBytes, SecurityError> {
-    let result=await adaptee.generateKey()
+    let result = await adaptee.generateKey()
 
     return result.map { transformations.transformOutputKey?($0) ?? $0 }
   }
@@ -75,14 +75,14 @@ public struct CryptoServiceTypeAdapter<
     data: SecureBytes,
     against hash: SecureBytes
   ) async -> Result<Bool, SecurityError> {
-    let transformedData=transformations.transformInputData?(data) ?? data
-    let transformedHash=transformations.transformInputData?(hash) ?? hash
+    let transformedData = transformations.transformInputData?(data) ?? data
+    let transformedHash = transformations.transformInputData?(hash) ?? hash
 
     return await adaptee.verify(data: transformedData, against: transformedHash)
   }
 
   public func generateRandomData(length: Int) async -> Result<SecureBytes, SecurityError> {
-    let result=await adaptee.generateRandomData(length: length)
+    let result = await adaptee.generateRandomData(length: length)
 
     return result.map { transformations.transformOutputData?($0) ?? $0 }
   }
@@ -94,8 +94,8 @@ public struct CryptoServiceTypeAdapter<
     key: SecureBytes,
     config: SecurityConfigDTO
   ) async -> Result<SecureBytes, SecurityError> {
-    let transformedData=transformations.transformInputData?(data) ?? data
-    let transformedKey=transformations.transformInputKey?(key) ?? key
+    let transformedData = transformations.transformInputData?(data) ?? data
+    let transformedKey = transformations.transformInputKey?(key) ?? key
 
     return await adaptee.encryptSymmetric(
       data: transformedData,
@@ -109,8 +109,8 @@ public struct CryptoServiceTypeAdapter<
     key: SecureBytes,
     config: SecurityConfigDTO
   ) async -> Result<SecureBytes, SecurityError> {
-    let transformedData=transformations.transformInputData?(data) ?? data
-    let transformedKey=transformations.transformInputKey?(key) ?? key
+    let transformedData = transformations.transformInputData?(data) ?? data
+    let transformedKey = transformations.transformInputKey?(key) ?? key
 
     return await adaptee.decryptSymmetric(
       data: transformedData,
@@ -124,8 +124,8 @@ public struct CryptoServiceTypeAdapter<
     publicKey: SecureBytes,
     config: SecurityConfigDTO
   ) async -> Result<SecureBytes, SecurityError> {
-    let transformedData=transformations.transformInputData?(data) ?? data
-    let transformedKey=transformations.transformInputKey?(publicKey) ?? publicKey
+    let transformedData = transformations.transformInputData?(data) ?? data
+    let transformedKey = transformations.transformInputKey?(publicKey) ?? publicKey
 
     return await adaptee.encryptAsymmetric(
       data: transformedData,
@@ -139,8 +139,8 @@ public struct CryptoServiceTypeAdapter<
     privateKey: SecureBytes,
     config: SecurityConfigDTO
   ) async -> Result<SecureBytes, SecurityError> {
-    let transformedData=transformations.transformInputData?(data) ?? data
-    let transformedKey=transformations.transformInputKey?(privateKey) ?? privateKey
+    let transformedData = transformations.transformInputData?(data) ?? data
+    let transformedKey = transformations.transformInputKey?(privateKey) ?? privateKey
 
     return await adaptee.decryptAsymmetric(
       data: transformedData,
@@ -153,7 +153,7 @@ public struct CryptoServiceTypeAdapter<
     data: SecureBytes,
     config: SecurityConfigDTO
   ) async -> Result<SecureBytes, SecurityError> {
-    let transformedData=transformations.transformInputData?(data) ?? data
+    let transformedData = transformations.transformInputData?(data) ?? data
 
     return await adaptee.hash(
       data: transformedData,
@@ -198,21 +198,21 @@ public struct CryptoServiceTypeAdapter<
     ///   - transformOutputSignature: Transform output signatures
     ///   - transformError: Transform errors
     public init(
-      transformInputData: (@Sendable (SecureBytes) -> SecureBytes)?=nil,
-      transformInputKey: (@Sendable (SecureBytes) -> SecureBytes)?=nil,
-      transformInputSignature: (@Sendable (SecureBytes) -> SecureBytes)?=nil,
-      transformOutputData: (@Sendable (SecureBytes) -> SecureBytes)?=nil,
-      transformOutputKey: (@Sendable (SecureBytes) -> SecureBytes)?=nil,
-      transformOutputSignature: (@Sendable (SecureBytes) -> SecureBytes)?=nil,
-      transformError: (@Sendable (SecurityError) -> SecurityError)?=nil
+      transformInputData: (@Sendable (SecureBytes) -> SecureBytes)? = nil,
+      transformInputKey: (@Sendable (SecureBytes) -> SecureBytes)? = nil,
+      transformInputSignature: (@Sendable (SecureBytes) -> SecureBytes)? = nil,
+      transformOutputData: (@Sendable (SecureBytes) -> SecureBytes)? = nil,
+      transformOutputKey: (@Sendable (SecureBytes) -> SecureBytes)? = nil,
+      transformOutputSignature: (@Sendable (SecureBytes) -> SecureBytes)? = nil,
+      transformError: (@Sendable (SecurityError) -> SecurityError)? = nil
     ) {
-      self.transformInputData=transformInputData
-      self.transformInputKey=transformInputKey
-      self.transformInputSignature=transformInputSignature
-      self.transformOutputData=transformOutputData
-      self.transformOutputKey=transformOutputKey
-      self.transformOutputSignature=transformOutputSignature
-      self.transformError=transformError
+      self.transformInputData = transformInputData
+      self.transformInputKey = transformInputKey
+      self.transformInputSignature = transformInputSignature
+      self.transformOutputData = transformOutputData
+      self.transformOutputKey = transformOutputKey
+      self.transformOutputSignature = transformOutputSignature
+      self.transformError = transformError
     }
   }
 }

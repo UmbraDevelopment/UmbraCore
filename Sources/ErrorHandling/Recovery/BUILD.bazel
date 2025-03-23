@@ -6,7 +6,7 @@ umbra_swift_library(
     deps = [
         "//Sources/ErrorHandling/Common:ErrorHandlingCommon",
         "//Sources/ErrorHandling/Core:ErrorHandlingCore",
-        "//Sources/ErrorHandling/Domains:ErrorHandlingDomains",
+        "//ErrorHandling/Domains:ErrorHandlingDomains",
         "//Sources/ErrorHandling/Interfaces:ErrorHandlingInterfaces",
         "//Sources/ErrorHandling/Mapping:ErrorHandlingMapping",
         "//Sources/ErrorHandling/Models:ErrorHandlingModels",

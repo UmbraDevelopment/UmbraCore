@@ -89,5 +89,5 @@ public protocol RepositoryStatsProvider: RepositoryCore {
 }
 
 /// A complete repository that implements all repository functionality.
-public typealias CompleteRepository=RepositoryCore & RepositoryLocking & RepositoryMaintenance &
+public typealias CompleteRepository = RepositoryCore & RepositoryLocking & RepositoryMaintenance &
   RepositoryStatsProvider

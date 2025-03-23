@@ -23,11 +23,11 @@ public final class MockableResticCLIHelper {
   public init(
     executablePath: String,
     processExecutor: ProcessExecutorProtocol,
-    logger: LoggingProtocol=UmbraLogging.createLogger()
+    logger: LoggingProtocol = UmbraLogging.createLogger()
   ) {
-    self.executablePath=executablePath
-    self.processExecutor=processExecutor
-    self.logger=logger
+    self.executablePath = executablePath
+    self.processExecutor = processExecutor
+    self.logger = logger
   }
 
   /// Execute a backup command
@@ -37,7 +37,7 @@ public final class MockableResticCLIHelper {
   public func execute(_ command: BackupCommand) throws -> String {
     try command.validate()
 
-    let arguments=[command.commandName] + command.commandArguments
+    let arguments = [command.commandName] + command.commandArguments
     return try executeCommand(arguments: arguments, environment: command.environment)
   }
 
@@ -48,7 +48,7 @@ public final class MockableResticCLIHelper {
   public func execute(_ command: RestoreCommand) throws -> String {
     try command.validate()
 
-    let arguments=[command.commandName] + command.commandArguments
+    let arguments = [command.commandName] + command.commandArguments
     return try executeCommand(arguments: arguments, environment: command.environment)
   }
 
@@ -59,7 +59,7 @@ public final class MockableResticCLIHelper {
   public func execute(_ command: SnapshotCommand) throws -> String {
     try command.validate()
 
-    let arguments=[command.commandName] + command.commandArguments
+    let arguments = [command.commandName] + command.commandArguments
     return try executeCommand(arguments: arguments, environment: command.environment)
   }
 
@@ -70,7 +70,7 @@ public final class MockableResticCLIHelper {
   public func execute(_ command: StatsCommand) throws -> String {
     try command.validate()
 
-    let arguments=[command.commandName] + command.commandArguments
+    let arguments = [command.commandName] + command.commandArguments
     return try executeCommand(arguments: arguments, environment: command.environment)
   }
 
@@ -81,7 +81,7 @@ public final class MockableResticCLIHelper {
   public func execute(_ command: InitCommand) throws -> String {
     try command.validate()
 
-    let arguments=[command.commandName] + command.commandArguments
+    let arguments = [command.commandName] + command.commandArguments
     return try executeCommand(arguments: arguments, environment: command.environment)
   }
 
@@ -92,7 +92,7 @@ public final class MockableResticCLIHelper {
   public func execute(_ command: CheckCommand) throws -> String {
     try command.validate()
 
-    let arguments=[command.commandName] + command.commandArguments
+    let arguments = [command.commandName] + command.commandArguments
     return try executeCommand(arguments: arguments, environment: command.environment)
   }
 
@@ -103,7 +103,7 @@ public final class MockableResticCLIHelper {
   public func execute(_ command: CopyCommand) throws -> String {
     try command.validate()
 
-    let arguments=[command.commandName] + command.commandArguments
+    let arguments = [command.commandName] + command.commandArguments
     return try executeCommand(arguments: arguments, environment: command.environment)
   }
 
@@ -114,7 +114,7 @@ public final class MockableResticCLIHelper {
   public func execute(_ command: TestableBackupCommand) throws -> String {
     try command.validate()
 
-    let arguments=[command.commandName] + command.arguments
+    let arguments = [command.commandName] + command.arguments
     return try executeCommand(arguments: arguments, environment: command.environment)
   }
 

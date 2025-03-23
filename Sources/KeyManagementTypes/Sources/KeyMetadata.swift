@@ -80,32 +80,32 @@ public struct KeyMetadata: Sendable, Codable {
     status: KeyStatus = .active,
     storageLocation: StorageLocation,
     accessControls: AccessControls = .none,
-    createdAt: Date=Date(),
-    lastModified: Date=Date(),
-    expiryDate: Date?=nil,
+    createdAt: Date = Date(),
+    lastModified: Date = Date(),
+    expiryDate: Date? = nil,
     algorithm: String,
     keySize: Int,
     identifier: String,
-    version: Int=1,
-    exportable: Bool=false,
-    isSystemKey: Bool=false,
-    isProcessIsolated: Bool=false,
-    customMetadata: [String: String]?=nil
+    version: Int = 1,
+    exportable: Bool = false,
+    isSystemKey: Bool = false,
+    isProcessIsolated: Bool = false,
+    customMetadata: [String: String]? = nil
   ) {
-    self.status=status
-    self.storageLocation=storageLocation
-    self.accessControls=accessControls
-    self.createdAt=createdAt
-    self.lastModified=lastModified
-    self.expiryDate=expiryDate
-    self.algorithm=algorithm
-    self.keySize=keySize
-    self.identifier=identifier
-    self.version=version
-    self.exportable=exportable
-    self.isSystemKey=isSystemKey
-    self.isProcessIsolated=isProcessIsolated
-    self.customMetadata=customMetadata
+    self.status = status
+    self.storageLocation = storageLocation
+    self.accessControls = accessControls
+    self.createdAt = createdAt
+    self.lastModified = lastModified
+    self.expiryDate = expiryDate
+    self.algorithm = algorithm
+    self.keySize = keySize
+    self.identifier = identifier
+    self.version = version
+    self.exportable = exportable
+    self.isSystemKey = isSystemKey
+    self.isProcessIsolated = isProcessIsolated
+    self.customMetadata = customMetadata
   }
 
   // MARK: - Timestamp-based conversion methods
@@ -148,15 +148,15 @@ public struct KeyMetadata: Sendable, Codable {
     accessControls: AccessControls = .none,
     createdAtTimestamp: Int64,
     lastModifiedTimestamp: Int64,
-    expiryTimestamp: Int64?=nil,
+    expiryTimestamp: Int64? = nil,
     algorithm: String,
     keySize: Int,
     identifier: String,
-    version: Int=1,
-    exportable: Bool=false,
-    isSystemKey: Bool=false,
-    isProcessIsolated: Bool=false,
-    customMetadata: [String: String]?=nil
+    version: Int = 1,
+    exportable: Bool = false,
+    isSystemKey: Bool = false,
+    isProcessIsolated: Bool = false,
+    customMetadata: [String: String]? = nil
   ) -> KeyMetadata {
     KeyMetadata(
       status: status,
@@ -181,8 +181,8 @@ public struct KeyMetadata: Sendable, Codable {
   /// Create a simplified version of this metadata with only essential fields
   /// - Returns: A simplified KeyMetadata with minimal requirements
   public func simplified() -> KeyMetadata {
-    var simplified=self
-    simplified.customMetadata=nil
+    var simplified = self
+    simplified.customMetadata = nil
     return simplified
   }
 
@@ -199,9 +199,9 @@ public struct KeyMetadata: Sendable, Codable {
   /// - Parameter newStatus: The new status to apply
   /// - Returns: An updated copy of the metadata
   public func withStatus(_ newStatus: KeyStatus) -> KeyMetadata {
-    var updated=self
-    updated.status=newStatus
-    updated.lastModified=Date()
+    var updated = self
+    updated.status = newStatus
+    updated.lastModified = Date()
     return updated
   }
 }
@@ -215,7 +215,7 @@ extension KeyMetadata {
   public func toCoreServicesNoFoundation() -> [String: Any] {
     // This is a type-erased conversion to avoid direct import
     // The result can be used to create CoreServicesTypesNoFoundation.KeyMetadata
-    var dict: [String: Any]=[
+    var dict: [String: Any] = [
       "status": status.toCoreServicesNoFoundation(),
       "storageLocation": storageLocation.toCoreServicesNoFoundation(),
       "accessControls": accessControls.rawValue,
@@ -231,11 +231,11 @@ extension KeyMetadata {
     ]
 
     if let expiryTimestamp {
-      dict["expiryTimestamp"]=expiryTimestamp
+      dict["expiryTimestamp"] = expiryTimestamp
     }
 
     if let customMetadata {
-      dict["customMetadata"]=customMetadata
+      dict["customMetadata"] = customMetadata
     }
 
     return dict
@@ -248,34 +248,34 @@ extension KeyMetadata {
   public static func fromCoreServicesNoFoundation(_ dict: [String: Any]) -> KeyMetadata {
     // Extract required properties
     guard
-      let statusAny=dict["status"],
-      let storageLocationAny=dict["storageLocation"],
-      let accessControlsRawValue=dict["accessControls"] as? String,
-      let createdAtTimestamp=dict["createdAtTimestamp"] as? Int64,
-      let lastModifiedTimestamp=dict["lastModifiedTimestamp"] as? Int64,
-      let algorithm=dict["algorithm"] as? String,
-      let keySize=dict["keySize"] as? Int,
-      let identifier=dict["identifier"] as? String
+      let statusAny = dict["status"],
+      let storageLocationAny = dict["storageLocation"],
+      let accessControlsRawValue = dict["accessControls"] as? String,
+      let createdAtTimestamp = dict["createdAtTimestamp"] as? Int64,
+      let lastModifiedTimestamp = dict["lastModifiedTimestamp"] as? Int64,
+      let algorithm = dict["algorithm"] as? String,
+      let keySize = dict["keySize"] as? Int,
+      let identifier = dict["identifier"] as? String
     else {
       fatalError("Missing required properties in KeyMetadata conversion")
     }
 
     // Convert status and storage location
-    let status=KeyStatus.fromCoreServicesNoFoundation(statusAny)
-    let storageLocation=StorageLocation.fromCoreServicesNoFoundation(storageLocationAny)
+    let status = KeyStatus.fromCoreServicesNoFoundation(statusAny)
+    let storageLocation = StorageLocation.fromCoreServicesNoFoundation(storageLocationAny)
 
     // Get access controls
-    guard let accessControls=AccessControls(rawValue: accessControlsRawValue) else {
+    guard let accessControls = AccessControls(rawValue: accessControlsRawValue) else {
       fatalError("Invalid access controls value: \(accessControlsRawValue)")
     }
 
     // Get optional properties
-    let version=dict["version"] as? Int ?? 1
-    let exportable=dict["exportable"] as? Bool ?? false
-    let isSystemKey=dict["isSystemKey"] as? Bool ?? false
-    let isProcessIsolated=dict["isProcessIsolated"] as? Bool ?? false
-    let expiryTimestamp=dict["expiryTimestamp"] as? Int64
-    let customMetadata=dict["customMetadata"] as? [String: String]
+    let version = dict["version"] as? Int ?? 1
+    let exportable = dict["exportable"] as? Bool ?? false
+    let isSystemKey = dict["isSystemKey"] as? Bool ?? false
+    let isProcessIsolated = dict["isProcessIsolated"] as? Bool ?? false
+    let expiryTimestamp = dict["expiryTimestamp"] as? Int64
+    let customMetadata = dict["customMetadata"] as? [String: String]
 
     // Create the KeyMetadata
     return withTimestamps(

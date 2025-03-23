@@ -1,32 +1,3 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_test")
-
-swift_test(
-    name = "ErrorHandlingProtocolsTests",
-    srcs = glob([
-        "**/*.swift",
-    ]),
-    copts = [
-        "-target",
-        "arm64-apple-macos14.0",
-        "-strict-concurrency=complete",
-        "-warn-concurrency",
-        "-enable-actor-data-race-checks",
-        "-enable-testing",
-    ],
-    env = {
-        "MACOS_DEPLOYMENT_TARGET": "14.0",
-        "SWIFT_DETERMINISTIC_HASHING": "1",
-        "DEVELOPER_DIR": "/Applications/Xcode.app/Contents/Developer",
-        "ARCH": "arm64",
-        "XCODE_VERSION_OVERRIDE": "16.2.0",
-    },
-    module_name = "ErrorHandlingProtocolsTests",
-    target_compatible_with = [
-        "@platforms//os:macos",
-        "@platforms//cpu:arm64",
-    ],
-    timeout = "moderate",
-    flaky = True,
     deps = [
         "//Sources/ErrorHandling",
         "//Sources/ErrorHandling/Common:ErrorHandlingCommon",

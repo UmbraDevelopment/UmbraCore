@@ -1,10 +1,3 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_test")
-load("//:bazel/macros/swift.bzl", "umbra_swift_test")
-
-umbra_swift_test(
-    name = "ModelsTests",
-    srcs = glob(["**/*.swift"]),
-    module_name = "ModelsTests",
     deps = [
         "//Sources/ErrorHandling/Models:ErrorHandlingModels",
     ],

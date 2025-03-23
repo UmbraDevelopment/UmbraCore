@@ -62,12 +62,12 @@ public protocol DomainErrorHandler: ErrorHandler {
 /// Default implementation for common error handler functionality
 extension DomainErrorHandler {
   public func handle(_ error: Error) -> ErrorRecoveryStrategy {
-    if let typedError=error as? ErrorType {
+    if let typedError = error as? ErrorType {
       return handleTyped(typedError)
     }
 
     // Attempt to map the error if it's not already the handled type
-    if let mappedError=mapToHandledType(error) {
+    if let mappedError = mapToHandledType(error) {
       return handleTyped(mappedError)
     }
 

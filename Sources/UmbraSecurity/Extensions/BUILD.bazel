@@ -7,7 +7,7 @@ umbracore_swift_library(
     srcs = ["URL+SecurityScoped.swift"],
     deps = [
         "//Sources/CoreErrors",
-        "//Sources/ErrorHandling/Domains:ErrorHandlingDomains",
+        "//ErrorHandling/Domains:ErrorHandlingDomains",
         "//Sources/SecurityInterfaces",
         "//Sources/SecurityTypes",
         "//Sources/UmbraCoreTypes",

@@ -29,7 +29,7 @@ final class ModernSecurityProviderAdapter: SecurityProtocolsCore.SecurityProvide
   private let baseProvider: any SecurityInterfacesBase.SecurityProviderBase
 
   init(baseProvider: any SecurityInterfacesBase.SecurityProviderBase) {
-    self.baseProvider=baseProvider
+    self.baseProvider = baseProvider
   }
 
   // MARK: - Service Access Methods
@@ -92,7 +92,7 @@ final class ModernCryptoServiceAdapter: CryptoServiceProtocol {
   private let baseProvider: any SecurityInterfacesBase.SecurityProviderBase
 
   init(baseProvider: any SecurityInterfacesBase.SecurityProviderBase) {
-    self.baseProvider=baseProvider
+    self.baseProvider = baseProvider
   }
 
   // MARK: - Basic Crypto Operations
@@ -252,7 +252,7 @@ final class ModernKeyManagementAdapter: KeyManagementProtocol {
   private let baseProvider: any SecurityInterfacesBase.SecurityProviderBase
 
   init(baseProvider: any SecurityInterfacesBase.SecurityProviderBase) {
-    self.baseProvider=baseProvider
+    self.baseProvider = baseProvider
   }
 
   func retrieveKey(withIdentifier _: String) async
@@ -279,7 +279,7 @@ final class ModernKeyManagementAdapter: KeyManagementProtocol {
     reencryptedData: SecureBytes?
   ), UmbraErrors.Security.Protocols> {
     // Placeholder implementation
-    let newKey=SecureBytes(bytes: [0x05, 0x06, 0x07, 0x08])
+    let newKey = SecureBytes(bytes: [0x05, 0x06, 0x07, 0x08])
     return .success((newKey: newKey, reencryptedData: dataToReencrypt))
   }
 

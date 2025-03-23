@@ -18,7 +18,7 @@ swift_library(
         "//Sources/CryptoTypes/Protocols:CryptoTypesProtocols",
         "//Sources/CryptoTypes/Types:CryptoTypesTypes",
         "//Sources/ErrorHandling",
-        "//Sources/ErrorHandling/Domains:ErrorHandlingDomains",
+        "//ErrorHandling/Domains:ErrorHandlingDomains",
         "//Sources/FoundationBridgeTypes",
         "//Sources/ObjCBridgingTypesFoundation",
         "//Sources/SecurityBridge",

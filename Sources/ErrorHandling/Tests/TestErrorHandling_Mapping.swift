@@ -1,9 +1,3 @@
-@testable import ErrorHandling
-@testable import ErrorHandlingCommon
-@testable import ErrorHandlingDomains
-@testable import ErrorHandlingInterfaces
-@testable import ErrorHandlingMapping
-@testable import ErrorHandlingTypes
 import XCTest
 
 /// Tests for the error mapping functionality
@@ -16,16 +10,16 @@ final class TestErrorHandling_Mapping: XCTestCase {
   @MainActor
   func testMappingSecurityErrors() {
     // Create security error
-    let coreError=UmbraErrors.GeneralSecurity.Core.encryptionFailed(reason: "Invalid key size")
+    let coreError = UmbraErrors.GeneralSecurity.Core.encryptionFailed(reason: "Invalid key size")
 
     // Map using UmbraErrorMapper
-    let securityError=UmbraErrorMapper.shared.mapSecurityError(coreError)
+    let securityError = UmbraErrorMapper.shared.mapSecurityError(coreError)
 
     // Verify mapping produced a non-nil result
     XCTAssertNotNil(securityError)
 
     // Verify error contains the reason text
-    let errorString=String(describing: securityError)
+    let errorString = String(describing: securityError)
     XCTAssertTrue(
       errorString.contains("Invalid key size"),
       "Mapped error should contain the reason text"
@@ -39,10 +33,10 @@ final class TestErrorHandling_Mapping: XCTestCase {
   func testMappingProtocolErrors() {
     // Create protocol error
     // Using UmbraErrors.Security.Protocols instead of UmbraErrors.GeneralSecurity.Protocols
-    let protocolError=UmbraErrors.Security.Protocols.invalidFormat(reason: "Bad signature")
+    let protocolError = UmbraErrors.Security.Protocols.invalidFormat(reason: "Bad signature")
 
     // Map using UmbraErrorMapper
-    let securityError=UmbraErrorMapper.shared.mapSecurityProtocolsError(protocolError)
+    let securityError = UmbraErrorMapper.shared.mapSecurityProtocolsError(protocolError)
 
     // Verify mapping
     XCTAssertNotNil(securityError)
@@ -57,11 +51,11 @@ final class TestErrorHandling_Mapping: XCTestCase {
   @MainActor
   func testErrorContextMapping() {
     // Create security error
-    let coreError=UmbraErrors.GeneralSecurity.Core.encryptionFailed(reason: "Invalid key size")
+    let coreError = UmbraErrors.GeneralSecurity.Core.encryptionFailed(reason: "Invalid key size")
 
     // Map the error directly
-    let mapper=UmbraErrorMapper.shared
-    let securityError=mapper.mapSecurityError(coreError)
+    let mapper = UmbraErrorMapper.shared
+    let securityError = mapper.mapSecurityError(coreError)
 
     // Verify the mapped error
     XCTAssertNotNil(securityError)
@@ -72,13 +66,13 @@ final class TestErrorHandling_Mapping: XCTestCase {
   @MainActor
   func testNSErrorConversion() {
     // Create security error
-    let coreError=UmbraErrors.GeneralSecurity.Core.encryptionFailed(reason: "Invalid key size")
+    let coreError = UmbraErrors.GeneralSecurity.Core.encryptionFailed(reason: "Invalid key size")
 
     // Map using UmbraErrorMapper
-    let securityError=UmbraErrorMapper.shared.mapSecurityError(coreError)
+    let securityError = UmbraErrorMapper.shared.mapSecurityError(coreError)
 
     // Verify the converted security error can be cast to NSError
-    let nsError=securityError as NSError
+    let nsError = securityError as NSError
 
     // Log NSError details for debugging
     print("NSError domain: \(nsError.domain)")
@@ -101,17 +95,17 @@ final class TestErrorHandling_Mapping: XCTestCase {
   @MainActor
   func testErrorChainMapping() {
     // Create error with underlying reason
-    let encryptionError=UmbraErrors.GeneralSecurity.Core
+    let encryptionError = UmbraErrors.GeneralSecurity.Core
       .encryptionFailed(reason: "Encryption failed due to invalid key")
 
     // Map using UmbraErrorMapper
-    let securityError=UmbraErrorMapper.shared.mapSecurityError(encryptionError)
+    let securityError = UmbraErrorMapper.shared.mapSecurityError(encryptionError)
 
     // Verify mapping
     XCTAssertNotNil(securityError)
 
     // Verify error contains the reason text
-    let errorString=String(describing: securityError)
+    let errorString = String(describing: securityError)
     XCTAssertTrue(
       errorString.contains("invalid key") || errorString.contains("invalid key"),
       "Mapped error should contain the original error reason"

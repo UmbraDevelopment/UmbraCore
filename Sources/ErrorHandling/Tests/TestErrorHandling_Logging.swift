@@ -1,5 +1,3 @@
-@testable import ErrorHandling
-import ErrorHandlingInterfaces
 import XCTest
 
 // MARK: - Logger Interfaces
@@ -37,8 +35,8 @@ final class MockLoggerConfiguration: LoggerConfiguration {
     destinations: [LogDestination],
     minimumSeverity: ErrorHandlingInterfaces.ErrorSeverity = .debug
   ) {
-    self.destinations=destinations
-    self.minimumSeverity=minimumSeverity
+    self.destinations = destinations
+    self.minimumSeverity = minimumSeverity
   }
 }
 
@@ -47,23 +45,23 @@ class ErrorLogger {
   let configuration: LoggerConfiguration
 
   init(configuration: LoggerConfiguration) {
-    self.configuration=configuration
+    self.configuration = configuration
   }
 
   func log(
     error: Error,
     severity: ErrorHandlingInterfaces.ErrorSeverity,
-    metadata: [String: Any]?=nil
+    metadata: [String: Any]? = nil
   ) {
     // Skip logging if severity is below minimum level
     guard severity >= configuration.minimumSeverity else { return }
 
     // Format the error message properly to match the real ErrorLogger
-    var message=""
-    if let umbraError=error as? UmbraError {
-      message="[\(umbraError.domain):\(umbraError.code)] \(umbraError.errorDescription)"
+    var message = ""
+    if let umbraError = error as? UmbraError {
+      message = "[\(umbraError.domain):\(umbraError.code)] \(umbraError.errorDescription)"
     } else {
-      message=error.localizedDescription
+      message = error.localizedDescription
     }
 
     // Send to all destinations
@@ -76,13 +74,13 @@ class ErrorLogger {
 /// Global test mode environment singleton to ensure security systems are disabled during tests
 final class TestModeEnvironment {
   /// Shared instance
-  static let shared=TestModeEnvironment()
+  static let shared = TestModeEnvironment()
 
   /// Whether test mode is enabled
-  private(set) var testModeEnabled=false
+  private(set) var testModeEnabled = false
 
   /// Whether security operations are disabled
-  private(set) var securityOperationsDisabled=false
+  private(set) var securityOperationsDisabled = false
 
   /// Private initialiser
   private init() {
@@ -93,16 +91,16 @@ final class TestModeEnvironment {
   /// Configure test mode based on environment
   private func configureTestMode() {
     // Get process info environment to check for test mode
-    let processInfo=ProcessInfo.processInfo
+    let processInfo = ProcessInfo.processInfo
 
     // Check for XCTest specific environment variables that indicate we're in a test
-    let isRunningTests=processInfo.environment["XCTestConfigurationFilePath"] != nil
+    let isRunningTests = processInfo.environment["XCTestConfigurationFilePath"] != nil
 
     // Set our UMBRA_SECURITY_TEST_MODE environment variable when running tests
     if isRunningTests {
       setenv("UMBRA_SECURITY_TEST_MODE", "1", 1)
       UserDefaults.standard.set(true, forKey: "UMBRA_SECURITY_TEST_MODE")
-      testModeEnabled=true
+      testModeEnabled = true
     }
   }
 
@@ -110,35 +108,35 @@ final class TestModeEnvironment {
   func enableTestMode() {
     setenv("UMBRA_SECURITY_TEST_MODE", "1", 1)
     UserDefaults.standard.set(true, forKey: "UMBRA_SECURITY_TEST_MODE")
-    testModeEnabled=true
+    testModeEnabled = true
   }
 
   /// Call this from test tearDown methods
   func disableTestMode() {
     unsetenv("UMBRA_SECURITY_TEST_MODE")
     UserDefaults.standard.removeObject(forKey: "UMBRA_SECURITY_TEST_MODE")
-    testModeEnabled=false
+    testModeEnabled = false
   }
 
   /// Disable security operations during tests to avoid encryption errors
   func disableSecurityOperations() {
     setenv("UMBRA_DISABLE_SECURITY", "1", 1)
     UserDefaults.standard.set(true, forKey: "UMBRA_DISABLE_SECURITY")
-    securityOperationsDisabled=true
+    securityOperationsDisabled = true
   }
 
   /// Re-enable security operations after tests
   func enableSecurityOperations() {
     unsetenv("UMBRA_DISABLE_SECURITY")
     UserDefaults.standard.removeObject(forKey: "UMBRA_DISABLE_SECURITY")
-    securityOperationsDisabled=false
+    securityOperationsDisabled = false
   }
 }
 
 @MainActor
 final class TestErrorHandling_Logging: XCTestCase {
   /// The timeout for asynchronous operations
-  let asyncTimeout: TimeInterval=15.0
+  let asyncTimeout: TimeInterval = 15.0
 
   /// Set up test environment before each test
   override func setUp() async throws {
@@ -154,7 +152,7 @@ final class TestErrorHandling_Logging: XCTestCase {
 
   // MARK: - Test Configuration
 
-  private let ENABLE_ASYNC_LOGGING_TESTS=true
+  private let ENABLE_ASYNC_LOGGING_TESTS = true
 
   // MARK: - Non-Security Tests
 
@@ -340,9 +338,9 @@ final class TestErrorHandling_Logging: XCTestCase {
   /// Mock implementation of LogDestination for test purposes
   actor MockLogDestination: LogDestination {
     // Thread-safe storage for logged events
-    private var _loggedMessages: [String]=[]
-    private var _loggedSeverities: [ErrorHandlingInterfaces.ErrorSeverity]=[]
-    private var _loggedMetadata: [[String: Any]?]=[]
+    private var _loggedMessages: [String] = []
+    private var _loggedSeverities: [ErrorHandlingInterfaces.ErrorSeverity] = []
+    private var _loggedMetadata: [[String: Any]?] = []
 
     // Callback for notification
     private var onLogReceived: (() -> Void)?
@@ -354,7 +352,7 @@ final class TestErrorHandling_Logging: XCTestCase {
 
     // Set the callback for log notifications
     func setCallback(_ callback: @escaping () -> Void) {
-      onLogReceived=callback
+      onLogReceived = callback
     }
 
     // Non-isolated methods that can be called from any thread
@@ -373,7 +371,7 @@ final class TestErrorHandling_Logging: XCTestCase {
         await self.storeLog(message: message, severity: severity, metadata: metadata)
 
         // Notify that a log was received
-        if let callback=await self.onLogReceived {
+        if let callback = await self.onLogReceived {
           callback()
         }
       }
@@ -393,7 +391,7 @@ final class TestErrorHandling_Logging: XCTestCase {
     // Implementation of the log method from LogDestination
     nonisolated func log(error: any UmbraError, severity: ErrorHandlingInterfaces.ErrorSeverity) {
       // Format error message to match real ErrorLogger implementation
-      let formattedMessage="[\(error.domain):\(error.code)] \(error.errorDescription)"
+      let formattedMessage = "[\(error.domain):\(error.code)] \(error.errorDescription)"
       write(message: formattedMessage, severity: severity, metadata: nil)
     }
 
@@ -423,12 +421,12 @@ final class TestErrorHandling_Logging: XCTestCase {
       errorDescription: String,
       source: ErrorHandlingInterfaces.ErrorSource
     ) {
-      self.domain=domain
-      self.code=code
-      self.errorDescription=errorDescription
-      self.source=source
-      underlyingError=nil
-      context=ErrorHandlingInterfaces.ErrorContext(
+      self.domain = domain
+      self.code = code
+      self.errorDescription = errorDescription
+      self.source = source
+      underlyingError = nil
+      context = ErrorHandlingInterfaces.ErrorContext(
         source: domain,
         operation: "test",
         details: errorDescription,
@@ -448,20 +446,20 @@ final class TestErrorHandling_Logging: XCTestCase {
     }
 
     func with(context: ErrorHandlingInterfaces.ErrorContext) -> TestError {
-      var copy=self
-      copy.context=context
+      var copy = self
+      copy.context = context
       return copy
     }
 
     func with(underlyingError: Error) -> TestError {
-      var copy=self
-      copy.underlyingError=underlyingError
+      var copy = self
+      copy.underlyingError = underlyingError
       return copy
     }
 
     func with(source: ErrorHandlingInterfaces.ErrorSource) -> TestError {
-      var copy=self
-      copy.source=source
+      var copy = self
+      copy.source = source
       return copy
     }
   }
@@ -476,12 +474,12 @@ final class TestErrorHandling_Logging: XCTestCase {
     var context: ErrorHandlingInterfaces.ErrorContext
 
     init(domain: String, code: String, description: String) {
-      self.domain=domain
-      self.code=code
-      errorDescription=description
-      source=ErrorHandlingInterfaces.ErrorSource(file: #file, line: #line, function: #function)
-      underlyingError=nil
-      context=ErrorHandlingInterfaces.ErrorContext(
+      self.domain = domain
+      self.code = code
+      errorDescription = description
+      source = ErrorHandlingInterfaces.ErrorSource(file: #file, line: #line, function: #function)
+      underlyingError = nil
+      context = ErrorHandlingInterfaces.ErrorContext(
         source: "SafeTestSource",
         operation: "TestOperation",
         details: "Safe test context that doesn't trigger security systems",
@@ -496,20 +494,20 @@ final class TestErrorHandling_Logging: XCTestCase {
     }
 
     func with(context: ErrorHandlingInterfaces.ErrorContext) -> Self {
-      var copy=self
-      copy.context=context
+      var copy = self
+      copy.context = context
       return copy
     }
 
     func with(underlyingError: any Error) -> Self {
-      var copy=self
-      copy.underlyingError=underlyingError
+      var copy = self
+      copy.underlyingError = underlyingError
       return copy
     }
 
     func with(source: ErrorHandlingInterfaces.ErrorSource) -> Self {
-      var copy=self
-      copy.source=source
+      var copy = self
+      copy.source = source
       return copy
     }
   }
@@ -520,15 +518,15 @@ final class TestErrorHandling_Logging: XCTestCase {
 /// Test mode handler to prevent security initialisation during tests
 extension ErrorHandling {
   enum SecurityTestMode {
-    private static var isTestModeEnabled=false
+    private static var isTestModeEnabled = false
 
     static func enableTestMode() {
-      isTestModeEnabled=true
+      isTestModeEnabled = true
       // Set any global flags or test doubles needed to bypass security systems
     }
 
     static func disableTestMode() {
-      isTestModeEnabled=false
+      isTestModeEnabled = false
       // Clean up any test-specific settings
     }
 

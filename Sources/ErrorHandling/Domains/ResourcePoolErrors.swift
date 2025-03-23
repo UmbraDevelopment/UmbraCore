@@ -1,5 +1,44 @@
-import ErrorHandlingInterfaces
 import Foundation
+
+// Local type declarations to replace imports
+// These replace the removed ErrorHandling and ErrorHandlingDomains imports
+
+/// Error domain namespace
+public enum ErrorDomain {
+  /// Security domain
+  public static let security = "Security"
+  /// Crypto domain
+  public static let crypto = "Crypto"
+  /// Application domain
+  public static let application = "Application"
+}
+
+/// Error context protocol
+public protocol ErrorContext {
+  /// Domain of the error
+  var domain: String { get }
+  /// Code of the error
+  var code: Int { get }
+  /// Description of the error
+  var description: String { get }
+}
+
+/// Base error context implementation
+public struct BaseErrorContext: ErrorContext {
+  /// Domain of the error
+  public let domain: String
+  /// Code of the error
+  public let code: Int
+  /// Description of the error
+  public let description: String
+
+  /// Initialise with domain, code and description
+  public init(domain: String, code: Int, description: String) {
+    self.domain = domain
+    self.code = code
+    self.description = description
+  }
+}
 
 extension UmbraErrors.Resource {
   /// Resource pool management errors
@@ -89,7 +128,7 @@ extension UmbraErrors.Resource {
         case let .poolExhausted(poolName, currentSize, maxSize):
           "Resource pool '\(poolName)' exhausted (current: \(currentSize), maximum: \(maxSize))"
         case let .invalidPoolState(poolName, state, expectedState):
-          if let expected=expectedState {
+          if let expected = expectedState {
             "Resource pool '\(poolName)' is in invalid state: current '\(state)', expected '\(expected)'"
           } else {
             "Resource pool '\(poolName)' is in invalid state: '\(state)'"
@@ -97,7 +136,7 @@ extension UmbraErrors.Resource {
         case let .poolAlreadyExists(poolName):
           "Resource pool '\(poolName)' already exists"
         case let .resourceAcquisitionFailed(poolName, resourceID, reason):
-          if let id=resourceID {
+          if let id = resourceID {
             "Failed to acquire resource '\(id)' from pool '\(poolName)': \(reason)"
           } else {
             "Failed to acquire resource from pool '\(poolName)': \(reason)"
@@ -193,9 +232,9 @@ extension UmbraErrors.Resource.Pool {
   public static func makeCreationFailed(
     poolName: String,
     reason: String,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .poolCreationFailed(poolName: poolName, reason: reason)
   }
@@ -203,11 +242,11 @@ extension UmbraErrors.Resource.Pool {
   /// Create an error for a failed resource acquisition
   public static func makeAcquisitionFailed(
     poolName: String,
-    resourceID: String?=nil,
+    resourceID: String? = nil,
     reason: String,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .resourceAcquisitionFailed(poolName: poolName, resourceID: resourceID, reason: reason)
   }
@@ -216,9 +255,9 @@ extension UmbraErrors.Resource.Pool {
   public static func makeResourceNotFound(
     poolName: String,
     resourceID: String,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .resourceNotFound(poolName: poolName, resourceID: resourceID)
   }
@@ -228,9 +267,9 @@ extension UmbraErrors.Resource.Pool {
     poolName: String,
     currentSize: Int,
     maxSize: Int,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .poolExhausted(poolName: poolName, currentSize: currentSize, maxSize: maxSize)
   }

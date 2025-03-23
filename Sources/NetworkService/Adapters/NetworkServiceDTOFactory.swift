@@ -16,17 +16,17 @@ public enum NetworkServiceDTOFactory {
   ///   - allowsCellularAccess: Whether to allow cellular access
   /// - Returns: A configured NetworkServiceDTOAdapter
   public static func createWithConfiguration(
-    timeout: TimeInterval=60.0,
+    timeout: TimeInterval = 60.0,
     cachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy,
-    allowsCellularAccess: Bool=true
+    allowsCellularAccess: Bool = true
   ) -> NetworkServiceDTOAdapter {
-    let config=URLSessionConfiguration.default
-    config.timeoutIntervalForRequest=timeout
-    config.timeoutIntervalForResource=timeout * 2
-    config.requestCachePolicy=cachePolicy
-    config.allowsCellularAccess=allowsCellularAccess
+    let config = URLSessionConfiguration.default
+    config.timeoutIntervalForRequest = timeout
+    config.timeoutIntervalForResource = timeout * 2
+    config.requestCachePolicy = cachePolicy
+    config.allowsCellularAccess = allowsCellularAccess
 
-    let session=URLSession(configuration: config)
+    let session = URLSession(configuration: config)
     return NetworkServiceDTOAdapter(session: session)
   }
 
@@ -37,39 +37,39 @@ public enum NetworkServiceDTOFactory {
   /// - Returns: A configured NetworkServiceDTOAdapter
   public static func createWithAuthentication(
     authType: NetworkRequestDTO.AuthType,
-    timeout: TimeInterval=60.0
+    timeout: TimeInterval = 60.0
   ) -> NetworkServiceDTOAdapter {
-    let config=URLSessionConfiguration.default
-    config.timeoutIntervalForRequest=timeout
-    config.timeoutIntervalForResource=timeout * 2
+    let config = URLSessionConfiguration.default
+    config.timeoutIntervalForRequest = timeout
+    config.timeoutIntervalForResource = timeout * 2
 
     // Configure auth headers
-    var defaultHeaders=[String: String]()
+    var defaultHeaders = [String: String]()
 
     switch authType {
       case let .bearer(token):
-        defaultHeaders["Authorization"]="Bearer \(token)"
+        defaultHeaders["Authorization"] = "Bearer \(token)"
       case let .basic(username, password):
-        if let authData="\(username):\(password)".data(using: .utf8) {
-          let base64Auth=authData.base64EncodedString()
-          defaultHeaders["Authorization"]="Basic \(base64Auth)"
+        if let authData = "\(username):\(password)".data(using: .utf8) {
+          let base64Auth = authData.base64EncodedString()
+          defaultHeaders["Authorization"] = "Basic \(base64Auth)"
         }
       case let .apiKey(key, paramName, inHeader):
         if inHeader {
-          defaultHeaders[paramName]=key
+          defaultHeaders[paramName] = key
         }
       // For URL param API keys, these will need to be added on the request level
       case let .custom(headers):
-        defaultHeaders=headers
+        defaultHeaders = headers
       case .none:
         break
     }
 
     if !defaultHeaders.isEmpty {
-      config.httpAdditionalHeaders=defaultHeaders
+      config.httpAdditionalHeaders = defaultHeaders
     }
 
-    let session=URLSession(configuration: config)
+    let session = URLSession(configuration: config)
     return NetworkServiceDTOAdapter(session: session)
   }
 }

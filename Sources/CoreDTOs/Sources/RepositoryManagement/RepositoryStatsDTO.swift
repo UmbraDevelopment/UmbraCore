@@ -39,15 +39,15 @@ public struct RepositoryStatsDTO: Sendable, Equatable {
     compressedSize: UInt64,
     deduplicated: UInt64,
     snapshotCount: Int,
-    oldestSnapshot: UInt64?=nil,
-    newestSnapshot: UInt64?=nil
+    oldestSnapshot: UInt64? = nil,
+    newestSnapshot: UInt64? = nil
   ) {
-    self.totalSize=totalSize
-    self.compressedSize=compressedSize
-    self.deduplicated=deduplicated
-    self.snapshotCount=snapshotCount
-    self.oldestSnapshot=oldestSnapshot
-    self.newestSnapshot=newestSnapshot
+    self.totalSize = totalSize
+    self.compressedSize = compressedSize
+    self.deduplicated = deduplicated
+    self.snapshotCount = snapshotCount
+    self.oldestSnapshot = oldestSnapshot
+    self.newestSnapshot = newestSnapshot
   }
 
   // MARK: - Factory Methods
@@ -106,19 +106,17 @@ public struct RepositoryStatsDTO: Sendable, Equatable {
   /// - Returns: A new RepositoryStatsDTO with combined statistics
   public func mergedWith(_ other: RepositoryStatsDTO) -> RepositoryStatsDTO {
     // Determine oldest and newest snapshot timestamps
-    let oldestTimestamp: UInt64?=if
-      let selfOldest=oldestSnapshot,
-      let otherOldest=other.oldestSnapshot
-    {
+    let oldestTimestamp: UInt64? = if
+      let selfOldest = oldestSnapshot,
+      let otherOldest = other.oldestSnapshot {
       min(selfOldest, otherOldest)
     } else {
       oldestSnapshot ?? other.oldestSnapshot
     }
 
-    let newestTimestamp: UInt64?=if
-      let selfNewest=newestSnapshot,
-      let otherNewest=other.newestSnapshot
-    {
+    let newestTimestamp: UInt64? = if
+      let selfNewest = newestSnapshot,
+      let otherNewest = other.newestSnapshot {
       max(selfNewest, otherNewest)
     } else {
       newestSnapshot ?? other.newestSnapshot

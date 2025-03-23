@@ -11,9 +11,6 @@ swift_library(
         # Enabling library evolution for binary compatibility
         "-Xfrontend", "-enable-library-evolution",
     ],
-    deps = [
-        "//Sources/CoreErrors",
-    ],
     visibility = [
         "//Sources/UmbraCoreTypes:__pkg__",  # Only visible to the main module
         "//Sources/UmbraCoreTypes/Tests:__pkg__",  # Also visible to tests

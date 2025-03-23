@@ -1,4 +1,4 @@
 import CoreErrors
 
 /// Type alias for backward compatibility
-public typealias CryptoError=CoreErrors.CryptoError
+public typealias CryptoError = CoreErrors.CryptoError

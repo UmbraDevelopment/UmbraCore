@@ -42,7 +42,7 @@ public struct ProviderConfiguration: Sendable {
     providerID: String,
     providerName: String,
     providerVersion: String,
-    capabilities: [String]=[
+    capabilities: [String] = [
       CoreCapability.encryption,
       CoreCapability.decryption,
       CoreCapability.keyGeneration,
@@ -50,9 +50,9 @@ public struct ProviderConfiguration: Sendable {
       CoreCapability.hashing
     ]
   ) {
-    self.providerID=providerID
-    self.providerName=providerName
-    self.providerVersion=providerVersion
-    self.capabilities=capabilities
+    self.providerID = providerID
+    self.providerName = providerName
+    self.providerVersion = providerVersion
+    self.capabilities = capabilities
   }
 }

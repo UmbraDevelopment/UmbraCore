@@ -1,28 +1,14 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
-load("//:bazel/macros/swift.bzl", "umbra_swift_library")
 
-umbra_swift_library(
+swift_library(
     name = "TestKit",
-    testonly = True,
-    srcs = glob(
-        ["**/*.swift"],
-        allow_empty = True,
-    ),
+    srcs = glob(["**/*.swift"]),
     deps = [
-        "//Sources/Core",
-        "//Sources/CryptoTypes",
-        "//Sources/CryptoTypes/Protocols:CryptoTypesProtocols",
-        "//Sources/ErrorHandling",
-        "//Sources/Repositories/Types:RepositoriesTypes",
-        "//Sources/ResticCLIHelper",
-        "//Tests/SecurityInterfacesTest",  # Using testable version
-        "//Sources/SecurityTypes",
-        "//Sources/SecurityTypes/Protocols:SecurityTypesProtocols",
         "//Sources/UmbraLogging",
-        "//Sources/SecurityInterfaces:SecurityInterfacesForTesting",
-        "//Sources/SecurityInterfacesBase:SecurityInterfacesBaseForTesting",
-        "//Sources/SecurityInterfacesProtocols:SecurityInterfacesProtocolsForTesting",
+        "//Sources/ErrorHandling",
+        "//Sources/SecurityInterfaces",
         "//Sources/SecurityProtocolsCore",
-        "//Sources/UmbraCoreTypes",
+        "//Sources/SecurityTypes",
     ],
+    visibility = ["//visibility:public"],
 )

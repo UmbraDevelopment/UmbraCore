@@ -2,10 +2,47 @@ import Foundation
 import UmbraLogging
 
 // Removed UmbraLoggingAdapters import to fix library evolution issues
-import ErrorHandlingCore
-import ErrorHandlingDomains // This contains the UmbraErrors namespace
-import ErrorHandlingInterfaces
-import ErrorHandlingProtocols
+print("Opening key import dialog...")
+
+// Local type declarations to replace imports
+// These replace the removed ErrorHandling and ErrorHandlingDomains imports
+
+/// Error domain namespace
+public enum ErrorDomain {
+  /// Security domain
+  public static let security = "Security"
+  /// Crypto domain
+  public static let crypto = "Crypto"
+  /// Application domain
+  public static let application = "Application"
+}
+
+/// Error context protocol
+public protocol ErrorContext {
+  /// Domain of the error
+  var domain: String { get }
+  /// Code of the error
+  var code: Int { get }
+  /// Description of the error
+  var description: String { get }
+}
+
+/// Base error context implementation
+public struct BaseErrorContext: ErrorContext {
+  /// Domain of the error
+  public let domain: String
+  /// Code of the error
+  public let code: Int
+  /// Description of the error
+  public let description: String
+
+  /// Initialise with domain, code and description
+  public init(domain: String, code: Int, description: String) {
+    self.domain = domain
+    self.code = code
+    self.description = description
+  }
+}
 
 /// Comprehensive examples showing how to use the enhanced error handling system
 /// with error recovery and notifications
@@ -93,14 +130,14 @@ public final class ComprehensiveErrorHandlingExample {
     print("SECURITY ERROR: \(error)")
 
     // 2. Try to automatically recover
-    let recovered=await attemptAutomaticRecovery(from: error)
+    let recovered = await attemptAutomaticRecovery(from: error)
     if recovered {
       print("Successfully recovered from security error")
       return
     }
 
     // 3. If automatic recovery failed, present options to the user
-    let recoveryOptions=getRecoveryOptionsForSecurityError(error)
+    let recoveryOptions = getRecoveryOptionsForSecurityError(error)
     presentRecoveryOptions(for: error, options: recoveryOptions)
   }
 
@@ -112,14 +149,14 @@ public final class ComprehensiveErrorHandlingExample {
     print("NETWORK ERROR: \(error)")
 
     // 2. Try to automatically recover
-    let recovered=await attemptAutomaticRecovery(from: error)
+    let recovered = await attemptAutomaticRecovery(from: error)
     if recovered {
       print("Successfully recovered from network error")
       return
     }
 
     // 3. If automatic recovery failed, present options to the user
-    let recoveryOptions=getRecoveryOptionsForNetworkError(error)
+    let recoveryOptions = getRecoveryOptionsForNetworkError(error)
     presentRecoveryOptions(for: error, options: recoveryOptions)
   }
 
@@ -131,14 +168,14 @@ public final class ComprehensiveErrorHandlingExample {
     print("FILE SYSTEM ERROR: \(error.localizedDescription)")
 
     // 2. Try to automatically recover
-    let recovered=await attemptAutomaticRecovery(from: error)
+    let recovered = await attemptAutomaticRecovery(from: error)
     if recovered {
       print("Successfully recovered from file system error")
       return
     }
 
     // 3. If automatic recovery failed, present options to the user
-    let recoveryOptions=getRecoveryOptionsForFileSystemError(error)
+    let recoveryOptions = getRecoveryOptionsForFileSystemError(error)
     presentRecoveryOptions(for: error, options: recoveryOptions)
   }
 
@@ -201,9 +238,9 @@ public final class ComprehensiveErrorHandlingExample {
     print("\nPlease select an option (simulated user would choose here)")
 
     // Simulate user selecting the first option
-    if let firstOption=options.first {
+    if let firstOption = options.first {
       print("Selected: \(firstOption.title)")
-      let recoverySuccessful=firstOption.perform()
+      let recoverySuccessful = firstOption.perform()
       print("Recovery action \(recoverySuccessful ? "succeeded" : "failed")")
     } else {
       print("No recovery options available")
@@ -235,8 +272,7 @@ public final class ComprehensiveErrorHandlingExample {
             return true
           }),
           RecoveryAction(id: "import", title: "Import Existing Key", handler: {
-            print("Opening key import dialog...")
-            return true
+            true
           })
         ]
 
@@ -334,11 +370,11 @@ struct RecoveryAction: RecoveryOption {
   let isDefault: Bool
   private let handler: () -> Bool
 
-  init(id: String, title: String, isDefault: Bool=false, handler: @escaping () -> Bool) {
-    self.id=id
-    self.title=title
-    self.isDefault=isDefault
-    self.handler=handler
+  init(id: String, title: String, isDefault: Bool = false, handler: @escaping () -> Bool) {
+    self.id = id
+    self.title = title
+    self.isDefault = isDefault
+    self.handler = handler
   }
 
   func perform() -> Bool {

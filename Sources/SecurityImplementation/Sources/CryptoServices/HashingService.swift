@@ -41,7 +41,7 @@ public struct HashingService: Sendable {
     data: SecureBytes
   ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     // Use SHA-256 through CryptoWrapper
-    let hashedData=CryptoWrapper.sha256(data)
+    let hashedData = CryptoWrapper.sha256(data)
     return .success(hashedData)
   }
 
@@ -55,10 +55,10 @@ public struct HashingService: Sendable {
     against hash: SecureBytes
   ) async -> Result<Bool, UmbraErrors.Security.Protocols> {
     // Calculate hash of the provided data
-    let calculatedHash=CryptoWrapper.sha256(data)
+    let calculatedHash = CryptoWrapper.sha256(data)
 
     // Implement constant-time comparison to prevent timing attacks
-    var result: UInt8=0
+    var result: UInt8 = 0
 
     // Only compare if lengths match
     if calculatedHash.count == hash.count {
@@ -85,7 +85,7 @@ public struct HashingService: Sendable {
     // via the config parameter
 
     // Use SHA-256 through CryptoWrapper
-    let hashedData=CryptoWrapper.sha256(data)
+    let hashedData = CryptoWrapper.sha256(data)
     return .success(hashedData)
   }
 
@@ -108,7 +108,7 @@ public struct HashingService: Sendable {
     }
 
     // Use HMAC-SHA256 through CryptoWrapper
-    let mac=CryptoWrapper.hmacSHA256(data: data, key: key)
+    let mac = CryptoWrapper.hmacSHA256(data: data, key: key)
     return .success(mac)
   }
 
@@ -124,10 +124,10 @@ public struct HashingService: Sendable {
     using key: SecureBytes
   ) async -> Result<Bool, UmbraErrors.Security.Protocols> {
     // Calculate a MAC for the data with the provided key
-    let calculatedMAC=CryptoWrapper.hmacSHA256(data: data, key: key)
+    let calculatedMAC = CryptoWrapper.hmacSHA256(data: data, key: key)
 
     // Implement constant-time comparison to prevent timing attacks
-    var result: UInt8=0
+    var result: UInt8 = 0
 
     // Only compare if lengths match
     if calculatedMAC.count == mac.count {

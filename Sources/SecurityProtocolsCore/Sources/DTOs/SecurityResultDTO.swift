@@ -1,6 +1,44 @@
-import ErrorHandling
-import ErrorHandlingDomains
 import UmbraCoreTypes
+
+// Local type declarations to replace imports
+// These replace the removed ErrorHandling and ErrorHandlingDomains imports
+
+/// Error domain namespace
+public enum ErrorDomain {
+  /// Security domain
+  public static let security = "Security"
+  /// Crypto domain
+  public static let crypto = "Crypto"
+  /// Application domain
+  public static let application = "Application"
+}
+
+/// Error context protocol
+public protocol ErrorContext {
+  /// Domain of the error
+  var domain: String { get }
+  /// Code of the error
+  var code: Int { get }
+  /// Description of the error
+  var description: String { get }
+}
+
+/// Base error context implementation
+public struct BaseErrorContext: ErrorContext {
+  /// Domain of the error
+  public let domain: String
+  /// Code of the error
+  public let code: Int
+  /// Description of the error
+  public let description: String
+
+  /// Initialise with domain, code and description
+  public init(domain: String, code: Int, description: String) {
+    self.domain = domain
+    self.code = code
+    self.description = description
+  }
+}
 
 /// FoundationIndependent representation of a security operation result.
 /// This data transfer object encapsulates the outcome of security-related operations
@@ -28,32 +66,32 @@ public struct SecurityResultDTO: Sendable, Equatable {
   /// Initialize a successful result with data
   /// - Parameter data: The operation result data
   public init(data: SecureBytes) {
-    success=true
-    self.data=data
-    errorCode=nil
-    errorMessage=nil
-    error=nil
+    success = true
+    self.data = data
+    errorCode = nil
+    errorMessage = nil
+    error = nil
   }
 
   /// Initialize a successful result without data
   public init() {
-    success=true
-    data=nil
-    errorCode=nil
-    errorMessage=nil
-    error=nil
+    success = true
+    data = nil
+    errorCode = nil
+    errorMessage = nil
+    error = nil
   }
 
   /// Initialize with success flag and optional data
   /// - Parameters:
   ///   - success: Whether the operation succeeded
   ///   - data: Optional result data
-  public init(success: Bool, data: SecureBytes?=nil) {
-    self.success=success
-    self.data=data
-    errorCode=nil
-    errorMessage=nil
-    error=nil
+  public init(success: Bool, data: SecureBytes? = nil) {
+    self.success = success
+    self.data = data
+    errorCode = nil
+    errorMessage = nil
+    error = nil
   }
 
   /// Initialize a security result
@@ -64,51 +102,51 @@ public struct SecurityResultDTO: Sendable, Equatable {
   ///   - errorDetails: Optional detailed error message
   public init(
     success: Bool,
-    error: UmbraErrors.Security.Protocols?=nil,
-    errorDetails: String?=nil
+    error: UmbraErrors.Security.Protocols? = nil,
+    errorDetails: String? = nil
   ) {
-    self.success=success
-    data=nil
-    self.error=error
+    self.success = success
+    data = nil
+    self.error = error
 
     // Derive error code based on error type
     if let error {
       switch error {
         case .invalidFormat:
-          errorCode=1001
+          errorCode = 1_001
         case .unsupportedOperation:
-          errorCode=1002
+          errorCode = 1_002
         case .incompatibleVersion:
-          errorCode=1003
+          errorCode = 1_003
         case .missingProtocolImplementation:
-          errorCode=1004
+          errorCode = 1_004
         case .invalidState:
-          errorCode=1005
+          errorCode = 1_005
         case .internalError:
-          errorCode=1006
+          errorCode = 1_006
         case .invalidInput:
-          errorCode=1007
+          errorCode = 1_007
         case .encryptionFailed:
-          errorCode=1008
+          errorCode = 1_008
         case .decryptionFailed:
-          errorCode=1009
+          errorCode = 1_009
         case .randomGenerationFailed:
-          errorCode=1010
+          errorCode = 1_010
         case .storageOperationFailed:
-          errorCode=1011
+          errorCode = 1_011
         case .serviceError:
-          errorCode=1012
+          errorCode = 1_012
         case .notImplemented:
-          errorCode=1013
+          errorCode = 1_013
         @unknown default:
-          errorCode=1099
+          errorCode = 1_099
       }
 
       // Set error description
-      errorMessage=errorDetails ?? String(describing: error)
+      errorMessage = errorDetails ?? String(describing: error)
     } else {
-      errorCode=nil
-      errorMessage=errorDetails
+      errorCode = nil
+      errorMessage = errorDetails
     }
   }
 
@@ -117,10 +155,10 @@ public struct SecurityResultDTO: Sendable, Equatable {
   ///   - errorCode: Numeric error code
   ///   - errorMessage: Human-readable error message
   public init(errorCode: Int, errorMessage: String) {
-    success=false
-    data=nil
-    self.errorCode=errorCode
-    self.errorMessage=errorMessage
+    success = false
+    data = nil
+    self.errorCode = errorCode
+    self.errorMessage = errorMessage
     error = .internalError("Error code: \(errorCode), Message: \(errorMessage)")
   }
 
@@ -155,7 +193,7 @@ public struct SecurityResultDTO: Sendable, Equatable {
   /// - Returns: A failure result DTO
   public static func failure(
     error: UmbraErrors.Security.Protocols,
-    details: String?=nil
+    details: String? = nil
   ) -> SecurityResultDTO {
     SecurityResultDTO(success: false, error: error, errorDetails: details)
   }
@@ -173,7 +211,7 @@ public struct SecurityResultDTO: Sendable, Equatable {
 
     // For successful results, compare data
     if lhs.success {
-      if let lhsData=lhs.data, let rhsData=rhs.data {
+      if let lhsData = lhs.data, let rhsData = rhs.data {
         return lhsData == rhsData
       } else {
         // If one has data and the other doesn't, they're not equal
@@ -186,7 +224,7 @@ public struct SecurityResultDTO: Sendable, Equatable {
       }
 
       // Compare error types
-      if let lhsError=lhs.error, let rhsError=rhs.error {
+      if let lhsError = lhs.error, let rhsError = rhs.error {
         // Compare error types by their string representation
         // This is a simple approach; a more robust solution would compare the enum cases directly
         return String(describing: lhsError) == String(describing: rhsError)

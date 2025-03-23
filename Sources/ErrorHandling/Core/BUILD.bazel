@@ -8,7 +8,7 @@ umbra_swift_library(
         "//Sources/ErrorHandling/Interfaces:ErrorHandlingInterfaces",
         "//Sources/ErrorHandling/Models:ErrorHandlingModels",
         "//Sources/ErrorHandling/Protocols:ErrorHandlingProtocols",
-        "//Sources/ErrorHandling/Domains:ErrorHandlingDomains",
+        "//ErrorHandling/Domains:ErrorHandlingDomains",
         "//Sources/ErrorHandling/Logging:ErrorHandlingLogging",
         # Removing dependency on Recovery to break circular dependency
         # "//Sources/ErrorHandling/Recovery:ErrorHandlingRecovery",

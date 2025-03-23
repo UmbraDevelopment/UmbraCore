@@ -20,7 +20,7 @@ import SecurityTypes
   deprecated,
   message: "This will be replaced by CryptoTypesTypes.CryptoConfig in a future version. Use CryptoTypesTypes.CryptoConfig instead."
 )
-public typealias CryptoConfig=CryptoTypesTypes.CryptoConfig
+public typealias CryptoConfig = CryptoTypesTypes.CryptoConfig
 
 // Keep existing functionality for backward compatibility
 extension CryptoTypesTypes.CryptoConfig {
@@ -29,7 +29,7 @@ extension CryptoTypesTypes.CryptoConfig {
   /// Higher values increase security but also increase processing time.
   @available(*, deprecated, message: "Will be removed in a future version")
   public var iterations: Int {
-    10000
+    10_000
   }
 
   /// Creates a legacy crypto configuration.
@@ -40,9 +40,9 @@ extension CryptoTypesTypes.CryptoConfig {
   ///   - iterations: PBKDF2 iterations (ignored in modern implementation). Defaults to 10,000.
   @available(*, deprecated, message: "Use the standard initializer instead")
   public static func legacyInit(
-    keySize: Int=256,
-    ivSize: Int=96,
-    iterations _: Int=10000
+    keySize: Int = 256,
+    ivSize: Int = 96,
+    iterations _: Int = 10_000
   ) -> CryptoTypesTypes.CryptoConfig {
     CryptoTypesTypes.CryptoConfig(keyLength: keySize, ivLength: ivSize / 8)
   }
@@ -76,7 +76,7 @@ public struct EncryptionResult: Sendable {
 )
 public actor CryptoService: UmbraService {
   /// The unique identifier for this service.
-  public static let serviceIdentifier="com.umbracore.crypto"
+  public static let serviceIdentifier = "com.umbracore.crypto"
 
   /// The internal state of the service.
   private var _state: ServiceState = .uninitialized
@@ -91,8 +91,8 @@ public actor CryptoService: UmbraService {
   ///
   /// - Parameter config: The configuration to use for cryptographic operations.
   ///                    Defaults to standard secure parameters.
-  public init(config: CryptoTypesTypes.CryptoConfig=CryptoTypesTypes.CryptoConfig.default) {
-    self.config=config
+  public init(config: CryptoTypesTypes.CryptoConfig = CryptoTypesTypes.CryptoConfig.default) {
+    self.config = config
   }
 
   /// Initializes the service and validates its configuration.
@@ -140,8 +140,8 @@ public actor CryptoService: UmbraService {
       throw CoreErrors.ServiceError.invalidState
     }
 
-    var key=[UInt8](repeating: 0, count: config.keyLength)
-    let status=SecRandomCopyBytes(kSecRandomDefault, key.count, &key)
+    var key = [UInt8](repeating: 0, count: config.keyLength)
+    let status = SecRandomCopyBytes(kSecRandomDefault, key.count, &key)
     guard status == errSecSuccess else {
       throw CoreErrors.CryptoError.keyGenerationFailed
     }
@@ -157,8 +157,8 @@ public actor CryptoService: UmbraService {
       throw CoreErrors.ServiceError.invalidState
     }
 
-    var iv=[UInt8](repeating: 0, count: config.ivLength)
-    let status=SecRandomCopyBytes(kSecRandomDefault, iv.count, &iv)
+    var iv = [UInt8](repeating: 0, count: config.ivLength)
+    let status = SecRandomCopyBytes(kSecRandomDefault, iv.count, &iv)
     guard status == errSecSuccess else {
       throw CoreErrors.CryptoError.ivGenerationFailed
     }
@@ -180,9 +180,9 @@ public actor CryptoService: UmbraService {
       throw CoreErrors.ServiceError.invalidState
     }
 
-    let initializationVector=try generateIV()
-    let encrypted=try encrypt(data, key: key, iv: initializationVector)
-    let tag=try generateTag(data: data, key: key, iv: initializationVector)
+    let initializationVector = try generateIV()
+    let encrypted = try encrypt(data, key: key, iv: initializationVector)
+    let tag = try generateTag(data: data, key: key, iv: initializationVector)
     return EncryptionResult(
       encrypted: encrypted,
       initializationVector: initializationVector,
@@ -259,8 +259,8 @@ public actor CryptoService: UmbraService {
       throw CoreErrors.ServiceError.invalidState
     }
 
-    var bytes=[UInt8](repeating: 0, count: length)
-    let status=SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
+    var bytes = [UInt8](repeating: 0, count: length)
+    let status = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
 
     guard status == errSecSuccess else {
       throw CoreErrors.CryptoError.randomGenerationFailed(status: status)
@@ -279,8 +279,8 @@ public actor CryptoService: UmbraService {
       throw CoreErrors.ServiceError.invalidState
     }
 
-    var bytes=[UInt8](repeating: 0, count: count)
-    let status=SecRandomCopyBytes(kSecRandomDefault, count, &bytes)
+    var bytes = [UInt8](repeating: 0, count: count)
+    let status = SecRandomCopyBytes(kSecRandomDefault, count, &bytes)
     guard status == errSecSuccess else {
       throw CoreErrors.CryptoError.randomGenerationFailed(status: status)
     }
@@ -299,11 +299,11 @@ public actor CryptoService: UmbraService {
 
     // Use CommonCrypto for SHA-256 hash
     // This is a simple implementation that should be enhanced in production
-    let hashData=Data(data)
-    var hashBytes=[UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
+    let hashData = Data(data)
+    var hashBytes = [UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
 
     hashData.withUnsafeBytes { dataBuffer in
-      _=CC_SHA256(dataBuffer.baseAddress, CC_LONG(data.count), &hashBytes)
+      _ = CC_SHA256(dataBuffer.baseAddress, CC_LONG(data.count), &hashBytes)
     }
 
     return hashBytes

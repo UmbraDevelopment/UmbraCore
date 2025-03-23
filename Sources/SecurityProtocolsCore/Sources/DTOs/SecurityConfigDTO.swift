@@ -53,25 +53,25 @@ public struct SecurityConfigDTO: Sendable, Equatable {
   public init(
     algorithm: String,
     keySizeInBits: Int,
-    initializationVector: SecureBytes?=nil,
-    additionalAuthenticatedData: SecureBytes?=nil,
-    iterations: Int?=nil,
-    options: [String: String]=[:],
-    keyIdentifier: String?=nil,
-    inputData: SecureBytes?=nil,
-    key: SecureBytes?=nil,
-    additionalData: SecureBytes?=nil
+    initializationVector: SecureBytes? = nil,
+    additionalAuthenticatedData: SecureBytes? = nil,
+    iterations: Int? = nil,
+    options: [String: String] = [:],
+    keyIdentifier: String? = nil,
+    inputData: SecureBytes? = nil,
+    key: SecureBytes? = nil,
+    additionalData: SecureBytes? = nil
   ) {
-    self.algorithm=algorithm
-    self.keySizeInBits=keySizeInBits
-    self.initializationVector=initializationVector
-    self.additionalAuthenticatedData=additionalAuthenticatedData
-    self.iterations=iterations
-    self.options=options
-    self.keyIdentifier=keyIdentifier
-    self.inputData=inputData
-    self.key=key
-    self.additionalData=additionalData
+    self.algorithm = algorithm
+    self.keySizeInBits = keySizeInBits
+    self.initializationVector = initializationVector
+    self.additionalAuthenticatedData = additionalAuthenticatedData
+    self.iterations = iterations
+    self.options = options
+    self.keyIdentifier = keyIdentifier
+    self.inputData = inputData
+    self.key = key
+    self.additionalData = additionalData
   }
 
   // MARK: - Factory Methods
@@ -83,9 +83,9 @@ public struct SecurityConfigDTO: Sendable, Equatable {
   ///   - aad: Optional additional authenticated data
   /// - Returns: Configuration for AES-GCM
   public static func aesGCM(
-    keySizeInBits: Int=256,
-    iv: SecureBytes?=nil,
-    aad: SecureBytes?=nil
+    keySizeInBits: Int = 256,
+    iv: SecureBytes? = nil,
+    aad: SecureBytes? = nil
   ) -> SecurityConfigDTO {
     SecurityConfigDTO(
       algorithm: "AES-GCM",
@@ -98,7 +98,7 @@ public struct SecurityConfigDTO: Sendable, Equatable {
   /// Create a configuration for RSA asymmetric encryption
   /// - Parameter keySizeInBits: Key size in bits (2048, 3072, or 4096)
   /// - Returns: Configuration for RSA
-  public static func rsa(keySizeInBits: Int=2048) -> SecurityConfigDTO {
+  public static func rsa(keySizeInBits: Int = 2_048) -> SecurityConfigDTO {
     SecurityConfigDTO(
       algorithm: "RSA",
       keySizeInBits: keySizeInBits
@@ -111,8 +111,8 @@ public struct SecurityConfigDTO: Sendable, Equatable {
   ///   - outputKeySizeInBits: Size of the derived key in bits
   /// - Returns: Configuration for PBKDF2
   public static func pbkdf2(
-    iterations: Int=10000,
-    outputKeySizeInBits: Int=256
+    iterations: Int = 10_000,
+    outputKeySizeInBits: Int = 256
   ) -> SecurityConfigDTO {
     SecurityConfigDTO(
       algorithm: "PBKDF2",

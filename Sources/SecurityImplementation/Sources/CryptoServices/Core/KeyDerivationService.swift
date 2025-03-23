@@ -21,7 +21,7 @@ final class KeyDerivationService: Sendable {
   // MARK: - Properties
 
   /// CryptoServiceCore for low-level cryptographic operations
-  private let cryptoService=CryptoServiceCore()
+  private let cryptoService = CryptoServiceCore()
 
   // MARK: - Initialisation
 
@@ -77,7 +77,7 @@ final class KeyDerivationService: Sendable {
     }
 
     // Use the cryptoService to generate random data
-    let result=await cryptoService.generateRandomData(length: length)
+    let result = await cryptoService.generateRandomData(length: length)
 
     switch result {
       case let .success(randomData):
@@ -110,7 +110,7 @@ final class KeyDerivationService: Sendable {
   /// - Returns: The generated key
   private func generateRSAKey(bits: Int) async throws -> SecureBytes {
     // RSA keys should be at least 2048 bits
-    guard bits >= 2048 else {
+    guard bits >= 2_048 else {
       throw CoreErrors.CryptoError
         .invalidKeySize(reason: "RSA key size must be at least 2048 bits, got \(bits)")
     }

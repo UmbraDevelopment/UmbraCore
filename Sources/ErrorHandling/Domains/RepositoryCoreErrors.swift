@@ -1,5 +1,44 @@
-import ErrorHandlingInterfaces
 import Foundation
+
+// Local type declarations to replace imports
+// These replace the removed ErrorHandling and ErrorHandlingDomains imports
+
+/// Error domain namespace
+public enum ErrorDomain {
+  /// Security domain
+  public static let security = "Security"
+  /// Crypto domain
+  public static let crypto = "Crypto"
+  /// Application domain
+  public static let application = "Application"
+}
+
+/// Error context protocol
+public protocol ErrorContext {
+  /// Domain of the error
+  var domain: String { get }
+  /// Code of the error
+  var code: Int { get }
+  /// Description of the error
+  var description: String { get }
+}
+
+/// Base error context implementation
+public struct BaseErrorContext: ErrorContext {
+  /// Domain of the error
+  public let domain: String
+  /// Code of the error
+  public let code: Int
+  /// Description of the error
+  public let description: String
+
+  /// Initialise with domain, code and description
+  public init(domain: String, code: Int, description: String) {
+    self.domain = domain
+    self.code = code
+    self.description = description
+  }
+}
 
 extension UmbraErrors.Repository {
   /// Core repository errors relating to repository access and management
@@ -120,13 +159,13 @@ extension UmbraErrors.Repository {
         case let .permissionDenied(operation, reason):
           "Permission denied for operation '\(operation)': \(reason)"
         case let .objectNotFound(objectID, objectType):
-          if let type=objectType {
+          if let type = objectType {
             "Object not found: \(type) with ID \(objectID)"
           } else {
             "Object not found: \(objectID)"
           }
         case let .objectAlreadyExists(objectID, objectType):
-          if let type=objectType {
+          if let type = objectType {
             "Object already exists: \(type) with ID \(objectID)"
           } else {
             "Object already exists: \(objectID)"
@@ -246,9 +285,9 @@ extension UmbraErrors.Repository.Core {
   /// Create an error for a repository that could not be found
   public static func makeNotFound(
     repository: String,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .repositoryNotFound(resource: repository)
   }
@@ -256,10 +295,10 @@ extension UmbraErrors.Repository.Core {
   /// Create an error for an object that could not be found
   public static func makeObjectNotFound(
     id: String,
-    type: String?=nil,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    type: String? = nil,
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .objectNotFound(objectID: id, objectType: type)
   }
@@ -268,9 +307,9 @@ extension UmbraErrors.Repository.Core {
   public static func makePermissionDenied(
     operation: String,
     reason: String,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .permissionDenied(operation: operation, reason: reason)
   }
@@ -280,9 +319,9 @@ extension UmbraErrors.Repository.Core {
     resource: String,
     operation: String,
     reason: String,
-    file _: String=#file,
-    line _: Int=#line,
-    function _: String=#function
+    file _: String = #file,
+    line _: Int = #line,
+    function _: String = #function
   ) -> Self {
     .internalError(reason: "Failed to \(operation) \(resource): \(reason)")
   }

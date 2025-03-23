@@ -1,4 +1,3 @@
-import ErrorHandlingDomains
 import Foundation
 import SecurityInterfaces
 import SecurityProtocolsCore
@@ -13,6 +12,11 @@ public protocol URLSecurityProvider {
   func startAccessing(url: URL) async throws -> Bool
 }
 
+// Define a dedicated error type for our test module
+public enum TestSecurityError: Error {
+  case invalidInput(message: String)
+}
+
 extension SecurityProtocolsCore.SecurityProviderProtocol {
   /// Start accessing a URL security-scoped resource
   /// - Parameter url: URL to access
@@ -21,8 +25,7 @@ extension SecurityProtocolsCore.SecurityProviderProtocol {
   public func startAccessing(url: URL) async throws -> Bool {
     // Access the path directly to avoid recursive call
     guard !url.path.isEmpty else {
-      throw ErrorHandlingDomains.UmbraErrors.Security.Protocols
-        .makeInvalidInput(message: "Empty path")
+      throw TestSecurityError.invalidInput(message: "Empty path")
     }
     return true
   }
