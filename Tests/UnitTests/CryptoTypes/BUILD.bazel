@@ -2,8 +2,11 @@ load("//:swift_rules.bzl", "umbra_swift_test")
 
 umbra_swift_test(
     name = "CryptoTypes",
-    srcs = glob(["**/*.swift"], allow_empty = True ),
+    srcs = glob(
+        ["**/*.swift"],
+        allow_empty = True,
+    ),
     deps = [
         "//Tests/TestKit",
-    ], 
+    ],
 )

@@ -1,15 +1,7 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
-
-swift_library(
+filegroup(
     name = "SecureString",
-    srcs = glob(
-        ["Sources/**/*.swift"], allow_empty = True
-    ),
+    srcs = ["//Sources/SecureString/Sources:SecureStringSources"],
     visibility = ["//visibility:public"],
-    deps = [
-        "//Sources/ErrorHandlingInterfaces",
-        "//Sources/UmbraErrors",
-    ], 
 )
 
 # Uncomment if documentation generation is needed
@@ -18,9 +10,6 @@ swift_library(
 #
 # swift_package(
 #     name = "docc_documentation",
-#     srcs = glob([
-#         "**/*.swift",
-#         "**/*.docc/**",
-#     ], allow_empty = True ),
+#     srcs = glob(["**/*.swift"], allow_empty = True),
 #     deps = ["//Sources/SecureString"],
 # )

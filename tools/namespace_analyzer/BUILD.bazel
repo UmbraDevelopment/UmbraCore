@@ -4,11 +4,11 @@ go_library(
     name = "namespace_analyzer_lib",
     srcs = ["main.go"],
     importpath = "dev.mpy.UmbraCore/tools/namespace_analyzer",
-    visibility = ["//visibility:private"]
+    visibility = ["//visibility:private"],
 )
 
 go_binary(
     name = "namespace_analyzer",
     embed = [":namespace_analyzer_lib"],
-    visibility = ["//visibility:public"]
+    visibility = ["//visibility:public"],
 )

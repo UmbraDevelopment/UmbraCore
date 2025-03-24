@@ -2,16 +2,13 @@ load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 swift_library(
     name = "SecurityProtocolsCore",
-    srcs = glob([
-        "Sources/**/*.swift",
-        "*.swift",
-    ], allow_empty = True ),
+    srcs = ["//Sources/SecurityProtocolsCore/Sources:SecurityProtocolsCoreSources"],
     visibility = ["//visibility:public"],
     deps = [
-        "//Sources/ErrorHandlingDomains",
+        "//Sources/UmbraCoreTypes",
         "//Sources/ErrorHandlingInterfaces",
-        "//Sources/UmbraErrors",
-    ], 
+        "//Sources/UmbraErrorsDomains",
+    ],
 )
 
 # Uncomment if documentation generation is needed
@@ -20,9 +17,6 @@ swift_library(
 #
 # swift_package(
 #     name = "docc_documentation",
-#     srcs = glob([
-#         "**/*.swift",
-#         "**/*.docc/**",
-#     ], allow_empty = True ),
+#     srcs = glob(["**/*.swift"], allow_empty = True),
 #     deps = ["//Sources/SecurityProtocolsCore"],
 # )

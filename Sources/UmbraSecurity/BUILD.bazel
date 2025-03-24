@@ -2,21 +2,24 @@ load("//:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
     name = "UmbraSecurity",
-    srcs = glob(["Sources/**/*.swift"], allow_empty = True ),
-        deps = [
+    srcs = glob(
+        ["Sources/**/*.swift"],
+        allow_empty = True,
+    ),
+    deps = [
         "//ErrorHandling/Core:ErrorHandlingCore",
         "//ErrorHandling/Domains:ErrorHandlingDomains",
         "//ErrorHandling/Interfaces:ErrorHandlingInterfaces",
         "//ErrorHandling/Mapping:ErrorHandlingMapping",
-        "//Sources/CoreDTOs:CoreDTOs",
-        "//Sources/CoreTypesInterfaces:CoreTypesInterfaces",
-        "//Sources/SecurityBridgeTypes:SecurityBridgeTypes",
-        "//Sources/SecurityInterfaces:SecurityInterfaces",
-        "//Sources/SecurityInterfacesBase:SecurityInterfacesBase",
-        "//Sources/SecurityInterfacesProtocols:SecurityInterfacesProtocols",
-        "//Sources/UmbraCoreTypes:UmbraCoreTypes",
-        "//Sources/XPCProtocolsCore:XPCProtocolsCore",
-    ], 
+        "//Sources/CoreDTOs",
+        "//Sources/CoreTypesInterfaces",
+        "//Sources/SecurityBridgeTypes",
+        "//Sources/SecurityInterfaces",
+        "//Sources/SecurityInterfacesBase",
+        "//Sources/SecurityInterfacesProtocols",
+        "//Sources/UmbraCoreTypes",
+        "//Sources/XPCProtocolsCore",
+    ],
 )
 
 # Uncomment if documentation generation is needed

@@ -67,7 +67,7 @@
 /// ```swift
 /// let registry = ServiceRegistry.shared
 ///
-/// if let cryptoService: CryptoService = registry.service() {
+/// if let cryptoService: CryptoServiceCore = registry.service() {
 ///     try await cryptoService.start()
 /// }
 /// ```

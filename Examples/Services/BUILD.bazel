@@ -10,7 +10,7 @@ filegroup(
     srcs = [
         "ServicesDTOExample.swift",
     ],
-    visibility = ["//visibility:public"]
+    visibility = ["//visibility:public"],
 )
 
 # Original dependencies that would be needed when re-enabling:

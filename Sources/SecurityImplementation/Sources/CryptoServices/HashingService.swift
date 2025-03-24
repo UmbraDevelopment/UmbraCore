@@ -20,7 +20,7 @@ import Foundation
 import SecurityProtocolsCore
 import UmbraCoreTypes
 
-/// Provides cryptographic hashing operations to the CryptoService.
+/// Provides cryptographic hashing operations to the CryptoServiceCore.
 ///
 /// This struct implements various hashing algorithms and message authentication
 /// code generation to ensure data integrity and authenticity.

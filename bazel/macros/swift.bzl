@@ -28,16 +28,27 @@ def umbra_swift_library(
     """
     copts = get_swift_copts(swift_mode, enable_library_evolution) + additional_copts
 
-    swift_library(
-        name = name,
-        srcs = srcs,
-        copts = copts,
-        module_name = name,
-        testonly = testonly,
-        visibility = ["//visibility:public"],
-        deps = deps,
-        **kwargs
-    )
+    # Handle empty source files gracefully by creating a placeholder filegroup
+    # when no source files are found
+    if not srcs:
+        # Create an empty filegroup as a placeholder when no sources exist
+        native.filegroup(
+            name = name,
+            srcs = [],
+            testonly = testonly,
+            visibility = ["//visibility:public"],
+        )
+    else:
+        swift_library(
+            name = name,
+            srcs = srcs,
+            copts = copts,
+            module_name = name,
+            testonly = testonly,
+            visibility = ["//visibility:public"],
+            deps = deps,
+            **kwargs
+        )
 
 def umbra_test_library(
         name,

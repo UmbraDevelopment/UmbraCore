@@ -4,11 +4,11 @@ go_library(
     name = "typealias_lib",
     srcs = ["main.go"],
     importpath = "dev.mpy.UmbraCore/tools/go/cmd/typealias",
-    visibility = ["//visibility:private"]
+    visibility = ["//visibility:private"],
 )
 
 go_binary(
     name = "typealias",
     embed = [":typealias_lib"],
-    visibility = ["//visibility:public"]
+    visibility = ["//visibility:public"],
 )

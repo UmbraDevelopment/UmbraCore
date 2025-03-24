@@ -11,7 +11,7 @@
  subsystem by providing a single entry point that coordinates between different
  components:
 
- * CryptoService: Handles encryption, decryption, hashing, and other cryptographic operations
+ * CryptoServiceCore: Handles encryption, decryption, hashing, and other cryptographic operations
  * KeyManager: Handles key generation, storage, retrieval, and lifecycle management
 
  ## Security Considerations
@@ -102,7 +102,7 @@ public final class SecurityProvider: SecurityProviderProtocol {
 
   /// Creates a new instance with default services
   public init() {
-    cryptoService=CryptoService()
+    cryptoService=CryptoServiceCore()
     keyManager=KeyManager()
     providerCore=SecurityProviderCore(cryptoService: cryptoService, keyManager: keyManager)
   }

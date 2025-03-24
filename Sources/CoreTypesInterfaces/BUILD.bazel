@@ -7,7 +7,7 @@ swift_library(
     visibility = ["//visibility:public"],
     deps = [
         "//Sources/CoreTypesInterfaces/Sources:CoreTypesInterfacesSources",
-    ]
+    ],
 )
 
 # Uncomment if documentation generation is needed

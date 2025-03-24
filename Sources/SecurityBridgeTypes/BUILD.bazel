@@ -2,10 +2,13 @@ load("//:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
     name = "SecurityBridgeTypes",
-    srcs = glob(["Sources/**/*.swift"], allow_empty = True ),
+    srcs = glob(
+        ["Sources/**/*.swift"],
+        allow_empty = True,
+    ),
     visibility = ["//visibility:public"],
     deps = [
-    ], 
+    ],
 )
 
 # Uncomment if documentation generation is needed
@@ -17,6 +20,6 @@ umbra_swift_library(
 #     srcs = glob([
 #         "**/*.swift",
 #         "**/*.docc/**",
-#     ], allow_empty = True ),
+#     ] , allow_empty = True),
 #     deps = ["//Sources/SecurityBridgeTypes"],
 # )

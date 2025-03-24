@@ -174,7 +174,7 @@ actor KeyManagerMockServiceContainer {
   }
 }
 
-/// Mock implementation of CryptoService for testing in KeyManagerTests
+/// Mock implementation of CryptoServiceCore for testing in KeyManagerTests
 actor MockCryptoService: ServiceTypes.UmbraService {
   static var serviceIdentifier: String="com.umbracore.crypto.mock"
   nonisolated let identifier: String=serviceIdentifier

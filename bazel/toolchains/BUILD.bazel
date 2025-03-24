@@ -11,7 +11,7 @@ package(default_visibility = ["//visibility:public"])
 # ARM64 toolchain implementation
 filegroup(
     name = "empty",
-    srcs = []
+    srcs = [],
 )
 
 cc_toolchain(
@@ -23,12 +23,12 @@ cc_toolchain(
     objcopy_files = ":empty",
     strip_files = ":empty",
     supports_param_files = 0,
-    toolchain_config = ":macos_arm64_toolchain_config"
+    toolchain_config = ":macos_arm64_toolchain_config",
 )
 
 # ARM64 toolchain configuration
 macos_arm64_toolchain_config(
-    name = "macos_arm64_toolchain_config"
+    name = "macos_arm64_toolchain_config",
 )
 
 # Register the toolchain so it can be selected
@@ -43,5 +43,5 @@ toolchain(
         "@platforms//cpu:arm64",
     ],
     toolchain = ":macos_arm64_test_toolchain",
-    toolchain_type = "@bazel_tools//tools/cpp:toolchain_type"
+    toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
 )

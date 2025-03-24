@@ -34,7 +34,7 @@ final class EncryptedBookmarkServiceTests: XCTestCase {
 
     // Set up services
     mockKeychain=MockKeychain()
-    cryptoService=CryptoService()
+    cryptoService=CryptoServiceCore()
     credentialManager=CredentialManager(cryptoService: cryptoService, keychain: mockKeychain)
     bookmarkService=SecurityBookmarkService()
     encryptedBookmarkService=EncryptedBookmarkService(

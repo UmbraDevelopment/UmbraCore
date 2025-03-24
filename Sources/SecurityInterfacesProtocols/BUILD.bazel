@@ -2,13 +2,16 @@ load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 swift_library(
     name = "SecurityInterfacesProtocols",
-    srcs = glob(["*.swift"], allow_empty = True ),
+    srcs = glob(
+        ["*.swift"],
+        allow_empty = True,
+    ),
     module_name = "SecurityInterfacesProtocols",
     visibility = ["//visibility:public"],
     deps = [
         "//Sources/CoreTypesInterfaces",
         "//Sources/XPCProtocolsCore",
-    ], 
+    ],
 )
 
 # Uncomment if documentation generation is needed

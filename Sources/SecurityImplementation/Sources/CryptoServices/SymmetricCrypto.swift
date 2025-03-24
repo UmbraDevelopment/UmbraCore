@@ -21,7 +21,7 @@ import Foundation
 import SecurityProtocolsCore
 import UmbraCoreTypes
 
-/// Provides symmetric encryption operations to the CryptoService.
+/// Provides symmetric encryption operations to the CryptoServiceCore.
 ///
 /// This struct offers methods for encrypting and decrypting data using symmetric
 /// cryptographic algorithms, with both basic and advanced configuration options.

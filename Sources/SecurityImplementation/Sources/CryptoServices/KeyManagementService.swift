@@ -18,7 +18,7 @@ import Foundation
 import SecurityProtocolsCore
 import UmbraCoreTypes
 
-/// Provides key management operations to the CryptoService.
+/// Provides key management operations to the CryptoServiceCore.
 ///
 /// This struct implements methods for generating and deriving cryptographic keys
 /// and producing secure random data for use throughout the security framework.
