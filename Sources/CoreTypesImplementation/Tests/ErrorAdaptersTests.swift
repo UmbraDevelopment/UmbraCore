@@ -1,21 +1,22 @@
 import CoreErrors
 @testable import CoreTypesImplementation
 import ErrorHandlingDomains // Add import for UmbraErrors
+import UmbraErrors
 import XCTest
 
 final class ErrorAdaptersTests: XCTestCase {
   func testExternalToCoreErrorMapping() {
-    // Test mapping from an external error to CoreErrors.SecurityError
+    // Test mapping from an external error to UmbraErrors.Security.Core
     struct ExternalError: Error, CustomStringConvertible {
       let reason: String
       var description: String { "External error: \(reason)" }
     }
 
-    let externalError=ExternalError(reason: "API call failed")
-    let mappedError=externalErrorToCoreError(externalError)
+    let externalError = ExternalError(reason: "API call failed")
+    let mappedError = externalErrorToCoreError(externalError)
 
     // Check that we can convert the error to a string instead of checking for specific case
-    let errorDescription=String(describing: mappedError)
+    let errorDescription = String(describing: mappedError)
     XCTAssertTrue(
       errorDescription.contains("External error"),
       "Mapped error should contain the original description"
@@ -23,65 +24,65 @@ final class ErrorAdaptersTests: XCTestCase {
   }
 
   func testCoreErrorPassthrough() {
-    // When passing a CoreErrors.SecurityError, it should be returned unchanged
-    let originalError=CoreErrors.SecurityError.internalError("Test error")
-    let mappedError=mapExternalToCoreError(originalError)
+    // When passing a UmbraErrors.Security.Core, it should be returned unchanged
+    let originalError = UmbraErrors.Security.Core.internalError(description: "Test error")
+    let mappedError = mapExternalToCoreError(originalError)
 
     XCTAssertEqual(
       originalError,
       mappedError,
-      "Original CoreErrors.SecurityError should pass through unchanged"
+      "Original UmbraErrors.Security.Core should pass through unchanged"
     )
   }
 
   func testCoreToExternalErrorMapping() {
-    // Test mapping from CoreErrors.SecurityError back to a generic Error
-    let coreError=CoreErrors.SecurityError.internalError("Access error")
-    let mappedError=mapCoreToExternalError(coreError)
+    // Test mapping from UmbraErrors.Security.Core back to a generic Error
+    let coreError = UmbraErrors.Security.Core.internalError(description: "Access error")
+    let mappedError = mapCoreToExternalError(coreError)
 
-    // Verify it's still a SecurityError
+    // Verify it's still a Security.Core error
     XCTAssertTrue(
-      mappedError is CoreErrors.SecurityError,
-      "Mapped error should still be a SecurityError"
+      mappedError is UmbraErrors.Security.Core,
+      "Mapped error should still be a Security.Core error"
     )
 
     // Verify it's the same error
-    if let securityError=mappedError as? CoreErrors.SecurityError {
+    if let securityError = mappedError as? UmbraErrors.Security.Core {
       XCTAssertEqual(securityError, coreError, "Error should remain unchanged")
     } else {
-      XCTFail("Error type was changed unexpectedly")
+      XCTFail("Error should remain a Security.Core error")
     }
   }
 
   func testSecureBytesErrorMapping() {
-    // Test mapping SecureBytesError to CoreErrors.SecurityError
+    // Test mapping SecureBytesError to UmbraErrors.Security.Core
 
     // Memory allocation failure
-    let allocError=SecureBytesError.allocationFailed
-    let mappedAllocError=mapSecureBytesToCoreError(allocError)
+    let allocError = SecureBytesError.allocationFailed
+    let mappedAllocError = mapSecureBytesToCoreError(allocError)
 
     // Use string comparison instead of case pattern matching
-    let allocErrorString=String(describing: mappedAllocError)
+    let allocErrorString = String(describing: mappedAllocError)
     XCTAssertTrue(
       allocErrorString.contains("internal"),
       "Error message doesn't match expected content"
     )
 
     // Invalid hex string
-    let hexError=SecureBytesError.invalidHexString
-    let mappedHexError=mapSecureBytesToCoreError(hexError)
+    let hexError = SecureBytesError.invalidHexString
+    let mappedHexError = mapSecureBytesToCoreError(hexError)
 
-    let hexErrorString=String(describing: mappedHexError)
+    let hexErrorString = String(describing: mappedHexError)
     XCTAssertTrue(
       hexErrorString.contains("internal"),
       "Error message doesn't match expected content"
     )
 
     // Out of bounds error
-    let boundsError=SecureBytesError.outOfBounds
-    let mappedBoundsError=mapSecureBytesToCoreError(boundsError)
+    let boundsError = SecureBytesError.outOfBounds
+    let mappedBoundsError = mapSecureBytesToCoreError(boundsError)
 
-    let boundsErrorString=String(describing: mappedBoundsError)
+    let boundsErrorString = String(describing: mappedBoundsError)
     XCTAssertTrue(
       boundsErrorString.contains("internal"),
       "Error message doesn't match expected content"
@@ -89,11 +90,11 @@ final class ErrorAdaptersTests: XCTestCase {
   }
 
   func testResultErrorMapping() {
-    // Test mapping Result with different error types to Result<T, CoreErrors.SecurityError>
+    // Test mapping Result with different error types to Result<T, UmbraErrors.Security.Core>
 
     // Test success case (should pass through)
-    let successResult=Result<String, Error>.success("test data")
-    let mappedSuccessResult=mapToSecurityResult(successResult)
+    let successResult = Result<String, Error>.success("test data")
+    let mappedSuccessResult = mapToSecurityResult(successResult)
 
     switch mappedSuccessResult {
       case let .success(value):
@@ -108,19 +109,19 @@ final class ErrorAdaptersTests: XCTestCase {
       var description: String { message }
     }
 
-    let failureResult=Result<String, Error>.failure(TestError(message: "Test error"))
-    let mappedFailureResult=mapToSecurityResult(failureResult)
+    let failureResult = Result<String, Error>.failure(TestError(message: "Test error"))
+    let mappedFailureResult = mapToSecurityResult(failureResult)
 
     switch mappedFailureResult {
       case .success:
         XCTFail("Failure result should remain a failure")
       case let .failure(error):
         XCTAssertTrue(
-          error is CoreErrors.SecurityError,
-          "Error should be mapped to SecurityError"
+          error is UmbraErrors.Security.Core,
+          "Error should be mapped to Security.Core"
         )
 
-        let errorString=String(describing: error)
+        let errorString = String(describing: error)
         XCTAssertTrue(
           errorString.contains("Test error"),
           "Mapped error should contain original error description"

@@ -4,7 +4,8 @@ umbra_swift_library(
     name = "CoreErrors",
     srcs = glob(["**/*.swift"], allow_empty = True ),
     deps = [
-    ], 
+        # No direct dependency on UmbraErrors to avoid circular dependency
+    ],
 )
 
 # Uncomment if documentation generation is needed

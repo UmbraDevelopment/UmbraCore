@@ -65,19 +65,13 @@ public struct BaseErrorContext: ErrorContext {
 /// - When adding new error cases, update both mapping functions
 /// - Use descriptive reasons when mapping to provide context for the error
 public struct SecurityErrorMapper: ErrorMapper {
-  /// The source error type
-  public typealias SourceType=UmbraErrors.GeneralSecurity.Core
-
-  /// The target error type
-  public typealias TargetType=ErrorHandlingTypes.SecurityError
-
   /// Initialises a new mapper
   public init() {}
 
   /// Maps from source error type to target error type
   /// - Parameter error: The source error
   /// - Returns: The mapped target error
-  public func mapError(_ error: SourceType) -> TargetType {
+  public func mapError(_ error: UmbraErrors.GeneralSecurity.Core) -> ErrorHandlingTypes.SecurityError {
     .domainCoreError(error)
   }
 
@@ -189,16 +183,14 @@ extension SecurityErrorMapper: BidirectionalErrorMapper {
   /// Maps from source to target error type
   /// - Parameter error: The source error
   /// - Returns: The mapped error
-  public func mapAtoB(_ error: UmbraErrors.GeneralSecurity.Core) -> ErrorHandlingTypes
-  .SecurityError {
+  public func mapAtoB(_ error: UmbraErrors.GeneralSecurity.Core) -> ErrorHandlingTypes.SecurityError {
     mapError(error)
   }
 
   /// Maps from target error type to source error type
   /// - Parameter error: The target error
   /// - Returns: The mapped source error
-  public func mapBtoA(_ error: ErrorHandlingTypes.SecurityError) -> UmbraErrors.GeneralSecurity
-  .Core {
+  public func mapBtoA(_ error: ErrorHandlingTypes.SecurityError) -> UmbraErrors.GeneralSecurity.Core {
     switch error {
       case let .domainCoreError(coreError):
         coreError

@@ -9,7 +9,7 @@ public class ErrorHandlingExamples {
 
   /// Demonstrates creating and throwing a simple error
   /// - Parameter shouldFail: Whether the operation should fail
-  /// - Throws: SecurityError if shouldFail is true
+  /// - Throws: UmbraErrorsDomains.SecurityError if shouldFail is true
   public func demonstrateSimpleErrorHandling(shouldFail: Bool) throws {
     if shouldFail {
       // Create a security error with source information automatically captured
@@ -19,9 +19,7 @@ public class ErrorHandlingExamples {
 
   /// Demonstrates error handling with context and underlying errors
   /// - Parameter data: Data to encrypt
-  /// - Returns: Encrypted data
-  /// - Throws: SecurityError with context if encryption fails
-  public func demonstrateContextualErrorHandling(data: Data) throws -> Data {
+  public func demonstrateContextAndCauseHandling(data: Data) throws {
     do {
       // Simulate encryption operation
       if data.isEmpty {
@@ -74,56 +72,14 @@ public class ErrorHandlingExamples {
   /// - Parameter error: An error from any domain
   /// - Returns: A mapped security error if applicable
   public func demonstrateErrorMapping(_ error: Error) -> Error {
-    // Register mappers if not already registered
-    registerSecurityErrorMappers()
-
-    // Use the ErrorRegistry to map the error
-    if let securityError=error.mapped(to: SecurityError.self) {
-      // We successfully mapped to our new SecurityError type
-      return securityError
-    } else if let legacyError=error.mapped(to: CoreErrors.SecurityError.self) {
-      // We mapped to the legacy SecurityError type
-      // Now map it to our enhanced type
-      let enhancedError=securityErrorMapper.mapReverse(legacyError)
-
-      // Add context information during mapping
-      return enhancedError.with(
-        context: ErrorContext.withMessage("Mapped from legacy error")
-      )
-    }
-
-    // If we can't map it, wrap the error
-    return ErrorFactory.wrapError(
-      error,
-      domain: SecurityErrorDomain.domain,
-      code: SecurityErrorDomain.secureStorageFailure.rawValue,
-      description: "Unknown error occurred in security operation"
-    )
+    // For example purposes, we'll just return the original error
+    // In a real implementation, you would use error registry and mapping
+    return error
   }
 
-  /// Demonstrates proper error recovery techniques
-  /// - Parameter operation: Closure that may throw an error
-  /// - Returns: The result of the operation or a default value on error
-  public func demonstrateErrorRecovery<T>(
-    _ operation: () throws -> T,
-    default defaultValue: T
-  ) -> T {
-    do {
-      return try operation()
-    } catch let error as SecurityError where error.errorCode == .decryptionFailed {
-      // Handle specific security errors
-      logger.warning("Decryption failed, using default value: \(error.errorDescription)")
-      return defaultValue
-    } catch {
-      // Handle any other errors
-      logger.error("Operation failed: \(error.localizedDescription)")
-      return defaultValue
-    }
-  }
-
-  /// Demonstrates deferred cleanup with errors
-  /// - Parameter resource: Resource identifier
-  /// - Throws: SecurityError if the operation fails
+  /// Shows how to use defer for resource cleanup
+  /// - Parameter resource: A resource identifier
+  /// - Throws: SecurityError if there's a problem with the resource
   public func demonstrateDeferredCleanup(resource: String) throws {
     // Simulate resource acquisition
     logger.info("Acquiring resource: \(resource)")

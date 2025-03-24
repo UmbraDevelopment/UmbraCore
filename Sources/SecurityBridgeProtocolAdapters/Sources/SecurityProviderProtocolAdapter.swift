@@ -6,9 +6,6 @@ import SecurityTypeConverters
 import UmbraCoreTypes
 import XPCProtocolsCore
 
-// Type alias to disambiguate SecurityError types
-typealias SPCSecurityError=UmbraErrors.Security.Protocols
-
 /// Bridge protocol that connects security providers to Foundation-free interfaces
 /// This helps break circular dependencies between security modules
 public protocol SecurityProviderBridge: Sendable {
@@ -46,8 +43,7 @@ public protocol SecurityProviderBridge: Sendable {
 
 /// Adapter that connects a foundation-free security provider to a Foundation-based interface
 /// Implementing the SecurityProviderProtocol while delegating to a foundation-free bridge
-public final class SecurityProviderProtocolAdapter: SecurityInterfacesProtocols
-.SecurityProviderProtocol {
+public final class SecurityProviderProtocolAdapter: SecurityInterfacesProtocols.SecurityProviderProtocol {
   /// The underlying bridge implementation
   private let adapter: any SecurityProviderBridge
 
@@ -60,8 +56,7 @@ public final class SecurityProviderProtocolAdapter: SecurityInterfacesProtocols
   private func wrapError(_ error: Error) throws -> Never {
     // Use our centralised error mapping to get a consistent error description
     let errorDescription="Security operation failed: \(error)"
-    throw UmbraErrors.Security.Protocols
-      .missingProtocolImplementation(protocolName: errorDescription)
+    throw UmbraErrors.Security.Protocols.missingProtocolImplementation(protocolName: errorDescription)
   }
 
   /// Create a new adapter with the given bridge
@@ -131,8 +126,7 @@ public final class SecurityProviderProtocolAdapter: SecurityInterfacesProtocols
   /// - Parameter data: Data to hash
   /// - Returns: Hash of the data
   /// - Throws: UmbraErrors.Security.Protocols if hashing fails
-  public func hash(_ data: CoreTypesInterfaces.SecureData) async throws -> CoreTypesInterfaces
-  .SecureData {
+  public func hash(_ data: CoreTypesInterfaces.SecureData) async throws -> CoreTypesInterfaces.SecureData {
     do {
       // Use the standardised converter from SecurityTypeConverters
       let bridgeData=data.toDataBridge()

@@ -15,11 +15,3 @@ import ErrorHandlingCore
 import ErrorHandlingDomains
 import ErrorHandlingInterfaces
 import ErrorHandlingMapping
-
-/// @deprecated Use UmbraErrors.Security.Core directly
-@available(
-  *,
-  deprecated,
-  message: "Use UmbraErrors.Security.Core directly instead of this typealias for improved type clarity"
-)
-public typealias SecurityProviderError=UmbraErrors.Security.Core

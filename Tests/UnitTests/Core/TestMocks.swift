@@ -8,6 +8,7 @@ import Foundation
 import KeyManagementTypes
 import SecurityTypes
 import ServiceTypes
+import UmbraErrors
 
 // MARK: - Service Container Mocks
 
@@ -148,7 +149,7 @@ actor GenericMockSecurityService {
     }
 
     guard !path.isEmpty else {
-      throw CoreErrors.SecurityError.invalidParameter(name: "path", reason: "Invalid path")
+      throw UmbraErrors.Security.Core.invalidParameter(name: "path", reason: "Invalid path")
     }
 
     // Mock bookmark creation by returning a simple representation of the path
@@ -161,7 +162,7 @@ actor GenericMockSecurityService {
     }
 
     guard !bookmark.isEmpty else {
-      throw CoreErrors.SecurityError.invalidParameter(
+      throw UmbraErrors.Security.Core.invalidParameter(
         name: "bookmark",
         reason: "Invalid bookmark data"
       )
@@ -171,7 +172,7 @@ actor GenericMockSecurityService {
     if let path=String(bytes: bookmark, encoding: .utf8) {
       return path
     } else {
-      throw CoreErrors.SecurityError.invalidParameter(
+      throw UmbraErrors.Security.Core.invalidParameter(
         name: "bookmark",
         reason: "Could not resolve bookmark"
       )
@@ -192,7 +193,7 @@ actor GenericMockSecurityService {
     }
 
     guard let bookmark=bookmarkStorage[identifier] else {
-      throw CoreErrors.SecurityError.invalidParameter(
+      throw UmbraErrors.Security.Core.invalidParameter(
         name: "identifier",
         reason: "Bookmark not found: \(identifier)"
       )

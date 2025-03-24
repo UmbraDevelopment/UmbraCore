@@ -67,12 +67,3 @@ extension UmbraErrors.Security.Core {
     }
   }
 }
-
-/// Deprecated typealias for backwards compatibility
-/// @deprecated Use UmbraErrors.Security.Core directly
-@available(
-  *,
-  deprecated,
-  message: "Use UmbraErrors.Security.Core directly instead of this typealias for improved type clarity"
-)
-public typealias SecurityError=UmbraErrors.Security.Core

@@ -2,9 +2,6 @@ import ErrorHandlingDomains
 import SecurityProtocolsCore
 import UmbraCoreTypes
 
-// Alias UmbraErrors.Security.Protocols as SecurityError to match the existing code expectations
-public typealias SecurityError=UmbraErrors.Security.Protocols
-
 /// Type-erased wrapper for CryptoServiceProtocol
 /// This allows for cleaner interfaces without exposing implementation details
 public final class AnyCryptoService: CryptoServiceProtocol {
@@ -12,29 +9,29 @@ public final class AnyCryptoService: CryptoServiceProtocol {
 
   private let _encrypt: @Sendable (SecureBytes, SecureBytes) async -> Result<
     SecureBytes,
-    SecurityError
+    UmbraErrors.Security.Protocols
   >
   private let _decrypt: @Sendable (SecureBytes, SecureBytes) async -> Result<
     SecureBytes,
-    SecurityError
+    UmbraErrors.Security.Protocols
   >
-  private let _hash: @Sendable (SecureBytes) async -> Result<SecureBytes, SecurityError>
-  private let _generateKey: @Sendable () async -> Result<SecureBytes, SecurityError>
-  private let _generateRandomData: @Sendable (Int) async -> Result<SecureBytes, SecurityError>
+  private let _hash: @Sendable (SecureBytes) async -> Result<SecureBytes, UmbraErrors.Security.Protocols>
+  private let _generateKey: @Sendable () async -> Result<SecureBytes, UmbraErrors.Security.Protocols>
+  private let _generateRandomData: @Sendable (Int) async -> Result<SecureBytes, UmbraErrors.Security.Protocols>
 
   // New required methods with corrected return types
-  private let _verify: @Sendable (SecureBytes, SecureBytes) async -> Result<Bool, SecurityError>
+  private let _verify: @Sendable (SecureBytes, SecureBytes) async -> Result<Bool, UmbraErrors.Security.Protocols>
   private let _encryptSymmetric: @Sendable (SecureBytes, SecureBytes, SecurityConfigDTO) async
-    -> Result<SecureBytes, SecurityError>
+    -> Result<SecureBytes, UmbraErrors.Security.Protocols>
   private let _decryptSymmetric: @Sendable (SecureBytes, SecureBytes, SecurityConfigDTO) async
-    -> Result<SecureBytes, SecurityError>
+    -> Result<SecureBytes, UmbraErrors.Security.Protocols>
   private let _encryptAsymmetric: @Sendable (SecureBytes, SecureBytes, SecurityConfigDTO) async
-    -> Result<SecureBytes, SecurityError>
+    -> Result<SecureBytes, UmbraErrors.Security.Protocols>
   private let _decryptAsymmetric: @Sendable (SecureBytes, SecureBytes, SecurityConfigDTO) async
-    -> Result<SecureBytes, SecurityError>
+    -> Result<SecureBytes, UmbraErrors.Security.Protocols>
   private let _hashWithConfig: @Sendable (SecureBytes, SecurityConfigDTO) async -> Result<
     SecureBytes,
-    SecurityError
+    UmbraErrors.Security.Protocols
   >
 
   // MARK: - Initialization
@@ -71,26 +68,26 @@ public final class AnyCryptoService: CryptoServiceProtocol {
   public func encrypt(
     data: SecureBytes,
     using key: SecureBytes
-  ) async -> Result<SecureBytes, SecurityError> {
+  ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     await _encrypt(data, key)
   }
 
   public func decrypt(
     data: SecureBytes,
     using key: SecureBytes
-  ) async -> Result<SecureBytes, SecurityError> {
+  ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     await _decrypt(data, key)
   }
 
-  public func hash(data: SecureBytes) async -> Result<SecureBytes, SecurityError> {
+  public func hash(data: SecureBytes) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     await _hash(data)
   }
 
-  public func generateKey() async -> Result<SecureBytes, SecurityError> {
+  public func generateKey() async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     await _generateKey()
   }
 
-  public func generateRandomData(length: Int) async -> Result<SecureBytes, SecurityError> {
+  public func generateRandomData(length: Int) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     await _generateRandomData(length)
   }
 
@@ -99,7 +96,7 @@ public final class AnyCryptoService: CryptoServiceProtocol {
   public func verify(
     data: SecureBytes,
     against hash: SecureBytes
-  ) async -> Result<Bool, SecurityError> {
+  ) async -> Result<Bool, UmbraErrors.Security.Protocols> {
     await _verify(data, hash)
   }
 
@@ -107,7 +104,7 @@ public final class AnyCryptoService: CryptoServiceProtocol {
     data: SecureBytes,
     key: SecureBytes,
     config: SecurityConfigDTO
-  ) async -> Result<SecureBytes, SecurityError> {
+  ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     await _encryptSymmetric(data, key, config)
   }
 
@@ -115,7 +112,7 @@ public final class AnyCryptoService: CryptoServiceProtocol {
     data: SecureBytes,
     key: SecureBytes,
     config: SecurityConfigDTO
-  ) async -> Result<SecureBytes, SecurityError> {
+  ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     await _decryptSymmetric(data, key, config)
   }
 
@@ -123,7 +120,7 @@ public final class AnyCryptoService: CryptoServiceProtocol {
     data: SecureBytes,
     publicKey: SecureBytes,
     config: SecurityConfigDTO
-  ) async -> Result<SecureBytes, SecurityError> {
+  ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     await _encryptAsymmetric(data, publicKey, config)
   }
 
@@ -131,14 +128,14 @@ public final class AnyCryptoService: CryptoServiceProtocol {
     data: SecureBytes,
     privateKey: SecureBytes,
     config: SecurityConfigDTO
-  ) async -> Result<SecureBytes, SecurityError> {
+  ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     await _decryptAsymmetric(data, privateKey, config)
   }
 
   public func hash(
     data: SecureBytes,
     config: SecurityConfigDTO
-  ) async -> Result<SecureBytes, SecurityError> {
+  ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     await _hashWithConfig(data, config)
   }
 }

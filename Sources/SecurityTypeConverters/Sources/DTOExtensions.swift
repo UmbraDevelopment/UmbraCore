@@ -45,9 +45,6 @@ public struct BaseErrorContext: ErrorContext {
   }
 }
 
-// Type alias to disambiguate SecurityError types
-typealias SPCSecurityError=UmbraErrors.Security.Protocols
-
 // MARK: - SecurityConfigDTO Extensions
 
 extension SecurityConfigDTO {

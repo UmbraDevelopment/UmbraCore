@@ -4,6 +4,7 @@ import Foundation
 import SecurityProtocolsCore
 import SecurityTypes
 import UmbraCoreTypes
+import UmbraErrors
 
 // Local type declarations to replace imports
 // These replace the removed ErrorHandling and ErrorHandlingDomains imports
@@ -186,7 +187,7 @@ public actor SecurityService: UmbraService, SecurityProtocolsCore.SecurityProvid
     }
 
     guard let cryptoService=_cryptoService else {
-      throw CoreErrors.SecurityError.operationFailed(
+      throw UmbraErrors.Security.Core.operationFailed(
         operation: "generateRandomBytes",
         reason: "Crypto service unavailable"
       )
@@ -304,7 +305,7 @@ public actor SecurityService: UmbraService, SecurityProtocolsCore.SecurityProvid
     }
 
     guard let cryptoService=_cryptoService else {
-      throw CoreErrors.SecurityError.operationFailed(
+      throw UmbraErrors.Security.Core.operationFailed(
         operation: "encryption",
         reason: "Service unavailable"
       )
@@ -327,7 +328,7 @@ public actor SecurityService: UmbraService, SecurityProtocolsCore.SecurityProvid
     }
 
     guard let cryptoService=_cryptoService else {
-      throw CoreErrors.SecurityError.operationFailed(
+      throw UmbraErrors.Security.Core.operationFailed(
         operation: "decryption",
         reason: "Service unavailable"
       )
@@ -354,7 +355,7 @@ public actor SecurityService: UmbraService, SecurityProtocolsCore.SecurityProvid
     }
 
     guard let cryptoService=_cryptoService else {
-      throw CoreErrors.SecurityError.operationFailed(
+      throw UmbraErrors.Security.Core.operationFailed(
         operation: "hash",
         reason: "Crypto service unavailable"
       )

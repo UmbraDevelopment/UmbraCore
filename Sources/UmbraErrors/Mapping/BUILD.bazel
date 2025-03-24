@@ -5,6 +5,8 @@ umbra_swift_library(
     srcs = glob(["**/*.swift"], allow_empty = True ),
     visibility = ["//Sources/UmbraErrors:__subpackages__"],  # Allow access from the UmbraErrors package
     deps = [
+        # Remove CoreErrors dependency to break circular dependency
+        "//Sources/ErrorHandlingDomains",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
         "//Sources/UmbraErrors/Domains:UmbraErrorsDomains",
     ], 
@@ -19,6 +21,6 @@ umbra_swift_library(
 #     srcs = glob([
 #         "**/*.swift",
 #         "**/*.docc/**",
-#     ], allow_empty = True ),
-#     deps = ["//Sources/UmbraErrorsMapping"],
+#     ] , allow_empty = True),
+#     deps = ["//Sources/UmbraErrors/Mapping"],
 # )
