@@ -1,4 +1,6 @@
-import CoreErrors
+
+import UmbraErrors
+import UmbraErrorsCore
 import CryptoTypesProtocols
 import Foundation
 

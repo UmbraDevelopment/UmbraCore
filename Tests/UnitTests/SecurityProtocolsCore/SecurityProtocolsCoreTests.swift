@@ -1,6 +1,7 @@
-import ErrorHandling
-import ErrorHandlingDomains
+
 @testable import SecurityProtocolsCore
+import UmbraErrors
+import UmbraErrorsCore
 import UmbraCoreTypes
 import XCTest
 

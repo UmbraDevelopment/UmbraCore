@@ -11,8 +11,10 @@
  * Data integrity verification
  */
 
+import UmbraErrors
+import UmbraErrorsCore
 import CommonCrypto
-import ErrorHandlingDomains
+
 import Foundation
 import SecurityProtocolsCore
 import UmbraCoreTypes

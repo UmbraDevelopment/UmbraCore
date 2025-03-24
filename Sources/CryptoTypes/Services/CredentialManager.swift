@@ -1,9 +1,10 @@
 // CryptoKit removed - cryptography will be handled in ResticBar
-import CoreErrors
+import UmbraErrors
+import UmbraErrorsCore
 import CryptoTypes
 import CryptoTypesProtocols
 import CryptoTypesTypes
-import ErrorHandling
+
 import Foundation
 import SecurityTypes
 import SecurityTypesProtocols
@@ -45,7 +46,7 @@ public actor CredentialManager {
   private let xpcService: any (XPCServiceProtocolComplete & Sendable)
   private let config: CryptoConfig
 
-  /// Initialize a new CredentialManager
+  /// Initialise a new CredentialManager
   /// - Parameters:
   ///   - service: Service name for the keychain
   ///   - xpcService: XPC service for cryptographic operations

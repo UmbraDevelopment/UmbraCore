@@ -1,25 +1,24 @@
 load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
-    name = "Sources",
-    srcs = glob(["**/*.swift"]),
+    name = "SecurityImplementation",
+    srcs = glob(
+        ["**/*.swift"],
+        allow_empty = False,
+        exclude = [
+            "**/Tests/**",
+            "**/*Test.swift",
+            "**/*.generated.swift",
+        ],
+        exclude_directories = 1,
+    ),
+    swiftc_opts = ["-Xfrontend", "-enable-cross-import-overlays"],
+    visibility = ["//visibility:public"],
     deps = [
-        # Dependencies will go here, for example:
-        # "//Sources/CoreDTOs",
-        # "//Sources/UmbraLogging",
-        # "@com_github_apple_swift_log//:Logging",
+        "//Sources/SecurityProtocolsCore/Sources:SecurityProtocolsCore",
+        "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
+        "//Sources/ErrorHandlingInterfaces",
+        "//Sources/ErrorHandlingDomains",
+        "//Sources/CoreErrors",
     ],
 )
-
-# Uncomment if documentation generation is needed
-# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
-# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
-#
-# swift_package(
-#     name = "docc_documentation",
-#     srcs = glob([
-#         "**/*.swift",
-#         "**/*.docc/**",
-#     ]),
-#     deps = ["//Sources/Sources"],
-# )

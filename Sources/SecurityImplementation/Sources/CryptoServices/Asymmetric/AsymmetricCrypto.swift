@@ -12,7 +12,9 @@
  * Parameter validation and secure operation
  */
 
-import ErrorHandlingDomains
+
+import UmbraErrors
+import UmbraErrorsCore
 import Foundation
 import SecurityProtocolsCore
 import UmbraCoreTypes

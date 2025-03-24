@@ -1,4 +1,5 @@
-import CoreErrors
+import UmbraErrors
+import UmbraErrorsCore
 import Foundation
 import UmbraCoreTypes
 
@@ -68,7 +69,7 @@ public protocol XPCServiceProtocolStandard: XPCServiceProtocolBasic {
   /// - Parameter length: Length in bytes of random data to generate
   /// - Returns: Result with SecureBytes on success or SecurityError on failure
   func generateRandomData(length: Int) async
-    -> Result<UmbraCoreTypes.SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols>
+    -> Result<UmbraCoreTypes.SecureBytes, UmbraErrors.SecurityError>
 
   /// Encrypt data using the service's encryption mechanism
   /// - Parameters:
@@ -76,7 +77,7 @@ public protocol XPCServiceProtocolStandard: XPCServiceProtocolBasic {
   ///   - keyIdentifier: Optional identifier for the key to use
   /// - Returns: Result with encrypted SecureBytes on success or SecurityError on failure
   func encryptSecureData(_ data: UmbraCoreTypes.SecureBytes, keyIdentifier: String?) async
-    -> Result<UmbraCoreTypes.SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols>
+    -> Result<UmbraCoreTypes.SecureBytes, UmbraErrors.SecurityError>
 
   /// Decrypt data using the service's decryption mechanism
   /// - Parameters:
@@ -84,7 +85,7 @@ public protocol XPCServiceProtocolStandard: XPCServiceProtocolBasic {
   ///   - keyIdentifier: Optional identifier for the key to use
   /// - Returns: Result with decrypted SecureBytes on success or SecurityError on failure
   func decryptSecureData(_ data: UmbraCoreTypes.SecureBytes, keyIdentifier: String?) async
-    -> Result<UmbraCoreTypes.SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols>
+    -> Result<UmbraCoreTypes.SecureBytes, UmbraErrors.SecurityError>
 
   /// Sign data using the service's signing mechanism
   /// - Parameters:
@@ -92,7 +93,7 @@ public protocol XPCServiceProtocolStandard: XPCServiceProtocolBasic {
   ///   - keyIdentifier: Identifier for the signing key
   /// - Returns: Result with signature as SecureBytes on success or SecurityError on failure
   func sign(_ data: UmbraCoreTypes.SecureBytes, keyIdentifier: String) async
-    -> Result<UmbraCoreTypes.SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols>
+    -> Result<UmbraCoreTypes.SecureBytes, UmbraErrors.SecurityError>
 
   /// Verify signature for data
   /// - Parameters:
@@ -104,29 +105,29 @@ public protocol XPCServiceProtocolStandard: XPCServiceProtocolBasic {
     signature: UmbraCoreTypes.SecureBytes,
     for data: UmbraCoreTypes.SecureBytes,
     keyIdentifier: String
-  ) async -> Result<Bool, ErrorHandlingDomains.UmbraErrors.Security.Protocols>
+  ) async -> Result<Bool, UmbraErrors.SecurityError>
 
   /// Standard protocol ping - extends basic ping with better error handling
   /// - Returns: Result with boolean indicating service status or SecurityError on failure
-  func pingStandard() async -> Result<Bool, ErrorHandlingDomains.UmbraErrors.Security.Protocols>
+  func pingStandard() async -> Result<Bool, UmbraErrors.SecurityError>
 
   /// Reset the security state of the service
   /// - Returns: Result with void on success or SecurityError on failure
-  func resetSecurity() async -> Result<Void, ErrorHandlingDomains.UmbraErrors.Security.Protocols>
+  func resetSecurity() async -> Result<Void, UmbraErrors.SecurityError>
 
   /// Get the service version
   /// - Returns: Result with version string on success or SecurityError on failure
   func getServiceVersion() async
-    -> Result<String, ErrorHandlingDomains.UmbraErrors.Security.Protocols>
+    -> Result<String, UmbraErrors.SecurityError>
 
   /// Get the hardware identifier
   /// - Returns: Result with identifier string on success or SecurityError on failure
   func getHardwareIdentifier() async
-    -> Result<String, ErrorHandlingDomains.UmbraErrors.Security.Protocols>
+    -> Result<String, UmbraErrors.SecurityError>
 
   /// Get the service status
   /// - Returns: Result with status dictionary on success or SecurityError on failure
-  func status() async -> Result<[String: Any], ErrorHandlingDomains.UmbraErrors.Security.Protocols>
+  func status() async -> Result<[String: Any], UmbraErrors.SecurityError>
 }
 
 /// Default implementations for the standard protocol methods
@@ -138,7 +139,7 @@ extension XPCServiceProtocolStandard {
 
   /// Default implementation forwards to the basic ping
   public func pingStandard() async
-  -> Result<Bool, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<Bool, UmbraErrors.SecurityError> {
     // Simple implementation that doesn't throw
     let pingResult=await ping()
     return .success(pingResult)
@@ -146,7 +147,7 @@ extension XPCServiceProtocolStandard {
 
   /// Default service status implementation
   public func status() async
-  -> Result<[String: Any], ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<[String: Any], UmbraErrors.SecurityError> {
     let versionResult=await getServiceVersion()
 
     var statusDict: [String: Any]=[
@@ -166,7 +167,7 @@ extension XPCServiceProtocolStandard {
     data: UmbraCoreTypes
       .SecureBytes
   ) async
-  -> Result<UmbraCoreTypes.SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<UmbraCoreTypes.SecureBytes, UmbraErrors.SecurityError> {
     await encryptSecureData(data, keyIdentifier: nil)
   }
 
@@ -175,7 +176,7 @@ extension XPCServiceProtocolStandard {
     data: UmbraCoreTypes
       .SecureBytes
   ) async
-  -> Result<UmbraCoreTypes.SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<UmbraCoreTypes.SecureBytes, UmbraErrors.SecurityError> {
     await decryptSecureData(data, keyIdentifier: nil)
   }
 }
@@ -192,17 +193,17 @@ public protocol KeyManagementServiceProtocol: Sendable {
     keyType: XPCProtocolTypeDefs.KeyType,
     keyIdentifier: String?,
     metadata: [String: String]?
-  ) async -> Result<String, ErrorHandlingDomains.UmbraErrors.Security.Protocols>
+  ) async -> Result<String, UmbraErrors.SecurityError>
 
   /// Delete a key
   /// - Parameter keyIdentifier: Identifier for the key to delete
   /// - Returns: Result with void on success or SecurityError on failure
   func deleteKey(keyIdentifier: String) async
-    -> Result<Void, ErrorHandlingDomains.UmbraErrors.Security.Protocols>
+    -> Result<Void, UmbraErrors.SecurityError>
 
   /// List all keys
   /// - Returns: Result with array of key identifiers on success or SecurityError on failure
-  func listKeys() async -> Result<[String], ErrorHandlingDomains.UmbraErrors.Security.Protocols>
+  func listKeys() async -> Result<[String], UmbraErrors.SecurityError>
 
   /// Import a key
   /// - Parameters:
@@ -216,7 +217,7 @@ public protocol KeyManagementServiceProtocol: Sendable {
     keyType: XPCProtocolTypeDefs.KeyType,
     keyIdentifier: String?,
     metadata: [String: String]?
-  ) async -> Result<String, ErrorHandlingDomains.UmbraErrors.Security.Protocols>
+  ) async -> Result<String, UmbraErrors.SecurityError>
 
   /// Export a key
   /// - Parameters:
@@ -226,5 +227,5 @@ public protocol KeyManagementServiceProtocol: Sendable {
   func exportKey(
     keyIdentifier: String,
     format: XPCProtocolTypeDefs.KeyFormat
-  ) async -> Result<UmbraCoreTypes.SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols>
+  ) async -> Result<UmbraCoreTypes.SecureBytes, UmbraErrors.SecurityError>
 }

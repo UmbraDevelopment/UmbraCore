@@ -1,13 +1,12 @@
 import CommonCrypto
 
 // CryptoKit removed - cryptography will be handled in ResticBar
-import CoreErrors
+import UmbraErrors
+import UmbraErrorsCore
 
 // Updating imports to use proper modules
 import CryptoTypes
 import CryptoTypesProtocols
-import ErrorHandling
-import ErrorHandlingDomains
 import Foundation
 import UmbraCoreTypes
 
@@ -22,7 +21,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
     var bytes=[UInt8](repeating: 0, count: length)
     let status=SecRandomCopyBytes(kSecRandomDefault, length, &bytes)
     guard status == errSecSuccess else {
-      throw UmbraErrors.Crypto.Core
+      throw UmbraErrorsCore.Crypto
         .randomGenerationFailed(reason: "Random generation failed with status: \(status)")
     }
     return Data(bytes)
@@ -32,7 +31,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
     var bytes=[UInt8](repeating: 0, count: length)
     let status=SecRandomCopyBytes(kSecRandomDefault, length, &bytes)
     guard status == errSecSuccess else {
-      throw UmbraErrors.Crypto.Core
+      throw UmbraErrorsCore.Crypto
         .randomGenerationFailed(reason: "Random generation failed with status: \(status)")
     }
     return Data(bytes)
@@ -41,28 +40,28 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
   public func encrypt(_: Data, using _: Data, iv _: Data) async throws -> Data {
     // Placeholder implementation - will be implemented properly in ResticBar
     // Throw a not implemented error for now
-    throw ErrorHandlingDomains.UmbraErrors.Crypto.Core
+    throw UmbraErrorsCore.Crypto
       .randomGenerationFailed(reason: "Encryption is not implemented in this version")
   }
 
   public func decrypt(_: Data, using _: Data, iv _: Data) async throws -> Data {
     // Placeholder implementation - will be implemented properly in ResticBar
     // Throw a not implemented error for now
-    throw ErrorHandlingDomains.UmbraErrors.Crypto.Core
+    throw UmbraErrorsCore.Crypto
       .randomGenerationFailed(reason: "Decryption is not implemented in this version")
   }
 
   public func deriveKey(from _: String, salt _: Data, iterations _: Int) async throws -> Data {
     // Placeholder implementation - will be implemented properly in ResticBar
     // Throw a not implemented error for now
-    throw ErrorHandlingDomains.UmbraErrors.Crypto.Core
+    throw UmbraErrorsCore.Crypto
       .randomGenerationFailed(reason: "Key derivation is not implemented in this version")
   }
 
   public func generateHMAC(for _: Data, using _: Data) async throws -> Data {
     // This is a placeholder implementation that will be replaced by ResticBar
     // In a real implementation, we would use CCHmac from CommonCrypto
-    throw ErrorHandlingDomains.UmbraErrors.Crypto.Core
+    throw UmbraErrorsCore.Crypto
       .randomGenerationFailed(reason: "HMAC generation is not implemented")
   }
 }

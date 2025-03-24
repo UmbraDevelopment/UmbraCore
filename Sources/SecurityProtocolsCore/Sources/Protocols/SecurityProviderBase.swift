@@ -1,4 +1,5 @@
-import ErrorHandlingInterfaces
+
+import UmbraErrorsCore
 import UmbraErrorsDomains
 
 /// Base protocol for security providers

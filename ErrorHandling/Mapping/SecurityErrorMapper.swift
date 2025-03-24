@@ -1,5 +1,7 @@
-import ErrorHandlingDomains
-import ErrorHandlingInterfaces
+
+
+import UmbraErrors
+import UmbraErrorsCore
 import Foundation
 
 /// Mapper for security-related errors to the UmbraErrors.Security namespace

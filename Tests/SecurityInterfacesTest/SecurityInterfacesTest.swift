@@ -1,4 +1,6 @@
-import ErrorHandling
+
+import UmbraErrors
+import UmbraErrorsCore
 import Foundation
 import SecurityInterfaces
 

@@ -1,9 +1,10 @@
-import ErrorHandlingDomains
 import Foundation
 import SecurityBridgeTypes
 import SecurityInterfacesBase
 import SecurityProtocolsCore
 import UmbraCoreTypes
+import UmbraErrors
+import UmbraErrorsCore
 
 /// Factory for creating protocol adapters
 public enum SecurityProviderAdapterFactory {

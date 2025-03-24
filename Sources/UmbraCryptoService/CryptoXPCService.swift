@@ -1,11 +1,12 @@
+import UmbraErrors
+import UmbraErrorsCore
 import CommonCrypto
 import Core
 import CryptoSwiftFoundationIndependent
 import CryptoTypes
-import ErrorHandlingCore
-import ErrorHandlingDomains
-import ErrorHandlingInterfaces
-import ErrorHandlingMapping
+
+
+
 import Foundation
 import SecurityUtils
 import UmbraCoreTypes
@@ -77,12 +78,12 @@ XPCServiceProtocolStandard, @unchecked Sendable {
 
   /// Synchronize keys between XPC service and client
   /// - Parameter syncData: Secure bytes for key synchronization
-  /// - Throws: ErrorHandlingDomains.UmbraErrors.Security.Protocols if synchronization fails
+  /// - Throws: UmbraErrors.Security.Protocols if synchronization fails
   public func synchroniseKeys(_ syncData: SecureBytes) async throws {
     // Basic implementation - no key synchronization needed in this service
     // Could be expanded if needed
     if syncData.isEmpty {
-      throw ErrorHandlingDomains.UmbraErrors.Security.Protocols
+      throw UmbraErrors.Security.Protocols
         .invalidInput("Empty synchronization data")
     }
   }
@@ -93,7 +94,7 @@ XPCServiceProtocolStandard, @unchecked Sendable {
   /// - Parameter length: Length in bytes of random data to generate
   /// - Returns: Result with SecureBytes on success or error on failure
   public func generateRandomData(length: Int) async
-  -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     let randomBytes=generateRandomBytes(count: length)
     return .success(SecureBytes(bytes: randomBytes))
   }
@@ -107,7 +108,7 @@ XPCServiceProtocolStandard, @unchecked Sendable {
     _ data: SecureBytes,
     keyIdentifier: String?
   ) async
-  -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     guard let keyID=keyIdentifier, !keyID.isEmpty else {
       return .failure(.invalidInput("Missing key identifier"))
     }
@@ -150,7 +151,7 @@ XPCServiceProtocolStandard, @unchecked Sendable {
     _ data: SecureBytes,
     keyIdentifier: String?
   ) async
-  -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     guard let keyID=keyIdentifier, !keyID.isEmpty else {
       return .failure(.invalidInput("Missing key identifier"))
     }
@@ -189,7 +190,7 @@ XPCServiceProtocolStandard, @unchecked Sendable {
     _ data: SecureBytes,
     keyIdentifier: String
   ) async
-  -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     // This is a simple implementation
     // In a real-world scenario, this would use proper signing algorithms
 
@@ -215,7 +216,7 @@ XPCServiceProtocolStandard, @unchecked Sendable {
     for data: SecureBytes,
     keyIdentifier: String
   ) async
-  -> Result<Bool, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<Bool, UmbraErrors.Security.Protocols> {
     // Simple implementation for demonstration
     let keyResult=await retrieveKeyData(identifier: keyIdentifier)
     switch keyResult {
@@ -231,7 +232,7 @@ XPCServiceProtocolStandard, @unchecked Sendable {
   /// Reset the security state of the service
   /// - Returns: Result with void on success or error on failure
   public func resetSecurity() async
-  -> Result<Void, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<Void, UmbraErrors.Security.Protocols> {
     // In a real implementation, this would reset internal state,
     // clear caches, and potentially rotate encryption keys
     .success(())
@@ -240,14 +241,14 @@ XPCServiceProtocolStandard, @unchecked Sendable {
   /// Get the service version
   /// - Returns: Result with version string on success or error on failure
   public func getServiceVersion() async
-  -> Result<String, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<String, UmbraErrors.Security.Protocols> {
     .success("1.0.0")
   }
 
   /// Get the hardware identifier
   /// - Returns: Result with identifier string on success or error on failure
   public func getHardwareIdentifier() async
-  -> Result<String, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<String, UmbraErrors.Security.Protocols> {
     // In a real implementation, this would return a unique identifier for the hardware
     .success("crypto-xpc-service-hardware-id")
   }
@@ -255,7 +256,7 @@ XPCServiceProtocolStandard, @unchecked Sendable {
   /// Get the service status
   /// - Returns: Result with status dictionary on success or error on failure
   public func status() async
-  -> Result<[String: Any], ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<[String: Any], UmbraErrors.Security.Protocols> {
     let statusInfo: [String: Any]=[
       "available": true,
       "version": "1.0.0",
@@ -268,14 +269,14 @@ XPCServiceProtocolStandard, @unchecked Sendable {
 
   /// Enhanced ping with detailed error reporting
   public func pingStandard() async
-  -> Result<Bool, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<Bool, UmbraErrors.Security.Protocols> {
     .success(true)
   }
 
   /// Get diagnostic information about the service
   /// - Returns: Result with diagnostic string or error
   public func getDiagnosticInfo() async
-  -> Result<String, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<String, UmbraErrors.Security.Protocols> {
     let info="""
       CryptoXPCService Diagnostics:
       - Version: 1.0.0
@@ -289,14 +290,14 @@ XPCServiceProtocolStandard, @unchecked Sendable {
   /// Get service version with modern interface
   /// - Returns: Result with version string or error
   public func getVersion() async
-  -> Result<String, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<String, UmbraErrors.Security.Protocols> {
     .success("1.0.0")
   }
 
   /// Get metrics about service performance
   /// - Returns: Result with metrics dictionary or error
   public func getMetrics() async
-  -> Result<[String: Any], ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<[String: Any], UmbraErrors.Security.Protocols> {
     // In a real implementation, this would track performance metrics
     let metrics: [String: Any]=[
       "operations_count": 0,
@@ -317,7 +318,7 @@ XPCServiceProtocolStandard, @unchecked Sendable {
     keySize: Int,
     metadata _: [String: String]?
   ) async
-  -> Result<String, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<String, UmbraErrors.Security.Protocols> {
     let keyID="key-\(UUID().uuidString)"
     let bytes=keySize / 8
     let keyData=generateRandomBytes(count: bytes)
@@ -335,7 +336,7 @@ XPCServiceProtocolStandard, @unchecked Sendable {
   /// - Parameter keyIdentifier: The identifier of the key to export
   /// - Returns: Result with the key material as SecureBytes or error
   public func exportKey(keyIdentifier: String) async
-  -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     let keyResult=await retrieveKeyData(identifier: keyIdentifier)
     switch keyResult {
       case let .success(keyData):
@@ -369,7 +370,7 @@ XPCServiceProtocolStandard, @unchecked Sendable {
       guard self != nil else {
         completion(
           nil,
-          ErrorHandlingDomains.UmbraErrors.Security.Protocols
+          UmbraErrors.Security.Protocols
             .invalidInput("Service is no longer available")
         )
         return
@@ -393,7 +394,7 @@ XPCServiceProtocolStandard, @unchecked Sendable {
       } catch {
         completion(
           nil,
-          ErrorHandlingDomains.UmbraErrors.Security.Protocols
+          UmbraErrors.Security.Protocols
             .invalidInput("Encryption failed: \(error.localizedDescription)")
         )
       }
@@ -415,7 +416,7 @@ XPCServiceProtocolStandard, @unchecked Sendable {
       guard self != nil else {
         completion(
           nil,
-          ErrorHandlingDomains.UmbraErrors.Security.Protocols
+          UmbraErrors.Security.Protocols
             .invalidInput("Service is no longer available")
         )
         return
@@ -428,7 +429,7 @@ XPCServiceProtocolStandard, @unchecked Sendable {
         guard let (iv, ciphertext)=CryptoFormat.unpackEncryptedData(data: dataBytes) else {
           completion(
             nil,
-            ErrorHandlingDomains.UmbraErrors.Security.Protocols
+            UmbraErrors.Security.Protocols
               .invalidInput("Invalid encrypted data format")
           )
           return
@@ -445,7 +446,7 @@ XPCServiceProtocolStandard, @unchecked Sendable {
       } catch {
         completion(
           nil,
-          ErrorHandlingDomains.UmbraErrors.Security.Protocols
+          UmbraErrors.Security.Protocols
             .invalidInput("Decryption failed: \(error.localizedDescription)")
         )
       }
@@ -487,7 +488,7 @@ XPCServiceProtocolStandard, @unchecked Sendable {
     guard !identifier.isEmpty else {
       completion(
         false,
-        ErrorHandlingDomains.UmbraErrors.Security.Protocols.invalidInput("Empty identifier")
+        UmbraErrors.Security.Protocols.invalidInput("Empty identifier")
       )
       return
     }
@@ -501,7 +502,7 @@ XPCServiceProtocolStandard, @unchecked Sendable {
     } catch {
       completion(
         false,
-        ErrorHandlingDomains.UmbraErrors.Security.Protocols
+        UmbraErrors.Security.Protocols
           .serviceError("Keychain storage failed: \(error.localizedDescription)")
       )
     }
@@ -516,7 +517,7 @@ XPCServiceProtocolStandard, @unchecked Sendable {
     guard !identifier.isEmpty else {
       completion(
         nil,
-        ErrorHandlingDomains.UmbraErrors.Security.Protocols.invalidInput("Empty identifier")
+        UmbraErrors.Security.Protocols.invalidInput("Empty identifier")
       )
       return
     }
@@ -528,14 +529,14 @@ XPCServiceProtocolStandard, @unchecked Sendable {
       } else {
         completion(
           nil,
-          ErrorHandlingDomains.UmbraErrors.Security.Protocols
+          UmbraErrors.Security.Protocols
             .invalidInput("Invalid key data format")
         )
       }
     } catch {
       completion(
         nil,
-        ErrorHandlingDomains.UmbraErrors.Security.Protocols
+        UmbraErrors.Security.Protocols
           .serviceError("Keychain retrieval failed: \(error.localizedDescription)")
       )
     }
@@ -550,7 +551,7 @@ XPCServiceProtocolStandard, @unchecked Sendable {
     guard !identifier.isEmpty else {
       completion(
         false,
-        ErrorHandlingDomains.UmbraErrors.Security.Protocols.invalidInput("Empty identifier")
+        UmbraErrors.Security.Protocols.invalidInput("Empty identifier")
       )
       return
     }
@@ -561,7 +562,7 @@ XPCServiceProtocolStandard, @unchecked Sendable {
     } catch {
       completion(
         false,
-        ErrorHandlingDomains.UmbraErrors.Security.Protocols
+        UmbraErrors.Security.Protocols
           .serviceError("Keychain deletion failed: \(error.localizedDescription)")
       )
     }
@@ -609,14 +610,14 @@ XPCServiceProtocolStandard, @unchecked Sendable {
   private func storeKeyData(
     _ keyData: [UInt8],
     identifier: String
-  ) async -> Result<Void, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  ) async -> Result<Void, UmbraErrors.Security.Protocols> {
     do {
       let keyString=Data(keyData).base64EncodedString()
       try dependencies.keychain.storePassword(keyString, for: identifier)
       return .success(())
     } catch {
       return .failure(
-        ErrorHandlingDomains.UmbraErrors.Security.Protocols
+        UmbraErrors.Security.Protocols
           .serviceError("Keychain storage failed: \(error.localizedDescription)")
       )
     }
@@ -626,10 +627,10 @@ XPCServiceProtocolStandard, @unchecked Sendable {
   /// - Parameter identifier: Identifier for the key
   /// - Returns: Result with key data or error
   private func retrieveKeyData(identifier: String) async
-  -> Result<[UInt8], ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<[UInt8], UmbraErrors.Security.Protocols> {
     if identifier.isEmpty {
       return .failure(
-        ErrorHandlingDomains.UmbraErrors.Security.Protocols
+        UmbraErrors.Security.Protocols
           .invalidInput("Empty identifier")
       )
     }
@@ -638,16 +639,16 @@ XPCServiceProtocolStandard, @unchecked Sendable {
       let keyString=try dependencies.keychain.retrievePassword(for: identifier)
       guard let keyData=Data(base64Encoded: keyString) else {
         return .failure(
-          ErrorHandlingDomains.UmbraErrors.Security.Protocols
+          UmbraErrors.Security.Protocols
             .invalidInput("Invalid key data format")
         )
       }
       return .success([UInt8](keyData))
-    } catch let error as ErrorHandlingDomains.UmbraErrors.Security.Protocols {
+    } catch let error as UmbraErrors.Security.Protocols {
       return .failure(error)
     } catch {
       return .failure(
-        ErrorHandlingDomains.UmbraErrors.Security.Protocols
+        UmbraErrors.Security.Protocols
           .serviceError("Keychain retrieval failed: \(error.localizedDescription)")
       )
     }
@@ -667,7 +668,7 @@ XPCServiceProtocolStandard, @unchecked Sendable {
   // MARK: - Default Implementation Methods
 
   public func encrypt(data: SecureBytes) async
-  -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     // Generate a key for this operation
     let key=SecureBytes(bytes: generateRandomBytes(count: 32))
 
@@ -687,29 +688,29 @@ XPCServiceProtocolStandard, @unchecked Sendable {
       return .success(SecureBytes(bytes: packedData))
     } catch {
       return .failure(
-        ErrorHandlingDomains.UmbraErrors.Security.Protocols
+        UmbraErrors.Security.Protocols
           .encryptionFailed(error.localizedDescription)
       )
     }
   }
 
   public func decrypt(data _: SecureBytes) async
-  -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     // Without a key, we can't decrypt
     .failure(
-      ErrorHandlingDomains.UmbraErrors.Security.Protocols
+      UmbraErrors.Security.Protocols
         .invalidInput("Key required for decryption")
     )
   }
 
   public func hash(data: SecureBytes) async
-  -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     let hashedData=sha256Hash(data.bytes())
     return .success(SecureBytes(bytes: hashedData))
   }
 
   public func generateKey() async
-  -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     let keyData=generateRandomBytes(count: 32)
     return .success(SecureBytes(bytes: keyData))
   }
@@ -720,10 +721,10 @@ XPCServiceProtocolStandard, @unchecked Sendable {
     iterations _: Int,
     keyLength _: Int,
     targetKeyIdentifier _: String?
-  ) async -> Result<String, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  ) async -> Result<String, UmbraErrors.Security.Protocols> {
     // This would typically use PBKDF2 or similar
     .failure(
-      ErrorHandlingDomains.UmbraErrors.Security.Protocols
+      UmbraErrors.Security.Protocols
         .notImplemented("Key derivation not implemented")
     )
   }
@@ -732,7 +733,7 @@ XPCServiceProtocolStandard, @unchecked Sendable {
     keyType: XPCProtocolTypeDefs.KeyType,
     keyIdentifier: String?,
     metadata _: [String: String]?
-  ) async -> Result<String, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  ) async -> Result<String, UmbraErrors.Security.Protocols> {
     let actualKeyID=keyIdentifier ?? "key-\(UUID().uuidString)"
     let keySize=keyType == .symmetric ? 256 : 128
 

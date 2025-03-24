@@ -1,7 +1,8 @@
-import ErrorHandlingCore
-import ErrorHandlingDomains
-import ErrorHandlingInterfaces
-import ErrorHandlingMapping
+
+
+
+import UmbraErrors
+import UmbraErrorsCore
 import Foundation
 import Security
 import UmbraCoreTypes
@@ -198,7 +199,7 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
 
   /// Synchronise keys with provided data
   /// - Parameter syncData: The data to synchronise with
-  /// - Throws: ErrorHandlingDomains.UmbraErrors.Security.Protocols.SecurityError if synchronization
+  /// - Throws: UmbraErrors.Security.Protocols.SecurityError if synchronization
   /// fails
   public func synchroniseKeys(_ syncData: SecureBytes) async throws {
     do {
@@ -210,13 +211,13 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
           }
         )
       } else {
-        throw ErrorHandlingDomains.UmbraErrors.Security.Protocols.SecurityError
+        throw UmbraErrors.Security.Protocols.SecurityError
           .internalError(description: "Service unavailable")
       }
     } catch let error as InternalKeychainXPCError {
       throw mapKeychainErrorToProtocolsError(error, operation: "synchronise")
     } catch {
-      throw ErrorHandlingDomains.UmbraErrors.Security.Protocols.SecurityError
+      throw UmbraErrors.Security.Protocols.SecurityError
         .internalError(description: "Failed to synchronize keys: \(error.localizedDescription)")
     }
   }
@@ -227,7 +228,7 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
   /// - Parameter length: Length in bytes of random data to generate
   /// - Returns: Result with SecureBytes on success or error on failure
   public func generateRandomData(length: Int) async
-  -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     var bytes=[UInt8](repeating: 0, count: length)
     let status=SecRandomCopyBytes(kSecRandomDefault, length, &bytes)
 
@@ -235,7 +236,7 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
       return .success(SecureBytes(bytes: bytes))
     } else {
       return .failure(
-        ErrorHandlingDomains.UmbraErrors.Security.Protocols
+        UmbraErrors.Security.Protocols
           .encryptionFailed("Failed to generate random data with status: \(status)")
       )
     }
@@ -244,7 +245,7 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
   /// Reset the security state of the service
   /// - Returns: Result with void on success or error on failure
   public func resetSecurity() async
-  -> Result<Void, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<Void, UmbraErrors.Security.Protocols> {
     // For a keychain service, resetting would mean clearing keychain items
     // This is a simplified version for demonstration
     .success(())
@@ -253,14 +254,14 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
   /// Get the service version
   /// - Returns: Result with version string on success or error on failure
   public func getServiceVersion() async
-  -> Result<String, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<String, UmbraErrors.Security.Protocols> {
     .success("1.0.0")
   }
 
   /// Get a hardware identifier
   /// - Returns: Result with identifier string on success or error on failure
   public func getHardwareIdentifier() async
-  -> Result<String, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<String, UmbraErrors.Security.Protocols> {
     .success("keychain-xpc-service-hardware-id")
   }
 
@@ -272,11 +273,11 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
   public func storeSecureData(
     _ data: SecureBytes,
     key: String
-  ) async -> Result<Void, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  ) async -> Result<Void, UmbraErrors.Security.Protocols> {
     do {
       // Use Swift Concurrency task to handle the XPC call instead of semaphores
       return try await withCheckedThrowingContinuation { [self] (continuation: CheckedContinuation<
-        Result<Void, ErrorHandlingDomains.UmbraErrors.Security.Protocols>,
+        Result<Void, UmbraErrors.Security.Protocols>,
         Error
       >) in
         Task {
@@ -293,7 +294,7 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
                 if let error {
                   let mappedError=(error as? InternalKeychainXPCError).map {
                     self.mapKeychainErrorToProtocolsError($0, operation: "store")
-                  } ?? ErrorHandlingDomains.UmbraErrors.Security.Protocols
+                  } ?? UmbraErrors.Security.Protocols
                     .internalError("Failed to store secure data: \(error.localizedDescription)")
                   continuation.resume(returning: .failure(mappedError))
                 } else {
@@ -304,7 +305,7 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
           } else {
             continuation
               .resume(returning: .failure(
-                ErrorHandlingDomains.UmbraErrors.Security.Protocols
+                UmbraErrors.Security.Protocols
                   .invalidState(
                     state: "unavailable",
                     expectedState: "available"
@@ -315,7 +316,7 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
       }
     } catch {
       return .failure(
-        ErrorHandlingDomains.UmbraErrors.Security.Protocols
+        UmbraErrors.Security.Protocols
           .internalError("Failed to store secure data: \(error.localizedDescription)")
       )
     }
@@ -325,11 +326,11 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
   /// - Parameter key: The key to retrieve data for
   /// - Returns: Result with the secure data or error
   public func retrieveSecureData(key: String) async
-  -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     do {
       // Use Swift Concurrency task to handle the XPC call instead of semaphores
       return try await withCheckedThrowingContinuation { [self] (continuation: CheckedContinuation<
-        Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols>,
+        Result<SecureBytes, UmbraErrors.Security.Protocols>,
         Error
       >) in
         Task {
@@ -343,7 +344,7 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
                 if let error {
                   let mappedError=(error as? InternalKeychainXPCError).map {
                     self.mapKeychainErrorToProtocolsError($0, operation: "retrieve")
-                  } ?? ErrorHandlingDomains.UmbraErrors.Security.Protocols
+                  } ?? UmbraErrors.Security.Protocols
                     .internalError("Failed to retrieve secure data: \(error.localizedDescription)")
                   continuation.resume(returning: .failure(mappedError))
                 } else if let data {
@@ -351,7 +352,7 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
                 } else {
                   continuation
                     .resume(returning: .failure(
-                      ErrorHandlingDomains.UmbraErrors.Security.Protocols
+                      UmbraErrors.Security.Protocols
                         .missingProtocolImplementation(protocolName: key)
                     ))
                 }
@@ -360,7 +361,7 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
           } else {
             continuation
               .resume(returning: .failure(
-                ErrorHandlingDomains.UmbraErrors.Security.Protocols
+                UmbraErrors.Security.Protocols
                   .invalidState(
                     state: "unavailable",
                     expectedState: "available"
@@ -371,7 +372,7 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
       }
     } catch {
       return .failure(
-        ErrorHandlingDomains.UmbraErrors.Security.Protocols
+        UmbraErrors.Security.Protocols
           .internalError("Failed to retrieve secure data: \(error.localizedDescription)")
       )
     }
@@ -381,11 +382,11 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
   /// - Parameter key: The key to delete data for
   /// - Returns: Result with success or error
   public func deleteSecureData(key: String) async
-  -> Result<Void, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<Void, UmbraErrors.Security.Protocols> {
     do {
       // Use Swift Concurrency task to handle the XPC call instead of semaphores
       return try await withCheckedThrowingContinuation { [self] (continuation: CheckedContinuation<
-        Result<Void, ErrorHandlingDomains.UmbraErrors.Security.Protocols>,
+        Result<Void, UmbraErrors.Security.Protocols>,
         Error
       >) in
         Task {
@@ -399,7 +400,7 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
                 if let error {
                   let mappedError=(error as? InternalKeychainXPCError).map {
                     self.mapKeychainErrorToProtocolsError($0, operation: "delete")
-                  } ?? ErrorHandlingDomains.UmbraErrors.Security.Protocols
+                  } ?? UmbraErrors.Security.Protocols
                     .internalError("Failed to delete secure data: \(error.localizedDescription)")
                   continuation.resume(returning: .failure(mappedError))
                 } else {
@@ -410,7 +411,7 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
           } else {
             continuation
               .resume(returning: .failure(
-                ErrorHandlingDomains.UmbraErrors.Security.Protocols
+                UmbraErrors.Security.Protocols
                   .invalidState(
                     state: "unavailable",
                     expectedState: "available"
@@ -421,7 +422,7 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
       }
     } catch {
       return .failure(
-        ErrorHandlingDomains.UmbraErrors.Security.Protocols
+        UmbraErrors.Security.Protocols
           .internalError("Failed to delete secure data: \(error.localizedDescription)")
       )
     }
@@ -430,7 +431,7 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
   /// The service status returns a dictionary with information about the service's status
   /// - Returns: Result with status dictionary or error
   public func status() async
-  -> Result<[String: Any], ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<[String: Any], UmbraErrors.Security.Protocols> {
     let statusInfo: [String: Any]=await [
       "available": state.isStartedState(),
       "version": "1.0.0",
@@ -450,7 +451,7 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
     _ data: SecureBytes,
     keyIdentifier _: String?
   ) async
-  -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     // This is a placeholder implementation - in a real implementation, we would
     // use the actual keychain to perform encryption
     let encryptedData=data.withUnsafeBytes { bytes in
@@ -473,7 +474,7 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
     _ data: SecureBytes,
     keyIdentifier _: String?
   ) async
-  -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     // This is a placeholder implementation - in a real implementation, we would
     // use the actual keychain to perform decryption
     let decryptedData=data.withUnsafeBytes { bytes in
@@ -496,7 +497,7 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
     _ data: SecureBytes,
     keyIdentifier _: String
   ) async
-  -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     // This is a placeholder implementation - in a real implementation, we would
     // use the actual keychain to generate a signature
     let signature=data.withUnsafeBytes { bytes in
@@ -521,7 +522,7 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
     for data: SecureBytes,
     keyIdentifier _: String
   ) async
-  -> Result<Bool, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<Bool, UmbraErrors.Security.Protocols> {
     // This is a placeholder implementation - in a real implementation, we would
     // use the actual keychain to verify the signature
     let isValid=signature.withUnsafeBytes { sigBytes in
@@ -684,7 +685,7 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
 
   // MARK: - Helper Methods
 
-  /// Maps internal keychain errors to ErrorHandlingDomains.UmbraErrors.Security.Protocols
+  /// Maps internal keychain errors to UmbraErrors.Security.Protocols
   /// - Parameters:
   ///   - error: The keychain error
   ///   - operation: The operation that failed
@@ -692,7 +693,7 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
   private func mapKeychainErrorToProtocolsError(
     _ error: InternalKeychainXPCError,
     operation: String
-  ) -> ErrorHandlingDomains.UmbraErrors.Security.Protocols {
+  ) -> UmbraErrors.Security.Protocols {
     switch error {
       case .duplicateItem:
         .internalError("Duplicate item exists")

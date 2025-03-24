@@ -1,5 +1,7 @@
+import UmbraErrors
+import UmbraErrorsCore
 import CoreTypesInterfaces
-import ErrorHandlingDomains
+
 import Foundation
 import KeyManagementTypes
 @preconcurrency import SecurityInterfaces
@@ -43,7 +45,7 @@ public actor MockSecurityProvider: SecurityProtocolsCore.SecurityProviderProtoco
   public func getSecurityConfig() async
     -> Result<
       SecurityProtocolsCore.SecurityConfigDTO,
-      ErrorHandlingDomains.UmbraErrors.Security.Protocols
+      UmbraErrors.Security.Protocols
     >
   {
     .success(mockConfiguration)
@@ -52,7 +54,7 @@ public actor MockSecurityProvider: SecurityProtocolsCore.SecurityProviderProtoco
   public func updateSecurityConfig(
     _ configuration: SecurityProtocolsCore
       .SecurityConfigDTO
-  ) async -> Result<Void, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  ) async -> Result<Void, UmbraErrors.Security.Protocols> {
     mockConfiguration=configuration
     return .success(())
   }
@@ -60,10 +62,10 @@ public actor MockSecurityProvider: SecurityProtocolsCore.SecurityProviderProtoco
   // MARK: - Security Provider Protocol Implementation
 
   public func startAccessing(path: String) async
-  -> Result<Bool, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<Bool, UmbraErrors.Security.Protocols> {
     guard !path.isEmpty else {
       return .failure(
-        ErrorHandlingDomains.UmbraErrors.Security.Protocols
+        UmbraErrors.Security.Protocols
           .makeStorageOperationFailed(message: "Empty path")
       )
     }
@@ -80,10 +82,10 @@ public actor MockSecurityProvider: SecurityProtocolsCore.SecurityProviderProtoco
   }
 
   public func createBookmark(forPath path: String) async
-  -> Result<UmbraCoreTypes.SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<UmbraCoreTypes.SecureBytes, UmbraErrors.Security.Protocols> {
     guard !path.isEmpty else {
       return .failure(
-        ErrorHandlingDomains.UmbraErrors.Security.Protocols
+        UmbraErrors.Security.Protocols
           .makeStorageOperationFailed(message: "Empty path")
       )
     }
@@ -96,7 +98,7 @@ public actor MockSecurityProvider: SecurityProtocolsCore.SecurityProviderProtoco
   public func resolveBookmark(_ bookmarkData: UmbraCoreTypes.SecureBytes) async -> Result<(
     path: String,
     isStale: Bool
-  ), ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  ), UmbraErrors.Security.Protocols> {
     // Convert SecureBytes to array for comparison
     var bookmarkBytes=[UInt8]()
     for i in 0..<bookmarkData.count {
@@ -115,7 +117,7 @@ public actor MockSecurityProvider: SecurityProtocolsCore.SecurityProviderProtoco
     }
 
     return .failure(
-      ErrorHandlingDomains.UmbraErrors.Security.Protocols
+      UmbraErrors.Security.Protocols
         .makeStorageOperationFailed(message: "Bookmark not found")
     )
   }
@@ -123,22 +125,22 @@ public actor MockSecurityProvider: SecurityProtocolsCore.SecurityProviderProtoco
   // MARK: - Host, Client, Key Operations
 
   public func getHostIdentifier() async
-  -> Result<String, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<String, UmbraErrors.Security.Protocols> {
     .success("mock-host-identifier")
   }
 
   public func registerClient(bundleIdentifier _: String) async
-  -> Result<Bool, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<Bool, UmbraErrors.Security.Protocols> {
     .success(true)
   }
 
   public func requestKeyRotation(keyID _: String) async
-  -> Result<Void, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<Void, UmbraErrors.Security.Protocols> {
     .success(())
   }
 
   public func notifyKeyCompromise(keyID _: String) async
-  -> Result<Void, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<Void, UmbraErrors.Security.Protocols> {
     .success(())
   }
 
@@ -149,17 +151,17 @@ public actor MockSecurityProvider: SecurityProtocolsCore.SecurityProviderProtoco
     key: UmbraCoreTypes
       .SecureBytes
   ) async
-  -> Result<UmbraCoreTypes.SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<UmbraCoreTypes.SecureBytes, UmbraErrors.Security.Protocols> {
     guard !data.isEmpty else {
       return .failure(
-        ErrorHandlingDomains.UmbraErrors.Security.Protocols
+        UmbraErrors.Security.Protocols
           .makeServiceError(message: "Empty data")
       )
     }
 
     guard !key.isEmpty else {
       return .failure(
-        ErrorHandlingDomains.UmbraErrors.Security.Protocols
+        UmbraErrors.Security.Protocols
           .makeServiceError(message: "Empty key")
       )
     }
@@ -173,17 +175,17 @@ public actor MockSecurityProvider: SecurityProtocolsCore.SecurityProviderProtoco
     key: UmbraCoreTypes
       .SecureBytes
   ) async
-  -> Result<UmbraCoreTypes.SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<UmbraCoreTypes.SecureBytes, UmbraErrors.Security.Protocols> {
     guard !data.isEmpty else {
       return .failure(
-        ErrorHandlingDomains.UmbraErrors.Security.Protocols
+        UmbraErrors.Security.Protocols
           .makeServiceError(message: "Empty data")
       )
     }
 
     guard !key.isEmpty else {
       return .failure(
-        ErrorHandlingDomains.UmbraErrors.Security.Protocols
+        UmbraErrors.Security.Protocols
           .makeServiceError(message: "Empty key")
       )
     }
@@ -196,7 +198,7 @@ public actor MockSecurityProvider: SecurityProtocolsCore.SecurityProviderProtoco
     _ data: UmbraCoreTypes.SecureBytes,
     withKey key: UmbraCoreTypes.SecureBytes
   ) async
-  -> Result<UmbraCoreTypes.SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<UmbraCoreTypes.SecureBytes, UmbraErrors.Security.Protocols> {
     await encrypt(data, key: key)
   }
 
@@ -204,7 +206,7 @@ public actor MockSecurityProvider: SecurityProtocolsCore.SecurityProviderProtoco
     _ data: UmbraCoreTypes.SecureBytes,
     withKey key: UmbraCoreTypes.SecureBytes
   ) async
-  -> Result<UmbraCoreTypes.SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<UmbraCoreTypes.SecureBytes, UmbraErrors.Security.Protocols> {
     await decrypt(data, key: key)
   }
 
@@ -214,10 +216,10 @@ public actor MockSecurityProvider: SecurityProtocolsCore.SecurityProviderProtoco
     _ data: UmbraCoreTypes
       .SecureBytes
   ) async
-  -> Result<UmbraCoreTypes.SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<UmbraCoreTypes.SecureBytes, UmbraErrors.Security.Protocols> {
     guard !data.isEmpty else {
       return .failure(
-        ErrorHandlingDomains.UmbraErrors.Security.Protocols
+        UmbraErrors.Security.Protocols
           .makeServiceError(message: "Empty data")
       )
     }
@@ -231,10 +233,10 @@ public actor MockSecurityProvider: SecurityProtocolsCore.SecurityProviderProtoco
   // MARK: - Random Data Generation
 
   public func generateRandomData(length: Int) async
-  -> Result<UmbraCoreTypes.SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<UmbraCoreTypes.SecureBytes, UmbraErrors.Security.Protocols> {
     guard length > 0 else {
       return .failure(
-        ErrorHandlingDomains.UmbraErrors.Security.Protocols
+        UmbraErrors.Security.Protocols
           .makeServiceError(message: "Invalid length")
       )
     }
@@ -256,7 +258,7 @@ public actor MockSecurityProvider: SecurityProtocolsCore.SecurityProviderProtoco
   }
 
   public func randomBytes(count: Int) async
-  -> Result<UmbraCoreTypes.SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<UmbraCoreTypes.SecureBytes, UmbraErrors.Security.Protocols> {
     await generateRandomData(length: count)
   }
 
@@ -272,7 +274,7 @@ public actor MockSecurityProvider: SecurityProtocolsCore.SecurityProviderProtoco
   }
 
   public func generateKey(length: Int) async
-  -> Result<UmbraCoreTypes.SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<UmbraCoreTypes.SecureBytes, UmbraErrors.Security.Protocols> {
     let result=await generateRandomData(length: length)
     switch result {
       case let .success(data):
@@ -295,10 +297,10 @@ public actor MockSecurityProvider: SecurityProtocolsCore.SecurityProviderProtoco
   }
 
   public nonisolated func getKeyInfo(keyID: String) async
-  -> Result<[String: AnyObject], ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<[String: AnyObject], UmbraErrors.Security.Protocols> {
     guard !keyID.isEmpty else {
       return .failure(
-        ErrorHandlingDomains.UmbraErrors.Security.Protocols
+        UmbraErrors.Security.Protocols
           .makeServiceError(message: "Empty key ID")
       )
     }
@@ -314,7 +316,7 @@ public actor MockSecurityProvider: SecurityProtocolsCore.SecurityProviderProtoco
   }
 
   public func registerNotifications() async
-  -> Result<Void, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<Void, UmbraErrors.Security.Protocols> {
     .success(())
   }
 
@@ -325,7 +327,7 @@ public actor MockSecurityProvider: SecurityProtocolsCore.SecurityProviderProtoco
     data _: [UInt8]?,
     parameters _: [String: String]
   ) async
-  -> Result<MockSecurityOperationResult, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<MockSecurityOperationResult, UmbraErrors.Security.Protocols> {
     let result=MockSecurityOperationResult(success: true, data: nil)
     return .success(result)
   }

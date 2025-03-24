@@ -1,6 +1,8 @@
+import UmbraErrors
+import UmbraErrorsCore
 import CryptoTypes
 import CryptoTypesProtocols
-import ErrorHandlingDomains
+
 import Foundation
 import SecurityProtocolsCore
 import UmbraCoreTypes
@@ -18,7 +20,7 @@ public actor MockCryptoService: SecurityProtocolsCore.CryptoServiceProtocol {
     using _: UmbraCoreTypes
       .SecureBytes
   ) async
-  -> Result<UmbraCoreTypes.SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<UmbraCoreTypes.SecureBytes, UmbraErrors.Security.Protocols> {
     .success(data) // Mock implementation just returns the data
   }
 
@@ -27,12 +29,12 @@ public actor MockCryptoService: SecurityProtocolsCore.CryptoServiceProtocol {
     using _: UmbraCoreTypes
       .SecureBytes
   ) async
-  -> Result<UmbraCoreTypes.SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<UmbraCoreTypes.SecureBytes, UmbraErrors.Security.Protocols> {
     .success(data) // Mock implementation just returns the data
   }
 
   public func generateKey() async
-  -> Result<UmbraCoreTypes.SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<UmbraCoreTypes.SecureBytes, UmbraErrors.Security.Protocols> {
     let bytes=Array(repeating: UInt8(0), count: 32)
     return .success(UmbraCoreTypes.SecureBytes(bytes: bytes))
   }
@@ -41,7 +43,7 @@ public actor MockCryptoService: SecurityProtocolsCore.CryptoServiceProtocol {
     data _: UmbraCoreTypes
       .SecureBytes
   ) async
-  -> Result<UmbraCoreTypes.SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<UmbraCoreTypes.SecureBytes, UmbraErrors.Security.Protocols> {
     let bytes=Array(repeating: UInt8(0), count: 32)
     return .success(UmbraCoreTypes.SecureBytes(bytes: bytes))
   }
@@ -50,7 +52,7 @@ public actor MockCryptoService: SecurityProtocolsCore.CryptoServiceProtocol {
     data _: UmbraCoreTypes.SecureBytes,
     against _: UmbraCoreTypes
       .SecureBytes
-  ) async -> Result<Bool, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  ) async -> Result<Bool, UmbraErrors.Security.Protocols> {
     .success(true)
   }
 
@@ -59,7 +61,7 @@ public actor MockCryptoService: SecurityProtocolsCore.CryptoServiceProtocol {
     key _: UmbraCoreTypes.SecureBytes,
     config _: SecurityProtocolsCore.SecurityConfigDTO
   ) async
-  -> Result<UmbraCoreTypes.SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<UmbraCoreTypes.SecureBytes, UmbraErrors.Security.Protocols> {
     .success(data)
   }
 
@@ -68,7 +70,7 @@ public actor MockCryptoService: SecurityProtocolsCore.CryptoServiceProtocol {
     key _: UmbraCoreTypes.SecureBytes,
     config _: SecurityProtocolsCore.SecurityConfigDTO
   ) async
-  -> Result<UmbraCoreTypes.SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<UmbraCoreTypes.SecureBytes, UmbraErrors.Security.Protocols> {
     .success(data)
   }
 
@@ -77,7 +79,7 @@ public actor MockCryptoService: SecurityProtocolsCore.CryptoServiceProtocol {
     publicKey _: UmbraCoreTypes.SecureBytes,
     config _: SecurityProtocolsCore.SecurityConfigDTO
   ) async
-  -> Result<UmbraCoreTypes.SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<UmbraCoreTypes.SecureBytes, UmbraErrors.Security.Protocols> {
     .success(data)
   }
 
@@ -86,7 +88,7 @@ public actor MockCryptoService: SecurityProtocolsCore.CryptoServiceProtocol {
     privateKey _: UmbraCoreTypes.SecureBytes,
     config _: SecurityProtocolsCore.SecurityConfigDTO
   ) async
-  -> Result<UmbraCoreTypes.SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<UmbraCoreTypes.SecureBytes, UmbraErrors.Security.Protocols> {
     .success(data)
   }
 
@@ -94,7 +96,7 @@ public actor MockCryptoService: SecurityProtocolsCore.CryptoServiceProtocol {
     data _: UmbraCoreTypes.SecureBytes,
     config _: SecurityProtocolsCore.SecurityConfigDTO
   ) async
-  -> Result<UmbraCoreTypes.SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<UmbraCoreTypes.SecureBytes, UmbraErrors.Security.Protocols> {
     let bytes=Array(repeating: UInt8(0), count: 32)
     return .success(UmbraCoreTypes.SecureBytes(bytes: bytes))
   }
@@ -104,7 +106,7 @@ public actor MockCryptoService: SecurityProtocolsCore.CryptoServiceProtocol {
     privateKey _: UmbraCoreTypes.SecureBytes,
     config _: SecurityProtocolsCore.SecurityConfigDTO
   ) async
-  -> Result<UmbraCoreTypes.SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<UmbraCoreTypes.SecureBytes, UmbraErrors.Security.Protocols> {
     let bytes=Array(repeating: UInt8(0), count: 64)
     return .success(UmbraCoreTypes.SecureBytes(bytes: bytes))
   }
@@ -114,12 +116,12 @@ public actor MockCryptoService: SecurityProtocolsCore.CryptoServiceProtocol {
     data _: UmbraCoreTypes.SecureBytes,
     publicKey _: UmbraCoreTypes.SecureBytes,
     config _: SecurityProtocolsCore.SecurityConfigDTO
-  ) async -> Result<Bool, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  ) async -> Result<Bool, UmbraErrors.Security.Protocols> {
     .success(true)
   }
 
   public func generateRandomData(length: Int) async
-  -> Result<UmbraCoreTypes.SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<UmbraCoreTypes.SecureBytes, UmbraErrors.Security.Protocols> {
     let bytes=Array(repeating: UInt8(0), count: length)
     return .success(UmbraCoreTypes.SecureBytes(bytes: bytes))
   }

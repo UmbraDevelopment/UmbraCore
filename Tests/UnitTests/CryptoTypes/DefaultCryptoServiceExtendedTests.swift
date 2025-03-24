@@ -2,7 +2,9 @@
 
 // Temporarily disabled due to macOS 15.4 deployment target requirement
 // @testable import CryptoTypesServices
-import ErrorHandling
+
+import UmbraErrors
+import UmbraErrorsCore
 import Foundation
 import XCTest
 

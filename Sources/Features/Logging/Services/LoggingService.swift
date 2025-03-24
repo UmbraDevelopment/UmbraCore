@@ -1,6 +1,5 @@
-import CoreErrors
-import ErrorHandling
-import ErrorHandlingDomains
+import UmbraErrors
+import UmbraErrorsCore
 import FeaturesLoggingErrors
 import FeaturesLoggingModels
 import FeaturesLoggingProtocols
@@ -28,7 +27,7 @@ public actor LoggingService {
   /// - Parameter path: Path to create a bookmark for
   /// - Returns: Result with bookmark data or error
   public func createLogBookmark(path: String) async
-  -> Result<[UInt8], ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<[UInt8], UmbraErrors.Security.Protocols> {
     let result=await securityProvider.createBookmark(for: path)
 
     switch result {
@@ -43,7 +42,7 @@ public actor LoggingService {
   /// - Parameter bookmarkData: The bookmark data to resolve
   /// - Returns: Result with resolved path or error
   public func resolveLogBookmark(_ bookmarkData: [UInt8]) async
-  -> Result<String, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<String, UmbraErrors.Security.Protocols> {
     let secureBytes=SecureBytes(bytes: bookmarkData)
     let result=await securityProvider.resolveBookmark(secureBytes)
 
@@ -64,7 +63,7 @@ public actor LoggingService {
   /// - Parameter bookmarkData: The bookmark data to validate
   /// - Returns: Result with validation status or error
   public func validateLogBookmark(_ bookmarkData: [UInt8]) async
-  -> Result<Bool, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<Bool, UmbraErrors.Security.Protocols> {
     let secureBytes=SecureBytes(bytes: bookmarkData)
     let result=await securityProvider.validateBookmark(secureBytes)
 
@@ -80,7 +79,7 @@ public actor LoggingService {
   /// - Parameter path: Path to the resource
   /// - Returns: Result with access status or error
   public func startAccessingLogResource(_ path: String) async
-  -> Result<Bool, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<Bool, UmbraErrors.Security.Protocols> {
     let result=await securityProvider.startAccessingResource(identifier: path)
 
     switch result {
@@ -105,9 +104,8 @@ public actor LoggingService {
   /// Maps security errors to XPC security errors
   /// - Returns: The mapped XPC security error
   private func mapError(
-    _ error: ErrorHandlingDomains.UmbraErrors.GeneralSecurity
-      .Core
-  ) -> ErrorHandlingDomains.UmbraErrors.Security.Protocols {
+    _ error: UmbraErrors.GeneralSecurity.Core
+  ) -> UmbraErrors.Security.Protocols {
     switch error {
       case let .storageOperationFailed(reason):
         .invalidInput("Bookmark error: \(reason)")

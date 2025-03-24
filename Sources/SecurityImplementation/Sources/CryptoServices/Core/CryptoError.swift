@@ -1,3 +1,6 @@
+import UmbraErrors
+import UmbraErrorsCore
+import SecurityProtocolsCore
 /**
  # CryptoError
 
@@ -9,7 +12,7 @@
  * Ensure consistent error handling across the cryptographic services
  */
 
-import ErrorHandlingInterfaces
+
 import Foundation
 
 /// Error type for cryptographic operations in SecurityImplementation

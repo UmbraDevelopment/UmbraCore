@@ -1,5 +1,7 @@
+import UmbraErrors
+import UmbraErrorsCore
 import CoreDTOs
-import ErrorHandlingDomains
+
 import Foundation
 import SecurityBridge
 import SecurityInterfaces
@@ -32,7 +34,7 @@ struct SecurityBridgeDTOExample {
   /// Check if the service is available
   /// - Returns: A Result indicating whether the service is available
   func checkServiceAvailability() async
-  -> Result<Bool, ErrorHandlingDomains.UmbraErrors.Security.ProtocolsDTO> {
+  -> Result<Bool, UmbraErrors.Security.ProtocolsDTO> {
     await serviceAdapter.ping()
   }
 
@@ -41,7 +43,7 @@ struct SecurityBridgeDTOExample {
   func getServiceStatus() async
     -> Result<
       XPCServiceDTO.ServiceStatusDTO,
-      ErrorHandlingDomains.UmbraErrors.Security.ProtocolsDTO
+      UmbraErrors.Security.ProtocolsDTO
     >
   {
     await serviceAdapter.getServiceStatus()
@@ -56,11 +58,11 @@ struct SecurityBridgeDTOExample {
     _ data: String,
     keyIdentifier: String?=nil
   ) async
-  -> Result<String, ErrorHandlingDomains.UmbraErrors.Security.ProtocolsDTO> {
+  -> Result<String, UmbraErrors.Security.ProtocolsDTO> {
     // Convert the string to bytes
     guard let dataBytes=data.data(using: .utf8) else {
       return .failure(
-        ErrorHandlingDomains.UmbraErrors.Security.ProtocolsDTO
+        UmbraErrors.Security.ProtocolsDTO
           .invalidInput(details: "Invalid UTF-8 string")
       )
     }
@@ -93,11 +95,11 @@ struct SecurityBridgeDTOExample {
     _ base64Data: String,
     keyIdentifier: String?=nil
   ) async
-  -> Result<String, ErrorHandlingDomains.UmbraErrors.Security.ProtocolsDTO> {
+  -> Result<String, UmbraErrors.Security.ProtocolsDTO> {
     // Convert the Base64 string to data
     guard let data=Data(base64Encoded: base64Data) else {
       return .failure(
-        ErrorHandlingDomains.UmbraErrors.Security.ProtocolsDTO
+        UmbraErrors.Security.ProtocolsDTO
           .invalidInput(details: "Invalid Base64 string")
       )
     }
@@ -118,7 +120,7 @@ struct SecurityBridgeDTOExample {
 
       guard let resultString=String(data: Data(bytesArray), encoding: .utf8) else {
         return .failure(
-          ErrorHandlingDomains.UmbraErrors.Security.ProtocolsDTO
+          UmbraErrors.Security.ProtocolsDTO
             .invalidInput(details: "Invalid UTF-8 data in decryption result")
         )
       }
@@ -131,7 +133,7 @@ struct SecurityBridgeDTOExample {
   /// - Parameter length: The length of the random data to generate (in bytes)
   /// - Returns: A Result containing the random data as a Base64 string or an error
   func generateRandomData(length: Int) async
-  -> Result<String, ErrorHandlingDomains.UmbraErrors.Security.ProtocolsDTO> {
+  -> Result<String, UmbraErrors.Security.ProtocolsDTO> {
     let result=await serviceAdapter.generateRandomData(length: length)
 
     return result.flatMap { randomBytes in
@@ -155,11 +157,11 @@ struct SecurityBridgeDTOExample {
     _ data: String,
     keyIdentifier: String
   ) async
-  -> Result<String, ErrorHandlingDomains.UmbraErrors.Security.ProtocolsDTO> {
+  -> Result<String, UmbraErrors.Security.ProtocolsDTO> {
     // Convert the string to bytes
     guard let dataBytes=data.data(using: .utf8) else {
       return .failure(
-        ErrorHandlingDomains.UmbraErrors.Security.ProtocolsDTO
+        UmbraErrors.Security.ProtocolsDTO
           .invalidInput(details: "Invalid UTF-8 string")
       )
     }
@@ -193,11 +195,11 @@ struct SecurityBridgeDTOExample {
     _ signature: String,
     for data: String,
     keyIdentifier: String
-  ) async -> Result<Bool, ErrorHandlingDomains.UmbraErrors.Security.ProtocolsDTO> {
+  ) async -> Result<Bool, UmbraErrors.Security.ProtocolsDTO> {
     // Convert the signature from Base64
     guard let signatureData=Data(base64Encoded: signature) else {
       return .failure(
-        ErrorHandlingDomains.UmbraErrors.Security.ProtocolsDTO
+        UmbraErrors.Security.ProtocolsDTO
           .invalidInput(details: "Invalid Base64 signature")
       )
     }
@@ -205,7 +207,7 @@ struct SecurityBridgeDTOExample {
     // Convert the data string to bytes
     guard let dataBytes=data.data(using: .utf8) else {
       return .failure(
-        ErrorHandlingDomains.UmbraErrors.Security.ProtocolsDTO
+        UmbraErrors.Security.ProtocolsDTO
           .invalidInput(details: "Invalid UTF-8 string")
       )
     }

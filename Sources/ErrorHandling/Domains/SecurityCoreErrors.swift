@@ -1,5 +1,5 @@
-import ErrorHandlingInterfaces
 import Foundation
+import Interfaces
 
 // Local type declarations to replace imports
 // These replace the removed ErrorHandling and ErrorHandlingDomains imports
@@ -166,7 +166,7 @@ extension UmbraErrors.Security {
     }
 
     /// Source information about where the error occurred
-    public var source: ErrorHandlingInterfaces.ErrorSource? {
+    public var source: Interfaces.ErrorSource? {
       nil // Source is typically set when the error is created with context
     }
 
@@ -176,8 +176,8 @@ extension UmbraErrors.Security {
     }
 
     /// Additional context for the error
-    public var context: ErrorHandlingInterfaces.ErrorContext {
-      ErrorHandlingInterfaces.ErrorContext(
+    public var context: Interfaces.ErrorContext {
+      Interfaces.ErrorContext(
         source: domain,
         operation: "security_operation",
         details: errorDescription
@@ -185,7 +185,7 @@ extension UmbraErrors.Security {
     }
 
     /// Creates a new instance of the error with additional context
-    public func with(context _: ErrorHandlingInterfaces.ErrorContext) -> Self {
+    public func with(context _: Interfaces.ErrorContext) -> Self {
       // Since these are enum cases, we need to return a new instance with the same value
       switch self {
         case let .authenticationFailed(reason):
@@ -227,7 +227,7 @@ extension UmbraErrors.Security {
     }
 
     /// Creates a new instance of the error with source information
-    public func with(source _: ErrorHandlingInterfaces.ErrorSource) -> Self {
+    public func with(source _: Interfaces.ErrorSource) -> Self {
       // Similar to above, return a new instance with the same value
       self // In a real implementation, we would attach the source information
     }

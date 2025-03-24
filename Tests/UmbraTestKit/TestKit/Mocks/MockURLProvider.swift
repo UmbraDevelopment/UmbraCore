@@ -1,5 +1,7 @@
+import UmbraErrors
+import UmbraErrorsCore
 import Core
-import ErrorHandlingDomains
+
 import Foundation
 @preconcurrency import SecurityInterfaces
 import SecurityProtocolsCore
@@ -34,7 +36,7 @@ public actor MockURLProvider: SecurityProtocolsCore.SecurityProviderProtocol, @u
 
   public func createBookmark(forPath path: String) async throws -> [UInt8] {
     guard !bookmarks.keys.contains(path) else {
-      throw ErrorHandlingDomains.UmbraErrors.Security.Protocols
+      throw UmbraErrors.Security.Protocols
         .makeStorageOperationFailed(message: "Bookmark already exists for path: \(path)")
     }
     let bookmark=Array("mock-bookmark-\(path)".utf8)
@@ -45,12 +47,12 @@ public actor MockURLProvider: SecurityProtocolsCore.SecurityProviderProtocol, @u
   public func resolveBookmark(_ bookmark: [UInt8]) async throws -> (path: String, isStale: Bool) {
     let bookmarkString=String(bytes: bookmark, encoding: .utf8) ?? ""
     guard bookmarkString.hasPrefix("mock-bookmark-") else {
-      throw ErrorHandlingDomains.UmbraErrors.Security.Protocols
+      throw UmbraErrors.Security.Protocols
         .makeStorageOperationFailed(message: "Invalid bookmark format")
     }
     let path=String(bookmarkString.dropFirst("mock-bookmark-".count))
     guard bookmarks[path] == bookmark else {
-      throw ErrorHandlingDomains.UmbraErrors.Security.Protocols
+      throw UmbraErrors.Security.Protocols
         .makeStorageOperationFailed(message: "Bookmark not found for path: \(path)")
     }
     accessedPaths.insert(path)
@@ -80,7 +82,7 @@ public actor MockURLProvider: SecurityProtocolsCore.SecurityProviderProtocol, @u
   ) async throws -> T {
     let granted=await startAccessing(path: path)
     guard granted else {
-      throw ErrorHandlingDomains.UmbraErrors.Security.Protocols
+      throw UmbraErrors.Security.Protocols
         .makeStorageOperationFailed(message: "Failed to access \(path)")
     }
     defer { Task { await stopAccessing(path: path) } }
@@ -91,7 +93,7 @@ public actor MockURLProvider: SecurityProtocolsCore.SecurityProviderProtocol, @u
 
   public func loadBookmark(withIdentifier identifier: String) async throws -> [UInt8] {
     guard let bookmarkData=bookmarks[identifier] else {
-      throw ErrorHandlingDomains.UmbraErrors.Security.Protocols
+      throw UmbraErrors.Security.Protocols
         .makeStorageOperationFailed(message: "Bookmark not found for identifier: \(identifier)")
     }
     return bookmarkData
@@ -99,7 +101,7 @@ public actor MockURLProvider: SecurityProtocolsCore.SecurityProviderProtocol, @u
 
   public func deleteBookmark(withIdentifier identifier: String) async throws {
     guard bookmarks.removeValue(forKey: identifier) != nil else {
-      throw ErrorHandlingDomains.UmbraErrors.Security.Protocols
+      throw UmbraErrors.Security.Protocols
         .makeStorageOperationFailed(message: "Bookmark not found for identifier: \(identifier)")
     }
   }
@@ -113,11 +115,11 @@ public actor MockURLProvider: SecurityProtocolsCore.SecurityProviderProtocol, @u
 
   public func readData(from path: String) async throws -> [UInt8] {
     guard let content=contents[path] else {
-      throw ErrorHandlingDomains.UmbraErrors.Security.Protocols
+      throw UmbraErrors.Security.Protocols
         .makeStorageOperationFailed(message: "No content found at path: \(path)")
     }
     guard let data=content.data(using: .utf8) else {
-      throw ErrorHandlingDomains.UmbraErrors.Security.Protocols
+      throw UmbraErrors.Security.Protocols
         .makeStorageOperationFailed(message: "Failed to encode content as data")
     }
     return [UInt8](data)
@@ -125,7 +127,7 @@ public actor MockURLProvider: SecurityProtocolsCore.SecurityProviderProtocol, @u
 
   public func deleteFile(at path: String) async throws {
     guard contents.removeValue(forKey: path) != nil else {
-      throw ErrorHandlingDomains.UmbraErrors.Security.Protocols
+      throw UmbraErrors.Security.Protocols
         .makeStorageOperationFailed(message: "No file found at path: \(path)")
     }
   }
@@ -135,7 +137,7 @@ public actor MockURLProvider: SecurityProtocolsCore.SecurityProviderProtocol, @u
   public func getSecurityConfig() async
     -> Result<
       SecurityProtocolsCore.SecurityConfigDTO,
-      ErrorHandlingDomains.UmbraErrors.Security.Protocols
+      UmbraErrors.Security.Protocols
     >
   {
     .success(mockConfiguration)
@@ -144,7 +146,7 @@ public actor MockURLProvider: SecurityProtocolsCore.SecurityProviderProtocol, @u
   public func updateSecurityConfig(
     _ configuration: SecurityProtocolsCore
       .SecurityConfigDTO
-  ) async -> Result<Void, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  ) async -> Result<Void, UmbraErrors.Security.Protocols> {
     mockConfiguration=configuration
     return .success(())
   }
@@ -152,22 +154,22 @@ public actor MockURLProvider: SecurityProtocolsCore.SecurityProviderProtocol, @u
   // MARK: - Host and Client Methods
 
   public func getHostIdentifier() async
-  -> Result<String, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<String, UmbraErrors.Security.Protocols> {
     .success("mock-url-provider-host")
   }
 
   public func registerClient(bundleIdentifier _: String) async
-  -> Result<Bool, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<Bool, UmbraErrors.Security.Protocols> {
     .success(true)
   }
 
   public func requestKeyRotation(keyID _: String) async
-  -> Result<Void, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<Void, UmbraErrors.Security.Protocols> {
     .success(())
   }
 
   public func notifyKeyCompromise(keyID _: String) async
-  -> Result<Void, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<Void, UmbraErrors.Security.Protocols> {
     .success(())
   }
 
@@ -175,7 +177,7 @@ public actor MockURLProvider: SecurityProtocolsCore.SecurityProviderProtocol, @u
 
   public func encrypt(_ data: [UInt8], key: [UInt8]) async throws -> [UInt8] {
     guard !key.isEmpty else {
-      throw ErrorHandlingDomains.UmbraErrors.Security.Protocols
+      throw UmbraErrors.Security.Protocols
         .makeServiceError(message: "Empty encryption key")
     }
 
@@ -196,7 +198,7 @@ public actor MockURLProvider: SecurityProtocolsCore.SecurityProviderProtocol, @u
 
   public func generateKey(length: Int) async throws -> [UInt8] {
     guard length > 0 else {
-      throw ErrorHandlingDomains.UmbraErrors.Security.Protocols
+      throw UmbraErrors.Security.Protocols
         .makeServiceError(message: "Invalid key length")
     }
 
@@ -233,19 +235,19 @@ public actor MockURLProvider: SecurityProtocolsCore.SecurityProviderProtocol, @u
   }
 
   public func generateRandomData(length: Int) async
-  -> Result<UmbraCoreTypes.SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<UmbraCoreTypes.SecureBytes, UmbraErrors.Security.Protocols> {
     let bytes=[UInt8](repeating: 0, count: length)
     return .success(UmbraCoreTypes.SecureBytes(bytes: bytes))
   }
 
   @preconcurrency
   public nonisolated func getKeyInfo(keyID _: String) async
-  -> Result<[String: AnyObject], ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<[String: AnyObject], UmbraErrors.Security.Protocols> {
     .success(["status": "active" as NSString])
   }
 
   public func registerNotifications() async
-  -> Result<Void, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<Void, UmbraErrors.Security.Protocols> {
     .success(())
   }
 
@@ -253,7 +255,7 @@ public actor MockURLProvider: SecurityProtocolsCore.SecurityProviderProtocol, @u
     operation _: String,
     data _: [UInt8]?,
     parameters _: [String: String]
-  ) async -> Result<SecurityOperationResult, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  ) async -> Result<SecurityOperationResult, UmbraErrors.Security.Protocols> {
     let result=SecurityOperationResult(success: true, data: nil)
     return .success(result)
   }

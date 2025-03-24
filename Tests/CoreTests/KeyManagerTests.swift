@@ -1,9 +1,10 @@
 import Core
-import CoreErrors
+import UmbraErrors
+import UmbraErrorsCore
 import CoreServicesTypes
 import CoreTypesInterfaces
 import CryptoTypes
-import ErrorHandling
+
 import Foundation
 import ServiceTypes
 import XCTest
@@ -168,7 +169,7 @@ actor KeyManagerMockServiceContainer {
 
   func resolve<T>(_: T.Type) async throws -> T where T: ServiceTypes.UmbraService {
     guard let service=services.values.first(where: { $0 is T }) as? T else {
-      throw CoreErrors.ServiceError.dependencyError
+      throw UmbraErrors.ServiceError.dependencyError
     }
     return service
   }
@@ -256,7 +257,7 @@ actor MockKeyManager: ServiceTypes.UmbraService {
   // KeyManager methods
   func retrieveKey(keyID: String) async throws -> [UInt8] {
     guard state == .ready else {
-      throw CoreErrors.ServiceError.dependencyError
+      throw UmbraErrors.ServiceError.dependencyError
     }
 
     // Check if key exists - do NOT auto-generate for test cases that check for non-existent keys
@@ -274,7 +275,7 @@ actor MockKeyManager: ServiceTypes.UmbraService {
 
   func storeKey(keyData: [UInt8], keyID: String) async throws {
     guard state == .ready else {
-      throw CoreErrors.ServiceError.dependencyError
+      throw UmbraErrors.ServiceError.dependencyError
     }
 
     // Empty key data means delete
@@ -288,7 +289,7 @@ actor MockKeyManager: ServiceTypes.UmbraService {
   // Generate a key and store it
   func generateKey(keyID: String, size: Int) async throws -> [UInt8] {
     guard state == .ready else {
-      throw CoreErrors.ServiceError.dependencyError
+      throw UmbraErrors.ServiceError.dependencyError
     }
 
     let key=try await generateRandomKey(size: size)

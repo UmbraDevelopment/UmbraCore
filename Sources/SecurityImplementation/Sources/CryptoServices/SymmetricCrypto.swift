@@ -2,23 +2,22 @@
  # UmbraCore Symmetric Cryptography Service
 
  This file provides symmetric encryption capabilities for the UmbraCore security framework.
- It implements the symmetric encryption portions of the CryptoServiceProtocol and provides
- AES-GCM encryption with appropriate security measures.
+ It implements the symmetric encryption portions of the CryptoServiceProtocol.
 
  ## Security Considerations
 
- * Symmetric encryption uses AES-GCM with 256-bit keys, which is considered strong by
-   current standards.
- * Memory safety is implemented via SecureBytes containers which provide basic memory
-   protections.
- * The implementation doesn't currently include mitigations for timing attacks or other
-   side-channel vulnerabilities.
+ * **Development Status**: This module contains proof-of-concept implementations that are NOT
+   suitable for production use without further review and enhancement.
+ * The symmetric implementation currently uses the CryptoWrapper which provides AES-GCM
+   style functionality but is not a true implementation - it must be replaced before production use.
+ * The authenticated encryption mode simulates GCM behaviour but is not a proper implementation.
  */
 
-import CoreErrors
-import ErrorHandlingDomains
+import UmbraErrors.Domains
+
 import Foundation
 import SecurityProtocolsCore
+import UmbraErrorsCore
 import UmbraCoreTypes
 
 /// Provides symmetric encryption operations to the CryptoServiceCore.

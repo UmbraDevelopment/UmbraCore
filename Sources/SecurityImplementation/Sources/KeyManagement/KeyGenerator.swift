@@ -20,10 +20,11 @@
  * In a production implementation, hardware-based random number generation would be preferred
  */
 
-import CoreErrors
-import ErrorHandlingDomains
+import UmbraErrors.Domains
+
 import Foundation
 import SecurityProtocolsCore
+import UmbraErrorsCore
 import UmbraCoreTypes
 
 /// Defines the intended purpose for cryptographic keys

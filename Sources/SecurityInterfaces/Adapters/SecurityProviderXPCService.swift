@@ -1,6 +1,6 @@
-import CoreErrors
-import ErrorHandling
-import ErrorHandlingDomains
+import UmbraErrors
+import UmbraErrorsCore
+
 import Foundation
 import SecurityProtocolsCore
 import UmbraCoreTypes
@@ -17,7 +17,7 @@ public final class SecurityProviderXPCService: XPCServiceProtocolBasic {
 
   // MARK: - Initialization
 
-  /// Initialize the XPC service
+  /// Initialise the XPC service
   public init() {
     // Connection setup would happen here in a real implementation
   }
@@ -40,7 +40,7 @@ public final class SecurityProviderXPCService: XPCServiceProtocolBasic {
   /// Get the current status of the XPC service
   /// - Returns: Dictionary containing status information
   public func status() async
-  -> Result<[String: Any], ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<[String: Any], UmbraErrors.Security.Protocols> {
     // In a real implementation, we would collect actual status information
     let statusDict: [String: Any]=[
       "name": "SecurityProviderXPCService",

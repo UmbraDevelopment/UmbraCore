@@ -1,4 +1,6 @@
-import ErrorHandlingInterfaces
+
+import UmbraErrors
+import UmbraErrorsCore
 import Foundation
 
 extension UmbraErrors.Security {

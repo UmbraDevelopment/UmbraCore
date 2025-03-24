@@ -17,8 +17,8 @@
  */
 
 import CommonCrypto
-import CoreErrors
-import ErrorHandlingDomains
+import UmbraErrors
+import UmbraErrorsCore
 import Foundation
 import SecurityProtocolsCore
 import UmbraCoreTypes

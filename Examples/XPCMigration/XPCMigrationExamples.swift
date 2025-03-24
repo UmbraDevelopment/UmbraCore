@@ -1,4 +1,6 @@
-import ErrorHandlingDomains
+
+import UmbraErrors
+import UmbraErrorsCore
 import Foundation
 import UmbraCoreTypes
 
@@ -131,15 +133,15 @@ public enum XPCMigrationExamples {
      class ModernXPCServiceImpl: XPCServiceProtocolComplete {
          // Implement required methods
 
-         func ping() async -> Result<Bool, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+         func ping() async -> Result<Bool, UmbraErrors.Security.Protocols> {
              return .success(true)
          }
 
-         func getVersion() async -> Result<String, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+         func getVersion() async -> Result<String, UmbraErrors.Security.Protocols> {
              return .success("2.0.0")
          }
 
-         func encrypt(data: SecureBytes) async -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+         func encrypt(data: SecureBytes) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
              do {
                  let encryptedData = try performModernEncryption(data)
                  return .success(encryptedData)
@@ -152,7 +154,7 @@ public enum XPCMigrationExamples {
              _ data: SecureBytes,
              identifier: String,
              metadata: [String: String]?
-         ) async -> Result<Void, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+         ) async -> Result<Void, UmbraErrors.Security.Protocols> {
              do {
                  try saveToModernSecureStorage(data, identifier: identifier, metadata: metadata)
                  return .success(())
@@ -245,14 +247,14 @@ extension XPCMigrationExamples {
     SecureBytes(bytes: [UInt8](data))
   }
 
-  /// Demo helper to convert Error to ErrorHandlingDomains.UmbraErrors.Security.Protocols
+  /// Demo helper to convert Error to UmbraErrors.Security.Protocols
   ///
   /// This is provided as a reference for migrating legacy code that uses Error
-  /// to modern code that uses ErrorHandlingDomains.UmbraErrors.Security.Protocols
+  /// to modern code that uses UmbraErrors.Security.Protocols
   static func convertLegacyError(_ error: Error) -> ErrorHandlingDomains.UmbraErrors.Security
   .Protocols {
     // If it's already the correct type, return it
-    if let securityError=error as? ErrorHandlingDomains.UmbraErrors.Security.Protocols {
+    if let securityError=error as? UmbraErrors.Security.Protocols {
       return securityError
     }
 

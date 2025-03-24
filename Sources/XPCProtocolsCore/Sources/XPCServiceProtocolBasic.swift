@@ -1,4 +1,5 @@
-import CoreErrors
+import UmbraErrors
+import UmbraErrorsCore
 import Foundation
 import UmbraCoreTypes
 
@@ -77,12 +78,12 @@ public protocol XPCServiceProtocolBasic: Sendable {
   /// Basic synchronisation of keys between XPC service and client.
   /// This method allows secure key material to be shared across process boundaries.
   /// - Parameter syncData: Secure bytes for key synchronisation
-  /// - Throws: ErrorHandlingDomains.UmbraErrors.Security.Protocols if synchronisation fails
+  /// - Throws: UmbraErrors.Security.Protocols if synchronisation fails
   func synchroniseKeys(_ syncData: SecureBytes) async throws
 
   /// Get the current status of the XPC service
   /// - Returns: Result containing status information or error
-  func status() async -> Result<[String: Any], ErrorHandlingDomains.UmbraErrors.Security.Protocols>
+  func status() async -> Result<[String: Any], UmbraErrors.Security.Protocols>
 }
 
 /// Default protocol implementation with baseline functionality.
@@ -97,7 +98,7 @@ extension XPCServiceProtocolBasic {
   /// Default implementation of the basic ping method.
   /// - Returns: Always returns true for basic implementations
   public func pingBasic() async
-  -> Result<Bool, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<Bool, UmbraErrors.Security.Protocols> {
     // Simple implementation that doesn't throw
     let pingResult=await ping()
     return .success(pingResult)
@@ -107,14 +108,14 @@ extension XPCServiceProtocolBasic {
   /// - Parameter syncData: Secure bytes for key synchronisation
   /// - Returns: Result with success or failure with error information
   public func synchronizeKeys(_ syncData: SecureBytes) async
-  -> Result<Void, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<Void, UmbraErrors.Security.Protocols> {
     do {
       try await synchroniseKeys(syncData)
       return .success(())
-    } catch let error as ErrorHandlingDomains.UmbraErrors.Security.Protocols {
+    } catch let error as UmbraErrors.Security.Protocols {
       return .failure(error)
     } catch {
-      return .failure(.internalError(error.localizedDescription))
+      return .failure(UmbraErrors.Security.Protocols.internalError(error.localizedDescription))
     }
   }
 }

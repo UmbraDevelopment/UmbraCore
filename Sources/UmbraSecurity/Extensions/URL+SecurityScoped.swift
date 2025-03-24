@@ -1,7 +1,8 @@
-import ErrorHandlingCore
-import ErrorHandlingDomains
-import ErrorHandlingInterfaces
-import ErrorHandlingMapping
+
+
+
+import UmbraErrors
+import UmbraErrorsCore
 import Foundation
 import SecurityBridgeTypes
 import SecurityTypes
@@ -14,7 +15,7 @@ extension URL {
   /// - Returns: Bookmark data
   /// - Throws: SecurityError if bookmark creation fails
   public func us_createSecurityScopedBookmark() async
-  -> Result<Data, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<Data, UmbraErrors.Security.Protocols> {
     let path=path
     do {
       return try .success(bookmarkData(
@@ -24,7 +25,7 @@ extension URL {
       ))
     } catch {
       return .failure(
-        ErrorHandlingDomains.UmbraErrors.Security.Protocols
+        UmbraErrors.Security.Protocols
           .internalError("Failed to create bookmark for: \(path)")
       )
     }
@@ -77,7 +78,7 @@ extension URL {
   /// - Returns: True if started successfully
   /// - Throws: SecurityError if access fails
   public func us_startAccessingSecurityScopedResource() async
-  -> Result<Bool, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<Bool, UmbraErrors.Security.Protocols> {
     let result=startAccessingSecurityScopedResource()
     if result {
       return .success(true)

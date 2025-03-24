@@ -1,4 +1,6 @@
-import ErrorHandlingDomains
+
+import UmbraErrors
+import UmbraErrorsCore
 import Foundation
 import UmbraCoreTypes
 import XPCProtocolsCore
@@ -100,7 +102,7 @@ final class XPCMigrationExamples {
       let secureData=SecureBytes(bytes: [UInt8](data))
 
       let result=await service.encryptSecureData(secureData, keyIdentifier: nil)
-      // Convert ErrorHandlingDomains.UmbraErrors.Security.Protocols to Error to match the function
+      // Convert UmbraErrors.Security.Protocols to Error to match the function
       // return type
       return result.mapError { error in
         error as Error

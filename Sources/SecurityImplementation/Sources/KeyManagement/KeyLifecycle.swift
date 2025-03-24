@@ -19,7 +19,9 @@
  * Versioning ensures that the correct key is used for each operation
  */
 
-import ErrorHandlingDomains
+
+import UmbraErrors
+import UmbraErrorsCore
 import Foundation
 import SecurityProtocolsCore
 import UmbraCoreTypes

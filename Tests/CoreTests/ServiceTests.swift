@@ -1,8 +1,9 @@
 import Core
-import CoreErrors
+import UmbraErrors
+import UmbraErrorsCore
 import CoreServicesTypes
 import CoreTypesInterfaces
-import ErrorHandling
+
 import Foundation
 import ServiceTypes
 import XCTest
@@ -36,7 +37,7 @@ final class ServiceTests: XCTestCase {
     )
   }
 
-  func testServiceInitialization() async throws {
+  func testServiceInitialisation() async throws {
     let service=MockService(container: container)
     try await container.register(service)
 
@@ -44,10 +45,10 @@ final class ServiceTests: XCTestCase {
     let initialState=await service.state
     XCTAssertEqual(initialState, .uninitialized)
 
-    // Initialize service
+    // Initialise service
     try await container.initialiseService(MockService.serviceIdentifier)
 
-    // Check state after initialization
+    // Check state after initialisation
     let finalState=await service.state
     XCTAssertEqual(finalState, .ready)
   }
@@ -57,17 +58,17 @@ final class ServiceTests: XCTestCase {
     let mainService=MockService(container: container)
     try await container.register(mainService)
 
-    // Initialize main service
+    // Initialise main service
     try await container.initialiseService(MockService.serviceIdentifier)
 
-    // Create dependent service after main service is initialized
+    // Create dependent service after main service is initialised
     let dependentService=MockDependentService(
       container: container,
       dependencyID: MockService.serviceIdentifier
     )
     try await container.register(dependentService)
 
-    // Initialize dependent service
+    // Initialise dependent service
     try await container.initialiseService(MockDependentService.serviceIdentifier)
 
     // Check states
@@ -81,10 +82,10 @@ final class ServiceTests: XCTestCase {
     let service=MockService(container: container)
     try await container.register(service)
 
-    // Initialize service
+    // Initialise service
     try await container.initialiseService(MockService.serviceIdentifier)
 
-    // Check state after initialization
+    // Check state after initialisation
     let initState=await service.state
     XCTAssertEqual(initState, .ready)
 
@@ -122,7 +123,7 @@ final class ServiceTests: XCTestCase {
       )
     }
 
-    // Try to initialize the dependent service before its dependency
+    // Try to initialise the dependent service before its dependency
     do {
       try await container.initialiseService(MockDependentService.serviceIdentifier)
       XCTFail("Expected dependency not ready error")
@@ -257,7 +258,7 @@ actor MockServiceContainer: ServiceContainer {
 
   func initialiseService(_ identifier: String) async throws {
     guard let service=services[identifier] as? any ServiceTypes.UmbraService else {
-      throw CoreErrors.ServiceError.dependencyError
+      throw UmbraErrors.ServiceError.dependencyError
     }
 
     _=try await service.validate()
@@ -266,7 +267,7 @@ actor MockServiceContainer: ServiceContainer {
 
   func shutdownService(_ identifier: String) async throws {
     guard let mockService=services[identifier] as? MockService else {
-      throw CoreErrors.ServiceError.dependencyError
+      throw UmbraErrors.ServiceError.dependencyError
     }
 
     await mockService.shutdown()

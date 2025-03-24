@@ -1,7 +1,8 @@
-import ErrorHandlingCore
-import ErrorHandlingDomains
-import ErrorHandlingInterfaces
-import ErrorHandlingMapping
+
+
+
+import UmbraErrors
+import UmbraErrorsCore
 import Foundation
 import SecurityProtocolsCore
 import UmbraCoreTypes
@@ -83,14 +84,14 @@ public enum KeychainXPCDTO {
     /// Operation succeeded with data
     case successWithData(SecureBytes)
     /// Operation failed with error
-    case failure(ErrorHandlingDomains.UmbraErrors.Security.Protocols)
+    case failure(UmbraErrors.Security.Protocols)
   }
 
   /// Protocol extension to convert keychain errors to XPC errors
-  extension ErrorHandlingDomains.UmbraErrors.Security.Protocols {
+  extension UmbraErrors.Security.Protocols {
     /// Convert to keychain operation error
     /// - Returns: The keychain operation error
-    public func toKeychainOperationError() -> ErrorHandlingDomains.UmbraErrors.Security.Protocols {
+    public func toKeychainOperationError() -> UmbraErrors.Security.Protocols {
       self
     }
   }
@@ -98,7 +99,7 @@ public enum KeychainXPCDTO {
   /// Extension to map KeyStorageError to KeychainOperationError
   extension KeyStorageError {
     /// Convert to KeychainXPCDTO.KeychainOperationError
-    public func toKeychainOperationError() -> ErrorHandlingDomains.UmbraErrors.Security.Protocols {
+    public func toKeychainOperationError() -> UmbraErrors.Security.Protocols {
       switch self {
         case .keyNotFound:
           return .missingProtocolImplementation(protocolName: "KeychainOperation")

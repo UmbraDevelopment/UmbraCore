@@ -1,9 +1,9 @@
 import Core
-import CoreErrors
+import UmbraErrorsCore
 import CoreServicesTypes
 import CoreTypesInterfaces
 import CryptoTypes
-import ErrorHandling
+
 import Foundation
 import KeyManagementTypes
 import SecurityTypes
@@ -37,7 +37,7 @@ actor GenericMockServiceContainer {
 
   func resolve<T>(_: T.Type) async throws -> T where T: ServiceTypes.UmbraService {
     guard let service=services.values.first(where: { $0 is T }) as? T else {
-      throw CoreErrors.ServiceError.dependencyError
+      throw UmbraErrors.ServiceError.dependencyError
     }
     return service
   }
@@ -75,7 +75,7 @@ actor GenericMockCryptoService {
   // Crypto operations
   func generateRandomBytes(count: Int) async throws -> [UInt8] {
     guard state == CoreServicesTypes.ServiceState.ready else {
-      throw CoreErrors.ServiceError.operationFailed
+      throw UmbraErrors.ServiceError.operationFailed
     }
     // Simple mock implementation that creates random bytes
     return (0..<count).map { _ in UInt8.random(in: 0...255) }
@@ -83,7 +83,7 @@ actor GenericMockCryptoService {
 
   func encrypt(data: [UInt8], key: [UInt8]) async throws -> [UInt8] {
     guard state == CoreServicesTypes.ServiceState.ready else {
-      throw CoreErrors.ServiceError.operationFailed
+      throw UmbraErrors.ServiceError.operationFailed
     }
     // Mock encryption by XORing with the key (for testing only, not secure)
     let repeatedKey=Array(repeating: key, count: (data.count / key.count) + 1).flatMap(\.self)
@@ -93,7 +93,7 @@ actor GenericMockCryptoService {
 
   func decrypt(data: [UInt8], key: [UInt8]) async throws -> [UInt8] {
     guard state == CoreServicesTypes.ServiceState.ready else {
-      throw CoreErrors.ServiceError.operationFailed
+      throw UmbraErrors.ServiceError.operationFailed
     }
     // XOR is symmetric, so encryption and decryption are the same
     return try await encrypt(data: data, key: key)
@@ -101,7 +101,7 @@ actor GenericMockCryptoService {
 
   func hash(data: [UInt8]) async throws -> [UInt8] {
     guard state == CoreServicesTypes.ServiceState.ready else {
-      throw CoreErrors.ServiceError.operationFailed
+      throw UmbraErrors.ServiceError.operationFailed
     }
     // Simple mock hash function (not cryptographically secure)
     var result: [UInt8]=Array(repeating: 0, count: 32)
@@ -145,7 +145,7 @@ actor GenericMockSecurityService {
   // Security operations
   func createBookmark(forPath path: String) async throws -> [UInt8] {
     guard state == CoreServicesTypes.ServiceState.ready else {
-      throw CoreErrors.ServiceError.operationFailed
+      throw UmbraErrors.ServiceError.operationFailed
     }
 
     guard !path.isEmpty else {
@@ -158,7 +158,7 @@ actor GenericMockSecurityService {
 
   func resolveBookmark(_ bookmark: [UInt8]) async throws -> String {
     guard state == CoreServicesTypes.ServiceState.ready else {
-      throw CoreErrors.ServiceError.operationFailed
+      throw UmbraErrors.ServiceError.operationFailed
     }
 
     guard !bookmark.isEmpty else {
@@ -181,7 +181,7 @@ actor GenericMockSecurityService {
 
   func storeBookmark(_ bookmark: [UInt8], withIdentifier identifier: String) async throws {
     guard state == CoreServicesTypes.ServiceState.ready else {
-      throw CoreErrors.ServiceError.operationFailed
+      throw UmbraErrors.ServiceError.operationFailed
     }
 
     bookmarkStorage[identifier]=bookmark
@@ -189,7 +189,7 @@ actor GenericMockSecurityService {
 
   func loadBookmark(withIdentifier identifier: String) async throws -> [UInt8] {
     guard state == CoreServicesTypes.ServiceState.ready else {
-      throw CoreErrors.ServiceError.operationFailed
+      throw UmbraErrors.ServiceError.operationFailed
     }
 
     guard let bookmark=bookmarkStorage[identifier] else {
@@ -204,7 +204,7 @@ actor GenericMockSecurityService {
 
   func verifyAccess(forPath _: String) async throws -> Bool {
     guard state == CoreServicesTypes.ServiceState.ready else {
-      throw CoreErrors.ServiceError.operationFailed
+      throw UmbraErrors.ServiceError.operationFailed
     }
 
     // For testing, always return true
@@ -327,7 +327,7 @@ actor GenericMockDependentService: ServiceTypes.UmbraService {
     // Ensure dependency is ready
     let dependencyState=await dependency.state
     guard dependencyState == CoreServicesTypes.ServiceState.ready else {
-      throw CoreErrors.ServiceError.dependencyError
+      throw UmbraErrors.ServiceError.dependencyError
     }
 
     _state=CoreServicesTypes.ServiceState.ready

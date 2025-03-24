@@ -1,9 +1,10 @@
 import Core
-import CoreErrors
+import UmbraErrors
+import UmbraErrorsCore
 import CoreServicesTypes
 import CoreTypesInterfaces
 import CryptoTypes
-import ErrorHandling
+
 import Foundation
 import ServiceTypes
 import XCTest
@@ -33,7 +34,7 @@ final class CryptoTests: XCTestCase {
   // MARK: - Tests
 
   func testGenerateRandomBytes() async throws {
-    // Initialize the service
+    // Initialise the service
     try await container.initialiseAll()
 
     // Generate random bytes
@@ -48,7 +49,7 @@ final class CryptoTests: XCTestCase {
   }
 
   func testEncryptDecrypt() async throws {
-    // Initialize the service
+    // Initialise the service
     try await container.initialiseAll()
 
     // Test data and key
@@ -65,7 +66,7 @@ final class CryptoTests: XCTestCase {
   }
 
   func testHash() async throws {
-    // Initialize the service
+    // Initialise the service
     try await container.initialiseAll()
 
     // Test data
@@ -86,7 +87,7 @@ final class CryptoTests: XCTestCase {
   }
 
   func testServiceState() async throws {
-    // Service should be initialized during setup
+    // Service should be initialised during setup
     try await container.initialiseAll()
     XCTAssertEqual(service.state, CoreServicesTypes.ServiceState.ready)
 
@@ -123,7 +124,7 @@ actor CryptoMockServiceContainer {
 
   func resolve<T>(_: T.Type) async throws -> T where T: ServiceTypes.UmbraService {
     guard let service=services.values.first(where: { $0 is T }) as? T else {
-      throw CoreErrors.ServiceError.dependencyError
+      throw UmbraErrors.ServiceError.dependencyError
     }
     return service
   }
@@ -157,7 +158,7 @@ actor CryptoMockCryptoService: ServiceTypes.UmbraService {
 
   func generateRandomBytes(count: Int) async throws -> [UInt8] {
     guard state == .ready else {
-      throw CoreErrors.ServiceError.dependencyError
+      throw UmbraErrors.ServiceError.dependencyError
     }
 
     // Actually generate some random bytes instead of sequential numbers

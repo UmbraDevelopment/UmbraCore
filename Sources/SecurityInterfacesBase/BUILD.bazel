@@ -2,7 +2,11 @@ load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
     name = "SecurityInterfacesBase",
-    srcs = glob(["**/*.swift"]),
+    srcs = glob(["*.swift", "**/*.swift"],
+        exclude = ["**/Tests/**", "**/*Test.swift", "**/*.generated.swift"],
+        exclude_directories = 1,
+        allow_empty = True
+    ),
     deps = [
         # Dependencies will go here, for example:
         # "//Sources/CoreDTOs",
@@ -12,7 +16,7 @@ umbra_swift_library(
 )
 
 # Uncomment if documentation generation is needed
-# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")])
 # load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
 #
 # swift_package(

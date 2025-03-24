@@ -1,5 +1,5 @@
-import CoreErrors
-import ErrorHandlingDomains
+import UmbraErrors
+import UmbraErrorsCore
 import Foundation
 import SecurityProtocolsCore
 import UmbraCoreTypes
@@ -63,7 +63,7 @@ class XPCProtocolsBasicTests: XCTestCase {
   /// Test security error converter
   func testSecurityErrorConverter() {
     // Create an error
-    let protocolError=ErrorHandlingDomains.UmbraErrors.Security.Protocols
+    let protocolError=UmbraErrors.Security.Protocols
       .internalError("Test error")
 
     // Convert to DTO

@@ -1,4 +1,5 @@
-import CoreErrors
+import UmbraErrors
+import UmbraErrorsCore
 import CoreServicesTypes
 import KeyManagementTypes
 import UmbraCoreTypes

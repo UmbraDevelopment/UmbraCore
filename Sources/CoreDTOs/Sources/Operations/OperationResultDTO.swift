@@ -1,6 +1,7 @@
-import ErrorHandlingCore
-import ErrorHandlingDomains
-import ErrorHandlingInterfaces
+
+
+import UmbraErrors
+import UmbraErrorsCore
 import Foundation
 
 /// Result of an operation that can succeed or fail
