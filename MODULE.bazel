@@ -20,11 +20,13 @@ bazel_dep(name = "rules_python", version = "0.40.0", dev_dependency = True)
 # Swift package manager integration
 swift_deps = use_extension("@rules_swift_package_manager//:extensions.bzl", "swift_deps")
 swift_deps.from_package(
+    declare_swift_deps_info = True,  # Enable swift_deps_info generation for Gazelle plugin
     resolved = "//:Package.resolved",
     swift = "//:Package.swift",
 )
 use_repo(
     swift_deps,
+    "swift_deps_info",  # For Gazelle plugin
     "swift_package",
     "swiftpkg_cryptoswift",
     "swiftpkg_swiftybeaver",

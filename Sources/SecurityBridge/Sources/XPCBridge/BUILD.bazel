@@ -1,27 +1,25 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
-swift_library(
+umbra_swift_library(
     name = "XPCBridge",
-    srcs = [
-        "XPCServiceDTOAdapter.swift",
-        "XPCServiceDTOFactory.swift",
-    ],
-    copts = [
-        "-target",
-        "arm64-apple-macos14.7.4",
-        "-g",
-        "-swift-version",
-        "5",
-    ],
-    module_name = "XPCBridge",
-    visibility = ["//visibility:public"],
+    srcs = glob(["**/*.swift"]),
     deps = [
-        "//Sources/CoreDTOs",
-        "//Sources/CoreTypesInterfaces",
-        "//Sources/SecureBytes",
-        "//Sources/SecurityInterfaces",
-        "//Sources/SecurityProtocolsCore",
-        "//Sources/UmbraCoreTypes",
-        "//Sources/XPCProtocolsCore",
+        # Dependencies will go here, for example:
+        # "//Sources/CoreDTOs",
+        # "//Sources/UmbraLogging",
+        # "@com_github_apple_swift_log//:Logging",
     ],
 )
+
+# Uncomment if documentation generation is needed
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+#
+# swift_package(
+#     name = "docc_documentation",
+#     srcs = glob([
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
+#     deps = ["//Sources/XPCBridge"],
+# )

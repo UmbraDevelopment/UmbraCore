@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "build_rebuilder_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/umbracore/tools/build_rebuilder",
+    visibility = ["//visibility:private"],
+)
+
+go_binary(
+    name = "build_rebuilder",
+    embed = [":build_rebuilder_lib"],
+    visibility = ["//visibility:public"],
+)

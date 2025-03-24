@@ -1,29 +1,25 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
-load("//:bazel/macros/swift.bzl", "umbra_swift_library")
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
-swift_library(
-    name = "FeaturesLoggingServices",
-    srcs = glob(
-        ["*.swift"]
-,
-        allow_empty = False,
-    ),
-    visibility = [
-        "//Sources/Features:__pkg__",
-        "//visibility:public",
-    ],
+umbra_swift_library(
+    name = "Services",
+    srcs = glob(["**/*.swift"]),
     deps = [
-        "//ErrorHandling/Domains:ErrorHandlingDomains",  # Add this direct dependency for UmbraErrors
-        "//Sources/CoreErrors",
-        "//Sources/ErrorHandling",
-        "//Sources/Features/Logging/Errors:FeaturesLoggingErrors",
-        "//Sources/Features/Logging/Models:FeaturesLoggingModels",
-        "//Sources/Features/Logging/Protocols:FeaturesLoggingProtocols",
-        "//Sources/SecurityInterfaces",
-        "//Sources/SecurityTypes",
-        "//Sources/SecurityTypes/Protocols:SecurityTypesProtocols",
-        "//Sources/UmbraCoreTypes",
-        "//Sources/XPCProtocolsCore",
-        "@swiftpkg_swiftybeaver//:SwiftyBeaver",
+        # Dependencies will go here, for example:
+        # "//Sources/CoreDTOs",
+        # "//Sources/UmbraLogging",
+        # "@com_github_apple_swift_log//:Logging",
     ],
 )
+
+# Uncomment if documentation generation is needed
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+#
+# swift_package(
+#     name = "docc_documentation",
+#     srcs = glob([
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
+#     deps = ["//Sources/Services"],
+# )

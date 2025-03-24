@@ -1,50 +1,30 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# Error handling improvements:
+# This module has been updated to use fully qualified error types instead of typealiases.
+# All error mapping should follow the UmbraErrors.* canonical hierarchy.
+# Ensure proper error propagation and mapping when adding new code.
 
-swift_library(
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
+
+umbra_swift_library(
     name = "UmbraSecurity",
-    srcs = glob(
-        ["*.swift"]
-,  
-        allow_empty = False,
-    ),
-    visibility = ["//visibility:public"],
+    srcs = glob(["**/*.swift"]),
     deps = [
-        "//ErrorHandling/Core:ErrorHandlingCore",
-        "//ErrorHandling/Domains:ErrorHandlingDomains",
-        "//ErrorHandling/Interfaces:ErrorHandlingInterfaces",
-        "//ErrorHandling/Mapping:ErrorHandlingMapping",
-        "//Sources/CoreDTOs",
-        "//Sources/CoreTypesInterfaces",
-        "//Sources/SecurityBridgeTypes",
-        "//Sources/SecurityInterfaces",
-        "//Sources/SecurityInterfacesBase",
-        "//Sources/SecurityInterfacesProtocols",
-        "//Sources/UmbraCoreTypes",
-        "//Sources/UmbraSecurity/Adapters:UmbraSecurityAdapters",  
-        "//Sources/UmbraSecurity/Services:UmbraSecurityServices",  
-        "//Sources/UmbraSecurity/Extensions:UmbraSecurityExtensions",  
-        "//Sources/XPCProtocolsCore",
+        # Dependencies will go here, for example:
+        # "//Sources/CoreDTOs",
+        # "//Sources/UmbraLogging",
+        # "@com_github_apple_swift_log//:Logging",
     ],
 )
 
 # Uncomment if documentation generation is needed
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 # load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
 #
 # swift_package(
 #     name = "docc_documentation",
-#     srcs = glob(["*.swift"], allow_empty = False ),
-#         deps = [
-# "//ErrorHandling/Core:ErrorHandlingCore",
-# "//ErrorHandling/Domains:ErrorHandlingDomains",
-# "//ErrorHandling/Interfaces:ErrorHandlingInterfaces",
-# "//ErrorHandling/Mapping:ErrorHandlingMapping",
-# "//Sources/CoreDTOs:CoreDTOs",
-# "//Sources/CoreTypesInterfaces:CoreTypesInterfaces",
-# "//Sources/SecurityBridgeTypes:SecurityBridgeTypes",
-# "//Sources/SecurityInterfaces:SecurityInterfaces",
-# "//Sources/SecurityInterfacesBase:SecurityInterfacesBase",
-# "//Sources/SecurityInterfacesProtocols:SecurityInterfacesProtocols",
-# "//Sources/UmbraCoreTypes:UmbraCoreTypes",
-# "//Sources/XPCProtocolsCore:XPCProtocolsCore",
-# ],
+#     srcs = glob([
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
+#     deps = ["//Sources/UmbraSecurity"],
 # )

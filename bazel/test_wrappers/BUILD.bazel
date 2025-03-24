@@ -1,3 +1,0 @@
-package(default_visibility = ["//visibility:public"])
-
-exports_files(["arm64_test_wrapper.sh"])

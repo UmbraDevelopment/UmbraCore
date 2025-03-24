@@ -1,18 +1,25 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
-load("//:bazel/macros/swift.bzl", "umbra_swift_library")
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
-swift_library(
-    name = "FeaturesCryptoProtocols",
-    srcs = glob(
-        ["*.swift"]
-,
-        allow_empty = False,
-    ),
+umbra_swift_library(
+    name = "Protocols",
+    srcs = glob(["**/*.swift"]),
     deps = [
-        "//Sources/ErrorHandling",
-        "//Sources/Features/Crypto/Models:FeaturesCryptoModels",
-        "//Sources/UmbraLogging",
+        # Dependencies will go here, for example:
+        # "//Sources/CoreDTOs",
+        # "//Sources/UmbraLogging",
+        # "@com_github_apple_swift_log//:Logging",
     ],
- = ["//visibility:public"],
-    visibility = ["//visibility:public"],
 )
+
+# Uncomment if documentation generation is needed
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+#
+# swift_package(
+#     name = "docc_documentation",
+#     srcs = glob([
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
+#     deps = ["//Sources/Protocols"],
+# )

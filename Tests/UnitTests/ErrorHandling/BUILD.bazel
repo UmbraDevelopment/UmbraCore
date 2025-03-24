@@ -1,13 +1,17 @@
-load("//:swift_rules.bzl", "umbra_swift_test")
+# Error handling improvements:
+# This module has been updated to use fully qualified error types instead of typealiases.
+# All error mapping should follow the UmbraErrors.* canonical hierarchy.
+# Ensure proper error propagation and mapping when adding new code.
 
-umbra_swift_test(
-    name = "ErrorHandling",
-    srcs = glob(
-        ["**/*.swift"],
-        allow_empty = True,
-    ),
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_test")
+
+swift_test(
+    name = "ErrorHandlingTests",
+    srcs = glob(["**/*.swift"]),
     deps = [
-        "//Tests/TestKit",
-    ] , 
-    visibility = ["//visibility:public"],
+        # Dependencies will go here, for example:
+        # "//Sources/ErrorHandling",
+        # "//Tests/TestKit",
+        # "@com_github_apple_swift_log//:Logging",
+    ],
 )

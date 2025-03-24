@@ -3,7 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 go_library(
     name = "deprecation_analyzer_lib",
     srcs = ["main.go"],
-    importpath = "dev.mpy.UmbraCore/tools/go/cmd/deprecation_analyzer",
+    importpath = "github.com/umbracore/tools/go/cmd/deprecation_analyzer",
     visibility = ["//visibility:private"],
 )
 

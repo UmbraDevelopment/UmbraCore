@@ -1,0 +1,12 @@
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_test")
+
+swift_test(
+    name = "LegacyTests",
+    srcs = glob(["**/*.swift"]),
+    deps = [
+        # Dependencies will go here, for example:
+        # "//Sources/Legacy",
+        # "//Tests/TestKit",
+        # "@com_github_apple_swift_log//:Logging",
+    ],
+)

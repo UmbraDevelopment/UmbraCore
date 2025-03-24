@@ -1,25 +1,17 @@
-load("@bazel_gazelle//:def.bzl", "gazelle")
 load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 
 go_library(
     name = "gazelle_lib",
     srcs = ["gazelle.go"],
-    importpath = "dev.mpy.UmbraCore/tools/gazelle",
-    visibility = ["//visibility:public"],
-    deps = ["//tools/gazelle/swift:swift_lib"],
-)
-
-gazelle(
-    name = "gazelle",
-    args = [
-        "-swift_module_naming=true",
-        "-swift_copts=-target,arm64-apple-macos14.7.4,-strict-concurrency=complete,-enable-actor-data-race-checks,-warn-concurrency,-enable-upcoming-feature,Isolated,-enable-upcoming-feature,ExistentialAny,-enable-upcoming-feature,StrictConcurrency,-enable-upcoming-feature,InternalImportsByDefault,-warn-swift-5-to-swift-6-path",
+    importpath = "github.com/umbracore/tools/gazelle",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//tools/gazelle/swift",
     ],
-    prefix = "github.com/mpy-dev-ml/UmbraCore",
 )
 
 go_binary(
-    name = "gazelle_binary",
+    name = "gazelle",
     embed = [":gazelle_lib"],
     visibility = ["//visibility:public"],
 )

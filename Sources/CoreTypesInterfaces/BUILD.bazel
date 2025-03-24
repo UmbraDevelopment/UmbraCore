@@ -1,34 +1,22 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# IMPORTANT: In accordance with UmbraCore typealias policy:
+# - Prefer fully qualified types over typealiases
+# - Only use typealiases when interfacing with external APIs or simplifying complex generic signatures
+# - Typealias declarations require explicit justification in code comments
+# See the typealias policy document for details.
 
-swift_library(
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
+
+umbra_swift_library(
     name = "CoreTypesInterfaces",
-    srcs = ["Exports.swift"],
-    module_name = "CoreTypesInterfaces",
-    visibility = ["//visibility:public"],
-    deps = [
-        "//Sources/CoreTypesInterfaces/Sources:CoreTypesInterfacesSources",
+    srcs = glob(["**/*.swift"]),
+    visibility = [
+        "//Sources/SecurityInterfaces:__pkg__",
+        "//visibility:public",
     ],
-)
-
-# Uncomment if documentation generation is needed
-# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
-#
-# swift_package(
-#     name = "docc_documentation",
-#     deps = ["//Sources/CoreTypesInterfaces"],
-# )
-
-# Add a test library target for CoreTypesInterfaces
-swift_library(
-    name = "CoreTypesInterfacesTests",
-    testonly = True,
-    srcs = glob(
-        ],
-        allow_empty = False,  # Changed to allow empty to prevent build failures
-    ),
-    module_name = "CoreTypesInterfacesTests",
-    visibility = ["//visibility:public"],
     deps = [
-        ":CoreTypesInterfaces",
+        # Dependencies will go here, for example:
+        # "//Sources/CoreDTOs",
+        # "//Sources/UmbraLogging",
+        # "@com_github_apple_swift_log//:Logging",
     ],
 )

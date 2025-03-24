@@ -1,37 +1,25 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
-swift_library(
+umbra_swift_library(
     name = "SecurityInterfacesBase",
-    srcs = glob(
-        ["*.swift"],
-        allow_empty = True,
-    ),
-    module_name = "SecurityInterfacesBase",
-    visibility = ["//visibility:public"],
+    srcs = glob(["**/*.swift"]),
     deps = [
-        "//ErrorHandling/Core:ErrorHandlingCore",
-        "//ErrorHandling/Domains:ErrorHandlingDomains",
-        "//ErrorHandling/Interfaces:ErrorHandlingInterfaces",
-        "//ErrorHandling/Mapping:ErrorHandlingMapping",
-        "//Sources/SecurityInterfacesProtocols",
-        "//Sources/UmbraCoreTypes",
-        "//Sources/XPCProtocolsCore",
+        # Dependencies will go here, for example:
+        # "//Sources/CoreDTOs",
+        # "//Sources/UmbraLogging",
+        # "@com_github_apple_swift_log//:Logging",
     ],
 )
 
 # Uncomment if documentation generation is needed
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 # load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
 #
 # swift_package(
 #     name = "docc_documentation",
-#     srcs = glob(["*.swift"], allow_empty = True ),
-#     deps = [
-#         "//ErrorHandling/Core:ErrorHandlingCore",
-#         "//ErrorHandling/Domains:ErrorHandlingDomains",
-#         "//ErrorHandling/Interfaces:ErrorHandlingInterfaces",
-#         "//ErrorHandling/Mapping:ErrorHandlingMapping",
-#         "//Sources/SecurityInterfacesProtocols:SecurityInterfacesProtocols",
-#         "//Sources/UmbraCoreTypes:UmbraCoreTypes",
-#         "//Sources/XPCProtocolsCore:XPCProtocolsCore",
-#     ],
+#     srcs = glob([
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
+#     deps = ["//Sources/SecurityInterfacesBase"],
 # )

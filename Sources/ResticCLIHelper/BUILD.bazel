@@ -1,15 +1,13 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
-swift_library(
+umbra_swift_library(
     name = "ResticCLIHelper",
-    srcs = glob(
-        ["*.swift"],
-        allow_empty = True,
-    ),
+    srcs = glob(["**/*.swift"]),
     deps = [
-        "//Sources/CoreDTOs",
-        "//Sources/ErrorHandling",
-        "//Sources/UmbraLogging",
+        # Dependencies will go here, for example:
+        # "//Sources/CoreDTOs",
+        # "//Sources/UmbraLogging",
+        # "@com_github_apple_swift_log//:Logging",
     ],
 )
 
@@ -22,8 +20,6 @@ swift_library(
 #     srcs = glob([
 #         "**/*.swift",
 #         "**/*.docc/**",
-#     ] , allow_empty = True),
+#     ]),
 #     deps = ["//Sources/ResticCLIHelper"],
-#    visibility = #    visibility = # = ["//visibility:public"] 
-    # visibility = ["//visibility:public"],
-)
+# )

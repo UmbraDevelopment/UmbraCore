@@ -4,7 +4,7 @@ Swift rules for UmbraCore.
 
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_binary", "swift_library", "swift_test")
 
-def umbra_swift_library(name, srcs = [], deps = [], visibility = None, testonly = None, **kwargs):
+def umbra_swift_library(name, srcs = [], deps = [], visibility = None, testonly = None, swiftc_opts = None, **kwargs):
     """
     A wrapper around swift_library that sets appropriate defaults for the UmbraCore project.
     
@@ -14,6 +14,7 @@ def umbra_swift_library(name, srcs = [], deps = [], visibility = None, testonly 
         deps: Dependencies.
         visibility: Visibility specification.
         testonly: Whether this target is for tests only.
+        swiftc_opts: Additional Swift compiler options.
         **kwargs: Additional arguments to pass to swift_library.
     """
     # Handle empty source files gracefully by creating a placeholder filegroup
@@ -26,6 +27,13 @@ def umbra_swift_library(name, srcs = [], deps = [], visibility = None, testonly 
             visibility = visibility if visibility != None else ["//visibility:public"],
         )
     else:
+        # Define default compiler options
+        default_copts = ["-strict-concurrency=complete"]
+        
+        # Add user-provided compiler options if any
+        if swiftc_opts:
+            default_copts.extend(swiftc_opts)
+            
         swift_library(
             name = name,
             srcs = srcs,
@@ -33,7 +41,7 @@ def umbra_swift_library(name, srcs = [], deps = [], visibility = None, testonly 
             visibility = visibility if visibility != None else ["//visibility:public"],
             testonly = testonly,
             module_name = name,
-            copts = ["-strict-concurrency=complete"],
+            copts = default_copts,
             **kwargs
         )
 
@@ -53,6 +61,5 @@ def umbra_swift_test(name, srcs = [], deps = [], visibility = None, **kwargs):
         srcs = srcs,
         deps = deps,
         visibility = visibility if visibility != None else ["//visibility:public"],
-        copts = ["-strict-concurrency=complete"],
         **kwargs
     )

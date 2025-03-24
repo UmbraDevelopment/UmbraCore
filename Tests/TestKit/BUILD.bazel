@@ -1,16 +1,12 @@
-load("//:swift_rules.bzl", "umbra_swift_test")
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_test")
 
-umbra_swift_test(
-    name = "TestKit",
-    srcs = glob(
-        ["**/*.swift"],
-        allow_empty = True,
-    ),
+swift_test(
+    name = "TestKitTests",
+    srcs = glob(["**/*.swift"]),
     deps = [
-        "//Sources/CoreDTOs",
-        "//Sources/ResticCLIHelper/Commands:ResticCLIHelperCommands",
-        "//Sources/UmbraLogging",
-        "@swiftpkg_swiftybeaver//:SwiftyBeaver",
-    ] , 
-    visibility = ["//visibility:public"],
+        # Dependencies will go here, for example:
+        # "//Sources/TestKit",
+        # "//Tests/TestKit",
+        # "@com_github_apple_swift_log//:Logging",
+    ],
 )

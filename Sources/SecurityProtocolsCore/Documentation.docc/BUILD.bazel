@@ -1,22 +1,16 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
-# Using filegroup instead of swift_library for documentation resources
-filegroup(
-    name = "SecurityProtocolsCoreDocumentation",
-    srcs = glob(
-        [
-            "**/*.md",
-            "**/*.png",
-            "**/*.jpg",
-            "**/*.svg",
-            "**/*.json",
-        ],
-        allow_empty = True,
-    ), 
-    visibility = ["//visibility:public"],
+umbra_swift_library(
+    name = "Documentation.docc",
+    srcs = glob(["**/*.swift"]),
+    deps = [
+        # Dependencies will go here, for example:
+        # "//Sources/CoreDTOs",
+        # "//Sources/UmbraLogging",
+        # "@com_github_apple_swift_log//:Logging",
+    ],
 )
 
-# Documentation comment preserved for reference
 # Uncomment if documentation generation is needed
 # load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 # load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
@@ -26,6 +20,6 @@ filegroup(
 #     srcs = glob([
 #         "**/*.swift",
 #         "**/*.docc/**",
-#     ], allow_empty = True),
-#     deps = ["//Sources/SecurityProtocolsCore"],
+#     ]),
+#     deps = ["//Sources/Documentation.docc"],
 # )
