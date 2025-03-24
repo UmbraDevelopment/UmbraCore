@@ -10,9 +10,10 @@
  * Generate secure random data
  */
 
-import ErrorHandlingCore
-import ErrorHandlingDomains
-import ErrorHandlingInterfaces
+
+
+import UmbraErrors
+import UmbraErrorsCore
 import Foundation
 import SecurityProtocolsCore
 import UmbraCoreTypes

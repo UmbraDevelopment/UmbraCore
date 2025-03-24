@@ -1,4 +1,6 @@
-import ErrorHandlingInterfaces
+
+import UmbraErrors
+import UmbraErrorsCore
 import Foundation
 
 /// A generic implementation of UmbraError used for wrapping arbitrary errors

@@ -1,6 +1,6 @@
 @testable import CoreErrors
-import ErrorHandling
-import ErrorHandlingDomains
+
+import UmbraErrorsCore
 import UmbraErrors
 import XCTest
 
@@ -35,11 +35,11 @@ final class CoreErrorsDefinitionTests: XCTestCase {
     let canonical=error.toCanonicalError()
 
     XCTAssertTrue(
-      canonical is ErrorHandlingDomains.UmbraErrors.GeneralSecurity.Core,
+      canonical is UmbraErrors.GeneralSecurity.Core,
       "Should map to expected canonical type"
     )
 
-    if let canonicalError=canonical as? ErrorHandlingDomains.UmbraErrors.GeneralSecurity.Core {
+    if let canonicalError=canonical as? UmbraErrors.GeneralSecurity.Core {
       if case let .invalidKey(reason)=canonicalError {
         XCTAssertEqual(reason, "Bad key", "Reason should be preserved in mapping")
       } else {

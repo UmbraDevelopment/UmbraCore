@@ -26,7 +26,9 @@
  * Each operation type is handled by a specialised method for clarity and maintainability
  */
 
-import ErrorHandlingDomains
+
+import UmbraErrors
+import UmbraErrorsCore
 import Foundation
 import SecurityProtocolsCore
 import UmbraCoreTypes

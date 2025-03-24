@@ -1,6 +1,7 @@
-import ErrorHandlingInterfaces
+
 import Foundation
-import UmbraErrorsDomains
+import UmbraErrorsCore
+import Domains
 
 /// Generic security error protocol for use in error mappers
 /// This allows us to decouple from specific implementations
@@ -11,15 +12,15 @@ public protocol SecurityErrorType: Error, CustomStringConvertible {
 
 /// Mapper from the enhanced SecurityError to a basic security error
 public struct EnhancedToBasicSecurityErrorMapper<T: SecurityErrorType>: ErrorMapper {
-  public typealias SourceError=UmbraErrorsDomains.SecurityError
-  public typealias TargetError=T
+  public typealias SourceError = Domains.SecurityError
+  public typealias TargetError = T
 
   public init() {}
 
   /// Maps from enhanced SecurityError to a basic security error
   /// - Parameter error: The enhanced SecurityError to map
   /// - Returns: The equivalent basic security error
-  public func map(_ error: UmbraErrorsDomains.SecurityError) -> T {
+  public func map(_ error: Domains.SecurityError) -> T {
     // Create a SecurityError with an appropriate description based on the error code
     T(description: error.localizedDescription)
   }
@@ -27,70 +28,70 @@ public struct EnhancedToBasicSecurityErrorMapper<T: SecurityErrorType>: ErrorMap
 
 /// Mapper from a basic security error to the enhanced SecurityError
 public struct BasicToEnhancedSecurityErrorMapper<S: SecurityErrorType>: ErrorMapper {
-  public typealias SourceError=S
-  public typealias TargetError=UmbraErrorsDomains.SecurityError
+  public typealias SourceError = S
+  public typealias TargetError = Domains.SecurityError
 
   public init() {}
 
   /// Maps from a basic security error to enhanced SecurityError
   /// - Parameter error: The basic security error to map
   /// - Returns: The equivalent enhanced SecurityError
-  public func map(_ error: S) -> UmbraErrorsDomains.SecurityError {
+  public func map(_ error: S) -> Domains.SecurityError {
     // Since basic security errors only have a description, we need to infer the error code
     // This is a best-effort mapping based on the description
     let description=error.description.lowercased()
 
     if description.contains("bookmark") {
-      return UmbraErrorsDomains.SecurityError(
+      return Domains.SecurityError(
         code: .bookmarkError,
         description: error.description,
         source: nil,
         underlyingError: error
       )
     } else if description.contains("access") {
-      return UmbraErrorsDomains.SecurityError(
+      return Domains.SecurityError(
         code: .accessError,
         description: error.description,
         source: nil,
         underlyingError: error
       )
     } else if description.contains("encrypt") {
-      return UmbraErrorsDomains.SecurityError(
+      return Domains.SecurityError(
         code: .encryptionFailed,
         description: error.description,
         source: nil,
         underlyingError: error
       )
     } else if description.contains("decrypt") {
-      return UmbraErrorsDomains.SecurityError(
+      return Domains.SecurityError(
         code: .decryptionFailed,
         description: error.description,
         source: nil,
         underlyingError: error
       )
     } else if description.contains("key") {
-      return UmbraErrorsDomains.SecurityError(
+      return Domains.SecurityError(
         code: .invalidKey,
         description: error.description,
         source: nil,
         underlyingError: error
       )
     } else if description.contains("certificate") {
-      return UmbraErrorsDomains.SecurityError(
+      return Domains.SecurityError(
         code: .certificateInvalid,
         description: error.description,
         source: nil,
         underlyingError: error
       )
     } else if description.contains("unauthorised") || description.contains("unauthorized") {
-      return UmbraErrorsDomains.SecurityError(
+      return Domains.SecurityError(
         code: .unauthorisedAccess,
         description: error.description,
         source: nil,
         underlyingError: error
       )
     } else if description.contains("storage") {
-      return UmbraErrorsDomains.SecurityError(
+      return Domains.SecurityError(
         code: .secureStorageFailure,
         description: error.description,
         source: nil,
@@ -98,7 +99,7 @@ public struct BasicToEnhancedSecurityErrorMapper<S: SecurityErrorType>: ErrorMap
       )
     } else {
       // Default fallback for unknown descriptions
-      return UmbraErrorsDomains.SecurityError(
+      return Domains.SecurityError(
         code: .accessError,
         description: error.description,
         source: nil,
@@ -130,7 +131,7 @@ public func registerSecurityErrorMappers() {
   )
 
   registry.register(
-    targetDomain: "UmbraErrorsDomains.SecurityError",
+    targetDomain: "SecurityError",
     mapper: BasicToEnhancedSecurityErrorMapper<GenericSecurityError>()
   )
 }

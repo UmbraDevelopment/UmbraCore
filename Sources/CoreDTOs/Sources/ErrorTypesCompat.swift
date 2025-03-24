@@ -1,7 +1,8 @@
-import ErrorHandlingCore
-import ErrorHandlingDomains
-import ErrorHandlingInterfaces
-import ErrorHandlingMapping
+
+
+
+import UmbraErrors
+import UmbraErrorsCore
 import Foundation
 
 // This file provides compatibility functions to transition from legacy errors to ErrorHandling

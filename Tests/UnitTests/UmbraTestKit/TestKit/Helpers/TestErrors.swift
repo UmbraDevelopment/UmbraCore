@@ -1,4 +1,6 @@
-import ErrorHandling
+
+import UmbraErrors
+import UmbraErrorsCore
 import Foundation
 
 /// Test error type for security error handling tests

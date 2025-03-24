@@ -1,5 +1,7 @@
 @testable import ErrorHandling
-import ErrorHandlingInterfaces
+
+import UmbraErrors
+import UmbraErrorsCore
 import XCTest
 
 // MARK: - Logger Interfaces

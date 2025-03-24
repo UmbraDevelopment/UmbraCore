@@ -1,4 +1,6 @@
-import ErrorHandlingDomains
+
+import UmbraErrors
+import UmbraErrorsCore
 import Foundation
 import SecurityProtocolsCore
 import UmbraCoreTypes
@@ -24,7 +26,7 @@ public final class SecureStorageProtocolAdapter: @unchecked Sendable {
     _ data: UmbraCoreTypes.SecureBytes,
     identifier: String,
     metadata _: [String: String]
-  ) async -> Result<Void, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  ) async -> Result<Void, UmbraErrors.Security.Protocols> {
     let result=await storage.storeSecurely(data: data, identifier: identifier)
 
     switch result {
@@ -32,14 +34,14 @@ public final class SecureStorageProtocolAdapter: @unchecked Sendable {
         return .success(())
       case let .failure(error):
         return .failure(
-          ErrorHandlingDomains.UmbraErrors.Security.Protocols
+          UmbraErrors.Security.Protocols
             .makeStorageOperationFailed(
               message: "Failed to store data: \(error)"
             )
         )
       @unknown default:
         return .failure(
-          ErrorHandlingDomains.UmbraErrors.Security.Protocols
+          UmbraErrors.Security.Protocols
             .makeStorageOperationFailed(
               message: "Unknown error storing data"
             )
@@ -53,7 +55,7 @@ public final class SecureStorageProtocolAdapter: @unchecked Sendable {
   public func retrieveData(
     identifier: String
   ) async
-  -> Result<UmbraCoreTypes.SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<UmbraCoreTypes.SecureBytes, UmbraErrors.Security.Protocols> {
     let result=await storage.retrieveSecurely(identifier: identifier)
 
     switch result {
@@ -64,21 +66,21 @@ public final class SecureStorageProtocolAdapter: @unchecked Sendable {
           // Create a special error message that can be detected and mapped back to
           // CryptoError.keyNotFound
           return .failure(
-            ErrorHandlingDomains.UmbraErrors.Security.Protocols
+            UmbraErrors.Security.Protocols
               .makeStorageOperationFailed(
                 message: "Failed to retrieve data: keyNotFound"
               )
           )
         }
         return .failure(
-          ErrorHandlingDomains.UmbraErrors.Security.Protocols
+          UmbraErrors.Security.Protocols
             .makeStorageOperationFailed(
               message: "Failed to retrieve data: \(error)"
             )
         )
       @unknown default:
         return .failure(
-          ErrorHandlingDomains.UmbraErrors.Security.Protocols
+          UmbraErrors.Security.Protocols
             .makeStorageOperationFailed(
               message: "Unknown error retrieving data"
             )
@@ -91,7 +93,7 @@ public final class SecureStorageProtocolAdapter: @unchecked Sendable {
   /// - Returns: Result of the deletion operation
   public func deleteData(
     identifier: String
-  ) async -> Result<Void, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  ) async -> Result<Void, UmbraErrors.Security.Protocols> {
     let result=await storage.deleteSecurely(identifier: identifier)
 
     switch result {
@@ -102,21 +104,21 @@ public final class SecureStorageProtocolAdapter: @unchecked Sendable {
           // Create a special error message that can be detected and mapped back to
           // CryptoError.keyNotFound
           return .failure(
-            ErrorHandlingDomains.UmbraErrors.Security.Protocols
+            UmbraErrors.Security.Protocols
               .makeStorageOperationFailed(
                 message: "Failed to delete data: keyNotFound"
               )
           )
         }
         return .failure(
-          ErrorHandlingDomains.UmbraErrors.Security.Protocols
+          UmbraErrors.Security.Protocols
             .makeStorageOperationFailed(
               message: "Failed to delete data: \(error)"
             )
         )
       @unknown default:
         return .failure(
-          ErrorHandlingDomains.UmbraErrors.Security.Protocols
+          UmbraErrors.Security.Protocols
             .makeStorageOperationFailed(
               message: "Unknown error deleting data"
             )

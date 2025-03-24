@@ -1,6 +1,7 @@
 // CryptoKit removed - cryptography will be handled in ResticBar
-import ErrorHandling
-import ErrorHandlingDomains
+
+import UmbraErrors
+import UmbraErrorsCore
 import Foundation
 import SecurityBridgeTypes
 import SecurityProtocolsCore
@@ -102,8 +103,8 @@ public actor CredentialManager {
     }
   }
 
-  /// Maps ErrorHandlingDomains.UmbraErrors.Security.Protocols to UmbraErrors.Security.Core
-  private func mapXPCError(_ error: ErrorHandlingDomains.UmbraErrors.Security.Protocols) -> Error {
+  /// Maps UmbraErrors.Security.Protocols to UmbraErrors.Security.Core
+  private func mapXPCError(_ error: UmbraErrors.Security.Protocols) -> Error {
     switch error {
       case let .serviceError(message):
         return UmbraErrors.Security.Core.internalError(reason: "Service error: \(message)")

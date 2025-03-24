@@ -1,4 +1,5 @@
-import CoreErrors
+import UmbraErrors
+import UmbraErrorsCore
 import Foundation
 import UmbraCoreTypes
 
@@ -144,7 +145,7 @@ extension XPCServiceProtocolComplete {
   public func bridgeEncryption(
     data: SecureBytes,
     keyIdentifier: String?
-  ) async -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     await encryptSecureData(data, keyIdentifier: keyIdentifier)
   }
 
@@ -156,7 +157,7 @@ extension XPCServiceProtocolComplete {
   public func bridgeDecryption(
     data: SecureBytes,
     keyIdentifier: String?
-  ) async -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     await decryptSecureData(data, keyIdentifier: keyIdentifier)
   }
 }

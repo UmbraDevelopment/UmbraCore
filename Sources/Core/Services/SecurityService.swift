@@ -1,10 +1,10 @@
-import CoreErrors
+import UmbraErrors
+import UmbraErrorsCore
 import CoreServicesTypes
 import Foundation
 import SecurityProtocolsCore
 import SecurityTypes
 import UmbraCoreTypes
-import UmbraErrors
 
 // Local type declarations to replace imports
 // These replace the removed ErrorHandling and ErrorHandlingDomains imports
@@ -133,7 +133,10 @@ public actor SecurityService: UmbraService, SecurityProtocolsCore.SecurityProvid
   /// - Throws: SecurityError if verification fails
   public func verifySecurityToken(_ token: SecureBytes) async throws -> Bool {
     guard state == .ready else {
-      throw CoreErrors.ServiceError.invalidState
+      throw UmbraErrors.Security.Core.operationFailed(
+        operation: "verifySecurityToken",
+        reason: "Invalid state"
+      )
     }
 
     // Verify the token format (simplified implementation)
@@ -151,7 +154,10 @@ public actor SecurityService: UmbraService, SecurityProtocolsCore.SecurityProvid
   /// - Throws: SecurityError if token generation fails
   public func generateSecurityToken(options: [String: Any]) async throws -> SecureBytes {
     guard state == .ready else {
-      throw CoreErrors.ServiceError.invalidState
+      throw UmbraErrors.Security.Core.operationFailed(
+        operation: "generateSecurityToken",
+        reason: "Invalid state"
+      )
     }
 
     // Extract token parameters with defaults
@@ -183,7 +189,10 @@ public actor SecurityService: UmbraService, SecurityProtocolsCore.SecurityProvid
   /// - Throws: SecurityError if generation fails
   public func generateRandomBytes(count: Int) async throws -> SecureBytes {
     guard state == .ready else {
-      throw CoreErrors.ServiceError.invalidState
+      throw UmbraErrors.Security.Core.operationFailed(
+        operation: "generateRandomBytes",
+        reason: "Invalid state"
+      )
     }
 
     guard let cryptoService=_cryptoService else {
@@ -204,7 +213,10 @@ public actor SecurityService: UmbraService, SecurityProtocolsCore.SecurityProvid
   /// - Throws: SecurityError if access failed
   public func startAccessing(path: String) async throws -> Bool {
     guard state == .ready else {
-      throw CoreErrors.ServiceError.invalidState
+      throw UmbraErrors.Security.Core.operationFailed(
+        operation: "startAccessing",
+        reason: "Invalid state"
+      )
     }
 
     // Check if we already have access
@@ -246,7 +258,10 @@ public actor SecurityService: UmbraService, SecurityProtocolsCore.SecurityProvid
   /// - Throws: SecurityError if bookmark creation failed
   public func createBookmark(for path: String) async throws -> Bool {
     guard state == .ready else {
-      throw CoreErrors.ServiceError.invalidState
+      throw UmbraErrors.Security.Core.operationFailed(
+        operation: "createBookmark",
+        reason: "Invalid state"
+      )
     }
 
     // Check if a bookmark already exists
@@ -271,13 +286,15 @@ public actor SecurityService: UmbraService, SecurityProtocolsCore.SecurityProvid
     perform operation: () async throws -> T
   ) async throws -> T {
     guard state == .ready else {
-      throw CoreErrors.ServiceError.invalidState
+      throw UmbraErrors.Security.Core.operationFailed(
+        operation: "withSecureAccess",
+        reason: "Invalid state"
+      )
     }
 
     // Start accessing the path
     guard try await startAccessing(path: path) else {
-      throw ErrorHandlingDomains.UmbraErrors.Storage.Core
-        .accessDenied(reason: "Security-scoped resource access failed for path: \(path)")
+      throw UmbraErrors.Storage.Core.accessDenied(reason: "Security-scoped resource access failed for path: \(path)")
     }
 
     defer {
@@ -301,12 +318,15 @@ public actor SecurityService: UmbraService, SecurityProtocolsCore.SecurityProvid
   /// - Throws: SecurityError if encryption fails
   public func encrypt(_ data: [UInt8], key: [UInt8]) async throws -> [UInt8] {
     guard state == .ready else {
-      throw CoreErrors.ServiceError.invalidState
+      throw UmbraErrors.Security.Core.operationFailed(
+        operation: "encrypt",
+        reason: "Invalid state"
+      )
     }
 
     guard let cryptoService=_cryptoService else {
       throw UmbraErrors.Security.Core.operationFailed(
-        operation: "encryption",
+        operation: "encrypt",
         reason: "Service unavailable"
       )
     }
@@ -324,12 +344,15 @@ public actor SecurityService: UmbraService, SecurityProtocolsCore.SecurityProvid
   /// - Throws: SecurityError if decryption fails
   public func decrypt(_ data: [UInt8], key: [UInt8]) async throws -> [UInt8] {
     guard state == .ready else {
-      throw CoreErrors.ServiceError.invalidState
+      throw UmbraErrors.Security.Core.operationFailed(
+        operation: "decrypt",
+        reason: "Invalid state"
+      )
     }
 
     guard let cryptoService=_cryptoService else {
       throw UmbraErrors.Security.Core.operationFailed(
-        operation: "decryption",
+        operation: "decrypt",
         reason: "Service unavailable"
       )
     }
@@ -351,7 +374,10 @@ public actor SecurityService: UmbraService, SecurityProtocolsCore.SecurityProvid
   /// - Throws: SecurityError if hashing fails
   public func hash(_ data: [UInt8]) async throws -> [UInt8] {
     guard state == .ready else {
-      throw CoreErrors.ServiceError.invalidState
+      throw UmbraErrors.Security.Core.operationFailed(
+        operation: "hash",
+        reason: "Invalid state"
+      )
     }
 
     guard let cryptoService=_cryptoService else {

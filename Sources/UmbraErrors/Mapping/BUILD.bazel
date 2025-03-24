@@ -2,17 +2,24 @@ load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
     name = "Mapping",
-    srcs = glob(["**/*.swift"]),
+    srcs = glob(["*.swift", "**/*.swift"],
+        exclude = ["**/Tests/**", "**/*Test.swift", "**/*.generated.swift"],
+        exclude_directories = 1,
+        allow_empty = True
+    ),
     deps = [
-        # Dependencies will go here, for example:
-        # "//Sources/CoreDTOs",
-        # "//Sources/UmbraLogging",
-        # "@com_github_apple_swift_log//:Logging",
+        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
+        "//Sources/UmbraErrors/Domains",
+        "//Sources/UmbraErrors/DTOs",
+        "//Sources/ErrorHandling",
+        "//Sources/ErrorHandlingInterfaces",
+        "//Sources/CoreErrors",
     ],
+    visibility = ["//visibility:public"],
 )
 
 # Uncomment if documentation generation is needed
-# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")])
 # load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
 #
 # swift_package(
@@ -21,5 +28,5 @@ umbra_swift_library(
 #         "**/*.swift",
 #         "**/*.docc/**",
 #     ]),
-#     deps = ["//Sources/Mapping"],
+#     deps = ["//Sources/UmbraErrors/Mapping"],
 # )

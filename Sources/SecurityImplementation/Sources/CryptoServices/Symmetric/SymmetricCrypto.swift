@@ -12,8 +12,10 @@
  * Initialisation vector generation
  */
 
+import UmbraErrors
+import UmbraErrorsCore
 import CryptoSwiftFoundationIndependent
-import ErrorHandlingDomains
+
 import Foundation
 import SecurityProtocolsCore
 import UmbraCoreTypes

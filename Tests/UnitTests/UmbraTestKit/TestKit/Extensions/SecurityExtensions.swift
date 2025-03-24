@@ -1,4 +1,6 @@
-import ErrorHandlingDomains
+
+import UmbraErrors
+import UmbraErrorsCore
 import Foundation
 import SecurityInterfaces
 import SecurityProtocolsCore
@@ -21,7 +23,7 @@ extension SecurityProtocolsCore.SecurityProviderProtocol {
   public func startAccessing(url: URL) async throws -> Bool {
     // Access the path directly to avoid recursive call
     guard !url.path.isEmpty else {
-      throw ErrorHandlingDomains.UmbraErrors.Security.Protocols
+      throw UmbraErrors.Security.Protocols
         .makeInvalidInput(message: "Empty path")
     }
     return true

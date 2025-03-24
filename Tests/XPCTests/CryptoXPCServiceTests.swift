@@ -1,4 +1,6 @@
-import ErrorHandlingDomains
+
+import UmbraErrors
+import UmbraErrorsCore
 import Foundation
 import UmbraCryptoService
 import UmbraXPC
@@ -177,7 +179,7 @@ final class CryptoXPCServiceTests: XCTestCase {
 
     // Set up mock to simulate an error
     mockCryptoService.mockGenerateKeyResult=(nil, NSError(
-      domain: "ErrorHandlingDomains.UmbraErrors.Security.Protocols",
+      domain: "UmbraErrors.Security.Protocols",
       code: 1,
       userInfo: [NSLocalizedDescriptionKey: "Invalid key size"]
     ))
@@ -203,7 +205,7 @@ final class CryptoXPCServiceTests: XCTestCase {
 
     // Set up mock to simulate an error
     mockCryptoService.mockDecryptResult=(nil, NSError(
-      domain: "ErrorHandlingDomains.UmbraErrors.Security.Protocols",
+      domain: "UmbraErrors.Security.Protocols",
       code: 1,
       userInfo: [NSLocalizedDescriptionKey: "Invalid data format"]
     ))

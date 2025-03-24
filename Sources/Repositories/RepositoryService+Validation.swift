@@ -1,8 +1,10 @@
 // Standard modules
+import UmbraErrors
+import UmbraErrorsCore
 import Foundation
 
 // Internal modules
-import ErrorHandlingDomains
+
 import RepositoriesTypes
 import UmbraLogging
 

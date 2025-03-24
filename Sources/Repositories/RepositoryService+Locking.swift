@@ -2,7 +2,8 @@
 import Foundation
 
 // Internal modules
-import ErrorHandlingDomains
+import UmbraErrors
+import UmbraErrorsCore
 import RepositoriesTypes
 import UmbraLogging
 

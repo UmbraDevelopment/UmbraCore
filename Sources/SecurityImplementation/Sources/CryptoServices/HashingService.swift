@@ -1,21 +1,18 @@
 /**
- # UmbraCore Cryptographic Hashing Service
+ # UmbraCore Hashing Service
 
- This file provides hashing and message authentication capabilities for the UmbraCore security
- framework. It implements the cryptographic hashing portions of the CryptoServiceProtocol and
- provides secure hashing algorithms such as SHA-256 and HMAC-SHA256.
+ This file provides cryptographic hashing capabilities for the UmbraCore security framework.
+ It implements the hashing portions of the CryptoServiceProtocol.
 
  ## Security Considerations
 
- * Uses SHA-256 which is currently considered secure for most applications.
- * HMAC-SHA256 is used for message authentication codes which provides both integrity and
-   authenticity.
- * Be aware that hash functions may require upgrading in the future as cryptographic standards
-   evolve.
+ * Uses SHA-256 as the primary hashing algorithm
+ * Provides HMAC functionality for authenticated hashing
+ * The implementation is a basic wrapper around CommonCrypto for demonstration purposes
  */
 
-import CoreErrors
-import ErrorHandlingDomains
+import UmbraErrors
+import UmbraErrorsCore
 import Foundation
 import SecurityProtocolsCore
 import UmbraCoreTypes

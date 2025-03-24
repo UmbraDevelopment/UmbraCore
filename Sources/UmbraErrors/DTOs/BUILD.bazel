@@ -1,0 +1,36 @@
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
+
+umbra_swift_library(
+    name = "DTOs",
+    srcs = glob(["*.swift", "**/*.swift"],
+        exclude = ["**/Tests/**", "**/*Test.swift", "**/*.generated.swift"],
+        exclude_directories = 1,
+        allow_empty = True
+    ),
+    deps = [
+        # Minimal dependencies only
+        # No circular dependencies should be introduced here
+        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# Create an alias that makes this module available for imports
+alias(
+    name = "UmbraErrorsDTOs",
+    actual = ":DTOs",
+    visibility = ["//visibility:public"],
+)
+
+# Uncomment if documentation generation is needed
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")])
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+#
+# swift_package(
+#     name = "docc_documentation",
+#     srcs = glob([
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
+#     deps = ["//Sources/UmbraErrors/DTOs"],
+# )

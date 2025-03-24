@@ -1,5 +1,7 @@
+import UmbraErrors
+import UmbraErrorsCore
 import CoreDTOs
-import ErrorHandlingDomains
+
 import SecurityBridge
 import SecurityInterfacesBase
 import SecurityProtocolsCore
@@ -163,7 +165,7 @@ private final class ExampleMockXPCService: XPCServiceProtocolComplete {
   // MARK: - XPCServiceProtocolStandard
 
   func generateRandomData(length: Int) async
-  -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     var bytes=[UInt8](repeating: 0, count: length)
     for i in 0..<length {
       bytes[i]=UInt8.random(in: 0...255)
@@ -175,7 +177,7 @@ private final class ExampleMockXPCService: XPCServiceProtocolComplete {
     _ data: SecureBytes,
     keyIdentifier _: String?
   ) async
-  -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     // Simple mock implementation - just return data unchanged for this example
     .success(data)
   }
@@ -184,7 +186,7 @@ private final class ExampleMockXPCService: XPCServiceProtocolComplete {
     _ data: SecureBytes,
     keyIdentifier _: String?
   ) async
-  -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     // Simple mock implementation - just return data unchanged for this example
     .success(data)
   }
@@ -193,7 +195,7 @@ private final class ExampleMockXPCService: XPCServiceProtocolComplete {
     _: SecureBytes,
     keyIdentifier _: String
   ) async
-  -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     // Mock signature - just use random bytes
     await generateRandomData(length: 32)
   }
@@ -203,31 +205,31 @@ private final class ExampleMockXPCService: XPCServiceProtocolComplete {
     for _: SecureBytes,
     keyIdentifier _: String
   ) async
-  -> Result<Bool, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<Bool, UmbraErrors.Security.Protocols> {
     // Mock verification - always return success for example purposes
     .success(true)
   }
 
-  func pingStandard() async -> Result<Bool, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  func pingStandard() async -> Result<Bool, UmbraErrors.Security.Protocols> {
     .success(true)
   }
 
-  func resetSecurity() async -> Result<Void, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  func resetSecurity() async -> Result<Void, UmbraErrors.Security.Protocols> {
     .success(())
   }
 
   func getServiceVersion() async
-  -> Result<String, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<String, UmbraErrors.Security.Protocols> {
     .success("1.0.0-mock")
   }
 
   func getHardwareIdentifier() async
-  -> Result<String, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<String, UmbraErrors.Security.Protocols> {
     .success("MOCK-HARDWARE-ID")
   }
 
   func status() async
-  -> Result<[String: Any], ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<[String: Any], UmbraErrors.Security.Protocols> {
     let status: [String: Any]=[
       "status": "active",
       "version": "1.0.0",
@@ -240,21 +242,21 @@ private final class ExampleMockXPCService: XPCServiceProtocolComplete {
 
   // MARK: - XPCServiceProtocolComplete
 
-  func pingAsync() async -> Result<Bool, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  func pingAsync() async -> Result<Bool, UmbraErrors.Security.Protocols> {
     .success(true)
   }
 
   func getDiagnosticInfo() async
-  -> Result<String, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<String, UmbraErrors.Security.Protocols> {
     .success("Mock XPC Service - All systems operational")
   }
 
-  func getVersion() async -> Result<String, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  func getVersion() async -> Result<String, UmbraErrors.Security.Protocols> {
     .success("1.0.0-mock")
   }
 
   func getMetrics() async
-  -> Result<[String: String], ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<[String: String], UmbraErrors.Security.Protocols> {
     .success([
       "operations": "42",
       "errors": "0",
@@ -266,7 +268,7 @@ private final class ExampleMockXPCService: XPCServiceProtocolComplete {
   func getSecurityConfigDTO() async
     -> Result<
       SecurityProtocolsCore.SecurityConfigDTO,
-      ErrorHandlingDomains.UmbraErrors.Security.Protocols
+      UmbraErrors.Security.Protocols
     >
   {
     // Return a mock configuration
@@ -280,7 +282,7 @@ private final class ExampleMockXPCService: XPCServiceProtocolComplete {
     config: SecurityProtocolsCore
       .SecurityConfigDTO
   ) async
-  -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     // Generate a random key of the specified size
     let keyLength=config.keySizeInBits / 8
     return await generateRandomData(length: keyLength)

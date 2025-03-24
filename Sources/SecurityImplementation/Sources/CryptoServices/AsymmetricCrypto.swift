@@ -12,10 +12,11 @@
    RSA or ECC implementation before use in production environments.
  */
 
-import CoreErrors
-import ErrorHandlingDomains
+import UmbraErrors.Domains
+
 import Foundation
 import SecurityProtocolsCore
+import UmbraErrorsCore
 import UmbraCoreTypes
 
 /// Provides asymmetric encryption operations to the CryptoServiceCore.

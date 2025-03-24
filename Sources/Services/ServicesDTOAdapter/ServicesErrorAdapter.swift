@@ -1,5 +1,7 @@
+import UmbraErrors
+import UmbraErrorsCore
 import CoreDTOs
-import ErrorHandling
+
 import Foundation
 
 /// A utility to adapt errors from Services module to Foundation-independent DTOs

@@ -1,6 +1,5 @@
-import CoreErrors
-import ErrorHandling
-import ErrorHandlingDomains
+import UmbraErrors
+import UmbraErrorsCore
 import Foundation
 import SecurityTypesProtocols
 import UmbraCoreTypes
@@ -20,7 +19,7 @@ public class DefaultSecurityProvider {
   // MARK: - URL-based Security Methods
 
   public func startAccessingResource(identifier: String) async
-  -> Result<Bool, ErrorHandlingDomains.UmbraErrors.GeneralSecurity.Core> {
+  -> Result<Bool, UmbraErrors.GeneralSecurity.Core> {
     let url=URL(fileURLWithPath: identifier)
     let success=url.startAccessingSecurityScopedResource()
     if success {
@@ -42,7 +41,7 @@ public class DefaultSecurityProvider {
   // MARK: - Bookmark Methods
 
   public func createBookmark(for identifier: String) async
-  -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.GeneralSecurity.Core> {
+  -> Result<SecureBytes, UmbraErrors.GeneralSecurity.Core> {
     let url=URL(fileURLWithPath: identifier)
     do {
       let bookmarkData=try url.bookmarkData(
@@ -56,7 +55,7 @@ public class DefaultSecurityProvider {
 
       return .success(SecureBytes(bytes: Array(bookmarkData)))
     } catch {
-      return .failure(ErrorHandlingDomains.UmbraErrors.GeneralSecurity.Core.storageOperationFailed(
+      return .failure(UmbraErrors.GeneralSecurity.Core.storageOperationFailed(
         reason: "Bookmark creation failed: \(error.localizedDescription)"
       ))
     }
@@ -65,7 +64,7 @@ public class DefaultSecurityProvider {
   public func resolveBookmark(_ bookmarkData: SecureBytes) async -> Result<(
     identifier: String,
     isStale: Bool
-  ), ErrorHandlingDomains.UmbraErrors.GeneralSecurity.Core> {
+  ), UmbraErrors.GeneralSecurity.Core> {
     do {
       var isStale=false
       let data=Data(bookmarkData.toArray())
@@ -78,14 +77,14 @@ public class DefaultSecurityProvider {
 
       return .success((identifier: url.path, isStale: isStale))
     } catch {
-      return .failure(ErrorHandlingDomains.UmbraErrors.GeneralSecurity.Core.storageOperationFailed(
+      return .failure(UmbraErrors.GeneralSecurity.Core.storageOperationFailed(
         reason: "Bookmark resolution failed: \(error.localizedDescription)"
       ))
     }
   }
 
   public func validateBookmark(_ bookmarkData: SecureBytes) async
-  -> Result<Bool, ErrorHandlingDomains.UmbraErrors.GeneralSecurity.Core> {
+  -> Result<Bool, UmbraErrors.GeneralSecurity.Core> {
     let result=await resolveBookmark(bookmarkData)
     switch result {
       case .success:
@@ -116,10 +115,10 @@ public class DefaultSecurityProvider {
     service _: String,
     account _: String
   ) async
-  -> Result<Void, ErrorHandlingDomains.UmbraErrors.GeneralSecurity.Core> {
+  -> Result<Void, UmbraErrors.GeneralSecurity.Core> {
     // This is a stub implementation as we're focusing on bookmark functionality
     .failure(
-      ErrorHandlingDomains.UmbraErrors.GeneralSecurity.Core
+      UmbraErrors.GeneralSecurity.Core
         .notImplemented(feature: "storeInKeychain")
     )
   }
@@ -128,10 +127,10 @@ public class DefaultSecurityProvider {
     service _: String,
     account _: String
   ) async
-  -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.GeneralSecurity.Core> {
+  -> Result<SecureBytes, UmbraErrors.GeneralSecurity.Core> {
     // This is a stub implementation as we're focusing on bookmark functionality
     .failure(
-      ErrorHandlingDomains.UmbraErrors.GeneralSecurity.Core
+      UmbraErrors.GeneralSecurity.Core
         .notImplemented(feature: "retrieveFromKeychain")
     )
   }
@@ -140,10 +139,10 @@ public class DefaultSecurityProvider {
     service _: String,
     account _: String
   ) async
-  -> Result<Void, ErrorHandlingDomains.UmbraErrors.GeneralSecurity.Core> {
+  -> Result<Void, UmbraErrors.GeneralSecurity.Core> {
     // This is a stub implementation as we're focusing on bookmark functionality
     .failure(
-      ErrorHandlingDomains.UmbraErrors.GeneralSecurity.Core
+      UmbraErrors.GeneralSecurity.Core
         .notImplemented(feature: "deleteFromKeychain")
     )
   }

@@ -1,5 +1,6 @@
 @testable import CoreErrors
-import ErrorHandling
+
+import UmbraErrorsCore
 import UmbraErrors
 import XCTest
 

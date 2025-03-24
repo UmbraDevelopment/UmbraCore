@@ -1,25 +1,25 @@
 /**
  # UmbraCore Key Utilities
 
- This file provides utility functions for working with cryptographic keys in the
- UmbraCore security framework, including key derivation, format conversion, and validation.
+ This file provides utility functions for key management in the UmbraCore security framework.
+ It offers helper methods for key format conversion, validation, and manipulation.
 
  ## Responsibilities
 
- * Key format conversion (e.g., raw to PEM)
- * Key validation and verification
- * Key derivation functions
- * Key metadata utilities
+ * Convert keys between different formats (SecureBytes, base64, hex)
+ * Validate key formats and properties
+ * Provide key comparison functionality with timing-attack resistance
+ * Implement key derivation from passwords or other key material
 
  ## Security Considerations
 
- * Proper key format handling prevents misuse of keys
- * Key validation ensures that only appropriate keys are used for operations
- * Key derivation uses secure algorithms with appropriate parameters
+ * Implementation uses secure comparison methods to prevent timing attacks
+ * Key material is maintained in SecureBytes containers where possible
+ * Current implementation is a placeholder for demonstration purposes
  */
 
-import CoreErrors
-import ErrorHandlingDomains
+import UmbraErrors
+import UmbraErrorsCore
 import Foundation
 import SecurityProtocolsCore
 import UmbraCoreTypes

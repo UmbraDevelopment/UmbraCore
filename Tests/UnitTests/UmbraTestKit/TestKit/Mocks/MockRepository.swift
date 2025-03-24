@@ -1,4 +1,6 @@
-import ErrorHandlingDomains
+
+import UmbraErrors
+import UmbraErrorsCore
 import Foundation
 import RepositoriesTypes
 import SecurityProtocolsCore

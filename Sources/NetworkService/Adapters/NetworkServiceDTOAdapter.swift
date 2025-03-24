@@ -1,6 +1,7 @@
+import UmbraErrors
+import UmbraErrorsCore
 import CoreDTOs
-import ErrorHandling
-import ErrorHandlingDomains
+
 import Foundation
 import UmbraCoreTypes
 

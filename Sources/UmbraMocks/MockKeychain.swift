@@ -1,4 +1,6 @@
-import CoreErrors
+
+import UmbraErrors
+import UmbraErrorsCore
 import Foundation
 import UmbraCoreTypes
 import XPCProtocolsCore
@@ -164,7 +166,7 @@ public final class MockKeychain: @unchecked Sendable, SecureStorageProtocol {
     _ data: SecureBytes,
     identifier: String,
     metadata: [String: String]?
-  ) async -> Result<Void, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  ) async -> Result<Void, UmbraErrors.Security.Protocols> {
     storageQueue.async(flags: .barrier) { [self] in
       storageDict[identifier]=(data, metadata)
     }
@@ -176,9 +178,9 @@ public final class MockKeychain: @unchecked Sendable, SecureStorageProtocol {
   /// - Returns: The stored data
   public func retrieveData(
     identifier: String
-  ) async -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
-    var result: Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> = .failure(
-      ErrorHandlingDomains.UmbraErrors.Security.Protocols.makeStorageOperationFailed(
+  ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
+    var result: Result<SecureBytes, UmbraErrors.Security.Protocols> = .failure(
+      UmbraErrors.Security.Protocols.makeStorageOperationFailed(
         message: "Key not found: \(identifier)"
       )
     )
@@ -197,7 +199,7 @@ public final class MockKeychain: @unchecked Sendable, SecureStorageProtocol {
   /// - Returns: Success or failure
   public func deleteData(
     identifier: String
-  ) async -> Result<Void, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  ) async -> Result<Void, UmbraErrors.Security.Protocols> {
     storageQueue.async(flags: .barrier) { [self] in
       storageDict.removeValue(forKey: identifier)
     }
@@ -207,7 +209,7 @@ public final class MockKeychain: @unchecked Sendable, SecureStorageProtocol {
   /// List all data identifiers
   /// - Returns: Array of data identifiers
   public func listDataIdentifiers() async
-  -> Result<[String], ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<[String], UmbraErrors.Security.Protocols> {
     var keys: [String]=[]
 
     storageQueue.sync { [self] in
@@ -222,10 +224,10 @@ public final class MockKeychain: @unchecked Sendable, SecureStorageProtocol {
   /// - Returns: Associated metadata
   public func getDataMetadata(
     for identifier: String
-  ) async -> Result<[String: String]?, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
-    var result: Result<[String: String]?, ErrorHandlingDomains.UmbraErrors.Security.Protocols> =
+  ) async -> Result<[String: String]?, UmbraErrors.Security.Protocols> {
+    var result: Result<[String: String]?, UmbraErrors.Security.Protocols> =
       .failure(
-        ErrorHandlingDomains.UmbraErrors.Security.Protocols.makeStorageOperationFailed(
+        UmbraErrors.Security.Protocols.makeStorageOperationFailed(
           message: "Key not found: \(identifier)"
         )
       )

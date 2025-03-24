@@ -1,25 +1,23 @@
-load("//bazel:swift_rules.bzl", "umbra_swift_library")
+# Error handling improvements:
+# This module has been updated to use fully qualified error types instead of typealiases.
+# All error mapping should follow the UmbraErrors.* canonical hierarchy.
+# Ensure proper error propagation and mapping when adding new code.
 
-umbra_swift_library(
-    name = "Tests",
-    srcs = glob(["**/*.swift"]),
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_test")
+
+swift_test(
+    name = "CoreErrorsTests",
+    srcs = glob(
+        ["*.swift", "**/*.swift"],
+        exclude = ["**/Tests/**", "**/*Test.swift", "**/*.generated.swift"],
+        exclude_directories = 1,
+        allow_empty = False
+    ),
     deps = [
-        # Dependencies will go here, for example:
-        # "//Sources/CoreDTOs",
-        # "//Sources/UmbraLogging",
+        "//Sources/CoreErrors",
+        "//Sources/UmbraErrors",
+        # Add any other required dependencies below:
+        # "//Tests/TestKit",
         # "@com_github_apple_swift_log//:Logging",
     ],
 )
-
-# Uncomment if documentation generation is needed
-# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
-# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
-#
-# swift_package(
-#     name = "docc_documentation",
-#     srcs = glob([
-#         "**/*.swift",
-#         "**/*.docc/**",
-#     ]),
-#     deps = ["//Sources/Tests"],
-# )

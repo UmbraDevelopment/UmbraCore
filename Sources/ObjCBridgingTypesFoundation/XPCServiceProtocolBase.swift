@@ -1,5 +1,5 @@
-import CoreErrors
-import ErrorHandlingDomains
+import UmbraErrors
+import UmbraErrorsCore
 import Foundation
 import XPCProtocolsCore
 
@@ -61,10 +61,10 @@ extension XPCServiceProtocolBaseFoundation {
   }
 
   /// Async ping implementation
-  public func ping() async -> Result<Bool, CoreErrors.XPCErrors.SecurityError> {
+  public func ping() async -> Result<Bool, UmbraErrors.XPC.Security> {
     await withCheckedContinuation { continuation in
       ping { success, error in
-        if let error=error as? CoreErrors.XPCErrors.SecurityError {
+        if let error=error as? UmbraErrors.XPC.Security {
           continuation.resume(returning: .failure(error))
         } else if let error {
           continuation

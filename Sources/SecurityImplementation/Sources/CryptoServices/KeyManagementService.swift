@@ -12,8 +12,9 @@
  * Care should be taken to properly dispose of keys when they are no longer needed.
  */
 
-import CoreErrors
-import ErrorHandlingDomains
+import UmbraErrors
+import UmbraErrorsCore
+
 import Foundation
 import SecurityProtocolsCore
 import UmbraCoreTypes

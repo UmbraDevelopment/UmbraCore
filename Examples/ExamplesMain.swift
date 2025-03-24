@@ -1,5 +1,6 @@
-import ErrorHandling
-import ErrorHandlingDomains
+
+import UmbraErrors
+import UmbraErrorsCore
 import Foundation
 
 // This is the main entry point for the Examples executable

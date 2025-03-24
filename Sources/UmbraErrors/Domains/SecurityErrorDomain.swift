@@ -1,5 +1,6 @@
-import ErrorHandlingInterfaces
 import Foundation
+
+import UmbraErrorsCore
 
 public enum SecurityErrorDomain: String, CaseIterable, Sendable {
   /// Domain identifier
@@ -17,32 +18,32 @@ public enum SecurityErrorDomain: String, CaseIterable, Sendable {
   case secureStorageFailure="SECURE_STORAGE_FAILURE"
 
   /// Returns a human-readable description for this error code
-  public var description: String {
+  var displayDescription: String {
     switch self {
-      case .bookmarkError:
-        "Error managing security bookmarks"
-      case .accessError:
-        "Security access error"
-      case .encryptionFailed:
-        "Encryption operation failed"
-      case .decryptionFailed:
-        "Decryption operation failed"
-      case .invalidKey:
-        "Invalid security key"
-      case .keyGenerationFailed:
-        "Failed to generate security key"
-      case .certificateInvalid:
-        "Certificate is invalid or expired"
-      case .unauthorisedAccess:
-        "Unauthorised access attempt"
-      case .secureStorageFailure:
-        "Secure storage operation failed"
+    case .bookmarkError:
+      return "Bookmark error"
+    case .accessError:
+      return "Access error"
+    case .encryptionFailed:
+      return "Encryption failed"
+    case .decryptionFailed:
+      return "Decryption failed"
+    case .invalidKey:
+      return "Invalid key"
+    case .keyGenerationFailed:
+      return "Key generation failed"
+    case .certificateInvalid:
+      return "Certificate invalid"
+    case .unauthorisedAccess:
+      return "Unauthorised access"
+    case .secureStorageFailure:
+      return "Secure storage failure"
     }
   }
 }
 
 /// Enhanced implementation of a SecurityError
-public struct SecurityError: UmbraError, CustomStringConvertible {
+public struct SecurityError: UmbraError {
   /// Domain identifier
   public let domain: String=SecurityErrorDomain.domain
 
@@ -57,12 +58,12 @@ public struct SecurityError: UmbraError, CustomStringConvertible {
 
   /// Human-readable description
   public var description: String {
-    "\(domain).\(code): \(errorDescription)"
+    return customDescription ?? errorCode.displayDescription
   }
 
   /// Human-readable description of the error
   public var errorDescription: String {
-    let baseDescription=customDescription ?? errorCode.description
+    let baseDescription = description
     return underlyingError != nil ?
       "\(baseDescription) (Caused by: \(String(describing: underlyingError)))" : baseDescription
   }
@@ -88,11 +89,7 @@ public struct SecurityError: UmbraError, CustomStringConvertible {
     description: String?=nil,
     source: ErrorSource?=nil,
     underlyingError: Error?=nil,
-    context: ErrorContext=ErrorContext(
-      source: "UmbraErrors",
-      operation: "SecurityOperation",
-      details: "Security error"
-    )
+    context: ErrorContext=ErrorContext()
   ) {
     errorCode=code
     customDescription=description
@@ -127,9 +124,9 @@ public struct SecurityError: UmbraError, CustomStringConvertible {
     )
   }
 
-  /// Creates a new error with the given source
-  /// - Parameter source: The source to associate with the error
-  /// - Returns: A new error with the given source
+  /// Creates a new error with the given source information
+  /// - Parameter source: The source information
+  /// - Returns: A new error with the given source information
   public func with(source: ErrorSource) -> SecurityError {
     SecurityError(
       code: errorCode,
@@ -141,25 +138,41 @@ public struct SecurityError: UmbraError, CustomStringConvertible {
   }
 }
 
-/// Extension to add additional custom error creation methods
+/// Convenience methods for creating specific security errors
 extension SecurityError {
   /// Creates a bookmark error
   /// - Parameters:
   ///   - message: Optional custom message
   ///   - file: Source file (auto-filled by the compiler)
-  ///   - line: Source line (auto-filled by the compiler)
   ///   - function: Function name (auto-filled by the compiler)
-  /// - Returns: A fully configured SecurityError
+  ///   - line: Line number (auto-filled by the compiler)
+  ///   - underlyingError: Optional underlying error
+  /// - Returns: A configured SecurityError
   public static func bookmarkError(
-    _ message: String?=nil,
+    message: String?=nil,
     file: String=#file,
+    function: String=#function,
     line: Int=#line,
-    function: String=#function
+    underlyingError: Error?=nil
   ) -> SecurityError {
-    SecurityError(
+    var contextDict: [String: Any] = [
+      "file": file,
+      "function": function,
+      "line": line
+    ]
+    if let message = message {
+      contextDict["details"] = message
+    }
+    
+    let context = ErrorContext(contextDict)
+    let source = ErrorSource(file: file, line: line, function: function)
+    
+    return SecurityError(
       code: .bookmarkError,
       description: message,
-      source: ErrorSource(identifier: "\(file):\(line)", location: function)
+      source: source,
+      underlyingError: underlyingError,
+      context: context
     )
   }
 
@@ -167,93 +180,35 @@ extension SecurityError {
   /// - Parameters:
   ///   - message: Optional custom message
   ///   - file: Source file (auto-filled by the compiler)
-  ///   - line: Source line (auto-filled by the compiler)
   ///   - function: Function name (auto-filled by the compiler)
-  /// - Returns: A fully configured SecurityError
+  ///   - line: Line number (auto-filled by the compiler)
+  ///   - underlyingError: Optional underlying error
+  /// - Returns: A configured SecurityError
   public static func accessError(
-    _ message: String?=nil,
+    message: String?=nil,
     file: String=#file,
+    function: String=#function,
     line: Int=#line,
-    function: String=#function
+    underlyingError: Error?=nil
   ) -> SecurityError {
-    SecurityError(
+    var contextDict: [String: Any] = [
+      "file": file,
+      "function": function,
+      "line": line
+    ]
+    if let message = message {
+      contextDict["details"] = message
+    }
+    
+    let context = ErrorContext(contextDict)
+    let source = ErrorSource(file: file, line: line, function: function)
+    
+    return SecurityError(
       code: .accessError,
       description: message,
-      source: ErrorSource(identifier: "\(file):\(line)", location: function)
-    )
-  }
-
-  /// Creates an encryption failure error
-  /// - Parameters:
-  ///   - message: Optional custom message
-  ///   - underlyingError: Optional underlying error
-  ///   - file: Source file (auto-filled by the compiler)
-  ///   - line: Source line (auto-filled by the compiler)
-  ///   - function: Function name (auto-filled by the compiler)
-  /// - Returns: A fully configured SecurityError
-  public static func encryptionFailed(
-    _ message: String?=nil,
-    underlyingError: Error?=nil,
-    file: String=#file,
-    line: Int=#line,
-    function: String=#function
-  ) -> SecurityError {
-    var error=SecurityError(
-      code: .encryptionFailed,
-      description: message
-    )
-
-    if let underlyingError {
-      error=error.with(underlyingError: underlyingError)
-    }
-
-    return error.with(source: ErrorSource(identifier: "\(file):\(line)", location: function))
-  }
-
-  /// Creates a decryption failure error
-  /// - Parameters:
-  ///   - message: Optional custom message
-  ///   - underlyingError: Optional underlying error
-  ///   - file: Source file (auto-filled by the compiler)
-  ///   - line: Source line (auto-filled by the compiler)
-  ///   - function: Function name (auto-filled by the compiler)
-  /// - Returns: A fully configured SecurityError
-  public static func decryptionFailed(
-    _ message: String?=nil,
-    underlyingError: Error?=nil,
-    file: String=#file,
-    line: Int=#line,
-    function: String=#function
-  ) -> SecurityError {
-    var error=SecurityError(
-      code: .decryptionFailed,
-      description: message
-    )
-
-    if let underlyingError {
-      error=error.with(underlyingError: underlyingError)
-    }
-
-    return error.with(source: ErrorSource(identifier: "\(file):\(line)", location: function))
-  }
-
-  /// Creates an invalid key error
-  /// - Parameters:
-  ///   - message: Optional custom message
-  ///   - file: Source file (auto-filled by the compiler)
-  ///   - line: Source line (auto-filled by the compiler)
-  ///   - function: Function name (auto-filled by the compiler)
-  /// - Returns: A fully configured SecurityError
-  public static func invalidKey(
-    _ message: String?=nil,
-    file: String=#file,
-    line: Int=#line,
-    function: String=#function
-  ) -> SecurityError {
-    SecurityError(
-      code: .invalidKey,
-      description: message,
-      source: ErrorSource(identifier: "\(file):\(line)", location: function)
+      source: source,
+      underlyingError: underlyingError,
+      context: context
     )
   }
 }
@@ -267,8 +222,7 @@ extension SecurityError {
 /// - Returns: The error with source information
 public func makeError<E: UmbraError>(_ error: E, file: String, line: Int, function: String) -> E {
   // Create source information
-  let sourceLocation="\(file):\(line) \(function)"
-  let source=ErrorSource(identifier: "UmbraCore", location: sourceLocation)
+  let source = ErrorSource(file: file, line: line, function: function)
 
   // Return error with source information
   return error.with(source: source)

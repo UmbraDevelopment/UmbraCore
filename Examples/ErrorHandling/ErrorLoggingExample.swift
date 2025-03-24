@@ -1,5 +1,6 @@
+import UmbraErrors
+import UmbraErrorsCore
 import ErrorHandlingCommon
-import ErrorHandlingInterfaces
 
 /// Example demonstrating integrated error severity and logging patterns
 enum ErrorLoggingExample {

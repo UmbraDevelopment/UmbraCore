@@ -1,7 +1,9 @@
+import UmbraErrors
+import UmbraErrorsCore
 import CryptoTypes
 import CryptoTypesProtocols
 import CryptoTypesTypes
-import ErrorHandlingDomains
+
 import Foundation
 import SecurityTypes
 import SecurityUtilsProtocols

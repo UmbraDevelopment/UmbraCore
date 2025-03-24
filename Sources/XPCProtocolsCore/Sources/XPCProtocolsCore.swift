@@ -12,16 +12,17 @@
  ## Key Components
  - Modern XPC Service implementation in ModernXPCService
  - Protocol definitions for XPC communication
- - Security error handling with CoreErrors.XPCErrors.SecurityError
+ - Security error handling with UmbraErrors.Security.Core types
 
  ## Proper Usage
  Always use fully qualified type references:
  ```swift
- func handleError(_ error: CoreErrors.XPCErrors.SecurityError) {
+ func handleError(_ error: UmbraErrors.Security.Core) {
      // Handle the error
  }
  ```
  */
 
-@_exported import CoreErrors
+@_exported import UmbraErrors
+@_exported import UmbraErrorsCore
 @_exported import UmbraCoreTypes

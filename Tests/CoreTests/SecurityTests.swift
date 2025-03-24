@@ -1,8 +1,9 @@
 import Core
-import CoreErrors
+import UmbraErrors
+import UmbraErrorsCore
 import CoreServicesTypes
 import CoreTypesInterfaces
-import ErrorHandling
+
 import Foundation
 import SecurityTypes
 import ServiceTypes
@@ -31,7 +32,7 @@ final class SecurityTests: XCTestCase {
 
   // MARK: - Tests
 
-  func testServiceInitialization() async throws {
+  func testServiceInitialisation() async throws {
     let initialState=await service.state
     XCTAssertEqual(initialState, CoreServicesTypes.ServiceState.uninitialized)
 
@@ -41,7 +42,7 @@ final class SecurityTests: XCTestCase {
   }
 
   func testBookmarkOperations() async throws {
-    // Initialize service
+    // Initialise service
     try await container.initialiseAll()
 
     // Test bookmark creation (using mock)
@@ -160,7 +161,7 @@ actor SecurityMockServiceContainer {
 
   func resolve<T>(_: T.Type) async throws -> T where T: ServiceTypes.UmbraService {
     guard let service=services.values.first(where: { $0 is T }) as? T else {
-      throw CoreErrors.ServiceError.dependencyError
+      throw UmbraErrors.ServiceError.dependencyError
     }
     return service
   }

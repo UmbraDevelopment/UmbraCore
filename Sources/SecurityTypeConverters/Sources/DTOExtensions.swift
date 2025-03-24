@@ -1,4 +1,6 @@
-import CoreErrors
+
+import UmbraErrors
+import UmbraErrorsCore
 import CoreTypesInterfaces
 import FoundationBridgeTypes
 import SecurityProtocolsCore

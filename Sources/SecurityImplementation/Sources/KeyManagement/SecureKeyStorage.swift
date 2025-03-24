@@ -15,7 +15,9 @@
  * For production use, consider implementing a secure persistent storage solution
  */
 
-import ErrorHandlingDomains
+
+import UmbraErrors
+import UmbraErrorsCore
 import Foundation
 import SecurityProtocolsCore
 import UmbraCoreTypes

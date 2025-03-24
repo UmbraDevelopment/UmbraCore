@@ -1,16 +1,29 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 swift_library(
-    name = "Sources",
-    srcs = glob(["**/*.swift"]),
+    name = "UmbraCoreTypes",
+    srcs = glob(
+        [
+            "*.swift",
+            "**/*.swift",
+        ],
+        allow_empty = False,
+        exclude = [
+            "**/Tests/**",
+            "**/*Test.swift",
+            "**/*.generated.swift",
+        ],
+        exclude_directories = 1,
+    ),
+    module_name = "UmbraCoreTypes",
     visibility = ["//visibility:public"],
     deps = [
-        "//Sources/UmbraCoreTypes/CoreErrors/Sources",
+        "//Sources/UmbraCoreTypes/CoreErrors/Sources:CoreErrors",
     ],
 )
 
 # Uncomment if documentation generation is needed
-# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")])
 # load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
 #
 # swift_package(
@@ -19,5 +32,5 @@ swift_library(
 #         "**/*.swift",
 #         "**/*.docc/**",
 #     ], allow_empty = False),
-#     deps = ["//Sources/UmbraCoreTypes/Sources"],
+#     deps = ["//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes"],
 # )

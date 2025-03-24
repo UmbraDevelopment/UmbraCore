@@ -1,4 +1,5 @@
-import CoreErrors
+import UmbraErrors
+import UmbraErrorsCore
 import Foundation
 import UmbraCoreTypes
 
@@ -74,26 +75,25 @@ public class ModernXPCService: XPCServiceProtocolComplete, @unchecked Sendable {
   public func synchroniseKeys(_ data: SecureBytes) async throws {
     // In a real implementation, this would securely store the key material
     if data.isEmpty {
-      throw ErrorHandlingDomains.UmbraErrors.Security.Protocols
-        .invalidInput("Empty synchronisation data")
+      throw UmbraErrors.Security.Protocols.invalidInput("Empty synchronisation data")
     }
   }
 
   /// Extended ping implementation with error handling
   public func pingBasic() async
-  -> Result<Bool, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<Bool, UmbraErrors.Security.Protocols> {
     .success(true)
   }
 
   /// Get the service version
   public func getServiceVersion() async
-  -> Result<String, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<String, UmbraErrors.Security.Protocols> {
     .success("1.0.0")
   }
 
   /// Get the device identifier
   public func getDeviceIdentifier() async
-  -> Result<String, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<String, UmbraErrors.Security.Protocols> {
     // In a real implementation, would access secure device identification
     .success(UUID().uuidString)
   }
@@ -102,20 +102,20 @@ public class ModernXPCService: XPCServiceProtocolComplete, @unchecked Sendable {
 
   /// Ping implementation for standard protocol level
   public func pingStandard() async
-  -> Result<Bool, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<Bool, UmbraErrors.Security.Protocols> {
     await pingBasic()
   }
 
   /// Reset security state
   public func resetSecurity() async
-  -> Result<Void, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<Void, UmbraErrors.Security.Protocols> {
     // Implementation would clear security state
     .success(())
   }
 
   /// Synchronise encryption keys
   public func synchronizeKeys(_ syncData: SecureBytes) async
-  -> Result<Void, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<Void, UmbraErrors.Security.Protocols> {
     if syncData.isEmpty {
       return .failure(.invalidInput("Empty synchronisation data"))
     }
@@ -126,7 +126,7 @@ public class ModernXPCService: XPCServiceProtocolComplete, @unchecked Sendable {
 
   /// Generate random data of specified length
   public func generateRandomData(length: Int) async
-  -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     guard length > 0 else {
       return .failure(.invalidInput("Length must be positive"))
     }
@@ -140,7 +140,7 @@ public class ModernXPCService: XPCServiceProtocolComplete, @unchecked Sendable {
     _ data: SecureBytes,
     keyIdentifier _: String?
   ) async
-  -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     guard !data.isEmpty else {
       return .failure(.invalidInput("Cannot encrypt empty data"))
     }
@@ -153,7 +153,7 @@ public class ModernXPCService: XPCServiceProtocolComplete, @unchecked Sendable {
     _ data: SecureBytes,
     keyIdentifier _: String?
   ) async
-  -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     guard !data.isEmpty else {
       return .failure(.invalidInput("Cannot decrypt empty data"))
     }
@@ -166,7 +166,7 @@ public class ModernXPCService: XPCServiceProtocolComplete, @unchecked Sendable {
     _ data: SecureBytes,
     keyIdentifier _: String
   ) async
-  -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     guard !data.isEmpty else {
       return .failure(.invalidInput("Cannot sign empty data"))
     }
@@ -181,7 +181,7 @@ public class ModernXPCService: XPCServiceProtocolComplete, @unchecked Sendable {
     signature: SecureBytes,
     for data: SecureBytes,
     keyIdentifier _: String
-  ) async -> Result<Bool, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  ) async -> Result<Bool, UmbraErrors.Security.Protocols> {
     guard !data.isEmpty else {
       return .failure(.invalidInput("Cannot verify empty data"))
     }
@@ -197,7 +197,7 @@ public class ModernXPCService: XPCServiceProtocolComplete, @unchecked Sendable {
   /// Delete a key from the service's key store
   public func deleteKey(
     keyIdentifier: String
-  ) async -> Result<Bool, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  ) async -> Result<Bool, UmbraErrors.Security.Protocols> {
     guard !keyIdentifier.isEmpty else {
       return .failure(.invalidInput("Key identifier cannot be empty"))
     }
@@ -208,7 +208,7 @@ public class ModernXPCService: XPCServiceProtocolComplete, @unchecked Sendable {
 
   /// List all key identifiers
   public func listKeys() async
-  -> Result<[String], ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<[String], UmbraErrors.Security.Protocols> {
     // In a real implementation, would return actual keys from storage
     .success(["key-1", "key-2", "key-3"])
   }
@@ -217,13 +217,13 @@ public class ModernXPCService: XPCServiceProtocolComplete, @unchecked Sendable {
 
   /// Complete protocol ping implementation
   public func pingComplete() async
-  -> Result<Bool, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<Bool, UmbraErrors.Security.Protocols> {
     await pingStandard()
   }
 
   /// Encrypt data with modern implementation
   public func encrypt(data: SecureBytes) async
-  -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     if data.isEmpty {
       return .failure(.invalidInput("Cannot encrypt empty data"))
     }
@@ -240,7 +240,7 @@ public class ModernXPCService: XPCServiceProtocolComplete, @unchecked Sendable {
 
   /// Decrypt data with modern implementation
   public func decrypt(data: SecureBytes) async
-  -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     if data.isEmpty {
       return .failure(.invalidInput("Cannot decrypt empty data"))
     }
@@ -257,7 +257,7 @@ public class ModernXPCService: XPCServiceProtocolComplete, @unchecked Sendable {
 
   /// Generate a cryptographic key - modern implementation
   public func generateKey() async
-  -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     // In a real implementation, would use secure random generation
     let keyLength=32 // 256 bits
     var keyBytes=[UInt8](repeating: 0, count: keyLength)
@@ -271,7 +271,7 @@ public class ModernXPCService: XPCServiceProtocolComplete, @unchecked Sendable {
 
   /// Hash data with modern implementation
   public func hash(data: SecureBytes) async
-  -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     if data.isEmpty {
       return .failure(.invalidInput("Cannot hash empty data"))
     }
@@ -297,7 +297,7 @@ public class ModernXPCService: XPCServiceProtocolComplete, @unchecked Sendable {
     keyType _: XPCProtocolTypeDefs.KeyType,
     keyIdentifier: String?,
     metadata _: [String: String]?
-  ) async -> Result<String, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  ) async -> Result<String, UmbraErrors.Security.Protocols> {
     let identifier=keyIdentifier ?? "key-\(UUID().uuidString)"
 
     // In a real implementation, would generate an appropriate key based on the type
@@ -312,7 +312,7 @@ public class ModernXPCService: XPCServiceProtocolComplete, @unchecked Sendable {
     keyType _: XPCProtocolTypeDefs.KeyType,
     keyIdentifier: String?,
     metadata _: [String: String]?
-  ) async -> Result<String, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  ) async -> Result<String, UmbraErrors.Security.Protocols> {
     if keyData.isEmpty {}
 
     let identifier=keyIdentifier ?? "imported-\(UUID().uuidString)"
@@ -324,7 +324,7 @@ public class ModernXPCService: XPCServiceProtocolComplete, @unchecked Sendable {
 
   /// Export a key by identifier
   public func exportKey(keyIdentifier: String) async
-  -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     if keyIdentifier.isEmpty {
       return .failure(.invalidInput("Key identifier cannot be empty"))
     }
@@ -340,7 +340,7 @@ public class ModernXPCService: XPCServiceProtocolComplete, @unchecked Sendable {
   public func importKey(
     _ keyData: SecureBytes,
     identifier: String?
-  ) async -> Result<String, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  ) async -> Result<String, UmbraErrors.Security.Protocols> {
     // Delegate to the more complete implementation
     await importKey(
       keyData: keyData,
@@ -354,7 +354,7 @@ public class ModernXPCService: XPCServiceProtocolComplete, @unchecked Sendable {
   public func generateKey(
     type _: String,
     bits: Int
-  ) async -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     if bits <= 0 {
       return .failure(.invalidInput("Key size must be positive"))
     }
@@ -373,7 +373,7 @@ public class ModernXPCService: XPCServiceProtocolComplete, @unchecked Sendable {
 
   /// Get the service status
   public func getServiceStatus() async
-  -> Result<XPCServiceStatus, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<XPCServiceStatus, UmbraErrors.Security.Protocols> {
     // In a real implementation, would collect actual service metrics
     let isActive=await ping()
     let status=XPCServiceStatus(
@@ -398,7 +398,7 @@ public class ModernXPCService: XPCServiceProtocolComplete, @unchecked Sendable {
     iterations: Int,
     keyLength: Int,
     targetKeyIdentifier: String?
-  ) async -> Result<String, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  ) async -> Result<String, UmbraErrors.Security.Protocols> {
     // Validate inputs
     guard !sourceKeyIdentifier.isEmpty else {
       return .failure(.invalidInput("Source key identifier cannot be empty"))
@@ -427,16 +427,16 @@ public class ModernXPCService: XPCServiceProtocolComplete, @unchecked Sendable {
 
   /// Get the hardware identifier
   /// - Returns: Result with identifier string on success or
-  /// ErrorHandlingDomains.UmbraErrors.Security.Protocols on failure
+  /// UmbraErrors.Security.Protocols on failure
   public func getHardwareIdentifier() async
-  -> Result<String, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<String, UmbraErrors.Security.Protocols> {
     // In a real implementation, would return actual hardware identifier
     .success("MODERN-HW-12345")
   }
 
   /// Hash secure data
   public func hashSecureData(_ data: SecureBytes) async
-  -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     // Delegate to the existing hash method
     await hash(data: data)
   }
@@ -446,7 +446,7 @@ public class ModernXPCService: XPCServiceProtocolComplete, @unchecked Sendable {
     algorithm: String,
     keySize: Int,
     purpose: String
-  ) async -> Result<String, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  ) async -> Result<String, UmbraErrors.Security.Protocols> {
     let identifier="generated-key-\(algorithm)-\(keySize)-\(purpose)"
 
     // In a real implementation, would generate an appropriate key based on the algorithm,

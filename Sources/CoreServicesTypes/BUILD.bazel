@@ -2,7 +2,19 @@ load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
     name = "CoreServicesTypes",
-    srcs = glob(["**/*.swift"]),
+    srcs = glob(
+        [
+            "*.swift",
+            "**/*.swift",
+        ],
+        allow_empty = False,
+        exclude = [
+            "**/Tests/**",
+            "**/*Test.swift",
+            "**/*.generated.swift",
+        ],
+        exclude_directories = 1,
+    ),
     visibility = [
         "//Sources/Services:__pkg__",
         "//visibility:public",

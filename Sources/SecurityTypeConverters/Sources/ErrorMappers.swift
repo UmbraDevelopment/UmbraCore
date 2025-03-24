@@ -1,4 +1,5 @@
-import CoreErrors
+
+import UmbraErrorsCore
 import SecurityProtocolsCore
 import UmbraErrors
 import XPCProtocolsCore

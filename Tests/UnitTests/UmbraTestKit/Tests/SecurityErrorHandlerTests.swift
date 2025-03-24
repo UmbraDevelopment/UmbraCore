@@ -1,5 +1,7 @@
+import UmbraErrors
+import UmbraErrorsCore
 import Core
-import ErrorHandlingDomains
+
 import SecurityInterfaces
 import XCTest
 
@@ -19,7 +21,7 @@ public class SecurityErrorHandler {
   public init() {}
 
   public func handleError(
-    _ error: ErrorHandlingDomains.UmbraErrors.Security.Protocols,
+    _ error: UmbraErrors.Security.Protocols,
     context: String
   ) -> Bool {
     let key="\(context):\(error)"
@@ -78,7 +80,7 @@ final class SecurityErrorHandlerTests: XCTestCase {
 
   func testHandleRetryableError() async throws {
     let shouldRetry=handler.handleError(
-      ErrorHandlingDomains.UmbraErrors.Security.Protocols.serviceError("Permission denied"),
+      UmbraErrors.Security.Protocols.serviceError("Permission denied"),
       context: "test"
     )
     XCTAssertTrue(shouldRetry, "First occurrence of retryable error should allow retry")
@@ -87,25 +89,25 @@ final class SecurityErrorHandlerTests: XCTestCase {
   func testMaxRetries() async throws {
     // First attempt
     _=handler.handleError(
-      ErrorHandlingDomains.UmbraErrors.Security.Protocols.serviceError("Permission denied"),
+      UmbraErrors.Security.Protocols.serviceError("Permission denied"),
       context: "test"
     )
 
     // Second attempt
     _=handler.handleError(
-      ErrorHandlingDomains.UmbraErrors.Security.Protocols.serviceError("Permission denied"),
+      UmbraErrors.Security.Protocols.serviceError("Permission denied"),
       context: "test"
     )
 
     // Third attempt
     _=handler.handleError(
-      ErrorHandlingDomains.UmbraErrors.Security.Protocols.serviceError("Permission denied"),
+      UmbraErrors.Security.Protocols.serviceError("Permission denied"),
       context: "test"
     )
 
     // Fourth attempt should not retry
     let shouldRetry=handler.handleError(
-      ErrorHandlingDomains.UmbraErrors.Security.Protocols.serviceError("Permission denied"),
+      UmbraErrors.Security.Protocols.serviceError("Permission denied"),
       context: "test"
     )
     XCTAssertFalse(shouldRetry, "Should not retry after max retries")
@@ -113,11 +115,11 @@ final class SecurityErrorHandlerTests: XCTestCase {
 
   func testErrorStatsTracking() async throws {
     _=handler.handleError(
-      ErrorHandlingDomains.UmbraErrors.Security.Protocols.serviceError("Test error"),
+      UmbraErrors.Security.Protocols.serviceError("Test error"),
       context: "test1"
     )
     _=handler.handleError(
-      ErrorHandlingDomains.UmbraErrors.Security.Protocols.serviceError("Test error"),
+      UmbraErrors.Security.Protocols.serviceError("Test error"),
       context: "test2"
     )
 
@@ -140,7 +142,7 @@ final class SecurityErrorHandlerTests: XCTestCase {
 
     // Mark an error for test_context
     _=testHandler.handleError(
-      ErrorHandlingDomains.UmbraErrors.Security.Protocols.serviceError("Test error"),
+      UmbraErrors.Security.Protocols.serviceError("Test error"),
       context: "test_context"
     )
 
@@ -150,7 +152,7 @@ final class SecurityErrorHandlerTests: XCTestCase {
 
   func testContextReset() async throws {
     _=handler.handleError(
-      ErrorHandlingDomains.UmbraErrors.Security.Protocols.serviceError("Test error"),
+      UmbraErrors.Security.Protocols.serviceError("Test error"),
       context: "test"
     )
 
@@ -159,7 +161,7 @@ final class SecurityErrorHandlerTests: XCTestCase {
 
     // After reset, should be able to retry
     let shouldRetry=handler.handleError(
-      ErrorHandlingDomains.UmbraErrors.Security.Protocols.serviceError("Test error"),
+      UmbraErrors.Security.Protocols.serviceError("Test error"),
       context: "test"
     )
     XCTAssertTrue(shouldRetry)

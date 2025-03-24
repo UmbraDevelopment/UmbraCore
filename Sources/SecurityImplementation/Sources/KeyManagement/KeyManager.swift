@@ -29,7 +29,9 @@
  * All operations include validation to prevent misuse
  */
 
-import ErrorHandlingDomains
+
+import UmbraErrors
+import UmbraErrorsCore
 import Foundation
 import SecurityProtocolsCore
 import UmbraCoreTypes

@@ -1,4 +1,6 @@
-import ErrorHandlingDomains
+
+import UmbraErrors
+import UmbraErrorsCore
 import Foundation
 import SecurityInterfaces
 import SecurityTypes
@@ -20,7 +22,7 @@ public actor MockKeychain: SecureStorageProvider {
 
   public func load(forKey key: String) async throws -> Data {
     guard let data=storage[key] else {
-      throw ErrorHandlingDomains.UmbraErrors.Security.Protocols
+      throw UmbraErrors.Security.Protocols
         .makeStorageOperationFailed(message: "No data found for key: \(key)")
     }
     return data
@@ -28,7 +30,7 @@ public actor MockKeychain: SecureStorageProvider {
 
   public func loadWithMetadata(forKey key: String) async throws -> (Data, [String: String]?) {
     guard let data=storage[key] else {
-      throw ErrorHandlingDomains.UmbraErrors.Security.Protocols
+      throw UmbraErrors.Security.Protocols
         .makeStorageOperationFailed(message: "No data found for key: \(key)")
     }
     return (data, metadata[key])
@@ -36,7 +38,7 @@ public actor MockKeychain: SecureStorageProvider {
 
   public func delete(forKey key: String) async throws {
     guard storage.removeValue(forKey: key) != nil else {
-      throw ErrorHandlingDomains.UmbraErrors.Security.Protocols
+      throw UmbraErrors.Security.Protocols
         .makeStorageOperationFailed(message: "No data found for key: \(key)")
     }
     metadata.removeValue(forKey: key)
@@ -50,7 +52,7 @@ public actor MockKeychain: SecureStorageProvider {
 
   public func getMetadata(forKey key: String) async throws -> [String: String]? {
     guard storage[key] != nil else {
-      throw ErrorHandlingDomains.UmbraErrors.Security.Protocols
+      throw UmbraErrors.Security.Protocols
         .makeStorageOperationFailed(message: "No data found for key: \(key)")
     }
     return metadata[key]
@@ -58,7 +60,7 @@ public actor MockKeychain: SecureStorageProvider {
 
   public func updateMetadata(_ metadata: [String: String], forKey key: String) async throws {
     guard storage[key] != nil else {
-      throw ErrorHandlingDomains.UmbraErrors.Security.Protocols
+      throw UmbraErrors.Security.Protocols
         .makeStorageOperationFailed(message: "No data found for key: \(key)")
     }
     self.metadata[key]=metadata

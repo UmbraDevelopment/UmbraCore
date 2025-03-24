@@ -1,3 +1,0 @@
-Starting local Bazel server (8.1.1) and connecting to it...
-ERROR: --experimental_ui_json_format :: Unrecognized option: --experimental_ui_json_format
-INFO: Invocation ID: 479e17c4-9bae-4462-a925-c8d8a5c40e40

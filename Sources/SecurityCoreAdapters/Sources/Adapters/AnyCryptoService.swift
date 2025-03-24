@@ -1,4 +1,5 @@
-import ErrorHandlingDomains
+import UmbraErrors
+import UmbraErrorsCore
 import SecurityProtocolsCore
 import UmbraCoreTypes
 

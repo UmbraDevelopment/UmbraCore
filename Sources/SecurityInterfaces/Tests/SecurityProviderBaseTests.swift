@@ -1,4 +1,5 @@
-import ErrorHandlingDomains
+import UmbraErrors
+import UmbraErrorsCore
 @testable import SecurityInterfaces
 import SecurityProtocolsCore
 import UmbraCoreTypes

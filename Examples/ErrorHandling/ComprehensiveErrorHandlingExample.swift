@@ -1,10 +1,12 @@
+import UmbraErrors
+import UmbraErrorsCore
 import Foundation
 import UmbraLogging
 
 // Removed UmbraLoggingAdapters import to fix library evolution issues
-import ErrorHandlingCore
+
 import ErrorHandlingDomains // This contains the UmbraErrors namespace
-import ErrorHandlingInterfaces
+
 import ErrorHandlingProtocols
 
 /// Comprehensive examples showing how to use the enhanced error handling system
@@ -28,7 +30,7 @@ public final class ComprehensiveErrorHandlingExample {
 
     do {
       try await authenticateUserWithCredentials()
-    } catch let securityError as ErrorHandlingDomains.UmbraErrors.GeneralSecurity.Core {
+    } catch let securityError as UmbraErrors.GeneralSecurity.Core {
       await handleSecurityErrorComprehensively(securityError)
     } catch {
       print("Unexpected error: \(error.localizedDescription)")
@@ -65,7 +67,7 @@ public final class ComprehensiveErrorHandlingExample {
   private func authenticateUserWithCredentials() async throws {
     print("Attempting to authenticate user...")
     // Simulate authentication failure
-    throw ErrorHandlingDomains.UmbraErrors.GeneralSecurity.Core
+    throw UmbraErrors.GeneralSecurity.Core
       .invalidInput(reason: "Invalid username or password")
   }
 
@@ -87,7 +89,7 @@ public final class ComprehensiveErrorHandlingExample {
 
   /// Comprehensive handling of security errors with recovery and notification
   private func handleSecurityErrorComprehensively(
-    _ error: ErrorHandlingDomains.UmbraErrors.GeneralSecurity.Core
+    _ error: UmbraErrors.GeneralSecurity.Core
   ) async {
     // 1. Log the error (simplified)
     print("SECURITY ERROR: \(error)")
@@ -148,7 +150,7 @@ public final class ComprehensiveErrorHandlingExample {
 
     // Simulated recovery logic
     switch error {
-      case let error as ErrorHandlingDomains.UmbraErrors.GeneralSecurity.Core:
+      case let error as UmbraErrors.GeneralSecurity.Core:
         switch error {
           case let .invalidInput(reason) where reason.contains("password"):
             print("Automatic recovery not possible for invalid password")
@@ -212,7 +214,7 @@ public final class ComprehensiveErrorHandlingExample {
 
   /// Get recovery options for security errors
   private func getRecoveryOptionsForSecurityError(
-    _ error: ErrorHandlingDomains.UmbraErrors.GeneralSecurity.Core
+    _ error: UmbraErrors.GeneralSecurity.Core
   ) -> [RecoveryOption] {
     // Simulated recovery options based on error type
     switch error {

@@ -1,5 +1,7 @@
+import UmbraErrors
+import UmbraErrorsCore
 import Core
-import ErrorHandlingDomains
+
 import XCTest
 
 /// Test cases for Security Error handling

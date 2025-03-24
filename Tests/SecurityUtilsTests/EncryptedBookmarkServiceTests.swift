@@ -1,9 +1,11 @@
 @testable import CryptoTypes
-import ErrorHandlingDomains
+
 @testable import SecurityTypes
 @testable import UmbraCrypto
 @testable import UmbraMocks
 @testable import UmbraSecurityUtils
+import UmbraErrors
+import UmbraErrorsCore
 import XCTest
 
 final class EncryptedBookmarkServiceTests: XCTestCase {

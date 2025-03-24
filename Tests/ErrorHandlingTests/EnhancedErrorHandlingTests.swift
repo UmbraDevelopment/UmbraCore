@@ -1,5 +1,7 @@
 @testable import ErrorHandling
-import ErrorHandlingDomains
+
+import UmbraErrors
+import UmbraErrorsCore
 import XCTest
 
 final class EnhancedErrorHandlingTests: XCTestCase {
