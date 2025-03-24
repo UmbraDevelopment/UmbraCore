@@ -8,26 +8,26 @@ platform(
     constraint_values = [
         "@platforms//os:macos",
         "@platforms//cpu:arm64",
-    ]
+    ],
 )
 
 # gazelle:prefix dev.mpy.UmbraCore
 
 gazelle(
     name = "gazelle",
-    command = "fix"
+    command = "fix",
 )
 
 # Test that BUILD files are up-to-date
 gazelle_test(
     name = "gazelle_test",
-    workspace = "//:BUILD.bazel"
+    workspace = "//:BUILD.bazel",
 )
 
 # Code quality targets
 alias(
     name = "format",
-    actual = "//tools:code_quality_manager"
+    actual = "//tools:code_quality_manager",
 )
 
 # Production-only targets
@@ -38,5 +38,5 @@ sh_binary(
         "$(location //tools:code_quality_manager)",
         "--production-only",
     ],
-    data = ["//tools:code_quality_manager"]
+    data = ["//tools:code_quality_manager"],
 )

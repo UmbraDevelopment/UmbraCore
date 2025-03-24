@@ -23,5 +23,5 @@ swift_library(
         "//Sources/SecurityProtocolsCore",
         "//Sources/UmbraCoreTypes",
         "//Sources/XPCProtocolsCore",
-    ]
+    ],
 )

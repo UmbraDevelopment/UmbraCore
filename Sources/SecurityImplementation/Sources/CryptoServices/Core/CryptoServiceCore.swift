@@ -22,7 +22,7 @@ import UmbraCoreTypes
 /// Core service provider for cryptographic operations that coordinates specialised
 /// services. It delegates operations to the appropriate specialised components while
 /// providing a simplified interface to callers.
-final class CryptoServiceCore: CryptoServiceProtocol, Sendable {
+public final class CryptoServiceCore: CryptoServiceProtocol, Sendable {
   // MARK: - Properties
 
   /// Service for symmetric encryption operations

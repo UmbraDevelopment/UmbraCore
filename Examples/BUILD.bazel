@@ -15,13 +15,16 @@ package(default_visibility = ["//visibility:public"])
 # Library of examples that can be imported elsewhere
 filegroup(
     name = "ExamplesLib",
-    srcs = glob(["**/*.swift"], allow_empty = True )
+    srcs = glob(
+        ["**/*.swift"],
+        allow_empty = True,
+    ),
 )
 
 # Executable example target - disabled
 filegroup(
     name = "Examples",
-    srcs = ["ExamplesMain.swift"], 
+    srcs = ["ExamplesMain.swift"],
 )
 
 # Comment explaining why examples are disabled

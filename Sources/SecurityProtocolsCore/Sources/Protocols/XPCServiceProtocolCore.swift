@@ -1,6 +1,18 @@
-import ErrorHandling
-import ErrorHandlingDomains
+import ErrorHandlingInterfaces
+import UmbraErrorsDomains
 import UmbraCoreTypes
+
+/// Protocol error type for XPC service operations
+public enum SecurityProtocolError: Error, Equatable, Sendable {
+  /// Internal error within the security system
+  case internalError(String)
+  
+  /// Operation is not supported
+  case unsupportedOperation(name: String)
+  
+  /// Service error with code
+  case serviceError(code: Int, message: String)
+}
 
 /// Protocol defining core XPC service functionality without Foundation dependencies.
 /// This protocol uses SecureBytes for binary data to avoid custom type definitions
@@ -11,73 +23,75 @@ public protocol XPCServiceProtocolCore: Sendable {
 
   /// Test connectivity with the XPC service
   /// - Returns: Boolean indicating whether the service is responsive
-  func ping() async -> Result<Bool, UmbraErrors.Security.Protocols>
+  func ping() async -> Result<Bool, SecurityProtocolError>
 
   /// Synchronise encryption keys across processes
   /// - Parameter syncData: Key synchronisation data
   /// - Returns: Success or a descriptive error
   func synchronizeKeys(_ syncData: SecureBytes) async
-    -> Result<Void, UmbraErrors.Security.Protocols>
+    -> Result<Void, SecurityProtocolError>
 
-  /// Encrypt data using the service's encryption implementation
+  /// Encrypt data using a service-managed key
   /// - Parameter data: Data to encrypt
-  /// - Returns: Encrypted data or error
-  func encrypt(data: SecureBytes) async -> Result<SecureBytes, UmbraErrors.Security.Protocols>
+  /// - Returns: Encrypted data or an error
+  func encrypt(data: SecureBytes) async
+    -> Result<SecureBytes, SecurityProtocolError>
 
-  /// Decrypt data using the service's decryption implementation
+  /// Decrypt data using a service-managed key
   /// - Parameter data: Data to decrypt
-  /// - Returns: Decrypted data or error
-  func decrypt(data: SecureBytes) async -> Result<SecureBytes, UmbraErrors.Security.Protocols>
+  /// - Returns: Decrypted data or an error
+  func decrypt(data: SecureBytes) async
+    -> Result<SecureBytes, SecurityProtocolError>
 
-  /// Generate a cryptographic key using the service
-  /// - Returns: Generated key or error
-  func generateKey() async -> Result<SecureBytes, UmbraErrors.Security.Protocols>
+  /// Generate a new cryptographic key
+  /// - Returns: Generated key or an error
+  func generateKey() async -> Result<SecureBytes, SecurityProtocolError>
 
-  /// Hash data using the service's hashing implementation
+  /// Compute a cryptographic hash of data
   /// - Parameter data: Data to hash
-  /// - Returns: Hash value or error
-  func hash(data: SecureBytes) async -> Result<SecureBytes, UmbraErrors.Security.Protocols>
+  /// - Returns: Hash value or an error
+  func hash(data: SecureBytes) async
+    -> Result<SecureBytes, SecurityProtocolError>
 }
 
-// MARK: - Default Implementations
-
-extension XPCServiceProtocolCore {
+/// Default implementations for XPCServiceProtocolCore functions
+public extension XPCServiceProtocolCore {
   /// Default protocol identifier
-  public static var protocolIdentifier: String {
+  static var protocolIdentifier: String {
     "com.umbra.xpc.service.protocol.core"
   }
 
-  /// Default ping implementation - always successful in the base protocol
-  public func ping() async -> Result<Bool, UmbraErrors.Security.Protocols> {
+  /// Default implementation that returns a ping success
+  func ping() async -> Result<Bool, SecurityProtocolError> {
     .success(true)
   }
 
   /// Default implementation that returns a not implemented error
-  public func synchronizeKeys(_: SecureBytes) async
-  -> Result<Void, UmbraErrors.Security.Protocols> {
+  func synchronizeKeys(_: SecureBytes) async
+  -> Result<Void, SecurityProtocolError> {
     .failure(.unsupportedOperation(name: "synchronizeKeys"))
   }
 
   /// Default implementation that returns a not implemented error
-  public func encrypt(data _: SecureBytes) async
-  -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
+  func encrypt(data _: SecureBytes) async
+  -> Result<SecureBytes, SecurityProtocolError> {
     .failure(.unsupportedOperation(name: "encrypt"))
   }
 
   /// Default implementation that returns a not implemented error
-  public func decrypt(data _: SecureBytes) async
-  -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
+  func decrypt(data _: SecureBytes) async
+  -> Result<SecureBytes, SecurityProtocolError> {
     .failure(.unsupportedOperation(name: "decrypt"))
   }
 
   /// Default implementation that returns a not implemented error
-  public func generateKey() async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
+  func generateKey() async -> Result<SecureBytes, SecurityProtocolError> {
     .failure(.unsupportedOperation(name: "generateKey"))
   }
-
+  
   /// Default implementation that returns a not implemented error
-  public func hash(data _: SecureBytes) async
-  -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
+  func hash(data _: SecureBytes) async
+  -> Result<SecureBytes, SecurityProtocolError> {
     .failure(.unsupportedOperation(name: "hash"))
   }
 }

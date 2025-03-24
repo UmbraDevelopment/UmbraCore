@@ -45,7 +45,7 @@ actor GenericMockServiceContainer {
 
 // MARK: - Crypto Service Mocks
 
-/// Generic mock implementation of CryptoService for testing
+/// Generic mock implementation of CryptoServiceCore for testing
 @preconcurrency
 actor GenericMockCryptoService {
   static let serviceIdentifier="com.umbracore.crypto.mock"

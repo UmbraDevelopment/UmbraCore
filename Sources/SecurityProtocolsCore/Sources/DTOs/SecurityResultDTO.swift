@@ -1,45 +1,5 @@
 import UmbraCoreTypes
 
-// Local type declarations to replace imports
-// These replace the removed ErrorHandling and ErrorHandlingDomains imports
-
-/// Error domain namespace
-public enum ErrorDomain {
-  /// Security domain
-  public static let security="Security"
-  /// Crypto domain
-  public static let crypto="Crypto"
-  /// Application domain
-  public static let application="Application"
-}
-
-/// Error context protocol
-public protocol ErrorContext {
-  /// Domain of the error
-  var domain: String { get }
-  /// Code of the error
-  var code: Int { get }
-  /// Description of the error
-  var description: String { get }
-}
-
-/// Base error context implementation
-public struct BaseErrorContext: ErrorContext {
-  /// Domain of the error
-  public let domain: String
-  /// Code of the error
-  public let code: Int
-  /// Description of the error
-  public let description: String
-
-  /// Initialise with domain, code and description
-  public init(domain: String, code: Int, description: String) {
-    self.domain=domain
-    self.code=code
-    self.description=description
-  }
-}
-
 /// FoundationIndependent representation of a security operation result.
 /// This data transfer object encapsulates the outcome of security-related operations
 /// including success with data or failure with error information.
@@ -59,179 +19,150 @@ public struct SecurityResultDTO: Sendable, Equatable {
   public let errorMessage: String?
 
   /// Security error type
-  public let error: UmbraErrors.Security.Protocols?
+  public let error: SecurityProtocolError?
 
   // MARK: - Initializers
 
-  /// Initialize a successful result with data
-  /// - Parameter data: The operation result data
+  /// Initialise a successful result with data
+  /// - Parameter data: Result data
   public init(data: SecureBytes) {
-    success=true
-    self.data=data
-    errorCode=nil
-    errorMessage=nil
-    error=nil
+    self.success = true
+    self.data = data
+    self.errorCode = nil
+    self.errorMessage = nil
+    self.error = nil
   }
 
-  /// Initialize a successful result without data
+  /// Initialise a successful result without data
   public init() {
-    success=true
-    data=nil
-    errorCode=nil
-    errorMessage=nil
-    error=nil
+    self.success = true
+    self.data = nil
+    self.errorCode = nil
+    self.errorMessage = nil
+    self.error = nil
   }
 
-  /// Initialize with success flag and optional data
+  /// Initialise with comprehensive parameters
   /// - Parameters:
   ///   - success: Whether the operation succeeded
   ///   - data: Optional result data
-  public init(success: Bool, data: SecureBytes?=nil) {
-    self.success=success
-    self.data=data
-    errorCode=nil
-    errorMessage=nil
-    error=nil
-  }
-
-  /// Initialize a security result
-  ///
-  /// - Parameters:
-  ///   - success: Result status
-  ///   - error: Optional error type
-  ///   - errorDetails: Optional detailed error message
+  ///   - errorCode: Optional error code
+  ///   - errorMessage: Optional error message
+  ///   - error: Optional protocol error
+  ///   - errorDetails: Optional additional error details
   public init(
     success: Bool,
-    error: UmbraErrors.Security.Protocols?=nil,
-    errorDetails: String?=nil
+    data: SecureBytes? = nil,
+    errorCode: Int? = nil,
+    errorMessage: String? = nil,
+    error: SecurityProtocolError? = nil,
+    errorDetails: String? = nil
   ) {
-    self.success=success
-    data=nil
-    self.error=error
-
-    // Derive error code based on error type
-    if let error {
+    self.success = success
+    self.data = data
+    self.error = error
+    
+    // Handle error codes and messages
+    if let error = error {
+      // Extract error code and message from the error
+      var code: Int
+      var message: String
+      
       switch error {
-        case .invalidFormat:
-          errorCode=1001
-        case .unsupportedOperation:
-          errorCode=1002
-        case .incompatibleVersion:
-          errorCode=1003
-        case .missingProtocolImplementation:
-          errorCode=1004
-        case .invalidState:
-          errorCode=1005
-        case .internalError:
-          errorCode=1006
-        case .invalidInput:
-          errorCode=1007
-        case .encryptionFailed:
-          errorCode=1008
-        case .decryptionFailed:
-          errorCode=1009
-        case .randomGenerationFailed:
-          errorCode=1010
-        case .storageOperationFailed:
-          errorCode=1011
-        case .serviceError:
-          errorCode=1012
-        case .notImplemented:
-          errorCode=1013
-        @unknown default:
-          errorCode=1099
+      case .internalError(let msg):
+        code = 500
+        message = msg
+      case .unsupportedOperation(let name):
+        code = 501
+        message = "Operation not supported: \(name)"
+      case .serviceError(let c, let msg):
+        code = c
+        message = msg
       }
-
-      // Set error description
-      errorMessage=errorDetails ?? String(describing: error)
+      
+      // If additional details are provided, append them to the error message
+      if let details = errorDetails, !details.isEmpty {
+        message += " (\(details))"
+      }
+      
+      self.errorCode = code
+      self.errorMessage = message
     } else {
-      errorCode=nil
-      errorMessage=errorDetails
+      // Use provided error code and message if no error object
+      self.errorCode = errorCode
+      
+      // Combine provided error message with details if both exist
+      if let message = errorMessage, let details = errorDetails, !details.isEmpty {
+        self.errorMessage = message + " (\(details))"
+      } else {
+        self.errorMessage = errorMessage ?? errorDetails
+      }
     }
   }
 
-  /// Initialize a failure result with error details
-  /// - Parameters:
-  ///   - errorCode: Numeric error code
-  ///   - errorMessage: Human-readable error message
-  public init(errorCode: Int, errorMessage: String) {
-    success=false
-    data=nil
-    self.errorCode=errorCode
-    self.errorMessage=errorMessage
-    error = .internalError("Error code: \(errorCode), Message: \(errorMessage)")
-  }
+  // MARK: - Static Constructors
 
-  // MARK: - Utility Methods
-
-  /// Create a successful result with the given data
-  /// - Parameter data: Result data
+  /// Create a successful result
+  /// - Parameter data: Optional result data
   /// - Returns: A success result DTO
-  public static func success(data: SecureBytes) -> SecurityResultDTO {
-    SecurityResultDTO(data: data)
+  public static func success(withData data: SecureBytes? = nil) -> SecurityResultDTO {
+    if let data = data {
+      return SecurityResultDTO(data: data)
+    } else {
+      return SecurityResultDTO()
+    }
   }
 
-  /// Create a successful result with no data
-  /// - Returns: A success result DTO
-  public static func success() -> SecurityResultDTO {
-    SecurityResultDTO()
-  }
-
-  /// Create a failure result with the given error information
+  /// Create a failure result
   /// - Parameters:
   ///   - code: Error code
   ///   - message: Error message
   /// - Returns: A failure result DTO
-  public static func failure(code: Int, message: String) -> SecurityResultDTO {
-    SecurityResultDTO(errorCode: code, errorMessage: message)
+  public static func failure(
+    code: Int,
+    message: String
+  ) -> SecurityResultDTO {
+    SecurityResultDTO(
+      success: false,
+      errorCode: code,
+      errorMessage: message
+    )
   }
 
-  /// Create a failure result DTO
+  /// Create a failure result from a protocol error
   /// - Parameters:
-  ///   - error: The security error type
-  ///   - details: Optional error details
+  ///   - error: The protocol error
+  ///   - details: Additional details
   /// - Returns: A failure result DTO
   public static func failure(
-    error: UmbraErrors.Security.Protocols,
-    details: String?=nil
+    error: SecurityProtocolError,
+    details: String? = nil
   ) -> SecurityResultDTO {
-    SecurityResultDTO(success: false, error: error, errorDetails: details)
+    SecurityResultDTO(
+      success: false,
+      error: error,
+      errorDetails: details
+    )
   }
 
-  // MARK: - Equatable Conformance
+  // MARK: - Equatable
 
-  /// Compares two SecurityResultDTO instances for equality
-  /// - Parameters:
-  ///   - lhs: Left-hand side instance
-  ///   - rhs: Right-hand side instance
-  /// - Returns: True if the instances are equal, false otherwise
   public static func == (lhs: SecurityResultDTO, rhs: SecurityResultDTO) -> Bool {
     // Compare success status
     guard lhs.success == rhs.success else { return false }
 
     // For successful results, compare data
     if lhs.success {
-      if let lhsData=lhs.data, let rhsData=rhs.data {
+      if let lhsData = lhs.data, let rhsData = rhs.data {
         return lhsData == rhsData
       } else {
-        // If one has data and the other doesn't, they're not equal
+        // If either has data and the other doesn't, they're not equal
         return lhs.data == nil && rhs.data == nil
       }
     } else {
-      // For failure results, compare error codes and messages
-      if lhs.errorCode != rhs.errorCode {
-        return false
-      }
-
-      // Compare error types
-      if let lhsError=lhs.error, let rhsError=rhs.error {
-        // Compare error types by their string representation
-        // This is a simple approach; a more robust solution would compare the enum cases directly
-        return String(describing: lhsError) == String(describing: rhsError)
-      } else {
-        // If one has an error and the other doesn't, they're not equal
-        return lhs.error == nil && rhs.error == nil
-      }
+      // For failure results, compare error information
+      return lhs.errorCode == rhs.errorCode &&
+          lhs.errorMessage == rhs.errorMessage
     }
   }
 }

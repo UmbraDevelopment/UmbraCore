@@ -5,11 +5,11 @@ import UmbraCoreTypes
 import XCTest
 
 final class CryptoServiceTests: XCTestCase {
-  private var cryptoService: CryptoServiceImpl!
+  private var cryptoService: CryptoServiceCore!
 
   override func setUp() {
     super.setUp()
-    cryptoService=CryptoServiceImpl()
+    cryptoService=CryptoServiceCore()
   }
 
   override func tearDown() {

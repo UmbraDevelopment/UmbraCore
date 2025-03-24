@@ -1,12 +1,22 @@
 load("//:swift_rules.bzl", "umbra_swift_library")
 
-umbra_swift_library(
-    name = "SecurityInterfacesDocumentation.docc",
-    srcs = glob(["**/*.swift"], allow_empty = True ),
-    deps = [
-    ], 
+# Using filegroup instead of swift_library for documentation resources
+filegroup(
+    name = "SecurityInterfacesDocumentation",
+    srcs = glob(
+        [
+            "**/*.md",
+            "**/*.png",
+            "**/*.jpg",
+            "**/*.svg",
+            "**/*.json",
+        ],
+        allow_empty = True,
+    ),
+    visibility = ["//visibility:public"],
 )
 
+# Documentation comment preserved for reference
 # Uncomment if documentation generation is needed
 # load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 # load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
@@ -16,6 +26,6 @@ umbra_swift_library(
 #     srcs = glob([
 #         "**/*.swift",
 #         "**/*.docc/**",
-#     ], allow_empty = True ),
-#     deps = ["//Sources/SecurityInterfacesDocumentation.docc"],
+#     ], allow_empty = True),
+#     deps = ["//Sources/SecurityInterfaces"],
 # )

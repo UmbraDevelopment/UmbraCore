@@ -8,8 +8,8 @@ common:
 
 # Swift-specific configuration
 swift:
-  # Use custom umbra_swift_library macro instead of standard swift_library
-  library_rule: "umbra_swift_library"
+  # Use standard swift_library rule from rules_swift instead of custom macro
+  library_rule: "swift_library"
   
   # Source file patterns
   source_extensions:
@@ -30,5 +30,11 @@ swift:
     swift_library:
       copts:
         - "-enable-library-evolution"
+        - "-strict-concurrency=complete"
+      module_name: "%{target}"
       visibility:
         - "//visibility:public"
+    
+    # Configure glob patterns to always include allow_empty=True
+    glob:
+      allow_empty: true

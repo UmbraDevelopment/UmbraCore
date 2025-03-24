@@ -3,10 +3,11 @@ load("//:swift_rules.bzl", "umbra_swift_test")
 umbra_swift_test(
     name = "Tests",
     srcs = glob(
-        ["**/*.swift"], allow_empty = True
+        ["**/*.swift"],
+        allow_empty = True,
     ),
     deps = [
-        "//Tests/UmbraTestKit",
         "//Tests/TestKit",
-    ], 
+        "//Tests/UmbraTestKit",
+    ],
 )

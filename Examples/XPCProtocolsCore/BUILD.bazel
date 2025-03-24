@@ -7,8 +7,11 @@ load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 # Disabled example - use filegroup instead of swift_library
 filegroup(
     name = "XPCProtocolsCoreExample",
-    srcs = glob(["*.swift"], allow_empty = True ),
-    visibility = ["//visibility:public"], 
+    srcs = glob(
+        ["*.swift"],
+        allow_empty = True,
+    ),
+    visibility = ["//visibility:public"],
 )
 
 # Original dependencies that would be needed when re-enabling:

@@ -31,7 +31,7 @@
  of concerns:
 
  * **SecurityProvider**: Facade that coordinates between cryptographic and key management services
- * **CryptoService**: Handles cryptographic operations (encryption, decryption, hashing)
+ * **CryptoServiceCore**: Handles cryptographic operations (encryption, decryption, hashing)
  * **KeyManager**: Manages cryptographic keys (generation, storage, retrieval)
  * **Specialised Components**: Focused implementations for specific functionality
 

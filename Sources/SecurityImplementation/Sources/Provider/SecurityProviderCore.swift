@@ -18,7 +18,7 @@
 
  * ConfigBuilder: Creates and validates security configurations
  * OperationsHandler: Routes operations to the appropriate service
- * CryptoService: Handles cryptographic operations
+ * CryptoServiceCore: Handles cryptographic operations
  * KeyManager: Handles key management operations
 
  ## Security Considerations

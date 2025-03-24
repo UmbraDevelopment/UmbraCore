@@ -63,7 +63,7 @@ public actor SecurityService: UmbraService, SecurityProtocolsCore.SecurityProvid
   public private(set) nonisolated(unsafe) var state: ServiceState = .uninitialized
 
   private let container: ServiceContainer
-  private var _cryptoService: CryptoService?
+  private var _cryptoService: CryptoServiceCore?
   private var accessedPaths: Set<String>
   private var bookmarks: [String: [UInt8]]
   private var keyManagerService: KeyManager?
@@ -99,7 +99,7 @@ public actor SecurityService: UmbraService, SecurityProtocolsCore.SecurityProvid
     _state = .initializing
 
     // Resolve dependencies
-    _cryptoService=try await container.resolve(CryptoService.self)
+    _cryptoService=try await container.resolve(CryptoServiceCore.self)
 
     _state = .ready
     state = .ready

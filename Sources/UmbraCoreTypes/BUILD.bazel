@@ -3,12 +3,13 @@ load("//:swift_rules.bzl", "umbra_swift_library")
 umbra_swift_library(
     name = "UmbraCoreTypes",
     srcs = glob(
-        ["Sources/**/*.swift"], allow_empty = True
+        ["Sources/**/*.swift"],
+        allow_empty = True,
     ),
     visibility = ["//visibility:public"],
     deps = [
         "//Sources/UmbraCoreTypes/CoreErrors:UmbraCoreTypes_CoreErrors",
-    ], 
+    ],
 )
 
 # Uncomment if documentation generation is needed

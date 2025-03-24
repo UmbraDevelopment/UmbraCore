@@ -129,7 +129,7 @@ actor CryptoMockServiceContainer {
   }
 }
 
-/// Mock CryptoService implementation for testing
+/// Mock CryptoServiceCore implementation for testing
 actor CryptoMockCryptoService: ServiceTypes.UmbraService {
   static var serviceIdentifier: String="com.umbracore.crypto.mock"
   nonisolated let identifier: String=serviceIdentifier

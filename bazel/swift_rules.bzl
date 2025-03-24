@@ -16,16 +16,26 @@ def umbra_swift_library(name, srcs = [], deps = [], visibility = None, testonly 
         testonly: Whether this target is for tests only.
         **kwargs: Additional arguments to pass to swift_library.
     """
-    swift_library(
-        name = name,
-        srcs = srcs,
-        deps = deps,
-        visibility = visibility if visibility != None else ["//visibility:public"],
-        testonly = testonly,
-        module_name = name,
-        copts = ["-strict-concurrency=complete"],
-        **kwargs
-    )
+    # Handle empty source files gracefully by creating a placeholder filegroup
+    if not srcs:
+        # Create an empty filegroup as a placeholder when no sources exist
+        native.filegroup(
+            name = name,
+            srcs = [],
+            testonly = testonly,
+            visibility = visibility if visibility != None else ["//visibility:public"],
+        )
+    else:
+        swift_library(
+            name = name,
+            srcs = srcs,
+            deps = deps,
+            visibility = visibility if visibility != None else ["//visibility:public"],
+            testonly = testonly,
+            module_name = name,
+            copts = ["-strict-concurrency=complete"],
+            **kwargs
+        )
 
 def umbra_swift_test(name, srcs = [], deps = [], visibility = None, **kwargs):
     """

@@ -47,11 +47,11 @@ private final class MockSecureStorage: SecureStorageProtocol, Sendable {
 
 final class SecurityProviderTests: XCTestCase {
   private var securityProvider: SecurityProviderImpl!
-  private var cryptoService: CryptoServiceImpl!
+  private var cryptoService: CryptoServiceCore!
 
   override func setUp() {
     super.setUp()
-    cryptoService=CryptoServiceImpl()
+    cryptoService=CryptoServiceCore()
     securityProvider=SecurityProviderImpl(
       cryptoService: cryptoService,
       keyManager: KeyManagementImpl(secureStorage: MockSecureStorage())

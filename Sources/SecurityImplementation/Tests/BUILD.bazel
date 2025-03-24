@@ -2,9 +2,12 @@ load("//:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
     name = "SecurityImplementationTests",
-    srcs = glob(["**/*.swift"], allow_empty = True ),
+    srcs = glob(
+        ["**/*.swift"],
+        allow_empty = True,
+    ),
     deps = [
-    ], 
+    ],
 )
 
 # Uncomment if documentation generation is needed
@@ -16,6 +19,6 @@ umbra_swift_library(
 #     srcs = glob([
 #         "**/*.swift",
 #         "**/*.docc/**",
-#     ], allow_empty = True ),
+#     ] , allow_empty = True),
 #     deps = ["//Sources/SecurityImplementationTests"],
 # )

@@ -2,7 +2,7 @@ import CoreErrors
 import CryptoTypesProtocols
 import Foundation
 
-/// Mock implementation of CryptoService for testing
+/// Mock implementation of CryptoServiceCore for testing
 @objc
 public final class MockCryptoService: NSObject, @unchecked Sendable, CryptoServiceProtocol {
   private let keysLock=NSLock()

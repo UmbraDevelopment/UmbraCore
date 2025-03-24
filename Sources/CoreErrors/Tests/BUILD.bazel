@@ -2,12 +2,15 @@ load("//:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
     name = "CoreErrorsTests",
-    srcs = glob(["**/*.swift"], allow_empty = True ),
+    srcs = glob(
+        ["**/*.swift"],
+        allow_empty = True,
+    ),
     deps = [
         "//Sources/CoreErrors",  # Add direct dependency on CoreErrors
         "//Sources/UmbraErrors/Domains:UmbraErrorsDomains",  # Add specific dependency to avoid circular reference
         "//Sources/ErrorHandlingInterfaces",  # Add interfaces dependency
-    ], 
+    ],
 )
 
 # Uncomment if documentation generation is needed
@@ -19,6 +22,6 @@ umbra_swift_library(
 #     srcs = glob([
 #         "**/*.swift",
 #         "**/*.docc/**",
-#     ], allow_empty = True ),
+#     ] , allow_empty = True),
 #     deps = ["//Sources/CoreErrorsTests"],
 # )

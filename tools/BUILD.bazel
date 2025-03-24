@@ -6,19 +6,19 @@ package(default_visibility = ["//visibility:public"])
 # Target to generate the SecureString module
 umbracore_gen_module(
     name = "gen_secure_string",
-    module_name = "SecureString"
+    module_name = "SecureString",
 )
 
 # Target to generate the URLPath module
 umbracore_gen_module(
     name = "gen_url_path",
-    module_name = "URLPath"
+    module_name = "URLPath",
 )
 
 # Target to generate a TimeTypes module
 umbracore_gen_module(
     name = "gen_time_types",
-    module_name = "TimeTypes"
+    module_name = "TimeTypes",
 )
 
 # Code Quality Manager tool
@@ -27,5 +27,5 @@ py_binary(
     srcs = ["code_quality_manager.py"],
     main = "code_quality_manager.py",
     python_version = "PY3",
-    deps = []
+    deps = [],
 )

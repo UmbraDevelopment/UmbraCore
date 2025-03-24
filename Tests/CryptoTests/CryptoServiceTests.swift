@@ -3,12 +3,12 @@
 import XCTest
 
 final class CryptoServiceTests: XCTestCase {
-  var cryptoService: CryptoService!
+  var cryptoService: CryptoServiceCore!
   var config: CryptoConfiguration!
 
   override func setUp() async throws {
     config = .default
-    cryptoService=CryptoService(config: config)
+    cryptoService=CryptoServiceCore(config: config)
   }
 
   func testEncryptionDecryption() async throws {

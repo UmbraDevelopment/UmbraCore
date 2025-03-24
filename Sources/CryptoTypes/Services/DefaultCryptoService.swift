@@ -11,7 +11,7 @@ import ErrorHandlingDomains
 import Foundation
 import UmbraCoreTypes
 
-/// Default implementation of CryptoService
+/// Default implementation of CryptoServiceCore
 /// This implementation will be replaced by functionality in ResticBar
 /// Note: This implementation is specifically for the main app context and should not
 /// be used directly in XPC services. For XPC cryptographic operations, use CryptoXPCService.
