@@ -7,19 +7,19 @@ import XCTest
 final class CoreErrorTests: XCTestCase {
   func testCoreErrorDescriptions() {
     // Test authentication failed error
-    let authError = CoreError.authenticationFailed
+    let authError=CoreError.authenticationFailed
     XCTAssertEqual(authError.errorDescription, "Authentication failed")
 
     // Test insufficient permissions error
-    let permError = CoreError.insufficientPermissions
+    let permError=CoreError.insufficientPermissions
     XCTAssertEqual(permError.errorDescription, "Insufficient permissions to perform the operation")
 
     // Test invalid configuration error
-    let configError = CoreError.invalidConfiguration("Missing API key")
+    let configError=CoreError.invalidConfiguration("Missing API key")
     XCTAssertEqual(configError.errorDescription, "Invalid configuration: Missing API key")
 
     // Test system error
-    let sysError = CoreError.systemError("Process terminated unexpectedly")
+    let sysError=CoreError.systemError("Process terminated unexpectedly")
     XCTAssertEqual(sysError.errorDescription, "System error: Process terminated unexpectedly")
   }
 
@@ -39,15 +39,15 @@ final class CoreErrorTests: XCTestCase {
 
 // Example service error for testing
 struct TestServiceError: ServiceErrorProtocol {
-  let serviceName: String = "TestService"
-  let operation: String = "testOperation"
-  let details: String? = "Test details"
-  let underlyingError: Error? = nil
+  let serviceName: String="TestService"
+  let operation: String="testOperation"
+  let details: String?="Test details"
+  let underlyingError: Error?=nil
   let errorType: ServiceErrorType
   let contextInfo: [String: String]
   let message: String
   var severity: ErrorSeverity = .error
-  var isRecoverable: Bool = false
+  var isRecoverable: Bool=false
   var recoverySteps: [String]?
   var errorContext: ErrorHandlingModels.ErrorContext?
 
@@ -70,7 +70,7 @@ struct TestServiceError: ServiceErrorProtocol {
 
 final class ServiceErrorTests: XCTestCase {
   func testServiceErrorType() {
-    let error = TestServiceError(
+    let error=TestServiceError(
       errorType: ServiceErrorType.configuration,
       contextInfo: ["key": "value"],
       message: "Test error"
@@ -81,7 +81,7 @@ final class ServiceErrorTests: XCTestCase {
     XCTAssertEqual(error.category, "Configuration")
     XCTAssertEqual(error.description, "[ERROR] Configuration Error: Test error")
 
-    let dict = error.toDictionary()
+    let dict=error.toDictionary()
     XCTAssertEqual(dict["type"] as? String, "TestServiceError")
     XCTAssertEqual(dict["error_type"] as? String, "Configuration")
     XCTAssertEqual(dict["description"] as? String, "Test error")

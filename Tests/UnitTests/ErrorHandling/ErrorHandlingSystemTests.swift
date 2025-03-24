@@ -31,9 +31,9 @@ final class ErrorHandlingSystemTests: XCTestCase {
   }
 
   private class MockNotificationHandler: ErrorNotificationHandler {
-    var presentedNotifications: [ErrorNotification] = []
-    var dismissedIDs: [UUID] = []
-    var dismissedAll = false
+    var presentedNotifications: [ErrorNotification]=[]
+    var dismissedIDs: [UUID]=[]
+    var dismissedAll=false
 
     func present(notification: ErrorNotification) {
       presentedNotifications.append(notification)
@@ -44,13 +44,13 @@ final class ErrorHandlingSystemTests: XCTestCase {
     }
 
     func dismissAll() {
-      dismissedAll = true
+      dismissedAll=true
     }
   }
 
   private class MockRecoveryProvider: RecoveryOptionsProvider {
-    var shouldProvideOptions = true
-    var optionsToReturn: [ErrorHandlingProtocols.RecoveryOption] = [
+    var shouldProvideOptions=true
+    var optionsToReturn: [ErrorHandlingProtocols.RecoveryOption]=[
       RecoveryOption.retry,
       RecoveryOption.cancel
     ]
@@ -65,7 +65,7 @@ final class ErrorHandlingSystemTests: XCTestCase {
   }
 
   private class MockLogger: ErrorLoggingService {
-    var loggedErrors: [(error: Error, level: ErrorSeverity)] = []
+    var loggedErrors: [(error: Error, level: ErrorSeverity)]=[]
 
     func log(_ error: Error, withSeverity severity: ErrorSeverity) {
       loggedErrors.append((error, severity))
@@ -90,12 +90,12 @@ final class ErrorHandlingSystemTests: XCTestCase {
 
     // Create a fresh ErrorHandler instance for each test
     ErrorHandler.resetSharedInstance()
-    errorHandler = ErrorHandler.shared
+    errorHandler=ErrorHandler.shared
 
     // Set up mocks
-    mockNotificationHandler = MockNotificationHandler()
-    mockRecoveryProvider = MockRecoveryProvider()
-    mockLogger = MockLogger()
+    mockNotificationHandler=MockNotificationHandler()
+    mockRecoveryProvider=MockRecoveryProvider()
+    mockLogger=MockLogger()
 
     // Configure the error handler with mocks
     errorHandler.setNotificationHandler(mockNotificationHandler)
@@ -104,10 +104,10 @@ final class ErrorHandlingSystemTests: XCTestCase {
   }
 
   override func tearDown() {
-    errorHandler = nil
-    mockNotificationHandler = nil
-    mockRecoveryProvider = nil
-    mockLogger = nil
+    errorHandler=nil
+    mockNotificationHandler=nil
+    mockRecoveryProvider=nil
+    mockLogger=nil
 
     super.tearDown()
   }
@@ -116,7 +116,7 @@ final class ErrorHandlingSystemTests: XCTestCase {
 
   func testBasicErrorHandling() {
     // Given
-    let error = SecurityError.authenticationFailed("Invalid credentials")
+    let error=SecurityError.authenticationFailed("Invalid credentials")
 
     // When
     errorHandler.handle(error, severity: .high)
@@ -126,16 +126,16 @@ final class ErrorHandlingSystemTests: XCTestCase {
     XCTAssertEqual(mockLogger.loggedErrors[0].level, .high)
 
     XCTAssertEqual(mockNotificationHandler.presentedNotifications.count, 1)
-    let notification = mockNotificationHandler.presentedNotifications[0]
+    let notification=mockNotificationHandler.presentedNotifications[0]
     XCTAssertEqual(notification.severity, .high)
     XCTAssertTrue(notification.message.contains("Invalid credentials"))
   }
 
   func testErrorWithRecoveryOptions() {
     // Given
-    let error = SecurityError.authenticationFailed("Invalid credentials")
-    let recoveryOptions: [RecoveryOption] = [.retry, .cancel]
-    mockRecoveryProvider.optionsToReturn = recoveryOptions
+    let error=SecurityError.authenticationFailed("Invalid credentials")
+    let recoveryOptions: [RecoveryOption]=[.retry, .cancel]
+    mockRecoveryProvider.optionsToReturn=recoveryOptions
 
     // When
     errorHandler.handle(error, severity: .high)
@@ -144,22 +144,22 @@ final class ErrorHandlingSystemTests: XCTestCase {
     XCTAssertEqual(mockRecoveryProvider.requestedErrors.count, 1)
     XCTAssertEqual(mockNotificationHandler.presentedNotifications.count, 1)
 
-    let notification = mockNotificationHandler.presentedNotifications[0]
+    let notification=mockNotificationHandler.presentedNotifications[0]
     XCTAssertNotNil(notification.recoveryOptions)
     XCTAssertEqual(notification.recoveryOptions?.count, 2)
   }
 
   func testErrorMapping() {
     // Given
-    let externalError = NSError(
+    let externalError=NSError(
       domain: "UmbraErrors.Security.Protocols",
       code: 401,
       userInfo: [NSLocalizedDescriptionKey: "Authentication failed: Token expired"]
     )
 
     // When
-    let securityErrorMapper = LegacySecurityErrorMapper()
-    let mappedError = securityErrorMapper.mapFromAny(externalError)
+    let securityErrorMapper=LegacySecurityErrorMapper()
+    let mappedError=securityErrorMapper.mapFromAny(externalError)
 
     // Then
     XCTAssertNotNil(mappedError)
@@ -176,7 +176,7 @@ final class ErrorHandlingSystemTests: XCTestCase {
 
   func testGenericUmbraErrorCreation() {
     // Given
-    let error = GenericUmbraError(
+    let error=GenericUmbraError(
       domain: "TestDomain",
       code: "test_error",
       description: "Test error description",
@@ -200,11 +200,11 @@ final class ErrorHandlingSystemTests: XCTestCase {
 
   func testSecurityErrorHandlerWithMixedErrors() async {
     // Given
-    let securityHandler = SecurityErrorHandler.shared
-    securityHandler.errorHandler = errorHandler
+    let securityHandler=SecurityErrorHandler.shared
+    securityHandler.errorHandler=errorHandler
 
     // When - Handle our direct SecurityError
-    let ourError = SecurityError.permissionDenied("Insufficient privileges")
+    let ourError=SecurityError.permissionDenied("Insufficient privileges")
     await securityHandler.handleSecurityError(ourError)
 
     // Then
@@ -212,10 +212,10 @@ final class ErrorHandlingSystemTests: XCTestCase {
     XCTAssertEqual(mockNotificationHandler.presentedNotifications.count, 1)
 
     // When - Handle external error
-    mockLogger.loggedErrors = []
-    mockNotificationHandler.presentedNotifications = []
+    mockLogger.loggedErrors=[]
+    mockNotificationHandler.presentedNotifications=[]
 
-    let externalError = NSError(
+    let externalError=NSError(
       domain: "SecurityTypes.SecurityError",
       code: 403,
       userInfo: [NSLocalizedDescriptionKey: "Authorization failed: Access denied to resource"]
@@ -232,10 +232,10 @@ final class ErrorHandlingSystemTests: XCTestCase {
 extension ErrorHandler {
   static func resetSharedInstance() {
     // This is a testing utility to reset the shared instance
-    _shared = ErrorHandler()
+    _shared=ErrorHandler()
   }
 
   func setLogger(_ logger: ErrorLoggingService) {
-    self.logger = logger
+    self.logger=logger
   }
 }

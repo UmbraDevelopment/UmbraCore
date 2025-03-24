@@ -13,7 +13,7 @@ final class MockCryptoXPCServiceDependencies: CryptoXPCServiceDependencies {
   public let keychain: UmbraKeychainService
 
   init() {
-    securityUtils = SecurityUtils.shared
-    keychain = UmbraKeychainService(identifier: "com.umbra.test.keychain")
+    securityUtils=SecurityUtils.shared
+    keychain=UmbraKeychainService(identifier: "com.umbra.test.keychain")
   }
 }

@@ -18,10 +18,10 @@ final class BackupCommandTests: XCTestCase {
    */
   func testBackupCommandArguments() {
     // Given
-    let options = CommonOptions(repository: "/test/repo", password: "test")
+    let options=CommonOptions(repository: "/test/repo", password: "test")
 
     // When
-    let command = BackupCommand(
+    let command=BackupCommand(
       paths: ["/path/one"],
       excludes: ["*.tmp"],
       tags: ["daily", "test"],
@@ -30,7 +30,7 @@ final class BackupCommandTests: XCTestCase {
     .withProgress()
 
     // Then
-    let args = command.commandArguments
+    let args=command.commandArguments
     XCTAssertTrue(args.contains("/path/one"), "Command should include the backup path")
     XCTAssertTrue(args.contains("--tag"), "Command should include the tag flag")
     XCTAssertTrue(args.contains("daily"), "Command should include the tag value")
@@ -45,15 +45,15 @@ final class BackupCommandTests: XCTestCase {
    */
   func testBackupCommandEnvironment() {
     // Given
-    let options = CommonOptions(
+    let options=CommonOptions(
       repository: "/test/repo",
       password: "testpassword",
       cachePath: "/test/cache"
     )
 
     // When
-    let command = BackupCommand(paths: ["/path/one"], options: options)
-    let env = command.environment
+    let command=BackupCommand(paths: ["/path/one"], options: options)
+    let env=command.environment
 
     // Then
     XCTAssertEqual(
@@ -74,10 +74,10 @@ final class BackupCommandTests: XCTestCase {
    */
   func testBackupCommandFluentInterface() {
     // Given
-    let options = CommonOptions(repository: "/test/repo", password: "test")
+    let options=CommonOptions(repository: "/test/repo", password: "test")
 
     // When
-    let command = BackupCommand(paths: [], options: options)
+    let command=BackupCommand(paths: [], options: options)
       .addPath("/path/one")
       .addPath("/path/two")
       .tag("daily")
@@ -87,7 +87,7 @@ final class BackupCommandTests: XCTestCase {
       .withProgress()
 
     // Then
-    let args = command.commandArguments
+    let args=command.commandArguments
     XCTAssertTrue(args.contains("/path/one"), "Should contain first added path")
     XCTAssertTrue(args.contains("/path/two"), "Should contain second added path")
     XCTAssertTrue(args.contains("daily"), "Should contain first tag")
@@ -101,12 +101,12 @@ final class BackupCommandTests: XCTestCase {
    */
   func testBackupCommandValidationWithValidInputs() throws {
     // Create a temporary file for testing
-    let tempDirectory = FileManager.default.temporaryDirectory.path
-    let tempFilePath = "\(tempDirectory)/test-backup-file.txt"
+    let tempDirectory=FileManager.default.temporaryDirectory.path
+    let tempFilePath="\(tempDirectory)/test-backup-file.txt"
     try "Test content".write(toFile: tempFilePath, atomically: true, encoding: .utf8)
 
     // Given
-    let validCommand = BackupCommand(
+    let validCommand=BackupCommand(
       paths: [tempFilePath],
       tags: ["valid-tag"],
       options: CommonOptions(repository: "/test/repo", password: "test")
@@ -124,7 +124,7 @@ final class BackupCommandTests: XCTestCase {
    */
   func testBackupCommandValidationWithEmptyPaths() {
     // Given
-    let emptyPathsCommand = BackupCommand(
+    let emptyPathsCommand=BackupCommand(
       paths: [],
       options: CommonOptions(repository: "/test/repo", password: "test")
     )
@@ -132,7 +132,7 @@ final class BackupCommandTests: XCTestCase {
     // Then
     XCTAssertThrowsError(try emptyPathsCommand.validate()) { error in
       XCTAssertTrue(error is ResticTypes.ResticError, "Should throw ResticError")
-      guard let resticError = error as? ResticTypes.ResticError else {
+      guard let resticError=error as? ResticTypes.ResticError else {
         XCTFail("Expected ResticError")
         return
       }
@@ -149,7 +149,7 @@ final class BackupCommandTests: XCTestCase {
    */
   func testBackupCommandValidationWithInvalidRepository() {
     // Given
-    let invalidRepoCommand = BackupCommand(
+    let invalidRepoCommand=BackupCommand(
       paths: ["/some/path"],
       options: CommonOptions(repository: "", password: "test")
     )
@@ -157,7 +157,7 @@ final class BackupCommandTests: XCTestCase {
     // Then
     XCTAssertThrowsError(try invalidRepoCommand.validate()) { error in
       XCTAssertTrue(error is ResticTypes.ResticError, "Should throw ResticError")
-      guard let resticError = error as? ResticTypes.ResticError else {
+      guard let resticError=error as? ResticTypes.ResticError else {
         XCTFail("Expected ResticError")
         return
       }
@@ -174,8 +174,8 @@ final class BackupCommandTests: XCTestCase {
    */
   func testBackupCommandValidationWithInvalidTag() {
     // Create a temporary file for testing
-    let tempDirectory = FileManager.default.temporaryDirectory.path
-    let tempFilePath = "\(tempDirectory)/test-backup-file.txt"
+    let tempDirectory=FileManager.default.temporaryDirectory.path
+    let tempFilePath="\(tempDirectory)/test-backup-file.txt"
     do {
       try "Test content".write(toFile: tempFilePath, atomically: true, encoding: .utf8)
     } catch {
@@ -184,7 +184,7 @@ final class BackupCommandTests: XCTestCase {
     }
 
     // Given - A tag with invalid characters (spaces are not allowed)
-    let invalidTagCommand = BackupCommand(
+    let invalidTagCommand=BackupCommand(
       paths: [tempFilePath],
       tags: ["invalid tag with spaces"],
       options: CommonOptions(repository: "/test/repo", password: "test")
@@ -193,7 +193,7 @@ final class BackupCommandTests: XCTestCase {
     // Then - This should throw an error since tag validation is implemented
     XCTAssertThrowsError(try invalidTagCommand.validate()) { error in
       XCTAssertTrue(error is ResticTypes.ResticError, "Should throw ResticError")
-      guard let resticError = error as? ResticTypes.ResticError else {
+      guard let resticError=error as? ResticTypes.ResticError else {
         XCTFail("Expected ResticError")
         return
       }

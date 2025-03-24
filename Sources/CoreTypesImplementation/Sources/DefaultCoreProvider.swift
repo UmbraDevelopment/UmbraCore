@@ -1,5 +1,8 @@
-import CoreErrors
 import CoreTypesInterfaces
+import ErrorHandlingCore
+import ErrorHandlingDomains
+import ErrorHandlingInterfaces
+import ErrorHandlingMapping
 import UmbraCoreTypes
 
 /// Default implementation of the CoreProvider protocol
@@ -24,7 +27,7 @@ public final class DefaultCoreProvider: CoreProvider {
   }
 
   /// Reset the provider to its initial state
-  /// - Returns: Result indicating success or failure with error
+  /// - Returns: Result indicating success or failure with an error
   public func reset() async -> SecurityResult<Void> {
     // Default implementation has no state to reset
     .success(())
@@ -49,25 +52,19 @@ public final class ConfigurableCoreProvider: CoreProvider {
   private let configuration: ProviderConfiguration
 
   /// Create a new configurable provider
-  /// - Parameter configuration: Provider configuration
+  /// - Parameter configuration: Provider configuration options
   public init(configuration: ProviderConfiguration) {
     self.configuration=configuration
   }
 
   /// The unique identifier for this provider
-  public var providerID: String {
-    configuration.providerID
-  }
+  public var providerID: String { configuration.providerID }
 
   /// A human-readable name for this provider
-  public var providerName: String {
-    configuration.providerName
-  }
+  public var providerName: String { configuration.providerName }
 
   /// The version of this provider
-  public var providerVersion: String {
-    configuration.providerVersion
-  }
+  public var providerVersion: String { configuration.providerVersion }
 
   /// Check if this provider is available and ready to use
   /// - Returns: True if the provider is available and ready
@@ -77,7 +74,7 @@ public final class ConfigurableCoreProvider: CoreProvider {
   }
 
   /// Reset the provider to its initial state
-  /// - Returns: Result indicating success or failure with error
+  /// - Returns: Result indicating success or failure with an error
   public func reset() async -> SecurityResult<Void> {
     // Configurable implementation has no state to reset
     .success(())

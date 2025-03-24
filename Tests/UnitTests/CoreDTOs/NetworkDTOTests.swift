@@ -8,7 +8,7 @@ final class NetworkDTOTests: XCTestCase {
 
   func testNetworkRequestDTOInitialization() {
     // Arrange & Act
-    let request = NetworkRequestDTO(
+    let request=NetworkRequestDTO(
       requestID: "req-123",
       url: "https://api.example.com/test",
       httpMethod: "POST",
@@ -34,7 +34,7 @@ final class NetworkDTOTests: XCTestCase {
 
   func testNetworkRequestDTOFactoryMethods() {
     // Test GET request
-    let getRequest = NetworkRequestDTO.get(
+    let getRequest=NetworkRequestDTO.get(
       url: "https://api.example.com/users",
       queryParameters: ["page": "1", "limit": "10"]
     )
@@ -46,8 +46,8 @@ final class NetworkDTOTests: XCTestCase {
     XCTAssertTrue(getRequest.bodyData.isEmpty)
 
     // Test POST request
-    let postBody: [UInt8] = Array("test data".utf8)
-    let postRequest = NetworkRequestDTO.post(
+    let postBody: [UInt8]=Array("test data".utf8)
+    let postRequest=NetworkRequestDTO.post(
       url: "https://api.example.com/users",
       body: postBody,
       contentType: "text/plain"
@@ -59,8 +59,8 @@ final class NetworkDTOTests: XCTestCase {
     XCTAssertEqual(postRequest.headers["Content-Type"], "text/plain")
 
     // Test PUT request
-    let putBody: [UInt8] = Array("{\"id\":1}".utf8)
-    let putRequest = NetworkRequestDTO.put(
+    let putBody: [UInt8]=Array("{\"id\":1}".utf8)
+    let putRequest=NetworkRequestDTO.put(
       url: "https://api.example.com/users/1",
       body: putBody
     )
@@ -71,7 +71,7 @@ final class NetworkDTOTests: XCTestCase {
     XCTAssertEqual(putRequest.headers["Content-Type"], "application/json")
 
     // Test DELETE request
-    let deleteRequest = NetworkRequestDTO.delete(
+    let deleteRequest=NetworkRequestDTO.delete(
       url: "https://api.example.com/users/1"
     )
 
@@ -82,7 +82,7 @@ final class NetworkDTOTests: XCTestCase {
 
   func testNetworkRequestDTOConversionToURLRequest() {
     // Arrange
-    let dto = NetworkRequestDTO(
+    let dto=NetworkRequestDTO(
       requestID: "req-123",
       url: "https://api.example.com/test?existing=param",
       httpMethod: "POST",
@@ -98,7 +98,7 @@ final class NetworkDTOTests: XCTestCase {
     )
 
     // Act
-    guard let urlRequest = dto.toURLRequest() else {
+    guard let urlRequest=dto.toURLRequest() else {
       XCTFail("Failed to convert to URLRequest")
       return
     }
@@ -119,15 +119,15 @@ final class NetworkDTOTests: XCTestCase {
 
   func testNetworkRequestDTOConversionFromURLRequest() {
     // Arrange
-    var urlRequest = URLRequest(url: URL(string: "https://api.example.com/test?param=value")!)
-    urlRequest.httpMethod = "POST"
+    var urlRequest=URLRequest(url: URL(string: "https://api.example.com/test?param=value")!)
+    urlRequest.httpMethod="POST"
     urlRequest.addValue("application/json", forHTTPHeaderField: "Content-Type")
     urlRequest.addValue("application/json", forHTTPHeaderField: "Accept")
-    urlRequest.httpBody = Data(Array("{\"key\":\"value\"}".utf8))
-    urlRequest.timeoutInterval = 30
+    urlRequest.httpBody=Data(Array("{\"key\":\"value\"}".utf8))
+    urlRequest.timeoutInterval=30
 
     // Act
-    let dto = NetworkRequestDTO.fromURLRequest(urlRequest)
+    let dto=NetworkRequestDTO.fromURLRequest(urlRequest)
 
     // Assert
     XCTAssertEqual(dto.url, "https://api.example.com/test?param=value")
@@ -143,7 +143,7 @@ final class NetworkDTOTests: XCTestCase {
 
   func testNetworkResponseDTOInitialization() {
     // Arrange & Act
-    let response = NetworkResponseDTO(
+    let response=NetworkResponseDTO(
       requestID: "req-123",
       statusCode: 200,
       statusMessage: "OK",
@@ -173,7 +173,7 @@ final class NetworkDTOTests: XCTestCase {
 
   func testNetworkResponseDTOFactoryMethods() {
     // Test success response
-    let successResponse = NetworkResponseDTO.success(
+    let successResponse=NetworkResponseDTO.success(
       requestID: "req-123",
       bodyData: [1, 2, 3, 4, 5],
       headers: ["Content-Type": "application/json"],
@@ -193,7 +193,7 @@ final class NetworkDTOTests: XCTestCase {
     XCTAssertFalse(successResponse.isError)
 
     // Test error response
-    let errorResponse = NetworkResponseDTO.error(
+    let errorResponse=NetworkResponseDTO.error(
       requestID: "req-123",
       statusCode: 404,
       statusMessage: "Not Found",
@@ -214,7 +214,7 @@ final class NetworkDTOTests: XCTestCase {
     XCTAssertTrue(errorResponse.isError)
 
     // Test network failure response
-    let networkFailure = NetworkResponseDTO.networkFailure(
+    let networkFailure=NetworkResponseDTO.networkFailure(
       requestID: "req-123",
       errorMessage: "Connection timeout",
       duration: 1.5,
@@ -235,7 +235,7 @@ final class NetworkDTOTests: XCTestCase {
 
   func testNetworkResponseDTOComputedProperties() {
     // Success response
-    let successResponse = NetworkResponseDTO.success(
+    let successResponse=NetworkResponseDTO.success(
       requestID: "req-123",
       bodyData: [1, 2, 3, 4, 5],
       timestamp: 1_625_000_000
@@ -248,7 +248,7 @@ final class NetworkDTOTests: XCTestCase {
     XCTAssertEqual(successResponse.bodySize, 5)
 
     // Client error response
-    let clientErrorResponse = NetworkResponseDTO.error(
+    let clientErrorResponse=NetworkResponseDTO.error(
       requestID: "req-123",
       statusCode: 400,
       statusMessage: "Bad Request",
@@ -262,7 +262,7 @@ final class NetworkDTOTests: XCTestCase {
     XCTAssertEqual(clientErrorResponse.bodySize, 0)
 
     // Server error response
-    let serverErrorResponse = NetworkResponseDTO.error(
+    let serverErrorResponse=NetworkResponseDTO.error(
       requestID: "req-123",
       statusCode: 500,
       statusMessage: "Internal Server Error",
@@ -277,7 +277,7 @@ final class NetworkDTOTests: XCTestCase {
 
   func testNetworkResponseDTOUtilityMethods() {
     // Test bodyAsUTF8String
-    let jsonResponse = NetworkResponseDTO.success(
+    let jsonResponse=NetworkResponseDTO.success(
       requestID: "req-123",
       bodyData: Array("{\"key\":\"value\"}".utf8),
       timestamp: 1_625_000_000
@@ -286,7 +286,7 @@ final class NetworkDTOTests: XCTestCase {
     XCTAssertEqual(jsonResponse.bodyAsUTF8String(), "{\"key\":\"value\"}")
 
     // Test getHeader (case-insensitive)
-    let headerResponse = NetworkResponseDTO.success(
+    let headerResponse=NetworkResponseDTO.success(
       requestID: "req-123",
       bodyData: [],
       headers: ["Content-Type": "application/json", "X-Custom-Header": "test"],
@@ -299,14 +299,14 @@ final class NetworkDTOTests: XCTestCase {
     XCTAssertNil(headerResponse.getHeader("non-existent"))
 
     // Test withUpdatedMetadata
-    let originalResponse = NetworkResponseDTO.success(
+    let originalResponse=NetworkResponseDTO.success(
       requestID: "req-123",
       bodyData: [],
       timestamp: 1_625_000_000,
       metadata: ["original": "value"]
     )
 
-    let updatedResponse = originalResponse.withUpdatedMetadata([
+    let updatedResponse=originalResponse.withUpdatedMetadata([
       "new": "value",
       "original": "updated"
     ])
@@ -317,20 +317,20 @@ final class NetworkDTOTests: XCTestCase {
 
   func testNetworkResponseDTOConversion() {
     // Arrange
-    let url = URL(string: "https://api.example.com/test")!
-    let urlRequest = URLRequest(url: url)
+    let url=URL(string: "https://api.example.com/test")!
+    let urlRequest=URLRequest(url: url)
 
-    let httpResponse = HTTPURLResponse(
+    let httpResponse=HTTPURLResponse(
       url: url,
       statusCode: 200,
       httpVersion: "HTTP/1.1",
       headerFields: ["Content-Type": "application/json"]
     )!
 
-    let responseData = Data(Array("{\"key\":\"value\"}".utf8))
+    let responseData=Data(Array("{\"key\":\"value\"}".utf8))
 
     // Act
-    let dto = NetworkResponseDTO.fromHTTPURLResponse(
+    let dto=NetworkResponseDTO.fromHTTPURLResponse(
       httpResponse,
       data: responseData,
       requestID: "req-123",
@@ -350,11 +350,11 @@ final class NetworkDTOTests: XCTestCase {
     XCTAssertFalse(dto.isFromCache)
 
     // Convert back to Data
-    let bodyData = dto.bodyAsData()
+    let bodyData=dto.bodyAsData()
     XCTAssertEqual(bodyData, responseData)
 
     // Convert to HTTPURLResponse
-    let convertedResponse = dto.toHTTPURLResponse(for: urlRequest)
+    let convertedResponse=dto.toHTTPURLResponse(for: urlRequest)
     XCTAssertNotNil(convertedResponse)
     XCTAssertEqual(convertedResponse?.statusCode, 200)
     XCTAssertEqual(

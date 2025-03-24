@@ -9,13 +9,13 @@ import XCTest
 
 /// A mock security provider for testing
 actor TestMockSecurityProvider: SecurityProtocolsCore.SecurityProviderProtocol {
-  private var bookmarks: [String: Data] = [:]
-  private var accessCount: [String: Int] = [:]
-  private var mockedResults: [String: Bool] = [:]
+  private var bookmarks: [String: Data]=[:]
+  private var accessCount: [String: Int]=[:]
+  private var mockedResults: [String: Bool]=[:]
   private var lastAccessedFile: String?
 
-  public nonisolated let cryptoService: CryptoServiceProtocol = MockSecurityCryptoService()
-  public nonisolated let keyManager: KeyManagementProtocol = MockKeyManagementService()
+  public nonisolated let cryptoService: CryptoServiceProtocol=MockSecurityCryptoService()
+  public nonisolated let keyManager: KeyManagementProtocol=MockKeyManagementService()
 
   init() {
     // Default initialization
@@ -25,7 +25,7 @@ actor TestMockSecurityProvider: SecurityProtocolsCore.SecurityProviderProtocol {
 
   /// Set a mocked result for a specific operation
   func setMockedResult(forOperation operation: String, result: Bool) {
-    mockedResults[operation] = result
+    mockedResults[operation]=result
   }
 
   /// Get the last accessed file path
@@ -49,8 +49,8 @@ actor TestMockSecurityProvider: SecurityProtocolsCore.SecurityProviderProtocol {
       )
     }
 
-    let bookmark = "test-bookmark-\(path)".data(using: .utf8)!
-    bookmarks[path] = bookmark
+    let bookmark="test-bookmark-\(path)".data(using: .utf8)!
+    bookmarks[path]=bookmark
     return .success(UmbraCoreTypes.SecureBytes(bytes: [UInt8](bookmark)))
   }
 
@@ -58,9 +58,9 @@ actor TestMockSecurityProvider: SecurityProtocolsCore.SecurityProviderProtocol {
     path: String,
     isStale: Bool
   ), ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
-    let bytes = Array(bookmarkData)
-    let data = Data(bytes)
-    let bookmarkString = String(data: data, encoding: .utf8) ?? ""
+    let bytes=Array(bookmarkData)
+    let data=Data(bytes)
+    let bookmarkString=String(data: data, encoding: .utf8) ?? ""
 
     guard bookmarkString.hasPrefix("test-bookmark-") else {
       return .failure(
@@ -69,7 +69,7 @@ actor TestMockSecurityProvider: SecurityProtocolsCore.SecurityProviderProtocol {
       )
     }
 
-    let path = String(bookmarkString.dropFirst("test-bookmark-".count))
+    let path=String(bookmarkString.dropFirst("test-bookmark-".count))
 
     guard bookmarks[path] == data else {
       return .failure(
@@ -83,10 +83,10 @@ actor TestMockSecurityProvider: SecurityProtocolsCore.SecurityProviderProtocol {
 
   func startAccessing(path: String) async
   -> Result<Bool, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
-    lastAccessedFile = path
-    accessCount[path] = (accessCount[path] ?? 0) + 1
+    lastAccessedFile=path
+    accessCount[path]=(accessCount[path] ?? 0) + 1
 
-    if let mockedResult = mockedResults["startAccessing-\(path)"] {
+    if let mockedResult=mockedResults["startAccessing-\(path)"] {
       return mockedResult ? .success(true) :
         .failure(
           ErrorHandlingDomains.UmbraErrors.Security.Protocols
@@ -99,7 +99,7 @@ actor TestMockSecurityProvider: SecurityProtocolsCore.SecurityProviderProtocol {
 
   func stopAccessing(path: String) async {
     // No need to return anything, just update internal state
-    accessCount[path] = (accessCount[path] ?? 0) - 1
+    accessCount[path]=(accessCount[path] ?? 0) - 1
     if accessCount[path] == 0 {
       accessCount.removeValue(forKey: path)
     }
@@ -234,9 +234,10 @@ actor TestMockSecurityProvider: SecurityProtocolsCore.SecurityProviderProtocol {
     -> Result<
       SecurityProtocolsCore.SecurityResult,
       ErrorHandlingDomains.UmbraErrors.Security.Protocols
-    > {
+    >
+  {
     // Simply create a successful result
-    let result = SecurityProtocolsCore.SecurityResult(success: true)
+    let result=SecurityProtocolsCore.SecurityResult(success: true)
     return .success(result)
   }
 
@@ -248,9 +249,10 @@ actor TestMockSecurityProvider: SecurityProtocolsCore.SecurityProviderProtocol {
     -> Result<
       SecurityProtocolsCore.SecurityResult,
       ErrorHandlingDomains.UmbraErrors.Security.Protocols
-    > {
+    >
+  {
     // Simply create a successful result without data
-    let result = SecurityProtocolsCore.SecurityResult(success: true)
+    let result=SecurityProtocolsCore.SecurityResult(success: true)
     return .success(result)
   }
 
@@ -258,7 +260,7 @@ actor TestMockSecurityProvider: SecurityProtocolsCore.SecurityProviderProtocol {
     operation _: SecurityProtocolsCore.SecurityOperation,
     config _: SecurityProtocolsCore.SecurityConfigDTO
   ) async -> SecurityProtocolsCore.SecurityResultDTO {
-    let emptyBytes = UmbraCoreTypes.SecureBytes(bytes: [])
+    let emptyBytes=UmbraCoreTypes.SecureBytes(bytes: [])
     return SecurityProtocolsCore.SecurityResultDTO(data: emptyBytes)
   }
 
@@ -278,14 +280,14 @@ actor TestMockSecurityProvider: SecurityProtocolsCore.SecurityProviderProtocol {
   }
 
   nonisolated func createSecureConfig(options: [String: Any]?) -> SecurityConfigDTO {
-    var securityOptions: [String: String] = [:]
+    var securityOptions: [String: String]=[:]
 
     if let options {
       for (key, value) in options {
-        if let stringValue = value as? String {
-          securityOptions[key] = stringValue
+        if let stringValue=value as? String {
+          securityOptions[key]=stringValue
         } else {
-          securityOptions[key] = String(describing: value)
+          securityOptions[key]=String(describing: value)
         }
       }
     }
@@ -313,51 +315,51 @@ final class MockSecurityProviderTests: XCTestCase {
   private var provider: TestMockSecurityProvider!
 
   override func setUp() async throws {
-    provider = TestMockSecurityProvider()
+    provider=TestMockSecurityProvider()
   }
 
   override func tearDown() async throws {
-    provider = nil
+    provider=nil
   }
 
   func testStartStopAccessing() async throws {
     // Test starting access
-    let path = "/test/path"
-    let result = await provider.startAccessing(path: path)
+    let path="/test/path"
+    let result=await provider.startAccessing(path: path)
     XCTAssertEqual(try result.get(), true)
 
     // Check that the path is being accessed
-    let isAccessed = await provider.isPathBeingAccessed(path)
+    let isAccessed=await provider.isPathBeingAccessed(path)
     XCTAssertTrue(isAccessed)
 
     // Test stopping access
     await provider.stopAccessing(path: path)
 
     // Check that the path is no longer being accessed
-    let isStillAccessed = await provider.isPathBeingAccessed(path)
+    let isStillAccessed=await provider.isPathBeingAccessed(path)
     XCTAssertFalse(isStillAccessed)
   }
 
   func testBookmarkCreation() async throws {
-    let path = "/test/path"
-    let result = await provider.createBookmark(forPath: path)
+    let path="/test/path"
+    let result=await provider.createBookmark(forPath: path)
 
     // Check that bookmark was created successfully
-    let bookmark = try result.get()
+    let bookmark=try result.get()
     XCTAssertGreaterThan(bookmark.count, 0)
   }
 
   func testBookmarkValidation() async throws {
     // Create valid bookmark
-    let path = "/test/path"
-    let createResult = await provider.createBookmark(forPath: path)
+    let path="/test/path"
+    let createResult=await provider.createBookmark(forPath: path)
 
     // Resolve the bookmark
-    let bookmark = try createResult.get()
-    let resolveResult = await provider.resolveBookmark(bookmark)
+    let bookmark=try createResult.get()
+    let resolveResult=await provider.resolveBookmark(bookmark)
 
     // Check that the path was resolved correctly
-    let resolved = try resolveResult.get()
+    let resolved=try resolveResult.get()
     XCTAssertEqual(resolved.path, path)
     XCTAssertFalse(resolved.isStale)
   }

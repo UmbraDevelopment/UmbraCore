@@ -6,8 +6,8 @@ import SecurityProtocolsCore
 import UmbraCoreTypes
 
 public actor MockCryptoService: SecurityProtocolsCore.CryptoServiceProtocol {
-  private var encryptedData: [String: Data] = [:]
-  private var decryptedData: [String: Data] = [:]
+  private var encryptedData: [String: Data]=[:]
+  private var decryptedData: [String: Data]=[:]
 
   public init() {}
 
@@ -33,7 +33,7 @@ public actor MockCryptoService: SecurityProtocolsCore.CryptoServiceProtocol {
 
   public func generateKey() async
   -> Result<UmbraCoreTypes.SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
-    let bytes = Array(repeating: UInt8(0), count: 32)
+    let bytes=Array(repeating: UInt8(0), count: 32)
     return .success(UmbraCoreTypes.SecureBytes(bytes: bytes))
   }
 
@@ -42,7 +42,7 @@ public actor MockCryptoService: SecurityProtocolsCore.CryptoServiceProtocol {
       .SecureBytes
   ) async
   -> Result<UmbraCoreTypes.SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
-    let bytes = Array(repeating: UInt8(0), count: 32)
+    let bytes=Array(repeating: UInt8(0), count: 32)
     return .success(UmbraCoreTypes.SecureBytes(bytes: bytes))
   }
 
@@ -95,7 +95,7 @@ public actor MockCryptoService: SecurityProtocolsCore.CryptoServiceProtocol {
     config _: SecurityProtocolsCore.SecurityConfigDTO
   ) async
   -> Result<UmbraCoreTypes.SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
-    let bytes = Array(repeating: UInt8(0), count: 32)
+    let bytes=Array(repeating: UInt8(0), count: 32)
     return .success(UmbraCoreTypes.SecureBytes(bytes: bytes))
   }
 
@@ -105,7 +105,7 @@ public actor MockCryptoService: SecurityProtocolsCore.CryptoServiceProtocol {
     config _: SecurityProtocolsCore.SecurityConfigDTO
   ) async
   -> Result<UmbraCoreTypes.SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
-    let bytes = Array(repeating: UInt8(0), count: 64)
+    let bytes=Array(repeating: UInt8(0), count: 64)
     return .success(UmbraCoreTypes.SecureBytes(bytes: bytes))
   }
 
@@ -120,27 +120,27 @@ public actor MockCryptoService: SecurityProtocolsCore.CryptoServiceProtocol {
 
   public func generateRandomData(length: Int) async
   -> Result<UmbraCoreTypes.SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
-    let bytes = Array(repeating: UInt8(0), count: length)
+    let bytes=Array(repeating: UInt8(0), count: length)
     return .success(UmbraCoreTypes.SecureBytes(bytes: bytes))
   }
 
   // MARK: - Legacy Methods
 
   public func encrypt(_ data: Data, using key: Data, iv: Data) async throws -> Data {
-    let identifier = "\(key.hashValue):\(iv.hashValue)"
-    encryptedData[identifier] = data
+    let identifier="\(key.hashValue):\(iv.hashValue)"
+    encryptedData[identifier]=data
     return data // Mock implementation just returns the original data
   }
 
   public func decrypt(_ data: Data, using key: Data, iv: Data) async throws -> Data {
-    let identifier = "\(key.hashValue):\(iv.hashValue)"
-    decryptedData[identifier] = data
+    let identifier="\(key.hashValue):\(iv.hashValue)"
+    decryptedData[identifier]=data
     return data // Mock implementation just returns the original data
   }
 
   public func deriveKey(from password: String, salt: Data, iterations _: Int) async throws -> Data {
     // Mock implementation just returns a deterministic key based on inputs
-    let combinedData = password.data(using: .utf8)! + salt
+    let combinedData=password.data(using: .utf8)! + salt
     return Data(combinedData.prefix(32))
   }
 
@@ -156,8 +156,8 @@ public actor MockCryptoService: SecurityProtocolsCore.CryptoServiceProtocol {
 
   // Test helper methods
   public func setDecryptedData(_ data: Data, forKey key: Data, initializationVector: Data) async {
-    let identifier = "\(key.base64EncodedString()):\(initializationVector.base64EncodedString())"
-    decryptedData[identifier] = data
+    let identifier="\(key.base64EncodedString()):\(initializationVector.base64EncodedString())"
+    decryptedData[identifier]=data
   }
 
   public func reset() async {

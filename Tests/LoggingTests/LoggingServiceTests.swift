@@ -6,12 +6,12 @@ import XCTest
 
 final class LoggingServiceTests: XCTestCase {
   private var logger: LoggingProtocol!
-  private let tempPath = NSTemporaryDirectory() + "test.log"
+  private let tempPath=NSTemporaryDirectory() + "test.log"
 
   override func setUp() async throws {
     try await super.setUp()
     // Use the factory method from UmbraLogging to create a logger
-    logger = UmbraLogging.createLogger()
+    logger=UmbraLogging.createLogger()
 
     // Create an empty file to ensure it exists
     FileManager.default.createFile(atPath: tempPath, contents: nil)
@@ -23,8 +23,8 @@ final class LoggingServiceTests: XCTestCase {
   }
 
   func testLogging() async throws {
-    var metadata = LogMetadata()
-    metadata["test"] = "value"
+    var metadata=LogMetadata()
+    metadata["test"]="value"
 
     // Use the updated UmbraLogLevel type
     await logger.info("Test message", metadata: metadata)
@@ -45,10 +45,10 @@ final class LoggingServiceTests: XCTestCase {
 
   func testMetadataHandling() async throws {
     // Test that metadata is properly handled
-    var metadata = LogMetadata()
-    metadata["key1"] = "value1"
-    metadata["key2"] = "42"
-    metadata["key3"] = "true"
+    var metadata=LogMetadata()
+    metadata["key1"]="value1"
+    metadata["key2"]="42"
+    metadata["key3"]="true"
 
     await logger.info("Test with complex metadata", metadata: metadata)
 

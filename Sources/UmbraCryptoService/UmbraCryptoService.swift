@@ -13,7 +13,7 @@
 ///
 /// ## Core Types
 /// ```swift
-/// CryptoService
+/// CryptoServiceCore
 /// KeyManager
 /// EncryptionContext
 /// ```
@@ -76,7 +76,7 @@
 ///
 /// # Usage Example
 /// ```swift
-/// let service = CryptoService.shared
+/// let service = CryptoServiceCore.shared
 ///
 /// let encrypted = try await service.encrypt(
 ///     data: data,

@@ -1,45 +1,5 @@
 import UmbraCoreTypes
 
-// Local type declarations to replace imports
-// These replace the removed ErrorHandling and ErrorHandlingDomains imports
-
-/// Error domain namespace
-public enum ErrorDomain {
-  /// Security domain
-  public static let security="Security"
-  /// Crypto domain
-  public static let crypto="Crypto"
-  /// Application domain
-  public static let application="Application"
-}
-
-/// Error context protocol
-public protocol ErrorContext {
-  /// Domain of the error
-  var domain: String { get }
-  /// Code of the error
-  var code: Int { get }
-  /// Description of the error
-  var description: String { get }
-}
-
-/// Base error context implementation
-public struct BaseErrorContext: ErrorContext {
-  /// Domain of the error
-  public let domain: String
-  /// Code of the error
-  public let code: Int
-  /// Description of the error
-  public let description: String
-
-  /// Initialise with domain, code and description
-  public init(domain: String, code: Int, description: String) {
-    self.domain=domain
-    self.code=code
-    self.description=description
-  }
-}
-
 /// Protocol defining cryptographic operations in a FoundationIndependent manner.
 /// This protocol uses only primitive types and FoundationIndependent custom types.
 public protocol CryptoServiceProtocol: Sendable {
@@ -49,32 +9,39 @@ public protocol CryptoServiceProtocol: Sendable {
   ///   - key: The encryption key as `SecureBytes`.
   /// - Returns: The encrypted data as `SecureBytes` or an error.
   func encrypt(data: SecureBytes, using key: SecureBytes) async
-    -> Result<SecureBytes, UmbraErrors.Security.Protocols>
+    -> Result<SecureBytes, SecurityProtocolError>
 
   /// Decrypts binary data using the provided key.
   /// - Parameters:
-  ///   - data: The encrypted data as `SecureBytes`.
+  ///   - data: The data to decrypt as `SecureBytes`.
   ///   - key: The decryption key as `SecureBytes`.
   /// - Returns: The decrypted data as `SecureBytes` or an error.
   func decrypt(data: SecureBytes, using key: SecureBytes) async
-    -> Result<SecureBytes, UmbraErrors.Security.Protocols>
+    -> Result<SecureBytes, SecurityProtocolError>
 
-  /// Generates a cryptographic key suitable for encryption/decryption operations.
-  /// - Returns: A new cryptographic key as `SecureBytes` or an error.
-  func generateKey() async -> Result<SecureBytes, UmbraErrors.Security.Protocols>
+  /// Generates a random cryptographic key.
+  /// - Parameter size: Size of the key in bytes.
+  /// - Returns: The generated key as `SecureBytes` or an error.
+  func generateKey(size: Int) async -> Result<SecureBytes, SecurityProtocolError>
 
-  /// Hashes the provided data using a cryptographically strong algorithm.
-  /// - Parameter data: The data to hash as `SecureBytes`.
-  /// - Returns: The resulting hash as `SecureBytes` or an error.
-  func hash(data: SecureBytes) async -> Result<SecureBytes, UmbraErrors.Security.Protocols>
+  /// Calculates a cryptographic hash of data.
+  /// - Parameter data: Data to hash as `SecureBytes`.
+  /// - Returns: The hash value as `SecureBytes` or an error.
+  func hash(data: SecureBytes) async -> Result<SecureBytes, SecurityProtocolError>
 
-  /// Verifies the integrity of data against a known hash.
+  /// Verifies that data matches a hash.
   /// - Parameters:
-  ///   - data: The data to verify as `SecureBytes`.
-  ///   - hash: The expected hash value as `SecureBytes`.
-  /// - Returns: Boolean indicating whether the hash matches.
-  func verify(data: SecureBytes, against hash: SecureBytes) async
-    -> Result<Bool, UmbraErrors.Security.Protocols>
+  ///   - data: Data to verify as `SecureBytes`.
+  ///   - hash: Expected hash as `SecureBytes`.
+  /// - Returns: Boolean indicating if verification passed or an error.
+  func verifyHash(data: SecureBytes, against hash: SecureBytes) async
+    -> Result<Bool, SecurityProtocolError>
+
+  /// Generates secure random bytes.
+  /// - Parameter length: Length of random data to generate.
+  /// - Returns: Random bytes as `SecureBytes` or an error.
+  func generateRandomBytes(length: Int) async
+    -> Result<SecureBytes, SecurityProtocolError>
 
   // MARK: - Symmetric Encryption
 
@@ -88,7 +55,7 @@ public protocol CryptoServiceProtocol: Sendable {
     data: SecureBytes,
     key: SecureBytes,
     config: SecurityConfigDTO
-  ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols>
+  ) async -> Result<SecureBytes, SecurityProtocolError>
 
   /// Decrypt data using a symmetric key
   /// - Parameters:
@@ -100,7 +67,7 @@ public protocol CryptoServiceProtocol: Sendable {
     data: SecureBytes,
     key: SecureBytes,
     config: SecurityConfigDTO
-  ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols>
+  ) async -> Result<SecureBytes, SecurityProtocolError>
 
   // MARK: - Asymmetric Encryption
 
@@ -114,7 +81,7 @@ public protocol CryptoServiceProtocol: Sendable {
     data: SecureBytes,
     publicKey: SecureBytes,
     config: SecurityConfigDTO
-  ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols>
+  ) async -> Result<SecureBytes, SecurityProtocolError>
 
   /// Decrypt data using an asymmetric private key
   /// - Parameters:
@@ -126,7 +93,7 @@ public protocol CryptoServiceProtocol: Sendable {
     data: SecureBytes,
     privateKey: SecureBytes,
     config: SecurityConfigDTO
-  ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols>
+  ) async -> Result<SecureBytes, SecurityProtocolError>
 
   // MARK: - Hashing
 
@@ -138,12 +105,12 @@ public protocol CryptoServiceProtocol: Sendable {
   func hash(
     data: SecureBytes,
     config: SecurityConfigDTO
-  ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols>
+  ) async -> Result<SecureBytes, SecurityProtocolError>
 
   // MARK: - Random Data Generation
 
   /// Generate cryptographically secure random data
   /// - Parameter length: The length of random data to generate in bytes
   /// - Returns: Result containing random data or error
-  func generateRandomData(length: Int) async -> Result<SecureBytes, UmbraErrors.Security.Protocols>
+  func generateRandomData(length: Int) async -> Result<SecureBytes, SecurityProtocolError>
 }

@@ -16,24 +16,24 @@ public enum ResticCommandTestHelpers {
   public static func createTestBackupCommand(
     paths: [String],
     options: CommonOptions,
-    tags: [String] = [],
-    hostname: String? = nil,
-    excludePatterns: [String] = []
+    tags: [String]=[],
+    hostname: String?=nil,
+    excludePatterns: [String]=[]
   ) -> TestableBackupCommand {
-    let command = TestableBackupCommand(paths: paths, options: options)
+    let command=TestableBackupCommand(paths: paths, options: options)
 
     // Apply optional parameters
-    var finalCommand = command
+    var finalCommand=command
     for tag in tags {
-      finalCommand = finalCommand.tag(tag)
+      finalCommand=finalCommand.tag(tag)
     }
 
     if let hostname {
-      finalCommand = finalCommand.host(hostname)
+      finalCommand=finalCommand.host(hostname)
     }
 
     for pattern in excludePatterns {
-      finalCommand = finalCommand.exclude(pattern)
+      finalCommand=finalCommand.exclude(pattern)
     }
 
     return finalCommand
@@ -50,9 +50,9 @@ public enum ResticCommandTestHelpers {
   public static func createTestSnapshotCommand(
     options: CommonOptions,
     operation: SnapshotCommand.Operation = .list,
-    tags: [String] = [],
-    paths: [String] = [],
-    hostname: String? = nil
+    tags: [String]=[],
+    paths: [String]=[],
+    hostname: String?=nil
   ) -> SnapshotCommand {
     SnapshotCommand(
       options: options,
@@ -83,22 +83,22 @@ public final class TestableBackupCommand: ResticCommand {
   public init(
     paths: [String],
     options: CommonOptions,
-    tags: [String] = [],
-    hostname: String? = nil,
-    excludePatterns: [String] = [],
-    parentPID: Int? = nil
+    tags: [String]=[],
+    hostname: String?=nil,
+    excludePatterns: [String]=[],
+    parentPID: Int?=nil
   ) {
-    _options = options
-    backupPaths = paths
-    self.tags = tags
-    self.hostname = hostname
-    self.excludePatterns = excludePatterns
-    self.parentPID = parentPID
+    _options=options
+    backupPaths=paths
+    self.tags=tags
+    self.hostname=hostname
+    self.excludePatterns=excludePatterns
+    self.parentPID=parentPID
   }
 
   /// Add a tag to the backup command
   public func tag(_ value: String) -> TestableBackupCommand {
-    var newTags = tags
+    var newTags=tags
     newTags.append(value)
     return TestableBackupCommand(
       paths: backupPaths,
@@ -124,7 +124,7 @@ public final class TestableBackupCommand: ResticCommand {
 
   /// Add an exclude pattern to the backup command
   public func exclude(_ pattern: String) -> TestableBackupCommand {
-    var newPatterns = excludePatterns
+    var newPatterns=excludePatterns
     newPatterns.append(pattern)
     return TestableBackupCommand(
       paths: backupPaths,
@@ -159,7 +159,7 @@ public final class TestableBackupCommand: ResticCommand {
   }
 
   public var arguments: [String] {
-    var args: [String] = []
+    var args: [String]=[]
 
     // Add paths to back up
     args.append(contentsOf: backupPaths)

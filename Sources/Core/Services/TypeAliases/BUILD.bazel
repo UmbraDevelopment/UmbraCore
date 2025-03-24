@@ -6,6 +6,7 @@ umbra_swift_library(
     name = "CoreServicesTypeAliases",
     srcs = glob(
         ["**/*.swift"],
+        allow_empty = True,
         exclude = ["XPCServiceProtocolAlias.swift"],
     ),
 )

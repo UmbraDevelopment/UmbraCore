@@ -92,7 +92,7 @@ class SecurityImplementationTests: XCTestCase {
     // in this test environment, we'll make a simpler test that verifies encryption works
 
     let keyManager=KeyManager()
-    let cryptoService=CryptoService()
+    let cryptoService=CryptoServiceCore()
 
     // Generate a key
     let genResult=await keyManager.generateKey(
@@ -153,11 +153,11 @@ class SecurityImplementationTests: XCTestCase {
     }
   }
 
-  // MARK: - CryptoService Tests
+  // MARK: - CryptoServiceCore Tests
 
   func testCryptoServiceEncryptDecrypt() async {
-    // Test encryption and decryption with CryptoService
-    let cryptoService=CryptoService()
+    // Test encryption and decryption with CryptoServiceCore
+    let cryptoService=CryptoServiceCore()
     let testKey=SecureBytes(bytes: [
       0x00,
       0x01,
@@ -221,12 +221,12 @@ class SecurityImplementationTests: XCTestCase {
 
   func testSecurityProviderBasicOperations() async {
     // Create a security provider with the implementations we want to test
-    let cryptoService=CryptoService()
+    let cryptoService=CryptoServiceCore()
     let keyManager=KeyManager()
     let provider=SecurityProviderImpl(cryptoService: cryptoService, keyManager: keyManager)
 
     // Verify the provider has the correct implementations
-    XCTAssertTrue(provider.cryptoService is CryptoService)
+    XCTAssertTrue(provider.cryptoService is CryptoServiceCore)
     XCTAssertTrue(provider.keyManager is KeyManager)
 
     // Test creating config
@@ -237,7 +237,7 @@ class SecurityImplementationTests: XCTestCase {
   // Test performing security operations through the provider
   func testSecurityProviderOperations() async {
     // Setup provider
-    let cryptoService=CryptoService()
+    let cryptoService=CryptoServiceCore()
     let keyManager=KeyManager()
     let provider=SecurityProviderImpl(cryptoService: cryptoService, keyManager: keyManager)
 
@@ -288,10 +288,10 @@ class SecurityImplementationTests: XCTestCase {
 
   func testAsymmetricKeyGeneration() async {
     // Test asymmetric key generation functionality
-    // Since CryptoService doesn't have a direct generateAsymmetricKeyPair method,
+    // Since CryptoServiceCore doesn't have a direct generateAsymmetricKeyPair method,
     // we'll simulate it by creating dummy keys for testing purposes
 
-    let cryptoService=CryptoService()
+    let cryptoService=CryptoServiceCore()
 
     // Create a simple test key for verification
     let publicKey=SecureBytes(bytes: Array(repeating: 0xBB, count: 256))
@@ -325,7 +325,7 @@ class SecurityImplementationTests: XCTestCase {
     print("Test data to encrypt: \(Array(testData))")
 
     // Instantiate the crypto service
-    let cryptoService=CryptoService()
+    let cryptoService=CryptoServiceCore()
     let config=SecurityConfigDTO(algorithm: "RSA", keySizeInBits: 2048)
 
     // Simple encrypt test with direct keys
@@ -372,7 +372,7 @@ class SecurityImplementationTests: XCTestCase {
 
   func testAsymmetricEncryptionWithLargeData() async {
     // Test encrypting data larger than RSA block size
-    let cryptoService=CryptoService()
+    let cryptoService=CryptoServiceCore()
     let config=SecurityConfigDTO(algorithm: "RSA", keySizeInBits: 2048)
 
     // Create a manually constructed dummy key pair for our simplified testing
@@ -431,7 +431,7 @@ class SecurityImplementationTests: XCTestCase {
     // This test is designed for the real hybrid encryption format
     // We're using a simplified implementation for debugging, so we'll adapt this test
 
-    let cryptoService=CryptoService()
+    let cryptoService=CryptoServiceCore()
     let config=SecurityConfigDTO(algorithm: "RSA", keySizeInBits: 2048)
 
     // Create a dummy key for testing
@@ -480,7 +480,7 @@ class SecurityImplementationTests: XCTestCase {
     // random elements that cause the same input to generate different hash values
     // across different calls. Therefore, we test basic functionality rather than exact equality.
 
-    let cryptoService=CryptoService()
+    let cryptoService=CryptoServiceCore()
 
     // Use fixed test vectors for predictable behaviour
     let testData=SecureBytes(bytes: [0x01, 0x02, 0x03, 0x04, 0x05])
@@ -527,7 +527,7 @@ class SecurityImplementationTests: XCTestCase {
 
   func testEncryptionDecryptionPerformance() async {
     // Test the performance of encryption and decryption with different data sizes
-    let cryptoService=CryptoService()
+    let cryptoService=CryptoServiceCore()
 
     // Data sizes to test (in KB)
     let dataSizes=[1, 10, 100, 1000, 4096]
@@ -591,7 +591,7 @@ class SecurityImplementationTests: XCTestCase {
 
   func testAsymmetricEncryptionPerformance() async {
     // Test the performance of asymmetric encryption and decryption with different data sizes
-    let cryptoService=CryptoService()
+    let cryptoService=CryptoServiceCore()
     let config=SecurityConfigDTO(algorithm: "RSA", keySizeInBits: 2048)
 
     // Create a key for our simplified implementation

@@ -18,16 +18,16 @@ public final class MockFileManager: Resettable, @unchecked Sendable {
     var access: FileAccess
     var children: [String: FileSystemItem]?
 
-    init(isDirectory: Bool, content: Data? = nil, access: FileAccess = .readWrite) {
-      self.isDirectory = isDirectory
-      self.content = content
-      self.access = access
-      children = isDirectory ? [:] : nil
+    init(isDirectory: Bool, content: Data?=nil, access: FileAccess = .readWrite) {
+      self.isDirectory=isDirectory
+      self.content=content
+      self.access=access
+      children=isDirectory ? [:] : nil
     }
   }
 
   /// Root of the simulated file system
-  private var fileSystem: [String: FileSystemItem] = ["/": FileSystemItem(isDirectory: true)]
+  private var fileSystem: [String: FileSystemItem]=["/": FileSystemItem(isDirectory: true)]
 
   /// Initializer
   public init() {
@@ -42,41 +42,41 @@ public final class MockFileManager: Resettable, @unchecked Sendable {
 
   /// Reset the mock to its initial state
   public func reset() async {
-    fileSystem = ["/": FileSystemItem(isDirectory: true)]
+    fileSystem=["/": FileSystemItem(isDirectory: true)]
 
-    createDirectoryCallCount = 0
-    removeItemCallCount = 0
-    fileExistsCallCount = 0
-    contentsOfDirectoryCallCount = 0
-    contentsCallCount = 0
-    contentsAsyncCallCount = 0
-    isReadableCallCount = 0
-    isWritableCallCount = 0
-    attributesCallCount = 0
-    setAttributesCallCount = 0
-    startAccessingSecurityScopedResourceCallCount = 0
-    stopAccessingSecurityScopedResourceCallCount = 0
+    createDirectoryCallCount=0
+    removeItemCallCount=0
+    fileExistsCallCount=0
+    contentsOfDirectoryCallCount=0
+    contentsCallCount=0
+    contentsAsyncCallCount=0
+    isReadableCallCount=0
+    isWritableCallCount=0
+    attributesCallCount=0
+    setAttributesCallCount=0
+    startAccessingSecurityScopedResourceCallCount=0
+    stopAccessingSecurityScopedResourceCallCount=0
   }
 
   // MARK: - Call Counters
 
-  public private(set) var createDirectoryCallCount = 0
-  public private(set) var removeItemCallCount = 0
-  public private(set) var fileExistsCallCount = 0
-  public private(set) var contentsOfDirectoryCallCount = 0
-  public private(set) var contentsCallCount = 0
-  public private(set) var contentsAsyncCallCount = 0
-  public private(set) var isReadableCallCount = 0
-  public private(set) var isWritableCallCount = 0
-  public private(set) var attributesCallCount = 0
-  public private(set) var setAttributesCallCount = 0
-  public private(set) var startAccessingSecurityScopedResourceCallCount = 0
-  public private(set) var stopAccessingSecurityScopedResourceCallCount = 0
+  public private(set) var createDirectoryCallCount=0
+  public private(set) var removeItemCallCount=0
+  public private(set) var fileExistsCallCount=0
+  public private(set) var contentsOfDirectoryCallCount=0
+  public private(set) var contentsCallCount=0
+  public private(set) var contentsAsyncCallCount=0
+  public private(set) var isReadableCallCount=0
+  public private(set) var isWritableCallCount=0
+  public private(set) var attributesCallCount=0
+  public private(set) var setAttributesCallCount=0
+  public private(set) var startAccessingSecurityScopedResourceCallCount=0
+  public private(set) var stopAccessingSecurityScopedResourceCallCount=0
 
   // MARK: - Security-Scoped Resources
 
   /// Tracks security-scoped resources that are currently being accessed
-  private var securityScopedResourcesBeingAccessed: Set<URL> = []
+  private var securityScopedResourcesBeingAccessed: Set<URL>=[]
 
   /// Simulate starting access to a security-scoped resource
   public func simulateStartAccessingSecurityScopedResource(at url: URL) -> Bool {
@@ -91,33 +91,33 @@ public final class MockFileManager: Resettable, @unchecked Sendable {
     securityScopedResourcesBeingAccessed.insert(url)
 
     // Update the file access to make it readable
-    let path = url.path
-    let components = path.split(separator: "/").map(String.init)
+    let path=url.path
+    let components=path.split(separator: "/").map(String.init)
 
     guard !components.isEmpty else { return false }
 
-    var currentDict = fileSystem
-    let lastComponent = components.last!
+    var currentDict=fileSystem
+    let lastComponent=components.last!
 
     // Navigate to parent directory
     for component in components.dropLast() {
       if component.isEmpty { continue }
 
-      guard let item = currentDict[component], item.isDirectory, let children = item.children else {
+      guard let item=currentDict[component], item.isDirectory, let children=item.children else {
         return false
       }
 
-      currentDict = children
+      currentDict=children
     }
 
     // Update the file access
-    if var item = currentDict[lastComponent] {
+    if var item=currentDict[lastComponent] {
       if item.access == .none {
         item.access = .readOnly
       } else if item.access == .writeOnly {
         item.access = .readWrite
       }
-      currentDict[lastComponent] = item
+      currentDict[lastComponent]=item
       return true
     }
 
@@ -132,31 +132,31 @@ public final class MockFileManager: Resettable, @unchecked Sendable {
     securityScopedResourcesBeingAccessed.remove(url)
 
     // If the file was previously made accessible, revert to original access
-    let path = url.path
-    let components = path.split(separator: "/").map(String.init)
+    let path=url.path
+    let components=path.split(separator: "/").map(String.init)
 
     if components.isEmpty { return }
 
-    var currentDict = fileSystem
-    let lastComponent = components.last!
+    var currentDict=fileSystem
+    let lastComponent=components.last!
 
     // Navigate to parent directory
     for component in components.dropLast() {
       if component.isEmpty { continue }
 
-      guard let item = currentDict[component], item.isDirectory, let children = item.children else {
+      guard let item=currentDict[component], item.isDirectory, let children=item.children else {
         return
       }
 
-      currentDict = children
+      currentDict=children
     }
 
     // Update the file access
-    if var item = currentDict[lastComponent] {
+    if var item=currentDict[lastComponent] {
       if item.access == .readOnly || item.access == .readWrite {
         item.access = .none
       }
-      currentDict[lastComponent] = item
+      currentDict[lastComponent]=item
     }
   }
 
@@ -165,44 +165,44 @@ public final class MockFileManager: Resettable, @unchecked Sendable {
   /// Simulate creating a directory
   public func simulateCreateDirectory(
     at url: URL,
-    withIntermediateDirectories createIntermediates: Bool = false
+    withIntermediateDirectories createIntermediates: Bool=false
   ) throws {
     createDirectoryCallCount += 1
 
     try checkForSimulatedError(path: url.path)
 
-    let path = url.path
-    let components = path.split(separator: "/").map(String.init)
+    let path=url.path
+    let components=path.split(separator: "/").map(String.init)
 
     // Check if parent directories exist
     if !createIntermediates {
-      let parentPath = components.dropLast().joined(separator: "/")
+      let parentPath=components.dropLast().joined(separator: "/")
       if !parentPath.isEmpty, !simulateFileExists(atPath: "/" + parentPath, isDirectory: nil) {
         throw NSError(domain: NSCocoaErrorDomain, code: NSFileNoSuchFileError, userInfo: nil)
       }
     }
 
     // Create directory path
-    var currentPath = ""
-    var currentDict = fileSystem
+    var currentPath=""
+    var currentDict=fileSystem
 
     for component in components {
       if component.isEmpty { continue }
 
       currentPath += "/" + component
 
-      if let item = currentDict[component] {
+      if let item=currentDict[component] {
         if !item.isDirectory {
           throw NSError(domain: NSCocoaErrorDomain, code: NSFileWriteFileExistsError, userInfo: nil)
         }
-        if let children = item.children {
-          currentDict = children
+        if let children=item.children {
+          currentDict=children
         }
       } else {
-        let newDir = FileSystemItem(isDirectory: true)
-        currentDict[component] = newDir
-        if let children = newDir.children {
-          currentDict = children
+        let newDir=FileSystemItem(isDirectory: true)
+        currentDict[component]=newDir
+        if let children=newDir.children {
+          currentDict=children
         }
       }
     }
@@ -214,25 +214,25 @@ public final class MockFileManager: Resettable, @unchecked Sendable {
 
     try checkForSimulatedError(path: url.path)
 
-    let path = url.path
-    let components = path.split(separator: "/").map(String.init)
+    let path=url.path
+    let components=path.split(separator: "/").map(String.init)
 
     guard !components.isEmpty else {
       throw NSError(domain: NSCocoaErrorDomain, code: NSFileNoSuchFileError, userInfo: nil)
     }
 
-    var currentDict = fileSystem
-    let lastComponent = components.last!
+    var currentDict=fileSystem
+    let lastComponent=components.last!
 
     // Navigate to parent directory
     for component in components.dropLast() {
       if component.isEmpty { continue }
 
-      guard let item = currentDict[component], item.isDirectory, let children = item.children else {
+      guard let item=currentDict[component], item.isDirectory, let children=item.children else {
         throw NSError(domain: NSCocoaErrorDomain, code: NSFileNoSuchFileError, userInfo: nil)
       }
 
-      currentDict = children
+      currentDict=children
     }
 
     // Remove the item
@@ -246,7 +246,7 @@ public final class MockFileManager: Resettable, @unchecked Sendable {
   /// Simulate checking if a file exists
   public func simulateFileExists(
     atPath path: String,
-    isDirectory: UnsafeMutablePointer<ObjCBool>? = nil
+    isDirectory: UnsafeMutablePointer<ObjCBool>?=nil
   ) -> Bool {
     fileExistsCallCount += 1
 
@@ -256,18 +256,18 @@ public final class MockFileManager: Resettable, @unchecked Sendable {
       return false
     }
 
-    let components = path.split(separator: "/").map(String.init)
-    var currentDict = fileSystem
+    let components=path.split(separator: "/").map(String.init)
+    var currentDict=fileSystem
 
     for component in components {
       if component.isEmpty { continue }
 
-      guard let item = currentDict[component] else {
+      guard let item=currentDict[component] else {
         return false
       }
 
       if component == components.last {
-        isDirectory?.pointee = ObjCBool(item.isDirectory)
+        isDirectory?.pointee=ObjCBool(item.isDirectory)
         return true
       }
 
@@ -275,7 +275,7 @@ public final class MockFileManager: Resettable, @unchecked Sendable {
         return false
       }
 
-      currentDict = item.children!
+      currentDict=item.children!
     }
 
     return true
@@ -285,19 +285,19 @@ public final class MockFileManager: Resettable, @unchecked Sendable {
   public func simulateContentsOfDirectory(at url: URL) throws -> [URL] {
     contentsOfDirectoryCallCount += 1
 
-    let path = url.path
-    let components = path.split(separator: "/").map(String.init)
-    var currentDict = fileSystem
+    let path=url.path
+    let components=path.split(separator: "/").map(String.init)
+    var currentDict=fileSystem
 
     // Navigate to directory
     for component in components {
       if component.isEmpty { continue }
 
-      guard let item = currentDict[component], item.isDirectory, let children = item.children else {
+      guard let item=currentDict[component], item.isDirectory, let children=item.children else {
         throw NSError(domain: NSCocoaErrorDomain, code: NSFileNoSuchFileError, userInfo: nil)
       }
 
-      currentDict = children
+      currentDict=children
     }
 
     // Return URLs for all items in the directory
@@ -310,13 +310,13 @@ public final class MockFileManager: Resettable, @unchecked Sendable {
 
     try checkForSimulatedError(path: path)
 
-    let components = path.split(separator: "/").map(String.init)
-    var currentDict = fileSystem
+    let components=path.split(separator: "/").map(String.init)
+    var currentDict=fileSystem
 
     for component in components {
       if component.isEmpty { continue }
 
-      guard let item = currentDict[component] else {
+      guard let item=currentDict[component] else {
         throw NSError(domain: NSCocoaErrorDomain, code: NSFileNoSuchFileError, userInfo: nil)
       }
 
@@ -337,7 +337,7 @@ public final class MockFileManager: Resettable, @unchecked Sendable {
           )
         }
 
-        guard let content = item.content else {
+        guard let content=item.content else {
           return Data()
         }
 
@@ -348,7 +348,7 @@ public final class MockFileManager: Resettable, @unchecked Sendable {
         throw NSError(domain: NSCocoaErrorDomain, code: NSFileNoSuchFileError, userInfo: nil)
       }
 
-      currentDict = item.children!
+      currentDict=item.children!
     }
 
     throw NSError(domain: NSCocoaErrorDomain, code: NSFileNoSuchFileError, userInfo: nil)
@@ -366,31 +366,31 @@ public final class MockFileManager: Resettable, @unchecked Sendable {
 
   /// Simulate setting file content
   public func simulateSetFileContent(_ content: String, at url: URL) -> Bool {
-    let data = content.data(using: .utf8) ?? Data()
+    let data=content.data(using: .utf8) ?? Data()
     return simulateSetFileContent(data, at: url)
   }
 
   /// Simulate setting file content with Data
   public func simulateSetFileContent(_ data: Data, at url: URL) -> Bool {
-    let path = url.path
-    let components = path.split(separator: "/").map(String.init)
+    let path=url.path
+    let components=path.split(separator: "/").map(String.init)
 
     guard !components.isEmpty else { return false }
 
-    var currentDict = fileSystem
-    let lastComponent = components.last!
+    var currentDict=fileSystem
+    let lastComponent=components.last!
 
     // Create parent directories if needed
     for component in components.dropLast() {
       if component.isEmpty { continue }
 
-      if let item = currentDict[component], item.isDirectory, let children = item.children {
-        currentDict = children
+      if let item=currentDict[component], item.isDirectory, let children=item.children {
+        currentDict=children
       } else {
-        let newDir = FileSystemItem(isDirectory: true)
-        currentDict[component] = newDir
-        if let children = newDir.children {
-          currentDict = children
+        let newDir=FileSystemItem(isDirectory: true)
+        currentDict[component]=newDir
+        if let children=newDir.children {
+          currentDict=children
         } else {
           return false
         }
@@ -398,7 +398,7 @@ public final class MockFileManager: Resettable, @unchecked Sendable {
     }
 
     // Create or update the file
-    if let item = currentDict[lastComponent] {
+    if let item=currentDict[lastComponent] {
       if item.isDirectory {
         return false
       }
@@ -407,11 +407,11 @@ public final class MockFileManager: Resettable, @unchecked Sendable {
         return false
       }
 
-      var updatedItem = item
-      updatedItem.content = data
-      currentDict[lastComponent] = updatedItem
+      var updatedItem=item
+      updatedItem.content=data
+      currentDict[lastComponent]=updatedItem
     } else {
-      currentDict[lastComponent] = FileSystemItem(isDirectory: false, content: data)
+      currentDict[lastComponent]=FileSystemItem(isDirectory: false, content: data)
     }
 
     return true
@@ -421,13 +421,13 @@ public final class MockFileManager: Resettable, @unchecked Sendable {
   public func simulateIsReadableFile(atPath path: String) -> Bool {
     isReadableCallCount += 1
 
-    let components = path.split(separator: "/").map(String.init)
-    var currentDict = fileSystem
+    let components=path.split(separator: "/").map(String.init)
+    var currentDict=fileSystem
 
     for component in components {
       if component.isEmpty { continue }
 
-      guard let item = currentDict[component] else {
+      guard let item=currentDict[component] else {
         return false
       }
 
@@ -439,7 +439,7 @@ public final class MockFileManager: Resettable, @unchecked Sendable {
         return false
       }
 
-      currentDict = item.children!
+      currentDict=item.children!
     }
 
     return false
@@ -449,13 +449,13 @@ public final class MockFileManager: Resettable, @unchecked Sendable {
   public func simulateIsWritableFile(atPath path: String) -> Bool {
     isWritableCallCount += 1
 
-    let components = path.split(separator: "/").map(String.init)
-    var currentDict = fileSystem
+    let components=path.split(separator: "/").map(String.init)
+    var currentDict=fileSystem
 
     for component in components {
       if component.isEmpty { continue }
 
-      guard let item = currentDict[component] else {
+      guard let item=currentDict[component] else {
         return false
       }
 
@@ -467,7 +467,7 @@ public final class MockFileManager: Resettable, @unchecked Sendable {
         return false
       }
 
-      currentDict = item.children!
+      currentDict=item.children!
     }
 
     return false
@@ -475,29 +475,29 @@ public final class MockFileManager: Resettable, @unchecked Sendable {
 
   /// Simulate setting access permissions for a file
   public func simulateSetAccess(_ access: FileAccess, for url: URL) -> Bool {
-    let path = url.path
-    let components = path.split(separator: "/").map(String.init)
+    let path=url.path
+    let components=path.split(separator: "/").map(String.init)
 
     guard !components.isEmpty else { return false }
 
-    var currentDict = fileSystem
-    let lastComponent = components.last!
+    var currentDict=fileSystem
+    let lastComponent=components.last!
 
     // Navigate to parent directory
     for component in components.dropLast() {
       if component.isEmpty { continue }
 
-      guard let item = currentDict[component], item.isDirectory, let children = item.children else {
+      guard let item=currentDict[component], item.isDirectory, let children=item.children else {
         return false
       }
 
-      currentDict = children
+      currentDict=children
     }
 
     // Update the file access
-    if var item = currentDict[lastComponent] {
-      item.access = access
-      currentDict[lastComponent] = item
+    if var item=currentDict[lastComponent] {
+      item.access=access
+      currentDict[lastComponent]=item
       return true
     }
 
@@ -508,24 +508,24 @@ public final class MockFileManager: Resettable, @unchecked Sendable {
   public func simulateAttributes(ofItemAtPath path: String) throws -> [FileAttributeKey: Any] {
     attributesCallCount += 1
 
-    let components = path.split(separator: "/").map(String.init)
-    var currentDict = fileSystem
+    let components=path.split(separator: "/").map(String.init)
+    var currentDict=fileSystem
 
     for component in components {
       if component.isEmpty { continue }
 
-      guard let item = currentDict[component] else {
+      guard let item=currentDict[component] else {
         throw NSError(domain: NSCocoaErrorDomain, code: NSFileNoSuchFileError, userInfo: nil)
       }
 
       if component == components.last {
-        var attributes: [FileAttributeKey: Any] = [:]
+        var attributes: [FileAttributeKey: Any]=[:]
 
-        attributes[.type] = item.isDirectory ? FileAttributeType.typeDirectory : FileAttributeType
+        attributes[.type]=item.isDirectory ? FileAttributeType.typeDirectory : FileAttributeType
           .typeRegular
 
-        if !item.isDirectory, let content = item.content {
-          attributes[.size] = content.count
+        if !item.isDirectory, let content=item.content {
+          attributes[.size]=content.count
         }
 
         // Add more attributes as needed
@@ -537,7 +537,7 @@ public final class MockFileManager: Resettable, @unchecked Sendable {
         throw NSError(domain: NSCocoaErrorDomain, code: NSFileNoSuchFileError, userInfo: nil)
       }
 
-      currentDict = item.children!
+      currentDict=item.children!
     }
 
     throw NSError(domain: NSCocoaErrorDomain, code: NSFileNoSuchFileError, userInfo: nil)
@@ -547,13 +547,13 @@ public final class MockFileManager: Resettable, @unchecked Sendable {
   public func simulateSetAttributes(_: [FileAttributeKey: Any], ofItemAtPath path: String) throws {
     setAttributesCallCount += 1
 
-    let components = path.split(separator: "/").map(String.init)
-    var currentDict = fileSystem
+    let components=path.split(separator: "/").map(String.init)
+    var currentDict=fileSystem
 
     for component in components {
       if component.isEmpty { continue }
 
-      guard let item = currentDict[component] else {
+      guard let item=currentDict[component] else {
         throw NSError(domain: NSCocoaErrorDomain, code: NSFileNoSuchFileError, userInfo: nil)
       }
 
@@ -567,7 +567,7 @@ public final class MockFileManager: Resettable, @unchecked Sendable {
         throw NSError(domain: NSCocoaErrorDomain, code: NSFileNoSuchFileError, userInfo: nil)
       }
 
-      currentDict = item.children!
+      currentDict=item.children!
     }
 
     throw NSError(domain: NSCocoaErrorDomain, code: NSFileNoSuchFileError, userInfo: nil)
@@ -586,23 +586,23 @@ public final class MockFileManager: Resettable, @unchecked Sendable {
     }
 
     // Check if destination parent directory exists
-    let dstParentPath = dstURL.deletingLastPathComponent().path
+    let dstParentPath=dstURL.deletingLastPathComponent().path
     if !simulateFileExists(atPath: dstParentPath, isDirectory: nil) {
       throw NSError(domain: NSCocoaErrorDomain, code: NSFileNoSuchFileError, userInfo: nil)
     }
 
     // Get source content
-    let srcComponents = srcURL.path.split(separator: "/").map(String.init)
-    var srcDict = fileSystem
+    let srcComponents=srcURL.path.split(separator: "/").map(String.init)
+    var srcDict=fileSystem
     var srcItem: FileSystemItem?
 
     for component in srcComponents {
       if component.isEmpty { continue }
 
-      if let item = srcDict[component] {
-        srcItem = item
-        if let children = item.children {
-          srcDict = children
+      if let item=srcDict[component] {
+        srcItem=item
+        if let children=item.children {
+          srcDict=children
         } else {
           break
         }
@@ -611,27 +611,27 @@ public final class MockFileManager: Resettable, @unchecked Sendable {
       }
     }
 
-    guard let sourceItem = srcItem else {
+    guard let sourceItem=srcItem else {
       throw NSError(domain: NSCocoaErrorDomain, code: NSFileNoSuchFileError, userInfo: nil)
     }
 
     // Create destination
-    let dstComponents = dstURL.path.split(separator: "/").map(String.init)
-    var dstDict = fileSystem
-    let dstLastComponent = dstComponents.last!
+    let dstComponents=dstURL.path.split(separator: "/").map(String.init)
+    var dstDict=fileSystem
+    let dstLastComponent=dstComponents.last!
 
     for component in dstComponents.dropLast() {
       if component.isEmpty { continue }
 
-      if let item = dstDict[component], item.isDirectory, let children = item.children {
-        dstDict = children
+      if let item=dstDict[component], item.isDirectory, let children=item.children {
+        dstDict=children
       } else {
         throw NSError(domain: NSCocoaErrorDomain, code: NSFileNoSuchFileError, userInfo: nil)
       }
     }
 
     // Create a copy of the source item
-    dstDict[dstLastComponent] = sourceItem
+    dstDict[dstLastComponent]=sourceItem
   }
 
   /// Simulate moving a file
@@ -654,22 +654,22 @@ public final class MockFileManager: Resettable, @unchecked Sendable {
     // In our mock, we'll just create a special file that represents a symlink
     // In a real implementation, we would need to track the link target as well
 
-    let path = url.path
-    let components = path.split(separator: "/").map(String.init)
+    let path=url.path
+    let components=path.split(separator: "/").map(String.init)
 
     guard !components.isEmpty else {
       throw NSError(domain: NSCocoaErrorDomain, code: NSFileWriteUnknownError, userInfo: nil)
     }
 
-    var currentDict = fileSystem
-    let lastComponent = components.last!
+    var currentDict=fileSystem
+    let lastComponent=components.last!
 
     // Navigate to parent directory
     for component in components.dropLast() {
       if component.isEmpty { continue }
 
-      if let item = currentDict[component], item.isDirectory, let children = item.children {
-        currentDict = children
+      if let item=currentDict[component], item.isDirectory, let children=item.children {
+        currentDict=children
       } else {
         throw NSError(domain: NSCocoaErrorDomain, code: NSFileNoSuchFileError, userInfo: nil)
       }
@@ -677,45 +677,45 @@ public final class MockFileManager: Resettable, @unchecked Sendable {
 
     // Create a special file item that represents a symlink
     // We'll use a Data object containing the destination path
-    let linkData = destURL.path.data(using: .utf8)!
-    let linkItem = FileSystemItem(isDirectory: false, content: linkData, access: .readWrite)
+    let linkData=destURL.path.data(using: .utf8)!
+    let linkItem=FileSystemItem(isDirectory: false, content: linkData, access: .readWrite)
 
     // Store in the file system
-    currentDict[lastComponent] = linkItem
+    currentDict[lastComponent]=linkItem
   }
 
   /// Simulate getting URLs for directory
   public func simulateURLsForDirectory(
     at url: URL,
-    includingPropertiesForKeys _: [URLResourceKey]? = nil,
-    options: FileManager.DirectoryEnumerationOptions = []
+    includingPropertiesForKeys _: [URLResourceKey]?=nil,
+    options: FileManager.DirectoryEnumerationOptions=[]
   ) throws -> [URL] {
     try checkForSimulatedError(path: url.path)
 
-    let path = url.path
+    let path=url.path
 
     // Check if directory exists
-    var isDir: ObjCBool = false
+    var isDir: ObjCBool=false
     if !simulateFileExists(atPath: path, isDirectory: &isDir) || !isDir.boolValue {
       throw NSError(domain: NSCocoaErrorDomain, code: NSFileNoSuchFileError, userInfo: nil)
     }
 
     // Get directory contents
-    let components = path.split(separator: "/").map(String.init)
-    var currentDict = fileSystem
+    let components=path.split(separator: "/").map(String.init)
+    var currentDict=fileSystem
 
     for component in components {
       if component.isEmpty { continue }
 
-      if let item = currentDict[component], item.isDirectory, let children = item.children {
-        currentDict = children
+      if let item=currentDict[component], item.isDirectory, let children=item.children {
+        currentDict=children
       } else {
         throw NSError(domain: NSCocoaErrorDomain, code: NSFileNoSuchFileError, userInfo: nil)
       }
     }
 
     // Create URLs for all children
-    var urls: [URL] = []
+    var urls: [URL]=[]
 
     for (name, item) in currentDict {
       // Skip hidden files if requested
@@ -733,7 +733,7 @@ public final class MockFileManager: Resettable, @unchecked Sendable {
         continue
       }
 
-      let childURL = url.appendingPathComponent(name)
+      let childURL=url.appendingPathComponent(name)
       urls.append(childURL)
     }
 
@@ -745,7 +745,7 @@ public final class MockFileManager: Resettable, @unchecked Sendable {
   /// Simulate coordinated reading
   public func simulateCoordinatedReading<T>(
     from url: URL,
-    options _: NSFileCoordinator.ReadingOptions = [],
+    options _: NSFileCoordinator.ReadingOptions=[],
     byAccessor: (URL) throws -> T
   ) throws -> T {
     // For the mock, we'll just call the accessor directly
@@ -756,7 +756,7 @@ public final class MockFileManager: Resettable, @unchecked Sendable {
   /// Simulate coordinated writing
   public func simulateCoordinatedWriting<T>(
     to url: URL,
-    options _: NSFileCoordinator.WritingOptions = [],
+    options _: NSFileCoordinator.WritingOptions=[],
     byAccessor: (URL) throws -> T
   ) throws -> T {
     // For the mock, we'll just call the accessor directly
@@ -768,8 +768,8 @@ public final class MockFileManager: Resettable, @unchecked Sendable {
 
   /// Create a test file with specified content
   public func createTestFile(at url: URL, withContent content: String) throws -> URL {
-    let data = content.data(using: .utf8)!
-    let success = simulateSetFileContent(data, at: url)
+    let data=content.data(using: .utf8)!
+    let success=simulateSetFileContent(data, at: url)
 
     if !success {
       throw NSError(domain: NSCocoaErrorDomain, code: NSFileWriteUnknownError, userInfo: nil)
@@ -779,34 +779,34 @@ public final class MockFileManager: Resettable, @unchecked Sendable {
   }
 
   /// Create a test directory with optional files
-  public func createTestDirectory(at url: URL, withFiles fileNames: [String] = []) throws -> URL {
+  public func createTestDirectory(at url: URL, withFiles fileNames: [String]=[]) throws -> URL {
     try simulateCreateDirectory(at: url, withIntermediateDirectories: true)
 
     for fileName in fileNames {
-      let fileURL = url.appendingPathComponent(fileName)
-      let content = "Test content for \(fileName)"
-      _ = try createTestFile(at: fileURL, withContent: content)
+      let fileURL=url.appendingPathComponent(fileName)
+      let content="Test content for \(fileName)"
+      _=try createTestFile(at: fileURL, withContent: content)
     }
 
     return url
   }
 
   /// Simulate file system errors for specific paths
-  private var pathsToSimulateErrors: [String: Error] = [:]
+  private var pathsToSimulateErrors: [String: Error]=[:]
 
   /// Set an error to be thrown when accessing a specific path
   public func simulateError(_ error: Error, forPath path: String) {
-    pathsToSimulateErrors[path] = error
+    pathsToSimulateErrors[path]=error
   }
 
   /// Clear simulated errors
   public func clearSimulatedErrors() {
-    pathsToSimulateErrors = [:]
+    pathsToSimulateErrors=[:]
   }
 
   /// Check if there's a simulated error for a path
   private func checkForSimulatedError(path: String) throws {
-    if let error = pathsToSimulateErrors[path] {
+    if let error=pathsToSimulateErrors[path] {
       throw error
     }
   }

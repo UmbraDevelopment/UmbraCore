@@ -1,6 +1,6 @@
 import ErrorHandlingCore
-import ErrorHandlingInterfaces
 import ErrorHandlingDomains
+import ErrorHandlingInterfaces
 import ErrorHandlingMapping
 import Foundation
 

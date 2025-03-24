@@ -15,8 +15,8 @@ import XCTest
 final class DefaultCryptoServiceExtendedTests: XCTestCase {
   // private var cryptoService: DefaultCryptoServiceImpl!
   // Salt for key derivation to make tests deterministic
-  private let testSalt = "umbrasalt".data(using: .utf8)!
-  private let keyIterations = 10_000
+  private let testSalt="umbrasalt".data(using: .utf8)!
+  private let keyIterations=10000
 
   // MARK: - Tests
 

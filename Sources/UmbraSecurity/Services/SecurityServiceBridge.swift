@@ -27,8 +27,8 @@ public final class SecurityServiceBridge: Sendable {
 
   /// Initialise a new security service bridge
   /// - Parameter cryptoService: The crypto service implementation
-  public init(cryptoService: SecurityCryptoService = SecurityCryptoService()) {
-    self.cryptoService = cryptoService
+  public init(cryptoService: SecurityCryptoService=SecurityCryptoService()) {
+    self.cryptoService=cryptoService
   }
 
   // MARK: - Security Operations
@@ -40,11 +40,11 @@ public final class SecurityServiceBridge: Sendable {
   /// - Returns: Encrypted data
   public func encrypt(data: Data, key: Data) throws -> Data {
     // Convert Foundation Data to [UInt8]
-    let dataBytes = [UInt8](data)
-    let keyBytes = [UInt8](key)
+    let dataBytes=[UInt8](data)
+    let keyBytes=[UInt8](key)
 
     // Use the crypto service to encrypt
-    let encryptedBytes = try cryptoService.encrypt(data: dataBytes, key: keyBytes)
+    let encryptedBytes=try cryptoService.encrypt(data: dataBytes, key: keyBytes)
 
     // Convert back to Foundation Data
     return Data(encryptedBytes)
@@ -57,11 +57,11 @@ public final class SecurityServiceBridge: Sendable {
   /// - Returns: Decrypted data
   public func decrypt(data: Data, key: Data) throws -> Data {
     // Convert Foundation Data to [UInt8]
-    let dataBytes = [UInt8](data)
-    let keyBytes = [UInt8](key)
+    let dataBytes=[UInt8](data)
+    let keyBytes=[UInt8](key)
 
     // Use the crypto service to decrypt
-    let decryptedBytes = try cryptoService.decrypt(data: dataBytes, key: keyBytes)
+    let decryptedBytes=try cryptoService.decrypt(data: dataBytes, key: keyBytes)
 
     // Convert back to Foundation Data
     return Data(decryptedBytes)
@@ -70,9 +70,9 @@ public final class SecurityServiceBridge: Sendable {
   /// Generate a random encryption key
   /// - Parameter size: Size of the key in bytes
   /// - Returns: Random key data
-  public func generateKey(size: Int = 32) -> Data {
+  public func generateKey(size: Int=32) -> Data {
     // Use the crypto service to generate a key
-    let keyBytes = cryptoService.generateKey(size: size)
+    let keyBytes=cryptoService.generateKey(size: size)
 
     // Convert to Foundation Data
     return Data(keyBytes)
@@ -83,10 +83,10 @@ public final class SecurityServiceBridge: Sendable {
   /// - Returns: Hash value
   public func hash(data: Data) -> Data {
     // Convert Foundation Data to [UInt8]
-    let dataBytes = [UInt8](data)
+    let dataBytes=[UInt8](data)
 
     // Use the crypto service to hash
-    let hashBytes = cryptoService.hash(data: dataBytes)
+    let hashBytes=cryptoService.hash(data: dataBytes)
 
     // Convert back to Foundation Data
     return Data(hashBytes)

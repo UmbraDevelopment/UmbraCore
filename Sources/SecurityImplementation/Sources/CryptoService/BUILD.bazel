@@ -1,0 +1,19 @@
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+
+swift_library(
+    name = "CryptoService",
+    srcs = glob(
+        ["**/*.swift"],
+        allow_empty = True,
+    ),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//Sources/CryptoSwiftFoundationIndependent",
+        "//Sources/ErrorHandling/Core:ErrorHandlingCore",
+        "//Sources/ErrorHandling/Mapping:ErrorHandlingMapping",
+        "//Sources/ErrorHandlingDomains",
+        "//Sources/ErrorHandlingInterfaces",
+        "//Sources/SecurityProtocolsCore",
+        "//Sources/UmbraCoreTypes",
+    ],
+)

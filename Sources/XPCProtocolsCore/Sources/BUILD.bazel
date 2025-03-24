@@ -2,8 +2,12 @@ load("//:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
     name = "XPCProtocolsCoreSources",
-    srcs = glob(["**/*.swift"]),
+    srcs = glob(
+        ["**/*.swift"],
+        allow_empty = True,
+    ),
     deps = [
+        "//Sources/CoreDTOs",
     ],
 )
 
@@ -16,6 +20,6 @@ umbra_swift_library(
 #     srcs = glob([
 #         "**/*.swift",
 #         "**/*.docc/**",
-#     ]),
+#     ] , allow_empty = True),
 #     deps = ["//Sources/XPCProtocolsCoreSources"],
 # )

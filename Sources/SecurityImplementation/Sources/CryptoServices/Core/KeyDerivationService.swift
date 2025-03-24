@@ -10,9 +10,9 @@
  * Generate secure random data
  */
 
-import ErrorHandlingInterfaces
-import ErrorHandlingDomains
 import ErrorHandlingCore
+import ErrorHandlingDomains
+import ErrorHandlingInterfaces
 import Foundation
 import SecurityProtocolsCore
 import UmbraCoreTypes
@@ -22,7 +22,7 @@ final class KeyDerivationService: Sendable {
   // MARK: - Properties
 
   /// CryptoServiceCore for low-level cryptographic operations
-  private let cryptoService = CryptoServiceCore()
+  private let cryptoService=CryptoServiceCore()
 
   // MARK: - Initialisation
 
@@ -52,19 +52,19 @@ final class KeyDerivationService: Sendable {
 
     // Generate key based on type
     switch keyType {
-    case .symmetric:
-      return try await generateAESKey(bits: bits)
-    case .rsa:
-      return try await generateRSAKey(bits: bits)
-    case .hmac:
-      return try await generateHMACKey(bits: bits)
-    case .ec:
-      return try await generateECKey(bits: bits)
-    case .asymmetric:
-      // Default to RSA for asymmetric keys
-      return try await generateRSAKey(bits: bits)
-    case .unknown:
-      throw CryptoError.invalidKeyFormat(reason: "Unknown key type")
+      case .symmetric:
+        return try await generateAESKey(bits: bits)
+      case .rsa:
+        return try await generateRSAKey(bits: bits)
+      case .hmac:
+        return try await generateHMACKey(bits: bits)
+      case .ec:
+        return try await generateECKey(bits: bits)
+      case .asymmetric:
+        // Default to RSA for asymmetric keys
+        return try await generateRSAKey(bits: bits)
+      case .unknown:
+        throw CryptoError.invalidKeyFormat(reason: "Unknown key type")
     }
   }
 
@@ -78,15 +78,15 @@ final class KeyDerivationService: Sendable {
     }
 
     // Use the cryptoService to generate random data
-    let result = await cryptoService.generateRandomData(length: length)
+    let result=await cryptoService.generateRandomData(length: length)
 
     switch result {
-    case let .success(randomData):
-      return randomData
-    case .failure:
-      throw CryptoError
-        .randomGenerationFailed(status: -1) // Using a dummy OSStatus since we can't convert error
-      // to OSStatus
+      case let .success(randomData):
+        return randomData
+      case .failure:
+        throw CryptoError
+          .randomGenerationFailed(status: -1) // Using a dummy OSStatus since we can't convert error
+        // to OSStatus
     }
   }
 

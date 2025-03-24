@@ -1,5 +1,8 @@
-import CoreErrors
 import CoreServicesTypes
+import ErrorHandlingCore
+import ErrorHandlingDomains
+import ErrorHandlingInterfaces
+import ErrorHandlingMapping
 import Foundation
 import UmbraLogging
 
@@ -12,7 +15,7 @@ public protocol UmbraService: Actor {
   nonisolated var state: ServiceState { get }
 
   /// Initialise the service
-  /// - Throws: ServiceError if initialisation fails
+  /// - Throws: ErrorHandlingCore.ServiceError if initialisation fails
   func initialize() async throws
 
   /// Gracefully shut down the service
@@ -31,13 +34,13 @@ extension UmbraService {
 }
 
 /// Errors that can occur during service operations
-/// @deprecated This will be replaced by CoreErrors.ServiceError in a future version.
-/// New code should use CoreErrors.ServiceError directly.
+/// @deprecated This will be replaced by ErrorHandlingCore.ServiceError in a future version.
+/// New code should use ErrorHandlingCore.ServiceError directly.
 /// Protocol for services that require cleanup of resources
 @available(
   *,
   deprecated,
-  message: "This will be replaced by CoreErrors.ServiceError in a future version. Use CoreErrors.ServiceError directly."
+  message: "This will be replaced by ErrorHandlingCore.ServiceError in a future version. Use ErrorHandlingCore.ServiceError directly."
 )
 
 public protocol CleanupCapable {
@@ -64,12 +67,12 @@ public protocol HealthCheckable {
   func getHealthStatus() async -> [String: Any]
 }
 
-// Extension to add more details to CoreErrors.ServiceError
-extension CoreErrors.ServiceError {
+// Extension to add more details to ErrorHandlingCore.ServiceError
+extension ErrorHandlingCore.ServiceError {
   /// Add a detailed message to the error
   /// - Parameter message: The detailed error message
-  /// - Returns: A corresponding CoreErrors.ServiceError with the message
-  public static func withMessage(_ message: String) -> CoreErrors.ServiceError {
+  /// - Returns: A corresponding ErrorHandlingCore.ServiceError with the message
+  public static func withMessage(_ message: String) -> ErrorHandlingCore.ServiceError {
     // Log the error message
     print("Service error: \(message)")
     // Return a default error
@@ -78,11 +81,12 @@ extension CoreErrors.ServiceError {
 }
 
 // Specific extensions for each error type
-extension CoreErrors.ServiceError {
+extension ErrorHandlingCore.ServiceError {
   /// Add a detailed message to initialisation failed error
   /// - Parameter message: The detailed error message
   /// - Returns: An initialisation failed error
-  public static func initialisationFailedWithMessage(_ message: String) -> CoreErrors.ServiceError {
+  public static func initialisationFailedWithMessage(_ message: String) -> ErrorHandlingCore
+  .ServiceError {
     print("Service initialisation failed: \(message)")
     return .initialisationFailed
   }
@@ -90,7 +94,7 @@ extension CoreErrors.ServiceError {
   /// Add a detailed message to invalid state error
   /// - Parameter message: The detailed error message
   /// - Returns: An invalid state error
-  public static func invalidStateWithMessage(_ message: String) -> CoreErrors.ServiceError {
+  public static func invalidStateWithMessage(_ message: String) -> ErrorHandlingCore.ServiceError {
     print("Invalid service state: \(message)")
     return .invalidState
   }
@@ -98,7 +102,8 @@ extension CoreErrors.ServiceError {
   /// Add a detailed message to configuration error
   /// - Parameter message: The detailed error message
   /// - Returns: A configuration error
-  public static func configurationErrorWithMessage(_ message: String) -> CoreErrors.ServiceError {
+  public static func configurationErrorWithMessage(_ message: String) -> ErrorHandlingCore
+  .ServiceError {
     print("Service configuration error: \(message)")
     return .configurationError
   }
@@ -106,7 +111,8 @@ extension CoreErrors.ServiceError {
   /// Add a detailed message to dependency error
   /// - Parameter message: The detailed error message
   /// - Returns: A dependency error
-  public static func dependencyErrorWithMessage(_ message: String) -> CoreErrors.ServiceError {
+  public static func dependencyErrorWithMessage(_ message: String) -> ErrorHandlingCore
+  .ServiceError {
     print("Service dependency error: \(message)")
     return .dependencyError
   }
@@ -114,7 +120,8 @@ extension CoreErrors.ServiceError {
   /// Add a detailed message to operation failed error
   /// - Parameter message: The detailed error message
   /// - Returns: An operation failed error
-  public static func operationFailedWithMessage(_ message: String) -> CoreErrors.ServiceError {
+  public static func operationFailedWithMessage(_ message: String) -> ErrorHandlingCore
+  .ServiceError {
     print("Operation failed: \(message)")
     return .operationFailed
   }

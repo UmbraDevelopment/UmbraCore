@@ -5,14 +5,14 @@ import Foundation
 final class MockKeychainService: NSObject, KeychainXPCProtocol {
   // Use an actor to make the storage Sendable-compliant
   private actor StorageActor {
-    var storage: [String: Data] = [:]
+    var storage: [String: Data]=[:]
 
     func getValue(for key: String) -> Data? {
       storage[key]
     }
 
     func setValue(_ value: Data, for key: String) {
-      storage[key] = value
+      storage[key]=value
     }
 
     func removeValue(for key: String) {
@@ -28,8 +28,8 @@ final class MockKeychainService: NSObject, KeychainXPCProtocol {
     }
   }
 
-  private let storageActor = StorageActor()
-  private let queue = DispatchQueue(label: "com.umbracore.mock-keychain", attributes: .concurrent)
+  private let storageActor=StorageActor()
+  private let queue=DispatchQueue(label: "com.umbracore.mock-keychain", attributes: .concurrent)
 
   private func key(account: String, service: String, accessGroup: String?) -> String {
     [service, account, accessGroup].compactMap(\.self).joined(separator: "_")
@@ -43,7 +43,7 @@ final class MockKeychainService: NSObject, KeychainXPCProtocol {
     reply: @escaping @Sendable (Error?) -> Void
   ) {
     Task {
-      let key = key(account: account, service: service, accessGroup: accessGroup)
+      let key=key(account: account, service: service, accessGroup: accessGroup)
       if await storageActor.hasValue(for: key) {
         reply(KeychainError.duplicateItem)
         return
@@ -61,7 +61,7 @@ final class MockKeychainService: NSObject, KeychainXPCProtocol {
     reply: @escaping @Sendable (Error?) -> Void
   ) {
     Task {
-      let key = key(account: account, service: service, accessGroup: accessGroup)
+      let key=key(account: account, service: service, accessGroup: accessGroup)
       guard await storageActor.hasValue(for: key) else {
         reply(KeychainError.itemNotFound)
         return
@@ -79,8 +79,8 @@ final class MockKeychainService: NSObject, KeychainXPCProtocol {
     reply: @escaping @Sendable (Data?, Error?) -> Void
   ) {
     Task {
-      let key = key(account: account, service: service, accessGroup: accessGroup)
-      let data = await storageActor.getValue(for: key)
+      let key=key(account: account, service: service, accessGroup: accessGroup)
+      let data=await storageActor.getValue(for: key)
       if let data {
         reply(data, nil)
       } else {
@@ -97,7 +97,7 @@ final class MockKeychainService: NSObject, KeychainXPCProtocol {
     reply: @escaping @Sendable (Error?) -> Void
   ) {
     Task {
-      let key = key(account: account, service: service, accessGroup: accessGroup)
+      let key=key(account: account, service: service, accessGroup: accessGroup)
       if await storageActor.hasValue(for: key) {
         await storageActor.removeValue(for: key)
         reply(nil)
@@ -124,8 +124,8 @@ final class MockKeychainService: NSObject, KeychainXPCProtocol {
     reply: @escaping @Sendable (Bool, Error?) -> Void
   ) {
     Task {
-      let key = key(account: account, service: service, accessGroup: accessGroup)
-      let exists = await storageActor.hasValue(for: key)
+      let key=key(account: account, service: service, accessGroup: accessGroup)
+      let exists=await storageActor.hasValue(for: key)
       reply(exists, nil)
     }
   }

@@ -2,8 +2,16 @@ load("//:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
     name = "UmbraErrorsDomains",
-    srcs = glob(["**/*.swift"]),
+    srcs = glob(
+        ["**/*.swift"],
+        allow_empty = True,
+    ),
+    # Make visible to all packages
+    visibility = ["//visibility:public"],
     deps = [
+        "//Sources/ErrorHandlingDomains",  # Fixed path to use Sources prefix
+        "//Sources/ErrorHandlingInterfaces",  # Added missing dependency for error types
+        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
     ],
 )
 
@@ -16,6 +24,6 @@ umbra_swift_library(
 #     srcs = glob([
 #         "**/*.swift",
 #         "**/*.docc/**",
-#     ]),
-#     deps = ["//Sources/UmbraErrorsDomains"],
+#     ] , allow_empty = True),
+#     deps = ["//Sources/UmbraErrors/Domains:UmbraErrorsDomains"],
 # )

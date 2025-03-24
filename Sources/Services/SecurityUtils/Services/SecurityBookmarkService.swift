@@ -1,5 +1,7 @@
-import CoreErrors
+import ErrorHandlingCore
 import ErrorHandlingDomains
+import ErrorHandlingInterfaces
+import ErrorHandlingMapping
 import Foundation
 
 // Removed SecurityInterfaces as it appears to be unavailable
@@ -14,7 +16,7 @@ public actor SecurityBookmarkService {
   private let urlProvider: URLProvider
   private var activeResources: Set<URL>
 
-  /// Initialize a new security bookmark service
+  /// Initialise a new security bookmark service
   /// - Parameter urlProvider: Provider for URL operations
   public init(urlProvider: URLProvider=PathURLProvider()) {
     self.urlProvider=urlProvider
@@ -34,7 +36,7 @@ public actor SecurityBookmarkService {
 
     // Start accessing the resource before creating bookmark
     guard fileURL.startAccessingSecurityScopedResource() else {
-      throw UmbraErrors.Bookmark.Core.accessDenied(
+      throw ErrorHandlingCore.UmbraErrors.Bookmark.Core.accessDenied(
         url: url,
         reason: "Could not access the resource"
       )
@@ -50,24 +52,27 @@ public actor SecurityBookmarkService {
         relativeTo: nil
       )
     } catch {
-      throw UmbraErrors.Bookmark.Core.creationFailed(url: url, reason: error.localizedDescription)
+      throw ErrorHandlingCore.UmbraErrors.Bookmark.Core.creationFailed(
+        url: url,
+        reason: error.localizedDescription
+      )
     }
   }
 
-  /// Resolve bookmark data to a URL
+  /// Resolve a security-scoped bookmark to a URL
   /// - Parameters:
-  ///   - data: Bookmark data previously created with createBookmark
+  ///   - bookmarkData: The bookmark data to resolve
   ///   - options: Bookmark resolution options
   /// - Returns: URL to the bookmarked resource
   public func resolveBookmark(
-    _ data: Data,
+    _ bookmarkData: Data,
     options: BookmarkOptions=BookmarkDefaultOptions
   ) async throws -> URL {
     do {
       // Use standard Foundation API since URLProvider doesn't have resolveBookmarkData
       var isStale=false
       let url=try URL(
-        resolvingBookmarkData: data,
+        resolvingBookmarkData: bookmarkData,
         options: getSystemBookmarkResolutionOptions(from: options),
         relativeTo: nil,
         bookmarkDataIsStale: &isStale
@@ -81,7 +86,7 @@ public actor SecurityBookmarkService {
 
       return url
     } catch {
-      throw UmbraErrors.Bookmark.Core.resolutionFailed(
+      throw ErrorHandlingCore.UmbraErrors.Bookmark.Core.resolutionFailed(
         reason: "Failed to resolve bookmark",
         underlyingError: error
       )
@@ -96,7 +101,7 @@ public actor SecurityBookmarkService {
 
     // Start accessing the resource
     guard fileURL.startAccessingSecurityScopedResource() else {
-      throw UmbraErrors.Bookmark.Core.startAccessFailed(
+      throw ErrorHandlingCore.UmbraErrors.Bookmark.Core.startAccessFailed(
         url: url,
         reason: "Could not start accessing the resource"
       )

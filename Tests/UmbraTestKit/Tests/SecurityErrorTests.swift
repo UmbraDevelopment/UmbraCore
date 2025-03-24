@@ -5,14 +5,14 @@ import XCTest
 
 final class SecurityErrorTests: XCTestCase {
   // Add static property for test discovery
-  static var allTests = [
+  static var allTests=[
     ("testErrorDescription", testErrorDescription),
     ("testErrorEquality", testErrorEquality),
     ("testErrorMetadata", testErrorMetadata)
   ]
 
   func testErrorDescription() {
-    let error = ErrorHandlingDomains.UmbraErrors.Security.Protocols
+    let error=ErrorHandlingDomains.UmbraErrors.Security.Protocols
       .serviceError("Access denied to /test/path")
     XCTAssertEqual(
       error.errorDescription,
@@ -21,11 +21,11 @@ final class SecurityErrorTests: XCTestCase {
   }
 
   func testErrorEquality() {
-    let error1 = ErrorHandlingDomains.UmbraErrors.Security.Protocols
+    let error1=ErrorHandlingDomains.UmbraErrors.Security.Protocols
       .serviceError("Access denied to /test/path")
-    let error2 = ErrorHandlingDomains.UmbraErrors.Security.Protocols
+    let error2=ErrorHandlingDomains.UmbraErrors.Security.Protocols
       .serviceError("Access denied to /test/path")
-    let error3 = ErrorHandlingDomains.UmbraErrors.Security.Protocols
+    let error3=ErrorHandlingDomains.UmbraErrors.Security.Protocols
       .serviceError("Access denied to /different/path")
 
     XCTAssertEqual(error1.errorDescription, error2.errorDescription)
@@ -33,7 +33,7 @@ final class SecurityErrorTests: XCTestCase {
   }
 
   func testErrorMetadata() {
-    let error = ErrorHandlingDomains.UmbraErrors.Security.Protocols
+    let error=ErrorHandlingDomains.UmbraErrors.Security.Protocols
       .serviceError("Access denied to /test/path")
     XCTAssertEqual(error.errorDescription, "Service error: Access denied to /test/path")
   }

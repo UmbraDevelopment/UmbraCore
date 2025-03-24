@@ -2,9 +2,12 @@ load("//:swift_rules.bzl", "umbra_swift_test")
 
 umbra_swift_test(
     name = "ErrorHandlingProtocolsTests",
-    srcs = glob(["**/*.swift"]),
+    srcs = glob(
+        ["**/*.swift"],
+        allow_empty = True,
+    ),
     deps = [
-        "//Sources/ErrorHandlingProtocols",
+        "//Sources/ErrorHandling/Protocols:ErrorHandlingProtocols",
         "//Tests/TestKit",
     ],
 )

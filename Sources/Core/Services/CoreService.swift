@@ -18,7 +18,7 @@ public final class CoreService {
   /// - Throws: ServiceError if initialization fails
   public func initialize() async throws {
     // Initialize crypto service
-    let crypto=try await container.resolve(CryptoService.self)
+    let crypto=try await container.resolve(CryptoServiceCore.self)
     try await crypto.initialize()
 
     // Initialize security service
@@ -36,8 +36,8 @@ public final class CoreService {
   /// Get the crypto service
   /// - Returns: The crypto service instance
   /// - Throws: ServiceError if service not found
-  public func getCryptoService() async throws -> CryptoService {
-    try await container.resolve(CryptoService.self)
+  public func getCryptoService() async throws -> CryptoServiceCore {
+    try await container.resolve(CryptoServiceCore.self)
   }
 
   /// Shutdown all services

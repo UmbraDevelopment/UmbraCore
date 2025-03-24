@@ -2,7 +2,12 @@ load("//:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
     name = "UmbraErrorsCore",
-    srcs = glob(["**/*.swift"]),
+    srcs = glob(
+        ["**/*.swift"],
+        allow_empty = True,
+    ),
+    # Allow access from the UmbraErrors package
+    visibility = ["//Sources/UmbraErrors:__subpackages__"],
     deps = [
     ],
 )
@@ -16,6 +21,6 @@ umbra_swift_library(
 #     srcs = glob([
 #         "**/*.swift",
 #         "**/*.docc/**",
-#     ]),
+#     ] , allow_empty = True),
 #     deps = ["//Sources/UmbraErrorsCore"],
 # )

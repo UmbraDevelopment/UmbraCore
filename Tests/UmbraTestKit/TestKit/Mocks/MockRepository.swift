@@ -12,20 +12,20 @@ public actor MockRepository: RepositoryCore & RepositoryLocking & RepositoryMain
   public private(set) var state: RepositoryState
 
   private let securityProvider: SecurityProtocolsCore.SecurityProviderProtocol
-  private var isLocked: Bool = false
+  private var isLocked: Bool=false
   private var mockStats: RepositoryStatistics
 
   public init(
-    identifier: String = UUID().uuidString,
-    location: URL = FileManager.default.temporaryDirectory.appendingPathComponent("mock-repo"),
+    identifier: String=UUID().uuidString,
+    location: URL=FileManager.default.temporaryDirectory.appendingPathComponent("mock-repo"),
     initialState: RepositoryState = .uninitialized,
-    securityProvider: SecurityProtocolsCore.SecurityProviderProtocol = MockSecurityProvider()
+    securityProvider: SecurityProtocolsCore.SecurityProviderProtocol=MockSecurityProvider()
   ) {
-    self.identifier = identifier
-    self.location = location
-    state = initialState
-    self.securityProvider = securityProvider
-    mockStats = RepositoryStatistics(
+    self.identifier=identifier
+    self.location=location
+    state=initialState
+    self.securityProvider=securityProvider
+    mockStats=RepositoryStatistics(
       totalSize: 0,
       snapshotCount: 0,
       lastCheck: Date(),
@@ -40,7 +40,7 @@ public actor MockRepository: RepositoryCore & RepositoryLocking & RepositoryMain
 
   public func initialize() async throws {
     // Capture the path outside the closure to avoid actor isolation issues
-    let pathToAccess = location.path
+    let pathToAccess=location.path
 
     // Use withSecurityScopedAccess but don't modify actor state inside the closure
     try await securityProvider.withSecurityScopedAccess(to: pathToAccess) {
@@ -62,7 +62,7 @@ public actor MockRepository: RepositoryCore & RepositoryLocking & RepositoryMain
     guard !isLocked else {
       throw RepositoryError.locked(reason: "Repository is already locked")
     }
-    isLocked = true
+    isLocked=true
     state = .locked
   }
 
@@ -70,7 +70,7 @@ public actor MockRepository: RepositoryCore & RepositoryLocking & RepositoryMain
     guard state == .locked else {
       throw RepositoryError.operationFailed(reason: "Repository must be locked to unlock")
     }
-    isLocked = false
+    isLocked=false
     state = .ready
   }
 
@@ -123,6 +123,6 @@ public actor MockRepository: RepositoryCore & RepositoryLocking & RepositoryMain
 
   // Test helper methods
   public func setStats(_ stats: RepositoryStatistics) {
-    mockStats = stats
+    mockStats=stats
   }
 }

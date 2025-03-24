@@ -12,8 +12,8 @@ class ResticTestCase: XCTestCase {
 
   override func setUp() async throws {
     try await super.setUp()
-    mockRepository = try await TestRepository.create()
-    helper = try ResticCLIHelper(executablePath: "/opt/homebrew/bin/restic")
+    mockRepository=try await TestRepository.create()
+    helper=try ResticCLIHelper(executablePath: "/opt/homebrew/bin/restic")
   }
 
   override func tearDown() async throws {

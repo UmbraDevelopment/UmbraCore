@@ -2,13 +2,16 @@ load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 swift_library(
     name = "ErrorHandlingDomains",
-    srcs = glob(["*.swift"]),
+    srcs = glob(
+        ["*.swift"],
+        allow_empty = True,
+    ),
     copts = [
         "-enable-library-evolution",
     ],
     module_name = "ErrorHandlingDomains",
     visibility = ["//visibility:public"],
     deps = [
-        "//Sources/ErrorHandlingInterfaces",
+        "//ErrorHandling/Interfaces:ErrorHandlingInterfaces",
     ],
 )

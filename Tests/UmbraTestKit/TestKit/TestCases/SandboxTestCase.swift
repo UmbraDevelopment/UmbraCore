@@ -14,10 +14,10 @@ open class SandboxTestCase: XCTestCase {
     try await super.setUp()
 
     // Create temporary directory
-    tempDirectory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    tempDirectory=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
 
     // Initialize mock file manager
-    mockFileManager = MockFileManager()
+    mockFileManager=MockFileManager()
 
     // Use the real FileManager to create the directory
     try FileManager.default.createDirectory(
@@ -31,8 +31,8 @@ open class SandboxTestCase: XCTestCase {
   open override func tearDown() async throws {
     // Clean up temporary directory
     try? FileManager.default.removeItem(at: tempDirectory)
-    tempDirectory = nil
-    mockFileManager = nil
+    tempDirectory=nil
+    mockFileManager=nil
 
     try await super.tearDown()
   }
@@ -50,9 +50,9 @@ open class SandboxTestCase: XCTestCase {
     content: String,
     access: FilePermission = .readWrite
   ) -> URL {
-    let fileURL = tempDirectory.appendingPathComponent(name)
+    let fileURL=tempDirectory.appendingPathComponent(name)
     mockFileManager.simulateSetFileContent(content, at: fileURL)
-    _ = mockFileManager.simulateSetAccess(access, for: fileURL)
+    _=mockFileManager.simulateSetAccess(access, for: fileURL)
     return fileURL
   }
 
@@ -61,7 +61,7 @@ open class SandboxTestCase: XCTestCase {
     name: String,
     access: FilePermission = .readWrite
   ) throws -> URL {
-    let dirURL = tempDirectory.appendingPathComponent(name)
+    let dirURL=tempDirectory.appendingPathComponent(name)
 
     // Use the real FileManager to create the directory
     try FileManager.default.createDirectory(
@@ -71,7 +71,7 @@ open class SandboxTestCase: XCTestCase {
     )
 
     // Set access via the mock manager
-    _ = mockFileManager.simulateSetAccess(access, for: dirURL)
+    _=mockFileManager.simulateSetAccess(access, for: dirURL)
     return dirURL
   }
 }

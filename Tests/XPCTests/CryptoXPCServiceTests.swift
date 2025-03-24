@@ -13,24 +13,24 @@ final class CryptoXPCServiceTests: XCTestCase {
   override func setUp() {
     super.setUp()
     // Create the real service for regular API testing
-    let dependencies = MockCryptoXPCServiceDependencies()
-    service = CryptoXPCService(dependencies: dependencies)
+    let dependencies=MockCryptoXPCServiceDependencies()
+    service=CryptoXPCService(dependencies: dependencies)
 
     // Create our mock for specific test scenarios
-    mockCryptoService = MockCryptoXPCService()
+    mockCryptoService=MockCryptoXPCService()
   }
 
   override func tearDown() {
-    service = nil
-    mockCryptoService = nil
+    service=nil
+    mockCryptoService=nil
     super.tearDown()
   }
 
   func testEncryptDecryptRoundTrip() {
     // Use expectations for completion-based APIs
-    let generateKeyExpectation = expectation(description: "Generate key")
-    let encryptExpectation = expectation(description: "Encrypt data")
-    let decryptExpectation = expectation(description: "Decrypt data")
+    let generateKeyExpectation=expectation(description: "Generate key")
+    let encryptExpectation=expectation(description: "Encrypt data")
+    let decryptExpectation=expectation(description: "Decrypt data")
 
     // Test variables
     var keyData: Data?
@@ -40,11 +40,11 @@ final class CryptoXPCServiceTests: XCTestCase {
     var decryptError: Error?
 
     // Test data
-    let testData = "Hello, XPC Crypto Service!".data(using: .utf8)!
+    let testData="Hello, XPC Crypto Service!".data(using: .utf8)!
 
     // Generate a test key
     service.generateKey(bits: 256) { key, _ in
-      keyData = key
+      keyData=key
       generateKeyExpectation.fulfill()
     }
 
@@ -52,15 +52,15 @@ final class CryptoXPCServiceTests: XCTestCase {
     XCTAssertNotNil(keyData, "Key generation should succeed")
     XCTAssertEqual(keyData?.count, 32, "Key should be 32 bytes for AES-256")
 
-    guard let key = keyData else {
+    guard let key=keyData else {
       XCTFail("Key generation failed")
       return
     }
 
     // Encrypt
     service.encrypt(testData, key: key) { encrypted, error in
-      encryptedData = encrypted
-      encryptError = error
+      encryptedData=encrypted
+      encryptError=error
       encryptExpectation.fulfill()
     }
 
@@ -73,15 +73,15 @@ final class CryptoXPCServiceTests: XCTestCase {
       "Encrypted data should include IV"
     )
 
-    guard let encrypted = encryptedData else {
+    guard let encrypted=encryptedData else {
       XCTFail("Encryption failed")
       return
     }
 
     // Decrypt
     service.decrypt(encrypted, key: key) { decrypted, error in
-      decryptedData = decrypted
-      decryptError = error
+      decryptedData=decrypted
+      decryptError=error
       decryptExpectation.fulfill()
     }
 
@@ -93,11 +93,11 @@ final class CryptoXPCServiceTests: XCTestCase {
 
   func testRandomDataGeneration() {
     // Test the implemented random data generation
-    let randomDataExpectation = expectation(description: "Generate random data")
+    let randomDataExpectation=expectation(description: "Generate random data")
     var randomData: Data?
 
     service.generateRandomData(length: 32) { data, _ in
-      randomData = data
+      randomData=data
       randomDataExpectation.fulfill()
     }
 
@@ -106,11 +106,11 @@ final class CryptoXPCServiceTests: XCTestCase {
     XCTAssertEqual(randomData?.count, 32, "Random data should be 32 bytes")
 
     // Test uniqueness with another random data generation
-    let randomData2Expectation = expectation(description: "Generate random data 2")
+    let randomData2Expectation=expectation(description: "Generate random data 2")
     var randomData2: Data?
 
     service.generateRandomData(length: 32) { data, _ in
-      randomData2 = data
+      randomData2=data
       randomData2Expectation.fulfill()
     }
 
@@ -121,36 +121,36 @@ final class CryptoXPCServiceTests: XCTestCase {
 
   func testKeyStorageRetrieval() {
     // Test key storage and retrieval
-    let generateKeyExpectation = expectation(description: "Generate key")
-    let storeKeyExpectation = expectation(description: "Store key")
-    let retrieveKeyExpectation = expectation(description: "Retrieve key")
+    let generateKeyExpectation=expectation(description: "Generate key")
+    let storeKeyExpectation=expectation(description: "Store key")
+    let retrieveKeyExpectation=expectation(description: "Retrieve key")
 
     var keyData: Data?
-    var storeSuccess = false
+    var storeSuccess=false
     var retrievedKey: Data?
     var storeError: Error?
     var retrieveError: Error?
 
-    let keyIdentifier = "test.crypto.key.\(UUID().uuidString)"
+    let keyIdentifier="test.crypto.key.\(UUID().uuidString)"
 
     // Generate key
     service.generateKey(bits: 256) { key, _ in
-      keyData = key
+      keyData=key
       generateKeyExpectation.fulfill()
     }
 
     wait(for: [generateKeyExpectation], timeout: 5.0)
     XCTAssertNotNil(keyData, "Key should be generated")
 
-    guard let key = keyData else {
+    guard let key=keyData else {
       XCTFail("Key generation failed")
       return
     }
 
     // Store key
     service.storeKey(key, identifier: keyIdentifier) { success, error in
-      storeSuccess = success
-      storeError = error
+      storeSuccess=success
+      storeError=error
       storeKeyExpectation.fulfill()
     }
 
@@ -160,8 +160,8 @@ final class CryptoXPCServiceTests: XCTestCase {
 
     // Retrieve key
     service.retrieveKey(identifier: keyIdentifier) { retrievedData, error in
-      retrievedKey = retrievedData
-      retrieveError = error
+      retrievedKey=retrievedData
+      retrieveError=error
       retrieveKeyExpectation.fulfill()
     }
 
@@ -173,10 +173,10 @@ final class CryptoXPCServiceTests: XCTestCase {
 
   func testInvalidKeySize() {
     // For error handling tests, we'll use our mock
-    let invalidKeyExpectation = expectation(description: "Invalid key size")
+    let invalidKeyExpectation=expectation(description: "Invalid key size")
 
     // Set up mock to simulate an error
-    mockCryptoService.mockGenerateKeyResult = (nil, NSError(
+    mockCryptoService.mockGenerateKeyResult=(nil, NSError(
       domain: "ErrorHandlingDomains.UmbraErrors.Security.Protocols",
       code: 1,
       userInfo: [NSLocalizedDescriptionKey: "Invalid key size"]
@@ -187,8 +187,8 @@ final class CryptoXPCServiceTests: XCTestCase {
 
     // Try to generate a key with invalid bit size using our mock
     mockCryptoService.generateKey(bits: 123) { key, error in
-      generatedKey = key
-      generationError = error
+      generatedKey=key
+      generationError=error
       invalidKeyExpectation.fulfill()
     }
 
@@ -199,10 +199,10 @@ final class CryptoXPCServiceTests: XCTestCase {
 
   func testInvalidEncryptedData() {
     // For error handling tests, we'll use our mock
-    let decryptExpectation = expectation(description: "Decrypt invalid data")
+    let decryptExpectation=expectation(description: "Decrypt invalid data")
 
     // Set up mock to simulate an error
-    mockCryptoService.mockDecryptResult = (nil, NSError(
+    mockCryptoService.mockDecryptResult=(nil, NSError(
       domain: "ErrorHandlingDomains.UmbraErrors.Security.Protocols",
       code: 1,
       userInfo: [NSLocalizedDescriptionKey: "Invalid data format"]
@@ -212,13 +212,13 @@ final class CryptoXPCServiceTests: XCTestCase {
     var decryptError: Error?
 
     // Create a test key
-    let key = Data(repeating: 0x42, count: 32)
-    let invalidData = Data([0x01, 0x02])
+    let key=Data(repeating: 0x42, count: 32)
+    let invalidData=Data([0x01, 0x02])
 
     // Try to decrypt invalid data using our mock
     mockCryptoService.decrypt(invalidData, key: key) { decrypted, error in
-      decryptedData = decrypted
-      decryptError = error
+      decryptedData=decrypted
+      decryptError=error
       decryptExpectation.fulfill()
     }
 

@@ -8,61 +8,61 @@ public enum TestErrorMapper {
   /// - Parameter error: The source error
   /// - Returns: A mapped NSError with appropriate domain and message
   public static func mapToNSError(_ error: Error) -> NSError {
-    let errorDomain = "com.umbracore.security.test"
+    let errorDomain="com.umbracore.security.test"
 
     // Extract description from the original error
-    var description = "\(error)"
-    var code = 1_001
+    var description="\(error)"
+    var code=1001
 
     // Handle specific error types from ErrorHandlingDomains
-    if let securityError = error as? UmbraErrors.Security.Protocols {
+    if let securityError=error as? UmbraErrors.Security.Protocols {
       switch securityError {
         case let .invalidFormat(reason):
-          description = "Invalid format: \(reason)"
-          code = 4_001
+          description="Invalid format: \(reason)"
+          code=4001
         case let .missingProtocolImplementation(protocolName):
-          description = "Missing protocol implementation: \(protocolName)"
-          code = 4_002
+          description="Missing protocol implementation: \(protocolName)"
+          code=4002
         case let .unsupportedOperation(name):
-          description = "Unsupported operation: \(name)"
-          code = 4_003
+          description="Unsupported operation: \(name)"
+          code=4003
         case let .incompatibleVersion(version):
-          description = "Incompatible version: \(version)"
-          code = 4_004
+          description="Incompatible version: \(version)"
+          code=4004
         case let .invalidState(state, expectedState):
-          description = "Invalid state: \(state), expected: \(expectedState)"
-          code = 4_005
+          description="Invalid state: \(state), expected: \(expectedState)"
+          code=4005
         case let .internalError(message):
-          description = "Internal error: \(message)"
-          code = 4_999
+          description="Internal error: \(message)"
+          code=4999
         case let .invalidInput(details):
-          description = "Invalid input: \(details)"
-          code = 4_006
+          description="Invalid input: \(details)"
+          code=4006
         case let .encryptionFailed(reason):
-          description = "Encryption failed: \(reason)"
-          code = 5_000
+          description="Encryption failed: \(reason)"
+          code=5000
         case let .decryptionFailed(reason):
-          description = "Decryption failed: \(reason)"
-          code = 5_001
+          description="Decryption failed: \(reason)"
+          code=5001
         case let .randomGenerationFailed(reason):
-          description = "Random generation failed: \(reason)"
-          code = 5_002
+          description="Random generation failed: \(reason)"
+          code=5002
         case let .storageOperationFailed(reason):
-          description = "Storage operation failed: \(reason)"
-          code = 5_003
+          description="Storage operation failed: \(reason)"
+          code=5003
         case let .serviceError(details):
-          description = "Service error: \(details)"
-          code = 5_004
+          description="Service error: \(details)"
+          code=5004
         case let .notImplemented(feature):
-          description = "Not implemented: \(feature)"
-          code = 5_005
+          description="Not implemented: \(feature)"
+          code=5005
         @unknown default:
-          description = "Unknown security protocol error: \(securityError)"
+          description="Unknown security protocol error: \(securityError)"
       }
     }
 
     // Create the NSError with localised description
-    let userInfo: [String: Any] = [
+    let userInfo: [String: Any]=[
       NSLocalizedDescriptionKey: description
     ]
 

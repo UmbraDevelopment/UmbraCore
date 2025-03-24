@@ -2,8 +2,14 @@ load("//:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
     name = "SecurityProtocolsCoreSources",
-    srcs = glob(["**/*.swift"]),
+    srcs = glob(
+        ["**/*.swift"],
+        allow_empty = True,
+    ),
     deps = [
+        "//Sources/ErrorHandlingDomains",
+        "//Sources/ErrorHandlingInterfaces",
+        "//Sources/UmbraCoreTypes",
     ],
 )
 
@@ -16,6 +22,6 @@ umbra_swift_library(
 #     srcs = glob([
 #         "**/*.swift",
 #         "**/*.docc/**",
-#     ]),
+#     ] , allow_empty = True),
 #     deps = ["//Sources/SecurityProtocolsCoreSources"],
 # )

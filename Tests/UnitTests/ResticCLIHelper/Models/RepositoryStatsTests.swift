@@ -6,7 +6,7 @@ import XCTest
 
 final class RepositoryStatsTests: XCTestCase {
   func testParseRepositoryStats() throws {
-    let json = """
+    let json="""
       {
           "total_size": 1073741824,
           "total_uncompressed_size": 2147483648,
@@ -21,8 +21,8 @@ final class RepositoryStatsTests: XCTestCase {
       }
       """
 
-    let data = json.data(using: .utf8)!
-    guard let statsDict = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+    let data=json.data(using: .utf8)!
+    guard let statsDict=try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
       XCTFail("Failed to parse stats JSON")
       return
     }

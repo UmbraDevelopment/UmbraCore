@@ -14,10 +14,10 @@ private struct TestResticCommand: ResticCommand {
     environment: [String: String],
     requiredEnvironmentVariables _: Set<String>
   ) {
-    commandName = command
-    commandArguments = arguments
-    self.environment = environment
-    options = CommonOptions(repository: "/test/repo", password: "test-password")
+    commandName=command
+    commandArguments=arguments
+    self.environment=environment
+    options=CommonOptions(repository: "/test/repo", password: "test-password")
   }
 
   func validate() throws {
@@ -28,7 +28,7 @@ private struct TestResticCommand: ResticCommand {
 
   // Fix: provide correct implementation for arguments property to match protocol
   var arguments: [String] {
-    var args = [String]()
+    var args=[String]()
     args.append(commandName)
     args.append(contentsOf: commandArguments)
     return args
@@ -37,7 +37,7 @@ private struct TestResticCommand: ResticCommand {
 
 final class ResticCommandTests: XCTestCase {
   func testValidCommand() throws {
-    let command = TestResticCommand(
+    let command=TestResticCommand(
       command: "backup",
       arguments: ["--tag", "test"],
       environment: ["RESTIC_PASSWORD": "test"],
@@ -50,7 +50,7 @@ final class ResticCommandTests: XCTestCase {
   }
 
   func testInvalidCommand() {
-    let command = TestResticCommand(
+    let command=TestResticCommand(
       command: "",
       arguments: [],
       environment: [:],
@@ -58,7 +58,7 @@ final class ResticCommandTests: XCTestCase {
     )
 
     XCTAssertThrowsError(try command.validate()) { error in
-      guard let resticError = error as? ResticError else {
+      guard let resticError=error as? ResticError else {
         XCTFail("Expected ResticError")
         return
       }
@@ -73,14 +73,14 @@ final class ResticCommandTests: XCTestCase {
   }
 
   func testCommandArguments() {
-    let command = TestResticCommand(
+    let command=TestResticCommand(
       command: "backup",
       arguments: ["--tag", "test"],
       environment: ["RESTIC_PASSWORD": "test"],
       requiredEnvironmentVariables: ["RESTIC_PASSWORD"]
     )
 
-    let args = command.arguments
+    let args=command.arguments
     XCTAssertEqual(args.first, "backup")
     XCTAssertTrue(args.contains("--tag"))
     XCTAssertTrue(args.contains("test"))

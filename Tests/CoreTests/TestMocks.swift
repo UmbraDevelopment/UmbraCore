@@ -13,29 +13,29 @@ import ServiceTypes
 
 /// Generic mock implementation of ServiceContainer for testing
 actor GenericMockServiceContainer {
-  var services: [String: Any] = [:]
-  var serviceStates: [String: CoreServicesTypes.ServiceState] = [:]
+  var services: [String: Any]=[:]
+  var serviceStates: [String: CoreServicesTypes.ServiceState]=[:]
 
   func register(_ service: any ServiceTypes.UmbraService) async throws {
-    services[service.identifier] = service
-    serviceStates[service.identifier] = CoreServicesTypes.ServiceState.uninitialized
+    services[service.identifier]=service
+    serviceStates[service.identifier]=CoreServicesTypes.ServiceState.uninitialized
   }
 
   func initialiseAll() async throws {
     for serviceID in services.keys {
-      serviceStates[serviceID] = CoreServicesTypes.ServiceState.ready
-      if let service = services[serviceID] as? any ServiceTypes.UmbraService {
+      serviceStates[serviceID]=CoreServicesTypes.ServiceState.ready
+      if let service=services[serviceID] as? any ServiceTypes.UmbraService {
         try await service.validate()
       }
     }
   }
 
   func initialiseService(_ identifier: String) async throws {
-    serviceStates[identifier] = CoreServicesTypes.ServiceState.ready
+    serviceStates[identifier]=CoreServicesTypes.ServiceState.ready
   }
 
   func resolve<T>(_: T.Type) async throws -> T where T: ServiceTypes.UmbraService {
-    guard let service = services.values.first(where: { $0 is T }) as? T else {
+    guard let service=services.values.first(where: { $0 is T }) as? T else {
       throw CoreErrors.ServiceError.dependencyError
     }
     return service
@@ -44,12 +44,12 @@ actor GenericMockServiceContainer {
 
 // MARK: - Crypto Service Mocks
 
-/// Generic mock implementation of CryptoService for testing
+/// Generic mock implementation of CryptoServiceCore for testing
 @preconcurrency
 actor GenericMockCryptoService {
-  static let serviceIdentifier = "com.umbracore.crypto.mock"
-  nonisolated let identifier: String = GenericMockCryptoService.serviceIdentifier
-  nonisolated let version: String = "1.0.0"
+  static let serviceIdentifier="com.umbracore.crypto.mock"
+  nonisolated let identifier: String=GenericMockCryptoService.serviceIdentifier
+  nonisolated let version: String="1.0.0"
 
   nonisolated var state: CoreServicesTypes.ServiceState {
     _state
@@ -59,16 +59,16 @@ actor GenericMockCryptoService {
   private nonisolated(unsafe) var _state: CoreServicesTypes.ServiceState = .uninitialized
 
   init(container: GenericMockServiceContainer) {
-    self.container = container
+    self.container=container
   }
 
   func validate() async throws -> Bool {
-    _state = CoreServicesTypes.ServiceState.ready
+    _state=CoreServicesTypes.ServiceState.ready
     return true
   }
 
   func shutdown() async {
-    _state = CoreServicesTypes.ServiceState.shutdown
+    _state=CoreServicesTypes.ServiceState.shutdown
   }
 
   // Crypto operations
@@ -85,7 +85,7 @@ actor GenericMockCryptoService {
       throw CoreErrors.ServiceError.operationFailed
     }
     // Mock encryption by XORing with the key (for testing only, not secure)
-    let repeatedKey = Array(repeating: key, count: (data.count / key.count) + 1).flatMap(\.self)
+    let repeatedKey=Array(repeating: key, count: (data.count / key.count) + 1).flatMap(\.self)
       .prefix(data.count)
     return zip(data, repeatedKey).map { $0 ^ $1 }
   }
@@ -103,7 +103,7 @@ actor GenericMockCryptoService {
       throw CoreErrors.ServiceError.operationFailed
     }
     // Simple mock hash function (not cryptographically secure)
-    var result: [UInt8] = Array(repeating: 0, count: 32)
+    var result: [UInt8]=Array(repeating: 0, count: 32)
     for (index, byte) in data.enumerated() {
       result[index % 32] ^= byte
     }
@@ -116,29 +116,29 @@ actor GenericMockCryptoService {
 /// Generic mock implementation of SecurityService for testing
 @preconcurrency
 actor GenericMockSecurityService {
-  static let serviceIdentifier = "com.umbracore.security.mock"
-  nonisolated let identifier: String = GenericMockSecurityService.serviceIdentifier
-  nonisolated let version: String = "1.0.0"
+  static let serviceIdentifier="com.umbracore.security.mock"
+  nonisolated let identifier: String=GenericMockSecurityService.serviceIdentifier
+  nonisolated let version: String="1.0.0"
 
   nonisolated var state: CoreServicesTypes.ServiceState {
     _state
   }
 
-  private var bookmarkStorage: [String: [UInt8]] = [:]
+  private var bookmarkStorage: [String: [UInt8]]=[:]
   private weak var container: GenericMockServiceContainer?
   private nonisolated(unsafe) var _state: CoreServicesTypes.ServiceState = .uninitialized
 
   init(container: GenericMockServiceContainer) {
-    self.container = container
+    self.container=container
   }
 
   func validate() async throws -> Bool {
-    _state = CoreServicesTypes.ServiceState.ready
+    _state=CoreServicesTypes.ServiceState.ready
     return true
   }
 
   func shutdown() async {
-    _state = CoreServicesTypes.ServiceState.shutdown
+    _state=CoreServicesTypes.ServiceState.shutdown
   }
 
   // Security operations
@@ -168,7 +168,7 @@ actor GenericMockSecurityService {
     }
 
     // Mock bookmark resolution by converting bytes back to string
-    if let path = String(bytes: bookmark, encoding: .utf8) {
+    if let path=String(bytes: bookmark, encoding: .utf8) {
       return path
     } else {
       throw CoreErrors.SecurityError.invalidParameter(
@@ -183,7 +183,7 @@ actor GenericMockSecurityService {
       throw CoreErrors.ServiceError.operationFailed
     }
 
-    bookmarkStorage[identifier] = bookmark
+    bookmarkStorage[identifier]=bookmark
   }
 
   func loadBookmark(withIdentifier identifier: String) async throws -> [UInt8] {
@@ -191,7 +191,7 @@ actor GenericMockSecurityService {
       throw CoreErrors.ServiceError.operationFailed
     }
 
-    guard let bookmark = bookmarkStorage[identifier] else {
+    guard let bookmark=bookmarkStorage[identifier] else {
       throw CoreErrors.SecurityError.invalidParameter(
         name: "identifier",
         reason: "Bookmark not found: \(identifier)"
@@ -221,21 +221,21 @@ struct GenericMockKeyManagerDependencies {
 /// Generic mock implementation of KeyManager for testing
 actor GenericMockKeyManager {
   private let dependencies: GenericMockKeyManagerDependencies
-  private var keyStore: [String: [UInt8]] = [:]
+  private var keyStore: [String: [UInt8]]=[:]
 
   init(dependencies: GenericMockKeyManagerDependencies) {
-    self.dependencies = dependencies
+    self.dependencies=dependencies
   }
 
   func generateKey(withID keyID: String, bits: Int) async throws -> [UInt8] {
-    let byteCount = bits / 8
-    let keyData = try await dependencies.cryptoService.generateRandomBytes(count: byteCount)
-    keyStore[keyID] = keyData
+    let byteCount=bits / 8
+    let keyData=try await dependencies.cryptoService.generateRandomBytes(count: byteCount)
+    keyStore[keyID]=keyData
     return keyData
   }
 
   func getKey(withID keyID: String) async throws -> [UInt8] {
-    guard let keyData = keyStore[keyID] else {
+    guard let keyData=keyStore[keyID] else {
       throw NSError(
         domain: "KeyManager",
         code: 404,
@@ -261,12 +261,12 @@ actor GenericMockKeyManager {
   }
 
   func encryptData(_ data: [UInt8], withKeyID keyID: String) async throws -> [UInt8] {
-    let key = try await getKey(withID: keyID)
+    let key=try await getKey(withID: keyID)
     return try await dependencies.cryptoService.encrypt(data: data, key: key)
   }
 
   func decryptData(_ data: [UInt8], withKeyID keyID: String) async throws -> [UInt8] {
-    let key = try await getKey(withID: keyID)
+    let key=try await getKey(withID: keyID)
     return try await dependencies.cryptoService.decrypt(data: data, key: key)
   }
 }
@@ -276,9 +276,9 @@ actor GenericMockKeyManager {
 /// Generic mock service for testing
 @preconcurrency
 actor GenericMockService: ServiceTypes.UmbraService {
-  static let serviceIdentifier = "com.umbracore.mock"
-  nonisolated let identifier: String = GenericMockService.serviceIdentifier
-  nonisolated let version: String = "1.0.0"
+  static let serviceIdentifier="com.umbracore.mock"
+  nonisolated let identifier: String=GenericMockService.serviceIdentifier
+  nonisolated let version: String="1.0.0"
 
   nonisolated var state: CoreServicesTypes.ServiceState {
     _state
@@ -287,27 +287,27 @@ actor GenericMockService: ServiceTypes.UmbraService {
   private nonisolated(unsafe) var _state: CoreServicesTypes.ServiceState = .uninitialized
 
   func validate() async throws -> Bool {
-    _state = CoreServicesTypes.ServiceState.initializing
+    _state=CoreServicesTypes.ServiceState.initializing
     // Simulate some initialization work
     try await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
-    _state = CoreServicesTypes.ServiceState.ready
+    _state=CoreServicesTypes.ServiceState.ready
     return true
   }
 
   func shutdown() async {
-    _state = CoreServicesTypes.ServiceState.shuttingDown
+    _state=CoreServicesTypes.ServiceState.shuttingDown
     // Simulate some shutdown work
     try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
-    _state = CoreServicesTypes.ServiceState.shutdown
+    _state=CoreServicesTypes.ServiceState.shutdown
   }
 }
 
 /// Generic mock dependent service for testing dependency initialization
 @preconcurrency
 actor GenericMockDependentService: ServiceTypes.UmbraService {
-  static let serviceIdentifier = "com.umbracore.dependent"
-  nonisolated let identifier: String = GenericMockDependentService.serviceIdentifier
-  nonisolated let version: String = "1.0.0"
+  static let serviceIdentifier="com.umbracore.dependent"
+  nonisolated let identifier: String=GenericMockDependentService.serviceIdentifier
+  nonisolated let version: String="1.0.0"
 
   nonisolated var state: CoreServicesTypes.ServiceState {
     _state
@@ -317,24 +317,24 @@ actor GenericMockDependentService: ServiceTypes.UmbraService {
   private nonisolated(unsafe) var _state: CoreServicesTypes.ServiceState = .uninitialized
 
   init(dependency: GenericMockService) {
-    self.dependency = dependency
+    self.dependency=dependency
   }
 
   func validate() async throws -> Bool {
-    _state = CoreServicesTypes.ServiceState.initializing
+    _state=CoreServicesTypes.ServiceState.initializing
 
     // Ensure dependency is ready
-    let dependencyState = await dependency.state
+    let dependencyState=await dependency.state
     guard dependencyState == CoreServicesTypes.ServiceState.ready else {
       throw CoreErrors.ServiceError.dependencyError
     }
 
-    _state = CoreServicesTypes.ServiceState.ready
+    _state=CoreServicesTypes.ServiceState.ready
     return true
   }
 
   func shutdown() async {
-    _state = CoreServicesTypes.ServiceState.shuttingDown
-    _state = CoreServicesTypes.ServiceState.shutdown
+    _state=CoreServicesTypes.ServiceState.shuttingDown
+    _state=CoreServicesTypes.ServiceState.shutdown
   }
 }

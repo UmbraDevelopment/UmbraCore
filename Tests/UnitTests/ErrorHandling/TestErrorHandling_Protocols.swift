@@ -8,7 +8,7 @@ final class TestErrorHandling_Protocols: XCTestCase {
 
   func testErrorProtocolConformance() {
     // Test a custom error type conforming to protocols
-    let customError = CustomErrorType(code: "CUSTOM001", message: "Custom error message")
+    let customError=CustomErrorType(code: "CUSTOM001", message: "Custom error message")
 
     // Verify error properties instead of checking protocol conformance
     // which is enforced by the compiler
@@ -29,10 +29,10 @@ final class TestErrorHandling_Protocols: XCTestCase {
   @MainActor
   func testErrorHandlerProtocol() {
     // Create a custom error handler
-    let handler = CustomErrorHandler()
+    let handler=CustomErrorHandler()
 
     // Create a test error
-    let error = TestError(
+    let error=TestError(
       domain: "TestDomain",
       code: "ERR001",
       description: "Invalid argument"
@@ -48,7 +48,7 @@ final class TestErrorHandling_Protocols: XCTestCase {
       XCTAssertEqual(handler.handledSeverities.first, .error)
 
       // Test retrieving recovery options
-      let options = handler.getRecoveryOptions(for: error)
+      let options=handler.getRecoveryOptions(for: error)
 
       // Verify recovery options were provided
       XCTAssertEqual(options.count, 2)
@@ -56,7 +56,7 @@ final class TestErrorHandling_Protocols: XCTestCase {
       XCTAssertEqual(options[1].title, "Cancel")
 
       // Test error with context
-      let context = ErrorHandlingInterfaces.ErrorContext(
+      let context=ErrorHandlingInterfaces.ErrorContext(
         source: "TestSource",
         operation: "testOperation",
         details: nil,
@@ -65,7 +65,7 @@ final class TestErrorHandling_Protocols: XCTestCase {
         line: #line,
         function: #function
       )
-      let errorWithContext = error.with(context: context)
+      let errorWithContext=error.with(context: context)
 
       XCTAssertEqual(errorWithContext.context.source, "TestSource")
       XCTAssertEqual(errorWithContext.context.operation, "testOperation")
@@ -76,10 +76,10 @@ final class TestErrorHandling_Protocols: XCTestCase {
 
   func testErrorProviderProtocol() {
     // Create a custom error provider
-    let provider = CustomErrorProvider()
+    let provider=CustomErrorProvider()
 
     // Test error creation
-    let error = provider.createError(code: "ERR001", message: "Provider error message")
+    let error=provider.createError(code: "ERR001", message: "Provider error message")
 
     // Verify the error properties
     XCTAssertEqual(error.code, "ERR001")
@@ -87,7 +87,7 @@ final class TestErrorHandling_Protocols: XCTestCase {
     XCTAssertEqual(error.domain, "CustomProvider")
 
     // Test error with context
-    let context = ErrorHandlingInterfaces.ErrorContext(
+    let context=ErrorHandlingInterfaces.ErrorContext(
       source: "TestSource",
       operation: "testOperation",
       details: nil,
@@ -96,7 +96,7 @@ final class TestErrorHandling_Protocols: XCTestCase {
       line: #line,
       function: #function
     )
-    let errorWithContext = error.with(context: context)
+    let errorWithContext=error.with(context: context)
 
     XCTAssertEqual(errorWithContext.context.source, "TestSource")
     XCTAssertEqual(errorWithContext.context.operation, "testOperation")
@@ -106,17 +106,17 @@ final class TestErrorHandling_Protocols: XCTestCase {
 
   func testRecoveryOptionsProviderProtocol() {
     // Create a custom recovery options provider
-    let provider = CustomRecoveryProvider()
+    let provider=CustomRecoveryProvider()
 
     // Test domain handling capability
     XCTAssertTrue(provider.canHandle(domain: "TestDomain"))
     XCTAssertFalse(provider.canHandle(domain: "UnsupportedDomain"))
 
     // Create a test error
-    let error = TestError(domain: "TestDomain", code: "TEST001", description: "Test error")
+    let error=TestError(domain: "TestDomain", code: "TEST001", description: "Test error")
 
     // Test recovery options retrieval
-    let options = provider.recoveryOptions(for: error)
+    let options=provider.recoveryOptions(for: error)
 
     // Verify recovery options
     XCTAssertEqual(options.count, 2)
@@ -153,18 +153,18 @@ final class TestErrorHandling_Protocols: XCTestCase {
 
   @MainActor
   class CustomErrorHandler: ErrorHandlingService {
-    var handledErrors: [Error] = []
-    var handledSeverities: [ErrorHandlingInterfaces.ErrorSeverity] = []
+    var handledErrors: [Error]=[]
+    var handledSeverities: [ErrorHandlingInterfaces.ErrorSeverity]=[]
     private var logger: ErrorLoggingProtocol?
     private var notifier: ErrorNotificationProtocol?
-    private var recoveryProviders: [RecoveryOptionsProvider] = []
+    private var recoveryProviders: [RecoveryOptionsProvider]=[]
 
     func handle(
       _ error: some UmbraError,
       severity: ErrorHandlingInterfaces.ErrorSeverity,
-      file _: String = #file,
-      function _: String = #function,
-      line _: Int = #line
+      file _: String=#file,
+      function _: String=#function,
+      line _: Int=#line
     ) {
       handledErrors.append(error)
       handledSeverities.append(severity)
@@ -174,7 +174,7 @@ final class TestErrorHandling_Protocols: XCTestCase {
 
       // Present the error if a notifier is set
       if let notifier {
-        let options = getRecoveryOptions(for: error)
+        let options=getRecoveryOptions(for: error)
         notifier.presentError(error, recoveryOptions: options)
       }
     }
@@ -187,11 +187,11 @@ final class TestErrorHandling_Protocols: XCTestCase {
     }
 
     func setLogger(_ logger: ErrorLoggingProtocol) {
-      self.logger = logger
+      self.logger=logger
     }
 
     func setNotificationHandler(_ handler: ErrorNotificationProtocol) {
-      notifier = handler
+      notifier=handler
     }
 
     func registerRecoveryProvider(_ provider: RecoveryOptionsProvider) {
@@ -205,7 +205,7 @@ final class TestErrorHandling_Protocols: XCTestCase {
     }
 
     struct ProviderError: UmbraError, CustomStringConvertible {
-      let domain: String = "CustomProvider"
+      let domain: String="CustomProvider"
       let code: String
       let errorDescription: String
       var source: ErrorHandlingInterfaces.ErrorSource?
@@ -213,11 +213,11 @@ final class TestErrorHandling_Protocols: XCTestCase {
       var context: ErrorHandlingInterfaces.ErrorContext
 
       init(code: String, message: String) {
-        self.code = code
-        errorDescription = message
-        source = nil
-        underlyingError = nil
-        context = ErrorHandlingInterfaces.ErrorContext(
+        self.code=code
+        errorDescription=message
+        source=nil
+        underlyingError=nil
+        context=ErrorHandlingInterfaces.ErrorContext(
           source: "CustomProvider",
           operation: "createError",
           details: nil,
@@ -229,20 +229,20 @@ final class TestErrorHandling_Protocols: XCTestCase {
       }
 
       func with(context: ErrorHandlingInterfaces.ErrorContext) -> Self {
-        var copy = self
-        copy.context = context
+        var copy=self
+        copy.context=context
         return copy
       }
 
       func with(underlyingError: Error) -> Self {
-        var copy = self
-        copy.underlyingError = underlyingError
+        var copy=self
+        copy.underlyingError=underlyingError
         return copy
       }
 
       func with(source: ErrorHandlingInterfaces.ErrorSource) -> Self {
-        var copy = self
-        copy.source = source
+        var copy=self
+        copy.source=source
         return copy
       }
 
@@ -277,32 +277,32 @@ final class TestErrorHandling_Protocols: XCTestCase {
       domain: String,
       code: String,
       description: String,
-      source: ErrorHandlingInterfaces.ErrorSource? = nil,
-      underlyingError: Error? = nil
+      source: ErrorHandlingInterfaces.ErrorSource?=nil,
+      underlyingError: Error?=nil
     ) {
-      self.domain = domain
-      self.code = code
-      errorDescription = description
-      self.source = source
-      self.underlyingError = underlyingError
-      context = ErrorHandlingInterfaces.ErrorContext(source: domain, operation: "testOperation")
+      self.domain=domain
+      self.code=code
+      errorDescription=description
+      self.source=source
+      self.underlyingError=underlyingError
+      context=ErrorHandlingInterfaces.ErrorContext(source: domain, operation: "testOperation")
     }
 
     func with(context: ErrorHandlingInterfaces.ErrorContext) -> Self {
-      var copy = self
-      copy.context = context
+      var copy=self
+      copy.context=context
       return copy
     }
 
     func with(underlyingError: Error) -> Self {
-      var copy = self
-      copy.underlyingError = underlyingError
+      var copy=self
+      copy.underlyingError=underlyingError
       return copy
     }
 
     func with(source: ErrorHandlingInterfaces.ErrorSource) -> Self {
-      var copy = self
-      copy.source = source
+      var copy=self
+      copy.source=source
       return copy
     }
 
@@ -315,12 +315,12 @@ final class TestErrorHandling_Protocols: XCTestCase {
     var id: UUID = .init()
     var title: String
     var description: String?
-    var isDisruptive: Bool = false
+    var isDisruptive: Bool=false
 
-    init(title: String, description: String? = nil, isDisruptive: Bool = false) {
-      self.title = title
-      self.description = description
-      self.isDisruptive = isDisruptive
+    init(title: String, description: String?=nil, isDisruptive: Bool=false) {
+      self.title=title
+      self.description=description
+      self.isDisruptive=isDisruptive
     }
 
     func perform() async {

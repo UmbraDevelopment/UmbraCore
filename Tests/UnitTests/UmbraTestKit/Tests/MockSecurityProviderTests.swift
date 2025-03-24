@@ -12,12 +12,12 @@ import XCTest
 @preconcurrency
 actor TestMockSecurityProvider: SecurityInterfacesProtocols.SecurityProviderProtocol,
 @unchecked Sendable {
-  private var bookmarks: [String: [UInt8]] = [:]
-  private var accessCount: [String: Int] = [:]
-  private var accessedPaths: Set<String> = []
-  private var storedBookmarks: [String: [UInt8]] = [:]
-  private var shouldFailBookmarkCreation = false
-  private var shouldFailAccess = false
+  private var bookmarks: [String: [UInt8]]=[:]
+  private var accessCount: [String: Int]=[:]
+  private var accessedPaths: Set<String>=[]
+  private var storedBookmarks: [String: [UInt8]]=[:]
+  private var shouldFailBookmarkCreation=false
+  private var shouldFailAccess=false
 
   // MARK: - Protocol properties
 
@@ -32,8 +32,8 @@ actor TestMockSecurityProvider: SecurityInterfacesProtocols.SecurityProviderProt
   }
 
   // Mock implementations
-  private let mockCryptoService = MockCryptoService()
-  private let mockKeyManager = MockKeyManagementServiceImpl()
+  private let mockCryptoService=MockCryptoService()
+  private let mockKeyManager=MockKeyManagementServiceImpl()
 
   // MARK: - SecurityProviderProtocol implementation
 
@@ -70,7 +70,8 @@ actor TestMockSecurityProvider: SecurityInterfacesProtocols.SecurityProviderProt
     -> Result<
       SecurityProtocolsCore.SecurityConfigDTO,
       ErrorHandlingDomains.UmbraErrors.Security.Protocols
-    > {
+    >
+  {
     .success(SecurityProtocolsCore.SecurityConfigDTO(
       algorithm: "AES-256",
       keySizeInBits: 256,
@@ -96,7 +97,7 @@ actor TestMockSecurityProvider: SecurityInterfacesProtocols.SecurityProviderProt
 
   public func getKeyInfo(keyID _: String) async
   -> Result<[String: AnyObject], ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
-    let info: [String: AnyObject] = [
+    let info: [String: AnyObject]=[
       "algorithm": "AES-256" as NSString,
       "keySize": 256 as NSNumber,
       "created": Date() as NSDate
@@ -168,13 +169,13 @@ actor TestMockSecurityProvider: SecurityInterfacesProtocols.SecurityProviderProt
   func hash(_ data: CoreTypesInterfaces.BinaryData) async throws -> CoreTypesInterfaces.BinaryData {
     // Mock implementation just returns first 32 bytes or pads with zeros
     if data.count >= 32 {
-      var result = [UInt8]()
+      var result=[UInt8]()
       for i in 0..<32 {
         result.append(data[i])
       }
       return CoreTypesInterfaces.BinaryData(bytes: result)
     } else {
-      var result = [UInt8]()
+      var result=[UInt8]()
       for i in 0..<data.count {
         result.append(data[i])
       }
@@ -228,8 +229,8 @@ actor TestMockSecurityProvider: SecurityInterfacesProtocols.SecurityProviderProt
     newKey: UmbraCoreTypes.SecureBytes,
     reencryptedData: UmbraCoreTypes.SecureBytes?
   ), ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
-    let newKey = UmbraCoreTypes.SecureBytes(bytes: [UInt8](repeating: 0, count: 32))
-    let reencrypted = dataToReencrypt
+    let newKey=UmbraCoreTypes.SecureBytes(bytes: [UInt8](repeating: 0, count: 32))
+    let reencrypted=dataToReencrypt
     return .success((newKey: newKey, reencryptedData: reencrypted))
   }
 
@@ -250,21 +251,21 @@ actor TestMockSecurityProvider: SecurityInterfacesProtocols.SecurityProviderProt
       )
     }
     // Convert path to bytes for mock bookmark
-    let bookmarkData = Array(("mock_bookmark_\(path)").utf8)
-    bookmarks[path] = bookmarkData
+    let bookmarkData=Array(("mock_bookmark_\(path)").utf8)
+    bookmarks[path]=bookmarkData
     return .success(bookmarkData)
   }
 
   func resolveBookmark(_ bookmark: [UInt8]) async
   -> Result<(path: String, isStale: Bool), ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
     // Convert bookmark bytes back to string for mock implementation
-    guard let mockPath = String(bytes: bookmark, encoding: .utf8) else {
+    guard let mockPath=String(bytes: bookmark, encoding: .utf8) else {
       return .failure(
         ErrorHandlingDomains.UmbraErrors.Security.Protocols
           .serviceError("Invalid bookmark data")
       )
     }
-    let path = mockPath.replacingOccurrences(of: "mock_bookmark_", with: "")
+    let path=mockPath.replacingOccurrences(of: "mock_bookmark_", with: "")
     if shouldFailAccess {
       return .failure(
         ErrorHandlingDomains.UmbraErrors.Security.Protocols
@@ -313,7 +314,7 @@ actor TestMockSecurityProvider: SecurityInterfacesProtocols.SecurityProviderProt
     defer { accessedPaths.remove(path) }
 
     do {
-      let result = try await operation()
+      let result=try await operation()
       return .success(result)
     } catch {
       return .failure(
@@ -327,10 +328,10 @@ actor TestMockSecurityProvider: SecurityInterfacesProtocols.SecurityProviderProt
 
   func validateBookmark(_ bookmarkData: [UInt8]) async
   -> Result<Bool, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
-    guard let mockPath = String(bytes: bookmarkData, encoding: .utf8) else {
+    guard let mockPath=String(bytes: bookmarkData, encoding: .utf8) else {
       return .success(false)
     }
-    let isValid = mockPath.hasPrefix("mock_bookmark_")
+    let isValid=mockPath.hasPrefix("mock_bookmark_")
     return .success(isValid)
   }
 
@@ -345,13 +346,13 @@ actor TestMockSecurityProvider: SecurityInterfacesProtocols.SecurityProviderProt
           .serviceError("Mock storage failure")
       )
     }
-    storedBookmarks[identifier] = bookmarkData
+    storedBookmarks[identifier]=bookmarkData
     return .success(())
   }
 
   func loadBookmark(withIdentifier identifier: String) async
   -> Result<[UInt8], ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
-    guard let bookmark = storedBookmarks[identifier] else {
+    guard let bookmark=storedBookmarks[identifier] else {
       return .failure(
         ErrorHandlingDomains.UmbraErrors.Security.Protocols
           .serviceError("Bookmark not found: \(identifier)")
@@ -374,12 +375,12 @@ actor TestMockSecurityProvider: SecurityInterfacesProtocols.SecurityProviderProt
 
   /// Set whether bookmark creation should fail
   func setShouldFailBookmarkCreation(_ shouldFail: Bool) {
-    shouldFailBookmarkCreation = shouldFail
+    shouldFailBookmarkCreation=shouldFail
   }
 
   /// Set whether access operations should fail
   func setShouldFailAccess(_ shouldFail: Bool) {
-    shouldFailAccess = shouldFail
+    shouldFailAccess=shouldFail
   }
 
   /// Get the access count for a path
@@ -491,13 +492,13 @@ class MockCryptoService: SecurityProtocolsCore.CryptoServiceProtocol, @unchecked
 @preconcurrency
 class MockKeyManagementServiceImpl: SecurityProtocolsCore.KeyManagementProtocol,
 @unchecked Sendable {
-  private var storedKeys: [String: UmbraCoreTypes.SecureBytes] = [:]
+  private var storedKeys: [String: UmbraCoreTypes.SecureBytes]=[:]
 
   // Implementation of KeyManagementProtocol
 
   func retrieveKey(withIdentifier identifier: String) async
   -> Result<UmbraCoreTypes.SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
-    if let key = storedKeys[identifier] {
+    if let key=storedKeys[identifier] {
       .success(key)
     } else {
       .failure(
@@ -512,13 +513,13 @@ class MockKeyManagementServiceImpl: SecurityProtocolsCore.KeyManagementProtocol,
     withIdentifier identifier: String
   ) async
   -> Result<Void, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
-    storedKeys[identifier] = key
+    storedKeys[identifier]=key
     return .success(())
   }
 
   func deleteKey(withIdentifier identifier: String) async
   -> Result<Void, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
-    storedKeys[identifier] = nil
+    storedKeys[identifier]=nil
     return .success(())
   }
 
@@ -529,8 +530,8 @@ class MockKeyManagementServiceImpl: SecurityProtocolsCore.KeyManagementProtocol,
     newKey: UmbraCoreTypes.SecureBytes,
     reencryptedData: UmbraCoreTypes.SecureBytes?
   ), ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
-    let newKey = UmbraCoreTypes.SecureBytes(bytes: [UInt8](repeating: 0, count: 32))
-    storedKeys[identifier] = newKey
+    let newKey=UmbraCoreTypes.SecureBytes(bytes: [UInt8](repeating: 0, count: 32))
+    storedKeys[identifier]=newKey
     return .success((newKey: newKey, reencryptedData: dataToReencrypt))
   }
 
@@ -544,7 +545,7 @@ final class MockSecurityProviderTests: XCTestCase {
   private var provider: TestMockSecurityProvider!
 
   // Add static property for test discovery
-  static var allTests = [
+  static var allTests=[
     ("testCreateBookmark", testCreateBookmark),
     ("testResolveBookmark", testResolveBookmark),
     ("testAccessControl", testAccessControl),
@@ -553,24 +554,24 @@ final class MockSecurityProviderTests: XCTestCase {
   ]
 
   override func setUp() async throws {
-    provider = TestMockSecurityProvider()
+    provider=TestMockSecurityProvider()
   }
 
   override func tearDown() async throws {
-    _ = await provider.resetSecurityData()
-    provider = nil
+    _=await provider.resetSecurityData()
+    provider=nil
   }
 
   func testCreateBookmark() async throws {
-    let testPath = "/test/path"
+    let testPath="/test/path"
 
     // Test successful bookmark creation
-    let result = await provider.createSecurityBookmark(for: testPath)
+    let result=await provider.createSecurityBookmark(for: testPath)
     switch result {
       case let .success(bookmarkData):
         XCTAssertFalse(bookmarkData.isEmpty)
         // Mock bookmarks are stored as UTF-8 data
-        let bookmarkString = String(bytes: bookmarkData, encoding: .utf8)
+        let bookmarkString=String(bytes: bookmarkData, encoding: .utf8)
         XCTAssertEqual(bookmarkString, "mock_bookmark_\(testPath)")
       case let .failure(error):
         XCTFail("Bookmark creation should succeed, got error: \(error)")
@@ -578,7 +579,7 @@ final class MockSecurityProviderTests: XCTestCase {
 
     // Test failed bookmark creation
     await provider.setShouldFailBookmarkCreation(true)
-    let failResult = await provider.createSecurityBookmark(for: testPath)
+    let failResult=await provider.createSecurityBookmark(for: testPath)
     switch failResult {
       case .success:
         XCTFail("Bookmark creation should fail when shouldFailBookmarkCreation is true")
@@ -589,18 +590,18 @@ final class MockSecurityProviderTests: XCTestCase {
   }
 
   func testResolveBookmark() async throws {
-    let testPath = "/test/path"
-    let result = await provider.createSecurityBookmark(for: testPath)
+    let testPath="/test/path"
+    let result=await provider.createSecurityBookmark(for: testPath)
 
     switch result {
       case let .success(bookmarkData):
         // Test successful resolution
-        let resolveResult = await provider.resolveBookmark(bookmarkData)
+        let resolveResult=await provider.resolveBookmark(bookmarkData)
         switch resolveResult {
           case let .success(resolved):
             XCTAssertEqual(resolved.path, testPath)
             XCTAssertFalse(resolved.isStale)
-            let accessCount = await provider.getAccessCount(for: testPath)
+            let accessCount=await provider.getAccessCount(for: testPath)
             XCTAssertEqual(accessCount, 1)
           case let .failure(error):
             XCTFail("Bookmark resolution should succeed, got error: \(error)")
@@ -608,7 +609,7 @@ final class MockSecurityProviderTests: XCTestCase {
 
         // Test failed resolution
         await provider.setShouldFailAccess(true)
-        let failResult = await provider.resolveBookmark(bookmarkData)
+        let failResult=await provider.resolveBookmark(bookmarkData)
         switch failResult {
           case .success:
             XCTFail("Bookmark resolution should fail when shouldFailAccess is true")
@@ -622,14 +623,14 @@ final class MockSecurityProviderTests: XCTestCase {
   }
 
   func testAccessControl() async throws {
-    let testPath = "/test/path"
+    let testPath="/test/path"
 
     // Test starting access
-    let startResult = await provider.startAccessing(path: testPath)
+    let startResult=await provider.startAccessing(path: testPath)
     switch startResult {
       case let .success(success):
         XCTAssertTrue(success)
-        let isAccessing = await provider.isAccessing(path: testPath)
+        let isAccessing=await provider.isAccessing(path: testPath)
         XCTAssertTrue(isAccessing)
       case let .failure(error):
         XCTFail("Starting access should succeed, got error: \(error)")
@@ -637,12 +638,12 @@ final class MockSecurityProviderTests: XCTestCase {
 
     // Test stopping access
     await provider.stopAccessing(path: testPath)
-    let isAccessingAfterStop = await provider.isAccessing(path: testPath)
+    let isAccessingAfterStop=await provider.isAccessing(path: testPath)
     XCTAssertFalse(isAccessingAfterStop)
 
     // Test failed access
     await provider.setShouldFailAccess(true)
-    let failResult = await provider.startAccessing(path: testPath)
+    let failResult=await provider.startAccessing(path: testPath)
     switch failResult {
       case .success:
         XCTFail("Starting access should fail when shouldFailAccess is true")
@@ -653,12 +654,12 @@ final class MockSecurityProviderTests: XCTestCase {
   }
 
   func testSecurityScopedOperations() async throws {
-    let testPath = "/test/path"
+    let testPath="/test/path"
 
     // Test successful operation
-    let result = await provider.performOperationWithSecurityScopeAccess(to: testPath) { [self] in
+    let result=await provider.performOperationWithSecurityScopeAccess(to: testPath) { [self] in
       // No need for capture list as we're just using self
-      let isAccessing = await provider.isAccessing(path: testPath)
+      let isAccessing=await provider.isAccessing(path: testPath)
       XCTAssertTrue(isAccessing)
       return "operation completed"
     }
@@ -667,7 +668,7 @@ final class MockSecurityProviderTests: XCTestCase {
       case let .success(value):
         XCTAssertEqual(value, "operation completed")
         // Path should no longer be accessed after operation completes
-        let isAccessing = await provider.isAccessing(path: testPath)
+        let isAccessing=await provider.isAccessing(path: testPath)
         XCTAssertFalse(isAccessing)
       case let .failure(error):
         XCTFail("Security scoped operation should succeed, got error: \(error)")
@@ -675,7 +676,7 @@ final class MockSecurityProviderTests: XCTestCase {
 
     // Test failed operation
     await provider.setShouldFailAccess(true)
-    let failResult = await provider.performOperationWithSecurityScopeAccess(to: testPath) {
+    let failResult=await provider.performOperationWithSecurityScopeAccess(to: testPath) {
       XCTFail("Operation block should not be called when access is denied")
       return "should not reach here"
     }
@@ -690,22 +691,22 @@ final class MockSecurityProviderTests: XCTestCase {
   }
 
   func testBookmarkStorage() async throws {
-    let testPath = "/test/path"
-    let identifier = "test_bookmark_id"
+    let testPath="/test/path"
+    let identifier="test_bookmark_id"
 
     // Create a bookmark to store
-    let bookmarkResult = await provider.createSecurityBookmark(for: testPath)
-    guard case let .success(bookmarkData) = bookmarkResult else {
+    let bookmarkResult=await provider.createSecurityBookmark(for: testPath)
+    guard case let .success(bookmarkData)=bookmarkResult else {
       XCTFail("Could not create test bookmark")
       return
     }
 
     // Test saving a bookmark
-    let saveResult = await provider.saveBookmark(bookmarkData, withIdentifier: identifier)
+    let saveResult=await provider.saveBookmark(bookmarkData, withIdentifier: identifier)
     XCTAssertTrue(saveResult.isSuccess)
 
     // Test loading the saved bookmark
-    let loadResult = await provider.loadBookmark(withIdentifier: identifier)
+    let loadResult=await provider.loadBookmark(withIdentifier: identifier)
     switch loadResult {
       case let .success(loadedData):
         XCTAssertEqual(loadedData, bookmarkData)
@@ -714,18 +715,18 @@ final class MockSecurityProviderTests: XCTestCase {
     }
 
     // Test validating a bookmark
-    let validateResult = await provider.validateBookmark(bookmarkData)
+    let validateResult=await provider.validateBookmark(bookmarkData)
     XCTAssertTrue(validateResult.isSuccess)
-    if let isValid = validateResult.value {
+    if let isValid=validateResult.value {
       XCTAssertTrue(isValid)
     }
 
     // Test deleting a bookmark
-    let deleteResult = await provider.deleteBookmark(withIdentifier: identifier)
+    let deleteResult=await provider.deleteBookmark(withIdentifier: identifier)
     XCTAssertTrue(deleteResult.isSuccess)
 
     // Verify the bookmark is gone
-    let reloadResult = await provider.loadBookmark(withIdentifier: identifier)
+    let reloadResult=await provider.loadBookmark(withIdentifier: identifier)
     XCTAssertTrue(reloadResult.isFailure)
   }
 }

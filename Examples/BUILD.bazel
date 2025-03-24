@@ -15,7 +15,10 @@ package(default_visibility = ["//visibility:public"])
 # Library of examples that can be imported elsewhere
 filegroup(
     name = "ExamplesLib",
-    srcs = glob(["**/*.swift"]),
+    srcs = glob(
+        ["**/*.swift"],
+        allow_empty = True,
+    ),
 )
 
 # Executable example target - disabled

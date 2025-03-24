@@ -1,70 +1,38 @@
-import CoreErrors
+import ErrorHandlingCore
+import ErrorHandlingDomains
+import ErrorHandlingInterfaces
+import ErrorHandlingMapping
 import Foundation
 import Security
 import UmbraCoreTypes
 import UmbraLogging
 import XPCProtocolsCore
 
-// Local type declarations to replace imports
-// These replace the removed ErrorHandling and ErrorHandlingDomains imports
-
-/// Error domain namespace
-public enum ErrorDomain {
-  /// Security domain
-  public static let security="Security"
-  /// Crypto domain
-  public static let crypto="Crypto"
-  /// Application domain
-  public static let application="Application"
-}
-
-/// Error context protocol
-public protocol ErrorContext {
-  /// Domain of the error
-  var domain: String { get }
-  /// Code of the error
-  var code: Int { get }
-  /// Description of the error
-  var description: String { get }
-}
-
-/// Base error context implementation
-public struct BaseErrorContext: ErrorContext {
-  /// Domain of the error
-  public let domain: String
-  /// Code of the error
-  public let code: Int
-  /// Description of the error
-  public let description: String
-
-  /// Initialise with domain, code and description
-  public init(domain: String, code: Int, description: String) {
-    self.domain=domain
-    self.code=code
-    self.description=description
-  }
-}
+// MARK: - Error handling for keychain operations
 
 /// Error type for keychain XPC operations (internal version)
 private enum InternalKeychainXPCError: Error, CustomStringConvertible {
   case duplicateItem
   case itemNotFound
-  case internalError(String)
-  case serviceUnavailable
-  case authenticationFailed
+  case invalidItem
+  case accessDenied
+  case unsupportedOperation
+  case unexpectedError(Int)
 
   var description: String {
     switch self {
       case .duplicateItem:
-        "A duplicate item exists"
+        "Item already exists in the keychain"
       case .itemNotFound:
-        "Item not found"
-      case let .internalError(message):
-        "Internal error: \(message)"
-      case .serviceUnavailable:
-        "Service unavailable"
-      case .authenticationFailed:
-        "Authentication failed"
+        "Item not found in the keychain"
+      case .invalidItem:
+        "Invalid item format or data"
+      case .accessDenied:
+        "Access denied by keychain"
+      case .unsupportedOperation:
+        "Operation not supported by this keychain implementation"
+      case let .unexpectedError(code):
+        "Unexpected keychain error: \(code)"
     }
   }
 }
@@ -228,9 +196,10 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
     await state.isStartedState()
   }
 
-  /// Synchronize keys with provided data
-  /// - Parameter syncData: The data to synchronize with
-  /// - Throws: CoreErrors.XPCErrors.SecurityError if synchronization fails
+  /// Synchronise keys with provided data
+  /// - Parameter syncData: The data to synchronise with
+  /// - Throws: ErrorHandlingDomains.UmbraErrors.Security.Protocols.SecurityError if synchronization
+  /// fails
   public func synchroniseKeys(_ syncData: SecureBytes) async throws {
     do {
       // Get the exported object from actor state
@@ -241,12 +210,13 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
           }
         )
       } else {
-        throw CoreErrors.XPCErrors.SecurityError.internalError(description: "Service unavailable")
+        throw ErrorHandlingDomains.UmbraErrors.Security.Protocols.SecurityError
+          .internalError(description: "Service unavailable")
       }
     } catch let error as InternalKeychainXPCError {
       throw mapKeychainErrorToProtocolsError(error, operation: "synchronise")
     } catch {
-      throw CoreErrors.XPCErrors.SecurityError
+      throw ErrorHandlingDomains.UmbraErrors.Security.Protocols.SecurityError
         .internalError(description: "Failed to synchronize keys: \(error.localizedDescription)")
     }
   }
@@ -728,12 +698,14 @@ public final class KeychainXPCService: NSObject, XPCServiceProtocolStandard, Key
         .internalError("Duplicate item exists")
       case .itemNotFound:
         .missingProtocolImplementation(protocolName: operation)
-      case let .internalError(message):
-        .internalError("Internal error occurred during \(operation): \(message)")
-      case .serviceUnavailable:
-        .invalidState(state: "unavailable", expectedState: "available")
-      case .authenticationFailed:
-        .invalidInput("Authentication failed for \(operation)")
+      case .invalidItem:
+        .invalidInput("Invalid item format or data")
+      case .accessDenied:
+        .accessDenied("Access denied by keychain")
+      case .unsupportedOperation:
+        .unsupportedOperation("Operation not supported by this keychain implementation")
+      case let .unexpectedError(code):
+        .internalError("Unexpected keychain error: \(code)")
     }
   }
 

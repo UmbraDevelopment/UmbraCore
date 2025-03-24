@@ -12,9 +12,9 @@
  * Handle error normalisation
  */
 
-import ErrorHandlingInterfaces
-import ErrorHandlingDomains
 import ErrorHandlingCore
+import ErrorHandlingDomains
+import ErrorHandlingInterfaces
 import Foundation
 import SecurityProtocolsCore
 import UmbraCoreTypes
@@ -22,7 +22,7 @@ import UmbraCoreTypes
 /// Core service provider for cryptographic operations that coordinates specialised
 /// services. It delegates operations to the appropriate specialised components while
 /// providing a simplified interface to callers.
-final class CryptoServiceCore: CryptoServiceProtocol, Sendable {
+public final class CryptoServiceCore: CryptoServiceProtocol, Sendable {
   // MARK: - Properties
 
   /// Service for symmetric encryption operations
@@ -73,7 +73,10 @@ final class CryptoServiceCore: CryptoServiceProtocol, Sendable {
     if result.success, let encryptedData=result.data {
       return .success(encryptedData)
     } else {
-      return .failure(ErrorHandlingDomains.UmbraErrors.Security.Protocols.encryptionFailed(result.errorMessage ?? "Unknown encryption error"))
+      return .failure(
+        ErrorHandlingDomains.UmbraErrors.Security.Protocols
+          .encryptionFailed(result.errorMessage ?? "Unknown encryption error")
+      )
     }
   }
 
@@ -96,19 +99,26 @@ final class CryptoServiceCore: CryptoServiceProtocol, Sendable {
     if result.success, let decryptedData=result.data {
       return .success(decryptedData)
     } else {
-      return .failure(ErrorHandlingDomains.UmbraErrors.Security.Protocols.decryptionFailed(result.errorMessage ?? "Unknown decryption error"))
+      return .failure(
+        ErrorHandlingDomains.UmbraErrors.Security.Protocols
+          .decryptionFailed(result.errorMessage ?? "Unknown decryption error")
+      )
     }
   }
 
   /// Generate a cryptographic key suitable for encryption/decryption operations.
   /// - Returns: A new cryptographic key as `SecureBytes` or an error.
-  public func generateKey() async -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  public func generateKey() async
+  -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
     // Generate a 256-bit AES key
     var keyBytes=[UInt8](repeating: 0, count: 32)
     let status=SecRandomCopyBytes(kSecRandomDefault, keyBytes.count, &keyBytes)
 
     guard status == errSecSuccess else {
-      return .failure(ErrorHandlingDomains.UmbraErrors.Security.Protocols.internalError("Failed to generate random bytes: \(status)"))
+      return .failure(
+        ErrorHandlingDomains.UmbraErrors.Security.Protocols
+          .internalError("Failed to generate random bytes: \(status)")
+      )
     }
 
     return .success(SecureBytes(bytes: keyBytes))
@@ -117,7 +127,8 @@ final class CryptoServiceCore: CryptoServiceProtocol, Sendable {
   /// Hashes the provided data using a cryptographically strong algorithm.
   /// - Parameter data: The data to hash as `SecureBytes`.
   /// - Returns: The resulting hash as `SecureBytes` or an error.
-  public func hash(data: SecureBytes) async -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  public func hash(data: SecureBytes) async
+  -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
     // Use SHA-256 as the default algorithm
     await hash(data: data, config: SecurityConfigDTO(algorithm: "SHA-256", keySizeInBits: 256))
   }
@@ -167,7 +178,10 @@ final class CryptoServiceCore: CryptoServiceProtocol, Sendable {
     if result.success, let encryptedData=result.data {
       return .success(encryptedData)
     } else {
-      return .failure(ErrorHandlingDomains.UmbraErrors.Security.Protocols.encryptionFailed(result.errorMessage ?? "Unknown encryption error"))
+      return .failure(
+        ErrorHandlingDomains.UmbraErrors.Security.Protocols
+          .encryptionFailed(result.errorMessage ?? "Unknown encryption error")
+      )
     }
   }
 
@@ -192,7 +206,10 @@ final class CryptoServiceCore: CryptoServiceProtocol, Sendable {
     if result.success, let decryptedData=result.data {
       return .success(decryptedData)
     } else {
-      return .failure(ErrorHandlingDomains.UmbraErrors.Security.Protocols.decryptionFailed(result.errorMessage ?? "Unknown decryption error"))
+      return .failure(
+        ErrorHandlingDomains.UmbraErrors.Security.Protocols
+          .decryptionFailed(result.errorMessage ?? "Unknown decryption error")
+      )
     }
   }
 
@@ -211,11 +228,15 @@ final class CryptoServiceCore: CryptoServiceProtocol, Sendable {
       algorithm: config.algorithm
     )
 
-    // Convert SecurityResultDTO to Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols>
+    // Convert SecurityResultDTO to Result<SecureBytes,
+    // ErrorHandlingDomains.UmbraErrors.Security.Protocols>
     if result.success, let hashedData=result.data {
       return .success(hashedData)
     } else {
-      return .failure(ErrorHandlingDomains.UmbraErrors.Security.Protocols.internalError(result.errorMessage ?? "Unknown hashing error"))
+      return .failure(
+        ErrorHandlingDomains.UmbraErrors.Security.Protocols
+          .internalError(result.errorMessage ?? "Unknown hashing error")
+      )
     }
   }
 
@@ -236,11 +257,15 @@ final class CryptoServiceCore: CryptoServiceProtocol, Sendable {
       algorithm: config.algorithm
     )
 
-    // Convert SecurityResultDTO to Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols>
+    // Convert SecurityResultDTO to Result<SecureBytes,
+    // ErrorHandlingDomains.UmbraErrors.Security.Protocols>
     if result.success, let resultData=result.data {
       return .success(resultData)
     } else {
-      return .failure(ErrorHandlingDomains.UmbraErrors.Security.Protocols.encryptionFailed(result.errorMessage ?? "Unknown encryption error"))
+      return .failure(
+        ErrorHandlingDomains.UmbraErrors.Security.Protocols
+          .encryptionFailed(result.errorMessage ?? "Unknown encryption error")
+      )
     }
   }
 
@@ -261,29 +286,40 @@ final class CryptoServiceCore: CryptoServiceProtocol, Sendable {
       algorithm: config.algorithm
     )
 
-    // Convert SecurityResultDTO to Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols>
+    // Convert SecurityResultDTO to Result<SecureBytes,
+    // ErrorHandlingDomains.UmbraErrors.Security.Protocols>
     if result.success, let resultData=result.data {
       return .success(resultData)
     } else {
-      return .failure(ErrorHandlingDomains.UmbraErrors.Security.Protocols.decryptionFailed(result.errorMessage ?? "Unknown decryption error"))
+      return .failure(
+        ErrorHandlingDomains.UmbraErrors.Security.Protocols
+          .decryptionFailed(result.errorMessage ?? "Unknown decryption error")
+      )
     }
   }
 
   /// Generate a symmetric key
   /// - Returns: Generated key or error
-  func generateSymmetricKey() async -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
+  func generateSymmetricKey() async
+  -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
     do {
       // Generate a 256-bit AES key
       var keyBytes=[UInt8](repeating: 0, count: 32)
       let status=SecRandomCopyBytes(kSecRandomDefault, keyBytes.count, &keyBytes)
 
       guard status == errSecSuccess else {
-        return .failure(ErrorHandlingDomains.UmbraErrors.Security.Protocols.internalError("Failed to generate random bytes: \(status)"))
+        return .failure(
+          ErrorHandlingDomains.UmbraErrors.Security.Protocols
+            .internalError("Failed to generate random bytes: \(status)")
+        )
       }
 
       return .success(SecureBytes(bytes: keyBytes))
     } catch {
-      return .failure(ErrorHandlingDomains.UmbraErrors.Security.Protocols.internalError("Failed to generate key: \(error.localizedDescription)"))
+      return .failure(
+        ErrorHandlingDomains.UmbraErrors.Security.Protocols
+          .internalError("Failed to generate key: \(error.localizedDescription)")
+      )
     }
   }
 
@@ -324,13 +360,17 @@ final class CryptoServiceCore: CryptoServiceProtocol, Sendable {
       let status=SecRandomCopyBytes(kSecRandomDefault, randomBytes.count, &randomBytes)
 
       guard status == errSecSuccess else {
-        return .failure(ErrorHandlingDomains.UmbraErrors.Security.Protocols.internalError("Failed to generate random bytes: \(status)"))
+        return .failure(
+          ErrorHandlingDomains.UmbraErrors.Security.Protocols
+            .internalError("Failed to generate random bytes: \(status)")
+        )
       }
 
       return .success(SecureBytes(bytes: randomBytes))
     } catch {
       return .failure(
-        ErrorHandlingDomains.UmbraErrors.Security.Protocols.randomGenerationFailed("Random data generation failed: \(error.localizedDescription)")
+        ErrorHandlingDomains.UmbraErrors.Security.Protocols
+          .randomGenerationFailed("Random data generation failed: \(error.localizedDescription)")
       )
     }
   }

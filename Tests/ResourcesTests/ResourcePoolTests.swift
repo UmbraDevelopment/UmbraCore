@@ -6,16 +6,16 @@ import XCTest
 
 /// State manager for test resources
 private final class TestResourceStateManager: @unchecked Sendable {
-  private let queue = DispatchQueue(label: "com.umbra.test.resource.state")
+  private let queue=DispatchQueue(label: "com.umbra.test.resource.state")
   private var _state: ResourcesProtocols.ResourceState
 
   init(initialState: ResourcesProtocols.ResourceState = .uninitialized) {
-    _state = initialState
+    _state=initialState
   }
 
   var state: ResourcesProtocols.ResourceState {
     get { queue.sync { _state } }
-    set { queue.sync { _state = newValue } }
+    set { queue.sync { _state=newValue } }
   }
 }
 
@@ -29,16 +29,16 @@ private actor TestResource: ResourcesProtocols.BasicManagedResource {
   private var error: Error?
 
   init(id: String) {
-    self.id = id
-    stateManager = TestResourceStateManager(initialState: .uninitialized)
+    self.id=id
+    stateManager=TestResourceStateManager(initialState: .uninitialized)
   }
 
   func setError(_ error: Error) {
-    self.error = error
+    self.error=error
   }
 
   private func updateState(_ newState: ResourcesProtocols.ResourceState) {
-    stateManager.state = newState
+    stateManager.state=newState
   }
 
   func initialize() async throws {
@@ -67,37 +67,37 @@ private actor TestResource: ResourcesProtocols.BasicManagedResource {
 
 class ResourcePoolTests: XCTestCase {
   func testResourcePoolBasicOperations() async throws {
-    let pool = ResourcePool<TestResource>(maxSize: 2)
-    let resource1 = TestResource(id: "1")
-    let resource2 = TestResource(id: "2")
+    let pool=ResourcePool<TestResource>(maxSize: 2)
+    let resource1=TestResource(id: "1")
+    let resource2=TestResource(id: "2")
 
     try await pool.add(resource1)
     try await pool.add(resource2)
 
-    let acquired1 = try await pool.acquire()
+    let acquired1=try await pool.acquire()
     XCTAssertEqual(acquired1.id, "1")
-    let acquired1State = acquired1.state
+    let acquired1State=acquired1.state
     XCTAssertEqual(acquired1State, ResourcesProtocols.ResourceState.inUse)
 
-    let acquired2 = try await pool.acquire()
+    let acquired2=try await pool.acquire()
     XCTAssertEqual(acquired2.id, "2")
-    let acquired2State = acquired2.state
+    let acquired2State=acquired2.state
     XCTAssertEqual(acquired2State, ResourcesProtocols.ResourceState.inUse)
 
     // Release resources
     await pool.release(acquired1)
-    let released1State = acquired1.state
+    let released1State=acquired1.state
     XCTAssertEqual(released1State, ResourcesProtocols.ResourceState.ready)
 
     await pool.release(acquired2)
-    let released2State = acquired2.state
+    let released2State=acquired2.state
     XCTAssertEqual(released2State, ResourcesProtocols.ResourceState.ready)
   }
 
   func testResourcePoolMaxSize() async throws {
-    let pool = ResourcePool<TestResource>(maxSize: 1)
-    let resource1 = TestResource(id: "1")
-    let resource2 = TestResource(id: "2")
+    let pool=ResourcePool<TestResource>(maxSize: 1)
+    let resource1=TestResource(id: "1")
+    let resource2=TestResource(id: "2")
 
     // Add first resource
     try await pool.add(resource1)
@@ -120,15 +120,15 @@ class ResourcePoolTests: XCTestCase {
   }
 
   func testResourceInitializationFailure() async {
-    let pool = ResourcePool<TestResource>(maxSize: 1)
-    let resource = TestResource(id: "1")
+    let pool=ResourcePool<TestResource>(maxSize: 1)
+    let resource=TestResource(id: "1")
     await resource.setError(ResourcesProtocols.ResourceError.acquisitionFailed("Test error"))
 
     do {
       try await pool.add(resource)
       XCTFail("Expected ResourceError.acquisitionFailed")
     } catch let error as ResourcesProtocols.ResourceError {
-      if case let .acquisitionFailed(message) = error {
+      if case let .acquisitionFailed(message)=error {
         XCTAssertEqual(message, "Test error")
       } else {
         XCTFail("Unexpected error: \(error)")
@@ -139,7 +139,7 @@ class ResourcePoolTests: XCTestCase {
   }
 
   func testResourceErrorDescription() {
-    let errors: [ResourcesProtocols.ResourceError] = [
+    let errors: [ResourcesProtocols.ResourceError]=[
       .acquisitionFailed("test"),
       .invalidState("test"),
       .timeout("test"),

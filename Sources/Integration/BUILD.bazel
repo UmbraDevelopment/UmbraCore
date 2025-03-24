@@ -1,0 +1,16 @@
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+
+# This module has no Swift files, so we use a filegroup instead
+filegroup(
+    name = "Integration",
+    srcs = glob(["**/*"], allow_empty = True),
+    visibility = ["//visibility:public"],
+)
+
+# Commented out until Swift files are added
+# swift_library(
+#     name = "Integration",
+#     srcs = glob(["**/*.swift"], allow_empty = True),
+#     visibility = ["//visibility:public"],
+#     module_name = "Integration"
+# )

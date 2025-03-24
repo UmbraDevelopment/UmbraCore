@@ -6,31 +6,31 @@ import XPCProtocolsCore
 // A test double for CryptoXPCService to use in tests
 class MockCryptoXPCService: CryptoXPCServiceInterface {
   // For tracking method calls
-  var encryptCallCount = 0
-  var decryptCallCount = 0
-  var generateKeyCallCount = 0
-  var generateRandomDataCallCount = 0
-  var storeKeyCallCount = 0
-  var retrieveKeyCallCount = 0
+  var encryptCallCount=0
+  var decryptCallCount=0
+  var generateKeyCallCount=0
+  var generateRandomDataCallCount=0
+  var storeKeyCallCount=0
+  var retrieveKeyCallCount=0
 
   // For controlling test responses
-  var mockEncryptResult: (Data?, Error?) = (nil, nil)
-  var mockDecryptResult: (Data?, Error?) = (nil, nil)
-  var mockGenerateKeyResult: (Data?, Error?) = (nil, nil)
-  var mockGenerateRandomDataResult: (Data?, Error?) = (nil, nil)
-  var mockStoreKeyResult: (Bool, Error?) = (false, nil)
-  var mockRetrieveKeyResult: (Data?, Error?) = (nil, nil)
+  var mockEncryptResult: (Data?, Error?)=(nil, nil)
+  var mockDecryptResult: (Data?, Error?)=(nil, nil)
+  var mockGenerateKeyResult: (Data?, Error?)=(nil, nil)
+  var mockGenerateRandomDataResult: (Data?, Error?)=(nil, nil)
+  var mockStoreKeyResult: (Bool, Error?)=(false, nil)
+  var mockRetrieveKeyResult: (Data?, Error?)=(nil, nil)
 
   // Dictionary to simulate keychain storage
-  private var storedKeys: [String: Data] = [:]
+  private var storedKeys: [String: Data]=[:]
 
   // Flag to control whether to use real random data generation
-  var useRealRandomData = true
+  var useRealRandomData=true
 
   // For real implementations
   private func generateRandomBytes(count: Int) -> [UInt8] {
-    var bytes = [UInt8](repeating: 0, count: count)
-    _ = SecRandomCopyBytes(kSecRandomDefault, count, &bytes)
+    var bytes=[UInt8](repeating: 0, count: count)
+    _=SecRandomCopyBytes(kSecRandomDefault, count, &bytes)
     return bytes
   }
 
@@ -46,7 +46,7 @@ class MockCryptoXPCService: CryptoXPCServiceInterface {
     }
 
     // Simple encryption for testing
-    var encryptedData = Data()
+    var encryptedData=Data()
     // Add 16 bytes of "IV" for testing
     encryptedData.append(Data(generateRandomBytes(count: 16)))
     // Append the original data - not real encryption, just for testing
@@ -64,7 +64,7 @@ class MockCryptoXPCService: CryptoXPCServiceInterface {
 
     // Simple decryption for testing
     if data.count <= 16 {
-      let error = NSError(
+      let error=NSError(
         domain: "ErrorHandlingDomains.UmbraErrors.Security.Protocols",
         code: 1,
         userInfo: [NSLocalizedDescriptionKey: "Invalid data length"]
@@ -74,7 +74,7 @@ class MockCryptoXPCService: CryptoXPCServiceInterface {
     }
 
     // Skip the first 16 bytes (simulated IV)
-    let decryptedData = data.subdata(in: 16..<data.count)
+    let decryptedData=data.subdata(in: 16..<data.count)
     completion(decryptedData, nil)
   }
 
@@ -87,8 +87,8 @@ class MockCryptoXPCService: CryptoXPCServiceInterface {
     }
 
     // Simple key generation
-    let bytes = bits / 8
-    let keyData = Data(generateRandomBytes(count: bytes))
+    let bytes=bits / 8
+    let keyData=Data(generateRandomBytes(count: bytes))
     completion(keyData, nil)
   }
 
@@ -101,15 +101,15 @@ class MockCryptoXPCService: CryptoXPCServiceInterface {
     }
 
     if useRealRandomData {
-      let randomData = Data(generateRandomBytes(count: length))
+      let randomData=Data(generateRandomBytes(count: length))
       completion(randomData, nil)
     } else {
       // Use predictable "random" data for testing
-      var predictableData = Data(repeating: 0xAA, count: length)
+      var predictableData=Data(repeating: 0xAA, count: length)
       // Add some variation to make each call unique
-      if let firstByte = predictableData.first, let lastByte = predictableData.last {
-        predictableData[0] = firstByte + UInt8(generateRandomDataCallCount)
-        predictableData[predictableData.count - 1] = lastByte + UInt8(generateRandomDataCallCount)
+      if let firstByte=predictableData.first, let lastByte=predictableData.last {
+        predictableData[0]=firstByte + UInt8(generateRandomDataCallCount)
+        predictableData[predictableData.count - 1]=lastByte + UInt8(generateRandomDataCallCount)
       }
       completion(predictableData, nil)
     }
@@ -124,7 +124,7 @@ class MockCryptoXPCService: CryptoXPCServiceInterface {
     }
 
     // Store the key in our mock storage
-    storedKeys[identifier] = key
+    storedKeys[identifier]=key
     completion(true, nil)
   }
 
@@ -137,7 +137,7 @@ class MockCryptoXPCService: CryptoXPCServiceInterface {
     }
 
     // Retrieve the key from our mock storage
-    let keyData = storedKeys[identifier]
+    let keyData=storedKeys[identifier]
     completion(keyData, nil)
   }
 }

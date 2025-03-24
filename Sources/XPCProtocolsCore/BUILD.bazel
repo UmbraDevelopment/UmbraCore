@@ -1,21 +1,36 @@
-load("//:swift_rules.bzl", "umbra_swift_library")
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
-umbra_swift_library(
+swift_library(
     name = "XPCProtocolsCore",
-    srcs = glob(["**/*.swift"]),
+    srcs = ["Exports.swift"],  # Wrapper file that re-exports the subpackage functionality
+    module_name = "XPCProtocolsCore",
+    visibility = ["//visibility:public"],
     deps = [
+        "//Sources/UmbraCoreTypes",
+        "//Sources/XPCProtocolsCore/Sources:XPCProtocolsCoreSources",
+    ],
+)
+
+# A separate target for tests
+swift_library(
+    name = "XPCProtocolsCoreTests",
+    testonly = True,
+    srcs = glob(
+        ["Tests/**/*.swift"],
+        allow_empty = True,
+    ),
+    module_name = "XPCProtocolsCoreTests",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":XPCProtocolsCore",
+        "//Sources/SecurityInterfacesBase",
     ],
 )
 
 # Uncomment if documentation generation is needed
-# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 # load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
 #
 # swift_package(
 #     name = "docc_documentation",
-#     srcs = glob([
-#         "**/*.swift",
-#         "**/*.docc/**",
-#     ]),
 #     deps = ["//Sources/XPCProtocolsCore"],
 # )

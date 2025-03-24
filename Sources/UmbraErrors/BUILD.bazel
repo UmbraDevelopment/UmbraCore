@@ -2,16 +2,15 @@ load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 swift_library(
     name = "UmbraErrors",
-    srcs = glob([
-        "Core/**/*.swift",
-        "Domains/**/*.swift",
-        "Mapping/**/*.swift",
-        "Utilities/**/*.swift",
-    ]),
+    srcs = ["Exports.swift"],  # We'll create an exports file to re-export symbols from subpackages
     visibility = ["//visibility:public"],
     deps = [
-        "//Sources/ErrorHandlingInterfaces",
         "//Sources/ErrorHandlingDomains",
+        "//Sources/ErrorHandlingInterfaces",
+        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
+        "//Sources/UmbraErrors/Domains:UmbraErrorsDomains",
+        "//Sources/UmbraErrors/Mapping:UmbraErrorsMapping",
+        "//Sources/UmbraErrors/Utilities:UmbraErrorsUtilities",
     ],
 )
 
@@ -23,6 +22,6 @@ swift_library(
 #     srcs = glob([
 #         "**/*.swift",
 #         "**/*.docc/**",
-#     ]),
+#     ] , allow_empty = True),
 #     deps = ["//Sources/UmbraErrors"],
 # )

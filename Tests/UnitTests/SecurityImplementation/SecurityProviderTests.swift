@@ -6,15 +6,15 @@ import XCTest
 
 // Mock storage for testing using actor for thread safety
 private actor MockSecureStorageActor {
-  private var storage: [String: SecureBytes] = [:]
+  private var storage: [String: SecureBytes]=[:]
 
   func storeData(_ data: SecureBytes, identifier: String) -> KeyStorageResult {
-    storage[identifier] = data
+    storage[identifier]=data
     return .success
   }
 
   func retrieveData(identifier: String) -> KeyRetrievalResult {
-    guard let data = storage[identifier] else {
+    guard let data=storage[identifier] else {
       return .failure(.keyNotFound)
     }
     return .success(data)
@@ -30,7 +30,7 @@ private actor MockSecureStorageActor {
 
 // Wrapper class that conforms to SecureStorageProtocol
 private final class MockSecureStorage: SecureStorageProtocol, Sendable {
-  private let actor = MockSecureStorageActor()
+  private let actor=MockSecureStorageActor()
 
   func storeSecurely(data: SecureBytes, identifier: String) async -> KeyStorageResult {
     await actor.storeData(data, identifier: identifier)
@@ -47,20 +47,20 @@ private final class MockSecureStorage: SecureStorageProtocol, Sendable {
 
 final class SecurityProviderTests: XCTestCase {
   private var securityProvider: SecurityProviderImpl!
-  private var cryptoService: CryptoServiceImpl!
+  private var cryptoService: CryptoServiceCore!
 
   override func setUp() {
     super.setUp()
-    cryptoService = CryptoServiceImpl()
-    securityProvider = SecurityProviderImpl(
+    cryptoService=CryptoServiceCore()
+    securityProvider=SecurityProviderImpl(
       cryptoService: cryptoService,
       keyManager: KeyManagementImpl(secureStorage: MockSecureStorage())
     )
   }
 
   override func tearDown() {
-    securityProvider = nil
-    cryptoService = nil
+    securityProvider=nil
+    cryptoService=nil
     super.tearDown()
   }
 
@@ -68,13 +68,13 @@ final class SecurityProviderTests: XCTestCase {
 
   func testSymmetricEncryption() async {
     // Create encryption config
-    let config = SecurityConfigDTO(
+    let config=SecurityConfigDTO(
       algorithm: "AES-GCM",
       keySizeInBits: 256
     )
 
     // Perform encryption
-    let result = await securityProvider.performSecureOperation(
+    let result=await securityProvider.performSecureOperation(
       operation: .symmetricEncryption,
       config: config
     )
@@ -91,33 +91,33 @@ final class SecurityProviderTests: XCTestCase {
 
   func testRandomDataGeneration() async {
     // Create config for random data generation
-    let config = SecurityConfigDTO(
+    let config=SecurityConfigDTO(
       algorithm: "SecureRandom",
       keySizeInBits: 32 // Request 32 bytes of random data
     )
 
     // Perform random generation operation
-    let result = await securityProvider.performSecureOperation(
+    let result=await securityProvider.performSecureOperation(
       operation: .randomGeneration,
       config: config
     )
 
     XCTAssertTrue(result.success, "Random data generation should succeed")
 
-    guard let randomData = result.data else {
+    guard let randomData=result.data else {
       XCTFail("Random data generation should return data")
       return
     }
 
     // Generate a second set of random data to verify uniqueness
-    let result2 = await securityProvider.performSecureOperation(
+    let result2=await securityProvider.performSecureOperation(
       operation: .randomGeneration,
       config: config
     )
 
     XCTAssertTrue(result2.success, "Second random data generation should succeed")
 
-    guard let randomData2 = result2.data else {
+    guard let randomData2=result2.data else {
       XCTFail("Second random data generation should return data")
       return
     }
@@ -130,16 +130,16 @@ final class SecurityProviderTests: XCTestCase {
 
   func testHashing() async {
     // Create test data
-    let data = SecureBytes(bytes: Array("Data to be hashed".utf8))
+    let data=SecureBytes(bytes: Array("Data to be hashed".utf8))
 
     // Create config for SHA-256 hashing
-    let config = SecurityConfigDTO(
+    let config=SecurityConfigDTO(
       algorithm: "SHA-256",
       keySizeInBits: 0 // Not applicable for hashing
     )
 
     // Perform hashing operation with provided data
-    let result = await cryptoService.hash(data: data, config: config)
+    let result=await cryptoService.hash(data: data, config: config)
 
     // Verify hashing was successful
     switch result {
@@ -148,7 +148,7 @@ final class SecurityProviderTests: XCTestCase {
         XCTAssertEqual(hash.count, 32, "SHA-256 hash should be 32 bytes")
 
         // Verify same data produces same hash
-        let repeatResult = await cryptoService.hash(data: data, config: config)
+        let repeatResult=await cryptoService.hash(data: data, config: config)
 
         switch repeatResult {
           case let .success(repeatHash):
@@ -166,13 +166,13 @@ final class SecurityProviderTests: XCTestCase {
 
   func testUnsupportedOperations() async {
     // Create config
-    let config = SecurityConfigDTO(
+    let config=SecurityConfigDTO(
       algorithm: "AES-GCM",
       keySizeInBits: 256
     )
 
     // List of operations that are not yet implemented
-    let unsupportedOperations: [SecurityOperation] = [
+    let unsupportedOperations: [SecurityOperation]=[
       .asymmetricEncryption,
       .asymmetricDecryption,
       .signatureGeneration,
@@ -181,7 +181,7 @@ final class SecurityProviderTests: XCTestCase {
 
     // Verify each operation properly reports as unsupported
     for operation in unsupportedOperations {
-      let result = await securityProvider.performSecureOperation(
+      let result=await securityProvider.performSecureOperation(
         operation: operation,
         config: config
       )

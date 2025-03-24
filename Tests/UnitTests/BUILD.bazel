@@ -7,7 +7,6 @@ umbra_swift_test(
         allow_empty = True,
     ),
     deps = [
-        "//Sources/Unit",
         "//Tests/TestKit",
     ],
 )

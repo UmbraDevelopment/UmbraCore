@@ -18,16 +18,16 @@ final class CryptoTests: XCTestCase {
   // MARK: - Test Lifecycle
 
   override func setUp() async throws {
-    container = CryptoMockServiceContainer()
-    service = CryptoMockCryptoService(container: container)
+    container=CryptoMockServiceContainer()
+    service=CryptoMockCryptoService(container: container)
 
     // Register service with container
     try await container.register(service)
   }
 
   override func tearDown() async throws {
-    service = nil
-    container = nil
+    service=nil
+    container=nil
   }
 
   // MARK: - Tests
@@ -37,13 +37,13 @@ final class CryptoTests: XCTestCase {
     try await container.initialiseAll()
 
     // Generate random bytes
-    let bytes = try await service.generateRandomBytes(count: 32)
+    let bytes=try await service.generateRandomBytes(count: 32)
 
     // Verify results
     XCTAssertEqual(bytes.count, 32, "Should generate the requested number of bytes")
 
     // Generate another set of bytes to ensure they're different
-    let moreBytes = try await service.generateRandomBytes(count: 32)
+    let moreBytes=try await service.generateRandomBytes(count: 32)
     XCTAssertNotEqual(bytes, moreBytes, "Random bytes should be different each time")
   }
 
@@ -52,15 +52,15 @@ final class CryptoTests: XCTestCase {
     try await container.initialiseAll()
 
     // Test data and key
-    let originalData: [UInt8] = Array("This is a test message".utf8)
-    let key: [UInt8] = try await service.generateRandomBytes(count: 32)
+    let originalData: [UInt8]=Array("This is a test message".utf8)
+    let key: [UInt8]=try await service.generateRandomBytes(count: 32)
 
     // Encrypt data
-    let encryptedData = try await service.encrypt(data: originalData, key: key)
+    let encryptedData=try await service.encrypt(data: originalData, key: key)
     XCTAssertNotEqual(encryptedData, originalData, "Encrypted data should differ from original")
 
     // Decrypt data
-    let decryptedData = try await service.decrypt(data: encryptedData, key: key)
+    let decryptedData=try await service.decrypt(data: encryptedData, key: key)
     XCTAssertEqual(decryptedData, originalData, "Decrypted data should match original")
   }
 
@@ -69,15 +69,15 @@ final class CryptoTests: XCTestCase {
     try await container.initialiseAll()
 
     // Test data
-    let data1: [UInt8] = Array("Test data 1".utf8)
-    let data2: [UInt8] = Array("Test data 2".utf8)
+    let data1: [UInt8]=Array("Test data 1".utf8)
+    let data2: [UInt8]=Array("Test data 2".utf8)
 
     // Generate hashes
-    let hash1 = try await service.hash(data: data1)
-    let hash2 = try await service.hash(data: data2)
+    let hash1=try await service.hash(data: data1)
+    let hash2=try await service.hash(data: data2)
 
     // Same input should produce same hash
-    let hash1_repeat = try await service.hash(data: data1)
+    let hash1_repeat=try await service.hash(data: data1)
 
     // Verify results
     XCTAssertEqual(hash1.count, 32, "Hash should be 32 bytes")
@@ -100,40 +100,40 @@ final class CryptoTests: XCTestCase {
 
 /// Mock implementation of ServiceContainer for testing
 actor CryptoMockServiceContainer {
-  var services: [String: Any] = [:]
-  var serviceStates: [String: CoreServicesTypes.ServiceState] = [:]
+  var services: [String: Any]=[:]
+  var serviceStates: [String: CoreServicesTypes.ServiceState]=[:]
 
   func register(_ service: any ServiceTypes.UmbraService) async throws {
-    services[service.identifier] = service
-    serviceStates[service.identifier] = CoreServicesTypes.ServiceState.uninitialized
+    services[service.identifier]=service
+    serviceStates[service.identifier]=CoreServicesTypes.ServiceState.uninitialized
   }
 
   func initialiseAll() async throws {
     for serviceID in services.keys {
-      serviceStates[serviceID] = CoreServicesTypes.ServiceState.ready
-      if let service = services[serviceID] as? any ServiceTypes.UmbraService {
+      serviceStates[serviceID]=CoreServicesTypes.ServiceState.ready
+      if let service=services[serviceID] as? any ServiceTypes.UmbraService {
         try await service.validate()
       }
     }
   }
 
   func initialiseService(_ identifier: String) async throws {
-    serviceStates[identifier] = CoreServicesTypes.ServiceState.ready
+    serviceStates[identifier]=CoreServicesTypes.ServiceState.ready
   }
 
   func resolve<T>(_: T.Type) async throws -> T where T: ServiceTypes.UmbraService {
-    guard let service = services.values.first(where: { $0 is T }) as? T else {
+    guard let service=services.values.first(where: { $0 is T }) as? T else {
       throw CoreErrors.ServiceError.dependencyError
     }
     return service
   }
 }
 
-/// Mock CryptoService implementation for testing
+/// Mock CryptoServiceCore implementation for testing
 actor CryptoMockCryptoService: ServiceTypes.UmbraService {
-  static var serviceIdentifier: String = "com.umbracore.crypto.mock"
-  nonisolated let identifier: String = serviceIdentifier
-  nonisolated let version: String = "1.0.0"
+  static var serviceIdentifier: String="com.umbracore.crypto.mock"
+  nonisolated let identifier: String=serviceIdentifier
+  nonisolated let version: String="1.0.0"
 
   nonisolated var state: CoreServicesTypes.ServiceState {
     _state
@@ -143,16 +143,16 @@ actor CryptoMockCryptoService: ServiceTypes.UmbraService {
   private nonisolated(unsafe) var _state: CoreServicesTypes.ServiceState = .uninitialized
 
   init(container: CryptoMockServiceContainer) {
-    self.container = container
+    self.container=container
   }
 
   func validate() async throws -> Bool {
-    _state = CoreServicesTypes.ServiceState.ready
+    _state=CoreServicesTypes.ServiceState.ready
     return true
   }
 
   func shutdown() async {
-    _state = CoreServicesTypes.ServiceState.shutdown
+    _state=CoreServicesTypes.ServiceState.shutdown
   }
 
   func generateRandomBytes(count: Int) async throws -> [UInt8] {
@@ -161,10 +161,10 @@ actor CryptoMockCryptoService: ServiceTypes.UmbraService {
     }
 
     // Actually generate some random bytes instead of sequential numbers
-    var bytes = [UInt8](repeating: 0, count: count)
+    var bytes=[UInt8](repeating: 0, count: count)
     // Use arc4random to generate random bytes
     for i in 0..<count {
-      bytes[i] = UInt8.random(in: 0...255)
+      bytes[i]=UInt8.random(in: 0...255)
     }
     return bytes
   }
@@ -183,9 +183,9 @@ actor CryptoMockCryptoService: ServiceTypes.UmbraService {
 
   func hash(data: [UInt8]) async throws -> [UInt8] {
     // Simple mock hash - just to provide consistent output for tests
-    var result = [UInt8](repeating: 0, count: 32)
+    var result=[UInt8](repeating: 0, count: 32)
     for (idx, byte) in data.enumerated() {
-      result[idx % 32] = result[idx % 32] &+ byte
+      result[idx % 32]=result[idx % 32] &+ byte
     }
     return result
   }

@@ -29,20 +29,20 @@ final class UmbraErrorProtocolTests: XCTestCase {
     }
 
     func with(context: ErrorHandlingCommon.ErrorContext) -> TestError {
-      var newError = self
-      newError.customContext = context
+      var newError=self
+      newError.customContext=context
       return newError
     }
 
     func with(underlyingError: Error) -> TestError {
-      var newError = self
-      newError.underlyingError = underlyingError
+      var newError=self
+      newError.underlyingError=underlyingError
       return newError
     }
 
     func with(source: ErrorHandlingCommon.ErrorSource) -> TestError {
-      var newError = self
-      newError.source = source
+      var newError=self
+      newError.source=source
       return newError
     }
   }
@@ -52,7 +52,7 @@ final class UmbraErrorProtocolTests: XCTestCase {
    */
   func testUmbraErrorBasicRequirements() {
     // Given
-    let error = TestError(code: "E001", errorDescription: "Test error")
+    let error=TestError(code: "E001", errorDescription: "Test error")
 
     // Then
     XCTAssertEqual(error.domain, "Test", "Domain should match the static domain property")
@@ -76,10 +76,10 @@ final class UmbraErrorProtocolTests: XCTestCase {
    */
   func testErrorWithSourceLocation() {
     // Given
-    let error = TestError(code: "E001", errorDescription: "Test error")
+    let error=TestError(code: "E001", errorDescription: "Test error")
 
     // When
-    let errorWithSource = error.withSource(file: "TestFile.swift", function: "testFunction", line: 42)
+    let errorWithSource=error.withSource(file: "TestFile.swift", function: "testFunction", line: 42)
 
     // Then
     XCTAssertNotNil(errorWithSource.source, "Source information should be set")
@@ -111,10 +111,10 @@ final class UmbraErrorProtocolTests: XCTestCase {
    */
   func testWithSourceUsingCallerLocation() {
     // Given
-    let error = TestError(code: "E002", errorDescription: "Test error with caller source")
+    let error=TestError(code: "E002", errorDescription: "Test error with caller source")
 
     // When
-    let errorWithSource = error.withSource()
+    let errorWithSource=error.withSource()
 
     // Then
     XCTAssertNotNil(errorWithSource.source, "Source information should be set")
@@ -140,15 +140,15 @@ final class UmbraErrorProtocolTests: XCTestCase {
    */
   func testErrorWithContext() {
     // Given
-    let error = TestError(code: "E003", errorDescription: "Test error")
-    let newContext = ErrorHandlingCommon.ErrorContext(
+    let error=TestError(code: "E003", errorDescription: "Test error")
+    let newContext=ErrorHandlingCommon.ErrorContext(
       source: "TestSource",
       operation: "TestOperation",
       details: "Detailed info"
     )
 
     // When
-    let errorWithContext = error.with(context: newContext)
+    let errorWithContext=error.with(context: newContext)
 
     // Then
     XCTAssertEqual(
@@ -173,11 +173,11 @@ final class UmbraErrorProtocolTests: XCTestCase {
    */
   func testErrorWithUnderlyingError() {
     // Given
-    let originalError = NSError(domain: "OriginalError", code: 100, userInfo: nil)
-    let testError = TestError(code: "E002", errorDescription: "Wrapper error")
+    let originalError=NSError(domain: "OriginalError", code: 100, userInfo: nil)
+    let testError=TestError(code: "E002", errorDescription: "Wrapper error")
 
     // When
-    let errorWithUnderlying = testError.with(underlyingError: originalError)
+    let errorWithUnderlying=testError.with(underlyingError: originalError)
 
     // Then
     XCTAssertNotNil(errorWithUnderlying.underlyingError, "Underlying error should be set")
@@ -212,7 +212,7 @@ final class UmbraErrorProtocolTests: XCTestCase {
     }
 
     // When
-    let error = CustomDomainError(
+    let error=CustomDomainError(
       code: "D001",
       errorDescription: "Custom domain error"
     )

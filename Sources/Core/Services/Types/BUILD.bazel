@@ -5,6 +5,7 @@ umbra_swift_library(
     name = "CoreServicesTypes",
     srcs = glob(
         ["**/*.swift"],
+        allow_empty = True,
         exclude = ["XPCServiceProtocol.swift"],
     ),
     deps = [

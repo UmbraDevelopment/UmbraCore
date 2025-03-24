@@ -9,18 +9,18 @@ final class DefaultCryptoServiceTests: XCTestCase {
 
   override func setUp() {
     super.setUp()
-    cryptoService = DefaultCryptoService()
+    cryptoService=DefaultCryptoService()
   }
 
   override func tearDown() {
-    cryptoService = nil
+    cryptoService=nil
     super.tearDown()
   }
 
   // MARK: - Test Simple API
 
   func testGenerateKey() async {
-    let keyResult = await cryptoService.generateKey()
+    let keyResult=await cryptoService.generateKey()
 
     switch keyResult {
       case let .success(key):
@@ -31,24 +31,24 @@ final class DefaultCryptoServiceTests: XCTestCase {
   }
 
   func testEncryptDecrypt() async {
-    let testData = SecureBytes(bytes: [1, 2, 3, 4, 5])
-    let keyResult = await cryptoService.generateKey()
+    let testData=SecureBytes(bytes: [1, 2, 3, 4, 5])
+    let keyResult=await cryptoService.generateKey()
 
-    guard case let .success(key) = keyResult else {
+    guard case let .success(key)=keyResult else {
       XCTFail("Failed to generate key for test")
       return
     }
 
-    let encryptResult = await cryptoService.encrypt(data: testData, using: key)
+    let encryptResult=await cryptoService.encrypt(data: testData, using: key)
 
-    guard case let .success(encryptedData) = encryptResult else {
+    guard case let .success(encryptedData)=encryptResult else {
       XCTFail("Encryption failed")
       return
     }
 
-    let decryptResult = await cryptoService.decrypt(data: encryptedData, using: key)
+    let decryptResult=await cryptoService.decrypt(data: encryptedData, using: key)
 
-    guard case let .success(decryptedData) = decryptResult else {
+    guard case let .success(decryptedData)=decryptResult else {
       XCTFail("Decryption failed")
       return
     }
@@ -59,10 +59,10 @@ final class DefaultCryptoServiceTests: XCTestCase {
   }
 
   func testHashingFunctionality() async {
-    let testData = SecureBytes(bytes: [1, 2, 3, 4, 5])
-    let hashResult = await cryptoService.hash(data: testData)
+    let testData=SecureBytes(bytes: [1, 2, 3, 4, 5])
+    let hashResult=await cryptoService.hash(data: testData)
 
-    guard case let .success(hash) = hashResult else {
+    guard case let .success(hash)=hashResult else {
       XCTFail("Hashing failed")
       return
     }
@@ -73,37 +73,37 @@ final class DefaultCryptoServiceTests: XCTestCase {
   // MARK: - Test Symmetric Encryption
 
   func testSymmetricEncryptionDecryption() async {
-    let testData = SecureBytes(bytes: [1, 2, 3, 4, 5])
-    let keyResult = await cryptoService.generateKey()
+    let testData=SecureBytes(bytes: [1, 2, 3, 4, 5])
+    let keyResult=await cryptoService.generateKey()
 
-    guard case let .success(key) = keyResult else {
+    guard case let .success(key)=keyResult else {
       XCTFail("Failed to generate key for test")
       return
     }
 
-    let config = SecurityConfigDTO(
+    let config=SecurityConfigDTO(
       algorithm: "AES-GCM",
       keySizeInBits: 256
     )
 
-    let encryptResult = await cryptoService.encryptSymmetric(
+    let encryptResult=await cryptoService.encryptSymmetric(
       data: testData,
       key: key,
       config: config
     )
 
-    guard case let .success(encryptedData) = encryptResult else {
+    guard case let .success(encryptedData)=encryptResult else {
       XCTFail("Encryption failed: \(encryptResult)")
       return
     }
 
-    let decryptResult = await cryptoService.decryptSymmetric(
+    let decryptResult=await cryptoService.decryptSymmetric(
       data: encryptedData,
       key: key,
       config: config
     )
 
-    guard case let .success(decryptedData) = decryptResult else {
+    guard case let .success(decryptedData)=decryptResult else {
       XCTFail("Decryption failed: \(decryptResult)")
       return
     }
@@ -114,7 +114,7 @@ final class DefaultCryptoServiceTests: XCTestCase {
   // MARK: - Test Random Data Generation
 
   func testRandomDataGeneration() async {
-    let randomDataResult = await cryptoService.generateRandomData(length: 32)
+    let randomDataResult=await cryptoService.generateRandomData(length: 32)
 
     switch randomDataResult {
       case let .success(randomData):
@@ -127,17 +127,17 @@ final class DefaultCryptoServiceTests: XCTestCase {
   // MARK: - Test Verify Functionality
 
   func testVerifyFunctionality() async {
-    let testData = SecureBytes(bytes: [1, 2, 3, 4, 5])
-    let hashResult = await cryptoService.hash(data: testData)
+    let testData=SecureBytes(bytes: [1, 2, 3, 4, 5])
+    let hashResult=await cryptoService.hash(data: testData)
 
-    guard case let .success(hash) = hashResult else {
+    guard case let .success(hash)=hashResult else {
       XCTFail("Hashing failed")
       return
     }
 
-    let verifyResult = await cryptoService.verify(data: testData, against: hash)
+    let verifyResult=await cryptoService.verify(data: testData, against: hash)
 
-    guard case let .success(isValid) = verifyResult else {
+    guard case let .success(isValid)=verifyResult else {
       XCTFail("Verification failed: \(verifyResult)")
       return
     }

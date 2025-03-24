@@ -29,7 +29,7 @@ public final class SecurityProviderImpl: SecurityProviderProtocol {
   /// Convenience initializer with default implementations
   public convenience init() {
     self.init(
-      cryptoService: CryptoService(),
+      cryptoService: CryptoServiceCore(),
       keyManager: KeyManager()
     )
   }

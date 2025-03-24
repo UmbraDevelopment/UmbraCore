@@ -8,7 +8,7 @@ class SecurityConfigurationTests: XCTestCase {
   // MARK: - Predefined Configuration Tests
 
   func testDefaultConfiguration() {
-    let defaultConfig = SecurityConfiguration.default
+    let defaultConfig=SecurityConfiguration.default
 
     XCTAssertEqual(defaultConfig.securityLevel, .standard)
     XCTAssertEqual(defaultConfig.encryptionAlgorithm, "AES-256")
@@ -17,7 +17,7 @@ class SecurityConfigurationTests: XCTestCase {
   }
 
   func testMinimalConfiguration() {
-    let minimalConfig = SecurityConfiguration.minimal
+    let minimalConfig=SecurityConfiguration.minimal
 
     XCTAssertEqual(minimalConfig.securityLevel, .basic)
     XCTAssertEqual(minimalConfig.encryptionAlgorithm, "AES-128")
@@ -26,7 +26,7 @@ class SecurityConfigurationTests: XCTestCase {
   }
 
   func testMaximumConfiguration() {
-    let maxConfig = SecurityConfiguration.maximum
+    let maxConfig=SecurityConfiguration.maximum
 
     XCTAssertEqual(maxConfig.securityLevel, .maximum)
     XCTAssertEqual(maxConfig.encryptionAlgorithm, "AES-GCM-256")
@@ -39,8 +39,8 @@ class SecurityConfigurationTests: XCTestCase {
   // MARK: - Custom Configuration Tests
 
   func testCustomConfiguration() {
-    let customOptions = ["testMode": "enabled", "loggingLevel": "verbose"]
-    let customConfig = SecurityConfiguration(
+    let customOptions=["testMode": "enabled", "loggingLevel": "verbose"]
+    let customConfig=SecurityConfiguration(
       securityLevel: .advanced,
       encryptionAlgorithm: "ChaCha20-Poly1305",
       hashAlgorithm: "SHA-384",
@@ -58,14 +58,14 @@ class SecurityConfigurationTests: XCTestCase {
   // MARK: - Dictionary Conversion Tests
 
   func testToDictionaryWithoutOptions() {
-    let config = SecurityConfiguration(
+    let config=SecurityConfiguration(
       securityLevel: .standard,
       encryptionAlgorithm: "AES-256",
       hashAlgorithm: "SHA-256",
       options: nil
     )
 
-    let dict = config.toDictionary()
+    let dict=config.toDictionary()
 
     XCTAssertEqual(dict["securityLevel"] as? Int, SecurityLevel.standard.rawValue)
     XCTAssertEqual(dict["encryptionAlgorithm"] as? String, "AES-256")
@@ -74,14 +74,14 @@ class SecurityConfigurationTests: XCTestCase {
   }
 
   func testToDictionaryWithOptions() {
-    let config = SecurityConfiguration(
+    let config=SecurityConfiguration(
       securityLevel: .advanced,
       encryptionAlgorithm: "AES-GCM-256",
       hashAlgorithm: "SHA-512",
       options: ["keyRotation": "enabled", "remoteAttestation": "optional"]
     )
 
-    let dict = config.toDictionary()
+    let dict=config.toDictionary()
 
     XCTAssertEqual(dict["securityLevel"] as? Int, SecurityLevel.advanced.rawValue)
     XCTAssertEqual(dict["encryptionAlgorithm"] as? String, "AES-GCM-256")
@@ -95,50 +95,50 @@ class SecurityConfigurationTests: XCTestCase {
 
   func testToSecurityProtocolsConfig() {
     // Test basic security level
-    var config = SecurityConfiguration(
+    var config=SecurityConfiguration(
       securityLevel: .basic,
       encryptionAlgorithm: "AES-128",
       hashAlgorithm: "SHA-1",
       options: nil
     )
 
-    var spcConfig = config.toSecurityProtocolsConfig()
+    var spcConfig=config.toSecurityProtocolsConfig()
     XCTAssertEqual(spcConfig.algorithm, "AES-128")
     XCTAssertEqual(spcConfig.keySizeInBits, 128)
 
     // Test standard security level
-    config = SecurityConfiguration(
+    config=SecurityConfiguration(
       securityLevel: .standard,
       encryptionAlgorithm: "AES-256",
       hashAlgorithm: "SHA-256",
       options: nil
     )
 
-    spcConfig = config.toSecurityProtocolsConfig()
+    spcConfig=config.toSecurityProtocolsConfig()
     XCTAssertEqual(spcConfig.algorithm, "AES-256")
     XCTAssertEqual(spcConfig.keySizeInBits, 256)
 
     // Test advanced security level
-    config = SecurityConfiguration(
+    config=SecurityConfiguration(
       securityLevel: .advanced,
       encryptionAlgorithm: "AES-GCM-256",
       hashAlgorithm: "SHA-512",
       options: nil
     )
 
-    spcConfig = config.toSecurityProtocolsConfig()
+    spcConfig=config.toSecurityProtocolsConfig()
     XCTAssertEqual(spcConfig.algorithm, "AES-GCM-256")
     XCTAssertEqual(spcConfig.keySizeInBits, 512)
 
     // Test maximum security level
-    config = SecurityConfiguration(
+    config=SecurityConfiguration(
       securityLevel: .maximum,
       encryptionAlgorithm: "ChaCha20-Poly1305",
       hashAlgorithm: "SHA-512",
       options: nil
     )
 
-    spcConfig = config.toSecurityProtocolsConfig()
+    spcConfig=config.toSecurityProtocolsConfig()
     XCTAssertEqual(spcConfig.algorithm, "ChaCha20-Poly1305")
     XCTAssertEqual(spcConfig.keySizeInBits, 512)
   }
@@ -146,7 +146,7 @@ class SecurityConfigurationTests: XCTestCase {
   // MARK: - Codable Tests
 
   func testCodableConformance() {
-    let original = SecurityConfiguration(
+    let original=SecurityConfiguration(
       securityLevel: .advanced,
       encryptionAlgorithm: "AES-GCM-256",
       hashAlgorithm: "SHA-512",
@@ -154,21 +154,21 @@ class SecurityConfigurationTests: XCTestCase {
     )
 
     // Encode
-    let encoder = JSONEncoder()
+    let encoder=JSONEncoder()
     var encodedData: Data
 
     do {
-      encodedData = try encoder.encode(original)
+      encodedData=try encoder.encode(original)
     } catch {
       XCTFail("Failed to encode SecurityConfiguration: \(error)")
       return
     }
 
     // Decode
-    let decoder = JSONDecoder()
+    let decoder=JSONDecoder()
 
     do {
-      let decoded = try decoder.decode(SecurityConfiguration.self, from: encodedData)
+      let decoded=try decoder.decode(SecurityConfiguration.self, from: encodedData)
 
       // Verify decoded matches original
       XCTAssertEqual(decoded.securityLevel, original.securityLevel)

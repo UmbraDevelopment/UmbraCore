@@ -16,26 +16,26 @@ final class MockStatsCommandTests: XCTestCase {
 
   override func setUp() {
     super.setUp()
-    processExecutor = MockProcessExecutor()
-    helper = MockableResticCLIHelper(
+    processExecutor=MockProcessExecutor()
+    helper=MockableResticCLIHelper(
       executablePath: "/mock/path/to/restic",
       processExecutor: processExecutor
     )
   }
 
   override func tearDown() {
-    processExecutor = nil
-    helper = nil
+    processExecutor=nil
+    helper=nil
     super.tearDown()
   }
 
   func testStatsCommandBuilder() throws {
-    let options = CommonOptions(
+    let options=CommonOptions(
       repository: "/tmp/repo",
       password: "test"
     )
 
-    let command = StatsCommand(options: options)
+    let command=StatsCommand(options: options)
       .mode(.restoreSize)
       .host("test-host")
       .tag("test-tag")
@@ -48,7 +48,7 @@ final class MockStatsCommandTests: XCTestCase {
     XCTAssertEqual(command.options.password, "test")
 
     // Get all arguments as a single string for easier testing
-    let allArguments = command.arguments.joined(separator: " ")
+    let allArguments=command.arguments.joined(separator: " ")
 
     // Verify all expected arguments are present
     XCTAssertTrue(allArguments.contains("--mode=restore-size"), "Arguments should contain mode")
@@ -60,10 +60,10 @@ final class MockStatsCommandTests: XCTestCase {
 
   func testStatsCommandExecution() throws {
     // Configure mock process executor to handle our command types
-    let mockExecutor = processExecutor as! MockProcessExecutor
+    let mockExecutor=processExecutor as! MockProcessExecutor
 
     // Configure mock responses
-    let statsJson = """
+    let statsJson="""
       {
         "total_size": 1024,
         "total_file_count": 10,
@@ -88,17 +88,17 @@ final class MockStatsCommandTests: XCTestCase {
     ))
 
     // Set up repository path
-    let repoPath = "/mock/repo"
+    let repoPath="/mock/repo"
 
     // Create common options
-    let commonOptions = CommonOptions(
+    let commonOptions=CommonOptions(
       repository: repoPath,
       password: "test-password",
       jsonOutput: true
     )
 
     // First create a mock backup
-    let backupCommand = ResticCommandTestHelpers.createTestBackupCommand(
+    let backupCommand=ResticCommandTestHelpers.createTestBackupCommand(
       paths: ["/test/files"],
       options: commonOptions,
       tags: ["test-backup"]
@@ -111,16 +111,16 @@ final class MockStatsCommandTests: XCTestCase {
     XCTAssertTrue(backupCommand.arguments.contains("--tag=test-backup"))
 
     // Execute the backup command
-    let backupOutput = try helper.execute(backupCommand)
+    let backupOutput=try helper.execute(backupCommand)
     XCTAssertTrue(backupOutput.contains("snapshot_id"), "Backup output should contain snapshot_id")
 
     // Now run the stats command
-    let statsCommand = StatsCommand(options: commonOptions)
+    let statsCommand=StatsCommand(options: commonOptions)
       .mode(.restoreSize)
       .tag("test-backup")
 
     // Execute the stats command
-    let statsOutput = try helper.execute(statsCommand)
+    let statsOutput=try helper.execute(statsCommand)
 
     // Verify the stats output
     XCTAssertTrue(statsOutput.contains("total_size"), "Stats output should contain total_size")
@@ -130,11 +130,11 @@ final class MockStatsCommandTests: XCTestCase {
     )
 
     // Parse the stats output to verify
-    let statsData = Data(statsOutput.utf8)
-    let statsInfo = try JSONDecoder().decode(RepositoryStats.self, from: statsData)
+    let statsData=Data(statsOutput.utf8)
+    let statsInfo=try JSONDecoder().decode(RepositoryStats.self, from: statsData)
 
     // Verify the stats values
-    XCTAssertEqual(statsInfo.totalSize, 1_024)
+    XCTAssertEqual(statsInfo.totalSize, 1024)
     XCTAssertEqual(statsInfo.totalFileCount, 10)
     XCTAssertEqual(statsInfo.totalBlobCount, 15)
     XCTAssertEqual(statsInfo.compressionRatio, 0.5)

@@ -1,8 +1,11 @@
-import CoreErrors
 import CoreServicesSecurityTypeAliases
 import CoreServicesTypeAliases
 import CoreServicesTypes
 import CoreTypesInterfaces
+import ErrorHandlingCore
+import ErrorHandlingDomains
+import ErrorHandlingInterfaces
+import ErrorHandlingMapping
 import Foundation
 import KeyManagementTypes
 import ObjCBridgingTypesFoundation
@@ -55,12 +58,12 @@ public actor ServiceContainer {
   /// - Parameters:
   ///   - service: Service to register
   ///   - dependencies: Optional array of service identifiers that this service depends on
-  /// - Throws: ServiceError if registration fails.
+  /// - Throws: ErrorHandlingCore.ServiceError if registration fails.
   public func register<T: UmbraService>(_ service: T, dependencies: [String]=[]) async throws {
     let identifier=T.serviceIdentifier
 
     guard services[identifier] == nil else {
-      throw CoreErrors.ServiceError.configurationError
+      throw ErrorHandlingCore.ServiceError.configurationError
     }
 
     // Store the service and its dependencies
@@ -73,20 +76,20 @@ public actor ServiceContainer {
 
   /// Resolve a service by type
   /// - Returns: The requested service instance.
-  /// - Throws: ServiceError if service not found or unusable.
+  /// - Throws: ErrorHandlingCore.ServiceError if service not found or unusable.
   public func resolve<T: UmbraService>(_: T.Type) async throws -> T {
     let identifier=T.serviceIdentifier
 
     guard let service=services[identifier] else {
-      throw CoreErrors.ServiceError.initialisationFailed
+      throw ErrorHandlingCore.ServiceError.initialisationFailed
     }
 
     guard let typedService=service as? T else {
-      throw CoreErrors.ServiceError.invalidState
+      throw ErrorHandlingCore.ServiceError.invalidState
     }
 
     guard await service.isUsable() else {
-      throw CoreErrors.ServiceError.invalidState
+      throw ErrorHandlingCore.ServiceError.invalidState
     }
 
     return typedService
@@ -95,21 +98,21 @@ public actor ServiceContainer {
   /// Resolve a service by identifier
   /// - Parameter identifier: Unique identifier of the service
   /// - Returns: The requested service
-  /// - Throws: ServiceError if service not found or unusable
+  /// - Throws: ErrorHandlingCore.ServiceError if service not found or unusable
   public func resolveByID(_ identifier: String) async throws -> any UmbraService {
     guard let service=services[identifier] else {
-      throw CoreErrors.ServiceError.initialisationFailed
+      throw ErrorHandlingCore.ServiceError.initialisationFailed
     }
 
     guard await service.isUsable() else {
-      throw CoreErrors.ServiceError.invalidState
+      throw ErrorHandlingCore.ServiceError.invalidState
     }
 
     return service
   }
 
   /// Initialise all registered services.
-  /// - Throws: ServiceError if any service fails to initialise.
+  /// - Throws: ErrorHandlingCore.ServiceError if any service fails to initialise.
   public func initialiseAllServices() async throws {
     let serviceIDs=try topologicalSort()
 
@@ -128,7 +131,7 @@ public actor ServiceContainer {
           await self?.updateServiceState(serviceID, newState: ServiceState.ready)
         } catch {
           await self?.updateServiceState(serviceID, newState: ServiceState.error)
-          throw CoreErrors.ServiceError.initialisationFailed
+          throw ErrorHandlingCore.ServiceError.initialisationFailed
         }
       }
 
@@ -138,10 +141,10 @@ public actor ServiceContainer {
 
   /// Initialise a specific service by identifier
   /// - Parameter identifier: Service identifier
-  /// - Throws: ServiceError if initialisation fails
+  /// - Throws: ErrorHandlingCore.ServiceError if initialisation fails
   public func initialiseService(_ identifier: String) async throws {
     guard let service=services[identifier] else {
-      throw CoreErrors.ServiceError.initialisationFailed
+      throw ErrorHandlingCore.ServiceError.initialisationFailed
     }
 
     // Don't initialise if already initialised
@@ -161,7 +164,7 @@ public actor ServiceContainer {
       await updateServiceState(identifier, newState: ServiceState.ready)
     } catch {
       await updateServiceState(identifier, newState: ServiceState.error)
-      throw CoreErrors.ServiceError.initialisationFailed
+      throw ErrorHandlingCore.ServiceError.initialisationFailed
     }
   }
 
@@ -216,7 +219,7 @@ public actor ServiceContainer {
 
   /// Sort services in topological order (dependencies first)
   /// - Returns: Array of service identifiers in dependency order
-  /// - Throws: ServiceError if circular dependency detected
+  /// - Throws: ErrorHandlingCore.ServiceError if circular dependency detected
   private func topologicalSort() throws -> [String] {
     var visited=Set<String>()
     var visiting=Set<String>()
@@ -238,7 +241,7 @@ public actor ServiceContainer {
   ///   - visited: Set of visited nodes
   ///   - visiting: Set of nodes currently being visited (to detect cycles)
   ///   - sorted: Array of sorted nodes
-  /// - Throws: ServiceError if circular dependency detected
+  /// - Throws: ErrorHandlingCore.ServiceError if circular dependency detected
   private func visit(
     _ serviceID: String,
     visited: inout Set<String>,
@@ -251,7 +254,7 @@ public actor ServiceContainer {
     }
 
     if visiting.contains(serviceID) {
-      throw CoreErrors.ServiceError.dependencyError
+      throw ErrorHandlingCore.ServiceError.dependencyError
     }
 
     visiting.insert(serviceID)
@@ -259,7 +262,7 @@ public actor ServiceContainer {
     let deps=dependencyGraph[serviceID] ?? []
     for depID in deps {
       if !services.keys.contains(depID) {
-        throw CoreErrors.ServiceError.dependencyError
+        throw ErrorHandlingCore.ServiceError.dependencyError
       }
       try visit(depID, visited: &visited, visiting: &visiting, sorted: &sorted)
     }

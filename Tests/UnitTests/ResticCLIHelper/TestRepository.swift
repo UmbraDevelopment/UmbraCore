@@ -24,7 +24,7 @@ final class TestRepository {
   let cachePath: String
 
   /// Password for the repository
-  let password: String = "test-password"
+  let password: String="test-password"
 
   /// Main helper instance
   private let helper: ResticCLIHelper
@@ -37,18 +37,18 @@ final class TestRepository {
    * The repository will be deleted when the test case is torn down.
    */
   static func create() async throws -> TestRepository {
-    let instance = try TestRepository()
+    let instance=try TestRepository()
 
     // Initialize the repository
-    let options = CommonOptions(
+    let options=CommonOptions(
       repository: instance.path,
       password: instance.password,
       validateCredentials: false,
       jsonOutput: true
     )
 
-    let initCommand = InitCommand(options: options)
-    _ = try await instance.helper.execute(initCommand)
+    let initCommand=InitCommand(options: options)
+    _=try await instance.helper.execute(initCommand)
 
     return instance
   }
@@ -56,24 +56,24 @@ final class TestRepository {
   /// Private initializer, call `create()` instead
   private init() throws {
     // Create unique temporary directory
-    let tempDirURL = FileManager.default.temporaryDirectory
+    let tempDirURL=FileManager.default.temporaryDirectory
       .appendingPathComponent("restic-tests-\(UUID().uuidString)")
 
     // Create repository subdirectory
-    repositoryURL = tempDirURL.appendingPathComponent("repo")
-    path = repositoryURL.path
+    repositoryURL=tempDirURL.appendingPathComponent("repo")
+    path=repositoryURL.path
 
     // Create test files directory
-    let testFilesURL = tempDirURL.appendingPathComponent("test-files")
-    testFilesPath = testFilesURL.path
+    let testFilesURL=tempDirURL.appendingPathComponent("test-files")
+    testFilesPath=testFilesURL.path
 
     // Create restore directory
-    let restoreURL = tempDirURL.appendingPathComponent("restore")
-    restorePath = restoreURL.path
+    let restoreURL=tempDirURL.appendingPathComponent("restore")
+    restorePath=restoreURL.path
 
     // Create cache directory
-    let cacheURL = tempDirURL.appendingPathComponent("cache")
-    cachePath = cacheURL.path
+    let cacheURL=tempDirURL.appendingPathComponent("cache")
+    cachePath=cacheURL.path
 
     // Create all directories
     try FileManager.default.createDirectory(at: repositoryURL, withIntermediateDirectories: true)
@@ -82,7 +82,7 @@ final class TestRepository {
     try FileManager.default.createDirectory(at: cacheURL, withIntermediateDirectories: true)
 
     // Initialize helper
-    helper = try ResticCLIHelper(executablePath: "/opt/homebrew/bin/restic")
+    helper=try ResticCLIHelper(executablePath: "/opt/homebrew/bin/restic")
   }
 
   /**
@@ -91,23 +91,23 @@ final class TestRepository {
    */
   func createStandardTestFiles() throws {
     // Create a simple text file
-    let textFile = (testFilesPath as NSString).appendingPathComponent("text.txt")
+    let textFile=(testFilesPath as NSString).appendingPathComponent("text.txt")
     try "This is a test file.\nIt has multiple lines.\nThis is line 3."
       .write(toFile: textFile, atomically: true, encoding: .utf8)
 
     // Create a binary file with random data
-    let binaryFile = (testFilesPath as NSString).appendingPathComponent("binary.dat")
-    var randomData = Data(count: 1_024) // 1KB file
-    _ = randomData.withUnsafeMutableBytes { bytes in
+    let binaryFile=(testFilesPath as NSString).appendingPathComponent("binary.dat")
+    var randomData=Data(count: 1024) // 1KB file
+    _=randomData.withUnsafeMutableBytes { bytes in
       SecRandomCopyBytes(kSecRandomDefault, bytes.count, bytes.baseAddress!)
     }
     try randomData.write(to: URL(fileURLWithPath: binaryFile))
 
     // Create a subdirectory with a file
-    let subdir = (testFilesPath as NSString).appendingPathComponent("subdir")
+    let subdir=(testFilesPath as NSString).appendingPathComponent("subdir")
     try FileManager.default.createDirectory(atPath: subdir, withIntermediateDirectories: true)
 
-    let subdirFile = (subdir as NSString).appendingPathComponent("file.txt")
+    let subdirFile=(subdir as NSString).appendingPathComponent("file.txt")
     try "This is a file in a subdirectory."
       .write(toFile: subdirFile, atomically: true, encoding: .utf8)
   }
