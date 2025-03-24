@@ -9,6 +9,6 @@ swift_library(
     copts = [
         "-enable-library-evolution",
     ],
-    module_name = "ErrorHandlingInterfaces",
+    module_name = "ErrorHandlingInterfaces", = ["//visibility:public"] , 
     visibility = ["//visibility:public"],
 )

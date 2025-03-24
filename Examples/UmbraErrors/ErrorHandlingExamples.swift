@@ -1,6 +1,7 @@
 import ErrorHandlingDomains
 import Foundation
 import OSLog
+import UmbraErrors
 
 /// Example class demonstrating best practices for error handling with the new system
 public class ErrorHandlingExamples {
@@ -81,7 +82,7 @@ public class ErrorHandlingExamples {
     if let securityError=error.mapped(to: SecurityError.self) {
       // We successfully mapped to our new SecurityError type
       return securityError
-    } else if let legacyError=error.mapped(to: CoreErrors.SecurityError.self) {
+    } else if let legacyError=error.mapped(to: UmbraErrors.Security.Core.self) {
       // We mapped to the legacy SecurityError type
       // Now map it to our enhanced type
       let enhancedError=securityErrorMapper.mapReverse(legacyError)

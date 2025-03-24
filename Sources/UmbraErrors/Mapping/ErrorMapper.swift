@@ -29,17 +29,17 @@ extension ErrorMapper {
 
 /// A type-erased error mapper that can map from any error to any error
 public struct AnyErrorMapper<Target: Error>: ErrorMapper {
+  /// Define the source error type for protocol conformance
+  public typealias SourceError=Error
+
+  /// Define the target error type for protocol conformance
+  public typealias TargetError=Target
+
   /// The mapping function
   private let _map: (Error) -> Target
 
   /// The canMap function
   private let _canMap: (Error) -> Bool
-
-  /// Source type is any Error
-  public typealias SourceError=Error
-
-  /// Target type is specified by the generic parameter
-  public typealias TargetError=Target
 
   /// Creates a new AnyErrorMapper instance
   /// - Parameters:
@@ -135,7 +135,7 @@ public struct BidirectionalErrorMapper<A: Error, B: Error> {
     guard forwardMapper.canMap(error) else {
       return nil
     }
-    return forwardMapper.map(error)
+    return forwardMapper.map(error as! B)
   }
 
   /// Maps an arbitrary error to A if possible
@@ -145,6 +145,6 @@ public struct BidirectionalErrorMapper<A: Error, B: Error> {
     guard reverseMapper.canMap(error) else {
       return nil
     }
-    return reverseMapper.map(error)
+    return reverseMapper.map(error as! A)
   }
 }

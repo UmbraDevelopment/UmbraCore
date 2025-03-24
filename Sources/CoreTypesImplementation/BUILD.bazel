@@ -1,12 +1,32 @@
-load("//:swift_rules.bzl", "umbra_swift_library")
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
-umbra_swift_library(
+swift_library(
     name = "CoreTypesImplementation",
     srcs = glob(
-        ["**/*.swift"],
-        allow_empty = True,
+        ],  # Only include Swift files at this level
+        allow_empty = False,
     ),
+    visibility = ["//visibility:public"],
     deps = [
+        "//Sources/CoreTypesImplementation/Sources:CoreTypesImplementationSources",
+        "//Sources/CoreTypesInterfaces",
+        "//Sources/ErrorHandlingInterfaces",
+        "//Sources/UmbraCoreTypes",
+    ],
+)
+
+# Test library target for CoreTypesImplementation
+swift_library(
+    name = "CoreTypesImplementationTests",
+    testonly = True,
+    srcs = glob(
+        ["Tests/*.swift"],
+        allow_empty = False,
+    ),
+    visibility = ["//visibility:public"],
+    deps = [
+        ":CoreTypesImplementation",
+        "//Sources/CoreTypesInterfaces",
     ],
 )
 
@@ -19,6 +39,6 @@ umbra_swift_library(
 #     srcs = glob([
 #         "**/*.swift",
 #         "**/*.docc/**",
-#     ] , allow_empty = True),
+#     ] , allow_empty = False),
 #     deps = ["//Sources/CoreTypesImplementation"],
 # )

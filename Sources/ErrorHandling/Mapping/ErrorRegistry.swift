@@ -105,9 +105,6 @@ public final class ErrorRegistry {
 
 /// Private adapter to create an ErrorMapper from the B->A direction of a BidirectionalErrorMapper
 private struct BtoAAdapter<M: BidirectionalErrorMapper>: ErrorMapper {
-  typealias SourceType=M.ErrorTypeB
-  typealias TargetType=M.ErrorTypeA
-
   private let mapper: M
 
   init(mapper: M) {

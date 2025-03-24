@@ -1,11 +1,13 @@
-load("//:swift_rules.bzl", "umbra_swift_library")
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
-umbra_swift_library(
+swift_library(
     name = "UmbraSecurity",
     srcs = glob(
-        ["Sources/**/*.swift"],
-        allow_empty = True,
+        ["*.swift"]
+,  
+        allow_empty = False,
     ),
+    visibility = ["//visibility:public"],
     deps = [
         "//ErrorHandling/Core:ErrorHandlingCore",
         "//ErrorHandling/Domains:ErrorHandlingDomains",
@@ -18,17 +20,19 @@ umbra_swift_library(
         "//Sources/SecurityInterfacesBase",
         "//Sources/SecurityInterfacesProtocols",
         "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraSecurity/Adapters:UmbraSecurityAdapters",  
+        "//Sources/UmbraSecurity/Services:UmbraSecurityServices",  
+        "//Sources/UmbraSecurity/Extensions:UmbraSecurityExtensions",  
         "//Sources/XPCProtocolsCore",
     ],
 )
 
 # Uncomment if documentation generation is needed
-# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 # load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
 #
 # swift_package(
 #     name = "docc_documentation",
-#     srcs = glob(["Sources/**/*.swift"], allow_empty = True ),
+#     srcs = glob(["*.swift"], allow_empty = False ),
 #         deps = [
 # "//ErrorHandling/Core:ErrorHandlingCore",
 # "//ErrorHandling/Domains:ErrorHandlingDomains",

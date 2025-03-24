@@ -1,0 +1,26 @@
+load("@bazel_gazelle//:def.bzl", "gazelle", "gazelle_binary")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+# Gazelle binary with Swift language support
+gazelle_binary(
+    name = "gazelle_swift_binary",
+    languages = [
+        "@bazel_gazelle//language/proto",  # Include proto support
+        "@bazel_gazelle//language/go",     # Include go support
+        "//gazelle-swift/language/swift",  # Swift language extension with full path
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# Gazelle rule that uses our Swift-enabled binary
+gazelle(
+    name = "gazelle",
+    gazelle = ":gazelle_swift_binary",
+)
+
+go_library(
+    name = "gazelle-swift",
+    srcs = [],
+    importpath = "github.com/umbracore/gazelle-swift",
+    visibility = ["//visibility:public"],
+)

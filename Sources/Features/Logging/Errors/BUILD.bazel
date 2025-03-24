@@ -1,7 +1,7 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 load("//:bazel/macros/swift.bzl", "umbra_swift_library")
 
-umbra_swift_library(
+swift_library(
     name = "FeaturesLoggingErrors",
     srcs = glob(
         ["*.swift"],
@@ -11,4 +11,6 @@ umbra_swift_library(
         "//Sources/ErrorHandling",
         "//Sources/UmbraLogging",
     ],
+ = ["//visibility:public"],
+    visibility = ["//visibility:public"],
 )

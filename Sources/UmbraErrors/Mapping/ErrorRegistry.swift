@@ -2,7 +2,8 @@ import Foundation
 import OSLog
 
 /// A centralised registry for error mappers that provides a single point for error transformation
-public final class ErrorRegistry {
+@available(*, renamed: "ErrorRegistry")
+public final class ErrorRegistry: @unchecked Sendable {
   /// Singleton instance of the registry
   public static let shared=ErrorRegistry()
 
@@ -11,6 +12,9 @@ public final class ErrorRegistry {
 
   /// All registered mappers
   private var mappers: [String: [AnyErrorMapper<Error>]]=[:]
+
+  /// Lock for thread safety
+  private let lock=NSLock()
 
   /// Creates a new ErrorRegistry instance
   public init() {}
@@ -27,6 +31,9 @@ public final class ErrorRegistry {
       return mapper.map(sourceError) as Error
     }
 
+    lock.lock()
+    defer { lock.unlock() }
+
     if mappers[targetDomain] == nil {
       mappers[targetDomain]=[]
     }
@@ -41,6 +48,9 @@ public final class ErrorRegistry {
   ///   - targetDomain: The domain to map to
   /// - Returns: The mapped error, or the original error if no mapper is found
   public func mapError(_ error: Error, to targetDomain: String) -> Error {
+    lock.lock()
+    defer { lock.unlock() }
+
     guard let domainMappers=mappers[targetDomain] else {
       logger.warning("No mappers registered for domain: \(targetDomain)")
       return error
@@ -64,6 +74,9 @@ public final class ErrorRegistry {
   ///   - targetType: The type to map to
   /// - Returns: The mapped error if a mapper is found, or nil otherwise
   public func mapError<T: Error>(_ error: Error, to _: T.Type) -> T? {
+    lock.lock()
+    defer { lock.unlock() }
+
     for (domain, domainMappers) in mappers {
       for mapper in domainMappers {
         if mapper.canMap(error) {
@@ -85,6 +98,9 @@ public final class ErrorRegistry {
 
   /// Clears all registered mappers
   public func clearMappers() {
+    lock.lock()
+    defer { lock.unlock() }
+
     mappers.removeAll()
     logger.debug("Cleared all mappers")
   }
@@ -92,6 +108,9 @@ public final class ErrorRegistry {
   /// Removes all mappers for a specific domain
   /// - Parameter domain: The domain to clear mappers for
   public func clearMappers(for domain: String) {
+    lock.lock()
+    defer { lock.unlock() }
+
     mappers.removeValue(forKey: domain)
     logger.debug("Cleared mappers for domain: \(domain)")
   }

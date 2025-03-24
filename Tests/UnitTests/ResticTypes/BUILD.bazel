@@ -8,5 +8,6 @@ umbra_swift_test(
     ),
     deps = [
         "//Tests/TestKit",
-    ],
+    ] , 
+    visibility = ["//visibility:public"],
 )

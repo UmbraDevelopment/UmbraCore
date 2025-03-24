@@ -1,17 +1,23 @@
-load("//:swift_rules.bzl", "umbra_swift_library")
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
-umbra_swift_library(
+swift_library(
     name = "ErrorHandlingExamples",
     srcs = glob(
-        ["**/*.swift"],
-        allow_empty = True,
+        ["*.swift"]
+,
+        allow_empty = False,
     ),
+    visibility = ["//visibility:public"],
     deps = [
+        "//Sources/ErrorHandlingInterfaces",
+        "//Sources/ErrorHandling/Core:ErrorHandlingCore",
+        "//Sources/ErrorHandling/Common:ErrorHandlingCommon",
+        "//Sources/CoreTypesInterfaces",
+        "//Sources/NotificationService",
     ],
 )
 
 # Uncomment if documentation generation is needed
-# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 # load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
 #
 # swift_package(
@@ -19,6 +25,6 @@ umbra_swift_library(
 #     srcs = glob([
 #         "**/*.swift",
 #         "**/*.docc/**",
-#     ] , allow_empty = True),
+#     ] , allow_empty = False),
 #     deps = ["//Sources/ErrorHandlingExamples"],
 # )

@@ -9,6 +9,8 @@ swift_library(
         "//Sources/UmbraCoreTypes",
         "//Sources/XPCProtocolsCore/Sources:XPCProtocolsCoreSources",
     ],
+    # Explicitly export the sources module
+)    
 )
 
 # A separate target for tests
@@ -16,8 +18,8 @@ swift_library(
     name = "XPCProtocolsCoreTests",
     testonly = True,
     srcs = glob(
-        ["Tests/**/*.swift"],
-        allow_empty = True,
+        ],  # Use a simpler glob pattern that matches files directly in the Tests directory
+        allow_empty = False,  # Fail if no files match to prevent empty target issues
     ),
     module_name = "XPCProtocolsCoreTests",
     visibility = ["//visibility:public"],

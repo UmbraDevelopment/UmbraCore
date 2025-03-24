@@ -10,16 +10,6 @@ import UmbraCoreTypes
 
 // MARK: - Error Types and Adapters
 
-/// Type alias for UmbraErrors.Security.Core - our target error type
-/// @deprecated This typealias will be removed in a future update.
-/// New code should use UmbraErrors.Security.Core directly to improve code clarity.
-@available(
-  *,
-  deprecated,
-  message: "Use UmbraErrors.Security.Core directly instead of this typealias for improved type clarity"
-)
-public typealias CESecurityError=UmbraErrors.Security.Core
-
 /// Create a local SecureBytesError enum that mirrors the one in ErrorHandlingDomains
 public enum SecureBytesError: Error, Equatable {
   case invalidHexString

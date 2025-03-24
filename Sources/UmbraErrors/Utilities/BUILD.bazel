@@ -1,13 +1,14 @@
-load("//:swift_rules.bzl", "umbra_swift_library")
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
-umbra_swift_library(
+swift_library(
     name = "UmbraErrorsUtilities",
     srcs = glob(
-        ["**/*.swift"],
-        allow_empty = True,
+        ["*.swift"]
+,
+        allow_empty = False,
     ),
     # Allow access from the UmbraErrors package
-    visibility = ["//Sources/UmbraErrors:__subpackages__"],
+    # visibility = ["//visibility:public"],
     deps = [
         "//Sources/CoreErrors",
         "//Sources/ErrorHandlingInterfaces",
@@ -26,6 +27,6 @@ umbra_swift_library(
 #     srcs = glob([
 #         "**/*.swift",
 #         "**/*.docc/**",
-#     ] , allow_empty = True),
+#     ] , allow_empty = False),
 #     deps = ["//Sources/UmbraErrorsUtilities"],
 # )

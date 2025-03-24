@@ -1,7 +1,6 @@
 import ErrorHandlingInterfaces
 import Foundation
 
-/// Domain for security-related errors
 public enum SecurityErrorDomain: String, CaseIterable, Sendable {
   /// Domain identifier
   public static let domain="Security"
@@ -21,73 +20,79 @@ public enum SecurityErrorDomain: String, CaseIterable, Sendable {
   public var description: String {
     switch self {
       case .bookmarkError:
-        return "Error managing security bookmarks"
+        "Error managing security bookmarks"
       case .accessError:
-        return "Security access error"
+        "Security access error"
       case .encryptionFailed:
-        return "Encryption operation failed"
+        "Encryption operation failed"
       case .decryptionFailed:
-        return "Decryption operation failed"
+        "Decryption operation failed"
       case .invalidKey:
-        return "Invalid security key"
+        "Invalid security key"
       case .keyGenerationFailed:
-        return "Failed to generate security key"
+        "Failed to generate security key"
       case .certificateInvalid:
-        return "Certificate is invalid or expired"
+        "Certificate is invalid or expired"
       case .unauthorisedAccess:
-        return "Unauthorised access attempt"
+        "Unauthorised access attempt"
       case .secureStorageFailure:
-        return "Secure storage operation failed"
+        "Secure storage operation failed"
     }
   }
 }
 
 /// Enhanced implementation of a SecurityError
-public struct SecurityError: UmbraError {
-  /// Domain of the error
-  public var domain: String { return SecurityErrorDomain.domain }
-  
+public struct SecurityError: UmbraError, CustomStringConvertible {
+  /// Domain identifier
+  public let domain: String=SecurityErrorDomain.domain
+
+  /// Error code string
+  public var code: String { errorCode.rawValue }
+
   /// The specific error code
   public let errorCode: SecurityErrorDomain
-  
-  /// Code representation as a string
-  public var code: String { return errorCode.rawValue }
-  
-  /// Human-readable description of the error
-  public var errorDescription: String {
-    return customDescription ?? errorCode.description
-  }
-  
+
   /// Custom description if provided
   private let customDescription: String?
-  
+
+  /// Human-readable description
+  public var description: String {
+    "\(domain).\(code): \(errorDescription)"
+  }
+
+  /// Human-readable description of the error
+  public var errorDescription: String {
+    let baseDescription=customDescription ?? errorCode.description
+    return underlyingError != nil ?
+      "\(baseDescription) (Caused by: \(String(describing: underlyingError)))" : baseDescription
+  }
+
   /// Source location of the error
   public let source: ErrorSource?
-  
+
   /// Underlying error that caused this error, if any
   public let underlyingError: Error?
-  
+
   /// Additional contextual information
   public let context: ErrorContext
-  
-  /// Provide CustomStringConvertible conformance
-  public var description: String {
-    return "\(domain).\(code): \(errorDescription)"
-  }
-  
+
   /// Creates a new SecurityError
   /// - Parameters:
-  ///   - code: The specific error code
-  ///   - description: Optional human-readable description
+  ///   - code: The error code
+  ///   - description: Optional custom description
   ///   - source: Optional source information
   ///   - underlyingError: Optional underlying error
-  ///   - context: Additional context information
+  ///   - context: Optional context information
   public init(
     code: SecurityErrorDomain,
     description: String?=nil,
     source: ErrorSource?=nil,
     underlyingError: Error?=nil,
-    context: ErrorContext=ErrorContext(source: "SecurityError", operation: "unknown", details: "")
+    context: ErrorContext=ErrorContext(
+      source: "UmbraErrors",
+      operation: "SecurityOperation",
+      details: "Security error"
+    )
   ) {
     errorCode=code
     customDescription=description
@@ -95,19 +100,23 @@ public struct SecurityError: UmbraError {
     self.underlyingError=underlyingError
     self.context=context
   }
-  
-  /// Creates a new instance with the given context
-  public func with(context newContext: ErrorContext) -> SecurityError {
+
+  /// Creates a new error with the given context
+  /// - Parameter context: The context to associate with the error
+  /// - Returns: A new error with the given context
+  public func with(context: ErrorContext) -> SecurityError {
     SecurityError(
       code: errorCode,
       description: customDescription,
       source: source,
       underlyingError: underlyingError,
-      context: newContext
+      context: context
     )
   }
-  
-  /// Creates a new instance with the given underlying error
+
+  /// Creates a new error with the given underlying error
+  /// - Parameter underlyingError: The underlying error
+  /// - Returns: A new error with the given underlying error
   public func with(underlyingError: Error) -> SecurityError {
     SecurityError(
       code: errorCode,
@@ -117,8 +126,10 @@ public struct SecurityError: UmbraError {
       context: context
     )
   }
-  
-  /// Creates a new instance with the given source information
+
+  /// Creates a new error with the given source
+  /// - Parameter source: The source to associate with the error
+  /// - Returns: A new error with the given source
   public func with(source: ErrorSource) -> SecurityError {
     SecurityError(
       code: errorCode,
@@ -151,7 +162,7 @@ extension SecurityError {
       source: ErrorSource(identifier: "\(file):\(line)", location: function)
     )
   }
-  
+
   /// Creates an access error
   /// - Parameters:
   ///   - message: Optional custom message
@@ -171,7 +182,7 @@ extension SecurityError {
       source: ErrorSource(identifier: "\(file):\(line)", location: function)
     )
   }
-  
+
   /// Creates an encryption failure error
   /// - Parameters:
   ///   - message: Optional custom message
@@ -191,14 +202,14 @@ extension SecurityError {
       code: .encryptionFailed,
       description: message
     )
-    
-    if let underlyingError=underlyingError {
+
+    if let underlyingError {
       error=error.with(underlyingError: underlyingError)
     }
-    
+
     return error.with(source: ErrorSource(identifier: "\(file):\(line)", location: function))
   }
-  
+
   /// Creates a decryption failure error
   /// - Parameters:
   ///   - message: Optional custom message
@@ -218,14 +229,14 @@ extension SecurityError {
       code: .decryptionFailed,
       description: message
     )
-    
-    if let underlyingError=underlyingError {
+
+    if let underlyingError {
       error=error.with(underlyingError: underlyingError)
     }
-    
+
     return error.with(source: ErrorSource(identifier: "\(file):\(line)", location: function))
   }
-  
+
   /// Creates an invalid key error
   /// - Parameters:
   ///   - message: Optional custom message
@@ -245,4 +256,20 @@ extension SecurityError {
       source: ErrorSource(identifier: "\(file):\(line)", location: function)
     )
   }
+}
+
+/// Helper function to create an error with source information
+/// - Parameters:
+///   - error: The error to enhance with source information
+///   - file: Source file
+///   - line: Source line
+///   - function: Source function
+/// - Returns: The error with source information
+public func makeError<E: UmbraError>(_ error: E, file: String, line: Int, function: String) -> E {
+  // Create source information
+  let sourceLocation="\(file):\(line) \(function)"
+  let source=ErrorSource(identifier: "UmbraCore", location: sourceLocation)
+
+  // Return error with source information
+  return error.with(source: source)
 }

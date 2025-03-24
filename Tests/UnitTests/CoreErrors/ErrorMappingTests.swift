@@ -1,6 +1,7 @@
 @testable import CoreErrors
 import ErrorHandling
 import ErrorHandlingDomains
+import UmbraErrors
 import XCTest
 
 final class ErrorMappingTests: XCTestCase {
@@ -69,8 +70,8 @@ final class ErrorMappingTests: XCTestCase {
     // Test conversion to canonical form - rather than testing round-trip equivalence,
     // we'll just test that the conversion functions work correctly in each direction
 
-    // Test forward conversion: SecurityError -> UmbraErrors.GeneralSecurity.Core
-    let securityError=CoreErrors.SecurityError.invalidKey(reason: "Test key")
+    // Test forward conversion: UmbraErrors.Security.Core -> UmbraErrors.GeneralSecurity.Core
+    let securityError=UmbraErrors.Security.Core.invalidKey(reason: "Test key")
     let canonicalError=securityError.toCanonicalError()
 
     XCTAssertTrue(
@@ -86,14 +87,14 @@ final class ErrorMappingTests: XCTestCase {
       }
     }
 
-    // Test reverse conversion: UmbraErrors.GeneralSecurity.Core -> SecurityError
-    let reversedError=CoreErrors.SecurityError.fromCanonicalError(canonicalError)
+    // Test reverse conversion: UmbraErrors.GeneralSecurity.Core -> UmbraErrors.Security.Core
+    let reversedError=UmbraErrors.Security.Core.fromCanonicalError(canonicalError)
     XCTAssertNotNil(reversedError, "Should convert back from canonical form")
 
     // Verify at least one known case preserves its identity
-    let internalError=CoreErrors.SecurityError.internalError(description: "Test error")
+    let internalError=UmbraErrors.Security.Core.internalError(description: "Test error")
     let canonical=internalError.toCanonicalError()
-    let roundTrip=CoreErrors.SecurityError.fromCanonicalError(canonical)
+    let roundTrip=UmbraErrors.Security.Core.fromCanonicalError(canonical)
 
     if let roundTrip {
       if case let .internalError(description)=roundTrip {
@@ -107,7 +108,7 @@ final class ErrorMappingTests: XCTestCase {
 
   func testErrorMapping_BetweenDomains() {
     // Test mapping errors between different domains (e.g., security to crypto)
-    let securityError=CoreErrors.SecurityError.operationFailed(
+    let securityError=UmbraErrors.Security.Core.operationFailed(
       operation: "encryption",
       reason: "Invalid key"
     )

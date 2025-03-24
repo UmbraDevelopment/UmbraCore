@@ -1,18 +1,19 @@
-load("//:swift_rules.bzl", "umbra_swift_library")
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
-umbra_swift_library(
+swift_library(
     name = "Core",
     srcs = glob(
-        ["**/*.swift"],
+        ["*.swift"],
         allow_empty = True,
     ),
+    visibility = ["//visibility:public"],
     deps = [
         "//Sources/ObjCBridgingTypesFoundation",
+        "//Sources/XPCProtocolsCore",
     ],
 )
 
 # Uncomment if documentation generation is needed
-# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 # load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
 #
 # swift_package(

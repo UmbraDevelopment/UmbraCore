@@ -4,4 +4,5 @@ platform(
         "@platforms//os:macos",
         "@platforms//cpu:arm64",
     ],
-)
+
+    visibility = ["//visibility:public"],)

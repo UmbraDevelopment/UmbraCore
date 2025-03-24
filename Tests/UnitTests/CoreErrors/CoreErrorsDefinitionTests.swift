@@ -1,14 +1,15 @@
 @testable import CoreErrors
 import ErrorHandling
 import ErrorHandlingDomains
+import UmbraErrors
 import XCTest
 
 final class CoreErrorsDefinitionTests: XCTestCase {
-  // MARK: - SecurityError Tests
+  // MARK: - Security Core Error Tests
 
   func testSecurityErrorProperties() {
     // Test all cases have proper descriptions
-    let testCases: [CoreErrors.SecurityError]=[
+    let testCases: [UmbraErrors.Security.Core]=[
       .invalidKey(reason: "Test reason"),
       .invalidContext(reason: "Test reason"),
       .invalidParameter(name: "param", reason: "Test reason"),
@@ -23,14 +24,14 @@ final class CoreErrorsDefinitionTests: XCTestCase {
       let canonicalError=errorCase.toCanonicalError()
       XCTAssertNotNil(canonicalError, "Should convert to canonical form")
 
-      let roundTrip=CoreErrors.SecurityError.fromCanonicalError(canonicalError)
+      let roundTrip=UmbraErrors.Security.Core.fromCanonicalError(canonicalError)
       XCTAssertNotNil(roundTrip, "Should convert back from canonical form")
     }
   }
 
   func testSecurityErrorCanonicalMapping() {
     // Test specific mappings to ensure correctness
-    let error=CoreErrors.SecurityError.invalidKey(reason: "Bad key")
+    let error=UmbraErrors.Security.Core.invalidKey(reason: "Bad key")
     let canonical=error.toCanonicalError()
 
     XCTAssertTrue(

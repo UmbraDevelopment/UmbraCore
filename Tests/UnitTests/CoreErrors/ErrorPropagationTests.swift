@@ -1,6 +1,7 @@
 @testable import CoreErrors
 import ErrorHandling
 import ErrorHandlingDomains
+import UmbraErrors
 import XCTest
 
 final class ErrorPropagationTests: XCTestCase {
@@ -41,7 +42,7 @@ final class ErrorPropagationTests: XCTestCase {
 
     // Create errors from different domains
     let cryptoError=CryptoError.encryptionFailed(reason: "Bad key")
-    let securityError=CoreErrors.SecurityError.invalidKey(reason: "Malformed key")
+    let securityError=UmbraErrors.Security.Core.invalidKey(reason: "Malformed key")
 
     // Convert both to canonical formats
     let canonicalCryptoError=cryptoError.toCanonical()
@@ -51,7 +52,7 @@ final class ErrorPropagationTests: XCTestCase {
     func extractErrorInfo(_ error: Any) -> (domain: String, message: String)? {
       if let error=error as? UmbraErrors.Crypto.Core {
         return ("Crypto", String(describing: error))
-      } else if let error=error as? ErrorHandlingDomains.UmbraErrors.GeneralSecurity.Core {
+      } else if let error=error as? UmbraErrors.Security.Core {
         return ("Security", String(describing: error))
       }
       return nil

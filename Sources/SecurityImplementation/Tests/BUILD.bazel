@@ -1,15 +1,15 @@
-load("//:swift_rules.bzl", "umbra_swift_library")
-
-umbra_swift_library(
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+swift_library(
     name = "SecurityImplementationTests",
     srcs = glob(
-        ["**/*.swift"],
-        allow_empty = True,
+        ["*.swift"]
+,
+        allow_empty = False,
     ),
     deps = [
-    ],
+    ] , 
+    visibility = ["//visibility:public"],
 )
-
 # Uncomment if documentation generation is needed
 # load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 # load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
@@ -19,6 +19,8 @@ umbra_swift_library(
 #     srcs = glob([
 #         "**/*.swift",
 #         "**/*.docc/**",
-#     ] , allow_empty = True),
+#     ] , allow_empty = False),
 #     deps = ["//Sources/SecurityImplementationTests"],
-# )
+#    visibility = #    visibility = # = ["//visibility:public"] 
+    # visibility = ["//visibility:public"],
+)

@@ -1,5 +1,6 @@
 @testable import CoreErrors
 import ErrorHandling
+import UmbraErrors
 import XCTest
 
 /// Tests focused on cross-domain error handling and centralised error functionality
@@ -10,7 +11,7 @@ final class ErrorConsolidationTests: XCTestCase {
     // Test conversion between different error domains
 
     // Create a security error
-    let securityError=CoreErrors.SecurityError.invalidKey(reason: "Test reason")
+    let securityError=UmbraErrors.Security.Core.invalidKey(reason: "Test reason")
 
     // Convert to canonical form
     let canonicalError=securityError.toCanonicalError()
@@ -18,8 +19,8 @@ final class ErrorConsolidationTests: XCTestCase {
     // Verify canonical type is correct and conversion happened
     XCTAssertNotNil(canonicalError, "Should convert to canonical form")
     XCTAssertFalse(
-      canonicalError is CoreErrors.SecurityError,
-      "Canonical error should be different from original SecurityError"
+      canonicalError is UmbraErrors.Security.Core,
+      "Canonical error should be different from original Security.Core error"
     )
 
     // Create a crypto error
@@ -40,7 +41,7 @@ final class ErrorConsolidationTests: XCTestCase {
     // Test complete error propagation chains between domains
 
     // Create a security error
-    let securityError=CoreErrors.SecurityError.operationFailed(
+    let securityError=UmbraErrors.Security.Core.operationFailed(
       operation: "key_generation",
       reason: "Insufficient entropy"
     )
@@ -69,7 +70,7 @@ final class ErrorConsolidationTests: XCTestCase {
     // Test full roundtrip conversion between domain-specific and canonical errors
 
     // Start with a security error
-    let originalError=CoreErrors.SecurityError.invalidContext(reason: "Missing parameters")
+    let originalError=UmbraErrors.Security.Core.invalidContext(reason: "Missing parameters")
 
     // Convert to canonical form
     let canonicalError=originalError.toCanonicalError()
@@ -90,7 +91,7 @@ final class ErrorConsolidationTests: XCTestCase {
     // Test ability to identify an error's domain regardless of specific type
 
     let testErrors: [Error]=[
-      CoreErrors.SecurityError.invalidKey(reason: "Test"),
+      UmbraErrors.Security.Core.invalidKey(reason: "Test"),
       CryptoError.encryptionFailed(reason: "Test")
     ]
 
@@ -107,11 +108,11 @@ final class ErrorConsolidationTests: XCTestCase {
     // Test proper inheritance/composition relationships within error types
 
     // Create errors of different types within the same domain
-    let operationError=CoreErrors.SecurityError.operationFailed(
+    let operationError=UmbraErrors.Security.Core.operationFailed(
       operation: "authentication",
       reason: "Invalid credentials"
     )
-    let keyError=CoreErrors.SecurityError.invalidKey(reason: "Invalid format")
+    let keyError=UmbraErrors.Security.Core.invalidKey(reason: "Invalid format")
 
     // Test that they're part of the same error family
     // Check domains directly instead of doing unnecessary type casting
@@ -123,7 +124,7 @@ final class ErrorConsolidationTests: XCTestCase {
 
     // Test that they're distinguishable
     switch operationError {
-      case CoreErrors.SecurityError.operationFailed:
+      case UmbraErrors.Security.Core.operationFailed:
         // Expected case
         break
       default:
@@ -131,7 +132,7 @@ final class ErrorConsolidationTests: XCTestCase {
     }
 
     switch keyError {
-      case CoreErrors.SecurityError.invalidKey:
+      case UmbraErrors.Security.Core.invalidKey:
         // Expected case
         break
       default:
@@ -144,8 +145,8 @@ final class ErrorConsolidationTests: XCTestCase {
 
     // Create various errors
     let errors: [Error]=[
-      CoreErrors.SecurityError.invalidKey(reason: "Test"),
-      CoreErrors.SecurityError.operationFailed(operation: "encrypt", reason: "Test"),
+      UmbraErrors.Security.Core.invalidKey(reason: "Test"),
+      UmbraErrors.Security.Core.operationFailed(operation: "encrypt", reason: "Test"),
       CryptoError.encryptionFailed(reason: "Test"),
       CryptoError.decryptionFailed(reason: "Test")
     ]
@@ -172,7 +173,7 @@ final class ErrorConsolidationTests: XCTestCase {
 
     // Create a serializable error (assigned to _ since we're only testing the serialization format
     // itself)
-    _=CoreErrors.SecurityError.operationFailed(
+    _=UmbraErrors.Security.Core.operationFailed(
       operation: "key_generation",
       reason: "Insufficient entropy"
     )
@@ -208,7 +209,7 @@ final class ErrorConsolidationTests: XCTestCase {
     // This test demonstrates the concept by simulating an IPC boundary
 
     // Create an error for test purposes (not directly used as we're simulating serialisation)
-    _=CoreErrors.SecurityError.operationFailed(
+    _=UmbraErrors.Security.Core.operationFailed(
       operation: "authentication",
       reason: "User not found"
     )
@@ -252,7 +253,7 @@ final class ErrorConsolidationTests: XCTestCase {
   /// Extract domain information from any error type
   private func extractErrorDomainInfo(from error: Error) -> (domain: String, category: String)? {
     switch error {
-      case is CoreErrors.SecurityError:
+      case is UmbraErrors.Security.Core:
         return ("Security", "Core")
       case is CryptoError:
         return ("Crypto", "Core")
@@ -293,7 +294,7 @@ final class ErrorConsolidationTests: XCTestCase {
     // Test consistent error metadata across different error types
 
     // Create various errors
-    let securityError=CoreErrors.SecurityError.operationFailed(
+    let securityError=UmbraErrors.Security.Core.operationFailed(
       operation: "encryption",
       reason: "Key size mismatch"
     )

@@ -1,15 +1,15 @@
 import ErrorHandlingInterfaces
-import UmbraErrorsDomains
 import UmbraCoreTypes
+import UmbraErrorsDomains
 
 /// Protocol error type for XPC service operations
 public enum SecurityProtocolError: Error, Equatable, Sendable {
   /// Internal error within the security system
   case internalError(String)
-  
+
   /// Operation is not supported
   case unsupportedOperation(name: String)
-  
+
   /// Service error with code
   case serviceError(code: Int, message: String)
 }
@@ -55,42 +55,42 @@ public protocol XPCServiceProtocolCore: Sendable {
 }
 
 /// Default implementations for XPCServiceProtocolCore functions
-public extension XPCServiceProtocolCore {
+extension XPCServiceProtocolCore {
   /// Default protocol identifier
-  static var protocolIdentifier: String {
+  public static var protocolIdentifier: String {
     "com.umbra.xpc.service.protocol.core"
   }
 
   /// Default implementation that returns a ping success
-  func ping() async -> Result<Bool, SecurityProtocolError> {
+  public func ping() async -> Result<Bool, SecurityProtocolError> {
     .success(true)
   }
 
   /// Default implementation that returns a not implemented error
-  func synchronizeKeys(_: SecureBytes) async
+  public func synchronizeKeys(_: SecureBytes) async
   -> Result<Void, SecurityProtocolError> {
     .failure(.unsupportedOperation(name: "synchronizeKeys"))
   }
 
   /// Default implementation that returns a not implemented error
-  func encrypt(data _: SecureBytes) async
+  public func encrypt(data _: SecureBytes) async
   -> Result<SecureBytes, SecurityProtocolError> {
     .failure(.unsupportedOperation(name: "encrypt"))
   }
 
   /// Default implementation that returns a not implemented error
-  func decrypt(data _: SecureBytes) async
+  public func decrypt(data _: SecureBytes) async
   -> Result<SecureBytes, SecurityProtocolError> {
     .failure(.unsupportedOperation(name: "decrypt"))
   }
 
   /// Default implementation that returns a not implemented error
-  func generateKey() async -> Result<SecureBytes, SecurityProtocolError> {
+  public func generateKey() async -> Result<SecureBytes, SecurityProtocolError> {
     .failure(.unsupportedOperation(name: "generateKey"))
   }
-  
+
   /// Default implementation that returns a not implemented error
-  func hash(data _: SecureBytes) async
+  public func hash(data _: SecureBytes) async
   -> Result<SecureBytes, SecurityProtocolError> {
     .failure(.unsupportedOperation(name: "hash"))
   }

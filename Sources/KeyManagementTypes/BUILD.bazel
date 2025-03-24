@@ -1,17 +1,34 @@
-load("//:swift_rules.bzl", "umbra_swift_library")
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
-umbra_swift_library(
+swift_library(
     name = "KeyManagementTypes",
+    # We're creating a module without its own source files,
+    # just exporting the functionality from the Sources subpackage
     srcs = glob(
-        ["**/*.swift"],
-        allow_empty = True,
+        ],
+        allow_empty = False,
     ),
+    visibility = ["//visibility:public"],
     deps = [
+        "//Sources/KeyManagementTypes/Sources:KeyManagementTypesSources",
+    ],
+)
+
+# For tests
+swift_library(
+    name = "KeyManagementTypesTests",
+    testonly = True,
+    srcs = glob(
+        ["Tests/*.swift"],
+        allow_empty = False,
+    ),
+    visibility = ["//visibility:public"],
+    deps = [
+        ":KeyManagementTypes",
     ],
 )
 
 # Uncomment if documentation generation is needed
-# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 # load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
 #
 # swift_package(
@@ -19,6 +36,6 @@ umbra_swift_library(
 #     srcs = glob([
 #         "**/*.swift",
 #         "**/*.docc/**",
-#     ] , allow_empty = True),
+#     ] , allow_empty = False),
 #     deps = ["//Sources/KeyManagementTypes"],
 # )

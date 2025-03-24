@@ -42,12 +42,6 @@ public struct BaseErrorContext: ErrorContext {
 
 /// Maps application errors from different sources to a consolidated ApplicationError
 public class ApplicationErrorMapper: ErrorMapper {
-  /// The source error type
-  public typealias SourceType=UmbraErrors.Application.Core
-
-  /// The target error type
-  public typealias TargetType=ApplicationError
-
   /// The domain this mapper handles
   public let domain="Application"
 
@@ -57,7 +51,7 @@ public class ApplicationErrorMapper: ErrorMapper {
   /// Maps from the source error type to the target error type
   /// - Parameter error: The source error
   /// - Returns: The mapped target error
-  public func mapError(_ error: SourceType) -> TargetType {
+  public func mapError(_ error: UmbraErrors.Application.Core) -> ApplicationError {
     mapFromTyped(error)
   }
 

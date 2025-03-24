@@ -1,6 +1,6 @@
 filegroup(
     name = "SecureString",
-    srcs = ["//Sources/SecureString/Sources:SecureStringSources"],
+    srcs = ["//Sources/SecureString/Sources:SecureStringSources"] , 
     visibility = ["//visibility:public"],
 )
 

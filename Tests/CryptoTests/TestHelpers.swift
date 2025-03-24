@@ -20,7 +20,8 @@ private actor KeyCounter {
 }
 
 // Test implementation of CryptoServiceCore for the tests
-public final class CryptoServiceCore: CryptoTypesProtocols.CryptoServiceProtocol, @unchecked Sendable {
+public final class CryptoServiceCore: CryptoTypesProtocols.CryptoServiceProtocol,
+@unchecked Sendable {
   public let config: CryptoConfiguration
   private let counter=KeyCounter()
 

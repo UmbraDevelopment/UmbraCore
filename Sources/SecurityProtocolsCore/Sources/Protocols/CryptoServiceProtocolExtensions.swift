@@ -1,6 +1,6 @@
 import ErrorHandlingInterfaces
-import UmbraErrorsDomains
 import UmbraCoreTypes
+import UmbraErrorsDomains
 
 // MARK: - DTO Extensions for CryptoServiceProtocol
 

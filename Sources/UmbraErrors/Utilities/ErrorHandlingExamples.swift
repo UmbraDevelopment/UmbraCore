@@ -1,8 +1,8 @@
+import CoreErrors
+import ErrorHandlingInterfaces
 import Foundation
 import OSLog
 import UmbraErrorsDomains
-import CoreErrors
-import ErrorHandlingInterfaces
 
 /// Example class demonstrating best practices for error handling with the new system
 public class ErrorHandlingExamples {
@@ -11,7 +11,7 @@ public class ErrorHandlingExamples {
 
   /// Demonstrates creating and throwing a simple error
   /// - Parameter shouldFail: Whether the operation should fail
-  /// - Throws: SecurityError if shouldFail is true
+  /// - Throws: UmbraErrorsDomains.SecurityError if shouldFail is true
   public func demonstrateSimpleErrorHandling(shouldFail: Bool) throws {
     if shouldFail {
       // Create a security error with source information automatically captured
@@ -26,12 +26,12 @@ public class ErrorHandlingExamples {
       // Validate inputs
       if data.isEmpty {
         // Create an error with additional context
-        let context = ErrorContext(
+        let context=ErrorContext(
           source: "EncryptionService",
           operation: "encryption",
           details: "Data length: \(data.count)"
         )
-        
+
         // Create and throw the error with context
         throw UmbraErrorsDomains.SecurityError(
           code: .encryptionFailed,
@@ -63,7 +63,7 @@ public class ErrorHandlingExamples {
     }
 
     // Simulate encryption with possible error
-    let errorProbability = arc4random_uniform(4)
+    let errorProbability=arc4random_uniform(4)
     switch errorProbability {
       case 0:
         return .failure(UmbraErrorsDomains.SecurityError(code: .encryptionFailed))
@@ -71,7 +71,7 @@ public class ErrorHandlingExamples {
         return .failure(UmbraErrorsDomains.SecurityError(code: .invalidKey))
       default:
         // Success case
-        let encryptedData = Data(data.reversed())
+        let encryptedData=Data(data.reversed())
         return .success(encryptedData)
     }
   }
@@ -82,7 +82,7 @@ public class ErrorHandlingExamples {
   public func demonstrateErrorMapping(_ error: Error) -> Error {
     // For example purposes, we'll just return the original error
     // In a real implementation, you would use error registry and mapping
-    return error
+    error
   }
 
   /// Shows how to use defer for resource cleanup
@@ -114,9 +114,9 @@ extension UmbraErrorsDomains.SecurityError {
   /// Adds context to this error
   /// - Parameter context: The context to add
   /// - Returns: The error with context
-  func with(context: ErrorContext) -> UmbraErrorsDomains.SecurityError {
+  func with(context _: ErrorContext) -> UmbraErrorsDomains.SecurityError {
     // In a real implementation, this would store the context with the error
     // For this example, we just return self
-    return self
+    self
   }
 }

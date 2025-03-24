@@ -3,7 +3,7 @@ load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 # This module has no Swift files, so we use a filegroup instead
 filegroup(
     name = "Integration",
-    srcs = glob(["**/*"], allow_empty = True),
+    srcs = glob(["**/*"], allow_empty = True), 
     visibility = ["//visibility:public"],
 )
 

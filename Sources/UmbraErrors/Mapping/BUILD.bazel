@@ -1,16 +1,18 @@
-load("//:swift_rules.bzl", "umbra_swift_library")
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
-umbra_swift_library(
+swift_library(
     name = "UmbraErrorsMapping",
     srcs = glob(
-        ["**/*.swift"],
-        allow_empty = True,
+        ["*.swift"]
+,
+        allow_empty = False,
     ),
     # Allow access from the UmbraErrors package
-    visibility = ["//Sources/UmbraErrors:__subpackages__"],
+    # visibility = ["//visibility:public"],
     deps = [
-        "//Sources/CoreErrors",
+        # Remove CoreErrors dependency to break circular dependency
         "//Sources/ErrorHandlingDomains",
+        "//Sources/ErrorHandlingInterfaces",  # Added dependency for interfaces
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
         "//Sources/UmbraErrors/Domains:UmbraErrorsDomains",
     ],
@@ -25,6 +27,6 @@ umbra_swift_library(
 #     srcs = glob([
 #         "**/*.swift",
 #         "**/*.docc/**",
-#     ] , allow_empty = True),
-#     deps = ["//Sources/UmbraErrorsMapping"],
+#     ] , allow_empty = False),
+#     deps = ["//Sources/UmbraErrors/Mapping"],
 # )
