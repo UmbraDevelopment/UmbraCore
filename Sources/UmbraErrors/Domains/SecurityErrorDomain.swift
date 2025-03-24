@@ -1,5 +1,6 @@
 import ErrorHandlingDomains
 import Foundation
+@preconcurrency import ErrorHandlingInterfaces
 
 /// Domain for security-related errors
 public enum SecurityErrorDomain: String, CaseIterable, Sendable {
@@ -43,81 +44,87 @@ public enum SecurityErrorDomain: String, CaseIterable, Sendable {
 }
 
 /// Enhanced implementation of a SecurityError
-public struct SecurityError: DomainError {
+public struct SecurityError: UmbraError, CustomStringConvertible {
   /// Domain identifier
-  public static let domain=SecurityErrorDomain.domain
+  public let domain: String = SecurityErrorDomain.domain
+  
+  /// Error code string
+  public var code: String { errorCode.rawValue }
+  
+  /// Human-readable description
+  public var description: String { errorDescription }
+  
+  /// Human-readable description of the error
+  public var errorDescription: String {
+    let baseDescription = errorCode.description
+    return underlyingError != nil ? "\(baseDescription) (Caused by: \(String(describing: underlyingError)))" : baseDescription
+  }
 
   /// The specific error code
   public let errorCode: SecurityErrorDomain
-
-  /// Error code as string
-  public var code: String {
-    errorCode.rawValue
-  }
-
-  /// Human-readable error description
-  public let errorDescription: String
-
+  
   /// Source location of the error
   public let source: ErrorSource?
-
+  
   /// Underlying error that caused this error, if any
   public let underlyingError: Error?
-
+  
   /// Additional contextual information
   public let context: ErrorContext
-
+  
   /// Creates a new SecurityError
   /// - Parameters:
   ///   - code: The error code
-  ///   - description: Custom error description (defaults to the standard description for the code)
-  ///   - source: Source location information
-  ///   - underlyingError: The underlying cause of this error
-  ///   - context: Additional context information
+  ///   - description: Optional custom description
+  ///   - source: Optional source information
+  ///   - underlyingError: Optional underlying error
+  ///   - context: Optional context information
   public init(
     code: SecurityErrorDomain,
-    description: String?=nil,
-    source: ErrorSource?=nil,
-    underlyingError: Error?=nil,
-    context: ErrorContext=ErrorContext()
+    description: String? = nil,
+    source: ErrorSource? = nil,
+    underlyingError: Error? = nil,
+    context: ErrorContext = ErrorContext(source: "UmbraErrors", operation: "SecurityOperation", details: "Security error")
   ) {
-    errorCode=code
-    errorDescription=description ?? code.description
-    self.source=source
-    self.underlyingError=underlyingError
-    self.context=context
+    self.errorCode = code
+    self.source = source
+    self.underlyingError = underlyingError
+    self.context = context
   }
-
-  /// Creates a new instance with the given context
+  
+  /// Creates a new error with the given context
+  /// - Parameter context: The context to associate with the error
+  /// - Returns: A new error with the given context
   public func with(context: ErrorContext) -> SecurityError {
     SecurityError(
-      code: errorCode,
-      description: errorDescription,
-      source: source,
-      underlyingError: underlyingError,
-      context: self.context.merging(with: context)
+      code: self.errorCode,
+      source: self.source,
+      underlyingError: self.underlyingError,
+      context: context
     )
   }
-
-  /// Creates a new instance with the given underlying error
+  
+  /// Creates a new error with the given underlying error
+  /// - Parameter underlyingError: The underlying error
+  /// - Returns: A new error with the given underlying error
   public func with(underlyingError: Error) -> SecurityError {
     SecurityError(
-      code: errorCode,
-      description: errorDescription,
-      source: source,
+      code: self.errorCode,
+      source: self.source,
       underlyingError: underlyingError,
-      context: context
+      context: self.context
     )
   }
-
-  /// Creates a new instance with the given source information
+  
+  /// Creates a new error with the given source
+  /// - Parameter source: The source to associate with the error
+  /// - Returns: A new error with the given source
   public func with(source: ErrorSource) -> SecurityError {
     SecurityError(
-      code: errorCode,
-      description: errorDescription,
+      code: self.errorCode,
       source: source,
-      underlyingError: underlyingError,
-      context: context
+      underlyingError: self.underlyingError,
+      context: self.context
     )
   }
 }
@@ -259,4 +266,20 @@ extension SecurityError {
       function: function
     )
   }
+}
+
+/// Helper function to create an error with source information
+/// - Parameters:
+///   - error: The error to enhance with source information
+///   - file: Source file
+///   - line: Source line
+///   - function: Source function
+/// - Returns: The error with source information
+public func makeError<E: UmbraError>(_ error: E, file: String, line: Int, function: String) -> E {
+  // Create source information
+  let sourceLocation = "\(file):\(line) \(function)"
+  let source = ErrorSource(identifier: "UmbraCore", location: sourceLocation)
+  
+  // Return error with source information
+  return error.with(source: source)
 }

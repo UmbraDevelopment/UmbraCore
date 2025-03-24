@@ -4,6 +4,9 @@ umbra_swift_library(
     name = "UmbraErrorsTests",
     srcs = glob(["**/*.swift"], allow_empty = True ),
     deps = [
+        "//Sources/UmbraErrors/Domains:UmbraErrorsDomains",
+        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
+        "//Sources/ErrorHandlingInterfaces",
     ], 
 )
 

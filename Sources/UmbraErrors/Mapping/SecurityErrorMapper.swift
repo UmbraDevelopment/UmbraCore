@@ -1,5 +1,6 @@
 import Foundation
 import UmbraErrorsDomains
+import ErrorHandlingInterfaces
 
 /// Generic security error protocol for use in error mappers
 /// This allows us to decouple from specific implementations
@@ -20,7 +21,7 @@ public struct EnhancedToBasicSecurityErrorMapper<T: SecurityErrorType>: ErrorMap
   /// - Returns: The equivalent basic security error
   public func map(_ error: UmbraErrorsDomains.SecurityError) -> T {
     // Create a SecurityError with an appropriate description based on the error code
-    return T(description: error.errorDescription)
+    return T(description: error.localizedDescription)
   }
 }
 
@@ -40,24 +41,69 @@ public struct BasicToEnhancedSecurityErrorMapper<S: SecurityErrorType>: ErrorMap
     let description = error.description.lowercased()
     
     if description.contains("bookmark") {
-      return UmbraErrorsDomains.SecurityError(code: .bookmarkError)
+      return UmbraErrorsDomains.SecurityError(
+        code: .bookmarkError,
+        description: error.description,
+        source: nil,
+        underlyingError: error
+      )
     } else if description.contains("access") {
-      return UmbraErrorsDomains.SecurityError(code: .accessError)
+      return UmbraErrorsDomains.SecurityError(
+        code: .accessError,
+        description: error.description,
+        source: nil,
+        underlyingError: error
+      )
     } else if description.contains("encrypt") {
-      return UmbraErrorsDomains.SecurityError(code: .encryptionFailed)
+      return UmbraErrorsDomains.SecurityError(
+        code: .encryptionFailed,
+        description: error.description,
+        source: nil,
+        underlyingError: error
+      )
     } else if description.contains("decrypt") {
-      return UmbraErrorsDomains.SecurityError(code: .decryptionFailed)
+      return UmbraErrorsDomains.SecurityError(
+        code: .decryptionFailed,
+        description: error.description,
+        source: nil,
+        underlyingError: error
+      )
     } else if description.contains("key") {
-      return UmbraErrorsDomains.SecurityError(code: .invalidKey)
+      return UmbraErrorsDomains.SecurityError(
+        code: .invalidKey,
+        description: error.description,
+        source: nil,
+        underlyingError: error
+      )
     } else if description.contains("certificate") {
-      return UmbraErrorsDomains.SecurityError(code: .certificateInvalid)
+      return UmbraErrorsDomains.SecurityError(
+        code: .certificateInvalid,
+        description: error.description,
+        source: nil,
+        underlyingError: error
+      )
     } else if description.contains("unauthorised") || description.contains("unauthorized") {
-      return UmbraErrorsDomains.SecurityError(code: .unauthorisedAccess)
+      return UmbraErrorsDomains.SecurityError(
+        code: .unauthorisedAccess,
+        description: error.description,
+        source: nil,
+        underlyingError: error
+      )
     } else if description.contains("storage") {
-      return UmbraErrorsDomains.SecurityError(code: .secureStorageFailure)
+      return UmbraErrorsDomains.SecurityError(
+        code: .secureStorageFailure,
+        description: error.description,
+        source: nil,
+        underlyingError: error
+      )
     } else {
       // Default fallback for unknown descriptions
-      return UmbraErrorsDomains.SecurityError(code: .accessError)
+      return UmbraErrorsDomains.SecurityError(
+        code: .accessError,
+        description: error.description,
+        source: nil,
+        underlyingError: error
+      )
     }
   }
 }

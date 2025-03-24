@@ -7,6 +7,7 @@ umbra_swift_library(
     deps = [
         # Remove CoreErrors dependency to break circular dependency
         "//Sources/ErrorHandlingDomains",
+        "//Sources/ErrorHandlingInterfaces",  # Added dependency for interfaces
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
         "//Sources/UmbraErrors/Domains:UmbraErrorsDomains",
     ], 

@@ -4,6 +4,9 @@ umbra_swift_library(
     name = "CoreErrorsTests",
     srcs = glob(["**/*.swift"], allow_empty = True ),
     deps = [
+        "//Sources/CoreErrors",  # Add direct dependency on CoreErrors
+        "//Sources/UmbraErrors/Domains:UmbraErrorsDomains",  # Add specific dependency to avoid circular reference
+        "//Sources/ErrorHandlingInterfaces",  # Add interfaces dependency
     ], 
 )
 
