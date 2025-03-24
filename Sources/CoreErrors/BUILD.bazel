@@ -1,13 +1,16 @@
-load("//:swift_rules.bzl", "umbra_swift_library")
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
-umbra_swift_library(
+swift_library(
     name = "CoreErrors",
     srcs = glob(
-        ["**/*.swift"],
-        allow_empty = True,
+        ["*.swift"]
+,  # Swift files are directly in this directory, not in a Sources subdirectory
+        allow_empty = False,  # Don't allow empty to ensure we catch missing files
     ),
+    visibility = ["//visibility:public"],
     deps = [
         # No direct dependency on UmbraErrors to avoid circular dependency
+        "//Sources/ErrorHandlingInterfaces",
     ],
 )
 

@@ -30,11 +30,11 @@ extension ErrorMapper {
 /// A type-erased error mapper that can map from any error to any error
 public struct AnyErrorMapper<Target: Error>: ErrorMapper {
   /// Define the source error type for protocol conformance
-  public typealias SourceError = Error
-  
+  public typealias SourceError=Error
+
   /// Define the target error type for protocol conformance
-  public typealias TargetError = Target
-  
+  public typealias TargetError=Target
+
   /// The mapping function
   private let _map: (Error) -> Target
 

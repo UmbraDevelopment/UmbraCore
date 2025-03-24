@@ -10,7 +10,7 @@ filegroup(
     srcs = glob(
         ["*.swift"],
         allow_empty = True,
-    ),
+    ), 
     visibility = ["//visibility:public"],
 )
 

@@ -9,5 +9,6 @@ umbra_swift_test(
     deps = [
         "//Sources/SecurityImplementation",
         "//Tests/TestKit",
-    ],
+    ] , 
+    visibility = ["//visibility:public"],
 )

@@ -15,12 +15,24 @@ public final class AnyCryptoService: CryptoServiceProtocol {
     SecureBytes,
     UmbraErrors.Security.Protocols
   >
-  private let _hash: @Sendable (SecureBytes) async -> Result<SecureBytes, UmbraErrors.Security.Protocols>
-  private let _generateKey: @Sendable () async -> Result<SecureBytes, UmbraErrors.Security.Protocols>
-  private let _generateRandomData: @Sendable (Int) async -> Result<SecureBytes, UmbraErrors.Security.Protocols>
+  private let _hash: @Sendable (SecureBytes) async -> Result<
+    SecureBytes,
+    UmbraErrors.Security.Protocols
+  >
+  private let _generateKey: @Sendable () async -> Result<
+    SecureBytes,
+    UmbraErrors.Security.Protocols
+  >
+  private let _generateRandomData: @Sendable (Int) async -> Result<
+    SecureBytes,
+    UmbraErrors.Security.Protocols
+  >
 
   // New required methods with corrected return types
-  private let _verify: @Sendable (SecureBytes, SecureBytes) async -> Result<Bool, UmbraErrors.Security.Protocols>
+  private let _verify: @Sendable (SecureBytes, SecureBytes) async -> Result<
+    Bool,
+    UmbraErrors.Security.Protocols
+  >
   private let _encryptSymmetric: @Sendable (SecureBytes, SecureBytes, SecurityConfigDTO) async
     -> Result<SecureBytes, UmbraErrors.Security.Protocols>
   private let _decryptSymmetric: @Sendable (SecureBytes, SecureBytes, SecurityConfigDTO) async
@@ -87,7 +99,8 @@ public final class AnyCryptoService: CryptoServiceProtocol {
     await _generateKey()
   }
 
-  public func generateRandomData(length: Int) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
+  public func generateRandomData(length: Int) async
+  -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     await _generateRandomData(length)
   }
 

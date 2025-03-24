@@ -26,20 +26,20 @@ public struct SecurityResultDTO: Sendable, Equatable {
   /// Initialise a successful result with data
   /// - Parameter data: Result data
   public init(data: SecureBytes) {
-    self.success = true
-    self.data = data
-    self.errorCode = nil
-    self.errorMessage = nil
-    self.error = nil
+    success=true
+    self.data=data
+    errorCode=nil
+    errorMessage=nil
+    error=nil
   }
 
   /// Initialise a successful result without data
   public init() {
-    self.success = true
-    self.data = nil
-    self.errorCode = nil
-    self.errorMessage = nil
-    self.error = nil
+    success=true
+    data=nil
+    errorCode=nil
+    errorMessage=nil
+    error=nil
   }
 
   /// Initialise with comprehensive parameters
@@ -52,50 +52,50 @@ public struct SecurityResultDTO: Sendable, Equatable {
   ///   - errorDetails: Optional additional error details
   public init(
     success: Bool,
-    data: SecureBytes? = nil,
-    errorCode: Int? = nil,
-    errorMessage: String? = nil,
-    error: SecurityProtocolError? = nil,
-    errorDetails: String? = nil
+    data: SecureBytes?=nil,
+    errorCode: Int?=nil,
+    errorMessage: String?=nil,
+    error: SecurityProtocolError?=nil,
+    errorDetails: String?=nil
   ) {
-    self.success = success
-    self.data = data
-    self.error = error
-    
+    self.success=success
+    self.data=data
+    self.error=error
+
     // Handle error codes and messages
-    if let error = error {
+    if let error {
       // Extract error code and message from the error
       var code: Int
       var message: String
-      
+
       switch error {
-      case .internalError(let msg):
-        code = 500
-        message = msg
-      case .unsupportedOperation(let name):
-        code = 501
-        message = "Operation not supported: \(name)"
-      case .serviceError(let c, let msg):
-        code = c
-        message = msg
+        case let .internalError(msg):
+          code=500
+          message=msg
+        case let .unsupportedOperation(name):
+          code=501
+          message="Operation not supported: \(name)"
+        case let .serviceError(c, msg):
+          code=c
+          message=msg
       }
-      
+
       // If additional details are provided, append them to the error message
-      if let details = errorDetails, !details.isEmpty {
+      if let details=errorDetails, !details.isEmpty {
         message += " (\(details))"
       }
-      
-      self.errorCode = code
-      self.errorMessage = message
+
+      self.errorCode=code
+      self.errorMessage=message
     } else {
       // Use provided error code and message if no error object
-      self.errorCode = errorCode
-      
+      self.errorCode=errorCode
+
       // Combine provided error message with details if both exist
-      if let message = errorMessage, let details = errorDetails, !details.isEmpty {
-        self.errorMessage = message + " (\(details))"
+      if let message=errorMessage, let details=errorDetails, !details.isEmpty {
+        self.errorMessage=message + " (\(details))"
       } else {
-        self.errorMessage = errorMessage ?? errorDetails
+        self.errorMessage=errorMessage ?? errorDetails
       }
     }
   }
@@ -105,11 +105,11 @@ public struct SecurityResultDTO: Sendable, Equatable {
   /// Create a successful result
   /// - Parameter data: Optional result data
   /// - Returns: A success result DTO
-  public static func success(withData data: SecureBytes? = nil) -> SecurityResultDTO {
-    if let data = data {
-      return SecurityResultDTO(data: data)
+  public static func success(withData data: SecureBytes?=nil) -> SecurityResultDTO {
+    if let data {
+      SecurityResultDTO(data: data)
     } else {
-      return SecurityResultDTO()
+      SecurityResultDTO()
     }
   }
 
@@ -136,7 +136,7 @@ public struct SecurityResultDTO: Sendable, Equatable {
   /// - Returns: A failure result DTO
   public static func failure(
     error: SecurityProtocolError,
-    details: String? = nil
+    details: String?=nil
   ) -> SecurityResultDTO {
     SecurityResultDTO(
       success: false,
@@ -153,7 +153,7 @@ public struct SecurityResultDTO: Sendable, Equatable {
 
     // For successful results, compare data
     if lhs.success {
-      if let lhsData = lhs.data, let rhsData = rhs.data {
+      if let lhsData=lhs.data, let rhsData=rhs.data {
         return lhsData == rhsData
       } else {
         // If either has data and the other doesn't, they're not equal
@@ -162,7 +162,7 @@ public struct SecurityResultDTO: Sendable, Equatable {
     } else {
       // For failure results, compare error information
       return lhs.errorCode == rhs.errorCode &&
-          lhs.errorMessage == rhs.errorMessage
+        lhs.errorMessage == rhs.errorMessage
     }
   }
 }

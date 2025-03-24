@@ -1,16 +1,22 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
-
 swift_library(
     name = "SecurityProtocolsCore",
-    srcs = ["//Sources/SecurityProtocolsCore/Sources:SecurityProtocolsCoreSources"],
-    visibility = ["//visibility:public"],
+    srcs = glob(
+        ["**/*.swift"],
+        allow_empty = True,  # Use False to catch missing files
+    ),
+    # We're creating a module without its own source files,
+    # just exporting the functionality from the Sources subpackage
+    # visibility = ["//visibility:public"],
     deps = [
+        "//Sources/SecurityProtocolsCore/Sources:SecurityProtocolsCoreSources",
         "//Sources/UmbraCoreTypes",
         "//Sources/ErrorHandlingInterfaces",
         "//Sources/UmbraErrors/Domains:UmbraErrorsDomains",
     ],
+    # Re-export the sources module
+    
 )
-
 # Uncomment if documentation generation is needed
 # load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 # load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")

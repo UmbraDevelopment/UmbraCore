@@ -1,6 +1,7 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_binary", "swift_library")
 
-package(default_visibility = ["//visibility:public"])
+package(default_visibility = ["//visibility:public"],
+)
 
 # This directory contains example code that is not meant to be built
 # with the main project. It's excluded from continuous integration

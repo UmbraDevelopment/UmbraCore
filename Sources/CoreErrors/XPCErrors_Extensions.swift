@@ -2,7 +2,7 @@ import Foundation
 
 // Avoid circular dependency by using typealias for UmbraErrors.Security.Core
 // This is temporary until a proper refactoring can break the dependency cycle
-public typealias SecurityCoreError = Error
+public typealias SecurityCoreError=Error
 
 /// XPC Errors namespace
 public enum XPCErrors {
@@ -32,10 +32,10 @@ public enum SecurityErrorConversion {
   /// - Returns: The XPC error as Any or nil if conversion is not possible
   public static func coreToXPC(_ error: Any) -> Any? {
     // Use string-based runtime casting to avoid direct dependency on UmbraErrors
-    let errorTypeName = String(describing: type(of: error))
+    let errorTypeName=String(describing: type(of: error))
     if errorTypeName.contains("Security.Core") {
       // Extract description using mirror if available, otherwise use default
-      let description = (error as? CustomStringConvertible)?.description ?? "Unknown security error"
+      let description=(error as? CustomStringConvertible)?.description ?? "Unknown security error"
       return XPCErrors.SecurityError.withDescription(description)
     }
     return nil
@@ -45,14 +45,18 @@ public enum SecurityErrorConversion {
   /// - Parameter error: The XPC error as Any
   /// - Returns: The core error as Any or nil if conversion is not possible
   public static func xpcToCore(_ error: Any) -> Any? {
-    if let xpcError = error as? XPCErrors.SecurityError {
+    if let xpcError=error as? XPCErrors.SecurityError {
       switch xpcError {
         case let .communicationError(description),
              let .serviceError(description),
              let .validationError(description),
              let .unknown(description):
           // Return a generic error type that will be properly cast by the caller
-          return NSError(domain: "Security.Core", code: 1, userInfo: [NSLocalizedDescriptionKey: description])
+          return NSError(
+            domain: "Security.Core",
+            code: 1,
+            userInfo: [NSLocalizedDescriptionKey: description]
+          )
       }
     }
     return nil

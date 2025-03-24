@@ -5,16 +5,16 @@ import OSLog
 @available(*, renamed: "ErrorRegistry")
 public final class ErrorRegistry: @unchecked Sendable {
   /// Singleton instance of the registry
-  public static let shared = ErrorRegistry()
+  public static let shared=ErrorRegistry()
 
   /// Logger for the error registry
-  private let logger = Logger(subsystem: "com.umbracorp.UmbraCore", category: "ErrorRegistry")
+  private let logger=Logger(subsystem: "com.umbracorp.UmbraCore", category: "ErrorRegistry")
 
   /// All registered mappers
-  private var mappers: [String: [AnyErrorMapper<Error>]] = [:]
-  
+  private var mappers: [String: [AnyErrorMapper<Error>]]=[:]
+
   /// Lock for thread safety
-  private let lock = NSLock()
+  private let lock=NSLock()
 
   /// Creates a new ErrorRegistry instance
   public init() {}
@@ -24,8 +24,8 @@ public final class ErrorRegistry: @unchecked Sendable {
   ///   - targetDomain: The domain to register the mapper for
   ///   - mapper: The mapper to register
   public func register<M: ErrorMapper>(targetDomain: String, mapper: M) {
-    let anyMapper = AnyErrorMapper<Error> { error in
-      guard let sourceError = error as? M.SourceError else {
+    let anyMapper=AnyErrorMapper<Error> { error in
+      guard let sourceError=error as? M.SourceError else {
         fatalError("Error type mismatch in ErrorRegistry")
       }
       return mapper.map(sourceError) as Error
@@ -33,9 +33,9 @@ public final class ErrorRegistry: @unchecked Sendable {
 
     lock.lock()
     defer { lock.unlock() }
-    
+
     if mappers[targetDomain] == nil {
-      mappers[targetDomain] = []
+      mappers[targetDomain]=[]
     }
 
     mappers[targetDomain]?.append(anyMapper)
@@ -50,15 +50,15 @@ public final class ErrorRegistry: @unchecked Sendable {
   public func mapError(_ error: Error, to targetDomain: String) -> Error {
     lock.lock()
     defer { lock.unlock() }
-    
-    guard let domainMappers = mappers[targetDomain] else {
+
+    guard let domainMappers=mappers[targetDomain] else {
       logger.warning("No mappers registered for domain: \(targetDomain)")
       return error
     }
 
     for mapper in domainMappers {
       if mapper.canMap(error) {
-        let mappedError = mapper.map(error)
+        let mappedError=mapper.map(error)
         logger.debug("Mapped error to domain: \(targetDomain)")
         return mappedError
       }
@@ -76,12 +76,12 @@ public final class ErrorRegistry: @unchecked Sendable {
   public func mapError<T: Error>(_ error: Error, to _: T.Type) -> T? {
     lock.lock()
     defer { lock.unlock() }
-    
+
     for (domain, domainMappers) in mappers {
       for mapper in domainMappers {
         if mapper.canMap(error) {
-          let mappedError = mapper.map(error)
-          if let typedError = mappedError as? T {
+          let mappedError=mapper.map(error)
+          if let typedError=mappedError as? T {
             logger.debug("Mapped error to type \(String(describing: T.self)) in domain: \(domain)")
             return typedError
           }
@@ -100,7 +100,7 @@ public final class ErrorRegistry: @unchecked Sendable {
   public func clearMappers() {
     lock.lock()
     defer { lock.unlock() }
-    
+
     mappers.removeAll()
     logger.debug("Cleared all mappers")
   }
@@ -110,7 +110,7 @@ public final class ErrorRegistry: @unchecked Sendable {
   public func clearMappers(for domain: String) {
     lock.lock()
     defer { lock.unlock() }
-    
+
     mappers.removeValue(forKey: domain)
     logger.debug("Cleared mappers for domain: \(domain)")
   }

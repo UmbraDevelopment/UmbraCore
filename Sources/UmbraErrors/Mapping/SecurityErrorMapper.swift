@@ -1,6 +1,6 @@
+import ErrorHandlingInterfaces
 import Foundation
 import UmbraErrorsDomains
-import ErrorHandlingInterfaces
 
 /// Generic security error protocol for use in error mappers
 /// This allows us to decouple from specific implementations
@@ -11,8 +11,8 @@ public protocol SecurityErrorType: Error, CustomStringConvertible {
 
 /// Mapper from the enhanced SecurityError to a basic security error
 public struct EnhancedToBasicSecurityErrorMapper<T: SecurityErrorType>: ErrorMapper {
-  public typealias SourceError = UmbraErrorsDomains.SecurityError
-  public typealias TargetError = T
+  public typealias SourceError=UmbraErrorsDomains.SecurityError
+  public typealias TargetError=T
 
   public init() {}
 
@@ -21,14 +21,14 @@ public struct EnhancedToBasicSecurityErrorMapper<T: SecurityErrorType>: ErrorMap
   /// - Returns: The equivalent basic security error
   public func map(_ error: UmbraErrorsDomains.SecurityError) -> T {
     // Create a SecurityError with an appropriate description based on the error code
-    return T(description: error.localizedDescription)
+    T(description: error.localizedDescription)
   }
 }
 
 /// Mapper from a basic security error to the enhanced SecurityError
 public struct BasicToEnhancedSecurityErrorMapper<S: SecurityErrorType>: ErrorMapper {
-  public typealias SourceError = S
-  public typealias TargetError = UmbraErrorsDomains.SecurityError
+  public typealias SourceError=S
+  public typealias TargetError=UmbraErrorsDomains.SecurityError
 
   public init() {}
 
@@ -38,8 +38,8 @@ public struct BasicToEnhancedSecurityErrorMapper<S: SecurityErrorType>: ErrorMap
   public func map(_ error: S) -> UmbraErrorsDomains.SecurityError {
     // Since basic security errors only have a description, we need to infer the error code
     // This is a best-effort mapping based on the description
-    let description = error.description.lowercased()
-    
+    let description=error.description.lowercased()
+
     if description.contains("bookmark") {
       return UmbraErrorsDomains.SecurityError(
         code: .bookmarkError,
@@ -112,25 +112,25 @@ public struct BasicToEnhancedSecurityErrorMapper<S: SecurityErrorType>: ErrorMap
 /// This avoids having to reference specific types from other modules
 public struct GenericSecurityError: SecurityErrorType {
   public let description: String
-  
+
   public init(description: String) {
-    self.description = description
+    self.description=description
   }
 }
 
 /// Function to register the SecurityError mapper with the ErrorRegistry
 public func registerSecurityErrorMappers() {
-  let registry = ErrorRegistry.shared
-  
+  let registry=ErrorRegistry.shared
+
   // Register mappers using string-based domain identifiers to avoid direct type references
   // This allows us to break circular dependencies while maintaining proper error mapping
   registry.register(
     targetDomain: "Security.Core",
     mapper: EnhancedToBasicSecurityErrorMapper<GenericSecurityError>()
   )
-  
+
   registry.register(
-    targetDomain: "UmbraErrorsDomains.SecurityError", 
+    targetDomain: "UmbraErrorsDomains.SecurityError",
     mapper: BasicToEnhancedSecurityErrorMapper<GenericSecurityError>()
   )
 }

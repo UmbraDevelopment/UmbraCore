@@ -17,3 +17,18 @@ swift_library(
 #     name = "docc_documentation",
 #     deps = ["//Sources/CoreTypesInterfaces"],
 # )
+
+# Add a test library target for CoreTypesInterfaces
+swift_library(
+    name = "CoreTypesInterfacesTests",
+    testonly = True,
+    srcs = glob(
+        ],
+        allow_empty = False,  # Changed to allow empty to prevent build failures
+    ),
+    module_name = "CoreTypesInterfacesTests",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":CoreTypesInterfaces",
+    ],
+)

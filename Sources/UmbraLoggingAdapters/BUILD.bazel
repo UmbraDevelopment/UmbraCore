@@ -1,10 +1,10 @@
-load("//:swift_rules.bzl", "umbra_swift_library")
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
-umbra_swift_library(
+swift_library(
     name = "UmbraLoggingAdapters",
     srcs = glob(
-        ["**/*.swift"],
-        allow_empty = True,
+        ["Sources/**/*.swift"],
+        allow_empty = False,  # Don't allow empty to ensure we catch missing files
     ),
     deps = [
     ],
@@ -21,4 +21,6 @@ umbra_swift_library(
 #         "**/*.docc/**",
 #     ] , allow_empty = True),
 #     deps = ["//Sources/UmbraLoggingAdapters"],
-# )
+#    visibility = #    visibility = # = ["//visibility:public"] 
+    # visibility = ["//visibility:public"],
+)

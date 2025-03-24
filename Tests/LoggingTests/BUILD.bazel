@@ -10,5 +10,6 @@ umbra_swift_test(
         "//Sources/SecurityTypes",
         "//Sources/UmbraLogging",
         "@swiftpkg_swiftybeaver//:SwiftyBeaver",
-    ],
+    ] , 
+    visibility = ["//visibility:public"],
 )

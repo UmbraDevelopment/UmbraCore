@@ -11,5 +11,6 @@ umbra_swift_test(
         "//Sources/ResticCLIHelper/Commands:ResticCLIHelperCommands",
         "//Sources/UmbraLogging",
         "@swiftpkg_swiftybeaver//:SwiftyBeaver",
-    ],
+    ] , 
+    visibility = ["//visibility:public"],
 )

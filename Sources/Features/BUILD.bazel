@@ -1,9 +1,9 @@
-load("//:swift_rules.bzl", "umbra_swift_library")
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
-umbra_swift_library(
+swift_library(
     name = "Features",
     srcs = glob(
-        ["**/*.swift"],
+        ["*.swift"],
         allow_empty = True,
     ),
     deps = [
@@ -21,4 +21,6 @@ umbra_swift_library(
 #         "**/*.docc/**",
 #     ] , allow_empty = True),
 #     deps = ["//Sources/Features"],
-# )
+#    visibility = #    visibility = # = ["//visibility:public"] 
+    # visibility = ["//visibility:public"],
+)

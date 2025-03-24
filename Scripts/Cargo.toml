@@ -1,0 +1,11 @@
+[package]
+name = "fix_build_files"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "fix_build_files"
+path = "fix_build_files.rs"
+
+[dependencies]
+regex = "1.10.3"
