@@ -1,17 +1,18 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# Error handling improvements:
+# This module has been updated to use fully qualified error types instead of typealiases.
+# All error mapping should follow the UmbraErrors.* canonical hierarchy.
+# Ensure proper error propagation and mapping when adding new code.
 
-swift_library(
-    name = "ErrorHandlingDomains",
-    srcs = glob(
-        ["*.swift"]
-,
-        allow_empty = False,
-    ),
-    visibility = ["//visibility:public"],
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
+
+umbra_swift_library(
+    name = "Domains",
+    srcs = glob(["**/*.swift"]),
     deps = [
-        "//Sources/ErrorHandlingInterfaces",
-        "//Sources/ErrorHandling/Core:ErrorHandlingCore",
-        "//Sources/CoreTypesInterfaces",
+        # Dependencies will go here, for example:
+        # "//Sources/CoreDTOs",
+        # "//Sources/UmbraLogging",
+        # "@com_github_apple_swift_log//:Logging",
     ],
 )
 
@@ -24,6 +25,6 @@ swift_library(
 #     srcs = glob([
 #         "**/*.swift",
 #         "**/*.docc/**",
-#     ] , allow_empty = False),
-#     deps = ["//Sources/ErrorHandlingDomains"],
+#     ]),
+#     deps = ["//Sources/Domains"],
 # )

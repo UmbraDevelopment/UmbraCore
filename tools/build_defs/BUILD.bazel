@@ -1,6 +1,0 @@
-package(default_visibility = ["//visibility:public"])
-
-exports_files([
-    "umbracore_module.bzl",
-    "umbracore_gen_module.bzl",
-])

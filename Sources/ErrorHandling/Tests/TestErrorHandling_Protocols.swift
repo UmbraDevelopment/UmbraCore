@@ -1,4 +1,8 @@
 import XCTest
+import ErrorHandling
+import ErrorHandling.Interfaces
+import ErrorHandling.Protocols
+import ErrorHandling.Types
 
 final class TestErrorHandling_Protocols: XCTestCase {
   // MARK: - Error Protocol Conformance Tests

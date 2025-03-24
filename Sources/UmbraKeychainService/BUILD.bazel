@@ -1,16 +1,20 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
-swift_library(
+umbra_swift_library(
     name = "UmbraKeychainService",
-    srcs = glob(
-        ["*.swift"]
-,
-        allow_empty = False,
-    ),
-    visibility = ["//visibility:public"],
+    srcs = glob(["**/*.swift"]),
+    # Swift 6 compatibility flags
+    swiftc_opts = [
+        "-enable-upcoming-feature",
+        "ConciseMagicFile",
+        "-enable-upcoming-feature",
+        "DisableOutOfOrderDependencies",
+    ],
     deps = [
-        "//Sources/SecurityProtocolsCore",
-        "//Sources/UmbraCoreTypes",
+        # Dependencies will go here, for example:
+        # "//Sources/CoreDTOs",
+        # "//Sources/UmbraLogging",
+        # "@com_github_apple_swift_log//:Logging",
     ],
 )
 
@@ -23,6 +27,6 @@ swift_library(
 #     srcs = glob([
 #         "**/*.swift",
 #         "**/*.docc/**",
-#     ] , allow_empty = False),
+#     ]),
 #     deps = ["//Sources/UmbraKeychainService"],
 # )

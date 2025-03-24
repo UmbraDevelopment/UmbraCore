@@ -1,19 +1,13 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
-swift_library(
-    name = "ErrorHandlingUtilities",
-    srcs = glob(
-        ["*.swift"]
-,
-        exclude = ["ComprehensiveErrorHandlingExample.swift"],  # Exclude file with top-level code
-        allow_empty = False,
-    ),
-    visibility = ["//visibility:public"],
+umbra_swift_library(
+    name = "Utilities",
+    srcs = glob(["**/*.swift"]),
     deps = [
-        "//Sources/ErrorHandlingInterfaces",
-        "//Sources/ErrorHandling/Core:ErrorHandlingCore",
-        "//Sources/LoggingWrapper",
-        "//Sources/LoggingWrapperInterfaces",
+        # Dependencies will go here, for example:
+        # "//Sources/CoreDTOs",
+        # "//Sources/UmbraLogging",
+        # "@com_github_apple_swift_log//:Logging",
     ],
 )
 
@@ -26,6 +20,6 @@ swift_library(
 #     srcs = glob([
 #         "**/*.swift",
 #         "**/*.docc/**",
-#     ] , allow_empty = False),
-#     deps = ["//Sources/ErrorHandlingUtilities"],
+#     ]),
+#     deps = ["//Sources/Utilities"],
 # )

@@ -1,16 +1,25 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# Error handling improvements:
+# This module has been updated to use fully qualified error types instead of typealiases.
+# All error mapping should follow the UmbraErrors.* canonical hierarchy.
+# Ensure proper error propagation and mapping when adding new code.
 
-swift_library(
+# IMPORTANT: In accordance with UmbraCore typealias policy:
+# - Prefer fully qualified types over typealiases
+# - Only use typealiases when interfacing with external APIs or simplifying complex generic signatures
+# - Typealias declarations require explicit justification in code comments
+# See the typealias policy document for details.
+
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
+
+umbra_swift_library(
     name = "CoreErrors",
-    srcs = glob(
-        ["*.swift"]
-,  # Swift files are directly in this directory, not in a Sources subdirectory
-        allow_empty = False,  # Don't allow empty to ensure we catch missing files
-    ),
-    visibility = ["//visibility:public"],
+    srcs = glob(["**/*.swift"]),
     deps = [
-        # No direct dependency on UmbraErrors to avoid circular dependency
-        "//Sources/ErrorHandlingInterfaces",
+        "//Sources/ErrorHandling",
+        # Additional dependencies as needed:
+        # "//Sources/CoreDTOs",
+        # "//Sources/UmbraLogging",
+        # "@com_github_apple_swift_log//:Logging",
     ],
 )
 
@@ -23,6 +32,6 @@ swift_library(
 #     srcs = glob([
 #         "**/*.swift",
 #         "**/*.docc/**",
-#     ] , allow_empty = True),
+#     ]),
 #     deps = ["//Sources/CoreErrors"],
 # )

@@ -1,30 +1,9 @@
-load("@bazel_gazelle//:def.bzl", "gazelle")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
-
-gazelle(
-    name = "gazelle",
-    prefix = "github.com/mpy-dev-ml/UmbraCore/tools/gazelle/swift",
-)
-
-go_library(
-    name = "swift_lib",
-    srcs = ["swift.go"],
-    importpath = "github.com/mpy-dev-ml/UmbraCore/tools/gazelle/swift",
-    visibility = ["//visibility:public"],
-    deps = [
-        "@bazel_gazelle//config",
-        "@bazel_gazelle//label",
-        "@bazel_gazelle//language",
-        "@bazel_gazelle//repo",
-        "@bazel_gazelle//resolve",
-        "@bazel_gazelle//rule",
-    ],
-)
 
 go_library(
     name = "swift",
     srcs = ["swift.go"],
-    importpath = "dev.mpy.UmbraCore/tools/gazelle/swift",
+    importpath = "github.com/umbracore/tools/gazelle/swift",
     visibility = ["//visibility:public"],
     deps = [
         "@bazel_gazelle//config:go_default_library",

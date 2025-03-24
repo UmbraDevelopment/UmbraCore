@@ -1,21 +1,13 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
-swift_library(
-    name = "UmbraSecurityServices",
-    srcs = glob(
-        ["*.swift"]
-,
-        allow_empty = False,
-    ),
-    visibility = ["//visibility:public"],
+umbra_swift_library(
+    name = "Services",
+    srcs = glob(["**/*.swift"]),
     deps = [
-        "//ErrorHandling/Core:ErrorHandlingCore",
-        "//ErrorHandling/Domains:ErrorHandlingDomains",
-        "//Sources/CoreDTOs",
-        "//Sources/CoreTypesInterfaces",
-        "//Sources/SecurityBridgeTypes",
-        "//Sources/SecurityInterfaces",
-        "//Sources/UmbraCoreTypes",
+        # Dependencies will go here, for example:
+        # "//Sources/CoreDTOs",
+        # "//Sources/UmbraLogging",
+        # "@com_github_apple_swift_log//:Logging",
     ],
 )
 
@@ -28,6 +20,6 @@ swift_library(
 #     srcs = glob([
 #         "**/*.swift",
 #         "**/*.docc/**",
-#     ] , allow_empty = False),
-#     deps = ["//Sources/UmbraSecurityServices"],
+#     ]),
+#     deps = ["//Sources/Services"],
 # )

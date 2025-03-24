@@ -5,5 +5,5 @@
 @_exported import struct Foundation.URLComponents
 @_exported import struct Foundation.URLQueryItem
 
-// Export all symbols from the Sources subpackage
-@_exported import XPCProtocolsCoreSources
+// Sources are now included directly in the main module
+// rather than through a submodule import

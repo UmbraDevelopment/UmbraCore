@@ -3,7 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 go_library(
     name = "docc_lib",
     srcs = ["main.go"],
-    importpath = "dev.mpy.UmbraCore/tools/go/cmd/docc",
+    importpath = "github.com/umbracore/tools/go/cmd/docc",
     visibility = ["//visibility:private"],
 )
 

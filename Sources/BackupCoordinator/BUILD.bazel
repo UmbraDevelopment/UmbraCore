@@ -1,14 +1,14 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
-swift_library(
+umbra_swift_library(
     name = "BackupCoordinator",
-    srcs = glob(
-        ["*.swift"],
-        allow_empty = False,
-    ),
+    srcs = glob(["**/*.swift"]),
     deps = [
-    ] , 
-    visibility = ["//visibility:public"],
+        # Dependencies will go here, for example:
+        # "//Sources/CoreDTOs",
+        # "//Sources/UmbraLogging",
+        # "@com_github_apple_swift_log//:Logging",
+    ],
 )
 
 # Uncomment if documentation generation is needed
@@ -20,8 +20,6 @@ swift_library(
 #     srcs = glob([
 #         "**/*.swift",
 #         "**/*.docc/**",
-#     ], allow_empty = False),
+#     ]),
 #     deps = ["//Sources/BackupCoordinator"],
-#    visibility = #    visibility = # = ["//visibility:public"] 
-    # visibility = ["//visibility:public"],
-)
+# )
