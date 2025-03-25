@@ -18,7 +18,8 @@ swift_library(
     module_name = "UmbraCoreTypes",
     visibility = ["//visibility:public"],
     deps = [
-        "//Sources/UmbraCoreTypes/CoreErrors/Sources:CoreErrors",
+        "//Sources/UmbraErrors",
+        "//Sources/UmbraErrors/Domains",
     ],
 )
 

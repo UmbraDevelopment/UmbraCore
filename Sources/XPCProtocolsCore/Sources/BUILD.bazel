@@ -1,7 +1,7 @@
 load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
-    name = "Sources",
+    name = "XPCProtocolsCoreSources",
     srcs = glob(["*.swift", "**/*.swift"],
         exclude = ["**/Tests/**", "**/*Test.swift", "**/*.generated.swift"],
         exclude_directories = 1,
@@ -25,5 +25,5 @@ umbra_swift_library(
 #         "**/*.swift",
 #         "**/*.docc/**",
 #     ]),
-#     deps = ["//Sources/Sources"],
+#     deps = ["//Sources/XPCProtocolsCoreSources"],
 # )

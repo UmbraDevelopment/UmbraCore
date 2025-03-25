@@ -1,4 +1,4 @@
-import UmbraCoreTypes_CoreErrors
+import UmbraErrors
 
 /// A secure byte array that automatically zeros its contents when deallocated
 ///
@@ -21,11 +21,11 @@ public struct SecureBytes: Sendable, Equatable, Hashable, Codable {
 
   /// Create a SecureBytes instance with the specified size, filled with zeros
   /// - Parameter count: The number of bytes to allocate
-  /// - Throws: `SecureBytesError.allocationFailed` if memory allocation fails
+  /// - Throws: `UmbraErrors.SecureBytesError.allocationFailed` if memory allocation fails
   public init(count: Int) throws {
     storage=[UInt8](repeating: 0, count: count)
     guard !storage.isEmpty else {
-      throw SecureBytesError.allocationFailed
+      throw UmbraErrors.SecureBytesError.allocationFailed
     }
   }
 
@@ -103,11 +103,11 @@ public struct SecureBytes: Sendable, Equatable, Hashable, Codable {
 
   /// Create a SecureBytes instance from a hex string
   /// - Parameter hexString: The hexadecimal string to convert
-  /// - Throws: `SecureBytesError.invalidHexString` if the string is not valid hexadecimal
+  /// - Throws: `UmbraErrors.SecureBytesError.invalidHexString` if the string is not valid hexadecimal
   public init(hexString: String) throws {
     // Validate the hex string has an even number of characters
     guard hexString.count % 2 == 0 else {
-      throw SecureBytesError.invalidHexString
+      throw UmbraErrors.SecureBytesError.invalidHexString
     }
 
     // Parse the hex string
@@ -120,7 +120,7 @@ public struct SecureBytes: Sendable, Equatable, Hashable, Codable {
       let byteString=String(hexString[index..<nextIndex])
 
       guard let byte=UInt8(byteString, radix: 16) else {
-        throw SecureBytesError.invalidHexString
+        throw UmbraErrors.SecureBytesError.invalidHexString
       }
 
       bytes.append(byte)
@@ -161,10 +161,10 @@ public struct SecureBytes: Sendable, Equatable, Hashable, Codable {
   ///
   /// - Parameter position: The position of the byte to access.
   /// - Returns: The byte at the specified position.
-  /// - Throws: `SecureBytesError.outOfBounds` if the position is outside the valid range.
+  /// - Throws: `UmbraErrors.SecureBytesError.outOfBounds` if the position is outside the valid range.
   public func byte(at position: Int) throws -> UInt8 {
     guard position >= 0, position < storage.count else {
-      throw SecureBytesError.outOfBounds
+      throw UmbraErrors.SecureBytesError.outOfBounds
     }
     return storage[position]
   }
@@ -257,10 +257,10 @@ public struct SecureBytes: Sendable, Equatable, Hashable, Codable {
   /// - Parameters:
   ///   - range: The range of bytes to include in the slice.
   /// - Returns: A new SecureBytes instance containing the specified bytes.
-  /// - Throws: `SecureBytesError.outOfBounds` if the range is outside the valid range.
+  /// - Throws: `UmbraErrors.SecureBytesError.outOfBounds` if the range is outside the valid range.
   public func slice(_ range: Range<Int>) throws -> SecureBytes {
     guard range.lowerBound >= 0, range.upperBound <= storage.count else {
-      throw SecureBytesError.outOfBounds
+      throw UmbraErrors.SecureBytesError.outOfBounds
     }
 
     return SecureBytes(bytes: Array(storage[range]))
@@ -271,11 +271,11 @@ public struct SecureBytes: Sendable, Equatable, Hashable, Codable {
   ///   - from: The starting index of the slice
   ///   - length: The number of bytes to include in the slice
   /// - Returns: A new SecureBytes instance containing the specified bytes
-  /// - Throws: `SecureBytesError.outOfBounds` if the range is outside the valid range
+  /// - Throws: `UmbraErrors.SecureBytesError.outOfBounds` if the range is outside the valid range
   public func slice(from startIndex: Int, length: Int) throws -> SecureBytes {
     let endIndex=startIndex + length
     guard startIndex >= 0, endIndex <= storage.count else {
-      throw SecureBytesError.outOfBounds
+      throw UmbraErrors.SecureBytesError.outOfBounds
     }
 
     return SecureBytes(bytes: Array(storage[startIndex..<endIndex]))
@@ -303,7 +303,7 @@ public struct SecureBytes: Sendable, Equatable, Hashable, Codable {
   /// - Parameter body: A closure that takes an unsafe pointer to the bytes and returns a value of
   /// type R.
   /// - Returns: A pointer to the bytes and the number of bytes.
-  /// - Throws: `SecureBytesError.allocationFailed` if memory allocation fails.
+  /// - Throws: `UmbraErrors.SecureBytesError.allocationFailed` if memory allocation fails.
   public func withUnsafeBytes<R>(_ body: (UnsafeRawBufferPointer) throws -> R) rethrows -> R {
     try storage.withUnsafeBytes { (buffer: UnsafeRawBufferPointer) in
       try body(buffer)

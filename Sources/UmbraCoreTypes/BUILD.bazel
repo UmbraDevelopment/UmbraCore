@@ -1,24 +1,11 @@
-load("//bazel:swift_rules.bzl", "umbra_swift_library")
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
+load("@bazel_skylib//rules:native_binary.bzl", "native_binary")
 
-umbra_swift_library(
+# Simply use an alias to the actual implementation in the Sources directory
+alias(
     name = "UmbraCoreTypes",
-    srcs = glob(
-        [
-            "*.swift",
-            "**/*.swift",
-        ],
-        allow_empty = False,
-        exclude = [
-            "**/Tests/**",
-            "**/*Test.swift",
-            "**/*.generated.swift",
-        ],
-        exclude_directories = 1,
-    ),
+    actual = "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
     visibility = ["//visibility:public"],
-    deps = [
-        "//Sources/UmbraCoreTypes/CoreErrors",
-    ],
 )
 
 # Documentation generation config

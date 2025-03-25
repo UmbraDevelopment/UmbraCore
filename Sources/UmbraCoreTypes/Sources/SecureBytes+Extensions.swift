@@ -1,4 +1,4 @@
-import UmbraCoreTypes_CoreErrors
+import UmbraErrors
 
 /// Extension to provide utility methods for SecureBytes
 extension SecureBytes {

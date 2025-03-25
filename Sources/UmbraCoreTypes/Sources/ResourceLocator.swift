@@ -1,4 +1,4 @@
-import UmbraCoreTypes_CoreErrors
+import UmbraErrors
 
 /// A Foundation-free representation of a resource location.
 ///

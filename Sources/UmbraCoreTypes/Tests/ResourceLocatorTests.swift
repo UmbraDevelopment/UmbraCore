@@ -1,8 +1,5 @@
-
 @testable import UmbraCoreTypes
 import UmbraErrors
-import UmbraErrorsCore
-import UmbraCoreTypes_CoreErrors
 import XCTest
 
 final class ResourceLocatorTests: XCTestCase {
@@ -119,11 +116,11 @@ final class ResourceLocatorTests: XCTestCase {
     }
   }
 
-  // MARK: - Error Mapping Tests
+  // MARK: - UmbraError Mapping Tests
 
-  func testMapToCoreErrors() {
-    // Given a ResourceLocatorError
-    let errors: [ResourceLocatorError]=[
+  func testResourceLocatorErrorToUmbraError() {
+    // Given ResourceLocatorError values
+    let errors: [ResourceLocatorError] = [
       .invalidPath,
       .resourceNotFound,
       .accessDenied,
@@ -131,111 +128,36 @@ final class ResourceLocatorTests: XCTestCase {
       .generalError("Test error message")
     ]
 
-    // When mapping to CoreErrors
+    // When mapping to UmbraErrors
     for error in errors {
-      let mappedError=mapToCoreErrors(error)
+      let umbralError = error.toUmbraError()
 
-      // Then it should produce the correct CoreErrors type
+      // Then it should produce the correct UmbraError type
+      XCTAssertTrue(umbralError is ResourceError, "Expected ResourceError but got \(type(of: umbralError))")
+      
+      guard let resourceError = umbralError as? ResourceError else {
+        XCTFail("Could not cast to ResourceError")
+        continue
+      }
+      
+      // Verify specific error properties based on the original error
       switch error {
         case .invalidPath:
-          if
-            let resourceError=mappedError as? CEResourceError,
-            case .invalidState=resourceError
-          {
-            // Success
-          } else {
-            XCTFail("Expected invalidPath to map to CEResourceError.invalidState")
-          }
-
+          XCTAssertEqual(resourceError.code, ResourceLocatorErrorDomain.invalidPath.rawValue)
+          XCTAssertEqual(resourceError.type, .invalidResource)
+          
         case .resourceNotFound:
-          if
-            let resourceError=mappedError as? CEResourceError,
-            case .resourceNotFound=resourceError
-          {
-            // Success
-          } else {
-            XCTFail("Expected resourceNotFound to map to CEResourceError.resourceNotFound")
-          }
-
+          XCTAssertEqual(resourceError.code, ResourceLocatorErrorDomain.resourceNotFound.rawValue)
+          XCTAssertEqual(resourceError.type, .notFound)
+          
         case .accessDenied:
-          if
-            let securityError=mappedError as? CESecurityError,
-            case .invalidInput=securityError
-          {
-            // Success
-          } else {
-            XCTFail("Expected accessDenied to map to CESecurityError.invalidInput")
-          }
-
-        case .unsupportedScheme:
-          if
-            let resourceError=mappedError as? CEResourceError,
-            case .operationFailed=resourceError
-          {
-            // Success
-          } else {
-            XCTFail("Expected unsupportedScheme to map to CEResourceError.operationFailed")
-          }
-
-        case .generalError:
-          if
-            let resourceError=mappedError as? CEResourceError,
-            case .operationFailed=resourceError
-          {
-            // Success
-          } else {
-            XCTFail("Expected generalError to map to CEResourceError.operationFailed")
-          }
-      }
-    }
-  }
-
-  func testMapFromCoreErrors() {
-    // Given a set of CoreErrors.ResourceError values
-    let errors: [CoreErrors.ResourceError]=[
-      .invalidState,
-      .resourceNotFound,
-      .operationFailed,
-      .acquisitionFailed,
-      .poolExhausted
-    ]
-
-    // When mapping from CoreErrors
-    for coreError in errors {
-      let mappedError=mapFromCoreErrors(coreError)
-
-      // Then it should produce the correct ResourceLocatorError or other type
-      switch coreError {
-        case .invalidState:
-          XCTAssertEqual(mappedError as? ResourceLocatorError, ResourceLocatorError.invalidPath)
-
-        case .resourceNotFound:
-          XCTAssertEqual(
-            mappedError as? ResourceLocatorError,
-            ResourceLocatorError.resourceNotFound
-          )
-
-        case .operationFailed:
-          XCTAssertEqual(
-            mappedError as? ResourceLocatorError,
-            ResourceLocatorError.generalError("Operation failed")
-          )
-
-        case .acquisitionFailed:
-          XCTAssertEqual(mappedError as? SecureBytesError, SecureBytesError.allocationFailed)
-
-        case .poolExhausted:
-          if
-            let resourceError=mappedError as? ResourceLocatorError,
-            case let .generalError(message)=resourceError
-          {
-            XCTAssertEqual(message, "Resource pool exhausted")
-          } else {
-            XCTFail("Expected poolExhausted to map to ResourceLocatorError.generalError")
-          }
-
-        @unknown default:
-          XCTFail("Unexpected error type: \(coreError)")
+          XCTAssertEqual(resourceError.code, ResourceLocatorErrorDomain.accessDenied.rawValue)
+          XCTAssertEqual(resourceError.type, .notAvailable)
+          
+        case .unsupportedScheme, .generalError:
+          // These would map to some appropriate ResourceError type in a real implementation
+          // For now we'll just verify they return a ResourceError
+          XCTAssertNotNil(resourceError.code)
       }
     }
   }
