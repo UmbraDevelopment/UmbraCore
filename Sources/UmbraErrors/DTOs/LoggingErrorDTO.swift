@@ -1,9 +1,10 @@
 import Foundation
+import UmbraErrorsCore
 
 /// DTO for logging errors
-public struct LoggingErrorDTO: Error, Hashable, Equatable {
+public struct LoggingErrorDTO: Error, Hashable, Equatable, Sendable {
     /// The type of logging error
-    public enum LoggingErrorType: String, Hashable, Equatable {
+    public enum LoggingErrorType: String, Hashable, Equatable, Sendable {
         /// Failed to write to log
         case writeFailed = "WRITE_FAILED"
         /// Invalid log format
@@ -29,7 +30,7 @@ public struct LoggingErrorDTO: Error, Hashable, Equatable {
     public let description: String
     
     /// Additional context information about the error
-    public let context: [String: Any]
+    public let context: ErrorContext
     
     /// The underlying error, if any
     public let underlyingError: Error?
@@ -43,12 +44,30 @@ public struct LoggingErrorDTO: Error, Hashable, Equatable {
     public init(
         type: LoggingErrorType,
         description: String,
-        context: [String: Any] = [:],
+        context: ErrorContext = ErrorContext(),
         underlyingError: Error? = nil
     ) {
         self.type = type
         self.description = description
         self.context = context
+        self.underlyingError = underlyingError
+    }
+    
+    /// Creates a new LoggingErrorDTO with dictionary context
+    /// - Parameters:
+    ///   - type: The type of logging error
+    ///   - description: Human-readable description
+    ///   - contextDict: Additional context information as dictionary
+    ///   - underlyingError: The underlying error
+    public init(
+        type: LoggingErrorType,
+        description: String,
+        contextDict: [String: Any] = [:],
+        underlyingError: Error? = nil
+    ) {
+        self.type = type
+        self.description = description
+        self.context = ErrorContext(contextDict)
         self.underlyingError = underlyingError
     }
     
@@ -63,7 +82,7 @@ public struct LoggingErrorDTO: Error, Hashable, Equatable {
         return LoggingErrorDTO(
             type: .unknown,
             description: "\(error)",
-            context: [:],
+            context: ErrorContext(),
             underlyingError: error
         )
     }

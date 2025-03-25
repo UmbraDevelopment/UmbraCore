@@ -1,12 +1,13 @@
 import Foundation
+import UmbraErrorsCore
 
 /// DTO for resource errors
-public struct ResourceErrorDTO: Error, Hashable, Equatable {
+public struct ResourceErrorDTO: Error, Hashable, Equatable, Sendable {
     /// The type of resource error
-    public enum ResourceErrorType: String, Hashable, Equatable {
+    public enum ResourceErrorType: String, Hashable, Equatable, Sendable {
         /// Failed to acquire resource
         case acquisitionFailed = "ACQUISITION_FAILED"
-        /// Resource is in invalid state
+        /// Resource is in an invalid state
         case invalidState = "INVALID_STATE"
         /// Resource pool is exhausted
         case poolExhausted = "POOL_EXHAUSTED"
@@ -33,7 +34,7 @@ public struct ResourceErrorDTO: Error, Hashable, Equatable {
     public let description: String
     
     /// Additional context information about the error
-    public let context: [String: Any]
+    public let context: ErrorContext
     
     /// The underlying error, if any
     public let underlyingError: Error?
@@ -47,12 +48,30 @@ public struct ResourceErrorDTO: Error, Hashable, Equatable {
     public init(
         type: ResourceErrorType,
         description: String,
-        context: [String: Any] = [:],
+        context: ErrorContext = ErrorContext(),
         underlyingError: Error? = nil
     ) {
         self.type = type
         self.description = description
         self.context = context
+        self.underlyingError = underlyingError
+    }
+    
+    /// Creates a new ResourceErrorDTO with dictionary context
+    /// - Parameters:
+    ///   - type: The type of resource error
+    ///   - description: Human-readable description
+    ///   - contextDict: Additional context information as dictionary
+    ///   - underlyingError: The underlying error
+    public init(
+        type: ResourceErrorType,
+        description: String,
+        contextDict: [String: Any] = [:],
+        underlyingError: Error? = nil
+    ) {
+        self.type = type
+        self.description = description
+        self.context = ErrorContext(contextDict)
         self.underlyingError = underlyingError
     }
     
@@ -67,7 +86,7 @@ public struct ResourceErrorDTO: Error, Hashable, Equatable {
         return ResourceErrorDTO(
             type: .unknown,
             description: "\(error)",
-            context: [:],
+            context: ErrorContext(),
             underlyingError: error
         )
     }
