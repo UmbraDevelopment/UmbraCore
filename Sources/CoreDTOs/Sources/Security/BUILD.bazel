@@ -16,7 +16,7 @@ umbra_swift_library(
         exclude_directories = 1,
     ),
     deps = [
-        "//Sources/SecurityBridgeTypes",
+        "//Sources/UmbraSecurityBridge",
         "//Sources/UmbraCoreTypes",
         "//Sources/UmbraLogging",
         # Removing circular dependency

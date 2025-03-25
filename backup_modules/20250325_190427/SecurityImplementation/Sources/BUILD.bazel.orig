@@ -1,0 +1,29 @@
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
+
+umbra_swift_library(
+    name = "SecurityImplementation",
+    srcs = glob(
+        ["**/*.swift"],
+        exclude = ["**/Tests/**", "**/*Test.swift", "**/*.generated.swift"],
+        exclude_directories = 0,
+        allow_empty = False,
+    ),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//Sources/SecurityProtocolsCore/Sources:SecurityProtocolsCore",
+        "//Sources/UmbraCoreTypes/Sources",
+    ],
+)
+
+# Uncomment if documentation generation is needed
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")])])
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+#
+# swift_package(
+#     name = "docc_documentation",
+#     srcs = glob([
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
+#     deps = ["//Sources/SecurityImplementation"],
+# )
