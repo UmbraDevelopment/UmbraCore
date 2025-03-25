@@ -1,4 +1,5 @@
 import UmbraCoreTypes
+import SecurityProtocolsCore.Types
 
 /// FoundationIndependent representation of a security operation result.
 /// This data transfer object encapsulates the outcome of security-related operations

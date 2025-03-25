@@ -24,6 +24,7 @@ umbra_swift_library(
         # "@com_github_apple_swift_log//:Logging",
         "//Sources/UmbraCoreTypes",
         "//Sources/UmbraErrors",
+        "//Sources/SecurityProtocolsCore/Sources/Types",
     ],
 )
 
