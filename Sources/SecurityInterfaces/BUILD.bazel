@@ -28,13 +28,18 @@ umbra_swift_library(
         "-enable-upcoming-feature",
         "DisableOutOfOrderDependencies",
     ],
+    visibility = ["//visibility:public"],
     deps = [
-        # Dependencies will go here, for example:
-        # "//Sources/CoreDTOs",
-        # "//Sources/UmbraLogging",
-        # "@com_github_apple_swift_log//:Logging",
+        # Combined dependencies from all SecurityInterfaces modules
         "//Sources/UmbraCoreTypes",
         "//Sources/SecurityProtocolsCore",
+        "//Sources/CoreTypesInterfaces",
+        # Temporarily removed XPCProtocolsCore dependency to avoid build errors
+        # "//Sources/XPCProtocolsCore/Sources:XPCProtocolsCoreSources",
+        "//Sources/UmbraErrors",
+        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
+        "//Sources/ObjCBridgingTypesFoundation",
+        "//Sources/UmbraSecurityBridge",
     ],
 )
 
@@ -49,11 +54,14 @@ umbra_swift_library(
 #         "**/*.docc/**",
 #     ]),
 #     deps = [
-# Dependencies will go here, for example:
-# "//Sources/CoreDTOs",
-# "//Sources/UmbraLogging",
-# "@com_github_apple_swift_log//:Logging",
 #        "//Sources/UmbraCoreTypes",
 #        "//Sources/SecurityProtocolsCore",
+#        "//Sources/CoreTypesInterfaces",
+#        # Temporarily removed XPCProtocolsCore dependency to avoid build errors
+#        # "//Sources/XPCProtocolsCore/Sources:XPCProtocolsCoreSources",
+#        "//Sources/UmbraErrors",
+#        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
+#        "//Sources/ObjCBridgingTypesFoundation",
+#        "//Sources/UmbraSecurityBridge",
 #     ],
 # )

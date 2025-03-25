@@ -1,7 +1,7 @@
 load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
-    name = "XPCProtocolsCoreSources",
+    name = "SecurityBridgeTypes",
     srcs = glob(
         [
             "*.swift",
@@ -15,15 +15,11 @@ umbra_swift_library(
         ],
         exclude_directories = 1,
     ),
-    visibility = ["//visibility:public"],
     deps = [
-        "//Sources/CoreDTOs",
-        "//Sources/CoreDTOs/Sources/Operations",
-        "//Sources/CoreDTOs/Sources/Security",
-        "//Sources/UmbraSecurityBridge",
-        "//Sources/UmbraCoreTypes",
-        "//Sources/UmbraErrors/Core:UmbraErrorsCore",  
+        # Removing CoreDTOs dependency to break circular dependency
+        # "//Sources/CoreDTOs",
         "//Sources/UmbraLogging",
+        # "@com_github_apple_swift_log//:Logging",
     ],
 )
 
@@ -37,5 +33,5 @@ umbra_swift_library(
 #         "**/*.swift",
 #         "**/*.docc/**",
 #     ]),
-#     deps = ["//Sources/XPCProtocolsCoreSources"],
+#     deps = ["//Sources/SecurityBridgeTypes/Sources:SecurityBridgeTypes"],
 # )

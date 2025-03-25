@@ -1,6 +1,4 @@
 import Foundation
-import SecurityBridgeTypes
-import SecurityInterfacesBase
 import SecurityProtocolsCore
 import UmbraCoreTypes
 import UmbraErrors
@@ -10,15 +8,14 @@ import UmbraErrorsCore
 public enum SecurityProviderAdapterFactory {
   /// Create a modern provider adapter from a legacy base provider
   public static func createAdapter(
-    from baseProvider: any SecurityInterfacesBase
-      .SecurityProviderBase
+    from baseProvider: any SecurityProviderBase
   ) -> any SecurityProtocolsCore.SecurityProviderProtocol {
     ModernSecurityProviderAdapter(baseProvider: baseProvider)
   }
 }
 
 /// Extension on SecurityProviderBase to add modern protocol conversion
-extension SecurityInterfacesBase.SecurityProviderBase {
+extension SecurityProviderBase {
   /// Convert this legacy provider to a modern provider interface
   public func asModernProvider() -> any SecurityProtocolsCore.SecurityProviderProtocol {
     SecurityProviderAdapterFactory.createAdapter(from: self)
@@ -27,10 +24,10 @@ extension SecurityInterfacesBase.SecurityProviderBase {
 
 /// Adapter that converts a SecurityProviderBase to a SecurityProviderProtocol
 final class ModernSecurityProviderAdapter: SecurityProtocolsCore.SecurityProviderProtocol {
-  private let baseProvider: any SecurityInterfacesBase.SecurityProviderBase
+  private let baseProvider: any SecurityProviderBase
 
-  init(baseProvider: any SecurityInterfacesBase.SecurityProviderBase) {
-    self.baseProvider=baseProvider
+  init(baseProvider: any SecurityProviderBase) {
+    self.baseProvider = baseProvider
   }
 
   // MARK: - Service Access Methods
@@ -90,10 +87,10 @@ final class ModernSecurityProviderAdapter: SecurityProtocolsCore.SecurityProvide
 
 /// Adapter for crypto service functionality
 final class ModernCryptoServiceAdapter: CryptoServiceProtocol {
-  private let baseProvider: any SecurityInterfacesBase.SecurityProviderBase
+  private let baseProvider: any SecurityProviderBase
 
-  init(baseProvider: any SecurityInterfacesBase.SecurityProviderBase) {
-    self.baseProvider=baseProvider
+  init(baseProvider: any SecurityProviderBase) {
+    self.baseProvider = baseProvider
   }
 
   // MARK: - Basic Crypto Operations
@@ -250,10 +247,10 @@ final class ModernCryptoServiceAdapter: CryptoServiceProtocol {
 
 /// Adapter for key management functionality
 final class ModernKeyManagementAdapter: KeyManagementProtocol {
-  private let baseProvider: any SecurityInterfacesBase.SecurityProviderBase
+  private let baseProvider: any SecurityProviderBase
 
-  init(baseProvider: any SecurityInterfacesBase.SecurityProviderBase) {
-    self.baseProvider=baseProvider
+  init(baseProvider: any SecurityProviderBase) {
+    self.baseProvider = baseProvider
   }
 
   func retrieveKey(withIdentifier _: String) async
@@ -280,7 +277,7 @@ final class ModernKeyManagementAdapter: KeyManagementProtocol {
     reencryptedData: SecureBytes?
   ), UmbraErrors.Security.Protocols> {
     // Placeholder implementation
-    let newKey=SecureBytes(bytes: [0x05, 0x06, 0x07, 0x08])
+    let newKey = SecureBytes(bytes: [0x05, 0x06, 0x07, 0x08])
     return .success((newKey: newKey, reencryptedData: dataToReencrypt))
   }
 

@@ -1,12 +1,9 @@
 load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
-    name = "Types",
+    name = "SecurityImplementation",
     srcs = glob(
-        [
-            "*.swift",
-            "**/*.swift",
-        ],
+        ["**/*.swift"],
         allow_empty = False,
         exclude = [
             "**/Tests/**",
@@ -17,8 +14,7 @@ umbra_swift_library(
     ),
     visibility = ["//visibility:public"],
     deps = [
-        "//Sources/UmbraSecurityBridge",
-        "//Sources/SecurityProtocolsCore",
-        "//Sources/UmbraCoreTypes",
+        "//Sources/SecurityProtocolsCore/Sources:SecurityProtocolsCore",
+        "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
     ],
 )
