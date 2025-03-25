@@ -7,7 +7,7 @@ umbra_swift_library(
             "*.swift",
             "**/*.swift",
         ],
-        allow_empty = True,
+        allow_empty = False,
         exclude = [
             "**/Tests/**",
             "**/*Test.swift",

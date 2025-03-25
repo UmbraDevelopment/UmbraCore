@@ -2,28 +2,32 @@ load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
     name = "UmbraErrorsCore",
-    srcs = glob(["*.swift", "**/*.swift"],
-        exclude = ["**/Tests/**", "**/*Test.swift", "**/*.generated.swift"],
+    srcs = glob(
+        [
+            "*.swift",
+            "**/*.swift",
+        ],
+        allow_empty = False,
+        exclude = [
+            "**/Tests/**",
+            "**/*Test.swift",
+            "**/*.generated.swift",
+        ],
         exclude_directories = 1,
-        allow_empty = True
     ),
+    visibility = ["//visibility:public"],
     deps = [
-        # Dependencies will go here, for example:
-        "//Sources/CoreDTOs",
+        # Remove CoreDTOs dependency to break circular reference
+        # "//Sources/CoreDTOs",
+
+        # Core foundations
         "//Sources/UmbraLogging",
-        # "@com_github_apple_swift_log//:Logging",
+        "//Sources/UmbraCoreTypes",
+
+        # Add dependencies for security and crypto related types
+        "//Sources/SecurityTypes",
+        "//Sources/CryptoTypes",
+        # Removing XPCProtocolsCore to break circular dependency
+        # "//Sources/XPCProtocolsCore",
     ],
 )
-
-# Uncomment if documentation generation is needed
-# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
-# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
-#
-# swift_package(
-#     name = "docc_documentation",
-#     srcs = glob([
-#         "**/*.swift",
-#         "**/*.docc/**",
-#     ]),
-#     deps = ["//Sources/UmbraErrors/Core:UmbraErrorsCore"],
-# )

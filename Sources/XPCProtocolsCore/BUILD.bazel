@@ -15,14 +15,17 @@ umbra_swift_library(
 umbra_swift_library(
     name = "XPCProtocolsCoreTests",
     testonly = True,
-    srcs = glob([
-        "Tests/**/*.swift",
-    ], allow_empty = True),
+    srcs = glob(
+        [
+            "Tests/**/*.swift",
+        ],
+        allow_empty = True,  # Allow empty glob since tests may not exist yet
+    ),
     visibility = ["//visibility:public"],
     deps = [
         ":XPCProtocolsCore",
-        "//Sources/SecurityInterfacesBase",
         "//Sources/CoreDTOs",
+        "//Sources/SecurityInterfacesBase",
         "//Sources/UmbraLogging",
     ],
 )

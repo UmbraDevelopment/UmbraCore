@@ -3,8 +3,8 @@ load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 # This target re-exports functionality from the Sources submodule
 swift_library(
     name = "SecurityProtocolsCore",
-    module_name = "SecurityProtocolsCore",
     srcs = ["ModuleExports.swift"],
+    module_name = "SecurityProtocolsCore",
     visibility = ["//visibility:public"],
     deps = [
         "//Sources/SecurityProtocolsCore/Sources:SecurityProtocolsCore",
@@ -16,6 +16,6 @@ swift_library(
 #
 # swift_package(
 #     name = "docc_documentation",
-#     srcs = glob(["**/*.swift"], allow_empty = True),
+#     srcs = glob(["**/*.swift"], allow_empty = False),
 #     deps = ["//Sources/SecurityProtocolsCore"],
 # )

@@ -12,13 +12,9 @@ umbra_swift_library(
         ],
         exclude_directories = 1,
     ),
-    swiftc_opts = ["-Xfrontend", "-enable-cross-import-overlays"],
     visibility = ["//visibility:public"],
     deps = [
         "//Sources/SecurityProtocolsCore/Sources:SecurityProtocolsCore",
         "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
-        "//Sources/ErrorHandlingInterfaces",
-        "//Sources/ErrorHandlingDomains",
-        "//Sources/CoreErrors",
     ],
 )

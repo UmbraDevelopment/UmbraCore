@@ -2,15 +2,23 @@ load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
     name = "Types",
-    srcs = glob(["*.swift", "**/*.swift"],
-        exclude = ["**/Tests/**", "**/*Test.swift", "**/*.generated.swift"],
+    srcs = glob(
+        [
+            "*.swift",
+            "**/*.swift",
+        ],
+        allow_empty = False,
+        exclude = [
+            "**/Tests/**",
+            "**/*Test.swift",
+            "**/*.generated.swift",
+        ],
         exclude_directories = 1,
-        allow_empty = True
     ),
-    deps = [
-        "//Sources/UmbraCoreTypes",
-        "//Sources/SecurityProtocolsCore",
-        "//Sources/SecurityBridgeTypes",
-    ],
     visibility = ["//visibility:public"],
+    deps = [
+        "//Sources/SecurityBridgeTypes",
+        "//Sources/SecurityProtocolsCore",
+        "//Sources/UmbraCoreTypes",
+    ],
 )

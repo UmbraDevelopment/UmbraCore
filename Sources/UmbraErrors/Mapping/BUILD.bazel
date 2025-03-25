@@ -2,20 +2,28 @@ load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
     name = "Mapping",
-    srcs = glob(["*.swift", "**/*.swift"],
-        exclude = ["**/Tests/**", "**/*Test.swift", "**/*.generated.swift"],
+    srcs = glob(
+        [
+            "*.swift",
+            "**/*.swift",
+        ],
+        allow_empty = False,
+        exclude = [
+            "**/Tests/**",
+            "**/*Test.swift",
+            "**/*.generated.swift",
+        ],
         exclude_directories = 1,
-        allow_empty = True
     ),
+    visibility = ["//visibility:public"],
     deps = [
-        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-        "//Sources/UmbraErrors/Domains",
-        "//Sources/UmbraErrors/DTOs",
+        "//Sources/CoreErrors",
         "//Sources/ErrorHandling",
         "//Sources/ErrorHandlingInterfaces",
-        "//Sources/CoreErrors",
+        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
+        "//Sources/UmbraErrors/DTOs",
+        "//Sources/UmbraErrors/Domains",
     ],
-    visibility = ["//visibility:public"],
 )
 
 # Uncomment if documentation generation is needed

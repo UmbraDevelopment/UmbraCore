@@ -2,10 +2,18 @@ load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
     name = "Provider",
-    srcs = glob(["*.swift", "**/*.swift"],
-        exclude = ["**/Tests/**", "**/*Test.swift", "**/*.generated.swift"],
+    srcs = glob(
+        [
+            "*.swift",
+            "**/*.swift",
+        ],
+        allow_empty = False,
+        exclude = [
+            "**/Tests/**",
+            "**/*Test.swift",
+            "**/*.generated.swift",
+        ],
         exclude_directories = 1,
-        allow_empty = True
     ),
     deps = [
         # Dependencies will go here, for example:
@@ -28,10 +36,10 @@ umbra_swift_library(
 #         "**/*.docc/**",
 #     ]),
 #     deps = [
-        # Dependencies will go here, for example:
-        # "//Sources/CoreDTOs",
-        # "//Sources/UmbraLogging",
-        # "@com_github_apple_swift_log//:Logging",
+# Dependencies will go here, for example:
+# "//Sources/CoreDTOs",
+# "//Sources/UmbraLogging",
+# "@com_github_apple_swift_log//:Logging",
 #        "//Sources/UmbraCoreTypes",
 #        "//Sources/SecurityProtocolsCore",
 #     ],

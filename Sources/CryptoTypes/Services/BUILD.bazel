@@ -2,22 +2,30 @@ load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
     name = "Services",
-    srcs = glob(["*.swift", "**/*.swift"],
-        exclude = ["**/Tests/**", "**/*Test.swift", "**/*.generated.swift"],
+    srcs = glob(
+        [
+            "*.swift",
+            "**/*.swift",
+        ],
+        allow_empty = False,
+        exclude = [
+            "**/Tests/**",
+            "**/*Test.swift",
+            "**/*.generated.swift",
+        ],
         exclude_directories = 1,
-        allow_empty = True
     ),
+    visibility = ["//visibility:public"],
     deps = [
         "//Sources/CryptoTypes/Protocols",
         "//Sources/CryptoTypes/Types",
-        "//Sources/UmbraErrors",
-        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
         "//Sources/SecurityTypes",
         "//Sources/SecurityTypes/Protocols",
         "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraErrors",
+        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
         "//Sources/XPCProtocolsCore",
     ],
-    visibility = ["//visibility:public"],
 )
 
 # Uncomment if documentation generation is needed
@@ -31,10 +39,10 @@ umbra_swift_library(
 #         "**/*.docc/**",
 #     ]),
 #     deps = [
-        # Dependencies will go here, for example:
-        # "//Sources/CoreDTOs",
-        # "//Sources/UmbraLogging",
-        # "@com_github_apple_swift_log//:Logging",
+# Dependencies will go here, for example:
+# "//Sources/CoreDTOs",
+# "//Sources/UmbraLogging",
+# "@com_github_apple_swift_log//:Logging",
 #        "//Sources/UmbraCoreTypes",
 #     ],
 # )

@@ -2,17 +2,25 @@ load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
     name = "Utilities",
-    srcs = glob(["*.swift", "**/*.swift"],
-        exclude = ["**/Tests/**", "**/*Test.swift", "**/*.generated.swift"],
+    srcs = glob(
+        [
+            "*.swift",
+            "**/*.swift",
+        ],
+        allow_empty = True,  # Allow empty glob since there may not be any Swift files yet
+        exclude = [
+            "**/Tests/**",
+            "**/*Test.swift",
+            "**/*.generated.swift",
+        ],
         exclude_directories = 1,
-        allow_empty = True
     ),
+    visibility = ["//visibility:public"],
     deps = [
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-        "//Sources/UmbraErrors/Domains",
         "//Sources/UmbraErrors/DTOs",
+        "//Sources/UmbraErrors/Domains",
     ],
-    visibility = ["//visibility:public"],
 )
 
 # Uncomment if documentation generation is needed
