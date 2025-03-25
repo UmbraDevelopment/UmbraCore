@@ -1,9 +1,10 @@
 import Foundation
+import UmbraErrorsCore
 
 /// DTO for key manager errors
-public struct KeyManagerErrorDTO: Error, Hashable, Equatable {
+public struct KeyManagerErrorDTO: Error, Hashable, Equatable, Sendable {
     /// The type of key manager error
-    public enum KeyManagerErrorType: String, Hashable, Equatable {
+    public enum KeyManagerErrorType: String, Hashable, Equatable, Sendable {
         /// Key not found
         case keyNotFound = "KEY_NOT_FOUND"
         /// Invalid key format
@@ -31,7 +32,7 @@ public struct KeyManagerErrorDTO: Error, Hashable, Equatable {
     public let description: String
     
     /// Additional context information about the error
-    public let context: [String: Any]
+    public let context: ErrorContext
     
     /// The underlying error, if any
     public let underlyingError: Error?
@@ -45,12 +46,30 @@ public struct KeyManagerErrorDTO: Error, Hashable, Equatable {
     public init(
         type: KeyManagerErrorType,
         description: String,
-        context: [String: Any] = [:],
+        context: ErrorContext = ErrorContext(),
         underlyingError: Error? = nil
     ) {
         self.type = type
         self.description = description
         self.context = context
+        self.underlyingError = underlyingError
+    }
+    
+    /// Creates a new KeyManagerErrorDTO with dictionary context
+    /// - Parameters:
+    ///   - type: The type of key manager error
+    ///   - description: Human-readable description
+    ///   - contextDict: Additional context information as dictionary
+    ///   - underlyingError: The underlying error
+    public init(
+        type: KeyManagerErrorType,
+        description: String,
+        contextDict: [String: Any] = [:],
+        underlyingError: Error? = nil
+    ) {
+        self.type = type
+        self.description = description
+        self.context = ErrorContext(contextDict)
         self.underlyingError = underlyingError
     }
     
@@ -65,7 +84,7 @@ public struct KeyManagerErrorDTO: Error, Hashable, Equatable {
         return KeyManagerErrorDTO(
             type: .unknown,
             description: "\(error)",
-            context: [:],
+            context: ErrorContext(),
             underlyingError: error
         )
     }

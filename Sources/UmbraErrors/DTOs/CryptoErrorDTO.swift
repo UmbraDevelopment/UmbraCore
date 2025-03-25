@@ -1,9 +1,10 @@
 import Foundation
+import UmbraErrorsCore
 
 /// DTO for crypto errors
-public struct CryptoErrorDTO: Error, Hashable, Equatable {
+public struct CryptoErrorDTO: Error, Hashable, Equatable, Sendable {
     /// The type of crypto error
-    public enum CryptoErrorType: String, Hashable, Equatable {
+    public enum CryptoErrorType: String, Hashable, Equatable, Sendable {
         /// Invalid key length
         case invalidKeyLength = "INVALID_KEY_LENGTH"
         /// Invalid parameters
@@ -33,7 +34,7 @@ public struct CryptoErrorDTO: Error, Hashable, Equatable {
     public let description: String
     
     /// Additional context information about the error
-    public let context: [String: Any]
+    public let context: ErrorContext
     
     /// The underlying error, if any
     public let underlyingError: Error?
@@ -47,12 +48,30 @@ public struct CryptoErrorDTO: Error, Hashable, Equatable {
     public init(
         type: CryptoErrorType,
         description: String,
-        context: [String: Any] = [:],
+        context: ErrorContext = ErrorContext(),
         underlyingError: Error? = nil
     ) {
         self.type = type
         self.description = description
         self.context = context
+        self.underlyingError = underlyingError
+    }
+    
+    /// Creates a new CryptoErrorDTO with dictionary context
+    /// - Parameters:
+    ///   - type: The type of crypto error
+    ///   - description: Human-readable description
+    ///   - contextDict: Additional context information as dictionary
+    ///   - underlyingError: The underlying error
+    public init(
+        type: CryptoErrorType,
+        description: String,
+        contextDict: [String: Any] = [:],
+        underlyingError: Error? = nil
+    ) {
+        self.type = type
+        self.description = description
+        self.context = ErrorContext(contextDict)
         self.underlyingError = underlyingError
     }
     
@@ -67,7 +86,7 @@ public struct CryptoErrorDTO: Error, Hashable, Equatable {
         return CryptoErrorDTO(
             type: .unknown,
             description: "\(error)",
-            context: [:],
+            context: ErrorContext(),
             underlyingError: error
         )
     }

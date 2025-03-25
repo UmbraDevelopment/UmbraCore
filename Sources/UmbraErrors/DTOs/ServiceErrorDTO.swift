@@ -1,9 +1,10 @@
 import Foundation
+import UmbraErrorsCore
 
 /// DTO for service errors
-public struct ServiceErrorDTO: Error, Hashable, Equatable {
+public struct ServiceErrorDTO: Error, Hashable, Equatable, Sendable {
     /// The type of service error
-    public enum ServiceErrorType: String, Hashable, Equatable {
+    public enum ServiceErrorType: String, Hashable, Equatable, Sendable {
         /// Service not available
         case serviceUnavailable = "SERVICE_UNAVAILABLE"
         /// Service timeout
@@ -35,7 +36,7 @@ public struct ServiceErrorDTO: Error, Hashable, Equatable {
     public let description: String
     
     /// Additional context information about the error
-    public let context: [String: Any]
+    public let context: ErrorContext
     
     /// The underlying error, if any
     public let underlyingError: Error?
@@ -49,12 +50,30 @@ public struct ServiceErrorDTO: Error, Hashable, Equatable {
     public init(
         type: ServiceErrorType,
         description: String,
-        context: [String: Any] = [:],
+        context: ErrorContext = ErrorContext(),
         underlyingError: Error? = nil
     ) {
         self.type = type
         self.description = description
         self.context = context
+        self.underlyingError = underlyingError
+    }
+    
+    /// Creates a new ServiceErrorDTO with dictionary context
+    /// - Parameters:
+    ///   - type: The type of service error
+    ///   - description: Human-readable description
+    ///   - contextDict: Additional context information as dictionary
+    ///   - underlyingError: The underlying error
+    public init(
+        type: ServiceErrorType,
+        description: String,
+        contextDict: [String: Any] = [:],
+        underlyingError: Error? = nil
+    ) {
+        self.type = type
+        self.description = description
+        self.context = ErrorContext(contextDict)
         self.underlyingError = underlyingError
     }
     
@@ -69,7 +88,7 @@ public struct ServiceErrorDTO: Error, Hashable, Equatable {
         return ServiceErrorDTO(
             type: .unknown,
             description: "\(error)",
-            context: [:],
+            context: ErrorContext(),
             underlyingError: error
         )
     }
