@@ -15,6 +15,10 @@ The XPCProtocolsCore module is a critical part of the UmbraCore XPC Protocol Con
 - Foundation-independent DTO-based communication
 - Standardised result encapsulation with `OperationResultDTO`
 - Advanced key exchange operations
+- Secure message passing between application and XPC service
+- Structured command execution framework
+- Permission management and validation
+- Resource lifecycle management
 
 ## Integration
 
@@ -36,11 +40,21 @@ class MyDTOService: XPCServiceProtocolDTO {
 // Or adapt an existing service
 let service = MyService()
 let dtoAdapter = XPCServiceProtocolDTOAdapter(service: service)
+
+// Create a client connection to the XPC service
+let xpcClient = ModernXPCService()
+
+// Execute a command through the XPC service
+try await xpcClient.executeCommand(
+    command: "backup",
+    arguments: ["--tag", "daily", "/Users/Documents"],
+    environment: ["PASSWORD": passwordRef]
+)
 ```
 
 ## DTO-Based Protocols
 
-The module now provides Foundation-independent DTO-based protocols that offer improved type safety and portability:
+The module provides Foundation-independent DTO-based protocols that offer improved type safety and portability:
 
 - `XPCServiceProtocolDTO`: Base protocol for DTO-based XPC services
 - `XPCServiceProtocolCompleteDTO`: Comprehensive protocol with key management
@@ -48,6 +62,21 @@ The module now provides Foundation-independent DTO-based protocols that offer im
 - `KeyManagementDTOProtocol`: Protocol for key management operations
 
 These protocols use CoreDTOs for all data exchanges, eliminating Foundation dependencies.
+
+## Modern XPC Components
+
+The module includes modern XPC components for building robust XPC services:
+
+- `XPCConnectionManager`: Actor-based manager for XPC connections
+- `XPCConnectionProtocol`: Protocol for establishing and managing XPC connections
+- `XPCError`: Comprehensive error type for XPC operations
+
+## Security Considerations
+
+- All commands are validated before execution
+- Environment variables are securely passed between processes
+- Resources are properly cleaned up after operations
+- Security boundaries are maintained throughout operations
 
 ## Example Implementation
 

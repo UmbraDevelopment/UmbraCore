@@ -1,7 +1,8 @@
-load("//bazel:swift_rules.bzl", "umbra_swift_library")
+load("//bazel:swift_rules.bzl", "umbra_swift_library", "umbra_swift_test")
 
 umbra_swift_library(
-    name = "Tests",
+    name = "TestsLib",
+    testonly = True,
     srcs = glob(
         [
             "*.swift",
@@ -9,19 +10,30 @@ umbra_swift_library(
         ],
         allow_empty = False,
         exclude = [
-            "**/Tests/**",
-            "**/*Test.swift",
             "**/*.generated.swift",
         ],
         exclude_directories = 1,
     ),
     deps = [
-        # Dependencies will go here, for example:
         "//Sources/CoreDTOs",
         "//Sources/UmbraLogging",
-        # "@com_github_apple_swift_log//:Logging",
         "//Sources/UmbraCoreTypes",
-        "//Sources/SecurityProtocolsCore",
+        "//Sources/UmbraErrors",
+        "//Sources/XPCProtocolsCore",
+    ],
+    swiftc_opts = [
+        "-target", "arm64-apple-macosx14.7.4",
+    ],
+)
+
+umbra_swift_test(
+    name = "XPCProtocolsCoreTests",
+    deps = [
+        ":TestsLib",
+    ],
+    # Pass compiler options through the kwargs mechanism
+    copts = [
+        "-target", "arm64-apple-macosx14.7.4",
     ],
 )
 
@@ -36,11 +48,9 @@ umbra_swift_library(
 #         "**/*.docc/**",
 #     ]),
 #     deps = [
-#         # Dependencies will go here, for example:
 #         "//Sources/CoreDTOs",
 #         "//Sources/UmbraLogging",
-#         # "@com_github_apple_swift_log//:Logging",
 #         "//Sources/UmbraCoreTypes",
-#         "//Sources/SecurityProtocolsCore",
+#         "//Sources/XPCProtocolsCore",
 #     ],
 # )

@@ -14,7 +14,6 @@ import UmbraErrorsCore
   import Foundation
   @preconcurrency import ObjCBridgingTypesFoundation
 #endif
-import UmbraXPC
 import XPCProtocolsCore
 
 /// Represents the type of cryptographic implementation to use

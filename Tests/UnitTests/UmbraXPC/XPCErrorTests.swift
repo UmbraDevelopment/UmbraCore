@@ -1,4 +1,4 @@
-@testable import UmbraXPC
+@testable import XPCProtocolsCore
 import XCTest
 
 final class XPCErrorTests: XCTestCase {
@@ -10,9 +10,9 @@ final class XPCErrorTests: XCTestCase {
     ]
 
     let expectedDescriptions=[
-      "XPC connection failed: Failed to connect",
-      "Failed to send XPC message: Failed to send",
-      "Invalid XPC message format: Invalid format"
+      "[Connection] XPC connection failed: Failed to connect",
+      "[Message] Failed to send XPC message: Failed to send",
+      "[Message] Invalid XPC message format: Invalid format"
     ]
 
     for (error, expectedDescription) in zip(errors, expectedDescriptions) {

@@ -58,7 +58,7 @@ public protocol XPCConnectionProtocol: Sendable {
 ///
 /// This enum provides specific error cases for different types of
 /// failures that can occur when working with XPC services.
-public enum XPCError: LocalizedError, Sendable {
+public enum XPCConnectionError: LocalizedError, Sendable {
   /// The connection to the XPC service failed.
   ///
   /// - Parameter reason: A description of why the connection failed.

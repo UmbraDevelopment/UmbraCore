@@ -4,8 +4,6 @@ import LoggingWrapper
 import SecurityUtils
 import UmbraKeychainService
 import UmbraLogging
-import UmbraXPC
-import XPC
 import XPCProtocolsCore
 
 /// XPC listener for the crypto service
