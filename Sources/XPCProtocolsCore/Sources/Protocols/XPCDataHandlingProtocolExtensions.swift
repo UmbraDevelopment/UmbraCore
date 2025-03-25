@@ -11,14 +11,9 @@ extension XPCDataHandlingProtocol {
 
   /// Convert SecureBytes to Data
   public func convertSecureBytesToData(_ secureBytes: SecureBytes) -> Data {
-    var data=Data()
-
-    // Access the bytes using withUnsafeBytes since there's no direct bytes property
-    secureBytes.withUnsafeBytes { rawBuffer in
-      data=Data(rawBuffer)
-    }
-
-    return data
+    // Convert SecureBytes to [UInt8] and then to Data
+    let bytes = [UInt8](secureBytes)
+    return Data(bytes)
   }
 
   /// Convert byte array to SecureBytes
@@ -28,14 +23,8 @@ extension XPCDataHandlingProtocol {
 
   /// Convert SecureBytes to byte array
   public func convertSecureBytesToBytes(_ secureBytes: SecureBytes) -> [UInt8] {
-    var bytes=[UInt8]()
-
-    // Access the bytes using withUnsafeBytes since there's no direct bytes property
-    secureBytes.withUnsafeBytes { rawBuffer in
-      bytes=Array(rawBuffer)
-    }
-
-    return bytes
+    // SecureBytes can be directly converted to [UInt8] using array conversion
+    return [UInt8](secureBytes)
   }
 
   /// Convert byte array to Data
