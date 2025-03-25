@@ -16,6 +16,7 @@ umbra_swift_library(
         exclude_directories = 1,
     ),
     deps = [
+        "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
         # Dependencies will go here, for example:
         # "//Sources/CoreDTOs",
         # "//Sources/UmbraLogging",
