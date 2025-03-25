@@ -13,7 +13,8 @@ swift_library(
         "//Sources/ErrorHandlingInterfaces",
         "//Sources/SecurityBridgeTypes",
         "//Sources/UmbraCoreTypes",
-        "//Sources/UmbraErrors",
+        # Removing direct dependency on UmbraErrors to break circular dependency
+        # "//Sources/UmbraErrors", 
         "//Sources/UmbraLogging",
     ],
 )

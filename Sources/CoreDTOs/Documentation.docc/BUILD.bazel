@@ -16,9 +16,10 @@ umbra_swift_library(
         exclude_directories = 1,
     ),
     deps = [
-        "//Sources/CoreDTOs",
-        # Other possible dependencies if needed:
-        # "//Sources/UmbraLogging",
+        # "//Sources/CoreDTOs",  # Commenting out to break dependency cycle
+        # Use more targeted dependencies instead:
+        "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraLogging",
         # "@com_github_apple_swift_log//:Logging",
     ],
 )
@@ -33,5 +34,8 @@ umbra_swift_library(
 #         "**/*.swift",
 #         "**/*.docc/**",
 #     ]),
-#     deps = ["//Sources/CoreDTOsDocumentation"],
+#     deps = [
+#         "//Sources/UmbraCoreTypes",
+#         "//Sources/UmbraLogging",
+#     ],
 # )

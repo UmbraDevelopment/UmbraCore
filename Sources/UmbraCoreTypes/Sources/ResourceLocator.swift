@@ -1,4 +1,4 @@
-import UmbraErrors
+import UmbraLogging
 
 /// A Foundation-free representation of a resource location.
 ///
@@ -34,7 +34,7 @@ public struct ResourceLocator: Sendable, Equatable, Hashable {
   ///   - path: The path component
   ///   - query: Optional query parameters
   ///   - fragment: Optional fragment identifier
-  /// - Throws: ResourceLocatorError.invalidPath if the path is empty
+  /// - Throws: ResourceLocatorError if the path is empty
   public init(scheme: String, path: String, query: String?=nil, fragment: String?=nil) throws {
     guard !path.isEmpty else {
       throw ResourceLocatorError.invalidPath
@@ -49,7 +49,7 @@ public struct ResourceLocator: Sendable, Equatable, Hashable {
   /// Create a file system ResourceLocator
   /// - Parameter path: The file system path
   /// - Returns: A ResourceLocator with "file" scheme
-  /// - Throws: ResourceLocatorError.invalidPath if the path is empty
+  /// - Throws: ResourceLocatorError if the path is empty
   public static func fileLocator(path: String) throws -> ResourceLocator {
     try ResourceLocator(scheme: "file", path: path)
   }
@@ -60,7 +60,7 @@ public struct ResourceLocator: Sendable, Equatable, Hashable {
   ///   - path: The path component
   ///   - query: Optional query parameters
   /// - Returns: A ResourceLocator with "http" scheme
-  /// - Throws: ResourceLocatorError.invalidPath if the host or path is invalid
+  /// - Throws: ResourceLocatorError if the host or path is invalid
   public static func httpLocator(
     host: String,
     path: String,
@@ -80,7 +80,7 @@ public struct ResourceLocator: Sendable, Equatable, Hashable {
   ///   - path: The path component
   ///   - query: Optional query parameters
   /// - Returns: A ResourceLocator with "https" scheme
-  /// - Throws: ResourceLocatorError.invalidPath if the host or path is invalid
+  /// - Throws: ResourceLocatorError if the host or path is invalid
   public static func httpsLocator(
     host: String,
     path: String,
@@ -132,4 +132,22 @@ public struct ResourceLocator: Sendable, Equatable, Hashable {
 
     return true
   }
+}
+
+/// Error types specific to ResourceLocator operations
+public enum ResourceLocatorError: Error, Equatable, Sendable {
+  /// The path is invalid or empty
+  case invalidPath
+  
+  /// The requested resource does not exist
+  case resourceNotFound
+  
+  /// Access to the resource is denied
+  case accessDenied
+  
+  /// The scheme is not supported
+  case unsupportedScheme
+  
+  /// General error with message
+  case generalError(String)
 }

@@ -22,11 +22,13 @@ umbra_swift_library(
     deps = [
         ":XPCProtocolsCore",
         "//Sources/SecurityInterfacesBase",
+        "//Sources/CoreDTOs",
+        "//Sources/UmbraLogging",
     ],
 )
 
 # Uncomment if documentation generation is needed
-# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")])
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
 #
 # swift_package(
 #     name = "docc_documentation",

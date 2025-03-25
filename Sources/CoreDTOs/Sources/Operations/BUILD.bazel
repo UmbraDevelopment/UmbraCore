@@ -20,6 +20,7 @@ umbra_swift_library(
         "//Sources/UmbraErrors",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
         "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraLogging",
     ],
 )
 
@@ -33,5 +34,10 @@ umbra_swift_library(
 #         "**/*.swift",
 #         "**/*.docc/**",
 #     ]),
-#     deps = ["//Sources/Operations"],
+#     deps = [
+#         "//Sources/UmbraErrors",
+#         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
+#         "//Sources/UmbraCoreTypes",
+#         "//Sources/UmbraLogging",
+#     ],
 # )

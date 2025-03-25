@@ -18,6 +18,9 @@ umbra_swift_library(
     deps = [
         "//Sources/SecurityBridgeTypes",
         "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraLogging",
+        # Removing circular dependency
+        # "//Sources/CoreDTOs",
     ],
 )
 
@@ -32,10 +35,10 @@ umbra_swift_library(
 #         "**/*.docc/**",
 #     ]),
 #     deps = [
-        # Dependencies will go here, for example:
-        # "//Sources/CoreDTOs",
-        # "//Sources/UmbraLogging",
-        # "@com_github_apple_swift_log//:Logging",
-#        "//Sources/UmbraCoreTypes",
+#         # Dependencies will go here, for example:
+#         "//Sources/SecurityBridgeTypes",
+#         "//Sources/UmbraCoreTypes",
+#         "//Sources/UmbraLogging",
+#         "//Sources/CoreDTOs",
 #     ],
 # )

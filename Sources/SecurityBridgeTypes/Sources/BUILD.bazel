@@ -8,9 +8,9 @@ umbra_swift_library(
         allow_empty = True
     ),
     deps = [
-        # Dependencies will go here, for example:
+        # Removing CoreDTOs dependency to break circular dependency
         # "//Sources/CoreDTOs",
-        # "//Sources/UmbraLogging",
+        "//Sources/UmbraLogging",
         # "@com_github_apple_swift_log//:Logging",
     ],
 )

@@ -17,9 +17,10 @@ umbra_swift_library(
     ),
     deps = [
         # Dependencies will go here, for example:
-        # "//Sources/CoreDTOs",
-        # "//Sources/UmbraLogging",
+        "//Sources/CoreDTOs",
+        "//Sources/UmbraLogging",
         # "@com_github_apple_swift_log//:Logging",
+        "//Sources/UmbraCoreTypes",
     ],
 )
 
@@ -33,5 +34,9 @@ umbra_swift_library(
 #         "**/*.swift",
 #         "**/*.docc/**",
 #     ]),
-#     deps = ["//Sources/DateTime"],
+#     deps = [
+#         "//Sources/CoreDTOs",
+#         "//Sources/UmbraLogging",
+#         "//Sources/UmbraCoreTypes",
+#     ],
 # )

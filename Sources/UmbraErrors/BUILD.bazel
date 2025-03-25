@@ -13,9 +13,10 @@ umbra_swift_library(
         "//Sources/UmbraErrors/Mapping",
         "//Sources/UmbraErrors/DTOs",
         # Additional dependencies as needed:
-        # "//Sources/CoreDTOs",
-        # "//Sources/UmbraLogging",
+        # "//Sources/CoreDTOs",  # Commented out to break dependency cycle
+        "//Sources/UmbraLogging",
         # "@com_github_apple_swift_log//:Logging",
+        "//Sources/UmbraCoreTypes",
     ],
 )
 
@@ -29,5 +30,12 @@ umbra_swift_library(
 #         "**/*.swift",
 #         "**/*.docc/**",
 #     ]),
-#     deps = ["//Sources/UmbraErrors"],
+#     deps = [
+#         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
+#         "//Sources/UmbraErrors/Domains",
+#         "//Sources/UmbraErrors/Mapping",
+#         "//Sources/UmbraErrors/DTOs",
+#         "//Sources/UmbraLogging",
+#         "//Sources/UmbraCoreTypes",
+#     ],
 # )

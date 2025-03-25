@@ -16,6 +16,7 @@ umbra_swift_library(
         "//Sources/SecurityBridgeTypes", 
         "//Sources/UmbraErrors",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
+        "//Sources/UmbraLogging",
     ],
 )
 

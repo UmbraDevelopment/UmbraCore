@@ -1,4 +1,5 @@
-import Foundation
+// Removing Foundation dependency as it's not required for this protocol
+// import Foundation
 
 /// Protocol defining the logging interface
 public protocol LoggingProtocol: Sendable {

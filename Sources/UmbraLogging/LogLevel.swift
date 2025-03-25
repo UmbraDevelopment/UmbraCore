@@ -1,4 +1,5 @@
-import Foundation
+// Removing Foundation dependency as it's not required for this enum
+// import Foundation
 
 /// Represents the severity level of a log message.
 ///

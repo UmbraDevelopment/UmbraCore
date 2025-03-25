@@ -18,8 +18,10 @@ swift_library(
     module_name = "UmbraCoreTypes",
     visibility = ["//visibility:public"],
     deps = [
-        "//Sources/UmbraErrors",
-        "//Sources/UmbraErrors/Domains",
+        # Removing UmbraErrors dependencies to break the circular dependency
+        # "//Sources/UmbraErrors",
+        # "//Sources/UmbraErrors/Domains",
+        "//Sources/UmbraLogging",
     ],
 )
 
@@ -33,5 +35,9 @@ swift_library(
 #         "**/*.swift",
 #         "**/*.docc/**",
 #     ], allow_empty = False),
-#     deps = ["//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes"],
+#     deps = [
+#         # "//Sources/UmbraErrors",  # Removed to break circular dependency
+#         # "//Sources/UmbraErrors/Domains",  # Removed to break circular dependency
+#         "//Sources/UmbraLogging",
+#     ],
 # )

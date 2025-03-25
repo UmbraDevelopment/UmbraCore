@@ -16,14 +16,15 @@ umbra_swift_library(
         exclude_directories = 1,
     ),
     deps = [
-        "//Sources/UmbraErrors:UmbraErrors",
-        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
+        # Removing UmbraErrors dependencies to break circular dependency
+        # "//Sources/UmbraErrors",
+        # "//Sources/UmbraErrors/Core:UmbraErrorsCore",
         "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
         "//Sources/ErrorHandling",
         "//Sources/ErrorHandlingInterfaces",
         "//Sources/ErrorHandlingDomains",
         # Other potential dependencies if needed:
-        # "//Sources/UmbraLogging",
+        "//Sources/UmbraLogging",
         # "@com_github_apple_swift_log//:Logging",
     ],
 )

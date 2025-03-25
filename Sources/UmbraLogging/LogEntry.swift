@@ -1,9 +1,10 @@
-import Foundation
+// Removing Foundation dependency
+// import Foundation
 
 /// Represents a log entry in the system
 public struct LogEntry: Sendable {
   /// The timestamp when the log entry was created
-  public let timestamp: Date
+  public let timestamp: TimePointAdapter
 
   /// The log level
   public let level: UmbraLogLevel
@@ -19,10 +20,10 @@ public struct LogEntry: Sendable {
   ///   - level: The log level
   ///   - message: The message to log
   ///   - metadata: Optional metadata
-  public init(level: UmbraLogLevel, message: String, metadata: LogMetadata?=nil) {
-    timestamp=Date()
-    self.level=level
-    self.message=message
-    self.metadata=metadata
+  public init(level: UmbraLogLevel, message: String, metadata: LogMetadata? = nil) {
+    timestamp = TimePointAdapter.now()
+    self.level = level
+    self.message = message
+    self.metadata = metadata
   }
 }

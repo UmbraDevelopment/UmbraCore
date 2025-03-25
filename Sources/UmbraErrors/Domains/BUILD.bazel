@@ -12,9 +12,10 @@ umbra_swift_library(
         "//Sources/ErrorHandling",
         "//Sources/ErrorHandlingInterfaces",
         # Additional dependencies as needed:
-        # "//Sources/CoreDTOs",
-        # "//Sources/UmbraLogging",
+        # "//Sources/CoreDTOs",  # Commented out to break dependency cycle
+        "//Sources/UmbraLogging",
         # "@com_github_apple_swift_log//:Logging",
+        "//Sources/UmbraCoreTypes",
     ],
     visibility = ["//visibility:public"],
 )
@@ -36,5 +37,11 @@ alias(
 #         "**/*.swift",
 #         "**/*.docc/**",
 #     ]),
-#     deps = ["//Sources/UmbraErrors/Domains"],
+#     deps = [
+#         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
+#         "//Sources/ErrorHandling",
+#         "//Sources/ErrorHandlingInterfaces",
+#         "//Sources/UmbraLogging",
+#         "//Sources/UmbraCoreTypes",
+#     ],
 # )
