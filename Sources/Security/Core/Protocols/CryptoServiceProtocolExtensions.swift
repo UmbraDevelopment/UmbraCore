@@ -1,7 +1,6 @@
 import UmbraCoreTypes
 import UmbraErrors
-import SecurityProtocolsCore.DTOs
-import Errors
+import Types
 
 // MARK: - DTO Extensions for CryptoServiceProtocol
 
@@ -14,23 +13,22 @@ extension CryptoServiceProtocol {
   ///   - key: Key to use for encryption
   ///   - config: Configuration options
   /// - Returns: Result as SecurityResultDTO
-  public func encryptSymmetricDTO(
+  public func encryptWithConfigurationDTO(
     data: SecureBytes,
     key: SecureBytes,
     config: SecurityConfigDTO
   ) async -> SecurityResultDTO {
-    let result = await encryptSymmetric(
+    let result = await encryptWithConfiguration(
       data: data,
       key: key,
-      algorithm: config.algorithm,
-      nonce: config.nonce
+      config: config
     )
 
     switch result {
       case let .success(encryptedData):
-        return SecurityResultDTO(data: encryptedData)
+        return SecurityResultDTO(status: .success, data: encryptedData)
       case let .failure(error):
-        return SecurityResultDTO(success: false, error: error)
+        return SecurityResultDTO(status: .failure, error: error)
     }
   }
 
@@ -40,48 +38,39 @@ extension CryptoServiceProtocol {
   ///   - key: Key to use for decryption
   ///   - config: Configuration options
   /// - Returns: Result as SecurityResultDTO
-  public func decryptSymmetricDTO(
+  public func decryptWithConfigurationDTO(
     data: SecureBytes,
     key: SecureBytes,
     config: SecurityConfigDTO
   ) async -> SecurityResultDTO {
-    let result = await decryptSymmetric(
+    let result = await decryptWithConfiguration(
       data: data,
       key: key,
-      algorithm: config.algorithm,
-      nonce: config.nonce
+      config: config
     )
 
     switch result {
       case let .success(decryptedData):
-        return SecurityResultDTO(data: decryptedData)
+        return SecurityResultDTO(status: .success, data: decryptedData)
       case let .failure(error):
-        return SecurityResultDTO(success: false, error: error)
+        return SecurityResultDTO(status: .failure, error: error)
     }
   }
 
-  /// Encrypts data using an asymmetric key (SecurityResultDTO version)
+  /// Hash data (SecurityResultDTO version)
   /// - Parameters:
-  ///   - data: Data to encrypt
-  ///   - publicKey: Public key for encryption
-  ///   - config: Configuration options
+  ///   - data: Data to hash
   /// - Returns: Result as SecurityResultDTO
-  public func encryptAsymmetricDTO(
-    data: SecureBytes,
-    publicKey: SecureBytes,
-    config: SecurityConfigDTO
+  public func hashDTO(
+    data: SecureBytes
   ) async -> SecurityResultDTO {
-    let result = await encryptAsymmetric(
-      data: data,
-      publicKey: publicKey,
-      algorithm: config.algorithm
-    )
+    let result = await hash(data: data)
 
     switch result {
-      case let .success(encryptedData):
-        return SecurityResultDTO(data: encryptedData)
+      case let .success(hashValue):
+        return SecurityResultDTO(status: .success, data: hashValue)
       case let .failure(error):
-        return SecurityResultDTO(success: false, error: error)
+        return SecurityResultDTO(status: .failure, error: error)
     }
   }
 }

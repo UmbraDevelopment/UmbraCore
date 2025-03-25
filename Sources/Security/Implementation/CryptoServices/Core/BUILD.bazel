@@ -1,0 +1,19 @@
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
+
+# Core cryptographic services implementation
+# This module contains the core error types and mappers for cryptographic operations
+umbra_swift_library(
+    name = "Core",
+    srcs = glob(
+        ["**/*.swift"],
+        exclude = ["**/*.generated.swift"],
+    ),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//Sources/Security/Core/Errors",
+        "//Sources/Security/Core/Protocols",
+        "//Sources/Security/Core/Types",
+        "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraErrors",
+    ],
+)

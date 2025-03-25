@@ -14,6 +14,11 @@ public struct SecurityConfigDTO: Sendable, Equatable {
 
   /// Initialization vector or nonce if required
   public let initializationVector: SecureBytes?
+  
+  /// Nonce for cryptographic operations (alias for initializationVector with clearer naming)
+  public var nonce: SecureBytes? { 
+    return initializationVector 
+  }
 
   /// Additional authenticated data for AEAD ciphers
   public let additionalAuthenticatedData: SecureBytes?

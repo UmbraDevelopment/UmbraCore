@@ -1,5 +1,5 @@
 import UmbraCoreTypes
-import SecurityProtocolsCore.Types
+import Errors
 
 /// FoundationIndependent representation of a security operation result.
 /// This data transfer object encapsulates the outcome of security-related operations
@@ -20,7 +20,7 @@ public struct SecurityResultDTO: Sendable, Equatable {
   public let errorMessage: String?
 
   /// Security error type
-  public let error: SecurityProtocolError?
+  public let error: Errors.SecurityProtocolError?
 
   // MARK: - Initializers
 
@@ -49,79 +49,44 @@ public struct SecurityResultDTO: Sendable, Equatable {
   ///   - data: Optional result data
   ///   - errorCode: Optional error code
   ///   - errorMessage: Optional error message
-  ///   - error: Optional protocol error
-  ///   - errorDetails: Optional additional error details
+  ///   - error: Optional security protocol error
   public init(
     success: Bool,
     data: SecureBytes?=nil,
     errorCode: Int?=nil,
     errorMessage: String?=nil,
-    error: SecurityProtocolError?=nil,
-    errorDetails: String?=nil
+    error: Errors.SecurityProtocolError?=nil
   ) {
     self.success=success
     self.data=data
+    self.errorCode=errorCode
+    self.errorMessage=errorMessage
     self.error=error
-
-    // Handle error codes and messages
-    if let error {
-      // Extract error code and message from the error
-      var code: Int
-      var message: String
-
-      switch error {
-        case let .internalError(msg):
-          code=500
-          message=msg
-        case let .unsupportedOperation(name):
-          code=501
-          message="Operation not supported: \(name)"
-        case let .serviceError(c, msg):
-          code=c
-          message=msg
-      }
-
-      // If additional details are provided, append them to the error message
-      if let details=errorDetails, !details.isEmpty {
-        message += " (\(details))"
-      }
-
-      self.errorCode=code
-      self.errorMessage=message
-    } else {
-      // Use provided error code and message if no error object
-      self.errorCode=errorCode
-
-      // Combine provided error message with details if both exist
-      if let message=errorMessage, let details=errorDetails, !details.isEmpty {
-        self.errorMessage=message + " (\(details))"
-      } else {
-        self.errorMessage=errorMessage ?? errorDetails
-      }
-    }
   }
 
-  // MARK: - Static Constructors
+  // MARK: - Factory Methods
 
-  /// Create a successful result
-  /// - Parameter data: Optional result data
-  /// - Returns: A success result DTO
-  public static func success(withData data: SecureBytes?=nil) -> SecurityResultDTO {
-    if let data {
-      SecurityResultDTO(data: data)
-    } else {
-      SecurityResultDTO()
-    }
+  /// Create a successful result with data
+  /// - Parameter data: Result data
+  /// - Returns: SecurityResultDTO instance
+  public static func success(data: SecureBytes) -> SecurityResultDTO {
+    SecurityResultDTO(data: data)
   }
 
-  /// Create a failure result
+  /// Create a successful result without data
+  /// - Returns: SecurityResultDTO instance
+  public static func success() -> SecurityResultDTO {
+    SecurityResultDTO()
+  }
+
+  /// Create a failed result with an error message
   /// - Parameters:
-  ///   - code: Error code
   ///   - message: Error message
-  /// - Returns: A failure result DTO
+  ///   - code: Optional error code
+  /// - Returns: SecurityResultDTO instance
   public static func failure(
-    code: Int,
-    message: String
+    message: String,
+    code: Int=0
   ) -> SecurityResultDTO {
     SecurityResultDTO(
       success: false,
@@ -130,40 +95,67 @@ public struct SecurityResultDTO: Sendable, Equatable {
     )
   }
 
-  /// Create a failure result from a protocol error
-  /// - Parameters:
-  ///   - error: The protocol error
-  ///   - details: Additional details
-  /// - Returns: A failure result DTO
+  /// Create a failed result with a SecurityProtocolError
+  /// - Parameter error: Security protocol error
+  /// - Returns: SecurityResultDTO instance
   public static func failure(
-    error: SecurityProtocolError,
-    details: String?=nil
+    error: Errors.SecurityProtocolError
   ) -> SecurityResultDTO {
-    SecurityResultDTO(
+    let message: String
+    
+    switch error {
+    case .internalError(let errorMessage):
+      message = "Internal error: \(errorMessage)"
+    case .invalidInput(let errorMessage):
+      message = "Invalid input: \(errorMessage)"
+    case .unsupportedOperation(let name):
+      message = "Unsupported operation: \(name)"
+    case .keyManagementError(let errorMessage):
+      message = "Key management error: \(errorMessage)"
+    case .cryptographicError(let errorMessage):
+      message = "Cryptographic error: \(errorMessage)"
+    case .authenticationFailed(let errorMessage):
+      message = "Authentication failed: \(errorMessage)"
+    case .storageError(let errorMessage):
+      message = "Storage error: \(errorMessage)"
+    case .configurationError(let errorMessage):
+      message = "Configuration error: \(errorMessage)"
+    case .securityError(let errorMessage):
+      message = "Security error: \(errorMessage)"
+    case .serviceError(let code, let errorMessage):
+      message = "Service error (\(code)): \(errorMessage)"
+    }
+    
+    return SecurityResultDTO(
       success: false,
-      error: error,
-      errorDetails: details
+      errorMessage: message,
+      error: error
     )
   }
 
-  // MARK: - Equatable
+  // MARK: - Conversion Methods
 
-  public static func == (lhs: SecurityResultDTO, rhs: SecurityResultDTO) -> Bool {
-    // Compare success status
-    guard lhs.success == rhs.success else { return false }
-
-    // For successful results, compare data
-    if lhs.success {
-      if let lhsData=lhs.data, let rhsData=rhs.data {
-        return lhsData == rhsData
-      } else {
-        // If either has data and the other doesn't, they're not equal
-        return lhs.data == nil && rhs.data == nil
-      }
+  /// Convert to Result<SecureBytes, SecurityProtocolError>
+  /// - Returns: Swift Result type with SecureBytes or SecurityProtocolError
+  public func toResult() -> Result<SecureBytes, Errors.SecurityProtocolError> {
+    if success, let data = data {
+      return .success(data)
+    } else if let error = error {
+      return .failure(error)
     } else {
-      // For failure results, compare error information
-      return lhs.errorCode == rhs.errorCode &&
-        lhs.errorMessage == rhs.errorMessage
+      return .failure(.internalError(errorMessage ?? "Unknown error"))
+    }
+  }
+
+  /// Convert to Result<Void, SecurityProtocolError>
+  /// - Returns: Swift Result type with Void or SecurityProtocolError
+  public func toVoidResult() -> Result<Void, Errors.SecurityProtocolError> {
+    if success {
+      return .success(())
+    } else if let error = error {
+      return .failure(error)
+    } else {
+      return .failure(.internalError(errorMessage ?? "Unknown error"))
     }
   }
 }
