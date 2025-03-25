@@ -9,7 +9,6 @@ umbra_swift_library(
         "//Sources/UmbraErrors/Domains",
         "//Sources/UmbraErrors/DTOs",
         "//Sources/UmbraErrors/Mapping",
-        "//Sources/UmbraErrors/Utilities",
         "//Sources/CoreErrors",
     ],
     visibility = ["//visibility:public"],

@@ -8,11 +8,13 @@ umbra_swift_library(
         allow_empty = True
     ),
     deps = [
-        # Dependencies will go here, for example:
-        # "//Sources/CoreDTOs",
-        # "//Sources/UmbraLogging",
-        # "@com_github_apple_swift_log//:Logging",
+        # Swift macro dependencies from the Swift package
+        "@swiftpkg_swift_syntax//:SwiftCompilerPlugin",
+        "@swiftpkg_swift_syntax//:SwiftSyntax",
+        "@swiftpkg_swift_syntax//:SwiftSyntaxBuilder",
+        "@swiftpkg_swift_syntax//:SwiftSyntaxMacros",
     ],
+    visibility = ["//visibility:public"],
 )
 
 # Uncomment if documentation generation is needed

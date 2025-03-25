@@ -38,7 +38,8 @@ let package=Package(
   ],
   dependencies: [
     .package(url: "https://github.com/krzyzanowskim/CryptoSwift.git", from: "1.8.0"),
-    .package(url: "https://github.com/SwiftyBeaver/SwiftyBeaver.git", from: "2.0.0")
+    .package(url: "https://github.com/SwiftyBeaver/SwiftyBeaver.git", from: "2.0.0"),
+    .package(url: "https://github.com/apple/swift-syntax.git", from: "509.0.0")
   ],
   targets: [
     // Base Types

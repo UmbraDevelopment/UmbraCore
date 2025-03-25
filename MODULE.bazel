@@ -29,6 +29,7 @@ use_repo(
     "swift_deps_info",  # For Gazelle plugin
     "swift_package",
     "swiftpkg_cryptoswift",
+    "swiftpkg_swift_syntax",
     "swiftpkg_swiftybeaver",
 )
 
