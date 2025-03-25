@@ -10,7 +10,7 @@ public enum SecurityProtocolError: Error, Equatable, Sendable {
   /// Invalid input was provided
   case invalidInput(String)
   
-  /// Operation is not supported by the implementation
+  /// Operation is not supported
   case unsupportedOperation(name: String)
   
   /// Key management error occurred
@@ -30,6 +30,9 @@ public enum SecurityProtocolError: Error, Equatable, Sendable {
   
   /// General security error with explanation
   case securityError(String)
+  
+  /// Service error with code (for compatibility with legacy error types)
+  case serviceError(code: Int, message: String)
   
   /// Error comparison
   public static func == (lhs: SecurityProtocolError, rhs: SecurityProtocolError) -> Bool {
@@ -52,6 +55,8 @@ public enum SecurityProtocolError: Error, Equatable, Sendable {
       return lmsg == rmsg
     case let (.securityError(lmsg), .securityError(rmsg)):
       return lmsg == rmsg
+    case let (.serviceError(lcode, lmsg), .serviceError(rcode, rmsg)):
+      return lcode == rcode && lmsg == rmsg
     default:
       return false
     }
@@ -78,6 +83,8 @@ public enum SecurityProtocolError: Error, Equatable, Sendable {
       return "Configuration error: \(message)"
     case .securityError(let message):
       return "Security error: \(message)"
+    case let .serviceError(code, message):
+      return "Service error (\(code)): \(message)"
     }
   }
 }
