@@ -1,10 +1,10 @@
 
-import UmbraErrors
-import UmbraErrorsCore
 import Foundation
 import SecurityBridge
 import SecurityProtocolsCore
 import UmbraCoreTypes
+import UmbraErrors
+import UmbraErrorsCore
 
 /// Security Bridge examples demonstrating how to use the security operations.
 enum SecurityBridgeDTOExample {

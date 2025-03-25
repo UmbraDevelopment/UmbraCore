@@ -1,10 +1,7 @@
-
-
-
-import UmbraErrors
-import UmbraErrorsCore
 import SecurityInterfacesProtocols
 import UmbraCoreTypes
+import UmbraErrors
+import UmbraErrorsCore
 import XPCProtocolsCore
 
 /// Base protocol for security providers

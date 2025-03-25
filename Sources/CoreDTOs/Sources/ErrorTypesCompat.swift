@@ -1,9 +1,6 @@
-
-
-
+import Foundation
 import UmbraErrors
 import UmbraErrorsCore
-import Foundation
 
 // This file provides compatibility functions to transition from legacy errors to ErrorHandling
 // These bridge between the old API and the new API structure

@@ -1,10 +1,7 @@
-
-
-
-import UmbraErrors
-import UmbraErrorsCore
 import Foundation
 import UmbraCoreTypes
+import UmbraErrors
+import UmbraErrorsCore
 import XPCProtocolsCore
 
 /// Base protocol for all XPC services

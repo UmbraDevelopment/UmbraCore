@@ -1,7 +1,7 @@
-import UmbraErrors
-import UmbraErrorsCore
 import Foundation
 import UmbraCoreTypes
+import UmbraErrors
+import UmbraErrorsCore
 
 // Local type declarations to replace imports
 // These replace the removed ErrorHandling and ErrorHandlingDomains imports

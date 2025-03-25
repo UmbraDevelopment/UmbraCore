@@ -1,7 +1,7 @@
 @testable import CoreErrors
 
-import UmbraErrorsCore
 import UmbraErrors
+import UmbraErrorsCore
 import XCTest
 
 /// Tests focused on cross-domain error handling and centralised error functionality

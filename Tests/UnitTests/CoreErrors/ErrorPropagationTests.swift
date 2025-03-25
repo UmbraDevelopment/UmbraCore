@@ -1,7 +1,7 @@
 @testable import CoreErrors
 
-import UmbraErrorsCore
 import UmbraErrors
+import UmbraErrorsCore
 import XCTest
 
 final class ErrorPropagationTests: XCTestCase {

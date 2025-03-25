@@ -1,8 +1,6 @@
-
-
+import Foundation
 import UmbraErrors
 import UmbraErrorsCore
-import Foundation
 
 /// Result of an operation that can succeed or fail
 public enum OperationResultDTO<T> {

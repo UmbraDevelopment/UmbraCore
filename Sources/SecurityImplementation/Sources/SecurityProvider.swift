@@ -136,7 +136,7 @@ public final class SecurityProvider: SecurityProviderProtocol {
 
    - Parameter options: Configuration options as a dictionary
    - Returns: A new security configuration
-   
+
    ## Usage
    ```swift
    let config = provider.createSecureConfig(options: [

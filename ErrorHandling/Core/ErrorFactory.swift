@@ -1,7 +1,7 @@
 
+import Foundation
 import UmbraErrors
 import UmbraErrorsCore
-import Foundation
 
 /// Factory functions for creating errors with source attribution
 public enum ErrorFactory {

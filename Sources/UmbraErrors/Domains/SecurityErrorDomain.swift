@@ -20,24 +20,24 @@ public enum SecurityErrorDomain: String, CaseIterable, Sendable {
   /// Returns a human-readable description for this error code
   var displayDescription: String {
     switch self {
-    case .bookmarkError:
-      return "Bookmark error"
-    case .accessError:
-      return "Access error"
-    case .encryptionFailed:
-      return "Encryption failed"
-    case .decryptionFailed:
-      return "Decryption failed"
-    case .invalidKey:
-      return "Invalid key"
-    case .keyGenerationFailed:
-      return "Key generation failed"
-    case .certificateInvalid:
-      return "Certificate invalid"
-    case .unauthorisedAccess:
-      return "Unauthorised access"
-    case .secureStorageFailure:
-      return "Secure storage failure"
+      case .bookmarkError:
+        "Bookmark error"
+      case .accessError:
+        "Access error"
+      case .encryptionFailed:
+        "Encryption failed"
+      case .decryptionFailed:
+        "Decryption failed"
+      case .invalidKey:
+        "Invalid key"
+      case .keyGenerationFailed:
+        "Key generation failed"
+      case .certificateInvalid:
+        "Certificate invalid"
+      case .unauthorisedAccess:
+        "Unauthorised access"
+      case .secureStorageFailure:
+        "Secure storage failure"
     }
   }
 }
@@ -58,12 +58,12 @@ public struct SecurityError: UmbraError {
 
   /// Human-readable description
   public var description: String {
-    return customDescription ?? errorCode.displayDescription
+    customDescription ?? errorCode.displayDescription
   }
 
   /// Human-readable description of the error
   public var errorDescription: String {
-    let baseDescription = description
+    let baseDescription=description
     return underlyingError != nil ?
       "\(baseDescription) (Caused by: \(String(describing: underlyingError)))" : baseDescription
   }
@@ -155,18 +155,18 @@ extension SecurityError {
     line: Int=#line,
     underlyingError: Error?=nil
   ) -> SecurityError {
-    var contextDict: [String: Any] = [
+    var contextDict: [String: Any]=[
       "file": file,
       "function": function,
       "line": line
     ]
-    if let message = message {
-      contextDict["details"] = message
+    if let message {
+      contextDict["details"]=message
     }
-    
-    let context = ErrorContext(contextDict)
-    let source = ErrorSource(file: file, line: line, function: function)
-    
+
+    let context=ErrorContext(contextDict)
+    let source=ErrorSource(file: file, line: line, function: function)
+
     return SecurityError(
       code: .bookmarkError,
       description: message,
@@ -191,18 +191,18 @@ extension SecurityError {
     line: Int=#line,
     underlyingError: Error?=nil
   ) -> SecurityError {
-    var contextDict: [String: Any] = [
+    var contextDict: [String: Any]=[
       "file": file,
       "function": function,
       "line": line
     ]
-    if let message = message {
-      contextDict["details"] = message
+    if let message {
+      contextDict["details"]=message
     }
-    
-    let context = ErrorContext(contextDict)
-    let source = ErrorSource(file: file, line: line, function: function)
-    
+
+    let context=ErrorContext(contextDict)
+    let source=ErrorSource(file: file, line: line, function: function)
+
     return SecurityError(
       code: .accessError,
       description: message,
@@ -222,7 +222,7 @@ extension SecurityError {
 /// - Returns: The error with source information
 public func makeError<E: UmbraError>(_ error: E, file: String, line: Int, function: String) -> E {
   // Create source information
-  let source = ErrorSource(file: file, line: line, function: function)
+  let source=ErrorSource(file: file, line: line, function: function)
 
   // Return error with source information
   return error.with(source: source)

@@ -1,9 +1,6 @@
-
-
-
+import Foundation
 import UmbraErrors
 import UmbraErrorsCore
-import Foundation
 
 // Removed SecurityInterfaces as it appears to be unavailable
 import SecurityTypes

@@ -120,7 +120,7 @@ final class ResourceLocatorTests: XCTestCase {
 
   func testResourceLocatorErrorToUmbraError() {
     // Given ResourceLocatorError values
-    let errors: [ResourceLocatorError] = [
+    let errors: [ResourceLocatorError]=[
       .invalidPath,
       .resourceNotFound,
       .accessDenied,
@@ -130,30 +130,33 @@ final class ResourceLocatorTests: XCTestCase {
 
     // When mapping to UmbraErrors
     for error in errors {
-      let umbralError = error.toUmbraError()
+      let umbralError=error.toUmbraError()
 
       // Then it should produce the correct UmbraError type
-      XCTAssertTrue(umbralError is ResourceError, "Expected ResourceError but got \(type(of: umbralError))")
-      
-      guard let resourceError = umbralError as? ResourceError else {
+      XCTAssertTrue(
+        umbralError is ResourceError,
+        "Expected ResourceError but got \(type(of: umbralError))"
+      )
+
+      guard let resourceError=umbralError as? ResourceError else {
         XCTFail("Could not cast to ResourceError")
         continue
       }
-      
+
       // Verify specific error properties based on the original error
       switch error {
         case .invalidPath:
           XCTAssertEqual(resourceError.code, ResourceLocatorErrorDomain.invalidPath.rawValue)
           XCTAssertEqual(resourceError.type, .invalidResource)
-          
+
         case .resourceNotFound:
           XCTAssertEqual(resourceError.code, ResourceLocatorErrorDomain.resourceNotFound.rawValue)
           XCTAssertEqual(resourceError.type, .notFound)
-          
+
         case .accessDenied:
           XCTAssertEqual(resourceError.code, ResourceLocatorErrorDomain.accessDenied.rawValue)
           XCTAssertEqual(resourceError.type, .notAvailable)
-          
+
         case .unsupportedScheme, .generalError:
           // These would map to some appropriate ResourceError type in a real implementation
           // For now we'll just verify they return a ResourceError

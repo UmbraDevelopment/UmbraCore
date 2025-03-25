@@ -2,9 +2,9 @@
 import Foundation
 
 // Internal modules
+import RepositoriesTypes
 import UmbraErrors
 import UmbraErrorsCore
-import RepositoriesTypes
 import UmbraLogging
 
 /// Extension for repository locking functionality

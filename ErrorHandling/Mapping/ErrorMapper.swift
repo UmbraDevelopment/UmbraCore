@@ -1,7 +1,7 @@
 
+import Foundation
 import UmbraErrors
 import UmbraErrorsCore
-import Foundation
 
 /// A protocol for mapping between error types
 public protocol ErrorMapper {

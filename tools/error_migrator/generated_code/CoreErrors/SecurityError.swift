@@ -1,7 +1,7 @@
 
+import Foundation
 import UmbraErrors
 import UmbraErrorsCore
-import Foundation
 
 /// SecurityError error type
 public enum SecurityError: Error {

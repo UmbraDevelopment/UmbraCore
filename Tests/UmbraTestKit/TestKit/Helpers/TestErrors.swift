@@ -1,7 +1,6 @@
-
+import Foundation
 import UmbraErrors
 import UmbraErrorsCore
-import Foundation
 
 /// Test error type for security error handling tests
 public enum SecTestError: Error, CustomStringConvertible, Equatable {

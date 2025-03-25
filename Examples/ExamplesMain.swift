@@ -1,7 +1,7 @@
 
+import Foundation
 import UmbraErrors
 import UmbraErrorsCore
-import Foundation
 
 // This is the main entry point for the Examples executable
 @main

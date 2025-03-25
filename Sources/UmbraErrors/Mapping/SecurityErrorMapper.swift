@@ -1,7 +1,6 @@
-
+import Domains
 import Foundation
 import UmbraErrorsCore
-import Domains
 
 /// Generic security error protocol for use in error mappers
 /// This allows us to decouple from specific implementations
@@ -12,8 +11,8 @@ public protocol SecurityErrorType: Error, CustomStringConvertible {
 
 /// Mapper from the enhanced SecurityError to a basic security error
 public struct EnhancedToBasicSecurityErrorMapper<T: SecurityErrorType>: ErrorMapper {
-  public typealias SourceError = Domains.SecurityError
-  public typealias TargetError = T
+  public typealias SourceError=Domains.SecurityError
+  public typealias TargetError=T
 
   public init() {}
 
@@ -28,8 +27,8 @@ public struct EnhancedToBasicSecurityErrorMapper<T: SecurityErrorType>: ErrorMap
 
 /// Mapper from a basic security error to the enhanced SecurityError
 public struct BasicToEnhancedSecurityErrorMapper<S: SecurityErrorType>: ErrorMapper {
-  public typealias SourceError = S
-  public typealias TargetError = Domains.SecurityError
+  public typealias SourceError=S
+  public typealias TargetError=Domains.SecurityError
 
   public init() {}
 

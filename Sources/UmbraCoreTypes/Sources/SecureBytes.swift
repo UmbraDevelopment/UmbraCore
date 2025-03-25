@@ -103,7 +103,8 @@ public struct SecureBytes: Sendable, Equatable, Hashable, Codable {
 
   /// Create a SecureBytes instance from a hex string
   /// - Parameter hexString: The hexadecimal string to convert
-  /// - Throws: `UmbraErrors.SecureBytesError.invalidHexString` if the string is not valid hexadecimal
+  /// - Throws: `UmbraErrors.SecureBytesError.invalidHexString` if the string is not valid
+  /// hexadecimal
   public init(hexString: String) throws {
     // Validate the hex string has an even number of characters
     guard hexString.count % 2 == 0 else {
@@ -161,7 +162,8 @@ public struct SecureBytes: Sendable, Equatable, Hashable, Codable {
   ///
   /// - Parameter position: The position of the byte to access.
   /// - Returns: The byte at the specified position.
-  /// - Throws: `UmbraErrors.SecureBytesError.outOfBounds` if the position is outside the valid range.
+  /// - Throws: `UmbraErrors.SecureBytesError.outOfBounds` if the position is outside the valid
+  /// range.
   public func byte(at position: Int) throws -> UInt8 {
     guard position >= 0, position < storage.count else {
       throw UmbraErrors.SecureBytesError.outOfBounds

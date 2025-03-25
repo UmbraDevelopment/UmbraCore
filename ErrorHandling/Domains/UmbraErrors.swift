@@ -1,7 +1,7 @@
 
+import Foundation
 import UmbraErrors
 import UmbraErrorsCore
-import Foundation
 
 /// Root namespace for all UmbraCore error domains
 /// Acts as a container for domain-specific error types

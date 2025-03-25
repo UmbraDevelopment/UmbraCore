@@ -23,6 +23,6 @@
  ```
  */
 
+@_exported import UmbraCoreTypes
 @_exported import UmbraErrors
 @_exported import UmbraErrorsCore
-@_exported import UmbraCoreTypes

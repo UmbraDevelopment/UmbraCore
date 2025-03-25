@@ -18,11 +18,11 @@
  * Current implementation is a placeholder for demonstration purposes
  */
 
-import UmbraErrors
-import UmbraErrorsCore
 import Foundation
 import SecurityProtocolsCore
 import UmbraCoreTypes
+import UmbraErrors
+import UmbraErrorsCore
 
 /// Key type enumeration
 public enum KeyType: String, Sendable, Equatable, CaseIterable {

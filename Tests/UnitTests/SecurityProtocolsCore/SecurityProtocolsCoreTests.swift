@@ -1,8 +1,7 @@
-
 @testable import SecurityProtocolsCore
+import UmbraCoreTypes
 import UmbraErrors
 import UmbraErrorsCore
-import UmbraCoreTypes
 import XCTest
 
 class SecurityProtocolsCoreTests: XCTestCase {

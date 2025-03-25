@@ -1,7 +1,7 @@
 
+import Foundation
 import UmbraErrors
 import UmbraErrorsCore
-import Foundation
 
 extension UmbraErrors.Security {
   /// Protocol-friendly security errors without Foundation dependencies

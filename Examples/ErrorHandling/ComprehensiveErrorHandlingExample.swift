@@ -1,6 +1,6 @@
+import Foundation
 import UmbraErrors
 import UmbraErrorsCore
-import Foundation
 import UmbraLogging
 
 // Removed UmbraLoggingAdapters import to fix library evolution issues

@@ -1,7 +1,7 @@
 
+import Foundation
 import UmbraErrors
 import UmbraErrorsCore
-import Foundation
 
 /// A generic implementation of UmbraError used for wrapping arbitrary errors
 /// and for creating simple errors without defining custom types

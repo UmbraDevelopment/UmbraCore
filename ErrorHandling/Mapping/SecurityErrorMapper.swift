@@ -1,8 +1,8 @@
 
 
+import Foundation
 import UmbraErrors
 import UmbraErrorsCore
-import Foundation
 
 /// Mapper for security-related errors to the UmbraErrors.Security namespace
 public struct SecurityErrorMapper: ErrorMapper {

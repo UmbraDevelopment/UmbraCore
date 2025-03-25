@@ -1,10 +1,10 @@
-import UmbraErrors
-import UmbraErrorsCore
 import CoreServicesTypes
 import Foundation
 import SecurityProtocolsCore
 import SecurityTypes
 import UmbraCoreTypes
+import UmbraErrors
+import UmbraErrorsCore
 
 // Local type declarations to replace imports
 // These replace the removed ErrorHandling and ErrorHandlingDomains imports
@@ -294,7 +294,8 @@ public actor SecurityService: UmbraService, SecurityProtocolsCore.SecurityProvid
 
     // Start accessing the path
     guard try await startAccessing(path: path) else {
-      throw UmbraErrors.Storage.Core.accessDenied(reason: "Security-scoped resource access failed for path: \(path)")
+      throw UmbraErrors.Storage.Core
+        .accessDenied(reason: "Security-scoped resource access failed for path: \(path)")
     }
 
     defer {

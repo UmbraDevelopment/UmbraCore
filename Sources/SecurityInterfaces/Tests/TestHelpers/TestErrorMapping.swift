@@ -1,7 +1,6 @@
-
+import Foundation
 import UmbraErrors
 import UmbraErrorsCore
-import Foundation
 
 /// Provides isolated error mapping functionality for test code
 /// Prevents direct imports of multiple conflicting modules in test files

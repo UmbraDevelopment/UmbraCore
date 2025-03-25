@@ -1,7 +1,7 @@
 // Standard modules
+import Foundation
 import UmbraErrors
 import UmbraErrorsCore
-import Foundation
 
 // Internal modules
 

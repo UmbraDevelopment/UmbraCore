@@ -1,8 +1,8 @@
 
-import UmbraErrors
-import UmbraErrorsCore
 import Foundation
 import OSLog
+import UmbraErrors
+import UmbraErrorsCore
 
 /// A centralised registry for error mappers that provides a single point for error transformation
 public final class ErrorRegistry {

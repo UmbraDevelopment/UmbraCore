@@ -1,10 +1,9 @@
-
-import UmbraErrors
-import UmbraErrorsCore
 import CoreTypesInterfaces
 import FoundationBridgeTypes
 import SecurityProtocolsCore
 import UmbraCoreTypes
+import UmbraErrors
+import UmbraErrorsCore
 import XPCProtocolsCore
 
 // Local type declarations to replace imports

@@ -24,8 +24,8 @@ import UmbraErrors.Domains
 
 import Foundation
 import SecurityProtocolsCore
-import UmbraErrorsCore
 import UmbraCoreTypes
+import UmbraErrorsCore
 
 /// Defines the intended purpose for cryptographic keys
 public enum KeyPurpose: String, Sendable, Equatable, CaseIterable {

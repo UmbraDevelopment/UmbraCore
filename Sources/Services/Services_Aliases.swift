@@ -10,6 +10,3 @@
  indirection in the UmbraCore codebase. New code should use fully qualified types
  from the ErrorHandling modules directly.
  */
-
-
-

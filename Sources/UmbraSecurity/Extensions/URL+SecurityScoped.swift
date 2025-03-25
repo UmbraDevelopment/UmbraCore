@@ -1,12 +1,9 @@
-
-
-
-import UmbraErrors
-import UmbraErrorsCore
 import Foundation
 import SecurityBridgeTypes
 import SecurityTypes
 import UmbraCoreTypes
+import UmbraErrors
+import UmbraErrorsCore
 import XPCProtocolsCore
 
 /// Extension to URL for security-scoped bookmark operations

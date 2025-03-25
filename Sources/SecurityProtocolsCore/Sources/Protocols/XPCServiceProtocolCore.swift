@@ -1,6 +1,5 @@
-
-import UmbraErrorsCore
 import UmbraCoreTypes
+import UmbraErrorsCore
 import UmbraErrorsDomains
 
 /// Protocol error type for XPC service operations

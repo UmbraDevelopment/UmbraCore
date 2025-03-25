@@ -17,8 +17,8 @@ import UmbraErrors.Domains
 
 import Foundation
 import SecurityProtocolsCore
-import UmbraErrorsCore
 import UmbraCoreTypes
+import UmbraErrorsCore
 
 /// Provides symmetric encryption operations to the CryptoServiceCore.
 ///

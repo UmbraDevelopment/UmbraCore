@@ -1,6 +1,3 @@
-
-import UmbraErrors
-import UmbraErrorsCore
 import CryptoTypes
 import CryptoTypesProtocols
 import CryptoTypesTypes
@@ -8,6 +5,8 @@ import Foundation
 import SecurityProtocolsCore
 import SecurityTypes
 import UmbraCoreTypes
+import UmbraErrors
+import UmbraErrorsCore
 import UmbraMocks
 import XPCProtocolsCore
 

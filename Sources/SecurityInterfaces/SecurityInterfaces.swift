@@ -7,9 +7,9 @@
 /// SecurityInterfacesProtocols (foundation-free) at the base, SecurityInterfacesBase building on
 /// top,
 /// and SecurityInterfaces providing the high-level interfaces.
-@_exported import UmbraErrors
-@_exported import UmbraErrorsCore
 @_exported import SecurityInterfacesBase
 @_exported import SecurityInterfacesProtocols
 import UmbraCoreTypes
+@_exported import UmbraErrors
+@_exported import UmbraErrorsCore
 import XPCProtocolsCore

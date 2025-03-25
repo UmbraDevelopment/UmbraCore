@@ -1,11 +1,9 @@
-// CryptoKit removed - cryptography will be handled in ResticBar
-
-import UmbraErrors
-import UmbraErrorsCore
 import Foundation
 import SecurityBridgeTypes
 import SecurityProtocolsCore
 import UmbraCoreTypes
+import UmbraErrors
+import UmbraErrorsCore
 import XPCProtocolsCore
 
 /// Manages secure storage and retrieval of credentials

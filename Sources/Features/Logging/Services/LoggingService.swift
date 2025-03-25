@@ -1,11 +1,11 @@
-import UmbraErrors
-import UmbraErrorsCore
 import FeaturesLoggingErrors
 import FeaturesLoggingModels
 import FeaturesLoggingProtocols
 import Foundation
 import SecurityTypesProtocols
 import UmbraCoreTypes
+import UmbraErrors
+import UmbraErrorsCore
 import XPCProtocolsCore
 
 /// Service responsible for managing log files with security-scoped bookmarks

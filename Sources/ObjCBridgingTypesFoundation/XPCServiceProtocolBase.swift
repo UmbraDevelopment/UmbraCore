@@ -1,6 +1,6 @@
+import Foundation
 import UmbraErrors
 import UmbraErrorsCore
-import Foundation
 import XPCProtocolsCore
 
 /// Custom error for Foundation bridging that doesn't require direct NSError use

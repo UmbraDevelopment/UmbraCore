@@ -1,8 +1,7 @@
-
 @testable import CoreTypesImplementation
-import UmbraErrorsCore
 import ErrorHandlingDomains // Add import for UmbraErrors
 import UmbraErrors
+import UmbraErrorsCore
 import XCTest
 
 final class ErrorAdaptersTests: XCTestCase {
