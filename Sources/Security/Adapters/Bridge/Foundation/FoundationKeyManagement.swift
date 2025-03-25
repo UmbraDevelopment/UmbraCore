@@ -1,3 +1,11 @@
+/**
+ # UmbraCore Foundation Bridge
+ 
+ This file defines protocols for interfacing UmbraCore security types
+ with Foundation data types, providing a clear bridge between core types
+ and Foundation framework.
+ */
+
 import Foundation
 import UmbraCoreTypes
 
@@ -41,10 +49,10 @@ public protocol FoundationKeyManagement: Sendable {
   /// Converts SecureBytes to Foundation Data
   /// - Parameter secureBytes: The secure bytes to convert
   /// - Returns: Foundation Data representation
-  func toFoundationData(_ secureBytes: SecureBytes) -> Data
+  func toFoundationData(_ secureBytes: SecureBytes) -> Foundation.Data
   
   /// Converts Foundation Data to SecureBytes
   /// - Parameter data: The Foundation Data to convert
   /// - Returns: SecureBytes representation
-  func toSecureBytes(_ data: Data) -> SecureBytes
+  func toSecureBytes(_ data: Foundation.Data) -> SecureBytes
 }

@@ -59,7 +59,7 @@
 import Foundation
 import SecurityProtocolsCore
 import UmbraCoreTypes
-import UmbraErrors
+import Errors
 import Types
 import Protocols
 
@@ -82,7 +82,7 @@ public enum SecurityImplementation {
   /// let result = await provider.performSecureOperation(...)
   /// ```
   public static func createDefaultSecurityProvider() -> SecurityProviderProtocol {
-    SecurityProvider()
+    return SecurityProvider()
   }
 
   /// Create a security provider with custom service implementations
@@ -103,6 +103,6 @@ public enum SecurityImplementation {
     cryptoService: CryptoServiceProtocol,
     keyManager: KeyManagementProtocol
   ) -> SecurityProviderProtocol {
-    SecurityProvider(cryptoService: cryptoService, keyManager: keyManager)
+    return SecurityProvider(cryptoService: cryptoService, keyManager: keyManager)
   }
 }

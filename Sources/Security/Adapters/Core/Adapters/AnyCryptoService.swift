@@ -1,8 +1,8 @@
 import SecurityProtocolsCore
 import UmbraCoreTypes
-import UmbraErrors
-import UmbraErrorsCore
+import Errors // Import Errors module for SecurityProtocolError
 import Types
+import Protocols // Import for CryptoServiceProtocol
 
 /// Type-erased wrapper for CryptoServiceProtocol
 /// This allows for cleaner interfaces without exposing implementation details
@@ -29,7 +29,7 @@ public final class AnyCryptoService: CryptoServiceProtocol {
   public func encrypt(
     data: SecureBytes,
     using key: SecureBytes
-  ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
+  ) async -> Result<SecureBytes, SecurityProtocolError> {
     await dto.encrypt(data, key)
   }
 
@@ -41,7 +41,7 @@ public final class AnyCryptoService: CryptoServiceProtocol {
   public func decrypt(
     data: SecureBytes,
     using key: SecureBytes
-  ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
+  ) async -> Result<SecureBytes, SecurityProtocolError> {
     await dto.decrypt(data, key)
   }
 
@@ -50,111 +50,19 @@ public final class AnyCryptoService: CryptoServiceProtocol {
   /// - Returns: The hash value or an error
   public func hash(
     data: SecureBytes
-  ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
+  ) async -> Result<SecureBytes, SecurityProtocolError> {
     await dto.hash(data)
   }
-
-  /// Verifies that the provided data matches the expected hash
+  
+  /// Verifies a hash against the expected value
   /// - Parameters:
   ///   - data: The data to verify
   ///   - expectedHash: The expected hash value
-  /// - Returns: True if the data matches the hash, false otherwise, or an error
+  /// - Returns: True if the hash matches, false otherwise, or an error
   public func verifyHash(
     data: SecureBytes,
     expectedHash: SecureBytes
-  ) async -> Result<Bool, UmbraErrors.Security.Protocols> {
+  ) async -> Result<Bool, SecurityProtocolError> {
     await dto.verifyHash(data, expectedHash)
-  }
-
-  /// Generates a cryptographically secure key
-  /// - Returns: The generated key or an error
-  public func generateKey() async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
-    // Default implementation - placeholder 
-    let bytes = [UInt8](repeating: 0, count: 32)
-    return .success(SecureBytes(bytes: bytes))
-  }
-
-  /// Generates cryptographically secure random data
-  /// - Parameter length: The length of the random data in bytes
-  /// - Returns: The random data or an error
-  public func generateRandomData(
-    ofLength length: Int
-  ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
-    // Default implementation - placeholder
-    let bytes = [UInt8](repeating: 0, count: length)
-    return .success(SecureBytes(bytes: bytes))
-  }
-
-  /// Encrypts data using symmetric encryption with the specified configuration
-  /// - Parameters:
-  ///   - data: The data to encrypt
-  ///   - key: The encryption key
-  ///   - config: Configuration parameters for encryption
-  /// - Returns: The encrypted data or an error
-  public func encryptSymmetric(
-    data: SecureBytes,
-    using key: SecureBytes,
-    with config: SecurityConfigDTO
-  ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
-    // Use the basic encrypt method as a fallback
-    await encrypt(data: data, using: key)
-  }
-
-  /// Decrypts data using symmetric encryption with the specified configuration
-  /// - Parameters:
-  ///   - data: The data to decrypt
-  ///   - key: The decryption key
-  ///   - config: Configuration parameters for decryption
-  /// - Returns: The decrypted data or an error
-  public func decryptSymmetric(
-    data: SecureBytes,
-    using key: SecureBytes,
-    with config: SecurityConfigDTO
-  ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
-    // Use the basic decrypt method as a fallback
-    await decrypt(data: data, using: key)
-  }
-
-  /// Encrypts data using asymmetric encryption with the specified configuration
-  /// - Parameters:
-  ///   - data: The data to encrypt
-  ///   - publicKey: The public key for encryption
-  ///   - config: Configuration parameters for encryption
-  /// - Returns: The encrypted data or an error
-  public func encryptAsymmetric(
-    data: SecureBytes,
-    using publicKey: SecureBytes,
-    with config: SecurityConfigDTO
-  ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
-    // Use the basic encrypt method as a fallback
-    await encrypt(data: data, using: publicKey)
-  }
-
-  /// Decrypts data using asymmetric encryption with the specified configuration
-  /// - Parameters:
-  ///   - data: The data to decrypt
-  ///   - privateKey: The private key for decryption
-  ///   - config: Configuration parameters for decryption
-  /// - Returns: The decrypted data or an error
-  public func decryptAsymmetric(
-    data: SecureBytes,
-    using privateKey: SecureBytes,
-    with config: SecurityConfigDTO
-  ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
-    // Use the basic decrypt method as a fallback
-    await decrypt(data: data, using: privateKey)
-  }
-
-  /// Generates a cryptographic hash of the data with the specified configuration
-  /// - Parameters:
-  ///   - data: The data to hash
-  ///   - config: Configuration parameters for hashing
-  /// - Returns: The hash value or an error
-  public func hash(
-    data: SecureBytes,
-    with config: SecurityConfigDTO
-  ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
-    // Use the basic hash method as a fallback
-    await hash(data: data)
   }
 }

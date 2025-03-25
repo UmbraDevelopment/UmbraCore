@@ -8,6 +8,8 @@
 import UmbraCoreTypes
 import UmbraErrors
 import CoreDTOs
+import SecurityProtocolsCore
+import Types
 
 // MARK: - DTO Extensions for CryptoServiceProtocol
 

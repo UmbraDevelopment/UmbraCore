@@ -1,215 +1,342 @@
-/**
- # UmbraCore Security Provider
-
- The SecurityProvider acts as a facade for the UmbraCore security subsystem, providing
- a unified interface to cryptographic operations and key management. It implements the
- SecurityProviderProtocol defined in the SecurityProtocolsCore module.
-
- ## Design Pattern
-
- This class follows the Facade design pattern, simplifying access to the security
- subsystem by providing a single entry point that coordinates between different
- components:
-
- * CryptoServiceCore: Handles encryption, decryption, hashing, and other cryptographic operations
- * KeyManager: Handles key generation, storage, retrieval, and lifecycle management
-
- ## Security Considerations
-
- * **Facade Security**: The provider enforces proper parameter validation and ensures
-   that operations are called with appropriate parameters, reducing the chance of
-   misusing the underlying services.
-
- * **Key Management**: The provider automatically handles key lookup by identifier when
-   provided in the configuration, simplifying key management for callers.
-
- * **Error Handling**: The provider normalises error reporting across different security
-   components, making it easier to handle errors consistently.
-
- * **Audit Trail**: In a production implementation, this class would be an appropriate
-   place to implement security logging and audit trail features.
-
- ## Usage Guidelines
-
- * Use the `performSecureOperation` method for standard cryptographic operations
- * Use the `createSecureConfig` method to build properly formatted configuration objects
- * Access the `cryptoService` and `keyManager` properties directly for more specific operations
- * Always validate the success flag in the returned SecurityResultDto
-
- ## Example Usage
-
- ```swift
- // Create the security provider
- let securityProvider = SecurityProvider()
-
- // Create a configuration for encryption
- let config = securityProvider.createSecureConfig(options: [
-     "algorithm": "AES-GCM",
-     "keySize": 256,
-     "keyIdentifier": "data-encryption-key"
- ])
-
- // Perform an encryption operation
- let result = await securityProvider.performSecureOperation(
-     operation: .symmetricEncryption,
-     config: config
- )
-
- // Check the result
- if result.status == .success {
-     // Use the encrypted data
-     let encryptedData = result.data
- }
- ```
-
- ## Limitations
-
- * **Foundation Independence**: This implementation avoids Foundation dependencies,
-   which means some features (like Base64 encoding/decoding) are placeholders.
-
- * **Not All Operations Implemented**: Some operations like asymmetric encryption,
-   signature generation/verification, and MAC generation are not fully implemented.
-
- * **Development Stage**: This implementation is designed for development and testing.
-   For production use, consider enhancing with:
-     - Comprehensive logging and auditing
-     - Input sanitisation
-     - Rate limiting for sensitive operations
-     - More robust error handling
- */
-
+// Import core protocols and types
 import Foundation
 import SecurityProtocolsCore
 import UmbraCoreTypes
-import UmbraErrors
-
-// Import specific protocols and types
+import Errors
 import Types
 import Protocols
-import Utils
 
-// Import implementation modules
-import Provider
-import CryptoServices
-import KeyManagement
+/**
+ # UmbraCore Security Provider
 
-/// Implementation of the SecurityProviderProtocol
-///
-/// SecurityProvider coordinates between cryptographic services and key management
-/// to provide a unified interface for security operations.
+ The SecurityProvider is the main entry point for the security subsystem,
+ coordinating cryptographic operations and key management.
+
+ ## Responsibilities
+
+ * Coordinating cryptographic operations
+ * Managing key storage and retrieval
+ * Providing a unified interface to all security features
+ */
+
+/// Main coordinator for security operations in UmbraCore
+/// This class provides a façade over various security services
 public final class SecurityProvider: SecurityProviderProtocol {
   // MARK: - Properties
 
-  /// The crypto service for cryptographic operations
-  public let cryptoService: CryptoServiceProtocol
-
-  /// The key manager for key operations
-  public let keyManager: KeyManagementProtocol
-
-  /// Core implementation that handles provider functionality
+  /// Core security provider implementation
   private let providerCore: SecurityProviderCore
+  
+  /// Public access to cryptographic service implementation
+  public let cryptoService: CryptoServiceProtocol
+  
+  /// Public access to key management service implementation
+  public let keyManager: KeyManagementProtocol
 
   // MARK: - Initialisation
 
-  /// Creates a new instance with default services
+  /// Default initialiser
   public init() {
-    // Use simplified approach with CryptoServiceAdapter to avoid circular dependencies
-    let cryptoServiceImpl = CryptoServiceAdapter(dto: CryptoServiceDto(
-      encrypt: { data, key in .success(data) },  // Placeholder implementations
-      decrypt: { data, key in .success(data) },
-      hash: { data in .success(data) },
-      verifyHash: { data, hash in .success(true) }
-    ))
-    
-    self.cryptoService = cryptoServiceImpl
-    self.keyManager = KeyManagementAdapter()
-    self.providerCore = SecurityProviderCore(
-      cryptoService: cryptoServiceImpl,
-      keyManager: keyManager
-    )
+    // Create core provider with default configuration
+    let core = SecurityProviderCore()
+    self.providerCore = core
+    self.cryptoService = DefaultCryptoService()
+    self.keyManager = DefaultKeyManagementService()
   }
 
-  /// Creates a new instance with the specified services
+  /// Initialiser with custom services
   /// - Parameters:
-  ///   - cryptoService: Crypto service to use
-  ///   - keyManager: Key manager to use
-  public init(cryptoService: CryptoServiceProtocol, keyManager: KeyManagementProtocol) {
+  ///   - cryptoService: The cryptographic service to use
+  ///   - keyManager: The key management service to use
+  public init(
+    cryptoService: CryptoServiceProtocol,
+    keyManager: KeyManagementProtocol
+  ) {
+    // Create core provider with default configuration
+    self.providerCore = SecurityProviderCore()
     self.cryptoService = cryptoService
     self.keyManager = keyManager
-    self.providerCore = SecurityProviderCore(
-      cryptoService: cryptoService,
-      keyManager: keyManager
-    )
+  }
+  
+  /// Initialiser with custom configuration
+  /// - Parameter config: Configuration options
+  internal init(config: SecurityConfigDTO) {
+    // Create core provider with custom configuration
+    self.providerCore = SecurityProviderCore(config: config)
+    self.cryptoService = DefaultCryptoService()
+    self.keyManager = DefaultKeyManagementService()
   }
 
-  // MARK: - SecurityProviderProtocol Implementation
+  // MARK: - SecurityProviderProtocol
 
-  /// Perform a secure operation with the specified configuration
+  /// Perform a secure operation with appropriate error handling
   /// - Parameters:
-  ///   - operation: The secure operation to perform
-  ///   - config: Configuration for the operation
+  ///   - operation: The security operation to perform
+  ///   - config: Configuration options
   /// - Returns: Result of the operation
   public func performSecureOperation(
     operation: SecurityOperation,
-    config: SecurityConfigDto
-  ) async -> SecurityResultDto {
+    config: SecurityConfigDTO
+  ) async -> SecurityResultDTO {
     await providerCore.performSecureOperation(operation: operation, config: config)
   }
 
-  /// Create a security configuration with the specified options
+  /// Create a secure configuration with appropriate defaults
   /// - Parameter options: Optional dictionary of configuration options
-  /// - Returns: A security configuration object
-  ///
-  /// Example:
-  /// ```swift
-  /// let config = provider.createSecureConfig(options: [
-  ///   "algorithm": "AES256",
-  ///   "mode": "GCM"
-  /// ])
-  /// ```
-  public func createSecureConfig(options: [String: Any]?) -> SecurityConfigDto {
-    providerCore.createSecureConfig(options: options)
-  }
-
-  /// Get the current status of the security system
-  /// - Returns: A status DTO with information about the security system
-  public func getStatus() async -> ServiceStatusDto {
-    await providerCore.getStatus()
-  }
-
-  /// Encrypts data using the specified key
-  /// - Parameters:
-  ///   - data: Data to encrypt
-  ///   - key: Encryption key
-  /// - Returns: Encrypted data or error
-  public func encrypt(
-    data: SecureBytes,
-    using key: SecureBytes
-  ) async -> Result<SecureBytes, UmbraErrors.Security.Core> {
-    let operation = SecurityOperation.encrypt(data: data, key: key)
-    let result = await providerCore.performSecureOperation(
-      operation: operation,
-      config: SecurityConfigDto.default
-    )
+  /// - Returns: A properly configured SecurityConfigDTO
+  public func createSecureConfig(options: [String: Any]?) -> SecurityConfigDTO {
+    var config = SecurityConfigDTO()
     
-    return result.convertToEncryptionResult()
+    // Apply options if provided
+    if let options = options {
+      for (key, value) in options {
+        switch key {
+        case "algorithm":
+          if let algorithmName = value as? String {
+            config.metadata = config.metadata ?? [:]
+            config.metadata?["algorithm"] = algorithmName
+          }
+        case "data":
+          if let data = value as? SecureBytes {
+            config.inputData = data
+          }
+        case "key":
+          if let key = value as? SecureBytes {
+            config.key = key
+          }
+        default:
+          // Add as metadata
+          config.metadata = config.metadata ?? [:]
+          config.metadata?[key] = value
+        }
+      }
+    }
+    
+    return config
+  }
+}
+
+/// Core implementation of security provider
+/// This separates the implementation details from the public interface
+private final class SecurityProviderCore: @unchecked Sendable {
+  // MARK: - Properties
+
+  // Service instances used by the provider
+  private let cryptoServices: CryptoServiceRegistry
+  private let keyManager: KeyManagementService
+
+  // MARK: - Initialisation
+
+  /// Default initialiser
+  init() {
+    // Create default service instances
+    cryptoServices = CryptoServiceRegistry()
+    keyManager = KeyManagementService()
   }
 
-  /// Decrypts data using the specified key
-  /// - Parameters:
-  ///   - data: Data to decrypt
-  ///   - key: Decryption key
-  /// - Returns: Decrypted data or error
-  public func decrypt(
-    data: SecureBytes,
-    using key: SecureBytes
-  ) async -> Result<SecureBytes, UmbraErrors.Security.Core> {
-    let operation = SecurityOperation.decrypt(data: data, key: key)
-    let result = await providerCore.performSecureOperation(
-      operation: operation,
-      config: SecurityConfigDto.default
-    )
-    
-    return result.convertToDecryptionResult()
+  /// Initialiser with custom configuration
+  /// - Parameter config: Configuration options
+  init(config _: SecurityConfigDTO) {
+    // Create configured service instances
+    cryptoServices = CryptoServiceRegistry()
+    keyManager = KeyManagementService()
   }
+
+  // MARK: - Internal Methods
+
+  /// Perform a secure operation with the given configuration
+  /// - Parameters:
+  ///   - operation: The security operation to perform
+  ///   - config: Configuration for the operation
+  /// - Returns: Result of the operation, including status and data
+  func performSecureOperation(
+    operation: SecurityOperation,
+    config: SecurityConfigDTO
+  ) async -> SecurityResultDTO {
+    // Delegate to appropriate service based on operation type
+    switch operation {
+    case .encrypt(let data, let key):
+      return await encrypt(data: data, key: key, config: config)
+    case .decrypt(let data, let key):
+      return await decrypt(data: data, key: key, config: config)
+    case .hash(let data):
+      return await hash(data: data, config: config)
+    case .generateKey:
+      return await generateKey(config: config)
+    case .sign(let data, let key):
+      return await sign(data: data, key: key, config: config)
+    case .verify(let data, let signature, let key):
+      return await verify(data: data, signature: signature, key: key, config: config)
+    case .deriveKey(let input, let salt):
+      return await deriveKey(input: input, salt: salt, config: config)
+    case .store(let data, let identifier):
+      return await storeData(data: data, identifier: identifier, config: config)
+    case .retrieve(let identifier):
+      return await retrieveData(identifier: identifier, config: config)
+    case .delete(let identifier):
+      return await deleteData(identifier: identifier, config: config)
+    case .custom(let operationName, let parameters):
+      return await customOperation(name: operationName, parameters: parameters, config: config)
+    }
+  }
+
+  // MARK: - Private Methods
+
+  /// Encrypt data using the configured services
+  private func encrypt(
+    data: SecureBytes,
+    key: SecureBytes,
+    config: SecurityConfigDTO
+  ) async -> SecurityResultDTO {
+    // Implementation to delegate to appropriate crypto service
+    return SecurityResultDTO(
+      status: .failure,
+      error: SecurityProtocolError.notImplemented("Encryption not yet implemented")
+    )
+  }
+
+  /// Decrypt data using the configured services
+  private func decrypt(
+    data: SecureBytes,
+    key: SecureBytes,
+    config: SecurityConfigDTO
+  ) async -> SecurityResultDTO {
+    // Implementation to delegate to appropriate crypto service
+    return SecurityResultDTO(
+      status: .failure,
+      error: SecurityProtocolError.notImplemented("Decryption not yet implemented")
+    )
+  }
+
+  /// Hash data using the configured services
+  private func hash(
+    data: SecureBytes,
+    config: SecurityConfigDTO
+  ) async -> SecurityResultDTO {
+    // Implementation to delegate to appropriate crypto service
+    return SecurityResultDTO(
+      status: .failure,
+      error: SecurityProtocolError.notImplemented("Hashing not yet implemented")
+    )
+  }
+
+  /// Generate a cryptographic key using the configured services
+  private func generateKey(
+    config: SecurityConfigDTO
+  ) async -> SecurityResultDTO {
+    // Implementation to delegate to appropriate crypto service
+    return SecurityResultDTO(
+      status: .failure,
+      error: SecurityProtocolError.notImplemented("Key generation not yet implemented")
+    )
+  }
+  
+  /// Sign data using the configured services
+  private func sign(
+    data: SecureBytes,
+    key: SecureBytes,
+    config: SecurityConfigDTO
+  ) async -> SecurityResultDTO {
+    return SecurityResultDTO(
+      status: .failure,
+      error: SecurityProtocolError.notImplemented("Signing not yet implemented")
+    )
+  }
+  
+  /// Verify a signature using the configured services
+  private func verify(
+    data: SecureBytes,
+    signature: SecureBytes,
+    key: SecureBytes,
+    config: SecurityConfigDTO
+  ) async -> SecurityResultDTO {
+    return SecurityResultDTO(
+      status: .failure,
+      error: SecurityProtocolError.notImplemented("Signature verification not yet implemented")
+    )
+  }
+  
+  /// Derive a key using the configured services
+  private func deriveKey(
+    input: SecureBytes,
+    salt: SecureBytes,
+    config: SecurityConfigDTO
+  ) async -> SecurityResultDTO {
+    return SecurityResultDTO(
+      status: .failure,
+      error: SecurityProtocolError.notImplemented("Key derivation not yet implemented")
+    )
+  }
+  
+  /// Store data using the configured services
+  private func storeData(
+    data: SecureBytes,
+    identifier: String,
+    config: SecurityConfigDTO
+  ) async -> SecurityResultDTO {
+    return SecurityResultDTO(
+      status: .failure,
+      error: SecurityProtocolError.notImplemented("Data storage not yet implemented")
+    )
+  }
+  
+  /// Retrieve data using the configured services
+  private func retrieveData(
+    identifier: String,
+    config: SecurityConfigDTO
+  ) async -> SecurityResultDTO {
+    return SecurityResultDTO(
+      status: .failure,
+      error: SecurityProtocolError.notImplemented("Data retrieval not yet implemented")
+    )
+  }
+  
+  /// Delete data using the configured services
+  private func deleteData(
+    identifier: String,
+    config: SecurityConfigDTO
+  ) async -> SecurityResultDTO {
+    return SecurityResultDTO(
+      status: .failure,
+      error: SecurityProtocolError.notImplemented("Data deletion not yet implemented")
+    )
+  }
+  
+  /// Handle custom operations
+  private func customOperation(
+    name: String,
+    parameters: [String: Any],
+    config: SecurityConfigDTO
+  ) async -> SecurityResultDTO {
+    return SecurityResultDTO(
+      status: .failure,
+      error: SecurityProtocolError.notImplemented("Custom operation '\(name)' not yet implemented")
+    )
+  }
+}
+
+// CryptoServiceRegistry to manage crypto service instances
+private final class CryptoServiceRegistry: @unchecked Sendable {
+  // Registry implementation
+  init() {
+    // Initialize registry
+  }
+}
+
+// KeyManagementService to handle key operations
+private final class KeyManagementService: @unchecked Sendable {
+  // Key management implementation
+  init() {
+    // Initialize key management
+  }
+}
+
+/// Default implementation of the CryptoServiceProtocol
+private final class DefaultCryptoService: CryptoServiceProtocol {
+  // Implementation details would go here
+}
+
+/// Default implementation of the KeyManagementProtocol
+private final class DefaultKeyManagementService: KeyManagementProtocol {
+  // Implementation details would go here
 }

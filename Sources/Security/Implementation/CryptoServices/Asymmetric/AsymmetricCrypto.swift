@@ -15,8 +15,8 @@
 import Foundation
 import SecurityProtocolsCore
 import UmbraCoreTypes
-import UmbraErrors
-import UmbraErrorsCore
+import Errors // Import Errors module which contains the SecurityProtocolError type
+import Types // Import Types module to access SecurityResultDTO
 
 /// Service for asymmetric cryptographic operations
 final class AsymmetricCrypto: Sendable {
@@ -43,30 +43,35 @@ final class AsymmetricCrypto: Sendable {
     // Validate inputs
     guard !data.isEmpty else {
       return SecurityResultDTO(
-        success: false,
-        error: UmbraErrors.Security.Protocols.invalidInput("Cannot encrypt empty data")
+        status: .failure,
+        error: SecurityProtocolError.invalidInput("Cannot encrypt empty data"),
+        metadata: ["details": "Empty data provided for encryption"]
       )
     }
 
     guard !publicKey.isEmpty else {
       return SecurityResultDTO(
-        success: false,
-        error: UmbraErrors.Security.Protocols.invalidInput("Public key cannot be empty")
+        status: .failure,
+        error: SecurityProtocolError.invalidInput("Public key cannot be empty"),
+        metadata: ["details": "Empty public key provided for encryption"]
       )
     }
 
-    // In a real implementation, this would use platform crypto APIs
-    // For now, return a placeholder implementation
+    // Placeholder implementation - simulate encryption
 
     // Create a simple "encrypted" representation for demonstration
     // DO NOT use this in production - this is just a placeholder!
-    var encryptedBytes=Array("ENCRYPTED:".utf8)
+    var encryptedBytes = Array("ENCRYPTED:".utf8)
     for i in 0..<data.count {
       encryptedBytes.append(data[i])
     }
-    let encryptedData=SecureBytes(bytes: encryptedBytes)
+    let encryptedData = SecureBytes(bytes: encryptedBytes)
 
-    return SecurityResultDTO(data: encryptedData)
+    return SecurityResultDTO(
+      status: .success,
+      data: encryptedData,
+      metadata: ["details": "Encryption successful"]
+    )
   }
 
   /// Decrypt data using an asymmetric private key
@@ -83,35 +88,42 @@ final class AsymmetricCrypto: Sendable {
     // Validate inputs
     guard !data.isEmpty else {
       return SecurityResultDTO(
-        success: false,
-        error: UmbraErrors.Security.Protocols.invalidInput("Cannot decrypt empty data")
+        status: .failure,
+        error: SecurityProtocolError.invalidInput("Cannot decrypt empty data"),
+        metadata: ["details": "Empty data provided for decryption"]
       )
     }
 
     guard !privateKey.isEmpty else {
       return SecurityResultDTO(
-        success: false,
-        error: UmbraErrors.Security.Protocols.invalidInput("Private key cannot be empty")
+        status: .failure,
+        error: SecurityProtocolError.invalidInput("Private key cannot be empty"),
+        metadata: ["details": "Empty private key provided for decryption"]
       )
     }
 
-    // Check if data has our fake "ENCRYPTED:" prefix
+    // Placeholder implementation - check if this is our simulated "encrypted" data
     // This is just for the placeholder implementation
-    let prefix=Array("ENCRYPTED:".utf8)
+    let prefix = Array("ENCRYPTED:".utf8)
     if data.count > prefix.count {
-      let dataArray=Array(0..<data.count).map { data[$0] }
+      let dataArray = Array(0..<data.count).map { data[$0] }
       if dataArray.prefix(prefix.count).elementsEqual(prefix) {
         // Extract the original data by removing our prefix
-        let decryptedBytes=Array(dataArray.dropFirst(prefix.count))
-        let decryptedData=SecureBytes(bytes: decryptedBytes)
-        return SecurityResultDTO(data: decryptedData)
+        let decryptedBytes = Array(dataArray.dropFirst(prefix.count))
+        let decryptedData = SecureBytes(bytes: decryptedBytes)
+        return SecurityResultDTO(
+          status: .success,
+          data: decryptedData,
+          metadata: ["details": "Decryption successful"]
+        )
       }
     }
 
-    // If we get here, decryption failed or the data wasn't encrypted with our placeholder
+    // If we get here, decryption "failed"
     return SecurityResultDTO(
-      success: false,
-      error: UmbraErrors.Security.Protocols.invalidFormat(reason: "Decryption failed")
+      status: .failure,
+      error: SecurityProtocolError.operationFailed("Decryption failed"),
+      metadata: ["details": "Decryption failed"]
     )
   }
 }

@@ -30,8 +30,8 @@ public protocol SecurityUtilsProtocol: Sendable {
   func encryptSymmetricDto(
     data: SecureBytes,
     key: SecureBytes,
-    config: SecurityConfigDto
-  ) async -> SecurityResultDto
+    config: SecurityConfigDTO
+  ) async -> SecurityResultDTO
 
   /// Decrypt data using symmetric encryption
   /// - Parameters:
@@ -42,8 +42,8 @@ public protocol SecurityUtilsProtocol: Sendable {
   func decryptSymmetricDto(
     data: SecureBytes,
     key: SecureBytes,
-    config: SecurityConfigDto
-  ) async -> SecurityResultDto
+    config: SecurityConfigDTO
+  ) async -> SecurityResultDTO
 
   /// Encrypt data using asymmetric encryption
   /// - Parameters:
@@ -54,8 +54,8 @@ public protocol SecurityUtilsProtocol: Sendable {
   func encryptAsymmetricDto(
     data: SecureBytes,
     publicKey: SecureBytes,
-    config: SecurityConfigDto
-  ) async -> SecurityResultDto
+    config: SecurityConfigDTO
+  ) async -> SecurityResultDTO
 
   /// Decrypt data using asymmetric encryption
   /// - Parameters:
@@ -66,8 +66,8 @@ public protocol SecurityUtilsProtocol: Sendable {
   func decryptAsymmetricDto(
     data: SecureBytes,
     privateKey: SecureBytes,
-    config: SecurityConfigDto
-  ) async -> SecurityResultDto
+    config: SecurityConfigDTO
+  ) async -> SecurityResultDTO
 
   /// Hash data using the specified configuration
   /// - Parameters:
@@ -76,8 +76,8 @@ public protocol SecurityUtilsProtocol: Sendable {
   /// - Returns: Result of the hashing operation
   func hashDto(
     data: SecureBytes,
-    config: SecurityConfigDto
-  ) async -> SecurityResultDto
+    config: SecurityConfigDTO
+  ) async -> SecurityResultDTO
 
   /// Derive a key from a password and salt
   /// - Parameters:
@@ -88,8 +88,8 @@ public protocol SecurityUtilsProtocol: Sendable {
   func deriveKeyDto(
     data: SecureBytes,
     salt: SecureBytes,
-    config: SecurityConfigDto
-  ) async -> SecurityResultDto
+    config: SecurityConfigDTO
+  ) async -> SecurityResultDTO
 }
 
 /// Backward compatibility type aliases
@@ -98,8 +98,8 @@ extension SecurityUtilsProtocol {
   func encryptSymmetricDTO(
     data: SecureBytes,
     key: SecureBytes,
-    config: SecurityConfigDto
-  ) async -> SecurityResultDto {
+    config: SecurityConfigDTO
+  ) async -> SecurityResultDTO {
     await encryptSymmetricDto(data: data, key: key, config: config)
   }
   
@@ -107,8 +107,8 @@ extension SecurityUtilsProtocol {
   func decryptSymmetricDTO(
     data: SecureBytes,
     key: SecureBytes,
-    config: SecurityConfigDto
-  ) async -> SecurityResultDto {
+    config: SecurityConfigDTO
+  ) async -> SecurityResultDTO {
     await decryptSymmetricDto(data: data, key: key, config: config)
   }
   
@@ -116,16 +116,16 @@ extension SecurityUtilsProtocol {
   func deriveKeyDTO(
     data: SecureBytes,
     salt: SecureBytes,
-    config: SecurityConfigDto
-  ) async -> SecurityResultDto {
+    config: SecurityConfigDTO
+  ) async -> SecurityResultDTO {
     await deriveKeyDto(data: data, salt: salt, config: config)
   }
   
   @available(*, deprecated, renamed: "hashDto", message: "Use hashDto instead")
   func hashDTO(
     data: SecureBytes,
-    config: SecurityConfigDto
-  ) async -> SecurityResultDto {
+    config: SecurityConfigDTO
+  ) async -> SecurityResultDTO {
     await hashDto(data: data, config: config)
   }
 }
@@ -156,18 +156,18 @@ public final class SecurityUtils: SecurityUtilsProtocol {
   public func encryptSymmetricDto(
     data: SecureBytes,
     key: SecureBytes,
-    config: SecurityConfigDto
-  ) async -> SecurityResultDto {
+    config: SecurityConfigDTO
+  ) async -> SecurityResultDTO {
     let result = await cryptoService.encrypt(data, key)
     
     switch result {
       case let .success(encryptedData):
-        return SecurityResultDto(
+        return SecurityResultDTO(
           status: .success,
           data: encryptedData
         )
       case let .failure(error):
-        return SecurityResultDto(
+        return SecurityResultDTO(
           status: .failure,
           error: error,
           metadata: ["details": "Symmetric encryption failed"]
@@ -184,18 +184,18 @@ public final class SecurityUtils: SecurityUtilsProtocol {
   public func decryptSymmetricDto(
     data: SecureBytes,
     key: SecureBytes,
-    config: SecurityConfigDto
-  ) async -> SecurityResultDto {
+    config: SecurityConfigDTO
+  ) async -> SecurityResultDTO {
     let result = await cryptoService.decrypt(data, key)
     
     switch result {
       case let .success(decryptedData):
-        return SecurityResultDto(
+        return SecurityResultDTO(
           status: .success,
           data: decryptedData
         )
       case let .failure(error):
-        return SecurityResultDto(
+        return SecurityResultDTO(
           status: .failure,
           error: error,
           metadata: ["details": "Symmetric decryption failed"]
@@ -214,8 +214,8 @@ public final class SecurityUtils: SecurityUtilsProtocol {
   public func encryptAsymmetricDto(
     data: SecureBytes,
     publicKey: SecureBytes,
-    config: SecurityConfigDto
-  ) async -> SecurityResultDto {
+    config: SecurityConfigDTO
+  ) async -> SecurityResultDTO {
     // Asymmetric encryption is not directly supported by the DTO
     // This is a simplified implementation that uses symmetric encryption
     await encryptSymmetricDto(data: data, key: publicKey, config: config)
@@ -230,8 +230,8 @@ public final class SecurityUtils: SecurityUtilsProtocol {
   public func decryptAsymmetricDto(
     data: SecureBytes,
     privateKey: SecureBytes,
-    config: SecurityConfigDto
-  ) async -> SecurityResultDto {
+    config: SecurityConfigDTO
+  ) async -> SecurityResultDTO {
     // Asymmetric decryption is not directly supported by the DTO
     // This is a simplified implementation that uses symmetric decryption
     await decryptSymmetricDto(data: data, key: privateKey, config: config)
@@ -246,18 +246,18 @@ public final class SecurityUtils: SecurityUtilsProtocol {
   /// - Returns: Result of the hashing operation
   public func hashDto(
     data: SecureBytes,
-    config: SecurityConfigDto
-  ) async -> SecurityResultDto {
+    config: SecurityConfigDTO
+  ) async -> SecurityResultDTO {
     let result = await cryptoService.hash(data)
     
     switch result {
       case let .success(hashData):
-        return SecurityResultDto(
+        return SecurityResultDTO(
           status: .success,
           data: hashData
         )
       case let .failure(error):
-        return SecurityResultDto(
+        return SecurityResultDTO(
           status: .failure,
           error: error,
           metadata: ["details": "Hashing operation failed"]
@@ -276,8 +276,8 @@ public final class SecurityUtils: SecurityUtilsProtocol {
   public func deriveKeyDto(
     data: SecureBytes,
     salt: SecureBytes,
-    config: SecurityConfigDto
-  ) async -> SecurityResultDto {
+    config: SecurityConfigDTO
+  ) async -> SecurityResultDTO {
     // Since there's no deriveKey method in the protocol, we need to implement this differently
     // For now, we'll use a combination of hash and the salt to simulate key derivation
 

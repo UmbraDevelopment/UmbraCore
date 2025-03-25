@@ -16,11 +16,11 @@ import Types
 public final class CryptoServiceAdapter: CryptoServiceProtocol {
   
   /// The DTO containing function references for crypto operations
-  private let dto: CryptoServiceDto
+  private let dto: CryptoServiceDTO
   
   /// Initialises a new crypto service adapter
   /// - Parameter dto: The data transfer object with function references
-  public init(dto: CryptoServiceDto) {
+  public init(dto: CryptoServiceDTO) {
     self.dto = dto
   }
   
@@ -101,7 +101,7 @@ public final class CryptoServiceAdapter: CryptoServiceProtocol {
   public func encryptSymmetric(
     data: SecureBytes,
     using key: SecureBytes,
-    with config: SecurityConfigDto
+    with config: SecurityConfigDTO
   ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     // Use the basic encrypt method as a fallback
     await encrypt(data: data, using: key)
@@ -116,7 +116,7 @@ public final class CryptoServiceAdapter: CryptoServiceProtocol {
   public func decryptSymmetric(
     data: SecureBytes,
     using key: SecureBytes,
-    with config: SecurityConfigDto
+    with config: SecurityConfigDTO
   ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     // Use the basic decrypt method as a fallback
     await decrypt(data: data, using: key)
@@ -131,7 +131,7 @@ public final class CryptoServiceAdapter: CryptoServiceProtocol {
   public func encryptAsymmetric(
     data: SecureBytes,
     using publicKey: SecureBytes,
-    with config: SecurityConfigDto
+    with config: SecurityConfigDTO
   ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     // Use the basic encrypt method as a fallback
     await encrypt(data: data, using: publicKey)
@@ -146,7 +146,7 @@ public final class CryptoServiceAdapter: CryptoServiceProtocol {
   public func decryptAsymmetric(
     data: SecureBytes,
     using privateKey: SecureBytes,
-    with config: SecurityConfigDto
+    with config: SecurityConfigDTO
   ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     // Use the basic decrypt method as a fallback
     await decrypt(data: data, using: privateKey)
@@ -159,7 +159,7 @@ public final class CryptoServiceAdapter: CryptoServiceProtocol {
   /// - Returns: The hash value or an error
   public func hash(
     data: SecureBytes,
-    with config: SecurityConfigDto
+    with config: SecurityConfigDTO
   ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     // Use the basic hash method as a fallback
     await hash(data: data)

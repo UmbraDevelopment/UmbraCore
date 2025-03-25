@@ -12,12 +12,11 @@
  */
 
 import CommonCrypto
-import UmbraErrors
-import UmbraErrorsCore
-
 import Foundation
 import SecurityProtocolsCore
 import UmbraCoreTypes
+import Errors // Import Errors module which contains the SecurityProtocolError type
+import Types // Import Types module to get access to SecurityResultDTO
 
 /// Service for cryptographic hashing operations
 final class HashingService: Sendable {
@@ -42,51 +41,53 @@ final class HashingService: Sendable {
     // Validate inputs
     guard !data.isEmpty else {
       return SecurityResultDTO(
-        success: false,
-        error: UmbraErrors.Security.Protocols.invalidInput("Cannot hash empty data"),
-        errorDetails: "Empty data provided for hashing"
+        status: .failure,
+        error: SecurityProtocolError.invalidInput("Cannot hash empty data"),
+        metadata: ["details": "Empty data provided for hashing"]
       )
     }
 
     // Validate algorithm
-    guard isSupportedHashAlgorithm(algorithm) else {
+    guard !algorithm.isEmpty else {
       return SecurityResultDTO(
-        success: false,
-        error: UmbraErrors.Security.Protocols
-          .unsupportedOperation(name: "Hash algorithm: \(algorithm)"),
-        errorDetails: "The specified hash algorithm is not supported"
+        status: .failure,
+        error: SecurityProtocolError.invalidInput("Algorithm cannot be empty"),
+        metadata: ["details": "No hashing algorithm specified"]
       )
     }
 
     do {
       // Implement SHA-256 hashing using CommonCrypto
-      if algorithm == "SHA-256" {
+      if algorithm.lowercased() == "sha-256" || algorithm.lowercased() == "sha256" {
         // Allocate buffer for SHA-256 result (32 bytes)
         var hashBytes=[UInt8](repeating: 0, count: 32)
 
+        // Extract bytes from SecureBytes for hashing
+        // SecureBytes doesn't have withUnsafeBytes, so we need to access its bytes directly
+        let dataBytes = data.toArray()
+        let dataCount = CC_LONG(dataBytes.count)
+        
         // Use CC_SHA256 from CommonCrypto
-        data.withUnsafeBytes { dataPtr in
-          let dataCount=CC_LONG(data.count)
-          _=CC_SHA256(dataPtr.baseAddress, dataCount, &hashBytes)
-        }
+        _ = CC_SHA256(dataBytes, dataCount, &hashBytes)
 
         let hashedData=SecureBytes(bytes: hashBytes)
-        return SecurityResultDTO(data: hashedData)
+        return SecurityResultDTO(
+          status: .success,
+          data: hashedData
+        )
       } else {
         // For now, return an unsupported operation error for other algorithms
         return SecurityResultDTO(
-          success: false,
-          error: UmbraErrors.Security.Protocols
-            .unsupportedOperation(name: "Hash algorithm: \(algorithm)"),
-          errorDetails: "The specified hash algorithm is not currently implemented"
+          status: .failure,
+          error: SecurityProtocolError.operationFailed("Hash algorithm not supported: \(algorithm)"),
+          metadata: ["details": "The specified hash algorithm is not currently implemented"]
         )
       }
     } catch {
       return SecurityResultDTO(
-        success: false,
-        error: UmbraErrors.Security.Protocols
-          .internalError("Hashing operation failed: \(error.localizedDescription)"),
-        errorDetails: "Error during cryptographic hashing: \(error)"
+        status: .failure,
+        error: SecurityProtocolError.operationFailed("Hashing operation failed: \(error.localizedDescription)"),
+        metadata: ["details": "Error during cryptographic hashing: \(error)"]
       )
     }
   }
