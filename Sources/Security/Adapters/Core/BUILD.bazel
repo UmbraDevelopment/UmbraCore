@@ -1,0 +1,38 @@
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
+
+umbra_swift_library(
+    name = "Core",
+    srcs = glob(["**/*.swift"], allow_empty = True),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//Sources/Security/Core/Types",
+        "//Sources/Security/Core/Protocols",
+        "//Sources/UmbraCoreTypes",
+        "//Sources/SecurityProtocolsCore",
+    ],
+)
+
+# Subdirectory libraries
+umbra_swift_library(
+    name = "Adapters",
+    srcs = glob(["Adapters/**/*.swift"], allow_empty = True),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//Sources/CoreDTOs",
+        "//Sources/Security/Core/Types",
+        "//Sources/Security/Core/Protocols",
+        "//Sources/SecurityProtocolsCore",
+    ],
+)
+
+umbra_swift_library(
+    name = "Protocols",
+    srcs = glob(["Protocols/**/*.swift"], allow_empty = True),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//Sources/CoreDTOs",
+        "//Sources/Security/Core/Types",
+        "//Sources/Security/Core/Protocols",
+        "//Sources/SecurityProtocolsCore",
+    ],
+)

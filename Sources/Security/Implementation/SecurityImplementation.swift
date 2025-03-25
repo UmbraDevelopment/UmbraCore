@@ -1,9 +1,9 @@
 /**
  # UmbraCore Security Implementation
 
- This file provides the main entry point for the Security Implementation module of UmbraCore.
+ This file provides the main entry point for the SecurityImplementation module of UmbraCore.
  It offers factory methods to create default and custom security providers that implement
- the core security protocols.
+ the SecurityProviderProtocol.
 
  ## Usage
 
@@ -27,7 +27,7 @@
 
  ## Architecture
 
- The Security Implementation module follows a modular architecture with clear separation
+ The SecurityImplementation module follows a modular architecture with clear separation
  of concerns:
 
  * **SecurityProvider**: Facade that coordinates between cryptographic and key management services
@@ -50,44 +50,59 @@
 
  ## Security Considerations
 
- This implementation adheres to industry best practices for cryptographic operations:
-
- - Uses well-vetted cryptographic libraries and algorithms
- - Protects keys with appropriate access controls
- - Implements secure error handling to prevent information leakage
- - Follows the principle of least privilege
+ * This implementation follows security best practices but should be reviewed
+   before use in production systems.
+ * Cryptographic operations use industry-standard algorithms (AES-GCM, SHA-256, etc.)
+ * Key management follows proper lifecycle practices (secure generation, storage, rotation)
  */
 
 import Foundation
+import SecurityProtocolsCore
 import UmbraCoreTypes
-import Protocols
+import UmbraErrors
 import Types
-import Errors
+import Protocols
 
-/// Main entry point for the Security Implementation module
-/// Provides factory methods for creating security service instances
+/// Central access point for security implementation functionality
+///
+/// This enum provides factory methods to create security providers and other
+/// security-related components. It serves as the main entry point for the
+/// SecurityImplementation module.
 public enum SecurityImplementation {
-    /// Create a default security provider with standard configuration
-    /// - Returns: A fully configured security provider
-    public static func createDefaultSecurityProvider() -> any CryptoServiceProtocol {
-        // TODO: Create and return a default provider implementation
-        // This will be implemented when migrating the provider implementations
-        fatalError("Not yet implemented")
-    }
-    
-    /// Create a custom security provider with specified configuration
-    /// - Parameter configuration: Custom security configuration options
-    /// - Returns: A configured security provider
-    public static func createSecurityProvider(
-        configuration: SecurityConfigDTO
-    ) -> any CryptoServiceProtocol {
-        // TODO: Create and return a custom provider implementation
-        // This will be implemented when migrating the provider implementations
-        fatalError("Not yet implemented")
-    }
-    
-    /// Version information for the security implementation
-    public static var version: String {
-        "1.0.0"
-    }
+  /// Create a default security provider with standard implementations
+  ///
+  /// This method creates a security provider with the default implementations
+  /// of all required components:
+  /// - CryptoServiceCore for cryptographic operations
+  /// - KeyManager for key management
+  ///
+  /// Example:
+  /// ```swift
+  /// let provider = SecurityImplementation.createDefaultSecurityProvider()
+  /// let result = await provider.performSecureOperation(...)
+  /// ```
+  public static func createDefaultSecurityProvider() -> SecurityProviderProtocol {
+    SecurityProvider()
+  }
+
+  /// Create a security provider with custom service implementations
+  ///
+  /// This method allows you to provide custom implementations of the
+  /// cryptographic service and key manager:
+  ///
+  /// Example:
+  /// ```swift
+  /// let customCrypto = MyCryptoService()
+  /// let customKeyManager = MyKeyManager()
+  /// let provider = SecurityImplementation.createSecurityProvider(
+  ///   cryptoService: customCrypto,
+  ///   keyManager: customKeyManager
+  /// )
+  /// ```
+  public static func createSecurityProvider(
+    cryptoService: CryptoServiceProtocol,
+    keyManager: KeyManagementProtocol
+  ) -> SecurityProviderProtocol {
+    SecurityProvider(cryptoService: cryptoService, keyManager: keyManager)
+  }
 }

@@ -1,6 +1,6 @@
-import Foundation
-import UmbraCoreTypes
+import SecurityProtocolsCore
 import UmbraErrors
+import UmbraErrorsCore
 
 /**
  # CryptoError
@@ -13,8 +13,10 @@ import UmbraErrors
  * Ensure consistent error handling across the cryptographic services
  */
 
-/// Error type for cryptographic operations in Security Implementation
-public enum CryptoError: Error, Equatable, Sendable {
+import Foundation
+
+/// Error type for cryptographic operations in SecurityImplementation
+public enum CryptoError: Error, Equatable {
   /// Error during encryption operation
   case encryptionError(reason: String)
 
@@ -57,12 +59,6 @@ public enum CryptoError: Error, Equatable, Sendable {
   /// Error for invalid key identifier
   case invalidKeyIdentifier(String)
 
-  /// Error for invalid nonce/IV
-  case invalidNonce(String)
-  
-  /// Error for authentication failure
-  case authenticationFailed(String)
-  
-  /// General internal failure
-  case internalError(String)
+  /// General cryptographic operation error
+  case operationError(reason: String)
 }

@@ -20,54 +20,69 @@ public protocol CryptoServiceProtocol: Sendable {
   /// - Returns: The decrypted data as `SecureBytes` or an error.
   func decrypt(data: SecureBytes, using key: SecureBytes) async
     -> Result<SecureBytes, SecurityProtocolError>
-
-  /// Generates a random cryptographic key.
-  /// - Parameter size: Size of the key in bytes.
-  /// - Returns: The generated key as `SecureBytes` or an error.
-  func generateKey(size: Int) async -> Result<SecureBytes, SecurityProtocolError>
-
-  /// Calculates a cryptographic hash of data.
+    
+  /// Computes a cryptographic hash of binary data.
   /// - Parameter data: Data to hash as `SecureBytes`.
-  /// - Returns: The hash value as `SecureBytes` or an error.
-  func hash(data: SecureBytes) async -> Result<SecureBytes, SecurityProtocolError>
-
-  /// Verifies that data matches a hash.
+  /// - Returns: The hash as `SecureBytes` or an error.
+  func hash(data: SecureBytes) async
+    -> Result<SecureBytes, SecurityProtocolError>
+    
+  /// Verifies a cryptographic hash against the expected value.
   /// - Parameters:
   ///   - data: Data to verify as `SecureBytes`.
-  ///   - hash: Hash to check against as `SecureBytes`.
-  /// - Returns: Boolean indicating if verification passed or an error.
-  func verifyHash(data: SecureBytes, against hash: SecureBytes) async
+  ///   - expectedHash: Expected hash value as `SecureBytes`.
+  /// - Returns: `true` if the hash matches, `false` if not, or an error.
+  func verifyHash(data: SecureBytes, expectedHash: SecureBytes) async
     -> Result<Bool, SecurityProtocolError>
+}
 
-  /// Generates secure random bytes.
-  /// - Parameter length: Number of bytes to generate.
-  /// - Returns: Random bytes as `SecureBytes` or an error.
-  func generateRandomBytes(length: Int) async
-    -> Result<SecureBytes, SecurityProtocolError>
+/// Extension to convert CryptoServiceProtocol to a DTO
+public extension CryptoServiceProtocol {
+  /// Converts this protocol implementation to a CryptoServiceDTO
+  /// - Returns: A CryptoServiceDTO representing this service
+  func toDTO() -> CryptoServiceDTO {
+    CryptoServiceDTO(
+      encrypt: { data, key in
+        await self.encrypt(data: data, using: key)
+      },
+      decrypt: { data, key in
+        await self.decrypt(data: data, using: key)
+      },
+      hash: { data in
+        await self.hash(data: data)
+      },
+      verifyHash: { data, expectedHash in
+        await self.verifyHash(data: data, expectedHash: expectedHash)
+      }
+    )
+  }
+}
 
-  // MARK: - Symmetric Encryption
-
-  /// Encrypts data using authenticated encryption with associated data (AEAD).
-  /// - Parameters:
-  ///   - data: Data to encrypt as `SecureBytes`.
-  ///   - key: Encryption key as `SecureBytes`.
-  ///   - config: Encryption configuration.
-  /// - Returns: Encrypted data as `SecureBytes` or an error.
-  func encryptWithConfiguration(
-    data: SecureBytes,
-    key: SecureBytes,
-    config: SecurityConfigDTO
-  ) async -> Result<SecureBytes, SecurityProtocolError>
-
-  /// Decrypts data using authenticated encryption with associated data (AEAD).
-  /// - Parameters:
-  ///   - data: Data to decrypt as `SecureBytes`.
-  ///   - key: Decryption key as `SecureBytes`.
-  ///   - config: Decryption configuration.
-  /// - Returns: Decrypted data as `SecureBytes` or an error.
-  func decryptWithConfiguration(
-    data: SecureBytes,
-    key: SecureBytes,
-    config: SecurityConfigDTO
-  ) async -> Result<SecureBytes, SecurityProtocolError>
+/// Extension to create a CryptoServiceProtocol from a DTO
+public extension CryptoServiceDTO {
+  /// Creates a protocol-conforming object from this DTO
+  /// - Returns: An object that conforms to CryptoServiceProtocol
+  func toProtocol() -> some CryptoServiceProtocol {
+    struct ProtocolAdapter: CryptoServiceProtocol {
+      let dto: CryptoServiceDTO
+      
+      func encrypt(data: SecureBytes, using key: SecureBytes) async -> Result<SecureBytes, SecurityProtocolError> {
+        await dto.encrypt(data, key)
+      }
+      
+      func decrypt(data: SecureBytes, using key: SecureBytes) async -> Result<SecureBytes, SecurityProtocolError> {
+        await dto.decrypt(data, key)
+      }
+      
+      func hash(data: SecureBytes) async -> Result<SecureBytes, SecurityProtocolError> {
+        await dto.hash(data)
+      }
+      
+      func verifyHash(data: SecureBytes, expectedHash: SecureBytes) async -> Result<Bool, SecurityProtocolError> {
+        await dto.verifyHash(data, expectedHash)
+      }
+    }
+    
+    return ProtocolAdapter(dto: self)
+  }
 }
