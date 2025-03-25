@@ -8,6 +8,7 @@ umbra_swift_library(
         allow_empty = True
     ),
     deps = [
+        "//Sources/ServiceTypes",
         # Dependencies will go here, for example:
         # "//Sources/CoreDTOs",
         # "//Sources/UmbraLogging",
