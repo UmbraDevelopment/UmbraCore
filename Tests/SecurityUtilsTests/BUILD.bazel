@@ -20,5 +20,12 @@ swift_test(
         # "//Sources/SecurityUtilsTests",
         # "//Tests/TestKit",
         # "@com_github_apple_swift_log//:Logging",
+        "//Sources/Security/Utils",
+        "//Sources/CryptoTypes",
+        "//Sources/SecurityTypes",
+        "//Sources/UmbraCrypto",
+        "//Sources/UmbraErrors",
+        "//Sources/ErrorHandlingDomains",
+        "//Sources/ErrorHandling",
     ],
 )

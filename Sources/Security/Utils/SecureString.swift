@@ -153,7 +153,7 @@ final class Lock {
   @usableFromInline
   init() {
     let err=pthread_mutex_init(_mutex, nil)
-    precondition(err == 0, "Failed to initialize mutex with error \(err)")
+    precondition(err == 0, "Failed to initialise mutex with error \(err)")
   }
 
   deinit {

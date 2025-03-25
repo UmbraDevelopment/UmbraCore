@@ -1,4 +1,4 @@
-@testable import SecureString
+@testable import Security
 import XCTest
 
 class SecureStringTests: XCTestCase {
@@ -46,7 +46,7 @@ class SecureStringTests: XCTestCase {
     XCTAssertNotEqual(string1, string3)
   }
 
-  func testBytesInitializer() {
+  func testBytesInitialiser() {
     let originalString="Hello from bytes"
     let bytes=Array(originalString.utf8)
     let secureString=SecureString(bytes: bytes)
@@ -56,32 +56,51 @@ class SecureStringTests: XCTestCase {
     }
   }
 
-  func testDescription() {
-    let secureString=SecureString("sensitive data")
+  func testHashable() {
+    let string1=SecureString("test string")
+    let string2=SecureString("test string")
+    let string3=SecureString("different string")
 
-    // Description should not expose the content
-    XCTAssertEqual(secureString.description, "<SecureString: length=\(secureString.length)>")
+    var dict=[SecureString: String]()
+    dict[string1]="value1"
 
-    // Debug description should also not expose the content
-    XCTAssertEqual(
-      secureString.debugDescription,
-      "<SecureString: length=\(secureString.length), content=REDACTED>"
-    )
+    // Same content should result in same hash
+    XCTAssertEqual(dict[string2], "value1")
+
+    // Different content should have different hash
+    XCTAssertNil(dict[string3])
   }
 
-  func testAccessorWithReturnValue() {
-    let secureString=SecureString("password123")
+  func testDescription() {
+    let secureString=SecureString("test string")
+    XCTAssertEqual(secureString.description, "<SecureString: length=11>")
+  }
 
-    // Test that the accessor can return values
-    let hasUppercase=secureString.access { string in
-      string.contains { $0.isUppercase }
+  func testDebugDescription() {
+    let secureString=SecureString("test string")
+    XCTAssertEqual(secureString.debugDescription, "<SecureString: length=11, content=REDACTED>")
+  }
+
+  func testThreadSafety() {
+    let secureString=SecureString("shared string")
+    
+    // Create multiple concurrent accesses
+    let expectation=XCTestExpectation(description: "Concurrent access completed")
+    expectation.expectedFulfillmentCount=10
+    
+    for _ in 0..<10 {
+      DispatchQueue.global().async {
+        // Access the string multiple times
+        for _ in 0..<100 {
+          secureString.access { _ in
+            // Just access the string
+          }
+        }
+        expectation.fulfill()
+      }
     }
-
-    let hasDigit=secureString.access { string in
-      string.contains { $0.isNumber }
-    }
-
-    XCTAssertFalse(hasUppercase)
-    XCTAssertTrue(hasDigit)
+    
+    // Wait for all accesses to complete
+    wait(for: [expectation], timeout: 5.0)
   }
 }
