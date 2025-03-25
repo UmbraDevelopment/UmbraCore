@@ -3,14 +3,26 @@ load("//bazel:swift_rules.bzl", "umbra_swift_library")
 # Top-level package for consolidated Security functionality
 umbra_swift_library(
     name = "Security",
-    srcs = glob(["*.swift"]),
+    srcs = glob(
+        ["*.swift"],
+        allow_empty = True,
+    ),
     visibility = ["//visibility:public"],
     deps = [
         "//Sources/Security/Core/Protocols",
         "//Sources/Security/Core/Types",
+        "//Sources/Security/Core/Types/Bridge",
         "//Sources/Security/Core/Errors",
-        "//Sources/Security/Implementation/Crypto",
-        "//Sources/Security/Adapters/Foundation",
+        "//Sources/Security/Implementation",
+        "//Sources/Security/Implementation/CryptoServices",
+        "//Sources/Security/Implementation/KeyManagement",
+        "//Sources/Security/Implementation/Provider",
+        "//Sources/Security/Implementation/Utils",
+        "//Sources/Security/Adapters/Bridge:SecurityBridge",
+        "//Sources/Security/Adapters/Core",
         "//Sources/Security/Utils",
+        "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraLogging",
+        "//Sources/SecurityProtocolsCore",
     ],
 )

@@ -5,6 +5,7 @@ umbra_swift_library(
     name = "Crypto",
     srcs = glob(
         ["**/*.swift"],
+        allow_empty = True,
         exclude = ["**/*.generated.swift"],
     ),
     visibility = ["//visibility:public"],

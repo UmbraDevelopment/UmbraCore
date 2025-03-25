@@ -6,6 +6,7 @@ umbra_swift_library(
     name = "Foundation",
     srcs = glob(
         ["**/*.swift"],
+        allow_empty = True,
         exclude = ["**/*.generated.swift"],
     ),
     visibility = ["//visibility:public"],
