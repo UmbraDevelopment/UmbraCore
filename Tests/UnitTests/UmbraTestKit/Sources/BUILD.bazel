@@ -7,7 +7,7 @@ swift_test(
             "*.swift",
             "**/*.swift",
         ],
-        allow_empty = False,
+        allow_empty = True,
         exclude = [
             "**/Tests/**",
             "**/*Test.swift",

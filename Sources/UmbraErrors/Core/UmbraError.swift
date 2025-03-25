@@ -35,7 +35,7 @@ public protocol UmbraError: Error, Sendable, CustomStringConvertible {
 /// Default implementation for UmbraError
 extension UmbraError {
   public var description: String {
-    var desc="[\(domain):\(code)] \(errorDescription)"
+    var desc = "[\(domain):\(code)] \(errorDescription)"
 
     if let source {
       desc += " (at \(source.function) in \(source.file):\(source.line))"
@@ -74,23 +74,18 @@ extension DomainError {
 }
 
 /// Logger for the UmbraErrors system
-private let errorLogger=Logger(subsystem: "com.umbracorp.UmbraCore", category: "Errors")
+private let errorLogger = Logger(subsystem: "com.umbracorp.UmbraCore", category: "Errors")
 
 /// Extension to provide logging capabilities to UmbraError
 extension UmbraError {
   /// Logs this error with the appropriate log level
   public func log(level: OSLogType = .error, privacy _: OSLogPrivacy = .public) {
     switch level {
-      case .debug:
-        errorLogger.debug("\(self, privacy: .public)")
-      case .info:
-        errorLogger.info("\(self, privacy: .public)")
-      case .error:
-        errorLogger.error("\(self, privacy: .public)")
-      case .fault:
-        errorLogger.fault("\(self, privacy: .public)")
-      default:
-        errorLogger.log("\(self, privacy: .public)")
+      case .debug: errorLogger.debug("\(self, privacy: .public)")
+      case .info: errorLogger.info("\(self, privacy: .public)")
+      case .error: errorLogger.error("\(self, privacy: .public)")
+      case .fault: errorLogger.fault("\(self, privacy: .public)")
+      default: errorLogger.log("\(self, privacy: .public)")
     }
   }
 }

@@ -1,22 +1,59 @@
 import Foundation
 import Interfaces
+import UmbraErrorsCore
+import UmbraLogging
 
 /// Example demonstrating integrated error severity and logging patterns
 enum ErrorLoggingExample {
+  /// Example notification level enum (for demonstration purposes only)
+  enum ErrorNotificationLevel: String {
+    case error
+    case warning
+    case info
+    case debug
+    
+    /// Convert to UmbraErrorsCore.ErrorSeverity
+    func toErrorSeverity() -> UmbraErrorsCore.ErrorSeverity {
+      switch self {
+      case .error:
+        return .error
+      case .warning:
+        return .warning
+      case .info:
+        return .info
+      case .debug:
+        return .debug
+      }
+    }
+  }
+  
   /// Example of how notification levels map to ErrorSeverity
   static func demonstrateSeverityMapping() {
     // Convert notification levels to ErrorSeverity
-    _=ErrorSeverity.from(notificationLevel: ErrorNotificationLevel.error)
-    _=ErrorSeverity.from(notificationLevel: ErrorNotificationLevel.warning)
-    _=ErrorSeverity.from(notificationLevel: ErrorNotificationLevel.info)
-    _=ErrorSeverity.from(notificationLevel: ErrorNotificationLevel.debug)
+    _ = ErrorNotificationLevel.error.toErrorSeverity()
+    _ = ErrorNotificationLevel.warning.toErrorSeverity()
+    _ = ErrorNotificationLevel.info.toErrorSeverity()
+    _ = ErrorNotificationLevel.debug.toErrorSeverity()
 
     // Convert ErrorSeverity to notification levels
-    _=ErrorSeverity.critical.toNotificationLevel()
-    _=ErrorSeverity.error.toNotificationLevel()
-    _=ErrorSeverity.warning.toNotificationLevel()
-    _=ErrorSeverity.info.toNotificationLevel()
-    _=ErrorSeverity.debug.toNotificationLevel()
+    let severityToLevel: (UmbraErrorsCore.ErrorSeverity) -> ErrorNotificationLevel = { severity in
+      switch severity {
+      case .critical, .error:
+        return .error
+      case .warning:
+        return .warning
+      case .info:
+        return .info
+      case .debug, .trace:
+        return .debug
+      }
+    }
+    
+    _ = severityToLevel(UmbraErrorsCore.ErrorSeverity.critical)
+    _ = severityToLevel(UmbraErrorsCore.ErrorSeverity.error)
+    _ = severityToLevel(UmbraErrorsCore.ErrorSeverity.warning)
+    _ = severityToLevel(UmbraErrorsCore.ErrorSeverity.info)
+    _ = severityToLevel(UmbraErrorsCore.ErrorSeverity.debug)
   }
 
   /// Simplified placeholder for potential error handling and logging configuration
@@ -24,7 +61,7 @@ enum ErrorLoggingExample {
     // This is just a stub for what could be implemented
 
     // Example of severity mapping
-    let severities: [ErrorSeverity]=[
+    let severities: [UmbraErrorsCore.ErrorSeverity] = [
       .critical,
       .error,
       .warning,

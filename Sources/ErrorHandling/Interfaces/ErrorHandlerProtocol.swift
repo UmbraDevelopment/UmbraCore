@@ -1,4 +1,5 @@
 import Foundation
+import UmbraErrorsCore
 
 /// Protocol defining common error handling capabilities
 ///
@@ -19,7 +20,7 @@ public protocol ErrorHandler {
   ///   - error: The error to log
   ///   - severity: The severity level
   ///   - context: Additional context for the error
-  func log(_ error: Error, severity: ErrorSeverity, context: [String: Any]?)
+  func log(_ error: Error, severity: UmbraErrorsCore.ErrorSeverity, context: [String: Any]?)
 
   /// Determine if this handler can process the given error
   /// - Parameter error: The error to check
@@ -72,7 +73,7 @@ extension DomainErrorHandler {
     }
 
     // Default handling for unknown errors
-    log(error, severity: .warning, context: ["reason": "Unhandled error type"])
+    log(error, severity: UmbraErrorsCore.ErrorSeverity.warning, context: ["reason": "Unhandled error type"])
     return .abort
   }
 

@@ -19,7 +19,7 @@ umbra_swift_library(
         [
             "Tests/**/*.swift",
         ],
-        allow_empty = False,  # Allow empty glob since tests may not exist yet
+        allow_empty = True,  # Allow empty glob since tests may not exist yet
     ),
     visibility = ["//visibility:public"],
     deps = [

@@ -1,11 +1,12 @@
 import Foundation
+import UmbraErrorsCore
 
 /// Basic implementation of the RecoveryOption protocol
 ///
 /// This struct provides a concrete implementation of the RecoveryOption
 /// protocol that can be used directly or as a base for more specialized
 /// recovery options.
-public struct ErrorRecoveryOption: RecoveryOption, Sendable, Equatable, Identifiable {
+public struct ErrorRecoveryOption: UmbraErrorsCore.RecoveryOption, Sendable, Equatable, Identifiable {
   /// Unique identifier for the recovery option
   public let id: UUID
 

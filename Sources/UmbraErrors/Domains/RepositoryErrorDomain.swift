@@ -56,7 +56,7 @@ public struct RepositoryError: UmbraError {
   public let description: String
 
   /// Additional context information about the error
-  public let context: ErrorContext
+  public let context: UmbraErrorsCore.ErrorContext
 
   /// The underlying error, if any
   public let underlyingError: Error?
@@ -92,7 +92,7 @@ public struct RepositoryError: UmbraError {
     type: ErrorType,
     code: String,
     description: String,
-    context: ErrorContext=ErrorContext(),
+    context: UmbraErrorsCore.ErrorContext=UmbraErrorsCore.ErrorContext(),
     underlyingError: Error?=nil,
     source: ErrorSource?=nil
   ) {
@@ -105,7 +105,7 @@ public struct RepositoryError: UmbraError {
   }
 
   /// Creates a new instance of the error with additional context
-  public func with(context: ErrorContext) -> RepositoryError {
+  public func with(context: UmbraErrorsCore.ErrorContext) -> RepositoryError {
     RepositoryError(
       type: type,
       code: code,
@@ -158,7 +158,7 @@ extension RepositoryError {
     contextDict["repoId"]=repoID
     contextDict["details"]="Repository with ID '\(repoID)' not found"
 
-    let errorContext=ErrorContext(contextDict)
+    let errorContext=UmbraErrorsCore.ErrorContext(contextDict)
 
     return RepositoryError(
       type: .notFound,
@@ -187,7 +187,7 @@ extension RepositoryError {
     contextDict["operation"]=operation
     contextDict["details"]="Access denied for operation '\(operation)' on repository '\(repoID)'"
 
-    let errorContext=ErrorContext(contextDict)
+    let errorContext=UmbraErrorsCore.ErrorContext(contextDict)
 
     return RepositoryError(
       type: .accessDenied,
@@ -213,7 +213,7 @@ extension RepositoryError {
     contextDict["repoId"]=repoID
     contextDict["details"]="Repository '\(repoID)' is locked"
 
-    let errorContext=ErrorContext(contextDict)
+    let errorContext=UmbraErrorsCore.ErrorContext(contextDict)
 
     return RepositoryError(
       type: .locked,
@@ -242,7 +242,7 @@ extension RepositoryError {
     contextDict["reason"]=reason
     contextDict["details"]="Repository '\(repoID)' is corrupt: \(reason)"
 
-    let errorContext=ErrorContext(contextDict)
+    let errorContext=UmbraErrorsCore.ErrorContext(contextDict)
 
     return RepositoryError(
       type: .corrupt,
@@ -271,7 +271,7 @@ extension RepositoryError {
     contextDict["reason"]=reason
     contextDict["details"]="Connection error with repository '\(repoID)': \(reason)"
 
-    let errorContext=ErrorContext(contextDict)
+    let errorContext=UmbraErrorsCore.ErrorContext(contextDict)
 
     return RepositoryError(
       type: .connectionError,
@@ -300,7 +300,7 @@ extension RepositoryError {
     contextDict["reason"]=reason
     contextDict["details"]="Repository '\(repoID)' is not accessible: \(reason)"
 
-    let errorContext=ErrorContext(contextDict)
+    let errorContext=UmbraErrorsCore.ErrorContext(contextDict)
 
     return RepositoryError(
       type: .notAccessible,
@@ -329,7 +329,7 @@ extension RepositoryError {
     contextDict["operation"]=operation
     contextDict["details"]="Operation '\(operation)' on repository '\(repoID)' timed out"
 
-    let errorContext=ErrorContext(contextDict)
+    let errorContext=UmbraErrorsCore.ErrorContext(contextDict)
 
     return RepositoryError(
       type: .timeout,
@@ -358,7 +358,7 @@ extension RepositoryError {
     contextDict["operation"]=operation
     contextDict["details"]="Operation '\(operation)' is not supported on repository '\(repoID)'"
 
-    let errorContext=ErrorContext(contextDict)
+    let errorContext=UmbraErrorsCore.ErrorContext(contextDict)
 
     return RepositoryError(
       type: .unsupportedOperation,
@@ -388,7 +388,7 @@ extension RepositoryError {
     }
     contextDict["details"]=message
 
-    let errorContext=ErrorContext(contextDict)
+    let errorContext=UmbraErrorsCore.ErrorContext(contextDict)
 
     return RepositoryError(
       type: .general,

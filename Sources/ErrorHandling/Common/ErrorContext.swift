@@ -1,12 +1,15 @@
 import Foundation
 import UmbraErrorsCore
 
-// Use the canonical ErrorContext from UmbraErrorsCore
-public typealias ErrorContext = UmbraErrorsCore.ErrorContext
+// MARK: - UmbraErrorsCore Integration
+
+// This file previously contained a typealias to UmbraErrorsCore.ErrorContext.
+// Instead of using a typealias, code should directly import UmbraErrorsCore
+// and use UmbraErrorsCore.ErrorContext.
 
 // The documentation and implementation have been moved to UmbraErrorsCore
 // Original documentation preserved here for reference:
-// 
+//
 // /// A structure that provides detailed context about an error's occurrence.
 // ///
 // /// `ErrorContext` enriches errors with information about where and how they

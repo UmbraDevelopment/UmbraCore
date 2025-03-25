@@ -1,4 +1,5 @@
 import Foundation
+import UmbraErrorsCore
 
 /// Protocol defining a destination for error logs
 public protocol LogDestination: Sendable {
@@ -11,7 +12,7 @@ public protocol LogDestination: Sendable {
   ///   - message: The message to log
   ///   - severity: The severity level of the message
   ///   - metadata: Additional contextual information
-  func write(message: String, severity: ErrorSeverity, metadata: [String: Any]?)
+  func write(message: String, severity: UmbraErrorsCore.ErrorSeverity, metadata: [String: Any]?)
 }
 
 /// Service interface for error logging
@@ -20,7 +21,7 @@ public protocol ErrorLoggingService: ErrorLoggingProtocol {
   /// - Parameters:
   ///   - error: The error to log
   ///   - severity: The severity level
-  func log(_ error: Error, withSeverity severity: ErrorSeverity)
+  func log(_ error: Error, withSeverity severity: UmbraErrorsCore.ErrorSeverity)
 
   /// Configure the logging service with destinations
   /// - Parameter destinations: The logging destinations to use
@@ -29,7 +30,7 @@ public protocol ErrorLoggingService: ErrorLoggingProtocol {
 
 /// Default implementation for converting UmbraErrors to general Error logging
 extension ErrorLoggingService {
-  public func log(error: some UmbraError, severity: ErrorSeverity) {
+  public func log(error: some UmbraError, severity: UmbraErrorsCore.ErrorSeverity) {
     log(error, withSeverity: severity)
   }
 }

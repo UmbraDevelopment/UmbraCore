@@ -1,46 +1,18 @@
 import Foundation
+import UmbraErrorsCore
 
-// Local type declarations to replace imports
-// These replace the removed ErrorHandling and ErrorHandlingDomains imports
+/**
+ * This file provides legacy service error types for backward compatibility.
+ * New code should use UmbraErrorsCore types directly.
+ * 
+ * The types in this file map to equivalent types in UmbraErrorsCore
+ * and provide conversion utilities to simplify migration.
+ */
 
-/// Error domain namespace
-public enum ErrorDomain {
-  /// Security domain
-  public static let security="Security"
-  /// Crypto domain
-  public static let crypto="Crypto"
-  /// Application domain
-  public static let application="Application"
-}
-
-/// Error context protocol
-public protocol ErrorContext {
-  /// Domain of the error
-  var domain: String { get }
-  /// Code of the error
-  var code: Int { get }
-  /// Description of the error
-  var description: String { get }
-}
-
-/// Base error context implementation
-public struct BaseErrorContext: ErrorContext {
-  /// Domain of the error
-  public let domain: String
-  /// Code of the error
-  public let code: Int
-  /// Description of the error
-  public let description: String
-
-  /// Initialise with domain, code and description
-  public init(domain: String, code: Int, description: String) {
-    self.domain=domain
-    self.code=code
-    self.description=description
-  }
-}
+// MARK: - Service Error Types
 
 /// Severity level for service errors
+/// For new code, use UmbraErrorsCore.ErrorSeverity instead
 @frozen
 public enum ServiceErrorSeverity: String, Codable, Sendable {
   /// Critical errors that require immediate attention
@@ -49,8 +21,42 @@ public enum ServiceErrorSeverity: String, Codable, Sendable {
   case error
   /// Less severe issues that may affect performance
   case warning
-  /// Informational issues that don't affect functionality
+  /// Informational messages that don't indicate problems
   case info
+  /// Detailed information for debugging
+  case debug
+  
+  /// Convert to UmbraErrorsCore.ErrorSeverity
+  public var asUmbraErrorSeverity: UmbraErrorsCore.ErrorSeverity {
+    switch self {
+    case .critical:
+      return .critical
+    case .error:
+      return .error
+    case .warning:
+      return .warning
+    case .info:
+      return .info
+    case .debug:
+      return .debug
+    }
+  }
+  
+  /// Create from UmbraErrorsCore.ErrorSeverity
+  public static func from(_ severity: UmbraErrorsCore.ErrorSeverity) -> ServiceErrorSeverity {
+    switch severity {
+    case .critical:
+      return .critical
+    case .error:
+      return .error
+    case .warning:
+      return .warning
+    case .info:
+      return .info
+    case .debug, .trace:
+      return .debug
+    }
+  }
 }
 
 /// Types of service errors
@@ -109,5 +115,94 @@ public enum ServiceErrorType: String, Sendable, CaseIterable {
       case .unknown:
         "Unknown Error"
     }
+  }
+}
+
+/// Properties common to all service errors
+public protocol ServiceError: Error, Sendable {
+  /// Service that encountered the error
+  var service: String { get }
+  
+  /// Type of error that occurred
+  var errorType: String { get }
+  
+  /// Detailed error message
+  var message: String { get }
+  
+  /// Optional request identifier associated with the error
+  var requestId: String? { get }
+  
+  /// Error severity level
+  var severity: ServiceErrorSeverity { get }
+  
+  /// Convert to UmbraErrorsCore.UmbraError
+  var asUmbraError: UmbraErrorsCore.UmbraError { get }
+}
+
+/// Default implementation of asUmbraError
+extension ServiceError {
+  public var asUmbraError: UmbraErrorsCore.UmbraError {
+    // Create context dictionary with service error information
+    let contextDict: [String: Any] = [
+      "service": service,
+      "errorType": errorType,
+      "message": message,
+      "requestId": requestId ?? "",
+      "severity": severity.rawValue
+    ]
+    
+    // Create ErrorContext instance
+    let errorContext = UmbraErrorsCore.ErrorContext(
+      contextDict,
+      source: service,
+      operation: "service_operation",
+      details: message
+    )
+    
+    // Create UmbraError with the context
+    return UmbraErrorsCore.UmbraError(
+      context: errorContext,
+      code: errorType,
+      domain: service
+    )
+  }
+}
+
+/// Basic implementation of ServiceError
+public struct BasicServiceError: ServiceError {
+  /// Service that encountered the error
+  public let service: String
+  
+  /// Type of error that occurred
+  public let errorType: String
+  
+  /// Detailed error message
+  public let message: String
+  
+  /// Optional request identifier associated with the error
+  public let requestId: String?
+  
+  /// Error severity level
+  public let severity: ServiceErrorSeverity
+  
+  /// Creates a new BasicServiceError
+  /// - Parameters:
+  ///   - service: Service that encountered the error
+  ///   - errorType: Type of error that occurred
+  ///   - message: Detailed error message
+  ///   - requestId: Optional request identifier
+  ///   - severity: Error severity level
+  public init(
+    service: String,
+    errorType: String,
+    message: String,
+    requestId: String? = nil,
+    severity: ServiceErrorSeverity = .error
+  ) {
+    self.service = service
+    self.errorType = errorType
+    self.message = message
+    self.requestId = requestId
+    self.severity = severity
   }
 }

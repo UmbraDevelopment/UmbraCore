@@ -1,4 +1,5 @@
 import Foundation
+import UmbraErrorsCore
 
 /// Likelihood of a recovery option succeeding
 public enum RecoveryLikelihood: Comparable, Sendable {
@@ -27,30 +28,17 @@ public enum RecoveryLikelihood: Comparable, Sendable {
   }
 }
 
-/// Protocol for error recovery options
-public protocol RecoveryOption: Sendable {
-  /// A unique identifier for this recovery option
-  var id: UUID { get }
-
-  /// User-facing title for this recovery option
-  var title: String { get }
-
-  /// Additional description of what this recovery will do
-  var description: String? { get }
-
-  /// Whether this recovery option can disrupt the user's workflow
-  var isDisruptive: Bool { get }
-
-  /// Action to perform when the recovery option is selected
-  func perform() async
-}
-
 /// Protocol for providing recovery options for errors
 public protocol RecoveryOptionsProvider: Sendable {
   /// Get recovery options for a specific error
   /// - Parameter error: The error to get recovery options for
   /// - Returns: Array of recovery options
-  func recoveryOptions(for error: some Error) -> [any RecoveryOption]
+  func getRecoveryOptions(for error: Error) -> [any UmbraErrorsCore.RecoveryOption]
+  
+  /// Check if this provider handles errors from a specific domain
+  /// - Parameter domain: The domain to check
+  /// - Returns: True if this provider can handle errors from the domain
+  func canHandle(domain: String) -> Bool
 }
 
 /// Protocol for services that can provide error recovery
@@ -65,7 +53,7 @@ public protocol ErrorRecoveryService: Sendable {
   /// Get available recovery options for an error
   /// - Parameter error: The error to get recovery options for
   /// - Returns: Available recovery options
-  func getRecoveryOptions(for error: some Error) -> [any RecoveryOption]
+  func getRecoveryOptions(for error: some Error) -> [any UmbraErrorsCore.RecoveryOption]
 
   /// Register a provider of recovery options
   /// - Parameter provider: The provider to register

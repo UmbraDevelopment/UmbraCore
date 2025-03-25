@@ -54,7 +54,7 @@ extension SecureBytesErrorDomain {
     description: String="The provided hexadecimal string is invalid or malformed",
     source: ErrorSource?=nil,
     underlyingError: Error?=nil,
-    context: ErrorContext=ErrorContext()
+    context: UmbraErrorsCore.ErrorContext=UmbraErrorsCore.ErrorContext()
   ) -> UmbraError {
     ResourceError(
       type: .invalidResource,
@@ -78,7 +78,7 @@ extension SecureBytesErrorDomain {
     description: String="The operation attempted to access memory outside the valid bounds",
     source: ErrorSource?=nil,
     underlyingError: Error?=nil,
-    context: ErrorContext=ErrorContext()
+    context: UmbraErrorsCore.ErrorContext=UmbraErrorsCore.ErrorContext()
   ) -> UmbraError {
     ResourceError(
       type: .invalidResource,
@@ -102,7 +102,7 @@ extension SecureBytesErrorDomain {
     description: String="Memory allocation failed for secure bytes storage",
     source: ErrorSource?=nil,
     underlyingError: Error?=nil,
-    context: ErrorContext=ErrorContext()
+    context: UmbraErrorsCore.ErrorContext=UmbraErrorsCore.ErrorContext()
   ) -> UmbraError {
     ResourceError(
       type: .general,

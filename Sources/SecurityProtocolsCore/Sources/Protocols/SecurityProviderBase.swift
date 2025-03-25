@@ -1,5 +1,5 @@
+import UmbraErrors
 import UmbraErrorsCore
-import UmbraErrorsDomains
 
 /// Base protocol for security providers
 /// This protocol is designed to be Foundation-free and serve as a base for more specific security

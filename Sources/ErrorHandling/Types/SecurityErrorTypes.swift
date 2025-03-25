@@ -5,20 +5,14 @@ import UmbraErrorsCore
 /// Core security error types used throughout the UmbraCore framework
 ///
 /// This enum defines all security-related errors in a single, flat structure
-/// that integrates with the domain-specific errors in UmbraErrors.Security hierarchy.
+/// that integrates with the domain-specific errors in UmbraErrors module.
 /// This approach promotes a consistent error taxonomy while maintaining clear
 /// separation between internal and external error representations.
 public enum SecurityError: Error, Equatable, Sendable {
   // MARK: - Domain Error Wrappers
 
-  /// Core security error from UmbraErrors.GeneralSecurity.Core
-  case domainCoreError(UmbraErrors.GeneralSecurity.Core)
-
-  /// Protocol-related security error from UmbraErrors.Security.Protocols
-  case domainProtocolError(UmbraErrors.Security.Protocols)
-
-  /// XPC-related security error from UmbraErrors.Security.XPC
-  case domainXPCError(UmbraErrors.Security.XPC)
+  /// Core security error from UmbraErrorsCore
+  case domainSecurityError(UmbraErrorsCore.UmbraError)
 
   // MARK: - Authentication Errors
 
@@ -31,117 +25,141 @@ public enum SecurityError: Error, Equatable, Sendable {
   /// Provided credentials are invalid
   case invalidCredentials(reason: String)
 
-  /// User session has expired
-  case sessionExpired(reason: String)
-
-  /// Authentication token has expired
-  case tokenExpired(reason: String)
-
-  // MARK: - Cryptographic Errors
-
-  /// Encryption operation failed
+  // MARK: - Cryptography Errors
+  
+  /// Failed to encrypt data
   case encryptionFailed(reason: String)
-
-  /// Decryption operation failed
+  
+  /// Failed to decrypt data
   case decryptionFailed(reason: String)
-
-  /// Hash verification failed
-  case hashVerificationFailed(reason: String)
-
+  
+  /// Cryptographic key is invalid or corrupted
+  case invalidKey(reason: String)
+  
+  /// Failed to generate cryptographic key
+  case keyGenerationFailed(reason: String)
+  
   /// Digital signature verification failed
   case signatureVerificationFailed(reason: String)
-
-  /// Key generation failed
-  case keyGenerationFailed(reason: String)
-
-  /// Key material is invalid
-  case invalidKeyMaterial(reason: String)
+  
+  /// Certificate is invalid, expired, or untrusted
+  case certificateInvalid(reason: String)
 
   // MARK: - Access Control Errors
-
-  /// Permission denied for resource
+  
+  /// Permission denied to access a resource
   case permissionDenied(resource: String, reason: String)
+  
+  /// Session has expired
+  case sessionExpired
+  
+  /// User account is locked or disabled
+  case accountLocked(reason: String)
+  
+  /// Rate limit exceeded for API or service
+  case rateLimitExceeded(service: String)
 
-  /// Biometric authentication failed
-  case biometricAuthenticationFailed(reason: String)
-
-  /// Access control level violation
-  case securityLevelViolation(required: String, current: String)
-
-  /// Too many failed authentication attempts
-  case tooManyFailedAttempts(attempts: Int, lockoutTime: String?)
-
-  // MARK: - System Security Errors
-
-  /// Secure Enclave operation failed
-  case secureEnclaveError(reason: String)
-
-  /// Keychain operation failed
-  case keychainError(reason: String)
-
-  /// Tampered binary detected
-  case binaryTampering(reason: String)
-
-  /// Memory corruption or exploit attempt detected
-  case securityExploitDetected(description: String)
-
-  /// Jailbreak or unsecured environment detected
-  case unsecuredEnvironment(reason: String)
+  // MARK: - Secure Storage Errors
+  
+  /// Failed to store data securely
+  case secureStorageFailed(reason: String)
+  
+  /// Failed to retrieve data from secure storage
+  case secureRetrievalFailed(reason: String)
+  
+  /// Secure storage is corrupted or tampered with
+  case secureStorageCorruption
+  
+  /// Unable to initialise secure storage
+  case secureStorageInitialisationFailed(reason: String)
 }
 
+// MARK: - CustomStringConvertible
 extension SecurityError: CustomStringConvertible {
   public var description: String {
     switch self {
-      case let .domainCoreError(error):
-        "Core security error: \(String(describing: error))"
-      case let .domainProtocolError(error):
-        "Protocol security error: \(String(describing: error))"
-      case let .domainXPCError(error):
-        "XPC security error: \(String(describing: error))"
+      case let .domainSecurityError(error):
+        return "Security error: \(String(describing: error))"
       case let .authenticationFailed(reason):
-        "Authentication failed: \(reason)"
+        return "Authentication failed: \(reason)"
       case let .unauthorizedAccess(reason):
-        "Unauthorized access: \(reason)"
+        return "Unauthorized access: \(reason)"
       case let .invalidCredentials(reason):
-        "Invalid credentials: \(reason)"
-      case let .sessionExpired(reason):
-        "Session expired: \(reason)"
-      case let .tokenExpired(reason):
-        "Token expired: \(reason)"
+        return "Invalid credentials: \(reason)"
       case let .encryptionFailed(reason):
-        "Encryption failed: \(reason)"
+        return "Encryption failed: \(reason)"
       case let .decryptionFailed(reason):
-        "Decryption failed: \(reason)"
-      case let .hashVerificationFailed(reason):
-        "Hash verification failed: \(reason)"
-      case let .signatureVerificationFailed(reason):
-        "Signature verification failed: \(reason)"
+        return "Decryption failed: \(reason)"
+      case let .invalidKey(reason):
+        return "Invalid key: \(reason)"
       case let .keyGenerationFailed(reason):
-        "Key generation failed: \(reason)"
-      case let .invalidKeyMaterial(reason):
-        "Invalid key material: \(reason)"
+        return "Key generation failed: \(reason)"
+      case let .signatureVerificationFailed(reason):
+        return "Signature verification failed: \(reason)"
+      case let .certificateInvalid(reason):
+        return "Certificate invalid: \(reason)"
       case let .permissionDenied(resource, reason):
-        "Permission denied for \(resource): \(reason)"
-      case let .biometricAuthenticationFailed(reason):
-        "Biometric authentication failed: \(reason)"
-      case let .securityLevelViolation(required, current):
-        "Security level violation: required \(required), current \(current)"
-      case let .tooManyFailedAttempts(attempts, lockoutTime):
-        if let lockout = lockoutTime {
-          "Too many failed attempts (\(attempts)). Locked out until \(lockout)."
-        } else {
-          "Too many failed attempts (\(attempts))."
-        }
-      case let .secureEnclaveError(reason):
-        "Secure Enclave error: \(reason)"
-      case let .keychainError(reason):
-        "Keychain error: \(reason)"
-      case let .binaryTampering(reason):
-        "Binary tampering detected: \(reason)"
-      case let .securityExploitDetected(description):
-        "Security exploit detected: \(description)"
-      case let .unsecuredEnvironment(reason):
-        "Unsecured environment detected: \(reason)"
+        return "Permission denied for \(resource): \(reason)"
+      case .sessionExpired:
+        return "Session expired"
+      case let .accountLocked(reason):
+        return "Account locked: \(reason)"
+      case let .rateLimitExceeded(service):
+        return "Rate limit exceeded for \(service)"
+      case let .secureStorageFailed(reason):
+        return "Secure storage failed: \(reason)"
+      case let .secureRetrievalFailed(reason):
+        return "Secure retrieval failed: \(reason)"
+      case .secureStorageCorruption:
+        return "Secure storage corruption detected"
+      case let .secureStorageInitialisationFailed(reason):
+        return "Secure storage initialisation failed: \(reason)"
+    }
+  }
+}
+
+// MARK: - Equatable
+extension SecurityError {
+  public static func == (lhs: SecurityError, rhs: SecurityError) -> Bool {
+    switch (lhs, rhs) {
+      case let (.domainSecurityError(lhsError), .domainSecurityError(rhsError)):
+        return String(describing: lhsError) == String(describing: rhsError)
+      case let (.authenticationFailed(lhsReason), .authenticationFailed(rhsReason)):
+        return lhsReason == rhsReason
+      case let (.unauthorizedAccess(lhsReason), .unauthorizedAccess(rhsReason)):
+        return lhsReason == rhsReason
+      case let (.invalidCredentials(lhsReason), .invalidCredentials(rhsReason)):
+        return lhsReason == rhsReason
+      case let (.encryptionFailed(lhsReason), .encryptionFailed(rhsReason)):
+        return lhsReason == rhsReason
+      case let (.decryptionFailed(lhsReason), .decryptionFailed(rhsReason)):
+        return lhsReason == rhsReason
+      case let (.invalidKey(lhsReason), .invalidKey(rhsReason)):
+        return lhsReason == rhsReason
+      case let (.keyGenerationFailed(lhsReason), .keyGenerationFailed(rhsReason)):
+        return lhsReason == rhsReason
+      case let (.signatureVerificationFailed(lhsReason), .signatureVerificationFailed(rhsReason)):
+        return lhsReason == rhsReason
+      case let (.certificateInvalid(lhsReason), .certificateInvalid(rhsReason)):
+        return lhsReason == rhsReason
+      case let (.permissionDenied(lhsResource, lhsReason), .permissionDenied(rhsResource, rhsReason)):
+        return lhsResource == rhsResource && lhsReason == rhsReason
+      case (.sessionExpired, .sessionExpired):
+        return true
+      case let (.accountLocked(lhsReason), .accountLocked(rhsReason)):
+        return lhsReason == rhsReason
+      case let (.rateLimitExceeded(lhsService), .rateLimitExceeded(rhsService)):
+        return lhsService == rhsService
+      case let (.secureStorageFailed(lhsReason), .secureStorageFailed(rhsReason)):
+        return lhsReason == rhsReason
+      case let (.secureRetrievalFailed(lhsReason), .secureRetrievalFailed(rhsReason)):
+        return lhsReason == rhsReason
+      case (.secureStorageCorruption, .secureStorageCorruption):
+        return true
+      case let (.secureStorageInitialisationFailed(lhsReason), .secureStorageInitialisationFailed(rhsReason)):
+        return lhsReason == rhsReason
+      default:
+        return false
     }
   }
 }
@@ -149,60 +167,5 @@ extension SecurityError: CustomStringConvertible {
 extension SecurityError: LocalizedError {
   public var errorDescription: String? {
     description
-  }
-}
-
-extension SecurityError {
-  public static func == (lhs: SecurityError, rhs: SecurityError) -> Bool {
-    switch (lhs, rhs) {
-      case let (.domainCoreError(lhsError), .domainCoreError(rhsError)):
-        String(describing: lhsError) == String(describing: rhsError)
-      case let (.domainProtocolError(lhsError), .domainProtocolError(rhsError)):
-        String(describing: lhsError) == String(describing: rhsError)
-      case let (.domainXPCError(lhsError), .domainXPCError(rhsError)):
-        String(describing: lhsError) == String(describing: rhsError)
-      case let (.authenticationFailed(lhsReason), .authenticationFailed(rhsReason)):
-        lhsReason == rhsReason
-      case let (.unauthorizedAccess(lhsReason), .unauthorizedAccess(rhsReason)):
-        lhsReason == rhsReason
-      case let (.invalidCredentials(lhsReason), .invalidCredentials(rhsReason)):
-        lhsReason == rhsReason
-      case let (.sessionExpired(lhsReason), .sessionExpired(rhsReason)):
-        lhsReason == rhsReason
-      case let (.tokenExpired(lhsReason), .tokenExpired(rhsReason)):
-        lhsReason == rhsReason
-      case let (.encryptionFailed(lhsReason), .encryptionFailed(rhsReason)):
-        lhsReason == rhsReason
-      case let (.decryptionFailed(lhsReason), .decryptionFailed(rhsReason)):
-        lhsReason == rhsReason
-      case let (.hashVerificationFailed(lhsReason), .hashVerificationFailed(rhsReason)):
-        lhsReason == rhsReason
-      case let (.signatureVerificationFailed(lhsReason), .signatureVerificationFailed(rhsReason)):
-        lhsReason == rhsReason
-      case let (.keyGenerationFailed(lhsReason), .keyGenerationFailed(rhsReason)):
-        lhsReason == rhsReason
-      case let (.invalidKeyMaterial(lhsReason), .invalidKeyMaterial(rhsReason)):
-        lhsReason == rhsReason
-      case let (.permissionDenied(lhsResource, lhsReason), .permissionDenied(rhsResource, rhsReason)):
-        lhsResource == rhsResource && lhsReason == rhsReason
-      case let (.biometricAuthenticationFailed(lhsReason), .biometricAuthenticationFailed(rhsReason)):
-        lhsReason == rhsReason
-      case let (.securityLevelViolation(lhsRequired, lhsCurrent), .securityLevelViolation(rhsRequired, rhsCurrent)):
-        lhsRequired == rhsRequired && lhsCurrent == rhsCurrent
-      case let (.tooManyFailedAttempts(lhsAttempts, lhsLockoutTime), .tooManyFailedAttempts(rhsAttempts, rhsLockoutTime)):
-        lhsAttempts == rhsAttempts && lhsLockoutTime == rhsLockoutTime
-      case let (.secureEnclaveError(lhsReason), .secureEnclaveError(rhsReason)):
-        lhsReason == rhsReason
-      case let (.keychainError(lhsReason), .keychainError(rhsReason)):
-        lhsReason == rhsReason
-      case let (.binaryTampering(lhsReason), .binaryTampering(rhsReason)):
-        lhsReason == rhsReason
-      case let (.securityExploitDetected(lhsDescription), .securityExploitDetected(rhsDescription)):
-        lhsDescription == rhsDescription
-      case let (.unsecuredEnvironment(lhsReason), .unsecuredEnvironment(rhsReason)):
-        lhsReason == rhsReason
-      default:
-        false
-    }
   }
 }

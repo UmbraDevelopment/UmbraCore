@@ -22,7 +22,7 @@ public protocol ServiceErrorProtocol: LocalizedError {
   var recoverySteps: [String]? { get }
 
   /// Creates an error context from this service error
-  var context: ErrorContext { get }
+  var context: UmbraErrorsCore.ErrorContext { get }
 }
 
 extension ServiceErrorProtocol {
@@ -33,9 +33,9 @@ extension ServiceErrorProtocol {
   public var recoverySteps: [String]? { nil }
 
   /// Default implementation creating an error context
-  public var context: ErrorContext {
+  public var context: UmbraErrorsCore.ErrorContext {
     // Create the error context with the required parameters
-    BaseErrorContext(
+    UmbraErrorsCore.ErrorContext.create(
       domain: serviceName,
       code: 0,
       description: details ?? "Unknown error in \(operation)",

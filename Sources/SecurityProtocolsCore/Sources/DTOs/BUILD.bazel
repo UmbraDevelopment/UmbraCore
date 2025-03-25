@@ -19,8 +19,11 @@ umbra_swift_library(
         # Dependencies will go here, for example:
         "//Sources/CoreDTOs",
         "//Sources/UmbraLogging",
+        # Removing the circular dependency to Protocols
+        # "//Sources/SecurityProtocolsCore/Sources/Protocols",
         # "@com_github_apple_swift_log//:Logging",
         "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraErrors",
     ],
 )
 

@@ -30,7 +30,7 @@ public struct LoggingErrorDTO: Error, Hashable, Equatable, Sendable {
   public let description: String
 
   /// Additional context information about the error
-  public let context: ErrorContext
+  public let context: UmbraErrorsCore.ErrorContext
 
   /// The underlying error, if any
   public let underlyingError: Error?
@@ -44,7 +44,7 @@ public struct LoggingErrorDTO: Error, Hashable, Equatable, Sendable {
   public init(
     type: LoggingErrorType,
     description: String,
-    context: ErrorContext=ErrorContext(),
+    context: UmbraErrorsCore.ErrorContext=UmbraErrorsCore.ErrorContext(),
     underlyingError: Error?=nil
   ) {
     self.type=type
@@ -67,7 +67,7 @@ public struct LoggingErrorDTO: Error, Hashable, Equatable, Sendable {
   ) {
     self.type=type
     self.description=description
-    context=ErrorContext(contextDict)
+    context=UmbraErrorsCore.ErrorContext(contextDict)
     self.underlyingError=underlyingError
   }
 
@@ -82,7 +82,7 @@ public struct LoggingErrorDTO: Error, Hashable, Equatable, Sendable {
     return LoggingErrorDTO(
       type: .unknown,
       description: "\(error)",
-      context: ErrorContext(),
+      context: UmbraErrorsCore.ErrorContext(),
       underlyingError: error
     )
   }

@@ -1,101 +1,86 @@
 import Foundation
 import UmbraErrorsCore
 
-// Local type declarations to replace imports
-// These replace the removed ErrorHandling and ErrorHandlingDomains imports
+// MARK: - Legacy Support
 
-/// Error domain namespace
-public enum ErrorDomain {
+/**
+ * This file previously contained local declarations of error types that have been
+ * moved to UmbraErrorsCore. The code below provides compatibility extensions and
+ * mappings to UmbraErrorsCore types to support existing client code.
+ *
+ * New code should:
+ * 1. Import UmbraErrorsCore directly
+ * 2. Use UmbraErrorsCore types like ErrorContext directly
+ * 3. Avoid using the compatibility layer in this file
+ */
+
+// MARK: - Domain Constants
+// Legacy domain constants for backward compatibility
+public extension UmbraErrorsCore.ErrorDomain {
   /// Security domain
-  public static let security = "Security"
+  static let security = "Security"
   /// Crypto domain
-  public static let crypto = "Crypto"
+  static let crypto = "Crypto"
   /// Application domain
-  public static let application = "Application"
+  static let application = "Application"
 }
 
-/// Error context protocol
-public protocol ErrorContextProtocol {
-  /// Domain of the error
-  var domain: String { get }
-  /// Code of the error
-  var code: Int { get }
-  /// Description of the error
-  var description: String { get }
-}
+// MARK: - Compatibility Mappings
 
-/// Base error context implementation
-public struct BaseErrorContext: ErrorContextProtocol {
+/// For backward compatibility - use UmbraErrorsCore.ErrorContext in new code
+public typealias ErrorContext = UmbraErrorsCore.ErrorContext
+
+/**
+ * For backward compatibility - use UmbraErrorsCore.ErrorContext in new code
+ * 
+ * This struct provides a simple mapping to UmbraErrorsCore.ErrorContext.
+ * It is only maintained for legacy code support and should not be used in new code.
+ */
+public struct BaseErrorContext: Equatable, Codable, Hashable, Sendable {
   /// Domain of the error
   public let domain: String
   /// Code of the error
   public let code: Int
   /// Description of the error
   public let description: String
-
+  
   /// Initialise with domain, code and description
   public init(domain: String, code: Int, description: String) {
     self.domain = domain
     self.code = code
     self.description = description
   }
+  
+  /// Map to UmbraErrorsCore.ErrorContext
+  public var asUmbraErrorContext: UmbraErrorsCore.ErrorContext {
+    UmbraErrorsCore.ErrorContext(
+      ["domain": domain, "code": code, "description": description],
+      source: domain,
+      operation: "unknown",
+      details: description
+    )
+  }
+  
+  /// Create from UmbraErrorsCore.ErrorContext
+  public static func from(_ context: UmbraErrorsCore.ErrorContext) -> BaseErrorContext {
+    let domainValue = context.typedValue(for: "domain", as: String.self) ?? context.source ?? "Unknown"
+    let codeValue = context.typedValue(for: "code", as: Int.self) ?? 0
+    let descriptionValue = context.details ?? "Unknown error"
+    
+    return BaseErrorContext(
+      domain: domainValue,
+      code: codeValue,
+      description: descriptionValue
+    )
+  }
 }
 
-// Use the canonical ErrorContext from UmbraErrorsCore
-public typealias ErrorContext = UmbraErrorsCore.ErrorContext
+// MARK: - Conversion Extensions
 
-/// Extension to add compatibility with ErrorContextProtocol
+/// Extension to enable conversion from UmbraErrorsCore.ErrorContext to BaseErrorContext
 extension UmbraErrorsCore.ErrorContext {
-    /// Domain value for compatibility with ErrorContextProtocol
-    public var domain: String {
-        return source ?? "Unknown"
-    }
-    
-    /// Code value for compatibility with ErrorContextProtocol
-    public var code: Int {
-        if let codeValue = self.value(for: "code") as? Int {
-            return codeValue
-        }
-        return 0
-    }
-    
-    /// Description value for compatibility with ErrorContextProtocol
-    public var description: String {
-        return details ?? "Unknown error"
-    }
+  /// Convert to legacy BaseErrorContext
+  public var asBaseErrorContext: BaseErrorContext {
+    BaseErrorContext.from(self)
+  }
 }
-
-/// Extension to add conveniences for common context values
-extension ErrorContext {
-    /// Creates a context with a message
-    public static func withMessage(_ message: String) -> ErrorContext {
-        return ErrorContext(
-            [:],
-            source: nil,
-            operation: nil,
-            details: message
-        )
-    }
-    
-    /// Creates a context with a source and message
-    public static func withSource(_ source: String, message: String) -> ErrorContext {
-        return ErrorContext(
-            [:],
-            source: source,
-            operation: nil,
-            details: message
-        )
-    }
-    
-    /// Creates a context with an operation and message
-    public static func withOperation(_ operation: String, message: String) -> ErrorContext {
-        return ErrorContext(
-            [:],
-            source: nil,
-            operation: operation,
-            details: message
-        )
-    }
-}
-
-// The rest of the file's functionality has been consolidated into UmbraErrorsCore.ErrorContext

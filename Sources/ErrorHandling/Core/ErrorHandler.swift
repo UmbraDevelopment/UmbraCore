@@ -17,7 +17,7 @@ public final class ErrorHandler {
   private var notificationHandler: ErrorNotificationService?
 
   /// Registered recovery options providers
-  private var recoveryProviders: [RecoveryOptionsProvider]
+  private var recoveryProviders: [Interfaces.RecoveryOptionsProvider]
 
   /// Private initialiser to enforce singleton pattern
   private init() {
@@ -38,7 +38,7 @@ public final class ErrorHandler {
 
   /// Register a recovery options provider
   /// - Parameter provider: The provider to register
-  public func registerRecoveryProvider(_ provider: RecoveryOptionsProvider) {
+  public func registerRecoveryProvider(_ provider: Interfaces.RecoveryOptionsProvider) {
     recoveryProviders.append(provider)
   }
 
@@ -50,8 +50,8 @@ public final class ErrorHandler {
   ///   - function: Function name (auto-filled by the compiler)
   ///   - line: Line number (auto-filled by the compiler)
   public func handle(
-    _ error: UmbraError,
-    severity: ErrorSeverity = .error,
+    _ error: UmbraErrorsCore.UmbraError,
+    severity: UmbraErrorsCore.ErrorSeverity = .error,
     file: String=#file,
     function: String=#function,
     line: Int=#line
@@ -60,7 +60,7 @@ public final class ErrorHandler {
     logger?.log(error, withSeverity: severity)
     
     // Present error notification if appropriate
-    if let notification = notificationHandler, severity.rawValue >= ErrorSeverity.error.rawValue {
+    if let notification = notificationHandler, severity.rawValue >= UmbraErrorsCore.ErrorSeverity.error.rawValue {
       Task {
         _ = await notification.notifyUser(
           about: error,
@@ -74,12 +74,12 @@ public final class ErrorHandler {
   /// Get recovery options for an error
   /// - Parameter error: The error to get recovery options for
   /// - Returns: An array of recovery options
-  public func getRecoveryOptions(for error: UmbraError) -> [RecoveryOption] {
+  public func getRecoveryOptions(for error: UmbraErrorsCore.UmbraError) -> [UmbraErrorsCore.RecoveryOption] {
     // Call the recoveryOptions method on each provider and combine the results
-    var options: [RecoveryOption] = []
+    var options: [UmbraErrorsCore.RecoveryOption] = []
     
     for provider in recoveryProviders {
-      let providerOptions = provider.recoveryOptions(for: error)
+      let providerOptions = provider.getRecoveryOptions(for: error)
       options.append(contentsOf: providerOptions)
     }
     
@@ -97,15 +97,16 @@ extension ErrorHandler {
   ///   - function: Function name (auto-filled by the compiler)
   ///   - line: Line number (auto-filled by the compiler)
   public func handleSecurity(
-    _ error: UmbraError,
-    severity: ErrorSeverity = .error,
+    _ error: UmbraErrorsCore.UmbraError,
+    severity: UmbraErrorsCore.ErrorSeverity = .error,
     file: String=#file,
     function: String=#function,
     line: Int=#line
   ) {
+    // Domain-specific handling for security errors
     handle(error, severity: severity, file: file, function: function, line: line)
   }
-
+  
   /// Handle a repository error
   /// - Parameters:
   ///   - error: The repository error to handle
@@ -114,12 +115,13 @@ extension ErrorHandler {
   ///   - function: Function name (auto-filled by the compiler)
   ///   - line: Line number (auto-filled by the compiler)
   public func handleRepository(
-    _ error: UmbraError,
-    severity: ErrorSeverity = .error,
+    _ error: UmbraErrorsCore.UmbraError,
+    severity: UmbraErrorsCore.ErrorSeverity = .error,
     file: String=#file,
     function: String=#function,
     line: Int=#line
   ) {
+    // Domain-specific handling for repository errors
     handle(error, severity: severity, file: file, function: function, line: line)
   }
 }

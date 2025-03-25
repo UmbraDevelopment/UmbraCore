@@ -52,8 +52,8 @@ public struct LoggingError: UmbraError {
   /// Human-readable description of the error
   public let description: String
 
-  /// Additional context information about the error
-  public let context: ErrorContext
+  /// Additional contextual information about the error
+  public let context: UmbraErrorsCore.ErrorContext
 
   /// The underlying error, if any
   public let underlyingError: Error?
@@ -89,7 +89,7 @@ public struct LoggingError: UmbraError {
     type: ErrorType,
     code: String,
     description: String,
-    context: ErrorContext=ErrorContext(),
+    context: UmbraErrorsCore.ErrorContext=UmbraErrorsCore.ErrorContext(),
     underlyingError: Error?=nil,
     source: ErrorSource?=nil
   ) {
@@ -102,7 +102,7 @@ public struct LoggingError: UmbraError {
   }
 
   /// Creates a new instance of the error with additional context
-  public func with(context: ErrorContext) -> LoggingError {
+  public func with(context: UmbraErrorsCore.ErrorContext) -> LoggingError {
     LoggingError(
       type: type,
       code: code,
@@ -155,7 +155,7 @@ extension LoggingError {
     contextDict["issue"]=issue
     contextDict["details"]="Configuration error: \(issue)"
 
-    let errorContext=ErrorContext(contextDict)
+    let errorContext=UmbraErrorsCore.ErrorContext(contextDict)
 
     return LoggingError(
       type: .configuration,
@@ -184,7 +184,7 @@ extension LoggingError {
     contextDict["reason"]=reason
     contextDict["details"]="Failed to write to log file '\(logFile)': \(reason)"
 
-    let errorContext=ErrorContext(contextDict)
+    let errorContext=UmbraErrorsCore.ErrorContext(contextDict)
 
     return LoggingError(
       type: .logWrite,
@@ -213,7 +213,7 @@ extension LoggingError {
     contextDict["reason"]=reason
     contextDict["details"]="Failed to read from log file '\(logFile)': \(reason)"
 
-    let errorContext=ErrorContext(contextDict)
+    let errorContext=UmbraErrorsCore.ErrorContext(contextDict)
 
     return LoggingError(
       type: .logRead,
@@ -238,7 +238,7 @@ extension LoggingError {
     var contextDict=context
     contextDict["details"]=message
 
-    let errorContext=ErrorContext(contextDict)
+    let errorContext=UmbraErrorsCore.ErrorContext(contextDict)
 
     return LoggingError(
       type: .general,

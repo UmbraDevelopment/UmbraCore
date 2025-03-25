@@ -12,30 +12,33 @@ public struct ErrorSource: Codable, Equatable, Hashable {
   /// - Parameters:
   ///   - identifier: The source identifier
   ///   - location: Optional location information
-  public init(identifier: String, location: String?=nil) {
-    self.identifier=identifier
-    self.location=location
+  public init(identifier: String, location: String? = nil) {
+    self.identifier = identifier
+    self.location = location
   }
 }
 
-// Use the canonical ErrorContext from UmbraErrorsCore instead of defining our own
-public typealias ErrorContext = UmbraErrorsCore.ErrorContext
+// MARK: - UmbraErrorsCore Integration
+
+// This file previously contained a typealias to UmbraErrorsCore.ErrorContext.
+// Instead of using a typealias, code should directly import UmbraErrorsCore
+// and use UmbraErrorsCore.ErrorContext.
 
 // Extension to bridge between the old and new ErrorContext formats if needed
 extension UmbraErrorsCore.ErrorContext {
-    /// Create a new error context with parameters matching the old interface
-    /// - Parameters:
-    ///   - source: Source of the error
-    ///   - operation: Operation that was being performed
-    ///   - details: Additional details
-    public init(source: String, operation: String, details: String) {
-        self.init(
-            [:],
-            source: source,
-            operation: operation,
-            details: details
-        )
-    }
+  /// Create a new error context with parameters matching the old interface
+  /// - Parameters:
+  ///   - source: Source of the error
+  ///   - operation: Operation that was being performed
+  ///   - details: Additional details
+  public init(source: String, operation: String, details: String) {
+    self.init(
+      [:],
+      source: source,
+      operation: operation,
+      details: details
+    )
+  }
 }
 
 /// Error context protocol
@@ -74,12 +77,12 @@ public protocol UmbraError: Error, CustomStringConvertible {
   var underlyingError: Error? { get }
 
   /// Additional context associated with this error
-  var context: ErrorContext { get }
+  var context: UmbraErrorsCore.ErrorContext { get }
 
   /// Creates a new error with the given context
   /// - Parameter context: The context to associate with the error
   /// - Returns: A new error with the given context
-  func with(context: ErrorContext) -> Self
+  func with(context: UmbraErrorsCore.ErrorContext) -> Self
 
   /// Creates a new error with the given underlying error
   /// - Parameter underlyingError: The underlying error

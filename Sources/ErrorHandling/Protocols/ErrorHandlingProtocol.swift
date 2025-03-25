@@ -1,7 +1,7 @@
 import Foundation
+import Interfaces
 import UmbraErrorsCore
 import UmbraLogging
-import Interfaces
 
 /// Error Handling Protocol
 /// Defines the public interface for error handling operations.
@@ -12,86 +12,89 @@ public protocol ErrorHandlingProtocol {
 /// A protocol that all UmbraCore errors must conform to.
 /// This provides a consistent interface for error handling across the codebase.
 public protocol UmbraError: Error, Sendable, CustomStringConvertible {
-  /// The domain that this error belongs to, e.g., "Security", "Repository"
+  /// Unique identifier for the error
+  var id: String { get }
+
+  /// Error domain for categorisation
   var domain: String { get }
 
-  /// A unique code that identifies this error within its domain
-  var code: String { get }
+  /// Specific error code within the domain
+  var code: Int { get }
 
-  /// A human-readable description of the error
-  var errorDescription: String { get }
+  /// Human-readable description of the error
+  var description: String { get }
 
   /// Optional source information about where the error occurred
-  var source: ErrorSource? { get }
+  var source: UmbraErrorsCore.ErrorSource? { get }
 
   /// Optional underlying error that caused this error
   var underlyingError: Error? { get }
 
-  /// Additional context information about the error
-  var context: ErrorContext { get }
-
   /// Creates a new instance of the error with additional context
-  func with(context: ErrorContext) -> Self
+  func with(context: UmbraErrorsCore.ErrorContext) -> Self
 
   /// Creates a new instance of the error with a specified underlying error
   func with(underlyingError: Error) -> Self
 
   /// Creates a new instance of the error with source information
-  func with(source: ErrorSource) -> Self
+  func with(source: UmbraErrorsCore.ErrorSource) -> Self
+
+  /// Gets or creates an error context from this error
+  var context: UmbraErrorsCore.ErrorContext { get }
+
+  /// Severity level of this error
+  var severity: UmbraErrorsCore.ErrorSeverity { get }
 }
 
-/// Default implementation for UmbraError
 extension UmbraError {
-  public var description: String {
-    var desc = "[\(domain):\(code)] \(errorDescription)"
+  /// Default implementation assumes no underlying error
+  public var underlyingError: Error? { nil }
 
-    if let source {
-      desc += " (at \(source.function) in \(source.file):\(source.line))"
-    }
+  /// Default implementation assumes no source information
+  public var source: UmbraErrorsCore.ErrorSource? { nil }
 
-    return desc
-  }
-
-  /// Default implementation returns an empty context
-  public var context: ErrorContext {
-    BaseErrorContext(
-      domain: domain,
-      code: 0,
-      description: errorDescription
-    )
+  /// Default implementation returns the error as is
+  public func with(context _: UmbraErrorsCore.ErrorContext) -> Self {
+    self
   }
 
   /// Default implementation returns the error as is
-  public func with(underlyingError: Error) -> Self {
+  public func with(underlyingError _: Error) -> Self {
     self
   }
 
-  /// Default implementation returns nil
-  public var source: ErrorSource? {
-    nil
-  }
-  
-  /// Default implementation for with source
-  public func with(source: ErrorSource) -> Self {
+  /// Default implementation returns the error as is
+  public func with(source _: UmbraErrorsCore.ErrorSource) -> Self {
     self
   }
-}
 
-/// Extension to add conveniences for UmbraError
-extension UmbraError {
-  /// Create a new instance of the error with source location information
-  ///
+  /// Default implementation creates a context from the error properties
+  public var context: UmbraErrorsCore.ErrorContext {
+    UmbraErrorsCore.ErrorContext.create(
+      domain: domain,
+      code: code,
+      description: description,
+      underlyingError: underlyingError
+    )
+  }
+
+  /// Default implementation for error severity
+  public var severity: UmbraErrorsCore.ErrorSeverity {
+    .error
+  }
+
+  /// Helper method to include source information using #file, #function, #line
   /// - Parameters:
-  ///   - file: The file where the error occurred (defaults to current file)
-  ///   - line: The line where the error occurred (defaults to current line)
-  ///   - function: The function where the error occurred (defaults to current function)
+  ///   - file: Source file where the error occurred
+  ///   - function: Function where the error occurred
+  ///   - line: Line number where the error occurred
   /// - Returns: A new instance of the error with source information
   public func withSource(file: String = #file, function: String = #function, line: Int = #line) -> Self {
-    with(source: ErrorSource(file: file, function: function, line: line))
+    with(source: UmbraErrorsCore.ErrorSource(file: file, line: line, function: function))
   }
 }
 
-/// A protocol for domain-specific error types
+/// Protocol for domain-specific error types
 public protocol DomainError: UmbraError {
   /// The domain identifier for this error type
   static var domain: String { get }
@@ -186,7 +189,7 @@ public protocol ErrorNotificationProtocol {
   func notifyUser<E: UmbraError>(
     about error: E,
     severity: UmbraErrorsCore.ErrorSeverity,
-    level: ErrorNotificationLevel,
-    recoveryOptions: [any RecoveryOption]
-  ) async -> (option: any RecoveryOption, status: RecoveryStatus)?
+    level: UmbraErrorsCore.ErrorNotificationLevel,
+    recoveryOptions: [any UmbraErrorsCore.RecoveryOption]
+  ) async -> (option: any UmbraErrorsCore.RecoveryOption, status: UmbraErrorsCore.RecoveryStatus)?
 }

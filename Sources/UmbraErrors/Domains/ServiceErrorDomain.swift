@@ -44,7 +44,7 @@ public struct ServiceError: UmbraError {
   public let description: String
 
   /// Additional context information about the error
-  public let context: ErrorContext
+  public let context: UmbraErrorsCore.ErrorContext
 
   /// The underlying error, if any
   public let underlyingError: Error?
@@ -80,7 +80,7 @@ public struct ServiceError: UmbraError {
     type: ErrorType,
     code: String,
     description: String,
-    context: ErrorContext=ErrorContext(),
+    context: UmbraErrorsCore.ErrorContext=UmbraErrorsCore.ErrorContext(),
     underlyingError: Error?=nil,
     source: ErrorSource?=nil
   ) {
@@ -93,7 +93,7 @@ public struct ServiceError: UmbraError {
   }
 
   /// Creates a new instance of the error with additional context
-  public func with(context: ErrorContext) -> ServiceError {
+  public func with(context: UmbraErrorsCore.ErrorContext) -> ServiceError {
     ServiceError(
       type: type,
       code: code,
@@ -149,7 +149,7 @@ extension ServiceError {
     contextDict["reason"]=reason
     contextDict["details"]="Failed to connect to service '\(serviceName)': \(reason)"
 
-    let errorContext=ErrorContext(contextDict)
+    let errorContext=UmbraErrorsCore.ErrorContext(contextDict)
 
     return ServiceError(
       type: .connectionFailed,
@@ -181,7 +181,7 @@ extension ServiceError {
     contextDict["reason"]=reason
     contextDict["details"]="Request to '\(serviceName)/\(endpoint)' failed: \(reason)"
 
-    let errorContext=ErrorContext(contextDict)
+    let errorContext=UmbraErrorsCore.ErrorContext(contextDict)
 
     return ServiceError(
       type: .requestFailed,
@@ -213,7 +213,7 @@ extension ServiceError {
     contextDict["reason"]=reason
     contextDict["details"]="Failed to parse response from '\(serviceName)/\(endpoint)': \(reason)"
 
-    let errorContext=ErrorContext(contextDict)
+    let errorContext=UmbraErrorsCore.ErrorContext(contextDict)
 
     return ServiceError(
       type: .parseError,
@@ -242,7 +242,7 @@ extension ServiceError {
     contextDict["operation"]=operation
     contextDict["details"]="Not authorised to perform '\(operation)' on service '\(serviceName)'"
 
-    let errorContext=ErrorContext(contextDict)
+    let errorContext=UmbraErrorsCore.ErrorContext(contextDict)
 
     return ServiceError(
       type: .unauthorised,
@@ -270,7 +270,7 @@ extension ServiceError {
     contextDict["serviceName"]=serviceName
     contextDict["details"]="Error in service '\(serviceName)': \(message)"
 
-    let errorContext=ErrorContext(contextDict)
+    let errorContext=UmbraErrorsCore.ErrorContext(contextDict)
 
     return ServiceError(
       type: .general,

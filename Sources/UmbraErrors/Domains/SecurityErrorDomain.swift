@@ -75,7 +75,7 @@ public struct SecurityError: UmbraError {
   public let underlyingError: Error?
 
   /// Additional contextual information
-  public let context: ErrorContext
+  public let context: UmbraErrorsCore.ErrorContext
 
   /// Creates a new SecurityError
   /// - Parameters:
@@ -89,7 +89,7 @@ public struct SecurityError: UmbraError {
     description: String?=nil,
     source: ErrorSource?=nil,
     underlyingError: Error?=nil,
-    context: ErrorContext=ErrorContext()
+    context: UmbraErrorsCore.ErrorContext=UmbraErrorsCore.ErrorContext()
   ) {
     errorCode=code
     customDescription=description
@@ -101,7 +101,7 @@ public struct SecurityError: UmbraError {
   /// Creates a new error with the given context
   /// - Parameter context: The context to associate with the error
   /// - Returns: A new error with the given context
-  public func with(context: ErrorContext) -> SecurityError {
+  public func with(context: UmbraErrorsCore.ErrorContext) -> SecurityError {
     SecurityError(
       code: errorCode,
       description: customDescription,
@@ -164,7 +164,7 @@ extension SecurityError {
       contextDict["details"]=message
     }
 
-    let context=ErrorContext(contextDict)
+    let context=UmbraErrorsCore.ErrorContext(contextDict)
     let source=ErrorSource(file: file, line: line, function: function)
 
     return SecurityError(
@@ -200,7 +200,7 @@ extension SecurityError {
       contextDict["details"]=message
     }
 
-    let context=ErrorContext(contextDict)
+    let context=UmbraErrorsCore.ErrorContext(contextDict)
     let source=ErrorSource(file: file, line: line, function: function)
 
     return SecurityError(

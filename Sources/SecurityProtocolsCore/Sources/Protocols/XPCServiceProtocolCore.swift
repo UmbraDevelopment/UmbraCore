@@ -1,6 +1,6 @@
 import UmbraCoreTypes
 import UmbraErrorsCore
-import UmbraErrorsDomains
+import UmbraErrors
 
 /// Protocol error type for XPC service operations
 public enum SecurityProtocolError: Error, Equatable, Sendable {

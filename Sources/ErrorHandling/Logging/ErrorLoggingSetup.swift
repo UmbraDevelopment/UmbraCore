@@ -54,7 +54,7 @@ extension ErrorLogger {
   ///   - line: The line where the error occurred
   public func logWithContext(
     _ error: Error,
-    context: ErrorContext,
+    context: UmbraErrorsCore.ErrorContext,
     level: ErrorLoggingLevel,
     file: String = #file,
     function: String = #function,
@@ -65,7 +65,7 @@ extension ErrorLogger {
       return
     }
 
-    var metadata: [String: Any] = [
+    var metadata: [String: String] = [
       "domain": context.domain,
       "code": context.code,
       "errorDescription": context.description
@@ -74,62 +74,81 @@ extension ErrorLogger {
     if configuration.includeSourceLocation {
       metadata["file"] = file
       metadata["function"] = function
-      metadata["line"] = line
+      metadata["line"] = String(line)
     }
 
     let message = "\(context.domain) [\(context.code)]: \(context.description)"
     
+    // Use a local method to log the message instead of directly accessing the logger property
+    logMessage(message, level: level, metadata: metadata)
+  }
+  
+  /// Internal helper to log a message with the appropriate level
+  /// - Parameters:
+  ///   - message: The message to log
+  ///   - level: The severity level
+  ///   - metadata: Metadata to include with the log
+  private func logMessage(_ message: String, level: ErrorLoggingLevel, metadata: [String: String]) {
+    // This method uses the internal log methods which have access to the logger
     switch level {
     case .debug:
-      logger.debug(message, metadata: LogMetadata(metadata))
+      debug(message, metadata: metadata)
     case .info:
-      logger.info(message, metadata: LogMetadata(metadata))
+      info(message, metadata: metadata)
     case .warning:
-      logger.warning(message, metadata: LogMetadata(metadata))
+      warning(message, metadata: metadata)
     case .error:
-      logger.error(message, metadata: LogMetadata(metadata))
+      error(message, metadata: metadata)
     case .critical:
-      logger.critical(message, metadata: LogMetadata(metadata))
+      critical(message, metadata: metadata)
     }
   }
 }
 
 // MARK: - Error Logging Level
 
-/// Defines the severity levels for error logging
-public enum ErrorLoggingLevel: Int, Comparable {
-  case debug = 0
-  case info = 1
-  case warning = 2
-  case error = 3
-  case critical = 4
+/// Error logging level enum - will be mapped to UmbraErrorsCore.ErrorSeverity
+public enum ErrorLoggingLevel: String, Codable, Comparable, Sendable {
+  /// Critical errors that require immediate attention
+  case critical
+  /// Serious errors that affect functionality
+  case error
+  /// Less severe issues that may affect performance
+  case warning
+  /// Informational messages that don't indicate problems
+  case info
+  /// Detailed information for debugging
+  case debug
   
-  public static func < (lhs: ErrorLoggingLevel, rhs: ErrorLoggingLevel) -> Bool {
-    return lhs.rawValue < rhs.rawValue
+  /// Map to ErrorSeverity
+  public var toErrorSeverity: UmbraErrorsCore.ErrorSeverity {
+    switch self {
+    case .critical:
+      return .critical
+    case .error:
+      return .error
+    case .warning:
+      return .warning
+    case .info:
+      return .info
+    case .debug:
+      return .debug
+    }
   }
-}
-
-// MARK: - Logger Configuration
-
-/// Configuration for the ErrorLogger
-public struct ErrorLoggerConfiguration {
-  /// The minimum severity level to log globally
-  public var minimumLevel: ErrorLoggingLevel = .debug
   
-  /// Whether to include source location information in logs
-  public var includeSourceLocation: Bool = true
+  /// Order for comparison
+  private var order: Int {
+    switch self {
+    case .critical: return 0
+    case .error: return 1
+    case .warning: return 2
+    case .info: return 3
+    case .debug: return 4
+    }
+  }
   
-  /// Whether to include stack traces in logs
-  public var includeStackTraces: Bool = false
-  
-  /// Default initialiser
-  public init(
-    minimumLevel: ErrorLoggingLevel = .debug,
-    includeSourceLocation: Bool = true,
-    includeStackTraces: Bool = false
-  ) {
-    self.minimumLevel = minimumLevel
-    self.includeSourceLocation = includeSourceLocation
-    self.includeStackTraces = includeStackTraces
+  /// Enable comparison between levels
+  public static func < (lhs: ErrorLoggingLevel, rhs: ErrorLoggingLevel) -> Bool {
+    return lhs.order < rhs.order
   }
 }

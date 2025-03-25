@@ -32,7 +32,7 @@ public struct KeyManagerErrorDTO: Error, Hashable, Equatable, Sendable {
   public let description: String
 
   /// Additional context information about the error
-  public let context: ErrorContext
+  public let context: UmbraErrorsCore.ErrorContext
 
   /// The underlying error, if any
   public let underlyingError: Error?
@@ -46,7 +46,7 @@ public struct KeyManagerErrorDTO: Error, Hashable, Equatable, Sendable {
   public init(
     type: KeyManagerErrorType,
     description: String,
-    context: ErrorContext=ErrorContext(),
+    context: UmbraErrorsCore.ErrorContext=UmbraErrorsCore.ErrorContext(),
     underlyingError: Error?=nil
   ) {
     self.type=type
@@ -69,7 +69,7 @@ public struct KeyManagerErrorDTO: Error, Hashable, Equatable, Sendable {
   ) {
     self.type=type
     self.description=description
-    context=ErrorContext(contextDict)
+    context=UmbraErrorsCore.ErrorContext(contextDict)
     self.underlyingError=underlyingError
   }
 
@@ -84,7 +84,7 @@ public struct KeyManagerErrorDTO: Error, Hashable, Equatable, Sendable {
     return KeyManagerErrorDTO(
       type: .unknown,
       description: "\(error)",
-      context: ErrorContext(),
+      context: UmbraErrorsCore.ErrorContext(),
       underlyingError: error
     )
   }

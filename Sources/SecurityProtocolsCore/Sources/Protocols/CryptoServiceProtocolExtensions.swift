@@ -1,6 +1,6 @@
 import UmbraCoreTypes
-import UmbraErrorsCore
-import UmbraErrorsDomains
+import UmbraErrors
+import "../DTOs"  // Import the DTOs module to access DTO types
 
 // MARK: - DTO Extensions for CryptoServiceProtocol
 

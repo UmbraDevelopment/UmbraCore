@@ -46,7 +46,7 @@ extension TimePointErrorDomain {
     description: String="The time format is invalid or malformed",
     source: ErrorSource?=nil,
     underlyingError: Error?=nil,
-    context: ErrorContext=ErrorContext()
+    context: UmbraErrorsCore.ErrorContext=UmbraErrorsCore.ErrorContext()
   ) -> UmbraError {
     ResourceError(
       type: .invalidResource,
@@ -70,7 +70,7 @@ extension TimePointErrorDomain {
     description: String="The time value is out of allowed range",
     source: ErrorSource?=nil,
     underlyingError: Error?=nil,
-    context: ErrorContext=ErrorContext()
+    context: UmbraErrorsCore.ErrorContext=UmbraErrorsCore.ErrorContext()
   ) -> UmbraError {
     ResourceError(
       type: .invalidResource,

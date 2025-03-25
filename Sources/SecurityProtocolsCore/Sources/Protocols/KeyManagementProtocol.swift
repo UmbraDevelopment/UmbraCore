@@ -1,6 +1,6 @@
 import UmbraCoreTypes
 import UmbraErrorsCore
-import UmbraErrorsDomains
+import UmbraErrors
 
 /// Protocol defining secure key management operations in a FoundationIndependent manner.
 /// All operations use only primitive types and FoundationIndependent custom types.
