@@ -1,5 +1,5 @@
 import CoreServices
-import CoreServicesTypesNoFoundation
+import CoreServicesTypes
 import UmbraErrors
 import UmbraErrorsCore
 
@@ -20,11 +20,11 @@ public actor SecurityServiceNoCrypto {
   // MARK: - Properties
 
   /// Current state of the service
-  private var _state: CoreServicesTypesNoFoundation.ServiceState = .uninitialized
+  private var _state: CoreServicesTypes.ServiceState = .uninitialized
 
   /// Static property to store state for non-isolated access
   private static var _nonIsolatedStateStorage: [
-    ObjectIdentifier: CoreServicesTypesNoFoundation
+    ObjectIdentifier: CoreServicesTypes
       .ServiceState
   ]=[:]
   private static let _stateAccessQueue=DispatchQueue(label: "com.umbra.security.service.state")
@@ -33,7 +33,7 @@ public actor SecurityServiceNoCrypto {
   private let instanceID=ObjectIdentifier(UUID() as NSObject)
 
   /// Public accessor for the state
-  public nonisolated var state: CoreServicesTypesNoFoundation.ServiceState {
+  public nonisolated var state: CoreServicesTypes.ServiceState {
     SecurityServiceNoCrypto._stateAccessQueue.sync {
       SecurityServiceNoCrypto._nonIsolatedStateStorage[instanceID] ?? .uninitialized
     }
@@ -42,7 +42,7 @@ public actor SecurityServiceNoCrypto {
   /// Update the non-isolated state - static method to avoid actor isolation issues
   private static func updateNonIsolatedState(
     for id: ObjectIdentifier,
-    newState: CoreServicesTypesNoFoundation.ServiceState
+    newState: CoreServicesTypes.ServiceState
   ) {
     _stateAccessQueue.sync {
       _nonIsolatedStateStorage[id]=newState

@@ -16,7 +16,7 @@ umbra_swift_library(
         exclude_directories = 1,
     ),
     deps = [
-        "//Sources/CoreServicesTypes",
+        "//Sources/Core/Services/Types",  # Updated path to Types module
         "//Sources/KeyManagementTypes",
         "//Sources/UmbraCoreTypes",
         "//Sources/SecurityProtocolsCore",

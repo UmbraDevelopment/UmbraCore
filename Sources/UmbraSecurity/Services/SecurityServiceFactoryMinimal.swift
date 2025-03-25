@@ -1,10 +1,12 @@
-import CoreServicesTypesNoFoundation
+import CoreServicesTypes
 import SecurityInterfaces
-import UmbraCoreTypesimport SecurityUtils
-import UmbraCoreTypesimport XPCProtocolsCoreimport XPCProtocolsCoreimport SecurityInterfacesProtocols
-import UmbraCoreTypesimport XPCProtocolsCoreimport XPCProtocolsCoreimport SecurityTypes
+import SecurityUtils
+import SecurityInterfacesProtocols
+import SecurityTypes
+import UmbraCoreTypes
 import UmbraLogging
-import XPCProtocolsCoreimport SecurityInterfacesBase
+import XPCProtocolsCore
+import SecurityInterfacesBase
 
 /// Minimal factory for creating security services with no Foundation dependencies
 /// This demonstrates how to use the components we've created to break circular dependencies
