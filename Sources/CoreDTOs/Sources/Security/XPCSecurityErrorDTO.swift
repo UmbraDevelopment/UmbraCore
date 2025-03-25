@@ -1,5 +1,3 @@
-import SecurityBridgeTypes
-
 /// This file previously contained a typealias UmbraErrorsSecurityProtocolsDTO.
 ///
 /// As per the project's typealias policy:

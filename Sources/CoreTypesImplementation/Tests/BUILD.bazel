@@ -2,6 +2,7 @@ load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
     name = "Tests",
+    testonly = True,
     srcs = glob(
         [
             "*.swift",
@@ -9,22 +10,20 @@ umbra_swift_library(
         ],
         allow_empty = False,
         exclude = [
-            "**/Tests/**",
-            "**/*Test.swift",
             "**/*.generated.swift",
         ],
         exclude_directories = 1,
     ),
     deps = [
-        # Dependencies will go here, for example:
-        # "//Sources/CoreDTOs",
-        # "//Sources/UmbraLogging",
-        # "@com_github_apple_swift_log//:Logging",
+        "//Sources/CoreTypesImplementation/Sources:CoreTypesImplementation",
+        "//Sources/CoreTypesInterfaces",
+        "//Sources/UmbraErrors",
+        "//Sources/UmbraCoreTypes",
     ],
 )
 
 # Uncomment if documentation generation is needed
-# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")])
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 # load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
 #
 # swift_package(
@@ -33,5 +32,11 @@ umbra_swift_library(
 #         "**/*.swift",
 #         "**/*.docc/**",
 #     ]),
-#     deps = ["//Sources/Tests"],
+#     deps = [
+        # Dependencies will go here, for example:
+        # "//Sources/CoreDTOs",
+        # "//Sources/UmbraLogging",
+        # "@com_github_apple_swift_log//:Logging",
+#        "//Sources/UmbraCoreTypes",
+#     ],
 # )

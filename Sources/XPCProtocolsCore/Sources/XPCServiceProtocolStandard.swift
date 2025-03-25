@@ -3,67 +3,15 @@ import UmbraCoreTypes
 import UmbraErrors
 import UmbraErrorsCore
 
-// Local type declarations to replace imports
-// These replace the removed ErrorHandling and ErrorHandlingDomains imports
-
-/// Error domain namespace
-public enum ErrorDomain {
-  /// Security domain
-  public static let security="Security"
-  /// Crypto domain
-  public static let crypto="Crypto"
-  /// Application domain
-  public static let application="Application"
-}
-
-/// Error context protocol
-public protocol ErrorContext {
-  /// Domain of the error
-  var domain: String { get }
-  /// Code of the error
-  var code: Int { get }
-  /// Description of the error
-  var description: String { get }
-}
-
-/// Base error context implementation
-public struct BaseErrorContext: ErrorContext {
-  /// Domain of the error
-  public let domain: String
-  /// Code of the error
-  public let code: Int
-  /// Description of the error
-  public let description: String
-
-  /// Initialise with domain, code and description
-  public init(domain: String, code: Int, description: String) {
-    self.domain=domain
-    self.code=code
-    self.description=description
-  }
-}
-
 /**
  # Standard XPC Service Protocol
-
- This file defines the standard protocol for XPC services in UmbraCore, building upon the basic
- protocol to provide more comprehensive cryptographic and security functionality.
-
- ## Features
-
- * Extends the basic XPC service protocol with cryptographic functions
- * Support for encryption, decryption, and key management
- * Status reporting and health checking capabilities
- * Support for modern SecureBytes for better memory safety and security
-
- ## Protocol Inheritance
-
- This protocol inherits from XPCServiceProtocolBasic and adds additional functionality.
- Services can choose to implement this protocol if they need to provide standard
- cryptographic capabilities.
+ 
+ Defines the standard XPC service protocol for cryptographic and security operations.
+ This protocol extends the basic protocol with more comprehensive operations
+ and error handling capabilities.
  */
 
-/// Protocol defining a standard set of cryptographic operations for XPC services
+/// Standard XPC service protocol for security and cryptographic operations
 public protocol XPCServiceProtocolStandard: XPCServiceProtocolBasic {
   /// Generate random data of specified length
   /// - Parameter length: Length in bytes of random data to generate

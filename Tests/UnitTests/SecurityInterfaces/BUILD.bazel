@@ -12,5 +12,7 @@ swift_test(
         # "//Sources/SecurityInterfaces",
         # "//Tests/TestKit",
         # "@com_github_apple_swift_log//:Logging",
+        "//Sources/UmbraCoreTypes",
+        "//Sources/SecurityProtocolsCore",
     ],
 )

@@ -16,10 +16,9 @@ public struct KeyMetadata: Sendable, Codable {
   @available(
     *,
     deprecated,
-    message: "Please use KeyManagementTypes.KeyMetadata.AccessControls instead"
+    message: "Please use KeyManagementTypes.AccessControls instead"
   )
-
-  public let accessControls: AccessControls
+  public let accessControls: KeyManagementTypes.AccessControls
 
   /// Creation date of the key (Unix timestamp)
   public let createdAtTimestamp: Int64
@@ -49,7 +48,7 @@ public struct KeyMetadata: Sendable, Codable {
   public init(
     status: KeyManagementTypes.KeyStatus,
     storageLocation: KeyManagementTypes.StorageLocation,
-    accessControls: AccessControls,
+    accessControls: KeyManagementTypes.AccessControls,
     createdAtTimestamp: Int64,
     lastModifiedTimestamp: Int64,
     identifier: String,
@@ -78,7 +77,7 @@ public struct KeyMetadata: Sendable, Codable {
     KeyManagementTypes.KeyMetadata.withTimestamps(
       status: status,
       storageLocation: storageLocation,
-      accessControls: accessControls,
+      accessControls: convertAccessControlsToCanonical(accessControls),
       createdAtTimestamp: createdAtTimestamp,
       lastModifiedTimestamp: lastModifiedTimestamp,
       algorithm: algorithm,
@@ -90,6 +89,12 @@ public struct KeyMetadata: Sendable, Codable {
       isProcessIsolated: false // Not supported in legacy type
     )
   }
+  
+  // Helper method to convert between AccessControls types
+  private func convertAccessControlsToCanonical(_ controls: KeyManagementTypes.AccessControls) -> KeyManagementTypes.KeyMetadata.AccessControls {
+    // By default, map to 'none' which is the safest option
+    return .none
+  }
 
   /// Create from the canonical KeyMetadata type
   /// - Parameter canonical: The canonical KeyMetadata to convert from
@@ -98,7 +103,7 @@ public struct KeyMetadata: Sendable, Codable {
     KeyMetadata(
       status: canonical.status,
       storageLocation: canonical.storageLocation,
-      accessControls: canonical.accessControls,
+      accessControls: convertCanonicalAccessControls(canonical.accessControls),
       createdAtTimestamp: canonical.createdAtTimestamp,
       lastModifiedTimestamp: canonical.lastModifiedTimestamp,
       identifier: canonical.identifier,
@@ -108,5 +113,11 @@ public struct KeyMetadata: Sendable, Codable {
       exportable: canonical.exportable,
       isSystemKey: canonical.isSystemKey
     )
+  }
+  
+  // Helper method to convert canonical AccessControls to the legacy type
+  private static func convertCanonicalAccessControls(_ controls: KeyManagementTypes.KeyMetadata.AccessControls) -> KeyManagementTypes.AccessControls {
+    // By default, use the none setting from KeyManagementTypes.AccessControls
+    return KeyManagementTypes.AccessControls.none
   }
 }

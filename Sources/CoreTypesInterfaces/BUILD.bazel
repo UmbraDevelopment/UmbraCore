@@ -26,9 +26,6 @@ umbra_swift_library(
         "//visibility:public",
     ],
     deps = [
-        # Dependencies will go here, for example:
-        # "//Sources/CoreDTOs",
-        # "//Sources/UmbraLogging",
-        # "@com_github_apple_swift_log//:Logging",
+        "//Sources/CoreTypesInterfaces/Sources:CoreTypesInterfacesSources",
     ],
 )

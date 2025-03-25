@@ -3,46 +3,6 @@ import UmbraCoreTypes
 import UmbraErrors
 import UmbraErrorsCore
 
-// Local type declarations to replace imports
-// These replace the removed ErrorHandling and ErrorHandlingDomains imports
-
-/// Error domain namespace
-public enum ErrorDomain {
-  /// Security domain
-  public static let security="Security"
-  /// Crypto domain
-  public static let crypto="Crypto"
-  /// Application domain
-  public static let application="Application"
-}
-
-/// Error context protocol
-public protocol ErrorContext {
-  /// Domain of the error
-  var domain: String { get }
-  /// Code of the error
-  var code: Int { get }
-  /// Description of the error
-  var description: String { get }
-}
-
-/// Base error context implementation
-public struct BaseErrorContext: ErrorContext {
-  /// Domain of the error
-  public let domain: String
-  /// Code of the error
-  public let code: Int
-  /// Description of the error
-  public let description: String
-
-  /// Initialise with domain, code and description
-  public init(domain: String, code: Int, description: String) {
-    self.domain=domain
-    self.code=code
-    self.description=description
-  }
-}
-
 /**
  # XPC Protocol Extensions
 
@@ -145,7 +105,7 @@ extension XPCServiceProtocolComplete {
   public func bridgeEncryption(
     data: SecureBytes,
     keyIdentifier: String?
-  ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
+  ) async -> Result<SecureBytes, SecurityError> {
     await encryptSecureData(data, keyIdentifier: keyIdentifier)
   }
 
@@ -157,7 +117,73 @@ extension XPCServiceProtocolComplete {
   public func bridgeDecryption(
     data: SecureBytes,
     keyIdentifier: String?
-  ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
+  ) async -> Result<SecureBytes, SecurityError> {
     await decryptSecureData(data, keyIdentifier: keyIdentifier)
+  }
+
+  /// Bridge getting random bytes from standard protocol to complete protocol
+  /// - Parameter count: Number of bytes to generate
+  /// - Returns: Result with random bytes if successful
+  public func getRandomBytes(count: Int) async -> Result<SecureBytes, CryptoError> {
+    let result=await self.getSecureRandomBytes(count: count)
+    return result
+  }
+
+  /// Bridge encryption from standard protocol to complete protocol
+  /// - Parameters:
+  ///   - data: SecureBytes to encrypt
+  ///   - keyIdentifier: Optional key identifier
+  ///   - algorithm: Optional algorithm specification
+  /// - Returns: Result with encrypted data if successful
+  public func encrypt(
+    data: SecureBytes,
+    keyIdentifier: String,
+    algorithm: String
+  ) async -> Result<SecureBytes, CryptoError> {
+    // If key ID specified, use crypto operations
+    if !keyIdentifier.isEmpty {
+      return await performCryptoOperation(
+        operation: "encrypt",
+        inputs: ["data": data],
+        keyIdentifier: keyIdentifier,
+        algorithm: algorithm
+      )
+    }
+    
+    // Otherwise use direct encryption (symmetric)
+    return await performEncryption(
+      data: data,
+      keyIdentifier: keyIdentifier,
+      algorithm: algorithm
+    )
+  }
+
+  /// Bridge decryption from standard protocol to complete protocol
+  /// - Parameters:
+  ///   - data: SecureBytes to decrypt
+  ///   - keyIdentifier: Optional key identifier
+  ///   - algorithm: Optional algorithm specification
+  /// - Returns: Result with decrypted data if successful
+  public func decrypt(
+    data: SecureBytes,
+    keyIdentifier: String,
+    algorithm: String
+  ) async -> Result<SecureBytes, CryptoError> {
+    // If key ID specified, use crypto operations
+    if !keyIdentifier.isEmpty {
+      return await performCryptoOperation(
+        operation: "decrypt",
+        inputs: ["data": data],
+        keyIdentifier: keyIdentifier,
+        algorithm: algorithm
+      )
+    }
+    
+    // Otherwise use direct decryption (symmetric)
+    return await performDecryption(
+      data: data,
+      keyIdentifier: keyIdentifier, 
+      algorithm: algorithm
+    )
   }
 }

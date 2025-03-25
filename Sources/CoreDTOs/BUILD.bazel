@@ -1,0 +1,19 @@
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+
+# This target re-exports functionality from the Sources submodule
+swift_library(
+    name = "CoreDTOs",
+    srcs = ["ModuleExports.swift"],
+    module_name = "CoreDTOs",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//Sources/CoreDTOs/Sources:CoreDTOs",
+        "//Sources/ErrorHandling",
+        "//Sources/ErrorHandlingDomains",
+        "//Sources/ErrorHandlingInterfaces",
+        "//Sources/SecurityBridgeTypes",
+        "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraErrors",
+        "//Sources/UmbraLogging",
+    ],
+)

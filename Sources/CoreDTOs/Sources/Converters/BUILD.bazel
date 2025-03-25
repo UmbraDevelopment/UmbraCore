@@ -15,16 +15,23 @@ umbra_swift_library(
         ],
         exclude_directories = 1,
     ),
+    visibility = ["//visibility:public"],
     deps = [
-        # Dependencies will go here, for example:
-        # "//Sources/CoreDTOs",
-        # "//Sources/UmbraLogging",
-        # "@com_github_apple_swift_log//:Logging",
+        "//Sources/CoreDTOs/Sources/DateTime",
+        "//Sources/CoreDTOs/Sources/FileSystem",
+        "//Sources/CoreDTOs/Sources/Network",
+        "//Sources/CoreDTOs/Sources/Notification",
+        "//Sources/CoreDTOs/Sources/Scheduling",
+        "//Sources/CoreDTOs/Sources/Security",
+        "//Sources/CoreDTOs/Sources/UserDefaults",
+        "//Sources/UmbraErrors",
+        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
+        "//Sources/UmbraCoreTypes",
     ],
 )
 
 # Uncomment if documentation generation is needed
-# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")])
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 # load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
 #
 # swift_package(
@@ -33,5 +40,11 @@ umbra_swift_library(
 #         "**/*.swift",
 #         "**/*.docc/**",
 #     ]),
-#     deps = ["//Sources/Converters"],
+#     deps = [
+        # Dependencies will go here, for example:
+        # "//Sources/CoreDTOs",
+        # "//Sources/UmbraLogging",
+        # "@com_github_apple_swift_log//:Logging",
+#        "//Sources/UmbraCoreTypes",
+#     ],
 # )

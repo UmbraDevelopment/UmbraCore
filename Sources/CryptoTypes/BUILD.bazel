@@ -13,7 +13,13 @@ umbra_swift_library(
         allow_empty = True
     ),
     deps = [
-        # Dependencies will go here, for example:
+        "//Sources/SecurityBridgeTypes/Sources:SecurityBridgeTypes",
+        "//Sources/SecurityProtocolsCore/Sources:SecurityProtocolsCore",
+        "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
+        "//Sources/UmbraErrors:UmbraErrors",
+        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
+        "//Sources/XPCProtocolsCore",
+        # Other possible dependencies based on other files in this module:
         # "//Sources/CoreDTOs",
         # "//Sources/UmbraLogging",
         # "@com_github_apple_swift_log//:Logging",
@@ -21,7 +27,7 @@ umbra_swift_library(
 )
 
 # Uncomment if documentation generation is needed
-# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")])
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 # load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
 #
 # swift_package(

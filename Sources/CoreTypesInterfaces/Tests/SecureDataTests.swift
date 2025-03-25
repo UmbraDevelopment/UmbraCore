@@ -1,4 +1,5 @@
 @testable import CoreTypesInterfaces
+import SecurityProtocolsCore
 import XCTest
 
 final class SecureDataTests: XCTestCase {

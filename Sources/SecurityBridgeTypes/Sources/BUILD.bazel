@@ -1,7 +1,7 @@
 load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
-    name = "Sources",
+    name = "SecurityBridgeTypes",
     srcs = glob(["*.swift", "**/*.swift"],
         exclude = ["**/Tests/**", "**/*Test.swift", "**/*.generated.swift"],
         exclude_directories = 1,
@@ -16,7 +16,7 @@ umbra_swift_library(
 )
 
 # Uncomment if documentation generation is needed
-# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")])
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 # load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
 #
 # swift_package(
@@ -25,5 +25,5 @@ umbra_swift_library(
 #         "**/*.swift",
 #         "**/*.docc/**",
 #     ]),
-#     deps = ["//Sources/Sources"],
+#     deps = ["//Sources/SecurityBridgeTypes/Sources:SecurityBridgeTypes"],
 # )

@@ -7,7 +7,7 @@ public enum OperationResultDTO<T> {
   /// Operation succeeded with a value
   case success(T)
   /// Operation failed with an error
-  case failure(ErrorHandlingCore.Error)
+  case failure(Error)
 
   /// Returns true if the operation succeeded
   public var succeeded: Bool {
@@ -50,7 +50,7 @@ public enum OperationResultDTO<T> {
     do {
       return try .success(body())
     } catch {
-      return .failure(ErrorHandlingCore.Error(error))
+      return .failure(error)
     }
   }
 }

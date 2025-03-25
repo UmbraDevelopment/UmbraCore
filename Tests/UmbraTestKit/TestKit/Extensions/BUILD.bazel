@@ -12,5 +12,6 @@ swift_test(
         # "//Sources/Extensions",
         # "//Tests/TestKit",
         # "@com_github_apple_swift_log//:Logging",
+        "//Sources/SecurityProtocolsCore",
     ],
 )

@@ -1,5 +1,4 @@
 import Foundation
-import SecurityBridgeTypes
 import UmbraErrors
 import UmbraErrorsCore
 
@@ -9,7 +8,7 @@ public enum SecurityDTOConverters {
   /// - Parameter error: Local error to convert
   /// - Returns: DTO error
   public static func toDTO(_ error: Error) -> Error {
-    if let securityError=error as? UmbraErrors.Security.Core {
+    if let securityError = error as? SecurityError {
       return XPCSecurityDTOConverter.toDTO(securityError)
     }
     return error
@@ -19,8 +18,8 @@ public enum SecurityDTOConverters {
   /// - Parameter error: DTO error to convert
   /// - Returns: Local error
   public static func fromDTO(_ error: Error) -> Error {
-    if let protocolsError=error as? UmbraErrors.Security.Protocols {
-      return XPCSecurityDTOConverter.fromDTO(protocolsError)
+    if let securityErrorDTO = error as? SecurityErrorDTO {
+      return XPCSecurityDTOConverter.fromDTO(securityErrorDTO)
     }
     return error
   }

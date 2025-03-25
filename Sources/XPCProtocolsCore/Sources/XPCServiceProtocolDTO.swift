@@ -1,48 +1,7 @@
 import CoreDTOs
-@_exported import struct CoreDTOs.OperationResultDTO
-@_exported import struct CoreDTOs.SecurityConfigDTO
-@_exported import struct CoreDTOs.SecurityErrorDTO
 import UmbraCoreTypes
-
-// Local type declarations to replace imports
-// These replace the removed ErrorHandling and ErrorHandlingDomains imports
-
-/// Error domain namespace
-public enum ErrorDomain {
-  /// Security domain
-  public static let security="Security"
-  /// Crypto domain
-  public static let crypto="Crypto"
-  /// Application domain
-  public static let application="Application"
-}
-
-/// Error context protocol
-public protocol ErrorContext {
-  /// Domain of the error
-  var domain: String { get }
-  /// Code of the error
-  var code: Int { get }
-  /// Description of the error
-  var description: String { get }
-}
-
-/// Base error context implementation
-public struct BaseErrorContext: ErrorContext {
-  /// Domain of the error
-  public let domain: String
-  /// Code of the error
-  public let code: Int
-  /// Description of the error
-  public let description: String
-
-  /// Initialise with domain, code and description
-  public init(domain: String, code: Int, description: String) {
-    self.domain=domain
-    self.code=code
-    self.description=description
-  }
-}
+import UmbraErrors
+import UmbraErrorsCore
 
 /**
  # XPC Service Protocol with DTOs
@@ -53,7 +12,7 @@ public struct BaseErrorContext: ErrorContext {
  */
 
 /// Basic XPC service protocol with DTO support
-public protocol XPCServiceProtocolDTO {
+public protocol XPCServiceProtocolDTO: XPCServiceProtocolBase {
   /// Protocol identifier
   static var protocolIdentifier: String { get }
 
@@ -126,22 +85,28 @@ extension XPCServiceProtocolDTO {
   /// Default implementation for random bytes
   public func getRandomBytesWithDTO(length: Int) async -> OperationResultDTO<SecureBytes> {
     // Default implementation just returns a failure
-    OperationResultDTO(
-      status: .failure,
-      errorCode: 1000,
-      errorMessage: "Random bytes generation not implemented",
-      details: ["requestedLength": "\(length)"]
+    .failure(
+      UmbraErrors.SecurityError(
+        domain: "XPC",
+        code: "NOT_IMPLEMENTED",
+        errorDescription: "Random bytes generation not implemented in this service",
+        source: nil,
+        underlyingError: nil,
+        context: ErrorContext()
+      )
     )
   }
 
   /// Get status with current timestamp and protocol version
   public func getStatusWithDTO() async -> OperationResultDTO<XPCProtocolDTOs.ServiceStatusDTO> {
-    let status=XPCProtocolDTOs.ServiceStatusDTO.current(
-      protocolVersion: Self.protocolIdentifier,
-      serviceVersion: "1.0.0",
-      details: ["serviceType": "XPC"]
+    let status = XPCProtocolDTOs.ServiceStatusDTO(
+      code: 200,
+      message: "Service is running",
+      isRunning: true,
+      version: Self.protocolIdentifier + " v1.0.0",
+      properties: ["timestamp": "\(Date())", "serviceType": "XPC"]
     )
 
-    return OperationResultDTO(value: status)
+    return .success(status)
   }
 }

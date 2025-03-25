@@ -1,89 +1,68 @@
-import SecurityBridgeTypes
 import UmbraCoreTypes
 import UmbraErrors
 import UmbraErrorsCore
+import CoreDTOs.Security
 
-/// Converts between UmbraErrors.Security.Core and
-/// UmbraErrors.Security.Protocols
+/// Converts between SecurityError and SecurityErrorDTO
 public enum XPCSecurityDTOConverter {
-  // MARK: - Convert to Protocols
+  // MARK: - Convert to DTO
 
-  /// Convert a UmbraErrors.Security.Core to UmbraErrors.Security.Protocols
+  /// Convert a SecurityError to SecurityErrorDTO
   /// - Parameter error: The error to convert
-  /// - Returns: A Foundation-independent UmbraErrors.Security.Protocols error
-  public static func toDTO(_ error: UmbraErrors.Security.Core) -> UmbraErrors.Security.Protocols {
-    switch error {
-      case let .internalError(description: description):
-        return .notImplemented(description)
-
-      case let .invalidKey(reason: reason):
-        return .invalidInput("Invalid key: \(reason)")
-
-      case let .invalidParameter(name: name, reason: reason):
-        return .invalidInput("Invalid parameter \(name): \(reason)")
-
-      case let .operationFailed(reason: reason):
-        return .operationFailed(reason)
-
-      case let .missingEntitlement(reason: reason):
-        return .operationFailed("Missing entitlement: \(reason)")
-
-      case let .notAuthorized(reason: reason):
-        return .operationFailed("Not authorized: \(reason)")
-
-      case let .authenticationFailed(reason: reason):
-        return .operationFailed("Authentication failed: \(reason)")
-
-      case let .invalidToken(reason: reason):
-        return .invalidInput("Invalid token: \(reason)")
-
-      case let .accessDenied(reason: reason):
-        return .operationFailed("Access denied: \(reason)")
-
-      case let .missingImplementation(component: component):
-        return .notImplemented("Missing implementation: \(component)")
-
-      case let .invalidCertificate(reason: reason):
-        return .invalidInput("Invalid certificate: \(reason)")
-
-      case let .invalidSignature(reason: reason):
-        return .invalidInput("Invalid signature: \(reason)")
-
-      case let .invalidContext(reason: reason):
-        return .invalidInput("Invalid context: \(reason)")
-
-      @unknown default:
-        return .notImplemented("Unknown security error")
+  /// - Returns: A Foundation-independent SecurityErrorDTO error
+  public static func toDTO(_ error: SecurityError) -> SecurityErrorDTO {
+    // Create a generic error DTO with appropriate values
+    return SecurityErrorDTO(
+      code: error.code,
+      domain: error.domain,
+      message: error.errorDescription,
+      details: extractErrorDetails(from: error.context)
+    )
+  }
+  
+  /// Extract details from an error context
+  /// - Parameter context: The error context
+  /// - Returns: Dictionary of details
+  private static func extractErrorDetails(from context: ErrorContext) -> [String: String] {
+    // Extract all context values that can be represented as strings
+    var details = [String: String]()
+    
+    if let contextData = context.value(for: "details") as? [String: Any] {
+      for (key, value) in contextData {
+        details[key] = String(describing: value)
+      }
     }
+    
+    return details
   }
 
-  // MARK: - Convert from Protocols
+  // MARK: - Convert from DTO
 
-  /// Convert an UmbraErrors.Security.Protocols to UmbraErrors.Security.Core
-  /// - Parameter protocols: The protocols error to convert
-  /// - Returns: A Foundation-dependent UmbraErrors.Security.Core
-  public static func fromDTO(
-    _ protocols: UmbraErrors.Security.Protocols
-  ) -> UmbraErrors.Security.Core {
-    switch protocols {
-      case let .invalidInput(message):
-        return .invalidParameter(name: "input", reason: message)
-      case let .operationFailed(message):
-        return .operationFailed(reason: message)
-      case let .timeout(message):
-        return .operationFailed(reason: "Timeout: \(message)")
-      case let .notFound(message):
-        return .operationFailed(reason: "Not found: \(message)")
-      case let .notAvailable(message):
-        return .operationFailed(reason: "Not available: \(message)")
-      case let .invalidState(message):
-        return .operationFailed(reason: "Invalid state: \(message)")
-      case let .randomGenerationFailed(message):
-        return .operationFailed(reason: "Random generation failed: \(message)")
-      case let .notImplemented(message):
-        return .internalError(description: message)
-      @unknown default:
-        return .internalError(description: "Unknown error")
+  /// Convert a SecurityErrorDTO to SecurityError
+  /// - Parameter dto: The DTO error to convert
+  /// - Returns: A SecurityError instance
+  public static func fromDTO(_ dto: SecurityErrorDTO) -> Error {
+    // Create a generic SecurityError with appropriate values
+    return SecurityError(
+      domain: dto.domain,
+      code: dto.code,
+      errorDescription: dto.message,
+      source: nil,
+      underlyingError: nil,
+      context: createContextFromDetails(dto.details)
+    )
+  }
+  
+  /// Create an ErrorContext from DTO details
+  /// - Parameter details: Details dictionary
+  /// - Returns: An ErrorContext instance
+  private static func createContextFromDetails(_ details: [String: String]) -> ErrorContext {
+    var context = ErrorContext()
+    
+    if !details.isEmpty {
+      context = context.adding(key: "details", value: details)
     }
+    
+    return context
   }
 }

@@ -8,9 +8,9 @@ swift_test(
         allow_empty = True
     ),
     deps = [
-        # Dependencies will go here, for example:
-        # "//Sources/Bookmark",
-        # "//Tests/TestKit",
-        # "@com_github_apple_swift_log//:Logging",
+        "//Sources/SecurityTypes",
+        "//Sources/SecurityUtils", 
+        "//Sources/UmbraBookmarkService",
     ],
+    visibility = ["//visibility:public"],
 )

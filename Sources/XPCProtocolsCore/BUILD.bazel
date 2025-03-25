@@ -17,7 +17,7 @@ umbra_swift_library(
     testonly = True,
     srcs = glob([
         "Tests/**/*.swift",
-    ]),
+    ], allow_empty = True),
     visibility = ["//visibility:public"],
     deps = [
         ":XPCProtocolsCore",

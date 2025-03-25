@@ -3,13 +3,15 @@ load("//bazel:swift_rules.bzl", "umbra_swift_library")
 umbra_swift_library(
     name = "UmbraErrorsExamples",
     srcs = glob(["*.swift"]),
+    visibility = ["//visibility:public"],
     deps = [
+        "//Sources/ErrorHandlingDomains",
         "//Sources/ErrorHandlingInterfaces",
+        "//Sources/UmbraErrors",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
         "//Sources/UmbraErrors/Domains",
         "//Sources/UmbraErrors/DTOs",
         "//Sources/UmbraErrors/Mapping",
         "//Sources/CoreErrors",
     ],
-    visibility = ["//visibility:public"],
 )

@@ -12,5 +12,6 @@ swift_test(
         # "//Sources/TestHelpers",
         # "//Tests/TestKit",
         # "@com_github_apple_swift_log//:Logging",
+        "//Sources/UmbraCoreTypes",
     ],
 )

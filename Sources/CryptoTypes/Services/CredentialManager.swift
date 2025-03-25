@@ -1,13 +1,10 @@
 // CryptoKit removed - cryptography will be handled in ResticBar
 import CryptoTypes
-import CryptoTypesProtocols
-import CryptoTypesTypes
 import UmbraErrors
 import UmbraErrorsCore
 
 import Foundation
 import SecurityTypes
-import SecurityTypesProtocols
 import UmbraCoreTypes
 import XPCProtocolsCore
 
