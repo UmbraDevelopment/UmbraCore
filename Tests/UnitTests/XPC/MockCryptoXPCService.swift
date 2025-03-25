@@ -1,6 +1,5 @@
 import Foundation
 import UmbraCryptoService
-import UmbraXPC
 import XPCProtocolsCore
 
 // A test double for CryptoXPCService to use in tests

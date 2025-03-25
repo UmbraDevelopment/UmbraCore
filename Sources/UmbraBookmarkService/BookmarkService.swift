@@ -1,5 +1,5 @@
 import Foundation
-import UmbraXPC
+import XPCProtocolsCore
 
 /// Service for managing security-scoped bookmarks
 public final class BookmarkService: NSObject, BookmarkServiceProtocol, NSXPCListenerDelegate,

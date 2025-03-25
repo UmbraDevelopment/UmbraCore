@@ -16,12 +16,13 @@ umbra_swift_library(
         exclude_directories = 1,
     ),
     deps = [
-        # Dependencies will go here, for example:
         "//Sources/CoreDTOs",
         "//Sources/UmbraLogging",
-        # "@com_github_apple_swift_log//:Logging",
         "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraErrors",
+        # Removed UmbraErrorsCore and external dependency
     ],
+    visibility = ["//visibility:public"],
 )
 
 # Uncomment if documentation generation is needed
@@ -35,10 +36,8 @@ umbra_swift_library(
 #         "**/*.docc/**",
 #     ]),
 #     deps = [
-#         # Dependencies will go here, for example:
 #         "//Sources/CoreDTOs",
 #         "//Sources/UmbraLogging",
-#         # "@com_github_apple_swift_log//:Logging",
 #         "//Sources/UmbraCoreTypes",
 #     ],
 # )

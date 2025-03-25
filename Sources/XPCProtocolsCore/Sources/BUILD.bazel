@@ -22,8 +22,12 @@ umbra_swift_library(
         "//Sources/CoreDTOs/Sources/Security",
         "//Sources/UmbraSecurityBridge",
         "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraErrors",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",  
         "//Sources/UmbraLogging",
+    ],
+    swiftc_opts = [
+        "-target", "arm64-apple-macosx14.7.4",
     ],
 )
 

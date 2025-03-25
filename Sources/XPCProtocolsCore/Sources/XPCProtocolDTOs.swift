@@ -1,8 +1,6 @@
 import Foundation
 import UmbraErrors
-import UmbraErrorsCore
 import UmbraCoreTypes
-import CoreDTOs
 
 // XPC Protocol DTO definitions
 public enum XPCProtocolDTOs {

@@ -115,7 +115,7 @@ extension XPCServiceProtocolBasic {
     } catch let error as SecurityError {
       return .failure(error)
     } catch {
-      return .failure(.generalError(error.localizedDescription))
+      return .failure(UmbraErrors.SecurityError.operationFailed(error.localizedDescription))
     }
   }
 }

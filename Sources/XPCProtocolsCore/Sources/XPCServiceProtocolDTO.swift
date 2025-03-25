@@ -1,7 +1,6 @@
-import CoreDTOs
+import Foundation
 import UmbraCoreTypes
 import UmbraErrors
-import UmbraErrorsCore
 
 /**
  # XPC Service Protocol with DTOs
@@ -10,6 +9,9 @@ import UmbraErrorsCore
  These protocols enable consistent data exchange between XPC clients and services
  without relying on Foundation types.
  */
+
+/// Base protocol for XPC services
+public protocol XPCServiceProtocolBase: Sendable {}
 
 /// Basic XPC service protocol with DTO support
 public protocol XPCServiceProtocolDTO: XPCServiceProtocolBase {
@@ -87,12 +89,8 @@ extension XPCServiceProtocolDTO {
     // Default implementation just returns a failure
     .failure(
       UmbraErrors.SecurityError(
-        domain: "XPC",
-        code: "NOT_IMPLEMENTED",
-        errorDescription: "Random bytes generation not implemented in this service",
-        source: nil,
-        underlyingError: nil,
-        context: ErrorContext()
+        code: .accessError,
+        description: "Random bytes generation not implemented in this service"
       )
     )
   }

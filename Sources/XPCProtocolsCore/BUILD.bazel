@@ -9,6 +9,9 @@ umbra_swift_library(
         "//Sources/UmbraCoreTypes",
         "//Sources/XPCProtocolsCore/Sources:XPCProtocolsCoreSources",
     ],
+    swiftc_opts = [
+        "-target", "arm64-apple-macosx14.7.4",
+    ],
 )
 
 # A separate target for tests
@@ -27,6 +30,9 @@ umbra_swift_library(
         "//Sources/CoreDTOs",
         "//Sources/SecurityInterfacesBase",
         "//Sources/UmbraLogging",
+    ],
+    swiftc_opts = [
+        "-target", "arm64-apple-macosx14.7.4",
     ],
 )
 

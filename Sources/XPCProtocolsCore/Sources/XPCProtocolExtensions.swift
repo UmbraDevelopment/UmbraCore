@@ -48,11 +48,7 @@ extension XPCServiceProtocolBasic {
   /// - Parameter secureBytes: SecureBytes to convert
   /// - Returns: Data representation
   public func convertSecureBytesToData(_ secureBytes: SecureBytes) -> Data {
-    var data=Data()
-    secureBytes.withUnsafeBytes { rawBuffer in
-      data=Data(rawBuffer)
-    }
-    return data
+    Data([UInt8](secureBytes))
   }
 
   /// Convert UInt8 array to SecureBytes
@@ -66,11 +62,7 @@ extension XPCServiceProtocolBasic {
   /// - Parameter secureBytes: SecureBytes to convert
   /// - Returns: A byte array containing the bytes
   public func convertSecureBytesToBytes(_ secureBytes: SecureBytes) -> [UInt8] {
-    var bytes=[UInt8]()
-    secureBytes.withUnsafeBytes { rawBuffer in
-      bytes=Array(rawBuffer)
-    }
-    return bytes
+    [UInt8](secureBytes)
   }
 }
 
@@ -125,8 +117,19 @@ extension XPCServiceProtocolComplete {
   /// - Parameter count: Number of bytes to generate
   /// - Returns: Result with random bytes if successful
   public func getRandomBytes(count: Int) async -> Result<SecureBytes, CryptoError> {
-    let result=await self.getSecureRandomBytes(count: count)
-    return result
+    let result = await generateRandomData(length: count)
+    
+    // Convert SecurityError to CryptoError
+    switch result {
+    case .success(let randomBytes):
+      return .success(randomBytes)
+    case .failure(let error):
+      return .failure(UmbraErrors.CryptoError(
+        type: .randomData,
+        code: UmbraErrors.CryptoErrorDomain.randomDataGenerationFailed.rawValue,
+        description: "Failed to generate random bytes: \(error.localizedDescription)"
+      ))
+    }
   }
 
   /// Bridge encryption from standard protocol to complete protocol
@@ -140,22 +143,20 @@ extension XPCServiceProtocolComplete {
     keyIdentifier: String,
     algorithm: String
   ) async -> Result<SecureBytes, CryptoError> {
-    // If key ID specified, use crypto operations
-    if !keyIdentifier.isEmpty {
-      return await performCryptoOperation(
-        operation: "encrypt",
-        inputs: ["data": data],
-        keyIdentifier: keyIdentifier,
-        algorithm: algorithm
-      )
-    }
+    // Use the encryptSecureData method which is part of the protocol
+    let result = await encryptSecureData(data, keyIdentifier: keyIdentifier)
     
-    // Otherwise use direct encryption (symmetric)
-    return await performEncryption(
-      data: data,
-      keyIdentifier: keyIdentifier,
-      algorithm: algorithm
-    )
+    // Convert SecurityError to CryptoError
+    switch result {
+    case .success(let encryptedData):
+      return .success(encryptedData)
+    case .failure(let error):
+      return .failure(UmbraErrors.CryptoError(
+        type: .encryption,
+        code: UmbraErrors.CryptoErrorDomain.encryptionFailed.rawValue,
+        description: "Encryption failed: \(error.localizedDescription)"
+      ))
+    }
   }
 
   /// Bridge decryption from standard protocol to complete protocol
@@ -169,21 +170,19 @@ extension XPCServiceProtocolComplete {
     keyIdentifier: String,
     algorithm: String
   ) async -> Result<SecureBytes, CryptoError> {
-    // If key ID specified, use crypto operations
-    if !keyIdentifier.isEmpty {
-      return await performCryptoOperation(
-        operation: "decrypt",
-        inputs: ["data": data],
-        keyIdentifier: keyIdentifier,
-        algorithm: algorithm
-      )
-    }
+    // Use the decryptSecureData method which is part of the protocol
+    let result = await decryptSecureData(data, keyIdentifier: keyIdentifier)
     
-    // Otherwise use direct decryption (symmetric)
-    return await performDecryption(
-      data: data,
-      keyIdentifier: keyIdentifier, 
-      algorithm: algorithm
-    )
+    // Convert SecurityError to CryptoError
+    switch result {
+    case .success(let decryptedData):
+      return .success(decryptedData)
+    case .failure(let error):
+      return .failure(UmbraErrors.CryptoError(
+        type: .decryption,
+        code: UmbraErrors.CryptoErrorDomain.decryptionFailed.rawValue,
+        description: "Decryption failed: \(error.localizedDescription)"
+      ))
+    }
   }
 }
