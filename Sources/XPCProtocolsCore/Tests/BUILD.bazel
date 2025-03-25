@@ -20,6 +20,9 @@ umbra_swift_library(
         "//Sources/UmbraCoreTypes",
         "//Sources/UmbraErrors",
         "//Sources/XPCProtocolsCore",
+        "//Sources/XPCProtocolsCore/Sources:XPCProtocolsCoreSources",
+        "//Sources/XPCProtocolsCore/Sources/Modern",
+        "//Sources/XPCProtocolsCore/Sources/Protocols",
     ],
     swiftc_opts = [
         "-target", "arm64-apple-macosx14.7.4",
