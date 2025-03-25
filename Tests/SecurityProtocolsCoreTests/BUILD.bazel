@@ -1,0 +1,13 @@
+load("//bazel:swift_rules.bzl", "umbra_swift_test")
+
+umbra_swift_test(
+    name = "SecurityProtocolsCoreTests",
+    srcs = glob([
+        "*.swift",
+        "**/*.swift",
+    ]),
+    deps = [
+        "//Sources/SecurityProtocolsCore",
+        "//Tests/TestKit",
+    ],
+)
