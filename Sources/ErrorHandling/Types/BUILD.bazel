@@ -16,10 +16,13 @@ umbra_swift_library(
         exclude_directories = 1,
     ),
     deps = [
-        # Dependencies will go here, for example:
-        # "//Sources/CoreDTOs",
-        # "//Sources/UmbraLogging",
-        # "@com_github_apple_swift_log//:Logging",
+        # Add UmbraErrorsCore dependency
+        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
+        
+        # Add Interfaces dependency for the canonical ErrorSeverity and error interfaces
+        "//Sources/ErrorHandling/Interfaces",
+        
+        # Add other dependencies as needed
     ],
 )
 

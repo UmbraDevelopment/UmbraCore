@@ -1,44 +1,7 @@
 import Foundation
-
-// Local type declarations to replace imports
-// These replace the removed ErrorHandling and ErrorHandlingDomains imports
-
-/// Error domain namespace
-public enum ErrorDomain {
-  /// Security domain
-  public static let security="Security"
-  /// Crypto domain
-  public static let crypto="Crypto"
-  /// Application domain
-  public static let application="Application"
-}
-
-/// Error context protocol
-public protocol ErrorContext {
-  /// Domain of the error
-  var domain: String { get }
-  /// Code of the error
-  var code: Int { get }
-  /// Description of the error
-  var description: String { get }
-}
-
-/// Base error context implementation
-public struct BaseErrorContext: ErrorContext {
-  /// Domain of the error
-  public let domain: String
-  /// Code of the error
-  public let code: Int
-  /// Description of the error
-  public let description: String
-
-  /// Initialise with domain, code and description
-  public init(domain: String, code: Int, description: String) {
-    self.domain=domain
-    self.code=code
-    self.description=description
-  }
-}
+import UmbraErrorsCore
+import Interfaces
+import Protocols
 
 /// Represents an action that can be taken to recover from an error
 public struct RecoveryAction: Sendable, Equatable {
@@ -51,107 +14,158 @@ public struct RecoveryAction: Sendable, Equatable {
   /// Optional detailed description of what the recovery action will do
   public let description: String?
 
-  /// Indicates whether this action should be presented as the default option
+  /// The action to take when this recovery is chosen
+  public let action: () async throws -> Void
+
+  /// Whether this is the default/recommended action
   public let isDefault: Bool
 
-  /// The action handler closure that will be called when the action is selected
-  /// Note: Marked with @Sendable to ensure proper concurrency safety
-  private let actionHandler: @Sendable () -> Void
-
-  /// Creates a new RecoveryAction instance
+  /// Initialize a new recovery action
   /// - Parameters:
-  ///   - id: Unique identifier for the recovery action
-  ///   - title: Human-readable title for the recovery action
-  ///   - description: Optional detailed description of what the recovery action will do
-  ///   - isDefault: Indicates whether this action should be presented as the default option
-  ///   - handler: The action handler closure that will be called when the action is selected
+  ///   - id: Unique identifier for the action
+  ///   - title: Human-readable title
+  ///   - description: Optional detailed description
+  ///   - isDefault: Whether this is the default action (defaults to false)
+  ///   - action: The action to execute
   public init(
     id: String,
     title: String,
-    description: String?=nil,
-    isDefault: Bool=false,
-    handler: @Sendable @escaping () -> Void
+    description: String? = nil,
+    isDefault: Bool = false,
+    action: @escaping () async throws -> Void
   ) {
-    self.id=id
-    self.title=title
-    self.description=description
-    self.isDefault=isDefault
-    actionHandler=handler
+    self.id = id
+    self.title = title
+    self.description = description
+    self.isDefault = isDefault
+    self.action = action
   }
 
-  /// Execute the recovery action
-  public func perform() {
-    actionHandler()
-  }
-
-  /// Equality comparison for RecoveryAction
-  /// Note: Only compares the id, title, description, and isDefault properties
-  /// The actionHandler is not compared as functions cannot be compared for equality
+  /// Equality comparison only compares the id, not the action
   public static func == (lhs: RecoveryAction, rhs: RecoveryAction) -> Bool {
-    lhs.id == rhs.id &&
-      lhs.title == rhs.title &&
-      lhs.description == rhs.description &&
-      lhs.isDefault == rhs.isDefault
+    lhs.id == rhs.id
   }
 }
 
-/// Extension to provide factory methods for common recovery actions
-extension RecoveryAction {
-  /// Creates a retry action
-  /// - Parameters:
-  ///   - title: Custom title for the retry action (defaults to "Retry")
-  ///   - description: Optional description of what will be retried
-  ///   - handler: The action to perform when retrying
-  /// - Returns: A new RecoveryAction for retrying
-  public static func retry(
-    title: String="Retry",
-    description: String?=nil,
-    handler: @Sendable @escaping () -> Void
-  ) -> RecoveryAction {
-    RecoveryAction(
-      id: "retry",
-      title: title,
-      description: description,
-      isDefault: true,
-      handler: handler
+/// Protocol for objects that can provide recovery actions for errors
+public protocol RecoveryActionProvider: Sendable {
+  /// Get recovery actions for a specific error
+  /// - Parameter error: The error to get recovery actions for
+  /// - Returns: Array of recovery actions
+  func getRecoveryActions(for error: Error) -> [RecoveryAction]
+}
+
+/// Default implementation for recovery action providers
+public struct DefaultRecoveryActionProvider: RecoveryActionProvider {
+  /// Initialize a new provider
+  public init() {}
+
+  /// Get recovery actions for a specific error
+  /// - Parameter error: The error to get recovery actions for
+  /// - Returns: Array of recovery actions
+  public func getRecoveryActions(for error: Error) -> [RecoveryAction] {
+    // Default implementation returns basic actions like retry and cancel
+    var actions: [RecoveryAction] = []
+
+    // Add retry action
+    actions.append(
+      RecoveryAction(
+        id: "retry",
+        title: "Retry",
+        description: "Attempt the operation again",
+        action: {
+          // This would be implemented by the caller
+          print("Retry action selected for \(error)")
+        }
+      )
     )
+
+    // Add cancel action
+    actions.append(
+      RecoveryAction(
+        id: "cancel",
+        title: "Cancel",
+        description: "Cancel the operation",
+        isDefault: true,
+        action: {
+          // This would be implemented by the caller
+          print("Cancel action selected for \(error)")
+        }
+      )
+    )
+
+    return actions
+  }
+}
+
+/// Protocol for errors that can provide their own recovery actions
+public protocol RecoverableErrorWithActions: UmbraError {
+  /// Get recovery actions for this error
+  /// - Returns: Array of recovery actions
+  func getRecoveryActions() -> [RecoveryAction]
+}
+
+/// Extension to provide default implementation for recoverable errors
+extension RecoverableErrorWithActions {
+  /// Default implementation returns an empty array
+  public func getRecoveryActions() -> [RecoveryAction] {
+    []
+  }
+}
+
+/// Protocol for recovery action managers
+public protocol RecoveryActionService: Sendable {
+  /// Register a provider for recovery actions
+  /// - Parameter provider: The provider to register
+  func registerProvider(_ provider: RecoveryActionProvider)
+
+  /// Get recovery actions for an error
+  /// - Parameter error: The error to get recovery actions for
+  /// - Returns: Array of recovery actions
+  func getRecoveryActions(for error: Error) -> [RecoveryAction]
+}
+
+/// Default implementation of recovery action service
+public final class RecoveryActionManager: RecoveryActionService {
+  /// Shared instance (singleton)
+  public static let shared = RecoveryActionManager()
+
+  /// Registered providers
+  private var providers: [RecoveryActionProvider] = []
+
+  /// Private initializer to enforce singleton pattern
+  private init() {
+    // Register default provider
+    registerProvider(DefaultRecoveryActionProvider())
   }
 
-  /// Creates a cancel action
-  /// - Parameters:
-  ///   - title: Custom title for the cancel action (defaults to "Cancel")
-  ///   - description: Optional description of what will be cancelled
-  ///   - handler: The action to perform when cancelling
-  /// - Returns: A new RecoveryAction for cancelling
-  public static func cancel(
-    title: String="Cancel",
-    description: String?=nil,
-    handler: @Sendable @escaping () -> Void
-  ) -> RecoveryAction {
-    RecoveryAction(
-      id: "cancel",
-      title: title,
-      description: description,
-      handler: handler
-    )
+  /// Register a provider for recovery actions
+  /// - Parameter provider: The provider to register
+  public func registerProvider(_ provider: RecoveryActionProvider) {
+    providers.append(provider)
   }
 
-  /// Creates an ignore action
-  /// - Parameters:
-  ///   - title: Custom title for the ignore action (defaults to "Ignore")
-  ///   - description: Optional description of what will be ignored
-  ///   - handler: The action to perform when ignoring
-  /// - Returns: A new RecoveryAction for ignoring
-  public static func ignore(
-    title: String="Ignore",
-    description: String?=nil,
-    handler: @Sendable @escaping () -> Void
-  ) -> RecoveryAction {
-    RecoveryAction(
-      id: "ignore",
-      title: title,
-      description: description,
-      handler: handler
-    )
+  /// Get recovery actions for an error
+  /// - Parameter error: The error to get recovery actions for
+  /// - Returns: Array of recovery actions
+  public func getRecoveryActions(for error: Error) -> [RecoveryAction] {
+    // If error is directly recoverable, use its actions
+    if let recoverableError = error as? RecoverableErrorWithActions {
+      let actions = recoverableError.getRecoveryActions()
+      if !actions.isEmpty {
+        return actions
+      }
+    }
+
+    // Otherwise, ask each provider for actions
+    for provider in providers {
+      let actions = provider.getRecoveryActions(for: error)
+      if !actions.isEmpty {
+        return actions
+      }
+    }
+
+    // If no provider handled it, return empty array
+    return []
   }
 }

@@ -1,4 +1,7 @@
 import Foundation
+import UmbraErrorsCore
+import UmbraLogging
+import Interfaces
 
 /// Error Handling Protocol
 /// Defines the public interface for error handling operations.
@@ -25,10 +28,10 @@ public protocol UmbraError: Error, Sendable, CustomStringConvertible {
   var underlyingError: Error? { get }
 
   /// Additional context information about the error
-  var context: ErrorDetailContext { get }
+  var context: ErrorContext { get }
 
   /// Creates a new instance of the error with additional context
-  func with(context: ErrorDetailContext) -> Self
+  func with(context: ErrorContext) -> Self
 
   /// Creates a new instance of the error with a specified underlying error
   func with(underlyingError: Error) -> Self
@@ -40,7 +43,7 @@ public protocol UmbraError: Error, Sendable, CustomStringConvertible {
 /// Default implementation for UmbraError
 extension UmbraError {
   public var description: String {
-    var desc="[\(domain):\(code)] \(errorDescription)"
+    var desc = "[\(domain):\(code)] \(errorDescription)"
 
     if let source {
       desc += " (at \(source.function) in \(source.file):\(source.line))"
@@ -50,22 +53,27 @@ extension UmbraError {
   }
 
   /// Default implementation returns an empty context
-  public var context: ErrorDetailContext {
-    ErrorDetailContext(
-      source: domain,
-      operation: "unknown",
-      details: errorDescription
+  public var context: ErrorContext {
+    BaseErrorContext(
+      domain: domain,
+      code: 0,
+      description: errorDescription
     )
   }
 
-  /// Default implementation returns the underlying error as is
-  public func with(underlyingError _: Error) -> Self {
+  /// Default implementation returns the error as is
+  public func with(underlyingError: Error) -> Self {
     self
   }
 
   /// Default implementation returns nil
   public var source: ErrorSource? {
     nil
+  }
+  
+  /// Default implementation for with source
+  public func with(source: ErrorSource) -> Self {
+    self
   }
 }
 
@@ -78,7 +86,7 @@ extension UmbraError {
   ///   - line: The line where the error occurred (defaults to current line)
   ///   - function: The function where the error occurred (defaults to current function)
   /// - Returns: A new instance of the error with source information
-  public func withSource(file: String=#file, function: String=#function, line: Int=#line) -> Self {
+  public func withSource(file: String = #file, function: String = #function, line: Int = #line) -> Self {
     with(source: ErrorSource(file: file, function: function, line: line))
   }
 }
@@ -119,7 +127,7 @@ public protocol ErrorLoggingProtocol {
   /// - Parameters:
   ///   - error: The error to log
   ///   - severity: The severity of the error
-  func log<E: UmbraError>(error: E, severity: ErrorSeverity)
+  func log<E: UmbraError>(error: E, severity: UmbraErrorsCore.ErrorSeverity)
 
   /// Log an error with debug severity
   /// - Parameter error: The error to log
@@ -145,23 +153,23 @@ public protocol ErrorLoggingProtocol {
 /// Default implementation for ErrorLoggingProtocol
 extension ErrorLoggingProtocol {
   public func logDebug(_ error: some UmbraError) {
-    log(error: error, severity: .debug)
+    log(error: error, severity: UmbraErrorsCore.ErrorSeverity.debug)
   }
 
   public func logInfo(_ error: some UmbraError) {
-    log(error: error, severity: .info)
+    log(error: error, severity: UmbraErrorsCore.ErrorSeverity.info)
   }
 
   public func logWarning(_ error: some UmbraError) {
-    log(error: error, severity: .warning)
+    log(error: error, severity: UmbraErrorsCore.ErrorSeverity.warning)
   }
 
   public func logError(_ error: some UmbraError) {
-    log(error: error, severity: .error)
+    log(error: error, severity: UmbraErrorsCore.ErrorSeverity.error)
   }
 
   public func logCritical(_ error: some UmbraError) {
-    log(error: error, severity: .critical)
+    log(error: error, severity: UmbraErrorsCore.ErrorSeverity.critical)
   }
 }
 
@@ -170,6 +178,15 @@ public protocol ErrorNotificationProtocol {
   /// Present an error to the user
   /// - Parameters:
   ///   - error: The error to present
+  ///   - severity: The error severity
+  ///   - level: The notification level for the UI
   ///   - recoveryOptions: Optional recovery options to present to the user
-  func presentError<E: UmbraError>(_ error: E, recoveryOptions: [RecoveryOption])
+  /// - Returns: The selected recovery option and status, if any
+  @discardableResult
+  func notifyUser<E: UmbraError>(
+    about error: E,
+    severity: UmbraErrorsCore.ErrorSeverity,
+    level: ErrorNotificationLevel,
+    recoveryOptions: [any RecoveryOption]
+  ) async -> (option: any RecoveryOption, status: RecoveryStatus)?
 }

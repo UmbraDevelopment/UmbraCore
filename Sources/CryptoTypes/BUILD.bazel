@@ -24,14 +24,20 @@ umbra_swift_library(
         "//Sources/SecurityBridgeTypes/Sources:SecurityBridgeTypes",
         "//Sources/SecurityProtocolsCore/Sources:SecurityProtocolsCore",
         "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
-        "//Sources/UmbraErrors",
-        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-        "//Sources/XPCProtocolsCore",
+        "//Sources/UmbraErrors/Core:UmbraErrorsCore",  # Only depend on UmbraErrorsCore
+        # Removed direct dependency on XPCProtocolsCore to break circular dependency
+        # "//Sources/XPCProtocolsCore",
         # Other possible dependencies based on other files in this module:
         # "//Sources/CoreDTOs",
-        # "//Sources/UmbraLogging",
-        # "@com_github_apple_swift_log//:Logging",
+        "//Sources/UmbraLogging",
     ],
+)
+
+# Create a forward declaration interface target that just declares the protocols/types needed from XPC
+umbra_swift_library(
+    name = "CryptoTypesInterfaces",
+    srcs = ["Interfaces/XPCInterfaces.swift"],
+    visibility = ["//visibility:public"],
 )
 
 # Uncomment if documentation generation is needed

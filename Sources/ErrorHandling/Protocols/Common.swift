@@ -1,89 +1,62 @@
 import Foundation
+import UmbraErrorsCore
+import Interfaces
 
-/// Error domain namespace
-public enum ErrorDomain {
-  /// Security domain
-  public static let security="Security"
-  /// Crypto domain
-  public static let crypto="Crypto"
-  /// Application domain
-  public static let application="Application"
-}
-
-/// Error context protocol
-public protocol ErrorContext {
-  /// Domain of the error
-  var domain: String { get }
-  /// Code of the error
-  var code: Int { get }
-  /// Description of the error
-  var description: String { get }
-}
-
-/// Base error context implementation
-public struct BaseErrorContext: ErrorContext {
-  /// Domain of the error
-  public let domain: String
-  /// Code of the error
-  public let code: Int
-  /// Description of the error
-  public let description: String
-
-  /// Initialise with domain, code and description
-  public init(domain: String, code: Int, description: String) {
-    self.domain=domain
-    self.code=code
-    self.description=description
+/// Recovery options provider extension type
+/// This complements the RecoveryOptionsProvider protocol from ErrorHandlingProtocol.swift
+public extension RecoveryOptionsProvider {
+  /// Default implementation for getting recovery options for an error
+  /// - Parameter error: The error to get recovery options for
+  /// - Returns: Array of recovery options
+  func getRecoveryOptions(for error: Error) -> [any RecoveryOption] {
+    // By default, return an empty array
+    []
+  }
+  
+  /// Check if this provider can handle errors from a specific domain
+  /// - Parameter domain: The domain to check
+  /// - Returns: True if this provider can handle errors from the domain
+  func canHandle(domain: String) -> Bool {
+    false
   }
 }
 
-/// Error source information
-public struct ErrorSource: Sendable, Equatable {
-  /// The file where the error occurred
-  public let file: String
-  /// The function where the error occurred
-  public let function: String
-  /// The line where the error occurred
-  public let line: Int
+/// Concrete implementation of a recovery option
+public struct StandardRecoveryOption: RecoveryOption {
+  /// Unique identifier
+  public let id: UUID
+  /// Title of the option
+  public let title: String
+  /// Description of what the option does
+  public let description: String?
+  /// Whether this option is disruptive (e.g., will cancel operations)
+  public let isDisruptive: Bool
+  /// Action to take when the option is selected
+  private let actionHandler: () async -> Void
 
-  /// Initialize with file, function and line
-  public init(file: String, function: String, line: Int) {
-    self.file=file
-    self.function=function
-    self.line=line
-  }
-}
-
-/// Error severity levels
-public enum ErrorSeverity: String, Sendable {
-  case debug
-  case info
-  case warning
-  case error
-  case critical
-}
-
-/// Detailed context for errors with service and operation information
-public struct ErrorDetailContext: Sendable {
-  /// Source of the error
-  public let source: String
-  /// Operation that was being performed
-  public let operation: String
-  /// Additional details about the error
-  public let details: String?
-  /// Underlying error if any
-  public let underlyingError: Error?
-
-  /// Initialize with source, operation, details, and optional underlyingError
+  /// Initialize a recovery option
+  /// - Parameters:
+  ///   - id: The unique identifier (defaults to a new UUID)
+  ///   - title: The title of the option
+  ///   - description: Description of what the option does (optional)
+  ///   - isDisruptive: Whether this option is disruptive (defaults to false)
+  ///   - action: Action to take when selected
   public init(
-    source: String,
-    operation: String,
-    details: String?=nil,
-    underlyingError: Error?=nil
+    id: UUID = UUID(),
+    title: String,
+    description: String? = nil,
+    isDisruptive: Bool = false,
+    action: @escaping () async -> Void
   ) {
-    self.source=source
-    self.operation=operation
-    self.details=details
-    self.underlyingError=underlyingError
+    self.id = id
+    self.title = title
+    self.description = description
+    self.isDisruptive = isDisruptive
+    self.actionHandler = action
+  }
+  
+  /// Perform the recovery action
+  public func perform() async {
+    await actionHandler()
   }
 }

@@ -1,5 +1,7 @@
 import Foundation
-import LoggingWrapperInterfaces
+import UmbraLogging
+import UmbraErrorsCore
+import Interfaces
 
 /// Logging extensions for ErrorSeverity
 ///
@@ -11,11 +13,11 @@ import LoggingWrapperInterfaces
 ///
 /// This extension is part of the Logger Isolation Pattern implemented in UmbraCore:
 ///
-/// 1. It imports only `LoggingWrapperInterfaces`, not the implementation module
+/// 1. It imports UmbraLogging instead of LoggingWrapperInterfaces
 /// 2. It provides a simple API for logging directly from error severity
 /// 3. It uses a simple console fallback when no logger is configured
 ///
-/// By depending only on the interfaces module, this extension maintains compatibility
+/// By depending on the UmbraLogging module, this extension maintains compatibility
 /// with the library evolution support required by ErrorHandlingCommon while still
 /// providing logging functionality.
 ///
@@ -42,15 +44,22 @@ extension ErrorSeverity {
   ///   - line: The line where the log is called from
   public func log(
     _ message: @autoclosure () -> Any,
-    file: String=#file,
-    function _: String=#function,
-    line: Int=#line
+    file: String = #file,
+    function: String = #function,
+    line: Int = #line
   ) {
-    // Forward to a logging implementation that will be provided at runtime
-    // This doesn't directly log, but relies on the app having a configured logging system
-    // The Logger implementation in LoggingWrapper will handle this when imported
-
-    // Simply print to console if no logging system is configured
-    print("[\(rawValue)] \(file):\(line) - \(message())")
+    // Forward to the UmbraLogging implementation
+    switch self {
+    case .debug:
+      Logger.debug(message(), file: file, function: function, line: line)
+    case .info:
+      Logger.info(message(), file: file, function: function, line: line)
+    case .warning:
+      Logger.warning(message(), file: file, function: function, line: line)
+    case .error:
+      Logger.error(message(), file: file, function: function, line: line)
+    case .critical:
+      Logger.critical(message(), file: file, function: function, line: line)
+    }
   }
 }

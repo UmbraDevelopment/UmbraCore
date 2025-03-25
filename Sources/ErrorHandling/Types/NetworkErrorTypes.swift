@@ -1,44 +1,5 @@
 import Foundation
-
-// Local type declarations to replace imports
-// These replace the removed ErrorHandling and ErrorHandlingDomains imports
-
-/// Error domain namespace
-public enum ErrorDomain {
-  /// Security domain
-  public static let security="Security"
-  /// Crypto domain
-  public static let crypto="Crypto"
-  /// Application domain
-  public static let application="Application"
-}
-
-/// Error context protocol
-public protocol ErrorContext {
-  /// Domain of the error
-  var domain: String { get }
-  /// Code of the error
-  var code: Int { get }
-  /// Description of the error
-  var description: String { get }
-}
-
-/// Base error context implementation
-public struct BaseErrorContext: ErrorContext {
-  /// Domain of the error
-  public let domain: String
-  /// Code of the error
-  public let code: Int
-  /// Description of the error
-  public let description: String
-
-  /// Initialise with domain, code and description
-  public init(domain: String, code: Int, description: String) {
-    self.domain=domain
-    self.code=code
-    self.description=description
-  }
-}
+import Interfaces
 
 /// Core network error types used throughout the UmbraCore framework
 ///
@@ -49,104 +10,143 @@ public enum NetworkError: Error, Equatable, Sendable {
   // MARK: - Connection Errors
 
   /// Connection to service failed
-  case connectionFailed(reason: String)
+  case connectionFailed(service: String, reason: String)
 
-  /// Service is unavailable
-  case serviceUnavailable(service: String, reason: String)
+  /// Connection timeout occurred
+  case connectionTimeout(service: String, timeoutMs: Int)
 
-  /// Timeout occurred while waiting for response
-  case timeout(operation: String, durationMs: Int)
+  /// No network connectivity
+  case noConnectivity(reason: String)
 
-  /// Network request was interrupted
-  case interrupted(reason: String)
+  /// Network connection lost during operation
+  case connectionLost(operation: String, reason: String)
 
-  // MARK: - Request Errors
+  // MARK: - HTTP Errors
 
-  /// Request contains invalid parameters or format
+  /// HTTP request invalid
   case invalidRequest(reason: String)
 
-  /// Request was rejected by the server
-  case requestRejected(code: Int, reason: String)
+  /// HTTP request failed
+  case requestFailed(statusCode: Int, reason: String)
 
-  /// Request is too large to process
-  case requestTooLarge(sizeByte: Int, maxSizeByte: Int)
+  /// HTTP authentication failed
+  case authenticationFailed(service: String, reason: String)
 
-  /// Rate limit has been exceeded
-  case rateLimitExceeded(limitPerHour: Int, retryAfterMs: Int)
+  /// HTTP authorization failed
+  case authorizationFailed(service: String, resource: String)
+
+  /// HTTP redirect error
+  case redirectError(from: String, to: String, reason: String)
+
+  /// HTTP client error (4xx)
+  case clientError(statusCode: Int, message: String)
+
+  /// HTTP server error (5xx)
+  case serverError(statusCode: Int, message: String)
 
   // MARK: - Response Errors
 
-  /// Response format is invalid
+  /// Response invalid
   case invalidResponse(reason: String)
 
-  /// Response is too large to process
-  case responseTooLarge(sizeByte: Int, maxSizeByte: Int)
+  /// Response parsing failed
+  case responseParseFailed(type: String, reason: String)
 
-  /// Response data is corrupted or incomplete
-  case dataCorruption(reason: String)
+  /// Unexpected empty response
+  case emptyResponse(expectation: String)
 
-  /// Unable to parse response data
-  case parsingFailed(reason: String)
+  /// Response format mismatch
+  case responseFormatMismatch(expected: String, received: String)
+
+  /// Response validation failed
+  case responseValidationFailed(reason: String)
+
+  // MARK: - Service Errors
+
+  /// Service unavailable
+  case serviceUnavailable(service: String, reason: String)
+
+  /// Service rate limit exceeded
+  case rateLimitExceeded(service: String, retryAfterSeconds: Int?)
+
+  /// Service maintenance in progress
+  case serviceMaintenance(service: String, estimatedCompletionTime: String?)
+
+  /// Incompatible API version
+  case incompatibleApiVersion(service: String, used: String, supported: String)
 
   // MARK: - Security Errors
 
-  /// SSL/TLS certificate validation failed
-  case certificateError(reason: String)
+  /// Certificate validation failed
+  case certificateValidationFailed(reason: String)
 
-  /// The host is untrusted
-  case untrustedHost(hostname: String)
+  /// SSL/TLS error
+  case tlsError(reason: String)
 
-  // MARK: - General Errors
-
-  /// Internal error occurred
-  case internalError(reason: String)
-
-  /// Unknown network error
-  case unknown(reason: String)
+  /// Secure connection failed
+  case secureConnectionFailed(reason: String)
 }
-
-// MARK: - CustomStringConvertible
 
 extension NetworkError: CustomStringConvertible {
   public var description: String {
     switch self {
-      case let .connectionFailed(reason):
-        "Connection failed: \(reason)"
-      case let .serviceUnavailable(service, reason):
-        "Service '\(service)' unavailable: \(reason)"
-      case let .timeout(operation, durationMs):
-        "Timeout occurred during \(operation) after \(durationMs)ms"
-      case let .interrupted(reason):
-        "Network request interrupted: \(reason)"
+      case let .connectionFailed(service, reason):
+        "Connection to \(service) failed: \(reason)"
+      case let .connectionTimeout(service, timeoutMs):
+        "Connection to \(service) timed out after \(timeoutMs)ms"
+      case let .noConnectivity(reason):
+        "No network connectivity: \(reason)"
+      case let .connectionLost(operation, reason):
+        "Connection lost during \(operation): \(reason)"
       case let .invalidRequest(reason):
-        "Invalid request: \(reason)"
-      case let .requestRejected(code, reason):
-        "Request rejected (code \(code)): \(reason)"
-      case let .requestTooLarge(sizeByte, maxSizeByte):
-        "Request too large: \(sizeByte) bytes (maximum \(maxSizeByte) bytes)"
-      case let .rateLimitExceeded(limitPerHour, retryAfterMs):
-        "Rate limit exceeded: \(limitPerHour) requests per hour, retry after \(retryAfterMs)ms"
+        "Invalid HTTP request: \(reason)"
+      case let .requestFailed(statusCode, reason):
+        "HTTP request failed with status \(statusCode): \(reason)"
+      case let .authenticationFailed(service, reason):
+        "Authentication failed for \(service): \(reason)"
+      case let .authorizationFailed(service, resource):
+        "Authorization failed for \(resource) on \(service)"
+      case let .redirectError(from, to, reason):
+        "Redirect error from \(from) to \(to): \(reason)"
+      case let .clientError(statusCode, message):
+        "HTTP client error (\(statusCode)): \(message)"
+      case let .serverError(statusCode, message):
+        "HTTP server error (\(statusCode)): \(message)"
       case let .invalidResponse(reason):
         "Invalid response: \(reason)"
-      case let .responseTooLarge(sizeByte, maxSizeByte):
-        "Response too large: \(sizeByte) bytes (maximum \(maxSizeByte) bytes)"
-      case let .dataCorruption(reason):
-        "Data corruption: \(reason)"
-      case let .parsingFailed(reason):
-        "Parsing failed: \(reason)"
-      case let .certificateError(reason):
-        "Certificate error: \(reason)"
-      case let .untrustedHost(hostname):
-        "Untrusted host: \(hostname)"
-      case let .internalError(reason):
-        "Internal error: \(reason)"
-      case let .unknown(reason):
-        "Unknown network error: \(reason)"
+      case let .responseParseFailed(type, reason):
+        "Failed to parse \(type) response: \(reason)"
+      case let .emptyResponse(expectation):
+        "Unexpected empty response. Expected: \(expectation)"
+      case let .responseFormatMismatch(expected, received):
+        "Response format mismatch: expected \(expected), received \(received)"
+      case let .responseValidationFailed(reason):
+        "Response validation failed: \(reason)"
+      case let .serviceUnavailable(service, reason):
+        "Service \(service) unavailable: \(reason)"
+      case let .rateLimitExceeded(service, retryAfterSeconds):
+        if let retryAfter = retryAfterSeconds {
+          "Rate limit exceeded for \(service). Retry after \(retryAfter) seconds."
+        } else {
+          "Rate limit exceeded for \(service)."
+        }
+      case let .serviceMaintenance(service, estimatedCompletionTime):
+        if let completionTime = estimatedCompletionTime {
+          "Service \(service) in maintenance. Estimated completion: \(completionTime)"
+        } else {
+          "Service \(service) in maintenance."
+        }
+      case let .incompatibleApiVersion(service, used, supported):
+        "Incompatible API version for \(service): used \(used), supported \(supported)"
+      case let .certificateValidationFailed(reason):
+        "Certificate validation failed: \(reason)"
+      case let .tlsError(reason):
+        "TLS error: \(reason)"
+      case let .secureConnectionFailed(reason):
+        "Secure connection failed: \(reason)"
     }
   }
 }
-
-// MARK: - LocalizedError
 
 extension NetworkError: LocalizedError {
   public var errorDescription: String? {

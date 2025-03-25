@@ -2,15 +2,23 @@ load("@build_bazel_rules_swift//swift:swift.bzl", "swift_test")
 
 swift_test(
     name = "BookmarkTests",
-    srcs = glob(["*.swift", "**/*.swift"],
-        exclude = ["**/Tests/**", "**/*Test.swift", "**/*.generated.swift"],
+    srcs = glob(
+        [
+            "*.swift",
+            "**/*.swift",
+        ],
+        allow_empty = False,
+        exclude = [
+            "**/Tests/**",
+            "**/*Test.swift",
+            "**/*.generated.swift",
+        ],
         exclude_directories = 1,
-        allow_empty = True
     ),
+    visibility = ["//visibility:public"],
     deps = [
         "//Sources/SecurityTypes",
-        "//Sources/SecurityUtils", 
+        "//Sources/SecurityUtils",
         "//Sources/UmbraBookmarkService",
     ],
-    visibility = ["//visibility:public"],
 )

@@ -1,4 +1,5 @@
 import Foundation
+import UmbraErrorsCore
 
 /// Protocol defining the fundamental error interface
 public protocol UmbraError: Error, Sendable, CustomStringConvertible {

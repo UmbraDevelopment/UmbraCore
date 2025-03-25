@@ -2,10 +2,18 @@ load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
     name = "API",
-    srcs = glob(["*.swift", "**/*.swift"],
-        exclude = ["**/Tests/**", "**/*Test.swift", "**/*.generated.swift"],
+    srcs = glob(
+        [
+            "*.swift",
+            "**/*.swift",
+        ],
+        allow_empty = False,
+        exclude = [
+            "**/Tests/**",
+            "**/*Test.swift",
+            "**/*.generated.swift",
+        ],
         exclude_directories = 1,
-        allow_empty = True
     ),
     visibility = ["//visibility:public"],
     deps = [

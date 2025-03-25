@@ -1,5 +1,5 @@
 # Error handling improvements:
-# This module has been updated to use fully qualified error types instead of typealiases.
+# This module has been updated to use fully qualified error types from UmbraErrorsCore.
 # All error mapping should follow the UmbraErrors.* canonical hierarchy.
 # Ensure proper error propagation and mapping when adding new code.
 
@@ -21,10 +21,12 @@ umbra_swift_library(
         exclude_directories = 1,
     ),
     deps = [
-        # Dependencies will go here, for example:
-        # "//Sources/CoreDTOs",
-        # "//Sources/UmbraLogging",
-        # "@com_github_apple_swift_log//:Logging",
+        # Canonical error types from UmbraErrorsCore
+        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
+        
+        # Local error handling modules
+        "//Sources/ErrorHandling/Interfaces",
+        "//Sources/ErrorHandling/Protocols",
     ],
 )
 

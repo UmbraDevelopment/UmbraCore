@@ -16,23 +16,18 @@ umbra_swift_test(
         exclude_directories = 1,
     ),
     deps = [
-        "//Sources/ErrorHandling",
-        # Additional dependencies as needed:
-        # "//Sources/CoreDTOs",
-        # "//Sources/UmbraLogging",
-        # "@com_github_apple_swift_log//:Logging",
+        # Core dependencies
+        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
+        
+        # Error handling module dependencies
+        "//Sources/ErrorHandling/Interfaces",
+        "//Sources/ErrorHandling/Protocols",
+        "//Sources/ErrorHandling/Core",
+        "//Sources/ErrorHandling/Recovery",
+        "//Sources/ErrorHandling/Notification",
+        "//Sources/ErrorHandling/Logging",
+        
+        # Logging dependency
+        "//Sources/UmbraLogging",
     ],
 )
-
-# Uncomment if documentation generation is needed
-# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
-# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
-#
-# swift_package(
-#     name = "docc_documentation",
-#     srcs = glob([
-#         "**/*.swift",
-#         "**/*.docc/**",
-#     ]),
-#     deps = ["//Sources/Tests"],
-# )

@@ -2,11 +2,20 @@ load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
     name = "TestingMacros",
-    srcs = glob(["*.swift", "**/*.swift"],
-        exclude = ["**/Tests/**", "**/*Test.swift", "**/*.generated.swift"],
+    srcs = glob(
+        [
+            "*.swift",
+            "**/*.swift",
+        ],
+        allow_empty = False,
+        exclude = [
+            "**/Tests/**",
+            "**/*Test.swift",
+            "**/*.generated.swift",
+        ],
         exclude_directories = 1,
-        allow_empty = True
     ),
+    visibility = ["//visibility:public"],
     deps = [
         # Swift macro dependencies from the Swift package
         "@swiftpkg_swift_syntax//:SwiftCompilerPlugin",
@@ -14,7 +23,6 @@ umbra_swift_library(
         "@swiftpkg_swift_syntax//:SwiftSyntaxBuilder",
         "@swiftpkg_swift_syntax//:SwiftSyntaxMacros",
     ],
-    visibility = ["//visibility:public"],
 )
 
 # Uncomment if documentation generation is needed

@@ -24,9 +24,10 @@ umbra_swift_library(
         "//Sources/UmbraLogging",
         "//Sources/UmbraCoreTypes",
 
-        # Add dependencies for security and crypto related types
+        # Add dependencies for security related types
         "//Sources/SecurityTypes",
-        "//Sources/CryptoTypes",
+        # Remove direct dependency on CryptoTypes to break circular dependency
+        # "//Sources/CryptoTypes",
         # Removing XPCProtocolsCore to break circular dependency
         # "//Sources/XPCProtocolsCore",
     ],

@@ -2,10 +2,18 @@ load("@build_bazel_rules_swift//swift:swift.bzl", "swift_test")
 
 swift_test(
     name = "CoreTests",
-    srcs = glob(["*.swift", "**/*.swift"],
-        exclude = ["**/Tests/**", "**/*Test.swift", "**/*.generated.swift"],
+    srcs = glob(
+        [
+            "*.swift",
+            "**/*.swift",
+        ],
+        allow_empty = False,
+        exclude = [
+            "**/Tests/**",
+            "**/*Test.swift",
+            "**/*.generated.swift",
+        ],
         exclude_directories = 1,
-        allow_empty = True
     ),
     deps = [
         # Dependencies will go here, for example:

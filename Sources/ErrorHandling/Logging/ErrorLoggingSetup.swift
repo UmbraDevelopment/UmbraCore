@@ -1,45 +1,6 @@
 import Foundation
 import UmbraLogging
-
-// Local type declarations to replace imports
-// These replace the removed ErrorHandling and ErrorHandlingDomains imports
-
-/// Error domain namespace
-public enum ErrorDomain {
-  /// Security domain
-  public static let security="Security"
-  /// Crypto domain
-  public static let crypto="Crypto"
-  /// Application domain
-  public static let application="Application"
-}
-
-/// Error context protocol
-public protocol ErrorContext {
-  /// Domain of the error
-  var domain: String { get }
-  /// Code of the error
-  var code: Int { get }
-  /// Description of the error
-  var description: String { get }
-}
-
-/// Base error context implementation
-public struct BaseErrorContext: ErrorContext {
-  /// Domain of the error
-  public let domain: String
-  /// Code of the error
-  public let code: Int
-  /// Description of the error
-  public let description: String
-
-  /// Initialise with domain, code and description
-  public init(domain: String, code: Int, description: String) {
-    self.domain=domain
-    self.code=code
-    self.description=description
-  }
-}
+import UmbraErrorsCore
 
 // MARK: - Domain-Specific Filters
 
@@ -49,129 +10,126 @@ extension ErrorLogger {
   /// - Parameters:
   ///   - domain: The domain to filter
   ///   - level: The minimum log level for this domain
-  /// - Returns: Configured logger
-  public func setupDomainFilter(
-    domain: String,
-    level _: UmbraLogLevel
-  ) -> ErrorLogger {
-    configure { config in
-      // Capture the minimum log level value
-      _=config.minimumSeverity
-
-      // Create a filter that checks domain and applies level-based filtering
-      let domainFilter: (Error) -> Bool={ error in
-        guard let umbraError=error as? ErrorHandlingInterfaces.UmbraError else {
-          return false
-        }
-
-        // Check if this error matches the domain
-        if umbraError.domain == domain {
-          // Since UmbraError doesn't have a severity property directly,
-          // we'll use a fixed mapping for filtering based on the domain level
-          // This implements a simple domain-based filter that doesn't rely on error severity
-
-          // By default, don't filter out errors matching our domain pattern
-          return false
-        }
-
-        return false
-      }
-
-      // Add this filter to the existing filters
-      config.filters.append(domainFilter)
-    }
+  public func setDomainFilter(domain: String, level: ErrorLoggingLevel) {
+    domainFilters[domain] = level
   }
 
-  /// Sets up a code-specific logging filter
+  /// Clears a specific domain filter
+  /// - Parameter domain: The domain to clear the filter for
+  public func clearDomainFilter(domain: String) {
+    domainFilters.removeValue(forKey: domain)
+  }
+
+  /// Clears all domain filters
+  public func clearAllDomainFilters() {
+    domainFilters.removeAll()
+  }
+
+  /// Internal method to check if a log should be processed based on domain filters
   /// - Parameters:
-  ///   - code: The error code to filter
-  ///   - level: The minimum log level for this code
-  /// - Returns: Configured logger
-  public func setupCodeFilter(
-    code: String,
-    level _: UmbraLogLevel
-  ) -> ErrorLogger {
-    configure { config in
-      // Capture the minimum log level value
-      _=config.minimumSeverity
-
-      // Create a filter that checks error code and applies level-based filtering
-      let codeFilter: (Error) -> Bool={ error in
-        guard let umbraError=error as? ErrorHandlingInterfaces.UmbraError else {
-          return false
-        }
-
-        // Check if this error matches the code
-        if umbraError.code == code {
-          // Since UmbraError doesn't have a severity property directly,
-          // we'll use a fixed mapping for filtering based on the code level
-          // This implements a simple code-based filter that doesn't rely on error severity
-
-          // By default, don't filter out errors matching our code
-          return false
-        }
-
-        return false
-      }
-
-      // Add this filter to the existing filters
-      config.filters.append(codeFilter)
+  ///   - domain: The domain of the error
+  ///   - level: The severity level of the error
+  /// - Returns: True if the log should be processed, false otherwise
+  internal func shouldProcessLog(domain: String, level: ErrorLoggingLevel) -> Bool {
+    // If no domain filter exists, use the global minimum level
+    guard let minLevel = domainFilters[domain] else {
+      return level.rawValue >= configuration.minimumLevel.rawValue
     }
-  }
 
-  /// Sets up a source-specific logging filter
+    // Otherwise, use the domain-specific minimum level
+    return level.rawValue >= minLevel.rawValue
+  }
+}
+
+// MARK: - Contextual Logging
+
+extension ErrorLogger {
+  /// Logs an error with contextual information
   /// - Parameters:
-  ///   - sourcePattern: The file path pattern to match (e.g. "Network/" matches all files in
-  /// Network directory)
-  ///   - level: The minimum log level for this source pattern
-  /// - Returns: Configured logger
-  public func setupSourceFilter(
-    sourcePattern: String,
-    level _: UmbraLogLevel
-  ) -> ErrorLogger {
-    configure { config in
-      // Capture the minimum log level value
-      _=config.minimumSeverity
+  ///   - error: The error to log
+  ///   - context: Additional context for the error
+  ///   - level: The severity level
+  ///   - file: The file where the error occurred
+  ///   - function: The function where the error occurred
+  ///   - line: The line where the error occurred
+  public func logWithContext(
+    _ error: Error,
+    context: ErrorContext,
+    level: ErrorLoggingLevel,
+    file: String = #file,
+    function: String = #function,
+    line: Int = #line
+  ) {
+    // Skip if we shouldn't process this log based on domain filters
+    guard shouldProcessLog(domain: context.domain, level: level) else {
+      return
+    }
 
-      let sourceFilter: (Error) -> Bool={ error in
-        guard
-          let umbraError=error as? ErrorHandlingInterfaces.UmbraError,
-          let source=umbraError.source
-        else {
-          return false
-        }
+    var metadata: [String: Any] = [
+      "domain": context.domain,
+      "code": context.code,
+      "errorDescription": context.description
+    ]
 
-        // Check if this error source matches the pattern
-        if source.file.contains(sourcePattern) {
-          // Since UmbraError doesn't have a severity property directly,
-          // we'll use a fixed mapping for filtering based on the source level
-          // This implements a simple source-based filter that doesn't rely on error severity
+    if configuration.includeSourceLocation {
+      metadata["file"] = file
+      metadata["function"] = function
+      metadata["line"] = line
+    }
 
-          // By default, don't filter out errors matching our source pattern
-          return false
-        }
-
-        return false
-      }
-
-      // Add this filter to the existing filters
-      config.filters.append(sourceFilter)
+    let message = "\(context.domain) [\(context.code)]: \(context.description)"
+    
+    switch level {
+    case .debug:
+      logger.debug(message, metadata: LogMetadata(metadata))
+    case .info:
+      logger.info(message, metadata: LogMetadata(metadata))
+    case .warning:
+      logger.warning(message, metadata: LogMetadata(metadata))
+    case .error:
+      logger.error(message, metadata: LogMetadata(metadata))
+    case .critical:
+      logger.critical(message, metadata: LogMetadata(metadata))
     }
   }
+}
 
-  /// Sets up system information logging
-  /// - Returns: Configured logger
-  public func setupSystemInfoLogging() -> ErrorLogger {
-    configure { config in
-      // Add system information as metadata
-      let systemInfoFilter: (Error) -> Bool={ _ in
-        // Return false to never filter out errors based on system info
-        // This is just used to add system info as metadata
-        false
-      }
+// MARK: - Error Logging Level
 
-      // Set the filter
-      config.filters=[systemInfoFilter]
-    }
+/// Defines the severity levels for error logging
+public enum ErrorLoggingLevel: Int, Comparable {
+  case debug = 0
+  case info = 1
+  case warning = 2
+  case error = 3
+  case critical = 4
+  
+  public static func < (lhs: ErrorLoggingLevel, rhs: ErrorLoggingLevel) -> Bool {
+    return lhs.rawValue < rhs.rawValue
+  }
+}
+
+// MARK: - Logger Configuration
+
+/// Configuration for the ErrorLogger
+public struct ErrorLoggerConfiguration {
+  /// The minimum severity level to log globally
+  public var minimumLevel: ErrorLoggingLevel = .debug
+  
+  /// Whether to include source location information in logs
+  public var includeSourceLocation: Bool = true
+  
+  /// Whether to include stack traces in logs
+  public var includeStackTraces: Bool = false
+  
+  /// Default initialiser
+  public init(
+    minimumLevel: ErrorLoggingLevel = .debug,
+    includeSourceLocation: Bool = true,
+    includeStackTraces: Bool = false
+  ) {
+    self.minimumLevel = minimumLevel
+    self.includeSourceLocation = includeSourceLocation
+    self.includeStackTraces = includeStackTraces
   }
 }

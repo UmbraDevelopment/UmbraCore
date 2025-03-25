@@ -1,44 +1,7 @@
 import Foundation
-
-// Local type declarations to replace imports
-// These replace the removed ErrorHandling and ErrorHandlingDomains imports
-
-/// Error domain namespace
-public enum ErrorDomain {
-  /// Security domain
-  public static let security="Security"
-  /// Crypto domain
-  public static let crypto="Crypto"
-  /// Application domain
-  public static let application="Application"
-}
-
-/// Error context protocol
-public protocol ErrorContext {
-  /// Domain of the error
-  var domain: String { get }
-  /// Code of the error
-  var code: Int { get }
-  /// Description of the error
-  var description: String { get }
-}
-
-/// Base error context implementation
-public struct BaseErrorContext: ErrorContext {
-  /// Domain of the error
-  public let domain: String
-  /// Code of the error
-  public let code: Int
-  /// Description of the error
-  public let description: String
-
-  /// Initialise with domain, code and description
-  public init(domain: String, code: Int, description: String) {
-    self.domain=domain
-    self.code=code
-    self.description=description
-  }
-}
+import UmbraErrorsCore
+import Interfaces
+import Protocols
 
 /// Represents a potential recovery option for an error
 public struct ErrorRecoveryOption: RecoveryOption, Sendable {
@@ -49,145 +12,77 @@ public struct ErrorRecoveryOption: RecoveryOption, Sendable {
   public let title: String
 
   /// Additional description of what this recovery will do
-  public let description: String?
+  public let recoveryDescription: String
 
-  /// How likely this recovery option is to succeed
-  public let successLikelihood: RecoveryLikelihood
+  /// The action to execute when this option is selected
+  public let action: @MainActor () -> Void
 
-  /// Whether this recovery option can disrupt the user's workflow
-  public let isDisruptive: Bool
+  /// Whether this is the default option
+  public let isDefault: Bool
 
-  /// The action to perform for recovery
-  public let recoveryAction: @Sendable () async throws -> Void
-
-  /// Creates a new recovery option
+  /// Initialize a recovery option
   /// - Parameters:
-  ///   - id: A unique identifier (optional, auto-generated if nil)
-  ///   - title: The user-facing button or option title
-  ///   - description: Optional additional details about this recovery
-  ///   - successLikelihood: How likely this recovery is to succeed
-  ///   - isDisruptive: Whether this recovery interrupts workflow
-  ///   - recoveryAction: The action to perform for this recovery
+  ///   - id: Unique identifier (defaults to random UUID)
+  ///   - title: User-facing title
+  ///   - description: Detailed description of what this option does
+  ///   - isDefault: Whether this is the default option (defaults to false)
+  ///   - action: The action to perform when selected
   public init(
-    id: UUID?=nil,
+    id: UUID=UUID(),
     title: String,
-    description: String?=nil,
-    successLikelihood: RecoveryLikelihood = .medium,
-    isDisruptive: Bool=false,
-    recoveryAction: @escaping @Sendable () async throws -> Void
+    description: String,
+    isDefault: Bool=false,
+    action: @escaping @MainActor () -> Void
   ) {
-    self.id=id ?? UUID()
+    self.id=id
     self.title=title
-    self.description=description
-    self.successLikelihood=successLikelihood
-    self.isDisruptive=isDisruptive
-    self.recoveryAction=recoveryAction
-  }
-
-  /// Perform the recovery action as required by RecoveryOption protocol
-  public func perform() async {
-    _=await execute()
-  }
-
-  /// Execute the recovery action
-  /// - Returns: Whether recovery was successful
-  public func execute() async -> Bool {
-    do {
-      try await recoveryAction()
-      return true
-    } catch {
-      // Create a simple error description if logging is not available
-      print("Recovery action failed: \(id) - \(error)")
-      return false
-    }
-  }
-}
-
-/// How likely a recovery option is to succeed
-public enum RecoveryLikelihood: String, CaseIterable, Sendable {
-  case high="High"
-  case medium="Medium"
-  case low="Low"
-  case unknown="Unknown"
-
-  /// Gets a numerical value representing the likelihood (0-1)
-  public var probability: Double {
-    switch self {
-      case .high: 0.9
-      case .medium: 0.5
-      case .low: 0.1
-      case .unknown: 0.0
-    }
+    self.recoveryDescription=description
+    self.isDefault=isDefault
+    self.action=action
   }
 }
 
 /// Protocol for errors that provide recovery options
-public protocol RecoverableError: ErrorHandlingInterfaces.UmbraError {
+public protocol RecoverableError: UmbraError {
   /// Gets available recovery options for this error
   /// - Returns: Array of recovery options
-  func recoveryOptions() -> [ErrorRecoveryOption]
-
-  /// Attempts to recover from this error using all available options
-  /// - Returns: Whether recovery was successful
-  func attemptRecovery() async -> Bool
+  @MainActor
+  func getRecoveryOptions() -> [RecoveryOption]
 }
 
-/// Default implementation of RecoverableError
-extension RecoverableError {
-  /// Default implementation attempts each recovery option in order
-  public func attemptRecovery() async -> Bool {
-    let options=recoveryOptions()
-    for option in options {
-      if await option.execute() {
-        return true
-      }
-    }
-    return false
-  }
+/// Protocol for error recovery managers
+public protocol ErrorRecoveryService: Sendable {
+  /// Register a provider of recovery options
+  /// - Parameter provider: The provider to register
+  func registerProvider(_ provider: RecoveryOptionsProvider)
+
+  /// Get recovery options for an error
+  /// - Parameter error: The error to get recovery options for
+  /// - Returns: Available recovery options
+  @MainActor
+  func getRecoveryOptions(for error: Error) -> [RecoveryOption]
 }
 
-/// Concrete implementation of recovery options
-/// This builds on the ErrorRecoveryOption interface defined in ErrorHandlingInterfaces
+/// A manager for error recovery options
 public final class RecoveryManager: RecoveryOptionsProvider, Sendable {
   /// The shared instance
   @MainActor
   public static let shared=RecoveryManager()
 
-  /// Debug mode flag
-  private let verbose=false
+  /// Recovery providers registered with this manager
+  private let providers=AtomicArray<DomainRecoveryProvider>()
 
-  /// Dictionary of domain-specific recovery providers
-  /// Using actor isolation to ensure thread safety
-  @MainActor
-  private var domainProviders: [String: DomainRecoveryProvider]=[:]
+  /// Private initialiser to enforce singleton pattern
+  private init() {}
 
-  /// Create a new recovery manager
+  /// Register a provider of recovery options
+  /// - Parameter provider: The provider to register
   @MainActor
-  public init() {
-    // Initialize the recovery manager
-    registerDefaultProviders()
+  public func registerProvider(_ provider: DomainRecoveryProvider) {
+    providers.append(provider)
   }
 
-  /// Register a recovery provider for a specific error domain
-  /// - Parameters:
-  ///   - provider: The provider to register
-  ///   - domain: The error domain to register for
-  @MainActor
-  public func register(provider: DomainRecoveryProvider, for domain: String) {
-    domainProviders[domain]=provider
-  }
-
-  /// Register the default providers
-  @MainActor
-  private func registerDefaultProviders() {
-    // Register built-in providers for standard error domains
-    register(provider: SecurityDomainProvider(), for: "Security")
-    register(provider: NetworkDomainProvider(), for: "Network")
-    register(provider: FilesystemDomainProvider(), for: "Filesystem")
-    register(provider: UserDomainProvider(), for: "User")
-  }
-
-  /// Provides recovery options for the specified error
+  /// Get recovery options for an error
   /// - Parameter error: The error to get recovery options for
   /// - Returns: Array of recovery options
   @MainActor
@@ -195,42 +90,46 @@ public final class RecoveryManager: RecoveryOptionsProvider, Sendable {
     // Get the error domain
     let domain=String(describing: type(of: error))
 
-    // Print debug information if enabled
-    if verbose {
-      print("Finding recovery options for error: \(error) in domain: \(domain)")
-    }
-
-    // Look for a provider for this error domain
-    if let provider=domainProviders[domain] {
-      if verbose {
-        print("Using provider: \(type(of: provider)) for domain: \(domain)")
+    // Look for a provider that can handle this domain
+    for provider in providers.elements {
+      if provider.canHandle(domain: domain) {
+        // Get recovery options from this provider
+        return await provider.createRecoveryOptions(for: error)
       }
-
-      // Get options from the provider
-      return provider.recoveryOptions(for: error)
     }
 
-    // Fallback to default options if no provider handled it
+    // If no specific provider was found, return default options
     return createDefaultRecoveryOptions(for: error)
   }
 
-  /// Provides default recovery options for common error types
-  /// - Parameter error: The error to get recovery options for
+  /// Create default recovery options for an error
+  /// - Parameter error: The error to create options for
   /// - Returns: Array of default recovery options
   @MainActor
-  private func createDefaultRecoveryOptions(for _: Error) -> [RecoveryOption] {
+  private func createDefaultRecoveryOptions(for error: Error) -> [RecoveryOption] {
     // Create default options based on the error type
     var options: [RecoveryOption]=[]
 
     // Add retry option
     options.append(
       ErrorRecoveryOption(
-        title: "Try Again",
-        description: "Attempt the operation again",
-        successLikelihood: .medium,
-        isDisruptive: false,
-        recoveryAction: {
-          // No-op for default option, would be overridden by caller
+        title: "Retry",
+        description: "Retry the operation that failed",
+        action: {
+          // This would normally retry the operation
+          print("Retry selected")
+        }
+      )
+    )
+
+    // Add ignore option
+    options.append(
+      ErrorRecoveryOption(
+        title: "Ignore",
+        description: "Ignore this error and continue",
+        action: {
+          // This would normally just ignore the error
+          print("Ignore selected")
         }
       )
     )
@@ -240,10 +139,10 @@ public final class RecoveryManager: RecoveryOptionsProvider, Sendable {
       ErrorRecoveryOption(
         title: "Cancel",
         description: "Cancel the operation",
-        successLikelihood: .high,
-        isDisruptive: false,
-        recoveryAction: {
-          // No-op for default option, would be overridden by caller
+        isDefault: true,
+        action: {
+          // This would normally cancel the operation
+          print("Cancel selected")
         }
       )
     )
@@ -252,62 +151,70 @@ public final class RecoveryManager: RecoveryOptionsProvider, Sendable {
   }
 }
 
-/// Provider for domain-specific recovery options
-public protocol DomainRecoveryProvider {
-  /// Checks if this provider can handle the given error domain
-  /// - Parameter domain: The error domain
-  /// - Returns: True if this provider can handle errors in this domain
+/// Protocol for domain-specific recovery providers
+public protocol DomainRecoveryProvider: Sendable {
+  /// Check if this provider can handle errors from a given domain
+  /// - Parameter domain: The domain to check
+  /// - Returns: True if this provider can handle errors from this domain
   func canHandle(domain: String) -> Bool
 
-  /// Gets recovery options for an error
+  /// Create recovery options for an error
   /// - Parameter error: The error to get recovery options for
   /// - Returns: Array of recovery options
   func recoveryOptions(for error: Error) -> [RecoveryOption]
 }
 
-/// Basic implementation of domain recovery provider
+/// Security domain provider
 public struct SecurityDomainProvider: DomainRecoveryProvider {
+  public init() {}
+
   public func canHandle(domain: String) -> Bool {
-    domain.contains("Security")
+    domain.contains("Security") || domain.contains("Crypto")
   }
 
-  public func recoveryOptions(for _: Error) -> [RecoveryOption] {
+  public func recoveryOptions(for error: Error) -> [RecoveryOption] {
     // Security-specific recovery options
     []
   }
 }
 
-/// Network domain recovery provider
+/// Network domain provider
 public struct NetworkDomainProvider: DomainRecoveryProvider {
+  public init() {}
+
   public func canHandle(domain: String) -> Bool {
-    domain.contains("Network")
+    domain.contains("Network") || domain.contains("HTTP")
   }
 
-  public func recoveryOptions(for _: Error) -> [RecoveryOption] {
+  public func recoveryOptions(for error: Error) -> [RecoveryOption] {
     // Network-specific recovery options
     []
   }
 }
 
-/// Filesystem domain recovery provider
+/// Filesystem domain provider
 public struct FilesystemDomainProvider: DomainRecoveryProvider {
+  public init() {}
+
   public func canHandle(domain: String) -> Bool {
     domain.contains("File") || domain.contains("Directory")
   }
 
-  public func recoveryOptions(for _: Error) -> [RecoveryOption] {
+  public func recoveryOptions(for error: Error) -> [RecoveryOption] {
     // Filesystem-specific recovery options
     []
   }
 }
 
-/// User interaction domain recovery provider
+/// User domain provider
 public struct UserDomainProvider: DomainRecoveryProvider {
+  public init() {}
+
   public func canHandle(domain: String) -> Bool {
     domain.contains("User") || domain.contains("Input")
   }
 
-  public func recoveryOptions(for _: Error) -> [RecoveryOption] {
+  public func recoveryOptions(for error: Error) -> [RecoveryOption] {
     // User-specific recovery options
     []
   }

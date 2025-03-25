@@ -1,7 +1,9 @@
 import Foundation
 
 /// A container for additional contextual information about an error
-public struct ErrorContext: Sendable, Equatable, Codable, Hashable {
+/// Using @unchecked Sendable due to the nature of the dictionary values
+/// NOTE: This should be refactored to use a more specific and fully Sendable type in a future update
+public struct ErrorContext: @unchecked Sendable, Equatable, Codable, Hashable {
   /// The dictionary of key-value pairs containing contextual information
   private var storage: [String: Any]
   
@@ -165,6 +167,33 @@ public struct ErrorContext: Sendable, Equatable, Codable, Hashable {
       file: self.file,
       line: self.line,
       function: self.function
+    )
+  }
+  
+  /// Creates a new context by merging with another context
+  /// - Parameter other: Another ErrorContext to merge with
+  /// - Returns: A new ErrorContext with values from both contexts (the other context takes precedence)
+  public func merging(with other: ErrorContext) -> ErrorContext {
+    var combinedStorage = self.storage
+    
+    // Merge storage values, with other taking precedence
+    for (key, value) in other.storage {
+      combinedStorage[key] = value
+    }
+    
+    // For a merged context, we keep our source/operation/details unless the other one has non-nil values
+    let mergedSource = other.source ?? self.source
+    let mergedOperation = other.operation ?? self.operation
+    let mergedDetails = other.details ?? self.details
+    
+    return ErrorContext(
+      combinedStorage,
+      source: mergedSource,
+      operation: mergedOperation,
+      details: mergedDetails,
+      file: other.file, // Use the most recent file/line/function info
+      line: other.line,
+      function: other.function
     )
   }
   

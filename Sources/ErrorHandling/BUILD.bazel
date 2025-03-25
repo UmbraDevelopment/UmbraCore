@@ -22,6 +22,7 @@ umbra_swift_library(
         exclude_directories = 1,
     ),
     deps = [
+        "//Sources/UmbraErrors/Core:UmbraErrorsCore",  # Add UmbraErrorsCore dependency
         # Dependencies will go here, for example:
         # "//Sources/CoreDTOs",
         # "//Sources/UmbraLogging",

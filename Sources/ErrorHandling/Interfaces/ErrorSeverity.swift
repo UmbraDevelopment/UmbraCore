@@ -1,6 +1,32 @@
 import Foundation
 
 /// Error severity levels for classification and logging
+///
+/// This enum provides a standardised way to categorise errors by severity throughout
+/// the UmbraCore framework. It establishes a clear hierarchy of error importance,
+/// with critical errors being the most severe and trace being the least severe.
+///
+/// ErrorSeverity is designed to work seamlessly with the logging system,
+/// allowing for consistent error handling and logging across the entire codebase.
+///
+/// ## Usage Example
+///
+/// ```swift
+/// func processResult(_ result: Result<Data, Error>) {
+///     switch result {
+///     case .success(let data):
+///         // Process data
+///     case .failure(let error):
+///         if let appError = error as? AppError {
+///             // Log based on severity
+///             print("Error occurred: \(appError.localizedDescription)")
+///         } else {
+///             // Use default severity
+///             print("Unknown error: \(error.localizedDescription)")
+///         }
+///     }
+/// }
+/// ```
 public enum ErrorSeverity: String, Comparable, Sendable {
   /// Critical error that requires immediate attention
   case critical="Critical"
@@ -32,51 +58,29 @@ public enum ErrorSeverity: String, Comparable, Sendable {
     }
     return lhsIndex < rhsIndex
   }
-
-  /// Indicates whether errors of this severity should be shown to the user
-  public var shouldNotify: Bool {
-    switch self {
-      case .critical, .error, .warning:
-        true
-      case .info, .debug, .trace:
-        false
-    }
-  }
-
-  /// Convert to a string representation for logging
-  public var stringValue: String {
-    rawValue.uppercased()
-  }
-
-  /// Convert from ErrorNotificationLevel to ErrorSeverity
+  
+  /// Convert from notification level to severity
+  /// - Parameter notificationLevel: The notification level to convert
+  /// - Returns: Corresponding error severity
   public static func from(notificationLevel: ErrorNotificationLevel) -> ErrorSeverity {
     switch notificationLevel {
-      case .debug:
-        .debug
-      case .info:
-        .info
-      case .warning:
-        .warning
-      case .error:
-        .error
-      case .critical:
-        .critical
+    case .critical: return .critical
+    case .error: return .error
+    case .warning: return .warning
+    case .info: return .info
+    case .debug: return .debug
     }
   }
-
-  /// Convert to ErrorNotificationLevel
+  
+  /// Convert severity to notification level
+  /// - Returns: Corresponding notification level
   public func toNotificationLevel() -> ErrorNotificationLevel {
     switch self {
-      case .trace, .debug:
-        .debug
-      case .info:
-        .info
-      case .warning:
-        .warning
-      case .error:
-        .error
-      case .critical:
-        .critical
+    case .critical: return .critical
+    case .error: return .error
+    case .warning: return .warning
+    case .info: return .info
+    case .debug, .trace: return .debug
     }
   }
 }

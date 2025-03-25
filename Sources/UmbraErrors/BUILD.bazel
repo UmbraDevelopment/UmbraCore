@@ -30,6 +30,7 @@ umbra_swift_library(
         # Additional dependencies needed but don't create circular references
         "//Sources/SecurityTypes",
         "//Sources/CryptoTypes",
-        "//Sources/XPCProtocolsCore",
+        # Remove direct dependency on XPCProtocolsCore to break circular dependency
+        # "//Sources/XPCProtocolsCore",
     ],
 )

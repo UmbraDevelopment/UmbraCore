@@ -7,7 +7,7 @@ umbra_swift_library(
             "*.swift",
             "**/*.swift",
         ],
-        allow_empty = True,  # Allow empty glob since there may not be any Swift files yet
+        allow_empty = False,  # Allow empty glob since there may not be any Swift files yet
         exclude = [
             "**/Tests/**",
             "**/*Test.swift",

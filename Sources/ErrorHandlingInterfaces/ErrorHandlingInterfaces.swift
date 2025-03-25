@@ -1,4 +1,5 @@
 import Foundation
+import UmbraErrorsCore
 
 /// Error source information
 public struct ErrorSource: Codable, Equatable, Hashable {
@@ -17,25 +18,24 @@ public struct ErrorSource: Codable, Equatable, Hashable {
   }
 }
 
-/// Error context information
-public struct ErrorContext: Codable, Equatable, Hashable {
-  /// Source of the error
-  public let source: String
-  /// Operation that was being performed
-  public let operation: String
-  /// Additional details about the error
-  public let details: String
+// Use the canonical ErrorContext from UmbraErrorsCore instead of defining our own
+public typealias ErrorContext = UmbraErrorsCore.ErrorContext
 
-  /// Create a new error context
-  /// - Parameters:
-  ///   - source: Source of the error
-  ///   - operation: Operation that was being performed
-  ///   - details: Additional details
-  public init(source: String, operation: String, details: String) {
-    self.source=source
-    self.operation=operation
-    self.details=details
-  }
+// Extension to bridge between the old and new ErrorContext formats if needed
+extension UmbraErrorsCore.ErrorContext {
+    /// Create a new error context with parameters matching the old interface
+    /// - Parameters:
+    ///   - source: Source of the error
+    ///   - operation: Operation that was being performed
+    ///   - details: Additional details
+    public init(source: String, operation: String, details: String) {
+        self.init(
+            [:],
+            source: source,
+            operation: operation,
+            details: details
+        )
+    }
 }
 
 /// Error context protocol
