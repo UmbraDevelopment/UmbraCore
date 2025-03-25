@@ -1,0 +1,15 @@
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
+
+# Core security types
+# This module contains foundational security type definitions
+umbra_swift_library(
+    name = "Types",
+    srcs = glob(
+        ["**/*.swift"],
+        exclude = ["**/*.generated.swift"],
+    ),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
+    ],
+)
