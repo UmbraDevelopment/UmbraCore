@@ -1,0 +1,17 @@
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
+
+# Cryptographic implementations for security services
+umbra_swift_library(
+    name = "Crypto",
+    srcs = glob(
+        ["**/*.swift"],
+        exclude = ["**/*.generated.swift"],
+    ),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//Sources/Security/Core/Protocols",
+        "//Sources/Security/Core/Types",
+        "//Sources/Security/Core/Errors",
+        "//Sources/UmbraCoreTypes",
+    ],
+)

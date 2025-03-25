@@ -1,0 +1,16 @@
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
+
+# Security utilities and helper functions
+# Provides common utility functions for security operations
+umbra_swift_library(
+    name = "Utils",
+    srcs = glob(
+        ["**/*.swift"],
+        exclude = ["**/*.generated.swift"],
+    ),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//Sources/Security/Core/Types",
+        "//Sources/UmbraCoreTypes",
+    ],
+)
