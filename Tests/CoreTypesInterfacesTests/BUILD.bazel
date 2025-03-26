@@ -1,0 +1,12 @@
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_test")
+
+swift_test(
+    name = "CoreTypesInterfacesTests",
+    srcs = glob(["**/*.swift"]),
+    deps = [
+        "//Sources/CoreTypesInterfaces",
+        "//Sources/SecurityProtocolsCore",
+        "//Sources/UmbraCoreTypes",
+        # Add any other dependencies that might be needed
+    ],
+)

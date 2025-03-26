@@ -1,5 +1,8 @@
 import Foundation
-import UmbraCoreTypes
+
+/// Utility extensions for converting between Foundation Date/Time and scheduling DTOs
+// Import Scheduling module to access ScheduleDTO and ScheduledTaskDTO
+import Scheduling
 
 // MARK: - Date Extensions for ScheduleDTO
 

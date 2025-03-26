@@ -17,18 +17,20 @@ umbra_swift_library(
     ),
     visibility = ["//visibility:public"],
     deps = [
+        # Add direct dependencies on all required modules
         "//Sources/CoreDTOs/Sources/DateTime",
         "//Sources/CoreDTOs/Sources/FileSystem",
         "//Sources/CoreDTOs/Sources/Network",
         "//Sources/CoreDTOs/Sources/Notification",
+        "//Sources/CoreDTOs/Sources/Operations",
+        "//Sources/CoreDTOs/Sources/Progress",
+        "//Sources/CoreDTOs/Sources/RepositoryManagement",
         "//Sources/CoreDTOs/Sources/Scheduling",
-        "//Sources/CoreDTOs/Sources/Security",
         "//Sources/CoreDTOs/Sources/UserDefaults",
         "//Sources/FileSystemTypes",
-        # Removing UmbraErrors dependencies to break circular dependency
-        # "//Sources/UmbraErrors",
-        # "//Sources/UmbraErrors/Core:UmbraErrorsCore",
         "//Sources/UmbraCoreTypes",
         "//Sources/UmbraLogging",
+        # Remove dependencies that create circular references
+        # "//Sources/CoreDTOs/Sources/Security",
     ],
 )

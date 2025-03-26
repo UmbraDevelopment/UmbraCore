@@ -17,7 +17,9 @@ umbra_swift_library(
     ),
     visibility = ["//visibility:public"],
     deps = [
-        "//Sources/CoreDTOs",
+        # Remove dependency on CoreDTOs to break circular dependency
+        # "//Sources/CoreDTOs",
+        # Instead depend on specific modules that Operations needs
         "//Sources/UmbraCoreTypes",
         "//Sources/UmbraErrors",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",

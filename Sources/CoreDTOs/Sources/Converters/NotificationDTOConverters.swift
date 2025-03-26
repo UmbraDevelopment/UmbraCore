@@ -1,6 +1,8 @@
 import Foundation
+import Notification
 
 /// Extension for converting between Foundation types and NotificationDTO
+// Direct imports removed to break circular dependencies
 extension NotificationDTO {
   /// Create a NotificationDTO from a Foundation Notification
   /// - Parameter notification: The Foundation Notification to convert

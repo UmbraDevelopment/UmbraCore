@@ -1,6 +1,9 @@
 import Foundation
+import UserDefaults
 
 /// Extension for converting between Foundation types and UserDefaultsValueDTO
+// Import UserDefaults module to access UserDefaultsValueDTO
+
 extension UserDefaultsValueDTO {
   /// Create a UserDefaultsValueDTO from a Foundation object
   /// - Parameter object: The object to convert

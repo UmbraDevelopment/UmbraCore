@@ -16,5 +16,6 @@ umbra_swift_library(
         exclude_directories = 1,
     ),
     deps = [
-],
+        "//Sources/SecurityTypes",
+    ],
 )
