@@ -18,7 +18,8 @@ umbra_swift_library(
     visibility = ["//visibility:public"],
     deps = [
         "//Sources/LoggingWrapperInterfaces",
-        "@swiftpkg_swiftybeaver//:SwiftyBeaver"
+        "@swiftpkg_swiftybeaver//:SwiftyBeaver",,
+        "//Sources/LoggingWrapperInterfaces:LoggingWrapperInterfaces"
     ],
 )
 
@@ -32,6 +33,8 @@ umbra_swift_library(
 #         "**/*.docc/**",
 #     ]),
 #     deps = [
-#         # Dependencies would go here
-#     ],
+        "//Sources/LoggingWrapperInterfaces",
+        "@swiftpkg_swiftybeaver//:SwiftyBeaver",,
+        "//Sources/LoggingWrapperInterfaces:LoggingWrapperInterfaces"
+    ],
 # )

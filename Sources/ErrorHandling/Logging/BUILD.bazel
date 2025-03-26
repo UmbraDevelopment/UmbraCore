@@ -18,7 +18,8 @@ umbra_swift_library(
     deps = [
         "//Sources/ErrorHandling/Interfaces",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-        "//Sources/UmbraLogging"
+        "//Sources/UmbraLogging",,
+        "//Sources/UmbraLogging:UmbraLogging"
     ],
 )
 
@@ -32,6 +33,9 @@ umbra_swift_library(
 #         "**/*.docc/**",
 #     ]),
 #     deps = [
-#         # Dependencies would go here
-#     ]
+        "//Sources/ErrorHandling/Interfaces",
+        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
+        "//Sources/UmbraLogging",,
+        "//Sources/UmbraLogging:UmbraLogging"
+    ],
 # )

@@ -15,7 +15,9 @@ umbra_swift_library(
         ],
         exclude_directories = 1,
     ),
-    deps = ["//Sources/ResticTypes"],
+    deps = [
+        "//Sources/ResticTypes",
+    ],
 )
 
 # Uncomment if documentation generation is needed

@@ -18,6 +18,6 @@ umbra_swift_library(
     deps = [
         "//Sources/ErrorHandling/Interfaces",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-        "//Sources/UmbraLogging"
+        "//Sources/UmbraLogging",
     ],
 )

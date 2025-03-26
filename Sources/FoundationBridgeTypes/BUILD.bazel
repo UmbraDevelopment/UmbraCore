@@ -15,7 +15,9 @@ umbra_swift_library(
         ],
         exclude_directories = 1,
     ),
-    deps = ["//Sources/CoreTypesInterfaces"],
+    deps = [
+        "//Sources/CoreTypesInterfaces",
+    ],
 )
 
 # Uncomment if documentation generation is needed
@@ -28,7 +30,6 @@ umbra_swift_library(
 #         "**/*.docc/**",
 #     ]),
 #     deps = [
-#         # Dependencies would go here
 #         "//Sources/CoreTypesInterfaces"
 #     ],
 # )

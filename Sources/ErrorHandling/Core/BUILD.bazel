@@ -23,7 +23,8 @@ umbra_swift_library(
     deps = [
         "//Sources/ErrorHandling/Interfaces",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-        "//Sources/XPCProtocolsCore/Sources/Protocols"
+        "//Sources/XPCProtocolsCore/Sources/Protocols",,
+        "//Sources/ErrorHandling/Interfaces:Interfaces"
     ],
 )
 
@@ -37,8 +38,9 @@ umbra_swift_library(
 #         "**/*.docc/**",
 #     ]),
 #     deps = [
-#         "//Sources/ErrorHandling/Interfaces",
-#         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-#         "//Sources/XPCProtocolsCore/Sources/Protocols"
-#     ],
+        "//Sources/ErrorHandling/Interfaces",
+        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
+        "//Sources/XPCProtocolsCore/Sources/Protocols",,
+        "//Sources/ErrorHandling/Interfaces:Interfaces"
+    ],
 # )
