@@ -21,9 +21,10 @@ swift_test(
         exclude_directories = 1,
     ),
     deps = [
-        # Dependencies will go here, for example:
-        # "//Sources/ErrorHandling",
-        # "//Tests/TestKit",
-        # "@com_github_apple_swift_log//:Logging",
+        "//Sources/CoreTypesInterfaces",
+        "//Sources/ErrorHandling",
+        "//Sources/ErrorHandlingModels",
+        "//Sources/Testing",
+        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
     ],
 )

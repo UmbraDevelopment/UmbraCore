@@ -16,11 +16,7 @@ umbra_swift_library(
         exclude_directories = 1,
     ),
     deps = [
-        # Core dependencies
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
         "//Sources/UmbraLogging",
-        
-        # Error handling dependencies
-        "//Sources/ErrorHandling/Interfaces",
     ],
 )

@@ -30,38 +30,12 @@ umbra_swift_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        # Combined dependencies from all SecurityInterfaces modules
-        "//Sources/UmbraCoreTypes",
-        "//Sources/SecurityProtocolsCore",
         "//Sources/CoreTypesInterfaces",
-        # Temporarily removed XPCProtocolsCore dependency to avoid build errors
-        # "//Sources/XPCProtocolsCore/Sources:XPCProtocolsCoreSources",
+        "//Sources/ObjCBridgingTypesFoundation",
+        "//Sources/SecurityProtocolsCore",
+        "//Sources/UmbraCoreTypes",
         "//Sources/UmbraErrors",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-        "//Sources/ObjCBridgingTypesFoundation",
-        "//Sources/UmbraSecurityBridge",
+        "//Sources/XPCProtocolsCore",
     ],
 )
-
-# Uncomment if documentation generation is needed
-# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
-# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
-#
-# swift_package(
-#     name = "docc_documentation",
-#     srcs = glob([
-#         "**/*.swift",
-#         "**/*.docc/**",
-#     ]),
-#     deps = [
-#        "//Sources/UmbraCoreTypes",
-#        "//Sources/SecurityProtocolsCore",
-#        "//Sources/CoreTypesInterfaces",
-#        # Temporarily removed XPCProtocolsCore dependency to avoid build errors
-#        # "//Sources/XPCProtocolsCore/Sources:XPCProtocolsCoreSources",
-#        "//Sources/UmbraErrors",
-#        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-#        "//Sources/ObjCBridgingTypesFoundation",
-#        "//Sources/UmbraSecurityBridge",
-#     ],
-# )

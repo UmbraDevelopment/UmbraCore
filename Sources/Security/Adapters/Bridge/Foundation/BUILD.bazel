@@ -15,16 +15,10 @@ umbra_swift_library(
         ],
         exclude_directories = 1,
     ),
-    deps = [
-        # Core dependencies
-        "//Sources/UmbraCoreTypes",
-        "//Sources/UmbraErrors",
-        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-        # Security module dependencies
-        "//Sources/Security/Core/Protocols",
-        "//Sources/Security/Core/Types",
-    ],
     visibility = ["//visibility:public"],
+    deps = [
+        "//Sources/UmbraCoreTypes",
+    ],
 )
 
 # Uncomment if documentation generation is needed

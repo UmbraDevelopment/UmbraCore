@@ -8,6 +8,7 @@ umbra_swift_test(
     ]),
     deps = [
         "//Sources/SecurityProtocolsCore",
+        "//Sources/UmbraCoreTypes",
         "//Tests/TestKit",
     ],
 )

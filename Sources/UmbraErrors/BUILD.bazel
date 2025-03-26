@@ -17,20 +17,5 @@ umbra_swift_library(
     ),
     visibility = ["//visibility:public"],
     deps = [
-        # Core error handling modules
-        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-        "//Sources/UmbraErrors/Domains",
-        "//Sources/UmbraErrors/Mapping",
-        "//Sources/UmbraErrors/DTOs",
-
-        # Core dependencies
-        "//Sources/UmbraLogging",
-        "//Sources/UmbraCoreTypes",
-
-        # Additional dependencies needed but don't create circular references
-        "//Sources/SecurityTypes",
-        "//Sources/CryptoTypes",
-        # Remove direct dependency on XPCProtocolsCore to break circular dependency
-        # "//Sources/XPCProtocolsCore",
-    ],
+],
 )

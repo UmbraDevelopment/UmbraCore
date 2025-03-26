@@ -21,12 +21,7 @@ umbra_swift_library(
         exclude_directories = 1,
     ),
     deps = [
-        # Canonical error types from UmbraErrorsCore
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-        
-        # Local error handling modules
-        "//Sources/ErrorHandling/Interfaces",
-        "//Sources/ErrorHandling/Protocols",
     ],
 )
 

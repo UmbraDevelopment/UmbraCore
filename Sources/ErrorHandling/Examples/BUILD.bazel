@@ -15,11 +15,13 @@ umbra_swift_library(
         ],
         exclude_directories = 1,
     ),
+    visibility = ["//visibility:public"],
     deps = [
         "//Sources/ErrorHandlingInterfaces",
         "//Sources/ErrorHandling/Interfaces",
         # Add missing dependency to resolve errors
         "//Sources/ErrorHandling/Core",
+        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
+        "//Sources/UmbraLogging",
     ],
-    visibility = ["//visibility:public"],
 )

@@ -16,6 +16,11 @@ swift_library(
         exclude_directories = 1,
     ),
     visibility = ["//visibility:public"],
+    deps = [
+        "//Sources/ResticCLIHelper",
+        "//Sources/ResticTypes",
+        "//Sources/UmbraLogging",
+    ],
 )
 
 swift_test(
@@ -34,9 +39,5 @@ swift_test(
         exclude_directories = 1,
     ),
     deps = [
-        # Dependencies will go here, for example:
-        # "//Sources/TestKit",
-        # "//Tests/TestKit",
-        # "@com_github_apple_swift_log//:Logging",
     ],
 )

@@ -18,6 +18,8 @@ umbra_swift_library(
     deps = [
         "//Sources/CoreErrors",
         "//Sources/ErrorHandling/Domains",
+        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
+        "//Sources/XPCProtocolsCore",
         # Add other dependencies as needed
     ],
 )

@@ -16,9 +16,5 @@ swift_test(
         exclude_directories = 1,
     ),
     deps = [
-        # Dependencies will go here, for example:
-        # "//Sources/Helpers",
-        # "//Tests/TestKit",
-        # "@com_github_apple_swift_log//:Logging",
-    ],
+],
 )

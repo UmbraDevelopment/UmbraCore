@@ -2,34 +2,18 @@ load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
     name = "KeyManagement",
-    srcs = glob(["**/*.swift"], allow_empty = True),
+    srcs = glob(
+        ["**/*.swift"],
+        allow_empty = True,
+    ),
     visibility = ["//visibility:public"],
     deps = [
         "//Sources/Security/Core/Errors",
         "//Sources/Security/Core/Protocols",
         "//Sources/Security/Core/Types",
+        "//Sources/SecurityProtocolsCore",
         "//Sources/UmbraCoreTypes",
         "//Sources/UmbraErrors",
-        "//Sources/SecurityProtocolsCore",
+        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
     ],
 )
-
-# Uncomment if documentation generation is needed
-# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
-# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
-#
-# swift_package(
-#     name = "docc_documentation",
-#     srcs = glob([
-#         "**/*.swift",
-#         "**/*.docc/**",
-#     ]),
-#     deps = [
-# Dependencies will go here, for example:
-# "//Sources/CoreDTOs",
-# "//Sources/UmbraLogging",
-# "@com_github_apple_swift_log//:Logging",
-#        "//Sources/UmbraCoreTypes",
-#        "//Sources/SecurityProtocolsCore",
-#     ],
-# )

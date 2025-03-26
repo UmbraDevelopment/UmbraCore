@@ -196,8 +196,8 @@ public struct NetworkResponseDTO: Sendable, Equatable {
   public func bodyAsUTF8String() -> String? {
     guard !bodyData.isEmpty else { return nil }
 
-    // Use native Swift String initializer with byte array
-    return String(bytes: bodyData, encoding: .utf8)
+    // Convert bytes to [UInt8] explicitly to match String initializer
+    return String(decoding: bodyData, as: UTF8.self)
   }
 
   /// Get a header value by name
