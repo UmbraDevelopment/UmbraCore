@@ -33,9 +33,9 @@ umbra_swift_library(
 #         "**/*.docc/**"
 #     ])
 #     deps = [
-        "//Sources/ErrorHandling/Interfaces",
-        "//Sources/SecurityTypes",
-        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-        "//Sources/ErrorHandling/Interfaces:Interfaces"
-    ],
+# "//Sources/ErrorHandling/Interfaces"
+# "//Sources/SecurityTypes"
+# "//Sources/UmbraErrors/Core:UmbraErrorsCore"
+# "//Sources/ErrorHandling/Interfaces:Interfaces"
+# ]
 # )

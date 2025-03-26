@@ -32,7 +32,7 @@ umbra_swift_library(
 #     srcs = glob([
 #         "**/*.swift",
 #         "**/*.docc/**"
-#     ]),
+#     ])
 #     deps = [
 #         "//Sources/ErrorHandling/Interfaces",
 #         "//Sources/SecurityTypes",

@@ -17,7 +17,7 @@ alias(
 #     srcs = glob([
 #         "Sources/**/*.swift"
 #         "Sources/**/*.docc/**"
-#     ], allow_empty = False)
+#     ] allow_empty = False)
 # deps = [
 #     # Dependencies would go here"//Sources/UmbraCoreTypes"]
 # )

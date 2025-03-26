@@ -65,7 +65,7 @@ umbra_swift_test(
 #     srcs = glob([
 #         "**/*.swift",
 #         "**/*.docc/**"
-#     ]),
+#     ])
 #     deps = [
 #         "//Sources/CoreDTOs",
 #         "//Sources/SecurityInterfaces",
