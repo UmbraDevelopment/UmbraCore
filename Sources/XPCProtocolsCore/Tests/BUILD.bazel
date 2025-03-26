@@ -61,23 +61,23 @@ umbra_swift_test(
 # load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 # load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
 # swift_package(
-#     name = "docc_documentation"
+#     name = "docc_documentation",
 #     srcs = glob([
-#         "**/*.swift"
+#         "**/*.swift",
 #         "**/*.docc/**"
-#     ])
+#     ]),
 #     deps = [
-        "//Sources/CoreDTOs",
-        "//Sources/SecurityInterfaces",
-        "//Sources/SecurityProtocolsCore",
-        "//Sources/SecurityTypes",
-        "//Sources/UmbraCoreTypes",
-        "//Sources/UmbraErrors",
-        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-        "//Sources/UmbraLogging",
-        "//Sources/XPCProtocolsCore",
-        "//Sources/XPCProtocolsCore/Sources:XPCProtocolsCoreSources",
-        "//Sources/XPCProtocolsCore/Sources/Modern",
-        "//Sources/XPCProtocolsCore/Sources/Protocols"
-    ],
+#         "//Sources/CoreDTOs",
+#         "//Sources/SecurityInterfaces",
+#         "//Sources/SecurityProtocolsCore",
+#         "//Sources/SecurityTypes",
+#         "//Sources/UmbraCoreTypes",
+#         "//Sources/UmbraErrors",
+#         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
+#         "//Sources/UmbraLogging",
+#         "//Sources/XPCProtocolsCore",
+#         "//Sources/XPCProtocolsCore/Sources:XPCProtocolsCoreSources",
+#         "//Sources/XPCProtocolsCore/Sources/Modern",
+#         "//Sources/XPCProtocolsCore/Sources/Protocols"
+#     ]
 # )

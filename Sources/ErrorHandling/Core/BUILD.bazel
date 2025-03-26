@@ -32,15 +32,15 @@ umbra_swift_library(
 # load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 # load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
 # swift_package(
-#     name = "docc_documentation"
+#     name = "docc_documentation",
 #     srcs = glob([
-#         "**/*.swift"
+#         "**/*.swift",
 #         "**/*.docc/**"
-#     ])
+#     ]),
 #     deps = [
-        "//Sources/ErrorHandling/Interfaces",
-        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-        "//Sources/XPCProtocolsCore/Sources/Protocols",
-        "//Sources/ErrorHandling/Interfaces:Interfaces"
-    ],
+#         "//Sources/ErrorHandling/Interfaces",
+#         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
+#         "//Sources/XPCProtocolsCore/Sources/Protocols",
+#         "//Sources/ErrorHandling/Interfaces:Interfaces"
+#     ]
 # )
