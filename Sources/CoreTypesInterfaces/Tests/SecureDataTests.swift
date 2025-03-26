@@ -2,6 +2,7 @@
 import SecurityProtocolsCore
 import XCTest
 
+import UmbraCoreTypes
 final class SecureDataTests: XCTestCase {
   func testInitialization() {
     let bytes: [UInt8]=[1, 2, 3, 4, 5]

@@ -2,6 +2,7 @@ import Foundation
 
 import UmbraErrorsCore
 
+import SecurityTypes
 public enum SecurityErrorDomain: String, CaseIterable, Sendable {
   /// Domain identifier
   public static let domain="Security"

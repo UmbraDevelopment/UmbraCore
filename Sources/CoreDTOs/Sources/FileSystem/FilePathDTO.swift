@@ -2,6 +2,7 @@ import Foundation
 import UmbraCoreTypes
 
 /// A Foundation-independent representation of a file path
+import FileSystemTypes
 public struct FilePathDTO: Sendable, Equatable {
   // MARK: - Types
 

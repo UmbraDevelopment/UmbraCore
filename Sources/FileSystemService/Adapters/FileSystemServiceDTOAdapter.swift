@@ -6,6 +6,7 @@ import UmbraCoreTypes
 // These replace the removed ErrorHandling and ErrorHandlingDomains imports
 
 /// Error domain namespace
+import FileSystemTypes
 public enum ErrorDomain {
   /// Security domain
   public static let security="Security"

@@ -10,6 +10,7 @@
 @testable import ErrorHandlingUtilities
 import Foundation
 import XCTest
+import SecurityTypes
 
 final class ErrorHandlingSystemTests: XCTestCase {
   // MARK: - Test Mocks

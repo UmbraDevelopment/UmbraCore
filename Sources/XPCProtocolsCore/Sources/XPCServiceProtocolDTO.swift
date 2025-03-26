@@ -3,6 +3,7 @@ import UmbraCoreTypes
 import UmbraErrors
 
 /**
+import CoreDTOs
  # XPC Service Protocol with DTOs
 
  This file defines foundation-independent protocols for XPC services using DTOs.

@@ -1,6 +1,7 @@
 import Foundation
 
 /// Extension for converting between Foundation types and FileSystemMetadataDTO
+import FileSystemTypes
 extension FileSystemMetadataDTO {
   /// Create a FileSystemMetadataDTO from Foundation FileManager attributes
   /// - Parameters:

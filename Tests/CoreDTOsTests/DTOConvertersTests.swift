@@ -7,6 +7,7 @@ import UmbraErrors
 import UmbraErrorsCore
 import XCTest
 
+import CoreDTOs
 final class DTOConvertersTests: XCTestCase {
   // MARK: - SecurityDTOConverters Tests
 

@@ -1,0 +1,23 @@
+{
+  "importToTarget": {
+    "Foundation": "",
+    "XCTest": "",
+    "SwiftUI": "",
+    "Combine": "",
+    "Dispatch": "",
+    "CoreData": "",
+    "CoreGraphics": "",
+    "CoreLocation": "",
+    "UIKit": "",
+    "AppKit": "",
+    "UmbraCoreTypes": "//Sources/UmbraCoreTypes",
+    "UmbraErrorsCore": "//Sources/UmbraErrors/Core:UmbraErrorsCore",
+    "SecurityInterfaces": "//Sources/SecurityInterfaces",
+    "SecurityProtocolsCore": "//Sources/SecurityProtocolsCore",
+    "SecurityTypes": "//Sources/SecurityTypes",
+    "CryptoTypes": "//Sources/CryptoTypes",
+    "CoreDTOs": "//Sources/CoreDTOs",
+    "FileSystemTypes": "//Sources/FileSystemTypes"
+  },
+  "generated": "2025-03-26T10:03:28Z"
+}

@@ -2,6 +2,7 @@
 import UmbraCoreTypes
 import XCTest
 
+import CoreDTOs
 final class OperationResultDTOTests: XCTestCase {
   // Test initialization with success value
   func testInitializationWithSuccessValue() {

@@ -3,6 +3,7 @@ import UmbraErrors
 import UmbraErrorsCore
 
 /// Result of an operation that can succeed or fail
+import CoreDTOs
 public enum OperationResultDTO<T> {
   /// Operation succeeded with a value
   case success(T)

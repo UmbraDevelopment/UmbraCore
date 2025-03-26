@@ -1,0 +1,8 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "bazel",
+    srcs = ["bazel.go"],
+    importpath = "github.com/umbracore/swift-deps/bazel",
+    visibility = ["//cmd/swift_deps:__subpackages__"],
+)

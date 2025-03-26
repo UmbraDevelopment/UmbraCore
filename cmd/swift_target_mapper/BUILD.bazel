@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "swift_target_mapper_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/umbracore/swift-target-mapper",
+    visibility = ["//visibility:private"],
+)
+
+go_binary(
+    name = "swift_target_mapper",
+    embed = [":swift_target_mapper_lib"],
+    visibility = ["//visibility:public"],
+)
+
+# Shell script to run the target mapper
+sh_binary(
+    name = "run_mapper",
+    srcs = ["run_mapper.sh"],
+    data = [":swift_target_mapper"],
+)

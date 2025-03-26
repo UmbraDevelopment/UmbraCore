@@ -5,6 +5,7 @@ import UmbraCoreTypes
 import UmbraSecurity
 
 /// Example demonstrating the use of Foundation-independent DTOs with UmbraSecurity
+import FileSystemTypes
 final class FoundationIndependentExample {
   // MARK: - Properties
 

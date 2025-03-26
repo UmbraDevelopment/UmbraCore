@@ -4,6 +4,7 @@ import SecurityBridgeTypes
 import UmbraCoreTypes
 
 /// Factory for creating Foundation-independent security service DTOs
+import FileSystemTypes
 public enum SecurityServiceDTOFactory {
   /// Create a security service DTO adapter
   /// - Parameter securityService: Optional custom security service to use
