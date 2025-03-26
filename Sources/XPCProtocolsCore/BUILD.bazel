@@ -43,11 +43,11 @@ umbra_swift_library(
 # Uncomment if documentation generation is needed
 # load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
 # swift_package(
-#     name = "docc_documentation",
+#     name = "docc_documentation"
 #     deps = [
-#         "//Sources/UmbraCoreTypes",
-#         "//Sources/UmbraErrors",
-#         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
+#         "//Sources/UmbraCoreTypes"
+#         "//Sources/UmbraErrors"
+#         "//Sources/UmbraErrors/Core:UmbraErrorsCore"
 #         "//Sources/XPCProtocolsCore/Sources:XPCProtocolsCoreSources"
-#     ],
+#     ]
 # )

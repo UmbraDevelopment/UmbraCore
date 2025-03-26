@@ -25,10 +25,10 @@ umbra_swift_library(
 # load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
 #
 # swift_package(
-#     name = "docc_documentation",
+#     name = "docc_documentation"
 #     srcs = glob([
-#         "**/*.swift",
-#         "**/*.docc/**",
-#     ]),
-#     deps = ["//Tests/UmbraCoreTests"],
+#         "**/*.swift"
+#         "**/*.docc/**"
+#     ])
+#     deps = ["//Tests/UmbraCoreTests"]
 # )

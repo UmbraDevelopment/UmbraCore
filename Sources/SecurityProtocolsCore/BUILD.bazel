@@ -15,17 +15,17 @@ swift_library(
 # load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
 # load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
 # swift_package(
-#     name = "docc_documentation",
-#     srcs = glob(["**/*.swift"], allow_empty = False),
-#     srcs = glob(["**/*.swift"], allow_empty = False),
-#     srcs = glob(["**/*.swift"], allow_empty = False),
-#     srcs = glob(["**/*.swift"], allow_empty = False),
+#     name = "docc_documentation"
+#     srcs = glob(["**/*.swift"], allow_empty = False)
+#     srcs = glob(["**/*.swift"], allow_empty = False)
+#     srcs = glob(["**/*.swift"], allow_empty = False)
+#     srcs = glob(["**/*.swift"], allow_empty = False)
 # deps = [
-#     # Dependencies would go here"//Sources/SecurityProtocolsCore"],
+#     # Dependencies would go here"//Sources/SecurityProtocolsCore"]
 # deps = [
-#     # Dependencies would go here"//Sources/SecurityProtocolsCore"],
+#     # Dependencies would go here"//Sources/SecurityProtocolsCore"]
 # deps = [
-#     # Dependencies would go here"//Sources/SecurityProtocolsCore"],
+#     # Dependencies would go here"//Sources/SecurityProtocolsCore"]
 # deps = [
-#     # Dependencies would go here"//Sources/SecurityProtocolsCore"],
+#     # Dependencies would go here"//Sources/SecurityProtocolsCore"]
 # )

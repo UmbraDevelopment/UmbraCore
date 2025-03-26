@@ -25,19 +25,19 @@ umbra_swift_library(
 # load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
 # load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
 # swift_package(
-#     name = "docc_documentation",
+#     name = "docc_documentation"
 #     srcs = glob([
 #     srcs = glob([
-#         "**/*.swift",
-#         "**/*.docc/**",
-#     ]),
-#     ]),
+#         "**/*.swift"
+#         "**/*.docc/**"
+#     ])
+#     ])
 # deps = [
-#     # Dependencies would go here"//Sources/Resources"],
+#     # Dependencies would go here"//Sources/Resources"]
 # deps = [
-#     # Dependencies would go here"//Sources/Resources"],
+#     # Dependencies would go here"//Sources/Resources"]
 # deps = [
-#     # Dependencies would go here"//Sources/Resources"],
+#     # Dependencies would go here"//Sources/Resources"]
 # deps = [
-#     # Dependencies would go here"//Sources/Resources"],
+#     # Dependencies would go here"//Sources/Resources"]
 # )
