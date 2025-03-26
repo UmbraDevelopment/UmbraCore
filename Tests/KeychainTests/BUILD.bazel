@@ -18,8 +18,8 @@ swift_test(
     deps = [
         "//Sources/UmbraKeychainService",
         # Dependencies will go here, for example:
-        # "//Sources/KeychainTests",
-        # "//Tests/TestKit",
+        # "//Sources/KeychainTests"
+        # "//Tests/TestKit"
         # "@com_github_apple_swift_log//:Logging"
     ],
 )

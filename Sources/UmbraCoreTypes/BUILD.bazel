@@ -13,11 +13,11 @@ alias(
 # load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
 #
 # swift_package(
-#     name = "docc_documentation",
+#     name = "docc_documentation"
 #     srcs = glob([
-#         "Sources/**/*.swift",
-#         "Sources/**/*.docc/**",
-#     ], allow_empty = False),
+#         "Sources/**/*.swift"
+#         "Sources/**/*.docc/**"
+#     ], allow_empty = False)
 # deps = [
-#     # Dependencies would go here"//Sources/UmbraCoreTypes"],
+#     # Dependencies would go here"//Sources/UmbraCoreTypes"]
 # )

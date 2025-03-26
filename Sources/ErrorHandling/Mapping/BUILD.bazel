@@ -22,9 +22,9 @@ umbra_swift_library(
     ),
     deps = [
         # Additional dependencies as needed:
-        # "//Sources/CoreDTOs",
-        # "//Sources/UmbraLogging",
-        # "@com_github_apple_swift_log//:Logging",
+        # "//Sources/CoreDTOs"
+        # "//Sources/UmbraLogging"
+        # "@com_github_apple_swift_log//:Logging"
         "//Sources/ErrorHandling/Types",
         "//Sources/ErrorHandling/Core",
         "//Sources/SecurityInterfaces",
@@ -38,13 +38,13 @@ umbra_swift_library(
 # load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
 # load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
 # swift_package(
-#     name = "docc_documentation",
+#     name = "docc_documentation"
 #     srcs = glob([
 #     srcs = glob([
-#         "**/*.swift",
-#         "**/*.docc/**",
-#     ]),
-#     ]),
+#         "**/*.swift"
+#         "**/*.docc/**"
+#     ])
+#     ])
 # deps = [
 #     # Dependencies would go here
 # deps = [

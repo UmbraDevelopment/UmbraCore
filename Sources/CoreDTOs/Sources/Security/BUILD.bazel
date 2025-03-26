@@ -17,9 +17,9 @@ umbra_swift_library(
     ),
     deps = [
         # Removing circular dependency with CoreDTOs
-        # "//Sources/CoreDTOs",
+        # "//Sources/CoreDTOs"
         # Replaced SecurityTypes with SecurityInterfaces to break circular dependency chain
-        # "//Sources/SecurityTypes",
+        # "//Sources/SecurityTypes"
         "//Sources/CoreDTOs/Sources:CoreDTOs",
         "//Sources/SecurityInterfaces",
         "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",

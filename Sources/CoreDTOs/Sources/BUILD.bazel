@@ -18,11 +18,11 @@ umbra_swift_library(
     visibility = ["//visibility:public"],
     deps = [
         # Removed dependency on deleted module
-        # "//Sources/DTOFoundationConverters",
+        # "//Sources/DTOFoundationConverters"
         # Removing circular dependency
-        # "//Sources/SecurityInterfaces",
+        # "//Sources/SecurityInterfaces"
         # Removing circular dependency
-        # "//Sources/UmbraSecurityBridge",
+        # "//Sources/UmbraSecurityBridge"
         "//Sources/CoreDTOs/Sources/Configuration",
         "//Sources/CoreDTOs/Sources/Converters",
         "//Sources/CoreDTOs/Sources/DateTime",
@@ -52,4 +52,4 @@ umbra_swift_library(
 # load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
 # load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
 # swift_package(
-#     name = "docc_documentation",
+#     name = "docc_documentation"
