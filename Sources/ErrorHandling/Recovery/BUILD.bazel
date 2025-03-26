@@ -16,17 +16,7 @@ umbra_swift_library(
         exclude_directories = 1,
     ),
     deps = [
-        # Add UmbraErrorsCore for canonical error type definitions
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-        
-        # Add Interfaces for canonical ErrorSeverity
-        "//Sources/ErrorHandling/Interfaces",
-        
-        # Add Protocols for RecoveryOptionsProvider interface
-        "//Sources/ErrorHandling/Protocols",
-        
-        # Other standard dependencies
-        "//Sources/UmbraLogging",
     ],
 )
 

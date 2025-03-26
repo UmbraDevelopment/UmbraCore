@@ -17,6 +17,7 @@ umbra_swift_library(
     ),
     visibility = ["//visibility:public"],
     deps = [
+        "//Sources/CryptoInterfaces",
         "//Sources/UmbraCoreTypes",
         "@swiftpkg_cryptoswift//:CryptoSwift",
     ],

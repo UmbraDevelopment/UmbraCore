@@ -16,13 +16,7 @@ umbra_swift_library(
         exclude_directories = 1,
     ),
     deps = [
-        # Add UmbraErrorsCore as a dependency to fix import error
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-        
-        # Dependencies will go here, for example:
-        # "//Sources/CoreDTOs",
-        # "//Sources/UmbraLogging",
-        # "@com_github_apple_swift_log//:Logging",
     ],
 )
 

@@ -17,18 +17,5 @@ umbra_swift_library(
     ),
     visibility = ["//visibility:public"],
     deps = [
-        # Remove CoreDTOs dependency to break circular reference
-        # "//Sources/CoreDTOs",
-
-        # Core foundations
-        "//Sources/UmbraLogging",
-        "//Sources/UmbraCoreTypes",
-
-        # Add dependencies for security related types
-        "//Sources/SecurityTypes",
-        # Remove direct dependency on CryptoTypes to break circular dependency
-        # "//Sources/CryptoTypes",
-        # Removing XPCProtocolsCore to break circular dependency
-        # "//Sources/XPCProtocolsCore",
-    ],
+],
 )

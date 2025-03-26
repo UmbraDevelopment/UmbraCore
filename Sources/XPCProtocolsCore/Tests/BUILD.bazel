@@ -14,29 +14,33 @@ umbra_swift_library(
         ],
         exclude_directories = 1,
     ),
+    swiftc_opts = [
+        "-target",
+        "arm64-apple-macosx14.7.4",
+    ],
     deps = [
         "//Sources/CoreDTOs",
-        "//Sources/UmbraLogging",
+        "//Sources/SecurityProtocolsCore",
         "//Sources/UmbraCoreTypes",
         "//Sources/UmbraErrors",
+        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
+        "//Sources/UmbraLogging",
         "//Sources/XPCProtocolsCore",
         "//Sources/XPCProtocolsCore/Sources:XPCProtocolsCoreSources",
         "//Sources/XPCProtocolsCore/Sources/Modern",
         "//Sources/XPCProtocolsCore/Sources/Protocols",
     ],
-    swiftc_opts = [
-        "-target", "arm64-apple-macosx14.7.4",
-    ],
 )
 
 umbra_swift_test(
     name = "XPCProtocolsCoreTests",
-    deps = [
-        ":TestsLib",
-    ],
     # Pass compiler options through the kwargs mechanism
     copts = [
-        "-target", "arm64-apple-macosx14.7.4",
+        "-target",
+        "arm64-apple-macosx14.7.4",
+    ],
+    deps = [
+        ":TestsLib",
     ],
 )
 

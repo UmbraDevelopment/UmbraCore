@@ -17,6 +17,8 @@ swift_test(
     ),
     deps = [
         "//Sources/ErrorHandling",
+        "//Sources/Testing",
+        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
         # Dependencies will go here, for example:
         # "//Sources/ErrorHandlingTests",
         # "//Tests/TestKit",

@@ -17,6 +17,7 @@ swift_test(
     ),
     deps = [
         "//Sources/ResticCLIHelper",
+        "//Sources/ResticTypes",
         # Dependencies will go here, for example:
         # "//Sources/ResticCLIHelperTests",
         # "//Tests/TestKit",

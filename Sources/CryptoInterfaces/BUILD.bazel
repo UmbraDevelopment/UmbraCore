@@ -1,13 +1,13 @@
 load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
-    name = "Common",
+    name = "CryptoInterfaces",
     srcs = glob(
         [
             "*.swift",
             "**/*.swift",
         ],
-        allow_empty = False,
+        allow_empty = True,  # Allow empty for now as we're just setting up the structure
         exclude = [
             "**/Tests/**",
             "**/*Test.swift",
@@ -15,8 +15,8 @@ umbra_swift_library(
         ],
         exclude_directories = 1,
     ),
+    visibility = ["//visibility:public"],
     deps = [
-        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-        "//Sources/UmbraLogging",
+        "//Sources/UmbraCoreTypes",
     ],
 )

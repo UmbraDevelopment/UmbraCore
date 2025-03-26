@@ -16,9 +16,13 @@ swift_test(
         exclude_directories = 1,
     ),
     deps = [
-        # Dependencies will go here, for example:
-        # "//Sources/XPC",
-        # "//Tests/TestKit",
-        # "@com_github_apple_swift_log//:Logging",
+        "//Sources/SecurityInterfaces",
+        "//Sources/SecurityTypes",
+        "//Sources/SecurityUtils",
+        "//Sources/UmbraCryptoService",
+        "//Sources/UmbraErrors",
+        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
+        "//Sources/UmbraKeychainService",
+        "//Sources/XPCProtocolsCore",
     ],
 )

@@ -17,8 +17,6 @@ umbra_swift_library(
     ),
     visibility = ["//visibility:public"],
     deps = [
-        # Minimal dependencies only
-        # No circular dependencies should be introduced here
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
     ],
 )
