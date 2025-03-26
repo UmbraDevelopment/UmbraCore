@@ -25,12 +25,13 @@ CONCURRENCY_SAFETY_OPTIONS = [
 
 # Target platform options
 PLATFORM_OPTIONS = [
-    "-target", "arm64-apple-macos14.7.4",
+    "-target",
+    "arm64-apple-macos14.7.4",
 ]
 
 # Performance optimization options for release builds
 OPTIMIZATION_OPTIONS = [
-    "-O", 
+    "-O",
     "-whole-module-optimization",
 ]
 
@@ -54,11 +55,11 @@ DEBUG_SWIFT_COPTS = DEFAULT_SWIFT_COPTS + DEBUG_OPTIONS
 
 def get_swift_copts(mode = "default", enable_library_evolution = True):
     """Returns the appropriate Swift compiler options based on the build mode.
-    
+
     Args:
         mode: Build mode ("default", "release", or "debug")
         enable_library_evolution: Whether to enable library evolution support
-        
+
     Returns:
         List of Swift compiler options
     """
@@ -68,8 +69,8 @@ def get_swift_copts(mode = "default", enable_library_evolution = True):
         copts = BASE_SWIFT_COPTS + DEBUG_OPTIONS
     else:
         copts = BASE_SWIFT_COPTS
-        
+
     if enable_library_evolution:
         copts = copts + LIBRARY_EVOLUTION_OPTIONS
-        
+
     return copts

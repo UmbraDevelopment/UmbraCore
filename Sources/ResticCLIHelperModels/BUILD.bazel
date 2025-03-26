@@ -16,7 +16,5 @@ umbra_swift_library(
         exclude_directories = 1,
     ),
     visibility = ["//visibility:public"],
-    deps = [
-        "//Sources/ResticTypes",
-    ],
+    deps = ["//Sources/ResticTypes"],
 )

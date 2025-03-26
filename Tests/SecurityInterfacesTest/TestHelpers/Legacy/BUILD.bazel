@@ -16,7 +16,7 @@ umbra_swift_library(
         exclude_directories = 1,
     ),
     deps = [
-],
+    ],
 )
 
 # Uncomment if documentation generation is needed

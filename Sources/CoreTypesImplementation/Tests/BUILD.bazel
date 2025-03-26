@@ -18,6 +18,7 @@ umbra_swift_library(
         "//Sources/CoreTypesImplementation/Sources:CoreTypesImplementation",
         "//Sources/CoreTypesInterfaces",
         "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
         "//Sources/UmbraErrors",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
     ],

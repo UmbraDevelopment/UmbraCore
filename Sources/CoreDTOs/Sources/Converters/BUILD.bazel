@@ -27,10 +27,11 @@ umbra_swift_library(
         "//Sources/CoreDTOs/Sources/RepositoryManagement",
         "//Sources/CoreDTOs/Sources/Scheduling",
         "//Sources/CoreDTOs/Sources/UserDefaults",
+        "//Sources/ErrorHandling/Notification",
         "//Sources/FileSystemTypes",
+        "//Sources/SecurityInterfaces",
         "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
         "//Sources/UmbraLogging",
-        # Remove dependencies that create circular references
-        # "//Sources/CoreDTOs/Sources/Security",
     ],
 )

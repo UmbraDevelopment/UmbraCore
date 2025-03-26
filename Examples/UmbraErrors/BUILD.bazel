@@ -5,13 +5,14 @@ umbra_swift_library(
     srcs = glob(["*.swift"]),
     visibility = ["//visibility:public"],
     deps = [
+        "//Sources/CoreErrors",
         "//Sources/ErrorHandlingDomains",
         "//Sources/ErrorHandlingInterfaces",
+        "//Sources/SecurityTypes",
         "//Sources/UmbraErrors",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-        "//Sources/UmbraErrors/Domains",
         "//Sources/UmbraErrors/DTOs",
+        "//Sources/UmbraErrors/Domains",
         "//Sources/UmbraErrors/Mapping",
-        "//Sources/CoreErrors",
     ],
 )

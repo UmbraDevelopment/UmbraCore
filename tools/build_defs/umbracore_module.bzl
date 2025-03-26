@@ -16,11 +16,11 @@ def umbracore_foundation_free_module(
         testonly = None,
         additional_inputs = None):
     """Creates a Foundation-free UmbraCore module with standard structure.
-    
-    This macro generates a Swift library target that explicitly has no 
-    Foundation dependencies and follows the architecture defined in our 
+
+    This macro generates a Swift library target that explicitly has no
+    Foundation dependencies and follows the architecture defined in our
     refactoring plan.
-    
+
     Args:
         name: Name of the module to create.
         srcs: Source files for the module. Defaults to all Swift files in Sources/.
@@ -32,23 +32,25 @@ def umbracore_foundation_free_module(
     """
     if srcs == None:
         srcs = native.glob(["Sources/**/*.swift"])
-    
+
     if deps == None:
         deps = []
-    
+
     if visibility == None:
         visibility = ["//visibility:public"]
-        
+
     if copts == None:
         copts = [
-            "-target", "arm64-apple-macos15.4",
+            "-target",
+            "arm64-apple-macos15.4",
             "-g",
-            "-swift-version", "5",
+            "-swift-version",
+            "5",
         ]
-    
+
     if additional_inputs == None:
         additional_inputs = []
-    
+
     swift_library(
         name = name,
         srcs = srcs,
@@ -68,7 +70,7 @@ def umbracore_foundation_independent_module(
         testonly = None):
     """
     Creates a Swift module that may use other modules but avoids Foundation dependencies.
-    
+
     Args:
         name: Name of the module
         srcs: Source files
@@ -79,20 +81,22 @@ def umbracore_foundation_independent_module(
     """
     if srcs == None:
         srcs = native.glob(["Sources/**/*.swift"])
-    
+
     if deps == None:
         deps = []
-    
+
     if copts == None:
         copts = [
-            "-target", "arm64-apple-macos15.4",
+            "-target",
+            "arm64-apple-macos15.4",
             "-g",
-            "-swift-version", "5",
+            "-swift-version",
+            "5",
         ]
-    
+
     if visibility == None:
         visibility = ["//visibility:public"]
-    
+
     swift_library(
         name = name,
         srcs = srcs,
@@ -111,7 +115,7 @@ def umbracore_module_test(
         visibility = None):
     """
     Creates a test target for an UmbraCore module.
-    
+
     Args:
         name: Name of the test module
         srcs: Test source files
@@ -120,7 +124,7 @@ def umbracore_module_test(
         visibility: Visibility
     """
     module_name = name.replace("Tests", "")
-    
+
     # Create a testable version of the module
     swift_library(
         name = name,

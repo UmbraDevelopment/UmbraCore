@@ -14,9 +14,9 @@ umbra_swift_library(
     ),
     visibility = ["//visibility:public"],
     deps = [
-        "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
         # Temporarily commenting out these dependencies to fix build issues
         # "//Sources/ErrorHandling/Interfaces:Interfaces",
         # "//Sources/ErrorHandling/Domains:Domains",
+        "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
     ],
 )

@@ -16,8 +16,11 @@ umbra_swift_library(
         exclude_directories = 1,
     ),
     deps = [
+        "//Sources/Features/Logging/Models:FeaturesLoggingModels",
+        "//Sources/SecurityInterfaces",
         "//Sources/SecurityTypes",
         "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
         "//Sources/UmbraErrors",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
         "//Sources/XPCProtocolsCore",

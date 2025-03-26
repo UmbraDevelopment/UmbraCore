@@ -17,14 +17,16 @@ umbra_swift_library(
     ),
     visibility = ["//visibility:public"],
     deps = [
+        "//Sources/CryptoTypes:CryptoTypesInterfaces",
         "//Sources/CryptoTypes/Protocols",
         "//Sources/CryptoTypes/Types",
+        "//Sources/SecurityInterfaces",
         "//Sources/SecurityTypes",
         "//Sources/SecurityTypes/Protocols",
         "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
         "//Sources/UmbraErrors",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
         "//Sources/XPCProtocolsCore",
     ],
 )
-

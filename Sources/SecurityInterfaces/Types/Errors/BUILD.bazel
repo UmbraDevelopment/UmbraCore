@@ -4,11 +4,16 @@ swift_library(
     name = "Errors",
     srcs = glob(["*.swift"]),
     module_name = "SecurityInterfacesErrors",
+    tags = [
+        "errors",
+        "security",
+        "types",
+    ],
     visibility = ["//visibility:public"],
     deps = [
+        "//Sources/SecurityTypes",
         "//Sources/UmbraErrors",
     ],
-    tags = ["security", "types", "errors"],
 )
 
 # Security Error Types

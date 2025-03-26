@@ -18,6 +18,7 @@ swift_library(
     visibility = ["//visibility:public"],
     deps = [
         "//Sources/ResticCLIHelper",
+        "//Sources/ResticCLIHelper/Types:ResticCLIHelperTypes",
         "//Sources/ResticTypes",
         "//Sources/UmbraLogging",
     ],
@@ -39,5 +40,9 @@ swift_test(
         exclude_directories = 1,
     ),
     deps = [
+        "//Sources/ResticCLIHelper",
+        "//Sources/ResticCLIHelper/Types:ResticCLIHelperTypes",
+        "//Sources/ResticTypes",
+        "//Sources/UmbraLogging",
     ],
 )

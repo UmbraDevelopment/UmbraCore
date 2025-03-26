@@ -10,6 +10,6 @@ swift_test(
         allow_empty = False,
     ),
     deps = [
-        "//Sources/Security:Security",
+        "//Sources/Security",
     ],
 )

@@ -7,7 +7,7 @@ load("@build_bazel_rules_swift//swift:swift.bzl", "swift_binary", "swift_library
 def umbra_swift_library(name, srcs = [], deps = [], visibility = None, testonly = None, **kwargs):
     """
     A wrapper around swift_library that sets appropriate defaults for the UmbraCore project.
-    
+
     Args:
         name: The name of the target.
         srcs: Source files to compile.
@@ -16,6 +16,7 @@ def umbra_swift_library(name, srcs = [], deps = [], visibility = None, testonly 
         testonly: Whether this target is for tests only.
         **kwargs: Additional arguments to pass to swift_library.
     """
+
     # Handle empty source files gracefully by creating a placeholder filegroup
     if not srcs:
         # Create an empty filegroup as a placeholder when no sources exist
@@ -40,7 +41,7 @@ def umbra_swift_library(name, srcs = [], deps = [], visibility = None, testonly 
 def umbra_swift_test(name, srcs = [], deps = [], visibility = None, **kwargs):
     """
     A wrapper around swift_test that sets appropriate defaults for the UmbraCore project.
-    
+
     Args:
         name: The name of the target.
         srcs: Source files to compile.

@@ -2,38 +2,61 @@ load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
     name = "Core",
-    srcs = glob(["**/*.swift"], allow_empty = True),
+    srcs = glob(
+        ["**/*.swift"],
+        allow_empty = True,
+    ),
     visibility = ["//visibility:public"],
     deps = [
-        "//Sources/Security/Core/Types",
         "//Sources/Security/Core/Protocols",
-        "//Sources/UmbraCoreTypes",
+        "//Sources/Security/Core/Types",
+        "//Sources/SecurityInterfaces",
+        "//Sources/SecurityInterfaces/Types/Errors",
         "//Sources/SecurityProtocolsCore",
+        "//Sources/SecurityTypes/Types",
+        "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
+        "//Sources/XPCProtocolsCore/Sources/Protocols",
     ],
 )
 
 # Subdirectory libraries
 umbra_swift_library(
     name = "Adapters",
-    srcs = glob(["Adapters/**/*.swift"], allow_empty = True),
+    srcs = glob(
+        ["Adapters/**/*.swift"],
+        allow_empty = True,
+    ),
     visibility = ["//visibility:public"],
     deps = [
-        "//Sources/CoreDTOs",
-        "//Sources/Security/Core/Errors",
-        "//Sources/Security/Core/Types",
         "//Sources/Security/Core/Protocols",
+        "//Sources/Security/Core/Types",
+        "//Sources/SecurityInterfaces",
+        "//Sources/SecurityInterfaces/Types/Errors",
         "//Sources/SecurityProtocolsCore",
+        "//Sources/SecurityTypes/Types",
+        "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
+        "//Sources/XPCProtocolsCore/Sources/Protocols",
     ],
 )
 
 umbra_swift_library(
     name = "Protocols",
-    srcs = glob(["Protocols/**/*.swift"], allow_empty = True),
+    srcs = glob(
+        ["Protocols/**/*.swift"],
+        allow_empty = True,
+    ),
     visibility = ["//visibility:public"],
     deps = [
-        "//Sources/CoreDTOs",
-        "//Sources/Security/Core/Types",
         "//Sources/Security/Core/Protocols",
+        "//Sources/Security/Core/Types",
+        "//Sources/SecurityInterfaces",
+        "//Sources/SecurityInterfaces/Types/Errors",
         "//Sources/SecurityProtocolsCore",
+        "//Sources/SecurityTypes/Types",
+        "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
+        "//Sources/XPCProtocolsCore/Sources/Protocols",
     ],
 )

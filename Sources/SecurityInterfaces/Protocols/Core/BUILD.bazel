@@ -4,14 +4,21 @@ swift_library(
     name = "Core",
     srcs = glob(["*.swift"]),
     module_name = "SecurityInterfacesCore",
+    tags = [
+        "core",
+        "protocols",
+        "security",
+    ],
     visibility = ["//visibility:public"],
     deps = [
+        "//Sources/SecurityInterfaces/Types/Errors",
+        "//Sources/SecurityTypes",
         "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
         "//Sources/UmbraErrors",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
         "//Sources/XPCProtocolsCore",
     ],
-    tags = ["security", "protocols", "core"],
 )
 
 # Core Security Protocols

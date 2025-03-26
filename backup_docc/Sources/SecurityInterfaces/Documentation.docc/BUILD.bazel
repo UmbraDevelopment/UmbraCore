@@ -1,7 +1,7 @@
 load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
-    name = "SecurityProtocolsDocumentation",
+    name = "SecurityInterfacesDocumentation",
     srcs = glob(
         [
             "*.swift",
@@ -16,7 +16,7 @@ umbra_swift_library(
         exclude_directories = 1,
     ),
     deps = [
-],
+    ],
 )
 
 # Uncomment if documentation generation is needed
@@ -29,5 +29,5 @@ umbra_swift_library(
 #         "**/*.swift",
 #         "**/*.docc/**",
 #     ]),
-#     deps = ["//Sources/SecurityProtocolsDocumentation"],
+#     deps = ["//Sources/SecurityInterfacesDocumentation"],
 # )

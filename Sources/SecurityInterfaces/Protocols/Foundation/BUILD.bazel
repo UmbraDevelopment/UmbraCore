@@ -4,12 +4,16 @@ swift_library(
     name = "Foundation",
     srcs = glob(["*.swift"]),
     module_name = "SecurityInterfacesFoundation",
+    tags = [
+        "foundation",
+        "protocols",
+        "security",
+    ],
     visibility = ["//visibility:public"],
     deps = [
         "//Sources/UmbraCoreTypes",
         "//Sources/UmbraErrors",
     ],
-    tags = ["security", "protocols", "foundation"],
 )
 
 # Foundation-Dependent Security Protocols

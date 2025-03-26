@@ -2,6 +2,7 @@ import Foundation
 
 /// Mapper for SecurityError to canonical UmbraErrors.Security.Core
 import SecurityInterfaces
+import SecurityTypes
 public enum SecurityErrorMapper {
 
   /// Maps a SecurityError to a canonical UmbraErrors.Security.Core error

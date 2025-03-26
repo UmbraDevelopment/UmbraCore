@@ -98,21 +98,21 @@ def umbra_swift_test(
         tags: Tags for the test target.
         **kwargs: Additional arguments to pass to swift_test.
     """
-    
+
     # Get compiler options for tests
     test_copts = get_swift_copts("debug") + ["-enable-testing"] + copts
-    
+
     # Base environment variables for Swift tests
     base_env = {
         "MACOS_DEPLOYMENT_TARGET": "14.7.4",  # Updated from 15.4 to match project minimum
         "SWIFT_DETERMINISTIC_HASHING": "1",
         "DEVELOPER_DIR": "/Applications/Xcode.app/Contents/Developer",
     }
-    
+
     # Merge the base environment with any provided environment variables
     test_env = dict(base_env)
     test_env.update(env)
-    
+
     # Create the Swift test target
     swift_test(
         name = name,

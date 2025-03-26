@@ -20,6 +20,7 @@ umbra_swift_library(
         # Remove dependency on CoreDTOs to break circular dependency
         # "//Sources/CoreDTOs",
         # Instead depend on specific modules that Operations needs
+        "//Sources/CoreDTOs/Sources:CoreDTOs",
         "//Sources/UmbraCoreTypes",
         "//Sources/UmbraErrors",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",

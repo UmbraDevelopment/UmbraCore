@@ -22,23 +22,33 @@ umbra_swift_library(
         exclude_directories = 1,
     ),
     deps = [
-        "//Sources/UmbraErrors/Core:UmbraErrorsCore",  # Add UmbraErrorsCore dependency
         # Dependencies will go here, for example:
         # "//Sources/CoreDTOs",
         # "//Sources/UmbraLogging",
         # "@com_github_apple_swift_log//:Logging",
+        "//Sources/UmbraErrors/Core:UmbraErrorsCore",  # Add UmbraErrorsCore dependency
     ],
 )
 
 # Uncomment if documentation generation is needed
 # load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 # load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
-#
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
 # swift_package(
 #     name = "docc_documentation",
+#     srcs = glob([
 #     srcs = glob([
 #         "**/*.swift",
 #         "**/*.docc/**",
 #     ]),
-#     deps = ["//Sources/ErrorHandling"],
+#     ]),
+# deps = [
+#     # Dependencies would go here"//Sources/ErrorHandling"],
+# deps = [
+#     # Dependencies would go here"//Sources/ErrorHandling"],
+# deps = [
+#     # Dependencies would go here"//Sources/ErrorHandling"],
+# deps = [
+#     # Dependencies would go here"//Sources/ErrorHandling"],
 # )

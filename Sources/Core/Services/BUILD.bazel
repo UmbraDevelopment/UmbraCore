@@ -19,10 +19,13 @@ umbra_swift_library(
         "//Sources/Core/Services/Types",  # Updated path to Types module
         "//Sources/CoreTypesInterfaces",
         "//Sources/KeyManagementTypes",
+        "//Sources/KeyManagementTypes:KeyManagementTypesTests",
         "//Sources/ObjCBridgingTypesFoundation",
+        "//Sources/SecurityInterfaces",
         "//Sources/SecurityProtocolsCore",
         "//Sources/SecurityTypes",
         "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
         "//Sources/UmbraErrors",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
         "//Sources/UmbraLogging",

@@ -19,6 +19,7 @@ umbra_swift_library(
     deps = [
         "//Sources/CryptoInterfaces",
         "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
         "@swiftpkg_cryptoswift//:CryptoSwift",
     ],
 )

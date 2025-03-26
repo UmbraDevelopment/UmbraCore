@@ -6,71 +6,72 @@ load(":build_settings.bzl", "BuildEnvironmentInfo")
 
 def _docc_documentation_impl(ctx):
     """Implementation of docc_documentation rule."""
+
     # Get build environment info from the build_environment target
     build_env = ctx.attr._build_environment[BuildEnvironmentInfo]
     is_local_build = build_env.is_local
-    
+
     # Check for build_environment flag to override is_local determination
     build_env_flag = ctx.var.get("define", "")
     if "build_environment=nonlocal" in build_env_flag:
         is_local_build = False
-    
+
     print("DEBUG: Is local build: %s" % is_local_build)
-    
+
     if ctx.attr.localonly and not is_local_build:
         # If localonly is True and we're not in a local development environment, skip generating documentation
         print("Skipping DocC documentation for %s (non-local build)" % ctx.attr.module_name)
         return [DefaultInfo(files = depset([]))]
-    
+
     print("Building DocC documentation for %s (local build or non-localonly target)" % ctx.attr.module_name)
-    
+
     # Create output directory for DocC archive
     docc_archive = ctx.actions.declare_directory(ctx.label.name + ".doccarchive")
-    
+
     # Create a temporary directory for DocC inputs
     temp_dir = ctx.actions.declare_directory(ctx.label.name + "_temp")
-    
+
     # Get all source files
     srcs = ctx.files.srcs
-    
+
     # Find docc_gen tool
     docc_gen = ctx.executable._docc_gen
-    
+
     # Find DocC tool
     docc_tool = "/usr/bin/xcrun docc"  # Direct path to DocC tool
-    
+
     # Build arguments for docc_gen
     args = ctx.actions.args()
-    
+
     # Add temp_dir argument
     args.add("--temp_dir", temp_dir.path)
-    
+
     # Add output directory argument
     args.add("--output", docc_archive.path)
-    
+
     # Add module name
     args.add("--module_name", ctx.attr.module_name)
-    
+
     # Add DocC tool path
     args.add("--docc_tool", docc_tool)
-    
+
     # Add symbol graph directory argument if provided
     if ctx.attr.symbol_graph_dir:
         args.add("--symbol_graph_dir", ctx.file.symbol_graph_dir.path)
-    
+
     # Add additional source directories if provided
     if ctx.attr.additional_source_directories:
         for dir in ctx.files.additional_source_directories:
             args.add("--additional_source_dir", dir.path)
-    
+
     # Add source files
     for src in srcs:
         args.add("--source", src.path)
-    
+
     # Add copy flag if requested
     if ctx.attr.copy_sources:
         args.add("--copy")
-    
+
     # Run docc_gen tool to generate DocC archive
     ctx.actions.run(
         executable = docc_gen,
@@ -79,7 +80,7 @@ def _docc_documentation_impl(ctx):
         outputs = [temp_dir, docc_archive],
         progress_message = "Generating DocC documentation for %s" % ctx.attr.module_name,
     )
-    
+
     return [DefaultInfo(files = depset([docc_archive]))]
 
 docc_documentation = rule(
@@ -97,7 +98,7 @@ docc_documentation = rule(
             cfg = "exec",
         ),
         "_build_environment": attr.label(
-            default = Label("//tools/swift:local_environment"),  
+            default = Label("//tools/swift:local_environment"),
             providers = [BuildEnvironmentInfo],
         ),
     },
@@ -106,9 +107,9 @@ docc_documentation = rule(
 def _docc_preview_impl(ctx):
     """Implementation of docc_preview rule."""
     docc_archive = ctx.file.docc_archive
-    
+
     script = ctx.actions.declare_file(ctx.label.name + ".sh")
-    
+
     # Create a script to preview the DocC documentation
     script_content = """#!/bin/bash
     # Get the absolute path to the DocC archive
@@ -126,19 +127,19 @@ def _docc_preview_impl(ctx):
         preview_script = ctx.executable._preview_script.path,
         docc_archive = docc_archive.path,
     )
-    
+
     ctx.actions.write(
         output = script,
         content = script_content,
         is_executable = True,
     )
-    
+
     # Return runfiles for the script
     runfiles = ctx.runfiles(files = [
         ctx.executable._preview_script,
         docc_archive,
     ])
-    
+
     return [DefaultInfo(
         executable = script,
         runfiles = runfiles,
@@ -166,9 +167,9 @@ docc_preview = rule(
 def _docc_serve_impl(ctx):
     """Implementation of docc_serve rule."""
     docc_archive = ctx.file.docc_archive
-    
+
     script = ctx.actions.declare_file(ctx.label.name + ".sh")
-    
+
     # Create a script to serve the DocC documentation
     script_content = """#!/bin/bash
     # Get the absolute path to the DocC archive
@@ -186,19 +187,19 @@ def _docc_serve_impl(ctx):
         serve_script = ctx.executable._serve_script.path,
         docc_archive = docc_archive.path,
     )
-    
+
     ctx.actions.write(
         output = script,
         content = script_content,
         is_executable = True,
     )
-    
+
     # Return runfiles for the script
     runfiles = ctx.runfiles(files = [
         ctx.executable._serve_script,
         docc_archive,
     ])
-    
+
     return [DefaultInfo(
         executable = script,
         runfiles = runfiles,
@@ -226,7 +227,7 @@ docc_serve = rule(
 def _docc_gen_impl(ctx):
     """Implementation for the docc_gen executable rule."""
     script = ctx.actions.declare_file(ctx.label.name + ".sh")
-    
+
     script_content = """#!/bin/bash
     set -e
     
@@ -425,13 +426,13 @@ EOL
         fi
     fi
     """
-    
+
     ctx.actions.write(
         output = script,
         content = script_content,
         is_executable = True,
     )
-    
+
     return [DefaultInfo(
         executable = script,
         files = depset([script]),

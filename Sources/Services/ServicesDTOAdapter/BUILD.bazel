@@ -17,7 +17,10 @@ umbra_swift_library(
     ),
     deps = [
         "//Sources/CoreDTOs",
+        "//Sources/CoreDTOs/Sources:CoreDTOs",
         "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
+        "//Sources/UmbraErrors",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
     ],
 )

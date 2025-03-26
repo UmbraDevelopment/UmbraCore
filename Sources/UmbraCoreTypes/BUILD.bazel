@@ -18,5 +18,6 @@ alias(
 #         "Sources/**/*.swift",
 #         "Sources/**/*.docc/**",
 #     ], allow_empty = False),
-#     deps = ["//Sources/UmbraCoreTypes"],
+# deps = [
+#     # Dependencies would go here"//Sources/UmbraCoreTypes"],
 # )

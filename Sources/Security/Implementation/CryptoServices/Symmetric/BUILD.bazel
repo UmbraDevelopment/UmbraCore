@@ -17,8 +17,13 @@ umbra_swift_library(
     ),
     visibility = ["//visibility:public"],
     deps = [
+        "//Sources/SecurityInterfaces",
+        "//Sources/SecurityInterfaces/Types/Errors",
         "//Sources/SecurityProtocolsCore",
+        "//Sources/SecurityTypes/Types",
         "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
+        "//Sources/UmbraErrors",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
     ],
 )

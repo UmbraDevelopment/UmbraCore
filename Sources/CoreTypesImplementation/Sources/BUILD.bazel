@@ -17,8 +17,11 @@ umbra_swift_library(
     ),
     deps = [
         "//Sources/CoreTypesInterfaces",
+        "//Sources/SecurityInterfaces",
+        "//Sources/SecurityTypes",
+        "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
         "//Sources/UmbraErrors",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-        "//Sources/UmbraCoreTypes",
     ],
 )

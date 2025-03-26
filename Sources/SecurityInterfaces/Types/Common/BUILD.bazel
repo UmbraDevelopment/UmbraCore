@@ -4,11 +4,16 @@ swift_library(
     name = "Common",
     srcs = glob(["*.swift"]),
     module_name = "SecurityInterfacesCommonTypes",
+    tags = [
+        "common",
+        "security",
+        "types",
+    ],
     visibility = ["//visibility:public"],
     deps = [
         "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
     ],
-    tags = ["security", "types", "common"],
 )
 
 # Common Security Types

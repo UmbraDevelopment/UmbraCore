@@ -15,13 +15,13 @@ umbra_swift_library(
         ],
         exclude_directories = 1,
     ),
+    visibility = ["//visibility:public"],
     deps = [
         "//Sources/CoreDTOs",
-        "//Sources/UmbraLogging",
+        "//Sources/Security/Adapters/Bridge/XPC:XPCBridge",
         "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
         "//Sources/UmbraErrors",
-        # Removed UmbraErrorsCore and external dependency
+        "//Sources/UmbraLogging",
     ],
-    visibility = ["//visibility:public"],
 )
-

@@ -15,31 +15,50 @@ umbra_swift_library(
         ],
         exclude_directories = 1,
     ),
+    swiftc_opts = [
+        "-target",
+        "arm64-apple-macosx14.7.4",
+    ],
     visibility = ["//visibility:public"],
     deps = [
         "//Sources/CoreDTOs",
+        "//Sources/CoreDTOs/Sources:CoreDTOs",
         "//Sources/CoreDTOs/Sources/Operations",
         "//Sources/CoreDTOs/Sources/Security",
-        "//Sources/UmbraSecurityBridge",
+        "//Sources/SecurityInterfaces",
+        "//Sources/SecurityTypes",
         "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
         "//Sources/UmbraErrors",
-        "//Sources/UmbraErrors/Core:UmbraErrorsCore",  
+        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
         "//Sources/UmbraLogging",
-    ],
-    swiftc_opts = [
-        "-target", "arm64-apple-macosx14.7.4",
+        "//Sources/UmbraSecurityBridge",,
+        "//Sources/SecurityTypes:SecurityTypes"
     ],
 )
 
 # Uncomment if documentation generation is needed
 # load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 # load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
-#
 # swift_package(
 #     name = "docc_documentation",
 #     srcs = glob([
 #         "**/*.swift",
 #         "**/*.docc/**",
 #     ]),
-#     deps = ["//Sources/XPCProtocolsCoreSources"],
+#     deps = [
+        "//Sources/CoreDTOs",
+        "//Sources/CoreDTOs/Sources:CoreDTOs",
+        "//Sources/CoreDTOs/Sources/Operations",
+        "//Sources/CoreDTOs/Sources/Security",
+        "//Sources/SecurityInterfaces",
+        "//Sources/SecurityTypes",
+        "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
+        "//Sources/UmbraErrors",
+        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
+        "//Sources/UmbraLogging",
+        "//Sources/UmbraSecurityBridge",,
+        "//Sources/SecurityTypes:SecurityTypes"
+    ],
 # )

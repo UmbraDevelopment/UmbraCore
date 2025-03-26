@@ -15,7 +15,7 @@ swift_test(
         exclude_directories = 1,
     ),
     deps = [
-        "//Tests/UmbraCoreTests",
         "//Sources/UmbraCore",
+        "//Tests/UmbraCoreTests",
     ],
 )

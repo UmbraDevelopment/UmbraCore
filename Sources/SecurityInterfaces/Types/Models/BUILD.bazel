@@ -4,11 +4,15 @@ swift_library(
     name = "Models",
     srcs = glob(["*.swift"]),
     module_name = "SecurityInterfacesModels",
+    tags = [
+        "models",
+        "security",
+        "types",
+    ],
     visibility = ["//visibility:public"],
     deps = [
         "//Sources/UmbraCoreTypes",
     ],
-    tags = ["security", "types", "models"],
 )
 
 # Security Model Types

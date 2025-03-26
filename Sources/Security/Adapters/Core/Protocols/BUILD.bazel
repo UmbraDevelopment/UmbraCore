@@ -16,7 +16,9 @@ umbra_swift_library(
         exclude_directories = 1,
     ),
     deps = [
+        "//Sources/SecurityInterfaces",
         "//Sources/SecurityProtocolsCore",
         "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
     ],
 )

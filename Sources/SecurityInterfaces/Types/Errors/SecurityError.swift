@@ -3,6 +3,7 @@ import UmbraErrors
 
 /// Comprehensive security error implementation
 /// This struct consolidates error handling for security operations across UmbraCore
+import SecurityTypes
 public struct SecurityError: Error, Equatable, Sendable {
   /// Error domain for categorisation
   public let domain: String

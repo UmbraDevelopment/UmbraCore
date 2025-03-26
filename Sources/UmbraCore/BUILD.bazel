@@ -17,19 +17,27 @@ umbra_swift_library(
     ),
     deps = [
         "//Sources/CryptoTypes",
-        "//Sources/SecurityTypes",
+        "//Sources/CryptoTypes:CryptoTypesInterfaces",
+        "//Sources/SecurityInterfaces",
+        "//Sources/SecurityTypes",,
+        "//Sources/SecurityInterfaces:SecurityInterfaces"
     ],
 )
 
 # Uncomment if documentation generation is needed
 # load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 # load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
-#
 # swift_package(
 #     name = "docc_documentation",
 #     srcs = glob([
 #         "**/*.swift",
 #         "**/*.docc/**",
 #     ]),
-#     deps = ["//Sources/UmbraCore"],
+#     deps = [
+        "//Sources/CryptoTypes",
+        "//Sources/CryptoTypes:CryptoTypesInterfaces",
+        "//Sources/SecurityInterfaces",
+        "//Sources/SecurityTypes",,
+        "//Sources/SecurityInterfaces:SecurityInterfaces"
+    ],
 # )

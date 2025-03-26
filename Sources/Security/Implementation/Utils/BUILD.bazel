@@ -2,15 +2,21 @@ load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
     name = "Utils",
-    srcs = glob(["**/*.swift"], allow_empty = True),
+    srcs = glob(
+        ["**/*.swift"],
+        allow_empty = True,
+    ),
     visibility = ["//visibility:public"],
     deps = [
         "//Sources/Security/Core/Errors",
         "//Sources/Security/Core/Protocols",
         "//Sources/Security/Core/Types",
-        "//Sources/UmbraCoreTypes",
-        "//Sources/UmbraErrors",
+        "//Sources/SecurityInterfaces",
         "//Sources/SecurityProtocolsCore",
+        "//Sources/SecurityTypes/Types",
+        "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
+        "//Sources/UmbraErrors",
+        "//Sources/XPCProtocolsCore/Sources/Protocols",
     ],
 )
-

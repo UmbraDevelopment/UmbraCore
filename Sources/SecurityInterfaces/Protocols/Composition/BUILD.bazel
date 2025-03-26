@@ -4,14 +4,19 @@ swift_library(
     name = "Composition",
     srcs = glob(["*.swift"]),
     module_name = "SecurityInterfacesComposition",
+    tags = [
+        "composition",
+        "protocols",
+        "security",
+    ],
     visibility = ["//visibility:public"],
     deps = [
-        "//Sources/UmbraCoreTypes",
-        "//Sources/SecurityInterfaces/Protocols/Core",
         "//Sources/SecurityInterfaces/DTOs",
+        "//Sources/SecurityInterfaces/Protocols/Core",
         "//Sources/SecurityInterfaces/Types/Common",
+        "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
     ],
-    tags = ["security", "protocols", "composition"],
 )
 
 # Composition Security Protocols

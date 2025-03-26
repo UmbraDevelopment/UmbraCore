@@ -16,5 +16,5 @@ swift_test(
         exclude_directories = 1,
     ),
     deps = [
-],
+    ],
 )

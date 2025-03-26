@@ -7,7 +7,7 @@ in accordance with the UmbraCore refactoring plan.
 
 def _umbracore_gen_module_impl(ctx):
     module_name = ctx.attr.module_name
-    
+
     # Create a Python script that generates the module structure
     script_content = """
 #!/usr/bin/env python3
@@ -101,26 +101,26 @@ if __name__ == "__main__":
     """.format(
         module_name = module_name,
     )
-    
+
     # Create the generator script
     script_file = ctx.actions.declare_file(ctx.label.name + ".py")
     ctx.actions.write(script_file, script_content, is_executable = True)
-    
+
     # Create a wrapper script that executes the Python script
     executable = ctx.actions.declare_file(ctx.label.name)
-    
+
     # Get the short path to the script file
     script_path = script_file.short_path
-    
+
     # Create the wrapper script with explicit string concatenation to avoid format issues
     wrapper_content = "#!/bin/bash\npython3 $RUNFILES/" + script_path + " $@"
-    
+
     ctx.actions.write(
         output = executable,
         content = wrapper_content,
         is_executable = True,
     )
-    
+
     return [DefaultInfo(
         executable = executable,
         runfiles = ctx.runfiles([script_file]),
@@ -139,7 +139,7 @@ umbracore_gen_module = rule(
 
 def create_gen_module_target(name, **kwargs):
     """Creates a target to generate a new UmbraCore module.
-    
+
     Args:
         name: Name of the target.
         **kwargs: Additional arguments to pass to the umbracore_gen_module rule.

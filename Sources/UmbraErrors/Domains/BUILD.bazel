@@ -17,15 +17,16 @@ umbra_swift_library(
     ),
     visibility = ["//visibility:public"],
     deps = [
+        # Additional dependencies as needed:
+        # "//Sources/CoreDTOs",  # Commented out to break dependency cycle
+        # "@com_github_apple_swift_log//:Logging",
+        "//Sources/SecurityInterfaces",
+        "//Sources/SecurityTypes",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
         "//Sources/ErrorHandling",
         "//Sources/ErrorHandlingInterfaces",
-        # Additional dependencies as needed:
-        # "//Sources/CoreDTOs",  # Commented out to break dependency cycle
         "//Sources/UmbraLogging",
-        # "@com_github_apple_swift_log//:Logging",
         "//Sources/UmbraCoreTypes",
-        "//Sources/SecurityTypes",
     ],
 )
 

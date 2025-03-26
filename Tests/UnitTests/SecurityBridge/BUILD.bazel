@@ -21,9 +21,9 @@ swift_test(
         exclude_directories = 1,
     ),
     deps = [
-        "//Sources/SecurityBridge",
-        "//Sources/UmbraCoreTypes",
         "//Sources/CoreDTOs",
+        "//Sources/SecurityBridge",
         "//Sources/SecurityProtocolsCore",
+        "//Sources/UmbraCoreTypes",
     ],
 )

@@ -17,9 +17,9 @@ umbra_swift_library(
     ),
     visibility = ["//visibility:public"],
     deps = [
+        # Add missing dependency to resolve errors
         "//Sources/ErrorHandlingInterfaces",
         "//Sources/ErrorHandling/Interfaces",
-        # Add missing dependency to resolve errors
         "//Sources/ErrorHandling/Core",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
         "//Sources/UmbraLogging",
