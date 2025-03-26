@@ -8,7 +8,7 @@ import FoundationBridgeTypes
 import SecurityBridge
 import SecurityBridgeTypes
 import SecurityInterfacesProtocols
-import SecurityProtocolsCore
+import SecurityInterfaces
 import SecurityUtils
 import UmbraCoreTypes
 import UmbraLogging

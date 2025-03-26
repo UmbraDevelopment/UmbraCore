@@ -15,7 +15,7 @@
 import ErrorHandlingDomains
 import Foundation
 import Protocols
-import SecurityProtocolsCore
+import SecurityInterfaces
 import UmbraCoreTypes
 import UmbraErrors
 import UmbraErrorsCore

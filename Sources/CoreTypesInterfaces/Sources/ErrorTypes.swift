@@ -3,7 +3,7 @@ import Foundation
 /// Protocol for error types that can be converted to SecurityError
 ///
 /// Implementations of this protocol should ensure consistent error handling across the codebase.
-import SecurityTypes
+import SecurityInterfaces
 public protocol SecurityErrorConvertible: Error, Sendable {
   /// Convert this error to a SecurityError
   ///

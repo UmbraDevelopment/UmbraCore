@@ -1,6 +1,6 @@
 import UmbraCoreTypes
 import Foundation
-import SecurityTypes
+import SecurityInterfaces
 
 // Removing imports that cause circular dependencies
 // import UmbraErrors

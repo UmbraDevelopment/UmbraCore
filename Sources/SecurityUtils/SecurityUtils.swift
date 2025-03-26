@@ -11,8 +11,8 @@ import SecurityInterfacesProtocols
 
 // import SecurityInterfaces
 
-import SecurityProtocolsCore
-import SecurityTypesTypes
+import SecurityInterfaces
+import SecurityInterfacesTypes
 import UmbraCoreTypes
 import XPCProtocolsCore
 

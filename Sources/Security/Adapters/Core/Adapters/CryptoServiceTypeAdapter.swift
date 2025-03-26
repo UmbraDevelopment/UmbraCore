@@ -1,6 +1,6 @@
 import Errors // Import Errors module for SecurityProtocolError
 import Protocols // Import for CryptoServiceProtocol
-import SecurityProtocolsCore
+import SecurityInterfaces
 import Types // Import Types for any DTOs
 import UmbraCoreTypes
 

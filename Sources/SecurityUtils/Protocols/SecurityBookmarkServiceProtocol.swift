@@ -1,5 +1,5 @@
 import Foundation
-import SecurityTypes
+import SecurityInterfaces
 
 /// Protocol for security bookmark service
 public protocol SecurityBookmarkServiceProtocol: Sendable {

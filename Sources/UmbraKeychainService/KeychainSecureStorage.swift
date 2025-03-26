@@ -1,5 +1,5 @@
 import Foundation
-import SecurityProtocolsCore
+import SecurityInterfaces
 import UmbraCoreTypes
 
 /// Implementation of the SecureStorageProtocol using keychain

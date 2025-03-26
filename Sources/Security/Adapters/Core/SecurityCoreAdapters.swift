@@ -1,6 +1,6 @@
 import Errors
 import Foundation
-import SecurityProtocolsCore
+import SecurityInterfaces
 import UmbraCoreTypes
 
 // Import the required modules

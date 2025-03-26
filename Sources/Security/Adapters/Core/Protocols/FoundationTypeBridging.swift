@@ -1,4 +1,4 @@
-import SecurityProtocolsCore
+import SecurityInterfaces
 import UmbraCoreTypes
 
 /// Protocol for bridging between Foundation-free and Foundation-dependent types

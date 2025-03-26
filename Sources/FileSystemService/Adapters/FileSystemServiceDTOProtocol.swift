@@ -4,7 +4,7 @@ import FileSystemTypes
 import FileSystem
 import Operations
 import DTOs
-import SecurityTypes
+import SecurityInterfaces
 
 /// Protocol defining a Foundation-independent interface for file system operations
 public protocol FileSystemServiceDTOProtocol: Sendable {

@@ -7,7 +7,7 @@
 
 import CoreDTOs
 import ErrorHandlingDomains
-import SecurityProtocolsCore
+import SecurityInterfaces
 import Types
 import UmbraCoreTypes
 import UmbraErrors

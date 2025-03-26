@@ -1,5 +1,5 @@
 @_exported import CryptoTypes
-@_exported import SecurityTypes
+@_exported import SecurityInterfaces
 
 /// Main entry point for UmbraCore functionality
 public enum UmbraCore {

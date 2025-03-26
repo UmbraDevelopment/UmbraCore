@@ -1,6 +1,6 @@
 import Foundation
 
-// import SecurityTypes
+// import SecurityInterfaces
 
 /// Errors that can occur during logging operations
 public enum LoggingError: LocalizedError {

@@ -1,0 +1,24 @@
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+
+swift_library(
+    name = "Composition",
+    srcs = glob(["*.swift"]),
+    module_name = "SecurityInterfacesComposition",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//Sources/UmbraCoreTypes",
+        "//Sources/SecurityInterfaces/Protocols/Core",
+        "//Sources/SecurityInterfaces/DTOs",
+        "//Sources/SecurityInterfaces/Types/Common",
+    ],
+    tags = ["security", "protocols", "composition"],
+)
+
+# Composition Security Protocols
+# ============================
+#
+# This module contains high-level protocol definitions that compose multiple
+# security service protocols to provide comprehensive security functionality.
+#
+# Key protocols:
+# - SecurityProviderComposition: Top-level protocol that includes crypto and storage services

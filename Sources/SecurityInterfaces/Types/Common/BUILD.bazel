@@ -1,0 +1,22 @@
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+
+swift_library(
+    name = "Common",
+    srcs = glob(["*.swift"]),
+    module_name = "SecurityInterfacesCommonTypes",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//Sources/UmbraCoreTypes",
+    ],
+    tags = ["security", "types", "common"],
+)
+
+# Common Security Types
+# ===================
+#
+# This module contains common type definitions used across the security interfaces.
+# These types are fundamental to security operations and are used by multiple protocols.
+#
+# Key types:
+# - SecurityOperation: Enumeration of security operations
+# - HashAlgorithm: Hash algorithm options and utilities

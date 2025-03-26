@@ -2,7 +2,7 @@ import FeaturesLoggingErrors
 import FeaturesLoggingModels
 import FeaturesLoggingProtocols
 import Foundation
-import SecurityTypes
+import SecurityInterfaces
 import SwiftyBeaver
 
 /// A logging service implementation using SwiftyBeaver

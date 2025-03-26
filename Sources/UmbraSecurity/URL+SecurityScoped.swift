@@ -3,8 +3,8 @@ import UmbraErrors
 import UmbraErrorsCore
 
 import Foundation
-import SecurityTypes
-import SecurityTypesProtocols
+import SecurityInterfaces
+import SecurityInterfacesProtocols
 import UmbraCoreTypes
 import XPCProtocolsCore
 

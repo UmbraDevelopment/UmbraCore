@@ -14,7 +14,7 @@
 import CommonCrypto
 import Errors // Import Errors module which contains the SecurityProtocolError type
 import Foundation
-import SecurityProtocolsCore
+import SecurityInterfaces
 import Types // Import Types module to get access to SecurityResultDTO
 import UmbraCoreTypes
 

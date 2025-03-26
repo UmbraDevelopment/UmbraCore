@@ -3,8 +3,8 @@ import UmbraErrors
 import UmbraErrorsCore
 
 // Removed SecurityInterfaces as it appears to be unavailable
-import SecurityTypes
-import SecurityTypesProtocols
+import SecurityInterfaces
+import SecurityInterfacesProtocols
 import SecurityUtilsProtocols
 import UmbraCoreTypes
 import XPCProtocolsCore

@@ -3,15 +3,18 @@ import Foundation
 // Local type declarations to replace imports
 // These replace the removed ErrorHandling and ErrorHandlingDomains imports
 
-/// Error domain namespace
-import SecurityTypes
+/// Error domain namespace for security-related errors
 public enum ErrorDomain {
-  /// Security domain
+  /// Security domain for general security errors
   public static let security="Security"
-  /// Crypto domain
+  /// Crypto domain for cryptographic operations
   public static let crypto="Crypto"
-  /// Application domain
+  /// Application domain for application-specific errors
   public static let application="Application"
+  /// Key management domain for key-related operations
+  public static let keyManagement="KeyManagement"
+  /// Storage domain for secure storage operations
+  public static let storage="Storage"
 }
 
 /// Error context protocol
@@ -32,20 +35,24 @@ public struct BaseErrorContext: ErrorContext {
   public let code: Int
   /// Description of the error
   public let description: String
-
-  /// Initialise with domain, code and description
+  
+  /// Initialise with domain, code, and description
+  /// - Parameters:
+  ///   - domain: The error domain
+  ///   - code: The error code
+  ///   - description: Human-readable description
   public init(domain: String, code: Int, description: String) {
-    self.domain=domain
-    self.code=code
-    self.description=description
+    self.domain = domain
+    self.code = code
+    self.description = description
   }
 }
 
 /// Domain-specific error type for security operations
-public enum SecurityError: Error, UmbraError, CustomStringConvertible {
+public enum SecurityError: Error, CustomStringConvertible {
   // Authentication errors
   case authenticationFailed(String)
-  case unauthorizedAccess(String)
+  case unauthorisedAccess(String)
   case invalidCredentials(String)
   case sessionExpired(String)
   case tokenExpired(String)
@@ -81,7 +88,7 @@ public enum SecurityError: Error, UmbraError, CustomStringConvertible {
     "Security"
   }
 
-  // MARK: - UmbraError Protocol
+  // MARK: - CustomStringConvertible Protocol
 
   /// Domain identifier for this error
   public var domain: String {
@@ -92,7 +99,7 @@ public enum SecurityError: Error, UmbraError, CustomStringConvertible {
   public var code: String {
     switch self {
       case .authenticationFailed: "auth_failed"
-      case .unauthorizedAccess: "unauthorized_access"
+      case .unauthorisedAccess: "unauthorised_access"
       case .invalidCredentials: "invalid_credentials"
       case .sessionExpired: "session_expired"
       case .tokenExpired: "token_expired"
@@ -124,7 +131,7 @@ public enum SecurityError: Error, UmbraError, CustomStringConvertible {
   public var errorDescription: String {
     switch self {
       case let .authenticationFailed(msg): "Authentication failed: \(msg)"
-      case let .unauthorizedAccess(msg): "Unauthorized access: \(msg)"
+      case let .unauthorisedAccess(msg): "Unauthorised access: \(msg)"
       case let .invalidCredentials(msg): "Invalid credentials: \(msg)"
       case let .sessionExpired(msg): "Session expired: \(msg)"
       case let .tokenExpired(msg): "Token expired: \(msg)"
@@ -148,9 +155,9 @@ public enum SecurityError: Error, UmbraError, CustomStringConvertible {
   }
 
   /// Source information for the error (optional)
-  public var source: ErrorHandlingInterfaces.ErrorSource? {
+  public var source: String? {
     switch self {
-      case .authenticationFailed, .unauthorizedAccess, .invalidCredentials, .sessionExpired,
+      case .authenticationFailed, .unauthorisedAccess, .invalidCredentials, .sessionExpired,
            .tokenExpired,
            .encryptionFailed, .decryptionFailed, .signatureInvalid, .hashingFailed,
            .keyGenerationFailed,
@@ -166,7 +173,7 @@ public enum SecurityError: Error, UmbraError, CustomStringConvertible {
   /// Underlying error that caused this error (optional)
   public var underlyingError: Error? {
     switch self {
-      case .authenticationFailed, .unauthorizedAccess, .invalidCredentials, .sessionExpired,
+      case .authenticationFailed, .unauthorisedAccess, .invalidCredentials, .sessionExpired,
            .tokenExpired,
            .encryptionFailed, .decryptionFailed, .signatureInvalid, .hashingFailed,
            .keyGenerationFailed,
@@ -180,9 +187,9 @@ public enum SecurityError: Error, UmbraError, CustomStringConvertible {
   }
 
   /// Context information about the error
-  public var context: ErrorHandlingInterfaces.ErrorContext {
+  public var context: BaseErrorContext {
     switch self {
-      case .authenticationFailed, .unauthorizedAccess, .invalidCredentials, .sessionExpired,
+      case .authenticationFailed, .unauthorisedAccess, .invalidCredentials, .sessionExpired,
            .tokenExpired,
            .encryptionFailed, .decryptionFailed, .signatureInvalid, .hashingFailed,
            .keyGenerationFailed,
@@ -191,20 +198,21 @@ public enum SecurityError: Error, UmbraError, CustomStringConvertible {
            .certificateVerificationFailed, .certificateTrustFailed, .secureChannelFailed,
            .securityPolicyViolation,
            .securityConfigurationError, .unknown:
-        ErrorHandlingInterfaces.ErrorContext(
-          source: "SecurityError",
-          operation: "security_operation"
+        BaseErrorContext(
+          domain: "SecurityError",
+          code: 0,
+          description: "security_operation"
         )
     }
   }
 
   /// Create a new instance with updated context
-  public func with(context _: ErrorHandlingInterfaces.ErrorContext) -> SecurityError {
+  public func with(context _: BaseErrorContext) -> SecurityError {
     switch self {
       case let .authenticationFailed(msg):
         .authenticationFailed(msg)
-      case let .unauthorizedAccess(msg):
-        .unauthorizedAccess(msg)
+      case let .unauthorisedAccess(msg):
+        .unauthorisedAccess(msg)
       case let .invalidCredentials(msg):
         .invalidCredentials(msg)
       case let .sessionExpired(msg):
@@ -251,8 +259,8 @@ public enum SecurityError: Error, UmbraError, CustomStringConvertible {
     switch self {
       case let .authenticationFailed(msg):
         .authenticationFailed(msg)
-      case let .unauthorizedAccess(msg):
-        .unauthorizedAccess(msg)
+      case let .unauthorisedAccess(msg):
+        .unauthorisedAccess(msg)
       case let .invalidCredentials(msg):
         .invalidCredentials(msg)
       case let .sessionExpired(msg):
@@ -295,12 +303,12 @@ public enum SecurityError: Error, UmbraError, CustomStringConvertible {
   }
 
   /// Create a new instance with source information
-  public func with(source _: ErrorHandlingInterfaces.ErrorSource) -> SecurityError {
+  public func with(source _: String) -> SecurityError {
     switch self {
       case let .authenticationFailed(msg):
         .authenticationFailed(msg)
-      case let .unauthorizedAccess(msg):
-        .unauthorizedAccess(msg)
+      case let .unauthorisedAccess(msg):
+        .unauthorisedAccess(msg)
       case let .invalidCredentials(msg):
         .invalidCredentials(msg)
       case let .sessionExpired(msg):
@@ -343,15 +351,15 @@ public enum SecurityError: Error, UmbraError, CustomStringConvertible {
   }
 }
 
-/// Extension to provide convenience initializers
+/// Extension to provide convenience initialisers
 extension SecurityError {
   /// Create a security error from another error
   public static func from(error: Error) -> SecurityError {
-    if let securityError=error as? SecurityError {
+    if let securityError = error as? SecurityError {
       return securityError
     }
-    // Explicitly cast to NSError to avoid ambiguity with localizedDescription
-    let nsError=error as NSError
+    // Explicitly cast to NSError to avoid ambiguity with localisedDescription
+    let nsError = error as NSError
     return SecurityError.unknown("Wrapped error: " + nsError.localizedDescription)
   }
 }

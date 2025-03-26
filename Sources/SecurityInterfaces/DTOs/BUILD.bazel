@@ -1,5 +1,13 @@
 load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
+# DTO CONSOLIDATION NOTE:
+# This module contains consolidated DTO functionality from SecurityProtocolsCore
+# to reduce duplication and centralise security-related DTOs in SecurityInterfaces.
+# The structure follows:
+# - Keys: Key-related DTOs (SecurityKeyDTO, SecurityKeyInformationDTO)
+# - Operations: Security operation DTOs (SecurityConfigDTO, SecurityResultDTO)
+# - Common: Shared types and utilities across DTOs (SharedTypes)
+
 umbra_swift_library(
     name = "DTOs",
     srcs = glob(
@@ -17,6 +25,8 @@ umbra_swift_library(
     ),
     deps = [
         "//Sources/CoreTypesInterfaces",
+        "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraErrors",
     ],
 )
 

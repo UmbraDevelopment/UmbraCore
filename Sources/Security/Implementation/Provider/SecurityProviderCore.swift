@@ -29,7 +29,7 @@
  */
 
 import Foundation
-import SecurityProtocolsCore
+import SecurityInterfaces
 import UmbraCoreTypes
 
 /// SecurityProviderCore is the central implementation of security provider functionality,

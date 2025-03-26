@@ -1,6 +1,6 @@
 import Foundation
 import SecurityBridgeTypes
-import SecurityProtocolsCore
+import SecurityInterfaces
 import UmbraCoreTypes
 import UmbraErrors
 import UmbraErrorsCore

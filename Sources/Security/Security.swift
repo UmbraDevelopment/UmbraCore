@@ -1,5 +1,5 @@
 import Foundation
-import SecurityProtocolsCore
+import SecurityInterfaces
 import UmbraLogging
 
 /// Security is the main entry point for the consolidated security framework.

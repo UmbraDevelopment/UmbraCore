@@ -2,7 +2,7 @@ import Foundation
 import FoundationBridgeTypes
 import SecurityBridge
 
-import SecurityProtocolsCore
+import SecurityInterfaces
 
 /// Factory class for creating security providers
 @MainActor

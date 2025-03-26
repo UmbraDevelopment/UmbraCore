@@ -92,7 +92,7 @@
 /// - Use appropriate access control
 ///
 import Foundation
-import SecurityTypes
+import SecurityInterfaces
 import SecurityUtils
 import UmbraLogging
 

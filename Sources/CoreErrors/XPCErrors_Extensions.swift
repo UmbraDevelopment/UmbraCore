@@ -2,7 +2,7 @@ import Foundation
 
 // Avoid circular dependency by using typealias for UmbraErrors.Security.Core
 // This is temporary until a proper refactoring can break the dependency cycle
-import SecurityTypes
+import SecurityInterfaces
 public typealias SecurityCoreError=Error
 
 /// XPC Errors namespace

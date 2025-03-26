@@ -1,4 +1,4 @@
-import SecurityProtocolsCore
+import SecurityInterfaces
 import UmbraErrors
 import UmbraErrorsCore
 

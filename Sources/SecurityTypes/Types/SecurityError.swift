@@ -1,7 +1,7 @@
 import Foundation
 
 /// Security error implementation
-import SecurityTypes
+import SecurityInterfaces
 public struct SecurityError: Error, Equatable {
   /// Error description
   public let description: String

@@ -2,7 +2,7 @@
 import UmbraErrors
 import XCTest
 
-import SecurityTypes
+import SecurityInterfaces
 final class ErrorMappingTests: XCTestCase {
   // MARK: - Crypto Error Mapping Tests
 

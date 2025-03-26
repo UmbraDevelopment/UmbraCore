@@ -1,7 +1,7 @@
 import Foundation
 
 /// Extended security error functionality
-import SecurityTypes
+import SecurityInterfaces
 extension SecurityError {
   /// Initialize with a reason and code
   public static func withReasonAndCode(reason: String, code _: Int) -> SecurityError {

@@ -2,7 +2,7 @@ import CryptoSwiftFoundationIndependent
 import UmbraErrors
 import UmbraErrorsCore
 
-import SecurityProtocolsCore
+import SecurityInterfaces
 
 /// Error types for security operations
 public enum SecurityCryptoError: Error, Sendable {

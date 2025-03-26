@@ -1,0 +1,27 @@
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+
+swift_library(
+    name = "Core",
+    srcs = glob(["*.swift"]),
+    module_name = "SecurityInterfacesCore",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraErrors",
+        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
+        "//Sources/XPCProtocolsCore",
+    ],
+    tags = ["security", "protocols", "core"],
+)
+
+# Core Security Protocols
+# ======================
+#
+# This module contains the core protocol definitions for security services
+# that are Foundation-independent. These protocols define the fundamental
+# operations that can be performed by security providers.
+#
+# Key protocols:
+# - SecurityProviderBase: Base protocol for all security providers
+# - CryptoServiceProtocol: Cryptographic operations protocol
+# - SecureStorageProtocol: Secure storage operations protocol

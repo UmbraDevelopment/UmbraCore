@@ -4,7 +4,7 @@ import UmbraErrors
 import UmbraErrorsCore
 
 import Foundation
-import SecurityTypes
+import SecurityInterfaces
 import UmbraCoreTypes
 import XPCProtocolsCore
 

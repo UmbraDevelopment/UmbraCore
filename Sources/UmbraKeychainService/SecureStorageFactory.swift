@@ -1,6 +1,6 @@
 import Foundation
 import os
-import SecurityProtocolsCore
+import SecurityInterfaces
 import UmbraCoreTypes
 import UmbraLogging
 

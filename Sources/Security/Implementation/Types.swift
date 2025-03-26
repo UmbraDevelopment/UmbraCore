@@ -1,4 +1,4 @@
-import SecurityProtocolsCore
+import SecurityInterfaces
 import UmbraCoreTypes
 
 // This file contains local types to break dependency cycles

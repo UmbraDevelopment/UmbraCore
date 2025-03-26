@@ -1,0 +1,21 @@
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+
+swift_library(
+    name = "Errors",
+    srcs = glob(["*.swift"]),
+    module_name = "SecurityInterfacesErrors",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//Sources/UmbraErrors",
+    ],
+    tags = ["security", "types", "errors"],
+)
+
+# Security Error Types
+# ==================
+#
+# This module contains error types used across the security interfaces.
+# These types provide a consistent approach to error handling in security operations.
+#
+# Key types:
+# - SecurityError: Comprehensive error implementation for security operations

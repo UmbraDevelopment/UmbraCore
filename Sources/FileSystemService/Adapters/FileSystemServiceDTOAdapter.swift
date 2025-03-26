@@ -8,7 +8,7 @@ import ErrorHandlingDomains
 import UmbraErrors
 import UmbraErrorsCore
 import DTOs
-import SecurityTypes
+import SecurityInterfaces
 
 /// Foundation-dependent adapter for file system operations
 /// Provides file system operations with Foundation types converted to DTOs

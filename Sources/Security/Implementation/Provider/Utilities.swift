@@ -1,4 +1,4 @@
-import SecurityProtocolsCore
+import SecurityInterfaces
 
 /**
  # UmbraCore Security Provider Utilities

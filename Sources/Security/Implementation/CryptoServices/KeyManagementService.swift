@@ -18,7 +18,7 @@ import UmbraErrors
 import UmbraErrorsCore
 
 import Foundation
-import SecurityProtocolsCore
+import SecurityInterfaces
 import UmbraCoreTypes
 
 /// Provides key management operations to the CryptoServiceCore.

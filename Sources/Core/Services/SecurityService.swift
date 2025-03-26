@@ -1,7 +1,7 @@
 import CoreServicesTypes
 import Foundation
-import SecurityProtocolsCore
-import SecurityTypes
+import SecurityInterfaces
+import SecurityInterfaces
 import UmbraCoreTypes
 import UmbraErrors
 import UmbraErrorsCore

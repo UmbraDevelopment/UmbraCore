@@ -1,5 +1,10 @@
 load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
+# CONSOLIDATION NOTE:
+# SecurityTypes is now a compatibility layer that re-exports types from SecurityInterfaces.
+# This module exists to maintain build compatibility during the transition period.
+# Please import directly from SecurityInterfaces for new code.
+
 umbra_swift_library(
     name = "SecurityTypes",
     srcs = glob(
@@ -17,6 +22,8 @@ umbra_swift_library(
     ),
     visibility = ["//visibility:public"],
     deps = [
+        "//Sources/SecurityInterfaces",
+        "//Sources/UmbraCoreTypes",
     ],
 )
 

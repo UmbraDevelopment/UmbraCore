@@ -6,7 +6,7 @@
 
 import Errors // Import for SecurityProtocolError
 import Foundation
-import SecurityProtocolsCore
+import SecurityInterfaces
 import UmbraCoreTypes // Import for SecureBytes
 
 // Note: CryptoServiceProtocol has been moved to Core/Protocols/CryptoServiceProtocol.swift

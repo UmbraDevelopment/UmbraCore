@@ -6,8 +6,8 @@ import UmbraErrors
 import UmbraErrorsCore
 
 import RepositoriesTypes
-import SecurityTypes
-import SecurityTypesProtocols
+import SecurityInterfaces
+import SecurityInterfacesProtocols
 import UmbraLogging
 
 /// A service that manages repository registration, locking, and statistics.

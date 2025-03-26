@@ -5,7 +5,7 @@ import UmbraErrors
 import UmbraErrorsCore
 
 import Foundation
-import SecurityTypes
+import SecurityInterfaces
 import SecurityUtilsProtocols
 
 /// Service for managing encrypted security-scoped bookmarks

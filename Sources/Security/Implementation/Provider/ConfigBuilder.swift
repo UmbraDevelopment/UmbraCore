@@ -20,7 +20,7 @@
  */
 
 import Foundation
-import SecurityProtocolsCore
+import SecurityInterfaces
 import UmbraCoreTypes
 
 /// Builds and validates security configurations
