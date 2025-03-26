@@ -6,11 +6,11 @@ umbra_swift_library(
     srcs = glob(
         [
             "*.swift",
-            "**/*.swift",
+            "**/*.swift"
         ],
         allow_empty = False,
         exclude = [
-            "**/*.generated.swift",
+            "**/*.generated.swift"
         ],
         exclude_directories = 1,
     ),
@@ -20,6 +20,6 @@ umbra_swift_library(
         "//Sources/UmbraCoreTypes",
         "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
         "//Sources/UmbraErrors",
-        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
+        "//Sources/UmbraErrors/Core:UmbraErrorsCore"
     ],
 )

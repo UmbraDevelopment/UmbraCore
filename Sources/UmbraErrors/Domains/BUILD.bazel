@@ -5,13 +5,13 @@ umbra_swift_library(
     srcs = glob(
         [
             "*.swift",
-            "**/*.swift",
+            "**/*.swift"
         ],
         allow_empty = False,
         exclude = [
             "**/Tests/**",
             "**/*Test.swift",
-            "**/*.generated.swift",
+            "**/*.generated.swift"
         ],
         exclude_directories = 1,
     ),
@@ -26,7 +26,7 @@ umbra_swift_library(
         "//Sources/ErrorHandling",
         "//Sources/ErrorHandlingInterfaces",
         "//Sources/UmbraLogging",
-        "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraCoreTypes"
     ],
 )
 

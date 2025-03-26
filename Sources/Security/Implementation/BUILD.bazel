@@ -10,7 +10,7 @@ umbra_swift_library(
             "CryptoServices/**/*.swift",
             "KeyManagement/**/*.swift",
             "Provider/**/*.swift",
-            "Utils/**/*.swift",
+            "Utils/**/*.swift"
         ],
         allow_empty = True,
     ),

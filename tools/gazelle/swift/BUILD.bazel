@@ -17,7 +17,7 @@ go_library(
         "@bazel_gazelle//language",
         "@bazel_gazelle//repo",
         "@bazel_gazelle//resolve",
-        "@bazel_gazelle//rule",
+        "@bazel_gazelle//rule"
     ],
 )
 
@@ -32,6 +32,6 @@ go_library(
         "@bazel_gazelle//language",
         "@bazel_gazelle//repo",
         "@bazel_gazelle//resolve",
-        "@bazel_gazelle//rule",
+        "@bazel_gazelle//rule"
     ],
 )

@@ -6,17 +6,17 @@ umbra_swift_library(
     srcs = glob(
         [
             "*.swift",
-            "**/*.swift",
+            "**/*.swift"
         ],
         allow_empty = False,
         exclude = [
-            "**/*.generated.swift",
+            "**/*.generated.swift"
         ],
         exclude_directories = 1,
     ),
     swiftc_opts = [
         "-target",
-        "arm64-apple-macosx14.7.4",
+        "arm64-apple-macosx14.7.4"
     ],
     deps = [
         "//Sources/CoreDTOs",
@@ -39,7 +39,7 @@ umbra_swift_test(
     # Pass compiler options through the kwargs mechanism
     copts = [
         "-target",
-        "arm64-apple-macosx14.7.4",
+        "arm64-apple-macosx14.7.4"
     ],
     deps = [
         "//Sources/CoreDTOs",

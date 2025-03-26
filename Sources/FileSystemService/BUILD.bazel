@@ -5,13 +5,13 @@ umbra_swift_library(
     srcs = glob(
         [
             "*.swift",
-            "**/*.swift",
+            "**/*.swift"
         ],
         allow_empty = True,  # Allow empty since all Swift files are in subdirectories
         exclude = [
             "**/Tests/**",
             "**/*Test.swift",
-            "**/*.generated.swift",
+            "**/*.generated.swift"
         ],
         exclude_directories = 1,
     ),
@@ -23,6 +23,6 @@ umbra_swift_library(
         "//Sources/FileSystemService/Adapters",
         "//Sources/FileSystemTypes",
         "//Sources/UmbraCoreTypes",
-        "//Sources/UmbraErrors",
+        "//Sources/UmbraErrors"
     ],
 )

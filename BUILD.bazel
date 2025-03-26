@@ -7,7 +7,7 @@ platform(
     name = "macos_arm64",
     constraint_values = [
         "@platforms//os:macos",
-        "@platforms//cpu:arm64",
+        "@platforms//cpu:arm64"
     ],
 )
 
@@ -36,7 +36,7 @@ sh_binary(
     srcs = ["format_production.sh"],
     args = [
         "$(location //tools:code_quality_manager)",
-        "--production-only",
+        "--production-only"
     ],
     data = ["//tools:code_quality_manager"],
 )

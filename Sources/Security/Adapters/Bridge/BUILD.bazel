@@ -4,13 +4,13 @@ umbra_swift_library(
     name = "SecurityBridge",
     srcs = glob(
         [
-            "**/*.swift",
+            "**/*.swift"
         ],
         allow_empty = True,
         exclude = [
             "**/Tests/**",
             "**/*Test.swift",
-            "**/*.generated.swift",
+            "**/*.generated.swift"
         ],
         exclude_directories = 1,
     ),
@@ -19,7 +19,7 @@ umbra_swift_library(
         "//Sources/CoreDTOs",
         "//Sources/Security/Core/Types/Bridge:SecurityBridgeTypes",
         "//Sources/SecurityProtocolsCore",
-        "//Sources/UmbraLogging",
+        "//Sources/UmbraLogging"
     ],
 )
 
@@ -35,7 +35,7 @@ umbra_swift_library(
         "//Sources/CoreDTOs",
         "//Sources/Security/Core/Types/Bridge:SecurityBridgeTypes",
         "//Sources/SecurityProtocolsCore",
-        "//Sources/UmbraLogging",
+        "//Sources/UmbraLogging"
     ],
 )
 
@@ -50,7 +50,7 @@ umbra_swift_library(
         "//Sources/CoreDTOs",
         "//Sources/Security/Core/Types/Bridge:SecurityBridgeTypes",
         "//Sources/SecurityProtocolsCore",
-        "//Sources/UmbraLogging",
+        "//Sources/UmbraLogging"
     ],
 )
 
@@ -65,7 +65,7 @@ umbra_swift_library(
         "//Sources/CoreDTOs",
         "//Sources/Security/Core/Types/Bridge:SecurityBridgeTypes",
         "//Sources/SecurityProtocolsCore",
-        "//Sources/UmbraLogging",
+        "//Sources/UmbraLogging"
     ],
 )
 
@@ -80,7 +80,7 @@ umbra_swift_library(
         "//Sources/CoreDTOs",
         "//Sources/Security/Core/Types/Bridge:SecurityBridgeTypes",
         "//Sources/SecurityProtocolsCore",
-        "//Sources/UmbraLogging",
+        "//Sources/UmbraLogging"
     ],
 )
 
@@ -95,7 +95,7 @@ umbra_swift_library(
         "//Sources/CoreDTOs",
         "//Sources/Security/Core/Types/Bridge:SecurityBridgeTypes",
         "//Sources/SecurityProtocolsCore",
-        "//Sources/UmbraLogging",
+        "//Sources/UmbraLogging"
     ],
 )
 
@@ -110,6 +110,6 @@ umbra_swift_library(
         "//Sources/CoreDTOs",
         "//Sources/Security/Core/Types/Bridge:SecurityBridgeTypes",
         "//Sources/SecurityProtocolsCore",
-        "//Sources/UmbraLogging",
+        "//Sources/UmbraLogging"
     ],
 )

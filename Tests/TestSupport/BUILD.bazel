@@ -5,13 +5,13 @@ swift_test(
     srcs = glob(
         [
             "*.swift",
-            "**/*.swift",
+            "**/*.swift"
         ],
         allow_empty = False,
         exclude = [
             "**/Tests/**",
             "**/*Test.swift",
-            "**/*.generated.swift",
+            "**/*.generated.swift"
         ],
         exclude_directories = 1,
     ),
@@ -20,6 +20,6 @@ swift_test(
         # Dependencies will go here, for example:
         # "//Sources/TestSupport",
         # "//Tests/TestKit",
-        # "@com_github_apple_swift_log//:Logging",
+        # "@com_github_apple_swift_log//:Logging"
     ],
 )

@@ -7,12 +7,12 @@ swift_library(
     tags = [
         "foundation",
         "protocols",
-        "security",
+        "security"
     ],
     visibility = ["//visibility:public"],
     deps = [
         "//Sources/UmbraCoreTypes",
-        "//Sources/UmbraErrors",
+        "//Sources/UmbraErrors"
     ],
 )
 

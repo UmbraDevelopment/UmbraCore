@@ -13,6 +13,6 @@ umbra_swift_library(
         "//Sources/Security/Core/Errors",
         "//Sources/Security/Core/Protocols",
         "//Sources/Security/Core/Types",
-        "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraCoreTypes"
     ],
 )
