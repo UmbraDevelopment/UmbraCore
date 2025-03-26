@@ -4,6 +4,7 @@ import Foundation
 // These replace the removed ErrorHandling and ErrorHandlingDomains imports
 
 /// Error domain namespace
+import SecurityTypes
 public enum ErrorDomain {
   /// Security domain
   public static let security="Security"

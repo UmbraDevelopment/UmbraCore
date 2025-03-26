@@ -3,6 +3,7 @@ import UmbraCoreTypes
 /// FoundationIndependent representation of a security error.
 /// This data transfer object encapsulates security error information
 /// without using any Foundation types.
+import CoreDTOs
 public struct SecurityErrorDTO: Error, Sendable, Equatable, CustomStringConvertible {
   // MARK: - Properties
 

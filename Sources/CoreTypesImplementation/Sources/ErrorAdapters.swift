@@ -10,6 +10,7 @@ import UmbraCoreTypes
 // MARK: - Error Types and Adapters
 
 /// Create a local SecureBytesError enum that mirrors the one in ErrorHandlingDomains
+import SecurityTypes
 public enum SecureBytesError: Error, Equatable {
   case invalidHexString
   case outOfBounds

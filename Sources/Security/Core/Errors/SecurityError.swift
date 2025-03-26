@@ -2,6 +2,7 @@ import Foundation
 
 /// Security error implementation
 /// Represents errors specific to security operations with descriptive messages
+import SecurityTypes
 public struct SecurityError: Error, Equatable, Sendable {
   /// Error description
   public let description: String

@@ -8,13 +8,21 @@ load("@build_bazel_rules_swift//swift:swift.bzl", "swift_test")
 swift_test(
     name = "CoreErrorsTests",
     srcs = glob(
-        ["*.swift", "**/*.swift"],
-        exclude = ["**/Tests/**", "**/*Test.swift", "**/*.generated.swift"],
+        [
+            "*.swift",
+            "**/*.swift",
+        ],
+        allow_empty = False,
+        exclude = [
+            "**/Tests/**",
+            "**/*Test.swift",
+            "**/*.generated.swift",
+        ],
         exclude_directories = 1,
-        allow_empty = False
     ),
     deps = [
         "//Sources/CoreErrors",
+        "//Sources/SecurityTypes",
         "//Sources/UmbraErrors",
         # Add any other required dependencies below:
         # "//Tests/TestKit",

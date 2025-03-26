@@ -4,6 +4,7 @@ import UmbraCoreTypes
 // MARK: - File System DTO Converters
 
 /// Extensions for converting between Foundation types and DTOs
+import FileSystemTypes
 extension FilePathDTO {
   /// Create a FilePathDTO from a Foundation URL
   /// - Parameters:

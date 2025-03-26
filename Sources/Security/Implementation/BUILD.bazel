@@ -4,20 +4,24 @@ load("//bazel:swift_rules.bzl", "umbra_swift_library")
 # This module contains the actual implementations of security protocols
 umbra_swift_library(
     name = "Implementation",
-    srcs = glob([
-        "*.swift",
-        "CryptoServices/**/*.swift",
-        "KeyManagement/**/*.swift",
-        "Provider/**/*.swift",
-        "Utils/**/*.swift",
-    ], allow_empty = True),
+    srcs = glob(
+        [
+            "*.swift",
+            "CryptoServices/**/*.swift",
+            "KeyManagement/**/*.swift",
+            "Provider/**/*.swift",
+            "Utils/**/*.swift",
+        ],
+        allow_empty = True,
+    ),
     visibility = ["//visibility:public"],
     deps = [
-        "//Sources/Security/Core/Errors:Errors",
-        "//Sources/Security/Core/Protocols:Protocols",
-        "//Sources/Security/Core/Types:Types",
-        "//Sources/UmbraCoreTypes:UmbraCoreTypes",
-        "//Sources/UmbraErrors",
+        "//Sources/Security/Core/Errors",
+        "//Sources/Security/Core/Protocols",
+        "//Sources/Security/Core/Types",
         "//Sources/SecurityProtocolsCore",
+        "//Sources/SecurityTypes",
+        "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraErrors",
     ],
 )

@@ -2,6 +2,7 @@ import CoreTypesInterfaces
 import Foundation
 
 /// Data transfer object for security keys
+import UmbraCoreTypes
 public struct SecurityKeyDTO: Sendable, Equatable {
   /// Unique identifier for the key
   public let id: String
