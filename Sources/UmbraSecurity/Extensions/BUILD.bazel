@@ -16,6 +16,7 @@ umbra_swift_library(
         exclude_directories = 1,
     ),
     deps = [
+        "//Sources/Security/Core/Types/Bridge:SecurityBridgeTypes",
         "//Sources/SecurityTypes",
         "//Sources/UmbraCoreTypes",
         "//Sources/UmbraErrors",

@@ -18,7 +18,7 @@ umbra_swift_library(
     deps = [
         "//Sources/CoreDTOs",
         "//Sources/UmbraLogging",
-        "//Sources/Security/Core/Types/Bridge",
+        "//Sources/Security/Core/Types/Bridge:SecurityBridgeTypes",
         "//Sources/SecurityProtocolsCore",
     ],
 )

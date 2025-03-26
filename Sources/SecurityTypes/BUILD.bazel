@@ -15,8 +15,9 @@ umbra_swift_library(
         ],
         exclude_directories = 1,
     ),
+    visibility = ["//visibility:public"],
     deps = [
-],
+    ],
 )
 
 # Uncomment if documentation generation is needed
