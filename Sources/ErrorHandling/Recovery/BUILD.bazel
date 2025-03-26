@@ -19,7 +19,7 @@ umbra_swift_library(
         "//Sources/ErrorHandling/Interfaces",
         "//Sources/SecurityTypes",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-        "//Sources/XPCProtocolsCore/Sources/Protocols",,
+        "//Sources/XPCProtocolsCore/Sources/Protocols",
         "//Sources/XPCProtocolsCore/Sources/Protocols:Protocols"
     ],
 )
@@ -37,7 +37,7 @@ umbra_swift_library(
         "//Sources/ErrorHandling/Interfaces",
         "//Sources/SecurityTypes",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-        "//Sources/XPCProtocolsCore/Sources/Protocols",,
+        "//Sources/XPCProtocolsCore/Sources/Protocols",
         "//Sources/XPCProtocolsCore/Sources/Protocols:Protocols"
     ],
 # )
