@@ -2,6 +2,7 @@ import CommonCrypto
 import UmbraErrors
 import UmbraErrorsCore
 
+import CoreServicesTypes
 import Foundation
 import FoundationBridgeTypes
 import SecurityBridge
@@ -12,7 +13,6 @@ import SecurityUtils
 import UmbraCoreTypes
 import UmbraLogging
 import XPCProtocolsCore
-import CoreServicesTypes
 
 /// Protocol for random data generation capabilities
 protocol RandomDataGenerating {

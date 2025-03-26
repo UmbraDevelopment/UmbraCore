@@ -52,27 +52,27 @@ public struct ErrorContext: @unchecked Sendable, Equatable, Codable, Hashable {
   ///   - line: Line number where the error occurred (automatically included)
   ///   - function: Function where the error occurred (automatically included)
   public init(
-    _ context: [String: Any] = [:],
-    source: String? = nil,
-    operation: String? = nil,
-    details: String? = nil,
-    underlyingError: Error? = nil,
-    file: String = #file,
-    line: Int = #line,
-    function: String = #function
+    _ context: [String: Any]=[:],
+    source: String?=nil,
+    operation: String?=nil,
+    details: String?=nil,
+    underlyingError: Error?=nil,
+    file: String=#file,
+    line: Int=#line,
+    function: String=#function
   ) {
-    var initialStorage = context
+    var initialStorage=context
     if let underlyingError {
-      initialStorage["underlyingError"] = underlyingError
+      initialStorage["underlyingError"]=underlyingError
     }
 
-    storage = initialStorage
-    self.source = source
-    self.operation = operation
-    self.details = details
-    self.file = file
-    self.line = line
-    self.function = function
+    storage=initialStorage
+    self.source=source
+    self.operation=operation
+    self.details=details
+    self.file=file
+    self.line=line
+    self.function=function
   }
 
   /// Gets a value from the context using the specified key
@@ -87,7 +87,7 @@ public struct ErrorContext: @unchecked Sendable, Equatable, Codable, Hashable {
   ///   - key: The key to look up
   ///   - type: The expected type of the value
   /// - Returns: The value cast to the specified type, or nil if not found or wrong type
-  public func typedValue<T>(for key: String, as _: T.Type = T.self) -> T? {
+  public func typedValue<T>(for key: String, as _: T.Type=T.self) -> T? {
     storage[key] as? T
   }
 
@@ -97,8 +97,8 @@ public struct ErrorContext: @unchecked Sendable, Equatable, Codable, Hashable {
   ///   - value: The value to associate with the key
   /// - Returns: A new ErrorContext instance with the added key-value pair
   public func adding(key: String, value: Any) -> ErrorContext {
-    var newContext = self
-    newContext.storage[key] = value
+    var newContext=self
+    newContext.storage[key]=value
     return newContext
   }
 
@@ -106,9 +106,9 @@ public struct ErrorContext: @unchecked Sendable, Equatable, Codable, Hashable {
   /// - Parameter context: Dictionary of key-value pairs to add
   /// - Returns: A new ErrorContext instance with the added key-value pairs
   public func adding(context: [String: Any]) -> ErrorContext {
-    var newContext = self
+    var newContext=self
     for (key, value) in context {
-      newContext.storage[key] = value
+      newContext.storage[key]=value
     }
     return newContext
   }
@@ -162,8 +162,8 @@ public struct ErrorContext: @unchecked Sendable, Equatable, Codable, Hashable {
   /// - Parameter error: The underlying error to set
   /// - Returns: A new ErrorContext with the updated underlying error
   public func with(underlyingError error: Error) -> ErrorContext {
-    var newStorage = storage
-    newStorage["underlyingError"] = error
+    var newStorage=storage
+    newStorage["underlyingError"]=error
 
     return ErrorContext(
       newStorage,
@@ -181,18 +181,18 @@ public struct ErrorContext: @unchecked Sendable, Equatable, Codable, Hashable {
   /// - Returns: A new ErrorContext with values from both contexts (the other context takes
   /// precedence)
   public func merging(with other: ErrorContext) -> ErrorContext {
-    var combinedStorage = storage
+    var combinedStorage=storage
 
     // Merge storage values, with other taking precedence
     for (key, value) in other.storage {
-      combinedStorage[key] = value
+      combinedStorage[key]=value
     }
 
     // For a merged context, we keep our source/operation/details unless the other one has non-nil
     // values
-    let mergedSource = other.source ?? source
-    let mergedOperation = other.operation ?? operation
-    let mergedDetails = other.details ?? details
+    let mergedSource=other.source ?? source
+    let mergedOperation=other.operation ?? operation
+    let mergedDetails=other.details ?? details
 
     return ErrorContext(
       combinedStorage,
@@ -217,7 +217,7 @@ public struct ErrorContext: @unchecked Sendable, Equatable, Codable, Hashable {
   /// - Note: The `storage` dictionary is intentionally excluded from encoding as it may
   ///   contain non-encodable values
   public func encode(to encoder: Encoder) throws {
-    var container = encoder.container(keyedBy: CodingKeys.self)
+    var container=encoder.container(keyedBy: CodingKeys.self)
 
     try container.encodeIfPresent(source, forKey: .source)
     try container.encodeIfPresent(operation, forKey: .operation)
@@ -233,17 +233,17 @@ public struct ErrorContext: @unchecked Sendable, Equatable, Codable, Hashable {
   /// - Parameter decoder: The decoder to read data from
   /// - Throws: Any decoding errors that occur during the decoding process
   public init(from decoder: Decoder) throws {
-    let container = try decoder.container(keyedBy: CodingKeys.self)
+    let container=try decoder.container(keyedBy: CodingKeys.self)
 
-    source = try container.decodeIfPresent(String.self, forKey: .source)
-    operation = try container.decodeIfPresent(String.self, forKey: .operation)
-    details = try container.decodeIfPresent(String.self, forKey: .details)
-    file = try container.decode(String.self, forKey: .file)
-    line = try container.decode(Int.self, forKey: .line)
-    function = try container.decode(String.self, forKey: .function)
+    source=try container.decodeIfPresent(String.self, forKey: .source)
+    operation=try container.decodeIfPresent(String.self, forKey: .operation)
+    details=try container.decodeIfPresent(String.self, forKey: .details)
+    file=try container.decode(String.self, forKey: .file)
+    line=try container.decode(Int.self, forKey: .line)
+    function=try container.decode(String.self, forKey: .function)
 
     // Initialize empty storage as we can't decode [String: Any]
-    storage = [:]
+    storage=[:]
   }
 
   // MARK: - Hashable Implementation
@@ -297,9 +297,9 @@ extension ErrorContext {
   /// - Returns: A new ErrorContext with the message as details
   public static func withMessage(
     _ message: String,
-    file: String = #file,
-    line: Int = #line,
-    function: String = #function
+    file: String=#file,
+    line: Int=#line,
+    function: String=#function
   ) -> ErrorContext {
     ErrorContext(details: message, file: file, line: line, function: function)
   }
@@ -307,9 +307,9 @@ extension ErrorContext {
   /// Creates a new ErrorContext that captures the current call site
   /// - Returns: A new ErrorContext with the current call site information
   public static func currentCallSite(
-    file: String = #file,
-    line: Int = #line,
-    function: String = #function
+    file: String=#file,
+    line: Int=#line,
+    function: String=#function
   ) -> ErrorContext {
     ErrorContext(file: file, line: line, function: function)
   }
@@ -320,21 +320,21 @@ extension ErrorContext {
 /// Common error domains used throughout the system
 public enum ErrorDomain {
   /// Security domain
-  public static let security = "Security"
+  public static let security="Security"
   /// Crypto domain
-  public static let crypto = "Crypto"
+  public static let crypto="Crypto"
   /// Application domain
-  public static let application = "Application"
+  public static let application="Application"
   /// Repository domain
-  public static let repository = "Repository"
+  public static let repository="Repository"
   /// Resource domain
-  public static let resource = "Resource"
+  public static let resource="Resource"
   /// Service domain
-  public static let service = "Service"
+  public static let service="Service"
   /// Logging domain
-  public static let logging = "Logging"
+  public static let logging="Logging"
   /// Key management domain
-  public static let keyManagement = "KeyManagement"
+  public static let keyManagement="KeyManagement"
 }
 
 // MARK: - Base Error Context
@@ -360,12 +360,12 @@ public struct BaseErrorContext: Equatable, Codable, Hashable, Sendable {
     domain: String,
     code: Int,
     description: String,
-    underlyingError: Error? = nil
+    underlyingError: Error?=nil
   ) {
-    self.domain = domain
-    self.code = code
-    self.description = description
-    self.underlyingError = underlyingError
+    self.domain=domain
+    self.code=code
+    self.description=description
+    self.underlyingError=underlyingError
   }
 
   // Equatable can't be automatically synthesised due to Error not conforming to Equatable
@@ -410,7 +410,7 @@ public struct BaseErrorContext: Equatable, Codable, Hashable, Sendable {
   /// - Throws: Any encoding errors that occur during the encoding process
   /// - Note: The `underlyingError` is intentionally excluded from encoding
   public func encode(to encoder: Encoder) throws {
-    var container = encoder.container(keyedBy: CodingKeys.self)
+    var container=encoder.container(keyedBy: CodingKeys.self)
     try container.encode(domain, forKey: .domain)
     try container.encode(code, forKey: .code)
     try container.encode(description, forKey: .description)
@@ -421,11 +421,11 @@ public struct BaseErrorContext: Equatable, Codable, Hashable, Sendable {
   /// - Parameter decoder: The decoder to read data from
   /// - Throws: Any decoding errors that occur during the decoding process
   public init(from decoder: Decoder) throws {
-    let container = try decoder.container(keyedBy: CodingKeys.self)
-    domain = try container.decode(String.self, forKey: .domain)
-    code = try container.decode(Int.self, forKey: .code)
-    description = try container.decode(String.self, forKey: .description)
-    underlyingError = nil // We can't decode Error
+    let container=try decoder.container(keyedBy: CodingKeys.self)
+    domain=try container.decode(String.self, forKey: .domain)
+    code=try container.decode(Int.self, forKey: .code)
+    description=try container.decode(String.self, forKey: .description)
+    underlyingError=nil // We can't decode Error
   }
 
   private enum CodingKeys: String, CodingKey {
@@ -457,7 +457,7 @@ extension ErrorContext {
     domain: String,
     code: Int,
     description: String,
-    underlyingError: Error? = nil
+    underlyingError: Error?=nil
   ) -> ErrorContext {
     ErrorContext(
       ["code": code],

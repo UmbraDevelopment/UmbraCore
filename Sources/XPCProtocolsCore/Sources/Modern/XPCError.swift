@@ -16,34 +16,34 @@ public enum XPCError: LocalizedError, Sendable {
 
   /// An error occurred in the XPC service
   case serviceError(category: Category, underlying: Error, message: String)
-  
+
   /// Connection to the XPC service failed
   case connectionError(message: String)
-  
+
   /// The request to the XPC service was invalid
   case invalidRequest(message: String)
-  
+
   /// The operation was cancelled
   case operationCancelled(reason: String)
-  
+
   /// The operation timed out
   case timeout(operation: String)
-  
+
   /// Security validation failed
   case securityValidationFailed(reason: String)
-  
+
   /// The service is unavailable
   case serviceUnavailable(name: String)
-  
+
   /// The connection to the XPC service failed
   case connectionFailed(String)
-  
+
   /// Failed to send a message over the XPC connection
   case messageFailed(String)
-  
+
   /// The message format is invalid for XPC transmission
   case invalidMessage(String)
-  
+
   /// The data is invalid
   case invalidData(message: String)
 
@@ -59,7 +59,7 @@ public enum XPCError: LocalizedError, Sendable {
         }
       case .connectionError, .timeout, .serviceUnavailable, .connectionFailed:
         true
-      case .invalidRequest, .operationCancelled, .securityValidationFailed, 
+      case .invalidRequest, .operationCancelled, .securityValidationFailed,
            .messageFailed, .invalidMessage, .invalidData:
         false
     }

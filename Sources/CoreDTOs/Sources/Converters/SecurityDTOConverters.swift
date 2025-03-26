@@ -1,4 +1,5 @@
 import Foundation
+
 // Removing imports that cause circular dependencies
 // import UmbraErrors
 // import UmbraErrorsCore
@@ -13,7 +14,7 @@ public enum SecurityDTOConverters {
     // if let securityError = error as? SecurityError {
     //   return XPCSecurityDTOConverter.toDTO(securityError)
     // }
-    return error
+    error
   }
 
   /// Convert a DTO error to a local error
@@ -24,6 +25,6 @@ public enum SecurityDTOConverters {
     // if let securityErrorDTO = error as? SecurityErrorDTO {
     //   return XPCSecurityDTOConverter.fromDTO(securityErrorDTO)
     // }
-    return error
+    error
   }
 }

@@ -34,7 +34,7 @@ public protocol RecoveryOptionsProvider: Sendable {
   /// - Parameter error: The error to get recovery options for
   /// - Returns: Array of recovery options
   func getRecoveryOptions(for error: Error) -> [any UmbraErrorsCore.RecoveryOption]
-  
+
   /// Check if this provider handles errors from a specific domain
   /// - Parameter domain: The domain to check
   /// - Returns: True if this provider can handle errors from the domain

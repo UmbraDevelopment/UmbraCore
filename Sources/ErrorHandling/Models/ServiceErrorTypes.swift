@@ -4,7 +4,7 @@ import UmbraErrorsCore
 /**
  * This file provides legacy service error types for backward compatibility.
  * New code should use UmbraErrorsCore types directly.
- * 
+ *
  * The types in this file map to equivalent types in UmbraErrorsCore
  * and provide conversion utilities to simplify migration.
  */
@@ -25,36 +25,36 @@ public enum ServiceErrorSeverity: String, Codable, Sendable {
   case info
   /// Detailed information for debugging
   case debug
-  
+
   /// Convert to UmbraErrorsCore.ErrorSeverity
   public var asUmbraErrorSeverity: UmbraErrorsCore.ErrorSeverity {
     switch self {
-    case .critical:
-      return .critical
-    case .error:
-      return .error
-    case .warning:
-      return .warning
-    case .info:
-      return .info
-    case .debug:
-      return .debug
+      case .critical:
+        .critical
+      case .error:
+        .error
+      case .warning:
+        .warning
+      case .info:
+        .info
+      case .debug:
+        .debug
     }
   }
-  
+
   /// Create from UmbraErrorsCore.ErrorSeverity
   public static func from(_ severity: UmbraErrorsCore.ErrorSeverity) -> ServiceErrorSeverity {
     switch severity {
-    case .critical:
-      return .critical
-    case .error:
-      return .error
-    case .warning:
-      return .warning
-    case .info:
-      return .info
-    case .debug, .trace:
-      return .debug
+      case .critical:
+        .critical
+      case .error:
+        .error
+      case .warning:
+        .warning
+      case .info:
+        .info
+      case .debug, .trace:
+        .debug
     }
   }
 }
@@ -122,19 +122,19 @@ public enum ServiceErrorType: String, Sendable, CaseIterable {
 public protocol ServiceError: Error, Sendable {
   /// Service that encountered the error
   var service: String { get }
-  
+
   /// Type of error that occurred
   var errorType: String { get }
-  
+
   /// Detailed error message
   var message: String { get }
-  
+
   /// Optional request identifier associated with the error
-  var requestId: String? { get }
-  
+  var requestID: String? { get }
+
   /// Error severity level
   var severity: ServiceErrorSeverity { get }
-  
+
   /// Convert to UmbraErrorsCore.UmbraError
   var asUmbraError: UmbraErrorsCore.UmbraError { get }
 }
@@ -143,22 +143,22 @@ public protocol ServiceError: Error, Sendable {
 extension ServiceError {
   public var asUmbraError: UmbraErrorsCore.UmbraError {
     // Create context dictionary with service error information
-    let contextDict: [String: Any] = [
+    let contextDict: [String: Any]=[
       "service": service,
       "errorType": errorType,
       "message": message,
-      "requestId": requestId ?? "",
+      "requestId": requestID ?? "",
       "severity": severity.rawValue
     ]
-    
+
     // Create ErrorContext instance
-    let errorContext = UmbraErrorsCore.ErrorContext(
+    let errorContext=UmbraErrorsCore.ErrorContext(
       contextDict,
       source: service,
       operation: "service_operation",
       details: message
     )
-    
+
     // Create UmbraError with the context
     return UmbraErrorsCore.UmbraError(
       context: errorContext,
@@ -172,19 +172,19 @@ extension ServiceError {
 public struct BasicServiceError: ServiceError {
   /// Service that encountered the error
   public let service: String
-  
+
   /// Type of error that occurred
   public let errorType: String
-  
+
   /// Detailed error message
   public let message: String
-  
+
   /// Optional request identifier associated with the error
-  public let requestId: String?
-  
+  public let requestID: String?
+
   /// Error severity level
   public let severity: ServiceErrorSeverity
-  
+
   /// Creates a new BasicServiceError
   /// - Parameters:
   ///   - service: Service that encountered the error
@@ -196,13 +196,13 @@ public struct BasicServiceError: ServiceError {
     service: String,
     errorType: String,
     message: String,
-    requestId: String? = nil,
+    requestID: String?=nil,
     severity: ServiceErrorSeverity = .error
   ) {
-    self.service = service
-    self.errorType = errorType
-    self.message = message
-    self.requestId = requestId
-    self.severity = severity
+    self.service=service
+    self.errorType=errorType
+    self.message=message
+    self.requestID=requestID
+    self.severity=severity
   }
 }

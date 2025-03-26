@@ -1,7 +1,7 @@
+import Errors
+import SecurityProtocolsCore.DTOs
 import UmbraCoreTypes
 import UmbraErrors
-import SecurityProtocolsCore.DTOs
-import Errors
 
 // MARK: - DTO Extensions for CryptoServiceProtocol
 
@@ -19,7 +19,7 @@ extension CryptoServiceProtocol {
     key: SecureBytes,
     config: SecurityConfigDTO
   ) async -> SecurityResultDTO {
-    let result = await encryptSymmetric(
+    let result=await encryptSymmetric(
       data: data,
       key: key,
       algorithm: config.algorithm,
@@ -45,7 +45,7 @@ extension CryptoServiceProtocol {
     key: SecureBytes,
     config: SecurityConfigDTO
   ) async -> SecurityResultDTO {
-    let result = await decryptSymmetric(
+    let result=await decryptSymmetric(
       data: data,
       key: key,
       algorithm: config.algorithm,
@@ -71,7 +71,7 @@ extension CryptoServiceProtocol {
     publicKey: SecureBytes,
     config: SecurityConfigDTO
   ) async -> SecurityResultDTO {
-    let result = await encryptAsymmetric(
+    let result=await encryptAsymmetric(
       data: data,
       publicKey: publicKey,
       algorithm: config.algorithm

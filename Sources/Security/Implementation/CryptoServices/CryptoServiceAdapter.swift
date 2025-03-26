@@ -1,31 +1,33 @@
 /**
  # UmbraCore CryptoServiceAdapter
- 
+
  This file provides a Data Transfer Object (DTO) based adapter for cryptographic operations in UmbraCore.
  It implements the CryptoServiceProtocol using a DTO to break circular dependencies.
  */
 
+import CoreDTOs
+import ErrorHandlingDomains
 import Foundation
-import UmbraCoreTypes
-import UmbraErrors
 import Protocols
 import Types
+import UmbraCoreTypes
+import UmbraErrors
 
 /// Adapter implementation of CryptoServiceProtocol that uses the DTO pattern
 /// to avoid circular dependencies between modules.
 public final class CryptoServiceAdapter: CryptoServiceProtocol {
-  
+
   /// The DTO containing function references for crypto operations
   private let dto: CryptoServiceDTO
-  
+
   /// Initialises a new crypto service adapter
   /// - Parameter dto: The data transfer object with function references
   public init(dto: CryptoServiceDTO) {
-    self.dto = dto
+    self.dto=dto
   }
-  
+
   // MARK: - CryptoServiceProtocol Implementation
-  
+
   /// Encrypts data using the specified key
   /// - Parameters:
   ///   - data: The data to encrypt
@@ -72,12 +74,12 @@ public final class CryptoServiceAdapter: CryptoServiceProtocol {
   }
 
   // MARK: - Extended CryptoServiceProtocol Methods
-  
+
   /// Generates a cryptographically secure key
   /// - Returns: The generated key or an error
   public func generateKey() async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
-    // Default implementation - placeholder 
-    let bytes = [UInt8](repeating: 0, count: 32)
+    // Default implementation - placeholder
+    let bytes=[UInt8](repeating: 0, count: 32)
     return .success(SecureBytes(bytes: bytes))
   }
 
@@ -88,7 +90,7 @@ public final class CryptoServiceAdapter: CryptoServiceProtocol {
     ofLength length: Int
   ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     // Default implementation - placeholder
-    let bytes = [UInt8](repeating: 0, count: length)
+    let bytes=[UInt8](repeating: 0, count: length)
     return .success(SecureBytes(bytes: bytes))
   }
 
@@ -101,7 +103,7 @@ public final class CryptoServiceAdapter: CryptoServiceProtocol {
   public func encryptSymmetric(
     data: SecureBytes,
     using key: SecureBytes,
-    with config: SecurityConfigDTO
+    with _: SecurityConfigDTO
   ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     // Use the basic encrypt method as a fallback
     await encrypt(data: data, using: key)
@@ -116,7 +118,7 @@ public final class CryptoServiceAdapter: CryptoServiceProtocol {
   public func decryptSymmetric(
     data: SecureBytes,
     using key: SecureBytes,
-    with config: SecurityConfigDTO
+    with _: SecurityConfigDTO
   ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     // Use the basic decrypt method as a fallback
     await decrypt(data: data, using: key)
@@ -131,7 +133,7 @@ public final class CryptoServiceAdapter: CryptoServiceProtocol {
   public func encryptAsymmetric(
     data: SecureBytes,
     using publicKey: SecureBytes,
-    with config: SecurityConfigDTO
+    with _: SecurityConfigDTO
   ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     // Use the basic encrypt method as a fallback
     await encrypt(data: data, using: publicKey)
@@ -146,7 +148,7 @@ public final class CryptoServiceAdapter: CryptoServiceProtocol {
   public func decryptAsymmetric(
     data: SecureBytes,
     using privateKey: SecureBytes,
-    with config: SecurityConfigDTO
+    with _: SecurityConfigDTO
   ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     // Use the basic decrypt method as a fallback
     await decrypt(data: data, using: privateKey)
@@ -159,7 +161,7 @@ public final class CryptoServiceAdapter: CryptoServiceProtocol {
   /// - Returns: The hash value or an error
   public func hash(
     data: SecureBytes,
-    with config: SecurityConfigDTO
+    with _: SecurityConfigDTO
   ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     // Use the basic hash method as a fallback
     await hash(data: data)

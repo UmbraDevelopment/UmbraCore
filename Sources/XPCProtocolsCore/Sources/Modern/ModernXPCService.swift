@@ -33,12 +33,12 @@ public enum ProtocolError: Error, Sendable {
 public struct SecureBytes: Sendable {
   /// The underlying data
   public let data: Data
-  
+
   /// Create secure bytes from data
   public init(_ data: Data) {
-    self.data = data
+    self.data=data
   }
-  
+
   /// Check if the secure bytes are empty
   public var isEmpty: Bool {
     data.isEmpty
@@ -55,13 +55,18 @@ public struct XPCServiceStatus: Sendable {
   public let isActive: Bool
   /// Additional information
   public let additionalInfo: [String: String]
-  
+
   /// Create a new service status
-  public init(timestamp: Date, protocolVersion: String, isActive: Bool, additionalInfo: [String: String] = [:]) {
-    self.timestamp = timestamp
-    self.protocolVersion = protocolVersion
-    self.isActive = isActive
-    self.additionalInfo = additionalInfo
+  public init(
+    timestamp: Date,
+    protocolVersion: String,
+    isActive: Bool,
+    additionalInfo: [String: String]=[:]
+  ) {
+    self.timestamp=timestamp
+    self.protocolVersion=protocolVersion
+    self.isActive=isActive
+    self.additionalInfo=additionalInfo
   }
 }
 
@@ -69,10 +74,10 @@ public struct XPCServiceStatus: Sendable {
 public protocol XPCServiceProtocolComplete: Sendable {
   /// Protocol identifier
   static var protocolIdentifier: String { get }
-  
+
   /// Ping the service
   func pingComplete() async -> Result<Bool, ProtocolError>
-  
+
   /// Get service status
   func getServiceStatus() async -> Result<XPCServiceStatus, ProtocolError>
 }
@@ -88,12 +93,12 @@ public class ModernXPCService: XPCServiceProtocolComplete, @unchecked Sendable {
 
   /// Service dependencies
   private let dependencies: ModernXPCServiceDependencies
-  
+
   /// Create a new modern XPC service
   public init(dependencies: ModernXPCServiceDependencies) {
-    self.dependencies = dependencies
+    self.dependencies=dependencies
   }
-  
+
   /// Synchronise data with the service
   public func synchronise(data: Data) async throws {
     // In a real implementation, this would securely store the key material
@@ -101,38 +106,38 @@ public class ModernXPCService: XPCServiceProtocolComplete, @unchecked Sendable {
       throw ProtocolError.invalidInput("Empty synchronisation data")
     }
   }
-  
+
   /// Ping the service to check if it's available
   public func ping() async -> Bool {
     // In a real implementation, would perform actual health check
-    return true
+    true
   }
-  
+
   /// Hash the provided data
   public func hash(data: SecureBytes) async -> Result<SecureBytes, ProtocolError> {
     // In a real implementation, would perform actual hashing
     if data.isEmpty {
       return .failure(.invalidInput("Cannot hash empty data"))
     }
-    
+
     // Create a mock hash result
-    let mockHash = "hash-\(data.data.count)-\(Date().timeIntervalSince1970)".data(using: .utf8)!
+    let mockHash="hash-\(data.data.count)-\(Date().timeIntervalSince1970)".data(using: .utf8)!
     return .success(SecureBytes(mockHash))
   }
-  
+
   // MARK: - XPCServiceProtocolComplete Implementation
-  
+
   /// Complete protocol ping implementation
   public func pingComplete() async -> Result<Bool, ProtocolError> {
-    let isActive = await ping()
+    let isActive=await ping()
     return .success(isActive)
   }
-  
+
   /// Get the service status
   public func getServiceStatus() async -> Result<XPCServiceStatus, ProtocolError> {
     // In a real implementation, would collect actual service metrics
-    let isActive = await ping()
-    let status = XPCServiceStatus(
+    let isActive=await ping()
+    let status=XPCServiceStatus(
       timestamp: Date(),
       protocolVersion: Self.protocolIdentifier,
       isActive: isActive,
@@ -140,19 +145,19 @@ public class ModernXPCService: XPCServiceProtocolComplete, @unchecked Sendable {
     )
     return .success(status)
   }
-  
+
   /// Generate a key with the specified parameters
   public func generateKey(
     algorithm: String,
     keySize: Int,
     purpose: String
   ) async -> Result<String, ProtocolError> {
-    let identifier = "generated-key-\(algorithm)-\(keySize)-\(purpose)"
-    
+    let identifier="generated-key-\(algorithm)-\(keySize)-\(purpose)"
+
     if keySize <= 0 {
       return .failure(.invalidInput("Key size must be positive"))
     }
-    
+
     return .success(identifier)
   }
 }

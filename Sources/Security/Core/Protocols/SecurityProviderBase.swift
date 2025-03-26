@@ -1,6 +1,6 @@
-import UmbraErrors
-import UmbraCoreTypes
 import Errors
+import UmbraCoreTypes
+import UmbraErrors
 
 /// Base protocol for security providers
 /// This protocol is designed to be Foundation-free and serve as a base for more specific security
@@ -42,7 +42,7 @@ public final class SecurityProviderBaseAdapter: SecurityProviderBase {
   private let provider: any SecurityProviderProtocol
 
   public init(provider: any SecurityProviderProtocol) {
-    self.provider = provider
+    self.provider=provider
   }
 
   public static var protocolIdentifier: String {

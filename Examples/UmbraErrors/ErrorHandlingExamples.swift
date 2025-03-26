@@ -6,7 +6,7 @@ import UmbraErrorsCore
 
 // Define our own SecurityError for the examples
 public struct SecurityError: UmbraError, Sendable {
-  public let domain: String = "Security"
+  public let domain: String="Security"
   public let errorCode: SecurityErrorCode
   public let description: String?
   public var errorDescription: String { description ?? errorCode.defaultDescription }
@@ -14,69 +14,69 @@ public struct SecurityError: UmbraError, Sendable {
   public var source: ErrorSource?
   public var underlyingError: Error?
   public var context: ErrorContext
-  
+
   public enum SecurityErrorCode: Int, Sendable, CaseIterable {
-    case unauthorisedAccess = 1000
-    case encryptionFailed = 1001
-    case decryptionFailed = 1002
-    case invalidKey = 1003
-    case accessError = 1004
-    
+    case unauthorisedAccess=1000
+    case encryptionFailed=1001
+    case decryptionFailed=1002
+    case invalidKey=1003
+    case accessError=1004
+
     var defaultDescription: String {
       switch self {
-      case .unauthorisedAccess:
-        return "Unauthorised access to secure resource"
-      case .encryptionFailed:
-        return "Failed to encrypt data"
-      case .decryptionFailed:
-        return "Failed to decrypt data"
-      case .invalidKey:
-        return "Invalid key provided"
-      case .accessError:
-        return "Access denied to secure resource"
+        case .unauthorisedAccess:
+          "Unauthorised access to secure resource"
+        case .encryptionFailed:
+          "Failed to encrypt data"
+        case .decryptionFailed:
+          "Failed to decrypt data"
+        case .invalidKey:
+          "Invalid key provided"
+        case .accessError:
+          "Access denied to secure resource"
       }
     }
   }
-  
+
   public init(
     code: SecurityErrorCode,
-    description: String? = nil,
-    source: ErrorSource? = nil,
-    underlyingError: Error? = nil,
-    context: ErrorContext = ErrorContext()
+    description: String?=nil,
+    source: ErrorSource?=nil,
+    underlyingError: Error?=nil,
+    context: ErrorContext=ErrorContext()
   ) {
-    self.errorCode = code
-    self.description = description
-    self.source = source
-    self.underlyingError = underlyingError
-    self.context = context
+    errorCode=code
+    self.description=description
+    self.source=source
+    self.underlyingError=underlyingError
+    self.context=context
   }
-  
+
   public func with(context: ErrorContext) -> SecurityError {
-    var copy = self
-    copy.context = context
+    var copy=self
+    copy.context=context
     return copy
   }
-  
+
   public func with(underlyingError: Error) -> SecurityError {
-    var copy = self
-    copy.underlyingError = underlyingError
+    var copy=self
+    copy.underlyingError=underlyingError
     return copy
   }
-  
+
   public func with(source: ErrorSource) -> SecurityError {
-    var copy = self
-    copy.source = source
+    var copy=self
+    copy.source=source
     return copy
   }
-  
+
   // Factory methods
   public static func unauthorisedAccess(
-    message: String? = nil,
-    cause: Error? = nil,
-    file: String = #file,
-    line: Int = #line,
-    function: String = #function
+    message: String?=nil,
+    cause: Error?=nil,
+    file: String=#file,
+    line: Int=#line,
+    function: String=#function
   ) -> SecurityError {
     SecurityError(
       code: .unauthorisedAccess,
@@ -85,13 +85,13 @@ public struct SecurityError: UmbraError, Sendable {
       underlyingError: cause
     )
   }
-  
+
   public static func encryptionFailed(
-    message: String? = nil,
-    cause: Error? = nil,
-    file: String = #file,
-    line: Int = #line,
-    function: String = #function
+    message: String?=nil,
+    cause: Error?=nil,
+    file: String=#file,
+    line: Int=#line,
+    function: String=#function
   ) -> SecurityError {
     SecurityError(
       code: .encryptionFailed,
@@ -100,12 +100,12 @@ public struct SecurityError: UmbraError, Sendable {
       underlyingError: cause
     )
   }
-  
+
   public static func invalidKey(
-    message: String? = nil,
-    file: String = #file,
-    line: Int = #line,
-    function: String = #function
+    message: String?=nil,
+    file: String=#file,
+    line: Int=#line,
+    function: String=#function
   ) -> SecurityError {
     SecurityError(
       code: .invalidKey,
@@ -113,12 +113,12 @@ public struct SecurityError: UmbraError, Sendable {
       source: ErrorSource(file: file, line: line, function: function)
     )
   }
-  
+
   public static func accessError(
-    message: String? = nil,
-    file: String = #file,
-    line: Int = #line,
-    function: String = #function
+    message: String?=nil,
+    file: String=#file,
+    line: Int=#line,
+    function: String=#function
   ) -> SecurityError {
     SecurityError(
       code: .accessError,
@@ -131,7 +131,7 @@ public struct SecurityError: UmbraError, Sendable {
 /// Example class demonstrating best practices for error handling with the new system
 public class ErrorHandlingExamples {
   /// Logger for this class
-  private let logger = Logger(subsystem: "com.umbracorp.UmbraCore", category: "ErrorExamples")
+  private let logger=Logger(subsystem: "com.umbracorp.UmbraCore", category: "ErrorExamples")
 
   /// Demonstrates creating and throwing a simple error
   /// - Parameter shouldFail: Whether the operation should fail
@@ -152,15 +152,15 @@ public class ErrorHandlingExamples {
       // Simulate encryption operation
       if data.isEmpty {
         // Create an error with additional context
-        var contextInfo = ErrorContext()
-        contextInfo = contextInfo.adding(key: "dataLength", value: data.count)
-                                 .adding(key: "operation", value: "encryption")
-        
-        let error = SecurityError.encryptionFailed(
+        var contextInfo=ErrorContext()
+        contextInfo=contextInfo.adding(key: "dataLength", value: data.count)
+          .adding(key: "operation", value: "encryption")
+
+        let error=SecurityError.encryptionFailed(
           message: "Cannot encrypt empty data",
           cause: NSError(domain: "com.example", code: -1, userInfo: nil)
         ).with(context: contextInfo)
-        
+
         throw error
       }
 
@@ -198,10 +198,10 @@ public class ErrorHandlingExamples {
   /// - Returns: A mapped security error if applicable
   public func demonstrateErrorMapping(_ error: Error) -> Error {
     // Example of simple error handling - just return the error
-    if let securityError = error as? SecurityError {
+    if let securityError=error as? SecurityError {
       return securityError
     }
-    
+
     // In a real implementation, you would use proper error mapping
     return SecurityError.accessError(
       message: "Error mapped from: \(String(describing: error))"

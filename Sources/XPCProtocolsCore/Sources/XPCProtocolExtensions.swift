@@ -117,18 +117,18 @@ extension XPCServiceProtocolComplete {
   /// - Parameter count: Number of bytes to generate
   /// - Returns: Result with random bytes if successful
   public func getRandomBytes(count: Int) async -> Result<SecureBytes, CryptoError> {
-    let result = await generateRandomData(length: count)
-    
+    let result=await generateRandomData(length: count)
+
     // Convert SecurityError to CryptoError
     switch result {
-    case .success(let randomBytes):
-      return .success(randomBytes)
-    case .failure(let error):
-      return .failure(UmbraErrors.CryptoError(
-        type: .randomData,
-        code: UmbraErrors.CryptoErrorDomain.randomDataGenerationFailed.rawValue,
-        description: "Failed to generate random bytes: \(error.localizedDescription)"
-      ))
+      case let .success(randomBytes):
+        return .success(randomBytes)
+      case let .failure(error):
+        return .failure(UmbraErrors.CryptoError(
+          type: .randomData,
+          code: UmbraErrors.CryptoErrorDomain.randomDataGenerationFailed.rawValue,
+          description: "Failed to generate random bytes: \(error.localizedDescription)"
+        ))
     }
   }
 
@@ -141,21 +141,21 @@ extension XPCServiceProtocolComplete {
   public func encrypt(
     data: SecureBytes,
     keyIdentifier: String,
-    algorithm: String
+    algorithm _: String
   ) async -> Result<SecureBytes, CryptoError> {
     // Use the encryptSecureData method which is part of the protocol
-    let result = await encryptSecureData(data, keyIdentifier: keyIdentifier)
-    
+    let result=await encryptSecureData(data, keyIdentifier: keyIdentifier)
+
     // Convert SecurityError to CryptoError
     switch result {
-    case .success(let encryptedData):
-      return .success(encryptedData)
-    case .failure(let error):
-      return .failure(UmbraErrors.CryptoError(
-        type: .encryption,
-        code: UmbraErrors.CryptoErrorDomain.encryptionFailed.rawValue,
-        description: "Encryption failed: \(error.localizedDescription)"
-      ))
+      case let .success(encryptedData):
+        return .success(encryptedData)
+      case let .failure(error):
+        return .failure(UmbraErrors.CryptoError(
+          type: .encryption,
+          code: UmbraErrors.CryptoErrorDomain.encryptionFailed.rawValue,
+          description: "Encryption failed: \(error.localizedDescription)"
+        ))
     }
   }
 
@@ -168,21 +168,21 @@ extension XPCServiceProtocolComplete {
   public func decrypt(
     data: SecureBytes,
     keyIdentifier: String,
-    algorithm: String
+    algorithm _: String
   ) async -> Result<SecureBytes, CryptoError> {
     // Use the decryptSecureData method which is part of the protocol
-    let result = await decryptSecureData(data, keyIdentifier: keyIdentifier)
-    
+    let result=await decryptSecureData(data, keyIdentifier: keyIdentifier)
+
     // Convert SecurityError to CryptoError
     switch result {
-    case .success(let decryptedData):
-      return .success(decryptedData)
-    case .failure(let error):
-      return .failure(UmbraErrors.CryptoError(
-        type: .decryption,
-        code: UmbraErrors.CryptoErrorDomain.decryptionFailed.rawValue,
-        description: "Decryption failed: \(error.localizedDescription)"
-      ))
+      case let .success(decryptedData):
+        return .success(decryptedData)
+      case let .failure(error):
+        return .failure(UmbraErrors.CryptoError(
+          type: .decryption,
+          code: UmbraErrors.CryptoErrorDomain.decryptionFailed.rawValue,
+          description: "Decryption failed: \(error.localizedDescription)"
+        ))
     }
   }
 }

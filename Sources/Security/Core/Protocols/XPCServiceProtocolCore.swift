@@ -1,5 +1,5 @@
-import UmbraCoreTypes
 import Errors
+import UmbraCoreTypes
 
 /// Protocol defining core XPC service functionality without Foundation dependencies.
 /// This protocol uses SecureBytes for binary data to avoid custom type definitions

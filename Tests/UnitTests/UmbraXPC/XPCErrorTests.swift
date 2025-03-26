@@ -1,5 +1,5 @@
-@testable import XPCProtocolsCore
 import XCTest
+@testable import XPCProtocolsCore
 
 final class XPCErrorTests: XCTestCase {
   func testXPCErrorDescription() {

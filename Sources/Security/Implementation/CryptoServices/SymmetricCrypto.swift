@@ -13,6 +13,8 @@
  * The authenticated encryption mode simulates GCM behaviour but is not a proper implementation.
  */
 
+import CoreDTOs
+import ErrorHandlingDomains
 import Foundation
 import SecurityProtocolsCore
 import UmbraCoreTypes
@@ -45,7 +47,7 @@ public struct SymmetricCrypto: Sendable {
   public func encrypt(
     data: SecureBytes,
     using key: SecureBytes
-  ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
+  ) async -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
     do {
       // Generate a random IV
       let iv=CryptoWrapper.generateRandomIVSecure()
@@ -75,7 +77,7 @@ public struct SymmetricCrypto: Sendable {
   public func decrypt(
     data: SecureBytes,
     using key: SecureBytes
-  ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
+  ) async -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
     do {
       // Ensure data is long enough to contain the IV
       guard data.count > 12 else {
@@ -107,8 +109,8 @@ public struct SymmetricCrypto: Sendable {
   public func encryptSymmetric(
     data: SecureBytes,
     key: SecureBytes,
-    config: SecurityConfigDTO
-  ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
+    config: CoreDTOs.SecurityConfigDTO
+  ) async -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
     do {
       // Use IV from config or generate a random one
       let iv=config.initializationVector ?? CryptoWrapper.generateRandomIVSecure()
@@ -138,8 +140,8 @@ public struct SymmetricCrypto: Sendable {
   public func decryptSymmetric(
     data: SecureBytes,
     key: SecureBytes,
-    config: SecurityConfigDTO
-  ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
+    config: CoreDTOs.SecurityConfigDTO
+  ) async -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
     do {
       let iv: SecureBytes
       let dataToDecrypt: SecureBytes

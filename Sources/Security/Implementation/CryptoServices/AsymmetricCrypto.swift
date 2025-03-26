@@ -12,6 +12,8 @@
    RSA or ECC implementation before use in production environments.
  */
 
+import CoreDTOs
+import ErrorHandlingDomains
 import Foundation
 import SecurityProtocolsCore
 import UmbraCoreTypes

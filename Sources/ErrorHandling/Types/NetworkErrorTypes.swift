@@ -125,13 +125,13 @@ extension NetworkError: CustomStringConvertible {
       case let .serviceUnavailable(service, reason):
         "Service \(service) unavailable: \(reason)"
       case let .rateLimitExceeded(service, retryAfterSeconds):
-        if let retryAfter = retryAfterSeconds {
+        if let retryAfter=retryAfterSeconds {
           "Rate limit exceeded for \(service). Retry after \(retryAfter) seconds."
         } else {
           "Rate limit exceeded for \(service)."
         }
       case let .serviceMaintenance(service, estimatedCompletionTime):
-        if let completionTime = estimatedCompletionTime {
+        if let completionTime=estimatedCompletionTime {
           "Service \(service) in maintenance. Estimated completion: \(completionTime)"
         } else {
           "Service \(service) in maintenance."

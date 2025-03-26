@@ -1,22 +1,22 @@
 import Foundation
-import UmbraErrorsCore
 import Interfaces
+import UmbraErrorsCore
 
 /// Recovery options provider extension type
 /// This complements the RecoveryOptionsProvider protocol from ErrorHandlingProtocol.swift
-public extension RecoveryOptionsProvider {
+extension RecoveryOptionsProvider {
   /// Default implementation for getting recovery options for an error
   /// - Parameter error: The error to get recovery options for
   /// - Returns: Array of recovery options
-  func getRecoveryOptions(for error: Error) -> [any RecoveryOption] {
+  public func getRecoveryOptions(for _: Error) -> [any RecoveryOption] {
     // By default, return an empty array
     []
   }
-  
+
   /// Check if this provider can handle errors from a specific domain
   /// - Parameter domain: The domain to check
   /// - Returns: True if this provider can handle errors from the domain
-  func canHandle(domain: String) -> Bool {
+  public func canHandle(domain _: String) -> Bool {
     false
   }
 }
@@ -42,19 +42,19 @@ public struct StandardRecoveryOption: RecoveryOption {
   ///   - isDisruptive: Whether this option is disruptive (defaults to false)
   ///   - action: Action to take when selected
   public init(
-    id: UUID = UUID(),
+    id: UUID=UUID(),
     title: String,
-    description: String? = nil,
-    isDisruptive: Bool = false,
+    description: String?=nil,
+    isDisruptive: Bool=false,
     action: @escaping () async -> Void
   ) {
-    self.id = id
-    self.title = title
-    self.description = description
-    self.isDisruptive = isDisruptive
-    self.actionHandler = action
+    self.id=id
+    self.title=title
+    self.description=description
+    self.isDisruptive=isDisruptive
+    actionHandler=action
   }
-  
+
   /// Perform the recovery action
   public func perform() async {
     await actionHandler()

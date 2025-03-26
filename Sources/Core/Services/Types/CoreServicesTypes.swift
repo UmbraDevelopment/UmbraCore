@@ -25,107 +25,26 @@ public enum CoreServices {
 }
 
 // Add extensions for Codable, CustomStringConvertible, etc.
-extension CoreServices.LegacyServiceState: CustomStringConvertible {
+extension ServiceState: CustomStringConvertible {
   public var description: String {
     switch self {
-      case .healthy:
+      case .ready, .running:
         "Healthy"
-      case let .degraded(reason):
-        "Degraded: \(reason)"
-      case let .unavailable(reason):
-        "Unavailable: \(reason)"
-      case .starting:
+      case .error:
+        "Unavailable: Error"
+      case .initializing:
         "Starting"
       case .shuttingDown:
         "Shutting Down"
-      case .maintenance:
+      case .suspended:
         "Maintenance"
+      case .uninitialized:
+        "Uninitialized"
+      case .shutdown:
+        "Shut Down"
     }
   }
 }
-
-extension CoreServices.LegacyServiceState: Codable {
-  private enum CodingKeys: String, CodingKey {
-    case type
-    case reason
-  }
-
-  public init(from decoder: Decoder) throws {
-    let container=try decoder.container(keyedBy: CodingKeys.self)
-    let type=try container.decode(String.self, forKey: .type)
-
-    switch type {
-      case "healthy":
-        self = .healthy
-      case "degraded":
-        let reason=try container.decode(String.self, forKey: .reason)
-        self = .degraded(reason: reason)
-      case "unavailable":
-        let reason=try container.decode(String.self, forKey: .reason)
-        self = .unavailable(reason: reason)
-      case "starting":
-        self = .starting
-      case "shuttingDown":
-        self = .shuttingDown
-      case "maintenance":
-        self = .maintenance
-      default:
-        throw DecodingError.dataCorrupted(
-          DecodingError.Context(
-            codingPath: container.codingPath,
-            debugDescription: "Unknown service state type: \(type)"
-          )
-        )
-    }
-  }
-
-  public func encode(to encoder: Encoder) throws {
-    var container=encoder.container(keyedBy: CodingKeys.self)
-
-    switch self {
-      case .healthy:
-        try container.encode("healthy", forKey: .type)
-      case let .degraded(reason):
-        try container.encode("degraded", forKey: .type)
-        try container.encode(reason, forKey: .reason)
-      case let .unavailable(reason):
-        try container.encode("unavailable", forKey: .type)
-        try container.encode(reason, forKey: .reason)
-      case .starting:
-        try container.encode("starting", forKey: .type)
-      case .shuttingDown:
-        try container.encode("shuttingDown", forKey: .type)
-      case .maintenance:
-        try container.encode("maintenance", forKey: .type)
-    }
-  }
-}
-
-/// Conversion helpers for legacy service state
-@available(*, deprecated, message: "Use ServiceState directly instead")
-extension CoreServices.LegacyServiceState {
-  /// Convert to external service state
-  public func toStandardServiceState() -> ServiceState {
-    switch self {
-      case .healthy:
-        .ready
-      case .degraded:
-        .running
-      case .unavailable:
-        .error
-      case .starting:
-        .initializing
-      case .shuttingDown:
-        .shuttingDown
-      case .maintenance:
-        .suspended
-    }
-  }
-}
-
-// For backwards compatibility, provide a direct typealias
-@available(*, deprecated, message: "Use ServiceState directly")
-public typealias CoreServicesTypesServiceState=CoreServices.LegacyServiceState
 
 /**
  * MIGRATION GUIDE:
@@ -154,3 +73,29 @@ public typealias CoreServicesTypesServiceState=CoreServices.LegacyServiceState
 /// New code should directly import CoreServicesTypes and use those types.
 @available(*, deprecated, message: "Import CoreServicesTypes module directly instead")
 public enum CoreServicesTypes {}
+
+// For backwards compatibility, provide a direct typealias
+@available(*, deprecated, message: "Use ServiceState directly")
+public typealias CoreServicesTypesServiceState=CoreServices.LegacyServiceState
+
+/// Conversion helpers for legacy service state
+@available(*, deprecated, message: "Use ServiceState directly instead")
+extension CoreServices.LegacyServiceState {
+  /// Convert to external service state
+  public func toStandardServiceState() -> ServiceState {
+    switch self {
+      case .healthy:
+        .ready
+      case .degraded:
+        .running
+      case .unavailable:
+        .error
+      case .starting:
+        .initializing
+      case .shuttingDown:
+        .shuttingDown
+      case .maintenance:
+        .suspended
+    }
+  }
+}

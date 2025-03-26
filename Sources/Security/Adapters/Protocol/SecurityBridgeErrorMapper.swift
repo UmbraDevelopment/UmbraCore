@@ -1,11 +1,11 @@
 // Updated imports to use the correct modules for Security protocols
+import Errors // Import Errors module for error types
 import Foundation
 import UmbraCoreTypes
-import Errors // Import Errors module for error types
 
 /// Maps between platform-specific error types and cross-protocol boundary errors
 /// This handles conversion of errors when crossing process boundaries
-public struct SecurityBridgeErrorMapper {
+public enum SecurityBridgeErrorMapper {
   // MARK: - Error Mapping
 
   /// Maps a platform error to a protocol-friendly error type
@@ -13,7 +13,7 @@ public struct SecurityBridgeErrorMapper {
   /// - Returns: A protocol-friendly error type
   public static func mapToBridgeError(_ error: Error) -> SecurityProtocolError {
     // If already a SecurityProtocolError, pass through unchanged
-    if let securityError = error as? SecurityProtocolError {
+    if let securityError=error as? SecurityProtocolError {
       return securityError
     }
 
@@ -27,6 +27,6 @@ public struct SecurityBridgeErrorMapper {
   public static func mapFromBridgeError(_ bridgeError: SecurityProtocolError) -> Error {
     // Just return the bridge error directly, since we're using SecurityProtocolError
     // throughout the codebase now
-    return bridgeError
+    bridgeError
   }
 }

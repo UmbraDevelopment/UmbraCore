@@ -38,31 +38,19 @@ extension KeyManagementTypes.KeyStatus {
     case deletionDate
   }
 
-  // Define our own StatusType for encoding/decoding
-  @available(
-    *,
-    deprecated,
-    message: "The internal implementation of StatusType will be unified with KeyManagementTypes in a future version"
-  )
-  public enum StatusType: String, Codable {
-    case active
-    case compromised
-    case retired
-    case pendingDeletion
-  }
-
+  // Use the canonical type for encoding/decoding
   public func encode(to encoder: Encoder) throws {
     var container=encoder.container(keyedBy: CodingKeys.self)
 
     switch self {
       case .active:
-        try container.encode(KeyManagementTypes.KeyStatus.StatusType.active, forKey: .type)
+        try container.encode("active", forKey: .type)
       case .compromised:
-        try container.encode(KeyManagementTypes.KeyStatus.StatusType.compromised, forKey: .type)
+        try container.encode("compromised", forKey: .type)
       case .retired:
-        try container.encode(KeyManagementTypes.KeyStatus.StatusType.retired, forKey: .type)
+        try container.encode("retired", forKey: .type)
       case let .pendingDeletion(date):
-        try container.encode(KeyManagementTypes.KeyStatus.StatusType.pendingDeletion, forKey: .type)
+        try container.encode("pendingDeletion", forKey: .type)
         try container.encode(date, forKey: .deletionDate)
     }
   }
@@ -71,18 +59,25 @@ extension KeyManagementTypes.KeyStatus {
   @available(*, deprecated, message: "Will need to be refactored for Swift 6")
   public init(from decoder: Decoder) throws {
     let container=try decoder.container(keyedBy: CodingKeys.self)
-    let type=try container.decode(KeyManagementTypes.KeyStatus.StatusType.self, forKey: .type)
+    let type=try container.decode(String.self, forKey: .type)
 
     switch type {
-      case .active:
+      case "active":
         self = .active
-      case .compromised:
+      case "compromised":
         self = .compromised
-      case .retired:
+      case "retired":
         self = .retired
-      case .pendingDeletion:
+      case "pendingDeletion":
         let date=try container.decode(Date.self, forKey: .deletionDate)
         self = .pendingDeletion(date)
+      default:
+        throw DecodingError.dataCorrupted(
+          DecodingError.Context(
+            codingPath: container.codingPath,
+            debugDescription: "Unknown key status type: \(type)"
+          )
+        )
     }
   }
 }

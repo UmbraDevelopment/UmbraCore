@@ -16,6 +16,8 @@ import SecurityProtocolsCore
 import UmbraCoreTypes
 import UmbraErrors
 import UmbraErrorsCore
+import ErrorHandlingDomains
+import CoreDTOs
 
 /// Provides cryptographic hashing operations to the CryptoServiceCore.
 ///
@@ -36,9 +38,9 @@ public struct HashingService: Sendable {
   /// - Returns: The resulting hash as `SecureBytes` or an error.
   public func hash(
     data: SecureBytes
-  ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
+  ) async -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
     // Use SHA-256 through CryptoWrapper
-    let hashedData=CryptoWrapper.sha256(data)
+    let hashedData = CryptoWrapper.sha256(data)
     return .success(hashedData)
   }
 
@@ -50,10 +52,10 @@ public struct HashingService: Sendable {
   public func verify(
     data: SecureBytes,
     against hash: SecureBytes
-  ) async -> Result<Bool, UmbraErrors.Security.Protocols> {
+  ) async -> Result<Bool, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
     // Calculate hash of the provided data
-    let calculatedHash=CryptoWrapper.sha256(data)
-
+    let calculatedHash = CryptoWrapper.sha256(data)
+    
     // Implement constant-time comparison to prevent timing attacks
     var result: UInt8=0
 
@@ -76,8 +78,8 @@ public struct HashingService: Sendable {
   /// - Returns: Result containing hash or error.
   public func hash(
     data: SecureBytes,
-    config _: SecurityConfigDTO
-  ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
+    config: CoreDTOs.SecurityConfigDTO
+  ) async -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
     // Currently we only support SHA-256, but this function allows for future algorithm selection
     // via the config parameter
 
@@ -98,7 +100,7 @@ public struct HashingService: Sendable {
   public func generateMAC(
     for data: SecureBytes,
     using key: SecureBytes
-  ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
+  ) async -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
     // Input validation
     guard !data.isEmpty, !key.isEmpty else {
       return .failure(.invalidInput(reason: "Input data or key is empty"))
@@ -119,7 +121,7 @@ public struct HashingService: Sendable {
     _ mac: SecureBytes,
     for data: SecureBytes,
     using key: SecureBytes
-  ) async -> Result<Bool, UmbraErrors.Security.Protocols> {
+  ) async -> Result<Bool, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
     // Calculate a MAC for the data with the provided key
     let calculatedMAC=CryptoWrapper.hmacSHA256(data: data, key: key)
 

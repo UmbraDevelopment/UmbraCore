@@ -12,6 +12,8 @@
  * Care should be taken to properly dispose of keys when they are no longer needed.
  */
 
+import CoreDTOs
+import ErrorHandlingDomains
 import UmbraErrors
 import UmbraErrorsCore
 
@@ -35,7 +37,8 @@ public struct KeyManagementService: Sendable {
 
   /// Generates a cryptographic key suitable for encryption/decryption operations.
   /// - Returns: A new cryptographic key as `SecureBytes` or an error.
-  public func generateKey() async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
+  public func generateKey() async
+  -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
     // Generate a random 256-bit (32-byte) key
     let key=CryptoWrapper.generateRandomKeySecure()
     return .success(key)
@@ -46,7 +49,7 @@ public struct KeyManagementService: Sendable {
   /// - Returns: Result containing random data or error.
   public func generateRandomData(
     length: Int
-  ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
+  ) async -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
     // Input validation
     guard length > 0 else {
       return .failure(.invalidInput(reason: "Random data length must be greater than zero"))
@@ -81,7 +84,7 @@ public struct KeyManagementService: Sendable {
     salt: SecureBytes,
     iterations: Int=10000,
     keyLength: Int=32
-  ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
+  ) async -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
     // Input validation
     guard !password.isEmpty, !salt.isEmpty else {
       return .failure(.invalidInput(reason: "Password or salt is empty"))

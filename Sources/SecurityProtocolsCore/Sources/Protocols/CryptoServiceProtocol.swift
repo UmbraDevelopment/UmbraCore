@@ -1,5 +1,5 @@
-import UmbraCoreTypes
 import Errors
+import UmbraCoreTypes
 
 /// Protocol defining cryptographic operations in a FoundationIndependent manner.
 /// This protocol uses only primitive types and FoundationIndependent custom types.
@@ -59,7 +59,7 @@ public protocol CryptoServiceProtocol: Sendable {
     algorithm: String,
     nonce: SecureBytes?
   ) async -> Result<SecureBytes, Errors.SecurityProtocolError>
-  
+
   /// Decrypt data using a symmetric key
   /// - Parameters:
   ///   - data: Data to decrypt
@@ -73,9 +73,9 @@ public protocol CryptoServiceProtocol: Sendable {
     algorithm: String,
     nonce: SecureBytes?
   ) async -> Result<SecureBytes, Errors.SecurityProtocolError>
-  
+
   // MARK: - Asymmetric Encryption
-  
+
   /// Encrypt data using an asymmetric public key
   /// - Parameters:
   ///   - data: Data to encrypt
@@ -87,7 +87,7 @@ public protocol CryptoServiceProtocol: Sendable {
     publicKey: SecureBytes,
     algorithm: String
   ) async -> Result<SecureBytes, Errors.SecurityProtocolError>
-  
+
   /// Decrypt data using an asymmetric private key
   /// - Parameters:
   ///   - data: Data to decrypt
@@ -99,7 +99,7 @@ public protocol CryptoServiceProtocol: Sendable {
     privateKey: SecureBytes,
     algorithm: String
   ) async -> Result<SecureBytes, Errors.SecurityProtocolError>
-  
+
   /// Sign data using an asymmetric private key
   /// - Parameters:
   ///   - data: Data to sign
@@ -111,7 +111,7 @@ public protocol CryptoServiceProtocol: Sendable {
     privateKey: SecureBytes,
     algorithm: String
   ) async -> Result<SecureBytes, Errors.SecurityProtocolError>
-  
+
   /// Generate random data of specified length
   /// - Parameter length: Number of random bytes to generate
   /// - Returns: Random bytes or error

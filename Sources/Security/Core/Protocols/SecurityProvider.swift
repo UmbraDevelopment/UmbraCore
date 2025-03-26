@@ -1,6 +1,6 @@
+import Errors
 import Foundation
 import UmbraCoreTypes
-import Errors
 
 /// Protocol for providing security-related operations
 /// Defines operations for security-scoped bookmarks and resource access management

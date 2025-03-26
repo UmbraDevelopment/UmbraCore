@@ -12,6 +12,7 @@
  * Handle error normalisation
  */
 
+import ErrorHandlingDomains
 import Foundation
 import SecurityProtocolsCore
 import UmbraCoreTypes

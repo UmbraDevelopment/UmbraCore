@@ -85,7 +85,7 @@ extension XPCServiceProtocolDTO {
   }
 
   /// Default implementation for random bytes
-  public func getRandomBytesWithDTO(length: Int) async -> OperationResultDTO<SecureBytes> {
+  public func getRandomBytesWithDTO(length _: Int) async -> OperationResultDTO<SecureBytes> {
     // Default implementation just returns a failure
     .failure(
       UmbraErrors.SecurityError(
@@ -97,7 +97,7 @@ extension XPCServiceProtocolDTO {
 
   /// Get status with current timestamp and protocol version
   public func getStatusWithDTO() async -> OperationResultDTO<XPCProtocolDTOs.ServiceStatusDTO> {
-    let status = XPCProtocolDTOs.ServiceStatusDTO(
+    let status=XPCProtocolDTOs.ServiceStatusDTO(
       code: 200,
       message: "Service is running",
       isRunning: true,

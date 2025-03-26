@@ -22,6 +22,19 @@ import SecurityProtocolsCore
 import UmbraCoreTypes
 import UmbraErrors
 import UmbraErrorsCore
+import ErrorHandlingDomains
+import CoreDTOs
+
+// Extension to add withUnsafeBytes functionality to SecureBytes
+extension SecureBytes {
+  /// Executes a closure with a buffer pointer to the underlying bytes
+  /// - Parameter body: The closure to execute
+  /// - Returns: The result of the closure
+  func withUnsafeBytes<R>(_ body: (UnsafeRawBufferPointer) throws -> R) rethrows -> R {
+    let bytes = self.toArray()
+    return try bytes.withUnsafeBytes(body)
+  }
+}
 
 /// A static utility class providing cryptographic operations for UmbraCore.
 ///
@@ -68,7 +81,7 @@ public enum CryptoWrapper {
   ///   - key: The encryption key (must be 32 bytes for AES-256)
   ///   - iv: The initialisation vector (should be 12 bytes for GCM mode)
   /// - Returns: The encrypted data
-  /// - Throws: UmbraErrors.Security.Protocols if encryption fails
+  /// - Throws: ErrorHandlingDomains.UmbraErrors.Security.Protocols if encryption fails
   public static func aesEncrypt(
     data: SecureBytes,
     key: SecureBytes,
@@ -76,13 +89,13 @@ public enum CryptoWrapper {
   ) throws -> SecureBytes {
     // Validate inputs
     guard key.count == 32 else {
-      throw UmbraErrors.Security.Protocols.invalidInput(
+      throw ErrorHandlingDomains.UmbraErrors.Security.Protocols.invalidInput(
         reason: "Key must be 32 bytes for AES-256"
       )
     }
 
     guard iv.count == 12 else {
-      throw UmbraErrors.Security.Protocols.invalidInput(
+      throw ErrorHandlingDomains.UmbraErrors.Security.Protocols.invalidInput(
         reason: "IV must be 12 bytes for GCM mode"
       )
     }
@@ -118,7 +131,7 @@ public enum CryptoWrapper {
   ///   - key: The decryption key (must be 32 bytes for AES-256)
   ///   - iv: The initialisation vector (should be 12 bytes for GCM mode)
   /// - Returns: The decrypted data
-  /// - Throws: UmbraErrors.Security.Protocols if decryption or verification fails
+  /// - Throws: ErrorHandlingDomains.UmbraErrors.Security.Protocols if decryption or verification fails
   public static func aesDecrypt(
     data: SecureBytes,
     key: SecureBytes,
@@ -126,19 +139,19 @@ public enum CryptoWrapper {
   ) throws -> SecureBytes {
     // Validate inputs
     guard key.count == 32 else {
-      throw UmbraErrors.Security.Protocols.invalidInput(
+      throw ErrorHandlingDomains.UmbraErrors.Security.Protocols.invalidInput(
         reason: "Key must be 32 bytes for AES-256"
       )
     }
 
     guard iv.count == 12 else {
-      throw UmbraErrors.Security.Protocols.invalidInput(
+      throw ErrorHandlingDomains.UmbraErrors.Security.Protocols.invalidInput(
         reason: "IV must be 12 bytes for GCM mode"
       )
     }
 
     guard data.count >= 16 else {
-      throw UmbraErrors.Security.Protocols.invalidInput(
+      throw ErrorHandlingDomains.UmbraErrors.Security.Protocols.invalidInput(
         reason: "Data too short, must include authentication tag"
       )
     }
@@ -156,7 +169,7 @@ public enum CryptoWrapper {
     let expectedTag=try expectedTagData.slice(from: 0, length: 16)
 
     guard expectedTag.secureCompare(with: providedTag) else {
-      throw UmbraErrors.Security.Protocols.invalidFormat(
+      throw ErrorHandlingDomains.UmbraErrors.Security.Protocols.invalidFormat(
         reason: "Authentication tag verification failed"
       )
     }
@@ -228,7 +241,7 @@ public enum CryptoWrapper {
   ///   - iterations: Number of iterations (minimum 1000 recommended)
   ///   - keyLength: Desired length of the derived key in bytes
   /// - Returns: The derived key as SecureBytes
-  /// - Throws: UmbraErrors.Security.Protocols if input validation fails
+  /// - Throws: ErrorHandlingDomains.UmbraErrors.Security.Protocols if input validation fails
   static func deriveKey(
     password: SecureBytes,
     salt: SecureBytes,
@@ -237,7 +250,7 @@ public enum CryptoWrapper {
   ) throws -> SecureBytes {
     // Validate inputs
     guard !password.isEmpty, !salt.isEmpty, iterations > 0, keyLength > 0 else {
-      throw UmbraErrors.Security.Protocols.invalidInput(
+      throw ErrorHandlingDomains.UmbraErrors.Security.Protocols.invalidInput(
         reason: "Invalid input for key derivation"
       )
     }
@@ -273,7 +286,7 @@ public enum CryptoWrapper {
     if status == kCCSuccess {
       return SecureBytes(bytes: derivedKeyBytes)
     } else {
-      throw UmbraErrors.Security.Protocols.internalError(
+      throw ErrorHandlingDomains.UmbraErrors.Security.Protocols.internalError(
         "Key derivation failed with code: \(status)"
       )
     }
@@ -288,7 +301,7 @@ public enum CryptoWrapper {
   ///   - length: Length of the data
   ///   - key: Key for HMAC generation
   ///   - keyLength: Length of the key
-  ///   - digestLength: Length of the digest to produce
+  ///   - digestLength _: Length of the digest to produce
   ///   - macOut: Buffer to store the HMAC result
   ///   - result: Array holding the HMAC result
   private static func authenticate(
@@ -325,7 +338,7 @@ public enum CryptoWrapper {
   ///   - key: The key to use
   ///   - keyLength: Length of the key
   ///   - iv: Initialization vector
-  ///   - ivLength: Length of the IV
+  ///   - ivLength _: Length of the IV
   ///   - outBuffer: Buffer for the output
   ///   - outBufferSize: Size of the output buffer
   ///   - outMoved: Number of bytes written to the output buffer

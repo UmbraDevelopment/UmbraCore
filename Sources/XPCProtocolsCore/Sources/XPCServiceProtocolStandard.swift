@@ -5,7 +5,7 @@ import UmbraErrorsCore
 
 /**
  # Standard XPC Service Protocol
- 
+
  Defines the standard XPC service protocol for cryptographic and security operations.
  This protocol extends the basic protocol with more comprehensive operations
  and error handling capabilities.

@@ -1,15 +1,16 @@
 /**
  # UmbraCore CryptoServiceProtocol Extensions
- 
+
  This file provides extensions to the CryptoServiceProtocol to standardise common operations
  and simplify implementation of the protocol.
  */
 
-import UmbraCoreTypes
-import UmbraErrors
 import CoreDTOs
+import ErrorHandlingDomains
 import SecurityProtocolsCore
 import Types
+import UmbraCoreTypes
+import UmbraErrors
 
 // MARK: - DTO Extensions for CryptoServiceProtocol
 
@@ -17,7 +18,7 @@ import Types
 /// to provide a consistent interface with SecurityProvider
 extension CryptoServiceProtocol {
   // MARK: - Encryption and Decryption
-  
+
   /// Encrypt data using symmetric encryption (SecurityResultDTO version)
   /// - Parameters:
   ///   - data: Data to encrypt
@@ -27,22 +28,22 @@ extension CryptoServiceProtocol {
   public func encryptWithConfigurationDto(
     data: SecureBytes,
     key: SecureBytes,
-    config: SecurityConfigDTO
+    config _: SecurityConfigDTO
   ) async -> SecurityResultDTO {
     // Use the simplified encrypt method instead of the removed encryptWithConfiguration
-    let result = await encrypt(
+    let result=await encrypt(
       data: data,
       using: key
     )
-    
+
     switch result {
-    case .success(let encryptedData):
-      return SecurityResultDTO(status: .success, data: encryptedData)
-    case .failure(let error):
-      return SecurityResultDTO(status: .failure, error: error)
+      case let .success(encryptedData):
+        return SecurityResultDTO(status: .success, data: encryptedData)
+      case let .failure(error):
+        return SecurityResultDTO(status: .failure, error: error)
     }
   }
-  
+
   /// Decrypt data using symmetric encryption (SecurityResultDTO version)
   /// - Parameters:
   ///   - data: Data to decrypt
@@ -52,24 +53,24 @@ extension CryptoServiceProtocol {
   public func decryptWithConfigurationDto(
     data: SecureBytes,
     key: SecureBytes,
-    config: SecurityConfigDTO
+    config _: SecurityConfigDTO
   ) async -> SecurityResultDTO {
     // Use the simplified decrypt method instead of the removed decryptWithConfiguration
-    let result = await decrypt(
+    let result=await decrypt(
       data: data,
       using: key
     )
-    
+
     switch result {
-    case .success(let decryptedData):
-      return SecurityResultDTO(status: .success, data: decryptedData)
-    case .failure(let error):
-      return SecurityResultDTO(status: .failure, error: error)
+      case let .success(decryptedData):
+        return SecurityResultDTO(status: .success, data: decryptedData)
+      case let .failure(error):
+        return SecurityResultDTO(status: .failure, error: error)
     }
   }
-  
+
   // MARK: - Hashing
-  
+
   /// Generate a hash of data (SecurityResultDTO version)
   /// - Parameters:
   ///   - data: Data to hash
@@ -77,18 +78,18 @@ extension CryptoServiceProtocol {
   /// - Returns: Result as SecurityResultDTO
   public func hashDto(
     data: SecureBytes,
-    config: SecurityConfigDTO
+    config _: SecurityConfigDTO
   ) async -> SecurityResultDTO {
-    let result = await hash(data: data)
-    
+    let result=await hash(data: data)
+
     switch result {
-    case .success(let hashData):
-      return SecurityResultDTO(status: .success, data: hashData)
-    case .failure(let error):
-      return SecurityResultDTO(status: .failure, error: error)
+      case let .success(hashData):
+        return SecurityResultDTO(status: .success, data: hashData)
+      case let .failure(error):
+        return SecurityResultDTO(status: .failure, error: error)
     }
   }
-  
+
   /// Verify a hash against expected value (SecurityResultDTO version)
   /// - Parameters:
   ///   - data: Data to verify
@@ -98,20 +99,20 @@ extension CryptoServiceProtocol {
   public func verifyHashDto(
     data: SecureBytes,
     expectedHash: SecureBytes,
-    config: SecurityConfigDTO
+    config _: SecurityConfigDTO
   ) async -> SecurityResultDTO {
-    let result = await verifyHash(data: data, expectedHash: expectedHash)
-    
+    let result=await verifyHash(data: data, expectedHash: expectedHash)
+
     switch result {
-    case .success:
-      return SecurityResultDTO(status: .success, data: SecureBytes(bytes: []))
-    case .failure(let error):
-      return SecurityResultDTO(status: .failure, error: error)
+      case .success:
+        return SecurityResultDTO(status: .success, data: SecureBytes(bytes: []))
+      case let .failure(error):
+        return SecurityResultDTO(status: .failure, error: error)
     }
   }
-  
+
   // MARK: - Deprecated Compatibility Methods
-  
+
   /// Encrypt data using symmetric encryption (Legacy DTO method)
   /// - Parameters:
   ///   - data: Data to encrypt
@@ -126,7 +127,7 @@ extension CryptoServiceProtocol {
   ) async -> SecurityResultDTO {
     await encryptWithConfigurationDto(data: data, key: key, config: config)
   }
-  
+
   /// Decrypt data using symmetric encryption (Legacy DTO method)
   /// - Parameters:
   ///   - data: Data to decrypt
@@ -141,7 +142,7 @@ extension CryptoServiceProtocol {
   ) async -> SecurityResultDTO {
     await decryptWithConfigurationDto(data: data, key: key, config: config)
   }
-  
+
   /// Generate a hash of data (Legacy DTO method)
   /// - Parameters:
   ///   - data: Data to hash
@@ -154,7 +155,7 @@ extension CryptoServiceProtocol {
   ) async -> SecurityResultDTO {
     await hashDto(data: data, config: config)
   }
-  
+
   /// Verify a hash against expected value (Legacy DTO method)
   /// - Parameters:
   ///   - data: Data to verify

@@ -1,6 +1,3 @@
-// Removing Foundation dependency as it's not required for this enum
-// import Foundation
-
 /// Represents the severity level of a log message.
 ///
 /// The log level determines how a message should be handled and displayed.

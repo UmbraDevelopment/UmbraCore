@@ -37,7 +37,7 @@ public struct ExternalError: Error, Equatable {
 /// - Returns: The equivalent SecurityError
 public func mapExternalToCoreError(_ error: Error) -> SecurityError {
   // If already the correct type, return as is
-  if let securityError = error as? SecurityError {
+  if let securityError=error as? SecurityError {
     return securityError
   }
 
@@ -91,12 +91,12 @@ public func mapToSecurityResult<T>(_ result: Result<T, Error>)
 /// - Parameter error: The external error to map
 /// - Returns: A SecurityError
 public func externalErrorToCoreError(_ error: Error) -> SecurityError {
-  if let securityError = error as? SecurityError {
+  if let securityError=error as? SecurityError {
     return securityError
   }
 
   // Map based on error type
-  if let externalError = error as? ExternalError {
+  if let externalError=error as? ExternalError {
     return SecurityError.internalError(reason: externalError.reason)
   }
 

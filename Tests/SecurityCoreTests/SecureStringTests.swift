@@ -11,13 +11,13 @@ final class SecureStringTests: XCTestCase {
 
   override func setUp() {
     super.setUp()
-    emptyString = SecureString()
-    sampleString = SecureString("Hello, world!")
+    emptyString=SecureString()
+    sampleString=SecureString("Hello, world!")
   }
 
   override func tearDown() {
-    emptyString = nil
-    sampleString = nil
+    emptyString=nil
+    sampleString=nil
     super.tearDown()
   }
 
@@ -35,14 +35,14 @@ final class SecureStringTests: XCTestCase {
   }
 
   func testNilInitialization() {
-    let nilString: String? = nil
-    let secureString = SecureString(nilString)
+    let nilString: String?=nil
+    let secureString=SecureString(nilString)
     XCTAssertEqual(secureString.count, 0)
     XCTAssertTrue(secureString.isEmpty)
   }
 
   func testStringLiteralInitialization() {
-    let literalString: SecureString = "Test string"
+    let literalString: SecureString="Test string"
     XCTAssertEqual(literalString.count, 11)
     XCTAssertFalse(literalString.isEmpty)
   }
@@ -67,27 +67,27 @@ final class SecureStringTests: XCTestCase {
   // MARK: - Secure Comparison Tests
 
   func testConstantTimeEquality() {
-    let string1 = SecureString("Secret value")
-    let string2 = SecureString("Secret value")
-    let string3 = SecureString("Different value")
+    let string1=SecureString("Secret value")
+    let string2=SecureString("Secret value")
+    let string3=SecureString("Different value")
 
     XCTAssertTrue(string1.secureCompare(string2))
     XCTAssertFalse(string1.secureCompare(string3))
   }
 
   func testEqualityOperator() {
-    let string1 = SecureString("Secret value")
-    let string2 = SecureString("Secret value")
-    let string3 = SecureString("Different value")
+    let string1=SecureString("Secret value")
+    let string2=SecureString("Secret value")
+    let string3=SecureString("Different value")
 
     XCTAssertTrue(string1 == string2)
     XCTAssertFalse(string1 == string3)
   }
 
   func testInequalityOperator() {
-    let string1 = SecureString("Secret value")
-    let string2 = SecureString("Secret value")
-    let string3 = SecureString("Different value")
+    let string1=SecureString("Secret value")
+    let string2=SecureString("Secret value")
+    let string3=SecureString("Different value")
 
     XCTAssertFalse(string1 != string2)
     XCTAssertTrue(string1 != string3)
@@ -105,49 +105,49 @@ final class SecureStringTests: XCTestCase {
     XCTAssertEqual(sampleString.debugDescription, "SecureString(13 chars: Hello, world!)")
 
     // Test masking of secure data
-    let password = SecureString("SuperSecretPassword123!")
+    let password=SecureString("SuperSecretPassword123!")
     XCTAssertEqual(password.debugDescription, "SecureString(23 chars: ********************)")
   }
 
   // MARK: - Appending Tests
 
   func testAppending() {
-    let first = SecureString("Hello, ")
-    let second = SecureString("world!")
-    let combined = first.appending(second)
+    let first=SecureString("Hello, ")
+    let second=SecureString("world!")
+    let combined=first.appending(second)
 
     XCTAssertEqual(combined.stringValue, "Hello, world!")
   }
 
   func testAppendingStringProtocol() {
-    let secure = SecureString("Hello, ")
-    let regular = "world!"
-    let combined = secure.appending(regular)
+    let secure=SecureString("Hello, ")
+    let regular="world!"
+    let combined=secure.appending(regular)
 
     XCTAssertEqual(combined.stringValue, "Hello, world!")
   }
 
   func testAppendingOperator() {
-    let first = SecureString("Hello, ")
-    let second = SecureString("world!")
-    let combined = first + second
+    let first=SecureString("Hello, ")
+    let second=SecureString("world!")
+    let combined=first + second
 
     XCTAssertEqual(combined.stringValue, "Hello, world!")
   }
 
   func testAppendingStringProtocolOperator() {
-    let secure = SecureString("Hello, ")
-    let regular = "world!"
-    let combined = secure + regular
+    let secure=SecureString("Hello, ")
+    let regular="world!"
+    let combined=secure + regular
 
     XCTAssertEqual(combined.stringValue, "Hello, world!")
   }
 
   func testMaskContentIfNeeded() {
-    let password = SecureString("Password123")
+    let password=SecureString("Password123")
     XCTAssertEqual(password.maskContentIfNeeded, "**********")
 
-    let regularText = SecureString("Hello")
+    let regularText=SecureString("Hello")
     XCTAssertEqual(regularText.maskContentIfNeeded, "Hello")
   }
 }

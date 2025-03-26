@@ -1,7 +1,7 @@
-import UmbraCoreTypes
-import UmbraErrorsCore
-import UmbraErrors
 import Errors
+import UmbraCoreTypes
+import UmbraErrors
+import UmbraErrorsCore
 
 /// Protocol defining core XPC service functionality without Foundation dependencies.
 /// This protocol uses SecureBytes for binary data to avoid custom type definitions
@@ -56,19 +56,19 @@ extension XPCServiceProtocolCore {
   }
 
   /// Default key synchronisation implementation that does nothing
-  public func synchronizeKeys(_ syncData: SecureBytes) async
+  public func synchronizeKeys(_: SecureBytes) async
   -> Result<Void, Errors.SecurityProtocolError> {
     .success(())
   }
 
   /// Default encryption implementation
-  public func encrypt(data: SecureBytes) async
+  public func encrypt(data _: SecureBytes) async
   -> Result<SecureBytes, Errors.SecurityProtocolError> {
     .failure(.unsupportedOperation(name: "encrypt"))
   }
 
   /// Default decryption implementation
-  public func decrypt(data: SecureBytes) async
+  public func decrypt(data _: SecureBytes) async
   -> Result<SecureBytes, Errors.SecurityProtocolError> {
     .failure(.unsupportedOperation(name: "decrypt"))
   }
@@ -79,7 +79,7 @@ extension XPCServiceProtocolCore {
   }
 
   /// Default hashing implementation
-  public func hash(data: SecureBytes) async
+  public func hash(data _: SecureBytes) async
   -> Result<SecureBytes, Errors.SecurityProtocolError> {
     .failure(.unsupportedOperation(name: "hash"))
   }

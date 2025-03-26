@@ -2,13 +2,13 @@ import CoreServicesTypes
 import Foundation
 import FoundationBridgeTypes
 import SecurityInterfaces
-import SecurityUtils
+import SecurityInterfacesBase
 import SecurityInterfacesProtocols
 import SecurityTypes
+import SecurityUtils
 import UmbraCoreTypes
 import UmbraLogging
 import XPCProtocolsCore
-import SecurityInterfacesBase
 
 /// Factory for creating security services with different configurations
 /// This demonstrates how to use the various components we've created to break circular dependencies

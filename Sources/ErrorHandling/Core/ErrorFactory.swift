@@ -16,7 +16,7 @@ public enum ErrorFactory {
     line: Int=#line,
     function: String=#function
   ) -> E {
-    let source = ErrorSource(file: file, line: line, function: function)
+    let source=ErrorSource(file: file, line: line, function: function)
     return error.with(source: source)
   }
 
@@ -35,8 +35,8 @@ public enum ErrorFactory {
     line: Int=#line,
     function: String=#function
   ) -> E {
-    let source = ErrorSource(file: file, line: line, function: function)
-    let withSource = error.with(source: source)
+    let source=ErrorSource(file: file, line: line, function: function)
+    let withSource=error.with(source: source)
     return withSource.with(underlyingError: underlyingError)
   }
 
@@ -55,8 +55,8 @@ public enum ErrorFactory {
     line: Int=#line,
     function: String=#function
   ) -> E {
-    let source = ErrorSource(file: file, line: line, function: function)
-    let withSource = error.with(source: source)
+    let source=ErrorSource(file: file, line: line, function: function)
+    let withSource=error.with(source: source)
     return withSource.with(context: context)
   }
 
@@ -77,7 +77,7 @@ public enum ErrorFactory {
     line: Int=#line,
     function: String=#function
   ) -> GenericUmbraError {
-    let source = ErrorSource(file: file, line: line, function: function)
+    let source=ErrorSource(file: file, line: line, function: function)
     return GenericUmbraError(
       domain: domain,
       code: code,

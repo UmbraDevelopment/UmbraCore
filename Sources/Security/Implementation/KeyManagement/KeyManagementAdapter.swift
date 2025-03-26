@@ -1,43 +1,43 @@
 /**
  # UmbraCore KeyManagementAdapter
- 
+
  This file provides a Data Transfer Object (DTO) based adapter for key management operations in UmbraCore.
  It implements the KeyManagementProtocol using a simplified approach to break circular dependencies.
  */
 
 import Foundation
-import UmbraCoreTypes
-import UmbraErrors
 import Protocols
 import Types
+import UmbraCoreTypes
+import UmbraErrors
 
 /// Adapter implementation of KeyManagementProtocol that uses a simplified approach
 /// to avoid circular dependencies between modules.
 public final class KeyManagementAdapter: KeyManagementProtocol {
   // MARK: - Properties
-  
+
   /// Placeholder storage for keys (in a real implementation, this would use secure storage)
-  private var keyStore: [String: SecureBytes] = [:]
-  
+  private var keyStore: [String: SecureBytes]=[:]
+
   // MARK: - Initialisation
-  
+
   /// Initialises a new key management adapter
   public init() {
     // In a real implementation, this would connect to secure storage
   }
-  
+
   // MARK: - KeyManagementProtocol Implementation
-  
+
   /// Retrieves a security key by its identifier.
   /// - Parameter identifier: A string identifying the key.
   /// - Returns: The security key as `SecureBytes` or an error.
   public func retrieveKey(
     withIdentifier identifier: String
   ) async -> Result<SecureBytes, SecurityProtocolError> {
-    if let key = keyStore[identifier] {
-      return .success(key)
+    if let key=keyStore[identifier] {
+      .success(key)
     } else {
-      return .failure(.keyNotFound)
+      .failure(.keyNotFound)
     }
   }
 
@@ -50,7 +50,7 @@ public final class KeyManagementAdapter: KeyManagementProtocol {
     _ key: SecureBytes,
     withIdentifier identifier: String
   ) async -> Result<Void, SecurityProtocolError> {
-    keyStore[identifier] = key
+    keyStore[identifier]=key
     return .success(())
   }
 
@@ -61,9 +61,9 @@ public final class KeyManagementAdapter: KeyManagementProtocol {
     withIdentifier identifier: String
   ) async -> Result<Void, SecurityProtocolError> {
     if keyStore.removeValue(forKey: identifier) != nil {
-      return .success(())
+      .success(())
     } else {
-      return .failure(.keyNotFound)
+      .failure(.keyNotFound)
     }
   }
 
@@ -83,14 +83,14 @@ public final class KeyManagementAdapter: KeyManagementProtocol {
     guard keyStore[identifier] != nil else {
       return .failure(.keyNotFound)
     }
-    
+
     do {
       // Generate a new key (simplified implementation)
-      let newKey = try SecureBytes(count: 32)
-      
+      let newKey=try SecureBytes(count: 32)
+
       // Store the new key
-      keyStore[identifier] = newKey
-      
+      keyStore[identifier]=newKey
+
       // If there's data to re-encrypt, simply return it as is for this adapter
       return .success((newKey: newKey, reencryptedData: dataToReencrypt))
     } catch {
@@ -101,6 +101,6 @@ public final class KeyManagementAdapter: KeyManagementProtocol {
   /// Lists all available key identifiers.
   /// - Returns: An array of key identifiers or an error.
   public func listKeyIdentifiers() async -> Result<[String], SecurityProtocolError> {
-    return .success(Array(keyStore.keys))
+    .success(Array(keyStore.keys))
   }
 }

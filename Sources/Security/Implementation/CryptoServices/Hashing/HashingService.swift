@@ -12,11 +12,11 @@
  */
 
 import CommonCrypto
+import Errors // Import Errors module which contains the SecurityProtocolError type
 import Foundation
 import SecurityProtocolsCore
-import UmbraCoreTypes
-import Errors // Import Errors module which contains the SecurityProtocolError type
 import Types // Import Types module to get access to SecurityResultDTO
+import UmbraCoreTypes
 
 /// Service for cryptographic hashing operations
 final class HashingService: Sendable {
@@ -64,11 +64,11 @@ final class HashingService: Sendable {
 
         // Extract bytes from SecureBytes for hashing
         // SecureBytes doesn't have withUnsafeBytes, so we need to access its bytes directly
-        let dataBytes = data.toArray()
-        let dataCount = CC_LONG(dataBytes.count)
-        
+        let dataBytes=data.toArray()
+        let dataCount=CC_LONG(dataBytes.count)
+
         // Use CC_SHA256 from CommonCrypto
-        _ = CC_SHA256(dataBytes, dataCount, &hashBytes)
+        _=CC_SHA256(dataBytes, dataCount, &hashBytes)
 
         let hashedData=SecureBytes(bytes: hashBytes)
         return SecurityResultDTO(
@@ -79,14 +79,16 @@ final class HashingService: Sendable {
         // For now, return an unsupported operation error for other algorithms
         return SecurityResultDTO(
           status: .failure,
-          error: SecurityProtocolError.operationFailed("Hash algorithm not supported: \(algorithm)"),
+          error: SecurityProtocolError
+            .operationFailed("Hash algorithm not supported: \(algorithm)"),
           metadata: ["details": "The specified hash algorithm is not currently implemented"]
         )
       }
     } catch {
       return SecurityResultDTO(
         status: .failure,
-        error: SecurityProtocolError.operationFailed("Hashing operation failed: \(error.localizedDescription)"),
+        error: SecurityProtocolError
+          .operationFailed("Hashing operation failed: \(error.localizedDescription)"),
         metadata: ["details": "Error during cryptographic hashing: \(error)"]
       )
     }

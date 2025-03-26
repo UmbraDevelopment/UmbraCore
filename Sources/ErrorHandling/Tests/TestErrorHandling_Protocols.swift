@@ -1,18 +1,18 @@
+import Core
+import Interfaces
+import Logging
+import Notification
+import Protocols
+import Recovery
 import UmbraErrorsCore
 import XCTest
-import Interfaces
-import Protocols
-import Core
-import Recovery
-import Notification
-import Logging
 
 final class TestErrorHandling_Protocols: XCTestCase {
   // MARK: - Error Protocol Conformance Tests
 
   func testErrorProtocolConformance() {
     // Test a custom error type conforming to protocols
-    let customError = CustomErrorType(code: "CUSTOM001", message: "Custom error message")
+    let customError=CustomErrorType(code: "CUSTOM001", message: "Custom error message")
 
     // Verify error properties instead of checking protocol conformance
     // which is enforced by the compiler
@@ -33,10 +33,10 @@ final class TestErrorHandling_Protocols: XCTestCase {
   @MainActor
   func testErrorHandlerProtocol() {
     // Create a custom error handler
-    let handler = CustomErrorHandler()
+    let handler=CustomErrorHandler()
 
     // Create a test error
-    let error = TestError(
+    let error=TestError(
       domain: "TestDomain",
       code: "ERR001",
       description: "Invalid argument"
@@ -52,7 +52,7 @@ final class TestErrorHandling_Protocols: XCTestCase {
       XCTAssertEqual(handler.handledSeverities.first, .error)
 
       // Test retrieving recovery options
-      let options = handler.getRecoveryOptions(for: error)
+      let options=handler.getRecoveryOptions(for: error)
       XCTAssertEqual(options.count, 2)
       XCTAssertEqual(options[0].title, "Retry")
       XCTAssertEqual(options[1].title, "Cancel")
@@ -63,7 +63,7 @@ final class TestErrorHandling_Protocols: XCTestCase {
 
   func testErrorContextProtocol() {
     // Create a test error context
-    let context = TestErrorContext(
+    let context=TestErrorContext(
       domain: "TestDomain",
       code: 123,
       description: "Test error context"
@@ -79,7 +79,7 @@ final class TestErrorHandling_Protocols: XCTestCase {
 
   func testErrorSource() {
     // Create an error source
-    let source = ErrorSource(
+    let source=ErrorSource(
       file: "TestFile.swift",
       line: 42,
       function: "testFunction()"
@@ -98,7 +98,7 @@ final class TestErrorHandling_Protocols: XCTestCase {
 struct CustomErrorType: UmbraError, LocalizedError {
   let code: String
   let message: String
-  
+
   var domain: String { "Test" }
   var errorDescription: String { message }
   var failureReason: String { "Custom failure reason" }
@@ -109,11 +109,11 @@ struct CustomErrorType: UmbraError, LocalizedError {
   var context: ErrorContext {
     BaseErrorContext(domain: domain, code: 0, description: message)
   }
-  
-  func with(context: ErrorContext) -> Self { self }
-  func with(underlyingError: Error) -> Self { self }
-  func with(source: ErrorSource) -> Self { self }
-  
+
+  func with(context _: ErrorContext) -> Self { self }
+  func with(underlyingError _: Error) -> Self { self }
+  func with(source _: ErrorSource) -> Self { self }
+
   var description: String { message }
 }
 
@@ -129,52 +129,58 @@ struct TestError: UmbraError {
   let domain: String
   let code: String
   let description: String
-  
+
   var errorDescription: String { description }
   var source: ErrorSource?
   var underlyingError: Error?
   var context: ErrorContext {
     BaseErrorContext(domain: domain, code: 0, description: description)
   }
-  
-  func with(context: ErrorContext) -> Self { self }
-  func with(underlyingError: Error) -> Self { self }
-  func with(source: ErrorSource) -> Self { self }
+
+  func with(context _: ErrorContext) -> Self { self }
+  func with(underlyingError _: Error) -> Self { self }
+  func with(source _: ErrorSource) -> Self { self }
 }
 
 // Custom error handler for testing
 class CustomErrorHandler: ErrorHandlingService {
-  var handledErrors: [Error] = []
-  var handledSeverities: [ErrorSeverity] = []
+  var handledErrors: [Error]=[]
+  var handledSeverities: [ErrorSeverity]=[]
   private var logger: ErrorLoggingProtocol?
   private var notifier: ErrorNotificationProtocol?
   private var recoveryProvider: RecoveryOptionsProvider?
-  
+
   init() {}
-  
+
   func setLogger(_ logger: ErrorLoggingProtocol) {
-    self.logger = logger
+    self.logger=logger
   }
-  
+
   func setNotificationHandler(_ notifier: ErrorNotificationProtocol) {
-    self.notifier = notifier
+    self.notifier=notifier
   }
-  
+
   func registerRecoveryProvider(_ provider: RecoveryOptionsProvider) {
-    recoveryProvider = provider
+    recoveryProvider=provider
   }
-  
-  func handle<E>(_ error: E, severity: ErrorSeverity, file: String, function: String, line: Int) where E: UmbraError {
+
+  func handle(
+    _ error: some UmbraError,
+    severity: ErrorSeverity,
+    file _: String,
+    function _: String,
+    line _: Int
+  ) {
     handledErrors.append(error)
     handledSeverities.append(severity)
-    
+
     // Simulate logging
     logger?.log(error: error, severity: severity)
-    
+
     // Notify if error is severe enough
     if severity >= .error {
       Task {
-        _ = await notifier?.notifyUser(
+        _=await notifier?.notifyUser(
           about: error,
           severity: severity,
           level: severity.toNotificationLevel(),
@@ -183,10 +189,10 @@ class CustomErrorHandler: ErrorHandlingService {
       }
     }
   }
-  
-  func getRecoveryOptions(for error: Error) -> [RecoveryOption] {
+
+  func getRecoveryOptions(for _: Error) -> [RecoveryOption] {
     // Return mock recovery options for testing
-    return [
+    [
       TestRecoveryOption(id: UUID(), title: "Retry"),
       TestRecoveryOption(id: UUID(), title: "Cancel")
     ]
@@ -197,7 +203,7 @@ class CustomErrorHandler: ErrorHandlingService {
 struct TestRecoveryOption: RecoveryOption {
   let id: UUID
   let title: String
-  
+
   @MainActor
   func perform() async {}
 }

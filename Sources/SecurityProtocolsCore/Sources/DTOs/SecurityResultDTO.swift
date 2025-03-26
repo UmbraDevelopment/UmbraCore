@@ -1,5 +1,5 @@
-import UmbraCoreTypes
 import Errors
+import UmbraCoreTypes
 
 /// FoundationIndependent representation of a security operation result.
 /// This data transfer object encapsulates the outcome of security-related operations
@@ -101,31 +101,29 @@ public struct SecurityResultDTO: Sendable, Equatable {
   public static func failure(
     error: Errors.SecurityProtocolError
   ) -> SecurityResultDTO {
-    let message: String
-    
-    switch error {
-    case .internalError(let errorMessage):
-      message = "Internal error: \(errorMessage)"
-    case .invalidInput(let errorMessage):
-      message = "Invalid input: \(errorMessage)"
-    case .unsupportedOperation(let name):
-      message = "Unsupported operation: \(name)"
-    case .keyManagementError(let errorMessage):
-      message = "Key management error: \(errorMessage)"
-    case .cryptographicError(let errorMessage):
-      message = "Cryptographic error: \(errorMessage)"
-    case .authenticationFailed(let errorMessage):
-      message = "Authentication failed: \(errorMessage)"
-    case .storageError(let errorMessage):
-      message = "Storage error: \(errorMessage)"
-    case .configurationError(let errorMessage):
-      message = "Configuration error: \(errorMessage)"
-    case .securityError(let errorMessage):
-      message = "Security error: \(errorMessage)"
-    case .serviceError(let code, let errorMessage):
-      message = "Service error (\(code)): \(errorMessage)"
+    let message=switch error {
+      case let .internalError(errorMessage):
+        "Internal error: \(errorMessage)"
+      case let .invalidInput(errorMessage):
+        "Invalid input: \(errorMessage)"
+      case let .unsupportedOperation(name):
+        "Unsupported operation: \(name)"
+      case let .keyManagementError(errorMessage):
+        "Key management error: \(errorMessage)"
+      case let .cryptographicError(errorMessage):
+        "Cryptographic error: \(errorMessage)"
+      case let .authenticationFailed(errorMessage):
+        "Authentication failed: \(errorMessage)"
+      case let .storageError(errorMessage):
+        "Storage error: \(errorMessage)"
+      case let .configurationError(errorMessage):
+        "Configuration error: \(errorMessage)"
+      case let .securityError(errorMessage):
+        "Security error: \(errorMessage)"
+      case let .serviceError(code, errorMessage):
+        "Service error (\(code)): \(errorMessage)"
     }
-    
+
     return SecurityResultDTO(
       success: false,
       errorMessage: message,
@@ -138,12 +136,12 @@ public struct SecurityResultDTO: Sendable, Equatable {
   /// Convert to Result<SecureBytes, SecurityProtocolError>
   /// - Returns: Swift Result type with SecureBytes or SecurityProtocolError
   public func toResult() -> Result<SecureBytes, Errors.SecurityProtocolError> {
-    if success, let data = data {
-      return .success(data)
-    } else if let error = error {
-      return .failure(error)
+    if success, let data {
+      .success(data)
+    } else if let error {
+      .failure(error)
     } else {
-      return .failure(.internalError(errorMessage ?? "Unknown error"))
+      .failure(.internalError(errorMessage ?? "Unknown error"))
     }
   }
 
@@ -151,11 +149,11 @@ public struct SecurityResultDTO: Sendable, Equatable {
   /// - Returns: Swift Result type with Void or SecurityProtocolError
   public func toVoidResult() -> Result<Void, Errors.SecurityProtocolError> {
     if success {
-      return .success(())
-    } else if let error = error {
-      return .failure(error)
+      .success(())
+    } else if let error {
+      .failure(error)
     } else {
-      return .failure(.internalError(errorMessage ?? "Unknown error"))
+      .failure(.internalError(errorMessage ?? "Unknown error"))
     }
   }
 }

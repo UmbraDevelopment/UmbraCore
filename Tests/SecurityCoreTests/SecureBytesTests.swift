@@ -70,7 +70,7 @@ final class SecureBytesTests: XCTestCase {
 
   func testOutOfBoundsSubscript() {
     // This should crash with a precondition failure
-    XCTAssertThrowsAssertion { _ = self.sampleBytes[10] }
+    XCTAssertThrowsAssertion { _=self.sampleBytes[10] }
   }
 
   func testRangeAccess() {
@@ -83,8 +83,8 @@ final class SecureBytesTests: XCTestCase {
 
   func testOutOfBoundsRange() {
     // These should crash with precondition failures
-    XCTAssertThrowsAssertion { _ = self.sampleBytes[-1..<3] }
-    XCTAssertThrowsAssertion { _ = self.sampleBytes[2..<10] }
+    XCTAssertThrowsAssertion { _=self.sampleBytes[-1..<3] }
+    XCTAssertThrowsAssertion { _=self.sampleBytes[2..<10] }
   }
 
   func testBytesMethod() {

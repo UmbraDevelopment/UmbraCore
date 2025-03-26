@@ -1,6 +1,6 @@
-import UmbraCoreTypes
 import Errors
 import Types
+import UmbraCoreTypes
 
 /// Protocol defining cryptographic service operations in a FoundationIndependent manner.
 /// All operations use only primitive types and FoundationIndependent custom types.
@@ -20,13 +20,13 @@ public protocol CryptoServiceProtocol: Sendable {
   /// - Returns: The decrypted data as `SecureBytes` or an error.
   func decrypt(data: SecureBytes, using key: SecureBytes) async
     -> Result<SecureBytes, SecurityProtocolError>
-    
+
   /// Computes a cryptographic hash of binary data.
   /// - Parameter data: Data to hash as `SecureBytes`.
   /// - Returns: The hash as `SecureBytes` or an error.
   func hash(data: SecureBytes) async
     -> Result<SecureBytes, SecurityProtocolError>
-    
+
   /// Verifies a cryptographic hash against the expected value.
   /// - Parameters:
   ///   - data: Data to verify as `SecureBytes`.
@@ -37,10 +37,10 @@ public protocol CryptoServiceProtocol: Sendable {
 }
 
 /// Extension to convert CryptoServiceProtocol to a DTO
-public extension CryptoServiceProtocol {
+extension CryptoServiceProtocol {
   /// Converts this protocol implementation to a CryptoServiceDTO
   /// - Returns: A CryptoServiceDTO representing this service
-  func toDTO() -> CryptoServiceDTO {
+  public func toDTO() -> CryptoServiceDTO {
     CryptoServiceDTO(
       encrypt: { data, key in
         await self.encrypt(data: data, using: key)
@@ -59,30 +59,39 @@ public extension CryptoServiceProtocol {
 }
 
 /// Extension to create a CryptoServiceProtocol from a DTO
-public extension CryptoServiceDTO {
+extension CryptoServiceDTO {
   /// Creates a protocol-conforming object from this DTO
   /// - Returns: An object that conforms to CryptoServiceProtocol
-  func toProtocol() -> some CryptoServiceProtocol {
+  public func toProtocol() -> some CryptoServiceProtocol {
     struct ProtocolAdapter: CryptoServiceProtocol {
       let dto: CryptoServiceDTO
-      
-      func encrypt(data: SecureBytes, using key: SecureBytes) async -> Result<SecureBytes, SecurityProtocolError> {
+
+      func encrypt(
+        data: SecureBytes,
+        using key: SecureBytes
+      ) async -> Result<SecureBytes, SecurityProtocolError> {
         await dto.encrypt(data, key)
       }
-      
-      func decrypt(data: SecureBytes, using key: SecureBytes) async -> Result<SecureBytes, SecurityProtocolError> {
+
+      func decrypt(
+        data: SecureBytes,
+        using key: SecureBytes
+      ) async -> Result<SecureBytes, SecurityProtocolError> {
         await dto.decrypt(data, key)
       }
-      
+
       func hash(data: SecureBytes) async -> Result<SecureBytes, SecurityProtocolError> {
         await dto.hash(data)
       }
-      
-      func verifyHash(data: SecureBytes, expectedHash: SecureBytes) async -> Result<Bool, SecurityProtocolError> {
+
+      func verifyHash(
+        data: SecureBytes,
+        expectedHash: SecureBytes
+      ) async -> Result<Bool, SecurityProtocolError> {
         await dto.verifyHash(data, expectedHash)
       }
     }
-    
+
     return ProtocolAdapter(dto: self)
   }
 }

@@ -12,9 +12,9 @@ public struct ErrorSource: Codable, Equatable, Hashable {
   /// - Parameters:
   ///   - identifier: The source identifier
   ///   - location: Optional location information
-  public init(identifier: String, location: String? = nil) {
-    self.identifier = identifier
-    self.location = location
+  public init(identifier: String, location: String?=nil) {
+    self.identifier=identifier
+    self.location=location
   }
 }
 

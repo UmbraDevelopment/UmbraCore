@@ -11,6 +11,7 @@ umbra_swift_library(
         "//Sources/UmbraCoreTypes",
         "//Sources/UmbraErrors",
         "//Sources/SecurityProtocolsCore",
+        "//Sources/ErrorHandlingDomains",
     ],
 )
 

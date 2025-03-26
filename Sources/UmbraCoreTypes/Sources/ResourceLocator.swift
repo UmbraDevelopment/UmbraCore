@@ -138,16 +138,16 @@ public struct ResourceLocator: Sendable, Equatable, Hashable {
 public enum ResourceLocatorError: Error, Equatable, Sendable {
   /// The path is invalid or empty
   case invalidPath
-  
+
   /// The requested resource does not exist
   case resourceNotFound
-  
+
   /// Access to the resource is denied
   case accessDenied
-  
+
   /// The scheme is not supported
   case unsupportedScheme
-  
+
   /// General error with message
   case generalError(String)
 }

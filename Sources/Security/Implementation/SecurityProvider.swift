@@ -1,10 +1,10 @@
 // Import core protocols and types
-import Foundation
-import SecurityProtocolsCore
-import UmbraCoreTypes
 import Errors
-import Types
+import Foundation
 import Protocols
+import SecurityProtocolsCore
+import Types
+import UmbraCoreTypes
 
 /**
  # UmbraCore Security Provider
@@ -26,10 +26,10 @@ public final class SecurityProvider: SecurityProviderProtocol {
 
   /// Core security provider implementation
   private let providerCore: SecurityProviderCore
-  
+
   /// Public access to cryptographic service implementation
   public let cryptoService: CryptoServiceProtocol
-  
+
   /// Public access to key management service implementation
   public let keyManager: KeyManagementProtocol
 
@@ -38,10 +38,10 @@ public final class SecurityProvider: SecurityProviderProtocol {
   /// Default initialiser
   public init() {
     // Create core provider with default configuration
-    let core = SecurityProviderCore()
-    self.providerCore = core
-    self.cryptoService = DefaultCryptoService()
-    self.keyManager = DefaultKeyManagementService()
+    let core=SecurityProviderCore()
+    providerCore=core
+    cryptoService=DefaultCryptoService()
+    keyManager=DefaultKeyManagementService()
   }
 
   /// Initialiser with custom services
@@ -53,18 +53,18 @@ public final class SecurityProvider: SecurityProviderProtocol {
     keyManager: KeyManagementProtocol
   ) {
     // Create core provider with default configuration
-    self.providerCore = SecurityProviderCore()
-    self.cryptoService = cryptoService
-    self.keyManager = keyManager
+    providerCore=SecurityProviderCore()
+    self.cryptoService=cryptoService
+    self.keyManager=keyManager
   }
-  
+
   /// Initialiser with custom configuration
   /// - Parameter config: Configuration options
-  internal init(config: SecurityConfigDTO) {
+  init(config: SecurityConfigDTO) {
     // Create core provider with custom configuration
-    self.providerCore = SecurityProviderCore(config: config)
-    self.cryptoService = DefaultCryptoService()
-    self.keyManager = DefaultKeyManagementService()
+    providerCore=SecurityProviderCore(config: config)
+    cryptoService=DefaultCryptoService()
+    keyManager=DefaultKeyManagementService()
   }
 
   // MARK: - SecurityProviderProtocol
@@ -85,33 +85,33 @@ public final class SecurityProvider: SecurityProviderProtocol {
   /// - Parameter options: Optional dictionary of configuration options
   /// - Returns: A properly configured SecurityConfigDTO
   public func createSecureConfig(options: [String: Any]?) -> SecurityConfigDTO {
-    var config = SecurityConfigDTO()
-    
+    var config=SecurityConfigDTO()
+
     // Apply options if provided
-    if let options = options {
+    if let options {
       for (key, value) in options {
         switch key {
-        case "algorithm":
-          if let algorithmName = value as? String {
-            config.metadata = config.metadata ?? [:]
-            config.metadata?["algorithm"] = algorithmName
-          }
-        case "data":
-          if let data = value as? SecureBytes {
-            config.inputData = data
-          }
-        case "key":
-          if let key = value as? SecureBytes {
-            config.key = key
-          }
-        default:
-          // Add as metadata
-          config.metadata = config.metadata ?? [:]
-          config.metadata?[key] = value
+          case "algorithm":
+            if let algorithmName=value as? String {
+              config.metadata=config.metadata ?? [:]
+              config.metadata?["algorithm"]=algorithmName
+            }
+          case "data":
+            if let data=value as? SecureBytes {
+              config.inputData=data
+            }
+          case "key":
+            if let key=value as? SecureBytes {
+              config.key=key
+            }
+          default:
+            // Add as metadata
+            config.metadata=config.metadata ?? [:]
+            config.metadata?[key]=value
         }
       }
     }
-    
+
     return config
   }
 }
@@ -130,16 +130,16 @@ private final class SecurityProviderCore: @unchecked Sendable {
   /// Default initialiser
   init() {
     // Create default service instances
-    cryptoServices = CryptoServiceRegistry()
-    keyManager = KeyManagementService()
+    cryptoServices=CryptoServiceRegistry()
+    keyManager=KeyManagementService()
   }
 
   /// Initialiser with custom configuration
   /// - Parameter config: Configuration options
   init(config _: SecurityConfigDTO) {
     // Create configured service instances
-    cryptoServices = CryptoServiceRegistry()
-    keyManager = KeyManagementService()
+    cryptoServices=CryptoServiceRegistry()
+    keyManager=KeyManagementService()
   }
 
   // MARK: - Internal Methods
@@ -155,28 +155,28 @@ private final class SecurityProviderCore: @unchecked Sendable {
   ) async -> SecurityResultDTO {
     // Delegate to appropriate service based on operation type
     switch operation {
-    case .encrypt(let data, let key):
-      return await encrypt(data: data, key: key, config: config)
-    case .decrypt(let data, let key):
-      return await decrypt(data: data, key: key, config: config)
-    case .hash(let data):
-      return await hash(data: data, config: config)
-    case .generateKey:
-      return await generateKey(config: config)
-    case .sign(let data, let key):
-      return await sign(data: data, key: key, config: config)
-    case .verify(let data, let signature, let key):
-      return await verify(data: data, signature: signature, key: key, config: config)
-    case .deriveKey(let input, let salt):
-      return await deriveKey(input: input, salt: salt, config: config)
-    case .store(let data, let identifier):
-      return await storeData(data: data, identifier: identifier, config: config)
-    case .retrieve(let identifier):
-      return await retrieveData(identifier: identifier, config: config)
-    case .delete(let identifier):
-      return await deleteData(identifier: identifier, config: config)
-    case .custom(let operationName, let parameters):
-      return await customOperation(name: operationName, parameters: parameters, config: config)
+      case let .encrypt(data, key):
+        await encrypt(data: data, key: key, config: config)
+      case let .decrypt(data, key):
+        await decrypt(data: data, key: key, config: config)
+      case let .hash(data):
+        await hash(data: data, config: config)
+      case .generateKey:
+        await generateKey(config: config)
+      case let .sign(data, key):
+        await sign(data: data, key: key, config: config)
+      case let .verify(data, signature, key):
+        await verify(data: data, signature: signature, key: key, config: config)
+      case let .deriveKey(input, salt):
+        await deriveKey(input: input, salt: salt, config: config)
+      case let .store(data, identifier):
+        await storeData(data: data, identifier: identifier, config: config)
+      case let .retrieve(identifier):
+        await retrieveData(identifier: identifier, config: config)
+      case let .delete(identifier):
+        await deleteData(identifier: identifier, config: config)
+      case let .custom(operationName, parameters):
+        await customOperation(name: operationName, parameters: parameters, config: config)
     }
   }
 
@@ -184,12 +184,12 @@ private final class SecurityProviderCore: @unchecked Sendable {
 
   /// Encrypt data using the configured services
   private func encrypt(
-    data: SecureBytes,
-    key: SecureBytes,
-    config: SecurityConfigDTO
+    data _: SecureBytes,
+    key _: SecureBytes,
+    config _: SecurityConfigDTO
   ) async -> SecurityResultDTO {
     // Implementation to delegate to appropriate crypto service
-    return SecurityResultDTO(
+    SecurityResultDTO(
       status: .failure,
       error: SecurityProtocolError.notImplemented("Encryption not yet implemented")
     )
@@ -197,12 +197,12 @@ private final class SecurityProviderCore: @unchecked Sendable {
 
   /// Decrypt data using the configured services
   private func decrypt(
-    data: SecureBytes,
-    key: SecureBytes,
-    config: SecurityConfigDTO
+    data _: SecureBytes,
+    key _: SecureBytes,
+    config _: SecurityConfigDTO
   ) async -> SecurityResultDTO {
     // Implementation to delegate to appropriate crypto service
-    return SecurityResultDTO(
+    SecurityResultDTO(
       status: .failure,
       error: SecurityProtocolError.notImplemented("Decryption not yet implemented")
     )
@@ -210,11 +210,11 @@ private final class SecurityProviderCore: @unchecked Sendable {
 
   /// Hash data using the configured services
   private func hash(
-    data: SecureBytes,
-    config: SecurityConfigDTO
+    data _: SecureBytes,
+    config _: SecurityConfigDTO
   ) async -> SecurityResultDTO {
     // Implementation to delegate to appropriate crypto service
-    return SecurityResultDTO(
+    SecurityResultDTO(
       status: .failure,
       error: SecurityProtocolError.notImplemented("Hashing not yet implemented")
     )
@@ -222,93 +222,93 @@ private final class SecurityProviderCore: @unchecked Sendable {
 
   /// Generate a cryptographic key using the configured services
   private func generateKey(
-    config: SecurityConfigDTO
+    config _: SecurityConfigDTO
   ) async -> SecurityResultDTO {
     // Implementation to delegate to appropriate crypto service
-    return SecurityResultDTO(
+    SecurityResultDTO(
       status: .failure,
       error: SecurityProtocolError.notImplemented("Key generation not yet implemented")
     )
   }
-  
+
   /// Sign data using the configured services
   private func sign(
-    data: SecureBytes,
-    key: SecureBytes,
-    config: SecurityConfigDTO
+    data _: SecureBytes,
+    key _: SecureBytes,
+    config _: SecurityConfigDTO
   ) async -> SecurityResultDTO {
-    return SecurityResultDTO(
+    SecurityResultDTO(
       status: .failure,
       error: SecurityProtocolError.notImplemented("Signing not yet implemented")
     )
   }
-  
+
   /// Verify a signature using the configured services
   private func verify(
-    data: SecureBytes,
-    signature: SecureBytes,
-    key: SecureBytes,
-    config: SecurityConfigDTO
+    data _: SecureBytes,
+    signature _: SecureBytes,
+    key _: SecureBytes,
+    config _: SecurityConfigDTO
   ) async -> SecurityResultDTO {
-    return SecurityResultDTO(
+    SecurityResultDTO(
       status: .failure,
       error: SecurityProtocolError.notImplemented("Signature verification not yet implemented")
     )
   }
-  
+
   /// Derive a key using the configured services
   private func deriveKey(
-    input: SecureBytes,
-    salt: SecureBytes,
-    config: SecurityConfigDTO
+    input _: SecureBytes,
+    salt _: SecureBytes,
+    config _: SecurityConfigDTO
   ) async -> SecurityResultDTO {
-    return SecurityResultDTO(
+    SecurityResultDTO(
       status: .failure,
       error: SecurityProtocolError.notImplemented("Key derivation not yet implemented")
     )
   }
-  
+
   /// Store data using the configured services
   private func storeData(
-    data: SecureBytes,
-    identifier: String,
-    config: SecurityConfigDTO
+    data _: SecureBytes,
+    identifier _: String,
+    config _: SecurityConfigDTO
   ) async -> SecurityResultDTO {
-    return SecurityResultDTO(
+    SecurityResultDTO(
       status: .failure,
       error: SecurityProtocolError.notImplemented("Data storage not yet implemented")
     )
   }
-  
+
   /// Retrieve data using the configured services
   private func retrieveData(
-    identifier: String,
-    config: SecurityConfigDTO
+    identifier _: String,
+    config _: SecurityConfigDTO
   ) async -> SecurityResultDTO {
-    return SecurityResultDTO(
+    SecurityResultDTO(
       status: .failure,
       error: SecurityProtocolError.notImplemented("Data retrieval not yet implemented")
     )
   }
-  
+
   /// Delete data using the configured services
   private func deleteData(
-    identifier: String,
-    config: SecurityConfigDTO
+    identifier _: String,
+    config _: SecurityConfigDTO
   ) async -> SecurityResultDTO {
-    return SecurityResultDTO(
+    SecurityResultDTO(
       status: .failure,
       error: SecurityProtocolError.notImplemented("Data deletion not yet implemented")
     )
   }
-  
+
   /// Handle custom operations
   private func customOperation(
     name: String,
-    parameters: [String: Any],
-    config: SecurityConfigDTO
+    parameters _: [String: Any],
+    config _: SecurityConfigDTO
   ) async -> SecurityResultDTO {
-    return SecurityResultDTO(
+    SecurityResultDTO(
       status: .failure,
       error: SecurityProtocolError.notImplemented("Custom operation '\(name)' not yet implemented")
     )

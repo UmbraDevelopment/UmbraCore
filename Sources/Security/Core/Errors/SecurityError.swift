@@ -8,7 +8,7 @@ public struct SecurityError: Error, Equatable, Sendable {
 
   /// Initialise with a description
   public init(description: String) {
-    self.description = description
+    self.description=description
   }
 
   /// Compare two SecurityErrors
@@ -26,15 +26,15 @@ public struct SecurityError: Error, Equatable, Sendable {
 /// Provides standardised domain strings for error categorisation
 public enum SecurityErrorDomain {
   /// Security domain
-  public static let security = "Security"
+  public static let security="Security"
   /// Crypto domain
-  public static let crypto = "Crypto"
+  public static let crypto="Crypto"
   /// Key management domain
-  public static let keyManagement = "KeyManagement"
+  public static let keyManagement="KeyManagement"
   /// Storage domain
-  public static let storage = "Storage"
+  public static let storage="Storage"
   /// XPC service domain
-  public static let xpcService = "XPCService"
+  public static let xpcService="XPCService"
   /// General application domain
-  public static let application = "Application"
+  public static let application="Application"
 }

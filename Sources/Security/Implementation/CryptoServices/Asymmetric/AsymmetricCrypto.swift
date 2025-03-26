@@ -12,11 +12,11 @@
  * Parameter validation and secure operation
  */
 
+import Errors // Import Errors module which contains the SecurityProtocolError type
 import Foundation
 import SecurityProtocolsCore
-import UmbraCoreTypes
-import Errors // Import Errors module which contains the SecurityProtocolError type
 import Types // Import Types module to access SecurityResultDTO
+import UmbraCoreTypes
 
 /// Service for asymmetric cryptographic operations
 final class AsymmetricCrypto: Sendable {
@@ -61,11 +61,11 @@ final class AsymmetricCrypto: Sendable {
 
     // Create a simple "encrypted" representation for demonstration
     // DO NOT use this in production - this is just a placeholder!
-    var encryptedBytes = Array("ENCRYPTED:".utf8)
+    var encryptedBytes=Array("ENCRYPTED:".utf8)
     for i in 0..<data.count {
       encryptedBytes.append(data[i])
     }
-    let encryptedData = SecureBytes(bytes: encryptedBytes)
+    let encryptedData=SecureBytes(bytes: encryptedBytes)
 
     return SecurityResultDTO(
       status: .success,
@@ -104,13 +104,13 @@ final class AsymmetricCrypto: Sendable {
 
     // Placeholder implementation - check if this is our simulated "encrypted" data
     // This is just for the placeholder implementation
-    let prefix = Array("ENCRYPTED:".utf8)
+    let prefix=Array("ENCRYPTED:".utf8)
     if data.count > prefix.count {
-      let dataArray = Array(0..<data.count).map { data[$0] }
+      let dataArray=Array(0..<data.count).map { data[$0] }
       if dataArray.prefix(prefix.count).elementsEqual(prefix) {
         // Extract the original data by removing our prefix
-        let decryptedBytes = Array(dataArray.dropFirst(prefix.count))
-        let decryptedData = SecureBytes(bytes: decryptedBytes)
+        let decryptedBytes=Array(dataArray.dropFirst(prefix.count))
+        let decryptedData=SecureBytes(bytes: decryptedBytes)
         return SecurityResultDTO(
           status: .success,
           data: decryptedData,

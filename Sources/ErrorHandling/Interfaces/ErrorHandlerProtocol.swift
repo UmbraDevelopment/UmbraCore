@@ -73,7 +73,11 @@ extension DomainErrorHandler {
     }
 
     // Default handling for unknown errors
-    log(error, severity: UmbraErrorsCore.ErrorSeverity.warning, context: ["reason": "Unhandled error type"])
+    log(
+      error,
+      severity: UmbraErrorsCore.ErrorSeverity.warning,
+      context: ["reason": "Unhandled error type"]
+    )
     return .abort
   }
 

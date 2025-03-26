@@ -1,5 +1,5 @@
-import UmbraCoreTypes
 import Errors
+import UmbraCoreTypes
 
 /// Protocol defining secure storage operations in a FoundationIndependent manner.
 /// All operations use only primitive types and FoundationIndependent custom types.

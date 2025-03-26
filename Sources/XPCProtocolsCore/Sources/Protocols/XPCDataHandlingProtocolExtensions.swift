@@ -12,7 +12,7 @@ extension XPCDataHandlingProtocol {
   /// Convert SecureBytes to Data
   public func convertSecureBytesToData(_ secureBytes: SecureBytes) -> Data {
     // Convert SecureBytes to [UInt8] and then to Data
-    let bytes = [UInt8](secureBytes)
+    let bytes=[UInt8](secureBytes)
     return Data(bytes)
   }
 
@@ -24,7 +24,7 @@ extension XPCDataHandlingProtocol {
   /// Convert SecureBytes to byte array
   public func convertSecureBytesToBytes(_ secureBytes: SecureBytes) -> [UInt8] {
     // SecureBytes can be directly converted to [UInt8] using array conversion
-    return [UInt8](secureBytes)
+    [UInt8](secureBytes)
   }
 
   /// Convert byte array to Data

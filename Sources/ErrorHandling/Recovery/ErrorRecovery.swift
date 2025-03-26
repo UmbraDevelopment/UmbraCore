@@ -1,7 +1,7 @@
 import Foundation
-import UmbraErrorsCore
 import Interfaces
 import Protocols
+import UmbraErrorsCore
 
 /// Represents a potential recovery option for an error
 public struct ErrorRecoveryOption: RecoveryOption, Sendable {
@@ -36,7 +36,7 @@ public struct ErrorRecoveryOption: RecoveryOption, Sendable {
   ) {
     self.id=id
     self.title=title
-    self.recoveryDescription=description
+    recoveryDescription=description
     self.isDefault=isDefault
     self.action=action
   }
@@ -106,7 +106,7 @@ public final class RecoveryManager: RecoveryOptionsProvider, Sendable {
   /// - Parameter error: The error to create options for
   /// - Returns: Array of default recovery options
   @MainActor
-  private func createDefaultRecoveryOptions(for error: Error) -> [RecoveryOption] {
+  private func createDefaultRecoveryOptions(for _: Error) -> [RecoveryOption] {
     // Create default options based on the error type
     var options: [RecoveryOption]=[]
 
@@ -172,7 +172,7 @@ public struct SecurityDomainProvider: DomainRecoveryProvider {
     domain.contains("Security") || domain.contains("Crypto")
   }
 
-  public func recoveryOptions(for error: Error) -> [RecoveryOption] {
+  public func recoveryOptions(for _: Error) -> [RecoveryOption] {
     // Security-specific recovery options
     []
   }
@@ -186,7 +186,7 @@ public struct NetworkDomainProvider: DomainRecoveryProvider {
     domain.contains("Network") || domain.contains("HTTP")
   }
 
-  public func recoveryOptions(for error: Error) -> [RecoveryOption] {
+  public func recoveryOptions(for _: Error) -> [RecoveryOption] {
     // Network-specific recovery options
     []
   }
@@ -200,7 +200,7 @@ public struct FilesystemDomainProvider: DomainRecoveryProvider {
     domain.contains("File") || domain.contains("Directory")
   }
 
-  public func recoveryOptions(for error: Error) -> [RecoveryOption] {
+  public func recoveryOptions(for _: Error) -> [RecoveryOption] {
     // Filesystem-specific recovery options
     []
   }
@@ -214,7 +214,7 @@ public struct UserDomainProvider: DomainRecoveryProvider {
     domain.contains("User") || domain.contains("Input")
   }
 
-  public func recoveryOptions(for error: Error) -> [RecoveryOption] {
+  public func recoveryOptions(for _: Error) -> [RecoveryOption] {
     // User-specific recovery options
     []
   }

@@ -277,32 +277,32 @@ public struct ProgressNotificationDTO: Sendable, Equatable {
   /// Generate a unique ID for notifications
   /// - Parameter prefix: Optional prefix for the ID
   /// - Returns: A unique ID string
-  private static func generateID(prefix: String? = nil) -> String {
+  private static func generateID(prefix: String?=nil) -> String {
     // Use simple random numbers for ID generation without Foundation
     let rand1=UInt32.random(in: 0...UInt32.max)
     let rand2=UInt32.random(in: 0...UInt32.max)
     let rand3=UInt32.random(in: 0...UInt32.max)
     // Replace Foundation-dependent String(format:) with our own implementation
-    let randomPart = toHexString(rand1) + toHexString(rand2) + toHexString(rand3)
+    let randomPart=toHexString(rand1) + toHexString(rand2) + toHexString(rand3)
     if let prefix {
       return "\(prefix)_\(randomPart)"
     }
     return randomPart
   }
-  
+
   /// Convert UInt32 to zero-padded 8-character hex string without Foundation
   private static func toHexString(_ value: UInt32) -> String {
-    let hexDigits = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"]
-    var result = ""
-    var remainingValue = value
-    
+    let hexDigits=["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"]
+    var result=""
+    var remainingValue=value
+
     // Process all 8 hex digits (4 bits each)
     for _ in 0..<8 {
-      let digit = remainingValue & 0xF // Get lowest 4 bits
-      result = hexDigits[Int(digit)] + result
+      let digit=remainingValue & 0xF // Get lowest 4 bits
+      result=hexDigits[Int(digit)] + result
       remainingValue >>= 4 // Shift right by 4 bits
     }
-    
+
     return result
   }
 

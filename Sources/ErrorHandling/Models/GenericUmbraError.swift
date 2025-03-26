@@ -16,22 +16,22 @@ import UmbraErrorsCore
 public struct GenericUmbraError: Error, Sendable {
   /// Domain identifier (eg: "Security", "Network", "Application")
   public let domain: String
-  
+
   /// Error code string (eg: "AUTHENTICATION_FAILED", "NETWORK_TIMEOUT")
   public let code: String
-  
+
   /// Human-readable description of the error
   public let errorDescription: String
-  
+
   /// Optional underlying error that caused this error
   public let underlyingError: Error?
-  
+
   /// Optional source of the error (eg: file, function)
   public let source: ErrorSource?
-  
+
   /// Additional context for the error
   public let context: UmbraErrorsCore.ErrorContext
-  
+
   /// Creates a new GenericUmbraError instance
   /// - Parameters:
   ///   - domain: The domain identifier
@@ -44,27 +44,27 @@ public struct GenericUmbraError: Error, Sendable {
     domain: String,
     code: String,
     errorDescription: String,
-    underlyingError: Error? = nil,
-    source: ErrorSource? = nil,
-    context: UmbraErrorsCore.ErrorContext? = nil
+    underlyingError: Error?=nil,
+    source: ErrorSource?=nil,
+    context: UmbraErrorsCore.ErrorContext?=nil
   ) {
-    self.domain = domain
-    self.code = code
-    self.errorDescription = errorDescription
-    self.underlyingError = underlyingError
-    self.source = source
-    
+    self.domain=domain
+    self.code=code
+    self.errorDescription=errorDescription
+    self.underlyingError=underlyingError
+    self.source=source
+
     // Create a default context if none provided
-    if let context = context {
-      self.context = context
+    if let context {
+      self.context=context
     } else {
-      let contextDict: [String: Any] = [
+      let contextDict: [String: Any]=[
         "domain": domain,
         "code": code,
         "description": errorDescription
       ]
-      
-      self.context = UmbraErrorsCore.ErrorContext(
+
+      self.context=UmbraErrorsCore.ErrorContext(
         contextDict,
         source: source?.description ?? "unknown",
         operation: "unknown",
@@ -72,7 +72,7 @@ public struct GenericUmbraError: Error, Sendable {
       )
     }
   }
-  
+
   /// Creates a new instance of the error with additional context
   public func with(context: UmbraErrorsCore.ErrorContext) -> Self {
     GenericUmbraError(
@@ -84,7 +84,7 @@ public struct GenericUmbraError: Error, Sendable {
       context: context
     )
   }
-  
+
   /// Creates a new instance of the error with additional underlying error
   public func with(underlyingError: Error) -> Self {
     GenericUmbraError(
@@ -96,7 +96,7 @@ public struct GenericUmbraError: Error, Sendable {
       context: context
     )
   }
-  
+
   /// Creates a new instance of the error with source information
   public func with(source: ErrorSource) -> Self {
     GenericUmbraError(
@@ -108,13 +108,13 @@ public struct GenericUmbraError: Error, Sendable {
       context: context
     )
   }
-  
+
   /// A readable string representation of the error
   public var description: String {
-    let sourceInfo = source?.file ?? "unknown"
-    let contextSource = context.source ?? "unknown"
-    let contextOperation = context.operation ?? "unknown"
-    
+    let sourceInfo=source?.file ?? "unknown"
+    let contextSource=context.source ?? "unknown"
+    let contextOperation=context.operation ?? "unknown"
+
     return "\(domain).\(code) (\(sourceInfo)): \(errorDescription) [Context: \(contextSource).\(contextOperation)]"
   }
 }
@@ -124,9 +124,9 @@ public struct GenericUmbraError: Error, Sendable {
 extension GenericUmbraError: Equatable {
   public static func == (lhs: GenericUmbraError, rhs: GenericUmbraError) -> Bool {
     lhs.domain == rhs.domain &&
-    lhs.code == rhs.code &&
-    lhs.errorDescription == rhs.errorDescription &&
-    lhs.source == rhs.source
+      lhs.code == rhs.code &&
+      lhs.errorDescription == rhs.errorDescription &&
+      lhs.source == rhs.source
     // Note: We don't compare underlyingError or context for equality
     // as Error doesn't conform to Equatable and context may contain non-equatable values
   }
@@ -138,26 +138,26 @@ extension GenericUmbraError: Equatable {
 public struct ErrorSource: Equatable, Sendable {
   /// File where the error occurred
   public let file: String
-  
+
   /// Function where the error occurred
   public let function: String
-  
+
   /// Line where the error occurred
   public let line: Int
-  
+
   /// Creates a new ErrorSource
   /// - Parameters:
   ///   - file: File where the error occurred
   ///   - function: Function where the error occurred
   ///   - line: Line where the error occurred
   public init(
-    file: String = #file,
-    function: String = #function,
-    line: Int = #line
+    file: String=#file,
+    function: String=#function,
+    line: Int=#line
   ) {
-    self.file = file
-    self.function = function
-    self.line = line
+    self.file=file
+    self.function=function
+    self.line=line
   }
 }
 
@@ -173,27 +173,27 @@ extension GenericUmbraError {
   /// Converts this error to an UmbraErrorsCore.UmbraError
   public var asUmbraError: UmbraErrorsCore.UmbraError {
     // We'll use the current UmbraError implementation in UmbraErrorsCore
-    let contextDict: [String: Any] = [
+    let contextDict: [String: Any]=[
       "domain": domain,
       "code": code,
       "description": errorDescription
     ]
-    
-    let errorContext = UmbraErrorsCore.ErrorContext(
+
+    let errorContext=UmbraErrorsCore.ErrorContext(
       contextDict,
       source: source?.description ?? domain,
       operation: "error_operation",
       details: errorDescription,
       underlyingError: underlyingError
     )
-    
+
     return UmbraErrorsCore.UmbraError(
       context: errorContext,
       code: code,
       domain: domain
     )
   }
-  
+
   /// Creates a GenericUmbraError from an UmbraErrorsCore.UmbraError
   public static func from(_ umbraError: UmbraErrorsCore.UmbraError) -> GenericUmbraError {
     GenericUmbraError(
@@ -222,9 +222,9 @@ extension GenericUmbraError {
     domain: String,
     code: String,
     description: String,
-    file: String = #file,
-    function: String = #function,
-    line: Int = #line
+    file: String=#file,
+    function: String=#function,
+    line: Int=#line
   ) -> GenericUmbraError {
     GenericUmbraError(
       domain: domain,
@@ -233,7 +233,7 @@ extension GenericUmbraError {
       source: ErrorSource(file: file, function: function, line: line)
     )
   }
-  
+
   /// Creates a security error with the given code and description
   /// - Parameters:
   ///   - code: The error code
@@ -249,7 +249,7 @@ extension GenericUmbraError {
       description: description
     )
   }
-  
+
   /// Creates a crypto error with the given code and description
   /// - Parameters:
   ///   - code: The error code

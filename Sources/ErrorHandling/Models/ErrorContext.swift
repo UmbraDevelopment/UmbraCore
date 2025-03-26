@@ -15,24 +15,25 @@ import UmbraErrorsCore
  */
 
 // MARK: - Domain Constants
+
 // Legacy domain constants for backward compatibility
-public extension UmbraErrorsCore.ErrorDomain {
+extension UmbraErrorsCore.ErrorDomain {
   /// Security domain
-  static let security = "Security"
+  public static let security="Security"
   /// Crypto domain
-  static let crypto = "Crypto"
+  public static let crypto="Crypto"
   /// Application domain
-  static let application = "Application"
+  public static let application="Application"
 }
 
 // MARK: - Compatibility Mappings
 
 /// For backward compatibility - use UmbraErrorsCore.ErrorContext in new code
-public typealias ErrorContext = UmbraErrorsCore.ErrorContext
+public typealias ErrorContext=UmbraErrorsCore.ErrorContext
 
 /**
  * For backward compatibility - use UmbraErrorsCore.ErrorContext in new code
- * 
+ *
  * This struct provides a simple mapping to UmbraErrorsCore.ErrorContext.
  * It is only maintained for legacy code support and should not be used in new code.
  */
@@ -43,14 +44,14 @@ public struct BaseErrorContext: Equatable, Codable, Hashable, Sendable {
   public let code: Int
   /// Description of the error
   public let description: String
-  
+
   /// Initialise with domain, code and description
   public init(domain: String, code: Int, description: String) {
-    self.domain = domain
-    self.code = code
-    self.description = description
+    self.domain=domain
+    self.code=code
+    self.description=description
   }
-  
+
   /// Map to UmbraErrorsCore.ErrorContext
   public var asUmbraErrorContext: UmbraErrorsCore.ErrorContext {
     UmbraErrorsCore.ErrorContext(
@@ -60,13 +61,14 @@ public struct BaseErrorContext: Equatable, Codable, Hashable, Sendable {
       details: description
     )
   }
-  
+
   /// Create from UmbraErrorsCore.ErrorContext
   public static func from(_ context: UmbraErrorsCore.ErrorContext) -> BaseErrorContext {
-    let domainValue = context.typedValue(for: "domain", as: String.self) ?? context.source ?? "Unknown"
-    let codeValue = context.typedValue(for: "code", as: Int.self) ?? 0
-    let descriptionValue = context.details ?? "Unknown error"
-    
+    let domainValue=context.typedValue(for: "domain", as: String.self) ?? context
+      .source ?? "Unknown"
+    let codeValue=context.typedValue(for: "code", as: Int.self) ?? 0
+    let descriptionValue=context.details ?? "Unknown error"
+
     return BaseErrorContext(
       domain: domainValue,
       code: codeValue,

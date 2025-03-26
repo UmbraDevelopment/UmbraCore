@@ -12,14 +12,14 @@
  * Initialisation vector generation
  */
 
-import Foundation
 import CryptoKit
+import Errors
+import Foundation
 import SecurityProtocolsCore
+import Types
 import UmbraCoreTypes
 import UmbraErrors
 import UmbraErrorsCore
-import Errors
-import Types
 
 /// Service for symmetric cryptographic operations
 final class SymmetricCrypto: Sendable {
@@ -29,22 +29,22 @@ final class SymmetricCrypto: Sendable {
   init() {
     // Initialize any resources needed
   }
-  
+
   // MARK: - Internal Helpers
-  
+
   /// Generate a random initialisation vector
   /// - Parameter size: Size of the IV in bytes
   /// - Returns: A secure random IV
-  private func generateRandomIV(size: Int = 12) -> SecureBytes {
-    var bytes = [UInt8](repeating: 0, count: size)
-    let status = SecRandomCopyBytes(kSecRandomDefault, size, &bytes)
+  private func generateRandomIV(size: Int=12) -> SecureBytes {
+    var bytes=[UInt8](repeating: 0, count: size)
+    let status=SecRandomCopyBytes(kSecRandomDefault, size, &bytes)
     if status == errSecSuccess {
       return SecureBytes(bytes: bytes)
     } else {
       // Fallback to less secure but still acceptable random generation
-      var randomBytes = [UInt8](repeating: 0, count: size)
+      var randomBytes=[UInt8](repeating: 0, count: size)
       for i in 0..<size {
-        randomBytes[i] = UInt8.random(in: 0...255)
+        randomBytes[i]=UInt8.random(in: 0...255)
       }
       return SecureBytes(bytes: randomBytes)
     }
@@ -86,7 +86,8 @@ final class SymmetricCrypto: Sendable {
       guard key.count == 32 else {
         return SecurityResultDTO(
           status: .failure,
-          error: SecurityProtocolError.invalidInput("AES-256 requires a 32-byte key, but got \(key.count) bytes"),
+          error: SecurityProtocolError
+            .invalidInput("AES-256 requires a 32-byte key, but got \(key.count) bytes"),
           metadata: ["details": "AES-256 requires a 32-byte key, but got \(key.count) bytes"]
         )
       }
@@ -95,25 +96,25 @@ final class SymmetricCrypto: Sendable {
     // Encrypt data using appropriate algorithm
     do {
       // Generate IV if not provided
-      let iv = initialIV ?? generateRandomIV()
+      let iv=initialIV ?? generateRandomIV()
 
       // Encrypt data using the appropriate algorithm
       // For AES-GCM, the IV is typically 12 bytes and is used for nonce
       if algorithm.lowercased().contains("aes-gcm") {
         // Create a placeholder implementation
         // In a real implementation, you would use CryptoKit for this
-        
+
         // Simulate encryption - PLACEHOLDER ONLY
-        let encrypted = SecureBytes(bytes: [
+        let encrypted=SecureBytes(bytes: [
           // Add a header to indicate this is simulated encryption
           0x45, 0x4E, 0x43, 0x52, 0x59, 0x50, 0x54, 0x45, 0x44 // "ENCRYPTED"
         ] + data.toArray())
-        
+
         // Combine IV and encrypted data for proper decryption later
         // Format: IV + EncryptedData
-        var combinedBytes = iv.toArray()
+        var combinedBytes=iv.toArray()
         combinedBytes.append(contentsOf: encrypted.toArray())
-        let combinedData = SecureBytes(bytes: combinedBytes)
+        let combinedData=SecureBytes(bytes: combinedBytes)
 
         return SecurityResultDTO(
           status: .success,
@@ -123,14 +124,16 @@ final class SymmetricCrypto: Sendable {
         // Unsupported algorithm
         return SecurityResultDTO(
           status: .failure,
-          error: SecurityProtocolError.operationFailed("Encryption algorithm not supported: \(algorithm)"),
+          error: SecurityProtocolError
+            .operationFailed("Encryption algorithm not supported: \(algorithm)"),
           metadata: ["details": "The specified algorithm is not currently implemented"]
         )
       }
     } catch {
       return SecurityResultDTO(
         status: .failure,
-        error: SecurityProtocolError.operationFailed("Encryption failed: \(error.localizedDescription)"),
+        error: SecurityProtocolError
+          .operationFailed("Encryption failed: \(error.localizedDescription)"),
         metadata: ["details": "Error during symmetric encryption: \(error)"]
       )
     }
@@ -168,7 +171,8 @@ final class SymmetricCrypto: Sendable {
       guard key.count == 32 else {
         return SecurityResultDTO(
           status: .failure,
-          error: SecurityProtocolError.invalidInput("AES-256 requires a 32-byte key, but got \(key.count) bytes"),
+          error: SecurityProtocolError
+            .invalidInput("AES-256 requires a 32-byte key, but got \(key.count) bytes"),
           metadata: ["details": "AES-256 requires a 32-byte key, but got \(key.count) bytes"]
         )
       }
@@ -187,25 +191,35 @@ final class SymmetricCrypto: Sendable {
         }
 
         // Extract IV and ciphertext
-        let iv = SecureBytes(bytes: data.prefix(12).toArray())
-        let ciphertext = SecureBytes(bytes: data.suffix(from: 12).toArray())
+        let iv=SecureBytes(bytes: data.prefix(12).toArray())
+        let ciphertext=SecureBytes(bytes: data.suffix(from: 12).toArray())
 
         // Check if this is our simulated encryption
-        let dataArray = ciphertext.toArray()
+        let dataArray=ciphertext.toArray()
         if dataArray.count >= 9 {
-          let header = Array(dataArray.prefix(9))
-          let expectedHeader: [UInt8] = [0x45, 0x4E, 0x43, 0x52, 0x59, 0x50, 0x54, 0x45, 0x44] // "ENCRYPTED"
-          
+          let header=Array(dataArray.prefix(9))
+          let expectedHeader: [UInt8]=[
+            0x45,
+            0x4E,
+            0x43,
+            0x52,
+            0x59,
+            0x50,
+            0x54,
+            0x45,
+            0x44
+          ] // "ENCRYPTED"
+
           if header == expectedHeader {
             // This is our simulated encryption, return the original data
-            let decryptedData = SecureBytes(bytes: Array(dataArray.dropFirst(9)))
+            let decryptedData=SecureBytes(bytes: Array(dataArray.dropFirst(9)))
             return SecurityResultDTO(
               status: .success,
               data: decryptedData
             )
           }
         }
-        
+
         // For a real implementation, use CryptoKit here
         return SecurityResultDTO(
           status: .failure,
@@ -216,14 +230,16 @@ final class SymmetricCrypto: Sendable {
         // Unsupported algorithm
         return SecurityResultDTO(
           status: .failure,
-          error: SecurityProtocolError.operationFailed("Decryption algorithm not supported: \(algorithm)"),
+          error: SecurityProtocolError
+            .operationFailed("Decryption algorithm not supported: \(algorithm)"),
           metadata: ["details": "The specified algorithm is not currently implemented"]
         )
       }
     } catch {
       return SecurityResultDTO(
         status: .failure,
-        error: SecurityProtocolError.operationFailed("Decryption failed: \(error.localizedDescription)"),
+        error: SecurityProtocolError
+          .operationFailed("Decryption failed: \(error.localizedDescription)"),
         metadata: ["details": "Error during symmetric decryption: \(error)"]
       )
     }

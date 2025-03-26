@@ -1,7 +1,7 @@
-import UmbraCoreTypes
-import UmbraErrorsCore
-import UmbraErrors
 import Errors
+import UmbraCoreTypes
+import UmbraErrors
+import UmbraErrorsCore
 
 /// Protocol defining secure key management operations in a FoundationIndependent manner.
 /// All operations use only primitive types and FoundationIndependent custom types.
@@ -25,16 +25,16 @@ public protocol KeyManagementProtocol: Sendable {
   /// - Returns: Success or an error.
   func deleteKey(withIdentifier identifier: String) async
     -> Result<Void, Errors.SecurityProtocolError>
-    
+
   /// Gets the type of a stored key
   /// - Parameter identifier: A string identifying the key
   /// - Returns: Key type information or error
   func getKeyType(withIdentifier identifier: String) async -> Result<(
-    keyType: String, 
-    algorithm: String, 
+    keyType: String,
+    algorithm: String,
     size: Int
   ), Errors.SecurityProtocolError>
-  
+
   /// Lists all available key identifiers
   /// - Returns: Array of identifier strings or error
   func listKeyIdentifiers() async -> Result<[String], Errors.SecurityProtocolError>

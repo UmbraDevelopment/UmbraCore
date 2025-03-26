@@ -1,7 +1,7 @@
 import Foundation
-import UmbraErrorsCore
 import Interfaces
 import Protocols
+import UmbraErrorsCore
 
 /// Represents an action that can be taken to recover from an error
 public struct RecoveryAction: Sendable, Equatable {
@@ -30,15 +30,15 @@ public struct RecoveryAction: Sendable, Equatable {
   public init(
     id: String,
     title: String,
-    description: String? = nil,
-    isDefault: Bool = false,
+    description: String?=nil,
+    isDefault: Bool=false,
     action: @escaping () async throws -> Void
   ) {
-    self.id = id
-    self.title = title
-    self.description = description
-    self.isDefault = isDefault
-    self.action = action
+    self.id=id
+    self.title=title
+    self.description=description
+    self.isDefault=isDefault
+    self.action=action
   }
 
   /// Equality comparison only compares the id, not the action
@@ -65,7 +65,7 @@ public struct DefaultRecoveryActionProvider: RecoveryActionProvider {
   /// - Returns: Array of recovery actions
   public func getRecoveryActions(for error: Error) -> [RecoveryAction] {
     // Default implementation returns basic actions like retry and cancel
-    var actions: [RecoveryAction] = []
+    var actions: [RecoveryAction]=[]
 
     // Add retry action
     actions.append(
@@ -128,10 +128,10 @@ public protocol RecoveryActionService: Sendable {
 /// Default implementation of recovery action service
 public final class RecoveryActionManager: RecoveryActionService {
   /// Shared instance (singleton)
-  public static let shared = RecoveryActionManager()
+  public static let shared=RecoveryActionManager()
 
   /// Registered providers
-  private var providers: [RecoveryActionProvider] = []
+  private var providers: [RecoveryActionProvider]=[]
 
   /// Private initializer to enforce singleton pattern
   private init() {
@@ -150,8 +150,8 @@ public final class RecoveryActionManager: RecoveryActionService {
   /// - Returns: Array of recovery actions
   public func getRecoveryActions(for error: Error) -> [RecoveryAction] {
     // If error is directly recoverable, use its actions
-    if let recoverableError = error as? RecoverableErrorWithActions {
-      let actions = recoverableError.getRecoveryActions()
+    if let recoverableError=error as? RecoverableErrorWithActions {
+      let actions=recoverableError.getRecoveryActions()
       if !actions.isEmpty {
         return actions
       }
@@ -159,7 +159,7 @@ public final class RecoveryActionManager: RecoveryActionService {
 
     // Otherwise, ask each provider for actions
     for provider in providers {
-      let actions = provider.getRecoveryActions(for: error)
+      let actions=provider.getRecoveryActions(for: error)
       if !actions.isEmpty {
         return actions
       }

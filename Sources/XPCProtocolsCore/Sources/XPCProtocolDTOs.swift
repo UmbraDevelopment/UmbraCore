@@ -1,6 +1,6 @@
 import Foundation
-import UmbraErrors
 import UmbraCoreTypes
+import UmbraErrors
 
 // XPC Protocol DTO definitions
 public enum XPCProtocolDTOs {
@@ -14,7 +14,7 @@ public enum XPCProtocolDTOs {
     public let description: String
     /// Additional properties
     public let properties: [String: String]
-    
+
     /// Standard initialiser
     /// - Parameters:
     ///   - code: Error code
@@ -25,14 +25,15 @@ public enum XPCProtocolDTOs {
       code: Int,
       domain: String,
       description: String,
-      properties: [String: String]=[:]) {
+      properties: [String: String]=[:]
+    ) {
       self.code=code
       self.domain=domain
       self.description=description
       self.properties=properties
     }
   }
-  
+
   /// Status DTO
   public struct ServiceStatusDTO: Codable, Sendable, Equatable {
     /// Status code
@@ -40,16 +41,16 @@ public enum XPCProtocolDTOs {
 
     /// Status message
     public let message: String
-    
+
     /// Is service running
     public let isRunning: Bool
-    
+
     /// Service version
     public let version: String
-    
+
     /// Additional properties
     public let properties: [String: String]
-    
+
     /// Standard initialiser
     /// - Parameters:
     ///   - code: Status code (0=OK, non-zero=error)
@@ -62,7 +63,8 @@ public enum XPCProtocolDTOs {
       message: String="OK",
       isRunning: Bool=false,
       version: String="unknown",
-      properties: [String: String]=[:]) {
+      properties: [String: String]=[:]
+    ) {
       self.code=code
       self.message=message
       self.isRunning=isRunning

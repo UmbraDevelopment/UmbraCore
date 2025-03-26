@@ -1,8 +1,8 @@
-import UmbraCoreTypes
-import SecurityProtocolsCore
 import Errors
 import Protocols
+import SecurityProtocolsCore
 import Types
+import UmbraCoreTypes
 
 /// Bridge protocol that connects security providers to Foundation-free interfaces
 /// This helps break circular dependencies between security modules
@@ -44,10 +44,10 @@ public protocol SecurityProviderBridge: Sendable {
 public final class SecurityProviderProtocolAdapter: SecurityProviderProtocol {
   /// The underlying bridge implementation
   private let adapter: any SecurityProviderBridge
-  
+
   /// The crypto service implementation required by SecurityProviderProtocol
   public let cryptoService: CryptoServiceProtocol
-  
+
   /// The key manager implementation required by SecurityProviderProtocol
   public let keyManager: KeyManagementProtocol
 
@@ -59,7 +59,7 @@ public final class SecurityProviderProtocolAdapter: SecurityProviderProtocol {
   /// Wrap any error into a SecurityProtocolError
   private func wrapError(_ error: Error) throws -> Never {
     // Use our centralised error mapping to get a consistent error description
-    let errorDescription = "Security operation failed: \(error)"
+    let errorDescription="Security operation failed: \(error)"
     throw SecurityProtocolError.internalError(errorDescription)
   }
 
@@ -73,9 +73,9 @@ public final class SecurityProviderProtocolAdapter: SecurityProviderProtocol {
     cryptoService: CryptoServiceProtocol,
     keyManager: KeyManagementProtocol
   ) {
-    self.adapter = bridge
-    self.cryptoService = cryptoService
-    self.keyManager = keyManager
+    adapter=bridge
+    self.cryptoService=cryptoService
+    self.keyManager=keyManager
   }
 
   /// Encrypt data using the provider's encryption
@@ -89,7 +89,7 @@ public final class SecurityProviderProtocolAdapter: SecurityProviderProtocol {
     key: SecureBytes
   ) async throws -> SecureBytes {
     do {
-      let result = try await adapter.encrypt(data, key: key)
+      let result=try await adapter.encrypt(data, key: key)
       return result
     } catch {
       try wrapError(error)
@@ -107,7 +107,7 @@ public final class SecurityProviderProtocolAdapter: SecurityProviderProtocol {
     key: SecureBytes
   ) async throws -> SecureBytes {
     do {
-      let result = try await adapter.decrypt(data, key: key)
+      let result=try await adapter.decrypt(data, key: key)
       return result
     } catch {
       try wrapError(error)
@@ -137,7 +137,7 @@ public final class SecurityProviderProtocolAdapter: SecurityProviderProtocol {
       try wrapError(error)
     }
   }
-  
+
   /// Perform a secure operation with appropriate error handling
   /// - Parameters:
   ///   - operation: The security operation to perform
@@ -149,159 +149,161 @@ public final class SecurityProviderProtocolAdapter: SecurityProviderProtocol {
   ) async -> SecurityResultDTO {
     // Map the operation to the appropriate underlying service call
     switch operation {
-    case .encrypt:
-      guard let data = config.inputData, let key = config.key else {
+      case .encrypt:
+        guard let data=config.inputData, let key=config.key else {
+          return SecurityResultDTO(
+            status: .failure,
+            error: SecurityProtocolError
+              .invalidInput("Missing required data or key for encryption"),
+            metadata: ["operation": "encrypt"]
+          )
+        }
+
+        do {
+          let result=try await encrypt(data, key: key)
+          return SecurityResultDTO(
+            status: .success,
+            data: result,
+            metadata: ["operation": "encrypt"]
+          )
+        } catch let error as SecurityProtocolError {
+          return SecurityResultDTO(
+            status: .failure,
+            error: error,
+            metadata: ["operation": "encrypt"]
+          )
+        } catch {
+          return SecurityResultDTO(
+            status: .failure,
+            error: SecurityProtocolError.internalError("Encryption failed: \(error)"),
+            metadata: ["operation": "encrypt"]
+          )
+        }
+
+      case .decrypt:
+        guard let data=config.inputData, let key=config.key else {
+          return SecurityResultDTO(
+            status: .failure,
+            error: SecurityProtocolError
+              .invalidInput("Missing required data or key for decryption"),
+            metadata: ["operation": "decrypt"]
+          )
+        }
+
+        do {
+          let result=try await decrypt(data, key: key)
+          return SecurityResultDTO(
+            status: .success,
+            data: result,
+            metadata: ["operation": "decrypt"]
+          )
+        } catch let error as SecurityProtocolError {
+          return SecurityResultDTO(
+            status: .failure,
+            error: error,
+            metadata: ["operation": "decrypt"]
+          )
+        } catch {
+          return SecurityResultDTO(
+            status: .failure,
+            error: SecurityProtocolError.internalError("Decryption failed: \(error)"),
+            metadata: ["operation": "decrypt"]
+          )
+        }
+
+      case .hash:
+        guard let data=config.inputData else {
+          return SecurityResultDTO(
+            status: .failure,
+            error: SecurityProtocolError.invalidInput("Missing required data for hashing"),
+            metadata: ["operation": "hash"]
+          )
+        }
+
+        do {
+          let result=try await hash(data)
+          return SecurityResultDTO(
+            status: .success,
+            data: result,
+            metadata: ["operation": "hash"]
+          )
+        } catch let error as SecurityProtocolError {
+          return SecurityResultDTO(
+            status: .failure,
+            error: error,
+            metadata: ["operation": "hash"]
+          )
+        } catch {
+          return SecurityResultDTO(
+            status: .failure,
+            error: SecurityProtocolError.internalError("Hashing failed: \(error)"),
+            metadata: ["operation": "hash"]
+          )
+        }
+
+      case .generateKey:
+        let keySize=config.metadata?["keySize"] as? Int ?? 32 // Default to 32 bytes (256 bits)
+
+        do {
+          let result=try await generateKey(sizeInBytes: keySize)
+          return SecurityResultDTO(
+            status: .success,
+            data: result,
+            metadata: ["operation": "generateKey", "keySize": keySize]
+          )
+        } catch let error as SecurityProtocolError {
+          return SecurityResultDTO(
+            status: .failure,
+            error: error,
+            metadata: ["operation": "generateKey"]
+          )
+        } catch {
+          return SecurityResultDTO(
+            status: .failure,
+            error: SecurityProtocolError.internalError("Key generation failed: \(error)"),
+            metadata: ["operation": "generateKey"]
+          )
+        }
+
+      default:
         return SecurityResultDTO(
           status: .failure,
-          error: SecurityProtocolError.invalidInput("Missing required data or key for encryption"),
-          metadata: ["operation": "encrypt"]
+          error: SecurityProtocolError.operationFailed("Unsupported operation: \(operation)"),
+          metadata: ["operation": "\(operation)"]
         )
-      }
-      
-      do {
-        let result = try await encrypt(data, key: key)
-        return SecurityResultDTO(
-          status: .success,
-          data: result,
-          metadata: ["operation": "encrypt"]
-        )
-      } catch let error as SecurityProtocolError {
-        return SecurityResultDTO(
-          status: .failure,
-          error: error,
-          metadata: ["operation": "encrypt"]
-        )
-      } catch {
-        return SecurityResultDTO(
-          status: .failure,
-          error: SecurityProtocolError.internalError("Encryption failed: \(error)"),
-          metadata: ["operation": "encrypt"]
-        )
-      }
-      
-    case .decrypt:
-      guard let data = config.inputData, let key = config.key else {
-        return SecurityResultDTO(
-          status: .failure,
-          error: SecurityProtocolError.invalidInput("Missing required data or key for decryption"),
-          metadata: ["operation": "decrypt"]
-        )
-      }
-      
-      do {
-        let result = try await decrypt(data, key: key)
-        return SecurityResultDTO(
-          status: .success,
-          data: result,
-          metadata: ["operation": "decrypt"]
-        )
-      } catch let error as SecurityProtocolError {
-        return SecurityResultDTO(
-          status: .failure,
-          error: error,
-          metadata: ["operation": "decrypt"]
-        )
-      } catch {
-        return SecurityResultDTO(
-          status: .failure,
-          error: SecurityProtocolError.internalError("Decryption failed: \(error)"),
-          metadata: ["operation": "decrypt"]
-        )
-      }
-      
-    case .hash:
-      guard let data = config.inputData else {
-        return SecurityResultDTO(
-          status: .failure,
-          error: SecurityProtocolError.invalidInput("Missing required data for hashing"),
-          metadata: ["operation": "hash"]
-        )
-      }
-      
-      do {
-        let result = try await hash(data)
-        return SecurityResultDTO(
-          status: .success,
-          data: result,
-          metadata: ["operation": "hash"]
-        )
-      } catch let error as SecurityProtocolError {
-        return SecurityResultDTO(
-          status: .failure,
-          error: error,
-          metadata: ["operation": "hash"]
-        )
-      } catch {
-        return SecurityResultDTO(
-          status: .failure,
-          error: SecurityProtocolError.internalError("Hashing failed: \(error)"),
-          metadata: ["operation": "hash"]
-        )
-      }
-      
-    case .generateKey:
-      let keySize = config.metadata?["keySize"] as? Int ?? 32 // Default to 32 bytes (256 bits)
-      
-      do {
-        let result = try await generateKey(sizeInBytes: keySize)
-        return SecurityResultDTO(
-          status: .success,
-          data: result,
-          metadata: ["operation": "generateKey", "keySize": keySize]
-        )
-      } catch let error as SecurityProtocolError {
-        return SecurityResultDTO(
-          status: .failure,
-          error: error,
-          metadata: ["operation": "generateKey"]
-        )
-      } catch {
-        return SecurityResultDTO(
-          status: .failure,
-          error: SecurityProtocolError.internalError("Key generation failed: \(error)"),
-          metadata: ["operation": "generateKey"]
-        )
-      }
-      
-    default:
-      return SecurityResultDTO(
-        status: .failure,
-        error: SecurityProtocolError.operationFailed("Unsupported operation: \(operation)"),
-        metadata: ["operation": "\(operation)"]
-      )
     }
   }
-  
+
   /// Create a secure configuration with appropriate defaults
   /// - Parameter options: Optional dictionary of configuration options
   /// - Returns: A properly configured SecurityConfigDTO
   public func createSecureConfig(options: [String: Any]?) -> SecurityConfigDTO {
     // Create a configuration with sensible defaults
-    var config = SecurityConfigDTO()
-    
+    var config=SecurityConfigDTO()
+
     // Apply user-provided options
-    if let options = options {
+    if let options {
       // Extract data if provided
-      if let data = options["data"] as? SecureBytes {
-        config.inputData = data
+      if let data=options["data"] as? SecureBytes {
+        config.inputData=data
       }
-      
+
       // Extract key if provided
-      if let key = options["key"] as? SecureBytes {
-        config.key = key
+      if let key=options["key"] as? SecureBytes {
+        config.key=key
       }
-      
+
       // Extract all other options as metadata
-      var metadata: [String: Any] = [:]
+      var metadata: [String: Any]=[:]
       for (key, value) in options where key != "data" && key != "key" {
-        metadata[key] = value
+        metadata[key]=value
       }
-      
+
       if !metadata.isEmpty {
-        config.metadata = metadata
+        config.metadata=metadata
       }
     }
-    
+
     return config
   }
 }

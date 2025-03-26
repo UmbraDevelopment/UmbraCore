@@ -1,14 +1,14 @@
-import SecurityProtocolsCore
-import UmbraCoreTypes
 import Errors // Import Errors module for SecurityProtocolError
-import Types
 import Protocols // Import for CryptoServiceProtocol
+import SecurityProtocolsCore
+import Types
+import UmbraCoreTypes
 
 /// Type-erased wrapper for CryptoServiceProtocol
 /// This allows for cleaner interfaces without exposing implementation details
 public final class AnyCryptoService: CryptoServiceProtocol {
   // MARK: - Private Properties
-  
+
   private let dto: CryptoServiceDTO
 
   // MARK: - Initialization
@@ -16,7 +16,7 @@ public final class AnyCryptoService: CryptoServiceProtocol {
   /// Initializes a new instance with a DTO
   /// - Parameter dto: The data transfer object containing crypto operations
   public init(dto: CryptoServiceDTO) {
-    self.dto = dto
+    self.dto=dto
   }
 
   // MARK: - CryptoServiceProtocol Implementation
@@ -53,7 +53,7 @@ public final class AnyCryptoService: CryptoServiceProtocol {
   ) async -> Result<SecureBytes, SecurityProtocolError> {
     await dto.hash(data)
   }
-  
+
   /// Verifies a hash against the expected value
   /// - Parameters:
   ///   - data: The data to verify

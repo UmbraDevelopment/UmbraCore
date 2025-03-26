@@ -5,12 +5,12 @@
  * structure is properly organised and can be built successfully.
  */
 
-import XCTest
 @testable import SecurityBridgeProtocolAdapters
+import XCTest
 
 class SecurityBridgeProtocolAdaptersTests: XCTestCase {
-    func testModuleExists() {
-        // Placeholder test to ensure the target builds
-        XCTAssertTrue(true, "SecurityBridgeProtocolAdapters module exists")
-    }
+  func testModuleExists() {
+    // Placeholder test to ensure the target builds
+    XCTAssertTrue(true, "SecurityBridgeProtocolAdapters module exists")
+  }
 }

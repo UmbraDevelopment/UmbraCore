@@ -1,18 +1,18 @@
-import Foundation
-import UmbraLogging
-import UmbraErrorsCore
-import Interfaces
 import Core
+import Foundation
+import Interfaces
 import Recovery
+import UmbraErrorsCore
+import UmbraLogging
 
 /// Central coordinating service for error notifications
 @MainActor
 public final class ErrorNotifier: ErrorNotificationProtocol {
   /// The shared instance
-  public static let shared = ErrorNotifier()
+  public static let shared=ErrorNotifier()
 
   /// Registered notification services
-  private var notificationServices: [ErrorNotificationService] = []
+  private var notificationServices: [ErrorNotificationService]=[]
 
   /// Initialises a new instance
   public init() {}
@@ -32,7 +32,7 @@ public final class ErrorNotifier: ErrorNotificationProtocol {
   /// - Returns: The selected recovery option, if any
   public func notifyUser(
     about error: Error,
-    severity: ErrorSeverity,
+    severity _: ErrorSeverity,
     level: ErrorNotificationLevel,
     recoveryOptions: [any RecoveryOption]
   ) async -> (option: RecoveryOption, status: RecoveryStatus)? {
@@ -42,7 +42,7 @@ public final class ErrorNotifier: ErrorNotificationProtocol {
     }
 
     // Get the appropriate service for this notification level
-    let service = selectService(for: level)
+    let service=selectService(for: level)
 
     // Log the notification
     UmbraLogger.shared.info("Notifying user about error: \(error.localizedDescription)")
@@ -67,7 +67,7 @@ public final class ErrorNotifier: ErrorNotificationProtocol {
     level: ErrorNotificationLevel
   ) async -> Bool {
     // Get recovery options
-    let options = RecoveryManager.shared.recoveryOptions(for: error)
+    let options=RecoveryManager.shared.recoveryOptions(for: error)
 
     // Skip if no options available
     guard !options.isEmpty else {
@@ -76,7 +76,7 @@ public final class ErrorNotifier: ErrorNotificationProtocol {
     }
 
     // Notify user and get selected option
-    let result = await notifyUser(
+    let result=await notifyUser(
       about: error,
       severity: severity,
       level: level,
@@ -84,7 +84,7 @@ public final class ErrorNotifier: ErrorNotificationProtocol {
     )
 
     // If no option was selected, return false
-    guard let result = result else {
+    guard let result else {
       UmbraLogger.shared.warning("No recovery option selected by user")
       return false
     }
@@ -99,12 +99,12 @@ public final class ErrorNotifier: ErrorNotificationProtocol {
   /// Selects an appropriate notification service for the given level
   /// - Parameter level: The notification level
   /// - Returns: The selected notification service
-  private func selectService(for level: ErrorNotificationLevel) -> ErrorNotificationService {
+  private func selectService(for _: ErrorNotificationLevel) -> ErrorNotificationService {
     // In a real implementation, we would select based on level and available services
     // For simplicity, we'll just return the first service
-    guard let service = notificationServices.first else {
+    guard let service=notificationServices.first else {
       // If no service is available, add a default console service
-      let defaultService = ConsoleNotificationService()
+      let defaultService=ConsoleNotificationService()
       notificationServices.append(defaultService)
       return defaultService
     }
@@ -141,7 +141,7 @@ public class ConsoleNotificationService: ErrorNotificationService {
       }
 
       // For testing, just select the first option
-      if let firstOption = recoveryOptions.first {
+      if let firstOption=recoveryOptions.first {
         print("Selected: \(firstOption.title)")
         await firstOption.perform()
         return (firstOption, .success)
@@ -164,7 +164,7 @@ extension UmbraError {
   @MainActor
   public func notify(
     level: ErrorNotificationLevel = .warning,
-    options: [any RecoveryOption] = []
+    options: [any RecoveryOption]=[]
   ) async -> (option: RecoveryOption, status: RecoveryStatus)? {
     await ErrorNotifier.shared.notifyUser(
       about: self,

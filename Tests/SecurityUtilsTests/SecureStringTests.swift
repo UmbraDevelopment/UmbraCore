@@ -83,11 +83,11 @@ class SecureStringTests: XCTestCase {
 
   func testThreadSafety() {
     let secureString=SecureString("shared string")
-    
+
     // Create multiple concurrent accesses
     let expectation=XCTestExpectation(description: "Concurrent access completed")
     expectation.expectedFulfillmentCount=10
-    
+
     for _ in 0..<10 {
       DispatchQueue.global().async {
         // Access the string multiple times
@@ -99,7 +99,7 @@ class SecureStringTests: XCTestCase {
         expectation.fulfill()
       }
     }
-    
+
     // Wait for all accesses to complete
     wait(for: [expectation], timeout: 5.0)
   }

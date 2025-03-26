@@ -56,12 +56,12 @@
  * Key management follows proper lifecycle practices (secure generation, storage, rotation)
  */
 
-import Foundation
-import SecurityProtocolsCore
-import UmbraCoreTypes
 import Errors
-import Types
+import Foundation
 import Protocols
+import SecurityProtocolsCore
+import Types
+import UmbraCoreTypes
 
 /// Central access point for security implementation functionality
 ///
@@ -82,7 +82,7 @@ public enum SecurityImplementation {
   /// let result = await provider.performSecureOperation(...)
   /// ```
   public static func createDefaultSecurityProvider() -> SecurityProviderProtocol {
-    return SecurityProvider()
+    SecurityProvider()
   }
 
   /// Create a security provider with custom service implementations
@@ -103,6 +103,6 @@ public enum SecurityImplementation {
     cryptoService: CryptoServiceProtocol,
     keyManager: KeyManagementProtocol
   ) -> SecurityProviderProtocol {
-    return SecurityProvider(cryptoService: cryptoService, keyManager: keyManager)
+    SecurityProvider(cryptoService: cryptoService, keyManager: keyManager)
   }
 }

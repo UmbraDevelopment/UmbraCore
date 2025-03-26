@@ -5,7 +5,7 @@ import UmbraErrorsCore
 
 /**
  # Complete XPC Service Protocol
- 
+
  This file defines the most comprehensive protocol for XPC services in UmbraCore,
  building upon the standard protocol to provide a complete suite of cryptographic
  and security functionality.

@@ -1,6 +1,3 @@
-// File renamed from Exports.swift to UmbraErrorsExports.swift
-// More descriptive name that clearly indicates its purpose
-
 // Do not export Foundation directly to avoid forcing Foundation dependency
 // @_exported import Foundation
 

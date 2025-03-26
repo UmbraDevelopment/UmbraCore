@@ -89,7 +89,7 @@ extension UmbraError {
   ///   - function: Function where the error occurred
   ///   - line: Line number where the error occurred
   /// - Returns: A new instance of the error with source information
-  public func withSource(file: String = #file, function: String = #function, line: Int = #line) -> Self {
+  public func withSource(file: String=#file, function: String=#function, line: Int=#line) -> Self {
     with(source: UmbraErrorsCore.ErrorSource(file: file, line: line, function: function))
   }
 }

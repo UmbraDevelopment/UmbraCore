@@ -6,11 +6,11 @@ import UmbraCoreTypes
 /// Error domain namespace for security operations
 public enum SecurityErrorDomain {
   /// Security domain
-  public static let security = "Security"
+  public static let security="Security"
   /// Crypto domain
-  public static let crypto = "Crypto"
+  public static let crypto="Crypto"
   /// Application domain
-  public static let application = "Application"
+  public static let application="Application"
 }
 
 /// Error context protocol for security operations
@@ -34,9 +34,9 @@ public struct SecurityBaseErrorContext: SecurityErrorContext {
 
   /// Initialise with domain, code and description
   public init(domain: String, code: Int, description: String) {
-    self.domain = domain
-    self.code = code
-    self.description = description
+    self.domain=domain
+    self.code=code
+    self.description=description
   }
 }
 
@@ -48,19 +48,19 @@ public struct SecurityProtocolsErrorDTO: Error, Sendable, Equatable, CustomStrin
   /// Enumeration of security error codes
   public enum ErrorCode: Int32, Sendable, Equatable, CustomStringConvertible {
     /// Unknown error
-    case unknown = 0
+    case unknown=0
     /// Invalid input data or parameters
-    case invalidInput = 1001
+    case invalidInput=1001
     /// Cryptographic operation failed
-    case cryptographicError = 1002
+    case cryptographicError=1002
     /// Key not found
-    case keyNotFound = 1003
+    case keyNotFound=1003
     /// Service is unavailable
-    case serviceUnavailable = 1004
+    case serviceUnavailable=1004
     /// Operation not supported
-    case unsupportedOperation = 1005
+    case unsupportedOperation=1005
     /// Permission denied
-    case permissionDenied = 1007
+    case permissionDenied=1007
 
     /// String description of the error code
     public var description: String {
@@ -102,9 +102,9 @@ public struct SecurityProtocolsErrorDTO: Error, Sendable, Equatable, CustomStrin
   /// - Parameters:
   ///   - code: Error code
   ///   - details: Additional details
-  public init(code: ErrorCode, details: [String: String] = [:]) {
-    self.code = code
-    self.details = details
+  public init(code: ErrorCode, details: [String: String]=[:]) {
+    self.code=code
+    self.details=details
   }
 
   // MARK: - CustomStringConvertible
@@ -122,10 +122,10 @@ public struct SecurityProtocolsErrorDTO: Error, Sendable, Equatable, CustomStrin
   /// Create an unknown error
   /// - Parameter details: Optional error details
   /// - Returns: A SecurityProtocolsErrorDTO
-  public static func unknown(details: String? = nil) -> SecurityProtocolsErrorDTO {
-    var detailsDict: [String: String] = [:]
+  public static func unknown(details: String?=nil) -> SecurityProtocolsErrorDTO {
+    var detailsDict: [String: String]=[:]
     if let details {
-      detailsDict["message"] = details
+      detailsDict["message"]=details
     }
     return SecurityProtocolsErrorDTO(code: .unknown, details: detailsDict)
   }
@@ -174,8 +174,8 @@ public struct SecurityProtocolsErrorDTO: Error, Sendable, Equatable, CustomStrin
   ///   - reason: Reason for unavailability
   /// - Returns: A SecurityProtocolsErrorDTO
   public static func serviceUnavailable(
-    service: String = "Security Service",
-    reason: String = "Service is not available"
+    service: String="Security Service",
+    reason: String="Service is not available"
   ) -> SecurityProtocolsErrorDTO {
     SecurityProtocolsErrorDTO(
       code: .serviceUnavailable,
@@ -203,11 +203,11 @@ public struct SecurityProtocolsErrorDTO: Error, Sendable, Equatable, CustomStrin
   /// - Returns: A SecurityProtocolsErrorDTO
   public static func permissionDenied(
     operation: String,
-    details: String? = nil
+    details: String?=nil
   ) -> SecurityProtocolsErrorDTO {
-    var detailsDict: [String: String] = ["operation": operation]
+    var detailsDict: [String: String]=["operation": operation]
     if let details {
-      detailsDict["message"] = details
+      detailsDict["message"]=details
     }
     return SecurityProtocolsErrorDTO(
       code: .permissionDenied,
