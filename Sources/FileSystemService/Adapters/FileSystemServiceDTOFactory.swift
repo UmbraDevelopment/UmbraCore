@@ -1,5 +1,6 @@
 import CoreDTOs
 import Foundation
+import FileSystemTypes
 
 /// Factory for creating FileSystemServiceDTOAdapter instances
 public enum FileSystemServiceDTOFactory {

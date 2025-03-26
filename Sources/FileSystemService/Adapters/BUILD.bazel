@@ -17,6 +17,14 @@ umbra_swift_library(
     ),
     deps = [
         "//Sources/CoreDTOs",
+        "//Sources/CoreDTOs/Sources/FileSystem:FileSystem",
+        "//Sources/CoreDTOs/Sources/Operations:Operations",
+        "//Sources/ErrorHandlingDomains",
+        "//Sources/FileSystemTypes",
+        "//Sources/SecurityTypes",
         "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraErrors",
+        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
+        "//Sources/UmbraErrors/DTOs:DTOs",
     ],
 )

@@ -1,8 +1,12 @@
 import CoreDTOs
 import Foundation
+import FileSystemTypes
+import FileSystem
+import Operations
+import DTOs
+import SecurityTypes
 
 /// Protocol defining a Foundation-independent interface for file system operations
-import FileSystemTypes
 public protocol FileSystemServiceDTOProtocol: Sendable {
   /// Check if a file exists at the specified path
   /// - Parameter path: File path to check

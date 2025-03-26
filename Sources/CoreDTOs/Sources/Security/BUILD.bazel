@@ -16,6 +16,8 @@ umbra_swift_library(
         exclude_directories = 1,
     ),
     deps = [
+        "//Sources/CoreDTOs",
+        "//Sources/SecurityTypes",
         "//Sources/UmbraSecurityBridge",
         "//Sources/UmbraCoreTypes",
         "//Sources/UmbraLogging",
@@ -23,4 +25,3 @@ umbra_swift_library(
         # "//Sources/CoreDTOs",
     ],
 )
-

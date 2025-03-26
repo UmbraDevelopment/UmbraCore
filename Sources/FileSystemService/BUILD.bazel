@@ -1,13 +1,13 @@
 load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
-    name = "Operations",
+    name = "FileSystemService",
     srcs = glob(
         [
             "*.swift",
             "**/*.swift",
         ],
-        allow_empty = False,
+        allow_empty = True,  # Allow empty since all Swift files are in subdirectories
         exclude = [
             "**/Tests/**",
             "**/*Test.swift",
@@ -17,10 +17,12 @@ umbra_swift_library(
     ),
     visibility = ["//visibility:public"],
     deps = [
+        "//Sources/Core/Services/Types",
         "//Sources/CoreDTOs",
+        "//Sources/ErrorHandlingDomains",
+        "//Sources/FileSystemService/Adapters",
+        "//Sources/FileSystemTypes",
         "//Sources/UmbraCoreTypes",
         "//Sources/UmbraErrors",
-        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-        "//Sources/UmbraLogging",
     ],
 )

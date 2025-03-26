@@ -24,6 +24,7 @@ umbra_swift_library(
         "//Sources/CoreDTOs/Sources/Scheduling",
         "//Sources/CoreDTOs/Sources/Security",
         "//Sources/CoreDTOs/Sources/UserDefaults",
+        "//Sources/FileSystemTypes",
         # Removing UmbraErrors dependencies to break circular dependency
         # "//Sources/UmbraErrors",
         # "//Sources/UmbraErrors/Core:UmbraErrorsCore",
@@ -31,4 +32,3 @@ umbra_swift_library(
         "//Sources/UmbraLogging",
     ],
 )
-
