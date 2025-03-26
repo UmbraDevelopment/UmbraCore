@@ -5,13 +5,13 @@ umbra_swift_library(
     srcs = glob(
         [
             "*.swift",
-            "**/*.swift"
+            "**/*.swift",
         ],
         allow_empty = False,
         exclude = [
             "**/Tests/**",
             "**/*Test.swift",
-            "**/*.generated.swift"
+            "**/*.generated.swift",
         ],
         exclude_directories = 1,
     ),
@@ -19,7 +19,6 @@ umbra_swift_library(
         "//Sources/ErrorHandling/Interfaces",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
         "//Sources/UmbraLogging",
-        "//Sources/UmbraLogging:UmbraLogging"
     ],
 )
 
@@ -27,15 +26,14 @@ umbra_swift_library(
 # load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 # load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
 # swift_package(
-#     name = "docc_documentation"
+#     name = "docc_documentation",
 #     srcs = glob([
-#         "**/*.swift"
+#         "**/*.swift",
 #         "**/*.docc/**"
-#     ])
+#     ]),
 #     deps = [
-# "//Sources/ErrorHandling/Interfaces"
-# "//Sources/UmbraErrors/Core:UmbraErrorsCore"
-# "//Sources/UmbraLogging"
-# "//Sources/UmbraLogging:UmbraLogging"
-# ]
+#         "//Sources/ErrorHandling/Interfaces",
+#         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
+#         "//Sources/UmbraLogging:UmbraLogging"
+#     ],
 # )

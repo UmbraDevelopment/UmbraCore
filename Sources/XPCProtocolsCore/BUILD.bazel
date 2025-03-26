@@ -6,14 +6,14 @@ umbra_swift_library(
     srcs = ["Exports.swift"],  # Wrapper file that re-exports the subpackage functionality
     swiftc_opts = [
         "-target",
-        "arm64-apple-macosx14.7.4"
+        "arm64-apple-macosx14.7.4",
     ],
     visibility = ["//visibility:public"],
     deps = [
         "//Sources/UmbraCoreTypes",
         "//Sources/UmbraErrors",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-        "//Sources/XPCProtocolsCore/Sources:XPCProtocolsCoreSources"
+        "//Sources/XPCProtocolsCore/Sources:XPCProtocolsCoreSources",
     ],
 )
 
@@ -23,20 +23,20 @@ umbra_swift_library(
     testonly = True,
     srcs = glob(
         [
-            "Tests/**/*.swift"
+            "Tests/**/*.swift",
         ],
         allow_empty = True,  # Allow empty glob since tests may not exist yet
     ),
     swiftc_opts = [
         "-target",
-        "arm64-apple-macosx14.7.4"
+        "arm64-apple-macosx14.7.4",
     ],
     visibility = ["//visibility:public"],
     deps = [
         "//Sources/UmbraCoreTypes",
         "//Sources/UmbraErrors",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-        "//Sources/XPCProtocolsCore/Sources:XPCProtocolsCoreSources"
+        "//Sources/XPCProtocolsCore/Sources:XPCProtocolsCoreSources",
     ],
 )
 

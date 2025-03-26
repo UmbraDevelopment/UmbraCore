@@ -7,7 +7,7 @@ swift_library(
     tags = [
         "composition",
         "protocols",
-        "security"
+        "security",
     ],
     visibility = ["//visibility:public"],
     deps = [
@@ -15,7 +15,7 @@ swift_library(
         "//Sources/SecurityInterfaces/Protocols/Core",
         "//Sources/SecurityInterfaces/Types/Common",
         "//Sources/UmbraCoreTypes",
-        "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes"
+        "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
     ],
 )
 

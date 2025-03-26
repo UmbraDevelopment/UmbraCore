@@ -14,6 +14,6 @@ umbra_swift_library(
         "//Sources/SecurityInterfaces",
         "//Sources/SecurityTypes",
         "//Sources/UmbraCoreTypes",
-        "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes"
+        "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
     ],
 )

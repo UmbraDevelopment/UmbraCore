@@ -5,13 +5,13 @@ umbra_swift_library(
     srcs = glob(
         [
             "*.swift",
-            "**/*.swift"
+            "**/*.swift",
         ],
         allow_empty = False,
         exclude = [
             "**/Tests/**",
             "**/*Test.swift",
-            "**/*.generated.swift"
+            "**/*.generated.swift",
         ],
         exclude_directories = 1,
     ),
@@ -19,7 +19,6 @@ umbra_swift_library(
     deps = [
         "//Sources/LoggingWrapperInterfaces",
         "@swiftpkg_swiftybeaver//:SwiftyBeaver",
-        "//Sources/LoggingWrapperInterfaces:LoggingWrapperInterfaces"
     ],
 )
 
@@ -31,10 +30,9 @@ umbra_swift_library(
 #     srcs = glob([
 #         "**/*.swift",
 #         "**/*.docc/**"
-#     ])
+#     ]),
 #     deps = [
-#         "//Sources/LoggingWrapperInterfaces",
+#         "//Sources/LoggingWrapperInterfaces:LoggingWrapperInterfaces",
 #         "@swiftpkg_swiftybeaver//:SwiftyBeaver",
-#         "//Sources/LoggingWrapperInterfaces:LoggingWrapperInterfaces"
 #     ]
 # )

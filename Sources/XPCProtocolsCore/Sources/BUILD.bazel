@@ -5,19 +5,19 @@ umbra_swift_library(
     srcs = glob(
         [
             "*.swift",
-            "**/*.swift"
+            "**/*.swift",
         ],
         allow_empty = False,
         exclude = [
             "**/Tests/**",
             "**/*Test.swift",
-            "**/*.generated.swift"
+            "**/*.generated.swift",
         ],
         exclude_directories = 1,
     ),
     swiftc_opts = [
         "-target",
-        "arm64-apple-macosx14.7.4"
+        "arm64-apple-macosx14.7.4",
     ],
     visibility = ["//visibility:public"],
     deps = [
@@ -32,7 +32,8 @@ umbra_swift_library(
         "//Sources/UmbraErrors",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
         "//Sources/UmbraLogging",
-        "//Sources/UmbraSecurityBridge"
+        "//Sources/UmbraSecurityBridge",,
+        "//Sources/SecurityTypes:SecurityTypes"
     ],
 )
 
@@ -46,17 +47,18 @@ umbra_swift_library(
 #         "**/*.docc/**"
 #     ])
 #     deps = [
-#         "//Sources/CoreDTOs"
-#         "//Sources/CoreDTOs/Sources:CoreDTOs"
-#         "//Sources/CoreDTOs/Sources/Operations"
-#         "//Sources/CoreDTOs/Sources/Security"
-#         "//Sources/SecurityInterfaces"
-#         "//Sources/SecurityTypes"
-#         "//Sources/UmbraCoreTypes"
-#         "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes"
-#         "//Sources/UmbraErrors"
-#         "//Sources/UmbraErrors/Core:UmbraErrorsCore"
-#         "//Sources/UmbraLogging"
-#         "//Sources/UmbraSecurityBridge"
-#     ]
+        "//Sources/CoreDTOs",
+        "//Sources/CoreDTOs/Sources:CoreDTOs",
+        "//Sources/CoreDTOs/Sources/Operations",
+        "//Sources/CoreDTOs/Sources/Security",
+        "//Sources/SecurityInterfaces",
+        "//Sources/SecurityTypes",
+        "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
+        "//Sources/UmbraErrors",
+        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
+        "//Sources/UmbraLogging",
+        "//Sources/UmbraSecurityBridge",,
+        "//Sources/SecurityTypes:SecurityTypes"
+    ]
 # )

@@ -25,13 +25,13 @@ umbra_swift_library(
     srcs = glob(
         [
             "*.swift",
-            "**/*.swift"
+            "**/*.swift",
         ],
         allow_empty = False,
         exclude = [
             "**/Tests/**",
             "**/*Test.swift",
-            "**/*.generated.swift"
+            "**/*.generated.swift",
         ],
         exclude_directories = 1,
     ),
@@ -40,7 +40,7 @@ umbra_swift_library(
         "-enable-upcoming-feature",
         "ConciseMagicFile",
         "-enable-upcoming-feature",
-        "DisableOutOfOrderDependencies"
+        "DisableOutOfOrderDependencies",
     ],
     visibility = ["//visibility:public"],
     deps = [
@@ -50,7 +50,8 @@ umbra_swift_library(
         "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
         "//Sources/UmbraErrors",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-        "//Sources/XPCProtocolsCore"
+        "//Sources/XPCProtocolsCore",,
+        "//Sources/XPCProtocolsCore:XPCProtocolsCore"
     ],
 )
 
@@ -60,19 +61,20 @@ umbra_swift_library(
         name = name,
         visibility = ["//visibility:public"],
         deps = [
-            "//Sources/CoreTypesInterfaces",
-            "//Sources/ObjCBridgingTypesFoundation",
-            "//Sources/UmbraCoreTypes",
-            "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
-            "//Sources/UmbraErrors",
-            "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-            "//Sources/XPCProtocolsCore"
-        ],
+        "//Sources/CoreTypesInterfaces",
+        "//Sources/ObjCBridgingTypesFoundation",
+        "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
+        "//Sources/UmbraErrors",
+        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
+        "//Sources/XPCProtocolsCore",,
+        "//Sources/XPCProtocolsCore:XPCProtocolsCore"
+    ],
     )
     for name in [
         "DTOs",
         "Protocols",
         "Types",
-        "XPC"
+        "XPC",
     ]
 ]

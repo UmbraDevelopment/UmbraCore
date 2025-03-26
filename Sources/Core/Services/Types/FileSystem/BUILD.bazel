@@ -5,13 +5,13 @@ umbra_swift_library(
     srcs = glob(
         [
             "*.swift",
-            "**/*.swift"
+            "**/*.swift",
         ],
         allow_empty = False,
     ),
     visibility = ["//visibility:public"],
     deps = [
         "//Sources/UmbraCoreTypes",
-        "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes"
+        "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
     ],
 )

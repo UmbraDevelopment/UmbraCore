@@ -5,13 +5,13 @@ umbra_swift_library(
     srcs = glob(
         [
             "*.swift",
-            "**/*.swift"
+            "**/*.swift",
         ],
         allow_empty = False,
         exclude = [
             "**/Tests/**",
             "**/*Test.swift",
-            "**/*.generated.swift"
+            "**/*.generated.swift",
         ],
         exclude_directories = 1,
     ),
@@ -20,11 +20,9 @@ umbra_swift_library(
         "//Sources/CryptoTypes:CryptoTypesInterfaces",
         "//Sources/SecurityInterfaces",
         "//Sources/SecurityTypes",
-        "//Sources/UmbraCoreTypes",
         "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
         "//Sources/UmbraErrors",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
         "//Sources/XPCProtocolsCore",
-        "//Sources/XPCProtocolsCore:XPCProtocolsCore"
     ],
 )

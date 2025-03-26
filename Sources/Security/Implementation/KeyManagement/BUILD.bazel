@@ -18,6 +18,6 @@ umbra_swift_library(
         "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
         "//Sources/UmbraErrors",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-        "//Sources/XPCProtocolsCore/Sources/Protocols"
+        "//Sources/XPCProtocolsCore/Sources/Protocols",
     ],
 )

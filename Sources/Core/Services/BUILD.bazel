@@ -5,13 +5,13 @@ umbra_swift_library(
     srcs = glob(
         [
             "*.swift",
-            "**/*.swift"
+            "**/*.swift",
         ],
         allow_empty = False,
         exclude = [
             "**/Tests/**",
             "**/*Test.swift",
-            "**/*.generated.swift"
+            "**/*.generated.swift",
         ],
         exclude_directories = 1,
     ),
@@ -30,6 +30,6 @@ umbra_swift_library(
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
         "//Sources/UmbraLogging",
         "//Sources/XPCProtocolsCore",
-        "@swiftpkg_cryptoswift//:CryptoSwift"
+        "@swiftpkg_cryptoswift//:CryptoSwift",
     ],
 )

@@ -10,7 +10,7 @@ umbra_swift_library(
             "CryptoServices/**/*.swift",
             "KeyManagement/**/*.swift",
             "Provider/**/*.swift",
-            "Utils/**/*.swift"
+            "Utils/**/*.swift",
         ],
         allow_empty = True,
     ),
@@ -24,10 +24,8 @@ umbra_swift_library(
         "//Sources/SecurityProtocolsCore",
         "//Sources/SecurityTypes",
         "//Sources/SecurityTypes/Types",
-        "//Sources/UmbraCoreTypes",
         "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
         "//Sources/UmbraErrors",
         "//Sources/XPCProtocolsCore/Sources/Protocols",
-        "//Sources/SecurityInterfaces/Types/Errors:Errors"
     ],
 )

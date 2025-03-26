@@ -8,7 +8,7 @@ umbra_swift_library(
         exclude = [
             "**/Tests/**",
             "**/*Test.swift",
-            "**/*.generated.swift"
+            "**/*.generated.swift",
         ],
         exclude_directories = 1,
     ),
@@ -17,6 +17,6 @@ umbra_swift_library(
         # Temporarily commenting out these dependencies to fix build issues
         # "//Sources/ErrorHandling/Interfaces:Interfaces"
         # "//Sources/ErrorHandling/Domains:Domains"
-        "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes"
+        "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
     ],
 )

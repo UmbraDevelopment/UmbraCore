@@ -5,20 +5,19 @@ umbra_swift_library(
     srcs = glob(
         [
             "*.swift",
-            "**/*.swift"
+            "**/*.swift",
         ],
         allow_empty = False,
         exclude = [
             "**/Tests/**",
             "**/*Test.swift",
-            "**/*.generated.swift"
+            "**/*.generated.swift",
         ],
         exclude_directories = 1,
     ),
     deps = [
         "//Sources/ErrorHandling/Interfaces",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-        "//Sources/ErrorHandling/Interfaces:Interfaces"
     ],
 )
 
@@ -30,10 +29,9 @@ umbra_swift_library(
 #     srcs = glob([
 #         "**/*.swift",
 #         "**/*.docc/**"
-#     ])
+#     ]),
 #     deps = [
-#         "//Sources/ErrorHandling/Interfaces",
+#         "//Sources/ErrorHandling/Interfaces:Interfaces",
 #         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-#         "//Sources/ErrorHandling/Interfaces:Interfaces"
-#     ]
+#     ],
 # )
