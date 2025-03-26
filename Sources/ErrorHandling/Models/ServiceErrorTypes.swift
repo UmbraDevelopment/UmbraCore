@@ -135,35 +135,26 @@ public protocol ServiceError: Error, Sendable {
   /// Error severity level
   var severity: ServiceErrorSeverity { get }
 
-  /// Convert to UmbraErrorsCore.UmbraError
-  var asUmbraError: UmbraErrorsCore.UmbraError { get }
+  /// Convert to GenericUmbraError
+  var asUmbraError: GenericUmbraError { get }
 }
 
 /// Default implementation of asUmbraError
 extension ServiceError {
-  public var asUmbraError: UmbraErrorsCore.UmbraError {
-    // Create context dictionary with service error information
-    let contextDict: [String: Any]=[
-      "service": service,
-      "errorType": errorType,
-      "message": message,
-      "requestId": requestID ?? "",
-      "severity": severity.rawValue
-    ]
+  public var asUmbraError: GenericUmbraError {
+    // Create error context
+    let errorContext = UmbraErrorsCore.ErrorContext()
+      .adding(key: "service", value: service)
+      .adding(key: "errorType", value: errorType)
+      .adding(key: "message", value: message)
+      .adding(key: "requestId", value: requestID ?? "")
 
-    // Create ErrorContext instance
-    let errorContext=UmbraErrorsCore.ErrorContext(
-      contextDict,
-      source: service,
-      operation: "service_operation",
-      details: message
-    )
-
-    // Create UmbraError with the context
-    return UmbraErrorsCore.UmbraError(
-      context: errorContext,
+    // Create GenericUmbraError with the context
+    return GenericUmbraError(
+      domain: service,
       code: errorType,
-      domain: service
+      errorDescription: message ?? "Unknown service error",
+      context: errorContext
     )
   }
 }

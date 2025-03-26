@@ -22,18 +22,14 @@ umbra_swift_library(
     visibility = ["//visibility:public"],
     deps = [
         "//Sources/CoreDTOs",
-        "//Sources/CoreDTOs/Sources:CoreDTOs",
         "//Sources/CoreDTOs/Sources/Operations",
         "//Sources/CoreDTOs/Sources/Security",
         "//Sources/SecurityInterfaces",
-        "//Sources/SecurityTypes",
         "//Sources/UmbraCoreTypes",
-        "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
         "//Sources/UmbraErrors",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
         "//Sources/UmbraLogging",
-        "//Sources/UmbraSecurityBridge",,
-        "//Sources/SecurityTypes:SecurityTypes"
+        "//Sources/UmbraSecurityBridge",
     ],
 )
 
@@ -41,24 +37,20 @@ umbra_swift_library(
 # load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 # load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
 # swift_package(
-#     name = "docc_documentation"
+#     name = "docc_documentation",
 #     srcs = glob([
-#         "**/*.swift"
-#         "**/*.docc/**"
-#     ])
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
 #     deps = [
-        "//Sources/CoreDTOs",
-        "//Sources/CoreDTOs/Sources:CoreDTOs",
-        "//Sources/CoreDTOs/Sources/Operations",
-        "//Sources/CoreDTOs/Sources/Security",
-        "//Sources/SecurityInterfaces",
-        "//Sources/SecurityTypes",
-        "//Sources/UmbraCoreTypes",
-        "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
-        "//Sources/UmbraErrors",
-        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-        "//Sources/UmbraLogging",
-        "//Sources/UmbraSecurityBridge",,
-        "//Sources/SecurityTypes:SecurityTypes"
-    ]
+#         "//Sources/CoreDTOs",
+#         "//Sources/CoreDTOs/Sources/Operations",
+#         "//Sources/CoreDTOs/Sources/Security",
+#         "//Sources/SecurityInterfaces",
+#         "//Sources/UmbraCoreTypes",
+#         "//Sources/UmbraErrors",
+#         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
+#         "//Sources/UmbraLogging",
+#         "//Sources/UmbraSecurityBridge",
+#     ],
 # )

@@ -15,6 +15,7 @@ umbra_swift_library(
         ],
         exclude_directories = 1,
     ),
+    testonly = True,
     deps = [
         "//Sources/KeyManagementTypes",
         "//Sources/KeyManagementTypes:KeyManagementTypesTests",
@@ -23,23 +24,15 @@ umbra_swift_library(
 
 # Uncomment if documentation generation is needed
 # load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
-# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
-# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
 # load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
 # swift_package(
-#     name = "docc_documentation"
+#     name = "docc_documentation",
 #     srcs = glob([
-#     srcs = glob([
-#         "**/*.swift"
-#         "**/*.docc/**"
-#     ])
-#     ])
-# deps = [
-#     # Dependencies would go here"//Sources/Tests"]
-# deps = [
-#     # Dependencies would go here"//Sources/Tests"]
-# deps = [
-#     # Dependencies would go here"//Sources/Tests"]
-# deps = [
-#     # Dependencies would go here"//Sources/Tests"]
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
+#     deps = [
+#         "//Sources/KeyManagementTypes",
+#         "//Sources/KeyManagementTypes:KeyManagementTypesTests",
+#     ],
 # )

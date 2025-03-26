@@ -17,8 +17,7 @@ swift_library(
         "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
         "//Sources/UmbraErrors",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-        "//Sources/XPCProtocolsCore",,
-        "//Sources/SecurityInterfaces/Types/Errors:Errors"
+        "//Sources/XPCProtocolsCore",
     ],
 )
 

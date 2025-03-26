@@ -1,5 +1,7 @@
 import Foundation
 import ResticTypes
+import ResticCLIHelper
+import Commands
 
 /// Example progress handler that prints progress to the console
 final class ConsoleProgressHandler: ResticProgressReporting {

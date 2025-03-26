@@ -1,4 +1,3 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(

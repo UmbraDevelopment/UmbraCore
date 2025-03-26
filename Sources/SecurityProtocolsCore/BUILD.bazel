@@ -7,7 +7,7 @@ swift_library(
     module_name = "SecurityProtocolsCore",
     visibility = ["//visibility:public"],
     deps = [
-        "//Sources/SecurityProtocolsCore/Sources:SecurityProtocolsCore"
+        "//Sources/SecurityProtocolsCore/Sources:SecurityProtocolsCore",
     ],
 )
 

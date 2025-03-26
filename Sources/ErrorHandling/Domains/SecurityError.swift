@@ -1,55 +1,6 @@
 import Foundation
-
-// Local type declarations to replace imports
-// These replace the removed ErrorHandling and ErrorHandlingDomains imports
-
-/// Error domain namespace for security-related errors
-import SecurityTypes
-
-public enum ErrorDomain {
-  /// Security domain for general security errors
-  public static let security="Security"
-  /// Crypto domain for cryptographic operations
-  public static let crypto="Crypto"
-  /// Application domain for application-specific errors
-  public static let application="Application"
-  /// Key management domain for key-related operations
-  public static let keyManagement="KeyManagement"
-  /// Storage domain for secure storage operations
-  public static let storage="Storage"
-}
-
-/// Error context protocol
-public protocol ErrorContext {
-  /// Domain of the error
-  var domain: String { get }
-  /// Code of the error
-  var code: Int { get }
-  /// Description of the error
-  var description: String { get }
-}
-
-/// Base error context implementation
-public struct BaseErrorContext: ErrorContext {
-  /// Domain of the error
-  public let domain: String
-  /// Code of the error
-  public let code: Int
-  /// Description of the error
-  public let description: String
-
-  /// Initialise with domain, code, and description
-  /// - Parameters:
-  ///   - domain: The error domain
-  ///   - code: The error code
-  ///   - description: Human-readable description
-  public init(domain: String, code: Int, description: String) {
-    self.domain=domain
-    self.code=code
-    self.description=description
-  }
-}
-
+import UmbraErrorsCore
+import Interfaces
 /// Domain-specific error type for security operations
 public enum SecurityError: Error, CustomStringConvertible {
   // Authentication errors
@@ -87,7 +38,7 @@ public enum SecurityError: Error, CustomStringConvertible {
 
   /// Domain identifier for SecurityError
   public static var domain: String {
-    "Security"
+    ErrorDomain.security
   }
 
   // MARK: - CustomStringConvertible Protocol
@@ -189,7 +140,7 @@ public enum SecurityError: Error, CustomStringConvertible {
   }
 
   /// Context information about the error
-  public var context: BaseErrorContext {
+  public var context: UmbraSharedErrorContext {
     switch self {
       case .authenticationFailed, .unauthorisedAccess, .invalidCredentials, .sessionExpired,
            .tokenExpired,
@@ -200,8 +151,8 @@ public enum SecurityError: Error, CustomStringConvertible {
            .certificateVerificationFailed, .certificateTrustFailed, .secureChannelFailed,
            .securityPolicyViolation,
            .securityConfigurationError, .unknown:
-        BaseErrorContext(
-          domain: "SecurityError",
+        UmbraSharedErrorContext(
+          domain: ErrorDomain.security,
           code: 0,
           description: "security_operation"
         )
@@ -209,7 +160,7 @@ public enum SecurityError: Error, CustomStringConvertible {
   }
 
   /// Create a new instance with updated context
-  public func with(context _: BaseErrorContext) -> SecurityError {
+  public func with(context _: UmbraSharedErrorContext) -> SecurityError {
     switch self {
       case let .authenticationFailed(msg):
         .authenticationFailed(msg)

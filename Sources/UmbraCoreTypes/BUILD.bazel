@@ -1,6 +1,3 @@
-load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
-load("@bazel_skylib//rules:native_binary.bzl", "native_binary")
-
 # Simply use an alias to the actual implementation in the Sources directory
 alias(
     name = "UmbraCoreTypes",

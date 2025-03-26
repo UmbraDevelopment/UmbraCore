@@ -28,8 +28,7 @@ umbra_swift_library(
         "//Sources/ErrorHandling/Types",
         "//Sources/ErrorHandling/Core",
         "//Sources/SecurityInterfaces",
-        "//Sources/SecurityTypes",,
-        "//Sources/SecurityTypes:SecurityTypes"
+        "//Sources/SecurityTypes",
     ],
 )
 

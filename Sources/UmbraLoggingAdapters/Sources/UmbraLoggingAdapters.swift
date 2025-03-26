@@ -8,7 +8,9 @@
 /// logging interfaces defined in UmbraLogging and their implementations.
 import Foundation
 import LoggingWrapper
+import LoggingWrapperInterfaces
 import UmbraLogging
+import Adapters
 
 /// Facade for UmbraLoggingAdapters module
 public enum UmbraLoggingAdapters {

@@ -1,48 +1,16 @@
 import Foundation
-
-// Local type declarations to replace imports
-// These replace the removed ErrorHandling and ErrorHandlingDomains imports
+import Interfaces
+import UmbraErrorsCore
 
 /// Error domain namespace
-public enum ErrorDomain {
-  /// Security domain
-  public static let security="Security"
-  /// Crypto domain
-  public static let crypto="Crypto"
-  /// Application domain
-  public static let application="Application"
-}
 
 /// Error context protocol
-public protocol ErrorContext {
-  /// Domain of the error
-  var domain: String { get }
-  /// Code of the error
-  var code: Int { get }
-  /// Description of the error
-  var description: String { get }
-}
 
 /// Base error context implementation
-public struct BaseErrorContext: ErrorContext {
-  /// Domain of the error
-  public let domain: String
-  /// Code of the error
-  public let code: Int
-  /// Description of the error
-  public let description: String
-
-  /// Initialise with domain, code and description
-  public init(domain: String, code: Int, description: String) {
-    self.domain=domain
-    self.code=code
-    self.description=description
-  }
-}
 
 extension UmbraErrors.Resource {
   /// Core resource errors related to resource acquisition and management
-  public enum Core: Error, UmbraError, StandardErrorCapabilities, ResourceErrors {
+  public enum Core: Error, Interfaces.UmbraError, StandardErrorCapabilitiesProtocol, ResourceErrors {
     // Resource acquisition errors
     /// Failed to acquire resource
     case acquisitionFailed(resource: String, reason: String)
@@ -82,7 +50,7 @@ extension UmbraErrors.Resource {
 
     /// Domain identifier for resource core errors
     public var domain: String {
-      "Resource.Core"
+      ErrorDomain.resource
     }
 
     /// Error code uniquely identifying the error type
@@ -149,8 +117,13 @@ extension UmbraErrors.Resource {
       }
     }
 
+    /// String description for CustomStringConvertible conformance
+    public var description: String {
+      return self.errorDescription
+    }
+
     /// Source information about where the error occurred
-    public var source: ErrorHandlingInterfaces.ErrorSource? {
+    public var source: ErrorSource? {
       nil // Source is typically set when the error is created with context
     }
 
@@ -160,58 +133,33 @@ extension UmbraErrors.Resource {
     }
 
     /// Additional context for the error
-    public var context: ErrorHandlingInterfaces.ErrorContext {
-      ErrorHandlingInterfaces.ErrorContext(
+    public var context: ErrorContext {
+      ErrorContext(
         source: domain,
         operation: "resource_operation",
-        details: errorDescription
+        details: errorDescription,
+        file: "",
+        line: 0,
+        function: ""
       )
     }
 
     /// Creates a new instance of the error with additional context
-    public func with(context _: ErrorHandlingInterfaces.ErrorContext) -> Self {
+    public func with(context _: ErrorContext) -> Self {
       // Since these are enum cases, we need to return a new instance with the same value
-      switch self {
-        case let .acquisitionFailed(resource, reason):
-          .acquisitionFailed(resource: resource, reason: reason)
-        case let .invalidState(resource, currentState, requiredState):
-          .invalidState(
-            resource: resource,
-            currentState: currentState,
-            requiredState: requiredState
-          )
-        case let .poolExhausted(poolName, limit):
-          .poolExhausted(poolName: poolName, limit: limit)
-        case let .resourceNotFound(resource):
-          .resourceNotFound(resource: resource)
-        case let .resourceAlreadyExists(resource):
-          .resourceAlreadyExists(resource: resource)
-        case let .operationFailed(resource, operation, reason):
-          .operationFailed(resource: resource, operation: operation, reason: reason)
-        case let .resourceLocked(resource, owner):
-          .resourceLocked(resource: resource, owner: owner)
-        case let .timeout(resource, timeoutMs):
-          .timeout(resource: resource, timeoutMs: timeoutMs)
-        case let .resourceCorrupt(resource, reason):
-          .resourceCorrupt(resource: resource, reason: reason)
-        case let .accessDenied(resource, reason):
-          .accessDenied(resource: resource, reason: reason)
-        case let .internalError(reason):
-          .internalError(reason: reason)
-      }
-      // In a real implementation, we would attach the context
+      self
     }
 
     /// Creates a new instance of the error with a specified underlying error
     public func with(underlyingError _: Error) -> Self {
-      // Similar to above, return a new instance with the same value
-      self // In a real implementation, we would attach the underlying error
+      // Since these are enum cases, we need to return a new instance with the same value
+      self
     }
 
     /// Creates a new instance of the error with source information
-    public func with(source _: ErrorHandlingInterfaces.ErrorSource) -> Self {
-      // Similar to above, return a new instance with the same value
-      self // In a real implementation, we would attach the source information
+    public func with(source: ErrorSource) -> Self {
+      // Return self for now - in a real implementation we would attach the source
+      return self
     }
 
     // MARK: - ResourceErrors Protocol Conformance

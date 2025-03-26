@@ -17,7 +17,6 @@ umbra_swift_library(
     ),
     deps = [
         "//Sources/SecurityInterfaces",
-        "//Sources/SecurityTypes",,
-        "//Sources/SecurityTypes:SecurityTypes"
+        "//Sources/SecurityTypes",
     ],
 )

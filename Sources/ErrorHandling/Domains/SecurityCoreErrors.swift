@@ -1,49 +1,10 @@
 import Foundation
 import Interfaces
-
-// Local type declarations to replace imports
-// These replace the removed ErrorHandling and ErrorHandlingDomains imports
-
-/// Error domain namespace
-public enum ErrorDomain {
-  /// Security domain
-  public static let security="Security"
-  /// Crypto domain
-  public static let crypto="Crypto"
-  /// Application domain
-  public static let application="Application"
-}
-
-/// Error context protocol
-public protocol ErrorContext {
-  /// Domain of the error
-  var domain: String { get }
-  /// Code of the error
-  var code: Int { get }
-  /// Description of the error
-  var description: String { get }
-}
-
-/// Base error context implementation
-public struct BaseErrorContext: ErrorContext {
-  /// Domain of the error
-  public let domain: String
-  /// Code of the error
-  public let code: Int
-  /// Description of the error
-  public let description: String
-
-  /// Initialise with domain, code and description
-  public init(domain: String, code: Int, description: String) {
-    self.domain=domain
-    self.code=code
-    self.description=description
-  }
-}
+import UmbraErrorsCore
 
 extension UmbraErrors.Security {
   /// Core security errors related to authentication, authorisation, encryption, etc.
-  public enum Core: Error, UmbraError, StandardErrorCapabilities, AuthenticationErrors,
+  public enum Core: Error, Interfaces.UmbraError, StandardErrorCapabilitiesProtocol, AuthenticationErrors,
   SecurityOperationErrors {
     // Authentication errors
     /// Authentication failed due to invalid credentials or expired session
@@ -94,7 +55,7 @@ extension UmbraErrors.Security {
 
     /// Domain identifier for security core errors
     public var domain: String {
-      "Security.Core"
+      ErrorDomain.security
     }
 
     /// Error code uniquely identifying the error type
@@ -131,105 +92,83 @@ extension UmbraErrors.Security {
       }
     }
 
-    /// Human-readable description of the error
+    /// String description for CustomStringConvertible conformance
+    public var description: String {
+      return self.errorDescription
+    }
+
+    /// Human-readable error description
     public var errorDescription: String {
       switch self {
         case let .authenticationFailed(reason):
-          "Authentication failed: \(reason)"
+          return "Authentication failed: \(reason)"
         case let .authorizationFailed(reason):
-          "Authorisation failed: \(reason)"
+          return "Authorization failed: \(reason)"
         case let .insufficientPermissions(resource, permission):
-          "Insufficient permissions to access \(resource). Required: \(permission)"
+          return "Insufficient permissions to access \(resource). Required: \(permission)"
         case let .encryptionFailed(reason):
-          "Encryption failed: \(reason)"
+          return "Encryption failed: \(reason)"
         case let .decryptionFailed(reason):
-          "Decryption failed: \(reason)"
+          return "Decryption failed: \(reason)"
         case let .hashingFailed(reason):
-          "Hash operation failed: \(reason)"
+          return "Hash operation failed: \(reason)"
         case let .signatureInvalid(reason):
-          "Signature verification failed: \(reason)"
+          return "Signature verification failed: \(reason)"
         case let .certificateInvalid(reason):
-          "Invalid certificate: \(reason)"
+          return "Invalid certificate: \(reason)"
         case let .certificateExpired(reason):
-          "Certificate expired: \(reason)"
+          return "Certificate expired: \(reason)"
         case let .policyViolation(policy, reason):
-          "Security policy violation (\(policy)): \(reason)"
+          return "Security policy violation (\(policy)): \(reason)"
         case let .secureConnectionFailed(reason):
-          "Secure connection failed: \(reason)"
+          return "Secure connection failed: \(reason)"
         case let .secureStorageFailed(operation, reason):
-          "Secure storage operation '\(operation)' failed: \(reason)"
+          return "Secure storage operation '\(operation)' failed: \(reason)"
         case let .dataIntegrityViolation(reason):
-          "Data integrity violation detected: \(reason)"
+          return "Data integrity violation detected: \(reason)"
         case let .internalError(reason):
-          "Internal security error: \(reason)"
+          return "Internal security error: \(reason)"
       }
     }
 
     /// Source information about where the error occurred
-    public var source: Interfaces.ErrorSource? {
+    public var source: ErrorSource? {
       nil // Source is typically set when the error is created with context
     }
-
+    
     /// The underlying error, if any
     public var underlyingError: Error? {
       nil // Underlying error is typically set when the error is created with context
     }
-
+    
     /// Additional context for the error
-    public var context: Interfaces.ErrorContext {
-      Interfaces.ErrorContext(
+    public var context: ErrorContext {
+      ErrorContext(
         source: domain,
-        operation: "security_operation",
-        details: errorDescription
+        operation: "",
+        details: errorDescription,
+        file: "",
+        line: 0,
+        function: ""
       )
     }
 
     /// Creates a new instance of the error with additional context
-    public func with(context _: Interfaces.ErrorContext) -> Self {
+    public func with(context _: ErrorContext) -> Self {
       // Since these are enum cases, we need to return a new instance with the same value
-      switch self {
-        case let .authenticationFailed(reason):
-          .authenticationFailed(reason: reason)
-        case let .authorizationFailed(reason):
-          .authorizationFailed(reason: reason)
-        case let .insufficientPermissions(resource, permission):
-          .insufficientPermissions(resource: resource, requiredPermission: permission)
-        case let .encryptionFailed(reason):
-          .encryptionFailed(reason: reason)
-        case let .decryptionFailed(reason):
-          .decryptionFailed(reason: reason)
-        case let .hashingFailed(reason):
-          .hashingFailed(reason: reason)
-        case let .signatureInvalid(reason):
-          .signatureInvalid(reason: reason)
-        case let .certificateInvalid(reason):
-          .certificateInvalid(reason: reason)
-        case let .certificateExpired(reason):
-          .certificateExpired(reason: reason)
-        case let .policyViolation(policy, reason):
-          .policyViolation(policy: policy, reason: reason)
-        case let .secureConnectionFailed(reason):
-          .secureConnectionFailed(reason: reason)
-        case let .secureStorageFailed(operation, reason):
-          .secureStorageFailed(operation: operation, reason: reason)
-        case let .dataIntegrityViolation(reason):
-          .dataIntegrityViolation(reason: reason)
-        case let .internalError(reason):
-          .internalError(reason: reason)
-      }
-      // In a real implementation, we would attach the context
+      self
     }
-
+    
     /// Creates a new instance of the error with a specified underlying error
     public func with(underlyingError _: Error) -> Self {
-      // Similar to above, return a new instance with the same value
-      self // In a real implementation, we would attach the underlying error
+      // Since these are enum cases, we need to return a new instance with the same value
+      self
     }
 
     /// Creates a new instance of the error with source information
-    public func with(source _: Interfaces.ErrorSource) -> Self {
-      // Similar to above, return a new instance with the same value
-      self // In a real implementation, we would attach the source information
+    public func with(source: ErrorSource) -> Self {
+      // Return self for now - in a real implementation we would attach the source
+      return self
     }
   }
 }

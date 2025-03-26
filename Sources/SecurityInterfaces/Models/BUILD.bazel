@@ -21,8 +21,7 @@ umbra_swift_library(
         "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
         "//Sources/UmbraErrors",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-        "//Sources/XPCProtocolsCore",,
-        "//Sources/CoreTypesInterfaces:CoreTypesInterfaces"
+        "//Sources/XPCProtocolsCore",
     ],
 )
 
@@ -33,15 +32,14 @@ umbra_swift_library(
 #     name = "docc_documentation",
 #     srcs = glob([
 #         "**/*.swift",
-#         "**/*.docc/**"
+#         "**/*.docc/**",
 #     ]),
 #     deps = [
-        "//Sources/CoreTypesInterfaces",
-        "//Sources/SecurityTypes",
-        "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
-        "//Sources/UmbraErrors",
-        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-        "//Sources/XPCProtocolsCore",,
-        "//Sources/CoreTypesInterfaces:CoreTypesInterfaces"
-    ],
+#         "//Sources/CoreTypesInterfaces:CoreTypesInterfaces",
+#         "//Sources/SecurityTypes",
+#         "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
+#         "//Sources/UmbraErrors",
+#         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
+#         "//Sources/XPCProtocolsCore",
+#     ],
 # )

@@ -5,13 +5,13 @@ umbra_swift_library(
     srcs = glob(
         [
             "*.swift",
-            "**/*.swift"
+            "**/*.swift",
         ],
         allow_empty = True,
         exclude = [
             "**/Tests/**",
             "**/*Test.swift",
-            "**/*.generated.swift"
+            "**/*.generated.swift",
         ],
         exclude_directories = 1,
     ),
@@ -19,7 +19,7 @@ umbra_swift_library(
     deps = [
         "//Sources/CoreDTOs",
         "//Sources/SecurityProtocolsCore",
-        "//Sources/UmbraLogging"
+        "//Sources/UmbraLogging",
     ],
 )
 

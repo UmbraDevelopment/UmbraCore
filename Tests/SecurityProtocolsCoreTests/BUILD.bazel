@@ -4,11 +4,11 @@ umbra_swift_test(
     name = "SecurityProtocolsCoreTests",
     srcs = glob([
         "*.swift",
-        "**/*.swift"
+        "**/*.swift",
     ]),
     deps = [
         "//Sources/SecurityProtocolsCore",
         "//Sources/UmbraCoreTypes",
-        "//Tests/TestKit"
+        "//Tests/TestKit",
     ],
 )

@@ -20,8 +20,7 @@ umbra_swift_library(
         "//Sources/ErrorHandling/Interfaces",
         "//Sources/ErrorHandling/Recovery",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-        "//Sources/UmbraLogging",,
-        "//Sources/UmbraLogging:UmbraLogging"
+        "//Sources/UmbraLogging",
     ],
 )
 

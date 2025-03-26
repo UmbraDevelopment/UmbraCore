@@ -12,8 +12,7 @@ swift_library(
     visibility = ["//visibility:public"],
     deps = [
         "//Sources/SecurityTypes",
-        "//Sources/UmbraErrors",,
-        "//Sources/SecurityTypes:SecurityTypes"
+        "//Sources/UmbraErrors",
     ],
 )
 

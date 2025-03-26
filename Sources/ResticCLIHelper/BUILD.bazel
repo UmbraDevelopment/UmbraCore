@@ -18,7 +18,6 @@ umbra_swift_library(
     visibility = ["//visibility:public"],
     deps = [
         "//Sources/ResticTypes",
-        "//Sources/UmbraLogging",,
-        "//Sources/UmbraLogging:UmbraLogging"
+        "//Sources/UmbraLogging",
     ],
 )

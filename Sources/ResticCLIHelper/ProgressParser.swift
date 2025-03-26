@@ -6,7 +6,7 @@ import ResticTypes
 /// - Parsing JSON output from Restic commands
 /// - Decoding progress information into strongly typed models
 /// - Reporting progress updates through a delegate
-final class ProgressParser {
+public final class ProgressParser {
   private let decoder=JSONDecoder()
   public private(set) var delegate: ResticProgressReporting
 

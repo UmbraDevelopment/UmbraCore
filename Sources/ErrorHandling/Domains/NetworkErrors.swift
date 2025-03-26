@@ -1,4 +1,7 @@
 import Foundation
+import UmbraErrorsCore
+// Use the shared declarations instead of local ones
+import Interfaces
 
 /// Network error domain general definitions
 /// These are supplementary to the more specialised definitions in dedicated files

@@ -1,48 +1,11 @@
 import Foundation
-
-// Local type declarations to replace imports
-// These replace the removed ErrorHandling and ErrorHandlingDomains imports
+import Interfaces
+import UmbraErrorsCore
 
 /// Error domain namespace
-public enum ErrorDomain {
-  /// Security domain
-  public static let security="Security"
-  /// Crypto domain
-  public static let crypto="Crypto"
-  /// Application domain
-  public static let application="Application"
-}
-
-/// Error context protocol
-public protocol ErrorContext {
-  /// Domain of the error
-  var domain: String { get }
-  /// Code of the error
-  var code: Int { get }
-  /// Description of the error
-  var description: String { get }
-}
-
-/// Base error context implementation
-public struct BaseErrorContext: ErrorContext {
-  /// Domain of the error
-  public let domain: String
-  /// Code of the error
-  public let code: Int
-  /// Description of the error
-  public let description: String
-
-  /// Initialise with domain, code and description
-  public init(domain: String, code: Int, description: String) {
-    self.domain=domain
-    self.code=code
-    self.description=description
-  }
-}
-
 extension UmbraErrors.Network {
   /// Core network errors related to connections, requests, and responses
-  public enum Core: Error, UmbraError, StandardErrorCapabilities, NetworkErrors {
+  public enum Core: Error, StandardErrorCapabilitiesProtocol, NetworkErrors {
     // Connection errors
     /// Connection to remote service failed
     case connectionFailed(reason: String)
@@ -88,11 +51,11 @@ extension UmbraErrors.Network {
     /// Generic network error
     case internalError(reason: String)
 
-    // MARK: - UmbraError Protocol
+    // MARK: - Interfaces.UmbraError Protocol
 
     /// Domain identifier for network core errors
     public var domain: String {
-      "Network.Core"
+      ErrorDomain.network
     }
 
     /// Error code uniquely identifying the error type
@@ -129,7 +92,12 @@ extension UmbraErrors.Network {
       }
     }
 
-    /// Human-readable description of the error
+    /// String description for CustomStringConvertible conformance
+    public var description: String {
+      return self.errorDescription
+    }
+
+    /// Human-readable error description
     public var errorDescription: String {
       switch self {
         case let .connectionFailed(reason):
@@ -164,7 +132,7 @@ extension UmbraErrors.Network {
     }
 
     /// Source information about where the error occurred
-    public var source: ErrorHandlingInterfaces.ErrorSource? {
+    public var source: Interfaces.ErrorSource? {
       nil // Source is typically set when the error is created with context
     }
 
@@ -174,64 +142,34 @@ extension UmbraErrors.Network {
     }
 
     /// Additional context for the error
-    public var context: ErrorHandlingInterfaces.ErrorContext {
-      ErrorHandlingInterfaces.ErrorContext(
+    public var context: Interfaces.ErrorContext {
+      Interfaces.ErrorContext(
         source: domain,
         operation: "network_operation",
-        details: errorDescription
+        details: errorDescription,
+        file: "",
+        line: 0,
+        function: ""
       )
     }
 
     /// Creates a new instance of the error with additional context
-    public func with(context _: ErrorHandlingInterfaces.ErrorContext) -> Self {
+    public func with(context: Interfaces.ErrorContext) -> Self {
       // Since these are enum cases, we need to return a new instance with the same value
-      switch self {
-        case let .connectionFailed(reason):
-          .connectionFailed(reason: reason)
-        case let .hostUnreachable(host):
-          .hostUnreachable(host: host)
-        case let .serviceUnavailable(service, reason):
-          .serviceUnavailable(service: service, reason: reason)
-        case let .timeout(operation, timeoutMs):
-          .timeout(operation: operation, timeoutMs: timeoutMs)
-        case let .interrupted(reason):
-          .interrupted(reason: reason)
-        case let .invalidRequest(reason):
-          .invalidRequest(reason: reason)
-        case let .requestFailed(statusCode, reason):
-          .requestFailed(statusCode: statusCode, reason: reason)
-        case let .requestTooLarge(sizeBytes, maxSizeBytes):
-          .requestTooLarge(sizeBytes: sizeBytes, maxSizeBytes: maxSizeBytes)
-        case let .rateLimitExceeded(limitPerHour, retryAfterMs):
-          .rateLimitExceeded(limitPerHour: limitPerHour, retryAfterMs: retryAfterMs)
-        case let .responseInvalid(reason):
-          .responseInvalid(reason: reason)
-        case let .dataCorruption(reason):
-          .dataCorruption(reason: reason)
-        case let .incompleteData(reason, receivedBytes, expectedBytes):
-          .incompleteData(
-            reason: reason,
-            receivedBytes: receivedBytes,
-            expectedBytes: expectedBytes
-          )
-        case let .transmissionError(reason):
-          .transmissionError(reason: reason)
-        case let .internalError(reason):
-          .internalError(reason: reason)
-      }
-      // In a real implementation, we would attach the context
+      return self
     }
 
     /// Creates a new instance of the error with a specified underlying error
-    public func with(underlyingError _: Error) -> Self {
-      // Similar to above, return a new instance with the same value
-      self // In a real implementation, we would attach the underlying error
+    public func with(underlyingError: Error) -> Self {
+      // Since these are enum cases, we need to return a new instance with the same value
+      return self
     }
 
     /// Creates a new instance of the error with source information
-    public func with(source _: ErrorHandlingInterfaces.ErrorSource) -> Self {
-      // Similar to above, return a new instance with the same value
-      self // In a real implementation, we would attach the source information
+    public func with(source: Interfaces.ErrorSource) -> Self {
+      // Here we would convert the Interfaces.ErrorSource to UmbraErrorsCore.ErrorSource
+      // using our conversion function, and attach it to a new instance
+      return self
     }
 
     // MARK: - NetworkErrors Protocol

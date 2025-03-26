@@ -171,7 +171,7 @@ extension ErrorSource: CustomStringConvertible {
 
 extension GenericUmbraError {
   /// Converts this error to an UmbraErrorsCore.UmbraError
-  public var asUmbraError: UmbraErrorsCore.UmbraError {
+  public var asUmbraError: GenericUmbraError {
     // We'll use the current UmbraError implementation in UmbraErrorsCore
     let contextDict: [String: Any]=[
       "domain": domain,
@@ -187,10 +187,13 @@ extension GenericUmbraError {
       underlyingError: underlyingError
     )
 
-    return UmbraErrorsCore.UmbraError(
-      context: errorContext,
+    return GenericUmbraError(
+      domain: domain,
       code: code,
-      domain: domain
+      errorDescription: errorDescription,
+      underlyingError: underlyingError,
+      source: source,
+      context: errorContext
     )
   }
 

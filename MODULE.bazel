@@ -12,6 +12,7 @@ bazel_dep(name = "rules_apple", version = "3.6.0", repo_name = "build_bazel_rule
 bazel_dep(name = "rules_swift_package_manager", version = "0.45.0")
 bazel_dep(name = "apple_support", version = "1.15.1", repo_name = "build_bazel_apple_support")
 bazel_dep(name = "rules_pkg", version = "1.0.1")  # Updated from 0.10.1 to match resolved dependency
+bazel_dep(name = "rules_cc", version = "0.0.17")  # Updated to match resolved version
 
 bazel_dep(name = "gazelle", version = "0.41.0", dev_dependency = True, repo_name = "bazel_gazelle")
 bazel_dep(name = "rules_go", version = "0.50.1", dev_dependency = True, repo_name = "io_bazel_rules_go")
@@ -34,3 +35,13 @@ use_repo(
 
 # Swift package dependencies are managed through the Package.swift and Package.resolved files
 # If additional crypto dependencies are needed, they should be added to Package.swift
+
+# Use http_archive to load the rules_shell
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "rules_shell",
+    sha256 = "d8cd4a3a91fc1dc68d4c7d6b655f09def109f7186437e3f50a9b60ab436a0c53",
+    strip_prefix = "rules_shell-0.3.0",
+    urls = ["https://github.com/bazelbuild/rules_shell/archive/refs/tags/v0.3.0.tar.gz"],
+)

@@ -28,13 +28,12 @@ umbra_swift_library(
     ),
     deps = [
         # Additional dependencies as needed:
-        # "//Sources/CoreDTOs"
-        # "//Sources/UmbraLogging"
-        # "@com_github_apple_swift_log//:Logging"
+        # "//Sources/CoreDTOs",
+        # "//Sources/UmbraLogging",
+        # "@com_github_apple_swift_log//:Logging",
         "//Sources/ErrorHandling",
         "//Sources/SecurityInterfaces",
-        "//Sources/SecurityTypes",,
-        "//Sources/SecurityTypes:SecurityTypes"
+        "//Sources/SecurityTypes",
     ],
 )
 
@@ -42,19 +41,18 @@ umbra_swift_library(
 # load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 # load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
 # swift_package(
-#     name = "docc_documentation"
+#     name = "docc_documentation",
 #     srcs = glob([
-#         "**/*.swift"
-#         "**/*.docc/**"
-#     ])
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
 #     deps = [
-        # Additional dependencies as needed:
-        # "//Sources/CoreDTOs"
-        # "//Sources/UmbraLogging"
-        # "@com_github_apple_swift_log//:Logging"
-        "//Sources/ErrorHandling",
-        "//Sources/SecurityInterfaces",
-        "//Sources/SecurityTypes",,
-        "//Sources/SecurityTypes:SecurityTypes"
-    ]
+#         # Additional dependencies as needed:
+#         # "//Sources/CoreDTOs",
+#         # "//Sources/UmbraLogging",
+#         # "@com_github_apple_swift_log//:Logging",
+#         "//Sources/ErrorHandling",
+#         "//Sources/SecurityInterfaces",
+#         "//Sources/SecurityTypes",
+#     ],
 # )

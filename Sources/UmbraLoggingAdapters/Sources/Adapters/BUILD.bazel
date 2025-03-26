@@ -18,8 +18,7 @@ umbra_swift_library(
     deps = [
         "//Sources/LoggingWrapper",
         "//Sources/LoggingWrapperInterfaces",
-        "//Sources/UmbraLogging",,
-        "//Sources/LoggingWrapper:LoggingWrapper"
+        "//Sources/UmbraLogging",
     ],
 )
 
@@ -27,15 +26,14 @@ umbra_swift_library(
 # load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 # load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
 # swift_package(
-#     name = "docc_documentation"
+#     name = "docc_documentation",
 #     srcs = glob([
-#         "**/*.swift"
-#         "**/*.docc/**"
-#     ])
+#         "**/*.swift",
+#         "**/*.docc/**",
+#     ]),
 #     deps = [
-        "//Sources/LoggingWrapper",
-        "//Sources/LoggingWrapperInterfaces",
-        "//Sources/UmbraLogging",,
-        "//Sources/LoggingWrapper:LoggingWrapper"
-    ]
+#         "//Sources/LoggingWrapper",
+#         "//Sources/LoggingWrapperInterfaces",
+#         "//Sources/UmbraLogging",
+#     ],
 # )

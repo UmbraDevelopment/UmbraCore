@@ -1,4 +1,7 @@
 import Foundation
+import UmbraErrorsCore
+// Use the shared declarations instead of local ones
+import Interfaces
 
 extension UmbraErrors {
   /// Storage-related error domains

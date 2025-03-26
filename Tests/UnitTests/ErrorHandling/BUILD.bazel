@@ -10,13 +10,13 @@ swift_test(
     srcs = glob(
         [
             "*.swift",
-            "**/*.swift"
+            "**/*.swift",
         ],
         allow_empty = False,
         exclude = [
             "**/Tests/**",
             "**/*Test.swift",
-            "**/*.generated.swift"
+            "**/*.generated.swift",
         ],
         exclude_directories = 1,
     ),
@@ -25,6 +25,6 @@ swift_test(
         "//Sources/ErrorHandling",
         "//Sources/ErrorHandlingModels",
         "//Sources/Testing",
-        "//Sources/UmbraErrors/Core:UmbraErrorsCore"
+        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
     ],
 )

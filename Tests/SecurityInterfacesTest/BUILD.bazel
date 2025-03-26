@@ -5,7 +5,7 @@ umbra_swift_test(
     srcs = glob(
         [
             "*.swift",
-            "**/*.swift"
+            "**/*.swift",
         ],
         allow_empty = False,
     ),
@@ -16,6 +16,6 @@ umbra_swift_test(
         "//Sources/UmbraErrors",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
         "//Sources/XPCProtocolsCore",
-        "//Tests/TestKit"
+        "//Tests/TestKit",
     ],
 )

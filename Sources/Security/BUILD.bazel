@@ -24,7 +24,6 @@ umbra_swift_library(
         "//Sources/SecurityInterfaces",
         "//Sources/SecurityProtocolsCore",
         "//Sources/UmbraCoreTypes",
-        "//Sources/UmbraLogging",,
-        "//Sources/SecurityInterfaces:SecurityInterfaces"
+        "//Sources/UmbraLogging",
     ],
 )

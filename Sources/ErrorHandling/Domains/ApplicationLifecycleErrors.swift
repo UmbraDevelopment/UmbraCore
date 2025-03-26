@@ -1,48 +1,18 @@
 import Foundation
+// Use the shared declarations instead of local ones
+import Interfaces
+import UmbraErrorsCore
 
-// Local type declarations to replace imports
-// These replace the removed ErrorHandling and ErrorHandlingDomains imports
 
 /// Error domain namespace
-public enum ErrorDomain {
-  /// Security domain
-  public static let security="Security"
-  /// Crypto domain
-  public static let crypto="Crypto"
-  /// Application domain
-  public static let application="Application"
-}
 
 /// Error context protocol
-public protocol ErrorContext {
-  /// Domain of the error
-  var domain: String { get }
-  /// Code of the error
-  var code: Int { get }
-  /// Description of the error
-  var description: String { get }
-}
 
 /// Base error context implementation
-public struct BaseErrorContext: ErrorContext {
-  /// Domain of the error
-  public let domain: String
-  /// Code of the error
-  public let code: Int
-  /// Description of the error
-  public let description: String
-
-  /// Initialise with domain, code and description
-  public init(domain: String, code: Int, description: String) {
-    self.domain=domain
-    self.code=code
-    self.description=description
-  }
-}
 
 extension UmbraErrors.Application {
   /// Application lifecycle and state management errors
-  public enum Lifecycle: Error, UmbraError, Sendable, CustomStringConvertible {
+  public enum Lifecycle: Error, UmbraErrorsCore.UmbraError, Sendable, CustomStringConvertible {
     /// Error during application startup or initialisation
     case startupError(String)
 
@@ -117,7 +87,7 @@ extension UmbraErrors.Application {
     }
 
     /// Source information about where the error occurred
-    public var source: ErrorHandlingInterfaces.ErrorSource? {
+    public var source: UmbraErrorsCore.ErrorSource? {
       nil // Source is typically set when the error is created with context
     }
 
@@ -127,8 +97,8 @@ extension UmbraErrors.Application {
     }
 
     /// Additional context for the error
-    public var context: ErrorHandlingInterfaces.ErrorContext {
-      ErrorHandlingInterfaces.ErrorContext(
+    public var context: UmbraErrorsCore.ErrorContext {
+      UmbraErrorsCore.ErrorContext(
         source: domain,
         operation: "lifecycle_operation",
         details: errorDescription
@@ -136,7 +106,7 @@ extension UmbraErrors.Application {
     }
 
     /// Creates a new instance of the error with additional context
-    public func with(context _: ErrorHandlingInterfaces.ErrorContext) -> Self {
+    public func with(context _: UmbraErrorsCore.ErrorContext) -> Self {
       // Since these are enum cases, we need to return a new instance with the same value
       switch self {
         case let .startupError(msg):
@@ -164,7 +134,7 @@ extension UmbraErrors.Application {
     }
 
     /// Creates a new instance of the error with source information
-    public func with(source _: ErrorHandlingInterfaces.ErrorSource) -> Self {
+    public func with(source: UmbraErrorsCore.ErrorSource) -> Self {
       // Similar to above, return a new instance with the same value
       self // In a real implementation, we would attach the source information
     }

@@ -1,47 +1,17 @@
 import Foundation
+// Use the shared declarations instead of local ones
+import Interfaces
+import UmbraErrorsCore
 
-// Local type declarations to replace imports
-// These replace the removed ErrorHandling and ErrorHandlingDomains imports
 
 /// Error domain namespace
-public enum ErrorDomain {
-  /// Security domain
-  public static let security="Security"
-  /// Crypto domain
-  public static let crypto="Crypto"
-  /// Application domain
-  public static let application="Application"
-}
 
 /// Error context protocol
-public protocol ErrorContext {
-  /// Domain of the error
-  var domain: String { get }
-  /// Code of the error
-  var code: Int { get }
-  /// Description of the error
-  var description: String { get }
-}
 
 /// Base error context implementation
-public struct BaseErrorContext: ErrorContext {
-  /// Domain of the error
-  public let domain: String
-  /// Code of the error
-  public let code: Int
-  /// Description of the error
-  public let description: String
-
-  /// Initialise with domain, code and description
-  public init(domain: String, code: Int, description: String) {
-    self.domain=domain
-    self.code=code
-    self.description=description
-  }
-}
 
 /// Domain-specific error type for application operations
-public enum ApplicationError: Error, UmbraError, CustomStringConvertible {
+public enum ApplicationError: Error, UmbraErrorsCore.UmbraError, CustomStringConvertible {
   // Core errors
   case configurationError(String)
   case initializationError(String)
@@ -148,7 +118,7 @@ public enum ApplicationError: Error, UmbraError, CustomStringConvertible {
   }
 
   /// Source information for the error (optional)
-  public var source: ErrorHandlingInterfaces.ErrorSource? {
+  public var source: UmbraErrorsCore.ErrorSource? {
     switch self {
       case .configurationError, .initializationError, .resourceNotFound, .resourceAlreadyExists,
            .operationTimeout, .operationCancelled, .invalidState, .dependencyError,
@@ -159,13 +129,13 @@ public enum ApplicationError: Error, UmbraError, CustomStringConvertible {
   }
 
   /// Context information about the error
-  public var context: ErrorHandlingInterfaces.ErrorContext {
+  public var context: UmbraErrorsCore.ErrorContext {
     switch self {
       case .configurationError, .initializationError, .resourceNotFound, .resourceAlreadyExists,
            .operationTimeout, .operationCancelled, .invalidState, .dependencyError,
            .externalServiceError, .viewError, .renderingError, .inputValidationError,
            .resourceLoadingError, .lifecycleError, .stateError, .settingsError, .unknown:
-        ErrorHandlingInterfaces.ErrorContext(
+        UmbraErrorsCore.ErrorContext(
           source: "ApplicationError",
           operation: "application_operation"
         )
@@ -275,7 +245,7 @@ public enum ApplicationError: Error, UmbraError, CustomStringConvertible {
   }
 
   /// Create a new instance with updated context
-  public func with(context _: ErrorHandlingInterfaces.ErrorContext) -> ApplicationError {
+  public func with(context _: UmbraErrorsCore.ErrorContext) -> ApplicationError {
     switch self {
       case let .configurationError(msg):
         .configurationError(msg)
@@ -355,7 +325,7 @@ public enum ApplicationError: Error, UmbraError, CustomStringConvertible {
   }
 
   /// Create a new instance with source information
-  public func with(source _: ErrorHandlingInterfaces.ErrorSource) -> ApplicationError {
+  public func with(source: UmbraErrorsCore.ErrorSource) -> ApplicationError {
     switch self {
       case let .configurationError(msg):
         .configurationError(msg)

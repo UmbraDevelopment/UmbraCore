@@ -1,4 +1,7 @@
 import Foundation
+import UmbraErrorsCore
+// Use the shared declarations instead of local ones
+import Interfaces
 
 /// Application error domain - General error types
 /// Note: More specialised error types are defined in dedicated files:
