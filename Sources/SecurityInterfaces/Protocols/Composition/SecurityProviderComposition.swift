@@ -1,6 +1,7 @@
 import UmbraCoreTypes
 
-/// Top-level protocol defining a complete security provider composed of individual specialised protocols.
+/// Top-level protocol defining a complete security provider composed of individual specialised
+/// protocols.
 /// This protocol consolidates cryptographic operations, key management, and security configuration
 /// into a cohesive interface for secure operations.
 public protocol SecurityProviderComposition: Sendable {

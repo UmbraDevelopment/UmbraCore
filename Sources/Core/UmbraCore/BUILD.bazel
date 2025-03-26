@@ -20,8 +20,7 @@ umbra_swift_library(
         "//Sources/CoreDTOs",
         "//Sources/UmbraCoreTypes",
         "//Sources/UmbraLogging",
-        "//Sources/XPCProtocolsCore",,
-        "//Sources/XPCProtocolsCore:XPCProtocolsCore"
+        "//Sources/XPCProtocolsCore"
     ],
 )
 
@@ -35,10 +34,9 @@ umbra_swift_library(
 #         "**/*.docc/**",
 #     ]),
 #     deps = [
-        "//Sources/CoreDTOs",
-        "//Sources/UmbraCoreTypes",
-        "//Sources/UmbraLogging",
-        "//Sources/XPCProtocolsCore",,
-        "//Sources/XPCProtocolsCore:XPCProtocolsCore"
-    ],
+#         "//Sources/CoreDTOs",
+#         "//Sources/UmbraCoreTypes",
+#         "//Sources/UmbraLogging",
+#         "//Sources/XPCProtocolsCore"
+#     ],
 # )

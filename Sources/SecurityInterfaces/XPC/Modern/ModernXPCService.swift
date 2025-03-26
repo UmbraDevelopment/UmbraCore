@@ -8,11 +8,11 @@ import UmbraErrors
 /// Error domain namespace
 public enum ErrorDomain {
   /// Security domain
-  public static let security = "Security"
+  public static let security="Security"
   /// Crypto domain
-  public static let crypto = "Crypto"
+  public static let crypto="Crypto"
   /// Application domain
-  public static let application = "Application"
+  public static let application="Application"
 }
 
 /// Protocol errors
@@ -36,7 +36,7 @@ public struct SecureBytes: Sendable {
 
   /// Create secure bytes from data
   public init(_ data: Data) {
-    self.data = data
+    self.data=data
   }
 
   /// Check if the secure bytes are empty
@@ -61,12 +61,12 @@ public struct XPCServiceStatus: Sendable {
     timestamp: Date,
     protocolVersion: String,
     isActive: Bool,
-    additionalInfo: [String: String] = [:]
+    additionalInfo: [String: String]=[:]
   ) {
-    self.timestamp = timestamp
-    self.protocolVersion = protocolVersion
-    self.isActive = isActive
-    self.additionalInfo = additionalInfo
+    self.timestamp=timestamp
+    self.protocolVersion=protocolVersion
+    self.isActive=isActive
+    self.additionalInfo=additionalInfo
   }
 }
 
@@ -96,7 +96,7 @@ public class ModernXPCService: XPCServiceProtocolComplete, @unchecked Sendable {
 
   /// Create a new modern XPC service
   public init(dependencies: ModernXPCServiceDependencies) {
-    self.dependencies = dependencies
+    self.dependencies=dependencies
   }
 
   /// Synchronise data with the service
@@ -121,7 +121,7 @@ public class ModernXPCService: XPCServiceProtocolComplete, @unchecked Sendable {
     }
 
     // Create a mock hash result
-    let mockHash = "hash-\(data.data.count)-\(Date().timeIntervalSince1970)".data(using: .utf8)!
+    let mockHash="hash-\(data.data.count)-\(Date().timeIntervalSince1970)".data(using: .utf8)!
     return .success(SecureBytes(mockHash))
   }
 
@@ -129,15 +129,15 @@ public class ModernXPCService: XPCServiceProtocolComplete, @unchecked Sendable {
 
   /// Complete protocol ping implementation
   public func pingComplete() async -> Result<Bool, ProtocolError> {
-    let isActive = await ping()
+    let isActive=await ping()
     return .success(isActive)
   }
 
   /// Get the service status
   public func getServiceStatus() async -> Result<XPCServiceStatus, ProtocolError> {
     // In a real implementation, would collect actual service metrics
-    let isActive = await ping()
-    let status = XPCServiceStatus(
+    let isActive=await ping()
+    let status=XPCServiceStatus(
       timestamp: Date(),
       protocolVersion: Self.protocolIdentifier,
       isActive: isActive,
@@ -152,7 +152,7 @@ public class ModernXPCService: XPCServiceProtocolComplete, @unchecked Sendable {
     keySize: Int,
     purpose: String
   ) async -> Result<String, ProtocolError> {
-    let identifier = "generated-key-\(algorithm)-\(keySize)-\(purpose)"
+    let identifier="generated-key-\(algorithm)-\(keySize)-\(purpose)"
 
     if keySize <= 0 {
       return .failure(.invalidInput("Key size must be positive"))

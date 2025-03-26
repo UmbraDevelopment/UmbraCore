@@ -17,7 +17,7 @@ public enum XPCProtocolTypeDefs {
     /// Secret key
     case secret
   }
-  
+
   /// Key format enumeration
   public enum KeyFormat: String, Sendable, Codable {
     /// Raw format

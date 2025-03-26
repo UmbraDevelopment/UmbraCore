@@ -15,7 +15,8 @@ umbra_swift_library(
         ],
         exclude_directories = 1,
     ),
-    deps = ["//Sources/Security"],
+    deps = ["//Sources/Security",
+        "//Sources/Security:Security"],
 )
 
 # Uncomment if documentation generation is needed

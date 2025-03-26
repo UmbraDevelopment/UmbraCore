@@ -30,8 +30,7 @@ umbra_swift_library(
         "//Sources/XPCProtocolsCore",
         "//Sources/XPCProtocolsCore/Sources:XPCProtocolsCoreSources",
         "//Sources/XPCProtocolsCore/Sources/Modern",
-        "//Sources/XPCProtocolsCore/Sources/Protocols",,
-        "//Sources/XPCProtocolsCore:XPCProtocolsCore"
+        "//Sources/XPCProtocolsCore/Sources/Protocols"
     ],
 )
 
@@ -54,8 +53,7 @@ umbra_swift_test(
         "//Sources/XPCProtocolsCore",
         "//Sources/XPCProtocolsCore/Sources:XPCProtocolsCoreSources",
         "//Sources/XPCProtocolsCore/Sources/Modern",
-        "//Sources/XPCProtocolsCore/Sources/Protocols",,
-        "//Sources/XPCProtocolsCore:XPCProtocolsCore"
+        "//Sources/XPCProtocolsCore/Sources/Protocols"
     ],
 )
 
@@ -69,18 +67,17 @@ umbra_swift_test(
 #         "**/*.docc/**",
 #     ]),
 #     deps = [
-        "//Sources/CoreDTOs",
-        "//Sources/SecurityInterfaces",
-        "//Sources/SecurityProtocolsCore",
-        "//Sources/SecurityTypes",
-        "//Sources/UmbraCoreTypes",
-        "//Sources/UmbraErrors",
-        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-        "//Sources/UmbraLogging",
-        "//Sources/XPCProtocolsCore",
-        "//Sources/XPCProtocolsCore/Sources:XPCProtocolsCoreSources",
-        "//Sources/XPCProtocolsCore/Sources/Modern",
-        "//Sources/XPCProtocolsCore/Sources/Protocols",,
-        "//Sources/XPCProtocolsCore:XPCProtocolsCore"
-    ],
+#         "//Sources/CoreDTOs",
+#         "//Sources/SecurityInterfaces",
+#         "//Sources/SecurityProtocolsCore",
+#         "//Sources/SecurityTypes",
+#         "//Sources/UmbraCoreTypes",
+#         "//Sources/UmbraErrors",
+#         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
+#         "//Sources/UmbraLogging",
+#         "//Sources/XPCProtocolsCore",
+#         "//Sources/XPCProtocolsCore/Sources:XPCProtocolsCoreSources",
+#         "//Sources/XPCProtocolsCore/Sources/Modern",
+#         "//Sources/XPCProtocolsCore/Sources/Protocols"
+#     ],
 # )

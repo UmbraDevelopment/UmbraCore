@@ -3,13 +3,13 @@ import UmbraCoreTypes
 import UmbraErrors
 
 /**
-import CoreDTOs
- # XPC Service Protocol with DTOs
+ import CoreDTOs
+  # XPC Service Protocol with DTOs
 
- This file defines foundation-independent protocols for XPC services using DTOs.
- These protocols enable consistent data exchange between XPC clients and services
- without relying on Foundation types.
- */
+  This file defines foundation-independent protocols for XPC services using DTOs.
+  These protocols enable consistent data exchange between XPC clients and services
+  without relying on Foundation types.
+  */
 
 /// Base protocol for XPC services
 public protocol XPCServiceProtocolBase: Sendable {}

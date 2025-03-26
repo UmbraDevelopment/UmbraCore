@@ -1,6 +1,6 @@
-import UmbraCoreTypes
 import Foundation
 import SecurityInterfaces
+import UmbraCoreTypes
 
 // Removing imports that cause circular dependencies
 // import UmbraErrors
@@ -18,7 +18,7 @@ public enum XPCSecurityDTOConverter {
   public static func toDTO(_ error: Error) -> Error {
     // Simplified conversion to avoid circular dependencies
     // Return the original error as we can't create a SecurityErrorDTO without proper imports
-    return error
+    error
   }
 
   /// Extract details from an error context

@@ -5,6 +5,7 @@ import UmbraErrorsCore
 /// Result of an operation that can succeed or fail
 // Removed circular import to CoreDTOs
 import CoreDTOs
+
 public enum OperationResultDTO<T> {
   /// Operation succeeded with a value
   case success(T)

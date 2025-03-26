@@ -4,6 +4,7 @@ import XPCProtocolsCore
 /// Protocol defining the core security provider interface without Foundation dependencies
 /// This is the base protocol that all security providers must implement
 import UmbraCoreTypes
+
 public protocol SecurityProviderProtocol: Sendable {
   /// Protocol identifier - used for protocol negotiation
   static var protocolIdentifier: String { get }

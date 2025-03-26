@@ -17,13 +17,13 @@
  */
 
 import CommonCrypto
+import CoreDTOs
+import ErrorHandlingDomains
 import Foundation
 import SecurityInterfaces
 import UmbraCoreTypes
 import UmbraErrors
 import UmbraErrorsCore
-import ErrorHandlingDomains
-import CoreDTOs
 
 // Extension to add withUnsafeBytes functionality to SecureBytes
 extension SecureBytes {
@@ -31,7 +31,7 @@ extension SecureBytes {
   /// - Parameter body: The closure to execute
   /// - Returns: The result of the closure
   func withUnsafeBytes<R>(_ body: (UnsafeRawBufferPointer) throws -> R) rethrows -> R {
-    let bytes = self.toArray()
+    let bytes=toArray()
     return try bytes.withUnsafeBytes(body)
   }
 }
@@ -131,7 +131,8 @@ public enum CryptoWrapper {
   ///   - key: The decryption key (must be 32 bytes for AES-256)
   ///   - iv: The initialisation vector (should be 12 bytes for GCM mode)
   /// - Returns: The decrypted data
-  /// - Throws: ErrorHandlingDomains.UmbraErrors.Security.Protocols if decryption or verification fails
+  /// - Throws: ErrorHandlingDomains.UmbraErrors.Security.Protocols if decryption or verification
+  /// fails
   public static func aesDecrypt(
     data: SecureBytes,
     key: SecureBytes,

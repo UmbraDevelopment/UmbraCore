@@ -20,8 +20,7 @@ umbra_swift_library(
         # "//Sources/CoreDTOs",
         # "//Sources/UmbraLogging",
         # "@com_github_apple_swift_log//:Logging",
-        "//Sources/ServiceTypes",,
-        "//Sources/ServiceTypes:ServiceTypes"
+        "//Sources/ServiceTypes"
     ],
 )
 
@@ -35,11 +34,10 @@ umbra_swift_library(
 #         "**/*.docc/**",
 #     ]),
 #     deps = [
-        # Dependencies will go here, for example:
-        # "//Sources/CoreDTOs",
-        # "//Sources/UmbraLogging",
-        # "@com_github_apple_swift_log//:Logging",
-        "//Sources/ServiceTypes",,
-        "//Sources/ServiceTypes:ServiceTypes"
-    ],
+#         # Dependencies will go here, for example:
+#         # "//Sources/CoreDTOs",
+#         # "//Sources/UmbraLogging",
+#         # "@com_github_apple_swift_log//:Logging",
+#         "//Sources/ServiceTypes"
+#     ],
 # )

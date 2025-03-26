@@ -191,10 +191,10 @@ final class SymmetricCrypto: Sendable {
         }
 
         // Extract IV and ciphertext
-        let ivBytes = Array(data.toArray().prefix(12))
-        let ciphertextBytes = Array(data.toArray().dropFirst(12))
-        let iv = SecureBytes(bytes: ivBytes)
-        let ciphertext = SecureBytes(bytes: ciphertextBytes)
+        let ivBytes=Array(data.toArray().prefix(12))
+        let ciphertextBytes=Array(data.toArray().dropFirst(12))
+        let iv=SecureBytes(bytes: ivBytes)
+        let ciphertext=SecureBytes(bytes: ciphertextBytes)
 
         // Check if this is our simulated encryption
         let dataArray=ciphertext.toArray()

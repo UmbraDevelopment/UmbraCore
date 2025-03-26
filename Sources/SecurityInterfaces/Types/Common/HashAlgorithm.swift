@@ -7,10 +7,10 @@ public enum HashAlgorithm: Sendable, Equatable, Hashable, CaseIterable {
 
   /// SHA-512 hash algorithm
   case sha512
-  
+
   /// HMAC-SHA-256 keyed hash algorithm
   case hmacSha256
-  
+
   /// HMAC-SHA-512 keyed hash algorithm
   case hmacSha512
 
@@ -28,21 +28,21 @@ public enum HashAlgorithm: Sendable, Equatable, Hashable, CaseIterable {
   public var stringValue: String {
     switch self {
       case .sha256:
-        return "SHA256"
+        "SHA256"
       case .sha512:
-        return "SHA512"
+        "SHA512"
       case .hmacSha256:
-        return "HMAC-SHA256"
+        "HMAC-SHA256"
       case .hmacSha512:
-        return "HMAC-SHA512"
+        "HMAC-SHA512"
     }
   }
-  
+
   /// Initialise from a string representation
   /// - Parameter string: String representation of the algorithm
   /// - Returns: The corresponding HashAlgorithm, or nil if not recognised
   public init?(from string: String) {
-    let normalised = string.uppercased()
+    let normalised=string.uppercased()
     switch normalised {
       case "SHA256", "SHA-256":
         self = .sha256

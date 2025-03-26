@@ -18,7 +18,8 @@ umbra_swift_library(
     deps = [
         "//Sources/LoggingWrapper",
         "//Sources/LoggingWrapperInterfaces",
-        "//Sources/UmbraLogging",
+        "//Sources/UmbraLogging",,
+        "//Sources/UmbraLogging:UmbraLogging"
     ],
 )
 

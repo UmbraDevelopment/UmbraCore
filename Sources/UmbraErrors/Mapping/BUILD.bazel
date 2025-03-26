@@ -23,7 +23,7 @@ umbra_swift_library(
         "//Sources/SecurityTypes",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
         "//Sources/UmbraErrors/DTOs",
-        "//Sources/UmbraErrors/Domains",
+        "//Sources/UmbraErrors/Domains"
     ],
 )
 

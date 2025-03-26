@@ -6,6 +6,7 @@ import UmbraErrorsCore
 
 // Define our own SecurityError for the examples
 import SecurityTypes
+
 public struct SecurityError: UmbraError, Sendable {
   public let domain: String="Security"
   public let errorCode: SecurityErrorCode

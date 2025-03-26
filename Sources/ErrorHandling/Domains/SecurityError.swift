@@ -5,6 +5,7 @@ import Foundation
 
 /// Error domain namespace for security-related errors
 import SecurityTypes
+
 public enum ErrorDomain {
   /// Security domain for general security errors
   public static let security="Security"
@@ -36,16 +37,16 @@ public struct BaseErrorContext: ErrorContext {
   public let code: Int
   /// Description of the error
   public let description: String
-  
+
   /// Initialise with domain, code, and description
   /// - Parameters:
   ///   - domain: The error domain
   ///   - code: The error code
   ///   - description: Human-readable description
   public init(domain: String, code: Int, description: String) {
-    self.domain = domain
-    self.code = code
-    self.description = description
+    self.domain=domain
+    self.code=code
+    self.description=description
   }
 }
 
@@ -356,11 +357,11 @@ public enum SecurityError: Error, CustomStringConvertible {
 extension SecurityError {
   /// Create a security error from another error
   public static func from(error: Error) -> SecurityError {
-    if let securityError = error as? SecurityError {
+    if let securityError=error as? SecurityError {
       return securityError
     }
     // Explicitly cast to NSError to avoid ambiguity with localisedDescription
-    let nsError = error as NSError
+    let nsError=error as NSError
     return SecurityError.unknown("Wrapped error: " + nsError.localizedDescription)
   }
 }

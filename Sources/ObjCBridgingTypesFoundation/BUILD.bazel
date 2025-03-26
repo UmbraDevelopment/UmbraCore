@@ -19,8 +19,9 @@ umbra_swift_library(
         # Add other dependencies as needed,
         "//Sources/CoreErrors",
         "//Sources/ErrorHandling/Domains",
+        "//Sources/UmbraErrors",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-        "//Sources/XPCProtocolsCore",
+        "//Sources/XPCProtocolsCore"
     ],
 )
 
@@ -37,6 +38,7 @@ umbra_swift_library(
 #         # Add other dependencies as needed,
 #         "//Sources/CoreErrors",
 #         "//Sources/ErrorHandling/Domains",
+#         "//Sources/UmbraErrors",
 #         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
 #         "//Sources/XPCProtocolsCore"
 #     ],

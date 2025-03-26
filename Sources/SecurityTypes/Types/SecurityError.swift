@@ -2,6 +2,7 @@ import Foundation
 
 /// Security error implementation
 import SecurityTypes
+
 public struct SecurityError: Error, Equatable {
   /// Error description
   public let description: String

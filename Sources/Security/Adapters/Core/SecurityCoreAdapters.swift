@@ -24,7 +24,7 @@ public enum SecurityCoreAdapters {
     service: Protocols.CryptoServiceProtocol & Sendable
   ) -> AnyCryptoService {
     // Create a DTO from the protocol implementation
-    let dto = CryptoServiceDto(
+    let dto=CryptoServiceDto(
       encrypt: { data, key in
         await service.encrypt(data: data, using: key)
       },

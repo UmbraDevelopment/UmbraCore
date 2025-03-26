@@ -28,6 +28,6 @@ umbra_swift_library(
         "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
         "//Sources/UmbraErrors",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-        "//Sources/UmbraErrors/DTOs",
+        "//Sources/UmbraErrors/DTOs"
     ],
 )

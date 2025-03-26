@@ -164,7 +164,7 @@ public struct SecureBytes: Sendable, Equatable, Hashable, Codable {
   /// - Returns: The value returned by the closure
   /// - Throws: Rethrows any error thrown by the closure
   public func withUnsafeBytes<R>(_ body: (UnsafeRawBufferPointer) throws -> R) rethrows -> R {
-    let bytes = self.toArray()
+    let bytes=toArray()
     return try bytes.withUnsafeBytes(body)
   }
 

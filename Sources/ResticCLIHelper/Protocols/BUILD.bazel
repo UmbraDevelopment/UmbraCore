@@ -17,6 +17,6 @@ umbra_swift_library(
     ),
     deps = [
         "//Sources/ResticCLIHelper/Types:ResticCLIHelperTypes",
-        "//Sources/ResticTypes",
+        "//Sources/ResticTypes"
     ],
 )

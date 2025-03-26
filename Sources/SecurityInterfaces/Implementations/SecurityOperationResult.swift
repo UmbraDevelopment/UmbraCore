@@ -18,10 +18,10 @@ public struct SecurityOperationResult: Sendable, Equatable {
   /// Create a successful result with data
   /// - Parameter data: The result data
   public init(data: SecureBytes) {
-    self.data = data
-    self.errorCode = nil
-    self.errorMessage = nil
-    self.success = true
+    self.data=data
+    errorCode=nil
+    errorMessage=nil
+    success=true
   }
 
   /// Create a failure result with error information
@@ -29,19 +29,19 @@ public struct SecurityOperationResult: Sendable, Equatable {
   ///   - errorCode: The error code
   ///   - errorMessage: The error message
   public init(errorCode: Int, errorMessage: String) {
-    self.data = nil
-    self.errorCode = errorCode
-    self.errorMessage = errorMessage
-    self.success = false
+    data=nil
+    self.errorCode=errorCode
+    self.errorMessage=errorMessage
+    success=false
   }
 
   /// Create from a result DTO
   /// - Parameter dto: The DTO to convert from
   public init(from dto: SecurityResultDTO) {
-    self.data = dto.data
-    self.errorCode = dto.errorCode
-    self.errorMessage = dto.errorMessage
-    self.success = dto.success
+    data=dto.data
+    errorCode=dto.errorCode
+    errorMessage=dto.errorMessage
+    success=dto.success
   }
 
   /// Convert to a DTO
@@ -67,19 +67,19 @@ public struct SecurityOperationResult: Sendable, Equatable {
 public struct SecurityResultDTO: Sendable, Equatable {
   /// Whether the operation succeeded
   public let success: Bool
-  
+
   /// Result data if successful
   public let data: SecureBytes?
-  
+
   /// Error code if failed
   public let errorCode: Int?
-  
+
   /// Error message if failed
   public let errorMessage: String?
-  
+
   /// Associated error object if available
   public let error: Error?
-  
+
   /// Create a new result DTO
   /// - Parameters:
   ///   - success: Whether the operation succeeded
@@ -94,20 +94,20 @@ public struct SecurityResultDTO: Sendable, Equatable {
     errorMessage: String?,
     error: Error?
   ) {
-    self.success = success
-    self.data = data
-    self.errorCode = errorCode
-    self.errorMessage = errorMessage
-    self.error = error
+    self.success=success
+    self.data=data
+    self.errorCode=errorCode
+    self.errorMessage=errorMessage
+    self.error=error
   }
-  
+
   /// Create a successful result with data
   /// - Parameter data: The result data
   /// - Returns: A successful result DTO
   public static func success(data: SecureBytes) -> SecurityResultDTO {
     SecurityResultDTO(success: true, data: data, errorCode: nil, errorMessage: nil, error: nil)
   }
-  
+
   /// Create a failure result with error information
   /// - Parameters:
   ///   - code: Error code
@@ -117,7 +117,7 @@ public struct SecurityResultDTO: Sendable, Equatable {
   public static func failure(
     code: Int,
     message: String,
-    error: Error? = nil
+    error: Error?=nil
   ) -> SecurityResultDTO {
     SecurityResultDTO(
       success: false,
@@ -127,12 +127,12 @@ public struct SecurityResultDTO: Sendable, Equatable {
       error: error
     )
   }
-  
+
   /// Equality check that ignores the error property
   public static func == (lhs: SecurityResultDTO, rhs: SecurityResultDTO) -> Bool {
     lhs.success == rhs.success &&
-    lhs.data == rhs.data &&
-    lhs.errorCode == rhs.errorCode &&
-    lhs.errorMessage == rhs.errorMessage
+      lhs.data == rhs.data &&
+      lhs.errorCode == rhs.errorCode &&
+      lhs.errorMessage == rhs.errorMessage
   }
 }

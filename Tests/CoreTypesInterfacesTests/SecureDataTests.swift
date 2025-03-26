@@ -1,7 +1,7 @@
 @testable import CoreTypesInterfaces
 import SecurityProtocolsCore
-import XCTest
 import UmbraCoreTypes
+import XCTest
 
 final class SecureDataTests: XCTestCase {
   func testInitialization() {
@@ -71,7 +71,7 @@ final class SecureDataTests: XCTestCase {
 
     XCTAssertEqual(byteArray.rawBytes, bytes)
   }
-  
+
   // Note: BinaryData compatibility test removed as BinaryData type isn't available
   // in this context. If BinaryData is a required type, the proper import should be added.
 }

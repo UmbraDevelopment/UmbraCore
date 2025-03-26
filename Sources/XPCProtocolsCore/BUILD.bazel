@@ -13,8 +13,7 @@ umbra_swift_library(
         "//Sources/UmbraCoreTypes",
         "//Sources/UmbraErrors",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-        "//Sources/XPCProtocolsCore/Sources:XPCProtocolsCoreSources",,
-        "//Sources/UmbraErrors:UmbraErrors"
+        "//Sources/XPCProtocolsCore/Sources:XPCProtocolsCoreSources"
     ],
 )
 
@@ -37,8 +36,7 @@ umbra_swift_library(
         "//Sources/UmbraCoreTypes",
         "//Sources/UmbraErrors",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-        "//Sources/XPCProtocolsCore/Sources:XPCProtocolsCoreSources",,
-        "//Sources/UmbraErrors:UmbraErrors"
+        "//Sources/XPCProtocolsCore/Sources:XPCProtocolsCoreSources"
     ],
 )
 
@@ -47,10 +45,9 @@ umbra_swift_library(
 # swift_package(
 #     name = "docc_documentation",
 #     deps = [
-        "//Sources/UmbraCoreTypes",
-        "//Sources/UmbraErrors",
-        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-        "//Sources/XPCProtocolsCore/Sources:XPCProtocolsCoreSources",,
-        "//Sources/UmbraErrors:UmbraErrors"
-    ],
+#         "//Sources/UmbraCoreTypes",
+#         "//Sources/UmbraErrors",
+#         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
+#         "//Sources/XPCProtocolsCore/Sources:XPCProtocolsCoreSources"
+#     ],
 # )

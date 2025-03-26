@@ -32,8 +32,7 @@ umbra_swift_library(
         "//Sources/UmbraErrors",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
         "//Sources/UmbraLogging",
-        "//Sources/UmbraSecurityBridge",,
-        "//Sources/SecurityTypes:SecurityTypes"
+        "//Sources/UmbraSecurityBridge"
     ],
 )
 
@@ -47,18 +46,17 @@ umbra_swift_library(
 #         "**/*.docc/**",
 #     ]),
 #     deps = [
-        "//Sources/CoreDTOs",
-        "//Sources/CoreDTOs/Sources:CoreDTOs",
-        "//Sources/CoreDTOs/Sources/Operations",
-        "//Sources/CoreDTOs/Sources/Security",
-        "//Sources/SecurityInterfaces",
-        "//Sources/SecurityTypes",
-        "//Sources/UmbraCoreTypes",
-        "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
-        "//Sources/UmbraErrors",
-        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-        "//Sources/UmbraLogging",
-        "//Sources/UmbraSecurityBridge",,
-        "//Sources/SecurityTypes:SecurityTypes"
-    ],
+#         "//Sources/CoreDTOs",
+#         "//Sources/CoreDTOs/Sources:CoreDTOs",
+#         "//Sources/CoreDTOs/Sources/Operations",
+#         "//Sources/CoreDTOs/Sources/Security",
+#         "//Sources/SecurityInterfaces",
+#         "//Sources/SecurityTypes",
+#         "//Sources/UmbraCoreTypes",
+#         "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
+#         "//Sources/UmbraErrors",
+#         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
+#         "//Sources/UmbraLogging",
+#         "//Sources/UmbraSecurityBridge"
+#     ],
 # )

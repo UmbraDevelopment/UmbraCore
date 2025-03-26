@@ -20,7 +20,7 @@ swift_library(
         "//Sources/ResticCLIHelper",
         "//Sources/ResticCLIHelper/Types:ResticCLIHelperTypes",
         "//Sources/ResticTypes",
-        "//Sources/UmbraLogging",
+        "//Sources/UmbraLogging"
     ],
 )
 
@@ -43,6 +43,6 @@ swift_test(
         "//Sources/ResticCLIHelper",
         "//Sources/ResticCLIHelper/Types:ResticCLIHelperTypes",
         "//Sources/ResticTypes",
-        "//Sources/UmbraLogging",
+        "//Sources/UmbraLogging"
     ],
 )

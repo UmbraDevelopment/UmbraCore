@@ -143,22 +143,22 @@ public final class SecurityProviderProtocolAdapter: SecurityProviderProtocol {
   /// - Returns: A properly configured SecurityConfigDTO
   public func createSecureConfig(options: [String: Any]?) -> SecurityConfigDTO {
     // Default values
-    var keySize = 256
+    var keySize=256
     var algorithm: SecurityConfigDTO.Algorithm = .aes
     var mode: SecurityConfigDTO.Mode? = .gcm
     var hashAlgorithm: HashAlgorithm = .sha256
-    var authData: SecureBytes? = nil
-    var configOptions: [String: String] = [:]
-    
+    var authData: SecureBytes?
+    var configOptions: [String: String]=[:]
+
     // Apply user-provided options
     if let options {
       // Extract key size if provided
-      if let size = options["keySize"] as? Int {
-        keySize = size
+      if let size=options["keySize"] as? Int {
+        keySize=size
       }
-      
+
       // Extract algorithm if provided
-      if let algoStr = options["algorithm"] as? String {
+      if let algoStr=options["algorithm"] as? String {
         if algoStr.lowercased().contains("aes") {
           algorithm = .aes
         } else if algoStr.lowercased().contains("rsa") {
@@ -167,9 +167,9 @@ public final class SecurityProviderProtocolAdapter: SecurityProviderProtocol {
           algorithm = .chacha20
         }
       }
-      
+
       // Extract mode if provided
-      if let modeStr = options["mode"] as? String {
+      if let modeStr=options["mode"] as? String {
         if modeStr.lowercased().contains("gcm") {
           mode = .gcm
         } else if modeStr.lowercased().contains("cbc") {
@@ -178,9 +178,9 @@ public final class SecurityProviderProtocolAdapter: SecurityProviderProtocol {
           mode = .ctr
         }
       }
-      
+
       // Extract hash algorithm if provided
-      if let hashStr = options["hashAlgorithm"] as? String {
+      if let hashStr=options["hashAlgorithm"] as? String {
         if hashStr.lowercased().contains("256") {
           hashAlgorithm = .sha256
         } else if hashStr.lowercased().contains("384") {
@@ -189,18 +189,24 @@ public final class SecurityProviderProtocolAdapter: SecurityProviderProtocol {
           hashAlgorithm = .sha512
         }
       }
-      
+
       // Extract authentication data if provided
-      if let data = options["authData"] as? SecureBytes {
-        authData = data
+      if let data=options["authData"] as? SecureBytes {
+        authData=data
       }
-      
+
       // Extract all other options as string-string pairs
-      for (key, value) in options where !["keySize", "algorithm", "mode", "hashAlgorithm", "authData"].contains(key) {
-        configOptions[key] = String(describing: value)
+      for (key, value) in options where ![
+        "keySize",
+        "algorithm",
+        "mode",
+        "hashAlgorithm",
+        "authData"
+      ].contains(key) {
+        configOptions[key]=String(describing: value)
       }
     }
-    
+
     // Create the configuration with the extracted values
     return SecurityConfigDTO(
       keySize: keySize,
@@ -225,8 +231,10 @@ public final class SecurityProviderProtocolAdapter: SecurityProviderProtocol {
     switch operation {
       case .encrypt:
         // For encryption, we need to extract the data and key from options
-        guard let data = SecureBytes(base64Encoded: config.options["inputData"] ?? ""),
-              let key = SecureBytes(base64Encoded: config.options["key"] ?? "") else {
+        guard
+          let data=SecureBytes(base64Encoded: config.options["inputData"] ?? ""),
+          let key=SecureBytes(base64Encoded: config.options["key"] ?? "")
+        else {
           return SecurityResultDTO(
             status: .failure,
             error: SecurityProtocolError
@@ -236,7 +244,7 @@ public final class SecurityProviderProtocolAdapter: SecurityProviderProtocol {
         }
 
         do {
-          let result = try await encrypt(data, key: key)
+          let result=try await encrypt(data, key: key)
           return SecurityResultDTO(
             status: .success,
             data: result,
@@ -258,8 +266,10 @@ public final class SecurityProviderProtocolAdapter: SecurityProviderProtocol {
 
       case .decrypt:
         // For decryption, we need to extract the data and key from options
-        guard let data = SecureBytes(base64Encoded: config.options["inputData"] ?? ""),
-              let key = SecureBytes(base64Encoded: config.options["key"] ?? "") else {
+        guard
+          let data=SecureBytes(base64Encoded: config.options["inputData"] ?? ""),
+          let key=SecureBytes(base64Encoded: config.options["key"] ?? "")
+        else {
           return SecurityResultDTO(
             status: .failure,
             error: SecurityProtocolError
@@ -269,7 +279,7 @@ public final class SecurityProviderProtocolAdapter: SecurityProviderProtocol {
         }
 
         do {
-          let result = try await decrypt(data, key: key)
+          let result=try await decrypt(data, key: key)
           return SecurityResultDTO(
             status: .success,
             data: result,
@@ -291,7 +301,7 @@ public final class SecurityProviderProtocolAdapter: SecurityProviderProtocol {
 
       case .hash:
         // For hashing, we need to extract the data from options
-        guard let data = SecureBytes(base64Encoded: config.options["inputData"] ?? "") else {
+        guard let data=SecureBytes(base64Encoded: config.options["inputData"] ?? "") else {
           return SecurityResultDTO(
             status: .failure,
             error: SecurityProtocolError.invalidInput("Missing required data for hashing"),
@@ -300,7 +310,7 @@ public final class SecurityProviderProtocolAdapter: SecurityProviderProtocol {
         }
 
         do {
-          let result = try await hash(data)
+          let result=try await hash(data)
           return SecurityResultDTO(
             status: .success,
             data: result,
@@ -322,10 +332,10 @@ public final class SecurityProviderProtocolAdapter: SecurityProviderProtocol {
 
       case .generateKey:
         // Use the keySize from the config
-        let keySize = config.keySize / 8 // Convert bits to bytes
+        let keySize=config.keySize / 8 // Convert bits to bytes
 
         do {
-          let result = try await generateKey(sizeInBytes: keySize)
+          let result=try await generateKey(sizeInBytes: keySize)
           return SecurityResultDTO(
             status: .success,
             data: result,

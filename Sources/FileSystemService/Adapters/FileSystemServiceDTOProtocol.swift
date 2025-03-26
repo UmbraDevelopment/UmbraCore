@@ -1,9 +1,9 @@
 import CoreDTOs
-import Foundation
-import FileSystemTypes
-import FileSystem
-import Operations
 import DTOs
+import FileSystem
+import FileSystemTypes
+import Foundation
+import Operations
 import SecurityInterfaces
 
 /// Protocol defining a Foundation-independent interface for file system operations

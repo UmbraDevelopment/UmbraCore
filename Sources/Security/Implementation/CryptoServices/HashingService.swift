@@ -11,13 +11,13 @@
  * The implementation is a basic wrapper around CommonCrypto for demonstration purposes
  */
 
+import CoreDTOs
+import ErrorHandlingDomains
 import Foundation
 import SecurityInterfaces
 import UmbraCoreTypes
 import UmbraErrors
 import UmbraErrorsCore
-import ErrorHandlingDomains
-import CoreDTOs
 
 /// Provides cryptographic hashing operations to the CryptoServiceCore.
 ///
@@ -40,7 +40,7 @@ public struct HashingService: Sendable {
     data: SecureBytes
   ) async -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
     // Use SHA-256 through CryptoWrapper
-    let hashedData = CryptoWrapper.sha256(data)
+    let hashedData=CryptoWrapper.sha256(data)
     return .success(hashedData)
   }
 
@@ -54,8 +54,8 @@ public struct HashingService: Sendable {
     against hash: SecureBytes
   ) async -> Result<Bool, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
     // Calculate hash of the provided data
-    let calculatedHash = CryptoWrapper.sha256(data)
-    
+    let calculatedHash=CryptoWrapper.sha256(data)
+
     // Implement constant-time comparison to prevent timing attacks
     var result: UInt8=0
 
@@ -78,7 +78,7 @@ public struct HashingService: Sendable {
   /// - Returns: Result containing hash or error.
   public func hash(
     data: SecureBytes,
-    config: CoreDTOs.SecurityConfigDTO
+    config _: CoreDTOs.SecurityConfigDTO
   ) async -> Result<SecureBytes, ErrorHandlingDomains.UmbraErrors.Security.Protocols> {
     // Currently we only support SHA-256, but this function allows for future algorithm selection
     // via the config parameter

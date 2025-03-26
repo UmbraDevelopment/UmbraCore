@@ -42,7 +42,7 @@ final class KeyDerivationService: Sendable {
   func generateKey(
     bits: Int,
     keyType: String,
-    purpose: String
+    purpose _: String
   ) async throws -> UmbraCoreTypes.SecureBytes {
     // Validate key size
     guard bits > 0 else {
@@ -85,7 +85,8 @@ final class KeyDerivationService: Sendable {
         return randomData
       case .failure:
         throw CryptoError
-          .invalidKeyFormat(reason: "Random generation failed") // Using a more appropriate error type
+          .invalidKeyFormat(reason: "Random generation failed") // Using a more appropriate error
+        // type
     }
   }
 

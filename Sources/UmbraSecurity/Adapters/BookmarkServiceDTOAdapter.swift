@@ -8,6 +8,7 @@ import UmbraCoreTypes
 
 /// Protocol for bookmark service DTOs, providing Foundation-independent bookmark operations
 import FileSystemTypes
+
 public protocol BookmarkServiceDTOProtocol {
   /// Create a bookmark for a file path
   /// - Parameter path: The path to create a bookmark for

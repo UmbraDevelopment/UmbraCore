@@ -17,7 +17,7 @@ umbra_swift_library(
     ),
     deps = [
         "//Sources/SecurityInterfaces",
-        "//Sources/SecurityTypes",
+        "//Sources/SecurityTypes"
     ],
 )
 
@@ -31,6 +31,7 @@ umbra_swift_library(
 #         "**/*.docc/**",
 #     ]),
 #     deps = [
-#         "//Sources/SecurityInterfaces"
+#         "//Sources/SecurityInterfaces",
+#         "//Sources/SecurityTypes"
 #     ],
 # )

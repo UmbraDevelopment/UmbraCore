@@ -8,13 +8,14 @@ import UmbraErrorsCore
 
 /// Error domain namespace
 import SecurityTypes
+
 public enum ErrorDomain {
   /// Security domain
-  public static let security = "Security"
+  public static let security="Security"
   /// Crypto domain
-  public static let crypto = "Crypto"
+  public static let crypto="Crypto"
   /// Application domain
-  public static let application = "Application"
+  public static let application="Application"
 }
 
 /// Error context protocol
@@ -38,9 +39,9 @@ public struct BaseErrorContext: ErrorContext {
 
   /// Initialise with domain, code and description
   public init(domain: String, code: Int, description: String) {
-    self.domain = domain
-    self.code = code
-    self.description = description
+    self.domain=domain
+    self.code=code
+    self.description=description
   }
 }
 
@@ -101,7 +102,7 @@ extension XPCServiceProtocolBasic {
   public func pingBasic() async
   -> Result<Bool, SecurityError> {
     // Simple implementation that doesn't throw
-    let pingResult = await ping()
+    let pingResult=await ping()
     return .success(pingResult)
   }
 

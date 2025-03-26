@@ -34,7 +34,7 @@ public enum SecurityDTOSharedTypes {
     /// Digital signature algorithms
     case signature
   }
-  
+
   /// Convert SecureBytes to/from other binary representations
   public enum SecureBytesConverter {
     /// Convert from binary data to SecureBytes
@@ -43,7 +43,7 @@ public enum SecurityDTOSharedTypes {
     public static func fromData(_ data: Data) -> SecureBytes {
       SecureBytes(Array(data))
     }
-    
+
     /// Convert from SecureBytes to binary data
     /// - Parameter secureBytes: Secure bytes to convert
     /// - Returns: Data representation

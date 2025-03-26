@@ -89,22 +89,22 @@ extension XPCServiceProtocolStandard {
   public func pingStandard() async
   -> Result<Bool, UmbraErrors.SecurityError> {
     // Simple implementation that doesn't throw
-    let pingResult = await ping()
+    let pingResult=await ping()
     return .success(pingResult)
   }
 
   /// Default service status implementation
   public func status() async
   -> Result<[String: Any], UmbraErrors.SecurityError> {
-    let versionResult = await getServiceVersion()
+    let versionResult=await getServiceVersion()
 
-    var statusDict: [String: Any] = [
+    var statusDict: [String: Any]=[
       "timestamp": Date().timeIntervalSince1970,
       "protocol": Self.protocolIdentifier
     ]
 
-    if case let .success(version) = versionResult {
-      statusDict["version"] = version
+    if case let .success(version)=versionResult {
+      statusDict["version"]=version
     }
 
     return .success(statusDict)

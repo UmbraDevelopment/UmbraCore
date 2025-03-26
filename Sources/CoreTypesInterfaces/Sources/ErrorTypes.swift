@@ -5,6 +5,7 @@ import Foundation
 /// Implementations of this protocol should ensure consistent error handling across the codebase.
 import SecurityInterfaces
 import SecurityTypes
+
 public protocol SecurityErrorConvertible: Error, Sendable {
   /// Convert this error to a SecurityError
   ///

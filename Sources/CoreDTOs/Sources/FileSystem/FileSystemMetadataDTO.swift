@@ -2,6 +2,7 @@ import Foundation
 
 /// A Foundation-independent representation of file system metadata.
 import FileSystemTypes
+
 public struct FileSystemMetadataDTO: Sendable, Equatable {
   // MARK: - Properties
 

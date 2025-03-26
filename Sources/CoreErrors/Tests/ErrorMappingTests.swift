@@ -4,6 +4,7 @@ import XCTest
 
 import SecurityInterfaces
 import SecurityTypes
+
 final class ErrorMappingTests: XCTestCase {
   // MARK: - Crypto Error Mapping Tests
 

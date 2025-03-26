@@ -33,8 +33,7 @@ umbra_swift_library(
         # "@com_github_apple_swift_log//:Logging",
         "//Sources/ErrorHandling",
         "//Sources/SecurityInterfaces",
-        "//Sources/SecurityTypes",,
-        "//Sources/SecurityTypes:SecurityTypes"
+        "//Sources/SecurityTypes"
     ],
 )
 
@@ -48,13 +47,12 @@ umbra_swift_library(
 #         "**/*.docc/**",
 #     ]),
 #     deps = [
-        # Additional dependencies as needed:
-        # "//Sources/CoreDTOs",
-        # "//Sources/UmbraLogging",
-        # "@com_github_apple_swift_log//:Logging",
-        "//Sources/ErrorHandling",
-        "//Sources/SecurityInterfaces",
-        "//Sources/SecurityTypes",,
-        "//Sources/SecurityTypes:SecurityTypes"
-    ],
+#         # Additional dependencies as needed:
+#         # "//Sources/CoreDTOs",
+#         # "//Sources/UmbraLogging",
+#         # "@com_github_apple_swift_log//:Logging",
+#         "//Sources/ErrorHandling",
+#         "//Sources/SecurityInterfaces",
+#         "//Sources/SecurityTypes"
+#     ],
 # )

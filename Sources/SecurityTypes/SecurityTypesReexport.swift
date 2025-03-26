@@ -1,7 +1,3 @@
-// This file has been intentionally removed.
-// Instead of using compatibility layers, we're directly updating references
-// to point to the consolidated SecurityInterfaces module.
-
 import Foundation
 @_exported import SecurityInterfaces
 @_exported import UmbraCoreTypes

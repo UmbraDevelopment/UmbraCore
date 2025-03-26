@@ -38,13 +38,13 @@ public struct DefaultModernXPCServiceDependencies: ModernXPCServiceDependencies 
   ///   - configuration: Configuration for the service
   ///   - useSecureStorage: Whether to use secure storage
   public init(
-    logger: SendableLogger? = nil,
-    configuration: [String: String] = [:],
-    useSecureStorage: Bool = true
+    logger: SendableLogger?=nil,
+    configuration: [String: String]=[:],
+    useSecureStorage: Bool=true
   ) {
-    self.logger = logger
-    self.configuration = configuration
-    self.useSecureStorage = useSecureStorage
+    self.logger=logger
+    self.configuration=configuration
+    self.useSecureStorage=useSecureStorage
   }
 }
 
@@ -65,12 +65,12 @@ public struct MockModernXPCServiceDependencies: ModernXPCServiceDependencies {
   ///   - configuration: Configuration for the service
   ///   - useSecureStorage: Whether to use secure storage
   public init(
-    logger: SendableLogger? = nil,
-    configuration: [String: String] = ["environment": "test"],
-    useSecureStorage: Bool = false
+    logger: SendableLogger?=nil,
+    configuration: [String: String]=["environment": "test"],
+    useSecureStorage: Bool=false
   ) {
-    self.logger = logger
-    self.configuration = configuration
-    self.useSecureStorage = useSecureStorage
+    self.logger=logger
+    self.configuration=configuration
+    self.useSecureStorage=useSecureStorage
   }
 }

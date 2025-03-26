@@ -49,18 +49,21 @@ public struct SecurityPolicy: Sendable, Equatable {
       // Use the canonical comparison method for KeyStatus
       compareKeyStatus(lhs.requiredKeyStatus, rhs.requiredKeyStatus)
   }
-  
+
   // Helper method to compare KeyStatus values using the canonical method
-  private static func compareKeyStatus(_ lhs: KeyManagementTypes.KeyStatus, _ rhs: KeyManagementTypes.KeyStatus) -> Bool {
+  private static func compareKeyStatus(
+    _ lhs: KeyManagementTypes.KeyStatus,
+    _ rhs: KeyManagementTypes.KeyStatus
+  ) -> Bool {
     switch (lhs, rhs) {
       case (.active, .active),
            (.compromised, .compromised),
            (.retired, .retired):
-        return true
+        true
       case let (.pendingDeletion(lhsDate), .pendingDeletion(rhsDate)):
-        return lhsDate == rhsDate
+        lhsDate == rhsDate
       default:
-        return false
+        false
     }
   }
 }

@@ -10,6 +10,7 @@ import UmbraLogging
 /// with error recovery and notifications
 import SecurityInterfaces
 import SecurityTypes
+
 public final class ComprehensiveErrorHandlingExample {
   /// Sets up the error handling system for an application
   public func setupErrorHandling() {

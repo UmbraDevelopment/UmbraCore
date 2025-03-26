@@ -19,8 +19,7 @@ umbra_swift_library(
         "//Sources/CoreDTOs",
         "//Sources/ErrorHandling",
         "//Sources/ObjCBridgingTypesFoundation",
-        "//Sources/UmbraLogging",,
-        "//Sources/ObjCBridgingTypesFoundation:ObjCBridgingTypesFoundation"
+        "//Sources/UmbraLogging"
     ],
 )
 
@@ -34,10 +33,9 @@ umbra_swift_library(
 #         "**/*.docc/**",
 #     ]),
 #     deps = [
-        "//Sources/CoreDTOs",
-        "//Sources/ErrorHandling",
-        "//Sources/ObjCBridgingTypesFoundation",
-        "//Sources/UmbraLogging",,
-        "//Sources/ObjCBridgingTypesFoundation:ObjCBridgingTypesFoundation"
-    ],
+#         "//Sources/CoreDTOs",
+#         "//Sources/ErrorHandling",
+#         "//Sources/ObjCBridgingTypesFoundation",
+#         "//Sources/UmbraLogging"
+#     ],
 # )

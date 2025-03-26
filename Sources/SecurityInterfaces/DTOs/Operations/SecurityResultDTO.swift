@@ -27,20 +27,20 @@ public struct SecurityResultDTO: Sendable, Equatable {
   /// Initialise a successful result with data
   /// - Parameter data: Result data
   public init(data: SecureBytes) {
-    success = true
-    self.data = data
-    errorCode = nil
-    errorMessage = nil
-    error = nil
+    success=true
+    self.data=data
+    errorCode=nil
+    errorMessage=nil
+    error=nil
   }
 
   /// Initialise a successful result without data
   public init() {
-    success = true
-    data = nil
-    errorCode = nil
-    errorMessage = nil
-    error = nil
+    success=true
+    data=nil
+    errorCode=nil
+    errorMessage=nil
+    error=nil
   }
 
   /// Initialise with comprehensive parameters
@@ -52,16 +52,16 @@ public struct SecurityResultDTO: Sendable, Equatable {
   ///   - error: Optional security protocol error
   public init(
     success: Bool,
-    data: SecureBytes? = nil,
-    errorCode: Int? = nil,
-    errorMessage: String? = nil,
-    error: Errors.SecurityProtocolError? = nil
+    data: SecureBytes?=nil,
+    errorCode: Int?=nil,
+    errorMessage: String?=nil,
+    error: Errors.SecurityProtocolError?=nil
   ) {
-    self.success = success
-    self.data = data
-    self.errorCode = errorCode
-    self.errorMessage = errorMessage
-    self.error = error
+    self.success=success
+    self.data=data
+    self.errorCode=errorCode
+    self.errorMessage=errorMessage
+    self.error=error
   }
 
   // MARK: - Factory Methods
@@ -86,7 +86,7 @@ public struct SecurityResultDTO: Sendable, Equatable {
   /// - Returns: SecurityResultDTO instance
   public static func failure(
     message: String,
-    code: Int = 0
+    code: Int=0
   ) -> SecurityResultDTO {
     SecurityResultDTO(
       success: false,
@@ -101,7 +101,7 @@ public struct SecurityResultDTO: Sendable, Equatable {
   public static func failure(
     error: Errors.SecurityProtocolError
   ) -> SecurityResultDTO {
-    let message = switch error {
+    let message=switch error {
       case let .internalError(errorMessage):
         "Internal error: \(errorMessage)"
       case let .invalidInput(errorMessage):

@@ -6,6 +6,7 @@ import UmbraErrors
 /// This type provides a standardized way to return either a successful result
 /// or an error from asynchronous operations.
 import CoreDTOs
+
 public enum OperationResultDTO<T: Sendable>: Sendable {
   /// Operation succeeded with a result
   case success(T)

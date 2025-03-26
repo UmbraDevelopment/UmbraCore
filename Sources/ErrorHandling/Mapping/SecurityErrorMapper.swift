@@ -6,6 +6,7 @@ import Foundation
 /// Error domain namespace
 import SecurityInterfaces
 import SecurityTypes
+
 public enum ErrorDomain {
   /// Security domain
   public static let security="Security"
