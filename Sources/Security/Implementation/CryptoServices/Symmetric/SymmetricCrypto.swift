@@ -125,7 +125,7 @@ final class SymmetricCrypto: Sendable {
         return SecurityResultDTO(
           status: .failure,
           error: SecurityProtocolError
-            .operationFailed("Encryption algorithm not supported: \(algorithm)"),
+            .unsupportedOperation(name: "Encryption algorithm not supported: \(algorithm)"),
           metadata: ["details": "The specified algorithm is not currently implemented"]
         )
       }
@@ -133,7 +133,7 @@ final class SymmetricCrypto: Sendable {
       return SecurityResultDTO(
         status: .failure,
         error: SecurityProtocolError
-          .operationFailed("Encryption failed: \(error.localizedDescription)"),
+          .cryptographicError("Encryption failed: \(error.localizedDescription)"),
         metadata: ["details": "Error during symmetric encryption: \(error)"]
       )
     }
@@ -191,8 +191,10 @@ final class SymmetricCrypto: Sendable {
         }
 
         // Extract IV and ciphertext
-        let iv=SecureBytes(bytes: data.prefix(12).toArray())
-        let ciphertext=SecureBytes(bytes: data.suffix(from: 12).toArray())
+        let ivBytes = Array(data.toArray().prefix(12))
+        let ciphertextBytes = Array(data.toArray().dropFirst(12))
+        let iv = SecureBytes(bytes: ivBytes)
+        let ciphertext = SecureBytes(bytes: ciphertextBytes)
 
         // Check if this is our simulated encryption
         let dataArray=ciphertext.toArray()
@@ -223,7 +225,7 @@ final class SymmetricCrypto: Sendable {
         // For a real implementation, use CryptoKit here
         return SecurityResultDTO(
           status: .failure,
-          error: SecurityProtocolError.operationFailed("Decryption failed: invalid data format"),
+          error: SecurityProtocolError.cryptographicError("Decryption failed: invalid data format"),
           metadata: ["details": "The encrypted data is not in the expected format"]
         )
       } else {
@@ -231,7 +233,7 @@ final class SymmetricCrypto: Sendable {
         return SecurityResultDTO(
           status: .failure,
           error: SecurityProtocolError
-            .operationFailed("Decryption algorithm not supported: \(algorithm)"),
+            .unsupportedOperation(name: "Decryption algorithm not supported: \(algorithm)"),
           metadata: ["details": "The specified algorithm is not currently implemented"]
         )
       }
@@ -239,7 +241,7 @@ final class SymmetricCrypto: Sendable {
       return SecurityResultDTO(
         status: .failure,
         error: SecurityProtocolError
-          .operationFailed("Decryption failed: \(error.localizedDescription)"),
+          .cryptographicError("Decryption failed: \(error.localizedDescription)"),
         metadata: ["details": "Error during symmetric decryption: \(error)"]
       )
     }

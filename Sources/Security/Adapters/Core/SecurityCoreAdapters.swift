@@ -13,7 +13,7 @@ public enum SecurityCoreAdapters {
   /// Create a type-erased wrapper for a crypto service DTO
   /// - Parameter dto: The crypto service DTO to wrap
   /// - Returns: A type-erased crypto service
-  public static func createAnyCryptoService(dto: CryptoServiceDTO) -> AnyCryptoService {
+  public static func createAnyCryptoService(dto: CryptoServiceDto) -> AnyCryptoService {
     AnyCryptoService(dto: dto)
   }
 
@@ -24,7 +24,7 @@ public enum SecurityCoreAdapters {
     service: Protocols.CryptoServiceProtocol & Sendable
   ) -> AnyCryptoService {
     // Create a DTO from the protocol implementation
-    let dto=CryptoServiceDTO(
+    let dto = CryptoServiceDto(
       encrypt: { data, key in
         await service.encrypt(data: data, using: key)
       },
@@ -45,7 +45,7 @@ public enum SecurityCoreAdapters {
   /// Creates a CryptoServiceAdapter from a DTO
   /// - Parameter dto: The crypto service DTO
   /// - Returns: A CryptoServiceAdapter instance
-  public static func createCryptoServiceAdapter(dto: CryptoServiceDTO) -> CryptoServiceAdapter {
+  public static func createCryptoServiceAdapter(dto: CryptoServiceDto) -> CryptoServiceAdapter {
     CryptoServiceAdapter(dto: dto)
   }
 }

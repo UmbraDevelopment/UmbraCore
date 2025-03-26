@@ -80,7 +80,7 @@ final class HashingService: Sendable {
         return SecurityResultDTO(
           status: .failure,
           error: SecurityProtocolError
-            .operationFailed("Hash algorithm not supported: \(algorithm)"),
+            .unsupportedOperation(name: "Hash algorithm not supported: \(algorithm)"),
           metadata: ["details": "The specified hash algorithm is not currently implemented"]
         )
       }
@@ -88,7 +88,7 @@ final class HashingService: Sendable {
       return SecurityResultDTO(
         status: .failure,
         error: SecurityProtocolError
-          .operationFailed("Hashing operation failed: \(error.localizedDescription)"),
+          .cryptographicError("Hashing operation failed: \(error.localizedDescription)"),
         metadata: ["details": "Error during cryptographic hashing: \(error)"]
       )
     }

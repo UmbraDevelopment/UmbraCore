@@ -162,14 +162,14 @@ final class ModernXPCTests: XCTestCase {
     let connection=MockXPCConnection()
 
     try? await connection.connect()
-    await XCTAssertTrue(connection.connectCalled)
+    XCTAssertTrue(await connection.connectCalled)
 
     await connection.disconnect()
-    await XCTAssertTrue(connection.disconnectCalled)
+    XCTAssertTrue(await connection.disconnectCalled)
 
     await connection.send(["test": "value"], replyHandler: nil)
-    await XCTAssertTrue(connection.sendCalled)
+    XCTAssertTrue(await connection.sendCalled)
 
-    await XCTAssertEqual(connection.endpoint, "com.test.mockservice")
+    XCTAssertEqual(await connection.endpoint, "com.test.mockservice")
   }
 }

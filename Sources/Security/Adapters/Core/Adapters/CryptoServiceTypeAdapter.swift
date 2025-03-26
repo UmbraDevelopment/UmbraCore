@@ -91,13 +91,13 @@ public struct CryptoServiceTypeAdapter<
 }
 
 /// Contains transformations that can be applied to data passing through the adapter
-private struct ServiceTransformations {
+private struct ServiceTransformations: Sendable {
   /// Optional transformation for input data
-  var transformInputData: ((SecureBytes) -> SecureBytes)?
+  var transformInputData: ((@Sendable (SecureBytes) -> SecureBytes))?
 
   /// Optional transformation for input keys
-  var transformInputKey: ((SecureBytes) -> SecureBytes)?
+  var transformInputKey: ((@Sendable (SecureBytes) -> SecureBytes))?
 
   /// Optional transformation for output data
-  var transformOutputData: ((SecureBytes) -> SecureBytes)?
+  var transformOutputData: ((@Sendable (SecureBytes) -> SecureBytes))?
 }

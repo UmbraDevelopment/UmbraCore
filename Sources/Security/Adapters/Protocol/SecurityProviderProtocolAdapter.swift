@@ -138,6 +138,80 @@ public final class SecurityProviderProtocolAdapter: SecurityProviderProtocol {
     }
   }
 
+  /// Create a secure configuration with appropriate defaults
+  /// - Parameter options: Optional dictionary of configuration options
+  /// - Returns: A properly configured SecurityConfigDTO
+  public func createSecureConfig(options: [String: Any]?) -> SecurityConfigDTO {
+    // Default values
+    var keySize = 256
+    var algorithm: SecurityConfigDTO.Algorithm = .aes
+    var mode: SecurityConfigDTO.Mode? = .gcm
+    var hashAlgorithm: HashAlgorithm = .sha256
+    var authData: SecureBytes? = nil
+    var configOptions: [String: String] = [:]
+    
+    // Apply user-provided options
+    if let options {
+      // Extract key size if provided
+      if let size = options["keySize"] as? Int {
+        keySize = size
+      }
+      
+      // Extract algorithm if provided
+      if let algoStr = options["algorithm"] as? String {
+        if algoStr.lowercased().contains("aes") {
+          algorithm = .aes
+        } else if algoStr.lowercased().contains("rsa") {
+          algorithm = .rsa
+        } else if algoStr.lowercased().contains("chacha") {
+          algorithm = .chacha20
+        }
+      }
+      
+      // Extract mode if provided
+      if let modeStr = options["mode"] as? String {
+        if modeStr.lowercased().contains("gcm") {
+          mode = .gcm
+        } else if modeStr.lowercased().contains("cbc") {
+          mode = .cbc
+        } else if modeStr.lowercased().contains("ctr") {
+          mode = .ctr
+        }
+      }
+      
+      // Extract hash algorithm if provided
+      if let hashStr = options["hashAlgorithm"] as? String {
+        if hashStr.lowercased().contains("256") {
+          hashAlgorithm = .sha256
+        } else if hashStr.lowercased().contains("384") {
+          hashAlgorithm = .sha384
+        } else if hashStr.lowercased().contains("512") {
+          hashAlgorithm = .sha512
+        }
+      }
+      
+      // Extract authentication data if provided
+      if let data = options["authData"] as? SecureBytes {
+        authData = data
+      }
+      
+      // Extract all other options as string-string pairs
+      for (key, value) in options where !["keySize", "algorithm", "mode", "hashAlgorithm", "authData"].contains(key) {
+        configOptions[key] = String(describing: value)
+      }
+    }
+    
+    // Create the configuration with the extracted values
+    return SecurityConfigDTO(
+      keySize: keySize,
+      algorithm: algorithm,
+      mode: mode,
+      hashAlgorithm: hashAlgorithm,
+      authenticationData: authData,
+      options: configOptions
+    )
+  }
+
   /// Perform a secure operation with appropriate error handling
   /// - Parameters:
   ///   - operation: The security operation to perform
@@ -150,7 +224,9 @@ public final class SecurityProviderProtocolAdapter: SecurityProviderProtocol {
     // Map the operation to the appropriate underlying service call
     switch operation {
       case .encrypt:
-        guard let data=config.inputData, let key=config.key else {
+        // For encryption, we need to extract the data and key from options
+        guard let data = SecureBytes(base64Encoded: config.options["inputData"] ?? ""),
+              let key = SecureBytes(base64Encoded: config.options["key"] ?? "") else {
           return SecurityResultDTO(
             status: .failure,
             error: SecurityProtocolError
@@ -160,7 +236,7 @@ public final class SecurityProviderProtocolAdapter: SecurityProviderProtocol {
         }
 
         do {
-          let result=try await encrypt(data, key: key)
+          let result = try await encrypt(data, key: key)
           return SecurityResultDTO(
             status: .success,
             data: result,
@@ -181,7 +257,9 @@ public final class SecurityProviderProtocolAdapter: SecurityProviderProtocol {
         }
 
       case .decrypt:
-        guard let data=config.inputData, let key=config.key else {
+        // For decryption, we need to extract the data and key from options
+        guard let data = SecureBytes(base64Encoded: config.options["inputData"] ?? ""),
+              let key = SecureBytes(base64Encoded: config.options["key"] ?? "") else {
           return SecurityResultDTO(
             status: .failure,
             error: SecurityProtocolError
@@ -191,7 +269,7 @@ public final class SecurityProviderProtocolAdapter: SecurityProviderProtocol {
         }
 
         do {
-          let result=try await decrypt(data, key: key)
+          let result = try await decrypt(data, key: key)
           return SecurityResultDTO(
             status: .success,
             data: result,
@@ -212,7 +290,8 @@ public final class SecurityProviderProtocolAdapter: SecurityProviderProtocol {
         }
 
       case .hash:
-        guard let data=config.inputData else {
+        // For hashing, we need to extract the data from options
+        guard let data = SecureBytes(base64Encoded: config.options["inputData"] ?? "") else {
           return SecurityResultDTO(
             status: .failure,
             error: SecurityProtocolError.invalidInput("Missing required data for hashing"),
@@ -221,7 +300,7 @@ public final class SecurityProviderProtocolAdapter: SecurityProviderProtocol {
         }
 
         do {
-          let result=try await hash(data)
+          let result = try await hash(data)
           return SecurityResultDTO(
             status: .success,
             data: result,
@@ -242,14 +321,15 @@ public final class SecurityProviderProtocolAdapter: SecurityProviderProtocol {
         }
 
       case .generateKey:
-        let keySize=config.metadata?["keySize"] as? Int ?? 32 // Default to 32 bytes (256 bits)
+        // Use the keySize from the config
+        let keySize = config.keySize / 8 // Convert bits to bytes
 
         do {
-          let result=try await generateKey(sizeInBytes: keySize)
+          let result = try await generateKey(sizeInBytes: keySize)
           return SecurityResultDTO(
             status: .success,
             data: result,
-            metadata: ["operation": "generateKey", "keySize": keySize]
+            metadata: ["operation": "generateKey", "keySize": String(keySize)]
           )
         } catch let error as SecurityProtocolError {
           return SecurityResultDTO(
@@ -268,42 +348,9 @@ public final class SecurityProviderProtocolAdapter: SecurityProviderProtocol {
       default:
         return SecurityResultDTO(
           status: .failure,
-          error: SecurityProtocolError.operationFailed("Unsupported operation: \(operation)"),
+          error: SecurityProtocolError.unsupportedOperation(name: "\(operation)"),
           metadata: ["operation": "\(operation)"]
         )
     }
-  }
-
-  /// Create a secure configuration with appropriate defaults
-  /// - Parameter options: Optional dictionary of configuration options
-  /// - Returns: A properly configured SecurityConfigDTO
-  public func createSecureConfig(options: [String: Any]?) -> SecurityConfigDTO {
-    // Create a configuration with sensible defaults
-    var config=SecurityConfigDTO()
-
-    // Apply user-provided options
-    if let options {
-      // Extract data if provided
-      if let data=options["data"] as? SecureBytes {
-        config.inputData=data
-      }
-
-      // Extract key if provided
-      if let key=options["key"] as? SecureBytes {
-        config.key=key
-      }
-
-      // Extract all other options as metadata
-      var metadata: [String: Any]=[:]
-      for (key, value) in options where key != "data" && key != "key" {
-        metadata[key]=value
-      }
-
-      if !metadata.isEmpty {
-        config.metadata=metadata
-      }
-    }
-
-    return config
   }
 }

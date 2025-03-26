@@ -122,7 +122,7 @@ final class AsymmetricCrypto: Sendable {
     // If we get here, decryption "failed"
     return SecurityResultDTO(
       status: .failure,
-      error: SecurityProtocolError.operationFailed("Decryption failed"),
+      error: SecurityProtocolError.cryptographicError("Decryption failed"),
       metadata: ["details": "Decryption failed"]
     )
   }

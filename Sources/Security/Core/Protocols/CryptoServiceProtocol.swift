@@ -38,10 +38,10 @@ public protocol CryptoServiceProtocol: Sendable {
 
 /// Extension to convert CryptoServiceProtocol to a DTO
 extension CryptoServiceProtocol {
-  /// Converts this protocol implementation to a CryptoServiceDTO
-  /// - Returns: A CryptoServiceDTO representing this service
-  public func toDTO() -> CryptoServiceDTO {
-    CryptoServiceDTO(
+  /// Converts this protocol implementation to a CryptoServiceDto
+  /// - Returns: A CryptoServiceDto representing this service
+  public func toDTO() -> CryptoServiceDto {
+    CryptoServiceDto(
       encrypt: { data, key in
         await self.encrypt(data: data, using: key)
       },
@@ -59,12 +59,12 @@ extension CryptoServiceProtocol {
 }
 
 /// Extension to create a CryptoServiceProtocol from a DTO
-extension CryptoServiceDTO {
+extension CryptoServiceDto {
   /// Creates a protocol-conforming object from this DTO
   /// - Returns: An object that conforms to CryptoServiceProtocol
   public func toProtocol() -> some CryptoServiceProtocol {
     struct ProtocolAdapter: CryptoServiceProtocol {
-      let dto: CryptoServiceDTO
+      let dto: CryptoServiceDto
 
       func encrypt(
         data: SecureBytes,

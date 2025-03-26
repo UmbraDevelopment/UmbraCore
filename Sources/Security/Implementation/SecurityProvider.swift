@@ -78,41 +78,125 @@ public final class SecurityProvider: SecurityProviderProtocol {
     operation: SecurityOperation,
     config: SecurityConfigDTO
   ) async -> SecurityResultDTO {
-    await providerCore.performSecureOperation(operation: operation, config: config)
+    return await providerCore.performSecureOperation(operation: operation, config: config)
   }
 
   /// Create a secure configuration with appropriate defaults
   /// - Parameter options: Optional dictionary of configuration options
   /// - Returns: A properly configured SecurityConfigDTO
   public func createSecureConfig(options: [String: Any]?) -> SecurityConfigDTO {
-    var config=SecurityConfigDTO()
+    // Start with default configuration
+    var keySize = 256
+    var algorithm = SecurityConfigDTO.Algorithm.aes
+    var mode: SecurityConfigDTO.Mode? = .gcm
+    var hashAlgorithm = HashAlgorithm.sha256
+    var authData: SecureBytes? = nil
+    var configOptions = [String: String]()
 
     // Apply options if provided
     if let options {
       for (key, value) in options {
         switch key {
           case "algorithm":
-            if let algorithmName=value as? String {
-              config.metadata=config.metadata ?? [:]
-              config.metadata?["algorithm"]=algorithmName
+            if let algorithmName = value as? String {
+              configOptions["algorithm"] = algorithmName
             }
           case "data":
-            if let data=value as? SecureBytes {
-              config.inputData=data
+            if let data = value as? SecureBytes {
+              configOptions["inputData"] = data.base64EncodedString()
             }
           case "key":
-            if let key=value as? SecureBytes {
-              config.key=key
+            if let key = value as? SecureBytes {
+              configOptions["key"] = key.base64EncodedString()
+            }
+          case "keySize":
+            if let size = value as? Int {
+              keySize = size
+            }
+          case "mode":
+            if let modeString = value as? String {
+              configOptions["mode"] = modeString
+            }
+          case "hashAlgorithm":
+            if let hashString = value as? String, 
+               let hash = HashAlgorithm(rawValue: hashString) {
+              hashAlgorithm = hash
             }
           default:
-            // Add as metadata
-            config.metadata=config.metadata ?? [:]
-            config.metadata?[key]=value
+            // Add as string option if possible
+            if let stringValue = value as? String {
+              configOptions[key] = stringValue
+            } else if let intValue = value as? Int {
+              configOptions[key] = String(intValue)
+            } else if let boolValue = value as? Bool {
+              configOptions[key] = String(boolValue)
+            }
         }
       }
     }
 
-    return config
+    return SecurityConfigDTO(
+      keySize: keySize,
+      algorithm: algorithm,
+      mode: mode,
+      hashAlgorithm: hashAlgorithm,
+      authenticationData: authData,
+      options: configOptions
+    )
+  }
+
+  // MARK: - Data Storage Operations
+  
+  /// Stores data securely
+  /// - Parameters:
+  ///   - data: Data to store
+  ///   - identifier: Identifier for the stored data
+  ///   - config: Configuration for the storage operation
+  /// - Returns: Result of the operation
+  private func storeData(
+    data: SecureBytes,
+    identifier: String,
+    config: SecurityConfigDTO
+  ) async -> SecurityResultDTO {
+    return await providerCore.storeData(data: data, identifier: identifier, config: config)
+  }
+  
+  /// Retrieves data securely
+  /// - Parameters:
+  ///   - identifier: Identifier for the stored data
+  ///   - config: Configuration for the retrieval operation
+  /// - Returns: Result of the operation with retrieved data
+  private func retrieveData(
+    identifier: String,
+    config: SecurityConfigDTO
+  ) async -> SecurityResultDTO {
+    return await providerCore.retrieveData(identifier: identifier, config: config)
+  }
+  
+  /// Deletes stored data
+  /// - Parameters:
+  ///   - identifier: Identifier for the data to delete
+  ///   - config: Configuration for the deletion operation
+  /// - Returns: Result of the operation
+  private func deleteData(
+    identifier: String,
+    config: SecurityConfigDTO
+  ) async -> SecurityResultDTO {
+    return await providerCore.deleteData(identifier: identifier, config: config)
+  }
+  
+  /// Performs a custom security operation
+  /// - Parameters:
+  ///   - name: Name of the custom operation
+  ///   - parameters: Parameters for the operation
+  ///   - config: Configuration for the operation
+  /// - Returns: Result of the operation
+  private func customOperation(
+    name: String,
+    parameters: [String: SecureBytes],
+    config: SecurityConfigDTO
+  ) async -> SecurityResultDTO {
+    return await providerCore.customOperation(name: name, parameters: parameters, config: config)
   }
 }
 
@@ -156,27 +240,27 @@ private final class SecurityProviderCore: @unchecked Sendable {
     // Delegate to appropriate service based on operation type
     switch operation {
       case let .encrypt(data, key):
-        await encrypt(data: data, key: key, config: config)
+        return await encrypt(data: data, key: key ?? SecureBytes(), config: config)
       case let .decrypt(data, key):
-        await decrypt(data: data, key: key, config: config)
-      case let .hash(data):
-        await hash(data: data, config: config)
+        return await decrypt(data: data, key: key ?? SecureBytes(), config: config)
+      case let .hash(data, algorithm):
+        return await hash(data: data, algorithm: algorithm, config: config)
       case .generateKey:
-        await generateKey(config: config)
+        return await generateKey(config: config)
       case let .sign(data, key):
-        await sign(data: data, key: key, config: config)
+        return await sign(data: data, key: key ?? SecureBytes(), config: config)
       case let .verify(data, signature, key):
-        await verify(data: data, signature: signature, key: key, config: config)
+        return await verify(data: data, signature: signature, key: key ?? SecureBytes(), config: config)
       case let .deriveKey(input, salt):
-        await deriveKey(input: input, salt: salt, config: config)
+        return await deriveKey(input: input, salt: salt ?? SecureBytes(), config: config)
       case let .store(data, identifier):
-        await storeData(data: data, identifier: identifier, config: config)
+        return await storeData(data: data, identifier: identifier, config: config)
       case let .retrieve(identifier):
-        await retrieveData(identifier: identifier, config: config)
+        return await retrieveData(identifier: identifier, config: config)
       case let .delete(identifier):
-        await deleteData(identifier: identifier, config: config)
+        return await deleteData(identifier: identifier, config: config)
       case let .custom(operationName, parameters):
-        await customOperation(name: operationName, parameters: parameters, config: config)
+        return await customOperation(name: operationName, parameters: parameters, config: config)
     }
   }
 
@@ -191,7 +275,7 @@ private final class SecurityProviderCore: @unchecked Sendable {
     // Implementation to delegate to appropriate crypto service
     SecurityResultDTO(
       status: .failure,
-      error: SecurityProtocolError.notImplemented("Encryption not yet implemented")
+      error: SecurityProtocolError.unsupportedOperation(name: "Encryption not yet implemented")
     )
   }
 
@@ -204,8 +288,35 @@ private final class SecurityProviderCore: @unchecked Sendable {
     // Implementation to delegate to appropriate crypto service
     SecurityResultDTO(
       status: .failure,
-      error: SecurityProtocolError.notImplemented("Decryption not yet implemented")
+      error: SecurityProtocolError.unsupportedOperation(name: "Decryption not yet implemented")
     )
+  }
+
+  /// Hash data using the specified algorithm
+  /// - Parameters:
+  ///   - data: Data to hash
+  ///   - algorithm: Hash algorithm to use
+  ///   - config: Configuration for the hashing operation
+  /// - Returns: Result of the operation with hash
+  private func hash(
+    data: SecureBytes,
+    algorithm: HashAlgorithm?,
+    config: SecurityConfigDTO
+  ) async -> SecurityResultDTO {
+    // Use the configured algorithm or default to the one in config
+    let hashAlgorithm = algorithm ?? config.hashAlgorithm
+    
+    // Create a new config with the specified algorithm
+    let hashConfig = SecurityConfigDTO(
+      keySize: config.keySize,
+      algorithm: config.algorithm,
+      mode: config.mode,
+      hashAlgorithm: hashAlgorithm,
+      authenticationData: config.authenticationData,
+      options: config.options
+    )
+    
+    return await hash(data: data, config: hashConfig)
   }
 
   /// Hash data using the configured services
@@ -216,7 +327,7 @@ private final class SecurityProviderCore: @unchecked Sendable {
     // Implementation to delegate to appropriate crypto service
     SecurityResultDTO(
       status: .failure,
-      error: SecurityProtocolError.notImplemented("Hashing not yet implemented")
+      error: SecurityProtocolError.unsupportedOperation(name: "Hashing not yet implemented")
     )
   }
 
@@ -227,90 +338,131 @@ private final class SecurityProviderCore: @unchecked Sendable {
     // Implementation to delegate to appropriate crypto service
     SecurityResultDTO(
       status: .failure,
-      error: SecurityProtocolError.notImplemented("Key generation not yet implemented")
+      error: SecurityProtocolError.unsupportedOperation(name: "Key generation not yet implemented")
     )
   }
 
-  /// Sign data using the configured services
+  /// Sign data using the provided key
+  /// - Parameters:
+  ///   - data: Data to sign
+  ///   - key: Key to use for signing
+  ///   - config: Configuration for the signing operation
+  /// - Returns: Result of the operation with signature
   private func sign(
-    data _: SecureBytes,
-    key _: SecureBytes,
-    config _: SecurityConfigDTO
+    data: SecureBytes,
+    key: SecureBytes,
+    config: SecurityConfigDTO
   ) async -> SecurityResultDTO {
-    SecurityResultDTO(
+    // Not implemented yet
+    return SecurityResultDTO(
       status: .failure,
-      error: SecurityProtocolError.notImplemented("Signing not yet implemented")
+      error: SecurityProtocolError.unsupportedOperation(name: "Signing not yet implemented")
     )
   }
-
-  /// Verify a signature using the configured services
+  
+  /// Verify a signature for data using the provided key
+  /// - Parameters:
+  ///   - data: Data to verify
+  ///   - signature: Signature to verify
+  ///   - key: Key to use for verification
+  ///   - config: Configuration for the verification operation
+  /// - Returns: Result of the operation with verification status
   private func verify(
-    data _: SecureBytes,
-    signature _: SecureBytes,
-    key _: SecureBytes,
-    config _: SecurityConfigDTO
+    data: SecureBytes,
+    signature: SecureBytes,
+    key: SecureBytes,
+    config: SecurityConfigDTO
   ) async -> SecurityResultDTO {
-    SecurityResultDTO(
+    // Not implemented yet
+    return SecurityResultDTO(
       status: .failure,
-      error: SecurityProtocolError.notImplemented("Signature verification not yet implemented")
+      error: SecurityProtocolError.unsupportedOperation(name: "Signature verification not yet implemented")
     )
   }
-
-  /// Derive a key using the configured services
+  
+  /// Derive a key from input data and salt
+  /// - Parameters:
+  ///   - input: Input data for key derivation
+  ///   - salt: Salt for key derivation
+  ///   - config: Configuration for the key derivation operation
+  /// - Returns: Result of the operation with derived key
   private func deriveKey(
-    input _: SecureBytes,
-    salt _: SecureBytes,
-    config _: SecurityConfigDTO
+    input: SecureBytes,
+    salt: SecureBytes,
+    config: SecurityConfigDTO
   ) async -> SecurityResultDTO {
-    SecurityResultDTO(
+    // Not implemented yet
+    return SecurityResultDTO(
       status: .failure,
-      error: SecurityProtocolError.notImplemented("Key derivation not yet implemented")
+      error: SecurityProtocolError.unsupportedOperation(name: "Key derivation not yet implemented")
     )
   }
 
-  /// Store data using the configured services
+  /// Stores data securely
+  /// - Parameters:
+  ///   - data: Data to store
+  ///   - identifier: Identifier for the stored data
+  ///   - config: Configuration for the storage operation
+  /// - Returns: Result of the operation
   private func storeData(
-    data _: SecureBytes,
-    identifier _: String,
-    config _: SecurityConfigDTO
+    data: SecureBytes,
+    identifier: String,
+    config: SecurityConfigDTO
   ) async -> SecurityResultDTO {
-    SecurityResultDTO(
+    // Not implemented yet
+    return SecurityResultDTO(
       status: .failure,
-      error: SecurityProtocolError.notImplemented("Data storage not yet implemented")
+      error: SecurityProtocolError.unsupportedOperation(name: "Data storage not yet implemented")
     )
   }
-
-  /// Retrieve data using the configured services
+  
+  /// Retrieves data securely
+  /// - Parameters:
+  ///   - identifier: Identifier for the stored data
+  ///   - config: Configuration for the retrieval operation
+  /// - Returns: Result of the operation with retrieved data
   private func retrieveData(
-    identifier _: String,
-    config _: SecurityConfigDTO
+    identifier: String,
+    config: SecurityConfigDTO
   ) async -> SecurityResultDTO {
-    SecurityResultDTO(
+    // Not implemented yet
+    return SecurityResultDTO(
       status: .failure,
-      error: SecurityProtocolError.notImplemented("Data retrieval not yet implemented")
+      error: SecurityProtocolError.unsupportedOperation(name: "Data retrieval not yet implemented")
     )
   }
-
-  /// Delete data using the configured services
+  
+  /// Deletes stored data
+  /// - Parameters:
+  ///   - identifier: Identifier for the data to delete
+  ///   - config: Configuration for the deletion operation
+  /// - Returns: Result of the operation
   private func deleteData(
-    identifier _: String,
-    config _: SecurityConfigDTO
+    identifier: String,
+    config: SecurityConfigDTO
   ) async -> SecurityResultDTO {
-    SecurityResultDTO(
+    // Not implemented yet
+    return SecurityResultDTO(
       status: .failure,
-      error: SecurityProtocolError.notImplemented("Data deletion not yet implemented")
+      error: SecurityProtocolError.unsupportedOperation(name: "Data deletion not yet implemented")
     )
   }
-
-  /// Handle custom operations
+  
+  /// Performs a custom security operation
+  /// - Parameters:
+  ///   - name: Name of the custom operation
+  ///   - parameters: Parameters for the operation
+  ///   - config: Configuration for the operation
+  /// - Returns: Result of the operation
   private func customOperation(
     name: String,
-    parameters _: [String: Any],
-    config _: SecurityConfigDTO
+    parameters: [String: SecureBytes],
+    config: SecurityConfigDTO
   ) async -> SecurityResultDTO {
-    SecurityResultDTO(
+    // Not implemented yet
+    return SecurityResultDTO(
       status: .failure,
-      error: SecurityProtocolError.notImplemented("Custom operation '\(name)' not yet implemented")
+      error: SecurityProtocolError.unsupportedOperation(name: "Custom operation '\(name)' not implemented")
     )
   }
 }
@@ -333,10 +485,68 @@ private final class KeyManagementService: @unchecked Sendable {
 
 /// Default implementation of the CryptoServiceProtocol
 private final class DefaultCryptoService: CryptoServiceProtocol {
-  // Implementation details would go here
+  func encrypt(
+    data: SecureBytes,
+    using key: SecureBytes
+  ) async -> Result<SecureBytes, SecurityProtocolError> {
+    // Basic implementation - in a real scenario, this would use a proper encryption algorithm
+    return .failure(SecurityProtocolError.unsupportedOperation(name: "Default encryption not implemented"))
+  }
+  
+  func decrypt(
+    data: SecureBytes,
+    using key: SecureBytes
+  ) async -> Result<SecureBytes, SecurityProtocolError> {
+    // Basic implementation - in a real scenario, this would use a proper decryption algorithm
+    return .failure(SecurityProtocolError.unsupportedOperation(name: "Default decryption not implemented"))
+  }
+  
+  func hash(data: SecureBytes) async -> Result<SecureBytes, SecurityProtocolError> {
+    // Basic implementation - in a real scenario, this would use a proper hashing algorithm
+    return .failure(SecurityProtocolError.unsupportedOperation(name: "Default hashing not implemented"))
+  }
+  
+  func verifyHash(
+    data: SecureBytes,
+    expectedHash: SecureBytes
+  ) async -> Result<Bool, SecurityProtocolError> {
+    // Basic implementation - in a real scenario, this would verify the hash properly
+    return .failure(SecurityProtocolError.unsupportedOperation(name: "Default hash verification not implemented"))
+  }
 }
 
 /// Default implementation of the KeyManagementProtocol
 private final class DefaultKeyManagementService: KeyManagementProtocol {
-  // Implementation details would go here
+  func retrieveKey(withIdentifier identifier: String) async
+    -> Result<SecureBytes, SecurityProtocolError> {
+    // Basic implementation - in a real scenario, this would retrieve keys from secure storage
+    return .failure(SecurityProtocolError.unsupportedOperation(name: "Default key retrieval not implemented"))
+  }
+  
+  func storeKey(_ key: SecureBytes, withIdentifier identifier: String) async
+    -> Result<Void, SecurityProtocolError> {
+    // Basic implementation - in a real scenario, this would store keys in secure storage
+    return .failure(SecurityProtocolError.unsupportedOperation(name: "Default key storage not implemented"))
+  }
+  
+  func deleteKey(withIdentifier identifier: String) async
+    -> Result<Void, SecurityProtocolError> {
+    // Basic implementation - in a real scenario, this would delete keys from secure storage
+    return .failure(SecurityProtocolError.unsupportedOperation(name: "Default key deletion not implemented"))
+  }
+  
+  func rotateKey(
+    withIdentifier identifier: String,
+    dataToReencrypt: SecureBytes?
+  ) async -> Result<(newKey: SecureBytes, reencryptedData: SecureBytes?), SecurityProtocolError> {
+    // Not implemented yet
+    return .failure(
+      SecurityProtocolError.unsupportedOperation(name: "Key rotation not yet implemented")
+    )
+  }
+  
+  func listKeyIdentifiers() async -> Result<[String], SecurityProtocolError> {
+    // Basic implementation - in a real scenario, this would list keys from secure storage
+    return .failure(SecurityProtocolError.unsupportedOperation(name: "Default key listing not implemented"))
+  }
 }

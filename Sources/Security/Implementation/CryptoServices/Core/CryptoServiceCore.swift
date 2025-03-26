@@ -14,6 +14,7 @@
 
 import ErrorHandlingDomains
 import Foundation
+import Protocols
 import SecurityProtocolsCore
 import UmbraCoreTypes
 import UmbraErrors
@@ -68,7 +69,7 @@ public final class CryptoServiceCore: CryptoServiceProtocol, Sendable {
       data: data,
       key: key,
       algorithm: "AES-GCM",
-      iv: nil
+      iv: nil as SecureBytes?
     )
     if result.success, let encryptedData=result.data {
       return .success(encryptedData)
@@ -94,7 +95,7 @@ public final class CryptoServiceCore: CryptoServiceProtocol, Sendable {
       data: data,
       key: key,
       algorithm: "AES-GCM",
-      iv: nil
+      iv: nil as SecureBytes?
     )
     if result.success, let decryptedData=result.data {
       return .success(decryptedData)
@@ -130,7 +131,7 @@ public final class CryptoServiceCore: CryptoServiceProtocol, Sendable {
   public func hash(data: SecureBytes) async
   -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     // Use SHA-256 as the default algorithm
-    await hash(data: data, config: SecurityConfigDTO(algorithm: "SHA-256", keySizeInBits: 256))
+    await hash(data: data, config: Types.SecurityConfigDTO(algorithm: .aes, keySize: 256))
   }
 
   /// Verifies the integrity of data against a known hash.
@@ -141,7 +142,10 @@ public final class CryptoServiceCore: CryptoServiceProtocol, Sendable {
   public func verify(data: SecureBytes, against hash: SecureBytes) async
   -> Result<Bool, UmbraErrors.Security.Protocols> {
     // Hash the data using SHA-256
-    let hashResult=await self.hash(data: data)
+    let hashResult=await self.hash(
+      data: data,
+      config: Types.SecurityConfigDTO(algorithm: .aes, keySize: 256)
+    )
 
     switch hashResult {
       case let .success(computedHash):
@@ -166,13 +170,13 @@ public final class CryptoServiceCore: CryptoServiceProtocol, Sendable {
   public func encryptSymmetric(
     data: SecureBytes,
     key: SecureBytes,
-    config: SecurityConfigDTO
+    config: Types.SecurityConfigDTO
   ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     let result=await symmetricCrypto.encryptData(
       data: data,
       key: key,
       algorithm: config.algorithm,
-      iv: nil
+      iv: nil as SecureBytes?
     )
 
     if result.success, let encryptedData=result.data {
@@ -194,13 +198,13 @@ public final class CryptoServiceCore: CryptoServiceProtocol, Sendable {
   public func decryptSymmetric(
     data: SecureBytes,
     key: SecureBytes,
-    config: SecurityConfigDTO
+    config: Types.SecurityConfigDTO
   ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     let result=await symmetricCrypto.decryptData(
       data: data,
       key: key,
       algorithm: config.algorithm,
-      iv: nil
+      iv: nil as SecureBytes?
     )
 
     if result.success, let decryptedData=result.data {
@@ -220,7 +224,7 @@ public final class CryptoServiceCore: CryptoServiceProtocol, Sendable {
   /// - Returns: The resulting hash as `SecureBytes` or an error.
   public func hash(
     data: SecureBytes,
-    config: SecurityConfigDTO
+    config: Types.SecurityConfigDTO
   ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     // Use the dedicated HashingService to hash the data
     let result=await hashingService.hashData(
@@ -249,7 +253,7 @@ public final class CryptoServiceCore: CryptoServiceProtocol, Sendable {
   func encryptAsymmetric(
     data: SecureBytes,
     publicKey: SecureBytes,
-    config: SecurityConfigDTO
+    config: Types.SecurityConfigDTO
   ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     let result=await asymmetricCrypto.encrypt(
       data: data,
@@ -278,7 +282,7 @@ public final class CryptoServiceCore: CryptoServiceProtocol, Sendable {
   func decryptAsymmetric(
     data: SecureBytes,
     privateKey: SecureBytes,
-    config: SecurityConfigDTO
+    config: Types.SecurityConfigDTO
   ) async -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     let result=await asymmetricCrypto.decrypt(
       data: data,
@@ -334,7 +338,7 @@ public final class CryptoServiceCore: CryptoServiceProtocol, Sendable {
   ) async -> Result<Bool, UmbraErrors.Security.Protocols> {
     let hashResult=await self.hash(
       data: data,
-      config: SecurityConfigDTO(algorithm: "SHA-256", keySizeInBits: 256)
+      config: Types.SecurityConfigDTO(algorithm: .aes, keySize: 256)
     )
 
     switch hashResult {

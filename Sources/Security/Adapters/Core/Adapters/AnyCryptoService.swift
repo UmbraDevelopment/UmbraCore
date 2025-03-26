@@ -9,13 +9,13 @@ import UmbraCoreTypes
 public final class AnyCryptoService: CryptoServiceProtocol {
   // MARK: - Private Properties
 
-  private let dto: CryptoServiceDTO
+  private let dto: CryptoServiceDto
 
   // MARK: - Initialization
 
   /// Initializes a new instance with a DTO
   /// - Parameter dto: The data transfer object containing crypto operations
-  public init(dto: CryptoServiceDTO) {
+  public init(dto: CryptoServiceDto) {
     self.dto=dto
   }
 

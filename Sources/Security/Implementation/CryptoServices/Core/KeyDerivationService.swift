@@ -12,6 +12,7 @@
 
 import Foundation
 import SecurityProtocolsCore
+import Types
 import UmbraCoreTypes
 import UmbraErrors
 import UmbraErrorsCore
@@ -40,8 +41,8 @@ final class KeyDerivationService: Sendable {
   /// - Returns: The generated key or an error
   func generateKey(
     bits: Int,
-    keyType: SecurityProtocolsCore.KeyType,
-    purpose _: SecurityProtocolsCore.KeyPurpose
+    keyType: String,
+    purpose: String
   ) async throws -> UmbraCoreTypes.SecureBytes {
     // Validate key size
     guard bits > 0 else {
@@ -51,18 +52,18 @@ final class KeyDerivationService: Sendable {
 
     // Generate key based on type
     switch keyType {
-      case .symmetric:
+      case "symmetric":
         return try await generateAESKey(bits: bits)
-      case .rsa:
+      case "rsa":
         return try await generateRSAKey(bits: bits)
-      case .hmac:
+      case "hmac":
         return try await generateHMACKey(bits: bits)
-      case .ec:
+      case "ec":
         return try await generateECKey(bits: bits)
-      case .asymmetric:
+      case "asymmetric":
         // Default to RSA for asymmetric keys
         return try await generateRSAKey(bits: bits)
-      case .unknown:
+      default:
         throw CryptoError.invalidKeyFormat(reason: "Unknown key type")
     }
   }
@@ -84,8 +85,7 @@ final class KeyDerivationService: Sendable {
         return randomData
       case .failure:
         throw CryptoError
-          .randomGenerationFailed(status: -1) // Using a dummy OSStatus since we can't convert error
-        // to OSStatus
+          .invalidKeyFormat(reason: "Random generation failed") // Using a more appropriate error type
     }
   }
 

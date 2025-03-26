@@ -1,3 +1,6 @@
+# Import user-specific configurations if present
+try-import %workspace%/.bazelrc.user
+
 # Platform configuration
 build --apple_platform_type=macos
 build --macos_minimum_os=14.7.4
