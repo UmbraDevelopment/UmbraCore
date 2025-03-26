@@ -1,9 +1,12 @@
 import UmbraCoreTypes
+import Foundation
+import SecurityTypes
 
 // Removing imports that cause circular dependencies
 // import UmbraErrors
 // import UmbraErrorsCore
-import CoreDTOs.Security
+// Fixed circular dependency by using direct import
+// import CoreDTOs.Security - Removed to break circular dependency
 
 /// Converts between SecurityError and SecurityErrorDTO
 public enum XPCSecurityDTOConverter {
@@ -14,11 +17,7 @@ public enum XPCSecurityDTOConverter {
   /// - Returns: A Foundation-independent SecurityErrorDTO error
   public static func toDTO(_ error: Error) -> Error {
     // Simplified conversion to avoid circular dependencies
-    if let securityError=error as? Error {
-      // Create a generic error DTO with minimal information
-      // Return the original error as we can't create a SecurityErrorDTO without proper imports
-      return error
-    }
+    // Return the original error as we can't create a SecurityErrorDTO without proper imports
     return error
   }
 

@@ -16,12 +16,11 @@ umbra_swift_library(
         exclude_directories = 1,
     ),
     deps = [
-        "//Sources/CoreDTOs",
+        # Removing circular dependency with CoreDTOs
+        # "//Sources/CoreDTOs",
         "//Sources/SecurityTypes",
         "//Sources/UmbraSecurityBridge",
         "//Sources/UmbraCoreTypes",
         "//Sources/UmbraLogging",
-        # Removing circular dependency
-        # "//Sources/CoreDTOs",
     ],
 )

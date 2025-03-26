@@ -16,7 +16,8 @@ umbra_swift_library(
         exclude_directories = 1,
     ),
     deps = [
-],
+        "//Sources/Features/Logging/Models:FeaturesLoggingModels",
+    ],
 )
 
 # Uncomment if documentation generation is needed
@@ -29,5 +30,5 @@ umbra_swift_library(
 #         "**/*.swift",
 #         "**/*.docc/**",
 #     ]),
-#     deps = ["//Sources/Protocols"],
+#     deps = ["//Sources/Features/Logging/Protocols"],
 # )

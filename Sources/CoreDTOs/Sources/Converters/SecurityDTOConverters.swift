@@ -1,4 +1,5 @@
 import Foundation
+import UmbraCoreTypes
 
 // Removing imports that cause circular dependencies
 // import UmbraErrors

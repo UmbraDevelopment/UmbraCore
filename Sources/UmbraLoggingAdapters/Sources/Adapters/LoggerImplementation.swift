@@ -1,5 +1,6 @@
 import Foundation
 import LoggingWrapper
+import LoggingWrapperInterfaces
 import UmbraLogging
 
 /// A thread-safe logging service implementation that wraps LoggingWrapper

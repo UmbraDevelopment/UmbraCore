@@ -16,6 +16,7 @@ umbra_swift_library(
         exclude_directories = 1,
     ),
     deps = [
+        "//Sources/LoggingWrapper",
         "//Sources/LoggingWrapperInterfaces",
         "//Sources/UmbraLogging",
     ],
@@ -31,5 +32,5 @@ umbra_swift_library(
 #         "**/*.swift",
 #         "**/*.docc/**",
 #     ]),
-#     deps = ["//Sources/Adapters"],
+#     deps = ["//Sources/UmbraLoggingAdapters/Sources/Adapters"],
 # )
