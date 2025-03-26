@@ -16,6 +16,7 @@ swift_test(
         exclude_directories = 1,
     ),
     deps = [
+        "//Sources/ResticCLIHelper",
         # Dependencies will go here, for example:
         # "//Sources/ResticCLIHelperTests",
         # "//Tests/TestKit",

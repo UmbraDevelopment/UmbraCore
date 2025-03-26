@@ -16,6 +16,7 @@ swift_test(
         exclude_directories = 1,
     ),
     deps = [
+        "//Sources/ErrorHandling",
         # Dependencies will go here, for example:
         # "//Sources/ErrorHandlingTests",
         # "//Tests/TestKit",

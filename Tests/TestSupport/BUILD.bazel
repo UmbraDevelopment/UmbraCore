@@ -16,6 +16,7 @@ swift_test(
         exclude_directories = 1,
     ),
     deps = [
+        "//Tests/UmbraTestKit",
         # Dependencies will go here, for example:
         # "//Sources/TestSupport",
         # "//Tests/TestKit",
