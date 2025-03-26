@@ -5,13 +5,13 @@ umbra_swift_library(
     srcs = glob(
         [
             "*.swift",
-            "**/*.swift",
+            "**/*.swift"
         ],
         allow_empty = True,  # Allow empty glob since there may not be any Swift files yet
         exclude = [
             "**/Tests/**",
             "**/*Test.swift",
-            "**/*.generated.swift",
+            "**/*.generated.swift"
         ],
         exclude_directories = 1,
     ),
@@ -19,7 +19,7 @@ umbra_swift_library(
     deps = [
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
         "//Sources/UmbraErrors/DTOs",
-        "//Sources/UmbraErrors/Domains",
+        "//Sources/UmbraErrors/Domains"
     ],
 )
 

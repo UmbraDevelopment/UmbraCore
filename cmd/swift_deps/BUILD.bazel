@@ -6,7 +6,7 @@ go_library(
     importpath = "github.com/umbracore/swift-deps",
     visibility = ["//visibility:private"],
     deps = [
-        "//cmd/swift_deps/resolver",
+        "//cmd/swift_deps/resolver"
     ],
 )
 

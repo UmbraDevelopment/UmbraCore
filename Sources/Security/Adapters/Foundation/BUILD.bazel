@@ -13,6 +13,6 @@ umbra_swift_library(
     deps = [
         "//Sources/Security/Core/Protocols",
         "//Sources/Security/Core/Types",
-        "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraCoreTypes"
     ],
 )

@@ -8,7 +8,7 @@ umbra_swift_library(
         exclude = [
             "**/Tests/**",
             "**/*Test.swift",
-            "**/*.generated.swift",
+            "**/*.generated.swift"
         ],
         exclude_directories = 1,
     ),
@@ -27,6 +27,6 @@ umbra_swift_library(
         "//Sources/UmbraErrors",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
         "//Sources/UmbraLogging",
-        "//Sources/XPCProtocolsCore/Sources/Protocols",
+        "//Sources/XPCProtocolsCore/Sources/Protocols"
     ],
 )
