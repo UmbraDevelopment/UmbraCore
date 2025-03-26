@@ -17,7 +17,7 @@ umbra_swift_library(
     ),
     deps = [
         "//Sources/ErrorHandling/Interfaces",
-        "//Sources/UmbraErrors/Core:UmbraErrorsCore",,
+        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
         "//Sources/ErrorHandling/Interfaces:Interfaces"
     ],
 )
@@ -33,7 +33,7 @@ umbra_swift_library(
 #     ]),
 #     deps = [
         "//Sources/ErrorHandling/Interfaces",
-        "//Sources/UmbraErrors/Core:UmbraErrorsCore",,
+        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
         "//Sources/ErrorHandling/Interfaces:Interfaces"
     ],
 # )
