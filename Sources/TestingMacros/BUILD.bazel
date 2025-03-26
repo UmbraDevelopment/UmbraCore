@@ -17,7 +17,11 @@ umbra_swift_library(
     ),
     visibility = ["//visibility:public"],
     deps = [
-],
+        "@swiftpkg_swift_syntax//:SwiftCompilerPlugin",
+        "@swiftpkg_swift_syntax//:SwiftSyntax",
+        "@swiftpkg_swift_syntax//:SwiftSyntaxBuilder",
+        "@swiftpkg_swift_syntax//:SwiftSyntaxMacros",
+    ],
 )
 
 # Uncomment if documentation generation is needed
