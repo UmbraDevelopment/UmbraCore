@@ -179,5 +179,16 @@
     "migration_date": "2025-03-27",
     "blocking_issues": [],
     "notes": "Successfully migrated to Alpha Dot Five architecture as LoggingAdapters. Implemented adapter patterns to connect LoggingInterfaces with LoggingWrapperServices while following proper separation of concerns."
+  },
+  "DateTimeService": {
+    "status": "Completed",
+    "dependencies": [
+      "CoreDTOs",
+      "UmbraErrors"
+    ],
+    "dependents": [],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture as three modules: DateTimeTypes, DateTimeInterfaces, and DateTimeServices. Maintained proper separation of concerns with Foundation-independence, whilst ensuring alignment with the existing CoreDTOs DateTime functionality."
   }
 }
