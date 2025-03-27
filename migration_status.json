@@ -6,7 +6,8 @@
       "CoreDTOs",
       "UserDefaults",
       "SecurityInterfaces",
-      "CryptoTypes"
+      "CryptoTypes",
+      "UmbraLogging"
     ],
     "migration_date": "2025-03-27",
     "blocking_issues": [],
@@ -130,5 +131,15 @@
     "migration_date": "2025-03-27",
     "blocking_issues": [],
     "notes": "Successfully migrated to Alpha Dot Five architecture with proper error handling and SecureBytes usage. Implementation will eventually be replaced by ResticBar."
+  },
+  "UmbraLogging": {
+    "status": "Completed",
+    "dependencies": [
+      "UmbraErrors"
+    ],
+    "dependents": [],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture, separating core types, interfaces, and implementations. Created Foundation-independent TimePointAdapter for timestamp representation."
   }
 }
