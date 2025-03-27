@@ -190,5 +190,56 @@
     "migration_date": "2025-03-27",
     "blocking_issues": [],
     "notes": "Successfully migrated to Alpha Dot Five architecture as three modules: DateTimeTypes, DateTimeInterfaces, and DateTimeServices. Maintained proper separation of concerns with Foundation-independence, whilst ensuring alignment with the existing CoreDTOs DateTime functionality."
+  },
+  "SecurityUtils": {
+    "status": "Completed",
+    "dependencies": [
+      "SecurityCoreTypes",
+      "SecurityTypes",
+      "UmbraErrors"
+    ],
+    "dependents": [
+      "SecurityProviders",
+      "SecurityKeyManagement"
+    ],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture with enhanced documentation. Implemented secure memory handling, performance benchmarking, and properly documented all components with British spellings and comprehensive security context."
+  },
+  "SecurityProviders": {
+    "status": "Completed",
+    "dependencies": [
+      "SecurityCoreTypes",
+      "SecurityUtils",
+      "UmbraErrors"
+    ],
+    "dependents": [],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture with comprehensive documentation. Implemented standard security interface and operations handler with proper separation of concerns."
+  },
+  "SecurityKeyManagement": {
+    "status": "Completed",
+    "dependencies": [
+      "SecurityCoreTypes",
+      "SecurityUtils",
+      "UmbraErrors"
+    ],
+    "dependents": [],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture with enhanced documentation. Implemented key rotation service and key store with comprehensive security guidance."
+  },
+  "SecurityCryptoServices": {
+    "status": "Completed",
+    "dependencies": [
+      "SecurityCoreTypes",
+      "SecurityTypes",
+      "UmbraErrors"
+    ],
+    "dependents": [],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture with comprehensive security documentation. Implemented hashing service with constant-time comparison for timing attack prevention and proper security context."
   }
 }
