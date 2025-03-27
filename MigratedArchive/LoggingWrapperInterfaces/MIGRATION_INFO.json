@@ -1,0 +1,14 @@
+{
+  "module_name": "LoggingWrapperInterfaces",
+  "migration_date": "2025-03-27",
+  "status": "Completed",
+  "migrated_files": [
+    "LogLevel.swift",
+    "LoggerProtocol.swift",
+    "BUILD.bazel"
+  ],
+  "target_modules": [
+    "packages/UmbraInterfaces/Sources/LoggingWrapperInterfaces"
+  ],
+  "notes": "Migrated LoggingWrapperInterfaces to Alpha Dot Five architecture as part of the logging ecosystem migration. Maintained the interface-focused approach without implementation details, ensuring a clean separation of concerns."
+}

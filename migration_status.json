@@ -137,9 +137,47 @@
     "dependencies": [
       "UmbraErrors"
     ],
-    "dependents": [],
+    "dependents": [
+      "LoggingWrapperInterfaces",
+      "UmbraLoggingAdapters"
+    ],
     "migration_date": "2025-03-27",
     "blocking_issues": [],
     "notes": "Successfully migrated to Alpha Dot Five architecture, separating core types, interfaces, and implementations. Created Foundation-independent TimePointAdapter for timestamp representation."
+  },
+  "LoggingWrapperInterfaces": {
+    "status": "Completed",
+    "dependencies": [],
+    "dependents": [
+      "LoggingWrapper",
+      "UmbraLoggingAdapters"
+    ],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture as part of the logging ecosystem. Maintained the interface-focused approach without implementation details for clean separation of concerns."
+  },
+  "LoggingWrapper": {
+    "status": "Completed",
+    "dependencies": [
+      "LoggingWrapperInterfaces"
+    ],
+    "dependents": [
+      "UmbraLoggingAdapters"
+    ],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture as LoggingWrapperServices, implementing the interfaces defined in LoggingWrapperInterfaces. Maintained the SwiftyBeaver integration."
+  },
+  "UmbraLoggingAdapters": {
+    "status": "Completed",
+    "dependencies": [
+      "UmbraLogging",
+      "LoggingWrapperInterfaces",
+      "LoggingWrapper"
+    ],
+    "dependents": [],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture as LoggingAdapters. Implemented adapter patterns to connect LoggingInterfaces with LoggingWrapperServices while following proper separation of concerns."
   }
 }
