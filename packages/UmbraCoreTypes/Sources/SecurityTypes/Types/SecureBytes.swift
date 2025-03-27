@@ -1,5 +1,5 @@
 import Foundation
-import UmbraLogging
+import LoggingTypes
 
 /// A secure byte array that automatically zeros its contents when deallocated
 ///

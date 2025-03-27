@@ -17,13 +17,11 @@ umbra_swift_library(
         "//packages/UmbraCoreTypes/Sources/UmbraErrors",
         "//packages/UmbraCoreTypes/Sources/UserDefaults",
         "//packages/UmbraCoreTypes/Sources/SecurityInterfaces",
+        "//packages/UmbraCoreTypes/Sources/LoggingTypes",
         
         # Modules still to be migrated
         "//packages/UmbraCoreTypes/Sources/Notification",
         "//packages/UmbraCoreTypes/Sources/Scheduling",
-        
-        # Dependencies to be migrated in future
-        "//Sources/UmbraLogging",
     ],
 )
 
