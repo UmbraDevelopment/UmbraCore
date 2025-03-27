@@ -1,6 +1,6 @@
 import Foundation
 
-// Temporarily using old module path during migration
+// Updated to use the migrated UmbraErrors Core module
 @_exported import UmbraErrorsCore
 
 // Removing import to UmbraErrors to break circular dependency

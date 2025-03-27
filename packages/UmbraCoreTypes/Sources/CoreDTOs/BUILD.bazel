@@ -16,8 +16,8 @@ umbra_swift_library(
         "//packages/UmbraCoreTypes/Sources/Notification",
         "//packages/UmbraCoreTypes/Sources/Scheduling",
         
-        # Original dependencies will be migrated later
-        "//Sources/UmbraErrors",
+        # Updated to use the migrated UmbraErrors module
+        "//packages/UmbraCoreTypes/Sources/UmbraErrors",
         "//Sources/ErrorHandling",
         "//Sources/UmbraLogging",
     ],
