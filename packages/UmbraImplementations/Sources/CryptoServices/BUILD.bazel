@@ -1,0 +1,14 @@
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+
+swift_library(
+    name = "CryptoServices",
+    srcs = glob(["**/*.swift"]),
+    module_name = "CryptoServices",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//packages/UmbraCoreTypes/Sources/CryptoTypes",
+        "//packages/UmbraCoreTypes/Sources/SecurityTypes",
+        "//packages/UmbraCoreTypes/Sources/UmbraErrors",
+        "//packages/UmbraInterfaces/Sources/CryptoInterfaces",
+    ],
+)
