@@ -1,0 +1,24 @@
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
+
+umbra_swift_library(
+    name = "SecurityAdapters",
+    srcs = glob(
+        [
+            "*.swift",
+            "**/*.swift",
+        ],
+        allow_empty = False,
+    ),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//packages/UmbraCoreTypes/Sources/UmbraErrors",
+        "//packages/UmbraCoreTypes/Sources/SecurityTypes",
+        "//packages/UmbraCoreTypes/Sources/SecurityCoreTypes",
+        "//packages/UmbraCoreTypes/Sources/SecurityInterfaces",
+        "//packages/UmbraCoreTypes/Sources/CoreDTOs",
+        "//packages/UmbraInterfaces/Sources/SecurityCoreInterfaces",
+        "//packages/UmbraImplementations/Sources/SecurityProviders",
+        "//packages/UmbraImplementations/Sources/SecurityCryptoServices",
+        "//packages/UmbraImplementations/Sources/SecurityUtils",
+    ],
+)
