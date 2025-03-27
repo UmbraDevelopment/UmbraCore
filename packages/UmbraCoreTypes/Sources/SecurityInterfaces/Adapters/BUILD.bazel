@@ -1,0 +1,18 @@
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
+
+umbra_swift_library(
+    name = "SecurityInterfacesAdapters",
+    srcs = glob(
+        [
+            "*.swift",
+        ],
+        allow_empty = False,
+    ),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//packages/UmbraCoreTypes/Sources/UmbraErrors",
+        "//packages/UmbraCoreTypes/Sources/SecurityTypes",
+        "//packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols:SecurityInterfacesProtocols",
+        "//packages/UmbraCoreTypes/Sources/SecurityInterfaces/DTOs:SecurityInterfacesDTOs",
+    ],
+)
