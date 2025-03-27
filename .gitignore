@@ -20,7 +20,8 @@ playground.xcworkspace
 # Swift Package Manager
 .build/
 .swiftpm/
-/Packages
+/Packages/     # Swift PM packages directory
+# Do NOT ignore our project's "packages" directory
 /*.xcodeproj
 .swiftpm/configuration/registries.json
 .swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
@@ -136,6 +137,15 @@ UmbraCore_archive/
 *.swift_analyzer
 *.protocol_analyzer
 *.bazel_analyzer
+
+# Swift file exclusions
+*.swift
+!packages/**/*.swift
+!tools/**/*.swift
+!alpha-tools/**/*.swift
+!**/migration_*.swift
+!**/verify_*.swift
+!**/test_*.swift
 
 # Python exclusions (except for migration, verification, and test scripts)
 *.py
