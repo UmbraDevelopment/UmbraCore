@@ -129,31 +129,50 @@ bazel-out/**/DocC
 *INTERNAL*
 *PRIVATE*
 UmbraCore_archive/
-*.py
 *.dot
-# Exclude markdown files except READMEs and documentation
+*.csv
+
+# Exclude analysis files
+*.swift_analyzer
+*.protocol_analyzer
+*.bazel_analyzer
+
+# Python exclusions (except for migration, verification, and test scripts)
+*.py
+!**/migration_*.py
+!**/verify_*.py
+!**/test_*.py
+!alpha-tools/**/*.py
+
+# Markdown exclusions (allow all docs in packages directory and migration docs)
 *.md
 !README*.md
 !docs/**/*.md
 !Examples/**/*.md
-# Exclude additional file types
-*.csv
-*.go
-*.swift_analyzer
-*.protocol_analyzer
-*.bazel_analyzer
-# Exclude .sh files except specific ones
+!packages/**/*.md
+!**/migration*.md
+
+# Shell script exclusions
 *.sh
 !workflow_manager.sh
 !docc_manager.sh
 !build_docc.sh
 !discover_docc_targets.sh
 !tools/swift/docc_gen.sh
-# Exclude txt files except specific ones
+!**/*migration*.sh
+!**/*verify*.sh
+
+# Go file exclusions (allow alpha-tools go files)
+*.go
+!alpha-tools/**/*.go
+!**/migration_*.go
+
+# Text file exclusions
 *.txt
 !test_targets.txt
 !production_targets.txt
 !requirements.txt
+!**/migration_*.txt
 
 # MkDocs build output
 /site/
