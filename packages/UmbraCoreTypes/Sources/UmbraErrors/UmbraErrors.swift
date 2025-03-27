@@ -11,3 +11,12 @@
 
 // The UmbraErrors module directly imports all components from Core, DTOs, Domains, and Mapping
 // This allows consumers to just import UmbraErrors without needing to know about the submodules
+
+// Re-export ErrorDTO from the DTOs package
+@_exported import struct UmbraErrorsDTOs.ErrorDTO
+
+// Re-export error domains
+public enum ErrorDomain {
+    // Common domains
+    public static let scheduling = "Scheduling"
+}
