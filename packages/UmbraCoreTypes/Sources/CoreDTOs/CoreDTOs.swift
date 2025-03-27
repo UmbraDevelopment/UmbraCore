@@ -31,5 +31,5 @@
 @_exported import FileSystemTypes
 @_exported import SecurityTypes
 @_exported import Notification
+@_exported import Scheduling
 // @_exported import UmbraErrors // Uncomment after UmbraErrors migration
-// @_exported import Scheduling // Uncomment after Scheduling migration
