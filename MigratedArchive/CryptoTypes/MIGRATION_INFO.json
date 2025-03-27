@@ -1,0 +1,28 @@
+{
+  "original_location": "/Users/mpy/CascadeProjects/UmbraCore/Sources/CryptoTypes",
+  "migration_date": "2025-03-27",
+  "migrated_to": [
+    "/Users/mpy/CascadeProjects/UmbraCore/packages/UmbraCoreTypes/Sources/CryptoTypes",
+    "/Users/mpy/CascadeProjects/UmbraCore/packages/UmbraInterfaces/Sources/CryptoInterfaces",
+    "/Users/mpy/CascadeProjects/UmbraCore/packages/UmbraImplementations/Sources/CryptoServices"
+  ],
+  "migration_version": "Alpha Dot Five",
+  "migration_notes": "Split the original CryptoTypes module into three separate modules following the Alpha Dot Five architecture principles: (1) CryptoTypes for core type definitions, (2) CryptoInterfaces for protocol definitions, and (3) CryptoServices for concrete implementations. Replaced Foundation.Data with SecurityTypes.SecureBytes for secure data handling.",
+  "migration_issues_resolved": [
+    "Removed @objc annotations for better Swift-native support",
+    "Fixed dependency on Foundation for Data types by using SecureBytes",
+    "Moved implementation code to separate module to maintain clean architecture",
+    "Updated error handling to use UmbraErrors framework"
+  ],
+  "migrated_files": {
+    "CryptoTypes.swift": "/packages/UmbraCoreTypes/Sources/CryptoTypes/CryptoTypes.swift",
+    "Types/CryptoConfig.swift": "/packages/UmbraCoreTypes/Sources/CryptoTypes/CryptoConfig.swift",
+    "Types/CryptoConfiguration.swift": "/packages/UmbraCoreTypes/Sources/CryptoTypes/CryptoConfiguration.swift",
+    "Types/SecureStorageData.swift": "/packages/UmbraCoreTypes/Sources/CryptoTypes/SecureStorageData.swift",
+    "Protocols/CryptoServiceProtocol.swift": "/packages/UmbraInterfaces/Sources/CryptoInterfaces/CryptoServiceProtocol.swift",
+    "Protocols/CredentialManagerProtocol.swift": "/packages/UmbraInterfaces/Sources/CryptoInterfaces/CredentialManagerProtocol.swift",
+    "Services/DefaultCryptoService.swift": "/packages/UmbraImplementations/Sources/CryptoServices/DefaultCryptoService.swift",
+    "Services/CredentialManager.swift": "/packages/UmbraImplementations/Sources/CryptoServices/DefaultCredentialManager.swift"
+  },
+  "archived_timestamp": "1743095253"
+}

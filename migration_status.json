@@ -5,7 +5,8 @@
     "dependents": [
       "CoreDTOs",
       "UserDefaults",
-      "SecurityInterfaces"
+      "SecurityInterfaces",
+      "CryptoTypes"
     ],
     "migration_date": "2025-03-27",
     "blocking_issues": [],
@@ -84,10 +85,50 @@
     "dependencies": [],
     "dependents": [
       "CoreDTOs",
-      "SecurityInterfaces"
+      "SecurityInterfaces",
+      "CryptoTypes"
     ],
     "migration_date": "2025-03-27",
     "blocking_issues": [],
     "notes": "Successfully migrated to Alpha Dot Five architecture."
+  },
+  "CryptoTypes": {
+    "status": "Completed",
+    "dependencies": [
+      "UmbraErrors",
+      "SecurityTypes"
+    ],
+    "dependents": [
+      "CryptoInterfaces"
+    ],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture, replacing Foundation.Data with SecurityTypes.SecureBytes for secure data handling."
+  },
+  "CryptoInterfaces": {
+    "status": "Completed",
+    "dependencies": [
+      "CryptoTypes",
+      "SecurityTypes"
+    ],
+    "dependents": [
+      "CryptoServices"
+    ],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture, removed @objc annotations for better Swift-native support."
+  },
+  "CryptoServices": {
+    "status": "Completed",
+    "dependencies": [
+      "CryptoInterfaces",
+      "CryptoTypes",
+      "UmbraErrors",
+      "SecurityTypes"
+    ],
+    "dependents": [],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture with proper error handling and SecureBytes usage. Implementation will eventually be replaced by ResticBar."
   }
 }
