@@ -1,0 +1,49 @@
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
+
+umbra_swift_library(
+    name = "CoreDTOs",
+    srcs = glob(
+        [
+            "*.swift",
+            "**/*.swift",
+        ],
+        allow_empty = False,
+    ),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//packages/UmbraCoreTypes/Sources/FileSystemTypes",
+        "//packages/UmbraCoreTypes/Sources/SecurityTypes",
+        
+        # Original dependencies will be migrated later
+        "//Sources/UmbraErrors",
+        "//Sources/ErrorHandling",
+        "//Sources/UmbraLogging",
+    ],
+)
+
+# For testing only
+umbra_swift_library(
+    name = "CoreDTOsTests",
+    testonly = True,
+    srcs = glob(
+        [
+            "*.swift",
+            "**/*.swift",
+        ],
+        allow_empty = False,
+        exclude = [
+            "**/Tests/**",
+            "**/*Test.swift",
+            "**/*.generated.swift",
+        ],
+        exclude_directories = 1,
+    ),
+    visibility = [
+        "//packages/UmbraCoreTypes:__subpackages__",
+        "//packages/UmbraInterfaces:__subpackages__",
+        "//packages/UmbraImplementations:__subpackages__",
+    ],
+    deps = [
+        ":CoreDTOs",
+    ],
+)

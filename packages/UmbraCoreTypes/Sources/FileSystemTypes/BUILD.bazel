@@ -1,0 +1,13 @@
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
+
+umbra_swift_library(
+    name = "FileSystemTypes",
+    srcs = glob(
+        [
+            "*.swift",
+            "**/*.swift",
+        ],
+        allow_empty = False,
+    ),
+    visibility = ["//visibility:public"],
+)
