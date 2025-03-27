@@ -73,6 +73,33 @@ UmbraCore powers several macOS backup management tools:
 - SSH key management
 - Cloud provider credentials
 
+## Project Structure
+
+UmbraCore is organised into several key components:
+
+- **UmbraErrors**: Core error handling and error types
+- **CoreDTOs**: Data transfer objects for module interoperability
+- **SecurityInterfaces**: Security provider interfaces and adapters
+- **SecurityTypes**: Core security type definitions
+- **FileSystemTypes**: File system abstractions and utilities
+- **Scheduling**: Task scheduling and background processing
+- **UserDefaults**: User preferences management
+- **ResticCLIHelper**: Command-line interface integration
+- **Repositories**: Repository management and operations
+- **Snapshots**: Snapshot creation and management
+- **Config**: Configuration and settings management
+- **Logging**: Privacy-aware structured logging
+
+### Alpha Dot Five Architecture Migration
+
+We are currently migrating to the new Alpha Dot Five architecture, which brings better module organisation, improved dependency management, and enhanced concurrency support. As part of this migration:
+
+- Successfully migrated modules are moved to the `MigratedArchive` directory
+- New modules follow the standardised Alpha Dot Five structure
+- Migration status is tracked in `migration_status.json`
+
+For detailed information about the migration process and archive structure, see the [MigratedArchive documentation](docs/migrated_archive_structure.md).
+
 ## Architecture
 
 ### Core Libraries
