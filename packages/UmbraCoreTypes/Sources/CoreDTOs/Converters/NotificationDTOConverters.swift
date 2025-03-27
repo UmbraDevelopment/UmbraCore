@@ -1,7 +1,7 @@
 import Foundation
 
-// Temporarily using old module path during migration
-// @_exported import Notification  // Temporarily commented out - module not found during migration
+// Properly importing the migrated Notification module
+@_exported import Notification
 
 /// Extension for converting between Foundation types and NotificationDTO
 // Direct imports removed to break circular dependencies

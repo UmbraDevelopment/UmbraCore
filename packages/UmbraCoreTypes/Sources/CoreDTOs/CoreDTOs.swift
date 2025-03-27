@@ -29,5 +29,7 @@
 // Re-export modules needed for CoreDTOs functionality
 // These will be uncommented during migration completion
 @_exported import FileSystemTypes
-// @_exported import KeyManagementTypes
-// @_exported import SecurityTypes
+@_exported import SecurityTypes
+@_exported import Notification
+// @_exported import UmbraErrors // Uncomment after UmbraErrors migration
+// @_exported import Scheduling // Uncomment after Scheduling migration
