@@ -1,5 +1,6 @@
 import Foundation
 import UmbraErrors
+import UserDefaultsDTOs
 
 /// Protocol defining the UserDefaults service adapter interface.
 ///
