@@ -1,0 +1,93 @@
+{
+  "UmbraErrors": {
+    "status": "Completed",
+    "dependencies": [],
+    "dependents": [
+      "CoreDTOs",
+      "UserDefaults",
+      "SecurityInterfaces"
+    ],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture."
+  },
+  "CoreDTOs": {
+    "status": "Completed",
+    "dependencies": [
+      "UmbraErrors"
+    ],
+    "dependents": [
+      "UserDefaults",
+      "SecurityInterfaces"
+    ],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture with proper integration with all migrated dependency modules (UmbraErrors, UserDefaults, SecurityInterfaces, FileSystemTypes, and SecurityTypes)."
+  },
+  "UserDefaults": {
+    "status": "Completed",
+    "dependencies": [
+      "UmbraErrors",
+      "CoreDTOs"
+    ],
+    "dependents": [
+      "SecurityInterfaces"
+    ],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Migrated with placeholder adapter implementation"
+  },
+  "SecurityInterfaces": {
+    "status": "Completed",
+    "dependencies": [
+      "UmbraErrors",
+      "CoreDTOs",
+      "UserDefaults"
+    ],
+    "dependents": [],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture with proper integration with UmbraErrors and UserDefaults."
+  },
+  "Notification": {
+    "status": "Completed",
+    "dependencies": [
+      "UmbraErrors"
+    ],
+    "dependents": [],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture."
+  },
+  "Scheduling": {
+    "status": "Completed",
+    "dependencies": [
+      "UmbraErrors"
+    ],
+    "dependents": [],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture."
+  },
+  "FileSystemTypes": {
+    "status": "Completed",
+    "dependencies": [],
+    "dependents": [
+      "CoreDTOs"
+    ],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture."
+  },
+  "SecurityTypes": {
+    "status": "Completed",
+    "dependencies": [],
+    "dependents": [
+      "CoreDTOs",
+      "SecurityInterfaces"
+    ],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture."
+  }
+}
