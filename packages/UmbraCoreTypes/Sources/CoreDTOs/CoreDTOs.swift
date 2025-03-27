@@ -32,4 +32,6 @@
 @_exported import SecurityTypes
 @_exported import Notification
 @_exported import Scheduling
-// @_exported import UmbraErrors // Uncomment after UmbraErrors migration
+@_exported import UmbraErrors
+@_exported import UserDefaults
+@_exported import SecurityInterfaces

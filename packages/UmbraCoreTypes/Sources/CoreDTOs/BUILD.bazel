@@ -11,14 +11,18 @@ umbra_swift_library(
     ),
     visibility = ["//visibility:public"],
     deps = [
+        # All migrated modules
         "//packages/UmbraCoreTypes/Sources/FileSystemTypes",
         "//packages/UmbraCoreTypes/Sources/SecurityTypes",
+        "//packages/UmbraCoreTypes/Sources/UmbraErrors",
+        "//packages/UmbraCoreTypes/Sources/UserDefaults",
+        "//packages/UmbraCoreTypes/Sources/SecurityInterfaces",
+        
+        # Modules still to be migrated
         "//packages/UmbraCoreTypes/Sources/Notification",
         "//packages/UmbraCoreTypes/Sources/Scheduling",
         
-        # Updated to use the migrated UmbraErrors module
-        "//packages/UmbraCoreTypes/Sources/UmbraErrors",
-        "//Sources/ErrorHandling",
+        # Dependencies to be migrated in future
         "//Sources/UmbraLogging",
     ],
 )

@@ -1,11 +1,7 @@
 import Foundation
-
-// Temporarily using old module path during migration
-// @_exported import UserDefaults  // Temporarily commented out - module not found during migration
+import UserDefaults
 
 /// Extension for converting between Foundation types and UserDefaultsValueDTO
-// Import UserDefaults module to access UserDefaultsValueDTO
-
 extension UserDefaultsValueDTO {
   /// Create a UserDefaultsValueDTO from a Foundation object
   /// - Parameter object: The object to convert

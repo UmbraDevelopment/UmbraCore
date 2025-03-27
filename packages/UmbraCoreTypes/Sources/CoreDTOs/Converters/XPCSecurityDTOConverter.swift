@@ -1,12 +1,6 @@
 import Foundation
-
-// Temporarily using old module path during migration
-// @_exported import SecurityInterfaces  // Temporarily commented out - module not found during migration
-
-// Removing imports that cause circular dependencies
-// import UmbraErrors
-// import UmbraErrorsCore
-// import CoreDTOs.Security - Removed to break circular dependency
+import SecurityInterfaces
+import UmbraErrors
 
 /// Converts between SecurityError and SecurityErrorDTO
 public enum XPCSecurityDTOConverter {
