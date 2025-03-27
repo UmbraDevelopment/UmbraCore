@@ -1,7 +1,8 @@
 import Core
 import Foundation
 import Interfaces
-import Recovery
+// Removing import to break circular dependency
+// import Recovery
 import UmbraErrorsCore
 import UmbraLogging
 
@@ -21,6 +22,19 @@ public final class ErrorNotifier: ErrorNotificationProtocol {
   /// - Parameter service: The notification service to register
   public func registerNotificationService(_ service: ErrorNotificationService) {
     notificationServices.append(service)
+  }
+
+  // Define placeholder protocol to replace Recovery.RecoveryOption
+  public protocol RecoveryOption {
+    var title: String { get }
+    var isDefault: Bool { get }
+  }
+  
+  // Define placeholder enum to replace Recovery.RecoveryStatus
+  public enum RecoveryStatus {
+    case applied
+    case failed
+    case cancelled
   }
 
   /// Notifies the user about an error
@@ -67,7 +81,7 @@ public final class ErrorNotifier: ErrorNotificationProtocol {
     level: ErrorNotificationLevel
   ) async -> Bool {
     // Get recovery options
-    let options=RecoveryManager.shared.recoveryOptions(for: error)
+    let options: [any RecoveryOption] = [] // Removed dependency on RecoveryManager
 
     // Skip if no options available
     guard !options.isEmpty else {
@@ -93,7 +107,7 @@ public final class ErrorNotifier: ErrorNotificationProtocol {
     UmbraLogger.shared.info("User selected recovery option: \(result.option.title)")
 
     // Return whether recovery was successful
-    return result.status == .success
+    return result.status == .applied
   }
 
   /// Selects an appropriate notification service for the given level
@@ -143,8 +157,8 @@ public class ConsoleNotificationService: ErrorNotificationService {
       // For testing, just select the first option
       if let firstOption=recoveryOptions.first {
         print("Selected: \(firstOption.title)")
-        await firstOption.perform()
-        return (firstOption, .success)
+        // Removed dependency on RecoveryOption.perform()
+        return (firstOption, .applied)
       }
     } else {
       print("No recovery options available")

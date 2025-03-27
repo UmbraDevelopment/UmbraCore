@@ -10,7 +10,7 @@ import UmbraErrorsCore
 
 extension UmbraErrors.Resource {
   /// Core resource errors related to resource acquisition and management
-  public enum Core: Error, Interfaces.UmbraError, StandardErrorCapabilitiesProtocol, ResourceErrors {
+  public enum Core: Error, StandardErrorCapabilitiesProtocol /*ResourceErrors*/ {
     // Resource acquisition errors
     /// Failed to acquire resource
     case acquisitionFailed(resource: String, reason: String)

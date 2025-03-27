@@ -4,8 +4,7 @@ import UmbraErrorsCore
 
 extension UmbraErrors.Security {
   /// Core security errors related to authentication, authorisation, encryption, etc.
-  public enum Core: Error, Interfaces.UmbraError, StandardErrorCapabilitiesProtocol, AuthenticationErrors,
-  SecurityOperationErrors {
+  public enum Core: Error, StandardErrorCapabilitiesProtocol /*, AuthenticationErrors, SecurityOperationErrors*/ {
     // Authentication errors
     /// Authentication failed due to invalid credentials or expired session
     case authenticationFailed(reason: String)
@@ -132,7 +131,7 @@ extension UmbraErrors.Security {
     }
 
     /// Source information about where the error occurred
-    public var source: ErrorSource? {
+    public var source: UmbraErrorsCore.ErrorSource? {
       nil // Source is typically set when the error is created with context
     }
     
@@ -142,31 +141,28 @@ extension UmbraErrors.Security {
     }
     
     /// Additional context for the error
-    public var context: ErrorContext {
-      ErrorContext(
+    public var context: UmbraErrorsCore.ErrorContext {
+      UmbraErrorsCore.ErrorContext(
         source: domain,
-        operation: "",
-        details: errorDescription,
-        file: "",
-        line: 0,
-        function: ""
+        operation: "security_operation",
+        details: errorDescription
       )
     }
 
     /// Creates a new instance of the error with additional context
-    public func with(context _: ErrorContext) -> Self {
+    public func with(context: UmbraErrorsCore.ErrorContext) -> Self {
       // Since these are enum cases, we need to return a new instance with the same value
       self
     }
     
     /// Creates a new instance of the error with a specified underlying error
-    public func with(underlyingError _: Error) -> Self {
+    public func with(underlyingError: Error) -> Self {
       // Since these are enum cases, we need to return a new instance with the same value
       self
     }
 
     /// Creates a new instance of the error with source information
-    public func with(source: ErrorSource) -> Self {
+    public func with(source: UmbraErrorsCore.ErrorSource) -> Self {
       // Return self for now - in a real implementation we would attach the source
       return self
     }

@@ -20,10 +20,12 @@ umbra_swift_library(
         # "//Sources/CoreDTOs"
         # Replaced SecurityTypes with SecurityInterfaces to break circular dependency chain
         # "//Sources/SecurityTypes"
-        "//Sources/CoreDTOs/Sources:CoreDTOs",
-        "//Sources/SecurityInterfaces",
+        # Removing self-referential dependency to break circular dependency
+        # "//Sources/CoreDTOs/Sources:CoreDTOs",
+        # Removing dependencies that cause circular references
+        # "//Sources/SecurityInterfaces",
+        # "//Sources/UmbraSecurityBridge",
         "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
-        "//Sources/UmbraSecurityBridge",
         "//Sources/UmbraCoreTypes",
         "//Sources/UmbraLogging",
     ],

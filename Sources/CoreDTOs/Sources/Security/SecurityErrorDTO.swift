@@ -5,7 +5,8 @@ import UmbraCoreTypes
 /// without using any Foundation types.
 // Removed redundant import that creates circular dependency
 // import CoreDTOs
-import CoreDTOs
+// Removing this import as we're already inside CoreDTOs module hierarchy
+// import CoreDTOs
 
 public struct SecurityErrorDTO: Error, Sendable, Equatable, CustomStringConvertible {
   // MARK: - Properties

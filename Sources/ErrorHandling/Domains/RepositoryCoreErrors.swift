@@ -1,8 +1,6 @@
 import Foundation
-// Use the shared declarations instead of local ones
 import Interfaces
 import UmbraErrorsCore
-
 
 /// Error domain namespace
 
@@ -12,7 +10,8 @@ import UmbraErrorsCore
 
 extension UmbraErrors.Repository {
   /// Core repository errors relating to repository access and management
-  public enum Core: Error, UmbraErrorsCore.UmbraError, StandardErrorCapabilitiesProtocol, ResourceErrors {
+  // Removed RepositoryErrors protocol conformance to break circular dependency
+  public enum Core: Error, StandardErrorCapabilitiesProtocol /*, RepositoryErrors */ {
     // Repository access errors
     /// The repository could not be found
     case repositoryNotFound(resource: String)
@@ -64,52 +63,59 @@ extension UmbraErrors.Repository {
     /// Internal repository error
     case internalError(reason: String)
 
-    // MARK: - UmbraError Protocol
-
-    /// Domain identifier for repository core errors
-    public var domain: String {
-      "Repository.Core"
-    }
-
-    /// Error code uniquely identifying the error type
+    // MARK: - StandardErrorCapabilitiesProtocol Requirements
+    
+    /// Code identifier for this error
     public var code: String {
       switch self {
-        case .repositoryNotFound:
-          "repository_not_found"
-        case .repositoryOpenFailed:
-          "repository_open_failed"
-        case .repositoryCorrupt:
-          "repository_corrupt"
-        case .repositoryLocked:
-          "repository_locked"
-        case .invalidState:
-          "invalid_state"
-        case .permissionDenied:
-          "permission_denied"
-        case .objectNotFound:
-          "object_not_found"
-        case .objectAlreadyExists:
-          "object_already_exists"
-        case .objectCorrupt:
-          "object_corrupt"
-        case .invalidObjectType:
-          "invalid_object_type"
-        case .invalidObjectData:
-          "invalid_object_data"
-        case .saveFailed:
-          "save_failed"
-        case .deleteFailed:
-          "delete_failed"
-        case .updateFailed:
-          "update_failed"
-        case .timeout:
-          "timeout"
-        case .internalError:
-          "internal_error"
+      case .repositoryNotFound:
+        return "repository_not_found"
+      case .repositoryOpenFailed:
+        return "repository_open_failed"
+      case .repositoryCorrupt:
+        return "repository_corrupt"
+      case .repositoryLocked:
+        return "repository_locked"
+      case .invalidState:
+        return "invalid_state"
+      case .permissionDenied:
+        return "permission_denied"
+      case .objectNotFound:
+        return "object_not_found"
+      case .objectAlreadyExists:
+        return "object_already_exists"
+      case .objectCorrupt:
+        return "object_corrupt"
+      case .invalidObjectType:
+        return "invalid_object_type"
+      case .invalidObjectData:
+        return "invalid_object_data"
+      case .saveFailed:
+        return "save_failed"
+      case .deleteFailed:
+        return "delete_failed"
+      case .updateFailed:
+        return "update_failed"
+      case .timeout:
+        return "operation_timeout"
+      case .internalError:
+        return "internal_error"
       }
     }
 
-    /// Human-readable description of the error
+    // MARK: - Error Properties
+
+    /// Domain identifier for repository core errors
+    public var domain: String {
+      ErrorDomain.repository
+    }
+
+    /// String description for CustomStringConvertible conformance
+    public var description: String {
+      return self.errorDescription
+    }
+
+    /// Human-readable error description
     public var errorDescription: String {
       switch self {
         case let .repositoryNotFound(resource):
@@ -179,55 +185,21 @@ extension UmbraErrors.Repository {
     }
 
     /// Creates a new instance of the error with additional context
-    public func with(context _: UmbraErrorsCore.ErrorContext) -> Self {
+    public func with(context: UmbraErrorsCore.ErrorContext) -> Self {
       // Since these are enum cases, we need to return a new instance with the same value
-      switch self {
-        case let .repositoryNotFound(resource):
-          .repositoryNotFound(resource: resource)
-        case let .repositoryOpenFailed(reason):
-          .repositoryOpenFailed(reason: reason)
-        case let .repositoryCorrupt(reason):
-          .repositoryCorrupt(reason: reason)
-        case let .repositoryLocked(owner):
-          .repositoryLocked(owner: owner)
-        case let .invalidState(state, expectedState):
-          .invalidState(state: state, expectedState: expectedState)
-        case let .permissionDenied(operation, reason):
-          .permissionDenied(operation: operation, reason: reason)
-        case let .objectNotFound(objectID, objectType):
-          .objectNotFound(objectID: objectID, objectType: objectType)
-        case let .objectAlreadyExists(objectID, objectType):
-          .objectAlreadyExists(objectID: objectID, objectType: objectType)
-        case let .objectCorrupt(objectID, reason):
-          .objectCorrupt(objectID: objectID, reason: reason)
-        case let .invalidObjectType(providedType, expectedType):
-          .invalidObjectType(providedType: providedType, expectedType: expectedType)
-        case let .invalidObjectData(objectID, reason):
-          .invalidObjectData(objectID: objectID, reason: reason)
-        case let .saveFailed(objectID, reason):
-          .saveFailed(objectID: objectID, reason: reason)
-        case let .deleteFailed(objectID, reason):
-          .deleteFailed(objectID: objectID, reason: reason)
-        case let .updateFailed(objectID, reason):
-          .updateFailed(objectID: objectID, reason: reason)
-        case let .timeout(operation, timeoutMs):
-          .timeout(operation: operation, timeoutMs: timeoutMs)
-        case let .internalError(reason):
-          .internalError(reason: reason)
-      }
-      // In a real implementation, we would attach the context
+      return self
     }
 
     /// Creates a new instance of the error with a specified underlying error
-    public func with(underlyingError _: Error) -> Self {
-      // Similar to above, return a new instance with the same value
-      self // In a real implementation, we would attach the underlying error
+    public func with(underlyingError: Error) -> Self {
+      // Since these are enum cases, we need to return a new instance with the same value
+      return self
     }
 
     /// Creates a new instance of the error with source information
     public func with(source: UmbraErrorsCore.ErrorSource) -> Self {
-      // Similar to above, return a new instance with the same value
-      self // In a real implementation, we would attach the source information
+      // Here we would attach the source information to a new instance
+      return self
     }
 
     // MARK: - ResourceErrors Protocol

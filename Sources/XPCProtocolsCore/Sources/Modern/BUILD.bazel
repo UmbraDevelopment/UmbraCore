@@ -18,10 +18,12 @@ umbra_swift_library(
     visibility = ["//visibility:public"],
     deps = [
         "//Sources/CoreDTOs",
-        "//Sources/Security/Adapters/Bridge/XPC:XPCBridge",
+        # Removing problematic dependency that may be causing circular references
+        # "//Sources/Security/Adapters/Bridge/XPC:XPCBridge",
         "//Sources/UmbraCoreTypes",
         "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
-        "//Sources/UmbraErrors",
+        "//Sources/UmbraErrors/Core:UmbraErrorsCore",  # Only depending on core errors
         "//Sources/UmbraLogging",
+        "//Sources/XPCProtocolsCore/Sources/Common",  # Adding our new Common module
     ],
 )

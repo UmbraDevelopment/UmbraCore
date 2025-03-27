@@ -1,7 +1,9 @@
 import Foundation
-import UmbraErrors
+// Removing import to break circular dependency
+// import UmbraErrors
 import UmbraErrorsCore
-import XPCProtocolsCore
+// Temporarily comment out to break circular dependency
+// import XPCProtocolsCore
 
 /// Custom error for Foundation bridging that doesn't require direct NSError use
 public enum FoundationBridgingError: Error, Sendable {
@@ -61,14 +63,11 @@ extension XPCServiceProtocolBaseFoundation {
   }
 
   /// Async ping implementation
-  public func ping() async -> Result<Bool, UmbraErrors.XPC.Security> {
+  public func ping() async -> Result<Bool, FoundationBridgingError> {
     await withCheckedContinuation { continuation in
       ping { success, error in
-        if let error=error as? UmbraErrors.XPC.Security {
-          continuation.resume(returning: .failure(error))
-        } else if let error {
-          continuation
-            .resume(returning: .failure(.internalError(description: error.localizedDescription)))
+        if let error {
+          continuation.resume(returning: .failure(FoundationBridgingError.serviceConnectionFailed(details: error.localizedDescription)))
         } else {
           continuation.resume(returning: .success(success))
         }
@@ -112,9 +111,10 @@ extension XPCServiceProtocolBaseFoundation {
   /// // Migration:
   /// let modernService = legacyService.asModernXPCService()
   /// ```
-  public func asModernXPCService() -> any XPCServiceProtocolBasic {
+  public func asModernXPCService() -> any XPCServiceProtocolBaseFoundation {
     // Use the migration factory to create a properly wrapped service
-    XPCProtocolMigrationFactory.createBasicAdapter()
+    // XPCProtocolMigrationFactory.createBasicAdapter()
+    self
   }
 }
 

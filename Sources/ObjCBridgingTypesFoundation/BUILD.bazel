@@ -19,9 +19,11 @@ umbra_swift_library(
         # Add other dependencies as needed
         "//Sources/CoreErrors",
         "//Sources/ErrorHandling/Domains",
-        "//Sources/UmbraErrors",
+        # Removing dependency on UmbraErrors to break circular dependency
+        # "//Sources/UmbraErrors",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-        "//Sources/XPCProtocolsCore",
+        # Removing dependency on XPCProtocolsCore to break circular dependency
+        # "//Sources/XPCProtocolsCore",
     ],
 )
 
@@ -38,8 +40,10 @@ umbra_swift_library(
 #         # Add other dependencies as needed
 #         "//Sources/CoreErrors",
 #         "//Sources/ErrorHandling/Domains",
-#         "//Sources/UmbraErrors",
+#         # Removing dependency on UmbraErrors to break circular dependency
+#         # "//Sources/UmbraErrors",
 #         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-#         "//Sources/XPCProtocolsCore",
+#         # Removing dependency on XPCProtocolsCore to break circular dependency
+#         # "//Sources/XPCProtocolsCore",
 #     ],
 # )

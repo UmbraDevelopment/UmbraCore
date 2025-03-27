@@ -20,10 +20,12 @@ umbra_swift_library(
         # Additional dependencies as needed:
         # "//Sources/CoreDTOs",  # Commented out to break dependency cycle
         # "@com_github_apple_swift_log//:Logging"
-        "//Sources/SecurityInterfaces",
-        "//Sources/SecurityTypes",
+        # Removing SecurityInterfaces and SecurityTypes dependencies to break circular dependency
+        # "//Sources/SecurityInterfaces",
+        # "//Sources/SecurityTypes",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-        "//Sources/ErrorHandling",
+        # Removing ErrorHandling dependency to break circular dependency
+        # "//Sources/ErrorHandling",
         "//Sources/ErrorHandlingInterfaces",
         "//Sources/UmbraLogging",
         "//Sources/UmbraCoreTypes",

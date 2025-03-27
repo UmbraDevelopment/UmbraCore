@@ -113,7 +113,9 @@ extension UmbraErrorsCore.ErrorSource {
 }
 
 // MARK: - ErrorContext Type Compatibility
+// Commenting out these methods as they reference types that don't exist in the Interfaces module
 
+/*
 /// Extension to add conversion initializers between ErrorContext types
 extension Interfaces.ErrorContext {
   /// Convert from UmbraErrorsCore.ErrorContext to Interfaces.ErrorContext
@@ -128,6 +130,7 @@ extension Interfaces.ErrorContext {
     )
   }
 }
+*/
 
 // MARK: - Type-safe wrapper functions to help with protocol conformance
 
@@ -143,7 +146,9 @@ public func convertToUmbraErrorsCoreSource(_ source: Interfaces.ErrorSource?) ->
   return UmbraErrorsCore.ErrorSource(from: source)
 }
 
+/*
 /// Convert UmbraErrorsCore.ErrorContext to Interfaces.ErrorContext safely
 public func convertToInterfacesContext(_ context: UmbraErrorsCore.ErrorContext) -> Interfaces.ErrorContext {
   return Interfaces.ErrorContext(from: context)
 }
+*/

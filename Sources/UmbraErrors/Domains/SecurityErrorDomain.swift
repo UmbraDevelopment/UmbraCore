@@ -2,8 +2,9 @@ import Foundation
 
 import UmbraErrorsCore
 
-import SecurityInterfaces
-import SecurityTypes
+// Removing imports to break circular dependency
+// import SecurityInterfaces
+// import SecurityTypes
 
 public enum SecurityErrorDomain: String, CaseIterable, Sendable {
   /// Domain identifier

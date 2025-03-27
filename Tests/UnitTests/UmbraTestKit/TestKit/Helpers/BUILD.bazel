@@ -18,7 +18,7 @@ swift_test(
     deps = [
         "//Sources/Core",
         "//Sources/CoreTypesInterfaces",
-        "//Sources/SecurityInterfacesProtocols",
+        "//Sources/SecurityInterfaces",
         "//Sources/SecurityTypes",
         "//Sources/UmbraErrors",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",

@@ -3,7 +3,10 @@ import UmbraErrorsCore
 // Use the shared declarations instead of local ones
 import Interfaces
 
+// This file is temporarily commented out to break circular dependencies
+// It should be restored after the module structure is refactored to avoid circular references.
 
+/*
 /// Error domain namespace
 
 /// Error context protocol
@@ -68,3 +71,4 @@ public struct RepositoryErrorDomain: ErrorDomain {
     }
   }
 }
+*/

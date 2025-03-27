@@ -17,7 +17,8 @@ umbra_swift_library(
     ),
     deps = [
         "//Sources/ErrorHandling/Interfaces",
-        "//Sources/SecurityTypes",
+        # Removed SecurityTypes dependency to break circular dependencies
+        # "//Sources/SecurityTypes",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
     ],
 )

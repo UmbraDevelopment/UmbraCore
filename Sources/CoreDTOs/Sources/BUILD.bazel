@@ -39,9 +39,10 @@ umbra_swift_library(
         "//Sources/ErrorHandlingDomains",
         "//Sources/ErrorHandlingInterfaces",
         "//Sources/FileSystemTypes",
-        "//Sources/SecurityProtocolsCore",
-        "//Sources/SecurityTypes",
-        "//Sources/UmbraErrors",
+        # Removing dependencies to break circular dependency chains
+        # "//Sources/SecurityProtocolsCore",
+        # "//Sources/SecurityTypes",
+        # "//Sources/UmbraErrors",
         "//Sources/UmbraLogging",
     ],
 )

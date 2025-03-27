@@ -29,7 +29,8 @@ umbra_swift_library(
         "//Sources/CoreDTOs/Sources/UserDefaults",
         "//Sources/ErrorHandling/Notification",
         "//Sources/FileSystemTypes",
-        "//Sources/SecurityInterfaces",
+        # Removing dependency on SecurityInterfaces to break circular dependency
+        # "//Sources/SecurityInterfaces",
         "//Sources/UmbraCoreTypes",
         "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
         "//Sources/UmbraLogging",

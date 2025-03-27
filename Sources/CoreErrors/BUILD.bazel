@@ -31,10 +31,13 @@ umbra_swift_library(
         # "//Sources/CoreDTOs",
         # "//Sources/UmbraLogging",
         # "@com_github_apple_swift_log//:Logging",
-        "//Sources/ErrorHandling",
-        "//Sources/SecurityInterfaces",
-        "//Sources/SecurityTypes",
+        # Removing dependency on ErrorHandling to break circular dependency
+        # "//Sources/ErrorHandling",
+        # Removing dependencies on SecurityInterfaces and SecurityTypes to break circular dependency
+        # "//Sources/SecurityInterfaces",
+        # "//Sources/SecurityTypes",
     ],
+    visibility = ["//visibility:public"],
 )
 
 # Uncomment if documentation generation is needed
@@ -51,8 +54,10 @@ umbra_swift_library(
 #         # "//Sources/CoreDTOs",
 #         # "//Sources/UmbraLogging",
 #         # "@com_github_apple_swift_log//:Logging",
-#         "//Sources/ErrorHandling",
-#         "//Sources/SecurityInterfaces",
-#         "//Sources/SecurityTypes",
+#         # Removing dependency on ErrorHandling to break circular dependency
+#         # "//Sources/ErrorHandling",
+#         # Removing dependencies on SecurityInterfaces and SecurityTypes to break circular dependency
+#         # "//Sources/SecurityInterfaces",
+#         # "//Sources/SecurityTypes",
 #     ],
 # )

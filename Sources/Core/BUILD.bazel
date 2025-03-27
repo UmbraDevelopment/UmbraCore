@@ -16,7 +16,8 @@ umbra_swift_library(
     ),
     visibility = ["//visibility:public"],
     deps = [
-        "//Sources/CoreDTOs",
+        # Removing dependency on CoreDTOs to break circular dependency
+        # "//Sources/CoreDTOs",
         "//Sources/ErrorHandling",
         "//Sources/ObjCBridgingTypesFoundation",
         "//Sources/UmbraLogging",
@@ -33,7 +34,7 @@ umbra_swift_library(
 #         "**/*.docc/**"
 #     ])
 #     deps = [
-#         "//Sources/CoreDTOs"
+#         # "//Sources/CoreDTOs"
 #         "//Sources/ErrorHandling"
 #         "//Sources/ObjCBridgingTypesFoundation"
 #         "//Sources/UmbraLogging"

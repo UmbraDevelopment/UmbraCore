@@ -12,6 +12,8 @@ umbra_swift_library(
             "**/Tests/**",
             "**/*Test.swift",
             "**/*.generated.swift",
+            # Exclude Common directory as it's now a separate target
+            "Common/**",
         ],
         exclude_directories = 1,
     ),
@@ -24,12 +26,13 @@ umbra_swift_library(
         "//Sources/CoreDTOs",
         "//Sources/CoreDTOs/Sources/Operations",
         "//Sources/CoreDTOs/Sources/Security",
-        "//Sources/SecurityInterfaces",
+        # Include our new Common module
+        "//Sources/XPCProtocolsCore/Sources/Common",
         "//Sources/UmbraCoreTypes",
         "//Sources/UmbraErrors",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
         "//Sources/UmbraLogging",
-        "//Sources/UmbraSecurityBridge",
+        # SecurityInterfaces and UmbraSecurityBridge dependencies removed to break circular dependencies
     ],
 )
 
@@ -46,11 +49,10 @@ umbra_swift_library(
 #         "//Sources/CoreDTOs",
 #         "//Sources/CoreDTOs/Sources/Operations",
 #         "//Sources/CoreDTOs/Sources/Security",
-#         "//Sources/SecurityInterfaces",
+#         "//Sources/XPCProtocolsCore/Sources/Common",
 #         "//Sources/UmbraCoreTypes",
 #         "//Sources/UmbraErrors",
 #         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
 #         "//Sources/UmbraLogging",
-#         "//Sources/UmbraSecurityBridge",
 #     ],
 # )

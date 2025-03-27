@@ -5,7 +5,7 @@ import UmbraErrorsCore
 /// Error domain namespace
 extension UmbraErrors.Network {
   /// Core network errors related to connections, requests, and responses
-  public enum Core: Error, StandardErrorCapabilitiesProtocol, NetworkErrors {
+  public enum Core: Error, StandardErrorCapabilitiesProtocol /*, NetworkErrors */ {
     // Connection errors
     /// Connection to remote service failed
     case connectionFailed(reason: String)
@@ -132,7 +132,7 @@ extension UmbraErrors.Network {
     }
 
     /// Source information about where the error occurred
-    public var source: Interfaces.ErrorSource? {
+    public var source: UmbraErrorsCore.ErrorSource? {
       nil // Source is typically set when the error is created with context
     }
 
@@ -142,19 +142,16 @@ extension UmbraErrors.Network {
     }
 
     /// Additional context for the error
-    public var context: Interfaces.ErrorContext {
-      Interfaces.ErrorContext(
+    public var context: UmbraErrorsCore.ErrorContext {
+      UmbraErrorsCore.ErrorContext(
         source: domain,
         operation: "network_operation",
-        details: errorDescription,
-        file: "",
-        line: 0,
-        function: ""
+        details: errorDescription
       )
     }
 
     /// Creates a new instance of the error with additional context
-    public func with(context: Interfaces.ErrorContext) -> Self {
+    public func with(context: UmbraErrorsCore.ErrorContext) -> Self {
       // Since these are enum cases, we need to return a new instance with the same value
       return self
     }
@@ -166,17 +163,12 @@ extension UmbraErrors.Network {
     }
 
     /// Creates a new instance of the error with source information
-    public func with(source: Interfaces.ErrorSource) -> Self {
-      // Here we would convert the Interfaces.ErrorSource to UmbraErrorsCore.ErrorSource
-      // using our conversion function, and attach it to a new instance
+    public func with(source: UmbraErrorsCore.ErrorSource) -> Self {
+      // Here we would attach the source information to a new instance
       return self
     }
 
-    // MARK: - NetworkErrors Protocol
-
-    // Note: Factory methods moved to extension below with 'make' prefix
-    // to avoid ambiguity with enum cases and to maintain a consistent pattern
-    // across the codebase.
+    // MARK: - Factory Methods
 
     // Required for protocol conformance - do not remove
     public static func makeConnectionFailed(reason: String) -> Self {

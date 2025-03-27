@@ -1,47 +1,7 @@
 import Foundation
+import MappingCommon
 
-// Local type declarations to replace imports
-// These replace the removed ErrorHandling and ErrorHandlingDomains imports
-
-/// Error domain namespace
-import SecurityInterfaces
-import SecurityTypes
-
-public enum ErrorDomain {
-  /// Security domain
-  public static let security="Security"
-  /// Crypto domain
-  public static let crypto="Crypto"
-  /// Application domain
-  public static let application="Application"
-}
-
-/// Error context protocol
-public protocol ErrorContext {
-  /// Domain of the error
-  var domain: String { get }
-  /// Code of the error
-  var code: Int { get }
-  /// Description of the error
-  var description: String { get }
-}
-
-/// Base error context implementation
-public struct BaseErrorContext: ErrorContext {
-  /// Domain of the error
-  public let domain: String
-  /// Code of the error
-  public let code: Int
-  /// Description of the error
-  public let description: String
-
-  /// Initialise with domain, code and description
-  public init(domain: String, code: Int, description: String) {
-    self.domain=domain
-    self.code=code
-    self.description=description
-  }
-}
+// MARK: - Security Error Mapper Implementation
 
 /// A bidirectional mapper for converting between `SecurityError` and
 /// `UmbraErrors.GeneralSecurity.Core` error types.
@@ -199,63 +159,31 @@ extension SecurityErrorMapper: BidirectionalErrorMapper {
   .Core {
     switch error {
       case let .domainCoreError(coreError):
-        coreError
+        return coreError
       case let .authenticationFailed(reason):
-        .invalidInput(reason: reason)
+        return .invalidInput(reason: reason)
       case let .permissionDenied(reason):
-        .invalidInput(reason: reason)
+        return .invalidInput(reason: reason)
       case let .unauthorizedAccess(reason):
-        .invalidInput(reason: reason)
+        return .invalidInput(reason: reason)
       case let .encryptionFailed(reason):
-        .encryptionFailed(reason: reason)
+        return .encryptionFailed(reason: reason)
       case let .decryptionFailed(reason):
-        .decryptionFailed(reason: reason)
+        return .decryptionFailed(reason: reason)
       case let .keyGenerationFailed(reason):
-        .keyGenerationFailed(reason: reason)
+        return .keyGenerationFailed(reason: reason)
       case let .hashingFailed(reason):
-        .hashVerificationFailed(reason: reason)
+        return .hashVerificationFailed(reason: reason)
       case let .signatureInvalid(reason):
-        .hashVerificationFailed(reason: reason)
-      case let .certificateInvalid(reason):
-        .invalidInput(reason: reason)
-      case let .secureChannelFailed(reason):
-        .serviceError(code: 1002, reason: reason)
-      case let .securityConfigurationError(reason):
-        .internalError("Configuration error: \(reason)")
+        return .hashVerificationFailed(reason: reason)
+      case .domainProtocolError:
+        return .serviceError(code: 1002, reason: "Protocol error")
+      case .domainXPCError:
+        return .serviceError(code: 1003, reason: "XPC error")
       case let .internalError(reason):
-        .internalError(reason)
-      case let .invalidCredentials(reason):
-        .invalidInput(reason: reason)
-      case let .sessionExpired(reason):
-        .invalidInput(reason: reason)
-      case let .tokenExpired(reason):
-        .invalidInput(reason: reason)
-      case let .unknown(reason):
-        .internalError("Unknown error: \(reason)")
-      default:
-        // Default fallback for unmappable errors
-        .internalError("Unmapped error: \(error)")
+        return .internalError(reason)
+      @unknown default:
+        return .internalError("Unknown error type: \(error)")
     }
-  }
-}
-
-/// Error registry extension for registering the security error mapper
-extension ErrorMapperRegistry {
-  /// Register the security error mapper with the registry
-  public func registerSecurityErrorMapper() {
-    registerMapper(
-      sourceType: UmbraErrors.GeneralSecurity.Core.self,
-      targetType: ErrorHandlingTypes.SecurityError.self,
-      factory: { SecurityErrorMapper() }
-    )
-  }
-}
-
-/// Error registry extension for registering the security error mapper
-extension ErrorRegistry {
-  /// Register the security error mapper with the error registry
-  public func registerSecurityErrorMapper() {
-    // This is a placeholder for now - we'll implement the actual registration
-    // once we've established how external error types should be registered
   }
 }

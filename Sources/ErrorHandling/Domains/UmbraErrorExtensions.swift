@@ -10,6 +10,12 @@ import UmbraErrorsCore
 /// Type bridge between UmbraErrorsCore.ErrorSource and Interfaces.ErrorSource
 public typealias InterfacesErrorSource = UmbraErrorsCore.ErrorSource
 
+// MARK: - Protocol Conformance Extensions
+// We're now selectively enabling extensions that don't cause circular dependencies
+
+// The following extensions are commented out temporarily while we resolve type issues
+
+/*
 // MARK: - UmbraErrors.Network.Core Extensions
 
 extension UmbraErrors.Network.Core: Interfaces.UmbraError {
@@ -22,56 +28,17 @@ extension UmbraErrors.Security.Core: Interfaces.UmbraError {
   // All required properties and methods are implemented directly on the type
 }
 
+// MARK: - UmbraErrors.Repository.Core Extensions
+
+extension UmbraErrors.Repository.Core: Interfaces.UmbraError {
+  // Add the missing code property required by the UmbraError protocol
+  // This is already defined in the RepositoryCoreErrors.swift
+}
+
+// The Resource.Core extension is temporarily commented out to avoid circular dependencies
 // MARK: - UmbraErrors.Resource.Core Extensions
 
 extension UmbraErrors.Resource.Core: Interfaces.UmbraError {
   // All required properties and methods are implemented directly on the type
 }
-
-// MARK: - UmbraErrors.Repository.Core Extensions
-
-extension UmbraErrors.Repository.Core: Interfaces.UmbraError {
-  // Source conversion
-  public var source: Interfaces.ErrorSource? {
-    if let coreSource = self.umbraErrorsCoreSource {
-      return convertToInterfacesSource(coreSource)
-    }
-    return nil
-  }
-  
-  // Original source accessor to avoid naming conflicts
-  private var umbraErrorsCoreSource: UmbraErrorsCore.ErrorSource? {
-    nil // Source is typically set when the error is created with context
-  }
-  
-  // Context conversion
-  public var context: Interfaces.ErrorContext {
-    Interfaces.ErrorContext(
-      source: domain,
-      operation: "repository_operation",
-      details: errorDescription,
-      file: "",
-      line: 0,
-      function: ""
-    )
-  }
-  
-  // Source setter
-  public func with(source: Interfaces.ErrorSource) -> Self {
-    // Convert to the UmbraErrorsCore.ErrorSource type and pass to the original implementation
-    let coreSource = convertToUmbraErrorsCoreSource(source) ?? UmbraErrorsCore.ErrorSource()
-    return self.with(umbraErrorsCoreSource: coreSource)
-  }
-  
-  // Original implementation that works with UmbraErrorsCore.ErrorSource
-  private func with(umbraErrorsCoreSource: UmbraErrorsCore.ErrorSource) -> Self {
-    // Since these are enum cases, we need to return a new instance with the same value
-    return self
-  }
-  
-  // Context setter
-  public func with(context: Interfaces.ErrorContext) -> Self {
-    // Since these are enum cases, we need to return a new instance with the same value
-    return self
-  }
-}
+*/

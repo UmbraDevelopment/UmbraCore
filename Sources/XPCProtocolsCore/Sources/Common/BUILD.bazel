@@ -1,7 +1,7 @@
 load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
-    name = "Operations",
+    name = "Common",
     srcs = glob(
         [
             "*.swift",
@@ -15,16 +15,13 @@ umbra_swift_library(
         ],
         exclude_directories = 1,
     ),
+    swiftc_opts = [
+        "-target",
+        "arm64-apple-macosx14.7.4",
+    ],
     visibility = ["//visibility:public"],
     deps = [
-        # Remove dependency on CoreDTOs to break circular dependency
-        # "//Sources/CoreDTOs"
-        # Remove dependency on CoreDTOs/Sources to break circular dependency
-        # "//Sources/CoreDTOs/Sources:CoreDTOs",
         "//Sources/UmbraCoreTypes",
-        # Remove dependency on UmbraErrors to break circular dependency
-        # "//Sources/UmbraErrors",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-        "//Sources/UmbraLogging",
     ],
 )

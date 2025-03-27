@@ -1,213 +1,193 @@
 import AppKit
 import Foundation
 
-// Local type declarations to replace imports
-// These replace the removed ErrorHandling and ErrorHandlingDomains imports
-
-/// Error domain namespace
-public enum ErrorDomain {
-  /// Security domain
-  public static let security="Security"
-  /// Crypto domain
-  public static let crypto="Crypto"
-  /// Application domain
-  public static let application="Application"
-}
-
-/// Error context protocol
-public protocol ErrorContext {
-  /// Domain of the error
-  var domain: String { get }
-  /// Code of the error
-  var code: Int { get }
-  /// Description of the error
-  var description: String { get }
-}
-
-/// Base error context implementation
-public struct BaseErrorContext: ErrorContext {
-  /// Domain of the error
-  public let domain: String
-  /// Code of the error
-  public let code: Int
-  /// Description of the error
-  public let description: String
-
-  /// Initialise with domain, code and description
-  public init(domain: String, code: Int, description: String) {
-    self.domain=domain
-    self.code=code
-    self.description=description
+/// Extension to Error protocol to provide domain and code information
+extension Error {
+  /// Get the domain of the error
+  var errorDomain: String? {
+    // First try to access as NSError
+    let nsError = self as NSError
+    return nsError.domain
+  }
+  
+  /// Get the code of the error
+  var errorCode: String? {
+    // First try to access as NSError
+    let nsError = self as NSError
+    return String(nsError.code)
   }
 }
-
-#if os(macOS)
-#endif
 
 /// A macOS implementation of the ErrorNotificationService
 @MainActor
 public final class MacErrorNotificationService: ErrorNotificationService {
   /// Supported error domains for this service
   public let supportedErrorDomains: [String]
+  
+  /// Supported notification levels
+  public let supportedLevels: [ErrorNotificationLevel] = [
+    .critical, .error, .warning, .info
+  ]
 
-  /// Notification levels supported by this service
-  public let supportedLevels: [ErrorNotificationLevel]
-
-  /// Initialises with specific error domains and levels
-  /// - Parameters:
-  ///   - supportedDomains: Domains this service can handle (or nil for all)
-  ///   - supportedLevels: Levels this service can handle
+  /// Initialise with the supported error domains
+  /// - Parameter supportedDomains: The error domains to support (nil for all domains)
   public init(
-    supportedDomains: [String]?=nil,
-    supportedLevels: [ErrorNotificationLevel]=[.warning, .error, .critical]
+    supportedDomains: [String]?
   ) {
     supportedErrorDomains=supportedDomains ?? []
-    self.supportedLevels=supportedLevels
   }
 
-  /// Creates a notification service that handles all domains
+  /// Creates a notification service that supports all error domains
   /// - Returns: A notification service for all error domains
   public static func forAllDomains() -> MacErrorNotificationService {
-    MacErrorNotificationService(supportedDomains: nil)
+    MacErrorNotificationService(supportedDomains: [])
   }
 
-  /// Notifies the user about an error using macOS alerts
+  /// Check if this service can handle an error
+  /// - Parameter error: The error to check
+  /// - Returns: Whether the error can be handled
+  public func canHandle(_ error: some Error) -> Bool {
+    // Get the domain for the error
+    let domain=getDomain(for: error)
+
+    // Check if we handle this domain
+    if supportedErrorDomains.isEmpty {
+      // We handle all domains
+      return true
+    } else {
+      // We only handle specific domains
+      return supportedErrorDomains.contains(domain)
+    }
+  }
+
+  /// Present a notification to the user about an error
   /// - Parameters:
-  ///   - error: The error to notify about
-  ///   - level: The notification level
-  ///   - recoveryOptions: Recovery options to present
-  /// - Returns: The chosen recovery option ID, if any
+  ///   - error: The error to notify the user about
+  ///   - level: The severity level of the notification
+  ///   - recoveryOptions: Available recovery options to present
+  /// - Returns: The UUID of the recovery option chosen, if any
   public func notifyUser(
     about error: some Error,
     level: ErrorNotificationLevel,
     recoveryOptions: [any RecoveryOption]
   ) async -> UUID? {
     // Skip if this service doesn't support the error domain or level
-    if !canHandle(error) || !supportedLevels.contains(level) {
+    guard canHandle(error) else {
       return nil
     }
 
-    #if os(macOS)
-      // Get error information
-      let domain=getDomain(for: error)
-      let title=getTitle(for: error, domain: domain)
-      let message=getMessage(for: error)
-
-      // Setup alert with error information
-      let alert=NSAlert()
-      alert.messageText=title
-      alert.informativeText=message
-
-      // Configure alert style based on level
-      switch level {
-        case .debug, .info:
-        alert.alertStyle = .informational
-        case .warning:
-        alert.alertStyle = .warning
-        case .error, .critical:
-        alert.alertStyle = .critical
-        @unknown default:
-        alert.alertStyle = .critical
+    return await withCheckedContinuation { continuation in
+      DispatchQueue.main.async {
+        // Create alert
+        let alert=NSAlert()
+        
+        // Configure alert content
+        self.configureAlert(alert, for: error, level: level)
+        
+        // Add recovery options as buttons
+        for option in recoveryOptions {
+          alert.addButton(withTitle: option.title)
+        }
+        
+        // If there are no recovery options, just add an OK button
+        if recoveryOptions.isEmpty {
+          alert.addButton(withTitle: "OK")
+        }
+        
+        // Present alert modally
+        let response=alert.runModal()
+        
+        // Process response
+        switch response {
+        case .alertFirstButtonReturn:
+          // First button was clicked
+          if !recoveryOptions.isEmpty {
+            // Return the UUID of the first recovery option
+            continuation.resume(returning: recoveryOptions[0].id)
+          } else {
+            // No recovery options, just return nil
+            continuation.resume(returning: nil)
+          }
+        case .alertSecondButtonReturn:
+          // Second button was clicked
+          if recoveryOptions.count >= 2 {
+            // Return the UUID of the second recovery option
+            continuation.resume(returning: recoveryOptions[1].id)
+          } else {
+            // This would be the OK button
+            continuation.resume(returning: nil)
+          }
+        case .alertThirdButtonReturn:
+          // Third button was clicked
+          if recoveryOptions.count >= 3 {
+            // Return the UUID of the third recovery option
+            continuation.resume(returning: recoveryOptions[2].id)
+          } else {
+            // Shouldn't happen
+            continuation.resume(returning: nil)
+          }
+        default:
+          // Some other button was clicked, just return nil
+          continuation.resume(returning: nil)
+        }
       }
-
-      // Add recovery options to alert
-      for option in recoveryOptions {
-        let buttonTitle=option.title
-        alert.addButton(withTitle: buttonTitle)
-      }
-
-      // Show alert and get user response
-      let response=alert.runModal()
-
-      // Determine which button was clicked (first button is NSAlertFirstButtonReturn)
-      let buttonIndex=Int(response.rawValue) - NSApplication.ModalResponse.alertFirstButtonReturn
-        .rawValue
-
-      // Return ID of selected recovery option if valid
-      if buttonIndex >= 0, buttonIndex < recoveryOptions.count {
-        return recoveryOptions[buttonIndex].id
-      }
-
-      return nil
-    #else
-      // Not supported on non-macOS platforms
-      return nil
-    #endif
+    }
   }
 
-  /// Whether this service can handle a particular error
-  /// - Parameter error: The error to check
-  /// - Returns: Whether this service can handle the error
-  public func canHandle(_ error: some Error) -> Bool {
-    // If no specific domains are defined, handle all
-    if supportedErrorDomains.isEmpty {
-      return true
-    }
-
-    // Check if error domain is supported
+  /// Configure the alert based on the error and level
+  /// - Parameters:
+  ///   - alert: The alert to configure
+  ///   - error: The error to display
+  ///   - level: The notification level
+  private func configureAlert(_ alert: NSAlert, for error: Error, level: ErrorNotificationLevel) {
     let domain=getDomain(for: error)
-    return supportedErrorDomains.contains(domain)
-  }
+    alert.messageText=getTitle(for: error, domain: domain)
+    alert.informativeText=getMessage(for: error)
 
-  #if os(macOS)
-    /// Configures an alert for an error
-    /// - Parameters:
-    ///   - alert: The alert to configure
-    ///   - error: The error to display
-    ///   - level: The notification level
-    private func configureAlert(_ alert: NSAlert, for error: Error, level: ErrorNotificationLevel) {
-      let domain=getDomain(for: error)
-      alert.messageText=getTitle(for: error, domain: domain)
-      alert.informativeText=getMessage(for: error)
-
-      // Configure alert style based on level
-      switch level {
-        case .debug, .info:
-          alert.alertStyle = .informational
-        case .warning:
-          alert.alertStyle = .warning
-        case .error, .critical:
-          alert.alertStyle = .critical
-        @unknown default:
-          alert.alertStyle = .critical
-      }
+    // Configure alert style based on level
+    switch level {
+      case .debug, .info:
+        alert.alertStyle = .informational
+      case .warning:
+        alert.alertStyle = .warning
+      case .error, .critical:
+        alert.alertStyle = .critical
+      @unknown default:
+        alert.alertStyle = .critical
     }
-  #endif
+
+    // Add recovery options to alert
+    // handled by caller
+  }
 
   /// Gets the domain for an error
   /// - Parameter error: The error to get the domain for
   /// - Returns: The error domain
   private func getDomain(for error: Error) -> String {
-    if let umbraError=error as? UmbraError {
-      return umbraError.domain
+    if let domain = error.errorDomain {
+      return domain
     } else {
-      // Access NSError properties directly through the bridged Error
-      let nsError=error as NSError
-      return nsError.domain
+      return "Unknown"
     }
   }
 
-  /// Gets a title for an error
+  /// Gets a user-friendly title for an error
   /// - Parameters:
-  ///   - error: The error
+  ///   - error: The error to get a title for
   ///   - domain: The error domain
   /// - Returns: A user-friendly title
   private func getTitle(for error: Error, domain: String) -> String {
-    if let umbraError=error as? UmbraError {
-      "Error in \(domain): \(umbraError.code)"
+    if let code = error.errorCode {
+      return "Error in \(domain): \(code)"
     } else {
-      "Error in \(domain)"
+      return "Error in \(domain)"
     }
   }
 
-  /// Gets a message for an error
-  /// - Parameter error: The error
+  /// Gets a user-friendly message for an error
+  /// - Parameter error: The error to get a message for
   /// - Returns: A user-friendly message
   private func getMessage(for error: Error) -> String {
-    if let umbraError=error as? UmbraError {
-      umbraError.errorDescription
-    } else {
-      error.localizedDescription
-    }
+    error.localizedDescription
   }
 }

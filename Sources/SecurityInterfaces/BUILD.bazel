@@ -50,7 +50,8 @@ umbra_swift_library(
         "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
         "//Sources/UmbraErrors",
         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-        "//Sources/XPCProtocolsCore",
+        # Replacing direct dependency on XPCProtocolsCore with the Common module
+        "//Sources/XPCProtocolsCore/Sources/Common",
     ],
 )
 
@@ -66,7 +67,8 @@ umbra_swift_library(
             "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
             "//Sources/UmbraErrors",
             "//Sources/UmbraErrors/Core:UmbraErrorsCore",
-            "//Sources/XPCProtocolsCore",
+            # Replacing direct dependency on XPCProtocolsCore with the Common module
+            "//Sources/XPCProtocolsCore/Sources/Common",
         ],
     )
     for name in [
