@@ -1,0 +1,12 @@
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_test")
+
+swift_test(
+    name = "CryptoServicesTests",
+    srcs = glob(["**/*.swift"]),
+    deps = [
+        "//packages/UmbraCoreTypes/Sources/CryptoTypes",
+        "//packages/UmbraCoreTypes/Sources/SecurityTypes",
+        "//packages/UmbraInterfaces/Sources/CryptoInterfaces",
+        "//packages/UmbraImplementations/Sources/CryptoServices",
+    ],
+)

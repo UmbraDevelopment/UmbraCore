@@ -1,0 +1,19 @@
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
+
+umbra_swift_library(
+    name = "KeychainServices",
+    srcs = glob(
+        ["**/*.swift"],
+        exclude = [
+            "**/*Test.swift",
+            "**/*.generated.swift",
+        ],
+    ),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//packages/UmbraInterfaces/Sources/KeychainInterfaces",
+        "//packages/UmbraInterfaces/Sources/LoggingInterfaces",
+        "//packages/UmbraImplementations/Sources/LoggingServices",
+        "//packages/UmbraImplementations/Sources/LoggingAdapters",
+    ],
+)
