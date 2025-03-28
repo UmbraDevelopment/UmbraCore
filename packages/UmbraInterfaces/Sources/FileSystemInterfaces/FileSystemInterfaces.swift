@@ -40,6 +40,6 @@
  */
 
 /// Module namespace for FileSystemInterfaces
-public enum FileSystemInterfaces {
+public enum FSNamespace {
     // This is a namespace-only enumeration that is not meant to be instantiated
 }

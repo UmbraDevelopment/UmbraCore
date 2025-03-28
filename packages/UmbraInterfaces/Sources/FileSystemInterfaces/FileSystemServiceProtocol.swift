@@ -19,44 +19,26 @@
  
  The protocol is organised into several functional areas:
  
- 1. **Core File Operations** - Reading, writing, copying, moving files
- 2. **Directory Operations** - Creating, listing, and managing directories
- 3. **Streaming Operations** - Memory-efficient handling of large files
- 4. **Extended Attributes** - Storing custom metadata with files
- 5. **Path Operations** - Manipulating and normalising file paths
- 6. **Temporary File Management** - Working with ephemeral files and directories
- 
- ## Usage Guidelines
- 
- When using this interface:
- 
- - Always check operation results before proceeding with dependent operations
- - Handle permissions and security contexts appropriately
- - Consider using relative paths when possible for better portability
- - Implement proper error handling for all file operations
- - Use streaming operations for large files to minimise memory usage
- - Properly clean up temporary resources when no longer needed
+ 1. **Core Operations**: Reading, writing, and deleting files
+ 2. **Directory Management**: Creating, listing, and navigating directories
+ 3. **Path Manipulation**: Working with file paths and references
+ 4. **Extended Attributes**: Storing metadata alongside files
+ 5. **Temporary Files**: Creating and working with ephemeral file storage
  
  ## Error Handling
  
- All operations that can fail return a `Result` type that
- encapsulates either a successful result or a detailed error with context.
- Error handling should be comprehensive, as file operations may fail for
- various reasons including permissions, disk space, locking, and more.
+ This protocol uses Swift's throwing mechanism with the `FileSystemError` enum
+ for consistent error handling. Each error provides specific information about
+ what went wrong, enabling callers to handle failures appropriately.
+ 
+ ## Thread Safety
+ 
+ Implementations of this protocol should be thread-safe and handle
+ concurrent access to the file system appropriately.
  */
-
 import Foundation
 import FileSystemTypes
 
-/// Type for streaming file read callback
-/// When implementing a handler, return `true` to continue receiving chunks, or `false` to stop streaming.
-public typealias FileReadChunkHandler = (Result<[UInt8], FileSystemError>) async -> Bool
-
-/// Type for streaming file write callback that provides chunks of data
-/// Return `nil` to signal the end of data, or a non-nil byte array to continue writing.
-public typealias FileWriteChunkProvider = () async -> Result<[UInt8]?, FileSystemError>
-
-/// Protocol defining a Foundation-independent interface for file system operations
 public protocol FileSystemServiceProtocol: Sendable {
     
     // MARK: - Core File & Directory Operations
@@ -64,146 +46,124 @@ public protocol FileSystemServiceProtocol: Sendable {
     /**
      Checks if a file exists at the specified path.
      
-     This method verifies the existence of a file or directory at the given path.
-     It does not validate permissions or validate that the path is accessible,
-     only that it exists in the file system.
-     
      - Parameter path: The file path to check
      - Returns: Boolean indicating whether the file exists
-     
-     Example:
-     ```swift
-     let exists = await fileSystemService.fileExists(at: FilePath(path: "/path/to/check"))
-     if exists {
-         // File or directory exists
-     }
-     ```
      */
     func fileExists(at path: FilePath) async -> Bool
-
+    
     /**
      Retrieves metadata about a file or directory.
      
-     This method collects information about the specified file system item,
-     including its size, creation date, modification date, and type.
+     This method collects information about size, dates, and other attributes
+     of the specified file system item.
      
      - Parameter path: The file path to check
      - Returns: Metadata if the file exists, nil otherwise
-     
-     Example:
-     ```swift
-     if let metadata = await fileSystemService.getMetadata(at: filePath) {
-         print("File size: \(metadata.size)")
-         print("Modified: \(metadata.modificationDate)")
-     }
-     ```
+     - Throws: `FileSystemError` if the operation fails for reasons other than non-existence
      */
-    func getMetadata(at path: FilePath) async -> FileSystemMetadata?
-
+    func getMetadata(at path: FilePath) async throws -> FileSystemMetadata?
+    
     /**
      Lists the contents of a directory.
      
-     This method returns all files and directories contained within the specified directory.
-     The results can be filtered to exclude hidden files if desired.
+     This method returns all files and directories contained within the specified directory,
+     with options to filter hidden files.
      
      - Parameters:
         - directoryPath: The directory to list contents of
         - includeHidden: Whether to include hidden files (default: false)
-     - Returns: A result containing either an array of file paths or an error
-     
-     Example:
-     ```swift
-     let result = await fileSystemService.listDirectory(at: directoryPath, includeHidden: false)
-     switch result {
-     case .success(let files):
-         // Process list of files
-     case .failure(let error):
-         // Handle error
-     }
-     ```
+     - Returns: An array of file paths within the directory
+     - Throws: `FileSystemError` if the operation fails
      */
     func listDirectory(
         at directoryPath: FilePath,
         includeHidden: Bool
-    ) async -> Result<[FilePath], FileSystemError>
-
+    ) async throws -> [FilePath]
+    
     /**
      Creates a directory at the specified path.
      
-     This method attempts to create a new directory. If intermediate directories
-     don't exist, they can optionally be created as well.
+     This method attempts to create a new directory, with options to create
+     any intermediate directories as needed.
      
      - Parameters:
         - path: The directory path to create
         - withIntermediates: Whether to create intermediate directories (default: false)
-     - Returns: A result indicating success or providing an error
-     
-     Example:
-     ```swift
-     let result = await fileSystemService.createDirectory(
-         at: directoryPath,
-         withIntermediates: true
-     )
-     if case .failure(let error) = result {
-         // Handle directory creation error
-     }
-     ```
+     - Throws: `FileSystemError` if the operation fails
      */
     func createDirectory(
         at path: FilePath,
         withIntermediates: Bool
-    ) async -> Result<Void, FileSystemError>
-
+    ) async throws
+    
     /**
-     Creates a file with the specified data.
+     Removes a file or directory at the specified path.
      
-     This method writes data to a file at the given path. If the file already
-     exists, the overwrite parameter determines whether it will be replaced.
+     This method deletes the item at the given path. For directories, the recursive
+     parameter determines whether to delete contents or require an empty directory.
      
      - Parameters:
-        - path: The file path to create
-        - data: The data to write to the file
-        - overwrite: Whether to overwrite if the file already exists (default: false)
-     - Returns: A result indicating success or providing an error
-     
-     Example:
-     ```swift
-     let data: [UInt8] = Array("Hello, world!".utf8)
-     let result = await fileSystemService.createFile(
-         at: filePath,
-         data: data,
-         overwrite: false
-     )
-     ```
+        - path: The path to delete
+        - recursive: Whether to delete directories recursively (default: false)
+     - Throws: `FileSystemError` if the operation fails
      */
-    func createFile(
+    func remove(
         at path: FilePath,
-        data: [UInt8],
-        overwrite: Bool
-    ) async -> Result<Void, FileSystemError>
-
+        recursive: Bool
+    ) async throws
+    
     /**
-     Reads the contents of a file as raw bytes.
+     Copies an item from one path to another.
      
-     This method reads the entire contents of the specified file and returns it as
-     an array of bytes. For large files, consider using streaming methods instead.
+     This method copies a file or directory from the source path to the destination path,
+     with options to control overwriting existing items and preserving attributes.
      
-     - Parameter path: The file path to read
-     - Returns: A result containing either the file data or an error
-     
-     Example:
-     ```swift
-     let result = await fileSystemService.readFile(at: filePath)
-     switch result {
-     case .success(let data):
-         // Process file data
-     case .failure(let error):
-         // Handle error
-     }
-     ```
+     - Parameters:
+        - sourcePath: The source path to copy from
+        - destinationPath: The destination path to copy to
+        - overwrite: Whether to overwrite existing items at the destination (default: false)
+        - preserveAttributes: Whether to preserve metadata and attributes (default: true)
+     - Throws: `FileSystemError` if the operation fails
      */
-    func readFile(at path: FilePath) async -> Result<[UInt8], FileSystemError>
-
+    func copy(
+        from sourcePath: FilePath,
+        to destinationPath: FilePath,
+        overwrite: Bool,
+        preserveAttributes: Bool
+    ) async throws
+    
+    /**
+     Moves an item from one path to another.
+     
+     This method moves a file or directory from the source path to the destination path,
+     with an option to control overwriting existing items.
+     
+     - Parameters:
+        - sourcePath: The source path to move from
+        - destinationPath: The destination path to move to
+        - overwrite: Whether to overwrite existing items at the destination (default: false)
+     - Throws: `FileSystemError` if the operation fails
+     */
+    func move(
+        from sourcePath: FilePath,
+        to destinationPath: FilePath,
+        overwrite: Bool
+    ) async throws
+    
+    // MARK: - File Reading & Writing
+    
+    /**
+     Reads the entire contents of a file as binary data.
+     
+     This method reads all data from a file into memory. For large files,
+     consider using streaming methods instead.
+     
+     - Parameter path: The file path to read from
+     - Returns: The binary data from the file
+     - Throws: `FileSystemError` if the operation fails
+     */
+    func readData(at path: FilePath) async throws -> [UInt8]
+    
     /**
      Writes data to a file, replacing its contents if it exists.
      
@@ -211,214 +171,71 @@ public protocol FileSystemServiceProtocol: Sendable {
      its contents will be replaced entirely.
      
      - Parameters:
+        - data: The binary data to write
         - path: The file path to write to
-        - data: The data to write to the file
-     - Returns: A result indicating success or providing an error
-     
-     Example:
-     ```swift
-     let data: [UInt8] = Array("Updated content".utf8)
-     let result = await fileSystemService.writeFile(at: filePath, data: data)
-     ```
+        - overwrite: Whether to overwrite if the file exists (default: false)
+     - Throws: `FileSystemError` if the operation fails
      */
-    func writeFile(
-        at path: FilePath,
-        data: [UInt8]
-    ) async -> Result<Void, FileSystemError>
-
-    /**
-     Deletes a file or directory at the specified path.
-     
-     This method removes the item at the given path. For directories, the recursive
-     parameter determines whether its contents will also be deleted.
-     
-     - Parameters:
-        - path: The path to delete
-        - recursive: Whether to recursively delete directory contents (default: false)
-     - Returns: A result indicating success or providing an error
-     
-     Example:
-     ```swift
-     // Delete directory and all its contents
-     let result = await fileSystemService.delete(at: dirPath, recursive: true)
-     ```
-     */
-    func delete(
-        at path: FilePath,
-        recursive: Bool
-    ) async -> Result<Void, FileSystemError>
-
-    /**
-     Moves a file or directory from one location to another.
-     
-     This method relocates a file or directory. If the destination already exists,
-     the operation will fail unless overwrite is true.
-     
-     - Parameters:
-        - sourcePath: The path of the item to move
-        - destinationPath: The path to move the item to
-        - overwrite: Whether to overwrite the destination if it exists (default: false)
-     - Returns: A result indicating success or providing an error
-     
-     Example:
-     ```swift
-     let result = await fileSystemService.move(
-         from: sourcePath,
-         to: destinationPath,
-         overwrite: true
-     )
-     ```
-     */
-    func move(
-        from sourcePath: FilePath,
-        to destinationPath: FilePath,
+    func writeData(
+        _ data: [UInt8],
+        to path: FilePath,
         overwrite: Bool
-    ) async -> Result<Void, FileSystemError>
-
-    /**
-     Copies a file or directory from one location to another.
-     
-     This method creates a copy of a file or directory. If the destination already exists,
-     the operation will fail unless overwrite is true.
-     
-     - Parameters:
-        - sourcePath: The path of the item to copy
-        - destinationPath: The path to copy the item to
-        - overwrite: Whether to overwrite the destination if it exists (default: false)
-        - recursive: Whether to recursively copy directory contents (default: true)
-     - Returns: A result indicating success or providing an error
-     
-     Example:
-     ```swift
-     let result = await fileSystemService.copy(
-         from: sourceFile,
-         to: destinationFile,
-         overwrite: false,
-         recursive: true
-     )
-     ```
-     */
-    func copy(
-        from sourcePath: FilePath,
-        to destinationPath: FilePath,
-        overwrite: Bool,
-        recursive: Bool
-    ) async -> Result<Void, FileSystemError>
-    
-    // MARK: - Streaming Operations
+    ) async throws
     
     /**
-     Reads a file in chunks and processes each chunk via a callback handler.
+     Appends data to the end of a file.
      
-     This method is optimised for handling large files by streaming the content in
-     small chunks rather than loading the entire file into memory at once.
-     
-     The handler should return true to continue receiving chunks, or false to stop
-     the streaming process.
+     This method adds data to an existing file without replacing its current contents.
+     If the file doesn't exist, it will be created.
      
      - Parameters:
-        - path: The file path to read
-        - chunkSize: The size of each chunk in bytes
-        - handler: An async callback that receives each chunk of data. Return true to continue streaming, false to stop.
-     - Returns: A result indicating success or providing an error
-     
-     Example:
-     ```swift
-     // Process a large file in 64KB chunks
-     let result = await fileSystemService.streamReadFile(
-         at: largePath,
-         chunkSize: 65536,
-         handler: { chunkResult in
-             switch chunkResult {
-             case .success(let bytes):
-                 // Process chunk of data
-                 return true // Continue reading
-             case .failure:
-                 return false // Stop on error
-             }
-         }
-     )
-     ```
-     
-     This approach is ideal for large files or when performing incremental processing,
-     such as parsing a file or streaming data to a network destination.
+        - data: The binary data to append
+        - path: The file path to append to
+     - Throws: `FileSystemError` if the operation fails
      */
-    func streamReadFile(
+    func appendData(
+        _ data: [UInt8],
+        to path: FilePath
+    ) async throws
+    
+    /**
+     Reads a file in chunks using a handler function.
+     
+     This method is optimised for large files, reading the file in chunks of the specified size
+     and passing each chunk to the handler function.
+     
+     - Parameters:
+        - path: The file path to read from
+        - chunkSize: The size of each chunk to read (in bytes)
+        - handler: A closure that receives each chunk of data
+     - Throws: `FileSystemError` if the operation fails
+     */
+    func readDataInChunks(
         at path: FilePath,
         chunkSize: Int,
-        handler: FileReadChunkHandler
-    ) async -> Result<Void, FileSystemError>
+        handler: @Sendable ([UInt8]) async throws -> Void
+    ) async throws
     
     /**
      Writes data to a file in chunks supplied by a provider function.
      
      This method is optimised for handling large files without loading the entire
      content into memory. The provider function supplies chunks of data until
-     it returns nil, indicating the end of the stream.
+     it returns nil, signaling the end of data.
      
      - Parameters:
         - path: The file path to write to
-        - overwrite: Whether to overwrite if the file already exists
-        - provider: An async function that provides chunks of data. Return nil to signal the end of the data.
-     - Returns: A result indicating success or providing an error
-     
-     Example:
-     ```swift
-     // Stream write a large file
-     let result = await fileSystemService.streamWriteFile(
-         at: outputPath,
-         overwrite: true,
-         provider: {
-             if hasMoreData {
-                 return .success(nextChunk) // Provide next chunk
-             } else {
-                 return .success(nil) // Signal end of data
-             }
-         }
-     )
-     ```
-     
-     This approach is ideal for generating large files incrementally or streaming
-     data from a network source directly to disk.
+        - overwrite: Whether to overwrite if the file exists (default: false)
+        - chunkProvider: A closure that provides chunks of data, returning nil when done
+     - Throws: `FileSystemError` if the operation fails
      */
-    func streamWriteFile(
-        at path: FilePath,
+    func writeDataInChunks(
+        to path: FilePath,
         overwrite: Bool,
-        provider: FileWriteChunkProvider
-    ) async -> Result<Void, FileSystemError>
+        chunkProvider: @Sendable () async throws -> [UInt8]?
+    ) async throws
     
     // MARK: - Extended Attributes
-    
-    /**
-     Gets the value of an extended attribute on a file or directory.
-     
-     Extended attributes are name:value pairs associated with filesystem objects (files, directories, 
-     symlinks, etc.). They allow storing custom metadata with files without requiring a separate database.
-     
-     Common use cases include storing file origin information, content type, security classifications,
-     or application-specific metadata.
-     
-     - Parameters:
-        - name: The name of the extended attribute to retrieve
-        - path: The path of the file or directory
-     - Returns: A result containing either the attribute data or an error
-     
-     Example:
-     ```swift
-     // Get a custom attribute
-     let result = await fileSystemService.getExtendedAttribute(
-         name: "com.app.metadata",
-         at: filePath
-     )
-     ```
-     
-     Note: Not all filesystems support extended attributes. The operation will
-     fail with an appropriate error on unsupported filesystems.
-     */
-    func getExtendedAttribute(
-        name: String,
-        at path: FilePath
-    ) async -> Result<[UInt8], FileSystemError>
     
     /**
      Sets an extended attribute on a file or directory.
@@ -427,189 +244,107 @@ public protocol FileSystemServiceProtocol: Sendable {
      can be used to store application-specific metadata alongside the file.
      
      - Parameters:
-        - name: The name of the extended attribute to set
-        - value: The data to store in the attribute
+        - name: The attribute name
+        - value: The attribute value as binary data
         - path: The path of the file or directory
-        - options: Options for setting the attribute (platform-specific)
-     - Returns: A result indicating success or providing an error
-     
-     Example:
-     ```swift
-     // Store metadata in an extended attribute
-     let metadataValue: [UInt8] = Array("Custom file metadata".utf8)
-     let result = await fileSystemService.setExtendedAttribute(
-         name: "com.app.metadata",
-         value: metadataValue,
-         at: filePath,
-         options: 0
-     )
-     ```
-     
-     Common option values:
-     - 0: Default behaviour
-     - 2 (XATTR_CREATE): Fail if attribute already exists
-     - 4 (XATTR_REPLACE): Fail if attribute doesn't exist
+     - Throws: `FileSystemError` if the operation fails
      */
     func setExtendedAttribute(
         name: String,
         value: [UInt8],
-        at path: FilePath,
-        options: Int
-    ) async -> Result<Void, FileSystemError>
+        at path: FilePath
+    ) async throws
     
     /**
-     Lists all extended attributes associated with a file or directory.
+     Gets an extended attribute from a file or directory.
      
-     This method retrieves the names of all extended attributes that have been
-     set on the specified file system item.
+     This method retrieves the value of a named attribute associated with the file.
+     
+     - Parameters:
+        - name: The attribute name
+        - path: The path of the file or directory
+     - Returns: The attribute value as binary data
+     - Throws: `FileSystemError` if the operation fails or attribute doesn't exist
+     */
+    func getExtendedAttribute(
+        name: String,
+        at path: FilePath
+    ) async throws -> [UInt8]
+    
+    /**
+     Removes an extended attribute from a file or directory.
+     
+     This method deletes a named attribute from the specified file.
+     
+     - Parameters:
+        - name: The attribute name to remove
+        - path: The path of the file or directory
+     - Throws: `FileSystemError` if the operation fails
+     */
+    func removeExtendedAttribute(
+        name: String,
+        at path: FilePath
+    ) async throws
+    
+    /**
+     Lists all extended attributes on a file or directory.
+     
+     This method returns the names of all attributes associated with the specified file.
      
      - Parameter path: The path of the file or directory
-     - Returns: A result containing either an array of attribute names or an error
-     
-     Example:
-     ```swift
-     // Get all attributes on a file
-     let result = await fileSystemService.listExtendedAttributes(at: filePath)
-     switch result {
-     case .success(let attributeNames):
-         for name in attributeNames {
-             // Process each attribute
-         }
-     case .failure(let error):
-         // Handle error
-     }
-     ```
+     - Returns: An array of attribute names
+     - Throws: `FileSystemError` if the operation fails
      */
     func listExtendedAttributes(
         at path: FilePath
-    ) async -> Result<[String], FileSystemError>
+    ) async throws -> [String]
     
-    // MARK: - Path Operations
+    // MARK: - Path Manipulation
     
     /**
      Normalises a file path, resolving any relative components.
      
      This method processes a path to create a canonical representation by:
      - Resolving relative components like '.' and '..'
-     - Removing redundant separators
-     - Expanding symbolic links if requested
+     - Removing duplicate separators
+     - Handling other platform-specific normalisations
      
-     - Parameters:
-        - path: The file path to normalise
-        - followSymlinks: Whether to resolve symbolic links
-     - Returns: A result containing either the normalised path or an error
-     
-     Example:
-     ```swift
-     // Get canonical path with symlinks resolved
-     let messyPath = FilePath(path: "project/../config/./settings/../config.json")
-     let result = await fileSystemService.normalisePath(messyPath, followSymlinks: true)
-     ```
-     
-     Normalising paths is important for comparing paths, checking permissions,
-     or storing canonical references to file system items.
+     - Parameter path: The path to normalise
+     - Returns: A normalised path
+     - Throws: `FileSystemError` if the path is invalid or cannot be normalised
      */
-    func normalisePath(
-        _ path: FilePath,
-        followSymlinks: Bool
-    ) async -> Result<FilePath, FileSystemError>
+    func normalisePath(_ path: FilePath) async throws -> FilePath
     
     /**
-     Resolves a relative path against a base path.
+     Extracts the file name component from a path.
      
-     This method combines a base path with a relative path to produce
-     an absolute path. If the relative path is already absolute, it
-     is returned unchanged.
+     This method returns just the final component of a path, without any directory information.
      
-     - Parameters:
-        - relativePath: The relative path to resolve
-        - basePath: The base path to resolve against
-     - Returns: A result containing either the resolved path or an error
-     
-     Example:
-     ```swift
-     // Resolve a configuration file path relative to the app directory
-     let configPath = FilePath(path: "config/settings.json")
-     let appPath = FilePath(path: "/Applications/MyApp")
-     let result = await fileSystemService.resolvePath(configPath, relativeTo: appPath)
-     // Result would be "/Applications/MyApp/config/settings.json"
-     */
-    func resolvePath(
-        _ relativePath: FilePath,
-        relativeTo basePath: FilePath
-    ) async -> Result<FilePath, FileSystemError>
-    
-    /**
-     Splits a path into its components.
-     
-     This method breaks down a path into its individual components, treating
-     the path separator as the delimiter between components.
-     
-     - Parameter path: The file path to split
-     - Returns: An array of path components
-     
-     Example:
-     ```swift
-     let path = FilePath(path: "/Users/name/Documents/file.txt")
-     let components = fileSystemService.pathComponents(path)
-     // Results in ["", "Users", "name", "Documents", "file.txt"]
-     ```
-     */
-    func pathComponents(_ path: FilePath) -> [String]
-    
-    /**
-     Gets the file name component of a path.
-     
-     This method extracts just the file or directory name from the path,
-     without the preceding directory components.
-     
-     - Parameter path: The file path to get the name from
-     - Returns: The file or directory name
-     
-     Example:
-     ```swift
-     let path = FilePath(path: "/path/to/document.pdf")
-     let name = fileSystemService.fileName(path)
-     // Results in "document.pdf"
-     ```
+     - Parameter path: The path to extract from
+     - Returns: The file name component
      */
     func fileName(_ path: FilePath) -> String
     
     /**
-     Gets the directory component of a path.
+     Extracts the directory component from a path.
      
-     This method extracts the directory portion of a path, excluding
-     the final file or directory name component.
+     This method returns the directory portion of a path, removing the final file name component.
      
-     - Parameter path: The file path to get the directory from
-     - Returns: The directory portion of the path
-     
-     Example:
-     ```swift
-     let path = FilePath(path: "/path/to/document.pdf")
-     let directory = fileSystemService.directoryPath(path)
-     // Results in FilePath(path: "/path/to")
-     ```
+     - Parameter path: The path to extract from
+     - Returns: The directory component
      */
     func directoryPath(_ path: FilePath) -> FilePath
     
     /**
-     Joins multiple path components together.
+     Joins path components together.
      
      This method combines multiple path components into a single path,
-     handling the path separators appropriately.
+     handling separator insertion appropriately.
      
      - Parameters:
-        - base: The base path
+        - base: The base path to start with
         - components: Additional path components to append
      - Returns: The combined path
-     
-     Example:
-     ```swift
-     let base = FilePath(path: "/Users/name")
-     let result = fileSystemService.joinPath(base, withComponents: ["Documents", "Projects", "notes.txt"])
-     // Results in FilePath(path: "/Users/name/Documents/Projects/notes.txt")
-     ```
      */
     func joinPath(_ base: FilePath, withComponents components: [String]) -> FilePath
     
@@ -621,169 +356,85 @@ public protocol FileSystemServiceProtocol: Sendable {
      
      - Parameters:
         - path: The path to check
-        - potentialParent: The potential parent path
-     - Returns: True if path is a subpath of potentialParent, false otherwise
-     
-     Example:
-     ```swift
-     let subPath = FilePath(path: "/Users/name/Documents/file.txt")
-     let parentPath = FilePath(path: "/Users/name")
-     let isSubpath = fileSystemService.isSubpath(subPath, of: parentPath)
-     // Results in true
-     ```
-     
-     This is useful for security checks, determining if a file is within an
-     allowed directory, or validating user input.
+        - directory: The potential parent directory
+     - Returns: True if path is a subpath of directory
      */
     func isSubpath(
         _ path: FilePath,
-        of potentialParent: FilePath
+        of directory: FilePath
     ) -> Bool
     
-    // MARK: - Temporary File Management
+    // MARK: - Temporary Files
     
     /**
-     Creates a temporary file with optional content.
+     Creates a temporary directory.
      
-     This method generates a secure temporary file with a unique name in the system's
-     temporary directory. The file will be automatically deleted when the system
-     restarts unless you move it to a permanent location.
+     This method creates a directory in the system's temporary location
+     that will be automatically cleaned up when the app terminates.
      
      - Parameters:
-        - prefix: Optional prefix for the temporary filename
-        - suffix: Optional suffix/extension for the temporary filename
-        - data: Optional initial data to write to the temporary file
-     - Returns: A result containing either the path to the temporary file or an error
+        - prefix: A prefix for the directory name
+     - Returns: The path to the created temporary directory
+     - Throws: `FileSystemError` if the operation fails
+     */
+    func createTemporaryDirectory(
+        prefix: String
+    ) async throws -> FilePath
+    
+    /**
+     Creates a temporary file.
      
-     Example:
-     ```swift
-     // Create a temporary JSON file with initial content
-     let jsonData: [UInt8] = Array("{\"temp\":true}".utf8)
-     let result = await fileSystemService.createTemporaryFile(
-         prefix: "config-",
-         suffix: ".json",
-         data: jsonData
-     )
-     ```
+     This method creates a file in the system's temporary location
+     that will be automatically cleaned up when the app terminates.
      
-     Temporary files are useful for:
-     - Storing intermediate processing results
-     - Staging content before finalising it in a permanent location
-     - Sharing data between processes
-     - Caching data that doesn't need to persist between application runs
+     - Parameters:
+        - prefix: A prefix for the file name
+        - suffix: A suffix for the file name (e.g., file extension)
+        - data: Optional data to write to the file
+     - Returns: The path to the created temporary file
+     - Throws: `FileSystemError` if the operation fails
      */
     func createTemporaryFile(
         prefix: String,
         suffix: String,
         data: [UInt8]?
-    ) async -> Result<FilePath, FileSystemError>
+    ) async throws -> FilePath
     
     /**
-     Creates a temporary directory.
+     Executes an operation with a temporary file and cleans up afterward.
      
-     This method generates a secure temporary directory with a unique name in the system's
-     temporary directory. The directory will be automatically deleted when the system
-     restarts unless you move its contents to a permanent location.
-     
-     - Parameter prefix: Optional prefix for the temporary directory name
-     - Returns: A result containing either the path to the temporary directory or an error
-     
-     Example:
-     ```swift
-     // Create a temporary directory for export operations
-     let result = await fileSystemService.createTemporaryDirectory(prefix: "export-")
-     ```
-     
-     Temporary directories are useful for:
-     - Workspace for complex multi-file operations
-     - Extracting archives
-     - Grouping related temporary files
-     - Building directory structures before finalising them
-     */
-    func createTemporaryDirectory(
-        prefix: String
-    ) async -> Result<FilePath, FileSystemError>
-    
-    /**
-     Gets the system's temporary directory path.
-     
-     This method returns the path to the system-wide temporary directory
-     where temporary files can be created.
-     
-     - Returns: The path to the system temporary directory
-     
-     Example:
-     ```swift
-     let tempDir = fileSystemService.temporaryDirectoryPath()
-     ```
-     */
-    func temporaryDirectoryPath() -> FilePath
-    
-    /**
-     Creates and manages a temporary file for the duration of a task.
-     
-     This method creates a temporary file, passes it to a task closure, and
-     ensures the file is deleted when the task completes (whether successfully
-     or with an error).
+     This method creates a temporary file, passes it to the provided task,
+     and ensures the file is deleted when the task completes.
      
      - Parameters:
-        - prefix: Optional prefix for the temporary filename
-        - suffix: Optional suffix/extension for the temporary filename
-        - data: Optional initial data to write to the temporary file
-        - task: A closure that performs operations with the temporary file
-     - Returns: The result returned by the task closure
-     
-     Example:
-     ```swift
-     // Process data in a temporary file and return a result
-     let result = await fileSystemService.withTemporaryFile(
-         prefix: "import-",
-         suffix: ".dat",
-         data: initialBytes
-     ) { tempPath in
-         // Process the temporary file
-         return processedResult
-     }
-     ```
-     
-     This pattern ensures proper resource cleanup even in the presence of errors
-     or exceptions, following the "Resource Acquisition Is Initialisation" (RAII)
-     pattern common in resource management.
+        - prefix: A prefix for the file name
+        - suffix: A suffix for the file name (e.g., file extension)
+        - data: Optional data to write to the file
+        - task: A closure that performs operations on the temporary file
+     - Returns: The result of the task closure
+     - Throws: `FileSystemError` if file operations fail, or rethrows errors from the task
      */
     func withTemporaryFile<T>(
         prefix: String,
         suffix: String,
         data: [UInt8]?,
         task: (FilePath) async throws -> T
-    ) async -> Result<T, Error>
+    ) async throws -> T
     
     /**
-     Creates and manages a temporary directory for the duration of a task.
+     Executes an operation with a temporary directory and cleans up afterward.
      
-     This method creates a temporary directory, passes it to a task closure, and
-     ensures the directory and its contents are deleted when the task completes
-     (whether successfully or with an error).
+     This method creates a temporary directory, passes it to the provided task,
+     and ensures the directory is deleted when the task completes.
      
      - Parameters:
-        - prefix: Optional prefix for the temporary directory name
+        - prefix: A prefix for the directory name
         - task: A closure that performs operations with the temporary directory
-     - Returns: The result returned by the task closure
-     
-     Example:
-     ```swift
-     // Extract and process an archive in a temporary directory
-     let result = await fileSystemService.withTemporaryDirectory(prefix: "archive-") { tempDirPath in
-         // Extract archive to tempDirPath
-         // Process the extracted files
-         return processingResult
-     }
-     ```
-     
-     Like withTemporaryFile, this ensures proper cleanup of the temporary directory
-     and all its contents regardless of how the task completes.
+     - Returns: The result of the task closure
+     - Throws: `FileSystemError` if directory operations fail, or rethrows errors from the task
      */
     func withTemporaryDirectory<T>(
         prefix: String,
         task: (FilePath) async throws -> T
-    ) async -> Result<T, Error>
+    ) async throws -> T
 }
