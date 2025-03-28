@@ -39,13 +39,13 @@ public final class KeyManagerImpl: KeyManagementProtocol, Sendable {
 
   /// Creates a new key manager with the default key store
   public init() {
-    self.keyStore = KeyStore()
+    keyStore=KeyStore()
   }
 
   /// Creates a new key manager with a custom key store
   /// - Parameter keyStore: Custom key store implementation
   public init(keyStore: KeyStore) {
-    self.keyStore = keyStore
+    self.keyStore=keyStore
   }
 
   // MARK: - KeyManagementProtocol Implementation
@@ -56,10 +56,10 @@ public final class KeyManagerImpl: KeyManagementProtocol, Sendable {
   public func retrieveKey(
     withIdentifier identifier: String
   ) async -> Result<SecureBytes, SecurityProtocolError> {
-    if let key = await keyStore.getKey(identifier: identifier) {
-      return .success(key)
+    if let key=await keyStore.getKey(identifier: identifier) {
+      .success(key)
     } else {
-      return .failure(.keyManagementError("Key with identifier '\(identifier)' not found"))
+      .failure(.keyManagementError("Key with identifier '\(identifier)' not found"))
     }
   }
 
@@ -103,37 +103,37 @@ public final class KeyManagerImpl: KeyManagementProtocol, Sendable {
     reencryptedData: SecureBytes?
   ), SecurityProtocolError> {
     // First, retrieve the old key
-    let keyResult = await retrieveKey(withIdentifier: identifier)
-    
+    let keyResult=await retrieveKey(withIdentifier: identifier)
+
     switch keyResult {
-      case .failure(let error):
+      case let .failure(error):
         return .failure(error)
-        
-      case .success(let oldKey):
+
+      case let .success(oldKey):
         // Generate a new key with the same length as the old one
-        let newKey = generateKey(length: oldKey.count)
-        
+        let newKey=generateKey(length: oldKey.count)
+
         // Store the new key with the same identifier (replacing the old one)
-        let storeResult = await storeKey(newKey, withIdentifier: identifier)
-        
+        let storeResult=await storeKey(newKey, withIdentifier: identifier)
+
         switch storeResult {
-          case .failure(let error):
+          case let .failure(error):
             return .failure(error)
-            
+
           case .success:
             // If data needs to be re-encrypted, do so with the new key
             var reencryptedData: SecureBytes?
-            
-            if let dataToReencrypt = dataToReencrypt {
+
+            if let dataToReencrypt {
               // In a real implementation, this would use proper re-encryption
               // Simulated re-encryption for demonstration purposes
-              reencryptedData = reencrypt(
-                data: dataToReencrypt, 
-                oldKey: oldKey, 
+              reencryptedData=reencrypt(
+                data: dataToReencrypt,
+                oldKey: oldKey,
                 newKey: newKey
               )
             }
-            
+
             return .success((newKey: newKey, reencryptedData: reencryptedData))
         }
     }
@@ -142,20 +142,20 @@ public final class KeyManagerImpl: KeyManagementProtocol, Sendable {
   /// Lists all available key identifiers.
   /// - Returns: An array of key identifiers or an error.
   public func listKeyIdentifiers() async -> Result<[String], SecurityProtocolError> {
-    return .success(await keyStore.getAllIdentifiers())
+    await .success(keyStore.getAllIdentifiers())
   }
-  
+
   // MARK: - Helper Methods
-  
+
   /// Generate a secure random key of the specified length
   /// - Parameter length: Length of the key in bytes
   /// - Returns: A new secure random key
   private func generateKey(length: Int) -> SecureBytes {
-    var keyBytes = [UInt8](repeating: 0, count: length)
-    _ = SecRandomCopyBytes(kSecRandomDefault, keyBytes.count, &keyBytes)
+    var keyBytes=[UInt8](repeating: 0, count: length)
+    _=SecRandomCopyBytes(kSecRandomDefault, keyBytes.count, &keyBytes)
     return SecureBytes(bytes: keyBytes)
   }
-  
+
   /// Re-encrypt data with a new key
   /// - Parameters:
   ///   - data: Data to re-encrypt
@@ -167,23 +167,23 @@ public final class KeyManagerImpl: KeyManagementProtocol, Sendable {
     oldKey: SecureBytes,
     newKey: SecureBytes
   ) -> SecureBytes? {
-    guard let data = data else {
+    guard let data else {
       return nil
     }
-    
+
     // In a real implementation, we would:
     // 1. Decrypt the data with the old key
     // 2. Encrypt the data with the new key
     // Here we just XOR with the keys for demonstration
-    
-    var newBytes = [UInt8]()
+
+    var newBytes=[UInt8]()
     for index in 0..<data.count {
-      let oldKeyByte = oldKey[index % oldKey.count]
-      let newKeyByte = newKey[index % newKey.count]
-      let byte = data[index]
+      let oldKeyByte=oldKey[index % oldKey.count]
+      let newKeyByte=newKey[index % newKey.count]
+      let byte=data[index]
       newBytes.append(byte ^ oldKeyByte ^ newKeyByte)
     }
-    
+
     return SecureBytes(bytes: newBytes)
   }
 }
