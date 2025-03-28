@@ -2,12 +2,11 @@ import CommonCrypto
 
 // CryptoKit removed - cryptography will be handled in ResticBar
 import UmbraErrors
-import UmbraErrorsCore
-import UmbraErrorsDTOs
+
+import CryptoInterfaces
 
 // Updating imports to use proper modules
 import CryptoTypes
-import CryptoInterfaces
 import SecurityTypes
 
 /// Default implementation of CryptoServiceCore
@@ -18,68 +17,58 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
   public init() {}
 
   public func generateSecureRandomKey(length: Int) async throws -> SecureBytes {
-    var bytes = [UInt8](repeating: 0, count: length)
-    let status = SecRandomCopyBytes(kSecRandomDefault, length, &bytes)
+    var bytes=[UInt8](repeating: 0, count: length)
+    let status=SecRandomCopyBytes(kSecRandomDefault, length, &bytes)
     guard status == errSecSuccess else {
-      throw CryptoErrorDTO(
-        type: CryptoErrorDTO.CryptoErrorType.keyGenerationFailed,
-        description: "Random generation failed with status: \(status)",
-        context: ErrorContext()
-      )
+      throw CryptoError
+        .keyGenerationFailed(reason: "Random generation failed with status: \(status)")
     }
     return SecureBytes(bytes: bytes)
   }
 
   public func generateSecureRandomBytes(length: Int) async throws -> SecureBytes {
-    var bytes = [UInt8](repeating: 0, count: length)
-    let status = SecRandomCopyBytes(kSecRandomDefault, length, &bytes)
+    var bytes=[UInt8](repeating: 0, count: length)
+    let status=SecRandomCopyBytes(kSecRandomDefault, length, &bytes)
     guard status == errSecSuccess else {
-      throw CryptoErrorDTO(
-        type: CryptoErrorDTO.CryptoErrorType.operationFailed,
-        description: "Random generation failed with status: \(status)",
-        context: ErrorContext()
-      )
+      throw CryptoError.operationFailed(reason: "Random generation failed with status: \(status)")
     }
     return SecureBytes(bytes: bytes)
   }
 
-  public func encrypt(_ data: SecureBytes, using key: SecureBytes, iv: SecureBytes) async throws -> SecureBytes {
+  public func encrypt(
+    _: SecureBytes,
+    using _: SecureBytes,
+    iv _: SecureBytes
+  ) async throws -> SecureBytes {
     // Placeholder implementation - will be implemented properly in ResticBar
     // Throw a not implemented error for now
-    throw CryptoErrorDTO(
-      type: CryptoErrorDTO.CryptoErrorType.encryptionFailed,
-      description: "Encryption is not implemented in this version",
-      context: ErrorContext()
-    )
+    throw CryptoError.encryptionFailed(reason: "Encryption is not implemented in this version")
   }
 
-  public func decrypt(_ data: SecureBytes, using key: SecureBytes, iv: SecureBytes) async throws -> SecureBytes {
+  public func decrypt(
+    _: SecureBytes,
+    using _: SecureBytes,
+    iv _: SecureBytes
+  ) async throws -> SecureBytes {
     // Placeholder implementation - will be implemented properly in ResticBar
     // Throw a not implemented error for now
-    throw CryptoErrorDTO(
-      type: CryptoErrorDTO.CryptoErrorType.decryptionFailed,
-      description: "Decryption is not implemented in this version",
-      context: ErrorContext()
-    )
+    throw CryptoError.decryptionFailed(reason: "Decryption is not implemented in this version")
   }
 
-  public func deriveKey(from password: String, salt: SecureBytes, iterations: Int) async throws -> SecureBytes {
+  public func deriveKey(
+    from _: String,
+    salt _: SecureBytes,
+    iterations _: Int
+  ) async throws -> SecureBytes {
     // Placeholder implementation - will be implemented properly in ResticBar
     // Throw a not implemented error for now
-    throw CryptoErrorDTO(
-      type: CryptoErrorDTO.CryptoErrorType.keyGenerationFailed, 
-      description: "Key derivation is not implemented in this version",
-      context: ErrorContext()
-    )
+    throw CryptoError
+      .keyGenerationFailed(reason: "Key derivation is not implemented in this version")
   }
 
-  public func generateHMAC(for data: SecureBytes, using key: SecureBytes) async throws -> SecureBytes {
+  public func generateHMAC(for _: SecureBytes, using _: SecureBytes) async throws -> SecureBytes {
     // This is a placeholder implementation that will be replaced by ResticBar
     // In a real implementation, we would use CCHmac from CommonCrypto
-    throw CryptoErrorDTO(
-      type: CryptoErrorDTO.CryptoErrorType.operationFailed,
-      description: "HMAC generation is not implemented",
-      context: ErrorContext()
-    )
+    throw CryptoError.operationFailed(reason: "HMAC generation is not implemented")
   }
 }

@@ -6,5 +6,5 @@
 /// Main namespace for CryptoServices
 public enum CryptoServices {
   /// Version of the CryptoServices module
-  public static let version = "1.0.0"
+  public static let version="1.0.0"
 }
