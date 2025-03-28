@@ -9,18 +9,18 @@ public enum LoggingLevelAdapter {
   /// - Returns: The equivalent LoggingWrapper.LogLevel
   public static func convertLevel(_ level: UmbraLogLevel) -> LogLevel {
     switch level {
-    case .verbose:
-      return .trace
-    case .debug:
-      return .debug
-    case .info:
-      return .info
-    case .warning:
-      return .warning
-    case .error:
-      return .error
-    case .critical:
-      return .critical
+      case .verbose:
+        .trace
+      case .debug:
+        .debug
+      case .info:
+        .info
+      case .warning:
+        .warning
+      case .error:
+        .error
+      case .critical:
+        .critical
     }
   }
 
@@ -29,18 +29,18 @@ public enum LoggingLevelAdapter {
   /// - Returns: The equivalent UmbraLogLevel
   public static func convertToUmbraLevel(_ level: LogLevel) -> UmbraLogLevel {
     switch level {
-    case .trace:
-      return .verbose
-    case .debug:
-      return .debug
-    case .info:
-      return .info
-    case .warning:
-      return .warning
-    case .error:
-      return .error
-    case .critical:
-      return .critical
+      case .trace:
+        .verbose
+      case .debug:
+        .debug
+      case .info:
+        .info
+      case .warning:
+        .warning
+      case .error:
+        .error
+      case .critical:
+        .critical
     }
   }
 

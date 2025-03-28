@@ -3,7 +3,7 @@ import LoggingWrapperInterfaces
 
 /// A simple logging facade that wraps SwiftyBeaver
 public class Logger: LoggerProtocol {
-  private static let logger = SwiftyBeaver.self
+  private static let logger=SwiftyBeaver.self
 
   /// Configuration manager to handle thread-safe setup
   ///
@@ -12,13 +12,13 @@ public class Logger: LoggerProtocol {
   @MainActor
   private final class ConfigurationManager {
     /// Whether the logger has been configured
-    private var isConfigured = false
+    private var isConfigured=false
 
     /// Configure the logger if it hasn't been configured yet
     /// - Returns: True if this is the first configuration, false if already configured
     func configure() -> Bool {
       if !isConfigured {
-        isConfigured = true
+        isConfigured=true
         return true
       }
       return false
@@ -26,7 +26,7 @@ public class Logger: LoggerProtocol {
   }
 
   /// Shared configuration manager
-  private static let configManager = ConfigurationManager()
+  private static let configManager=ConfigurationManager()
 
   /// Configure the logger with a default console destination
   ///
@@ -34,8 +34,8 @@ public class Logger: LoggerProtocol {
   /// It is safe to call this method multiple times; only the first call will have an effect.
   public static func configure() {
     // Create a default console destination
-    let console = ConsoleDestination()
-    console.format = "$DHH:mm:ss.SSS$d $L $M"
+    let console=ConsoleDestination()
+    console.format="$DHH:mm:ss.SSS$d $L $M"
 
     // Configure with the console destination
     configure(with: console)
@@ -50,15 +50,15 @@ public class Logger: LoggerProtocol {
   ///   - includeLineNumber: Whether to include line numbers, defaults to false
   public static func configureConsole(
     minimumLevel: LogLevel = .info,
-    includeTimestamp: Bool = true,
-    includeFileInfo: Bool = false,
-    includeLineNumber: Bool = false
+    includeTimestamp: Bool=true,
+    includeFileInfo: Bool=false,
+    includeLineNumber: Bool=false
   ) {
     // Create the console destination
-    let console = ConsoleDestination()
+    let console=ConsoleDestination()
 
     // Configure the format based on parameters
-    var format = ""
+    var format=""
     if includeTimestamp {
       format += "$DHH:mm:ss.SSS$d "
     }
@@ -71,10 +71,10 @@ public class Logger: LoggerProtocol {
       format += " "
     }
     format += "$M"
-    console.format = format
+    console.format=format
 
     // Set minimum level
-    console.minLevel = mapLogLevel(minimumLevel)
+    console.minLevel=mapLogLevel(minimumLevel)
 
     // Configure the logger
     configure(with: console)
@@ -98,18 +98,18 @@ public class Logger: LoggerProtocol {
   /// - Returns: SwiftyBeaver's level
   private static func mapLogLevel(_ level: LogLevel) -> SwiftyBeaver.Level {
     switch level {
-    case .critical:
-      return .error
-    case .error:
-      return .error
-    case .warning:
-      return .warning
-    case .info:
-      return .info
-    case .debug:
-      return .debug
-    case .trace:
-      return .verbose
+      case .critical:
+        .error
+      case .error:
+        .error
+      case .warning:
+        .warning
+      case .info:
+        .info
+      case .debug:
+        .debug
+      case .trace:
+        .verbose
     }
   }
 
@@ -123,12 +123,18 @@ public class Logger: LoggerProtocol {
   public static func log(
     _ level: LogLevel,
     _ message: @autoclosure () -> Any,
-    file: String = #file,
-    function: String = #function,
-    line: Int = #line
+    file: String=#file,
+    function: String=#function,
+    line: Int=#line
   ) {
-    let swiftyLevel = mapLogLevel(level)
-    logger.custom(level: swiftyLevel, message: message(), file: file, function: function, line: line)
+    let swiftyLevel=mapLogLevel(level)
+    logger.custom(
+      level: swiftyLevel,
+      message: message(),
+      file: file,
+      function: function,
+      line: line
+    )
   }
 
   /// Log a message at the critical level
@@ -139,9 +145,9 @@ public class Logger: LoggerProtocol {
   ///   - line: The line from which the log is sent
   public static func critical(
     _ message: @autoclosure () -> Any,
-    file: String = #file,
-    function: String = #function,
-    line: Int = #line
+    file: String=#file,
+    function: String=#function,
+    line: Int=#line
   ) {
     log(.critical, message(), file: file, function: function, line: line)
   }
@@ -154,9 +160,9 @@ public class Logger: LoggerProtocol {
   ///   - line: The line from which the log is sent
   public static func error(
     _ message: @autoclosure () -> Any,
-    file: String = #file,
-    function: String = #function,
-    line: Int = #line
+    file: String=#file,
+    function: String=#function,
+    line: Int=#line
   ) {
     log(.error, message(), file: file, function: function, line: line)
   }
@@ -169,9 +175,9 @@ public class Logger: LoggerProtocol {
   ///   - line: The line from which the log is sent
   public static func warning(
     _ message: @autoclosure () -> Any,
-    file: String = #file,
-    function: String = #function,
-    line: Int = #line
+    file: String=#file,
+    function: String=#function,
+    line: Int=#line
   ) {
     log(.warning, message(), file: file, function: function, line: line)
   }
@@ -184,9 +190,9 @@ public class Logger: LoggerProtocol {
   ///   - line: The line from which the log is sent
   public static func info(
     _ message: @autoclosure () -> Any,
-    file: String = #file,
-    function: String = #function,
-    line: Int = #line
+    file: String=#file,
+    function: String=#function,
+    line: Int=#line
   ) {
     log(.info, message(), file: file, function: function, line: line)
   }
@@ -199,9 +205,9 @@ public class Logger: LoggerProtocol {
   ///   - line: The line from which the log is sent
   public static func debug(
     _ message: @autoclosure () -> Any,
-    file: String = #file,
-    function: String = #function,
-    line: Int = #line
+    file: String=#file,
+    function: String=#function,
+    line: Int=#line
   ) {
     log(.debug, message(), file: file, function: function, line: line)
   }
@@ -214,9 +220,9 @@ public class Logger: LoggerProtocol {
   ///   - line: The line from which the log is sent
   public static func trace(
     _ message: @autoclosure () -> Any,
-    file: String = #file,
-    function: String = #function,
-    line: Int = #line
+    file: String=#file,
+    function: String=#function,
+    line: Int=#line
   ) {
     log(.trace, message(), file: file, function: function, line: line)
   }

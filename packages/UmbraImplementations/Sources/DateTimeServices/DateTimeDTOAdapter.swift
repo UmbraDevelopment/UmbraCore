@@ -19,11 +19,11 @@ public final class DateTimeDTOAdapter: DateTimeDTOProtocol {
   /// Get the current date and time
   /// - Parameter timeZoneOffset: Optional time zone offset (defaults to UTC)
   /// - Returns: Current date and time
-  public func now(in timeZoneOffset: DateTimeDTO.TimeZoneOffset? = nil) -> DateTimeDTO {
-    let currentDate = Date()
-    let timestamp = currentDate.timeIntervalSince1970
-    
-    if let offsetToUse = timeZoneOffset {
+  public func now(in timeZoneOffset: DateTimeDTO.TimeZoneOffset?=nil) -> DateTimeDTO {
+    let currentDate=Date()
+    let timestamp=currentDate.timeIntervalSince1970
+
+    if let offsetToUse=timeZoneOffset {
       return DateTimeDTO(timestamp: timestamp, timeZoneOffset: offsetToUse)
     } else {
       // Default to UTC if no time zone provided
@@ -46,65 +46,68 @@ public final class DateTimeDTOAdapter: DateTimeDTOProtocol {
   ///   - formatter: The formatter to use
   /// - Returns: Parsed date or nil if parsing failed
   public func parse(string: String, using formatter: DateFormatterDTO) -> DateTimeDTO? {
-    let dateFormatter = DateFormatter()
-    
+    let dateFormatter=DateFormatter()
+
     // Configure the formatter based on DateFormatterDTO properties
     configureFormatter(dateFormatter, with: formatter)
-    
-    guard let parsedDate = dateFormatter.date(from: string) else {
+
+    guard let parsedDate=dateFormatter.date(from: string) else {
       return nil
     }
-    
-    let timestamp = parsedDate.timeIntervalSince1970
-    
+
+    let timestamp=parsedDate.timeIntervalSince1970
+
     // Create a time zone offset based on formatter's time zone
-    let secondsFromGMT = dateFormatter.timeZone.secondsFromGMT()
-    let totalMinutes = secondsFromGMT / 60
-    let timeZoneOffset = DateTimeDTO.TimeZoneOffset(totalMinutes: totalMinutes)
-    
+    let secondsFromGMT=dateFormatter.timeZone.secondsFromGMT()
+    let totalMinutes=secondsFromGMT / 60
+    let timeZoneOffset=DateTimeDTO.TimeZoneOffset(totalMinutes: totalMinutes)
+
     return DateTimeDTO(timestamp: timestamp, timeZoneOffset: timeZoneOffset)
   }
-  
+
   /// Configure a Foundation DateFormatter using a DateFormatterDTO
   /// - Parameters:
   ///   - dateFormatter: The Foundation DateFormatter to configure
   ///   - formatterDTO: The DateFormatterDTO to use for configuration
-  private func configureFormatter(_ dateFormatter: DateFormatter, with formatterDTO: DateFormatterDTO) {
+  private func configureFormatter(
+    _ dateFormatter: DateFormatter,
+    with formatterDTO: DateFormatterDTO
+  ) {
     // Set locale if provided
-    if let localeIdentifier = formatterDTO.localeIdentifier {
-      dateFormatter.locale = Locale(identifier: localeIdentifier)
+    if let localeIdentifier=formatterDTO.localeIdentifier {
+      dateFormatter.locale=Locale(identifier: localeIdentifier)
     }
-    
+
     // Apply date style
     switch formatterDTO.dateStyle {
-    case .none:
-      dateFormatter.dateStyle = .none
-    case .short:
-      dateFormatter.dateStyle = .short
-    case .medium:
-      dateFormatter.dateStyle = .medium
-    case .long:
-      dateFormatter.dateStyle = .long
-    case .full:
-      dateFormatter.dateStyle = .full
-    case .custom(let formatString):
-      dateFormatter.dateFormat = formatString
+      case .none:
+        dateFormatter.dateStyle = .none
+      case .short:
+        dateFormatter.dateStyle = .short
+      case .medium:
+        dateFormatter.dateStyle = .medium
+      case .long:
+        dateFormatter.dateStyle = .long
+      case .full:
+        dateFormatter.dateStyle = .full
+      case let .custom(formatString):
+        dateFormatter.dateFormat=formatString
     }
-    
+
     // Apply time style
     switch formatterDTO.timeStyle {
-    case .none:
-      dateFormatter.timeStyle = .none
-    case .short:
-      dateFormatter.timeStyle = .short
-    case .medium:
-      dateFormatter.timeStyle = .medium
-    case .long:
-      dateFormatter.timeStyle = .long
-    case .full:
-      dateFormatter.timeStyle = .full
-    case .custom(let formatString):
-      dateFormatter.dateFormat = formatString
+      case .none:
+        dateFormatter.timeStyle = .none
+      case .short:
+        dateFormatter.timeStyle = .short
+      case .medium:
+        dateFormatter.timeStyle = .medium
+      case .long:
+        dateFormatter.timeStyle = .long
+      case .full:
+        dateFormatter.timeStyle = .full
+      case let .custom(formatString):
+        dateFormatter.dateFormat=formatString
     }
   }
 
@@ -115,8 +118,8 @@ public final class DateTimeDTOAdapter: DateTimeDTOProtocol {
   /// - Returns: New date with seconds added
   public func add(to date: DateTimeDTO, seconds: Double) -> DateTimeDTO {
     // Add the seconds to the timestamp
-    let newTimestamp = date.timestamp + seconds
-    
+    let newTimestamp=date.timestamp + seconds
+
     // Return a new DateTimeDTO with the same time zone
     return DateTimeDTO(timestamp: newTimestamp, timeZoneOffset: date.timeZoneOffset)
   }
@@ -141,34 +144,34 @@ public final class DateTimeDTOAdapter: DateTimeDTOProtocol {
     seconds: Int
   ) -> DateTimeDTO {
     // Convert to Foundation Date
-    let timestamp = date.timestamp
-    let dateValue = Date(timeIntervalSince1970: timestamp)
-    
+    let timestamp=date.timestamp
+    let dateValue=Date(timeIntervalSince1970: timestamp)
+
     // Create date components to add
-    var components = DateComponents()
-    components.year = years
-    components.month = months
-    components.day = days
-    components.hour = hours
-    components.minute = minutes
-    components.second = seconds
-    
+    var components=DateComponents()
+    components.year=years
+    components.month=months
+    components.day=days
+    components.hour=hours
+    components.minute=minutes
+    components.second=seconds
+
     // Create calendar in the date's time zone
-    let calendar = Calendar.current
-    
+    let calendar=Calendar.current
+
     // Convert TimeZoneOffset to Foundation TimeZone
-    let tzTotalMinutes = date.timeZoneOffset.totalMinutes
-    let timeZone = TimeZone(secondsFromGMT: tzTotalMinutes * 60)!
-    
-    var calendarWithTimeZone = calendar
-    calendarWithTimeZone.timeZone = timeZone
-    
+    let tzTotalMinutes=date.timeZoneOffset.totalMinutes
+    let timeZone=TimeZone(secondsFromGMT: tzTotalMinutes * 60)!
+
+    var calendarWithTimeZone=calendar
+    calendarWithTimeZone.timeZone=timeZone
+
     // Add the components
-    guard let newDate = calendarWithTimeZone.date(byAdding: components, to: dateValue) else {
+    guard let newDate=calendarWithTimeZone.date(byAdding: components, to: dateValue) else {
       return date // Return original if addition fails
     }
-    
-    let newTimestamp = newDate.timeIntervalSince1970
+
+    let newTimestamp=newDate.timeIntervalSince1970
     return DateTimeDTO(timestamp: newTimestamp, timeZoneOffset: date.timeZoneOffset)
   }
 
@@ -178,9 +181,9 @@ public final class DateTimeDTOAdapter: DateTimeDTOProtocol {
   ///   - date2: Second date
   /// - Returns: Difference in seconds
   public func difference(between date1: DateTimeDTO, and date2: DateTimeDTO) -> Double {
-    let timestamp1 = date1.timestamp
-    let timestamp2 = date2.timestamp
-    
+    let timestamp1=date1.timestamp
+    let timestamp2=date2.timestamp
+
     return timestamp2 - timestamp1
   }
 
@@ -193,8 +196,8 @@ public final class DateTimeDTOAdapter: DateTimeDTOProtocol {
     date: DateTimeDTO,
     to timeZoneOffset: DateTimeDTO.TimeZoneOffset
   ) -> DateTimeDTO {
-    let timestamp = date.timestamp
-    
+    let timestamp=date.timestamp
+
     return DateTimeDTO(timestamp: timestamp, timeZoneOffset: timeZoneOffset)
   }
 
@@ -202,14 +205,14 @@ public final class DateTimeDTOAdapter: DateTimeDTOProtocol {
   /// - Parameter identifier: Time zone identifier (e.g., "Europe/London", "America/New_York")
   /// - Returns: Time zone offset or UTC if not found
   public func timeZoneOffset(for identifier: String) -> DateTimeDTO.TimeZoneOffset {
-    guard let timeZone = TimeZone(identifier: identifier) else {
+    guard let timeZone=TimeZone(identifier: identifier) else {
       return DateTimeDTO.TimeZoneOffset.utc
     }
-    
+
     // Get current seconds from GMT for the time zone
-    let secondsFromGMT = timeZone.secondsFromGMT()
-    let totalMinutes = secondsFromGMT / 60
-    
+    let secondsFromGMT=timeZone.secondsFromGMT()
+    let totalMinutes=secondsFromGMT / 60
+
     return DateTimeDTO.TimeZoneOffset(totalMinutes: totalMinutes)
   }
 
@@ -238,34 +241,34 @@ public final class DateTimeDTOAdapter: DateTimeDTOProtocol {
     minute: Int,
     second: Int,
     nanosecond: Int,
-    timeZoneOffset: DateTimeDTO.TimeZoneOffset = DateTimeDTO.TimeZoneOffset.utc
+    timeZoneOffset: DateTimeDTO.TimeZoneOffset=DateTimeDTO.TimeZoneOffset.utc
   ) -> DateTimeDTO? {
     // Create date components
-    var components = DateComponents()
-    components.year = year
-    components.month = month.rawValue
-    components.day = day
-    components.hour = hour
-    components.minute = minute
-    components.second = second
-    components.nanosecond = nanosecond
-    
+    var components=DateComponents()
+    components.year=year
+    components.month=month.rawValue
+    components.day=day
+    components.hour=hour
+    components.minute=minute
+    components.second=second
+    components.nanosecond=nanosecond
+
     // Create calendar in the specified time zone
-    let calendar = Calendar.current
-    
+    let calendar=Calendar.current
+
     // Convert TimeZoneOffset to Foundation TimeZone
-    let tzTotalMinutes = timeZoneOffset.totalMinutes
-    let timeZone = TimeZone(secondsFromGMT: tzTotalMinutes * 60)!
-    
-    var calendarWithTimeZone = calendar
-    calendarWithTimeZone.timeZone = timeZone
-    
+    let tzTotalMinutes=timeZoneOffset.totalMinutes
+    let timeZone=TimeZone(secondsFromGMT: tzTotalMinutes * 60)!
+
+    var calendarWithTimeZone=calendar
+    calendarWithTimeZone.timeZone=timeZone
+
     // Create the date
-    guard let date = calendarWithTimeZone.date(from: components) else {
+    guard let date=calendarWithTimeZone.date(from: components) else {
       return nil
     }
-    
-    let timestamp = date.timeIntervalSince1970
+
+    let timestamp=date.timeIntervalSince1970
     return DateTimeDTO(timestamp: timestamp, timeZoneOffset: timeZoneOffset)
   }
 }
