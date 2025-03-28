@@ -1,0 +1,22 @@
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
+
+umbra_swift_library(
+    name = "Protocols",
+    srcs = glob(
+        [
+            "*.swift",
+            "**/*.swift",
+        ],
+        allow_empty = False,
+        exclude = [
+            "**/Tests/**",
+            "**/*Test.swift",
+            "**/*.generated.swift",
+        ],
+        exclude_directories = 1,
+    ),
+    deps = [
+        "//Sources/ResticCLIHelper/Types:ResticCLIHelperTypes",
+        "//Sources/ResticTypes",
+    ],
+)

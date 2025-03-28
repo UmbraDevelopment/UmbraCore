@@ -1,0 +1,336 @@
+import Foundation
+import UmbraErrors
+import BackupInterfaces
+import ResticInterfaces
+
+/// Responsible for creating Restic commands for backup operations
+///
+/// This class centralises all command creation logic for backup-related
+/// operations, ensuring consistent command structure and arguments.
+struct BackupCommandFactory {
+    
+    /// Creates a backup command from the provided sources, exclusions, and tags
+    /// - Parameters:
+    ///   - sources: Paths to include in the backup
+    ///   - excludePaths: Optional paths to exclude
+    ///   - tags: Optional tags to associate with the backup
+    ///   - options: Additional options for the backup
+    /// - Returns: A command ready for execution
+    /// - Throws: BackupError if command creation fails
+    func createBackupCommand(
+        sources: [URL],
+        excludePaths: [URL]?,
+        tags: [String]?,
+        options: BackupOptions?
+    ) throws -> ResticCommand {
+        // Validate inputs
+        guard !sources.isEmpty else {
+            throw BackupError.invalidConfiguration(details: "No source paths provided")
+        }
+        
+        // Start with basic backup command
+        var arguments = ["backup"]
+        
+        // Add sources
+        arguments.append(contentsOf: sources.map { $0.path })
+        
+        // Add excludes if provided
+        if let excludePaths = excludePaths, !excludePaths.isEmpty {
+            for excludePath in excludePaths {
+                arguments.append(contentsOf: ["--exclude", excludePath.path])
+            }
+        }
+        
+        // Add tags if provided
+        if let tags = tags, !tags.isEmpty {
+            for tag in tags {
+                arguments.append(contentsOf: ["--tag", tag])
+            }
+        }
+        
+        // Add options if provided
+        if let options = options {
+            if let compressionLevel = options.compressionLevel {
+                arguments.append("--compression=\(compressionLevel)")
+            }
+            
+            // Handle verification
+            if options.verifyAfterBackup {
+                arguments.append("--verify")
+            }
+            
+            // Handle parallelisation
+            if options.useParallelisation {
+                arguments.append("--parallel")
+            }
+            
+            // Handle priority
+            switch options.priority {
+            case .low:
+                arguments.append("--nice=19")
+            case .high:
+                arguments.append("--nice=0")
+            case .critical:
+                arguments.append("--nice=-20")
+            case .normal:
+                break // Default priority
+            }
+            
+            // Handle max size if specified
+            if let maxSize = options.maxSize {
+                arguments.append("--max-size=\(maxSize)")
+            }
+        }
+        
+        // Always add JSON output
+        arguments.append("--json")
+        
+        return ResticCommandImpl(arguments: arguments)
+    }
+    
+    /// Creates a restore command from the provided parameters
+    /// - Parameters:
+    ///   - snapshotID: ID of the snapshot to restore
+    ///   - targetPath: Path to restore files to
+    ///   - includePaths: Optional specific paths to restore
+    ///   - excludePaths: Optional paths to exclude from restoration
+    ///   - options: Additional options for the restore operation
+    /// - Returns: A command ready for execution
+    /// - Throws: BackupError if command creation fails
+    func createRestoreCommand(
+        snapshotID: String,
+        targetPath: URL,
+        includePaths: [URL]?,
+        excludePaths: [URL]?,
+        options: RestoreOptions?
+    ) throws -> ResticCommand {
+        // Start with basic restore command
+        var arguments = ["restore", snapshotID, "--target", targetPath.path]
+        
+        // Add includes if provided
+        if let includePaths = includePaths, !includePaths.isEmpty {
+            for includePath in includePaths {
+                arguments.append(contentsOf: ["--include", includePath.path])
+            }
+        }
+        
+        // Add excludes if provided
+        if let excludePaths = excludePaths, !excludePaths.isEmpty {
+            for excludePath in excludePaths {
+                arguments.append(contentsOf: ["--exclude", excludePath.path])
+            }
+        }
+        
+        // Add options if provided
+        if let options = options {
+            // RestoreOptions doesn't have dryRun, but we can handle the other properties
+            
+            // Handle overwrite
+            if options.overwriteExisting {
+                arguments.append("--force")
+            }
+            
+            // Handle restore permissions
+            if options.restorePermissions {
+                arguments.append("--preserve-permissions")
+            }
+            
+            // Handle verification
+            if options.verifyAfterRestore {
+                arguments.append("--verify")
+            }
+            
+            // Handle parallelisation
+            if options.useParallelisation {
+                arguments.append("--parallel")
+            }
+            
+            // Handle priority
+            switch options.priority {
+            case .low:
+                arguments.append("--nice=19")
+            case .high:
+                arguments.append("--nice=0")
+            case .critical:
+                arguments.append("--nice=-20")
+            case .normal:
+                break // Default priority
+            }
+        }
+        
+        // Always add JSON output
+        arguments.append("--json")
+        
+        return ResticCommandImpl(arguments: arguments)
+    }
+    
+    /// Creates a maintenance command with the specified type and options
+    /// - Parameters:
+    ///   - type: Type of maintenance to perform
+    ///   - options: Additional options for the maintenance operation
+    /// - Returns: A command ready for execution
+    /// - Throws: BackupError if command creation fails
+    func createMaintenanceCommand(
+        type: MaintenanceType,
+        options: MaintenanceOptions?
+    ) throws -> ResticCommand {
+        // Determine base command from maintenance type
+        var baseCommand: String
+        switch type {
+        case .check:
+            baseCommand = "check"
+        case .prune:
+            baseCommand = "prune"
+        case .rebuildIndex:
+            baseCommand = "rebuild-index"
+        case .optimise:
+            baseCommand = "prune" // Using prune with specific options for optimization
+        case .full:
+            // For full maintenance, we're using check which is the most comprehensive
+            baseCommand = "check"
+        }
+        
+        // Start with base command
+        var arguments = [baseCommand]
+        
+        // Add options if provided
+        if let options = options {
+            if options.dryRun {
+                arguments.append("--dry-run")
+            }
+            
+            if baseCommand == "check" {
+                arguments.append("--verify-data")
+            }
+        }
+        
+        // Always add JSON output
+        arguments.append("--json")
+        
+        return ResticCommandImpl(arguments: arguments)
+    }
+    
+    /// Creates an initialization command for a repository
+    /// - Parameters:
+    ///   - location: Repository location (path or URL)
+    ///   - password: Repository password
+    /// - Returns: A command ready for execution
+    /// - Throws: BackupError if command creation fails
+    func createInitCommand(
+        location: String,
+        password: String
+    ) throws -> ResticCommand {
+        // Environment variables including password
+        var environment = ProcessInfo.processInfo.environment
+        environment["RESTIC_PASSWORD"] = password
+        
+        // Init command with repository location
+        let arguments = ["init", "--repository", location, "--json"]
+        
+        return ResticCommandImpl(arguments: arguments, environment: environment)
+    }
+    
+    /// Creates a repository check command
+    /// - Parameters:
+    ///   - options: Optional check options
+    /// - Returns: A command ready for execution
+    /// - Throws: BackupError if command creation fails
+    func createCheckCommand(options: RepositoryCheckOptions?) throws -> ResticCommand {
+        var arguments = ["check"]
+        
+        if let options = options {
+            if options.readData {
+                arguments.append("--read-data")
+            }
+            
+            if options.checkUnused {
+                arguments.append("--check-unused")
+            }
+        }
+        
+        // Always add JSON output
+        arguments.append("--json")
+        
+        return ResticCommandImpl(arguments: arguments)
+    }
+    
+    /// Creates a command to list snapshots
+    /// - Parameters:
+    ///   - repositoryID: ID of the repository to list snapshots from
+    ///   - tags: Optional tags to filter snapshots by
+    ///   - before: Optional date to filter snapshots before
+    ///   - after: Optional date to filter snapshots after
+    ///   - path: Optional path contained in snapshots
+    ///   - limit: Optional maximum number of snapshots to return
+    /// - Returns: A command ready for execution
+    /// - Throws: BackupError if command creation fails
+    func createListCommand(
+        repositoryID: String?,
+        tags: [String]?,
+        before: Date?,
+        after: Date?,
+        path: URL?,
+        limit: Int?
+    ) throws -> ResticCommand {
+        var arguments = ["snapshots"]
+        
+        // Add optional arguments
+        if let repositoryID = repositoryID {
+            arguments.append(contentsOf: ["--repository-id", repositoryID])
+        }
+        
+        if let tags = tags, !tags.isEmpty {
+            for tag in tags {
+                arguments.append(contentsOf: ["--tag", tag])
+            }
+        }
+        
+        if let before = before {
+            let formatter = ISO8601DateFormatter()
+            arguments.append(contentsOf: ["--before", formatter.string(from: before)])
+        }
+        
+        if let after = after {
+            let formatter = ISO8601DateFormatter()
+            arguments.append(contentsOf: ["--after", formatter.string(from: after)])
+        }
+        
+        if let path = path {
+            arguments.append(contentsOf: ["--path", path.path])
+        }
+        
+        if let limit = limit {
+            arguments.append(contentsOf: ["--limit", String(limit)])
+        }
+        
+        // Always add JSON output
+        arguments.append("--json")
+        
+        return ResticCommandImpl(arguments: arguments)
+    }
+    
+    /// Creates a command to delete a snapshot
+    /// - Parameters:
+    ///   - snapshotID: ID of the snapshot to delete
+    ///   - pruneAfterDelete: Whether to prune unreferenced data after deletion
+    /// - Returns: A command ready for execution
+    /// - Throws: BackupError if command creation fails
+    func createDeleteCommand(
+        snapshotID: String,
+        pruneAfterDelete: Bool
+    ) throws -> ResticCommand {
+        var arguments = ["forget", snapshotID]
+        
+        // Add deletion flags
+        arguments.append("--remove-data") // Actually remove data, not just the snapshot reference
+        
+        if pruneAfterDelete {
+            arguments.append("--prune")
+        }
+        
+        // Always add JSON output
+        arguments.append("--json")
+        
+        return ResticCommandImpl(arguments: arguments)
+    }
+}

@@ -1,0 +1,25 @@
+{
+  "originalModule": "ResticTypes",
+  "migrationDate": "2025-03-28",
+  "migratedTo": [
+    {
+      "module": "ResticInterfaces",
+      "path": "/Users/mpy/CascadeProjects/UmbraCore/packages/UmbraInterfaces/Sources/ResticInterfaces",
+      "description": "Core protocols and data types required for Restic operations"
+    }
+  ],
+  "migrationNotes": [
+    "Moved error types to ResticInterfaces/ResticError.swift with enhanced recovery suggestions",
+    "Reorganised common data types into structured protocol definitions",
+    "Added proper British spelling to all documentation",
+    "Implemented actor-based concurrency patterns for thread safety",
+    "Separated interfaces from implementation for better maintainability and testing"
+  ],
+  "architectureCompliance": {
+    "actorBased": true,
+    "interfaceSeparation": true,
+    "errorHandling": true,
+    "britishSpelling": true,
+    "sendableConformance": true
+  }
+}

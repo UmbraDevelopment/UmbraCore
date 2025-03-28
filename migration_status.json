@@ -18,7 +18,11 @@
       "FileSystemService",
       "NetworkService",
       "Repository",
-      "DateTimeService"
+      "DateTimeService",
+      "ResticInterfaces",
+      "BackupInterfaces",
+      "BackupServices",
+      "ResticServices"
     ],
     "migration_date": "2025-03-27",
     "blocking_issues": [],
@@ -169,7 +173,9 @@
     "dependents": [
       "LoggingWrapperInterfaces",
       "UmbraLoggingAdapters",
-      "Repository"
+      "Repository",
+      "ResticServices",
+      "BackupServices"
     ],
     "migration_date": "2025-03-27",
     "blocking_issues": [],
@@ -308,5 +314,59 @@
     "migration_date": "2025-03-27",
     "blocking_issues": [],
     "notes": "Successfully migrated to Alpha Dot Five architecture with proper separation of interfaces (RepositoryInterfaces) and implementations (RepositoryServices). Improved error handling and documentation with British spelling."
+  },
+  "ResticInterfaces": {
+    "status": "Completed",
+    "dependencies": [
+      "UmbraErrors"
+    ],
+    "dependents": [
+      "ResticServices",
+      "BackupInterfaces"
+    ],
+    "migration_date": "2025-03-28",
+    "blocking_issues": [],
+    "notes": "Successfully migrated from ResticTypes to Alpha Dot Five architecture. Created comprehensive interface definitions with proper protocol boundaries, improved error types, and British spelling documentation."
+  },
+  "ResticServices": {
+    "status": "Completed",
+    "dependencies": [
+      "ResticInterfaces",
+      "UmbraLogging",
+      "UmbraErrors"
+    ],
+    "dependents": [
+      "BackupServices"
+    ],
+    "migration_date": "2025-03-28",
+    "blocking_issues": [],
+    "notes": "Successfully migrated from ResticCLIHelper and ResticCLIHelperModels to Alpha Dot Five architecture. Implemented actor-based concurrency with proper thread safety, comprehensive error handling, and descriptive naming conventions."
+  },
+  "BackupInterfaces": {
+    "status": "Completed",
+    "dependencies": [
+      "UmbraErrors",
+      "ResticInterfaces"
+    ],
+    "dependents": [
+      "BackupServices"
+    ],
+    "migration_date": "2025-03-28",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture. Created comprehensive interface definitions with proper protocol boundaries, improved type definitions, and British English documentation."
+  },
+  "BackupServices": {
+    "status": "Completed",
+    "dependencies": [
+      "BackupInterfaces",
+      "ResticInterfaces",
+      "ResticServices",
+      "UmbraErrors",
+      "UmbraLogging"
+    ],
+    "dependents": [],
+    "migration_date": "2025-03-28",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture. Refactored implementation classes for improved modularity, implemented factory pattern for command creation, and added comprehensive error mapping. Improved code organisation with proper separation of concerns."
   }
 }

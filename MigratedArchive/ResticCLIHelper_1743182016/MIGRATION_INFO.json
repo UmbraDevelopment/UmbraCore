@@ -1,0 +1,25 @@
+{
+  "originalModule": "ResticCLIHelper",
+  "migrationDate": "2025-03-28",
+  "migratedTo": [
+    {
+      "module": "ResticServices",
+      "path": "/Users/mpy/CascadeProjects/UmbraCore/packages/UmbraImplementations/Sources/ResticServices",
+      "description": "Implementation of Restic service interfaces with actor-based concurrency"
+    }
+  ],
+  "migrationNotes": [
+    "Transformed CLI helper into a proper service implementation with actor-based concurrency",
+    "Improved command structure with clear error propagation and proper typing",
+    "Enhanced progress reporting with type-safe interfaces",
+    "Added comprehensive documentation with British spelling",
+    "Created factory implementation for proper dependency injection"
+  ],
+  "architectureCompliance": {
+    "actorBased": true,
+    "interfaceSeparation": true,
+    "errorHandling": true,
+    "britishSpelling": true,
+    "sendableConformance": true
+  }
+}
