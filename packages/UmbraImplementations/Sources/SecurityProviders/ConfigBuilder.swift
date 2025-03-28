@@ -94,7 +94,7 @@ final class ConfigBuilder {
     }
     
     // Create a basic configuration with the correct initialiser parameters
-    var config = SecurityConfigDTO(
+    let config = SecurityConfigDTO(
       keySize: keySize,
       algorithm: algorithm,
       mode: mode

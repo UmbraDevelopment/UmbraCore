@@ -54,7 +54,7 @@ public enum XPCServiceProtocolDefinitionFactory {
 }
 
 /// Default implementation of the XPC service protocol definition
-public class XPCServiceProtocolDefinitionImpl: NSObject, XPCServiceProtocolDefinition {
+public final class XPCServiceProtocolDefinitionImpl: NSObject, XPCServiceProtocolDefinition, @unchecked Sendable {
 
   /// Protocol identifier for XPC service registration
   public static var protocolIdentifier: String {

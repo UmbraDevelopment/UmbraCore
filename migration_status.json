@@ -7,7 +7,18 @@
       "UserDefaults",
       "SecurityInterfaces",
       "CryptoTypes",
-      "UmbraLogging"
+      "UmbraLogging",
+      "Notification",
+      "Scheduling",
+      "CryptoServices",
+      "SecurityUtils",
+      "SecurityProviders",
+      "SecurityKeyManagement",
+      "SecurityCryptoServices",
+      "FileSystemService",
+      "NetworkService",
+      "Repository",
+      "DateTimeService"
     ],
     "migration_date": "2025-03-27",
     "blocking_issues": [],
@@ -20,7 +31,14 @@
     ],
     "dependents": [
       "UserDefaults",
-      "SecurityInterfaces"
+      "SecurityInterfaces",
+      "FileSystemTypes",
+      "SecurityTypes",
+      "CryptoTypes",
+      "CryptoServices",
+      "NetworkService",
+      "Repository",
+      "DateTimeService"
     ],
     "migration_date": "2025-03-27",
     "blocking_issues": [],
@@ -46,7 +64,11 @@
       "CoreDTOs",
       "UserDefaults"
     ],
-    "dependents": [],
+    "dependents": [
+      "SecurityTypes",
+      "CryptoTypes",
+      "CryptoInterfaces"
+    ],
     "migration_date": "2025-03-27",
     "blocking_issues": [],
     "notes": "Successfully migrated to Alpha Dot Five architecture with proper integration with UmbraErrors and UserDefaults."
@@ -75,7 +97,8 @@
     "status": "Completed",
     "dependencies": [],
     "dependents": [
-      "CoreDTOs"
+      "CoreDTOs",
+      "FileSystemService"
     ],
     "migration_date": "2025-03-27",
     "blocking_issues": [],
@@ -87,7 +110,12 @@
     "dependents": [
       "CoreDTOs",
       "SecurityInterfaces",
-      "CryptoTypes"
+      "CryptoTypes",
+      "CryptoInterfaces",
+      "SecurityUtils",
+      "SecurityProviders",
+      "SecurityKeyManagement",
+      "SecurityCryptoServices"
     ],
     "migration_date": "2025-03-27",
     "blocking_issues": [],
@@ -100,7 +128,8 @@
       "SecurityTypes"
     ],
     "dependents": [
-      "CryptoInterfaces"
+      "CryptoInterfaces",
+      "CryptoServices"
     ],
     "migration_date": "2025-03-27",
     "blocking_issues": [],
@@ -139,7 +168,8 @@
     ],
     "dependents": [
       "LoggingWrapperInterfaces",
-      "UmbraLoggingAdapters"
+      "UmbraLoggingAdapters",
+      "Repository"
     ],
     "migration_date": "2025-03-27",
     "blocking_issues": [],
@@ -241,5 +271,42 @@
     "migration_date": "2025-03-27",
     "blocking_issues": [],
     "notes": "Successfully migrated to Alpha Dot Five architecture with comprehensive security documentation. Implemented hashing service with constant-time comparison for timing attack prevention and proper security context."
+  },
+  "FileSystemService": {
+    "status": "Completed",
+    "dependencies": [
+      "FileSystemTypes",
+      "UmbraErrors"
+    ],
+    "dependents": [],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture as FileSystemInterfaces and FileSystemServices modules. New features include streaming operations, extended attributes, path operations, and temporary file management."
+  },
+  "NetworkService": {
+    "status": "Completed",
+    "dependencies": [
+      "UmbraErrors",
+      "CoreDTOs"
+    ],
+    "dependents": [
+      "Repository"
+    ],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture with separation of interfaces (NetworkInterfaces) and implementations (NetworkServices)."
+  },
+  "Repository": {
+    "status": "Completed",
+    "dependencies": [
+      "UmbraErrors",
+      "CoreDTOs",
+      "NetworkService",
+      "UmbraLogging"
+    ],
+    "dependents": [],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture with proper separation of interfaces (RepositoryInterfaces) and implementations (RepositoryServices). Improved error handling and documentation with British spelling."
   }
 }
