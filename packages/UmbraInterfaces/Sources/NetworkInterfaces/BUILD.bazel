@@ -10,5 +10,6 @@ swift_library(
     visibility = ["//visibility:public"],
     deps = [
         "//packages/UmbraCoreTypes/Sources/CoreDTOs",
+        "//packages/UmbraCoreTypes/Sources/UmbraErrors",
     ],
 )

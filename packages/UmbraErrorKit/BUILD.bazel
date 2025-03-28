@@ -1,0 +1,21 @@
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
+
+umbra_swift_library(
+    name = "UmbraErrorKit",
+    srcs = glob(
+        [
+            "Sources/**/*.swift",
+        ],
+        allow_empty = False,
+        exclude = [
+            "**/Tests/**",
+            "**/*Test.swift",
+            "**/*.generated.swift",
+        ],
+    ),
+    module_name = "UmbraErrorKit",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//packages/UmbraCoreTypes/Sources/CoreDTOs",
+    ],
+)

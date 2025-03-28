@@ -12,5 +12,6 @@ swift_library(
         "//packages/UmbraCoreTypes/Sources/CoreDTOs",
         "//packages/UmbraCoreTypes/Sources/UmbraErrors",
         "//packages/UmbraInterfaces/Sources/NetworkInterfaces",
+        "//MigratedArchive/UmbraLogging",
     ],
 )
