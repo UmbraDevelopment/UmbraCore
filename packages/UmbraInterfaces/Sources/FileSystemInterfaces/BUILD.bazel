@@ -1,0 +1,19 @@
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
+
+umbra_swift_library(
+    name = "FileSystemInterfaces",
+    srcs = glob(
+        ["**/*.swift"],
+        exclude = [
+            "**/*Test.swift",
+            "**/*.generated.swift",
+        ],
+    ),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//packages/UmbraCoreTypes/Sources/CoreDTOs",
+        "//packages/UmbraCoreTypes/Sources/FileSystemTypes",
+        "//packages/UmbraCoreTypes/Sources/SecurityTypes",
+        "//packages/UmbraCoreTypes/Sources/UmbraErrors",
+    ],
+)
