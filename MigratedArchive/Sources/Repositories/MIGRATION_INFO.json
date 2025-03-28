@@ -1,0 +1,6 @@
+{
+  "originalPath": "Sources/Repositories",
+  "migratedTo": "packages/UmbraImplementations/Sources/RepositoryServices",
+  "migrationDate": "2025-03-28",
+  "migrationNote": "Migrated as part of Alpha Dot Five architecture upgrade. Implemented self-contained error types and actor-based concurrency."
+}

@@ -1,0 +1,6 @@
+{
+  "originalPath": "Sources/FileSystemService",
+  "migratedTo": "packages/UmbraImplementations/Sources/FileSystemServices",
+  "migrationDate": "2025-03-28",
+  "migrationNote": "Migrated as part of Alpha Dot Five architecture upgrade. Refactored to use actors and proper isolation."
+}
