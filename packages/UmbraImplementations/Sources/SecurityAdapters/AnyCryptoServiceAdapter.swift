@@ -31,7 +31,7 @@ public final class AnyCryptoServiceAdapter: CryptoServiceProtocol, Sendable {
   /// Create a new adapter that wraps the specified crypto service
   /// - Parameter wrapped: The crypto service to wrap
   public init(wrapped: CryptoServiceProtocol) {
-    self.wrapped = wrapped
+    self.wrapped=wrapped
   }
 
   // MARK: - CryptoServiceProtocol Implementation

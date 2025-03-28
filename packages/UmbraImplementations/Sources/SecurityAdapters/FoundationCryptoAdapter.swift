@@ -32,8 +32,8 @@ public final class FoundationCryptoAdapter: Sendable {
 
   /// Create a new adapter with the specified security provider
   /// - Parameter securityProvider: The security provider to adapt
-  public init(securityProvider: SecurityProviderProtocol = SecurityProviderImpl()) {
-    self.securityProvider = securityProvider
+  public init(securityProvider: SecurityProviderProtocol=SecurityProviderImpl()) {
+    self.securityProvider=securityProvider
   }
 
   // MARK: - Public API
@@ -44,16 +44,16 @@ public final class FoundationCryptoAdapter: Sendable {
   ///   - key: Key to use for encryption
   /// - Returns: Encrypted data
   public func encrypt(_ data: Data, using key: Data) async throws -> Data {
-    let secureData = data.toSecureBytes()
-    let secureKey = key.toSecureBytes()
-    
+    let secureData=data.toSecureBytes()
+    let secureKey=key.toSecureBytes()
+
     // Use defer to ensure secure data is zeroed after use
     defer {
-      var keyCopy = secureKey
+      var keyCopy=secureKey
       MemoryProtection.secureZero(&keyCopy)
     }
-    
-    let resultDTO = await securityProvider.performSecureOperation(
+
+    let resultDTO=await securityProvider.performSecureOperation(
       operation: .encrypt(data: secureData, key: secureKey),
       config: SecurityConfigDTO(
         keySize: 256,
@@ -61,31 +61,37 @@ public final class FoundationCryptoAdapter: Sendable {
         mode: .gcm
       )
     )
-    
+
     // Handle the result
-    guard resultDTO.status == .success, let encryptedData = resultDTO.data else {
-      throw CryptoError.encryptionFailed(resultDTO.error?.localizedDescription ?? "Encryption failed", context: CryptoErrorContext(operation: "encrypt", details: ["data": data.description, "key": key.description]))
+    guard resultDTO.status == .success, let encryptedData=resultDTO.data else {
+      throw CryptoError.encryptionFailed(
+        resultDTO.error?.localizedDescription ?? "Encryption failed",
+        context: CryptoErrorContext(
+          operation: "encrypt",
+          details: ["data": data.description, "key": key.description]
+        )
+      )
     }
-    
+
     return encryptedData.toDataEfficient()
   }
-  
+
   /// Decrypt data using the provided key
   /// - Parameters:
   ///   - data: Data to decrypt
   ///   - key: Key to use for decryption
   /// - Returns: Decrypted data
   public func decrypt(_ data: Data, using key: Data) async throws -> Data {
-    let secureData = data.toSecureBytes()
-    let secureKey = key.toSecureBytes()
-    
+    let secureData=data.toSecureBytes()
+    let secureKey=key.toSecureBytes()
+
     // Use defer to ensure secure data is zeroed after use
     defer {
-      var keyCopy = secureKey
+      var keyCopy=secureKey
       MemoryProtection.secureZero(&keyCopy)
     }
-    
-    let resultDTO = await securityProvider.performSecureOperation(
+
+    let resultDTO=await securityProvider.performSecureOperation(
       operation: .decrypt(data: secureData, key: secureKey),
       config: SecurityConfigDTO(
         keySize: 256,
@@ -93,22 +99,28 @@ public final class FoundationCryptoAdapter: Sendable {
         mode: .gcm
       )
     )
-    
+
     // Handle the result
-    guard resultDTO.status == .success, let decryptedData = resultDTO.data else {
-      throw CryptoError.decryptionFailed(resultDTO.error?.localizedDescription ?? "Decryption failed", context: CryptoErrorContext(operation: "decrypt", details: ["data": data.description, "key": key.description]))
+    guard resultDTO.status == .success, let decryptedData=resultDTO.data else {
+      throw CryptoError.decryptionFailed(
+        resultDTO.error?.localizedDescription ?? "Decryption failed",
+        context: CryptoErrorContext(
+          operation: "decrypt",
+          details: ["data": data.description, "key": key.description]
+        )
+      )
     }
-    
+
     return decryptedData.toDataEfficient()
   }
-  
+
   /// Computes a hash of the input data
   /// - Parameter data: Data to hash
   /// - Returns: Hash value of the data
   public func hash(_ data: Data) async throws -> Data {
-    let secureData = data.toSecureBytes()
-    
-    let resultDTO = await securityProvider.performSecureOperation(
+    let secureData=data.toSecureBytes()
+
+    let resultDTO=await securityProvider.performSecureOperation(
       operation: .hash(data: secureData, algorithm: .sha256),
       config: SecurityConfigDTO(
         keySize: 256,
@@ -116,20 +128,23 @@ public final class FoundationCryptoAdapter: Sendable {
         hashAlgorithm: .sha256
       )
     )
-    
+
     // Handle the result
-    guard resultDTO.status == .success, let hashedData = resultDTO.data else {
-      throw CryptoError.hashingFailed(resultDTO.error?.localizedDescription ?? "Hashing failed", context: CryptoErrorContext(operation: "hash", details: ["data": data.description]))
+    guard resultDTO.status == .success, let hashedData=resultDTO.data else {
+      throw CryptoError.hashingFailed(
+        resultDTO.error?.localizedDescription ?? "Hashing failed",
+        context: CryptoErrorContext(operation: "hash", details: ["data": data.description])
+      )
     }
-    
+
     return hashedData.toDataEfficient()
   }
-  
+
   /// Generates a random cryptographic key of the specified length
   /// - Parameter bitLength: Length of the key in bits
   /// - Returns: Generated key as Data
-  public func generateKey(bitLength: Int = 256) async throws -> Data {
-    let resultDTO = await securityProvider.performSecureOperation(
+  public func generateKey(bitLength: Int=256) async throws -> Data {
+    let resultDTO=await securityProvider.performSecureOperation(
       operation: .generateKey(size: bitLength),
       config: SecurityConfigDTO(
         keySize: bitLength,
@@ -137,15 +152,21 @@ public final class FoundationCryptoAdapter: Sendable {
         mode: .gcm
       )
     )
-    
+
     // Handle the result
-    guard resultDTO.status == .success, let keyData = resultDTO.data else {
-      throw CryptoError.keyGenerationFailed(resultDTO.error?.localizedDescription ?? "Key generation failed", context: CryptoErrorContext(operation: "generateKey", details: ["bitLength": "\(bitLength)"]))
+    guard resultDTO.status == .success, let keyData=resultDTO.data else {
+      throw CryptoError.keyGenerationFailed(
+        resultDTO.error?.localizedDescription ?? "Key generation failed",
+        context: CryptoErrorContext(
+          operation: "generateKey",
+          details: ["bitLength": "\(bitLength)"]
+        )
+      )
     }
-    
+
     // Use memory protection to handle the key securely
     return MemoryProtection.withSecureTemporaryData([UInt8](keyData.toDataEfficient())) { bytes in
-      return Data(bytes)
+      Data(bytes)
     }
   }
 }
@@ -156,14 +177,14 @@ public final class FoundationCryptoAdapter: Sendable {
 public struct CryptoErrorContext: Sendable {
   public let operation: String
   public let details: [String: String]
-  
-  public init(operation: String, details: [String: String] = [:]) {
-    self.operation = operation
-    self.details = details
+
+  public init(operation: String, details: [String: String]=[:]) {
+    self.operation=operation
+    self.details=details
   }
-  
+
   public var description: String {
-    var result = "Operation: \(operation)"
+    var result="Operation: \(operation)"
     if !details.isEmpty {
       result += ", Details: \(details)"
     }
@@ -175,31 +196,31 @@ public struct CryptoErrorContext: Sendable {
  * Errors that can occur during cryptographic operations
  */
 public enum CryptoError: Error, LocalizedError {
-  case encryptionFailed(String, context: CryptoErrorContext? = nil)
-  case decryptionFailed(String, context: CryptoErrorContext? = nil)
-  case hashingFailed(String, context: CryptoErrorContext? = nil)
-  case keyGenerationFailed(String, context: CryptoErrorContext? = nil)
-  
+  case encryptionFailed(String, context: CryptoErrorContext?=nil)
+  case decryptionFailed(String, context: CryptoErrorContext?=nil)
+  case hashingFailed(String, context: CryptoErrorContext?=nil)
+  case keyGenerationFailed(String, context: CryptoErrorContext?=nil)
+
   public var errorDescription: String? {
     switch self {
-    case .encryptionFailed(let message, _):
-      return "Encryption failed: \(message)"
-    case .decryptionFailed(let message, _):
-      return "Decryption failed: \(message)"
-    case .hashingFailed(let message, _):
-      return "Hashing failed: \(message)"
-    case .keyGenerationFailed(let message, _):
-      return "Key generation failed: \(message)"
+      case let .encryptionFailed(message, _):
+        "Encryption failed: \(message)"
+      case let .decryptionFailed(message, _):
+        "Decryption failed: \(message)"
+      case let .hashingFailed(message, _):
+        "Hashing failed: \(message)"
+      case let .keyGenerationFailed(message, _):
+        "Key generation failed: \(message)"
     }
   }
-  
+
   public var failureReason: String? {
     switch self {
-    case .encryptionFailed(_, let context),
-         .decryptionFailed(_, let context),
-         .hashingFailed(_, let context),
-         .keyGenerationFailed(_, let context):
-      return context?.description
+      case let .encryptionFailed(_, context),
+           let .decryptionFailed(_, context),
+           let .hashingFailed(_, context),
+           let .keyGenerationFailed(_, context):
+        context?.description
     }
   }
 }
