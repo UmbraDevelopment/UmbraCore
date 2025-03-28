@@ -59,10 +59,10 @@ public final class SecurityProviderCore: @unchecked Sendable {
   ///   - cryptoService: The crypto service to use
   ///   - keyManager: The key manager to use
   init(cryptoService: CryptoServiceProtocol, keyManager: KeyManagementProtocol) {
-    self.cryptoService = cryptoService
-    self.keyManager = keyManager
-    configBuilder = ConfigBuilder()
-    operationsHandler = OperationsHandler(
+    self.cryptoService=cryptoService
+    self.keyManager=keyManager
+    configBuilder=ConfigBuilder()
+    operationsHandler=OperationsHandler(
       cryptoService: cryptoService,
       keyManager: keyManager
     )

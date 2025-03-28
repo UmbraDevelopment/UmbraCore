@@ -27,9 +27,9 @@ public final class SecurityProviderImpl: SecurityProviderProtocol {
     cryptoService: CryptoServiceProtocol,
     keyManager: KeyManagementProtocol
   ) {
-    self.cryptoService = cryptoService
-    self.keyManager = keyManager
-    self.core = SecurityProviderCore(
+    self.cryptoService=cryptoService
+    self.keyManager=keyManager
+    core=SecurityProviderCore(
       cryptoService: cryptoService,
       keyManager: keyManager
     )
@@ -39,12 +39,240 @@ public final class SecurityProviderImpl: SecurityProviderProtocol {
   public convenience init() {
     // Use a factory method to create default implementations
     // without directly referencing the concrete types
-    let defaultCryptoService = createDefaultCryptoService()
-    let defaultKeyManager = createDefaultKeyManager()
-    
+    let defaultCryptoService=createDefaultCryptoService()
+    let defaultKeyManager=createDefaultKeyManager()
+
     self.init(
       cryptoService: defaultCryptoService,
       keyManager: defaultKeyManager
+    )
+  }
+
+  // MARK: - Core Operation Methods
+
+  /**
+   Encrypts data with the specified configuration.
+
+   - Parameter config: Configuration for the encryption operation
+   - Returns: Result containing encrypted data or error
+   */
+  public func encrypt(config: SecurityConfigDTO) async -> SecurityResultDTO {
+    // Extract data and key from config options
+    guard
+      let dataString=config.options["inputData"],
+      let data=SecureBytes(base64Encoded: dataString)
+    else {
+      return SecurityResultDTO(
+        status: .failure,
+        error: SecurityError.invalidInput("Missing or invalid input data for encryption")
+      )
+    }
+
+    // Extract key if provided
+    var key: SecureBytes?
+    if
+      let keyString=config.options["key"],
+      let keyData=SecureBytes(base64Encoded: keyString)
+    {
+      key=keyData
+    }
+
+    // Perform the encryption operation
+    return await performSecureOperation(
+      operation: .encrypt(data: data, key: key),
+      config: config
+    )
+  }
+
+  /**
+   Decrypts data with the specified configuration.
+
+   - Parameter config: Configuration for the decryption operation
+   - Returns: Result containing decrypted data or error
+   */
+  public func decrypt(config: SecurityConfigDTO) async -> SecurityResultDTO {
+    // Extract data and key from config options
+    guard
+      let dataString=config.options["ciphertext"],
+      let data=SecureBytes(base64Encoded: dataString)
+    else {
+      return SecurityResultDTO(
+        status: .failure,
+        error: SecurityError.invalidInput("Missing or invalid input data for decryption")
+      )
+    }
+
+    // Extract key if provided
+    var key: SecureBytes?
+    if
+      let keyString=config.options["key"],
+      let keyData=SecureBytes(base64Encoded: keyString)
+    {
+      key=keyData
+    }
+
+    // Perform the decryption operation
+    return await performSecureOperation(
+      operation: .decrypt(data: data, key: key),
+      config: config
+    )
+  }
+
+  /**
+   Generates a cryptographic key with the specified configuration.
+
+   - Parameter config: Configuration for the key generation operation
+   - Returns: Result containing key identifier or error
+   */
+  public func generateKey(config: SecurityConfigDTO) async -> SecurityResultDTO {
+    // Extract key size from config
+    let keySize=config.keySize
+
+    // Perform the key generation operation
+    return await performSecureOperation(
+      operation: .generateKey(size: keySize),
+      config: config
+    )
+  }
+
+  /**
+   Securely stores data with the specified configuration.
+
+   - Parameter config: Configuration for the secure storage operation
+   - Returns: Result containing storage confirmation or error
+   */
+  public func secureStore(config: SecurityConfigDTO) async -> SecurityResultDTO {
+    // Extract data and identifier from config options
+    guard
+      let dataString=config.options["data"],
+      let data=SecureBytes(base64Encoded: dataString),
+      let identifier=config.options["identifier"]
+    else {
+      return SecurityResultDTO(
+        status: .failure,
+        error: SecurityError.invalidInput("Missing or invalid parameters for secure storage")
+      )
+    }
+
+    // Perform the secure store operation
+    return await performSecureOperation(
+      operation: .store(data: data, identifier: identifier),
+      config: config
+    )
+  }
+
+  /**
+   Retrieves securely stored data with the specified configuration.
+
+   - Parameter config: Configuration for the secure retrieval operation
+   - Returns: Result containing retrieved data or error
+   */
+  public func secureRetrieve(config: SecurityConfigDTO) async -> SecurityResultDTO {
+    // Extract identifier from config options
+    guard let identifier=config.options["identifier"] else {
+      return SecurityResultDTO(
+        status: .failure,
+        error: SecurityError.invalidInput("Missing identifier for secure retrieval")
+      )
+    }
+
+    // Perform the secure retrieve operation
+    return await performSecureOperation(
+      operation: .retrieve(identifier: identifier),
+      config: config
+    )
+  }
+
+  /**
+   Securely deletes stored data with the specified configuration.
+
+   - Parameter config: Configuration for the secure deletion operation
+   - Returns: Result containing deletion confirmation or error
+   */
+  public func secureDelete(config: SecurityConfigDTO) async -> SecurityResultDTO {
+    // Extract identifier from config options
+    guard let identifier=config.options["identifier"] else {
+      return SecurityResultDTO(
+        status: .failure,
+        error: SecurityError.invalidInput("Missing identifier for secure deletion")
+      )
+    }
+
+    // Perform the secure delete operation
+    return await performSecureOperation(
+      operation: .delete(identifier: identifier),
+      config: config
+    )
+  }
+
+  /**
+   Creates a digital signature for data with the specified configuration.
+
+   - Parameter config: Configuration for the digital signature operation
+   - Returns: Result containing signature data or error
+   */
+  public func sign(config: SecurityConfigDTO) async -> SecurityResultDTO {
+    // Extract data and key from config options
+    guard
+      let dataString=config.options["data"],
+      let data=SecureBytes(base64Encoded: dataString)
+    else {
+      return SecurityResultDTO(
+        status: .failure,
+        error: SecurityError.invalidInput("Missing or invalid data for signing")
+      )
+    }
+
+    // Extract key if provided
+    var key: SecureBytes?
+    if
+      let keyString=config.options["key"],
+      let keyData=SecureBytes(base64Encoded: keyString)
+    {
+      key=keyData
+    }
+
+    // Perform the signing operation
+    return await performSecureOperation(
+      operation: .sign(data: data, key: key),
+      config: config
+    )
+  }
+
+  /**
+   Verifies a digital signature with the specified configuration.
+
+   - Parameter config: Configuration for the signature verification operation
+   - Returns: Result containing verification status or error
+   */
+  public func verify(config: SecurityConfigDTO) async -> SecurityResultDTO {
+    // Extract data, signature, and key from config options
+    guard
+      let dataString=config.options["data"],
+      let data=SecureBytes(base64Encoded: dataString),
+      let signatureString=config.options["signature"],
+      let signature=SecureBytes(base64Encoded: signatureString)
+    else {
+      return SecurityResultDTO(
+        status: .failure,
+        error: SecurityError
+          .invalidInput("Missing or invalid parameters for signature verification")
+      )
+    }
+
+    // Extract key if provided
+    var key: SecureBytes?
+    if
+      let keyString=config.options["key"],
+      let keyData=SecureBytes(base64Encoded: keyString)
+    {
+      key=keyData
+    }
+
+    // Perform the verification operation
+    return await performSecureOperation(
+      operation: .verify(data: data, signature: signature, key: key),
+      config: config
     )
   }
 
@@ -77,13 +305,18 @@ public final class SecurityProviderImpl: SecurityProviderProtocol {
 private func createDefaultCryptoService() -> CryptoServiceProtocol {
   // This would typically be CryptoServiceImpl() from the SecurityCryptoServices module
   // But since we can't import it directly, we'll use a runtime lookup approach
-  
+
   // First try to dynamically load the class by name
-  if let cryptoServiceClass = NSClassFromString("SecurityCryptoServices.CryptoServiceImpl") as? NSObject.Type,
-     let instance = cryptoServiceClass.init() as? CryptoServiceProtocol {
+  if
+    let cryptoServiceClass=NSClassFromString(
+      "SecurityCryptoServices.CryptoServiceImpl"
+    ) as? NSObject
+      .Type,
+      let instance=cryptoServiceClass.init() as? CryptoServiceProtocol
+  {
     return instance
   }
-  
+
   // If dynamic loading fails, use a basic implementation that meets the protocol
   return BasicCryptoService()
 }
@@ -93,13 +326,15 @@ private func createDefaultCryptoService() -> CryptoServiceProtocol {
 private func createDefaultKeyManager() -> KeyManagementProtocol {
   // This would typically be KeyManagerImpl() from the SecurityKeyManagement module
   // But since we can't import it directly, we'll use a runtime lookup approach
-  
+
   // First try to dynamically load the class by name
-  if let keyManagerClass = NSClassFromString("SecurityKeyManagement.KeyManagerImpl") as? NSObject.Type,
-     let instance = keyManagerClass.init() as? KeyManagementProtocol {
+  if
+    let keyManagerClass=NSClassFromString("SecurityKeyManagement.KeyManagerImpl") as? NSObject.Type,
+    let instance=keyManagerClass.init() as? KeyManagementProtocol
+  {
     return instance
   }
-  
+
   // If dynamic loading fails, use a basic implementation that meets the protocol
   return BasicKeyManager()
 }
@@ -108,42 +343,59 @@ private func createDefaultKeyManager() -> KeyManagementProtocol {
 
 /// A basic crypto service implementation used as a fallback
 private final class BasicCryptoService: CryptoServiceProtocol {
-  func encrypt(data: SecureBytes, using key: SecureBytes) async -> Result<SecureBytes, SecurityProtocolError> {
+  func encrypt(
+    data _: SecureBytes,
+    using _: SecureBytes
+  ) async -> Result<SecureBytes, SecurityProtocolError> {
     .failure(.unsupportedOperation(name: "Basic implementation does not support encryption"))
   }
-  
-  func decrypt(data: SecureBytes, using key: SecureBytes) async -> Result<SecureBytes, SecurityProtocolError> {
+
+  func decrypt(
+    data _: SecureBytes,
+    using _: SecureBytes
+  ) async -> Result<SecureBytes, SecurityProtocolError> {
     .failure(.unsupportedOperation(name: "Basic implementation does not support decryption"))
   }
-  
-  func hash(data: SecureBytes) async -> Result<SecureBytes, SecurityProtocolError> {
+
+  func hash(data _: SecureBytes) async -> Result<SecureBytes, SecurityProtocolError> {
     .failure(.unsupportedOperation(name: "Basic implementation does not support hashing"))
   }
-  
-  func verifyHash(data: SecureBytes, expectedHash: SecureBytes) async -> Result<Bool, SecurityProtocolError> {
+
+  func verifyHash(
+    data _: SecureBytes,
+    expectedHash _: SecureBytes
+  ) async -> Result<Bool, SecurityProtocolError> {
     .failure(.unsupportedOperation(name: "Basic implementation does not support hash verification"))
   }
 }
 
 /// A basic key manager implementation used as a fallback
 private final class BasicKeyManager: KeyManagementProtocol {
-  func retrieveKey(withIdentifier identifier: String) async -> Result<SecureBytes, SecurityProtocolError> {
+  func retrieveKey(withIdentifier _: String) async -> Result<SecureBytes, SecurityProtocolError> {
     .failure(.unsupportedOperation(name: "Basic implementation does not support key retrieval"))
   }
-  
-  func storeKey(_ key: SecureBytes, withIdentifier identifier: String) async -> Result<Void, SecurityProtocolError> {
+
+  func storeKey(
+    _: SecureBytes,
+    withIdentifier _: String
+  ) async -> Result<Void, SecurityProtocolError> {
     .failure(.unsupportedOperation(name: "Basic implementation does not support key storage"))
   }
-  
-  func deleteKey(withIdentifier identifier: String) async -> Result<Void, SecurityProtocolError> {
+
+  func deleteKey(withIdentifier _: String) async -> Result<Void, SecurityProtocolError> {
     .failure(.unsupportedOperation(name: "Basic implementation does not support key deletion"))
   }
-  
-  func rotateKey(withIdentifier identifier: String, dataToReencrypt: SecureBytes?) async -> Result<(newKey: SecureBytes, reencryptedData: SecureBytes?), SecurityProtocolError> {
+
+  func rotateKey(withIdentifier _: String, dataToReencrypt _: SecureBytes?) async -> Result<(
+    newKey: SecureBytes,
+    reencryptedData: SecureBytes?
+  ), SecurityProtocolError> {
     .failure(.unsupportedOperation(name: "Basic implementation does not support key rotation"))
   }
-  
+
   func listKeyIdentifiers() async -> Result<[String], SecurityProtocolError> {
-    .failure(.unsupportedOperation(name: "Basic implementation does not support listing key identifiers"))
+    .failure(
+      .unsupportedOperation(name: "Basic implementation does not support listing key identifiers")
+    )
   }
 }

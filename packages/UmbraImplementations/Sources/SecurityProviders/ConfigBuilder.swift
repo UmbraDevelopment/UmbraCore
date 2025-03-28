@@ -65,155 +65,170 @@ final class ConfigBuilder {
    */
   func createConfig(options: [String: Any]?) -> SecurityConfigDTO {
     // Extract options from the dictionary or use defaults
-    let algorithmString = options?["algorithm"] as? String ?? "AES-GCM"
-    let keySize = options?["keySize"] as? Int ?? 256
-    
+    let algorithmString=options?["algorithm"] as? String ?? "AES-GCM"
+    let keySize=options?["keySize"] as? Int ?? 256
+
     // Parse algorithm and mode from the algorithm string
-    var algorithm: SecurityConfigDTO.Algorithm = .aes
-    var mode: SecurityConfigDTO.Mode? = .gcm
-    
+    var algorithm="AES"
+    var mode: String?="GCM"
+
     // Handle parsing algorithm-mode combinations like "AES-GCM"
     if algorithmString.contains("-") {
-      let components = algorithmString.split(separator: "-")
+      let components=algorithmString.split(separator: "-")
       if components.count >= 2 {
-        // Try to parse the algorithm
-        if let parsedAlgorithm = SecurityConfigDTO.Algorithm(rawValue: String(components[0])) {
-          algorithm = parsedAlgorithm
-        }
-        
-        // Try to parse the mode
-        if let parsedMode = SecurityConfigDTO.Mode(rawValue: String(components[1])) {
-          mode = parsedMode
-        }
+        // Set the algorithm and mode from the components
+        algorithm=String(components[0])
+        mode=String(components[1])
       }
     } else {
       // Handle single algorithm names without a mode
-      if let parsedAlgorithm = SecurityConfigDTO.Algorithm(rawValue: algorithmString) {
-        algorithm = parsedAlgorithm
+      algorithm=algorithmString
+
+      // For RSA and other asymmetric algorithms, mode is not applicable
+      if ["RSA", "ECDSA", "ED25519"].contains(algorithm) {
+        mode=nil
       }
     }
-    
-    // Create a basic configuration with the correct initialiser parameters
-    let config = SecurityConfigDTO(
-      keySize: keySize,
-      algorithm: algorithm,
-      mode: mode
-    )
-    
-    // Create a mutable options dictionary for our config
-    var configOptions = config.options
-    
-    // Add any additional options that were provided
-    if let ivHex = options?["iv"] as? String {
-      if let ivData = Utilities.hexStringToData(ivHex) {
-        // Convert [UInt8] to Data before using base64EncodedString
-        let ivDataObj = Data(ivData)
-        configOptions["initializationVector"] = ivDataObj.base64EncodedString()
+
+    // Extract string options that should be passed to the configuration
+    var configOptions: [String: String]=[:]
+
+    // Process options and convert to appropriate types
+    if let options {
+      for (key, value) in options {
+        if key != "algorithm" && key != "keySize" && key != "mode" {
+          if let stringValue=value as? String {
+            configOptions[key]=stringValue
+          } else if let intValue=value as? Int {
+            configOptions[key]=String(intValue)
+          } else if let boolValue=value as? Bool {
+            configOptions[key]=boolValue ? "true" : "false"
+          } else if let dataValue=value as? Data {
+            configOptions[key]=dataValue.base64EncodedString()
+          }
+        }
       }
     }
-    
-    if let keyId = options?["keyIdentifier"] as? String {
-      configOptions["keyIdentifier"] = keyId
-    }
-    
-    if let inputB64 = options?["inputData"] as? String {
-      configOptions["inputData"] = inputB64
-    }
-    
-    // Create a new config with the updated options
+
+    // Create a configuration with the parsed values
     return SecurityConfigDTO(
-      keySize: config.keySize,
-      algorithm: config.algorithm,
-      mode: config.mode,
-      hashAlgorithm: config.hashAlgorithm,
-      authenticationData: config.authenticationData,
+      algorithm: algorithm,
+      keySize: keySize,
+      mode: mode,
       options: configOptions
     )
   }
+
+  /**
+   Validate security configuration parameters.
+
+   - Parameter config: The configuration to validate
+   - Returns: True if the configuration is valid, false otherwise
+   */
+  func validateConfig(_ config: SecurityConfigDTO) -> Bool {
+    let algorithm=config.algorithm
+    let keySize=config.keySize
+
+    // Check for supported algorithms
+    let supportedAlgorithms=["AES", "RSA", "ChaCha20", "ECDSA", "ED25519"]
+    guard supportedAlgorithms.contains(algorithm) else {
+      return false
+    }
+
+    // Validate key size based on algorithm
+    switch algorithm {
+      case "AES":
+        return [128, 192, 256].contains(keySize)
+      case "RSA":
+        return [1024, 2048, 4096].contains(keySize)
+      case "ChaCha20":
+        return keySize == 256
+      case "ECDSA":
+        return [256, 384, 521].contains(keySize)
+      case "ED25519":
+        return keySize == 256
+      default:
+        return false
+    }
+  }
 }
 
-// MARK: - Extension to SecurityConfigDTO for fluent configuration
+// MARK: - Extensions
 
-/// Utility functions to add to the SecurityConfigDTO type
 extension SecurityConfigDTO {
-  /// Add an initialization vector to the configuration
-  /// - Parameter iv: The initialization vector to add
-  /// - Returns: A new configuration with the IV added
-  func withInitializationVector(_ iv: SecureBytes) -> SecurityConfigDTO {
-    // Convert IV to base64 string
-    var bytes = [UInt8]()
-    for i in 0..<iv.count {
-      bytes.append(iv[i])
-    }
-    let ivBase64 = Data(bytes).base64EncodedString()
-    
-    // Add to options
-    var newOptions = self.options
-    newOptions["initializationVector"] = ivBase64
-    
-    // Return new configuration
+  /**
+   Add an initialization vector to the configuration.
+
+   - Parameter iv: The initialization vector to add
+   - Returns: A new configuration with the IV added
+   */
+  func withInitializationVector(_ iv: Data) -> SecurityConfigDTO {
+    var updatedOptions=options
+    updatedOptions["iv"]=iv.base64EncodedString()
+
     return SecurityConfigDTO(
-      keySize: self.keySize,
-      algorithm: self.algorithm,
-      mode: self.mode,
-      hashAlgorithm: self.hashAlgorithm,
-      authenticationData: self.authenticationData,
-      options: newOptions
+      algorithm: algorithm,
+      keySize: keySize,
+      mode: mode,
+      hashAlgorithm: hashAlgorithm,
+      options: updatedOptions
     )
   }
-  
-  /// Add a key identifier to the configuration
-  /// - Parameter keyId: The key identifier to add
-  /// - Returns: A new configuration with the key identifier added
-  func withKeyIdentifier(_ keyId: String) -> SecurityConfigDTO {
-    // Add to options
-    var newOptions = self.options
-    newOptions["keyIdentifier"] = keyId
-    
-    // Return new configuration
+
+  /**
+   Add a key identifier to the configuration.
+
+   - Parameter keyId: The key identifier to add
+   - Returns: A new configuration with the key identifier added
+   */
+  func withKeyIdentifier(_ keyID: String) -> SecurityConfigDTO {
+    var updatedOptions=options
+    updatedOptions["keyIdentifier"]=keyID
+
     return SecurityConfigDTO(
-      keySize: self.keySize,
-      algorithm: self.algorithm,
-      mode: self.mode,
-      hashAlgorithm: self.hashAlgorithm,
-      authenticationData: self.authenticationData,
-      options: newOptions
+      algorithm: algorithm,
+      keySize: keySize,
+      mode: mode,
+      hashAlgorithm: hashAlgorithm,
+      options: updatedOptions
     )
   }
-  
-  /// Add input data to the configuration
-  /// - Parameter data: The input data to add
-  /// - Returns: A new configuration with the input data added
-  func withInputData(_ data: SecureBytes) -> SecurityConfigDTO {
-    // Convert data to base64 string
-    var bytes = [UInt8]()
-    for i in 0..<data.count {
-      bytes.append(data[i])
-    }
-    let dataBase64 = Data(bytes).base64EncodedString()
-    
-    // Add to options
-    var newOptions = self.options
-    newOptions["inputData"] = dataBase64
-    
-    // Return new configuration
+
+  /**
+   Add input data to the configuration.
+
+   - Parameter data: The input data to add
+   - Returns: A new configuration with the input data added
+   */
+  func withInputData(_ data: Data) -> SecurityConfigDTO {
+    var updatedOptions=options
+    updatedOptions["inputData"]=data.base64EncodedString()
+
     return SecurityConfigDTO(
-      keySize: self.keySize,
-      algorithm: self.algorithm,
-      mode: self.mode,
-      hashAlgorithm: self.hashAlgorithm,
-      authenticationData: self.authenticationData,
-      options: newOptions
+      algorithm: algorithm,
+      keySize: keySize,
+      mode: mode,
+      hashAlgorithm: hashAlgorithm,
+      options: updatedOptions
     )
   }
-  
-  /// Get the input data from the configuration
-  var inputData: SecureBytes? {
-    guard let dataBase64 = options["inputData"],
-          let data = Data(base64Encoded: dataBase64) else {
-      return nil
-    }
-    
-    return SecureBytes(bytes: [UInt8](data))
+
+  /**
+   Add authentication data to the configuration.
+
+   - Parameter data: The authentication data to add
+   - Returns: A new configuration with the authentication data added
+   */
+  func withAuthenticationData(_ data: Data) -> SecurityConfigDTO {
+    var updatedOptions=options
+    updatedOptions["authenticationData"]=data.base64EncodedString()
+
+    return SecurityConfigDTO(
+      algorithm: algorithm,
+      keySize: keySize,
+      mode: mode,
+      hashAlgorithm: hashAlgorithm,
+      options: updatedOptions
+    )
   }
 }

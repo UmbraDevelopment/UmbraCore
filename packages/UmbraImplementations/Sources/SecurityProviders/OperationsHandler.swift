@@ -52,8 +52,8 @@ final class OperationsHandler {
   ///   - cryptoService: The crypto service to use
   ///   - keyManager: The key manager to use
   init(cryptoService: CryptoServiceProtocol, keyManager: KeyManagementProtocol) {
-    self.cryptoService = cryptoService
-    self.keyManager = keyManager
+    self.cryptoService=cryptoService
+    self.keyManager=keyManager
   }
 
   // MARK: - Operation Handling
@@ -69,14 +69,14 @@ final class OperationsHandler {
   ) async -> SecurityResultDTO {
     switch operation {
       case .encrypt:
-        return await handleEncryption(config: config, operation: operation)
+        await handleEncryption(config: config, operation: operation)
       case .decrypt:
-        return await handleDecryption(config: config, operation: operation)
+        await handleDecryption(config: config, operation: operation)
       case .hash:
-        return await handleHashing(config: config, operation: operation)
+        await handleHashing(config: config, operation: operation)
       case .verify, .generateKey, .sign, .deriveKey, .store, .retrieve, .delete, .custom:
         // Return error for unsupported operations
-        return SecurityResultDTO(
+        SecurityResultDTO(
           status: .failure,
           error: SecurityProtocolError.unsupportedOperation(name: operation.operationType)
         )
@@ -92,16 +92,16 @@ final class OperationsHandler {
   /// - Returns: A properly formatted SecurityResultDTO
   func resultToDTO(
     _ result: Result<SecureBytes, SecurityProtocolError>,
-    operation: SecurityOperation
+    operation _: SecurityOperation
   ) -> SecurityResultDTO {
     switch result {
       case let .success(data):
-        return SecurityResultDTO(
+        SecurityResultDTO(
           status: .success,
           data: data
         )
       case let .failure(error):
-        return SecurityResultDTO(
+        SecurityResultDTO(
           status: .failure,
           error: error
         )
@@ -115,8 +115,8 @@ final class OperationsHandler {
     _ config: SecurityConfigDTO
   ) async -> Result<SecureBytes, SecurityProtocolError> {
     // Check if the key is directly provided in the options
-    if let key = config.options["key"] {
-      if let keyData = Utilities.base64StringToData(key) {
+    if let key=config.options["key"] {
+      if let keyData=Utilities.base64StringToData(key) {
         return .success(SecureBytes(bytes: keyData))
       } else {
         return .failure(.invalidInput("Invalid key format"))
@@ -124,10 +124,10 @@ final class OperationsHandler {
     }
 
     // Check if a key identifier is provided
-    if let keyID = config.options["keyIdentifier"] {
+    if let keyID=config.options["keyIdentifier"] {
       // Retrieve the key from the key manager
-      let keyResult = await keyManager.retrieveKey(withIdentifier: keyID)
-      
+      let keyResult=await keyManager.retrieveKey(withIdentifier: keyID)
+
       switch keyResult {
         case let .success(key):
           return .success(key)
@@ -138,7 +138,7 @@ final class OperationsHandler {
           )
       }
     }
-    
+
     // No key provided or found
     return .failure(.invalidInput("No key provided for operation"))
   }
@@ -153,12 +153,15 @@ final class OperationsHandler {
     operation: SecurityOperation
   ) async -> SecurityResultDTO {
     // First check if we need to retrieve a key
-    let keyResult = await retrieveKeyForOperation(config)
+    let keyResult=await retrieveKeyForOperation(config)
 
     switch keyResult {
       case let .success(key):
-        // Check if we have input data
-        guard let inputData = config.inputData else {
+        // Extract input data from options
+        guard
+          let dataString=config.options["inputData"],
+          let inputData=SecureBytes(base64Encoded: dataString)
+        else {
           return SecurityResultDTO(
             status: .failure,
             error: SecurityProtocolError.invalidInput("No input data provided for encryption")
@@ -166,7 +169,7 @@ final class OperationsHandler {
         }
 
         // Perform the encryption with the key
-        let result = await cryptoService.encrypt(data: inputData, using: key)
+        let result=await cryptoService.encrypt(data: inputData, using: key)
         return resultToDTO(result, operation: operation)
 
       case let .failure(error):
@@ -187,20 +190,23 @@ final class OperationsHandler {
     operation: SecurityOperation
   ) async -> SecurityResultDTO {
     // First check if we need to retrieve a key
-    let keyResult = await retrieveKeyForOperation(config)
+    let keyResult=await retrieveKeyForOperation(config)
 
     switch keyResult {
       case let .success(key):
-        // Check if we have input data
-        guard let inputData = config.inputData else {
+        // Extract input data from options
+        guard
+          let dataString=config.options["ciphertext"],
+          let inputData=SecureBytes(base64Encoded: dataString)
+        else {
           return SecurityResultDTO(
             status: .failure,
-            error: SecurityProtocolError.invalidInput("No input data provided for decryption")
+            error: SecurityProtocolError.invalidInput("No ciphertext provided for decryption")
           )
         }
 
         // Perform the decryption with the key
-        let result = await cryptoService.decrypt(data: inputData, using: key)
+        let result=await cryptoService.decrypt(data: inputData, using: key)
         return resultToDTO(result, operation: operation)
 
       case let .failure(error):
@@ -220,16 +226,24 @@ final class OperationsHandler {
     config: SecurityConfigDTO,
     operation: SecurityOperation
   ) async -> SecurityResultDTO {
-    // Check if we have input data
-    guard let inputData = config.inputData else {
+    // Extract input data from options
+    guard
+      let dataString=config.options["data"],
+      let inputData=SecureBytes(base64Encoded: dataString)
+    else {
       return SecurityResultDTO(
         status: .failure,
-        error: SecurityProtocolError.invalidInput("No input data provided for hashing")
+        error: SecurityProtocolError.invalidInput("No data provided for hashing")
       )
     }
 
+    // Note: The hash algorithm is specified in the config but our current
+    // CryptoServiceProtocol doesn't allow specifying the algorithm directly.
+    // In a future version, we might want to enhance the protocol to support this.
+    _=config.hashAlgorithm ?? "SHA256"
+
     // Perform the hashing
-    let result = await cryptoService.hash(data: inputData)
+    let result=await cryptoService.hash(data: inputData)
     return resultToDTO(result, operation: operation)
   }
 }
