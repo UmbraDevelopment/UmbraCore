@@ -5,13 +5,13 @@ public struct ServiceStatusDTO: Equatable, Sendable {
   /// Status enumeration representing service health
   public enum Status: String, Sendable, Equatable {
     /// Service is fully operational and healthy
-    case healthy = "Healthy"
+    case healthy="Healthy"
     /// Service is operational but with reduced capabilities or performance
-    case degraded = "Degraded"
+    case degraded="Degraded"
     /// Service is completely unavailable
-    case unavailable = "Unavailable"
+    case unavailable="Unavailable"
     /// Service status is unknown or cannot be determined
-    case unknown = "Unknown"
+    case unknown="Unknown"
   }
 
   /// The current service status
@@ -36,12 +36,12 @@ public struct ServiceStatusDTO: Equatable, Sendable {
     status: Status,
     version: String,
     timestamp: UInt64,
-    details: [String: String] = [:]
+    details: [String: String]=[:]
   ) {
-    self.status = status
-    self.version = version
-    self.timestamp = timestamp
-    self.details = details
+    self.status=status
+    self.version=version
+    self.timestamp=timestamp
+    self.details=details
   }
 
   /// Create a healthy status
@@ -51,7 +51,7 @@ public struct ServiceStatusDTO: Equatable, Sendable {
   /// - Returns: A ServiceStatusDTO with healthy status
   public static func healthy(
     version: String,
-    timestamp: UInt64 = UInt64(Date().timeIntervalSince1970 * 1000)
+    timestamp: UInt64=UInt64(Date().timeIntervalSince1970 * 1000)
   ) -> ServiceStatusDTO {
     ServiceStatusDTO(
       status: .healthy,
@@ -69,7 +69,7 @@ public struct ServiceStatusDTO: Equatable, Sendable {
   public static func degraded(
     version: String,
     reason: String,
-    timestamp: UInt64 = UInt64(Date().timeIntervalSince1970 * 1000)
+    timestamp: UInt64=UInt64(Date().timeIntervalSince1970 * 1000)
   ) -> ServiceStatusDTO {
     ServiceStatusDTO(
       status: .degraded,
@@ -88,7 +88,7 @@ public struct ServiceStatusDTO: Equatable, Sendable {
   public static func unavailable(
     version: String,
     reason: String,
-    timestamp: UInt64 = UInt64(Date().timeIntervalSince1970 * 1000)
+    timestamp: UInt64=UInt64(Date().timeIntervalSince1970 * 1000)
   ) -> ServiceStatusDTO {
     ServiceStatusDTO(
       status: .unavailable,

@@ -1,4 +1,3 @@
-
 /// FoundationIndependent representation of a network request.
 /// This data transfer object encapsulates network request information
 /// without using any Foundation types.

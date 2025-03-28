@@ -32,6 +32,6 @@ public enum UmbraLogLevel: Int, Sendable, Comparable {
 
   /// Implementation of Comparable protocol for log levels
   public static func < (lhs: UmbraLogLevel, rhs: UmbraLogLevel) -> Bool {
-    return lhs.rawValue < rhs.rawValue
+    lhs.rawValue < rhs.rawValue
   }
 }

@@ -1,6 +1,3 @@
-// FileSystemTypes module
-// This module defines the fundamental file system types used throughout UmbraCore
-
 // Export Foundation types that are needed for FileSystemTypes
 @_exported import Foundation
 

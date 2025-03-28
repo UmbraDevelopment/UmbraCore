@@ -1,4 +1,3 @@
-
 /// FoundationIndependent representation of repository information.
 /// This data transfer object encapsulates details about a backup repository
 /// without using any Foundation types.

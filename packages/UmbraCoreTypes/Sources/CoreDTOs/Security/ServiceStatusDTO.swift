@@ -1,4 +1,3 @@
-
 /// Foundation-independent DTO for representing service status information
 /// This DTO provides status, version, and additional metadata about services
 /// without requiring Foundation types.

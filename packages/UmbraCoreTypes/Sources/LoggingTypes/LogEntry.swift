@@ -17,10 +17,10 @@ public struct LogEntry: Sendable {
   ///   - level: The log level
   ///   - message: The message to log
   ///   - metadata: Optional metadata
-  public init(level: UmbraLogLevel, message: String, metadata: LogMetadata? = nil) {
-    timestamp = TimePointAdapter.now()
-    self.level = level
-    self.message = message
-    self.metadata = metadata
+  public init(level: UmbraLogLevel, message: String, metadata: LogMetadata?=nil) {
+    timestamp=TimePointAdapter.now()
+    self.level=level
+    self.message=message
+    self.metadata=metadata
   }
 }

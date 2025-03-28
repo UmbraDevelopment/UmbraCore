@@ -8,7 +8,7 @@ public struct FilePath: Sendable, Equatable, Hashable {
   /// Creates a new file path
   /// - Parameter path: The string representation of the path
   public init(path: String) {
-    self.path = path
+    self.path=path
   }
 }
 
@@ -51,10 +51,10 @@ public struct FileSystemMetadata: Sendable, Equatable, Hashable {
     creationDate: Date?,
     modificationDate: Date?
   ) {
-    self.path = path
-    self.itemType = itemType
-    self.size = size
-    self.creationDate = creationDate
-    self.modificationDate = modificationDate
+    self.path=path
+    self.itemType=itemType
+    self.size=size
+    self.creationDate=creationDate
+    self.modificationDate=modificationDate
   }
 }

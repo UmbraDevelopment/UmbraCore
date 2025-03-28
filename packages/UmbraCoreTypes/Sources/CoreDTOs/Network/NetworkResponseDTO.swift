@@ -1,4 +1,3 @@
-
 /// FoundationIndependent representation of a network response.
 /// This data transfer object encapsulates network response information
 /// without using any Foundation types.

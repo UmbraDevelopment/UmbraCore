@@ -1,6 +1,3 @@
-// Notification module
-// This module provides notification types used throughout UmbraCore
-
 // Export Foundation types that are needed for Notification
 @_exported import Foundation
 

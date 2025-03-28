@@ -52,27 +52,27 @@ public struct ErrorContext: @unchecked Sendable, Equatable, Codable, Hashable {
   ///   - line: Line number where the error occurred (automatically included)
   ///   - function: Function where the error occurred (automatically included)
   public init(
-    _ context: [String: Any] = [:],
-    source: String? = nil,
-    operation: String? = nil,
-    details: String? = nil,
-    underlyingError: Error? = nil,
-    file: String = #file,
-    line: Int = #line,
-    function: String = #function
+    _ context: [String: Any]=[:],
+    source: String?=nil,
+    operation: String?=nil,
+    details: String?=nil,
+    underlyingError: Error?=nil,
+    file: String=#file,
+    line: Int=#line,
+    function: String=#function
   ) {
-    var initialStorage = context
+    var initialStorage=context
     if let underlyingError {
-      initialStorage["underlyingError"] = underlyingError
+      initialStorage["underlyingError"]=underlyingError
     }
 
-    storage = initialStorage
-    self.source = source
-    self.operation = operation
-    self.details = details
-    self.file = file
-    self.line = line
-    self.function = function
+    storage=initialStorage
+    self.source=source
+    self.operation=operation
+    self.details=details
+    self.file=file
+    self.line=line
+    self.function=function
   }
 
   /// Gets a value from the context using the specified key
@@ -87,7 +87,7 @@ public struct ErrorContext: @unchecked Sendable, Equatable, Codable, Hashable {
   ///   - key: The key to look up
   ///   - type: The expected type of the value
   /// - Returns: The value cast to the specified type, or nil if not found or wrong type
-  public func typedValue<T>(for key: String, as _: T.Type = T.self) -> T? {
+  public func typedValue<T>(for key: String, as _: T.Type=T.self) -> T? {
     storage[key] as? T
   }
 
@@ -97,8 +97,8 @@ public struct ErrorContext: @unchecked Sendable, Equatable, Codable, Hashable {
   ///   - value: The value to associate with the key
   /// - Returns: A new ErrorContext instance with the added key-value pair
   public func adding(key: String, value: Any) -> ErrorContext {
-    var newContext = self
-    newContext.storage[key] = value
+    var newContext=self
+    newContext.storage[key]=value
     return newContext
   }
 
@@ -106,9 +106,9 @@ public struct ErrorContext: @unchecked Sendable, Equatable, Codable, Hashable {
   /// - Parameter context: Dictionary of key-value pairs to add
   /// - Returns: A new ErrorContext instance with the added key-value pairs
   public func adding(context: [String: Any]) -> ErrorContext {
-    var newContext = self
+    var newContext=self
     for (key, value) in context {
-      newContext.storage[key] = value
+      newContext.storage[key]=value
     }
     return newContext
   }
@@ -162,8 +162,8 @@ public struct ErrorContext: @unchecked Sendable, Equatable, Codable, Hashable {
   /// - Parameter error: The underlying error to set
   /// - Returns: A new ErrorContext with the updated underlying error
   public func with(underlyingError error: Error) -> ErrorContext {
-    var newStorage = storage
-    newStorage["underlyingError"] = error
+    var newStorage=storage
+    newStorage["underlyingError"]=error
 
     return ErrorContext(
       newStorage,
@@ -181,18 +181,18 @@ public struct ErrorContext: @unchecked Sendable, Equatable, Codable, Hashable {
   /// - Returns: A new ErrorContext with values from both contexts (the other context takes
   /// precedence)
   public func merging(with other: ErrorContext) -> ErrorContext {
-    var combinedStorage = storage
+    var combinedStorage=storage
 
     // Merge storage values, with other taking precedence
     for (key, value) in other.storage {
-      combinedStorage[key] = value
+      combinedStorage[key]=value
     }
 
     // For a merged context, we keep our source/operation/details unless the other one has non-nil
     // values
-    let mergedSource = other.source ?? source
-    let mergedOperation = other.operation ?? operation
-    let mergedDetails = other.details ?? details
+    let mergedSource=other.source ?? source
+    let mergedOperation=other.operation ?? operation
+    let mergedDetails=other.details ?? details
 
     return ErrorContext(
       combinedStorage,
@@ -208,21 +208,21 @@ public struct ErrorContext: @unchecked Sendable, Equatable, Codable, Hashable {
   // MARK: - Codable Implementation
 
   public init(from decoder: Decoder) throws {
-    let container = try decoder.container(keyedBy: CodingKeys.self)
-    source = try container.decodeIfPresent(String.self, forKey: .source)
-    operation = try container.decodeIfPresent(String.self, forKey: .operation)
-    details = try container.decodeIfPresent(String.self, forKey: .details)
-    file = try container.decode(String.self, forKey: .file)
-    line = try container.decode(Int.self, forKey: .line)
-    function = try container.decode(String.self, forKey: .function)
+    let container=try decoder.container(keyedBy: CodingKeys.self)
+    source=try container.decodeIfPresent(String.self, forKey: .source)
+    operation=try container.decodeIfPresent(String.self, forKey: .operation)
+    details=try container.decodeIfPresent(String.self, forKey: .details)
+    file=try container.decode(String.self, forKey: .file)
+    line=try container.decode(Int.self, forKey: .line)
+    function=try container.decode(String.self, forKey: .function)
 
     // Storage can't be directly encoded/decoded due to Any values
     // We initialize with an empty dictionary, as Codable errors can't store Any values
-    storage = [:]
+    storage=[:]
   }
 
   public func encode(to encoder: Encoder) throws {
-    var container = encoder.container(keyedBy: CodingKeys.self)
+    var container=encoder.container(keyedBy: CodingKeys.self)
     try container.encodeIfPresent(source, forKey: .source)
     try container.encodeIfPresent(operation, forKey: .operation)
     try container.encodeIfPresent(details, forKey: .details)
@@ -238,11 +238,11 @@ public struct ErrorContext: @unchecked Sendable, Equatable, Codable, Hashable {
     // We only compare the public properties, not the storage dictionary
     // since the storage dictionary contains Any values that can't reliably be compared
     lhs.source == rhs.source &&
-    lhs.operation == rhs.operation &&
-    lhs.details == rhs.details &&
-    lhs.file == rhs.file &&
-    lhs.line == rhs.line &&
-    lhs.function == rhs.function
+      lhs.operation == rhs.operation &&
+      lhs.details == rhs.details &&
+      lhs.file == rhs.file &&
+      lhs.line == rhs.line &&
+      lhs.function == rhs.function
   }
 
   // MARK: - Hashable Implementation
@@ -270,7 +270,7 @@ extension ErrorContext {
   public static func fileOperation(
     path: String,
     operation: String,
-    details: String? = nil
+    details: String?=nil
   ) -> ErrorContext {
     ErrorContext(
       ["path": path],
@@ -288,14 +288,14 @@ extension ErrorContext {
   /// - Returns: An ErrorContext with network operation information
   public static func network(
     url: URL,
-    statusCode: Int? = nil,
+    statusCode: Int?=nil,
     operation: String
   ) -> ErrorContext {
-    var context: [String: Any] = ["url": url.absoluteString]
+    var context: [String: Any]=["url": url.absoluteString]
     if let statusCode {
-      context["statusCode"] = statusCode
+      context["statusCode"]=statusCode
     }
-    
+
     return ErrorContext(
       context,
       source: "Network",
@@ -325,11 +325,11 @@ public struct BaseErrorContext: Equatable, Codable, Hashable, Sendable {
     domain: String,
     code: Int,
     description: String,
-    url: URL? = nil
+    url: URL?=nil
   ) {
-    self.domain = domain
-    self.code = code
-    self.description = description
-    self.url = url
+    self.domain=domain
+    self.code=code
+    self.description=description
+    self.url=url
   }
 }

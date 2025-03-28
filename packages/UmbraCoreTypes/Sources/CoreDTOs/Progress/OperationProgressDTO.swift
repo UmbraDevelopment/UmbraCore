@@ -1,4 +1,3 @@
-
 /// FoundationIndependent representation of operation progress.
 /// This data transfer object encapsulates progress information for operations
 /// without using any Foundation types.

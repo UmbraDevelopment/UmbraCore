@@ -30,13 +30,13 @@ public struct ScheduleDTO: Sendable, Equatable {
 
   /// Days of the week for scheduling
   public enum DayOfWeek: Int, Sendable, Equatable, CaseIterable {
-    case sunday = 0
-    case monday = 1
-    case tuesday = 2
-    case wednesday = 3
-    case thursday = 4
-    case friday = 5
-    case saturday = 6
+    case sunday=0
+    case monday=1
+    case tuesday=2
+    case wednesday=3
+    case thursday=4
+    case friday=5
+    case saturday=6
 
     /// String representation of the day
     public var name: String {
@@ -142,60 +142,60 @@ public struct ScheduleDTO: Sendable, Equatable {
   public init(
     id: String,
     name: String,
-    isEnabled: Bool = true,
+    isEnabled: Bool=true,
     frequency: Frequency,
-    interval: Int = 1,
-    startTimeOfDay: Int? = nil,
-    endTimeOfDay: Int? = nil,
-    daysOfWeek: [DayOfWeek]? = nil,
-    daysOfMonth: [Int]? = nil,
-    cronExpression: String? = nil,
-    nextRunTime: UInt64? = nil,
-    lastRunTime: UInt64? = nil,
-    runMissedSchedule: Bool = true,
-    maxRuns: Int? = nil,
-    runCount: Int = 0,
+    interval: Int=1,
+    startTimeOfDay: Int?=nil,
+    endTimeOfDay: Int?=nil,
+    daysOfWeek: [DayOfWeek]?=nil,
+    daysOfMonth: [Int]?=nil,
+    cronExpression: String?=nil,
+    nextRunTime: UInt64?=nil,
+    lastRunTime: UInt64?=nil,
+    runMissedSchedule: Bool=true,
+    maxRuns: Int?=nil,
+    runCount: Int=0,
     createdAt: UInt64,
-    metadata: [String: String] = [:]
+    metadata: [String: String]=[:]
   ) {
-    self.id = id
-    self.name = name
-    self.isEnabled = isEnabled
-    self.frequency = frequency
+    self.id=id
+    self.name=name
+    self.isEnabled=isEnabled
+    self.frequency=frequency
     // Ensure interval is at least 1
-    self.interval = max(1, interval)
-    self.startTimeOfDay = startTimeOfDay
-    self.endTimeOfDay = endTimeOfDay
+    self.interval=max(1, interval)
+    self.startTimeOfDay=startTimeOfDay
+    self.endTimeOfDay=endTimeOfDay
 
     // Validate days of week
     if let daysOfWeek, frequency == .daysOfWeek {
-      self.daysOfWeek = daysOfWeek.isEmpty ? [.monday] : daysOfWeek
+      self.daysOfWeek=daysOfWeek.isEmpty ? [.monday] : daysOfWeek
     } else {
-      self.daysOfWeek = daysOfWeek
+      self.daysOfWeek=daysOfWeek
     }
 
     // Validate days of month, ensure values are between 1-31
     if let daysOfMonth, frequency == .daysOfMonth {
-      let validDays = daysOfMonth.filter { $0 >= 1 && $0 <= 31 }
-      self.daysOfMonth = validDays.isEmpty ? [1] : validDays
+      let validDays=daysOfMonth.filter { $0 >= 1 && $0 <= 31 }
+      self.daysOfMonth=validDays.isEmpty ? [1] : validDays
     } else {
-      self.daysOfMonth = daysOfMonth
+      self.daysOfMonth=daysOfMonth
     }
 
     // Validate cron expression
     if frequency == .custom {
-      self.cronExpression = cronExpression ?? "0 0 * * *" // Default to daily at midnight
+      self.cronExpression=cronExpression ?? "0 0 * * *" // Default to daily at midnight
     } else {
-      self.cronExpression = cronExpression
+      self.cronExpression=cronExpression
     }
 
-    self.nextRunTime = nextRunTime
-    self.lastRunTime = lastRunTime
-    self.runMissedSchedule = runMissedSchedule
-    self.maxRuns = maxRuns
-    self.runCount = max(0, runCount)
-    self.createdAt = createdAt
-    self.metadata = metadata
+    self.nextRunTime=nextRunTime
+    self.lastRunTime=lastRunTime
+    self.runMissedSchedule=runMissedSchedule
+    self.maxRuns=maxRuns
+    self.runCount=max(0, runCount)
+    self.createdAt=createdAt
+    self.metadata=metadata
   }
 
   // MARK: - Factory Methods
@@ -208,10 +208,10 @@ public struct ScheduleDTO: Sendable, Equatable {
   ///   - metadata: Additional metadata
   /// - Returns: A new schedule configured to run once at the specified time
   public static func oneTime(
-    id: String = UUID().uuidString,
+    id: String=UUID().uuidString,
     name: String,
     runTime: UInt64,
-    metadata: [String: String] = [:]
+    metadata: [String: String]=[:]
   ) -> ScheduleDTO {
     ScheduleDTO(
       id: id,
@@ -232,11 +232,11 @@ public struct ScheduleDTO: Sendable, Equatable {
   ///   - metadata: Additional metadata
   /// - Returns: A new schedule configured to run daily
   public static func daily(
-    id: String = UUID().uuidString,
+    id: String=UUID().uuidString,
     name: String,
-    interval: Int = 1,
-    startTimeOfDay: Int = 9 * 3600, // 9:00 AM
-    metadata: [String: String] = [:]
+    interval: Int=1,
+    startTimeOfDay: Int=9 * 3600, // 9:00 AM
+    metadata: [String: String]=[:]
   ) -> ScheduleDTO {
     ScheduleDTO(
       id: id,
@@ -258,11 +258,11 @@ public struct ScheduleDTO: Sendable, Equatable {
   ///   - metadata: Additional metadata
   /// - Returns: A new schedule configured to run on the specified days of the week
   public static func weekly(
-    id: String = UUID().uuidString,
+    id: String=UUID().uuidString,
     name: String,
-    daysOfWeek: [DayOfWeek] = [.monday, .wednesday, .friday],
-    startTimeOfDay: Int = 9 * 3600, // 9:00 AM
-    metadata: [String: String] = [:]
+    daysOfWeek: [DayOfWeek]=[.monday, .wednesday, .friday],
+    startTimeOfDay: Int=9 * 3600, // 9:00 AM
+    metadata: [String: String]=[:]
   ) -> ScheduleDTO {
     ScheduleDTO(
       id: id,
@@ -285,11 +285,11 @@ public struct ScheduleDTO: Sendable, Equatable {
   ///   - runCount: New run count
   /// - Returns: A new schedule with the updated properties
   public func with(
-    isEnabled: Bool? = nil,
-    nextRunTime: UInt64? = nil,
-    lastRunTime: UInt64? = nil,
-    runCount: Int? = nil,
-    metadata: [String: String]? = nil
+    isEnabled: Bool?=nil,
+    nextRunTime: UInt64?=nil,
+    lastRunTime: UInt64?=nil,
+    runCount: Int?=nil,
+    metadata: [String: String]?=nil
   ) -> ScheduleDTO {
     ScheduleDTO(
       id: id,
@@ -320,41 +320,41 @@ public struct ScheduleDTO: Sendable, Equatable {
       case .once:
         return "Once only"
       case .minutely:
-        let plural = interval > 1 ? "s" : ""
+        let plural=interval > 1 ? "s" : ""
         return "Every \(interval) minute\(plural)"
       case .hourly:
-        let plural = interval > 1 ? "s" : ""
+        let plural=interval > 1 ? "s" : ""
         return "Every \(interval) hour\(plural)"
       case .daily:
-        let plural = interval > 1 ? "s" : ""
+        let plural=interval > 1 ? "s" : ""
         return "Every \(interval) day\(plural)"
       case .weekly:
-        let plural = interval > 1 ? "s" : ""
+        let plural=interval > 1 ? "s" : ""
         return "Every \(interval) week\(plural)"
       case .monthly:
-        let plural = interval > 1 ? "s" : ""
+        let plural=interval > 1 ? "s" : ""
         return "Every \(interval) month\(plural)"
       case .daysOfWeek:
-        if let days = daysOfWeek, !days.isEmpty {
+        if let days=daysOfWeek, !days.isEmpty {
           if days.count == 7 {
             return "Every day of the week"
           }
-          let dayNames = days.map { $0.shortName }.joined(separator: ", ")
+          let dayNames=days.map(\.shortName).joined(separator: ", ")
           return "Every \(dayNames)"
         }
         return "On specific days of the week"
       case .daysOfMonth:
-        if let days = daysOfMonth, !days.isEmpty {
+        if let days=daysOfMonth, !days.isEmpty {
           // Format for readability
           if days.count > 5 {
             return "Multiple days each month"
           }
-          let dayNames = days.map { String($0) }.joined(separator: ", ")
+          let dayNames=days.map { String($0) }.joined(separator: ", ")
           return "Day\(days.count > 1 ? "s" : "") \(dayNames) of each month"
         }
         return "On specific days of the month"
       case .custom:
-        if let cron = cronExpression {
+        if let cron=cronExpression {
           return "Custom schedule: \(cron)"
         }
         return "Custom schedule"

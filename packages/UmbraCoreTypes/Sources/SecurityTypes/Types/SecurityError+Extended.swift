@@ -9,9 +9,9 @@ extension SecurityErrorDTO {
   ///   - domain: The error domain, defaults to security
   /// - Returns: A configured SecurityErrorDTO
   public static func withReasonAndCode(
-    reason: String, 
-    code: Int, 
-    domain: String = ErrorDomain.security
+    reason: String,
+    code: Int,
+    domain: String=ErrorDomain.security
   ) -> SecurityErrorDTO {
     SecurityErrorDTO(
       domain: domain,
@@ -19,7 +19,7 @@ extension SecurityErrorDTO {
       description: reason
     )
   }
-  
+
   /// Create a generic security error
   /// - Parameters:
   ///   - reason: The error reason
@@ -27,7 +27,7 @@ extension SecurityErrorDTO {
   /// - Returns: A configured SecurityErrorDTO
   public static func generic(
     reason: String,
-    code: Int = 1000
+    code: Int=1000
   ) -> SecurityErrorDTO {
     SecurityErrorDTO(
       domain: ErrorDomain.security,

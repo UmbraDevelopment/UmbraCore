@@ -6,23 +6,23 @@ public struct KeyManagerErrorDTO: Error, Hashable, Equatable, Sendable {
   /// The type of key manager error
   public enum KeyManagerErrorType: String, Hashable, Equatable, Sendable {
     /// Key not found
-    case keyNotFound = "KEY_NOT_FOUND"
+    case keyNotFound="KEY_NOT_FOUND"
     /// Invalid key format
-    case invalidKeyFormat = "INVALID_KEY_FORMAT"
+    case invalidKeyFormat="INVALID_KEY_FORMAT"
     /// Key generation failed
-    case keyGenerationFailed = "KEY_GENERATION_FAILED"
+    case keyGenerationFailed="KEY_GENERATION_FAILED"
     /// Key storage failed
-    case keyStorageFailed = "KEY_STORAGE_FAILED"
+    case keyStorageFailed="KEY_STORAGE_FAILED"
     /// Key deletion failed
-    case keyDeletionFailed = "KEY_DELETION_FAILED"
+    case keyDeletionFailed="KEY_DELETION_FAILED"
     /// Key retrieval failed
-    case keyRetrievalFailed = "KEY_RETRIEVAL_FAILED"
+    case keyRetrievalFailed="KEY_RETRIEVAL_FAILED"
     /// Access denied
-    case accessDenied = "ACCESS_DENIED"
+    case accessDenied="ACCESS_DENIED"
     /// General failure
-    case generalFailure = "GENERAL_FAILURE"
+    case generalFailure="GENERAL_FAILURE"
     /// Unknown key manager error
-    case unknown = "UNKNOWN"
+    case unknown="UNKNOWN"
   }
 
   /// The type of key manager error
@@ -46,13 +46,13 @@ public struct KeyManagerErrorDTO: Error, Hashable, Equatable, Sendable {
   public init(
     type: KeyManagerErrorType,
     description: String,
-    context: ErrorContext = ErrorContext(),
-    underlyingError: Error? = nil
+    context: ErrorContext=ErrorContext(),
+    underlyingError: Error?=nil
   ) {
-    self.type = type
-    self.description = description
-    self.context = context
-    self.underlyingError = underlyingError
+    self.type=type
+    self.description=description
+    self.context=context
+    self.underlyingError=underlyingError
   }
 
   /// Creates a new KeyManagerErrorDTO with dictionary context
@@ -64,20 +64,20 @@ public struct KeyManagerErrorDTO: Error, Hashable, Equatable, Sendable {
   public init(
     type: KeyManagerErrorType,
     description: String,
-    contextDict: [String: Any] = [:],
-    underlyingError: Error? = nil
+    contextDict: [String: Any]=[:],
+    underlyingError: Error?=nil
   ) {
-    self.type = type
-    self.description = description
-    context = ErrorContext(contextDict)
-    self.underlyingError = underlyingError
+    self.type=type
+    self.description=description
+    context=ErrorContext(contextDict)
+    self.underlyingError=underlyingError
   }
 
   /// Creates a KeyManagerErrorDTO from a generic error
   /// - Parameter error: The source error
   /// - Returns: A KeyManagerErrorDTO
   public static func from(_ error: Error) -> KeyManagerErrorDTO {
-    if let keyManagerError = error as? KeyManagerErrorDTO {
+    if let keyManagerError=error as? KeyManagerErrorDTO {
       return keyManagerError
     }
 

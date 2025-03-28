@@ -6,27 +6,27 @@ public struct ServiceErrorDTO: Error, Hashable, Equatable, Sendable {
   /// The type of service error
   public enum ServiceErrorType: String, Hashable, Equatable, Sendable {
     /// Service not available
-    case serviceUnavailable = "SERVICE_UNAVAILABLE"
+    case serviceUnavailable="SERVICE_UNAVAILABLE"
     /// Service timeout
-    case timeout = "TIMEOUT"
+    case timeout="TIMEOUT"
     /// Invalid request to service
-    case invalidRequest = "INVALID_REQUEST"
+    case invalidRequest="INVALID_REQUEST"
     /// Service operation failed
-    case operationFailed = "OPERATION_FAILED"
+    case operationFailed="OPERATION_FAILED"
     /// Service configuration error
-    case configurationError = "CONFIGURATION_ERROR"
+    case configurationError="CONFIGURATION_ERROR"
     /// Service dependency error
-    case dependencyError = "DEPENDENCY_ERROR"
+    case dependencyError="DEPENDENCY_ERROR"
     /// Service authentication error
-    case authenticationError = "AUTHENTICATION_ERROR"
+    case authenticationError="AUTHENTICATION_ERROR"
     /// Service authorisation error
-    case authorisationError = "AUTHORISATION_ERROR"
+    case authorisationError="AUTHORISATION_ERROR"
     /// Rate limit exceeded
-    case rateLimitExceeded = "RATE_LIMIT_EXCEEDED"
+    case rateLimitExceeded="RATE_LIMIT_EXCEEDED"
     /// General service failure
-    case generalFailure = "GENERAL_FAILURE"
+    case generalFailure="GENERAL_FAILURE"
     /// Unknown service error
-    case unknown = "UNKNOWN"
+    case unknown="UNKNOWN"
   }
 
   /// The type of service error
@@ -50,13 +50,13 @@ public struct ServiceErrorDTO: Error, Hashable, Equatable, Sendable {
   public init(
     type: ServiceErrorType,
     description: String,
-    context: ErrorContext = ErrorContext(),
-    underlyingError: Error? = nil
+    context: ErrorContext=ErrorContext(),
+    underlyingError: Error?=nil
   ) {
-    self.type = type
-    self.description = description
-    self.context = context
-    self.underlyingError = underlyingError
+    self.type=type
+    self.description=description
+    self.context=context
+    self.underlyingError=underlyingError
   }
 
   /// Creates a new ServiceErrorDTO with dictionary context
@@ -68,20 +68,20 @@ public struct ServiceErrorDTO: Error, Hashable, Equatable, Sendable {
   public init(
     type: ServiceErrorType,
     description: String,
-    contextDict: [String: Any] = [:],
-    underlyingError: Error? = nil
+    contextDict: [String: Any]=[:],
+    underlyingError: Error?=nil
   ) {
-    self.type = type
-    self.description = description
-    context = ErrorContext(contextDict)
-    self.underlyingError = underlyingError
+    self.type=type
+    self.description=description
+    context=ErrorContext(contextDict)
+    self.underlyingError=underlyingError
   }
 
   /// Creates a ServiceErrorDTO from a generic error
   /// - Parameter error: The source error
   /// - Returns: A ServiceErrorDTO
   public static func from(_ error: Error) -> ServiceErrorDTO {
-    if let serviceError = error as? ServiceErrorDTO {
+    if let serviceError=error as? ServiceErrorDTO {
       return serviceError
     }
 

@@ -1,6 +1,3 @@
-// SecurityTypes module
-// This module defines the fundamental security types used throughout UmbraCore
-
 // Export Foundation types that are needed for SecurityTypes
 @_exported import Foundation
 

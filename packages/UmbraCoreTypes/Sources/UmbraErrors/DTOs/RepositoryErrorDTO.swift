@@ -6,27 +6,27 @@ public struct RepositoryErrorDTO: Error, Hashable, Equatable, Sendable {
   /// The type of repository error
   public enum RepositoryErrorType: String, Hashable, Equatable, Sendable {
     /// Item not found
-    case notFound = "NOT_FOUND"
+    case notFound="NOT_FOUND"
     /// Repository not found
-    case repositoryNotFound = "REPOSITORY_NOT_FOUND"
+    case repositoryNotFound="REPOSITORY_NOT_FOUND"
     /// Repository is locked
-    case locked = "LOCKED"
+    case locked="LOCKED"
     /// Repository is not accessible
-    case notAccessible = "NOT_ACCESSIBLE"
+    case notAccessible="NOT_ACCESSIBLE"
     /// Invalid repository configuration
-    case invalidConfiguration = "INVALID_CONFIGURATION"
+    case invalidConfiguration="INVALID_CONFIGURATION"
     /// Conflict in repository operation
-    case conflict = "CONFLICT"
+    case conflict="CONFLICT"
     /// Authentication failed
-    case authenticationFailed = "AUTHENTICATION_FAILED"
+    case authenticationFailed="AUTHENTICATION_FAILED"
     /// Authorisation failed
-    case authorisationFailed = "AUTHORISATION_FAILED"
+    case authorisationFailed="AUTHORISATION_FAILED"
     /// Operation timeout
-    case timeout = "TIMEOUT"
+    case timeout="TIMEOUT"
     /// General failure
-    case generalFailure = "GENERAL_FAILURE"
+    case generalFailure="GENERAL_FAILURE"
     /// Unknown repository error
-    case unknown = "UNKNOWN"
+    case unknown="UNKNOWN"
   }
 
   /// The type of repository error
@@ -50,13 +50,13 @@ public struct RepositoryErrorDTO: Error, Hashable, Equatable, Sendable {
   public init(
     type: RepositoryErrorType,
     description: String,
-    context: ErrorContext = ErrorContext(),
-    underlyingError: Error? = nil
+    context: ErrorContext=ErrorContext(),
+    underlyingError: Error?=nil
   ) {
-    self.type = type
-    self.description = description
-    self.context = context
-    self.underlyingError = underlyingError
+    self.type=type
+    self.description=description
+    self.context=context
+    self.underlyingError=underlyingError
   }
 
   /// Creates a new RepositoryErrorDTO with dictionary context
@@ -68,20 +68,20 @@ public struct RepositoryErrorDTO: Error, Hashable, Equatable, Sendable {
   public init(
     type: RepositoryErrorType,
     description: String,
-    contextDict: [String: Any] = [:],
-    underlyingError: Error? = nil
+    contextDict: [String: Any]=[:],
+    underlyingError: Error?=nil
   ) {
-    self.type = type
-    self.description = description
-    context = ErrorContext(contextDict)
-    self.underlyingError = underlyingError
+    self.type=type
+    self.description=description
+    context=ErrorContext(contextDict)
+    self.underlyingError=underlyingError
   }
 
   /// Creates a RepositoryErrorDTO from a generic error
   /// - Parameter error: The source error
   /// - Returns: A RepositoryErrorDTO
   public static func from(_ error: Error) -> RepositoryErrorDTO {
-    if let repositoryError = error as? RepositoryErrorDTO {
+    if let repositoryError=error as? RepositoryErrorDTO {
       return repositoryError
     }
 

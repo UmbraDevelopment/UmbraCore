@@ -124,26 +124,26 @@ public struct ScheduledTaskDTO: Sendable, Equatable {
     status: TaskStatus = .pending,
     configData: String,
     createdAt: UInt64,
-    startedAt: UInt64? = nil,
-    completedAt: UInt64? = nil,
-    duration: UInt64? = nil,
-    errorMessage: String? = nil,
-    resultData: String? = nil,
-    metadata: [String: String] = [:]
+    startedAt: UInt64?=nil,
+    completedAt: UInt64?=nil,
+    duration: UInt64?=nil,
+    errorMessage: String?=nil,
+    resultData: String?=nil,
+    metadata: [String: String]=[:]
   ) {
-    self.id = id
-    self.scheduleID = scheduleID
-    self.name = name
-    self.taskType = taskType
-    self.status = status
-    self.configData = configData
-    self.createdAt = createdAt
-    self.startedAt = startedAt
-    self.completedAt = completedAt
-    self.duration = duration
-    self.errorMessage = errorMessage
-    self.resultData = resultData
-    self.metadata = metadata
+    self.id=id
+    self.scheduleID=scheduleID
+    self.name=name
+    self.taskType=taskType
+    self.status=status
+    self.configData=configData
+    self.createdAt=createdAt
+    self.startedAt=startedAt
+    self.completedAt=completedAt
+    self.duration=duration
+    self.errorMessage=errorMessage
+    self.resultData=resultData
+    self.metadata=metadata
   }
 
   // MARK: - Factory Methods
@@ -203,7 +203,8 @@ public struct ScheduledTaskDTO: Sendable, Equatable {
   /// Create a copy of this task with updated status to 'running'
   /// - Parameter startedAt: Start time, defaults to current time
   /// - Returns: A new task with running status
-  public func markAsRunning(startedAt: UInt64 = UInt64(Date().timeIntervalSince1970)) -> ScheduledTaskDTO {
+  public func markAsRunning(startedAt: UInt64=UInt64(Date().timeIntervalSince1970))
+  -> ScheduledTaskDTO {
     ScheduledTaskDTO(
       id: id,
       scheduleID: scheduleID,
@@ -223,14 +224,13 @@ public struct ScheduledTaskDTO: Sendable, Equatable {
   ///   - resultData: Result data as JSON string
   /// - Returns: A new task with completed status
   public func markAsCompleted(
-    completedAt: UInt64 = UInt64(Date().timeIntervalSince1970),
-    resultData: String? = nil
+    completedAt: UInt64=UInt64(Date().timeIntervalSince1970),
+    resultData: String?=nil
   ) -> ScheduledTaskDTO {
-    let calculatedDuration: UInt64?
-    if let startTime = startedAt {
-      calculatedDuration = completedAt - startTime
+    let calculatedDuration: UInt64?=if let startTime=startedAt {
+      completedAt - startTime
     } else {
-      calculatedDuration = nil
+      nil
     }
 
     return ScheduledTaskDTO(
@@ -256,15 +256,14 @@ public struct ScheduledTaskDTO: Sendable, Equatable {
   ///   - resultData: Result data as JSON string
   /// - Returns: A new task with failed status
   public func markAsFailed(
-    completedAt: UInt64 = UInt64(Date().timeIntervalSince1970),
+    completedAt: UInt64=UInt64(Date().timeIntervalSince1970),
     errorMessage: String,
-    resultData: String? = nil
+    resultData: String?=nil
   ) -> ScheduledTaskDTO {
-    let calculatedDuration: UInt64?
-    if let startTime = startedAt {
-      calculatedDuration = completedAt - startTime
+    let calculatedDuration: UInt64?=if let startTime=startedAt {
+      completedAt - startTime
     } else {
-      calculatedDuration = nil
+      nil
     }
 
     return ScheduledTaskDTO(
@@ -288,13 +287,12 @@ public struct ScheduledTaskDTO: Sendable, Equatable {
   /// - Parameter completedAt: Completion time, defaults to current time
   /// - Returns: A new task with cancelled status
   public func markAsCancelled(
-    completedAt: UInt64 = UInt64(Date().timeIntervalSince1970)
+    completedAt: UInt64=UInt64(Date().timeIntervalSince1970)
   ) -> ScheduledTaskDTO {
-    let calculatedDuration: UInt64?
-    if let startTime = startedAt {
-      calculatedDuration = completedAt - startTime
+    let calculatedDuration: UInt64?=if let startTime=startedAt {
+      completedAt - startTime
     } else {
-      calculatedDuration = nil
+      nil
     }
 
     return ScheduledTaskDTO(

@@ -35,7 +35,7 @@ public protocol UmbraError: Error, Sendable, CustomStringConvertible {
 /// Default implementation for UmbraError
 extension UmbraError {
   public var description: String {
-    var desc = "[\(domain):\(code)] \(errorDescription)"
+    var desc="[\(domain):\(code)] \(errorDescription)"
 
     if let source {
       desc += " (at \(source.function) in \(source.file):\(source.line))"
@@ -74,7 +74,7 @@ extension DomainError {
 }
 
 /// Logger for the UmbraErrors system
-private let errorLogger = Logger(subsystem: "com.umbracorp.UmbraCore", category: "Errors")
+private let errorLogger=Logger(subsystem: "com.umbracorp.UmbraCore", category: "Errors")
 
 /// Extension to provide logging capabilities to UmbraError
 extension UmbraError {

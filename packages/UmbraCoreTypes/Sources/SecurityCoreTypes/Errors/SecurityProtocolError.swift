@@ -65,25 +65,25 @@ public enum SecurityProtocolError: Error, Equatable, Sendable {
   /// Get descriptive error message
   public var errorDescription: String {
     switch self {
-      case .internalError(let message):
+      case let .internalError(message):
         "Internal error: \(message)"
-      case .invalidInput(let message):
+      case let .invalidInput(message):
         "Invalid input: \(message)"
-      case .unsupportedOperation(let name):
+      case let .unsupportedOperation(name):
         "Unsupported operation: \(name)"
-      case .keyManagementError(let message):
+      case let .keyManagementError(message):
         "Key management error: \(message)"
-      case .cryptographicError(let message):
+      case let .cryptographicError(message):
         "Cryptographic error: \(message)"
-      case .authenticationFailed(let message):
+      case let .authenticationFailed(message):
         "Authentication failed: \(message)"
-      case .storageError(let message):
+      case let .storageError(message):
         "Storage error: \(message)"
-      case .configurationError(let message):
+      case let .configurationError(message):
         "Configuration error: \(message)"
-      case .securityError(let message):
+      case let .securityError(message):
         "Security error: \(message)"
-      case .serviceError(let code, let message):
+      case let .serviceError(code, message):
         "Service error (\(code)): \(message)"
     }
   }

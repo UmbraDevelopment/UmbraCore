@@ -6,7 +6,7 @@ public struct TimePointAdapter: Sendable, Equatable, Hashable, Comparable {
   /// Create a new TimePointAdapter with the specified time interval since 1970
   /// - Parameter timeIntervalSince1970: Seconds since January 1, 1970 at 00:00:00 UTC
   public init(timeIntervalSince1970: Double) {
-    self.timeIntervalSince1970 = timeIntervalSince1970
+    self.timeIntervalSince1970=timeIntervalSince1970
   }
 
   /// Create a TimePointAdapter representing the current time

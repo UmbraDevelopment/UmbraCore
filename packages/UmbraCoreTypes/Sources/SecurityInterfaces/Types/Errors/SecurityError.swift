@@ -1,6 +1,6 @@
 import Foundation
-import UmbraErrors
 import SecurityTypes
+import UmbraErrors
 
 /// Comprehensive security error implementation
 /// This struct consolidates error handling for security operations across UmbraCore
@@ -27,12 +27,12 @@ public struct SecurityError: Error, Equatable, Sendable {
     domain: String,
     code: Int,
     description: String,
-    info: [String: String]? = nil
+    info: [String: String]?=nil
   ) {
-    self.domain = domain
-    self.code = code
-    self.description = description
-    self.info = info
+    self.domain=domain
+    self.code=code
+    self.description=description
+    self.info=info
   }
 
   /// Compare two SecurityErrors
@@ -50,8 +50,8 @@ public struct SecurityError: Error, Equatable, Sendable {
   public static func withReason(
     domain: String,
     reason: String,
-    code: Int = 1001,
-    info: [String: String]? = nil
+    code: Int=1001,
+    info: [String: String]?=nil
   ) -> SecurityError {
     SecurityError(
       domain: domain,
@@ -68,8 +68,8 @@ public struct SecurityError: Error, Equatable, Sendable {
   /// - Returns: Configured SecurityError
   public static func generic(
     reason: String,
-    code: Int = 1000,
-    info: [String: String]? = nil
+    code: Int=1000,
+    info: [String: String]?=nil
   ) -> SecurityError {
     SecurityError(
       domain: "Security",

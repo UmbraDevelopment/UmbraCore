@@ -42,7 +42,7 @@ public enum HashAlgorithm: Sendable, Equatable, Hashable, CaseIterable {
   /// - Parameter string: String representation of the algorithm
   /// - Returns: The corresponding HashAlgorithm, or nil if not recognised
   public init?(from string: String) {
-    let normalised = string.uppercased()
+    let normalised=string.uppercased()
     switch normalised {
       case "SHA256", "SHA-256":
         self = .sha256

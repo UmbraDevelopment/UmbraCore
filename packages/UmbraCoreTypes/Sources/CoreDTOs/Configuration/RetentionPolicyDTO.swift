@@ -1,4 +1,3 @@
-
 /// FoundationIndependent representation of a backup retention policy.
 /// This data transfer object encapsulates retention policy options
 /// without using any Foundation types.

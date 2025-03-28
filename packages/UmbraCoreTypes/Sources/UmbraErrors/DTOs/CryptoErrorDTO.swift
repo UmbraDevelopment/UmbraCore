@@ -6,25 +6,25 @@ public struct CryptoErrorDTO: Error, Hashable, Equatable, Sendable {
   /// The type of crypto error
   public enum CryptoErrorType: String, Hashable, Equatable, Sendable {
     /// Invalid key length
-    case invalidKeyLength = "INVALID_KEY_LENGTH"
+    case invalidKeyLength="INVALID_KEY_LENGTH"
     /// Invalid parameters
-    case invalidParameters = "INVALID_PARAMETERS"
+    case invalidParameters="INVALID_PARAMETERS"
     /// Operation failed
-    case operationFailed = "OPERATION_FAILED"
+    case operationFailed="OPERATION_FAILED"
     /// Algorithm not supported
-    case algorithmNotSupported = "ALGORITHM_NOT_SUPPORTED"
+    case algorithmNotSupported="ALGORITHM_NOT_SUPPORTED"
     /// Key generation failed
-    case keyGenerationFailed = "KEY_GENERATION_FAILED"
+    case keyGenerationFailed="KEY_GENERATION_FAILED"
     /// Encryption failed
-    case encryptionFailed = "ENCRYPTION_FAILED"
+    case encryptionFailed="ENCRYPTION_FAILED"
     /// Decryption failed
-    case decryptionFailed = "DECRYPTION_FAILED"
+    case decryptionFailed="DECRYPTION_FAILED"
     /// Signature verification failed
-    case signatureVerificationFailed = "SIGNATURE_VERIFICATION_FAILED"
+    case signatureVerificationFailed="SIGNATURE_VERIFICATION_FAILED"
     /// Certificate validation failed
-    case certificateValidationFailed = "CERTIFICATE_VALIDATION_FAILED"
+    case certificateValidationFailed="CERTIFICATE_VALIDATION_FAILED"
     /// Unknown crypto error
-    case unknown = "UNKNOWN"
+    case unknown="UNKNOWN"
   }
 
   /// The type of crypto error
@@ -48,13 +48,13 @@ public struct CryptoErrorDTO: Error, Hashable, Equatable, Sendable {
   public init(
     type: CryptoErrorType,
     description: String,
-    context: ErrorContext = ErrorContext(),
-    underlyingError: Error? = nil
+    context: ErrorContext=ErrorContext(),
+    underlyingError: Error?=nil
   ) {
-    self.type = type
-    self.description = description
-    self.context = context
-    self.underlyingError = underlyingError
+    self.type=type
+    self.description=description
+    self.context=context
+    self.underlyingError=underlyingError
   }
 
   /// Creates a new CryptoErrorDTO with dictionary context
@@ -66,20 +66,20 @@ public struct CryptoErrorDTO: Error, Hashable, Equatable, Sendable {
   public init(
     type: CryptoErrorType,
     description: String,
-    contextDict: [String: Any] = [:],
-    underlyingError: Error? = nil
+    contextDict: [String: Any]=[:],
+    underlyingError: Error?=nil
   ) {
-    self.type = type
-    self.description = description
-    context = ErrorContext(contextDict)
-    self.underlyingError = underlyingError
+    self.type=type
+    self.description=description
+    context=ErrorContext(contextDict)
+    self.underlyingError=underlyingError
   }
 
   /// Creates a CryptoErrorDTO from a generic error
   /// - Parameter error: The source error
   /// - Returns: A CryptoErrorDTO
   public static func from(_ error: Error) -> CryptoErrorDTO {
-    if let cryptoError = error as? CryptoErrorDTO {
+    if let cryptoError=error as? CryptoErrorDTO {
       return cryptoError
     }
 

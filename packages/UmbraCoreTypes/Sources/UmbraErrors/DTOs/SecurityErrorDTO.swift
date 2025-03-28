@@ -41,13 +41,13 @@ public struct SecurityErrorDTO: Sendable {
   public init(
     type: SecurityErrorType,
     description: String,
-    context: [String: String] = [:],
-    underlyingError: Error? = nil
+    context: [String: String]=[:],
+    underlyingError: Error?=nil
   ) {
-    self.type = type
-    self.description = description
-    self.context = context
-    self.underlyingError = underlyingError
+    self.type=type
+    self.description=description
+    self.context=context
+    self.underlyingError=underlyingError
   }
 
   /// Convert to a generic ErrorDTO
@@ -98,15 +98,15 @@ extension SecurityErrorDTO: Codable {
   }
 
   public init(from decoder: Decoder) throws {
-    let container = try decoder.container(keyedBy: CodingKeys.self)
-    type = try container.decode(SecurityErrorType.self, forKey: .type)
-    description = try container.decode(String.self, forKey: .description)
-    context = try container.decode([String: String].self, forKey: .context)
-    underlyingError = nil
+    let container=try decoder.container(keyedBy: CodingKeys.self)
+    type=try container.decode(SecurityErrorType.self, forKey: .type)
+    description=try container.decode(String.self, forKey: .description)
+    context=try container.decode([String: String].self, forKey: .context)
+    underlyingError=nil
   }
 
   public func encode(to encoder: Encoder) throws {
-    var container = encoder.container(keyedBy: CodingKeys.self)
+    var container=encoder.container(keyedBy: CodingKeys.self)
     try container.encode(type, forKey: .type)
     try container.encode(description, forKey: .description)
     try container.encode(context, forKey: .context)

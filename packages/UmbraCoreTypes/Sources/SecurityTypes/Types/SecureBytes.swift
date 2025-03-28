@@ -17,14 +17,14 @@ public struct SecureBytes: Sendable, Equatable, Hashable, Codable {
 
   /// Create an empty SecureBytes instance
   public init() {
-    storage = []
+    storage=[]
   }
 
   /// Create a SecureBytes instance with the specified size, filled with zeros
   /// - Parameter count: The number of bytes to allocate
   /// - Throws: `SecureBytesError.allocationFailed` if memory allocation fails
   public init(count: Int) throws {
-    storage = [UInt8](repeating: 0, count: count)
+    storage=[UInt8](repeating: 0, count: count)
     guard !storage.isEmpty else {
       throw SecureBytesError.allocationFailed
     }
@@ -33,13 +33,13 @@ public struct SecureBytes: Sendable, Equatable, Hashable, Codable {
   /// Create a SecureBytes instance with the specified capacity, filled with zeros
   /// - Parameter capacity: The number of bytes to allocate
   public init(capacity: Int) {
-    storage = [UInt8](repeating: 0, count: capacity)
+    storage=[UInt8](repeating: 0, count: capacity)
   }
 
   /// Create a SecureBytes instance from raw bytes
   /// - Parameter bytes: The bytes to use
   public init(bytes: [UInt8]) {
-    storage = bytes
+    storage=bytes
   }
 
   /// Create a SecureBytes instance from a raw buffer pointer and count
@@ -47,8 +47,26 @@ public struct SecureBytes: Sendable, Equatable, Hashable, Codable {
   ///   - bytes: Pointer to the bytes
   ///   - count: Number of bytes to copy
   public init(bytes: UnsafeRawPointer, count: Int) {
-    let buffer = UnsafeRawBufferPointer(start: bytes, count: count)
-    storage = [UInt8](buffer)
+    let buffer=UnsafeRawBufferPointer(start: bytes, count: count)
+    storage=[UInt8](buffer)
+  }
+
+  /// Create a SecureBytes instance from a base64 encoded string
+  /// - Parameter base64String: The base64 encoded string
+  /// - Returns: A new SecureBytes instance, or nil if the string couldn't be decoded
+  public init?(base64Encoded base64String: String) {
+    guard let data=Data(base64Encoded: base64String) else {
+      return nil
+    }
+
+    let bytes=[UInt8](data)
+    storage=bytes
+  }
+
+  /// Create a SecureBytes instance from a Foundation Data object
+  /// - Parameter data: The Data object to convert
+  public init(data: Data) {
+    storage=[UInt8](data)
   }
 
   // MARK: - Properties
@@ -73,7 +91,7 @@ public struct SecureBytes: Sendable, Equatable, Hashable, Codable {
       storage[position]
     }
     set {
-      storage[position] = newValue
+      storage[position]=newValue
     }
   }
 
@@ -82,7 +100,7 @@ public struct SecureBytes: Sendable, Equatable, Hashable, Codable {
   /// Securely zero the buffer contents
   public mutating func reset() {
     for i in 0..<storage.count {
-      storage[i] = 0
+      storage[i]=0
     }
   }
 
@@ -120,7 +138,7 @@ public struct SecureBytes: Sendable, Equatable, Hashable, Codable {
   ///   - bytes: Pointer to the bytes
   ///   - count: Number of bytes to append
   public mutating func append(bytes: UnsafeRawPointer, count: Int) {
-    let buffer = UnsafeRawBufferPointer(start: bytes, count: count)
+    let buffer=UnsafeRawBufferPointer(start: bytes, count: count)
     storage.append(contentsOf: buffer)
   }
 
@@ -136,6 +154,22 @@ public struct SecureBytes: Sendable, Equatable, Hashable, Codable {
   /// - Throws: Rethrows any error thrown by the closure
   public func withUnsafeBytes<R>(_ body: (UnsafeRawBufferPointer) throws -> R) rethrows -> R {
     try storage.withUnsafeBytes(body)
+  }
+
+  // MARK: - Data Conversion
+
+  /// Convert SecureBytes to a Foundation Data object
+  /// - Returns: Data representation of the bytes
+  /// - Warning: This creates a copy that is not automatically zeroed
+  public func data() -> Data {
+    Data(storage)
+  }
+
+  /// Convert SecureBytes to a base64-encoded string
+  /// - Returns: Base64 encoded string representation of the bytes
+  /// - Warning: This creates a copy that is not automatically zeroed
+  public func base64EncodedString() -> String {
+    Data(storage).base64EncodedString()
   }
 }
 

@@ -1,4 +1,3 @@
-
 /// FoundationIndependent representation of a schedule.
 /// This data transfer object encapsulates schedule information
 /// without using any Foundation types.

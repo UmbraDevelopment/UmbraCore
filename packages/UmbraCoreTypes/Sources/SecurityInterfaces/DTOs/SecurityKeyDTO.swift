@@ -1,6 +1,6 @@
+import CoreDTOs
 import Foundation
 import SecurityTypes
-import CoreDTOs
 
 /// Data transfer object for security keys
 public struct SecurityKeyDTO: Sendable, Equatable {
@@ -22,10 +22,10 @@ public struct SecurityKeyDTO: Sendable, Equatable {
   ///   - algorithm: Algorithm used for this key
   ///   - keyData: The actual key data
   ///   - metadata: Additional metadata associated with the key
-  public init(id: String, algorithm: String, keyData: SecureBytes, metadata: [String: String] = [:]) {
-    self.id = id
-    self.algorithm = algorithm
-    self.keyData = keyData
-    self.metadata = metadata
+  public init(id: String, algorithm: String, keyData: SecureBytes, metadata: [String: String]=[:]) {
+    self.id=id
+    self.algorithm=algorithm
+    self.keyData=keyData
+    self.metadata=metadata
   }
 }

@@ -46,7 +46,7 @@ public protocol SecurityProvider: Sendable {
     to path: String,
     perform operation: @Sendable () async throws -> T
   ) async throws -> T
-  
+
   /// Encrypt data using the specified algorithm
   /// - Parameters:
   ///   - data: Data to encrypt
@@ -54,10 +54,10 @@ public protocol SecurityProvider: Sendable {
   /// - Returns: Encrypted data result
   /// - Throws: Security error if encryption fails
   func encrypt(
-    _ data: Data, 
+    _ data: Data,
     using algorithm: String
   ) async -> Result<Data, SecurityErrorDTO>
-  
+
   /// Decrypt data using the specified algorithm
   /// - Parameters:
   ///   - data: Data to decrypt
@@ -65,17 +65,17 @@ public protocol SecurityProvider: Sendable {
   /// - Returns: Decrypted data result
   /// - Throws: Security error if decryption fails
   func decrypt(
-    _ data: Data, 
+    _ data: Data,
     using algorithm: String
   ) async -> Result<Data, SecurityErrorDTO>
-  
+
   /// Generate a cryptographic hash for data
   /// - Parameters:
   ///   - data: Data to hash
   ///   - algorithm: Hash algorithm to use
   /// - Returns: Hash result
   func hash(
-    _ data: Data, 
+    _ data: Data,
     using algorithm: HashAlgorithm
   ) async -> Result<Data, SecurityErrorDTO>
 }

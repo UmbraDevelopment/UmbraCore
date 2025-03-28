@@ -44,7 +44,7 @@ public final class SecurityProviderBaseAdapter: SecurityProviderBase {
   /// Initialise with a security provider
   /// - Parameter provider: The provider to adapt
   public init(provider: any SecurityProviderProtocol) {
-    self.provider = provider
+    self.provider=provider
   }
 
   public static var protocolIdentifier: String {

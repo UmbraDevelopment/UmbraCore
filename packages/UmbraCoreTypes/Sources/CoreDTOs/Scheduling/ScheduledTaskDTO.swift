@@ -1,4 +1,3 @@
-
 /// FoundationIndependent representation of a scheduled task.
 /// This data transfer object encapsulates task information for scheduled operations
 /// without using any Foundation types.

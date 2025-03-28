@@ -17,10 +17,10 @@ public struct SecurityResult {
   ///   - success: Whether the operation was successful
   ///   - data: Output data from the operation, if any
   ///   - metadata: Additional metadata about the operation
-  public init(success: Bool, data: Data? = nil, metadata: [String: String] = [:]) {
-    self.success = success
-    self.data = data
-    self.metadata = metadata
+  public init(success: Bool, data: Data?=nil, metadata: [String: String]=[:]) {
+    self.success=success
+    self.data=data
+    self.metadata=metadata
   }
 }
 
@@ -41,8 +41,8 @@ public struct SecurityStatus {
   ///   - statusCode: Numeric status code
   ///   - statusMessage: Human-readable status message
   public init(isActive: Bool, statusCode: Int, statusMessage: String) {
-    self.isActive = isActive
-    self.statusCode = statusCode
-    self.statusMessage = statusMessage
+    self.isActive=isActive
+    self.statusCode=statusCode
+    self.statusMessage=statusMessage
   }
 }

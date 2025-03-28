@@ -34,49 +34,49 @@ public enum UserDefaultsValueDTO: Sendable, Equatable, Hashable {
   ///
   /// Represents a textual value stored in user defaults.
   case string(String)
-  
+
   /// Number value.
   ///
   /// Represents a numeric value stored in user defaults.
   case number(Double)
-  
+
   /// Boolean value.
   ///
   /// Represents a true/false value stored in user defaults.
   case boolean(Bool)
-  
+
   /// Date value stored as ISO8601 string.
   ///
   /// Represents a date and time value stored in user defaults.
   case date(String)
-  
+
   /// Data value stored as base64 encoded string.
   ///
   /// Represents binary data stored in user defaults.
   case data(String)
-  
+
   /// URL value stored as string.
   ///
   /// Represents a URL stored in user defaults.
   case url(String)
-  
+
   /// Array of UserDefaultsValueDTO values.
   ///
   /// Represents an ordered collection of values stored in user defaults.
   case array([UserDefaultsValueDTO])
-  
+
   /// Dictionary of string keys to UserDefaultsValueDTO values.
   ///
   /// Represents a key-value collection of values stored in user defaults.
   case dictionary([String: UserDefaultsValueDTO])
-  
+
   /// Null value.
   ///
   /// Represents a nil or null value in user defaults.
   case null
-  
+
   // MARK: - Convenient type accessors
-  
+
   /// Gets the value as a string if possible.
   public var stringValue: String? {
     switch self {
@@ -96,7 +96,7 @@ public enum UserDefaultsValueDTO: Sendable, Equatable, Hashable {
         nil
     }
   }
-  
+
   /// Gets the value as a double if possible.
   public var numberValue: Double? {
     switch self {
@@ -110,7 +110,7 @@ public enum UserDefaultsValueDTO: Sendable, Equatable, Hashable {
         nil
     }
   }
-  
+
   /// Gets the value as a boolean if possible.
   public var booleanValue: Bool? {
     switch self {
@@ -124,7 +124,7 @@ public enum UserDefaultsValueDTO: Sendable, Equatable, Hashable {
         nil
     }
   }
-  
+
   /// Gets the value as a Date if possible.
   public var dateValue: Date? {
     switch self {
@@ -136,7 +136,7 @@ public enum UserDefaultsValueDTO: Sendable, Equatable, Hashable {
         nil
     }
   }
-  
+
   /// Gets the value as Data if possible.
   public var dataValue: Data? {
     switch self {
@@ -148,7 +148,7 @@ public enum UserDefaultsValueDTO: Sendable, Equatable, Hashable {
         nil
     }
   }
-  
+
   /// Gets the value as a URL if possible.
   public var urlValue: URL? {
     switch self {
@@ -160,7 +160,7 @@ public enum UserDefaultsValueDTO: Sendable, Equatable, Hashable {
         nil
     }
   }
-  
+
   /// Gets the value as an array if possible.
   public var arrayValue: [UserDefaultsValueDTO]? {
     switch self {
@@ -170,7 +170,7 @@ public enum UserDefaultsValueDTO: Sendable, Equatable, Hashable {
         nil
     }
   }
-  
+
   /// Gets the value as a dictionary if possible.
   public var dictionaryValue: [String: UserDefaultsValueDTO]? {
     switch self {
@@ -180,7 +180,7 @@ public enum UserDefaultsValueDTO: Sendable, Equatable, Hashable {
         nil
     }
   }
-  
+
   /// Whether the value is null.
   public var isNull: Bool {
     switch self {
@@ -190,15 +190,15 @@ public enum UserDefaultsValueDTO: Sendable, Equatable, Hashable {
         false
     }
   }
-  
+
   // MARK: - Conversion helpers
-  
+
   /// Create a UserDefaultsValueDTO from any supported type.
   public static func from(_ value: Any?) -> UserDefaultsValueDTO {
-    guard let value = value else {
+    guard let value else {
       return .null
     }
-    
+
     switch value {
       case let string as String:
         return .string(string)
@@ -215,9 +215,9 @@ public enum UserDefaultsValueDTO: Sendable, Equatable, Hashable {
       case let array as [Any]:
         return .array(array.map { from($0) })
       case let dict as [String: Any]:
-        var result: [String: UserDefaultsValueDTO] = [:]
+        var result: [String: UserDefaultsValueDTO]=[:]
         for (key, value) in dict {
-          result[key] = from(value)
+          result[key]=from(value)
         }
         return .dictionary(result)
       default:

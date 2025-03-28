@@ -6,25 +6,25 @@ public struct ResourceErrorDTO: Error, Hashable, Equatable, Sendable {
   /// The type of resource error
   public enum ResourceErrorType: String, Hashable, Equatable, Sendable {
     /// Failed to acquire resource
-    case acquisitionFailed = "ACQUISITION_FAILED"
+    case acquisitionFailed="ACQUISITION_FAILED"
     /// Resource is in an invalid state
-    case invalidState = "INVALID_STATE"
+    case invalidState="INVALID_STATE"
     /// Resource pool is exhausted
-    case poolExhausted = "POOL_EXHAUSTED"
+    case poolExhausted="POOL_EXHAUSTED"
     /// Resource not found
-    case resourceNotFound = "RESOURCE_NOT_FOUND"
+    case resourceNotFound="RESOURCE_NOT_FOUND"
     /// Operation on resource failed
-    case operationFailed = "OPERATION_FAILED"
+    case operationFailed="OPERATION_FAILED"
     /// Resource already exists
-    case alreadyExists = "ALREADY_EXISTS"
+    case alreadyExists="ALREADY_EXISTS"
     /// Resource is locked
-    case locked = "LOCKED"
+    case locked="LOCKED"
     /// Resource has expired
-    case expired = "EXPIRED"
+    case expired="EXPIRED"
     /// General failure
-    case generalFailure = "GENERAL_FAILURE"
+    case generalFailure="GENERAL_FAILURE"
     /// Unknown resource error
-    case unknown = "UNKNOWN"
+    case unknown="UNKNOWN"
   }
 
   /// The type of resource error
@@ -48,13 +48,13 @@ public struct ResourceErrorDTO: Error, Hashable, Equatable, Sendable {
   public init(
     type: ResourceErrorType,
     description: String,
-    context: ErrorContext = ErrorContext(),
-    underlyingError: Error? = nil
+    context: ErrorContext=ErrorContext(),
+    underlyingError: Error?=nil
   ) {
-    self.type = type
-    self.description = description
-    self.context = context
-    self.underlyingError = underlyingError
+    self.type=type
+    self.description=description
+    self.context=context
+    self.underlyingError=underlyingError
   }
 
   /// Creates a new ResourceErrorDTO with dictionary context
@@ -66,20 +66,20 @@ public struct ResourceErrorDTO: Error, Hashable, Equatable, Sendable {
   public init(
     type: ResourceErrorType,
     description: String,
-    contextDict: [String: Any] = [:],
-    underlyingError: Error? = nil
+    contextDict: [String: Any]=[:],
+    underlyingError: Error?=nil
   ) {
-    self.type = type
-    self.description = description
-    context = ErrorContext(contextDict)
-    self.underlyingError = underlyingError
+    self.type=type
+    self.description=description
+    context=ErrorContext(contextDict)
+    self.underlyingError=underlyingError
   }
 
   /// Creates a ResourceErrorDTO from a generic error
   /// - Parameter error: The source error
   /// - Returns: A ResourceErrorDTO
   public static func from(_ error: Error) -> ResourceErrorDTO {
-    if let resourceError = error as? ResourceErrorDTO {
+    if let resourceError=error as? ResourceErrorDTO {
       return resourceError
     }
 

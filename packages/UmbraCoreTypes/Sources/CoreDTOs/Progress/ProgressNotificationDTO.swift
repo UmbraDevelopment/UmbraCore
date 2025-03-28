@@ -1,4 +1,3 @@
-
 /// FoundationIndependent representation of a notification.
 /// This data transfer object encapsulates notification data
 /// without using any Foundation types.

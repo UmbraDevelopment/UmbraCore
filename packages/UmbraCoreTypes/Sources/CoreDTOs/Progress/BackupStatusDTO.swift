@@ -1,4 +1,3 @@
-
 /// FoundationIndependent representation of backup operation status.
 /// This data transfer object encapsulates status information for backup operations
 /// without using any Foundation types.

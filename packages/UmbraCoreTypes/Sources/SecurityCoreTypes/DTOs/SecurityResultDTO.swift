@@ -7,13 +7,13 @@ public struct SecurityResultDTO: Sendable {
   /// Result status
   public enum Status: String, Sendable, Equatable {
     /// Operation completed successfully
-    case success = "Success"
+    case success="Success"
     /// Operation failed
-    case failure = "Failure"
+    case failure="Failure"
     /// Operation requires additional input
-    case needsInput = "NeedsInput"
+    case needsInput="NeedsInput"
     /// Operation partially completed
-    case partial = "Partial"
+    case partial="Partial"
   }
 
   /// Operation status
@@ -36,20 +36,20 @@ public struct SecurityResultDTO: Sendable {
   ///   - metadata: Additional metadata
   public init(
     status: Status,
-    data: SecureBytes? = nil,
-    error: Error? = nil,
-    metadata: [String: String] = [:]
+    data: SecureBytes?=nil,
+    error: Error?=nil,
+    metadata: [String: String]=[:]
   ) {
-    self.status = status
-    self.data = data
-    self.error = error
-    self.metadata = metadata
+    self.status=status
+    self.data=data
+    self.error=error
+    self.metadata=metadata
   }
 
   /// Create a success result with data
   /// - Parameter data: The operation result data
   /// - Returns: A success result DTO
-  public static func success(data: SecureBytes? = nil) -> SecurityResultDTO {
+  public static func success(data: SecureBytes?=nil) -> SecurityResultDTO {
     SecurityResultDTO(status: .success, data: data, error: nil)
   }
 

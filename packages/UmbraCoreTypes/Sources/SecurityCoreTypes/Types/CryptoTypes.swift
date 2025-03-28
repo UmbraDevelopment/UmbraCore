@@ -11,25 +11,25 @@ import UmbraErrors
 /// Data Transfer Object for crypto service operations
 public struct CryptoServiceDto: Sendable {
   /// Function type for encrypt operation
-  public typealias EncryptFunction = @Sendable (SecureBytes, SecureBytes) async -> Result<
+  public typealias EncryptFunction=@Sendable (SecureBytes, SecureBytes) async -> Result<
     SecureBytes,
     SecurityProtocolError
   >
 
   /// Function type for decrypt operation
-  public typealias DecryptFunction = @Sendable (SecureBytes, SecureBytes) async -> Result<
+  public typealias DecryptFunction=@Sendable (SecureBytes, SecureBytes) async -> Result<
     SecureBytes,
     SecurityProtocolError
   >
 
   /// Function type for hash operation
-  public typealias HashFunction = @Sendable (SecureBytes) async -> Result<
+  public typealias HashFunction=@Sendable (SecureBytes) async -> Result<
     SecureBytes,
     SecurityProtocolError
   >
 
   /// Function type for hash verification operation
-  public typealias VerifyHashFunction = @Sendable (SecureBytes, SecureBytes) async -> Result<
+  public typealias VerifyHashFunction=@Sendable (SecureBytes, SecureBytes) async -> Result<
     Bool,
     SecurityProtocolError
   >
@@ -58,10 +58,10 @@ public struct CryptoServiceDto: Sendable {
     hash: @escaping HashFunction,
     verifyHash: @escaping VerifyHashFunction
   ) {
-    self.encrypt = encrypt
-    self.decrypt = decrypt
-    self.hash = hash
-    self.verifyHash = verifyHash
+    self.encrypt=encrypt
+    self.decrypt=decrypt
+    self.hash=hash
+    self.verifyHash=verifyHash
   }
 }
 
@@ -69,7 +69,7 @@ public struct CryptoServiceDto: Sendable {
 public struct KeyPairDto: Sendable, Equatable {
   /// The public key
   public let publicKey: SecureBytes
-  
+
   /// The private key
   public let privateKey: SecureBytes
 
@@ -78,8 +78,8 @@ public struct KeyPairDto: Sendable, Equatable {
   ///   - publicKey: The public key
   ///   - privateKey: The private key
   public init(publicKey: SecureBytes, privateKey: SecureBytes) {
-    self.publicKey = publicKey
-    self.privateKey = privateKey
+    self.publicKey=publicKey
+    self.privateKey=privateKey
   }
 }
 
@@ -119,11 +119,11 @@ public struct KeyDerivationParameters: Sendable, Equatable {
   ///   - function: The key derivation function
   public init(
     salt: SecureBytes,
-    iterations: Int = 10000,
+    iterations: Int=10000,
     function: KeyDerivationFunction = .pbkdf2
   ) {
-    self.salt = salt
-    self.iterations = iterations
-    self.function = function
+    self.salt=salt
+    self.iterations=iterations
+    self.function=function
   }
 }

@@ -29,14 +29,14 @@ public struct ErrorDTO: Equatable, Hashable, Sendable {
     identifier: String,
     domain: String,
     description: String,
-    code: Int? = nil,
-    contextData: [String: String] = [:]
+    code: Int?=nil,
+    contextData: [String: String]=[:]
   ) {
-    self.identifier = identifier
-    self.domain = domain
-    self.description = description
-    self.code = code
-    self.contextData = contextData
+    self.identifier=identifier
+    self.domain=domain
+    self.description=description
+    self.code=code
+    self.contextData=contextData
   }
 
   /// Creates an ErrorDTO from any Error
@@ -44,14 +44,14 @@ public struct ErrorDTO: Equatable, Hashable, Sendable {
   /// - Returns: An ErrorDTO representing the error
   public static func from(_ error: Error) -> ErrorDTO {
     // If the error is already an ErrorDTO, just return it
-    if let errorDTO = error as? ErrorDTO {
+    if let errorDTO=error as? ErrorDTO {
       return errorDTO
     }
 
     // Extract information using ErrorHandlingInterfaces if available
-    let domain = (error as NSError).domain
-    let code = (error as NSError).code
-    let description = error.localizedDescription
+    let domain=(error as NSError).domain
+    let code=(error as NSError).code
+    let description=error.localizedDescription
 
     return ErrorDTO(
       identifier: "\(domain).\(code)",

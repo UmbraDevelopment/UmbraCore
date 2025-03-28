@@ -1,4 +1,3 @@
-
 /// A Foundation-independent representation of a file bookmark
 /// Used for saving and restoring access to file system resources
 public struct BookmarkDTO: Sendable, Equatable {

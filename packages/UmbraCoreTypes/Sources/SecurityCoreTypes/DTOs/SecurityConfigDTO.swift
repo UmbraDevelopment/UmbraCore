@@ -1,68 +1,147 @@
 import Foundation
 import SecurityTypes
 
-/// Security configuration data transfer object
-/// Used to configure security operations with specific options
+/**
+ # SecurityConfigDTO
+
+ Data transfer object for configuring security operations with specific options.
+
+ This structure follows the Alpha Dot Five architecture pattern for DTOs, providing
+ a clear and standardised way to configure security operations across the system.
+ */
 public struct SecurityConfigDTO: Sendable, Equatable {
-  /// Algorithm to use for cryptographic operations
-  public enum Algorithm: String, Sendable, Equatable {
-    /// AES algorithm
-    case aes = "AES"
-    /// RSA algorithm
-    case rsa = "RSA"
-    /// ChaCha20 algorithm
-    case chacha20 = "ChaCha20"
-  }
+  /// Algorithm to use for cryptographic operations (e.g., "AES", "RSA", "ChaCha20")
+  public let algorithm: String
 
-  /// Mode of operation for block ciphers
-  public enum Mode: String, Sendable, Equatable {
-    /// Galois/Counter Mode
-    case gcm = "GCM"
-    /// Cipher Block Chaining
-    case cbc = "CBC"
-    /// Counter Mode
-    case ctr = "CTR"
-  }
-
-  /// Key size in bits
+  /// Key size in bits (e.g., 128, 256, 2048)
   public let keySize: Int
 
-  /// Algorithm to use
-  public let algorithm: Algorithm
+  /// Mode of operation for block ciphers (e.g., "GCM", "CBC")
+  public let mode: String?
 
-  /// Mode of operation (for block ciphers)
-  public let mode: Mode?
-
-  /// Hash algorithm for hashing operations
-  public let hashAlgorithm: HashAlgorithm
-
-  /// Authentication data (for authenticated encryption modes)
-  public let authenticationData: SecureBytes?
+  /// Hash algorithm for hashing operations (e.g., "SHA256", "SHA512")
+  public let hashAlgorithm: String?
 
   /// Additional options as key-value pairs
   public let options: [String: String]
 
-  /// Initialise with configuration options
-  /// - Parameters:
-  ///   - keySize: Key size in bits (default: 256)
-  ///   - algorithm: Algorithm to use (default: .aes)
-  ///   - mode: Mode of operation (default: .gcm)
-  ///   - hashAlgorithm: Hash algorithm (default: .sha256)
-  ///   - authenticationData: Authentication data (default: nil)
-  ///   - options: Additional options as key-value pairs (default: empty)
+  /**
+   Initialises a new SecurityConfigDTO with the specified parameters.
+
+   - Parameters:
+     - algorithm: Algorithm to use (e.g., "AES", "RSA", "ChaCha20")
+     - keySize: Key size in bits
+     - mode: Mode of operation for block ciphers
+     - hashAlgorithm: Hash algorithm to use
+     - options: Additional operation-specific options
+   */
   public init(
-    keySize: Int = 256,
-    algorithm: Algorithm = .aes,
-    mode: Mode? = .gcm,
-    hashAlgorithm: HashAlgorithm = .sha256,
-    authenticationData: SecureBytes? = nil,
-    options: [String: String] = [:]
+    algorithm: String,
+    keySize: Int,
+    mode: String?=nil,
+    hashAlgorithm: String?=nil,
+    options: [String: String]=[:]
   ) {
-    self.keySize = keySize
-    self.algorithm = algorithm
-    self.mode = mode
-    self.hashAlgorithm = hashAlgorithm
-    self.authenticationData = authenticationData
-    self.options = options
+    self.algorithm=algorithm
+    self.keySize=keySize
+    self.mode=mode
+    self.hashAlgorithm=hashAlgorithm
+    self.options=options
+  }
+
+  /**
+   Creates a configuration for AES encryption.
+
+   - Parameters:
+     - keySize: Key size in bits (128, 192, or 256)
+     - mode: Mode of operation ("GCM", "CBC", or "CTR")
+     - additionalOptions: Additional operation-specific options
+   - Returns: A configured SecurityConfigDTO
+   */
+  public static func aesEncryption(
+    keySize: Int=256,
+    mode: String="GCM",
+    additionalOptions: [String: String]=[:]
+  ) -> SecurityConfigDTO {
+    var options=additionalOptions
+    options["encryptionType"]="symmetric"
+
+    return SecurityConfigDTO(
+      algorithm: "AES",
+      keySize: keySize,
+      mode: mode,
+      options: options
+    )
+  }
+
+  /**
+   Creates a configuration for RSA encryption.
+
+   - Parameters:
+     - keySize: Key size in bits (2048 or 4096)
+     - additionalOptions: Additional operation-specific options
+   - Returns: A configured SecurityConfigDTO
+   */
+  public static func rsaEncryption(
+    keySize: Int=2048,
+    additionalOptions: [String: String]=[:]
+  ) -> SecurityConfigDTO {
+    var options=additionalOptions
+    options["encryptionType"]="asymmetric"
+
+    return SecurityConfigDTO(
+      algorithm: "RSA",
+      keySize: keySize,
+      options: options
+    )
+  }
+
+  /**
+   Creates a configuration for digital signatures.
+
+   - Parameters:
+     - algorithm: Signature algorithm ("RSA", "ECDSA")
+     - hashAlgorithm: Hash algorithm to use ("SHA256", "SHA384", "SHA512")
+     - additionalOptions: Additional operation-specific options
+   - Returns: A configured SecurityConfigDTO
+   */
+  public static func signature(
+    algorithm: String="RSA",
+    hashAlgorithm: String="SHA256",
+    additionalOptions: [String: String]=[:]
+  ) -> SecurityConfigDTO {
+    var options=additionalOptions
+    options["operation"]="sign"
+
+    return SecurityConfigDTO(
+      algorithm: algorithm,
+      keySize: algorithm == "RSA" ? 2048 : 256,
+      hashAlgorithm: hashAlgorithm,
+      options: options
+    )
+  }
+
+  /**
+   Creates a configuration for secure key generation.
+
+   - Parameters:
+     - algorithm: Key algorithm ("AES", "RSA", "ECDSA")
+     - keySize: Key size in bits
+     - additionalOptions: Additional key generation options
+   - Returns: A configured SecurityConfigDTO
+   */
+  public static func keyGeneration(
+    algorithm: String,
+    keySize: Int,
+    additionalOptions: [String: String]=[:]
+  ) -> SecurityConfigDTO {
+    var options=additionalOptions
+    options["operation"]="generateKey"
+
+    return SecurityConfigDTO(
+      algorithm: algorithm,
+      keySize: keySize,
+      options: options
+    )
   }
 }

@@ -4,13 +4,13 @@ import Foundation
 /// Defines standard hash algorithms used across the security framework
 public enum HashAlgorithm: String, Sendable, CaseIterable {
   /// SHA-256 hash algorithm (256 bits)
-  case sha256 = "SHA256"
+  case sha256="SHA256"
 
   /// SHA-384 hash algorithm (384 bits)
-  case sha384 = "SHA384"
+  case sha384="SHA384"
 
   /// SHA-512 hash algorithm (512 bits)
-  case sha512 = "SHA512"
+  case sha512="SHA512"
 
   /// The length of the digest in bytes
   public var digestLength: Int {

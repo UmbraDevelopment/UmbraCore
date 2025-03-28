@@ -6,19 +6,19 @@ import Foundation
 /// allowing for consistent error notifications across the application.
 public enum ErrorNotificationLevel: Int, Comparable, Sendable {
   /// Critical notification that requires immediate user attention
-  case critical = 0
+  case critical=0
 
   /// Error notification for significant problems
-  case error = 1
+  case error=1
 
   /// Warning notification for potential issues
-  case warning = 2
+  case warning=2
 
   /// Informational notification
-  case info = 3
+  case info=3
 
   /// Debug notification for developer information
-  case debug = 4
+  case debug=4
 
   /// Implementation of Comparable protocol
   public static func < (lhs: ErrorNotificationLevel, rhs: ErrorNotificationLevel) -> Bool {
@@ -55,30 +55,30 @@ public enum ErrorNotificationLevel: Int, Comparable, Sendable {
 /// ```
 public enum ErrorSeverity: String, Comparable, Sendable {
   /// Critical error that requires immediate attention
-  case critical = "Critical"
+  case critical="Critical"
 
   /// Error that indicates a significant problem
-  case error = "Error"
+  case error="Error"
 
   /// Warning about potential issues
-  case warning = "Warning"
+  case warning="Warning"
 
   /// Informational message about error conditions
-  case info = "Info"
+  case info="Info"
 
   /// Debug-level severity for minor issues
-  case debug = "Debug"
+  case debug="Debug"
 
   /// Trace-level severity for detailed debugging
-  case trace = "Trace"
+  case trace="Trace"
 
   /// Comparison implementation for Comparable protocol
   public static func < (lhs: ErrorSeverity, rhs: ErrorSeverity) -> Bool {
     // Reverse order: critical > error > warning > info > debug > trace
-    let order: [ErrorSeverity] = [.trace, .debug, .info, .warning, .error, .critical]
+    let order: [ErrorSeverity]=[.trace, .debug, .info, .warning, .error, .critical]
     guard
-      let lhsIndex = order.firstIndex(of: lhs),
-      let rhsIndex = order.firstIndex(of: rhs)
+      let lhsIndex=order.firstIndex(of: lhs),
+      let rhsIndex=order.firstIndex(of: rhs)
     else {
       return false
     }

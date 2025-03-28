@@ -10,8 +10,8 @@ public protocol SecurityErrorType: Error, CustomStringConvertible {
 
 /// Mapper from the enhanced SecurityError to a basic security error
 public struct EnhancedToBasicSecurityErrorMapper<T: SecurityErrorType>: ErrorMapper {
-  public typealias SourceError = SecurityError
-  public typealias TargetError = T
+  public typealias SourceError=SecurityError
+  public typealias TargetError=T
 
   public init() {}
 
@@ -39,24 +39,24 @@ public struct SecurityError: Error, CustomStringConvertible {
     case unauthorisedAccess
     case secureStorageFailure
   }
-  
+
   /// The error code
   public let code: Code
-  
+
   /// Human-readable description
   public let description: String
-  
+
   /// Source information
   public let source: ErrorSource?
-  
+
   /// Underlying error
   public let underlyingError: Error?
-  
+
   /// Localised description
   public var localizedDescription: String {
     description
   }
-  
+
   /// Create a new security error
   public init(
     code: Code,
@@ -64,17 +64,17 @@ public struct SecurityError: Error, CustomStringConvertible {
     source: ErrorSource?,
     underlyingError: Error?
   ) {
-    self.code = code
-    self.description = description
-    self.source = source
-    self.underlyingError = underlyingError
+    self.code=code
+    self.description=description
+    self.source=source
+    self.underlyingError=underlyingError
   }
 }
 
 /// Mapper from a basic security error to the enhanced SecurityError
 public struct BasicToEnhancedSecurityErrorMapper<S: SecurityErrorType>: ErrorMapper {
-  public typealias SourceError = S
-  public typealias TargetError = SecurityError
+  public typealias SourceError=S
+  public typealias TargetError=SecurityError
 
   public init() {}
 
@@ -84,7 +84,7 @@ public struct BasicToEnhancedSecurityErrorMapper<S: SecurityErrorType>: ErrorMap
   public func map(_ error: S) -> SecurityError {
     // Since basic security errors only have a description, we need to infer the error code
     // This is a best-effort mapping based on the description
-    let description = error.description.lowercased()
+    let description=error.description.lowercased()
 
     if description.contains("bookmark") {
       return SecurityError(
@@ -160,13 +160,13 @@ public struct GenericSecurityError: SecurityErrorType {
   public let description: String
 
   public init(description: String) {
-    self.description = description
+    self.description=description
   }
 }
 
 /// Function to register the SecurityError mapper with the ErrorRegistry
 public func registerSecurityErrorMappers() {
-  let registry = ErrorRegistry.shared
+  let registry=ErrorRegistry.shared
 
   // Register mappers using string-based domain identifiers to avoid direct type references
   // This allows us to break circular dependencies while maintaining proper error mapping

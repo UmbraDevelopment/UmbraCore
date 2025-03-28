@@ -15,23 +15,24 @@
 // Export Foundation types that are needed for CoreDTOs
 @_exported import Foundation
 
+@_exported import struct Foundation.Calendar
+
 // Explicitly export the types we need from Foundation
 // to avoid having to import Foundation in files that use CoreDTOs
 @_exported import struct Foundation.Data
 @_exported import struct Foundation.Date
-@_exported import struct Foundation.URL
-@_exported import struct Foundation.Locale
-@_exported import struct Foundation.TimeZone
-@_exported import struct Foundation.Calendar
 @_exported import struct Foundation.DateComponents
 @_exported import struct Foundation.IndexPath
+@_exported import struct Foundation.Locale
+@_exported import struct Foundation.TimeZone
+@_exported import struct Foundation.URL
 
 // Re-export modules needed for CoreDTOs functionality
 // These will be uncommented during migration completion
 @_exported import FileSystemTypes
-@_exported import SecurityTypes
 @_exported import Notification
 @_exported import Scheduling
+@_exported import SecurityInterfaces
+@_exported import SecurityTypes
 @_exported import UmbraErrors
 @_exported import UserDefaults
-@_exported import SecurityInterfaces

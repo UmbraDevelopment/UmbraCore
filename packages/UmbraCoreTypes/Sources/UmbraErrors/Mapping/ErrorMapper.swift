@@ -30,10 +30,10 @@ extension ErrorMapper {
 /// A type-erased error mapper that can map from any error to any error
 public struct AnyErrorMapper<Target: Error>: ErrorMapper {
   /// Define the source error type for protocol conformance
-  public typealias SourceError = Error
+  public typealias SourceError=Error
 
   /// Define the target error type for protocol conformance
-  public typealias TargetError = Target
+  public typealias TargetError=Target
 
   /// The mapping function
   private let _map: (Error) -> Target
@@ -45,22 +45,22 @@ public struct AnyErrorMapper<Target: Error>: ErrorMapper {
   /// - Parameters:
   ///   - map: The mapping function
   ///   - canMap: The function that determines if this mapper can handle a given error
-  public init(map: @escaping (Error) -> Target, canMap: @escaping (Error) -> Bool = { _ in true }) {
-    _map = map
-    _canMap = canMap
+  public init(map: @escaping (Error) -> Target, canMap: @escaping (Error) -> Bool={ _ in true }) {
+    _map=map
+    _canMap=canMap
   }
 
   /// Creates a type-erased wrapper around a concrete error mapper
   /// - Parameter mapper: The concrete mapper to wrap
   public init<M: ErrorMapper>(_ mapper: M) where M.TargetError == Target {
-    _map = { error in
-      guard let sourceError = error as? M.SourceError else {
+    _map={ error in
+      guard let sourceError=error as? M.SourceError else {
         // This should never happen if canMap is implemented correctly
         fatalError("Error type mismatch in AnyErrorMapper")
       }
       return mapper.map(sourceError)
     }
-    _canMap = mapper.canMap
+    _canMap=mapper.canMap
   }
 
   /// Maps an error from the source type to the target type
@@ -91,8 +91,8 @@ public struct BidirectionalErrorMapper<A: Error, B: Error> {
   ///   - forwardMapper: Mapper from A to B
   ///   - reverseMapper: Mapper from B to A
   public init(forwardMapper: AnyErrorMapper<B>, reverseMapper: AnyErrorMapper<A>) {
-    self.forwardMapper = forwardMapper
-    self.reverseMapper = reverseMapper
+    self.forwardMapper=forwardMapper
+    self.reverseMapper=reverseMapper
   }
 
   /// Creates a new BidirectionalErrorMapper instance with mapping functions
@@ -100,14 +100,14 @@ public struct BidirectionalErrorMapper<A: Error, B: Error> {
   ///   - forwardMap: Function to map from A to B
   ///   - reverseMap: Function to map from B to A
   public init(forwardMap: @escaping (A) -> B, reverseMap: @escaping (B) -> A) {
-    forwardMapper = AnyErrorMapper { error in
-      guard let a = error as? A else {
+    forwardMapper=AnyErrorMapper { error in
+      guard let a=error as? A else {
         fatalError("Error type mismatch in BidirectionalErrorMapper")
       }
       return forwardMap(a)
     }
-    reverseMapper = AnyErrorMapper { error in
-      guard let b = error as? B else {
+    reverseMapper=AnyErrorMapper { error in
+      guard let b=error as? B else {
         fatalError("Error type mismatch in BidirectionalErrorMapper")
       }
       return reverseMap(b)

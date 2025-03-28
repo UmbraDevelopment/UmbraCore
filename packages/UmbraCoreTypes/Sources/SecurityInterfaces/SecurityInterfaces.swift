@@ -24,9 +24,6 @@
 import Foundation
 
 // Export Foundation types needed for SecurityInterfaces
-@_exported import Foundation
-
-// Export UmbraErrors for error handling
 @_exported import UmbraErrors
 
 // Export UserDefaults for preference management

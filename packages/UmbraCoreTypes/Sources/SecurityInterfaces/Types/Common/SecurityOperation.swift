@@ -75,29 +75,29 @@ public enum SecurityOperation: String, Sendable, Equatable {
   public var description: String {
     switch self {
       case .encrypt:
-        return "Encrypt Data"
+        "Encrypt Data"
       case .decrypt:
-        return "Decrypt Data"
+        "Decrypt Data"
       case .generateKey:
-        return "Generate Key"
+        "Generate Key"
       case .hash:
-        return "Calculate Hash"
+        "Calculate Hash"
       case .sign:
-        return "Sign Data"
+        "Sign Data"
       case .verify:
-        return "Verify Signature"
+        "Verify Signature"
       case .storeKey:
-        return "Store Key"
+        "Store Key"
       case .retrieveKey:
-        return "Retrieve Key"
+        "Retrieve Key"
       case .deleteKey:
-        return "Delete Key"
+        "Delete Key"
       case .listKeys:
-        return "List Keys"
+        "List Keys"
       case .generateRandomData:
-        return "Generate Random Data"
+        "Generate Random Data"
       case ._unspecified:
-        return "Unspecified Operation"
+        "Unspecified Operation"
     }
   }
 }

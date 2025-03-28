@@ -6,21 +6,21 @@ public struct LoggingErrorDTO: Error, Hashable, Equatable, Sendable {
   /// The type of logging error
   public enum LoggingErrorType: String, Hashable, Equatable, Sendable {
     /// Failed to write to log
-    case writeFailed = "WRITE_FAILED"
+    case writeFailed="WRITE_FAILED"
     /// Invalid log format
-    case invalidFormat = "INVALID_FORMAT"
+    case invalidFormat="INVALID_FORMAT"
     /// Storage error
-    case storageError = "STORAGE_ERROR"
+    case storageError="STORAGE_ERROR"
     /// Log rotation error
-    case rotationError = "ROTATION_ERROR"
+    case rotationError="ROTATION_ERROR"
     /// Log configuration error
-    case configurationError = "CONFIGURATION_ERROR"
+    case configurationError="CONFIGURATION_ERROR"
     /// Permission error
-    case permissionError = "PERMISSION_ERROR"
+    case permissionError="PERMISSION_ERROR"
     /// General failure
-    case generalFailure = "GENERAL_FAILURE"
+    case generalFailure="GENERAL_FAILURE"
     /// Unknown logging error
-    case unknown = "UNKNOWN"
+    case unknown="UNKNOWN"
   }
 
   /// The type of logging error
@@ -44,13 +44,13 @@ public struct LoggingErrorDTO: Error, Hashable, Equatable, Sendable {
   public init(
     type: LoggingErrorType,
     description: String,
-    context: ErrorContext = ErrorContext(),
-    underlyingError: Error? = nil
+    context: ErrorContext=ErrorContext(),
+    underlyingError: Error?=nil
   ) {
-    self.type = type
-    self.description = description
-    self.context = context
-    self.underlyingError = underlyingError
+    self.type=type
+    self.description=description
+    self.context=context
+    self.underlyingError=underlyingError
   }
 
   /// Creates a new LoggingErrorDTO with dictionary context
@@ -62,20 +62,20 @@ public struct LoggingErrorDTO: Error, Hashable, Equatable, Sendable {
   public init(
     type: LoggingErrorType,
     description: String,
-    contextDict: [String: Any] = [:],
-    underlyingError: Error? = nil
+    contextDict: [String: Any]=[:],
+    underlyingError: Error?=nil
   ) {
-    self.type = type
-    self.description = description
-    context = ErrorContext(contextDict)
-    self.underlyingError = underlyingError
+    self.type=type
+    self.description=description
+    context=ErrorContext(contextDict)
+    self.underlyingError=underlyingError
   }
 
   /// Creates a LoggingErrorDTO from a generic error
   /// - Parameter error: The source error
   /// - Returns: A LoggingErrorDTO
   public static func from(_ error: Error) -> LoggingErrorDTO {
-    if let loggingError = error as? LoggingErrorDTO {
+    if let loggingError=error as? LoggingErrorDTO {
       return loggingError
     }
 

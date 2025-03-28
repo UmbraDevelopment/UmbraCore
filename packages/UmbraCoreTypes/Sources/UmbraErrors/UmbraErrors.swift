@@ -1,6 +1,3 @@
-// UmbraErrors module
-// This module provides error types and handling utilities used throughout UmbraCore
-
 // Export Foundation and OSLog types that are needed for UmbraErrors
 @_exported import Foundation
 @_exported import OSLog
@@ -17,6 +14,6 @@
 
 // Re-export error domains
 public enum ErrorDomain {
-    // Common domains
-    public static let scheduling = "Scheduling"
+  // Common domains
+  public static let scheduling="Scheduling"
 }
