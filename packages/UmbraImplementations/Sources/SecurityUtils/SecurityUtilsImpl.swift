@@ -34,7 +34,7 @@ public final class SecurityUtilsImpl: Sendable {
   /// - Parameter string: String to convert
   /// - Returns: SecureBytes representation of the string
   public func secureStringToBytes(_ string: String) -> SecureBytes {
-    let data = Data(string.utf8)
+    let data=Data(string.utf8)
     return SecureBytes(bytes: [UInt8](data))
   }
 
@@ -43,11 +43,11 @@ public final class SecurityUtilsImpl: Sendable {
   /// - Returns: String representation of the bytes
   public func bytesToSecureString(_ bytes: SecureBytes) -> String? {
     // Convert SecureBytes to Data by creating an array of bytes
-    var byteArray = [UInt8]()
+    var byteArray=[UInt8]()
     for i in 0..<bytes.count {
       byteArray.append(bytes[i])
     }
-    let data = Data(byteArray)
+    let data=Data(byteArray)
     return String(data: data, encoding: .utf8)
   }
 
@@ -61,18 +61,18 @@ public final class SecurityUtilsImpl: Sendable {
   /// - Returns: A hexadecimal string representation
   public func bytesToHexString(
     _ bytes: SecureBytes,
-    uppercase: Bool = true,
-    separator: String? = nil
+    uppercase: Bool=true,
+    separator: String?=nil
   ) -> String {
-    let format = uppercase ? "%02X" : "%02x"
-    
+    let format=uppercase ? "%02X" : "%02x"
+
     // Convert SecureBytes to hex chars using subscripting
-    var hexChars = [String]()
+    var hexChars=[String]()
     for i in 0..<bytes.count {
       hexChars.append(String(format: format, bytes[i]))
     }
 
-    if let separator = separator {
+    if let separator {
       return hexChars.joined(separator: separator)
     } else {
       return hexChars.joined()
@@ -84,23 +84,23 @@ public final class SecurityUtilsImpl: Sendable {
   /// - Returns: The converted binary data as SecureBytes or nil if conversion fails
   public func hexStringToBytes(_ hexString: String) -> SecureBytes? {
     // Remove any spaces from the string
-    let hex = hexString.replacingOccurrences(of: " ", with: "")
+    let hex=hexString.replacingOccurrences(of: " ", with: "")
 
     // Check for even number of characters
     guard hex.count % 2 == 0 else {
       return nil
     }
 
-    var bytes = [UInt8]()
+    var bytes=[UInt8]()
     bytes.reserveCapacity(hex.count / 2)
 
     // Process two characters at a time (one byte)
     for i in stride(from: 0, to: hex.count, by: 2) {
-      let start = hex.index(hex.startIndex, offsetBy: i)
-      let end = hex.index(start, offsetBy: 2)
-      let byteString = String(hex[start..<end])
+      let start=hex.index(hex.startIndex, offsetBy: i)
+      let end=hex.index(start, offsetBy: 2)
+      let byteString=String(hex[start..<end])
 
-      guard let byte = UInt8(byteString, radix: 16) else {
+      guard let byte=UInt8(byteString, radix: 16) else {
         return nil
       }
 
@@ -115,11 +115,11 @@ public final class SecurityUtilsImpl: Sendable {
   /// - Returns: A Base64-encoded string
   public func bytesToBase64String(_ bytes: SecureBytes) -> String {
     // Convert SecureBytes to Data by creating an array of bytes
-    var byteArray = [UInt8]()
+    var byteArray=[UInt8]()
     for i in 0..<bytes.count {
       byteArray.append(bytes[i])
     }
-    let data = Data(byteArray)
+    let data=Data(byteArray)
     return data.base64EncodedString()
   }
 
@@ -127,7 +127,7 @@ public final class SecurityUtilsImpl: Sendable {
   /// - Parameter base64String: The Base64-encoded string
   /// - Returns: The decoded binary data as SecureBytes or nil if decoding fails
   public func base64StringToBytes(_ base64String: String) -> SecureBytes? {
-    guard let data = Data(base64Encoded: base64String) else {
+    guard let data=Data(base64Encoded: base64String) else {
       return nil
     }
     return SecureBytes(bytes: [UInt8](data))
@@ -142,7 +142,7 @@ public final class SecurityUtilsImpl: Sendable {
   /// - Returns: True if the key meets requirements, false otherwise
   public func validateKeyStrength(key: SecureBytes, minimumBitLength: Int) -> Bool {
     // Check key length
-    return key.count * 8 >= minimumBitLength
+    key.count * 8 >= minimumBitLength
   }
 
   // MARK: - Random Data
@@ -154,13 +154,13 @@ public final class SecurityUtilsImpl: Sendable {
   /// - Returns: Random string of specified length
   public func generateRandomString(
     length: Int,
-    charset: String = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    charset: String="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
   ) -> String {
-    let randomBytes = generateRandomBytes(count: length)
-    let charsetLength = charset.count
-    
+    let randomBytes=generateRandomBytes(count: length)
+    let charsetLength=charset.count
+
     return randomBytes.enumerated().reduce(into: "") { result, element in
-      let index = charset.index(charset.startIndex, offsetBy: Int(element.element) % charsetLength)
+      let index=charset.index(charset.startIndex, offsetBy: Int(element.element) % charsetLength)
       result.append(charset[index])
     }
   }
@@ -169,8 +169,8 @@ public final class SecurityUtilsImpl: Sendable {
   /// - Parameter count: Number of random bytes to generate
   /// - Returns: Array of random bytes
   public func generateRandomBytes(count: Int) -> [UInt8] {
-    var bytes = [UInt8](repeating: 0, count: count)
-    _ = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
+    var bytes=[UInt8](repeating: 0, count: count)
+    _=SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
     return bytes
   }
 
@@ -186,12 +186,12 @@ public final class SecurityUtilsImpl: Sendable {
     guard lhs.count == rhs.count else {
       return false
     }
-    
-    var result: UInt8 = 0
+
+    var result: UInt8=0
     for i in 0..<lhs.count {
       result |= lhs[i] ^ rhs[i]
     }
-    
+
     return result == 0
   }
 }
