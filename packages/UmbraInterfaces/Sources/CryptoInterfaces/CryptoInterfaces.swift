@@ -7,5 +7,5 @@
 /// Main namespace for cryptographic interfaces
 public enum CryptoInterfaces {
   /// Version of the CryptoInterfaces module
-  public static let version = "1.0.0"
+  public static let version="1.0.0"
 }

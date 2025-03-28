@@ -31,7 +31,7 @@ public protocol LoggingProtocol: Sendable {
 public enum LoggingError: Error {
   /// Failed to initialise logging system
   case initialisationFailed(String)
-  
+
   /// Failed to write log
   case writeFailed(String)
 }

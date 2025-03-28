@@ -2,8 +2,9 @@ import Foundation
 import SecurityTypes
 
 /// Protocol defining the credential management operations
-/// 
-/// This protocol is used in conjunction with SecureStorageProvider to securely store and manage credentials.
+///
+/// This protocol is used in conjunction with SecureStorageProvider to securely store and manage
+/// credentials.
 @preconcurrency
 public protocol CredentialManagerProtocol: Sendable {
   /// Save a credential securely

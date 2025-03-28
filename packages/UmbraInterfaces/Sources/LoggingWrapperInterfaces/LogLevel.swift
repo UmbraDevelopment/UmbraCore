@@ -18,27 +18,27 @@
 public enum LogLevel: Int, Comparable, Sendable {
   /// Critical issues that require immediate attention
   /// These are severe errors that may lead to application termination or data loss
-  case critical = 50
+  case critical=50
 
   /// Standard errors that should be addressed
   /// These indicate functionality is impaired but the application can continue running
-  case error = 40
+  case error=40
 
   /// Warning messages that indicate potential issues
   /// These highlight abnormal or unexpected system behaviour that might lead to errors
-  case warning = 30
+  case warning=30
 
   /// Informational messages about system operation
   /// These provide runtime information about the normal functioning of the system
-  case info = 20
+  case info=20
 
   /// Debug information for development purposes
   /// These provide detailed information useful during development and troubleshooting
-  case debug = 10
+  case debug=10
 
   /// Detailed trace information for in-depth debugging
   /// These provide extremely detailed information about code execution paths
-  case trace = 0
+  case trace=0
 
   /// Comparison implementation for Comparable protocol
   ///
@@ -47,6 +47,6 @@ public enum LogLevel: Int, Comparable, Sendable {
   /// which allows for natural comparison operations when filtering by severity.
   public static func < (lhs: LogLevel, rhs: LogLevel) -> Bool {
     // Lower numeric values represent lower severity
-    return lhs.rawValue < rhs.rawValue
+    lhs.rawValue < rhs.rawValue
   }
 }
