@@ -7,13 +7,19 @@ umbra_swift_library(
         exclude = [
             "**/*Test.swift",
             "**/*.generated.swift",
+            "ActorTypes/**/*.swift",  # Exclude ActorTypes directory files as they're in a separate target
         ],
     ),
     visibility = ["//visibility:public"],
     deps = [
         "//packages/UmbraInterfaces/Sources/KeychainInterfaces",
         "//packages/UmbraInterfaces/Sources/LoggingInterfaces",
+        "//packages/UmbraInterfaces/Sources/SecurityCoreInterfaces",
         "//packages/UmbraImplementations/Sources/LoggingServices",
         "//packages/UmbraImplementations/Sources/LoggingAdapters",
+        "//packages/UmbraCoreTypes/Sources/UmbraErrors",
+        "//packages/UmbraCoreTypes/Sources/LoggingTypes",
+        "//packages/UmbraCoreTypes/Sources/SecurityCoreTypes",
+        "//packages/UmbraImplementations/Sources/KeychainServices/ActorTypes:KeychainSecurityActor",
     ],
 )

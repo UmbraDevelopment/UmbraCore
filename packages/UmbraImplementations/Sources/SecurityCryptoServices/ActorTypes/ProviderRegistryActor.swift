@@ -4,7 +4,9 @@ import SecurityCoreTypes
 import SecurityTypes
 import LoggingInterfaces
 import LoggingTypes
+import SecurityProviders
 import UmbraErrors
+import ProviderFactories
 
 /**
  # ProviderRegistryActor
@@ -121,20 +123,20 @@ public actor ProviderRegistryActor {
             // Register default factories (directly to avoid actor-isolation issues)
             // Basic provider is always available
             self.providerFactories[.basic] = { @Sendable in
-                return try SecurityProviderFactory.createProvider(type: .basic)
+                return try SecurityProviderFactoryImpl.createProvider(type: .basic)
             }
             
             // Apple provider if available
             #if canImport(CryptoKit) && (os(macOS) || os(iOS) || os(watchOS) || os(tvOS))
             self.providerFactories[.apple] = { @Sendable in
-                return try SecurityProviderFactory.createProvider(type: .apple)
+                return try SecurityProviderFactoryImpl.createProvider(type: .apple)
             }
             #endif
             
             // Ring provider if available
             #if canImport(RingCrypto)
             self.providerFactories[.ring] = { @Sendable in
-                return try SecurityProviderFactory.createProvider(type: .ring)
+                return try SecurityProviderFactoryImpl.createProvider(type: .ring)
             }
             #endif
         }

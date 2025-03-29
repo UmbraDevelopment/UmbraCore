@@ -19,35 +19,7 @@ import SecurityCoreInterfaces
 import SecurityCoreTypes
 import SecurityTypes
 import UmbraErrors
-
-// MARK: - Key Storage Protocol
-
-/// Protocol for key storage functionality
-public protocol KeyStorage: Sendable {
-  /// Store a key
-  /// - Parameters:
-  ///   - key: The key to store
-  ///   - identifier: The identifier for the key
-  func storeKey(_ key: SecureBytes, identifier: String) async
-
-  /// Get a key
-  /// - Parameter identifier: The identifier for the key
-  /// - Returns: The key or nil if not found
-  func getKey(identifier: String) async -> SecureBytes?
-
-  /// Delete a key
-  /// - Parameter identifier: The identifier for the key
-  func deleteKey(identifier: String) async
-
-  /// Check if a key exists
-  /// - Parameter identifier: The identifier for the key
-  /// - Returns: True if the key exists
-  func containsKey(identifier: String) async -> Bool
-
-  /// List all key identifiers
-  /// - Returns: Array of key identifiers
-  func listKeyIdentifiers() async -> [String]
-}
+import SecurityKeyTypes
 
 /// KeyStorage factory
 ///
@@ -55,7 +27,7 @@ public protocol KeyStorage: Sendable {
 public enum KeyStorageFactory {
   /// Create a key storage implementation
   /// - Returns: An implementation of KeyStorage
-  public static func createKeyStorage() -> any KeyStorage {
+  public static func createKeyStorage() -> KeyStorage {
     KeyStorageManager()
   }
 }
@@ -68,7 +40,7 @@ actor KeyStorageManager: KeyStorage {
   // MARK: - Properties
 
   /// Dictionary for storing keys by identifier
-  private var storage: [String: SecureBytes]=[:]
+  private var storage: [String: SecureBytes] = [:]
 
   // MARK: - Public Interface
 
@@ -76,53 +48,53 @@ actor KeyStorageManager: KeyStorage {
   /// - Parameters:
   ///   - key: The key to store
   ///   - identifier: The identifier for the key
-  func storeKey(_ key: SecureBytes, identifier: String) async {
-    storage[identifier]=key
+  public func storeKey(_ key: SecureBytes, identifier: String) async {
+    storage[identifier] = key
   }
 
   /// Get a key from memory
   /// - Parameter identifier: The identifier for the key
   /// - Returns: The key or nil if not found
-  func getKey(identifier: String) async -> SecureBytes? {
+  public func getKey(identifier: String) async -> SecureBytes? {
     storage[identifier]
   }
 
   /// Delete a key from memory
   /// - Parameter identifier: The identifier for the key
-  func deleteKey(identifier: String) async {
+  public func deleteKey(identifier: String) async {
     storage.removeValue(forKey: identifier)
   }
 
   /// Check if a key exists in memory
   /// - Parameter identifier: The identifier for the key
   /// - Returns: True if the key exists
-  func containsKey(identifier: String) async -> Bool {
+  public func containsKey(identifier: String) async -> Bool {
     storage[identifier] != nil
   }
 
   /// List all key identifiers
   /// - Returns: Array of key identifiers
-  func listKeyIdentifiers() async -> [String] {
+  public func listKeyIdentifiers() async -> [String] {
     Array(storage.keys)
   }
 }
 
 /// A secure storage mechanism for cryptographic keys
-public final class KeyStore: Sendable {
+public final class KeyStore: KeyStorage, Sendable {
   // MARK: - Properties
 
   /// Thread-safe key storage
-  private let keyStorage: any KeyStorage
+  private let keyStorage: KeyStorage
 
   // MARK: - Initialisation
 
   /// Initialise with a specific key storage implementation
   /// - Parameter keyStorage: The key storage to use
-  public init(keyStorage: any KeyStorage=KeyStorageFactory.createKeyStorage()) {
-    self.keyStorage=keyStorage
+  public init(keyStorage: KeyStorage = KeyStorageFactory.createKeyStorage()) {
+    self.keyStorage = keyStorage
   }
 
-  // MARK: - Public Methods
+  // MARK: - KeyStorage Protocol Implementation
 
   /// Store a key with the given identifier
   /// - Parameters:
@@ -154,7 +126,7 @@ public final class KeyStore: Sendable {
 
   /// Get all key identifiers
   /// - Returns: Array of all key identifiers
-  public func getAllIdentifiers() async -> [String] {
+  public func listKeyIdentifiers() async -> [String] {
     await keyStorage.listKeyIdentifiers()
   }
 }

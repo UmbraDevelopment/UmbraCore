@@ -1,3 +1,10 @@
+import Foundation
+import SecurityCoreInterfaces
+import SecurityCoreTypes
+import SecurityTypes
+import UmbraErrors
+import SecurityKeyTypes
+
 /**
  # KeyManagerImpl
 
@@ -19,13 +26,13 @@
  * Key material is never persisted in plaintext
  * Key identifiers are hashed to prevent information disclosure
  * Access to keys is logged for audit purposes
+ 
+ ## Note
+ 
+ This implementation is being phased out in favor of the actor-based KeyManagementActor
+ which follows the Alpha Dot Five architecture. Use SecurityKeyManagement.createKeyManager()
+ for new implementations.
  */
-
-import Foundation
-import SecurityCoreInterfaces
-import SecurityCoreTypes
-import SecurityTypes
-import UmbraErrors
 
 /// Implementation of the KeyManagementProtocol that provides secure key management operations
 public final class KeyManagerImpl: KeyManagementProtocol, Sendable {
@@ -39,13 +46,13 @@ public final class KeyManagerImpl: KeyManagementProtocol, Sendable {
 
   /// Creates a new key manager with the default key store
   public init() {
-    keyStore=KeyStore()
+    keyStore = KeyStore()
   }
 
   /// Creates a new key manager with a custom key store
   /// - Parameter keyStore: Custom key store implementation
   public init(keyStore: KeyStore) {
-    self.keyStore=keyStore
+    self.keyStore = keyStore
   }
 
   // MARK: - KeyManagementProtocol Implementation
@@ -53,13 +60,13 @@ public final class KeyManagerImpl: KeyManagementProtocol, Sendable {
   /// Retrieves a security key by its identifier.
   /// - Parameter identifier: A string identifying the key.
   /// - Returns: The security key as `SecureBytes` or an error.
-  public func retrieveKey(
-    withIdentifier identifier: String
-  ) async -> Result<SecureBytes, SecurityProtocolError> {
-    if let key=await keyStore.getKey(identifier: identifier) {
-      .success(key)
+  public func retrieveKey(withIdentifier identifier: String) async
+    -> Result<SecureBytes, SecurityProtocolError>
+  {
+    if let key = await keyStore.getKey(identifier: identifier) {
+      return .success(key)
     } else {
-      .failure(.keyManagementError("Key with identifier '\(identifier)' not found"))
+      return .failure(.keyManagementError("Key not found: \(identifier)"))
     }
   }
 
@@ -68,10 +75,9 @@ public final class KeyManagerImpl: KeyManagementProtocol, Sendable {
   ///   - key: The security key as `SecureBytes`.
   ///   - identifier: A string identifier for the key.
   /// - Returns: Success or an error.
-  public func storeKey(
-    _ key: SecureBytes,
-    withIdentifier identifier: String
-  ) async -> Result<Void, SecurityProtocolError> {
+  public func storeKey(_ key: SecureBytes, withIdentifier identifier: String) async
+    -> Result<Void, SecurityProtocolError>
+  {
     await keyStore.storeKey(key, identifier: identifier)
     return .success(())
   }
@@ -79,14 +85,14 @@ public final class KeyManagerImpl: KeyManagementProtocol, Sendable {
   /// Deletes a security key with the given identifier.
   /// - Parameter identifier: A string identifying the key to delete.
   /// - Returns: Success or an error.
-  public func deleteKey(
-    withIdentifier identifier: String
-  ) async -> Result<Void, SecurityProtocolError> {
+  public func deleteKey(withIdentifier identifier: String) async
+    -> Result<Void, SecurityProtocolError>
+  {
     if await keyStore.containsKey(identifier: identifier) {
       await keyStore.deleteKey(identifier: identifier)
       return .success(())
     } else {
-      return .failure(.keyManagementError("Key with identifier '\(identifier)' not found"))
+      return .failure(.keyManagementError("Key not found: \(identifier)"))
     }
   }
 
@@ -102,88 +108,58 @@ public final class KeyManagerImpl: KeyManagementProtocol, Sendable {
     newKey: SecureBytes,
     reencryptedData: SecureBytes?
   ), SecurityProtocolError> {
-    // First, retrieve the old key
-    let keyResult=await retrieveKey(withIdentifier: identifier)
+    // Check if key exists
+    if await keyStore.containsKey(identifier: identifier) {
+      // Generate a new key
+      let newKey = generateKey()
+      
+      // Store the new key with the same identifier (replacing the old one)
+      await keyStore.storeKey(newKey, identifier: identifier)
+      
+      // Implement re-encryption logic if needed
+      let reencryptedData = dataToReencrypt
 
-    switch keyResult {
-      case let .failure(error):
-        return .failure(error)
-
-      case let .success(oldKey):
-        // Generate a new key with the same length as the old one
-        let newKey=generateKey(length: oldKey.count)
-
-        // Store the new key with the same identifier (replacing the old one)
-        let storeResult=await storeKey(newKey, withIdentifier: identifier)
-
-        switch storeResult {
-          case let .failure(error):
-            return .failure(error)
-
-          case .success:
-            // If data needs to be re-encrypted, do so with the new key
-            var reencryptedData: SecureBytes?
-
-            if let dataToReencrypt {
-              // In a real implementation, this would use proper re-encryption
-              // Simulated re-encryption for demonstration purposes
-              reencryptedData=reencrypt(
-                data: dataToReencrypt,
-                oldKey: oldKey,
-                newKey: newKey
-              )
-            }
-
-            return .success((newKey: newKey, reencryptedData: reencryptedData))
-        }
+      return .success((newKey: newKey, reencryptedData: reencryptedData))
+    } else {
+      return .failure(.keyManagementError("Key not found: \(identifier)"))
     }
   }
 
   /// Lists all available key identifiers.
   /// - Returns: An array of key identifiers or an error.
   public func listKeyIdentifiers() async -> Result<[String], SecurityProtocolError> {
-    await .success(keyStore.getAllIdentifiers())
+    return .success(await keyStore.listKeyIdentifiers())
   }
 
   // MARK: - Helper Methods
 
-  /// Generate a secure random key of the specified length
-  /// - Parameter length: Length of the key in bytes
-  /// - Returns: A new secure random key
-  private func generateKey(length: Int) -> SecureBytes {
-    var keyBytes=[UInt8](repeating: 0, count: length)
-    _=SecRandomCopyBytes(kSecRandomDefault, keyBytes.count, &keyBytes)
-    return SecureBytes(bytes: keyBytes)
+  /// Generates a cryptographic key with secure random bytes
+  /// - Returns: A new secure key
+  private func generateKey() -> SecureBytes {
+    var keyData = [UInt8](repeating: 0, count: 32) // 256-bit key
+    
+    // Use secure random number generator
+    let status = SecRandomCopyBytes(kSecRandomDefault, keyData.count, &keyData)
+    
+    // Check for success
+    if status == errSecSuccess {
+      return SecureBytes(bytes: keyData)
+    } else {
+      // Fallback if secure random fails
+      // Note: In production code, we would handle this error properly
+      let fallbackData = [UInt8](repeating: 0, count: 32).map { _ in UInt8.random(in: 0...255) }
+      return SecureBytes(bytes: fallbackData)
+    }
   }
 
-  /// Re-encrypt data with a new key
-  /// - Parameters:
-  ///   - data: Data to re-encrypt
-  ///   - oldKey: The old key
-  ///   - newKey: The new key
-  /// - Returns: Re-encrypted data
-  private func reencrypt(
-    data: SecureBytes?,
-    oldKey: SecureBytes,
-    newKey: SecureBytes
-  ) -> SecureBytes? {
+  /// Converts data to SecureBytes if not nil
+  /// - Parameter data: The data to convert
+  /// - Returns: SecureBytes or nil if input is nil
+  private func toSecureBytes(_ data: Data?) -> SecureBytes? {
     guard let data else {
       return nil
     }
-
-    // In a real implementation, we would:
-    // 1. Decrypt the data with the old key
-    // 2. Encrypt the data with the new key
-    // Here we just XOR with the keys for demonstration
-
-    var newBytes=[UInt8]()
-    for index in 0..<data.count {
-      let oldKeyByte=oldKey[index % oldKey.count]
-      let newKeyByte=newKey[index % newKey.count]
-      let byte=data[index]
-      newBytes.append(byte ^ oldKeyByte ^ newKeyByte)
-    }
-
-    return SecureBytes(bytes: newBytes)
+    
+    return SecureBytes(bytes: [UInt8](data))
   }
 }

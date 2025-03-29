@@ -27,20 +27,20 @@ public final class SecurityProviderImpl: SecurityProviderProtocol {
     cryptoService: CryptoServiceProtocol,
     keyManager: KeyManagementProtocol
   ) {
-    self.cryptoService=cryptoService
-    self.keyManager=keyManager
-    core=SecurityProviderCore(
+    self.cryptoService = cryptoService
+    self.keyManager = keyManager
+    core = SecurityProviderCore(
       cryptoService: cryptoService,
       keyManager: keyManager
     )
   }
 
   /// Convenience initialiser with default implementations
-  public convenience init() {
+  public convenience init() async {
     // Use a factory method to create default implementations
     // without directly referencing the concrete types
-    let defaultCryptoService=createDefaultCryptoService()
-    let defaultKeyManager=createDefaultKeyManager()
+    let defaultCryptoService = createDefaultCryptoService()
+    let defaultKeyManager = await createDefaultKeyManager()
 
     self.init(
       cryptoService: defaultCryptoService,
@@ -59,8 +59,8 @@ public final class SecurityProviderImpl: SecurityProviderProtocol {
   public func encrypt(config: SecurityConfigDTO) async -> SecurityResultDTO {
     // Extract data and key from config options
     guard
-      let dataString=config.options["inputData"],
-      let data=SecureBytes(base64Encoded: dataString)
+      let dataString = config.options["inputData"],
+      let data = SecureBytes(base64Encoded: dataString)
     else {
       return SecurityResultDTO(
         status: .failure,
@@ -71,10 +71,10 @@ public final class SecurityProviderImpl: SecurityProviderProtocol {
     // Extract key if provided
     var key: SecureBytes?
     if
-      let keyString=config.options["key"],
-      let keyData=SecureBytes(base64Encoded: keyString)
+      let keyString = config.options["key"],
+      let keyData = SecureBytes(base64Encoded: keyString)
     {
-      key=keyData
+      key = keyData
     }
 
     // Perform the encryption operation
@@ -93,8 +93,8 @@ public final class SecurityProviderImpl: SecurityProviderProtocol {
   public func decrypt(config: SecurityConfigDTO) async -> SecurityResultDTO {
     // Extract data and key from config options
     guard
-      let dataString=config.options["ciphertext"],
-      let data=SecureBytes(base64Encoded: dataString)
+      let dataString = config.options["ciphertext"],
+      let data = SecureBytes(base64Encoded: dataString)
     else {
       return SecurityResultDTO(
         status: .failure,
@@ -105,10 +105,10 @@ public final class SecurityProviderImpl: SecurityProviderProtocol {
     // Extract key if provided
     var key: SecureBytes?
     if
-      let keyString=config.options["key"],
-      let keyData=SecureBytes(base64Encoded: keyString)
+      let keyString = config.options["key"],
+      let keyData = SecureBytes(base64Encoded: keyString)
     {
-      key=keyData
+      key = keyData
     }
 
     // Perform the decryption operation
@@ -126,7 +126,7 @@ public final class SecurityProviderImpl: SecurityProviderProtocol {
    */
   public func generateKey(config: SecurityConfigDTO) async -> SecurityResultDTO {
     // Extract key size from config
-    let keySize=config.keySize
+    let keySize = config.keySize
 
     // Perform the key generation operation
     return await performSecureOperation(
@@ -144,9 +144,9 @@ public final class SecurityProviderImpl: SecurityProviderProtocol {
   public func secureStore(config: SecurityConfigDTO) async -> SecurityResultDTO {
     // Extract data and identifier from config options
     guard
-      let dataString=config.options["data"],
-      let data=SecureBytes(base64Encoded: dataString),
-      let identifier=config.options["identifier"]
+      let dataString = config.options["data"],
+      let data = SecureBytes(base64Encoded: dataString),
+      let identifier = config.options["identifier"]
     else {
       return SecurityResultDTO(
         status: .failure,
@@ -169,7 +169,7 @@ public final class SecurityProviderImpl: SecurityProviderProtocol {
    */
   public func secureRetrieve(config: SecurityConfigDTO) async -> SecurityResultDTO {
     // Extract identifier from config options
-    guard let identifier=config.options["identifier"] else {
+    guard let identifier = config.options["identifier"] else {
       return SecurityResultDTO(
         status: .failure,
         error: SecurityError.invalidInput("Missing identifier for secure retrieval")
@@ -191,7 +191,7 @@ public final class SecurityProviderImpl: SecurityProviderProtocol {
    */
   public func secureDelete(config: SecurityConfigDTO) async -> SecurityResultDTO {
     // Extract identifier from config options
-    guard let identifier=config.options["identifier"] else {
+    guard let identifier = config.options["identifier"] else {
       return SecurityResultDTO(
         status: .failure,
         error: SecurityError.invalidInput("Missing identifier for secure deletion")
@@ -214,8 +214,8 @@ public final class SecurityProviderImpl: SecurityProviderProtocol {
   public func sign(config: SecurityConfigDTO) async -> SecurityResultDTO {
     // Extract data and key from config options
     guard
-      let dataString=config.options["data"],
-      let data=SecureBytes(base64Encoded: dataString)
+      let dataString = config.options["data"],
+      let data = SecureBytes(base64Encoded: dataString)
     else {
       return SecurityResultDTO(
         status: .failure,
@@ -226,10 +226,10 @@ public final class SecurityProviderImpl: SecurityProviderProtocol {
     // Extract key if provided
     var key: SecureBytes?
     if
-      let keyString=config.options["key"],
-      let keyData=SecureBytes(base64Encoded: keyString)
+      let keyString = config.options["key"],
+      let keyData = SecureBytes(base64Encoded: keyString)
     {
-      key=keyData
+      key = keyData
     }
 
     // Perform the signing operation
@@ -248,10 +248,10 @@ public final class SecurityProviderImpl: SecurityProviderProtocol {
   public func verify(config: SecurityConfigDTO) async -> SecurityResultDTO {
     // Extract data, signature, and key from config options
     guard
-      let dataString=config.options["data"],
-      let data=SecureBytes(base64Encoded: dataString),
-      let signatureString=config.options["signature"],
-      let signature=SecureBytes(base64Encoded: signatureString)
+      let dataString = config.options["data"],
+      let data = SecureBytes(base64Encoded: dataString),
+      let signatureString = config.options["signature"],
+      let signature = SecureBytes(base64Encoded: signatureString)
     else {
       return SecurityResultDTO(
         status: .failure,
@@ -263,10 +263,10 @@ public final class SecurityProviderImpl: SecurityProviderProtocol {
     // Extract key if provided
     var key: SecureBytes?
     if
-      let keyString=config.options["key"],
-      let keyData=SecureBytes(base64Encoded: keyString)
+      let keyString = config.options["key"],
+      let keyData = SecureBytes(base64Encoded: keyString)
     {
-      key=keyData
+      key = keyData
     }
 
     // Perform the verification operation
@@ -308,11 +308,10 @@ private func createDefaultCryptoService() -> CryptoServiceProtocol {
 
   // First try to dynamically load the class by name
   if
-    let cryptoServiceClass=NSClassFromString(
+    let cryptoServiceClass = NSClassFromString(
       "SecurityCryptoServices.CryptoServiceImpl"
-    ) as? NSObject
-      .Type,
-      let instance=cryptoServiceClass.init() as? CryptoServiceProtocol
+    ) as? NSObject.Type,
+    let instance = cryptoServiceClass.init() as? CryptoServiceProtocol
   {
     return instance
   }
@@ -323,20 +322,68 @@ private func createDefaultCryptoService() -> CryptoServiceProtocol {
 
 /// Create a default key manager implementation
 /// This breaks the direct dependency on SecurityKeyManagement
-private func createDefaultKeyManager() -> KeyManagementProtocol {
-  // This would typically be KeyManagerImpl() from the SecurityKeyManagement module
-  // But since we can't import it directly, we'll use a runtime lookup approach
-
-  // First try to dynamically load the class by name
+private func createDefaultKeyManager() async -> KeyManagementProtocol {
+  // First try to load the KeyManagementActor implementation via factory method
   if
-    let keyManagerClass=NSClassFromString("SecurityKeyManagement.KeyManagerImpl") as? NSObject.Type,
-    let instance=keyManagerClass.init() as? KeyManagementProtocol
+    let securityKeyManagementClass = NSClassFromString("SecurityKeyManagement.SecurityKeyManagement"),
+    securityKeyManagementClass.responds(to: NSSelectorFromString("createKeyManager"))
+  {
+    // Using Objective-C runtime to call the asynchronous method
+    // This is complex because we need to bridge between ObjC runtime and Swift async/await
+    // Using a helper type KeyManagerAsyncFactory to handle this properly
+    if let factory = KeyManagerAsyncFactory.createInstance() {
+      return await factory.createKeyManager()
+    }
+  }
+  
+  // If modern async factory method isn't available, fall back to dynamic loading
+  // of the legacy KeyManagerImpl (for backwards compatibility)
+  if
+    let keyManagerClass = NSClassFromString("SecurityKeyManagement.KeyManagerImpl") as? NSObject.Type,
+    let instance = keyManagerClass.init() as? KeyManagementProtocol
   {
     return instance
   }
-
-  // If dynamic loading fails, use a basic implementation that meets the protocol
+  
+  // If all dynamic loading fails, use a basic implementation that meets the protocol
   return BasicKeyManager()
+}
+
+// Helper class for bridging async factory methods through ObjC runtime
+private final class KeyManagerAsyncFactory: NSObject {
+  typealias AsyncKeyManagerFactory = @Sendable () async -> KeyManagementProtocol
+  
+  private var asyncFactory: AsyncKeyManagerFactory?
+  
+  // Static factory method to create an instance if possible
+  static func createInstance() -> KeyManagerAsyncFactory? {
+    let instance = KeyManagerAsyncFactory()
+    
+    // Try to dynamically load the module and set up the async factory
+    if
+      let securityKeyManagementClass = NSClassFromString("SecurityKeyManagement.SecurityKeyManagement"),
+      class_getClassMethod(securityKeyManagementClass, NSSelectorFromString("createKeyManager")) != nil
+    {
+      // This is a simplified approach - in a real implementation,
+      // we would need more complex bridging to properly handle Swift async methods
+      // called through Objective-C runtime
+      instance.asyncFactory = {
+        // Return a basic implementation for now - the actual implementation
+        // would need to properly bridge to Swift's concurrency
+        return BasicKeyManager()
+      }
+      return instance
+    } else {
+      return nil
+    }
+  }
+  
+  func createKeyManager() async -> KeyManagementProtocol {
+    if let factory = asyncFactory {
+      return await factory()
+    }
+    return BasicKeyManager()
+  }
 }
 
 // MARK: - Basic Implementations

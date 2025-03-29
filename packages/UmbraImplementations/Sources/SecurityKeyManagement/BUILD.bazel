@@ -7,6 +7,12 @@ umbra_swift_library(
             "*.swift",
             "**/*.swift",
         ],
+        exclude = [
+            "**/*Test.swift",
+            "**/*.generated.swift",
+            "Actor/**/*.swift",  # Exclude old Actor directory files 
+            "ActorTypes/**/*.swift",  # Exclude ActorTypes directory files as they'll be in a separate target
+        ],
         allow_empty = False,
     ),
     visibility = ["//visibility:public"],
@@ -16,7 +22,13 @@ umbra_swift_library(
         "//packages/UmbraCoreTypes/Sources/SecurityCoreTypes",
         "//packages/UmbraCoreTypes/Sources/SecurityInterfaces",
         "//packages/UmbraCoreTypes/Sources/CoreDTOs",
+        "//packages/UmbraCoreTypes/Sources/LoggingTypes",
         "//packages/UmbraInterfaces/Sources/SecurityCoreInterfaces",
+        "//packages/UmbraInterfaces/Sources/LoggingInterfaces",
         "//packages/UmbraImplementations/Sources/SecurityProviders",
+        # Include the modules
+        "//packages/UmbraImplementations/Sources/SecurityKeyManagement/ActorTypes:KeyManagementActor",
+        "//packages/UmbraImplementations/Sources/SecurityKeyManagement/Storage:KeyStorage",
+        "//packages/UmbraImplementations/Sources/SecurityKeyManagement/Types:SecurityKeyTypes",
     ],
 )

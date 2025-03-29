@@ -1,41 +1,50 @@
+import Foundation
+import SecurityCoreInterfaces
+import LoggingInterfaces
+import SecurityKeyTypes // Import SecurityKeyTypes module for KeyStorage protocol
+
 /**
- # SecurityKeyManagement Module
-
- This module provides key management implementations for the UmbraCore security framework.
- It implements the key management interfaces defined in SecurityCoreInterfaces with concrete
- implementations focusing on secure key storage, retrieval, rotation, and deletion.
-
- ## Components
-
- - KeyManagerImpl: Main implementation of the KeyManagementProtocol
- - Supporting components:
-   - KeyStore: Secure storage for cryptographic keys
-   - KeyStorageManager: Thread-safe storage manager for keys
-
+ # SecurityKeyManagement
+ 
+ Main entry point for key management services in UmbraCore.
+ This provides factory methods to access various key management operations
+ through a clean interface that avoids implementation details.
+ 
  ## Usage
-
- The KeyManagerImpl can be instantiated directly or through dependency injection:
-
+ 
  ```swift
- // Using default implementation
- let keyManager = KeyManagerImpl()
-
- // Usage via SecurityProviderProtocol
- let securityProvider = SecurityProviderImpl(
-   cryptoService: /* crypto service implementation */ ,
-   keyManager: KeyManagerImpl()
+ // Create a key manager with a logger
+ let logger = YourLoggerImplementation()
+ let keyManager = await SecurityKeyManagement.createKeyManager(
+     logger: logger
  )
+ 
+ // Generate a key
+ let key = try await keyManager.generateKey(ofType: .aes256)
  ```
  */
-
-// Export Foundation types needed by this module
-@_exported import Foundation
-
-// Export dependencies
-@_exported import SecurityCoreInterfaces
-@_exported import SecurityCoreTypes
-@_exported import SecurityTypes
-@_exported import UmbraErrors
-
-// Public exports
-public typealias DefaultKeyManager=KeyManagerImpl
+public enum SecurityKeyManagement {
+    /**
+     Creates a new key management service with the specified logger.
+     
+     - Parameter logger: Logger for recording operations (optional)
+     - Returns: A new implementation of KeyManagementProtocol
+     */
+    public static func createKeyManager(
+        logger: LoggingProtocol? = nil
+    ) async -> any KeyManagementProtocol {
+        return await KeyManagementFactory.createKeyManager(logger: logger)
+    }
+    
+    /**
+     Creates a key storage implementation suitable for the current environment.
+     
+     - Parameter logger: Logger for recording operations (optional)
+     - Returns: A new implementation of KeyStorage
+     */
+    public static func createKeyStorage(
+        logger: LoggingProtocol? = nil
+    ) -> any KeyStorage {
+        return KeyManagementFactory.createKeyStorage(logger: logger)
+    }
+}

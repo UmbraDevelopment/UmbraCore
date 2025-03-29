@@ -3,20 +3,24 @@ import SecurityCoreInterfaces
 import SecurityCoreTypes
 import SecurityTypes
 import LoggingInterfaces
+import UmbraErrors
 
 /**
- # CryptoServices
+ # CryptoServicesFactory
  
- Main entry point for the cryptographic services in UmbraCore.
- This provides factory methods to access various cryptographic services
- through a clean interface that avoids implementation details.
+ A factory for creating cryptographic service components without exposing 
+ implementation details or naming conflicts with Swift keywords.
+ 
+ This factory handles the proper instantiation of all actor-based cryptographic
+ services, avoiding direct references to implementation types that might clash
+ with Swift reserved keywords.
  
  ## Usage
  
  ```swift
  // Create a crypto service with a specific provider
- let logger = YourLoggerImplementation()
- let cryptoService = CryptoServices.createCryptoService(
+ let logger = DefaultLogger()
+ let cryptoService = try await CryptoServicesFactory.createCryptoService(
      providerType: .apple,
      logger: logger
  )
@@ -25,23 +29,27 @@ import LoggingInterfaces
  let encryptedData = try await cryptoService.encrypt(data: secureData, using: secureKey)
  ```
  */
-public enum CryptoServices {
+public enum CryptoServicesFactory {
     /**
      Creates a new crypto service with the specified provider type.
      
      - Parameters:
         - providerType: The type of security provider to use (optional)
         - logger: Logger for recording operations
-     - Returns: A new implementation of CryptoServiceProtocol
+     - Returns: A new crypto service implementation
      */
     public static func createCryptoService(
         providerType: SecurityProviderType? = nil,
         logger: LoggingProtocol
     ) -> any CryptoServiceProtocol {
-        return CryptoServicesFactory.createCryptoService(
-            providerType: providerType,
+        // Import the actor from the implementations module and initialise it
+        let impl = CryptoActorImplementations.CryptoServiceActor(
+            providerType: providerType, 
             logger: logger
         )
+        
+        // Return the implementation as the protocol type
+        return impl
     }
     
     /**
@@ -51,31 +59,37 @@ public enum CryptoServices {
         - providerType: The type of security provider to use (optional)
         - storageURL: Custom URL for key storage (optional)
         - logger: Logger for recording operations
-     - Returns: A new implementation of SecureStorageProtocol
+     - Returns: A new secure storage service implementation
      */
     public static func createSecureStorage(
         providerType: SecurityProviderType? = nil,
         storageURL: URL? = nil,
         logger: LoggingProtocol
     ) -> any SecureStorageProtocol {
-        return CryptoServicesFactory.createSecureStorage(
+        // Import the actor from the implementations module and initialise it
+        let impl = CryptoActorImplementations.SecureStorageActor(
             providerType: providerType,
             storageURL: storageURL,
             logger: logger
         )
+        
+        // Return the implementation as the protocol type
+        return impl
     }
     
     /**
      Creates a new provider registry for managing security providers.
      
      - Parameter logger: Logger for recording operations
-     - Returns: A new implementation of ProviderRegistryProtocol
+     - Returns: A new provider registry implementation
      */
     public static func createProviderRegistry(
         logger: LoggingProtocol
     ) -> any ProviderRegistryProtocol {
-        return CryptoServicesFactory.createProviderRegistry(
-            logger: logger
-        )
+        // Import the actor from the implementations module and initialise it
+        let impl = CryptoActorImplementations.ProviderRegistryActor(logger: logger)
+        
+        // Return the implementation as the protocol type
+        return impl
     }
 }
