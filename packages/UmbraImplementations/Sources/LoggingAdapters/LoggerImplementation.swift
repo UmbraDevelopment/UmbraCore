@@ -38,7 +38,7 @@ public actor LoggerImplementation: LoggingProtocol {
 
   /// Log a message at the specified level
   /// - Parameter entry: The log entry to record
-  private func log(_ entry: LogEntry) {
+  private func log(_ entry: LoggingTypes.LogEntry) {
     let logLevel=LoggingLevelAdapter.convertLevel(entry.level)
 
     if let metadata=entry.metadata {
@@ -52,7 +52,7 @@ public actor LoggerImplementation: LoggingProtocol {
   /// Format metadata into a string representation
   /// - Parameter metadata: The metadata to format
   /// - Returns: A string representation of the metadata
-  private func formatMetadata(_ metadata: LogMetadata) -> String {
+  private func formatMetadata(_ metadata: LoggingTypes.LogMetadata) -> String {
     let dict=metadata.asDictionary
     if dict.isEmpty {
       return "{}"
@@ -70,31 +70,31 @@ public actor LoggerImplementation: LoggingProtocol {
   /// - Parameters:
   ///   - message: The message to log
   ///   - metadata: Optional metadata
-  public func debug(_ message: String, metadata: LogMetadata?) async {
-    await log(LogEntry(level: .debug, message: message, metadata: metadata))
+  public func debug(_ message: String, metadata: LoggingTypes.LogMetadata?) async {
+    await log(LoggingTypes.LogEntry(level: .debug, message: message, metadata: metadata))
   }
 
   /// Log an info message
   /// - Parameters:
   ///   - message: The message to log
   ///   - metadata: Optional metadata
-  public func info(_ message: String, metadata: LogMetadata?) async {
-    await log(LogEntry(level: .info, message: message, metadata: metadata))
+  public func info(_ message: String, metadata: LoggingTypes.LogMetadata?) async {
+    await log(LoggingTypes.LogEntry(level: .info, message: message, metadata: metadata))
   }
 
   /// Log a warning message
   /// - Parameters:
   ///   - message: The message to log
   ///   - metadata: Optional metadata
-  public func warning(_ message: String, metadata: LogMetadata?) async {
-    await log(LogEntry(level: .warning, message: message, metadata: metadata))
+  public func warning(_ message: String, metadata: LoggingTypes.LogMetadata?) async {
+    await log(LoggingTypes.LogEntry(level: .warning, message: message, metadata: metadata))
   }
 
   /// Log an error message
   /// - Parameters:
   ///   - message: The message to log
   ///   - metadata: Optional metadata
-  public func error(_ message: String, metadata: LogMetadata?) async {
-    await log(LogEntry(level: .error, message: message, metadata: metadata))
+  public func error(_ message: String, metadata: LoggingTypes.LogMetadata?) async {
+    await log(LoggingTypes.LogEntry(level: .error, message: message, metadata: metadata))
   }
 }

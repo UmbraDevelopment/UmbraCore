@@ -1,12 +1,5 @@
 import Foundation
 
-/// Type alias for log metadata
-///
-/// This allows us to enforce a consistent type for metadata across
-/// the logging system while maintaining flexibility for different
-/// metadata value types.
-public typealias LogMetadata=[String: String]
-
 /// Log level for filtering log messages
 public enum LogLevel: String, Sendable, Comparable {
   /// Debug-level information (most verbose)

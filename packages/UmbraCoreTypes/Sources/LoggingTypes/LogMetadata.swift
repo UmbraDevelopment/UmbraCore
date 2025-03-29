@@ -1,5 +1,5 @@
 /// Represents metadata that can be attached to log entries
-public struct LogMetadata: Sendable {
+public struct LogMetadata: Sendable, Hashable, Equatable {
   private var storage: [String: String]
 
   /// Initialise a new LogMetadata instance
@@ -15,8 +15,18 @@ public struct LogMetadata: Sendable {
   }
 
   /// Get all metadata as a dictionary
-  public var asDictionary: [String: Any] {
+  public var asDictionary: [String: String] {
     storage
+  }
+  
+  /// Equatable conformance
+  public static func == (lhs: LogMetadata, rhs: LogMetadata) -> Bool {
+    lhs.storage == rhs.storage
+  }
+  
+  /// Hashable conformance
+  public func hash(into hasher: inout Hasher) {
+    hasher.combine(storage)
   }
 }
 

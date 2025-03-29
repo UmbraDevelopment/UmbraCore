@@ -4,14 +4,17 @@
 /// architecture principle of separation between types, interfaces, and implementations.
 ///
 /// This module contains:
-/// - Logging protocol definitions
-/// - Error types specific to logging interfaces
+/// - LoggingProtocol: Core logging interface with essential logging methods
+/// - LoggingServiceProtocol: Enhanced logging service with comprehensive features
+/// - LogFormatterProtocol: Interface for formatting log entries
+/// - LoggingError: Domain-specific error types for logging operations
 ///
 /// Following Alpha Dot Five principles, this module:
 /// - Contains only interface definitions
 /// - Depends only on core types
 /// - Avoids implementation details
 /// - Defines behaviours through protocols
+/// - Uses proper British spelling in documentation
+/// - Avoids unnecessary type aliases
 
-// No need for @_exported import as the protocol is defined in this module
-// and will be available when the module is imported
+@_exported import LoggingTypes
