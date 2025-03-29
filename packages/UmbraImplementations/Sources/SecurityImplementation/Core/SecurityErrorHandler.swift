@@ -57,7 +57,7 @@ public struct SecurityErrorHandler {
     metadata["errorType"] = String(describing: type(of: error))
     metadata["errorDescription"] = error.localizedDescription
 
-    let logMetadata = LogMetadata(metadata)
+    let logMetadata: LoggingInterfaces.LogMetadata = metadata
 
     // Log the error with appropriate level based on error type
     switch securityError {

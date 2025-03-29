@@ -41,10 +41,10 @@ extension SecurityProviderImpl {
     let operationName = "encryptAndStore"
     
     // Create log metadata
-    let logMetadata = LogMetadata([
+    let logMetadata: LoggingInterfaces.LogMetadata = [
       "operationId": operationID, 
       "operation": operationName
-    ])
+    ]
     
     await logger.info("Starting combined encrypt and store operation", metadata: logMetadata)
     
@@ -120,7 +120,7 @@ extension SecurityProviderImpl {
       let duration = Date().timeIntervalSince(startTime) * 1000
       
       // Log success
-      var resultMetadata = [
+      var resultMetadata: LoggingInterfaces.LogMetadata = [
         "operationId": operationID, 
         "storageIdentifier": storageIdentifier,
         "durationMs": String(format: "%.2f", duration)
@@ -128,7 +128,7 @@ extension SecurityProviderImpl {
       
       await logger.info(
         "Combined encrypt and store operation completed successfully",
-        metadata: LogMetadata(resultMetadata)
+        metadata: resultMetadata
       )
       
       // Return success result with metadata
@@ -186,11 +186,11 @@ extension SecurityProviderImpl {
     let startTime = Date()
     let operationName = "retrieveAndDecrypt"
     
-    let logMetadata = LogMetadata([
+    let logMetadata: LoggingInterfaces.LogMetadata = [
       "operationId": operationID, 
       "identifier": identifier,
       "operation": operationName
-    ])
+    ]
     
     await logger.info("Starting combined retrieve and decrypt operation", metadata: logMetadata)
     
@@ -287,7 +287,7 @@ extension SecurityProviderImpl {
     config: SecurityConfigDTO
   ) async -> [SecurityResultDTO] {
     let operationId = UUID().uuidString
-    let logMetadata = LogMetadata(["itemCount": String(dataItems.count), "operationId": operationId])
+    let logMetadata: LoggingInterfaces.LogMetadata = ["itemCount": String(dataItems.count), "operationId": operationId]
     
     await logger.info("Starting batch encryption of \(dataItems.count) items", metadata: logMetadata)
     
@@ -323,12 +323,12 @@ extension SecurityProviderImpl {
     }
     
     // Log batch summary
-    let batchMetadata = LogMetadata([
+    let batchMetadata: LoggingInterfaces.LogMetadata = [
       "totalItems": String(dataItems.count),
       "successCount": String(successCount),
       "failureCount": String(dataItems.count - successCount),
       "operationId": operationId
-    ])
+    ]
     
     await logger.info(
       "Batch encryption completed: \(successCount)/\(dataItems.count) successful",
@@ -354,7 +354,7 @@ extension SecurityProviderImpl {
     config: SecurityConfigDTO
   ) async -> [SecurityResultDTO] {
     let operationId = UUID().uuidString
-    let logMetadata = LogMetadata(["itemCount": String(dataItems.count), "operationId": operationId])
+    let logMetadata: LoggingInterfaces.LogMetadata = ["itemCount": String(dataItems.count), "operationId": operationId]
     
     await logger.info("Starting batch decryption of \(dataItems.count) items", metadata: logMetadata)
     
@@ -390,12 +390,12 @@ extension SecurityProviderImpl {
     }
     
     // Log batch summary
-    let batchMetadata = LogMetadata([
+    let batchMetadata: LoggingInterfaces.LogMetadata = [
       "totalItems": String(dataItems.count),
       "successCount": String(successCount),
       "failureCount": String(dataItems.count - successCount),
       "operationId": operationId
-    ])
+    ]
     
     await logger.info(
       "Batch decryption completed: \(successCount)/\(dataItems.count) successful",
@@ -419,12 +419,12 @@ extension SecurityProviderImpl {
     let startTime = Date()
     
     // Create metadata for logging
-    let metadata = [
+    let metadata: LoggingInterfaces.LogMetadata = [
       "operationId": operationID, 
       "operation": SecurityOperation.generateRandom(length: 0).rawValue
     ]
     
-    let logMetadata = LogMetadata(metadata)
+    let logMetadata = metadata
     
     // Get the requested length
     guard let lengthString = config.options["length"],
@@ -454,7 +454,7 @@ extension SecurityProviderImpl {
     )
     
     // Add duration to metadata
-    var resultMetadata = metadata
+    var resultMetadata: LoggingInterfaces.LogMetadata = metadata
     resultMetadata["durationMs"] = String(format: "%.2f", duration)
     
     // Return success result

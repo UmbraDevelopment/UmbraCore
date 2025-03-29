@@ -31,11 +31,11 @@ extension SecurityProviderImpl {
     // Create a safe version of config - don't log auth data
     let safeConfig = "Algorithm: \(config.algorithm), KeySize: \(config.keySize), Mode: \(config.options["mode"] ?? "none")"
 
-    let metadata = LogMetadata([
+    let metadata: LoggingInterfaces.LogMetadata = [
       "operation": operation.description,
       "configuration": safeConfig,
       "timestamp": "\(Date())"
-    ])
+    ]
 
     await logger.info("Starting security operation: \(operation.description)", metadata: metadata)
   }
@@ -48,11 +48,11 @@ extension SecurityProviderImpl {
      - duration: The time taken to complete the operation in milliseconds
    */
   func logOperationSuccess(operation: SecurityOperation, duration: Double) async {
-    let metadata = LogMetadata([
+    let metadata: LoggingInterfaces.LogMetadata = [
       "operation": operation.description,
       "durationMs": String(format: "%.2f", duration),
       "timestamp": "\(Date())"
-    ])
+    ]
 
     await logger.info(
       "Successfully completed security operation: \(operation.description)",
@@ -69,12 +69,12 @@ extension SecurityProviderImpl {
      - duration: The time taken before failure in milliseconds
    */
   func logOperationFailure(operation: SecurityOperation, error: Error, duration: Double) async {
-    let metadata = LogMetadata([
+    let metadata: LoggingInterfaces.LogMetadata = [
       "operation": operation.description,
       "errorType": "\(type(of: error))",
       "durationMs": String(format: "%.2f", duration),
       "timestamp": "\(Date())"
-    ])
+    ]
 
     await logger.error("Security operation failed: \(operation.description)", metadata: metadata)
   }

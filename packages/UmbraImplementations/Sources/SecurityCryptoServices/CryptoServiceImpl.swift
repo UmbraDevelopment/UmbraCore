@@ -29,9 +29,15 @@ public final class CryptoServiceImpl: CryptoServiceProtocol, Sendable {
   /// Service for hashing operations
   private let hashingService: HashingService
 
+  /// Default key size for AES encryption (256 bits)
+  private let defaultAESKeySize = 256
+
+  /// Default hash algorithm
+  private let defaultHashAlgorithm = SecurityCoreTypes.HashAlgorithm.sha256
+
   // MARK: - Initialisation
 
-  /// Private initializer with dependencies
+  /// Private initialiser with dependencies
   /// - Parameters:
   ///   - symmetricCrypto: Service for symmetric encryption operations
   ///   - hashingService: Service for hashing operations
@@ -39,8 +45,8 @@ public final class CryptoServiceImpl: CryptoServiceProtocol, Sendable {
     symmetricCrypto: SymmetricCryptoService,
     hashingService: HashingService
   ) {
-    self.symmetricCrypto=symmetricCrypto
-    self.hashingService=hashingService
+    self.symmetricCrypto = symmetricCrypto
+    self.hashingService = hashingService
   }
 
   /// Factory method to create a CryptoServiceImpl instance
@@ -63,9 +69,10 @@ public final class CryptoServiceImpl: CryptoServiceProtocol, Sendable {
     data: SecureBytes,
     using key: SecureBytes
   ) async -> Result<SecureBytes, SecurityProtocolError> {
-    let config=SecurityConfigDTO(
-      algorithm: .aes,
-      mode: .gcm
+    let config = SecurityConfigDTO(
+      algorithm: "AES",
+      keySize: defaultAESKeySize,
+      mode: "GCM"
     )
     return symmetricCrypto.encrypt(data: data, key: key, config: config)
   }
@@ -79,9 +86,10 @@ public final class CryptoServiceImpl: CryptoServiceProtocol, Sendable {
     data: SecureBytes,
     using key: SecureBytes
   ) async -> Result<SecureBytes, SecurityProtocolError> {
-    let config=SecurityConfigDTO(
-      algorithm: .aes,
-      mode: .gcm
+    let config = SecurityConfigDTO(
+      algorithm: "AES",
+      keySize: defaultAESKeySize,
+      mode: "GCM"
     )
     return symmetricCrypto.decrypt(data: data, key: key, config: config)
   }
@@ -92,8 +100,8 @@ public final class CryptoServiceImpl: CryptoServiceProtocol, Sendable {
   public func hash(
     data: SecureBytes
   ) async -> Result<SecureBytes, SecurityProtocolError> {
-    // Use SHA-256 as the default algorithm
-    hashingService.hash(data: data, algorithm: .sha256)
+    // Use the correct method signature with HashAlgorithm parameter
+    return hashingService.hash(data: data, algorithm: defaultHashAlgorithm)
   }
 
   /// Verifies the integrity of data against a known hash.
@@ -104,12 +112,12 @@ public final class CryptoServiceImpl: CryptoServiceProtocol, Sendable {
   public func verifyHash(data: SecureBytes, expectedHash: SecureBytes) async
   -> Result<Bool, SecurityProtocolError> {
     // Hash the data using SHA-256
-    let hashResult=await hash(data: data)
+    let hashResult = await hash(data: data)
 
     switch hashResult {
       case let .success(computedHash):
         // Compare the computed hash with the expected hash
-        let match=(computedHash.count == expectedHash.count) &&
+        let match = (computedHash.count == expectedHash.count) &&
           (0..<computedHash.count).allSatisfy { computedHash[$0] == expectedHash[$0] }
         return .success(match)
       case let .failure(error):

@@ -1,0 +1,22 @@
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
+
+umbra_swift_library(
+    name = "CoreServices",
+    srcs = glob(
+        [
+            "*.swift",
+            "**/*.swift",
+        ],
+        allow_empty = False,
+    ),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//packages/UmbraInterfaces/Sources/CoreInterfaces",
+        "//packages/UmbraCoreTypes/Sources/UmbraErrors",
+        "//packages/UmbraInterfaces/Sources/CryptoInterfaces",
+        "//packages/UmbraInterfaces/Sources/SecurityCoreInterfaces",
+        "//packages/UmbraImplementations/Sources/CryptoServices",
+        "//packages/UmbraImplementations/Sources/SecurityCryptoServices",
+        "//packages/UmbraImplementations/Sources/SecurityImplementation",
+    ],
+)
