@@ -1,6 +1,7 @@
 import Foundation
-import UmbraErrorsCore
 import Interfaces
+import UmbraErrorsCore
+
 /// Domain-specific error type for security operations
 public enum SecurityError: Error, CustomStringConvertible {
   // Authentication errors

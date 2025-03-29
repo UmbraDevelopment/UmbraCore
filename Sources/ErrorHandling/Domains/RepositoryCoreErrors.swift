@@ -11,7 +11,7 @@ import UmbraErrorsCore
 extension UmbraErrors.Repository {
   /// Core repository errors relating to repository access and management
   // Removed RepositoryErrors protocol conformance to break circular dependency
-  public enum Core: Error, StandardErrorCapabilitiesProtocol /*, RepositoryErrors */ {
+  public enum Core: Error, StandardErrorCapabilitiesProtocol /* , RepositoryErrors */ {
     // Repository access errors
     /// The repository could not be found
     case repositoryNotFound(resource: String)
@@ -64,42 +64,42 @@ extension UmbraErrors.Repository {
     case internalError(reason: String)
 
     // MARK: - StandardErrorCapabilitiesProtocol Requirements
-    
+
     /// Code identifier for this error
     public var code: String {
       switch self {
-      case .repositoryNotFound:
-        return "repository_not_found"
-      case .repositoryOpenFailed:
-        return "repository_open_failed"
-      case .repositoryCorrupt:
-        return "repository_corrupt"
-      case .repositoryLocked:
-        return "repository_locked"
-      case .invalidState:
-        return "invalid_state"
-      case .permissionDenied:
-        return "permission_denied"
-      case .objectNotFound:
-        return "object_not_found"
-      case .objectAlreadyExists:
-        return "object_already_exists"
-      case .objectCorrupt:
-        return "object_corrupt"
-      case .invalidObjectType:
-        return "invalid_object_type"
-      case .invalidObjectData:
-        return "invalid_object_data"
-      case .saveFailed:
-        return "save_failed"
-      case .deleteFailed:
-        return "delete_failed"
-      case .updateFailed:
-        return "update_failed"
-      case .timeout:
-        return "operation_timeout"
-      case .internalError:
-        return "internal_error"
+        case .repositoryNotFound:
+          "repository_not_found"
+        case .repositoryOpenFailed:
+          "repository_open_failed"
+        case .repositoryCorrupt:
+          "repository_corrupt"
+        case .repositoryLocked:
+          "repository_locked"
+        case .invalidState:
+          "invalid_state"
+        case .permissionDenied:
+          "permission_denied"
+        case .objectNotFound:
+          "object_not_found"
+        case .objectAlreadyExists:
+          "object_already_exists"
+        case .objectCorrupt:
+          "object_corrupt"
+        case .invalidObjectType:
+          "invalid_object_type"
+        case .invalidObjectData:
+          "invalid_object_data"
+        case .saveFailed:
+          "save_failed"
+        case .deleteFailed:
+          "delete_failed"
+        case .updateFailed:
+          "update_failed"
+        case .timeout:
+          "operation_timeout"
+        case .internalError:
+          "internal_error"
       }
     }
 
@@ -112,7 +112,7 @@ extension UmbraErrors.Repository {
 
     /// String description for CustomStringConvertible conformance
     public var description: String {
-      return self.errorDescription
+      errorDescription
     }
 
     /// Human-readable error description
@@ -185,21 +185,21 @@ extension UmbraErrors.Repository {
     }
 
     /// Creates a new instance of the error with additional context
-    public func with(context: UmbraErrorsCore.ErrorContext) -> Self {
+    public func with(context _: UmbraErrorsCore.ErrorContext) -> Self {
       // Since these are enum cases, we need to return a new instance with the same value
-      return self
+      self
     }
 
     /// Creates a new instance of the error with a specified underlying error
-    public func with(underlyingError: Error) -> Self {
+    public func with(underlyingError _: Error) -> Self {
       // Since these are enum cases, we need to return a new instance with the same value
-      return self
+      self
     }
 
     /// Creates a new instance of the error with source information
-    public func with(source: UmbraErrorsCore.ErrorSource) -> Self {
+    public func with(source _: UmbraErrorsCore.ErrorSource) -> Self {
       // Here we would attach the source information to a new instance
-      return self
+      self
     }
 
     // MARK: - ResourceErrors Protocol

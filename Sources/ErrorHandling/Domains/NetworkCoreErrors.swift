@@ -5,7 +5,7 @@ import UmbraErrorsCore
 /// Error domain namespace
 extension UmbraErrors.Network {
   /// Core network errors related to connections, requests, and responses
-  public enum Core: Error, StandardErrorCapabilitiesProtocol /*, NetworkErrors */ {
+  public enum Core: Error, StandardErrorCapabilitiesProtocol /* , NetworkErrors */ {
     // Connection errors
     /// Connection to remote service failed
     case connectionFailed(reason: String)
@@ -94,7 +94,7 @@ extension UmbraErrors.Network {
 
     /// String description for CustomStringConvertible conformance
     public var description: String {
-      return self.errorDescription
+      errorDescription
     }
 
     /// Human-readable error description
@@ -151,21 +151,21 @@ extension UmbraErrors.Network {
     }
 
     /// Creates a new instance of the error with additional context
-    public func with(context: UmbraErrorsCore.ErrorContext) -> Self {
+    public func with(context _: UmbraErrorsCore.ErrorContext) -> Self {
       // Since these are enum cases, we need to return a new instance with the same value
-      return self
+      self
     }
 
     /// Creates a new instance of the error with a specified underlying error
-    public func with(underlyingError: Error) -> Self {
+    public func with(underlyingError _: Error) -> Self {
       // Since these are enum cases, we need to return a new instance with the same value
-      return self
+      self
     }
 
     /// Creates a new instance of the error with source information
-    public func with(source: UmbraErrorsCore.ErrorSource) -> Self {
+    public func with(source _: UmbraErrorsCore.ErrorSource) -> Self {
       // Here we would attach the source information to a new instance
-      return self
+      self
     }
 
     // MARK: - Factory Methods

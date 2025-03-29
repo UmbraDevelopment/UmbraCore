@@ -1,8 +1,8 @@
 import Foundation
+
 // Use the shared declarations instead of local ones
 import Interfaces
 import UmbraErrorsCore
-
 
 /// Error domain namespace
 
@@ -325,7 +325,7 @@ public enum ApplicationError: Error, UmbraErrorsCore.UmbraError, CustomStringCon
   }
 
   /// Create a new instance with source information
-  public func with(source: UmbraErrorsCore.ErrorSource) -> ApplicationError {
+  public func with(source _: UmbraErrorsCore.ErrorSource) -> ApplicationError {
     switch self {
       case let .configurationError(msg):
         .configurationError(msg)

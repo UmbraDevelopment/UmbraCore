@@ -24,7 +24,7 @@ public class ApplicationErrorMapper: ErrorMapper {
   public func mapFromAny(_ error: Error) -> ApplicationError? {
     // Get the error type name as a string
     let errorType=String(describing: type(of: error))
-    
+
     // Core application errors
     if errorType.contains("UmbraErrors.Application.Core") {
       if let typedError=error as? UmbraErrors.Application.Core {

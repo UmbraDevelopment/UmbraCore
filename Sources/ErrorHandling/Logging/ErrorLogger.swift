@@ -1,8 +1,8 @@
 import Foundation
 import Interfaces
+import LoggingWrapper
 import UmbraErrorsCore
 import UmbraLogging
-import LoggingWrapper
 
 // MARK: - Logging Adapter
 
@@ -46,9 +46,9 @@ public class ErrorLogger {
 
   /// Configuration for the error logger
   private let configuration: ErrorLoggerConfiguration
-  
+
   /// Domain-specific log level filters
-  private var domainFilters: [String: ErrorLoggingLevel] = [:]
+  private var domainFilters: [String: ErrorLoggingLevel]=[:]
 
   /// Initialises with the default logger and configuration
   public init(
@@ -58,9 +58,9 @@ public class ErrorLogger {
     self.logger=logger
     self.configuration=configuration
   }
-  
+
   // MARK: - Domain-Specific Filters
-  
+
   /// Sets up domain-specific logging filter for a certain domain
   /// - Parameters:
   ///   - domain: The domain to filter
@@ -106,7 +106,7 @@ public class ErrorLogger {
     additionalContext: [String: Any]?=nil
   ) async {
     // Get the logging level from the severity
-    _ = mapSeverityToLevel(severity)
+    _=mapSeverityToLevel(severity)
 
     // Format a human-readable message for the error
     let message=formatErrorMessage(error)
@@ -114,11 +114,11 @@ public class ErrorLogger {
     // Create metadata from error and add additional context
     var metadata=createMetadataFromError(error)
     if let additionalContext {
-      if var metadataDict = metadata?.asDictionary as? [String: String] {
+      if var metadataDict=metadata?.asDictionary as? [String: String] {
         for (key, value) in additionalContext {
-          metadataDict[key] = "\(value)"
+          metadataDict[key]="\(value)"
         }
-        metadata = LogMetadata(metadataDict)
+        metadata=LogMetadata(metadataDict)
       }
     }
 
@@ -165,9 +165,9 @@ public class ErrorLogger {
   public func debug(_ message: String, metadata: LogMetadata?=nil) async {
     await logger.debug(message, metadata: metadata)
   }
-  
+
   // MARK: - Contextual Logging
-  
+
   /// Logs an error with contextual information
   /// - Parameters:
   ///   - error: The error to log
@@ -185,14 +185,14 @@ public class ErrorLogger {
     line: Int=#line
   ) {
     // Extract domain from context or use default
-    let domain = context.value(for: "domain") as? String ?? "UnknownDomain"
-    
+    let domain=context.value(for: "domain") as? String ?? "UnknownDomain"
+
     // Skip if we shouldn't process this log based on domain filters
     guard shouldProcessLog(domain: domain, level: level) else {
       return
     }
 
-    var metadata: [String: String] = [
+    var metadata: [String: String]=[
       "domain": domain,
       "code": context.value(for: "code") as? String ?? "unknown",
       "errorDescription": context.value(for: "description") as? String ?? "No description"
@@ -200,12 +200,12 @@ public class ErrorLogger {
 
     // Include source location if enabled
     if configuration.includeSourceLocation {
-      metadata["file"] = file
-      metadata["function"] = function
-      metadata["line"] = String(line)
+      metadata["file"]=file
+      metadata["function"]=function
+      metadata["line"]=String(line)
     }
 
-    let message = "\(domain) [\(metadata["code"]!)]: \(metadata["errorDescription"]!)"
+    let message="\(domain) [\(metadata["code"]!)]: \(metadata["errorDescription"]!)"
 
     // Use a local method to log the message asynchronously
     Task {
@@ -218,10 +218,14 @@ public class ErrorLogger {
   ///   - message: The message to log
   ///   - level: The severity level
   ///   - metadata: Metadata to include with the log
-  private func logMessageAsync(_ message: String, level: ErrorLoggingLevel, metadata: [String: String]) async {
+  private func logMessageAsync(
+    _ message: String,
+    level: ErrorLoggingLevel,
+    metadata: [String: String]
+  ) async {
     // Convert string dictionary to LogMetadata
-    let logMetadata = LogMetadata(metadata)
-    
+    let logMetadata=LogMetadata(metadata)
+
     // This method uses the internal log methods which have access to the logger
     switch level {
       case .trace:
@@ -255,70 +259,70 @@ public class ErrorLogger {
   /// - Parameter error: The error to extract metadata from
   /// - Returns: A LogMetadata instance with error information
   private func createMetadataFromError(_ error: Error) -> LogMetadata? {
-    if let umbraError = error as? UmbraErrorsCore.UmbraError {
+    if let umbraError=error as? UmbraErrorsCore.UmbraError {
       // Convert context to metadata dictionary
-      let contextDict = convertContextToMetadata(umbraError.context)
-      let metadata = LogMetadata(contextDict)
-      
+      let contextDict=convertContextToMetadata(umbraError.context)
+      let metadata=LogMetadata(contextDict)
+
       // Add other UmbraError properties as strings
-      var metadataDict = metadata.asDictionary as? [String: String] ?? [:]
-      metadataDict["domain"] = umbraError.domain
-      metadataDict["code"] = umbraError.code
-      metadataDict["description"] = umbraError.errorDescription
-      
+      var metadataDict=metadata.asDictionary as? [String: String] ?? [:]
+      metadataDict["domain"]=umbraError.domain
+      metadataDict["code"]=umbraError.code
+      metadataDict["description"]=umbraError.errorDescription
+
       return LogMetadata(metadataDict)
     } else {
       // For non-UmbraErrors, add basic information
-      var metadataDict: [String: String] = [
+      var metadataDict: [String: String]=[
         "error_type": "\(type(of: error))",
         "description": error.localizedDescription
       ]
-      
+
       // Include source location if enabled
       if configuration.includeSourceLocation {
-        metadataDict["file"] = #file
-        metadataDict["function"] = #function
-        metadataDict["line"] = "\(#line)"
+        metadataDict["file"]=#file
+        metadataDict["function"]=#function
+        metadataDict["line"]="\(#line)"
       }
-      
+
       return LogMetadata(metadataDict)
     }
   }
-  
+
   /// Converts ErrorContext to a metadata dictionary
   /// - Parameter context: The error context to convert
   /// - Returns: Dictionary with string keys and string values
   private func convertContextToMetadata(_ context: ErrorContext) -> [String: String] {
-    var result: [String: String] = [:]
-    
+    var result: [String: String]=[:]
+
     // Add primary properties if they exist
-    if let source = context.source {
-      result["source"] = "\(source)"
+    if let source=context.source {
+      result["source"]="\(source)"
     }
-    
-    if let operation = context.operation {
-      result["operation"] = "\(operation)"
+
+    if let operation=context.operation {
+      result["operation"]="\(operation)"
     }
-    
-    if let details = context.details {
-      result["details"] = "\(details)"
+
+    if let details=context.details {
+      result["details"]="\(details)"
     }
-    
+
     // Add function, file, line info
-    result["file"] = context.file
-    result["function"] = context.function
-    result["line"] = "\(context.line)"
-    
+    result["file"]=context.file
+    result["function"]=context.function
+    result["line"]="\(context.line)"
+
     // Try to add common context values by known keys
     for key in ["domain", "code", "description", "errorCode", "errorDomain", "errorDescription"] {
-      if let value = context.value(for: key) {
-        result[key] = "\(value)"
+      if let value=context.value(for: key) {
+        result[key]="\(value)"
       }
     }
-    
+
     return result
   }
-  
+
   /// Maps a UmbraErrorsCore.ErrorSeverity to an ErrorLoggingLevel
   /// - Parameter severity: The severity to map
   /// - Returns: The corresponding logging level
@@ -346,7 +350,7 @@ public class ErrorLogger {
 public struct ErrorLoggerConfiguration {
   /// The minimum severity level to output
   public var minimumSeverity: UmbraErrorsCore.ErrorSeverity
-  
+
   /// The minimum logging level to output
   public var minimumLevel: ErrorLoggingLevel
 
@@ -366,10 +370,10 @@ public struct ErrorLoggerConfiguration {
   public init(
     minimumSeverity: UmbraErrorsCore.ErrorSeverity = .info,
     minimumLevel: ErrorLoggingLevel = .info,
-    includeSourceLocation: Bool = true,
-    includeStackTraces: Bool = true,
-    includeMetadata: Bool = true,
-    includeFileInfo: Bool = true
+    includeSourceLocation: Bool=true,
+    includeStackTraces: Bool=true,
+    includeMetadata: Bool=true,
+    includeFileInfo: Bool=true
   ) {
     self.minimumSeverity=minimumSeverity
     self.minimumLevel=minimumLevel
@@ -388,8 +392,8 @@ public enum ErrorLoggingLevel: Int, Comparable {
   case warning=3
   case error=4
   case critical=5
-  
+
   public static func < (lhs: ErrorLoggingLevel, rhs: ErrorLoggingLevel) -> Bool {
-    return lhs.rawValue < rhs.rawValue
+    lhs.rawValue < rhs.rawValue
   }
 }

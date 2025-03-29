@@ -9,27 +9,23 @@ import Foundation
 
 // Simple error type to replace SecurityError
 private struct GenericSecurityError: Error, CustomStringConvertible {
-    let description: String
-    
-    init(description: String) {
-        self.description = description
-    }
+  let description: String
 }
 
 /// Namespace for UmbraErrors.Security.Core enums
 public enum UmbraSecurityCoreErrors {
-    /// Basic security error type
-    public enum Core: Error, CustomStringConvertible {
-        /// Generic security error
-        case genericError(String)
-        
-        public var description: String {
-            switch self {
-            case .genericError(let message):
-                return message
-            }
-        }
+  /// Basic security error type
+  public enum Core: Error, CustomStringConvertible {
+    /// Generic security error
+    case genericError(String)
+
+    public var description: String {
+      switch self {
+        case let .genericError(message):
+          message
+      }
     }
+  }
 }
 
 public enum SecurityErrorMapper {
@@ -45,7 +41,7 @@ public enum SecurityErrorMapper {
   /// - Parameter error: The canonical error to map
   /// - Returns: Mapped SecurityError
   public static func mapFromSecurityCoreError(_ error: Error) -> Error {
-    if let secError = error as? UmbraSecurityCoreErrors.Core {
+    if let secError=error as? UmbraSecurityCoreErrors.Core {
       return GenericSecurityError(description: secError.description)
     }
     return GenericSecurityError(description: error.localizedDescription)

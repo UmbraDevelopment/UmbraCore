@@ -3,17 +3,17 @@ import Foundation
 /// Error domain namespace for internal use in the Mapping module
 public enum ErrorDomain {
   /// Security domain
-  public static let security = "Security"
+  public static let security="Security"
   /// Crypto domain
-  public static let crypto = "Crypto"
+  public static let crypto="Crypto"
   /// Application domain
-  public static let application = "Application"
+  public static let application="Application"
   /// Network domain
-  public static let network = "Network"
+  public static let network="Network"
   /// Repository domain
-  public static let repository = "Repository"
+  public static let repository="Repository"
   /// Storage domain
-  public static let storage = "Storage"
+  public static let storage="Storage"
 }
 
 /// Error context protocol for internal use in the Mapping module
@@ -37,9 +37,9 @@ public struct BaseErrorContext: ErrorContext {
 
   /// Initialise with domain, code and description
   public init(domain: String, code: Int, description: String) {
-    self.domain = domain
-    self.code = code
-    self.description = description
+    self.domain=domain
+    self.code=code
+    self.description=description
   }
 }
 
@@ -195,7 +195,7 @@ public enum UmbraErrors {
       case internalError(_ message: String)
     }
   }
-  
+
   /// Stub namespace for Security
   public enum Security {
     /// Stub for Protocol errors
@@ -203,7 +203,7 @@ public enum UmbraErrors {
       /// Unknown protocol error
       case unknown(reason: String)
     }
-    
+
     /// Stub for XPC errors
     public enum XPC: Error {
       /// Connection failed
@@ -216,7 +216,7 @@ public enum UmbraErrors {
       case permissionDenied(reason: String)
     }
   }
-  
+
   /// Stub namespace for XPC
   public enum XPC {
     /// Stub for Core errors
@@ -231,7 +231,7 @@ public enum UmbraErrors {
       case permissionDenied(reason: String)
     }
   }
-  
+
   /// Stub namespace for Application
   public enum Application {
     /// Stub for Core errors
@@ -239,20 +239,20 @@ public enum UmbraErrors {
       /// Generic application error
       case generic(reason: String)
     }
-    
+
     /// Stub for Lifecycle errors
     public enum Lifecycle: Error {
       /// Launch error
       case launchError(reason: String)
     }
-    
+
     /// Stub for UI errors
     public enum UI: Error {
       /// Generic UI error
       case generic(reason: String)
     }
   }
-  
+
   /// Stub namespace for Network
   public enum Network {
     /// Stub for Core errors
@@ -260,14 +260,14 @@ public enum UmbraErrors {
       /// Connection failed
       case connectionFailed(reason: String)
     }
-    
+
     /// Stub for HTTP errors
     public enum HTTP: Error {
       /// HTTP error
       case badRequest(reason: String)
     }
   }
-  
+
   /// Stub namespace for Storage
   public enum Storage {
     /// Stub for Database errors
@@ -293,7 +293,7 @@ public enum UmbraErrors {
       /// Internal error
       case internalError(reason: String)
     }
-    
+
     /// Stub for FileSystem errors
     public enum FileSystem: Error {
       /// File not found
@@ -322,7 +322,7 @@ public enum UmbraErrors {
       case internalError(reason: String)
     }
   }
-  
+
   /// Stub namespace for Repository
   public enum Repository {
     /// Stub for Core errors
@@ -335,7 +335,7 @@ public enum UmbraErrors {
       case repositoryCorrupt(reason: String)
     }
   }
-  
+
   /// Stub namespace for Resource
   public enum Resource {
     /// Stub for File errors
@@ -347,7 +347,7 @@ public enum UmbraErrors {
       /// No access
       case noAccess(path: String)
     }
-    
+
     /// Stub for Core errors
     public enum Core: Error {
       /// Resource not found
@@ -357,18 +357,18 @@ public enum UmbraErrors {
       /// Resource invalid
       case resourceInvalid(resource: String, reason: String)
     }
-    
+
     /// Stub for Pool errors
     public enum Pool: Error {
       /// Resource pool exhausted
       case poolExhausted(poolName: String)
       /// Invalid resource in pool
-      case invalidResource(resourceId: String, reason: String)
+      case invalidResource(resourceID: String, reason: String)
       /// Resource allocation failed
       case allocationFailed(reason: String)
     }
   }
-  
+
   /// Stub namespace for Logging
   public enum Logging {
     /// Stub for Core errors
@@ -383,7 +383,7 @@ public enum UmbraErrors {
       case destinationUnavailable(destination: String, reason: String)
     }
   }
-  
+
   /// Stub namespace for Bookmark
   public enum Bookmark {
     /// Stub for Core errors
@@ -398,7 +398,7 @@ public enum UmbraErrors {
       case expired(reason: String)
     }
   }
-  
+
   /// Stub namespace for Crypto
   public enum Crypto {
     /// Stub for Core errors
@@ -446,7 +446,7 @@ public enum ErrorHandlingTypes {
     /// Internal error
     case internalError(reason: String)
   }
-  
+
   /// Stub for NetworkError
   public enum NetworkError: Error {
     /// Connection failed
@@ -488,7 +488,7 @@ public enum ErrorHandlingTypes {
     /// Internal error
     case internalError(reason: String)
   }
-  
+
   /// Stub for ApplicationError
   public enum ApplicationError: Error {
     /// Core application error
@@ -540,7 +540,7 @@ public enum ErrorHandlingTypes {
     /// Internal error
     case internalError(reason: String)
   }
-  
+
   /// Stub for StorageError
   public enum StorageError: Error {
     /// File not found
@@ -576,18 +576,18 @@ public enum ErrorHandlingTypes {
 
 /// Interface for error mappers
 public protocol ErrorMapper {
-    associatedtype SourceError: Error
-    associatedtype TargetError
-    
-    /// Maps from the source error type to the target error type
-    func mapError(_ error: SourceError) -> TargetError
+  associatedtype SourceError: Error
+  associatedtype TargetError
+
+  /// Maps from the source error type to the target error type
+  func mapError(_ error: SourceError) -> TargetError
 }
 
 /// Interface for bidirectional error mappers
 public protocol BidirectionalErrorMapper: ErrorMapper {
-    /// Maps from source error type A to target error type B
-    func mapAtoB(_ error: SourceError) -> TargetError
-    
-    /// Maps from target error type B to source error type A
-    func mapBtoA(_ error: TargetError) -> SourceError
+  /// Maps from source error type A to target error type B
+  func mapAtoB(_ error: SourceError) -> TargetError
+
+  /// Maps from target error type B to source error type A
+  func mapBtoA(_ error: TargetError) -> SourceError
 }

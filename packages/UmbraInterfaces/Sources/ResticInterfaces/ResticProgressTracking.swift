@@ -57,13 +57,13 @@ public struct BackupProgress: Codable, Sendable {
   }
 
   private enum CodingKeys: String, CodingKey {
-    case status = "message_type"
-    case totalFiles = "total_files"
-    case totalBytes = "total_bytes"
-    case processedFiles = "files_done"
-    case processedBytes = "bytes_done"
-    case currentFile = "current_file"
-    case secondsElapsed = "seconds_elapsed"
+    case status="message_type"
+    case totalFiles="total_files"
+    case totalBytes="total_bytes"
+    case processedFiles="files_done"
+    case processedBytes="bytes_done"
+    case currentFile="current_file"
+    case secondsElapsed="seconds_elapsed"
   }
 }
 
@@ -124,22 +124,23 @@ public struct RestoreProgress: Codable, Sendable {
   }
 
   private enum CodingKeys: String, CodingKey {
-    case status = "message_type"
-    case totalFiles = "total_files"
-    case totalBytes = "total_bytes"
-    case restoredFiles = "files_done"
-    case restoredBytes = "bytes_done"
-    case currentFile = "current_file"
-    case secondsElapsed = "seconds_elapsed"
+    case status="message_type"
+    case totalFiles="total_files"
+    case totalBytes="total_bytes"
+    case restoredFiles="files_done"
+    case restoredBytes="bytes_done"
+    case currentFile="current_file"
+    case secondsElapsed="seconds_elapsed"
   }
 }
 
 /// Protocol for objects that can receive progress updates from Restic operations.
-/// 
+///
 /// Implement this protocol to receive real-time updates about backup and restore
 /// progress, allowing for accurate monitoring and user interface updates.
 public protocol ResticProgressReporting: Sendable {
   /// Called when progress information is updated during a Restic operation
-  /// - Parameter progress: The updated progress information (typically BackupProgress or RestoreProgress)
+  /// - Parameter progress: The updated progress information (typically BackupProgress or
+  /// RestoreProgress)
   func progressUpdated(_ progress: Any)
 }

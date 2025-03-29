@@ -1,8 +1,8 @@
 import Foundation
+
 // Use the shared declarations instead of local ones
 import Interfaces
 import UmbraErrorsCore
-
 
 /// Error domain namespace
 
@@ -106,7 +106,8 @@ public enum RepositoryErrorType: Error {
 }
 
 /// Struct wrapper for repository errors that conforms to UmbraError
-public struct RepositoryError: Error, UmbraErrorsCore.UmbraError, Sendable, CustomStringConvertible {
+public struct RepositoryError: Error, UmbraErrorsCore.UmbraError, Sendable,
+CustomStringConvertible {
   /// The specific repository error type
   public let errorType: RepositoryErrorType
 

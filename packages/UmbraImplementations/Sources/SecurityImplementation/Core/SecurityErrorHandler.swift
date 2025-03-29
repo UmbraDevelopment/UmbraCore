@@ -31,7 +31,7 @@ public struct SecurityErrorHandler {
    - Parameter logger: The logger to use for recording errors
    */
   public init(logger: LoggingProtocol) {
-    self.logger = logger
+    self.logger=logger
   }
 
   /**
@@ -46,18 +46,18 @@ public struct SecurityErrorHandler {
   public func handleError(
     _ error: Error,
     operation: SecurityOperation,
-    context: [String: String] = [:]
+    context: [String: String]=[:]
   ) async -> SecurityError {
     // Map to a SecurityError if not already
-    let securityError = Self.mapError(error)
+    let securityError=Self.mapError(error)
 
     // Create log metadata
-    var metadata = context
-    metadata["operation"] = operation.rawValue
-    metadata["errorType"] = String(describing: type(of: error))
-    metadata["errorDescription"] = error.localizedDescription
+    var metadata=context
+    metadata["operation"]=operation.rawValue
+    metadata["errorType"]=String(describing: type(of: error))
+    metadata["errorDescription"]=error.localizedDescription
 
-    let logMetadata: LoggingInterfaces.LogMetadata = metadata
+    let logMetadata: LoggingInterfaces.LogMetadata=metadata
 
     // Log the error with appropriate level based on error type
     switch securityError {
@@ -73,7 +73,7 @@ public struct SecurityErrorHandler {
           "Unsupported security operation attempted: \(operation.description) - \(securityError.localizedDescription)",
           metadata: logMetadata
         )
-      case .cryptoError, .keyManagementError, .storageError, .networkError, 
+      case .cryptoError, .keyManagementError, .storageError, .networkError,
            .systemError, .unknownError:
         // System errors are critical security issues
         await logger.error(
@@ -117,12 +117,12 @@ public struct SecurityErrorHandler {
    */
   static func mapError(_ error: Error) -> SecurityError {
     // If it's already a SecurityError, return it directly
-    if let securityError = error as? SecurityError {
+    if let securityError=error as? SecurityError {
       return securityError
     }
 
     // Map other error types to appropriate SecurityError cases
-    if let nsError = error as NSError? {
+    if let nsError=error as NSError? {
       switch nsError.domain {
         case "Security":
           return mapSecurityFrameworkError(nsError)
@@ -151,11 +151,11 @@ public struct SecurityErrorHandler {
     switch error.code {
       // Map various error codes to appropriate SecurityError cases
       case -25291, -25292, -25293:
-        return .authenticationFailed("Authentication failed: \(error.localizedDescription)")
+        .authenticationFailed("Authentication failed: \(error.localizedDescription)")
       case -25294, -25295:
-        return .invalidKey("Invalid key: \(error.localizedDescription)")
+        .invalidKey("Invalid key: \(error.localizedDescription)")
       default:
-        return .systemError("Security framework error: \(error.localizedDescription)")
+        .systemError("Security framework error: \(error.localizedDescription)")
     }
   }
 
@@ -168,13 +168,13 @@ public struct SecurityErrorHandler {
   private static func mapKeychainError(_ error: NSError) -> SecurityError {
     switch error.code {
       case -25300:
-        return .itemNotFound("Item not found in keychain")
+        .itemNotFound("Item not found in keychain")
       case -25299:
-        return .duplicateItem("Duplicate item in keychain")
+        .duplicateItem("Duplicate item in keychain")
       case -25308:
-        return .interactionNotAllowed("Keychain interaction not allowed")
+        .interactionNotAllowed("Keychain interaction not allowed")
       default:
-        return .keyManagementError("Keychain error: \(error.localizedDescription)")
+        .keyManagementError("Keychain error: \(error.localizedDescription)")
     }
   }
 }

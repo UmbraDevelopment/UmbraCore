@@ -1,6 +1,7 @@
 import Core
 import Foundation
 import Interfaces
+
 // Removing import to break circular dependency
 // import Recovery
 import UmbraErrorsCore
@@ -29,7 +30,7 @@ public final class ErrorNotifier: ErrorNotificationProtocol {
     var title: String { get }
     var isDefault: Bool { get }
   }
-  
+
   // Define placeholder enum to replace Recovery.RecoveryStatus
   public enum RecoveryStatus {
     case applied
@@ -81,7 +82,7 @@ public final class ErrorNotifier: ErrorNotificationProtocol {
     level: ErrorNotificationLevel
   ) async -> Bool {
     // Get recovery options
-    let options: [any RecoveryOption] = [] // Removed dependency on RecoveryManager
+    let options: [any RecoveryOption]=[] // Removed dependency on RecoveryManager
 
     // Skip if no options available
     guard !options.isEmpty else {

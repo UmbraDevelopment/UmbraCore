@@ -10,7 +10,7 @@ import UmbraErrorsCore
 
 extension UmbraErrors.Resource {
   /// Core resource errors related to resource acquisition and management
-  public enum Core: Error, StandardErrorCapabilitiesProtocol /*ResourceErrors*/ {
+  public enum Core: Error, StandardErrorCapabilitiesProtocol /* ResourceErrors */ {
     // Resource acquisition errors
     /// Failed to acquire resource
     case acquisitionFailed(resource: String, reason: String)
@@ -119,7 +119,7 @@ extension UmbraErrors.Resource {
 
     /// String description for CustomStringConvertible conformance
     public var description: String {
-      return self.errorDescription
+      errorDescription
     }
 
     /// Source information about where the error occurred
@@ -157,9 +157,9 @@ extension UmbraErrors.Resource {
     }
 
     /// Creates a new instance of the error with source information
-    public func with(source: ErrorSource) -> Self {
+    public func with(source _: ErrorSource) -> Self {
       // Return self for now - in a real implementation we would attach the source
-      return self
+      self
     }
 
     // MARK: - ResourceErrors Protocol Conformance

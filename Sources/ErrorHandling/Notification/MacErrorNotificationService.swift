@@ -6,14 +6,14 @@ extension Error {
   /// Get the domain of the error
   var errorDomain: String? {
     // First try to access as NSError
-    let nsError = self as NSError
+    let nsError=self as NSError
     return nsError.domain
   }
-  
+
   /// Get the code of the error
   var errorCode: String? {
     // First try to access as NSError
-    let nsError = self as NSError
+    let nsError=self as NSError
     return String(nsError.code)
   }
 }
@@ -23,9 +23,9 @@ extension Error {
 public final class MacErrorNotificationService: ErrorNotificationService {
   /// Supported error domains for this service
   public let supportedErrorDomains: [String]
-  
+
   /// Supported notification levels
-  public let supportedLevels: [ErrorNotificationLevel] = [
+  public let supportedLevels: [ErrorNotificationLevel]=[
     .critical, .error, .warning, .info
   ]
 
@@ -80,55 +80,55 @@ public final class MacErrorNotificationService: ErrorNotificationService {
       DispatchQueue.main.async {
         // Create alert
         let alert=NSAlert()
-        
+
         // Configure alert content
         self.configureAlert(alert, for: error, level: level)
-        
+
         // Add recovery options as buttons
         for option in recoveryOptions {
           alert.addButton(withTitle: option.title)
         }
-        
+
         // If there are no recovery options, just add an OK button
         if recoveryOptions.isEmpty {
           alert.addButton(withTitle: "OK")
         }
-        
+
         // Present alert modally
         let response=alert.runModal()
-        
+
         // Process response
         switch response {
-        case .alertFirstButtonReturn:
-          // First button was clicked
-          if !recoveryOptions.isEmpty {
-            // Return the UUID of the first recovery option
-            continuation.resume(returning: recoveryOptions[0].id)
-          } else {
-            // No recovery options, just return nil
+          case .alertFirstButtonReturn:
+            // First button was clicked
+            if !recoveryOptions.isEmpty {
+              // Return the UUID of the first recovery option
+              continuation.resume(returning: recoveryOptions[0].id)
+            } else {
+              // No recovery options, just return nil
+              continuation.resume(returning: nil)
+            }
+          case .alertSecondButtonReturn:
+            // Second button was clicked
+            if recoveryOptions.count >= 2 {
+              // Return the UUID of the second recovery option
+              continuation.resume(returning: recoveryOptions[1].id)
+            } else {
+              // This would be the OK button
+              continuation.resume(returning: nil)
+            }
+          case .alertThirdButtonReturn:
+            // Third button was clicked
+            if recoveryOptions.count >= 3 {
+              // Return the UUID of the third recovery option
+              continuation.resume(returning: recoveryOptions[2].id)
+            } else {
+              // Shouldn't happen
+              continuation.resume(returning: nil)
+            }
+          default:
+            // Some other button was clicked, just return nil
             continuation.resume(returning: nil)
-          }
-        case .alertSecondButtonReturn:
-          // Second button was clicked
-          if recoveryOptions.count >= 2 {
-            // Return the UUID of the second recovery option
-            continuation.resume(returning: recoveryOptions[1].id)
-          } else {
-            // This would be the OK button
-            continuation.resume(returning: nil)
-          }
-        case .alertThirdButtonReturn:
-          // Third button was clicked
-          if recoveryOptions.count >= 3 {
-            // Return the UUID of the third recovery option
-            continuation.resume(returning: recoveryOptions[2].id)
-          } else {
-            // Shouldn't happen
-            continuation.resume(returning: nil)
-          }
-        default:
-          // Some other button was clicked, just return nil
-          continuation.resume(returning: nil)
         }
       }
     }
@@ -164,10 +164,10 @@ public final class MacErrorNotificationService: ErrorNotificationService {
   /// - Parameter error: The error to get the domain for
   /// - Returns: The error domain
   private func getDomain(for error: Error) -> String {
-    if let domain = error.errorDomain {
-      return domain
+    if let domain=error.errorDomain {
+      domain
     } else {
-      return "Unknown"
+      "Unknown"
     }
   }
 
@@ -177,10 +177,10 @@ public final class MacErrorNotificationService: ErrorNotificationService {
   ///   - domain: The error domain
   /// - Returns: A user-friendly title
   private func getTitle(for error: Error, domain: String) -> String {
-    if let code = error.errorCode {
-      return "Error in \(domain): \(code)"
+    if let code=error.errorCode {
+      "Error in \(domain): \(code)"
     } else {
-      return "Error in \(domain)"
+      "Error in \(domain)"
     }
   }
 

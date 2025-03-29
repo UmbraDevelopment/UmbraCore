@@ -7,7 +7,6 @@ import UmbraErrorsCore
 @testable import UmbraMocks
 @testable import UmbraSecurityUtils
 import XCTest
-import SecurityTypes
 
 final class EncryptedBookmarkServiceTests: XCTestCase {
   var cryptoService: CryptoServiceProtocol!

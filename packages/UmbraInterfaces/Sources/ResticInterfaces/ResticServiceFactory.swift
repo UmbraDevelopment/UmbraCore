@@ -20,7 +20,7 @@ public protocol ResticServiceFactory: Sendable {
     defaultPassword: String?,
     progressDelegate: ResticProgressReporting?
   ) throws -> any ResticServiceProtocol
-  
+
   /// Creates a new ResticService instance with the system's default Restic executable.
   ///
   /// - Parameters:
@@ -28,7 +28,8 @@ public protocol ResticServiceFactory: Sendable {
   ///   - defaultPassword: Optional default repository password
   ///   - progressDelegate: Optional delegate for progress reporting
   /// - Returns: A new ResticService instance
-  /// - Throws: ResticError if the service cannot be created or the Restic executable cannot be found
+  /// - Throws: ResticError if the service cannot be created or the Restic executable cannot be
+  /// found
   func createDefaultResticService(
     defaultRepository: String?,
     defaultPassword: String?,

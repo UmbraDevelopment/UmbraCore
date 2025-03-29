@@ -5,13 +5,13 @@ import ResticInterfaces
 public struct ResticInitCommandImpl: ResticInitCommand {
   /// Repository location (path or URL)
   public let location: String
-  
+
   /// Repository password
   public let password: String
-  
+
   /// Common options for the command
   public let commonOptions: ResticCommonOptions?
-  
+
   /// Creates a new init command.
   ///
   /// - Parameters:
@@ -23,45 +23,45 @@ public struct ResticInitCommandImpl: ResticInitCommand {
     password: String,
     commonOptions: ResticCommonOptions?
   ) {
-    self.location = location
-    self.password = password
-    self.commonOptions = commonOptions
+    self.location=location
+    self.password=password
+    self.commonOptions=commonOptions
   }
-  
+
   /// Arguments for the command
   public var arguments: [String] {
-    var args = ["init"]
-    
-    if let commonOptions = commonOptions {
+    var args=["init"]
+
+    if let commonOptions {
       args.append(contentsOf: commonOptions.buildArguments())
     }
-    
+
     args.append(contentsOf: ["-r", location])
-    
+
     return args
   }
-  
+
   /// Environment variables for the command
   public var environment: [String: String] {
-    var env = ProcessInfo.processInfo.environment
-    env["RESTIC_PASSWORD"] = password
-    
-    if let commonOptions = commonOptions {
+    var env=ProcessInfo.processInfo.environment
+    env["RESTIC_PASSWORD"]=password
+
+    if let commonOptions {
       for (key, value) in commonOptions.buildEnvironment() {
-        env[key] = value
+        env[key]=value
       }
     }
-    
+
     return env
   }
-  
+
   /// Validates the command before execution
   /// - Throws: ResticError if the command is invalid
   public func validate() throws {
     if location.isEmpty {
       throw ResticError.missingParameter("Repository location is required")
     }
-    
+
     if password.isEmpty {
       throw ResticError.missingParameter("Repository password is required")
     }
@@ -72,16 +72,16 @@ public struct ResticInitCommandImpl: ResticInitCommand {
 public struct ResticBackupCommandImpl: ResticBackupCommand {
   /// Paths to backup
   public let paths: [String]
-  
+
   /// Optional tag for the backup
   public let tag: String?
-  
+
   /// Patterns to exclude from backup
   public let excludes: [String]?
-  
+
   /// Common options for the command
   public let commonOptions: ResticCommonOptions?
-  
+
   /// Creates a new backup command.
   ///
   /// - Parameters:
@@ -95,55 +95,55 @@ public struct ResticBackupCommandImpl: ResticBackupCommand {
     excludes: [String]?,
     commonOptions: ResticCommonOptions?
   ) {
-    self.paths = paths
-    self.tag = tag
-    self.excludes = excludes
-    self.commonOptions = commonOptions
+    self.paths=paths
+    self.tag=tag
+    self.excludes=excludes
+    self.commonOptions=commonOptions
   }
-  
+
   /// Arguments for the command
   public var arguments: [String] {
-    var args = ["backup"]
-    
-    if let commonOptions = commonOptions {
+    var args=["backup"]
+
+    if let commonOptions {
       args.append(contentsOf: commonOptions.buildArguments())
     }
-    
-    if let tag = tag {
+
+    if let tag {
       args.append(contentsOf: ["--tag", tag])
     }
-    
-    if let excludes = excludes {
+
+    if let excludes {
       for exclude in excludes {
         args.append(contentsOf: ["--exclude", exclude])
       }
     }
-    
+
     args.append(contentsOf: paths)
-    
+
     return args
   }
-  
+
   /// Environment variables for the command
   public var environment: [String: String] {
-    var env = ProcessInfo.processInfo.environment
-    
-    if let commonOptions = commonOptions {
+    var env=ProcessInfo.processInfo.environment
+
+    if let commonOptions {
       for (key, value) in commonOptions.buildEnvironment() {
-        env[key] = value
+        env[key]=value
       }
     }
-    
+
     return env
   }
-  
+
   /// Validates the command before execution
   /// - Throws: ResticError if the command is invalid
   public func validate() throws {
     if paths.isEmpty {
       throw ResticError.missingParameter("At least one backup path is required")
     }
-    
+
     for path in paths {
       if !FileManager.default.fileExists(atPath: path) {
         throw ResticError.invalidParameter("Path does not exist: \(path)")
@@ -156,16 +156,16 @@ public struct ResticBackupCommandImpl: ResticBackupCommand {
 public struct ResticRestoreCommandImpl: ResticRestoreCommand {
   /// Snapshot ID to restore from
   public let snapshotID: String
-  
+
   /// Target path for restoration
   public let targetPath: String
-  
+
   /// Specific paths to restore (nil for all)
   public let paths: [String]?
-  
+
   /// Common options for the command
   public let commonOptions: ResticCommonOptions?
-  
+
   /// Creates a new restore command.
   ///
   /// - Parameters:
@@ -179,51 +179,51 @@ public struct ResticRestoreCommandImpl: ResticRestoreCommand {
     paths: [String]?,
     commonOptions: ResticCommonOptions?
   ) {
-    self.snapshotID = snapshotID
-    self.targetPath = targetPath
-    self.paths = paths
-    self.commonOptions = commonOptions
+    self.snapshotID=snapshotID
+    self.targetPath=targetPath
+    self.paths=paths
+    self.commonOptions=commonOptions
   }
-  
+
   /// Arguments for the command
   public var arguments: [String] {
-    var args = ["restore", snapshotID]
-    
-    if let commonOptions = commonOptions {
+    var args=["restore", snapshotID]
+
+    if let commonOptions {
       args.append(contentsOf: commonOptions.buildArguments())
     }
-    
+
     args.append(contentsOf: ["--target", targetPath])
-    
-    if let paths = paths {
+
+    if let paths {
       for path in paths {
         args.append(contentsOf: ["--include", path])
       }
     }
-    
+
     return args
   }
-  
+
   /// Environment variables for the command
   public var environment: [String: String] {
-    var env = ProcessInfo.processInfo.environment
-    
-    if let commonOptions = commonOptions {
+    var env=ProcessInfo.processInfo.environment
+
+    if let commonOptions {
       for (key, value) in commonOptions.buildEnvironment() {
-        env[key] = value
+        env[key]=value
       }
     }
-    
+
     return env
   }
-  
+
   /// Validates the command before execution
   /// - Throws: ResticError if the command is invalid
   public func validate() throws {
     if snapshotID.isEmpty {
       throw ResticError.missingParameter("Snapshot ID is required")
     }
-    
+
     if targetPath.isEmpty {
       throw ResticError.missingParameter("Target path is required")
     }
@@ -234,10 +234,10 @@ public struct ResticRestoreCommandImpl: ResticRestoreCommand {
 public struct ResticSnapshotsCommandImpl: ResticSnapshotsCommand {
   /// Optional tag to filter snapshots
   public let tag: String?
-  
+
   /// Common options for the command
   public let commonOptions: ResticCommonOptions?
-  
+
   /// Creates a new snapshots command.
   ///
   /// - Parameters:
@@ -247,38 +247,38 @@ public struct ResticSnapshotsCommandImpl: ResticSnapshotsCommand {
     tag: String?,
     commonOptions: ResticCommonOptions?
   ) {
-    self.tag = tag
-    self.commonOptions = commonOptions
+    self.tag=tag
+    self.commonOptions=commonOptions
   }
-  
+
   /// Arguments for the command
   public var arguments: [String] {
-    var args = ["snapshots"]
-    
-    if let commonOptions = commonOptions {
+    var args=["snapshots"]
+
+    if let commonOptions {
       args.append(contentsOf: commonOptions.buildArguments())
     }
-    
-    if let tag = tag {
+
+    if let tag {
       args.append(contentsOf: ["--tag", tag])
     }
-    
+
     return args
   }
-  
+
   /// Environment variables for the command
   public var environment: [String: String] {
-    var env = ProcessInfo.processInfo.environment
-    
-    if let commonOptions = commonOptions {
+    var env=ProcessInfo.processInfo.environment
+
+    if let commonOptions {
       for (key, value) in commonOptions.buildEnvironment() {
-        env[key] = value
+        env[key]=value
       }
     }
-    
+
     return env
   }
-  
+
   /// Validates the command before execution
   /// - Throws: ResticError if the command is invalid
   public func validate() throws {
@@ -290,10 +290,10 @@ public struct ResticSnapshotsCommandImpl: ResticSnapshotsCommand {
 public struct ResticMaintenanceCommandImpl: ResticMaintenanceCommand {
   /// Type of maintenance to perform
   public let maintenanceType: ResticMaintenanceType
-  
+
   /// Common options for the command
   public let commonOptions: ResticCommonOptions?
-  
+
   /// Creates a new maintenance command.
   ///
   /// - Parameters:
@@ -303,34 +303,34 @@ public struct ResticMaintenanceCommandImpl: ResticMaintenanceCommand {
     maintenanceType: ResticMaintenanceType,
     commonOptions: ResticCommonOptions?
   ) {
-    self.maintenanceType = maintenanceType
-    self.commonOptions = commonOptions
+    self.maintenanceType=maintenanceType
+    self.commonOptions=commonOptions
   }
-  
+
   /// Arguments for the command
   public var arguments: [String] {
-    var args = [maintenanceType.rawValue]
-    
-    if let commonOptions = commonOptions {
+    var args=[maintenanceType.rawValue]
+
+    if let commonOptions {
       args.append(contentsOf: commonOptions.buildArguments())
     }
-    
+
     return args
   }
-  
+
   /// Environment variables for the command
   public var environment: [String: String] {
-    var env = ProcessInfo.processInfo.environment
-    
-    if let commonOptions = commonOptions {
+    var env=ProcessInfo.processInfo.environment
+
+    if let commonOptions {
       for (key, value) in commonOptions.buildEnvironment() {
-        env[key] = value
+        env[key]=value
       }
     }
-    
+
     return env
   }
-  
+
   /// Validates the command before execution
   /// - Throws: ResticError if the command is invalid
   public func validate() throws {
@@ -342,10 +342,10 @@ public struct ResticMaintenanceCommandImpl: ResticMaintenanceCommand {
 public struct ResticCheckCommandImpl: ResticCheckCommand {
   /// Whether to read all data blobs
   public let readData: Bool
-  
+
   /// Common options for the command
   public let commonOptions: ResticCommonOptions?
-  
+
   /// Creates a new check command.
   ///
   /// - Parameters:
@@ -355,38 +355,38 @@ public struct ResticCheckCommandImpl: ResticCheckCommand {
     readData: Bool,
     commonOptions: ResticCommonOptions?
   ) {
-    self.readData = readData
-    self.commonOptions = commonOptions
+    self.readData=readData
+    self.commonOptions=commonOptions
   }
-  
+
   /// Arguments for the command
   public var arguments: [String] {
-    var args = ["check"]
-    
-    if let commonOptions = commonOptions {
+    var args=["check"]
+
+    if let commonOptions {
       args.append(contentsOf: commonOptions.buildArguments())
     }
-    
+
     if readData {
       args.append("--read-data")
     }
-    
+
     return args
   }
-  
+
   /// Environment variables for the command
   public var environment: [String: String] {
-    var env = ProcessInfo.processInfo.environment
-    
-    if let commonOptions = commonOptions {
+    var env=ProcessInfo.processInfo.environment
+
+    if let commonOptions {
       for (key, value) in commonOptions.buildEnvironment() {
-        env[key] = value
+        env[key]=value
       }
     }
-    
+
     return env
   }
-  
+
   /// Validates the command before execution
   /// - Throws: ResticError if the command is invalid
   public func validate() throws {

@@ -143,7 +143,7 @@ public protocol ServiceError: Error, Sendable {
 extension ServiceError {
   public var asUmbraError: GenericUmbraError {
     // Create error context
-    let errorContext = UmbraErrorsCore.ErrorContext()
+    let errorContext=UmbraErrorsCore.ErrorContext()
       .adding(key: "service", value: service)
       .adding(key: "errorType", value: errorType)
       .adding(key: "message", value: message)

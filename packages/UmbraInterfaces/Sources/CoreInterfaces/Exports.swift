@@ -1,6 +1,3 @@
-// Exports file for CoreInterfaces
-// This file exports all public interfaces from the module
-
 // Core Error Types
 @_exported import UmbraErrors
 

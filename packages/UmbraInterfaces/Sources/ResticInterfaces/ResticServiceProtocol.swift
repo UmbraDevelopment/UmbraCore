@@ -4,10 +4,10 @@ import Foundation
 public protocol ResticCommand: Sendable {
   /// Arguments for the command
   var arguments: [String] { get }
-  
+
   /// Environment variables for the command
   var environment: [String: String] { get }
-  
+
   /// Validates the command before execution
   /// - Throws: ResticError if the command is invalid
   func validate() throws
@@ -30,36 +30,37 @@ public protocol ResticCommand: Sendable {
 public protocol ResticServiceProtocol: Sendable {
   /// The path to the Restic executable
   var executablePath: String { get }
-  
+
   /// The default repository location, if set
   var defaultRepository: String? { get set }
-  
+
   /// The default repository password, if set
   var defaultPassword: String? { get set }
-  
+
   /// Progress reporting delegate for receiving operation updates
   var progressDelegate: ResticProgressReporting? { get set }
-  
+
   /// Executes a Restic command and returns its output
   /// - Parameter command: The command to execute
   /// - Returns: The command output as a string
   /// - Throws: ResticError if the command fails
   func execute(_ command: ResticCommand) async throws -> String
-  
+
   /// Initialises a new repository
   /// - Parameters:
   ///   - location: Repository location (path or URL)
   ///   - password: Repository password
   /// - Returns: Result of the initialisation
   /// - Throws: ResticError if initialisation fails
-  func initialiseRepository(at location: String, password: String) async throws -> ResticCommandResult
-  
+  func initialiseRepository(at location: String, password: String) async throws
+    -> ResticCommandResult
+
   /// Checks repository health
   /// - Parameter location: Optional repository location (uses default if nil)
   /// - Returns: Result of the repository check
   /// - Throws: ResticError if the check fails
   func checkRepository(at location: String?) async throws -> ResticCommandResult
-  
+
   /// Lists snapshots in the repository
   /// - Parameters:
   ///   - location: Optional repository location (uses default if nil)
@@ -67,7 +68,7 @@ public protocol ResticServiceProtocol: Sendable {
   /// - Returns: Result containing snapshot information
   /// - Throws: ResticError if the listing fails
   func listSnapshots(at location: String?, tag: String?) async throws -> ResticCommandResult
-  
+
   /// Creates a backup
   /// - Parameters:
   ///   - paths: Array of paths to backup
@@ -75,8 +76,9 @@ public protocol ResticServiceProtocol: Sendable {
   ///   - excludes: Optional array of exclude patterns
   /// - Returns: Result with backup information
   /// - Throws: ResticError if the backup fails
-  func backup(paths: [String], tag: String?, excludes: [String]?) async throws -> ResticCommandResult
-  
+  func backup(paths: [String], tag: String?, excludes: [String]?) async throws
+    -> ResticCommandResult
+
   /// Restores from a backup
   /// - Parameters:
   ///   - snapshot: Snapshot ID to restore from
@@ -84,8 +86,9 @@ public protocol ResticServiceProtocol: Sendable {
   ///   - paths: Optional specific paths to restore
   /// - Returns: Result with restore information
   /// - Throws: ResticError if the restore fails
-  func restore(snapshot: String, to target: String, paths: [String]?) async throws -> ResticCommandResult
-  
+  func restore(snapshot: String, to target: String, paths: [String]?) async throws
+    -> ResticCommandResult
+
   /// Performs repository maintenance
   /// - Parameter type: Type of maintenance operation
   /// - Returns: Result with maintenance information

@@ -52,22 +52,25 @@ public final class DefaultLoggingServiceImpl: LoggingProtocol {
   ///   - level: The log level
   ///   - message: The message to log
   ///   - metadata: Optional metadata
-  private func log(level: LoggingTypes.UmbraLogLevel, message: String, metadata: LoggingInterfaces.LogMetadata?) async {
+  private func log(
+    level: LoggingTypes.UmbraLogLevel,
+    message: String,
+    metadata: LoggingInterfaces.LogMetadata?
+  ) async {
     // Convert from LoggingInterfaces.LogMetadata to LoggingTypes.LogMetadata
-    let typedMetadata: LoggingTypes.LogMetadata?
-    if let metadata = metadata {
-      typedMetadata = LoggingTypes.LogMetadata(metadata)
+    let typedMetadata: LoggingTypes.LogMetadata?=if let metadata {
+      LoggingTypes.LogMetadata(metadata)
     } else {
-      typedMetadata = nil
+      nil
     }
-    
-    let entry = LoggingTypes.LogEntry(level: level, message: message, metadata: typedMetadata)
+
+    let entry=LoggingTypes.LogEntry(level: level, message: message, metadata: typedMetadata)
 
     // In a real implementation, this would:
     // 1. Format the log entry
     // 2. Determine appropriate destinations
     // 3. Write to those destinations
-    
+
     // For now, just print to the console as a placeholder
     print("[\(level)] \(message)")
   }

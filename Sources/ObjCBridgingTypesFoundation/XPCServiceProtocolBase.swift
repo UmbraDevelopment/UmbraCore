@@ -1,7 +1,9 @@
 import Foundation
+
 // Removing import to break circular dependency
 // import UmbraErrors
 import UmbraErrorsCore
+
 // Temporarily comment out to break circular dependency
 // import XPCProtocolsCore
 
@@ -67,7 +69,11 @@ extension XPCServiceProtocolBaseFoundation {
     await withCheckedContinuation { continuation in
       ping { success, error in
         if let error {
-          continuation.resume(returning: .failure(FoundationBridgingError.serviceConnectionFailed(details: error.localizedDescription)))
+          continuation
+            .resume(returning: .failure(
+              FoundationBridgingError
+                .serviceConnectionFailed(details: error.localizedDescription)
+            ))
         } else {
           continuation.resume(returning: .success(success))
         }

@@ -11,13 +11,13 @@ public enum ResticError: Error, Sendable {
 
   /// The command failed to execute
   case executionFailed(String)
-  
+
   /// The command failed to execute with exit code and error output
   case executionFailure(Int, String)
-  
+
   /// Invalid command format or structure
   case invalidCommand(String)
-  
+
   /// Command execution timed out
   case executionTimeout
 
@@ -90,7 +90,7 @@ extension ResticError: LocalizedError {
         "Error: \(message)"
     }
   }
-  
+
   public var failureReason: String? {
     switch self {
       case let .missingParameter(message):
@@ -127,7 +127,7 @@ extension ResticError: LocalizedError {
         message
     }
   }
-  
+
   public var recoverySuggestion: String? {
     switch self {
       case .missingParameter:

@@ -4,7 +4,8 @@ import UmbraErrorsCore
 
 extension UmbraErrors.Security {
   /// Core security errors related to authentication, authorisation, encryption, etc.
-  public enum Core: Error, StandardErrorCapabilitiesProtocol /*, AuthenticationErrors, SecurityOperationErrors*/ {
+  public enum Core: Error,
+  StandardErrorCapabilitiesProtocol /* , AuthenticationErrors, SecurityOperationErrors */ {
     // Authentication errors
     /// Authentication failed due to invalid credentials or expired session
     case authenticationFailed(reason: String)
@@ -93,40 +94,40 @@ extension UmbraErrors.Security {
 
     /// String description for CustomStringConvertible conformance
     public var description: String {
-      return self.errorDescription
+      errorDescription
     }
 
     /// Human-readable error description
     public var errorDescription: String {
       switch self {
         case let .authenticationFailed(reason):
-          return "Authentication failed: \(reason)"
+          "Authentication failed: \(reason)"
         case let .authorizationFailed(reason):
-          return "Authorization failed: \(reason)"
+          "Authorization failed: \(reason)"
         case let .insufficientPermissions(resource, permission):
-          return "Insufficient permissions to access \(resource). Required: \(permission)"
+          "Insufficient permissions to access \(resource). Required: \(permission)"
         case let .encryptionFailed(reason):
-          return "Encryption failed: \(reason)"
+          "Encryption failed: \(reason)"
         case let .decryptionFailed(reason):
-          return "Decryption failed: \(reason)"
+          "Decryption failed: \(reason)"
         case let .hashingFailed(reason):
-          return "Hash operation failed: \(reason)"
+          "Hash operation failed: \(reason)"
         case let .signatureInvalid(reason):
-          return "Signature verification failed: \(reason)"
+          "Signature verification failed: \(reason)"
         case let .certificateInvalid(reason):
-          return "Invalid certificate: \(reason)"
+          "Invalid certificate: \(reason)"
         case let .certificateExpired(reason):
-          return "Certificate expired: \(reason)"
+          "Certificate expired: \(reason)"
         case let .policyViolation(policy, reason):
-          return "Security policy violation (\(policy)): \(reason)"
+          "Security policy violation (\(policy)): \(reason)"
         case let .secureConnectionFailed(reason):
-          return "Secure connection failed: \(reason)"
+          "Secure connection failed: \(reason)"
         case let .secureStorageFailed(operation, reason):
-          return "Secure storage operation '\(operation)' failed: \(reason)"
+          "Secure storage operation '\(operation)' failed: \(reason)"
         case let .dataIntegrityViolation(reason):
-          return "Data integrity violation detected: \(reason)"
+          "Data integrity violation detected: \(reason)"
         case let .internalError(reason):
-          return "Internal security error: \(reason)"
+          "Internal security error: \(reason)"
       }
     }
 
@@ -134,12 +135,12 @@ extension UmbraErrors.Security {
     public var source: UmbraErrorsCore.ErrorSource? {
       nil // Source is typically set when the error is created with context
     }
-    
+
     /// The underlying error, if any
     public var underlyingError: Error? {
       nil // Underlying error is typically set when the error is created with context
     }
-    
+
     /// Additional context for the error
     public var context: UmbraErrorsCore.ErrorContext {
       UmbraErrorsCore.ErrorContext(
@@ -150,21 +151,21 @@ extension UmbraErrors.Security {
     }
 
     /// Creates a new instance of the error with additional context
-    public func with(context: UmbraErrorsCore.ErrorContext) -> Self {
+    public func with(context _: UmbraErrorsCore.ErrorContext) -> Self {
       // Since these are enum cases, we need to return a new instance with the same value
       self
     }
-    
+
     /// Creates a new instance of the error with a specified underlying error
-    public func with(underlyingError: Error) -> Self {
+    public func with(underlyingError _: Error) -> Self {
       // Since these are enum cases, we need to return a new instance with the same value
       self
     }
 
     /// Creates a new instance of the error with source information
-    public func with(source: UmbraErrorsCore.ErrorSource) -> Self {
+    public func with(source _: UmbraErrorsCore.ErrorSource) -> Self {
       // Return self for now - in a real implementation we would attach the source
-      return self
+      self
     }
   }
 }

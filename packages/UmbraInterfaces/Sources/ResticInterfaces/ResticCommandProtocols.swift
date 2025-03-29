@@ -4,10 +4,10 @@ import Foundation
 public protocol ResticInitCommand: ResticCommand {
   /// Repository location (path or URL)
   var location: String { get }
-  
+
   /// Repository password
   var password: String { get }
-  
+
   /// Common options for the command
   var commonOptions: ResticCommonOptions? { get }
 }
@@ -16,13 +16,13 @@ public protocol ResticInitCommand: ResticCommand {
 public protocol ResticBackupCommand: ResticCommand {
   /// Paths to backup
   var paths: [String] { get }
-  
+
   /// Optional tag for the backup
   var tag: String? { get }
-  
+
   /// Patterns to exclude from backup
   var excludes: [String]? { get }
-  
+
   /// Common options for the command
   var commonOptions: ResticCommonOptions? { get }
 }
@@ -31,13 +31,13 @@ public protocol ResticBackupCommand: ResticCommand {
 public protocol ResticRestoreCommand: ResticCommand {
   /// Snapshot ID to restore from
   var snapshotID: String { get }
-  
+
   /// Target path for restoration
   var targetPath: String { get }
-  
+
   /// Specific paths to restore (nil for all)
   var paths: [String]? { get }
-  
+
   /// Common options for the command
   var commonOptions: ResticCommonOptions? { get }
 }
@@ -46,7 +46,7 @@ public protocol ResticRestoreCommand: ResticCommand {
 public protocol ResticSnapshotsCommand: ResticCommand {
   /// Optional tag to filter snapshots
   var tag: String? { get }
-  
+
   /// Common options for the command
   var commonOptions: ResticCommonOptions? { get }
 }
@@ -55,7 +55,7 @@ public protocol ResticSnapshotsCommand: ResticCommand {
 public protocol ResticMaintenanceCommand: ResticCommand {
   /// Type of maintenance to perform
   var maintenanceType: ResticMaintenanceType { get }
-  
+
   /// Common options for the command
   var commonOptions: ResticCommonOptions? { get }
 }
@@ -64,7 +64,7 @@ public protocol ResticMaintenanceCommand: ResticCommand {
 public protocol ResticCheckCommand: ResticCommand {
   /// Whether to read all data blobs
   var readData: Bool { get }
-  
+
   /// Common options for the command
   var commonOptions: ResticCommonOptions? { get }
 }

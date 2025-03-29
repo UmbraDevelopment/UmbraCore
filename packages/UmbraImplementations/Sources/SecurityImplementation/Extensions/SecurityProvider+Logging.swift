@@ -29,9 +29,9 @@ extension SecurityProviderImpl {
    */
   func logOperationStart(operation: SecurityOperation, config: SecurityConfigDTO) async {
     // Create a safe version of config - don't log auth data
-    let safeConfig = "Algorithm: \(config.algorithm), KeySize: \(config.keySize), Mode: \(config.options["mode"] ?? "none")"
+    let safeConfig="Algorithm: \(config.algorithm), KeySize: \(config.keySize), Mode: \(config.options["mode"] ?? "none")"
 
-    let metadata: LoggingInterfaces.LogMetadata = [
+    let metadata: LoggingInterfaces.LogMetadata=[
       "operation": operation.description,
       "configuration": safeConfig,
       "timestamp": "\(Date())"
@@ -48,7 +48,7 @@ extension SecurityProviderImpl {
      - duration: The time taken to complete the operation in milliseconds
    */
   func logOperationSuccess(operation: SecurityOperation, duration: Double) async {
-    let metadata: LoggingInterfaces.LogMetadata = [
+    let metadata: LoggingInterfaces.LogMetadata=[
       "operation": operation.description,
       "durationMs": String(format: "%.2f", duration),
       "timestamp": "\(Date())"
@@ -69,7 +69,7 @@ extension SecurityProviderImpl {
      - duration: The time taken before failure in milliseconds
    */
   func logOperationFailure(operation: SecurityOperation, error: Error, duration: Double) async {
-    let metadata: LoggingInterfaces.LogMetadata = [
+    let metadata: LoggingInterfaces.LogMetadata=[
       "operation": operation.description,
       "errorType": "\(type(of: error))",
       "durationMs": String(format: "%.2f", duration),

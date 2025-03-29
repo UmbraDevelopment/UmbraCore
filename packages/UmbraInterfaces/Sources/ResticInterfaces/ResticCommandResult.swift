@@ -7,19 +7,19 @@ import Foundation
 public struct ResticCommandResult: Sendable {
   /// The raw output string from the command
   public let output: String
-  
+
   /// The exit code of the command (0 for success)
   public let exitCode: Int
-  
+
   /// Whether the command was successful
   public let isSuccess: Bool
-  
+
   /// Duration of the command execution in seconds
   public let duration: TimeInterval
-  
+
   /// Any structured data parsed from the command output
   public let data: [String: Any]
-  
+
   /// Creates a new command result.
   ///
   /// - Parameters:
@@ -29,17 +29,17 @@ public struct ResticCommandResult: Sendable {
   ///   - data: Any structured data parsed from the command output
   public init(
     output: String,
-    exitCode: Int = 0,
-    duration: TimeInterval = 0,
-    data: [String: Any] = [:]
+    exitCode: Int=0,
+    duration: TimeInterval=0,
+    data: [String: Any]=[:]
   ) {
-    self.output = output
-    self.exitCode = exitCode
-    self.isSuccess = exitCode == 0
-    self.duration = duration
-    self.data = data
+    self.output=output
+    self.exitCode=exitCode
+    isSuccess=exitCode == 0
+    self.duration=duration
+    self.data=data
   }
-  
+
   /// Creates a successful result.
   ///
   /// - Parameters:
@@ -49,12 +49,12 @@ public struct ResticCommandResult: Sendable {
   /// - Returns: A successful command result
   public static func success(
     output: String,
-    duration: TimeInterval = 0,
-    data: [String: Any] = [:]
+    duration: TimeInterval=0,
+    data: [String: Any]=[:]
   ) -> ResticCommandResult {
     ResticCommandResult(output: output, exitCode: 0, duration: duration, data: data)
   }
-  
+
   /// Creates a failure result.
   ///
   /// - Parameters:
@@ -64,8 +64,8 @@ public struct ResticCommandResult: Sendable {
   /// - Returns: A failure command result
   public static func failure(
     output: String,
-    exitCode: Int = 1,
-    duration: TimeInterval = 0
+    exitCode: Int=1,
+    duration: TimeInterval=0
   ) -> ResticCommandResult {
     ResticCommandResult(output: output, exitCode: exitCode, duration: duration)
   }

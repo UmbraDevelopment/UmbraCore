@@ -13,12 +13,12 @@ extension UmbraErrorsCore.UmbraError {
   ///   - additionalMessage: Optional additional context message
   ///   - logger: The logger to use (defaults to shared instance)
   public func logAsError(
-    additionalMessage: String? = nil,
-    logger: ErrorLogger = ErrorLogger.shared
+    additionalMessage: String?=nil,
+    logger: ErrorLogger=ErrorLogger.shared
   ) async {
-    var message = errorDescription
+    var message=errorDescription
     if let additionalMessage {
-      message = "\(additionalMessage): \(message)"
+      message="\(additionalMessage): \(message)"
     }
     await logger.error(message, metadata: createMetadata())
   }
@@ -28,12 +28,12 @@ extension UmbraErrorsCore.UmbraError {
   ///   - additionalMessage: Optional additional context message
   ///   - logger: The logger to use (defaults to shared instance)
   public func logAsWarning(
-    additionalMessage: String? = nil,
-    logger: ErrorLogger = ErrorLogger.shared
+    additionalMessage: String?=nil,
+    logger: ErrorLogger=ErrorLogger.shared
   ) async {
-    var message = errorDescription
+    var message=errorDescription
     if let additionalMessage {
-      message = "\(additionalMessage): \(message)"
+      message="\(additionalMessage): \(message)"
     }
     await logger.warning(message, metadata: createMetadata())
   }
@@ -43,12 +43,12 @@ extension UmbraErrorsCore.UmbraError {
   ///   - additionalMessage: Optional additional context message
   ///   - logger: The logger to use (defaults to shared instance)
   public func logAsInfo(
-    additionalMessage: String? = nil,
-    logger: ErrorLogger = ErrorLogger.shared
+    additionalMessage: String?=nil,
+    logger: ErrorLogger=ErrorLogger.shared
   ) async {
-    var message = errorDescription
+    var message=errorDescription
     if let additionalMessage {
-      message = "\(additionalMessage): \(message)"
+      message="\(additionalMessage): \(message)"
     }
     await logger.info(message, metadata: createMetadata())
   }
@@ -58,12 +58,12 @@ extension UmbraErrorsCore.UmbraError {
   ///   - additionalMessage: Optional additional context message
   ///   - logger: The logger to use (defaults to shared instance)
   public func logAsDebug(
-    additionalMessage: String? = nil,
-    logger: ErrorLogger = ErrorLogger.shared
+    additionalMessage: String?=nil,
+    logger: ErrorLogger=ErrorLogger.shared
   ) async {
-    var message = errorDescription
+    var message=errorDescription
     if let additionalMessage {
-      message = "\(additionalMessage): \(message)"
+      message="\(additionalMessage): \(message)"
     }
     await logger.debug(message, metadata: createMetadata())
   }
@@ -73,12 +73,12 @@ extension UmbraErrorsCore.UmbraError {
   ///   - additionalMessage: Optional additional context message
   ///   - logger: The logger to use (defaults to shared instance)
   public func logAsCritical(
-    additionalMessage: String? = nil,
-    logger: ErrorLogger = ErrorLogger.shared
+    additionalMessage: String?=nil,
+    logger: ErrorLogger=ErrorLogger.shared
   ) async {
-    var message = errorDescription
+    var message=errorDescription
     if let additionalMessage {
-      message = "\(additionalMessage): \(message)"
+      message="\(additionalMessage): \(message)"
     }
     await logger.critical(message, metadata: createMetadata())
   }
@@ -90,48 +90,52 @@ extension UmbraErrorsCore.UmbraError {
   ///   - logger: The logger to use (defaults to shared instance)
   public func log(
     severity: UmbraErrorsCore.ErrorSeverity = .error,
-    additionalMessage: String? = nil,
-    logger: ErrorLogger = ErrorLogger.shared
+    additionalMessage: String?=nil,
+    logger: ErrorLogger=ErrorLogger.shared
   ) async {
-    await logger.log(self, severity: severity, additionalContext: additionalMessage != nil ? ["additionalMessage": additionalMessage!] : nil)
+    await logger.log(
+      self,
+      severity: severity,
+      additionalContext: additionalMessage != nil ? ["additionalMessage": additionalMessage!] : nil
+    )
   }
-  
+
   /// Creates a LogMetadata instance from this error's context
   /// - Returns: A LogMetadata instance with error information
   private func createMetadata() -> LogMetadata {
     // Create a dictionary with error context information
-    var metadataDict: [String: String] = [
+    var metadataDict: [String: String]=[
       "domain": domain,
       "code": code,
       "description": errorDescription
     ]
-    
+
     // Add source information if available
-    if let source = source {
-      metadataDict["source"] = "\(source)"
+    if let source {
+      metadataDict["source"]="\(source)"
     }
-    
+
     // Add file, function, line information
-    metadataDict["file"] = context.file
-    metadataDict["function"] = context.function
-    metadataDict["line"] = "\(context.line)"
-    
+    metadataDict["file"]=context.file
+    metadataDict["function"]=context.function
+    metadataDict["line"]="\(context.line)"
+
     // Add operation and details if available
-    if let operation = context.operation {
-      metadataDict["operation"] = "\(operation)"
+    if let operation=context.operation {
+      metadataDict["operation"]="\(operation)"
     }
-    
-    if let details = context.details {
-      metadataDict["details"] = "\(details)"
+
+    if let details=context.details {
+      metadataDict["details"]="\(details)"
     }
-    
+
     // Try to add common context values by known keys
     for key in ["errorCode", "errorDomain", "requestId", "timestamp", "additionalInfo"] {
-      if let value = context.value(for: key) {
-        metadataDict[key] = "\(value)"
+      if let value=context.value(for: key) {
+        metadataDict[key]="\(value)"
       }
     }
-    
+
     return LogMetadata(metadataDict)
   }
 }

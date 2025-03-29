@@ -1,8 +1,8 @@
 import Foundation
+
 // Use the shared declarations instead of local ones
 import Interfaces
 import UmbraErrorsCore
-
 
 /// Error domain namespace
 
@@ -233,7 +233,7 @@ extension UmbraErrors.Network {
     }
 
     /// Creates a new instance of the error with source information
-    public func with(source: UmbraErrorsCore.ErrorSource) -> Self {
+    public func with(source _: UmbraErrorsCore.ErrorSource) -> Self {
       // Similar to above, return a new instance with the same value
       self // In a real implementation, we would attach the source information
     }

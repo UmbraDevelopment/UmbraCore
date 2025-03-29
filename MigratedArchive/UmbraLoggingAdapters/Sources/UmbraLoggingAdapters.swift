@@ -1,3 +1,5 @@
+import Adapters
+
 /// UmbraLoggingAdapters
 ///
 /// This module provides adapter implementations for the UmbraLogging interfaces.
@@ -10,7 +12,6 @@ import Foundation
 import LoggingWrapper
 import LoggingWrapperInterfaces
 import UmbraLogging
-import Adapters
 
 /// Facade for UmbraLoggingAdapters module
 public enum UmbraLoggingAdapters {

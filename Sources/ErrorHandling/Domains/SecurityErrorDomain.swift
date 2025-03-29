@@ -1,8 +1,8 @@
 import Foundation
+
 // Use the shared declarations instead of local ones
 import Interfaces
 import UmbraErrorsCore
-
 
 /// Error domain namespace
 
@@ -77,7 +77,8 @@ public protocol DomainError: Error {
 }
 
 /// Struct wrapper for security errors that conforms to UmbraError
-public struct UmbraSecurityError: Error, UmbraErrorsCore.UmbraError, Sendable, CustomStringConvertible {
+public struct UmbraSecurityError: Error, UmbraErrorsCore.UmbraError, Sendable,
+CustomStringConvertible {
   /// The specific security error type
   public let errorType: SecurityErrorType
 
