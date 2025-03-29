@@ -77,20 +77,20 @@ public actor ProviderRegistryActor {
         
         // Register default factories (directly to avoid actor-isolation issues)
         // Basic provider is always available
-        self.providerFactories[.basic] = {
+        self.providerFactories[.basic] = { @Sendable in
             return try SecurityProviderFactory.createProvider(type: .basic)
         }
         
         // Apple provider if available
         #if canImport(CryptoKit) && (os(macOS) || os(iOS) || os(watchOS) || os(tvOS))
-        self.providerFactories[.apple] = {
+        self.providerFactories[.apple] = { @Sendable in
             return try SecurityProviderFactory.createProvider(type: .apple)
         }
         #endif
         
         // Ring provider if available
-        #if canImport(RingCrypto)
-        self.providerFactories[.ring] = {
+        #if os(Linux) || os(Android)
+        self.providerFactories[.ring] = { @Sendable in
             return try SecurityProviderFactory.createProvider(type: .ring)
         }
         #endif
