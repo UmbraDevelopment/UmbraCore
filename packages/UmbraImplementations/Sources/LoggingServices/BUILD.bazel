@@ -11,11 +11,31 @@ umbra_swift_library(
             "**/Tests/**",
             "**/*Test.swift",
             "**/*.generated.swift",
+            "Examples/**",
         ],
         exclude_directories = 1,
     ),
     visibility = ["//visibility:public"],
     deps = [
+        "//packages/UmbraCoreTypes/Sources/LoggingTypes",
+        "//packages/UmbraInterfaces/Sources/LoggingInterfaces",
+    ],
+)
+
+# Examples are deliberately not built as part of the main library
+# They serve as documentation and reference for developers
+umbra_swift_library(
+    name = "LoggingServicesExamples",
+    srcs = glob(
+        [
+            "Examples/*.swift",
+        ],
+        allow_empty = True,
+    ),
+    testonly = True,
+    visibility = ["//visibility:public"],
+    deps = [
+        ":LoggingServices",
         "//packages/UmbraCoreTypes/Sources/LoggingTypes",
         "//packages/UmbraInterfaces/Sources/LoggingInterfaces",
     ],

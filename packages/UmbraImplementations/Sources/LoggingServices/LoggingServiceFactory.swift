@@ -108,4 +108,90 @@ public enum LoggingServiceFactory {
             formatter: formatter
         )
     }
+    
+    /// Create an OSLog-based logging service
+    /// - Parameters:
+    ///   - subsystem: The subsystem identifier (typically reverse-DNS bundle identifier)
+    ///   - category: The logging category (module or component name)
+    ///   - minimumLevel: Minimum log level to display (defaults to info)
+    ///   - formatter: Optional custom formatter to use
+    /// - Returns: A configured logging service actor that uses OSLog
+    public static func createOSLogger(
+        subsystem: String,
+        category: String,
+        minimumLevel: LoggingTypes.UmbraLogLevel = .info,
+        formatter: LoggingInterfaces.LogFormatterProtocol? = nil
+    ) -> LoggingServiceActor {
+        let osLogDestination = OSLogDestination(
+            subsystem: subsystem,
+            category: category,
+            minimumLevel: minimumLevel,
+            formatter: formatter
+        )
+        
+        return LoggingServiceActor(
+            destinations: [osLogDestination],
+            minimumLogLevel: minimumLevel,
+            formatter: formatter
+        )
+    }
+    
+    /// Create a comprehensive logging service with OSLog, file and console output
+    /// - Parameters:
+    ///   - subsystem: The subsystem identifier for OSLog
+    ///   - category: The category for OSLog
+    ///   - logDirectoryPath: Directory to store log files
+    ///   - logFileName: Name of the log file (without path)
+    ///   - minimumLevel: Minimum log level to display (defaults to info)
+    ///   - fileMinimumLevel: Minimum level for file logging (defaults to warning)
+    ///   - osLogMinimumLevel: Minimum level for OSLog (defaults to info)
+    ///   - consoleMinimumLevel: Minimum level for console (defaults to info)
+    ///   - maxFileSizeMB: Maximum log file size in megabytes before rotation
+    ///   - maxBackupCount: Number of backup log files to keep
+    ///   - formatter: Optional custom formatter to use
+    /// - Returns: A logging service actor with multiple destinations
+    public static func createComprehensiveLogger(
+        subsystem: String,
+        category: String,
+        logDirectoryPath: String,
+        logFileName: String = "umbra.log",
+        minimumLevel: LoggingTypes.UmbraLogLevel = .info,
+        fileMinimumLevel: LoggingTypes.UmbraLogLevel = .warning,
+        osLogMinimumLevel: LoggingTypes.UmbraLogLevel = .info,
+        consoleMinimumLevel: LoggingTypes.UmbraLogLevel = .info,
+        maxFileSizeMB: UInt64 = 10,
+        maxBackupCount: Int = 5,
+        formatter: LoggingInterfaces.LogFormatterProtocol? = nil
+    ) -> LoggingServiceActor {
+        let filePath = (logDirectoryPath as NSString).appendingPathComponent(logFileName)
+        
+        let consoleDestination = ConsoleLogDestination(
+            identifier: "console-comprehensive",
+            minimumLevel: consoleMinimumLevel,
+            formatter: formatter
+        )
+        
+        let fileDestination = FileLogDestination(
+            identifier: "file-comprehensive",
+            filePath: filePath,
+            minimumLevel: fileMinimumLevel,
+            maxFileSize: maxFileSizeMB * 1024 * 1024,
+            maxBackupCount: maxBackupCount,
+            formatter: formatter
+        )
+        
+        let osLogDestination = OSLogDestination(
+            identifier: "oslog-comprehensive",
+            subsystem: subsystem,
+            category: category,
+            minimumLevel: osLogMinimumLevel,
+            formatter: formatter
+        )
+        
+        return LoggingServiceActor(
+            destinations: [consoleDestination, fileDestination, osLogDestination],
+            minimumLogLevel: minimumLevel,
+            formatter: formatter
+        )
+    }
 }

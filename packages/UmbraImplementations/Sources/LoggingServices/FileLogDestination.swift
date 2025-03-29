@@ -66,8 +66,9 @@ extension FileManager: FileManagerProtocol {
     }
 }
 
-// Mark FileManager as unchecked Sendable
-extension FileManager: @unchecked Sendable {}
+// Make FileManager Sendable-conforming to support actor isolation
+// The @retroactive attribute silences warnings about extending an imported type
+extension FileManager: @retroactive @unchecked Sendable {}
 
 /// A log destination that writes to a file
 ///
@@ -81,10 +82,10 @@ public actor FileLogDestination: LoggingTypes.LogDestination {
     /// Minimum log level this destination will accept
     public nonisolated(unsafe) var minimumLevel: LoggingTypes.UmbraLogLevel
     
-    /// File path where logs are written
-    private let filePath: String
+    /// Path to the log file
+    public let filePath: String
     
-    /// Directory path containing the log file
+    /// Path to the directory containing the log file
     private let directoryPath: String
     
     /// File manager for file operations
