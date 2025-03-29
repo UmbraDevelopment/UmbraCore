@@ -161,7 +161,7 @@ public struct SecureBytes: Sendable, Equatable, Hashable, Codable {
   /// Convert SecureBytes to a Foundation Data object
   /// - Returns: Data representation of the bytes
   /// - Warning: This creates a copy that is not automatically zeroed
-  public func data() -> Data {
+  public func extractUnderlyingData() -> Data {
     Data(storage)
   }
 
@@ -170,6 +170,17 @@ public struct SecureBytes: Sendable, Equatable, Hashable, Codable {
   /// - Warning: This creates a copy that is not automatically zeroed
   public func base64EncodedString() -> String {
     Data(storage).base64EncodedString()
+  }
+}
+
+// MARK: - Backwards Compatibility
+
+extension SecureBytes {
+  /// Legacy method for extracting data - use extractUnderlyingData() instead
+  /// - Returns: Data representation of the bytes
+  @available(*, deprecated, message: "Use extractUnderlyingData() for clarity")
+  public func data() -> Data {
+    extractUnderlyingData()
   }
 }
 

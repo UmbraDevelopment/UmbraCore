@@ -21,6 +21,9 @@ public struct SecurityConfigDTO: Sendable, Equatable {
 
   /// Hash algorithm for hashing operations (e.g., "SHA256", "SHA512")
   public let hashAlgorithm: String?
+  
+  /// The specific security provider type to use for this operation
+  public let providerType: SecurityProviderType?
 
   /// Additional options as key-value pairs
   public let options: [String: String]
@@ -33,6 +36,7 @@ public struct SecurityConfigDTO: Sendable, Equatable {
      - keySize: Key size in bits
      - mode: Mode of operation for block ciphers
      - hashAlgorithm: Hash algorithm to use
+     - providerType: Specific security provider to use (optional)
      - options: Additional operation-specific options
    */
   public init(
@@ -40,12 +44,14 @@ public struct SecurityConfigDTO: Sendable, Equatable {
     keySize: Int,
     mode: String?=nil,
     hashAlgorithm: String?=nil,
+    providerType: SecurityProviderType?=nil,
     options: [String: String]=[:]
   ) {
     self.algorithm=algorithm
     self.keySize=keySize
     self.mode=mode
     self.hashAlgorithm=hashAlgorithm
+    self.providerType=providerType
     self.options=options
   }
 
@@ -55,12 +61,14 @@ public struct SecurityConfigDTO: Sendable, Equatable {
    - Parameters:
      - keySize: Key size in bits (128, 192, or 256)
      - mode: Mode of operation ("GCM", "CBC", or "CTR")
+     - providerType: Specific security provider to use (optional)
      - additionalOptions: Additional operation-specific options
    - Returns: A configured SecurityConfigDTO
    */
   public static func aesEncryption(
     keySize: Int=256,
     mode: String="GCM",
+    providerType: SecurityProviderType?=nil,
     additionalOptions: [String: String]=[:]
   ) -> SecurityConfigDTO {
     var options=additionalOptions
@@ -70,6 +78,7 @@ public struct SecurityConfigDTO: Sendable, Equatable {
       algorithm: "AES",
       keySize: keySize,
       mode: mode,
+      providerType: providerType,
       options: options
     )
   }
@@ -79,11 +88,13 @@ public struct SecurityConfigDTO: Sendable, Equatable {
 
    - Parameters:
      - keySize: Key size in bits (2048 or 4096)
+     - providerType: Specific security provider to use (optional)
      - additionalOptions: Additional operation-specific options
    - Returns: A configured SecurityConfigDTO
    */
   public static func rsaEncryption(
     keySize: Int=2048,
+    providerType: SecurityProviderType?=nil,
     additionalOptions: [String: String]=[:]
   ) -> SecurityConfigDTO {
     var options=additionalOptions
@@ -92,6 +103,7 @@ public struct SecurityConfigDTO: Sendable, Equatable {
     return SecurityConfigDTO(
       algorithm: "RSA",
       keySize: keySize,
+      providerType: providerType,
       options: options
     )
   }
@@ -102,12 +114,14 @@ public struct SecurityConfigDTO: Sendable, Equatable {
    - Parameters:
      - algorithm: Signature algorithm ("RSA", "ECDSA")
      - hashAlgorithm: Hash algorithm to use ("SHA256", "SHA384", "SHA512")
+     - providerType: Specific security provider to use (optional)
      - additionalOptions: Additional operation-specific options
    - Returns: A configured SecurityConfigDTO
    */
   public static func signature(
     algorithm: String="RSA",
     hashAlgorithm: String="SHA256",
+    providerType: SecurityProviderType?=nil,
     additionalOptions: [String: String]=[:]
   ) -> SecurityConfigDTO {
     var options=additionalOptions
@@ -117,6 +131,7 @@ public struct SecurityConfigDTO: Sendable, Equatable {
       algorithm: algorithm,
       keySize: algorithm == "RSA" ? 2048 : 256,
       hashAlgorithm: hashAlgorithm,
+      providerType: providerType,
       options: options
     )
   }
@@ -127,12 +142,14 @@ public struct SecurityConfigDTO: Sendable, Equatable {
    - Parameters:
      - algorithm: Key algorithm ("AES", "RSA", "ECDSA")
      - keySize: Key size in bits
+     - providerType: Specific security provider to use (optional)
      - additionalOptions: Additional key generation options
    - Returns: A configured SecurityConfigDTO
    */
   public static func keyGeneration(
     algorithm: String,
     keySize: Int,
+    providerType: SecurityProviderType?=nil,
     additionalOptions: [String: String]=[:]
   ) -> SecurityConfigDTO {
     var options=additionalOptions
@@ -141,6 +158,7 @@ public struct SecurityConfigDTO: Sendable, Equatable {
     return SecurityConfigDTO(
       algorithm: algorithm,
       keySize: keySize,
+      providerType: providerType,
       options: options
     )
   }
