@@ -97,14 +97,14 @@ public actor KeyManagementActor: KeyManagementProtocol {
   -> Result<SecureBytes, SecurityProtocolError> {
     await logger.debug(
       "Retrieving key with identifier: \(identifier)",
-      metadata: LogMetadata(),
+      metadata: PrivacyMetadata(),
       source: "KeyManagementActor"
     )
 
     guard !identifier.isEmpty else {
       await logger.error(
         "Cannot retrieve key with empty identifier",
-        metadata: LogMetadata(),
+        metadata: PrivacyMetadata(),
         source: "KeyManagementActor"
       )
       return .failure(.invalidInput("Identifier cannot be empty"))
@@ -113,14 +113,14 @@ public actor KeyManagementActor: KeyManagementProtocol {
     if let key=await keyStore.getKey(identifier: sanitizeIdentifier(identifier)) {
       await logger.debug(
         "Successfully retrieved key with identifier: \(identifier)",
-        metadata: LogMetadata(),
+        metadata: PrivacyMetadata(),
         source: "KeyManagementActor"
       )
       return .success(key)
     } else {
       await logger.warning(
         "Key not found with identifier: \(identifier)",
-        metadata: LogMetadata(),
+        metadata: PrivacyMetadata(),
         source: "KeyManagementActor"
       )
       return .failure(.keyManagementError("Key not found with identifier: \(identifier)"))
@@ -141,14 +141,14 @@ public actor KeyManagementActor: KeyManagementProtocol {
   ) async -> Result<Void, SecurityProtocolError> {
     await logger.debug(
       "Storing key with identifier: \(identifier)",
-      metadata: LogMetadata(),
+      metadata: PrivacyMetadata(),
       source: "KeyManagementActor"
     )
 
     guard !identifier.isEmpty else {
       await logger.error(
         "Cannot store key with empty identifier",
-        metadata: LogMetadata(),
+        metadata: PrivacyMetadata(),
         source: "KeyManagementActor"
       )
       return .failure(.invalidInput("Identifier cannot be empty"))
@@ -157,7 +157,7 @@ public actor KeyManagementActor: KeyManagementProtocol {
     guard !key.isEmpty else {
       await logger.error(
         "Cannot store empty key",
-        metadata: LogMetadata(),
+        metadata: PrivacyMetadata(),
         source: "KeyManagementActor"
       )
       return .failure(.invalidInput("Key cannot be empty"))
@@ -169,7 +169,7 @@ public actor KeyManagementActor: KeyManagementProtocol {
     if await keyStore.containsKey(identifier: sanitizedIdentifier) {
       await logger.warning(
         "Overwriting existing key with identifier: \(identifier)",
-        metadata: LogMetadata(),
+        metadata: PrivacyMetadata(),
         source: "KeyManagementActor"
       )
     }
@@ -178,7 +178,7 @@ public actor KeyManagementActor: KeyManagementProtocol {
     await keyStore.storeKey(key, identifier: sanitizedIdentifier)
     await logger.debug(
       "Successfully stored key with identifier: \(identifier)",
-      metadata: LogMetadata(),
+      metadata: PrivacyMetadata(),
       source: "KeyManagementActor"
     )
     return .success(())
@@ -194,14 +194,14 @@ public actor KeyManagementActor: KeyManagementProtocol {
   -> Result<Void, SecurityProtocolError> {
     await logger.debug(
       "Deleting key with identifier: \(identifier)",
-      metadata: LogMetadata(),
+      metadata: PrivacyMetadata(),
       source: "KeyManagementActor"
     )
 
     guard !identifier.isEmpty else {
       await logger.error(
         "Cannot delete key with empty identifier",
-        metadata: LogMetadata(),
+        metadata: PrivacyMetadata(),
         source: "KeyManagementActor"
       )
       return .failure(.invalidInput("Identifier cannot be empty"))
@@ -214,14 +214,14 @@ public actor KeyManagementActor: KeyManagementProtocol {
       await keyStore.deleteKey(identifier: sanitizedIdentifier)
       await logger.debug(
         "Successfully deleted key with identifier: \(identifier)",
-        metadata: LogMetadata(),
+        metadata: PrivacyMetadata(),
         source: "KeyManagementActor"
       )
       return .success(())
     } else {
       await logger.warning(
         "Key not found for deletion with identifier: \(identifier)",
-        metadata: LogMetadata(),
+        metadata: PrivacyMetadata(),
         source: "KeyManagementActor"
       )
       return .failure(.keyManagementError("Key not found with identifier: \(identifier)"))
@@ -242,14 +242,14 @@ public actor KeyManagementActor: KeyManagementProtocol {
   ) async -> Result<(newKey: SecureBytes, reencryptedData: SecureBytes?), SecurityProtocolError> {
     await logger.debug(
       "Rotating key with identifier: \(identifier)",
-      metadata: LogMetadata(),
+      metadata: PrivacyMetadata(),
       source: "KeyManagementActor"
     )
 
     guard !identifier.isEmpty else {
       await logger.error(
         "Cannot rotate key with empty identifier",
-        metadata: LogMetadata(),
+        metadata: PrivacyMetadata(),
         source: "KeyManagementActor"
       )
       return .failure(.invalidInput("Identifier cannot be empty"))
@@ -264,7 +264,7 @@ public actor KeyManagementActor: KeyManagementProtocol {
         let newKey=try await keyGenerator.generateKey()
         await logger.debug(
           "Generated new key for rotation",
-          metadata: LogMetadata(),
+          metadata: PrivacyMetadata(),
           source: "KeyManagementActor"
         )
 
@@ -272,7 +272,7 @@ public actor KeyManagementActor: KeyManagementProtocol {
         await keyStore.storeKey(newKey, identifier: sanitizedIdentifier)
         await logger.debug(
           "Stored new key with identifier: \(identifier)",
-          metadata: LogMetadata(),
+          metadata: PrivacyMetadata(),
           source: "KeyManagementActor"
         )
 
@@ -285,7 +285,7 @@ public actor KeyManagementActor: KeyManagementProtocol {
           reencryptedData=dataToReencrypt
           await logger.debug(
             "Re-encrypted data with new key",
-            metadata: LogMetadata(),
+            metadata: PrivacyMetadata(),
             source: "KeyManagementActor"
           )
         }
@@ -294,7 +294,7 @@ public actor KeyManagementActor: KeyManagementProtocol {
       } catch {
         await logger.error(
           "Failed to rotate key: \(error.localizedDescription)",
-          metadata: LogMetadata(),
+          metadata: PrivacyMetadata(),
           source: "KeyManagementActor"
         )
         return .failure(
@@ -304,7 +304,7 @@ public actor KeyManagementActor: KeyManagementProtocol {
     } else {
       await logger.warning(
         "Key not found for rotation with identifier: \(identifier)",
-        metadata: LogMetadata(),
+        metadata: PrivacyMetadata(),
         source: "KeyManagementActor"
       )
       return .failure(.keyManagementError("Key not found with identifier: \(identifier)"))
@@ -319,14 +319,14 @@ public actor KeyManagementActor: KeyManagementProtocol {
   public func listKeyIdentifiers() async -> Result<[String], SecurityProtocolError> {
     await logger.debug(
       "Listing all key identifiers",
-      metadata: LogMetadata(),
+      metadata: PrivacyMetadata(),
       source: "KeyManagementActor"
     )
 
     let identifiers=await keyStore.listKeyIdentifiers()
     await logger.debug(
       "Found \(identifiers.count) key identifiers",
-      metadata: LogMetadata(),
+      metadata: PrivacyMetadata(),
       source: "KeyManagementActor"
     )
     return .success(identifiers)
