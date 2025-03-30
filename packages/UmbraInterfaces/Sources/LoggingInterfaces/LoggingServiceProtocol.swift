@@ -46,32 +46,32 @@ public protocol LoggingServiceProtocol: Sendable {
   ///   - metadata: Optional metadata
   ///   - source: Optional source component identifier
   func error(_ message: String, metadata: LoggingTypes.LogMetadata?, source: String?) async
-  
+
   /// Log a critical message
   /// - Parameters:
   ///   - message: The message to log
   ///   - metadata: Optional metadata
   ///   - source: Optional source component identifier
   func critical(_ message: String, metadata: LoggingTypes.LogMetadata?, source: String?) async
-  
+
   /// Add a log destination
   /// - Parameter destination: The destination to add
   /// - Throws: LoggingError if the destination cannot be added
   func addDestination(_ destination: LoggingTypes.LogDestination) async throws
-  
+
   /// Remove a log destination by identifier
   /// - Parameter identifier: Unique identifier of the destination to remove
   /// - Returns: true if the destination was removed, false if not found
   func removeDestination(withIdentifier identifier: String) async -> Bool
-  
+
   /// Set the global minimum log level
   /// - Parameter level: The minimum log level to record
   func setMinimumLogLevel(_ level: LoggingTypes.UmbraLogLevel) async
-  
+
   /// Get the current global minimum log level
   /// - Returns: The current minimum log level
   func getMinimumLogLevel() async -> LoggingTypes.UmbraLogLevel
-  
+
   /// Flush all destinations, ensuring pending logs are written
   /// - Throws: LoggingError if any destination fails to flush
   func flushAllDestinations() async throws

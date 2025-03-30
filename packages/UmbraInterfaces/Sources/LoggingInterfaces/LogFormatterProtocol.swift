@@ -14,17 +14,17 @@ public protocol LogFormatterProtocol: Sendable {
   /// - Parameter metadata: Metadata to format
   /// - Returns: Formatted string representation of the metadata
   func formatMetadata(_ metadata: LoggingTypes.LogMetadata?) -> String?
-  
+
   /// Format a timestamp to a string
   /// - Parameter timestamp: The timestamp to format
   /// - Returns: Formatted string representation of the timestamp
   func formatTimestamp(_ timestamp: LoggingTypes.TimePointAdapter) -> String
-  
+
   /// Format a log level to a string
   /// - Parameter level: The log level to format
   /// - Returns: Formatted string representation of the log level
   func formatLogLevel(_ level: LoggingTypes.UmbraLogLevel) -> String
-  
+
   /// Customise the format based on configuration
   /// - Parameters:
   ///   - includeTimestamp: Whether to include timestamps in the output
