@@ -55,7 +55,11 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
     for account: String,
     accessOptions: KeychainAccessOptions?=nil
   ) async throws {
-    await logger.debug("Storing password for account: \(account)", metadata: nil)
+    await logger.debug(
+      "Storing password for account: \(account)",
+      metadata: nil,
+      source: "KeychainService"
+    )
 
     guard !password.isEmpty else {
       throw KeychainError.invalidParameter("Password cannot be empty")
@@ -86,16 +90,25 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
     let status=SecItemAdd(query as CFDictionary, nil)
 
     if status == errSecSuccess {
-      await logger.info("Successfully stored password for account: \(account)", metadata: nil)
+      await logger.info(
+        "Successfully stored password for account: \(account)",
+        metadata: nil,
+        source: "KeychainService"
+      )
     } else if status == errSecDuplicateItem {
       await logger.warning(
         "Password already exists for account: \(account). Use updatePassword instead.",
-        metadata: nil
+        metadata: nil,
+        source: "KeychainService"
       )
       throw KeychainError.itemAlreadyExists
     } else {
       let error=KeychainError.fromOSStatus(status)
-      await logger.error("Failed to store password: \(error)", metadata: nil)
+      await logger.error(
+        "Failed to store password: \(error)",
+        metadata: nil,
+        source: "KeychainService"
+      )
       throw error
     }
   }
@@ -109,7 +122,11 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
    - Throws: KeychainError if the password doesn't exist or retrieval fails
    */
   public func retrievePassword(for account: String) async throws -> String {
-    await logger.debug("Retrieving password for account: \(account)", metadata: nil)
+    await logger.debug(
+      "Retrieving password for account: \(account)",
+      metadata: nil,
+      source: "KeychainService"
+    )
 
     guard !account.isEmpty else {
       throw KeychainError.invalidParameter("Account identifier cannot be empty")
@@ -131,19 +148,35 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
     if status == errSecSuccess, let passwordData=result as? Data {
       // Convert data to string
       guard let password=String(data: passwordData, encoding: .utf8) else {
-        await logger.error("Retrieved data couldn't be converted to a string", metadata: nil)
+        await logger.error(
+          "Retrieved data couldn't be converted to a string",
+          metadata: nil,
+          source: "KeychainService"
+        )
         throw KeychainError.invalidDataFormat("Retrieved data is not a valid UTF-8 string")
       }
 
-      await logger.info("Successfully retrieved password for account: \(account)", metadata: nil)
+      await logger.info(
+        "Successfully retrieved password for account: \(account)",
+        metadata: nil,
+        source: "KeychainService"
+      )
       return password
     } else {
       if status == errSecItemNotFound {
-        await logger.warning("No password found for account: \(account)", metadata: nil)
+        await logger.warning(
+          "No password found for account: \(account)",
+          metadata: nil,
+          source: "KeychainService"
+        )
         throw KeychainError.itemNotFound
       } else {
         let error=KeychainError.fromOSStatus(status)
-        await logger.error("Failed to retrieve password: \(error)", metadata: nil)
+        await logger.error(
+          "Failed to retrieve password: \(error)",
+          metadata: nil,
+          source: "KeychainService"
+        )
         throw error
       }
     }
@@ -157,7 +190,11 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
    - Throws: KeychainError if the deletion fails
    */
   public func deletePassword(for account: String) async throws {
-    await logger.debug("Deleting password for account: \(account)", metadata: nil)
+    await logger.debug(
+      "Deleting password for account: \(account)",
+      metadata: nil,
+      source: "KeychainService"
+    )
 
     guard !account.isEmpty else {
       throw KeychainError.invalidParameter("Account identifier cannot be empty")
@@ -174,13 +211,25 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
     let status=SecItemDelete(query as CFDictionary)
 
     if status == errSecSuccess {
-      await logger.info("Successfully deleted password for account: \(account)", metadata: nil)
+      await logger.info(
+        "Successfully deleted password for account: \(account)",
+        metadata: nil,
+        source: "KeychainService"
+      )
     } else if status == errSecItemNotFound {
-      await logger.warning("No password found to delete for account: \(account)", metadata: nil)
+      await logger.warning(
+        "No password found to delete for account: \(account)",
+        metadata: nil,
+        source: "KeychainService"
+      )
       throw KeychainError.itemNotFound
     } else {
       let error=KeychainError.fromOSStatus(status)
-      await logger.error("Failed to delete password: \(error)", metadata: nil)
+      await logger.error(
+        "Failed to delete password: \(error)",
+        metadata: nil,
+        source: "KeychainService"
+      )
       throw error
     }
   }
@@ -200,7 +249,11 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
     for account: String,
     accessOptions: KeychainAccessOptions?=nil
   ) async throws {
-    await logger.debug("Storing data for account: \(account)", metadata: nil)
+    await logger.debug(
+      "Storing data for account: \(account)",
+      metadata: nil,
+      source: "KeychainService"
+    )
 
     guard !data.isEmpty else {
       throw KeychainError.invalidParameter("Data cannot be empty")
@@ -226,13 +279,21 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
     let status=SecItemAdd(query as CFDictionary, nil)
 
     if status == errSecSuccess {
-      await logger.info("Successfully stored data for account: \(account)", metadata: nil)
+      await logger.info(
+        "Successfully stored data for account: \(account)",
+        metadata: nil,
+        source: "KeychainService"
+      )
     } else if status == errSecDuplicateItem {
-      await logger.warning("Data already exists for account: \(account)", metadata: nil)
+      await logger.warning(
+        "Data already exists for account: \(account)",
+        metadata: nil,
+        source: "KeychainService"
+      )
       throw KeychainError.itemAlreadyExists
     } else {
       let error=KeychainError.fromOSStatus(status)
-      await logger.error("Failed to store data: \(error)", metadata: nil)
+      await logger.error("Failed to store data: \(error)", metadata: nil, source: "KeychainService")
       throw error
     }
   }
@@ -246,7 +307,11 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
    - Throws: KeychainError if the data doesn't exist or retrieval fails
    */
   public func retrieveData(for account: String) async throws -> Data {
-    await logger.debug("Retrieving data for account: \(account)", metadata: nil)
+    await logger.debug(
+      "Retrieving data for account: \(account)",
+      metadata: nil,
+      source: "KeychainService"
+    )
 
     guard !account.isEmpty else {
       throw KeychainError.invalidParameter("Account identifier cannot be empty")
@@ -266,15 +331,27 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
     let status=SecItemCopyMatching(query as CFDictionary, &result)
 
     if status == errSecSuccess, let data=result as? Data {
-      await logger.info("Successfully retrieved data for account: \(account)", metadata: nil)
+      await logger.info(
+        "Successfully retrieved data for account: \(account)",
+        metadata: nil,
+        source: "KeychainService"
+      )
       return data
     } else {
       if status == errSecItemNotFound {
-        await logger.warning("No data found for account: \(account)", metadata: nil)
+        await logger.warning(
+          "No data found for account: \(account)",
+          metadata: nil,
+          source: "KeychainService"
+        )
         throw KeychainError.itemNotFound
       } else {
         let error=KeychainError.fromOSStatus(status)
-        await logger.error("Failed to retrieve data: \(error)", metadata: nil)
+        await logger.error(
+          "Failed to retrieve data: \(error)",
+          metadata: nil,
+          source: "KeychainService"
+        )
         throw error
       }
     }
@@ -300,7 +377,11 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
    - Returns: True if a password exists for the account, false otherwise
    */
   public func passwordExists(for account: String) async -> Bool {
-    await logger.debug("Checking if password exists for account: \(account)", metadata: nil)
+    await logger.debug(
+      "Checking if password exists for account: \(account)",
+      metadata: nil,
+      source: "KeychainService"
+    )
 
     guard !account.isEmpty else {
       return false
@@ -330,7 +411,11 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
    - Throws: KeychainError if the operation fails or the password doesn't exist
    */
   public func updatePassword(_ newPassword: String, for account: String) async throws {
-    await logger.debug("Updating password for account: \(account)", metadata: nil)
+    await logger.debug(
+      "Updating password for account: \(account)",
+      metadata: nil,
+      source: "KeychainService"
+    )
 
     guard !newPassword.isEmpty else {
       throw KeychainError.invalidParameter("New password cannot be empty")
@@ -344,7 +429,8 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
     guard await passwordExists(for: account) else {
       await logger.warning(
         "Cannot update - no password exists for account: \(account)",
-        metadata: nil
+        metadata: nil,
+        source: "KeychainService"
       )
       throw KeychainError.itemNotFound
     }
@@ -370,10 +456,18 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
     let status=SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
 
     if status == errSecSuccess {
-      await logger.info("Successfully updated password for account: \(account)", metadata: nil)
+      await logger.info(
+        "Successfully updated password for account: \(account)",
+        metadata: nil,
+        source: "KeychainService"
+      )
     } else {
       let error=KeychainError.fromOSStatus(status)
-      await logger.error("Failed to update password: \(error)", metadata: nil)
+      await logger.error(
+        "Failed to update password: \(error)",
+        metadata: nil,
+        source: "KeychainService"
+      )
       throw error
     }
   }

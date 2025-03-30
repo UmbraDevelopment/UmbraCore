@@ -105,11 +105,16 @@ public actor BackupCoordinatorImpl: BackupCoordinatorProtocol {
     tags: [String]?=nil,
     options: BackupOptions?=nil
   ) async throws -> BackupResult {
-    await logger.info("Initiating backup via coordinator", metadata: [
+    let metadata=LogMetadata([
       "sources": sources.map(\.path).joined(separator: ", "),
       "excludeCount": String(excludePaths?.count ?? 0),
       "tagCount": String(tags?.count ?? 0)
     ])
+    await logger.info(
+      "Initiating backup via coordinator",
+      metadata: metadata,
+      source: "BackupCoordinator"
+    )
 
     do {
       // Delegate to backup service
@@ -120,17 +125,27 @@ public actor BackupCoordinatorImpl: BackupCoordinatorProtocol {
         options: options
       )
 
-      await logger.info("Backup completed via coordinator", metadata: [
+      let metadata=LogMetadata([
         "snapshotID": result.snapshotID,
         "fileCount": String(result.fileCount),
         "successful": String(result.successful)
       ])
+      await logger.info(
+        "Backup completed via coordinator",
+        metadata: metadata,
+        source: "BackupCoordinator"
+      )
 
       return result
     } catch {
-      await logger.error("Backup failed via coordinator", metadata: [
+      let metadata=LogMetadata([
         "error": error.localizedDescription
       ])
+      await logger.error(
+        "Backup failed via coordinator",
+        metadata: metadata,
+        source: "BackupCoordinator"
+      )
 
       throw error
     }
@@ -152,12 +167,17 @@ public actor BackupCoordinatorImpl: BackupCoordinatorProtocol {
     excludePaths: [URL]?=nil,
     options: RestoreOptions?=nil
   ) async throws -> RestoreResult {
-    await logger.info("Initiating restore via coordinator", metadata: [
+    let metadata=LogMetadata([
       "snapshotID": snapshotID,
       "targetPath": targetPath.path,
       "includeCount": String(includePaths?.count ?? 0),
       "excludeCount": String(excludePaths?.count ?? 0)
     ])
+    await logger.info(
+      "Initiating restore via coordinator",
+      metadata: metadata,
+      source: "BackupCoordinator"
+    )
 
     do {
       // Delegate to backup service
@@ -169,17 +189,27 @@ public actor BackupCoordinatorImpl: BackupCoordinatorProtocol {
         options: options
       )
 
-      await logger.info("Restore completed via coordinator", metadata: [
+      let metadata=LogMetadata([
         "snapshotID": result.snapshotID,
         "fileCount": String(result.fileCount),
         "successful": String(result.successful)
       ])
+      await logger.info(
+        "Restore completed via coordinator",
+        metadata: metadata,
+        source: "BackupCoordinator"
+      )
 
       return result
     } catch {
-      await logger.error("Restore failed via coordinator", metadata: [
+      let metadata=LogMetadata([
         "error": error.localizedDescription
       ])
+      await logger.error(
+        "Restore failed via coordinator",
+        metadata: metadata,
+        source: "BackupCoordinator"
+      )
 
       throw error
     }
@@ -195,9 +225,14 @@ public actor BackupCoordinatorImpl: BackupCoordinatorProtocol {
     snapshotID: String,
     options: DeleteOptions?=nil
   ) async throws -> DeleteResult {
-    await logger.info("Initiating backup deletion via coordinator", metadata: [
+    let metadata=LogMetadata([
       "snapshotID": snapshotID
     ])
+    await logger.info(
+      "Initiating backup deletion via coordinator",
+      metadata: metadata,
+      source: "BackupCoordinator"
+    )
 
     do {
       // Get pruning option
@@ -209,16 +244,26 @@ public actor BackupCoordinatorImpl: BackupCoordinatorProtocol {
         pruneAfterDelete: pruneAfterDelete
       )
 
-      await logger.info("Backup deletion completed via coordinator", metadata: [
+      let metadata=LogMetadata([
         "snapshotID": result.snapshotID,
         "successful": String(result.successful)
       ])
+      await logger.info(
+        "Backup deletion completed via coordinator",
+        metadata: metadata,
+        source: "BackupCoordinator"
+      )
 
       return result
     } catch {
-      await logger.error("Backup deletion failed via coordinator", metadata: [
+      let metadata=LogMetadata([
         "error": error.localizedDescription
       ])
+      await logger.error(
+        "Backup deletion failed via coordinator",
+        metadata: metadata,
+        source: "BackupCoordinator"
+      )
 
       throw error
     }
@@ -240,11 +285,16 @@ public actor BackupCoordinatorImpl: BackupCoordinatorProtocol {
     after: Date?=nil,
     options: ListOptions?=nil
   ) async throws -> [BackupSnapshot] {
-    await logger.info("Listing snapshots via coordinator", metadata: [
+    let metadata=LogMetadata([
       "tagCount": String(tags?.count ?? 0),
       "before": before?.description ?? "none",
       "after": after?.description ?? "none"
     ])
+    await logger.info(
+      "Listing snapshots via coordinator",
+      metadata: metadata,
+      source: "BackupCoordinator"
+    )
 
     do {
       // Delegate to snapshot service
@@ -257,15 +307,25 @@ public actor BackupCoordinatorImpl: BackupCoordinatorProtocol {
         limit: options?.limit
       )
 
-      await logger.info("Listed snapshots via coordinator", metadata: [
+      let metadata=LogMetadata([
         "count": String(snapshots.count)
       ])
+      await logger.info(
+        "Listed snapshots via coordinator",
+        metadata: metadata,
+        source: "BackupCoordinator"
+      )
 
       return snapshots
     } catch {
-      await logger.error("Snapshot listing failed via coordinator", metadata: [
+      let metadata=LogMetadata([
         "error": error.localizedDescription
       ])
+      await logger.error(
+        "Snapshot listing failed via coordinator",
+        metadata: metadata,
+        source: "BackupCoordinator"
+      )
 
       throw error
     }
@@ -281,10 +341,15 @@ public actor BackupCoordinatorImpl: BackupCoordinatorProtocol {
     snapshotID: String,
     includeFileStatistics: Bool=false
   ) async throws -> BackupSnapshot {
-    await logger.info("Getting snapshot details via coordinator", metadata: [
+    let metadata=LogMetadata([
       "snapshotID": snapshotID,
       "includeFileStatistics": String(includeFileStatistics)
     ])
+    await logger.info(
+      "Getting snapshot details via coordinator",
+      metadata: metadata,
+      source: "BackupCoordinator"
+    )
 
     do {
       // Delegate to snapshot service
@@ -293,16 +358,26 @@ public actor BackupCoordinatorImpl: BackupCoordinatorProtocol {
         includeFileStatistics: includeFileStatistics
       )
 
-      await logger.info("Retrieved snapshot details via coordinator", metadata: [
+      let metadata=LogMetadata([
         "snapshotID": snapshot.id,
         "creationTime": snapshot.creationTime.description
       ])
+      await logger.info(
+        "Retrieved snapshot details via coordinator",
+        metadata: metadata,
+        source: "BackupCoordinator"
+      )
 
       return snapshot
     } catch {
-      await logger.error("Snapshot details retrieval failed via coordinator", metadata: [
+      let metadata=LogMetadata([
         "error": error.localizedDescription
       ])
+      await logger.error(
+        "Snapshot details retrieval failed via coordinator",
+        metadata: metadata,
+        source: "BackupCoordinator"
+      )
 
       throw error
     }
@@ -320,11 +395,16 @@ public actor BackupCoordinatorImpl: BackupCoordinatorProtocol {
     addTags: [String]=[],
     removeTags: [String]=[]
   ) async throws -> BackupSnapshot {
-    await logger.info("Updating snapshot tags via coordinator", metadata: [
+    let metadata=LogMetadata([
       "snapshotID": snapshotID,
       "addTagCount": String(addTags.count),
       "removeTagCount": String(removeTags.count)
     ])
+    await logger.info(
+      "Updating snapshot tags via coordinator",
+      metadata: metadata,
+      source: "BackupCoordinator"
+    )
 
     do {
       // Delegate to snapshot service
@@ -334,16 +414,26 @@ public actor BackupCoordinatorImpl: BackupCoordinatorProtocol {
         removeTags: removeTags
       )
 
-      await logger.info("Updated snapshot tags via coordinator", metadata: [
+      let metadata=LogMetadata([
         "snapshotID": snapshot.id,
         "tagCount": String(snapshot.tags.count)
       ])
+      await logger.info(
+        "Updated snapshot tags via coordinator",
+        metadata: metadata,
+        source: "BackupCoordinator"
+      )
 
       return snapshot
     } catch {
-      await logger.error("Snapshot tag update failed via coordinator", metadata: [
+      let metadata=LogMetadata([
         "error": error.localizedDescription
       ])
+      await logger.error(
+        "Snapshot tag update failed via coordinator",
+        metadata: metadata,
+        source: "BackupCoordinator"
+      )
 
       throw error
     }
@@ -361,11 +451,16 @@ public actor BackupCoordinatorImpl: BackupCoordinatorProtocol {
     pattern: String,
     caseSensitive: Bool=false
   ) async throws -> [SnapshotFile] {
-    await logger.info("Finding files in snapshot via coordinator", metadata: [
+    let metadata=LogMetadata([
       "snapshotID": snapshotID,
       "pattern": pattern,
       "caseSensitive": String(caseSensitive)
     ])
+    await logger.info(
+      "Finding files in snapshot via coordinator",
+      metadata: metadata,
+      source: "BackupCoordinator"
+    )
 
     do {
       // Delegate to snapshot service
@@ -375,15 +470,25 @@ public actor BackupCoordinatorImpl: BackupCoordinatorProtocol {
         caseSensitive: caseSensitive
       )
 
-      await logger.info("Found files in snapshot via coordinator", metadata: [
+      let metadata=LogMetadata([
         "count": String(files.count)
       ])
+      await logger.info(
+        "Found files in snapshot via coordinator",
+        metadata: metadata,
+        source: "BackupCoordinator"
+      )
 
       return files
     } catch {
-      await logger.error("File search failed via coordinator", metadata: [
+      let metadata=LogMetadata([
         "error": error.localizedDescription
       ])
+      await logger.error(
+        "File search failed via coordinator",
+        metadata: metadata,
+        source: "BackupCoordinator"
+      )
 
       throw error
     }
@@ -396,9 +501,14 @@ public actor BackupCoordinatorImpl: BackupCoordinatorProtocol {
   public func verifySnapshot(
     snapshotID: String
   ) async throws -> VerificationResult {
-    await logger.info("Verifying snapshot via coordinator", metadata: [
+    let metadata=LogMetadata([
       "snapshotID": snapshotID
     ])
+    await logger.info(
+      "Verifying snapshot via coordinator",
+      metadata: metadata,
+      source: "BackupCoordinator"
+    )
 
     do {
       // Delegate to snapshot service
@@ -406,17 +516,27 @@ public actor BackupCoordinatorImpl: BackupCoordinatorProtocol {
         snapshotID: snapshotID
       )
 
-      await logger.info("Verified snapshot via coordinator", metadata: [
+      let metadata=LogMetadata([
         "snapshotID": snapshotID,
         "successful": String(result.successful),
         "issues": String(result.issues.count)
       ])
+      await logger.info(
+        "Verified snapshot via coordinator",
+        metadata: metadata,
+        source: "BackupCoordinator"
+      )
 
       return result
     } catch {
-      await logger.error("Snapshot verification failed via coordinator", metadata: [
+      let metadata=LogMetadata([
         "error": error.localizedDescription
       ])
+      await logger.error(
+        "Snapshot verification failed via coordinator",
+        metadata: metadata,
+        source: "BackupCoordinator"
+      )
 
       throw error
     }
@@ -429,9 +549,14 @@ public actor BackupCoordinatorImpl: BackupCoordinatorProtocol {
   public func performMaintenance(
     type: MaintenanceType
   ) async throws -> MaintenanceResult {
-    await logger.info("Performing maintenance via coordinator", metadata: [
+    let metadata=LogMetadata([
       "type": String(describing: type)
     ])
+    await logger.info(
+      "Performing maintenance via coordinator",
+      metadata: metadata,
+      source: "BackupCoordinator"
+    )
 
     do {
       // This would delegate to a maintenance service
@@ -444,16 +569,26 @@ public actor BackupCoordinatorImpl: BackupCoordinatorProtocol {
         endTime: Date()
       )
 
-      await logger.info("Maintenance completed via coordinator", metadata: [
+      let metadata=LogMetadata([
         "type": String(describing: type),
         "successful": String(result.successful)
       ])
+      await logger.info(
+        "Maintenance completed via coordinator",
+        metadata: metadata,
+        source: "BackupCoordinator"
+      )
 
       return result
     } catch {
-      await logger.error("Maintenance failed via coordinator", metadata: [
+      let metadata=LogMetadata([
         "error": error.localizedDescription
       ])
+      await logger.error(
+        "Maintenance failed via coordinator",
+        metadata: metadata,
+        source: "BackupCoordinator"
+      )
 
       throw error
     }

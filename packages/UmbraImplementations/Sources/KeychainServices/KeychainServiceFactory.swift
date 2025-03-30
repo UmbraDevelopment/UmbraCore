@@ -25,7 +25,7 @@ import LoggingServices
  */
 public enum KeychainServiceFactory {
   /// Default service identifier for keychain entries
-  public static let defaultServiceIdentifier = "com.umbra.keychain"
+  public static let defaultServiceIdentifier="com.umbra.keychain"
 
   /**
    Creates a KeychainServiceProtocol implementation with default configuration.
@@ -37,19 +37,21 @@ public enum KeychainServiceFactory {
    - Returns: A configured KeychainServiceProtocol instance
    */
   public static func createService(
-    serviceIdentifier: String = defaultServiceIdentifier,
-    logger: LoggingServiceProtocol? = nil
+    serviceIdentifier: String=defaultServiceIdentifier,
+    logger: LoggingServiceProtocol?=nil
   ) async -> KeychainServiceProtocol {
     // Use provided logger or create a default one with appropriate identifier
-    let actualLogger = logger ?? await LoggingServiceFactory.createDefaultLogger(
-      minimumLevel: .info,
-      identifier: "KeychainService"
+    let actualLogger=logger ?? LoggingServiceFactory.createStandardLogger(
+      minimumLevel: .info
     )
+
+    // Create a LoggingProtocol adapter for the service
+    let serviceLogger = LoggingAdapter(wrapping: actualLogger)
 
     // Create and return the keychain service
     return KeychainServiceImpl(
       serviceIdentifier: serviceIdentifier,
-      logger: actualLogger
+      logger: serviceLogger
     )
   }
 
@@ -63,19 +65,21 @@ public enum KeychainServiceFactory {
    - Returns: A configured in-memory KeychainServiceProtocol instance
    */
   public static func createInMemoryService(
-    serviceIdentifier: String = defaultServiceIdentifier,
-    logger: LoggingServiceProtocol? = nil
+    serviceIdentifier: String=defaultServiceIdentifier,
+    logger: LoggingServiceProtocol?=nil
   ) async -> KeychainServiceProtocol {
     // Use provided logger or create a default one with appropriate identifier
-    let actualLogger = logger ?? await LoggingServiceFactory.createDefaultLogger(
-      minimumLevel: .info,
-      identifier: "InMemoryKeychainService"
+    let actualLogger=logger ?? LoggingServiceFactory.createStandardLogger(
+      minimumLevel: .info
     )
 
+    // Create a LoggingProtocol adapter for the service
+    let serviceLogger = LoggingAdapter(wrapping: actualLogger)
+    
     // Create and return the in-memory keychain service
     return InMemoryKeychainServiceImpl(
       serviceIdentifier: serviceIdentifier,
-      logger: actualLogger
+      logger: serviceLogger
     )
   }
 }

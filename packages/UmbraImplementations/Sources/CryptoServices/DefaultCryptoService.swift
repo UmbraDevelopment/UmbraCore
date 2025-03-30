@@ -33,15 +33,15 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
    - Throws: CryptoError if key generation fails
    */
   public func generateSecureRandomKey(length: Int) async throws -> SecureBytes {
-    var bytes = [UInt8](repeating: 0, count: length)
-    let status = SecRandomCopyBytes(kSecRandomDefault, length, &bytes)
-    
+    var bytes=[UInt8](repeating: 0, count: length)
+    let status=SecRandomCopyBytes(kSecRandomDefault, length, &bytes)
+
     guard status == errSecSuccess else {
       throw CryptoError.keyGenerationFailed(
         reason: "Random generation failed with status: \(status)"
       )
     }
-    
+
     return SecureBytes(bytes: bytes)
   }
 
@@ -53,15 +53,15 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
    - Throws: CryptoError if random generation fails
    */
   public func generateSecureRandomBytes(length: Int) async throws -> SecureBytes {
-    var bytes = [UInt8](repeating: 0, count: length)
-    let status = SecRandomCopyBytes(kSecRandomDefault, length, &bytes)
-    
+    var bytes=[UInt8](repeating: 0, count: length)
+    let status=SecRandomCopyBytes(kSecRandomDefault, length, &bytes)
+
     guard status == errSecSuccess else {
       throw CryptoError.operationFailed(
         reason: "Random generation failed with status: \(status)"
       )
     }
-    
+
     return SecureBytes(bytes: bytes)
   }
 
@@ -76,9 +76,9 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
    - Throws: CryptoError if encryption fails
    */
   public func encrypt(
-    _ data: SecureBytes,
-    using key: SecureBytes,
-    iv: SecureBytes
+    _: SecureBytes,
+    using _: SecureBytes,
+    iv _: SecureBytes
   ) async throws -> SecureBytes {
     // This implementation will be enhanced in future versions
     // Currently, we throw an error to indicate encryption should use
@@ -99,9 +99,9 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
    - Throws: CryptoError if decryption fails
    */
   public func decrypt(
-    _ data: SecureBytes,
-    using key: SecureBytes,
-    iv: SecureBytes
+    _: SecureBytes,
+    using _: SecureBytes,
+    iv _: SecureBytes
   ) async throws -> SecureBytes {
     // This implementation will be enhanced in future versions
     // Currently, we throw an error to indicate decryption should use
@@ -123,7 +123,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
    */
   public func deriveKey(
     from password: String,
-    salt: SecureBytes,
+    salt _: SecureBytes,
     iterations: Int
   ) async throws -> SecureBytes {
     // Validate inputs
@@ -132,13 +132,13 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
         reason: "Password cannot be empty"
       )
     }
-    
+
     guard iterations > 0 else {
       throw CryptoError.keyDerivationFailed(
         reason: "Invalid iteration count: \(iterations)"
       )
     }
-    
+
     // This implementation will be enhanced in future versions
     // Currently, we throw an error to indicate key derivation should use
     // the SecurityCryptoServices module instead
@@ -146,7 +146,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
       reason: "Please use SecurityCryptoServices for key derivation operations"
     )
   }
-  
+
   /**
    Generates a message authentication code (HMAC) using SHA-256.
 
@@ -157,8 +157,8 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
    - Throws: CryptoError if HMAC generation fails
    */
   public func generateHMAC(
-    for data: SecureBytes,
-    using key: SecureBytes
+    for _: SecureBytes,
+    using _: SecureBytes
   ) async throws -> SecureBytes {
     // This implementation will be enhanced in future versions
     // Currently, we throw an error to indicate HMAC generation should use

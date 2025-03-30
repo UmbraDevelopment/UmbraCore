@@ -22,7 +22,7 @@ import SecurityCoreTypes
  options.algorithm = "AES"
  options.keySize = 256
  options.mode = "GCM"
- 
+
  let config = await securityProvider.createSecureConfig(options: options)
 
  let result = await securityProvider.encrypt(config: config)

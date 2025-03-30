@@ -365,16 +365,17 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
 
   /**
    Creates a secure configuration with type-safe, Sendable-compliant options.
-   
+
    This method provides a Swift 6-compatible way to create security configurations
    that can safely cross actor boundaries.
-   
+
    - Parameter options: Type-safe options structure that conforms to Sendable
    - Returns: A properly configured SecurityConfigDTO
    */
-  public nonisolated func createSecureConfig(options: SecurityConfigOptions) async -> SecurityConfigDTO {
+  public nonisolated func createSecureConfig(options: SecurityConfigOptions) async
+  -> SecurityConfigDTO {
     // Create a configuration with the provided options or defaults
-    return SecurityConfigDTO(options: options)
+    SecurityConfigDTO(options: options)
   }
 
   // MARK: - Helper Methods

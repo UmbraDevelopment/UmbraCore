@@ -1,25 +1,25 @@
 import CryptoInterfaces
+import CryptoTypes
 import Foundation
 import LoggingInterfaces
 import LoggingServices
-import CryptoTypes
 import SecurityTypes
 import UmbraErrors
 
 /**
  # CryptoServiceFactory
- 
+
  Factory for creating CryptoServiceProtocol implementations.
  This factory follows the Alpha Dot Five architecture pattern
  of providing asynchronous factory methods that return actor-based
  implementations.
- 
+
  ## Usage Example
- 
+
  ```swift
  // Create a default implementation
  let cryptoService = await CryptoServiceFactory.createDefault()
- 
+
  // Create a logging implementation
  let loggingService = await CryptoServiceFactory.createLogging(
    wrapped: cryptoService,
@@ -30,167 +30,167 @@ import UmbraErrors
 public enum CryptoServiceFactory {
   /**
    Creates a default implementation of CryptoServiceProtocol.
-   
+
    - Returns: A CryptoServiceProtocol implementation
    */
   public static func createDefault() async -> CryptoServiceProtocol {
-    return DefaultCryptoServiceImpl()
+    DefaultCryptoServiceImpl()
   }
-  
+
   /**
    Creates a mock implementation of CryptoServiceProtocol.
-   
+
    - Parameter configuration: Configuration for the mock implementation
    - Returns: A CryptoServiceProtocol implementation that mocks cryptographic operations
    */
   public static func createMock(
     configuration: MockCryptoServiceImpl.Configuration = .init()
   ) async -> CryptoServiceProtocol {
-    return MockCryptoServiceImpl(configuration: configuration)
+    MockCryptoServiceImpl(configuration: configuration)
   }
-  
+
   /**
    Creates a logging decorator for a CryptoServiceProtocol implementation.
-   
+
    - Parameters:
      - wrapped: The implementation to wrap with logging
      - logger: Optional logger to use, a default will be created if nil
-   
+
    - Returns: A CryptoServiceProtocol implementation with logging capabilities
    */
   public static func createLogging(
     wrapped: CryptoServiceProtocol,
-    logger: LoggingProtocol? = nil
+    logger: LoggingProtocol?=nil
   ) async -> CryptoServiceProtocol {
     // Use provided logger or create a default one with appropriate identifier
-    let actualLogger = logger ?? DefaultLogger()
-    
+    let actualLogger=logger ?? DefaultLogger()
+
     return LoggingCryptoServiceImpl(wrapped: wrapped, logger: actualLogger)
   }
-  
+
   /// Default logger implementation used when no logger is provided
   private struct DefaultLogger: LoggingProtocol {
-    func debug(_ message: String, metadata: LoggingTypes.LogMetadata?, source: String?) async {}
-    func info(_ message: String, metadata: LoggingTypes.LogMetadata?, source: String?) async {}
-    func notice(_ message: String, metadata: LoggingTypes.LogMetadata?, source: String?) async {}
-    func warning(_ message: String, metadata: LoggingTypes.LogMetadata?, source: String?) async {}
-    func error(_ message: String, metadata: LoggingTypes.LogMetadata?, source: String?) async {}
-    func critical(_ message: String, metadata: LoggingTypes.LogMetadata?, source: String?) async {}
+    func debug(_: String, metadata _: LoggingTypes.LogMetadata?, source _: String?) async {}
+    func info(_: String, metadata _: LoggingTypes.LogMetadata?, source _: String?) async {}
+    func notice(_: String, metadata _: LoggingTypes.LogMetadata?, source _: String?) async {}
+    func warning(_: String, metadata _: LoggingTypes.LogMetadata?, source _: String?) async {}
+    func error(_: String, metadata _: LoggingTypes.LogMetadata?, source _: String?) async {}
+    func critical(_: String, metadata _: LoggingTypes.LogMetadata?, source _: String?) async {}
   }
 }
 
 /**
  # MockCryptoServiceImpl
- 
+
  A mock implementation of CryptoServiceProtocol for testing purposes.
  This implementation simulates cryptographic operations without actually
  performing encryption, allowing for controlled testing environments.
  */
-public actor MockCryptoServiceImpl: CryptoServiceProtocol, Sendable {
+public actor MockCryptoServiceImpl: CryptoServiceProtocol {
   /// Configuration options for the mock
   public struct Configuration: Sendable {
     /// Whether encryption should succeed
     public let encryptionShouldSucceed: Bool
-    
+
     /// Whether decryption should succeed
     public let decryptionShouldSucceed: Bool
-    
+
     /// Whether key derivation should succeed
     public let keyDerivationShouldSucceed: Bool
-    
+
     /// Whether random generation should succeed
     public let randomGenerationShouldSucceed: Bool
-    
+
     /// Whether HMAC generation should succeed
     public let hmacGenerationShouldSucceed: Bool
-    
+
     /// Initialise with default values (all operations succeed)
     public init(
-      encryptionShouldSucceed: Bool = true,
-      decryptionShouldSucceed: Bool = true,
-      keyDerivationShouldSucceed: Bool = true,
-      randomGenerationShouldSucceed: Bool = true,
-      hmacGenerationShouldSucceed: Bool = true
+      encryptionShouldSucceed: Bool=true,
+      decryptionShouldSucceed: Bool=true,
+      keyDerivationShouldSucceed: Bool=true,
+      randomGenerationShouldSucceed: Bool=true,
+      hmacGenerationShouldSucceed: Bool=true
     ) {
-      self.encryptionShouldSucceed = encryptionShouldSucceed
-      self.decryptionShouldSucceed = decryptionShouldSucceed
-      self.keyDerivationShouldSucceed = keyDerivationShouldSucceed
-      self.randomGenerationShouldSucceed = randomGenerationShouldSucceed
-      self.hmacGenerationShouldSucceed = hmacGenerationShouldSucceed
+      self.encryptionShouldSucceed=encryptionShouldSucceed
+      self.decryptionShouldSucceed=decryptionShouldSucceed
+      self.keyDerivationShouldSucceed=keyDerivationShouldSucceed
+      self.randomGenerationShouldSucceed=randomGenerationShouldSucceed
+      self.hmacGenerationShouldSucceed=hmacGenerationShouldSucceed
     }
   }
-  
+
   private let configuration: Configuration
-  
+
   /// Initialise a new mock with the specified configuration
   public init(configuration: Configuration) {
-    self.configuration = configuration
+    self.configuration=configuration
   }
-  
+
   public func encrypt(
-    _ data: SecureBytes, 
-    using key: SecureBytes, 
-    iv: SecureBytes
+    _ data: SecureBytes,
+    using _: SecureBytes,
+    iv _: SecureBytes
   ) async throws -> SecureBytes {
     guard configuration.encryptionShouldSucceed else {
       throw CryptoError.encryptionFailed(reason: "Mock encryption configured to fail")
     }
-    
+
     // Just return the original data as "encrypted"
     return data
   }
-  
+
   public func decrypt(
-    _ data: SecureBytes, 
-    using key: SecureBytes, 
-    iv: SecureBytes
+    _ data: SecureBytes,
+    using _: SecureBytes,
+    iv _: SecureBytes
   ) async throws -> SecureBytes {
     guard configuration.decryptionShouldSucceed else {
       throw CryptoError.decryptionFailed(reason: "Mock decryption configured to fail")
     }
-    
+
     // Just return the original data as "decrypted"
     return data
   }
-  
+
   public func deriveKey(
-    from password: String,
-    salt: SecureBytes,
-    iterations: Int
+    from _: String,
+    salt _: SecureBytes,
+    iterations _: Int
   ) async throws -> SecureBytes {
     guard configuration.keyDerivationShouldSucceed else {
       throw CryptoError.keyDerivationFailed(reason: "Mock key derivation configured to fail")
     }
-    
+
     // Generate a deterministic "key" based on the input
-    let length = 32 // Default key length
+    let length=32 // Default key length
     return SecureBytes(bytes: [UInt8](repeating: 0x42, count: length))
   }
-  
+
   public func generateSecureRandomKey(length: Int) async throws -> SecureBytes {
     guard configuration.randomGenerationShouldSucceed else {
       throw CryptoError.keyGenerationFailed(reason: "Mock key generation configured to fail")
     }
-    
+
     return SecureBytes(bytes: [UInt8](repeating: 0x41, count: length))
   }
-  
+
   public func generateSecureRandomBytes(length: Int) async throws -> SecureBytes {
     guard configuration.randomGenerationShouldSucceed else {
       throw CryptoError.keyGenerationFailed(reason: "Mock random generation configured to fail")
     }
-    
+
     return SecureBytes(bytes: [UInt8](repeating: 0x43, count: length))
   }
-  
+
   public func generateHMAC(
-    for data: SecureBytes,
-    using key: SecureBytes
+    for _: SecureBytes,
+    using _: SecureBytes
   ) async throws -> SecureBytes {
     guard configuration.hmacGenerationShouldSucceed else {
       throw CryptoError.operationFailed(reason: "Mock HMAC generation configured to fail")
     }
-    
+
     // Return a fixed HMAC value
     return SecureBytes(bytes: [UInt8](repeating: 0x44, count: 32))
   }
@@ -198,122 +198,158 @@ public actor MockCryptoServiceImpl: CryptoServiceProtocol, Sendable {
 
 /**
  # LoggingCryptoServiceImpl
- 
+
  A decorator for CryptoServiceProtocol that adds logging capabilities.
  This implementation logs all cryptographic operations while delegating
  the actual work to a wrapped implementation.
  */
-public actor LoggingCryptoServiceImpl: CryptoServiceProtocol, Sendable {
+public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
   /// The wrapped implementation
   private let wrapped: CryptoServiceProtocol
-  
+
   /// The logger to use
   private let logger: LoggingProtocol
-  
+
   /**
    Initialise a new logging decorator.
-   
+
    - Parameters:
      - wrapped: The implementation to wrap
      - logger: The logger to use
    */
   public init(wrapped: CryptoServiceProtocol, logger: LoggingProtocol) {
-    self.wrapped = wrapped
-    self.logger = logger
+    self.wrapped=wrapped
+    self.logger=logger
   }
-  
+
   public func encrypt(
-    _ data: SecureBytes, 
-    using key: SecureBytes, 
+    _ data: SecureBytes,
+    using key: SecureBytes,
     iv: SecureBytes
   ) async throws -> SecureBytes {
-    var metadata = LogMetadata()
-    metadata["dataSize"] = "\(data.count)"
-    
+    var metadata=LogMetadata()
+    metadata["dataSize"]="\(data.count)"
+
     await logger.debug("Starting encryption operation", metadata: metadata, source: "CryptoService")
-    
+
     do {
-      let result = try await wrapped.encrypt(data, using: key, iv: iv)
-      await logger.debug("Encryption completed successfully", metadata: metadata, source: "CryptoService")
+      let result=try await wrapped.encrypt(data, using: key, iv: iv)
+      await logger.debug(
+        "Encryption completed successfully",
+        metadata: metadata,
+        source: "CryptoService"
+      )
       return result
     } catch {
-      await logger.error("Encryption failed: \(error.localizedDescription)", metadata: metadata, source: "CryptoService")
+      await logger.error(
+        "Encryption failed: \(error.localizedDescription)",
+        metadata: metadata,
+        source: "CryptoService"
+      )
       throw error
     }
   }
-  
+
   public func decrypt(
-    _ data: SecureBytes, 
-    using key: SecureBytes, 
+    _ data: SecureBytes,
+    using key: SecureBytes,
     iv: SecureBytes
   ) async throws -> SecureBytes {
-    var metadata = LogMetadata()
-    metadata["dataSize"] = "\(data.count)"
-    
+    var metadata=LogMetadata()
+    metadata["dataSize"]="\(data.count)"
+
     await logger.debug("Starting decryption operation", metadata: metadata, source: "CryptoService")
-    
+
     do {
-      let result = try await wrapped.decrypt(data, using: key, iv: iv)
-      await logger.debug("Decryption completed successfully", metadata: metadata, source: "CryptoService")
+      let result=try await wrapped.decrypt(data, using: key, iv: iv)
+      await logger.debug(
+        "Decryption completed successfully",
+        metadata: metadata,
+        source: "CryptoService"
+      )
       return result
     } catch {
-      await logger.error("Decryption failed: \(error.localizedDescription)", metadata: metadata, source: "CryptoService")
+      await logger.error(
+        "Decryption failed: \(error.localizedDescription)",
+        metadata: metadata,
+        source: "CryptoService"
+      )
       throw error
     }
   }
-  
+
   public func deriveKey(
     from password: String,
     salt: SecureBytes,
     iterations: Int
   ) async throws -> SecureBytes {
-    var metadata = LogMetadata()
-    metadata["iterations"] = "\(iterations)"
-    
+    var metadata=LogMetadata()
+    metadata["iterations"]="\(iterations)"
+
     await logger.debug("Starting key derivation", metadata: metadata, source: "CryptoService")
-    
+
     do {
-      let result = try await wrapped.deriveKey(from: password, salt: salt, iterations: iterations)
-      
-      await logger.debug("Key derivation completed successfully", metadata: metadata, source: "CryptoService")
+      let result=try await wrapped.deriveKey(from: password, salt: salt, iterations: iterations)
+
+      await logger.debug(
+        "Key derivation completed successfully",
+        metadata: metadata,
+        source: "CryptoService"
+      )
       return result
     } catch {
-      await logger.error("Key derivation failed: \(error.localizedDescription)", metadata: metadata, source: "CryptoService")
+      await logger.error(
+        "Key derivation failed: \(error.localizedDescription)",
+        metadata: metadata,
+        source: "CryptoService"
+      )
       throw error
     }
   }
-  
+
   public func generateSecureRandomKey(length: Int) async throws -> SecureBytes {
-    var metadata = LogMetadata()
-    metadata["length"] = "\(length)"
-    
+    var metadata=LogMetadata()
+    metadata["length"]="\(length)"
+
     await logger.debug("Generating secure random key", metadata: metadata, source: "CryptoService")
-    
+
     do {
-      let result = try await wrapped.generateSecureRandomKey(length: length)
-      await logger.debug("Secure random key generated successfully", metadata: metadata, source: "CryptoService")
+      let result=try await wrapped.generateSecureRandomKey(length: length)
+      await logger.debug(
+        "Secure random key generated successfully",
+        metadata: metadata,
+        source: "CryptoService"
+      )
       return result
     } catch {
-      await logger.error("Secure random key generation failed: \(error.localizedDescription)", metadata: metadata, source: "CryptoService")
+      await logger.error(
+        "Secure random key generation failed: \(error.localizedDescription)",
+        metadata: metadata,
+        source: "CryptoService"
+      )
       throw error
     }
   }
-  
+
   public func generateHMAC(
     for data: SecureBytes,
     using key: SecureBytes
   ) async throws -> SecureBytes {
-    var metadata = LogMetadata()
-    metadata["dataSize"] = "\(data.count)"
-    
+    var metadata=LogMetadata()
+    metadata["dataSize"]="\(data.count)"
+
     await logger.debug("Generating HMAC", metadata: metadata, source: "CryptoService")
-    
+
     do {
-      let result = try await wrapped.generateHMAC(for: data, using: key)
+      let result=try await wrapped.generateHMAC(for: data, using: key)
       await logger.debug("HMAC generated successfully", metadata: metadata, source: "CryptoService")
       return result
     } catch {
-      await logger.error("HMAC generation failed: \(error.localizedDescription)", metadata: metadata, source: "CryptoService")
+      await logger.error(
+        "HMAC generation failed: \(error.localizedDescription)",
+        metadata: metadata,
+        source: "CryptoService"
+      )
       throw error
     }
   }

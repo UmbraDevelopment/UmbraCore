@@ -25,21 +25,34 @@ extension RepositoryServiceImpl {
       "check_unused": String(describing: checkUnused)
     ])
 
-    await logger.info("Performing maintenance on repository", metadata: metadata)
+    await logger.info(
+      "Performing maintenance on repository",
+      metadata: metadata,
+      source: "RepositoryService"
+    )
 
     guard let repository=repositories[identifier] as? RepositoryMaintenanceProtocol else {
-      await logger.error("Repository not found or does not support maintenance", metadata: metadata)
+      await logger.error(
+        "Repository not found or does not support maintenance",
+        metadata: metadata,
+        source: "RepositoryService"
+      )
       throw RepositoryError.notFound
     }
 
     do {
       let stats=try await repository.check(readData: readData, checkUnused: checkUnused)
-      await logger.info("Repository maintenance completed successfully", metadata: metadata)
+      await logger.info(
+        "Repository maintenance completed successfully",
+        metadata: metadata,
+        source: "RepositoryService"
+      )
       return stats
     } catch {
       await logger.error(
         "Repository maintenance failed: \(error.localizedDescription)",
-        metadata: metadata
+        metadata: metadata,
+        source: "RepositoryService"
       )
       throw RepositoryError.maintenanceFailed
     }
@@ -54,21 +67,30 @@ extension RepositoryServiceImpl {
   public func repairRepository(identifier: String) async throws -> Bool {
     let metadata=LogMetadata(["repository_id": identifier])
 
-    await logger.info("Repairing repository", metadata: metadata)
+    await logger.info("Repairing repository", metadata: metadata, source: "RepositoryService")
 
     guard let repository=repositories[identifier] as? RepositoryMaintenanceProtocol else {
-      await logger.error("Repository not found or does not support maintenance", metadata: metadata)
+      await logger.error(
+        "Repository not found or does not support maintenance",
+        metadata: metadata,
+        source: "RepositoryService"
+      )
       throw RepositoryError.notFound
     }
 
     do {
       let repaired=try await repository.repair()
-      await logger.info("Repository repair result: \(repaired)", metadata: metadata)
+      await logger.info(
+        "Repository repair result: \(repaired)",
+        metadata: metadata,
+        source: "RepositoryService"
+      )
       return repaired
     } catch {
       await logger.error(
         "Repository repair failed: \(error.localizedDescription)",
-        metadata: metadata
+        metadata: metadata,
+        source: "RepositoryService"
       )
       throw RepositoryError.maintenanceFailed
     }
@@ -82,20 +104,29 @@ extension RepositoryServiceImpl {
   public func pruneRepository(identifier: String) async throws {
     let metadata=LogMetadata(["repository_id": identifier])
 
-    await logger.info("Pruning repository", metadata: metadata)
+    await logger.info("Pruning repository", metadata: metadata, source: "RepositoryService")
 
     guard let repository=repositories[identifier] as? RepositoryMaintenanceProtocol else {
-      await logger.error("Repository not found or does not support maintenance", metadata: metadata)
+      await logger.error(
+        "Repository not found or does not support maintenance",
+        metadata: metadata,
+        source: "RepositoryService"
+      )
       throw RepositoryError.notFound
     }
 
     do {
       try await repository.prune()
-      await logger.info("Repository pruned successfully", metadata: metadata)
+      await logger.info(
+        "Repository pruned successfully",
+        metadata: metadata,
+        source: "RepositoryService"
+      )
     } catch {
       await logger.error(
         "Repository pruning failed: \(error.localizedDescription)",
-        metadata: metadata
+        metadata: metadata,
+        source: "RepositoryService"
       )
       throw RepositoryError.maintenanceFailed
     }
@@ -109,20 +140,33 @@ extension RepositoryServiceImpl {
   public func rebuildRepositoryIndex(identifier: String) async throws {
     let metadata=LogMetadata(["repository_id": identifier])
 
-    await logger.info("Rebuilding repository index", metadata: metadata)
+    await logger.info(
+      "Rebuilding repository index",
+      metadata: metadata,
+      source: "RepositoryService"
+    )
 
     guard let repository=repositories[identifier] as? RepositoryMaintenanceProtocol else {
-      await logger.error("Repository not found or does not support maintenance", metadata: metadata)
+      await logger.error(
+        "Repository not found or does not support maintenance",
+        metadata: metadata,
+        source: "RepositoryService"
+      )
       throw RepositoryError.notFound
     }
 
     do {
       try await repository.rebuildIndex()
-      await logger.info("Repository index rebuilt successfully", metadata: metadata)
+      await logger.info(
+        "Repository index rebuilt successfully",
+        metadata: metadata,
+        source: "RepositoryService"
+      )
     } catch {
       await logger.error(
         "Repository index rebuild failed: \(error.localizedDescription)",
-        metadata: metadata
+        metadata: metadata,
+        source: "RepositoryService"
       )
       throw RepositoryError.maintenanceFailed
     }

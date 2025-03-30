@@ -16,7 +16,11 @@ umbra_swift_library(
     ),
     visibility = ["//visibility:public"],
     deps = [
-        "//packages/UmbraCoreTypes:UmbraCoreTypes",
-        "//packages/UmbraErrorKit:UmbraErrorKit",
+        "//packages/UmbraCoreTypes/Sources/UmbraErrors:UmbraErrors",
+        "//packages/UmbraCoreTypes/Sources/ErrorCoreTypes:ErrorCoreTypes",
+        "//packages/UmbraCoreTypes/Sources/CoreDTOs:CoreDTOs",
+        "//packages/UmbraCoreTypes/Sources/KeyManagementTypes:KeyManagementTypes",
+        "//packages/UmbraCoreTypes/Sources/SecurityTypes:SecurityTypes",
+        "//packages/UmbraCoreTypes/Sources/SecurityCoreTypes:SecurityCoreTypes",
     ],
 )

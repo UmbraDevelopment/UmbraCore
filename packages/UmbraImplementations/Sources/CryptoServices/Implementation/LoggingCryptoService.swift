@@ -26,9 +26,9 @@ public actor LoggingCryptoService: CryptoServiceProtocol {
 
   /// The logger to use for recording operations
   private let logger: any LoggingProtocol
-  
+
   /// Source identifier for logging
-  private let sourceId = "CryptoServices"
+  private let sourceID="CryptoServices"
 
   /// Initialises a new logging wrapper around a crypto service
   /// - Parameters:
@@ -38,7 +38,11 @@ public actor LoggingCryptoService: CryptoServiceProtocol {
     wrapped=wrapping
     self.logger=logger
     Task {
-      await self.logger.debug("Created LoggingCryptoService wrapper", metadata: nil, source: sourceId)
+      await self.logger.debug(
+        "Created LoggingCryptoService wrapper",
+        metadata: nil,
+        source: sourceID
+      )
     }
   }
 
@@ -58,7 +62,7 @@ public actor LoggingCryptoService: CryptoServiceProtocol {
     iv: SecureBytes
   ) async throws -> SecureBytes {
     let startTime=DispatchTime.now()
-    await logger.info("Encrypting \(data.count) bytes of data", metadata: nil, source: sourceId)
+    await logger.info("Encrypting \(data.count) bytes of data", metadata: nil, source: sourceID)
 
     do {
       let result=try await wrapped.encrypt(data, using: key, iv: iv)
@@ -69,11 +73,15 @@ public actor LoggingCryptoService: CryptoServiceProtocol {
       await logger.info(
         "Successfully encrypted \(data.count) bytes to \(result.count) bytes in \(String(format: "%.2f", durationMs))ms",
         metadata: nil,
-        source: sourceId
+        source: sourceID
       )
       return result
     } catch {
-      await logger.error("Encryption failed: \(error.localizedDescription)", metadata: nil, source: sourceId)
+      await logger.error(
+        "Encryption failed: \(error.localizedDescription)",
+        metadata: nil,
+        source: sourceID
+      )
       throw error
     }
   }
@@ -94,7 +102,7 @@ public actor LoggingCryptoService: CryptoServiceProtocol {
     iv: SecureBytes
   ) async throws -> SecureBytes {
     let startTime=DispatchTime.now()
-    await logger.info("Decrypting \(data.count) bytes of data", metadata: nil, source: sourceId)
+    await logger.info("Decrypting \(data.count) bytes of data", metadata: nil, source: sourceID)
 
     do {
       let result=try await wrapped.decrypt(data, using: key, iv: iv)
@@ -105,11 +113,15 @@ public actor LoggingCryptoService: CryptoServiceProtocol {
       await logger.info(
         "Successfully decrypted \(data.count) bytes to \(result.count) bytes in \(String(format: "%.2f", durationMs))ms",
         metadata: nil,
-        source: sourceId
+        source: sourceID
       )
       return result
     } catch {
-      await logger.error("Decryption failed: \(error.localizedDescription)", metadata: nil, source: sourceId)
+      await logger.error(
+        "Decryption failed: \(error.localizedDescription)",
+        metadata: nil,
+        source: sourceID
+      )
       throw error
     }
   }
@@ -130,7 +142,11 @@ public actor LoggingCryptoService: CryptoServiceProtocol {
     iterations: Int
   ) async throws -> SecureBytes {
     let startTime=DispatchTime.now()
-    await logger.info("Deriving key from password using \(iterations) iterations", metadata: nil, source: sourceId)
+    await logger.info(
+      "Deriving key from password using \(iterations) iterations",
+      metadata: nil,
+      source: sourceID
+    )
 
     do {
       let result=try await wrapped.deriveKey(from: password, salt: salt, iterations: iterations)
@@ -141,11 +157,15 @@ public actor LoggingCryptoService: CryptoServiceProtocol {
       await logger.info(
         "Successfully derived \(result.count)-byte key in \(String(format: "%.2f", durationMs))ms",
         metadata: nil,
-        source: sourceId
+        source: sourceID
       )
       return result
     } catch {
-      await logger.error("Key derivation failed: \(error.localizedDescription)", metadata: nil, source: sourceId)
+      await logger.error(
+        "Key derivation failed: \(error.localizedDescription)",
+        metadata: nil,
+        source: sourceID
+      )
       throw error
     }
   }
@@ -159,7 +179,11 @@ public actor LoggingCryptoService: CryptoServiceProtocol {
    */
   public func generateSecureRandomKey(length: Int) async throws -> SecureBytes {
     let startTime=DispatchTime.now()
-    await logger.info("Generating secure random key of \(length) bytes", metadata: nil, source: sourceId)
+    await logger.info(
+      "Generating secure random key of \(length) bytes",
+      metadata: nil,
+      source: sourceID
+    )
 
     do {
       let result=try await wrapped.generateSecureRandomKey(length: length)
@@ -170,14 +194,14 @@ public actor LoggingCryptoService: CryptoServiceProtocol {
       await logger.info(
         "Successfully generated \(result.count)-byte secure random key in \(String(format: "%.2f", durationMs))ms",
         metadata: nil,
-        source: sourceId
+        source: sourceID
       )
       return result
     } catch {
       await logger.error(
         "Secure random key generation failed: \(error.localizedDescription)",
         metadata: nil,
-        source: sourceId
+        source: sourceID
       )
       throw error
     }
@@ -197,7 +221,11 @@ public actor LoggingCryptoService: CryptoServiceProtocol {
     using key: SecureBytes
   ) async throws -> SecureBytes {
     let startTime=DispatchTime.now()
-    await logger.info("Generating HMAC for \(data.count) bytes of data", metadata: nil, source: sourceId)
+    await logger.info(
+      "Generating HMAC for \(data.count) bytes of data",
+      metadata: nil,
+      source: sourceID
+    )
 
     do {
       let result=try await wrapped.generateHMAC(for: data, using: key)
@@ -208,11 +236,15 @@ public actor LoggingCryptoService: CryptoServiceProtocol {
       await logger.info(
         "Successfully generated \(result.count)-byte HMAC in \(String(format: "%.2f", durationMs))ms",
         metadata: nil,
-        source: sourceId
+        source: sourceID
       )
       return result
     } catch {
-      await logger.error("HMAC generation failed: \(error.localizedDescription)", metadata: nil, source: sourceId)
+      await logger.error(
+        "HMAC generation failed: \(error.localizedDescription)",
+        metadata: nil,
+        source: sourceID
+      )
       throw error
     }
   }

@@ -107,10 +107,10 @@ public protocol SecurityProviderProtocol: Sendable, AsyncServiceInitializable {
 
   /**
    Creates a secure configuration with type-safe, Sendable-compliant options.
-   
+
    This method provides a Swift 6-compatible way to create security configurations
    that can safely cross actor boundaries.
-   
+
    - Parameter options: Type-safe options structure that conforms to Sendable
    - Returns: A properly configured SecurityConfigDTO
    */

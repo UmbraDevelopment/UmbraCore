@@ -1,4 +1,5 @@
 import Foundation
+import SecurityTypes
 
 /**
  # Cryptographic Service Protocol

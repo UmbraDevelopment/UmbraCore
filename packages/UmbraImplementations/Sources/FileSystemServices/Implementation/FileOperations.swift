@@ -29,13 +29,18 @@ extension FileSystemServiceImpl {
       let data=try Data(contentsOf: URL(fileURLWithPath: path.path))
       let bytes=[UInt8](data)
 
-      await logger.debug("Read \(bytes.count) bytes from \(path.path)", metadata: nil)
+      await logger.debug(
+        "Read \(bytes.count) bytes from \(path.path)",
+        metadata: nil,
+        source: "FileSystemService"
+      )
 
       return bytes
     } catch {
       await logger.error(
         "Failed to read file at \(path.path): \(error.localizedDescription)",
-        metadata: nil
+        metadata: nil,
+        source: "FileSystemService"
       )
       throw FileSystemInterfaces.FileSystemError.readError(
         path: path.path,
@@ -85,7 +90,11 @@ extension FileSystemServiceImpl {
         )
       }
 
-      await logger.debug("Read text file (\(data.count) bytes) from \(path.path)", metadata: nil)
+      await logger.debug(
+        "Read text file (\(data.count) bytes) from \(path.path)",
+        metadata: nil,
+        source: "FileSystemService"
+      )
 
       return string
     } catch let fsError as FileSystemInterfaces.FileSystemError {
@@ -94,7 +103,8 @@ extension FileSystemServiceImpl {
     } catch {
       await logger.error(
         "Failed to read text file at \(path.path): \(error.localizedDescription)",
-        metadata: nil
+        metadata: nil,
+        source: "FileSystemService"
       )
       throw FileSystemInterfaces.FileSystemError.readError(
         path: path.path,
@@ -139,7 +149,8 @@ extension FileSystemServiceImpl {
       } catch {
         await logger.error(
           "Failed to create parent directories for \(path.path): \(error.localizedDescription)",
-          metadata: nil
+          metadata: nil,
+          source: "FileSystemService"
         )
         throw FileSystemInterfaces.FileSystemError.writeError(
           path: directory.path,
@@ -152,11 +163,16 @@ extension FileSystemServiceImpl {
       let data=Data(bytes)
       try data.write(to: url)
 
-      await logger.debug("Wrote \(bytes.count) bytes to \(path.path)", metadata: nil)
+      await logger.debug(
+        "Wrote \(bytes.count) bytes to \(path.path)",
+        metadata: nil,
+        source: "FileSystemService"
+      )
     } catch {
       await logger.error(
         "Failed to write file at \(path.path): \(error.localizedDescription)",
-        metadata: nil
+        metadata: nil,
+        source: "FileSystemService"
       )
       throw FileSystemInterfaces.FileSystemError.writeError(
         path: path.path,
@@ -266,11 +282,16 @@ extension FileSystemServiceImpl {
       let fileData=Data(data)
       try fileHandle.write(contentsOf: fileData)
 
-      await logger.debug("Appended \(data.count) bytes to \(path.path)", metadata: nil)
+      await logger.debug(
+        "Appended \(data.count) bytes to \(path.path)",
+        metadata: nil,
+        source: "FileSystemService"
+      )
     } catch {
       await logger.error(
         "Failed to append data to \(path.path): \(error.localizedDescription)",
-        metadata: nil
+        metadata: nil,
+        source: "FileSystemService"
       )
       throw FileSystemInterfaces.FileSystemError.writeError(
         path: path.path,
@@ -332,12 +353,20 @@ extension FileSystemServiceImpl {
     let exists=fileManager.fileExists(atPath: path.path, isDirectory: &isDir)
 
     if !exists {
-      await logger.warning("File does not exist for removal: \(path.path)", metadata: nil)
+      await logger.warning(
+        "File does not exist for removal: \(path.path)",
+        metadata: nil,
+        source: "FileSystemService"
+      )
       throw FileSystemInterfaces.FileSystemError.pathNotFound(path: path.path)
     }
 
     if isDir.boolValue {
-      await logger.warning("Path is a directory, not a file: \(path.path)", metadata: nil)
+      await logger.warning(
+        "Path is a directory, not a file: \(path.path)",
+        metadata: nil,
+        source: "FileSystemService"
+      )
       throw FileSystemInterfaces.FileSystemError.invalidPath(
         path: path.path,
         reason: "Path is a directory, not a file"
@@ -346,11 +375,12 @@ extension FileSystemServiceImpl {
 
     do {
       try fileManager.removeItem(atPath: path.path)
-      await logger.info("Removed file at \(path.path)", metadata: nil)
+      await logger.info("Removed file at \(path.path)", metadata: nil, source: "FileSystemService")
     } catch {
       await logger.error(
         "Failed to remove file at \(path.path): \(error.localizedDescription)",
-        metadata: nil
+        metadata: nil,
+        source: "FileSystemService"
       )
       throw FileSystemInterfaces.FileSystemError.writeError(
         path: path.path,
@@ -390,12 +420,20 @@ extension FileSystemServiceImpl {
     let sourceExists=fileManager.fileExists(atPath: sourcePath.path, isDirectory: &isSourceDir)
 
     if !sourceExists {
-      await logger.warning("Source file does not exist: \(sourcePath.path)", metadata: nil)
+      await logger.warning(
+        "Source file does not exist: \(sourcePath.path)",
+        metadata: nil,
+        source: "FileSystemService"
+      )
       throw FileSystemInterfaces.FileSystemError.pathNotFound(path: sourcePath.path)
     }
 
     if isSourceDir.boolValue {
-      await logger.warning("Source is a directory, not a file: \(sourcePath.path)", metadata: nil)
+      await logger.warning(
+        "Source is a directory, not a file: \(sourcePath.path)",
+        metadata: nil,
+        source: "FileSystemService"
+      )
       throw FileSystemInterfaces.FileSystemError.invalidPath(
         path: sourcePath.path,
         reason: "Source is a directory, not a file"
@@ -405,7 +443,11 @@ extension FileSystemServiceImpl {
     // Check if destination exists
     if fileManager.fileExists(atPath: destinationPath.path) {
       if !overwrite {
-        await logger.warning("Destination already exists: \(destinationPath.path)", metadata: nil)
+        await logger.warning(
+          "Destination already exists: \(destinationPath.path)",
+          metadata: nil,
+          source: "FileSystemService"
+        )
         throw FileSystemInterfaces.FileSystemError.pathAlreadyExists(path: destinationPath.path)
       }
 
@@ -435,10 +477,15 @@ extension FileSystemServiceImpl {
 
       await logger.info(
         "Copied file from \(sourcePath.path) to \(destinationPath.path)",
-        metadata: nil
+        metadata: nil,
+        source: "FileSystemService"
       )
     } catch {
-      await logger.error("Failed to copy file: \(error.localizedDescription)", metadata: nil)
+      await logger.error(
+        "Failed to copy file: \(error.localizedDescription)",
+        metadata: nil,
+        source: "FileSystemService"
+      )
       throw FileSystemInterfaces.FileSystemError.writeError(
         path: destinationPath.path,
         reason: error.localizedDescription
@@ -475,12 +522,20 @@ extension FileSystemServiceImpl {
     let sourceExists=fileManager.fileExists(atPath: sourcePath.path, isDirectory: &isSourceDir)
 
     if !sourceExists {
-      await logger.warning("Source file does not exist: \(sourcePath.path)", metadata: nil)
+      await logger.warning(
+        "Source file does not exist: \(sourcePath.path)",
+        metadata: nil,
+        source: "FileSystemService"
+      )
       throw FileSystemInterfaces.FileSystemError.pathNotFound(path: sourcePath.path)
     }
 
     if isSourceDir.boolValue {
-      await logger.warning("Source is a directory, not a file: \(sourcePath.path)", metadata: nil)
+      await logger.warning(
+        "Source is a directory, not a file: \(sourcePath.path)",
+        metadata: nil,
+        source: "FileSystemService"
+      )
       throw FileSystemInterfaces.FileSystemError.invalidPath(
         path: sourcePath.path,
         reason: "Source is a directory, not a file"
@@ -489,7 +544,11 @@ extension FileSystemServiceImpl {
 
     if fileManager.fileExists(atPath: destinationPath.path) {
       if !overwrite {
-        await logger.warning("Destination already exists: \(destinationPath.path)", metadata: nil)
+        await logger.warning(
+          "Destination already exists: \(destinationPath.path)",
+          metadata: nil,
+          source: "FileSystemService"
+        )
         throw FileSystemInterfaces.FileSystemError.pathAlreadyExists(path: destinationPath.path)
       }
 
@@ -515,10 +574,15 @@ extension FileSystemServiceImpl {
 
       await logger.info(
         "Moved file from \(sourcePath.path) to \(destinationPath.path)",
-        metadata: nil
+        metadata: nil,
+        source: "FileSystemService"
       )
     } catch {
-      await logger.error("Failed to move file: \(error.localizedDescription)", metadata: nil)
+      await logger.error(
+        "Failed to move file: \(error.localizedDescription)",
+        metadata: nil,
+        source: "FileSystemService"
+      )
       throw FileSystemInterfaces.FileSystemError.writeError(
         path: destinationPath.path,
         reason: error.localizedDescription

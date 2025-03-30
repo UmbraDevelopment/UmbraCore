@@ -21,7 +21,7 @@ public struct SecurityConfigDTO: Sendable, Equatable {
 
   /// Hash algorithm for hashing operations (e.g., "SHA256", "SHA512")
   public let hashAlgorithm: String?
-  
+
   /// The specific security provider type to use for this operation
   public let providerType: SecurityProviderType?
 
@@ -42,64 +42,64 @@ public struct SecurityConfigDTO: Sendable, Equatable {
   public init(
     algorithm: String,
     keySize: Int,
-    mode: String? = nil,
-    hashAlgorithm: String? = nil,
-    providerType: SecurityProviderType? = nil,
-    options: [String: String] = [:]
+    mode: String?=nil,
+    hashAlgorithm: String?=nil,
+    providerType: SecurityProviderType?=nil,
+    options: [String: String]=[:]
   ) {
-    self.algorithm = algorithm
-    self.keySize = keySize
-    self.mode = mode
-    self.hashAlgorithm = hashAlgorithm
-    self.providerType = providerType
-    self.options = options
+    self.algorithm=algorithm
+    self.keySize=keySize
+    self.mode=mode
+    self.hashAlgorithm=hashAlgorithm
+    self.providerType=providerType
+    self.options=options
   }
-  
+
   /**
    Initialises a new SecurityConfigDTO with the Sendable SecurityConfigOptions struct.
-   
+
    This initialiser provides a type-safe way to create a configuration with
    options that can safely cross actor boundaries.
-   
+
    - Parameter options: Structured configuration options that conform to Sendable
    */
   public init(options: SecurityConfigOptions) {
     // Use provided values or defaults
-    self.algorithm = options.algorithm ?? "AES"
-    self.keySize = options.keySize ?? 256
-    self.mode = options.mode
-    self.hashAlgorithm = options.hashAlgorithm
-    self.providerType = nil // Not included in options
-    
+    algorithm=options.algorithm ?? "AES"
+    keySize=options.keySize ?? 256
+    mode=options.mode
+    hashAlgorithm=options.hashAlgorithm
+    providerType=nil // Not included in options
+
     // Build options dictionary
-    var optionsDict: [String: String] = [:]
-    
+    var optionsDict: [String: String]=[:]
+
     // Add identifier and data fields if present
-    if let identifier = options.identifier {
-      optionsDict["identifier"] = identifier
+    if let identifier=options.identifier {
+      optionsDict["identifier"]=identifier
     }
-    if let dataBase64 = options.dataBase64 {
-      optionsDict["dataBase64"] = dataBase64
+    if let dataBase64=options.dataBase64 {
+      optionsDict["dataBase64"]=dataBase64
     }
-    if let dataHex = options.dataHex {
-      optionsDict["dataHex"] = dataHex
+    if let dataHex=options.dataHex {
+      optionsDict["dataHex"]=dataHex
     }
-    if let keyBase64 = options.keyBase64 {
-      optionsDict["keyBase64"] = keyBase64
+    if let keyBase64=options.keyBase64 {
+      optionsDict["keyBase64"]=keyBase64
     }
-    if let keyIdentifier = options.keyIdentifier {
-      optionsDict["keyIdentifier"] = keyIdentifier
+    if let keyIdentifier=options.keyIdentifier {
+      optionsDict["keyIdentifier"]=keyIdentifier
     }
-    if let signatureBase64 = options.signatureBase64 {
-      optionsDict["signatureBase64"] = signatureBase64
+    if let signatureBase64=options.signatureBase64 {
+      optionsDict["signatureBase64"]=signatureBase64
     }
-    
+
     // Add all additional options
     for (key, value) in options.additionalOptions {
-      optionsDict[key] = value
+      optionsDict[key]=value
     }
-    
-    self.options = optionsDict
+
+    self.options=optionsDict
   }
 
   /**

@@ -65,13 +65,15 @@ public actor BackupServiceImpl: BackupServiceProtocol {
     progressReporter: BackupProgressReporter?,
     cancellationToken _: CancellationToken?
   ) async throws -> BackupResult {
-    await logger.info("Creating backup", metadata: [
-      "sources": sources.map(\.path).joined(separator: ", "),
-      "excludePaths": excludePaths?.map(\.path).joined(separator: ", ") ?? "none",
-      "tags": tags?.joined(separator: ", ") ?? "none",
-      "compressionLevel": String(options?.compressionLevel ?? 0),
-      "verifyAfterBackup": String(options?.verifyAfterBackup ?? false)
-    ])
+    // Create proper LogMetadata
+    var metadata=LogMetadata()
+    metadata["sources"]=sources.map(\.path).joined(separator: ", ")
+    metadata["excludePaths"]=excludePaths?.map(\.path).joined(separator: ", ") ?? "none"
+    metadata["tags"]=tags?.joined(separator: ", ") ?? "none"
+    metadata["compressionLevel"]=String(options?.compressionLevel ?? 0)
+    metadata["verifyAfterBackup"]=String(options?.verifyAfterBackup ?? false)
+
+    await logger.info("Creating backup", metadata: metadata, source: "BackupService")
 
     let startTime=Date()
     let operation=BackupOperation.createBackup
@@ -104,12 +106,17 @@ public actor BackupServiceImpl: BackupServiceProtocol {
       // We can't modify the duration directly as it's a let constant
       // In a real implementation, this would be handled in the parser
 
-      await logger.info("Backup completed successfully", metadata: [
-        "snapshotID": result.snapshotID,
-        "fileCount": String(result.fileCount),
-        "sizeInBytes": String(result.totalSize),
-        "duration": String(format: "%.2fs", duration)
-      ])
+      // Create result metadata
+      var resultMetadata=LogMetadata()
+      resultMetadata["fileCount"]=String(result.fileCount)
+      resultMetadata["sizeInBytes"]=String(result.totalSize)
+      resultMetadata["duration"]=String(format: "%.2fs", duration)
+
+      await logger.info(
+        "Backup completed successfully",
+        metadata: resultMetadata,
+        source: "BackupService"
+      )
 
       // Report completion
       if let progressReporter {
@@ -121,9 +128,15 @@ public actor BackupServiceImpl: BackupServiceProtocol {
 
       return result
     } catch let error as ResticError {
-      await logger.error("Backup failed with Restic error", metadata: [
-        "error": error.localizedDescription
-      ])
+      // Create error metadata
+      var errorMetadata=LogMetadata()
+      errorMetadata["error"]=error.localizedDescription
+
+      await logger.error(
+        "Backup failed with Restic error",
+        metadata: errorMetadata,
+        source: "BackupService"
+      )
 
       // Report error
       if let progressReporter {
@@ -135,9 +148,7 @@ public actor BackupServiceImpl: BackupServiceProtocol {
 
       throw errorMapper.convertResticError(error)
     } catch let error as BackupError {
-      await logger.error("Backup failed", metadata: [
-        "error": error.localizedDescription
-      ])
+      await logger.error("Backup failed", metadata: nil, source: "BackupService")
 
       // Report error
       if let progressReporter {
@@ -149,9 +160,11 @@ public actor BackupServiceImpl: BackupServiceProtocol {
 
       throw error
     } catch {
-      await logger.error("Backup failed with unexpected error", metadata: [
-        "error": error.localizedDescription
-      ])
+      await logger.error(
+        "Backup failed with unexpected error",
+        metadata: nil,
+        source: "BackupService"
+      )
 
       // Report error
       if let progressReporter {
@@ -185,17 +198,17 @@ public actor BackupServiceImpl: BackupServiceProtocol {
     progressReporter: BackupProgressReporter?,
     cancellationToken _: CancellationToken?
   ) async throws -> RestoreResult {
-    await logger.info("Restoring backup", metadata: [
-      "snapshotID": snapshotID,
-      "targetPath": targetPath.path,
-      "includePaths": includePaths?.map(\.path).joined(separator: ", ") ?? "all",
-      "excludePaths": excludePaths?.map(\.path).joined(separator: ", ") ?? "none",
-      "overwrite": String(options?.overwriteExisting ?? false),
-      "restorePermissions": String(options?.restorePermissions ?? false),
-      "verifyAfterRestore": String(options?.verifyAfterRestore ?? false),
-      "useParallelisation": String(options?.useParallelisation ?? false),
-      "priority": options?.priority.rawValue ?? "normal"
-    ])
+    // Create metadata
+    var metadata=LogMetadata()
+    metadata["snapshotID"]=snapshotID
+    metadata["targetPath"]=targetPath.path
+    metadata["includePaths"]=includePaths?.map(\.path).joined(separator: ", ") ?? "all"
+    metadata["excludePaths"]=excludePaths?.map(\.path).joined(separator: ", ") ?? "none"
+    metadata["verifyAfterRestore"]=String(options?.verifyAfterRestore ?? false)
+    metadata["useParallelisation"]=String(options?.useParallelisation ?? false)
+    metadata["priority"]=options?.priority.rawValue ?? "normal"
+
+    await logger.info("Restoring backup", metadata: metadata, source: "BackupService")
 
     let operation=BackupOperation.restoreBackup
 
@@ -223,11 +236,17 @@ public actor BackupServiceImpl: BackupServiceProtocol {
       // Parse the output to obtain the restore result
       let result=try resultParser.parseRestoreResult(output: output, targetPath: targetPath)
 
-      await logger.info("Restore completed successfully", metadata: [
-        "snapshotID": snapshotID,
-        "targetPath": targetPath.path,
-        "fileCount": String(result.fileCount)
-      ])
+      // Create result metadata
+      var resultMetadata=LogMetadata()
+      resultMetadata["snapshotID"]=snapshotID
+      resultMetadata["targetPath"]=targetPath.path
+      resultMetadata["fileCount"]=String(result.fileCount)
+
+      await logger.info(
+        "Restore completed successfully",
+        metadata: resultMetadata,
+        source: "BackupService"
+      )
 
       // Report completion
       if let progressReporter {
@@ -239,9 +258,15 @@ public actor BackupServiceImpl: BackupServiceProtocol {
 
       return result
     } catch let error as ResticError {
-      await logger.error("Restore failed with Restic error", metadata: [
-        "error": error.localizedDescription
-      ])
+      // Create error metadata
+      var errorMetadata=LogMetadata()
+      errorMetadata["error"]=error.localizedDescription
+
+      await logger.error(
+        "Restore failed with Restic error",
+        metadata: errorMetadata,
+        source: "BackupService"
+      )
 
       // Report error
       if let progressReporter {
@@ -253,9 +278,7 @@ public actor BackupServiceImpl: BackupServiceProtocol {
 
       throw errorMapper.convertResticError(error)
     } catch let error as BackupError {
-      await logger.error("Restore failed", metadata: [
-        "error": error.localizedDescription
-      ])
+      await logger.error("Restore failed", metadata: nil, source: "BackupService")
 
       // Report error
       if let progressReporter {
@@ -267,9 +290,11 @@ public actor BackupServiceImpl: BackupServiceProtocol {
 
       throw error
     } catch {
-      await logger.error("Restore failed with unexpected error", metadata: [
-        "error": error.localizedDescription
-      ])
+      await logger.error(
+        "Restore failed with unexpected error",
+        metadata: nil,
+        source: "BackupService"
+      )
 
       // Report error
       if let progressReporter {
@@ -301,12 +326,14 @@ public actor BackupServiceImpl: BackupServiceProtocol {
     progressReporter: BackupProgressReporter?,
     cancellationToken _: CancellationToken?
   ) async throws -> [BackupSnapshot] {
-    await logger.info("Listing snapshots", metadata: [
-      "tags": tags?.joined(separator: ", ") ?? "all",
-      "before": before?.description ?? "any",
-      "after": after?.description ?? "any",
-      "options": String(describing: options)
-    ])
+    // Create metadata
+    var metadata=LogMetadata()
+    metadata["tags"]=tags?.joined(separator: ", ") ?? "all"
+    metadata["before"]=before?.description ?? "any"
+    metadata["after"]=after?.description ?? "any"
+    metadata["options"]=String(describing: options)
+
+    await logger.info("Listing snapshots", metadata: metadata, source: "BackupService")
 
     let operation=BackupOperation.listSnapshots
 
@@ -345,9 +372,15 @@ public actor BackupServiceImpl: BackupServiceProtocol {
 
       return snapshots
     } catch let error as ResticError {
-      await logger.error("List snapshots failed with Restic error", metadata: [
-        "error": error.localizedDescription
-      ])
+      // Create error metadata
+      var errorMetadata=LogMetadata()
+      errorMetadata["error"]=error.localizedDescription
+
+      await logger.error(
+        "List snapshots failed with Restic error",
+        metadata: errorMetadata,
+        source: "BackupService"
+      )
 
       if let progressReporter {
         await progressReporter.reportProgress(
@@ -358,9 +391,7 @@ public actor BackupServiceImpl: BackupServiceProtocol {
 
       throw errorMapper.convertResticError(error)
     } catch {
-      await logger.error("List snapshots failed with error", metadata: [
-        "error": error.localizedDescription
-      ])
+      await logger.error("List snapshots failed with error", metadata: nil, source: "BackupService")
 
       if let progressReporter {
         await progressReporter.reportProgress(
@@ -389,10 +420,12 @@ public actor BackupServiceImpl: BackupServiceProtocol {
   ) async throws -> DeleteResult {
     _=Date() // Using _ to silence the warning about unused variable
 
-    await logger.info("Deleting snapshot", metadata: [
-      "snapshotID": snapshotID,
-      "pruneAfterDelete": String(options?.pruneAfterDelete ?? false)
-    ])
+    // Create metadata
+    var metadata=LogMetadata()
+    metadata["snapshotID"]=snapshotID
+    metadata["pruneAfterDelete"]=String(options?.pruneAfterDelete ?? false)
+
+    await logger.info("Deleting snapshot", metadata: metadata, source: "BackupService")
 
     let operation=BackupOperation.deleteBackup
 
@@ -421,9 +454,15 @@ public actor BackupServiceImpl: BackupServiceProtocol {
         successful: true // Assuming success if we get here (failures throw errors)
       )
 
-      await logger.info("Deleted snapshot successfully", metadata: [
-        "snapshotID": snapshotID
-      ])
+      // Create success metadata
+      var successMetadata=LogMetadata()
+      successMetadata["snapshotID"]=snapshotID
+
+      await logger.info(
+        "Deleted snapshot successfully",
+        metadata: successMetadata,
+        source: "BackupService"
+      )
 
       // Report completion
       if let progressReporter {
@@ -435,9 +474,15 @@ public actor BackupServiceImpl: BackupServiceProtocol {
 
       return result
     } catch let error as ResticError {
-      await logger.error("Delete snapshot failed with Restic error", metadata: [
-        "error": error.localizedDescription
-      ])
+      // Create error metadata
+      var errorMetadata=LogMetadata()
+      errorMetadata["error"]=error.localizedDescription
+
+      await logger.error(
+        "Delete snapshot failed with Restic error",
+        metadata: errorMetadata,
+        source: "BackupService"
+      )
 
       // Report error
       if let progressReporter {
@@ -449,9 +494,7 @@ public actor BackupServiceImpl: BackupServiceProtocol {
 
       throw errorMapper.convertResticError(error)
     } catch let error as BackupError {
-      await logger.error("Delete snapshot failed", metadata: [
-        "error": error.localizedDescription
-      ])
+      await logger.error("Delete snapshot failed", metadata: nil, source: "BackupService")
 
       // Report error
       if let progressReporter {
@@ -463,9 +506,11 @@ public actor BackupServiceImpl: BackupServiceProtocol {
 
       throw error
     } catch {
-      await logger.error("Delete snapshot failed with unexpected error", metadata: [
-        "error": error.localizedDescription
-      ])
+      await logger.error(
+        "Delete snapshot failed with unexpected error",
+        metadata: nil,
+        source: "BackupService"
+      )
 
       // Report error
       if let progressReporter {
@@ -493,10 +538,16 @@ public actor BackupServiceImpl: BackupServiceProtocol {
     progressReporter: BackupProgressReporter?,
     cancellationToken _: CancellationToken?
   ) async throws -> MaintenanceResult {
-    await logger.info("Performing repository maintenance", metadata: [
-      "type": String(describing: type),
-      "dryRun": String(options?.dryRun ?? false)
-    ])
+    // Create metadata
+    var metadata=LogMetadata()
+    metadata["type"]=String(describing: type)
+    metadata["dryRun"]=String(options?.dryRun ?? false)
+
+    await logger.info(
+      "Performing repository maintenance",
+      metadata: metadata,
+      source: "BackupService"
+    )
 
     let operation=BackupOperation.maintenance
 
@@ -521,12 +572,17 @@ public actor BackupServiceImpl: BackupServiceProtocol {
       // Parse the output to obtain the maintenance result
       let result=try resultParser.parseMaintenanceResult(output: output, type: type)
 
-      await logger.info("Maintenance completed", metadata: [
-        "type": String(describing: type),
-        "successful": String(result.successful),
-        "issuesCount": String(result.issuesFound.count),
-        "spaceOptimised": result.spaceOptimised.map { String($0) } ?? "none"
-      ])
+      // Create result metadata
+      var resultMetadata=LogMetadata()
+      resultMetadata["successful"]=String(result.successful)
+      resultMetadata["issuesCount"]=String(result.issuesFound.count)
+      resultMetadata["spaceOptimised"]=result.spaceOptimised.map { String($0) } ?? "none"
+
+      await logger.info(
+        "Maintenance completed successfully",
+        metadata: resultMetadata,
+        source: "BackupService"
+      )
 
       // Report completion
       if let progressReporter {
@@ -538,9 +594,15 @@ public actor BackupServiceImpl: BackupServiceProtocol {
 
       return result
     } catch let error as ResticError {
-      await logger.error("Maintenance failed with Restic error", metadata: [
-        "error": error.localizedDescription
-      ])
+      // Create error metadata
+      var errorMetadata=LogMetadata()
+      errorMetadata["error"]=error.localizedDescription
+
+      await logger.error(
+        "Maintenance failed with Restic error",
+        metadata: errorMetadata,
+        source: "BackupService"
+      )
 
       // Report error
       if let progressReporter {
@@ -552,9 +614,7 @@ public actor BackupServiceImpl: BackupServiceProtocol {
 
       throw errorMapper.convertResticError(error)
     } catch let error as BackupError {
-      await logger.error("Maintenance failed", metadata: [
-        "error": error.localizedDescription
-      ])
+      await logger.error("Maintenance failed", metadata: nil, source: "BackupService")
 
       // Report error
       if let progressReporter {
@@ -566,9 +626,11 @@ public actor BackupServiceImpl: BackupServiceProtocol {
 
       throw error
     } catch {
-      await logger.error("Maintenance failed with unexpected error", metadata: [
-        "error": error.localizedDescription
-      ])
+      await logger.error(
+        "Maintenance failed with unexpected error",
+        metadata: nil,
+        source: "BackupService"
+      )
 
       // Report error
       if let progressReporter {

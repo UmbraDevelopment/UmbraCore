@@ -17,7 +17,8 @@
 /// // Log messages at different levels
 /// await logger.info("Application started", metadata: nil, source: "AppDelegate")
 /// await logger.warning("Network connectivity limited", metadata: nil, source: "NetworkMonitor")
-/// await logger.error("Failed to save file", metadata: LogMetadata(dictionary: ["path": "/tmp/file.txt"]), source: "FileManager")
+/// await logger.error("Failed to save file", metadata: LogMetadata(dictionary: ["path":
+/// "/tmp/file.txt"]), source: "FileManager")
 ///
 /// // Create a production logger with file output
 /// let prodLogger = LoggingServiceFactory.createProductionLogger(

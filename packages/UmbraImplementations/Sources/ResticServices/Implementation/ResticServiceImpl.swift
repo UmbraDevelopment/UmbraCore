@@ -155,7 +155,11 @@ public actor ResticServiceImpl: ResticServiceProtocol {
   public func execute(_ command: ResticCommand) async throws -> String {
     try command.validate()
 
-    await logger.info("Executing Restic command: \(type(of: command))", metadata: nil)
+    await logger.info(
+      "Executing Restic command: \(type(of: command))",
+      metadata: nil,
+      source: "ResticService"
+    )
 
     let setup=setupProcess(for: command)
 

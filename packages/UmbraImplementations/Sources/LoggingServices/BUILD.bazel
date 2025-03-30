@@ -5,6 +5,7 @@ umbra_swift_library(
     srcs = glob(
         [
             "*.swift",
+            "**/*.swift",
         ],
         allow_empty = False,
         exclude = [

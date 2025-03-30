@@ -17,9 +17,9 @@
 import Foundation
 import SecurityCoreInterfaces
 import SecurityCoreTypes
+import SecurityKeyTypes
 import SecurityTypes
 import UmbraErrors
-import SecurityKeyTypes
 
 /// KeyStorage factory
 ///
@@ -40,7 +40,7 @@ actor KeyStorageManager: KeyStorage {
   // MARK: - Properties
 
   /// Dictionary for storing keys by identifier
-  private var storage: [String: SecureBytes] = [:]
+  private var storage: [String: SecureBytes]=[:]
 
   // MARK: - Public Interface
 
@@ -49,7 +49,7 @@ actor KeyStorageManager: KeyStorage {
   ///   - key: The key to store
   ///   - identifier: The identifier for the key
   public func storeKey(_ key: SecureBytes, identifier: String) async {
-    storage[identifier] = key
+    storage[identifier]=key
   }
 
   /// Get a key from memory
@@ -90,8 +90,8 @@ public final class KeyStore: KeyStorage, Sendable {
 
   /// Initialise with a specific key storage implementation
   /// - Parameter keyStorage: The key storage to use
-  public init(keyStorage: KeyStorage = KeyStorageFactory.createKeyStorage()) {
-    self.keyStorage = keyStorage
+  public init(keyStorage: KeyStorage=KeyStorageFactory.createKeyStorage()) {
+    self.keyStorage=keyStorage
   }
 
   // MARK: - KeyStorage Protocol Implementation

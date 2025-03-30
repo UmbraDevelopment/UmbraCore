@@ -56,7 +56,11 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
     for account: String,
     accessOptions _: KeychainAccessOptions?=nil
   ) async throws {
-    await logger.debug("Storing password for account: \(account) in memory", metadata: nil)
+    await logger.debug(
+      "Storing password for account: \(account) in memory",
+      metadata: nil,
+      source: "InMemoryKeychainService"
+    )
 
     guard !password.isEmpty else {
       throw KeychainError.invalidParameter("Password cannot be empty")
@@ -68,7 +72,11 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
 
     // Check if password already exists
     if passwordStorage[account] != nil {
-      await logger.warning("Password already exists for account: \(account)", metadata: nil)
+      await logger.warning(
+        "Password already exists for account: \(account)",
+        metadata: nil,
+        source: "InMemoryKeychainService"
+      )
       throw KeychainError.itemAlreadyExists
     }
 
@@ -76,7 +84,8 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
     passwordStorage[account]=password
     await logger.info(
       "Successfully stored password for account: \(account) in memory",
-      metadata: nil
+      metadata: nil,
+      source: "InMemoryKeychainService"
     )
   }
 
@@ -89,7 +98,11 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
    - Throws: KeychainError if the password doesn't exist
    */
   public func retrievePassword(for account: String) async throws -> String {
-    await logger.debug("Retrieving password for account: \(account) from memory", metadata: nil)
+    await logger.debug(
+      "Retrieving password for account: \(account) from memory",
+      metadata: nil,
+      source: "InMemoryKeychainService"
+    )
 
     guard !account.isEmpty else {
       throw KeychainError.invalidParameter("Account identifier cannot be empty")
@@ -99,11 +112,16 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
     if let password=passwordStorage[account] {
       await logger.info(
         "Successfully retrieved password for account: \(account) from memory",
-        metadata: nil
+        metadata: nil,
+        source: "InMemoryKeychainService"
       )
       return password
     } else {
-      await logger.warning("No password found for account: \(account) in memory", metadata: nil)
+      await logger.warning(
+        "No password found for account: \(account) in memory",
+        metadata: nil,
+        source: "InMemoryKeychainService"
+      )
       throw KeychainError.itemNotFound
     }
   }
@@ -116,7 +134,11 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
    - Throws: KeychainError if the password doesn't exist
    */
   public func deletePassword(for account: String) async throws {
-    await logger.debug("Deleting password for account: \(account) from memory", metadata: nil)
+    await logger.debug(
+      "Deleting password for account: \(account) from memory",
+      metadata: nil,
+      source: "InMemoryKeychainService"
+    )
 
     guard !account.isEmpty else {
       throw KeychainError.invalidParameter("Account identifier cannot be empty")
@@ -127,12 +149,14 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
       passwordStorage.removeValue(forKey: account)
       await logger.info(
         "Successfully deleted password for account: \(account) from memory",
-        metadata: nil
+        metadata: nil,
+        source: "InMemoryKeychainService"
       )
     } else {
       await logger.warning(
         "No password found to delete for account: \(account) in memory",
-        metadata: nil
+        metadata: nil,
+        source: "InMemoryKeychainService"
       )
       throw KeychainError.itemNotFound
     }
@@ -153,7 +177,11 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
     for account: String,
     accessOptions _: KeychainAccessOptions?=nil
   ) async throws {
-    await logger.debug("Storing data for account: \(account) in memory", metadata: nil)
+    await logger.debug(
+      "Storing data for account: \(account) in memory",
+      metadata: nil,
+      source: "InMemoryKeychainService"
+    )
 
     guard !data.isEmpty else {
       throw KeychainError.invalidParameter("Data cannot be empty")
@@ -165,13 +193,21 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
 
     // Check if data already exists
     if dataStorage[account] != nil {
-      await logger.warning("Data already exists for account: \(account)", metadata: nil)
+      await logger.warning(
+        "Data already exists for account: \(account)",
+        metadata: nil,
+        source: "InMemoryKeychainService"
+      )
       throw KeychainError.itemAlreadyExists
     }
 
     // Store the data
     dataStorage[account]=data
-    await logger.info("Successfully stored data for account: \(account) in memory", metadata: nil)
+    await logger.info(
+      "Successfully stored data for account: \(account) in memory",
+      metadata: nil,
+      source: "InMemoryKeychainService"
+    )
   }
 
   /**
@@ -183,7 +219,11 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
    - Throws: KeychainError if the data doesn't exist
    */
   public func retrieveData(for account: String) async throws -> Data {
-    await logger.debug("Retrieving data for account: \(account) from memory", metadata: nil)
+    await logger.debug(
+      "Retrieving data for account: \(account) from memory",
+      metadata: nil,
+      source: "InMemoryKeychainService"
+    )
 
     guard !account.isEmpty else {
       throw KeychainError.invalidParameter("Account identifier cannot be empty")
@@ -193,11 +233,16 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
     if let data=dataStorage[account] {
       await logger.info(
         "Successfully retrieved data for account: \(account) from memory",
-        metadata: nil
+        metadata: nil,
+        source: "InMemoryKeychainService"
       )
       return data
     } else {
-      await logger.warning("No data found for account: \(account) in memory", metadata: nil)
+      await logger.warning(
+        "No data found for account: \(account) in memory",
+        metadata: nil,
+        source: "InMemoryKeychainService"
+      )
       throw KeychainError.itemNotFound
     }
   }
@@ -210,7 +255,11 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
    - Throws: KeychainError if the data doesn't exist
    */
   public func deleteData(for account: String) async throws {
-    await logger.debug("Deleting data for account: \(account) from memory", metadata: nil)
+    await logger.debug(
+      "Deleting data for account: \(account) from memory",
+      metadata: nil,
+      source: "InMemoryKeychainService"
+    )
 
     guard !account.isEmpty else {
       throw KeychainError.invalidParameter("Account identifier cannot be empty")
@@ -221,12 +270,14 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
       dataStorage.removeValue(forKey: account)
       await logger.info(
         "Successfully deleted data for account: \(account) from memory",
-        metadata: nil
+        metadata: nil,
+        source: "InMemoryKeychainService"
       )
     } else {
       await logger.warning(
         "No data found to delete for account: \(account) in memory",
-        metadata: nil
+        metadata: nil,
+        source: "InMemoryKeychainService"
       )
       throw KeychainError.itemNotFound
     }
@@ -242,7 +293,8 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
   public func passwordExists(for account: String) async -> Bool {
     await logger.debug(
       "Checking if password exists for account: \(account) in memory",
-      metadata: nil
+      metadata: nil,
+      source: "InMemoryKeychainService"
     )
 
     guard !account.isEmpty else {
@@ -262,7 +314,11 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
    - Throws: KeychainError if the password doesn't exist
    */
   public func updatePassword(_ newPassword: String, for account: String) async throws {
-    await logger.debug("Updating password for account: \(account) in memory", metadata: nil)
+    await logger.debug(
+      "Updating password for account: \(account) in memory",
+      metadata: nil,
+      source: "InMemoryKeychainService"
+    )
 
     guard !newPassword.isEmpty else {
       throw KeychainError.invalidParameter("New password cannot be empty")
@@ -277,12 +333,14 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
       passwordStorage[account]=newPassword
       await logger.info(
         "Successfully updated password for account: \(account) in memory",
-        metadata: nil
+        metadata: nil,
+        source: "InMemoryKeychainService"
       )
     } else {
       await logger.warning(
         "Cannot update - no password exists for account: \(account) in memory",
-        metadata: nil
+        metadata: nil,
+        source: "InMemoryKeychainService"
       )
       throw KeychainError.itemNotFound
     }
@@ -293,7 +351,11 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
    Useful for test setup/teardown.
    */
   public func clearAllData() async {
-    await logger.info("Clearing all stored data from memory", metadata: nil)
+    await logger.info(
+      "Clearing all stored data from memory",
+      metadata: nil,
+      source: "InMemoryKeychainService"
+    )
     passwordStorage.removeAll()
     dataStorage.removeAll()
   }

@@ -76,14 +76,15 @@ extension FileSystemServiceImpl {
         try await handler([UInt8](chunkData))
       }
 
-      await logger.debug("Read \(bytesRead) bytes in chunks from \(path.path)", metadata: nil)
+      await logger.debug("Read \(bytesRead) bytes in chunks from \(path.path)", metadata: nil, source: "StreamingOperations")
     } catch let fsError as FileSystemInterfaces.FileSystemError {
       // Rethrow FileSystemError directly
       throw fsError
     } catch {
       await logger.error(
         "Failed to read file in chunks at \(path.path): \(error.localizedDescription)",
-        metadata: nil
+        metadata: nil,
+        source: "StreamingOperations"
       )
       throw FileSystemInterfaces.FileSystemError.readError(
         path: path.path,
@@ -177,7 +178,8 @@ extension FileSystemServiceImpl {
     } catch {
       await logger.error(
         "Failed to create parent directories for \(path.path): \(error.localizedDescription)",
-        metadata: nil
+        metadata: nil,
+        source: "StreamingOperations"
       )
       throw FileSystemInterfaces.FileSystemError.writeError(
         path: directory.path,
@@ -204,14 +206,15 @@ extension FileSystemServiceImpl {
         bytesWritten += chunk.count
       }
 
-      await logger.debug("Wrote \(bytesWritten) bytes in chunks to \(path.path)", metadata: nil)
+      await logger.debug("Wrote \(bytesWritten) bytes in chunks to \(path.path)", metadata: nil, source: "StreamingOperations")
     } catch let fsError as FileSystemInterfaces.FileSystemError {
       // Rethrow FileSystemError directly
       throw fsError
     } catch {
       await logger.error(
         "Failed to write file in chunks at \(path.path): \(error.localizedDescription)",
-        metadata: nil
+        metadata: nil,
+        source: "StreamingOperations"
       )
       throw FileSystemInterfaces.FileSystemError.writeError(
         path: path.path,

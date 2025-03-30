@@ -1,8 +1,8 @@
 import Foundation
+import LoggingInterfaces
 import SecurityCoreInterfaces
 import SecurityCoreTypes
 import SecurityTypes
-import LoggingInterfaces
 import UmbraErrors
 
 // Re-export the actor types from the ActorTypes directory

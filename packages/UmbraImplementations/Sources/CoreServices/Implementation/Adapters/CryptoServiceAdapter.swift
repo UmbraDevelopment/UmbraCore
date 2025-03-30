@@ -22,7 +22,7 @@ import UmbraErrors
  one interface (CoreCryptoServiceProtocol) while wrapping an instance of another
  interface (CryptoServiceProtocol).
  */
-public actor CryptoServiceAdapter: CoreInterfaces.CoreCryptoServiceProtocol, Sendable {
+public actor CryptoServiceAdapter: CoreInterfaces.CoreCryptoServiceProtocol {
   // MARK: - Properties
 
   /**
@@ -40,7 +40,7 @@ public actor CryptoServiceAdapter: CoreInterfaces.CoreCryptoServiceProtocol, Sen
    - Parameter cryptoService: The crypto service implementation to adapt
    */
   public init(cryptoService: CryptoInterfaces.CryptoServiceProtocol) {
-    self.cryptoService = cryptoService
+    self.cryptoService=cryptoService
   }
 
   // MARK: - CoreCryptoServiceProtocol Implementation
@@ -71,20 +71,20 @@ public actor CryptoServiceAdapter: CoreInterfaces.CoreCryptoServiceProtocol, Sen
    */
   public func encrypt(data: Data, with key: Data) async throws -> Data {
     // Convert to SecureBytes
-    let secureData = SecureBytes(data: data)
-    let secureKey = SecureBytes(data: key)
-    
+    let secureData=SecureBytes(data: data)
+    let secureKey=SecureBytes(data: key)
+
     // Generate a secure random IV
-    let secureIV = try await cryptoService.generateSecureRandomBytes(length: 16)
-    
+    let secureIV=try await cryptoService.generateSecureRandomBytes(length: 16)
+
     // Perform encryption
-    let encryptedResult = try await cryptoService.encrypt(secureData, using: secureKey, iv: secureIV)
-    
+    let encryptedResult=try await cryptoService.encrypt(secureData, using: secureKey, iv: secureIV)
+
     // Create a combined output that includes the IV and encrypted data
-    var result = Data()
+    var result=Data()
     result.append(secureIV.extractUnderlyingData()) // IV first
     result.append(encryptedResult.extractUnderlyingData()) // Then encrypted data
-    
+
     return result
   }
 
@@ -103,19 +103,23 @@ public actor CryptoServiceAdapter: CoreInterfaces.CoreCryptoServiceProtocol, Sen
     guard data.count > 16 else {
       throw CryptoError.invalidInput(reason: "Data too short, missing IV")
     }
-    
+
     // Extract IV and encrypted data
-    let iv = data.prefix(16)
-    let encryptedData = data.suffix(from: 16)
-    
+    let iv=data.prefix(16)
+    let encryptedData=data.suffix(from: 16)
+
     // Convert to SecureBytes
-    let secureIV = SecureBytes(data: iv)
-    let secureEncryptedData = SecureBytes(data: encryptedData)
-    let secureKey = SecureBytes(data: key)
-    
+    let secureIV=SecureBytes(data: iv)
+    let secureEncryptedData=SecureBytes(data: encryptedData)
+    let secureKey=SecureBytes(data: key)
+
     // Perform decryption
-    let decryptedResult = try await cryptoService.decrypt(secureEncryptedData, using: secureKey, iv: secureIV)
-    
+    let decryptedResult=try await cryptoService.decrypt(
+      secureEncryptedData,
+      using: secureKey,
+      iv: secureIV
+    )
+
     return decryptedResult.extractUnderlyingData()
   }
 
@@ -129,7 +133,7 @@ public actor CryptoServiceAdapter: CoreInterfaces.CoreCryptoServiceProtocol, Sen
    - Throws: CryptoError if key generation fails
    */
   public func generateKey(length: Int) async throws -> Data {
-    let key = try await cryptoService.generateSecureRandomKey(length: length)
+    let key=try await cryptoService.generateSecureRandomKey(length: length)
     return key.extractUnderlyingData()
   }
 
@@ -144,8 +148,8 @@ public actor CryptoServiceAdapter: CoreInterfaces.CoreCryptoServiceProtocol, Sen
    */
   public func hash(data: Data) async throws -> Data {
     // Convert to SecureBytes
-    let secureData = SecureBytes(data: data)
-    
+    let secureData=SecureBytes(data: data)
+
     // We don't have a direct hash method in the CryptoServiceProtocol shown here,
     // so we would need to use the appropriate method from the underlying implementation
     // or extend the protocol. For this example, we'll throw an unimplemented error.

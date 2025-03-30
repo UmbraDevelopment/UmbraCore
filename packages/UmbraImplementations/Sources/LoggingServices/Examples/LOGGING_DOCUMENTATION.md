@@ -100,6 +100,303 @@ privacyMetadata["__privacy_message"] = message.privacy.description
 privacyMetadata["__privacy_metadata"] = metadataPrivacy.description
 ```
 
+## Privacy-Enhanced Logging
+
+The Alpha Dot Five architecture includes a comprehensive privacy-enhanced logging system that prioritises data protection whilst maintaining robust logging capabilities.
+
+### Core Types
+
+The foundation of the privacy-enhanced logging system includes:
+
+#### LogPrivacyLevel
+
+```swift
+public enum LogPrivacyLevel: Sendable, Equatable {
+    /// Public information that can be logged without redaction
+    case `public`
+    
+    /// Private information that should be redacted in logs
+    /// but may be visible in debug builds
+    case `private`
+    
+    /// Sensitive information that requires special handling
+    /// and should always be redacted or processed before logging
+    case sensitive
+    
+    /// Information that should be hashed before logging
+    /// to allow correlation without revealing the actual value
+    case hash
+    
+    /// Auto-redacted content based on type analysis
+    /// This is the default for unannotated values
+    case auto
+}
+```
+
+#### PrivacyString
+
+A string interpolation type that supports privacy annotations for interpolated values:
+
+```swift
+// Basic usage
+let message: PrivacyString = "Processing payment for user \(private: userId) with amount \(public: amount)"
+
+// Converting to a log-safe string
+let processedMessage = message.processForLogging()
+```
+
+#### LogContext
+
+Provides rich contextual information about log events with privacy annotations:
+
+```swift
+public struct LogContext: Sendable, Equatable {
+    /// Component that generated the log
+    public let source: String
+    
+    /// Additional structured data with privacy annotations
+    public let metadata: LogMetadata?
+    
+    /// For tracking related logs across components
+    public let correlationId: String
+    
+    /// When the log was created
+    public let timestamp: LogTimestamp
+}
+```
+
+### Protocol Hierarchy
+
+The privacy-enhanced logging system uses a hierarchical protocol design:
+
+#### CoreLoggingProtocol
+
+The base protocol that all logging protocols extend from:
+
+```swift
+public protocol CoreLoggingProtocol: Sendable {
+    /// Log a message with the specified level and context
+    func logMessage(_ level: LogLevel, _ message: String, context: LogContext) async
+}
+```
+
+#### LoggingProtocol
+
+Standard logging protocol with convenience methods:
+
+```swift
+public protocol LoggingProtocol: CoreLoggingProtocol {
+    func trace(_ message: String, metadata: LogMetadata?, source: String) async
+    func debug(_ message: String, metadata: LogMetadata?, source: String) async
+    func info(_ message: String, metadata: LogMetadata?, source: String) async
+    func warning(_ message: String, metadata: LogMetadata?, source: String) async
+    func error(_ message: String, metadata: LogMetadata?, source: String) async
+    func critical(_ message: String, metadata: LogMetadata?, source: String) async
+}
+```
+
+#### PrivacyAwareLoggingProtocol
+
+Enhanced logging protocol with privacy controls:
+
+```swift
+public protocol PrivacyAwareLoggingProtocol: LoggingProtocol {
+    /// Log a message with explicit privacy controls
+    func log(
+        _ level: LogLevel,
+        _ message: PrivacyString,
+        metadata: LogMetadata?,
+        source: String
+    ) async
+    
+    /// Log sensitive information with appropriate redaction
+    func logSensitive(
+        _ level: LogLevel,
+        _ message: String,
+        sensitiveValues: [String: Any],
+        source: String
+    ) async
+    
+    /// Log an error with privacy controls
+    func logError(
+        _ error: Error,
+        privacyLevel: LogPrivacyLevel,
+        metadata: LogMetadata?,
+        source: String
+    ) async
+}
+```
+
+### Implementations
+
+#### PrivacyAwareLogger
+
+An actor that implements the PrivacyAwareLoggingProtocol:
+
+```swift
+public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol {
+    // Implementation of the privacy-aware logging protocol
+}
+```
+
+#### OSLogPrivacyBackend
+
+A backend that uses Apple's OSLog system with privacy annotations:
+
+```swift
+public struct OSLogPrivacyBackend: LoggingBackend {
+    // Implementation that maps LogPrivacyLevel to OSLog privacy qualifiers
+}
+```
+
+#### Factory Pattern
+
+```swift
+public enum PrivacyAwareLoggingFactory {
+    /// Create a logger with privacy features
+    public static func createLogger(
+        minimumLevel: LogLevel = .info,
+        identifier: String,
+        backend: LoggingBackend? = nil,
+        privacyLevel: LogPrivacyLevel = .auto
+    ) -> any PrivacyAwareLoggingProtocol {
+        // Creates the appropriate logger instance
+    }
+}
+```
+
+### Usage Examples
+
+#### Basic Privacy-Aware Logging
+
+```swift
+// Create a privacy-aware logger
+let logger = PrivacyAwareLoggingFactory.createLogger(
+    identifier: "com.umbraapp.example"
+)
+
+// Log with explicit privacy annotations
+await logger.log(
+    .info,
+    "Processing payment for user \(private: userId) with amount \(public: amount)",
+    metadata: [
+        "transactionId": (value: transactionId, privacy: .public),
+        "cardInfo": (value: cardLastFour, privacy: .private)
+    ],
+    source: "PaymentProcessor"
+)
+```
+
+#### Sensitive Data Handling
+
+```swift
+// Simplified logging of sensitive data
+await logger.logSensitive(
+    .debug,
+    "Authentication attempt",
+    sensitiveValues: [
+        "username": username,
+        "ipAddress": ipAddress
+    ],
+    source: "AuthenticationService"
+)
+```
+
+#### Error Logging with Privacy
+
+```swift
+do {
+    // Operation code
+} catch {
+    await logger.logError(
+        error,
+        privacyLevel: .private,
+        metadata: [
+            "errorCode": (value: (error as? AppError)?.code ?? -1, privacy: .public),
+            "timestamp": (value: Date(), privacy: .public)
+        ],
+        source: "OperationManager"
+    )
+}
+```
+
+### MVVM Integration
+
+The privacy-enhanced logging system integrates cleanly with the MVVM architecture:
+
+```swift
+public class KeychainSecurityViewModel {
+    private let logger: PrivacyAwareLoggingProtocol
+    private let keychainService: KeychainSecurityProtocol
+    
+    @Published private(set) var status: KeychainOperationStatus = .idle
+    
+    public func storeSecret(_ secret: String, forAccount account: String) async {
+        // Update status for UI binding
+        status = .processing
+        
+        await logger.log(
+            .info,
+            "Processing secret storage for \(private: account)",
+            metadata: [
+                "secretLength": (value: secret.count, privacy: .public)
+            ],
+            source: "KeychainSecurityViewModel"
+        )
+        
+        do {
+            try await keychainService.storeSecret(secret, forAccount: account)
+            
+            // Update status for UI binding
+            status = .completed
+            
+            await logger.info(
+                "Secret stored successfully",
+                metadata: nil,
+                source: "KeychainSecurityViewModel"
+            )
+        } catch {
+            // Update status for UI binding
+            status = .failed(error)
+            
+            await logger.logError(
+                error,
+                privacyLevel: .private,
+                metadata: nil,
+                source: "KeychainSecurityViewModel"
+            )
+        }
+    }
+}
+```
+
+### Benefits
+
+1. **Privacy by Design**: Data privacy is a first-class concern in the logging architecture
+2. **Regulatory Compliance**: Helps meet GDPR, CCPA, and other privacy regulations
+3. **Development-friendly**: More verbose in development, appropriately redacted in production
+4. **Type Safety**: Strong typing for privacy annotations
+5. **Contextual Richness**: Preserves important context whilst protecting sensitive data
+6. **MVVM Compatibility**: Seamlessly integrates with the MVVM architecture
+7. **Extensibility**: Easy to adapt for different logging backends
+
+### Implementation Guidelines
+
+1. Always use the appropriate privacy level for personal or sensitive data
+2. Prefer explicit privacy annotations over relying on automatic redaction
+3. Keep public metadata separate from private metadata
+4. Use correlation IDs to trace related log events across components
+5. Configure minimum log levels appropriately for each environment
+
+### Migration Guide
+
+When migrating from the existing adapter-based logging system:
+
+1. Replace `LoggingAdapter` instances with direct `PrivacyAwareLogger` instances
+2. Update logging calls to use the privacy-enhanced methods
+3. Add appropriate privacy annotations to sensitive data
+4. Update dependencies to inject the new logger types
+
 ## Usage Examples
 
 ### Basic Logging

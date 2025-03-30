@@ -32,7 +32,11 @@ public actor RepositoryServiceImpl: RepositoryServiceProtocol {
     repositories=[:]
     self.logger=logger
     Task {
-      await self.logger.info("Repository service initialised", metadata: nil)
+      await self.logger.info(
+        "Repository service initialised",
+        metadata: nil,
+        source: "RepositoryService"
+      )
     }
   }
 
@@ -55,11 +59,15 @@ public actor RepositoryServiceImpl: RepositoryServiceProtocol {
       "state": String(describing: state)
     ])
 
-    await logger.info("Registering repository", metadata: metadata)
+    await logger.info("Registering repository", metadata: metadata, source: "RepositoryService")
 
     // Ensure repository is accessible
     guard await repository.isAccessible() else {
-      await logger.error("Repository not accessible", metadata: metadata)
+      await logger.error(
+        "Repository not accessible",
+        metadata: metadata,
+        source: "RepositoryService"
+      )
       throw RepositoryError.permissionDenied
     }
 
@@ -67,34 +75,48 @@ public actor RepositoryServiceImpl: RepositoryServiceProtocol {
     guard repositories[identifier] == nil else {
       await logger.error(
         "Duplicate repository identifier",
-        metadata: metadata
+        metadata: metadata,
+        source: "RepositoryService"
       )
       throw RepositoryError.duplicateIdentifier
     }
 
     // Initialise repository if needed
     if case RepositoryState.uninitialized=state {
-      await logger.info("Initialising uninitialised repository", metadata: metadata)
+      await logger.info(
+        "Initialising uninitialised repository",
+        metadata: metadata,
+        source: "RepositoryService"
+      )
       try await repository.initialise()
     }
 
     // Validate repository
     do {
       guard try await repository.validate() else {
-        await logger.error("Repository validation failed", metadata: metadata)
+        await logger.error(
+          "Repository validation failed",
+          metadata: metadata,
+          source: "RepositoryService"
+        )
         throw RepositoryError.invalidRepository
       }
     } catch {
       await logger.error(
         "Repository validation error: \(error.localizedDescription)",
-        metadata: metadata
+        metadata: metadata,
+        source: "RepositoryService"
       )
       throw RepositoryError.internalError
     }
 
     // Add to registry
     repositories[identifier]=repository
-    await logger.info("Repository registered successfully", metadata: metadata)
+    await logger.info(
+      "Repository registered successfully",
+      metadata: metadata,
+      source: "RepositoryService"
+    )
   }
 
   /// Unregisters a repository from the service.
@@ -104,15 +126,19 @@ public actor RepositoryServiceImpl: RepositoryServiceProtocol {
   public func unregister(identifier: String) async throws {
     let metadata=LogMetadata(["repository_id": identifier])
 
-    await logger.info("Unregistering repository", metadata: metadata)
+    await logger.info("Unregistering repository", metadata: metadata, source: "RepositoryService")
 
     guard repositories[identifier] != nil else {
-      await logger.error("Repository not found", metadata: metadata)
+      await logger.error("Repository not found", metadata: metadata, source: "RepositoryService")
       throw RepositoryError.notFound
     }
 
     repositories.removeValue(forKey: identifier)
-    await logger.info("Repository unregistered successfully", metadata: metadata)
+    await logger.info(
+      "Repository unregistered successfully",
+      metadata: metadata,
+      source: "RepositoryService"
+    )
   }
 
   /// Gets a registered repository by its identifier.

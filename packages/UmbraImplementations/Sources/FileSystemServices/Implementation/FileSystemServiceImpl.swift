@@ -232,10 +232,10 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
 
 /// A simple no-op logger implementation for when no logger is provided
 private struct NullLogger: LoggingInterfaces.LoggingProtocol {
-  func debug(_: String, metadata _: LoggingTypes.LogMetadata?) async {}
-  func info(_: String, metadata _: LoggingTypes.LogMetadata?) async {}
-  func warning(_: String, metadata _: LoggingTypes.LogMetadata?) async {}
-  func error(_: String, metadata _: LoggingTypes.LogMetadata?) async {}
-  func critical(_: String, metadata _: LoggingTypes.LogMetadata?) async {}
+  func debug(_: String, metadata _: LoggingTypes.LogMetadata?, source _: String?) async {}
+  func info(_: String, metadata _: LoggingTypes.LogMetadata?, source _: String?) async {}
+  func warning(_: String, metadata _: LoggingTypes.LogMetadata?, source _: String?) async {}
+  func error(_: String, metadata _: LoggingTypes.LogMetadata?, source _: String?) async {}
+  func critical(_: String, metadata _: LoggingTypes.LogMetadata?, source _: String?) async {}
   func setContext(_: Any) {}
 }

@@ -23,7 +23,7 @@ import UmbraErrors
  The core service handles initialisation and shutdown of all dependent services,
  ensuring proper startup and cleanup procedures are followed.
  */
-public actor CoreServiceActor: CoreServiceProtocol, Sendable {
+public actor CoreServiceActor: CoreServiceProtocol {
   // MARK: - Properties
 
   /**
@@ -32,7 +32,7 @@ public actor CoreServiceActor: CoreServiceProtocol, Sendable {
    This follows the singleton pattern to ensure there is only one instance
    of the core service throughout the application.
    */
-  public static let shared = CoreServiceActor()
+  public static let shared=CoreServiceActor()
 
   /**
    Container for resolving service dependencies
@@ -47,7 +47,7 @@ public actor CoreServiceActor: CoreServiceProtocol, Sendable {
 
    Used to prevent multiple initialisation attempts.
    */
-  private var isInitialised = false
+  private var isInitialised=false
 
   // MARK: - Initialisation
 
@@ -57,7 +57,7 @@ public actor CoreServiceActor: CoreServiceProtocol, Sendable {
    Creates a new core service with a default service container.
    */
   private init() {
-    self.container = ServiceContainerImpl()
+    container=ServiceContainerImpl()
   }
 
   /**
@@ -78,18 +78,21 @@ public actor CoreServiceActor: CoreServiceProtocol, Sendable {
       // Initialise critical services
       try await initialiseSecurityServices()
       try await initialiseCryptoServices()
-      
+
       // Mark as initialised
-      isInitialised = true
+      isInitialised=true
     } catch {
       // Wrap any initialisation errors in a CoreError
-      throw CoreError.initialisation(message: "Failed to initialise core services: \(error.localizedDescription)")
+      throw CoreError
+        .initialisation(
+          message: "Failed to initialise core services: \(error.localizedDescription)"
+        )
     }
   }
 
   /**
    Initialises security-related services
-   
+
    - Throws: CoreError if initialisation fails
    */
   private func initialiseSecurityServices() async throws {
@@ -98,7 +101,7 @@ public actor CoreServiceActor: CoreServiceProtocol, Sendable {
 
   /**
    Initialises cryptography-related services
-   
+
    - Throws: CoreError if initialisation fails
    */
   private func initialiseCryptoServices() async throws {
@@ -152,27 +155,27 @@ public actor CoreServiceActor: CoreServiceProtocol, Sendable {
    This method does not throw errors, but logs any shutdown issues internally.
    */
   public func shutdown() async {
-    isInitialised = false
+    isInitialised=false
     // Additional shutdown logic would be implemented here
   }
 }
 
 /**
  # Core Error
- 
+
  Error type for core service operations.
  Provides specific error cases for different failure scenarios.
  */
 public enum CoreError: Error, Sendable {
   /// Initialisation of a core service failed
   case initialisation(message: String)
-  
+
   /// A requested service is not available
   case serviceNotAvailable(message: String)
-  
+
   /// An operation failed due to invalid configuration
   case invalidConfiguration(message: String)
-  
+
   /// An operation failed due to an internal error
   case internalError(message: String)
 }

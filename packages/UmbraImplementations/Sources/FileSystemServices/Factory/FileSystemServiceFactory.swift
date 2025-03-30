@@ -149,11 +149,11 @@ public final class FileSystemServiceFactory: @unchecked Sendable {
  This avoids the need for nil checks throughout the file system services code.
  */
 private struct NullLogger: LoggingInterfaces.LoggingProtocol {
-  func debug(_: String, metadata _: LoggingTypes.LogMetadata?) async {}
-  func info(_: String, metadata _: LoggingTypes.LogMetadata?) async {}
-  func notice(_: String, metadata _: LoggingTypes.LogMetadata?) async {}
-  func warning(_: String, metadata _: LoggingTypes.LogMetadata?) async {}
-  func error(_: String, metadata _: LoggingTypes.LogMetadata?) async {}
-  func critical(_: String, metadata _: LoggingTypes.LogMetadata?) async {}
-  func fault(_: String, metadata _: LoggingTypes.LogMetadata?) async {}
+  func debug(_: String, metadata _: LoggingTypes.LogMetadata?, source _: String?) async {}
+  func info(_: String, metadata _: LoggingTypes.LogMetadata?, source _: String?) async {}
+  func notice(_: String, metadata _: LoggingTypes.LogMetadata?, source _: String?) async {}
+  func warning(_: String, metadata _: LoggingTypes.LogMetadata?, source _: String?) async {}
+  func error(_: String, metadata _: LoggingTypes.LogMetadata?, source _: String?) async {}
+  func critical(_: String, metadata _: LoggingTypes.LogMetadata?, source _: String?) async {}
+  func fault(_: String, metadata _: LoggingTypes.LogMetadata?, source _: String?) async {}
 }

@@ -1,4 +1,6 @@
 import Foundation
+import SecurityCoreTypes
+import SecurityTypes
 
 /**
  # Security Provider Protocol

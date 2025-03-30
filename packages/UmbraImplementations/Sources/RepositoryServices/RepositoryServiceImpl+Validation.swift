@@ -14,21 +14,26 @@ extension RepositoryServiceImpl {
   public func validateRepository(identifier: String) async throws -> Bool {
     let metadata=LogMetadata(["repository_id": identifier])
 
-    await logger.info("Validating repository", metadata: metadata)
+    await logger.info("Validating repository", metadata: metadata, source: "RepositoryService")
 
     guard let repository=repositories[identifier] else {
-      await logger.error("Repository not found", metadata: metadata)
+      await logger.error("Repository not found", metadata: metadata, source: "RepositoryService")
       throw RepositoryError.notFound
     }
 
     do {
       let isValid=try await repository.validate()
-      await logger.info("Repository validation result: \(isValid)", metadata: metadata)
+      await logger.info(
+        "Repository validation result: \(isValid)",
+        metadata: metadata,
+        source: "RepositoryService"
+      )
       return isValid
     } catch {
       await logger.error(
         "Repository validation error: \(error.localizedDescription)",
-        metadata: metadata
+        metadata: metadata,
+        source: "RepositoryService"
       )
       throw RepositoryError.invalidOperation
     }
