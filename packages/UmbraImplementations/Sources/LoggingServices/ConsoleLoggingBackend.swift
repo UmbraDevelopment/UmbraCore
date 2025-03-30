@@ -1,3 +1,4 @@
+import Foundation
 import LoggingTypes
 import LoggingInterfaces
 
@@ -28,7 +29,7 @@ public struct ConsoleLoggingBackend: LoggingBackend {
         // Format metadata if present
         var metadataString = ""
         if let metadata = context.metadata, !metadata.isEmpty {
-            metadataString = " " + formatMetadata(metadata)
+            metadataString = " " + formatPrivacyMetadata(metadata)
         }
         
         // Format and print the log message
@@ -49,10 +50,10 @@ public struct ConsoleLoggingBackend: LoggingBackend {
     /// Provides formatting information for each log level
     /// - Parameter level: The log level to format
     /// - Returns: A tuple containing an emoji and ANSI colour code for the log level
-    private func formatForLevel(_ level: LogLevel) -> (emoji: String, colourCode: String) {
+    private func formatForLevel(_ level: LogLevel) -> (String, String) {
         switch level {
         case .trace:
-            return ("🔍", "\u{001B}[90m") // Dark gray
+            return ("🔍", "\u{001B}[90m") // Dark grey
         case .debug:
             return ("🐞", "\u{001B}[36m") // Cyan
         case .info:
@@ -62,64 +63,68 @@ public struct ConsoleLoggingBackend: LoggingBackend {
         case .error:
             return ("❌", "\u{001B}[31m") // Red
         case .critical:
-            return ("🚨", "\u{001B}[41m\u{001B}[37m") // White on red background
+            return ("🚨", "\u{001B}[35m") // Magenta
         }
     }
     
     /// Formats metadata for display
     /// - Parameter metadata: The metadata to format
-    /// - Returns: A formatted metadata string
-    private func formatMetadata(_ metadata: LogMetadata) -> String {
+    /// - Returns: A formatted string representation of the metadata
+    private func formatPrivacyMetadata(_ metadata: PrivacyMetadata) -> String {
         var parts: [String] = []
         
-        for (key, value) in metadata {
+        for key in metadata.keys {
+            guard let value = metadata[key] else { continue }
+            
+            // Access the value based on privacy level
             let formattedValue: String
             
             switch value.privacy {
             case .public:
-                formattedValue = "\(value.value)"
+                // Public data can be shown as-is
+                formattedValue = "\(key): \(value.valueString)"
+                
             case .private:
+                // In debug builds, show private data with a marker
                 #if DEBUG
-                formattedValue = "🔒[\(value.value)]"
+                formattedValue = "\(key): 🔒[\(value.valueString)]"
                 #else
-                formattedValue = "🔒[REDACTED]"
+                formattedValue = "\(key): 🔒[REDACTED]"
                 #endif
+                
             case .sensitive:
-                formattedValue = "🔐[SENSITIVE]"
-            case .hash:
-                if let stringValue = value.value as? String {
-                    let hashedValue = simpleHash(stringValue)
-                    formattedValue = "🔏[\(hashedValue)]"
-                } else {
-                    formattedValue = "🔏[HASHED]"
-                }
-            case .auto:
+                // Sensitive data gets additional protection
                 #if DEBUG
-                formattedValue = "🔍[\(value.value)]"
+                formattedValue = "\(key): 🔐[\(value.valueString)]"
                 #else
-                formattedValue = "🔍[AUTO-REDACTED]"
+                formattedValue = "\(key): 🔐[SENSITIVE]"
+                #endif
+                
+            case .hash:
+                // Hashed data shows a placeholder
+                formattedValue = "\(key): 🔏[HASHED]"
+                
+            case .auto:
+                // Auto adapts based on build configuration
+                #if DEBUG
+                formattedValue = "\(key): \(value.valueString)"
+                #else
+                formattedValue = "\(key): [REDACTED]"
                 #endif
             }
             
-            parts.append("\(key): \(formattedValue)")
+            parts.append(formattedValue)
         }
         
-        return "{" + parts.joined(separator: ", ") + "}"
+        return parts.isEmpty ? "" : "{" + parts.joined(separator: ", ") + "}"
     }
     
-    /// Creates a simple hash representation of a string
-    /// - Parameter value: The string to hash
-    /// - Returns: A simple hash string
-    private func simpleHash(_ value: String) -> String {
-        // This is a placeholder for a real hashing algorithm
-        // In a real implementation, this would use a cryptographic hash function
-        let chars = Array(value)
-        var hashValue = 0
-        
-        for char in chars {
-            hashValue = ((hashValue << 5) &+ hashValue) &+ Int(char.asciiValue ?? 0)
-        }
-        
-        return String(format: "%08x", abs(hashValue))
+    /// Whether the specified log level should be logged given the minimum level
+    /// - Parameters:
+    ///   - level: The log level to check
+    ///   - minimumLevel: The minimum level to log
+    /// - Returns: True if the level should be logged
+    public func shouldLog(level: LogLevel, minimumLevel: LogLevel) -> Bool {
+        return level >= minimumLevel
     }
 }

@@ -30,13 +30,44 @@ public struct ConsoleLogDestination: LoggingTypes.LogDestination {
     self.minimumLevel=minimumLevel
     self.formatter=formatter ?? DefaultLogFormatter()
   }
+  
+  /// Convert LogLevel to numeric value for comparison
+  /// - Parameter level: The LogLevel to convert
+  /// - Returns: Numeric value representing severity
+  private func logLevelToNumericValue(_ level: LogLevel) -> Int {
+    switch level {
+    case .trace: return 0
+    case .debug: return 1
+    case .info: return 2
+    case .warning: return 3
+    case .error: return 4
+    case .critical: return 5
+    }
+  }
+  
+  /// Convert UmbraLogLevel to numeric value for comparison
+  /// - Parameter level: The UmbraLogLevel to convert
+  /// - Returns: Numeric value representing severity
+  private func umbraLogLevelToNumericValue(_ level: UmbraLogLevel) -> Int {
+    switch level {
+    case .verbose: return 0
+    case .debug: return 1
+    case .info: return 2
+    case .warning: return 3
+    case .error: return 4
+    case .critical: return 5
+    }
+  }
 
   /// Write a log entry to the console
   /// - Parameter entry: The log entry to write
   /// - Throws: LoggingError if writing fails
   public func write(_ entry: LoggingTypes.LogEntry) async throws {
-    // Check minimum level
-    guard entry.level.rawValue >= minimumLevel.rawValue else {
+    // Check minimum level using numeric values for comparison
+    let entryLevelValue = logLevelToNumericValue(entry.level)
+    let minimumLevelValue = umbraLogLevelToNumericValue(minimumLevel)
+    
+    guard entryLevelValue >= minimumLevelValue else {
       return
     }
 
@@ -50,6 +81,6 @@ public struct ConsoleLogDestination: LoggingTypes.LogDestination {
   ///
   /// Console output is written immediately, so this is a no-op.
   public func flush() async throws {
-    // Console output is immediate, nothing to flush
+    // No action needed, console output is immediate
   }
 }

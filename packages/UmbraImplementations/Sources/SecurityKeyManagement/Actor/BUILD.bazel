@@ -13,5 +13,6 @@ swift_library(
         "//packages/UmbraInterfaces/Sources/SecurityCoreInterfaces",
         "//packages/UmbraInterfaces/Sources/LoggingInterfaces",
         "//packages/UmbraImplementations/Sources/SecurityKeyManagement/Types:SecurityKeyTypes",
+        "//packages/UmbraImplementations/Sources/LoggingServices",
     ],
 )

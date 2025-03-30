@@ -3,7 +3,7 @@ import LoggingInterfaces
 
 /// An actor that implements the PrivacyAwareLoggingProtocol with support for
 /// privacy controls and proper isolation for concurrent logging.
-public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol {
+public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
     /// The minimum log level to process
     private let minimumLevel: LogLevel
     
@@ -13,15 +13,27 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol {
     /// The backend that will actually write the logs
     private let backend: LoggingBackend
     
+    /// The logging actor required by LoggingProtocol
+    public let loggingActor: LoggingActor
+    
     /// Creates a new privacy-aware logger
     /// - Parameters:
     ///   - minimumLevel: The minimum log level to process
     ///   - identifier: The identifier for this logger instance
     ///   - backend: The backend that will actually write the logs
-    public init(minimumLevel: LogLevel, identifier: String, backend: LoggingBackend) {
+    ///   - loggingActor: Optional custom logging actor, will create a default one if not provided
+    public init(
+        minimumLevel: LogLevel, 
+        identifier: String, 
+        backend: LoggingBackend,
+        loggingActor: LoggingActor? = nil
+    ) {
         self.minimumLevel = minimumLevel
         self.identifier = identifier
         self.backend = backend
+        
+        // Use provided logging actor or create a default one
+        self.loggingActor = loggingActor ?? LoggingActor(destinations: [])
     }
     
     /// Implements the core logging functionality
@@ -42,6 +54,9 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol {
             context: context,
             subsystem: identifier
         )
+        
+        // Also log to the logging actor for compatibility
+        await loggingActor.log(level: level, message: message, context: context)
     }
     
     // MARK: - LoggingProtocol Methods
@@ -111,6 +126,9 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol {
             context: context,
             subsystem: identifier
         )
+        
+        // Also log to the logging actor for compatibility
+        await loggingActor.log(level: level, message: processedMessage, context: context)
     }
     
     /// Log sensitive information with appropriate redaction
@@ -144,6 +162,9 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol {
             context: context,
             subsystem: identifier
         )
+        
+        // Also log to the logging actor for compatibility
+        await loggingActor.log(level: level, message: message, context: context)
     }
     
     /// Log an error with privacy controls

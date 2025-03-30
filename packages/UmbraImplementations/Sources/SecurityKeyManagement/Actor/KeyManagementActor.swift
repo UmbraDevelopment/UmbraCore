@@ -6,6 +6,7 @@ import SecurityCoreTypes
 import SecurityKeyTypes
 import SecurityTypes
 import UmbraErrors
+import LoggingServices
 
 /**
  # KeyManagementActor
@@ -130,7 +131,10 @@ public actor KeyManagementActor: KeyManagementProtocol {
     if let key=await keyStore.getKey(identifier: sanitizeIdentifier(identifier)) {
       await keyLogger.logOperationSuccess(
         keyIdentifier: identifier,
-        operation: "retrieve"
+        operation: "retrieve",
+        result: key as SecureBytes,  // Explicitly specify SecureBytes as the generic parameter type
+        additionalContext: LogMetadataDTOCollection(),
+        message: "Retrieved key with identifier"
       )
       return .success(key)
     } else {
@@ -195,7 +199,10 @@ public actor KeyManagementActor: KeyManagementProtocol {
     await keyStore.storeKey(key, identifier: sanitizedIdentifier)
     await keyLogger.logOperationSuccess(
       keyIdentifier: identifier,
-      operation: "store"
+      operation: "store",
+      result: nil as Void?,  // Explicitly specify Void as the generic parameter type
+      additionalContext: LogMetadataDTOCollection(),
+      message: "Stored key with identifier"
     )
     return .success(())
   }
@@ -229,7 +236,10 @@ public actor KeyManagementActor: KeyManagementProtocol {
       await keyStore.deleteKey(identifier: sanitizedIdentifier)
       await keyLogger.logOperationSuccess(
         keyIdentifier: identifier,
-        operation: "delete"
+        operation: "delete",
+        result: nil as Void?,  // Explicitly specify Void as the generic parameter type
+        additionalContext: LogMetadataDTOCollection(),
+        message: "Deleted key with identifier"
       )
       return .success(())
     } else {
@@ -283,6 +293,7 @@ public actor KeyManagementActor: KeyManagementProtocol {
         await keyLogger.logOperationSuccess(
           keyIdentifier: identifier,
           operation: "rotate",
+          result: nil as Void?,  // Explicitly specify Void as the generic parameter type
           additionalContext: additionalContext,
           message: "Generated new key for rotation"
         )
@@ -296,6 +307,7 @@ public actor KeyManagementActor: KeyManagementProtocol {
         await keyLogger.logOperationSuccess(
           keyIdentifier: identifier,
           operation: "rotate",
+          result: nil as Void?,  // Explicitly specify Void as the generic parameter type
           additionalContext: additionalContext,
           message: "Stored new key with identifier"
         )
@@ -313,6 +325,7 @@ public actor KeyManagementActor: KeyManagementProtocol {
           await keyLogger.logOperationSuccess(
             keyIdentifier: identifier,
             operation: "rotate",
+            result: nil as Void?,  // Explicitly specify Void as the generic parameter type
             additionalContext: additionalContext,
             message: "Re-encrypted data with new key"
           )
@@ -359,6 +372,7 @@ public actor KeyManagementActor: KeyManagementProtocol {
     await keyLogger.logOperationSuccess(
       keyIdentifier: "all",
       operation: "list",
+      result: identifiers as [String],  // Explicitly specify [String] as the generic parameter type
       additionalContext: additionalContext,
       message: "Found \(identifiers.count) key identifiers"
     )
@@ -394,7 +408,7 @@ public struct DefaultKeyGenerator: KeyGenerator {
   public func generateKey() async throws -> SecureBytes {
     // For a real implementation, this would use a secure random number generator
     // and more sophisticated key generation logic
-    let keyData=SecureBytes(repeating: 0, count: 32)
+    let keyData = try SecureBytes(count: 32)
     return keyData
   }
 }

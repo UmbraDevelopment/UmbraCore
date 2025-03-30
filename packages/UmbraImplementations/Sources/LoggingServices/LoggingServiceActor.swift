@@ -341,7 +341,7 @@ public actor LoggingServiceActor: LoggingServiceProtocol {
     
     let minLevel: Int
     switch minimumLogLevel {
-      case .trace: minLevel = 0
+      case .verbose: minLevel = 0  // UmbraLogLevel uses .verbose instead of .trace
       case .debug: minLevel = 1
       case .info: minLevel = 2
       case .warning: minLevel = 3
@@ -495,45 +495,45 @@ public struct DefaultLogFormatter: LoggingInterfaces.LogFormatterProtocol, Senda
   /// - Parameter entry: The log entry to format
   /// - Returns: A string representation of the log entry
   public func format(_ entry: LoggingTypes.LogEntry) -> String {
-    var components=[String]()
-
+    var components: [String] = []
+    
+    // Add log level
+    components.append("[\(entry.level)]")
+    
     // Add timestamp if configured
     if configuration.includeTimestamp {
-      components.append(formatTimestamp(entry.timestamp))
+      // Create TimePointAdapter from LogTimestamp's secondsSinceEpoch
+      let timePointAdapter = TimePointAdapter(
+        timeIntervalSince1970: Double(entry.timestamp.secondsSinceEpoch)
+      )
+      components.append(formatTimestamp(timePointAdapter))
     }
-
-    // Add log level if configured
-    if configuration.includeLevel {
-      components.append("[\(formatLogLevel(entry.level))]")
-    }
-
-    // Add source if configured and available
-    if configuration.includeSource {
-      // Entry.source is no longer optional since it has a default value
+    
+    // Add message
+    components.append(entry.message)
+    
+    // Add source if configured
+    if configuration.includeSource && !entry.source.isEmpty {
       components.append("[\(entry.source)]")
     }
-
-    // Add basic message
-    components.append(entry.message)
-
-    // Add metadata
+    
+    // Add metadata if configured and available
     if configuration.includeMetadata, let metadata = entry.metadata, !metadata.isEmpty {
-      // Convert PrivacyMetadata to a simple string representation
-      let metadataString = metadata.entries()
+      let metadataString = metadata.keys
+        .sorted()
         .map { key -> String in
           if let value = metadata[key] {
-            return "\(key): \(value.value)"
+            // Access the value string from PrivacyMetadataValue
+            return "\(key): \(value.valueString)"
           } else {
             return "\(key): nil"
           }
         }
         .joined(separator: ", ")
       
-      if !metadataString.isEmpty {
-        components.append("{" + metadataString + "}")
-      }
+      components.append("{\(metadataString)}")
     }
-
+    
     return components.joined(separator: " ")
   }
 

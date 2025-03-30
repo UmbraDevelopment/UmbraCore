@@ -63,91 +63,52 @@ public struct OSLogPrivacyBackend: LoggingBackend {
     /// Formats metadata with appropriate privacy annotations for OSLog
     /// - Parameter metadata: The metadata with privacy annotations
     /// - Returns: A formatted string with OSLog privacy qualifiers
-    private func formatMetadataWithPrivacy(_ metadata: LogMetadata) -> String {
+    private func formatMetadataWithPrivacy(_ metadata: PrivacyMetadata) -> String {
         var parts: [String] = []
         
-        for (key, value) in metadata {
+        // Iterate through each key-value pair
+        for key in metadata.keys {
+            guard let value = metadata[key] else { continue }
+            
             let privacyAnnotation: String
+            let stringValue = value.valueString
             
-            #if canImport(OSLog)
-            // Apply different OSLog privacy annotations based on our LogPrivacyLevel
+            // Apply appropriate privacy annotation based on the privacy level
             switch value.privacy {
             case .public:
-                // Public information: no privacy protection needed
-                privacyAnnotation = "\(key): \(value.value)"
-                
-            case .private:
-                // Private information: use OSLog's private qualifier
-                privacyAnnotation = "\(key): \(OSLogPrivate: value.value)"
-                
-            case .sensitive:
-                // Sensitive information: use OSLog's private qualifier
-                // In DEBUG, we show it with a marker, otherwise completely redacted
-                #if DEBUG
-                privacyAnnotation = "\(key): 🔐[\(OSLogPrivate: value.value)]"
-                #else
-                privacyAnnotation = "\(key): 🔐[SENSITIVE]"
-                #endif
-                
-            case .hash:
-                // Hashed information: compute a hash for correlation
-                if let stringValue = value.value as? String {
-                    let hashedValue = simpleHash(stringValue)
-                    privacyAnnotation = "\(key): 🔏[\(hashedValue)]"
-                } else {
-                    privacyAnnotation = "\(key): 🔏[HASHED]"
-                }
-                
-            case .auto:
-                // Auto privacy: Use OSLog's default behavior which is smart about PII
-                privacyAnnotation = "\(key): \(value.value)"
+                privacyAnnotation = "%{public}"
+            case .private, .sensitive, .hash, .auto:
+                privacyAnnotation = "%{private}"
             }
-            #else
-            // Fallback for platforms without OSLog
-            switch value.privacy {
-            case .public:
-                privacyAnnotation = "\(key): \(value.value)"
-            case .private, .sensitive:
-                #if DEBUG
-                privacyAnnotation = "\(key): 🔒[\(value.value)]"
-                #else
-                privacyAnnotation = "\(key): 🔒[REDACTED]"
-                #endif
-            case .hash:
-                if let stringValue = value.value as? String {
-                    let hashedValue = simpleHash(stringValue)
-                    privacyAnnotation = "\(key): 🔏[\(hashedValue)]"
-                } else {
-                    privacyAnnotation = "\(key): 🔏[HASHED]"
-                }
-            case .auto:
-                #if DEBUG
-                privacyAnnotation = "\(key): \(value.value)"
-                #else
-                privacyAnnotation = "\(key): [REDACTED]"
-                #endif
-            }
-            #endif
             
-            parts.append(privacyAnnotation)
+            parts.append("\(key): \(privacyAnnotation)\(stringValue)")
         }
         
-        return "{" + parts.joined(separator: ", ") + "}"
+        return parts.isEmpty ? "" : "{" + parts.joined(separator: ", ") + "}"
     }
     
-    /// Creates a simple hash representation of a string
-    /// - Parameter value: The string to hash
-    /// - Returns: A simple hash string
-    private func simpleHash(_ value: String) -> String {
-        // This is a placeholder for a real hashing algorithm
-        // In a real implementation, this would use a cryptographic hash function
-        let chars = Array(value)
-        var hashValue = 0
-        
-        for char in chars {
-            hashValue = ((hashValue << 5) &+ hashValue) &+ Int(char.asciiValue ?? 0)
+    /// Whether the specified log level should be logged given the minimum level
+    /// - Parameters:
+    ///   - level: The log level to check
+    ///   - minimumLevel: The minimum level to log
+    /// - Returns: True if the level should be logged
+    public func shouldLog(level: LogLevel, minimumLevel: LogLevel) -> Bool {
+        let levelValue = logLevelToNumericValue(level)
+        let minimumValue = logLevelToNumericValue(minimumLevel)
+        return levelValue >= minimumValue
+    }
+    
+    /// Converts a LogLevel to a numeric value for comparison
+    /// - Parameter level: The log level to convert
+    /// - Returns: A numeric value representing the severity
+    private func logLevelToNumericValue(_ level: LogLevel) -> Int {
+        switch level {
+        case .trace: return 0
+        case .debug: return 1
+        case .info: return 2
+        case .warning: return 3
+        case .error: return 4
+        case .critical: return 5
         }
-        
-        return String(format: "%08x", abs(hashValue))
     }
 }

@@ -7,138 +7,127 @@ import LoggingTypes
 /// throughout the application. It follows the Alpha Dot Five architecture
 /// pattern of having concrete implementations separate from interfaces.
 public final class DefaultLoggingServiceImpl: LoggingProtocol {
-
+  
+  /// The logging actor required by LoggingProtocol
+  public let loggingActor: LoggingActor
+  
   /// Initialises a new DefaultLoggingServiceImpl
-  public init() {
-    // Implementation-specific initialisation can be added here
+  public init(loggingActor: LoggingActor? = nil) {
+    // Create a default logging actor if none provided
+    self.loggingActor = loggingActor ?? LoggingActor(destinations: [])
   }
-
+  
+  /// Implement the core logging functionality required by CoreLoggingProtocol
+  public func logMessage(_ level: LogLevel, _ message: String, context: LogContext) async {
+    // Forward to the logging actor
+    await loggingActor.log(level: level, message: message, context: context)
+  }
+  
+  /// Log a trace message
+  /// - Parameters:
+  ///   - message: The message to log
+  ///   - metadata: Optional metadata
+  ///   - source: Source component identifier
+  public func trace(_ message: String, metadata: PrivacyMetadata?, source: String) async {
+    await log(.trace, message, metadata: metadata, source: source)
+  }
+  
   /// Log a debug message
   /// - Parameters:
   ///   - message: The message to log
   ///   - metadata: Optional metadata
-  ///   - source: Optional source component identifier
-  public func debug(_ message: String, metadata: LoggingTypes.LogMetadata?, source: String?) async {
-    await log(
-      level: LoggingTypes.UmbraLogLevel.debug,
-      message: message,
-      metadata: metadata,
-      source: source
-    )
+  ///   - source: Source component identifier
+  public func debug(_ message: String, metadata: PrivacyMetadata?, source: String) async {
+    await log(.debug, message, metadata: metadata, source: source)
   }
 
   /// Log an info message
   /// - Parameters:
   ///   - message: The message to log
   ///   - metadata: Optional metadata
-  ///   - source: Optional source component identifier
-  public func info(_ message: String, metadata: LoggingTypes.LogMetadata?, source: String?) async {
-    await log(
-      level: LoggingTypes.UmbraLogLevel.info,
-      message: message,
-      metadata: metadata,
-      source: source
-    )
+  ///   - source: Source component identifier
+  public func info(_ message: String, metadata: PrivacyMetadata?, source: String) async {
+    await log(.info, message, metadata: metadata, source: source)
   }
 
   /// Log a warning message
   /// - Parameters:
   ///   - message: The message to log
   ///   - metadata: Optional metadata
-  ///   - source: Optional source component identifier
-  public func warning(
-    _ message: String,
-    metadata: LoggingTypes.LogMetadata?,
-    source: String?
-  ) async {
-    await log(
-      level: LoggingTypes.UmbraLogLevel.warning,
-      message: message,
-      metadata: metadata,
-      source: source
-    )
+  ///   - source: Source component identifier
+  public func warning(_ message: String, metadata: PrivacyMetadata?, source: String) async {
+    await log(.warning, message, metadata: metadata, source: source)
   }
 
   /// Log an error message
   /// - Parameters:
   ///   - message: The message to log
   ///   - metadata: Optional metadata
-  ///   - source: Optional source component identifier
+  ///   - source: Source component identifier
+  public func error(_ message: String, metadata: PrivacyMetadata?, source: String) async {
+    await log(.error, message, metadata: metadata, source: source)
+  }
+  
+  /// Log a critical message
+  /// - Parameters:
+  ///   - message: The message to log
+  ///   - metadata: Optional metadata
+  ///   - source: Source component identifier
+  public func critical(_ message: String, metadata: PrivacyMetadata?, source: String) async {
+    await log(.critical, message, metadata: metadata, source: source)
+  }
+  
+  // MARK: - Deprecated Methods (for backward compatibility)
+  
+  /// Legacy debug method - will be removed in future versions
+  /// @deprecated Use debug(_:metadata:source:) instead
+  @available(*, deprecated, message: "Use debug(_:metadata:source:) instead")
+  public func debug(_ message: String, metadata: LoggingTypes.LogMetadata?, source: String?) async {
+    let privacyMetadata = convertToPrivacyMetadata(metadata)
+    await debug(message, metadata: privacyMetadata, source: source ?? "unknown")
+  }
+
+  /// Legacy info method - will be removed in future versions
+  /// @deprecated Use info(_:metadata:source:) instead
+  @available(*, deprecated, message: "Use info(_:metadata:source:) instead")
+  public func info(_ message: String, metadata: LoggingTypes.LogMetadata?, source: String?) async {
+    let privacyMetadata = convertToPrivacyMetadata(metadata)
+    await info(message, metadata: privacyMetadata, source: source ?? "unknown")
+  }
+
+  /// Legacy warning method - will be removed in future versions
+  /// @deprecated Use warning(_:metadata:source:) instead
+  @available(*, deprecated, message: "Use warning(_:metadata:source:) instead")
+  public func warning(
+    _ message: String,
+    metadata: LoggingTypes.LogMetadata?,
+    source: String?
+  ) async {
+    let privacyMetadata = convertToPrivacyMetadata(metadata)
+    await warning(message, metadata: privacyMetadata, source: source ?? "unknown")
+  }
+
+  /// Legacy error method - will be removed in future versions
+  /// @deprecated Use error(_:metadata:source:) instead
+  @available(*, deprecated, message: "Use error(_:metadata:source:) instead")
   public func error(_ message: String, metadata: LoggingTypes.LogMetadata?, source: String?) async {
-    await log(
-      level: LoggingTypes.UmbraLogLevel.error,
-      message: message,
-      metadata: metadata,
-      source: source
-    )
+    let privacyMetadata = convertToPrivacyMetadata(metadata)
+    await error(message, metadata: privacyMetadata, source: source ?? "unknown")
   }
 
   // MARK: - Private Methods
 
-  /// Internal logging implementation
-  /// - Parameters:
-  ///   - level: Log level
-  ///   - message: Message to log
-  ///   - metadata: Optional metadata
-  ///   - source: Optional source component identifier
-  private func log(
-    level: LoggingTypes.UmbraLogLevel,
-    message: String,
-    metadata: LoggingTypes.LogMetadata?,
-    source: String?
-  ) async {
-    // Implementation would typically forward to a logger or console
-    // This is a simplified implementation
-
-    // Convert metadata to the format expected by LogEntry
-    let privacyMetadata: PrivacyMetadata? = metadata.map { metadata in
-        var result = PrivacyMetadata()
-        for (key, value) in metadata.asDictionary {
-            // Default to private privacy level for all converted metadata
-            result[key] = PrivacyMetadataValue(value: value, privacy: .private)
-        }
-        return result
+  /// Convert from old LogMetadata format to new PrivacyMetadata format
+  /// - Parameter metadata: Old metadata format
+  /// - Returns: New privacy-aware metadata format
+  private func convertToPrivacyMetadata(_ metadata: LoggingTypes.LogMetadata?) -> PrivacyMetadata? {
+    guard let metadata = metadata else { return nil }
+    
+    var result = PrivacyMetadata()
+    for (key, value) in metadata.asDictionary {
+        // Default to private privacy level for all converted metadata
+        result[key] = PrivacyMetadataValue(value: value, privacy: .private)
     }
-
-    // Create a LogLevel from UmbraLogLevel - using the correct case names
-    let logLevel: LogLevel
-    switch level {
-        case .verbose: logLevel = .trace // UmbraLogLevel.verbose maps to LogLevel.trace
-        case .debug: logLevel = .debug
-        case .info: logLevel = .info
-        case .warning: logLevel = .warning
-        case .error: logLevel = .error
-        case .critical: logLevel = .critical
-    }
-
-    // Create the log entry - not used in this implementation but would be in a real one
-    Task {
-        // LogTimestamp.now() is an async function so we need a Task
-        let timestamp = await LogTimestamp.now()
-        _ = LoggingTypes.LogEntry(
-            level: logLevel,
-            message: message,
-            metadata: privacyMetadata,
-            source: source ?? "DefaultLogger",
-            entryID: nil,
-            timestamp: timestamp
-        )
-    }
-
-    // In a real implementation, this would:
-    // 1. Write to console
-    // 2. Save to file
-    // 3. Send to network service, etc.
-
-    // For now, just print to the console
-    print("[\(level)] \(message)")
-
-    if let metadata = metadata, !metadata.asDictionary.isEmpty {
-      print("  Metadata: \(metadata.asDictionary)")
-    }
-
-    if let source {
-      print("  Source: \(source)")
-    }
+    return result
   }
 }

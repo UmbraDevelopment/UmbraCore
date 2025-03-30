@@ -120,6 +120,28 @@ public struct OSLogDestination: LoggingTypes.LogDestination {
     return result
   }
 
+  /// Check if a privacy level is considered public
+  /// - Parameter privacy: The OSLogPrivacy value to check
+  /// - Returns: true if the privacy level is public
+  private func isPublic(_ privacy: OSLogPrivacy) -> Bool {
+    // Since OSLogPrivacy doesn't conform to Equatable,
+    // we need to use a different approach
+    #if DEBUG
+    // In debug mode, we can use string comparison as a way to determine
+    if String(describing: privacy) == String(describing: OSLogPrivacy.public) {
+        return true
+    }
+    return false
+    #else
+    // In release mode, we use the tag defined in the original privacy level
+    // This is implementation-specific but provides a way to check in release builds
+    if case OSLogPrivacy.public = privacy {
+        return true
+    }
+    return false
+    #endif
+  }
+
   /// Write a log entry to OSLog
   /// - Parameter entry: The log entry to write
   /// - Throws: LoggingError if writing fails
@@ -174,9 +196,12 @@ public struct OSLogDestination: LoggingTypes.LogDestination {
 
     // Format metadata if present
     if !filteredMetadata.isEmpty {
-      // Use if/else instead of switch for OSLogPrivacy comparison
-      if messagePrivacy == .public {
-        if metadataPrivacy == .public {
+      // Use helper function instead of direct equality comparison
+      let isMessagePublic = isPublic(messagePrivacy)
+      let isMetadataPublic = isPublic(metadataPrivacy)
+      
+      if isMessagePublic {
+        if isMetadataPublic {
           os_log(
             "%{public}@ [Metadata: %{public}@]",
             log: osLog,
@@ -194,7 +219,7 @@ public struct OSLogDestination: LoggingTypes.LogDestination {
           )
         }
       } else {
-        if metadataPrivacy == .public {
+        if isMetadataPublic {
           os_log(
             "%{private}@ [Metadata: %{public}@]",
             log: osLog,
@@ -214,7 +239,8 @@ public struct OSLogDestination: LoggingTypes.LogDestination {
       }
     } else {
       // Just log the message with appropriate privacy
-      if messagePrivacy == .public {
+      let isMessagePublic = isPublic(messagePrivacy)
+      if isMessagePublic {
         os_log("%{public}@", log: osLog, type: type, entry.message)
       } else {
         os_log("%{private}@", log: osLog, type: type, entry.message)
