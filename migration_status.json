@@ -26,7 +26,11 @@
       "ErrorLoggingServices",
       "LoggingServices",
       "LoggingInterfaces",
-      "LoggingTypes"
+      "LoggingTypes",
+      "ErrorCoreTypes",
+      "ErrorHandlingInterfaces",
+      "ErrorDomainsImpl",
+      "ErrorHandlingImpl"
     ],
     "migration_date": "2025-03-27",
     "blocking_issues": [],
@@ -427,5 +431,58 @@
     "migration_date": "2025-03-29",
     "blocking_issues": [],
     "notes": "Successfully migrated to Alpha Dot Five architecture with LogPrivacy features for enhanced data security."
+  },
+  "ErrorCoreTypes": {
+    "status": "Completed",
+    "dependencies": [
+      "UmbraErrors"
+    ],
+    "dependents": [
+      "ErrorHandlingInterfaces",
+      "ErrorDomainsImpl",
+      "ErrorHandlingImpl"
+    ],
+    "migration_date": "2025-03-30",
+    "blocking_issues": [],
+    "notes": "Successfully migrated from ErrorHandling to Alpha Dot Five architecture with proper error context, source tracking, and domain types. Uses British spelling in documentation."
+  },
+  "ErrorHandlingInterfaces": {
+    "status": "Completed",
+    "dependencies": [
+      "ErrorCoreTypes",
+      "LoggingInterfaces",
+      "LoggingTypes"
+    ],
+    "dependents": [
+      "ErrorDomainsImpl",
+      "ErrorHandlingImpl"
+    ],
+    "migration_date": "2025-03-30",
+    "blocking_issues": [],
+    "notes": "Successfully migrated from ErrorHandling to Alpha Dot Five architecture with clear protocol boundaries for error domains, handling, mapping, and logging."
+  },
+  "ErrorDomainsImpl": {
+    "status": "Completed",
+    "dependencies": [
+      "ErrorCoreTypes",
+      "ErrorHandlingInterfaces"
+    ],
+    "dependents": [],
+    "migration_date": "2025-03-30",
+    "blocking_issues": [],
+    "notes": "Successfully migrated from ErrorHandling to Alpha Dot Five architecture with domain-specific error types for security-related errors. Uses British spelling in documentation."
+  },
+  "ErrorHandlingImpl": {
+    "status": "Completed",
+    "dependencies": [
+      "ErrorCoreTypes",
+      "ErrorHandlingInterfaces",
+      "LoggingInterfaces",
+      "LoggingTypes"
+    ],
+    "dependents": [],
+    "migration_date": "2025-03-30",
+    "blocking_issues": [],
+    "notes": "Successfully migrated from ErrorHandling to Alpha Dot Five architecture with DefaultErrorHandler and ErrorLoggerService implementations. Integrates with the logging system."
   }
 }
