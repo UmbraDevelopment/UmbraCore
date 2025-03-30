@@ -8,18 +8,15 @@ public protocol BackupServiceProtocol: Sendable {
   ///   - excludePaths: Optional paths to exclude
   ///   - tags: Optional tags to associate with the backup
   ///   - options: Optional backup options
-  ///   - progressReporter: Optional reporter for tracking operation progress
-  ///   - cancellationToken: Optional token for cancelling the operation
-  /// - Returns: Result of the backup operation
-  /// - Throws: `BackupError` if backup creation fails or is cancelled
+  /// - Returns: Result of the backup operation and a progress sequence
+  /// - Throws: `BackupError` if backup creation fails
+  /// - Note: The returned task can be cancelled using Swift's built-in cancellation mechanism
   func createBackup(
     sources: [URL],
     excludePaths: [URL]?,
     tags: [String]?,
-    options: BackupOptions?,
-    progressReporter: BackupProgressReporter?,
-    cancellationToken: CancellationToken?
-  ) async throws -> BackupResult
+    options: BackupOptions?
+  ) async throws -> (BackupResult, AsyncStream<BackupProgress>)
 
   /// Restores a backup
   /// - Parameters:
@@ -28,19 +25,16 @@ public protocol BackupServiceProtocol: Sendable {
   ///   - includePaths: Optional paths to include
   ///   - excludePaths: Optional paths to exclude
   ///   - options: Optional restore options
-  ///   - progressReporter: Optional reporter for tracking operation progress
-  ///   - cancellationToken: Optional token for cancelling the operation
-  /// - Returns: Result of the restore operation
-  /// - Throws: `BackupError` if restore fails or is cancelled
+  /// - Returns: Result of the restore operation and a progress sequence
+  /// - Throws: `BackupError` if restore fails
+  /// - Note: The returned task can be cancelled using Swift's built-in cancellation mechanism
   func restoreBackup(
     snapshotID: String,
     targetPath: URL,
     includePaths: [URL]?,
     excludePaths: [URL]?,
-    options: RestoreOptions?,
-    progressReporter: BackupProgressReporter?,
-    cancellationToken: CancellationToken?
-  ) async throws -> RestoreResult
+    options: RestoreOptions?
+  ) async throws -> (RestoreResult, AsyncStream<BackupProgress>)
 
   /// Lists available snapshots
   /// - Parameters:
@@ -48,46 +42,34 @@ public protocol BackupServiceProtocol: Sendable {
   ///   - before: Optional date to filter snapshots before
   ///   - after: Optional date to filter snapshots after
   ///   - options: Optional listing options
-  ///   - progressReporter: Optional reporter for tracking operation progress
-  ///   - cancellationToken: Optional token for cancelling the operation
   /// - Returns: Array of matching snapshots
-  /// - Throws: `BackupError` if listing fails or is cancelled
+  /// - Throws: `BackupError` if listing fails
   func listSnapshots(
     tags: [String]?,
     before: Date?,
     after: Date?,
-    options: ListOptions?,
-    progressReporter: BackupProgressReporter?,
-    cancellationToken: CancellationToken?
+    options: ListOptions?
   ) async throws -> [BackupSnapshot]
 
   /// Deletes a backup
   /// - Parameters:
   ///   - snapshotID: ID of the snapshot to delete
   ///   - options: Optional delete options
-  ///   - progressReporter: Optional reporter for tracking operation progress
-  ///   - cancellationToken: Optional token for cancelling the operation
-  /// - Returns: Result of the delete operation
-  /// - Throws: `BackupError` if deletion fails or is cancelled
+  /// - Returns: Result of the delete operation and a progress sequence
+  /// - Throws: `BackupError` if deletion fails
   func deleteBackup(
     snapshotID: String,
-    options: DeleteOptions?,
-    progressReporter: BackupProgressReporter?,
-    cancellationToken: CancellationToken?
-  ) async throws -> DeleteResult
+    options: DeleteOptions?
+  ) async throws -> (DeleteResult, AsyncStream<BackupProgress>)
 
   /// Performs maintenance on the backup repository
   /// - Parameters:
   ///   - type: Type of maintenance to perform
   ///   - options: Optional maintenance options
-  ///   - progressReporter: Optional reporter for tracking operation progress
-  ///   - cancellationToken: Optional token for cancelling the operation
-  /// - Returns: Result of the maintenance operation
-  /// - Throws: `BackupError` if maintenance fails or is cancelled
+  /// - Returns: Result of the maintenance operation and a progress sequence
+  /// - Throws: `BackupError` if maintenance fails
   func performMaintenance(
     type: MaintenanceType,
-    options: MaintenanceOptions?,
-    progressReporter: BackupProgressReporter?,
-    cancellationToken: CancellationToken?
-  ) async throws -> MaintenanceResult
+    options: MaintenanceOptions?
+  ) async throws -> (MaintenanceResult, AsyncStream<BackupProgress>)
 }

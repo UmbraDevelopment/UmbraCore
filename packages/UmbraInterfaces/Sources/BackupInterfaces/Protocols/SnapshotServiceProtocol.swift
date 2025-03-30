@@ -15,35 +15,26 @@ public protocol SnapshotServiceProtocol: Sendable {
   ///   - after: Optional date to filter snapshots after
   ///   - path: Optional path that must be included in the snapshot
   ///   - limit: Maximum number of snapshots to return
-  ///   - progressReporter: Optional reporter for tracking operation progress
-  ///   - cancellationToken: Optional token for cancelling the operation
   /// - Returns: Array of backup snapshots matching the criteria
-  /// - Throws: `BackupError` if the listing operation fails or is cancelled
+  /// - Throws: `BackupError` if the listing operation fails
   func listSnapshots(
     repositoryID: String?,
     tags: [String]?,
     before: Date?,
     after: Date?,
     path: URL?,
-    limit: Int?,
-    progressReporter: BackupProgressReporter?,
-    cancellationToken: CancellationToken?
+    limit: Int?
   ) async throws -> [BackupSnapshot]
 
   /// Retrieves detailed information about a specific snapshot
   /// - Parameters:
   ///   - snapshotID: ID of the snapshot
   ///   - includeFileStatistics: Whether to include detailed file statistics
-  ///   - progressReporter: Optional reporter for tracking operation progress
-  ///   - cancellationToken: Optional token for cancelling the operation
   /// - Returns: Detailed backup snapshot information
-  /// - Throws: `BackupError` if the snapshot cannot be found or accessed or the operation is
-  /// cancelled
+  /// - Throws: `BackupError` if the snapshot cannot be found or accessed
   func getSnapshotDetails(
     snapshotID: String,
-    includeFileStatistics: Bool,
-    progressReporter: BackupProgressReporter?,
-    cancellationToken: CancellationToken?
+    includeFileStatistics: Bool
   ) async throws -> BackupSnapshot
 
   /// Compares two snapshots and returns differences
@@ -51,131 +42,118 @@ public protocol SnapshotServiceProtocol: Sendable {
   ///   - snapshotID1: First snapshot ID
   ///   - snapshotID2: Second snapshot ID
   ///   - path: Optional specific path to compare
-  ///   - progressReporter: Optional reporter for tracking operation progress
-  ///   - cancellationToken: Optional token for cancelling the operation
-  /// - Returns: Snapshot difference result
-  /// - Throws: `BackupError` if comparison fails or is cancelled
+  /// - Returns: Snapshot difference result and a progress sequence
+  /// - Throws: `BackupError` if comparison fails
   func compareSnapshots(
     snapshotID1: String,
     snapshotID2: String,
-    path: URL?,
-    progressReporter: BackupProgressReporter?,
-    cancellationToken: CancellationToken?
-  ) async throws -> SnapshotDifference
+    path: URL?
+  ) async throws -> (SnapshotDifference, AsyncStream<BackupProgress>)
 
   /// Updates tags for a snapshot
   /// - Parameters:
   ///   - snapshotID: Snapshot ID to update
   ///   - addTags: Tags to add
   ///   - removeTags: Tags to remove
-  ///   - progressReporter: Optional reporter for tracking operation progress
-  ///   - cancellationToken: Optional token for cancelling the operation
   /// - Returns: Updated backup snapshot
-  /// - Throws: `BackupError` if tag update fails or is cancelled
+  /// - Throws: `BackupError` if tag update fails
   func updateSnapshotTags(
     snapshotID: String,
     addTags: [String],
-    removeTags: [String],
-    progressReporter: BackupProgressReporter?,
-    cancellationToken: CancellationToken?
+    removeTags: [String]
   ) async throws -> BackupSnapshot
 
   /// Updates the description for a snapshot
   /// - Parameters:
   ///   - snapshotID: Snapshot ID to update
   ///   - description: New description
-  ///   - progressReporter: Optional reporter for tracking operation progress
-  ///   - cancellationToken: Optional token for cancelling the operation
   /// - Returns: Updated backup snapshot
-  /// - Throws: `BackupError` if description update fails or is cancelled
+  /// - Throws: `BackupError` if description update fails
   func updateSnapshotDescription(
     snapshotID: String,
-    description: String,
-    progressReporter: BackupProgressReporter?,
-    cancellationToken: CancellationToken?
+    description: String
   ) async throws -> BackupSnapshot
 
   /// Deletes a snapshot
   /// - Parameters:
   ///   - snapshotID: Snapshot ID to delete
   ///   - pruneAfterDelete: Whether to prune repository after deletion
-  ///   - progressReporter: Optional reporter for tracking operation progress
-  ///   - cancellationToken: Optional token for cancelling the operation
-  /// - Returns: Result of deletion operation
-  /// - Throws: `BackupError` if deletion fails or is cancelled
+  /// - Returns: Result of the delete operation and a progress sequence
+  /// - Throws: `BackupError` if deletion fails
   func deleteSnapshot(
     snapshotID: String,
-    pruneAfterDelete: Bool,
-    progressReporter: BackupProgressReporter?,
-    cancellationToken: CancellationToken?
-  ) async throws -> DeleteResult
+    pruneAfterDelete: Bool
+  ) async throws -> (DeleteResult, AsyncStream<BackupProgress>)
+
+  /// Exports a snapshot to a specified location
+  /// - Parameters:
+  ///   - snapshotID: Snapshot ID to export
+  ///   - destination: Destination path for export
+  ///   - format: Export format
+  /// - Returns: Export result and a progress sequence
+  /// - Throws: `BackupError` if export fails
+  func exportSnapshot(
+    snapshotID: String,
+    destination: URL,
+    format: ExportFormat
+  ) async throws -> (ExportResult, AsyncStream<BackupProgress>)
+
+  /// Imports a snapshot from a specified location
+  /// - Parameters:
+  ///   - source: Source path for import
+  ///   - repositoryID: Target repository ID
+  ///   - format: Import format
+  /// - Returns: Import result and a progress sequence
+  /// - Throws: `BackupError` if import fails
+  func importSnapshot(
+    source: URL,
+    repositoryID: String,
+    format: ImportFormat
+  ) async throws -> (ImportResult, AsyncStream<BackupProgress>)
+
+  /// Verifies the integrity of a snapshot
+  /// - Parameters:
+  ///   - snapshotID: Snapshot ID to verify
+  ///   - level: Verification level
+  /// - Returns: Verification result and a progress sequence
+  /// - Throws: `BackupError` if verification fails
+  func verifySnapshot(
+    snapshotID: String,
+    level: VerificationLevel
+  ) async throws -> (VerificationResult, AsyncStream<BackupProgress>)
 
   /// Copies a snapshot to another repository
   /// - Parameters:
   ///   - snapshotID: Snapshot ID to copy
   ///   - targetRepositoryID: Target repository ID
-  ///   - progressReporter: Optional reporter for tracking operation progress
-  ///   - cancellationToken: Optional token for cancelling the operation
-  /// - Returns: ID of the new snapshot in the target repository
-  /// - Throws: `BackupError` if copy operation fails or is cancelled
+  /// - Returns: Copy result and a progress sequence
+  /// - Throws: `BackupError` if copy fails
   func copySnapshot(
     snapshotID: String,
-    targetRepositoryID: String,
-    progressReporter: BackupProgressReporter?,
-    cancellationToken: CancellationToken?
-  ) async throws -> String
+    targetRepositoryID: String
+  ) async throws -> (CopyResult, AsyncStream<BackupProgress>)
 
-  /// Finds files within a snapshot
+  /// Retrieves the content of a specific file in a snapshot
   /// - Parameters:
-  ///   - snapshotID: Snapshot ID to search
-  ///   - pattern: Pattern to search for
-  ///   - caseSensitive: Whether the search is case-sensitive
-  ///   - progressReporter: Optional reporter for tracking operation progress
-  ///   - cancellationToken: Optional token for cancelling the operation
-  /// - Returns: List of matching files
-  /// - Throws: `BackupError` if search fails or is cancelled
-  func findFiles(
+  ///   - snapshotID: Snapshot ID
+  ///   - path: Path to the file
+  /// - Returns: File content and metadata
+  /// - Throws: `BackupError` if file retrieval fails
+  func getFileContent(
     snapshotID: String,
-    pattern: String,
-    caseSensitive: Bool,
-    progressReporter: BackupProgressReporter?,
-    cancellationToken: CancellationToken?
-  ) async throws -> [SnapshotFile]
+    path: URL
+  ) async throws -> FileContent
 
-  /// Locks a snapshot to prevent modification or deletion
+  /// Lists the files in a directory within a snapshot
   /// - Parameters:
-  ///   - snapshotID: Snapshot ID to lock
-  ///   - progressReporter: Optional reporter for tracking operation progress
-  ///   - cancellationToken: Optional token for cancelling the operation
-  /// - Throws: `BackupError` if locking fails or is cancelled
-  func lockSnapshot(
+  ///   - snapshotID: Snapshot ID
+  ///   - path: Path to the directory
+  ///   - recursive: Whether to list files recursively
+  /// - Returns: Array of file information
+  /// - Throws: `BackupError` if listing fails
+  func listFiles(
     snapshotID: String,
-    progressReporter: BackupProgressReporter?,
-    cancellationToken: CancellationToken?
-  ) async throws
-
-  /// Unlocks a previously locked snapshot
-  /// - Parameters:
-  ///   - snapshotID: Snapshot ID to unlock
-  ///   - progressReporter: Optional reporter for tracking operation progress
-  ///   - cancellationToken: Optional token for cancelling the operation
-  /// - Throws: `BackupError` if unlocking fails or is cancelled
-  func unlockSnapshot(
-    snapshotID: String,
-    progressReporter: BackupProgressReporter?,
-    cancellationToken: CancellationToken?
-  ) async throws
-
-  /// Verifies a snapshot's integrity
-  /// - Parameters:
-  ///   - snapshotID: Snapshot ID to verify
-  ///   - progressReporter: Optional reporter for tracking operation progress
-  ///   - cancellationToken: Optional token for cancelling the operation
-  /// - Returns: Verification result
-  /// - Throws: `BackupError` if verification fails or is cancelled
-  func verifySnapshot(
-    snapshotID: String,
-    progressReporter: BackupProgressReporter?,
-    cancellationToken: CancellationToken?
-  ) async throws -> VerificationResult
+    path: URL,
+    recursive: Bool
+  ) async throws -> [FileInfo]
 }
