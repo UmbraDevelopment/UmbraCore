@@ -138,9 +138,13 @@ The privacy-aware logging system has been implemented in several critical compon
    - Factory methods for creating loggers
    - Enhanced logging in `KeyManagementActor`, `KeychainSecurityActor`, and `CryptoServiceActor`
    - Privacy-aware error logging in `DefaultErrorHandler`
+   - Integration with `ModernSnapshotServiceImpl` using component-based architecture
+   - Implementation of domain-specific `SnapshotLogContextAdapter` for privacy-aware logging
+   - Creation of `SnapshotOperationDTO` parameter objects with privacy annotations
+   - Centralised error handling with privacy context
 
 2. **In Progress**:
-   - Integration with `SnapshotServiceImpl` and other service implementations
+   - Integration with other service implementations
    - Resolving protocol conformance issues
 
 ## Integration Strategy
@@ -151,6 +155,29 @@ To fully integrate the privacy-aware logging system across UmbraCore without dis
 2. **Phase 2**: Update service implementations one by one to use the appropriate domain loggers
 3. **Phase 3**: Refine protocol hierarchies and consolidate any adapter code
 4. **Phase 4**: Implement consistent dependency injection for all loggers
+
+## Recent Implementations
+
+### Backup Services Module
+
+The Backup Services module has been fully refactored to follow the Alpha Dot Five architecture with privacy-aware logging:
+
+1. **Component-Based Architecture**:
+   - Specialised services for different operation types
+   - Clear separation of concerns following single responsibility principle
+   - Actor-based implementation for thread safety
+
+2. **Privacy-Aware Logging**:
+   - Consistent use of `SnapshotLogContextAdapter` for structured logging
+   - Privacy annotations for all parameters and metadata
+   - Centralised error handling with appropriate privacy controls
+
+3. **Type-Safe DTOs**:
+   - Operation-specific parameter objects with validation
+   - Privacy annotations integrated directly into DTOs
+   - Strongly-typed interfaces that make illegal states unrepresentable
+
+For detailed information on the Backup Services implementation, see the [BackupServices-AlphaDotFive-Architecture.md](./BackupServices-AlphaDotFive-Architecture.md) document.
 
 ## Examples
 
