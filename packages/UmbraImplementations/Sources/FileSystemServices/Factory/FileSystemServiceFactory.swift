@@ -90,39 +90,8 @@ public final class FileSystemServiceFactory: @unchecked Sendable {
   /**
    Creates a custom file system service instance with full configuration control.
 
-   This method provides complete control over all aspects of the file system service
-   configuration for specialised use cases.
-
-   Note: When providing a custom FileManager, it's important to ensure it's not accessed
-   concurrently from multiple contexts to avoid potential data races in Swift 6. The service
-   implementation isolates FileManager access within an actor to provide thread safety.
-
-   - Parameters:
-      - fileManager: The FileManager to use (isolated within the service actor)
-      - operationQueueQoS: The QoS class for background operations
-      - logger: Optional logger for operation tracking
-   - Returns: An implementation of FileSystemServiceProtocol
-   */
-  @_disfavoredOverload // Discourages use of this method to avoid Swift 6 warnings
-  public func createCustomService(
-    fileManager: FileManager=FileManager.default,
-    operationQueueQoS: QualityOfService = .utility,
-    logger: (any LoggingInterfaces.LoggingProtocol)?=nil
-  ) -> any FileSystemServiceProtocol {
-    // This method is marked with @_disfavoredOverload to discourage its use
-    // due to Swift 6 warnings about FileManager sendability
-    FileSystemServiceImpl(
-      fileManager: fileManager,
-      operationQueueQoS: operationQueueQoS,
-      logger: logger ?? NullLogger()
-    )
-  }
-
-  /**
-   Creates a custom file system service instance with full configuration control.
-
-   This method is Swift 6 compatible and should be preferred over the version that
-   takes a FileManager parameter directly.
+   This method is Swift 6 compatible and uses the default FileManager to avoid
+   data race risks with sendability.
 
    - Parameters:
       - operationQueueQoS: The QoS class for background operations
@@ -149,11 +118,21 @@ public final class FileSystemServiceFactory: @unchecked Sendable {
  This avoids the need for nil checks throughout the file system services code.
  */
 private struct NullLogger: LoggingInterfaces.LoggingProtocol {
-  func debug(_: String, metadata _: LoggingTypes.LogMetadata?, source _: String?) async {}
-  func info(_: String, metadata _: LoggingTypes.LogMetadata?, source _: String?) async {}
-  func notice(_: String, metadata _: LoggingTypes.LogMetadata?, source _: String?) async {}
-  func warning(_: String, metadata _: LoggingTypes.LogMetadata?, source _: String?) async {}
-  func error(_: String, metadata _: LoggingTypes.LogMetadata?, source _: String?) async {}
-  func critical(_: String, metadata _: LoggingTypes.LogMetadata?, source _: String?) async {}
-  func fault(_: String, metadata _: LoggingTypes.LogMetadata?, source _: String?) async {}
+  // Add loggingActor property required by LoggingProtocol
+  var loggingActor: LoggingInterfaces.LoggingActor = LoggingInterfaces.LoggingActor(destinations: [])
+  
+  // Core method required by CoreLoggingProtocol
+  func logMessage(_ level: LoggingTypes.LogLevel, _ message: String, context: LoggingTypes.LogContext) async {
+    // Empty implementation for this stub
+  }
+
+  // Implement all required methods with proper parameter types
+  func debug(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {}
+  func info(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {}
+  func notice(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {}
+  func warning(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {}
+  func error(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {}
+  func critical(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {}
+  func trace(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {}
+  func fault(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {}
 }

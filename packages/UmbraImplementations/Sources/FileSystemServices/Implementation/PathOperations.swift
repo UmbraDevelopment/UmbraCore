@@ -47,14 +47,16 @@ extension FileSystemServiceImpl {
 
       await logger.debug(
         "Normalised path from \(path.path) to \(normalisedPath.path)",
-        metadata: nil
+        metadata: nil,
+        source: "FileSystemService"
       )
 
       return normalisedPath
     } catch {
       await logger.error(
         "Failed to normalise path \(path.path): \(error.localizedDescription)",
-        metadata: nil
+        metadata: nil,
+        source: "FileSystemService"
       )
       throw FileSystemInterfaces.FileSystemError.readError(
         path: path.path,
@@ -93,7 +95,8 @@ extension FileSystemServiceImpl {
 
     await logger.debug(
       "Joined path \(base.path) with \(component) to create \(joinedPath.path)",
-      metadata: nil
+      metadata: nil,
+      source: "FileSystemService"
     )
 
     return joinedPath
@@ -113,7 +116,7 @@ extension FileSystemServiceImpl {
     let url=URL(fileURLWithPath: path.path)
     let fileName=url.lastPathComponent
 
-    await logger.debug("Extracted file name \(fileName) from path \(path.path)", metadata: nil)
+    await logger.debug("Extracted file name \(fileName) from path \(path.path)", metadata: nil, source: "FileSystemService")
 
     return fileName
   }
@@ -135,7 +138,8 @@ extension FileSystemServiceImpl {
 
     await logger.debug(
       "Extracted directory path \(directoryPath.path) from path \(path.path)",
-      metadata: nil
+      metadata: nil,
+      source: "FileSystemService"
     )
 
     return directoryPath
@@ -157,7 +161,8 @@ extension FileSystemServiceImpl {
 
     await logger.debug(
       "Extracted file extension \(fileExtension) from path \(path.path)",
-      metadata: nil
+      metadata: nil,
+      source: "FileSystemService"
     )
 
     return fileExtension
@@ -197,7 +202,7 @@ extension FileSystemServiceImpl {
     let newURL=directory.appendingPathComponent(newFileName)
     let newPath=FilePath(path: newURL.path)
 
-    await logger.debug("Changed extension of \(path.path) to \(newPath.path)", metadata: nil)
+    await logger.debug("Changed extension of \(path.path) to \(newPath.path)", metadata: nil, source: "FileSystemService")
 
     return newPath
   }

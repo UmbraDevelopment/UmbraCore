@@ -54,11 +54,12 @@ extension FileSystemServiceImpl {
     do {
       try fileManager.removeItem(atPath: path.path)
 
-      await logger.debug("Removed item at \(path.path)", metadata: nil)
+      await logger.debug("Removed item at \(path.path)", metadata: nil, source: "FileSystemService")
     } catch {
       await logger.error(
         "Failed to remove item at \(path.path): \(error.localizedDescription)",
-        metadata: nil
+        metadata: nil,
+        source: "FileSystemService"
       )
       throw FileSystemInterfaces.FileSystemError.writeError(
         path: path.path,
@@ -149,12 +150,14 @@ extension FileSystemServiceImpl {
 
       await logger.debug(
         "Copied item from \(sourcePath.path) to \(destinationPath.path)",
-        metadata: nil
+        metadata: nil,
+        source: "FileSystemService"
       )
     } catch {
       await logger.error(
         "Failed to copy from \(sourcePath.path) to \(destinationPath.path): \(error.localizedDescription)",
-        metadata: nil
+        metadata: nil,
+        source: "FileSystemService"
       )
       throw FileSystemInterfaces.FileSystemError.writeError(
         path: destinationPath.path,
@@ -243,12 +246,14 @@ extension FileSystemServiceImpl {
 
       await logger.debug(
         "Moved item from \(sourcePath.path) to \(destinationPath.path)",
-        metadata: nil
+        metadata: nil,
+        source: "FileSystemService"
       )
     } catch {
       await logger.error(
         "Failed to move from \(sourcePath.path) to \(destinationPath.path): \(error.localizedDescription)",
-        metadata: nil
+        metadata: nil,
+        source: "FileSystemService"
       )
       throw FileSystemInterfaces.FileSystemError.writeError(
         path: destinationPath.path,

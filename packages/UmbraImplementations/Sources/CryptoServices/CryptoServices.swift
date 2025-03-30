@@ -92,10 +92,20 @@ public enum CryptoServices {
  Basic logger implementation for when no logger is provided.
  */
 private struct DefaultLogger: LoggingProtocol {
-  func debug(_: String, metadata _: LoggingTypes.LogMetadata?, source _: String?) async {}
-  func info(_: String, metadata _: LoggingTypes.LogMetadata?, source _: String?) async {}
-  func notice(_: String, metadata _: LoggingTypes.LogMetadata?, source _: String?) async {}
-  func warning(_: String, metadata _: LoggingTypes.LogMetadata?, source _: String?) async {}
-  func error(_: String, metadata _: LoggingTypes.LogMetadata?, source _: String?) async {}
-  func critical(_: String, metadata _: LoggingTypes.LogMetadata?, source _: String?) async {}
+  // Add loggingActor property required by LoggingProtocol
+  var loggingActor: LoggingInterfaces.LoggingActor = LoggingInterfaces.LoggingActor(destinations: [])
+  
+  // Core method required by CoreLoggingProtocol
+  func logMessage(_ level: LoggingTypes.LogLevel, _ message: String, context: LoggingTypes.LogContext) async {
+    // Empty implementation for this stub
+  }
+
+  // Implement all required methods with proper parameter types
+  func debug(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {}
+  func info(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {}
+  func notice(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {}
+  func warning(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {}
+  func error(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {}
+  func critical(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {}
+  func trace(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {}
 }
