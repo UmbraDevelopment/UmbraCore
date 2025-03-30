@@ -8,37 +8,37 @@
 /// that debugging information remains useful.
 @frozen
 public enum LogPrivacy: Sendable, Hashable, Equatable, CustomStringConvertible {
-    /// Information can be freely viewed
-    ///
-    /// Equivalent to OSLogPrivacy.public
-    case `public`
-    
-    /// Information is private but can be viewed for debugging
-    ///
-    /// Equivalent to OSLogPrivacy.private
-    case `private`
-    
-    /// Information is sensitive and redacted in released versions
-    ///
-    /// Equivalent to OSLogPrivacy.sensitive
-    case sensitive
-    
-    /// Information is auto-redacted by the logging system
-    ///
-    /// Equivalent to OSLogPrivacy.auto
-    case auto
-    
-    /// String representation of the privacy level
-    public var description: String {
-        switch self {
-        case .public:
-            return "public"
-        case .private:
-            return "private"
-        case .sensitive:
-            return "sensitive"
-        case .auto:
-            return "auto"
-        }
+  /// Information can be freely viewed
+  ///
+  /// Equivalent to OSLogPrivacy.public
+  case `public`
+
+  /// Information is private but can be viewed for debugging
+  ///
+  /// Equivalent to OSLogPrivacy.private
+  case `private`
+
+  /// Information is sensitive and redacted in released versions
+  ///
+  /// Equivalent to OSLogPrivacy.sensitive
+  case sensitive
+
+  /// Information is auto-redacted by the logging system
+  ///
+  /// Equivalent to OSLogPrivacy.auto
+  case auto
+
+  /// String representation of the privacy level
+  public var description: String {
+    switch self {
+      case .public:
+        "public"
+      case .private:
+        "private"
+      case .sensitive:
+        "sensitive"
+      case .auto:
+        "auto"
     }
+  }
 }

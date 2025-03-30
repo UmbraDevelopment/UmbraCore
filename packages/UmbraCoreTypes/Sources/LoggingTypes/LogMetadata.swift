@@ -18,12 +18,12 @@ public struct LogMetadata: Sendable, Hashable, Equatable {
   public var asDictionary: [String: String] {
     storage
   }
-  
+
   /// Equatable conformance
   public static func == (lhs: LogMetadata, rhs: LogMetadata) -> Bool {
     lhs.storage == rhs.storage
   }
-  
+
   /// Hashable conformance
   public func hash(into hasher: inout Hasher) {
     hasher.combine(storage)
