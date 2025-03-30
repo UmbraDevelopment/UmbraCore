@@ -76,7 +76,7 @@ public actor KeychainSecurityActor {
   private let securityProvider: SecurityProviderProtocol
   
   /// The keychain logger for structured logging
-  private let keychainLogger: KeychainLogger
+  nonisolated private let keychainLogger: KeychainLogger
   
   // MARK: - Initialisation
   

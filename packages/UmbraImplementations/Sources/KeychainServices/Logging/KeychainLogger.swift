@@ -12,7 +12,7 @@ import LoggingTypes
  is properly classified with appropriate privacy levels, with British spelling
  in documentation and comments.
  */
-public struct KeychainLogger {
+public struct KeychainLogger: Sendable {
     /// The underlying logger
     private let logger: any LoggingProtocol
     
