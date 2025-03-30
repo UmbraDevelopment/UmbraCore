@@ -80,6 +80,15 @@ public struct BackupProgress: Sendable, Equatable {
 
     /// Verifying data integrity
     case verifying
+
+    /// Operation completed successfully
+    case completed
+
+    /// Operation was cancelled
+    case cancelled
+
+    /// Operation failed
+    case failed
   }
 
   /// Current phase of the operation
@@ -109,6 +118,9 @@ public struct BackupProgress: Sendable, Equatable {
   /// Optional rate of processing in bytes per second
   public let bytesPerSecond: Double?
 
+  /// Optional error that caused the operation to fail
+  public let error: Error?
+
   /// Creates a new progress instance
   /// - Parameters:
   ///   - phase: Current phase of the operation
@@ -120,6 +132,7 @@ public struct BackupProgress: Sendable, Equatable {
   ///   - totalBytes: Optional total bytes to process
   ///   - estimatedTimeRemaining: Optional estimated time remaining in seconds
   ///   - bytesPerSecond: Optional rate of processing in bytes per second
+  ///   - error: Optional error that caused the operation to fail
   public init(
     phase: Phase,
     percentComplete: Double,
@@ -129,7 +142,8 @@ public struct BackupProgress: Sendable, Equatable {
     processedBytes: UInt64?=nil,
     totalBytes: UInt64?=nil,
     estimatedTimeRemaining: TimeInterval?=nil,
-    bytesPerSecond: Double?=nil
+    bytesPerSecond: Double?=nil,
+    error: Error?=nil
   ) {
     self.phase=phase
     self.percentComplete=min(max(percentComplete, 0.0), 1.0)
@@ -140,6 +154,23 @@ public struct BackupProgress: Sendable, Equatable {
     self.totalBytes=totalBytes
     self.estimatedTimeRemaining=estimatedTimeRemaining
     self.bytesPerSecond=bytesPerSecond
+    self.error=error
+  }
+
+  /// Custom implementation of Equatable since Error doesn't conform to Equatable
+  public static func == (lhs: BackupProgress, rhs: BackupProgress) -> Bool {
+    // Compare all properties except error
+    return lhs.phase == rhs.phase &&
+           lhs.percentComplete == rhs.percentComplete &&
+           lhs.currentItem == rhs.currentItem &&
+           lhs.processedItems == rhs.processedItems &&
+           lhs.totalItems == rhs.totalItems &&
+           lhs.processedBytes == rhs.processedBytes &&
+           lhs.totalBytes == rhs.totalBytes &&
+           lhs.estimatedTimeRemaining == rhs.estimatedTimeRemaining &&
+           lhs.bytesPerSecond == rhs.bytesPerSecond &&
+           // For error, just check if both are nil or both are non-nil
+           (lhs.error == nil) == (rhs.error == nil)
   }
 
   /// Creates a new progress instance at the initialising phase
@@ -244,6 +275,25 @@ public struct BackupProgress: Sendable, Equatable {
     )
   }
 
+  /// Creates a new progress instance for a completed operation
+  /// - Returns: A progress instance in the completed phase
+  public static func completed() -> BackupProgress {
+    BackupProgress(phase: .completed, percentComplete: 1.0)
+  }
+
+  /// Creates a new progress instance for a cancelled operation
+  /// - Returns: A progress instance in the cancelled phase
+  public static func cancelled() -> BackupProgress {
+    BackupProgress(phase: .cancelled, percentComplete: 0.0)
+  }
+
+  /// Creates a new progress instance for a failed operation
+  /// - Parameter error: The error that caused the failure
+  /// - Returns: A progress instance in the failed phase
+  public static func failed(_ error: Error) -> BackupProgress {
+    BackupProgress(phase: .failed, percentComplete: 0.0, error: error)
+  }
+
   /// Returns a string representation of the progress
   public var description: String {
     var components: [String]=[]
@@ -282,6 +332,10 @@ public struct BackupProgress: Sendable, Equatable {
 
     if let currentItem {
       components.append("\"\(currentItem)\"")
+    }
+
+    if let error {
+      components.append("Error: \(error.localizedDescription)")
     }
 
     return components.joined(separator: " • ")

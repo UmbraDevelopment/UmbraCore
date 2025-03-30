@@ -16,6 +16,10 @@ umbra_swift_library(
         "//packages/UmbraCoreTypes/Sources/SecurityCoreTypes",
         "//packages/UmbraCoreTypes/Sources/SecurityInterfaces",
         "//packages/UmbraCoreTypes/Sources/CoreDTOs",
+        "//packages/UmbraCoreTypes/Sources/ErrorCoreTypes",
+        "//packages/UmbraCoreTypes/Sources/KeyManagementTypes",
+        "//packages/UmbraCoreTypes/Sources/CryptoTypes",
         "//packages/UmbraInterfaces/Sources/SecurityCoreInterfaces",
+        "//packages/UmbraImplementations/Sources/ErrorDomainsImpl",
     ],
 )
