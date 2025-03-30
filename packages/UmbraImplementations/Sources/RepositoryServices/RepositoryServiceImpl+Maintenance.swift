@@ -19,11 +19,11 @@ extension RepositoryServiceImpl {
     readData: Bool,
     checkUnused: Bool
   ) async throws -> RepositoryStatistics {
-    let metadata=LogMetadata([
-      "repository_id": identifier,
-      "read_data": String(describing: readData),
-      "check_unused": String(describing: checkUnused)
-    ])
+    // Create privacy-aware metadata
+    var metadata = PrivacyMetadata()
+    metadata["repository_id"] = PrivacyMetadataValue(value: identifier, privacy: .public)
+    metadata["read_data"] = PrivacyMetadataValue(value: String(describing: readData), privacy: .public)
+    metadata["check_unused"] = PrivacyMetadataValue(value: String(describing: checkUnused), privacy: .public)
 
     await logger.info(
       "Performing maintenance on repository",
@@ -54,7 +54,7 @@ extension RepositoryServiceImpl {
         metadata: metadata,
         source: "RepositoryService"
       )
-      throw RepositoryError.maintenanceFailed
+      throw RepositoryError.internalError
     }
   }
 
@@ -65,7 +65,9 @@ extension RepositoryServiceImpl {
   /// - Throws: `RepositoryError.notFound` if the repository is not found,
   ///           or other repository errors if repair fails.
   public func repairRepository(identifier: String) async throws -> Bool {
-    let metadata=LogMetadata(["repository_id": identifier])
+    // Create privacy-aware metadata
+    var metadata = PrivacyMetadata()
+    metadata["repository_id"] = PrivacyMetadataValue(value: identifier, privacy: .public)
 
     await logger.info("Repairing repository", metadata: metadata, source: "RepositoryService")
 
@@ -92,19 +94,25 @@ extension RepositoryServiceImpl {
         metadata: metadata,
         source: "RepositoryService"
       )
-      throw RepositoryError.maintenanceFailed
+      throw RepositoryError.internalError
     }
   }
 
-  /// Prunes unused data from a repository.
+  /// Deletes unused data from a repository.
   ///
   /// - Parameter identifier: The repository identifier.
   /// - Throws: `RepositoryError.notFound` if the repository is not found,
   ///           or other repository errors if pruning fails.
   public func pruneRepository(identifier: String) async throws {
-    let metadata=LogMetadata(["repository_id": identifier])
+    // Create privacy-aware metadata
+    var metadata = PrivacyMetadata()
+    metadata["repository_id"] = PrivacyMetadataValue(value: identifier, privacy: .public)
 
-    await logger.info("Pruning repository", metadata: metadata, source: "RepositoryService")
+    await logger.info(
+      "Pruning repository",
+      metadata: metadata,
+      source: "RepositoryService"
+    )
 
     guard let repository=repositories[identifier] as? RepositoryMaintenanceProtocol else {
       await logger.error(
@@ -128,17 +136,19 @@ extension RepositoryServiceImpl {
         metadata: metadata,
         source: "RepositoryService"
       )
-      throw RepositoryError.maintenanceFailed
+      throw RepositoryError.internalError
     }
   }
 
-  /// Rebuilds the index for a repository.
+  /// Rebuilds the repository index.
   ///
   /// - Parameter identifier: The repository identifier.
   /// - Throws: `RepositoryError.notFound` if the repository is not found,
-  ///           or other repository errors if index rebuilding fails.
+  ///           or other repository errors if rebuild fails.
   public func rebuildRepositoryIndex(identifier: String) async throws {
-    let metadata=LogMetadata(["repository_id": identifier])
+    // Create privacy-aware metadata
+    var metadata = PrivacyMetadata()
+    metadata["repository_id"] = PrivacyMetadataValue(value: identifier, privacy: .public)
 
     await logger.info(
       "Rebuilding repository index",
@@ -168,7 +178,7 @@ extension RepositoryServiceImpl {
         metadata: metadata,
         source: "RepositoryService"
       )
-      throw RepositoryError.maintenanceFailed
+      throw RepositoryError.internalError
     }
   }
 }
