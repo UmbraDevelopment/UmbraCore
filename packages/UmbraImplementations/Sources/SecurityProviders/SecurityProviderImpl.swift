@@ -3,6 +3,8 @@ import SecurityCoreInterfaces
 import SecurityCoreTypes
 import SecurityTypes
 import UmbraErrors
+import ErrorCoreTypes
+import ErrorDomainsImpl
 
 /**
  # SecurityProviderImpl
@@ -465,15 +467,53 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
       
       return result
     } catch let error as SecurityProtocolError {
-      // Pass through SecurityProtocolError
-      throw error
+      // Create error context with source information
+      let context = ErrorContext(
+        source: ErrorSource(file: #file, function: #function, line: #line),
+        metadata: ["operation": String(describing: operation)]
+      )
+      
+      // Map to domain error and throw
+      let domainError = mapToSecurityErrorDomain(error, context: context)
+      throw domainError
     } catch {
-      // Wrap other errors
-      throw SecurityProtocolError.internalError(error.localizedDescription)
+      // Wrap other errors with context
+      let context = ErrorContext(
+        source: ErrorSource(file: #file, function: #function, line: #line),
+        metadata: ["operation": String(describing: operation)]
+      )
+      
+      throw SecurityErrorDomain.generalSecurityError(
+        reason: error.localizedDescription,
+        context: context
+      )
     }
   }
   
   // MARK: - Private Helpers
+  
+  /// Maps a SecurityProtocolError to a SecurityErrorDomain
+  private func mapToSecurityErrorDomain(
+    _ error: SecurityProtocolError,
+    context: ErrorContext
+  ) -> SecurityErrorDomain {
+    switch error {
+    case .authenticationFailed(let reason):
+      return .authenticationFailed(reason: reason, context: context)
+    case .invalidInput(let reason):
+      return .invalidInput(reason: reason, context: context)
+    case .cryptographicError(let reason):
+      return .encryptionFailed(reason: reason, context: context)
+    case .keyManagementError(let reason):
+      return .keyManagementFailed(reason: reason, context: context)
+    case .invalidOperation(let reason):
+      return .unsupportedOperation(name: reason, context: context)
+    case .secureStorageError(let reason):
+      return .generalSecurityError(reason: "Secure storage error: \(reason)", context: context)
+    case .generalError(let reason):
+      return .generalSecurityError(reason: reason, context: context)
+    }
+  }
   
   /// Extract data from configuration options
   private func extractData(from config: SecurityConfigDTO) -> SecureBytes? {
