@@ -25,7 +25,7 @@ swift_test(
         # "//Tests/TestKit"
         # "@com_github_apple_swift_log//:Logging"
         "//Sources/CoreErrors",
-        "//Sources/SecurityTypes",
+        "//packages/UmbraCoreTypes/Sources/SecurityTypes",  # Updated path to Alpha Dot Five location
         "//Sources/UmbraErrors",
     ],
 )
