@@ -86,6 +86,52 @@ public struct SnapshotLoggingAdapter {
     }
     
     /**
+     Logs an operation failure with the error that occurred.
+     
+     - Parameters:
+        - error: The error that occurred during the operation
+        - logContext: The structured log context with privacy metadata
+     */
+    public func logOperationFailure(
+        error: Error,
+        logContext: LogContextDTO
+    ) async {
+        let errorDescription = error.localizedDescription
+        let message = "Operation failed: \(errorDescription)"
+        var metadata = logContext.toPrivacyMetadata()
+        
+        // Add error information to metadata
+        metadata["error"] = PrivacyMetadataValue(value: errorDescription, privacy: .private)
+        metadata["errorType"] = PrivacyMetadataValue(value: String(describing: type(of: error)), privacy: .public)
+        
+        await logger.error(
+            message,
+            metadata: metadata,
+            source: logContext.getSource()
+        )
+    }
+    
+    /**
+     Logs an operation with a general LogContextDTO, providing compatibility with the new adapter pattern.
+     
+     - Parameters:
+        - logContext: Any log context that implements LogContextDTO
+        - message: Optional custom message override
+     */
+    public func logOperationSuccess(
+        logContext: LogContextDTO,
+        message: String? = nil
+    ) async {
+        let defaultMessage = "Operation completed successfully"
+        
+        await logger.info(
+            message ?? defaultMessage,
+            metadata: logContext.toPrivacyMetadata(),
+            source: logContext.getSource()
+        )
+    }
+    
+    /**
      Logs the start of a snapshot operation.
      
      - Parameters:

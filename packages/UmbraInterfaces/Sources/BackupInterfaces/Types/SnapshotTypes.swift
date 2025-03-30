@@ -65,24 +65,4 @@ public struct ModifiedFile: Sendable, Equatable, Identifiable {
   }
 }
 
-/// File types in a snapshot
-public enum FileType: String, Sendable, Equatable, CaseIterable {
-  /// Regular file
-  case file
-  /// Directory
-  case directory
-  /// Symbolic link
-  case symlink
-  /// Hard link
-  case hardlink
-  /// Block device
-  case blockDevice
-  /// Character device
-  case charDevice
-  /// Named pipe
-  case pipe
-  /// Socket
-  case socket
-  /// Other special file
-  case special
-}
+// FileType has been moved to FileInfo.swift for better organisation and separation of concerns

@@ -7,7 +7,7 @@ import UmbraErrors
 ///
 /// This class centralises all command creation logic for backup-related
 /// operations, ensuring consistent command structure and arguments.
-struct BackupCommandFactory {
+public struct BackupCommandFactory {
 
   /// Creates a backup command from the provided sources, exclusions, and tags
   /// - Parameters:
@@ -17,7 +17,7 @@ struct BackupCommandFactory {
   ///   - options: Additional options for the backup
   /// - Returns: A command ready for execution
   /// - Throws: BackupError if command creation fails
-  func createBackupCommand(
+  public func createBackupCommand(
     sources: [URL],
     excludePaths: [URL]?,
     tags: [String]?,
@@ -97,7 +97,7 @@ struct BackupCommandFactory {
   ///   - options: Additional options for the restore operation
   /// - Returns: A command ready for execution
   /// - Throws: BackupError if command creation fails
-  func createRestoreCommand(
+  public func createRestoreCommand(
     snapshotID: String,
     targetPath: URL,
     includePaths: [URL]?,
@@ -170,7 +170,7 @@ struct BackupCommandFactory {
   ///   - options: Additional options for the maintenance operation
   /// - Returns: A command ready for execution
   /// - Throws: BackupError if command creation fails
-  func createMaintenanceCommand(
+  public func createMaintenanceCommand(
     type: MaintenanceType,
     options: MaintenanceOptions?
   ) throws -> ResticCommand {
@@ -215,7 +215,7 @@ struct BackupCommandFactory {
   ///   - password: Repository password
   /// - Returns: A command ready for execution
   /// - Throws: BackupError if command creation fails
-  func createInitCommand(
+  public func createInitCommand(
     location: String,
     password: String
   ) throws -> ResticCommand {
@@ -234,7 +234,7 @@ struct BackupCommandFactory {
   ///   - options: Optional check options
   /// - Returns: A command ready for execution
   /// - Throws: BackupError if command creation fails
-  func createCheckCommand(options: RepositoryCheckOptions?) throws -> ResticCommand {
+  public func createCheckCommand(options: RepositoryCheckOptions?) throws -> ResticCommand {
     var arguments=["check"]
 
     if let options {
@@ -263,7 +263,7 @@ struct BackupCommandFactory {
   ///   - limit: Optional maximum number of snapshots to return
   /// - Returns: A command ready for execution
   /// - Throws: BackupError if command creation fails
-  func createListCommand(
+  public func createListCommand(
     repositoryID: String?,
     tags: [String]?,
     before: Date?,
@@ -314,7 +314,7 @@ struct BackupCommandFactory {
   ///   - pruneAfterDelete: Whether to prune unreferenced data after deletion
   /// - Returns: A command ready for execution
   /// - Throws: BackupError if command creation fails
-  func createDeleteCommand(
+  public func createDeleteCommand(
     snapshotID: String,
     pruneAfterDelete: Bool
   ) throws -> ResticCommand {

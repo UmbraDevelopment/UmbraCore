@@ -26,6 +26,15 @@ public struct BackupLogContext: LogContextDTO {
     /// Initialises an empty backup log context
     public init() {}
     
+    /// Gets the source of this log context
+    /// - Returns: The source identifier for logging
+    public func getSource() -> String {
+        if let op = operation {
+            return "BackupService.\(op)"
+        }
+        return "BackupService"
+    }
+    
     /// Converts the context to privacy metadata for logging
     /// - Returns: Privacy metadata with appropriate annotations
     public func toPrivacyMetadata() -> PrivacyMetadata {
@@ -36,6 +45,12 @@ public struct BackupLogContext: LogContextDTO {
         }
         
         return metadata
+    }
+    
+    /// Gets the metadata for this log context
+    /// - Returns: Log metadata with appropriate privacy annotations
+    public func getMetadata() -> PrivacyMetadata {
+        return toPrivacyMetadata()
     }
     
     /// Adds a general key-value pair to the context

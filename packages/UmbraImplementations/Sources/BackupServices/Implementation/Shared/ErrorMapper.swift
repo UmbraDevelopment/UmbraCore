@@ -7,12 +7,12 @@ import UmbraErrors
 ///
 /// This utility converts low-level Restic errors into domain-specific
 /// BackupError types that are more meaningful to clients of the backup services.
-struct ErrorMapper {
+public struct ErrorMapper {
 
   /// Converts a ResticError to a BackupError
   /// - Parameter error: The original Restic error
   /// - Returns: An appropriate BackupError
-  func convertResticError(_ error: ResticError) -> BackupError {
+  public func convertResticError(_ error: ResticError) -> BackupError {
     switch error {
       case let .repositoryNotFound(path):
         BackupError.repositoryAccessFailure(
@@ -109,7 +109,7 @@ struct ErrorMapper {
   ///   - exitCode: The command exit code
   ///   - errorOutput: Error output from the command
   /// - Returns: An appropriate BackupError
-  func mapExitCodeToError(
+  public func mapExitCodeToError(
     exitCode: Int,
     errorOutput: String
   ) -> BackupError {

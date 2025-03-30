@@ -23,7 +23,7 @@ public struct BackupServiceFactory {
     logger: any LoggingProtocol,
     repositoryInfo: RepositoryInfo
   ) -> BackupServiceProtocol {
-    BackupServiceImpl(
+    ModernBackupServiceImpl(
       resticService: resticService,
       logger: logger,
       repositoryInfo: repositoryInfo
@@ -34,12 +34,12 @@ public struct BackupServiceFactory {
   /// - Parameters:
   ///   - resticService: The Restic service to use for backend operations
   ///   - logger: Logger for operation tracking
-  /// - Returns: A configured snapshot service
+  /// - Returns: A configured snapshot service following the Alpha Dot Five architecture
   public func createSnapshotService(
     resticService: ResticServiceProtocol,
     logger: any LoggingProtocol
   ) -> SnapshotServiceProtocol {
-    SnapshotServiceImpl(
+    ModernSnapshotServiceImpl(
       resticService: resticService,
       logger: logger
     )

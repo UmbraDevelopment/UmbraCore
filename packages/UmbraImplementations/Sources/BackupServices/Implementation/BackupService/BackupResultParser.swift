@@ -6,14 +6,14 @@ import UmbraErrors
 ///
 /// This struct centralises the parsing logic for backup-related operations,
 /// converting Restic command outputs into domain models.
-struct BackupResultParser {
+public struct BackupResultParser {
   /// Parses the result of a backup operation
   /// - Parameters:
   ///   - output: The command output to parse
   ///   - sources: The source paths used in the backup
   /// - Returns: A backup result with details about the operation
   /// - Throws: BackupError if parsing fails
-  func parseBackupResult(output: String, sources: [URL]) throws -> BackupResult {
+  public func parseBackupResult(output: String, sources: [URL]) throws -> BackupResult {
     guard !output.isEmpty else {
       throw BackupError.parsingError(details: "Empty output from backup command")
     }
@@ -60,7 +60,7 @@ struct BackupResultParser {
   ///   - targetPath: Path where files were restored
   /// - Returns: A RestoreResult object
   /// - Throws: BackupError if parsing fails
-  func parseRestoreResult(output: String, targetPath: URL) throws -> RestoreResult {
+  public func parseRestoreResult(output: String, targetPath: URL) throws -> RestoreResult {
     // Simple parsing - look for file restoration lines
     let lines=output.components(separatedBy: .newlines)
 
@@ -90,7 +90,7 @@ struct BackupResultParser {
   ///   - type: The type of maintenance that was performed
   /// - Returns: A maintenance result with details about the operation
   /// - Throws: BackupError if parsing fails
-  func parseMaintenanceResult(output: String, type: MaintenanceType) throws -> MaintenanceResult {
+  public func parseMaintenanceResult(output: String, type: MaintenanceType) throws -> MaintenanceResult {
     // Check for errors in the output
     let outputLower=output.lowercased()
     let hasErrors=outputLower.contains("error") || outputLower.contains("fatal") || outputLower
@@ -205,7 +205,7 @@ struct BackupResultParser {
   /// - Parameter output: The command output to parse
   /// - Returns: A boolean indicating success
   /// - Throws: BackupError if parsing fails
-  func parseInitResult(output: String) throws -> Bool {
+  public func parseInitResult(output: String) throws -> Bool {
     // Check for errors
     let outputLower=output.lowercased()
     let hasErrors=outputLower.contains("error") || outputLower.contains("fatal") || outputLower
@@ -224,7 +224,7 @@ struct BackupResultParser {
   ///   - sources: Optional source paths for context
   /// - Returns: An array of backup snapshots
   /// - Throws: BackupError if parsing fails
-  func parseSnapshotsList(output: String, sources: [URL]) throws -> [BackupSnapshot] {
+  public func parseSnapshotsList(output: String, sources: [URL]) throws -> [BackupSnapshot] {
     guard !output.isEmpty else {
       throw BackupError.parsingError(details: "Empty output from snapshots command")
     }

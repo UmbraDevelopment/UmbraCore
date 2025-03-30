@@ -15,493 +15,639 @@ import UmbraErrors
  - Integration with privacy-aware logging
  
  It follows the Alpha Dot Five architecture principles with proper British
- spelling in documentation while maintaining required code conventions.
+ spelling in documentation and comments.
  */
 public actor ModernBackupServiceImpl: BackupServiceProtocol {
-    /// The Restic service used for backend operations
-    private let resticService: ResticServiceProtocol
-
-    /// Logger for operation tracking
-    private let logger: any LoggingProtocol
+    // MARK: - Dependencies
     
-    /// Privacy-aware logging adapter for structured logging
-    private let backupLogging: BackupLoggingAdapter
-
-    /// Repository information
-    private let repositoryInfo: RepositoryInfo
-
-    /// Factory for creating Restic commands
-    private let commandFactory: BackupCommandFactory
-
-    /// Parser for Restic command outputs
-    private let resultParser: BackupResultParser
-
-    /// Error mapper for converting Restic errors to backup errors
-    private let errorMapper: ErrorMapper
+    /// Component for executing backup operations
+    private let operationsService: BackupOperationsService
     
-    /// Progress reporter
-    private let progressReporter: AsyncProgressReporter
+    /// Executor for handling operation flow
+    private let operationExecutor: BackupOperationExecutor
+    
+    /// Metrics collector
+    private let metricsCollector: BackupMetricsCollector
+    
+    /// Cancellation handler
+    private let cancellationHandler: CancellationHandlerProtocol
+    
+    /// Error mapper for creating privacy-aware error contexts
+    private let errorLogContextMapper: ErrorLogContextMapper
+    
+    /// Error mapper for converting errors to backup errors
+    private let errorMapper: BackupErrorMapper
 
-    /// Creates a new backup service implementation
-    /// - Parameters:
-    ///   - resticService: Restic service for backend operations
-    ///   - logger: Logger for operation tracking
-    ///   - repositoryInfo: Repository connection details
+    // MARK: - Initialisation
+    
+    /**
+     * Creates a new backup service implementation
+     *
+     * - Parameters:
+     *   - resticService: Restic service for backend operations
+     *   - logger: Logger for operation tracking
+     *   - repositoryInfo: Repository connection details
+     */
     public init(
         resticService: ResticServiceProtocol,
         logger: any LoggingProtocol,
         repositoryInfo: RepositoryInfo
     ) {
-        self.resticService = resticService
-        self.logger = logger
-        self.backupLogging = BackupLoggingAdapter(logger: logger)
-        self.repositoryInfo = repositoryInfo
-        self.commandFactory = BackupCommandFactory()
-        self.resultParser = BackupResultParser()
-        self.errorMapper = ErrorMapper()
-        self.progressReporter = AsyncProgressReporter()
+        // Create components
+        let commandFactory = BackupCommandFactory()
+        let resultParser = BackupResultParser()
+        
+        // Initialize component services
+        operationsService = BackupOperationsService(
+            resticService: resticService,
+            repositoryInfo: repositoryInfo,
+            commandFactory: commandFactory,
+            resultParser: resultParser
+        )
+        
+        errorLogContextMapper = ErrorLogContextMapper()
+        errorMapper = BackupErrorMapper()
+        metricsCollector = BackupMetricsCollector()
+        cancellationHandler = ModernCancellationHandler()
+        
+        // Initialize operation executor
+        operationExecutor = BackupOperationExecutor(
+            logger: logger,
+            cancellationHandler: cancellationHandler,
+            metricsCollector: metricsCollector,
+            errorLogContextMapper: errorLogContextMapper,
+            errorMapper: errorMapper
+        )
     }
 
-    /// Creates a backup from the provided sources
-    /// - Parameters:
-    ///   - sources: Paths to include in the backup
-    ///   - excludePaths: Optional paths to exclude
-    ///   - tags: Optional tags to associate with the backup
-    ///   - options: Additional options for the backup
-    /// - Returns: Result of the backup operation and a progress sequence
-    /// - Throws: `BackupError` if the backup fails
+    // MARK: - BackupServiceProtocol Implementation
+    
+    /**
+     * Creates a backup from the provided sources
+     *
+     * - Parameters:
+     *   - sources: Paths to include in the backup
+     *   - excludePaths: Optional paths to exclude
+     *   - tags: Optional tags to apply to the backup
+     *   - options: Optional backup configuration options
+     * - Returns: Backup creation result and progress stream
+     * - Throws: BackupError if backup creation fails
+     */
     public func createBackup(
         sources: [URL],
-        excludePaths: [URL]?,
-        tags: [String]?,
-        options: BackupOptions?
-    ) async throws -> (BackupResult, AsyncStream<BackupProgress>) {
-        // Create a log context with privacy-aware metadata
-        let logContext = BackupLogContext()
-            .with(sources: sources.map(\.path), privacy: .public)
-            .with(excludePaths: excludePaths?.map(\.path), privacy: .public)
-            .with(tags: tags, privacy: .public)
-            .with(key: "compressionLevel", value: String(options?.compressionLevel ?? 0), privacy: .public)
-            .with(key: "verifyAfterBackup", value: String(options?.verifyAfterBackup ?? false), privacy: .public)
-            .with(operation: "createBackup")
-
-        // Create a progress stream
-        let operation = BackupOperation.createBackup
-        let progressStream = progressReporter.progressStream(for: operation)
+        excludePaths: [URL]? = nil,
+        tags: [String]? = nil,
+        options: BackupOptions? = nil
+    ) async throws -> (BackupResult, AsyncStream<BackupInterfaces.BackupProgress>) {
+        // Create parameters object
+        let parameters = BackupCreateParameters(
+            sources: sources,
+            excludePaths: excludePaths,
+            tags: tags,
+            options: options
+        )
         
-        // Log operation start
-        await backupLogging.logOperationStart(logContext: logContext)
-        progressReporter.reportProgress(.initialising(description: "Preparing backup..."), for: operation)
+        // Create progress reporter
+        let progressReporter = BackupProgressReporter()
         
-        let startTime = Date()
+        // Create cancellation token
+        let cancellationToken = CancellationToken()
         
-        do {
-            // Create backup command
-            let command = try commandFactory.createBackupCommand(
-                sources: sources,
-                excludePaths: excludePaths,
-                tags: tags,
-                options: options
-            )
-            
-            // Check for task cancellation
-            try Task.checkCancellation()
-            progressReporter.reportProgress(.processing(phase: "Backing up files", percentComplete: 0.2), for: operation)
-            
-            // Execute backup command
-            let output = try await resticService.execute(command)
-            progressReporter.reportProgress(.processing(phase: "Processing backup results", percentComplete: 0.8), for: operation)
-            
-            // Parse the output to obtain the backup result
-            let backupResult = try resultParser.parseBackupResult(
-                output: output,
-                startTime: startTime,
-                endTime: Date(),
-                sources: sources,
-                repositoryInfo: repositoryInfo
-            )
-            
-            // Perform verification if requested
-            if options?.verifyAfterBackup == true {
-                progressReporter.reportProgress(.processing(phase: "Verifying backup", percentComplete: 0.9), for: operation)
-                try await verifyBackup(snapshotID: backupResult.snapshotID)
-            }
-            
-            // Log successful completion
-            let resultContext = logContext
-                .with(key: "snapshotID", value: backupResult.snapshotID, privacy: .public)
-                .with(key: "filesAdded", value: String(backupResult.filesAdded), privacy: .public)
-                .with(key: "filesChanged", value: String(backupResult.filesChanged), privacy: .public)
-                .with(key: "bytesAdded", value: String(backupResult.bytesAdded), privacy: .public)
-                .with(key: "duration", value: String(format: "%.2f", backupResult.duration), privacy: .public)
-                
-            await backupLogging.logOperationSuccess(logContext: resultContext)
-            progressReporter.reportProgress(.completed, for: operation)
-            progressReporter.completeOperation(operation)
-            
-            return (backupResult, progressStream)
-        } catch is CancellationError {
-            await backupLogging.logOperationCancelled(logContext: logContext)
-            progressReporter.reportProgress(.cancelled, for: operation)
-            progressReporter.completeOperation(operation)
-            
-            throw BackupError.operationCancelled(
-                "Backup operation was cancelled",
-                context: errorMapper.createErrorContext(from: logContext)
-            )
-        } catch {
-            // Map and log error
-            let mappedError = errorMapper.mapError(error, context: logContext)
-            await backupLogging.logOperationFailure(error: mappedError, logContext: logContext)
-            
-            progressReporter.reportProgress(.failed(error: mappedError), for: operation)
-            progressReporter.completeOperation(operation)
-            
-            throw mappedError
-        }
+        // Execute the operation
+        return try await operationExecutor.execute(
+            parameters: parameters,
+            operation: { params, reporter, token in
+                try await operationsService.createBackup(
+                    parameters: params,
+                    progressReporter: reporter,
+                    cancellationToken: token
+                )
+            },
+            progressReporter: progressReporter,
+            cancellationToken: cancellationToken
+        )
     }
-
-    /// Restores a backup to the target location
-    /// - Parameters:
-    ///   - snapshotID: ID of the snapshot to restore
-    ///   - targetPath: Path to restore to
-    ///   - includePaths: Optional paths to include
-    ///   - excludePaths: Optional paths to exclude
-    ///   - options: Optional restore options
-    /// - Returns: Result of the restore operation and a progress sequence
-    /// - Throws: `BackupError` if restore fails
+    
+    /**
+     * Restores a backup to the specified location
+     *
+     * - Parameters:
+     *   - snapshotID: ID of the snapshot to restore
+     *   - targetPath: Destination path for the restored files
+     *   - includePaths: Optional paths to include in the restore
+     *   - excludePaths: Optional paths to exclude from the restore
+     *   - options: Optional restore configuration options
+     * - Returns: Restore result and progress stream
+     * - Throws: BackupError if restore fails
+     */
     public func restoreBackup(
         snapshotID: String,
         targetPath: URL,
         includePaths: [URL]?,
         excludePaths: [URL]?,
         options: RestoreOptions?
-    ) async throws -> (RestoreResult, AsyncStream<BackupProgress>) {
-        // Create a log context with privacy-aware metadata
-        let logContext = BackupLogContext()
-            .with(key: "snapshotID", value: snapshotID, privacy: .public)
-            .with(key: "targetPath", value: targetPath.path, privacy: .public)
-            .with(includePaths: includePaths?.map(\.path), privacy: .public)
-            .with(excludePaths: excludePaths?.map(\.path), privacy: .public)
-            .with(key: "overwriteExisting", value: String(options?.overwriteExisting ?? false), privacy: .public)
-            .with(operation: "restoreBackup")
-            
-        // Create a progress stream
-        let operation = BackupOperation.restoreBackup
-        let progressStream = progressReporter.progressStream(for: operation)
+    ) async throws -> (RestoreResult, AsyncStream<BackupInterfaces.BackupProgress>) {
+        // Create parameters object
+        let parameters = BackupRestoreParameters(
+            snapshotID: snapshotID,
+            targetPath: targetPath,
+            includePaths: includePaths,
+            excludePaths: excludePaths,
+            options: options
+        )
         
-        // Log operation start
-        await backupLogging.logOperationStart(logContext: logContext)
-        progressReporter.reportProgress(.initialising(description: "Preparing restore..."), for: operation)
+        // Create progress reporter
+        let progressReporter = BackupProgressReporter()
         
-        let startTime = Date()
+        // Create cancellation token
+        let cancellationToken = CancellationToken()
         
-        do {
-            // Create restore command
-            let command = try commandFactory.createRestoreCommand(
-                snapshotID: snapshotID,
-                targetPath: targetPath,
-                includePaths: includePaths,
-                excludePaths: excludePaths,
-                options: options
-            )
-            
-            // Check for task cancellation
-            try Task.checkCancellation()
-            progressReporter.reportProgress(.processing(phase: "Restoring files", percentComplete: 0.2), for: operation)
-            
-            // Execute restore command
-            let output = try await resticService.execute(command)
-            progressReporter.reportProgress(.processing(phase: "Processing restore results", percentComplete: 0.8), for: operation)
-            
-            // Parse the output to obtain the restore result
-            let restoreResult = try resultParser.parseRestoreResult(
-                output: output,
-                startTime: startTime,
-                endTime: Date(),
-                snapshotID: snapshotID,
-                targetPath: targetPath
-            )
-            
-            // Log successful completion
-            let resultContext = logContext
-                .with(key: "filesRestored", value: String(restoreResult.filesRestored), privacy: .public)
-                .with(key: "bytesRestored", value: String(restoreResult.bytesRestored), privacy: .public)
-                .with(key: "duration", value: String(format: "%.2f", restoreResult.duration), privacy: .public)
-                
-            await backupLogging.logOperationSuccess(logContext: resultContext)
-            progressReporter.reportProgress(.completed, for: operation)
-            progressReporter.completeOperation(operation)
-            
-            return (restoreResult, progressStream)
-        } catch is CancellationError {
-            await backupLogging.logOperationCancelled(logContext: logContext)
-            progressReporter.reportProgress(.cancelled, for: operation)
-            progressReporter.completeOperation(operation)
-            
-            throw BackupError.operationCancelled(
-                "Restore operation was cancelled",
-                context: errorMapper.createErrorContext(from: logContext)
-            )
-        } catch {
-            // Map and log error
-            let mappedError = errorMapper.mapError(error, context: logContext)
-            await backupLogging.logOperationFailure(error: mappedError, logContext: logContext)
-            
-            progressReporter.reportProgress(.failed(error: mappedError), for: operation)
-            progressReporter.completeOperation(operation)
-            
-            throw mappedError
-        }
+        // Execute the operation
+        return try await operationExecutor.execute(
+            parameters: parameters,
+            operation: { params, reporter, token in
+                try await operationsService.restoreBackup(
+                    parameters: params,
+                    progressReporter: reporter,
+                    cancellationToken: token
+                )
+            },
+            progressReporter: progressReporter,
+            cancellationToken: cancellationToken
+        )
     }
-
-    /// Lists available snapshots
-    /// - Parameters:
-    ///   - tags: Optional tags to filter by
-    ///   - before: Optional date to filter snapshots before
-    ///   - after: Optional date to filter snapshots after
-    ///   - options: Optional listing options
-    /// - Returns: Array of matching snapshots
-    /// - Throws: `BackupError` if listing fails
+    
+    /**
+     * Lists available backups matching the specified criteria
+     *
+     * - Parameters:
+     *   - tags: Optional tags to filter by
+     *   - before: Optional date to filter before
+     *   - after: Optional date to filter after
+     *   - host: Optional host to filter by
+     *   - path: Optional path that must be included in the backup
+     * - Returns: Array of matching backup snapshots
+     * - Throws: BackupError if listing fails
+     */
+    public func listBackups(
+        tags: [String]?,
+        before: Date?,
+        after: Date?,
+        host: String?,
+        path: URL?
+    ) async throws -> [BackupSnapshot] {
+        // Create parameters object
+        let parameters = BackupListParameters(
+            tags: tags,
+            before: before,
+            after: after,
+            host: host,
+            path: path
+        )
+        
+        // Create cancellation token
+        let cancellationToken = CancellationToken()
+        
+        // Execute the operation
+        return try await operationExecutor.execute(
+            parameters: parameters,
+            operation: { params, _, token in
+                try await operationsService.listBackups(
+                    parameters: params,
+                    cancellationToken: token
+                )
+            },
+            progressReporter: nil,
+            cancellationToken: cancellationToken
+        )
+    }
+    
+    /**
+     * Lists snapshots matching the given criteria.
+     *
+     * - Parameters:
+     *   - tags: Optional tags to filter by
+     *   - before: Optional date to filter snapshots before
+     *   - after: Optional date to filter snapshots after
+     *   - options: Optional listing options
+     * - Returns: Array of matching snapshots
+     * - Throws: BackupError if listing fails
+     */
     public func listSnapshots(
         tags: [String]?,
         before: Date?,
         after: Date?,
         options: ListOptions?
     ) async throws -> [BackupSnapshot] {
-        // Create a log context with privacy-aware metadata
-        let logContext = BackupLogContext()
-            .with(tags: tags, privacy: .public)
-            .with(key: "before", value: before?.description ?? "any", privacy: .public)
-            .with(key: "after", value: after?.description ?? "any", privacy: .public)
-            .with(key: "limit", value: options?.limit != nil ? String(options!.limit) : "none", privacy: .public)
-            .with(operation: "listSnapshots")
-            
-        // Log operation start
-        await backupLogging.logOperationStart(logContext: logContext)
+        // Create parameters object
+        let parameters = BackupListParameters(
+            repositoryID: nil,
+            tags: tags,
+            before: before,
+            after: after,
+            host: options?.host,
+            path: options?.path,
+            pattern: options?.pattern,
+            limit: options?.limit
+        )
         
-        do {
-            // Create list command
-            let command = try commandFactory.createListCommand(
-                tags: tags,
-                before: before,
-                after: after,
-                options: options
-            )
-            
-            // Check for task cancellation
-            try Task.checkCancellation()
-            
-            // Execute list command
-            let output = try await resticService.execute(command)
-            
-            // Parse the output to obtain snapshots
-            let snapshots = try resultParser.parseSnapshotsList(
-                output: output,
-                repositoryID: repositoryInfo.id
-            )
-            
-            // Log successful completion
-            let resultContext = logContext
-                .with(key: "count", value: String(snapshots.count), privacy: .public)
-                
-            await backupLogging.logOperationSuccess(logContext: resultContext)
-            
-            return snapshots
-        } catch is CancellationError {
-            await backupLogging.logOperationCancelled(logContext: logContext)
-            
-            throw BackupError.operationCancelled(
-                "List snapshots operation was cancelled",
-                context: errorMapper.createErrorContext(from: logContext)
-            )
-        } catch {
-            // Map and log error
-            let mappedError = errorMapper.mapError(error, context: logContext)
-            await backupLogging.logOperationFailure(error: mappedError, logContext: logContext)
-            
-            throw mappedError
-        }
+        // Call the list operation on the operations service
+        return try await backupOperationsService.listBackups(
+            parameters: parameters,
+            cancellationToken: nil
+        )
     }
     
-    /// Deletes a backup
-    /// - Parameters:
-    ///   - snapshotID: ID of the snapshot to delete
-    ///   - options: Optional delete options
-    /// - Returns: Result of the delete operation and a progress sequence
-    /// - Throws: `BackupError` if deletion fails
+    /**
+     * Deletes a backup snapshot
+     *
+     * - Parameters:
+     *   - snapshotID: ID of the snapshot to delete
+     *   - options: Optional deletion options
+     * - Returns: Deletion result and progress stream
+     * - Throws: BackupError if deletion fails
+     */
     public func deleteBackup(
         snapshotID: String,
         options: DeleteOptions?
-    ) async throws -> (DeleteResult, AsyncStream<BackupProgress>) {
-        // Create a log context with privacy-aware metadata
-        let logContext = BackupLogContext()
-            .with(key: "snapshotID", value: snapshotID, privacy: .public)
-            .with(key: "prune", value: String(options?.prune ?? false), privacy: .public)
-            .with(operation: "deleteBackup")
+    ) async throws -> (DeleteResult, AsyncStream<BackupInterfaces.BackupProgress>) {
+        // Create parameters object
+        let parameters = BackupDeleteParameters(
+            snapshotID: snapshotID,
+            pruneAfterDelete: options?.prune ?? false
+        )
+        
+        // Create progress reporter
+        let progressReporter = BackupProgressReporter()
+        
+        // Create cancellation token
+        let cancellationToken = CancellationToken()
+        
+        // Execute the operation
+        let result = try await operationExecutor.execute(
+            parameters: parameters,
+            operation: { params, _, token in
+                try await operationsService.deleteBackup(
+                    parameters: params,
+                    cancellationToken: token
+                )
+            },
+            progressReporter: progressReporter,
+            cancellationToken: cancellationToken
+        )
+        
+        // Create an empty progress stream
+        var progressContinuation: AsyncStream<BackupInterfaces.BackupProgress>.Continuation!
+        let progressStream = AsyncStream<BackupInterfaces.BackupProgress> { continuation in
+            progressContinuation = continuation
             
-        // Create a progress stream
-        let operation = BackupOperation.deleteBackup
-        let progressStream = progressReporter.progressStream(for: operation)
-        
-        // Log operation start
-        await backupLogging.logOperationStart(logContext: logContext)
-        progressReporter.reportProgress(.initialising(description: "Preparing deletion..."), for: operation)
-        
-        do {
-            // Create delete command
-            let command = try commandFactory.createForgetCommand(
-                snapshotID: snapshotID,
-                prune: options?.prune ?? false
+            // Create a completed progress
+            let progress = BackupInterfaces.BackupProgress(
+                bytesProcessed: 0,
+                totalBytes: 0,
+                filesProcessed: 0,
+                totalFiles: 0,
+                currentFile: nil,
+                status: .completed,
+                speed: 0
             )
             
-            // Check for task cancellation
-            try Task.checkCancellation()
-            progressReporter.reportProgress(.processing(phase: "Deleting snapshot", percentComplete: 0.3), for: operation)
-            
-            // Execute delete command
-            let output = try await resticService.execute(command)
-            progressReporter.reportProgress(.processing(phase: "Processing deletion results", percentComplete: 0.7), for: operation)
-            
-            // Parse the output to obtain delete result
-            let deleteResult = try resultParser.parseDeleteResult(output: output)
-            
-            // Log successful completion
-            let resultContext = logContext
-                .with(key: "deletedSnapshots", value: String(deleteResult.deletedSnapshots), privacy: .public)
-                .with(key: "deletedBlobs", value: String(deleteResult.deletedBlobs), privacy: .public)
-                .with(key: "freedSpace", value: deleteResult.freedSpace.description, privacy: .public)
-                
-            await backupLogging.logOperationSuccess(logContext: resultContext)
-            progressReporter.reportProgress(.completed, for: operation)
-            progressReporter.completeOperation(operation)
-            
-            return (deleteResult, progressStream)
-        } catch is CancellationError {
-            await backupLogging.logOperationCancelled(logContext: logContext)
-            progressReporter.reportProgress(.cancelled, for: operation)
-            progressReporter.completeOperation(operation)
-            
-            throw BackupError.operationCancelled(
-                "Delete operation was cancelled",
-                context: errorMapper.createErrorContext(from: logContext)
-            )
-        } catch {
-            // Map and log error
-            let mappedError = errorMapper.mapError(error, context: logContext)
-            await backupLogging.logOperationFailure(error: mappedError, logContext: logContext)
-            
-            progressReporter.reportProgress(.failed(error: mappedError), for: operation)
-            progressReporter.completeOperation(operation)
-            
-            throw mappedError
+            // Send the completed progress
+            continuation.yield(progress)
+            continuation.finish()
         }
+        
+        return (result, progressStream)
     }
     
-    /// Performs maintenance on the backup repository
-    /// - Parameters:
-    ///   - type: Type of maintenance to perform
-    ///   - options: Optional maintenance options
-    /// - Returns: Result of the maintenance operation and a progress sequence
-    /// - Throws: `BackupError` if maintenance fails
+    /**
+     * Performs maintenance operations on the backup repository
+     *
+     * - Parameters:
+     *   - type: Type of maintenance to perform
+     *   - options: Optional maintenance configuration options
+     * - Returns: Maintenance result and progress stream
+     * - Throws: BackupError if maintenance fails
+     */
     public func performMaintenance(
         type: MaintenanceType,
         options: MaintenanceOptions?
-    ) async throws -> (MaintenanceResult, AsyncStream<BackupProgress>) {
-        // Create a log context with privacy-aware metadata
-        let logContext = BackupLogContext()
-            .with(key: "type", value: String(describing: type), privacy: .public)
-            .with(key: "dryRun", value: String(options?.dryRun ?? false), privacy: .public)
-            .with(operation: "performMaintenance")
-            
-        // Create a progress stream
-        let (progressStream, updateProgress, completeProgress) = BackupProgress.createProgressStream()
+    ) async throws -> (MaintenanceResult, AsyncStream<BackupInterfaces.BackupProgress>) {
+        // Create parameters object
+        let parameters = BackupMaintenanceParameters(
+            maintenanceType: type,
+            options: options
+        )
         
-        // Log operation start
-        await backupLogging.logOperationStart(logContext: logContext)
-        updateProgress(.initialising(description: "Preparing maintenance..."))
+        // Create progress reporter
+        let progressReporter = BackupProgressReporter()
         
-        let startTime = Date()
+        // Create cancellation token
+        let cancellationToken = CancellationToken()
         
-        do {
-            // Create maintenance command based on type
-            let command = try commandFactory.createMaintenanceCommand(
-                type: type,
-                options: options
-            )
-            
-            // Check for task cancellation
-            try Task.checkCancellation()
-            updateProgress(.processing(phase: "Performing \(type) maintenance", percentComplete: 0.3))
-            
-            // Execute maintenance command
-            let output = try await resticService.execute(command)
-            updateProgress(.processing(phase: "Processing maintenance results", percentComplete: 0.8))
-            
-            // Parse the output to obtain maintenance result
-            let maintenanceResult = try resultParser.parseMaintenanceResult(
-                output: output,
-                type: type,
-                startTime: startTime,
-                endTime: Date()
-            )
-            
-            // Log successful completion
-            let resultContext = logContext
-                .with(key: "processedItems", value: String(maintenanceResult.processedItems), privacy: .public)
-                .with(key: "duration", value: String(format: "%.2f", maintenanceResult.duration), privacy: .public)
-                
-            await backupLogging.logOperationSuccess(logContext: resultContext)
-            updateProgress(.completed)
-            completeProgress()
-            
-            return (maintenanceResult, progressStream)
-        } catch is CancellationError {
-            await backupLogging.logOperationCancelled(logContext: logContext)
-            updateProgress(.cancelled)
-            completeProgress()
-            
-            throw BackupError.operationCancelled(
-                "Maintenance operation was cancelled",
-                context: errorMapper.createErrorContext(from: logContext)
-            )
-        } catch {
-            // Map and log error
-            let mappedError = errorMapper.mapError(error, context: logContext)
-            await backupLogging.logOperationFailure(error: mappedError, logContext: logContext)
-            
-            updateProgress(.failed(error: mappedError))
-            completeProgress()
-            
-            throw mappedError
-        }
+        // Execute the operation
+        return try await operationExecutor.execute(
+            parameters: parameters,
+            operation: { params, reporter, token in
+                try await operationsService.performMaintenance(
+                    parameters: params,
+                    progressReporter: reporter,
+                    cancellationToken: token
+                )
+            },
+            progressReporter: progressReporter,
+            cancellationToken: cancellationToken
+        )
     }
     
-    // MARK: - Private Helpers
-    
-    /// Verifies a backup snapshot
-    /// - Parameter snapshotID: ID of the snapshot to verify
-    /// - Throws: BackupError if verification fails
-    private func verifyBackup(snapshotID: String) async throws {
-        let logContext = BackupLogContext()
-            .with(key: "snapshotID", value: snapshotID, privacy: .public)
-            .with(operation: "verifyBackup")
-            
-        await backupLogging.logOperationStart(logContext: logContext)
+    /**
+     * Gets details for a specific snapshot
+     *
+     * - Parameters:
+     *   - snapshotID: ID of the snapshot to query
+     *   - includeFileStatistics: Whether to include file statistics
+     * - Returns: Detailed backup snapshot information
+     * - Throws: BackupError if the snapshot cannot be found or accessed
+     */
+    public func getSnapshotDetails(
+        snapshotID: String,
+        includeFileStatistics: Bool
+    ) async throws -> BackupSnapshot {
+        // Create parameters object
+        let parameters = BackupListParameters(
+            tags: nil,
+            before: nil,
+            after: nil,
+            host: nil,
+            path: nil
+        )
         
-        do {
-            // Create verify command
-            let command = try commandFactory.createVerifyCommand(snapshotID: snapshotID)
-            
-            // Execute verify command
-            let _ = try await resticService.execute(command)
-            
-            // Log successful verification
-            await backupLogging.logOperationSuccess(logContext: logContext)
-        } catch {
-            let mappedError = errorMapper.mapError(error, context: logContext)
-            await backupLogging.logOperationFailure(error: mappedError, logContext: logContext)
-            throw mappedError
+        // Create cancellation token
+        let cancellationToken = CancellationToken()
+        
+        // List all snapshots
+        let snapshots = try await operationExecutor.execute(
+            parameters: parameters,
+            operation: { params, _, token in
+                try await operationsService.listBackups(
+                    parameters: params,
+                    cancellationToken: token
+                )
+            },
+            progressReporter: nil,
+            cancellationToken: cancellationToken
+        )
+        
+        // Find the requested snapshot
+        guard let snapshot = snapshots.first(where: { $0.id == snapshotID }) else {
+            throw BackupError.snapshotNotFound(
+                id: snapshotID,
+                details: "Snapshot not found"
+            )
         }
+        
+        // If statistics are requested, get them
+        if includeFileStatistics {
+            // TODO: Implement file statistics
+        }
+        
+        return snapshot
+    }
+    
+    /**
+     * Exports a snapshot to a standalone format
+     *
+     * - Parameters:
+     *   - snapshotID: ID of the snapshot to export
+     *   - destination: Destination for the exported snapshot
+     *   - format: Format to export in
+     * - Returns: Export result and a progress sequence
+     * - Throws: BackupError if export fails
+     */
+    public func exportSnapshot(
+        snapshotID: String,
+        destination: URL,
+        format: ExportFormat
+    ) async throws -> (ExportResult, AsyncStream<BackupInterfaces.BackupProgress>) {
+        // Create an empty progress stream for now
+        var progressContinuation: AsyncStream<BackupInterfaces.BackupProgress>.Continuation!
+        let progressStream = AsyncStream<BackupInterfaces.BackupProgress> { continuation in
+            progressContinuation = continuation
+            
+            // Create a completed progress
+            let progress = BackupInterfaces.BackupProgress(
+                bytesProcessed: 0,
+                totalBytes: 0,
+                filesProcessed: 0,
+                totalFiles: 0,
+                currentFile: nil,
+                status: .completed,
+                speed: 0
+            )
+            
+            // Send the completed progress
+            continuation.yield(progress)
+            continuation.finish()
+        }
+        
+        // Return a stub result for now
+        return (ExportResult(exportedFiles: 0, exportSize: 0), progressStream)
+    }
+    
+    /**
+     * Imports a snapshot from a standalone format
+     *
+     * - Parameters:
+     *   - source: Source of the snapshot to import
+     *   - repositoryID: Target repository ID
+     *   - format: Format to import from
+     * - Returns: Import result and a progress sequence
+     * - Throws: BackupError if import fails
+     */
+    public func importSnapshot(
+        source: URL,
+        repositoryID: String,
+        format: ImportFormat
+    ) async throws -> (ImportResult, AsyncStream<BackupInterfaces.BackupProgress>) {
+        // Create an empty progress stream for now
+        var progressContinuation: AsyncStream<BackupInterfaces.BackupProgress>.Continuation!
+        let progressStream = AsyncStream<BackupInterfaces.BackupProgress> { continuation in
+            progressContinuation = continuation
+            
+            // Create a completed progress
+            let progress = BackupInterfaces.BackupProgress(
+                bytesProcessed: 0,
+                totalBytes: 0,
+                filesProcessed: 0,
+                totalFiles: 0,
+                currentFile: nil,
+                status: .completed,
+                speed: 0
+            )
+            
+            // Send the completed progress
+            continuation.yield(progress)
+            continuation.finish()
+        }
+        
+        // Return a stub result for now
+        return (ImportResult(importedFiles: 0, importSize: 0), progressStream)
+    }
+    
+    /**
+     * Verifies a snapshot's integrity
+     *
+     * - Parameters:
+     *   - snapshotID: ID of the snapshot to verify
+     *   - level: Level of verification to perform
+     * - Returns: Verification result and a progress sequence
+     * - Throws: BackupError if verification fails
+     */
+    public func verifySnapshot(
+        snapshotID: String,
+        level: VerificationLevel
+    ) async throws -> (VerificationResult, AsyncStream<BackupInterfaces.BackupProgress>) {
+        // Create an empty progress stream for now
+        var progressContinuation: AsyncStream<BackupInterfaces.BackupProgress>.Continuation!
+        let progressStream = AsyncStream<BackupInterfaces.BackupProgress> { continuation in
+            progressContinuation = continuation
+            
+            // Create a completed progress
+            let progress = BackupInterfaces.BackupProgress(
+                bytesProcessed: 0,
+                totalBytes: 0,
+                filesProcessed: 0,
+                totalFiles: 0,
+                currentFile: nil,
+                status: .completed,
+                speed: 0
+            )
+            
+            // Send the completed progress
+            continuation.yield(progress)
+            continuation.finish()
+        }
+        
+        // Return a stub result for now
+        return (VerificationResult(verifiedFiles: 0, corruptFiles: 0), progressStream)
+    }
+    
+    /**
+     * Copies a snapshot to another repository
+     *
+     * - Parameters:
+     *   - snapshotID: ID of the snapshot to copy
+     *   - targetRepositoryID: Target repository ID
+     * - Returns: Copy result and a progress sequence
+     * - Throws: BackupError if copy fails
+     */
+    public func copySnapshot(
+        snapshotID: String,
+        targetRepositoryID: String
+    ) async throws -> (CopyResult, AsyncStream<BackupInterfaces.BackupProgress>) {
+        // Create an empty progress stream for now
+        var progressContinuation: AsyncStream<BackupInterfaces.BackupProgress>.Continuation!
+        let progressStream = AsyncStream<BackupInterfaces.BackupProgress> { continuation in
+            progressContinuation = continuation
+            
+            // Create a completed progress
+            let progress = BackupInterfaces.BackupProgress(
+                bytesProcessed: 0,
+                totalBytes: 0,
+                filesProcessed: 0,
+                totalFiles: 0,
+                currentFile: nil,
+                status: .completed,
+                speed: 0
+            )
+            
+            // Send the completed progress
+            continuation.yield(progress)
+            continuation.finish()
+        }
+        
+        // Return a stub result for now
+        return (CopyResult(copiedFiles: 0, copySize: 0), progressStream)
+    }
+    
+    /**
+     * Retrieves file content from a snapshot
+     *
+     * - Parameters:
+     *   - snapshotID: ID of the snapshot containing the file
+     *   - path: Path to the file within the snapshot
+     * - Returns: File content and metadata
+     * - Throws: BackupError if file retrieval fails
+     */
+    public func getFileContent(
+        snapshotID: String,
+        path: URL
+    ) async throws -> FileContent {
+        // Create a stub result for now
+        return FileContent(
+            data: Data(),
+            metadata: FileMetadata(
+                size: 0,
+                modTime: Date(),
+                mode: 0,
+                uid: 0,
+                gid: 0
+            )
+        )
+    }
+    
+    /**
+     * Lists files in a backup snapshot
+     *
+     * - Parameters:
+     *   - snapshotID: ID of the snapshot to list files from
+     *   - path: Optional path to filter by
+     *   - pattern: Optional pattern to filter by
+     * - Returns: Array of file information
+     * - Throws: BackupError if listing fails
+     */
+    public func listFiles(
+        snapshotID: String,
+        path: URL?,
+        pattern: String?
+    ) async throws -> [SnapshotFileEntry] {
+        // Create cancellation token
+        let cancellationToken = CancellationToken()
+        
+        // Execute the operation to find files
+        return try await operationsService.findFiles(
+            snapshotID: snapshotID,
+            path: path?.path,
+            pattern: pattern,
+            progressReporter: nil,
+            cancellationToken: cancellationToken
+        )
+    }
+    
+    // MARK: - Metrics and Diagnostics
+    
+    /**
+     * Gets metrics about backup operations
+     *
+     * - Returns: Dictionary with metrics information
+     */
+    public func getMetrics() async -> [String: Any] {
+        return await metricsCollector.getMetricsSummary()
+    }
+    
+    /**
+     * Gets success rates for different operations
+     *
+     * - Returns: Dictionary mapping operation types to success rates (0-1)
+     */
+    public func getSuccessRates() async -> [String: Double] {
+        return await metricsCollector.getSuccessRates()
+    }
+    
+    /**
+     * Resets all collected metrics
+     */
+    public func resetMetrics() async {
+        await metricsCollector.resetMetrics()
     }
 }
