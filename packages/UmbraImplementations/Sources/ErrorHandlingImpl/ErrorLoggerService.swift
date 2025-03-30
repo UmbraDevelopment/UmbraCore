@@ -61,19 +61,29 @@ public actor ErrorLoggerService: ErrorLoggingProtocol {
       }
     }
 
+    // Convert LogMetadata to PrivacyMetadata
+    let privacyMetadata: PrivacyMetadata = {
+      var result = PrivacyMetadata()
+      for (key, value) in metadata.asDictionary {
+        // Use privacy level private for error details
+        result[key] = PrivacyMetadataValue(value: value, privacy: .private)
+      }
+      return result
+    }()
+
     // Log with the appropriate level
     let message="[\(level.rawValue.uppercased())] \(error.localizedDescription)"
     let source=context?.source.description ?? "ErrorLoggerService"
 
     switch level {
       case .debug:
-        await logger.debug(message, metadata: metadata, source: source)
+        await logger.debug(message, metadata: privacyMetadata, source: source)
       case .info:
-        await logger.info(message, metadata: metadata, source: source)
+        await logger.info(message, metadata: privacyMetadata, source: source)
       case .warning:
-        await logger.warning(message, metadata: metadata, source: source)
+        await logger.warning(message, metadata: privacyMetadata, source: source)
       case .error, .critical:
-        await logger.error(message, metadata: metadata, source: source)
+        await logger.error(message, metadata: privacyMetadata, source: source)
     }
   }
 

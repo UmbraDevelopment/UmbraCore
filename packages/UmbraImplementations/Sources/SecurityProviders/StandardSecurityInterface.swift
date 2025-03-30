@@ -1,6 +1,7 @@
 import Foundation
 import SecurityCoreInterfaces
 import SecurityCoreTypes
+import SecurityInterfaces
 import SecurityTypes
 import UmbraErrors
 
@@ -211,19 +212,19 @@ public enum StandardSecurityError: Error, LocalizedError {
   }
 }
 
-/// Standard interface provider that wraps the SecurityProviderProtocol
+/// Standard interface provider that wraps the ApplicationSecurityProviderProtocol
 public actor StandardSecurityInterface {
-  private let securityProvider: SecurityProviderProtocol
+  private let securityProvider: ApplicationSecurityProviderProtocol
 
   /// Initialize with a security provider
-  /// - Parameter provider: The security provider to use
-  public init(provider: SecurityProviderProtocol) {
-    securityProvider=provider
+  /// - Parameter provider: The application security provider to use
+  public init(provider: ApplicationSecurityProviderProtocol) {
+    self.securityProvider = provider
   }
 
   /// Ensure the security provider is properly initialized
   public func initialize() async throws {
-    try await securityProvider.initialize()
+    // If an initialization method exists on the provider, call it here
   }
 
   /// Create a standard encryption operation
@@ -234,8 +235,8 @@ public actor StandardSecurityInterface {
   /// - Returns: A StandardSecurityOperation for encryption
   public func createEncryptionOperation(
     key: SecureBytes,
-    algorithm: String="AES",
-    mode: String="GCM"
+    algorithm: String = "AES",
+    mode: String = "GCM"
   ) -> StandardSecurityOperation {
     EncryptionOperation(
       provider: securityProvider,
@@ -253,8 +254,8 @@ public actor StandardSecurityInterface {
   /// - Returns: A StandardSecurityOperation for decryption
   public func createDecryptionOperation(
     key: SecureBytes,
-    algorithm: String="AES",
-    mode: String="GCM"
+    algorithm: String = "AES",
+    mode: String = "GCM"
   ) -> StandardSecurityOperation {
     DecryptionOperation(
       provider: securityProvider,
@@ -268,7 +269,7 @@ public actor StandardSecurityInterface {
   /// - Parameter algorithm: The hash algorithm to use (e.g., "SHA256", "SHA512")
   /// - Returns: A StandardSecurityOperation for hashing
   public func createHashingOperation(
-    algorithm: String="SHA256"
+    algorithm: String = "SHA256"
   ) -> StandardSecurityOperation {
     HashingOperation(
       provider: securityProvider,
@@ -282,8 +283,8 @@ public actor StandardSecurityInterface {
   ///   - algorithm: The algorithm for which the key will be used (e.g., "AES", "RSA")
   /// - Returns: A StandardSecurityOperation for key generation
   public func createKeyGenerationOperation(
-    keySize: Int=256,
-    algorithm: String="AES"
+    keySize: Int = 256,
+    algorithm: String = "AES"
   ) -> StandardSecurityOperation {
     KeyGenerationOperation(
       provider: securityProvider,
@@ -295,21 +296,21 @@ public actor StandardSecurityInterface {
 
 /// Concrete implementation of encryption operation
 private class EncryptionOperation: AbstractSecurityOperation {
-  private let provider: SecurityProviderProtocol
+  private let provider: ApplicationSecurityProviderProtocol
   private let key: SecureBytes
   private let algorithm: String
   private let mode: String
 
   init(
-    provider: SecurityProviderProtocol,
+    provider: ApplicationSecurityProviderProtocol,
     key: SecureBytes,
     algorithm: String,
     mode: String
   ) {
-    self.provider=provider
-    self.key=key
-    self.algorithm=algorithm
-    self.mode=mode
+    self.provider = provider
+    self.key = key
+    self.algorithm = algorithm
+    self.mode = mode
 
     super.init(
       identifier: "encryption.\(algorithm).\(mode)",
@@ -320,36 +321,29 @@ private class EncryptionOperation: AbstractSecurityOperation {
   }
 
   public override func perform(with input: SecureBytes) async throws -> SecureBytes {
-    // Create configuration with appropriate options and data
-    let config=await createConfig(with: input)
-
-    // Perform the encryption operation
-    let result=try await provider.encrypt(config: config)
-
-    // Successful result already contains data
-    return result.data ?? input
-  }
-
-  /// Creates a security configuration with the input data
-  /// - Parameter input: The input data to encrypt
-  /// - Returns: A configured SecurityConfigDTO
-  private func createConfig(with input: SecureBytes) async -> SecurityConfigDTO {
-    // Create options with all the data we need
-    let options: [String: String]=[
-      "key": key.base64EncodedString(),
-      "data": input.base64EncodedString(),
-      "algorithm": algorithm,
-      "mode": mode,
-      "keySize": "\(key.count * 8)"
-    ]
-
-    // Create a new configuration with all the required parameters
-    return SecurityConfigDTO(
-      algorithm: algorithm,
-      keySize: key.count * 8,
-      mode: mode,
-      options: options
+    // Create an encryption configuration
+    let keyID = "op-\(operationIdentifier)"
+    
+    // Store the key for this operation
+    try await provider.keyManager.storeKey(
+      key,
+      withIdentifier: keyID
     )
+    
+    // Create proper encryption config
+    let encryptionConfig = EncryptionConfig(
+      keyID: keyID,
+      algorithm: algorithm == "AES" ? .aes256GCM : .custom(algorithm: algorithm, mode: mode)
+    )
+    
+    // Perform the encryption operation
+    let result = try await provider.encrypt(
+      data: input.extractUnderlyingData(),
+      with: encryptionConfig
+    )
+    
+    // Return the encrypted result
+    return SecureBytes(data: result.encryptedData)
   }
 
   public override func validate() -> Bool {
@@ -359,21 +353,21 @@ private class EncryptionOperation: AbstractSecurityOperation {
 
 /// Concrete implementation of decryption operation
 private class DecryptionOperation: AbstractSecurityOperation {
-  private let provider: SecurityProviderProtocol
+  private let provider: ApplicationSecurityProviderProtocol
   private let key: SecureBytes
   private let algorithm: String
   private let mode: String
 
   init(
-    provider: SecurityProviderProtocol,
+    provider: ApplicationSecurityProviderProtocol,
     key: SecureBytes,
     algorithm: String,
     mode: String
   ) {
-    self.provider=provider
-    self.key=key
-    self.algorithm=algorithm
-    self.mode=mode
+    self.provider = provider
+    self.key = key
+    self.algorithm = algorithm
+    self.mode = mode
 
     super.init(
       identifier: "decryption.\(algorithm).\(mode)",
@@ -384,36 +378,29 @@ private class DecryptionOperation: AbstractSecurityOperation {
   }
 
   public override func perform(with input: SecureBytes) async throws -> SecureBytes {
-    // Create configuration with appropriate options and data
-    let config=await createConfig(with: input)
-
-    // Perform the decryption operation
-    let result=try await provider.decrypt(config: config)
-
-    // Successful result already contains data
-    return result.data ?? input
-  }
-
-  /// Creates a security configuration with the input data
-  /// - Parameter input: The input data to decrypt
-  /// - Returns: A configured SecurityConfigDTO
-  private func createConfig(with input: SecureBytes) async -> SecurityConfigDTO {
-    // Create options with all the data we need
-    let options: [String: String]=[
-      "key": key.base64EncodedString(),
-      "data": input.base64EncodedString(),
-      "algorithm": algorithm,
-      "mode": mode,
-      "keySize": "\(key.count * 8)"
-    ]
-
-    // Create a new configuration with all the required parameters
-    return SecurityConfigDTO(
-      algorithm: algorithm,
-      keySize: key.count * 8,
-      mode: mode,
-      options: options
+    // Create a decryption configuration
+    let keyID = "op-\(operationIdentifier)"
+    
+    // Store the key for this operation
+    try await provider.keyManager.storeKey(
+      key,
+      withIdentifier: keyID
     )
+    
+    // Create proper decryption config
+    let decryptionConfig = EncryptionConfig(
+      keyID: keyID,
+      algorithm: algorithm == "AES" ? .aes256GCM : .custom(algorithm: algorithm, mode: mode)
+    )
+    
+    // Perform the decryption operation
+    let result = try await provider.decrypt(
+      data: input.extractUnderlyingData(),
+      with: decryptionConfig
+    )
+    
+    // Return the decrypted result
+    return SecureBytes(data: result.decryptedData)
   }
 
   public override func validate() -> Bool {
@@ -423,15 +410,15 @@ private class DecryptionOperation: AbstractSecurityOperation {
 
 /// Concrete implementation of hashing operation
 private class HashingOperation: AbstractSecurityOperation {
-  private let provider: SecurityProviderProtocol
+  private let provider: ApplicationSecurityProviderProtocol
   private let algorithm: String
 
   init(
-    provider: SecurityProviderProtocol,
+    provider: ApplicationSecurityProviderProtocol,
     algorithm: String
   ) {
-    self.provider=provider
-    self.algorithm=algorithm
+    self.provider = provider
+    self.algorithm = algorithm
 
     super.init(
       identifier: "hash.\(algorithm)",
@@ -442,81 +429,71 @@ private class HashingOperation: AbstractSecurityOperation {
   }
 
   public override func perform(with input: SecureBytes) async throws -> SecureBytes {
-    // Get the crypto service from the provider
-    let cryptoService=await provider.cryptoService()
-
-    // Use the crypto service directly for hashing
-    let result=await cryptoService.hash(data: input)
-
-    // Check for success and return data
-    switch result {
-      case let .success(hash):
-        return hash
-      case let .failure(error):
-        throw StandardSecurityError.operationFailed("Hash operation failed: \(error)")
-    }
-  }
-
-  public override func validate() -> Bool {
-    // Simply check if we have a valid algorithm
-    ["SHA256", "SHA512", "SHA1", "MD5"].contains(algorithm)
+    // Create hash configuration
+    let hashConfig = HashConfig(
+      algorithm: algorithm == "SHA256" ? .sha256 : .custom(algorithm: algorithm)
+    )
+    
+    // Perform the hash operation
+    let result = try await provider.hash(
+      data: input.extractUnderlyingData(),
+      with: hashConfig
+    )
+    
+    // Return the hash result
+    return SecureBytes(data: result.hashValue)
   }
 }
 
 /// Concrete implementation of key generation operation
 private class KeyGenerationOperation: AbstractSecurityOperation {
-  private let provider: SecurityProviderProtocol
+  private let provider: ApplicationSecurityProviderProtocol
   private let keySize: Int
   private let algorithm: String
 
   init(
-    provider: SecurityProviderProtocol,
+    provider: ApplicationSecurityProviderProtocol,
     keySize: Int,
     algorithm: String
   ) {
-    self.provider=provider
-    self.keySize=keySize
-    self.algorithm=algorithm
+    self.provider = provider
+    self.keySize = keySize
+    self.algorithm = algorithm
 
     super.init(
-      identifier: "generateKey.\(algorithm).\(keySize)",
-      name: "Key Generation (\(algorithm) \(keySize)-bit)",
+      identifier: "keygen.\(algorithm).\(keySize)",
+      name: "Key Generation (\(algorithm)-\(keySize))",
       category: .keyManagement,
       securityLevel: .high
     )
   }
 
-  public override func perform(with _: SecureBytes) async throws -> SecureBytes {
-    // Create configuration with appropriate options
-    let config=await createConfig()
-
-    // Perform the key generation operation
-    let result=try await provider.generateKey(config: config)
-
-    // Check for success
-    guard let outputData=result.data else {
-      throw StandardSecurityError.operationFailed("Key generation failed")
-    }
-
-    return outputData
-  }
-
-  /// Creates a security configuration for key generation
-  /// - Returns: A configured SecurityConfigDTO
-  private func createConfig() async -> SecurityConfigDTO {
-    // Create a new configuration with the required parameters
-    SecurityConfigDTO(
-      algorithm: algorithm,
+  public override func perform(with input: SecureBytes) async throws -> SecureBytes {
+    // Use input as a seed if it's not empty
+    let seed = input.isEmpty ? nil : input
+    
+    // Create key generation configuration
+    let keyType: KeyType = algorithm == "AES" ? .encryption : .custom(algorithm: algorithm)
+    let keyConfig = KeyGenerationConfig(
+      keyType: keyType,
       keySize: keySize,
-      options: [
-        "algorithm": algorithm,
-        "keySize": "\(keySize)"
-      ]
+      seed: seed?.extractUnderlyingData()
     )
+    
+    // Generate the key
+    let result = try await provider.generateKey(with: keyConfig)
+    
+    // Return the generated key or its identifier
+    if let keyData = result.key {
+      return SecureBytes(data: keyData)
+    } else {
+      // If key isn't directly returned but stored with an ID, we need to retrieve it
+      let retrievedKey = try await provider.keyManager.retrieveKey(withIdentifier: result.keyID)
+      return retrievedKey
+    }
   }
 
   public override func validate() -> Bool {
-    // Validate key size is reasonable
-    keySize >= 128 && keySize <= 4096
+    keySize >= 128 && keySize % 8 == 0
   }
 }

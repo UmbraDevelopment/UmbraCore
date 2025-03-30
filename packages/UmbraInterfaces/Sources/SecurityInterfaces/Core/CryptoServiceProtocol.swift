@@ -2,10 +2,10 @@ import Foundation
 import SecurityTypes
 
 /**
- # Cryptographic Service Protocol
+ # Application Cryptographic Service Protocol
 
- The CryptoServiceProtocol defines the interface for performing cryptographic operations,
- including encryption, decryption, hashing, and signing.
+ The ApplicationCryptoServiceProtocol defines the interface for performing cryptographic operations
+ at the application level, including encryption, decryption, hashing, and signing.
 
  ## Responsibilities
 
@@ -16,10 +16,10 @@ import SecurityTypes
 
  ## Usage
 
- The crypto service should be accessed through the SecurityProviderProtocol or
+ The application crypto service should be accessed through the ApplicationSecurityProviderProtocol or
  directly through dependency injection when needed.
  */
-public protocol CryptoServiceProtocol: Sendable {
+public protocol ApplicationCryptoServiceProtocol: Sendable {
   /**
    Encrypts data using the specified key and algorithm.
 
@@ -53,12 +53,12 @@ public protocol CryptoServiceProtocol: Sendable {
   ) async throws -> Data
 
   /**
-   Computes a hash of the given data using the specified algorithm.
+   Computes a hash of the input data using the specified algorithm.
 
    - Parameters:
      - data: The data to hash
      - algorithm: The hashing algorithm to use
-   - Returns: The computed hash value
+   - Returns: The computed hash
    - Throws: CryptoError if hashing fails
    */
   func hash(
@@ -67,29 +67,29 @@ public protocol CryptoServiceProtocol: Sendable {
   ) async throws -> Data
 
   /**
-   Signs data using the specified key and algorithm.
+   Creates a digital signature for the input data using the specified key and algorithm.
 
    - Parameters:
      - data: The data to sign
      - key: The key identifier to use for signing
-     - algorithm: The signing algorithm to use
-   - Returns: The computed signature
+     - algorithm: The signature algorithm to use
+   - Returns: The digital signature
    - Throws: CryptoError if signing fails
    */
   func sign(
     data: Data,
     using key: KeyIdentifier,
-    algorithm: SigningAlgorithm
+    algorithm: SignatureAlgorithm
   ) async throws -> Data
 
   /**
-   Verifies a signature for the given data.
+   Verifies a digital signature against the original data.
 
    - Parameters:
      - signature: The signature to verify
-     - data: The data that was signed
+     - data: The original data that was signed
      - key: The key identifier to use for verification
-     - algorithm: The signing algorithm that was used
+     - algorithm: The signature algorithm that was used
    - Returns: True if the signature is valid, false otherwise
    - Throws: CryptoError if verification fails
    */
@@ -97,32 +97,32 @@ public protocol CryptoServiceProtocol: Sendable {
     signature: Data,
     for data: Data,
     using key: KeyIdentifier,
-    algorithm: SigningAlgorithm
+    algorithm: SignatureAlgorithm
   ) async throws -> Bool
 
   /**
-   Generates a random sequence of bytes of the specified length.
+   Generates random data of the specified length.
 
-   - Parameter length: The number of random bytes to generate
-   - Returns: The generated random bytes
+   - Parameter length: The number of bytes to generate
+   - Returns: The generated random data
    - Throws: CryptoError if random generation fails
    */
-  func generateRandomBytes(length: Int) async throws -> Data
+  func generateRandomData(length: Int) async throws -> Data
 
   /**
-   Derives a key from the provided password using the specified parameters.
+   Derives a key from a password or passphrase.
 
    - Parameters:
-     - password: The password to derive the key from
-     - salt: The salt to use in the derivation
-     - iterations: The number of iterations to perform
-     - keyLength: The desired length of the derived key in bytes
+     - password: The password to derive from
+     - salt: Salt data for the derivation
+     - iterations: Number of iterations to perform
+     - keyLength: Length of the derived key
      - algorithm: The key derivation algorithm to use
-   - Returns: The derived key
+   - Returns: The derived key material
    - Throws: CryptoError if key derivation fails
    */
   func deriveKey(
-    from password: String,
+    from password: Data,
     salt: Data,
     iterations: Int,
     keyLength: Int,

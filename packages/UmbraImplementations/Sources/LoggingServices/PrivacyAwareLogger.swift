@@ -47,32 +47,32 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol {
     // MARK: - LoggingProtocol Methods
     
     /// Log a trace message
-    public func trace(_ message: String, metadata: LogMetadata?, source: String) async {
+    public func trace(_ message: String, metadata: PrivacyMetadata?, source: String) async {
         await log(.trace, message, metadata: metadata, source: source)
     }
     
     /// Log a debug message
-    public func debug(_ message: String, metadata: LogMetadata?, source: String) async {
+    public func debug(_ message: String, metadata: PrivacyMetadata?, source: String) async {
         await log(.debug, message, metadata: metadata, source: source)
     }
     
     /// Log an info message
-    public func info(_ message: String, metadata: LogMetadata?, source: String) async {
+    public func info(_ message: String, metadata: PrivacyMetadata?, source: String) async {
         await log(.info, message, metadata: metadata, source: source)
     }
     
     /// Log a warning message
-    public func warning(_ message: String, metadata: LogMetadata?, source: String) async {
+    public func warning(_ message: String, metadata: PrivacyMetadata?, source: String) async {
         await log(.warning, message, metadata: metadata, source: source)
     }
     
     /// Log an error message
-    public func error(_ message: String, metadata: LogMetadata?, source: String) async {
+    public func error(_ message: String, metadata: PrivacyMetadata?, source: String) async {
         await log(.error, message, metadata: metadata, source: source)
     }
     
     /// Log a critical message
-    public func critical(_ message: String, metadata: LogMetadata?, source: String) async {
+    public func critical(_ message: String, metadata: PrivacyMetadata?, source: String) async {
         await log(.critical, message, metadata: metadata, source: source)
     }
     
@@ -87,7 +87,7 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol {
     public func log(
         _ level: LogLevel,
         _ message: PrivacyString,
-        metadata: LogMetadata?,
+        metadata: PrivacyMetadata?,
         source: String
     ) async {
         // Check if this log level should be processed
@@ -126,15 +126,15 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol {
         source: String
     ) async {
         // Convert sensitive values to metadata with privacy annotations
-        var metadata: LogMetadata = [:]
+        var privacyMetadata = PrivacyMetadata()
         for (key, value) in sensitiveValues {
-            metadata[key] = (value: value, privacy: .sensitive)
+            privacyMetadata[key] = PrivacyMetadataValue(value: String(describing: value), privacy: .sensitive)
         }
         
         // Create context with metadata
         let context = LogContext(
             source: source,
-            metadata: metadata
+            metadata: privacyMetadata
         )
         
         // Write to the backend
@@ -155,7 +155,7 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol {
     public func logError(
         _ error: Error,
         privacyLevel: LogPrivacyLevel,
-        metadata: LogMetadata?,
+        metadata: PrivacyMetadata?,
         source: String
     ) async {
         // Create a privacy string with the error description
@@ -170,8 +170,11 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol {
         )
         
         // Add error metadata
-        var combinedMetadata = metadata ?? [:]
-        combinedMetadata["errorType"] = (value: String(describing: type(of: error)), privacy: .public)
+        var combinedMetadata = metadata ?? PrivacyMetadata()
+        combinedMetadata["errorType"] = PrivacyMetadataValue(
+            value: String(describing: type(of: error)), 
+            privacy: .public
+        )
         
         // Log the error with privacy controls
         await log(.error, errorMessage, metadata: combinedMetadata, source: source)

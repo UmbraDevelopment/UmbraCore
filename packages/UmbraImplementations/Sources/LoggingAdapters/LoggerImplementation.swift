@@ -5,9 +5,14 @@ import LoggingWrapperServices
 
 /// A thread-safe logging service implementation that adapts
 /// the LoggingInterfaces to LoggingWrapperServices
-public actor LoggerImplementation: LoggingProtocol {
+public actor LoggerImplementation: LoggingProtocol, CoreLoggingProtocol {
   /// The shared logger instance
   public static let shared=LoggerImplementation()
+  
+  /// The underlying logging actor
+  public var loggingActor: LoggingActor {
+    self
+  }
 
   /// Initialise the logger with default configuration
   public init() {
@@ -54,8 +59,13 @@ public actor LoggerImplementation: LoggingProtocol {
   /// Format metadata into a string representation
   /// - Parameter metadata: The metadata to format
   /// - Returns: A string representation of the metadata
-  private func formatMetadata(_ metadata: LoggingTypes.LogMetadata) -> String {
-    let dict=metadata.asDictionary
+  private func formatMetadata(_ metadata: LoggingTypes.PrivacyMetadata) -> String {
+    let dict = metadata.entries().reduce(into: [String: String]()) { result, key in
+        if let value = metadata[key] {
+            result[key] = String(describing: value)
+        }
+    }
+    
     if dict.isEmpty {
       return "{}"
     }
@@ -65,20 +75,54 @@ public actor LoggerImplementation: LoggingProtocol {
     }
     return "{ \(entries.joined(separator: ", ")) }"
   }
+  
+  /// Log a message with the specified level and context
+  /// - Parameters:
+  ///   - level: The severity level of the log
+  ///   - message: The message to log
+  ///   - context: The context information for the log
+  public func logMessage(_ level: LogLevel, _ message: String, context: LogContext) async {
+    await log(LoggingTypes.LogEntry(
+      timestamp: LogTimestamp.now(),
+      level: level,
+      message: message,
+      metadata: context.metadata,
+      source: context.source,
+      entryID: nil
+    ))
+  }
 
   // MARK: - LoggingProtocol Implementation
+  
+  /// Log a trace message
+  /// - Parameters:
+  ///   - message: The message to log
+  ///   - metadata: Optional metadata
+  ///   - source: Source component identifier
+  public func trace(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {
+    await log(LoggingTypes.LogEntry(
+      timestamp: LogTimestamp.now(),
+      level: .trace,
+      message: message,
+      metadata: metadata,
+      source: source,
+      entryID: nil
+    ))
+  }
 
   /// Log a debug message
   /// - Parameters:
   ///   - message: The message to log
   ///   - metadata: Optional metadata
   ///   - source: Optional source component identifier
-  public func debug(_ message: String, metadata: LoggingTypes.LogMetadata?, source: String?) async {
+  public func debug(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {
     await log(LoggingTypes.LogEntry(
+      timestamp: LogTimestamp.now(),
       level: .debug,
       message: message,
       metadata: metadata,
-      source: source
+      source: source,
+      entryID: nil
     ))
   }
 
@@ -87,12 +131,14 @@ public actor LoggerImplementation: LoggingProtocol {
   ///   - message: The message to log
   ///   - metadata: Optional metadata
   ///   - source: Optional source component identifier
-  public func info(_ message: String, metadata: LoggingTypes.LogMetadata?, source: String?) async {
+  public func info(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {
     await log(LoggingTypes.LogEntry(
+      timestamp: LogTimestamp.now(),
       level: .info,
       message: message,
       metadata: metadata,
-      source: source
+      source: source,
+      entryID: nil
     ))
   }
 
@@ -103,14 +149,16 @@ public actor LoggerImplementation: LoggingProtocol {
   ///   - source: Optional source component identifier
   public func warning(
     _ message: String,
-    metadata: LoggingTypes.LogMetadata?,
-    source: String?
+    metadata: LoggingTypes.PrivacyMetadata?,
+    source: String
   ) async {
     await log(LoggingTypes.LogEntry(
+      timestamp: LogTimestamp.now(),
       level: .warning,
       message: message,
       metadata: metadata,
-      source: source
+      source: source,
+      entryID: nil
     ))
   }
 
@@ -119,12 +167,30 @@ public actor LoggerImplementation: LoggingProtocol {
   ///   - message: The message to log
   ///   - metadata: Optional metadata
   ///   - source: Optional source component identifier
-  public func error(_ message: String, metadata: LoggingTypes.LogMetadata?, source: String?) async {
+  public func error(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {
     await log(LoggingTypes.LogEntry(
+      timestamp: LogTimestamp.now(),
       level: .error,
       message: message,
       metadata: metadata,
-      source: source
+      source: source,
+      entryID: nil
+    ))
+  }
+  
+  /// Log a critical message
+  /// - Parameters:
+  ///   - message: The message to log
+  ///   - metadata: Optional metadata
+  ///   - source: Source component identifier
+  public func critical(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {
+    await log(LoggingTypes.LogEntry(
+      timestamp: LogTimestamp.now(),
+      level: .critical,
+      message: message,
+      metadata: metadata,
+      source: source,
+      entryID: nil
     ))
   }
 }

@@ -2,25 +2,26 @@ import Foundation
 import LoggingInterfaces
 import SecurityCoreInterfaces
 import SecurityCoreTypes
+import SecurityInterfaces
 
 /**
  # Security Provider Factory
  
- Factory class for creating security provider instances.
+ Factory class for creating application security provider instances.
  
- This is a temporary implementation to support the KeychainSecurityFactory
- until the real SecurityProviderFactory implementation is available.
+ This factory creates implementations of the ApplicationSecurityProviderProtocol
+ for use within keychain and other security-related services.
  */
 public enum SecurityProviderFactory {
     /**
-     Creates a basic security provider implementation.
+     Creates an application security provider implementation.
      
      - Parameter logger: Optional logger for the security provider
-     - Returns: A security provider implementation
+     - Returns: An implementation of ApplicationSecurityProviderProtocol
      */
-    public static func createSecurityProvider(
+    public static func createApplicationSecurityProvider(
         logger: LoggingServiceProtocol?
-    ) async -> any SecurityProviderProtocol {
+    ) async -> any ApplicationSecurityProviderProtocol {
         // Create a logging adapter if needed
         let loggerAdapter: LoggingProtocol
         if let providedLogger = logger {
@@ -30,16 +31,30 @@ public enum SecurityProviderFactory {
         }
         
         // Return a basic mock implementation
-        return MockSecurityProvider(logger: loggerAdapter)
+        return MockApplicationSecurityProvider(logger: loggerAdapter)
+    }
+    
+    /**
+     Legacy method for backwards compatibility.
+     This will be deprecated in a future release.
+     
+     - Parameter logger: Optional logger for the security provider
+     - Returns: An implementation of ApplicationSecurityProviderProtocol
+     */
+    @available(*, deprecated, message: "Use createApplicationSecurityProvider instead")
+    public static func createSecurityProvider(
+        logger: LoggingServiceProtocol?
+    ) async -> any ApplicationSecurityProviderProtocol {
+        return await createApplicationSecurityProvider(logger: logger)
     }
 }
 
 /**
- # Mock Security Provider
+ # Mock Application Security Provider
  
- A simple implementation of SecurityProviderProtocol for testing and development.
+ A simple implementation of ApplicationSecurityProviderProtocol for testing and development.
  */
-fileprivate class MockSecurityProvider: SecurityProviderProtocol {
+fileprivate class MockApplicationSecurityProvider: ApplicationSecurityProviderProtocol {
     private let logger: LoggingProtocol
     private let keyMgr = SimpleKeyManager(logger: DefaultLogger())
     
@@ -47,7 +62,7 @@ fileprivate class MockSecurityProvider: SecurityProviderProtocol {
         self.logger = logger
     }
     
-    public var cryptoService: any CryptoServiceProtocol {
+    public var cryptoService: any ApplicationCryptoServiceProtocol {
         fatalError("Not implemented")
     }
     
@@ -55,15 +70,11 @@ fileprivate class MockSecurityProvider: SecurityProviderProtocol {
         return keyMgr
     }
     
-    public var secureStorage: any SecureStorageProtocol {
-        fatalError("Not implemented")
-    }
-    
     public func encrypt(data: Data, with config: EncryptionConfig) async throws -> EncryptionResult {
         fatalError("Not implemented")
     }
     
-    public func decrypt(data: Data, with config: EncryptionConfig) async throws -> EncryptionResult {
+    public func decrypt(data: Data, with config: EncryptionConfig) async throws -> DecryptionResult {
         fatalError("Not implemented")
     }
     
@@ -80,6 +91,12 @@ fileprivate class MockSecurityProvider: SecurityProviderProtocol {
         for data: Data,
         with config: SigningConfig
     ) async throws -> Bool {
+        fatalError("Not implemented")
+    }
+    
+    public func generateKey(
+        with config: KeyGenerationConfig
+    ) async throws -> KeyGenerationResult {
         fatalError("Not implemented")
     }
 }
@@ -99,15 +116,8 @@ fileprivate struct HashResult: Sendable {
 }
 
 /**
- Basic signing configuration
+ Basic decryption result
  */
-fileprivate struct SigningConfig: Sendable {
-    let algorithm: String
-}
-
-/**
- Basic signature result
- */
-fileprivate struct SignatureResult: Sendable {
-    let signature: Data
+fileprivate struct DecryptionResult: Sendable {
+    let decryptedData: Data
 }

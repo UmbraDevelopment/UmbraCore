@@ -3,11 +3,11 @@ import SecurityCoreTypes
 import SecurityTypes
 
 /**
- # Security Provider Protocol
+ # Application Security Provider Protocol
 
- The SecurityProviderProtocol defines the primary interface for accessing all security-related
- functionality in UmbraCore. It serves as the main entry point for the security subsystem,
- coordinating cryptographic operations, key management, and secure storage.
+ The ApplicationSecurityProviderProtocol defines the primary interface for accessing all security-related
+ functionality in UmbraCore applications. It serves as the main entry point for the security subsystem,
+ coordinating cryptographic operations, key management, and secure storage for application-level security needs.
 
  ## Responsibilities
 
@@ -18,12 +18,12 @@ import SecurityTypes
 
  ## Usage
 
- The security provider should be created through the `SecurityProviderFactory` and
+ The application security provider should be created through the `SecurityProviderFactory` and
  accessed through dependency injection in client code.
  */
-public protocol SecurityProviderProtocol: Sendable {
+public protocol ApplicationSecurityProviderProtocol: Sendable {
   /// Access to the cryptographic service implementation
-  var cryptoService: any CryptoServiceProtocol { get }
+  var cryptoService: any ApplicationCryptoServiceProtocol { get }
 
   /// Access to the key management service implementation
   var keyManager: any KeyManagementProtocol { get }

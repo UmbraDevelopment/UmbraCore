@@ -162,21 +162,49 @@ public actor LoggingServiceActor: LoggingServiceProtocol {
     }
 
     // Create log entry
-    let entry=LogEntry(
-      level: level,
-      message: message,
-      metadata: metadata,
-      source: source
-    )
-
-    // Log to all destinations
-    for destination in destinations.values {
-      do {
-        try await destination.write(entry)
-      } catch {
-        // Swallow errors from individual destinations
-        continue
-      }
+    Task {
+        // Convert UmbraLogLevel to LogLevel
+        let logLevel: LogLevel
+        switch level {
+            case .verbose: logLevel = .trace
+            case .debug: logLevel = .debug
+            case .info: logLevel = .info
+            case .warning: logLevel = .warning
+            case .error: logLevel = .error
+            case .critical: logLevel = .critical
+        }
+        
+        // Convert metadata to PrivacyMetadata
+        let privacyMetadata: PrivacyMetadata? = metadata.map { metadata in
+            var result = PrivacyMetadata()
+            for (key, value) in metadata.asDictionary {
+                // Default to private privacy level for all converted metadata
+                result[key] = PrivacyMetadataValue(value: value, privacy: .private)
+            }
+            return result
+        }
+        
+        // Use async LogTimestamp.now()
+        let timestamp = await LogTimestamp.now()
+        
+        let entry = LoggingTypes.LogEntry(
+            level: logLevel,
+            message: message,
+            metadata: privacyMetadata,
+            source: source ?? "LoggingServiceActor",
+            entryID: nil,
+            timestamp: timestamp
+        )
+        
+        // Log to all destinations
+        for destination in destinations.values {
+            do {
+                try await destination.write(entry)
+            } catch {
+                // Swallow errors from individual destinations
+                continue
+            }
+        }
     }
   }
 
@@ -299,7 +327,29 @@ public actor LoggingServiceActor: LoggingServiceProtocol {
   /// - Parameter entry: The log entry to write
   public func logEntry(_ entry: LogEntry) async {
     // Check if we should log at this level
-    guard entry.level.rawValue >= minimumLogLevel.rawValue else {
+    // Convert to the same type for comparison
+    let entryLevel: Int
+    switch entry.level {
+      case .trace: entryLevel = 0
+      case .debug: entryLevel = 1
+      case .info: entryLevel = 2
+      case .warning: entryLevel = 3
+      case .error: entryLevel = 4
+      case .critical: entryLevel = 5
+      default: entryLevel = 2 // Default to info
+    }
+    
+    let minLevel: Int
+    switch minimumLogLevel {
+      case .trace: minLevel = 0
+      case .debug: minLevel = 1
+      case .info: minLevel = 2
+      case .warning: minLevel = 3
+      case .error: minLevel = 4
+      case .critical: minLevel = 5
+    }
+    
+    guard entryLevel >= minLevel else {
       return
     }
 
@@ -412,37 +462,76 @@ public struct DefaultLogFormatter: LoggingInterfaces.LogFormatterProtocol, Senda
     dateFormatter.dateFormat=configuration.dateFormat
   }
 
+  /// Format a log level to a string representation
+  /// - Parameter level: The log level to format
+  /// - Returns: A formatted string representation
+  private func formatLogLevel(_ level: LogLevel) -> String {
+    switch level {
+      case .trace: return "TRACE"
+      case .debug: return "DEBUG"
+      case .info: return "INFO"
+      case .warning: return "WARN"
+      case .error: return "ERROR"
+      case .critical: return "CRIT"
+      default: return "UNKNOWN"
+    }
+  }
+
+  /// Format a log level to a string representation
+  /// - Parameter level: The log level to format
+  /// - Returns: A formatted string representation
+  public func formatLogLevel(_ level: LoggingTypes.UmbraLogLevel) -> String {
+    switch level {
+      case .verbose: return "TRACE"
+      case .debug: return "DEBUG"
+      case .info: return "INFO"
+      case .warning: return "WARN"
+      case .error: return "ERROR"
+      case .critical: return "CRIT"
+    }
+  }
+
   /// Format a log entry to a string
   /// - Parameter entry: The log entry to format
-  /// - Returns: Formatted string representation of the log entry
+  /// - Returns: A string representation of the log entry
   public func format(_ entry: LoggingTypes.LogEntry) -> String {
-    var components: [String]=[]
+    var components=[String]()
 
+    // Add timestamp if configured
     if configuration.includeTimestamp {
-      components
-        .append(
-          dateFormatter
-            .string(from: Date(timeIntervalSince1970: entry.timestamp.timeIntervalSince1970))
-        )
+      components.append(formatTimestamp(entry.timestamp))
     }
 
+    // Add log level if configured
     if configuration.includeLevel {
       components.append("[\(formatLogLevel(entry.level))]")
     }
 
-    if configuration.includeSource, let source=entry.source {
-      components.append("[\(source)]")
+    // Add source if configured and available
+    if configuration.includeSource {
+      // Entry.source is no longer optional since it has a default value
+      components.append("[\(entry.source)]")
     }
 
-    // Add the message
+    // Add basic message
     components.append(entry.message)
 
     // Add metadata
-    if configuration.includeMetadata, let metadata=entry.metadata, !metadata.asDictionary.isEmpty {
-      let metadataString=metadata.asDictionary
-        .map { key, value in "\(key): \(value)" }
+    if configuration.includeMetadata, let metadata = entry.metadata, !metadata.isEmpty {
+      // Convert PrivacyMetadata to a simple string representation
+      let metadataString = metadata.entries()
+        .map { key -> String in
+          if let value = metadata[key] {
+            return "\(key): \(value.value)"
+          } else {
+            return "\(key): nil"
+          }
+        }
         .joined(separator: ", ")
-      components.append("[Metadata: \(metadataString)]")
+      
+      if !metadataString.isEmpty {
+        components.append("{" + metadataString + "}")
+      }
     }
 
     return components.joined(separator: " ")
@@ -468,26 +557,6 @@ public struct DefaultLogFormatter: LoggingInterfaces.LogFormatterProtocol, Senda
   /// - Returns: Formatted string representation of the timestamp
   public func formatTimestamp(_ timestamp: LoggingTypes.TimePointAdapter) -> String {
     dateFormatter.string(from: Date(timeIntervalSince1970: timestamp.timeIntervalSince1970))
-  }
-
-  /// Format a log level to a string
-  /// - Parameter level: The log level to format
-  /// - Returns: Formatted string representation of the log level
-  public func formatLogLevel(_ level: LoggingTypes.UmbraLogLevel) -> String {
-    switch level {
-      case .verbose:
-        "VERBOSE"
-      case .debug:
-        "DEBUG"
-      case .info:
-        "INFO"
-      case .warning:
-        "WARNING"
-      case .error:
-        "ERROR"
-      case .critical:
-        "CRITICAL"
-    }
   }
 
   /// Customise the format based on configuration

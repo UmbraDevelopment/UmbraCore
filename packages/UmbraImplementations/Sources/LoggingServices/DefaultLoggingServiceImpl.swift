@@ -91,10 +91,39 @@ public final class DefaultLoggingServiceImpl: LoggingProtocol {
     // This is a simplified implementation
 
     // Convert metadata to the format expected by LogEntry
-    let typedMetadata=metadata
+    let privacyMetadata: PrivacyMetadata? = metadata.map { metadata in
+        var result = PrivacyMetadata()
+        for (key, value) in metadata.asDictionary {
+            // Default to private privacy level for all converted metadata
+            result[key] = PrivacyMetadataValue(value: value, privacy: .private)
+        }
+        return result
+    }
+
+    // Create a LogLevel from UmbraLogLevel - using the correct case names
+    let logLevel: LogLevel
+    switch level {
+        case .verbose: logLevel = .trace // UmbraLogLevel.verbose maps to LogLevel.trace
+        case .debug: logLevel = .debug
+        case .info: logLevel = .info
+        case .warning: logLevel = .warning
+        case .error: logLevel = .error
+        case .critical: logLevel = .critical
+    }
 
     // Create the log entry - not used in this implementation but would be in a real one
-    _=LoggingTypes.LogEntry(level: level, message: message, metadata: typedMetadata, source: source)
+    Task {
+        // LogTimestamp.now() is an async function so we need a Task
+        let timestamp = await LogTimestamp.now()
+        _ = LoggingTypes.LogEntry(
+            level: logLevel,
+            message: message,
+            metadata: privacyMetadata,
+            source: source ?? "DefaultLogger",
+            entryID: nil,
+            timestamp: timestamp
+        )
+    }
 
     // In a real implementation, this would:
     // 1. Write to console
@@ -104,7 +133,7 @@ public final class DefaultLoggingServiceImpl: LoggingProtocol {
     // For now, just print to the console
     print("[\(level)] \(message)")
 
-    if let metadata=typedMetadata, !metadata.asDictionary.isEmpty {
+    if let metadata = metadata, !metadata.asDictionary.isEmpty {
       print("  Metadata: \(metadata.asDictionary)")
     }
 

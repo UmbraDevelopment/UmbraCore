@@ -53,6 +53,9 @@ public actor KeychainSecurityActor {
 
   /// Logger for recording operations
   private let logger: LoggingProtocol
+  
+  /// Domain-specific logger for keychain operations
+  private let keychainLogger: KeychainLogger
 
   /// Error type for keychain security operations
   public enum KeychainSecurityError: Error {
@@ -76,9 +79,10 @@ public actor KeychainSecurityActor {
     keyManager: KeyManagementProtocol,
     logger: LoggingProtocol
   ) {
-    self.keychainService=keychainService
-    self.keyManager=keyManager
-    self.logger=logger
+    self.keychainService = keychainService
+    self.keyManager = keyManager
+    self.logger = logger
+    self.keychainLogger = KeychainLogger(logger: logger)
   }
 
   // MARK: - Public Methods
@@ -96,61 +100,67 @@ public actor KeychainSecurityActor {
   public func storeEncryptedSecret(
     _ secret: String,
     forAccount account: String,
-    keyIdentifier: String?=nil
+    keyIdentifier: String? = nil
   ) async throws {
-    let keyID=keyIdentifier ?? deriveKeyIdentifier(forAccount: account)
+    let keyID = keyIdentifier ?? deriveKeyIdentifier(forAccount: account)
 
-    // Log the operation (without sensitive details)
-    var metadata=LogMetadata()
-    metadata["account"]="REDACTED"
-    metadata["keyIdentifier"]=keyID
-    metadata["operation"]="store"
-
-    await logger.info(
-      "Storing encrypted secret for account",
-      metadata: metadata,
-      source: "KeychainSecurityActor"
+    // Log the operation start using our domain-specific logger
+    await keychainLogger.logOperationStart(
+        account: account,
+        operation: "store",
+        keyIdentifier: keyID
     )
 
     // Get or generate key for encryption
-    let keyResult=await keyManager.retrieveKey(withIdentifier: keyID)
+    let keyResult = await keyManager.retrieveKey(withIdentifier: keyID)
     let key: SecureBytes
 
     switch keyResult {
-      case let .success(existingKey):
-        key=existingKey
-      case .failure:
+    case let .success(existingKey):
+        key = existingKey
+    case .failure:
         // Key doesn't exist, generate a new one
-        var debugMetadata=LogMetadata()
-        debugMetadata["keyIdentifier"]=keyID
-
-        await logger.debug(
-          "Generating new encryption key",
-          metadata: debugMetadata,
-          source: "KeychainSecurityActor"
+        var additionalContext = LogMetadataDTOCollection()
+        additionalContext.addPublic(key: "action", value: "generate_key")
+        
+        await keychainLogger.logOperationStart(
+            account: account,
+            operation: "generate_key",
+            keyIdentifier: keyID,
+            additionalContext: additionalContext
         )
 
         // Create secure bytes from the secret
-        guard let secretData=secret.data(using: .utf8) else {
-          throw KeychainSecurityError.encodingFailed
+        guard let secretData = secret.data(using: .utf8) else {
+            let error = KeychainSecurityError.encodingFailed
+            await keychainLogger.logOperationError(
+                account: account,
+                operation: "store",
+                error: error,
+                keyIdentifier: keyID
+            )
+            throw error
         }
 
-        let secureBytes=SecureBytes(bytes: [UInt8](secretData))
+        let secureBytes = SecureBytes(bytes: [UInt8](secretData))
 
         // Store the key
-        let storeResult=await keyManager.storeKey(secureBytes, withIdentifier: keyID)
+        let storeResult = await keyManager.storeKey(secureBytes, withIdentifier: keyID)
 
         switch storeResult {
-          case .success:
-            key=secureBytes
-          case let .failure(error):
-            var errorMetadata=LogMetadata()
-            errorMetadata["error"]=error.localizedDescription
-
-            await logger.error(
-              "Failed to store encryption key",
-              metadata: errorMetadata,
-              source: "KeychainSecurityActor"
+        case .success:
+            key = secureBytes
+            await keychainLogger.logOperationSuccess(
+                account: account,
+                operation: "generate_key",
+                keyIdentifier: keyID
+            )
+        case let .failure(error):
+            await keychainLogger.logOperationError(
+                account: account,
+                operation: "generate_key",
+                error: error,
+                keyIdentifier: keyID
             )
             throw KeychainSecurityError.securityError(error)
         }
@@ -162,21 +172,25 @@ public actor KeychainSecurityActor {
 
     // Store in keychain
     do {
-      try await keychainService.storePassword(
-        secret,
-        for: account,
-        accessOptions: nil
-      )
+        try await keychainService.storePassword(
+            secret,
+            for: account,
+            accessOptions: nil
+        )
+        
+        await keychainLogger.logOperationSuccess(
+            account: account,
+            operation: "store",
+            keyIdentifier: keyID
+        )
     } catch {
-      var errorMetadata=LogMetadata()
-      errorMetadata["error"]=error.localizedDescription
-
-      await logger.error(
-        "Failed to store secret in keychain",
-        metadata: errorMetadata,
-        source: "KeychainSecurityActor"
-      )
-      throw KeychainSecurityError.keychainError(error.localizedDescription)
+        await keychainLogger.logOperationError(
+            account: account,
+            operation: "store",
+            error: error,
+            keyIdentifier: keyID
+        )
+        throw KeychainSecurityError.keychainError(error.localizedDescription)
     }
   }
 
@@ -192,132 +206,141 @@ public actor KeychainSecurityActor {
    */
   public func retrieveEncryptedSecret(
     for account: String,
-    keyIdentifier: String?=nil
+    keyIdentifier: String? = nil
   ) async throws -> String {
-    let keyID=keyIdentifier ?? deriveKeyIdentifier(forAccount: account)
+    let keyID = keyIdentifier ?? deriveKeyIdentifier(forAccount: account)
 
-    // Log the operation (without sensitive details)
-    var metadata=LogMetadata()
-    metadata["account"]="REDACTED"
-    metadata["keyIdentifier"]=keyID
-    metadata["operation"]="retrieve"
-
-    await logger.info(
-      "Retrieving encrypted secret for account",
-      metadata: metadata,
-      source: "KeychainSecurityActor"
+    // Log the operation using our domain-specific logger
+    await keychainLogger.logOperationStart(
+        account: account,
+        operation: "retrieve",
+        keyIdentifier: keyID
     )
 
     // Get the key for decryption
-    let keyResult=await keyManager.retrieveKey(withIdentifier: keyID)
+    let keyResult = await keyManager.retrieveKey(withIdentifier: keyID)
 
     switch keyResult {
-      case .success:
+    case .success:
         // Key exists, continue
         break
-      case let .failure(error):
-        var errorMetadata=LogMetadata()
-        errorMetadata["error"]=error.localizedDescription
-
-        await logger.error(
-          "Failed to retrieve encryption key",
-          metadata: errorMetadata,
-          source: "KeychainSecurityActor"
+    case let .failure(error):
+        await keychainLogger.logOperationError(
+            account: account,
+            operation: "retrieve",
+            error: error,
+            keyIdentifier: keyID
         )
         throw KeychainSecurityError.securityError(error)
     }
 
     // Get the encrypted secret from keychain
     do {
-      let secret=try await keychainService.retrievePassword(for: account)
-      return secret
+        let secret = try await keychainService.retrievePassword(for: account)
+        
+        await keychainLogger.logOperationSuccess(
+            account: account,
+            operation: "retrieve",
+            keyIdentifier: keyID
+        )
+        
+        return secret
     } catch {
-      var errorMetadata=LogMetadata()
-      errorMetadata["error"]=error.localizedDescription
-
-      await logger.error(
-        "Failed to retrieve secret from keychain",
-        metadata: errorMetadata,
-        source: "KeychainSecurityActor"
-      )
-      throw KeychainSecurityError.keychainError(error.localizedDescription)
+        await keychainLogger.logOperationError(
+            account: account,
+            operation: "retrieve",
+            error: error,
+            keyIdentifier: keyID
+        )
+        throw KeychainSecurityError.keychainError(error.localizedDescription)
     }
   }
 
   /**
-   Deletes a secret and its associated encryption key.
+   Deletes an encrypted secret from the keychain.
 
    - Parameters:
       - account: The account identifier for the secret
       - keyIdentifier: Optional identifier for the encryption key, defaults to the account name
-      - deleteKey: Whether to also delete the associated encryption key
 
    - Throws: KeychainSecurityError if operations fail
    */
-  public func deleteSecret(
-    forAccount account: String,
-    keyIdentifier: String?=nil,
-    deleteKey: Bool=true
+  public func deleteEncryptedSecret(
+    for account: String,
+    keyIdentifier: String? = nil
   ) async throws {
-    let keyID=keyIdentifier ?? deriveKeyIdentifier(forAccount: account)
+    let keyID = keyIdentifier ?? deriveKeyIdentifier(forAccount: account)
 
     // Log the operation
-    var metadata=LogMetadata()
-    metadata["account"]="REDACTED"
-    metadata["keyIdentifier"]=keyID
-    metadata["deleteKey"]="\(deleteKey)"
-    metadata["operation"]="delete"
-
-    await logger.info(
-      "Deleting secret for account",
-      metadata: metadata,
-      source: "KeychainSecurityActor"
+    await keychainLogger.logOperationStart(
+        account: account,
+        operation: "delete",
+        keyIdentifier: keyID
     )
 
-    // Delete from keychain
-    do {
-      try await keychainService.deletePassword(for: account)
-    } catch {
-      var errorMetadata=LogMetadata()
-      errorMetadata["error"]=error.localizedDescription
+    // Delete the key first
+    let keyResult = await keyManager.deleteKey(withIdentifier: keyID)
 
-      await logger.error(
-        "Failed to delete secret from keychain",
-        metadata: errorMetadata,
-        source: "KeychainSecurityActor"
-      )
-      throw KeychainSecurityError.keychainError(error.localizedDescription)
+    switch keyResult {
+    case .success:
+        var additionalContext = LogMetadataDTOCollection()
+        additionalContext.addPublic(key: "keyDeleted", value: "true")
+        
+        await keychainLogger.logOperationSuccess(
+            account: account,
+            operation: "delete_key",
+            keyIdentifier: keyID,
+            additionalContext: additionalContext
+        )
+    case let .failure(error):
+        var additionalContext = LogMetadataDTOCollection()
+        additionalContext.addPublic(key: "keyDeleted", value: "false")
+        
+        await keychainLogger.logOperationError(
+            account: account,
+            operation: "delete_key",
+            error: error,
+            keyIdentifier: keyID,
+            additionalContext: additionalContext,
+            message: "Failed to delete key, continuing with secret deletion"
+        )
+        // We still continue to delete the item from keychain
     }
 
-    // Optionally delete the key
-    if deleteKey {
-      let keyResult=await keyManager.deleteKey(withIdentifier: keyID)
-
-      if case let .failure(error)=keyResult {
-        var errorMetadata=LogMetadata()
-        errorMetadata["error"]=error.localizedDescription
-
-        await logger.error(
-          "Failed to delete encryption key",
-          metadata: errorMetadata,
-          source: "KeychainSecurityActor"
+    // Delete the secret from keychain
+    do {
+        try await keychainService.deletePassword(for: account)
+        
+        await keychainLogger.logOperationSuccess(
+            account: account,
+            operation: "delete",
+            keyIdentifier: keyID
         )
-        throw KeychainSecurityError.securityError(error)
-      }
+    } catch {
+        await keychainLogger.logOperationError(
+            account: account,
+            operation: "delete",
+            error: error,
+            keyIdentifier: keyID
+        )
+        throw KeychainSecurityError.keychainError(error.localizedDescription)
     }
   }
 
-  // MARK: - Private Methods
+  // MARK: - Private Helpers
 
   /**
-   Derives a consistent key identifier from an account name.
+   Derives a key identifier from an account name.
 
-   - Parameter account: The account to derive from
-   - Returns: A consistent key identifier
+   This creates a consistent key ID that can be used to retrieve the
+   encryption key for a specific account.
+
+   - Parameter account: The account name
+   - Returns: A key identifier
    */
   private func deriveKeyIdentifier(forAccount account: String) -> String {
-    // Simple hashing to create a key identifier
-    // In a real implementation, we might use a more sophisticated approach
-    "key_\(account.hashValue)"
+    // In a real implementation, this might hash the account name for security
+    // For this example, we'll just append a prefix
+    return "keychain_key_\(account)"
   }
 }

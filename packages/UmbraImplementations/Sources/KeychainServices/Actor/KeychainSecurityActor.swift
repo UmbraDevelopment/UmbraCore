@@ -4,19 +4,20 @@ import LoggingInterfaces
 import LoggingTypes
 import SecurityCoreInterfaces
 import SecurityCoreTypes
+import SecurityInterfaces
 import UmbraErrors
 
 /**
  # KeychainSecurityActor
 
- An actor that integrates both KeychainServiceProtocol and SecurityProviderProtocol,
+ An actor that integrates both KeychainServiceProtocol and ApplicationSecurityProviderProtocol,
  providing a unified interface for secure storage operations that might require
  both services.
 
  ## Responsibilities
 
  - Secure storage of sensitive data in the keychain
- - Proper encryption/decryption of data using the security provider
+ - Proper encryption/decryption of data using the application security provider
  - Thread-safe operations for all security-related activities
  - Proper error handling and logging
 
@@ -26,7 +27,7 @@ import UmbraErrors
  // Create the actor
  let securityActor = KeychainSecurityActor(
      keychainService: await KeychainServiceFactory.createService(),
-     securityProvider: await SecurityProviderFactory.createSecurityProvider(),
+     securityProvider: await SecurityProviderFactory.createApplicationSecurityProvider(),
      logger: myLogger
  )
 
@@ -48,8 +49,8 @@ public actor KeychainSecurityActor {
   /// The keychain service for storing items
   private let keychainService: KeychainServiceProtocol
 
-  /// The security provider for encryption operations
-  private let securityProvider: SecurityProviderProtocol
+  /// The application security provider for encryption operations
+  private let securityProvider: ApplicationSecurityProviderProtocol
 
   /// Logger for recording operations
   private let logger: LoggingServiceProtocol
@@ -71,17 +72,17 @@ public actor KeychainSecurityActor {
 
    - Parameters:
       - keychainService: The service for interacting with the keychain
-      - securityProvider: The provider for encryption and key management
+      - securityProvider: The application-level provider for encryption and key management
       - logger: Logger for recording operations
    */
   public init(
     keychainService: KeychainServiceProtocol,
-    securityProvider: SecurityProviderProtocol,
+    securityProvider: ApplicationSecurityProviderProtocol,
     logger: LoggingServiceProtocol
   ) {
-    self.keychainService=keychainService
-    self.securityProvider=securityProvider
-    self.logger=logger
+    self.keychainService = keychainService
+    self.securityProvider = securityProvider
+    self.logger = logger
   }
 
   // MARK: - Public Methods
@@ -99,214 +100,159 @@ public actor KeychainSecurityActor {
   public func storeEncryptedSecret(
     _ secret: String,
     forAccount account: String,
-    keyIdentifier: String?=nil
+    keyIdentifier: String? = nil
   ) async throws {
-    let keyID=keyIdentifier ?? deriveKeyIdentifier(forAccount: account)
+    let keyID = keyIdentifier ?? deriveKeyIdentifier(forAccount: account)
 
     // Log the operation (without sensitive details)
-    var metadata=LogMetadata()
-    metadata["account"]=account
-    metadata["keyIdentifier"]=keyID
-    await logger.debug(
-      "Storing encrypted secret for account",
+    var metadata = LogMetadata()
+    metadata["account"] = account
+    metadata["keyID"] = keyID
+    metadata["operation"] = "storeEncryptedSecret"
+
+    await logger.info(
+      "Starting encrypted secret storage operation",
       metadata: metadata,
       source: "KeychainSecurityActor"
     )
 
-    // Get the encryption key via the key manager
-    let keyManager=await securityProvider.keyManager()
-    let keyResult=await keyManager.retrieveKey(withIdentifier: keyID)
-
-    let key: SecureBytes
-
-    switch keyResult {
-      case let .success(existingKey):
-        key=existingKey
-        await logger.debug(
-          "Retrieved existing encryption key",
-          metadata: metadata,
-          source: "KeychainSecurityActor"
-        )
-      case .failure:
-        // Generate a new key if one doesn't exist
-        await logger.debug(
-          "No existing key found, generating new key",
-          metadata: metadata,
-          source: "KeychainSecurityActor"
-        )
-
-        // Generate a new AES-256 key using the crypto service
-        key=try await generateAESKey()
-
-        // Store the new key for future use
-        let keyStoreResult=await keyManager.storeKey(key, withIdentifier: keyID)
-        guard case .success=keyStoreResult else {
-          await logger.error(
-            "Failed to store encryption key",
-            metadata: metadata,
-            source: "KeychainSecurityActor"
-          )
-          throw KeychainSecurityError.keyStorageFailed
-        }
-
-        await logger.debug(
-          "Stored new encryption key",
-          metadata: metadata,
-          source: "KeychainSecurityActor"
-        )
-    }
-
-    // Encrypt the secret
-    guard let data=secret.data(using: .utf8) else {
-      throw KeychainSecurityError.encodingFailed
-    }
-
-    let secureData=SecureBytes(data: data)
-
-    // Create encryption config
-    var options: [String: String]=[:]
-    options["dataBase64"]=secureData.base64EncodedString()
-    let keyBase64=key.base64EncodedString()
-    options["keyBase64"]=keyBase64
-
-    let config=SecurityConfigDTO.aesEncryption(
-      keySize: 256,
-      mode: "GCM",
-      additionalOptions: options
-    )
-
-    // Perform encryption
     do {
-      let encryptionResult=try await securityProvider.encrypt(config: config)
-
-      // Store the encrypted data in the keychain
-      if let resultData=encryptionResult.data {
-        try await keychainService.storeData(
-          resultData.extractUnderlyingData(),
-          for: account,
-          accessOptions: nil
-        )
-      } else {
-        throw KeychainSecurityError.securityError(
-          SecurityProtocolError.invalidInput("Invalid data format")
-        )
+      // Convert the secret to data
+      guard let secretData = secret.data(using: .utf8) else {
+        throw KeychainSecurityError.encodingFailed
       }
+
+      // Encrypt the data
+      let encryptionConfig = EncryptionConfig(
+        keyID: keyID,
+        algorithm: .aes256GCM
+      )
+
+      let encryptionResult = try await securityProvider.encrypt(
+        data: secretData,
+        with: encryptionConfig
+      )
+
+      // Store in keychain
+      try await keychainService.storeItem(
+        encryptionResult.encryptedData,
+        forAccount: account,
+        withLabel: "Encrypted Secret"
+      )
 
       await logger.info(
         "Successfully stored encrypted secret",
         metadata: metadata,
         source: "KeychainSecurityActor"
       )
-    } catch let error as SecurityProtocolError {
+    } catch let error as KeychainError {
+      // Handle keychain-specific errors
       await logger.error(
-        "Encryption failed",
+        "Failed to store encrypted secret: Keychain error",
+        metadata: metadata,
+        source: "KeychainSecurityActor"
+      )
+      throw KeychainSecurityError.keychainError(error.localizedDescription)
+    } catch let error as SecurityProtocolError {
+      // Handle security provider errors
+      await logger.error(
+        "Failed to store encrypted secret: Security error",
         metadata: metadata,
         source: "KeychainSecurityActor"
       )
       throw KeychainSecurityError.securityError(error)
     } catch {
+      // Handle unexpected errors
       await logger.error(
-        "Keychain storage failed",
+        "Failed to store encrypted secret: Unknown error",
         metadata: metadata,
         source: "KeychainSecurityActor"
       )
-      throw KeychainSecurityError.keychainError(error.localizedDescription)
+      throw error
     }
   }
 
   /**
-   Retrieves and decrypts a secret from the keychain.
+   Retrieves an encrypted secret from the keychain.
 
    - Parameters:
       - account: The account identifier for the secret
-      - keyIdentifier: Optional identifier for the decryption key
+      - keyIdentifier: Optional identifier for the encryption key, defaults to the account name
 
-   - Returns: The decrypted secret as a string
+   - Returns: The decrypted secret string
    - Throws: KeychainSecurityError if operations fail
    */
   public func retrieveEncryptedSecret(
     forAccount account: String,
-    keyIdentifier: String?=nil
+    keyIdentifier: String? = nil
   ) async throws -> String {
-    let keyID=keyIdentifier ?? deriveKeyIdentifier(forAccount: account)
+    let keyID = keyIdentifier ?? deriveKeyIdentifier(forAccount: account)
 
     // Log the operation (without sensitive details)
-    var metadata=LogMetadata()
-    metadata["account"]=account
-    metadata["keyIdentifier"]=keyID
-    await logger.debug(
-      "Retrieving encrypted secret for account",
+    var metadata = LogMetadata()
+    metadata["account"] = account
+    metadata["keyID"] = keyID
+    metadata["operation"] = "retrieveEncryptedSecret"
+
+    await logger.info(
+      "Starting encrypted secret retrieval operation",
       metadata: metadata,
       source: "KeychainSecurityActor"
     )
 
-    // Get the encryption key via the key manager
-    let keyManager=await securityProvider.keyManager()
-    let keyResult=await keyManager.retrieveKey(withIdentifier: keyID)
+    do {
+      // Retrieve from keychain
+      let encryptedData = try await keychainService.retrieveItem(
+        forAccount: account
+      )
 
-    guard case .success(_)=keyResult else {
-      await logger.error(
-        "Encryption key not found for decryption",
+      // Decrypt the data
+      let decryptionConfig = EncryptionConfig(
+        keyID: keyID,
+        algorithm: .aes256GCM
+      )
+
+      let decryptionResult = try await securityProvider.decrypt(
+        data: encryptedData,
+        with: decryptionConfig
+      )
+
+      // Convert to string
+      guard let secretString = String(data: decryptionResult.decryptedData, encoding: .utf8) else {
+        throw KeychainSecurityError.encodingFailed
+      }
+
+      await logger.info(
+        "Successfully retrieved and decrypted secret",
         metadata: metadata,
         source: "KeychainSecurityActor"
       )
-      throw KeychainSecurityError.keyNotFound
-    }
 
-    // Get the encrypted data from the keychain
-    do {
-      let password = try await keychainService.retrievePassword(for: account)
-
-      // Create decryption config
-      let config = SecurityConfigDTO.aesEncryption(
-        keySize: 256,
-        mode: "GCM",
-        additionalOptions: ["operation": "decrypt"]
-      )
-
-      // Set up the encrypted data
-      let secureData = SecureBytes(data: Data(password.utf8))
-
-      // Perform decryption
-      do {
-        let decryptionResult = try await securityProvider.decrypt(config: config)
-
-        // Convert the decrypted data back to a string
-        guard
-          let secretString=String(
-            data: decryptionResult.data?.extractUnderlyingData() ?? Data(),
-            encoding: .utf8
-          )
-        else {
-          await logger.error(
-            "Failed to decode decrypted data to string",
-            metadata: metadata,
-            source: "KeychainSecurityActor"
-          )
-          throw KeychainSecurityError.encodingFailed
-        }
-
-        await logger.info(
-          "Successfully retrieved and decrypted secret",
-          metadata: metadata,
-          source: "KeychainSecurityActor"
-        )
-        return secretString
-      } catch let error as SecurityProtocolError {
-        await logger.error(
-          "Decryption failed",
-          metadata: metadata,
-          source: "KeychainSecurityActor"
-        )
-        throw KeychainSecurityError.securityError(error)
-      }
-    } catch {
+      return secretString
+    } catch let error as KeychainError {
+      // Handle keychain-specific errors
       await logger.error(
-        "Failed to retrieve encrypted data from keychain: \(error.localizedDescription)",
+        "Failed to retrieve encrypted secret: Keychain error",
         metadata: metadata,
         source: "KeychainSecurityActor"
       )
       throw KeychainSecurityError.keychainError(error.localizedDescription)
+    } catch let error as SecurityProtocolError {
+      // Handle security provider errors
+      await logger.error(
+        "Failed to retrieve encrypted secret: Security error",
+        metadata: metadata,
+        source: "KeychainSecurityActor"
+      )
+      throw KeychainSecurityError.securityError(error)
+    } catch {
+      // Handle unexpected errors
+      await logger.error(
+        "Failed to retrieve encrypted secret: Unknown error",
+        metadata: metadata,
+        source: "KeychainSecurityActor"
+      )
+      throw error
     }
   }
 
@@ -321,16 +267,16 @@ public actor KeychainSecurityActor {
    */
   public func deleteEncryptedSecret(
     forAccount account: String,
-    keyIdentifier: String?=nil,
-    deleteKey: Bool=true
+    keyIdentifier: String? = nil,
+    deleteKey: Bool = true
   ) async throws {
-    let keyID=keyIdentifier ?? deriveKeyIdentifier(forAccount: account)
+    let keyID = keyIdentifier ?? deriveKeyIdentifier(forAccount: account)
 
     // Log the operation
-    var metadata=LogMetadata()
-    metadata["account"]=account
-    metadata["keyIdentifier"]=keyID
-    metadata["deleteKey"]=String(deleteKey)
+    var metadata = LogMetadata()
+    metadata["account"] = account
+    metadata["keyID"] = keyID
+    metadata["deleteKey"] = String(deleteKey)
     await logger.debug(
       "Deleting encrypted secret",
       metadata: metadata,
@@ -356,9 +302,9 @@ public actor KeychainSecurityActor {
 
     // Delete the key if requested
     if deleteKey {
-      let keyManager=await securityProvider.keyManager()
-      let keyResult=await keyManager.deleteKey(withIdentifier: keyID)
-      if case let .failure(error)=keyResult {
+      let keyManager = await securityProvider.keyManager()
+      let keyResult = await keyManager.deleteKey(withIdentifier: keyID)
+      if case let .failure(error) = keyResult {
         await logger.error(
           "Failed to delete encryption key: \(error.localizedDescription)",
           metadata: metadata,
@@ -377,30 +323,41 @@ public actor KeychainSecurityActor {
   // MARK: - Private Helpers
 
   /**
-   Derives a key identifier from an account name.
+   Derives a consistent key identifier from an account name.
 
-   - Parameter account: The account to derive from
-   - Returns: A standardised key identifier
+   - Parameter account: The account to derive the key identifier from
+   - Returns: A key identifier suitable for use with the security provider
    */
   private func deriveKeyIdentifier(forAccount account: String) -> String {
-    "keychain_key_\(account)"
+    return "keychain.secret.\(account)"
   }
 
+  /**
+   Generates a new AES encryption key.
+
+   - Returns: A secure bytes representation of the key
+   - Throws: KeychainSecurityError if key generation fails
+   */
   private func generateAESKey() async throws -> SecureBytes {
     // Generate a new secure random key for AES-256 (32 bytes)
     // We need to create a SecurityConfigDTO for AES-256 encryption
     let config = SecurityConfigDTO.aesEncryption(
         keySize: 256,
-        mode: "GCM"
+        options: [:]
     )
-    
-    // Use the security provider to generate the key
-    let keyResult = try await securityProvider.generateKey(config: config)
-    
-    if let key = keyResult.data {
-        return key
-    } else {
+
+    let result = try await securityProvider.generateKey(
+        with: KeyGenerationConfig(
+            keyType: .encryption,
+            keySize: 256
+        )
+    )
+
+    // Return the key or throw if we didn't get one
+    guard let keyData = result.keyID.data(using: .utf8) else {
         throw KeychainSecurityError.keyGenerationFailed
     }
+
+    return SecureBytes(data: keyData)
   }
 }

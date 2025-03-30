@@ -1,6 +1,7 @@
 import BackupInterfaces
 import Foundation
 import LoggingInterfaces
+import LoggingTypes
 import ResticInterfaces
 import ResticServices
 import UmbraErrors
@@ -16,6 +17,9 @@ public actor SnapshotServiceImpl: SnapshotServiceProtocol {
 
   /// Logger for operation tracking
   private let logger: any LoggingProtocol
+  
+  /// Privacy-aware logging adapter for structured logging
+  private let snapshotLogging: SnapshotLoggingAdapter
 
   /// Factory for creating Restic commands
   private let commandFactory: ResticCommandFactory
@@ -34,11 +38,12 @@ public actor SnapshotServiceImpl: SnapshotServiceProtocol {
     resticService: ResticServiceProtocol,
     logger: any LoggingProtocol
   ) {
-    self.resticService=resticService
-    self.logger=logger
-    commandFactory=ResticCommandFactory()
-    resultParser=SnapshotResultParser()
-    errorMapper=ErrorMapper()
+    self.resticService = resticService
+    self.logger = logger
+    self.snapshotLogging = SnapshotLoggingAdapter(logger: logger)
+    commandFactory = ResticCommandFactory()
+    resultParser = SnapshotResultParser()
+    errorMapper = ErrorMapper()
   }
 
   /// Lists available snapshots with optional filtering
@@ -63,24 +68,21 @@ public actor SnapshotServiceImpl: SnapshotServiceProtocol {
     progressReporter _: BackupProgressReporter?,
     cancellationToken _: CancellationToken?
   ) async throws -> [BackupSnapshot] {
-    // Create metadata
-    var metadata=LogMetadata()
-    metadata["repositoryID"]=repositoryID ?? "any"
-    metadata["tags"]=tags?.joined(separator: ", ") ?? "any"
-    metadata["before"]=before?.description ?? "any"
-    metadata["after"]=after?.description ?? "any"
-    metadata["path"]=path?.path ?? "any"
-    metadata["limit"]=limit != nil ? String(limit!) : "unlimited"
+    // Create a structured log context with privacy-aware metadata
+    let logContext = SnapshotLogContext()
+        .with(repositoryID: repositoryID, privacy: .public)
+        .with(tags: tags, privacy: .public)
+        .with(beforeDate: before, privacy: .public)
+        .with(afterDate: after, privacy: .public)
+        .with(path: path?.path, privacy: .public)
+        .with(key: "limit", value: limit != nil ? String(limit!) : "unlimited", privacy: .public)
+        .with(operation: "listSnapshots")
 
-    await logger.info(
-      "Listing snapshots with detailed criteria",
-      metadata: metadata,
-      source: "SnapshotService"
-    )
+    await snapshotLogging.logOperationStart(logContext: logContext)
 
     do {
       // Create command to list snapshots
-      let command=try commandFactory.createListCommand(
+      let command = try commandFactory.createListCommand(
         repositoryID: repositoryID,
         tags: tags,
         before: before,
@@ -90,58 +92,94 @@ public actor SnapshotServiceImpl: SnapshotServiceProtocol {
       )
 
       // Execute command
-      let output=try await resticService.execute(command)
+      let output = try await resticService.execute(command)
 
       // Parse snapshots
-      let snapshots=try resultParser.parseSnapshotsList(output: output, repositoryID: repositoryID)
+      let snapshots = try resultParser.parseSnapshotsList(output: output, repositoryID: repositoryID)
 
-      // Create result metadata
-      var resultMetadata=LogMetadata()
-      resultMetadata["count"]=String(snapshots.count)
-
-      await logger.info(
-        "Listed snapshots successfully",
-        metadata: resultMetadata,
-        source: "SnapshotService"
-      )
+      // Log successful operation
+      let resultContext = logContext.with(key: "count", value: String(snapshots.count), privacy: .public)
+      await snapshotLogging.logOperationSuccess(logContext: resultContext)
 
       return snapshots
     } catch let error as ResticError {
-      // Create error metadata
-      var errorMetadata=LogMetadata()
-      errorMetadata["error"]=error.localizedDescription
-
-      await logger.error(
-        "List snapshots failed with Restic error",
-        metadata: errorMetadata,
-        source: "SnapshotService"
-      )
-
+      // Log Restic error
+      let errorContext = logContext.withError(error)
+      await snapshotLogging.logOperationError(logContext: errorContext, message: "List snapshots failed with Restic error")
+      
       throw errorMapper.convertResticError(error)
     } catch let error as BackupError {
-      // Create error metadata
-      var errorMetadata=LogMetadata()
-      errorMetadata["error"]=error.localizedDescription
-
-      await logger.error(
-        "List snapshots failed",
-        metadata: errorMetadata,
-        source: "SnapshotService"
-      )
-
+      // Log backup error
+      let errorContext = logContext.withError(error)
+      await snapshotLogging.logOperationError(logContext: errorContext, message: "List snapshots failed")
+      
       throw error
     } catch {
-      // Create error metadata
-      var errorMetadata=LogMetadata()
-      errorMetadata["error"]=error.localizedDescription
+      // Log unexpected error
+      let errorContext = logContext.withError(error)
+      await snapshotLogging.logOperationError(logContext: errorContext, message: "List snapshots failed with unexpected error")
+      
+      throw BackupError.unexpectedError(error.localizedDescription)
+    }
+  }
 
-      await logger.error(
-        "List snapshots failed with unexpected error",
-        metadata: errorMetadata,
-        source: "SnapshotService"
+  /// Gets a specific snapshot by ID
+  /// - Parameters:
+  ///   - snapshotID: ID of the snapshot
+  ///   - includeFileStatistics: Whether to include detailed file statistics
+  ///   - progressReporter: Optional reporter for tracking operation progress
+  ///   - cancellationToken: Optional token for cancelling the operation
+  /// - Returns: Detailed backup snapshot information
+  /// - Throws: `BackupError` if the snapshot lookup fails
+  public func getSnapshot(
+    snapshotID: String,
+    includeFileStatistics: Bool,
+    progressReporter _: BackupProgressReporter?,
+    cancellationToken _: CancellationToken?
+  ) async throws -> BackupSnapshot {
+    // Create a structured log context with privacy-aware metadata
+    let logContext = SnapshotLogContext()
+        .with(snapshotID: snapshotID, privacy: .public)
+        .with(key: "includeFileStatistics", value: String(includeFileStatistics), privacy: .public)
+        .with(operation: "getSnapshot")
+
+    await snapshotLogging.logOperationStart(logContext: logContext)
+
+    do {
+      // Create command to get the snapshot
+      let command = try commandFactory.createGetCommand(
+        snapshotID: snapshotID,
+        includeFileStatistics: includeFileStatistics
       )
 
-      throw BackupError.genericError(reason: error.localizedDescription)
+      // Execute command
+      let output = try await resticService.execute(command)
+
+      // Parse snapshot
+      let snapshot = try resultParser.parseSnapshotDetail(output: output)
+
+      // Log successful operation
+      await snapshotLogging.logOperationSuccess(logContext: logContext)
+
+      return snapshot
+    } catch let error as ResticError {
+      // Log Restic error
+      let errorContext = logContext.withError(error)
+      await snapshotLogging.logOperationError(logContext: errorContext, message: "Get snapshot failed with Restic error")
+      
+      throw errorMapper.convertResticError(error)
+    } catch let error as BackupError {
+      // Log backup error
+      let errorContext = logContext.withError(error)
+      await snapshotLogging.logOperationError(logContext: errorContext, message: "Get snapshot failed")
+      
+      throw error
+    } catch {
+      // Log unexpected error
+      let errorContext = logContext.withError(error)
+      await snapshotLogging.logOperationError(logContext: errorContext, message: "Get snapshot failed with unexpected error")
+      
+      throw BackupError.unexpectedError(error.localizedDescription)
     }
   }
 
@@ -160,9 +198,9 @@ public actor SnapshotServiceImpl: SnapshotServiceProtocol {
     cancellationToken _: CancellationToken?
   ) async throws -> BackupSnapshot {
     // Create metadata
-    var metadata=LogMetadata()
-    metadata["snapshotID"]=snapshotID
-    metadata["includeFileStatistics"]=String(includeFileStatistics)
+    var metadata=PrivacyMetadata()
+    metadata["snapshotID"]=PrivacyMetadataValue(value: snapshotID, privacy: .public)
+    metadata["includeFileStatistics"]=PrivacyMetadataValue(value: String(includeFileStatistics), privacy: .public)
 
     await logger.info(
       "Getting detailed snapshot information",
@@ -193,10 +231,10 @@ public actor SnapshotServiceImpl: SnapshotServiceProtocol {
       }
 
       // Create result metadata
-      var resultMetadata=LogMetadata()
-      resultMetadata["snapshotID"]=snapshot.id
-      resultMetadata["creationTime"]=snapshot.creationTime.description
-      resultMetadata["fileCount"]=String(snapshot.fileCount)
+      var resultMetadata=PrivacyMetadata()
+      resultMetadata["snapshotID"]=PrivacyMetadataValue(value: snapshot.id, privacy: .public)
+      resultMetadata["creationTime"]=PrivacyMetadataValue(value: snapshot.creationTime.description, privacy: .public)
+      resultMetadata["fileCount"]=PrivacyMetadataValue(value: String(snapshot.fileCount), privacy: .public)
 
       await logger.info(
         "Retrieved snapshot details successfully",
@@ -207,8 +245,8 @@ public actor SnapshotServiceImpl: SnapshotServiceProtocol {
       return snapshot
     } catch let error as ResticError {
       // Create error metadata
-      var errorMetadata=LogMetadata()
-      errorMetadata["error"]=error.localizedDescription
+      var errorMetadata=PrivacyMetadata()
+      errorMetadata["error"]=PrivacyMetadataValue(value: error.localizedDescription, privacy: .private)
 
       await logger.error(
         "Get snapshot details failed with Restic error",
@@ -219,8 +257,8 @@ public actor SnapshotServiceImpl: SnapshotServiceProtocol {
       throw errorMapper.convertResticError(error)
     } catch let error as BackupError {
       // Create error metadata
-      var errorMetadata=LogMetadata()
-      errorMetadata["error"]=error.localizedDescription
+      var errorMetadata=PrivacyMetadata()
+      errorMetadata["error"]=PrivacyMetadataValue(value: error.localizedDescription, privacy: .private)
 
       await logger.error(
         "Get snapshot details failed",
@@ -231,8 +269,8 @@ public actor SnapshotServiceImpl: SnapshotServiceProtocol {
       throw error
     } catch {
       // Create error metadata
-      var errorMetadata=LogMetadata()
-      errorMetadata["error"]=error.localizedDescription
+      var errorMetadata=PrivacyMetadata()
+      errorMetadata["error"]=PrivacyMetadataValue(value: error.localizedDescription, privacy: .private)
 
       await logger.error(
         "Get snapshot details failed with unexpected error",
@@ -244,97 +282,131 @@ public actor SnapshotServiceImpl: SnapshotServiceProtocol {
     }
   }
 
-  /// Compares two snapshots and returns the differences
+  /// Compares two snapshots to identify differences
   /// - Parameters:
   ///   - snapshotID1: ID of the first snapshot
   ///   - snapshotID2: ID of the second snapshot
-  ///   - path: Optional path to compare within the snapshots
   ///   - progressReporter: Optional reporter for tracking operation progress
   ///   - cancellationToken: Optional token for cancelling the operation
-  /// - Returns: A detailed comparison of the snapshots
-  /// - Throws: `BackupError` if comparison fails
+  /// - Returns: Detailed snapshot difference information
+  /// - Throws: `BackupError` if the compare operation fails
   public func compareSnapshots(
     snapshotID1: String,
     snapshotID2: String,
-    path: URL?,
     progressReporter _: BackupProgressReporter?,
     cancellationToken _: CancellationToken?
   ) async throws -> SnapshotDifference {
-    // Create metadata
-    var metadata=LogMetadata()
-    metadata["snapshotID1"]=snapshotID1
-    metadata["snapshotID2"]=snapshotID2
-    metadata["path"]=path?.path ?? "all"
+    // Create a structured log context with privacy-aware metadata
+    let logContext = SnapshotLogContext()
+        .with(key: "snapshotID1", value: snapshotID1, privacy: .public)
+        .with(key: "snapshotID2", value: snapshotID2, privacy: .public)
+        .with(operation: "compareSnapshots")
 
-    await logger.info("Comparing snapshots", metadata: metadata, source: "SnapshotService")
+    await snapshotLogging.logOperationStart(logContext: logContext)
 
     do {
       // Create command to compare snapshots
-      let command=try commandFactory.createCompareCommand(
-        snapshotID1: snapshotID1,
-        snapshotID2: snapshotID2,
-        path: path
-      )
-
-      // Execute command
-      let output=try await resticService.execute(command)
-
-      // Parse comparison result
-      let difference=try resultParser.parseComparisonResult(
-        output: output,
+      let command = try commandFactory.createCompareCommand(
         snapshotID1: snapshotID1,
         snapshotID2: snapshotID2
       )
 
-      // Create result metadata
-      var resultMetadata=LogMetadata()
-      resultMetadata["addedFiles"]=String(difference.addedFiles?.count ?? 0)
-      resultMetadata["removedFiles"]=String(difference.removedFiles?.count ?? 0)
-      resultMetadata["modifiedFiles"]=String(difference.modifiedFiles?.count ?? 0)
+      // Execute command
+      let output = try await resticService.execute(command)
 
-      await logger.info(
-        "Snapshot comparison completed",
-        metadata: resultMetadata,
-        source: "SnapshotService"
-      )
+      // Parse difference
+      let difference = try resultParser.parseSnapshotDifference(output: output)
+
+      // Log successful operation with results
+      let resultContext = logContext
+          .with(key: "addedFiles", value: String(difference.addedFiles.count), privacy: .public)
+          .with(key: "modifiedFiles", value: String(difference.modifiedFiles.count), privacy: .public)
+          .with(key: "removedFiles", value: String(difference.removedFiles.count), privacy: .public)
+
+      await snapshotLogging.logOperationSuccess(logContext: resultContext)
 
       return difference
     } catch let error as ResticError {
-      // Create error metadata
-      var errorMetadata=LogMetadata()
-      errorMetadata["error"]=error.localizedDescription
-
-      await logger.error(
-        "Snapshot comparison failed with Restic error",
-        metadata: errorMetadata,
-        source: "SnapshotService"
-      )
-
+      // Log Restic error
+      let errorContext = logContext.withError(error)
+      await snapshotLogging.logOperationError(logContext: errorContext, message: "Compare snapshots failed with Restic error")
+      
       throw errorMapper.convertResticError(error)
     } catch let error as BackupError {
-      // Create error metadata
-      var errorMetadata=LogMetadata()
-      errorMetadata["error"]=error.localizedDescription
-
-      await logger.error(
-        "Snapshot comparison failed",
-        metadata: errorMetadata,
-        source: "SnapshotService"
-      )
-
+      // Log backup error
+      let errorContext = logContext.withError(error)
+      await snapshotLogging.logOperationError(logContext: errorContext, message: "Compare snapshots failed")
+      
       throw error
     } catch {
-      // Create error metadata
-      var errorMetadata=LogMetadata()
-      errorMetadata["error"]=error.localizedDescription
+      // Log unexpected error
+      let errorContext = logContext.withError(error)
+      await snapshotLogging.logOperationError(logContext: errorContext, message: "Compare snapshots failed with unexpected error")
+      
+      throw BackupError.unexpectedError(error.localizedDescription)
+    }
+  }
 
-      await logger.error(
-        "Snapshot comparison failed with unexpected error",
-        metadata: errorMetadata,
-        source: "SnapshotService"
+  /// Adds tags to a snapshot
+  /// - Parameters:
+  ///   - snapshotID: ID of the snapshot
+  ///   - addTags: Tags to add to the snapshot
+  ///   - progressReporter: Optional reporter for tracking operation progress
+  ///   - cancellationToken: Optional token for cancelling the operation
+  /// - Returns: Updated backup snapshot information
+  /// - Throws: `BackupError` if the tag update fails
+  public func addTagsToSnapshot(
+    snapshotID: String,
+    addTags: [String],
+    progressReporter _: BackupProgressReporter?,
+    cancellationToken _: CancellationToken?
+  ) async throws -> BackupSnapshot {
+    // Create a structured log context with privacy-aware metadata
+    let logContext = SnapshotLogContext()
+        .with(snapshotID: snapshotID, privacy: .public)
+        .with(key: "addTags", value: addTags.joined(separator: ", "), privacy: .public)
+        .with(operation: "addTagsToSnapshot")
+
+    await snapshotLogging.logOperationStart(logContext: logContext)
+
+    do {
+      // Create command to add tags
+      let command = try commandFactory.createAddTagsCommand(
+        snapshotID: snapshotID,
+        tags: addTags
       )
 
-      throw BackupError.genericError(reason: error.localizedDescription)
+      // Execute command
+      let output = try await resticService.execute(command)
+
+      // Parse updated snapshot
+      let snapshot = try resultParser.parseTagUpdateResult(output: output)
+
+      // Log successful operation
+      let resultContext = logContext
+          .with(key: "totalTags", value: String(snapshot.tags.count), privacy: .public)
+
+      await snapshotLogging.logOperationSuccess(logContext: resultContext)
+
+      return snapshot
+    } catch let error as ResticError {
+      // Log Restic error
+      let errorContext = logContext.withError(error)
+      await snapshotLogging.logOperationError(logContext: errorContext, message: "Add tags to snapshot failed with Restic error")
+      
+      throw errorMapper.convertResticError(error)
+    } catch let error as BackupError {
+      // Log backup error
+      let errorContext = logContext.withError(error)
+      await snapshotLogging.logOperationError(logContext: errorContext, message: "Add tags to snapshot failed")
+      
+      throw error
+    } catch {
+      // Log unexpected error
+      let errorContext = logContext.withError(error)
+      await snapshotLogging.logOperationError(logContext: errorContext, message: "Add tags to snapshot failed with unexpected error")
+      
+      throw BackupError.unexpectedError(error.localizedDescription)
     }
   }
 
@@ -355,10 +427,10 @@ public actor SnapshotServiceImpl: SnapshotServiceProtocol {
     cancellationToken _: CancellationToken?
   ) async throws -> BackupSnapshot {
     // Create metadata
-    var metadata=LogMetadata()
-    metadata["snapshotID"]=snapshotID
-    metadata["addTags"]=addTags.joined(separator: ", ")
-    metadata["removeTags"]=removeTags.joined(separator: ", ")
+    var metadata=PrivacyMetadata()
+    metadata["snapshotID"]=PrivacyMetadataValue(value: snapshotID, privacy: .public)
+    metadata["addTags"]=PrivacyMetadataValue(value: addTags.joined(separator: ", "), privacy: .public)
+    metadata["removeTags"]=PrivacyMetadataValue(value: removeTags.joined(separator: ", "), privacy: .public)
 
     await logger.info("Updating snapshot tags", metadata: metadata, source: "SnapshotService")
 
@@ -382,9 +454,9 @@ public actor SnapshotServiceImpl: SnapshotServiceProtocol {
       )
 
       // Create result metadata
-      var resultMetadata=LogMetadata()
-      resultMetadata["snapshotID"]=snapshot.id
-      resultMetadata["tags"]=snapshot.tags.joined(separator: ", ")
+      var resultMetadata=PrivacyMetadata()
+      resultMetadata["snapshotID"]=PrivacyMetadataValue(value: snapshot.id, privacy: .public)
+      resultMetadata["tags"]=PrivacyMetadataValue(value: snapshot.tags.joined(separator: ", "), privacy: .public)
 
       await logger.info(
         "Updated snapshot tags successfully",
@@ -395,8 +467,8 @@ public actor SnapshotServiceImpl: SnapshotServiceProtocol {
       return snapshot
     } catch let error as ResticError {
       // Create error metadata
-      var errorMetadata=LogMetadata()
-      errorMetadata["error"]=error.localizedDescription
+      var errorMetadata=PrivacyMetadata()
+      errorMetadata["error"]=PrivacyMetadataValue(value: error.localizedDescription, privacy: .private)
 
       await logger.error(
         "Update snapshot tags failed with Restic error",
@@ -407,8 +479,8 @@ public actor SnapshotServiceImpl: SnapshotServiceProtocol {
       throw errorMapper.convertResticError(error)
     } catch let error as BackupError {
       // Create error metadata
-      var errorMetadata=LogMetadata()
-      errorMetadata["error"]=error.localizedDescription
+      var errorMetadata=PrivacyMetadata()
+      errorMetadata["error"]=PrivacyMetadataValue(value: error.localizedDescription, privacy: .private)
 
       await logger.error(
         "Update snapshot tags failed",
@@ -419,8 +491,8 @@ public actor SnapshotServiceImpl: SnapshotServiceProtocol {
       throw error
     } catch {
       // Create error metadata
-      var errorMetadata=LogMetadata()
-      errorMetadata["error"]=error.localizedDescription
+      var errorMetadata=PrivacyMetadata()
+      errorMetadata["error"]=PrivacyMetadataValue(value: error.localizedDescription, privacy: .private)
 
       await logger.error(
         "Update snapshot tags failed with unexpected error",
@@ -434,185 +506,121 @@ public actor SnapshotServiceImpl: SnapshotServiceProtocol {
 
   /// Updates the description for a specific snapshot
   /// - Parameters:
-  ///   - snapshotID: ID of the snapshot to update
-  ///   - description: New description
+  ///   - snapshotID: ID of the snapshot
+  ///   - description: New description for the snapshot
   ///   - progressReporter: Optional reporter for tracking operation progress
   ///   - cancellationToken: Optional token for cancelling the operation
-  /// - Returns: Updated snapshot
-  /// - Throws: `BackupError` if update fails
+  /// - Returns: Updated backup snapshot information
+  /// - Throws: `BackupError` if the description update fails
   public func updateSnapshotDescription(
     snapshotID: String,
     description: String,
     progressReporter _: BackupProgressReporter?,
     cancellationToken _: CancellationToken?
   ) async throws -> BackupSnapshot {
-    // Create metadata
-    var metadata=LogMetadata()
-    metadata["snapshotID"]=snapshotID
-    metadata["description"]=description
+    // Create a structured log context with privacy-aware metadata
+    let logContext = SnapshotLogContext()
+        .with(snapshotID: snapshotID, privacy: .public)
+        .with(key: "description", value: description, privacy: .public)
+        .with(operation: "updateSnapshotDescription")
 
-    await logger.info(
-      "Updating snapshot description",
-      metadata: metadata,
-      source: "SnapshotService"
-    )
+    await snapshotLogging.logOperationStart(logContext: logContext)
 
     do {
-      // Create command to update description
-      let command=try commandFactory.createUpdateDescriptionCommand(
+      // Create command to update the description
+      let command = try commandFactory.createUpdateDescriptionCommand(
         snapshotID: snapshotID,
         description: description
       )
 
       // Execute command
-      _=try await resticService.execute(command)
+      let output = try await resticService.execute(command)
 
-      // Get updated snapshot
-      let snapshot=try await getSnapshotDetails(
-        snapshotID: snapshotID,
-        includeFileStatistics: false,
-        progressReporter: nil,
-        cancellationToken: nil
-      )
+      // Parse updated snapshot
+      let snapshot = try resultParser.parseDescriptionUpdateResult(output: output)
 
-      // Create result metadata
-      var resultMetadata=LogMetadata()
-      resultMetadata["snapshotID"]=snapshot.id
-      resultMetadata["description"]=snapshot.description ?? "none"
-
-      await logger.info(
-        "Updated snapshot description successfully",
-        metadata: resultMetadata,
-        source: "SnapshotService"
-      )
+      // Log successful operation
+      await snapshotLogging.logOperationSuccess(logContext: logContext)
 
       return snapshot
     } catch let error as ResticError {
-      // Create error metadata
-      var errorMetadata=LogMetadata()
-      errorMetadata["error"]=error.localizedDescription
-
-      await logger.error(
-        "Update snapshot description failed with Restic error",
-        metadata: errorMetadata,
-        source: "SnapshotService"
-      )
-
+      // Log Restic error
+      let errorContext = logContext.withError(error)
+      await snapshotLogging.logOperationError(logContext: errorContext, message: "Update snapshot description failed with Restic error")
+      
       throw errorMapper.convertResticError(error)
     } catch let error as BackupError {
-      // Create error metadata
-      var errorMetadata=LogMetadata()
-      errorMetadata["error"]=error.localizedDescription
-
-      await logger.error(
-        "Update snapshot description failed",
-        metadata: errorMetadata,
-        source: "SnapshotService"
-      )
-
+      // Log backup error
+      let errorContext = logContext.withError(error)
+      await snapshotLogging.logOperationError(logContext: errorContext, message: "Update snapshot description failed")
+      
       throw error
     } catch {
-      // Create error metadata
-      var errorMetadata=LogMetadata()
-      errorMetadata["error"]=error.localizedDescription
-
-      await logger.error(
-        "Update snapshot description failed with unexpected error",
-        metadata: errorMetadata,
-        source: "SnapshotService"
-      )
-
-      throw BackupError.genericError(reason: error.localizedDescription)
+      // Log unexpected error
+      let errorContext = logContext.withError(error)
+      await snapshotLogging.logOperationError(logContext: errorContext, message: "Update snapshot description failed with unexpected error")
+      
+      throw BackupError.unexpectedError(error.localizedDescription)
     }
   }
 
   /// Deletes a snapshot
   /// - Parameters:
   ///   - snapshotID: ID of the snapshot to delete
-  ///   - pruneAfterDelete: Whether to prune repository after deletion
   ///   - progressReporter: Optional reporter for tracking operation progress
   ///   - cancellationToken: Optional token for cancelling the operation
-  /// - Returns: Result of deletion operation
-  /// - Throws: `BackupError` if deletion fails
+  /// - Returns: Result of the delete operation
+  /// - Throws: `BackupError` if the delete operation fails
   public func deleteSnapshot(
     snapshotID: String,
-    pruneAfterDelete: Bool,
     progressReporter _: BackupProgressReporter?,
     cancellationToken _: CancellationToken?
   ) async throws -> DeleteResult {
-    let deletionTime=Date()
+    let deletionTime = Date()
 
-    // Create metadata
-    var metadata=LogMetadata()
-    metadata["snapshotID"]=snapshotID
-    metadata["pruneAfterDelete"]=String(pruneAfterDelete)
+    // Create a structured log context with privacy-aware metadata
+    let logContext = SnapshotLogContext()
+        .with(snapshotID: snapshotID, privacy: .public)
+        .with(operation: "deleteSnapshot")
 
-    await logger.info("Deleting snapshot", metadata: metadata, source: "SnapshotService")
+    await snapshotLogging.logOperationStart(logContext: logContext)
 
     do {
-      // Create command to delete snapshot
-      let command=try commandFactory.createDeleteCommand(
-        snapshotID: snapshotID,
-        pruneAfterDelete: pruneAfterDelete
-      )
+      // Create command to delete the snapshot
+      let command = try commandFactory.createDeleteCommand(snapshotID: snapshotID)
 
       // Execute command
-      _=try await resticService.execute(command)
+      let output = try await resticService.execute(command)
 
-      // Create result metadata
-      var resultMetadata=LogMetadata()
-      resultMetadata["snapshotID"]=snapshotID
-      resultMetadata["pruneAfterDelete"]=String(pruneAfterDelete)
+      // Parse delete result
+      let result = try resultParser.parseDeleteResult(output: output)
 
-      await logger.info(
-        "Deleted snapshot successfully",
-        metadata: resultMetadata,
-        source: "SnapshotService"
-      )
+      // Log successful operation with results
+      let resultContext = logContext
+          .with(key: "deletedFiles", value: String(result.deletedFiles), privacy: .public)
+          .with(key: "deletedBytes", value: String(result.deletedBytes), privacy: .public)
 
-      // Basic parse of delete result - for a more robust implementation, we'd
-      // need to parse the JSON output to determine success/failure in detail
-      return DeleteResult(
-        snapshotID: snapshotID,
-        deletionTime: deletionTime,
-        successful: true // Assuming success if we get here (failures throw errors)
-      )
+      await snapshotLogging.logOperationSuccess(logContext: resultContext)
+
+      return result
     } catch let error as ResticError {
-      // Create error metadata
-      var errorMetadata=LogMetadata()
-      errorMetadata["error"]=error.localizedDescription
-
-      await logger.error(
-        "Delete snapshot failed with Restic error",
-        metadata: errorMetadata,
-        source: "SnapshotService"
-      )
-
+      // Log Restic error
+      let errorContext = logContext.withError(error)
+      await snapshotLogging.logOperationError(logContext: errorContext, message: "Delete snapshot failed with Restic error")
+      
       throw errorMapper.convertResticError(error)
     } catch let error as BackupError {
-      // Create error metadata
-      var errorMetadata=LogMetadata()
-      errorMetadata["error"]=error.localizedDescription
-
-      await logger.error(
-        "Delete snapshot failed",
-        metadata: errorMetadata,
-        source: "SnapshotService"
-      )
-
+      // Log backup error
+      let errorContext = logContext.withError(error)
+      await snapshotLogging.logOperationError(logContext: errorContext, message: "Delete snapshot failed")
+      
       throw error
     } catch {
-      // Create error metadata
-      var errorMetadata=LogMetadata()
-      errorMetadata["error"]=error.localizedDescription
-
-      await logger.error(
-        "Delete snapshot failed with unexpected error",
-        metadata: errorMetadata,
-        source: "SnapshotService"
-      )
-
-      throw BackupError.genericError(reason: error.localizedDescription)
+      // Log unexpected error
+      let errorContext = logContext.withError(error)
+      await snapshotLogging.logOperationError(logContext: errorContext, message: "Delete snapshot failed with unexpected error")
+      
+      throw BackupError.unexpectedError(error.localizedDescription)
     }
   }
 
@@ -630,75 +638,52 @@ public actor SnapshotServiceImpl: SnapshotServiceProtocol {
     progressReporter _: BackupProgressReporter?,
     cancellationToken _: CancellationToken?
   ) async throws -> String {
-    // Create metadata
-    var metadata=LogMetadata()
-    metadata["snapshotID"]=snapshotID
-    metadata["targetRepositoryID"]=targetRepositoryID
+    // Create a structured log context with privacy-aware metadata
+    let logContext = SnapshotLogContext()
+        .with(snapshotID: snapshotID, privacy: .public)
+        .with(key: "targetRepositoryID", value: targetRepositoryID, privacy: .public)
+        .with(operation: "copySnapshot")
 
-    await logger.info(
-      "Copying snapshot to another repository",
-      metadata: metadata,
-      source: "SnapshotService"
-    )
+    await snapshotLogging.logOperationStart(logContext: logContext)
 
     do {
-      // Create command to copy snapshot
-      let command=try commandFactory.createCopyCommand(
+      // Create command to copy the snapshot
+      let command = try commandFactory.createCopyCommand(
         snapshotID: snapshotID,
         targetRepositoryID: targetRepositoryID
       )
 
       // Execute command
-      let output=try await resticService.execute(command)
+      let output = try await resticService.execute(command)
 
-      // Parse new snapshot ID
-      let newSnapshotID=try resultParser.parseNewSnapshotID(output: output)
+      // Parse the ID of the copied snapshot
+      let newSnapshotID = try resultParser.parseCopyResult(output: output)
 
-      // Create result metadata
-      var resultMetadata=LogMetadata()
-      resultMetadata["snapshotID"]=snapshotID
-      resultMetadata["targetRepositoryID"]=targetRepositoryID
-      resultMetadata["newSnapshotID"]=newSnapshotID
+      // Log successful operation with the new ID
+      let resultContext = logContext
+          .with(key: "newSnapshotID", value: newSnapshotID, privacy: .public)
 
-      await logger.info(
-        "Copied snapshot successfully",
-        metadata: resultMetadata,
-        source: "SnapshotService"
-      )
+      await snapshotLogging.logOperationSuccess(logContext: resultContext)
 
       return newSnapshotID
     } catch let error as ResticError {
-      // Create error metadata
-      var errorMetadata=LogMetadata()
-      errorMetadata["error"]=error.localizedDescription
-
-      await logger.error(
-        "Copy snapshot failed with Restic error",
-        metadata: errorMetadata,
-        source: "SnapshotService"
-      )
-
+      // Log Restic error
+      let errorContext = logContext.withError(error)
+      await snapshotLogging.logOperationError(logContext: errorContext, message: "Copy snapshot failed with Restic error")
+      
       throw errorMapper.convertResticError(error)
     } catch let error as BackupError {
-      // Create error metadata
-      var errorMetadata=LogMetadata()
-      errorMetadata["error"]=error.localizedDescription
-
-      await logger.error("Copy snapshot failed", metadata: errorMetadata, source: "SnapshotService")
-
+      // Log backup error
+      let errorContext = logContext.withError(error)
+      await snapshotLogging.logOperationError(logContext: errorContext, message: "Copy snapshot failed")
+      
       throw error
     } catch {
-      // Create error metadata
-      var errorMetadata=LogMetadata()
-      errorMetadata["error"]=error.localizedDescription
-
-      await logger.error(
-        "Copy snapshot failed with unexpected error",
-        metadata: errorMetadata,
-        source: "SnapshotService"
-      )
-
-      throw BackupError.genericError(reason: error.localizedDescription)
+      // Log unexpected error
+      let errorContext = logContext.withError(error)
+      await snapshotLogging.logOperationError(logContext: errorContext, message: "Copy snapshot failed with unexpected error")
+      
+      throw BackupError.unexpectedError(error.localizedDescription)
     }
   }
 
@@ -718,73 +703,122 @@ public actor SnapshotServiceImpl: SnapshotServiceProtocol {
     progressReporter _: BackupProgressReporter?,
     cancellationToken _: CancellationToken?
   ) async throws -> [SnapshotFile] {
-    // Create metadata
-    var metadata=LogMetadata()
-    metadata["snapshotID"]=snapshotID
-    metadata["pattern"]=pattern
-    metadata["caseSensitive"]=String(caseSensitive)
+    // Create a structured log context with privacy-aware metadata
+    let logContext = SnapshotLogContext()
+        .with(snapshotID: snapshotID, privacy: .public)
+        .with(key: "pattern", value: pattern, privacy: .public)
+        .with(key: "caseSensitive", value: String(caseSensitive), privacy: .public)
+        .with(operation: "findFiles")
 
-    await logger.info("Finding files in snapshot", metadata: metadata, source: "SnapshotService")
+    await snapshotLogging.logOperationStart(logContext: logContext)
 
     do {
       // Create command to find files
-      let command=try commandFactory.createFindCommand(
+      let command = try commandFactory.createFindCommand(
         snapshotID: snapshotID,
         pattern: pattern,
         caseSensitive: caseSensitive
       )
 
       // Execute command
-      let output=try await resticService.execute(command)
+      let output = try await resticService.execute(command)
 
       // Parse find result
-      let files=try resultParser.parseFindResult(output: output, pattern: pattern)
+      let files = try resultParser.parseFindResult(output: output, pattern: pattern)
 
-      // Create result metadata
-      var resultMetadata=LogMetadata()
-      resultMetadata["snapshotID"]=snapshotID
-      resultMetadata["pattern"]=pattern
-      resultMetadata["matchCount"]=String(files.count)
+      // Log successful operation with the file count
+      let resultContext = logContext
+          .with(key: "fileCount", value: String(files.count), privacy: .public)
 
-      await logger.info(
-        "Found files in snapshot",
-        metadata: resultMetadata,
-        source: "SnapshotService"
-      )
+      await snapshotLogging.logOperationSuccess(logContext: resultContext)
 
       return files
     } catch let error as ResticError {
-      // Create error metadata
-      var errorMetadata=LogMetadata()
-      errorMetadata["error"]=error.localizedDescription
-
-      await logger.error(
-        "Find files failed with Restic error",
-        metadata: errorMetadata,
-        source: "SnapshotService"
-      )
-
+      // Log Restic error
+      let errorContext = logContext.withError(error)
+      await snapshotLogging.logOperationError(logContext: errorContext, message: "Find files failed with Restic error")
+      
       throw errorMapper.convertResticError(error)
     } catch let error as BackupError {
-      // Create error metadata
-      var errorMetadata=LogMetadata()
-      errorMetadata["error"]=error.localizedDescription
-
-      await logger.error("Find files failed", metadata: errorMetadata, source: "SnapshotService")
-
+      // Log backup error
+      let errorContext = logContext.withError(error)
+      await snapshotLogging.logOperationError(logContext: errorContext, message: "Find files failed")
+      
       throw error
     } catch {
-      // Create error metadata
-      var errorMetadata=LogMetadata()
-      errorMetadata["error"]=error.localizedDescription
+      // Log unexpected error
+      let errorContext = logContext.withError(error)
+      await snapshotLogging.logOperationError(logContext: errorContext, message: "Find files failed with unexpected error")
+      
+      throw BackupError.unexpectedError(error.localizedDescription)
+    }
+  }
 
-      await logger.error(
-        "Find files failed with unexpected error",
-        metadata: errorMetadata,
-        source: "SnapshotService"
+  /// Restores files from a snapshot to the filesystem
+  /// - Parameters:
+  ///   - snapshotID: ID of the snapshot
+  ///   - targetPath: Path to restore files to
+  ///   - includePattern: Optional pattern of files to include
+  ///   - excludePattern: Optional pattern of files to exclude
+  ///   - progressReporter: Optional reporter for tracking operation progress
+  ///   - cancellationToken: Optional token for cancelling the operation
+  /// - Throws: `BackupError` if the restore operation fails
+  public func restoreFiles(
+    snapshotID: String,
+    targetPath: URL,
+    includePattern: String?,
+    excludePattern: String?,
+    progressReporter _: BackupProgressReporter?,
+    cancellationToken _: CancellationToken?
+  ) async throws {
+    // Create a structured log context with privacy-aware metadata
+    let logContext = SnapshotLogContext()
+        .with(snapshotID: snapshotID, privacy: .public)
+        .with(key: "targetPath", value: targetPath.path, privacy: .private)
+        .with(key: "includePattern", value: includePattern ?? "all", privacy: .public)
+        .with(key: "excludePattern", value: excludePattern ?? "none", privacy: .public)
+        .with(operation: "restoreFiles")
+
+    await snapshotLogging.logOperationStart(logContext: logContext)
+
+    do {
+      // Create command to restore files
+      let command = try commandFactory.createRestoreCommand(
+        snapshotID: snapshotID,
+        targetPath: targetPath,
+        includePattern: includePattern,
+        excludePattern: excludePattern
       )
 
-      throw BackupError.genericError(reason: error.localizedDescription)
+      // Execute command
+      let output = try await resticService.execute(command)
+
+      // Parse restore result
+      let fileCount = try resultParser.parseRestoreResult(output: output)
+
+      // Log successful operation with the file count
+      let resultContext = logContext
+          .with(key: "restoredFiles", value: String(fileCount), privacy: .public)
+
+      await snapshotLogging.logOperationSuccess(logContext: resultContext)
+    } catch let error as ResticError {
+      // Log Restic error
+      let errorContext = logContext.withError(error)
+      await snapshotLogging.logOperationError(logContext: errorContext, message: "Restore files failed with Restic error")
+      
+      throw errorMapper.convertResticError(error)
+    } catch let error as BackupError {
+      // Log backup error
+      let errorContext = logContext.withError(error)
+      await snapshotLogging.logOperationError(logContext: errorContext, message: "Restore files failed")
+      
+      throw error
+    } catch {
+      // Log unexpected error
+      let errorContext = logContext.withError(error)
+      await snapshotLogging.logOperationError(logContext: errorContext, message: "Restore files failed with unexpected error")
+      
+      throw BackupError.unexpectedError(error.localizedDescription)
     }
   }
 
@@ -799,8 +833,8 @@ public actor SnapshotServiceImpl: SnapshotServiceProtocol {
     cancellationToken _: CancellationToken?
   ) async throws {
     // Create metadata
-    var metadata=LogMetadata()
-    metadata["snapshotID"]=snapshotID
+    var metadata=PrivacyMetadata()
+    metadata["snapshotID"]=PrivacyMetadataValue(value: snapshotID, privacy: .public)
 
     await logger.info("Locking snapshot", metadata: metadata, source: "SnapshotService")
 
@@ -812,8 +846,8 @@ public actor SnapshotServiceImpl: SnapshotServiceProtocol {
       _=try await resticService.execute(command)
 
       // Create result metadata
-      var resultMetadata=LogMetadata()
-      resultMetadata["snapshotID"]=snapshotID
+      var resultMetadata=PrivacyMetadata()
+      resultMetadata["snapshotID"]=PrivacyMetadataValue(value: snapshotID, privacy: .public)
 
       await logger.info(
         "Locked snapshot successfully",
@@ -822,8 +856,8 @@ public actor SnapshotServiceImpl: SnapshotServiceProtocol {
       )
     } catch let error as ResticError {
       // Create error metadata
-      var errorMetadata=LogMetadata()
-      errorMetadata["error"]=error.localizedDescription
+      var errorMetadata=PrivacyMetadata()
+      errorMetadata["error"]=PrivacyMetadataValue(value: error.localizedDescription, privacy: .private)
 
       await logger.error(
         "Lock snapshot failed with Restic error",
@@ -834,16 +868,16 @@ public actor SnapshotServiceImpl: SnapshotServiceProtocol {
       throw errorMapper.convertResticError(error)
     } catch let error as BackupError {
       // Create error metadata
-      var errorMetadata=LogMetadata()
-      errorMetadata["error"]=error.localizedDescription
+      var errorMetadata=PrivacyMetadata()
+      errorMetadata["error"]=PrivacyMetadataValue(value: error.localizedDescription, privacy: .private)
 
       await logger.error("Lock snapshot failed", metadata: errorMetadata, source: "SnapshotService")
 
       throw error
     } catch {
       // Create error metadata
-      var errorMetadata=LogMetadata()
-      errorMetadata["error"]=error.localizedDescription
+      var errorMetadata=PrivacyMetadata()
+      errorMetadata["error"]=PrivacyMetadataValue(value: error.localizedDescription, privacy: .private)
 
       await logger.error(
         "Lock snapshot failed with unexpected error",
@@ -866,8 +900,8 @@ public actor SnapshotServiceImpl: SnapshotServiceProtocol {
     cancellationToken _: CancellationToken?
   ) async throws {
     // Create metadata
-    var metadata=LogMetadata()
-    metadata["snapshotID"]=snapshotID
+    var metadata=PrivacyMetadata()
+    metadata["snapshotID"]=PrivacyMetadataValue(value: snapshotID, privacy: .public)
 
     await logger.info("Unlocking snapshot", metadata: metadata, source: "SnapshotService")
 
@@ -879,8 +913,8 @@ public actor SnapshotServiceImpl: SnapshotServiceProtocol {
       _=try await resticService.execute(command)
 
       // Create result metadata
-      var resultMetadata=LogMetadata()
-      resultMetadata["snapshotID"]=snapshotID
+      var resultMetadata=PrivacyMetadata()
+      resultMetadata["snapshotID"]=PrivacyMetadataValue(value: snapshotID, privacy: .public)
 
       await logger.info(
         "Unlocked snapshot successfully",
@@ -889,8 +923,8 @@ public actor SnapshotServiceImpl: SnapshotServiceProtocol {
       )
     } catch let error as ResticError {
       // Create error metadata
-      var errorMetadata=LogMetadata()
-      errorMetadata["error"]=error.localizedDescription
+      var errorMetadata=PrivacyMetadata()
+      errorMetadata["error"]=PrivacyMetadataValue(value: error.localizedDescription, privacy: .private)
 
       await logger.error(
         "Unlock snapshot failed with Restic error",
@@ -901,8 +935,8 @@ public actor SnapshotServiceImpl: SnapshotServiceProtocol {
       throw errorMapper.convertResticError(error)
     } catch let error as BackupError {
       // Create error metadata
-      var errorMetadata=LogMetadata()
-      errorMetadata["error"]=error.localizedDescription
+      var errorMetadata=PrivacyMetadata()
+      errorMetadata["error"]=PrivacyMetadataValue(value: error.localizedDescription, privacy: .private)
 
       await logger.error(
         "Unlock snapshot failed",
@@ -913,8 +947,8 @@ public actor SnapshotServiceImpl: SnapshotServiceProtocol {
       throw error
     } catch {
       // Create error metadata
-      var errorMetadata=LogMetadata()
-      errorMetadata["error"]=error.localizedDescription
+      var errorMetadata=PrivacyMetadata()
+      errorMetadata["error"]=PrivacyMetadataValue(value: error.localizedDescription, privacy: .private)
 
       await logger.error(
         "Unlock snapshot failed with unexpected error",
@@ -940,8 +974,8 @@ public actor SnapshotServiceImpl: SnapshotServiceProtocol {
     let startTime=Date()
 
     // Create metadata
-    var metadata=LogMetadata()
-    metadata["snapshotID"]=snapshotID
+    var metadata=PrivacyMetadata()
+    metadata["snapshotID"]=PrivacyMetadataValue(value: snapshotID, privacy: .public)
 
     await logger.info("Verifying snapshot integrity", metadata: metadata, source: "SnapshotService")
 
@@ -961,9 +995,9 @@ public actor SnapshotServiceImpl: SnapshotServiceProtocol {
       )
 
       // Create result metadata
-      var resultMetadata=LogMetadata()
-      resultMetadata["snapshotID"]=snapshotID
-      resultMetadata["duration"]=String(format: "%.2fs", endTime.timeIntervalSince(startTime))
+      var resultMetadata=PrivacyMetadata()
+      resultMetadata["snapshotID"]=PrivacyMetadataValue(value: snapshotID, privacy: .public)
+      resultMetadata["duration"]=PrivacyMetadataValue(value: String(format: "%.2fs", endTime.timeIntervalSince(startTime)), privacy: .public)
 
       await logger.info(
         "Snapshot verification completed successfully",
@@ -974,8 +1008,8 @@ public actor SnapshotServiceImpl: SnapshotServiceProtocol {
       return result
     } catch let error as ResticError {
       // Create error metadata
-      var errorMetadata=LogMetadata()
-      errorMetadata["error"]=error.localizedDescription
+      var errorMetadata=PrivacyMetadata()
+      errorMetadata["error"]=PrivacyMetadataValue(value: error.localizedDescription, privacy: .private)
 
       await logger.error(
         "Snapshot verification failed with Restic error",
@@ -986,8 +1020,8 @@ public actor SnapshotServiceImpl: SnapshotServiceProtocol {
       throw errorMapper.convertResticError(error)
     } catch let error as BackupError {
       // Create error metadata
-      var errorMetadata=LogMetadata()
-      errorMetadata["error"]=error.localizedDescription
+      var errorMetadata=PrivacyMetadata()
+      errorMetadata["error"]=PrivacyMetadataValue(value: error.localizedDescription, privacy: .private)
 
       await logger.error(
         "Snapshot verification failed",
@@ -998,8 +1032,8 @@ public actor SnapshotServiceImpl: SnapshotServiceProtocol {
       throw error
     } catch {
       // Create error metadata
-      var errorMetadata=LogMetadata()
-      errorMetadata["error"]=error.localizedDescription
+      var errorMetadata=PrivacyMetadata()
+      errorMetadata["error"]=PrivacyMetadataValue(value: error.localizedDescription, privacy: .private)
 
       await logger.error(
         "Snapshot verification failed with unexpected error",

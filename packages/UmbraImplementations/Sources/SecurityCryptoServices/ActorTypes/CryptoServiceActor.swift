@@ -41,6 +41,9 @@ public actor CryptoServiceActor {
 
   /// Logger for recording operations
   private let logger: LoggingProtocol
+  
+  /// Domain-specific logger for cryptographic operations
+  private let cryptoLogger: CryptoLogger
 
   /// Configuration options for cryptographic operations
   private var defaultConfig: SecurityConfigDTO
@@ -54,37 +57,55 @@ public actor CryptoServiceActor {
       - providerType: The type of security provider to use
       - logger: Logger for recording operations
    */
-  public init(providerType: SecurityProviderType?=nil, logger: LoggingProtocol) {
-    self.logger=logger ?? DefaultLogger()
+  public init(providerType: SecurityProviderType? = nil, logger: LoggingProtocol) {
+    self.logger = logger ?? DefaultLogger()
+    self.cryptoLogger = CryptoLogger(logger: logger)
 
     do {
       if let providerType {
-        provider=try SecurityProviderFactoryImpl.createProvider(type: providerType)
+        provider = try SecurityProviderFactoryImpl.createProvider(type: providerType)
       } else {
-        provider=try SecurityProviderFactoryImpl.createBestAvailableProvider()
+        provider = try SecurityProviderFactoryImpl.createBestAvailableProvider()
       }
 
       // If the provider successfully initialises, set the default config
       if let providerType {
-        defaultConfig=SecurityConfigDTO.aesEncryption(providerType: providerType)
+        defaultConfig = SecurityConfigDTO.aesEncryption(providerType: providerType)
       } else {
-        defaultConfig=SecurityConfigDTO.aesEncryption(providerType: .basic)
+        defaultConfig = SecurityConfigDTO.aesEncryption(providerType: .basic)
       }
 
       Task {
-        await logger.info(
-          "Initialised CryptoServiceActor with provider: \(self.provider.providerType.rawValue)",
-          metadata: nil
+        var context = LogMetadataDTOCollection()
+        context.addPublic(key: "provider", value: self.provider.providerType.rawValue)
+        context.addPublic(key: "algorithm", value: "AES")
+        
+        await cryptoLogger.logOperationSuccess(
+            operation: "initialize",
+            algorithm: "AES",
+            additionalContext: context,
+            message: "Initialised CryptoServiceActor with provider: \(self.provider.providerType.rawValue)"
         )
       }
     } catch {
       // Fall back to basic provider if there's an issue
-      provider=SecurityProviderFactoryImpl.createDefaultProvider()
-      defaultConfig=SecurityConfigDTO.aesEncryption(providerType: .basic)
+      provider = SecurityProviderFactoryImpl.createDefaultProvider()
+      defaultConfig = SecurityConfigDTO.aesEncryption(providerType: .basic)
 
       // Log the error but don't crash
-      await self.logger
-        .warning("Failed to initialise security provider: \(error). Using basic provider instead.")
+      Task {
+        await cryptoLogger.logOperationError(
+            operation: "initialize",
+            error: error,
+            algorithm: "AES",
+            additionalContext: {
+                var context = LogMetadataDTOCollection()
+                context.addPublic(key: "fallback", value: "basic")
+                return context
+            }(),
+            message: "Failed to initialise security provider. Using basic provider instead."
+        )
+      }
     }
   }
 
@@ -95,13 +116,40 @@ public actor CryptoServiceActor {
    - Returns: True if the provider was successfully changed, false otherwise
    */
   public func setProviderType(_ type: SecurityProviderType) async throws {
+    await cryptoLogger.logOperationStart(
+        operation: "change_provider",
+        additionalContext: {
+            var context = LogMetadataDTOCollection()
+            context.addPublic(key: "provider", value: type.rawValue)
+            return context
+        }()
+    )
+    
     do {
-      let newProvider=try SecurityProviderFactoryImpl.createProvider(type: type)
-      provider=newProvider
-      defaultConfig=SecurityConfigDTO.aesEncryption(providerType: type)
-      await logger.info("Security provider changed to: \(type)")
+      let newProvider = try SecurityProviderFactoryImpl.createProvider(type: type)
+      provider = newProvider
+      defaultConfig = SecurityConfigDTO.aesEncryption(providerType: type)
+      
+      await cryptoLogger.logOperationSuccess(
+          operation: "change_provider",
+          additionalContext: {
+              var context = LogMetadataDTOCollection()
+              context.addPublic(key: "provider", value: type.rawValue)
+              return context
+          }(),
+          message: "Security provider changed to: \(type)"
+      )
     } catch {
-      await logger.error("Failed to change security provider: \(error)")
+      await cryptoLogger.logOperationError(
+          operation: "change_provider",
+          error: error,
+          additionalContext: {
+              var context = LogMetadataDTOCollection()
+              context.addPublic(key: "provider", value: type.rawValue)
+              return context
+          }(),
+          message: "Failed to change security provider"
+      )
       throw SecurityServiceError.providerError(error.localizedDescription)
     }
   }
@@ -121,27 +169,39 @@ public actor CryptoServiceActor {
   public func encrypt(
     data: SecureBytes,
     using key: SecureBytes,
-    config: SecurityConfigDTO?=nil
+    config: SecurityConfigDTO? = nil
   ) async throws -> SecureBytes {
-    let dataBytes=data.extractUnderlyingData()
-    let keyBytes=key.extractUnderlyingData()
+    let algorithm = (config ?? defaultConfig).algorithm
+    
+    await cryptoLogger.logOperationStart(
+        operation: "encrypt",
+        algorithm: algorithm
+    )
+    
+    let dataBytes = data.extractUnderlyingData()
+    let keyBytes = key.extractUnderlyingData()
 
     // Generate IV using the provider
     let iv: Data
     do {
-      iv=try provider.generateIV(size: 16)
+      iv = try provider.generateIV(size: 16)
     } catch {
-      await logger.error("Failed to generate IV: \(error.localizedDescription)", metadata: nil)
+      await cryptoLogger.logOperationError(
+          operation: "generate_iv",
+          error: error,
+          algorithm: algorithm,
+          message: "Failed to generate IV"
+      )
       throw SecurityProtocolError
         .cryptographicError("Failed to generate IV: \(error.localizedDescription)")
     }
 
     // Use provided config or default
-    let operationConfig=config ?? defaultConfig
+    let operationConfig = config ?? defaultConfig
 
     // Encrypt data
     do {
-      let encryptedData=try provider.encrypt(
+      let encryptedData = try provider.encrypt(
         plaintext: dataBytes,
         key: keyBytes,
         iv: iv,
@@ -149,15 +209,35 @@ public actor CryptoServiceActor {
       )
 
       // Prepend IV to encrypted data for later decryption
-      var result=Data(capacity: iv.count + encryptedData.count)
+      var result = Data(capacity: iv.count + encryptedData.count)
       result.append(iv)
       result.append(encryptedData)
 
+      await cryptoLogger.logOperationSuccess(
+          operation: "encrypt",
+          algorithm: algorithm,
+          additionalContext: {
+              var context = LogMetadataDTOCollection()
+              context.addPublic(key: "dataSize", value: String(dataBytes.count))
+              context.addPublic(key: "resultSize", value: String(result.count))
+              return context
+          }()
+      )
+      
       return SecureBytes(data: result)
     } catch {
-      await logger.error("Encryption failed: \(error.localizedDescription)", metadata: nil)
+      await cryptoLogger.logOperationError(
+          operation: "encrypt",
+          error: error,
+          algorithm: algorithm,
+          additionalContext: {
+              var context = LogMetadataDTOCollection()
+              context.addPublic(key: "dataSize", value: String(dataBytes.count))
+              return context
+          }()
+      )
 
-      if let secError=error as? SecurityProtocolError {
+      if let secError = error as? SecurityProtocolError {
         throw secError
       } else {
         throw SecurityProtocolError
@@ -179,38 +259,74 @@ public actor CryptoServiceActor {
   public func decrypt(
     data: SecureBytes,
     using key: SecureBytes,
-    config: SecurityConfigDTO?=nil
+    config: SecurityConfigDTO? = nil
   ) async throws -> SecureBytes {
-    let dataBytes=data.extractUnderlyingData()
-    let keyBytes=key.extractUnderlyingData()
+    let algorithm = (config ?? defaultConfig).algorithm
+    
+    await cryptoLogger.logOperationStart(
+        operation: "decrypt",
+        algorithm: algorithm
+    )
+    
+    let dataBytes = data.extractUnderlyingData()
+    let keyBytes = key.extractUnderlyingData()
 
     // Validate minimum length (IV + at least some ciphertext)
     guard dataBytes.count > 16 else {
-      await logger.error("Encrypted data too short, must include IV", metadata: nil)
+      await cryptoLogger.logOperationError(
+          operation: "decrypt",
+          error: SecurityProtocolError.invalidInput("Encrypted data too short"),
+          algorithm: algorithm,
+          additionalContext: {
+              var context = LogMetadataDTOCollection()
+              context.addPublic(key: "dataSize", value: String(dataBytes.count))
+              return context
+          }()
+      )
       throw SecurityProtocolError.invalidInput("Encrypted data too short, must include IV")
     }
 
     // Extract IV and ciphertext
-    let iv=dataBytes.prefix(16)
-    let ciphertext=dataBytes.dropFirst(16)
+    let iv = dataBytes.prefix(16)
+    let ciphertext = dataBytes.dropFirst(16)
 
     // Use provided config or default
-    let operationConfig=config ?? defaultConfig
+    let operationConfig = config ?? defaultConfig
 
     // Decrypt data
     do {
-      let decryptedData=try provider.decrypt(
+      let decryptedData = try provider.decrypt(
         ciphertext: ciphertext,
         key: keyBytes,
         iv: Data(iv),
         config: operationConfig
       )
 
+      await cryptoLogger.logOperationSuccess(
+          operation: "decrypt",
+          algorithm: algorithm,
+          additionalContext: {
+              var context = LogMetadataDTOCollection()
+              context.addPublic(key: "ciphertextSize", value: String(ciphertext.count))
+              context.addPublic(key: "plaintextSize", value: String(decryptedData.count))
+              return context
+          }()
+      )
+      
       return SecureBytes(data: decryptedData)
     } catch {
-      await logger.error("Decryption failed: \(error.localizedDescription)", metadata: nil)
+      await cryptoLogger.logOperationError(
+          operation: "decrypt",
+          error: error,
+          algorithm: algorithm,
+          additionalContext: {
+              var context = LogMetadataDTOCollection()
+              context.addPublic(key: "ciphertextSize", value: String(ciphertext.count))
+              return context
+          }()
+      )
 
-      if let secError=error as? SecurityProtocolError {
+      if let secError = error as? SecurityProtocolError {
         throw secError
       } else {
         throw SecurityProtocolError
@@ -232,18 +348,50 @@ public actor CryptoServiceActor {
    */
   public func generateKey(
     size: Int,
-    config: SecurityConfigDTO?=nil
+    config: SecurityConfigDTO? = nil
   ) async throws -> SecureBytes {
+    let algorithm = (config ?? defaultConfig).algorithm
+    
+    await cryptoLogger.logOperationStart(
+        operation: "generate_key",
+        algorithm: algorithm,
+        additionalContext: {
+            var context = LogMetadataDTOCollection()
+            context.addPublic(key: "keySize", value: String(size))
+            return context
+        }()
+    )
+    
     // Use provided config or default
-    let operationConfig=config ?? defaultConfig
+    let operationConfig = config ?? defaultConfig
 
     do {
-      let keyData=try provider.generateKey(size: size, config: operationConfig)
+      let keyData = try provider.generateKey(size: size, config: operationConfig)
+      
+      await cryptoLogger.logOperationSuccess(
+          operation: "generate_key",
+          algorithm: algorithm,
+          additionalContext: {
+              var context = LogMetadataDTOCollection()
+              context.addPublic(key: "keySize", value: String(size))
+              return context
+          }()
+      )
+      
       return SecureBytes(data: keyData)
     } catch {
-      await logger.error("Key generation failed: \(error.localizedDescription)", metadata: nil)
+      await cryptoLogger.logOperationError(
+          operation: "generate_key",
+          error: error,
+          algorithm: algorithm,
+          additionalContext: {
+              var context = LogMetadataDTOCollection()
+              context.addPublic(key: "keySize", value: String(size))
+              return context
+          }()
+      )
 
-      if let secError=error as? SecurityProtocolError {
+      if let secError = error as? SecurityProtocolError {
         throw secError
       } else {
         throw SecurityProtocolError
@@ -252,51 +400,157 @@ public actor CryptoServiceActor {
     }
   }
 
-  // MARK: - Hashing Operations
-
   /**
-   Creates a cryptographic hash of the input data.
+   Derives a key from a password using PBKDF2.
 
    - Parameters:
-      - data: The data to hash
-      - algorithm: Hash algorithm to use (SHA256, SHA384, SHA512)
-   - Returns: Hash value wrapped in SecureBytes
-   - Throws: SecurityProtocolError if hashing fails
+      - password: The password to derive from
+      - salt: Salt to use for derivation
+      - iterations: Number of iterations (higher is more secure but slower)
+      - keyLength: Desired key length in bytes
+      - config: Optional configuration override
+   - Returns: Derived key wrapped in SecureBytes
+   - Throws: SecurityProtocolError if key derivation fails
    */
-  public func hash(
-    data: SecureBytes,
-    algorithm: String="SHA256"
+  public func deriveKey(
+    fromPassword password: String,
+    salt: Data,
+    iterations: Int = 10000,
+    keyLength: Int = 32,
+    config: SecurityConfigDTO? = nil
   ) async throws -> SecureBytes {
-    let dataBytes=data.extractUnderlyingData()
+    let algorithm = "PBKDF2"
+    
+    await cryptoLogger.logOperationStart(
+        operation: "derive_key",
+        algorithm: algorithm,
+        additionalContext: {
+            var context = LogMetadataDTOCollection()
+            context.addPublic(key: "iterations", value: String(iterations))
+            context.addPublic(key: "keyLength", value: String(keyLength))
+            context.addPublic(key: "saltLength", value: String(salt.count))
+            return context
+        }()
+    )
+    
+    // Use provided config or default
+    let operationConfig = config ?? defaultConfig
 
     do {
-      let hashData=try provider.hash(data: dataBytes, algorithm: algorithm)
-      return SecureBytes(data: hashData)
+      let keyData = try provider.deriveKey(
+        fromPassword: password,
+        salt: salt,
+        iterations: iterations,
+        keyLength: keyLength,
+        config: operationConfig
+      )
+      
+      await cryptoLogger.logOperationSuccess(
+          operation: "derive_key",
+          algorithm: algorithm,
+          additionalContext: {
+              var context = LogMetadataDTOCollection()
+              context.addPublic(key: "iterations", value: String(iterations))
+              context.addPublic(key: "keyLength", value: String(keyLength))
+              return context
+          }()
+      )
+      
+      return SecureBytes(data: keyData)
     } catch {
-      await logger.error("Hashing failed: \(error.localizedDescription)", metadata: nil)
+      await cryptoLogger.logOperationError(
+          operation: "derive_key",
+          error: error,
+          algorithm: algorithm,
+          additionalContext: {
+              var context = LogMetadataDTOCollection()
+              context.addPublic(key: "iterations", value: String(iterations))
+              context.addPublic(key: "keyLength", value: String(keyLength))
+              return context
+          }()
+      )
 
-      if let secError=error as? SecurityProtocolError {
+      if let secError = error as? SecurityProtocolError {
         throw secError
       } else {
         throw SecurityProtocolError
-          .cryptographicError("Hashing failed: \(error.localizedDescription)")
+          .cryptographicError("Key derivation failed: \(error.localizedDescription)")
       }
     }
   }
 
+  // MARK: - Hash Functions
+
   /**
-   Verifies that a hash matches the expected value.
+   Generates a cryptographic hash of data using the specified algorithm.
 
    - Parameters:
-      - hash: The hash to verify
-      - expected: The expected hash value
-   - Returns: True if the hashes match, false otherwise
+      - data: Data to hash
+      - algorithm: Hashing algorithm to use
+      - config: Optional configuration override
+   - Returns: Hash value as SecureBytes
+   - Throws: SecurityProtocolError if hashing fails
    */
-  public func verifyHash(_ hash: SecureBytes, matches expected: SecureBytes) -> Bool {
-    hash == expected
+  public func hash(
+    data: SecureBytes,
+    using algorithm: HashAlgorithm = .sha256,
+    config: SecurityConfigDTO? = nil
+  ) async throws -> SecureBytes {
+    await cryptoLogger.logOperationStart(
+        operation: "hash",
+        algorithm: algorithm.rawValue,
+        additionalContext: {
+            var context = LogMetadataDTOCollection()
+            context.addPublic(key: "dataSize", value: String(data.count))
+            return context
+        }()
+    )
+    
+    let dataBytes = data.extractUnderlyingData()
+
+    // Use provided config or default
+    let operationConfig = config ?? defaultConfig
+
+    do {
+      let hashValue = try provider.hash(
+        data: dataBytes,
+        algorithm: algorithm,
+        config: operationConfig
+      )
+      
+      await cryptoLogger.logOperationSuccess(
+          operation: "hash",
+          algorithm: algorithm.rawValue,
+          additionalContext: {
+              var context = LogMetadataDTOCollection()
+              context.addPublic(key: "dataSize", value: String(data.count))
+              context.addPublic(key: "hashSize", value: String(hashValue.count))
+              return context
+          }()
+      )
+      
+      return SecureBytes(data: hashValue)
+    } catch {
+      await cryptoLogger.logOperationError(
+          operation: "hash",
+          error: error,
+          algorithm: algorithm.rawValue,
+          additionalContext: {
+              var context = LogMetadataDTOCollection()
+              context.addPublic(key: "dataSize", value: String(data.count))
+              return context
+          }()
+      )
+
+      if let secError = error as? SecurityProtocolError {
+        throw secError
+      } else {
+        throw SecurityProtocolError.cryptographicError("Hashing failed: \(error.localizedDescription)")
+      }
+    }
   }
 
-  // MARK: - Parallel Processing
+  // MARK: - Batch Operations
 
   /**
    Encrypts multiple data items in parallel using task groups.
@@ -305,31 +559,85 @@ public actor CryptoServiceActor {
       - dataItems: Array of data items to encrypt
       - key: The encryption key to use for all items
       - config: Optional configuration override
-   - Returns: Array of encrypted data items in the same order
-   - Throws: SecurityProtocolError if any encryption operation fails
+   - Returns: Array of encrypted data items
+   - Throws: SecurityProtocolError if any encryption fails
    */
   public func encryptBatch(
     dataItems: [SecureBytes],
     using key: SecureBytes,
-    config: SecurityConfigDTO?=nil
+    config: SecurityConfigDTO? = nil
   ) async throws -> [SecureBytes] {
-    try await withThrowingTaskGroup(of: (Int, SecureBytes).self) { group in
-      // Add each encryption task to the group
+    let algorithm = (config ?? defaultConfig).algorithm
+    
+    await cryptoLogger.logOperationStart(
+        operation: "encrypt_batch",
+        algorithm: algorithm,
+        additionalContext: {
+            var context = LogMetadataDTOCollection()
+            context.addPublic(key: "itemCount", value: String(dataItems.count))
+            return context
+        }()
+    )
+    
+    var results = [SecureBytes]()
+    var errorEncountered: Error?
+
+    // Use task groups for parallel processing
+    try await withThrowingTaskGroup(of: (Int, Result<SecureBytes, Error>).self) { group in
+      // Queue up all encryption tasks
       for (index, data) in dataItems.enumerated() {
         group.addTask {
-          let encryptedData=try await self.encrypt(data: data, using: key, config: config)
-          return (index, encryptedData)
+          do {
+            let encrypted = try await self.encrypt(data: data, using: key, config: config)
+            return (index, .success(encrypted))
+          } catch {
+            return (index, .failure(error))
+          }
         }
       }
 
-      // Collect results and maintain original order
-      var results=[(Int, SecureBytes)]()
-      for try await result in group {
-        results.append(result)
-      }
+      // Prepare to receive results in order
+      results = Array(repeating: SecureBytes(), count: dataItems.count)
 
-      return results.sorted { $0.0 < $1.0 }.map(\.1)
+      // Process results as they complete
+      for try await (index, result) in group {
+        switch result {
+        case let .success(encrypted):
+          results[index] = encrypted
+        case let .failure(error):
+          errorEncountered = error
+          group.cancelAll() // Cancel remaining tasks on first error
+          break
+        }
+      }
     }
+
+    if let error = errorEncountered {
+      await cryptoLogger.logOperationError(
+          operation: "encrypt_batch",
+          error: error,
+          algorithm: algorithm,
+          additionalContext: {
+              var context = LogMetadataDTOCollection()
+              context.addPublic(key: "itemCount", value: String(dataItems.count))
+              return context
+          }()
+      )
+      throw error
+    }
+
+    await cryptoLogger.logOperationSuccess(
+        operation: "encrypt_batch",
+        algorithm: algorithm,
+        additionalContext: {
+            var context = LogMetadataDTOCollection()
+            context.addPublic(key: "itemCount", value: String(dataItems.count))
+            context.addPublic(key: "successCount", value: String(results.count))
+            return context
+        }()
+    )
+    
+    return results
   }
 
   /**
@@ -339,30 +647,84 @@ public actor CryptoServiceActor {
       - dataItems: Array of encrypted data items to decrypt
       - key: The decryption key to use for all items
       - config: Optional configuration override
-   - Returns: Array of decrypted data items in the same order
-   - Throws: SecurityProtocolError if any decryption operation fails
+   - Returns: Array of decrypted data items
+   - Throws: SecurityProtocolError if any decryption fails
    */
   public func decryptBatch(
     dataItems: [SecureBytes],
     using key: SecureBytes,
-    config: SecurityConfigDTO?=nil
+    config: SecurityConfigDTO? = nil
   ) async throws -> [SecureBytes] {
-    try await withThrowingTaskGroup(of: (Int, SecureBytes).self) { group in
-      // Add each decryption task to the group
+    let algorithm = (config ?? defaultConfig).algorithm
+    
+    await cryptoLogger.logOperationStart(
+        operation: "decrypt_batch",
+        algorithm: algorithm,
+        additionalContext: {
+            var context = LogMetadataDTOCollection()
+            context.addPublic(key: "itemCount", value: String(dataItems.count))
+            return context
+        }()
+    )
+    
+    var results = [SecureBytes]()
+    var errorEncountered: Error?
+
+    // Use task groups for parallel processing
+    try await withThrowingTaskGroup(of: (Int, Result<SecureBytes, Error>).self) { group in
+      // Queue up all decryption tasks
       for (index, data) in dataItems.enumerated() {
         group.addTask {
-          let decryptedData=try await self.decrypt(data: data, using: key, config: config)
-          return (index, decryptedData)
+          do {
+            let decrypted = try await self.decrypt(data: data, using: key, config: config)
+            return (index, .success(decrypted))
+          } catch {
+            return (index, .failure(error))
+          }
         }
       }
 
-      // Collect results and maintain original order
-      var results=[(Int, SecureBytes)]()
-      for try await result in group {
-        results.append(result)
-      }
+      // Prepare to receive results in order
+      results = Array(repeating: SecureBytes(), count: dataItems.count)
 
-      return results.sorted { $0.0 < $1.0 }.map(\.1)
+      // Process results as they complete
+      for try await (index, result) in group {
+        switch result {
+        case let .success(decrypted):
+          results[index] = decrypted
+        case let .failure(error):
+          errorEncountered = error
+          group.cancelAll() // Cancel remaining tasks on first error
+          break
+        }
+      }
     }
+
+    if let error = errorEncountered {
+      await cryptoLogger.logOperationError(
+          operation: "decrypt_batch",
+          error: error,
+          algorithm: algorithm,
+          additionalContext: {
+              var context = LogMetadataDTOCollection()
+              context.addPublic(key: "itemCount", value: String(dataItems.count))
+              return context
+          }()
+      )
+      throw error
+    }
+
+    await cryptoLogger.logOperationSuccess(
+        operation: "decrypt_batch",
+        algorithm: algorithm,
+        additionalContext: {
+            var context = LogMetadataDTOCollection()
+            context.addPublic(key: "itemCount", value: String(dataItems.count))
+            context.addPublic(key: "successCount", value: String(results.count))
+            return context
+        }()
+    )
+    
+    return results
   }
 }

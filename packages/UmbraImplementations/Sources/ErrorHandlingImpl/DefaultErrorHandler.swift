@@ -17,7 +17,11 @@ import LoggingTypes
 public actor DefaultErrorHandler: ErrorHandlerProtocol {
   // MARK: - Properties
 
+  /// The logger to use for error logging
   private let logger: LoggingProtocol
+  
+  /// Domain-specific logger for error handling
+  private let errorLogger: ErrorLogger
 
   // MARK: - Initialisation
 
@@ -27,7 +31,8 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
    - Parameter logger: The logger to use for error logging
    */
   public init(logger: LoggingProtocol) {
-    self.logger=logger
+    self.logger = logger
+    self.errorLogger = ErrorLogger(logger: logger)
   }
 
   // MARK: - ErrorHandlerProtocol Implementation
@@ -48,33 +53,15 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
     source: String?,
     metadata: [String: String]
   ) async {
-    // Create log metadata
-    var logMetadata=LoggingTypes.LogMetadata()
-
-    // Add error information
-    logMetadata["errorType"]=String(describing: type(of: error))
-    logMetadata["errorMessage"]=error.localizedDescription
-
-    // Add domain information if available
-    if let domainError=error as? any ErrorDomainProtocol {
-      logMetadata["errorDomain"]=String(describing: type(of: domainError).domain)
-      logMetadata["errorCode"]="\(domainError.code)"
-    }
-
-    // Add user metadata
-    for (key, value) in metadata {
-      logMetadata[key]=value
-    }
-
-    // Log the error
-    await logger.error(
-      "Error encountered: \(error.localizedDescription)",
-      metadata: logMetadata,
-      source: source ?? "DefaultErrorHandler"
+    // Log the error using our structured, privacy-aware logger
+    await errorLogger.logError(
+      error,
+      source: source,
+      metadata: metadata
     )
 
     // Handle specific error types differently if needed
-    if let _=error as? any ErrorDomainProtocol {
+    if let _ = error as? any ErrorDomainProtocol {
       // Special handling for domain errors could be added here
     }
 
@@ -94,7 +81,19 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
     _ error: some Error,
     context: ErrorContext
   ) async {
-    let source=context.source.description
-    await handle(error, source: source, metadata: context.metadata)
+    // Convert context to metadata dictionary
+    var metadata: [String: String] = [:]
+    for (key, value) in context.metadata {
+      metadata[key] = value
+    }
+    
+    // Log the error using our structured, privacy-aware logger
+    await errorLogger.logError(
+      error,
+      source: context.source,
+      metadata: metadata
+    )
+
+    // Additional error handling logic could be added here
   }
 }

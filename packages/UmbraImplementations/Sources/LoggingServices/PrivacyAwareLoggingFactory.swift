@@ -69,4 +69,84 @@ public enum PrivacyAwareLoggingFactory {
             backend: multiBackend
         )
     }
+    
+    // MARK: - Domain-Specific Loggers
+    
+    /// Creates a domain-specific logger for key management operations.
+    /// 
+    /// This provides a logger specialised for securely logging key management
+    /// operations with appropriate privacy controls.
+    ///
+    /// - Parameter logger: The underlying logger to use.
+    /// - Returns: A KeyManagementLogger instance.
+    public static func createKeyManagementLogger(
+        logger: LoggingProtocol
+    ) -> KeyManagementLogger {
+        return KeyManagementLogger(logger: logger)
+    }
+    
+    /// Creates a domain-specific logger for keychain operations.
+    /// 
+    /// This provides a logger specialised for securely logging keychain
+    /// operations with appropriate privacy controls for account information.
+    ///
+    /// - Parameter logger: The underlying logger to use.
+    /// - Returns: A KeychainLogger instance.
+    public static func createKeychainLogger(
+        logger: LoggingProtocol
+    ) -> KeychainLogger {
+        return KeychainLogger(logger: logger)
+    }
+    
+    /// Creates a domain-specific logger for cryptographic operations.
+    /// 
+    /// This provides a logger specialised for securely logging cryptographic
+    /// operations with appropriate privacy controls.
+    ///
+    /// - Parameter logger: The underlying logger to use.
+    /// - Returns: A CryptoLogger instance.
+    public static func createCryptoLogger(
+        logger: LoggingProtocol
+    ) -> CryptoLogger {
+        return CryptoLogger(logger: logger)
+    }
+    
+    /// Creates a domain-specific logger for error handling.
+    /// 
+    /// This provides a logger specialised for securely logging errors
+    /// with appropriate privacy controls.
+    ///
+    /// - Parameter logger: The underlying logger to use.
+    /// - Returns: An ErrorLogger instance.
+    public static func createErrorLogger(
+        logger: LoggingProtocol
+    ) -> ErrorLogger {
+        return ErrorLogger(logger: logger)
+    }
+    
+    /// Creates a domain-specific logger for file system operations.
+    /// 
+    /// This provides a logger specialised for securely logging file system
+    /// operations with appropriate privacy controls for file paths.
+    ///
+    /// - Parameter logger: The underlying logger to use.
+    /// - Returns: A FileSystemLogger instance.
+    public static func createFileSystemLogger(
+        logger: LoggingProtocol
+    ) -> FileSystemLogger {
+        return FileSystemLogger(logger: logger)
+    }
+    
+    /// Creates a domain-specific logger for snapshot operations.
+    /// 
+    /// This provides a logger specialised for securely logging snapshot
+    /// operations with appropriate privacy controls.
+    ///
+    /// - Parameter logger: The underlying logger to use.
+    /// - Returns: A SnapshotLogger instance.
+    public static func createSnapshotLogger(
+        logger: LoggingProtocol
+    ) -> SnapshotLogger {
+        return SnapshotLogger(logger: logger)
+    }
 }
