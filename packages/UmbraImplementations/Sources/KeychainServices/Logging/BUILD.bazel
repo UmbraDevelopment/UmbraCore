@@ -1,13 +1,15 @@
 load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
-    name = "LoggingTypes",
+    name = "KeychainLogger",
     srcs = glob(
         ["*.swift"],
-        exclude = ["**/*Test.swift"],
+        allow_empty = False,
     ),
     visibility = ["//visibility:public"],
     deps = [
+        "//packages/UmbraInterfaces/Sources/LoggingInterfaces",
+        "//packages/UmbraCoreTypes/Sources/LoggingTypes",
         "//packages/UmbraCoreTypes/Sources/UmbraErrors",
     ],
 )

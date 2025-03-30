@@ -4,7 +4,7 @@ import LoggingInterfaces
 import LoggingTypes
 import SecurityCoreInterfaces
 import SecurityCoreTypes
-import SecurityInterfaces
+import KeychainTypes
 import UmbraErrors
 
 /**
@@ -123,10 +123,12 @@ public actor KeychainSecurityActor {
       }
 
       // Encrypt the data
-      let encryptionConfig = EncryptionConfig(
-        keyID: keyID,
-        algorithm: .aes256GCM
+      let encryptionOptions = SecurityConfigOptions(
+        algorithm: EncryptionAlgorithm.aes256Gcm.rawValue,
+        keyIdentifier: keyID
       )
+      
+      let encryptionConfig = SecurityConfigDTO(options: encryptionOptions)
 
       let encryptionResult = try await securityProvider.encrypt(
         data: secretData,
@@ -207,10 +209,12 @@ public actor KeychainSecurityActor {
       )
 
       // Decrypt the data
-      let decryptionConfig = EncryptionConfig(
-        keyID: keyID,
-        algorithm: .aes256GCM
+      let decryptionOptions = SecurityConfigOptions(
+        algorithm: EncryptionAlgorithm.aes256Gcm.rawValue,
+        keyIdentifier: keyID
       )
+      
+      let decryptionConfig = SecurityConfigDTO(options: decryptionOptions)
 
       let decryptionResult = try await securityProvider.decrypt(
         data: encryptedData,
@@ -218,7 +222,7 @@ public actor KeychainSecurityActor {
       )
 
       // Convert to string
-      guard let secretString = String(data: decryptionResult.decryptedData, encoding: .utf8) else {
+      guard let secretString = String(data: decryptionResult.decryptedData, encoding: String.Encoding.utf8) else {
         throw KeychainSecurityError.encodingFailed
       }
 
@@ -341,20 +345,20 @@ public actor KeychainSecurityActor {
   private func generateAESKey() async throws -> SecureBytes {
     // Generate a new secure random key for AES-256 (32 bytes)
     // We need to create a SecurityConfigDTO for AES-256 encryption
-    let config = SecurityConfigDTO.aesEncryption(
+    let configOptions = SecurityConfigOptions(
+        algorithm: "AES",
         keySize: 256,
-        options: [:]
+        mode: "GCM"
     )
+    
+    let config = SecurityConfigDTO(options: configOptions)
 
     let result = try await securityProvider.generateKey(
-        with: KeyGenerationConfig(
-            keyType: .encryption,
-            keySize: 256
-        )
+        with: config
     )
 
     // Return the key or throw if we didn't get one
-    guard let keyData = result.keyID.data(using: .utf8) else {
+    guard let keyData = result.keyID.data(using: String.Encoding.utf8) else {
         throw KeychainSecurityError.keyGenerationFailed
     }
 
