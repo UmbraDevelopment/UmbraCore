@@ -1,0 +1,12 @@
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+
+swift_library(
+    name = "APIInterfaces",
+    srcs = glob(["**/*.swift"]),
+    module_name = "APIInterfaces",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//packages/UmbraCoreTypes/Sources/UmbraErrors",
+        "//packages/UmbraCoreTypes/Sources/SecurityTypes",
+    ],
+)
