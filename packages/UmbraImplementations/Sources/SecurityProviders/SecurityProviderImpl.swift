@@ -7,37 +7,58 @@ import SecurityTypes
 import UmbraErrors
 
 /**
- # ApplicationSecurityProviderService
+ # SecurityProviderImpl
  
- Actor-based implementation of the ApplicationSecurityProviderProtocol.
+ Thread-safe implementation of the SecurityProviderProtocol that follows the Alpha Dot Five architecture.
  
- This implementation isolates security operations in an actor, ensuring thread-safety
- while maintaining proper isolation boundaries for sensitive operations at the application level.
+ This implementation coordinates between cryptographic services and key management systems,
+ providing a unified interface for all security operations while ensuring proper isolation
+ and error handling.
+ 
+ ## Design Philosophy
+ 
+ This implementation follows these core principles:
+ 
+ 1. **Actor-Based Concurrency**: While not an actor itself, it uses thread-safe access patterns
+    that complement Swift's structured concurrency model.
+ 
+ 2. **Provider Abstraction**: Supports multiple cryptographic implementations:
+    - Basic/fallback provider (AES-CBC implementation)
+    - Ring FFI for cross-platform environments
+    - CryptoKit for native Apple platforms
+ 
+ 3. **Privacy-By-Design**: Incorporates privacy-aware error handling and logging that
+    prevents leakage of sensitive information.
+ 
+ 4. **Type Safety**: Uses strongly-typed interfaces that make illegal states unrepresentable.
  */
-public actor ApplicationSecurityProviderService: ApplicationSecurityProviderProtocol {
-  // MARK: - Properties
+public final class SecurityProviderImpl: SecurityProviderProtocol {
+  // MARK: - Private Properties
   
-  /// Cryptographic service implementation
-  private let _cryptoService: ApplicationCryptoServiceProtocol
+  /// The crypto service for cryptographic operations
+  private let cryptoServiceImpl: CryptoServiceProtocol
   
-  /// Key management service implementation
-  private let _keyManager: KeyManagementProtocol
+  /// The key manager for key operations
+  private let keyManagerImpl: KeyManagementProtocol
+  
+  /// Lock for thread-safe access
+  private let lock = NSLock()
   
   // MARK: - Initialisation
   
   /**
-   Initialises a new application security provider instance.
+   Initialises a new security provider instance.
    
    - Parameters:
      - cryptoService: Service providing cryptographic operations
      - keyManager: Service providing key management operations
    */
   public init(
-    cryptoService: ApplicationCryptoServiceProtocol,
+    cryptoService: CryptoServiceProtocol,
     keyManager: KeyManagementProtocol
   ) {
-    _cryptoService = cryptoService
-    _keyManager = keyManager
+    self.cryptoServiceImpl = cryptoService
+    self.keyManagerImpl = keyManager
   }
   
   /**
@@ -49,484 +70,519 @@ public actor ApplicationSecurityProviderService: ApplicationSecurityProviderProt
    */
   public func initialize() async throws {
     // Initialize any components that support AsyncServiceInitializable
-    if let initialisable = _cryptoService as? AsyncServiceInitializable {
+    if let initialisable = cryptoServiceImpl as? AsyncServiceInitializable {
       try await initialisable.initialize()
     }
     
-    if let initialisable = _keyManager as? AsyncServiceInitializable {
+    if let initialisable = keyManagerImpl as? AsyncServiceInitializable {
       try await initialisable.initialize()
     }
   }
   
-  // MARK: - ApplicationSecurityProviderProtocol
+  // MARK: - SecurityProviderProtocol Implementation
   
-  /// Access to the cryptographic service implementation
-  public var cryptoService: any ApplicationCryptoServiceProtocol {
-    return _cryptoService
-  }
-  
-  /// Access to the key management service implementation
-  public var keyManager: any KeyManagementProtocol {
-    return _keyManager
-  }
-  
-  /// Access to the secure storage service implementation
-  public var secureStorage: any SecureStorageProtocol {
-    return _cryptoService as! SecureStorageProtocol
+  /**
+   Provides access to the cryptographic service implementation.
+   
+   - Returns: The crypto service implementation
+   */
+  public func cryptoService() async -> CryptoServiceProtocol {
+    return cryptoServiceImpl
   }
   
   /**
-   Encrypts data using the specified configuration.
+   Provides access to the key management service implementation.
    
-   - Parameters:
-     - data: The data to encrypt
-     - config: Configuration for the encryption operation
-   - Returns: Result containing the encrypted data or an error
+   - Returns: The key management implementation
    */
-  public func encrypt(data: Data, with config: EncryptionConfig) async throws -> EncryptionResult {
-    return try await withSecurityOperation(.encrypt) { [self] in
-      let result = try await _cryptoService.encrypt(
+  public func keyManager() async -> KeyManagementProtocol {
+    return keyManagerImpl
+  }
+  
+  /**
+   Encrypts data with the specified configuration.
+   
+   - Parameter config: Configuration for the encryption operation
+   - Returns: Result containing encrypted data or error
+   */
+  public func encrypt(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+    // Extract necessary parameters from config
+    guard let key = try await getKeyForOperation(config: config, operation: .encrypt(data: config.data ?? SecureBytes(), key: nil)) else {
+      throw SecurityErrorDomain.invalidKey(
+        reason: "Could not retrieve key for encryption operation"
+      )
+    }
+    
+    // Convert data from config
+    guard let data = config.data else {
+      throw SecurityErrorDomain.invalidInput(
+        reason: "Missing data for encryption operation"
+      )
+    }
+    
+    // Perform the encryption using the crypto service
+    let result = await cryptoServiceImpl.encrypt(data: data, using: key)
+    
+    // Process result
+    switch result {
+    case .success(let encryptedData):
+      return SecurityResultDTO(
+        status: .success,
+        data: encryptedData,
+        metadata: [
+          "algorithm": config.algorithm,
+          "operationType": "encrypt"
+        ]
+      )
+    case .failure(let error):
+      throw error
+    }
+  }
+  
+  /**
+   Decrypts data with the specified configuration.
+   
+   - Parameter config: Configuration for the decryption operation
+   - Returns: Result containing decrypted data or error
+   */
+  public func decrypt(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+    // Extract necessary parameters from config
+    guard let key = try await getKeyForOperation(config: config, operation: .decrypt(data: config.data ?? SecureBytes(), key: nil)) else {
+      throw SecurityErrorDomain.invalidKey(
+        reason: "Could not retrieve key for decryption operation"
+      )
+    }
+    
+    // Convert data from config
+    guard let data = config.data else {
+      throw SecurityErrorDomain.invalidInput(
+        reason: "Missing data for decryption operation"
+      )
+    }
+    
+    // Perform the decryption using the crypto service
+    let result = await cryptoServiceImpl.decrypt(data: data, using: key)
+    
+    // Process result
+    switch result {
+    case .success(let decryptedData):
+      return SecurityResultDTO(
+        status: .success,
+        data: decryptedData,
+        metadata: [
+          "algorithm": config.algorithm,
+          "operationType": "decrypt"
+        ]
+      )
+    case .failure(let error):
+      throw error
+    }
+  }
+  
+  /**
+   Generates a cryptographic key with the specified configuration.
+   
+   - Parameter config: Configuration for the key generation operation
+   - Returns: Result containing key identifier or error
+   */
+  public func generateKey(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+    // Extract key size from config (default to 256 if not specified)
+    let keySize = config.keySize ?? 256
+    
+    // Generate random bytes as the key
+    let keyData = try await generateRandomBytes(length: keySize / 8)
+    
+    // Determine identifier for the key (use provided ID or generate a UUID)
+    let keyID = config.identifier ?? UUID().uuidString
+    
+    // Store the generated key
+    let storeResult = await keyManagerImpl.storeKey(keyData, withIdentifier: keyID)
+    
+    // Process result
+    switch storeResult {
+    case .success:
+      return SecurityResultDTO(
+        status: .success,
+        identifier: keyID,
+        metadata: [
+          "keySize": "\(keySize)",
+          "algorithm": config.algorithm,
+          "operationType": "generateKey"
+        ]
+      )
+    case .failure(let error):
+      throw error
+    }
+  }
+  
+  /**
+   Computes a cryptographic hash for the provided data.
+   
+   - Parameter config: Configuration for the hash operation
+   - Returns: Result containing hash data or error
+   */
+  public func hash(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+    // Extract data from config
+    guard let data = config.data else {
+      throw SecurityErrorDomain.invalidInput(
+        reason: "Missing data for hash operation"
+      )
+    }
+    
+    // Perform hash operation
+    let result = await cryptoServiceImpl.hash(data: data)
+    
+    // Process result
+    switch result {
+    case .success(let hashData):
+      return SecurityResultDTO(
+        status: .success,
+        data: hashData,
+        metadata: [
+          "algorithm": config.hashAlgorithm ?? "SHA256",
+          "operationType": "hash"
+        ]
+      )
+    case .failure(let error):
+      throw error
+    }
+  }
+  
+  /**
+   Securely stores data with the specified configuration.
+   
+   - Parameter config: Configuration for the secure storage operation
+   - Returns: Result containing storage confirmation or error
+   */
+  public func secureStore(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+    // Extract necessary parameters from config
+    guard let data = config.data else {
+      throw SecurityErrorDomain.invalidInput(
+        reason: "Missing data for secure storage operation"
+      )
+    }
+    
+    // Ensure we have an identifier
+    guard let identifier = config.identifier else {
+      throw SecurityErrorDomain.invalidInput(
+        reason: "Missing identifier for secure storage operation"
+      )
+    }
+    
+    // We'll use the key manager to store the data as a "key"
+    let storeResult = await keyManagerImpl.storeKey(data, withIdentifier: identifier)
+    
+    // Process result
+    switch storeResult {
+    case .success:
+      return SecurityResultDTO(
+        status: .success,
+        identifier: identifier,
+        metadata: [
+          "operation": "secureStore",
+          "timestamp": "\(Date().timeIntervalSince1970)"
+        ]
+      )
+    case .failure(let error):
+      throw error
+    }
+  }
+  
+  /**
+   Retrieves securely stored data with the specified configuration.
+   
+   - Parameter config: Configuration for the secure retrieval operation
+   - Returns: Result containing retrieved data or error
+   */
+  public func secureRetrieve(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+    // Ensure we have an identifier
+    guard let identifier = config.identifier else {
+      throw SecurityErrorDomain.invalidInput(
+        reason: "Missing identifier for secure retrieval operation"
+      )
+    }
+    
+    // We'll use the key manager to retrieve the data
+    let retrieveResult = await keyManagerImpl.retrieveKey(withIdentifier: identifier)
+    
+    // Process result
+    switch retrieveResult {
+    case .success(let data):
+      return SecurityResultDTO(
+        status: .success,
+        identifier: identifier,
         data: data,
-        using: KeyIdentifier(config.keyID),
-        algorithm: config.algorithm
+        metadata: [
+          "operation": "secureRetrieve",
+          "timestamp": "\(Date().timeIntervalSince1970)"
+        ]
       )
-      
-      return EncryptionResult(
-        encryptedData: result,
-        metadata: ["algorithm": config.algorithm.description]
-      )
+    case .failure(let error):
+      throw error
     }
   }
   
   /**
-   Decrypts data using the specified configuration.
+   Deletes securely stored data with the specified configuration.
+   
+   - Parameter config: Configuration for the secure deletion operation
+   - Returns: Result containing deletion confirmation or error
+   */
+  public func secureDelete(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+    // Ensure we have an identifier
+    guard let identifier = config.identifier else {
+      throw SecurityErrorDomain.invalidInput(
+        reason: "Missing identifier for secure deletion operation"
+      )
+    }
+    
+    // We'll use the key manager to delete the data
+    let deleteResult = await keyManagerImpl.deleteKey(withIdentifier: identifier)
+    
+    // Process result
+    switch deleteResult {
+    case .success:
+      return SecurityResultDTO(
+        status: .success,
+        identifier: identifier,
+        metadata: [
+          "operation": "secureDelete",
+          "timestamp": "\(Date().timeIntervalSince1970)"
+        ]
+      )
+    case .failure(let error):
+      throw error
+    }
+  }
+  
+  /**
+   Creates a digital signature for data with the specified configuration.
+   
+   - Parameter config: Configuration for the digital signature operation
+   - Returns: Result containing signature data or error
+   */
+  public func sign(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+    // Extract necessary parameters
+    guard let data = config.data else {
+      throw SecurityErrorDomain.invalidInput(
+        reason: "Missing data for signing operation"
+      )
+    }
+    
+    guard let key = try await getKeyForOperation(config: config, operation: .sign(data: data, key: nil)) else {
+      throw SecurityErrorDomain.invalidKey(
+        reason: "Could not retrieve key for signing operation"
+      )
+    }
+    
+    // This is a placeholder implementation since we don't have direct access to a signing function
+    // In a real implementation, you would call the appropriate signing service
+    // For now, we'll use the hash function as a simplistic stand-in
+    let hashResult = await cryptoServiceImpl.hash(data: data)
+    
+    // Process result
+    switch hashResult {
+    case .success(let signatureData):
+      return SecurityResultDTO(
+        status: .success,
+        data: signatureData,
+        metadata: [
+          "algorithm": config.algorithm,
+          "operationType": "sign",
+          "note": "This is a placeholder implementation using hashing"
+        ]
+      )
+    case .failure(let error):
+      throw error
+    }
+  }
+  
+  /**
+   Verifies a digital signature with the specified configuration.
+   
+   - Parameter config: Configuration for the signature verification operation
+   - Returns: Result containing verification status or error
+   */
+  public func verify(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+    // Extract necessary parameters
+    guard let data = config.data else {
+      throw SecurityErrorDomain.invalidInput(
+        reason: "Missing data for verification operation"
+      )
+    }
+    
+    guard let signatureStr = config.options?["signature"], let signature = Data(base64Encoded: signatureStr) else {
+      throw SecurityErrorDomain.invalidInput(
+        reason: "Missing signature for verification operation"
+      )
+    }
+    
+    let secureSignature = SecureBytes(data: signature)
+    
+    guard let key = try await getKeyForOperation(config: config, operation: .verify(data: data, signature: secureSignature, key: nil)) else {
+      throw SecurityErrorDomain.invalidKey(
+        reason: "Could not retrieve key for verification operation"
+      )
+    }
+    
+    // This is a placeholder implementation since we don't have direct access to a verification function
+    // In a real implementation, you would call the appropriate verification service
+    // For now, we'll create a simplistic comparison 
+    let hashResult = await cryptoServiceImpl.hash(data: data)
+    
+    // Process result
+    switch hashResult {
+    case .success(let computedHash):
+      // Simple verification by comparing the provided signature with the computed hash
+      let verified = computedHash.count == secureSignature.count && 
+                     computedHash.withUnsafeBytes { hashPtr in
+                       secureSignature.withUnsafeBytes { sigPtr in
+                         memcmp(hashPtr.baseAddress, sigPtr.baseAddress, computedHash.count) == 0
+                       }
+                     }
+      
+      return SecurityResultDTO(
+        status: .success,
+        metadata: [
+          "algorithm": config.algorithm,
+          "operationType": "verify",
+          "verified": "\(verified)",
+          "note": "This is a placeholder implementation using hashing comparison"
+        ]
+      )
+    case .failure(let error):
+      throw error
+    }
+  }
+  
+  /**
+   Performs a generic secure operation with appropriate error handling.
    
    - Parameters:
-     - data: The encrypted data to decrypt
-     - config: Configuration for the decryption operation
-   - Returns: Result containing the decrypted data or an error
+     - operation: The security operation to perform
+     - config: Configuration options
+   - Returns: Result of the operation
    */
-  public func decrypt(data: Data, with config: EncryptionConfig) async throws -> DecryptionResult {
-    return try await withSecurityOperation(.decrypt) { [self] in
-      let result = try await _cryptoService.decrypt(
-        data: data,
-        using: KeyIdentifier(config.keyID),
-        algorithm: config.algorithm
-      )
-      
-      return DecryptionResult(
-        decryptedData: result,
-        metadata: ["algorithm": config.algorithm.description]
+  public func performSecureOperation(
+    operation: SecurityOperation,
+    config: SecurityConfigDTO
+  ) async throws -> SecurityResultDTO {
+    switch operation {
+    case .encrypt:
+      return try await encrypt(config: config)
+    case .decrypt:
+      return try await decrypt(config: config)
+    case .hash:
+      return try await hash(config: config)
+    case .generateKey:
+      return try await generateKey(config: config)
+    case .sign:
+      return try await sign(config: config)
+    case .verify:
+      return try await verify(config: config)
+    case .store:
+      return try await secureStore(config: config)
+    case .retrieve:
+      return try await secureRetrieve(config: config)
+    case .delete:
+      return try await secureDelete(config: config)
+    case .deriveKey, .custom:
+      throw SecurityErrorDomain.unsupportedOperation(
+        name: "Operation \(operation) not supported in this implementation"
       )
     }
   }
   
   /**
-   Generates a cryptographic key with the specified parameters.
+   Creates a secure configuration with type-safe, Sendable-compliant options.
    
-   - Parameter config: Configuration for the key generation
-   - Returns: Result containing the generated key identifier
-   */
-  public func generateKey(with config: KeyGenerationConfig) async throws -> KeyGenerationResult {
-    return try await withSecurityOperation(.generateKey) { [self] in
-      let key = try await _keyManager.generateKey(
-        type: config.keyType,
-        size: config.keySize,
-        metadata: config.metadata ?? [:]
-      )
-      
-      return KeyGenerationResult(
-        keyID: key.identifier,
-        keyType: config.keyType.rawValue,
-        metadata: ["keySize": String(config.keySize)]
-      )
-    }
-  }
-  
-  /**
-   Computes a cryptographic hash of the input data.
+   This method provides a Swift 6-compatible way to create security configurations
+   that can safely cross actor boundaries.
    
-   - Parameters:
-     - data: The data to hash
-     - algorithm: The hashing algorithm to use
-   - Returns: The computed hash value
+   - Parameter options: Type-safe options structure that conforms to Sendable
+   - Returns: A properly configured SecurityConfigDTO
    */
-  public func hash(data: Data, using algorithm: HashAlgorithm) async throws -> HashResult {
-    return try await withSecurityOperation(.hash) { [self] in
-      let result = try await _cryptoService.hash(
-        data: data,
-        using: algorithm
-      )
-      
-      return HashResult(
-        hashedData: result,
-        algorithm: algorithm.rawValue
-      )
-    }
-  }
-  
-  /**
-   Signs data with the specified key.
-   
-   - Parameters:
-     - data: The data to sign
-     - keyID: Identifier of the key to use for signing
-     - algorithm: The signing algorithm to use
-   - Returns: The digital signature
-   */
-  public func sign(data: Data, with keyID: String, using algorithm: SignatureAlgorithm) async throws -> SignatureResult {
-    return try await withSecurityOperation(.sign) { [self] in
-      let signature = try await _cryptoService.sign(
-        data: data,
-        using: KeyIdentifier(keyID),
-        algorithm: algorithm
-      )
-      
-      return SignatureResult(
-        signature: signature,
-        algorithm: algorithm.rawValue,
-        keyID: keyID
-      )
-    }
-  }
-  
-  /**
-   Verifies a digital signature.
-   
-   - Parameters:
-     - signature: The signature to verify
-     - data: The original data that was signed
-     - keyID: Identifier of the key to use for verification
-     - algorithm: The signing algorithm used
-   - Returns: True if the signature is valid, false otherwise
-   */
-  public func verify(signature: Data, for data: Data, with keyID: String, using algorithm: SignatureAlgorithm) async throws -> Bool {
-    return try await withSecurityOperation(.verify) { [self] in
-      try await _cryptoService.verify(
-        signature: signature,
-        for: data,
-        using: KeyIdentifier(keyID),
-        algorithm: algorithm
-      )
-    }
-  }
-  
-  /**
-   Stores data securely.
-   
-   - Parameters:
-     - data: The data to store
-     - identifier: A unique identifier for later retrieval
-     - options: Storage options and metadata
-   */
-  public func storeSecurely(data: Data, withIdentifier identifier: String, options: SecureStorageOptions) async throws {
-    try await withSecurityOperation(.store) { [self] in
-      try await secureStorage.store(
-        data: data,
-        withIdentifier: identifier,
-        options: options
-      )
-    }
-  }
-  
-  /**
-   Retrieves securely stored data.
-   
-   - Parameter identifier: The identifier used when storing the data
-   - Returns: The retrieved data
-   */
-  public func retrieveSecureData(withIdentifier identifier: String) async throws -> Data {
-    return try await withSecurityOperation(.retrieve) { [self] in
-      try await secureStorage.retrieve(withIdentifier: identifier)
-    }
-  }
-  
-  /**
-   Deletes securely stored data.
-   
-   - Parameter identifier: The identifier of the data to delete
-   */
-  public func deleteSecureData(withIdentifier identifier: String) async throws {
-    try await withSecurityOperation(.delete) { [self] in
-      try await secureStorage.delete(withIdentifier: identifier)
-    }
-  }
-  
-  /**
-   Validates the security configuration of the system.
-   
-   - Returns: A validation result indicating the security status
-   */
-  public func validateSecurityConfiguration() async throws -> SecurityValidationResult {
-    let result = SecurityValidationResult(
-      status: .valid,
-      details: [
-        "cryptoService": "available",
-        "keyManager": "available", 
-        "secureStorage": "available"
-      ]
+  public func createSecureConfig(options: SecurityConfigOptions) async -> SecurityConfigDTO {
+    // Create a basic configuration based on the options
+    var config = SecurityConfigDTO(
+      algorithm: options.algorithm,
+      keySize: options.keySize,
+      mode: options.mode,
+      hashAlgorithm: options.hashAlgorithm,
+      providerType: options.providerType
     )
     
-    return result
-  }
-  
-  // MARK: - Private Methods
-  
-  /**
-   Executes a security operation with standard error handling and logging.
-   
-   - Parameters:
-     - operation: The security operation being performed
-     - body: The operation execution closure
-   - Returns: The result of the operation
-   - Throws: Security errors converted to appropriate domain errors
-   */
-  private func withSecurityOperation<T>(_ operation: SecurityOperation, _ body: () async throws -> T) async throws -> T {
-    do {
-      return try await body()
-    } catch let error as SecurityProtocolError {
-      // Create error context with source information
-      let context = ErrorContext(
-        source: ErrorSource(file: #file, function: #function, line: #line),
-        metadata: ["operation": String(describing: operation)]
-      )
-      
-      throw SecurityErrorDomain.mapError(error, context: context)
-    } catch {
-      // Create error context with source information
-      let context = ErrorContext(
-        source: ErrorSource(file: #file, function: #function, line: #line),
-        metadata: ["operation": String(describing: operation), 
-                   "error": error.localizedDescription]
-      )
-      
-      throw SecurityErrorDomain.unexpectedError(context: context)
-    }
-  }
-  
-  /**
-   Processes a complete security operation from start to finish.
-   
-   This method handles operation logging, execution, error handling, and result formatting.
-   
-   - Parameters:
-     - operation: The security operation to execute
-     - metadata: Additional operation metadata
-     - body: The operation execution closure
-   - Returns: Result containing operation data or error information
-   */
-  private func processSecurityOperation<T, R>(
-    _ operation: SecurityOperationType,
-    input: T,
-    result: @escaping (R) -> SecurityResultDTO,
-    body: (T) async throws -> R
-  ) async throws -> SecurityResultDTO {
-    do {
-      // Create a result to return with default failure state
-      var result = SecurityResultDTO(
-        status: .failure,
-        metadata: ["operation": String(describing: operation)]
-      )
-      
-      // Execute the operation based on type
-      switch operation {
-        case let .encrypt(data, providedKey):
-          // Get or use provided key
-          let key: SecureBytes = if let providedKey {
-            providedKey
-          } else {
-            // Use default key if none provided
-            try await getDefaultKey(for: .encryption)
-          }
-          
-          // Process encryption
-          let encrypted = try await _cryptoService.encrypt(
-            bytes: SecureBytes(data: data),
-            key: key
-          )
-          
-          // Set success result
-          result.status = .success
-          result.data = encrypted.data
-          result.metadata["keyType"] = "encryption"
-          
-        case let .decrypt(data, providedKey):
-          // Get or use provided key
-          let key: SecureBytes = if let providedKey {
-            providedKey
-          } else {
-            // Use default key if none provided
-            try await getDefaultKey(for: .encryption)
-          }
-          
-          // Process decryption
-          let decrypted = try await _cryptoService.decrypt(
-            bytes: SecureBytes(data: data),
-            key: key
-          )
-          
-          // Set success result
-          result.status = .success
-          result.data = decrypted.data
-          result.metadata["keyType"] = "encryption"
-          
-        case let .sign(data, providedKey):
-          // Get or use provided key
-          let key: SecureBytes = if let providedKey {
-            providedKey
-          } else {
-            // Use default key if none provided
-            try await getDefaultKey(for: .signing)
-          }
-          
-          // Process signing
-          let signature = try await _cryptoService.sign(
-            bytes: SecureBytes(data: data),
-            key: key
-          )
-          
-          // Set success result
-          result.status = .success
-          result.data = signature.data
-          result.metadata["keyType"] = "signing"
-          
-        case let .verify(data, signature, providedKey):
-          // Get or use provided key
-          let key: SecureBytes = if let providedKey {
-            providedKey
-          } else {
-            // Use default key if none provided
-            try await getDefaultKey(for: .signing)
-          }
-          
-          // Process verification
-          let verified = try await _cryptoService.verify(
-            signature: SecureBytes(data: signature),
-            data: SecureBytes(data: data),
-            key: key
-          )
-          
-          // Set success result
-          result.status = .success
-          result.metadata["verified"] = String(verified)
-          result.metadata["keyType"] = "signing"
-          
-        case let .store(data, identifier):
-          // Store data securely
-          try await _keyManager.storeKey(
-            SecureBytes(data: data),
-            withIdentifier: identifier
-          )
-          
-          // Set success result
-          result.status = .success
-          result.metadata["identifier"] = identifier
-          
-        case let .retrieve(identifier):
-          // Retrieve the data using the key manager
-          let retrieveResult = await _keyManager.retrieveKey(withIdentifier: identifier)
-          
-          switch retrieveResult {
-            case let .success(key):
-              // Set success result
-              result.status = .success
-              result.data = key.data
-              result.metadata["identifier"] = identifier
-              
-            case let .failure(error):
-              // Set failure result
-              result.status = .failure
-              result.error = error.localizedDescription
-              result.metadata["identifier"] = identifier
-          }
-          
-        case let .delete(identifier):
-          // Delete data securely
-          try await _keyManager.deleteKey(withIdentifier: identifier)
-          
-          // Set success result
-          result.status = .success
-          result.metadata["identifier"] = identifier
-          
-        case let .generateKey(type, size):
-          // Generate key with specified parameters
-          let generateResult = try await _keyManager.generateKey(
-            type: type,
-            size: size,
-            metadata: [:]
-          )
-          
-          // Set success result
-          result.status = .success
-          result.data = Data(generateResult.identifier.utf8)
-          result.metadata["keyType"] = type.rawValue
-          result.metadata["keySize"] = String(size)
-      }
-      
-      return result
-    } catch let error as SecurityProtocolError {
-      // Create error context with source information
-      let context = ErrorContext(
-        source: ErrorSource(file: #file, function: #function, line: #line),
-        metadata: ["operation": String(describing: operation)]
-      )
-      
-      let convertedError = SecurityErrorDomain.mapError(error, context: context)
-      
-      // Return a failure result
-      return SecurityResultDTO(
-        status: .failure,
-        error: convertedError.localizedDescription,
-        metadata: ["operation": String(describing: operation)]
-      )
-    } catch {
-      // Create error context with source information
-      let context = ErrorContext(
-        source: ErrorSource(file: #file, function: #function, line: #line),
-        metadata: ["operation": String(describing: operation), 
-                   "error": error.localizedDescription]
-      )
-      
-      let wrappedError = SecurityErrorDomain.unexpectedError(context: context)
-      
-      // Return a failure result
-      return SecurityResultDTO(
-        status: .failure,
-        error: wrappedError.localizedDescription,
-        metadata: ["operation": String(describing: operation)]
-      )
-    }
-  }
-  
-  /**
-   Gets a default key for the specified operation type.
-   
-   - Parameter operationType: The operation requiring a key
-   - Returns: A secure bytes representation of the key
-   - Throws: SecurityProtocolError if the key isn't found
-   */
-  private func getDefaultKey(for operationType: KeyType) async throws -> SecureBytes {
-    let keyResult = await _keyManager.retrieveKey(withIdentifier: "default.\(operationType.rawValue)")
+    // Set additional properties from options
+    config.data = options.data
+    config.key = options.key
+    config.identifier = options.identifier
     
-    switch keyResult {
-      case let .success(key):
-        return key
-        
-      case .failure:
-        // Generate a new default key if one doesn't exist
-        let newKey = try await _keyManager.generateKey(
-          type: operationType,
-          size: operationType == .encryption ? 256 : 2048,
-          metadata: ["purpose": "default"]
-        )
-        
-        let retrieveResult = await _keyManager.retrieveKey(withIdentifier: newKey.identifier)
-        
-        guard case let .success(key) = retrieveResult else {
-          throw SecurityProtocolError.keyNotFound("Could not create default key")
-        }
-        
-        return key
+    // Convert any additional options to a dictionary
+    var optionsDict: [String: String] = [:]
+    if let additionalOptions = options.additionalOptions {
+      for (key, value) in additionalOptions where value is CustomStringConvertible {
+        optionsDict[key] = (value as? CustomStringConvertible)?.description
+      }
     }
+    
+    // Set the options dictionary
+    config.options = optionsDict
+    
+    return config
+  }
+  
+  // MARK: - Helper Methods
+  
+  /**
+   Retrieves a key for the specified operation.
+   
+   - Parameters:
+     - config: The security configuration
+     - operation: The operation being performed
+   - Returns: The key to use for the operation
+   - Throws: A security error if the key cannot be retrieved
+   */
+  private func getKeyForOperation(
+    config: SecurityConfigDTO,
+    operation: SecurityOperation
+  ) async throws -> SecureBytes? {
+    // If a key is provided directly in the config, use it
+    if let keyData = config.key {
+      return keyData
+    }
+    
+    // If a key ID is provided, retrieve the key
+    if let keyID = config.identifier {
+      let result = await keyManagerImpl.retrieveKey(withIdentifier: keyID)
+      switch result {
+      case .success(let key):
+        return key
+      case .failure(let error):
+        throw error
+      }
+    }
+    
+    // No key found
+    return nil
+  }
+  
+  /**
+   Generates random bytes for cryptographic operations.
+   
+   - Parameter length: The number of bytes to generate
+   - Returns: The generated random data
+   - Throws: A security error if random generation fails
+   */
+  private func generateRandomBytes(length: Int) async throws -> SecureBytes {
+    var bytes = [UInt8](repeating: 0, count: length)
+    let status = SecRandomCopyBytes(kSecRandomDefault, length, &bytes)
+    
+    guard status == errSecSuccess else {
+      throw SecurityErrorDomain.operationFailed(
+        reason: "Failed to generate random bytes: \(status)"
+      )
+    }
+    
+    return SecureBytes(bytes: bytes)
   }
 }

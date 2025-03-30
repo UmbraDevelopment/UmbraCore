@@ -2,6 +2,7 @@ import Foundation
 import SecurityCoreInterfaces
 import SecurityCoreTypes
 import SecurityTypes
+import UmbraErrors
 
 #if canImport(CryptoKit)
   import CryptoKit
@@ -30,221 +31,230 @@ import SecurityTypes
    - tvOS 13.0+
    - watchOS 6.0+
    */
-  public struct AppleSecurityProvider: EncryptionProviderProtocol {
-    /// The type of provider implementation
-    public let providerType: SecurityProviderType = .apple
+  public actor AppleSecurityProvider: CryptoServiceProtocol, AsyncServiceInitializable {
+    /// The type of provider implementation (accessible from any actor context)
+    public nonisolated let providerType: SecurityProviderType = .apple
 
     /// Initialises a new Apple security provider
     public init() {}
+    
+    /// Initializes the service, performing any necessary setup
+    public func initialize() async throws {
+      // No additional setup needed for CryptoKit
+    }
 
     /**
-     Encrypts plaintext using AES-GCM via CryptoKit.
+     Encrypts data using AES-GCM via CryptoKit.
 
      - Parameters:
-        - plaintext: Data to encrypt
+        - data: Data to encrypt
         - key: Encryption key
-        - iv: Nonce for encryption (12 bytes for AES-GCM)
-        - config: Additional configuration options
-     - Returns: Encrypted data
-     - Throws: CryptoError if encryption fails
+     - Returns: Result with encrypted data or error
      */
     public func encrypt(
-      plaintext: Data,
-      key: Data,
-      iv: Data,
-      config: SecurityConfigDTO
-    ) throws -> Data {
-      // Validate key size
-      guard let keySize=validateKeySize(key.count, algorithm: config.algorithm) else {
-        throw SecurityProtocolError
-          .invalidInput("Invalid key size for algorithm \(config.algorithm)")
+      data: SecureBytes,
+      using key: SecureBytes
+    ) async -> Result<SecureBytes, Error> {
+      do {
+        // Generate a random nonce for encryption
+        let nonce = try AES.GCM.Nonce()
+        
+        // Convert SecureBytes to CryptoKit key format
+        let cryptoKitKey = try getCryptoKitSymmetricKey(from: key)
+        
+        // Perform the encryption
+        let sealedBox = try AES.GCM.seal(data.data, using: cryptoKitKey, nonce: nonce)
+        
+        // Combine nonce and sealed data for storage/transmission
+        // Format: [Nonce][Tag][Ciphertext]
+        guard let combined = sealedBox.combined else {
+          throw SecurityErrorDomain.cryptographicError(
+            reason: "Failed to generate combined ciphertext output"
+          )
+        }
+        
+        return .success(SecureBytes(data: combined))
+      } catch {
+        return .failure(mapToSecurityErrorDomain(error))
       }
-
-      // Validate nonce/IV
-      guard iv.count == 12 else {
-        throw SecurityProtocolError.invalidInput("Invalid nonce size, must be 12 bytes for AES-GCM")
-      }
-
-      // Set up symmetric key
-      let symmetricKey: SymmetricKey
-      switch keySize {
-        case 128:
-          symmetricKey=SymmetricKey(data: key)
-        case 192:
-          symmetricKey=SymmetricKey(data: key)
-        case 256:
-          symmetricKey=SymmetricKey(data: key)
-        default:
-          throw SecurityProtocolError.invalidInput("Unsupported key size: \(keySize) bits")
-      }
-
-      // Create AES-GCM nonce
-      let nonce=try AES.GCM.Nonce(data: iv)
-
-      // Perform encryption
-      let sealedBox=try AES.GCM.seal(plaintext, using: symmetricKey, nonce: nonce)
-
-      // Return combined data (nonce + ciphertext + tag)
-      guard let combined=sealedBox.combined else {
-        throw SecurityProtocolError
-          .cryptographicError("Failed to combine encrypted data components")
-      }
-
-      return combined
     }
 
     /**
-     Decrypts ciphertext using AES-GCM via CryptoKit.
+     Decrypts data using AES-GCM via CryptoKit.
 
      - Parameters:
-        - ciphertext: Data to decrypt (must include nonce and tag)
+        - data: Data to decrypt (must include nonce, tag, and ciphertext)
         - key: Decryption key
-        - iv: Nonce for decryption (ignored as it's included in the ciphertext)
-        - config: Additional configuration options
-     - Returns: Decrypted plaintext
-     - Throws: CryptoError if decryption fails
+     - Returns: Result with decrypted data or error
      */
     public func decrypt(
-      ciphertext: Data,
-      key: Data,
-      iv _: Data,
-      config: SecurityConfigDTO
-    ) throws -> Data {
-      // Validate key size
-      guard let keySize=validateKeySize(key.count, algorithm: config.algorithm) else {
-        throw SecurityProtocolError
-          .invalidInput("Invalid key size for algorithm \(config.algorithm)")
+      data: SecureBytes,
+      using key: SecureBytes
+    ) async -> Result<SecureBytes, Error> {
+      do {
+        // Create a sealed box from the combined format
+        let sealedBox = try AES.GCM.SealedBox(combined: data.data)
+        
+        // Convert SecureBytes to CryptoKit key format
+        let cryptoKitKey = try getCryptoKitSymmetricKey(from: key)
+        
+        // Perform the decryption
+        let decryptedData = try AES.GCM.open(sealedBox, using: cryptoKitKey)
+        
+        return .success(SecureBytes(data: decryptedData))
+      } catch {
+        return .failure(mapToSecurityErrorDomain(error))
       }
+    }
 
-      // Set up symmetric key
-      let symmetricKey: SymmetricKey
+    /**
+     Generates a cryptographic key of the specified size.
+
+     - Parameter size: Key size in bits (128, 192, or 256)
+     - Returns: Result with generated key or error
+     */
+    public func generateKey(size: Int) async -> Result<SecureBytes, Error> {
+      do {
+        // Convert bits to bytes
+        let keySize = size / 8
+        
+        // CryptoKit supports 128, 192, and 256-bit keys for AES
+        switch keySize {
+        case 16: // 128 bits
+          let key = SymmetricKey(size: .bits128)
+          return .success(SecureBytes(data: key.withUnsafeBytes { Data($0) }))
+        case 24: // 192 bits
+          let key = SymmetricKey(size: .bits192)
+          return .success(SecureBytes(data: key.withUnsafeBytes { Data($0) }))
+        case 32: // 256 bits
+          let key = SymmetricKey(size: .bits256)
+          return .success(SecureBytes(data: key.withUnsafeBytes { Data($0) }))
+        default:
+          throw SecurityErrorDomain.invalidInput(
+            reason: "Invalid key size, must be 128, 192, or 256 bits"
+          )
+        }
+      } catch {
+        return .failure(mapToSecurityErrorDomain(error))
+      }
+    }
+
+    /**
+     Computes a cryptographic hash of the provided data.
+
+     - Parameter data: Data to hash (default algorithm: SHA-256)
+     - Returns: Result with hash value or error
+     */
+    public func hash(data: SecureBytes) async -> Result<SecureBytes, Error> {
+      do {
+        // Default to SHA-256
+        let hashData = SHA256.hash(data: data.data)
+        return .success(SecureBytes(data: Data(hashData)))
+      } catch {
+        return .failure(mapToSecurityErrorDomain(error))
+      }
+    }
+    
+    // MARK: - Helper Methods
+    
+    /**
+     Converts a SecureBytes key to a CryptoKit SymmetricKey.
+     
+     - Parameter key: The key as SecureBytes
+     - Returns: A CryptoKit SymmetricKey
+     - Throws: SecurityErrorDomain if key conversion fails
+     */
+    private func getCryptoKitSymmetricKey(from key: SecureBytes) throws -> SymmetricKey {
+      let keySize = key.count * 8
+      
+      // Validate key size
       switch keySize {
-        case 128:
-          symmetricKey=SymmetricKey(data: key)
-        case 192:
-          symmetricKey=SymmetricKey(data: key)
-        case 256:
-          symmetricKey=SymmetricKey(data: key)
-        default:
-          throw SecurityProtocolError.invalidInput("Unsupported key size: \(keySize) bits")
+      case 128, 192, 256:
+        return SymmetricKey(data: key.data)
+      default:
+        throw SecurityErrorDomain.invalidInput(
+          reason: "Invalid key size: \(keySize) bits. Must be 128, 192, or 256 bits."
+        )
       }
-
-      // Create sealed box from combined data
-      let sealedBox=try AES.GCM.SealedBox(combined: ciphertext)
-
-      // Perform decryption
-      let plaintext=try AES.GCM.open(sealedBox, using: symmetricKey)
-
-      return plaintext
     }
-
+    
     /**
-     Generates a cryptographic key of the specified size using CryptoKit.
-
-     - Parameters:
-        - size: Key size in bits (128, 192, or 256 for AES)
-        - config: Additional configuration options
-     - Returns: Generated key data
-     - Throws: CryptoError if key generation fails
+     Maps any error to the appropriate SecurityErrorDomain case
+     
+     - Parameter error: The original error
+     - Returns: A SecurityErrorDomain error
      */
-    public func generateKey(size: Int, config _: SecurityConfigDTO) throws -> Data {
-      // Validate key size
-      guard size == 128 || size == 192 || size == 256 else {
-        throw SecurityProtocolError.invalidInput("Invalid key size, must be 128, 192, or 256 bits")
+    private func mapToSecurityErrorDomain(_ error: Error) -> Error {
+      if let securityError = error as? SecurityErrorDomain {
+        return securityError
       }
-
-      // Generate key of appropriate size
-      let keyBytes=size / 8
-      let symmetricKey=SymmetricKey(size: SymmetricKeySize(bitCount: size))
-
-      // Extract key data
-      let keyData=symmetricKey.withUnsafeBytes { Data($0) }
-
-      // Ensure we got the right number of bytes
-      guard keyData.count == keyBytes else {
-        throw SecurityProtocolError
-          .cryptographicError("Key generation produced incorrect key length")
-      }
-
-      return keyData
-    }
-
-    /**
-     Generates a random nonce of the specified size using CryptoKit.
-
-     - Parameters:
-        - size: Nonce size in bytes (typically 12 for AES-GCM)
-     - Returns: Generated nonce data
-     - Throws: CryptoError if nonce generation fails
-     */
-    public func generateIV(size: Int) throws -> Data {
-      guard size > 0 else {
-        throw SecurityProtocolError.invalidInput("IV size must be greater than 0")
-      }
-
-      if size == 12 {
-        // Use AES.GCM.Nonce for optimal generation
-        let nonce=AES.GCM.Nonce()
-        return Data(nonce)
-      } else {
-        // For other sizes, use secure random generation
-        var nonceData=Data(count: size)
-        let result=nonceData.withUnsafeMutableBytes {
-          SecRandomCopyBytes(kSecRandomDefault, size, $0.baseAddress!)
+      
+      // CryptoKit specific error handling
+      if let cryptoKitError = error as? CryptoKitError {
+        switch cryptoKitError {
+        case .incorrectKeySize:
+          return SecurityErrorDomain.invalidKey(
+            reason: "CryptoKit error: incorrect key size"
+          )
+        case .incorrectParameterSize:
+          return SecurityErrorDomain.invalidInput(
+            reason: "CryptoKit error: incorrect parameter size"
+          )
+        case .authenticationFailure:
+          return SecurityErrorDomain.cryptographicError(
+            reason: "CryptoKit error: authentication failure during decryption"
+          )
+        case .underlyingCoreCryptoError(let status):
+          return SecurityErrorDomain.cryptographicError(
+            reason: "CryptoKit underlying CoreCrypto error: \(status)"
+          )
+        @unknown default:
+          return SecurityErrorDomain.cryptographicError(
+            reason: "Unknown CryptoKit error: \(cryptoKitError.localizedDescription)"
+          )
         }
-
-        guard result == errSecSuccess else {
-          throw SecurityProtocolError
-            .cryptographicError("IV generation failed with status \(result)")
-        }
-
-        return nonceData
       }
+      
+      return SecurityErrorDomain.operationFailed(
+        reason: "Apple CryptoKit operation failed: \(error.localizedDescription)"
+      )
+    }
+  }
+#else
+  // Empty placeholder for when CryptoKit is not available
+  public actor AppleSecurityProvider: CryptoServiceProtocol, AsyncServiceInitializable {
+    public nonisolated let providerType: SecurityProviderType = .apple
+
+    public init() {}
+    
+    public func initialize() async throws {
+      throw SecurityErrorDomain.unsupportedOperation(
+        name: "Apple CryptoKit is not available on this platform"
+      )
     }
 
-    /**
-     Creates a cryptographic hash of the input data using CryptoKit.
-
-     - Parameters:
-        - data: Data to hash
-        - algorithm: Hash algorithm to use (SHA256, SHA384, SHA512)
-     - Returns: Hash value
-     - Throws: CryptoError if hashing fails
-     */
-    public func hash(data: Data, algorithm: String) throws -> Data {
-      switch algorithm.uppercased() {
-        case "SHA256":
-          let digest=SHA256.hash(data: data)
-          return Data(digest)
-
-        case "SHA384":
-          let digest=SHA384.hash(data: data)
-          return Data(digest)
-
-        case "SHA512":
-          let digest=SHA512.hash(data: data)
-          return Data(digest)
-
-        default:
-          throw SecurityProtocolError.unsupportedOperation(name: "Hash algorithm \(algorithm)")
-      }
+    public func encrypt(data: SecureBytes, using key: SecureBytes) async -> Result<SecureBytes, Error> {
+      return .failure(SecurityErrorDomain.unsupportedOperation(
+        name: "Apple CryptoKit encryption is not available on this platform"
+      ))
     }
 
-    // MARK: - Private Helpers
+    public func decrypt(data: SecureBytes, using key: SecureBytes) async -> Result<SecureBytes, Error> {
+      return .failure(SecurityErrorDomain.unsupportedOperation(
+        name: "Apple CryptoKit decryption is not available on this platform"
+      ))
+    }
 
-    private func validateKeySize(_ keySize: Int, algorithm: String) -> Int? {
-      let keySizeBits=keySize * 8
+    public func generateKey(size: Int) async -> Result<SecureBytes, Error> {
+      return .failure(SecurityErrorDomain.unsupportedOperation(
+        name: "Apple CryptoKit key generation is not available on this platform"
+      ))
+    }
 
-      switch algorithm.uppercased() {
-        case "AES":
-          if keySizeBits == 128 || keySizeBits == 192 || keySizeBits == 256 {
-            return keySizeBits
-          }
-        default:
-          break
-      }
-
-      return nil
+    public func hash(data: SecureBytes) async -> Result<SecureBytes, Error> {
+      return .failure(SecurityErrorDomain.unsupportedOperation(
+        name: "Apple CryptoKit hashing is not available on this platform"
+      ))
     }
   }
 #endif

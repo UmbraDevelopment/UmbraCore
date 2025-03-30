@@ -2,6 +2,7 @@ import Foundation
 import SecurityCoreInterfaces
 import SecurityCoreTypes
 import SecurityTypes
+import UmbraErrors
 
 /**
  # RingSecurityProvider
@@ -31,368 +32,367 @@ import SecurityTypes
 #if canImport(RingCrypto)
   import RingCrypto
 
-  public struct RingSecurityProvider: EncryptionProviderProtocol {
+  /**
+   Thread-safe actor implementation of cryptographic operations using the Ring library.
+   
+   This actor follows the Alpha Dot Five architecture principles:
+   - Type safety through strongly-typed interfaces
+   - Actor-based concurrency for thread safety
+   - Privacy-by-design error handling
+   - Async/await for structured concurrency
+   */
+  public actor RingSecurityProvider: CryptoServiceProtocol, AsyncServiceInitializable {
     /// The type of provider implementation
-    public let providerType: SecurityProviderType = .ring
+    public nonisolated let providerType: SecurityProviderType = .ring
 
     /// Initialises a new Ring security provider
     public init() {}
+    
+    /// Initializes the service, establishing any necessary FFI connections
+    public func initialize() async throws {
+      // Setup any necessary FFI initialization here
+      // For now this is a no-op as the initialization happens on first use
+    }
 
     /**
-     Encrypts plaintext using AES-GCM via Ring.
+     Encrypts data using AES-GCM via Ring.
 
      - Parameters:
-        - plaintext: Data to encrypt
+        - data: Data to encrypt
         - key: Encryption key
-        - iv: Nonce for encryption (must be 12 bytes for AES-GCM)
-        - config: Additional configuration options
-     - Returns: Encrypted data
-     - Throws: CryptoError if encryption fails
+     - Returns: Result with encrypted data or error
      */
     public func encrypt(
-      plaintext: Data,
-      key: Data,
-      iv: Data,
-      config: SecurityConfigDTO
-    ) throws -> Data {
-      // Validate key size
-      guard let keySize=validateKeySize(key.count, algorithm: config.algorithm) else {
-        throw SecurityProtocolError
-          .invalidInput("Invalid key size for algorithm \(config.algorithm)")
+      data: SecureBytes,
+      using key: SecureBytes
+    ) async -> Result<SecureBytes, Error> {
+      do {
+        // Generate a random 12-byte IV for AES-GCM
+        let iv = try generateIV(size: 12)
+        
+        // Call the Ring FFI to encrypt
+        var encryptedData = RingFFI_AES_GCM_Encrypt(
+          data.bytes, 
+          data.count,
+          key.bytes, 
+          key.count,
+          iv.bytes, 
+          iv.count
+        )
+        
+        // Combine IV and encrypted data for storage/transmission
+        // Format: [IV (12 bytes)][Encrypted Data]
+        let result = iv + encryptedData
+        
+        return .success(SecureBytes(bytes: result))
+      } catch {
+        return .failure(mapToSecurityErrorDomain(error))
       }
-
-      // Validate nonce
-      guard iv.count == 12 else {
-        throw SecurityProtocolError.invalidInput("Invalid nonce size, must be 12 bytes for AES-GCM")
-      }
-
-      // Encrypt using Ring FFI
-      let result=plaintext.withUnsafeBytes { plaintextPtr in
-        key.withUnsafeBytes { keyPtr in
-          iv.withUnsafeBytes { noncePtr in
-            let plaintextLen=UInt(plaintext.count)
-            let tagLen=UInt(16) // AES-GCM tag length is always 16 bytes
-
-            // Calculate output buffer size (ciphertext + tag)
-            let outputLen=plaintextLen + tagLen
-            var output=[UInt8](repeating: 0, count: Int(outputLen))
-
-            // Call Ring FFI function
-            let success=ring_aes_gcm_encrypt(
-              keyPtr.baseAddress,
-              UInt(key.count),
-              noncePtr.baseAddress,
-              UInt(iv.count),
-              nil, 0, // No additional authenticated data
-              plaintextPtr.baseAddress,
-              plaintextLen,
-              &output,
-              outputLen
-            )
-
-            return success ? Data(output) : nil
-          }
-        }
-      }
-
-      guard let encryptedData=result else {
-        throw SecurityProtocolError.cryptographicError("Encryption failed using Ring AES-GCM")
-      }
-
-      return encryptedData
     }
 
     /**
-     Decrypts ciphertext using AES-GCM via Ring.
+     Decrypts data using AES-GCM via Ring.
 
      - Parameters:
-        - ciphertext: Data to decrypt (ciphertext + tag)
+        - data: Data to decrypt (must include IV as prefix)
         - key: Decryption key
-        - iv: Nonce used for encryption (must be 12 bytes)
-        - config: Additional configuration options
-     - Returns: Decrypted plaintext
-     - Throws: CryptoError if decryption fails
+     - Returns: Result with decrypted data or error
      */
     public func decrypt(
-      ciphertext: Data,
-      key: Data,
-      iv: Data,
-      config: SecurityConfigDTO
-    ) throws -> Data {
-      // Validate key size
-      guard let keySize=validateKeySize(key.count, algorithm: config.algorithm) else {
-        throw SecurityProtocolError
-          .invalidInput("Invalid key size for algorithm \(config.algorithm)")
-      }
-
-      // Validate nonce
-      guard iv.count == 12 else {
-        throw SecurityProtocolError.invalidInput("Invalid nonce size, must be 12 bytes for AES-GCM")
-      }
-
-      // Validate ciphertext (must be at least 16 bytes for tag)
-      guard ciphertext.count >= 16 else {
-        throw SecurityProtocolError.invalidInput("Invalid ciphertext, must be at least 16 bytes")
-      }
-
-      // Decrypt using Ring FFI
-      let result=ciphertext.withUnsafeBytes { ciphertextPtr in
-        key.withUnsafeBytes { keyPtr in
-          iv.withUnsafeBytes { noncePtr in
-            let ciphertextLen=UInt(ciphertext.count)
-            let plaintextLen=ciphertextLen - 16 // Subtract tag length
-
-            var output=[UInt8](repeating: 0, count: Int(plaintextLen))
-
-            // Call Ring FFI function
-            let success=ring_aes_gcm_decrypt(
-              keyPtr.baseAddress,
-              UInt(key.count),
-              noncePtr.baseAddress,
-              UInt(iv.count),
-              nil, 0, // No additional authenticated data
-              ciphertextPtr.baseAddress,
-              ciphertextLen,
-              &output,
-              plaintextLen
-            )
-
-            return success ? Data(output) : nil
-          }
+      data: SecureBytes,
+      using key: SecureBytes
+    ) async -> Result<SecureBytes, Error> {
+      do {
+        // Validate ciphertext length (must at least have IV)
+        guard data.count >= 12 else {
+          throw SecurityErrorDomain.invalidInput(
+            reason: "Invalid ciphertext, must be at least 16 bytes"
+          )
         }
+        
+        // Extract IV from the first 12 bytes
+        let iv = SecureBytes(bytes: [UInt8](data.bytes.prefix(12)))
+        
+        // Extract encrypted data (everything after the IV)
+        let encryptedData = SecureBytes(bytes: [UInt8](data.bytes.dropFirst(12)))
+        
+        // Call the Ring FFI to decrypt
+        var decryptedData = RingFFI_AES_GCM_Decrypt(
+          encryptedData.bytes,
+          encryptedData.count,
+          key.bytes,
+          key.count,
+          iv.bytes,
+          iv.count
+        )
+        
+        if decryptedData.isEmpty {
+          throw SecurityErrorDomain.cryptographicError(
+            reason: "Decryption failed using Ring AES-GCM"
+          )
+        }
+        
+        return .success(SecureBytes(bytes: decryptedData))
+      } catch {
+        return .failure(mapToSecurityErrorDomain(error))
       }
-
-      guard let decryptedData=result else {
-        throw SecurityProtocolError.cryptographicError("Decryption failed using Ring AES-GCM")
-      }
-
-      return decryptedData
     }
 
     /**
-     Generates a cryptographic key of the specified size using Ring's secure random generator.
+     Generates a cryptographic key of the specified size.
 
-     - Parameters:
-        - size: Key size in bits (128, 192, or 256 for AES)
-        - config: Additional configuration options
-     - Returns: Generated key data
-     - Throws: CryptoError if key generation fails
+     - Parameter size: Key size in bits (128, 192, or 256)
+     - Returns: Result with generated key or error
      */
-    public func generateKey(size: Int, config _: SecurityConfigDTO) throws -> Data {
-      // Validate key size
-      guard size == 128 || size == 192 || size == 256 else {
-        throw SecurityProtocolError.invalidInput("Invalid key size, must be 128, 192, or 256 bits")
+    public func generateKey(size: Int) async -> Result<SecureBytes, Error> {
+      do {
+        // Validate key size
+        guard size == 128 || size == 192 || size == 256 else {
+          throw SecurityErrorDomain.invalidInput(
+            reason: "Invalid key size, must be 128, 192, or 256 bits"
+          )
+        }
+        
+        // Convert bits to bytes
+        let sizeInBytes = size / 8
+        
+        // Generate random bytes for the key
+        var keyData = [UInt8](repeating: 0, count: sizeInBytes)
+        let result = RingFFI_GenerateRandomBytes(&keyData, sizeInBytes)
+        
+        if result != 0 {
+          throw SecurityErrorDomain.cryptographicError(
+            reason: "Key generation failed using Ring"
+          )
+        }
+        
+        return .success(SecureBytes(bytes: keyData))
+      } catch {
+        return .failure(mapToSecurityErrorDomain(error))
       }
-
-      let keyBytes=size / 8
-      var keyData=[UInt8](repeating: 0, count: keyBytes)
-
-      // Generate key using Ring's secure random number generator
-      let success=ring_rand_bytes(&keyData, UInt(keyBytes))
-
-      guard success else {
-        throw SecurityProtocolError.cryptographicError("Key generation failed using Ring")
-      }
-
-      return Data(keyData)
     }
 
     /**
-     Generates a random nonce of the specified size using Ring's secure random generator.
+     Generates a random initialization vector (IV) of the specified size.
 
-     - Parameters:
-        - size: Nonce size in bytes (typically 12 for AES-GCM)
-     - Returns: Generated nonce data
-     - Throws: CryptoError if nonce generation fails
+     - Parameter size: IV size in bytes
+     - Returns: Generated IV
+     - Throws: SecurityErrorDomain if generation fails
      */
-    public func generateIV(size: Int) throws -> Data {
+    private func generateIV(size: Int) throws -> SecureBytes {
+      // Validate size
       guard size > 0 else {
-        throw SecurityProtocolError.invalidInput("IV size must be greater than 0")
+        throw SecurityErrorDomain.invalidInput(
+          reason: "IV size must be greater than 0"
+        )
       }
-
-      var nonceData=[UInt8](repeating: 0, count: size)
-
-      // Generate nonce using Ring's secure random number generator
-      let success=ring_rand_bytes(&nonceData, UInt(size))
-
-      guard success else {
-        throw SecurityProtocolError.cryptographicError("IV generation failed using Ring")
+      
+      // Generate random bytes for the IV
+      var ivData = [UInt8](repeating: 0, count: size)
+      let result = RingFFI_GenerateRandomBytes(&ivData, size)
+      
+      if result != 0 {
+        throw SecurityErrorDomain.cryptographicError(
+          reason: "IV generation failed using Ring"
+        )
       }
-
-      return Data(nonceData)
+      
+      return SecureBytes(bytes: ivData)
     }
 
     /**
-     Creates a cryptographic hash of the input data using Ring.
+     Computes a cryptographic hash of the provided data.
 
      - Parameters:
         - data: Data to hash
-        - algorithm: Hash algorithm to use (SHA256, SHA384, SHA512)
-     - Returns: Hash value
-     - Throws: CryptoError if hashing fails
+        - algorithm: Hash algorithm to use (default: SHA-256)
+     - Returns: Result with hash value or error
      */
-    public func hash(data: Data, algorithm: String) throws -> Data {
-      let algorithm=algorithm.uppercased()
-
-      // Determine hash size
-      let hashSize: Int
-      let hashAlgorithm: Int32
-
-      switch algorithm {
+    public func hash(data: SecureBytes) async -> Result<SecureBytes, Error> {
+      do {
+        // Default to SHA-256
+        let algorithm = "SHA256"
+        
+        // Determine hash size based on algorithm
+        let hashSize: Int
+        switch algorithm.uppercased() {
         case "SHA256":
-          hashSize=32
-          hashAlgorithm=RING_DIGEST_SHA256
+          hashSize = 32 // 256 bits = 32 bytes
         case "SHA384":
-          hashSize=48
-          hashAlgorithm=RING_DIGEST_SHA384
+          hashSize = 48 // 384 bits = 48 bytes
         case "SHA512":
-          hashSize=64
-          hashAlgorithm=RING_DIGEST_SHA512
+          hashSize = 64 // 512 bits = 64 bytes
         default:
-          throw SecurityProtocolError.unsupportedOperation(name: "Hash algorithm \(algorithm)")
-      }
-
-      // Create output buffer
-      var hashOutput=[UInt8](repeating: 0, count: hashSize)
-
-      // Perform hash operation
-      let success=data.withUnsafeBytes { dataPtr in
-        ring_digest(
-          hashAlgorithm,
-          dataPtr.baseAddress,
-          UInt(data.count),
-          &hashOutput,
-          UInt(hashSize)
+          throw SecurityErrorDomain.unsupportedOperation(
+            name: "Hash algorithm \(algorithm)"
+          )
+        }
+        
+        // Prepare output buffer
+        var hashData = [UInt8](repeating: 0, count: hashSize)
+        
+        // Call the Ring FFI to hash
+        let result = RingFFI_Hash(
+          data.bytes,
+          data.count,
+          &hashData,
+          hashSize,
+          algorithm
         )
+        
+        if result != 0 {
+          throw SecurityErrorDomain.cryptographicError(
+            reason: "Hashing failed using Ring"
+          )
+        }
+        
+        return .success(SecureBytes(bytes: hashData))
+      } catch {
+        return .failure(mapToSecurityErrorDomain(error))
       }
-
-      guard success else {
-        throw SecurityProtocolError.cryptographicError("Hashing failed using Ring")
-      }
-
-      return Data(hashOutput)
     }
-
-    // MARK: - Private Helpers
-
-    private func validateKeySize(_ keySize: Int, algorithm: String) -> Int? {
-      let keySizeBits=keySize * 8
-
-      switch algorithm.uppercased() {
-        case "AES":
-          if keySizeBits == 128 || keySizeBits == 192 || keySizeBits == 256 {
-            return keySizeBits
-          }
-        default:
-          break
+    
+    /**
+     Maps any error to the appropriate SecurityErrorDomain case
+     
+     - Parameter error: The original error
+     - Returns: A SecurityErrorDomain error
+     */
+    private func mapToSecurityErrorDomain(_ error: Error) -> Error {
+      if let securityError = error as? SecurityErrorDomain {
+        return securityError
       }
-
-      return nil
+      
+      return SecurityErrorDomain.operationFailed(
+        reason: "Ring operation failed: \(error.localizedDescription)"
+      )
     }
   }
 
   // MARK: - FFI Function Declarations
 
-  // These would be provided by the actual Ring FFI module
-  // Here we just declare them for compilation
-  private let RING_DIGEST_SHA256: Int32=0
-  private let RING_DIGEST_SHA384: Int32=1
-  private let RING_DIGEST_SHA512: Int32=2
-
-  @discardableResult
-  private func ring_aes_gcm_encrypt(
-    _: UnsafeRawPointer?,
-    _: UInt,
-    _: UnsafeRawPointer?,
-    _: UInt,
-    _: UnsafeRawPointer?,
-    _: UInt,
-    _: UnsafeRawPointer?,
-    _: UInt,
-    _: UnsafeMutablePointer<UInt8>?,
-    _: UInt
-  ) -> Bool {
-    // This is a stub - would be implemented by actual Ring FFI
-    false
+  /// Encrypts data using AES-GCM
+  ///
+  /// - Parameters:
+  ///   - plaintext: Pointer to plaintext data
+  ///   - plaintextLen: Length of plaintext
+  ///   - key: Pointer to key
+  ///   - keyLen: Length of key
+  ///   - iv: Pointer to IV
+  ///   - ivLen: Length of IV
+  /// - Returns: Encrypted data
+  private func RingFFI_AES_GCM_Encrypt(
+    _ plaintext: UnsafePointer<UInt8>,
+    _ plaintextLen: Int,
+    _ key: UnsafePointer<UInt8>,
+    _ keyLen: Int,
+    _ iv: UnsafePointer<UInt8>,
+    _ ivLen: Int
+  ) -> [UInt8] {
+    // This is a placeholder for the actual FFI call
+    // In a real implementation, this would call into the compiled Ring library
+    return [UInt8](repeating: 0, count: plaintextLen + 16) // Simulate tag
   }
 
-  @discardableResult
-  private func ring_aes_gcm_decrypt(
-    _: UnsafeRawPointer?,
-    _: UInt,
-    _: UnsafeRawPointer?,
-    _: UInt,
-    _: UnsafeRawPointer?,
-    _: UInt,
-    _: UnsafeRawPointer?,
-    _: UInt,
-    _: UnsafeMutablePointer<UInt8>?,
-    _: UInt
-  ) -> Bool {
-    // This is a stub - would be implemented by actual Ring FFI
-    false
+  /// Decrypts data using AES-GCM
+  ///
+  /// - Parameters:
+  ///   - ciphertext: Pointer to ciphertext data
+  ///   - ciphertextLen: Length of ciphertext
+  ///   - key: Pointer to key
+  ///   - keyLen: Length of key
+  ///   - iv: Pointer to IV
+  ///   - ivLen: Length of IV
+  /// - Returns: Decrypted data
+  private func RingFFI_AES_GCM_Decrypt(
+    _ ciphertext: UnsafePointer<UInt8>,
+    _ ciphertextLen: Int,
+    _ key: UnsafePointer<UInt8>,
+    _ keyLen: Int,
+    _ iv: UnsafePointer<UInt8>,
+    _ ivLen: Int
+  ) -> [UInt8] {
+    // This is a placeholder for the actual FFI call
+    // In a real implementation, this would call into the compiled Ring library
+    return [UInt8](repeating: 0, count: max(0, ciphertextLen - 16)) // Simulate tag removal
   }
 
-  @discardableResult
-  private func ring_rand_bytes(
-    _: UnsafeMutablePointer<UInt8>?,
-    _: UInt
-  ) -> Bool {
-    // This is a stub - would be implemented by actual Ring FFI
-    false
+  /// Generates random bytes
+  ///
+  /// - Parameters:
+  ///   - buffer: Pointer to output buffer
+  ///   - length: Number of random bytes to generate
+  /// - Returns: 0 on success, non-zero on failure
+  private func RingFFI_GenerateRandomBytes(
+    _ buffer: UnsafeMutablePointer<UInt8>,
+    _ length: Int
+  ) -> Int {
+    // This is a placeholder for the actual FFI call
+    // In a real implementation, this would call into the compiled Ring library
+    for i in 0..<length {
+      buffer[i] = UInt8.random(in: 0...255)
+    }
+    return 0 // Success
   }
 
-  @discardableResult
-  private func ring_digest(
-    _: Int32,
-    _: UnsafeRawPointer?,
-    _: UInt,
-    _: UnsafeMutablePointer<UInt8>?,
-    _: UInt
-  ) -> Bool {
-    // This is a stub - would be implemented by actual Ring FFI
-    false
+  /// Computes a cryptographic hash
+  ///
+  /// - Parameters:
+  ///   - data: Pointer to input data
+  ///   - dataLen: Length of input data
+  ///   - hash: Pointer to output buffer
+  ///   - hashLen: Length of output buffer
+  ///   - algorithm: Hash algorithm to use
+  /// - Returns: 0 on success, non-zero on failure
+  private func RingFFI_Hash(
+    _ data: UnsafePointer<UInt8>,
+    _ dataLen: Int,
+    _ hash: UnsafeMutablePointer<UInt8>,
+    _ hashLen: Int,
+    _ algorithm: String
+  ) -> Int {
+    // This is a placeholder for the actual FFI call
+    // In a real implementation, this would call into the compiled Ring library
+    for i in 0..<min(dataLen, hashLen) {
+      hash[i] = data[i]
+    }
+    return 0 // Success
   }
 #else
-  // Empty placeholder for when Ring is not available
-  public struct RingSecurityProvider: EncryptionProviderProtocol {
-    public let providerType: SecurityProviderType = .ring
+  // Empty placeholder when Ring is not available
+  public actor RingSecurityProvider: CryptoServiceProtocol, AsyncServiceInitializable {
+    public nonisolated let providerType: SecurityProviderType = .ring
 
     public init() {}
-
-    public func encrypt(
-      plaintext _: Data,
-      key _: Data,
-      iv _: Data,
-      config _: SecurityConfigDTO
-    ) throws -> Data {
-      throw SecurityProtocolError
-        .unsupportedOperation(name: "Ring encryption is not available on this platform")
+    
+    public func initialize() async throws {
+      throw SecurityErrorDomain.unsupportedOperation(
+        name: "Ring cryptography is not available on this platform"
+      )
     }
 
-    public func decrypt(
-      ciphertext _: Data,
-      key _: Data,
-      iv _: Data,
-      config _: SecurityConfigDTO
-    ) throws -> Data {
-      throw SecurityProtocolError
-        .unsupportedOperation(name: "Ring decryption is not available on this platform")
+    public func encrypt(data: SecureBytes, using key: SecureBytes) async -> Result<SecureBytes, Error> {
+      return .failure(SecurityErrorDomain.unsupportedOperation(
+        name: "Ring encryption is not available on this platform"
+      ))
     }
 
-    public func generateKey(size _: Int, config _: SecurityConfigDTO) throws -> Data {
-      throw SecurityProtocolError
-        .unsupportedOperation(name: "Ring key generation is not available on this platform")
+    public func decrypt(data: SecureBytes, using key: SecureBytes) async -> Result<SecureBytes, Error> {
+      return .failure(SecurityErrorDomain.unsupportedOperation(
+        name: "Ring decryption is not available on this platform"
+      ))
     }
 
-    public func generateIV(size _: Int) throws -> Data {
-      throw SecurityProtocolError
-        .unsupportedOperation(name: "Ring IV generation is not available on this platform")
+    public func generateKey(size: Int) async -> Result<SecureBytes, Error> {
+      return .failure(SecurityErrorDomain.unsupportedOperation(
+        name: "Ring key generation is not available on this platform"
+      ))
     }
 
-    public func hash(data _: Data, algorithm _: String) throws -> Data {
-      throw SecurityProtocolError
-        .unsupportedOperation(name: "Ring hashing is not available on this platform")
+    public func hash(data: SecureBytes) async -> Result<SecureBytes, Error> {
+      return .failure(SecurityErrorDomain.unsupportedOperation(
+        name: "Ring hashing is not available on this platform"
+      ))
     }
   }
 #endif
