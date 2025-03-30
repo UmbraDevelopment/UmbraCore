@@ -31,13 +31,12 @@ extension SecurityProviderImpl {
     // Create a safe version of config - don't log auth data
     let safeConfig="Algorithm: \(config.algorithm), KeySize: \(config.keySize), Mode: \(config.options["mode"] ?? "none")"
 
-    let metadata: LoggingInterfaces.LogMetadata=[
-      "operation": operation.description,
-      "configuration": safeConfig,
-      "timestamp": "\(Date())"
-    ]
+    let metadata = LoggingTypes.LogMetadata()
+    metadata["operation"] = .string(operation.description)
+    metadata["configuration"] = .string(safeConfig)
+    metadata["timestamp"] = .string("\(Date())")
 
-    await logger.info("Starting security operation: \(operation.description)", metadata: metadata)
+    await logInfo("Starting security operation: \(operation.description)", operation: "security_operation", additionalMetadata: [:])
   }
 
   /**
@@ -48,16 +47,12 @@ extension SecurityProviderImpl {
      - duration: The time taken to complete the operation in milliseconds
    */
   func logOperationSuccess(operation: SecurityOperation, duration: Double) async {
-    let metadata: LoggingInterfaces.LogMetadata=[
-      "operation": operation.description,
-      "durationMs": String(format: "%.2f", duration),
-      "timestamp": "\(Date())"
-    ]
+    let metadata = LoggingTypes.LogMetadata()
+    metadata["operation"] = .string(operation.description)
+    metadata["durationMs"] = .string(String(format: "%.2f", duration))
+    metadata["timestamp"] = .string("\(Date())")
 
-    await logger.info(
-      "Successfully completed security operation: \(operation.description)",
-      metadata: metadata
-    )
+    await logInfo("Successfully completed security operation: \(operation.description)", operation: "security_operation", additionalMetadata: [:])
   }
 
   /**
@@ -69,13 +64,104 @@ extension SecurityProviderImpl {
      - duration: The time taken before failure in milliseconds
    */
   func logOperationFailure(operation: SecurityOperation, error: Error, duration: Double) async {
-    let metadata: LoggingInterfaces.LogMetadata=[
-      "operation": operation.description,
-      "errorType": "\(type(of: error))",
-      "durationMs": String(format: "%.2f", duration),
-      "timestamp": "\(Date())"
-    ]
+    let metadata = LoggingTypes.LogMetadata()
+    metadata["operation"] = .string(operation.description)
+    metadata["errorType"] = .string("\(type(of: error))")
+    metadata["durationMs"] = .string(String(format: "%.2f", duration))
+    metadata["timestamp"] = .string("\(Date())")
 
-    await logger.error("Security operation failed: \(operation.description)", metadata: metadata)
+    await logError("Security operation failed: \(operation.description)", operation: "security_operation", error: error, additionalMetadata: [:])
+  }
+
+  /**
+   Logs debug information with standardised metadata formatting.
+   
+   - Parameters:
+     - message: The log message to record
+     - operation: Operation identifier for tracking
+     - additionalMetadata: Any extra metadata to include
+   */
+  internal func logDebug(
+    _ message: String,
+    operation: String,
+    additionalMetadata: [String: String] = [:]
+  ) async {
+    guard let logger = _logger else { return }
+    
+    // Create base metadata
+    let metadata = LoggingTypes.LogMetadata()
+    metadata["component"] = .string("SecurityProvider")
+    metadata["operation"] = .string(operation)
+    
+    // Add any additional metadata
+    for (key, value) in additionalMetadata {
+      metadata[key] = .string(value)
+    }
+    
+    await logger.debug(message, metadata: metadata, source: "SecurityProvider")
+  }
+  
+  /**
+   Logs informational messages with standardised metadata formatting.
+   
+   - Parameters:
+     - message: The log message to record
+     - operation: Operation identifier for tracking
+     - additionalMetadata: Any extra metadata to include
+   */
+  internal func logInfo(
+    _ message: String,
+    operation: String,
+    additionalMetadata: [String: String] = [:]
+  ) async {
+    guard let logger = _logger else { return }
+    
+    // Create base metadata
+    let metadata = LoggingTypes.LogMetadata()
+    metadata["component"] = .string("SecurityProvider")
+    metadata["operation"] = .string(operation)
+    
+    // Add any additional metadata
+    for (key, value) in additionalMetadata {
+      metadata[key] = .string(value)
+    }
+    
+    await logger.info(message, metadata: metadata, source: "SecurityProvider")
+  }
+  
+  /**
+   Logs error information with standardised metadata formatting.
+   
+   - Parameters:
+     - message: The error message to record
+     - operation: Operation identifier for tracking
+     - error: Optional error object to include details from
+     - additionalMetadata: Any extra metadata to include
+   */
+  internal func logError(
+    _ message: String,
+    operation: String,
+    error: Error? = nil,
+    additionalMetadata: [String: String] = [:]
+  ) async {
+    guard let logger = _logger else { return }
+    
+    // Create base metadata
+    let metadata = LoggingTypes.LogMetadata()
+    metadata["component"] = .string("SecurityProvider")
+    metadata["operation"] = .string(operation)
+    
+    // Add error details if provided
+    if let error = error {
+      metadata["errorType"] = .string("\(type(of: error))")
+      metadata["errorDescription"] = .string(error.localizedDescription)
+    }
+    
+    // Add any additional metadata
+    for (key, value) in additionalMetadata {
+      metadata[key] = .string(value)
+    }
+    
+    await logger.error(message, metadata: metadata, source: "SecurityProvider")
   }
 }

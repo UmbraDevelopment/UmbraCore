@@ -15,7 +15,7 @@ import LoggingTypes
  ## Main Components
  
  - `DefaultCryptoServiceImpl`: Actor-based implementation of cryptographic operations
- - `LoggingCryptoServiceImpl`: Logging wrapper for cryptographic operations
+ - `LoggingCryptoService`: Logging wrapper for cryptographic operations
  - `CryptoServiceFactory`: Factory for creating crypto service instances
  
  ## Usage Example
@@ -64,16 +64,10 @@ public enum CryptoServices {
   public static func createWithLogging(logger: LoggingProtocol? = nil) async -> CryptoServiceProtocol {
     let defaultService = await CryptoServiceFactory.createDefault()
     
-    // Use provided logger or create a default one - avoid await with ?? operator
-    let actualLogger: LoggingProtocol
-    if let logger = logger {
-      actualLogger = logger
-    } else {
-      // Create a default logger without async calls
-      // This assumes LoggingProtocol has a non-async initialiser
-      actualLogger = DefaultLogger()
-    }
+    // Use provided logger or create a default one
+    let actualLogger: LoggingProtocol = logger ?? DefaultLogger()
     
+    // The factory method is async
     return await CryptoServiceFactory.createLogging(
       wrapped: defaultService,
       logger: actualLogger
@@ -97,10 +91,10 @@ public enum CryptoServices {
  Basic logger implementation for when no logger is provided.
  */
 private struct DefaultLogger: LoggingProtocol {
-  func debug(_ message: String, metadata: LoggingTypes.LogMetadata?) async {}
-  func info(_ message: String, metadata: LoggingTypes.LogMetadata?) async {}
-  func notice(_ message: String, metadata: LoggingTypes.LogMetadata?) async {}
-  func warning(_ message: String, metadata: LoggingTypes.LogMetadata?) async {}
-  func error(_ message: String, metadata: LoggingTypes.LogMetadata?) async {}
-  func critical(_ message: String, metadata: LoggingTypes.LogMetadata?) async {}
+  func debug(_ message: String, metadata: LoggingTypes.LogMetadata?, source: String?) async {}
+  func info(_ message: String, metadata: LoggingTypes.LogMetadata?, source: String?) async {}
+  func notice(_ message: String, metadata: LoggingTypes.LogMetadata?, source: String?) async {}
+  func warning(_ message: String, metadata: LoggingTypes.LogMetadata?, source: String?) async {}
+  func error(_ message: String, metadata: LoggingTypes.LogMetadata?, source: String?) async {}
+  func critical(_ message: String, metadata: LoggingTypes.LogMetadata?, source: String?) async {}
 }

@@ -1,4 +1,3 @@
-
 import Foundation
 import UmbraCoreTypes
 import UmbraErrors
@@ -254,28 +253,27 @@ extension XPCMigrationExamples {
   static func convertLegacyError(_ error: Error) -> ErrorHandlingDomains.UmbraErrors.Security
   .Protocols {
     // If it's already the correct type, return it
-    if let securityError=error as? UmbraErrors.Security.Protocols {
+    if let securityError = error as? UmbraErrors.Security.Protocols {
       return securityError
     }
 
     // Otherwise map based on error properties
-    if let errorObject=error as? NSError {
-      let errorDomain=errorObject.domain
-      let code=errorObject.code
-      let description=error.localizedDescription
+    let errorObject = error as NSError
+    let errorDomain = errorObject.domain
+    let code = errorObject.code
+    let description = error.localizedDescription
 
-      if errorDomain.contains("encryption") {
-        return .cryptographicError(
-          operation: "encryption",
-          details: "Error \(code): \(description)"
-        )
-      } else if errorDomain.contains("storage") {
-        return .invalidState(details: "Storage error: \(description)")
-      } else if errorDomain.contains("key") {
-        return .keyGenerationFailed(reason: "Error \(code): \(description)")
-      } else if errorDomain.contains("signature") {
-        return .cryptographicError(operation: "signature", details: "Error \(code): \(description)")
-      }
+    if errorDomain.contains("encryption") {
+      return .cryptographicError(
+        operation: "encryption",
+        details: "Error \(code): \(description)"
+      )
+    } else if errorDomain.contains("storage") {
+      return .invalidState(details: "Storage error: \(description)")
+    } else if errorDomain.contains("key") {
+      return .keyGenerationFailed(reason: "Error \(code): \(description)")
+    } else if errorDomain.contains("signature") {
+      return .cryptographicError(operation: "signature", details: "Error \(code): \(description)")
     }
 
     // Default error case

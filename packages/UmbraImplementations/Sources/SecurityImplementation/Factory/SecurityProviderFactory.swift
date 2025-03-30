@@ -26,19 +26,28 @@ public enum SecurityProviderFactory {
    - Returns: A properly configured SecurityProviderProtocol instance
    */
   public static func createSecurityProvider(
-    logger: LoggingProtocol?=nil
+    logger: LoggingServiceProtocol? = nil
   ) async -> SecurityProviderProtocol {
     // Get the default implementations
-    let cryptoService=createDefaultCryptoService()
-    let keyManager=createDefaultKeyManager()
-    let actualLogger=logger ?? DefaultLoggingServiceImpl()
-
-    // Create and return the provider
-    return SecurityProviderImpl(
-      cryptoService: cryptoService,
-      keyManager: keyManager,
-      logger: actualLogger
+    let cryptoService = createDefaultCryptoService()
+    let keyManager = createDefaultKeyManager()
+    
+    // Use the provided logger or create a default one
+    let actualLogger = logger ?? await LoggingServiceFactory.createDefaultLogger(
+      minimumLevel: .info,
+      identifier: "SecurityProviderDefaultLogger"
     )
+
+    // Create the provider
+    let provider = SecurityProviderImpl(
+      cryptoService: cryptoService,
+      keyManager: keyManager
+    )
+    
+    // Initialise the provider (this handles async setup)
+    try? await provider.initialize()
+    
+    return provider
   }
 
   /**
@@ -47,222 +56,190 @@ public enum SecurityProviderFactory {
    - Parameters:
      - cryptoService: Custom crypto service
      - keyManager: Custom key management service
-     - logger: Custom logger
    - Returns: A configured SecurityProviderProtocol instance
+   
+   Note: This method creates the provider but does not initialise it.
+   You must call `initialize()` on the returned provider before use.
    */
   public static func createSecurityProvider(
     cryptoService: CryptoServiceProtocol,
-    keyManager: KeyManagementProtocol,
-    logger: LoggingProtocol
+    keyManager: KeyManagementProtocol
   ) -> SecurityProviderProtocol {
     SecurityProviderImpl(
       cryptoService: cryptoService,
-      keyManager: keyManager,
-      logger: logger
+      keyManager: keyManager
     )
   }
 
-  /**
-   Creates the default cryptographic service.
+  // MARK: - Helper Methods
 
-   - Returns: A CryptoServiceProtocol instance that handles cryptographic operations
+  /**
+   Creates the default crypto service implementation.
+   
+   - Returns: A properly configured crypto service
    */
   private static func createDefaultCryptoService() -> CryptoServiceProtocol {
-    // Create an adapter that conforms to our required protocol
-    CryptoServiceAdapter()
-  }
-
-  /**
-   A simple adapter class that conforms to the SecurityCoreInterfaces.CryptoServiceProtocol.
-
-   This implementation provides basic cryptographic functionality while ensuring
-   thread safety through the Sendable protocol. In a production environment,
-   these methods would connect to platform-specific cryptography implementations.
-   */
-  private final class CryptoServiceAdapter: CryptoServiceProtocol, Sendable {
-    // MARK: - Required protocol methods
-
-    /**
-     Encrypts binary data using the provided key.
-
-     - Parameters:
-       - data: The data to encrypt
-       - key: The encryption key
-     - Returns: A result containing either the encrypted data or an error
-     */
-    func encrypt(
-      data: SecureBytes,
-      using key: SecureBytes
-    ) async -> Result<SecureBytes, SecurityProtocolError> {
-      // Check for valid inputs
-      guard !data.isEmpty else {
-        return .failure(.invalidInput("Data to encrypt cannot be empty"))
-      }
-
-      guard !key.isEmpty else {
-        return .failure(.invalidInput("Encryption key cannot be empty"))
-      }
-
-      // In a real implementation, this would use proper encryption
-      // For now, we'll just return a simulation of encrypted data
-      return .success(data)
-    }
-
-    /**
-     Decrypts binary data using the provided key.
-
-     - Parameters:
-       - data: The data to decrypt
-       - key: The decryption key
-     - Returns: A result containing either the decrypted data or an error
-     */
-    func decrypt(
-      data: SecureBytes,
-      using key: SecureBytes
-    ) async -> Result<SecureBytes, SecurityProtocolError> {
-      // Check for valid inputs
-      guard !data.isEmpty else {
-        return .failure(.invalidInput("Data to decrypt cannot be empty"))
-      }
-
-      guard !key.isEmpty else {
-        return .failure(.invalidInput("Decryption key cannot be empty"))
-      }
-
-      // In a real implementation, this would use proper decryption
-      // For now, we'll just return a simulation of decrypted data
-      return .success(data)
-    }
-
-    /**
-     Computes a cryptographic hash of binary data.
-
-     - Parameter data: The data to hash
-     - Returns: A result containing either the hash or an error
-     */
-    func hash(data: SecureBytes) async -> Result<SecureBytes, SecurityProtocolError> {
-      // Check for valid input
-      guard !data.isEmpty else {
-        return .failure(.invalidInput("Data to hash cannot be empty"))
-      }
-
-      // In a real implementation, this would compute a secure hash
-      // For now, we'll just return a simulation of a hash value
-      return .success(data)
-    }
-
-    /**
-     Verifies a cryptographic hash against the expected value.
-
-     - Parameters:
-       - data: The data to verify
-       - expectedHash: The expected hash value
-     - Returns: A result containing either a boolean indicating if the hash matches or an error
-     */
-    func verifyHash(
-      data: SecureBytes,
-      expectedHash: SecureBytes
-    ) async -> Result<Bool, SecurityProtocolError> {
-      // Check for valid inputs
-      guard !data.isEmpty else {
-        return .failure(.invalidInput("Data to verify cannot be empty"))
-      }
-
-      guard !expectedHash.isEmpty else {
-        return .failure(.invalidInput("Expected hash cannot be empty"))
-      }
-
-      // In a real implementation, this would compute and compare hashes
-      // For now, just simulate a successful verification
-      return .success(true)
-    }
-
-    /**
-     Signs data using a private key.
-
-     - Parameters:
-       - data: The data to sign
-       - key: The private key to use for signing
-     - Returns: A result containing either the signature or an error
-     */
-    func sign(
-      data: SecureBytes,
-      using key: SecureBytes
-    ) async -> Result<SecureBytes, SecurityProtocolError> {
-      // Check for valid inputs
-      guard !data.isEmpty else {
-        return .failure(.invalidInput("Data to sign cannot be empty"))
-      }
-
-      guard !key.isEmpty else {
-        return .failure(.invalidInput("Signing key cannot be empty"))
-      }
-
-      // In a real implementation, this would use proper signing algorithms
-      // For now, just return a simulated signature
-      return .success(data)
-    }
-
-    /**
-     Verifies a signature against the original data.
-
-     - Parameters:
-       - signature: The signature to verify
-       - data: The original data
-       - key: The public key to use for verification
-     - Returns: A result containing either a boolean indicating if the signature is valid or an error
-     */
-    func verifySignature(
-      _ signature: SecureBytes,
-      for data: SecureBytes,
-      using key: SecureBytes
-    ) async -> Result<Bool, SecurityProtocolError> {
-      // Check for valid inputs
-      guard !signature.isEmpty else {
-        return .failure(.invalidInput("Signature cannot be empty"))
-      }
-
-      guard !data.isEmpty else {
-        return .failure(.invalidInput("Data cannot be empty"))
-      }
-
-      guard !key.isEmpty else {
-        return .failure(.invalidInput("Verification key cannot be empty"))
-      }
-
-      // In a real implementation, this would verify the signature cryptographically
-      // For now, just simulate a successful verification
-      return .success(true)
-    }
-
-    /**
-     Generates a cryptographic key of the specified size.
-
-     - Parameter size: The size of the key to generate in bits
-     - Returns: A result containing either the generated key or an error
-     */
-    func generateKey(size: Int) async -> Result<SecureBytes, SecurityProtocolError> {
-      // Check for valid input
-      guard size >= 128 else {
-        return .failure(.invalidInput("Key size must be at least 128 bits"))
-      }
-
-      // In a real implementation, this would generate a secure random key
-      // For now, create a simulated key of the requested size
-      let byteCount=size / 8
-      var bytes=[UInt8](repeating: 0, count: byteCount)
-      _=SecRandomCopyBytes(kSecRandomDefault, byteCount, &bytes)
-
-      return .success(SecureBytes(bytes: bytes))
-    }
+    CryptoServiceAdapter(cryptoService: CryptoServices.CryptoServiceFactory.createDefaultService())
   }
 
   /**
    Creates the default key management service.
-
-   - Returns: A KeyManagementProtocol instance
+   
+   - Returns: A properly configured key management service
    */
   private static func createDefaultKeyManager() -> KeyManagementProtocol {
-    DefaultKeyManager()
+    KeyManagementAdapter(keyManager: SecurityKeyManagement.KeyManagementFactory.createDefaultManager())
+  }
+
+  // MARK: - Service Adapters
+
+  /**
+   Adapter to make CryptoServices.CryptoService compatible with CryptoServiceProtocol.
+   */
+  private final class CryptoServiceAdapter: CryptoServiceProtocol, Sendable {
+    private let cryptoService: CryptoServices.CryptoService
+    
+    init(cryptoService: CryptoServices.CryptoService) {
+      self.cryptoService = cryptoService
+    }
+    
+    // MARK: - Required protocol methods
+
+    /**
+     Encrypts binary data using the provided key.
+     */
+    func encrypt(data: SecureBytes, using key: SecureBytes) async -> Result<SecureBytes, SecurityProtocolError> {
+      do {
+        let encryptedData = try cryptoService.encrypt(data: data.extractUnderlyingData(), using: key.extractUnderlyingData())
+        return .success(SecureBytes(data: encryptedData))
+      } catch {
+        return .failure(.encryptionFailed(message: error.localizedDescription))
+      }
+    }
+    
+    /**
+     Decrypts binary data using the provided key.
+     */
+    func decrypt(data: SecureBytes, using key: SecureBytes) async -> Result<SecureBytes, SecurityProtocolError> {
+      do {
+        let decryptedData = try cryptoService.decrypt(data: data.extractUnderlyingData(), using: key.extractUnderlyingData())
+        return .success(SecureBytes(data: decryptedData))
+      } catch {
+        return .failure(.decryptionFailed(message: error.localizedDescription))
+      }
+    }
+    
+    /**
+     Computes a cryptographic hash of binary data.
+     */
+    func hash(data: SecureBytes) async -> Result<SecureBytes, SecurityProtocolError> {
+      do {
+        let hashedData = try cryptoService.hash(data: data.extractUnderlyingData())
+        return .success(SecureBytes(data: hashedData))
+      } catch {
+        return .failure(.hashingFailed(message: error.localizedDescription))
+      }
+    }
+    
+    /**
+     Verifies a cryptographic hash against the expected value.
+     */
+    func verifyHash(data: SecureBytes, expectedHash: SecureBytes) async -> Result<Bool, SecurityProtocolError> {
+      do {
+        let hashedData = try cryptoService.hash(data: data.extractUnderlyingData())
+        let expectedData = expectedHash.extractUnderlyingData()
+        return .success(hashedData == expectedData)
+      } catch {
+        return .failure(.hashingFailed(message: error.localizedDescription))
+      }
+    }
+  }
+
+  /**
+   Adapter to make SecurityKeyManagement.KeyManager compatible with KeyManagementProtocol.
+   */
+  private final class KeyManagementAdapter: KeyManagementProtocol, Sendable {
+    private let keyManager: SecurityKeyManagement.KeyManager
+    
+    init(keyManager: SecurityKeyManagement.KeyManager) {
+      self.keyManager = keyManager
+    }
+    
+    // MARK: - Required protocol methods
+    
+    /**
+     Retrieves a security key by its identifier.
+     */
+    func retrieveKey(withIdentifier identifier: String) async -> Result<SecureBytes, SecurityProtocolError> {
+      do {
+        let keyData = try keyManager.retrieveKey(withIdentifier: identifier)
+        return .success(SecureBytes(data: keyData))
+      } catch {
+        return .failure(.keyRetrievalFailed(message: error.localizedDescription))
+      }
+    }
+    
+    /**
+     Stores a security key with the given identifier.
+     */
+    func storeKey(_ key: SecureBytes, withIdentifier identifier: String) async -> Result<Void, SecurityProtocolError> {
+      do {
+        try keyManager.storeKey(key.extractUnderlyingData(), withIdentifier: identifier)
+        return .success(())
+      } catch {
+        return .failure(.keyStorageFailed(message: error.localizedDescription))
+      }
+    }
+    
+    /**
+     Deletes a security key with the given identifier.
+     */
+    func deleteKey(withIdentifier identifier: String) async -> Result<Void, SecurityProtocolError> {
+      do {
+        try keyManager.deleteKey(withIdentifier: identifier)
+        return .success(())
+      } catch {
+        return .failure(.keyDeletionFailed(message: error.localizedDescription))
+      }
+    }
+    
+    /**
+     Rotates a security key, creating a new key and optionally re-encrypting data.
+     */
+    func rotateKey(
+      withIdentifier identifier: String,
+      dataToReencrypt: SecureBytes?
+    ) async -> Result<(newKey: SecureBytes, reencryptedData: SecureBytes?), SecurityProtocolError> {
+      do {
+        let dataToProcess = dataToReencrypt?.extractUnderlyingData()
+        let (newKey, reencryptedData) = try keyManager.rotateKey(
+          withIdentifier: identifier,
+          dataToReencrypt: dataToProcess
+        )
+        
+        let secureNewKey = SecureBytes(data: newKey)
+        var secureReencryptedData: SecureBytes?
+        
+        if let reencryptedData = reencryptedData {
+          secureReencryptedData = SecureBytes(data: reencryptedData)
+        }
+        
+        return .success((newKey: secureNewKey, reencryptedData: secureReencryptedData))
+      } catch {
+        return .failure(.keyRotationFailed(message: error.localizedDescription))
+      }
+    }
+    
+    /**
+     Lists all available key identifiers.
+     */
+    func listKeyIdentifiers() async -> Result<[String], SecurityProtocolError> {
+      do {
+        let identifiers = try keyManager.listKeyIdentifiers()
+        return .success(identifiers)
+      } catch {
+        return .failure(.operationFailed(message: error.localizedDescription))
+      }
+    }
   }
 }

@@ -6,7 +6,7 @@ import SecurityCoreTypes
 /**
  # Security Provider Adapter
 
- This class implements the adapter pattern to bridge between the CoreSecurityProviderProtocol
+ This actor implements the adapter pattern to bridge between the CoreSecurityProviderProtocol
  and the full SecurityProviderProtocol implementation.
 
  ## Purpose
@@ -14,6 +14,7 @@ import SecurityCoreTypes
  - Provides a simplified interface for core modules to access security functionality
  - Delegates operations to the actual security implementation
  - Converts between data types as necessary
+ - Ensures thread safety through the actor concurrency model
 
  ## Design Pattern
 
@@ -21,7 +22,7 @@ import SecurityCoreTypes
  one interface (CoreSecurityProviderProtocol) while wrapping an instance of another
  interface (SecurityProviderProtocol).
  */
-public class SecurityProviderAdapter: CoreSecurityProviderProtocol {
+public actor SecurityProviderAdapter: CoreSecurityProviderProtocol, Sendable {
   // MARK: - Properties
 
   /**
@@ -39,7 +40,7 @@ public class SecurityProviderAdapter: CoreSecurityProviderProtocol {
    - Parameter securityProvider: The security provider implementation to adapt
    */
   public init(securityProvider: SecurityCoreInterfaces.SecurityProviderProtocol) {
-    self.securityProvider=securityProvider
+    self.securityProvider = securityProvider
   }
 
   // MARK: - CoreSecurityProviderProtocol Implementation
@@ -47,12 +48,131 @@ public class SecurityProviderAdapter: CoreSecurityProviderProtocol {
   /**
    Initialises the security provider
 
-   Delegates to the underlying security provider implementation.
+   This method ensures the underlying security provider is properly initialised.
+   With actor-based implementations, this may redirect to the underlying provider's
+   initialize() method.
 
    - Throws: SecurityError if initialisation fails
    */
   public func initialise() async throws {
-    try await securityProvider.initialise()
+    try await securityProvider.initialize()
+  }
+
+  /**
+   Encrypts data with the provided key
+
+   Delegates to the underlying security provider implementation.
+
+   - Parameters:
+     - data: The data to encrypt
+     - key: The encryption key
+   - Returns: The encrypted data
+   - Throws: SecurityError if encryption fails
+   */
+  public func encrypt(data: Data, key: Data) async throws -> Data {
+    // Create the secure bytes from data
+    let secureData = SecureBytes(data: data)
+    let secureKey = SecureBytes(data: key)
+    
+    // Create the configuration for encryption
+    let config = SecurityConfigDTO(
+      operation: .encrypt,
+      key: secureKey,
+      data: secureData,
+      algorithm: "AES",
+      mode: "GCM"
+    )
+    
+    // Perform encryption
+    let result = try await securityProvider.encrypt(config: config)
+    
+    // Return the encrypted data
+    return result.processedData.extractUnderlyingData()
+  }
+
+  /**
+   Decrypts data with the provided key
+
+   Delegates to the underlying security provider implementation.
+
+   - Parameters:
+     - data: The data to decrypt
+     - key: The decryption key
+   - Returns: The decrypted data
+   - Throws: SecurityError if decryption fails
+   */
+  public func decrypt(data: Data, key: Data) async throws -> Data {
+    // Create the secure bytes from data
+    let secureData = SecureBytes(data: data)
+    let secureKey = SecureBytes(data: key)
+    
+    // Create the configuration for decryption
+    let config = SecurityConfigDTO(
+      operation: .decrypt,
+      key: secureKey,
+      data: secureData,
+      algorithm: "AES",
+      mode: "GCM"
+    )
+    
+    // Perform decryption
+    let result = try await securityProvider.decrypt(config: config)
+    
+    // Return the decrypted data
+    return result.processedData.extractUnderlyingData()
+  }
+
+  /**
+   Generates a secure random key of the specified length
+
+   Delegates to the underlying security provider implementation.
+
+   - Parameter length: The length of the key in bytes
+   - Returns: A secure random key
+   - Throws: SecurityError if key generation fails
+   */
+  public func generateKey(length: Int) async throws -> Data {
+    let result = try await securityProvider.generateEncryptionKey(keySize: length * 8)
+    return result.processedData.extractUnderlyingData()
+  }
+
+  /**
+   Stores a key securely
+
+   Delegates to the underlying security provider implementation.
+
+   - Parameters:
+     - key: The key to store
+     - identifier: The identifier for retrieving the key
+   - Throws: SecurityError if key storage fails
+   */
+  public func storeKey(_ key: Data, identifier: String) async throws {
+    let secureKey = SecureBytes(data: key)
+    let result = await securityProvider.storeKey(secureKey, withIdentifier: identifier)
+    
+    if case .failure(let error) = result {
+      throw SecurityError.keyStorageFailed(message: error.localizedDescription)
+    }
+  }
+
+  /**
+   Retrieves a stored key by its identifier
+
+   Delegates to the underlying security provider implementation.
+
+   - Parameter identifier: The identifier of the key to retrieve
+   - Returns: The retrieved key
+   - Throws: SecurityError if key retrieval fails
+   */
+  public func retrieveKey(identifier: String) async throws -> Data {
+    let result = await securityProvider.retrieveKey(withIdentifier: identifier)
+    
+    switch result {
+    case .success(let key):
+      return key.extractUnderlyingData()
+    case .failure(let error):
+      throw SecurityError.keyRetrievalFailed(message: error.localizedDescription)
+    }
   }
 
   /**
@@ -99,4 +219,19 @@ public class SecurityProviderAdapter: CoreSecurityProviderProtocol {
   public func verifySignature(data: Data, signature: Data) async throws -> Bool {
     try await securityProvider.verify(data: data, signature: signature)
   }
+}
+
+/**
+ # Security Error
+ 
+ Error type for security operations through the adapter.
+ */
+public enum SecurityError: Error, Sendable {
+  case encryptionFailed(message: String)
+  case decryptionFailed(message: String)
+  case keyGenerationFailed(message: String)
+  case keyStorageFailed(message: String)
+  case keyRetrievalFailed(message: String)
+  case initialisation(message: String)
+  case invalidInput(message: String)
 }

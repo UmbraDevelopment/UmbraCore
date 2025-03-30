@@ -18,11 +18,12 @@ import SecurityCoreTypes
  let securityProvider = await SecurityImplementation.createSecurityProvider()
 
  // Use the provider to perform security operations
- let config = securityProvider.createSecureConfig(options: [
-     "algorithm": "AES",
-     "keySize": 256,
-     "mode": "GCM"
- ])
+ var options = SecurityConfigOptions()
+ options.algorithm = "AES"
+ options.keySize = 256
+ options.mode = "GCM"
+ 
+ let config = await securityProvider.createSecureConfig(options: options)
 
  let result = await securityProvider.encrypt(config: config)
  ```

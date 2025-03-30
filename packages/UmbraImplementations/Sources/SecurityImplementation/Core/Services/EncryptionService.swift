@@ -113,7 +113,7 @@ final class EncryptionService: SecurityServiceBase {
       }
 
       // Perform the encryption using the crypto service
-      let encryptedData=await performEncryption(data: inputData, key: key, iv: iv)
+      let encryptedData=try await performEncryption(data: inputData, key: key, iv: iv)
 
       // Calculate duration for performance metrics
       let duration=Date().timeIntervalSince(startTime) * 1000
@@ -213,7 +213,7 @@ final class EncryptionService: SecurityServiceBase {
       }
 
       // Perform the decryption
-      let decryptedData=await performDecryption(data: inputData, key: key, iv: iv)
+      let decryptedData=try await performDecryption(data: inputData, key: key, iv: iv)
 
       // Calculate duration for performance metrics
       let duration=Date().timeIntervalSince(startTime) * 1000
@@ -278,7 +278,7 @@ final class EncryptionService: SecurityServiceBase {
     do {
       // Convert SecureBytes to Data if necessary based on the crypto service implementation
       if let dataMethod=cryptoService as? HasDataEncryption {
-        let result=await dataMethod.encrypt(
+        let result=try await dataMethod.encrypt(
           data: data.extractUnderlyingData(),
           key: key.extractUnderlyingData()
         )
@@ -309,7 +309,7 @@ final class EncryptionService: SecurityServiceBase {
     do {
       // Convert SecureBytes to Data if necessary based on the crypto service implementation
       if let dataMethod=cryptoService as? HasDataEncryption {
-        let result=await dataMethod.decrypt(
+        let result=try await dataMethod.decrypt(
           data: data.extractUnderlyingData(),
           key: key.extractUnderlyingData()
         )

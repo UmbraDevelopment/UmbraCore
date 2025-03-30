@@ -81,7 +81,7 @@ final class SecureStorageService: SecurityServiceBase {
       config: config
     )
 
-    await logger.info("Starting secure storage operation", metadata: logMetadata)
+    await logger.info("Starting secure storage operation", metadata: logMetadata, source: "SecureStorageService")
 
     do {
       // Extract required parameters from configuration
@@ -112,16 +112,16 @@ final class SecureStorageService: SecurityServiceBase {
           let duration=Date().timeIntervalSince(startTime) * 1000
 
           // Create success metadata for logging
-          let successMetadata: LoggingInterfaces.LogMetadata=[
-            "operationId": operationID,
-            "operation": String(describing: operation),
-            "storageIdentifier": identifier,
-            "durationMs": String(format: "%.2f", duration)
-          ]
+          let successMetadata = LoggingTypes.LogMetadata()
+          successMetadata["operationId"] = .string(operationID)
+          successMetadata["operation"] = .string(String(describing: operation))
+          successMetadata["storageIdentifier"] = .string(identifier)
+          successMetadata["durationMs"] = .string(String(format: "%.2f", duration))
 
           await logger.info(
             "Secure storage operation completed successfully",
-            metadata: successMetadata
+            metadata: successMetadata,
+            source: "SecureStorageService"
           )
 
           // Return successful result with identifier
@@ -142,16 +142,16 @@ final class SecureStorageService: SecurityServiceBase {
       let duration=Date().timeIntervalSince(startTime) * 1000
 
       // Create failure metadata for logging
-      let errorMetadata: LoggingInterfaces.LogMetadata=[
-        "operationId": operationID,
-        "operation": String(describing: operation),
-        "durationMs": String(format: "%.2f", duration),
-        "errorType": "\(type(of: error))"
-      ]
+      let errorMetadata = LoggingTypes.LogMetadata()
+      errorMetadata["operationId"] = .string(operationID)
+      errorMetadata["operation"] = .string(String(describing: operation))
+      errorMetadata["durationMs"] = .string(String(format: "%.2f", duration))
+      errorMetadata["errorType"] = .string("\(type(of: error))")
 
       await logger.error(
         "Secure storage operation failed: \(error.localizedDescription)",
-        metadata: errorMetadata
+        metadata: errorMetadata,
+        source: "SecureStorageService"
       )
 
       // Return failure result
@@ -184,7 +184,7 @@ final class SecureStorageService: SecurityServiceBase {
       config: config
     )
 
-    await logger.info("Starting secure retrieval operation", metadata: logMetadata)
+    await logger.info("Starting secure retrieval operation", metadata: logMetadata, source: "SecureStorageService")
 
     do {
       // Extract required parameters from configuration
@@ -226,16 +226,16 @@ final class SecureStorageService: SecurityServiceBase {
           let duration=Date().timeIntervalSince(startTime) * 1000
 
           // Create success metadata for logging
-          let successMetadata: LoggingInterfaces.LogMetadata=[
-            "operationId": operationID,
-            "operation": String(describing: operation),
-            "storageIdentifier": identifier,
-            "durationMs": String(format: "%.2f", duration)
-          ]
+          let successMetadata = LoggingTypes.LogMetadata()
+          successMetadata["operationId"] = .string(operationID)
+          successMetadata["operation"] = .string(String(describing: operation))
+          successMetadata["storageIdentifier"] = .string(identifier)
+          successMetadata["durationMs"] = .string(String(format: "%.2f", duration))
 
           await logger.info(
             "Secure retrieval operation completed successfully",
-            metadata: successMetadata
+            metadata: successMetadata,
+            source: "SecureStorageService"
           )
 
           // Return successful result with retrieved data
@@ -257,17 +257,17 @@ final class SecureStorageService: SecurityServiceBase {
       let duration=Date().timeIntervalSince(startTime) * 1000
 
       // Create failure metadata for logging
-      let errorMetadata: LoggingInterfaces.LogMetadata=[
-        "operationId": operationID,
-        "operation": String(describing: operation),
-        "durationMs": String(format: "%.2f", duration),
-        "errorType": "\(type(of: error))",
-        "errorMessage": error.localizedDescription
-      ]
+      let errorMetadata = LoggingTypes.LogMetadata()
+      errorMetadata["operationId"] = .string(operationID)
+      errorMetadata["operation"] = .string(String(describing: operation))
+      errorMetadata["durationMs"] = .string(String(format: "%.2f", duration))
+      errorMetadata["errorType"] = .string("\(type(of: error))")
+      errorMetadata["errorMessage"] = .string(error.localizedDescription)
 
       await logger.error(
         "Secure retrieval operation failed: \(error.localizedDescription)",
-        metadata: errorMetadata
+        metadata: errorMetadata,
+        source: "SecureStorageService"
       )
 
       // Return failure result
@@ -300,7 +300,7 @@ final class SecureStorageService: SecurityServiceBase {
       config: config
     )
 
-    await logger.info("Starting secure deletion operation", metadata: logMetadata)
+    await logger.info("Starting secure deletion operation", metadata: logMetadata, source: "SecureStorageService")
 
     do {
       // Extract required parameters from configuration
@@ -321,16 +321,16 @@ final class SecureStorageService: SecurityServiceBase {
       let duration=Date().timeIntervalSince(startTime) * 1000
 
       // Create success metadata for logging
-      let successMetadata: LoggingInterfaces.LogMetadata=[
-        "operationId": operationID,
-        "operation": String(describing: operation),
-        "storageIdentifier": identifier,
-        "durationMs": String(format: "%.2f", duration)
-      ]
+      let successMetadata = LoggingTypes.LogMetadata()
+      successMetadata["operationId"] = .string(operationID)
+      successMetadata["operation"] = .string(String(describing: operation))
+      successMetadata["storageIdentifier"] = .string(identifier)
+      successMetadata["durationMs"] = .string(String(format: "%.2f", duration))
 
       await logger.info(
         "Secure deletion operation completed successfully",
-        metadata: successMetadata
+        metadata: successMetadata,
+        source: "SecureStorageService"
       )
 
       // Return successful result
@@ -346,17 +346,17 @@ final class SecureStorageService: SecurityServiceBase {
       let duration=Date().timeIntervalSince(startTime) * 1000
 
       // Create failure metadata for logging
-      let errorMetadata: LoggingInterfaces.LogMetadata=[
-        "operationId": operationID,
-        "operation": String(describing: operation),
-        "durationMs": String(format: "%.2f", duration),
-        "errorType": "\(type(of: error))",
-        "errorMessage": error.localizedDescription
-      ]
+      let errorMetadata = LoggingTypes.LogMetadata()
+      errorMetadata["operationId"] = .string(operationID)
+      errorMetadata["operation"] = .string(String(describing: operation))
+      errorMetadata["durationMs"] = .string(String(format: "%.2f", duration))
+      errorMetadata["errorType"] = .string("\(type(of: error))")
+      errorMetadata["errorMessage"] = .string(error.localizedDescription)
 
       await logger.error(
         "Secure deletion operation failed: \(error.localizedDescription)",
-        metadata: errorMetadata
+        metadata: errorMetadata,
+        source: "SecureStorageService"
       )
 
       // Return failure result

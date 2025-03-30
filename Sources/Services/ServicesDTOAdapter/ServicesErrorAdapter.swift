@@ -156,21 +156,21 @@ public enum ServicesErrorAdapter {
     details["errorDomain"]=error._domain
 
     // Extract specific information for certain error types
-    if let nsError=error as? NSError {
-      // Add userInfo keys that might be useful
-      if let failureReason=nsError.localizedFailureReason {
+    let nsError = error as NSError
+    
+    // Add userInfo keys that might be useful
+    if let failureReason=nsError.localizedFailureReason {
         details["failureReason"]=failureReason
-      }
-      if let recoverySuggestion=nsError.localizedRecoverySuggestion {
+    }
+    if let recoverySuggestion=nsError.localizedRecoverySuggestion {
         details["recoverySuggestion"]=recoverySuggestion
-      }
+    }
 
-      // Extract any service or account information that might be in the userInfo
-      for (key, value) in nsError.userInfo
-        where key.contains("service") || key.contains("account")
-      {
-        details[key]=String(describing: value)
-      }
+    // Extract any service or account information that might be in the userInfo
+    for (key, value) in nsError.userInfo
+      where key.contains("service") || key.contains("account")
+    {
+      details[key]=String(describing: value)
     }
 
     return details
@@ -188,21 +188,21 @@ public enum ServicesErrorAdapter {
     details["errorDomain"]=error._domain
 
     // Extract specific information for certain error types
-    if let nsError=error as? NSError {
-      // Add userInfo keys that might be useful
-      if let failureReason=nsError.localizedFailureReason {
+    let nsError = error as NSError
+    
+    // Add userInfo keys that might be useful
+    if let failureReason=nsError.localizedFailureReason {
         details["failureReason"]=failureReason
-      }
-      if let recoverySuggestion=nsError.localizedRecoverySuggestion {
+    }
+    if let recoverySuggestion=nsError.localizedRecoverySuggestion {
         details["recoverySuggestion"]=recoverySuggestion
-      }
+    }
 
-      // Extract any algorithm or operation information that might be in the userInfo
-      for (key, value) in nsError.userInfo
-        where key.contains("algorithm") || key.contains("operation")
-      {
-        details[key]=String(describing: value)
-      }
+    // Extract any algorithm or operation information that might be in the userInfo
+    for (key, value) in nsError.userInfo
+      where key.contains("algorithm") || key.contains("operation")
+    {
+      details[key]=String(describing: value)
     }
 
     return details

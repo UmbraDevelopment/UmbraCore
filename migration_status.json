@@ -22,7 +22,11 @@
       "ResticInterfaces",
       "BackupInterfaces",
       "BackupServices",
-      "ResticServices"
+      "ResticServices",
+      "ErrorLoggingServices",
+      "LoggingServices",
+      "LoggingInterfaces",
+      "LoggingTypes"
     ],
     "migration_date": "2025-03-27",
     "blocking_issues": [],
@@ -175,7 +179,8 @@
       "UmbraLoggingAdapters",
       "Repository",
       "ResticServices",
-      "BackupServices"
+      "BackupServices",
+      "ErrorLoggingServices"
     ],
     "migration_date": "2025-03-27",
     "blocking_issues": [],
@@ -368,5 +373,59 @@
     "migration_date": "2025-03-28",
     "blocking_issues": [],
     "notes": "Successfully migrated to Alpha Dot Five architecture. Refactored implementation classes for improved modularity, implemented factory pattern for command creation, and added comprehensive error mapping. Improved code organisation with proper separation of concerns."
+  },
+  "ErrorLoggingServices": {
+    "status": "Completed",
+    "dependencies": [
+      "UmbraErrors",
+      "LoggingInterfaces",
+      "LoggingTypes",
+      "LoggingServices"
+    ],
+    "dependents": [],
+    "migration_date": "2025-03-29",
+    "blocking_issues": [],
+    "notes": "Successfully migrated from ErrorHandling/Logging to Alpha Dot Five architecture with proper actor-based implementation and privacy controls."
+  },
+  "LoggingServices": {
+    "status": "Completed",
+    "dependencies": [
+      "LoggingInterfaces",
+      "LoggingTypes",
+      "UmbraErrors"
+    ],
+    "dependents": [
+      "ErrorLoggingServices"
+    ],
+    "migration_date": "2025-03-29",
+    "blocking_issues": [],
+    "notes": "Successfully migrated UmbraLogging to Alpha Dot Five architecture with OSLog integration and privacy controls."
+  },
+  "LoggingInterfaces": {
+    "status": "Completed",
+    "dependencies": [
+      "LoggingTypes"
+    ],
+    "dependents": [
+      "LoggingServices",
+      "ErrorLoggingServices"
+    ],
+    "migration_date": "2025-03-29",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture with proper interface definitions."
+  },
+  "LoggingTypes": {
+    "status": "Completed",
+    "dependencies": [
+      "UmbraErrors"
+    ],
+    "dependents": [
+      "LoggingInterfaces",
+      "LoggingServices",
+      "ErrorLoggingServices"
+    ],
+    "migration_date": "2025-03-29",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture with LogPrivacy features for enhanced data security."
   }
 }

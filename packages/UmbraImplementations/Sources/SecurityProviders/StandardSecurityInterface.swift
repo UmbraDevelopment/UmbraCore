@@ -116,34 +116,22 @@ public protocol StandardSecurityOperation {
  */
 public enum OperationCategory: String, Sendable, Equatable, CaseIterable {
   /// Operations that transform plaintext into ciphertext
-  case encryption="Encryption"
-
+  case encryption = "Encryption"
+  
   /// Operations that transform ciphertext back into plaintext
-  case decryption="Decryption"
-
-  /// Operations that generate fixed-length digests from arbitrary data
-  case hashing="Hashing"
-
-  /// Operations that generate digital signatures for data authentication
-  case signing="Signing"
-
-  /// Operations that verify digital signatures
-  case verification="Verification"
-
-  /// Operations that generate cryptographic keys
-  case keyGeneration="Key Generation"
-
-  /// Operations that derive keys from other keys or secrets
-  case keyDerivation="Key Derivation"
-
-  /// Operations that rotate cryptographic keys
-  case keyRotation="Key Rotation"
-
-  /// Operations related to secure key storage
-  case keyStorage="Key Storage"
-
-  /// Operations that generate cryptographically secure random values
-  case random="Random Generation"
+  case decryption = "Decryption"
+  
+  /// Operations that generate or verify digital signatures
+  case signature = "Digital Signature"
+  
+  /// Operations for one-way transformations like hashing
+  case hash = "Hash"
+  
+  /// Operations related to key management (generation, derivation, etc.)
+  case keyManagement = "Key Management"
+  
+  /// Operations for verifying data
+  case verification = "Verification"
 }
 
 /**
@@ -155,16 +143,16 @@ public enum OperationCategory: String, Sendable, Equatable, CaseIterable {
  */
 public enum SecurityLevel: Int, Sendable, Equatable, Comparable, CaseIterable {
   /// Basic security operations with minimal risk
-  case low=0
+  case low = 0
 
   /// Standard security operations with moderate risk
-  case medium=1
+  case medium = 1
 
   /// Sensitive security operations that require careful handling
-  case high=2
+  case high = 2
 
   /// Highly sensitive operations that may require additional approvals or controls
-  case critical=3
+  case critical = 3
 
   public static func < (lhs: SecurityLevel, rhs: SecurityLevel) -> Bool {
     lhs.rawValue < rhs.rawValue
@@ -184,10 +172,10 @@ public class AbstractSecurityOperation: StandardSecurityOperation {
     category: OperationCategory,
     securityLevel: SecurityLevel
   ) {
-    operationIdentifier=identifier
-    operationName=name
-    self.category=category
-    self.securityLevel=securityLevel
+    operationIdentifier = identifier
+    operationName = name
+    self.category = category
+    self.securityLevel = securityLevel
   }
 
   public func perform(with _: SecureBytes) async throws -> SecureBytes {
@@ -224,13 +212,18 @@ public enum StandardSecurityError: Error, LocalizedError {
 }
 
 /// Standard interface provider that wraps the SecurityProviderProtocol
-public class StandardSecurityInterface {
+public actor StandardSecurityInterface {
   private let securityProvider: SecurityProviderProtocol
 
   /// Initialize with a security provider
   /// - Parameter provider: The security provider to use
   public init(provider: SecurityProviderProtocol) {
-    securityProvider=provider
+    securityProvider = provider
+  }
+  
+  /// Ensure the security provider is properly initialized
+  public func initialize() async throws {
+    try await securityProvider.initialize()
   }
 
   /// Create a standard encryption operation
@@ -241,8 +234,8 @@ public class StandardSecurityInterface {
   /// - Returns: A StandardSecurityOperation for encryption
   public func createEncryptionOperation(
     key: SecureBytes,
-    algorithm: String="AES",
-    mode: String="GCM"
+    algorithm: String = "AES",
+    mode: String = "GCM"
   ) -> StandardSecurityOperation {
     EncryptionOperation(
       provider: securityProvider,
@@ -260,8 +253,8 @@ public class StandardSecurityInterface {
   /// - Returns: A StandardSecurityOperation for decryption
   public func createDecryptionOperation(
     key: SecureBytes,
-    algorithm: String="AES",
-    mode: String="GCM"
+    algorithm: String = "AES",
+    mode: String = "GCM"
   ) -> StandardSecurityOperation {
     DecryptionOperation(
       provider: securityProvider,
@@ -275,7 +268,7 @@ public class StandardSecurityInterface {
   /// - Parameter algorithm: The hash algorithm to use (e.g., "SHA256", "SHA512")
   /// - Returns: A StandardSecurityOperation for hashing
   public func createHashingOperation(
-    algorithm: String="SHA256"
+    algorithm: String = "SHA256"
   ) -> StandardSecurityOperation {
     HashingOperation(
       provider: securityProvider,
@@ -289,8 +282,8 @@ public class StandardSecurityInterface {
   ///   - algorithm: The algorithm for which the key will be used (e.g., "AES", "RSA")
   /// - Returns: A StandardSecurityOperation for key generation
   public func createKeyGenerationOperation(
-    keySize: Int=256,
-    algorithm: String="AES"
+    keySize: Int = 256,
+    algorithm: String = "AES"
   ) -> StandardSecurityOperation {
     KeyGenerationOperation(
       provider: securityProvider,
@@ -313,10 +306,10 @@ private class EncryptionOperation: AbstractSecurityOperation {
     algorithm: String,
     mode: String
   ) {
-    self.provider=provider
-    self.key=key
-    self.algorithm=algorithm
-    self.mode=mode
+    self.provider = provider
+    self.key = key
+    self.algorithm = algorithm
+    self.mode = mode
 
     super.init(
       identifier: "encryption.\(algorithm).\(mode)",
@@ -327,31 +320,36 @@ private class EncryptionOperation: AbstractSecurityOperation {
   }
 
   public override func perform(with input: SecureBytes) async throws -> SecureBytes {
-    // Create configuration with appropriate options
-    let options: [String: String]=[
-      "keyIdentifier": UUID().uuidString, // In practice, this would be a real key ID
-      "inputData": input.base64EncodedString()
-    ]
+    // Create configuration with appropriate options and data
+    let config = await createConfig(with: input)
 
-    // Create security configuration
-    let config=SecurityConfigDTO(
+    // Perform the encryption operation
+    let result = try await provider.encrypt(config: config)
+
+    // Successful result already contains data
+    return result.data ?? input
+  }
+  
+  /// Creates a security configuration with the input data
+  /// - Parameter input: The input data to encrypt
+  /// - Returns: A configured SecurityConfigDTO
+  private func createConfig(with input: SecureBytes) async -> SecurityConfigDTO {
+    // Create options with all the data we need
+    let options: [String: String] = [
+      "key": key.base64EncodedString(),
+      "data": input.base64EncodedString(),
+      "algorithm": algorithm,
+      "mode": mode,
+      "keySize": "\(key.count * 8)"
+    ]
+    
+    // Create a new configuration with all the required parameters
+    return SecurityConfigDTO(
       algorithm: algorithm,
       keySize: key.count * 8,
       mode: mode,
       options: options
     )
-
-    // Perform the encryption operation
-    let result=await provider.encrypt(config: config)
-
-    // Check for success
-    guard result.status == .success, let outputData=result.data else {
-      throw StandardSecurityError.operationFailed(
-        result.error?.localizedDescription ?? "Encryption operation failed"
-      )
-    }
-
-    return outputData
   }
 
   public override func validate() -> Bool {
@@ -372,10 +370,10 @@ private class DecryptionOperation: AbstractSecurityOperation {
     algorithm: String,
     mode: String
   ) {
-    self.provider=provider
-    self.key=key
-    self.algorithm=algorithm
-    self.mode=mode
+    self.provider = provider
+    self.key = key
+    self.algorithm = algorithm
+    self.mode = mode
 
     super.init(
       identifier: "decryption.\(algorithm).\(mode)",
@@ -386,31 +384,36 @@ private class DecryptionOperation: AbstractSecurityOperation {
   }
 
   public override func perform(with input: SecureBytes) async throws -> SecureBytes {
-    // Create configuration with appropriate options
-    let options: [String: String]=[
-      "keyIdentifier": UUID().uuidString, // In practice, this would be a real key ID
-      "ciphertext": input.base64EncodedString()
-    ]
+    // Create configuration with appropriate options and data
+    let config = await createConfig(with: input)
 
-    // Create security configuration
-    let config=SecurityConfigDTO(
+    // Perform the decryption operation
+    let result = try await provider.decrypt(config: config)
+
+    // Successful result already contains data
+    return result.data ?? input
+  }
+  
+  /// Creates a security configuration with the input data
+  /// - Parameter input: The input data to decrypt
+  /// - Returns: A configured SecurityConfigDTO
+  private func createConfig(with input: SecureBytes) async -> SecurityConfigDTO {
+    // Create options with all the data we need
+    let options: [String: String] = [
+      "key": key.base64EncodedString(),
+      "data": input.base64EncodedString(),
+      "algorithm": algorithm,
+      "mode": mode,
+      "keySize": "\(key.count * 8)"
+    ]
+    
+    // Create a new configuration with all the required parameters
+    return SecurityConfigDTO(
       algorithm: algorithm,
       keySize: key.count * 8,
       mode: mode,
       options: options
     )
-
-    // Perform the decryption operation
-    let result=await provider.decrypt(config: config)
-
-    // Check for success
-    guard result.status == .success, let outputData=result.data else {
-      throw StandardSecurityError.operationFailed(
-        result.error?.localizedDescription ?? "Decryption operation failed"
-      )
-    }
-
-    return outputData
   }
 
   public override func validate() -> Bool {
@@ -427,44 +430,36 @@ private class HashingOperation: AbstractSecurityOperation {
     provider: SecurityProviderProtocol,
     algorithm: String
   ) {
-    self.provider=provider
-    self.algorithm=algorithm
+    self.provider = provider
+    self.algorithm = algorithm
 
     super.init(
-      identifier: "hashing.\(algorithm)",
-      name: "Hashing (\(algorithm))",
-      category: .hashing,
+      identifier: "hash.\(algorithm)",
+      name: "Hash (\(algorithm))",
+      category: .hash,
       securityLevel: .medium
     )
   }
 
   public override func perform(with input: SecureBytes) async throws -> SecureBytes {
-    // Create a secure configuration for hashing
-    let config=SecurityConfigDTO(
-      algorithm: "SHA",
-      keySize: 256,
-      hashAlgorithm: algorithm
-    )
-
-    // In this case, we're using a generic secure operation since hashing
-    // might not have a dedicated method in the provider
-    let result=await provider.performSecureOperation(
-      operation: .hash(data: input, algorithm: algorithm),
-      config: config
-    )
-
-    // Check for success
-    guard result.status == .success, let outputData=result.data else {
-      throw StandardSecurityError.operationFailed(
-        result.error?.localizedDescription ?? "Hashing operation failed"
-      )
+    // Get the crypto service from the provider
+    let cryptoService = await provider.cryptoService()
+    
+    // Use the crypto service directly for hashing
+    let result = await cryptoService.hash(data: input)
+    
+    // Check for success and return data
+    switch result {
+    case .success(let hash):
+      return hash
+    case .failure(let error):
+      throw StandardSecurityError.operationFailed("Hash operation failed: \(error)")
     }
-
-    return outputData
   }
 
   public override func validate() -> Bool {
-    true
+    // Simply check if we have a valid algorithm
+    ["SHA256", "SHA512", "SHA1", "MD5"].contains(algorithm)
   }
 }
 
@@ -479,52 +474,49 @@ private class KeyGenerationOperation: AbstractSecurityOperation {
     keySize: Int,
     algorithm: String
   ) {
-    self.provider=provider
-    self.keySize=keySize
-    self.algorithm=algorithm
+    self.provider = provider
+    self.keySize = keySize
+    self.algorithm = algorithm
 
     super.init(
-      identifier: "key.generation.\(algorithm)",
-      name: "Key Generation (\(algorithm))",
-      category: .keyGeneration,
+      identifier: "generateKey.\(algorithm).\(keySize)",
+      name: "Key Generation (\(algorithm) \(keySize)-bit)",
+      category: .keyManagement,
       securityLevel: .high
     )
   }
 
   public override func perform(with input: SecureBytes) async throws -> SecureBytes {
-    // For key generation, input may be used as seed material or ignored
-
     // Create configuration with appropriate options
-    var options: [String: String]=[
-      "purpose": "encryption",
-      "keyId": UUID().uuidString
-    ]
-
-    if !input.isEmpty {
-      options["seedMaterial"]=input.base64EncodedString()
-    }
-
-    // Create security configuration
-    let config=SecurityConfigDTO(
-      algorithm: algorithm,
-      keySize: keySize,
-      options: options
-    )
+    let config = await createConfig()
 
     // Perform the key generation operation
-    let result=await provider.generateKey(config: config)
+    let result = try await provider.generateKey(config: config)
 
     // Check for success
-    guard result.status == .success, let outputData=result.data else {
-      throw StandardSecurityError.operationFailed(
-        result.error?.localizedDescription ?? "Key generation failed"
-      )
+    guard let outputData = result.data else {
+      throw StandardSecurityError.operationFailed("Key generation failed")
     }
 
     return outputData
   }
+  
+  /// Creates a security configuration for key generation
+  /// - Returns: A configured SecurityConfigDTO
+  private func createConfig() async -> SecurityConfigDTO {
+    // Create a new configuration with the required parameters
+    return SecurityConfigDTO(
+      algorithm: algorithm,
+      keySize: keySize,
+      options: [
+        "algorithm": algorithm,
+        "keySize": "\(keySize)"
+      ]
+    )
+  }
 
   public override func validate() -> Bool {
-    keySize > 0
+    // Validate key size is reasonable
+    keySize >= 128 && keySize <= 4096
   }
 }

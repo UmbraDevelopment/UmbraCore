@@ -364,26 +364,17 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
   }
 
   /**
-   Creates a secure configuration with appropriate defaults.
-
-   This method constructs a SecurityConfigDTO with sensible defaults
-   and incorporates any provided options.
-
-   - Parameter options: Optional dictionary of configuration options
+   Creates a secure configuration with type-safe, Sendable-compliant options.
+   
+   This method provides a Swift 6-compatible way to create security configurations
+   that can safely cross actor boundaries.
+   
+   - Parameter options: Type-safe options structure that conforms to Sendable
    - Returns: A properly configured SecurityConfigDTO
    */
-  public nonisolated func createSecureConfig(options: [String: Any]?) -> SecurityConfigDTO {
-    // Create a configuration with required parameters
-    let config=SecurityConfigDTO(
-      algorithm: "AES",
-      keySize: 256,
-      mode: "GCM",
-      hashAlgorithm: "SHA256",
-      options: options?.compactMapValues { "\($0)" } ?? [:]
-    )
-
-    // Set reasonable defaults
-    return config
+  public nonisolated func createSecureConfig(options: SecurityConfigOptions) async -> SecurityConfigDTO {
+    // Create a configuration with the provided options or defaults
+    return SecurityConfigDTO(options: options)
   }
 
   // MARK: - Helper Methods

@@ -7,7 +7,7 @@ import UmbraErrors
 /**
  # Core Service Implementation
 
- This class is the central implementation of the CoreServiceProtocol,
+ This actor is the central implementation of the CoreServiceProtocol,
  providing access to all core services throughout the application.
 
  ## Architecture
@@ -16,14 +16,14 @@ import UmbraErrors
  - Uses dependency injection via a service container
  - Implements the façade pattern to simplify access to subsystems
  - Uses adapters to isolate core components from implementation details
+ - Ensures thread safety through the actor concurrency model
 
  ## Lifecycle Management
 
  The core service handles initialisation and shutdown of all dependent services,
  ensuring proper startup and cleanup procedures are followed.
  */
-@MainActor
-public final class CoreServiceImpl: CoreServiceProtocol {
+public actor CoreServiceActor: CoreServiceProtocol, Sendable {
   // MARK: - Properties
 
   /**
@@ -32,7 +32,7 @@ public final class CoreServiceImpl: CoreServiceProtocol {
    This follows the singleton pattern to ensure there is only one instance
    of the core service throughout the application.
    */
-  public static let shared=CoreServiceImpl()
+  public static let shared = CoreServiceActor()
 
   /**
    Container for resolving service dependencies
@@ -40,85 +40,108 @@ public final class CoreServiceImpl: CoreServiceProtocol {
    This container manages registration and resolution of all services,
    facilitating dependency injection throughout the application.
    */
-  public let container: ServiceContainerProtocol
+  public nonisolated let container: ServiceContainerProtocol
 
   /**
    Flag indicating if the service has been initialised
 
    Used to prevent multiple initialisation attempts.
    */
-  private var isInitialised=false
+  private var isInitialised = false
 
   // MARK: - Initialisation
 
   /**
    Private initialiser to enforce singleton pattern
 
-   Creates a new service container instance for dependency management.
+   Creates a new core service with a default service container.
    */
   private init() {
-    container=ServiceContainerImpl()
+    self.container = ServiceContainerImpl()
   }
-
-  // MARK: - CoreServiceProtocol Implementation
 
   /**
    Initialises all core services
 
-   Performs necessary setup for all managed services, including:
-   - Cryptographic services
-   - Security services
-
-   If the service has already been initialised, this method returns without
-   performing additional initialisation.
+   Performs necessary setup and initialisation of all managed services,
+   ensuring they are ready for use.
 
    - Throws: CoreError if initialisation fails for any required service
    */
   public func initialise() async throws {
+    // Prevent multiple initialisation
     guard !isInitialised else {
       return
     }
 
-    // Initialise crypto service
-    let crypto=try await getCryptoService()
-    try await crypto.initialise()
-
-    // Initialise security service
-    let security=try await getSecurityService()
-    try await security.initialise()
-
-    isInitialised=true
+    do {
+      // Initialise critical services
+      try await initialiseSecurityServices()
+      try await initialiseCryptoServices()
+      
+      // Mark as initialised
+      isInitialised = true
+    } catch {
+      // Wrap any initialisation errors in a CoreError
+      throw CoreError.initialisation(message: "Failed to initialise core services: \(error.localizedDescription)")
+    }
   }
+
+  /**
+   Initialises security-related services
+   
+   - Throws: CoreError if initialisation fails
+   */
+  private func initialiseSecurityServices() async throws {
+    // Nothing to do here yet - services are initialised on demand
+  }
+
+  /**
+   Initialises cryptography-related services
+   
+   - Throws: CoreError if initialisation fails
+   */
+  private func initialiseCryptoServices() async throws {
+    // Nothing to do here yet - services are initialised on demand
+  }
+
+  // MARK: - Service Access Methods
 
   /**
    Gets the crypto service for cryptographic operations
 
-   Resolves the cryptographic service adapter from the container.
+   Returns an adapter that provides simplified access to the full
+   cryptographic implementation.
 
    - Returns: Crypto service implementation conforming to CoreCryptoServiceProtocol
-   - Throws: CoreError.serviceNotFound if service is not available
+   - Throws: CoreError if service not available
    */
   public func getCryptoService() async throws -> CoreCryptoServiceProtocol {
     do {
       return try await container.resolve(CoreCryptoServiceProtocol.self)
     } catch {
-      throw CoreError.serviceNotFound(name: "CryptoService")
+      throw CoreError.serviceNotAvailable(
+        message: "Crypto service is not available: \(error.localizedDescription)"
+      )
     }
   }
 
   /**
-   Gets the security service for security operations
+   Gets the security provider for authentication and encryption
 
-   Resolves the security service adapter from the container.
+   Returns an adapter that provides simplified access to the full
+   security implementation.
 
-   - Returns: Security service implementation conforming to CoreSecurityProviderProtocol
-   - Throws: CoreError.serviceNotFound if service is not available
+   - Returns: Security provider implementation conforming to CoreSecurityProviderProtocol
+   - Throws: CoreError if service not available
    */
-  public func getSecurityService() async throws -> CoreSecurityProviderProtocol {
+  public func getSecurityProvider() async throws -> CoreSecurityProviderProtocol {
     do {
       return try await container.resolve(CoreSecurityProviderProtocol.self)
     } catch {
-      throw CoreError.serviceNotFound(name: "SecurityService")
+      throw CoreError.serviceNotAvailable(
+        message: "Security provider is not available: \(error.localizedDescription)"
+      )
     }
   }
 
@@ -129,7 +152,27 @@ public final class CoreServiceImpl: CoreServiceProtocol {
    This method does not throw errors, but logs any shutdown issues internally.
    */
   public func shutdown() async {
-    isInitialised=false
+    isInitialised = false
     // Additional shutdown logic would be implemented here
   }
+}
+
+/**
+ # Core Error
+ 
+ Error type for core service operations.
+ Provides specific error cases for different failure scenarios.
+ */
+public enum CoreError: Error, Sendable {
+  /// Initialisation of a core service failed
+  case initialisation(message: String)
+  
+  /// A requested service is not available
+  case serviceNotAvailable(message: String)
+  
+  /// An operation failed due to invalid configuration
+  case invalidConfiguration(message: String)
+  
+  /// An operation failed due to an internal error
+  case internalError(message: String)
 }

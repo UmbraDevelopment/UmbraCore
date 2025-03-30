@@ -9,8 +9,8 @@ import LoggingTypes
 internal struct DefaultLogger: LoggingProtocol {
     public init() {}
     
-    public func debug(_ message: String, metadata: LoggingTypes.LogMetadata?) async {}
-    public func info(_ message: String, metadata: LoggingTypes.LogMetadata?) async {}
-    public func warning(_ message: String, metadata: LoggingTypes.LogMetadata?) async {}
-    public func error(_ message: String, metadata: LoggingTypes.LogMetadata?) async {}
+    public func debug(_ message: String, metadata: LoggingTypes.LogMetadata? = nil, source: String? = nil) async {}
+    public func info(_ message: String, metadata: LoggingTypes.LogMetadata? = nil, source: String? = nil) async {}
+    public func warning(_ message: String, metadata: LoggingTypes.LogMetadata? = nil, source: String? = nil) async {}
+    public func error(_ message: String, metadata: LoggingTypes.LogMetadata? = nil, source: String? = nil) async {}
 }
