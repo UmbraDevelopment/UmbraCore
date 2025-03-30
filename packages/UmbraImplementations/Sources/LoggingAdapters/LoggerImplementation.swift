@@ -3,15 +3,28 @@ import LoggingTypes
 import LoggingWrapperInterfaces
 import LoggingWrapperServices
 
-/// A thread-safe logging service implementation that adapts
-/// the LoggingInterfaces to LoggingWrapperServices
-public actor LoggerImplementation: LoggingProtocol, CoreLoggingProtocol {
+/**
+ # LoggerImplementation
+ 
+ A thread-safe logging service implementation that adapts the LoggingInterfaces
+ to LoggingWrapperServices following the Alpha Dot Five architecture.
+ 
+ This implementation provides:
+ - Actor-based concurrency for thread safety
+ - Privacy-aware logging with proper metadata handling
+ - Async/await API integration
+ */
+@preconcurrency public actor LoggerImplementation: LoggingProtocol, CoreLoggingProtocol {
   /// The shared logger instance
-  public static let shared=LoggerImplementation()
+  public static let shared = LoggerImplementation()
   
-  /// The underlying logging actor
-  public var loggingActor: LoggingActor {
-    self
+  /// The underlying logging actor for isolated access
+  private let _internalLoggingActor = LoggingInterfaces.LoggingActor(destinations: [])
+  
+  /// The underlying logging actor (nonisolated for protocol conformance)
+  public nonisolated var loggingActor: LoggingInterfaces.LoggingActor {
+    // Return the internal logging actor for nonisolated access
+    _internalLoggingActor
   }
 
   /// Initialise the logger with default configuration
@@ -20,177 +33,220 @@ public actor LoggerImplementation: LoggingProtocol, CoreLoggingProtocol {
     Logger.configure()
   }
 
-  /// Initialise the logger with specific destinations
-  /// - Parameter destinations: Array of log destinations
-  private init(destinations _: [Any]) {
-    // LoggingWrapper handles destinations internally
-    Logger.configure()
-  }
-
   /// Swift 6-compatible factory method to create a logger with specific destinations
   /// - Parameter destinations: Array of Sendable-compliant destinations
   /// - Returns: A new LoggerImplementation instance
-  public static func withDestinations(_: [some Sendable]) -> LoggerImplementation {
-    // Create a new logger instance with default configuration
-    // LoggingWrapper doesn't expose destination configuration in the same way as SwiftyBeaver
-    let logger=LoggerImplementation()
-
+  public static func withDestinations(_ destinations: [some Sendable]) -> LoggerImplementation {
+    // Create a new logger instance
+    let logger = LoggerImplementation()
+    
     // Configure the logger
     Logger.configure()
-
+    
     return logger
   }
 
   /// Log a message at the specified level
   /// - Parameter entry: The log entry to record
   private func log(_ entry: LoggingTypes.LogEntry) {
-    let logLevel=LoggingLevelAdapter.convertLevel(entry.level)
+    // Convert LoggingTypes.LogLevel to UmbraLogLevel for the adapter
+    let umbraLevel = convertToUmbraLevel(entry.level)
+    let logLevel = LoggingLevelAdapter.convertLevel(umbraLevel)
 
-    if let metadata=entry.metadata {
+    if let metadata = entry.metadata {
       // If we have metadata, include it in the message
-      let sourceInfo=entry.source != nil ? " | Source: \(entry.source!)" : ""
-      Logger.log(logLevel, "\(entry.message)\(sourceInfo) | Metadata: \(formatMetadata(metadata))")
+      let sourceInfo = !entry.source.isEmpty ? " | Source: \(entry.source)" : ""
+      let metadataInfo = " | Metadata: \(formatMetadata(metadata))"
+      Logger.log(logLevel, "\(entry.message)\(sourceInfo)\(metadataInfo)")
     } else {
-      let sourceInfo=entry.source != nil ? " | Source: \(entry.source!)" : ""
+      // Simple log without metadata
+      let sourceInfo = !entry.source.isEmpty ? " | Source: \(entry.source)" : ""
       Logger.log(logLevel, "\(entry.message)\(sourceInfo)")
     }
   }
+  
+  /// Converts LoggingTypes.LogLevel to UmbraLogLevel
+  /// - Parameter level: The LogLevel to convert
+  /// - Returns: The equivalent UmbraLogLevel
+  private func convertToUmbraLevel(_ level: LoggingTypes.LogLevel) -> UmbraLogLevel {
+    switch level {
+      case .trace:
+        return .verbose
+      case .debug:
+        return .debug
+      case .info:
+        return .info
+      case .warning:
+        return .warning
+      case .error:
+        return .error
+      case .critical:
+        return .critical
+    }
+  }
 
-  /// Format metadata into a string representation
+  /// Format metadata for logging
   /// - Parameter metadata: The metadata to format
-  /// - Returns: A string representation of the metadata
-  private func formatMetadata(_ metadata: LoggingTypes.PrivacyMetadata) -> String {
-    let dict = metadata.entries().reduce(into: [String: String]()) { result, key in
-        if let value = metadata[key] {
-            result[key] = String(describing: value)
-        }
+  /// - Returns: A formatted string representation of the metadata
+  private func formatMetadata(_ metadata: LoggingTypes.PrivacyMetadata?) -> String {
+    guard let metadata = metadata else { return "{}" }
+    
+    // Format the keys and values from the metadata entries
+    let entries = metadata.entries().map { key in
+      if let value = metadata[key] {
+        return "\(key)=\(String(describing: value))"
+      } else {
+        return "\(key)=nil"
+      }
     }
     
-    if dict.isEmpty {
+    if entries.isEmpty {
       return "{}"
     }
-
-    let entries=dict.map { key, value in
-      "\"\(key)\": \"\(value)\""
-    }
+    
+    // Return formatted string
     return "{ \(entries.joined(separator: ", ")) }"
   }
   
-  /// Log a message with the specified level and context
-  /// - Parameters:
-  ///   - level: The severity level of the log
-  ///   - message: The message to log
-  ///   - context: The context information for the log
-  public func logMessage(_ level: LogLevel, _ message: String, context: LogContext) async {
-    await log(LoggingTypes.LogEntry(
-      timestamp: LogTimestamp.now(),
-      level: level,
-      message: message,
-      metadata: context.metadata,
-      source: context.source,
-      entryID: nil
-    ))
-  }
-
   // MARK: - LoggingProtocol Implementation
-  
-  /// Log a trace message
-  /// - Parameters:
-  ///   - message: The message to log
-  ///   - metadata: Optional metadata
-  ///   - source: Source component identifier
-  public func trace(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {
-    await log(LoggingTypes.LogEntry(
-      timestamp: LogTimestamp.now(),
-      level: .trace,
-      message: message,
-      metadata: metadata,
-      source: source,
-      entryID: nil
-    ))
-  }
 
-  /// Log a debug message
-  /// - Parameters:
-  ///   - message: The message to log
-  ///   - metadata: Optional metadata
-  ///   - source: Optional source component identifier
-  public func debug(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {
-    await log(LoggingTypes.LogEntry(
-      timestamp: LogTimestamp.now(),
-      level: .debug,
-      message: message,
-      metadata: metadata,
-      source: source,
-      entryID: nil
-    ))
-  }
-
-  /// Log an info message
-  /// - Parameters:
-  ///   - message: The message to log
-  ///   - metadata: Optional metadata
-  ///   - source: Optional source component identifier
-  public func info(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {
-    await log(LoggingTypes.LogEntry(
-      timestamp: LogTimestamp.now(),
-      level: .info,
-      message: message,
-      metadata: metadata,
-      source: source,
-      entryID: nil
-    ))
-  }
-
-  /// Log a warning message
-  /// - Parameters:
-  ///   - message: The message to log
-  ///   - metadata: Optional metadata
-  ///   - source: Optional source component identifier
-  public func warning(
+  public func trace(
     _ message: String,
-    metadata: LoggingTypes.PrivacyMetadata?,
+    metadata: PrivacyMetadata?,
     source: String
   ) async {
+    // Log locally
     await log(LoggingTypes.LogEntry(
-      timestamp: LogTimestamp.now(),
-      level: .warning,
+      level: LoggingTypes.LogLevel.trace,
       message: message,
       metadata: metadata,
       source: source,
-      entryID: nil
+      entryID: nil,
+      timestamp: await LogTimestamp.now()
     ))
+    
+    // Also log to the actor
+    let context = LogContext(source: source)
+    await self.loggingActor.log(level: .trace, message: message, context: context)
   }
 
-  /// Log an error message
-  /// - Parameters:
-  ///   - message: The message to log
-  ///   - metadata: Optional metadata
-  ///   - source: Optional source component identifier
-  public func error(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {
+  public func debug(
+    _ message: String,
+    metadata: PrivacyMetadata?,
+    source: String
+  ) async {
+    // Log locally
     await log(LoggingTypes.LogEntry(
-      timestamp: LogTimestamp.now(),
-      level: .error,
+      level: LoggingTypes.LogLevel.debug,
       message: message,
       metadata: metadata,
       source: source,
-      entryID: nil
+      entryID: nil,
+      timestamp: await LogTimestamp.now()
     ))
+    
+    // Also log to the actor
+    let context = LogContext(source: source)
+    await self.loggingActor.log(level: .debug, message: message, context: context)
   }
-  
-  /// Log a critical message
-  /// - Parameters:
-  ///   - message: The message to log
-  ///   - metadata: Optional metadata
-  ///   - source: Source component identifier
-  public func critical(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {
+
+  public func info(
+    _ message: String,
+    metadata: PrivacyMetadata?,
+    source: String
+  ) async {
+    // Log locally
     await log(LoggingTypes.LogEntry(
-      timestamp: LogTimestamp.now(),
-      level: .critical,
+      level: LoggingTypes.LogLevel.info,
       message: message,
       metadata: metadata,
       source: source,
-      entryID: nil
+      entryID: nil,
+      timestamp: await LogTimestamp.now()
     ))
+    
+    // Also log to the actor
+    let context = LogContext(source: source)
+    await self.loggingActor.log(level: .info, message: message, context: context)
+  }
+
+  public func warning(
+    _ message: String,
+    metadata: PrivacyMetadata?,
+    source: String
+  ) async {
+    // Log locally
+    await log(LoggingTypes.LogEntry(
+      level: LoggingTypes.LogLevel.warning,
+      message: message,
+      metadata: metadata,
+      source: source,
+      entryID: nil,
+      timestamp: await LogTimestamp.now()
+    ))
+    
+    // Also log to the actor
+    let context = LogContext(source: source)
+    await self.loggingActor.log(level: .warning, message: message, context: context)
+  }
+
+  public func error(
+    _ message: String,
+    metadata: PrivacyMetadata?,
+    source: String
+  ) async {
+    // Log locally
+    await log(LoggingTypes.LogEntry(
+      level: LoggingTypes.LogLevel.error,
+      message: message,
+      metadata: metadata,
+      source: source,
+      entryID: nil,
+      timestamp: await LogTimestamp.now()
+    ))
+    
+    // Also log to the actor
+    let context = LogContext(source: source)
+    await self.loggingActor.log(level: .error, message: message, context: context)
+  }
+
+  public func critical(
+    _ message: String,
+    metadata: PrivacyMetadata?,
+    source: String
+  ) async {
+    // Log locally
+    await log(LoggingTypes.LogEntry(
+      level: LoggingTypes.LogLevel.critical,
+      message: message,
+      metadata: metadata,
+      source: source,
+      entryID: nil,
+      timestamp: await LogTimestamp.now()
+    ))
+    
+    // Also log to the actor
+    let context = LogContext(source: source)
+    await self.loggingActor.log(level: .critical, message: message, context: context)
+  }
+
+  /// Log a message with the specified log level and context
+  /// - Parameters:
+  ///   - level: The level to log at
+  ///   - message: The message to log
+  ///   - context: The context information for the log
+  public func logMessage(_ level: LoggingTypes.LogLevel, _ message: String, context: LogContext) async {
+    // Log locally
+    await log(LoggingTypes.LogEntry(
+      level: level,
+      message: message,
+      metadata: nil,
+      source: context.source,
+      entryID: nil,
+      timestamp: await LogTimestamp.now()
+    ))
+    
+    // Also log to the actor
+    await self.loggingActor.log(level: level, message: message, context: context)
   }
 }

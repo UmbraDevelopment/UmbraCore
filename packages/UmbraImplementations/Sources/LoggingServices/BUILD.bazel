@@ -33,6 +33,7 @@ umbra_swift_library(
         ],
         allow_empty = True,
     ),
+    tags = ["manual"],  # Prevent automatic building of examples
     testonly = True,
     visibility = ["//visibility:public"],
     deps = [

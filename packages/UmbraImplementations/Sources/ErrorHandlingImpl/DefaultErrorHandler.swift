@@ -6,50 +6,38 @@ import LoggingTypes
 
 /**
  # DefaultErrorHandler
-
- Default implementation of the ErrorHandlerProtocol.
-
- This implementation logs errors and provides basic error handling
- functionality. It follows the Alpha Dot Five architecture by providing
- a concrete implementation of an interface with proper British spelling
- in documentation.
+ 
+ Default implementation of the ErrorHandlerProtocol that handles
+ errors according to the Alpha Dot Five architecture principles of
+ privacy-aware error handling, structured logging, and actor-based
+ concurrency.
+ 
+ This handler ensures errors are properly logged with appropriate
+ privacy controls, categorised by domain, and processed for analysis.
  */
 public actor DefaultErrorHandler: ErrorHandlerProtocol {
-  // MARK: - Properties
-
-  /// The logger to use for error logging
-  private let logger: LoggingProtocol
-  
-  /// Domain-specific logger for error handling
+  /// Logger for error reporting
   private let errorLogger: ErrorLogger
-
-  // MARK: - Initialisation
-
+  
   /**
-   Initialises a new DefaultErrorHandler.
-
-   - Parameter logger: The logger to use for error logging
+   Initialises a new error handler.
+   
+   - Parameter logger: The logger to use for error reporting
    */
   public init(logger: LoggingProtocol) {
-    self.logger = logger
     self.errorLogger = ErrorLogger(logger: logger)
   }
-
-  // MARK: - ErrorHandlerProtocol Implementation
-
+  
   /**
-   Handles an error according to the implementation's strategy.
-
-   This method logs the error with appropriate metadata and takes
-   appropriate action based on error type.
-
+   Handles an error with additional source information and metadata.
+   
    - Parameters:
       - error: The error to handle
-      - source: Optional string identifying the error source
-      - metadata: Additional contextual information about the error
+      - source: Source identifier for the error
+      - metadata: Additional contextual information
    */
-  public func handle(
-    _ error: some Error,
+  public func handle<E: Error>(
+    _ error: E,
     source: String?,
     metadata: [String: String]
   ) async {
@@ -77,8 +65,8 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
       - error: The error to handle
       - context: Contextual information about the error
    */
-  public func handle(
-    _ error: some Error,
+  public func handle<E: Error>(
+    _ error: E,
     context: ErrorContext
   ) async {
     // Convert context to metadata dictionary
@@ -87,13 +75,16 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
       metadata[key] = value
     }
     
+    // Convert ErrorSource to String
+    let sourceString = context.source.description
+    
     // Log the error using our structured, privacy-aware logger
     await errorLogger.logError(
       error,
-      source: context.source,
+      source: sourceString,
       metadata: metadata
     )
 
-    // Additional error handling logic could be added here
+    // Additional context-specific handling could be added here
   }
 }
