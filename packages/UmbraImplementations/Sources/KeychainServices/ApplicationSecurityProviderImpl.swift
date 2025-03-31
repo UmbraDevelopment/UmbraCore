@@ -1,8 +1,8 @@
 import CoreInterfaces
 import Foundation
 import LoggingInterfaces
-import SecurityCoreTypes
-import SecurityTypes
+import CoreSecurityTypes
+import DomainSecurityTypes
 
 /**
  # Application Security Provider Implementation

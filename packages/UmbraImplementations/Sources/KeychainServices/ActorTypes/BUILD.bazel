@@ -13,7 +13,7 @@ umbra_swift_library(
         "//packages/UmbraInterfaces/Sources/LoggingInterfaces",
         "//packages/UmbraCoreTypes/Sources/UmbraErrors",
         "//packages/UmbraCoreTypes/Sources/LoggingTypes",
-        "//packages/UmbraCoreTypes/Sources/SecurityCoreTypes",
+        "//packages/UmbraCoreTypes/Sources/CoreSecurityTypes",
         "//packages/UmbraImplementations/Sources/KeychainServices/Logging:KeychainLogger",
     ],
 )

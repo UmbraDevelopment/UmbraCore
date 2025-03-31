@@ -14,20 +14,20 @@ import Foundation
  3. Handle operation updates in a more composable way
  */
 
-/// Extension to BackupProgress to provide helpers for async progress reporting
-extension BackupProgress {
+/// Extension to BackupProgressInfo to provide helpers for async progress reporting
+extension BackupProgressInfo {
   /// Creates a continued progress stream from a completed progress
   /// - Returns: Tuple of progress stream and continuation for sending updates
   public static func createStream()
     -> (
-      stream: AsyncStream<BackupProgress>,
-      continuation: AsyncStream<BackupProgress>.Continuation
+      stream: AsyncStream<BackupProgressInfo>,
+      continuation: AsyncStream<BackupProgressInfo>.Continuation
     )
   {
-    var continuation: AsyncStream<BackupProgress>.Continuation!
-    let stream=AsyncStream<BackupProgress> { cont in
-      continuation=cont
-      cont.onTermination={ @Sendable _ in
+    var continuation: AsyncStream<BackupProgressInfo>.Continuation!
+    let stream = AsyncStream<BackupProgressInfo> { cont in
+      continuation = cont
+      cont.onTermination = { @Sendable _ in
         // Handle stream termination if needed
       }
     }
@@ -37,11 +37,11 @@ extension BackupProgress {
   /// Creates a continuous progress stream with initialisation started
   /// - Returns: Tuple of progress stream and a function to update progress
   public static func createProgressStream() -> (
-    stream: AsyncStream<BackupProgress>,
-    update: (BackupProgress) -> Void,
+    stream: AsyncStream<BackupProgressInfo>,
+    update: (BackupProgressInfo) -> Void,
     complete: () -> Void
   ) {
-    let (stream, continuation)=createStream()
+    let (stream, continuation) = createStream()
 
     // Send initial progress
     continuation.yield(.initialising())
@@ -69,19 +69,19 @@ extension Task where Success == Never, Failure == Never {
   /// - Returns: A cancellable task
   public static func withProgressReporting(
     operation _: BackupOperation,
-    progressHandler: @escaping (BackupProgress) -> Void,
-    action: @escaping (AsyncStream<BackupProgress>.Continuation) async throws -> Void
+    progressHandler: @escaping (BackupProgressInfo) -> Void,
+    action: @escaping (AsyncStream<BackupProgressInfo>.Continuation) async throws -> Void
   ) -> Task {
     Task {
-      let (_, continuation)=BackupProgress.createStream()
+      let (_, continuation) = BackupProgressInfo.createStream()
 
       do {
         try await action(continuation)
-        await MainActor.run { progressHandler(BackupProgress.completed()) }
+        await MainActor.run { progressHandler(BackupProgressInfo.completed()) }
       } catch is CancellationError {
-        await MainActor.run { progressHandler(BackupProgress.cancelled()) }
+        await MainActor.run { progressHandler(BackupProgressInfo.cancelled()) }
       } catch {
-        await MainActor.run { progressHandler(BackupProgress.failed(error)) }
+        await MainActor.run { progressHandler(BackupProgressInfo.failed(error)) }
       }
 
       continuation.finish()
@@ -100,13 +100,13 @@ public protocol AsyncProgressReporting: Sendable {
   /// Get a progress stream for the specified operation
   /// - Parameter operation: The backup operation to track
   /// - Returns: An async sequence of progress updates
-  func progressStream(for operation: BackupOperation) -> AsyncStream<BackupProgress>
+  func progressStream(for operation: BackupOperation) -> AsyncStream<BackupProgressInfo>
 
   /// Report progress for an operation
   /// - Parameters:
   ///   - progress: The progress update
   ///   - operation: The operation being performed
-  func reportProgress(_ progress: BackupProgress, for operation: BackupOperation)
+  func reportProgress(_ progress: BackupProgressInfo, for operation: BackupOperation)
 
   /// Mark an operation as complete
   /// - Parameter operation: The completed operation
@@ -117,9 +117,9 @@ public protocol AsyncProgressReporting: Sendable {
 public actor AsyncProgressReporter: AsyncProgressReporting {
   /// Progress streams by operation type
   private var streams: [BackupOperation: (
-    stream: AsyncStream<BackupProgress>,
-    continuation: AsyncStream<BackupProgress>.Continuation
-  )]=[:]
+    stream: AsyncStream<BackupProgressInfo>,
+    continuation: AsyncStream<BackupProgressInfo>.Continuation
+  )] = [:]
 
   /// Initialises a new async progress reporter
   public init() {}
@@ -128,13 +128,13 @@ public actor AsyncProgressReporter: AsyncProgressReporting {
   /// - Parameter operation: The backup operation to track
   /// - Returns: An async sequence of progress updates
   public nonisolated func progressStream(for operation: BackupOperation)
-  -> AsyncStream<BackupProgress> {
+  -> AsyncStream<BackupProgressInfo> {
     // Since we need actor isolation for this function, we'll create a stream here
     // and keep updating it from the actor-isolated methods
-    let (stream, continuation)=BackupProgress.createStream()
+    let (stream, continuation) = BackupProgressInfo.createStream()
 
     // Initialize with creating phase
-    continuation.yield(BackupProgress.initialising())
+    continuation.yield(BackupProgressInfo.initialising())
 
     // Schedule task to set up the stream properly with actor
     Task {
@@ -147,9 +147,9 @@ public actor AsyncProgressReporter: AsyncProgressReporting {
   /// Set up the stream internally (actor-isolated)
   private func setupStreamInternally(
     operation: BackupOperation,
-    continuation: AsyncStream<BackupProgress>.Continuation
+    continuation: AsyncStream<BackupProgressInfo>.Continuation
   ) {
-    streams[operation]=(BackupProgress.createStream().0, continuation)
+    streams[operation] = (BackupProgressInfo.createStream().0, continuation)
   }
 
   /// Report progress for an operation
@@ -157,7 +157,7 @@ public actor AsyncProgressReporter: AsyncProgressReporting {
   ///   - progress: The progress update
   ///   - operation: The operation being performed
   public nonisolated func reportProgress(
-    _ progress: BackupProgress,
+    _ progress: BackupProgressInfo,
     for operation: BackupOperation
   ) {
     Task {
@@ -167,10 +167,10 @@ public actor AsyncProgressReporter: AsyncProgressReporting {
 
   /// Report progress internally (actor-isolated)
   private func reportProgressInternally(
-    _ progress: BackupProgress,
+    _ progress: BackupProgressInfo,
     for operation: BackupOperation
   ) {
-    if let continuation=streams[operation]?.continuation {
+    if let continuation = streams[operation]?.continuation {
       continuation.yield(progress)
     }
   }
@@ -185,8 +185,8 @@ public actor AsyncProgressReporter: AsyncProgressReporting {
 
   /// Complete operation internally (actor-isolated)
   private func completeOperationInternally(_ operation: BackupOperation) {
-    if let continuation=streams[operation]?.continuation {
-      continuation.yield(BackupProgress.completed())
+    if let continuation = streams[operation]?.continuation {
+      continuation.yield(BackupProgressInfo.completed())
       continuation.finish()
       streams.removeValue(forKey: operation)
     }

@@ -1,5 +1,6 @@
 import Foundation
 import UmbraErrors
+import LoggingInterfaces
 
 /// Comprehensive error type for backup operations
 ///
@@ -93,48 +94,49 @@ public enum BackupError: Error, CustomNSError, LocalizedError {
   public var errorDescription: String? {
     switch self {
       case let .repositoryAccessFailure(path, reason):
-        return "Cannot access backup repository at \(path): \(reason)"
+        return "Cannot access backup repository at \(path.asBackupPath()): \(reason.asErrorDetail())"
       case let .invalidConfiguration(details):
-        return "Invalid backup configuration: \(details)"
+        return "Invalid backup configuration: \(details.asErrorDetail())"
       case let .snapshotFailure(id, reason):
         if let id {
-          return "Failed to process snapshot \(id): \(reason)"
+          return "Failed to process snapshot \(id.asBackupID()): \(reason.asErrorDetail())"
         } else {
-          return "Failed to create snapshot: \(reason)"
+          return "Failed to create snapshot: \(reason.asErrorDetail())"
         }
       case let .restoreFailure(reason):
-        return "Failed to restore backup: \(reason)"
+        return "Failed to restore backup: \(reason.asErrorDetail())"
       case let .snapshotNotFound(id):
-        return "Snapshot not found: \(id)"
+        return "Snapshot not found: \(id.asBackupID())"
       case let .invalidPaths(paths):
-        let pathList=paths.joined(separator: ", ")
-        return "Invalid or inaccessible paths: \(pathList)"
+        return "Invalid or inaccessible paths: \(paths.asPrivatePaths())"
       case let .insufficientPermissions(path):
-        return "Insufficient permissions to access: \(path)"
+        return "Insufficient permissions to access: \(path.asBackupPath())"
       case let .repositoryCorruption(details):
-        return "Backup repository is corrupt: \(details)"
+        return "Backup repository is corrupt: \(details.asErrorDetail())"
       case let .maintenanceFailure(reason):
-        return "Repository maintenance failed: \(reason)"
+        return "Repository maintenance failed: \(reason.asErrorDetail())"
       case let .insufficientDiskSpace(available, required):
-        let availableMB=Double(available) / 1_048_576.0
-        let requiredMB=Double(required) / 1_048_576.0
-        return "Insufficient disk space: \(String(format: "%.1f", availableMB)) MB available, \(String(format: "%.1f", requiredMB)) MB required"
+        let availableMB = Double(available) / 1_048_576.0
+        let requiredMB = Double(required) / 1_048_576.0
+        let availableFormatted = String(format: "%.1f", availableMB).asPublicInfo()
+        let requiredFormatted = String(format: "%.1f", requiredMB).asPublicInfo()
+        return "Insufficient disk space: \(availableFormatted) MB available, \(requiredFormatted) MB required"
       case .operationCancelled:
         return "Backup operation was cancelled"
       case let .lockingError(reason):
-        return "Repository locking error: \(reason)"
+        return "Repository locking error: \(reason.asErrorDetail())"
       case let .inconsistentState(details):
-        return "Backup repository is in an inconsistent state: \(details)"
+        return "Backup repository is in an inconsistent state: \(details.asErrorDetail())"
       case let .parsingError(details):
-        return "Failed to parse command output: \(details)"
+        return "Failed to parse command output: \(details.asErrorDetail())"
       case let .authenticationFailure(reason):
-        return "Authentication failed: \(reason)"
+        return "Authentication failed: \(reason.asErrorDetail())"
       case let .commandExecutionFailure(command, exitCode, _):
-        return "Command execution failed: '\(command)' exited with code \(exitCode)"
+        return "Command execution failed: '\(command.asCommandOutput())' exited with code \(String(exitCode).asErrorCode())"
       case let .timeoutError(operation, _):
-        return "Operation timed out: \(operation)"
+        return "Operation timed out: \(operation.asPublicInfo())"
       case let .genericError(reason):
-        return "Backup error: \(reason)"
+        return "Backup error: \(reason.asErrorDetail())"
     }
   }
 
@@ -142,41 +144,41 @@ public enum BackupError: Error, CustomNSError, LocalizedError {
   public var failureReason: String? {
     switch self {
       case let .repositoryAccessFailure(_, reason):
-        "The backup repository could not be accessed due to: \(reason)"
+        "The backup repository could not be accessed due to: \(reason.asErrorDetail())"
       case let .invalidConfiguration(details):
-        "The backup configuration is invalid: \(details)"
+        "The backup configuration is invalid: \(details.asErrorDetail())"
       case let .snapshotFailure(_, reason):
-        "The snapshot operation failed: \(reason)"
+        "The snapshot operation failed: \(reason.asErrorDetail())"
       case let .restoreFailure(reason):
-        "The restore operation could not be completed: \(reason)"
+        "The restore operation could not be completed: \(reason.asErrorDetail())"
       case let .snapshotNotFound(id):
-        "The requested snapshot (\(id)) does not exist or was deleted"
+        "The requested snapshot (\(id.asBackupID())) does not exist or was deleted"
       case .invalidPaths:
         "One or more paths in the operation are invalid or cannot be accessed"
       case let .insufficientPermissions(path):
-        "The application does not have sufficient permissions to access \(path)"
+        "The application does not have sufficient permissions to access \(path.asBackupPath())"
       case let .repositoryCorruption(details):
-        "The backup repository structure is damaged: \(details)"
+        "The backup repository structure is damaged: \(details.asErrorDetail())"
       case let .maintenanceFailure(reason):
-        "Repository maintenance failed: \(reason)"
+        "Repository maintenance failed: \(reason.asErrorDetail())"
       case .insufficientDiskSpace:
         "There is not enough free disk space to complete the operation"
       case .operationCancelled:
         "The operation was cancelled by the user or system"
       case let .lockingError(reason):
-        "Could not acquire exclusive lock on repository: \(reason)"
+        "Could not acquire exclusive lock on repository: \(reason.asErrorDetail())"
       case let .inconsistentState(details):
-        "The repository data is inconsistent: \(details)"
+        "The repository data is inconsistent: \(details.asErrorDetail())"
       case let .parsingError(details):
-        "Failed to parse command output: \(details)"
+        "Failed to parse command output: \(details.asErrorDetail())"
       case let .authenticationFailure(reason):
-        "Authentication with the repository failed: \(reason)"
+        "Authentication with the repository failed: \(reason.asErrorDetail())"
       case let .commandExecutionFailure(_, _, errorOutput):
-        "Command failed with error: \(errorOutput)"
+        "Command failed with error: \(errorOutput.asErrorDetail())"
       case let .timeoutError(_, details):
-        "The operation timed out: \(details)"
+        "The operation timed out: \(details.asErrorDetail())"
       case let .genericError(reason):
-        reason
+        reason.asErrorDetail()
     }
   }
 
@@ -184,7 +186,7 @@ public enum BackupError: Error, CustomNSError, LocalizedError {
   public var recoverySuggestion: String? {
     switch self {
       case let .repositoryAccessFailure(path, _):
-        "Check network connectivity if the repository is remote. Verify that the path '\(path)' exists and is accessible."
+        "Check network connectivity if the repository is remote. Verify that the path '\(path.asBackupPath())' exists and is accessible."
       case .invalidConfiguration:
         "Review your backup configuration and correct any errors in paths, options, or settings."
       case .snapshotFailure:
@@ -196,7 +198,7 @@ public enum BackupError: Error, CustomNSError, LocalizedError {
       case .invalidPaths:
         "Verify that all paths exist and are correctly formatted. Check file permissions to ensure they are accessible."
       case let .insufficientPermissions(path):
-        "Adjust file system permissions to allow access to \(path), or run the application with elevated privileges."
+        "Adjust file system permissions to allow access to \(path.asBackupPath()), or run the application with elevated privileges."
       case .repositoryCorruption:
         "Run repository maintenance with the 'check' and 'repair' options. If issues persist, restore from a known good backup."
       case .maintenanceFailure:

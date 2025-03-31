@@ -103,21 +103,21 @@ public actor BackupServicesActor: BackupServiceProtocol {
   // MARK: - BackupServiceProtocol Implementation
 
   /**
-   * Creates a backup from the provided sources.
+   * Creates a new backup.
    *
    * - Parameters:
-   *   - sources: Paths to include in the backup
+   *   - sources: Source paths to back up
    *   - excludePaths: Optional paths to exclude
-   *   - tags: Optional tags to apply to the backup
-   *   - options: Optional backup configuration options
-   * - Returns: A Result containing either the operation result or an error
+   *   - tags: Optional tags to associate with the backup
+   *   - backupOptions: Optional backup configuration options
+   * - Returns: A Result containing either the operation response or an error
    */
   public func createBackup(
     sources: [URL],
-    excludePaths: [URL]?=nil,
-    tags: [String]?=nil,
-    options: BackupOptions?=nil
-  ) async -> Result<BackupOperationResult<BackupResult>, BackupOperationError> {
+    excludePaths: [URL]?,
+    tags: [String]?,
+    backupOptions: BackupOptions?
+  ) async -> Result<BackupOperationResponse<BackupResult>, BackupOperationError> {
     // Create a log context
     var logContext=BackupLogContext()
       .with(operation: "createBackup")
@@ -160,7 +160,7 @@ public actor BackupServicesActor: BackupServiceProtocol {
       sources: sources,
       excludePaths: excludePaths,
       tags: tags,
-      options: options
+      options: backupOptions
     )
 
     // Create a cancellation token for this operation
@@ -201,7 +201,7 @@ public actor BackupServicesActor: BackupServiceProtocol {
       )
 
       // Create operation result
-      let operationResult=BackupOperationResult(
+      let operationResult=BackupOperationResponse(
         value: result,
         progressStream: progressReporter.stream,
         metadata: metadata
@@ -248,23 +248,23 @@ public actor BackupServicesActor: BackupServiceProtocol {
   }
 
   /**
-   * Restores a backup to the specified location.
+   * Restores a backup.
    *
    * - Parameters:
    *   - snapshotID: ID of the snapshot to restore
    *   - targetPath: Path to restore to
    *   - includePaths: Optional paths to include
    *   - excludePaths: Optional paths to exclude
-   *   - options: Optional restore options
-   * - Returns: A Result containing either the operation result or an error
+   *   - restoreOptions: Optional restore configuration options
+   * - Returns: A Result containing either the operation response or an error
    */
   public func restoreBackup(
     snapshotID: String,
     targetPath: URL,
     includePaths: [URL]?,
     excludePaths: [URL]?,
-    options: RestoreOptions?
-  ) async -> Result<BackupOperationResult<RestoreResult>, BackupOperationError> {
+    restoreOptions: RestoreOptions?
+  ) async -> Result<BackupOperationResponse<RestoreResult>, BackupOperationError> {
     // Create a log context
     var logContext=BackupLogContext()
       .with(operation: "restoreBackup")
@@ -304,7 +304,7 @@ public actor BackupServicesActor: BackupServiceProtocol {
       targetPath: targetPath,
       includePaths: includePaths,
       excludePaths: excludePaths,
-      options: options
+      options: restoreOptions
     )
 
     // Create a cancellation token for this operation
@@ -345,7 +345,7 @@ public actor BackupServicesActor: BackupServiceProtocol {
       )
 
       // Create operation result
-      let operationResult=BackupOperationResult(
+      let operationResult=BackupOperationResponse(
         value: result,
         progressStream: progressReporter.stream,
         metadata: metadata
@@ -488,13 +488,13 @@ public actor BackupServicesActor: BackupServiceProtocol {
    *
    * - Parameters:
    *   - snapshotID: ID of the snapshot to delete
-   *   - options: Optional delete options
-   * - Returns: A Result containing either the operation result or an error
+   *   - deleteOptions: Optional delete configuration options
+   * - Returns: A Result containing either the operation response or an error
    */
   public func deleteBackup(
     snapshotID: String,
-    options: DeleteOptions?
-  ) async -> Result<BackupOperationResult<BackupDeleteResult>, BackupOperationError> {
+    deleteOptions: DeleteOptions?
+  ) async -> Result<BackupOperationResponse<BackupDeleteResult>, BackupOperationError> {
     // Create a log context
     let logContext=BackupLogContext()
       .with(operation: "deleteBackup")
@@ -516,7 +516,7 @@ public actor BackupServicesActor: BackupServiceProtocol {
     // Create parameters
     let parameters=BackupDeleteParameters(
       snapshotID: snapshotID,
-      pruneAfterDelete: options?.prune ?? false
+      pruneAfterDelete: deleteOptions?.prune ?? false
     )
 
     // Create a cancellation token for this operation
@@ -557,7 +557,7 @@ public actor BackupServicesActor: BackupServiceProtocol {
       )
 
       // Create operation result
-      let operationResult=BackupOperationResult(
+      let operationResult=BackupOperationResponse(
         value: result,
         progressStream: progressReporter.stream,
         metadata: metadata
@@ -600,13 +600,13 @@ public actor BackupServicesActor: BackupServiceProtocol {
    *
    * - Parameters:
    *   - type: Type of maintenance to perform
-   *   - options: Optional maintenance options
-   * - Returns: A Result containing either the operation result or an error
+   *   - maintenanceOptions: Optional maintenance configuration options
+   * - Returns: A Result containing either the operation response or an error
    */
   public func performMaintenance(
     type: MaintenanceType,
-    options: MaintenanceOptions?
-  ) async -> Result<BackupOperationResult<MaintenanceResult>, BackupOperationError> {
+    maintenanceOptions: MaintenanceOptions?
+  ) async -> Result<BackupOperationResponse<MaintenanceResult>, BackupOperationError> {
     // Create a log context
     let logContext=BackupLogContext()
       .with(operation: "performMaintenance")
@@ -621,7 +621,7 @@ public actor BackupServicesActor: BackupServiceProtocol {
     // Create parameters
     let parameters=BackupMaintenanceParameters(
       maintenanceType: type,
-      options: options
+      options: maintenanceOptions
     )
 
     // Create a cancellation token for this operation
@@ -661,7 +661,7 @@ public actor BackupServicesActor: BackupServiceProtocol {
       )
 
       // Create operation result
-      let operationResult=BackupOperationResult(
+      let operationResult=BackupOperationResponse(
         value: result,
         progressStream: progressReporter.stream,
         metadata: metadata

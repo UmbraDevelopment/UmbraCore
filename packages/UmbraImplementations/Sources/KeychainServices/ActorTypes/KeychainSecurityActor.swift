@@ -5,8 +5,8 @@ import LoggingInterfaces
 import LoggingTypes
 import OSLog
 import SecurityCoreInterfaces
-import SecurityCoreTypes
-import SecurityTypes
+import CoreSecurityTypes
+import DomainSecurityTypes
 import UmbraErrors
 
 /**

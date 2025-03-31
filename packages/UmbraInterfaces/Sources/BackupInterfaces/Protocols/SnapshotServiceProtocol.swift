@@ -48,7 +48,7 @@ public protocol SnapshotServiceProtocol: Sendable {
     snapshotID1: String,
     snapshotID2: String,
     path: URL?
-  ) async throws -> (SnapshotDifference, AsyncStream<BackupProgress>)
+  ) async throws -> (SnapshotDifference, AsyncStream<BackupProgressInfo>)
 
   /// Updates tags for a snapshot
   /// - Parameters:
@@ -83,7 +83,7 @@ public protocol SnapshotServiceProtocol: Sendable {
   func deleteSnapshot(
     snapshotID: String,
     pruneAfterDelete: Bool
-  ) async throws -> (BackupDeleteResult, AsyncStream<BackupProgress>)
+  ) async throws -> (BackupDeleteResult, AsyncStream<BackupProgressInfo>)
 
   /// Exports a snapshot to a specified location
   /// - Parameters:
@@ -96,7 +96,7 @@ public protocol SnapshotServiceProtocol: Sendable {
     snapshotID: String,
     destination: URL,
     format: BackupExportFormat
-  ) async throws -> (BackupExportResult, AsyncStream<BackupProgress>)
+  ) async throws -> (BackupExportResult, AsyncStream<BackupProgressInfo>)
 
   /// Imports a snapshot from a specified location
   /// - Parameters:
@@ -109,7 +109,7 @@ public protocol SnapshotServiceProtocol: Sendable {
     source: URL,
     repositoryID: String,
     format: BackupImportFormat
-  ) async throws -> (BackupImportResult, AsyncStream<BackupProgress>)
+  ) async throws -> (BackupImportResult, AsyncStream<BackupProgressInfo>)
 
   /// Verifies the integrity of a snapshot
   /// - Parameters:
@@ -120,7 +120,7 @@ public protocol SnapshotServiceProtocol: Sendable {
   func verifySnapshot(
     snapshotID: String,
     level: VerificationLevel
-  ) async throws -> (VerificationResult, AsyncStream<BackupProgress>)
+  ) async throws -> (VerificationResult, AsyncStream<BackupProgressInfo>)
 
   /// Copies a snapshot to another repository
   /// - Parameters:
@@ -131,7 +131,7 @@ public protocol SnapshotServiceProtocol: Sendable {
   func copySnapshot(
     snapshotID: String,
     targetRepositoryID: String
-  ) async throws -> (BackupCopyResult, AsyncStream<BackupProgress>)
+  ) async throws -> (BackupCopyResult, AsyncStream<BackupProgressInfo>)
 
   /// Retrieves the content of a specific file in a snapshot
   /// - Parameters:

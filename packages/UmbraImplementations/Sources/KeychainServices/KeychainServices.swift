@@ -48,7 +48,7 @@ import KeychainInterfaces
 import LoggingInterfaces
 import LoggingTypes
 import SecurityCoreInterfaces
-import SecurityCoreTypes
+import CoreSecurityTypes
 import UmbraErrors
 
 /// Convenience access to KeychainServiceFactory

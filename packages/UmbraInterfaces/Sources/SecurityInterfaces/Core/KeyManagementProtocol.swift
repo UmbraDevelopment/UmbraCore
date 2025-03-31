@@ -7,7 +7,7 @@
  */
 
 import Foundation
-import SecurityTypes
+import CoreSecurityTypes
 
 /**
  Protocol defining key management operations.

@@ -18,6 +18,8 @@ umbra_swift_library(
     visibility = ["//visibility:public"],
     deps = [
         "//packages/UmbraInterfaces/Sources/LoggingWrapperInterfaces",
+        "//packages/UmbraInterfaces/Sources/LoggingInterfaces",
+        "//packages/UmbraCoreTypes/Sources/LoggingTypes",
         "@swiftpkg_swiftybeaver//:SwiftyBeaver",
     ],
 )

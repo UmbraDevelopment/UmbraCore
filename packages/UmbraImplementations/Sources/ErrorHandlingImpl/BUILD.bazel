@@ -9,6 +9,7 @@ swift_library(
         "//packages/UmbraCoreTypes/Sources/ErrorCoreTypes:ErrorCoreTypes",
         "//packages/UmbraInterfaces/Sources/ErrorHandlingInterfaces:ErrorHandlingInterfaces",
         "//packages/UmbraInterfaces/Sources/LoggingInterfaces:LoggingInterfaces",
+        "//packages/UmbraInterfaces/Sources/LoggingWrapperInterfaces:LoggingWrapperInterfaces",
         "//packages/UmbraCoreTypes/Sources/LoggingTypes:LoggingTypes",
     ],
 )

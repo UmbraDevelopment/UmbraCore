@@ -1,7 +1,7 @@
 import Foundation
 import KeychainInterfaces
 import LoggingInterfaces
-import SecurityCoreTypes
+import CoreSecurityTypes
 import UmbraErrors
 import XPCProtocolsCore
 import XPCServices

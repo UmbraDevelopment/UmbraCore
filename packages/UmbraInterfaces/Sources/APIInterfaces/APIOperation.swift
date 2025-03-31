@@ -8,6 +8,20 @@
  Each API operation must define its own result type, providing strict
  type safety across the API surface.
 
+ ## Privacy Considerations
+
+ When implementing API operations:
+ - Define clear privacy levels for all fields in the operation
+ - Mark sensitive fields with appropriate attributes for logging
+ - Consider using opaque identifiers instead of direct values for sensitive data
+ - Implement proper data sanitisation for inputs and outputs
+
+ ## Concurrency Safety
+
+ All API operations must be Sendable to ensure they can be safely used
+ across concurrency boundaries. Use immutable value types and consider
+ implementing custom Sendable conformance if needed.
+
  ## Usage Example
 
  ```swift
@@ -16,12 +30,104 @@
 
      let includeDetails: Bool
      let filterStatus: RepositoryStatus?
+     
+     /// Privacy metadata for this operation
+     var privacyMetadata: APIOperationPrivacyMetadata {
+         return .init(
+             sensitiveParameters: [],
+             loggableResponseFields: ["id", "name", "status"],
+             privacyLevel: .standard
+         )
+     }
  }
  ```
  */
 public protocol APIOperation: Sendable {
   /// The return type for this operation
   associatedtype ResultType: Sendable
+  
+  /// Unique identifier for this operation instance
+  var operationId: String { get }
+  
+  /// Privacy metadata for this operation
+  var privacyMetadata: APIOperationPrivacyMetadata { get }
+}
+
+/// Default implementation for operationId
+public extension APIOperation {
+  var operationId: String {
+    UUID().uuidString
+  }
+  
+  var privacyMetadata: APIOperationPrivacyMetadata {
+    .standard
+  }
+}
+
+/**
+ # Privacy Metadata for API Operations
+ 
+ Defines the privacy characteristics of an API operation to ensure
+ proper handling of sensitive data in logs and error messages.
+ */
+public struct APIOperationPrivacyMetadata: Sendable, Equatable {
+  /// Standard metadata with default privacy settings
+  public static let standard = APIOperationPrivacyMetadata()
+  
+  /// Highly sensitive metadata for security operations
+  public static let sensitive = APIOperationPrivacyMetadata(
+    sensitiveParameters: ["*"],
+    loggableResponseFields: [],
+    privacyLevel: .sensitive
+  )
+  
+  /// Parameters that should be treated as sensitive
+  public let sensitiveParameters: [String]
+  
+  /// Response fields that are safe to log
+  public let loggableResponseFields: [String]
+  
+  /// Overall privacy level for this operation
+  public let privacyLevel: APIPrivacyLevel
+  
+  /// Creates new API operation privacy metadata
+  public init(
+    sensitiveParameters: [String] = [],
+    loggableResponseFields: [String] = ["*"],
+    privacyLevel: APIPrivacyLevel = .standard
+  ) {
+    self.sensitiveParameters = sensitiveParameters
+    self.loggableResponseFields = loggableResponseFields
+    self.privacyLevel = privacyLevel
+  }
+}
+
+/**
+ # Privacy Level for API Operations
+ 
+ Defines the overall privacy sensitivity of an API operation.
+ */
+public enum APIPrivacyLevel: String, Sendable, Equatable, Comparable {
+  /// Public data that can be freely logged
+  case `public`
+  
+  /// Standard operational data with normal privacy requirements
+  case standard
+  
+  /// Sensitive data requiring redaction in logs
+  case sensitive
+  
+  /// Highly sensitive data requiring special handling
+  case restricted
+  
+  public static func < (lhs: APIPrivacyLevel, rhs: APIPrivacyLevel) -> Bool {
+    let order: [APIPrivacyLevel] = [.public, .standard, .sensitive, .restricted]
+    guard let lhsIndex = order.firstIndex(of: lhs),
+          let rhsIndex = order.firstIndex(of: rhs) else {
+      return false
+    }
+    return lhsIndex < rhsIndex
+  }
 }
 
 /**
@@ -58,7 +164,7 @@ public protocol DomainAPIOperation: APIOperation {
  Defines the available domains for API operations.
  Each domain represents a logical grouping of related operations.
  */
-public enum APIDomain: String, Sendable {
+public enum APIDomain: String, Sendable, Equatable, CaseIterable {
   /// Operations related to repository management
   case repository
 
@@ -76,6 +182,12 @@ public enum APIDomain: String, Sendable {
 
   /// Operations related to the application lifecycle
   case application
+  
+  /// Operations related to authentication and authorization
+  case authentication
+  
+  /// Operations related to account management
+  case account
 }
 
 /**
@@ -128,9 +240,24 @@ public enum APIResult<Value: Sendable>: Sendable {
   public func map<NewValue: Sendable>(_ transform: (Value) -> NewValue) -> APIResult<NewValue> {
     switch self {
       case let .success(value):
-        .success(transform(value))
+        return .success(transform(value))
       case let .failure(error):
-        .failure(error)
+        return .failure(error)
+    }
+  }
+  
+  /**
+   Maps the error of a failure result using the given transformation.
+   
+   - Parameter transform: A closure that takes the error and returns a new error
+   - Returns: A new result with the transformed error, or the original success
+   */
+  public func mapError(_ transform: (APIError) -> APIError) -> APIResult<Value> {
+    switch self {
+      case let .success(value):
+        return .success(value)
+      case let .failure(error):
+        return .failure(transform(error))
     }
   }
 
@@ -142,9 +269,9 @@ public enum APIResult<Value: Sendable>: Sendable {
   public var isSuccess: Bool {
     switch self {
       case .success:
-        true
+        return true
       case .failure:
-        false
+        return false
     }
   }
 
@@ -154,6 +281,34 @@ public enum APIResult<Value: Sendable>: Sendable {
    - Returns: True if the result is a failure, false otherwise
    */
   public var isFailure: Bool {
-    !isSuccess
+    return !isSuccess
+  }
+  
+  /**
+   Retrieve the successful value if available.
+   
+   - Returns: The successful value, or nil if this result is a failure
+   */
+  public var value: Value? {
+    switch self {
+      case let .success(value):
+        return value
+      case .failure:
+        return nil
+    }
+  }
+  
+  /**
+   Retrieve the error if available.
+   
+   - Returns: The error, or nil if this result is a success
+   */
+  public var error: APIError? {
+    switch self {
+      case .success:
+        return nil
+      case let .failure(error):
+        return error
+    }
   }
 }

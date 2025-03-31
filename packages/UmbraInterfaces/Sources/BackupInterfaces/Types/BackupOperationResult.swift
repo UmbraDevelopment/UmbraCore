@@ -1,59 +1,89 @@
 import Foundation
 
 /**
- * Result of a backup operation with generically-typed success value.
+ * Response container for a backup operation with generically-typed success value.
  *
- * This structure provides a standardised way to return operation results
+ * This structure provides a standardised way to return operation responses
  * with optional progress reporting, following the Alpha Dot Five architecture
  * pattern for structured return types.
  */
-public struct BackupOperationResult<Success>: Sendable, Equatable where Success: Sendable,
+public struct BackupOperationResponse<Success>: Sendable, Equatable where Success: Sendable,
 Success: Equatable {
   /// The operation-specific result
   public let value: Success
 
   /// Optional progress reporting stream
-  public let progressStream: AsyncStream<BackupProgress>?
+  public let progressStream: AsyncStream<BackupProgressInfo>?
 
-  /// Metadata about the operation
-  public let metadata: [String: String]?
+  /// Strongly-typed metadata about the operation
+  public let metadata: BackupOperationMetadata?
 
   /**
-   * Creates a new operation result.
+   * Creates a new operation response.
    *
    * - Parameters:
    *   - value: The operation-specific result
    *   - progressStream: Optional progress reporting stream
-   *   - metadata: Metadata about the operation
+   *   - metadata: Strongly-typed metadata about the operation
    */
   public init(
     value: Success,
-    progressStream: AsyncStream<BackupProgress>?=nil,
-    metadata: [String: String]?=nil
+    progressStream: AsyncStream<BackupProgressInfo>? = nil,
+    metadata: BackupOperationMetadata? = nil
   ) {
-    self.value=value
-    self.progressStream=progressStream
-    self.metadata=metadata
+    self.value = value
+    self.progressStream = progressStream
+    self.metadata = metadata
   }
 
   /**
-   * Compares two BackupOperationResult instances for equality.
+   * Creates a new operation response with the current date for start and end times.
+   *
+   * - Parameters:
+   *   - value: The operation-specific result
+   *   - progressStream: Optional progress reporting stream
+   *   - operationType: Type of operation performed
+   *   - additionalInfo: Additional metadata about the operation
+   */
+  public init(
+    value: Success,
+    progressStream: AsyncStream<BackupProgressInfo>? = nil,
+    operationType: String,
+    additionalInfo: [String: String] = [:]
+  ) {
+    let now = Date()
+    let metadata = BackupOperationMetadata(
+      startTime: now,
+      endTime: now,
+      metadata: [.operationType: operationType],
+      additionalInfo: additionalInfo
+    )
+    
+    self.init(
+      value: value,
+      progressStream: progressStream,
+      metadata: metadata
+    )
+  }
+
+  /**
+   * Compares two BackupOperationResponse instances for equality.
    *
    * Note that the progressStream property is not compared as AsyncStream
    * does not conform to Equatable.
    *
    * - Parameters:
-   *   - lhs: The first result to compare
-   *   - rhs: The second result to compare
-   * - Returns: True if the results are equal, false otherwise
+   *   - lhs: The first response to compare
+   *   - rhs: The second response to compare
+   * - Returns: True if the responses are equal, false otherwise
    */
   public static func == (
-    lhs: BackupOperationResult<Success>,
-    rhs: BackupOperationResult<Success>
+    lhs: BackupOperationResponse<Success>,
+    rhs: BackupOperationResponse<Success>
   ) -> Bool {
     // Compare only the value and metadata, not the progressStream
     // as AsyncStream doesn't conform to Equatable
-    let metadataEqual: Bool=switch (lhs.metadata, rhs.metadata) {
+    let metadataEqual: Bool = switch (lhs.metadata, rhs.metadata) {
       case (.none, .none):
         true
       case let (.some(lhsMetadata), .some(rhsMetadata)):
@@ -63,6 +93,46 @@ Success: Equatable {
     }
 
     return lhs.value == rhs.value && metadataEqual
+  }
+  
+  /**
+   * Returns a new response with updated metadata.
+   *
+   * - Parameter metadata: The new metadata
+   * - Returns: A new response with the updated metadata
+   */
+  public func with(metadata: BackupOperationMetadata) -> BackupOperationResponse<Success> {
+    return BackupOperationResponse(
+      value: self.value,
+      progressStream: self.progressStream,
+      metadata: metadata
+    )
+  }
+  
+  /**
+   * Returns a new response with the specified metadata key-value added.
+   *
+   * - Parameters:
+   *   - key: The metadata key
+   *   - value: The value to store
+   * - Returns: A new response with the added metadata
+   */
+  public func with(
+    key: BackupOperationMetadata.MetadataKey,
+    value: String
+  ) -> BackupOperationResponse<Success> {
+    guard let existingMetadata = metadata else {
+      // If no metadata exists, create new metadata with current timestamp
+      let now = Date()
+      let newMetadata = BackupOperationMetadata(
+        startTime: now,
+        endTime: now,
+        metadata: [key: value]
+      )
+      return with(metadata: newMetadata)
+    }
+    
+    return with(metadata: existingMetadata.with(key: key, value: value))
   }
 }
 
@@ -86,7 +156,7 @@ public struct BackupOperationMetadata: Sendable, Equatable {
   public let operationType: String?
 
   /// Optional additional metadata
-  public let additionalInfo: [String: String]
+  public var additionalInfo: [String: String]
 
   /**
    * Creates new operation metadata.
@@ -100,13 +170,31 @@ public struct BackupOperationMetadata: Sendable, Equatable {
   public init(
     startTime: Date,
     endTime: Date,
-    operationType: String?=nil,
-    additionalInfo: [String: String]=[:]
+    metadata: [MetadataKey: String] = [:],
+    additionalInfo: [String: String] = [:]
   ) {
-    self.startTime=startTime
-    self.endTime=endTime
-    duration=endTime.timeIntervalSince(startTime)
-    self.operationType=operationType
-    self.additionalInfo=additionalInfo
+    self.startTime = startTime
+    self.endTime = endTime
+    self.duration = endTime.timeIntervalSince(startTime)
+    self.operationType = metadata[.operationType]
+    self.additionalInfo = additionalInfo
+  }
+
+  public enum MetadataKey: String, Equatable, Hashable {
+    case operationType
+  }
+
+  /**
+   * Returns a new metadata with the specified key-value added.
+   *
+   * - Parameters:
+   *   - key: The metadata key
+   *   - value: The value to store
+   * - Returns: A new metadata with the added key-value
+   */
+  public func with(key: MetadataKey, value: String) -> BackupOperationMetadata {
+    var newMetadata = self
+    newMetadata.additionalInfo[key.rawValue] = value
+    return newMetadata
   }
 }

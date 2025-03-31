@@ -7,9 +7,9 @@ import Foundation
 public protocol BackupProgressReporter: Sendable {
   /// Reports the current progress of an operation
   /// - Parameters:
-  ///   - progress: The progress information
+  ///   - progressInfo: The progress information
   ///   - operation: The operation being performed
-  func reportProgress(_ progress: BackupProgress, for operation: BackupOperation) async
+  func reportProgress(_ progressInfo: BackupProgressInfo, for operation: BackupOperation) async
 
   /// Reports that an operation has been cancelled
   /// - Parameter operation: The operation that was cancelled
@@ -69,7 +69,7 @@ public enum BackupOperation: String, Sendable, Equatable {
 }
 
 /// Represents the progress of a backup operation
-public struct BackupProgress: Sendable, Equatable {
+public struct BackupProgressInfo: Sendable, Equatable {
   /// Current phase of the operation
   public enum Phase: String, Sendable, Equatable {
     /// Initialising the operation
@@ -103,254 +103,219 @@ public struct BackupProgress: Sendable, Equatable {
     case failed
   }
 
-  /// Current phase of the operation
+  /// The current phase of the operation
   public let phase: Phase
 
-  /// Completed percentage (0.0 to 1.0)
+  /// Percentage complete (0-100)
   public let percentComplete: Double
 
-  /// Optional current item being processed
-  public let currentItem: String?
+  /// Number of items processed
+  public let itemsProcessed: Int
 
-  /// Optional count of processed items
-  public let processedItems: Int?
+  /// Total number of items
+  public let totalItems: Int
 
-  /// Optional total items to process
-  public let totalItems: Int?
+  /// Number of bytes processed
+  public let bytesProcessed: Int64
 
-  /// Optional bytes processed so far
-  public let processedBytes: UInt64?
+  /// Total number of bytes
+  public let totalBytes: Int64
 
-  /// Optional total bytes to process
-  public let totalBytes: UInt64?
-
-  /// Optional estimated time remaining in seconds
+  /// Estimated time remaining in seconds
   public let estimatedTimeRemaining: TimeInterval?
 
-  /// Optional rate of processing in bytes per second
-  public let bytesPerSecond: Double?
-
-  /// Optional error that caused the operation to fail
+  /// Error if in failed phase
   public let error: Error?
 
-  /// Creates a new progress instance
-  /// - Parameters:
-  ///   - phase: Current phase of the operation
-  ///   - percentComplete: Completed percentage (0.0 to 1.0)
-  ///   - currentItem: Optional current item being processed
-  ///   - processedItems: Optional count of processed items
-  ///   - totalItems: Optional total items to process
-  ///   - processedBytes: Optional bytes processed so far
-  ///   - totalBytes: Optional total bytes to process
-  ///   - estimatedTimeRemaining: Optional estimated time remaining in seconds
-  ///   - bytesPerSecond: Optional rate of processing in bytes per second
-  ///   - error: Optional error that caused the operation to fail
+  /// Current operation details
+  public let details: String?
+
+  /// Whether the operation can be cancelled
+  public let isCancellable: Bool
+
+  /// Creates a new progress info
   public init(
     phase: Phase,
     percentComplete: Double,
-    currentItem: String?=nil,
-    processedItems: Int?=nil,
-    totalItems: Int?=nil,
-    processedBytes: UInt64?=nil,
-    totalBytes: UInt64?=nil,
-    estimatedTimeRemaining: TimeInterval?=nil,
-    bytesPerSecond: Double?=nil,
-    error: Error?=nil
-  ) {
-    self.phase=phase
-    self.percentComplete=min(max(percentComplete, 0.0), 1.0)
-    self.currentItem=currentItem
-    self.processedItems=processedItems
-    self.totalItems=totalItems
-    self.processedBytes=processedBytes
-    self.totalBytes=totalBytes
-    self.estimatedTimeRemaining=estimatedTimeRemaining
-    self.bytesPerSecond=bytesPerSecond
-    self.error=error
-  }
-
-  /// Custom implementation of Equatable since Error doesn't conform to Equatable
-  public static func == (lhs: BackupProgress, rhs: BackupProgress) -> Bool {
-    // Compare all properties except error
-    lhs.phase == rhs.phase &&
-      lhs.percentComplete == rhs.percentComplete &&
-      lhs.currentItem == rhs.currentItem &&
-      lhs.processedItems == rhs.processedItems &&
-      lhs.totalItems == rhs.totalItems &&
-      lhs.processedBytes == rhs.processedBytes &&
-      lhs.totalBytes == rhs.totalBytes &&
-      lhs.estimatedTimeRemaining == rhs.estimatedTimeRemaining &&
-      lhs.bytesPerSecond == rhs.bytesPerSecond &&
-      // For error, just check if both are nil or both are non-nil
-      (lhs.error == nil) == (rhs.error == nil)
-  }
-
-  /// Creates a new progress instance at the initialising phase
-  /// - Returns: A progress instance at 0% in the initialising phase
-  public static func initialising() -> BackupProgress {
-    BackupProgress(phase: .initialising, percentComplete: 0.0)
-  }
-
-  /// Creates a new progress instance at the scanning phase
-  /// - Parameters:
-  ///   - percentComplete: Completed percentage (0.0 to 1.0)
-  ///   - currentItem: Optional current item being scanned
-  /// - Returns: A progress instance in the scanning phase
-  public static func scanning(
-    percentComplete: Double,
-    currentItem: String?=nil
-  ) -> BackupProgress {
-    BackupProgress(
-      phase: .scanning,
-      percentComplete: percentComplete,
-      currentItem: currentItem
-    )
-  }
-
-  /// Creates a new progress instance for data transfer
-  /// - Parameters:
-  ///   - processedBytes: Bytes processed so far
-  ///   - totalBytes: Total bytes to process
-  ///   - bytesPerSecond: Optional rate of processing
-  ///   - estimatedTimeRemaining: Optional estimated time remaining
-  /// - Returns: A progress instance in the transferring phase
-  public static func transferring(
-    processedBytes: UInt64,
-    totalBytes: UInt64,
-    bytesPerSecond: Double?=nil,
-    estimatedTimeRemaining: TimeInterval?=nil
-  ) -> BackupProgress {
-    let percent=totalBytes > 0 ? Double(processedBytes) / Double(totalBytes) : 0.0
-
-    return BackupProgress(
-      phase: .transferring,
-      percentComplete: percent,
-      processedBytes: processedBytes,
-      totalBytes: totalBytes,
-      estimatedTimeRemaining: estimatedTimeRemaining,
-      bytesPerSecond: bytesPerSecond
-    )
-  }
-
-  /// Creates a new progress instance for file processing
-  /// - Parameters:
-  ///   - processedItems: Items processed so far
-  ///   - totalItems: Total items to process
-  ///   - currentItem: Optional current item being processed
-  /// - Returns: A progress instance in the processing phase
-  public static func processing(
-    processedItems: Int,
+    itemsProcessed: Int,
     totalItems: Int,
-    currentItem: String?=nil
-  ) -> BackupProgress {
-    let percent=totalItems > 0 ? Double(processedItems) / Double(totalItems) : 0.0
+    bytesProcessed: Int64,
+    totalBytes: Int64,
+    estimatedTimeRemaining: TimeInterval? = nil,
+    error: Error? = nil,
+    details: String? = nil,
+    isCancellable: Bool = true
+  ) {
+    self.phase = phase
+    self.percentComplete = max(0.0, min(100.0, percentComplete))
+    self.itemsProcessed = itemsProcessed
+    self.totalItems = totalItems
+    self.bytesProcessed = bytesProcessed
+    self.totalBytes = totalBytes
+    self.estimatedTimeRemaining = estimatedTimeRemaining
+    self.error = error
+    self.details = details
+    self.isCancellable = isCancellable
+  }
 
-    return BackupProgress(
+  /// Creates a progress in the initialising phase
+  public static func initialising() -> BackupProgressInfo {
+    return BackupProgressInfo(
+      phase: .initialising,
+      percentComplete: 0.0,
+      itemsProcessed: 0,
+      totalItems: 0,
+      bytesProcessed: 0,
+      totalBytes: 0,
+      estimatedTimeRemaining: nil,
+      details: "Initialising operation"
+    )
+  }
+
+  /// Creates a progress in the completed phase
+  public static func completed() -> BackupProgressInfo {
+    return BackupProgressInfo(
+      phase: .completed,
+      percentComplete: 100.0,
+      itemsProcessed: 0,
+      totalItems: 0,
+      bytesProcessed: 0,
+      totalBytes: 0,
+      estimatedTimeRemaining: 0,
+      details: "Operation completed"
+    )
+  }
+
+  /// Creates a progress in the cancelled phase
+  public static func cancelled() -> BackupProgressInfo {
+    return BackupProgressInfo(
+      phase: .cancelled,
+      percentComplete: 0.0,
+      itemsProcessed: 0,
+      totalItems: 0,
+      bytesProcessed: 0,
+      totalBytes: 0,
+      estimatedTimeRemaining: 0,
+      details: "Operation cancelled",
+      isCancellable: false
+    )
+  }
+
+  /// Creates a progress in the failed phase
+  public static func failed(_ error: Error) -> BackupProgressInfo {
+    return BackupProgressInfo(
+      phase: .failed,
+      percentComplete: 0.0,
+      itemsProcessed: 0,
+      totalItems: 0,
+      bytesProcessed: 0,
+      totalBytes: 0,
+      estimatedTimeRemaining: 0,
+      error: error,
+      details: "Operation failed: \(error.localizedDescription)",
+      isCancellable: false
+    )
+  }
+
+  /// Creates a progress in the scanning phase
+  public static func scanning(
+    itemsScanned: Int,
+    details: String? = nil
+  ) -> BackupProgressInfo {
+    return BackupProgressInfo(
+      phase: .scanning,
+      percentComplete: 0.0,
+      itemsProcessed: itemsScanned,
+      totalItems: 0,
+      bytesProcessed: 0,
+      totalBytes: 0,
+      details: details ?? "Scanning files"
+    )
+  }
+
+  /// Creates a progress in the processing phase
+  public static func processing(
+    itemsProcessed: Int,
+    totalItems: Int,
+    details: String? = nil
+  ) -> BackupProgressInfo {
+    let percent = totalItems > 0 ? Double(itemsProcessed) / Double(totalItems) * 100.0 : 0.0
+
+    return BackupProgressInfo(
       phase: .processing,
       percentComplete: percent,
-      currentItem: currentItem,
-      processedItems: processedItems,
-      totalItems: totalItems
+      itemsProcessed: itemsProcessed,
+      totalItems: totalItems,
+      bytesProcessed: 0,
+      totalBytes: 0,
+      details: details ?? "Processing items"
     )
   }
 
-  /// Creates a new progress instance at the finalising phase
-  /// - Parameter percentComplete: Completed percentage (0.0 to 1.0)
-  /// - Returns: A progress instance in the finalising phase
-  public static func finalising(percentComplete: Double=0.9) -> BackupProgress {
-    BackupProgress(phase: .finalising, percentComplete: percentComplete)
+  /// Creates a progress in the transferring phase
+  public static func transferring(
+    processedBytes: Int64,
+    totalBytes: Int64,
+    itemsProcessed: Int = 0,
+    totalItems: Int = 0,
+    details: String? = nil
+  ) -> BackupProgressInfo {
+    let percent = totalBytes > 0 ? Double(processedBytes) / Double(totalBytes) * 100.0 : 0.0
+
+    return BackupProgressInfo(
+      phase: .transferring,
+      percentComplete: percent,
+      itemsProcessed: itemsProcessed,
+      totalItems: totalItems,
+      bytesProcessed: processedBytes,
+      totalBytes: totalBytes,
+      details: details ?? "Transferring data"
+    )
   }
 
-  /// Creates a new progress instance at the cleanup phase
-  /// - Parameter percentComplete: Completed percentage (0.0 to 1.0)
-  /// - Returns: A progress instance in the cleanup phase
-  public static func cleanup(percentComplete: Double=0.95) -> BackupProgress {
-    BackupProgress(phase: .cleanup, percentComplete: percentComplete)
+  /// Creates a progress in the finalising phase
+  public static func finalising(details: String? = nil) -> BackupProgressInfo {
+    return BackupProgressInfo(
+      phase: .finalising,
+      percentComplete: 99.0,
+      itemsProcessed: 0,
+      totalItems: 0,
+      bytesProcessed: 0,
+      totalBytes: 0,
+      details: details ?? "Finalising"
+    )
   }
 
-  /// Creates a new progress instance at the verifying phase
-  /// - Parameters:
-  ///   - percentComplete: Completed percentage (0.0 to 1.0)
-  ///   - processedItems: Optional count of processed items
-  ///   - totalItems: Optional total items to process
-  /// - Returns: A progress instance in the verifying phase
+  /// Creates a progress in the cleanup phase
+  public static func cleanup(details: String? = nil) -> BackupProgressInfo {
+    return BackupProgressInfo(
+      phase: .cleanup,
+      percentComplete: 99.5,
+      itemsProcessed: 0,
+      totalItems: 0,
+      bytesProcessed: 0,
+      totalBytes: 0,
+      details: details ?? "Cleaning up"
+    )
+  }
+
+  /// Creates a progress in the verifying phase
   public static func verifying(
-    percentComplete: Double,
-    processedItems: Int?=nil,
-    totalItems: Int?=nil
-  ) -> BackupProgress {
-    BackupProgress(
+    itemsVerified: Int,
+    totalItems: Int,
+    details: String? = nil
+  ) -> BackupProgressInfo {
+    let percent = totalItems > 0 ? Double(itemsVerified) / Double(totalItems) * 100.0 : 0.0
+
+    return BackupProgressInfo(
       phase: .verifying,
-      percentComplete: percentComplete,
-      processedItems: processedItems,
-      totalItems: totalItems
+      percentComplete: percent,
+      itemsProcessed: itemsVerified,
+      totalItems: totalItems,
+      bytesProcessed: 0,
+      totalBytes: 0,
+      details: details ?? "Verifying data"
     )
-  }
-
-  /// Creates a new progress instance for a completed operation
-  /// - Returns: A progress instance in the completed phase
-  public static func completed() -> BackupProgress {
-    BackupProgress(phase: .completed, percentComplete: 1.0)
-  }
-
-  /// Creates a new progress instance for a cancelled operation
-  /// - Returns: A progress instance in the cancelled phase
-  public static func cancelled() -> BackupProgress {
-    BackupProgress(phase: .cancelled, percentComplete: 0.0)
-  }
-
-  /// Creates a new progress instance for a failed operation
-  /// - Parameter error: The error that caused the failure
-  /// - Returns: A progress instance in the failed phase
-  public static func failed(_ error: Error) -> BackupProgress {
-    BackupProgress(phase: .failed, percentComplete: 0.0, error: error)
-  }
-
-  /// Returns a string representation of the progress
-  public var description: String {
-    var components: [String]=[]
-
-    components.append("\(phase.rawValue.capitalized): \(Int(percentComplete * 100))%")
-
-    if let processedItems, let totalItems {
-      components.append("\(processedItems)/\(totalItems) items")
-    }
-
-    if let processedBytes, let totalBytes {
-      let formatter=ByteCountFormatter()
-      formatter.allowedUnits=[.useAll]
-      formatter.countStyle = .file
-      components
-        .append(
-          "\(formatter.string(fromByteCount: Int64(processedBytes)))/\(formatter.string(fromByteCount: Int64(totalBytes)))"
-        )
-    }
-
-    if let bytesPerSecond {
-      let formatter=ByteCountFormatter()
-      formatter.allowedUnits=[.useAll]
-      formatter.countStyle = .memory
-      components.append("\(formatter.string(fromByteCount: Int64(bytesPerSecond)))/s")
-    }
-
-    if let estimatedTimeRemaining {
-      let formatter=DateComponentsFormatter()
-      formatter.allowedUnits=[.hour, .minute, .second]
-      formatter.unitsStyle = .abbreviated
-      if let formattedTime=formatter.string(from: estimatedTimeRemaining) {
-        components.append("\(formattedTime) remaining")
-      }
-    }
-
-    if let currentItem {
-      components.append("\"\(currentItem)\"")
-    }
-
-    if let error {
-      components.append("Error: \(error.localizedDescription)")
-    }
-
-    return components.joined(separator: " • ")
   }
 }
 
@@ -359,34 +324,28 @@ public protocol ProgressCancellationToken: Sendable {
   /// Checks if the operation has been cancelled
   var isCancelled: Bool { get }
 
-  /// Cancels the operation
+  /// Attempts to cancel the operation
   func cancel()
 }
 
-/// A concrete implementation of a progress cancellation token
-public final class ProgressOperationCancellationToken: ProgressCancellationToken,
-@unchecked Sendable {
-  /// Lock for thread-safe access to _isCancelled
-  private let lock=NSLock()
+/// Simple implementation of a cancellation token
+public final class SimpleCancellationToken: ProgressCancellationToken {
+  /// Whether the token has been cancelled
+  public private(set) var isCancelled: Bool = false
 
-  /// Internal cancelled state
-  private var _isCancelled=false
-
-  /// Checks if the operation has been cancelled
-  public var isCancelled: Bool {
-    lock.lock()
-    defer { lock.unlock() }
-    return _isCancelled
-  }
+  /// The action to perform when cancellation is requested
+  private let onCancel: () -> Void
 
   /// Creates a new cancellation token
-  public init() {}
+  /// - Parameter onCancel: Action to perform when cancellation is requested
+  public init(onCancel: @escaping () -> Void = {}) {
+    self.onCancel = onCancel
+  }
 
-  /// Cancels the operation
+  /// Attempts to cancel the operation
   public func cancel() {
-    lock.lock()
-    _isCancelled=true
-    lock.unlock()
+    isCancelled = true
+    onCancel()
   }
 }
 
@@ -396,7 +355,7 @@ public final class ProgressOperationCancellationToken: ProgressCancellationToken
 /// that tracks progress and can be observed by clients.
 public actor BackupProgressMonitor: BackupProgressReporter {
   /// The current progress of the operation
-  private var _currentProgress: [BackupOperation: BackupProgress]=[:]
+  private var _currentProgress: [BackupOperation: BackupProgressInfo]=[:]
 
   /// Operation start times for calculating rates
   private var operationStartTimes: [BackupOperation: Date]=[:]
@@ -407,7 +366,7 @@ public actor BackupProgressMonitor: BackupProgressReporter {
   }
 
   /// Closure called when progress is updated
-  public var onProgressUpdated: ((BackupOperation, BackupProgress) async -> Void)?
+  public var onProgressUpdated: ((BackupOperation, BackupProgressInfo) async -> Void)?
 
   /// Closure called when an operation is cancelled
   public var onOperationCancelled: ((BackupOperation) async -> Void)?
@@ -424,7 +383,7 @@ public actor BackupProgressMonitor: BackupProgressReporter {
   /// Gets the current progress for an operation
   /// - Parameter operation: The operation to get progress for
   /// - Returns: The current progress, or nil if no progress is available
-  public func currentProgress(for operation: BackupOperation) -> BackupProgress? {
+  public func currentProgress(for operation: BackupOperation) -> BackupProgressInfo? {
     _currentProgress[operation]
   }
 
@@ -441,20 +400,20 @@ public actor BackupProgressMonitor: BackupProgressReporter {
 
   /// Reports the current progress of an operation
   /// - Parameters:
-  ///   - progress: The progress information
+  ///   - progressInfo: The progress information
   ///   - operation: The operation being performed
-  public func reportProgress(_ progress: BackupProgress, for operation: BackupOperation) async {
+  public func reportProgress(_ progressInfo: BackupProgressInfo, for operation: BackupOperation) async {
     // Record start time if this is the first progress report
     if operationStartTimes[operation] == nil {
       operationStartTimes[operation]=Date()
     }
 
     // Update current progress
-    _currentProgress[operation]=progress
+    _currentProgress[operation]=progressInfo
 
     // Notify observers
     if let onProgressUpdated {
-      await onProgressUpdated(operation, progress)
+      await onProgressUpdated(operation, progressInfo)
     }
   }
 

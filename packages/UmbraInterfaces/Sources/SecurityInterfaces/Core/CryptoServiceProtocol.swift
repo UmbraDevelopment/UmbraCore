@@ -1,5 +1,5 @@
 import Foundation
-import SecurityTypes
+import CoreSecurityTypes
 
 /**
  # Application Cryptographic Service Protocol

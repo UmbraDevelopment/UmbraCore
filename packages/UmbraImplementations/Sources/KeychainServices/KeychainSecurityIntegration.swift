@@ -3,7 +3,7 @@ import KeychainInterfaces
 import LoggingInterfaces
 import LoggingTypes
 import SecurityCoreInterfaces
-import SecurityCoreTypes
+import CoreSecurityTypes
 import UmbraErrors
 
 // Re-export the KeychainSecurityActor module from its new location

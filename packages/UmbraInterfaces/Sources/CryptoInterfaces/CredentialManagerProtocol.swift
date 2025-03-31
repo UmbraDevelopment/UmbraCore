@@ -1,5 +1,5 @@
 import Foundation
-import SecurityTypes
+import DomainSecurityTypes
 
 /// Protocol defining the credential management operations
 ///
@@ -11,12 +11,12 @@ public protocol CredentialManagerProtocol: Sendable {
   /// - Parameters:
   ///   - identifier: Identifier for the credential
   ///   - data: Data to store
-  func save(_ data: SecurityTypes.SecureBytes, forIdentifier identifier: String) async throws
+  func save(_ data: DomainSecurityTypes.SecureBytes, forIdentifier identifier: String) async throws
 
   /// Retrieve a credential
   /// - Parameter identifier: Identifier for the credential
   /// - Returns: Stored data
-  func retrieve(forIdentifier identifier: String) async throws -> SecurityTypes.SecureBytes
+  func retrieve(forIdentifier identifier: String) async throws -> DomainSecurityTypes.SecureBytes
 
   /// Delete a credential
   /// - Parameter identifier: Identifier for the credential

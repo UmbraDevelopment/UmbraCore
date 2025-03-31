@@ -1,7 +1,7 @@
 import CoreDTOs
 import Foundation
 import LoggingInterfaces
-import SecurityTypes
+import DomainSecurityTypes
 import UmbraErrors
 import XPCProtocolsCore
 

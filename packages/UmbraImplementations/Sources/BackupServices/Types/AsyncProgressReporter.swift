@@ -68,79 +68,131 @@ public actor AsyncProgressReporter<Progress: Sendable> {
 }
 
 /**
- * Extension for BackupProgress-specific reporting.
+ * Extension for BackupProgressInfo-specific reporting.
+ *
+ * This extension provides convenience methods specifically for BackupProgressInfo
+ * to handle standard progress reporting operations.
  */
-extension AsyncProgressReporter where Progress == BackupProgress {
+extension AsyncProgressReporter where Progress == BackupProgressInfo {
   /**
-   * Reports completion.
+   * Reports that an operation has completed successfully.
+   *
+   * - Parameter detail: Optional completion detail message
    */
-  public func reportCompletion() {
-    // Create completion progress if needed
-    if latestProgress?.phase != .completed {
-      let completionProgress=BackupProgress(
+  public func reportCompletion(detail: String?=nil) async {
+    if let detail {
+      let completionProgress=BackupProgressInfo(
         phase: .completed,
-        percentComplete: 1.0
+        percentComplete: 100.0,
+        itemsProcessed: 0,
+        totalItems: 0,
+        bytesProcessed: 0,
+        totalBytes: 0,
+        details: detail
       )
-      reportProgress(completionProgress)
+      await reportProgress(completionProgress)
+    } else {
+      await reportProgress(.completed())
     }
   }
 
   /**
-   * Reports cancellation.
+   * Reports that an operation has been cancelled.
+   *
+   * - Parameter detail: Optional cancellation detail message
    */
-  public func reportCancellation() {
-    // Create cancellation progress
-    let cancellationProgress=BackupProgress(
+  public func reportCancellation(detail: String?=nil) async {
+    let cancellationProgress=BackupProgressInfo(
       phase: .cancelled,
-      percentComplete: latestProgress?.percentComplete ?? 0
+      percentComplete: 0.0,
+      itemsProcessed: 0,
+      totalItems: 0,
+      bytesProcessed: 0,
+      totalBytes: 0,
+      details: detail ?? "Operation cancelled",
+      isCancellable: false
     )
-    reportProgress(cancellationProgress)
+    await reportProgress(cancellationProgress)
   }
 
   /**
-   * Reports an error.
+   * Reports that an operation has failed.
    *
-   * - Parameter error: The error to report
+   * - Parameters:
+   *   - error: The error that caused the failure
+   *   - detail: Optional additional detail message
    */
-  public func reportError(_ error: Error) {
-    // Create error progress
-    let errorProgress=BackupProgress(
+  public func reportError(_ error: Error, detail: String?=nil) async {
+    let errorProgress=BackupProgressInfo(
       phase: .failed,
-      percentComplete: latestProgress?.percentComplete ?? 0,
-      error: error
+      percentComplete: 0.0,
+      itemsProcessed: 0,
+      totalItems: 0,
+      bytesProcessed: 0,
+      totalBytes: 0,
+      error: error,
+      details: detail ?? "Operation failed: \(error.localizedDescription)",
+      isCancellable: false
     )
-    reportProgress(errorProgress)
+    await reportProgress(errorProgress)
   }
 }
 
 /**
  * Adapter to make AsyncProgressReporter conform to BackupProgressReporter.
+ *
+ * This struct bridges the AsyncProgressReporter to the BackupProgressReporter
+ * protocol, enabling its use in contexts that expect the protocol.
  */
 public struct ProgressReporterAdapter: BackupProgressReporter {
-  /// The wrapped async progress reporter
-  private let reporter: AsyncProgressReporter<BackupProgress>
+  /// The underlying progress reporter
+  private let reporter: AsyncProgressReporter<BackupProgressInfo>
 
   /**
-   * Creates a new adapter.
+   * Creates a new progress reporter adapter.
    *
-   * - Parameter reporter: The reporter to adapt
+   * - Parameter reporter: The underlying AsyncProgressReporter
    */
-  public init(reporter: AsyncProgressReporter<BackupProgress>) {
+  public init(reporter: AsyncProgressReporter<BackupProgressInfo>) {
     self.reporter=reporter
   }
 
-  public func reportProgress(_ progress: BackupProgress, for _: BackupOperation) async {
+  /**
+   * Reports progress for an operation.
+   *
+   * - Parameters:
+   *   - progress: The progress update
+   *   - operation: The operation being performed
+   */
+  public func reportProgress(_ progress: BackupProgressInfo, for _: BackupOperation) async {
     await reporter.reportProgress(progress)
   }
 
+  /**
+   * Reports that an operation has been cancelled.
+   *
+   * - Parameter operation: The operation that was cancelled
+   */
   public func reportCancellation(for _: BackupOperation) async {
     await reporter.reportCancellation()
   }
 
+  /**
+   * Reports that an operation has failed.
+   *
+   * - Parameters:
+   *   - error: The error that caused the failure
+   *   - operation: The operation that failed
+   */
   public func reportFailure(_ error: Error, for _: BackupOperation) async {
     await reporter.reportError(error)
   }
 
+  /**
+   * Reports that an operation has completed successfully.
+   *
+   * - Parameter operation: The operation that completed
+   */
   public func reportCompletion(for _: BackupOperation) async {
     await reporter.reportCompletion()
   }
