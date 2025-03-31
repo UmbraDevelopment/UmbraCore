@@ -63,28 +63,28 @@ import UmbraErrors
      - Returns: Result with encrypted data or error
      */
     public func encrypt(
-      data: SecureBytes,
-      using key: SecureBytes
-    ) async -> Result<SecureBytes, Error> {
+      data: [UInt8],
+      using key: [UInt8]
+    ) async -> Result<[UInt8], Error> {
       do {
         // Generate a random 12-byte IV for AES-GCM
-        let iv=try generateIV(size: 12)
+        let iv = try generateIV(size: 12)
 
         // Call the Ring FFI to encrypt
-        var encryptedData=RingFFI_AES_GCM_Encrypt(
-          data.bytes,
+        var encryptedData = RingFFI_AES_GCM_Encrypt(
+          data,
           data.count,
-          key.bytes,
+          key,
           key.count,
-          iv.bytes,
+          iv,
           iv.count
         )
 
         // Combine IV and encrypted data for storage/transmission
         // Format: [IV (12 bytes)][Encrypted Data]
-        let result=iv + encryptedData
+        let result = iv + encryptedData
 
-        return .success(SecureBytes(bytes: result))
+        return .success(result)
       } catch {
         return .failure(mapToSecurityErrorDomain(error))
       }
@@ -99,9 +99,9 @@ import UmbraErrors
      - Returns: Result with decrypted data or error
      */
     public func decrypt(
-      data: SecureBytes,
-      using key: SecureBytes
-    ) async -> Result<SecureBytes, Error> {
+      data: [UInt8],
+      using key: [UInt8]
+    ) async -> Result<[UInt8], Error> {
       do {
         // Validate ciphertext length (must at least have IV)
         guard data.count >= 12 else {
@@ -111,18 +111,18 @@ import UmbraErrors
         }
 
         // Extract IV from the first 12 bytes
-        let iv=SecureBytes(bytes: [UInt8](data.bytes.prefix(12)))
+        let iv = Array(data.prefix(12))
 
         // Extract encrypted data (everything after the IV)
-        let encryptedData=SecureBytes(bytes: [UInt8](data.bytes.dropFirst(12)))
+        let encryptedData = Array(data.dropFirst(12))
 
         // Call the Ring FFI to decrypt
-        var decryptedData=RingFFI_AES_GCM_Decrypt(
-          encryptedData.bytes,
+        var decryptedData = RingFFI_AES_GCM_Decrypt(
+          encryptedData,
           encryptedData.count,
-          key.bytes,
+          key,
           key.count,
-          iv.bytes,
+          iv,
           iv.count
         )
 
@@ -132,7 +132,7 @@ import UmbraErrors
           )
         }
 
-        return .success(SecureBytes(bytes: decryptedData))
+        return .success(decryptedData)
       } catch {
         return .failure(mapToSecurityErrorDomain(error))
       }
@@ -144,7 +144,7 @@ import UmbraErrors
      - Parameter size: Key size in bits (128, 192, or 256)
      - Returns: Result with generated key or error
      */
-    public func generateKey(size: Int) async -> Result<SecureBytes, Error> {
+    public func generateKey(size: Int) async -> Result<[UInt8], Error> {
       do {
         // Validate key size
         guard size == 128 || size == 192 || size == 256 else {
@@ -154,11 +154,11 @@ import UmbraErrors
         }
 
         // Convert bits to bytes
-        let sizeInBytes=size / 8
+        let sizeInBytes = size / 8
 
         // Generate random bytes for the key
-        var keyData=[UInt8](repeating: 0, count: sizeInBytes)
-        let result=RingFFI_GenerateRandomBytes(&keyData, sizeInBytes)
+        var keyData = [UInt8](repeating: 0, count: sizeInBytes)
+        let result = RingFFI_GenerateRandomBytes(&keyData, sizeInBytes)
 
         if result != 0 {
           throw SecurityErrorDomain.cryptographicError(
@@ -166,7 +166,7 @@ import UmbraErrors
           )
         }
 
-        return .success(SecureBytes(bytes: keyData))
+        return .success(keyData)
       } catch {
         return .failure(mapToSecurityErrorDomain(error))
       }
@@ -179,7 +179,7 @@ import UmbraErrors
      - Returns: Generated IV
      - Throws: SecurityErrorDomain if generation fails
      */
-    private func generateIV(size: Int) throws -> SecureBytes {
+    private func generateIV(size: Int) throws -> [UInt8] {
       // Validate size
       guard size > 0 else {
         throw SecurityErrorDomain.invalidInput(
@@ -188,8 +188,8 @@ import UmbraErrors
       }
 
       // Generate random bytes for the IV
-      var ivData=[UInt8](repeating: 0, count: size)
-      let result=RingFFI_GenerateRandomBytes(&ivData, size)
+      var ivData = [UInt8](repeating: 0, count: size)
+      let result = RingFFI_GenerateRandomBytes(&ivData, size)
 
       if result != 0 {
         throw SecurityErrorDomain.cryptographicError(
@@ -197,7 +197,7 @@ import UmbraErrors
         )
       }
 
-      return SecureBytes(bytes: ivData)
+      return ivData
     }
 
     /**
@@ -205,48 +205,21 @@ import UmbraErrors
 
      - Parameters:
         - data: Data to hash
-        - algorithm: Hash algorithm to use (default: SHA-256)
      - Returns: Result with hash value or error
      */
-    public func hash(data: SecureBytes) async -> Result<SecureBytes, Error> {
+    public func hash(data: [UInt8]) async -> Result<[UInt8], Error> {
       do {
         // Default to SHA-256
-        let algorithm="SHA256"
-
-        // Determine hash size based on algorithm
-        let hashSize: Int
-        switch algorithm.uppercased() {
-          case "SHA256":
-            hashSize=32 // 256 bits = 32 bytes
-          case "SHA384":
-            hashSize=48 // 384 bits = 48 bytes
-          case "SHA512":
-            hashSize=64 // 512 bits = 64 bytes
-          default:
-            throw SecurityErrorDomain.unsupportedOperation(
-              name: "Hash algorithm \(algorithm)"
-            )
-        }
-
-        // Prepare output buffer
-        var hashData=[UInt8](repeating: 0, count: hashSize)
-
-        // Call the Ring FFI to hash
-        let result=RingFFI_Hash(
-          data.bytes,
-          data.count,
-          &hashData,
-          hashSize,
-          algorithm
-        )
+        var hashData = [UInt8](repeating: 0, count: 32) // SHA-256 is 32 bytes
+        let result = RingFFI_SHA256(&hashData, data, data.count)
 
         if result != 0 {
           throw SecurityErrorDomain.cryptographicError(
-            reason: "Hashing failed using Ring"
+            reason: "Hash computation failed using Ring SHA-256"
           )
         }
 
-        return .success(SecureBytes(bytes: hashData))
+        return .success(hashData)
       } catch {
         return .failure(mapToSecurityErrorDomain(error))
       }
@@ -259,12 +232,12 @@ import UmbraErrors
      - Returns: A SecurityErrorDomain error
      */
     private func mapToSecurityErrorDomain(_ error: Error) -> Error {
-      if let securityError=error as? SecurityErrorDomain {
+      if let securityError = error as? SecurityErrorDomain {
         return securityError
       }
 
-      return SecurityErrorDomain.operationFailed(
-        reason: "Ring operation failed: \(error.localizedDescription)"
+      return SecurityErrorDomain.cryptographicError(
+        reason: "Ring cryptographic operation failed: \(error.localizedDescription)"
       )
     }
   }
@@ -272,92 +245,54 @@ import UmbraErrors
   // MARK: - FFI Function Declarations
 
   /// Encrypts data using AES-GCM
-  ///
-  /// - Parameters:
-  ///   - plaintext: Pointer to plaintext data
-  ///   - plaintextLen: Length of plaintext
-  ///   - key: Pointer to key
-  ///   - keyLen: Length of key
-  ///   - iv: Pointer to IV
-  ///   - ivLen: Length of IV
-  /// - Returns: Encrypted data
   private func RingFFI_AES_GCM_Encrypt(
-    _: UnsafePointer<UInt8>,
-    _ plaintextLen: Int,
-    _: UnsafePointer<UInt8>,
-    _: Int,
-    _: UnsafePointer<UInt8>,
-    _: Int
+    _ plaintext: [UInt8],
+    _ plaintextLength: Int,
+    _ key: [UInt8],
+    _ keyLength: Int,
+    _ iv: [UInt8],
+    _ ivLength: Int
   ) -> [UInt8] {
-    // This is a placeholder for the actual FFI call
-    // In a real implementation, this would call into the compiled Ring library
-    [UInt8](repeating: 0, count: plaintextLen + 16) // Simulate tag
+    // FFI implementation would be here
+    // This is a placeholder that returns empty data
+    return []
   }
 
   /// Decrypts data using AES-GCM
-  ///
-  /// - Parameters:
-  ///   - ciphertext: Pointer to ciphertext data
-  ///   - ciphertextLen: Length of ciphertext
-  ///   - key: Pointer to key
-  ///   - keyLen: Length of key
-  ///   - iv: Pointer to IV
-  ///   - ivLen: Length of IV
-  /// - Returns: Decrypted data
   private func RingFFI_AES_GCM_Decrypt(
-    _: UnsafePointer<UInt8>,
-    _ ciphertextLen: Int,
-    _: UnsafePointer<UInt8>,
-    _: Int,
-    _: UnsafePointer<UInt8>,
-    _: Int
+    _ ciphertext: [UInt8],
+    _ ciphertextLength: Int,
+    _ key: [UInt8],
+    _ keyLength: Int,
+    _ iv: [UInt8],
+    _ ivLength: Int
   ) -> [UInt8] {
-    // This is a placeholder for the actual FFI call
-    // In a real implementation, this would call into the compiled Ring library
-    [UInt8](repeating: 0, count: max(0, ciphertextLen - 16)) // Simulate tag removal
+    // FFI implementation would be here
+    // This is a placeholder that returns empty data
+    return []
   }
 
-  /// Generates random bytes
-  ///
-  /// - Parameters:
-  ///   - buffer: Pointer to output buffer
-  ///   - length: Number of random bytes to generate
-  /// - Returns: 0 on success, non-zero on failure
+  /// Generates cryptographically secure random bytes
   private func RingFFI_GenerateRandomBytes(
-    _ buffer: UnsafeMutablePointer<UInt8>,
+    _ buffer: inout [UInt8],
     _ length: Int
   ) -> Int {
-    // This is a placeholder for the actual FFI call
-    // In a real implementation, this would call into the compiled Ring library
-    for i in 0..<length {
-      buffer[i]=UInt8.random(in: 0...255)
-    }
-    return 0 // Success
+    // FFI implementation would be here
+    // This is a placeholder that returns success (0)
+    return 0
   }
 
-  /// Computes a cryptographic hash
-  ///
-  /// - Parameters:
-  ///   - data: Pointer to input data
-  ///   - dataLen: Length of input data
-  ///   - hash: Pointer to output buffer
-  ///   - hashLen: Length of output buffer
-  ///   - algorithm: Hash algorithm to use
-  /// - Returns: 0 on success, non-zero on failure
-  private func RingFFI_Hash(
-    _ data: UnsafePointer<UInt8>,
-    _ dataLen: Int,
-    _ hash: UnsafeMutablePointer<UInt8>,
-    _ hashLen: Int,
-    _: String
+  /// Computes SHA-256 hash
+  private func RingFFI_SHA256(
+    _ outputHash: inout [UInt8],
+    _ data: [UInt8],
+    _ dataLength: Int
   ) -> Int {
-    // This is a placeholder for the actual FFI call
-    // In a real implementation, this would call into the compiled Ring library
-    for i in 0..<min(dataLen, hashLen) {
-      hash[i]=data[i]
-    }
-    return 0 // Success
+    // FFI implementation would be here
+    // This is a placeholder that returns success (0)
+    return 0
   }
+
 #else
   // Empty placeholder when Ring is not available
   public actor RingSecurityProvider: CryptoServiceProtocol, AsyncServiceInitializable {
@@ -367,37 +302,37 @@ import UmbraErrors
 
     public func initialize() async throws {
       throw SecurityErrorDomain.unsupportedOperation(
-        name: "Ring cryptography is not available on this platform"
+        reason: "Ring crypto library is not available on this platform"
       )
     }
 
     public func encrypt(
-      data _: SecureBytes,
-      using _: SecureBytes
-    ) async -> Result<SecureBytes, Error> {
-      .failure(SecurityErrorDomain.unsupportedOperation(
-        name: "Ring encryption is not available on this platform"
+      data: [UInt8],
+      using key: [UInt8]
+    ) async -> Result<[UInt8], Error> {
+      return .failure(SecurityErrorDomain.unsupportedOperation(
+        reason: "Ring crypto library is not available on this platform"
       ))
     }
 
     public func decrypt(
-      data _: SecureBytes,
-      using _: SecureBytes
-    ) async -> Result<SecureBytes, Error> {
-      .failure(SecurityErrorDomain.unsupportedOperation(
-        name: "Ring decryption is not available on this platform"
+      data: [UInt8],
+      using key: [UInt8]
+    ) async -> Result<[UInt8], Error> {
+      return .failure(SecurityErrorDomain.unsupportedOperation(
+        reason: "Ring crypto library is not available on this platform"
       ))
     }
 
-    public func generateKey(size _: Int) async -> Result<SecureBytes, Error> {
-      .failure(SecurityErrorDomain.unsupportedOperation(
-        name: "Ring key generation is not available on this platform"
+    public func generateKey(size: Int) async -> Result<[UInt8], Error> {
+      return .failure(SecurityErrorDomain.unsupportedOperation(
+        reason: "Ring crypto library is not available on this platform"
       ))
     }
 
-    public func hash(data _: SecureBytes) async -> Result<SecureBytes, Error> {
-      .failure(SecurityErrorDomain.unsupportedOperation(
-        name: "Ring hashing is not available on this platform"
+    public func hash(data: [UInt8]) async -> Result<[UInt8], Error> {
+      return .failure(SecurityErrorDomain.unsupportedOperation(
+        reason: "Ring crypto library is not available on this platform"
       ))
     }
   }

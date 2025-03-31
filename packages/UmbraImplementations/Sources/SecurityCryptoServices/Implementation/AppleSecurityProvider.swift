@@ -52,28 +52,28 @@ import UmbraErrors
      - Returns: Result with encrypted data or error
      */
     public func encrypt(
-      data: SecureBytes,
-      using key: SecureBytes
-    ) async -> Result<SecureBytes, Error> {
+      data: [UInt8],
+      using key: [UInt8]
+    ) async -> Result<[UInt8], Error> {
       do {
         // Generate a random nonce for encryption
-        let nonce=try AES.GCM.Nonce()
+        let nonce = try AES.GCM.Nonce()
 
-        // Convert SecureBytes to CryptoKit key format
-        let cryptoKitKey=try getCryptoKitSymmetricKey(from: key)
+        // Convert byte array to CryptoKit key format
+        let cryptoKitKey = try getCryptoKitSymmetricKey(from: key)
 
         // Perform the encryption
-        let sealedBox=try AES.GCM.seal(data.data, using: cryptoKitKey, nonce: nonce)
+        let sealedBox = try AES.GCM.seal(Data(data), using: cryptoKitKey, nonce: nonce)
 
         // Combine nonce and sealed data for storage/transmission
         // Format: [Nonce][Tag][Ciphertext]
-        guard let combined=sealedBox.combined else {
+        guard let combined = sealedBox.combined else {
           throw SecurityErrorDomain.cryptographicError(
             reason: "Failed to generate combined ciphertext output"
           )
         }
 
-        return .success(SecureBytes(data: combined))
+        return .success([UInt8](combined))
       } catch {
         return .failure(mapToSecurityErrorDomain(error))
       }
@@ -88,20 +88,20 @@ import UmbraErrors
      - Returns: Result with decrypted data or error
      */
     public func decrypt(
-      data: SecureBytes,
-      using key: SecureBytes
-    ) async -> Result<SecureBytes, Error> {
+      data: [UInt8],
+      using key: [UInt8]
+    ) async -> Result<[UInt8], Error> {
       do {
         // Create a sealed box from the combined format
-        let sealedBox=try AES.GCM.SealedBox(combined: data.data)
+        let sealedBox = try AES.GCM.SealedBox(combined: Data(data))
 
-        // Convert SecureBytes to CryptoKit key format
-        let cryptoKitKey=try getCryptoKitSymmetricKey(from: key)
+        // Convert byte array to CryptoKit key format
+        let cryptoKitKey = try getCryptoKitSymmetricKey(from: key)
 
         // Perform the decryption
-        let decryptedData=try AES.GCM.open(sealedBox, using: cryptoKitKey)
+        let decryptedData = try AES.GCM.open(sealedBox, using: cryptoKitKey)
 
-        return .success(SecureBytes(data: decryptedData))
+        return .success([UInt8](decryptedData))
       } catch {
         return .failure(mapToSecurityErrorDomain(error))
       }
@@ -113,22 +113,22 @@ import UmbraErrors
      - Parameter size: Key size in bits (128, 192, or 256)
      - Returns: Result with generated key or error
      */
-    public func generateKey(size: Int) async -> Result<SecureBytes, Error> {
+    public func generateKey(size: Int) async -> Result<[UInt8], Error> {
       do {
         // Convert bits to bytes
-        let keySize=size / 8
+        let keySize = size / 8
 
         // CryptoKit supports 128, 192, and 256-bit keys for AES
         switch keySize {
           case 16: // 128 bits
-            let key=SymmetricKey(size: .bits128)
-            return .success(SecureBytes(data: key.withUnsafeBytes { Data($0) }))
+            let key = SymmetricKey(size: .bits128)
+            return .success(key.withUnsafeBytes { [UInt8]($0) })
           case 24: // 192 bits
-            let key=SymmetricKey(size: .bits192)
-            return .success(SecureBytes(data: key.withUnsafeBytes { Data($0) }))
+            let key = SymmetricKey(size: .bits192)
+            return .success(key.withUnsafeBytes { [UInt8]($0) })
           case 32: // 256 bits
-            let key=SymmetricKey(size: .bits256)
-            return .success(SecureBytes(data: key.withUnsafeBytes { Data($0) }))
+            let key = SymmetricKey(size: .bits256)
+            return .success(key.withUnsafeBytes { [UInt8]($0) })
           default:
             throw SecurityErrorDomain.invalidInput(
               reason: "Invalid key size, must be 128, 192, or 256 bits"
@@ -145,11 +145,11 @@ import UmbraErrors
      - Parameter data: Data to hash (default algorithm: SHA-256)
      - Returns: Result with hash value or error
      */
-    public func hash(data: SecureBytes) async -> Result<SecureBytes, Error> {
+    public func hash(data: [UInt8]) async -> Result<[UInt8], Error> {
       do {
         // Default to SHA-256
-        let hashData=SHA256.hash(data: data.data)
-        return .success(SecureBytes(data: Data(hashData)))
+        let hashData = SHA256.hash(data: Data(data))
+        return .success([UInt8](Data(hashData)))
       } catch {
         return .failure(mapToSecurityErrorDomain(error))
       }
@@ -158,19 +158,19 @@ import UmbraErrors
     // MARK: - Helper Methods
 
     /**
-     Converts a SecureBytes key to a CryptoKit SymmetricKey.
+     Converts a byte array key to a CryptoKit SymmetricKey.
 
-     - Parameter key: The key as SecureBytes
+     - Parameter key: The key as byte array
      - Returns: A CryptoKit SymmetricKey
      - Throws: SecurityErrorDomain if key conversion fails
      */
-    private func getCryptoKitSymmetricKey(from key: SecureBytes) throws -> SymmetricKey {
-      let keySize=key.count * 8
+    private func getCryptoKitSymmetricKey(from key: [UInt8]) throws -> SymmetricKey {
+      let keySize = key.count * 8
 
       // Validate key size
       switch keySize {
         case 128, 192, 256:
-          return SymmetricKey(data: key.data)
+          return SymmetricKey(data: Data(key))
         default:
           throw SecurityErrorDomain.invalidInput(
             reason: "Invalid key size: \(keySize) bits. Must be 128, 192, or 256 bits."
@@ -185,12 +185,12 @@ import UmbraErrors
      - Returns: A SecurityErrorDomain error
      */
     private func mapToSecurityErrorDomain(_ error: Error) -> Error {
-      if let securityError=error as? SecurityErrorDomain {
+      if let securityError = error as? SecurityErrorDomain {
         return securityError
       }
 
       // CryptoKit specific error handling
-      if let cryptoKitError=error as? CryptoKitError {
+      if let cryptoKitError = error as? CryptoKitError {
         switch cryptoKitError {
           case .incorrectKeySize:
             return SecurityErrorDomain.invalidKey(
@@ -201,22 +201,23 @@ import UmbraErrors
               reason: "CryptoKit error: incorrect parameter size"
             )
           case .authenticationFailure:
-            return SecurityErrorDomain.cryptographicError(
-              reason: "CryptoKit error: authentication failure during decryption"
+            return SecurityErrorDomain.authenticationFailure(
+              reason: "CryptoKit error: authentication tag verification failed"
             )
-          case let .underlyingCoreCryptoError(status):
+          case .underlyingCoreCryptoError:
             return SecurityErrorDomain.cryptographicError(
-              reason: "CryptoKit underlying CoreCrypto error: \(status)"
+              reason: "CryptoKit error: underlying CoreCrypto operation failed"
             )
           @unknown default:
             return SecurityErrorDomain.cryptographicError(
-              reason: "Unknown CryptoKit error: \(cryptoKitError.localizedDescription)"
+              reason: "Unknown CryptoKit error: \(cryptoKitError)"
             )
         }
       }
 
-      return SecurityErrorDomain.operationFailed(
-        reason: "Apple CryptoKit operation failed: \(error.localizedDescription)"
+      // Handle other error types
+      return SecurityErrorDomain.cryptographicError(
+        reason: "Cryptographic operation failed: \(error.localizedDescription)"
       )
     }
   }
@@ -229,37 +230,37 @@ import UmbraErrors
 
     public func initialize() async throws {
       throw SecurityErrorDomain.unsupportedOperation(
-        name: "Apple CryptoKit is not available on this platform"
+        reason: "CryptoKit is not available on this platform"
       )
     }
 
     public func encrypt(
-      data _: SecureBytes,
-      using _: SecureBytes
-    ) async -> Result<SecureBytes, Error> {
-      .failure(SecurityErrorDomain.unsupportedOperation(
-        name: "Apple CryptoKit encryption is not available on this platform"
+      data: [UInt8],
+      using key: [UInt8]
+    ) async -> Result<[UInt8], Error> {
+      return .failure(SecurityErrorDomain.unsupportedOperation(
+        reason: "CryptoKit is not available on this platform"
       ))
     }
 
     public func decrypt(
-      data _: SecureBytes,
-      using _: SecureBytes
-    ) async -> Result<SecureBytes, Error> {
-      .failure(SecurityErrorDomain.unsupportedOperation(
-        name: "Apple CryptoKit decryption is not available on this platform"
+      data: [UInt8],
+      using key: [UInt8]
+    ) async -> Result<[UInt8], Error> {
+      return .failure(SecurityErrorDomain.unsupportedOperation(
+        reason: "CryptoKit is not available on this platform"
       ))
     }
 
-    public func generateKey(size _: Int) async -> Result<SecureBytes, Error> {
-      .failure(SecurityErrorDomain.unsupportedOperation(
-        name: "Apple CryptoKit key generation is not available on this platform"
+    public func generateKey(size: Int) async -> Result<[UInt8], Error> {
+      return .failure(SecurityErrorDomain.unsupportedOperation(
+        reason: "CryptoKit is not available on this platform"
       ))
     }
 
-    public func hash(data _: SecureBytes) async -> Result<SecureBytes, Error> {
-      .failure(SecurityErrorDomain.unsupportedOperation(
-        name: "Apple CryptoKit hashing is not available on this platform"
+    public func hash(data: [UInt8]) async -> Result<[UInt8], Error> {
+      return .failure(SecurityErrorDomain.unsupportedOperation(
+        reason: "CryptoKit is not available on this platform"
       ))
     }
   }

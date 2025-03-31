@@ -1,0 +1,23 @@
+{
+  "originalModule": "UmbraCryptoService",
+  "migratedDate": "2025-03-31",
+  "migrationReason": "Migration to Alpha Dot Five architecture",
+  "newLocation": {
+    "protocol": "packages/UmbraCoreTypes/Sources/CryptoInterfaces/Protocols/CryptoXPCServiceProtocol.swift",
+    "implementation": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+    "factory": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceFactory.swift",
+    "dtos": [
+      "packages/UmbraCoreTypes/Sources/CryptoTypes/DTOs/CryptoOperationOptionsDTO.swift",
+      "packages/UmbraCoreTypes/Sources/CryptoTypes/DTOs/SigningOptionsDTO.swift",
+      "packages/UmbraCoreTypes/Sources/CryptoTypes/DTOs/KeyGenerationOptionsDTO.swift"
+    ]
+  },
+  "architecturalChanges": [
+    "Replaced class-based implementation with actor-based concurrency",
+    "Eliminated Foundation dependencies with proper DTOs",
+    "Updated error handling to use domain-specific errors",
+    "Implemented proper privacy-aware logging",
+    "Migrated to modern Swift concurrency patterns"
+  ],
+  "notes": "The CryptoXPCServiceActor provides a thread-safe implementation of cryptographic operations via XPC using Foundation-independent DTOs and domain-specific errors. It follows the Alpha Dot Five architecture with proper actor isolation for all mutable state."
+}

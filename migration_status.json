@@ -30,7 +30,12 @@
       "ErrorCoreTypes",
       "ErrorHandlingInterfaces",
       "ErrorDomainsImpl",
-      "ErrorHandlingImpl"
+      "ErrorHandlingImpl",
+      "CryptoXPCServices",
+      "SecurityBookmark",
+      "API",
+      "Core",
+      "Config"
     ],
     "migration_date": "2025-03-27",
     "blocking_issues": [],
@@ -50,7 +55,12 @@
       "CryptoServices",
       "NetworkService",
       "Repository",
-      "DateTimeService"
+      "DateTimeService",
+      "CryptoXPCServices",
+      "SecurityBookmark",
+      "API",
+      "Core",
+      "Config"
     ],
     "migration_date": "2025-03-27",
     "blocking_issues": [],
@@ -79,7 +89,9 @@
     "dependents": [
       "SecurityTypes",
       "CryptoTypes",
-      "CryptoInterfaces"
+      "CryptoInterfaces",
+      "CryptoXPCServices",
+      "API"
     ],
     "migration_date": "2025-03-27",
     "blocking_issues": [],
@@ -127,7 +139,9 @@
       "SecurityUtils",
       "SecurityProviders",
       "SecurityKeyManagement",
-      "SecurityCryptoServices"
+      "SecurityCryptoServices",
+      "CryptoXPCServices",
+      "SecurityBookmark"
     ],
     "migration_date": "2025-03-27",
     "blocking_issues": [],
@@ -141,7 +155,8 @@
     ],
     "dependents": [
       "CryptoInterfaces",
-      "CryptoServices"
+      "CryptoServices",
+      "CryptoXPCServices"
     ],
     "migration_date": "2025-03-27",
     "blocking_issues": [],
@@ -412,7 +427,12 @@
     ],
     "dependents": [
       "LoggingServices",
-      "ErrorLoggingServices"
+      "ErrorLoggingServices",
+      "CryptoXPCServices",
+      "SecurityBookmark",
+      "API",
+      "Core",
+      "Config"
     ],
     "migration_date": "2025-03-29",
     "blocking_issues": [],
@@ -426,7 +446,8 @@
     "dependents": [
       "LoggingInterfaces",
       "LoggingServices",
-      "ErrorLoggingServices"
+      "ErrorLoggingServices",
+      "ErrorHandlingInterfaces"
     ],
     "migration_date": "2025-03-29",
     "blocking_issues": [],
@@ -451,7 +472,8 @@
     "dependencies": [
       "ErrorCoreTypes",
       "LoggingInterfaces",
-      "LoggingTypes"
+      "LoggingTypes",
+      "UmbraErrors"
     ],
     "dependents": [
       "ErrorDomainsImpl",
@@ -484,5 +506,75 @@
     "migration_date": "2025-03-30",
     "blocking_issues": [],
     "notes": "Successfully migrated from ErrorHandling to Alpha Dot Five architecture with DefaultErrorHandler and ErrorLoggerService implementations. Integrates with the logging system."
+  },
+  "CryptoXPCServices": {
+    "status": "Completed",
+    "dependencies": [
+      "CryptoTypes",
+      "CoreDTOs",
+      "LoggingInterfaces",
+      "DomainSecurityTypes",
+      "UmbraErrors",
+      "XPCProtocolsCore",
+      "SecurityInterfaces"
+    ],
+    "dependents": [],
+    "migration_date": "2025-03-31",
+    "blocking_issues": [],
+    "notes": "Successfully migrated from UmbraCryptoService to Alpha Dot Five architecture using actor-based concurrency. Replaced class-based implementation with thread-safe actors, Foundation-independent DTOs and privacy-aware logging. The implementation properly isolates all mutable state and uses Swift's structured concurrency patterns."
+  },
+  "SecurityBookmark": {
+    "status": "Completed",
+    "dependencies": [
+      "CoreDTOs",
+      "DomainSecurityTypes",
+      "LoggingInterfaces",
+      "UmbraErrors"
+    ],
+    "dependents": [],
+    "migration_date": "2025-03-31",
+    "blocking_issues": [],
+    "notes": "Successfully migrated security-scoped bookmark functionality from UmbraSecurity to Alpha Dot Five architecture using actor-based concurrency. The SecurityBookmarkActor provides thread-safe operations for creating, resolving and managing access to security-scoped bookmarks in sandboxed applications. Implemented proper resource tracking with reference counting for security-scoped resources."
+  },
+  "API": {
+    "status": "Completed",
+    "dependencies": [
+      "CoreDTOs",
+      "LoggingInterfaces",
+      "SecurityInterfaces",
+      "UmbraErrors"
+    ],
+    "dependents": [],
+    "migration_date": "2025-03-31",
+    "blocking_issues": [],
+    "notes": "Successfully migrated API module to Alpha Dot Five architecture using actor-based concurrency. Implemented APIServiceActor for thread-safe API operations with proper isolation. Created Foundation-independent DTOs for all data exchanges and implemented privacy-aware logging throughout. The implementation follows all Alpha Dot Five architecture principles and provides a clean interface for external clients."
+  },
+  "Core": {
+    "status": "Completed",
+    "dependencies": [
+      "CoreDTOs",
+      "LoggingInterfaces",
+      "UmbraErrors"
+    ],
+    "dependents": [
+      "API",
+      "Config"
+    ],
+    "migration_date": "2025-03-31",
+    "blocking_issues": [],
+    "notes": "Successfully migrated Core module to Alpha Dot Five architecture using actor-based concurrency. Implemented CoreServiceActor for thread-safe core framework operations with proper isolation. Created comprehensive DTOs for framework state, version information, and system details. The implementation embraces Swift structured concurrency patterns and provides robust error handling with domain-specific errors."
+  },
+  "Config": {
+    "status": "Completed",
+    "dependencies": [
+      "CoreDTOs",
+      "LoggingInterfaces",
+      "UmbraErrors",
+      "Core"
+    ],
+    "dependents": [],
+    "migration_date": "2025-03-31",
+    "blocking_issues": [],
+    "notes": "Successfully migrated Config module to Alpha Dot Five architecture using actor-based concurrency. Implemented ConfigurationServiceActor for thread-safe configuration management with proper isolation. Designed type-safe configuration value handling with appropriate privacy controls for sensitive values. The implementation supports multiple configuration sources with priority-based resolution and change notification using AsyncStream."
   }
 }

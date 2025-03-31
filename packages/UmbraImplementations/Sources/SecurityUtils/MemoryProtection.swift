@@ -74,7 +74,7 @@ public enum MemoryProtection {
   public static func secureZero(_ bytes: inout [UInt8]) {
     // Use volatile to prevent compiler optimisation from removing this zeroing
     for i in 0..<bytes.count {
-      bytes[i]=0
+      bytes[i] = 0
     }
   }
 
@@ -106,50 +106,11 @@ public enum MemoryProtection {
     _ data: [UInt8],
     _ block: ([UInt8]) throws -> T
   ) rethrows -> T {
-    var secureData=data
+    var secureData = data
     defer {
       secureZero(&secureData)
     }
     return try block(secureData)
-  }
-
-  /**
-   Securely zeroes the contents of a SecureBytes instance.
-
-   This extension method provides a way to explicitly wipe the contents of
-   a SecureBytes object when it's no longer needed, offering an additional
-   layer of security beyond normal memory management.
-
-   ## When to Use
-
-   Whilst SecureBytes offers some built-in protections, explicitly zeroing
-   instances can be valuable in these scenarios:
-
-   - Before releasing references to long-lived objects
-   - When working with particularly sensitive materials (master keys, etc.)
-   - When implementing key rotation or credential changes
-
-   ## Example Usage
-
-   ```swift
-   var oldKey = retrieveEncryptionKey()
-
-   // After rotating to a new key
-   generateAndStoreNewKey()
-
-   // Wipe the old key from memory
-   MemoryProtection.secureZero(&oldKey)
-   ```
-
-   - Parameter secureBytes: The SecureBytes instance to zero (passed as an inout parameter)
-   */
-  public static func secureZero(_ secureBytes: inout SecureBytes) {
-    var bytes=[UInt8]()
-    for i in 0..<secureBytes.count {
-      bytes.append(secureBytes[i])
-    }
-    secureZero(&bytes)
-    secureBytes=SecureBytes(bytes: [])
   }
 
   /**
@@ -190,7 +151,7 @@ public enum MemoryProtection {
       return false
     }
 
-    var result: UInt8=0
+    var result: UInt8 = 0
 
     // Constant-time comparison - always compare all bytes
     for i in 0..<lhs.count {
@@ -199,7 +160,6 @@ public enum MemoryProtection {
       result |= lhs[i] ^ rhs[i]
     }
 
-    // If result is 0, all bytes matched
     return result == 0
   }
 }

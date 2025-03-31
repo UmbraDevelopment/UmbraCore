@@ -1,6 +1,6 @@
 # Migration Guide: Security Provider Architecture
 
-This guide provides step-by-step instructions for migrating from the legacy security implementation to the new pluggable security provider architecture.
+This guide provides step-by-step instructions for migrating from the legacy security implementation to the new Alpha Dot Five architecture with native byte arrays.
 
 ## Overview of Changes
 
@@ -8,7 +8,7 @@ The security implementation has been refactored to provide:
 
 - Multiple security provider options (Basic, Apple CryptoKit, Ring FFI)
 - Actor-based concurrency for Swift 6 compatibility
-- Enhanced memory safety for sensitive data with `SecureBytes`
+- Enhanced memory safety using native Swift byte arrays (`[UInt8]`)
 - More consistent error handling with `SecurityProtocolError`
 - Better protocol boundaries and interfaces
 
@@ -26,27 +26,29 @@ import SecurityCoreInterfaces
 import SecurityTypes
 ```
 
-### 2. Use SecureBytes for Sensitive Data
+### 2. Use Byte Arrays for Sensitive Data
 
 ```swift
-// Old approach
-let sensitiveData = Data(...)
-let encryptedData = try cryptoService.encrypt(data: sensitiveData, using: keyData)
-
-// New approach
+// Old approach using SecureBytes
 let secureData = SecureBytes(data: sensitiveData)
 let secureKey = SecureBytes(data: keyData)
 let result = await cryptoService.encrypt(data: secureData, using: secureKey)
+
+// New approach using byte arrays
+let dataBytes: [UInt8] = [UInt8](sensitiveData)
+let keyBytes: [UInt8] = [UInt8](keyData)
+let result = await cryptoService.encrypt(data: dataBytes, using: keyBytes)
 ```
 
-Important: Use `extractUnderlyingData()` instead of the deprecated `data()` method when you need to access the raw Data:
+Important: When handling sensitive data, use `MemoryProtection` utilities to securely zero memory:
 
 ```swift
-// Preferred
-let rawData = secureBytes.extractUnderlyingData()
-
-// Deprecated (will continue to work but generates a warning)
-let rawData = secureBytes.data()
+// Secure handling with byte arrays
+var sensitiveBytes: [UInt8] = retrieveSensitiveData()
+defer {
+    MemoryProtection.secureZero(&sensitiveBytes)
+}
+// Use sensitiveBytes...
 ```
 
 ### 3. Access UmbraCrypto via Actor
@@ -75,7 +77,7 @@ do {
 }
 
 // New approach
-let result = await cryptoService.encrypt(data: secureData, using: secureKey)
+let result = await cryptoService.encrypt(data: dataBytes, using: keyBytes)
 switch result {
 case .success(let encrypted):
     // Use encrypted data
@@ -134,18 +136,21 @@ Take advantage of platform-specific features:
 
 ## Common Migration Issues
 
-### Issue: Cannot find type 'LoggingProtocol'
+### Issue: Missing Memory Protection
 
 ```swift
-// Solution: Add import
-import LoggingInterfaces
-```
+// Problem: Sensitive data not securely erased
+var sensitiveData: [UInt8] = generateEncryptionKey()
+// ... use sensitiveData
+// Data remains in memory
 
-### Issue: 'data()' is deprecated
-
-```swift
-// Solution: Replace with extractUnderlyingData()
-let bytes = secureData.extractUnderlyingData()
+// Solution: Use MemoryProtection utilities
+var sensitiveData: [UInt8] = generateEncryptionKey()
+defer {
+    MemoryProtection.secureZero(&sensitiveData)
+}
+// ... use sensitiveData
+// Data is securely erased when leaving scope
 ```
 
 ### Issue: UmbraCrypto property access errors
@@ -161,14 +166,15 @@ Use these checks to verify successful migration:
 
 1. Code compiles without warnings related to Swift 6 concurrency
 2. Data encrypted with old system can be decrypted with new system
-3. All `guard let dataBytes = data.extractUnderlyingData()` patterns are replaced
+3. All `SecureBytes` usages are replaced with `[UInt8]` arrays
 4. All static `UmbraCrypto` accesses are updated to use the actor
+5. Memory protection is applied to sensitive data handling
 
 ## Testing Recommendations
 
 1. Create unit tests that verify interoperability between old and new formats
 2. Test across different platforms if applicable
-3. Verify proper memory zeroing of sensitive data with `SecureBytes.reset()`
+3. Verify proper memory zeroing of sensitive data with `MemoryProtection.secureZero()`
 4. Test fallback mechanisms when preferred providers aren't available
 
 ## Timeline

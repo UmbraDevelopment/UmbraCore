@@ -1,34 +1,49 @@
-import Core
 import Foundation
 
-/// UmbraAPI provides a simplified interface to the UmbraCore security framework.
+/// UmbraAPI has been completely migrated to the Alpha Dot Five architecture.
+/// Use packages/UmbraCoreTypes/Sources/APIInterfaces and packages/UmbraImplementations/Sources/APIServices instead.
+///
+/// Example usage:
+/// ```swift
+/// import APIInterfaces
+/// 
+/// // Get a service instance
+/// let apiService = APIServiceFactory.createDefault()
+/// 
+/// // Initialize with configuration
+/// let config = APIConfigurationDTO(environment: .development)
+/// try await apiService.initialise(configuration: config)
+/// ```
+@available(*, unavailable, message: "UmbraAPI has been migrated to APIInterfaces. Use APIServiceFactory.createDefault() instead.")
 public enum UmbraAPI {
-  /// Initialize the UmbraCore framework
+  /// This method has been migrated to the APIServiceProtocol
+  @available(*, unavailable, message: "Use APIServiceFactory.createDefault() and initialise() instead")
   public static func initialize() async throws {
-    try await Core.initialize()
+    fatalError("This API has been completely migrated to the Alpha Dot Five architecture")
   }
 
-  /// Create an encrypted security-scoped bookmark for the given URL
+  /// This method has been migrated to the APIServiceProtocol
+  @available(*, unavailable, message: "Use apiService.createEncryptedBookmark() instead")
   public static func createEncryptedBookmark(
-    for _: URL,
-    identifier _: String
+    for url: URL,
+    identifier: String
   ) async throws {
-    // Delegate to SecurityUtils
+    fatalError("This API has been completely migrated to the Alpha Dot Five architecture")
   }
 
-  /// Resolve an encrypted security-scoped bookmark
+  /// This method has been migrated to the APIServiceProtocol
+  @available(*, unavailable, message: "Use apiService.resolveEncryptedBookmark() instead")
   public static func resolveEncryptedBookmark(
-    withIdentifier _: String
+    withIdentifier identifier: String
   ) async throws -> URL {
-    // Delegate to SecurityUtils
-    fatalError("Not implemented")
+    fatalError("This API has been completely migrated to the Alpha Dot Five architecture")
   }
 
-  /// Delete an encrypted security-scoped bookmark
+  /// This method has been migrated to the APIServiceProtocol
+  @available(*, unavailable, message: "Use apiService.deleteEncryptedBookmark() instead")
   public static func deleteEncryptedBookmark(
-    withIdentifier _: String
+    withIdentifier identifier: String
   ) async throws {
-    // Delegate to SecurityUtils
-    fatalError("Not implemented")
+    fatalError("This API has been completely migrated to the Alpha Dot Five architecture")
   }
 }

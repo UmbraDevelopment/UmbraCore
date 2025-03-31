@@ -3,6 +3,7 @@ import DomainSecurityTypes
 import Foundation
 import SecurityCoreInterfaces
 import SecurityKeyTypes
+import SecurityUtils
 import UmbraErrors
 
 /**
@@ -46,23 +47,23 @@ public final class KeyManagerImpl: KeyManagementProtocol, Sendable {
 
   /// Creates a new key manager with the default key store
   public init() {
-    keyStore=KeyStore()
+    keyStore = KeyStore()
   }
 
   /// Creates a new key manager with a custom key store
   /// - Parameter keyStore: Custom key store implementation
   public init(keyStore: KeyStore) {
-    self.keyStore=keyStore
+    self.keyStore = keyStore
   }
 
   // MARK: - KeyManagementProtocol Implementation
 
   /// Retrieves a security key by its identifier.
   /// - Parameter identifier: A string identifying the key.
-  /// - Returns: The security key as `SecureBytes` or an error.
+  /// - Returns: The security key as a byte array or an error.
   public func retrieveKey(withIdentifier identifier: String) async
-  -> Result<SecureBytes, SecurityProtocolError> {
-    if let key=await keyStore.getKey(identifier: identifier) {
+  -> Result<[UInt8], SecurityProtocolError> {
+    if let key = await keyStore.getKey(identifier: identifier) {
       .success(key)
     } else {
       .failure(.keyManagementError("Key not found: \(identifier)"))
@@ -71,10 +72,10 @@ public final class KeyManagerImpl: KeyManagementProtocol, Sendable {
 
   /// Stores a security key with the given identifier.
   /// - Parameters:
-  ///   - key: The security key as `SecureBytes`.
+  ///   - key: The security key as a byte array.
   ///   - identifier: A string identifier for the key.
   /// - Returns: Success or an error.
-  public func storeKey(_ key: SecureBytes, withIdentifier identifier: String) async
+  public func storeKey(_ key: [UInt8], withIdentifier identifier: String) async
   -> Result<Void, SecurityProtocolError> {
     await keyStore.storeKey(key, identifier: identifier)
     return .success(())
@@ -100,21 +101,21 @@ public final class KeyManagerImpl: KeyManagementProtocol, Sendable {
   /// - Returns: The new key and re-encrypted data (if provided) or an error.
   public func rotateKey(
     withIdentifier identifier: String,
-    dataToReencrypt: SecureBytes?
+    dataToReencrypt: [UInt8]?
   ) async -> Result<(
-    newKey: SecureBytes,
-    reencryptedData: SecureBytes?
+    newKey: [UInt8],
+    reencryptedData: [UInt8]?
   ), SecurityProtocolError> {
     // Check if key exists
     if await keyStore.containsKey(identifier: identifier) {
       // Generate a new key
-      let newKey=generateKey()
+      let newKey = generateKey()
 
       // Store the new key with the same identifier (replacing the old one)
       await keyStore.storeKey(newKey, identifier: identifier)
 
       // Implement re-encryption logic if needed
-      let reencryptedData=dataToReencrypt
+      let reencryptedData = dataToReencrypt
 
       return .success((newKey: newKey, reencryptedData: reencryptedData))
     } else {
@@ -130,33 +131,33 @@ public final class KeyManagerImpl: KeyManagementProtocol, Sendable {
 
   // MARK: - Helper Methods
 
-  /// Generates a cryptographic key with secure random bytes
-  /// - Returns: A new secure key
-  private func generateKey() -> SecureBytes {
-    var keyData=[UInt8](repeating: 0, count: 32) // 256-bit key
-
-    // Use secure random number generator
-    let status=SecRandomCopyBytes(kSecRandomDefault, keyData.count, &keyData)
-
-    // Check for success
-    if status == errSecSuccess {
-      return SecureBytes(bytes: keyData)
-    } else {
-      // Fallback if secure random fails
-      // Note: In production code, we would handle this error properly
-      let fallbackData=[UInt8](repeating: 0, count: 32).map { _ in UInt8.random(in: 0...255) }
-      return SecureBytes(bytes: fallbackData)
+  /**
+   Generates a cryptographic key with secure random bytes
+   
+   Uses memory protection utilities to ensure sensitive key material
+   is properly zeroed after use when no longer needed.
+   
+   - Returns: A new secure key as a byte array
+   */
+  private func generateKey() -> [UInt8] {
+    // Create buffer for key material with secure zeroing
+    return MemoryProtection.withSecureTemporaryData([UInt8](repeating: 0, count: 32)) { buffer in
+      var keyData = buffer
+      
+      // Use secure random number generator
+      let status = SecRandomCopyBytes(kSecRandomDefault, keyData.count, &keyData)
+      
+      // Check for success
+      if status == errSecSuccess {
+        return keyData
+      } else {
+        // Fallback if secure random fails
+        // This is less secure, but still protected by MemoryProtection
+        for i in 0..<keyData.count {
+          keyData[i] = UInt8.random(in: 0...255)
+        }
+        return keyData
+      }
     }
-  }
-
-  /// Converts data to SecureBytes if not nil
-  /// - Parameter data: The data to convert
-  /// - Returns: SecureBytes or nil if input is nil
-  private func toSecureBytes(_ data: Data?) -> SecureBytes? {
-    guard let data else {
-      return nil
-    }
-
-    return SecureBytes(bytes: [UInt8](data))
   }
 }

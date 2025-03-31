@@ -81,12 +81,12 @@ public actor KeyManagementActor: KeyManagementProtocol {
   public init(
     keyStore: KeyStorage,
     logger: LoggingProtocol,
-    keyGenerator: KeyGenerator=DefaultKeyGenerator()
+    keyGenerator: KeyGenerator = DefaultKeyGenerator()
   ) {
-    self.keyStore=keyStore
-    self.logger=logger
-    keyLogger=KeyManagementLogger(logger: logger)
-    self.keyGenerator=keyGenerator
+    self.keyStore = keyStore
+    self.logger = logger
+    keyLogger = KeyManagementLogger(logger: logger)
+    self.keyGenerator = keyGenerator
   }
 
   // MARK: - Key Management Operations
@@ -129,17 +129,14 @@ public actor KeyManagementActor: KeyManagementProtocol {
     }
 
     if let key = await keyStore.getKey(identifier: sanitizeIdentifier(identifier)) {
-      // Convert SecureBytes to [UInt8] array
-      let keyBytes = key.toArray()
-      
       await keyLogger.logOperationSuccess(
         keyIdentifier: identifier,
         operation: "retrieve",
-        result: keyBytes,
+        result: key,
         additionalContext: LogMetadataDTOCollection(),
         message: "Retrieved key with identifier"
       )
-      return .success(keyBytes)
+      return .success(key)
     } else {
       let error = SecurityProtocolError
         .keyManagementError("Key not found with identifier: \(identifier)")
@@ -200,9 +197,7 @@ public actor KeyManagementActor: KeyManagementProtocol {
       )
     }
 
-    // Convert [UInt8] to SecureBytes for storage
-    let secureKey = SecureBytes(bytes: key)
-    await keyStore.storeKey(secureKey, identifier: sanitizedIdentifier)
+    await keyStore.storeKey(key, identifier: sanitizedIdentifier)
     
     await keyLogger.logOperationSuccess(
       keyIdentifier: identifier,
@@ -304,8 +299,7 @@ public actor KeyManagementActor: KeyManagementProtocol {
 
     do {
       // Generate a new key
-      let newKey = try await keyGenerator.generateKey()
-      let newKeyBytes = newKey.toArray()
+      let newKey = try await keyGenerator.generateKey(bitLength: 256)
       
       // Store the new key with a temporary identifier
       let tempIdentifier = "\(sanitizedIdentifier).new"
@@ -330,12 +324,12 @@ public actor KeyManagementActor: KeyManagementProtocol {
       await keyLogger.logOperationSuccess(
         keyIdentifier: identifier,
         operation: "rotate",
-        result: (newKey: newKeyBytes, reencryptedData: reencryptedData),
+        result: (newKey: newKey, reencryptedData: reencryptedData),
         additionalContext: LogMetadataDTOCollection(),
         message: "Successfully rotated key"
       )
 
-      return .success((newKey: newKeyBytes, reencryptedData: reencryptedData))
+      return .success((newKey: newKey, reencryptedData: reencryptedData))
     } catch {
       let secError = error as? SecurityProtocolError
         ?? SecurityProtocolError.keyManagementError(error.localizedDescription)
@@ -372,10 +366,11 @@ protocol KeyGenerator {
   /**
    Generates a new cryptographic key.
 
+   - Parameter bitLength: The desired bit length of the key
    - Returns: A new key
    - Throws: An error if key generation fails
    */
-  func generateKey() async throws -> [UInt8]
+  func generateKey(bitLength: Int) async throws -> [UInt8]
 }
 
 /**
@@ -385,13 +380,14 @@ struct DefaultKeyGenerator: KeyGenerator {
   /**
    Generates a new cryptographic key.
 
+   - Parameter bitLength: The desired bit length of the key
    - Returns: A new key
    - Throws: An error if key generation fails
    */
-  public func generateKey() async throws -> [UInt8] {
+  public func generateKey(bitLength: Int) async throws -> [UInt8] {
     // For a real implementation, this would use a secure random number generator
     // and more sophisticated key generation logic
-    var bytes = [UInt8](repeating: 0, count: 32)
+    var bytes = [UInt8](repeating: 0, count: bitLength / 8)
     let status = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
     
     guard status == errSecSuccess else {

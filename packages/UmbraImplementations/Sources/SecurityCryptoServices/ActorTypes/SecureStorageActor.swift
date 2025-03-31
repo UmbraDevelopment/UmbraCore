@@ -41,7 +41,7 @@ public actor SecureStorageActor {
   private let logger: LoggingProtocol
 
   /// In-memory cache of recently used keys (identifier -> key)
-  private var keyCache: [String: SecureBytes]=[:]
+  private var keyCache: [String: [UInt8]] = [:]
 
   /// Storage location for encrypted keys
   private let storageURL: URL
@@ -57,22 +57,22 @@ public actor SecureStorageActor {
       - logger: Logger for recording operations
    */
   public init(
-    providerType: SecurityProviderType?=nil,
-    storageURL: URL?=nil,
+    providerType: SecurityProviderType? = nil,
+    storageURL: URL? = nil,
     logger: LoggingProtocol
   ) {
-    self.logger=logger
-    cryptoService=CryptoServiceActor(providerType: providerType, logger: logger)
+    self.logger = logger
+    cryptoService = CryptoServiceActor(providerType: providerType, logger: logger)
 
     // Set up storage location
-    if let customURL=storageURL {
-      self.storageURL=customURL
+    if let customURL = storageURL {
+      self.storageURL = customURL
     } else {
       // Default to app support directory
-      let fileManager=FileManager.default
-      let appSupportURL=fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask)
+      let fileManager = FileManager.default
+      let appSupportURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask)
         .first!
-      self.storageURL=appSupportURL.appendingPathComponent("UmbraSecureStorage", isDirectory: true)
+      self.storageURL = appSupportURL.appendingPathComponent("UmbraSecureStorage", isDirectory: true)
     }
 
     // Ensure storage directory exists
@@ -98,18 +98,18 @@ public actor SecureStorageActor {
    The key is encrypted using a master key before being written to storage.
 
    - Parameters:
-      - key: The key to store
+      - key: The key to store as a byte array
       - identifier: Unique identifier for the key
       - overwrite: Whether to overwrite an existing key with the same identifier
    - Throws: SecurityProtocolError if storage fails
    */
   public func storeKey(
-    _ key: SecureBytes,
+    _ key: [UInt8],
     withIdentifier identifier: String,
-    overwrite: Bool=false
+    overwrite: Bool = false
   ) async throws {
     // Check if key exists and we're not overwriting
-    let keyURL=storageURL.appendingPathComponent("\(identifier).key")
+    let keyURL = storageURL.appendingPathComponent("\(identifier).key")
     if FileManager.default.fileExists(atPath: keyURL.path) && !overwrite {
       await logger.warning(
         "Key with identifier '\(identifier)' already exists and overwrite is false",
@@ -120,22 +120,30 @@ public actor SecureStorageActor {
 
     do {
       // Generate or retrieve master key for wrapping
-      let masterKey=try await getMasterKey()
+      let masterKey = try await getMasterKey()
 
       // Encrypt the key
-      let encryptedKey=try await cryptoService.encrypt(data: key, using: masterKey)
+      let encryptResult = await cryptoService.encrypt(data: key, using: masterKey)
+      
+      guard case let .success(encryptedKey) = encryptResult else {
+        if case let .failure(error) = encryptResult {
+          throw error
+        } else {
+          throw SecurityProtocolError.cryptographicError("Encryption failed with unknown error")
+        }
+      }
 
       // Write to storage
-      try encryptedKey.extractUnderlyingData().write(to: keyURL)
+      try Data(encryptedKey).write(to: keyURL)
 
       // Update cache
-      keyCache[identifier]=key
+      keyCache[identifier] = key
 
       await logger.info("Successfully stored key with identifier: \(identifier)", metadata: nil)
     } catch {
       await logger.error("Failed to store key: \(error.localizedDescription)", metadata: nil)
 
-      if let secError=error as? SecurityProtocolError {
+      if let secError = error as? SecurityProtocolError {
         throw secError
       } else {
         throw SecurityProtocolError
@@ -150,17 +158,17 @@ public actor SecureStorageActor {
    The key is decrypted using the master key after being read from storage.
 
    - Parameter identifier: The unique identifier of the key to retrieve
-   - Returns: The retrieved key
+   - Returns: The retrieved key as a byte array
    - Throws: SecurityProtocolError if retrieval fails
    */
-  public func retrieveKey(withIdentifier identifier: String) async throws -> SecureBytes {
+  public func retrieveKey(withIdentifier identifier: String) async throws -> [UInt8] {
     // Check cache first
-    if let cachedKey=keyCache[identifier] {
+    if let cachedKey = keyCache[identifier] {
       return cachedKey
     }
 
     // Construct key URL
-    let keyURL=storageURL.appendingPathComponent("\(identifier).key")
+    let keyURL = storageURL.appendingPathComponent("\(identifier).key")
 
     // Check if key exists
     guard FileManager.default.fileExists(atPath: keyURL.path) else {
@@ -170,24 +178,32 @@ public actor SecureStorageActor {
 
     do {
       // Read encrypted key from storage
-      let encryptedData=try Data(contentsOf: keyURL)
-      let encryptedKey=SecureBytes(data: encryptedData)
+      let encryptedData = try Data(contentsOf: keyURL)
+      let encryptedKey = [UInt8](encryptedData)
 
       // Retrieve master key for unwrapping
-      let masterKey=try await getMasterKey()
+      let masterKey = try await getMasterKey()
 
       // Decrypt the key
-      let key=try await cryptoService.decrypt(data: encryptedKey, using: masterKey)
+      let decryptResult = await cryptoService.decrypt(data: encryptedKey, using: masterKey)
+      
+      guard case let .success(key) = decryptResult else {
+        if case let .failure(error) = decryptResult {
+          throw error
+        } else {
+          throw SecurityProtocolError.cryptographicError("Decryption failed with unknown error")
+        }
+      }
 
       // Update cache
-      keyCache[identifier]=key
+      keyCache[identifier] = key
 
       await logger.info("Successfully retrieved key with identifier: \(identifier)", metadata: nil)
       return key
     } catch {
       await logger.error("Failed to retrieve key: \(error.localizedDescription)", metadata: nil)
 
-      if let secError=error as? SecurityProtocolError {
+      if let secError = error as? SecurityProtocolError {
         throw secError
       } else {
         throw SecurityProtocolError
@@ -203,29 +219,53 @@ public actor SecureStorageActor {
    - Throws: SecurityProtocolError if deletion fails
    */
   public func deleteKey(withIdentifier identifier: String) async throws {
-    // Remove from cache
-    keyCache.removeValue(forKey: identifier)
-
-    // Construct key URL
-    let keyURL=storageURL.appendingPathComponent("\(identifier).key")
+    let keyURL = storageURL.appendingPathComponent("\(identifier).key")
 
     // Check if key exists
     guard FileManager.default.fileExists(atPath: keyURL.path) else {
-      await logger.warning(
-        "Key with identifier '\(identifier)' not found for deletion",
-        metadata: nil
-      )
-      return
+      await logger.error("Key with identifier '\(identifier)' not found", metadata: nil)
+      throw SecurityProtocolError.invalidInput("Key with identifier '\(identifier)' not found")
     }
 
     do {
-      // Delete the file
+      // Remove from disk
       try FileManager.default.removeItem(at: keyURL)
+
+      // Remove from cache
+      keyCache[identifier] = nil
+
       await logger.info("Successfully deleted key with identifier: \(identifier)", metadata: nil)
     } catch {
       await logger.error("Failed to delete key: \(error.localizedDescription)", metadata: nil)
       throw SecurityProtocolError
-        .cryptographicError("Failed to delete key: \(error.localizedDescription)")
+        .invalidInput("Failed to delete key: \(error.localizedDescription)")
+    }
+  }
+
+  /**
+   Lists all available key identifiers.
+
+   - Returns: Array of key identifiers
+   - Throws: SecurityProtocolError if listing fails
+   */
+  public func listKeyIdentifiers() async throws -> [String] {
+    do {
+      let fileManager = FileManager.default
+      let fileURLs = try fileManager.contentsOfDirectory(
+        at: storageURL,
+        includingPropertiesForKeys: nil,
+        options: [.skipsHiddenFiles]
+      )
+
+      let keyIdentifiers = fileURLs
+        .filter { $0.pathExtension == "key" }
+        .map { $0.deletingPathExtension().lastPathComponent }
+
+      return keyIdentifiers
+    } catch {
+      await logger.error("Failed to list key identifiers: \(error.localizedDescription)", metadata: nil)
+      throw SecurityProtocolError
+        .invalidInput("Failed to list key identifiers: \(error.localizedDescription)")
     }
   }
 
@@ -241,28 +281,52 @@ public actor SecureStorageActor {
    */
   public func rotateKey(
     withIdentifier identifier: String,
-    newKeySize size: Int=256,
-    dataToReencrypt: [SecureBytes]?=nil
-  ) async throws -> [SecureBytes]? {
+    newKeySize size: Int = 256,
+    dataToReencrypt: [[UInt8]]? = nil
+  ) async throws -> [[UInt8]]? {
     // Retrieve the old key
-    let oldKey=try await retrieveKey(withIdentifier: identifier)
+    let oldKey = try await retrieveKey(withIdentifier: identifier)
 
     // Generate a new key
-    let newKey=try await cryptoService.generateKey(size: size)
+    let newKeyResult = await cryptoService.generateKey(size: size)
+    
+    guard case let .success(newKey) = newKeyResult else {
+      if case let .failure(error) = newKeyResult {
+        throw error
+      } else {
+        throw SecurityProtocolError.cryptographicError("Key generation failed with unknown error")
+      }
+    }
 
     // Store the new key, overwriting the old one
     try await storeKey(newKey, withIdentifier: identifier, overwrite: true)
 
     // Re-encrypt data if provided
-    if let dataItems=dataToReencrypt {
+    if let dataItems = dataToReencrypt {
       // Decrypt with old key
-      let decryptedItems=try await cryptoService.decryptBatch(dataItems: dataItems, using: oldKey)
+      let decryptResults = await cryptoService.decryptBatch(dataItems: dataItems, using: oldKey)
+      
+      guard case let .success(decryptedItems) = decryptResults else {
+        if case let .failure(error) = decryptResults {
+          throw error
+        } else {
+          throw SecurityProtocolError.cryptographicError("Decryption failed with unknown error")
+        }
+      }
 
       // Re-encrypt with new key
-      let reencryptedItems=try await cryptoService.encryptBatch(
+      let encryptResults = await cryptoService.encryptBatch(
         dataItems: decryptedItems,
         using: newKey
       )
+      
+      guard case let .success(reencryptedItems) = encryptResults else {
+        if case let .failure(error) = encryptResults {
+          throw error
+        } else {
+          throw SecurityProtocolError.cryptographicError("Encryption failed with unknown error")
+        }
+      }
 
       await logger.info(
         "Successfully rotated key and re-encrypted \(dataItems.count) data items",
@@ -278,102 +342,94 @@ public actor SecureStorageActor {
   // MARK: - Private Helpers
 
   /**
-   Gets or generates the master key used for wrapping other keys.
+   Gets or generates the master key used for encrypting/decrypting other keys.
 
-   - Returns: The master key
-   - Throws: SecurityProtocolError if key retrieval or generation fails
+   - Returns: Master key as a byte array
+   - Throws: SecurityProtocolError if key retrieval fails
    */
-  private func getMasterKey() async throws -> SecureBytes {
-    let masterKeyIdentifier="umbra.master.key"
-    let masterKeyURL=storageURL.appendingPathComponent("\(masterKeyIdentifier).key")
+  private func getMasterKey() async throws -> [UInt8] {
+    let masterKeyIdentifier = "umbra.master.key"
+    let masterKeyURL = storageURL.appendingPathComponent("\(masterKeyIdentifier).key")
 
     // If master key doesn't exist, generate it
     if !FileManager.default.fileExists(atPath: masterKeyURL.path) {
-      await logger.info("Generating new master key", metadata: nil)
+      await logger.info("Master key does not exist, generating new one", metadata: nil)
+      
+      // Generate a new master key (32 bytes = 256 bits, suitable for AES-256)
+      let randomResult = await cryptoService.generateRandomBytes(count: 32)
+      
+      guard case let .success(masterKeyBytes) = randomResult else {
+        if case let .failure(error) = randomResult {
+          throw error
+        } else {
+          throw SecurityProtocolError.cryptographicError("Random generation failed with unknown error")
+        }
+      }
 
-      // Generate a strong key
-      let masterKey=try await cryptoService.generateKey(size: 256)
-
-      // Derive a wrapping key from device-specific information
-      let wrappingKey=try await deriveWrappingKey()
+      // Derive a wrapping key from device-specific factors
+      // In a real implementation, this would use secure enclave or keychain
+      let wrappingKeyResult = await cryptoService.deriveKey(
+        fromPassword: "device-specific-salt",
+        salt: [0x55, 0x4D, 0x42, 0x52, 0x41], // "UMBRA" in hex
+        iterations: 10000
+      )
+      
+      guard case let .success(wrappingKey) = wrappingKeyResult else {
+        if case let .failure(error) = wrappingKeyResult {
+          throw error
+        } else {
+          throw SecurityProtocolError.cryptographicError("Key derivation failed with unknown error")
+        }
+      }
 
       // Encrypt the master key with the wrapping key
-      let encryptedMasterKey=try await cryptoService.encrypt(data: masterKey, using: wrappingKey)
+      let encryptResult = await cryptoService.encrypt(data: masterKeyBytes, using: wrappingKey)
+      
+      guard case let .success(encryptedMasterKey) = encryptResult else {
+        if case let .failure(error) = encryptResult {
+          throw error
+        } else {
+          throw SecurityProtocolError.cryptographicError("Encryption failed with unknown error")
+        }
+      }
 
-      // Write to storage
-      try encryptedMasterKey.extractUnderlyingData().write(to: masterKeyURL)
+      // Save the encrypted master key
+      try Data(encryptedMasterKey).write(to: masterKeyURL)
+      
+      // Return the unencrypted master key for immediate use
+      return masterKeyBytes
+    } else {
+      // Master key exists, load and decrypt it
+      let encryptedData = try Data(contentsOf: masterKeyURL)
+      let encryptedMasterKey = [UInt8](encryptedData)
 
-      return masterKey
-    }
-
-    // Read existing master key
-    do {
-      let encryptedData=try Data(contentsOf: masterKeyURL)
-      let encryptedMasterKey=SecureBytes(data: encryptedData)
-
-      // Derive the wrapping key
-      let wrappingKey=try await deriveWrappingKey()
+      // Derive the same wrapping key
+      let wrappingKeyResult = await cryptoService.deriveKey(
+        fromPassword: "device-specific-salt",
+        salt: [0x55, 0x4D, 0x42, 0x52, 0x41], // "UMBRA" in hex
+        iterations: 10000
+      )
+      
+      guard case let .success(wrappingKey) = wrappingKeyResult else {
+        if case let .failure(error) = wrappingKeyResult {
+          throw error
+        } else {
+          throw SecurityProtocolError.cryptographicError("Key derivation failed with unknown error")
+        }
+      }
 
       // Decrypt the master key
-      let masterKey=try await cryptoService.decrypt(data: encryptedMasterKey, using: wrappingKey)
+      let decryptResult = await cryptoService.decrypt(data: encryptedMasterKey, using: wrappingKey)
+      
+      guard case let .success(masterKey) = decryptResult else {
+        if case let .failure(error) = decryptResult {
+          throw error
+        } else {
+          throw SecurityProtocolError.cryptographicError("Decryption failed with unknown error")
+        }
+      }
 
       return masterKey
-    } catch {
-      await logger.error(
-        "Failed to retrieve master key: \(error.localizedDescription)",
-        metadata: nil
-      )
-      throw SecurityProtocolError
-        .cryptographicError("Failed to retrieve master key: \(error.localizedDescription)")
     }
   }
-
-  /**
-   Derives a wrapping key from device-specific information.
-
-   This key is used to protect the master key and is derived from
-   hardware-specific information where possible.
-
-   - Returns: A device-specific wrapping key
-   - Throws: SecurityProtocolError if key derivation fails
-   */
-  private func deriveWrappingKey() async throws -> SecureBytes {
-    // Create a device identifier that's stable across app launches
-    var deviceIdentifiers=[String]()
-
-    // Add stable device identifiers (replace with actual implementation)
-    deviceIdentifiers.append(Bundle.main.bundleIdentifier ?? "com.umbra.core")
-
-    #if os(macOS)
-      // Add macOS-specific identifiers
-      if let serialNumber=getSerialNumber() {
-        deviceIdentifiers.append(serialNumber)
-      }
-    #endif
-
-    // Join and hash the identifiers to create a stable seed
-    let identifierString=deviceIdentifiers.joined(separator: "|")
-    let identifierData=identifierString.data(using: .utf8)!
-    let identifierBytes=SecureBytes(data: identifierData)
-
-    // Hash multiple times to strengthen
-    let hash1=try await cryptoService.hash(data: identifierBytes, algorithm: "SHA256")
-    let hash2=try await cryptoService.hash(data: hash1, algorithm: "SHA512")
-
-    // Use the resulting hash as our wrapping key
-    return hash2
-  }
-
-  #if os(macOS)
-    /**
-     Retrieves the Mac serial number for device identification.
-
-     - Returns: Serial number as a string, or nil if not available
-     */
-    private func getSerialNumber() -> String? {
-      // This is a placeholder - actual implementation would use IOKit
-      // to retrieve the hardware serial in a secure way
-      nil
-    }
-  #endif
 }

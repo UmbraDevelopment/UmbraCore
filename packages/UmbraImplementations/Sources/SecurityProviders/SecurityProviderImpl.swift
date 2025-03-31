@@ -138,6 +138,71 @@ public final class SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceI
     return nil
   }
 
+  // MARK: - SecurityProviderProtocol Core Implementation
+  
+  /// Encrypt binary data using the provider's encryption mechanism
+  /// - Parameters:
+  ///   - data: Data to encrypt
+  ///   - key: Encryption key
+  /// - Returns: Encrypted data
+  /// - Throws: SecurityProtocolError if encryption fails
+  public func encrypt(_ data: [UInt8], key: [UInt8]) async throws -> [UInt8] {
+    let result = await cryptoServiceImpl.encrypt(data: data, using: key)
+    
+    switch result {
+      case .success(let encryptedData):
+        return encryptedData
+      case .failure(let error):
+        throw SecurityProtocolError.invalidMessageFormat(
+          details: "Encryption failed: \(error.localizedDescription)"
+        )
+    }
+  }
+  
+  /// Decrypt binary data using the provider's decryption mechanism
+  /// - Parameters:
+  ///   - data: Data to decrypt
+  ///   - key: Decryption key
+  /// - Returns: Decrypted data
+  /// - Throws: SecurityProtocolError if decryption fails
+  public func decrypt(_ data: [UInt8], key: [UInt8]) async throws -> [UInt8] {
+    let result = await cryptoServiceImpl.decrypt(data: data, using: key)
+    
+    switch result {
+      case .success(let decryptedData):
+        return decryptedData
+      case .failure(let error):
+        throw SecurityProtocolError.invalidMessageFormat(
+          details: "Decryption failed: \(error.localizedDescription)"
+        )
+    }
+  }
+  
+  /// Generate a cryptographically secure random key
+  /// - Parameter length: Length of the key in bytes
+  /// - Returns: Generated key
+  /// - Throws: SecurityProtocolError if key generation fails
+  public func generateKey(length: Int) async throws -> [UInt8] {
+    return try await generateRandomBytes(count: length)
+  }
+  
+  /// Hash data using the provider's hashing mechanism
+  /// - Parameter data: Data to hash
+  /// - Returns: Hash of the data
+  /// - Throws: SecurityProtocolError if hashing fails
+  public func hash(_ data: [UInt8]) async throws -> [UInt8] {
+    let result = await cryptoServiceImpl.hash(data: data)
+    
+    switch result {
+      case .success(let hashData):
+        return hashData
+      case .failure(let error):
+        throw SecurityProtocolError.invalidMessageFormat(
+          details: "Hashing failed: \(error.localizedDescription)"
+        )
+    }
+  }
+
   // MARK: - SecurityProvider Implementation
 
   /**

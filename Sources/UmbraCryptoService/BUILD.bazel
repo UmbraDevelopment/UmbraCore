@@ -1,5 +1,10 @@
 load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
+# Note: CryptoXPCService.swift and CryptoServiceListener.swift have been migrated
+# to the Alpha Dot Five architecture using actor-based implementation in:
+# - packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift
+# - packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoServiceMonitor.swift
+
 umbra_swift_library(
     name = "UmbraCryptoService",
     srcs = glob(
@@ -12,6 +17,9 @@ umbra_swift_library(
             "**/Tests/**",
             "**/*Test.swift",
             "**/*.generated.swift",
+            # These files have been migrated to CryptoXPCServices
+            "CryptoXPCService.swift",
+            "CryptoServiceListener.swift",
         ],
         exclude_directories = 1,
     ),

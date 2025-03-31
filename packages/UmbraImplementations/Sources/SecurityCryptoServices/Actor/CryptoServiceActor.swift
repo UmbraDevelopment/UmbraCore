@@ -21,7 +21,7 @@ import SecurityCoreInterfaces
  let cryptoService = CryptoServiceActor(providerType: .apple, logger: logger)
 
  // Perform operations asynchronously
- let encryptedData = try await cryptoService.encrypt(data: secureData, using: secureKey)
+ let encryptedData = try await cryptoService.encrypt(data: myData, using: myKey)
  ```
 
  ## Thread Safety
@@ -121,16 +121,16 @@ public actor CryptoServiceActor {
       - data: The data to encrypt
       - key: The encryption key
       - config: Optional configuration override
-   - Returns: Encrypted data wrapped in SecureBytes
+   - Returns: Encrypted data as a byte array
    - Throws: SecurityProtocolError if encryption fails
    */
   public func encrypt(
-    data: SecureBytes,
-    using key: SecureBytes,
+    data: [UInt8],
+    using key: [UInt8],
     config: SecurityConfigDTO?=nil
-  ) async throws -> SecureBytes {
-    let dataBytes=data.extractUnderlyingData()
-    let keyBytes=key.extractUnderlyingData()
+  ) async throws -> [UInt8] {
+    let dataBytes = Data(data)
+    let keyBytes = Data(key)
 
     // Generate IV using the provider
     let iv: Data
@@ -159,7 +159,7 @@ public actor CryptoServiceActor {
       result.append(iv)
       result.append(encryptedData)
 
-      return SecureBytes(data: result)
+      return [UInt8](result)
     } catch {
       await logger.error("Encryption failed: \(error.localizedDescription)", metadata: nil)
 
@@ -179,16 +179,16 @@ public actor CryptoServiceActor {
       - data: The data to decrypt (IV + ciphertext)
       - key: The decryption key
       - config: Optional configuration override
-   - Returns: Decrypted data wrapped in SecureBytes
+   - Returns: Decrypted data as a byte array
    - Throws: SecurityProtocolError if decryption fails
    */
   public func decrypt(
-    data: SecureBytes,
-    using key: SecureBytes,
+    data: [UInt8],
+    using key: [UInt8],
     config: SecurityConfigDTO?=nil
-  ) async throws -> SecureBytes {
-    let dataBytes=data.extractUnderlyingData()
-    let keyBytes=key.extractUnderlyingData()
+  ) async throws -> [UInt8] {
+    let dataBytes = Data(data)
+    let keyBytes = Data(key)
 
     // Validate minimum length (IV + at least some ciphertext)
     guard dataBytes.count > 16 else {
@@ -208,11 +208,11 @@ public actor CryptoServiceActor {
       let decryptedData=try provider.decrypt(
         ciphertext: ciphertext,
         key: keyBytes,
-        iv: Data(iv),
+        iv: iv,
         config: operationConfig
       )
 
-      return SecureBytes(data: decryptedData)
+      return [UInt8](decryptedData)
     } catch {
       await logger.error("Decryption failed: \(error.localizedDescription)", metadata: nil)
 
@@ -225,29 +225,33 @@ public actor CryptoServiceActor {
     }
   }
 
-  // MARK: - Key Management
-
   /**
-   Generates a cryptographic key of the specified size.
+   Generates a cryptographic key of the specified strength.
 
    - Parameters:
-      - size: Key size in bits (128, 192, or 256 for AES)
+      - bitLength: The key length in bits
       - config: Optional configuration override
-   - Returns: Generated key wrapped in SecureBytes
+   - Returns: Generated key as a byte array
    - Throws: SecurityProtocolError if key generation fails
    */
   public func generateKey(
-    size: Int,
+    bitLength: Int=256,
     config: SecurityConfigDTO?=nil
-  ) async throws -> SecureBytes {
+  ) async throws -> [UInt8] {
+    // Calculate byte length from bit length
+    let byteLength=(bitLength + 7) / 8
+
     // Use provided config or default
     let operationConfig=config ?? defaultConfig
 
     do {
-      let keyData=try provider.generateKey(size: size, config: operationConfig)
-      return SecureBytes(data: keyData)
+      let keyData=try provider.generateKey(size: byteLength, config: operationConfig)
+      return [UInt8](keyData)
     } catch {
-      await logger.error("Key generation failed: \(error.localizedDescription)", metadata: nil)
+      await logger.error(
+        "Key generation failed: \(error.localizedDescription)",
+        metadata: nil
+      )
 
       if let secError=error as? SecurityProtocolError {
         throw secError
@@ -258,26 +262,22 @@ public actor CryptoServiceActor {
     }
   }
 
-  // MARK: - Hashing Operations
-
   /**
-   Creates a cryptographic hash of the input data.
+   Computes a cryptographic hash of the provided data.
 
    - Parameters:
-      - data: The data to hash
-      - algorithm: Hash algorithm to use (SHA256, SHA384, SHA512)
-   - Returns: Hash value wrapped in SecureBytes
+      - data: Data to hash
+      - algorithm: Hash algorithm to use
+   - Returns: Hash value as a byte array
    - Throws: SecurityProtocolError if hashing fails
    */
   public func hash(
-    data: SecureBytes,
-    algorithm: String="SHA256"
-  ) async throws -> SecureBytes {
-    let dataBytes=data.extractUnderlyingData()
-
+    data: [UInt8],
+    algorithm: HashAlgorithm=.sha256
+  ) async throws -> [UInt8] {
     do {
-      let hashData=try provider.hash(data: dataBytes, algorithm: algorithm)
-      return SecureBytes(data: hashData)
+      let hashData=try provider.hash(data: Data(data), algorithm: algorithm)
+      return [UInt8](hashData)
     } catch {
       await logger.error("Hashing failed: \(error.localizedDescription)", metadata: nil)
 
@@ -291,50 +291,58 @@ public actor CryptoServiceActor {
   }
 
   /**
-   Verifies that a hash matches the expected value.
+   Verifies that a hash matches the expected value using constant-time comparison.
 
    - Parameters:
       - hash: The hash to verify
       - expected: The expected hash value
    - Returns: True if the hashes match, false otherwise
    */
-  public func verifyHash(_ hash: SecureBytes, matches expected: SecureBytes) -> Bool {
-    hash == expected
-  }
+  public func verifyHash(_ hash: [UInt8], matches expected: [UInt8]) -> Bool {
+    // Using secure comparison to prevent timing attacks
+    guard hash.count == expected.count else {
+      return false
+    }
 
-  // MARK: - Parallel Processing
+    var result: UInt8=0
+    for i in 0..<hash.count {
+      result |= hash[i] ^ expected[i]
+    }
+    return result == 0
+  }
 
   /**
    Encrypts multiple data items in parallel using task groups.
 
    - Parameters:
       - dataItems: Array of data items to encrypt
-      - key: The encryption key to use for all items
+      - key: The encryption key
       - config: Optional configuration override
-   - Returns: Array of encrypted data items in the same order
-   - Throws: SecurityProtocolError if any encryption operation fails
+   - Returns: Array of encrypted data items
+   - Throws: SecurityProtocolError if encryption fails
    */
   public func encryptBatch(
-    dataItems: [SecureBytes],
-    using key: SecureBytes,
+    dataItems: [[UInt8]],
+    using key: [UInt8],
     config: SecurityConfigDTO?=nil
-  ) async throws -> [SecureBytes] {
-    try await withThrowingTaskGroup(of: (Int, SecureBytes).self) { group in
-      // Add each encryption task to the group
-      for (index, data) in dataItems.enumerated() {
+  ) async throws -> [[UInt8]] {
+    try await withThrowingTaskGroup(of: (Int, [UInt8]).self) { group in
+      // Add tasks for each item
+      for (index, item) in dataItems.enumerated() {
         group.addTask {
-          let encryptedData=try await self.encrypt(data: data, using: key, config: config)
-          return (index, encryptedData)
+          let encrypted=try await self.encrypt(data: item, using: key, config: config)
+          return (index, encrypted)
         }
       }
 
-      // Collect results and maintain original order
-      var results=[(Int, SecureBytes)]()
+      // Collect results maintaining original order
+      var results=[(Int, [UInt8])]()
       for try await result in group {
         results.append(result)
       }
 
-      return results.sorted { $0.0 < $1.0 }.map(\.1)
+      // Sort by original index and return just the encrypted data
+      return results.sorted(by: { $0.0 < $1.0 }).map { $0.1 }
     }
   }
 
@@ -343,32 +351,33 @@ public actor CryptoServiceActor {
 
    - Parameters:
       - dataItems: Array of encrypted data items to decrypt
-      - key: The decryption key to use for all items
+      - key: The decryption key
       - config: Optional configuration override
-   - Returns: Array of decrypted data items in the same order
-   - Throws: SecurityProtocolError if any decryption operation fails
+   - Returns: Array of decrypted data items
+   - Throws: SecurityProtocolError if decryption fails
    */
   public func decryptBatch(
-    dataItems: [SecureBytes],
-    using key: SecureBytes,
+    dataItems: [[UInt8]],
+    using key: [UInt8],
     config: SecurityConfigDTO?=nil
-  ) async throws -> [SecureBytes] {
-    try await withThrowingTaskGroup(of: (Int, SecureBytes).self) { group in
-      // Add each decryption task to the group
-      for (index, data) in dataItems.enumerated() {
+  ) async throws -> [[UInt8]] {
+    try await withThrowingTaskGroup(of: (Int, [UInt8]).self) { group in
+      // Add tasks for each item
+      for (index, item) in dataItems.enumerated() {
         group.addTask {
-          let decryptedData=try await self.decrypt(data: data, using: key, config: config)
-          return (index, decryptedData)
+          let decrypted=try await self.decrypt(data: item, using: key, config: config)
+          return (index, decrypted)
         }
       }
 
-      // Collect results and maintain original order
-      var results=[(Int, SecureBytes)]()
+      // Collect results maintaining original order
+      var results=[(Int, [UInt8])]()
       for try await result in group {
         results.append(result)
       }
 
-      return results.sorted { $0.0 < $1.0 }.map(\.1)
+      // Sort by original index and return just the decrypted data
+      return results.sorted(by: { $0.0 < $1.0 }).map { $0.1 }
     }
   }
 }

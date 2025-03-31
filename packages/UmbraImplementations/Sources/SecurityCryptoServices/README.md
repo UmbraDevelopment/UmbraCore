@@ -33,7 +33,7 @@ The security provider architecture follows the Alpha Dot Five pattern with clear
 
 ### Basic Usage (Swift 6 Compatible)
 
-The security system now uses an actor-based approach for better concurrency safety:
+The security system uses an actor-based approach for better concurrency safety:
 
 ```swift
 // Access the crypto system via the actor
@@ -48,20 +48,22 @@ let encryptedData = try provider.encrypt(
 )
 ```
 
-### Working with SecureBytes
+### Working with Byte Arrays
 
-`SecureBytes` provides memory-safe handling of sensitive cryptographic data:
+Native Swift byte arrays (`[UInt8]`) are used for handling sensitive cryptographic data with memory protection utilities:
 
 ```swift
-// Create secure bytes from regular data
-let sensitiveData = SecureBytes(data: myRegularData)
+// Create byte arrays from regular data
+let sensitiveData: [UInt8] = [UInt8](myRegularData)
 
-// Extract data when needed for operations (creates a copy)
-let dataForProcessing = sensitiveData.extractUnderlyingData()
+// Use MemoryProtection utilities for secure memory handling
+var tempBytes: [UInt8] = generateSensitiveData()
+defer {
+    MemoryProtection.secureZero(&tempBytes) // Securely zero when no longer needed
+}
 
-// Securely zero when no longer needed
-var tempBytes = sensitiveData
-tempBytes.reset()
+// Process the sensitive data
+let processedData = processSensitiveData(tempBytes)
 ```
 
 ### Using the SecurityProviderBridge
@@ -72,8 +74,8 @@ The bridge connects the modern provider architecture to existing systems:
 // Create a bridge with logging
 let bridge = await UmbraCrypto.shared.createBridge(logger: myLogger)
 
-// Use the bridge with SecureBytes for operations
-let result = await bridge.encrypt(data: secureData, using: secureKey)
+// Use the bridge with byte arrays for operations
+let result = await bridge.encrypt(data: myData, using: myKey)
 
 // Process the result
 switch result {
@@ -148,7 +150,7 @@ public protocol EncryptionProviderProtocol {
     func decrypt(ciphertext: Data, key: Data, iv: Data, config: SecurityConfigDTO) throws -> Data
     func generateKey(size: Int, config: SecurityConfigDTO) throws -> Data
     func generateIV(size: Int) throws -> Data
-    func hash(data: Data, algorithm: String) throws -> Data
+    func hash(data: Data, algorithm: HashAlgorithm) throws -> Data
 }
 ```
 
@@ -171,21 +173,23 @@ public struct SecurityConfigDTO {
 }
 ```
 
-### SecureBytes
+### MemoryProtection
 
-Memory-safe container for sensitive data:
+Utilities for secure memory handling:
 
 ```swift
-public struct SecureBytes: Sendable, Equatable, Hashable, Codable {
-    // Create from various sources
-    public init(data: Data)
-    public init(bytes: [UInt8])
+public enum MemoryProtection {
+    // Securely zero memory to prevent sensitive data leaks
+    public static func secureZero(_ bytes: inout [UInt8])
     
-    // Access the underlying data (creates a copy)
-    public func extractUnderlyingData() -> Data
+    // Work with sensitive data with automatic zeroing after use
+    public static func withSecureTemporaryData<T>(
+        _ data: [UInt8],
+        _ block: ([UInt8]) throws -> T
+    ) rethrows -> T
     
-    // Securely zero the contents
-    public mutating func reset()
+    // Perform constant-time comparison to prevent timing attacks
+    public static func secureCompare(_ lhs: [UInt8], _ rhs: [UInt8]) -> Bool
 }
 ```
 
@@ -210,7 +214,7 @@ public enum SecurityProtocolError: Error {
 
 ## Best Practices
 
-1. **Memory Management**: Always use `SecureBytes` for sensitive information and call `reset()` when done
+1. **Memory Management**: Always use `MemoryProtection.secureZero()` for clearing sensitive data
 2. **Error Handling**: Check for specific error cases in `SecurityProtocolError` for better diagnostics
 3. **Provider Selection**: Choose the appropriate provider for your target platforms
 4. **Configuration**: Use the factory methods on `SecurityConfigDTO` for standard configurations
@@ -260,8 +264,8 @@ let providerRegistry = CryptoServices.createProviderRegistryActor(
 
 ```swift
 // Encryption
-let secureData = SecureBytes(data: sensitiveData)
-let secureKey = SecureBytes(data: keyData)
+let secureData = [UInt8](sensitiveData)
+let secureKey = [UInt8](keyData)
 
 do {
     let encryptedData = try await cryptoService.encrypt(
@@ -332,14 +336,14 @@ let specificProvider = try await registry.selectProvider(
 
 #### Memory Safety
 
-All sensitive data is handled using `SecureBytes`, which zeroes memory when it's deallocated:
+All sensitive data is handled using native byte arrays (`[UInt8]`) with memory protection utilities:
 
 ```swift
-// SecureBytes automatically zeroes memory on deinit
-let secureData = SecureBytes(data: sensitiveData)
+// Native byte arrays automatically zero memory on deinit
+let secureData: [UInt8] = [UInt8](sensitiveData)
 
 // Explicitly clear when no longer needed
-secureData.reset()
+MemoryProtection.secureZero(&secureData)
 ```
 
 #### Concurrency Safety
@@ -396,3 +400,330 @@ let batchResults = try await cryptoService.encryptBatch(
     dataItems: [item1, item2, item3],
     using: key
 )
+
+```
+
+Follow these instructions to make the following change to my code document.
+
+Instruction: Update the README.md file to reflect the migration from SecureBytes to native byte arrays, maintaining British spelling in documentation.
+
+Code Edit:
+```
+# UmbraCore Security Architecture
+
+This module implements a flexible security provider system for UmbraCore, offering three distinct security integration options:
+
+1. **Basic Security** (AES-CBC) - Fallback implementation using common cryptographic primitives
+2. **Ring FFI** - Cross-platform security using Rust's Ring cryptography library
+3. **Apple CryptoKit** - Native Apple platform integration with hardware acceleration
+
+## Architecture
+
+The security provider architecture follows the Alpha Dot Five pattern with clear separation of interfaces and implementations:
+
+```
+┌─────────────────────┐     ┌─────────────────────┐
+│ SecurityProviderType │     │ SecurityConfigDTO   │
+└─────────────────────┘     └─────────────────────┘
+           │                           │
+           └───────────┬───────────────┘
+                       │
+               ┌───────▼──────┐
+               │ Provider API │
+               └───────┬──────┘
+                       │
+    ┌─────────────────┼─────────────────┐
+    │                 │                 │
+┌───▼────┐      ┌─────▼─────┐     ┌─────▼─────┐
+│ Basic   │      │ Ring FFI  │     │ CryptoKit │
+│ AES-CBC │      │ Provider  │     │ Provider  │
+└─────────┘      └───────────┘     └───────────┘
+```
+
+## Usage
+
+### Basic Usage (Swift 6 Compatible)
+
+The security system uses an actor-based approach for better concurrency safety:
+
+```swift
+// Access the crypto system via the actor
+let provider = await UmbraCrypto.shared.provider()
+
+// Encrypt data using the provider
+let encryptedData = try provider.encrypt(
+    plaintext: myData, 
+    key: myKey, 
+    iv: myIV, 
+    config: SecurityConfigDTO.aesEncryption()
+)
+```
+
+### Working with Byte Arrays
+
+Native Swift byte arrays (`[UInt8]`) are used for handling sensitive cryptographic data with memory protection utilities:
+
+```swift
+// Create byte arrays from regular data
+let sensitiveData: [UInt8] = [UInt8](myRegularData)
+
+// Use MemoryProtection utilities for secure memory handling
+var tempBytes: [UInt8] = generateSensitiveData()
+defer {
+    MemoryProtection.secureZero(&tempBytes) // Securely zero when no longer needed
+}
+
+// Process the sensitive data
+let processedData = processSensitiveData(tempBytes)
+```
+
+### Using the SecurityProviderBridge
+
+The bridge connects the modern provider architecture to existing systems:
+
+```swift
+// Create a bridge with logging
+let bridge = await UmbraCrypto.shared.createBridge(logger: myLogger)
+
+// Use the bridge with byte arrays for operations
+let result = await bridge.encrypt(data: myData, using: myKey)
+
+// Process the result
+switch result {
+case .success(let encryptedData):
+    // Use the encrypted data
+case .failure(let error):
+    // Handle the error
+}
+```
+
+### Selecting a Specific Provider
+
+You can explicitly choose which security provider to use:
+
+```swift
+// Set up a specific configuration
+let config = SecurityConfigDTO(
+    algorithm: "AES",
+    keySize: 256,
+    blockMode: .gcm,
+    padding: .noPadding,
+    providerType: .apple
+)
+
+// Create a provider of the specified type
+let provider = try SecurityProviderFactory.createProvider(type: .apple)
+
+// Or change the global provider
+await UmbraCrypto.shared.setProvider(provider)
+```
+
+## Security Provider Types
+
+### BasicSecurityProvider
+
+A fallback implementation using CommonCrypto with AES-CBC:
+
+- Available on all platforms
+- Implements standard encryption/decryption with PKCS#7 padding
+- Uses secure random generation for keys and IVs
+- Provides SHA-256/384/512 hashing
+
+### AppleSecurityProvider
+
+Native implementation using CryptoKit for Apple platforms:
+
+- Available on macOS 10.15+, iOS 13.0+, tvOS 13.0+, watchOS 6.0+
+- Uses AES-GCM for authenticated encryption
+- Leverages hardware acceleration where available
+- Provides optimised implementations of modern cryptographic algorithms
+
+### RingSecurityProvider
+
+Cross-platform implementation using Rust's Ring library via FFI:
+
+- Works on any platform with Ring FFI bindings
+- Uses constant-time implementations to prevent timing attacks
+- Provides AES-GCM for authenticated encryption
+- Offers high-quality cryptographic primitives
+
+## Key Classes and Protocols
+
+### EncryptionProviderProtocol
+
+The core protocol that all security providers implement:
+
+```swift
+public protocol EncryptionProviderProtocol {
+    var providerType: SecurityProviderType { get }
+    
+    func encrypt(plaintext: Data, key: Data, iv: Data, config: SecurityConfigDTO) throws -> Data
+    func decrypt(ciphertext: Data, key: Data, iv: Data, config: SecurityConfigDTO) throws -> Data
+    func generateKey(size: Int, config: SecurityConfigDTO) throws -> Data
+    func generateIV(size: Int) throws -> Data
+    func hash(data: Data, algorithm: HashAlgorithm) throws -> Data
+}
+```
+
+### SecurityConfigDTO
+
+Configuration options for security operations:
+
+```swift
+public struct SecurityConfigDTO {
+    public let algorithm: String
+    public let keySize: Int
+    public let blockMode: BlockMode
+    public let padding: PaddingMode
+    public let providerType: SecurityProviderType
+    
+    // Factory methods available for common configurations
+    public static func aesEncryption(
+        providerType: SecurityProviderType = .basic
+    ) -> SecurityConfigDTO
+}
+```
+
+### MemoryProtection
+
+Utilities for secure memory handling:
+
+```swift
+public enum MemoryProtection {
+    // Securely zero memory to prevent sensitive data leaks
+    public static func secureZero(_ bytes: inout [UInt8])
+    
+    // Work with sensitive data with automatic zeroing after use
+    public static func withSecureTemporaryData<T>(
+        _ data: [UInt8],
+        _ block: ([UInt8]) throws -> T
+    ) rethrows -> T
+    
+    // Perform constant-time comparison to prevent timing attacks
+    public static func secureCompare(_ lhs: [UInt8], _ rhs: [UInt8]) -> Bool
+}
+```
+
+## Error Handling
+
+The security system uses the `SecurityProtocolError` enum for consistent error handling:
+
+```swift
+public enum SecurityProtocolError: Error {
+    case invalidInput(String)
+    case cryptographicError(String)
+    case unsupportedOperation(name: String)
+    // Additional cases for specific errors
+}
+```
+
+## Integration Guide
+
+### Setting Up in Your Project
+
+Add the necessary dependencies to your package:
+
+```swift
+dependencies: [
+    .package(path: "../UmbraCore/packages/UmbraInterfaces"),
+    .package(path: "../UmbraCore/packages/UmbraImplementations")
+]
+```
+
+Import the required modules:
+
+```swift
+import SecurityCoreTypes
+import SecurityCoreInterfaces
+import SecurityCryptoServices
+```
+
+### Creating the Security Service
+
+Set up the security services in your app initialization:
+
+```swift
+// Create logger
+let logger = LoggingServiceFactory.createDefaultLogger()
+
+// Create a crypto service actor
+let cryptoService = CryptoServiceActor(providerType: .apple, logger: logger)
+
+// Create a secure storage actor
+let secureStorage = SecureStorageActor(providerType: .apple, logger: logger)
+```
+
+### Basic Cryptographic Operations
+
+Perform encryption and decryption:
+
+```swift
+// Generate a key
+let key = try await cryptoService.generateKey(bitLength: 256)
+
+// Encrypt data
+let plaintext: [UInt8] = [UInt8]("Hello, secure world!".utf8)
+let encrypted = try await cryptoService.encrypt(data: plaintext, using: key)
+
+// Decrypt data
+let decrypted = try await cryptoService.decrypt(data: encrypted, using: key)
+let message = String(bytes: decrypted, encoding: .utf8)
+```
+
+### Key Management
+
+Store and retrieve keys securely:
+
+```swift
+// Store a key
+try await secureStorage.storeKey(key, withIdentifier: "master-key")
+
+// Retrieve a key
+let retrievedKey = try await secureStorage.retrieveKey(withIdentifier: "master-key")
+
+// Delete a key
+let deleted = await secureStorage.deleteKey(withIdentifier: "old-key")
+
+// Rotate a key
+let rotatedKey = try await secureStorage.rotateKey(withIdentifier: "master-key", bitLength: 256)
+```
+
+## Best Practices
+
+1. **Memory Management**: Always use `MemoryProtection.secureZero()` for clearing sensitive data
+2. **Error Handling**: Use `Result`-based error handling for better error context
+3. **Provider Selection**: Choose the appropriate provider for your platform and security requirements
+4. **Actor Isolation**: Respect Swift actor isolation for thread safety
+
+## For Service Implementers
+
+When implementing your own crypto services:
+
+```swift
+// Select best provider for current platform
+let registry = CryptoServices.createProviderRegistryActor(logger: logger)
+let provider = try await registry.selectProvider(for: .currentPlatform)
+
+// Select provider for specific environment
+let provider = try await registry.selectProvider(for: .managed(
+    performance: .optimised, 
+    compliance: .fips140, 
+    environment: .production
+))
+```
+
+## Performance Considerations
+
+1. **Batch Operations**: Use `encryptBatch`/`decryptBatch` for multiple items
+2. **Provider Selection**: The Apple provider will have better performance on Apple silicon
+3. **Concurrency**: Actors provide isolation but may create contention, consider workload distribution
+4. **Memory Usage**: Working with large datasets may require careful buffer management
+
+## Compliance and Security Audits
+
+The security components in UmbraCore are designed for:
+
+1. **FIPS 140-3 Compatibility**: When using Apple or Ring providers
+2. **Best Practice Alignment**: Following NIST recommendations for key sizes and algorithms
+3. **Side-Channel Resistance**: With constant-time operations and memory protection
+4. **Forward Secrecy**: Supporting key rotation protocols

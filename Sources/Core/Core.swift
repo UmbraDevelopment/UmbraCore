@@ -1,136 +1,51 @@
-/// Core Module
+/// Core Module has been completely migrated to the Alpha Dot Five architecture.
+/// Use packages/UmbraCoreTypes/Sources/CoreInterfaces and packages/UmbraImplementations/Sources/CoreServices instead.
 ///
-/// Provides fundamental types and utilities that form the foundation
-/// of the UmbraCore framework. This module contains essential
-/// functionality used across all other modules.
-///
-/// # Key Features
-/// - Base types and protocols
-/// - Common utilities
-/// - Framework configuration
-/// - System integration
-///
-/// # Module Organisation
-///
-/// ## Foundation Types
+/// Example usage:
 /// ```swift
-/// Result
-/// Optional
-/// Sequence
+/// import CoreInterfaces
+/// 
+/// // Get a service instance
+/// let coreService = CoreServiceFactory.createDefault()
+/// 
+/// // Initialise with configuration
+/// let config = CoreConfigurationDTO(
+///    environment: .development,
+///    applicationIdentifier: "uk.co.umbra.myapp"
+/// )
+/// try await coreService.initialise(configuration: config)
 /// ```
-///
-/// ## Configuration
-/// ```swift
-/// CoreConfig
-/// Environment
-/// BuildFlags
-/// ```
-///
-/// ## System Integration
-/// ```swift
-/// SystemInfo
-/// PlatformUtils
-/// VersionInfo
-/// ```
-///
-/// # Framework Configuration
-///
-/// ## Build Configuration
-/// Supports multiple build configurations:
-/// - Debug: Development builds
-/// - Release: Production builds
-/// - Profile: Performance analysis
-///
-/// ## Environment Settings
-/// Environment-specific configuration:
-/// - Development
-/// - Staging
-/// - Production
-///
-/// # System Integration
-///
-/// ## Platform Support
-/// - macOS 14.0+
-/// - Apple Silicon optimisation
-/// - Intel compatibility
-///
-/// ## Version Management
-/// - Semantic versioning
-/// - Compatibility checking
-/// - Update management
-///
-/// # Performance Considerations
-///
-/// ## Memory Management
-/// - Resource pooling
-/// - Cache management
-/// - Memory limits
-///
-/// ## Optimisation
-/// - Lazy loading
-/// - Value semantics
-/// - Copy-on-write
-///
-/// # Usage Example
-/// ```swift
-/// let config = CoreConfig.current
-///
-/// if config.isDebugBuild {
-///     // Enable additional debugging
-/// }
-/// ```
-///
-/// # Thread Safety
-/// Core types are designed for concurrent use:
-/// - Thread-safe configuration
-/// - Atomic operations
-/// - Value types
-
-import Foundation
-import ObjCBridgingTypesFoundation
-
-/// Core framework initialisation and management
+@available(*, unavailable, message: "Core has been migrated to CoreInterfaces. Use CoreServiceFactory.createDefault() instead.")
 public enum Core {
-  /// Current version of the Core module
-  public static let version="1.0.0"
+  /// Current version is meaningless as this module has been completely migrated
+  @available(*, unavailable, message: "Use coreService.getVersion() instead")
+  public static let version = "MIGRATED"
 
-  /// Flag indicating whether the Core framework has been initialised
-  @MainActor
-  private static var isInitialized=false
-
-  /// Initialises the core framework and its essential services.
-  /// - Throws: CoreError if framework is already initialised or if service initialisation fails
-  @MainActor
+  /// This method has been migrated to the CoreServiceProtocol
+  @available(*, unavailable, message: "Use CoreServiceFactory.createDefault() and initialise() instead")
   public static func initialize() async throws {
-    // Ensure framework is in a valid state for initialisation
-    guard !isInitialized else {
-      throw CoreError.initialisationError("Core framework is already initialised")
-    }
-
-    // Mark framework as initialized
-    isInitialized=true
-
-    // Note: When ServiceContainer is implemented, add:
-    // try await ServiceContainer.shared.initialize()
+    fatalError("This API has been completely migrated to the Alpha Dot Five architecture")
+  }
+  
+  /// This method has been migrated to the CoreServiceProtocol
+  @available(*, unavailable, message: "Use coreService.getSystemInfo() instead")
+  public static func getSystemInfo() async -> Any {
+    fatalError("This API has been completely migrated to the Alpha Dot Five architecture")
+  }
+  
+  /// This method has been migrated to the CoreServiceProtocol
+  @available(*, unavailable, message: "Use coreService.getVersion() instead")
+  public static func getVersion() async -> Any {
+    fatalError("This API has been completely migrated to the Alpha Dot Five architecture")
   }
 }
 
 /// Errors that can occur during Core operations
-/// @deprecated This will be replaced by ErrorHandling.CoreError in a future version.
-/// New code should use ErrorHandling.CoreError directly.
-@available(
-  *,
-  deprecated,
-  message: "This will be replaced by ErrorHandling.CoreError in a future version. Use ErrorHandling.CoreError instead."
-)
-public enum CoreError: Foundation.LocalizedError {
-  /// Error during initialisation
+/// @unavailable This has been replaced by UmbraErrors.CoreError in the Alpha Dot Five architecture.
+@available(*, unavailable, renamed: "UmbraErrors.CoreError", message: "Use UmbraErrors.CoreError from the Alpha Dot Five architecture")
+public enum CoreError: Error {
   case initialisationError(String)
-
-  public var errorDescription: String? {
-    switch self {
-      case let .initialisationError(message):
-        "Initialisation error: \(message)"
-    }
-  }
+  case configurationError(String)
+  case serviceError(String)
+  case invalidOperation(String)
 }
