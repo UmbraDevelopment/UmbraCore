@@ -1,0 +1,39 @@
+{
+  "rootDir": "/Users/mpy/CascadeProjects/UmbraCore",
+  "excludeDirs": [
+    ".git",
+    ".github",
+    "bazel-*",
+    "build",
+    "Scripts",
+    "node_modules"
+  ],
+  "legacyImports": [
+    "import SecurityInterfaces",
+    "import SecurityInterfacesBase",
+    "import SecurityInterfacesProtocols",
+    "import SecurityProvider"
+  ],
+  "legacyProtocols": [
+    "XPCServiceProtocol",
+    "XPCServiceProtocolDeprecated",
+    "XPCCryptoServiceProtocol",
+    "XPCSecurityServiceProtocol",
+    "SecurityXPCProtocol",
+    "CryptoXPCProtocol"
+  ],
+  "modernImports": [
+    "import XPCProtocolsCore",
+    "import UmbraCoreTypes"
+  ],
+  "modernProtocols": [
+    "XPCServiceProtocolBasic",
+    "XPCServiceProtocolStandard",
+    "XPCServiceProtocolComplete",
+    "XPCSecurityError"
+  ],
+  "outputFile": "xpc_protocol_analysis.json",
+  "includeModuleMap": true,
+  "maxGoRoutines": 8,
+  "verboseOutput": true
+}

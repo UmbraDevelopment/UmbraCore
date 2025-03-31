@@ -1,0 +1,77 @@
+{
+  "targetModule": "CoreErrors",
+  "errorsToMigrate": {
+    "SecurityError": [
+      "Core",
+      "Services",
+      "SecurityInterfacesBase",
+      "SecurityProtocolsCore",
+      "SecurityTypes",
+      "Types"
+    ],
+    "CryptoError": [
+      "Core",
+      "Services",
+      "CryptoTypes",
+      "Types",
+      "CryptoService",
+      "UmbraCryptoService"
+    ],
+    "ResourceError": [
+      "Resources",
+      "Protocols",
+      "Types"
+    ],
+    "KeyManagerError": [
+      "Core",
+      "Services"
+    ],
+    "ServiceError": [
+      "Core",
+      "Services" 
+    ],
+    "RepositoryError": [
+      "Repositories",
+      "Types"
+    ],
+    "LoggingError": [
+      "Features",
+      "Errors",
+      "Protocols",
+      "UmbraLogging"
+    ]
+  },
+  "dryRun": false,
+  "outputDir": "./generated_code",
+  "mergeAllCases": true,
+  "generateDocs": true,
+  "forceCompletion": true,
+  "additionalCases": {
+    "SecurityError": [
+      "encryptionFailed",
+      "decryptionFailed",
+      "keyGenerationFailed",
+      "invalidKey",
+      "hashVerificationFailed",
+      "invalidData",
+      "accessDenied",
+      "bookmarkFailed",
+      "accessFailed",
+      "randomGenerationFailed",
+      "hashingFailed",
+      "itemNotFound"
+    ],
+    "CryptoError": [
+      "invalidKeyLength",
+      "invalidIVLength",
+      "invalidSaltLength",
+      "invalidIterationCount",
+      "unsupportedAlgorithm",
+      "invalidKeySize",
+      "invalidKey",
+      "operationFailed",
+      "invalidData"
+    ]
+  },
+  "readme": "./README.md"
+}

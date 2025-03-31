@@ -1,0 +1,11 @@
+load("@rules_python//python:defs.bzl", "py_binary")
+
+package(default_visibility = ["//visibility:public"])
+
+py_binary(
+    name = "code_quality_manager",
+    srcs = ["code_quality_manager.py"],
+    main = "code_quality_manager.py",
+    python_version = "PY3",
+    deps = [],
+)

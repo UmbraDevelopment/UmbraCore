@@ -1,0 +1,67 @@
+# DocC documentation configuration for UmbraCore
+# This file contains the targets to build for DocC documentation
+
+targets:
+  - target: //Sources/CoreDTOs:CoreDTOsDocC
+    output: Sources/CoreDTOs/CoreDTOsDocC.doccarchive
+    module: CoreDTOs
+  - target: //Sources/SecurityProtocolsCore:SecurityProtocolsCoreDocC
+    output: Sources/SecurityProtocolsCore/SecurityProtocolsCoreDocC.doccarchive
+    module: SecurityProtocolsCore
+  - target: //Sources/SecurityInterfaces/Documentation.docc:SecurityInterfacesDocC
+    output: Sources/SecurityInterfaces/Documentation.docc/SecurityInterfacesDocC.doccarchive
+    module: SecurityInterfaces
+
+# Configuration settings
+settings:
+  output_dir: docs/api
+  build_environment: local
+
+# DocC Configuration for UmbraCore
+# This file controls how documentation is generated across all modules
+
+# General settings
+general:
+  # Organisation name to use in documentation
+  organisation: "Umbra Development"
+  # Copyright text
+  copyright: " 2025 Umbra Development. All rights reserved."
+  # Default theme (light or dark)
+  default_theme: "light"
+  # Default language
+  language: "en-GB"
+
+# Symbol graph generation settings
+symbol_graphs:
+  # Directory where symbol graphs will be stored
+  output_dir: "symbol-graphs"
+  # Generate symbol graphs for all dependencies
+  include_dependencies: true
+  # Minimum access level to include in documentation
+  minimum_access_level: "public"
+  # Include synthesised members (like Codable implementations)
+  include_synthesised_members: true
+  # Include extensions from other modules
+  include_extensions: true
+
+# Documentation rendering settings
+rendering:
+  # Use pretty URLs without file extensions
+  pretty_urls: true
+  # Enable syntax highlighting
+  syntax_highlighting: true
+  # Enable dark mode support
+  dark_mode: true
+  # Show availability information
+  show_availability: true
+  # Navigation style (tree or flat)
+  navigation_style: "tree"
+
+# Module-specific overrides
+modules:
+  # Example of module-specific settings
+  # CoreDTOs:
+  #   custom_header: "Core Data Transfer Objects"
+  #   additional_articles:
+  #     - path: "Documentation/CoreDTOs/Overview.md"
+  #     - path: "Documentation/CoreDTOs/Usage.md"

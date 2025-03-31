@@ -1,0 +1,460 @@
+# Production target configuration for UmbraCore
+# This file contains the targets to be included in production builds
+
+# Target configuration
+targets:
+  - target: "//Sources/API:API"
+    module: "Sources/API"
+    name: "API"
+    enabled: true
+  - target: "//Sources/Autocomplete:Autocomplete"
+    module: "Sources/Autocomplete"
+    name: "Autocomplete"
+    enabled: true
+  - target: "//Sources/Autocomplete/Protocols:Protocols"
+    module: "Sources/Autocomplete/Protocols"
+    name: "Protocols"
+    enabled: true
+  - target: "//Sources/Core:Core"
+    module: "Sources/Core"
+    name: "Core"
+    enabled: true
+  - target: "//Sources/Core/Services:CoreServices"
+    module: "Sources/Core/Services"
+    name: "CoreServices"
+    enabled: true
+  - target: "//Sources/Core/Services/TypeAliases:CoreServicesSecurityTypeAliases"
+    module: "Sources/Core/Services/TypeAliases"
+    name: "CoreServicesSecurityTypeAliases"
+    enabled: true
+  - target: "//Sources/Core/Services/TypeAliases:CoreServicesTypeAliases"
+    module: "Sources/Core/Services/TypeAliases"
+    name: "CoreServicesTypeAliases"
+    enabled: true
+  - target: "//Sources/Core/Services/Types:CoreServicesTypes"
+    module: "Sources/Core/Services/Types"
+    name: "CoreServicesTypes"
+    enabled: true
+  - target: "//Sources/Core/UmbraCore:CoreUmbraCore"
+    module: "Sources/Core/UmbraCore"
+    name: "CoreUmbraCore"
+    enabled: true
+  - target: "//Sources/CoreDTOs:CoreDTOs"
+    module: "Sources/CoreDTOs"
+    name: "CoreDTOs"
+    enabled: true
+  - target: "//Sources/CoreErrors:CoreErrors"
+    module: "Sources/CoreErrors"
+    name: "CoreErrors"
+    enabled: true
+  - target: "//Sources/CoreServicesTypes:CoreServicesTypes"
+    module: "Sources/CoreServicesTypes"
+    name: "CoreServicesTypes"
+    enabled: true
+  - target: "//Sources/CoreServicesTypesNoFoundation:CoreServicesTypesNoFoundation"
+    module: "Sources/CoreServicesTypesNoFoundation"
+    name: "CoreServicesTypesNoFoundation"
+    enabled: true
+  - target: "//Sources/CoreTypesImplementation:CoreTypesImplementation"
+    module: "Sources/CoreTypesImplementation"
+    name: "CoreTypesImplementation"
+    enabled: true
+  - target: "//Sources/CoreTypesInterfaces:CoreTypesInterfaces"
+    module: "Sources/CoreTypesInterfaces"
+    name: "CoreTypesInterfaces"
+    enabled: true
+  - target: "//Sources/CryptoServiceProtocol:CryptoServiceProtocol"
+    module: "Sources/CryptoServiceProtocol"
+    name: "CryptoServiceProtocol"
+    enabled: true
+  - target: "//Sources/CryptoSwiftFoundationIndependent:CryptoSwiftFoundationIndependent"
+    module: "Sources/CryptoSwiftFoundationIndependent"
+    name: "CryptoSwiftFoundationIndependent"
+    enabled: true
+  - target: "//Sources/CryptoTypes:CryptoTypes"
+    module: "Sources/CryptoTypes"
+    name: "CryptoTypes"
+    enabled: true
+  - target: "//Sources/CryptoTypes/Protocols:CryptoTypesProtocols"
+    module: "Sources/CryptoTypes/Protocols"
+    name: "CryptoTypesProtocols"
+    enabled: true
+  - target: "//Sources/CryptoTypes/Services:CryptoTypesServices"
+    module: "Sources/CryptoTypes/Services"
+    name: "CryptoTypesServices"
+    enabled: true
+  - target: "//Sources/CryptoTypes/Types:CryptoTypesTypes"
+    module: "Sources/CryptoTypes/Types"
+    name: "CryptoTypesTypes"
+    enabled: true
+  - target: "//Sources/ErrorHandling:ErrorHandling"
+    module: "Sources/ErrorHandling"
+    name: "ErrorHandling"
+    enabled: true
+  - target: "//Sources/ErrorHandling/Common:ErrorHandlingCommon"
+    module: "Sources/ErrorHandling/Common"
+    name: "ErrorHandlingCommon"
+    enabled: true
+  - target: "//Sources/ErrorHandling/Core:ErrorHandlingCore"
+    module: "Sources/ErrorHandling/Core"
+    name: "ErrorHandlingCore"
+    enabled: true
+  - target: "//Sources/ErrorHandling/Domains:ErrorHandlingDomains"
+    module: "Sources/ErrorHandling/Domains"
+    name: "ErrorHandlingDomains"
+    enabled: true
+  - target: "//Sources/ErrorHandling/Examples:ErrorHandlingExamples"
+    module: "Sources/ErrorHandling/Examples"
+    name: "ErrorHandlingExamples"
+    enabled: true
+  - target: "//Sources/ErrorHandling/Interfaces:ErrorHandlingInterfaces"
+    module: "Sources/ErrorHandling/Interfaces"
+    name: "ErrorHandlingInterfaces"
+    enabled: true
+  - target: "//Sources/ErrorHandling/Logging:ErrorHandlingLogging"
+    module: "Sources/ErrorHandling/Logging"
+    name: "ErrorHandlingLogging"
+    enabled: true
+  - target: "//Sources/ErrorHandling/Mapping:ErrorHandlingMapping"
+    module: "Sources/ErrorHandling/Mapping"
+    name: "ErrorHandlingMapping"
+    enabled: true
+  - target: "//Sources/ErrorHandling/Models:ErrorHandlingModels"
+    module: "Sources/ErrorHandling/Models"
+    name: "ErrorHandlingModels"
+    enabled: true
+  - target: "//Sources/ErrorHandling/ModuleInfo:ErrorHandlingModuleInfo"
+    module: "Sources/ErrorHandling/ModuleInfo"
+    name: "ErrorHandlingModuleInfo"
+    enabled: true
+  - target: "//Sources/ErrorHandling/Notification:ErrorHandlingNotification"
+    module: "Sources/ErrorHandling/Notification"
+    name: "ErrorHandlingNotification"
+    enabled: true
+  - target: "//Sources/ErrorHandling/Protocols:ErrorHandlingProtocols"
+    module: "Sources/ErrorHandling/Protocols"
+    name: "ErrorHandlingProtocols"
+    enabled: true
+  - target: "//Sources/ErrorHandling/Recovery:ErrorHandlingRecovery"
+    module: "Sources/ErrorHandling/Recovery"
+    name: "ErrorHandlingRecovery"
+    enabled: true
+  - target: "//Sources/ErrorHandling/Types:ErrorHandlingTypes"
+    module: "Sources/ErrorHandling/Types"
+    name: "ErrorHandlingTypes"
+    enabled: true
+  - target: "//Sources/ErrorHandling/Utilities:ErrorHandlingUtilities"
+    module: "Sources/ErrorHandling/Utilities"
+    name: "ErrorHandlingUtilities"
+    enabled: true
+  - target: "//Sources/Features:Features"
+    module: "Sources/Features"
+    name: "Features"
+    enabled: true
+  - target: "//Sources/Features/Crypto/Models:FeaturesCryptoModels"
+    module: "Sources/Features/Crypto/Models"
+    name: "FeaturesCryptoModels"
+    enabled: true
+  - target: "//Sources/Features/Crypto/Protocols:FeaturesCryptoProtocols"
+    module: "Sources/Features/Crypto/Protocols"
+    name: "FeaturesCryptoProtocols"
+    enabled: true
+  - target: "//Sources/Features/Logging/Errors:FeaturesLoggingErrors"
+    module: "Sources/Features/Logging/Errors"
+    name: "FeaturesLoggingErrors"
+    enabled: true
+  - target: "//Sources/Features/Logging/Models:FeaturesLoggingModels"
+    module: "Sources/Features/Logging/Models"
+    name: "FeaturesLoggingModels"
+    enabled: true
+  - target: "//Sources/Features/Logging/Protocols:FeaturesLoggingProtocols"
+    module: "Sources/Features/Logging/Protocols"
+    name: "FeaturesLoggingProtocols"
+    enabled: true
+  - target: "//Sources/Features/Logging/Services:FeaturesLoggingServices"
+    module: "Sources/Features/Logging/Services"
+    name: "FeaturesLoggingServices"
+    enabled: true
+  - target: "//Sources/FoundationBridgeTypes:FoundationBridgeTypes"
+    module: "Sources/FoundationBridgeTypes"
+    name: "FoundationBridgeTypes"
+    enabled: true
+  - target: "//Sources/KeyManagementTypes:KeyManagementTypes"
+    module: "Sources/KeyManagementTypes"
+    name: "KeyManagementTypes"
+    enabled: true
+  - target: "//Sources/LoggingWrapper:LoggingWrapper"
+    module: "Sources/LoggingWrapper"
+    name: "LoggingWrapper"
+    enabled: true
+  - target: "//Sources/LoggingWrapperInterfaces:LoggingWrapperInterfaces"
+    module: "Sources/LoggingWrapperInterfaces"
+    name: "LoggingWrapperInterfaces"
+    enabled: true
+  - target: "//Sources/ObjCBridgingTypes:ObjCBridgingTypes"
+    module: "Sources/ObjCBridgingTypes"
+    name: "ObjCBridgingTypes"
+    enabled: true
+  - target: "//Sources/ObjCBridgingTypesFoundation:ObjCBridgingTypesFoundation"
+    module: "Sources/ObjCBridgingTypesFoundation"
+    name: "ObjCBridgingTypesFoundation"
+    enabled: true
+  - target: "//Sources/Repositories:Repositories"
+    module: "Sources/Repositories"
+    name: "Repositories"
+    enabled: true
+  - target: "//Sources/Repositories/Protocols:RepositoriesProtocols"
+    module: "Sources/Repositories/Protocols"
+    name: "RepositoriesProtocols"
+    enabled: true
+  - target: "//Sources/Repositories/Types:RepositoriesTypes"
+    module: "Sources/Repositories/Types"
+    name: "RepositoriesTypes"
+    enabled: true
+  - target: "//Sources/Resources:Resources"
+    module: "Sources/Resources"
+    name: "Resources"
+    enabled: true
+  - target: "//Sources/Resources/Protocols:ResourcesProtocols"
+    module: "Sources/Resources/Protocols"
+    name: "ResourcesProtocols"
+    enabled: true
+  - target: "//Sources/Resources/Types:ResourcesTypes"
+    module: "Sources/Resources/Types"
+    name: "ResourcesTypes"
+    enabled: true
+  - target: "//Sources/ResticCLIHelper:ResticCLIHelper"
+    module: "Sources/ResticCLIHelper"
+    name: "ResticCLIHelper"
+    enabled: true
+  - target: "//Sources/ResticCLIHelper/Commands:ResticCLIHelperCommands"
+    module: "Sources/ResticCLIHelper/Commands"
+    name: "ResticCLIHelperCommands"
+    enabled: true
+  - target: "//Sources/ResticCLIHelper/Models:ResticCLIHelperModels"
+    module: "Sources/ResticCLIHelper/Models"
+    name: "ResticCLIHelperModels"
+    enabled: true
+  - target: "//Sources/ResticCLIHelper/Protocols:ResticCLIHelperProtocols"
+    module: "Sources/ResticCLIHelper/Protocols"
+    name: "ResticCLIHelperProtocols"
+    enabled: true
+  - target: "//Sources/ResticCLIHelper/Types:ResticCLIHelperTypes"
+    module: "Sources/ResticCLIHelper/Types"
+    name: "ResticCLIHelperTypes"
+    enabled: true
+  - target: "//Sources/ResticTypes:ResticTypes"
+    module: "Sources/ResticTypes"
+    name: "ResticTypes"
+    enabled: true
+  - target: "//Sources/SecureBytes:SecureBytes"
+    module: "Sources/SecureBytes"
+    name: "SecureBytes"
+    enabled: true
+  - target: "//Sources/SecureString:SecureString"
+    module: "Sources/SecureString"
+    name: "SecureString"
+    enabled: true
+  - target: "//Sources/SecurityBridge:SecurityBridge"
+    module: "Sources/SecurityBridge"
+    name: "SecurityBridge"
+    enabled: true
+  - target: "//Sources/SecurityBridge/Sources/XPCBridge:XPCBridge"
+    module: "Sources/SecurityBridge/Sources/XPCBridge"
+    name: "XPCBridge"
+    enabled: true
+  - target: "//Sources/SecurityBridgeProtocolAdapters:SecurityBridgeProtocolAdapters"
+    module: "Sources/SecurityBridgeProtocolAdapters"
+    name: "SecurityBridgeProtocolAdapters"
+    enabled: true
+  - target: "//Sources/SecurityBridgeTypes:SecurityBridgeTypes"
+    module: "Sources/SecurityBridgeTypes"
+    name: "SecurityBridgeTypes"
+    enabled: true
+  - target: "//Sources/SecurityCoreAdapters:SecurityCoreAdapters"
+    module: "Sources/SecurityCoreAdapters"
+    name: "SecurityCoreAdapters"
+    enabled: true
+  - target: "//Sources/SecurityImplementation:SecurityImplementation"
+    module: "Sources/SecurityImplementation"
+    name: "SecurityImplementation"
+    enabled: true
+  - target: "//Sources/SecurityInterfaces:SecurityInterfaces"
+    module: "Sources/SecurityInterfaces"
+    name: "SecurityInterfaces"
+    enabled: true
+  - target: "//Sources/SecurityInterfacesBase:SecurityInterfacesBase"
+    module: "Sources/SecurityInterfacesBase"
+    name: "SecurityInterfacesBase"
+    enabled: true
+  - target: "//Sources/SecurityInterfacesFoundation:SecurityInterfacesFoundation"
+    module: "Sources/SecurityInterfacesFoundation"
+    name: "SecurityInterfacesFoundation"
+    enabled: true
+  - target: "//Sources/SecurityInterfacesProtocols:SecurityInterfacesProtocols"
+    module: "Sources/SecurityInterfacesProtocols"
+    name: "SecurityInterfacesProtocols"
+    enabled: true
+  - target: "//Sources/SecurityInterfacesXPC:SecurityInterfacesXPC"
+    module: "Sources/SecurityInterfacesXPC"
+    name: "SecurityInterfacesXPC"
+    enabled: true
+  - target: "//Sources/SecurityProtocolsCore:SecurityProtocolsCore"
+    module: "Sources/SecurityProtocolsCore"
+    name: "SecurityProtocolsCore"
+    enabled: true
+  - target: "//Sources/SecurityTypeConverters:SecurityTypeConverters"
+    module: "Sources/SecurityTypeConverters"
+    name: "SecurityTypeConverters"
+    enabled: true
+  - target: "//Sources/SecurityTypes:SecurityTypes"
+    module: "Sources/SecurityTypes"
+    name: "SecurityTypes"
+    enabled: true
+  - target: "//Sources/SecurityTypes/Protocols:SecurityTypesProtocols"
+    module: "Sources/SecurityTypes/Protocols"
+    name: "SecurityTypesProtocols"
+    enabled: true
+  - target: "//Sources/SecurityTypes/Types:SecurityTypesTypes"
+    module: "Sources/SecurityTypes/Types"
+    name: "SecurityTypesTypes"
+    enabled: true
+  - target: "//Sources/SecurityUtils:SecurityUtils"
+    module: "Sources/SecurityUtils"
+    name: "SecurityUtils"
+    enabled: true
+  - target: "//Sources/SecurityUtils/Protocols:SecurityUtilsProtocols"
+    module: "Sources/SecurityUtils/Protocols"
+    name: "SecurityUtilsProtocols"
+    enabled: true
+  - target: "//Sources/ServiceTypes:ServiceTypes"
+    module: "Sources/ServiceTypes"
+    name: "ServiceTypes"
+    enabled: true
+  - target: "//Sources/Services:Services"
+    module: "Sources/Services"
+    name: "Services"
+    enabled: true
+  - target: "//Sources/Services/CredentialManager:CredentialManager"
+    module: "Sources/Services/CredentialManager"
+    name: "CredentialManager"
+    enabled: true
+  - target: "//Sources/Services/CryptoService:CryptoService"
+    module: "Sources/Services/CryptoService"
+    name: "CryptoService"
+    enabled: true
+  - target: "//Sources/Services/SecurityUtils:SecurityUtils"
+    module: "Sources/Services/SecurityUtils"
+    name: "SecurityUtils"
+    enabled: true
+  - target: "//Sources/Services/SecurityUtils/Protocols:SecurityUtilsProtocols"
+    module: "Sources/Services/SecurityUtils/Protocols"
+    name: "SecurityUtilsProtocols"
+    enabled: true
+  - target: "//Sources/Services/SecurityUtils/Services:SecurityUtilsServices"
+    module: "Sources/Services/SecurityUtils/Services"
+    name: "SecurityUtilsServices"
+    enabled: true
+  - target: "//Sources/Services/ServicesDTOAdapter:ServicesDTOAdapter"
+    module: "Sources/Services/ServicesDTOAdapter"
+    name: "ServicesDTOAdapter"
+    enabled: true
+  - target: "//Sources/Snapshots:Snapshots"
+    module: "Sources/Snapshots"
+    name: "Snapshots"
+    enabled: true
+  - target: "//Sources/Snapshots/Protocols:SnapshotsProtocols"
+    module: "Sources/Snapshots/Protocols"
+    name: "SnapshotsProtocols"
+    enabled: true
+  - target: "//Sources/TestUtils:TestUtils"
+    module: "Sources/TestUtils"
+    name: "TestUtils"
+    enabled: true
+  - target: "//Sources/Testing:Testing"
+    module: "Sources/Testing"
+    name: "Testing"
+    enabled: true
+  - target: "//Sources/UmbraBookmarkService:UmbraBookmarkService"
+    module: "Sources/UmbraBookmarkService"
+    name: "UmbraBookmarkService"
+    enabled: true
+  - target: "//Sources/UmbraCore:UmbraCore"
+    module: "Sources/UmbraCore"
+    name: "UmbraCore"
+    enabled: true
+  - target: "//Sources/UmbraCoreTypes:UmbraCoreTypes"
+    module: "Sources/UmbraCoreTypes"
+    name: "UmbraCoreTypes"
+    enabled: true
+  - target: "//Sources/UmbraCoreTypes/CoreErrors:UmbraCoreTypesCoreErrors"
+    module: "Sources/UmbraCoreTypes/CoreErrors"
+    name: "UmbraCoreTypesCoreErrors"
+    enabled: true
+  - target: "//Sources/UmbraCrypto:UmbraCrypto"
+    module: "Sources/UmbraCrypto"
+    name: "UmbraCrypto"
+    enabled: true
+  - target: "//Sources/UmbraCryptoService:UmbraCryptoService"
+    module: "Sources/UmbraCryptoService"
+    name: "UmbraCryptoService"
+    enabled: true
+  - target: "//Sources/UmbraKeychainService:UmbraKeychainService"
+    module: "Sources/UmbraKeychainService"
+    name: "UmbraKeychainService"
+    enabled: true
+  - target: "//Sources/UmbraLogging:UmbraLogging"
+    module: "Sources/UmbraLogging"
+    name: "UmbraLogging"
+    enabled: true
+  - target: "//Sources/UmbraLoggingAdapters:UmbraLoggingAdapters"
+    module: "Sources/UmbraLoggingAdapters"
+    name: "UmbraLoggingAdapters"
+    enabled: true
+  - target: "//Sources/UmbraMocks:UmbraMocks"
+    module: "Sources/UmbraMocks"
+    name: "UmbraMocks"
+    enabled: true
+  - target: "//Sources/UmbraSecurity:UmbraSecurity"
+    module: "Sources/UmbraSecurity"
+    name: "UmbraSecurity"
+    enabled: true
+  - target: "//Sources/UmbraSecurity/Adapters:Adapters"
+    module: "Sources/UmbraSecurity/Adapters"
+    name: "Adapters"
+    enabled: true
+  - target: "//Sources/UmbraSecurity/Extensions:UmbraSecurityExtensions"
+    module: "Sources/UmbraSecurity/Extensions"
+    name: "UmbraSecurityExtensions"
+    enabled: true
+  - target: "//Sources/UmbraSecurity/Services:UmbraSecurityServicesCore"
+    module: "Sources/UmbraSecurity/Services"
+    name: "UmbraSecurityServicesCore"
+    enabled: true
+  - target: "//Sources/UmbraSecurityCore:UmbraSecurityCore"
+    module: "Sources/UmbraSecurityCore"
+    name: "UmbraSecurityCore"
+    enabled: true
+  - target: "//Sources/UmbraXPC:UmbraXPC"
+    module: "Sources/UmbraXPC"
+    name: "UmbraXPC"
+    enabled: true
+  - target: "//Sources/XPC:XPC"
+    module: "Sources/XPC"
+    name: "XPC"
+    enabled: true
+  - target: "//Sources/XPC/Core:XPCCore"
+    module: "Sources/XPC/Core"
+    name: "XPCCore"
+    enabled: true
+  - target: "//Sources/XPCProtocolsCore:XPCProtocolsCore"
+    module: "Sources/XPCProtocolsCore"
+    name: "XPCProtocolsCore"
+    enabled: true
+
+# Excluded target patterns
+excluded:
+  - pattern: ".*Tests"
+  - pattern: ".*TestHelpers"
+  - pattern: ".*ForTesting"
+  - pattern: ".*_runner"

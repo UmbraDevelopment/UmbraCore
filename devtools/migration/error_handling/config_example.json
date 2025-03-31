@@ -1,0 +1,33 @@
+{
+  "TargetModule": "CoreErrors",
+  "ErrorsToMigrate": {
+    "SecurityError": [
+      "SecurityProtocolsCore",
+      "XPCProtocolsCore"
+    ],
+    "ResourceError": [
+      "ResourceManagementCore",
+      "StorageCore",
+      "BackupCore",
+      "NetworkingCore"
+    ],
+    "LoggingError": [
+      "LoggingCore",
+      "LoggingFoundation",
+      "SystemLoggingCore",
+      "ApplicationLoggingCore",
+      "LoggingBridge"
+    ],
+    "CredentialError": [
+      "CredentialManagementCore",
+      "SecurityCore"
+    ],
+    "ResticError": [
+      "ResticCore",
+      "BackupUtilitiesCore",
+      "ResticBridge"
+    ]
+  },
+  "DryRun": true,
+  "OutputDir": "./generated_code"
+}
