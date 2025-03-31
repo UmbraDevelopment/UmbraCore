@@ -65,96 +65,106 @@ final class ConfigBuilder {
    */
   func createConfig(options: [String: Any]?) -> SecurityConfigDTO {
     // Extract options from the dictionary or use defaults
-    let algorithmString=options?["algorithm"] as? String ?? "AES-GCM"
-    let keySize=options?["keySize"] as? Int ?? 256
+    let algorithmString = options?["algorithm"] as? String ?? "AES-GCM"
+    let _ = options?["keySize"] as? Int ?? 256  // Key size is handled by the enum types now
+    let hashAlgString = options?["hashAlgorithm"] as? String ?? "SHA-256"
+    let providerString = options?["providerType"] as? String ?? "Basic"
+    
+    // Determine whether to enable detailed logging
+    let enableDetailedLogging = options?["enableDetailedLogging"] as? Bool ?? false
+    
+    // Determine key derivation iterations
+    let keyDerivationIterations = options?["keyDerivationIterations"] as? Int ?? 100_000
+    
+    // Determine memory limit for key derivation
+    let memoryLimitBytes = options?["memoryLimitBytes"] as? Int ?? 65536
+    
+    // Determine whether to use hardware acceleration
+    let useHardwareAcceleration = options?["useHardwareAcceleration"] as? Bool ?? true
+    
+    // Determine operation timeout
+    let operationTimeoutSeconds = options?["operationTimeoutSeconds"] as? TimeInterval ?? 30.0
+    
+    // Determine whether to verify operations
+    let verifyOperations = options?["verifyOperations"] as? Bool ?? true
 
-    // Parse algorithm and mode from the algorithm string
-    var algorithm="AES"
-    var mode: String?="GCM"
-
-    // Handle parsing algorithm-mode combinations like "AES-GCM"
-    if algorithmString.contains("-") {
-      let components=algorithmString.split(separator: "-")
-      if components.count >= 2 {
-        // Set the algorithm and mode from the components
-        algorithm=String(components[0])
-        mode=String(components[1])
-      }
-    } else {
-      // Handle single algorithm names without a mode
-      algorithm=algorithmString
-
-      // For RSA and other asymmetric algorithms, mode is not applicable
-      if ["RSA", "ECDSA", "ED25519"].contains(algorithm) {
-        mode=nil
-      }
+    // Map to encryption algorithm enum
+    var encryptionAlgorithm = EncryptionAlgorithm.aes256CBC
+    if algorithmString.contains("GCM") {
+      encryptionAlgorithm = .aes256GCM
+    } else if algorithmString.contains("Poly1305") || algorithmString.contains("ChaCha") {
+      encryptionAlgorithm = .chacha20Poly1305
     }
 
-    // Extract string options that should be passed to the configuration
-    var configOptions: [String: String]=[:]
-
-    // Process options and convert to appropriate types
-    if let options {
-      for (key, value) in options {
-        if key != "algorithm" && key != "keySize" && key != "mode" {
-          if let stringValue=value as? String {
-            configOptions[key]=stringValue
-          } else if let intValue=value as? Int {
-            configOptions[key]=String(intValue)
-          } else if let boolValue=value as? Bool {
-            configOptions[key]=boolValue ? "true" : "false"
-          } else if let dataValue=value as? Data {
-            configOptions[key]=dataValue.base64EncodedString()
-          }
-        }
-      }
+    // Map to hash algorithm enum
+    var hashAlgorithm = HashAlgorithm.sha256
+    if hashAlgString.contains("512") {
+      hashAlgorithm = .sha512
+    } else if hashAlgString.lowercased().contains("blake") {
+      hashAlgorithm = .blake2b
     }
 
-    // Create a configuration with the parsed values
+    // Map to provider type enum
+    var providerType = SecurityProviderType.basic
+    switch providerString.lowercased() {
+      case "cryptokit":
+        providerType = .cryptoKit
+      case "ring":
+        providerType = .ring
+      case "system":
+        providerType = .system
+      case "hsm":
+        providerType = .hsm
+      default:
+        providerType = .basic
+    }
+
+    // Create SecurityConfigOptions with the parsed values
+    let configOptions = SecurityConfigOptions(
+      enableDetailedLogging: enableDetailedLogging,
+      keyDerivationIterations: keyDerivationIterations,
+      memoryLimitBytes: memoryLimitBytes,
+      useHardwareAcceleration: useHardwareAcceleration,
+      operationTimeoutSeconds: operationTimeoutSeconds,
+      verifyOperations: verifyOperations
+    )
+
+    // Create a configuration with the proper enum values and options
     return SecurityConfigDTO(
-      algorithm: algorithm,
-      keySize: keySize,
-      mode: mode,
+      encryptionAlgorithm: encryptionAlgorithm,
+      hashAlgorithm: hashAlgorithm,
+      providerType: providerType,
       options: configOptions
     )
   }
 
+  // MARK: - Option Validation
+
   /**
-   Validate security configuration parameters.
+   Validates a key size for a specific algorithm.
 
-   - Parameter config: The configuration to validate
-   - Returns: True if the configuration is valid, false otherwise
+   - Parameters:
+     - keySize: The key size in bits
+     - algorithm: The encryption algorithm
+   - Returns: True if the key size is valid for the algorithm
    */
-  func validateConfig(_ config: SecurityConfigDTO) -> Bool {
-    let algorithm=config.algorithm
-    let keySize=config.keySize
-
-    // Check for supported algorithms
-    let supportedAlgorithms=["AES", "RSA", "ChaCha20", "ECDSA", "ED25519"]
-    guard supportedAlgorithms.contains(algorithm) else {
-      return false
-    }
-
-    // Validate key size based on algorithm
-    switch algorithm {
+  func isValidKeySize(_ keySize: Int, forAlgorithm algorithm: String) -> Bool {
+    switch algorithm.uppercased() {
       case "AES":
         return [128, 192, 256].contains(keySize)
+      case "CHACHA20":
+        return keySize == 256
       case "RSA":
-        return [1024, 2048, 4096].contains(keySize)
-      case "ChaCha20":
-        return keySize == 256
-      case "ECDSA":
+        return [2048, 3072, 4096].contains(keySize)
+      case "ECDSA", "ED25519":
         return [256, 384, 521].contains(keySize)
-      case "ED25519":
-        return keySize == 256
       default:
         return false
     }
   }
 }
 
-// MARK: - Extensions
-
+// Extension to provide convenience methods for SecurityConfigDTO
 extension SecurityConfigDTO {
   /**
    Add an initialisation vector to the configuration.
@@ -163,34 +173,20 @@ extension SecurityConfigDTO {
    - Returns: A new configuration with the IV added
    */
   func withInitialisationVector(_ iv: Data) -> SecurityConfigDTO {
-    var updatedOptions=options
-    updatedOptions["iv"]=iv.base64EncodedString()
-
+    // Create a new options object if needed, or use the existing one
+    var existingOptions = self.options ?? SecurityConfigOptions()
+    
+    // Store the IV data as a custom property in a metadata dictionary
+    var customMetadata = existingOptions.metadata ?? [:]
+    customMetadata["iv"] = iv.base64EncodedString()
+    existingOptions.metadata = customMetadata
+    
+    // Create a new SecurityConfigDTO with updated options
     return SecurityConfigDTO(
-      algorithm: algorithm,
-      keySize: keySize,
-      mode: mode,
-      hashAlgorithm: hashAlgorithm,
-      options: updatedOptions
-    )
-  }
-
-  /**
-   Add a key identifier to the configuration.
-
-   - Parameter keyId: The key identifier to add
-   - Returns: A new configuration with the key identifier added
-   */
-  func withKeyIdentifier(_ keyID: String) -> SecurityConfigDTO {
-    var updatedOptions=options
-    updatedOptions["keyIdentifier"]=keyID
-
-    return SecurityConfigDTO(
-      algorithm: algorithm,
-      keySize: keySize,
-      mode: mode,
-      hashAlgorithm: hashAlgorithm,
-      options: updatedOptions
+      encryptionAlgorithm: self.encryptionAlgorithm,
+      hashAlgorithm: self.hashAlgorithm,
+      providerType: self.providerType,
+      options: existingOptions
     )
   }
 
@@ -198,37 +194,71 @@ extension SecurityConfigDTO {
    Add input data to the configuration.
 
    - Parameter data: The input data to add
-   - Returns: A new configuration with the input data added
+   - Returns: A new configuration with the data added
    */
   func withInputData(_ data: Data) -> SecurityConfigDTO {
-    var updatedOptions=options
-    updatedOptions["inputData"]=data.base64EncodedString()
-
+    // Create a new options object if needed, or use the existing one
+    var existingOptions = self.options ?? SecurityConfigOptions()
+    
+    // Store the data as a custom property in a metadata dictionary
+    var customMetadata = existingOptions.metadata ?? [:]
+    customMetadata["data"] = data.base64EncodedString()
+    existingOptions.metadata = customMetadata
+    
+    // Create a new SecurityConfigDTO with updated options
     return SecurityConfigDTO(
-      algorithm: algorithm,
-      keySize: keySize,
-      mode: mode,
-      hashAlgorithm: hashAlgorithm,
-      options: updatedOptions
+      encryptionAlgorithm: self.encryptionAlgorithm,
+      hashAlgorithm: self.hashAlgorithm,
+      providerType: self.providerType,
+      options: existingOptions
     )
   }
 
   /**
-   Add authentication data to the configuration.
+   Add a key to the configuration.
 
-   - Parameter data: The authentication data to add
-   - Returns: A new configuration with the authentication data added
+   - Parameter key: The key to add
+   - Returns: A new configuration with the key added
    */
-  func withAuthenticationData(_ data: Data) -> SecurityConfigDTO {
-    var updatedOptions=options
-    updatedOptions["authenticationData"]=data.base64EncodedString()
-
+  func withKey(_ key: Data) -> SecurityConfigDTO {
+    // Create a new options object if needed, or use the existing one
+    var existingOptions = self.options ?? SecurityConfigOptions()
+    
+    // Store the key data as a custom property in a metadata dictionary
+    var customMetadata = existingOptions.metadata ?? [:]
+    customMetadata["key"] = key.base64EncodedString()
+    existingOptions.metadata = customMetadata
+    
+    // Create a new SecurityConfigDTO with updated options
     return SecurityConfigDTO(
-      algorithm: algorithm,
-      keySize: keySize,
-      mode: mode,
-      hashAlgorithm: hashAlgorithm,
-      options: updatedOptions
+      encryptionAlgorithm: self.encryptionAlgorithm,
+      hashAlgorithm: self.hashAlgorithm,
+      providerType: self.providerType,
+      options: existingOptions
+    )
+  }
+
+  /**
+   Add a key identifier to the configuration.
+
+   - Parameter identifier: The key identifier to add
+   - Returns: A new configuration with the key identifier added
+   */
+  func withKeyIdentifier(_ identifier: String) -> SecurityConfigDTO {
+    // Create a new options object if needed, or use the existing one
+    var existingOptions = self.options ?? SecurityConfigOptions()
+    
+    // Store the key identifier as a custom property in a metadata dictionary
+    var customMetadata = existingOptions.metadata ?? [:]
+    customMetadata["keyIdentifier"] = identifier
+    existingOptions.metadata = customMetadata
+    
+    // Create a new SecurityConfigDTO with updated options
+    return SecurityConfigDTO(
+      encryptionAlgorithm: self.encryptionAlgorithm,
+      hashAlgorithm: self.hashAlgorithm,
+      providerType: self.providerType,
+      options: existingOptions
     )
   }
 }

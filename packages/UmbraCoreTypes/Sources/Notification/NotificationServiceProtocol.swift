@@ -4,7 +4,8 @@ import Foundation
 public typealias NotificationObserverID=String
 
 /// Notification handler type
-public typealias NotificationHandler=(NotificationDTO) -> Void
+/// Making this @Sendable ensures Swift 6 compatibility when used in actor-isolated contexts
+public typealias NotificationHandler=@Sendable (NotificationDTO) -> Void
 
 /// Protocol defining a Foundation-independent interface for notification operations
 public protocol NotificationServiceProtocol: Sendable {

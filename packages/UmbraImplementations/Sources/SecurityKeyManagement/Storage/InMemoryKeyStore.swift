@@ -1,5 +1,4 @@
 import CoreSecurityTypes
-import DomainSecurityTypes
 import Foundation
 import SecurityCoreInterfaces
 import SecurityKeyTypes
@@ -41,18 +40,18 @@ public final class InMemoryKeyStore: KeyStorage, Sendable {
   /// Actor to provide thread-safe access to the keys
   private actor StorageActor {
     /// Dictionary to store keys by their identifier
-    var keys: [String: SecureBytes]=[:]
+    var keys: [String: [UInt8]] = [:]
 
     /// Initialises an empty storage
     init() {}
 
     /// Store a key with an identifier
-    func storeKey(_ key: SecureBytes, identifier: String) {
-      keys[identifier]=key
+    func storeKey(_ key: [UInt8], identifier: String) {
+      keys[identifier] = key
     }
 
     /// Retrieve a key by identifier
-    func getKey(identifier: String) -> SecureBytes? {
+    func getKey(identifier: String) -> [UInt8]? {
       keys[identifier]
     }
 
@@ -76,17 +75,18 @@ public final class InMemoryKeyStore: KeyStorage, Sendable {
    Creates a new empty in-memory key store.
    */
   public init() {
-    storage=StorageActor()
+    storage = StorageActor()
   }
 
   /**
    Store a key with the specified identifier.
 
    - Parameters:
-      - key: The key to store
+      - key: The key to store as a byte array
       - identifier: The identifier for the key
+   - Throws: This implementation does not throw errors but confirms to protocol
    */
-  public func storeKey(_ key: SecureBytes, identifier: String) async {
+  public func storeKey(_ key: [UInt8], identifier: String) async throws {
     await storage.storeKey(key, identifier: identifier)
   }
 
@@ -94,37 +94,41 @@ public final class InMemoryKeyStore: KeyStorage, Sendable {
    Retrieve a key by its identifier.
 
    - Parameter identifier: The identifier for the key
-   - Returns: The key if found, nil otherwise
+   - Returns: The key as a byte array if found, nil otherwise
+   - Throws: This implementation does not throw errors but confirms to protocol
    */
-  public func getKey(identifier: String) async -> SecureBytes? {
+  public func getKey(identifier: String) async -> [UInt8]? {
     await storage.getKey(identifier: identifier)
   }
 
   /**
    Delete a key with the specified identifier.
 
-   - Parameter identifier: The identifier of the key to delete
+   - Parameter identifier: The identifier for the key
+   - Throws: This implementation does not throw errors but confirms to protocol
    */
-  public func deleteKey(identifier: String) async {
+  public func deleteKey(identifier: String) async throws {
     await storage.deleteKey(identifier: identifier)
   }
 
   /**
-   Check if a key with the specified identifier exists.
+   Check if a key exists.
 
-   - Parameter identifier: The identifier to check
+   - Parameter identifier: The identifier for the key
    - Returns: True if the key exists, false otherwise
+   - Throws: This implementation does not throw errors but confirms to protocol
    */
-  public func containsKey(identifier: String) async -> Bool {
+  public func containsKey(identifier: String) async throws -> Bool {
     await storage.containsKey(identifier: identifier)
   }
 
   /**
-   Get a list of all key identifiers in the store.
+   List all key identifiers.
 
-   - Returns: Array of key identifiers
+   - Returns: An array of all key identifiers
+   - Throws: This implementation does not throw errors but confirms to protocol
    */
-  public func listKeyIdentifiers() async -> [String] {
+  public func listKeyIdentifiers() async throws -> [String] {
     await storage.listKeyIdentifiers()
   }
 }

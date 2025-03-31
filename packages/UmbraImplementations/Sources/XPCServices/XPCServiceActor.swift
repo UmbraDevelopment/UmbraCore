@@ -156,12 +156,11 @@ public actor XPCServiceActor: XPCServiceProtocol {
           }
 
           do {
-            // Decode the response
-            guard
-              let responseObject=try NSKeyedUnarchiver
-                .unarchiveTopLevelObjectWithData(responseData),
-                let response=responseObject as? R
-            else {
+            // Decode the response using the modern API
+            // The type-specific approach is safer and preferred
+            let response = try NSKeyedUnarchiver.unarchivedObject(of: R.self, from: responseData)
+            
+            guard let response else {
               throw XPCServiceError
                 .responseDecodingFailed("Failed to decode response as expected type")
             }

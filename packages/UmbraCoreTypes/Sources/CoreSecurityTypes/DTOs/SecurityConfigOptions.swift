@@ -25,6 +25,9 @@ public struct SecurityConfigOptions: Sendable, Equatable, Codable {
 
   /// Whether to verify outputs of security operations
   public let verifyOperations: Bool
+  
+  /// Custom metadata for additional configuration options
+  public var metadata: [String: String]?
 
   /**
    Initialises security configuration options.
@@ -36,6 +39,7 @@ public struct SecurityConfigOptions: Sendable, Equatable, Codable {
      - useHardwareAcceleration: Whether to use hardware acceleration
      - operationTimeoutSeconds: Timeout for operations in seconds
      - verifyOperations: Whether to verify operation outputs
+     - metadata: Custom metadata for additional configuration options
    */
   public init(
     enableDetailedLogging: Bool=false,
@@ -43,7 +47,8 @@ public struct SecurityConfigOptions: Sendable, Equatable, Codable {
     memoryLimitBytes: Int=65536,
     useHardwareAcceleration: Bool=true,
     operationTimeoutSeconds: TimeInterval=30.0,
-    verifyOperations: Bool=true
+    verifyOperations: Bool=true,
+    metadata: [String: String]?=nil
   ) {
     self.enableDetailedLogging=enableDetailedLogging
     self.keyDerivationIterations=keyDerivationIterations
@@ -51,6 +56,7 @@ public struct SecurityConfigOptions: Sendable, Equatable, Codable {
     self.useHardwareAcceleration=useHardwareAcceleration
     self.operationTimeoutSeconds=operationTimeoutSeconds
     self.verifyOperations=verifyOperations
+    self.metadata=metadata
   }
 
   /// Default security configuration options

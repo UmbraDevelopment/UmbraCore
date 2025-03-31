@@ -206,7 +206,6 @@ public actor FileLogDestination: LoggingTypes.LogDestination {
       case .warning: 3
       case .error: 4
       case .critical: 5
-      default: 2 // Default to info level
     }
 
     let minLevelValue=switch minimumLevel {

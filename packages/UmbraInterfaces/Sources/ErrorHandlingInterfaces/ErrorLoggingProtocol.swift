@@ -166,23 +166,23 @@ public extension ErrorLoggingProtocol {
   }
   
   func debug<E: Error>(_ error: E, context: ErrorContext? = nil) async {
-    await debug(error, context: context, options: nil)
+    await debug(error, context: context, options: nil as ErrorLoggingOptions?)
   }
   
   func info<E: Error>(_ error: E, context: ErrorContext? = nil) async {
-    await info(error, context: context, options: nil)
+    await info(error, context: context, options: nil as ErrorLoggingOptions?)
   }
   
-  func warning<E: Error>(_ error: E, context: ErrorContext? = nil) async {
-    await warning(error, context: context, options: nil)
+  func warning<E: Error>(_ theError: E, context: ErrorContext? = nil) async {
+    await warning(theError, context: context, options: nil as ErrorLoggingOptions?)
   }
   
-  func error<E: Error>(_ error: E, context: ErrorContext? = nil) async {
-    await error(error, context: context, options: nil)
+  func error<E: Error>(_ theError: E, context: ErrorContext? = nil) async {
+    await error(theError, context: context, options: nil as ErrorLoggingOptions?)
   }
   
-  func critical<E: Error>(_ error: E, context: ErrorContext? = nil) async {
-    await critical(error, context: context, options: nil)
+  func critical<E: Error>(_ theError: E, context: ErrorContext? = nil) async {
+    await critical(theError, context: context, options: nil as ErrorLoggingOptions?)
   }
 }
 

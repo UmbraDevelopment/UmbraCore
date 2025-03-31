@@ -1,4 +1,4 @@
-/// FoundationIndependent configuration for security operations.
+/// Foundation-independent configuration for security operations.
 /// This struct provides configuration options for various security operations
 /// without using any Foundation types.
 public struct SecurityConfigDTO: Sendable, Equatable {
@@ -18,7 +18,7 @@ public struct SecurityConfigDTO: Sendable, Equatable {
 
   // MARK: - Initializers
 
-  /// Initialize a security configuration
+  /// Initialise a security configuration
   /// - Parameters:
   ///   - algorithm: The algorithm identifier (e.g., "AES-GCM", "RSA", "PBKDF2")
   ///   - keySizeInBits: Key size in bits
@@ -65,70 +65,43 @@ public struct SecurityConfigDTO: Sendable, Equatable {
     )
   }
 
-  /// Create a new instance with input data from SecureBytes
-  /// - Parameter data: The SecureBytes input data to use
-  /// - Returns: A new SecurityConfigDTO with the specified input data
-  /// - Throws: CoreSecurityError if the secure bytes have been zeroised
-  public func withInputData(_ data: SecureBytes) throws -> SecurityConfigDTO {
-    try data.withUnsafeBytes { secureData in
-      let bytes=[UInt8](secureData)
-      return withInputData(bytes)
-    }
-  }
-
   /// Create a new instance with a key stored in the options
-  /// - Parameter key: The key as SecureBytes
+  /// - Parameter key: The key as a byte array
   /// - Returns: A new SecurityConfigDTO with the key stored in options
-  /// - Throws: CoreSecurityError if the secure bytes have been zeroised
-  public func withKey(_ key: SecureBytes) throws -> SecurityConfigDTO {
-    try key.withUnsafeBytes { secureData in
-      let bytes=[UInt8](secureData)
-      // Store the key in the options as a Base64 encoded string
-      let base64Key=encodeBase64(bytes)
-      return withOptions(["key": base64Key])
-    }
+  public func withKey(_ key: [UInt8]) -> SecurityConfigDTO {
+    // Store the key in the options as a Base64 encoded string
+    let base64Key = encodeBase64(key)
+    return withOptions(["key": base64Key])
   }
 
-  // Helper method to Base64 encode bytes without Foundation
-  private func encodeBase64(_ bytes: [UInt8]) -> String {
-    let base64Chars="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
-    var result=""
-
-    var i=0
-    while i < bytes.count {
-      let remaining=bytes.count - i
-
-      // Process 3 bytes at a time, or whatever remains
-      let byte1=bytes[i]
-      let byte2=remaining > 1 ? bytes[i + 1] : 0
-      let byte3=remaining > 2 ? bytes[i + 2] : 0
-
-      // Extract 4 6-bit values
-      let char1=byte1 >> 2
-      let char2=((byte1 & 0x3) << 4) | (byte2 >> 4)
-      let char3=remaining > 1 ? ((byte2 & 0xF) << 2) | (byte3 >> 6) : 64 // 64 = padding
-      let char4=remaining > 2 ? byte3 & 0x3F : 64 // 64 = padding
-
-      // Map to Base64 characters
-      result.append(base64Chars[String.Index(utf16Offset: Int(char1), in: base64Chars)])
-      result.append(base64Chars[String.Index(utf16Offset: Int(char2), in: base64Chars)])
-
-      if char3 != 64 {
-        result.append(base64Chars[String.Index(utf16Offset: Int(char3), in: base64Chars)])
-      } else {
-        result.append("=")
-      }
-
-      if char4 != 64 {
-        result.append(base64Chars[String.Index(utf16Offset: Int(char4), in: base64Chars)])
-      } else {
-        result.append("=")
-      }
-
-      i += 3
+  /// Extract a key from options, if present
+  /// - Returns: Key bytes if found and properly decoded, nil otherwise
+  public func extractKey() -> [UInt8]? {
+    guard let base64Key=options["key"] else {
+      return nil
     }
-
-    return result
+    
+    return decodeBase64(base64Key)
+  }
+  
+  // MARK: - Private Methods
+  
+  /// Internal Base64 encoding implementation
+  /// - Parameter bytes: Bytes to encode
+  /// - Returns: Base64-encoded string
+  private func encodeBase64(_ bytes: [UInt8]) -> String {
+    let data = Data(bytes)
+    return data.base64EncodedString()
+  }
+  
+  /// Internal Base64 decoding implementation
+  /// - Parameter base64String: String to decode
+  /// - Returns: Decoded bytes or nil if invalid
+  private func decodeBase64(_ base64String: String) -> [UInt8]? {
+    guard let data = Data(base64Encoded: base64String) else {
+      return nil
+    }
+    return [UInt8](data)
   }
 }
 

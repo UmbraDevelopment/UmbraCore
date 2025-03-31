@@ -40,41 +40,45 @@ actor KeyStorageManager: KeyStorage {
   // MARK: - Properties
 
   /// Dictionary for storing keys by identifier
-  private var storage: [String: SecureBytes]=[:]
+  private var storage: [String: [UInt8]] = [:]
 
   // MARK: - Public Interface
 
   /// Store a key in memory
   /// - Parameters:
-  ///   - key: The key to store
+  ///   - key: The key to store as a byte array
   ///   - identifier: The identifier for the key
-  public func storeKey(_ key: SecureBytes, identifier: String) async {
-    storage[identifier]=key
+  /// - Throws: This implementation doesn't throw but conforms to protocol
+  public func storeKey(_ key: [UInt8], identifier: String) async throws {
+    storage[identifier] = key
   }
 
   /// Get a key from memory
   /// - Parameter identifier: The identifier for the key
-  /// - Returns: The key or nil if not found
-  public func getKey(identifier: String) async -> SecureBytes? {
+  /// - Returns: The key as a byte array or nil if not found
+  public func getKey(identifier: String) async -> [UInt8]? {
     storage[identifier]
   }
 
   /// Delete a key from memory
   /// - Parameter identifier: The identifier for the key
-  public func deleteKey(identifier: String) async {
+  /// - Throws: This implementation doesn't throw but conforms to protocol
+  public func deleteKey(identifier: String) async throws {
     storage.removeValue(forKey: identifier)
   }
 
   /// Check if a key exists in memory
   /// - Parameter identifier: The identifier for the key
   /// - Returns: True if the key exists
-  public func containsKey(identifier: String) async -> Bool {
+  /// - Throws: This implementation doesn't throw but conforms to protocol
+  public func containsKey(identifier: String) async throws -> Bool {
     storage[identifier] != nil
   }
 
   /// List all key identifiers
   /// - Returns: Array of key identifiers
-  public func listKeyIdentifiers() async -> [String] {
+  /// - Throws: This implementation doesn't throw but conforms to protocol
+  public func listKeyIdentifiers() async throws -> [String] {
     Array(storage.keys)
   }
 }
@@ -91,42 +95,46 @@ public final class KeyStore: KeyStorage, Sendable {
   /// Initialise with a specific key storage implementation
   /// - Parameter keyStorage: The key storage to use
   public init(keyStorage: KeyStorage=KeyStorageFactory.createKeyStorage()) {
-    self.keyStorage=keyStorage
+    self.keyStorage = keyStorage
   }
 
   // MARK: - KeyStorage Protocol Implementation
 
   /// Store a key with the given identifier
   /// - Parameters:
-  ///   - key: The key to store
+  ///   - key: The key to store as a byte array
   ///   - identifier: The identifier for the key
-  public func storeKey(_ key: SecureBytes, identifier: String) async {
-    await keyStorage.storeKey(key, identifier: identifier)
+  /// - Throws: An error if storing the key fails
+  public func storeKey(_ key: [UInt8], identifier: String) async throws {
+    try await keyStorage.storeKey(key, identifier: identifier)
   }
 
-  /// Retrieve a key by its identifier
+  /// Get a key by its identifier
   /// - Parameter identifier: The identifier for the key
-  /// - Returns: The key if found, nil otherwise
-  public func getKey(identifier: String) async -> SecureBytes? {
+  /// - Returns: The key as a byte array or nil if not found
+  public func getKey(identifier: String) async -> [UInt8]? {
     await keyStorage.getKey(identifier: identifier)
   }
 
   /// Delete a key by its identifier
-  /// - Parameter identifier: The identifier of the key to delete
-  public func deleteKey(identifier: String) async {
-    await keyStorage.deleteKey(identifier: identifier)
+  /// - Parameter identifier: The identifier for the key
+  /// - Throws: An error if deleting the key fails
+  public func deleteKey(identifier: String) async throws {
+    try await keyStorage.deleteKey(identifier: identifier)
   }
 
-  /// Check if a key exists with the given identifier
-  /// - Parameter identifier: The identifier to check
-  /// - Returns: True if a key exists with the identifier, false otherwise
-  public func containsKey(identifier: String) async -> Bool {
-    await keyStorage.containsKey(identifier: identifier)
+  /// Check if a key exists
+  /// - Parameter identifier: The identifier for the key
+  /// - Returns: True if the key exists
+  /// - Throws: An error if checking for the key fails
+  public func containsKey(identifier: String) async throws -> Bool {
+    try await keyStorage.containsKey(identifier: identifier)
   }
 
-  /// Get all key identifiers
-  /// - Returns: Array of all key identifiers
-  public func listKeyIdentifiers() async -> [String] {
-    await keyStorage.listKeyIdentifiers()
+  /// List all key identifiers
+  /// - Returns: Array of key identifiers
+  /// - Throws: An error if listing keys fails
+  public func listKeyIdentifiers() async throws -> [String] {
+    try await keyStorage.listKeyIdentifiers()
   }
 }

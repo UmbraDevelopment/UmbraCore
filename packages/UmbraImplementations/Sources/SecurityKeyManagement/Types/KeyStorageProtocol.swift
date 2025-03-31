@@ -1,5 +1,4 @@
 import CoreSecurityTypes
-import DomainSecurityTypes
 import Foundation
 import SecurityCoreInterfaces
 import UmbraErrors
@@ -28,25 +27,30 @@ import UmbraErrors
 public protocol KeyStorage: Sendable {
   /// Store a key
   /// - Parameters:
-  ///   - key: The key to store
+  ///   - key: The key to store as a byte array
   ///   - identifier: The identifier for the key
-  func storeKey(_ key: SecureBytes, identifier: String) async
+  /// - Throws: An error if storing the key fails
+  func storeKey(_ key: [UInt8], identifier: String) async throws
 
   /// Get a key
   /// - Parameter identifier: The identifier for the key
-  /// - Returns: The key or nil if not found
-  func getKey(identifier: String) async -> SecureBytes?
+  /// - Returns: The key as a byte array or nil if not found
+  /// - Throws: An error if retrieving the key fails
+  func getKey(identifier: String) async throws -> [UInt8]?
 
   /// Delete a key
   /// - Parameter identifier: The identifier for the key
-  func deleteKey(identifier: String) async
+  /// - Throws: An error if deleting the key fails
+  func deleteKey(identifier: String) async throws
 
   /// Check if a key exists
   /// - Parameter identifier: The identifier for the key
   /// - Returns: True if the key exists
-  func containsKey(identifier: String) async -> Bool
+  /// - Throws: An error if checking the key fails
+  func containsKey(identifier: String) async throws -> Bool
 
   /// List all key identifiers
   /// - Returns: Array of key identifiers
-  func listKeyIdentifiers() async -> [String]
+  /// - Throws: An error if listing keys fails
+  func listKeyIdentifiers() async throws -> [String]
 }

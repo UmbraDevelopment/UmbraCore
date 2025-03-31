@@ -4,9 +4,10 @@ umbra_swift_library(
     name = "UmbraInterfaces",
     srcs = glob(
         [
-            "**/*.swift",
+            "Sources/*/*.swift",
+            "Sources/*/*/*.swift",
         ],
-        allow_empty = False,
+        allow_empty = True,
         exclude = [
             "**/Tests/**",
             "**/*Test.swift",

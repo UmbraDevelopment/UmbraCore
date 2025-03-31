@@ -3,38 +3,92 @@ import DomainSecurityTypes
 import Foundation
 import UmbraErrors
 
-/// Protocol defining cryptographic service operations in a FoundationIndependent manner.
-/// All operations use only primitive types and FoundationIndependent custom types.
+/// Protocol defining cryptographic service operations in a Foundation-independent manner.
+/// All operations use only primitive types and Foundation-independent custom types.
 public protocol CryptoServiceProtocol: Sendable {
   /// Encrypts binary data using the provided key.
   /// - Parameters:
-  ///   - data: Data to encrypt as `SecureBytes`.
-  ///   - key: Encryption key as `SecureBytes`.
-  /// - Returns: The encrypted data as `SecureBytes` or an error.
-  func encrypt(data: SecureBytes, using key: SecureBytes) async
-    -> Result<SecureBytes, SecurityProtocolError>
+  ///   - data: Data to encrypt as byte array.
+  ///   - key: Encryption key as byte array.
+  /// - Returns: The encrypted data as byte array or an error.
+  func encrypt(data: [UInt8], using key: [UInt8]) async
+    -> Result<[UInt8], SecurityProtocolError>
 
   /// Decrypts binary data using the provided key.
   /// - Parameters:
-  ///   - data: Data to decrypt as `SecureBytes`.
-  ///   - key: Decryption key as `SecureBytes`.
-  /// - Returns: The decrypted data as `SecureBytes` or an error.
-  func decrypt(data: SecureBytes, using key: SecureBytes) async
-    -> Result<SecureBytes, SecurityProtocolError>
+  ///   - data: Data to decrypt as byte array.
+  ///   - key: Decryption key as byte array.
+  /// - Returns: The decrypted data as byte array or an error.
+  func decrypt(data: [UInt8], using key: [UInt8]) async
+    -> Result<[UInt8], SecurityProtocolError>
 
   /// Computes a cryptographic hash of binary data.
-  /// - Parameter data: Data to hash as `SecureBytes`.
-  /// - Returns: The hash as `SecureBytes` or an error.
-  func hash(data: SecureBytes) async
-    -> Result<SecureBytes, SecurityProtocolError>
+  /// - Parameter data: Data to hash as byte array.
+  /// - Returns: The hash as byte array or an error.
+  func hash(data: [UInt8]) async
+    -> Result<[UInt8], SecurityProtocolError>
 
   /// Verifies a cryptographic hash against the expected value.
   /// - Parameters:
-  ///   - data: Data to verify as `SecureBytes`.
-  ///   - expectedHash: Expected hash value as `SecureBytes`.
+  ///   - data: Data to verify as byte array.
+  ///   - expectedHash: Expected hash value as byte array.
   /// - Returns: `true` if the hash matches, `false` if not, or an error.
-  func verifyHash(data: SecureBytes, expectedHash: SecureBytes) async
+  func verifyHash(data: [UInt8], expectedHash: [UInt8]) async
     -> Result<Bool, SecurityProtocolError>
+}
+
+/// Data transfer object for cryptographic operations.
+/// Used to pass crypto functionality between modules without requiring direct dependencies.
+public struct CryptoServiceDto: Sendable {
+  /// Type alias for encrypt function
+  public typealias EncryptFunction = @Sendable (
+    [UInt8], [UInt8]
+  ) async -> Result<[UInt8], SecurityProtocolError>
+  
+  /// Type alias for decrypt function
+  public typealias DecryptFunction = @Sendable (
+    [UInt8], [UInt8]
+  ) async -> Result<[UInt8], SecurityProtocolError>
+  
+  /// Type alias for hash function
+  public typealias HashFunction = @Sendable (
+    [UInt8]
+  ) async -> Result<[UInt8], SecurityProtocolError>
+  
+  /// Type alias for verify hash function
+  public typealias VerifyHashFunction = @Sendable (
+    [UInt8], [UInt8]
+  ) async -> Result<Bool, SecurityProtocolError>
+  
+  /// Function to encrypt data
+  public let encrypt: EncryptFunction
+  
+  /// Function to decrypt data
+  public let decrypt: DecryptFunction
+  
+  /// Function to hash data
+  public let hash: HashFunction
+  
+  /// Function to verify a hash
+  public let verifyHash: VerifyHashFunction
+  
+  /// Initialise a new CryptoServiceDto
+  /// - Parameters:
+  ///   - encrypt: Function to encrypt data
+  ///   - decrypt: Function to decrypt data
+  ///   - hash: Function to hash data
+  ///   - verifyHash: Function to verify a hash
+  public init(
+    encrypt: @escaping EncryptFunction,
+    decrypt: @escaping DecryptFunction,
+    hash: @escaping HashFunction,
+    verifyHash: @escaping VerifyHashFunction
+  ) {
+    self.encrypt = encrypt
+    self.decrypt = decrypt
+    self.hash = hash
+    self.verifyHash = verifyHash
+  }
 }
 
 /// Extension to convert CryptoServiceProtocol to a DTO
@@ -68,26 +122,26 @@ extension CryptoServiceDto {
       let dto: CryptoServiceDto
 
       func encrypt(
-        data: SecureBytes,
-        using key: SecureBytes
-      ) async -> Result<SecureBytes, SecurityProtocolError> {
+        data: [UInt8],
+        using key: [UInt8]
+      ) async -> Result<[UInt8], SecurityProtocolError> {
         await dto.encrypt(data, key)
       }
 
       func decrypt(
-        data: SecureBytes,
-        using key: SecureBytes
-      ) async -> Result<SecureBytes, SecurityProtocolError> {
+        data: [UInt8],
+        using key: [UInt8]
+      ) async -> Result<[UInt8], SecurityProtocolError> {
         await dto.decrypt(data, key)
       }
 
-      func hash(data: SecureBytes) async -> Result<SecureBytes, SecurityProtocolError> {
+      func hash(data: [UInt8]) async -> Result<[UInt8], SecurityProtocolError> {
         await dto.hash(data)
       }
 
       func verifyHash(
-        data: SecureBytes,
-        expectedHash: SecureBytes
+        data: [UInt8],
+        expectedHash: [UInt8]
       ) async -> Result<Bool, SecurityProtocolError> {
         await dto.verifyHash(data, expectedHash)
       }
