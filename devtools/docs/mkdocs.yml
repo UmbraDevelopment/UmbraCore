@@ -1,0 +1,75 @@
+site_name: UmbraCore Documentation
+site_description: Documentation for UmbraCore - Secure Backup Management System
+site_author: MPY Development
+repo_url: https://github.com/mpy-dev-ml/UmbraCore
+edit_uri: edit/main/docs/
+site_url: https://umbracore.dev
+
+theme:
+  name: material
+  custom_dir: docs/overrides
+  palette:
+    scheme: slate
+    primary: blue
+    accent: cyan
+  font:
+    text: Roboto Mono
+    code: Roboto Mono
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - toc.follow
+    - search.suggest
+    - search.highlight
+
+plugins:
+  - search
+
+extra_css:
+  - assets/css/custom.css
+
+markdown_extensions:
+  - admonition
+  - codehilite
+  - footnotes
+  - toc:
+      permalink: true
+  - pymdownx.highlight:
+      use_pygments: true
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+
+nav:
+  - Home: index.md
+  - Project Structure: module_structure.md
+  - Build System: README_build_system.md
+  - Roadmap: ROADMAP.md
+  - Development:
+      - Overview: development/index.md
+      - Architecture: development/architecture.md
+      - Bazel & SPM: development/bazel_spm.md
+      - Contributing: development/contributing.md
+      - Project Structure: development/project_structure.md
+      - XPC Implementation: development/xpc_implementation_plan.md
+  - API Reference:
+      - Overview: api/README.md
+  - Modules:
+      - Overview: modules/index.md
+      - BackupCoordinator: modules/backupcoordinator.md
+      - Configuration: modules/configuration.md
+      - Error Types: modules/errortypes.md
+      - Repository Manager: modules/repositorymanager.md
+      - Restic CLI Helper: modules/resticlihelper.md
+      - Security Protocols: modules/securityprotocolscore.md
+      - Security Types: modules/securitytypes.md
+      - UmbraCore: modules/umbracore.md
+      - Umbra Crypto Service: modules/umbracryptoservice.md
+      - Umbra Keychain Service: modules/umbrakeychainservice.md
+      - Umbra XPC: modules/umbraxpc.md
+      - XPC Protocols Core: modules/xpcprotocolscore.md

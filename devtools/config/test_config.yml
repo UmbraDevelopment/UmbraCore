@@ -1,0 +1,58 @@
+# Test configuration for UmbraCore
+# This file contains the targets to be run in test workflows
+
+# Target configuration
+targets:
+  - target: "//Sources/CoreErrors/Tests:CoreErrorsTests"
+    module: "Sources/CoreErrors/Tests"
+    name: "CoreErrorsTests"
+    enabled: true
+  - target: "//Sources/ErrorHandling/Tests:ErrorHandlingTests"
+    module: "Sources/ErrorHandling/Tests"
+    name: "ErrorHandlingTests"
+    enabled: true
+  - target: "//Sources/KeyManagementTypes/Tests:KeyManagementTypesTests"
+    module: "Sources/KeyManagementTypes/Tests"
+    name: "KeyManagementTypesTests"
+    enabled: true
+  - target: "//Sources/SecureBytes:SecureBytesTests"
+    module: "Sources/SecureBytes"
+    name: "SecureBytesTests"
+    enabled: true
+  - target: "//Sources/SecureString:SecureStringTests"
+    module: "Sources/SecureString"
+    name: "SecureStringTests"
+    enabled: true
+  - target: "//Sources/SecurityImplementation:SecurityImplementationTests_runner"
+    module: "Sources/SecurityImplementation"
+    name: "SecurityImplementationTests_runner"
+    enabled: true
+  - target: "//Sources/SecurityInterfaces/Tests:ProviderFactoryAdapterTests"
+    module: "Sources/SecurityInterfaces/Tests"
+    name: "ProviderFactoryAdapterTests"
+    enabled: true
+  - target: "//Sources/SecurityInterfaces/Tests:SecurityProviderBaseTests"
+    module: "Sources/SecurityInterfaces/Tests"
+    name: "SecurityProviderBaseTests"
+    enabled: true
+  - target: "//Sources/SecurityInterfaces/Tests:XPCMigrationTests"
+    module: "Sources/SecurityInterfaces/Tests"
+    name: "XPCMigrationTests"
+    enabled: true
+  - target: "//Sources/SecurityProtocolsCore:SecurityProtocolsCoreTests"
+    module: "Sources/SecurityProtocolsCore"
+    name: "SecurityProtocolsCoreTests"
+    enabled: true
+  - target: "//Sources/UmbraSecurityCore:UmbraSecurityCoreTests"
+    module: "Sources/UmbraSecurityCore"
+    name: "UmbraSecurityCoreTests"
+    enabled: true
+  - target: "//Sources/XPCProtocolsCore:XPCProtocolsCoreTests"
+    module: "Sources/XPCProtocolsCore"
+    name: "XPCProtocolsCoreTests"
+    enabled: true
+
+# Deprecated targets to ignore
+deprecated:
+  - pattern: "//Sources/SecurityBridge:.*"
+  - pattern: "//Sources/SecurityInterfaces/Tests:SecurityProviderTests"
