@@ -68,26 +68,25 @@ public struct SecurityConfigDTO: Sendable, Equatable {
   /// Create a new instance with input data from SecureBytes
   /// - Parameter data: The SecureBytes input data to use
   /// - Returns: A new SecurityConfigDTO with the specified input data
-  public func withInputData(_ data: SecureBytes) -> SecurityConfigDTO {
-    var bytes=[UInt8]()
-    for i in 0..<data.count {
-      bytes.append(data[i])
+  /// - Throws: CoreSecurityError if the secure bytes have been zeroised
+  public func withInputData(_ data: SecureBytes) throws -> SecurityConfigDTO {
+    try data.withUnsafeBytes { secureData in
+      let bytes=[UInt8](secureData)
+      return withInputData(bytes)
     }
-    return withInputData(bytes)
   }
 
   /// Create a new instance with a key stored in the options
   /// - Parameter key: The key as SecureBytes
   /// - Returns: A new SecurityConfigDTO with the key stored in options
-  public func withKey(_ key: SecureBytes) -> SecurityConfigDTO {
-    var bytes=[UInt8]()
-    for i in 0..<key.count {
-      bytes.append(key[i])
+  /// - Throws: CoreSecurityError if the secure bytes have been zeroised
+  public func withKey(_ key: SecureBytes) throws -> SecurityConfigDTO {
+    try key.withUnsafeBytes { secureData in
+      let bytes=[UInt8](secureData)
+      // Store the key in the options as a Base64 encoded string
+      let base64Key=encodeBase64(bytes)
+      return withOptions(["key": base64Key])
     }
-
-    // Store the key in the options as a Base64 encoded string
-    let base64Key=encodeBase64(bytes)
-    return withOptions(["key": base64Key])
   }
 
   // Helper method to Base64 encode bytes without Foundation
@@ -167,4 +166,5 @@ extension SecurityConfigDTO {
   }
 }
 
-import SecurityTypes
+import CoreSecurityTypes
+import DomainSecurityTypes

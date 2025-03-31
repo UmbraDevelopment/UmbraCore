@@ -185,15 +185,15 @@ struct ResticCommandFactory {
     snapshotID: String,
     includeFileStatistics: Bool
   ) throws -> ResticCommand {
-    var arguments = ["snapshots", snapshotID, "--json"]
-    
+    var arguments=["snapshots", snapshotID, "--json"]
+
     if includeFileStatistics {
       arguments.append("--stats")
     }
-    
+
     return ResticCommandImpl(arguments: arguments)
   }
-  
+
   /// Creates a command to add tags to a snapshot
   /// - Parameters:
   ///   - snapshotID: Snapshot ID to update
@@ -204,15 +204,15 @@ struct ResticCommandFactory {
     snapshotID: String,
     tags: [String]
   ) throws -> ResticCommand {
-    var arguments = ["tag", "--id", snapshotID, "--json"]
-    
+    var arguments=["tag", "--id", snapshotID, "--json"]
+
     for tag in tags {
       arguments.append(contentsOf: ["--add", tag])
     }
-    
+
     return ResticCommandImpl(arguments: arguments)
   }
-  
+
   /// Creates a command to restore files from a snapshot
   /// - Parameters:
   ///   - snapshotID: ID of the snapshot to restore from
@@ -224,19 +224,19 @@ struct ResticCommandFactory {
   func createRestoreCommand(
     snapshotID: String,
     targetPath: URL,
-    includePattern: String? = nil,
-    excludePattern: String? = nil
+    includePattern: String?=nil,
+    excludePattern: String?=nil
   ) throws -> ResticCommand {
-    var arguments = ["restore", snapshotID, "--target", targetPath.path, "--json"]
-    
-    if let includePattern = includePattern {
+    var arguments=["restore", snapshotID, "--target", targetPath.path, "--json"]
+
+    if let includePattern {
       arguments.append(contentsOf: ["--include", includePattern])
     }
-    
-    if let excludePattern = excludePattern {
+
+    if let excludePattern {
       arguments.append(contentsOf: ["--exclude", excludePattern])
     }
-    
+
     return ResticCommandImpl(arguments: arguments)
   }
 

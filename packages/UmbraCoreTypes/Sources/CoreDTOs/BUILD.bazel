@@ -13,7 +13,8 @@ umbra_swift_library(
     deps = [
         # All migrated modules
         "//packages/UmbraCoreTypes/Sources/FileSystemTypes",
-        "//packages/UmbraCoreTypes/Sources/SecurityTypes",
+        "//packages/UmbraCoreTypes/Sources/DomainSecurityTypes",
+        "//packages/UmbraCoreTypes/Sources/CoreSecurityTypes",
         "//packages/UmbraCoreTypes/Sources/UmbraErrors",
         "//packages/UmbraCoreTypes/Sources/UserDefaults",
         "//packages/UmbraCoreTypes/Sources/SecurityInterfaces",

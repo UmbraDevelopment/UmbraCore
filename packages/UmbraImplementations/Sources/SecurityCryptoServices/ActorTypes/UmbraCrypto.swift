@@ -1,9 +1,9 @@
+import CoreSecurityTypes
+import DomainSecurityTypes
 import Foundation
 import LoggingInterfaces
 import ProviderFactories
 import SecurityCoreInterfaces
-import SecurityCoreTypes
-import SecurityTypes
 import UmbraErrors
 
 /**

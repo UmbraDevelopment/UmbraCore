@@ -55,12 +55,12 @@ public enum KeychainSecurityFactory {
     )
 
     // Create an adapter for the logger
-    let loggerAdapter = logger.map { LoggingAdapter(wrapping: $0) } ?? DefaultLogger()
+    let loggerAdapter=logger.map { LoggingAdapter(wrapping: $0) } ?? DefaultLogger()
 
     // Create and return the actor
-    return KeychainSecurityActor(
+    return await KeychainSecurityActor(
       keychainService: keychainService,
-      keyManager: await securityProvider.keyManager(),
+      keyManager: securityProvider.keyManager(),
       logger: loggerAdapter
     )
   }
@@ -81,23 +81,23 @@ public enum KeychainSecurityFactory {
     logger: LoggingServiceProtocol
   ) -> KeychainSecurityActor {
     // Create an adapter for the logger
-    let loggerAdapter = LoggingAdapter(wrapping: logger)
-    
-    return KeychainSecurityActor(
+    let loggerAdapter=LoggingAdapter(wrapping: logger)
+
+    return await KeychainSecurityActor(
       keychainService: keychainService,
-      keyManager: await securityProvider.keyManager(),
+      keyManager: securityProvider.keyManager(),
       logger: loggerAdapter
     )
   }
 
   /**
-   Creates a KeychainSecurityActor with in-memory implementations for testing.
+   Creates an in-memory keychain security actor for testing.
 
    - Parameters:
-      - serviceIdentifier: Optional custom service identifier
-      - logger: Optional custom logger
+     - serviceIdentifier: Identifier for the keychain service
+     - logger: Optional logging service
 
-   - Returns: A KeychainSecurityActor with in-memory implementations
+   - Returns: An initialised KeychainSecurityActor using in-memory storage
    */
   public static func createInMemoryActor(
     serviceIdentifier: String=defaultServiceIdentifier,
@@ -115,12 +115,13 @@ public enum KeychainSecurityFactory {
     )
 
     // Create an adapter for the logger
-    let loggerAdapter = logger.map { LoggingAdapter(wrapping: $0) } ?? DefaultLogger()
+    let loggerAdapter: LoggingProtocol=logger
+      .map { LoggingAdapter(wrapping: $0) } ?? DefaultLogger()
 
-    // Create and return the actor
+    // Create and return the actor with the proper initialization parameters
     return KeychainSecurityActor(
       keychainService: keychainService,
-      keyManager: await securityProvider.keyManager(),
+      securityProvider: securityProvider,
       logger: loggerAdapter
     )
   }

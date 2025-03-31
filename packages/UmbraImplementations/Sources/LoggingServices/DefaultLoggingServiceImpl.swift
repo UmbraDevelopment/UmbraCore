@@ -7,22 +7,22 @@ import LoggingTypes
 /// throughout the application. It follows the Alpha Dot Five architecture
 /// pattern of having concrete implementations separate from interfaces.
 public final class DefaultLoggingServiceImpl: LoggingProtocol {
-  
+
   /// The logging actor required by LoggingProtocol
   public let loggingActor: LoggingActor
-  
+
   /// Initialises a new DefaultLoggingServiceImpl
-  public init(loggingActor: LoggingActor? = nil) {
+  public init(loggingActor: LoggingActor?=nil) {
     // Create a default logging actor if none provided
-    self.loggingActor = loggingActor ?? LoggingActor(destinations: [])
+    self.loggingActor=loggingActor ?? LoggingActor(destinations: [])
   }
-  
+
   /// Implement the core logging functionality required by CoreLoggingProtocol
   public func logMessage(_ level: LogLevel, _ message: String, context: LogContext) async {
     // Forward to the logging actor
     await loggingActor.log(level: level, message: message, context: context)
   }
-  
+
   /// Log a trace message
   /// - Parameters:
   ///   - message: The message to log
@@ -31,7 +31,7 @@ public final class DefaultLoggingServiceImpl: LoggingProtocol {
   public func trace(_ message: String, metadata: PrivacyMetadata?, source: String) async {
     await log(.trace, message, metadata: metadata, source: source)
   }
-  
+
   /// Log a debug message
   /// - Parameters:
   ///   - message: The message to log
@@ -67,7 +67,7 @@ public final class DefaultLoggingServiceImpl: LoggingProtocol {
   public func error(_ message: String, metadata: PrivacyMetadata?, source: String) async {
     await log(.error, message, metadata: metadata, source: source)
   }
-  
+
   /// Log a critical message
   /// - Parameters:
   ///   - message: The message to log
@@ -76,14 +76,14 @@ public final class DefaultLoggingServiceImpl: LoggingProtocol {
   public func critical(_ message: String, metadata: PrivacyMetadata?, source: String) async {
     await log(.critical, message, metadata: metadata, source: source)
   }
-  
+
   // MARK: - Deprecated Methods (for backward compatibility)
-  
+
   /// Legacy debug method - will be removed in future versions
   /// @deprecated Use debug(_:metadata:source:) instead
   @available(*, deprecated, message: "Use debug(_:metadata:source:) instead")
   public func debug(_ message: String, metadata: LoggingTypes.LogMetadata?, source: String?) async {
-    let privacyMetadata = convertToPrivacyMetadata(metadata)
+    let privacyMetadata=convertToPrivacyMetadata(metadata)
     await debug(message, metadata: privacyMetadata, source: source ?? "unknown")
   }
 
@@ -91,7 +91,7 @@ public final class DefaultLoggingServiceImpl: LoggingProtocol {
   /// @deprecated Use info(_:metadata:source:) instead
   @available(*, deprecated, message: "Use info(_:metadata:source:) instead")
   public func info(_ message: String, metadata: LoggingTypes.LogMetadata?, source: String?) async {
-    let privacyMetadata = convertToPrivacyMetadata(metadata)
+    let privacyMetadata=convertToPrivacyMetadata(metadata)
     await info(message, metadata: privacyMetadata, source: source ?? "unknown")
   }
 
@@ -103,7 +103,7 @@ public final class DefaultLoggingServiceImpl: LoggingProtocol {
     metadata: LoggingTypes.LogMetadata?,
     source: String?
   ) async {
-    let privacyMetadata = convertToPrivacyMetadata(metadata)
+    let privacyMetadata=convertToPrivacyMetadata(metadata)
     await warning(message, metadata: privacyMetadata, source: source ?? "unknown")
   }
 
@@ -111,7 +111,7 @@ public final class DefaultLoggingServiceImpl: LoggingProtocol {
   /// @deprecated Use error(_:metadata:source:) instead
   @available(*, deprecated, message: "Use error(_:metadata:source:) instead")
   public func error(_ message: String, metadata: LoggingTypes.LogMetadata?, source: String?) async {
-    let privacyMetadata = convertToPrivacyMetadata(metadata)
+    let privacyMetadata=convertToPrivacyMetadata(metadata)
     await error(message, metadata: privacyMetadata, source: source ?? "unknown")
   }
 
@@ -121,12 +121,12 @@ public final class DefaultLoggingServiceImpl: LoggingProtocol {
   /// - Parameter metadata: Old metadata format
   /// - Returns: New privacy-aware metadata format
   private func convertToPrivacyMetadata(_ metadata: LoggingTypes.LogMetadata?) -> PrivacyMetadata? {
-    guard let metadata = metadata else { return nil }
-    
-    var result = PrivacyMetadata()
+    guard let metadata else { return nil }
+
+    var result=PrivacyMetadata()
     for (key, value) in metadata.asDictionary {
-        // Default to private privacy level for all converted metadata
-        result[key] = PrivacyMetadataValue(value: value, privacy: .private)
+      // Default to private privacy level for all converted metadata
+      result[key]=PrivacyMetadataValue(value: value, privacy: .private)
     }
     return result
   }

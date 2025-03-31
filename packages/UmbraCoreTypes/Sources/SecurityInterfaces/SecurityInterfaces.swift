@@ -29,5 +29,5 @@ import Foundation
 // Export UserDefaults for preference management
 @_exported import UserDefaults
 
-// Export SecurityTypes for type definitions
-@_exported import SecurityTypes
+// Export DomainSecurityTypes for type definitions
+@_exported import DomainSecurityTypes

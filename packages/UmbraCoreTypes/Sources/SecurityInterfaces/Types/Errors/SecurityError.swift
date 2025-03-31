@@ -1,5 +1,6 @@
+import CoreSecurityTypes
+import DomainSecurityTypes
 import Foundation
-import SecurityTypes
 import UmbraErrors
 
 /// Comprehensive security error implementation

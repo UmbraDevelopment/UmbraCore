@@ -83,7 +83,7 @@ public protocol SnapshotServiceProtocol: Sendable {
   func deleteSnapshot(
     snapshotID: String,
     pruneAfterDelete: Bool
-  ) async throws -> (DeleteResult, AsyncStream<BackupProgress>)
+  ) async throws -> (BackupDeleteResult, AsyncStream<BackupProgress>)
 
   /// Exports a snapshot to a specified location
   /// - Parameters:
@@ -95,8 +95,8 @@ public protocol SnapshotServiceProtocol: Sendable {
   func exportSnapshot(
     snapshotID: String,
     destination: URL,
-    format: ExportFormat
-  ) async throws -> (ExportResult, AsyncStream<BackupProgress>)
+    format: BackupExportFormat
+  ) async throws -> (BackupExportResult, AsyncStream<BackupProgress>)
 
   /// Imports a snapshot from a specified location
   /// - Parameters:
@@ -108,8 +108,8 @@ public protocol SnapshotServiceProtocol: Sendable {
   func importSnapshot(
     source: URL,
     repositoryID: String,
-    format: ImportFormat
-  ) async throws -> (ImportResult, AsyncStream<BackupProgress>)
+    format: BackupImportFormat
+  ) async throws -> (BackupImportResult, AsyncStream<BackupProgress>)
 
   /// Verifies the integrity of a snapshot
   /// - Parameters:
@@ -131,7 +131,7 @@ public protocol SnapshotServiceProtocol: Sendable {
   func copySnapshot(
     snapshotID: String,
     targetRepositoryID: String
-  ) async throws -> (CopyResult, AsyncStream<BackupProgress>)
+  ) async throws -> (BackupCopyResult, AsyncStream<BackupProgress>)
 
   /// Retrieves the content of a specific file in a snapshot
   /// - Parameters:

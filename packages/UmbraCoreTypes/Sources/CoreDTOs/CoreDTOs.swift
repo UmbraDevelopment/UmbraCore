@@ -27,12 +27,14 @@
 @_exported import struct Foundation.TimeZone
 @_exported import struct Foundation.URL
 
+@_exported import CoreSecurityTypes
+@_exported import DomainSecurityTypes
+
 // Re-export modules needed for CoreDTOs functionality
 // These will be uncommented during migration completion
 @_exported import FileSystemTypes
 @_exported import Notification
 @_exported import Scheduling
 @_exported import SecurityInterfaces
-@_exported import SecurityTypes
 @_exported import UmbraErrors
 @_exported import UserDefaults

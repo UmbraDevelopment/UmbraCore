@@ -1,6 +1,6 @@
 import CryptoInterfaces
 import CryptoTypes
-import SecurityTypes
+import DomainSecurityTypes
 import UmbraErrors
 import UmbraErrorsCore
 import UmbraErrorsDTOs

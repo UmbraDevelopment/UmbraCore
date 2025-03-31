@@ -1,8 +1,8 @@
+import CoreSecurityTypes
+import DomainSecurityTypes
 import Foundation
 import LoggingInterfaces
 import SecurityCoreInterfaces
-import SecurityCoreTypes
-import SecurityTypes
 
 /**
  # CryptoServiceActor

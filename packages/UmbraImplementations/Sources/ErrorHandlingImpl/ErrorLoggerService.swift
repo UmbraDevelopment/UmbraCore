@@ -62,11 +62,11 @@ public actor ErrorLoggerService: ErrorLoggingProtocol {
     }
 
     // Convert LogMetadata to PrivacyMetadata
-    let privacyMetadata: PrivacyMetadata = {
-      var result = PrivacyMetadata()
+    let privacyMetadata: PrivacyMetadata={
+      var result=PrivacyMetadata()
       for (key, value) in metadata.asDictionary {
         // Use privacy level private for error details
-        result[key] = PrivacyMetadataValue(value: value, privacy: .private)
+        result[key]=PrivacyMetadataValue(value: value, privacy: .private)
       }
       return result
     }()

@@ -1,8 +1,8 @@
 import CommonCrypto
 import CryptoInterfaces
 import CryptoTypes
+import DomainSecurityTypes
 import Foundation
-import SecurityTypes
 
 /**
  # Crypto Service Implementation

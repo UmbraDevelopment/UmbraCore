@@ -46,7 +46,11 @@ extension FileSystemServiceImpl {
         throw FileSystemInterfaces.FileSystemError.pathAlreadyExists(path: path.path)
       } else if !withIntermediates {
         // Directory already exists, which is fine
-        await logger.debug("Directory already exists at \(path.path)", metadata: nil, source: "FileSystemService")
+        await logger.debug(
+          "Directory already exists at \(path.path)",
+          metadata: nil,
+          source: "FileSystemService"
+        )
         return
       }
     }
@@ -58,7 +62,11 @@ extension FileSystemServiceImpl {
         attributes: nil
       )
 
-      await logger.debug("Created directory at \(path.path)", metadata: nil, source: "FileSystemService")
+      await logger.debug(
+        "Created directory at \(path.path)",
+        metadata: nil,
+        source: "FileSystemService"
+      )
     } catch {
       await logger.error(
         "Failed to create directory at \(path.path): \(error.localizedDescription)",
@@ -110,7 +118,11 @@ extension FileSystemServiceImpl {
       let contents=try fileManager.contentsOfDirectory(atPath: path.path)
       let isEmpty=contents.isEmpty
 
-      await logger.debug("Checked if directory is empty at \(path.path): \(isEmpty)", metadata: nil, source: "FileSystemService")
+      await logger.debug(
+        "Checked if directory is empty at \(path.path): \(isEmpty)",
+        metadata: nil,
+        source: "FileSystemService"
+      )
 
       return isEmpty
     } catch {

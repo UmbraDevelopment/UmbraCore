@@ -78,11 +78,10 @@ public enum KeychainServicesFactory {
     let actualLogger=logger ?? DefaultLogger()
 
     // For key manager, we need to dynamically load it from SecurityKeyManagement
-    let actualKeyManager: KeyManagementProtocol
-
+    let actualKeyManager: (any KeyManagementProtocol)?
       // Try to create key manager using dynamic loading
       = if
-      let factory=try? KeyManagerAsyncFactory.createInstance(),
+      let factory=try? await KeyManagerAsyncFactory.createInstance(),
       let keyManager=await factory.createKeyManager()
     {
       keyManager
@@ -92,9 +91,9 @@ public enum KeychainServicesFactory {
     }
 
     // Create and return the security implementation
-    return await KeychainSecurityImpl(
+    return KeychainSecurityImpl(
       keychainService: actualKeychainService,
-      keyManager: actualKeyManager,
+      keyManager: actualKeyManager ?? SimpleKeyManager(logger: actualLogger),
       logger: actualLogger
     )
   }

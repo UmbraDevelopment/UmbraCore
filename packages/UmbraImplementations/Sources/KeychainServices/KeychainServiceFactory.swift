@@ -46,7 +46,7 @@ public enum KeychainServiceFactory {
     )
 
     // Create a LoggingProtocol adapter for the service
-    let serviceLogger = LoggingAdapter(wrapping: actualLogger)
+    let serviceLogger=LoggingAdapter(wrapping: actualLogger)
 
     // Create and return the keychain service
     return KeychainServiceImpl(
@@ -74,8 +74,8 @@ public enum KeychainServiceFactory {
     )
 
     // Create a LoggingProtocol adapter for the service
-    let serviceLogger = LoggingAdapter(wrapping: actualLogger)
-    
+    let serviceLogger=LoggingAdapter(wrapping: actualLogger)
+
     // Create and return the in-memory keychain service
     return InMemoryKeychainServiceImpl(
       serviceIdentifier: serviceIdentifier,

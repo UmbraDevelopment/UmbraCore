@@ -22,8 +22,8 @@ public protocol BackupCoordinatorProtocol: Sendable {
     tags: [String]?,
     options: BackupOptions?,
     progressReporter: BackupProgressReporter?,
-    cancellationToken: CancellationToken?
-  ) async throws -> BackupResult
+    cancellationToken: BackupCancellationToken?
+  ) async throws -> BackupCreateResult
 
   /// Restores a backup
   /// - Parameters:
@@ -43,8 +43,8 @@ public protocol BackupCoordinatorProtocol: Sendable {
     excludePaths: [URL]?,
     options: RestoreOptions?,
     progressReporter: BackupProgressReporter?,
-    cancellationToken: CancellationToken?
-  ) async throws -> RestoreResult
+    cancellationToken: BackupCancellationToken?
+  ) async throws -> BackupRestoreResult
 
   /// Deletes a backup
   /// - Parameters:
@@ -58,8 +58,8 @@ public protocol BackupCoordinatorProtocol: Sendable {
     snapshotID: String,
     options: DeleteOptions?,
     progressReporter: BackupProgressReporter?,
-    cancellationToken: CancellationToken?
-  ) async throws -> DeleteResult
+    cancellationToken: BackupCancellationToken?
+  ) async throws -> BackupDeleteResult
 
   /// Lists all available snapshots
   /// - Parameters:
@@ -77,7 +77,7 @@ public protocol BackupCoordinatorProtocol: Sendable {
     after: Date?,
     options: ListOptions?,
     progressReporter: BackupProgressReporter?,
-    cancellationToken: CancellationToken?
+    cancellationToken: BackupCancellationToken?
   ) async throws -> [BackupSnapshot]
 
   /// Gets detailed information about a specific snapshot
@@ -92,7 +92,7 @@ public protocol BackupCoordinatorProtocol: Sendable {
     snapshotID: String,
     includeFileStatistics: Bool,
     progressReporter: BackupProgressReporter?,
-    cancellationToken: CancellationToken?
+    cancellationToken: BackupCancellationToken?
   ) async throws -> BackupSnapshot
 
   /// Updates tags for a snapshot
@@ -109,7 +109,7 @@ public protocol BackupCoordinatorProtocol: Sendable {
     addTags: [String],
     removeTags: [String],
     progressReporter: BackupProgressReporter?,
-    cancellationToken: CancellationToken?
+    cancellationToken: BackupCancellationToken?
   ) async throws -> BackupSnapshot
 
   /// Finds files within a snapshot
@@ -126,7 +126,7 @@ public protocol BackupCoordinatorProtocol: Sendable {
     pattern: String,
     caseSensitive: Bool,
     progressReporter: BackupProgressReporter?,
-    cancellationToken: CancellationToken?
+    cancellationToken: BackupCancellationToken?
   ) async throws -> [SnapshotFile]
 
   /// Verifies a snapshot's integrity
@@ -139,7 +139,7 @@ public protocol BackupCoordinatorProtocol: Sendable {
   func verifySnapshot(
     snapshotID: String,
     progressReporter: BackupProgressReporter?,
-    cancellationToken: CancellationToken?
+    cancellationToken: BackupCancellationToken?
   ) async throws -> VerificationResult
 
   /// Performs a maintenance operation on the repository
@@ -152,6 +152,6 @@ public protocol BackupCoordinatorProtocol: Sendable {
   func performMaintenance(
     type: MaintenanceType,
     progressReporter: BackupProgressReporter?,
-    cancellationToken: CancellationToken?
+    cancellationToken: BackupCancellationToken?
   ) async throws -> MaintenanceResult
 }

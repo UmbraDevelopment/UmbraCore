@@ -284,7 +284,7 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
   }
 
   /**
-   Checks if a password exists in memory.
+   Checks if a password exists for the specified account.
 
    - Parameter account: The account identifier to check
 
@@ -292,14 +292,10 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
    */
   public func passwordExists(for account: String) async -> Bool {
     await logger.debug(
-      "Checking if password exists for account: \(account) in memory",
+      "Checking if password exists for account: \(account)",
       metadata: nil,
       source: "InMemoryKeychainService"
     )
-
-    guard !account.isEmpty else {
-      return false
-    }
 
     return passwordStorage[account] != nil
   }
@@ -311,39 +307,40 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
       - newPassword: The new password to store
       - account: The account identifier for the password
 
-   - Throws: KeychainError if the password doesn't exist
+   - Throws: KeychainError if the password doesn't exist or the operation fails
    */
   public func updatePassword(_ newPassword: String, for account: String) async throws {
     await logger.debug(
-      "Updating password for account: \(account) in memory",
+      "Updating password for account: \(account)",
       metadata: nil,
       source: "InMemoryKeychainService"
     )
 
     guard !newPassword.isEmpty else {
-      throw KeychainError.invalidParameter("New password cannot be empty")
+      throw KeychainError.invalidParameter("Password cannot be empty")
     }
 
     guard !account.isEmpty else {
       throw KeychainError.invalidParameter("Account identifier cannot be empty")
     }
 
-    // Check if the password exists
-    if passwordStorage[account] != nil {
-      passwordStorage[account]=newPassword
-      await logger.info(
-        "Successfully updated password for account: \(account) in memory",
-        metadata: nil,
-        source: "InMemoryKeychainService"
-      )
-    } else {
+    // Check if password exists
+    guard passwordStorage[account] != nil else {
       await logger.warning(
-        "Cannot update - no password exists for account: \(account) in memory",
+        "No password found to update for account: \(account)",
         metadata: nil,
         source: "InMemoryKeychainService"
       )
       throw KeychainError.itemNotFound
     }
+
+    // Update the password
+    passwordStorage[account]=newPassword
+    await logger.info(
+      "Successfully updated password for account: \(account)",
+      metadata: nil,
+      source: "InMemoryKeychainService"
+    )
   }
 
   /**

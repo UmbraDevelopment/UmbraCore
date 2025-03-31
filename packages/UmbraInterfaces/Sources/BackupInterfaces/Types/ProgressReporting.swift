@@ -54,6 +54,18 @@ public enum BackupOperation: String, Sendable, Equatable {
 
   /// Searching for files within a snapshot
   case findFiles
+
+  /// Updating snapshot tags
+  case updateTags
+
+  /// Updating snapshot description
+  case updateDescription
+
+  /// Exporting a snapshot
+  case exportSnapshot
+
+  /// Copying a snapshot to another repository
+  case copySnapshot
 }
 
 /// Represents the progress of a backup operation
@@ -160,17 +172,17 @@ public struct BackupProgress: Sendable, Equatable {
   /// Custom implementation of Equatable since Error doesn't conform to Equatable
   public static func == (lhs: BackupProgress, rhs: BackupProgress) -> Bool {
     // Compare all properties except error
-    return lhs.phase == rhs.phase &&
-           lhs.percentComplete == rhs.percentComplete &&
-           lhs.currentItem == rhs.currentItem &&
-           lhs.processedItems == rhs.processedItems &&
-           lhs.totalItems == rhs.totalItems &&
-           lhs.processedBytes == rhs.processedBytes &&
-           lhs.totalBytes == rhs.totalBytes &&
-           lhs.estimatedTimeRemaining == rhs.estimatedTimeRemaining &&
-           lhs.bytesPerSecond == rhs.bytesPerSecond &&
-           // For error, just check if both are nil or both are non-nil
-           (lhs.error == nil) == (rhs.error == nil)
+    lhs.phase == rhs.phase &&
+      lhs.percentComplete == rhs.percentComplete &&
+      lhs.currentItem == rhs.currentItem &&
+      lhs.processedItems == rhs.processedItems &&
+      lhs.totalItems == rhs.totalItems &&
+      lhs.processedBytes == rhs.processedBytes &&
+      lhs.totalBytes == rhs.totalBytes &&
+      lhs.estimatedTimeRemaining == rhs.estimatedTimeRemaining &&
+      lhs.bytesPerSecond == rhs.bytesPerSecond &&
+      // For error, just check if both are nil or both are non-nil
+      (lhs.error == nil) == (rhs.error == nil)
   }
 
   /// Creates a new progress instance at the initialising phase
@@ -342,8 +354,8 @@ public struct BackupProgress: Sendable, Equatable {
   }
 }
 
-/// Defines a token that can be used to cancel an operation
-public protocol CancellationToken: Sendable {
+/// Defines a token that can be used to cancel an operation related to progress reporting
+public protocol ProgressCancellationToken: Sendable {
   /// Checks if the operation has been cancelled
   var isCancelled: Bool { get }
 
@@ -351,8 +363,9 @@ public protocol CancellationToken: Sendable {
   func cancel()
 }
 
-/// A concrete implementation of a cancellation token
-public final class BackupCancellationToken: CancellationToken, @unchecked Sendable {
+/// A concrete implementation of a progress cancellation token
+public final class ProgressOperationCancellationToken: ProgressCancellationToken,
+@unchecked Sendable {
   /// Lock for thread-safe access to _isCancelled
   private let lock=NSLock()
 

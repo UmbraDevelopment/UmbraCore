@@ -1,6 +1,6 @@
+import CoreSecurityTypes
 import Foundation
 import os.log
-import SecurityCoreTypes
 
 /**
  # Performance Benchmarking for Security Operations

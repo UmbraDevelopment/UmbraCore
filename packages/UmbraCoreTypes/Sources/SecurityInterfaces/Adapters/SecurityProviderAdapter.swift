@@ -1,5 +1,5 @@
+import DomainSecurityTypes
 import Foundation
-import SecurityTypes
 import UmbraErrors
 
 /// Adapter for SecurityProviderProtocol implementations

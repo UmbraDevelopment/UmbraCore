@@ -1,4 +1,4 @@
-import SecurityTypes
+import DomainSecurityTypes
 
 /// Data structure for storing encrypted data with its IV
 public struct SecureStorageData: Codable, Sendable {

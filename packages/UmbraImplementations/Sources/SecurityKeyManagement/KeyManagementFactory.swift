@@ -1,10 +1,10 @@
+import CoreSecurityTypes
 import Foundation
 import KeyManagementActor // Import the actor module directly
 import KeyStorage // Import the KeyStorage module with InMemoryKeyStore
 import LoggingInterfaces
 import LoggingTypes
 import SecurityCoreInterfaces
-import SecurityCoreTypes
 import SecurityKeyTypes // Import the module containing KeyStorage protocol
 import UmbraErrors
 

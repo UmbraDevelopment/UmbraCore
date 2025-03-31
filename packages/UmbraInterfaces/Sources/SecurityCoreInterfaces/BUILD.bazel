@@ -7,14 +7,12 @@ umbra_swift_library(
             "*.swift",
             "**/*.swift",
         ],
-        allow_empty = False,
+        allow_empty = True,
     ),
     visibility = ["//visibility:public"],
     deps = [
         "//packages/UmbraCoreTypes/Sources/UmbraErrors",
-        "//packages/UmbraCoreTypes/Sources/SecurityTypes",
-        "//packages/UmbraCoreTypes/Sources/SecurityCoreTypes",
-        "//packages/UmbraCoreTypes/Sources/SecurityInterfaces",
-        "//packages/UmbraCoreTypes/Sources/CoreDTOs",
+        "//packages/UmbraCoreTypes/Sources/CoreSecurityTypes",
+        "//packages/UmbraCoreTypes/Sources/DomainSecurityTypes",
     ],
 )

@@ -156,14 +156,14 @@ public enum ServicesErrorAdapter {
     details["errorDomain"]=error._domain
 
     // Extract specific information for certain error types
-    let nsError = error as NSError
-    
+    let nsError=error as NSError
+
     // Add userInfo keys that might be useful
     if let failureReason=nsError.localizedFailureReason {
-        details["failureReason"]=failureReason
+      details["failureReason"]=failureReason
     }
     if let recoverySuggestion=nsError.localizedRecoverySuggestion {
-        details["recoverySuggestion"]=recoverySuggestion
+      details["recoverySuggestion"]=recoverySuggestion
     }
 
     // Extract any service or account information that might be in the userInfo
@@ -188,14 +188,14 @@ public enum ServicesErrorAdapter {
     details["errorDomain"]=error._domain
 
     // Extract specific information for certain error types
-    let nsError = error as NSError
-    
+    let nsError=error as NSError
+
     // Add userInfo keys that might be useful
     if let failureReason=nsError.localizedFailureReason {
-        details["failureReason"]=failureReason
+      details["failureReason"]=failureReason
     }
     if let recoverySuggestion=nsError.localizedRecoverySuggestion {
-        details["recoverySuggestion"]=recoverySuggestion
+      details["recoverySuggestion"]=recoverySuggestion
     }
 
     // Extract any algorithm or operation information that might be in the userInfo

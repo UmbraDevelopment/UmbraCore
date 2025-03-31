@@ -1,9 +1,9 @@
 import CryptoInterfaces
 import CryptoTypes
+import DomainSecurityTypes
 import Foundation
 import LoggingInterfaces
 import LoggingTypes
-import SecurityTypes
 
 /**
  # Logging Crypto Service

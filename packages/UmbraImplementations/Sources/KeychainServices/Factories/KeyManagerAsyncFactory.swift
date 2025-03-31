@@ -10,10 +10,34 @@ import SecurityCoreInterfaces
 
  This factory uses reflection to dynamically load and instantiate the proper
  key manager from SecurityKeyManagement if available.
+
+ In accordance with Swift concurrency rules and Alpha Dot Five architecture,
+ this implementation uses proper actor isolation to ensure thread safety.
  */
-public class KeyManagerAsyncFactory {
-  /// The singleton factory instance
-  private static var sharedInstance: KeyManagerAsyncFactory?
+@globalActor
+public actor KeyManagerAsyncActor {
+  public static let shared=KeyManagerAsyncActor()
+}
+
+@KeyManagerAsyncActor
+public final class KeyManagerAsyncFactory: @unchecked Sendable {
+  /// The singleton factory instance - using a constant to ensure thread safety
+  private static let sharedInstanceLock=NSLock()
+  private static var _sharedInstance: KeyManagerAsyncFactory?
+
+  /// Thread-safe access to the singleton instance
+  private static var sharedInstance: KeyManagerAsyncFactory? {
+    get {
+      sharedInstanceLock.lock()
+      defer { sharedInstanceLock.unlock() }
+      return _sharedInstance
+    }
+    set {
+      sharedInstanceLock.lock()
+      defer { sharedInstanceLock.unlock() }
+      _sharedInstance=newValue
+    }
+  }
 
   /// The key manager creation method
   private var createKeyManagerMethod: (() async -> any KeyManagementProtocol)?

@@ -14,9 +14,9 @@
  * Handle secure comparison of sensitive data
  */
 
+import CoreSecurityTypes
+import DomainSecurityTypes
 import Foundation
-import SecurityCoreTypes
-import SecurityTypes
 import UmbraErrors
 
 /// Implementation of security utilities that support the core security functionality

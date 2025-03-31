@@ -5,8 +5,8 @@ umbra_swift_library(
     srcs = glob(["*.swift"]),
     visibility = ["//visibility:public"],
     deps = [
-        "//packages/UmbraCoreTypes/Sources/SecurityTypes",
-        "//packages/UmbraCoreTypes/Sources/SecurityCoreTypes",
+        "//packages/UmbraCoreTypes/Sources/DomainSecurityTypes",
+        "//packages/UmbraCoreTypes/Sources/CoreSecurityTypes",
         "//packages/UmbraCoreTypes/Sources/UmbraErrors",
         "//packages/UmbraInterfaces/Sources/SecurityCoreInterfaces",
         "//packages/UmbraInterfaces/Sources/LoggingInterfaces",

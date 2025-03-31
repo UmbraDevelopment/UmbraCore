@@ -1,6 +1,6 @@
+import CoreSecurityTypes
+import DomainSecurityTypes
 import Foundation
-import SecurityCoreTypes
-import SecurityTypes
 
 /**
  # Application Security Provider Protocol

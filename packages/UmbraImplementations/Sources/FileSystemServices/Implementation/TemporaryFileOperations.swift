@@ -159,7 +159,11 @@ extension FileSystemServiceImpl {
       try await writeFile(bytes: initialData, to: tempPath)
     }
 
-    await logger.debug("Created temporary file at \(tempPath.path)", metadata: nil, source: "FileSystemService")
+    await logger.debug(
+      "Created temporary file at \(tempPath.path)",
+      metadata: nil,
+      source: "FileSystemService"
+    )
 
     return tempPath
   }
@@ -189,7 +193,11 @@ extension FileSystemServiceImpl {
         attributes: nil
       )
 
-      await logger.debug("Created temporary directory at \(tempDirPath.path)", metadata: nil, source: "FileSystemService")
+      await logger.debug(
+        "Created temporary directory at \(tempDirPath.path)",
+        metadata: nil,
+        source: "FileSystemService"
+      )
 
       return tempDirPath
     } catch {

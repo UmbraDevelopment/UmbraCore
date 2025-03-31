@@ -253,15 +253,15 @@ extension XPCMigrationExamples {
   static func convertLegacyError(_ error: Error) -> ErrorHandlingDomains.UmbraErrors.Security
   .Protocols {
     // If it's already the correct type, return it
-    if let securityError = error as? UmbraErrors.Security.Protocols {
+    if let securityError=error as? UmbraErrors.Security.Protocols {
       return securityError
     }
 
     // Otherwise map based on error properties
-    let errorObject = error as NSError
-    let errorDomain = errorObject.domain
-    let code = errorObject.code
-    let description = error.localizedDescription
+    let errorObject=error as NSError
+    let errorDomain=errorObject.domain
+    let code=errorObject.code
+    let description=error.localizedDescription
 
     if errorDomain.contains("encryption") {
       return .cryptographicError(

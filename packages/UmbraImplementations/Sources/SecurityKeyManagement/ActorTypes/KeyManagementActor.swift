@@ -1,10 +1,10 @@
+import CoreSecurityTypes
+import DomainSecurityTypes
 import Foundation
 import LoggingInterfaces
 import LoggingTypes
 import SecurityCoreInterfaces
-import SecurityCoreTypes
 import SecurityKeyTypes
-import SecurityTypes
 import UmbraErrors
 
 /**
@@ -12,7 +12,7 @@ import UmbraErrors
 
  An actor-based implementation of the KeyManagementProtocol that provides secure
  key management operations with proper concurrency safety in accordance with the
- Alpha Dot Five architecture.
+ architecture.
 
  This actor ensures proper isolation of the key management operations, preventing
  race conditions and other concurrency issues that could compromise security.
@@ -335,16 +335,16 @@ public actor KeyManagementActor: KeyManagementProtocol {
   // MARK: - Private Helpers
 
   /**
-   Sanitizes an identifier to be safe for storage.
+   Sanitises an identifier to be safe for storage.
 
    This prevents issues with special characters or injection attacks when
    using the identifier for storage operations.
 
    - Parameter identifier: The raw identifier
-   - Returns: A sanitized identifier safe for storage
+   - Returns: A sanitised identifier safe for storage
    */
   private func sanitizeIdentifier(_ identifier: String) -> String {
-    // In a real implementation, this would perform proper sanitization
+    // In a real implementation, this would perform proper sanitisation
     // For now, we'll just ensure it doesn't have any file path separators
     identifier.replacingOccurrences(of: "/", with: "_")
       .replacingOccurrences(of: "\\", with: "_")

@@ -28,15 +28,21 @@
    keyManager: customKeyManager
  )
  ```
+
+ ## Documentation Notes
+
+ The documentation for this module has been updated to reference CoreSecurityTypes and DomainSecurityTypes instead of SecurityCoreTypes and SecurityTypes. Additionally, British English spelling is used throughout the documentation.
+
  */
 
 // Export Foundation types needed by this module
 @_exported import Foundation
 
+@_exported import CoreSecurityTypes
+@_exported import DomainSecurityTypes
+
 // Export public interfaces from this module
 @_exported import SecurityCoreInterfaces
-@_exported import SecurityCoreTypes
-@_exported import SecurityTypes
 
 // Public exports
 public typealias DefaultSecurityProvider=SecurityProviderImpl

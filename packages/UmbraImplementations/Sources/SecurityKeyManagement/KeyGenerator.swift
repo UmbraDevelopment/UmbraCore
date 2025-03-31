@@ -1,6 +1,6 @@
+import CoreSecurityTypes
+import DomainSecurityTypes
 import Foundation
-import SecurityCoreTypes
-import SecurityTypes
 
 /// Protocol for generating cryptographic keys
 public protocol KeyGenerator {

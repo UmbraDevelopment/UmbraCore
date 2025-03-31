@@ -1,138 +1,93 @@
 import BackupInterfaces
 import Foundation
 import LoggingTypes
-import ResticInterfaces
 import UmbraErrors
 
 /**
- * Provides error mapping functionality for backup operations
+ * Maps general errors to domain-specific backup errors.
  *
- * This utility converts low-level errors into domain-specific
- * BackupError types that are more meaningful to clients of the backup services,
- * while ensuring privacy-sensitive information is properly handled.
+ * This class follows the Alpha Dot Five architecture pattern for
+ * structured error handling, ensuring consistent error mapping
+ * throughout the backup services.
  */
 public struct BackupErrorMapper {
-    
-    public init() {}
+  /// Creates a new error mapper
+  public init() {}
 
-    /**
-     * Maps any error to an appropriate BackupError
-     * - Parameters:
-     *   - error: The original error
-     *   - context: Log context for the operation
-     * - Returns: An appropriate BackupError
-     */
-    public func mapError(_ error: Error, context: LogContextDTO? = nil) -> BackupError {
-        // If it's already a BackupError, just return it
-        if let backupError = error as? BackupError {
-            return backupError
-        }
-        
-        // Handle ResticError types
-        if let resticError = error as? ResticError {
-            return convertResticError(resticError)
-        }
-        
-        // Handle URLError types
-        if let urlError = error as? URLError {
-            return BackupError.networkConnectionFailure(
-                code: urlError.code.rawValue,
-                reason: urlError.localizedDescription
-            )
-        }
-        
-        // Handle NSError types
-        if let nsError = error as? NSError {
-            switch nsError.domain {
-                case NSURLErrorDomain:
-                    return BackupError.networkConnectionFailure(
-                        code: nsError.code,
-                        reason: nsError.localizedDescription
-                    )
-                    
-                case NSPOSIXErrorDomain:
-                    return BackupError.invalidConfiguration(
-                        details: "File system error: \(nsError.localizedDescription)"
-                    )
-                    
-                case NSCocoaErrorDomain:
-                    if nsError.code == NSFileNoSuchFileError {
-                        if let url = nsError.userInfo[NSURLErrorKey] as? URL {
-                            return BackupError.invalidConfiguration(
-                                details: "File not found: \(url.path)"
-                            )
-                        } else {
-                            return BackupError.invalidConfiguration(
-                                details: "File not found: unknown path"
-                            )
-                        }
-                    } else {
-                        return BackupError.invalidConfiguration(
-                            details: "File system error: \(nsError.localizedDescription)"
-                        )
-                    }
-                    
-                default:
-                    break
-            }
-        }
-        
-        // For other errors, create a general error
-        return BackupError.unexpectedError(
-            error.localizedDescription
-        )
+  /**
+   * Maps any error to an appropriate BackupOperationError
+   * - Parameters:
+   *   - error: The original error
+   *   - context: Log context for the operation
+   * - Returns: An appropriate BackupOperationError
+   */
+  public func mapError(_ error: Error, context _: LogContextDTO?=nil) -> BackupOperationError {
+    // If it's already a BackupOperationError, just return it
+    if let backupError=error as? BackupOperationError {
+      return backupError
     }
 
-    /// Converts a ResticError to a BackupError
-    /// - Parameter error: The original Restic error
-    /// - Returns: An appropriate BackupError
-    func convertResticError(_ error: ResticError) -> BackupError {
-        switch error {
-            case let .repositoryNotFound(path):
-                return BackupError.repositoryAccessFailure(
-                    path: path,
-                    reason: "Repository not found"
-                )
+    // Check if this is a cancellation
+    if error is CancellationError {
+      return BackupOperationError.operationCancelled("Operation was cancelled by the user")
+    }
 
-            case let .permissionDenied(path):
-                return BackupError.repositoryAccessFailure(
-                    path: path,
-                    reason: "Access denied"
-                )
+    // Handle URLError types
+    if let urlError=error as? URLError {
+      return BackupOperationError.networkError(
+        "Network error \(urlError.code.rawValue): \(urlError.localizedDescription)"
+      )
+    }
 
-            case .invalidPassword:
-                return BackupError.authenticationFailure(
-                    reason: "Invalid repository password"
-                )
+    // Handle NSError types
+    if let nsError=error as? NSError {
+      switch nsError.domain {
+        case NSURLErrorDomain:
+          return BackupOperationError.networkError(
+            "Network error \(nsError.code): \(nsError.localizedDescription)"
+          )
 
-            case let .missingParameter(param):
-                return BackupError.invalidConfiguration(
-                    details: "Missing parameter: \(param)"
-                )
-
-            case let .invalidParameter(param):
-                return BackupError.invalidConfiguration(
-                    details: "Invalid parameter: \(param)"
-                )
-
-            case let .executionFailure(exitCode, message):
-                return BackupError.commandExecutionFailure(
-                    command: "restic",
-                    exitCode: exitCode,
-                    errorOutput: message
-                )
-
-            case let .executionFailed(message):
-                return BackupError.commandExecutionFailure(
-                    command: "restic",
-                    exitCode: -1,
-                    errorOutput: message
-                )
-
+        case NSPOSIXErrorDomain:
+          // Handle POSIX errors by their numeric values
+          switch nsError.code {
+            case 2: // ENOENT
+              return BackupOperationError.fileNotFound(
+                "File or directory not found: \(nsError.localizedDescription)"
+              )
+            case 13: // EACCES
+              return BackupOperationError.permissionDenied(
+                "Permission denied: \(nsError.localizedDescription)"
+              )
+            case 28: // ENOSPC
+              return BackupOperationError.insufficientSpace(
+                "No space left on device: \(nsError.localizedDescription)"
+              )
             default:
-                return BackupError.unexpectedError(
-                    "Unexpected Restic error: \(error.localizedDescription)"
-                )
-        }
+              break
+          }
+
+        case NSCocoaErrorDomain:
+          switch CocoaError.Code(rawValue: nsError.code) {
+            case .fileNoSuchFile, .fileReadNoSuchFile:
+              return BackupOperationError.fileNotFound(
+                "File not found: \(nsError.localizedDescription)"
+              )
+            case .fileReadNoPermission, .fileWriteNoPermission:
+              return BackupOperationError.permissionDenied(
+                "Permission denied: \(nsError.localizedDescription)"
+              )
+            default:
+              break
+          }
+
+        default:
+          break
+      }
     }
+
+    // For other errors, create a general error
+    return BackupOperationError.unexpected(
+      "Unexpected error: \(error.localizedDescription)"
+    )
+  }
 }

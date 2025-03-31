@@ -19,10 +19,10 @@
  and ensures that all required options are present with appropriate defaults.
  */
 
+import CoreSecurityTypes
+import DomainSecurityTypes
 import Foundation
 import SecurityCoreInterfaces
-import SecurityCoreTypes
-import SecurityTypes
 import UmbraErrors
 
 /// Builds and validates security configurations
@@ -157,12 +157,12 @@ final class ConfigBuilder {
 
 extension SecurityConfigDTO {
   /**
-   Add an initialization vector to the configuration.
+   Add an initialisation vector to the configuration.
 
-   - Parameter iv: The initialization vector to add
+   - Parameter iv: The initialisation vector to add
    - Returns: A new configuration with the IV added
    */
-  func withInitializationVector(_ iv: Data) -> SecurityConfigDTO {
+  func withInitialisationVector(_ iv: Data) -> SecurityConfigDTO {
     var updatedOptions=options
     updatedOptions["iv"]=iv.base64EncodedString()
 

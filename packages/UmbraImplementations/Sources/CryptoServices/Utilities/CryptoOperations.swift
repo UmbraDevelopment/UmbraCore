@@ -1,7 +1,7 @@
 import CommonCrypto
 import CryptoTypes
+import DomainSecurityTypes
 import Foundation
-import SecurityTypes
 
 /**
  # Crypto Operations

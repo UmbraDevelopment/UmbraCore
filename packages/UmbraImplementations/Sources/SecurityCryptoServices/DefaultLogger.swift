@@ -15,25 +15,30 @@ import OSLog
 public final class DefaultLogger: LoggingProtocol {
   /// OSLog instance for system logging
   private let logger: Logger
-  
+
   /// The logging actor for this logger
   private let _loggingActor: SimpleLoggingActor
-  
+
   /// Get the underlying logging actor
   public var loggingActor: LoggingActor {
-    return _loggingActor
+    _loggingActor
   }
-  
+
   /// Initialise a new logger with the default subsystem and category
   public init() {
-    logger = Logger(subsystem: "com.umbra.securitycryptoservices", category: "CryptoServices")
-    _loggingActor = SimpleLoggingActor()
+    logger=Logger(subsystem: "com.umbra.securitycryptoservices", category: "CryptoServices")
+    _loggingActor=SimpleLoggingActor()
   }
-  
+
   /// Standard logging method that all level-specific methods delegate to
-  public func log(_ level: LogLevel, _ message: String, metadata: PrivacyMetadata?, source: String) async {
-    let formattedMessage = "[\(source)] \(message)"
-    
+  public func log(
+    _ level: LogLevel,
+    _ message: String,
+    metadata _: PrivacyMetadata?,
+    source: String
+  ) async {
+    let formattedMessage="[\(source)] \(message)"
+
     switch level {
       case .trace:
         logger.debug("TRACE: \(formattedMessage)")
@@ -74,7 +79,7 @@ public final class DefaultLogger: LoggingProtocol {
   public func error(_ message: String, metadata: PrivacyMetadata?, source: String) async {
     await log(.error, message, metadata: metadata, source: source)
   }
-  
+
   /// Log critical message
   public func critical(_ message: String, metadata: PrivacyMetadata?, source: String) async {
     await log(.critical, message, metadata: metadata, source: source)
@@ -86,12 +91,17 @@ public final class DefaultLogger: LoggingProtocol {
  */
 final class SimpleLoggingActor: LoggingActor {
   /// The OSLog instance for system logging
-  private let logger = Logger(subsystem: "com.umbra.securitycryptoservices", category: "LoggingActor")
-  
+  private let logger=Logger(subsystem: "com.umbra.securitycryptoservices", category: "LoggingActor")
+
   /// Log a message at the specified level
-  public func log(_ level: LogLevel, _ message: String, metadata: PrivacyMetadata?, source: String) async {
-    let formattedMessage = "[\(source)] \(message)"
-    
+  public func log(
+    _ level: LogLevel,
+    _ message: String,
+    metadata _: PrivacyMetadata?,
+    source: String
+  ) async {
+    let formattedMessage="[\(source)] \(message)"
+
     switch level {
       case .trace:
         logger.debug("TRACE: \(formattedMessage)")

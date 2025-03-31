@@ -30,32 +30,32 @@ public struct ConsoleLogDestination: LoggingTypes.LogDestination {
     self.minimumLevel=minimumLevel
     self.formatter=formatter ?? DefaultLogFormatter()
   }
-  
+
   /// Convert LogLevel to numeric value for comparison
   /// - Parameter level: The LogLevel to convert
   /// - Returns: Numeric value representing severity
   private func logLevelToNumericValue(_ level: LogLevel) -> Int {
     switch level {
-    case .trace: return 0
-    case .debug: return 1
-    case .info: return 2
-    case .warning: return 3
-    case .error: return 4
-    case .critical: return 5
+      case .trace: 0
+      case .debug: 1
+      case .info: 2
+      case .warning: 3
+      case .error: 4
+      case .critical: 5
     }
   }
-  
+
   /// Convert UmbraLogLevel to numeric value for comparison
   /// - Parameter level: The UmbraLogLevel to convert
   /// - Returns: Numeric value representing severity
   private func umbraLogLevelToNumericValue(_ level: UmbraLogLevel) -> Int {
     switch level {
-    case .verbose: return 0
-    case .debug: return 1
-    case .info: return 2
-    case .warning: return 3
-    case .error: return 4
-    case .critical: return 5
+      case .verbose: 0
+      case .debug: 1
+      case .info: 2
+      case .warning: 3
+      case .error: 4
+      case .critical: 5
     }
   }
 
@@ -64,9 +64,9 @@ public struct ConsoleLogDestination: LoggingTypes.LogDestination {
   /// - Throws: LoggingError if writing fails
   public func write(_ entry: LoggingTypes.LogEntry) async throws {
     // Check minimum level using numeric values for comparison
-    let entryLevelValue = logLevelToNumericValue(entry.level)
-    let minimumLevelValue = umbraLogLevelToNumericValue(minimumLevel)
-    
+    let entryLevelValue=logLevelToNumericValue(entry.level)
+    let minimumLevelValue=umbraLogLevelToNumericValue(minimumLevel)
+
     guard entryLevelValue >= minimumLevelValue else {
       return
     }

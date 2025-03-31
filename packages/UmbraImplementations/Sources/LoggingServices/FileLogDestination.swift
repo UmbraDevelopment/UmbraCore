@@ -199,27 +199,25 @@ public actor FileLogDestination: LoggingTypes.LogDestination {
   public func write(_ entry: LoggingTypes.LogEntry) async throws {
     // Check minimum level
     // Convert to the same integer representation for comparison
-    let entryLevelValue: Int
-    switch entry.level {
-      case .trace: entryLevelValue = 0
-      case .debug: entryLevelValue = 1
-      case .info: entryLevelValue = 2
-      case .warning: entryLevelValue = 3
-      case .error: entryLevelValue = 4
-      case .critical: entryLevelValue = 5
-      default: entryLevelValue = 2 // Default to info level
+    let entryLevelValue=switch entry.level {
+      case .trace: 0
+      case .debug: 1
+      case .info: 2
+      case .warning: 3
+      case .error: 4
+      case .critical: 5
+      default: 2 // Default to info level
     }
-    
-    let minLevelValue: Int
-    switch minimumLevel {
-      case .verbose: minLevelValue = 0 // UmbraLogLevel.verbose maps to LogLevel.trace
-      case .debug: minLevelValue = 1
-      case .info: minLevelValue = 2
-      case .warning: minLevelValue = 3
-      case .error: minLevelValue = 4
-      case .critical: minLevelValue = 5
+
+    let minLevelValue=switch minimumLevel {
+      case .verbose: 0 // UmbraLogLevel.verbose maps to LogLevel.trace
+      case .debug: 1
+      case .info: 2
+      case .warning: 3
+      case .error: 4
+      case .critical: 5
     }
-    
+
     guard entryLevelValue >= minLevelValue else {
       return
     }

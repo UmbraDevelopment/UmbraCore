@@ -26,10 +26,10 @@
  * Each operation type is handled by a specialised method for clarity and maintainability
  */
 
+import CoreSecurityTypes
+import DomainSecurityTypes
 import Foundation
 import SecurityCoreInterfaces
-import SecurityCoreTypes
-import SecurityTypes
 import UmbraErrors
 
 /// Handles routing of security operations to the appropriate services

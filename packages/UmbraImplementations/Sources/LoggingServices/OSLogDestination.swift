@@ -75,13 +75,13 @@ public struct OSLogDestination: LoggingTypes.LogDestination {
   /// - Returns: Corresponding OSLogPrivacy
   private func osLogPrivacy(for privacy: LogPrivacy) -> OSLogPrivacy {
     if privacy == .public {
-      return .public
+      .public
     } else if privacy == .private {
-      return .private
+      .private
     } else if privacy == .sensitive {
-      return .sensitive
+      .sensitive
     } else {
-      return .auto
+      .auto
     }
   }
 
@@ -108,12 +108,12 @@ public struct OSLogDestination: LoggingTypes.LogDestination {
     }
 
     // Convert PrivacyMetadata to dictionary of strings
-    var result = [String: String]()
+    var result=[String: String]()
     for key in metadata.entries() {
-      if let value = metadata[key] {
+      if let value=metadata[key] {
         // Use the appropriate access pattern for the value - it might be different than .value
         // Based on the error, we need to find the right property or method
-        result[key] = String(describing: value)
+        result[key]=String(describing: value)
       }
     }
 
@@ -127,18 +127,18 @@ public struct OSLogDestination: LoggingTypes.LogDestination {
     // Since OSLogPrivacy doesn't conform to Equatable,
     // we need to use a different approach
     #if DEBUG
-    // In debug mode, we can use string comparison as a way to determine
-    if String(describing: privacy) == String(describing: OSLogPrivacy.public) {
+      // In debug mode, we can use string comparison as a way to determine
+      if String(describing: privacy) == String(describing: OSLogPrivacy.public) {
         return true
-    }
-    return false
+      }
+      return false
     #else
-    // In release mode, we use the tag defined in the original privacy level
-    // This is implementation-specific but provides a way to check in release builds
-    if case OSLogPrivacy.public = privacy {
+      // In release mode, we use the tag defined in the original privacy level
+      // This is implementation-specific but provides a way to check in release builds
+      if case OSLogPrivacy.public=privacy {
         return true
-    }
-    return false
+      }
+      return false
     #endif
   }
 
@@ -147,59 +147,56 @@ public struct OSLogDestination: LoggingTypes.LogDestination {
   /// - Throws: LoggingError if writing fails
   public func write(_ entry: LoggingTypes.LogEntry) async throws {
     // Check minimum level using integer values for comparison
-    let entryLevelValue: Int
-    switch entry.level {
-      case .trace: entryLevelValue = 0
-      case .debug: entryLevelValue = 1
-      case .info: entryLevelValue = 2
-      case .warning: entryLevelValue = 3
-      case .error: entryLevelValue = 4
-      case .critical: entryLevelValue = 5
-      default: entryLevelValue = 2 // Default to info level
+    let entryLevelValue=switch entry.level {
+      case .trace: 0
+      case .debug: 1
+      case .info: 2
+      case .warning: 3
+      case .error: 4
+      case .critical: 5
+      default: 2 // Default to info level
     }
-    
-    let minLevelValue: Int
-    switch minimumLevel {
-      case .verbose: minLevelValue = 0 // UmbraLogLevel.verbose maps to LogLevel.trace
-      case .debug: minLevelValue = 1
-      case .info: minLevelValue = 2
-      case .warning: minLevelValue = 3
-      case .error: minLevelValue = 4
-      case .critical: minLevelValue = 5
+
+    let minLevelValue=switch minimumLevel {
+      case .verbose: 0 // UmbraLogLevel.verbose maps to LogLevel.trace
+      case .debug: 1
+      case .info: 2
+      case .warning: 3
+      case .error: 4
+      case .critical: 5
     }
-    
+
     guard entryLevelValue >= minLevelValue else {
       return
     }
 
     // Extract privacy settings
-    let privacySettings = extractPrivacySettings(from: entry.metadata)
-    let messagePrivacy = privacySettings.messagePrivacy
-    let metadataPrivacy = privacySettings.metadataPrivacy
+    let privacySettings=extractPrivacySettings(from: entry.metadata)
+    let messagePrivacy=privacySettings.messagePrivacy
+    let metadataPrivacy=privacySettings.metadataPrivacy
 
     // Filter out privacy metadata
-    let filteredMetadata = filterPrivacyMetadata(entry.metadata)
+    let filteredMetadata=filterPrivacyMetadata(entry.metadata)
 
     // Get OSLog type based on log level
     // Convert LogLevel to UmbraLogLevel
-    let umbraLevel: UmbraLogLevel
-    switch entry.level {
-      case .trace: umbraLevel = .verbose // LogLevel.trace maps to UmbraLogLevel.verbose
-      case .debug: umbraLevel = .debug
-      case .info: umbraLevel = .info
-      case .warning: umbraLevel = .warning
-      case .error: umbraLevel = .error
-      case .critical: umbraLevel = .critical
-      default: umbraLevel = .info
+    let umbraLevel: UmbraLogLevel=switch entry.level {
+      case .trace: .verbose // LogLevel.trace maps to UmbraLogLevel.verbose
+      case .debug: .debug
+      case .info: .info
+      case .warning: .warning
+      case .error: .error
+      case .critical: .critical
+      default: .info
     }
-    let type = osLogType(for: umbraLevel)
+    let type=osLogType(for: umbraLevel)
 
     // Format metadata if present
     if !filteredMetadata.isEmpty {
       // Use helper function instead of direct equality comparison
-      let isMessagePublic = isPublic(messagePrivacy)
-      let isMetadataPublic = isPublic(metadataPrivacy)
-      
+      let isMessagePublic=isPublic(messagePrivacy)
+      let isMetadataPublic=isPublic(metadataPrivacy)
+
       if isMessagePublic {
         if isMetadataPublic {
           os_log(
@@ -239,7 +236,7 @@ public struct OSLogDestination: LoggingTypes.LogDestination {
       }
     } else {
       // Just log the message with appropriate privacy
-      let isMessagePublic = isPublic(messagePrivacy)
+      let isMessagePublic=isPublic(messagePrivacy)
       if isMessagePublic {
         os_log("%{public}@", log: osLog, type: type, entry.message)
       } else {

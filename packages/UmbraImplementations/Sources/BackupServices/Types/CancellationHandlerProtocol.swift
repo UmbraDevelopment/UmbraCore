@@ -1,5 +1,5 @@
-import Foundation
 import BackupInterfaces
+import Foundation
 
 /**
  * Protocol for handling cancellation in operations.
@@ -9,74 +9,48 @@ import BackupInterfaces
  * Alpha Dot Five architecture's principles.
  */
 public protocol CancellationHandlerProtocol: Sendable {
-    /**
-     * Executes an operation with cancellation support.
-     *
-     * - Parameters:
-     *   - cancellationToken: Optional token for cancelling the operation
-     *   - operation: The operation to execute
-     * - Returns: The result of the operation
-     * - Throws: Error if the operation fails or is cancelled
-     */
-    func executeWithCancellationSupport<T>(
-        cancellationToken: CancellationToken?,
-        operation: @escaping () async throws -> T
-    ) async throws -> T
-}
+  /**
+   * Registers a new operation for cancellation tracking.
+   *
+   * - Parameter id: Unique identifier for the operation
+   * - Returns: A cancellation token for the operation
+   */
+  func registerOperation(id: String) async -> BackupCancellationToken
 
-/**
- * Modern implementation of the cancellation handler protocol.
- * 
- * This implementation follows the Alpha Dot Five architecture
- * principles for handling cancellation in a privacy-aware manner.
- */
-public actor ModernCancellationHandler: CancellationHandlerProtocol {
-    /**
-     * Initialises a new cancellation handler.
-     */
-    public init() {}
-    
-    /**
-     * Executes an operation with cancellation support.
-     *
-     * - Parameters:
-     *   - cancellationToken: Optional token for cancelling the operation
-     *   - operation: The operation to execute
-     * - Returns: The result of the operation
-     * - Throws: Error if the operation fails or is cancelled
-     */
-    public func executeWithCancellationSupport<T>(
-        cancellationToken: CancellationToken?,
-        operation: @escaping () async throws -> T
-    ) async throws -> T {
-        // If no token is provided, execute the operation directly
-        guard let token = cancellationToken else {
-            return try await operation()
-        }
-        
-        // Create a task for checking cancellation
-        let cancellationTask = Task {
-            while !Task.isCancelled {
-                if await token.isCancelled() {
-                    throw CancellationError()
-                }
-                try await Task.sleep(nanoseconds: 100_000_000) // Check every 100ms
-            }
-        }
-        
-        // Create a task for the operation
-        let operationTask = Task {
-            try await operation()
-        }
-        
-        // Wait for either completion or cancellation
-        do {
-            let result = try await operationTask.value
-            cancellationTask.cancel()
-            return result
-        } catch {
-            cancellationTask.cancel()
-            throw error
-        }
-    }
+  /**
+   * Cancels an operation.
+   *
+   * - Parameter id: Identifier of the operation to cancel
+   * - Returns: Whether the operation was found and cancelled
+   */
+  func cancelOperation(id: String) async -> Bool
+
+  /**
+   * Checks if an operation has been cancelled.
+   *
+   * - Parameter id: Identifier of the operation to check
+   * - Returns: Whether the operation has been cancelled
+   */
+  func isOperationCancelled(id: String) async -> Bool
+
+  /**
+   * Unregisters an operation from cancellation tracking.
+   *
+   * - Parameter id: Identifier of the operation to unregister
+   */
+  func unregisterOperation(id: String) async
+
+  /**
+   * Executes an operation with cancellation support.
+   *
+   * - Parameters:
+   *   - operation: The function to execute
+   *   - cancellationToken: Optional token for cancelling the operation
+   * - Returns: The result of the operation
+   * - Throws: Error if the operation fails or is cancelled
+   */
+  func withCancellationSupport<T>(
+    _ operation: @escaping () async throws -> T,
+    cancellationToken: BackupCancellationToken?
+  ) async throws -> T
 }

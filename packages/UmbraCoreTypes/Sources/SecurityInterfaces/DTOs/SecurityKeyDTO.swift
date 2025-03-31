@@ -1,6 +1,6 @@
 import CoreDTOs
+import DomainSecurityTypes
 import Foundation
-import SecurityTypes
 
 /// Data transfer object for security keys
 public struct SecurityKeyDTO: Sendable, Equatable {

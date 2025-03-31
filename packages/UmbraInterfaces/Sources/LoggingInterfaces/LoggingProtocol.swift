@@ -8,7 +8,7 @@ public protocol LoggingProtocol: CoreLoggingProtocol {
   ///   - metadata: Optional metadata
   ///   - source: Source component identifier
   func trace(_ message: String, metadata: PrivacyMetadata?, source: String) async
-  
+
   /// Log a debug message
   /// - Parameters:
   ///   - message: The message to log
@@ -36,14 +36,14 @@ public protocol LoggingProtocol: CoreLoggingProtocol {
   ///   - metadata: Optional metadata
   ///   - source: Source component identifier
   func error(_ message: String, metadata: PrivacyMetadata?, source: String) async
-  
+
   /// Log a critical message
   /// - Parameters:
   ///   - message: The message to log
   ///   - metadata: Optional metadata
   ///   - source: Source component identifier
   func critical(_ message: String, metadata: PrivacyMetadata?, source: String) async
-  
+
   /// Get the underlying logging actor
   /// - Returns: The logging actor used by this logger
   var loggingActor: LoggingActor { get }
@@ -51,46 +51,51 @@ public protocol LoggingProtocol: CoreLoggingProtocol {
 
 /// Default implementations for LoggingProtocol to ensure compatibility with CoreLoggingProtocol
 extension LoggingProtocol {
-    /// Maps the individual log level methods to the core logMessage method
-    /// - Parameters:
-    ///   - level: The severity level of the log
-    ///   - message: The message to log
-    ///   - metadata: Optional metadata
-    ///   - source: Source component identifier
-    public func log(_ level: LogLevel, _ message: String, metadata: PrivacyMetadata?, source: String) async {
-        let context = await LogContext.create(source: source, metadata: metadata)
-        await logMessage(level, message, context: context)
-    }
-    
-    /// Implementation of trace level logging using the core method
-    public func trace(_ message: String, metadata: PrivacyMetadata?, source: String) async {
-        await log(.trace, message, metadata: metadata, source: source)
-    }
-    
-    /// Implementation of debug level logging using the core method
-    public func debug(_ message: String, metadata: PrivacyMetadata?, source: String) async {
-        await log(.debug, message, metadata: metadata, source: source)
-    }
-    
-    /// Implementation of info level logging using the core method
-    public func info(_ message: String, metadata: PrivacyMetadata?, source: String) async {
-        await log(.info, message, metadata: metadata, source: source)
-    }
-    
-    /// Implementation of warning level logging using the core method
-    public func warning(_ message: String, metadata: PrivacyMetadata?, source: String) async {
-        await log(.warning, message, metadata: metadata, source: source)
-    }
-    
-    /// Implementation of error level logging using the core method
-    public func error(_ message: String, metadata: PrivacyMetadata?, source: String) async {
-        await log(.error, message, metadata: metadata, source: source)
-    }
-    
-    /// Implementation of critical level logging using the core method
-    public func critical(_ message: String, metadata: PrivacyMetadata?, source: String) async {
-        await log(.critical, message, metadata: metadata, source: source)
-    }
+  /// Maps the individual log level methods to the core logMessage method
+  /// - Parameters:
+  ///   - level: The severity level of the log
+  ///   - message: The message to log
+  ///   - metadata: Optional metadata
+  ///   - source: Source component identifier
+  public func log(
+    _ level: LogLevel,
+    _ message: String,
+    metadata: PrivacyMetadata?,
+    source: String
+  ) async {
+    let context=await LogContext.create(source: source, metadata: metadata)
+    await logMessage(level, message, context: context)
+  }
+
+  /// Implementation of trace level logging using the core method
+  public func trace(_ message: String, metadata: PrivacyMetadata?, source: String) async {
+    await log(.trace, message, metadata: metadata, source: source)
+  }
+
+  /// Implementation of debug level logging using the core method
+  public func debug(_ message: String, metadata: PrivacyMetadata?, source: String) async {
+    await log(.debug, message, metadata: metadata, source: source)
+  }
+
+  /// Implementation of info level logging using the core method
+  public func info(_ message: String, metadata: PrivacyMetadata?, source: String) async {
+    await log(.info, message, metadata: metadata, source: source)
+  }
+
+  /// Implementation of warning level logging using the core method
+  public func warning(_ message: String, metadata: PrivacyMetadata?, source: String) async {
+    await log(.warning, message, metadata: metadata, source: source)
+  }
+
+  /// Implementation of error level logging using the core method
+  public func error(_ message: String, metadata: PrivacyMetadata?, source: String) async {
+    await log(.error, message, metadata: metadata, source: source)
+  }
+
+  /// Implementation of critical level logging using the core method
+  public func critical(_ message: String, metadata: PrivacyMetadata?, source: String) async {
+    await log(.critical, message, metadata: metadata, source: source)
+  }
 }
 
 /// Errors that can occur during logging operations
@@ -121,7 +126,7 @@ public enum LoggingError: Error, Sendable, Hashable {
 
   /// Duplicate destination identifier
   case duplicateDestination(identifier: String)
-  
+
   /// Error during privacy processing
   case privacyProcessingFailed(reason: String)
 }

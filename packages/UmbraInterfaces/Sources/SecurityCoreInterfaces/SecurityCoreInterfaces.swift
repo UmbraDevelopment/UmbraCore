@@ -16,8 +16,8 @@
 // Export Foundation types needed by this module
 @_exported import Foundation
 
-@_exported import SecurityCoreTypes
+@_exported import CoreSecurityTypes
 
 // Export dependencies
-@_exported import SecurityTypes
+@_exported import DomainSecurityTypes
 @_exported import UmbraErrors

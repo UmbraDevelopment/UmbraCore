@@ -35,8 +35,8 @@
 @_exported import Foundation
 
 // Export dependencies
-@_exported import SecurityCoreTypes
-@_exported import SecurityTypes
+@_exported import CoreSecurityTypes
+@_exported import DomainSecurityTypes
 @_exported import UmbraErrors
 
 // Public exports

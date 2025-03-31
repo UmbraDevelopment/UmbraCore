@@ -71,7 +71,11 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
    - Throws: FileSystemError if the metadata cannot be accessed
    */
   public func getMetadata(at path: FilePath) async throws -> FileSystemMetadata? {
-    await logger.debug("Getting metadata for \(path.path)", metadata: nil, source: "FileSystemService")
+    await logger.debug(
+      "Getting metadata for \(path.path)",
+      metadata: nil,
+      source: "FileSystemService"
+    )
 
     do {
       // Check if file exists
@@ -122,7 +126,11 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
    - Throws: FileSystemError if the path does not exist or can't be accessed
    */
   public func isDirectory(at path: FilePath) async throws -> Bool {
-    await logger.debug("Checking if \(path.path) is a directory", metadata: nil, source: "FileSystemService")
+    await logger.debug(
+      "Checking if \(path.path) is a directory",
+      metadata: nil,
+      source: "FileSystemService"
+    )
 
     // Check if the path exists at all
     var isDir: ObjCBool=false
@@ -148,19 +156,31 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
     at directoryPath: FilePath,
     includeHidden: Bool=false
   ) async throws -> [FilePath] {
-    await logger.debug("Listing directory at \(directoryPath.path)", metadata: nil, source: "FileSystemService")
+    await logger.debug(
+      "Listing directory at \(directoryPath.path)",
+      metadata: nil,
+      source: "FileSystemService"
+    )
 
     // Check if the path is a directory
     var isDir: ObjCBool=false
     let exists=fileManager.fileExists(atPath: directoryPath.path, isDirectory: &isDir)
 
     if !exists {
-      await logger.warning("Directory does not exist: \(directoryPath.path)", metadata: nil, source: "FileSystemService")
+      await logger.warning(
+        "Directory does not exist: \(directoryPath.path)",
+        metadata: nil,
+        source: "FileSystemService"
+      )
       throw FileSystemInterfaces.FileSystemError.pathNotFound(path: directoryPath.path)
     }
 
     if !isDir.boolValue {
-      await logger.warning("Path is not a directory: \(directoryPath.path)", metadata: nil, source: "FileSystemService")
+      await logger.warning(
+        "Path is not a directory: \(directoryPath.path)",
+        metadata: nil,
+        source: "FileSystemService"
+      )
       throw FileSystemInterfaces.FileSystemError.invalidPath(
         path: directoryPath.path,
         reason: "Path is not a directory: \(directoryPath.path)"
@@ -235,22 +255,22 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
 /// A simple no-op logger implementation for when no logger is provided
 private struct NullLogger: LoggingInterfaces.LoggingProtocol {
   // Add loggingActor property required by LoggingProtocol
-  var loggingActor: LoggingInterfaces.LoggingActor = LoggingInterfaces.LoggingActor(destinations: [])
-  
+  var loggingActor: LoggingInterfaces.LoggingActor = .init(destinations: [])
+
   // Core method required by CoreLoggingProtocol
-  func logMessage(_ level: LoggingTypes.LogLevel, _ message: String, context: LoggingTypes.LogContext) async {
+  func logMessage(_: LoggingTypes.LogLevel, _: String, context _: LoggingTypes.LogContext) async {
     // Empty implementation for this stub
   }
 
   // Implement all required methods with proper parameter types
-  func debug(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {}
-  func info(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {}
-  func notice(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {}
-  func warning(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {}
-  func error(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {}
-  func critical(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {}
-  func trace(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {}
-  
+  func debug(_: String, metadata _: LoggingTypes.PrivacyMetadata?, source _: String) async {}
+  func info(_: String, metadata _: LoggingTypes.PrivacyMetadata?, source _: String) async {}
+  func notice(_: String, metadata _: LoggingTypes.PrivacyMetadata?, source _: String) async {}
+  func warning(_: String, metadata _: LoggingTypes.PrivacyMetadata?, source _: String) async {}
+  func error(_: String, metadata _: LoggingTypes.PrivacyMetadata?, source _: String) async {}
+  func critical(_: String, metadata _: LoggingTypes.PrivacyMetadata?, source _: String) async {}
+  func trace(_: String, metadata _: LoggingTypes.PrivacyMetadata?, source _: String) async {}
+
   // Deprecated method kept for backwards compatibility
   func setContext(_: Any) {}
 }

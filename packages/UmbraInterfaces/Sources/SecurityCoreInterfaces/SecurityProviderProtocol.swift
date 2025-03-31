@@ -1,12 +1,12 @@
+import CoreSecurityTypes
+import DomainSecurityTypes
 import Foundation
-import SecurityCoreTypes
-import SecurityTypes
 import UmbraErrors
 
 /**
  # SecurityProviderProtocol
 
- Top-level protocol defining a complete security provider following the Alpha Dot Five architecture.
+ Top-level protocol defining a complete security provider following the architecture.
 
  This protocol consolidates cryptographic operations, key management, and security configuration
  into a cohesive interface for secure operations across the UmbraCore platform.

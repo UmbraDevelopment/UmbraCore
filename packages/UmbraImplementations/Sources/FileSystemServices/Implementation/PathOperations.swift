@@ -116,7 +116,11 @@ extension FileSystemServiceImpl {
     let url=URL(fileURLWithPath: path.path)
     let fileName=url.lastPathComponent
 
-    await logger.debug("Extracted file name \(fileName) from path \(path.path)", metadata: nil, source: "FileSystemService")
+    await logger.debug(
+      "Extracted file name \(fileName) from path \(path.path)",
+      metadata: nil,
+      source: "FileSystemService"
+    )
 
     return fileName
   }
@@ -202,7 +206,11 @@ extension FileSystemServiceImpl {
     let newURL=directory.appendingPathComponent(newFileName)
     let newPath=FilePath(path: newURL.path)
 
-    await logger.debug("Changed extension of \(path.path) to \(newPath.path)", metadata: nil, source: "FileSystemService")
+    await logger.debug(
+      "Changed extension of \(path.path) to \(newPath.path)",
+      metadata: nil,
+      source: "FileSystemService"
+    )
 
     return newPath
   }

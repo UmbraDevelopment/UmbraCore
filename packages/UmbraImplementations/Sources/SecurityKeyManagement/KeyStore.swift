@@ -14,11 +14,11 @@
  * Support key rotation policies
  */
 
+import CoreSecurityTypes
+import DomainSecurityTypes
 import Foundation
 import SecurityCoreInterfaces
-import SecurityCoreTypes
 import SecurityKeyTypes
-import SecurityTypes
 import UmbraErrors
 
 /// KeyStorage factory

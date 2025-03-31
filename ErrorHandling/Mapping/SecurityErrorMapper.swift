@@ -13,8 +13,8 @@ public struct SecurityErrorMapper: ErrorMapper {
   /// - Returns: A properly namespaced security error
   public func map(_ error: Error) -> Error {
     // Handle different types of security errors
-    let nsError = error as NSError
-    
+    let nsError=error as NSError
+
     // Map NSError based on domain and code
     switch nsError.domain {
       case "NSOSStatusErrorDomain":
@@ -24,7 +24,7 @@ public struct SecurityErrorMapper: ErrorMapper {
       case _ where nsError.domain.contains("apple.security"):
         // Handle platform-specific security errors
         #if os(macOS)
-          if let secError = error as? SecurityKeyChainError {
+          if let secError=error as? SecurityKeyChainError {
             return mapKeyChainError(secError)
           }
         #endif
@@ -39,13 +39,13 @@ public struct SecurityErrorMapper: ErrorMapper {
   /// - Returns: True if this mapper can handle the error
   public func canMap(_ error: Error) -> Bool {
     // Can map NSErrors from security-related domains
-    let nsError = error as NSError
+    let nsError=error as NSError
     let securityDomains=[
       "NSOSStatusErrorDomain",
       "kCFErrorDomainCFNetwork",
       "com.apple.security"
     ]
-    
+
     if securityDomains.contains(nsError.domain) {
       return true
     }

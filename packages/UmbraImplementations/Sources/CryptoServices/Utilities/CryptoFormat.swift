@@ -1,6 +1,6 @@
 import CryptoTypes
+import DomainSecurityTypes
 import Foundation
-import SecurityTypes
 
 /**
  # Crypto Format Utilities

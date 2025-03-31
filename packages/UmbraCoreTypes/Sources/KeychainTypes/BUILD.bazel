@@ -3,6 +3,8 @@ load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 swift_library(
     name = "KeychainTypes",
     srcs = glob(["**/*.swift"]),
-    deps = [],
+    deps = [
+        "//packages/UmbraInterfaces/Sources/KeychainInterfaces",
+    ],
     visibility = ["//visibility:public"],
 )

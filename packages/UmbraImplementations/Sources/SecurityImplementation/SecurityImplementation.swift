@@ -1,13 +1,13 @@
+import CoreSecurityTypes
 import Foundation
 import LoggingInterfaces
 import SecurityCoreInterfaces
-import SecurityCoreTypes
 
 /**
  # UmbraCore Security Implementation
 
  This module provides the main implementation of the security subsystem
- for UmbraCore, following the Alpha Dot Five architecture principles.
+ for UmbraCore, following the architecture principles.
 
  ## Usage
 

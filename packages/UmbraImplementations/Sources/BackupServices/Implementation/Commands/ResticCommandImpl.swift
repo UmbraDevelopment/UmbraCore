@@ -7,7 +7,7 @@ import ResticInterfaces
 /// to construct commands for Restic operations.
 public struct ResticCommandImpl: ResticCommand {
   /// Arguments for the command
-  public let arguments: [String]
+  public var arguments: [String]
 
   /// Environment variables for the command
   public let environment: [String: String]

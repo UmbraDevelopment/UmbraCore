@@ -13,8 +13,8 @@ extension RepositoryServiceImpl {
   ///           or other repository errors if validation fails.
   public func validateRepository(identifier: String) async throws -> Bool {
     // Create privacy-aware metadata
-    var metadata = PrivacyMetadata()
-    metadata["repository_id"] = PrivacyMetadataValue(value: identifier, privacy: .public)
+    var metadata=PrivacyMetadata()
+    metadata["repository_id"]=PrivacyMetadataValue(value: identifier, privacy: .public)
 
     await logger.info("Validating repository", metadata: metadata, source: "RepositoryService")
 

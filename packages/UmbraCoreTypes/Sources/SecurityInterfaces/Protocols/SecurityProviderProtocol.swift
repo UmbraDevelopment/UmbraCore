@@ -1,5 +1,5 @@
+import DomainSecurityTypes
 import Foundation
-import SecurityTypes
 import UmbraErrors
 
 /// Protocol defining the core security provider interface without Foundation dependencies

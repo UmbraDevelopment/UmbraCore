@@ -1,9 +1,9 @@
 import CryptoInterfaces
 import CryptoTypes
+import DomainSecurityTypes
 import Foundation
 import LoggingInterfaces
 import LoggingServices
-import SecurityTypes
 import UmbraErrors
 
 /**
@@ -71,21 +71,21 @@ public enum CryptoServiceFactory {
   /// Default logger implementation used when no logger is provided
   private struct DefaultLogger: LoggingProtocol {
     // Add loggingActor property required by LoggingProtocol
-    var loggingActor: LoggingInterfaces.LoggingActor = LoggingInterfaces.LoggingActor(destinations: [])
-    
+    var loggingActor: LoggingInterfaces.LoggingActor = .init(destinations: [])
+
     // Core method required by CoreLoggingProtocol
-    func logMessage(_ level: LoggingTypes.LogLevel, _ message: String, context: LoggingTypes.LogContext) async {
+    func logMessage(_: LoggingTypes.LogLevel, _: String, context _: LoggingTypes.LogContext) async {
       // Empty implementation for this stub
     }
 
     // Implement all required methods with proper parameter types
-    func debug(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {}
-    func info(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {}
-    func notice(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {}
-    func warning(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {}
-    func error(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {}
-    func critical(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {}
-    func trace(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {}
+    func debug(_: String, metadata _: LoggingTypes.PrivacyMetadata?, source _: String) async {}
+    func info(_: String, metadata _: LoggingTypes.PrivacyMetadata?, source _: String) async {}
+    func notice(_: String, metadata _: LoggingTypes.PrivacyMetadata?, source _: String) async {}
+    func warning(_: String, metadata _: LoggingTypes.PrivacyMetadata?, source _: String) async {}
+    func error(_: String, metadata _: LoggingTypes.PrivacyMetadata?, source _: String) async {}
+    func critical(_: String, metadata _: LoggingTypes.PrivacyMetadata?, source _: String) async {}
+    func trace(_: String, metadata _: LoggingTypes.PrivacyMetadata?, source _: String) async {}
   }
 }
 
@@ -237,8 +237,8 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
     using key: SecureBytes,
     iv: SecureBytes
   ) async throws -> SecureBytes {
-    var metadata = LoggingTypes.PrivacyMetadata()
-    metadata["dataSize"] = LoggingTypes.PrivacyMetadataValue(value: "\(data.count)", privacy: .public)
+    var metadata=LoggingTypes.PrivacyMetadata()
+    metadata["dataSize"]=LoggingTypes.PrivacyMetadataValue(value: "\(data.count)", privacy: .public)
 
     await logger.debug("Starting encryption operation", metadata: metadata, source: "CryptoService")
 
@@ -265,8 +265,8 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
     using key: SecureBytes,
     iv: SecureBytes
   ) async throws -> SecureBytes {
-    var metadata = LoggingTypes.PrivacyMetadata()
-    metadata["dataSize"] = LoggingTypes.PrivacyMetadataValue(value: "\(data.count)", privacy: .public)
+    var metadata=LoggingTypes.PrivacyMetadata()
+    metadata["dataSize"]=LoggingTypes.PrivacyMetadataValue(value: "\(data.count)", privacy: .public)
 
     await logger.debug("Starting decryption operation", metadata: metadata, source: "CryptoService")
 
@@ -293,8 +293,9 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
     salt: SecureBytes,
     iterations: Int
   ) async throws -> SecureBytes {
-    var metadata = LoggingTypes.PrivacyMetadata()
-    metadata["iterations"] = LoggingTypes.PrivacyMetadataValue(value: "\(iterations)", privacy: .public)
+    var metadata=LoggingTypes.PrivacyMetadata()
+    metadata["iterations"]=LoggingTypes
+      .PrivacyMetadataValue(value: "\(iterations)", privacy: .public)
 
     await logger.debug("Starting key derivation", metadata: metadata, source: "CryptoService")
 
@@ -318,8 +319,8 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
   }
 
   public func generateSecureRandomKey(length: Int) async throws -> SecureBytes {
-    var metadata = LoggingTypes.PrivacyMetadata()
-    metadata["length"] = LoggingTypes.PrivacyMetadataValue(value: "\(length)", privacy: .public)
+    var metadata=LoggingTypes.PrivacyMetadata()
+    metadata["length"]=LoggingTypes.PrivacyMetadataValue(value: "\(length)", privacy: .public)
 
     await logger.debug("Generating secure random key", metadata: metadata, source: "CryptoService")
 
@@ -345,8 +346,8 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
     for data: SecureBytes,
     using key: SecureBytes
   ) async throws -> SecureBytes {
-    var metadata = LoggingTypes.PrivacyMetadata()
-    metadata["dataSize"] = LoggingTypes.PrivacyMetadataValue(value: "\(data.count)", privacy: .public)
+    var metadata=LoggingTypes.PrivacyMetadata()
+    metadata["dataSize"]=LoggingTypes.PrivacyMetadataValue(value: "\(data.count)", privacy: .public)
 
     await logger.debug("Generating HMAC", metadata: metadata, source: "CryptoService")
 

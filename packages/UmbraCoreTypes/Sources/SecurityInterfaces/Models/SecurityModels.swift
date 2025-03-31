@@ -1,5 +1,5 @@
+import DomainSecurityTypes
 import Foundation
-import SecurityTypes
 
 /// Result of a security operation
 public struct SecurityResult {

@@ -109,7 +109,7 @@ public struct RestoreResult: Sendable, Equatable {
 }
 
 /// Result of a delete operation
-public struct DeleteResult: Sendable, Equatable {
+public struct BRDeleteResult: Sendable, Equatable {
   /// Unique identifier of the deleted snapshot
   public let snapshotID: String
 

@@ -1,7 +1,7 @@
 import CommonCrypto
 import CryptoInterfaces
 import CryptoTypes
-import SecurityTypes
+import DomainSecurityTypes
 import UmbraErrors
 
 /**

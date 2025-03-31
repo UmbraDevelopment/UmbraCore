@@ -20,7 +20,7 @@ umbra_swift_library(
         "//packages/UmbraCoreTypes/Sources/ErrorCoreTypes:ErrorCoreTypes",
         "//packages/UmbraCoreTypes/Sources/CoreDTOs:CoreDTOs",
         "//packages/UmbraCoreTypes/Sources/KeyManagementTypes:KeyManagementTypes",
-        "//packages/UmbraCoreTypes/Sources/SecurityTypes:SecurityTypes",
-        "//packages/UmbraCoreTypes/Sources/SecurityCoreTypes:SecurityCoreTypes",
+        "//packages/UmbraCoreTypes/Sources/DomainSecurityTypes:DomainSecurityTypes",
+        "//packages/UmbraCoreTypes/Sources/CoreSecurityTypes:CoreSecurityTypes",
     ],
 )

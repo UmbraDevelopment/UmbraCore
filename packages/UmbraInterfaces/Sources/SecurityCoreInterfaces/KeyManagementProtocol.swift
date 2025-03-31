@@ -1,6 +1,6 @@
+import CoreSecurityTypes
+import DomainSecurityTypes
 import Foundation
-import SecurityCoreTypes
-import SecurityTypes
 import UmbraErrors
 
 /// Protocol defining secure key management operations in a FoundationIndependent manner.

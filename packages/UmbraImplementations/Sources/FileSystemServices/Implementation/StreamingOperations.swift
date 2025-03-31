@@ -76,7 +76,11 @@ extension FileSystemServiceImpl {
         try await handler([UInt8](chunkData))
       }
 
-      await logger.debug("Read \(bytesRead) bytes in chunks from \(path.path)", metadata: nil, source: "StreamingOperations")
+      await logger.debug(
+        "Read \(bytesRead) bytes in chunks from \(path.path)",
+        metadata: nil,
+        source: "StreamingOperations"
+      )
     } catch let fsError as FileSystemInterfaces.FileSystemError {
       // Rethrow FileSystemError directly
       throw fsError
@@ -206,7 +210,11 @@ extension FileSystemServiceImpl {
         bytesWritten += chunk.count
       }
 
-      await logger.debug("Wrote \(bytesWritten) bytes in chunks to \(path.path)", metadata: nil, source: "StreamingOperations")
+      await logger.debug(
+        "Wrote \(bytesWritten) bytes in chunks to \(path.path)",
+        metadata: nil,
+        source: "StreamingOperations"
+      )
     } catch let fsError as FileSystemInterfaces.FileSystemError {
       // Rethrow FileSystemError directly
       throw fsError

@@ -4,7 +4,7 @@ import Foundation
 ///
 /// This type encapsulates the differences between two snapshots,
 /// including counts of added, removed, modified, and unchanged files.
-public struct SnapshotDifference: Sendable, Equatable {
+public struct BackupSnapshotDifference: Sendable, Equatable {
   /// ID of the first snapshot compared
   public let snapshotID1: String
 

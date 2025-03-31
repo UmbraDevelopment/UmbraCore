@@ -1,5 +1,5 @@
+import DomainSecurityTypes
 import Foundation
-import SecurityTypes
 
 /// Enumeration of security operations that can be performed by a security provider
 /// This enum serves as a type-safe way to request specific security operations

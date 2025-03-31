@@ -20,10 +20,12 @@ extension RepositoryServiceImpl {
     checkUnused: Bool
   ) async throws -> RepositoryStatistics {
     // Create privacy-aware metadata
-    var metadata = PrivacyMetadata()
-    metadata["repository_id"] = PrivacyMetadataValue(value: identifier, privacy: .public)
-    metadata["read_data"] = PrivacyMetadataValue(value: String(describing: readData), privacy: .public)
-    metadata["check_unused"] = PrivacyMetadataValue(value: String(describing: checkUnused), privacy: .public)
+    var metadata=PrivacyMetadata()
+    metadata["repository_id"]=PrivacyMetadataValue(value: identifier, privacy: .public)
+    metadata["read_data"]=PrivacyMetadataValue(value: String(describing: readData),
+                                               privacy: .public)
+    metadata["check_unused"]=PrivacyMetadataValue(value: String(describing: checkUnused),
+                                                  privacy: .public)
 
     await logger.info(
       "Performing maintenance on repository",
@@ -66,8 +68,8 @@ extension RepositoryServiceImpl {
   ///           or other repository errors if repair fails.
   public func repairRepository(identifier: String) async throws -> Bool {
     // Create privacy-aware metadata
-    var metadata = PrivacyMetadata()
-    metadata["repository_id"] = PrivacyMetadataValue(value: identifier, privacy: .public)
+    var metadata=PrivacyMetadata()
+    metadata["repository_id"]=PrivacyMetadataValue(value: identifier, privacy: .public)
 
     await logger.info("Repairing repository", metadata: metadata, source: "RepositoryService")
 
@@ -105,8 +107,8 @@ extension RepositoryServiceImpl {
   ///           or other repository errors if pruning fails.
   public func pruneRepository(identifier: String) async throws {
     // Create privacy-aware metadata
-    var metadata = PrivacyMetadata()
-    metadata["repository_id"] = PrivacyMetadataValue(value: identifier, privacy: .public)
+    var metadata=PrivacyMetadata()
+    metadata["repository_id"]=PrivacyMetadataValue(value: identifier, privacy: .public)
 
     await logger.info(
       "Pruning repository",
@@ -147,8 +149,8 @@ extension RepositoryServiceImpl {
   ///           or other repository errors if rebuild fails.
   public func rebuildRepositoryIndex(identifier: String) async throws {
     // Create privacy-aware metadata
-    var metadata = PrivacyMetadata()
-    metadata["repository_id"] = PrivacyMetadataValue(value: identifier, privacy: .public)
+    var metadata=PrivacyMetadata()
+    metadata["repository_id"]=PrivacyMetadataValue(value: identifier, privacy: .public)
 
     await logger.info(
       "Rebuilding repository index",

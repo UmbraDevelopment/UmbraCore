@@ -1,7 +1,7 @@
 import CryptoInterfaces
 import CryptoTypes
+import DomainSecurityTypes
 import Foundation
-import SecurityTypes
 
 /**
  # Mock Crypto Service

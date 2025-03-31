@@ -1,5 +1,5 @@
+import CoreSecurityTypes
 import Foundation
-import SecurityCoreTypes
 
 /**
  # Memory Protection Utilities

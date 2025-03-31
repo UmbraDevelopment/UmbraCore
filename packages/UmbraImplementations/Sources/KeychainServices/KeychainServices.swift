@@ -88,23 +88,23 @@ public enum KeychainServices {
   ) async -> any KeychainSecurityProtocol {
     // Create a fallback key manager if none provided
     let actualKeyManager: KeyManagementProtocol
-    if let providedKeyManager = keyManager {
-      actualKeyManager = providedKeyManager
+    if let providedKeyManager=keyManager {
+      actualKeyManager=providedKeyManager
     } else {
       do {
-        let factory = try KeyManagerAsyncFactory.createInstance()
-        if let createdKeyManager = await factory.createKeyManager() {
-          actualKeyManager = createdKeyManager
+        let factory=try await KeyManagerAsyncFactory.createInstance()
+        if let createdKeyManager=await factory.createKeyManager() {
+          actualKeyManager=createdKeyManager
         } else {
           // Fall back to SimpleKeyManager if the factory failed to create a key manager
-          actualKeyManager = SimpleKeyManager(logger: logger ?? DefaultLogger())
+          actualKeyManager=SimpleKeyManager(logger: logger ?? DefaultLogger())
         }
       } catch {
         // Fall back to SimpleKeyManager if we can't create the proper key manager
-        actualKeyManager = SimpleKeyManager(logger: logger ?? DefaultLogger())
+        actualKeyManager=SimpleKeyManager(logger: logger ?? DefaultLogger())
       }
     }
-    
+
     return await KeychainServicesFactory.createSecurityService(
       keychainService: keychainService,
       keyManager: actualKeyManager,
@@ -126,10 +126,45 @@ public struct SimpleKeyManager: KeyManagementProtocol {
 
   // Initialiser with logger
   public init(logger: LoggingProtocol) {
-    self.logger = logger
+    self.logger=logger
   }
 
-  public func retrieveKey(withIdentifier _: String) async -> Result<SecureBytes, SecurityProtocolError> {
+  // MARK: - Helper Methods
+
+  /// Convert a dictionary to PrivacyMetadata
+  private func createPrivacyMetadata(from dict: [String: String]) -> PrivacyMetadata? {
+    guard !dict.isEmpty else {
+      return nil
+    }
+
+    var result=PrivacyMetadata()
+    for (key, value) in dict {
+      // In KeychainServices, we treat all metadata as private by default
+      result[key]=PrivacyMetadataValue(value: value, privacy: .private)
+    }
+    return result
+  }
+
+  // Implementation of generateKey method from KeyManagementProtocol
+  public func generateKey(with config: KeyGenerationConfig) async throws -> KeyGenerationResult {
+    await logger.warning(
+      "Using simple key manager implementation for key generation - this is not secure for production",
+      metadata: createPrivacyMetadata(from: ["algorithm": config.algorithm.rawValue]),
+      source: "SimpleKeyManager"
+    )
+
+    // Generate a simple UUID-based key identifier
+    let keyIdentifier="generated-key-\(UUID().uuidString)"
+
+    return KeyGenerationResult(
+      keyIdentifier: keyIdentifier,
+      algorithm: config.algorithm,
+      metadata: config.metadata
+    )
+  }
+
+  public func retrieveKey(withIdentifier _: String) async
+  -> Result<SecureBytes, SecurityProtocolError> {
     await logger.warning(
       "Attempted to retrieve key with a simple key manager implementation",
       metadata: nil,
@@ -140,7 +175,10 @@ public struct SimpleKeyManager: KeyManagementProtocol {
     )
   }
 
-  public func storeKey(_: SecureBytes, withIdentifier _: String) async -> Result<Void, SecurityProtocolError> {
+  public func storeKey(
+    _: SecureBytes,
+    withIdentifier _: String
+  ) async -> Result<Void, SecurityProtocolError> {
     await logger.warning(
       "Attempted to store key with a simple key manager implementation",
       metadata: nil,

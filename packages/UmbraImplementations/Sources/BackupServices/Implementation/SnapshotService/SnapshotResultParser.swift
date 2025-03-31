@@ -287,35 +287,35 @@ struct SnapshotResultParser {
   ) throws -> VerificationResult {
     // Check for errors in repository check output
     let repositoryValid = !repositoryCheck.contains("error")
-    
+
     // Extract data integrity status
     let dataIntegrityValid = !dataIntegrityCheck.contains("error")
-    
+
     // Collect any issues found
-    var issues: [VerificationIssue] = []
-    
+    var issues: [VerificationIssue]=[]
+
     if !repositoryValid {
       issues.append(VerificationIssue(
-        type: .repositoryStructure,
-        message: "Repository structure verification failed",
-        severity: .critical,
-        affectedPath: nil
+        type: .inconsistentMetadata,
+        path: nil,
+        description: "Repository structure verification failed",
+        resolution: "Run a repository maintenance operation to rebuild indices"
       ))
     }
-    
+
     if !dataIntegrityValid {
       issues.append(VerificationIssue(
-        type: .dataIntegrity,
-        message: "Data integrity verification failed",
-        severity: .critical,
-        affectedPath: nil
+        type: .corruptedData,
+        path: nil,
+        description: "Data integrity verification failed",
+        resolution: "Restore from an alternate backup if possible"
       ))
     }
-    
+
     // Calculate duration based on issues found
-    let startTime = Date().addingTimeInterval(-60) // Assume 60s duration
-    let endTime = Date()
-    
+    let startTime=Date().addingTimeInterval(-60) // Assume 60s duration
+    let endTime=Date()
+
     // Create and return verification result
     return VerificationResult(
       successful: repositoryValid && dataIntegrityValid,
@@ -354,18 +354,21 @@ struct SnapshotResultParser {
    */
   func parseSnapshot(_ output: String) throws -> BackupSnapshot {
     // Use existing parseSnapshotDetails method with default parameters
-    guard let snapshot = try parseSnapshotDetails(
-      output: output,
-      snapshotID: "", // Not needed as it's extracted from output
-      includeFileStatistics: false,
-      repositoryID: nil
-    ) else {
-      throw BackupError.parsingError(details: "Failed to parse snapshot: no snapshot found in output")
+    guard
+      let snapshot=try parseSnapshotDetails(
+        output: output,
+        snapshotID: "", // Not needed as it's extracted from output
+        includeFileStatistics: false,
+        repositoryID: nil
+      )
+    else {
+      throw BackupError
+        .parsingError(details: "Failed to parse snapshot: no snapshot found in output")
     }
-    
+
     return snapshot
   }
-  
+
   /**
    * Parses a comparison between two snapshots.
    *
@@ -373,19 +376,187 @@ struct SnapshotResultParser {
    * - Returns: Result of the comparison
    * - Throws: BackupError if parsing fails
    */
-  func parseComparison(_ output: String) throws -> AlphaDotFiveSnapshotComparisonResult {
+  func parseComparison(_ output: String) throws -> BackupSnapshotComparisonResult {
     // Parse the difference data
-    let difference = try parseSnapshotDifference(output: output)
-    
+    let difference=try parseSnapshotDifference(output: output)
+
     // Create a comparison result using the difference data
-    return AlphaDotFiveSnapshotComparisonResult(
-      addedFiles: difference.addedFiles,
-      modifiedFiles: difference.modifiedFiles,
-      removedFiles: difference.removedFiles,
-      unchangedFiles: difference.unchangedFiles,
-      totalChangeCount: difference.addedFiles.count + difference.modifiedFiles.count + difference.removedFiles.count,
+    return BackupSnapshotComparisonResult(
+      addedFiles: convertToFileInfoArray(difference.addedFiles),
+      modifiedFiles: convertToFileInfoArray(difference.modifiedFiles),
+      removedFiles: convertToFileInfoArray(difference.removedFiles),
+      unchangedFiles: [],
+      totalChangeCount: (difference.addedFiles?.count ?? 0) +
+        (difference.modifiedFiles?.count ?? 0) + (difference.removedFiles?.count ?? 0),
       comparisonDate: Date()
     )
   }
 
+  /**
+   * Convert an array of SnapshotFile to an array of FileInfo
+   * - Parameter files: Array of SnapshotFile
+   * - Returns: Array of FileInfo
+   */
+  private func convertToFileInfoArray(_ files: [SnapshotFile]?) -> [FileInfo] {
+    (files ?? []).map { file in
+      FileInfo(
+        path: file.path,
+        size: file.size,
+        modificationTime: file.modificationTime,
+        type: .regular, // Default to regular file
+        permissions: FilePermissions(
+          ownerRead: true,
+          ownerWrite: true,
+          ownerExecute: false,
+          groupRead: true,
+          groupWrite: false,
+          groupExecute: false,
+          othersRead: true,
+          othersWrite: false,
+          othersExecute: false
+        ),
+        owner: "owner", // Default owner
+        group: "group", // Default group
+        contentHash: file.contentHash ?? ""
+      )
+    }
+  }
+
+  /**
+   * Parses the output of a snapshot difference command into a SnapshotDifference object
+   *
+   * - Parameter output: Command output to parse
+   * - Returns: Parsed snapshot difference
+   * - Throws: BackupError if parsing fails
+   */
+  func parseSnapshotDifference(output: String) throws -> SnapshotDifference {
+    guard let data=output.data(using: .utf8) else {
+      throw BackupError.parsingError(details: "Failed to convert output to data")
+    }
+
+    do {
+      // Parse the JSON output
+      let decoder=JSONDecoder()
+      let diffResult=try decoder.decode(ResticDiffResult.self, from: data)
+
+      // Convert SnapshotFileEntry to SnapshotFile
+      func convertToSnapshotFile(_ entry: SnapshotFileEntry) -> SnapshotFile {
+        SnapshotFile(
+          path: entry.path,
+          size: entry.size,
+          modificationTime: entry.modTime,
+          mode: UInt16(entry.mode), // Convert UInt32 to UInt16
+          uid: entry.uid,
+          gid: entry.gid,
+          contentHash: nil
+        )
+      }
+
+      // Process added files
+      let addedFiles=diffResult.added?.map { file in
+        SnapshotFileEntry(
+          path: file.path ?? "",
+          type: "file",
+          size: file.size ?? 0,
+          modTime: file.mtime ?? Date(),
+          mode: 0644,
+          uid: 0,
+          gid: 0
+        )
+      } ?? []
+
+      // Process modified files
+      let modifiedFiles=diffResult.modified?.map { file in
+        SnapshotFileEntry(
+          path: file.path ?? "",
+          type: "file",
+          size: file.size ?? 0,
+          modTime: file.mtime ?? Date(),
+          mode: 0644,
+          uid: 0,
+          gid: 0
+        )
+      } ?? []
+
+      // Process removed files
+      let removedFiles=diffResult.removed?.map { file in
+        SnapshotFileEntry(
+          path: file.path ?? "",
+          type: "file",
+          size: file.size ?? 0,
+          modTime: file.mtime ?? Date(),
+          mode: 0644,
+          uid: 0,
+          gid: 0
+        )
+      } ?? []
+
+      // Process unchanged files
+      let unchangedFiles=diffResult.unchanged?.map { file in
+        SnapshotFileEntry(
+          path: file.path ?? "",
+          type: "file",
+          size: file.size ?? 0,
+          modTime: file.mtime ?? Date(),
+          mode: 0644,
+          uid: 0,
+          gid: 0
+        )
+      } ?? []
+
+      let addedSnapshotFiles=addedFiles.map(convertToSnapshotFile)
+      let removedSnapshotFiles=removedFiles.map(convertToSnapshotFile)
+      let modifiedSnapshotFiles=modifiedFiles.map(convertToSnapshotFile)
+
+      return SnapshotDifference(
+        snapshotID1: "unknown1", // These would need to be passed in from outside
+        snapshotID2: "unknown2", // These would need to be passed in from outside
+        addedCount: addedFiles.count,
+        removedCount: removedFiles.count,
+        modifiedCount: modifiedFiles.count,
+        unchangedCount: 0,
+        addedFiles: addedSnapshotFiles,
+        removedFiles: removedSnapshotFiles,
+        modifiedFiles: modifiedSnapshotFiles
+      )
+    } catch {
+      throw BackupError
+        .parsingError(details: "Failed to parse diff result: \(error.localizedDescription)")
+    }
+  }
+
+  /// Helper struct for decoding Restic diff output
+  private struct ResticDiffResult: Codable {
+    let added: [ResticFileEntry]?
+    let modified: [ResticFileEntry]?
+    let removed: [ResticFileEntry]?
+    let unchanged: [ResticFileEntry]?
+  }
+
+  /// Helper struct for decoding Restic file entries
+  private struct ResticFileEntry: Codable {
+    let path: String?
+    let size: UInt64?
+    let mtime: Date?
+
+    enum CodingKeys: String, CodingKey {
+      case path
+      case size
+      case mtime
+    }
+
+    init(from decoder: Decoder) throws {
+      let container=try decoder.container(keyedBy: CodingKeys.self)
+      path=try container.decodeIfPresent(String.self, forKey: .path)
+      size=try container.decodeIfPresent(UInt64.self, forKey: .size)
+
+      // Handle date decoding with ISO8601 format
+      if let timeString=try container.decodeIfPresent(String.self, forKey: .mtime) {
+        let formatter=ISO8601DateFormatter()
+        mtime=formatter.date(from: timeString) ?? Date()
+      } else {
+        mtime=nil
+      }
+    }
+  }
 }

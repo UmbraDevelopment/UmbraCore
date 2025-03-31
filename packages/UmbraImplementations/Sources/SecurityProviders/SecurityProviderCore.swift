@@ -28,10 +28,10 @@
  * Operations are routed based on explicit operation types rather than complex logic
  */
 
+import CoreSecurityTypes
+import DomainSecurityTypes
 import Foundation
 import SecurityCoreInterfaces
-import SecurityCoreTypes
-import SecurityTypes
 import UmbraErrors
 
 /// SecurityProviderCore is the central implementation of security provider functionality,

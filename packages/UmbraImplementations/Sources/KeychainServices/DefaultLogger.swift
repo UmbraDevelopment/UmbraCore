@@ -1,78 +1,94 @@
 import Foundation
 import LoggingInterfaces
 import LoggingTypes
-import OSLog
+import os
 
 /**
- # DefaultLogger
+ # Default Logger
 
- A simple logger implementation that provides basic logging functionality
- when no other logger is provided. This ensures that logging is always available
- even in minimal configurations.
-
- This logger uses OSLog on Apple platforms for efficient system integration.
+ A simple logger implementation that uses the Apple OSLog system.
+ This implementation follows the Alpha Dot Five architecture's privacy-by-design
+ principles, ensuring sensitive information is properly redacted in logs.
  */
-public final class DefaultLogger: LoggingProtocol {
-  /// OSLog instance for system logging
+public final class DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
   private let logger: Logger
 
-  /// Initialise a new logger with the default subsystem and category
+  /// Creates a new DefaultLogger
   public init() {
     logger=Logger(subsystem: "com.umbra.keychainservices", category: "KeychainServices")
   }
 
-  /// Log trace message
-  public func trace(_ message: String, metadata _: LogMetadata?, source _: String?) async {
-    logger.debug("TRACE: \(message)")
+  /// The actor used for all logging operations
+  private let _loggingActor=LoggingActor(destinations: [], minimumLogLevel: .info)
+
+  /// Get the underlying logging actor
+  public var loggingActor: LoggingActor {
+    _loggingActor
   }
 
-  /// Log debug message
-  public func debug(_ message: String, metadata _: LogMetadata?, source _: String?) async {
-    logger.debug("DEBUG: \(message)")
-  }
-
-  /// Log info message
-  public func info(_ message: String, metadata _: LogMetadata?, source _: String?) async {
-    logger.info("INFO: \(message)")
-  }
-
-  /// Log notice message
-  public func notice(_ message: String, metadata _: LogMetadata?, source _: String?) async {
-    logger.notice("NOTICE: \(message)")
-  }
-
-  /// Log warning message
-  public func warning(_ message: String, metadata _: LogMetadata?, source _: String?) async {
-    logger.warning("WARNING: \(message)")
-  }
-
-  /// Log error message
-  public func error(_ message: String, metadata _: LogMetadata?, source _: String?) async {
-    logger.error("ERROR: \(message)")
-  }
-
-  /// Log critical message
-  public func critical(_ message: String, metadata _: LogMetadata?, source _: String?) async {
-    logger.critical("CRITICAL: \(message)")
-  }
-
-  /// Log generic message with specified level
-  public func log(level: LogLevel, message: String, metadata: LogMetadata?, source: String?) async {
+  /// Required CoreLoggingProtocol implementation
+  public func logMessage(_ level: LogLevel, _ message: String, context: LogContext) async {
     switch level {
       case .trace:
-        await trace(message, metadata: metadata, source: source)
+        // Forward to debug since we don't have trace
+        await debug(message, metadata: context.metadata, source: context.source)
       case .debug:
-        await debug(message, metadata: metadata, source: source)
+        await debug(message, metadata: context.metadata, source: context.source)
       case .info:
-        await info(message, metadata: metadata, source: source)
-      case .notice:
-        await notice(message, metadata: metadata, source: source)
+        await info(message, metadata: context.metadata, source: context.source)
       case .warning:
-        await warning(message, metadata: metadata, source: source)
+        await warning(message, metadata: context.metadata, source: context.source)
       case .error:
-        await error(message, metadata: metadata, source: source)
+        await error(message, metadata: context.metadata, source: context.source)
       case .critical:
-        await critical(message, metadata: metadata, source: source)
+        await critical(message, metadata: context.metadata, source: context.source)
     }
+  }
+
+  /// Log a debug message
+  public func debug(_ message: String, metadata: LogMetadata?, source: String?) async {
+    let logContext=buildLogContext(metadata: metadata, source: source)
+    logger.debug("\(message, privacy: .public)")
+    await loggingActor.log(level: .debug, message: message, context: logContext)
+  }
+
+  /// Log an info message
+  public func info(_ message: String, metadata: LogMetadata?, source: String?) async {
+    let logContext=buildLogContext(metadata: metadata, source: source)
+    logger.info("\(message, privacy: .public)")
+    await loggingActor.log(level: .info, message: message, context: logContext)
+  }
+
+  /// Log a warning message
+  public func warning(_ message: String, metadata: LogMetadata?, source: String?) async {
+    let logContext=buildLogContext(metadata: metadata, source: source)
+    logger.warning("\(message, privacy: .public)")
+    await loggingActor.log(level: .warning, message: message, context: logContext)
+  }
+
+  /// Log an error message
+  public func error(_ message: String, metadata: LogMetadata?, source: String?) async {
+    let logContext=buildLogContext(metadata: metadata, source: source)
+    logger.error("\(message, privacy: .public)")
+    await loggingActor.log(level: .error, message: message, context: logContext)
+  }
+
+  /// Log a critical error message
+  public func critical(_ message: String, metadata: LogMetadata?, source: String?) async {
+    let logContext=buildLogContext(metadata: metadata, source: source)
+    logger.critical("\(message, privacy: .public)")
+    await loggingActor.log(level: .critical, message: message, context: logContext)
+  }
+
+  /// Build a log context for logging
+  private func buildLogContext(metadata: LogMetadata?, source: String?) -> LogContext {
+    var context=LogContext(timestamp: Date())
+    if let metadata {
+      context.metadata=metadata
+    }
+    if let source {
+      context.source=source
+    }
+    return context
   }
 }

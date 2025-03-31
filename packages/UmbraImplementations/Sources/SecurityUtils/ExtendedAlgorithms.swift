@@ -1,6 +1,6 @@
+import CoreSecurityTypes
+import DomainSecurityTypes
 import Foundation
-import SecurityCoreTypes
-import SecurityTypes
 
 /// Extends support for cryptographic algorithms beyond those defined in SecurityConfigDTO
 public enum ExtendedAlgorithm: String, Sendable, Equatable {

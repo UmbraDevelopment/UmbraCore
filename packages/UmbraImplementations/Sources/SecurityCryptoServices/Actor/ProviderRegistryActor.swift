@@ -1,9 +1,9 @@
+import CoreSecurityTypes
+import DomainSecurityTypes
 import Foundation
 import LoggingInterfaces
 import LoggingTypes
 import SecurityCoreInterfaces
-import SecurityCoreTypes
-import SecurityTypes
 import UmbraErrors
 
 /**
@@ -13,7 +13,7 @@ import UmbraErrors
  in the Umbra security system. It serves as the central registry for all available
  cryptographic provider implementations.
 
- The registry follows the Alpha Dot Five architecture pattern of using actors
+ The registry follows the architecture pattern of using actors
  for concurrency safety and proper isolation of security-critical operations.
 
  ## Features

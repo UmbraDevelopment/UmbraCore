@@ -90,7 +90,10 @@ public struct BackupResultParser {
   ///   - type: The type of maintenance that was performed
   /// - Returns: A maintenance result with details about the operation
   /// - Throws: BackupError if parsing fails
-  public func parseMaintenanceResult(output: String, type: MaintenanceType) throws -> MaintenanceResult {
+  public func parseMaintenanceResult(
+    output: String,
+    type: MaintenanceType
+  ) throws -> MaintenanceResult {
     // Check for errors in the output
     let outputLower=output.lowercased()
     let hasErrors=outputLower.contains("error") || outputLower.contains("fatal") || outputLower

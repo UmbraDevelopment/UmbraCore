@@ -1,19 +1,19 @@
+import CoreSecurityTypes
+import DomainSecurityTypes
 import Foundation
 import LoggingInterfaces
+import LoggingServices
 import LoggingTypes
 import SecurityCoreInterfaces
-import SecurityCoreTypes
 import SecurityKeyTypes
-import SecurityTypes
 import UmbraErrors
-import LoggingServices
 
 /**
  # KeyManagementActor
 
  An actor-based implementation of the KeyManagementProtocol that provides secure
  key management operations with proper concurrency safety in accordance with the
- Alpha Dot Five architecture.
+ architecture.
 
  This actor ensures proper isolation of the key management operations, preventing
  race conditions and other concurrency issues that could compromise security.
@@ -61,7 +61,7 @@ public actor KeyManagementActor: KeyManagementProtocol {
 
   /// The logger for recording operations
   private let logger: LoggingProtocol
-  
+
   /// Domain-specific logger for key management operations
   private let keyLogger: KeyManagementLogger
 
@@ -81,12 +81,12 @@ public actor KeyManagementActor: KeyManagementProtocol {
   public init(
     keyStore: KeyStorage,
     logger: LoggingProtocol,
-    keyGenerator: KeyGenerator = DefaultKeyGenerator()
+    keyGenerator: KeyGenerator=DefaultKeyGenerator()
   ) {
-    self.keyStore = keyStore
-    self.logger = logger
-    self.keyLogger = KeyManagementLogger(logger: logger)
-    self.keyGenerator = keyGenerator
+    self.keyStore=keyStore
+    self.logger=logger
+    keyLogger=KeyManagementLogger(logger: logger)
+    self.keyGenerator=keyGenerator
   }
 
   // MARK: - Key Management Operations
@@ -100,7 +100,7 @@ public actor KeyManagementActor: KeyManagementProtocol {
   private func sanitizeIdentifier(_ identifier: String) -> String {
     // Basic sanitisation - in a real implementation, this would be more robust
     // For example, we might hash the identifier or apply more sophisticated sanitisation
-    return identifier.replacingOccurrences(of: "/", with: "_")
+    identifier.replacingOccurrences(of: "/", with: "_")
       .replacingOccurrences(of: "\\", with: "_")
       .replacingOccurrences(of: ":", with: "_")
   }
@@ -132,13 +132,14 @@ public actor KeyManagementActor: KeyManagementProtocol {
       await keyLogger.logOperationSuccess(
         keyIdentifier: identifier,
         operation: "retrieve",
-        result: key as SecureBytes,  // Explicitly specify SecureBytes as the generic parameter type
+        result: key as SecureBytes, // Explicitly specify SecureBytes as the generic parameter type
         additionalContext: LogMetadataDTOCollection(),
         message: "Retrieved key with identifier"
       )
       return .success(key)
     } else {
-      let error = SecurityProtocolError.keyManagementError("Key not found with identifier: \(identifier)")
+      let error=SecurityProtocolError
+        .keyManagementError("Key not found with identifier: \(identifier)")
       await keyLogger.logOperationError(
         keyIdentifier: identifier,
         operation: "retrieve",
@@ -185,9 +186,9 @@ public actor KeyManagementActor: KeyManagementProtocol {
     let sanitizedIdentifier=sanitizeIdentifier(identifier)
 
     if await keyStore.containsKey(identifier: sanitizedIdentifier) {
-      var additionalContext = LogMetadataDTOCollection()
+      var additionalContext=LogMetadataDTOCollection()
       additionalContext.addPublic(key: "action", value: "overwrite")
-      
+
       await keyLogger.logOperationStart(
         keyIdentifier: identifier,
         operation: "store",
@@ -200,7 +201,7 @@ public actor KeyManagementActor: KeyManagementProtocol {
     await keyLogger.logOperationSuccess(
       keyIdentifier: identifier,
       operation: "store",
-      result: nil as Void?,  // Explicitly specify Void as the generic parameter type
+      result: nil as Void?, // Explicitly specify Void as the generic parameter type
       additionalContext: LogMetadataDTOCollection(),
       message: "Stored key with identifier"
     )
@@ -237,13 +238,14 @@ public actor KeyManagementActor: KeyManagementProtocol {
       await keyLogger.logOperationSuccess(
         keyIdentifier: identifier,
         operation: "delete",
-        result: nil as Void?,  // Explicitly specify Void as the generic parameter type
+        result: nil as Void?, // Explicitly specify Void as the generic parameter type
         additionalContext: LogMetadataDTOCollection(),
         message: "Deleted key with identifier"
       )
       return .success(())
     } else {
-      let error = SecurityProtocolError.keyManagementError("Key not found with identifier: \(identifier)")
+      let error=SecurityProtocolError
+        .keyManagementError("Key not found with identifier: \(identifier)")
       await keyLogger.logOperationError(
         keyIdentifier: identifier,
         operation: "delete",
@@ -286,46 +288,47 @@ public actor KeyManagementActor: KeyManagementProtocol {
       do {
         // Generate a new key for rotation
         let newKey=try await keyGenerator.generateKey()
-        
-        var additionalContext = LogMetadataDTOCollection()
+
+        var additionalContext=LogMetadataDTOCollection()
         additionalContext.addPublic(key: "action", value: "key_generation")
-        
+
         await keyLogger.logOperationSuccess(
           keyIdentifier: identifier,
           operation: "rotate",
-          result: nil as Void?,  // Explicitly specify Void as the generic parameter type
+          result: nil as Void?, // Explicitly specify Void as the generic parameter type
           additionalContext: additionalContext,
           message: "Generated new key for rotation"
         )
 
         // Store the newly generated key
         await keyStore.storeKey(newKey, identifier: sanitizedIdentifier)
-        
-        additionalContext = LogMetadataDTOCollection()
+
+        additionalContext=LogMetadataDTOCollection()
         additionalContext.addPublic(key: "action", value: "key_storage")
-        
+
         await keyLogger.logOperationSuccess(
           keyIdentifier: identifier,
           operation: "rotate",
-          result: nil as Void?,  // Explicitly specify Void as the generic parameter type
+          result: nil as Void?, // Explicitly specify Void as the generic parameter type
           additionalContext: additionalContext,
           message: "Stored new key with identifier"
         )
 
         // Re-encrypt data if provided
         var reencryptedData: SecureBytes?
-        if let dataToReencrypt=dataToReencrypt {
-          // In a real implementation, we would use the old key to decrypt and the new key to encrypt
+        if let dataToReencrypt {
+          // In a real implementation, we would use the old key to decrypt and the new key to
+          // encrypt
           // For simplicity, we're just copying the data in this example
           reencryptedData=dataToReencrypt
-          
-          additionalContext = LogMetadataDTOCollection()
+
+          additionalContext=LogMetadataDTOCollection()
           additionalContext.addPublic(key: "action", value: "data_reencryption")
-          
+
           await keyLogger.logOperationSuccess(
             keyIdentifier: identifier,
             operation: "rotate",
-            result: nil as Void?,  // Explicitly specify Void as the generic parameter type
+            result: nil as Void?, // Explicitly specify Void as the generic parameter type
             additionalContext: additionalContext,
             message: "Re-encrypted data with new key"
           )
@@ -343,7 +346,8 @@ public actor KeyManagementActor: KeyManagementProtocol {
         )
       }
     } else {
-      let error = SecurityProtocolError.keyManagementError("Key not found with identifier: \(identifier)")
+      let error=SecurityProtocolError
+        .keyManagementError("Key not found with identifier: \(identifier)")
       await keyLogger.logOperationError(
         keyIdentifier: identifier,
         operation: "rotate",
@@ -365,14 +369,14 @@ public actor KeyManagementActor: KeyManagementProtocol {
     )
 
     let identifiers=await keyStore.listKeyIdentifiers()
-    
-    var additionalContext = LogMetadataDTOCollection()
+
+    var additionalContext=LogMetadataDTOCollection()
     additionalContext.addPublic(key: "count", value: String(identifiers.count))
-    
+
     await keyLogger.logOperationSuccess(
       keyIdentifier: "all",
       operation: "list",
-      result: identifiers as [String],  // Explicitly specify [String] as the generic parameter type
+      result: identifiers as [String], // Explicitly specify [String] as the generic parameter type
       additionalContext: additionalContext,
       message: "Found \(identifiers.count) key identifiers"
     )
@@ -408,7 +412,7 @@ public struct DefaultKeyGenerator: KeyGenerator {
   public func generateKey() async throws -> SecureBytes {
     // For a real implementation, this would use a secure random number generator
     // and more sophisticated key generation logic
-    let keyData = try SecureBytes(count: 32)
+    let keyData=try SecureBytes(count: 32)
     return keyData
   }
 }

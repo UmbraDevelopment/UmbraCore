@@ -12,9 +12,9 @@
  * Encapsulate implementation details of helper methods
  */
 
+import CoreSecurityTypes
+import DomainSecurityTypes
 import Foundation
-import SecurityCoreTypes
-import SecurityTypes
 
 /// Helper functions for security configuration and operations
 enum Utilities {
