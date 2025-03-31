@@ -1,0 +1,13 @@
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+
+swift_library(
+    name = "ErrorLoggingInterfaces",
+    srcs = glob(["**/*.swift"]),
+    module_name = "ErrorLoggingInterfaces",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//packages/UmbraCoreTypes/Sources/LoggingTypes",
+        "//packages/UmbraCoreTypes/Sources/UmbraErrors",
+        "//packages/UmbraCoreTypes/Sources/UmbraErrors/Core:UmbraErrorsCore",
+    ],
+)

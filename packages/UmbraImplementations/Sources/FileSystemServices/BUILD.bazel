@@ -1,0 +1,26 @@
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
+
+umbra_swift_library(
+    name = "FileSystemServices",
+    srcs = [
+        "Factory/FileSystemServiceFactory.swift",
+        "Implementation/CoreOperations.swift",
+        "Implementation/DirectoryOperations.swift",
+        "Implementation/ExtendedAttributeOperations.swift",
+        "Implementation/FileOperations.swift",
+        "Implementation/FileSystemServiceImpl.swift",
+        "Implementation/PathOperations.swift",
+        "Implementation/StreamingOperations.swift",
+        "Implementation/TemporaryFileOperations.swift",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//packages/UmbraCoreTypes/Sources/CoreDTOs",
+        "//packages/UmbraCoreTypes/Sources/FileSystemTypes",
+        "//packages/UmbraInterfaces/Sources/FileSystemInterfaces",
+        "//packages/UmbraInterfaces/Sources/LoggingInterfaces",
+        "//packages/UmbraImplementations/Sources/LoggingServices",
+        "//packages/UmbraCoreTypes/Sources/LoggingTypes",
+        "//MigratedArchive/UmbraLogging",
+    ],
+)

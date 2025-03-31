@@ -1,0 +1,17 @@
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
+
+umbra_swift_library(
+    name = "UserDefaults",
+    srcs = glob(
+        [
+            "*.swift",
+        ],
+        allow_empty = False,
+    ),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//packages/UmbraCoreTypes/Sources/UmbraErrors",
+        "//packages/UmbraCoreTypes/Sources/UserDefaults/DTOs:UserDefaultsDTOs",
+        "//packages/UmbraCoreTypes/Sources/UserDefaults/Adapters:UserDefaultsAdapters",
+    ],
+)

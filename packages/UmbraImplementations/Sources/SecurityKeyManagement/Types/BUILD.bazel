@@ -1,0 +1,14 @@
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
+
+umbra_swift_library(
+    name = "SecurityKeyTypes",
+    srcs = glob(["*.swift"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//packages/UmbraCoreTypes/Sources/DomainSecurityTypes",
+        "//packages/UmbraCoreTypes/Sources/CoreSecurityTypes",
+        "//packages/UmbraCoreTypes/Sources/UmbraErrors",
+        "//packages/UmbraInterfaces/Sources/SecurityCoreInterfaces",
+        "//packages/UmbraInterfaces/Sources/LoggingInterfaces",
+    ],
+)

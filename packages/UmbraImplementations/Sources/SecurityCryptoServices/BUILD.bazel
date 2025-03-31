@@ -1,0 +1,51 @@
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
+
+umbra_swift_library(
+    name = "SecurityCryptoServices",
+    srcs = glob(
+        [
+            "*.swift",
+            "**/*.swift",
+        ],
+        exclude = [
+            "**/*Test.swift",
+            "**/*.generated.swift",
+            "Actor/**/*.swift",  # Exclude old Actor directory files 
+            "ActorTypes/**/*.swift",  # Exclude ActorTypes directory files as they'll be in a separate target
+            "ProviderFactories/**/*.swift", # Exclude ProviderFactories as they're in a separate target
+        ],
+        allow_empty = False,
+    ),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//packages/UmbraCoreTypes/Sources/UmbraErrors",
+        "//packages/UmbraCoreTypes/Sources/DomainSecurityTypes",
+        "//packages/UmbraCoreTypes/Sources/CoreSecurityTypes",
+        "//packages/UmbraCoreTypes/Sources/SecurityInterfaces",
+        "//packages/UmbraCoreTypes/Sources/CoreDTOs",
+        "//packages/UmbraInterfaces/Sources/SecurityCoreInterfaces",
+        "//packages/UmbraInterfaces/Sources/LoggingInterfaces",
+        "//packages/UmbraImplementations/Sources/SecurityProviders",
+        "//packages/UmbraImplementations/Sources/SecurityCryptoServices/ActorTypes:CryptoActorImplementations",
+        "//packages/UmbraImplementations/Sources/SecurityCryptoServices/ProviderFactories:ProviderFactories",
+    ],
+)
+
+# Define separate targets for each actor implementation to avoid
+# conflicts with Swift's 'actor' keyword
+umbra_swift_library(
+    name = "CryptoActorImplementations",
+    srcs = glob(
+        ["ActorTypes/**/*.swift"],
+        allow_empty = True,  # Allow empty in case files haven't been moved yet
+    ),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//packages/UmbraCoreTypes/Sources/UmbraErrors",
+        "//packages/UmbraCoreTypes/Sources/DomainSecurityTypes",
+        "//packages/UmbraCoreTypes/Sources/CoreSecurityTypes",
+        "//packages/UmbraCoreTypes/Sources/SecurityInterfaces",
+        "//packages/UmbraInterfaces/Sources/SecurityCoreInterfaces",
+        "//packages/UmbraInterfaces/Sources/LoggingInterfaces",
+    ],
+)

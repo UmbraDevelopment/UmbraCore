@@ -1,0 +1,44 @@
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
+
+umbra_swift_library(
+    name = "LoggingServices",
+    srcs = glob(
+        [
+            "*.swift",
+            "**/*.swift",
+        ],
+        allow_empty = False,
+        exclude = [
+            "**/Tests/**",
+            "**/*Test.swift",
+            "**/*.generated.swift",
+            "Examples/**",
+        ],
+        exclude_directories = 1,
+    ),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//packages/UmbraCoreTypes/Sources/LoggingTypes",
+        "//packages/UmbraInterfaces/Sources/LoggingInterfaces",
+    ],
+)
+
+# Examples are deliberately not built as part of the main library
+# They serve as documentation and reference for developers
+umbra_swift_library(
+    name = "LoggingServicesExamples",
+    srcs = glob(
+        [
+            "Examples/*.swift",
+        ],
+        allow_empty = True,
+    ),
+    tags = ["manual"],  # Prevent automatic building of examples
+    testonly = True,
+    visibility = ["//visibility:public"],
+    deps = [
+        ":LoggingServices",
+        "//packages/UmbraCoreTypes/Sources/LoggingTypes",
+        "//packages/UmbraInterfaces/Sources/LoggingInterfaces",
+    ],
+)

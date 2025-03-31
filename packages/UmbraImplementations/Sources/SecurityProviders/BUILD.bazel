@@ -1,0 +1,25 @@
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
+
+umbra_swift_library(
+    name = "SecurityProviders",
+    srcs = glob(
+        [
+            "*.swift",
+            "**/*.swift",
+        ],
+        allow_empty = False,
+    ),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//packages/UmbraCoreTypes/Sources/UmbraErrors",
+        "//packages/UmbraCoreTypes/Sources/DomainSecurityTypes",
+        "//packages/UmbraCoreTypes/Sources/CoreSecurityTypes",
+        "//packages/UmbraCoreTypes/Sources/SecurityInterfaces",
+        "//packages/UmbraCoreTypes/Sources/CoreDTOs",
+        "//packages/UmbraCoreTypes/Sources/ErrorCoreTypes",
+        "//packages/UmbraCoreTypes/Sources/KeyManagementTypes",
+        "//packages/UmbraCoreTypes/Sources/CryptoTypes",
+        "//packages/UmbraInterfaces/Sources/SecurityCoreInterfaces",
+        "//packages/UmbraImplementations/Sources/ErrorDomainsImpl",
+    ],
+)

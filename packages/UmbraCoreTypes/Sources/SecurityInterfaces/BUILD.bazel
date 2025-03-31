@@ -1,0 +1,21 @@
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
+
+# SecurityInterfaces module for the Alpha Dot Five architecture
+# This module provides the core security interfaces and protocols for the UmbraCore framework.
+umbra_swift_library(
+    name = "SecurityInterfaces",
+    srcs = glob(
+        [
+            "*.swift",
+            "**/*.swift",
+        ],
+        allow_empty = True,
+    ),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//packages/UmbraCoreTypes/Sources/UmbraErrors",
+        "//packages/UmbraCoreTypes/Sources/CoreSecurityTypes",
+        "//packages/UmbraCoreTypes/Sources/DomainSecurityTypes",
+        "//packages/UmbraCoreTypes/Sources/UserDefaults",
+    ],
+)

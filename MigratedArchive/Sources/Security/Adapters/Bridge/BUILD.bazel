@@ -1,0 +1,115 @@
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
+
+umbra_swift_library(
+    name = "SecurityBridge",
+    srcs = glob(
+        [
+            "**/*.swift",
+        ],
+        allow_empty = True,
+        exclude = [
+            "**/Tests/**",
+            "**/*Test.swift",
+            "**/*.generated.swift",
+        ],
+        exclude_directories = 1,
+    ),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//Sources/CoreDTOs",
+        "//Sources/Security/Core/Types/Bridge:SecurityBridgeTypes",
+        "//Sources/SecurityProtocolsCore",
+        "//Sources/UmbraLogging",
+    ],
+)
+
+# Subdirectory libraries
+umbra_swift_library(
+    name = "DTO",
+    srcs = glob(
+        ["DTO/**/*.swift"],
+        allow_empty = True,
+    ),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//Sources/CoreDTOs",
+        "//Sources/Security/Core/Types/Bridge:SecurityBridgeTypes",
+        "//Sources/SecurityProtocolsCore",
+        "//Sources/UmbraLogging",
+    ],
+)
+
+umbra_swift_library(
+    name = "Protocol",
+    srcs = glob(
+        ["Protocol/**/*.swift"],
+        allow_empty = True,
+    ),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//Sources/CoreDTOs",
+        "//Sources/Security/Core/Types/Bridge:SecurityBridgeTypes",
+        "//Sources/SecurityProtocolsCore",
+        "//Sources/UmbraLogging",
+    ],
+)
+
+umbra_swift_library(
+    name = "Foundation",
+    srcs = glob(
+        ["Foundation/**/*.swift"],
+        allow_empty = True,
+    ),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//Sources/CoreDTOs",
+        "//Sources/Security/Core/Types/Bridge:SecurityBridgeTypes",
+        "//Sources/SecurityProtocolsCore",
+        "//Sources/UmbraLogging",
+    ],
+)
+
+umbra_swift_library(
+    name = "XPC",
+    srcs = glob(
+        ["XPC/**/*.swift"],
+        allow_empty = True,
+    ),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//Sources/CoreDTOs",
+        "//Sources/Security/Core/Types/Bridge:SecurityBridgeTypes",
+        "//Sources/SecurityProtocolsCore",
+        "//Sources/UmbraLogging",
+    ],
+)
+
+umbra_swift_library(
+    name = "Core",
+    srcs = glob(
+        ["Core/**/*.swift"],
+        allow_empty = True,
+    ),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//Sources/CoreDTOs",
+        "//Sources/Security/Core/Types/Bridge:SecurityBridgeTypes",
+        "//Sources/SecurityProtocolsCore",
+        "//Sources/UmbraLogging",
+    ],
+)
+
+umbra_swift_library(
+    name = "Base",
+    srcs = glob(
+        ["Base/**/*.swift"],
+        allow_empty = True,
+    ),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//Sources/CoreDTOs",
+        "//Sources/Security/Core/Types/Bridge:SecurityBridgeTypes",
+        "//Sources/SecurityProtocolsCore",
+        "//Sources/UmbraLogging",
+    ],
+)

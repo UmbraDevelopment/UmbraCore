@@ -1,0 +1,21 @@
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
+
+umbra_swift_library(
+    name = "CryptoActorImplementations",
+    srcs = glob(
+        ["*.swift"],
+        allow_empty = False,
+    ),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//packages/UmbraCoreTypes/Sources/UmbraErrors",
+        "//packages/UmbraCoreTypes/Sources/DomainSecurityTypes",
+        "//packages/UmbraCoreTypes/Sources/CoreSecurityTypes",
+        "//packages/UmbraCoreTypes/Sources/SecurityInterfaces",
+        "//packages/UmbraInterfaces/Sources/SecurityCoreInterfaces",
+        "//packages/UmbraInterfaces/Sources/LoggingInterfaces",
+        "//packages/UmbraCoreTypes/Sources/LoggingTypes",
+        "//packages/UmbraImplementations/Sources/SecurityProviders",  # Important dependency for SecurityProviderFactory
+        "//packages/UmbraImplementations/Sources/SecurityCryptoServices/ProviderFactories:ProviderFactories",  # Provider factory implementations
+    ],
+)

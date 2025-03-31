@@ -1,0 +1,17 @@
+{
+  "module_name": "DateTimeService",
+  "migration_date": "2025-03-27",
+  "status": "Completed",
+  "migrated_files": [
+    "Adapters/DateTimeDTOAdapter.swift",
+    "Adapters/DateTimeDTOFactory.swift",
+    "Adapters/DateTimeDTOProtocol.swift",
+    "Adapters/BUILD.bazel"
+  ],
+  "target_modules": [
+    "packages/UmbraCoreTypes/Sources/DateTimeTypes",
+    "packages/UmbraInterfaces/Sources/DateTimeInterfaces", 
+    "packages/UmbraImplementations/Sources/DateTimeServices"
+  ],
+  "notes": "Migrated DateTimeService to Alpha Dot Five architecture, following proper separation of concerns. Created DateTimeTypes in UmbraCoreTypes, DateTimeInterfaces in UmbraInterfaces, and DateTimeServices in UmbraImplementations. Ensured all implementation details were properly aligned with the existing CoreDTOs DateTime functionality."
+}

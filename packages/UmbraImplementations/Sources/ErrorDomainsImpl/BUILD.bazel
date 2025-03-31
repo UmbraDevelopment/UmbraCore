@@ -1,0 +1,12 @@
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+
+swift_library(
+    name = "ErrorDomainsImpl",
+    srcs = glob(["**/*.swift"]),
+    module_name = "ErrorDomainsImpl",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//packages/UmbraCoreTypes/Sources/ErrorCoreTypes:ErrorCoreTypes",
+        "//packages/UmbraInterfaces/Sources/ErrorHandlingInterfaces:ErrorHandlingInterfaces",
+    ],
+)

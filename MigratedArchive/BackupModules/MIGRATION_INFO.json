@@ -1,0 +1,56 @@
+{
+    "migrationDate": "2025-03-28",
+    "migratedModules": [
+        {
+            "name": "BackupCoordinator",
+            "sourceLocation": "/Users/mpy/CascadeProjects/UmbraCore/Sources/BackupCoordinator",
+            "targetLocation": "/Users/mpy/CascadeProjects/UmbraCore/packages/UmbraImplementations/Sources/BackupCoordinator",
+            "interfacesLocation": "/Users/mpy/CascadeProjects/UmbraCore/packages/UmbraInterfaces/Sources/BackupInterfaces",
+            "changes": [
+                "Separated interfaces into dedicated protocol modules",
+                "Implemented actor-based implementations for thread safety",
+                "Added comprehensive error handling with proper error hierarchy",
+                "Created detailed documentation using British spelling",
+                "Integrated with Restic backend for storage operations"
+            ]
+        },
+        {
+            "name": "Snapshots",
+            "sourceLocation": "/Users/mpy/CascadeProjects/UmbraCore/Sources/Snapshots",
+            "targetLocation": "/Users/mpy/CascadeProjects/UmbraCore/packages/UmbraImplementations/Sources/BackupServices",
+            "interfacesLocation": "/Users/mpy/CascadeProjects/UmbraCore/packages/UmbraInterfaces/Sources/BackupInterfaces",
+            "changes": [
+                "Migrated and expanded snapshot functionality",
+                "Created dedicated SnapshotServiceProtocol with clear interface boundaries",
+                "Implemented actor-based snapshot service with proper concurrency",
+                "Added detailed snapshot metrics and comparison functionality",
+                "Implemented robust integration with Restic commands"
+            ]
+        }
+    ],
+    "architecturalChanges": [
+        "Adopted actor model for thread safety across all backup services",
+        "Implemented clean separation between interfaces and implementations",
+        "Created factory pattern for proper dependency injection",
+        "Established unified error handling approach with domain-specific errors",
+        "Implemented comprehensive logging throughout the codebase"
+    ],
+    "apiChanges": [
+        "Changed backup creation to be more configurative with options",
+        "Expanded snapshot management with tagging, verification, and comparison functionality",
+        "Added comprehensive file search within snapshots",
+        "Implemented detailed snapshot statistics and metadata",
+        "Created unified BackupCoordinator for simpler client integration"
+    ],
+    "pendingTasks": [
+        "Implement full unit test suite for all services",
+        "Complete end-to-end integration tests with mock Restic backend",
+        "Add progress reporting with cancellation support",
+        "Implement retention policy enforcement"
+    ],
+    "additionalNotes": [
+        "Implementation follows Alpha Dot Five architecture and style guide",
+        "All user-facing error messages and documentation use British English spelling",
+        "Command construction and parsing is ready for integration with actual Restic backend"
+    ]
+}

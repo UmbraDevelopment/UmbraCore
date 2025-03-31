@@ -1,5 +1,3 @@
-
-
 import Foundation
 import UmbraErrors
 import UmbraErrorsCore
@@ -15,28 +13,25 @@ public struct SecurityErrorMapper: ErrorMapper {
   /// - Returns: A properly namespaced security error
   public func map(_ error: Error) -> Error {
     // Handle different types of security errors
-    if let nsError=error as? NSError {
-      // Map NSError based on domain and code
-      switch nsError.domain {
-        case "NSOSStatusErrorDomain":
-          return mapOSStatusError(nsError)
-        case "kCFErrorDomainCFNetwork":
-          return mapNetworkSecurityError(nsError)
-        default:
-          return mapGenericSecurityError(nsError)
-      }
+    let nsError=error as NSError
+
+    // Map NSError based on domain and code
+    switch nsError.domain {
+      case "NSOSStatusErrorDomain":
+        return mapOSStatusError(nsError)
+      case "kCFErrorDomainCFNetwork":
+        return mapNetworkSecurityError(nsError)
+      case _ where nsError.domain.contains("apple.security"):
+        // Handle platform-specific security errors
+        #if os(macOS)
+          if let secError=error as? SecurityKeyChainError {
+            return mapKeyChainError(secError)
+          }
+        #endif
+        return mapGenericSecurityError(nsError)
+      default:
+        return mapGenericSecurityError(nsError)
     }
-
-    // Handle platform-specific security errors
-    #if os(macOS)
-      if let secError=error as? SecurityKeyChainError {
-        return mapKeyChainError(secError)
-      }
-    #endif
-
-    // Default case - wrap in a generic security error
-    return UmbraErrors.Security.Core
-      .internalError(description: "Unmapped security error: \(error.localizedDescription)")
   }
 
   /// Check if this mapper can handle the given error
@@ -44,23 +39,23 @@ public struct SecurityErrorMapper: ErrorMapper {
   /// - Returns: True if this mapper can handle the error
   public func canMap(_ error: Error) -> Bool {
     // Can map NSErrors from security-related domains
-    if let nsError=error as? NSError {
-      let securityDomains=[
-        "NSOSStatusErrorDomain",
-        "kCFErrorDomainCFNetwork",
-        "com.apple.security"
-      ]
-      return securityDomains.contains(nsError.domain)
+    let nsError=error as NSError
+    let securityDomains=[
+      "NSOSStatusErrorDomain",
+      "kCFErrorDomainCFNetwork",
+      "com.apple.security"
+    ]
+
+    if securityDomains.contains(nsError.domain) {
+      return true
     }
 
     // Can map platform-specific security errors
     #if os(macOS)
-      if error is SecurityKeyChainError {
-        return true
-      }
+      return error is SecurityKeyChainError
+    #else
+      return false
     #endif
-
-    return false
   }
 
   // MARK: - Private mapping methods

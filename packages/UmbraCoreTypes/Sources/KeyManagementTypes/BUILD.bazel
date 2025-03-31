@@ -1,0 +1,35 @@
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
+
+umbra_swift_library(
+    name = "KeyManagementTypes",
+    srcs = glob([
+        "*.swift",
+    ]),
+    visibility = ["//visibility:public"],
+)
+
+# For testing only
+umbra_swift_library(
+    name = "KeyManagementTypesTests",
+    testonly = True,
+    srcs = glob(
+        [
+            "*.swift",
+        ],
+        allow_empty = False,
+        exclude = [
+            "**/Tests/**",
+            "**/*Test.swift",
+            "**/*.generated.swift",
+        ],
+        exclude_directories = 1,
+    ),
+    visibility = [
+        "//packages/UmbraCoreTypes:__subpackages__",
+        "//packages/UmbraInterfaces/Sources/SecurityInterfaces:__pkg__",
+        "//packages/UmbraImplementations/Sources/SecurityImpl:__pkg__",
+    ],
+    deps = [
+        ":KeyManagementTypes",
+    ],
+)

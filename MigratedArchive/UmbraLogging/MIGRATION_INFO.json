@@ -1,0 +1,19 @@
+{
+  "module_name": "UmbraLogging",
+  "migration_date": "2025-03-27",
+  "status": "Completed",
+  "migrated_files": [
+    "LogEntry.swift",
+    "LogLevel.swift",
+    "LogMetadata.swift",
+    "LoggingProtocol.swift",
+    "TimePointAdapter.swift",
+    "UmbraLogging.swift"
+  ],
+  "target_modules": [
+    "packages/UmbraCoreTypes/Sources/LoggingTypes",
+    "packages/UmbraInterfaces/Sources/LoggingInterfaces",
+    "packages/UmbraImplementations/Sources/LoggingServices"
+  ],
+  "notes": "Migrated UmbraLogging module to Alpha Dot Five architecture, separating core types, interfaces, and implementations into distinct modules following the architecture principles. The module is Foundation-independent where possible."
+}

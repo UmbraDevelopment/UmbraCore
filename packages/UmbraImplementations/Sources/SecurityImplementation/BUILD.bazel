@@ -1,0 +1,21 @@
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+
+swift_library(
+    name = "SecurityImplementation",
+    srcs = glob([
+        "**/*.swift",
+    ]),
+    module_name = "SecurityImplementation",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//packages/UmbraInterfaces/Sources/SecurityCoreInterfaces",
+        "//packages/UmbraCoreTypes/Sources/CoreSecurityTypes",
+        "//packages/UmbraCoreTypes/Sources/DomainSecurityTypes",
+        "//packages/UmbraInterfaces/Sources/LoggingInterfaces",
+        "//packages/UmbraCoreTypes/Sources/LoggingTypes",
+        "//packages/UmbraInterfaces/Sources/CryptoInterfaces",
+        "//packages/UmbraImplementations/Sources/CryptoServices",
+        "//packages/UmbraImplementations/Sources/LoggingServices",
+        "//packages/UmbraImplementations/Sources/SecurityKeyManagement",
+    ],
+)

@@ -1,0 +1,11 @@
+{
+  "original_module": "Services/CryptoService",
+  "migration_date": "2025-03-28",
+  "migrated_by": "Alpha Dot Five Migration",
+  "replacement_modules": [
+    "packages/UmbraImplementations/Sources/CryptoServices",
+    "packages/UmbraInterfaces/Sources/CryptoInterfaces",
+    "packages/UmbraCoreTypes/Sources/CryptoTypes"
+  ],
+  "notes": "This module was migrated as part of the Alpha Dot Five architecture migration. The functionality has been replaced by the CryptoServices implementation with improved error handling, proper British spelling in documentation, and actor-based thread safety."
+}

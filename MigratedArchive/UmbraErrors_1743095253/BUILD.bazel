@@ -1,0 +1,25 @@
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
+
+umbra_swift_library(
+    name = "UmbraErrors",
+    srcs = glob(
+        [
+            "*.swift",
+            "**/*.swift",
+        ],
+        allow_empty = False,
+        exclude = [
+            "**/Tests/**",
+            "**/*Test.swift",
+            "**/*.generated.swift",
+        ],
+        exclude_directories = 1,
+    ),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
+        "//Sources/UmbraErrors/DTOs",
+        "//Sources/UmbraErrors/Domains",
+        "//Sources/UmbraErrors/Mapping",
+    ],
+)

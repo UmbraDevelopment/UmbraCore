@@ -1,0 +1,29 @@
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
+
+umbra_swift_library(
+    name = "Modern",
+    srcs = glob(
+        [
+            "*.swift",
+            "**/*.swift",
+        ],
+        allow_empty = False,
+        exclude = [
+            "**/Tests/**",
+            "**/*Test.swift",
+            "**/*.generated.swift",
+        ],
+        exclude_directories = 1,
+    ),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//Sources/CoreDTOs",
+        # Removing problematic dependency that may be causing circular references
+        # "//Sources/Security/Adapters/Bridge/XPC:XPCBridge",
+        "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraCoreTypes/Sources:UmbraCoreTypes",
+        "//Sources/UmbraErrors/Core:UmbraErrorsCore",  # Only depending on core errors
+        "//Sources/UmbraLogging",
+        "//Sources/XPCProtocolsCore/Sources/Common",  # Adding our new Common module
+    ],
+)

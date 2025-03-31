@@ -1,0 +1,41 @@
+{
+  "files": [
+    "CryptoTypes.swift",
+    "BUILD.bazel"
+  ],
+  "subdirs": {
+    "Types": {
+      "files": [
+        "CredentialManager.swift",
+        "CryptoConfig.swift",
+        "SecureStorageData.swift",
+        "BUILD.bazel",
+        "CryptoConfiguration.swift"
+      ],
+      "subdirs": {}
+    },
+    "Protocols": {
+      "files": [
+        "CryptoServiceProtocol.swift",
+        "CredentialManagerProtocol.swift",
+        "BUILD.bazel"
+      ],
+      "subdirs": {}
+    },
+    "Services": {
+      "files": [
+        "CryptoTypes_Services.swift",
+        "CredentialManager.swift",
+        "DefaultCryptoService.swift",
+        "BUILD.bazel"
+      ],
+      "subdirs": {}
+    },
+    "Interfaces": {
+      "files": [
+        "XPCInterfaces.swift"
+      ],
+      "subdirs": {}
+    }
+  }
+}

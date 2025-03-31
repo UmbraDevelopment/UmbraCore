@@ -1,0 +1,25 @@
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
+
+package(default_visibility = ["//visibility:public"])
+
+# UmbraCoreTypes meta-package
+# This serves as an umbrella target for all core types packages
+
+# UmbraCoreTypes aggregated library
+umbra_swift_library(
+    name = "UmbraCoreTypes",
+    srcs = [],
+    deps = [
+        "//packages/UmbraCoreTypes/Sources/KeyManagementTypes",
+        "//packages/UmbraCoreTypes/Sources/CoreDTOs",
+        "//packages/UmbraCoreTypes/Sources/ErrorCoreTypes",
+        "//packages/UmbraCoreTypes/Sources/FileSystemTypes",
+        "//packages/UmbraCoreTypes/Sources/Notification",
+        "//packages/UmbraCoreTypes/Sources/Scheduling",
+        "//packages/UmbraCoreTypes/Sources/UmbraErrors",
+        # Add other type modules as they are migrated:
+        # "//packages/UmbraCoreTypes/Sources/ResticTypes",
+        # "//packages/UmbraCoreTypes/Sources/SecurityTypes",
+        # "//packages/UmbraCoreTypes/Sources/ServiceTypes",
+    ],
+)

@@ -1,0 +1,580 @@
+{
+  "UmbraErrors": {
+    "status": "Completed",
+    "dependencies": [],
+    "dependents": [
+      "CoreDTOs",
+      "UserDefaults",
+      "SecurityInterfaces",
+      "CryptoTypes",
+      "UmbraLogging",
+      "Notification",
+      "Scheduling",
+      "CryptoServices",
+      "SecurityUtils",
+      "SecurityProviders",
+      "SecurityKeyManagement",
+      "SecurityCryptoServices",
+      "FileSystemService",
+      "NetworkService",
+      "Repository",
+      "DateTimeService",
+      "ResticInterfaces",
+      "BackupInterfaces",
+      "BackupServices",
+      "ResticServices",
+      "ErrorLoggingServices",
+      "LoggingServices",
+      "LoggingInterfaces",
+      "LoggingTypes",
+      "ErrorCoreTypes",
+      "ErrorHandlingInterfaces",
+      "ErrorDomainsImpl",
+      "ErrorHandlingImpl",
+      "CryptoXPCServices",
+      "SecurityBookmark",
+      "API",
+      "Core",
+      "Config"
+    ],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture."
+  },
+  "CoreDTOs": {
+    "status": "Completed",
+    "dependencies": [
+      "UmbraErrors"
+    ],
+    "dependents": [
+      "UserDefaults",
+      "SecurityInterfaces",
+      "FileSystemTypes",
+      "SecurityTypes",
+      "CryptoTypes",
+      "CryptoServices",
+      "NetworkService",
+      "Repository",
+      "DateTimeService",
+      "CryptoXPCServices",
+      "SecurityBookmark",
+      "API",
+      "Core",
+      "Config"
+    ],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture with proper integration with all migrated dependency modules (UmbraErrors, UserDefaults, SecurityInterfaces, FileSystemTypes, and SecurityTypes)."
+  },
+  "UserDefaults": {
+    "status": "Completed",
+    "dependencies": [
+      "UmbraErrors",
+      "CoreDTOs"
+    ],
+    "dependents": [
+      "SecurityInterfaces"
+    ],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Migrated with placeholder adapter implementation"
+  },
+  "SecurityInterfaces": {
+    "status": "Completed",
+    "dependencies": [
+      "UmbraErrors",
+      "CoreDTOs",
+      "UserDefaults"
+    ],
+    "dependents": [
+      "SecurityTypes",
+      "CryptoTypes",
+      "CryptoInterfaces",
+      "CryptoXPCServices",
+      "API"
+    ],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture with proper integration with UmbraErrors and UserDefaults."
+  },
+  "Notification": {
+    "status": "Completed",
+    "dependencies": [
+      "UmbraErrors"
+    ],
+    "dependents": [],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture."
+  },
+  "Scheduling": {
+    "status": "Completed",
+    "dependencies": [
+      "UmbraErrors"
+    ],
+    "dependents": [],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture."
+  },
+  "FileSystemTypes": {
+    "status": "Completed",
+    "dependencies": [],
+    "dependents": [
+      "CoreDTOs",
+      "FileSystemService"
+    ],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture."
+  },
+  "SecurityTypes": {
+    "status": "Completed",
+    "dependencies": [],
+    "dependents": [
+      "CoreDTOs",
+      "SecurityInterfaces",
+      "CryptoTypes",
+      "CryptoInterfaces",
+      "SecurityUtils",
+      "SecurityProviders",
+      "SecurityKeyManagement",
+      "SecurityCryptoServices",
+      "CryptoXPCServices",
+      "SecurityBookmark"
+    ],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture."
+  },
+  "CryptoTypes": {
+    "status": "Completed",
+    "dependencies": [
+      "UmbraErrors",
+      "SecurityTypes"
+    ],
+    "dependents": [
+      "CryptoInterfaces",
+      "CryptoServices",
+      "CryptoXPCServices"
+    ],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture, replacing Foundation.Data with SecurityTypes.SecureBytes for secure data handling."
+  },
+  "CryptoInterfaces": {
+    "status": "Completed",
+    "dependencies": [
+      "CryptoTypes",
+      "SecurityTypes"
+    ],
+    "dependents": [
+      "CryptoServices"
+    ],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture, removed @objc annotations for better Swift-native support."
+  },
+  "CryptoServices": {
+    "status": "Completed",
+    "dependencies": [
+      "CryptoInterfaces",
+      "CryptoTypes",
+      "UmbraErrors",
+      "SecurityTypes"
+    ],
+    "dependents": [],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture with proper error handling and SecureBytes usage. Implementation will eventually be replaced by ResticBar."
+  },
+  "UmbraLogging": {
+    "status": "Completed",
+    "dependencies": [
+      "UmbraErrors"
+    ],
+    "dependents": [
+      "LoggingWrapperInterfaces",
+      "UmbraLoggingAdapters",
+      "Repository",
+      "ResticServices",
+      "BackupServices",
+      "ErrorLoggingServices"
+    ],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture, separating core types, interfaces, and implementations. Created Foundation-independent TimePointAdapter for timestamp representation."
+  },
+  "LoggingWrapperInterfaces": {
+    "status": "Completed",
+    "dependencies": [],
+    "dependents": [
+      "LoggingWrapper",
+      "UmbraLoggingAdapters"
+    ],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture as part of the logging ecosystem. Maintained the interface-focused approach without implementation details for clean separation of concerns."
+  },
+  "LoggingWrapper": {
+    "status": "Completed",
+    "dependencies": [
+      "LoggingWrapperInterfaces"
+    ],
+    "dependents": [
+      "UmbraLoggingAdapters"
+    ],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture as LoggingWrapperServices, implementing the interfaces defined in LoggingWrapperInterfaces. Maintained the SwiftyBeaver integration."
+  },
+  "UmbraLoggingAdapters": {
+    "status": "Completed",
+    "dependencies": [
+      "UmbraLogging",
+      "LoggingWrapperInterfaces",
+      "LoggingWrapper"
+    ],
+    "dependents": [],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture as LoggingAdapters. Implemented adapter patterns to connect LoggingInterfaces with LoggingWrapperServices while following proper separation of concerns."
+  },
+  "DateTimeService": {
+    "status": "Completed",
+    "dependencies": [
+      "CoreDTOs",
+      "UmbraErrors"
+    ],
+    "dependents": [],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture as three modules: DateTimeTypes, DateTimeInterfaces, and DateTimeServices. Maintained proper separation of concerns with Foundation-independence, whilst ensuring alignment with the existing CoreDTOs DateTime functionality."
+  },
+  "SecurityUtils": {
+    "status": "Completed",
+    "dependencies": [
+      "SecurityCoreTypes",
+      "SecurityTypes",
+      "UmbraErrors"
+    ],
+    "dependents": [
+      "SecurityProviders",
+      "SecurityKeyManagement"
+    ],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture with enhanced documentation. Implemented secure memory handling, performance benchmarking, and properly documented all components with British spellings and comprehensive security context."
+  },
+  "SecurityProviders": {
+    "status": "Completed",
+    "dependencies": [
+      "SecurityCoreTypes",
+      "SecurityUtils",
+      "UmbraErrors"
+    ],
+    "dependents": [],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture with comprehensive documentation. Implemented standard security interface and operations handler with proper separation of concerns."
+  },
+  "SecurityKeyManagement": {
+    "status": "Completed",
+    "dependencies": [
+      "SecurityCoreTypes",
+      "SecurityUtils",
+      "UmbraErrors"
+    ],
+    "dependents": [],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture with enhanced documentation. Implemented key rotation service and key store with comprehensive security guidance."
+  },
+  "SecurityCryptoServices": {
+    "status": "Completed",
+    "dependencies": [
+      "SecurityCoreTypes",
+      "SecurityTypes",
+      "UmbraErrors"
+    ],
+    "dependents": [],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture with comprehensive security documentation. Implemented hashing service with constant-time comparison for timing attack prevention and proper security context."
+  },
+  "FileSystemService": {
+    "status": "Completed",
+    "dependencies": [
+      "FileSystemTypes",
+      "UmbraErrors"
+    ],
+    "dependents": [],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture as FileSystemInterfaces and FileSystemServices modules. New features include streaming operations, extended attributes, path operations, and temporary file management."
+  },
+  "NetworkService": {
+    "status": "Completed",
+    "dependencies": [
+      "UmbraErrors",
+      "CoreDTOs"
+    ],
+    "dependents": [
+      "Repository"
+    ],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture with separation of interfaces (NetworkInterfaces) and implementations (NetworkServices)."
+  },
+  "Repository": {
+    "status": "Completed",
+    "dependencies": [
+      "UmbraErrors",
+      "CoreDTOs",
+      "NetworkService",
+      "UmbraLogging"
+    ],
+    "dependents": [],
+    "migration_date": "2025-03-27",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture with proper separation of interfaces (RepositoryInterfaces) and implementations (RepositoryServices). Improved error handling and documentation with British spelling."
+  },
+  "ResticInterfaces": {
+    "status": "Completed",
+    "dependencies": [
+      "UmbraErrors"
+    ],
+    "dependents": [
+      "ResticServices",
+      "BackupInterfaces"
+    ],
+    "migration_date": "2025-03-28",
+    "blocking_issues": [],
+    "notes": "Successfully migrated from ResticTypes to Alpha Dot Five architecture. Created comprehensive interface definitions with proper protocol boundaries, improved error types, and British spelling documentation."
+  },
+  "ResticServices": {
+    "status": "Completed",
+    "dependencies": [
+      "ResticInterfaces",
+      "UmbraLogging",
+      "UmbraErrors"
+    ],
+    "dependents": [
+      "BackupServices"
+    ],
+    "migration_date": "2025-03-28",
+    "blocking_issues": [],
+    "notes": "Successfully migrated from ResticCLIHelper and ResticCLIHelperModels to Alpha Dot Five architecture. Implemented actor-based concurrency with proper thread safety, comprehensive error handling, and descriptive naming conventions."
+  },
+  "BackupInterfaces": {
+    "status": "Completed",
+    "dependencies": [
+      "UmbraErrors",
+      "ResticInterfaces"
+    ],
+    "dependents": [
+      "BackupServices"
+    ],
+    "migration_date": "2025-03-28",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture. Created comprehensive interface definitions with proper protocol boundaries, improved type definitions, and British English documentation."
+  },
+  "BackupServices": {
+    "status": "Completed",
+    "dependencies": [
+      "BackupInterfaces",
+      "ResticInterfaces",
+      "ResticServices",
+      "UmbraErrors",
+      "UmbraLogging"
+    ],
+    "dependents": [],
+    "migration_date": "2025-03-28",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture. Refactored implementation classes for improved modularity, implemented factory pattern for command creation, and added comprehensive error mapping. Improved code organisation with proper separation of concerns."
+  },
+  "ErrorLoggingServices": {
+    "status": "Completed",
+    "dependencies": [
+      "UmbraErrors",
+      "LoggingInterfaces",
+      "LoggingTypes",
+      "LoggingServices"
+    ],
+    "dependents": [],
+    "migration_date": "2025-03-29",
+    "blocking_issues": [],
+    "notes": "Successfully migrated from ErrorHandling/Logging to Alpha Dot Five architecture with proper actor-based implementation and privacy controls."
+  },
+  "LoggingServices": {
+    "status": "Completed",
+    "dependencies": [
+      "LoggingInterfaces",
+      "LoggingTypes",
+      "UmbraErrors"
+    ],
+    "dependents": [
+      "ErrorLoggingServices"
+    ],
+    "migration_date": "2025-03-29",
+    "blocking_issues": [],
+    "notes": "Successfully migrated UmbraLogging to Alpha Dot Five architecture with OSLog integration and privacy controls."
+  },
+  "LoggingInterfaces": {
+    "status": "Completed",
+    "dependencies": [
+      "LoggingTypes"
+    ],
+    "dependents": [
+      "LoggingServices",
+      "ErrorLoggingServices",
+      "CryptoXPCServices",
+      "SecurityBookmark",
+      "API",
+      "Core",
+      "Config"
+    ],
+    "migration_date": "2025-03-29",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture with proper interface definitions."
+  },
+  "LoggingTypes": {
+    "status": "Completed",
+    "dependencies": [
+      "UmbraErrors"
+    ],
+    "dependents": [
+      "LoggingInterfaces",
+      "LoggingServices",
+      "ErrorLoggingServices",
+      "ErrorHandlingInterfaces"
+    ],
+    "migration_date": "2025-03-29",
+    "blocking_issues": [],
+    "notes": "Successfully migrated to Alpha Dot Five architecture with LogPrivacy features for enhanced data security."
+  },
+  "ErrorCoreTypes": {
+    "status": "Completed",
+    "dependencies": [
+      "UmbraErrors"
+    ],
+    "dependents": [
+      "ErrorHandlingInterfaces",
+      "ErrorDomainsImpl",
+      "ErrorHandlingImpl"
+    ],
+    "migration_date": "2025-03-30",
+    "blocking_issues": [],
+    "notes": "Successfully migrated from ErrorHandling to Alpha Dot Five architecture with proper error context, source tracking, and domain types. Uses British spelling in documentation."
+  },
+  "ErrorHandlingInterfaces": {
+    "status": "Completed",
+    "dependencies": [
+      "ErrorCoreTypes",
+      "LoggingInterfaces",
+      "LoggingTypes",
+      "UmbraErrors"
+    ],
+    "dependents": [
+      "ErrorDomainsImpl",
+      "ErrorHandlingImpl"
+    ],
+    "migration_date": "2025-03-30",
+    "blocking_issues": [],
+    "notes": "Successfully migrated from ErrorHandling to Alpha Dot Five architecture with clear protocol boundaries for error domains, handling, mapping, and logging."
+  },
+  "ErrorDomainsImpl": {
+    "status": "Completed",
+    "dependencies": [
+      "ErrorCoreTypes",
+      "ErrorHandlingInterfaces"
+    ],
+    "dependents": [],
+    "migration_date": "2025-03-30",
+    "blocking_issues": [],
+    "notes": "Successfully migrated from ErrorHandling to Alpha Dot Five architecture with domain-specific error types for security-related errors. Uses British spelling in documentation."
+  },
+  "ErrorHandlingImpl": {
+    "status": "Completed",
+    "dependencies": [
+      "ErrorCoreTypes",
+      "ErrorHandlingInterfaces",
+      "LoggingInterfaces",
+      "LoggingTypes"
+    ],
+    "dependents": [],
+    "migration_date": "2025-03-30",
+    "blocking_issues": [],
+    "notes": "Successfully migrated from ErrorHandling to Alpha Dot Five architecture with DefaultErrorHandler and ErrorLoggerService implementations. Integrates with the logging system."
+  },
+  "CryptoXPCServices": {
+    "status": "Completed",
+    "dependencies": [
+      "CryptoTypes",
+      "CoreDTOs",
+      "LoggingInterfaces",
+      "DomainSecurityTypes",
+      "UmbraErrors",
+      "XPCProtocolsCore",
+      "SecurityInterfaces"
+    ],
+    "dependents": [],
+    "migration_date": "2025-03-31",
+    "blocking_issues": [],
+    "notes": "Successfully migrated from UmbraCryptoService to Alpha Dot Five architecture using actor-based concurrency. Replaced class-based implementation with thread-safe actors, Foundation-independent DTOs and privacy-aware logging. The implementation properly isolates all mutable state and uses Swift's structured concurrency patterns."
+  },
+  "SecurityBookmark": {
+    "status": "Completed",
+    "dependencies": [
+      "CoreDTOs",
+      "DomainSecurityTypes",
+      "LoggingInterfaces",
+      "UmbraErrors"
+    ],
+    "dependents": [],
+    "migration_date": "2025-03-31",
+    "blocking_issues": [],
+    "notes": "Successfully migrated security-scoped bookmark functionality from UmbraSecurity to Alpha Dot Five architecture using actor-based concurrency. The SecurityBookmarkActor provides thread-safe operations for creating, resolving and managing access to security-scoped bookmarks in sandboxed applications. Implemented proper resource tracking with reference counting for security-scoped resources."
+  },
+  "API": {
+    "status": "Completed",
+    "dependencies": [
+      "CoreDTOs",
+      "LoggingInterfaces",
+      "SecurityInterfaces",
+      "UmbraErrors"
+    ],
+    "dependents": [],
+    "migration_date": "2025-03-31",
+    "blocking_issues": [],
+    "notes": "Successfully migrated API module to Alpha Dot Five architecture using actor-based concurrency. Implemented APIServiceActor for thread-safe API operations with proper isolation. Created Foundation-independent DTOs for all data exchanges and implemented privacy-aware logging throughout. The implementation follows all Alpha Dot Five architecture principles and provides a clean interface for external clients."
+  },
+  "Core": {
+    "status": "Completed",
+    "dependencies": [
+      "CoreDTOs",
+      "LoggingInterfaces",
+      "UmbraErrors"
+    ],
+    "dependents": [
+      "API",
+      "Config"
+    ],
+    "migration_date": "2025-03-31",
+    "blocking_issues": [],
+    "notes": "Successfully migrated Core module to Alpha Dot Five architecture using actor-based concurrency. Implemented CoreServiceActor for thread-safe core framework operations with proper isolation. Created comprehensive DTOs for framework state, version information, and system details. The implementation embraces Swift structured concurrency patterns and provides robust error handling with domain-specific errors."
+  },
+  "Config": {
+    "status": "Completed",
+    "dependencies": [
+      "CoreDTOs",
+      "LoggingInterfaces",
+      "UmbraErrors",
+      "Core"
+    ],
+    "dependents": [],
+    "migration_date": "2025-03-31",
+    "blocking_issues": [],
+    "notes": "Successfully migrated Config module to Alpha Dot Five architecture using actor-based concurrency. Implemented ConfigurationServiceActor for thread-safe configuration management with proper isolation. Designed type-safe configuration value handling with appropriate privacy controls for sensitive values. The implementation supports multiple configuration sources with priority-based resolution and change notification using AsyncStream."
+  }
+}
