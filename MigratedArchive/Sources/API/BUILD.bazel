@@ -1,0 +1,55 @@
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
+
+# Note: This module has been completely migrated to the Alpha Dot Five architecture.
+# All code should now use the new implementation directly:
+# - packages/UmbraCoreTypes/Sources/APIInterfaces/Protocols/APIServiceProtocol.swift
+# - packages/UmbraImplementations/Sources/APIServices/APIServiceActor.swift
+# 
+# WARNING: Do NOT use this module for new code. It exists only to provide a migration
+# path and will be removed entirely in a future release.
+
+umbra_swift_library(
+    name = "API",
+    srcs = glob(
+        [
+            "*.swift",
+            "**/*.swift",
+        ],
+        allow_empty = False,
+        exclude = [
+            "**/Tests/**",
+            "**/*Test.swift",
+            "**/*.generated.swift",
+        ],
+        exclude_directories = 1,
+    ),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//packages/UmbraCoreTypes/Sources/APIInterfaces",
+        "//packages/UmbraImplementations/Sources/APIServices",
+        "//packages/UmbraCoreTypes/Sources/UmbraErrors",
+    ],
+)
+
+# Uncomment if documentation generation is needed
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+# swift_package(
+#     name = "docc_documentation"
+#     srcs = glob([
+#     srcs = glob([
+#         "**/*.swift"
+#         "**/*.docc/**"
+#     ])
+#     ])
+# deps = [
+#     # Dependencies would go here"//Sources/API"]
+# deps = [
+#     # Dependencies would go here"//Sources/API"]
+# deps = [
+#     # Dependencies would go here"//Sources/API"]
+# deps = [
+#     # Dependencies would go here"//Sources/API"]
+# )

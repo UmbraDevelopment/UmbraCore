@@ -1,0 +1,59 @@
+# Error handling improvements:
+# This module has been updated to use fully qualified error types instead of typealiases.
+# All error mapping should follow the UmbraErrors.* canonical hierarchy.
+# Ensure proper error propagation and mapping when adding new code.
+
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
+
+umbra_swift_library(
+    name = "Mapping",
+    srcs = glob(
+        [
+            "*.swift",
+            "**/*.swift",
+        ],
+        allow_empty = False,
+        exclude = [
+            "**/Tests/**",
+            "**/*Test.swift",
+            "**/*.generated.swift",
+            # Exclude Common directory as it's now a separate target
+            "Common/**",
+        ],
+        exclude_directories = 1,
+    ),
+    deps = [
+        # Additional dependencies as needed:
+        # "//Sources/CoreDTOs"
+        # "//Sources/UmbraLogging"
+        # "@com_github_apple_swift_log//:Logging"
+        "//Sources/ErrorHandling/Types",
+        "//Sources/ErrorHandling/Core",
+        # Include our new MappingCommon module
+        "//Sources/ErrorHandling/Mapping/Common:MappingCommon",
+        # Removed SecurityInterfaces and SecurityTypes to break circular dependencies
+        # "//Sources/SecurityInterfaces",
+        # "//Sources/SecurityTypes",
+    ],
+)
+
+# Uncomment if documentation generation is needed
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+# swift_package(
+#     name = "docc_documentation"
+#     srcs = glob([
+#     srcs = glob([
+#         "**/*.swift"
+#         "**/*.docc/**"
+#     ])
+#     ])
+# deps = [
+#     # Dependencies would go here
+# deps = [
+#     # Dependencies would go here
+# deps = [
+#     # Dependencies would go here
+# )

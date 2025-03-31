@@ -1,0 +1,55 @@
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
+
+umbra_swift_library(
+    name = "XPCProtocolsCore",
+    srcs = ["Exports.swift"],  # Wrapper file that re-exports the subpackage functionality
+    swiftc_opts = [
+        "-target",
+        "arm64-apple-macosx14.7.4",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraErrors",
+        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
+        "//Sources/XPCProtocolsCore/Sources/Common",  # Adding the Common module
+        "//Sources/XPCProtocolsCore/Sources:XPCProtocolsCoreSources",
+    ],
+)
+
+# A separate target for tests
+umbra_swift_library(
+    name = "XPCProtocolsCoreTests",
+    testonly = True,
+    srcs = glob(
+        [
+            "Tests/**/*.swift",
+        ],
+        allow_empty = True,  # Allow empty glob since tests may not exist yet
+    ),
+    swiftc_opts = [
+        "-target",
+        "arm64-apple-macosx14.7.4",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraErrors",
+        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
+        "//Sources/XPCProtocolsCore/Sources/Common",  # Adding the Common module
+        "//Sources/XPCProtocolsCore/Sources:XPCProtocolsCoreSources",
+    ],
+)
+
+# Uncomment if documentation generation is needed
+# load("@rules_swift_package_manager//swiftpkg:defs.bzl", "swift_package")
+# swift_package(
+#     name = "docc_documentation",
+#     deps = [
+#         "//Sources/UmbraCoreTypes",
+#         "//Sources/UmbraErrors",
+#         "//Sources/UmbraErrors/Core:UmbraErrorsCore",
+#         "//Sources/XPCProtocolsCore/Sources/Common",
+#         "//Sources/XPCProtocolsCore/Sources:XPCProtocolsCoreSources",
+#     ],
+# )

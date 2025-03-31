@@ -1,0 +1,18 @@
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
+
+# Foundation adapters for Security services
+# Provides integration with Foundation framework components
+umbra_swift_library(
+    name = "Foundation",
+    srcs = glob(
+        ["**/*.swift"],
+        allow_empty = True,
+        exclude = ["**/*.generated.swift"],
+    ),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//Sources/Security/Core/Protocols",
+        "//Sources/Security/Core/Types",
+        "//Sources/UmbraCoreTypes",
+    ],
+)

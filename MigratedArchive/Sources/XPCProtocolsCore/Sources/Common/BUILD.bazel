@@ -1,0 +1,27 @@
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
+
+umbra_swift_library(
+    name = "Common",
+    srcs = glob(
+        [
+            "*.swift",
+            "**/*.swift",
+        ],
+        allow_empty = False,
+        exclude = [
+            "**/Tests/**",
+            "**/*Test.swift",
+            "**/*.generated.swift",
+        ],
+        exclude_directories = 1,
+    ),
+    swiftc_opts = [
+        "-target",
+        "arm64-apple-macosx14.7.4",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//Sources/UmbraCoreTypes",
+        "//Sources/UmbraErrors/Core:UmbraErrorsCore",
+    ],
+)
