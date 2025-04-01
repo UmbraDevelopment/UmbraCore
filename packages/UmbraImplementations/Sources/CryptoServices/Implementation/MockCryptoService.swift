@@ -1,296 +1,204 @@
-import CryptoInterfaces
-import CryptoTypes
+import CoreSecurityTypes
 import DomainSecurityTypes
 import Foundation
+import SecurityCoreInterfaces
+import UmbraErrors
 
 /**
  # Mock Crypto Service
 
- A test implementation of the CryptoServiceProtocol that can be used in unit tests
- without requiring actual cryptographic operations.
+ A test implementation of the CryptoServiceProtocol that uses SecureStorage and
+ is suitable for unit tests without requiring actual cryptographic operations.
 
  This implementation allows predetermined responses to be configured, making test
  results predictable and consistent. It follows the Alpha Dot Five architecture
  with proper British spelling and Sendable conformance.
  */
 public actor MockCryptoService: CryptoServiceProtocol {
-  /// Dictionary of predetermined encryption results
-  private var encryptionResults: [String: Data]
-
-  /// Dictionary of predetermined decryption results
-  private var decryptionResults: [String: Data]
-
-  /// Dictionary of predetermined key derivation results
-  private var keyDerivationResults: [String: Data]
-
-  /// Dictionary of predetermined random key results
-  private var randomKeyResults: [Int: Data]
-
-  /// Dictionary of predetermined HMAC results
-  private var hmacResults: [String: Data]
-
+  /// The secure storage used for sensitive material
+  public let secureStorage: SecureStorageProtocol
+  
   /// Record of all method calls for verification
   private(set) var callHistory: [String] = []
 
-  /// Initialises a mock service with default empty result sets
-  public init() {
-    encryptionResults = [:]
-    decryptionResults = [:]
-    keyDerivationResults = [:]
-    randomKeyResults = [:]
-    hmacResults = [:]
+  /// Initialises a mock service with a new secure storage instance
+  public init(secureStorage: SecureStorageProtocol? = nil) {
+    self.secureStorage = secureStorage ?? SecureStorage()
   }
-
-  /// Initialises a mock service with predefined results
-  public init(
-    encryptionResults: [String: Data] = [:],
-    decryptionResults: [String: Data] = [:],
-    keyDerivationResults: [String: Data] = [:],
-    randomKeyResults: [Int: Data] = [:],
-    hmacResults: [String: Data] = [:]
-  ) {
-    self.encryptionResults = encryptionResults
-    self.decryptionResults = decryptionResults
-    self.keyDerivationResults = keyDerivationResults
-    self.randomKeyResults = randomKeyResults
-    self.hmacResults = hmacResults
-  }
-
-  /**
-   Sets a predefined result for encryption operations.
-
-   - Parameters:
-     - data: The input data to match
-     - key: The key to match
-     - iv: The IV to match
-     - result: The predefined result to return
-   */
-  public func setEncryptionResult(
-    for data: Data,
-    key: Data,
-    iv: Data,
-    result: Data
-  ) {
-    let key = makeEncryptionKey(data: data, key: key, iv: iv)
-    encryptionResults[key] = result
-  }
-
-  /**
-   Sets a predefined result for decryption operations.
-
-   - Parameters:
-     - data: The input data to match
-     - key: The key to match
-     - iv: The IV to match
-     - result: The predefined result to return
-   */
-  public func setDecryptionResult(
-    for data: Data,
-    key: Data,
-    iv: Data,
-    result: Data
-  ) {
-    let key = makeEncryptionKey(data: data, key: key, iv: iv)
-    decryptionResults[key] = result
-  }
-
-  /**
-   Sets a predefined result for key derivation operations.
-
-   - Parameters:
-     - password: The password to match
-     - salt: The salt to match
-     - iterations: The iterations to match
-     - result: The predefined result to return
-   */
-  public func setKeyDerivationResult(
-    for password: String,
-    salt: Data,
-    iterations: Int,
-    result: Data
-  ) {
-    let key = "\(password)_\(salt.hashValue)_\(iterations)"
-    keyDerivationResults[key] = result
-  }
-
-  /**
-   Sets a predefined result for key generation operations.
-
-   - Parameters:
-     - length: The length to match
-     - result: The predefined result to return
-   */
-  public func setRandomKeyResult(
-    for length: Int,
-    result: Data
-  ) {
-    randomKeyResults[length] = result
-  }
-
-  /**
-   Sets a predefined result for HMAC generation operations.
-
-   - Parameters:
-     - data: The input data to match
-     - key: The key to match
-     - result: The predefined result to return
-   */
-  public func setHMACResult(
-    for data: Data,
-    key: Data,
-    result: Data
-  ) {
-    let key = "\(data.hashValue)_\(key.hashValue)"
-    hmacResults[key] = result
-  }
-
-  /**
-   Encrypts data using the pre-configured results.
-
-   - Parameters:
-     - data: Data to encrypt
-     - key: Encryption key
-     - iv: Initialisation vector
-     - cryptoOptions: Optional encryption configuration
-   - Returns: Encrypted data from the preconfigured results
-   - Throws: CryptoError if no mock result is configured
-   */
+  
+  /// Encrypts binary data using a key from secure storage (mock implementation).
+  /// - Parameters:
+  ///   - dataIdentifier: Identifier of the data to encrypt in secure storage.
+  ///   - keyIdentifier: Identifier of the encryption key in secure storage.
+  ///   - options: Optional encryption configuration.
+  /// - Returns: Identifier for the encrypted data in secure storage, or an error.
   public func encrypt(
-    _ data: Data,
-    using key: Data,
-    iv: Data,
-    cryptoOptions: CryptoOptions?
-  ) async throws -> Data {
-    callHistory
-      .append("encrypt(data: \(data.count) bytes, key: \(key.count) bytes, iv: \(iv.count) bytes)")
-
-    let lookupKey = makeEncryptionKey(data: data, key: key, iv: iv)
-
-    guard let result = encryptionResults[lookupKey] else {
-      throw CryptoError.encryptionFailed(
-        reason: "No mock encryption result for data: \(data.count) bytes, key: \(key.count) bytes"
-      )
+    dataIdentifier: String,
+    keyIdentifier: String,
+    options: EncryptionOptions?
+  ) async -> Result<String, SecurityProtocolError> {
+    callHistory.append("encrypt(dataIdentifier: \(dataIdentifier), keyIdentifier: \(keyIdentifier))")
+    
+    // For mock purposes, just return the data as-is with a new identifier
+    let dataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
+    
+    switch dataResult {
+    case .success(let data):
+      // Create a mock result identifier
+      let resultIdentifier = "mock-encrypted-\(UUID().uuidString)"
+      // Store the same data under the new identifier (this is a mock!)
+      let storeResult = await secureStorage.storeData(data, withIdentifier: resultIdentifier)
+      
+      switch storeResult {
+      case .success:
+        return .success(resultIdentifier)
+      case .failure(let error):
+        return .failure(error)
+      }
+    case .failure(let error):
+      return .failure(error)
     }
-
-    return result
   }
 
-  /**
-   Decrypts data using the pre-configured results.
-
-   - Parameters:
-     - data: Data to decrypt
-     - key: Decryption key
-     - iv: Initialisation vector
-     - cryptoOptions: Optional decryption configuration
-   - Returns: Decrypted data from the preconfigured results
-   - Throws: CryptoError if no mock result is configured
-   */
+  /// Decrypts binary data using a key from secure storage (mock implementation).
+  /// - Parameters:
+  ///   - encryptedDataIdentifier: Identifier of the encrypted data in secure storage.
+  ///   - keyIdentifier: Identifier of the decryption key in secure storage.
+  ///   - options: Optional decryption configuration.
+  /// - Returns: Identifier for the decrypted data in secure storage, or an error.
   public func decrypt(
-    _ data: Data,
-    using key: Data,
-    iv: Data,
-    cryptoOptions: CryptoOptions?
-  ) async throws -> Data {
-    callHistory
-      .append("decrypt(data: \(data.count) bytes, key: \(key.count) bytes, iv: \(iv.count) bytes)")
-
-    let lookupKey = makeEncryptionKey(data: data, key: key, iv: iv)
-
-    guard let result = decryptionResults[lookupKey] else {
-      throw CryptoError.decryptionFailed(
-        reason: "No mock decryption result for data: \(data.count) bytes, key: \(key.count) bytes"
-      )
+    encryptedDataIdentifier: String,
+    keyIdentifier: String,
+    options: DecryptionOptions?
+  ) async -> Result<String, SecurityProtocolError> {
+    callHistory.append("decrypt(encryptedDataIdentifier: \(encryptedDataIdentifier), keyIdentifier: \(keyIdentifier))")
+    
+    // For mock purposes, just return the data as-is with a new identifier
+    let dataResult = await secureStorage.retrieveData(withIdentifier: encryptedDataIdentifier)
+    
+    switch dataResult {
+    case .success(let data):
+      // Create a mock result identifier
+      let resultIdentifier = "mock-decrypted-\(UUID().uuidString)"
+      // Store the same data under the new identifier (this is a mock!)
+      let storeResult = await secureStorage.storeData(data, withIdentifier: resultIdentifier)
+      
+      switch storeResult {
+      case .success:
+        return .success(resultIdentifier)
+      case .failure(let error):
+        return .failure(error)
+      }
+    case .failure(let error):
+      return .failure(error)
     }
-
-    return result
   }
 
-  /**
-   Derives a key using the pre-configured results.
-
-   - Parameters:
-     - password: Password to derive the key from
-     - salt: Salt value for the derivation
-     - iterations: Number of iterations for the derivation
-     - derivationOptions: Optional key derivation configuration
-   - Returns: Derived key from the preconfigured results
-   - Throws: CryptoError if no mock result is configured
-   */
-  public func deriveKey(
-    from password: String,
-    salt: Data,
-    iterations: Int,
-    derivationOptions: KeyDerivationOptions?
-  ) async throws -> Data {
-    callHistory
-      .append(
-        "deriveKey(password: \(password.count) chars, salt: \(salt.count) bytes, iterations: \(iterations))"
-      )
-
-    let lookupKey = "\(password)_\(salt.hashValue)_\(iterations)"
-
-    guard let result = keyDerivationResults[lookupKey] else {
-      throw CryptoError.keyDerivationFailed(
-        reason: "No mock key derivation result for password: \(password.count) chars, salt: \(salt.count) bytes"
-      )
+  /// Computes a cryptographic hash of data in secure storage (mock implementation).
+  /// - Parameter dataIdentifier: Identifier of the data to hash in secure storage.
+  /// - Returns: Identifier for the hash in secure storage, or an error.
+  public func hash(
+    dataIdentifier: String,
+    options: HashingOptions?
+  ) async -> Result<String, SecurityProtocolError> {
+    callHistory.append("hash(dataIdentifier: \(dataIdentifier))")
+    
+    // For mock purposes, just create a fixed mock hash
+    let mockHash: [UInt8] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    let hashIdentifier = "mock-hash-\(UUID().uuidString)"
+    
+    let storeResult = await secureStorage.storeData(mockHash, withIdentifier: hashIdentifier)
+    
+    switch storeResult {
+    case .success:
+      return .success(hashIdentifier)
+    case .failure(let error):
+      return .failure(error)
     }
-
-    return result
   }
 
-  /**
-   Generates a key using the pre-configured results.
-
-   - Parameters:
-     - length: Length of the key to generate
-     - keyOptions: Optional key generation configuration
-   - Returns: Generated key from the preconfigured results
-   - Throws: CryptoError if no mock result is configured
-   */
-  public func generateKey(length: Int, keyOptions: KeyGenerationOptions?) async throws -> Data {
+  /// Verifies a cryptographic hash against the expected value (mock implementation).
+  /// - Parameters:
+  ///   - dataIdentifier: Identifier of the data to verify in secure storage.
+  ///   - hashIdentifier: Identifier of the expected hash in secure storage.
+  /// - Returns: Always returns true for mock purposes, or an error if identifiers are invalid.
+  public func verifyHash(
+    dataIdentifier: String,
+    hashIdentifier: String,
+    options: HashingOptions?
+  ) async -> Result<Bool, SecurityProtocolError> {
+    callHistory.append("verifyHash(dataIdentifier: \(dataIdentifier), hashIdentifier: \(hashIdentifier))")
+    
+    // Check if the identifiers exist
+    let dataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
+    let hashResult = await secureStorage.retrieveData(withIdentifier: hashIdentifier)
+    
+    switch (dataResult, hashResult) {
+    case (.success, .success):
+      // For mock purposes, always return true
+      return .success(true)
+    case (.failure(let error), _):
+      return .failure(error)
+    case (_, .failure(let error)):
+      return .failure(error)
+    }
+  }
+  
+  /// Generates a cryptographic key and stores it securely (mock implementation).
+  /// - Parameters:
+  ///   - length: The length of the key to generate in bytes.
+  ///   - options: Optional key generation configuration.
+  /// - Returns: Identifier for the generated key in secure storage, or an error.
+  public func generateKey(
+    length: Int,
+    options: KeyGenerationOptions?
+  ) async -> Result<String, SecurityProtocolError> {
     callHistory.append("generateKey(length: \(length))")
-
-    guard let result = randomKeyResults[length] else {
-      throw CryptoError.keyGenerationFailed(
-        reason: "No mock random key result for length: \(length)"
-      )
+    
+    // Create a mock key of the requested length
+    let mockKey = Array(repeating: UInt8(0), count: length)
+    let keyIdentifier = "mock-key-\(UUID().uuidString)"
+    
+    let storeResult = await secureStorage.storeData(mockKey, withIdentifier: keyIdentifier)
+    
+    switch storeResult {
+    case .success:
+      return .success(keyIdentifier)
+    case .failure(let error):
+      return .failure(error)
     }
-
-    return result
-  }
-
-  /**
-   Generates an HMAC using the pre-configured results.
-
-   - Parameters:
-     - data: Data to authenticate
-     - key: The authentication key
-     - hmacOptions: Optional HMAC configuration
-   - Returns: HMAC from the preconfigured results
-   - Throws: CryptoError if no mock result is configured
-   */
-  public func generateHMAC(
-    for data: Data,
-    using key: Data,
-    hmacOptions: HMACOptions?
-  ) async throws -> Data {
-    callHistory.append("generateHMAC(data: \(data.count) bytes, key: \(key.count) bytes)")
-    
-    let lookupKey = "\(data.hashValue)_\(key.hashValue)"
-    
-    guard let result = hmacResults[lookupKey] else {
-      throw CryptoError.operationFailed(
-        reason: "No mock HMAC result for data: \(data.count) bytes, key: \(key.count) bytes"
-      )
-    }
-    
-    return result
   }
   
-  // MARK: - Private Helper Methods
+  /// Imports data into secure storage for cryptographic operations (mock implementation).
+  /// - Parameters:
+  ///   - data: The raw data to store securely.
+  ///   - customIdentifier: Optional custom identifier for the data.
+  /// - Returns: The identifier for the data in secure storage, or an error.
+  public func importData(
+    _ data: [UInt8],
+    customIdentifier: String?
+  ) async -> Result<String, SecurityProtocolError> {
+    let identifier = customIdentifier ?? "mock-import-\(UUID().uuidString)"
+    callHistory.append("importData(bytes: \(data.count), customIdentifier: \(String(describing: customIdentifier)))")
+    
+    let storeResult = await secureStorage.storeData(data, withIdentifier: identifier)
+    
+    switch storeResult {
+    case .success:
+      return .success(identifier)
+    case .failure(let error):
+      return .failure(error)
+    }
+  }
   
-  private func makeEncryptionKey(data: Data, key: Data, iv: Data) -> String {
-    return "\(data.hashValue)_\(key.hashValue)_\(iv.hashValue)"
+  /// Exports data from secure storage (mock implementation).
+  /// - Parameter identifier: The identifier of the data to export.
+  /// - Returns: The raw data, or an error.
+  public func exportData(
+    identifier: String
+  ) async -> Result<[UInt8], SecurityProtocolError> {
+    callHistory.append("exportData(identifier: \(identifier))")
+    
+    return await secureStorage.retrieveData(withIdentifier: identifier)
   }
 }
