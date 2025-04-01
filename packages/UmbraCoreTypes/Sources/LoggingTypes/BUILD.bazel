@@ -9,5 +9,6 @@ umbra_swift_library(
     visibility = ["//visibility:public"],
     deps = [
         "//packages/UmbraCoreTypes/Sources/UmbraErrors",
+        # Removing CoreDTOs dependency to break circular dependency
     ],
 )
