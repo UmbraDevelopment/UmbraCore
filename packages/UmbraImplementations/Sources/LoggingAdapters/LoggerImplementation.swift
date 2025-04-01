@@ -31,7 +31,7 @@ public actor LoggerImplementation: LoggingProtocol, CoreLoggingProtocol {
   /// Initialise the logger with default configuration
   public init() {
     // LoggingWrapper has its own internal configuration
-    Logger.configure()
+    Logger.configure(LoggingWrapperInterfaces.LoggerConfiguration.standard)
   }
 
   /// Swift 6-compatible factory method to create a logger with specific destinations
@@ -42,7 +42,7 @@ public actor LoggerImplementation: LoggingProtocol, CoreLoggingProtocol {
     let logger=LoggerImplementation()
 
     // Configure the logger
-    Logger.configure()
+    Logger.configure(LoggingWrapperInterfaces.LoggerConfiguration.standard)
 
     return logger
   }

@@ -3,49 +3,93 @@ import ErrorHandlingInterfaces
 import Foundation
 import LoggingInterfaces
 import LoggingTypes
+import UmbraErrors
 
 /**
- # DefaultErrorHandler
-
- Default implementation of the ErrorHandlerProtocol that handles
- errors according to the Alpha Dot Five architecture principles of
- privacy-aware error handling, structured logging, and actor-based
- concurrency.
-
- This handler ensures errors are properly logged with appropriate
- privacy controls, categorised by domain, and processed for analysis.
+ # Default Error Handler Implementation
+ 
+ A thread-safe error handler implementation that provides centralised
+ error handling capabilities following the Alpha Dot Five architecture
+ principles.
+ 
+ This implementation supports:
+ - Privacy-aware error logging
+ - Error recovery with customisable strategies
+ - Consistent error handling across the application
  */
 public actor DefaultErrorHandler: ErrorHandlerProtocol {
   /// Logger for error reporting
   private let errorLogger: ErrorLogger
   
-  /// Registry of recovery strategies
-  private var recoveryRegistry: [String: Any] = [:]
-
-  /**
-   Initialises a new error handler.
-
-   - Parameter logger: The logger to use for error reporting
-   */
-  public init(logger: PrivacyAwareLoggingProtocol) {
-    self.errorLogger = ErrorLogger(logger: logger)
+  /// Registry for type-erased recovery strategies
+  private var recoveryRegistry: [String: [AnyErrorRecoveryStrategy]] = [:]
+  
+  // MARK: - Type Erasure for Recovery Strategies
+  
+  /// Protocol to erase the generic types of ErrorRecoveryStrategy
+  private protocol AnyErrorRecoveryStrategy {
+    /// Attempts to execute the recovery action with type-erased input/output.
+    /// The implementation should attempt to cast the error and context to the expected types.
+    func attemptAction(error: Any, context: ErrorContext) async -> Any?
+    
+    /// The specific error type this strategy handles.
+    var errorType: Any.Type { get }
   }
-
+  
+  /// Wrapper to hold a concrete strategy and conform to AnyErrorRecoveryStrategy
+  private struct RecoveryStrategyWrapper<E: Error, Outcome>: AnyErrorRecoveryStrategy {
+    let concreteStrategy: ErrorRecoveryStrategy<E, Outcome>
+    
+    var errorType: Any.Type { E.self }
+    
+    func attemptAction(error: Any, context: ErrorContext) async -> Any? {
+      // Attempt to cast the provided error to the type this strategy expects
+      guard let typedError = error as? E else {
+        return nil // Type mismatch
+      }
+      // Execute the concrete strategy's action
+      return await concreteStrategy.action(typedError, context)
+    }
+  }
+  
   /**
-   Handles an error according to the implementation's strategy.
-
-   This method takes appropriate action to process the error, including
-   logging, recovery attempts, and monitoring as specified in the options.
-
-   - Parameters:
-      - error: The error to handle
-      - options: Configuration options for error handling
+   Initialises a new default error handler with the specified error logger.
+   
+   - Parameter errorLogger: The logger to use for error reporting
    */
-  public func handle(
-    _ error: some Error,
-    options: ErrorHandlingOptions?
-  ) async {
-    // Get options with defaults if not provided
+  public init(errorLogger: ErrorLogger) {
+    self.errorLogger = errorLogger
+  }
+  
+  /**
+   Maps ErrorPrivacyLevel to LogPrivacy for proper logging integration.
+   
+   - Parameter level: The error privacy level to map
+   - Returns: The corresponding LogPrivacy level
+   */
+  private func mapPrivacyLevel(_ level: ErrorPrivacyLevel) -> LogPrivacy {
+    switch level {
+    case .minimal:
+      return .public
+    case .standard:
+      return .private
+    case .enhanced, .maximum:
+      return .sensitive
+    }
+  }
+  
+  /**
+   Handles an error with default options.
+   
+   This method logs the error with the appropriate privacy level and
+   includes a stack trace if requested by the options.
+   
+   - Parameters:
+     - error: The error to handle
+     - options: Optional handling options
+   */
+  public func handleError<E: Error>(_ error: E, options: ErrorHandlingOptions?) async {
+    // Determine effective options
     let effectiveOptions = options ?? .standard
     
     // Create basic metadata from options
@@ -53,232 +97,218 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
     
     // Add stack trace if requested
     if effectiveOptions.includeStackTrace {
-      // Capture current stack trace if available
-      if let stackTrace = Thread.callStackSymbols.joined(separator: "\n") {
-        metadata["stackTrace"] = stackTrace
-      }
+      // Thread.callStackSymbols returns a non-optional array, so no need for optional binding
+      let stackTrace = Thread.callStackSymbols.joined(separator: "\n")
+      metadata["stackTrace"] = stackTrace
     }
     
     // Log the error with appropriate privacy level
     await errorLogger.logError(
       error,
       level: mapErrorToLogLevel(error),
-      privacyLevel: effectiveOptions.privacyLevel,
+      privacyLevel: mapPrivacyLevel(effectiveOptions.privacyLevel),
       metadata: metadata
     )
     
     // Handle user notification if requested
     if effectiveOptions.notifyUser {
-      // Code to notify user would go here
-      // This could involve posting a notification or other UI feedback
-    }
-    
-    // Report to monitoring systems if requested
-    if effectiveOptions.reportToMonitoring {
-      // Code to report to monitoring systems would go here
-      // This could involve sending to analytics, crash reporting, etc.
-    }
-    
-    // Attempt recovery if requested (implementation would depend on registered strategies)
-    if effectiveOptions.attemptRecovery {
-      // Attempt generic recovery based on error type
-      // Specific recovery logic would be implemented here
-    }
-  }
-
-  /**
-   Handles an error with a context.
-
-   This method extracts metadata from the context and applies privacy
-   controls based on the context's domain.
-
-   - Parameters:
-      - error: The error to handle
-      - context: Contextual information about the error
-      - options: Configuration options for error handling
-   */
-  public func handle(
-    _ error: some Error,
-    context: ErrorContext,
-    options: ErrorHandlingOptions?
-  ) async {
-    // Get options with defaults if not provided
-    let effectiveOptions = options ?? .standard
-    
-    // Create combined metadata from context and options
-    var metadata: [String: String] = effectiveOptions.additionalMetadata
-    
-    // Add context metadata, prioritising context values in case of conflicts
-    for (key, value) in context.metadata {
-      metadata[key] = value
-    }
-    
-    // Add source information from context
-    metadata["source"] = context.source.description
-    
-    // Add domain information from context if available
-    if let domain = context.domain {
-      metadata["domain"] = domain.description
-    }
-    
-    // Determine privacy level based on context and options
-    let effectivePrivacyLevel = determinePrivacyLevel(
-      from: context,
-      baseLevel: effectiveOptions.privacyLevel
-    )
-    
-    // Log the error with enhanced context
-    await errorLogger.logError(
-      error,
-      level: mapErrorToLogLevel(error),
-      privacyLevel: effectivePrivacyLevel,
-      metadata: metadata
-    )
-    
-    // Additional context-specific handling
-    if let domain = context.domain {
-      // Domain-specific handling could be implemented here
-      // For example, different notification strategies per domain
-    }
-    
-    // Handle user notification if requested
-    if effectiveOptions.notifyUser {
-      // Context-aware user notification would go here
-    }
-    
-    // Report to monitoring systems if requested
-    if effectiveOptions.reportToMonitoring {
-      // Context-aware monitoring reporting would go here
-    }
-    
-    // Attempt recovery if requested
-    if effectiveOptions.attemptRecovery {
-      // Context-aware recovery strategy selection would go here
+      await notifyUser(about: error)
     }
   }
   
   /**
-   Handles an error with recovery options.
-   
-   This method attempts to recover from the error using the provided 
-   recovery strategies in order. It returns a result indicating whether
-   recovery was successful and the recovery outcome.
-   
-   - Parameters:
-      - error: The error to handle
-      - context: Contextual information about the error
-      - recoveryStrategies: Ordered list of recovery strategies to attempt
-      - options: Configuration options for error handling
-   
-   - Returns: Result indicating whether recovery was successful and the recovery outcome
-   */
-  public func handleWithRecovery<E: Error, Outcome>(
-    _ error: E,
-    context: ErrorContext,
-    recoveryStrategies: [ErrorRecoveryStrategy<E, Outcome>],
-    options: ErrorHandlingOptions?
-  ) async -> ErrorRecoveryResult<Outcome> {
-    // Get options with defaults if not provided
-    let effectiveOptions = options ?? .standard
-    
-    // Log the error first
-    await handle(error, context: context, options: effectiveOptions)
-    
-    // If recovery is disabled, return not attempted
-    if !effectiveOptions.attemptRecovery {
-      return .notAttempted
-    }
-    
-    // No strategies provided, return not attempted
-    if recoveryStrategies.isEmpty {
-      return .notAttempted
-    }
-    
-    // Try each recovery strategy in order
-    for (index, strategy) in recoveryStrategies.enumerated() {
-      do {
-        // Log that we're attempting a recovery strategy
-        await errorLogger.info(
-          "Attempting recovery strategy \(index + 1)/\(recoveryStrategies.count): \(strategy.description)",
-          metadata: ["errorType": String(describing: type(of: error))]
-        )
-        
-        // Apply the recovery strategy
-        if let outcome = await strategy.action(error, context) {
-          // Log success
-          await errorLogger.info(
-            "Recovery successful using strategy: \(strategy.description)",
-            metadata: ["errorType": String(describing: type(of: error))]
-          )
-          return .recovered(outcome)
-        }
-      } catch {
-        // Log failure of this strategy, but continue to the next one
-        await errorLogger.warning(
-          "Recovery strategy failed: \(strategy.description)",
-          metadata: ["errorType": String(describing: type(of: error)), "recoveryError": String(describing: error)]
-        )
-      }
-    }
-    
-    // All strategies failed or returned nil
-    return .failed(error)
-  }
-  
-  // MARK: - Private Helper Methods
-  
-  /**
-   Determines the appropriate log level for an error.
-   
-   Maps different error types to appropriate log levels based on severity.
+   Maps an error to an appropriate log level.
    
    - Parameter error: The error to map
-   - Returns: The appropriate log level
+   - Returns: The appropriate log level for the error
    */
-  private func mapErrorToLogLevel(_ error: Error) -> ErrorLogLevel {
-    // Determine log level based on error type or severity
-    if let domainError = error as? ErrorDomainProtocol {
-      switch domainError.severity {
-      case .low:
-        return .info
-      case .medium:
-        return .warning
-      case .high:
-        return .error
-      case .critical:
-        return .critical
-      }
+  private func mapErrorToLogLevel<E: Error>(_ error: E) -> ErrorLogLevel {
+    // Determine error severity based on error type
+    if let umbraError = error as? any UmbraError {
+      return umbraError.severity.toLogLevel()
     }
     
-    // Default mapping for standard errors
+    // Default to error level for unknown errors
     return .error
   }
   
   /**
-   Determines the effective privacy level based on context.
+   Notifies the user about an error.
+   
+   - Parameter error: The error to notify about
+   */
+  private func notifyUser<E: Error>(about error: E) async {
+    // In a real implementation, this would integrate with a notification system
+    // For now, we just log that notification would happen
+    var metadata: [String: String] = [:]
+    
+    // Format error for user display
+    let userMessage = formatErrorForUser(error)
+    metadata["userMessage"] = userMessage
+    
+    // We would typically notify the user via UI here if appropriate
+    // This requires integrating with the UI layer (e.g., through a delegate or callback)
+    // For now, we just log this action
+    
+    // Convert LogMetadataDTOCollection to [String: String] for the debug method
+    // Note: This might need adjustment based on the final logger interface
+    let stringMetadata: [String: String] = metadata.reduce(into: [:]) { result, dto in
+      result[dto.key] = dto.value
+    }
+    
+    // Log that user notification would occur using a specific error type
+    let notificationError = UserNotificationSimulatedError(
+      underlyingErrorDescription: error.localizedDescription
+    )
+    // Use .info level for this operational message
+    await errorLogger.info(notificationError)
+  }
+  
+  /**
+   Formats an error for user display.
+   
+   - Parameter error: The error to format
+   - Returns: A user-friendly error message
+   */
+  private func formatErrorForUser<E: Error>(_ error: E) -> String {
+    // In a real implementation, this would format the error in a user-friendly way
+    // For now, we just return a generic message with the error description
+    return "An error occurred: \(error.localizedDescription)"
+  }
+  
+  // Define a specific error type for simulated user notifications
+  private struct UserNotificationSimulatedError: Error, LocalizedError {
+    let underlyingErrorDescription: String
+    var errorDescription: String? {
+      "Simulated user notification for error: \(underlyingErrorDescription)"
+    }
+  }
+
+  /**
+   Registers a recovery strategy for an error type.
    
    - Parameters:
-     - context: The error context
-     - baseLevel: The base privacy level from options
-   
-   - Returns: The effective privacy level to use
+     - strategy: The recovery strategy to register
+     - forErrorType: The error type to register for
    */
-  private func determinePrivacyLevel(
-    from context: ErrorContext,
-    baseLevel: ErrorPrivacyLevel
-  ) -> ErrorPrivacyLevel {
-    // If the context has specific privacy requirements, prioritise those
-    if let domain = context.domain {
-      // This could be expanded to have domain-specific privacy rules
-      if domain.description.contains("Security") || 
-         domain.description.contains("Crypto") ||
-         domain.description.contains("Authentication") {
-        // Security domains get enhanced privacy by default
-        return baseLevel < .enhanced ? .enhanced : baseLevel
+  public func registerRecoveryStrategy<E: Error, Outcome>(
+    _ strategy: ErrorRecoveryStrategy<E, Outcome>, 
+    forErrorType: E.Type
+  ) {
+    let key = String(describing: E.self)
+    
+    // Add to existing strategies or create new entry
+    var strategies: [AnyErrorRecoveryStrategy] = recoveryRegistry[key] ?? []
+    strategies.append(RecoveryStrategyWrapper(concreteStrategy: strategy))
+    recoveryRegistry[key] = strategies
+  }
+  
+  /**
+   Handles an error with recovery options and context.
+   
+   - Parameters:
+     - error: The error to handle
+     - context: Context information for error handling
+     - options: Optional handling options
+   */
+  public func handleErrorWithContext<E: Error>(_ error: E, context: ErrorContext, options: ErrorHandlingOptions?) async {
+    // Determine effective options
+    let effectiveOptions = options ?? .standard
+    
+    // Create basic metadata from options and context
+    var metadata = effectiveOptions.additionalMetadata
+    
+    // Add stack trace if requested
+    if effectiveOptions.includeStackTrace {
+      let stackTrace = Thread.callStackSymbols.joined(separator: "\n")
+      metadata["stackTrace"] = stackTrace
+    }
+    
+    // Add source information
+    metadata["file"] = context.source.file
+    metadata["function"] = context.source.function
+    metadata["line"] = "\(context.source.line)"
+    
+    // Add metadata from context
+    for (key, value) in context.metadata {
+      metadata[key] = value
+    }
+    
+    // Log the error with appropriate privacy level
+    await errorLogger.logError(
+      error,
+      level: mapErrorToLogLevel(error),
+      privacyLevel: mapPrivacyLevel(effectiveOptions.privacyLevel),
+      metadata: metadata
+    )
+    
+    // Handle user notification if requested
+    if effectiveOptions.notifyUser {
+      await notifyUser(about: error)
+    }
+  }
+  
+  /**
+   Attempts to recover from an error using registered strategies.
+   
+   - Parameters:
+     - error: The error to recover from
+     - context: Context information for recovery
+   - Returns: A result indicating whether recovery was successful
+   */
+  public func attemptRecovery<E: Error, Outcome>(
+    from error: E,
+    context: ErrorContext
+  ) async -> ErrorRecoveryResult<Outcome>? {
+    let errorType = type(of: error)
+    let key = String(describing: errorType)
+    
+    // Look for strategies for this exact error type
+    guard let strategies = recoveryRegistry[key], !strategies.isEmpty else {
+      return nil
+    }
+    
+    // Try each strategy in order
+    for strategy in strategies {
+      // Attempt to execute the type-erased action and cast the result
+      if let outcome = await strategy.attemptAction(error: error, context: context) as? Outcome {
+        // Found a successful recovery strategy
+        return .recovered(outcome)
       }
     }
     
-    // Otherwise use the base level
-    return baseLevel
+    // If no strategy succeeded
+    return nil
+  }
+  
+  // MARK: - Helper Functions
+  
+  /**
+   Maps an Error to an ErrorLogLevel based on its type or severity.
+   
+   - Parameter error: The error to map.
+   - Returns: The corresponding ErrorLogLevel.
+   */
+  private func mapErrorToLogLevel<E: Error>(_ error: E) -> ErrorLogLevel {
+    if let umbraError = error as? UmbraError {
+      return umbraError.severity
+    } else {
+      // Default to .error for generic Swift errors
+      return .error
+    }
+  }
+  
+  /**
+   Maps ErrorPrivacyLevel to LogPrivacy.
+   
+   - Parameter level: The ErrorPrivacyLevel.
+   - Returns: The corresponding LogPrivacy.
+   */
+  private func mapPrivacyLevel(_ level: ErrorPrivacyLevel) -> LogPrivacy {
+    switch level {
+    case .standard: return .private // Default to private for safety
+    case .public: return .public
+    case .sensitive: return .sensitive
+    }
   }
 }

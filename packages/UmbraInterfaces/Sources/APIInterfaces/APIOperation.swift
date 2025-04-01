@@ -1,3 +1,5 @@
+import Darwin
+
 /**
  # API Operation Protocol
 
@@ -53,10 +55,54 @@ public protocol APIOperation: Sendable {
   var privacyMetadata: APIOperationPrivacyMetadata { get }
 }
 
+/// Operation ID generation
+private enum OperationIDGenerator {
+  /// Thread-safe atomic counter
+  @Sendable private static var counter = 0
+  
+  /// Internal lock for thread safety
+  private static let counterLock = Lock()
+  
+  /// Generate a unique operation ID using a counter and timestamp
+  static func generateID() -> String {
+    let count = counterLock.withLock {
+      counter += 1
+      return counter
+    }
+    
+    // Use uptime in milliseconds as a timestamp component
+    let timestamp = UptimeProvider.millisecondsSinceStart
+    return "\(timestamp)-\(count)"
+  }
+}
+
+/// Simple lock for thread safety
+private final class Lock {
+  private var _lock = OS_UNFAIR_LOCK_INIT
+  
+  func withLock<T>(_ work: () -> T) -> T {
+    os_unfair_lock_lock(&_lock)
+    defer { os_unfair_lock_unlock(&_lock) }
+    return work()
+  }
+}
+
+/// Provides system uptime without Foundation dependencies
+private enum UptimeProvider {
+  /// Get milliseconds since system boot
+  static var millisecondsSinceStart: UInt64 {
+    var info = mach_timebase_info_data_t()
+    mach_timebase_info(&info)
+    let time = mach_absolute_time()
+    let nanos = time * UInt64(info.numer) / UInt64(info.denom)
+    return nanos / 1_000_000
+  }
+}
+
 /// Default implementation for operationId
 public extension APIOperation {
   var operationId: String {
-    UUID().uuidString
+    OperationIDGenerator.generateID()
   }
   
   var privacyMetadata: APIOperationPrivacyMetadata {

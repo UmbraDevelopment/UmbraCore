@@ -330,9 +330,9 @@ public protocol ProgressCancellationToken: Sendable {
 
 /// Simple implementation of a cancellation token
 public final class SimpleCancellationToken: ProgressCancellationToken {
-  /// Whether the token has been cancelled
-  public private(set) var isCancelled: Bool = false
-
+  /// Actor to safely manage the mutable state
+  private let stateManager = CancellationStateManager()
+  
   /// The action to perform when cancellation is requested
   private let onCancel: () -> Void
 
@@ -342,10 +342,30 @@ public final class SimpleCancellationToken: ProgressCancellationToken {
     self.onCancel = onCancel
   }
 
+  /// Checks if the operation has been cancelled
+  public var isCancelled: Bool {
+    get async {
+      await stateManager.isCancelled
+    }
+  }
+  
   /// Attempts to cancel the operation
   public func cancel() {
+    Task {
+      await stateManager.setCancelled()
+      onCancel()
+    }
+  }
+}
+
+/// Actor for managing cancellation state in a thread-safe manner
+private actor CancellationStateManager {
+  /// Whether the token has been cancelled
+  var isCancelled: Bool = false
+  
+  /// Marks the operation as cancelled
+  func setCancelled() {
     isCancelled = true
-    onCancel()
   }
 }
 

@@ -1,14 +1,13 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
-swift_library(
+umbra_swift_library(
     name = "APIServices",
     srcs = glob(["**/*.swift"]),
-    module_name = "APIServices",
     visibility = ["//visibility:public"],
     deps = [
         "//packages/UmbraCoreTypes/Sources/APIInterfaces",
         "//packages/UmbraCoreTypes/Sources/UmbraErrors",
-        "//packages/UmbraCoreTypes/Sources/LoggingInterfaces",
+        "//packages/UmbraInterfaces/Sources/LoggingInterfaces",
         "//packages/UmbraCoreTypes/Sources/SecurityInterfaces",
         "//packages/UmbraCoreTypes/Sources/CoreDTOs",
     ],

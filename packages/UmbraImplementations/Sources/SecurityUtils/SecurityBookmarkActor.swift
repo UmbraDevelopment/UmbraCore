@@ -1,6 +1,6 @@
 import CoreDTOs
 import DomainSecurityTypes
-import LoggingInterfaces
+import LoggingTypes
 import UmbraErrors
 import Foundation
 
@@ -50,11 +50,13 @@ public actor SecurityBookmarkActor: SecurityBookmarkProtocol {
         for url: URL,
         readOnly: Bool
     ) async -> Result<SecureBytes, UmbraErrors.Security.Bookmark> {
+        var metadata = LogMetadataDTOCollection()
+        metadata.addSensitive(key: "url", value: url.path)
+        metadata.addPublic(key: "readOnly", value: String(readOnly))
+        
         await bookmarkLogger.logOperationStart(
             operation: "createBookmark",
-            additionalContext: LogMetadataDTOCollection()
-                .withSensitive(key: "url", value: url.path)
-                .withPublic(key: "readOnly", value: String(readOnly))
+            additionalContext: metadata
         )
         
         do {
@@ -68,12 +70,14 @@ public actor SecurityBookmarkActor: SecurityBookmarkProtocol {
                 relativeTo: nil
             )
             
-            let secureData = SecureBytes(bytes: [UInt8](bookmarkData))
+            let secureData = SecureBytes(data: bookmarkData)
+            
+            var successMetadata = LogMetadataDTOCollection()
+            successMetadata.addPrivate(key: "dataSize", value: String(bookmarkData.count))
             
             await bookmarkLogger.logOperationSuccess(
                 operation: "createBookmark",
-                additionalContext: LogMetadataDTOCollection()
-                    .withPrivate(key: "dataSize", value: String(secureData.bytes.count))
+                additionalContext: successMetadata
             )
             
             return .success(secureData)
@@ -101,15 +105,17 @@ public actor SecurityBookmarkActor: SecurityBookmarkProtocol {
     public func resolveBookmark(
         _ bookmarkData: SecureBytes
     ) async -> Result<(URL, Bool), UmbraErrors.Security.Bookmark> {
+        var metadata = LogMetadataDTOCollection()
+        metadata.addPublic(key: "dataSize", value: String(bookmarkData.dataCount))
+        
         await bookmarkLogger.logOperationStart(
             operation: "resolveBookmark",
-            additionalContext: LogMetadataDTOCollection()
-                .withPrivate(key: "dataSize", value: String(bookmarkData.bytes.count))
+            additionalContext: metadata
         )
         
         do {
             var isStale = false
-            let data = Data(bookmarkData.bytes)
+            let data = bookmarkData.toData()
             
             let url = try URL(
                 resolvingBookmarkData: data,
@@ -118,11 +124,13 @@ public actor SecurityBookmarkActor: SecurityBookmarkProtocol {
                 bookmarkDataIsStale: &isStale
             )
             
+            var successMetadata = LogMetadataDTOCollection()
+            successMetadata.addSensitive(key: "url", value: url.path)
+            successMetadata.addPublic(key: "isStale", value: String(isStale))
+            
             await bookmarkLogger.logOperationSuccess(
                 operation: "resolveBookmark",
-                additionalContext: LogMetadataDTOCollection()
-                    .withSensitive(key: "url", value: url.path)
-                    .withPublic(key: "isStale", value: String(isStale))
+                additionalContext: successMetadata
             )
             
             return .success((url, isStale))
@@ -154,10 +162,12 @@ public actor SecurityBookmarkActor: SecurityBookmarkProtocol {
     public func startAccessing(
         _ url: URL
     ) async -> Result<Bool, UmbraErrors.Security.Bookmark> {
+        var metadata = LogMetadataDTOCollection()
+        metadata.addSensitive(key: "url", value: url.path)
+        
         await bookmarkLogger.logOperationStart(
             operation: "startAccessing",
-            additionalContext: LogMetadataDTOCollection()
-                .withSensitive(key: "url", value: url.path)
+            additionalContext: metadata
         )
         
         // Check if already accessing
@@ -167,10 +177,12 @@ public actor SecurityBookmarkActor: SecurityBookmarkProtocol {
             // Already accessing, increment count
             activeResources[url] = currentCount + 1
             
+            var successMetadata = LogMetadataDTOCollection()
+            successMetadata.addPrivate(key: "count", value: String(currentCount + 1))
+            
             await bookmarkLogger.logOperationSuccess(
                 operation: "startAccessing",
-                additionalContext: LogMetadataDTOCollection()
-                    .withPrivate(key: "count", value: String(currentCount + 1))
+                additionalContext: successMetadata
             )
             
             return .success(true)
@@ -182,10 +194,12 @@ public actor SecurityBookmarkActor: SecurityBookmarkProtocol {
         if result {
             activeResources[url] = 1
             
+            var successMetadata = LogMetadataDTOCollection()
+            successMetadata.addPrivate(key: "count", value: "1")
+            
             await bookmarkLogger.logOperationSuccess(
                 operation: "startAccessing",
-                additionalContext: LogMetadataDTOCollection()
-                    .withPrivate(key: "count", value: "1")
+                additionalContext: successMetadata
             )
             
             return .success(true)
@@ -216,10 +230,12 @@ public actor SecurityBookmarkActor: SecurityBookmarkProtocol {
     public func stopAccessing(
         _ url: URL
     ) async -> Result<Int, UmbraErrors.Security.Bookmark> {
+        var metadata = LogMetadataDTOCollection()
+        metadata.addSensitive(key: "url", value: url.path)
+        
         await bookmarkLogger.logOperationStart(
             operation: "stopAccessing",
-            additionalContext: LogMetadataDTOCollection()
-                .withSensitive(key: "url", value: url.path)
+            additionalContext: metadata
         )
         
         // Check if currently accessing
@@ -243,21 +259,25 @@ public actor SecurityBookmarkActor: SecurityBookmarkProtocol {
             url.stopAccessingSecurityScopedResource()
             activeResources.removeValue(forKey: url)
             
+            var successMetadata = LogMetadataDTOCollection()
+            successMetadata.addPrivate(key: "count", value: "0")
+            successMetadata.addPublic(key: "released", value: "true")
+            
             await bookmarkLogger.logOperationSuccess(
                 operation: "stopAccessing",
-                additionalContext: LogMetadataDTOCollection()
-                    .withPrivate(key: "count", value: "0")
-                    .withPublic(key: "released", value: "true")
+                additionalContext: successMetadata
             )
         } else {
             // Otherwise, decrement the count
             activeResources[url] = newCount
             
+            var successMetadata = LogMetadataDTOCollection()
+            successMetadata.addPrivate(key: "count", value: String(newCount))
+            successMetadata.addPublic(key: "released", value: "false")
+            
             await bookmarkLogger.logOperationSuccess(
                 operation: "stopAccessing",
-                additionalContext: LogMetadataDTOCollection()
-                    .withPrivate(key: "count", value: String(newCount))
-                    .withPublic(key: "released", value: "false")
+                additionalContext: successMetadata
             )
         }
         
@@ -280,11 +300,13 @@ public actor SecurityBookmarkActor: SecurityBookmarkProtocol {
         _ bookmarkData: SecureBytes,
         recreateIfStale: Bool
     ) async -> Result<BookmarkValidationResultDTO, UmbraErrors.Security.Bookmark> {
+        var metadata = LogMetadataDTOCollection()
+        metadata.addPrivate(key: "dataSize", value: String(bookmarkData.dataCount))
+        metadata.addPublic(key: "recreateIfStale", value: String(recreateIfStale))
+        
         await bookmarkLogger.logOperationStart(
             operation: "validateBookmark",
-            additionalContext: LogMetadataDTOCollection()
-                .withPrivate(key: "dataSize", value: String(bookmarkData.bytes.count))
-                .withPublic(key: "recreateIfStale", value: String(recreateIfStale))
+            additionalContext: metadata
         )
         
         // Resolve the bookmark
@@ -294,11 +316,13 @@ public actor SecurityBookmarkActor: SecurityBookmarkProtocol {
         case .success(let (url, isStale)):
             // If not stale, return valid
             if !isStale {
+                var successMetadata = LogMetadataDTOCollection()
+                successMetadata.addPublic(key: "isValid", value: "true")
+                successMetadata.addPublic(key: "isStale", value: "false")
+                
                 await bookmarkLogger.logOperationSuccess(
                     operation: "validateBookmark",
-                    additionalContext: LogMetadataDTOCollection()
-                        .withPublic(key: "isValid", value: "true")
-                        .withPublic(key: "isStale", value: "false")
+                    additionalContext: successMetadata
                 )
                 
                 return .success(BookmarkValidationResultDTO(
@@ -315,12 +339,14 @@ public actor SecurityBookmarkActor: SecurityBookmarkProtocol {
                 
                 switch recreateResult {
                 case .success(let newBookmarkData):
+                    var successMetadata = LogMetadataDTOCollection()
+                    successMetadata.addPublic(key: "isValid", value: "true")
+                    successMetadata.addPublic(key: "isStale", value: "true")
+                    successMetadata.addPublic(key: "recreated", value: "true")
+                    
                     await bookmarkLogger.logOperationSuccess(
                         operation: "validateBookmark",
-                        additionalContext: LogMetadataDTOCollection()
-                            .withPublic(key: "isValid", value: "true")
-                            .withPublic(key: "isStale", value: "true")
-                            .withPublic(key: "recreated", value: "true")
+                        additionalContext: successMetadata
                     )
                     
                     return .success(BookmarkValidationResultDTO(
@@ -341,12 +367,14 @@ public actor SecurityBookmarkActor: SecurityBookmarkProtocol {
             }
             
             // If stale but don't recreate, return stale
+            var successMetadata = LogMetadataDTOCollection()
+            successMetadata.addPublic(key: "isValid", value: "true")
+            successMetadata.addPublic(key: "isStale", value: "true")
+            successMetadata.addPublic(key: "recreated", value: "false")
+            
             await bookmarkLogger.logOperationSuccess(
                 operation: "validateBookmark",
-                additionalContext: LogMetadataDTOCollection()
-                    .withPublic(key: "isValid", value: "true")
-                    .withPublic(key: "isStale", value: "true")
-                    .withPublic(key: "recreated", value: "false")
+                additionalContext: successMetadata
             )
             
             return .success(BookmarkValidationResultDTO(
@@ -372,17 +400,22 @@ public actor SecurityBookmarkActor: SecurityBookmarkProtocol {
      - Returns: True if all resources have been released, false otherwise
      */
     public func verifyAllResourcesReleased() async -> Bool {
+        var metadata = LogMetadataDTOCollection()
+        
         await bookmarkLogger.logOperationStart(
-            operation: "verifyAllResourcesReleased"
+            operation: "verifyAllResourcesReleased",
+            additionalContext: metadata
         )
         
         let allReleased = activeResources.isEmpty
         
+        var successMetadata = LogMetadataDTOCollection()
+        successMetadata.addPublic(key: "allReleased", value: String(allReleased))
+        successMetadata.addPrivate(key: "activeCount", value: String(activeResources.count))
+        
         await bookmarkLogger.logOperationSuccess(
             operation: "verifyAllResourcesReleased",
-            additionalContext: LogMetadataDTOCollection()
-                .withPublic(key: "allReleased", value: String(allReleased))
-                .withPrivate(key: "activeCount", value: String(activeResources.count))
+            additionalContext: successMetadata
         )
         
         return allReleased
@@ -397,10 +430,12 @@ public actor SecurityBookmarkActor: SecurityBookmarkProtocol {
      - Returns: The number of resources that were released
      */
     public func forceReleaseAllResources() async -> Int {
+        var metadata = LogMetadataDTOCollection()
+        metadata.addPrivate(key: "activeCount", value: String(activeResources.count))
+        
         await bookmarkLogger.logOperationStart(
             operation: "forceReleaseAllResources",
-            additionalContext: LogMetadataDTOCollection()
-                .withPrivate(key: "activeCount", value: String(activeResources.count))
+            additionalContext: metadata
         )
         
         let count = activeResources.count
@@ -413,10 +448,12 @@ public actor SecurityBookmarkActor: SecurityBookmarkProtocol {
         // Clear the tracking dictionary
         activeResources.removeAll()
         
+        var successMetadata = LogMetadataDTOCollection()
+        successMetadata.addPublic(key: "releasedCount", value: String(count))
+        
         await bookmarkLogger.logOperationSuccess(
             operation: "forceReleaseAllResources",
-            additionalContext: LogMetadataDTOCollection()
-                .withPublic(key: "releasedCount", value: String(count))
+            additionalContext: successMetadata
         )
         
         return count
@@ -442,10 +479,16 @@ fileprivate struct BookmarkLogger {
         operation: String,
         additionalContext: LogMetadataDTOCollection? = nil
     ) async {
+        var metadata = LogMetadataDTOCollection()
+        metadata.addPublic(key: "operation", value: operation)
+        if let additionalContext = additionalContext {
+            metadata.merge(with: additionalContext)
+        }
+        
         await logger.log(
             level: .debug,
             message: "Starting bookmark operation: \(operation)",
-            metadata: additionalContext
+            metadata: metadata.toPrivacyMetadata()
         )
     }
     
@@ -453,10 +496,17 @@ fileprivate struct BookmarkLogger {
         operation: String,
         additionalContext: LogMetadataDTOCollection? = nil
     ) async {
+        var metadata = LogMetadataDTOCollection()
+        metadata.addPublic(key: "operation", value: operation)
+        metadata.addPublic(key: "status", value: "success")
+        if let additionalContext = additionalContext {
+            metadata.merge(with: additionalContext)
+        }
+        
         await logger.log(
             level: .debug,
             message: "Successfully completed bookmark operation: \(operation)",
-            metadata: additionalContext
+            metadata: metadata.toPrivacyMetadata()
         )
     }
     
@@ -465,13 +515,18 @@ fileprivate struct BookmarkLogger {
         error: Error,
         additionalContext: LogMetadataDTOCollection? = nil
     ) async {
-        var context = additionalContext ?? LogMetadataDTOCollection()
-        context = context.withPrivate(key: "error", value: "\(error)")
+        var metadata = LogMetadataDTOCollection()
+        metadata.addPublic(key: "operation", value: operation)
+        metadata.addPublic(key: "status", value: "error")
+        metadata.addError(error)
+        if let additionalContext = additionalContext {
+            metadata.merge(with: additionalContext)
+        }
         
         await logger.log(
             level: .error,
             message: "Failed bookmark operation: \(operation)",
-            metadata: context
+            metadata: metadata.toPrivacyMetadata()
         )
     }
 }
