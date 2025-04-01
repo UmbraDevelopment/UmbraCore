@@ -119,7 +119,7 @@ public enum ExtendedMode: String, Sendable, Equatable {
     rawValue
   }
 
-  /// Check if mode requires initialization vector
+  /// Check if mode requires an IV/nonce
   public var requiresIV: Bool {
     switch self {
       case .ecb:
@@ -128,41 +128,57 @@ public enum ExtendedMode: String, Sendable, Equatable {
         true
     }
   }
+
+  /// Get recommended IV size for this mode in bytes
+  public var recommendedIVSize: Int {
+    switch self {
+      case .gcm, .ccm:
+        12 // GCM/CCM prefer 12-byte nonces
+      case .cbc, .cfb, .ofb:
+        16 // Full block size for AES
+      case .ctr:
+        8 // Counter typically uses half-block
+      case .xts:
+        16 // XTS uses a 16-byte tweak
+      case .ecb:
+        0 // ECB doesn't use an IV
+    }
+  }
 }
 
 /// Extends support for hash algorithms beyond those in SecurityConfigDTO
 public enum ExtendedHashAlgorithm: String, Sendable, Equatable {
   // Standard hash algorithms
-  case sha256="SHA256"
-  case sha512="SHA512"
-  case md5="MD5"
-  case sha1="SHA1"
+  case sha256="SHA-256"
+  case sha384="SHA-384"
+  case sha512="SHA-512"
 
   // Extended hash algorithms
+  case sha3_256="SHA3-256"
+  case sha3_384="SHA3-384"
+  case sha3_512="SHA3-512"
   case blake2b="BLAKE2b"
   case blake2s="BLAKE2s"
-  case sha3_256="SHA3-256"
-  case sha3_512="SHA3-512"
 
   /// Convert from core hash algorithm string
   public init?(from coreHashAlgorithm: String) {
     switch coreHashAlgorithm {
-      case "SHA256":
+      case "SHA-256", "SHA256":
         self = .sha256
-      case "SHA512":
+      case "SHA-384", "SHA384":
+        self = .sha384
+      case "SHA-512", "SHA512":
         self = .sha512
-      case "MD5":
-        self = .md5
-      case "SHA1":
-        self = .sha1
+      case "SHA3-256":
+        self = .sha3_256
+      case "SHA3-384":
+        self = .sha3_384
+      case "SHA3-512":
+        self = .sha3_512
       case "BLAKE2b":
         self = .blake2b
       case "BLAKE2s":
         self = .blake2s
-      case "SHA3-256":
-        self = .sha3_256
-      case "SHA3-512":
-        self = .sha3_512
       default:
         return nil
     }
@@ -178,19 +194,25 @@ public enum ExtendedHashAlgorithm: String, Sendable, Equatable {
 extension SecurityConfigDTO {
   /// Get the extended algorithm representation, if applicable
   public var extendedAlgorithm: ExtendedAlgorithm? {
-    ExtendedAlgorithm(from: algorithm)
+    return ExtendedAlgorithm(from: encryptionAlgorithm.rawValue)
   }
 
   /// Get the extended mode representation, if applicable
   public var extendedMode: ExtendedMode? {
-    guard let mode else { return nil }
-    return ExtendedMode(from: mode)
+    // Access mode information from encryptionAlgorithm if available
+    // Use runtime check to determine if mode exists on encryptionAlgorithm
+    let mirror = Mirror(reflecting: encryptionAlgorithm)
+    for child in mirror.children {
+      if child.label == "mode", let modeString = child.value as? String {
+        return ExtendedMode(from: modeString)
+      }
+    }
+    return nil
   }
 
   /// Get the extended hash algorithm representation, if applicable
   public var extendedHashAlgorithm: ExtendedHashAlgorithm? {
-    guard let hashAlgorithm else { return nil }
-    return ExtendedHashAlgorithm(from: hashAlgorithm)
+    return ExtendedHashAlgorithm(from: hashAlgorithm.rawValue)
   }
 }
 
@@ -201,33 +223,75 @@ public struct ExtendedSecurityConfig {
   public let keySize: Int
   public let hashAlgorithm: ExtendedHashAlgorithm
   public let options: [String: String]
+  public let providerType: SecurityProviderType
 
   /// Initialize with extended options
   public init(
     algorithm: ExtendedAlgorithm,
-    mode: ExtendedMode?=nil,
-    keySize: Int?=nil,
+    mode: ExtendedMode? = nil,
+    keySize: Int? = nil,
     hashAlgorithm: ExtendedHashAlgorithm = .sha256,
-    options: [String: String]=[:]
+    providerType: SecurityProviderType = .basic,
+    options: [String: String] = [:]
   ) {
-    self.algorithm=algorithm
-    self.mode=mode
-    self.keySize=keySize ?? algorithm.recommendedKeySize
-    self.hashAlgorithm=hashAlgorithm
-    self.options=options
+    self.algorithm = algorithm
+    self.mode = mode
+    self.keySize = keySize ?? algorithm.recommendedKeySize
+    self.hashAlgorithm = hashAlgorithm
+    self.providerType = providerType
+    self.options = options
   }
 
   /// Convert to core SecurityConfigDTO
   public func toConfigDTO() -> SecurityConfigDTO {
-    let coreAlgorithm=algorithm.coreAlgorithmString
-    let coreMode=mode?.coreModeString
+    // Create encryption algorithm from rawValue
+    let encryptionAlg = EncryptionAlgorithm(rawValue: algorithm.coreAlgorithmString)!
+    
+    // Create hash algorithm from rawValue
+    let hashAlg = HashAlgorithm(rawValue: hashAlgorithm.coreHashAlgorithmString)!
+    
+    // Create security config options if needed
+    let configOptions: SecurityConfigOptions?
+    if options.isEmpty {
+      configOptions = nil
+    } else {
+      // Extract specific known options if they exist
+      let enableLogging = options["enableDetailedLogging"].flatMap { $0 == "true" } ?? false
+      let keyIterations = options["keyDerivationIterations"].flatMap { Int($0) } ?? 100_000
+      let memoryLimit = options["memoryLimitBytes"].flatMap { Int($0) } ?? 65536
+      let useHardware = options["useHardwareAcceleration"].flatMap { $0 == "true" } ?? true
+      let timeout = options["operationTimeoutSeconds"].flatMap { TimeInterval($0) } ?? 30.0
+      let verify = options["verifyOperations"].flatMap { $0 == "true" } ?? true
+      
+      // Put any remaining options into metadata
+      var metadata: [String: String]? = nil
+      let knownKeys = ["enableDetailedLogging", "keyDerivationIterations", 
+                       "memoryLimitBytes", "useHardwareAcceleration", 
+                       "operationTimeoutSeconds", "verifyOperations"]
+      
+      let remainingOptions = options.filter { !knownKeys.contains($0.key) }
+      if !remainingOptions.isEmpty {
+        metadata = remainingOptions
+      }
+      
+      // Create SecurityConfigOptions with individual parameters
+      configOptions = SecurityConfigOptions(
+        enableDetailedLogging: enableLogging,
+        keyDerivationIterations: keyIterations,
+        memoryLimitBytes: memoryLimit,
+        useHardwareAcceleration: useHardware,
+        operationTimeoutSeconds: timeout,
+        verifyOperations: verify,
+        metadata: metadata
+      )
+    }
 
+    // Create the config DTO
     return SecurityConfigDTO(
-      algorithm: coreAlgorithm,
-      keySize: keySize,
-      mode: coreMode,
-      hashAlgorithm: hashAlgorithm.coreHashAlgorithmString,
-      options: options
+      encryptionAlgorithm: encryptionAlg,
+      hashAlgorithm: hashAlg,
+      providerType: providerType,
+      options: configOptions
     )
   }
 }

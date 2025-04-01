@@ -61,4 +61,66 @@ public struct TimePointDTO: Sendable, Equatable, Codable {
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         return formatter.string(from: toDate())
     }
+    
+    /**
+     Determines if this time point is after another time point.
+     
+     - Parameter other: The time point to compare with
+     - Returns: True if this time point is after the other time point
+     */
+    public func isAfter(_ other: TimePointDTO) -> Bool {
+        if self.timestamp > other.timestamp {
+            return true
+        }
+        
+        if self.timestamp == other.timestamp,
+           let selfNanos = self.nanoseconds,
+           let otherNanos = other.nanoseconds,
+           selfNanos > otherNanos {
+            return true
+        }
+        
+        return false
+    }
+    
+    /**
+     Determines if this time point is before another time point.
+     
+     - Parameter other: The time point to compare with
+     - Returns: True if this time point is before the other time point
+     */
+    public func isBefore(_ other: TimePointDTO) -> Bool {
+        if self.timestamp < other.timestamp {
+            return true
+        }
+        
+        if self.timestamp == other.timestamp,
+           let selfNanos = self.nanoseconds,
+           let otherNanos = other.nanoseconds,
+           selfNanos < otherNanos {
+            return true
+        }
+        
+        return false
+    }
+    
+    /**
+     Determines if this time point is after or equal to another time point.
+     
+     - Parameter other: The time point to compare with
+     - Returns: True if this time point is after or equal to the other time point
+     */
+    public func isAfterOrEqual(_ other: TimePointDTO) -> Bool {
+        return self == other || self.isAfter(other)
+    }
+    
+    /**
+     Determines if this time point is before or equal to another time point.
+     
+     - Parameter other: The time point to compare with
+     - Returns: True if this time point is before or equal to the other time point
+     */
+    public func isBeforeOrEqual(_ other: TimePointDTO) -> Bool {
+        return self == other || self.isBefore(other)
+    }
 }

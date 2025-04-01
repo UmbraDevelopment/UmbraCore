@@ -26,6 +26,8 @@ umbra_swift_library(
         "//packages/UmbraInterfaces/Sources/SecurityCoreInterfaces",
         "//packages/UmbraInterfaces/Sources/LoggingInterfaces",
         "//packages/UmbraImplementations/Sources/SecurityProviders",
+        "//packages/UmbraImplementations/Sources/LoggingAdapters", # Added for privacy-enhanced logging
+        "//packages/UmbraImplementations/Sources/SecurityUtils", # Added for SecurityUtils module
         # Include the modules
         "//packages/UmbraImplementations/Sources/SecurityKeyManagement/ActorTypes:KeyManagementActor",
         "//packages/UmbraImplementations/Sources/SecurityKeyManagement/Storage:KeyStorage",

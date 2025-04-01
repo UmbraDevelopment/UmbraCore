@@ -38,17 +38,16 @@ public struct KeychainLogger: Sendable {
     account: String?=nil,
     additionalMetadata: [String: Any]=[:]
   ) async {
-    var metadata=LogMetadataDTOCollection()
-
-    metadata.addPublic(key: "operation", value: operation)
+    var metadata = LogMetadataDTOCollection()
+    metadata = metadata.withPublic(key: "operation", value: operation)
 
     if let account {
-      metadata.addPrivate(key: "account", value: account)
+      metadata = metadata.withPrivate(key: "account", value: account)
     }
 
     // Add any additional metadata
     for (key, value) in additionalMetadata {
-      metadata.add(LogMetadataDTO(key: key, value: String(describing: value), privacy: .auto))
+      metadata = metadata.with(key: key, value: String(describing: value), privacyLevel: .auto)
     }
 
     await logger.info(
@@ -73,21 +72,20 @@ public struct KeychainLogger: Sendable {
     keyIdentifier: String?=nil,
     additionalContext: LogMetadataDTOCollection?=nil
   ) async {
-    var metadata=LogMetadataDTOCollection()
-
-    metadata.addPublic(key: "operation", value: operation)
+    var metadata = LogMetadataDTOCollection()
+    metadata = metadata.withPublic(key: "operation", value: operation)
 
     if let account {
-      metadata.addPrivate(key: "account", value: account)
+      metadata = metadata.withPrivate(key: "account", value: account)
     }
 
     if let keyIdentifier {
-      metadata.addPrivate(key: "keyIdentifier", value: keyIdentifier)
+      metadata = metadata.withPrivate(key: "keyIdentifier", value: keyIdentifier)
     }
 
     // Add additional context if provided
     if let additionalContext {
-      metadata.merge(with: additionalContext)
+      metadata = metadata.merging(with: additionalContext)
     }
 
     await logger.info(
@@ -110,18 +108,17 @@ public struct KeychainLogger: Sendable {
     account: String?=nil,
     additionalMetadata: [String: Any]=[:]
   ) async {
-    var metadata=LogMetadataDTOCollection()
-
-    metadata.addPublic(key: "operation", value: operation)
-    metadata.addPublic(key: "status", value: "success")
+    var metadata = LogMetadataDTOCollection()
+    metadata = metadata.withPublic(key: "operation", value: operation)
+    metadata = metadata.withPublic(key: "status", value: "success")
 
     if let account {
-      metadata.addPrivate(key: "account", value: account)
+      metadata = metadata.withPrivate(key: "account", value: account)
     }
 
     // Add any additional metadata
     for (key, value) in additionalMetadata {
-      metadata.add(LogMetadataDTO(key: key, value: String(describing: value), privacy: .auto))
+      metadata = metadata.with(key: key, value: String(describing: value), privacyLevel: .auto)
     }
 
     await logger.info(
@@ -146,22 +143,21 @@ public struct KeychainLogger: Sendable {
     keyIdentifier: String?=nil,
     additionalContext: LogMetadataDTOCollection?=nil
   ) async {
-    var metadata=LogMetadataDTOCollection()
-
-    metadata.addPublic(key: "operation", value: operation)
-    metadata.addPublic(key: "status", value: "success")
+    var metadata = LogMetadataDTOCollection()
+    metadata = metadata.withPublic(key: "operation", value: operation)
+    metadata = metadata.withPublic(key: "status", value: "success")
 
     if let account {
-      metadata.addPrivate(key: "account", value: account)
+      metadata = metadata.withPrivate(key: "account", value: account)
     }
 
     if let keyIdentifier {
-      metadata.addPrivate(key: "keyIdentifier", value: keyIdentifier)
+      metadata = metadata.withPrivate(key: "keyIdentifier", value: keyIdentifier)
     }
 
     // Add additional context if provided
     if let additionalContext {
-      metadata.merge(with: additionalContext)
+      metadata = metadata.merging(with: additionalContext)
     }
 
     await logger.info(
@@ -186,20 +182,19 @@ public struct KeychainLogger: Sendable {
     account: String?=nil,
     additionalMetadata: [String: Any]=[:]
   ) async {
-    var metadata=LogMetadataDTOCollection()
-
-    metadata.addPublic(key: "operation", value: operation)
-    metadata.addPublic(key: "status", value: "error")
-    metadata.addPublic(key: "errorType", value: String(describing: type(of: error)))
-    metadata.addPrivate(key: "errorMessage", value: error.localizedDescription)
+    var metadata = LogMetadataDTOCollection()
+    metadata = metadata.withPublic(key: "operation", value: operation)
+    metadata = metadata.withPublic(key: "status", value: "error")
+    metadata = metadata.withPublic(key: "errorType", value: String(describing: type(of: error)))
+    metadata = metadata.withPrivate(key: "errorMessage", value: error.localizedDescription)
 
     if let account {
-      metadata.addPrivate(key: "account", value: account)
+      metadata = metadata.withPrivate(key: "account", value: account)
     }
 
     // Add any additional metadata
     for (key, value) in additionalMetadata {
-      metadata.add(LogMetadataDTO(key: key, value: String(describing: value), privacy: .auto))
+      metadata = metadata.with(key: key, value: String(describing: value), privacyLevel: .auto)
     }
 
     await logger.error(
@@ -228,24 +223,23 @@ public struct KeychainLogger: Sendable {
     additionalContext: LogMetadataDTOCollection?=nil,
     message: String?=nil
   ) async {
-    var metadata=LogMetadataDTOCollection()
-
-    metadata.addPublic(key: "operation", value: operation)
-    metadata.addPublic(key: "status", value: "error")
-    metadata.addPublic(key: "errorType", value: String(describing: type(of: error)))
-    metadata.addPrivate(key: "errorMessage", value: error.localizedDescription)
+    var metadata = LogMetadataDTOCollection()
+    metadata = metadata.withPublic(key: "operation", value: operation)
+    metadata = metadata.withPublic(key: "status", value: "error")
+    metadata = metadata.withPublic(key: "errorType", value: String(describing: type(of: error)))
+    metadata = metadata.withPrivate(key: "errorMessage", value: error.localizedDescription)
 
     if let account {
-      metadata.addPrivate(key: "account", value: account)
+      metadata = metadata.withPrivate(key: "account", value: account)
     }
 
     if let keyIdentifier {
-      metadata.addPrivate(key: "keyIdentifier", value: keyIdentifier)
+      metadata = metadata.withPrivate(key: "keyIdentifier", value: keyIdentifier)
     }
 
     // Add additional context if provided
     if let additionalContext {
-      metadata.merge(with: additionalContext)
+      metadata = metadata.merging(with: additionalContext)
     }
 
     let defaultMessage="Error during keychain operation: \(operation)"
