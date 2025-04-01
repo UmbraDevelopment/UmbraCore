@@ -11,5 +11,6 @@ swift_library(
         "//packages/UmbraInterfaces/Sources/LoggingInterfaces:LoggingInterfaces",
         "//packages/UmbraInterfaces/Sources/LoggingWrapperInterfaces:LoggingWrapperInterfaces",
         "//packages/UmbraCoreTypes/Sources/LoggingTypes:LoggingTypes",
+        "//packages/UmbraCoreTypes/Sources/UmbraErrors:UmbraErrors", # Added dependency
     ],
 )

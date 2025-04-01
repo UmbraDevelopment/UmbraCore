@@ -82,13 +82,15 @@ public enum LoggingLevelAdapter {
   }
 
   /**
-   Configure the logger with default settings
-
+   Configures the default logger.
+   
+   This sets up the logging wrapper with standard settings.
+   
    - Returns: True if configuration was successful
    */
   public static func configureDefaultLogger() -> Bool {
     // Configure the logging wrapper with default settings
-    Logger.configure()
+    Logger.configure(LoggingWrapperInterfaces.LoggerConfiguration.standard)
     return true
   }
 }

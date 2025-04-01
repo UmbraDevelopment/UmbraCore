@@ -14,10 +14,10 @@ umbra_swift_library(
         ],
         exclude_directories = 1,
     ),
-    module_name = "ConfigInterfaces",
     visibility = ["//visibility:public"],
     deps = [
         "//packages/UmbraCoreTypes/Sources/CoreDTOs",
+        "//packages/UmbraCoreTypes/Sources/DateTimeTypes",
         "//packages/UmbraCoreTypes/Sources/UmbraErrors",
     ],
 )

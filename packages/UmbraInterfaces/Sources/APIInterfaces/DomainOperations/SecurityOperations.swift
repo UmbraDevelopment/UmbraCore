@@ -29,10 +29,10 @@ public struct EncryptDataOperation: SecurityAPIOperation {
   public typealias ResultType=EncryptionResult
 
   /// Data to encrypt
-  public let data: SecureBytes
+  public let data: SendableCryptoMaterial
 
   /// Optional encryption key - if not provided, a system key will be used or generated
-  public let key: SecureBytes?
+  public let key: SendableCryptoMaterial?
 
   /// Optional algorithm to use (defaults to system default)
   public let algorithm: String?
@@ -54,8 +54,8 @@ public struct EncryptDataOperation: SecurityAPIOperation {
       - keyIdentifier: Optional key identifier
    */
   public init(
-    data: SecureBytes,
-    key: SecureBytes?=nil,
+    data: SendableCryptoMaterial,
+    key: SendableCryptoMaterial?=nil,
     algorithm: String?=nil,
     storeKey: Bool=false,
     keyIdentifier: String?=nil
@@ -73,13 +73,13 @@ public struct EncryptDataOperation: SecurityAPIOperation {
  */
 public struct DecryptDataOperation: SecurityAPIOperation {
   /// The operation result type
-  public typealias ResultType=SecureBytes
+  public typealias ResultType=SendableCryptoMaterial
 
   /// Encrypted data to decrypt
-  public let data: SecureBytes
+  public let data: SendableCryptoMaterial
 
   /// Optional decryption key - if not provided, the system will attempt to retrieve a stored key
-  public let key: SecureBytes?
+  public let key: SendableCryptoMaterial?
 
   /// Optional key identifier to retrieve a stored key
   public let keyIdentifier: String?
@@ -93,8 +93,8 @@ public struct DecryptDataOperation: SecurityAPIOperation {
       - keyIdentifier: Optional key identifier for a stored key
    */
   public init(
-    data: SecureBytes,
-    key: SecureBytes?=nil,
+    data: SendableCryptoMaterial,
+    key: SendableCryptoMaterial?=nil,
     keyIdentifier: String?=nil
   ) {
     self.data=data
@@ -149,7 +149,7 @@ public struct GenerateKeyOperation: SecurityAPIOperation {
  */
 public struct RetrieveKeyOperation: SecurityAPIOperation {
   /// The operation result type
-  public typealias ResultType=SecureBytes
+  public typealias ResultType=SendableCryptoMaterial
 
   /// Key identifier
   public let keyIdentifier: String
@@ -189,10 +189,10 @@ public struct DeleteKeyOperation: SecurityAPIOperation {
  */
 public struct HashDataOperation: SecurityAPIOperation {
   /// The operation result type
-  public typealias ResultType=SecureBytes
+  public typealias ResultType=SendableCryptoMaterial
 
   /// Data to hash
-  public let data: SecureBytes
+  public let data: SendableCryptoMaterial
 
   /// Hash algorithm to use
   public let algorithm: HashAlgorithm
@@ -202,10 +202,10 @@ public struct HashDataOperation: SecurityAPIOperation {
 
    - Parameters:
       - data: Data to hash
-      - algorithm: Hash algorithm
+      - algorithm: Hashing algorithm to use
    */
   public init(
-    data: SecureBytes,
+    data: SendableCryptoMaterial,
     algorithm: HashAlgorithm = .sha256
   ) {
     self.data=data
@@ -214,14 +214,14 @@ public struct HashDataOperation: SecurityAPIOperation {
 }
 
 /**
- Operation to store a secret in the keychain.
+ Operation to store a secret in the system keychain.
  */
 public struct StoreSecretOperation: SecurityAPIOperation {
   /// The operation result type
-  public typealias ResultType=StoreSecretResult
+  public typealias ResultType=Void
 
   /// Secret to store
-  public let secret: SecureBytes
+  public let secret: SendableCryptoMaterial
 
   /// Account identifier
   public let account: String
@@ -233,12 +233,12 @@ public struct StoreSecretOperation: SecurityAPIOperation {
    Initialises a new store secret operation.
 
    - Parameters:
-      - secret: Secret to store
+      - secret: Secret data to store
       - account: Account identifier
-      - encrypt: Whether to encrypt the secret
+      - encrypt: Whether to encrypt the secret first
    */
   public init(
-    secret: SecureBytes,
+    secret: SendableCryptoMaterial,
     account: String,
     encrypt: Bool=true
   ) {
@@ -249,36 +249,27 @@ public struct StoreSecretOperation: SecurityAPIOperation {
 }
 
 /**
- Operation to retrieve a secret from the keychain.
+ Operation to retrieve a secret from the system keychain.
  */
 public struct RetrieveSecretOperation: SecurityAPIOperation {
   /// The operation result type
-  public typealias ResultType=SecureBytes
+  public typealias ResultType=SendableCryptoMaterial
 
   /// Account identifier
   public let account: String
 
-  /// Whether the secret is encrypted
-  public let encrypted: Bool
-
   /**
    Initialises a new retrieve secret operation.
 
-   - Parameters:
-      - account: Account identifier
-      - encrypted: Whether the secret is encrypted
+   - Parameter account: Account identifier
    */
-  public init(
-    account: String,
-    encrypted: Bool=true
-  ) {
+  public init(account: String) {
     self.account=account
-    self.encrypted=encrypted
   }
 }
 
 /**
- Operation to delete a secret from the keychain.
+ Operation to delete a secret from the system keychain.
  */
 public struct DeleteSecretOperation: SecurityAPIOperation {
   /// The operation result type
@@ -298,28 +289,29 @@ public struct DeleteSecretOperation: SecurityAPIOperation {
 }
 
 /**
- Key types for cryptographic operations.
+ Operation to generate a random number.
  */
-public enum KeyType: String, Sendable {
-  /// Symmetric key (same key for encryption and decryption)
-  case symmetric
+public struct GenerateRandomOperation: SecurityAPIOperation {
+  /// The operation result type
+  public typealias ResultType=Int
 
-  /// Asymmetric key (public/private key pair)
-  case asymmetric
-}
+  /// Minimum value (inclusive)
+  public let min: Int
 
-/**
- Hash algorithms for hashing operations.
- */
-public enum HashAlgorithm: String, Sendable {
-  /// SHA-256 algorithm
-  case sha256
+  /// Maximum value (inclusive)
+  public let max: Int
 
-  /// SHA-512 algorithm
-  case sha512
+  /**
+   Initialises a new generate random operation.
 
-  /// BLAKE2b algorithm
-  case blake2b
+   - Parameters:
+      - min: Minimum value (inclusive)
+      - max: Maximum value (inclusive)
+   */
+  public init(min: Int, max: Int) {
+    self.min=min
+    self.max=max
+  }
 }
 
 /**
@@ -327,7 +319,7 @@ public enum HashAlgorithm: String, Sendable {
  */
 public struct EncryptionResult: Sendable {
   /// Encrypted data
-  public let encryptedData: SecureBytes
+  public let encryptedData: SendableCryptoMaterial
 
   /// Key identifier if the key was stored
   public let keyIdentifier: String?
@@ -336,11 +328,11 @@ public struct EncryptionResult: Sendable {
    Initialises a new encryption result.
 
    - Parameters:
-      - encryptedData: Encrypted data
-      - keyIdentifier: Optional key identifier
+      - encryptedData: The encrypted data
+      - keyIdentifier: Optional identifier for the stored key
    */
   public init(
-    encryptedData: SecureBytes,
+    encryptedData: SendableCryptoMaterial,
     keyIdentifier: String?=nil
   ) {
     self.encryptedData=encryptedData
@@ -353,7 +345,7 @@ public struct EncryptionResult: Sendable {
  */
 public struct KeyGenerationResult: Sendable {
   /// Generated key
-  public let key: SecureBytes
+  public let key: SendableCryptoMaterial
 
   /// Key identifier if the key was stored
   public let keyIdentifier: String?
@@ -362,11 +354,11 @@ public struct KeyGenerationResult: Sendable {
    Initialises a new key generation result.
 
    - Parameters:
-      - key: Generated key
-      - keyIdentifier: Optional key identifier
+      - key: The generated key
+      - keyIdentifier: Optional identifier for the stored key
    */
   public init(
-    key: SecureBytes,
+    key: SendableCryptoMaterial,
     keyIdentifier: String?=nil
   ) {
     self.key=key
@@ -375,27 +367,26 @@ public struct KeyGenerationResult: Sendable {
 }
 
 /**
- Result of a secret storage operation.
+ Types of cryptographic keys.
  */
-public struct StoreSecretResult: Sendable {
-  /// Account the secret was stored for
-  public let account: String
+public enum KeyType: String, Sendable, CaseIterable {
+  /// Symmetric encryption key (same key for encryption and decryption)
+  case symmetric
+  
+  /// Asymmetric encryption key pair (public/private)
+  case asymmetric
+}
 
-  /// Key identifier if the secret was encrypted
-  public let keyIdentifier: String?
-
-  /**
-   Initialises a new store secret result.
-
-   - Parameters:
-      - account: Account the secret was stored for
-      - keyIdentifier: Optional key identifier
-   */
-  public init(
-    account: String,
-    keyIdentifier: String?=nil
-  ) {
-    self.account=account
-    self.keyIdentifier=keyIdentifier
-  }
+/**
+ Supported hash algorithms.
+ */
+public enum HashAlgorithm: String, Sendable, CaseIterable {
+  /// SHA-256 algorithm
+  case sha256
+  
+  /// SHA-512 algorithm
+  case sha512
+  
+  /// Blake2b algorithm
+  case blake2b
 }

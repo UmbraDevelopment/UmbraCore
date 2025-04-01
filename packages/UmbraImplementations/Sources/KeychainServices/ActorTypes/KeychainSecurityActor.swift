@@ -143,21 +143,26 @@ public actor KeychainSecurityActor {
       }
 
       // Prepare encryption configuration with additional options for the input data
-      var options=[String: String]()
-      options["keyIdentifier"]=keyID
-      options["algorithm"]=EncryptionAlgorithm.aes256Gcm.rawValue
-      options["data"]=secretData.base64EncodedString() // Include the data directly in the options
+      let configOptions = SecurityConfigOptions(
+        enableDetailedLogging: false,
+        useHardwareAcceleration: true,
+        operationTimeoutSeconds: 30.0,
+        metadata: [
+          "keySize": "256",
+          "algorithm": "AES-256-GCM"
+        ]
+      )
 
-      // Create the config with our options
-      let encryptionConfig=SecurityConfigDTO(
-        algorithm: EncryptionAlgorithm.aes256Gcm.rawValue,
-        keySize: 256,
-        options: options
+      let config = SecurityConfigDTO(
+        encryptionAlgorithm: .aes256GCM,
+        hashAlgorithm: .sha256,
+        providerType: .cryptoKit,
+        options: configOptions
       )
 
       // Encrypt the data
       let encryptionResult=try await securityProvider.encrypt(
-        config: encryptionConfig
+        config: config
       )
 
       // Extract the encrypted data from the result
@@ -238,22 +243,26 @@ public actor KeychainSecurityActor {
       let encryptedData=try await keychainService.retrieveData(for: account)
 
       // Prepare decryption configuration with options
-      var options=[String: String]()
-      options["keyIdentifier"]=keyID
-      options["algorithm"]=EncryptionAlgorithm.aes256Gcm.rawValue
-      options["data"]=encryptedData
-        .base64EncodedString() // Include the data directly in the options
+      let configOptions = SecurityConfigOptions(
+        enableDetailedLogging: false,
+        useHardwareAcceleration: true,
+        operationTimeoutSeconds: 30.0,
+        metadata: [
+          "keySize": "256",
+          "algorithm": "AES-256-GCM"
+        ]
+      )
 
-      // Create the config with our options
-      let decryptionConfig=SecurityConfigDTO(
-        algorithm: EncryptionAlgorithm.aes256Gcm.rawValue,
-        keySize: 256,
-        options: options
+      let config = SecurityConfigDTO(
+        encryptionAlgorithm: .aes256GCM,
+        hashAlgorithm: .sha256,
+        providerType: .cryptoKit,
+        options: configOptions
       )
 
       // Decrypt the data
       let decryptionResult=try await securityProvider.decrypt(
-        config: decryptionConfig
+        config: config
       )
 
       // Extract the decrypted data from the result
@@ -376,17 +385,24 @@ public actor KeychainSecurityActor {
   private func generateAESKey() async throws -> Data {
     // Generate a new secure random key for AES-256 (32 bytes)
     // We need to create a SecurityConfigDTO for AES-256 encryption
-    let configOptions=[
-      "algorithm": EncryptionAlgorithm.aes256Gcm.rawValue
-    ]
+    let configOptions = SecurityConfigOptions(
+      enableDetailedLogging: false,
+      useHardwareAcceleration: true,
+      operationTimeoutSeconds: 30.0,
+      metadata: [
+        "keySize": "256",
+        "algorithm": "AES-256-GCM"
+      ]
+    )
 
-    let config=SecurityConfigDTO(
-      algorithm: EncryptionAlgorithm.aes256Gcm.rawValue,
-      keySize: 256,
+    let config = SecurityConfigDTO(
+      encryptionAlgorithm: .aes256GCM,
+      hashAlgorithm: .sha256,
+      providerType: .cryptoKit,
       options: configOptions
     )
 
-    let result=try await securityProvider.generateKey(
+    let result = try await securityProvider.generateKey(
       config: config
     )
 

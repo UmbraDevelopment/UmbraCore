@@ -4,6 +4,7 @@ import DomainSecurityTypes
 import UmbraErrors
 import UmbraErrorsCore
 import UmbraErrorsDTOs
+import Foundation
 
 /// Default implementation of CredentialManagerProtocol using a SecureStorageProvider
 public actor DefaultCredentialManager: CredentialManagerProtocol {
@@ -18,79 +19,81 @@ public actor DefaultCredentialManager: CredentialManagerProtocol {
   ///   - storageProvider: The storage provider to use
   ///   - cryptoService: The crypto service to use
   public init(storageProvider: SecureStorageProvider, cryptoService: CryptoServiceProtocol) {
-    self.storageProvider=storageProvider
-    self.cryptoService=cryptoService
+    self.storageProvider = storageProvider
+    self.cryptoService = cryptoService
   }
 
   /// Save a credential securely
   /// - Parameters:
   ///   - data: Data to store
   ///   - identifier: Identifier for the credential
-  public func save(_ data: SecureBytes, forIdentifier identifier: String) async throws {
+  public func save(_ data: Data, forIdentifier identifier: String) async throws {
     // In a real implementation, we would encrypt the data before storing
     // This is a simplified implementation that delegates to the storage provider
-    let result=await storageProvider.storeData(data.toData(), forKey: identifier)
-
-    switch result {
-      case .success:
-        return
-      case let .failure(error):
-        let context=ErrorContext([
-          "identifier": identifier,
-          "error": error.localizedDescription
-        ])
-        throw CryptoErrorDTO(
-          type: CryptoErrorDTO.CryptoErrorType.operationFailed,
-          description: "Failed to store credential",
-          context: context,
-          underlyingError: error
-        )
+    do {
+      try await storageProvider.securelyStore(data: data, withIdentifier: identifier, options: nil)
+    } catch let error {
+      let context = ErrorContext([
+        "identifier": identifier,
+        "error": error.localizedDescription
+      ])
+      throw CryptoErrorDTO(
+        type: CryptoErrorDTO.CryptoErrorType.operationFailed,
+        description: "Failed to store credential",
+        context: context,
+        underlyingError: error
+      )
     }
   }
 
-  /// Retrieve a credential
+  /// Retrieve a credential securely
   /// - Parameter identifier: Identifier for the credential
   /// - Returns: Stored data
-  public func retrieve(forIdentifier identifier: String) async throws -> SecureBytes {
-    let result=await storageProvider.retrieveData(forKey: identifier)
-
-    switch result {
-      case let .success(data):
-        // Convert Data to SecureBytes
-        return SecureBytes(bytes: [UInt8](data))
-      case let .failure(error):
-        let context=ErrorContext([
-          "identifier": identifier,
-          "error": error.localizedDescription
-        ])
-        throw CryptoErrorDTO(
-          type: CryptoErrorDTO.CryptoErrorType.operationFailed,
-          description: "Failed to retrieve credential",
-          context: context,
-          underlyingError: error
-        )
+  public func retrieve(forIdentifier identifier: String) async throws -> Data {
+    do {
+      return try await storageProvider.retrieveSecureData(withIdentifier: identifier)
+    } catch let error {
+      let context = ErrorContext([
+        "identifier": identifier,
+        "error": error.localizedDescription
+      ])
+      throw CryptoErrorDTO(
+        type: CryptoErrorDTO.CryptoErrorType.operationFailed,
+        description: "Failed to retrieve credential",
+        context: context,
+        underlyingError: error
+      )
     }
   }
 
-  /// Delete a credential
+  /// Delete a credential securely
   /// - Parameter identifier: Identifier for the credential
   public func delete(forIdentifier identifier: String) async throws {
-    let result=await storageProvider.deleteData(forKey: identifier)
+    do {
+      try await storageProvider.deleteSecureData(withIdentifier: identifier)
+    } catch let error {
+      let context = ErrorContext([
+        "identifier": identifier,
+        "error": error.localizedDescription
+      ])
+      throw CryptoErrorDTO(
+        type: CryptoErrorDTO.CryptoErrorType.operationFailed,
+        description: "Failed to delete credential",
+        context: context,
+        underlyingError: error
+      )
+    }
+  }
 
-    switch result {
-      case .success:
-        return
-      case let .failure(error):
-        let context=ErrorContext([
-          "identifier": identifier,
-          "error": error.localizedDescription
-        ])
-        throw CryptoErrorDTO(
-          type: CryptoErrorDTO.CryptoErrorType.operationFailed,
-          description: "Failed to delete credential",
-          context: context,
-          underlyingError: error
-        )
+  /// Check if a credential exists
+  /// - Parameter identifier: Identifier for the credential
+  /// - Returns: True if the credential exists, false otherwise
+  public func exists(forIdentifier identifier: String) async -> Bool {
+    do {
+      _ = try await storageProvider.retrieveSecureData(withIdentifier: identifier)
+      return true
+    } catch {
+      return false
     }
   }
 }

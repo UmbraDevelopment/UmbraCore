@@ -15,45 +15,45 @@ import Foundation
  */
 public actor MockCryptoService: CryptoServiceProtocol {
   /// Dictionary of predetermined encryption results
-  private var encryptionResults: [String: SecureBytes]
+  private var encryptionResults: [String: Data]
 
   /// Dictionary of predetermined decryption results
-  private var decryptionResults: [String: SecureBytes]
+  private var decryptionResults: [String: Data]
 
   /// Dictionary of predetermined key derivation results
-  private var keyDerivationResults: [String: SecureBytes]
+  private var keyDerivationResults: [String: Data]
 
   /// Dictionary of predetermined random key results
-  private var randomKeyResults: [Int: SecureBytes]
+  private var randomKeyResults: [Int: Data]
 
   /// Dictionary of predetermined HMAC results
-  private var hmacResults: [String: SecureBytes]
+  private var hmacResults: [String: Data]
 
   /// Record of all method calls for verification
-  private(set) var callHistory: [String]=[]
+  private(set) var callHistory: [String] = []
 
   /// Initialises a mock service with default empty result sets
   public init() {
-    encryptionResults=[:]
-    decryptionResults=[:]
-    keyDerivationResults=[:]
-    randomKeyResults=[:]
-    hmacResults=[:]
+    encryptionResults = [:]
+    decryptionResults = [:]
+    keyDerivationResults = [:]
+    randomKeyResults = [:]
+    hmacResults = [:]
   }
 
   /// Initialises a mock service with predefined results
   public init(
-    encryptionResults: [String: SecureBytes]=[:],
-    decryptionResults: [String: SecureBytes]=[:],
-    keyDerivationResults: [String: SecureBytes]=[:],
-    randomKeyResults: [Int: SecureBytes]=[:],
-    hmacResults: [String: SecureBytes]=[:]
+    encryptionResults: [String: Data] = [:],
+    decryptionResults: [String: Data] = [:],
+    keyDerivationResults: [String: Data] = [:],
+    randomKeyResults: [Int: Data] = [:],
+    hmacResults: [String: Data] = [:]
   ) {
-    self.encryptionResults=encryptionResults
-    self.decryptionResults=decryptionResults
-    self.keyDerivationResults=keyDerivationResults
-    self.randomKeyResults=randomKeyResults
-    self.hmacResults=hmacResults
+    self.encryptionResults = encryptionResults
+    self.decryptionResults = decryptionResults
+    self.keyDerivationResults = keyDerivationResults
+    self.randomKeyResults = randomKeyResults
+    self.hmacResults = hmacResults
   }
 
   /**
@@ -66,13 +66,13 @@ public actor MockCryptoService: CryptoServiceProtocol {
      - result: The predefined result to return
    */
   public func setEncryptionResult(
-    for data: SecureBytes,
-    key: SecureBytes,
-    iv: SecureBytes,
-    result: SecureBytes
+    for data: Data,
+    key: Data,
+    iv: Data,
+    result: Data
   ) {
-    let key=makeEncryptionKey(data: data, key: key, iv: iv)
-    encryptionResults[key]=result
+    let key = makeEncryptionKey(data: data, key: key, iv: iv)
+    encryptionResults[key] = result
   }
 
   /**
@@ -85,13 +85,13 @@ public actor MockCryptoService: CryptoServiceProtocol {
      - result: The predefined result to return
    */
   public func setDecryptionResult(
-    for data: SecureBytes,
-    key: SecureBytes,
-    iv: SecureBytes,
-    result: SecureBytes
+    for data: Data,
+    key: Data,
+    iv: Data,
+    result: Data
   ) {
-    let key=makeEncryptionKey(data: data, key: key, iv: iv)
-    decryptionResults[key]=result
+    let key = makeEncryptionKey(data: data, key: key, iv: iv)
+    decryptionResults[key] = result
   }
 
   /**
@@ -105,220 +105,192 @@ public actor MockCryptoService: CryptoServiceProtocol {
    */
   public func setKeyDerivationResult(
     for password: String,
-    salt: SecureBytes,
+    salt: Data,
     iterations: Int,
-    result: SecureBytes
+    result: Data
   ) {
-    let key="\(password)_\(salt.hashValue)_\(iterations)"
-    keyDerivationResults[key]=result
+    let key = "\(password)_\(salt.hashValue)_\(iterations)"
+    keyDerivationResults[key] = result
   }
 
   /**
-   Sets a predefined result for random key generation.
+   Sets a predefined result for key generation operations.
 
    - Parameters:
-     - length: The key length to match
+     - length: The length to match
      - result: The predefined result to return
    */
   public func setRandomKeyResult(
     for length: Int,
-    result: SecureBytes
+    result: Data
   ) {
-    randomKeyResults[length]=result
+    randomKeyResults[length] = result
   }
 
   /**
-   Sets a predefined result for HMAC generation.
+   Sets a predefined result for HMAC generation operations.
 
    - Parameters:
-     - data: The data to match
+     - data: The input data to match
      - key: The key to match
      - result: The predefined result to return
    */
   public func setHMACResult(
-    for data: SecureBytes,
-    key: SecureBytes,
-    result: SecureBytes
+    for data: Data,
+    key: Data,
+    result: Data
   ) {
-    let key="\(data.hashValue)_\(key.hashValue)"
-    hmacResults[key]=result
+    let key = "\(data.hashValue)_\(key.hashValue)"
+    hmacResults[key] = result
   }
 
   /**
-   Mock implementation of encryption operation.
+   Encrypts data using the pre-configured results.
 
    - Parameters:
      - data: Data to encrypt
      - key: Encryption key
      - iv: Initialisation vector
-   - Returns: Encrypted data as SecureBytes
+     - cryptoOptions: Optional encryption configuration
+   - Returns: Encrypted data from the preconfigured results
    - Throws: CryptoError if no mock result is configured
    */
   public func encrypt(
-    _ data: SecureBytes,
-    using key: SecureBytes,
-    iv: SecureBytes
-  ) async throws -> SecureBytes {
+    _ data: Data,
+    using key: Data,
+    iv: Data,
+    cryptoOptions: CryptoOptions?
+  ) async throws -> Data {
     callHistory
       .append("encrypt(data: \(data.count) bytes, key: \(key.count) bytes, iv: \(iv.count) bytes)")
 
-    let lookupKey=makeEncryptionKey(data: data, key: key, iv: iv)
+    let lookupKey = makeEncryptionKey(data: data, key: key, iv: iv)
 
-    if let result=encryptionResults[lookupKey] {
-      return result
+    guard let result = encryptionResults[lookupKey] else {
+      throw CryptoError.encryptionFailed(
+        reason: "No mock encryption result for data: \(data.count) bytes, key: \(key.count) bytes"
+      )
     }
 
-    // Default behaviour if no mock is configured
-    if let fallback=encryptionResults["default"] {
-      return fallback
-    }
-
-    // Generate a predictable result based on inputs
-    let mockResult=SecureBytes(bytes: Array(repeating: 0xAA, count: data.count + 16))
-    return mockResult
+    return result
   }
 
   /**
-   Mock implementation of decryption operation.
+   Decrypts data using the pre-configured results.
 
    - Parameters:
      - data: Data to decrypt
      - key: Decryption key
      - iv: Initialisation vector
-   - Returns: Decrypted data as SecureBytes
+     - cryptoOptions: Optional decryption configuration
+   - Returns: Decrypted data from the preconfigured results
    - Throws: CryptoError if no mock result is configured
    */
   public func decrypt(
-    _ data: SecureBytes,
-    using key: SecureBytes,
-    iv: SecureBytes
-  ) async throws -> SecureBytes {
+    _ data: Data,
+    using key: Data,
+    iv: Data,
+    cryptoOptions: CryptoOptions?
+  ) async throws -> Data {
     callHistory
       .append("decrypt(data: \(data.count) bytes, key: \(key.count) bytes, iv: \(iv.count) bytes)")
 
-    let lookupKey=makeEncryptionKey(data: data, key: key, iv: iv)
+    let lookupKey = makeEncryptionKey(data: data, key: key, iv: iv)
 
-    if let result=decryptionResults[lookupKey] {
-      return result
+    guard let result = decryptionResults[lookupKey] else {
+      throw CryptoError.decryptionFailed(
+        reason: "No mock decryption result for data: \(data.count) bytes, key: \(key.count) bytes"
+      )
     }
 
-    // Default behaviour if no mock is configured
-    if let fallback=decryptionResults["default"] {
-      return fallback
-    }
-
-    // Simulate decryption failure with wrong key
-    if key.count < 32 {
-      throw CryptoError.invalidKey(reason: "Mock decryption requires a 32-byte key")
-    }
-
-    // Generate a predictable result based on inputs
-    let mockResult=SecureBytes(bytes: Array(repeating: 0xBB, count: data.count - 16))
-    return mockResult
+    return result
   }
 
   /**
-   Mock implementation of key derivation.
+   Derives a key using the pre-configured results.
 
    - Parameters:
-     - password: Password to derive key from
-     - salt: Salt for key derivation
-     - iterations: Number of iterations for key derivation
-   - Returns: Derived key as SecureBytes
+     - password: Password to derive the key from
+     - salt: Salt value for the derivation
+     - iterations: Number of iterations for the derivation
+     - derivationOptions: Optional key derivation configuration
+   - Returns: Derived key from the preconfigured results
    - Throws: CryptoError if no mock result is configured
    */
   public func deriveKey(
     from password: String,
-    salt: SecureBytes,
-    iterations: Int
-  ) async throws -> SecureBytes {
+    salt: Data,
+    iterations: Int,
+    derivationOptions: KeyDerivationOptions?
+  ) async throws -> Data {
     callHistory
       .append(
         "deriveKey(password: \(password.count) chars, salt: \(salt.count) bytes, iterations: \(iterations))"
       )
 
-    let lookupKey="\(password)_\(salt.hashValue)_\(iterations)"
+    let lookupKey = "\(password)_\(salt.hashValue)_\(iterations)"
 
-    if let result=keyDerivationResults[lookupKey] {
-      return result
+    guard let result = keyDerivationResults[lookupKey] else {
+      throw CryptoError.keyDerivationFailed(
+        reason: "No mock key derivation result for password: \(password.count) chars, salt: \(salt.count) bytes"
+      )
     }
 
-    // Default behaviour if no mock is configured
-    if let fallback=keyDerivationResults["default"] {
-      return fallback
-    }
-
-    // Generate a predictable result based on inputs
-    let mockResult=SecureBytes(bytes: Array(repeating: 0xCC, count: 32))
-    return mockResult
+    return result
   }
 
   /**
-   Mock implementation of random key generation.
+   Generates a key using the pre-configured results.
 
-   - Parameter length: Length of the key in bytes
-   - Returns: Generated key as SecureBytes
+   - Parameters:
+     - length: Length of the key to generate
+     - keyOptions: Optional key generation configuration
+   - Returns: Generated key from the preconfigured results
    - Throws: CryptoError if no mock result is configured
    */
-  public func generateSecureRandomKey(length: Int) async throws -> SecureBytes {
-    callHistory.append("generateSecureRandomKey(length: \(length))")
+  public func generateKey(length: Int, keyOptions: KeyGenerationOptions?) async throws -> Data {
+    callHistory.append("generateKey(length: \(length))")
 
-    if let result=randomKeyResults[length] {
-      return result
+    guard let result = randomKeyResults[length] else {
+      throw CryptoError.keyGenerationFailed(
+        reason: "No mock random key result for length: \(length)"
+      )
     }
 
-    // Default behaviour if no mock is configured
-    if let fallback=randomKeyResults[0] {
-      return fallback
-    }
-
-    // Generate a predictable "random" key
-    let mockResult=SecureBytes(bytes: Array(repeating: 0xDD, count: length))
-    return mockResult
+    return result
   }
 
   /**
-   Mock implementation of HMAC generation.
+   Generates an HMAC using the pre-configured results.
 
    - Parameters:
      - data: Data to authenticate
-     - key: Authentication key
-   - Returns: Authentication code as SecureBytes
+     - key: The authentication key
+     - hmacOptions: Optional HMAC configuration
+   - Returns: HMAC from the preconfigured results
    - Throws: CryptoError if no mock result is configured
    */
   public func generateHMAC(
-    for data: SecureBytes,
-    using key: SecureBytes
-  ) async throws -> SecureBytes {
+    for data: Data,
+    using key: Data,
+    hmacOptions: HMACOptions?
+  ) async throws -> Data {
     callHistory.append("generateHMAC(data: \(data.count) bytes, key: \(key.count) bytes)")
-
-    let lookupKey="\(data.hashValue)_\(key.hashValue)"
-
-    if let result=hmacResults[lookupKey] {
-      return result
+    
+    let lookupKey = "\(data.hashValue)_\(key.hashValue)"
+    
+    guard let result = hmacResults[lookupKey] else {
+      throw CryptoError.operationFailed(
+        reason: "No mock HMAC result for data: \(data.count) bytes, key: \(key.count) bytes"
+      )
     }
-
-    // Default behaviour if no mock is configured
-    if let fallback=hmacResults["default"] {
-      return fallback
-    }
-
-    // Generate a predictable HMAC result
-    let mockResult=SecureBytes(bytes: Array(repeating: 0xEE, count: 32))
-    return mockResult
+    
+    return result
   }
-
-  /**
-   Resets the call history for verification in tests.
-   */
-  public func resetCallHistory() {
-    callHistory=[]
-  }
-
-  // MARK: - Private Helpers
-
-  /// Creates a lookup key for encryption/decryption operations
-  private func makeEncryptionKey(data: SecureBytes, key: SecureBytes, iv: SecureBytes) -> String {
-    "\(data.hashValue)_\(key.hashValue)_\(iv.hashValue)"
+  
+  // MARK: - Private Helper Methods
+  
+  private func makeEncryptionKey(data: Data, key: Data, iv: Data) -> String {
+    return "\(data.hashValue)_\(key.hashValue)_\(iv.hashValue)"
   }
 }

@@ -16,30 +16,26 @@ import Foundation
  */
 public enum CryptoFormat {
   /// The current version of the crypto format
-  public static let formatVersion: UInt8=1
+  public static let formatVersion: UInt8 = 1
 
   /// Format magic bytes for identification
-  private static let magicBytes: [UInt8]=[0x55, 0x4D, 0x42, 0x52] // "UMBR" in hex
+  private static let magicBytes: [UInt8] = [0x55, 0x4D, 0x42, 0x52] // "UMBR" in hex
 
   /// Standard IV size for AES-GCM in bytes
-  public static let ivSize=12
+  public static let ivSize = 12
 
   /// Standard GCM authentication tag size in bytes
-  public static let tagSize=16
+  public static let tagSize = 16
 
   /// Header size for encrypted data (magic + version + reserved)
-  private static let headerSize=8 // 4 (magic) + 1 (version) + 3 (reserved)
+  private static let headerSize = 8 // 4 (magic) + 1 (version) + 3 (reserved)
 
   /**
    Package encrypted data with metadata in the standard format.
-
-   Format structure:
-   - 4 bytes: Magic value "UMBR"
-   - 1 byte: Format version
-   - 3 bytes: Reserved for future use
-   - 12 bytes: Initialisation vector
-   - N bytes: Ciphertext
-   - 16 bytes: Authentication tag (if GCM)
+   
+   Note: This method is maintained for backward compatibility.
+   New actor-based implementations should be developed for the Alpha Dot Five 
+   architecture using SecureStorage.
 
    - Parameters:
       - iv: The initialisation vector used for encryption
@@ -50,127 +46,137 @@ public enum CryptoFormat {
   public static func packageEncryptedData(
     iv: [UInt8],
     ciphertext: [UInt8],
-    tag: [UInt8]?=nil
+    tag: [UInt8]? = nil
   ) -> [UInt8] {
-    var result=[UInt8]()
-
+    var result = [UInt8]()
+    
     // Add header
     result.append(contentsOf: magicBytes)
     result.append(formatVersion)
     result.append(contentsOf: [0, 0, 0]) // Reserved
-
+    
     // Add IV
     result.append(contentsOf: iv)
-
+    
     // Add ciphertext
     result.append(contentsOf: ciphertext)
-
+    
     // Add tag if present
-    if let tag {
+    if let tag = tag {
       result.append(contentsOf: tag)
     }
-
+    
     return result
   }
 
   /**
    Unpack encrypted data from the standard format.
+   
+   Note: This method is maintained for backward compatibility.
+   New actor-based implementations should be developed for the Alpha Dot Five 
+   architecture using SecureStorage.
 
-   - Parameter data: The packaged encrypted data
+   - Parameter data: Packaged data in the standard format
    - Returns: Tuple containing IV, ciphertext, and optional tag, or nil if format is invalid
    */
-  public static func unpackEncryptedData(data: [UInt8])
-  -> (iv: [UInt8], ciphertext: [UInt8], tag: [UInt8]?)? {
+  public static func unpackEncryptedData(
+    data: [UInt8]
+  ) -> (iv: [UInt8], ciphertext: [UInt8], tag: [UInt8]?)? {
     // Check minimum size
-    let minSize=headerSize + ivSize
+    let minSize = headerSize + ivSize
     guard data.count > minSize else {
       return nil
     }
-
+    
     // Verify magic bytes
     for i in 0..<magicBytes.count {
       guard data[i] == magicBytes[i] else {
         return nil
       }
     }
-
+    
     // Verify version
-    let version=data[4]
+    let version = data[4]
     guard version == formatVersion else {
       return nil
     }
-
+    
     // Extract IV
-    let ivStart=headerSize
-    let ivEnd=ivStart + ivSize
-    let iv=Array(data[ivStart..<ivEnd])
-
+    let ivStart = headerSize
+    let ivEnd = ivStart + ivSize
+    let iv = Array(data[ivStart..<ivEnd])
+    
     // If we have enough data for a tag, extract it and the ciphertext separately
     if data.count >= ivEnd + tagSize {
-      let ciphertextStart=ivEnd
-      let ciphertextEnd=data.count - tagSize
-      let tagStart=ciphertextEnd
-
-      let ciphertext=Array(data[ciphertextStart..<ciphertextEnd])
-      let tag=Array(data[tagStart..<data.count])
-
+      let ciphertextStart = ivEnd
+      let ciphertextEnd = data.count - tagSize
+      let tagStart = ciphertextEnd
+      
+      let ciphertext = Array(data[ciphertextStart..<ciphertextEnd])
+      let tag = Array(data[tagStart..<data.count])
+      
       return (iv, ciphertext, tag)
     } else {
       // No tag, just ciphertext
-      let ciphertext=Array(data[ivEnd..<data.count])
+      let ciphertext = Array(data[ivEnd..<data.count])
       return (iv, ciphertext, nil)
     }
   }
 
   /**
-   Package an encrypted SecureBytes instance.
-
-   This is a convenience method that works with SecureBytes instead of raw byte arrays.
-
+   Package encrypted data in secure format.
+   
+   Note: This method is maintained for backward compatibility.
+   New actor-based implementations should be developed for the Alpha Dot Five 
+   architecture using SecureStorage.
+   
    - Parameters:
       - iv: The initialisation vector
       - ciphertext: The encrypted data
       - tag: The authentication tag (optional)
-   - Returns: Packaged data as SecureBytes
+   - Returns: Packaged data as Data
    */
-  public static func packageSecureBytes(
-    iv: SecureBytes,
-    ciphertext: SecureBytes,
-    tag: SecureBytes?=nil
-  ) -> SecureBytes {
-    let ivBytes=iv.bytes()
-    let ciphertextBytes=ciphertext.bytes()
-    let tagBytes=tag?.bytes()
-
-    let packaged=packageEncryptedData(
+  public static func packageSecureData(
+    iv: Data,
+    ciphertext: Data,
+    tag: Data? = nil
+  ) -> Data {
+    let ivBytes = [UInt8](iv)
+    let ciphertextBytes = [UInt8](ciphertext)
+    let tagBytes = tag.map { [UInt8]($0) }
+    
+    let packaged = packageEncryptedData(
       iv: ivBytes,
       ciphertext: ciphertextBytes,
       tag: tagBytes
     )
-
-    return SecureBytes(bytes: packaged)
+    
+    return Data(packaged)
   }
 
   /**
-   Unpack an encrypted SecureBytes instance.
-
-   This is a convenience method that works with SecureBytes instead of raw byte arrays.
-
-   - Parameter data: The packaged encrypted data as SecureBytes
-   - Returns: Tuple containing IV, ciphertext, and optional tag as SecureBytes, or nil if format is invalid
+   Unpack encrypted data from secure format.
+   
+   Note: This method is maintained for backward compatibility.
+   New actor-based implementations should be developed for the Alpha Dot Five 
+   architecture using SecureStorage.
+   
+   - Parameter data: The packaged encrypted data
+   - Returns: Tuple containing IV, ciphertext, and optional tag as Data, or nil if format is invalid
    */
-  public static func unpackSecureBytes(data: SecureBytes)
-  -> (iv: SecureBytes, ciphertext: SecureBytes, tag: SecureBytes?)? {
-    let dataBytes=data.bytes()
-
-    guard let unpacked=unpackEncryptedData(data: dataBytes) else {
+  public static func unpackSecureData(
+    data: Data
+  ) -> (iv: Data, ciphertext: Data, tag: Data?)? {
+    let dataBytes = [UInt8](data)
+    
+    guard let unpacked = unpackEncryptedData(data: dataBytes) else {
       return nil
     }
-
-    let iv=SecureBytes(bytes: unpacked.iv)
-    let ciphertext=SecureBytes(bytes: unpacked.ciphertext)
-    let tag=unpacked.tag.map { SecureBytes(bytes: $0) }
-
+    
+    let iv = Data(unpacked.iv)
+    let ciphertext = Data(unpacked.ciphertext)
+    let tag = unpacked.tag.map { Data($0) }
+    
     return (iv, ciphertext, tag)
   }
 }

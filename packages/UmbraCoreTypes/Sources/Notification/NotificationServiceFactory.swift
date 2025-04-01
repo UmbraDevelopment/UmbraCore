@@ -71,18 +71,24 @@ private final class DefaultNotificationService: NotificationServiceProtocol {
     let notificationName = Notification.Name(name)
     let observerID = UUID().uuidString
     
+    // Convert to immutable copies for thread safety
+    let senderCopy = sender
+    
+    // Create observer in a thread-safe manner
     let observer = notificationCenter.addObserver(
       forName: notificationName,
-      object: sender,
+      object: senderCopy,
       queue: .main
     ) { [weak self] notification in
       guard let self else { return }
-      let dto = createDTO(from: notification)
+      // Use nonisolated helper to prevent actor isolation warnings
+      let dto = self.createDTO(from: notification)
       handler(dto)
     }
 
-    Task {
-      await observationActor.addObserver(observer, forID: observerID)
+    // Safely send observer to actor
+    Task { [observationActor, observerID] in
+      await observationActor.storeObserver(observer, forID: observerID)
     }
 
     return observerID
@@ -100,20 +106,29 @@ private final class DefaultNotificationService: NotificationServiceProtocol {
     handler: @escaping NotificationHandler
   ) -> NotificationObserverID {
     let observerID = UUID().uuidString
+    let names = names // Create immutable copy
+    let senderCopy = sender // Create immutable copy
 
-    Task {
-      await observationActor.addMultipleObservers(for: names, baseID: observerID) { name in
-        let notificationName = Notification.Name(name)
-        let observer = notificationCenter.addObserver(
-          forName: notificationName,
-          object: sender,
-          queue: .main
-        ) { [weak self] notification in
-          guard let self else { return }
-          let dto = createDTO(from: notification)
-          handler(dto)
-        }
-        return observer
+    // Create and store observers in a thread-safe manner
+    for name in names {
+      // Create a unique ID for each observer to ensure proper cleanup
+      let uniqueID = "\(observerID):\(name)"
+      
+      let notificationName = Notification.Name(name)
+      let observer = notificationCenter.addObserver(
+        forName: notificationName,
+        object: senderCopy,
+        queue: .main
+      ) { [weak self] notification in
+        guard let self else { return }
+        // Use nonisolated helper to prevent actor isolation warnings
+        let dto = self.createDTO(from: notification)
+        handler(dto)
+      }
+      
+      // Safely store each observer with its unique ID
+      Task { [observationActor] in
+        await observationActor.storeObserver(observer, forID: uniqueID)
       }
     }
     
@@ -123,8 +138,11 @@ private final class DefaultNotificationService: NotificationServiceProtocol {
   /// Remove an observer
   /// - Parameter observerID: The ID of the observer to remove
   public func removeObserver(withID observerID: NotificationObserverID) {
-    Task {
-      await observationActor.removeObserver(withID: observerID) { observer in
+    // Safely remove observer within actor
+    Task { [weak self, observationActor, notificationCenter, observerID] in
+      guard let _ = self else { return }
+      let observers = await observationActor.removeObservers(withIDPrefix: observerID)
+      for observer in observers {
         notificationCenter.removeObserver(observer)
       }
     }
@@ -132,8 +150,11 @@ private final class DefaultNotificationService: NotificationServiceProtocol {
 
   /// Remove all observers
   public func removeAllObservers() {
-    Task {
-      await observationActor.removeAllObservers { observer in
+    // Safely remove all observers within actor
+    Task { [weak self, observationActor, notificationCenter] in
+      guard let _ = self else { return }
+      let observers = await observationActor.removeAllObservers()
+      for observer in observers {
         notificationCenter.removeObserver(observer)
       }
     }
@@ -142,7 +163,7 @@ private final class DefaultNotificationService: NotificationServiceProtocol {
   /// Create a NotificationDTO from a Foundation Notification
   /// - Parameter notification: The notification to observe
   /// - Returns: A NotificationDTO representation
-  private func createDTO(from notification: Notification) -> NotificationDTO {
+  private nonisolated func createDTO(from notification: Notification) -> NotificationDTO {
     // Convert [AnyHashable: Any]? to [String: String]
     let userInfo = notification.userInfo?
       .reduce(into: [String: String]()) { result, pair in
@@ -168,60 +189,41 @@ private actor ObservationActor {
   /// Dictionary mapping observer IDs to observer objects
   private var observers: [NotificationObserverID: NSObjectProtocol] = [:]
   
-  /// Add an observer with the given ID
+  /// Store an observer with the given ID
   /// - Parameters:
   ///   - observer: The observer object
   ///   - id: The ID to associate with the observer
-  func addObserver(_ observer: NSObjectProtocol, forID id: NotificationObserverID) {
+  func storeObserver(_ observer: NSObjectProtocol, forID id: NotificationObserverID) {
     observers[id] = observer
   }
   
-  /// Add multiple observers for different notification names but with a base ID
-  /// - Parameters:
-  ///   - names: Notification names to observe
-  ///   - baseID: The base ID to use (will be combined with notification name)
-  ///   - createObserver: A closure that creates an observer for a given name
-  func addMultipleObservers(
-    for names: [String], 
-    baseID: String,
-    createObserver: (String) -> NSObjectProtocol
-  ) {
-    for name in names {
-      let observer = createObserver(name)
-      // Store each individual observer with a compound ID
-      let compoundID = "\(baseID):\(name)"
-      observers[compoundID] = observer
-    }
-  }
-  
-  /// Remove an observer with the given ID
-  /// - Parameters:
-  ///   - id: The ID of the observer to remove
-  ///   - cleanup: A closure that performs any cleanup needed for the observer
-  func removeObserver(
-    withID id: NotificationObserverID,
-    cleanup: (NSObjectProtocol) -> Void
-  ) {
-    // Check for compound IDs (from multi-notification observers)
-    let compoundPrefix = "\(id):"
+  /// Remove observers with the given ID prefix
+  /// - Parameter idPrefix: The ID prefix to match
+  /// - Returns: Array of removed observers
+  func removeObservers(withIDPrefix idPrefix: String) -> [NSObjectProtocol] {
+    var removedObservers: [NSObjectProtocol] = []
+    
+    // Find all keys that match the ID exactly or have it as a prefix
     let keysToRemove = observers.keys.filter {
-      $0 == id || $0.hasPrefix(compoundPrefix)
+      $0 == idPrefix || $0.hasPrefix("\(idPrefix):")
     }
     
+    // Remove each matching observer and collect them
     for key in keysToRemove {
       if let observer = observers[key] {
-        cleanup(observer)
+        removedObservers.append(observer)
         observers.removeValue(forKey: key)
       }
     }
+    
+    return removedObservers
   }
   
   /// Remove all observers
-  /// - Parameter cleanup: A closure that performs any cleanup needed for each observer
-  func removeAllObservers(cleanup: (NSObjectProtocol) -> Void) {
-    for (_, observer) in observers {
-      cleanup(observer)
-    }
+  /// - Returns: Array of all removed observers
+  func removeAllObservers() -> [NSObjectProtocol] {
+    let allObservers = observers.values.map { $0 }
     observers.removeAll()
+    return allObservers
   }
 }
