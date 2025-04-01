@@ -1,157 +1,106 @@
-import DomainSecurityTypes
+import Foundation
 
 /**
  # Crypto Service Protocol
 
- Defines the core cryptographic operations required by the system.
- This protocol ensures a standard interface for all cryptographic
- service implementations, providing:
-
- - Secure encryption and decryption
- - Password-based key derivation
- - Secure random key generation
- - Message authentication
-
- ## Actor-Based Implementation
-
- Implementations of this protocol MUST use Swift actors to ensure proper
- state isolation and thread safety:
-
- ```swift
- actor CryptoServiceImpl: CryptoServiceProtocol {
-     // Private state should be isolated within the actor
-     private let securityProvider: SecurityProviderProtocol
-     private let logger: PrivacyAwareLoggingProtocol
-     
-     // All function implementations must use 'await' appropriately when
-     // accessing actor-isolated state or calling other actor methods
- }
- ```
-
- ## Protocol Forwarding
-
- To support proper protocol conformance while maintaining actor isolation,
- implementations should consider using the protocol forwarding pattern:
-
- ```swift
- // Public non-actor class that conforms to protocol
- public final class CryptoService: CryptoServiceProtocol {
-     private let actor: CryptoServiceActor
-     
-     // Forward all protocol methods to the actor
-     public func encrypt(...) async throws -> SecureBytes {
-         try await actor.encrypt(...)
-     }
- }
- ```
-
- ## Privacy Considerations
-
- Cryptographic operations involve highly sensitive data. Implementations must:
- - Never log keys, passwords, or other sensitive cryptographic material
- - Use privacy-aware logging for operation contexts
- - Ensure secure memory handling for all cryptographic materials
- - Properly zeroize memory after operations complete
+ Defines cryptographic operations following the Alpha Dot Five architecture.
+ 
+ This protocol provides methods for common cryptographic operations including
+ encryption, decryption, key derivation, and secure random generation.
  */
 public protocol CryptoServiceProtocol: Sendable {
   /**
    Encrypts data using AES encryption.
-
+   
    This method encrypts the provided data using the specified key and initialisation vector.
-   The implementation must ensure data confidentiality and integrity.
-
+   
    - Parameters:
-     - data: Data to encrypt
-     - key: Encryption key
-     - iv: Initialisation vector
-     - cryptoOptions: Optional additional encryption configuration options
-   - Returns: Encrypted data as SecureBytes
+      - data: Data to encrypt
+      - key: Encryption key
+      - iv: Initialisation vector
+      - cryptoOptions: Optional configuration for the encryption operation
+   
+   - Returns: Encrypted data
    - Throws: CryptoError if encryption fails
    */
   func encrypt(
-    _ data: SecureBytes, 
-    using key: SecureBytes, 
-    iv: SecureBytes,
+    _ data: Data, 
+    using key: Data, 
+    iv: Data,
     cryptoOptions: CryptoOptions?
-  ) async throws -> SecureBytes
-
+  ) async throws -> Data
+  
   /**
-   Decrypts data using AES encryption.
-
+   Decrypts data using AES decryption.
+   
    This method decrypts the provided data using the specified key and initialisation vector.
-   The implementation must verify data integrity before returning decrypted content.
-
+   
    - Parameters:
-     - data: Data to decrypt
-     - key: Decryption key
-     - iv: Initialisation vector
-     - cryptoOptions: Optional additional decryption configuration options
-   - Returns: Decrypted data as SecureBytes
-   - Throws: CryptoError if decryption fails or authentication fails
+      - data: Data to decrypt
+      - key: Decryption key
+      - iv: Initialisation vector
+      - cryptoOptions: Optional configuration for the decryption operation
+   
+   - Returns: Decrypted data
+   - Throws: CryptoError if decryption fails
    */
   func decrypt(
-    _ data: SecureBytes, 
-    using key: SecureBytes, 
-    iv: SecureBytes,
+    _ data: Data, 
+    using key: Data, 
+    iv: Data,
     cryptoOptions: CryptoOptions?
-  ) async throws -> SecureBytes
-
+  ) async throws -> Data
+  
   /**
-   Derives a key from a password using PBKDF2.
-
-   This method performs key derivation to transform a user password into a cryptographic key
-   using a secure key derivation function with the provided salt and iteration count.
-
+   Derives a key from a password using PBKDF2 or other key derivation function.
+   
    - Parameters:
-     - password: Password to derive key from
-     - salt: Salt for key derivation
-     - iterations: Number of iterations for key derivation (higher is more secure)
-     - derivationOptions: Optional additional key derivation configuration options
-   - Returns: Derived key as SecureBytes
+      - password: The password to derive the key from
+      - salt: Salt for the key derivation
+      - iterations: Number of iterations for the key derivation
+      - derivationOptions: Optional configuration for the derivation operation
+   
+   - Returns: The derived key
    - Throws: CryptoError if key derivation fails
    */
   func deriveKey(
     from password: String, 
-    salt: SecureBytes, 
+    salt: Data, 
     iterations: Int,
     derivationOptions: KeyDerivationOptions?
-  ) async throws -> SecureBytes
-
+  ) async throws -> Data
+  
   /**
-   Generates a cryptographically secure random key.
-
-   This method creates a random key using a cryptographically secure random number generator
-   with sufficient entropy to ensure key security.
-
+   Generates a random cryptographic key.
+   
    - Parameters:
-     - length: Length of the key in bytes
-     - keyOptions: Optional additional key generation configuration options
-   - Returns: The generated key as SecureBytes
+      - length: Length of the key in bytes
+      - keyOptions: Optional configuration for key generation
+   
+   - Returns: Generated key
    - Throws: CryptoError if key generation fails
    */
-  func generateSecureRandomKey(
+  func generateKey(
     length: Int,
     keyOptions: KeyGenerationOptions?
-  ) async throws -> SecureBytes
-
+  ) async throws -> Data
+  
   /**
-   Generates a message authentication code (HMAC) using SHA-256.
-
-   This method creates an authentication code for the provided data using the specified key,
-   which can be used to verify data integrity and authenticity.
-
+   Generates an HMAC for the provided data and key.
+   
    - Parameters:
-     - data: Data to authenticate
-     - key: The authentication key
-     - hmacOptions: Optional additional HMAC configuration options
-   - Returns: The authentication code as SecureBytes
+      - data: Data to generate HMAC for
+      - key: Key to use for HMAC generation
+      - hmacOptions: Optional configuration for HMAC generation
+   
+   - Returns: Generated HMAC
    - Throws: CryptoError if HMAC generation fails
    */
   func generateHMAC(
-    for data: SecureBytes, 
-    using key: SecureBytes,
+    for data: Data, 
+    using key: Data,
     hmacOptions: HMACOptions?
-  ) async throws -> SecureBytes
+  ) async throws -> Data
 }
 
 /**
@@ -174,7 +123,7 @@ public struct CryptoOptions: Sendable, Equatable {
   public let algorithm: Algorithm
   
   /// Additional authenticated data for AEAD ciphers
-  public let authenticatedData: SecureBytes?
+  public let authenticatedData: Data?
   
   /// Authentication tag length in bits for GCM mode
   public let tagLength: Int?
@@ -182,12 +131,34 @@ public struct CryptoOptions: Sendable, Equatable {
   /// Creates new crypto options
   public init(
     algorithm: Algorithm = .aesGCM,
-    authenticatedData: SecureBytes? = nil,
+    authenticatedData: Data? = nil,
     tagLength: Int? = nil
   ) {
     self.algorithm = algorithm
     self.authenticatedData = authenticatedData
     self.tagLength = tagLength
+  }
+  
+  /// Equality comparison for CryptoOptions
+  public static func == (lhs: CryptoOptions, rhs: CryptoOptions) -> Bool {
+    // Compare the algorithm
+    guard lhs.algorithm == rhs.algorithm else {
+      return false
+    }
+    
+    // Compare tag length
+    guard lhs.tagLength == rhs.tagLength else {
+      return false
+    }
+    
+    // Compare authenticated data
+    if let lhsData = lhs.authenticatedData, let rhsData = rhs.authenticatedData {
+      return lhsData == rhsData
+    }
+    
+    // If one has data and the other doesn't, they're not equal
+    // If both are nil, they're equal
+    return lhs.authenticatedData == nil && rhs.authenticatedData == nil
   }
 }
 

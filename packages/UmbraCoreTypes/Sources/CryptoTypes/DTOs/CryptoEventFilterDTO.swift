@@ -1,4 +1,6 @@
-import CoreDTOs
+import Foundation
+import DateTimeTypes
+import LoggingTypes
 
 /**
  # CryptoEventFilterDTO
@@ -95,12 +97,16 @@ public struct CryptoEventFilterDTO: Sendable, Equatable {
         }
         
         // Check time range
-        if let fromTime = fromTime, event.timestamp < fromTime {
-            return false
+        if let fromTime = fromTime {
+            if !event.timestamp.isAfterOrEqual(fromTime) {
+                return false
+            }
         }
         
-        if let toTime = toTime, event.timestamp > toTime {
-            return false
+        if let toTime = toTime {
+            if !event.timestamp.isBeforeOrEqual(toTime) {
+                return false
+            }
         }
         
         // Check metadata filters
@@ -223,6 +229,19 @@ public struct CryptoEventFilterDTO: Sendable, Equatable {
 }
 
 /**
+ Operation type for metadata filters.
+ 
+ This enumeration defines the valid operations that can be performed
+ when filtering metadata in crypto event logs.
+ */
+public enum MetadataFilterOperation: Sendable {
+    case equals
+    case contains
+    case startsWith
+    case endsWith
+}
+
+/**
  # MetadataFilter
  
  Filter for event metadata.
@@ -234,21 +253,35 @@ public struct MetadataFilter: Sendable, Equatable {
     /// The metadata key to filter on
     public let key: String
     
-    /// The value to match, if exact matching is desired
-    public let exactValue: String?
+    /// The value to match
+    public let value: String
     
-    /// The value to match against, if contains matching is desired
-    public let containsValue: String?
+    /// The operation to perform
+    public let operation: MetadataFilterOperation
     
     /**
      Creates a new MetadataFilter.
      
      - Parameters:
         - key: The metadata key to filter on
-        - exactValue: The value to match exactly
+        - value: The value to match
+        - operation: The operation to perform
+     */
+    public init(key: String, value: String, operation: MetadataFilterOperation) {
+        self.key = key
+        self.value = value
+        self.operation = operation
+    }
+    
+    /**
+     Creates a new MetadataFilter.
+     
+     - Parameters:
+        - key: The metadata key to filter on
+        - value: The value to match exactly
      */
     public static func exact(key: String, value: String) -> MetadataFilter {
-        MetadataFilter(key: key, exactValue: value, containsValue: nil)
+        MetadataFilter(key: key, value: value, operation: .equals)
     }
     
     /**
@@ -256,32 +289,57 @@ public struct MetadataFilter: Sendable, Equatable {
      
      - Parameters:
         - key: The metadata key to filter on
-        - containsValue: The value to check for containment
+        - value: The value to check for containment
      */
     public static func contains(key: String, value: String) -> MetadataFilter {
-        MetadataFilter(key: key, exactValue: nil, containsValue: value)
+        MetadataFilter(key: key, value: value, operation: .contains)
     }
     
     /**
-     Checks if metadata matches this filter.
+     Creates a new MetadataFilter.
      
-     - Parameter metadata: The metadata to check
+     - Parameters:
+        - key: The metadata key to filter on
+        - value: The value to check for prefix
+     */
+    public static func startsWith(key: String, value: String) -> MetadataFilter {
+        MetadataFilter(key: key, value: value, operation: .startsWith)
+    }
+    
+    /**
+     Creates a new MetadataFilter.
      
-     - Returns: True if the metadata matches the filter criteria, false otherwise
+     - Parameters:
+        - key: The metadata key to filter on
+        - value: The value to check for suffix
+     */
+    public static func endsWith(key: String, value: String) -> MetadataFilter {
+        MetadataFilter(key: key, value: value, operation: .endsWith)
+    }
+    
+    /**
+     Checks if the given metadata matches the filter criteria.
+     
+     - Parameter metadata: The metadata to check.
+     - Returns: True if the metadata matches the filter criteria, false otherwise.
      */
     public func matches(_ metadata: LogMetadataDTOCollection) -> Bool {
         guard let entry = metadata.entries.first(where: { $0.key == key }) else {
             return false
         }
         
-        if let exactValue = exactValue {
-            return entry.value == exactValue
-        }
+        // Check if the value matches the specified value
+        let entryValue = entry.value
         
-        if let containsValue = containsValue {
-            return entry.value.contains(containsValue)
+        switch operation {
+        case .equals:
+            return entryValue == value
+        case .contains:
+            return entryValue.lowercased().contains(value.lowercased())
+        case .startsWith:
+            return entryValue.lowercased().hasPrefix(value.lowercased())
+        case .endsWith:
+            return entryValue.lowercased().hasSuffix(value.lowercased())
         }
-        
-        return true  // No value criteria specified
     }
 }

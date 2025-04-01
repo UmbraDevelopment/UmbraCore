@@ -1,4 +1,6 @@
-import CoreDTOs
+import Foundation
+import LoggingTypes
+import DateTimeTypes
 
 /**
  # CryptoEventDTO

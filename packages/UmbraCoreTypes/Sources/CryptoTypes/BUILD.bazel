@@ -8,5 +8,7 @@ swift_library(
     deps = [
         "//packages/UmbraCoreTypes/Sources/UmbraErrors",
         "//packages/UmbraCoreTypes/Sources/DomainSecurityTypes",
+        "//packages/UmbraCoreTypes/Sources/DateTimeTypes",
+        "//packages/UmbraCoreTypes/Sources/LoggingTypes",
     ],
 )

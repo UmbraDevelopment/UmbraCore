@@ -41,7 +41,7 @@ public actor ErrorLoggerService: ErrorLoggingProtocol {
    - Parameter level: The error privacy level to map
    - Returns: The corresponding LogPrivacy level
    */
-  private func mapPrivacyLevel(_ level: ErrorPrivacyLevel) -> LogPrivacy {
+  private func mapPrivacyLevel(_ level: ErrorPrivacyLevel) -> LogPrivacyLevel {
     switch level {
     case .minimal:
       return .public
@@ -162,7 +162,7 @@ public actor ErrorLoggerService: ErrorLoggingProtocol {
     var metadata = PrivacyMetadata()
     
     // Map privacy level to LogPrivacy
-    let logPrivacy = mapPrivacyLevel(privacyLevel)
+    _ = mapPrivacyLevel(privacyLevel)
     
     // Add source information with appropriate privacy
     metadata["file"] = PrivacyMetadataValue(value: URL(fileURLWithPath: file).lastPathComponent, privacy: .public)
@@ -174,8 +174,7 @@ public actor ErrorLoggerService: ErrorLoggingProtocol {
     
     // Add domain for domain errors
     if let domainError = error as? ErrorDomainProtocol {
-      metadata["errorDomain"] = PrivacyMetadataValue(value: String(describing: type(of: domainError)), privacy: .public)
-      metadata["errorCategory"] = PrivacyMetadataValue(value: domainError.category, privacy: .public)
+      metadata["errorDomain"] = PrivacyMetadataValue(value: String(describing: domainError), privacy: .public)
     }
     
     // Add localized information for localized errors
@@ -183,7 +182,7 @@ public actor ErrorLoggerService: ErrorLoggingProtocol {
       if let failureReason = localizedError.failureReason {
         metadata["failureReason"] = PrivacyMetadataValue(
           value: failureReason,
-          privacy: privacyLevel == .minimal ? .public : logPrivacy
+          privacy: privacyLevel == .minimal ? .public : .private
         )
       }
       

@@ -11,6 +11,7 @@ swift_library(
         "//packages/UmbraInterfaces/Sources/LoggingInterfaces:LoggingInterfaces",
         "//packages/UmbraInterfaces/Sources/LoggingWrapperInterfaces:LoggingWrapperInterfaces",
         "//packages/UmbraCoreTypes/Sources/LoggingTypes:LoggingTypes",
-        "//packages/UmbraCoreTypes/Sources/UmbraErrors:UmbraErrors", # Added dependency
+        "//packages/UmbraCoreTypes/Sources/UmbraErrors:UmbraErrors",
+        "//packages/UmbraImplementations/Sources/LoggingAdapters:LoggingAdapters", # Added dependency for privacy-enhanced logging
     ],
 )
