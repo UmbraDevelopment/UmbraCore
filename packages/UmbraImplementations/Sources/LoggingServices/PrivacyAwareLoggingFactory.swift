@@ -111,23 +111,20 @@ public enum PrivacyAwareLoggingFactory {
     CryptoLogger(logger: logger)
   }
 
-  /// Creates a domain-specific logger for error handling.
+  /// Creates a logger specialised for error logging with privacy controls.
   ///
-  /// This provides a logger specialised for securely logging errors
-  /// with appropriate privacy controls.
-  ///
-  /// - Parameter logger: The underlying logger to use.
-  /// - Returns: An ErrorLogger instance.
+  /// - Parameter logger: The base logger to use
+  /// - Returns: An error logger with privacy controls
   public static func createErrorLogger(
     logger: LoggingProtocol
-  ) -> ErrorLogger {
-    ErrorLogger(logger: logger)
+  ) -> EnhancedErrorLogger {
+    EnhancedErrorLogger(logger: logger)
   }
 
   /// Creates a domain-specific logger for file system operations.
   ///
-  /// This provides a logger specialised for securely logging file system
-  /// operations with appropriate privacy controls for file paths.
+  /// This provides a logger specialised for securely logging file operations
+  /// with appropriate privacy controls for paths and other sensitive information.
   ///
   /// - Parameter logger: The underlying logger to use.
   /// - Returns: A FileSystemLogger instance.
