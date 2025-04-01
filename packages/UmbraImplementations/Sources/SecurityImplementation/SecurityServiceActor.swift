@@ -1,11 +1,14 @@
 import Foundation
 import LoggingInterfaces
-import SecurityInterfaces
+import SecurityCoreInterfaces
 import UmbraErrors
-import CryptoInterfaces
 import CryptoTypes
+import CoreSecurityTypes
+import DomainSecurityTypes
+import SecurityCoreInterfaces
+import LoggingTypes
 
-/// Actor implementation of the SecurityServiceProtocol that provides thread-safe
+/// Actor implementation of the SecurityProviderProtocol that provides thread-safe
 /// access to security services with proper domain separation.
 ///
 /// This implementation follows the Alpha Dot Five architecture principles:
@@ -14,19 +17,19 @@ import CryptoTypes
 /// - Privacy-aware logging for sensitive operations
 /// - Strong type safety with proper error handling
 /// - Clear domain separation between security policy and cryptographic operations
-public actor SecurityServiceActor: SecurityServiceProtocol {
+public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitializable {
     // MARK: - Private Properties
     
     /// The crypto service used for cryptographic operations
-    private let cryptoService: CryptoXPCServiceProtocol
+    private let cryptoService: any CryptoServiceProtocol
     
     /// The logger used for logging security events
-    private let logger: LoggingProtocol
+    private let logger: LoggingInterfaces.LoggingProtocol
     
     /// The configuration for this security service
     private var configuration: SecurityConfigurationDTO
     
-    /// Flag indicating whether the service has been initialised
+    /// Flag indicating if service has been initialised
     private var isInitialised: Bool = false
     
     /// Internal store for event subscribers
@@ -37,56 +40,57 @@ public actor SecurityServiceActor: SecurityServiceProtocol {
     
     // MARK: - Initialisation
     
-    /// Creates a new security service actor with the given crypto service and logger
+    /// Creates a new security service actor with the specified dependencies
     /// - Parameters:
     ///   - cryptoService: The crypto service to use for cryptographic operations
     ///   - logger: The logger to use for logging security events
-    public init(cryptoService: CryptoXPCServiceProtocol, logger: LoggingProtocol) {
+    public init(
+        cryptoService: any CryptoServiceProtocol,
+        logger: LoggingInterfaces.LoggingProtocol
+    ) {
         self.cryptoService = cryptoService
         self.logger = logger
         self.configuration = .default
+        self.isInitialised = false
     }
     
-    // MARK: - SecurityServiceProtocol Implementation
-    
-    /// Initialises the security service with the given configuration
-    /// - Parameter configuration: Configuration options for the security service
+    /// Initialises the security service
     /// - Throws: SecurityError if initialisation fails
-    public func initialise(configuration: SecurityConfigurationDTO) async throws {
+    public func initialise() async throws {
         guard !isInitialised else {
             throw UmbraErrors.SecurityError.alreadyInitialised
         }
         
-        self.configuration = configuration
-        
         // Log initialisation event with privacy controls
-        logger.log(
-            level: .information,
-            message: "Security service initialised with \(configuration.securityLevel.rawValue) security level",
-            metadata: [
-                "security_level": .string(configuration.securityLevel.rawValue),
-                "service_id": .string(serviceIdentifier.uuidString)
-            ],
-            privacy: .public
+        await logger.debug(
+            "Initialising security service",
+            metadata: PrivacyMetadata([
+                "operation": (value: "initialise", privacy: .public)
+            ]),
+            source: "SecurityServiceActor.initialise"
         )
         
-        // Publish initialisation event
-        let initialisationEvent = SecurityEventDTO(
-            eventIdentifier: UUID().uuidString,
-            eventType: .initialisation,
-            timestampISO8601: ISO8601DateFormatter().string(from: Date()),
-            severityLevel: .informational,
-            eventMessage: "Security service initialised",
-            contextInformation: [
-                "security_level": configuration.securityLevel.rawValue,
-                "service_id": serviceIdentifier.uuidString
-            ],
-            containsSensitiveInformation: false,
-            sourceComponent: "SecurityService"
-        )
-        publishEvent(initialisationEvent)
+        // Validate that crypto service is available
+        guard await cryptoService.isAvailable() else {
+            throw UmbraErrors.SecurityError.serviceUnavailable
+        }
         
+        // Mark as initialised
         isInitialised = true
+        
+        await logger.info(
+            "Security service initialised successfully",
+            metadata: PrivacyMetadata([
+                "status": (value: "success", privacy: .public)
+            ]),
+            source: "SecurityServiceActor.initialise"
+        )
+    }
+    
+    /// Initialize the security service (American spelling for AsyncServiceInitializable conformance)
+    /// - Throws: SecurityError if initialization fails
+    public func initialize() async throws {
+        try await initialise()
     }
     
     /// Secures data according to the security policy defined in the security context
@@ -99,23 +103,20 @@ public actor SecurityServiceActor: SecurityServiceProtocol {
         try validateInitialisation()
         
         // Log security operation with privacy controls
-        logger.log(
-            level: .debug,
-            message: "Securing data using \(securityContext.operationType.rawValue) operation",
+        await logger.debug(
+            "Securing data using \(securityContext.operationType.rawValue) operation",
             metadata: [
-                "operation_type": .string(securityContext.operationType.rawValue),
-                "security_level": .string(securityContext.securityLevel.rawValue),
-                "data_length": .int(data.count)
-            ],
-            privacy: .private
+                "operation_type": securityContext.operationType.rawValue,
+                "security_level": securityContext.securityLevel.rawValue,
+                "data_length": String(data.count)
+            ]
         )
         
         switch securityContext.operationType {
         case .encryption:
             // Delegate to crypto service for encryption
-            let secureBytes = SecureBytes(bytes: data)
             let result = await cryptoService.encrypt(
-                data: secureBytes,
+                data: data,
                 keyIdentifier: securityContext.keyIdentifier,
                 options: securityContext.cryptoOptions
             )
@@ -123,28 +124,24 @@ public actor SecurityServiceActor: SecurityServiceProtocol {
             switch result {
             case .success(let encryptedData):
                 // Log success
-                logger.log(
-                    level: .debug,
-                    message: "Data secured successfully",
+                await logger.debug(
+                    "Data secured successfully",
                     metadata: [
-                        "operation_type": .string(securityContext.operationType.rawValue),
-                        "result_length": .int(encryptedData.bytes.count)
-                    ],
-                    privacy: .private
+                        "operation_type": securityContext.operationType.rawValue,
+                        "result_length": String(encryptedData.count)
+                    ]
                 )
                 
-                return encryptedData.bytes
+                return encryptedData
                 
             case .failure(let error):
                 // Log error and convert to security domain error
-                logger.log(
-                    level: .error,
-                    message: "Data security operation failed: \(error.localizedDescription)",
+                await logger.error(
+                    "Data security operation failed: \(error.localizedDescription)",
                     metadata: [
-                        "operation_type": .string(securityContext.operationType.rawValue),
-                        "error": .string(error.localizedDescription)
-                    ],
-                    privacy: .private
+                        "operation_type": securityContext.operationType.rawValue,
+                        "error": error.localizedDescription
+                    ]
                 )
                 
                 throw UmbraErrors.SecurityError.encryptionFailed(
@@ -169,23 +166,20 @@ public actor SecurityServiceActor: SecurityServiceProtocol {
         try validateInitialisation()
         
         // Log security operation with privacy controls
-        logger.log(
-            level: .debug,
-            message: "Retrieving secured data using \(securityContext.operationType.rawValue) operation",
+        await logger.debug(
+            "Retrieving secured data using \(securityContext.operationType.rawValue) operation",
             metadata: [
-                "operation_type": .string(securityContext.operationType.rawValue),
-                "security_level": .string(securityContext.securityLevel.rawValue),
-                "data_length": .int(securedData.count)
-            ],
-            privacy: .private
+                "operation_type": securityContext.operationType.rawValue,
+                "security_level": securityContext.securityLevel.rawValue,
+                "data_length": String(securedData.count)
+            ]
         )
         
         switch securityContext.operationType {
         case .decryption:
             // Delegate to crypto service for decryption
-            let encryptedBytes = SecureBytes(bytes: securedData)
             let result = await cryptoService.decrypt(
-                encryptedData: encryptedBytes,
+                encryptedData: securedData,
                 keyIdentifier: securityContext.keyIdentifier,
                 options: securityContext.cryptoOptions
             )
@@ -193,28 +187,24 @@ public actor SecurityServiceActor: SecurityServiceProtocol {
             switch result {
             case .success(let decryptedData):
                 // Log success
-                logger.log(
-                    level: .debug,
-                    message: "Secured data retrieved successfully",
+                await logger.debug(
+                    "Secured data retrieved successfully",
                     metadata: [
-                        "operation_type": .string(securityContext.operationType.rawValue),
-                        "result_length": .int(decryptedData.bytes.count)
-                    ],
-                    privacy: .private
+                        "operation_type": securityContext.operationType.rawValue,
+                        "result_length": String(decryptedData.count)
+                    ]
                 )
                 
-                return decryptedData.bytes
+                return decryptedData
                 
             case .failure(let error):
                 // Log error and convert to security domain error
-                logger.log(
-                    level: .error,
-                    message: "Data retrieval operation failed: \(error.localizedDescription)",
+                await logger.error(
+                    "Data retrieval operation failed: \(error.localizedDescription)",
                     metadata: [
-                        "operation_type": .string(securityContext.operationType.rawValue),
-                        "error": .string(error.localizedDescription)
-                    ],
-                    privacy: .private
+                        "operation_type": securityContext.operationType.rawValue,
+                        "error": error.localizedDescription
+                    ]
                 )
                 
                 throw UmbraErrors.SecurityError.decryptionFailed(
@@ -237,13 +227,11 @@ public actor SecurityServiceActor: SecurityServiceProtocol {
         try validateInitialisation()
         
         // Log bookmark creation with privacy controls
-        logger.log(
-            level: .debug,
-            message: "Creating security-scoped bookmark",
+        await logger.debug(
+            "Creating security-scoped bookmark",
             metadata: [
-                "url_path": .string(url.path)
-            ],
-            privacy: .private
+                "url_path": url.path
+            ]
         )
         
         do {
@@ -258,25 +246,21 @@ public actor SecurityServiceActor: SecurityServiceProtocol {
             let bytes = [UInt8](bookmarkData)
             
             // Log success
-            logger.log(
-                level: .debug,
-                message: "Security-scoped bookmark created successfully",
+            await logger.debug(
+                "Security-scoped bookmark created successfully",
                 metadata: [
-                    "bookmark_size": .int(bytes.count)
-                ],
-                privacy: .private
+                    "bookmark_size": String(bytes.count)
+                ]
             )
             
             return bytes
         } catch {
             // Log error
-            logger.log(
-                level: .error,
-                message: "Failed to create security-scoped bookmark: \(error.localizedDescription)",
+            await logger.error(
+                "Failed to create security-scoped bookmark: \(error.localizedDescription)",
                 metadata: [
-                    "error": .string(error.localizedDescription)
-                ],
-                privacy: .private
+                    "error": error.localizedDescription
+                ]
             )
             
             throw UmbraErrors.SecurityError.bookmarkCreationFailed(
@@ -293,13 +277,11 @@ public actor SecurityServiceActor: SecurityServiceProtocol {
         try validateInitialisation()
         
         // Log bookmark resolution with privacy controls
-        logger.log(
-            level: .debug,
-            message: "Resolving security-scoped bookmark",
+        await logger.debug(
+            "Resolving security-scoped bookmark",
             metadata: [
-                "bookmark_size": .int(bookmarkData.count)
-            ],
-            privacy: .private
+                "bookmark_size": String(bookmarkData.count)
+            ]
         )
         
         do {
@@ -316,26 +298,22 @@ public actor SecurityServiceActor: SecurityServiceProtocol {
             )
             
             // Log success
-            logger.log(
-                level: .debug,
-                message: "Security-scoped bookmark resolved successfully",
+            await logger.debug(
+                "Security-scoped bookmark resolved successfully",
                 metadata: [
-                    "url_path": .string(url.path),
-                    "is_stale": .bool(isStale)
-                ],
-                privacy: .private
+                    "url_path": url.path,
+                    "is_stale": String(isStale)
+                ]
             )
             
             return (url, isStale)
         } catch {
             // Log error
-            logger.log(
-                level: .error,
-                message: "Failed to resolve security-scoped bookmark: \(error.localizedDescription)",
+            await logger.error(
+                "Failed to resolve security-scoped bookmark: \(error.localizedDescription)",
                 metadata: [
-                    "error": .string(error.localizedDescription)
-                ],
-                privacy: .private
+                    "error": error.localizedDescription
+                ]
             )
             
             throw UmbraErrors.SecurityError.bookmarkResolutionFailed(
@@ -355,15 +333,13 @@ public actor SecurityServiceActor: SecurityServiceProtocol {
         try validateInitialisation()
         
         // Log verification with privacy controls
-        logger.log(
-            level: .debug,
-            message: "Verifying data integrity using \(context.operationType.rawValue)",
+        await logger.debug(
+            "Verifying data integrity using \(context.operationType.rawValue)",
             metadata: [
-                "operation_type": .string(context.operationType.rawValue),
-                "data_length": .int(data.count),
-                "verification_length": .int(verification.count)
-            ],
-            privacy: .private
+                "operation_type": context.operationType.rawValue,
+                "data_length": String(data.count),
+                "verification_length": String(verification.count)
+            ]
         )
         
         switch context.operationType {
@@ -372,12 +348,9 @@ public actor SecurityServiceActor: SecurityServiceProtocol {
                 switch verificationType {
                 case "signature":
                     // Delegate to crypto service for signature verification
-                    let dataBytes = SecureBytes(bytes: data)
-                    let signatureBytes = SecureBytes(bytes: verification)
-                    
                     let result = await cryptoService.verify(
-                        signature: signatureBytes,
-                        data: dataBytes,
+                        signature: verification,
+                        data: data,
                         keyIdentifier: context.keyIdentifier,
                         options: nil
                     )
@@ -385,23 +358,22 @@ public actor SecurityServiceActor: SecurityServiceProtocol {
                     switch result {
                     case .success(let isValid):
                         // Log result
-                        logger.log(
-                            level: .debug,
-                            message: "Signature verification completed: \(isValid ? "valid" : "invalid")",
-                            privacy: .private
+                        await logger.debug(
+                            "Signature verification completed: \(isValid ? "valid" : "invalid")",
+                            metadata: [
+                                "is_valid": String(isValid)
+                            ]
                         )
                         
                         return isValid
                         
                     case .failure(let error):
                         // Log error and convert to security domain error
-                        logger.log(
-                            level: .error,
-                            message: "Signature verification failed: \(error.localizedDescription)",
+                        await logger.error(
+                            "Signature verification failed: \(error.localizedDescription)",
                             metadata: [
-                                "error": .string(error.localizedDescription)
-                            ],
-                            privacy: .private
+                                "error": error.localizedDescription
+                            ]
                         )
                         
                         throw UmbraErrors.SecurityError.verificationFailed(
@@ -411,37 +383,35 @@ public actor SecurityServiceActor: SecurityServiceProtocol {
                     
                 case "hash":
                     // Delegate to crypto service for hash verification
-                    let dataBytes = SecureBytes(bytes: data)
                     let hashAlgorithm = context.metadata["hash_algorithm"].map { HashAlgorithm(rawValue: $0) } ?? .sha256
                     
                     let hashResult = await cryptoService.hash(
-                        data: dataBytes,
+                        data: data,
                         algorithm: hashAlgorithm
                     )
                     
                     switch hashResult {
                     case .success(let computedHash):
                         // Compare the computed hash with the provided hash
-                        let match = constantTimeCompare(computedHash.bytes, verification)
+                        let match = constantTimeCompare(computedHash, verification)
                         
                         // Log result
-                        logger.log(
-                            level: .debug,
-                            message: "Hash verification completed: \(match ? "valid" : "invalid")",
-                            privacy: .private
+                        await logger.debug(
+                            "Hash verification completed: \(match ? "valid" : "invalid")",
+                            metadata: [
+                                "is_match": String(match)
+                            ]
                         )
                         
                         return match
                         
                     case .failure(let error):
                         // Log error and convert to security domain error
-                        logger.log(
-                            level: .error,
-                            message: "Hash computation failed: \(error.localizedDescription)",
+                        await logger.error(
+                            "Hash computation failed: \(error.localizedDescription)",
                             metadata: [
-                                "error": .string(error.localizedDescription)
-                            ],
-                            privacy: .private
+                                "error": error.localizedDescription
+                            ]
                         )
                         
                         throw UmbraErrors.SecurityError.hashingFailed(
@@ -465,6 +435,19 @@ public actor SecurityServiceActor: SecurityServiceProtocol {
                 reason: "Operation type \(context.operationType.rawValue) not supported for data verification"
             )
         }
+    }
+    
+    /// Updates the configuration of the security service with new settings
+    /// - Parameter configuration: The new configuration to apply
+    /// - Throws: SecurityError if update fails
+    public func updateConfiguration(_ configuration: SecurityConfigurationDTO) async throws {
+        try validateInitialisation()
+        self.configuration = configuration
+        
+        // Log configuration update
+        await logger.debug(
+            "Security service configuration updated to \(configuration.securityLevel.rawValue) security level"
+        )
     }
     
     /// Returns version information about the security service
@@ -492,14 +475,12 @@ public actor SecurityServiceActor: SecurityServiceProtocol {
             continuation = newContinuation
             
             // Log subscription with privacy controls
-            self.logger.log(
-                level: .debug,
-                message: "New security event subscriber added",
+            self.logger.debug(
+                "New security event subscriber added",
                 metadata: [
-                    "min_severity": .string(filter.minimumSeverityLevel?.rawValue ?? "None"),
-                    "include_sensitive": .bool(filter.includeSensitiveInformation)
-                ],
-                privacy: .public
+                    "min_severity": filter.minimumSeverityLevel?.rawValue ?? "None",
+                    "include_sensitive": String(filter.includeSensitiveInformation)
+                ]
             )
         }
         
@@ -543,23 +524,153 @@ public actor SecurityServiceActor: SecurityServiceProtocol {
         }
     }
     
-    /// Performs a constant-time comparison of two byte arrays
+    /// Performs constant-time comparison of two byte arrays to prevent timing attacks
     /// - Parameters:
-    ///   - lhs: First byte array
-    ///   - rhs: Second byte array
-    /// - Returns: True if the arrays are equal
-    private func constantTimeCompare(_ lhs: [UInt8], _ rhs: [UInt8]) -> Bool {
-        // If lengths don't match, arrays are not equal
-        guard lhs.count == rhs.count else {
+    ///   - a: First byte array
+    ///   - b: Second byte array
+    /// - Returns: True if arrays are equal, false otherwise
+    private func constantTimeCompare(_ a: [UInt8], _ b: [UInt8]) -> Bool {
+        guard a.count == b.count else {
             return false
         }
         
-        // Constant-time comparison to prevent timing attacks
         var result: UInt8 = 0
-        for i in 0..<lhs.count {
-            result |= lhs[i] ^ rhs[i]
+        for i in 0..<a.count {
+            result |= a[i] ^ b[i]
         }
         
         return result == 0
+    }
+    
+    // MARK: - SecurityProviderProtocol Implementation
+    
+    /// Access to cryptographic service implementation
+    public func cryptoService() async -> CryptoServiceProtocol {
+        return cryptoService
+    }
+    
+    /// Access to key management service implementation
+    public func keyManager() async -> SecurityCoreInterfaces.KeyManagementProtocol {
+        throw UmbraErrors.SecurityError.serviceUnavailable
+    }
+    
+    /// Encrypts data with the specified configuration
+    public func encrypt(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+        try validateInitialisation()
+        
+        // Implementation would go here
+        // For now, we'll throw an error since this is a stub
+        throw SecurityProtocolError.notImplemented(message: "Encryption not implemented in this version")
+    }
+    
+    /// Decrypts data with the specified configuration
+    public func decrypt(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+        try validateInitialisation()
+        
+        // Implementation would go here
+        // For now, we'll throw an error since this is a stub
+        throw SecurityProtocolError.notImplemented(message: "Decryption not implemented in this version")
+    }
+    
+    /// Generates a cryptographic key with the specified configuration
+    public func generateKey(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+        try validateInitialisation()
+        
+        // Implementation would go here
+        // For now, we'll throw an error since this is a stub
+        throw SecurityProtocolError.notImplemented(message: "Key generation not implemented in this version")
+    }
+    
+    /// Securely stores data with the specified configuration
+    public func secureStore(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+        try validateInitialisation()
+        
+        // Implementation would go here
+        // For now, we'll throw an error since this is a stub
+        throw SecurityProtocolError.notImplemented(message: "Secure storage not implemented in this version")
+    }
+    
+    /// Retrieves securely stored data with the specified configuration
+    public func secureRetrieve(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+        try validateInitialisation()
+        
+        // Implementation would go here
+        // For now, we'll throw an error since this is a stub
+        throw SecurityProtocolError.notImplemented(message: "Secure retrieval not implemented in this version")
+    }
+    
+    /// Deletes securely stored data with the specified configuration
+    public func secureDelete(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+        try validateInitialisation()
+        
+        // Implementation would go here
+        // For now, we'll throw an error since this is a stub
+        throw SecurityProtocolError.notImplemented(message: "Secure deletion not implemented in this version")
+    }
+    
+    /// Creates a digital signature for data with the specified configuration
+    public func sign(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+        try validateInitialisation()
+        
+        // Implementation would go here
+        // For now, we'll throw an error since this is a stub
+        throw SecurityProtocolError.notImplemented(message: "Digital signing not implemented in this version")
+    }
+    
+    /// Verifies a digital signature with the specified configuration
+    public func verify(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+        try validateInitialisation()
+        
+        // Implementation would go here
+        // For now, we'll throw an error since this is a stub
+        throw SecurityProtocolError.notImplemented(message: "Signature verification not implemented in this version")
+    }
+    
+    /// Performs a hash operation with the specified configuration
+    public func hash(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+        try validateInitialisation()
+        
+        // Implementation would go here
+        // For now, we'll throw an error since this is a stub
+        throw SecurityProtocolError.notImplemented(message: "Hashing not implemented in this version")
+    }
+    
+    /// Generates a secure random value
+    public func secureRandom(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+        try validateInitialisation()
+        
+        // Implementation would go here
+        // For now, we'll throw an error since this is a stub
+        throw SecurityProtocolError.notImplemented(message: "Random generation not implemented in this version")
+    }
+    
+    /// Performs a secure operation with the specified configuration
+    public func performSecureOperation(operation: SecurityOperation, config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+        try validateInitialisation()
+        
+        switch operation {
+        case .encrypt:
+            return try await encrypt(config: config)
+        case .decrypt:
+            return try await decrypt(config: config)
+        case .hash:
+            return try await hash(config: config)
+        case .secureRandom:
+            return try await secureRandom(config: config)
+        case .generateKey:
+            return try await generateKey(config: config)
+        case .secureStore:
+            return try await secureStore(config: config)
+        case .secureRetrieve:
+            return try await secureRetrieve(config: config)
+        case .secureDelete:
+            return try await secureDelete(config: config)
+        case .sign:
+            return try await sign(config: config)
+        case .verify:
+            return try await verify(config: config)
+        default:
+            throw SecurityProtocolError.notImplemented(message: "Operation \(operation) not implemented")
+        }
     }
 }

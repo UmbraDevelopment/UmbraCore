@@ -1,6 +1,6 @@
 import CryptoInterfaces
 import LoggingInterfaces
-import SecurityInterfaces
+import SecurityCoreInterfaces
 
 /**
  # CryptoXPCServiceFactory

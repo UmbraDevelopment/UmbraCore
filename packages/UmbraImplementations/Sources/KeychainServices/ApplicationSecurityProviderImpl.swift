@@ -3,6 +3,7 @@ import Foundation
 import LoggingInterfaces
 import CoreSecurityTypes
 import DomainSecurityTypes
+import SecurityCoreInterfaces
 
 /**
  # Application Security Provider Implementation
@@ -20,7 +21,7 @@ public enum ApplicationSecurityFactory {
    */
   public static func createApplicationSecurityProvider(
     logger: (any LoggingServiceProtocol)?
-  ) async -> any ApplicationSecurityProviderProtocol {
+  ) async -> any SecurityProviderProtocol {
     // Create a key manager adapter
     let keyManager=await MockKeyManagerFactory.shared.createKeyManager()
 
@@ -43,7 +44,7 @@ public enum ApplicationSecurityFactory {
    */
   public static func createSecurityProvider(
     logger: (any LoggingServiceProtocol)?
-  ) async -> any ApplicationSecurityProviderProtocol {
+  ) async -> any SecurityProviderProtocol {
     await createApplicationSecurityProvider(logger: logger)
   }
 }
@@ -398,92 +399,144 @@ public struct KeyGenerationResult: Sendable, Hashable {
 }
 
 /**
- Application Security Provider Protocol
-
- The primary interface for accessing all security-related
- functionality in UmbraCore applications. Serves as the main entry point for the security subsystem,
- coordinating cryptographic operations, key management, and secure storage.
+ Mock implementation of SecurityProviderProtocol for testing and development.
+ This provides a basic implementation that delegates to real services where possible,
+ and returns placeholder implementations where necessary.
  */
-public protocol ApplicationSecurityProviderProtocol: Sendable {
-  /// Access to the cryptographic service implementation
-  var cryptoService: any ApplicationCryptoServiceProtocol { get }
-
-  /// Access to the key management service implementation
-  var keyManager: any KeyManagementProtocol { get }
-
-  /// Access to the secure storage service implementation
-  var secureStorage: any SecureStorageProtocol { get }
-
-  /// Encrypts data using the specified configuration
-  func encrypt(data: Data, with config: EncryptionConfig) async throws -> EncryptionResult
-
-  /// Decrypts data using the specified configuration
-  func decrypt(data: Data, with config: EncryptionConfig) async throws -> DecryptionResult
-
-  /// Signs data using the specified configuration
-  func sign(data: Data, with config: SigningConfig) async throws -> SignatureResult
-
-  /// Verifies a signature for the given data
-  func verify(
-    signature: Data,
-    for data: Data,
-    with config: SigningConfig
-  ) async throws -> Bool
-
-  /// Generates a new key with the specified configuration
-  func generateKey(
-    with config: KeyGenerationConfig
-  ) async throws -> KeyGenerationResult
+private final class MockSecurityProvider: SecurityProviderProtocol {
+  private let logger: any LoggingProtocol
+  private let keyMgr: any KeyManagementProtocol
+  
+  init(logger: any LoggingProtocol, keyManager: any KeyManagementProtocol) {
+    self.logger = logger
+    self.keyMgr = keyManager
+  }
+  
+  // MARK: - AsyncServiceInitializable
+  
+  public func initialize() async throws {
+    // No initialization needed for mock implementation
+  }
+  
+  // MARK: - Service Access
+  
+  public func cryptoService() async -> CryptoServiceProtocol {
+    return MockCryptoService()
+  }
+  
+  public func keyManager() async -> KeyManagementProtocol {
+    return keyMgr
+  }
+  
+  // MARK: - Core Operations
+  
+  public func encrypt(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+    guard let data = config.data else {
+      throw SecurityProtocolError.invalidData(reason: "No data provided for encryption")
+    }
+    
+    logger.info("Encrypting data of \(data.count) bytes with mock provider", metadata: ["operation": "encrypt"])
+    let result = SecurityResultDTO(
+      data: data, // In a real implementation, this would be encrypted data
+      identifier: "mock-encrypted-\(UUID().uuidString)",
+      metadata: ["algorithm": "AES-256", "mode": "GCM"]
+    )
+    return result
+  }
+  
+  public func decrypt(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+    guard let data = config.data else {
+      throw SecurityProtocolError.invalidData(reason: "No data provided for decryption")
+    }
+    
+    logger.info("Decrypting data of \(data.count) bytes with mock provider", metadata: ["operation": "decrypt"])
+    let result = SecurityResultDTO(
+      data: data, // In a real implementation, this would be decrypted data
+      identifier: config.identifier ?? "",
+      metadata: ["algorithm": "AES-256", "mode": "GCM"]
+    )
+    return result
+  }
+  
+  public func generateKey(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+    logger.info("Generating key with mock provider", metadata: ["operation": "generateKey"])
+    let mockKey = Data(repeating: 0, count: 32) // 256-bit key
+    let result = SecurityResultDTO(
+      data: mockKey,
+      identifier: "mock-key-\(UUID().uuidString)",
+      metadata: ["algorithm": "AES", "size": "256", "type": "symmetric"]
+    )
+    return result
+  }
+  
+  public func sign(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+    guard let data = config.data else {
+      throw SecurityProtocolError.invalidData(reason: "No data provided for signing")
+    }
+    
+    logger.info("Signing data of \(data.count) bytes with mock provider", metadata: ["operation": "sign"])
+    let mockSignature = Data(repeating: 0, count: 64) // Mock signature
+    let result = SecurityResultDTO(
+      data: mockSignature,
+      identifier: config.identifier ?? "",
+      metadata: ["algorithm": "HMAC-SHA256"]
+    )
+    return result
+  }
+  
+  public func verify(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+    guard let data = config.data, let signature = config.additionalData else {
+      throw SecurityProtocolError.invalidData(reason: "No data or signature provided for verification")
+    }
+    
+    logger.info("Verifying signature for data of \(data.count) bytes with mock provider", metadata: ["operation": "verify"])
+    let result = SecurityResultDTO(
+      data: Data([1]), // 1 for true, would be based on actual verification in a real implementation
+      identifier: config.identifier ?? "",
+      metadata: ["algorithm": "HMAC-SHA256", "verified": "true"]
+    )
+    return result
+  }
+  
+  public func hash(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+    guard let data = config.data else {
+      throw SecurityProtocolError.invalidData(reason: "No data provided for hashing")
+    }
+    
+    logger.info("Hashing data of \(data.count) bytes with mock provider", metadata: ["operation": "hash"])
+    let mockHash = Data(repeating: 0, count: 32) // Mock SHA-256 hash
+    let result = SecurityResultDTO(
+      data: mockHash,
+      identifier: config.identifier ?? "",
+      metadata: ["algorithm": "SHA-256"]
+    )
+    return result
+  }
 }
 
 /**
- Application Crypto Service Protocol
-
- Interface for cryptographic operations in UmbraCore applications.
+ Mock implementation of CryptoServiceProtocol for testing
  */
-public protocol ApplicationCryptoServiceProtocol: Sendable {
-  /// Encrypts data using the specified configuration
-  func encrypt(data: Data, with config: EncryptionConfig) async throws -> EncryptionResult
-
-  /// Decrypts data using the specified configuration
-  func decrypt(data: Data, with config: EncryptionConfig) async throws -> DecryptionResult
-
-  /// Generates a hash for the given data
-  func hash(data: Data, with config: HashingConfig) async throws -> HashResult
-
-  /// Signs data using the specified configuration
-  func sign(data: Data, with config: SigningConfig) async throws -> SignatureResult
-
-  /// Verifies a signature for the given data
-  func verify(
-    signature: Data,
-    for data: Data,
-    with config: SigningConfig
-  ) async throws -> Bool
-
-  /// Generates a new key with the specified configuration
-  func generateKey(
-    with config: KeyGenerationConfig
-  ) async throws -> KeyGenerationResult
-}
-
-/**
- # Secure Storage Protocol
-
- Interface for securely storing and retrieving sensitive data.
- */
-public protocol SecureStorageProtocol: Sendable {
-  /// Store a password securely
-  func storePassword(_ password: String, for account: String) async throws
-
-  /// Retrieve a password
-  func retrievePassword(for account: String) async throws -> String
-
-  /// Delete a password
-  func deletePassword(for account: String) async throws
-
-  /// Check if a password exists
-  func passwordExists(for account: String) async -> Bool
+private final class MockCryptoService: CryptoServiceProtocol {
+  func encrypt(data: [UInt8], using key: [UInt8]) async -> Result<[UInt8], SecurityProtocolError> {
+    // Mock implementation - returns the same data for testing
+    return .success(data)
+  }
+  
+  func decrypt(data: [UInt8], using key: [UInt8]) async -> Result<[UInt8], SecurityProtocolError> {
+    // Mock implementation - returns the same data for testing
+    return .success(data)
+  }
+  
+  func hash(data: [UInt8]) async -> Result<[UInt8], SecurityProtocolError> {
+    // Mock implementation - returns a fixed "hash" for testing
+    return .success([0, 1, 2, 3, 4, 5, 6, 7])
+  }
+  
+  func verifyHash(data: [UInt8], expectedHash: [UInt8]) async -> Result<Bool, SecurityProtocolError> {
+    // Mock implementation - always returns true for testing
+    return .success(true)
+  }
 }
 
 /**
@@ -492,89 +545,3 @@ public protocol SecureStorageProtocol: Sendable {
  Type alias for log metadata dictionary
  */
 public typealias LogMetadata=[String: String]
-
-/**
- Mock implementation of ApplicationSecurityProviderProtocol for testing and development.
- This provides a basic implementation that delegates to real services where possible,
- and returns placeholder implementations where necessary.
- */
-private final class MockSecurityProvider: ApplicationSecurityProviderProtocol {
-  private let logger: any LoggingProtocol
-  private let keyMgr: any KeyManagementProtocol
-
-  init(logger: any LoggingProtocol, keyManager: any KeyManagementProtocol) {
-    self.logger=logger
-    keyMgr=keyManager
-  }
-
-  public var keyManager: any KeyManagementProtocol {
-    keyMgr
-  }
-
-  public var cryptoService: any ApplicationCryptoServiceProtocol {
-    fatalError("Not implemented in mock provider")
-  }
-
-  public var secureStorage: any SecureStorageProtocol {
-    fatalError("Not implemented in mock provider")
-  }
-
-  public func encrypt(data: Data, with _: EncryptionConfig) async throws -> EncryptionResult {
-    await logger.warning(
-      "Mock encryption used - not secure",
-      metadata: LogMetadata(),
-      source: "MockSecurityProvider"
-    )
-    return EncryptionResult(
-      ciphertext: data,
-      keyIdentifier: "mock-key-id",
-      algorithm: .aes256gcm,
-      metadata: [:]
-    )
-  }
-
-  public func decrypt(data: Data, with _: EncryptionConfig) async throws -> DecryptionResult {
-    await logger.warning(
-      "Mock decryption used - not secure",
-      metadata: LogMetadata(),
-      source: "MockSecurityProvider"
-    )
-    return DecryptionResult(
-      plaintext: data,
-      algorithm: .aes256gcm,
-      metadata: [:]
-    )
-  }
-
-  public func sign(data: Data, with _: SigningConfig) async throws -> SignatureResult {
-    await logger.warning(
-      "Mock signing used - not secure",
-      metadata: LogMetadata(),
-      source: "MockSecurityProvider"
-    )
-    return SignatureResult(
-      signature: data,
-      algorithm: .ecdsaP256,
-      keyIdentifier: "mock-key-id"
-    )
-  }
-
-  public func verify(
-    signature _: Data,
-    for _: Data,
-    with _: SigningConfig
-  ) async throws -> Bool {
-    await logger.warning(
-      "Mock signature verification used - not secure",
-      metadata: LogMetadata(),
-      source: "MockSecurityProvider"
-    )
-    return true
-  }
-
-  public func generateKey(
-    with config: KeyGenerationConfig
-  ) async throws -> KeyGenerationResult {
-    try await keyManager.generateKey(with: config)
-  }
-}

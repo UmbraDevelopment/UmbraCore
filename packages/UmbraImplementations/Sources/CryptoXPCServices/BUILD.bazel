@@ -1,23 +1,20 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 swift_library(
-    name = "CryptoServices",
+    name = "CryptoXPCServices",
     srcs = glob([
         "**/*.swift",
     ]),
-    module_name = "CryptoServices",
+    module_name = "CryptoXPCServices",
     visibility = ["//visibility:public"],
     deps = [
         "//packages/UmbraCoreTypes/Sources/CoreSecurityTypes",
         "//packages/UmbraCoreTypes/Sources/CryptoTypes",
         "//packages/UmbraCoreTypes/Sources/DomainSecurityTypes",
-        "//packages/UmbraCoreTypes/Sources/LoggingTypes",
         "//packages/UmbraCoreTypes/Sources/UmbraErrors",
         "//packages/UmbraInterfaces/Sources/CryptoInterfaces",
         "//packages/UmbraInterfaces/Sources/LoggingInterfaces",
         "//packages/UmbraInterfaces/Sources/SecurityCoreInterfaces",
-        "//packages/UmbraInterfaces/Sources/SecurityInterfaces",  # Temporary, until we fully migrate SecureStorageConfig
-        "//packages/UmbraImplementations/Sources/LoggingServices",
-        "//packages/UmbraImplementations/Sources/LoggingAdapters", # Added for privacy-enhanced logging integration
+        "//packages/UmbraInterfaces/Sources/XPCProtocolsCore",
     ],
 )

@@ -35,6 +35,7 @@
 @_exported import FileSystemTypes
 @_exported import Notification
 @_exported import Scheduling
-@_exported import SecurityInterfaces
+/// Export key security-related interfaces
+@_exported import SecurityCoreInterfaces
 @_exported import UmbraErrors
 @_exported import UserDefaults

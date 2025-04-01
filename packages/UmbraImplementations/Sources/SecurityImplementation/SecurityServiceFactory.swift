@@ -1,11 +1,12 @@
 import Foundation
 import LoggingInterfaces
-import SecurityInterfaces
+import LoggingServices
+import SecurityCoreInterfaces
 import UmbraErrors
 import CryptoInterfaces
-import CryptoXPCServices
+import CryptoServices
 
-/// Factory for creating instances of the SecurityServiceProtocol.
+/// Factory for creating instances of the SecurityProviderProtocol.
 ///
 /// This factory provides methods for creating fully configured security service
 /// instances with various configurations and crypto service integrations, ensuring
@@ -13,67 +14,58 @@ import CryptoXPCServices
 public enum SecurityServiceFactory {
     /// Creates a default security service instance with standard configuration
     /// - Returns: A fully configured security service
-    public static func createDefault() -> SecurityServiceProtocol {
-        let logger = LoggingFactory.createDefault(
-            subsystem: "uk.co.umbra.security",
-            category: "SecurityService"
+    public static func createDefault() -> SecurityProviderProtocol {
+        let logger = LoggingServices.createStandardLogger(
+            minimumLevel: .info,
+            formatter: nil
         )
         
-        // Use the crypto XPC service for cryptographic operations
-        let cryptoService = CryptoXPCServiceFactory.createDefault()
-        
-        return SecurityServiceActor(
-            cryptoService: cryptoService,
-            logger: logger
-        )
+        return createWithLogger(logger)
     }
     
-    /// Creates a custom security service instance with the specified configuration
-    /// - Parameters:
-    ///   - cryptoService: The crypto service to use for cryptographic operations
-    ///   - logger: The logger to use for logging security events
+    /// Creates a security service with the specified logger
+    /// - Parameter logger: The logger to use for security operations
     /// - Returns: A fully configured security service
-    public static func createCustom(
-        cryptoService: CryptoXPCServiceProtocol,
-        logger: LoggingProtocol
-    ) -> SecurityServiceProtocol {
-        return SecurityServiceActor(
+    public static func createWithLogger(_ logger: LoggingInterfaces.LoggingProtocol) -> SecurityProviderProtocol {
+        // Create dependencies
+        let cryptoService = CryptoServices.createDefault()
+        
+        // Create the actor
+        let securityActor = SecurityServiceActor(
             cryptoService: cryptoService,
             logger: logger
         )
+        
+        // Initialise asynchronously in the background
+        Task {
+            try? await securityActor.initialise()
+        }
+        
+        return securityActor
     }
     
-    /// Creates a high-security service instance with enhanced security settings
-    /// - Returns: A fully configured high-security service
-    public static func createHighSecurity() -> SecurityServiceProtocol {
-        let logger = LoggingFactory.createDefault(
-            subsystem: "uk.co.umbra.security",
-            category: "HighSecurityService"
+    /// Creates a high-security service with more stringent security settings
+    /// - Returns: A security service configured for high-security environments
+    public static func createHighSecurity() -> SecurityProviderProtocol {
+        let logger = LoggingServices.createDevelopmentLogger(
+            minimumLevel: .debug,
+            formatter: nil
         )
         
-        // Use the high-security crypto service
-        let cryptoService = CryptoXPCServiceFactory.createHighSecurity()
+        // Create dependencies with high-security settings
+        let cryptoService = CryptoServices.createDefault() // High security settings will be applied via options
         
-        return SecurityServiceActor(
+        // Create the actor
+        let securityActor = SecurityServiceActor(
             cryptoService: cryptoService,
             logger: logger
         )
-    }
-    
-    /// Creates a minimal security service instance for resource-constrained environments
-    /// - Returns: A minimally configured security service
-    public static func createMinimal() -> SecurityServiceProtocol {
-        let logger = LoggingFactory.createMinimal(
-            subsystem: "uk.co.umbra.security",
-            category: "MinimalSecurityService"
-        )
         
-        // Use the minimal crypto service
-        let cryptoService = CryptoXPCServiceFactory.createMinimal()
+        // Initialise asynchronously in the background
+        Task {
+            try? await securityActor.initialise()
+        }
         
-        return SecurityServiceActor(
-            cryptoService: cryptoService,
-            logger: logger
-        )
+        return securityActor
     }
 }

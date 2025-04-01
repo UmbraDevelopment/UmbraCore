@@ -1,9 +1,8 @@
 import CoreInterfaces
-import CryptoInterfaces
 import Foundation
 import LoggingInterfaces
 import LoggingServices
-import SecurityInterfaces
+import SecurityCoreInterfaces
 
 /**
  # Core Service Factory

@@ -166,13 +166,13 @@ public actor KeychainSecurityActor {
       )
 
       // Extract the encrypted data from the result
-      guard let resultData=encryptionResult.data else {
+      guard let resultData = encryptionResult.resultData else {
         throw KeychainSecurityError.dataConversionFailed
       }
 
       // Convert SecureBytes to regular Data by using its base64 encoding method
       // and then converting back to Data - avoids direct access to private storage
-      let base64String=resultData.base64EncodedString()
+      let base64String = resultData.base64EncodedString()
       guard let encryptedData=Data(base64Encoded: base64String) else {
         throw KeychainSecurityError.dataConversionFailed
       }
@@ -181,7 +181,7 @@ public actor KeychainSecurityActor {
       try await keychainService.storeData(
         encryptedData,
         for: account,
-        accessOptions: nil
+        keychainOptions: nil
       )
 
       // Log successful operation
@@ -240,7 +240,7 @@ public actor KeychainSecurityActor {
 
     do {
       // Retrieve the encrypted data from keychain
-      let encryptedData=try await keychainService.retrieveData(for: account)
+      let encryptedData=try await keychainService.retrieveData(for: account, keychainOptions: nil)
 
       // Prepare decryption configuration with options
       let configOptions = SecurityConfigOptions(
@@ -266,13 +266,13 @@ public actor KeychainSecurityActor {
       )
 
       // Extract the decrypted data from the result
-      guard let resultData=decryptionResult.data else {
+      guard let resultData = decryptionResult.resultData else {
         throw KeychainSecurityError.dataConversionFailed
       }
 
       // Convert SecureBytes to regular Data by using its base64 encoding method
       // and then converting back to Data - avoids direct access to private storage
-      let base64String=resultData.base64EncodedString()
+      let base64String = resultData.base64EncodedString()
       guard let decryptedData=Data(base64Encoded: base64String) else {
         throw KeychainSecurityError.dataConversionFailed
       }
@@ -353,7 +353,7 @@ public actor KeychainSecurityActor {
 
     // Delete the secret from keychain
     do {
-      try await keychainService.deleteData(for: account)
+      try await keychainService.deleteData(for: account, keychainOptions: KeychainOptions.standard)
 
       await keychainLogger.logOperationSuccess(
         account: account,
@@ -407,7 +407,7 @@ public actor KeychainSecurityActor {
     )
 
     // Convert the result to Data
-    guard let secureBytes=result.data else {
+    guard let secureBytes=result.resultData else {
       throw KeychainSecurityError.dataConversionFailed
     }
 

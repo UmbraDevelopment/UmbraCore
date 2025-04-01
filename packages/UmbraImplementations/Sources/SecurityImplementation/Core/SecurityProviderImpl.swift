@@ -1,8 +1,7 @@
 import Foundation
 import LoggingInterfaces
 import SecurityCoreInterfaces
-import SecurityCoreTypes
-import SecurityTypes
+import CoreSecurityTypes
 
 /**
  # Core Security Provider Service
@@ -22,7 +21,7 @@ import SecurityTypes
  */
 // Using @preconcurrency to resolve protocol conformance issues with isolated methods
 @preconcurrency
-public actor CoreSecurityProviderService: SecurityProviderProtocol {
+public actor CoreSecurityProviderService: SecurityProviderProtocol, AsyncServiceInitializable {
   // MARK: - Dependencies
 
   /**
@@ -62,40 +61,67 @@ public actor CoreSecurityProviderService: SecurityProviderProtocol {
   private let storageService: SecureStorageService
 
   /**
+   The hashing service for handling hashing operations
+   */
+  private let hashingService: HashingService
+
+  /**
    Initializes the security provider with all required services.
 
    - Parameters:
      - cryptoService: Service for cryptographic operations
      - keyManager: Service for key management operations
-     - logger: Service for logging operations
+     - logger: Logger for security operations
    */
   public init(
     cryptoService: SecurityCoreInterfaces.CryptoServiceProtocol,
     keyManager: KeyManagementProtocol,
     logger: LoggingInterfaces.LoggingProtocol
   ) {
-    self.cryptoService=cryptoService
-    self.keyManager=keyManager
-    self.logger=logger
+    self.cryptoService = cryptoService
+    self.keyManager = keyManager
+    self.logger = logger
 
     // Initialize component services
-    encryptionService=EncryptionService(
-      keyManager: keyManager,
+    self.encryptionService = EncryptionService(
       cryptoService: cryptoService,
+      logger: logger
+    )
+    
+    self.hashingService = HashingService(
+      cryptoService: cryptoService,
+      logger: logger
+    )
+    
+    self.signatureService = SignatureService(
+      cryptoService: cryptoService,
+      keyManagementService: keyManager,
       logger: logger
     )
 
-    signatureService=SignatureService(
-      keyManager: keyManager,
+    // Initialise the secure storage service
+    self.storageService = SecureStorageService(
       cryptoService: cryptoService,
       logger: logger
     )
+  }
 
-    storageService=SecureStorageService(
-      keyManager: keyManager,
-      cryptoService: cryptoService,
-      logger: logger
-    )
+  /**
+   Initializes the security provider service.
+   
+   This method performs any necessary setup that must occur before the service
+   is ready for use, including initializing dependencies and verifying security configuration.
+   
+   - Throws: Error if initialization fails
+   */
+  public func initialize() async throws {
+    await logger.info("Initializing security provider service")
+    
+    // Initialize dependencies
+    try await cryptoService.initialize()
+    try await keyManager.initialize()
+    
+    await logger.info("Security provider service initialized successfully")
   }
 
   // MARK: - SecurityProviderProtocol Implementation
@@ -159,14 +185,14 @@ public actor CoreSecurityProviderService: SecurityProviderProtocol {
     )
 
     // Process the request through the key management service
-    let result=try await keyManager.generateKey(
+    let result = try await keyManager.generateKey(
       type: config.keyType,
       size: config.keySize,
       metadata: config.metadata
     )
 
     // Create result data
-    let resultDTO=SecurityResultDTO(
+    let resultDTO = SecurityResultDTO(
       status: .success,
       data: Data(result.identifier.utf8),
       metadata: ["keyType": config.keyType.rawValue, "keySize": String(config.keySize)]
@@ -231,6 +257,267 @@ public actor CoreSecurityProviderService: SecurityProviderProtocol {
   }
 
   /**
+   Securely stores data with the specified configuration.
+   
+   - Parameter config: Configuration for the secure storage operation
+   - Returns: Result containing storage confirmation or error
+   */
+  public func secureStore(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+    let startTime = Date()
+    let operationID = UUID().uuidString
+    
+    await logger.debug("Starting secure store operation", metadata: [
+      "operation_id": operationID,
+      "algorithm": config.encryptionAlgorithm.rawValue
+    ])
+    
+    // Extract required parameters from configuration
+    guard let dataString = config.options?.metadata?["data"],
+          let inputData = Data(base64Encoded: dataString) else {
+      throw SecurityError.invalidInput("Missing or invalid input data for secure storage")
+    }
+    
+    // First encrypt the data
+    let encryptionResult = try await encrypt(config: config)
+    
+    if !encryptionResult.successful {
+      return encryptionResult
+    }
+    
+    // Then store the encrypted data using the key manager
+    guard let encryptedData = encryptionResult.resultData else {
+      throw SecurityError.internalError("Encryption successful but no encrypted data returned")
+    }
+    
+    let keyIdentifier = UUID().uuidString
+    let storeResult = try await keyManager.storeKey(
+      identifier: keyIdentifier,
+      keyData: encryptedData,
+      metadata: config.options?.metadata ?? [:]
+    )
+    
+    let executionTime = Date().timeIntervalSince(startTime) * 1000
+    
+    return SecurityResultDTO(
+      successful: storeResult.successful,
+      resultData: keyIdentifier.data(using: .utf8),
+      errorDetails: storeResult.errorDetails,
+      executionTimeMs: executionTime,
+      metadata: storeResult.metadata
+    )
+  }
+
+  /**
+   Retrieves securely stored data with the specified configuration.
+   
+   - Parameter config: Configuration for the secure retrieval operation
+   - Returns: Result containing retrieved data or error
+   */
+  public func secureRetrieve(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+    let startTime = Date()
+    let operationID = UUID().uuidString
+    
+    await logger.debug("Starting secure retrieve operation", metadata: [
+      "operation_id": operationID,
+      "algorithm": config.encryptionAlgorithm.rawValue
+    ])
+    
+    // Extract required parameters from configuration
+    guard let keyIdentifier = config.options?.metadata?["key_identifier"] else {
+      throw SecurityError.invalidInput("Missing key identifier for secure retrieval")
+    }
+    
+    // Retrieve the encrypted data using the key manager
+    let retrieveResult = try await keyManager.getKey(
+      identifier: keyIdentifier,
+      metadata: config.options?.metadata ?? [:]
+    )
+    
+    if !retrieveResult.successful || retrieveResult.keyData == nil {
+      let errorDetails = retrieveResult.errorDetails ?? "Failed to retrieve data"
+      return SecurityResultDTO(
+        successful: false,
+        resultData: nil,
+        errorDetails: errorDetails,
+        executionTimeMs: Date().timeIntervalSince(startTime) * 1000,
+        metadata: retrieveResult.metadata
+      )
+    }
+    
+    // Decrypt the retrieved data
+    let decryptConfig = SecurityConfigDTO(
+      encryptionAlgorithm: config.encryptionAlgorithm,
+      hashAlgorithm: config.hashAlgorithm,
+      providerType: config.providerType,
+      options: config.options
+    )
+    
+    guard let keyData = retrieveResult.keyData else {
+      throw SecurityError.internalError("Key data missing after successful retrieval")
+    }
+    
+    // Modify the config to include the encrypted data
+    var decryptMetadata = config.options?.metadata ?? [:]
+    decryptMetadata["data"] = keyData.base64EncodedString()
+    
+    let decryptOptions = SecurityConfigOptions(
+      enableDetailedLogging: config.options?.enableDetailedLogging ?? false,
+      keyDerivationIterations: config.options?.keyDerivationIterations ?? 100_000,
+      memoryLimitBytes: config.options?.memoryLimitBytes ?? 65536,
+      useHardwareAcceleration: config.options?.useHardwareAcceleration ?? true,
+      operationTimeoutSeconds: config.options?.operationTimeoutSeconds ?? 30.0,
+      verifyOperations: config.options?.verifyOperations ?? true,
+      metadata: decryptMetadata
+    )
+    
+    let decryptResult = try await decrypt(
+      config: SecurityConfigDTO(
+        encryptionAlgorithm: config.encryptionAlgorithm,
+        hashAlgorithm: config.hashAlgorithm,
+        providerType: config.providerType,
+        options: decryptOptions
+      )
+    )
+    
+    let executionTime = Date().timeIntervalSince(startTime) * 1000
+    
+    return SecurityResultDTO(
+      successful: decryptResult.successful,
+      resultData: decryptResult.resultData,
+      errorDetails: decryptResult.errorDetails,
+      executionTimeMs: executionTime,
+      metadata: decryptResult.metadata
+    )
+  }
+
+  /**
+   Securely deletes stored data with the specified configuration.
+   
+   - Parameter config: Configuration for the secure deletion operation
+   - Returns: Result containing deletion confirmation or error
+   */
+  public func secureDelete(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+    let startTime = Date()
+    let operationID = UUID().uuidString
+    
+    await logger.debug("Starting secure delete operation", metadata: [
+      "operation_id": operationID
+    ])
+    
+    // Extract required parameters from configuration
+    guard let keyIdentifier = config.options?.metadata?["key_identifier"] else {
+      throw SecurityError.invalidInput("Missing key identifier for secure deletion")
+    }
+    
+    // Delete the key using the key manager
+    let deleteResult = try await keyManager.deleteKey(
+      identifier: keyIdentifier,
+      metadata: config.options?.metadata ?? [:]
+    )
+    
+    let executionTime = Date().timeIntervalSince(startTime) * 1000
+    
+    return SecurityResultDTO(
+      successful: deleteResult.successful,
+      resultData: nil,
+      errorDetails: deleteResult.errorDetails,
+      executionTimeMs: executionTime,
+      metadata: deleteResult.metadata
+    )
+  }
+
+  /**
+   Performs a security operation based on the provided configuration.
+   
+   - Parameters:
+     - operation: The security operation to perform
+     - config: Configuration for the operation
+   - Returns: Result of the operation
+   */
+  public func performSecureOperation(
+    operation: CoreSecurityTypes.SecurityOperation,
+    config: CoreSecurityTypes.SecurityConfigDTO
+  ) async throws -> CoreSecurityTypes.SecurityResultDTO {
+    let startTime = Date()
+    let operationID = UUID().uuidString
+    
+    await logger.debug("Starting secure operation: \(operation.rawValue)", metadata: [
+      "operation_id": operationID,
+      "algorithm": config.encryptionAlgorithm.rawValue
+    ])
+    
+    let result: CoreSecurityTypes.SecurityResultDTO
+    
+    switch operation {
+    case .encryption:
+      result = try await encrypt(config: config)
+    case .decryption:
+      result = try await decrypt(config: config)
+    case .hashing:
+      result = try await hash(config: config)
+    case .keyGeneration:
+      result = try await generateKey(config: config)
+    case .keyRotation:
+      result = try await rotateKey(config: config)
+    case .keyDeletion:
+      result = try await secureDelete(config: config)
+    case .secureStorage:
+      result = try await secureStore(config: config)
+    case .secureRetrieval:
+      result = try await secureRetrieve(config: config)
+    }
+    
+    let executionTime = Date().timeIntervalSince(startTime) * 1000
+    
+    // Add execution time to the result metadata
+    var updatedMetadata = result.metadata ?? [:]
+    updatedMetadata["execution_time_ms"] = "\(executionTime)"
+    updatedMetadata["operation_id"] = operationID
+    
+    return CoreSecurityTypes.SecurityResultDTO(
+      successful: result.successful,
+      resultData: result.resultData,
+      errorDetails: result.errorDetails,
+      executionTimeMs: executionTime,
+      metadata: updatedMetadata
+    )
+  }
+  
+  /**
+   Creates a security configuration with appropriate settings.
+   
+   - Parameter options: The options to include in the configuration
+   - Returns: A properly configured SecurityConfigDTO
+   */
+  public func createSecureConfig(options: SecurityConfigOptions) async -> SecurityConfigDTO {
+    // Determine the most appropriate encryption algorithm based on options
+    let encryptionAlgorithm: EncryptionAlgorithm
+    if options.useHardwareAcceleration {
+      encryptionAlgorithm = .aesGcm256
+    } else {
+      encryptionAlgorithm = .aesCbc256
+    }
+    
+    // Determine appropriate hash algorithm
+    let hashAlgorithm: HashAlgorithm = .sha256
+    
+    // Determine appropriate provider type based on options
+    let providerType: SecurityProviderType
+    if options.useHardwareAcceleration {
+      providerType = .hardware
+    } else {
+      providerType = .software
+    }
+    
+    return SecurityConfigDTO(
+      encryptionAlgorithm: encryptionAlgorithm,
+      hashAlgorithm: hashAlgorithm,
+      providerType: providerType,
+      options: options
+    )
+  }
+
+  /**
    Processes a security operation based on the provided configuration.
 
    This is a unified entry point for all security operations, handling common
@@ -244,15 +531,15 @@ public actor CoreSecurityProviderService: SecurityProviderProtocol {
   public func processSecurityOperation(
     operation: SecurityOperation,
     metadata: [String: String]
-  ) async -> SecurityCoreTypes.SecurityResultDTO {
+  ) async -> CoreSecurityTypes.SecurityResultDTO {
     // Process the operation using actor-isolated state
-    let operationID=UUID().uuidString
-    let startTime=Date()
+    let operationID = UUID().uuidString
+    let startTime = Date()
 
     // Create base metadata
-    var operationMetadata=metadata
-    operationMetadata["operationID"]=operationID
-    operationMetadata["operation"]=String(describing: operation)
+    var operationMetadata = metadata
+    operationMetadata["operationID"] = operationID
+    operationMetadata["operation"] = String(describing: operation)
 
     // Log operation start
     await logger.info(
@@ -263,10 +550,10 @@ public actor CoreSecurityProviderService: SecurityProviderProtocol {
 
     do {
       // Process the operation based on type
-      let result: SecurityResultDTO=try await {
+      let result: SecurityResultDTO = try await {
         switch operation {
           case let .encrypt(data, key, algorithm):
-            let config=SecurityConfigDTO(
+            let config = SecurityConfigDTO(
               operationType: .encrypt,
               data: data,
               key: key,
@@ -276,7 +563,7 @@ public actor CoreSecurityProviderService: SecurityProviderProtocol {
             return try await encrypt(config: config)
 
           case let .decrypt(data, key, algorithm):
-            let config=SecurityConfigDTO(
+            let config = SecurityConfigDTO(
               operationType: .decrypt,
               data: data,
               key: key,
@@ -286,7 +573,7 @@ public actor CoreSecurityProviderService: SecurityProviderProtocol {
             return try await decrypt(config: config)
 
           case let .generateKey(type, size):
-            let config=SecurityConfigDTO(
+            let config = SecurityConfigDTO(
               operationType: .generateKey,
               keyType: type,
               keySize: size,
@@ -295,7 +582,7 @@ public actor CoreSecurityProviderService: SecurityProviderProtocol {
             return try await generateKey(config: config)
 
           case let .sign(data, key, algorithm):
-            let config=SecurityConfigDTO(
+            let config = SecurityConfigDTO(
               operationType: .sign,
               data: data,
               key: key,
@@ -305,7 +592,7 @@ public actor CoreSecurityProviderService: SecurityProviderProtocol {
             return try await sign(config: config)
 
           case let .verify(data, signature, key, algorithm):
-            let config=SecurityConfigDTO(
+            let config = SecurityConfigDTO(
               operationType: .verify,
               data: data,
               signature: signature,
@@ -316,7 +603,7 @@ public actor CoreSecurityProviderService: SecurityProviderProtocol {
             return try await verify(config: config)
 
           case let .store(data, identifier):
-            let config=SecurityConfigDTO(
+            let config = SecurityConfigDTO(
               operationType: .store,
               data: data,
               identifier: identifier,
@@ -325,7 +612,7 @@ public actor CoreSecurityProviderService: SecurityProviderProtocol {
             return try await store(config: config)
 
           case let .retrieve(identifier):
-            let config=SecurityConfigDTO(
+            let config = SecurityConfigDTO(
               operationType: .retrieve,
               identifier: identifier,
               metadata: metadata
@@ -335,12 +622,12 @@ public actor CoreSecurityProviderService: SecurityProviderProtocol {
       }()
 
       // Calculate operation duration
-      let duration=Date().timeIntervalSince(startTime)
+      let duration = Date().timeIntervalSince(startTime)
 
       // Log operation completion
-      var resultMetadata=operationMetadata
-      resultMetadata["duration"]=String(format: "%.3f", duration)
-      resultMetadata["status"]="success"
+      var resultMetadata = operationMetadata
+      resultMetadata["duration"] = String(format: "%.3f", duration)
+      resultMetadata["status"] = "success"
 
       await logger.info(
         "Completed security operation: \(operation)",
@@ -351,13 +638,13 @@ public actor CoreSecurityProviderService: SecurityProviderProtocol {
       return result
     } catch {
       // Calculate operation duration
-      let duration=Date().timeIntervalSince(startTime)
+      let duration = Date().timeIntervalSince(startTime)
 
       // Log operation failure
-      var errorMetadata=operationMetadata
-      errorMetadata["duration"]=String(format: "%.3f", duration)
-      errorMetadata["status"]="error"
-      errorMetadata["error"]=error.localizedDescription
+      var errorMetadata = operationMetadata
+      errorMetadata["duration"] = String(format: "%.3f", duration)
+      errorMetadata["status"] = "error"
+      errorMetadata["error"] = error.localizedDescription
 
       await logger.error(
         "Failed security operation: \(operation)",
@@ -366,7 +653,7 @@ public actor CoreSecurityProviderService: SecurityProviderProtocol {
       )
 
       // Return failure result
-      return SecurityResultDTO(
+      return CoreSecurityTypes.SecurityResultDTO(
         status: .failure,
         error: error.localizedDescription,
         metadata: errorMetadata

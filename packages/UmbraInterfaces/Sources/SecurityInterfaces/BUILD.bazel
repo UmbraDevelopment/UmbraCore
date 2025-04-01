@@ -8,5 +8,6 @@ swift_library(
     deps = [
         "//packages/UmbraCoreTypes/Sources/CoreSecurityTypes:CoreSecurityTypes",
         "//packages/UmbraCoreTypes/Sources/DomainSecurityTypes:DomainSecurityTypes",
+        "//packages/UmbraInterfaces/Sources/SecurityCoreInterfaces",
     ],
 )

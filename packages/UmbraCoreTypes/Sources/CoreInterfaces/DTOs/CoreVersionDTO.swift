@@ -6,6 +6,8 @@
 ///
 /// All properties are immutable to ensure thread safety when
 /// passing instances between actors or across module boundaries.
+import DateTimeTypes
+
 public struct CoreVersionDTO: Sendable, Equatable {
     /// Major version component (breaking changes)
     public let major: UInt

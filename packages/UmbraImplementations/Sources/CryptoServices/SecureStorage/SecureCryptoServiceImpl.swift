@@ -12,7 +12,7 @@
 import Foundation
 import CryptoInterfaces
 import CryptoTypes
-import SecurityInterfaces
+import SecurityCoreInterfaces
 import LoggingInterfaces
 import LoggingTypes
 import UmbraErrors

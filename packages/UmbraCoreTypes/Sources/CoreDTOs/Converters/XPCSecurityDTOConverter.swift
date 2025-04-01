@@ -1,5 +1,5 @@
 import Foundation
-import SecurityInterfaces
+import SecurityCoreInterfaces
 import UmbraErrors
 
 /// Converts between SecurityError and SecurityErrorDTO

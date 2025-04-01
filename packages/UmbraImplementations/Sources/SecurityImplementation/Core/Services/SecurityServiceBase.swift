@@ -1,7 +1,7 @@
 import Foundation
 import LoggingInterfaces
 import SecurityCoreInterfaces
-import SecurityCoreTypes
+import CoreSecurityTypes
 
 /**
  # Security Service Base Protocol

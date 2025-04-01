@@ -4,7 +4,7 @@ import LoggingInterfaces
 import DomainSecurityTypes
 import UmbraErrors
 import XPCProtocolsCore
-import SecurityInterfaces
+import SecurityCoreInterfaces
 
 /**
  # CryptoXPCServiceActor

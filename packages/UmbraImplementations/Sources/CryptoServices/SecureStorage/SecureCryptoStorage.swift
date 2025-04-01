@@ -10,7 +10,7 @@
  */
 
 import Foundation
-import SecurityInterfaces
+import SecurityCoreInterfaces
 import CryptoTypes
 import CryptoInterfaces
 import UmbraErrors

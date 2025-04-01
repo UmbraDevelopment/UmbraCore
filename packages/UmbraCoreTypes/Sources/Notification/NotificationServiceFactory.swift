@@ -1,4 +1,4 @@
-import Foundation
+@preconcurrency import Foundation
 
 /// Factory for creating notification service implementations
 public enum NotificationServiceFactory {
@@ -86,9 +86,11 @@ private final class DefaultNotificationService: NotificationServiceProtocol {
       handler(dto)
     }
 
-    // Safely send observer to actor
-    Task { [observationActor, observerID] in
-      await observationActor.storeObserver(observer, forID: observerID)
+    // Safely send observer to actor using a detached task to avoid data races
+    // with the non-Sendable NSObjectProtocol observer
+    let observerCopy = observer // Make a local copy of the observer
+    Task.detached { [observationActor, observerID] in
+      await observationActor.storeObserver(observerCopy, forID: observerID)
     }
 
     return observerID
@@ -138,10 +140,12 @@ private final class DefaultNotificationService: NotificationServiceProtocol {
   /// Remove an observer
   /// - Parameter observerID: The ID of the observer to remove
   public func removeObserver(withID observerID: NotificationObserverID) {
-    // Safely remove observer within actor
-    Task { [weak self, observationActor, notificationCenter, observerID] in
+    // Use a detached task to avoid data races with the non-Sendable NSObjectProtocol
+    Task.detached { [weak self, observationActor, notificationCenter, observerID] in
       guard let _ = self else { return }
+      // Use structured concurrency to properly isolate the non-Sendable observers
       let observers = await observationActor.removeObservers(withIDPrefix: observerID)
+      // Process observers within the isolated task
       for observer in observers {
         notificationCenter.removeObserver(observer)
       }
@@ -150,10 +154,12 @@ private final class DefaultNotificationService: NotificationServiceProtocol {
 
   /// Remove all observers
   public func removeAllObservers() {
-    // Safely remove all observers within actor
-    Task { [weak self, observationActor, notificationCenter] in
+    // Use a detached task to avoid data races with the non-Sendable NSObjectProtocol
+    Task.detached { [weak self, observationActor, notificationCenter] in
       guard let _ = self else { return }
+      // Use structured concurrency to properly isolate the non-Sendable observers
       let observers = await observationActor.removeAllObservers()
+      // Process observers within the isolated task
       for observer in observers {
         notificationCenter.removeObserver(observer)
       }

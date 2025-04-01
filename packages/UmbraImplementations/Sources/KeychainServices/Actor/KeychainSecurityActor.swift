@@ -128,9 +128,10 @@ public actor KeychainSecurityActor {
 
       // Create the config with our options
       let encryptionConfig=SecurityConfigDTO(
-        algorithm: "AES256GCM",
-        keySize: 256,
-        options: options
+        encryptionAlgorithm: .aes256GCM,
+        hashAlgorithm: .sha256,
+        providerType: .basic,
+        options: SecurityConfigOptions(metadata: options)
       )
 
       // Encrypt the data
@@ -154,7 +155,7 @@ public actor KeychainSecurityActor {
       try await keychainService.storeData(
         encryptedData,
         for: account,
-        accessOptions: nil
+        keychainOptions: KeychainOptions.standard
       )
 
       // Log success
@@ -214,19 +215,23 @@ public actor KeychainSecurityActor {
 
     do {
       // Retrieve the encrypted data from keychain
-      let encryptedData=try await keychainService.retrieveData(for: account)
+      let encryptedData=try await keychainService.retrieveData(for: account, keychainOptions: KeychainOptions.standard)
 
-      // Prepare decryption configuration with options
-      var options=[String: String]()
-      options["keyIdentifier"]=keyID
-      options["algorithm"]="AES256GCM"
-      options["data"]=encryptedData.base64EncodedString()
+      // Prepare configuration options
+      let configOptions=SecurityConfigOptions(
+        keyIdentifier: keyID,
+        additionalParameters: [
+          "algorithm": "AES256GCM",
+          "data": encryptedData.base64EncodedString()
+        ]
+      )
 
       // Create the config with our options
       let decryptionConfig=SecurityConfigDTO(
-        algorithm: "AES256GCM",
-        keySize: 256,
-        options: options
+        encryptionAlgorithm: .aes256gcm,
+        hashAlgorithm: .sha256,
+        providerType: .standard,
+        options: configOptions
       )
 
       // Decrypt the data
@@ -309,7 +314,7 @@ public actor KeychainSecurityActor {
 
     do {
       // Delete the secret from keychain
-      try await keychainService.deleteData(for: account)
+      try await keychainService.deleteData(for: account, keychainOptions: KeychainOptions.standard)
 
       // Delete the encryption key if requested
       if deleteKey {

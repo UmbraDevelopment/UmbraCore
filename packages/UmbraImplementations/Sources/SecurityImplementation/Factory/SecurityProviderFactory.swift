@@ -1,267 +1,156 @@
-import CryptoServices
 import Foundation
 import LoggingInterfaces
 import LoggingServices
+import LoggingTypes
 import SecurityCoreInterfaces
-import SecurityCoreTypes
+import CoreSecurityTypes
+import CryptoServices
 import SecurityKeyManagement
-import SecurityTypes
 
 /**
- # SecurityProviderFactory
-
- Factory for creating instances of the SecurityProviderImpl with appropriate dependencies.
-
- ## Factory Pattern
-
- The factory pattern allows for easy creation of security providers with either:
- - Default dependencies
- - Custom dependencies for testing or specialised scenarios
+ Factory for creating security providers with different security configurations.
+ 
+ This factory provides convenient methods for creating security providers with
+ pre-configured security levels suitable for different use cases:
+ 
+ - Standard: Suitable for most applications with good security/performance balance
+ - High: Stronger security for sensitive applications, with some performance tradeoff
+ - Maximum: Highest security level, suitable for extremely sensitive data
+ 
+ All providers follow the Alpha Dot Five architecture principles.
  */
 public enum SecurityProviderFactory {
+    
   /**
-   Creates a SecurityProvider with default implementations of all dependencies.
-
-   - Parameter logger: Optional custom logger (uses default if nil)
-   - Returns: A properly configured SecurityProviderProtocol instance
-   */
-  public static func createSecurityProvider(
-    logger: LoggingServiceProtocol?=nil
-  ) async -> SecurityProviderProtocol {
-    // Get the default implementations
-    let cryptoService=createDefaultCryptoService()
-    let keyManager=createDefaultKeyManager()
-
-    // Use the provided logger or create a default one
-    let actualLogger=logger ?? await LoggingServiceFactory.createDefaultLogger(
-      minimumLevel: .info,
-      identifier: "SecurityProviderDefaultLogger"
-    )
-
-    // Create the provider
-    let provider=SecurityProviderImpl(
-      cryptoService: cryptoService,
-      keyManager: keyManager
-    )
-
-    // Initialise the provider (this handles async setup)
-    try? await provider.initialize()
-
-    return provider
-  }
-
-  /**
-   Creates a SecurityProvider with custom dependencies.
-
-   - Parameters:
-     - cryptoService: Custom crypto service
-     - keyManager: Custom key management service
+   Creates a security provider with standard security level.
+   
+   This provider offers a good balance between security and performance,
+   suitable for most common application scenarios. It uses:
+   - AES-256 encryption with GCM mode
+   - PBKDF2 with 10,000 iterations for key derivation
+   - Secure random number generation
+   - Privacy-aware logging
+   
+   - Parameter logger: Optional logger for security events
    - Returns: A configured SecurityProviderProtocol instance
-
-   Note: This method creates the provider but does not initialise it.
-   You must call `initialize()` on the returned provider before use.
    */
-  public static func createSecurityProvider(
-    cryptoService: CryptoServiceProtocol,
-    keyManager: KeyManagementProtocol
-  ) -> SecurityProviderProtocol {
-    SecurityProviderImpl(
+  public static func createStandardSecurityProvider(
+    logger: LoggingInterfaces.LoggingProtocol? = nil
+  ) async -> SecurityProviderProtocol {
+    // Create standard crypto service
+    let cryptoService: any CryptoServiceProtocol = await CryptoServiceFactory.createStandardCryptoService()
+    let keyManager = await KeyManagementFactory.createKeyManager(logger: logger)
+    
+    // Use the provided logger or create a default one
+    let actualLogger: LoggingInterfaces.LoggingProtocol
+    if let logger = logger {
+      actualLogger = logger
+    } else {
+      let developmentLogger = LoggingServiceFactory.createDevelopmentLogger(
+        minimumLevel: .info,
+        formatter: nil
+      )
+      actualLogger = developmentLogger
+    }
+    
+    // Create the security service actor
+    let securityService = SecurityServiceActor(
       cryptoService: cryptoService,
-      keyManager: keyManager
+      logger: actualLogger
     )
+    
+    // Initialize the service
+    try? await securityService.initialize()
+    
+    return securityService
   }
-
-  // MARK: - Helper Methods
-
+  
   /**
-   Creates the default crypto service implementation.
-
-   - Returns: A properly configured crypto service
+   Creates a security provider with high security level.
+   
+   This provider offers enhanced security suitable for sensitive applications.
+   It uses:
+   - AES-256 encryption with GCM mode and additional integrity checks
+   - Argon2id for key derivation
+   - Hardware-backed secure random generation where available
+   - Enhanced security event logging
+   
+   - Parameter logger: Optional logger for security events
+   - Returns: A configured SecurityProviderProtocol instance
    */
-  private static func createDefaultCryptoService() -> CryptoServiceProtocol {
-    CryptoServiceAdapter(cryptoService: CryptoServices.CryptoServiceFactory.createDefaultService())
-  }
-
-  /**
-   Creates the default key management service.
-
-   - Returns: A properly configured key management service
-   */
-  private static func createDefaultKeyManager() -> KeyManagementProtocol {
-    KeyManagementAdapter(
-      keyManager: SecurityKeyManagement.KeyManagementFactory
-        .createDefaultManager()
+  public static func createHighSecurityProvider(
+    logger: LoggingInterfaces.LoggingProtocol? = nil
+  ) async -> SecurityProviderProtocol {
+    // Create high-security crypto service
+    let cryptoService: any CryptoServiceProtocol = await CryptoServiceFactory.createHighSecurityCryptoService()
+    let keyManager = await KeyManagementFactory.createKeyManager(logger: logger)
+    
+    // Use the provided logger or create a default one with debug level logging
+    let actualLogger: LoggingInterfaces.LoggingProtocol
+    if let logger = logger {
+      actualLogger = logger
+    } else {
+      let developmentLogger = LoggingServiceFactory.createDevelopmentLogger(
+        minimumLevel: .debug,
+        formatter: nil
+      )
+      actualLogger = developmentLogger
+    }
+    
+    // Create the security service actor
+    let securityService = SecurityServiceActor(
+      cryptoService: cryptoService,
+      logger: actualLogger
     )
+    
+    // Initialize the service
+    try? await securityService.initialize()
+    
+    return securityService
   }
-
-  // MARK: - Service Adapters
-
+  
   /**
-   Adapter to make CryptoServices.CryptoService compatible with CryptoServiceProtocol.
+   Creates a security provider with maximum security level.
+   
+   This provider offers the highest level of security for extremely sensitive
+   data, with some performance tradeoff. It uses:
+   - ChaCha20-Poly1305 for authenticated encryption
+   - Argon2id with memory-hard parameters for key derivation
+   - Hardware-backed secure random generation
+   - Triple key derivation with domain separation
+   - Comprehensive security event logging and auditing
+   
+   - Parameter logger: Optional logger for security events
+   - Returns: A configured SecurityProviderProtocol instance
    */
-  private final class CryptoServiceAdapter: CryptoServiceProtocol, Sendable {
-    private let cryptoService: CryptoServices.CryptoService
-
-    init(cryptoService: CryptoServices.CryptoService) {
-      self.cryptoService=cryptoService
+  public static func createMaximumSecurityProvider(
+    logger: LoggingInterfaces.LoggingProtocol? = nil
+  ) async -> SecurityProviderProtocol {
+    // Create max-security crypto service
+    let cryptoService: any CryptoServiceProtocol = await CryptoServiceFactory.createMaxSecurityCryptoService()
+    let keyManager = await KeyManagementFactory.createKeyManager(logger: logger)
+    
+    // Use the provided logger or create a default one with debug level logging
+    let actualLogger: LoggingInterfaces.LoggingProtocol
+    if let logger = logger {
+      actualLogger = logger
+    } else {
+      let developmentLogger = LoggingServiceFactory.createDevelopmentLogger(
+        minimumLevel: .debug,
+        formatter: nil
+      )
+      actualLogger = developmentLogger
     }
-
-    // MARK: - Required protocol methods
-
-    /**
-     Encrypts binary data using the provided key.
-     */
-    func encrypt(
-      data: SecureBytes,
-      using key: SecureBytes
-    ) async -> Result<SecureBytes, SecurityProtocolError> {
-      do {
-        let encryptedData=try cryptoService.encrypt(
-          data: data.extractUnderlyingData(),
-          using: key.extractUnderlyingData()
-        )
-        return .success(SecureBytes(data: encryptedData))
-      } catch {
-        return .failure(.encryptionFailed(message: error.localizedDescription))
-      }
-    }
-
-    /**
-     Decrypts binary data using the provided key.
-     */
-    func decrypt(
-      data: SecureBytes,
-      using key: SecureBytes
-    ) async -> Result<SecureBytes, SecurityProtocolError> {
-      do {
-        let decryptedData=try cryptoService.decrypt(
-          data: data.extractUnderlyingData(),
-          using: key.extractUnderlyingData()
-        )
-        return .success(SecureBytes(data: decryptedData))
-      } catch {
-        return .failure(.decryptionFailed(message: error.localizedDescription))
-      }
-    }
-
-    /**
-     Computes a cryptographic hash of binary data.
-     */
-    func hash(data: SecureBytes) async -> Result<SecureBytes, SecurityProtocolError> {
-      do {
-        let hashedData=try cryptoService.hash(data: data.extractUnderlyingData())
-        return .success(SecureBytes(data: hashedData))
-      } catch {
-        return .failure(.hashingFailed(message: error.localizedDescription))
-      }
-    }
-
-    /**
-     Verifies a cryptographic hash against the expected value.
-     */
-    func verifyHash(
-      data: SecureBytes,
-      expectedHash: SecureBytes
-    ) async -> Result<Bool, SecurityProtocolError> {
-      do {
-        let hashedData=try cryptoService.hash(data: data.extractUnderlyingData())
-        let expectedData=expectedHash.extractUnderlyingData()
-        return .success(hashedData == expectedData)
-      } catch {
-        return .failure(.hashingFailed(message: error.localizedDescription))
-      }
-    }
-  }
-
-  /**
-   Adapter to make SecurityKeyManagement.KeyManager compatible with KeyManagementProtocol.
-   */
-  private final class KeyManagementAdapter: KeyManagementProtocol, Sendable {
-    private let keyManager: SecurityKeyManagement.KeyManager
-
-    init(keyManager: SecurityKeyManagement.KeyManager) {
-      self.keyManager=keyManager
-    }
-
-    // MARK: - Required protocol methods
-
-    /**
-     Retrieves a security key by its identifier.
-     */
-    func retrieveKey(withIdentifier identifier: String) async
-    -> Result<SecureBytes, SecurityProtocolError> {
-      do {
-        let keyData=try keyManager.retrieveKey(withIdentifier: identifier)
-        return .success(SecureBytes(data: keyData))
-      } catch {
-        return .failure(.keyRetrievalFailed(message: error.localizedDescription))
-      }
-    }
-
-    /**
-     Stores a security key with the given identifier.
-     */
-    func storeKey(
-      _ key: SecureBytes,
-      withIdentifier identifier: String
-    ) async -> Result<Void, SecurityProtocolError> {
-      do {
-        try keyManager.storeKey(key.extractUnderlyingData(), withIdentifier: identifier)
-        return .success(())
-      } catch {
-        return .failure(.keyStorageFailed(message: error.localizedDescription))
-      }
-    }
-
-    /**
-     Deletes a security key with the given identifier.
-     */
-    func deleteKey(withIdentifier identifier: String) async -> Result<Void, SecurityProtocolError> {
-      do {
-        try keyManager.deleteKey(withIdentifier: identifier)
-        return .success(())
-      } catch {
-        return .failure(.keyDeletionFailed(message: error.localizedDescription))
-      }
-    }
-
-    /**
-     Rotates a security key, creating a new key and optionally re-encrypting data.
-     */
-    func rotateKey(
-      withIdentifier identifier: String,
-      dataToReencrypt: SecureBytes?
-    ) async -> Result<(newKey: SecureBytes, reencryptedData: SecureBytes?), SecurityProtocolError> {
-      do {
-        let dataToProcess=dataToReencrypt?.extractUnderlyingData()
-        let (newKey, reencryptedData)=try keyManager.rotateKey(
-          withIdentifier: identifier,
-          dataToReencrypt: dataToProcess
-        )
-
-        let secureNewKey=SecureBytes(data: newKey)
-        var secureReencryptedData: SecureBytes?
-
-        if let reencryptedData {
-          secureReencryptedData=SecureBytes(data: reencryptedData)
-        }
-
-        return .success((newKey: secureNewKey, reencryptedData: secureReencryptedData))
-      } catch {
-        return .failure(.keyRotationFailed(message: error.localizedDescription))
-      }
-    }
-
-    /**
-     Lists all available key identifiers.
-     */
-    func listKeyIdentifiers() async -> Result<[String], SecurityProtocolError> {
-      do {
-        let identifiers=try keyManager.listKeyIdentifiers()
-        return .success(identifiers)
-      } catch {
-        return .failure(.operationFailed(message: error.localizedDescription))
-      }
-    }
+    
+    // Create the security service actor
+    let securityService = SecurityServiceActor(
+      cryptoService: cryptoService,
+      logger: actualLogger
+    )
+    
+    // Initialize the service
+    try? await securityService.initialize()
+    
+    return securityService
   }
 }

@@ -126,7 +126,7 @@ public actor CryptoServiceImpl: CryptoServiceProtocol {
       switch algorithm {
       case .aesGCM:
         // Include authenticated data if provided
-        let aad = cryptoOptions?.authenticatedData.map { [UInt8]($0) }
+        let aad = cryptoOptions?.authenticatedData.map { Array($0) }
         let tagLength = cryptoOptions?.tagLength ?? 128
         
         encryptedBytes = try encryptAES_GCM(
@@ -146,7 +146,7 @@ public actor CryptoServiceImpl: CryptoServiceProtocol {
         
       case .chaCha20Poly1305:
         // Include authenticated data if provided
-        let aad = cryptoOptions?.authenticatedData.map { [UInt8]($0) }
+        let aad = cryptoOptions?.authenticatedData.map { Array($0) }
         
         encryptedBytes = try encryptChaCha20Poly1305(
           data: dataBytes,
@@ -213,7 +213,7 @@ public actor CryptoServiceImpl: CryptoServiceProtocol {
       switch algorithm {
       case .aesGCM:
         // Include authenticated data if provided
-        let aad = cryptoOptions?.authenticatedData.map { [UInt8]($0) }
+        let aad = cryptoOptions?.authenticatedData.map { Array($0) }
         let tagLength = cryptoOptions?.tagLength ?? 128
         
         decryptedBytes = try decryptAES_GCM(
@@ -233,7 +233,7 @@ public actor CryptoServiceImpl: CryptoServiceProtocol {
         
       case .chaCha20Poly1305:
         // Include authenticated data if provided
-        let aad = cryptoOptions?.authenticatedData.map { [UInt8]($0) }
+        let aad = cryptoOptions?.authenticatedData.map { Array($0) }
         
         decryptedBytes = try decryptChaCha20Poly1305(
           data: dataBytes,

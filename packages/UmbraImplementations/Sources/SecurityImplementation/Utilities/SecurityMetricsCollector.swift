@@ -1,6 +1,6 @@
 import Foundation
 import LoggingInterfaces
-import SecurityCoreTypes
+import CoreSecurityTypes
 
 /**
  # Security Metrics Collector

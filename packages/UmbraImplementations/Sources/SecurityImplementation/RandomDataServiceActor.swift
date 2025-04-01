@@ -1,270 +1,244 @@
 import Foundation
 import LoggingInterfaces
-import SecurityInterfaces
+import LoggingTypes
+import Security
 import UmbraErrors
 
 /// Actor implementation of the RandomDataServiceProtocol that provides thread-safe
-/// access to secure random data generation.
+/// access to secure random data generation with proper error handling.
 ///
 /// This implementation follows the Alpha Dot Five architecture principles:
 /// - Actor-based concurrency for thread safety
-/// - Provider-based abstraction for multiple implementation strategies
 /// - Privacy-aware logging for sensitive operations
 /// - Strong type safety with proper error handling
 public actor RandomDataServiceActor: RandomDataServiceProtocol {
     // MARK: - Private Properties
     
-    /// The logger used for logging security events
+    /// The logger used for logging random data generation events
     private let logger: LoggingProtocol
-    
-    /// The configuration for this random data service
-    private var configuration: RandomizationOptionsDTO
     
     /// Flag indicating whether the service has been initialised
     private var isInitialised: Bool = false
     
-    /// Secure random number generator
-    private var secureRandomGenerator: SecureRandomGenerator
+    /// The entropy source being used
+    private var entropySource: EntropySource = .system
+    
+    /// Unique identifier for this random data service instance
+    private let serviceIdentifier: UUID = UUID()
     
     // MARK: - Initialisation
     
     /// Creates a new random data service actor with the given logger
-    /// - Parameter logger: The logger to use for logging security events
+    /// - Parameter logger: The logger to use for logging random data generation events
     public init(logger: LoggingProtocol) {
         self.logger = logger
-        self.configuration = .default
-        self.secureRandomGenerator = SecureRandomGenerator()
+    }
+    
+    /// Initialises the random data service with the specified entropy source
+    /// - Parameter entropySource: The entropy source to use (system, hardware, or hybrid)
+    /// - Throws: SecurityError if initialisation fails
+    public func initialise(entropySource: EntropySource) async throws {
+        guard !isInitialised else {
+            throw SecurityError.alreadyInitialized("Random data service is already initialised")
+        }
+        
+        // Log initialisation
+        await logger.debug(
+            "Initialising random data service with \(entropySource.rawValue) entropy source",
+            metadata: PrivacyMetadata([
+                "entropy_source": (value: entropySource.rawValue, privacy: .public),
+                "service_id": (value: serviceIdentifier.uuidString, privacy: .public)
+            ]),
+            source: "RandomDataServiceActor.initialise"
+        )
+        
+        // Store the entropy source
+        self.entropySource = entropySource
+        
+        // Perform any entropy source-specific initialisation
+        switch entropySource {
+        case .hardware:
+            // Validate hardware entropy is available
+            let testBytes = [UInt8](repeating: 0, count: 16)
+            var bytes = testBytes
+            let result = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
+            
+            guard result == errSecSuccess else {
+                throw SecurityError.initialisationFailed(
+                    reason: "Hardware entropy source is not available"
+                )
+            }
+            
+            // Ensure the bytes are actually random
+            guard bytes != testBytes else {
+                throw SecurityError.initialisationFailed(
+                    reason: "Entropy source did not produce random data"
+                )
+            }
+            
+        case .system, .hybrid:
+            // System and hybrid entropy sources are always available
+            break
+        }
+        
+        isInitialised = true
+        
+        // Log success
+        await logger.debug(
+            "Random data service initialised successfully",
+            metadata: PrivacyMetadata([
+                "entropy_source": (value: entropySource.rawValue, privacy: .public)
+            ]),
+            source: "RandomDataServiceActor.initialise"
+        )
+    }
+    
+    /// Returns the entropy quality level of the random data service
+    /// - Returns: Entropy quality level (low, medium, high)
+    public func getEntropyQuality() async -> EntropyQuality {
+        switch entropySource {
+        case .hardware:
+            return .high
+        case .hybrid:
+            return .medium
+        case .system:
+            return .low
+        }
     }
     
     // MARK: - RandomDataServiceProtocol Implementation
     
-    /// Initialises the random data service with the specified configuration
-    /// - Parameter configuration: Configuration options for random data generation
-    /// - Throws: SecurityError if initialisation fails
-    public func initialise(configuration: RandomizationOptionsDTO) async throws {
-        guard !isInitialised else {
-            throw UmbraErrors.SecurityError.alreadyInitialised
-        }
-        
-        self.configuration = configuration
-        
-        // Configure the random generator based on security level
-        switch configuration.securityLevel {
-        case .high:
-            secureRandomGenerator.setHighSecurityMode(true)
-        case .basic:
-            secureRandomGenerator.setHighSecurityMode(false)
-        case .standard:
-            secureRandomGenerator.setHighSecurityMode(false)
-        }
-        
-        // Log initialisation with privacy controls
-        logger.log(
-            level: .information,
-            message: "Random data service initialised with \(configuration.securityLevel.rawValue) security level",
-            metadata: [
-                "security_level": .string(configuration.securityLevel.rawValue),
-                "entropy_source": .string(configuration.entropySource.rawValue)
-            ],
-            privacy: .public
-        )
-        
-        isInitialised = true
-    }
-    
-    /// Generates a random double value between 0.0 and 1.0
-    /// - Returns: A random double value
-    public func generateRandomDouble() async -> Double {
-        // Generate a secure random value even if not initialised
-        let value = secureRandomGenerator.generateSecureDouble()
-        
-        // Log with privacy controls if initialised
-        if isInitialised {
-            logger.log(
-                level: .debug,
-                message: "Generated random double value",
-                privacy: .private
-            )
-        }
-        
-        return value
-    }
-    
-    /// Generates random bytes of the specified length
-    /// - Parameter count: The number of random bytes to generate
-    /// - Returns: An array of random bytes
+    /// Generates cryptographically secure random bytes
+    /// - Parameter length: The number of bytes to generate
+    /// - Returns: The generated random bytes
     /// - Throws: SecurityError if random generation fails
-    public func generateRandomBytes(count: Int) async throws -> [UInt8] {
+    public func generateRandomBytes(length: Int) async throws -> [UInt8] {
         try validateInitialisation()
         
-        // Log with privacy controls
-        logger.log(
-            level: .debug,
-            message: "Generating \(count) random bytes",
-            metadata: [
-                "byte_count": .int(count)
-            ],
-            privacy: .public
+        // Log operation with privacy controls
+        await logger.debug(
+            "Generating \(length) random bytes",
+            metadata: PrivacyMetadata([
+                "length": (value: String(length), privacy: .public)
+            ]),
+            source: "RandomDataServiceActor.generateRandomBytes"
         )
         
-        // Generate random bytes
-        do {
-            let bytes = try secureRandomGenerator.generateSecureBytes(count: count)
-            
-            // Log success
-            logger.log(
-                level: .debug,
-                message: "Random bytes generated successfully",
-                metadata: [
-                    "byte_count": .int(count)
-                ],
-                privacy: .public
-            )
-            
-            return bytes
-        } catch {
-            // Log failure
-            logger.log(
-                level: .error,
-                message: "Random byte generation failed: \(error.localizedDescription)",
-                metadata: [
-                    "byte_count": .int(count),
-                    "error": .string(error.localizedDescription)
-                ],
-                privacy: .public
-            )
-            
-            throw UmbraErrors.SecurityError.randomGenerationFailed(
-                reason: "Random byte generation failed: \(error.localizedDescription)"
-            )
+        // Generate the random bytes using Apple's SecRandom API
+        var bytes = [UInt8](repeating: 0, count: length)
+        let result = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
+        
+        guard result == errSecSuccess else {
+            throw SecurityError.operationFailed("SecRandomCopyBytes failed with error \(result)")
         }
-    }
-    
-    /// Generates a random integer within the specified range
-    /// - Parameter range: The range of values to generate from
-    /// - Returns: A random integer
-    public func generateRandomInt(in range: ClosedRange<Int>) async -> Int {
-        let value = secureRandomGenerator.generateSecureInt(in: range)
-        
-        // Log with privacy controls if initialised
-        if isInitialised {
-            logger.log(
-                level: .debug,
-                message: "Generated random integer in range \(range.lowerBound)...\(range.upperBound)",
-                privacy: .private
-            )
-        }
-        
-        return value
-    }
-    
-    /// Generates a random element from an array
-    /// - Parameter array: The array to select from
-    /// - Returns: A randomly selected element, or nil if the array is empty
-    public func generateRandomElement<T>(from array: [T]) async -> T? {
-        guard !array.isEmpty else {
-            return nil
-        }
-        
-        let index = await generateRandomInt(in: 0...(array.count - 1))
-        
-        // Log with privacy controls if initialised
-        if isInitialised {
-            logger.log(
-                level: .debug,
-                message: "Generated random element from array of \(array.count) items",
-                privacy: .private
-            )
-        }
-        
-        return array[index]
-    }
-    
-    /// Shuffles an array randomly
-    /// - Parameter array: The array to shuffle
-    /// - Returns: A new array with the elements in random order
-    public func shuffle<T>(_ array: [T]) async -> [T] {
-        var result = array
-        
-        // Early return for empty or single-element arrays
-        guard result.count > 1 else {
-            return result
-        }
-        
-        // Fisher-Yates shuffle using secure random integers
-        for i in 0..<(result.count - 1) {
-            let remainingCount = result.count - i
-            let j = await generateRandomInt(in: i...(i + remainingCount - 1))
-            if i != j {
-                result.swapAt(i, j)
-            }
-        }
-        
-        // Log with privacy controls if initialised
-        if isInitialised {
-            logger.log(
-                level: .debug,
-                message: "Shuffled array of \(array.count) items",
-                privacy: .private
-            )
-        }
-        
-        return result
-    }
-    
-    /// Generates a secure token as a string
-    /// - Parameter byteCount: The number of bytes to use for the token
-    /// - Returns: A secure token as a string
-    /// - Throws: SecurityError if token generation fails
-    public func generateSecureToken(byteCount: Int) async throws -> String {
-        try validateInitialisation()
-        
-        // Log with privacy controls
-        logger.log(
-            level: .debug,
-            message: "Generating secure token with \(byteCount) bytes of entropy",
-            metadata: [
-                "byte_count": .int(byteCount)
-            ],
-            privacy: .public
-        )
-        
-        // Generate random bytes
-        let randomBytes = try await generateRandomBytes(count: byteCount)
-        
-        // Convert to base64 string
-        let base64String = Data(randomBytes).base64EncodedString()
         
         // Log success
-        logger.log(
-            level: .debug,
-            message: "Secure token generated successfully",
-            metadata: [
-                "byte_count": .int(byteCount),
-                "token_length": .int(base64String.count)
-            ],
-            privacy: .public
+        await logger.debug(
+            "Successfully generated random bytes",
+            metadata: PrivacyMetadata([
+                "length": (value: String(bytes.count), privacy: .public)
+            ]),
+            source: "RandomDataServiceActor.generateRandomBytes"
         )
         
-        return base64String
+        return bytes
     }
     
-    /// Generates a UUID
-    /// - Returns: A new UUID
-    public func generateUUID() async -> UUID {
-        // Generate a UUID
-        let uuid = secureRandomGenerator.generateSecureUUID()
+    /// Generates a cryptographically secure random integer within the specified range
+    /// - Parameter range: The range within which to generate the random integer
+    /// - Returns: The generated random integer
+    /// - Throws: SecurityError if random generation fails
+    public func generateRandomInteger<T: FixedWidthInteger>(in range: Range<T>) async throws -> T {
+        try validateInitialisation()
         
-        // Log with privacy controls if initialised
-        if isInitialised {
-            logger.log(
-                level: .debug,
-                message: "Generated secure UUID",
-                privacy: .private
-            )
+        // Log operation with privacy controls
+        await logger.debug(
+            "Generating random integer in range \(range.lowerBound)..<\(range.upperBound)",
+            metadata: PrivacyMetadata([
+                "lower_bound": (value: String(range.lowerBound), privacy: .public),
+                "upper_bound": (value: String(range.upperBound), privacy: .public),
+                "type": (value: String(describing: T.self), privacy: .public)
+            ]),
+            source: "RandomDataServiceActor.generateRandomInteger"
+        )
+        
+        // Calculate range width and validate
+        let width = range.upperBound - range.lowerBound
+        guard width > 0 else {
+            throw SecurityError.invalidInput("Range width must be greater than zero")
         }
         
-        return uuid
+        // Determine how many bytes we need
+        let bytesNeeded = (T.bitWidth + 7) / 8
+        
+        // Generate random bytes
+        let randomBytes = try await generateRandomBytes(length: bytesNeeded)
+        
+        // Convert bytes to integer
+        var randomValue: T = 0
+        for byte in randomBytes {
+            randomValue = (randomValue << 8) | T(byte)
+        }
+        
+        // Map to range
+        let scaled = range.lowerBound + T(UInt64(randomValue) % UInt64(width))
+        
+        // Log success
+        await logger.debug(
+            "Successfully generated random integer",
+            metadata: PrivacyMetadata([
+                "value": (value: String(scaled), privacy: .public)
+            ]),
+            source: "RandomDataServiceActor.generateRandomInteger"
+        )
+        
+        return scaled
+    }
+    
+    /// Generates a cryptographically secure random integer within the specified closed range
+    /// - Parameter range: The closed range within which to generate the random integer
+    /// - Returns: The generated random integer
+    /// - Throws: SecurityError if random generation fails
+    public func generateRandomInteger<T: FixedWidthInteger>(in range: ClosedRange<T>) async throws -> T {
+        // Convert closed range to half-open range and use existing implementation
+        return try await generateRandomInteger(in: range.lowerBound..<(range.upperBound + 1))
+    }
+    
+    /// Generates a cryptographically secure random double between 0.0 and 1.0
+    /// - Returns: The generated random double
+    /// - Throws: SecurityError if random generation fails
+    public func generateRandomDouble() async throws -> Double {
+        try validateInitialisation()
+        
+        // Log operation with privacy controls
+        await logger.debug(
+            "Generating random double between 0.0 and 1.0",
+            metadata: PrivacyMetadata([:]),
+            source: "RandomDataServiceActor.generateRandomDouble"
+        )
+        
+        // Generate 8 random bytes
+        let randomBytes = try await generateRandomBytes(length: 8)
+        
+        // Convert to UInt64
+        var value: UInt64 = 0
+        for byte in randomBytes {
+            value = (value << 8) | UInt64(byte)
+        }
+        
+        // Convert to Double in range [0, 1)
+        let scaled = Double(value) / Double(UInt64.max)
+        
+        // Log success
+        await logger.debug(
+            "Successfully generated random double",
+            metadata: PrivacyMetadata([
+                "value": (value: String(format: "%.6f", scaled), privacy: .public)
+            ]),
+            source: "RandomDataServiceActor.generateRandomDouble"
+        )
+        
+        return scaled
     }
     
     // MARK: - Helper Methods
@@ -273,129 +247,7 @@ public actor RandomDataServiceActor: RandomDataServiceProtocol {
     /// - Throws: SecurityError if not initialised
     private func validateInitialisation() throws {
         guard isInitialised else {
-            throw UmbraErrors.SecurityError.notInitialised
+            throw SecurityError.notInitialized("Random data service is not initialised")
         }
-    }
-}
-
-/// Secure random number generator for cryptographic operations
-private class SecureRandomGenerator {
-    /// Flag indicating whether high security mode is enabled
-    private var highSecurityMode: Bool = false
-    
-    /// Sets the security mode for the generator
-    /// - Parameter enabled: Whether high security mode is enabled
-    func setHighSecurityMode(_ enabled: Bool) {
-        highSecurityMode = enabled
-    }
-    
-    /// Generates a secure random double between 0.0 and 1.0
-    /// - Returns: A secure random double
-    func generateSecureDouble() -> Double {
-        // In high security mode, use secure random bytes for better entropy
-        if highSecurityMode {
-            var randomBytes = [UInt8](repeating: 0, count: 8)
-            let result = SecRandomCopyBytes(kSecRandomDefault, randomBytes.count, &randomBytes)
-            
-            if result == errSecSuccess {
-                // Convert 8 random bytes to a UInt64
-                let randomValue = randomBytes.withUnsafeBytes { bytes in
-                    bytes.load(as: UInt64.self)
-                }
-                
-                // Convert to Double between 0.0 and 1.0
-                return Double(randomValue) / Double(UInt64.max)
-            }
-        }
-        
-        // Fall back to standard Swift random if high security isn't required or fails
-        return Double.random(in: 0.0..<1.0)
-    }
-    
-    /// Generates secure random bytes
-    /// - Parameter count: The number of bytes to generate
-    /// - Returns: An array of random bytes
-    /// - Throws: Error if generation fails
-    func generateSecureBytes(count: Int) throws -> [UInt8] {
-        var randomBytes = [UInt8](repeating: 0, count: count)
-        let result = SecRandomCopyBytes(kSecRandomDefault, count, &randomBytes)
-        
-        guard result == errSecSuccess else {
-            throw UmbraErrors.SecurityError.randomGenerationFailed(
-                reason: "SecRandomCopyBytes failed with error \(result)"
-            )
-        }
-        
-        return randomBytes
-    }
-    
-    /// Generates a secure random integer in the specified range
-    /// - Parameter range: The range to generate a random integer within
-    /// - Returns: A secure random integer
-    func generateSecureInt(in range: ClosedRange<Int>) -> Int {
-        // In high security mode, use secure random bytes
-        if highSecurityMode {
-            // Calculate how many bits we need
-            let rangeSize = UInt64(range.upperBound - range.lowerBound + 1)
-            let bitsNeeded = UInt64.bitWidth - rangeSize.leadingZeroBitCount
-            let bytesNeeded = (bitsNeeded + 7) / 8
-            
-            var randomValue: UInt64 = 0
-            var randomBytes = [UInt8](repeating: 0, count: Int(bytesNeeded))
-            
-            // Keep trying until we get a value in range
-            repeat {
-                let result = SecRandomCopyBytes(kSecRandomDefault, randomBytes.count, &randomBytes)
-                guard result == errSecSuccess else {
-                    // Fall back to standard Swift random if secure generation fails
-                    return Int.random(in: range)
-                }
-                
-                // Convert bytes to UInt64
-                randomValue = 0
-                for i in 0..<min(8, randomBytes.count) {
-                    randomValue = (randomValue << 8) | UInt64(randomBytes[i])
-                }
-                
-                // Mask off unused bits to avoid bias
-                let mask = (1 << bitsNeeded) - 1
-                randomValue &= UInt64(mask)
-                
-            } while randomValue >= rangeSize
-            
-            return Int(randomValue) + range.lowerBound
-        }
-        
-        // Fall back to standard Swift random if high security isn't required
-        return Int.random(in: range)
-    }
-    
-    /// Generates a secure UUID
-    /// - Returns: A secure UUID
-    func generateSecureUUID() -> UUID {
-        // In high security mode, generate a UUID from secure random bytes
-        if highSecurityMode {
-            do {
-                var uuidBytes = try generateSecureBytes(count: 16)
-                
-                // Set version to 4 (random)
-                uuidBytes[6] = (uuidBytes[6] & 0x0F) | 0x40
-                // Set variant to RFC 4122
-                uuidBytes[8] = (uuidBytes[8] & 0x3F) | 0x80
-                
-                return UUID(uuid: (
-                    uuidBytes[0], uuidBytes[1], uuidBytes[2], uuidBytes[3],
-                    uuidBytes[4], uuidBytes[5], uuidBytes[6], uuidBytes[7],
-                    uuidBytes[8], uuidBytes[9], uuidBytes[10], uuidBytes[11],
-                    uuidBytes[12], uuidBytes[13], uuidBytes[14], uuidBytes[15]
-                ))
-            } catch {
-                // Fall back to standard UUID if secure generation fails
-                return UUID()
-            }
-        }
-        
-        // Fall back to standard UUID generation if high security isn't required
-        return UUID()
     }
 }

@@ -63,10 +63,14 @@ public final class KeyManagerImpl: KeyManagementProtocol, Sendable {
   /// - Returns: The security key as a byte array or an error.
   public func retrieveKey(withIdentifier identifier: String) async
   -> Result<[UInt8], SecurityProtocolError> {
-    if let key = await keyStore.getKey(identifier: identifier) {
-      .success(key)
-    } else {
-      .failure(.keyManagementError("Key not found: \(identifier)"))
+    do {
+      if let key = try await keyStore.getKey(identifier: identifier) {
+        return .success(key)
+      } else {
+        return .failure(.invalidState(expected: "Key with identifier '\(identifier)'", actual: "No key found"))
+      }
+    } catch {
+      return .failure(.messageIntegrityViolation(details: "Error retrieving key: \(error.localizedDescription)"))
     }
   }
 
@@ -77,8 +81,12 @@ public final class KeyManagerImpl: KeyManagementProtocol, Sendable {
   /// - Returns: Success or an error.
   public func storeKey(_ key: [UInt8], withIdentifier identifier: String) async
   -> Result<Void, SecurityProtocolError> {
-    await keyStore.storeKey(key, identifier: identifier)
-    return .success(())
+    do {
+      try await keyStore.storeKey(key, identifier: identifier)
+      return .success(())
+    } catch {
+      return .failure(.invalidMessageFormat(details: "Error storing key: \(error.localizedDescription)"))
+    }
   }
 
   /// Deletes a security key with the given identifier.
@@ -86,11 +94,15 @@ public final class KeyManagerImpl: KeyManagementProtocol, Sendable {
   /// - Returns: Success or an error.
   public func deleteKey(withIdentifier identifier: String) async
   -> Result<Void, SecurityProtocolError> {
-    if await keyStore.containsKey(identifier: identifier) {
-      await keyStore.deleteKey(identifier: identifier)
-      return .success(())
-    } else {
-      return .failure(.keyManagementError("Key not found: \(identifier)"))
+    do {
+      if try await keyStore.containsKey(identifier: identifier) {
+        try await keyStore.deleteKey(identifier: identifier)
+        return .success(())
+      } else {
+        return .failure(.invalidState(expected: "Key with identifier '\(identifier)'", actual: "No key found"))
+      }
+    } catch {
+      return .failure(.messageIntegrityViolation(details: "Error deleting key: \(error.localizedDescription)"))
     }
   }
 
@@ -106,27 +118,35 @@ public final class KeyManagerImpl: KeyManagementProtocol, Sendable {
     newKey: [UInt8],
     reencryptedData: [UInt8]?
   ), SecurityProtocolError> {
-    // Check if key exists
-    if await keyStore.containsKey(identifier: identifier) {
-      // Generate a new key
-      let newKey = generateKey()
+    do {
+      // Check if key exists
+      if try await keyStore.containsKey(identifier: identifier) {
+        // Generate a new key
+        let newKey = generateKey()
 
-      // Store the new key with the same identifier (replacing the old one)
-      await keyStore.storeKey(newKey, identifier: identifier)
+        // Store the new key with the same identifier (replacing the old one)
+        try await keyStore.storeKey(newKey, identifier: identifier)
 
-      // Implement re-encryption logic if needed
-      let reencryptedData = dataToReencrypt
+        // Implement re-encryption logic if needed
+        let reencryptedData = dataToReencrypt
 
-      return .success((newKey: newKey, reencryptedData: reencryptedData))
-    } else {
-      return .failure(.keyManagementError("Key not found: \(identifier)"))
+        return .success((newKey: newKey, reencryptedData: reencryptedData))
+      } else {
+        return .failure(.invalidState(expected: "Key with identifier '\(identifier)'", actual: "No key found"))
+      }
+    } catch {
+      return .failure(.messageIntegrityViolation(details: "Error rotating key: \(error.localizedDescription)"))
     }
   }
 
   /// Lists all available key identifiers.
   /// - Returns: An array of key identifiers or an error.
   public func listKeyIdentifiers() async -> Result<[String], SecurityProtocolError> {
-    await .success(keyStore.listKeyIdentifiers())
+    do {
+      return .success(try await keyStore.listKeyIdentifiers())
+    } catch {
+      return .failure(.messageIntegrityViolation(details: "Error listing keys: \(error.localizedDescription)"))
+    }
   }
 
   // MARK: - Helper Methods

@@ -1,6 +1,8 @@
 import ConfigInterfaces
 import LoggingInterfaces
 import UmbraErrors
+import DateTimeTypes
+import CoreTypesInterfaces
 
 /// ConfigurationServiceActor
 ///
@@ -49,6 +51,7 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
         // Log the initialisation attempt with privacy-aware logging
         logger.info(
             "Initialising configuration service",
+            context: ["service": "ConfigurationServiceActor"],
             metadata: [
                 "source": .public(source.name),
                 "source_type": .public(source.sourceType.rawValue),
@@ -59,7 +62,7 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
         // Check if we already have sources (already initialised)
         if !sources.isEmpty {
             let message = "Configuration service is already initialised"
-            logger.warning(message)
+            logger.warning(message, context: ["service": "ConfigurationServiceActor"])
             throw UmbraErrors.ConfigError.initialisationError(message: message)
         }
         
@@ -77,15 +80,17 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
                     key: "",
                     changeType: .initialised,
                     sourceIdentifier: source.identifier,
-                    timestamp: TimePointDTO.now()
+                    timestamp: TimePointDTO.now(),
+                    context: ["service": "ConfigurationServiceActor"]
                 )
             )
             
-            logger.info("Configuration service initialised successfully")
+            logger.info("Configuration service initialised successfully", context: ["service": "ConfigurationServiceActor"])
         } catch {
             // Log the error with privacy-aware logging
             logger.error(
                 "Failed to initialise configuration service",
+                context: ["service": "ConfigurationServiceActor"],
                 metadata: [
                     "source": .public(source.name),
                     "error": .public(error.localizedDescription)
@@ -109,6 +114,7 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
         // Log the operation with privacy-aware logging
         logger.info(
             "Adding configuration source",
+            context: ["service": "ConfigurationServiceActor"],
             metadata: [
                 "source": .public(source.name),
                 "priority": .public("\(priority)"),
@@ -119,7 +125,7 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
         // Check if the source already exists
         if sources.contains(where: { $0.source.identifier == source.identifier }) {
             let message = "Configuration source with identifier '\(source.identifier)' already exists"
-            logger.warning(message)
+            logger.warning(message, context: ["service": "ConfigurationServiceActor"])
             throw UmbraErrors.ConfigError.duplicateSource(message: message)
         }
         
@@ -135,15 +141,17 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
                     key: "",
                     changeType: .sourceAdded,
                     sourceIdentifier: source.identifier,
-                    timestamp: TimePointDTO.now()
+                    timestamp: TimePointDTO.now(),
+                    context: ["service": "ConfigurationServiceActor"]
                 )
             )
             
-            logger.info("Configuration source added successfully")
+            logger.info("Configuration source added successfully", context: ["service": "ConfigurationServiceActor"])
         } catch {
             // Log the error with privacy-aware logging
             logger.error(
                 "Failed to add configuration source",
+                context: ["service": "ConfigurationServiceActor"],
                 metadata: [
                     "source": .public(source.name),
                     "error": .public(error.localizedDescription)
@@ -165,13 +173,14 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
         // Log the operation with privacy-aware logging
         logger.info(
             "Removing configuration source",
+            context: ["service": "ConfigurationServiceActor"],
             metadata: ["source_id": .public(identifier)]
         )
         
         // Find the source index
         guard let index = sources.firstIndex(where: { $0.source.identifier == identifier }) else {
             let message = "Configuration source with identifier '\(identifier)' not found"
-            logger.warning(message)
+            logger.warning(message, context: ["service": "ConfigurationServiceActor"])
             throw UmbraErrors.ConfigError.sourceNotFound(message: message)
         }
         
@@ -192,15 +201,17 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
                     key: "",
                     changeType: .sourceRemoved,
                     sourceIdentifier: source.identifier,
-                    timestamp: TimePointDTO.now()
+                    timestamp: TimePointDTO.now(),
+                    context: ["service": "ConfigurationServiceActor"]
                 )
             )
             
-            logger.info("Configuration source removed successfully")
+            logger.info("Configuration source removed successfully", context: ["service": "ConfigurationServiceActor"])
         } catch {
             // Log the error with privacy-aware logging
             logger.error(
                 "Failed to remove configuration source",
+                context: ["service": "ConfigurationServiceActor"],
                 metadata: [
                     "source_id": .public(identifier),
                     "error": .public(error.localizedDescription)
@@ -226,11 +237,13 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
         if value.isSensitive {
             logger.debug(
                 "Retrieved sensitive string configuration value",
+                context: ["service": "ConfigurationServiceActor"],
                 metadata: ["key": .public(key)]
             )
         } else {
             logger.debug(
                 "Retrieved string configuration value",
+                context: ["service": "ConfigurationServiceActor"],
                 metadata: [
                     "key": .public(key),
                     "value": .public(value.stringValue)
@@ -258,6 +271,7 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
         // Log the operation with privacy-aware logging
         logger.debug(
             "Retrieved boolean configuration value",
+            context: ["service": "ConfigurationServiceActor"],
             metadata: [
                 "key": .public(key),
                 "value": .public(value.stringValue)
@@ -284,6 +298,7 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
         // Log the operation with privacy-aware logging
         logger.debug(
             "Retrieved integer configuration value",
+            context: ["service": "ConfigurationServiceActor"],
             metadata: [
                 "key": .public(key),
                 "value": .public(value.stringValue)
@@ -310,6 +325,7 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
         // Log the operation with privacy-aware logging
         logger.debug(
             "Retrieved double configuration value",
+            context: ["service": "ConfigurationServiceActor"],
             metadata: [
                 "key": .public(key),
                 "value": .public(value.stringValue)
@@ -336,6 +352,7 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
         // Log the operation with privacy-aware logging - note that we're not logging the value
         logger.debug(
             "Retrieved secure configuration value",
+            context: ["service": "ConfigurationServiceActor"],
             metadata: ["key": .public(key)]
         )
         
@@ -349,6 +366,7 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
         if !value.isSensitive {
             logger.warning(
                 "Accessing non-sensitive value through secure API",
+                context: ["service": "ConfigurationServiceActor"],
                 metadata: ["key": .public(key)]
             )
         }
@@ -367,6 +385,7 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
         if value.isSensitive {
             logger.info(
                 "Setting sensitive configuration value",
+                context: ["service": "ConfigurationServiceActor"],
                 metadata: [
                     "key": .public(key),
                     "source": .public(source ?? "default")
@@ -375,6 +394,7 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
         } else {
             logger.info(
                 "Setting configuration value",
+                context: ["service": "ConfigurationServiceActor"],
                 metadata: [
                     "key": .public(key),
                     "value": .public(value.stringValue),
@@ -424,18 +444,21 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
                     sourceIdentifier: sourceId,
                     timestamp: TimePointDTO.now(),
                     oldValue: oldValue,
-                    newValue: value
+                    newValue: value,
+                    context: ["service": "ConfigurationServiceActor"]
                 )
             )
             
             logger.debug(
                 "Configuration value set successfully",
+                context: ["service": "ConfigurationServiceActor"],
                 metadata: ["key": .public(key)]
             )
         } catch {
             // Log the error with privacy-aware logging
             logger.error(
                 "Failed to set configuration value",
+                context: ["service": "ConfigurationServiceActor"],
                 metadata: [
                     "key": .public(key),
                     "source": .public(sourceId),
@@ -460,6 +483,7 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
         // Log the operation with privacy-aware logging
         logger.info(
             "Removing configuration value",
+            context: ["service": "ConfigurationServiceActor"],
             metadata: [
                 "key": .public(key),
                 "source": .public(source ?? "all")
@@ -496,6 +520,7 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
             guard oldValue != nil else {
                 logger.debug(
                     "Configuration value does not exist, nothing to remove",
+                    context: ["service": "ConfigurationServiceActor"],
                     metadata: ["key": .public(key)]
                 )
                 return
@@ -516,18 +541,21 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
                     sourceIdentifier: sourceId,
                     timestamp: TimePointDTO.now(),
                     oldValue: oldValue,
-                    newValue: nil
+                    newValue: nil,
+                    context: ["service": "ConfigurationServiceActor"]
                 )
             )
             
             logger.debug(
                 "Configuration value removed successfully",
+                context: ["service": "ConfigurationServiceActor"],
                 metadata: ["key": .public(key)]
             )
         } catch {
             // Log the error with privacy-aware logging
             logger.error(
                 "Failed to remove configuration value",
+                context: ["service": "ConfigurationServiceActor"],
                 metadata: [
                     "key": .public(key),
                     "source": .public(sourceId),
@@ -550,6 +578,7 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
         // Log the operation with privacy-aware logging
         logger.info(
             "Saving configuration changes",
+            context: ["service": "ConfigurationServiceActor"],
             metadata: ["source": .public(source ?? "all")]
         )
         
@@ -577,7 +606,7 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
             }
         }
         
-        logger.info("Configuration changes saved successfully")
+        logger.info("Configuration changes saved successfully", context: ["service": "ConfigurationServiceActor"])
     }
     
     /// Subscribes to configuration change events
@@ -590,6 +619,7 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
         // Log the subscription with privacy-aware logging
         logger.debug(
             "New configuration change subscription",
+            context: ["service": "ConfigurationServiceActor"],
             metadata: [
                 "subscription_id": .public(subscriptionId.uuidString),
                 "filter_types": .public(filter?.changeTypes?.map { $0.rawValue }.joined(separator: ", ") ?? "all")
@@ -619,6 +649,7 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
         // Log the operation with privacy-aware logging
         logger.debug(
             "Getting all configuration keys",
+            context: ["service": "ConfigurationServiceActor"],
             metadata: ["source": .public(source ?? "all")]
         )
         
@@ -643,6 +674,7 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
         // Log the removal with privacy-aware logging
         logger.debug(
             "Configuration change subscription removed",
+            context: ["service": "ConfigurationServiceActor"],
             metadata: ["subscription_id": .public(subscriptionId.uuidString)]
         )
     }
@@ -658,6 +690,7 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
             // Log the event publication with privacy-aware logging
             logger.trace(
                 "Published configuration change event to subscriber",
+                context: ["service": "ConfigurationServiceActor"],
                 metadata: [
                     "subscription_id": .public(subscriptionId.uuidString),
                     "event_id": .public(event.identifier),
@@ -698,6 +731,7 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
         // For now, we'll just log it
         logger.debug(
             "Loading configuration from source",
+            context: ["service": "ConfigurationServiceActor"],
             metadata: ["source_id": .public(sourceId)]
         )
     }
@@ -710,6 +744,7 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
         // For now, we'll just log it
         logger.debug(
             "Saving configuration to source",
+            context: ["service": "ConfigurationServiceActor"],
             metadata: ["source_id": .public(sourceId)]
         )
     }
@@ -718,7 +753,10 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
     private func refreshConfigurationCache() async {
         // In a real implementation, this would rebuild the cache from all sources
         // For now, we'll just log it
-        logger.debug("Refreshing configuration cache")
+        logger.debug(
+            "Refreshing configuration cache",
+            context: ["service": "ConfigurationServiceActor"]
+        )
         
         // Mock refreshing the cache - this would actually merge values from all sources
         // respecting their priority

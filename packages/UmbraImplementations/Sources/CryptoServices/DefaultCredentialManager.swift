@@ -5,6 +5,9 @@ import UmbraErrors
 import UmbraErrorsCore
 import UmbraErrorsDTOs
 import Foundation
+import LoggingInterfaces
+import SecurityCoreInterfaces
+import SecurityInterfaces
 
 /// Default implementation of CredentialManagerProtocol using a SecureStorageProvider
 public actor DefaultCredentialManager: CredentialManagerProtocol {

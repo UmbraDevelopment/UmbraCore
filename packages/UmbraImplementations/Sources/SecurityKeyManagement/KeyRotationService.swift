@@ -201,7 +201,7 @@ public class KeyRotationServiceImpl: KeyRotationService {
     let (baseID, version)=try parseKeyIdentifier(identifier)
 
     // Get the existing key, if it exists
-    guard let oldKey=await keyStore.getKey(identifier: identifier) else {
+    guard let oldKey=try await keyStore.getKey(identifier: identifier) else {
       throw KeyRotationError.keyNotFound(identifier)
     }
 
@@ -214,7 +214,7 @@ public class KeyRotationServiceImpl: KeyRotationService {
     let newIdentifier="\(baseID)_v\(newVersion)"
 
     // Store the new key
-    await keyStore.storeKey(newKey, identifier: newIdentifier)
+    try await keyStore.storeKey(newKey, identifier: newIdentifier)
 
     return newIdentifier
   }

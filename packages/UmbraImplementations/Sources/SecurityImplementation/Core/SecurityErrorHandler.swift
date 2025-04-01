@@ -1,8 +1,8 @@
 import Foundation
 import LoggingInterfaces
 import LoggingTypes
-import SecurityCoreTypes
-import SecurityTypes
+import CoreSecurityTypes
+import UmbraErrors
 
 /**
  # SecurityErrorHandler

@@ -112,8 +112,9 @@ public final class KeyStore: KeyStorage, Sendable {
   /// Get a key by its identifier
   /// - Parameter identifier: The identifier for the key
   /// - Returns: The key as a byte array or nil if not found
-  public func getKey(identifier: String) async -> [UInt8]? {
-    await keyStorage.getKey(identifier: identifier)
+  /// - Throws: An error if retrieving the key fails
+  public func getKey(identifier: String) async throws -> [UInt8]? {
+    try await keyStorage.getKey(identifier: identifier)
   }
 
   /// Delete a key by its identifier

@@ -1,7 +1,6 @@
 import Foundation
 import LoggingInterfaces
-import SecurityCoreTypes
-import SecurityTypes
+import CoreSecurityTypes
 
 /**
  # Security Operations Error Handler

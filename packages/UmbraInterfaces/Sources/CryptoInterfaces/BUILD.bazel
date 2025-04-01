@@ -6,8 +6,10 @@ swift_library(
     module_name = "CryptoInterfaces",
     visibility = ["//visibility:public"],
     deps = [
+        "//packages/UmbraCoreTypes/Sources/CoreSecurityTypes",
         "//packages/UmbraCoreTypes/Sources/CryptoTypes",
         "//packages/UmbraCoreTypes/Sources/DomainSecurityTypes",
         "//packages/UmbraCoreTypes/Sources/UmbraErrors",
+        "//packages/UmbraInterfaces/Sources/SecurityCoreInterfaces",
     ],
 )

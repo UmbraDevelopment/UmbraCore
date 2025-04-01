@@ -1,8 +1,6 @@
-import Foundation
 import LoggingInterfaces
 import SecurityCoreInterfaces
-import SecurityCoreTypes
-import SecurityTypes
+import CoreSecurityTypes
 
 /**
  # Hashing Service

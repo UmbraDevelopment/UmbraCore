@@ -156,16 +156,23 @@ public actor XPCServiceActor: XPCServiceProtocol {
           }
 
           do {
-            // Decode the response using the modern API
-            // The type-specific approach is safer and preferred
-            let response = try NSKeyedUnarchiver.unarchivedObject(of: R.self, from: responseData)
-            
-            guard let response else {
-              throw XPCServiceError
-                .responseDecodingFailed("Failed to decode response as expected type")
+            // Handle two cases: types that conform to NSSecureCoding and types that support JSON
+            if let decodable = R.self as? NSSecureCoding.Type,
+               let decodableClass = decodable as? AnyClass {
+              // Use NSKeyedUnarchiver for NSSecureCoding types
+              let messageObject = try NSKeyedUnarchiver.unarchivedObject(ofClasses: [decodableClass], from: responseData)
+              guard let response = messageObject as? R else {
+                throw XPCServiceError.responseDecodingFailed("Failed to decode response as expected type")
+              }
+              continuation.resume(returning: response)
+            } else {
+              // For types that don't conform to NSSecureCoding, try JSON
+              let dictionary = try JSONSerialization.jsonObject(with: responseData)
+              guard let response = dictionary as? R else {
+                throw XPCServiceError.responseDecodingFailed("Failed to decode response as expected type")
+              }
+              continuation.resume(returning: response)
             }
-
-            continuation.resume(returning: response)
           } catch {
             continuation
               .resume(
@@ -199,18 +206,40 @@ public actor XPCServiceActor: XPCServiceProtocol {
 
     let wrappedHandler=AnyXPCHandler { data in
       // Decode the message
-      guard
-        let messageObject=try NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data),
-        let message=messageObject as? T
-      else {
-        throw XPCServiceError.messageEncodingFailed("Failed to decode message as expected type")
+      do {
+        // Handle two cases: types that conform to NSSecureCoding and types that support JSON
+        if let decodable = T.self as? NSSecureCoding.Type,
+           let decodableClass = decodable as? AnyClass,
+           let messageObject = try NSKeyedUnarchiver.unarchivedObject(ofClasses: [decodableClass], from: data),
+           let message = messageObject as? T {
+          
+          // Call the handler with the decoded message
+          let response = try await handler(message)
+          
+          // If response conforms to NSSecureCoding, use NSKeyedArchiver
+          if let secureCodingResponse = response as? NSSecureCoding {
+            return try NSKeyedArchiver.archivedData(withRootObject: secureCodingResponse, requiringSecureCoding: true)
+          } else {
+            // Fallback to JSON for types that don't conform to NSSecureCoding
+            let dictionary = try JSONSerialization.data(withJSONObject: response, options: [])
+            return dictionary
+          }
+        } else {
+          // For types that don't conform to NSSecureCoding, try JSON
+          let dictionary = try JSONSerialization.jsonObject(with: data)
+          guard let message = dictionary as? T else {
+            throw XPCServiceError.messageEncodingFailed("Failed to decode message as expected type")
+          }
+          
+          // Call the handler
+          let response = try await handler(message)
+          
+          // Encode the response
+          return try JSONSerialization.data(withJSONObject: response, options: [])
+        }
+      } catch {
+        throw XPCServiceError.messageEncodingFailed("Failed to decode message: \(error.localizedDescription)")
       }
-
-      // Call the handler
-      let response=try await handler(message)
-
-      // Encode the response
-      return try NSKeyedArchiver.archivedData(withRootObject: response, requiringSecureCoding: true)
     }
 
     handlers[endpoint]=wrappedHandler

@@ -1,22 +1,23 @@
 import Foundation
+import LoggingInterfaces
+import LoggingTypes
 import SecurityCoreInterfaces
-import SecurityCoreTypes
-import SecurityTypes
+import CoreSecurityTypes
 
 /**
  # SecurityProvider Validation Extension
 
- This extension adds comprehensive validation capabilities to the SecurityProviderImpl,
- ensuring that all inputs to security operations are properly validated before processing.
+ This extension adds input validation helpers to the CoreSecurityProviderService.
+ These methods ensure that operations have valid parameters before being performed,
+ leading to more robust error handling and predictable behaviour.
 
- ## Validation Standards
+ ## Benefits
 
- - All inputs must be validated before use
- - Validation failures result in clear error messages
- - Context is provided for debugging
+ - Consistent parameter validation across all security operations
+ - Early detection of configuration errors
  - Common validation logic is centralised
  */
-extension SecurityProviderImpl {
+extension CoreSecurityProviderService {
   /**
    Validates configuration for encryption operations.
 
@@ -24,20 +25,23 @@ extension SecurityProviderImpl {
    - Throws: SecurityError if validation fails
    */
   func validateEncryptionConfig(_ config: SecurityConfigDTO) throws {
-    // Check for required options
-    guard config.options["inputData"] != nil else {
-      throw SecurityError.invalidInput("Missing input data for encryption")
+    // Check for required parameters
+    guard let metadata = config.options?.metadata else {
+      throw SecurityProtocolError.invalidConfiguration(message: "Missing configuration metadata")
+    }
+    
+    guard metadata["key"] != nil else {
+      throw SecurityProtocolError.invalidConfiguration(message: "Missing encryption key")
     }
 
-    guard config.keySize > 0 else {
-      throw SecurityError.invalidInput("Invalid key size for encryption: \(config.keySize)")
+    guard metadata["data"] != nil else {
+      throw SecurityProtocolError.invalidConfiguration(message: "Missing data to encrypt")
     }
 
-    // Check for supported algorithm
-    let algorithm=config.algorithm
-    let supportedAlgorithms=["AES", "ChaCha20"]
-    guard supportedAlgorithms.contains(algorithm) else {
-      throw SecurityError.unsupportedOperation("Unsupported algorithm: \(algorithm)")
+    // Validate algorithm is supported
+    let supportedAlgorithms = ["AES", "ChaCha20"]
+    guard supportedAlgorithms.contains(config.encryptionAlgorithm.rawValue) else {
+      throw SecurityProtocolError.invalidConfiguration(message: "Unsupported encryption algorithm: \(config.encryptionAlgorithm.rawValue)")
     }
   }
 
@@ -48,67 +52,90 @@ extension SecurityProviderImpl {
    - Throws: SecurityError if validation fails
    */
   func validateDecryptionConfig(_ config: SecurityConfigDTO) throws {
-    // Check for required options
-    guard config.options["ciphertext"] != nil else {
-      throw SecurityError.invalidInput("Missing ciphertext for decryption")
+    // Check for required parameters
+    guard let metadata = config.options?.metadata else {
+      throw SecurityProtocolError.invalidConfiguration(message: "Missing configuration metadata")
+    }
+    
+    guard metadata["key"] != nil else {
+      throw SecurityProtocolError.invalidConfiguration(message: "Missing decryption key")
     }
 
-    guard config.keySize > 0 else {
-      throw SecurityError.invalidInput("Invalid key size for decryption: \(config.keySize)")
+    guard metadata["data"] != nil else {
+      throw SecurityProtocolError.invalidConfiguration(message: "Missing data to decrypt")
     }
 
-    // Check for supported algorithm
-    let algorithm=config.algorithm
-    let supportedAlgorithms=["AES", "ChaCha20"]
-    guard supportedAlgorithms.contains(algorithm) else {
-      throw SecurityError.unsupportedOperation("Unsupported algorithm: \(algorithm)")
+    guard metadata["iv"] != nil else {
+      throw SecurityProtocolError.invalidConfiguration(message: "Missing initialisation vector (IV)")
+    }
+
+    // Validate algorithm is supported
+    let supportedAlgorithms = ["AES", "ChaCha20"]
+    guard supportedAlgorithms.contains(config.encryptionAlgorithm.rawValue) else {
+      throw SecurityProtocolError.invalidConfiguration(message: "Unsupported decryption algorithm: \(config.encryptionAlgorithm.rawValue)")
     }
   }
 
   /**
-   Validates configuration for key generation operations.
+   Validates configuration for key management operations.
 
    - Parameter config: The configuration to validate
    - Throws: SecurityError if validation fails
    */
-  func validateKeyGenerationConfig(_ config: SecurityConfigDTO) throws {
-    // Check for valid key size
-    guard config.keySize >= 128 else {
-      throw SecurityError.invalidInput("Key size must be at least 128 bits")
+  func validateKeyManagementConfig(_ config: SecurityConfigDTO) throws {
+    guard let metadata = config.options?.metadata else {
+      throw SecurityProtocolError.invalidConfiguration(message: "Missing configuration metadata")
+    }
+    
+    // Check for identifier
+    guard let keyIdentifier = metadata["keyIdentifier"], !keyIdentifier.isEmpty else {
+      throw SecurityProtocolError.invalidConfiguration(message: "Missing or empty key identifier")
     }
 
-    // Validate key size is appropriate for algorithm
-    let algorithm=config.algorithm
-    switch algorithm {
-      case "AES":
-        guard [128, 192, 256].contains(config.keySize) else {
-          throw SecurityError
-            .invalidInput(
-              "Invalid key size for AES: \(config.keySize). Must be 128, 192, or 256 bits"
-            )
-        }
-      case "RSA":
-        guard config.keySize >= 2048 && config.keySize % 8 == 0 else {
-          throw SecurityError
-            .invalidInput(
-              "Invalid key size for RSA: \(config.keySize). Must be at least 2048 bits and a multiple of 8"
-            )
-        }
-      case "ECC":
-        guard [256, 384, 521].contains(config.keySize) else {
-          throw SecurityError
-            .invalidInput(
-              "Invalid key size for ECC: \(config.keySize). Must be 256, 384, or 521 bits"
-            )
-        }
-      default:
-        break
+    // For key generation, check algorithm
+    if metadata["operation"] == "generate" {
+      // Validate algorithm is supported
+      let supportedAlgorithms = ["AES", "RSA", "EC"]
+      guard supportedAlgorithms.contains(config.encryptionAlgorithm.rawValue) else {
+        throw SecurityProtocolError.invalidConfiguration(message: "Unsupported key algorithm: \(config.encryptionAlgorithm.rawValue)")
+      }
+    }
+  }
+
+  /**
+   Validates configuration for signature operations.
+
+   - Parameter config: The configuration to validate
+   - Throws: SecurityError if validation fails
+   */
+  func validateSignatureConfig(_ config: SecurityConfigDTO) throws {
+    guard let metadata = config.options?.metadata else {
+      throw SecurityProtocolError.invalidConfiguration(message: "Missing configuration metadata")
+    }
+    
+    // Check for required parameters
+    guard metadata["data"] != nil else {
+      throw SecurityProtocolError.invalidConfiguration(message: "Missing data to sign/verify")
     }
 
-    // Check for supported algorithm
-    let supportedAlgorithms=["AES", "ChaCha20", "RSA", "ECC", "ED25519"]
-    guard supportedAlgorithms.contains(algorithm) else {
-      throw SecurityError.unsupportedOperation("Unsupported algorithm: \(algorithm)")
+    guard metadata["keyIdentifier"] != nil else {
+      throw SecurityProtocolError.invalidConfiguration(message: "Missing signing key identifier")
+    }
+
+    // For verification, we need a signature
+    if metadata["operation"] == "verify" {
+      guard metadata["signature"] != nil else {
+        throw SecurityProtocolError.invalidConfiguration(message: "Missing signature to verify")
+      }
+    }
+
+    // Signature algorithm should be checked with the proper algorithm property
+    let supportedAlgorithms = ["RSA", "ECDSA", "Ed25519"]
+    // Since the algorithm for signatures might be different from encryption algorithm
+    // we should ideally use a dedicated signature algorithm property if available
+    // For now, we're using the encryptionAlgorithm as a placeholder
+    guard supportedAlgorithms.contains(config.encryptionAlgorithm.rawValue) else {
+      throw SecurityProtocolError.invalidConfiguration(message: "Unsupported signature algorithm: \(config.encryptionAlgorithm.rawValue)")
     }
   }
 
@@ -118,101 +145,30 @@ extension SecurityProviderImpl {
    - Parameter config: The configuration to validate
    - Throws: SecurityError if validation fails
    */
-  func validateSecureStorageConfig(_ config: SecurityConfigDTO) throws {
-    // Validate identifier
-    guard let identifier=config.options["identifier"] else {
-      throw SecurityError.invalidInput("Missing identifier for secure storage")
+  func validateStorageConfig(_ config: SecurityConfigDTO) throws {
+    guard let metadata = config.options?.metadata else {
+      throw SecurityProtocolError.invalidConfiguration(message: "Missing configuration metadata")
     }
-
-    // Check for valid identifier format (basic validation)
-    guard !identifier.isEmpty else {
-      throw SecurityError.invalidInput("Empty identifier for secure storage")
-    }
-
-    // Validate data is present
-    guard config.options["data"] != nil else {
-      throw SecurityError.invalidInput("Missing data for secure storage")
-    }
-  }
-
-  /**
-   Validates configuration for secure retrieval operations.
-
-   - Parameter config: The configuration to validate
-   - Throws: SecurityError if validation fails
-   */
-  func validateSecureRetrievalConfig(_ config: SecurityConfigDTO) throws {
-    // Validate identifier
-    guard let identifier=config.options["identifier"] else {
-      throw SecurityError.invalidInput("Missing identifier for secure retrieval")
-    }
-
-    // Check for valid identifier format (basic validation)
-    guard !identifier.isEmpty else {
-      throw SecurityError.invalidInput("Empty identifier for secure retrieval")
-    }
-  }
-
-  /**
-   Validates configuration for secure deletion operations.
-
-   - Parameter config: The configuration to validate
-   - Throws: SecurityError if validation fails
-   */
-  func validateSecureDeletionConfig(_ config: SecurityConfigDTO) throws {
-    // Validate identifier
-    guard let identifier=config.options["identifier"] else {
-      throw SecurityError.invalidInput("Missing identifier for secure deletion")
-    }
-
-    // Check for valid identifier format (basic validation)
-    guard !identifier.isEmpty else {
-      throw SecurityError.invalidInput("Empty identifier for secure deletion")
-    }
-  }
-
-  /**
-   Validates configuration for signing operations.
-
-   - Parameter config: The configuration to validate
-   - Throws: SecurityError if validation fails
-   */
-  func validateSigningConfig(_ config: SecurityConfigDTO) throws {
-    // Check for required options
-    guard config.options["data"] != nil else {
-      throw SecurityError.invalidInput("Missing data for signing")
-    }
-
-    // Check for hash algorithm if specified
-    if let hashAlg=config.hashAlgorithm {
-      let supportedHashAlgorithms=["SHA256", "SHA384", "SHA512"]
-      guard supportedHashAlgorithms.contains(hashAlg) else {
-        throw SecurityError.unsupportedOperation("Unsupported hash algorithm: \(hashAlg)")
+    
+    // For storing data
+    if metadata["operation"] == "store" {
+      guard metadata["data"] != nil else {
+        throw SecurityProtocolError.invalidConfiguration(message: "Missing data to store")
       }
     }
-  }
 
-  /**
-   Validates configuration for signature verification operations.
-
-   - Parameter config: The configuration to validate
-   - Throws: SecurityError if validation fails
-   */
-  func validateVerificationConfig(_ config: SecurityConfigDTO) throws {
-    // Check for required options
-    guard config.options["data"] != nil else {
-      throw SecurityError.invalidInput("Missing data for verification")
+    // For retrieving data
+    if metadata["operation"] == "retrieve" || metadata["operation"] == "delete" {
+      guard metadata["identifier"] != nil else {
+        throw SecurityProtocolError.invalidConfiguration(message: "Missing data identifier")
+      }
     }
 
-    guard config.options["signature"] != nil else {
-      throw SecurityError.invalidInput("Missing signature for verification")
-    }
-
-    // Check for hash algorithm if specified
-    if let hashAlg=config.hashAlgorithm {
-      let supportedHashAlgorithms=["SHA256", "SHA384", "SHA512"]
-      guard supportedHashAlgorithms.contains(hashAlg) else {
-        throw SecurityError.unsupportedOperation("Unsupported hash algorithm: \(hashAlg)")
+    // Check storage location if specified
+    if let location = metadata["location"] {
+      let supportedLocations = ["keychain", "secureEnclave", "fileSystem", "memory"]
+      guard supportedLocations.contains(location) else {
+        throw SecurityProtocolError.invalidConfiguration(message: "Unsupported storage location: \(location)")
       }
     }
   }

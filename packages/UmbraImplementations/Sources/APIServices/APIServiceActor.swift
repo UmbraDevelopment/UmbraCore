@@ -1,6 +1,6 @@
 import APIInterfaces
 import LoggingInterfaces
-import SecurityInterfaces
+import SecurityCoreInterfaces
 import UmbraErrors
 
 /// APIServiceActor

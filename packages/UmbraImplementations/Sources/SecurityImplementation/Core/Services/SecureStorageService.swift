@@ -93,15 +93,15 @@ final class SecureStorageService: SecurityServiceBase {
         throw SecureStorageError.invalidInput("Missing storage identifier")
       }
 
-      guard let dataToStore=config.options["data"].flatMap({ SecureBytes(base64Encoded: $0) })
+      guard let dataToStore=config.options["data"].flatMap({ Data(base64Encoded: $0) })
       else {
         throw SecureStorageError.invalidInput("Missing or invalid data for storage")
       }
 
       // Since the CryptoService doesn't have generateRandomBytes, use a fixed key and IV for now
       // In a production implementation, this would use a proper secure random generator
-      let storageKey=SecureBytes(base64Encoded: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=") ??
-        SecureBytes()
+      let storageKey=Data(base64Encoded: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=") ??
+        Data()
 
       // Encrypt the data before storage
       let encryptResult=await cryptoService.encrypt(data: dataToStore, using: storageKey)
@@ -200,7 +200,7 @@ final class SecureStorageService: SecurityServiceBase {
         throw SecureStorageError.invalidInput("Missing storage identifier")
       }
 
-      guard let key=config.options["key"].flatMap({ SecureBytes(base64Encoded: $0) }) else {
+      guard let key=config.options["key"].flatMap({ Data(base64Encoded: $0) }) else {
         throw SecureStorageError.invalidInput("Missing decryption key")
       }
 
@@ -398,7 +398,7 @@ final class SecureStorageService: SecurityServiceBase {
    */
   private func simulateSecureStorage(
     identifier _: String,
-    data _: SecureBytes,
+    data _: Data,
     metadata _: [String: String]
   ) -> Bool {
     // In a real implementation, this would store the data securely
@@ -415,22 +415,21 @@ final class SecureStorageService: SecurityServiceBase {
    - Returns: Retrieved data and metadata, or nil if not found
    */
   private func simulateSecureRetrieval(identifier _: String)
-  -> (data: SecureBytes, metadata: [String: String])? {
+  -> (data: Data, metadata: [String: String])? {
     // In a real implementation, this would retrieve data from secure storage
     // For simulation purposes, we'll create dummy data
 
     // Create dummy encrypted data
-    let dummyData=Data(repeating: 0, count: 64)
-    let dummySecureBytes=try? SecureBytes(data: dummyData)
+    let dummyData = Data(repeating: 0, count: 64)
 
     // Create dummy metadata
-    let dummyMetadata=[
+    let dummyMetadata = [
       "iv": Data(repeating: 0, count: 16).base64EncodedString(),
       "algorithm": "AES256",
       "timestamp": "\(Date().timeIntervalSince1970)"
     ]
 
-    return (dummySecureBytes ?? SecureBytes(), dummyMetadata)
+    return (data: dummyData, metadata: dummyMetadata)
   }
 
   /**

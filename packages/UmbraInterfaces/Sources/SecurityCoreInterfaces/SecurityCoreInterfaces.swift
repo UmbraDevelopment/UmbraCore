@@ -13,11 +13,17 @@
  - SecurityProviderProtocol: Top-level interface for comprehensive security operations
  */
 
-// Export Foundation types needed by this module
-@_exported import Foundation
+import CoreSecurityTypes
+import DomainSecurityTypes
+import UmbraErrors
 
-@_exported import CoreSecurityTypes
+/// Main module for security interfaces
+/// This module contains all the core security interfaces used throughout the system
+@_exported import struct Foundation.Data
+@_exported import struct Foundation.URL
 
-// Export dependencies
-@_exported import DomainSecurityTypes
-@_exported import UmbraErrors
+// Exports all core security interfaces
+@_exported import struct CoreSecurityTypes.SecurityConfigDTO
+@_exported import struct CoreSecurityTypes.SecurityResultDTO
+@_exported import enum CoreSecurityTypes.SecurityOperation
+@_exported import enum DomainSecurityTypes.SecurityProtocolError

@@ -2,13 +2,13 @@ import Foundation
 import LoggingInterfaces
 import LoggingTypes
 import SecurityCoreInterfaces
-import SecurityCoreTypes
-import SecurityTypes
+import CoreSecurityTypes
+import DomainSecurityTypes
 
 /**
  # SecurityProvider Operations Extension
 
- This extension adds specialised operations to the SecurityProviderImpl that
+ This extension adds specialised operations to the CoreSecurityProviderService that
  combine multiple basic operations into higher-level functionality.
 
  ## Operations
@@ -17,7 +17,7 @@ import SecurityTypes
  * Combined retrieve and decrypt operations
  * Batch encryption and decryption for collections of data
  */
-extension SecurityProviderImpl {
+extension CoreSecurityProviderService {
   /**
    Encrypts data and then stores it securely.
 
@@ -30,247 +30,139 @@ extension SecurityProviderImpl {
    - Returns: Result with storage metadata
    */
   public func encryptAndStore(
-    data: SecureBytes,
+    data: Data,
     config: SecurityConfigDTO
-  ) async -> SecurityResultDTO {
-    // Generate a unique operation ID
-    let operationID=UUID().uuidString
-    let startTime=Date()
-
-    // Create descriptive operation name since this is a composite operation
-    let operationName="encryptAndStore"
-
-    // Create log metadata
-    let logMetadata: LoggingInterfaces.LogMetadata=[
-      "operationId": operationID,
-      "operation": operationName
-    ]
-
-    await logger.info("Starting combined encrypt and store operation", metadata: logMetadata)
-
-    do {
-      // Start with encryption configuration
-      var encryptionConfig=config
-
-      // Convert SecureBytes to base64 string for options
-      let dataString=data.base64EncodedString()
-      var updatedOptions=encryptionConfig.options
-      updatedOptions["inputData"]=dataString
-
-      encryptionConfig=SecurityConfigDTO(
-        algorithm: encryptionConfig.algorithm,
-        keySize: encryptionConfig.keySize,
-        hashAlgorithm: encryptionConfig.hashAlgorithm,
-        options: updatedOptions
-      )
-
-      if encryptionConfig.options["keyIdentifier"] == nil {
-        throw SecurityError.invalidKey("No key identifier provided for encryption")
-      }
-      // Encrypt the data
-      let encryptResult=await encrypt(config: encryptionConfig)
-
-      if encryptResult.status != SecurityResultDTO.Status.success {
-        return encryptResult
-      }
-
-      // Create storage configuration
-      var storageConfig=SecurityConfigDTO(
-        algorithm: config.algorithm,
-        keySize: config.keySize,
-        hashAlgorithm: config.hashAlgorithm,
-        options: config.options.merging([:]) { (_, new) in new }
-      )
-
-      // Use the encrypted data for storage
-      if let encryptedData=encryptResult.data {
-        var updatedOptions=storageConfig.options
-        updatedOptions["storeData"]=encryptedData.base64EncodedString()
-        storageConfig=SecurityConfigDTO(
-          algorithm: storageConfig.algorithm,
-          keySize: storageConfig.keySize,
-          hashAlgorithm: storageConfig.hashAlgorithm,
-          options: updatedOptions
-        )
-      } else {
-        throw SecurityError.invalidData("No encrypted data available")
-      }
-
-      // Generate a storage identifier if not provided
-      let storageIdentifier=config.options["storageIdentifier"] ?? UUID().uuidString
-
-      // Create a new storage config with the identifier
-      var storageOptions=storageConfig.options
-      storageOptions["storageIdentifier"]=storageIdentifier
-      storageConfig=SecurityConfigDTO(
-        algorithm: storageConfig.algorithm,
-        keySize: storageConfig.keySize,
-        hashAlgorithm: storageConfig.hashAlgorithm,
-        options: storageOptions
-      )
-
-      // Store the encrypted data
-      let storeResult=await secureStore(config: storageConfig)
-
-      if storeResult.status != SecurityResultDTO.Status.success {
-        return storeResult
-      }
-
-      // Calculate duration
-      let duration=Date().timeIntervalSince(startTime) * 1000
-
-      // Log success
-      var resultMetadata: LoggingInterfaces.LogMetadata=[
-        "operationId": operationID,
-        "storageIdentifier": storageIdentifier,
-        "durationMs": String(format: "%.2f", duration)
-      ]
-
-      await logger.info(
-        "Combined encrypt and store operation completed successfully",
-        metadata: resultMetadata
-      )
-
-      // Return success result with metadata
-      return SecurityResultDTO(
-        status: .success,
-        data: storeResult.data,
-        metadata: resultMetadata
-      )
-    } catch {
-      // Calculate duration
-      let duration=Date().timeIntervalSince(startTime) * 1000
-
-      // Create error handler
-      let errorHandler=SecurityErrorHandler(logger: logger)
-
-      // Map and log the error
-      let securityError=await errorHandler.handleError(
-        error,
-        operation: .encrypt,
-        context: [
-          "operationId": operationID,
-          "durationMs": String(format: "%.2f", duration),
-          "combinedOperation": "encryptAndStore"
-        ]
-      )
-
-      // Return failure result
-      return SecurityResultDTO(
-        status: .failure,
-        error: securityError,
-        metadata: [
-          "operationId": operationID,
-          "durationMs": String(format: "%.2f", duration)
-        ]
-      )
+  ) async throws -> SecurityResultDTO {
+    // First encrypt the data
+    let encryptConfig = config
+    let encryptResult = try await performSecureOperation(
+      operation: .encrypt,
+      config: encryptConfig
+    )
+    
+    // If encryption failed, return that error immediately
+    if !encryptResult.successful {
+      return encryptResult
     }
+    
+    // Now store the encrypted data
+    let storeConfig = SecurityConfigDTO(
+      encryptionAlgorithm: config.encryptionAlgorithm,
+      hashAlgorithm: config.hashAlgorithm,
+      providerType: config.providerType,
+      options: SecurityConfigOptions(
+        enableDetailedLogging: config.options?.enableDetailedLogging ?? false,
+        keyDerivationIterations: config.options?.keyDerivationIterations ?? 100_000,
+        memoryLimitBytes: config.options?.memoryLimitBytes ?? 65536,
+        useHardwareAcceleration: config.options?.useHardwareAcceleration ?? true,
+        operationTimeoutSeconds: config.options?.operationTimeoutSeconds ?? 30.0,
+        verifyOperations: config.options?.verifyOperations ?? true,
+        metadata: [
+          "location": config.options?.metadata?["storeLocation"] ?? "default",
+          "identifier": config.options?.metadata?["storeIdentifier"] ?? UUID().uuidString,
+          "data": encryptResult.resultData?.base64EncodedString() ?? ""
+        ]
+      )
+    )
+    
+    let storeResult = try await performSecureOperation(
+      operation: .storeKey,
+      config: storeConfig
+    )
+    
+    return storeResult
   }
-
+  
   /**
-   Retrieves securely stored data and then decrypts it.
+   Retrieves encrypted data and decrypts it in a single operation.
 
-   This method combines secure retrieval and decryption into a single operation,
+   This method combines retrieval and decryption into a single operation,
    simplifying common use cases that require both operations.
 
    - Parameters:
-     - identifier: Identifier for the stored data
+     - identifier: The identifier for the stored data
      - config: Configuration for both operations
-   - Returns: Result with decrypted data
+   - Returns: The decrypted data
    */
   public func retrieveAndDecrypt(
     identifier: String,
     config: SecurityConfigDTO
-  ) async -> SecurityResultDTO {
-    let operationID=UUID().uuidString
-    let startTime=Date()
-    let operationName="retrieveAndDecrypt"
-
-    let logMetadata: LoggingInterfaces.LogMetadata=[
-      "operationId": operationID,
-      "identifier": identifier,
-      "operation": operationName
-    ]
-
-    await logger.info("Starting combined retrieve and decrypt operation", metadata: logMetadata)
-
-    do {
-      // Create retrieval config
-      var retrievalConfig=SecurityConfigDTO(
-        algorithm: config.algorithm,
-        keySize: config.keySize,
-        hashAlgorithm: config.hashAlgorithm,
-        options: config.options.merging([:]) { (_, new) in new }
-      )
-
-      // Add storage identifier for retrieval
-      var updatedOptions=retrievalConfig.options
-      updatedOptions["storageIdentifier"]=identifier
-      retrievalConfig=SecurityConfigDTO(
-        algorithm: retrievalConfig.algorithm,
-        keySize: retrievalConfig.keySize,
-        hashAlgorithm: retrievalConfig.hashAlgorithm,
-        options: updatedOptions
-      )
-
-      // Retrieve the encrypted data
-      let retrieveResult=await secureRetrieve(config: retrievalConfig)
-
-      if retrieveResult.status != SecurityResultDTO.Status.success {
-        return retrieveResult
-      }
-
-      // Create decryption config
-      let decryptionConfig=config
-
-      // Use the retrieved encrypted data for decryption
-      if let retrievedData=retrieveResult.data {
-        var newOptions=decryptionConfig.options
-        newOptions["encryptedData"]=retrievedData.base64EncodedString()
-
-        let updatedConfig=SecurityConfigDTO(
-          algorithm: decryptionConfig.algorithm,
-          keySize: decryptionConfig.keySize,
-          hashAlgorithm: decryptionConfig.hashAlgorithm,
-          options: newOptions
-        )
-
-        return await decrypt(config: updatedConfig)
-      } else {
-        throw SecurityError.invalidData("No data retrieved")
-      }
-    } catch {
-      // Calculate duration
-      let duration=Date().timeIntervalSince(startTime) * 1000
-
-      // Create error handler
-      let errorHandler=SecurityErrorHandler(logger: logger)
-
-      // Map and log the error
-      let securityError=await errorHandler.handleError(
-        error,
-        operation: .decrypt,
-        context: [
-          "operationId": operationID,
-          "durationMs": String(format: "%.2f", duration),
-          "identifier": identifier,
-          "combinedOperation": "retrieveAndDecrypt"
+  ) async throws -> SecurityResultDTO {
+    // First retrieve the encrypted data
+    let retrieveConfig = SecurityConfigDTO(
+      encryptionAlgorithm: config.encryptionAlgorithm,
+      hashAlgorithm: config.hashAlgorithm,
+      providerType: config.providerType,
+      options: SecurityConfigOptions(
+        enableDetailedLogging: config.options?.enableDetailedLogging ?? false,
+        keyDerivationIterations: config.options?.keyDerivationIterations ?? 100_000,
+        memoryLimitBytes: config.options?.memoryLimitBytes ?? 65536,
+        useHardwareAcceleration: config.options?.useHardwareAcceleration ?? true,
+        operationTimeoutSeconds: config.options?.operationTimeoutSeconds ?? 30.0,
+        verifyOperations: config.options?.verifyOperations ?? true,
+        metadata: [
+          "location": config.options?.metadata?["storeLocation"] ?? "default",
+          "identifier": identifier
         ]
       )
-
-      // Return failure result
-      return SecurityResultDTO(
-        status: .failure,
-        error: securityError,
+    )
+    
+    // Retrieve the encrypted data
+    let retrieveResult = try await performSecureOperation(
+      operation: .retrieveKey,
+      config: retrieveConfig
+    )
+    
+    // If retrieval failed, return that error immediately
+    if !retrieveResult.successful {
+      return retrieveResult
+    }
+    
+    // Now decrypt the data
+    guard let encryptedDataBase64 = retrieveResult.resultData else {
+      // Log and return error
+      await logger.error(
+        "Retrieved data was nil",
+        metadata: PrivacyMetadata([
+          "identifier": (value: identifier, privacy: .public)
+        ]),
+        source: "SecurityProvider+Operations.retrieveAndDecrypt"
+      )
+      
+      return SecurityResultDTO.failure(
+        errorDetails: "Retrieved data was nil",
+        executionTimeMs: 0,
         metadata: [
-          "operationId": operationID,
-          "durationMs": String(format: "%.2f", duration),
           "identifier": identifier
         ]
       )
     }
+    
+    // Create decrypt config
+    let decryptConfig = SecurityConfigDTO(
+      encryptionAlgorithm: config.encryptionAlgorithm,
+      hashAlgorithm: config.hashAlgorithm,
+      providerType: config.providerType,
+      options: SecurityConfigOptions(
+        enableDetailedLogging: config.options?.enableDetailedLogging ?? false,
+        keyDerivationIterations: config.options?.keyDerivationIterations ?? 100_000,
+        memoryLimitBytes: config.options?.memoryLimitBytes ?? 65536,
+        useHardwareAcceleration: config.options?.useHardwareAcceleration ?? true,
+        operationTimeoutSeconds: config.options?.operationTimeoutSeconds ?? 30.0,
+        verifyOperations: config.options?.verifyOperations ?? true,
+        metadata: config.options?.metadata ?? [:]
+      )
+    )
+    
+    // Decrypt the data
+    let decryptResult = try await performSecureOperation(
+      operation: .decrypt,
+      config: decryptConfig
+    )
+    
+    return decryptResult
   }
-
+  
   /**
    Performs batch encryption on multiple data items.
 
@@ -278,204 +170,252 @@ extension SecurityProviderImpl {
    but returning individual results for each item.
 
    - Parameters:
-     - dataItems: Collection of data items to encrypt
-     - config: Base configuration for encryption operations
+     - dataItems: Array of data items to encrypt
+     - config: The encryption configuration to use
    - Returns: Array of encryption results corresponding to each input item
    */
   public func batchEncrypt(
-    dataItems: [SecureBytes],
+    dataItems: [Data],
     config: SecurityConfigDTO
   ) async -> [SecurityResultDTO] {
-    let operationID=UUID().uuidString
-    let logMetadata: LoggingInterfaces.LogMetadata=[
-      "itemCount": String(dataItems.count),
-      "operationId": operationID
-    ]
-
+    let operationID = UUID().uuidString
+    let privacyMetadata = PrivacyMetadata([
+      "itemCount": (value: String(dataItems.count), privacy: .public),
+      "operationId": (value: operationID, privacy: .public)
+    ])
+    
     await logger.info(
-      "Starting batch encryption of \(dataItems.count) items",
-      metadata: logMetadata
+      "Starting batch encryption operation",
+      metadata: privacyMetadata,
+      source: "SecurityProvider+Operations.batchEncrypt"
     )
-
-    var results: [SecurityResultDTO]=[]
-    var successCount=0
-
-    // Process each item sequentially
-    for (index, item) in dataItems.enumerated() {
-      // Clone the base config for this item
-      var itemConfig=config
-
-      // Convert SecureBytes to base64 string for options
-      let dataString=item.base64EncodedString()
-      var updatedOptions=itemConfig.options
-      updatedOptions["inputData"]=dataString
-
-      itemConfig=SecurityConfigDTO(
-        algorithm: itemConfig.algorithm,
-        keySize: itemConfig.keySize,
-        hashAlgorithm: itemConfig.hashAlgorithm,
-        options: updatedOptions
+    
+    var results = [SecurityResultDTO]()
+    for (index, data) in dataItems.enumerated() {
+      // Create config with the current data item
+      var itemConfig = config
+      
+      // Add the current data item to the config
+      var metadata = config.options?.metadata ?? [:]
+      metadata["data"] = data.base64EncodedString()
+      metadata["itemIndex"] = String(index)
+      
+      let itemOptions = SecurityConfigOptions(
+        enableDetailedLogging: config.options?.enableDetailedLogging ?? false,
+        keyDerivationIterations: config.options?.keyDerivationIterations ?? 100_000,
+        memoryLimitBytes: config.options?.memoryLimitBytes ?? 65536,
+        useHardwareAcceleration: config.options?.useHardwareAcceleration ?? true,
+        operationTimeoutSeconds: config.options?.operationTimeoutSeconds ?? 30.0,
+        verifyOperations: config.options?.verifyOperations ?? true,
+        metadata: metadata
       )
-
-      // Encrypt this item
-      let encryptResult=await encrypt(config: itemConfig)
-      results.append(encryptResult)
-
-      if encryptResult.status == SecurityResultDTO.Status.success {
-        successCount += 1
-      } else {
-        await logger.error("Batch encryption failed at item \(index + 1)", metadata: logMetadata)
+      
+      itemConfig = SecurityConfigDTO(
+        encryptionAlgorithm: config.encryptionAlgorithm,
+        hashAlgorithm: config.hashAlgorithm,
+        providerType: config.providerType,
+        options: itemOptions
+      )
+      
+      // Encrypt the current item
+      do {
+        let result = try await performSecureOperation(
+          operation: .encrypt,
+          config: itemConfig
+        )
+        results.append(result)
+      } catch {
+        // If encryption fails, add a failure result
+        results.append(
+          SecurityResultDTO.failure(
+            errorDetails: "Encryption operation failed: \(error.localizedDescription)",
+            executionTimeMs: 0,
+            metadata: ["itemIndex": String(index)]
+          )
+        )
       }
     }
-
-    // Log batch summary
-    let batchMetadata: LoggingInterfaces.LogMetadata=[
-      "totalItems": String(dataItems.count),
-      "successCount": String(successCount),
-      "failureCount": String(dataItems.count - successCount),
-      "operationId": operationID
-    ]
-
+    
     await logger.info(
-      "Batch encryption completed: \(successCount)/\(dataItems.count) successful",
-      metadata: batchMetadata
+      "Completed batch encryption operation",
+      metadata: privacyMetadata,
+      source: "SecurityProvider+Operations.batchEncrypt"
     )
-
+    
     return results
   }
-
+  
   /**
-   Performs batch decryption on multiple data items.
-
+   Performs batch decryption on multiple encrypted data items.
+   
    This method decrypts multiple data items in sequence using the same configuration
    but returning individual results for each item.
-
+   
    - Parameters:
-     - dataItems: Collection of encrypted data items to decrypt
-     - config: Base configuration for decryption operations
+     - dataItems: Array of encrypted data items to decrypt
+     - config: The decryption configuration to use
    - Returns: Array of decryption results corresponding to each input item
    */
   public func batchDecrypt(
-    dataItems: [SecureBytes],
+    dataItems: [Data],
     config: SecurityConfigDTO
   ) async -> [SecurityResultDTO] {
-    let operationID=UUID().uuidString
-    let logMetadata: LoggingInterfaces.LogMetadata=[
-      "itemCount": String(dataItems.count),
-      "operationId": operationID
-    ]
-
+    let operationID = UUID().uuidString
+    let privacyMetadata = PrivacyMetadata([
+      "itemCount": (value: String(dataItems.count), privacy: .public),
+      "operationId": (value: operationID, privacy: .public)
+    ])
+    
     await logger.info(
-      "Starting batch decryption of \(dataItems.count) items",
-      metadata: logMetadata
+      "Starting batch decryption operation",
+      metadata: privacyMetadata,
+      source: "SecurityProvider+Operations.batchDecrypt"
     )
-
-    var results: [SecurityResultDTO]=[]
-    var successCount=0
-
-    // Process each item sequentially
-    for (index, item) in dataItems.enumerated() {
-      // Clone the base config for this item
-      var itemConfig=config
-
-      // Convert SecureBytes to base64 string for options
-      let dataString=item.base64EncodedString()
-      var updatedOptions=itemConfig.options
-      updatedOptions["encryptedData"]=dataString
-
-      itemConfig=SecurityConfigDTO(
-        algorithm: itemConfig.algorithm,
-        keySize: itemConfig.keySize,
-        hashAlgorithm: itemConfig.hashAlgorithm,
-        options: updatedOptions
+    
+    var results = [SecurityResultDTO]()
+    for (index, data) in dataItems.enumerated() {
+      // Create config with the current data item
+      var itemConfig = config
+      
+      // Add the current data item to the config
+      var metadata = config.options?.metadata ?? [:]
+      metadata["data"] = data.base64EncodedString()
+      metadata["itemIndex"] = String(index)
+      
+      let itemOptions = SecurityConfigOptions(
+        enableDetailedLogging: config.options?.enableDetailedLogging ?? false,
+        keyDerivationIterations: config.options?.keyDerivationIterations ?? 100_000,
+        memoryLimitBytes: config.options?.memoryLimitBytes ?? 65536,
+        useHardwareAcceleration: config.options?.useHardwareAcceleration ?? true,
+        operationTimeoutSeconds: config.options?.operationTimeoutSeconds ?? 30.0,
+        verifyOperations: config.options?.verifyOperations ?? true,
+        metadata: metadata
       )
-
-      // Decrypt this item
-      let decryptResult=await decrypt(config: itemConfig)
-      results.append(decryptResult)
-
-      if decryptResult.status == SecurityResultDTO.Status.success {
-        successCount += 1
-      } else {
-        await logger.error("Batch decryption failed at item \(index + 1)", metadata: logMetadata)
+      
+      itemConfig = SecurityConfigDTO(
+        encryptionAlgorithm: config.encryptionAlgorithm,
+        hashAlgorithm: config.hashAlgorithm,
+        providerType: config.providerType,
+        options: itemOptions
+      )
+      
+      // Decrypt the current item
+      do {
+        let result = try await performSecureOperation(
+          operation: .decrypt,
+          config: itemConfig
+        )
+        results.append(result)
+      } catch {
+        // If decryption fails, add a failure result
+        results.append(
+          SecurityResultDTO.failure(
+            errorDetails: "Decryption operation failed: \(error.localizedDescription)",
+            executionTimeMs: 0,
+            metadata: ["itemIndex": String(index)]
+          )
+        )
       }
     }
-
-    // Log batch summary
-    let batchMetadata: LoggingInterfaces.LogMetadata=[
-      "totalItems": String(dataItems.count),
-      "successCount": String(successCount),
-      "failureCount": String(dataItems.count - successCount),
-      "operationId": operationID
-    ]
-
+    
     await logger.info(
-      "Batch decryption completed: \(successCount)/\(dataItems.count) successful",
-      metadata: batchMetadata
+      "Completed batch decryption operation",
+      metadata: privacyMetadata,
+      source: "SecurityProvider+Operations.batchDecrypt"
     )
-
+    
     return results
   }
 
   /**
-   Generates random secure data of the specified length.
-
-   - Parameter config: Configuration containing length and other parameters
-   - Returns: Result with random data
+   Generates cryptographically secure random data.
+   
+   This method creates random data suitable for cryptographic operations like
+   key generation, nonce creation, or salt generation.
+   
+   - Parameter config: Configuration specifying the length of random data needed
+   - Returns: Result containing the generated random data
    */
-  public func generateRandom(
+  public func generateSecureRandom(
     config: SecurityConfigDTO
-  ) async -> SecurityResultDTO {
+  ) async throws -> SecurityResultDTO {
     // Generate a unique operation ID
-    let operationID=UUID().uuidString
-    let startTime=Date()
-
+    let operationID = UUID().uuidString
+    let startTime = Date()
+    
     // Create metadata for logging
-    let metadata: LoggingInterfaces.LogMetadata=[
-      "operationId": operationID,
-      "operation": SecurityOperation.generateRandom(length: 0).rawValue
-    ]
-
-    let logMetadata=metadata
-
-    // Get the requested length
+    let privacyMetadata = PrivacyMetadata([
+      "operationId": (value: operationID, privacy: .public),
+      "securityProvider": (value: config.providerType.rawValue, privacy: .public)
+    ])
+    
+    // Validate length parameter in config
     guard
-      let lengthString=config.options["length"],
-      let length=Int(lengthString)
+      let metadata = config.options?.metadata,
+      let lengthString = metadata["length"],
+      let length = Int(lengthString)
     else {
-      return SecurityResultDTO(
-        status: .failure,
-        error: SecurityError
-          .invalidInput("Missing or invalid length parameter for random data generation"),
+      await logger.error(
+        "Missing or invalid length parameter for random data generation",
+        metadata: privacyMetadata,
+        source: "SecurityProvider+Operations.generateSecureRandom"
+      )
+      
+      return SecurityResultDTO.failure(
+        errorDetails: "Missing or invalid length parameter for random data generation",
+        executionTimeMs: 0,
         metadata: metadata
       )
     }
-
-    await logger.info("Generating secure random data of \(length) bytes", metadata: logMetadata)
-
+    
+    await logger.info(
+      "Generating secure random data of \(length) bytes",
+      metadata: privacyMetadata,
+      source: "SecurityProvider+Operations.generateSecureRandom"
+    )
+    
     // Generate random bytes directly
-    var randomBytes=[UInt8](repeating: 0, count: length)
-    _=SecRandomCopyBytes(kSecRandomDefault, length, &randomBytes)
-
-    // Convert to secure bytes
-    let secureBytes=SecureBytes(bytes: randomBytes)
-
+    var randomBytes = [UInt8](repeating: 0, count: length)
+    let status = SecRandomCopyBytes(
+      kSecRandomDefault,
+      length,
+      &randomBytes
+    )
+    
     // Calculate duration
-    let duration=Date().timeIntervalSince(startTime) * 1000
-
+    let duration = Date().timeIntervalSince(startTime) * 1000
+    
+    if status != errSecSuccess {
+      await logger.error(
+        "Failed to generate random data: Error \(status)",
+        metadata: privacyMetadata,
+        source: "SecurityProvider+Operations.generateSecureRandom"
+      )
+      
+      return SecurityResultDTO.failure(
+        errorDetails: "Random data generation failed with status \(status)",
+        executionTimeMs: duration,
+        metadata: metadata
+      )
+    }
+    
+    // Convert to Data
+    let randomData = Data(randomBytes)
+    
+    // Add duration to result metadata
+    var resultMetadata = metadata
+    resultMetadata["durationMs"] = String(format: "%.2f", duration)
+    
     await logger.info(
       "Random data generation completed successfully",
-      metadata: logMetadata
+      metadata: privacyMetadata,
+      source: "SecurityProvider+Operations.generateSecureRandom"
     )
-
-    // Add duration to metadata
-    var resultMetadata: LoggingInterfaces.LogMetadata=metadata
-    resultMetadata["durationMs"]=String(format: "%.2f", duration)
-
+    
     // Return success result
-    return SecurityResultDTO(
-      status: .success,
-      data: secureBytes,
+    return SecurityResultDTO.success(
+      resultData: randomData,
+      executionTimeMs: duration,
       metadata: resultMetadata
     )
   }

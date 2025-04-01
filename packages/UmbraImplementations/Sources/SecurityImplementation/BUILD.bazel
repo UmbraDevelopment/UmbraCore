@@ -17,5 +17,6 @@ swift_library(
         "//packages/UmbraImplementations/Sources/CryptoServices",
         "//packages/UmbraImplementations/Sources/LoggingServices",
         "//packages/UmbraImplementations/Sources/SecurityKeyManagement",
+        "//packages/UmbraCoreTypes/Sources/UmbraErrors",
     ],
 )
