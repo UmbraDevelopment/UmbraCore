@@ -141,26 +141,26 @@ public struct BackupProgressInfo: Sendable, Equatable {
     totalItems: Int,
     bytesProcessed: Int64,
     totalBytes: Int64,
-    estimatedTimeRemaining: TimeInterval? = nil,
-    error: Error? = nil,
-    details: String? = nil,
-    isCancellable: Bool = true
+    estimatedTimeRemaining: TimeInterval?=nil,
+    error: Error?=nil,
+    details: String?=nil,
+    isCancellable: Bool=true
   ) {
-    self.phase = phase
-    self.percentComplete = max(0.0, min(100.0, percentComplete))
-    self.itemsProcessed = itemsProcessed
-    self.totalItems = totalItems
-    self.bytesProcessed = bytesProcessed
-    self.totalBytes = totalBytes
-    self.estimatedTimeRemaining = estimatedTimeRemaining
-    self.error = error
-    self.details = details
-    self.isCancellable = isCancellable
+    self.phase=phase
+    self.percentComplete=max(0.0, min(100.0, percentComplete))
+    self.itemsProcessed=itemsProcessed
+    self.totalItems=totalItems
+    self.bytesProcessed=bytesProcessed
+    self.totalBytes=totalBytes
+    self.estimatedTimeRemaining=estimatedTimeRemaining
+    self.error=error
+    self.details=details
+    self.isCancellable=isCancellable
   }
 
   /// Creates a progress in the initialising phase
   public static func initialising() -> BackupProgressInfo {
-    return BackupProgressInfo(
+    BackupProgressInfo(
       phase: .initialising,
       percentComplete: 0.0,
       itemsProcessed: 0,
@@ -174,7 +174,7 @@ public struct BackupProgressInfo: Sendable, Equatable {
 
   /// Creates a progress in the completed phase
   public static func completed() -> BackupProgressInfo {
-    return BackupProgressInfo(
+    BackupProgressInfo(
       phase: .completed,
       percentComplete: 100.0,
       itemsProcessed: 0,
@@ -188,7 +188,7 @@ public struct BackupProgressInfo: Sendable, Equatable {
 
   /// Creates a progress in the cancelled phase
   public static func cancelled() -> BackupProgressInfo {
-    return BackupProgressInfo(
+    BackupProgressInfo(
       phase: .cancelled,
       percentComplete: 0.0,
       itemsProcessed: 0,
@@ -203,7 +203,7 @@ public struct BackupProgressInfo: Sendable, Equatable {
 
   /// Creates a progress in the failed phase
   public static func failed(_ error: Error) -> BackupProgressInfo {
-    return BackupProgressInfo(
+    BackupProgressInfo(
       phase: .failed,
       percentComplete: 0.0,
       itemsProcessed: 0,
@@ -220,9 +220,9 @@ public struct BackupProgressInfo: Sendable, Equatable {
   /// Creates a progress in the scanning phase
   public static func scanning(
     itemsScanned: Int,
-    details: String? = nil
+    details: String?=nil
   ) -> BackupProgressInfo {
-    return BackupProgressInfo(
+    BackupProgressInfo(
       phase: .scanning,
       percentComplete: 0.0,
       itemsProcessed: itemsScanned,
@@ -237,9 +237,9 @@ public struct BackupProgressInfo: Sendable, Equatable {
   public static func processing(
     itemsProcessed: Int,
     totalItems: Int,
-    details: String? = nil
+    details: String?=nil
   ) -> BackupProgressInfo {
-    let percent = totalItems > 0 ? Double(itemsProcessed) / Double(totalItems) * 100.0 : 0.0
+    let percent=totalItems > 0 ? Double(itemsProcessed) / Double(totalItems) * 100.0 : 0.0
 
     return BackupProgressInfo(
       phase: .processing,
@@ -256,11 +256,11 @@ public struct BackupProgressInfo: Sendable, Equatable {
   public static func transferring(
     processedBytes: Int64,
     totalBytes: Int64,
-    itemsProcessed: Int = 0,
-    totalItems: Int = 0,
-    details: String? = nil
+    itemsProcessed: Int=0,
+    totalItems: Int=0,
+    details: String?=nil
   ) -> BackupProgressInfo {
-    let percent = totalBytes > 0 ? Double(processedBytes) / Double(totalBytes) * 100.0 : 0.0
+    let percent=totalBytes > 0 ? Double(processedBytes) / Double(totalBytes) * 100.0 : 0.0
 
     return BackupProgressInfo(
       phase: .transferring,
@@ -274,8 +274,8 @@ public struct BackupProgressInfo: Sendable, Equatable {
   }
 
   /// Creates a progress in the finalising phase
-  public static func finalising(details: String? = nil) -> BackupProgressInfo {
-    return BackupProgressInfo(
+  public static func finalising(details: String?=nil) -> BackupProgressInfo {
+    BackupProgressInfo(
       phase: .finalising,
       percentComplete: 99.0,
       itemsProcessed: 0,
@@ -287,8 +287,8 @@ public struct BackupProgressInfo: Sendable, Equatable {
   }
 
   /// Creates a progress in the cleanup phase
-  public static func cleanup(details: String? = nil) -> BackupProgressInfo {
-    return BackupProgressInfo(
+  public static func cleanup(details: String?=nil) -> BackupProgressInfo {
+    BackupProgressInfo(
       phase: .cleanup,
       percentComplete: 99.5,
       itemsProcessed: 0,
@@ -303,9 +303,9 @@ public struct BackupProgressInfo: Sendable, Equatable {
   public static func verifying(
     itemsVerified: Int,
     totalItems: Int,
-    details: String? = nil
+    details: String?=nil
   ) -> BackupProgressInfo {
-    let percent = totalItems > 0 ? Double(itemsVerified) / Double(totalItems) * 100.0 : 0.0
+    let percent=totalItems > 0 ? Double(itemsVerified) / Double(totalItems) * 100.0 : 0.0
 
     return BackupProgressInfo(
       phase: .verifying,
@@ -331,15 +331,15 @@ public protocol ProgressCancellationToken: Sendable {
 /// Simple implementation of a cancellation token
 public final class SimpleCancellationToken: ProgressCancellationToken {
   /// Actor to safely manage the mutable state
-  private let stateManager = CancellationStateManager()
-  
+  private let stateManager=CancellationStateManager()
+
   /// The action to perform when cancellation is requested
   private let onCancel: () -> Void
 
   /// Creates a new cancellation token
   /// - Parameter onCancel: Action to perform when cancellation is requested
-  public init(onCancel: @escaping () -> Void = {}) {
-    self.onCancel = onCancel
+  public init(onCancel: @escaping () -> Void={}) {
+    self.onCancel=onCancel
   }
 
   /// Checks if the operation has been cancelled
@@ -348,7 +348,7 @@ public final class SimpleCancellationToken: ProgressCancellationToken {
       await stateManager.isCancelled
     }
   }
-  
+
   /// Attempts to cancel the operation
   public func cancel() {
     Task {
@@ -361,11 +361,11 @@ public final class SimpleCancellationToken: ProgressCancellationToken {
 /// Actor for managing cancellation state in a thread-safe manner
 private actor CancellationStateManager {
   /// Whether the token has been cancelled
-  var isCancelled: Bool = false
-  
+  var isCancelled: Bool=false
+
   /// Marks the operation as cancelled
   func setCancelled() {
-    isCancelled = true
+    isCancelled=true
   }
 }
 
@@ -422,7 +422,10 @@ public actor BackupProgressMonitor: BackupProgressReporter {
   /// - Parameters:
   ///   - progressInfo: The progress information
   ///   - operation: The operation being performed
-  public func reportProgress(_ progressInfo: BackupProgressInfo, for operation: BackupOperation) async {
+  public func reportProgress(
+    _ progressInfo: BackupProgressInfo,
+    for operation: BackupOperation
+  ) async {
     // Record start time if this is the first progress report
     if operationStartTimes[operation] == nil {
       operationStartTimes[operation]=Date()

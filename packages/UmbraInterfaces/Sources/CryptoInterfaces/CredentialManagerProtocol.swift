@@ -20,7 +20,7 @@ public protocol CredentialManagerProtocol: Sendable {
   /// Delete a credential
   /// - Parameter identifier: Identifier for the credential
   func delete(forIdentifier identifier: String) async throws
-  
+
   /// Check if a credential exists
   /// - Parameter identifier: Identifier for the credential
   /// - Returns: True if the credential exists, false otherwise

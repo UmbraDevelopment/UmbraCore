@@ -49,9 +49,9 @@ final class EncryptionService: SecurityServiceBase {
     cryptoService: SecurityCoreInterfaces.CryptoServiceProtocol,
     logger: LoggingInterfaces.LoggingProtocol
   ) {
-    self.cryptoService = cryptoService
-    self.logger = logger
-    self.secureStorage = SecureStorage()
+    self.cryptoService=cryptoService
+    self.logger=logger
+    secureStorage=SecureStorage()
   }
 
   /**
@@ -75,12 +75,12 @@ final class EncryptionService: SecurityServiceBase {
    - Returns: Result containing encrypted data or error information
    */
   func encrypt(config: SecurityConfigDTO) async -> SecurityResultDTO {
-    let operationID = UUID().uuidString
-    let startTime = Date()
-    let operation = SecurityOperation.encrypt
+    let operationID=UUID().uuidString
+    let startTime=Date()
+    let operation=SecurityOperation.encrypt
 
     // Create metadata for logging
-    let logMetadata = createOperationMetadata(
+    let logMetadata=createOperationMetadata(
       operationID: operationID,
       operation: operation,
       config: config
@@ -91,58 +91,58 @@ final class EncryptionService: SecurityServiceBase {
     do {
       // Extract required parameters from configuration
       guard
-        let inputDataString = config.options["data"],
-        let inputData = Data(base64Encoded: inputDataString)
+        let inputDataString=config.options["data"],
+        let inputData=Data(base64Encoded: inputDataString)
       else {
         throw EncryptionServiceError.invalidInput("Missing or invalid input data for encryption")
       }
 
       // Store the input data securely
-      let inputId = UUID().uuidString
-      try await secureStorage.store(data: inputData, withIdentifier: inputId)
+      let inputID=UUID().uuidString
+      try await secureStorage.store(data: inputData, withIdentifier: inputID)
 
       guard
-        let keyString = config.options["key"],
-        let keyData = Data(base64Encoded: keyString)
+        let keyString=config.options["key"],
+        let keyData=Data(base64Encoded: keyString)
       else {
         throw EncryptionServiceError.invalidInput("Missing or invalid encryption key")
       }
 
       // Store the key securely
-      let keyId = UUID().uuidString
-      try await secureStorage.store(data: keyData, withIdentifier: keyId)
+      let keyID=UUID().uuidString
+      try await secureStorage.store(data: keyData, withIdentifier: keyID)
 
       // Generate IV if not provided
-      let ivId = UUID().uuidString
+      let ivID=UUID().uuidString
       if
-        let ivString = config.options["iv"],
-        let ivData = Data(base64Encoded: ivString)
+        let ivString=config.options["iv"],
+        let ivData=Data(base64Encoded: ivString)
       {
-        try await secureStorage.store(data: ivData, withIdentifier: ivId)
+        try await secureStorage.store(data: ivData, withIdentifier: ivID)
       } else {
         // Generate a random IV for this encryption
-        let ivLength = 16 // AES block size
-        let ivData = Data((0..<ivLength).map { _ in UInt8.random(in: 0...255) })
-        try await secureStorage.store(data: ivData, withIdentifier: ivId)
+        let ivLength=16 // AES block size
+        let ivData=Data((0..<ivLength).map { _ in UInt8.random(in: 0...255) })
+        try await secureStorage.store(data: ivData, withIdentifier: ivID)
       }
 
       // Perform the encryption using the crypto service
-      let encryptedDataId = try await performEncryption(dataId: inputId, keyId: keyId, ivId: ivId)
-      
+      let encryptedDataID=try await performEncryption(dataID: inputID, keyID: keyID, ivID: ivID)
+
       // Retrieve the encrypted data
-      let encryptedData = try await secureStorage.retrieve(withIdentifier: encryptedDataId)
+      let encryptedData=try await secureStorage.retrieve(withIdentifier: encryptedDataID)
 
       // Clean up temporary secure storage
-      await secureStorage.delete(withIdentifier: inputId)
-      await secureStorage.delete(withIdentifier: keyId)
-      await secureStorage.delete(withIdentifier: ivId)
-      await secureStorage.delete(withIdentifier: encryptedDataId)
+      await secureStorage.delete(withIdentifier: inputID)
+      await secureStorage.delete(withIdentifier: keyID)
+      await secureStorage.delete(withIdentifier: ivID)
+      await secureStorage.delete(withIdentifier: encryptedDataID)
 
       // Calculate duration for performance metrics
-      let duration = Date().timeIntervalSince(startTime) * 1000
+      let duration=Date().timeIntervalSince(startTime) * 1000
 
       // Create success metadata for logging
-      let successMetadata: LoggingInterfaces.LogMetadata = [
+      let successMetadata: LoggingInterfaces.LogMetadata=[
         "operationId": operationID,
         "operation": operation.rawValue,
         "durationMs": String(format: "%.2f", duration)
@@ -155,8 +155,8 @@ final class EncryptionService: SecurityServiceBase {
 
       // Return successful result with encrypted data
       return SecurityResultDTO.success(
-        resultData: encryptedData, 
-        executionTimeMs: duration, 
+        resultData: encryptedData,
+        executionTimeMs: duration,
         metadata: [
           "algorithm": config.algorithm,
           "mode": config.options["mode"] ?? "unknown"
@@ -164,10 +164,10 @@ final class EncryptionService: SecurityServiceBase {
       )
     } catch {
       // Calculate duration before failure
-      let duration = Date().timeIntervalSince(startTime) * 1000
+      let duration=Date().timeIntervalSince(startTime) * 1000
 
       // Create failure metadata for logging
-      let errorMetadata: LoggingInterfaces.LogMetadata = [
+      let errorMetadata: LoggingInterfaces.LogMetadata=[
         "operationId": operationID,
         "operation": operation.rawValue,
         "durationMs": String(format: "%.2f", duration),
@@ -181,8 +181,8 @@ final class EncryptionService: SecurityServiceBase {
 
       // Return failure result
       return SecurityResultDTO.failure(
-        errorDetails: error.localizedDescription, 
-        executionTimeMs: duration, 
+        errorDetails: error.localizedDescription,
+        executionTimeMs: duration,
         metadata: [
           "errorMessage": error.localizedDescription
         ]
@@ -197,12 +197,12 @@ final class EncryptionService: SecurityServiceBase {
    - Returns: Result containing decrypted data or error information
    */
   func decrypt(config: SecurityConfigDTO) async -> SecurityResultDTO {
-    let operationID = UUID().uuidString
-    let startTime = Date()
-    let operation = SecurityOperation.decrypt
+    let operationID=UUID().uuidString
+    let startTime=Date()
+    let operation=SecurityOperation.decrypt
 
     // Create metadata for logging
-    let logMetadata = createOperationMetadata(
+    let logMetadata=createOperationMetadata(
       operationID: operationID,
       operation: operation,
       config: config
@@ -213,55 +213,55 @@ final class EncryptionService: SecurityServiceBase {
     do {
       // Extract required parameters from configuration
       guard
-        let inputDataString = config.options["data"],
-        let inputData = Data(base64Encoded: inputDataString)
+        let inputDataString=config.options["data"],
+        let inputData=Data(base64Encoded: inputDataString)
       else {
         throw EncryptionServiceError.invalidInput("Missing or invalid input data for decryption")
       }
 
       // Store the input data securely
-      let inputId = UUID().uuidString
-      try await secureStorage.store(data: inputData, withIdentifier: inputId)
+      let inputID=UUID().uuidString
+      try await secureStorage.store(data: inputData, withIdentifier: inputID)
 
       guard
-        let keyString = config.options["key"],
-        let keyData = Data(base64Encoded: keyString)
+        let keyString=config.options["key"],
+        let keyData=Data(base64Encoded: keyString)
       else {
         throw EncryptionServiceError.invalidInput("Missing or invalid decryption key")
       }
 
       // Store the key securely
-      let keyId = UUID().uuidString
-      try await secureStorage.store(data: keyData, withIdentifier: keyId)
+      let keyID=UUID().uuidString
+      try await secureStorage.store(data: keyData, withIdentifier: keyID)
 
       guard
-        let ivString = config.options["iv"],
-        let ivData = Data(base64Encoded: ivString)
+        let ivString=config.options["iv"],
+        let ivData=Data(base64Encoded: ivString)
       else {
         throw EncryptionServiceError.invalidInput("Missing initialization vector (IV)")
       }
 
       // Store the IV securely
-      let ivId = UUID().uuidString
-      try await secureStorage.store(data: ivData, withIdentifier: ivId)
+      let ivID=UUID().uuidString
+      try await secureStorage.store(data: ivData, withIdentifier: ivID)
 
       // Perform the decryption
-      let decryptedDataId = try await performDecryption(dataId: inputId, keyId: keyId, ivId: ivId)
-      
+      let decryptedDataID=try await performDecryption(dataID: inputID, keyID: keyID, ivID: ivID)
+
       // Retrieve the decrypted data
-      let decryptedData = try await secureStorage.retrieve(withIdentifier: decryptedDataId)
+      let decryptedData=try await secureStorage.retrieve(withIdentifier: decryptedDataID)
 
       // Clean up temporary secure storage
-      await secureStorage.delete(withIdentifier: inputId)
-      await secureStorage.delete(withIdentifier: keyId)
-      await secureStorage.delete(withIdentifier: ivId)
-      await secureStorage.delete(withIdentifier: decryptedDataId)
+      await secureStorage.delete(withIdentifier: inputID)
+      await secureStorage.delete(withIdentifier: keyID)
+      await secureStorage.delete(withIdentifier: ivID)
+      await secureStorage.delete(withIdentifier: decryptedDataID)
 
       // Calculate duration for performance metrics
-      let duration = Date().timeIntervalSince(startTime) * 1000
+      let duration=Date().timeIntervalSince(startTime) * 1000
 
       // Create success metadata for logging
-      let successMetadata: LoggingInterfaces.LogMetadata = [
+      let successMetadata: LoggingInterfaces.LogMetadata=[
         "operationId": operationID,
         "operation": operation.rawValue,
         "durationMs": String(format: "%.2f", duration)
@@ -274,8 +274,8 @@ final class EncryptionService: SecurityServiceBase {
 
       // Return successful result with decrypted data
       return SecurityResultDTO.success(
-        resultData: decryptedData, 
-        executionTimeMs: duration, 
+        resultData: decryptedData,
+        executionTimeMs: duration,
         metadata: [
           "algorithm": config.algorithm,
           "mode": config.options["mode"] ?? "unknown"
@@ -283,10 +283,10 @@ final class EncryptionService: SecurityServiceBase {
       )
     } catch {
       // Calculate duration before failure
-      let duration = Date().timeIntervalSince(startTime) * 1000
+      let duration=Date().timeIntervalSince(startTime) * 1000
 
       // Create failure metadata for logging
-      let errorMetadata: LoggingInterfaces.LogMetadata = [
+      let errorMetadata: LoggingInterfaces.LogMetadata=[
         "operationId": operationID,
         "operation": operation.rawValue,
         "durationMs": String(format: "%.2f", duration),
@@ -300,8 +300,8 @@ final class EncryptionService: SecurityServiceBase {
 
       // Return failure result
       return SecurityResultDTO.failure(
-        errorDetails: error.localizedDescription, 
-        executionTimeMs: duration, 
+        errorDetails: error.localizedDescription,
+        executionTimeMs: duration,
         metadata: [
           "errorMessage": error.localizedDescription
         ]
@@ -310,45 +310,45 @@ final class EncryptionService: SecurityServiceBase {
   }
 
   private func performEncryption(
-    dataId: String,
-    keyId: String,
-    ivId: String
+    dataID: String,
+    keyID: String,
+    ivID: String
   ) async throws -> String {
     // Perform the encryption using the crypto service
     do {
       // Retrieve the data from secure storage
-      let data = try await secureStorage.retrieve(withIdentifier: dataId)
-      let key = try await secureStorage.retrieve(withIdentifier: keyId)
-      let iv = try await secureStorage.retrieve(withIdentifier: ivId)
-      
+      let data=try await secureStorage.retrieve(withIdentifier: dataID)
+      let key=try await secureStorage.retrieve(withIdentifier: keyID)
+      let iv=try await secureStorage.retrieve(withIdentifier: ivID)
+
       // Convert to arrays of UInt8 if needed by the crypto service
-      let dataArray = [UInt8](data)
-      let keyArray = [UInt8](key)
-      
+      let dataArray=[UInt8](data)
+      let keyArray=[UInt8](key)
+
       // If the crypto service uses Data-based methods
-      if let dataMethod = cryptoService as? HasDataEncryption {
-        let result = try await dataMethod.encrypt(
+      if let dataMethod=cryptoService as? HasDataEncryption {
+        let result=try await dataMethod.encrypt(
           data: data,
           key: key
         )
-        
+
         // Store the result in secure storage
-        let resultId = UUID().uuidString
-        try await secureStorage.store(data: result, withIdentifier: resultId)
-        return resultId
+        let resultID=UUID().uuidString
+        try await secureStorage.store(data: result, withIdentifier: resultID)
+        return resultID
       }
 
       // Try the standard protocol method signature which returns a Result type
-      let encryptResult = await cryptoService.encrypt(data: dataArray, using: keyArray)
+      let encryptResult=await cryptoService.encrypt(data: dataArray, using: keyArray)
 
       // Handle the Result type
       switch encryptResult {
         case let .success(encryptedData):
           // Convert back to Data and store in secure storage
-          let resultData = Data(encryptedData)
-          let resultId = UUID().uuidString
-          try await secureStorage.store(data: resultData, withIdentifier: resultId)
-          return resultId
+          let resultData=Data(encryptedData)
+          let resultID=UUID().uuidString
+          try await secureStorage.store(data: resultData, withIdentifier: resultID)
+          return resultID
         case let .failure(error):
           throw EncryptionServiceError.encryptionFailed("Encryption failed: \(error)")
       }
@@ -358,45 +358,45 @@ final class EncryptionService: SecurityServiceBase {
   }
 
   private func performDecryption(
-    dataId: String,
-    keyId: String,
-    ivId: String
+    dataID: String,
+    keyID: String,
+    ivID: String
   ) async throws -> String {
     // Perform the decryption using the crypto service
     do {
       // Retrieve the data from secure storage
-      let data = try await secureStorage.retrieve(withIdentifier: dataId)
-      let key = try await secureStorage.retrieve(withIdentifier: keyId)
-      let iv = try await secureStorage.retrieve(withIdentifier: ivId)
-      
+      let data=try await secureStorage.retrieve(withIdentifier: dataID)
+      let key=try await secureStorage.retrieve(withIdentifier: keyID)
+      let iv=try await secureStorage.retrieve(withIdentifier: ivID)
+
       // Convert to arrays of UInt8 if needed by the crypto service
-      let dataArray = [UInt8](data)
-      let keyArray = [UInt8](key)
-      
+      let dataArray=[UInt8](data)
+      let keyArray=[UInt8](key)
+
       // If the crypto service uses Data-based methods
-      if let dataMethod = cryptoService as? HasDataEncryption {
-        let result = try await dataMethod.decrypt(
+      if let dataMethod=cryptoService as? HasDataEncryption {
+        let result=try await dataMethod.decrypt(
           data: data,
           key: key
         )
-        
+
         // Store the result in secure storage
-        let resultId = UUID().uuidString
-        try await secureStorage.store(data: result, withIdentifier: resultId)
-        return resultId
+        let resultID=UUID().uuidString
+        try await secureStorage.store(data: result, withIdentifier: resultID)
+        return resultID
       }
 
       // Try the standard protocol method signature which returns a Result type
-      let decryptResult = await cryptoService.decrypt(data: dataArray, using: keyArray)
+      let decryptResult=await cryptoService.decrypt(data: dataArray, using: keyArray)
 
       // Handle the Result type
       switch decryptResult {
         case let .success(decryptedData):
           // Convert back to Data and store in secure storage
-          let resultData = Data(decryptedData)
-          let resultId = UUID().uuidString
-          try await secureStorage.store(data: resultData, withIdentifier: resultId)
-          return resultId
+          let resultData=Data(decryptedData)
+          let resultID=UUID().uuidString
+          try await secureStorage.store(data: resultData, withIdentifier: resultID)
+          return resultID
         case let .failure(error):
           throw EncryptionServiceError.decryptionFailed("Decryption failed: \(error)")
       }
@@ -430,19 +430,19 @@ enum EncryptionServiceError: Error {
  for better memory safety and concurrency control.
  */
 actor SecureStorage {
-  private var storage: [String: Data] = [:]
-  
+  private var storage: [String: Data]=[:]
+
   func store(data: Data, withIdentifier identifier: String) throws {
-    storage[identifier] = data
+    storage[identifier]=data
   }
-  
+
   func retrieve(withIdentifier identifier: String) throws -> Data {
-    guard let data = storage[identifier] else {
+    guard let data=storage[identifier] else {
       throw SecurityProtocolError.keyNotFound
     }
     return data
   }
-  
+
   func delete(withIdentifier identifier: String) {
     storage.removeValue(forKey: identifier)
   }

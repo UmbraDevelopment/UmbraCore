@@ -40,14 +40,14 @@ public final class InMemoryKeyStore: KeyStorage, Sendable {
   /// Actor to provide thread-safe access to the keys
   private actor StorageActor {
     /// Dictionary to store keys by their identifier
-    var keys: [String: [UInt8]] = [:]
+    var keys: [String: [UInt8]]=[:]
 
     /// Initialises an empty storage
     init() {}
 
     /// Store a key with an identifier
     func storeKey(_ key: [UInt8], identifier: String) {
-      keys[identifier] = key
+      keys[identifier]=key
     }
 
     /// Retrieve a key by identifier
@@ -75,7 +75,7 @@ public final class InMemoryKeyStore: KeyStorage, Sendable {
    Creates a new empty in-memory key store.
    */
   public init() {
-    storage = StorageActor()
+    storage=StorageActor()
   }
 
   /**

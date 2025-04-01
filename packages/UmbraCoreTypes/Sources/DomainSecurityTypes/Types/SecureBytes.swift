@@ -14,22 +14,22 @@ public final class SecureBytes: @unchecked Sendable {
   private let secureStorage: Data
 
   /// Zeroisation flag - access only through thread-safe methods
-  private var _isZeroised: Bool = false
+  private var _isZeroised: Bool=false
 
   /// Thread-safe lock for access control
-  private let lock = NSLock()
-  
+  private let lock=NSLock()
+
   /// Thread-safe accessor for zeroisation status
   private var isZeroised: Bool {
     get {
-        lock.lock()
-        defer { lock.unlock() }
-        return _isZeroised
+      lock.lock()
+      defer { lock.unlock() }
+      return _isZeroised
     }
     set {
-        lock.lock()
-        defer { lock.unlock() }
-        _isZeroised = newValue
+      lock.lock()
+      defer { lock.unlock() }
+      _isZeroised=newValue
     }
   }
 
@@ -39,7 +39,7 @@ public final class SecureBytes: @unchecked Sendable {
    - Parameter data: Data to store securely
    */
   public init(data: Data) {
-    secureStorage = data
+    secureStorage=data
   }
 
   /**
@@ -48,8 +48,8 @@ public final class SecureBytes: @unchecked Sendable {
    - Parameter count: Number of zero bytes to initialise
    */
   public init(zeroCount count: Int) {
-    var bytes = [UInt8](repeating: 0, count: count)
-    secureStorage = Data(bytes: &bytes, count: count)
+    var bytes=[UInt8](repeating: 0, count: count)
+    secureStorage=Data(bytes: &bytes, count: count)
   }
 
   /**
@@ -59,15 +59,15 @@ public final class SecureBytes: @unchecked Sendable {
    - Throws: CoreSecurityError if random generation fails
    */
   public init(randomCount count: Int) throws {
-    var bytes = [UInt8](repeating: 0, count: count)
+    var bytes=[UInt8](repeating: 0, count: count)
 
     // Generate random bytes
-    let status = SecRandomCopyBytes(kSecRandomDefault, count, &bytes)
+    let status=SecRandomCopyBytes(kSecRandomDefault, count, &bytes)
     guard status == errSecSuccess else {
       throw CoreSecurityError.cryptoError("Failed to generate secure random bytes: \(status)")
     }
 
-    secureStorage = Data(bytes: &bytes, count: count)
+    secureStorage=Data(bytes: &bytes, count: count)
   }
 
   /**
@@ -102,7 +102,7 @@ public final class SecureBytes: @unchecked Sendable {
 
     // Secure zeroisation would ideally overwrite memory directly
     // This is a simplified version for demonstration
-    isZeroised = true
+    isZeroised=true
   }
 
   deinit {

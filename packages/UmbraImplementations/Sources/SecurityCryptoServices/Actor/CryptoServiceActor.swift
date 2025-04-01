@@ -129,8 +129,8 @@ public actor CryptoServiceActor {
     using key: [UInt8],
     config: SecurityConfigDTO?=nil
   ) async throws -> [UInt8] {
-    let dataBytes = Data(data)
-    let keyBytes = Data(key)
+    let dataBytes=Data(data)
+    let keyBytes=Data(key)
 
     // Generate IV using the provider
     let iv: Data
@@ -187,8 +187,8 @@ public actor CryptoServiceActor {
     using key: [UInt8],
     config: SecurityConfigDTO?=nil
   ) async throws -> [UInt8] {
-    let dataBytes = Data(data)
-    let keyBytes = Data(key)
+    let dataBytes=Data(data)
+    let keyBytes=Data(key)
 
     // Validate minimum length (IV + at least some ciphertext)
     guard dataBytes.count > 16 else {
@@ -342,7 +342,7 @@ public actor CryptoServiceActor {
       }
 
       // Sort by original index and return just the encrypted data
-      return results.sorted(by: { $0.0 < $1.0 }).map { $0.1 }
+      return results.sorted(by: { $0.0 < $1.0 }).map(\.1)
     }
   }
 
@@ -377,7 +377,7 @@ public actor CryptoServiceActor {
       }
 
       // Sort by original index and return just the decrypted data
-      return results.sorted(by: { $0.0 < $1.0 }).map { $0.1 }
+      return results.sorted(by: { $0.0 < $1.0 }).map(\.1)
     }
   }
 }

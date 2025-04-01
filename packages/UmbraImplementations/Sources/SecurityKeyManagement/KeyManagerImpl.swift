@@ -47,13 +47,13 @@ public final class KeyManagerImpl: KeyManagementProtocol, Sendable {
 
   /// Creates a new key manager with the default key store
   public init() {
-    keyStore = KeyStore()
+    keyStore=KeyStore()
   }
 
   /// Creates a new key manager with a custom key store
   /// - Parameter keyStore: Custom key store implementation
   public init(keyStore: KeyStore) {
-    self.keyStore = keyStore
+    self.keyStore=keyStore
   }
 
   // MARK: - KeyManagementProtocol Implementation
@@ -64,13 +64,18 @@ public final class KeyManagerImpl: KeyManagementProtocol, Sendable {
   public func retrieveKey(withIdentifier identifier: String) async
   -> Result<[UInt8], SecurityProtocolError> {
     do {
-      if let key = try await keyStore.getKey(identifier: identifier) {
+      if let key=try await keyStore.getKey(identifier: identifier) {
         return .success(key)
       } else {
-        return .failure(.invalidState(expected: "Key with identifier '\(identifier)'", actual: "No key found"))
+        return .failure(.invalidState(
+          expected: "Key with identifier '\(identifier)'",
+          actual: "No key found"
+        ))
       }
     } catch {
-      return .failure(.messageIntegrityViolation(details: "Error retrieving key: \(error.localizedDescription)"))
+      return .failure(
+        .messageIntegrityViolation(details: "Error retrieving key: \(error.localizedDescription)")
+      )
     }
   }
 
@@ -85,7 +90,9 @@ public final class KeyManagerImpl: KeyManagementProtocol, Sendable {
       try await keyStore.storeKey(key, identifier: identifier)
       return .success(())
     } catch {
-      return .failure(.invalidMessageFormat(details: "Error storing key: \(error.localizedDescription)"))
+      return .failure(
+        .invalidMessageFormat(details: "Error storing key: \(error.localizedDescription)")
+      )
     }
   }
 
@@ -99,10 +106,15 @@ public final class KeyManagerImpl: KeyManagementProtocol, Sendable {
         try await keyStore.deleteKey(identifier: identifier)
         return .success(())
       } else {
-        return .failure(.invalidState(expected: "Key with identifier '\(identifier)'", actual: "No key found"))
+        return .failure(.invalidState(
+          expected: "Key with identifier '\(identifier)'",
+          actual: "No key found"
+        ))
       }
     } catch {
-      return .failure(.messageIntegrityViolation(details: "Error deleting key: \(error.localizedDescription)"))
+      return .failure(
+        .messageIntegrityViolation(details: "Error deleting key: \(error.localizedDescription)")
+      )
     }
   }
 
@@ -122,20 +134,25 @@ public final class KeyManagerImpl: KeyManagementProtocol, Sendable {
       // Check if key exists
       if try await keyStore.containsKey(identifier: identifier) {
         // Generate a new key
-        let newKey = generateKey()
+        let newKey=generateKey()
 
         // Store the new key with the same identifier (replacing the old one)
         try await keyStore.storeKey(newKey, identifier: identifier)
 
         // Implement re-encryption logic if needed
-        let reencryptedData = dataToReencrypt
+        let reencryptedData=dataToReencrypt
 
         return .success((newKey: newKey, reencryptedData: reencryptedData))
       } else {
-        return .failure(.invalidState(expected: "Key with identifier '\(identifier)'", actual: "No key found"))
+        return .failure(.invalidState(
+          expected: "Key with identifier '\(identifier)'",
+          actual: "No key found"
+        ))
       }
     } catch {
-      return .failure(.messageIntegrityViolation(details: "Error rotating key: \(error.localizedDescription)"))
+      return .failure(
+        .messageIntegrityViolation(details: "Error rotating key: \(error.localizedDescription)")
+      )
     }
   }
 
@@ -143,9 +160,11 @@ public final class KeyManagerImpl: KeyManagementProtocol, Sendable {
   /// - Returns: An array of key identifiers or an error.
   public func listKeyIdentifiers() async -> Result<[String], SecurityProtocolError> {
     do {
-      return .success(try await keyStore.listKeyIdentifiers())
+      return try await .success(keyStore.listKeyIdentifiers())
     } catch {
-      return .failure(.messageIntegrityViolation(details: "Error listing keys: \(error.localizedDescription)"))
+      return .failure(
+        .messageIntegrityViolation(details: "Error listing keys: \(error.localizedDescription)")
+      )
     }
   }
 
@@ -153,20 +172,20 @@ public final class KeyManagerImpl: KeyManagementProtocol, Sendable {
 
   /**
    Generates a cryptographic key with secure random bytes
-   
+
    Uses memory protection utilities to ensure sensitive key material
    is properly zeroed after use when no longer needed.
-   
+
    - Returns: A new secure key as a byte array
    */
   private func generateKey() -> [UInt8] {
     // Create buffer for key material with secure zeroing
-    return MemoryProtection.withSecureTemporaryData([UInt8](repeating: 0, count: 32)) { buffer in
-      var keyData = buffer
-      
+    MemoryProtection.withSecureTemporaryData([UInt8](repeating: 0, count: 32)) { buffer in
+      var keyData=buffer
+
       // Use secure random number generator
-      let status = SecRandomCopyBytes(kSecRandomDefault, keyData.count, &keyData)
-      
+      let status=SecRandomCopyBytes(kSecRandomDefault, keyData.count, &keyData)
+
       // Check for success
       if status == errSecSuccess {
         return keyData
@@ -174,7 +193,7 @@ public final class KeyManagerImpl: KeyManagementProtocol, Sendable {
         // Fallback if secure random fails
         // This is less secure, but still protected by MemoryProtection
         for i in 0..<keyData.count {
-          keyData[i] = UInt8.random(in: 0...255)
+          keyData[i]=UInt8.random(in: 0...255)
         }
         return keyData
       }

@@ -79,9 +79,9 @@ public actor KeyManagementActor: KeyManagementProtocol {
     logger: LoggingProtocol,
     keyGenerator: KeyGeneratorProtocol=DefaultKeyGenerator()
   ) {
-    self.keyStore = keyStore
-    self.logger = logger
-    self.keyGenerator = keyGenerator
+    self.keyStore=keyStore
+    self.logger=logger
+    self.keyGenerator=keyGenerator
   }
 
   // MARK: - KeyManagementProtocol Implementation
@@ -109,10 +109,10 @@ public actor KeyManagementActor: KeyManagementProtocol {
       return .failure(.invalidMessageFormat(details: "Identifier cannot be empty"))
     }
 
-    let sanitizedId = sanitizeIdentifier(identifier)
-    
+    let sanitizedID=sanitizeIdentifier(identifier)
+
     do {
-      if let keyBytes = try await keyStore.getKey(identifier: sanitizedId) {
+      if let keyBytes=try await keyStore.getKey(identifier: sanitizedID) {
         await logger.info(
           "Successfully retrieved key with identifier: \(identifier)",
           metadata: PrivacyMetadata(),
@@ -168,7 +168,7 @@ public actor KeyManagementActor: KeyManagementProtocol {
       )
       return .failure(.invalidMessageFormat(details: "Identifier cannot be empty"))
     }
-    
+
     guard !key.isEmpty else {
       await logger.error(
         "Cannot store empty key",
@@ -178,11 +178,11 @@ public actor KeyManagementActor: KeyManagementProtocol {
       return .failure(.invalidMessageFormat(details: "Key cannot be empty"))
     }
 
-    let sanitizedId = sanitizeIdentifier(identifier)
-    
+    let sanitizedID=sanitizeIdentifier(identifier)
+
     do {
-      try await keyStore.storeKey(key, identifier: sanitizedId)
-      
+      try await keyStore.storeKey(key, identifier: sanitizedID)
+
       await logger.info(
         "Successfully stored key with identifier: \(identifier)",
         metadata: PrivacyMetadata(),
@@ -195,7 +195,9 @@ public actor KeyManagementActor: KeyManagementProtocol {
         metadata: PrivacyMetadata(),
         source: "KeyManagementActor"
       )
-      return .failure(.messageIntegrityViolation(details: "Failed to store key: \(error.localizedDescription)"))
+      return .failure(
+        .messageIntegrityViolation(details: "Failed to store key: \(error.localizedDescription)")
+      )
     }
   }
 
@@ -223,14 +225,14 @@ public actor KeyManagementActor: KeyManagementProtocol {
       return .failure(.invalidMessageFormat(details: "Identifier cannot be empty"))
     }
 
-    let sanitizedId = sanitizeIdentifier(identifier)
-    
+    let sanitizedID=sanitizeIdentifier(identifier)
+
     do {
-      let exists = try await keyStore.containsKey(identifier: sanitizedId)
-      
+      let exists=try await keyStore.containsKey(identifier: sanitizedID)
+
       if exists {
-        try await keyStore.deleteKey(identifier: sanitizedId)
-        
+        try await keyStore.deleteKey(identifier: sanitizedID)
+
         await logger.info(
           "Successfully deleted key with identifier: \(identifier)",
           metadata: PrivacyMetadata(),
@@ -254,7 +256,9 @@ public actor KeyManagementActor: KeyManagementProtocol {
         metadata: PrivacyMetadata(),
         source: "KeyManagementActor"
       )
-      return .failure(.messageIntegrityViolation(details: "Failed to delete key: \(error.localizedDescription)"))
+      return .failure(
+        .messageIntegrityViolation(details: "Failed to delete key: \(error.localizedDescription)")
+      )
     }
   }
 
@@ -288,32 +292,32 @@ public actor KeyManagementActor: KeyManagementProtocol {
       return .failure(.invalidMessageFormat(details: "Identifier cannot be empty"))
     }
 
-    let sanitizedId = sanitizeIdentifier(identifier)
-    
+    let sanitizedID=sanitizeIdentifier(identifier)
+
     do {
-      let exists = try await keyStore.containsKey(identifier: sanitizedId)
-      
+      let exists=try await keyStore.containsKey(identifier: sanitizedID)
+
       if exists {
         // Generate a new key
-        let newKeyBytes = try await keyGenerator.generateKey()
-        
+        let newKeyBytes=try await keyGenerator.generateKey()
+
         // Store the new key
-        try await keyStore.storeKey(newKeyBytes, identifier: sanitizedId)
-        
+        try await keyStore.storeKey(newKeyBytes, identifier: sanitizedID)
+
         // Re-encrypt data if provided
-        var reencryptedData: [UInt8]? = nil
-        if let dataToReencrypt = dataToReencrypt {
+        var reencryptedData: [UInt8]?=nil
+        if let dataToReencrypt {
           // In a real implementation, this would use both the old and new keys
           // For this implementation, we'll just pass through the data
-          reencryptedData = dataToReencrypt
+          reencryptedData=dataToReencrypt
         }
-        
+
         await logger.info(
           "Successfully rotated key with identifier: \(identifier)",
           metadata: PrivacyMetadata(),
           source: "KeyManagementActor"
         )
-        
+
         return .success((newKey: newKeyBytes, reencryptedData: reencryptedData))
       } else {
         await logger.error(
@@ -322,7 +326,7 @@ public actor KeyManagementActor: KeyManagementProtocol {
           source: "KeyManagementActor"
         )
         return .failure(.invalidState(
-          expected: "Key exists with identifier \(identifier)", 
+          expected: "Key exists with identifier \(identifier)",
           actual: "No key found"
         ))
       }
@@ -349,16 +353,16 @@ public actor KeyManagementActor: KeyManagementProtocol {
       metadata: PrivacyMetadata(),
       source: "KeyManagementActor"
     )
-    
+
     do {
-      let identifiers = try await keyStore.listKeyIdentifiers()
-      
+      let identifiers=try await keyStore.listKeyIdentifiers()
+
       await logger.info(
         "Successfully listed \(identifiers.count) key identifiers",
         metadata: PrivacyMetadata(),
         source: "KeyManagementActor"
       )
-      
+
       return .success(identifiers)
     } catch {
       await logger.error(
@@ -371,7 +375,7 @@ public actor KeyManagementActor: KeyManagementProtocol {
       ))
     }
   }
-  
+
   /**
    Sanitises an identifier to be safe for storage.
 
@@ -383,7 +387,7 @@ public actor KeyManagementActor: KeyManagementProtocol {
    */
   private func sanitizeIdentifier(_ identifier: String) -> String {
     // Basic sanitisation - remove characters that might cause issues in storage
-    return identifier
+    identifier
       .replacingOccurrences(of: "/", with: "_")
       .replacingOccurrences(of: "\\", with: "_")
       .replacingOccurrences(of: ":", with: "_")
@@ -408,7 +412,7 @@ public protocol KeyGeneratorProtocol: Sendable {
  */
 public struct DefaultKeyGenerator: KeyGeneratorProtocol {
   public init() {}
-  
+
   /**
    Generates a new cryptographic key.
 
@@ -417,16 +421,16 @@ public struct DefaultKeyGenerator: KeyGeneratorProtocol {
    */
   public func generateKey() async throws -> [UInt8] {
     // Create a secure random key
-    let defaultKeyLength = 32 // 256 bits
-    var keyBytes = [UInt8](repeating: 0, count: defaultKeyLength)
-    
-    let status = SecRandomCopyBytes(kSecRandomDefault, defaultKeyLength, &keyBytes)
+    let defaultKeyLength=32 // 256 bits
+    var keyBytes=[UInt8](repeating: 0, count: defaultKeyLength)
+
+    let status=SecRandomCopyBytes(kSecRandomDefault, defaultKeyLength, &keyBytes)
     guard status == errSecSuccess else {
       throw SecurityProtocolError.messageIntegrityViolation(
         details: "Failed to generate random key: \(status)"
       )
     }
-    
+
     return keyBytes
   }
 }

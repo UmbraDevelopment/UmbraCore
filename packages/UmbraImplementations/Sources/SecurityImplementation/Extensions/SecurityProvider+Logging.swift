@@ -1,8 +1,8 @@
+import CoreSecurityTypes
 import Foundation
 import LoggingInterfaces
 import LoggingTypes
 import SecurityCoreInterfaces
-import CoreSecurityTypes
 
 /**
  # SecurityProvider Logging Extension
@@ -29,9 +29,9 @@ extension CoreSecurityProviderService {
    */
   func logOperationStart(operation: SecurityOperation, config: SecurityConfigDTO) async {
     // Create a safe version of config - don't log auth data
-    let safeConfig = "Algorithm: \(config.encryptionAlgorithm), Mode: \(config.options?.["mode"] ?? "none")"
+    let safeConfig="Algorithm: \(config.encryptionAlgorithm), Mode: \(config.options?.["mode"] ?? "none")"
 
-    let metadata = PrivacyMetadata([
+    let metadata=PrivacyMetadata([
       "operation": (value: operation.description, privacy: .public),
       "configuration": (value: safeConfig, privacy: .public),
       "timestamp": (value: "\(Date())", privacy: .public)
@@ -58,7 +58,7 @@ extension CoreSecurityProviderService {
     result: SecurityResultDTO
   ) async {
     // Create a success log with detailed metrics
-    let metadata = PrivacyMetadata([
+    let metadata=PrivacyMetadata([
       "operation": (value: operation.description, privacy: .public),
       "status": (value: "success", privacy: .public),
       "durationMs": (value: String(format: "%.2f", durationMs), privacy: .public),
@@ -85,7 +85,7 @@ extension CoreSecurityProviderService {
     error: Error,
     duration: Double
   ) async {
-    let metadata = PrivacyMetadata([
+    let metadata=PrivacyMetadata([
       "operation": (value: operation.description, privacy: .public),
       "status": (value: "failure", privacy: .public),
       "errorType": (value: "\(type(of: error))", privacy: .public),
@@ -93,11 +93,10 @@ extension CoreSecurityProviderService {
     ])
 
     // Create a safe error message that doesn't expose sensitive data
-    let safeError: String
-    if let securityError = error as? SecurityProtocolError {
-      safeError = "SecurityError: \(securityError.localizedDescription)"
+    let safeError=if let securityError=error as? SecurityProtocolError {
+      "SecurityError: \(securityError.localizedDescription)"
     } else {
-      safeError = "Error: \(type(of: error))"
+      "Error: \(type(of: error))"
     }
 
     await logger.error(
@@ -118,18 +117,18 @@ extension CoreSecurityProviderService {
   func logInfo(
     _ message: String,
     operation: String,
-    additionalMetadata: [String: String] = [:]
+    additionalMetadata: [String: String]=[:]
   ) async {
-    var metadataDict: [String: (value: Any, privacy: LogPrivacyLevel)] = [
+    var metadataDict: [String: (value: Any, privacy: LogPrivacyLevel)]=[
       "securityOperation": (value: operation, privacy: .public)
     ]
-    
+
     // Add additional metadata
     for (key, value) in additionalMetadata {
-      metadataDict[key] = (value: value, privacy: .public)
+      metadataDict[key]=(value: value, privacy: .public)
     }
-    
-    let metadata = PrivacyMetadata(metadataDict)
+
+    let metadata=PrivacyMetadata(metadataDict)
 
     await logger.info(
       message,
@@ -149,18 +148,18 @@ extension CoreSecurityProviderService {
   func logWarning(
     _ message: String,
     operation: String,
-    additionalMetadata: [String: String] = [:]
+    additionalMetadata: [String: String]=[:]
   ) async {
-    var metadataDict: [String: (value: Any, privacy: LogPrivacyLevel)] = [
+    var metadataDict: [String: (value: Any, privacy: LogPrivacyLevel)]=[
       "securityOperation": (value: operation, privacy: .public)
     ]
-    
+
     // Add additional metadata
     for (key, value) in additionalMetadata {
-      metadataDict[key] = (value: value, privacy: .public)
+      metadataDict[key]=(value: value, privacy: .public)
     }
-    
-    let metadata = PrivacyMetadata(metadataDict)
+
+    let metadata=PrivacyMetadata(metadataDict)
 
     await logger.warning(
       message,

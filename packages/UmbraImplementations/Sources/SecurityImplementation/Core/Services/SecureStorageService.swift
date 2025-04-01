@@ -420,10 +420,10 @@ final class SecureStorageService: SecurityServiceBase {
     // For simulation purposes, we'll create dummy data
 
     // Create dummy encrypted data
-    let dummyData = Data(repeating: 0, count: 64)
+    let dummyData=Data(repeating: 0, count: 64)
 
     // Create dummy metadata
-    let dummyMetadata = [
+    let dummyMetadata=[
       "iv": Data(repeating: 0, count: 16).base64EncodedString(),
       "algorithm": "AES256",
       "timestamp": "\(Date().timeIntervalSince1970)"

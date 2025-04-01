@@ -24,6 +24,6 @@ import UmbraErrors
 
 // Exports all core security interfaces
 @_exported import struct CoreSecurityTypes.SecurityConfigDTO
-@_exported import struct CoreSecurityTypes.SecurityResultDTO
 @_exported import enum CoreSecurityTypes.SecurityOperation
+@_exported import struct CoreSecurityTypes.SecurityResultDTO
 @_exported import enum DomainSecurityTypes.SecurityProtocolError

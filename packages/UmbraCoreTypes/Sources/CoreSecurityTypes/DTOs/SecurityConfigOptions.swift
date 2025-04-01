@@ -25,7 +25,7 @@ public struct SecurityConfigOptions: Sendable, Equatable, Codable {
 
   /// Whether to verify outputs of security operations
   public let verifyOperations: Bool
-  
+
   /// Custom metadata for additional configuration options
   public var metadata: [String: String]?
 

@@ -1,4 +1,6 @@
 import APIInterfaces
+import CoreSecurityTypes
+import DomainAPI
 import Foundation
 import KeychainInterfaces
 import LoggingInterfaces
@@ -6,10 +8,8 @@ import LoggingTypes
 import SecurityCoreInterfaces
 import SecurityCoreTypes
 import SecurityTypes
-import UmbraErrors
-import CoreSecurityTypes
-import DomainAPI
 import SecurityUtils
+import UmbraErrors
 
 /**
  # Security Domain Handler
@@ -254,12 +254,21 @@ public struct SecurityDomainHandler: DomainHandler {
       }
 
       // Use memory protection for both the key and encrypted data
-      return try await MemoryProtection.withSecureTemporaryBatch([key, operation.encryptedData]) { secureBatch in
-        let secureKey = secureBatch[0]
-        let secureEncryptedData = secureBatch[1]
+      return try await MemoryProtection.withSecureTemporaryBatch([
+        key,
+        operation.encryptedData
+      ]) { secureBatch in
+        let secureKey=secureBatch[0]
+        let secureEncryptedData=secureBatch[1]
 
-        let securityOperation: SecurityOperation = .decrypt(data: secureEncryptedData, key: secureKey)
-        let result=try await securityService.performSecureOperation(securityOperation, config: config)
+        let securityOperation: SecurityOperation = .decrypt(
+          data: secureEncryptedData,
+          key: secureKey
+        )
+        let result=try await securityService.performSecureOperation(
+          securityOperation,
+          config: config
+        )
 
         // Return the decrypted data
         guard let decryptedData=result.data else {
@@ -293,12 +302,11 @@ public struct SecurityDomainHandler: DomainHandler {
     options["keyType"]=operation.keyType.rawValue
 
     // Configure size based on key type
-    let keySize: Int
-    switch operation.keyType {
-    case .symmetric:
-      keySize=operation.size ?? 256
-    case .asymmetric:
-      keySize=operation.size ?? 2048
+    let keySize: Int=switch operation.keyType {
+      case .symmetric:
+        operation.size ?? 256
+      case .asymmetric:
+        operation.size ?? 2048
     }
 
     // Generate a key identifier if needed
@@ -349,7 +357,7 @@ public struct SecurityDomainHandler: DomainHandler {
       }
 
       // Return the result, making a secured copy if needed
-      let resultKey = operation.includeKeyInResponse ? 
+      let resultKey=operation.includeKeyInResponse ?
         (result.key != nil ? MemoryProtection.secureDataCopy(result.key!) : nil) : nil
 
       return KeyGenerationResult(
@@ -371,7 +379,8 @@ public struct SecurityDomainHandler: DomainHandler {
     // Log with privacy controls
     var metadata=PrivacyMetadata()
     metadata["operation"]=PrivacyMetadataValue(value: "retrieveKey", privacy: .public)
-    metadata["keyIdentifier"]=PrivacyMetadataValue(value: operation.keyIdentifier, privacy: .private)
+    metadata["keyIdentifier"]=PrivacyMetadataValue(value: operation.keyIdentifier,
+                                                   privacy: .private)
     await logger?.info(
       "Retrieving key",
       metadata: metadata,
@@ -403,7 +412,8 @@ public struct SecurityDomainHandler: DomainHandler {
     // Log with privacy controls
     var metadata=PrivacyMetadata()
     metadata["operation"]=PrivacyMetadataValue(value: "deleteKey", privacy: .public)
-    metadata["keyIdentifier"]=PrivacyMetadataValue(value: operation.keyIdentifier, privacy: .private)
+    metadata["keyIdentifier"]=PrivacyMetadataValue(value: operation.keyIdentifier,
+                                                   privacy: .private)
     await logger?.info(
       "Deleting key",
       metadata: metadata,
@@ -446,7 +456,8 @@ public struct SecurityDomainHandler: DomainHandler {
     // Log with privacy controls
     var metadata=PrivacyMetadata()
     metadata["operation"]=PrivacyMetadataValue(value: "hashData", privacy: .public)
-    metadata["algorithm"]=PrivacyMetadataValue(value: operation.algorithm.rawValue, privacy: .public)
+    metadata["algorithm"]=PrivacyMetadataValue(value: operation.algorithm.rawValue,
+                                               privacy: .public)
 
     await logger?.info(
       "Hashing data",
@@ -464,14 +475,14 @@ public struct SecurityDomainHandler: DomainHandler {
     return try await MemoryProtection.withSecureTemporaryData(operation.data) { secureData in
       // Perform the hashing operation
       let securityOperation: SecurityOperation = .hash(data: secureData)
-      let result = try await self.securityService.performSecureOperation(securityOperation, config: config)
+      let result=try await securityService.performSecureOperation(securityOperation, config: config)
 
       // Return the hash result
-      guard let hashData = result.data else {
+      guard let hashData=result.data else {
         throw SecurityProtocolError.cryptographicError("Hashing failed to produce valid data")
       }
 
-      await self.logger?.info(
+      await logger?.info(
         "Successfully hashed data",
         metadata: metadata,
         source: "SecurityDomainHandler"
@@ -627,7 +638,8 @@ public struct SecurityDomainHandler: DomainHandler {
       metadata["errorDetails"]=PrivacyMetadataValue(value: "\(secError)", privacy: .private)
     } else {
       metadata["errorType"]=PrivacyMetadataValue(value: "\(type(of: error))", privacy: .public)
-      metadata["errorDetails"]=PrivacyMetadataValue(value: "\(error.localizedDescription)", privacy: .private)
+      metadata["errorDetails"]=PrivacyMetadataValue(value: "\(error.localizedDescription)",
+                                                    privacy: .private)
     }
 
     await logger?.error(
@@ -653,12 +665,12 @@ public struct SecurityDomainHandler: DomainHandler {
     // Map security protocol errors to API errors
     if let secError=error as? SecurityProtocolError {
       switch secError {
-      case .invalidInput:
-        return APIError.invalidInput(secError.localizedDescription)
-      case .cryptographicError:
-        return APIError.securityError(secError.localizedDescription)
-      case .unsupportedOperation:
-        return APIError.operationNotSupported(secError.localizedDescription)
+        case .invalidInput:
+          return APIError.invalidInput(secError.localizedDescription)
+        case .cryptographicError:
+          return APIError.securityError(secError.localizedDescription)
+        case .unsupportedOperation:
+          return APIError.operationNotSupported(secError.localizedDescription)
       }
     }
 

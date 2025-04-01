@@ -372,7 +372,7 @@ public struct KeyGenerationResult: Sendable {
 public enum KeyType: String, Sendable, CaseIterable {
   /// Symmetric encryption key (same key for encryption and decryption)
   case symmetric
-  
+
   /// Asymmetric encryption key pair (public/private)
   case asymmetric
 }
@@ -383,10 +383,10 @@ public enum KeyType: String, Sendable, CaseIterable {
 public enum HashAlgorithm: String, Sendable, CaseIterable {
   /// SHA-256 algorithm
   case sha256
-  
+
   /// SHA-512 algorithm
   case sha512
-  
+
   /// Blake2b algorithm
   case blake2b
 }

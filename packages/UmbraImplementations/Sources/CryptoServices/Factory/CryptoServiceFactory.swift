@@ -5,7 +5,7 @@ import Foundation
 import LoggingInterfaces
 import LoggingServices
 import SecurityCoreInterfaces
-import SecurityInterfaces  // Temporary, until we fully migrate SecureStorageConfig
+import SecurityInterfaces // Temporary, until we fully migrate SecureStorageConfig
 import UmbraErrors
 
 /**
@@ -32,36 +32,36 @@ import UmbraErrors
 public enum CryptoServiceFactory {
   /**
    Creates a default implementation of CryptoServiceProtocol.
-   
+
    This implementation uses the Alpha Dot Five architecture principles,
    providing robust security capabilities with proper isolation.
-   
+
    - Returns: A CryptoServiceProtocol implementation
    */
   public static func createDefault() async -> CryptoServiceProtocol {
-    return await MockCryptoServiceImpl()
+    await MockCryptoServiceImpl()
   }
-  
+
   /**
    Creates a mock implementation of CryptoServiceProtocol.
-   
+
    This implementation is useful for testing and does not perform
    actual cryptographic operations.
-   
+
    - Parameter configuration: Configuration options for the mock
    - Returns: A mock CryptoServiceProtocol implementation
    */
   public static func createMock(
     configuration: MockCryptoServiceImpl.Configuration = .init()
   ) async -> CryptoServiceProtocol {
-    return await MockCryptoServiceImpl(configuration: configuration)
+    await MockCryptoServiceImpl(configuration: configuration)
   }
-  
+
   /**
    Creates a logging decorator for any CryptoServiceProtocol implementation.
-   
+
    This logs all cryptographic operations before delegating to the wrapped implementation.
-   
+
    - Parameters:
      - wrapped: The implementation to wrap
      - logger: The logger to use
@@ -71,7 +71,7 @@ public enum CryptoServiceFactory {
     wrapped: CryptoServiceProtocol,
     logger: LoggingProtocol
   ) async -> CryptoServiceProtocol {
-    return await LoggingCryptoServiceImpl(wrapped: wrapped, logger: logger)
+    await LoggingCryptoServiceImpl(wrapped: wrapped, logger: logger)
   }
 }
 
@@ -102,21 +102,21 @@ public actor MockCryptoServiceImpl: CryptoServiceProtocol {
 
     /// Initialize with default values or customize behavior
     public init(
-      encryptionShouldSucceed: Bool = true,
-      decryptionShouldSucceed: Bool = true,
-      hashingShouldSucceed: Bool = true,
-      hashVerificationShouldSucceed: Bool = true,
-      keyDerivationShouldSucceed: Bool = true,
-      randomGenerationShouldSucceed: Bool = true,
-      hmacGenerationShouldSucceed: Bool = true
+      encryptionShouldSucceed: Bool=true,
+      decryptionShouldSucceed: Bool=true,
+      hashingShouldSucceed: Bool=true,
+      hashVerificationShouldSucceed: Bool=true,
+      keyDerivationShouldSucceed: Bool=true,
+      randomGenerationShouldSucceed: Bool=true,
+      hmacGenerationShouldSucceed: Bool=true
     ) {
-      self.encryptionShouldSucceed = encryptionShouldSucceed
-      self.decryptionShouldSucceed = decryptionShouldSucceed
-      self.hashingShouldSucceed = hashingShouldSucceed
-      self.hashVerificationShouldSucceed = hashVerificationShouldSucceed
-      self.keyDerivationShouldSucceed = keyDerivationShouldSucceed
-      self.randomGenerationShouldSucceed = randomGenerationShouldSucceed
-      self.hmacGenerationShouldSucceed = hmacGenerationShouldSucceed
+      self.encryptionShouldSucceed=encryptionShouldSucceed
+      self.decryptionShouldSucceed=decryptionShouldSucceed
+      self.hashingShouldSucceed=hashingShouldSucceed
+      self.hashVerificationShouldSucceed=hashVerificationShouldSucceed
+      self.keyDerivationShouldSucceed=keyDerivationShouldSucceed
+      self.randomGenerationShouldSucceed=randomGenerationShouldSucceed
+      self.hmacGenerationShouldSucceed=hmacGenerationShouldSucceed
     }
   }
 
@@ -124,44 +124,59 @@ public actor MockCryptoServiceImpl: CryptoServiceProtocol {
   private let configuration: Configuration
 
   /// Initialize with specific configuration
-  public init(configuration: Configuration = Configuration()) {
-    self.configuration = configuration
+  public init(configuration: Configuration=Configuration()) {
+    self.configuration=configuration
   }
 
-  public func encrypt(data: [UInt8], using key: [UInt8]) async -> Result<[UInt8], SecurityProtocolError> {
+  public func encrypt(
+    data: [UInt8],
+    using _: [UInt8]
+  ) async -> Result<[UInt8], SecurityProtocolError> {
     guard configuration.encryptionShouldSucceed else {
       return .failure(.operationFailed("Mock encryption configured to fail"))
     }
 
     // Create a mock encrypted result
-    let encryptedData = [UInt8](repeating: 0x42, count: data.count + 16) // Add 16 bytes for mock IV/padding
-    
+    let encryptedData=[UInt8](
+      repeating: 0x42,
+      count: data.count + 16
+    ) // Add 16 bytes for mock IV/padding
+
     return .success(encryptedData)
   }
 
-  public func decrypt(data: [UInt8], using key: [UInt8]) async -> Result<[UInt8], SecurityProtocolError> {
+  public func decrypt(
+    data: [UInt8],
+    using _: [UInt8]
+  ) async -> Result<[UInt8], SecurityProtocolError> {
     guard configuration.decryptionShouldSucceed else {
       return .failure(.operationFailed("Mock decryption configured to fail"))
     }
 
     // Create a mock decrypted result
-    let decryptedData = [UInt8](repeating: 0x41, count: max(0, data.count - 16)) // Remove 16 bytes for mock IV/padding
-    
+    let decryptedData=[UInt8](repeating: 0x41, count: max(
+      0,
+      data.count - 16
+    )) // Remove 16 bytes for mock IV/padding
+
     return .success(decryptedData)
   }
 
-  public func hash(data: [UInt8]) async -> Result<[UInt8], SecurityProtocolError> {
+  public func hash(data _: [UInt8]) async -> Result<[UInt8], SecurityProtocolError> {
     guard configuration.hashingShouldSucceed else {
       return .failure(.operationFailed("Mock hashing configured to fail"))
     }
 
     // Create a mock hash (fixed length of 32 bytes for SHA-256)
-    let hash = [UInt8](repeating: 0x43, count: 32)
-    
+    let hash=[UInt8](repeating: 0x43, count: 32)
+
     return .success(hash)
   }
 
-  public func verifyHash(data: [UInt8], expectedHash: [UInt8]) async -> Result<Bool, SecurityProtocolError> {
+  public func verifyHash(
+    data _: [UInt8],
+    expectedHash _: [UInt8]
+  ) async -> Result<Bool, SecurityProtocolError> {
     guard configuration.hashVerificationShouldSucceed else {
       return .failure(.operationFailed("Mock hash verification configured to fail"))
     }
@@ -193,37 +208,37 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
      - logger: The logger to use
    */
   public init(wrapped: CryptoServiceProtocol, logger: LoggingProtocol) {
-    self.wrapped = wrapped
-    self.logger = logger
+    self.wrapped=wrapped
+    self.logger=logger
   }
 
   public func encrypt(
     data: [UInt8],
     using key: [UInt8]
   ) async -> Result<[UInt8], SecurityProtocolError> {
-    var metadata = LoggingTypes.PrivacyMetadata()
-    metadata["dataSize"] = LoggingTypes.PrivacyMetadataValue(value: "\(data.count)", privacy: .public)
+    var metadata=LoggingTypes.PrivacyMetadata()
+    metadata["dataSize"]=LoggingTypes.PrivacyMetadataValue(value: "\(data.count)", privacy: .public)
 
     await logger.debug("Starting encryption operation", metadata: metadata, source: "CryptoService")
 
-    let result = await wrapped.encrypt(data: data, using: key)
-    
+    let result=await wrapped.encrypt(data: data, using: key)
+
     switch result {
-    case .success:
-      await logger.debug(
-        "Encryption completed successfully",
-        metadata: metadata,
-        source: "CryptoService"
-      )
-    case .failure(let error):
-      await logger.error(
-        "Encryption failed",
-        error: error,
-        metadata: metadata,
-        source: "CryptoService"
-      )
+      case .success:
+        await logger.debug(
+          "Encryption completed successfully",
+          metadata: metadata,
+          source: "CryptoService"
+        )
+      case let .failure(error):
+        await logger.error(
+          "Encryption failed",
+          error: error,
+          metadata: metadata,
+          source: "CryptoService"
+        )
     }
-    
+
     return result
   }
 
@@ -231,58 +246,58 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
     data: [UInt8],
     using key: [UInt8]
   ) async -> Result<[UInt8], SecurityProtocolError> {
-    var metadata = LoggingTypes.PrivacyMetadata()
-    metadata["dataSize"] = LoggingTypes.PrivacyMetadataValue(value: "\(data.count)", privacy: .public)
+    var metadata=LoggingTypes.PrivacyMetadata()
+    metadata["dataSize"]=LoggingTypes.PrivacyMetadataValue(value: "\(data.count)", privacy: .public)
 
     await logger.debug("Starting decryption operation", metadata: metadata, source: "CryptoService")
 
-    let result = await wrapped.decrypt(data: data, using: key)
-    
+    let result=await wrapped.decrypt(data: data, using: key)
+
     switch result {
-    case .success:
-      await logger.debug(
-        "Decryption completed successfully",
-        metadata: metadata,
-        source: "CryptoService"
-      )
-    case .failure(let error):
-      await logger.error(
-        "Decryption failed",
-        error: error,
-        metadata: metadata,
-        source: "CryptoService"
-      )
+      case .success:
+        await logger.debug(
+          "Decryption completed successfully",
+          metadata: metadata,
+          source: "CryptoService"
+        )
+      case let .failure(error):
+        await logger.error(
+          "Decryption failed",
+          error: error,
+          metadata: metadata,
+          source: "CryptoService"
+        )
     }
-    
+
     return result
   }
 
   public func hash(
     data: [UInt8]
   ) async -> Result<[UInt8], SecurityProtocolError> {
-    var metadata = LoggingTypes.PrivacyMetadata()
-    metadata["dataSize"] = LoggingTypes.PrivacyMetadataValue(value: "\(data.count)", privacy: .public)
+    var metadata=LoggingTypes.PrivacyMetadata()
+    metadata["dataSize"]=LoggingTypes.PrivacyMetadataValue(value: "\(data.count)", privacy: .public)
 
     await logger.debug("Starting hash operation", metadata: metadata, source: "CryptoService")
 
-    let result = await wrapped.hash(data: data)
-    
+    let result=await wrapped.hash(data: data)
+
     switch result {
-    case .success:
-      await logger.debug(
-        "Hash operation completed successfully",
-        metadata: metadata,
-        source: "CryptoService"
-      )
-    case .failure(let error):
-      await logger.error(
-        "Hash operation failed",
-        error: error,
-        metadata: metadata,
-        source: "CryptoService"
-      )
+      case .success:
+        await logger.debug(
+          "Hash operation completed successfully",
+          metadata: metadata,
+          source: "CryptoService"
+        )
+      case let .failure(error):
+        await logger.error(
+          "Hash operation failed",
+          error: error,
+          metadata: metadata,
+          source: "CryptoService"
+        )
     }
-    
+
     return result
   }
 
@@ -290,75 +305,84 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
     data: [UInt8],
     expectedHash: [UInt8]
   ) async -> Result<Bool, SecurityProtocolError> {
-    var metadata = LoggingTypes.PrivacyMetadata()
-    metadata["dataSize"] = LoggingTypes.PrivacyMetadataValue(value: "\(data.count)", privacy: .public)
+    var metadata=LoggingTypes.PrivacyMetadata()
+    metadata["dataSize"]=LoggingTypes.PrivacyMetadataValue(value: "\(data.count)", privacy: .public)
 
     await logger.debug("Starting hash verification", metadata: metadata, source: "CryptoService")
 
-    let result = await wrapped.verifyHash(data: data, expectedHash: expectedHash)
-    
+    let result=await wrapped.verifyHash(data: data, expectedHash: expectedHash)
+
     switch result {
-    case .success(let matches):
-      await logger.debug(
-        "Hash verification completed successfully: \(matches ? "match" : "no match")",
-        metadata: metadata,
-        source: "CryptoService"
-      )
-    case .failure(let error):
-      await logger.error(
-        "Hash verification failed",
-        error: error,
-        metadata: metadata,
-        source: "CryptoService"
-      )
+      case let .success(matches):
+        await logger.debug(
+          "Hash verification completed successfully: \(matches ? "match" : "no match")",
+          metadata: metadata,
+          source: "CryptoService"
+        )
+      case let .failure(error):
+        await logger.error(
+          "Hash verification failed",
+          error: error,
+          metadata: metadata,
+          source: "CryptoService"
+        )
     }
-    
+
     return result
   }
 }
 
 /**
  # SecureCryptoServiceImpl
- 
+
  A CryptoServiceProtocol implementation that follows the Alpha Dot Five architecture
  by storing sensitive cryptographic material using the SecureStorageProtocol.
  */
 public actor SecureCryptoServiceImpl: CryptoServiceProtocol {
-  
+
   /// The wrapped implementation that does the actual cryptographic work
   private let wrapped: CryptoServiceProtocol
-  
+
   /**
    Initializes a new secure crypto service with an optional wrapped implementation.
-   
+
    - Parameter wrapped: The underlying implementation to use (defaults to a standard one)
    */
-  public init(wrapped: CryptoServiceProtocol? = nil) async {
-    if let wrapped = wrapped {
-      self.wrapped = wrapped
+  public init(wrapped: CryptoServiceProtocol?=nil) async {
+    if let wrapped {
+      self.wrapped=wrapped
     } else {
-      self.wrapped = await MockCryptoServiceImpl()
+      self.wrapped=await MockCryptoServiceImpl()
     }
   }
-  
-  public func encrypt(data: [UInt8], using key: [UInt8]) async -> Result<[UInt8], SecurityProtocolError> {
+
+  public func encrypt(
+    data: [UInt8],
+    using key: [UInt8]
+  ) async -> Result<[UInt8], SecurityProtocolError> {
     // Convert to the canonical types and call the wrapped implementation
-    return await wrapped.encrypt(data: data, using: key)
+    await wrapped.encrypt(data: data, using: key)
   }
-  
-  public func decrypt(data: [UInt8], using key: [UInt8]) async -> Result<[UInt8], SecurityProtocolError> {
+
+  public func decrypt(
+    data: [UInt8],
+    using key: [UInt8]
+  ) async -> Result<[UInt8], SecurityProtocolError> {
     // Convert to the canonical types and call the wrapped implementation
-    return await wrapped.decrypt(data: data, using: key)
+    await wrapped.decrypt(data: data, using: key)
   }
-  
+
   public func hash(data: [UInt8]) async -> Result<[UInt8], SecurityProtocolError> {
     // Convert to the canonical types and call the wrapped implementation
-    return await wrapped.hash(data: data)
+    await wrapped.hash(data: data)
   }
-  
-  public func verifyHash(data: [UInt8], expectedHash: [UInt8]) async -> Result<Bool, SecurityProtocolError> {
+
+  public func verifyHash(
+    data: [UInt8],
+    expectedHash: [UInt8]
+  ) async -> Result<Bool, SecurityProtocolError> {
     // Convert to the canonical types and call the wrapped implementation
-    return await wrapped.verifyHash(data: data, expectedHash: expectedHash)
+    await wrapped.verifyHash(data: data, expectedHash: expectedHash)
   }
 }
 

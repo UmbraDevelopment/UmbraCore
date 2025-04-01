@@ -11,7 +11,7 @@ import LoggingTypes
  This protocol establishes a consistent interface for logging errors across
  the system. It bridges error handling with the logging system, following
  the Alpha Dot Five architecture principles.
- 
+
  ## Actor-Based Implementation
 
  Implementations of this protocol MUST use Swift actors to ensure proper
@@ -22,7 +22,7 @@ import LoggingTypes
      // Private state should be isolated within the actor
      private let logger: PrivacyAwareLoggingProtocol
      private let metadataCollector: ErrorMetadataCollector
-     
+
      // All function implementations must use 'await' appropriately when
      // accessing actor-isolated state or calling other actor methods
  }
@@ -37,7 +37,7 @@ import LoggingTypes
  // Public non-actor class that conforms to protocol
  public final class ErrorLogger: ErrorLoggingProtocol {
      private let actor: ErrorLoggingActor
-     
+
      // Forward all protocol methods to the actor
      public func logError<E>(_ error: E, level: ErrorLogLevel, options: ErrorLoggingOptions?) async where E: Error {
          await actor.logError(error, level: level, options: options)
@@ -93,7 +93,7 @@ public protocol ErrorLoggingProtocol: Sendable {
       - options: Configuration options for error logging
    */
   func debug<E: Error>(
-    _ error: E, 
+    _ error: E,
     context: ErrorContext?,
     options: ErrorLoggingOptions?
   ) async
@@ -107,7 +107,7 @@ public protocol ErrorLoggingProtocol: Sendable {
       - options: Configuration options for error logging
    */
   func info<E: Error>(
-    _ error: E, 
+    _ error: E,
     context: ErrorContext?,
     options: ErrorLoggingOptions?
   ) async
@@ -121,7 +121,7 @@ public protocol ErrorLoggingProtocol: Sendable {
       - options: Configuration options for error logging
    */
   func warning<E: Error>(
-    _ error: E, 
+    _ error: E,
     context: ErrorContext?,
     options: ErrorLoggingOptions?
   ) async
@@ -135,11 +135,11 @@ public protocol ErrorLoggingProtocol: Sendable {
       - options: Configuration options for error logging
    */
   func error<E: Error>(
-    _ error: E, 
+    _ error: E,
     context: ErrorContext?,
     options: ErrorLoggingOptions?
   ) async
-  
+
   /**
    Logs an error with critical level.
 
@@ -149,39 +149,48 @@ public protocol ErrorLoggingProtocol: Sendable {
       - options: Configuration options for error logging
    */
   func critical<E: Error>(
-    _ error: E, 
+    _ error: E,
     context: ErrorContext?,
     options: ErrorLoggingOptions?
   ) async
 }
 
 /// Default implementations for optional parameters
-public extension ErrorLoggingProtocol {
-  func logError<E: Error>(_ error: E, level: ErrorLogLevel, options: ErrorLoggingOptions? = nil) async {
+extension ErrorLoggingProtocol {
+  public func logError(
+    _ error: some Error,
+    level: ErrorLogLevel,
+    options: ErrorLoggingOptions?=nil
+  ) async {
     await logError(error, level: level, options: options)
   }
-  
-  func logError<E: Error>(_ error: E, level: ErrorLogLevel, context: ErrorContext, options: ErrorLoggingOptions? = nil) async {
+
+  public func logError(
+    _ error: some Error,
+    level: ErrorLogLevel,
+    context: ErrorContext,
+    options: ErrorLoggingOptions?=nil
+  ) async {
     await logError(error, level: level, context: context, options: options)
   }
-  
-  func debug<E: Error>(_ error: E, context: ErrorContext? = nil) async {
+
+  public func debug(_ error: some Error, context: ErrorContext?=nil) async {
     await debug(error, context: context, options: nil as ErrorLoggingOptions?)
   }
-  
-  func info<E: Error>(_ error: E, context: ErrorContext? = nil) async {
+
+  public func info(_ error: some Error, context: ErrorContext?=nil) async {
     await info(error, context: context, options: nil as ErrorLoggingOptions?)
   }
-  
-  func warning<E: Error>(_ theError: E, context: ErrorContext? = nil) async {
+
+  public func warning(_ theError: some Error, context: ErrorContext?=nil) async {
     await warning(theError, context: context, options: nil as ErrorLoggingOptions?)
   }
-  
-  func error<E: Error>(_ theError: E, context: ErrorContext? = nil) async {
+
+  public func error(_ theError: some Error, context: ErrorContext?=nil) async {
     await error(theError, context: context, options: nil as ErrorLoggingOptions?)
   }
-  
-  func critical<E: Error>(_ theError: E, context: ErrorContext? = nil) async {
+
+  public func critical(_ theError: some Error, context: ErrorContext?=nil) async {
     await critical(theError, context: context, options: nil as ErrorLoggingOptions?)
   }
 }
@@ -204,11 +213,13 @@ public enum ErrorLogLevel: String, Sendable, CaseIterable, Comparable {
 
   /// Critical-level errors (severe problems)
   case critical
-  
+
   public static func < (lhs: ErrorLogLevel, rhs: ErrorLogLevel) -> Bool {
-    let order: [ErrorLogLevel] = [.debug, .info, .warning, .error, .critical]
-    guard let lhsIndex = order.firstIndex(of: lhs),
-          let rhsIndex = order.firstIndex(of: rhs) else {
+    let order: [ErrorLogLevel]=[.debug, .info, .warning, .error, .critical]
+    guard
+      let lhsIndex=order.firstIndex(of: lhs),
+      let rhsIndex=order.firstIndex(of: rhs)
+    else {
       return false
     }
     return lhsIndex < rhsIndex
@@ -220,40 +231,40 @@ public enum ErrorLogLevel: String, Sendable, CaseIterable, Comparable {
  */
 public struct ErrorLoggingOptions: Sendable, Equatable {
   /// Standard options for most error logging
-  public static let standard = ErrorLoggingOptions()
-  
+  public static let standard=ErrorLoggingOptions()
+
   /// Whether to include stack traces in the log
   public let includeStackTrace: Bool
-  
+
   /// Whether to include the source code location
   public let includeSourceLocation: Bool
-  
+
   /// Privacy level for logging this error
   public let privacyLevel: ErrorPrivacyLevel
-  
+
   /// Additional metadata to include in the log
   public let additionalMetadata: [String: String]
-  
+
   /// User-facing message template (if applicable)
   public let userMessageTemplate: String?
-  
+
   /// Whether to report this error to a monitoring service
   public let reportToMonitoring: Bool
-  
+
   /// Creates new error logging options
   public init(
-    includeStackTrace: Bool = true,
-    includeSourceLocation: Bool = true,
+    includeStackTrace: Bool=true,
+    includeSourceLocation: Bool=true,
     privacyLevel: ErrorPrivacyLevel = .standard,
-    additionalMetadata: [String: String] = [:],
-    userMessageTemplate: String? = nil,
-    reportToMonitoring: Bool = true
+    additionalMetadata: [String: String]=[:],
+    userMessageTemplate: String?=nil,
+    reportToMonitoring: Bool=true
   ) {
-    self.includeStackTrace = includeStackTrace
-    self.includeSourceLocation = includeSourceLocation
-    self.privacyLevel = privacyLevel
-    self.additionalMetadata = additionalMetadata
-    self.userMessageTemplate = userMessageTemplate
-    self.reportToMonitoring = reportToMonitoring
+    self.includeStackTrace=includeStackTrace
+    self.includeSourceLocation=includeSourceLocation
+    self.privacyLevel=privacyLevel
+    self.additionalMetadata=additionalMetadata
+    self.userMessageTemplate=userMessageTemplate
+    self.reportToMonitoring=reportToMonitoring
   }
 }

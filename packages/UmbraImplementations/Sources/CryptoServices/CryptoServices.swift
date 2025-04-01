@@ -8,69 +8,69 @@ import LoggingTypes
 import SecurityCoreInterfaces
 
 /**
- # CryptoServices Module
+  # CryptoServices Module
 
- This module provides cryptographic services for the UmbraCore platform, following
- the Alpha Dot Five architecture principles with actor-based concurrency.
- 
- The module supports these key operations:
- - Encryption and decryption of data
- - Secure hashing of data
- - Hash verification
- 
- ## Usage Example
+  This module provides cryptographic services for the UmbraCore platform, following
+  the Alpha Dot Five architecture principles with actor-based concurrency.
 
-```swift
-// Create a default implementation
-let cryptoService = await CryptoServices.createDefault()
+  The module supports these key operations:
+  - Encryption and decryption of data
+  - Secure hashing of data
+  - Hash verification
 
-// Encrypt some data
-let data: [UInt8] = [1, 2, 3, 4]
-let key: [UInt8] = Array(repeating: 0, count: 32)
-let result = await cryptoService.encrypt(data: data, using: key)
+  ## Usage Example
 
-// Process the result
-switch result {
-case .success(let encryptedData):
-    print("Encrypted successfully: \(encryptedData.count) bytes")
-case .failure(let error):
-    print("Encryption failed: \(error)")
-}
-```
+ ```swift
+ // Create a default implementation
+ let cryptoService = await CryptoServices.createDefault()
 
- ## Key Components
- 
- - **CryptoServices**: Primary static factory for obtaining implementations
- - **CryptoServiceFactory**: Internal factory for different implementations
- */
+ // Encrypt some data
+ let data: [UInt8] = [1, 2, 3, 4]
+ let key: [UInt8] = Array(repeating: 0, count: 32)
+ let result = await cryptoService.encrypt(data: data, using: key)
+
+ // Process the result
+ switch result {
+ case .success(let encryptedData):
+     print("Encrypted successfully: \(encryptedData.count) bytes")
+ case .failure(let error):
+     print("Encryption failed: \(error)")
+ }
+ ```
+
+  ## Key Components
+
+  - **CryptoServices**: Primary static factory for obtaining implementations
+  - **CryptoServiceFactory**: Internal factory for different implementations
+  */
 public enum CryptoServices {
   /**
    Creates a default implementation of CryptoServiceProtocol.
-   
+
    - Returns: A CryptoServiceProtocol implementation
    */
   public static func createDefault() async -> CryptoServiceProtocol {
     await CryptoServiceFactory.createDefault()
   }
-  
+
   /**
    Creates a crypto service with logging capabilities.
-   
+
    - Parameter logger: Optional logger to use, default logger will be used if nil
    - Returns: A CryptoServiceProtocol implementation with logging
    */
   public static func createWithLogging(logger: LoggingProtocol) async
   -> CryptoServiceProtocol {
-    let defaultService = await CryptoServiceFactory.createDefault()
+    let defaultService=await CryptoServiceFactory.createDefault()
     return await CryptoServiceFactory.createLoggingDecorator(
       wrapped: defaultService,
       logger: logger
     )
   }
-  
+
   /**
    Creates a mock implementation of CryptoServiceProtocol for testing.
-   
+
    - Parameter configuration: Configuration for the mock behavior
    - Returns: A mock CryptoServiceProtocol implementation
    */

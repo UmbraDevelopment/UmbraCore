@@ -1,12 +1,12 @@
+import CoreSecurityTypes
+import DomainSecurityTypes
 import Foundation
 import KeychainInterfaces
 import LoggingInterfaces
 import LoggingTypes
-import SecurityCoreInterfaces
-import CoreSecurityTypes
-import DomainSecurityTypes
-import UmbraErrors
 import OSLog
+import SecurityCoreInterfaces
+import UmbraErrors
 
 /**
  # KeychainSecurityActor
@@ -215,7 +215,10 @@ public actor KeychainSecurityActor {
 
     do {
       // Retrieve the encrypted data from keychain
-      let encryptedData=try await keychainService.retrieveData(for: account, keychainOptions: KeychainOptions.standard)
+      let encryptedData=try await keychainService.retrieveData(
+        for: account,
+        keychainOptions: KeychainOptions.standard
+      )
 
       // Prepare configuration options
       let configOptions=SecurityConfigOptions(

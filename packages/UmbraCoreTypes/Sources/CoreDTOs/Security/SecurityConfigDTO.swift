@@ -70,7 +70,7 @@ public struct SecurityConfigDTO: Sendable, Equatable {
   /// - Returns: A new SecurityConfigDTO with the key stored in options
   public func withKey(_ key: [UInt8]) -> SecurityConfigDTO {
     // Store the key in the options as a Base64 encoded string
-    let base64Key = encodeBase64(key)
+    let base64Key=encodeBase64(key)
     return withOptions(["key": base64Key])
   }
 
@@ -80,25 +80,25 @@ public struct SecurityConfigDTO: Sendable, Equatable {
     guard let base64Key=options["key"] else {
       return nil
     }
-    
+
     return decodeBase64(base64Key)
   }
-  
+
   // MARK: - Private Methods
-  
+
   /// Internal Base64 encoding implementation
   /// - Parameter bytes: Bytes to encode
   /// - Returns: Base64-encoded string
   private func encodeBase64(_ bytes: [UInt8]) -> String {
-    let data = Data(bytes)
+    let data=Data(bytes)
     return data.base64EncodedString()
   }
-  
+
   /// Internal Base64 decoding implementation
   /// - Parameter base64String: String to decode
   /// - Returns: Decoded bytes or nil if invalid
   private func decodeBase64(_ base64String: String) -> [UInt8]? {
-    guard let data = Data(base64Encoded: base64String) else {
+    guard let data=Data(base64Encoded: base64String) else {
       return nil
     }
     return [UInt8](data)

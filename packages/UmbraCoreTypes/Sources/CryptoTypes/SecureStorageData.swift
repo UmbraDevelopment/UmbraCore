@@ -13,16 +13,16 @@ public struct SecureStorageData: Codable, Sendable {
   ///   - encryptedData: The encrypted data
   ///   - iv: The initialisation vector used for encryption
   public init(encryptedData: [UInt8], iv: [UInt8]) {
-    self.encryptedData = encryptedData
-    self.iv = iv
+    self.encryptedData=encryptedData
+    self.iv=iv
   }
-  
+
   /// Convert to a Data object for persistence
   /// - Returns: Data object containing serialised storage data
   public func toData() throws -> Data {
     try JSONEncoder().encode(self)
   }
-  
+
   /// Create SecureStorageData from serialised data
   /// - Parameter data: Serialised data
   /// - Returns: SecureStorageData instance

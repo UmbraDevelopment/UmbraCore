@@ -1,8 +1,8 @@
 import CoreInterfaces
-import Foundation
-import LoggingInterfaces
 import CoreSecurityTypes
 import DomainSecurityTypes
+import Foundation
+import LoggingInterfaces
 import SecurityCoreInterfaces
 
 /**
@@ -406,106 +406,122 @@ public struct KeyGenerationResult: Sendable, Hashable {
 private final class MockSecurityProvider: SecurityProviderProtocol {
   private let logger: any LoggingProtocol
   private let keyMgr: any KeyManagementProtocol
-  
+
   init(logger: any LoggingProtocol, keyManager: any KeyManagementProtocol) {
-    self.logger = logger
-    self.keyMgr = keyManager
+    self.logger=logger
+    keyMgr=keyManager
   }
-  
+
   // MARK: - AsyncServiceInitializable
-  
+
   public func initialize() async throws {
     // No initialization needed for mock implementation
   }
-  
+
   // MARK: - Service Access
-  
+
   public func cryptoService() async -> CryptoServiceProtocol {
-    return MockCryptoService()
+    MockCryptoService()
   }
-  
+
   public func keyManager() async -> KeyManagementProtocol {
-    return keyMgr
+    keyMgr
   }
-  
+
   // MARK: - Core Operations
-  
+
   public func encrypt(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
-    guard let data = config.data else {
+    guard let data=config.data else {
       throw SecurityProtocolError.invalidData(reason: "No data provided for encryption")
     }
-    
-    logger.info("Encrypting data of \(data.count) bytes with mock provider", metadata: ["operation": "encrypt"])
-    let result = SecurityResultDTO(
+
+    logger.info(
+      "Encrypting data of \(data.count) bytes with mock provider",
+      metadata: ["operation": "encrypt"]
+    )
+    let result=SecurityResultDTO(
       data: data, // In a real implementation, this would be encrypted data
       identifier: "mock-encrypted-\(UUID().uuidString)",
       metadata: ["algorithm": "AES-256", "mode": "GCM"]
     )
     return result
   }
-  
+
   public func decrypt(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
-    guard let data = config.data else {
+    guard let data=config.data else {
       throw SecurityProtocolError.invalidData(reason: "No data provided for decryption")
     }
-    
-    logger.info("Decrypting data of \(data.count) bytes with mock provider", metadata: ["operation": "decrypt"])
-    let result = SecurityResultDTO(
+
+    logger.info(
+      "Decrypting data of \(data.count) bytes with mock provider",
+      metadata: ["operation": "decrypt"]
+    )
+    let result=SecurityResultDTO(
       data: data, // In a real implementation, this would be decrypted data
       identifier: config.identifier ?? "",
       metadata: ["algorithm": "AES-256", "mode": "GCM"]
     )
     return result
   }
-  
-  public func generateKey(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+
+  public func generateKey(config _: SecurityConfigDTO) async throws -> SecurityResultDTO {
     logger.info("Generating key with mock provider", metadata: ["operation": "generateKey"])
-    let mockKey = Data(repeating: 0, count: 32) // 256-bit key
-    let result = SecurityResultDTO(
+    let mockKey=Data(repeating: 0, count: 32) // 256-bit key
+    let result=SecurityResultDTO(
       data: mockKey,
       identifier: "mock-key-\(UUID().uuidString)",
       metadata: ["algorithm": "AES", "size": "256", "type": "symmetric"]
     )
     return result
   }
-  
+
   public func sign(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
-    guard let data = config.data else {
+    guard let data=config.data else {
       throw SecurityProtocolError.invalidData(reason: "No data provided for signing")
     }
-    
-    logger.info("Signing data of \(data.count) bytes with mock provider", metadata: ["operation": "sign"])
-    let mockSignature = Data(repeating: 0, count: 64) // Mock signature
-    let result = SecurityResultDTO(
+
+    logger.info(
+      "Signing data of \(data.count) bytes with mock provider",
+      metadata: ["operation": "sign"]
+    )
+    let mockSignature=Data(repeating: 0, count: 64) // Mock signature
+    let result=SecurityResultDTO(
       data: mockSignature,
       identifier: config.identifier ?? "",
       metadata: ["algorithm": "HMAC-SHA256"]
     )
     return result
   }
-  
+
   public func verify(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
-    guard let data = config.data, let signature = config.additionalData else {
-      throw SecurityProtocolError.invalidData(reason: "No data or signature provided for verification")
+    guard let data=config.data, let signature=config.additionalData else {
+      throw SecurityProtocolError
+        .invalidData(reason: "No data or signature provided for verification")
     }
-    
-    logger.info("Verifying signature for data of \(data.count) bytes with mock provider", metadata: ["operation": "verify"])
-    let result = SecurityResultDTO(
+
+    logger.info(
+      "Verifying signature for data of \(data.count) bytes with mock provider",
+      metadata: ["operation": "verify"]
+    )
+    let result=SecurityResultDTO(
       data: Data([1]), // 1 for true, would be based on actual verification in a real implementation
       identifier: config.identifier ?? "",
       metadata: ["algorithm": "HMAC-SHA256", "verified": "true"]
     )
     return result
   }
-  
+
   public func hash(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
-    guard let data = config.data else {
+    guard let data=config.data else {
       throw SecurityProtocolError.invalidData(reason: "No data provided for hashing")
     }
-    
-    logger.info("Hashing data of \(data.count) bytes with mock provider", metadata: ["operation": "hash"])
-    let mockHash = Data(repeating: 0, count: 32) // Mock SHA-256 hash
-    let result = SecurityResultDTO(
+
+    logger.info(
+      "Hashing data of \(data.count) bytes with mock provider",
+      metadata: ["operation": "hash"]
+    )
+    let mockHash=Data(repeating: 0, count: 32) // Mock SHA-256 hash
+    let result=SecurityResultDTO(
       data: mockHash,
       identifier: config.identifier ?? "",
       metadata: ["algorithm": "SHA-256"]
@@ -518,24 +534,27 @@ private final class MockSecurityProvider: SecurityProviderProtocol {
  Mock implementation of CryptoServiceProtocol for testing
  */
 private final class MockCryptoService: CryptoServiceProtocol {
-  func encrypt(data: [UInt8], using key: [UInt8]) async -> Result<[UInt8], SecurityProtocolError> {
+  func encrypt(data: [UInt8], using _: [UInt8]) async -> Result<[UInt8], SecurityProtocolError> {
     // Mock implementation - returns the same data for testing
-    return .success(data)
+    .success(data)
   }
-  
-  func decrypt(data: [UInt8], using key: [UInt8]) async -> Result<[UInt8], SecurityProtocolError> {
+
+  func decrypt(data: [UInt8], using _: [UInt8]) async -> Result<[UInt8], SecurityProtocolError> {
     // Mock implementation - returns the same data for testing
-    return .success(data)
+    .success(data)
   }
-  
-  func hash(data: [UInt8]) async -> Result<[UInt8], SecurityProtocolError> {
+
+  func hash(data _: [UInt8]) async -> Result<[UInt8], SecurityProtocolError> {
     // Mock implementation - returns a fixed "hash" for testing
-    return .success([0, 1, 2, 3, 4, 5, 6, 7])
+    .success([0, 1, 2, 3, 4, 5, 6, 7])
   }
-  
-  func verifyHash(data: [UInt8], expectedHash: [UInt8]) async -> Result<Bool, SecurityProtocolError> {
+
+  func verifyHash(
+    data _: [UInt8],
+    expectedHash _: [UInt8]
+  ) async -> Result<Bool, SecurityProtocolError> {
     // Mock implementation - always returns true for testing
-    return .success(true)
+    .success(true)
   }
 }
 

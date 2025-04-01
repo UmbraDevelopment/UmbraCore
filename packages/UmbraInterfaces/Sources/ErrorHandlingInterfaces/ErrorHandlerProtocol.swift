@@ -20,7 +20,7 @@ import Foundation
      // Private state should be isolated within the actor
      private let errorLogger: ErrorLoggingProtocol
      private let metadataCollector: ErrorMetadataCollector
-     
+
      // All function implementations must use 'await' appropriately when
      // accessing actor-isolated state or calling other actor methods
  }
@@ -35,7 +35,7 @@ import Foundation
  // Public non-actor class that conforms to protocol
  public final class ErrorHandler: ErrorHandlerProtocol {
      private let actor: ErrorHandlerActor
-     
+
      // Forward all protocol methods to the actor
      public func handle<E>(_ error: E, options: ErrorHandlingOptions?) async where E: Error {
          await actor.handle(error, options: options)
@@ -83,18 +83,18 @@ public protocol ErrorHandlerProtocol: Sendable {
     context: ErrorContext,
     options: ErrorHandlingOptions?
   ) async
-  
+
   /**
    Handles an error with recovery options.
-   
+
    This method attempts to recover from the error using the provided recovery strategies.
-   
+
    - Parameters:
       - error: The error to handle
       - context: Contextual information about the error
       - recoveryStrategies: Ordered list of recovery strategies to attempt
       - options: Configuration options for error handling
-   
+
    - Returns: Result indicating whether recovery was successful and the recovery outcome
    */
   func handleWithRecovery<E: Error, Outcome>(
@@ -106,26 +106,35 @@ public protocol ErrorHandlerProtocol: Sendable {
 }
 
 /// Default implementations for optional parameters
-public extension ErrorHandlerProtocol {
-  func handle<E: Error>(_ error: E, options: ErrorHandlingOptions? = nil) async {
+extension ErrorHandlerProtocol {
+  public func handle(_ error: some Error, options: ErrorHandlingOptions?=nil) async {
     await handle(error, options: options)
   }
-  
-  func handle<E: Error>(_ error: E, context: ErrorContext) async {
+
+  public func handle(_ error: some Error, context: ErrorContext) async {
     await handle(error, context: context, options: nil)
   }
-  
-  func handle<E: Error>(_ error: E, context: ErrorContext, options: ErrorHandlingOptions? = nil) async {
+
+  public func handle(
+    _ error: some Error,
+    context: ErrorContext,
+    options: ErrorHandlingOptions?=nil
+  ) async {
     await handle(error, context: context, options: options)
   }
-  
-  func handleWithRecovery<E: Error, Outcome>(
+
+  public func handleWithRecovery<E: Error, Outcome>(
     _ error: E,
     context: ErrorContext,
     recoveryStrategies: [ErrorRecoveryStrategy<E, Outcome>],
-    options: ErrorHandlingOptions? = nil
+    options: ErrorHandlingOptions?=nil
   ) async -> ErrorRecoveryResult<Outcome> {
-    await handleWithRecovery(error, context: context, recoveryStrategies: recoveryStrategies, options: options)
+    await handleWithRecovery(
+      error,
+      context: context,
+      recoveryStrategies: recoveryStrategies,
+      options: options
+    )
   }
 }
 
@@ -134,41 +143,41 @@ public extension ErrorHandlerProtocol {
  */
 public struct ErrorHandlingOptions: Sendable, Equatable {
   /// Standard options for most error handling
-  public static let standard = ErrorHandlingOptions()
-  
+  public static let standard=ErrorHandlingOptions()
+
   /// Whether to include stack traces with the error
   public let includeStackTrace: Bool
-  
+
   /// Whether to attempt automatic recovery
   public let attemptRecovery: Bool
-  
+
   /// Whether to notify the user about the error
   public let notifyUser: Bool
-  
+
   /// Whether to propagate the error to monitoring systems
   public let reportToMonitoring: Bool
-  
+
   /// Privacy level for error logging
   public let privacyLevel: ErrorPrivacyLevel
-  
+
   /// Additional metadata to include with the error
   public let additionalMetadata: [String: String]
-  
+
   /// Creates new error handling options
   public init(
-    includeStackTrace: Bool = true,
-    attemptRecovery: Bool = true,
-    notifyUser: Bool = false,
-    reportToMonitoring: Bool = true,
+    includeStackTrace: Bool=true,
+    attemptRecovery: Bool=true,
+    notifyUser: Bool=false,
+    reportToMonitoring: Bool=true,
     privacyLevel: ErrorPrivacyLevel = .standard,
-    additionalMetadata: [String: String] = [:]
+    additionalMetadata: [String: String]=[:]
   ) {
-    self.includeStackTrace = includeStackTrace
-    self.attemptRecovery = attemptRecovery
-    self.notifyUser = notifyUser
-    self.reportToMonitoring = reportToMonitoring
-    self.privacyLevel = privacyLevel
-    self.additionalMetadata = additionalMetadata
+    self.includeStackTrace=includeStackTrace
+    self.attemptRecovery=attemptRecovery
+    self.notifyUser=notifyUser
+    self.reportToMonitoring=reportToMonitoring
+    self.privacyLevel=privacyLevel
+    self.additionalMetadata=additionalMetadata
   }
 }
 
@@ -178,20 +187,22 @@ public struct ErrorHandlingOptions: Sendable, Equatable {
 public enum ErrorPrivacyLevel: String, Sendable, Equatable, Comparable {
   /// Minimal privacy controls - suitable for development environments
   case minimal
-  
+
   /// Standard privacy controls - default for most errors
   case standard
-  
+
   /// Enhanced privacy controls - for errors with potentially sensitive information
   case enhanced
-  
+
   /// Maximum privacy controls - for errors with highly sensitive information
   case maximum
-  
+
   public static func < (lhs: ErrorPrivacyLevel, rhs: ErrorPrivacyLevel) -> Bool {
-    let order: [ErrorPrivacyLevel] = [.minimal, .standard, .enhanced, .maximum]
-    guard let lhsIndex = order.firstIndex(of: lhs),
-          let rhsIndex = order.firstIndex(of: rhs) else {
+    let order: [ErrorPrivacyLevel]=[.minimal, .standard, .enhanced, .maximum]
+    guard
+      let lhsIndex=order.firstIndex(of: lhs),
+      let rhsIndex=order.firstIndex(of: rhs)
+    else {
       return false
     }
     return lhsIndex < rhsIndex
@@ -204,17 +215,17 @@ public enum ErrorPrivacyLevel: String, Sendable, Equatable, Comparable {
 public struct ErrorRecoveryStrategy<E: Error, Outcome>: Sendable {
   /// The recovery action to attempt
   public let action: (E, ErrorContext) async -> Outcome?
-  
+
   /// Description of this recovery strategy for logging
   public let description: String
-  
+
   /// Creates a new error recovery strategy
   public init(
     description: String,
     action: @escaping (E, ErrorContext) async -> Outcome?
   ) {
-    self.description = description
-    self.action = action
+    self.description=description
+    self.action=action
   }
 }
 
@@ -224,30 +235,30 @@ public struct ErrorRecoveryStrategy<E: Error, Outcome>: Sendable {
 public enum ErrorRecoveryResult<Outcome>: Sendable {
   /// Recovery was successful
   case recovered(Outcome)
-  
+
   /// Recovery failed
   case failed(Error)
-  
+
   /// No recovery was attempted
   case notAttempted
-  
+
   /// Whether recovery was successful
   public var isRecovered: Bool {
     switch self {
-    case .recovered:
-      return true
-    case .failed, .notAttempted:
-      return false
+      case .recovered:
+        true
+      case .failed, .notAttempted:
+        false
     }
   }
-  
+
   /// The recovered value if available
   public var value: Outcome? {
     switch self {
-    case .recovered(let value):
-      return value
-    case .failed, .notAttempted:
-      return nil
+      case let .recovered(value):
+        value
+      case .failed, .notAttempted:
+        nil
     }
   }
 }

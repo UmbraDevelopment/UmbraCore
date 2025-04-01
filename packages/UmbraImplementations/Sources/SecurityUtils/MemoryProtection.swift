@@ -74,7 +74,7 @@ public enum MemoryProtection {
   public static func secureZero(_ bytes: inout [UInt8]) {
     // Use volatile to prevent compiler optimisation from removing this zeroing
     for i in 0..<bytes.count {
-      bytes[i] = 0
+      bytes[i]=0
     }
   }
 
@@ -106,7 +106,7 @@ public enum MemoryProtection {
     _ data: [UInt8],
     _ block: ([UInt8]) throws -> T
   ) rethrows -> T {
-    var secureData = data
+    var secureData=data
     defer {
       secureZero(&secureData)
     }
@@ -151,7 +151,7 @@ public enum MemoryProtection {
       return false
     }
 
-    var result: UInt8 = 0
+    var result: UInt8=0
 
     // Constant-time comparison - always compare all bytes
     for i in 0..<lhs.count {

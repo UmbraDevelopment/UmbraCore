@@ -1,3 +1,5 @@
+import CoreSecurityTypes
+import DomainSecurityTypes
 import Foundation
 import KeychainInterfaces
 import KeychainLogger
@@ -5,8 +7,6 @@ import LoggingInterfaces
 import LoggingTypes
 import OSLog
 import SecurityCoreInterfaces
-import CoreSecurityTypes
-import DomainSecurityTypes
 import UmbraErrors
 
 /**
@@ -143,7 +143,7 @@ public actor KeychainSecurityActor {
       }
 
       // Prepare encryption configuration with additional options for the input data
-      let configOptions = SecurityConfigOptions(
+      let configOptions=SecurityConfigOptions(
         enableDetailedLogging: false,
         useHardwareAcceleration: true,
         operationTimeoutSeconds: 30.0,
@@ -153,7 +153,7 @@ public actor KeychainSecurityActor {
         ]
       )
 
-      let config = SecurityConfigDTO(
+      let config=SecurityConfigDTO(
         encryptionAlgorithm: .aes256GCM,
         hashAlgorithm: .sha256,
         providerType: .cryptoKit,
@@ -166,13 +166,13 @@ public actor KeychainSecurityActor {
       )
 
       // Extract the encrypted data from the result
-      guard let resultData = encryptionResult.resultData else {
+      guard let resultData=encryptionResult.resultData else {
         throw KeychainSecurityError.dataConversionFailed
       }
 
       // Convert SecureBytes to regular Data by using its base64 encoding method
       // and then converting back to Data - avoids direct access to private storage
-      let base64String = resultData.base64EncodedString()
+      let base64String=resultData.base64EncodedString()
       guard let encryptedData=Data(base64Encoded: base64String) else {
         throw KeychainSecurityError.dataConversionFailed
       }
@@ -243,7 +243,7 @@ public actor KeychainSecurityActor {
       let encryptedData=try await keychainService.retrieveData(for: account, keychainOptions: nil)
 
       // Prepare decryption configuration with options
-      let configOptions = SecurityConfigOptions(
+      let configOptions=SecurityConfigOptions(
         enableDetailedLogging: false,
         useHardwareAcceleration: true,
         operationTimeoutSeconds: 30.0,
@@ -253,7 +253,7 @@ public actor KeychainSecurityActor {
         ]
       )
 
-      let config = SecurityConfigDTO(
+      let config=SecurityConfigDTO(
         encryptionAlgorithm: .aes256GCM,
         hashAlgorithm: .sha256,
         providerType: .cryptoKit,
@@ -266,13 +266,13 @@ public actor KeychainSecurityActor {
       )
 
       // Extract the decrypted data from the result
-      guard let resultData = decryptionResult.resultData else {
+      guard let resultData=decryptionResult.resultData else {
         throw KeychainSecurityError.dataConversionFailed
       }
 
       // Convert SecureBytes to regular Data by using its base64 encoding method
       // and then converting back to Data - avoids direct access to private storage
-      let base64String = resultData.base64EncodedString()
+      let base64String=resultData.base64EncodedString()
       guard let decryptedData=Data(base64Encoded: base64String) else {
         throw KeychainSecurityError.dataConversionFailed
       }
@@ -385,7 +385,7 @@ public actor KeychainSecurityActor {
   private func generateAESKey() async throws -> Data {
     // Generate a new secure random key for AES-256 (32 bytes)
     // We need to create a SecurityConfigDTO for AES-256 encryption
-    let configOptions = SecurityConfigOptions(
+    let configOptions=SecurityConfigOptions(
       enableDetailedLogging: false,
       useHardwareAcceleration: true,
       operationTimeoutSeconds: 30.0,
@@ -395,14 +395,14 @@ public actor KeychainSecurityActor {
       ]
     )
 
-    let config = SecurityConfigDTO(
+    let config=SecurityConfigDTO(
       encryptionAlgorithm: .aes256GCM,
       hashAlgorithm: .sha256,
       providerType: .cryptoKit,
       options: configOptions
     )
 
-    let result = try await securityProvider.generateKey(
+    let result=try await securityProvider.generateKey(
       config: config
     )
 

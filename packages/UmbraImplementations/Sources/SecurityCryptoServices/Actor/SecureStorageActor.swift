@@ -42,7 +42,7 @@ public actor SecureStorageActor {
   private let logger: LoggingProtocol
 
   /// In-memory cache of recently used keys (identifier -> key)
-  private var keyCache: [String: [UInt8]] = [:]
+  private var keyCache: [String: [UInt8]]=[:]
 
   /// Storage location for encrypted keys
   private let storageURL: URL
@@ -123,18 +123,18 @@ public actor SecureStorageActor {
 
     do {
       // Generate or retrieve master key for wrapping
-      let masterKey = try await getMasterKey()
-      
+      let masterKey=try await getMasterKey()
+
       // Use memory protection to handle the sensitive key data
       try await MemoryProtection.withSecureTemporaryData(key) { secureKey in
         // Encrypt the key
-        let encryptedKey = try await self.cryptoService.encrypt(data: secureKey, using: masterKey)
-        
+        let encryptedKey=try await self.cryptoService.encrypt(data: secureKey, using: masterKey)
+
         // Write to storage
         try Data(encryptedKey).write(to: keyURL)
-        
+
         // Update cache - create a copy to store in cache
-        self.keyCache[identifier] = [UInt8](secureKey)
+        self.keyCache[identifier]=[UInt8](secureKey)
       }
 
       await logger.info("Successfully stored key with identifier: \(identifier)", metadata: nil)
@@ -185,10 +185,10 @@ public actor SecureStorageActor {
       let masterKey=try await getMasterKey()
 
       // Decrypt the key with memory protection
-      let key = try await cryptoService.decrypt(data: encryptedKey, using: masterKey)
+      let key=try await cryptoService.decrypt(data: encryptedKey, using: masterKey)
 
       // Update cache with a secured copy
-      keyCache[identifier] = MemoryProtection.secureDataCopy(key)
+      keyCache[identifier]=MemoryProtection.secureDataCopy(key)
 
       await logger.info("Successfully retrieved key with identifier: \(identifier)", metadata: nil)
       return key
@@ -216,7 +216,10 @@ public actor SecureStorageActor {
 
     // Check if key exists
     guard FileManager.default.fileExists(atPath: keyURL.path) else {
-      await logger.warning("Key with identifier '\(identifier)' not found for deletion", metadata: nil)
+      await logger.warning(
+        "Key with identifier '\(identifier)' not found for deletion",
+        metadata: nil
+      )
       return false
     }
 
@@ -225,7 +228,7 @@ public actor SecureStorageActor {
       try FileManager.default.removeItem(at: keyURL)
 
       // Securely remove from cache if it exists
-      if let _ = keyCache[identifier] {
+      if let _=keyCache[identifier] {
         // Use memory protection to zero the memory before removing
         MemoryProtection.securelyZeroData(&keyCache[identifier]!)
         keyCache.removeValue(forKey: identifier)
@@ -244,7 +247,7 @@ public actor SecureStorageActor {
 
   /**
    Rotates a key, generating a new key and re-encrypting data secured with the old key.
-   
+
    Uses memory protection to ensure secure handling of key material throughout
    the rotation process.
 
@@ -261,41 +264,42 @@ public actor SecureStorageActor {
     dataToReencrypt: [[UInt8]]?=nil
   ) async throws -> [[UInt8]]? {
     // Retrieve the old key first
-    let oldKey = try await retrieveKey(withIdentifier: identifier)
-    
+    let oldKey=try await retrieveKey(withIdentifier: identifier)
+
     // Generate a new key
-    let newKey = try await cryptoService.generateKey(bitLength: bitLength)
-    
+    let newKey=try await cryptoService.generateKey(bitLength: bitLength)
+
     // Use memory protection for the key rotation process
     return try await MemoryProtection.withSecureTemporaryBatch([oldKey, newKey]) { protectedKeys in
-      let protectedOldKey = protectedKeys[0]
-      let protectedNewKey = protectedKeys[1]
-      
+      let protectedOldKey=protectedKeys[0]
+      let protectedNewKey=protectedKeys[1]
+
       // Store the new key with the same identifier (overwriting the old one)
       try await self.storeKey(protectedNewKey, withIdentifier: identifier, overwrite: true)
-      
+
       // If there are data items to re-encrypt, do that
-      if let dataItems = dataToReencrypt {
+      if let dataItems=dataToReencrypt {
         // Decrypt with old key
-        let decryptedItems = try await self.cryptoService.decryptBatch(
+        let decryptedItems=try await self.cryptoService.decryptBatch(
           dataItems: dataItems,
           using: protectedOldKey
         )
-        
+
         // Use memory protection for handling the decrypted sensitive data
-        let reencryptedItems = try await MemoryProtection.withSecureTemporaryBatch(decryptedItems) { protectedItems in
-          // Re-encrypt with new key
-          return try await self.cryptoService.encryptBatch(
-            dataItems: protectedItems,
-            using: protectedNewKey
-          )
-        }
-        
+        let reencryptedItems=try await MemoryProtection
+          .withSecureTemporaryBatch(decryptedItems) { protectedItems in
+            // Re-encrypt with new key
+            try await self.cryptoService.encryptBatch(
+              dataItems: protectedItems,
+              using: protectedNewKey
+            )
+          }
+
         await self.logger.info(
           "Successfully rotated key '\(identifier)' and re-encrypted \(dataItems.count) data items",
           metadata: nil
         )
-        
+
         return reencryptedItems
       } else {
         await self.logger.info("Successfully rotated key '\(identifier)'", metadata: nil)
@@ -316,42 +320,43 @@ public actor SecureStorageActor {
    - Throws: SecurityProtocolError if master key operations fail
    */
   private func getMasterKey() async throws -> [UInt8] {
-    let masterKeyIdentifier = "umbra.master.key"
-    let masterKeyURL = storageURL.appendingPathComponent("\(masterKeyIdentifier).key")
+    let masterKeyIdentifier="umbra.master.key"
+    let masterKeyURL=storageURL.appendingPathComponent("\(masterKeyIdentifier).key")
 
     // If master key doesn't exist, generate it
     if !FileManager.default.fileExists(atPath: masterKeyURL.path) {
       do {
         // Generate a strong master key with memory protection
-        let masterKey = try await cryptoService.generateKey(bitLength: 256)
-        
+        let masterKey=try await cryptoService.generateKey(bitLength: 256)
+
         return try await MemoryProtection.withSecureTemporaryData(masterKey) { protectedMasterKey in
           // Derive a wrapping key from system and user information
-          let wrappingKey = try await self.deriveWrappingKey()
-          
+          let wrappingKey=try await self.deriveWrappingKey()
+
           // Use memory protection for the wrapping key
-          return try await MemoryProtection.withSecureTemporaryData(wrappingKey) { protectedWrappingKey in
-            // Encrypt the master key with the wrapping key
-            let encryptedMasterKey = try await self.cryptoService.encrypt(
-              data: protectedMasterKey,
-              using: protectedWrappingKey
-            )
-            
-            // Write encrypted master key to storage
-            try Data(encryptedMasterKey).write(to: masterKeyURL)
-            
-            await self.logger.info("Generated and stored new master key", metadata: nil)
-            
-            // Return a copy of the master key
-            return [UInt8](protectedMasterKey)
-          }
+          return try await MemoryProtection
+            .withSecureTemporaryData(wrappingKey) { protectedWrappingKey in
+              // Encrypt the master key with the wrapping key
+              let encryptedMasterKey=try await self.cryptoService.encrypt(
+                data: protectedMasterKey,
+                using: protectedWrappingKey
+              )
+
+              // Write encrypted master key to storage
+              try Data(encryptedMasterKey).write(to: masterKeyURL)
+
+              await self.logger.info("Generated and stored new master key", metadata: nil)
+
+              // Return a copy of the master key
+              return [UInt8](protectedMasterKey)
+            }
         }
       } catch {
         await logger.error(
           "Failed to generate master key: \(error.localizedDescription)",
           metadata: nil
         )
-        
+
         if let secError=error as? SecurityProtocolError {
           throw secError
         } else {
@@ -368,24 +373,25 @@ public actor SecureStorageActor {
       let encryptedMasterKey=[UInt8](encryptedData)
 
       // Derive the wrapping key with memory protection
-      let wrappingKey = try await deriveWrappingKey()
-      
-      return try await MemoryProtection.withSecureTemporaryData(wrappingKey) { protectedWrappingKey in
-        // Decrypt the master key
-        let masterKey = try await self.cryptoService.decrypt(
-          data: encryptedMasterKey,
-          using: protectedWrappingKey
-        )
-        
-        // Return a copy of the master key
-        return masterKey
-      }
+      let wrappingKey=try await deriveWrappingKey()
+
+      return try await MemoryProtection
+        .withSecureTemporaryData(wrappingKey) { protectedWrappingKey in
+          // Decrypt the master key
+          let masterKey=try await self.cryptoService.decrypt(
+            data: encryptedMasterKey,
+            using: protectedWrappingKey
+          )
+
+          // Return a copy of the master key
+          return masterKey
+        }
     } catch {
       await logger.error(
         "Failed to retrieve master key: \(error.localizedDescription)",
         metadata: nil
       )
-      
+
       if let secError=error as? SecurityProtocolError {
         throw secError
       } else {
@@ -408,7 +414,7 @@ public actor SecureStorageActor {
     // Implementation-specific key derivation - this would use hardware info
     // For this example, we generate a key through the crypto service
     // In a real implementation, this would use secure enclaves and derivation
-    return try await cryptoService.generateKey(bitLength: 256)
+    try await cryptoService.generateKey(bitLength: 256)
   }
 
   /**
@@ -423,7 +429,7 @@ public actor SecureStorageActor {
       MemoryProtection.securelyZeroData(&keyCache[identifier]!)
     }
     keyCache.removeAll()
-    
+
     // Log the cache clearing operation
     Task {
       await logger.info("Cleared key cache", metadata: nil)

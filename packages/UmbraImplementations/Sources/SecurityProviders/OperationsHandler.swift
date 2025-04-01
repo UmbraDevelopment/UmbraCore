@@ -51,8 +51,8 @@ final class OperationsHandler {
   ///   - cryptoService: The crypto service to use
   ///   - keyManager: The key manager to use
   init(cryptoService: CryptoServiceProtocol, keyManager: KeyManagementProtocol) {
-    self.cryptoService = cryptoService
-    self.keyManager = keyManager
+    self.cryptoService=cryptoService
+    self.keyManager=keyManager
   }
 
   // MARK: - Operation Handling
@@ -68,14 +68,14 @@ final class OperationsHandler {
   ) async -> SecurityResultDTO {
     switch operation {
       case .encrypt:
-        return await handleEncryption(config: config, operation: operation)
+        await handleEncryption(config: config, operation: operation)
       case .decrypt:
-        return await handleDecryption(config: config, operation: operation)
+        await handleDecryption(config: config, operation: operation)
       case .hash:
-        return await handleHashing(config: config, operation: operation)
+        await handleHashing(config: config, operation: operation)
       case .sign, .verify, .deriveKey, .generateRandom, .storeKey, .retrieveKey, .deleteKey:
         // Return error for unsupported operations
-        return .failure(
+        .failure(
           errorDetails: "Unsupported operation: \(operation.rawValue)",
           executionTimeMs: 0,
           metadata: ["operation": operation.rawValue]
@@ -96,13 +96,13 @@ final class OperationsHandler {
   ) -> SecurityResultDTO {
     switch result {
       case let .success(data):
-        return .success(
+        .success(
           resultData: Data(data),
           executionTimeMs: 0, // Should implement proper timing in production
           metadata: ["operation": operation.rawValue]
         )
       case let .failure(error):
-        return .failure(
+        .failure(
           errorDetails: error.localizedDescription,
           executionTimeMs: 0, // Should implement proper timing in production
           metadata: ["operation": operation.rawValue]
@@ -113,9 +113,10 @@ final class OperationsHandler {
   /// Retrieve a key for a cryptographic operation
   /// - Parameter config: Configuration to extract key information from
   /// - Returns: Result with the key bytes or an error
-  private func retrieveKeyForOperation(_ config: SecurityConfigDTO) async -> Result<[UInt8], SecurityProtocolError> {
+  private func retrieveKeyForOperation(_ config: SecurityConfigDTO) async
+  -> Result<[UInt8], SecurityProtocolError> {
     // Check if a key is directly provided in options
-    if let keyData = config.options?.metadata?["key"], let key = Data(base64Encoded: keyData) {
+    if let keyData=config.options?.metadata?["key"], let key=Data(base64Encoded: keyData) {
       return .success(Array(key))
     } else if config.options?.metadata?["key"] != nil {
       // Key is present but not valid base64
@@ -123,9 +124,9 @@ final class OperationsHandler {
     }
 
     // Check if a key identifier is provided
-    if let keyID = config.options?.metadata?["keyIdentifier"] {
+    if let keyID=config.options?.metadata?["keyIdentifier"] {
       // Retrieve the key from the key manager
-      let keyResult = await keyManager.retrieveKey(withIdentifier: keyID)
+      let keyResult=await keyManager.retrieveKey(withIdentifier: keyID)
 
       switch keyResult {
         case let .success(keyData):
@@ -153,14 +154,14 @@ final class OperationsHandler {
     operation: SecurityOperation
   ) async -> SecurityResultDTO {
     // First check if we need to retrieve a key
-    let keyResult = await retrieveKeyForOperation(config)
+    let keyResult=await retrieveKeyForOperation(config)
 
     switch keyResult {
       case let .success(key):
         // Now that we have the key, extract the data to encrypt
         guard
-          let dataString = config.options?.metadata?["data"],
-          let inputData = Data(base64Encoded: dataString)
+          let dataString=config.options?.metadata?["data"],
+          let inputData=Data(base64Encoded: dataString)
         else {
           return .failure(
             errorDetails: "No input data provided for encryption",
@@ -170,8 +171,8 @@ final class OperationsHandler {
         }
 
         // Perform encryption with the key and data
-        return resultToDTO(
-          await cryptoService.encrypt(data: [UInt8](inputData), using: key), 
+        return await resultToDTO(
+          cryptoService.encrypt(data: [UInt8](inputData), using: key),
           operation: operation
         )
       case let .failure(error):
@@ -193,14 +194,14 @@ final class OperationsHandler {
     operation: SecurityOperation
   ) async -> SecurityResultDTO {
     // First check if we need to retrieve a key
-    let keyResult = await retrieveKeyForOperation(config)
+    let keyResult=await retrieveKeyForOperation(config)
 
     switch keyResult {
       case let .success(key):
         // Now that we have the key, extract the data to decrypt
         guard
-          let dataString = config.options?.metadata?["data"],
-          let inputData = Data(base64Encoded: dataString)
+          let dataString=config.options?.metadata?["data"],
+          let inputData=Data(base64Encoded: dataString)
         else {
           return .failure(
             errorDetails: "No ciphertext provided for decryption",
@@ -210,8 +211,8 @@ final class OperationsHandler {
         }
 
         // Perform decryption with the key and data
-        return resultToDTO(
-          await cryptoService.decrypt(data: [UInt8](inputData), using: key), 
+        return await resultToDTO(
+          cryptoService.decrypt(data: [UInt8](inputData), using: key),
           operation: operation
         )
       case let .failure(error):
@@ -234,8 +235,8 @@ final class OperationsHandler {
   ) async -> SecurityResultDTO {
     // Extract data to hash
     guard
-      let dataString = config.options?.metadata?["data"],
-      let inputData = Data(base64Encoded: dataString)
+      let dataString=config.options?.metadata?["data"],
+      let inputData=Data(base64Encoded: dataString)
     else {
       return .failure(
         errorDetails: "No data provided for hashing",
@@ -245,8 +246,8 @@ final class OperationsHandler {
     }
 
     // Perform hashing
-    return resultToDTO(
-      await cryptoService.hash(data: [UInt8](inputData)), 
+    return await resultToDTO(
+      cryptoService.hash(data: [UInt8](inputData)),
       operation: operation
     )
   }

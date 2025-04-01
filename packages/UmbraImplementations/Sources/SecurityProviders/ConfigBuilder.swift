@@ -65,31 +65,31 @@ final class ConfigBuilder {
    */
   func createConfig(options: [String: Any]?) -> SecurityConfigDTO {
     // Extract options from the dictionary or use defaults
-    let algorithmString = options?["algorithm"] as? String ?? "AES-GCM"
-    let _ = options?["keySize"] as? Int ?? 256  // Key size is handled by the enum types now
-    let hashAlgString = options?["hashAlgorithm"] as? String ?? "SHA-256"
-    let providerString = options?["providerType"] as? String ?? "Basic"
-    
+    let algorithmString=options?["algorithm"] as? String ?? "AES-GCM"
+    let _=options?["keySize"] as? Int ?? 256 // Key size is handled by the enum types now
+    let hashAlgString=options?["hashAlgorithm"] as? String ?? "SHA-256"
+    let providerString=options?["providerType"] as? String ?? "Basic"
+
     // Determine whether to enable detailed logging
-    let enableDetailedLogging = options?["enableDetailedLogging"] as? Bool ?? false
-    
+    let enableDetailedLogging=options?["enableDetailedLogging"] as? Bool ?? false
+
     // Determine key derivation iterations
-    let keyDerivationIterations = options?["keyDerivationIterations"] as? Int ?? 100_000
-    
+    let keyDerivationIterations=options?["keyDerivationIterations"] as? Int ?? 100_000
+
     // Determine memory limit for key derivation
-    let memoryLimitBytes = options?["memoryLimitBytes"] as? Int ?? 65536
-    
+    let memoryLimitBytes=options?["memoryLimitBytes"] as? Int ?? 65536
+
     // Determine whether to use hardware acceleration
-    let useHardwareAcceleration = options?["useHardwareAcceleration"] as? Bool ?? true
-    
+    let useHardwareAcceleration=options?["useHardwareAcceleration"] as? Bool ?? true
+
     // Determine operation timeout
-    let operationTimeoutSeconds = options?["operationTimeoutSeconds"] as? TimeInterval ?? 30.0
-    
+    let operationTimeoutSeconds=options?["operationTimeoutSeconds"] as? TimeInterval ?? 30.0
+
     // Determine whether to verify operations
-    let verifyOperations = options?["verifyOperations"] as? Bool ?? true
+    let verifyOperations=options?["verifyOperations"] as? Bool ?? true
 
     // Map to encryption algorithm enum
-    var encryptionAlgorithm = EncryptionAlgorithm.aes256CBC
+    var encryptionAlgorithm=EncryptionAlgorithm.aes256CBC
     if algorithmString.contains("GCM") {
       encryptionAlgorithm = .aes256GCM
     } else if algorithmString.contains("Poly1305") || algorithmString.contains("ChaCha") {
@@ -97,7 +97,7 @@ final class ConfigBuilder {
     }
 
     // Map to hash algorithm enum
-    var hashAlgorithm = HashAlgorithm.sha256
+    var hashAlgorithm=HashAlgorithm.sha256
     if hashAlgString.contains("512") {
       hashAlgorithm = .sha512
     } else if hashAlgString.lowercased().contains("blake") {
@@ -105,7 +105,7 @@ final class ConfigBuilder {
     }
 
     // Map to provider type enum
-    var providerType = SecurityProviderType.basic
+    var providerType=SecurityProviderType.basic
     switch providerString.lowercased() {
       case "cryptokit":
         providerType = .cryptoKit
@@ -120,7 +120,7 @@ final class ConfigBuilder {
     }
 
     // Create SecurityConfigOptions with the parsed values
-    let configOptions = SecurityConfigOptions(
+    let configOptions=SecurityConfigOptions(
       enableDetailedLogging: enableDetailedLogging,
       keyDerivationIterations: keyDerivationIterations,
       memoryLimitBytes: memoryLimitBytes,
@@ -151,15 +151,15 @@ final class ConfigBuilder {
   func isValidKeySize(_ keySize: Int, forAlgorithm algorithm: String) -> Bool {
     switch algorithm.uppercased() {
       case "AES":
-        return [128, 192, 256].contains(keySize)
+        [128, 192, 256].contains(keySize)
       case "CHACHA20":
-        return keySize == 256
+        keySize == 256
       case "RSA":
-        return [2048, 3072, 4096].contains(keySize)
+        [2048, 3072, 4096].contains(keySize)
       case "ECDSA", "ED25519":
-        return [256, 384, 521].contains(keySize)
+        [256, 384, 521].contains(keySize)
       default:
-        return false
+        false
     }
   }
 }
@@ -174,18 +174,18 @@ extension SecurityConfigDTO {
    */
   func withInitialisationVector(_ iv: Data) -> SecurityConfigDTO {
     // Create a new options object if needed, or use the existing one
-    var existingOptions = self.options ?? SecurityConfigOptions()
-    
+    var existingOptions=options ?? SecurityConfigOptions()
+
     // Store the IV data as a custom property in a metadata dictionary
-    var customMetadata = existingOptions.metadata ?? [:]
-    customMetadata["iv"] = iv.base64EncodedString()
-    existingOptions.metadata = customMetadata
-    
+    var customMetadata=existingOptions.metadata ?? [:]
+    customMetadata["iv"]=iv.base64EncodedString()
+    existingOptions.metadata=customMetadata
+
     // Create a new SecurityConfigDTO with updated options
     return SecurityConfigDTO(
-      encryptionAlgorithm: self.encryptionAlgorithm,
-      hashAlgorithm: self.hashAlgorithm,
-      providerType: self.providerType,
+      encryptionAlgorithm: encryptionAlgorithm,
+      hashAlgorithm: hashAlgorithm,
+      providerType: providerType,
       options: existingOptions
     )
   }
@@ -198,18 +198,18 @@ extension SecurityConfigDTO {
    */
   func withInputData(_ data: Data) -> SecurityConfigDTO {
     // Create a new options object if needed, or use the existing one
-    var existingOptions = self.options ?? SecurityConfigOptions()
-    
+    var existingOptions=options ?? SecurityConfigOptions()
+
     // Store the data as a custom property in a metadata dictionary
-    var customMetadata = existingOptions.metadata ?? [:]
-    customMetadata["data"] = data.base64EncodedString()
-    existingOptions.metadata = customMetadata
-    
+    var customMetadata=existingOptions.metadata ?? [:]
+    customMetadata["data"]=data.base64EncodedString()
+    existingOptions.metadata=customMetadata
+
     // Create a new SecurityConfigDTO with updated options
     return SecurityConfigDTO(
-      encryptionAlgorithm: self.encryptionAlgorithm,
-      hashAlgorithm: self.hashAlgorithm,
-      providerType: self.providerType,
+      encryptionAlgorithm: encryptionAlgorithm,
+      hashAlgorithm: hashAlgorithm,
+      providerType: providerType,
       options: existingOptions
     )
   }
@@ -222,18 +222,18 @@ extension SecurityConfigDTO {
    */
   func withKey(_ key: Data) -> SecurityConfigDTO {
     // Create a new options object if needed, or use the existing one
-    var existingOptions = self.options ?? SecurityConfigOptions()
-    
+    var existingOptions=options ?? SecurityConfigOptions()
+
     // Store the key data as a custom property in a metadata dictionary
-    var customMetadata = existingOptions.metadata ?? [:]
-    customMetadata["key"] = key.base64EncodedString()
-    existingOptions.metadata = customMetadata
-    
+    var customMetadata=existingOptions.metadata ?? [:]
+    customMetadata["key"]=key.base64EncodedString()
+    existingOptions.metadata=customMetadata
+
     // Create a new SecurityConfigDTO with updated options
     return SecurityConfigDTO(
-      encryptionAlgorithm: self.encryptionAlgorithm,
-      hashAlgorithm: self.hashAlgorithm,
-      providerType: self.providerType,
+      encryptionAlgorithm: encryptionAlgorithm,
+      hashAlgorithm: hashAlgorithm,
+      providerType: providerType,
       options: existingOptions
     )
   }
@@ -246,18 +246,18 @@ extension SecurityConfigDTO {
    */
   func withKeyIdentifier(_ identifier: String) -> SecurityConfigDTO {
     // Create a new options object if needed, or use the existing one
-    var existingOptions = self.options ?? SecurityConfigOptions()
-    
+    var existingOptions=options ?? SecurityConfigOptions()
+
     // Store the key identifier as a custom property in a metadata dictionary
-    var customMetadata = existingOptions.metadata ?? [:]
-    customMetadata["keyIdentifier"] = identifier
-    existingOptions.metadata = customMetadata
-    
+    var customMetadata=existingOptions.metadata ?? [:]
+    customMetadata["keyIdentifier"]=identifier
+    existingOptions.metadata=customMetadata
+
     // Create a new SecurityConfigDTO with updated options
     return SecurityConfigDTO(
-      encryptionAlgorithm: self.encryptionAlgorithm,
-      hashAlgorithm: self.hashAlgorithm,
-      providerType: self.providerType,
+      encryptionAlgorithm: encryptionAlgorithm,
+      hashAlgorithm: hashAlgorithm,
+      providerType: providerType,
       options: existingOptions
     )
   }

@@ -1,7 +1,7 @@
 import CoreSecurityTypes
+import DomainSecurityTypes
 import Foundation
 import SecurityCoreInterfaces
-import DomainSecurityTypes
 import UmbraErrors
 
 /**
@@ -40,7 +40,7 @@ public final class SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceI
   private let keyManagerImpl: KeyManagementProtocol
 
   /// Lock for thread-safe access
-  private let lock = NSLock()
+  private let lock=NSLock()
 
   // MARK: - Initialisation
 
@@ -55,8 +55,8 @@ public final class SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceI
     cryptoService: CryptoServiceProtocol,
     keyManager: KeyManagementProtocol
   ) {
-    self.cryptoServiceImpl = cryptoService
-    self.keyManagerImpl = keyManager
+    cryptoServiceImpl=cryptoService
+    keyManagerImpl=keyManager
   }
 
   /**
@@ -66,11 +66,11 @@ public final class SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceI
    */
   public func initialize() async throws {
     // Initialize any components that support AsyncServiceInitializable
-    if let initialisable = cryptoServiceImpl as? AsyncServiceInitializable {
+    if let initialisable=cryptoServiceImpl as? AsyncServiceInitializable {
       try await initialisable.initialize()
     }
 
-    if let initialisable = keyManagerImpl as? AsyncServiceInitializable {
+    if let initialisable=keyManagerImpl as? AsyncServiceInitializable {
       try await initialisable.initialize()
     }
   }
@@ -79,12 +79,12 @@ public final class SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceI
 
   /// Access to cryptographic service implementation
   public func cryptoService() async -> CryptoServiceProtocol {
-    return cryptoServiceImpl
+    cryptoServiceImpl
   }
 
   /// Access to key management service implementation
   public func keyManager() async -> KeyManagementProtocol {
-    return keyManagerImpl
+    keyManagerImpl
   }
 
   // MARK: - Thread Safety
@@ -114,32 +114,32 @@ public final class SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceI
    */
   private func getKeyForOperation(
     config: SecurityConfigDTO,
-    operation: SecurityOperation
+    operation _: SecurityOperation
   ) async throws -> [UInt8]? {
     // Check if the key is directly provided in the options
-    if let keyB64 = config.options?.metadata?["key"], let keyData = Data(base64Encoded: keyB64) {
+    if let keyB64=config.options?.metadata?["key"], let keyData=Data(base64Encoded: keyB64) {
       return [UInt8](keyData)
     }
-    
+
     // Check if a key identifier is provided to load from key manager
-    if let keyID = config.options?.metadata?["keyIdentifier"] {
-      let result = await keyManagerImpl.retrieveKey(withIdentifier: keyID)
+    if let keyID=config.options?.metadata?["keyIdentifier"] {
+      let result=await keyManagerImpl.retrieveKey(withIdentifier: keyID)
       switch result {
-        case .success(let key):
+        case let .success(key):
           return key
-        case .failure(let error):
+        case let .failure(error):
           throw SecurityProtocolError.invalidMessageFormat(
             details: "Failed to retrieve key with identifier \(keyID): \(error.localizedDescription)"
           )
       }
     }
-    
+
     // TODO: Implement more advanced key retrieval based on operation type
     return nil
   }
 
   // MARK: - SecurityProviderProtocol Core Implementation
-  
+
   /// Encrypt binary data using the provider's encryption mechanism
   /// - Parameters:
   ///   - data: Data to encrypt
@@ -147,18 +147,18 @@ public final class SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceI
   /// - Returns: Encrypted data
   /// - Throws: SecurityProtocolError if encryption fails
   public func encrypt(_ data: [UInt8], key: [UInt8]) async throws -> [UInt8] {
-    let result = await cryptoServiceImpl.encrypt(data: data, using: key)
-    
+    let result=await cryptoServiceImpl.encrypt(data: data, using: key)
+
     switch result {
-      case .success(let encryptedData):
+      case let .success(encryptedData):
         return encryptedData
-      case .failure(let error):
+      case let .failure(error):
         throw SecurityProtocolError.invalidMessageFormat(
           details: "Encryption failed: \(error.localizedDescription)"
         )
     }
   }
-  
+
   /// Decrypt binary data using the provider's decryption mechanism
   /// - Parameters:
   ///   - data: Data to decrypt
@@ -166,37 +166,37 @@ public final class SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceI
   /// - Returns: Decrypted data
   /// - Throws: SecurityProtocolError if decryption fails
   public func decrypt(_ data: [UInt8], key: [UInt8]) async throws -> [UInt8] {
-    let result = await cryptoServiceImpl.decrypt(data: data, using: key)
-    
+    let result=await cryptoServiceImpl.decrypt(data: data, using: key)
+
     switch result {
-      case .success(let decryptedData):
+      case let .success(decryptedData):
         return decryptedData
-      case .failure(let error):
+      case let .failure(error):
         throw SecurityProtocolError.invalidMessageFormat(
           details: "Decryption failed: \(error.localizedDescription)"
         )
     }
   }
-  
+
   /// Generate a cryptographically secure random key
   /// - Parameter length: Length of the key in bytes
   /// - Returns: Generated key
   /// - Throws: SecurityProtocolError if key generation fails
   public func generateKey(length: Int) async throws -> [UInt8] {
-    return try await generateRandomBytes(count: length)
+    try await generateRandomBytes(count: length)
   }
-  
+
   /// Hash data using the provider's hashing mechanism
   /// - Parameter data: Data to hash
   /// - Returns: Hash of the data
   /// - Throws: SecurityProtocolError if hashing fails
   public func hash(_ data: [UInt8]) async throws -> [UInt8] {
-    let result = await cryptoServiceImpl.hash(data: data)
-    
+    let result=await cryptoServiceImpl.hash(data: data)
+
     switch result {
-      case .success(let hashData):
+      case let .success(hashData):
         return hashData
-      case .failure(let error):
+      case let .failure(error):
         throw SecurityProtocolError.invalidMessageFormat(
           details: "Hashing failed: \(error.localizedDescription)"
         )
@@ -217,20 +217,24 @@ public final class SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceI
     guard config.options != nil else {
       throw SecurityProtocolError.invalidMessageFormat(details: "Missing configuration options")
     }
-    
-    guard let dataString = config.options?.metadata?["data"], let inputData = Data(base64Encoded: dataString) else {
-      throw SecurityProtocolError.invalidMessageFormat(details: "Missing or invalid data for encryption operation")
+
+    guard
+      let dataString=config.options?.metadata?["data"],
+      let inputData=Data(base64Encoded: dataString)
+    else {
+      throw SecurityProtocolError
+        .invalidMessageFormat(details: "Missing or invalid data for encryption operation")
     }
-    
-    guard let key = try await getKeyForOperation(config: config, operation: .encrypt) else {
+
+    guard let key=try await getKeyForOperation(config: config, operation: .encrypt) else {
       throw SecurityProtocolError.invalidState(
-        expected: "Key available", 
+        expected: "Key available",
         actual: "No key found for encryption operation"
       )
     }
 
     // Perform encryption
-    let result = await cryptoServiceImpl.encrypt(data: [UInt8](inputData), using: key)
+    let result=await cryptoServiceImpl.encrypt(data: [UInt8](inputData), using: key)
 
     // Process result
     switch result {
@@ -263,20 +267,24 @@ public final class SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceI
     guard config.options != nil else {
       throw SecurityProtocolError.invalidMessageFormat(details: "Missing configuration options")
     }
-    
-    guard let dataString = config.options?.metadata?["data"], let inputData = Data(base64Encoded: dataString) else {
-      throw SecurityProtocolError.invalidMessageFormat(details: "Missing or invalid data for decryption operation")
+
+    guard
+      let dataString=config.options?.metadata?["data"],
+      let inputData=Data(base64Encoded: dataString)
+    else {
+      throw SecurityProtocolError
+        .invalidMessageFormat(details: "Missing or invalid data for decryption operation")
     }
-    
-    guard let key = try await getKeyForOperation(config: config, operation: .decrypt) else {
+
+    guard let key=try await getKeyForOperation(config: config, operation: .decrypt) else {
       throw SecurityProtocolError.invalidState(
-        expected: "Key available", 
+        expected: "Key available",
         actual: "No key found for decryption operation"
       )
     }
 
     // Perform decryption
-    let result = await cryptoServiceImpl.decrypt(data: [UInt8](inputData), using: key)
+    let result=await cryptoServiceImpl.decrypt(data: [UInt8](inputData), using: key)
 
     // Process result
     switch result {
@@ -306,24 +314,24 @@ public final class SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceI
    */
   public func generateKey(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
     // Extract key size from config (default to 256 if not explicitly set)
-    let keySize = config.options?.metadata?["keySize"].flatMap { Int($0) } ?? 256
+    let keySize=config.options?.metadata?["keySize"].flatMap { Int($0) } ?? 256
 
     // Generate random bytes as the key
-    let keyBytes = try await generateRandomBytes(count: keySize / 8)
+    let keyBytes=try await generateRandomBytes(count: keySize / 8)
 
     // Store the key if needed
-    let keyID = UUID().uuidString
-    let storeResult = await keyManagerImpl.storeKey(keyBytes, withIdentifier: keyID)
+    let keyID=UUID().uuidString
+    let storeResult=await keyManagerImpl.storeKey(keyBytes, withIdentifier: keyID)
 
     switch storeResult {
       case .success:
         // Create metadata for the operation
-        let metadata: [String: String] = [
+        let metadata: [String: String]=[
           "keySize": "\(keySize)",
           "keyID": keyID,
           "operation": "generateRandom"
         ]
-        
+
         // Use the success factory method
         return .success(
           resultData: Data(keyBytes),
@@ -352,13 +360,17 @@ public final class SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceI
     guard config.options != nil else {
       throw SecurityProtocolError.invalidMessageFormat(details: "Missing configuration options")
     }
-    
-    guard let dataString = config.options?.metadata?["data"], let inputData = Data(base64Encoded: dataString) else {
-      throw SecurityProtocolError.invalidMessageFormat(details: "Missing or invalid data for hash operation")
+
+    guard
+      let dataString=config.options?.metadata?["data"],
+      let inputData=Data(base64Encoded: dataString)
+    else {
+      throw SecurityProtocolError
+        .invalidMessageFormat(details: "Missing or invalid data for hash operation")
     }
 
     // Perform hash operation
-    let result = await cryptoServiceImpl.hash(data: [UInt8](inputData))
+    let result=await cryptoServiceImpl.hash(data: [UInt8](inputData))
 
     // Process result
     switch result {
@@ -392,17 +404,22 @@ public final class SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceI
     guard config.options != nil else {
       throw SecurityProtocolError.invalidMessageFormat(details: "Missing configuration options")
     }
-    
-    guard let dataString = config.options?.metadata?["data"], let inputData = Data(base64Encoded: dataString) else {
-      throw SecurityProtocolError.invalidMessageFormat(details: "Missing or invalid data for secure storage operation")
+
+    guard
+      let dataString=config.options?.metadata?["data"],
+      let inputData=Data(base64Encoded: dataString)
+    else {
+      throw SecurityProtocolError
+        .invalidMessageFormat(details: "Missing or invalid data for secure storage operation")
     }
-    
-    guard let identifier = config.options?.metadata?["identifier"] else {
-      throw SecurityProtocolError.invalidMessageFormat(details: "Missing identifier for secure storage operation")
+
+    guard let identifier=config.options?.metadata?["identifier"] else {
+      throw SecurityProtocolError
+        .invalidMessageFormat(details: "Missing identifier for secure storage operation")
     }
 
     // Store the data
-    let storeResult = await keyManagerImpl.storeKey([UInt8](inputData), withIdentifier: identifier)
+    let storeResult=await keyManagerImpl.storeKey([UInt8](inputData), withIdentifier: identifier)
 
     switch storeResult {
       case .success:
@@ -435,13 +452,14 @@ public final class SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceI
     guard config.options != nil else {
       throw SecurityProtocolError.invalidMessageFormat(details: "Missing configuration options")
     }
-    
-    guard let identifier = config.options?.metadata?["identifier"] else {
-      throw SecurityProtocolError.invalidMessageFormat(details: "Missing identifier for secure retrieval operation")
+
+    guard let identifier=config.options?.metadata?["identifier"] else {
+      throw SecurityProtocolError
+        .invalidMessageFormat(details: "Missing identifier for secure retrieval operation")
     }
 
     // Retrieve the data
-    let retrieveResult = await keyManagerImpl.retrieveKey(withIdentifier: identifier)
+    let retrieveResult=await keyManagerImpl.retrieveKey(withIdentifier: identifier)
 
     switch retrieveResult {
       case let .success(data):
@@ -474,13 +492,14 @@ public final class SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceI
     guard config.options != nil else {
       throw SecurityProtocolError.invalidMessageFormat(details: "Missing configuration options")
     }
-    
-    guard let identifier = config.options?.metadata?["identifier"] else {
-      throw SecurityProtocolError.invalidMessageFormat(details: "Missing identifier for secure deletion operation")
+
+    guard let identifier=config.options?.metadata?["identifier"] else {
+      throw SecurityProtocolError
+        .invalidMessageFormat(details: "Missing identifier for secure deletion operation")
     }
 
     // Delete the data
-    let deleteResult = await keyManagerImpl.deleteKey(withIdentifier: identifier)
+    let deleteResult=await keyManagerImpl.deleteKey(withIdentifier: identifier)
 
     switch deleteResult {
       case .success:
@@ -513,21 +532,25 @@ public final class SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceI
     guard config.options != nil else {
       throw SecurityProtocolError.invalidMessageFormat(details: "Missing configuration options")
     }
-    
-    guard let dataString = config.options?.metadata?["data"], let inputData = Data(base64Encoded: dataString) else {
-      throw SecurityProtocolError.invalidMessageFormat(details: "Missing or invalid data for sign operation")
+
+    guard
+      let dataString=config.options?.metadata?["data"],
+      let inputData=Data(base64Encoded: dataString)
+    else {
+      throw SecurityProtocolError
+        .invalidMessageFormat(details: "Missing or invalid data for sign operation")
     }
-    
-    guard let key = try await getKeyForOperation(config: config, operation: .sign) else {
+
+    guard let key=try await getKeyForOperation(config: config, operation: .sign) else {
       throw SecurityProtocolError.invalidState(
-        expected: "Key available", 
+        expected: "Key available",
         actual: "No key found for sign operation"
       )
     }
 
     // For now, we'll just return a basic HMAC as signature since full signing implementation
     // would depend on specific algorithms that might not be in scope
-    let result = await cryptoServiceImpl.hash(data: [UInt8](inputData) + key)
+    let result=await cryptoServiceImpl.hash(data: [UInt8](inputData) + key)
 
     switch result {
       case let .success(signatureData):
@@ -560,30 +583,38 @@ public final class SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceI
     guard config.options != nil else {
       throw SecurityProtocolError.invalidMessageFormat(details: "Missing configuration options")
     }
-    
-    guard let dataString = config.options?.metadata?["data"], let inputData = Data(base64Encoded: dataString) else {
-      throw SecurityProtocolError.invalidMessageFormat(details: "Missing or invalid data for verification operation")
+
+    guard
+      let dataString=config.options?.metadata?["data"],
+      let inputData=Data(base64Encoded: dataString)
+    else {
+      throw SecurityProtocolError
+        .invalidMessageFormat(details: "Missing or invalid data for verification operation")
     }
-    
-    guard let signatureString = config.options?.metadata?["signature"], let signatureData = Data(base64Encoded: signatureString) else {
-      throw SecurityProtocolError.invalidMessageFormat(details: "Missing or invalid signature for verification operation")
+
+    guard
+      let signatureString=config.options?.metadata?["signature"],
+      let signatureData=Data(base64Encoded: signatureString)
+    else {
+      throw SecurityProtocolError
+        .invalidMessageFormat(details: "Missing or invalid signature for verification operation")
     }
-    
-    guard let key = try await getKeyForOperation(config: config, operation: .verify) else {
+
+    guard let key=try await getKeyForOperation(config: config, operation: .verify) else {
       throw SecurityProtocolError.invalidState(
-        expected: "Key available", 
+        expected: "Key available",
         actual: "No key found for verification operation"
       )
     }
 
     // For now, we'll use a simple approach similar to the sign operation
-    let result = await cryptoServiceImpl.hash(data: [UInt8](inputData) + key)
+    let result=await cryptoServiceImpl.hash(data: [UInt8](inputData) + key)
 
     switch result {
       case let .success(computedSignature):
         // Compare the computed signature with the provided one
-        let isValid = compareBytes([UInt8](signatureData), computedSignature)
-        
+        let isValid=compareBytes([UInt8](signatureData), computedSignature)
+
         return .success(
           resultData: nil,
           executionTimeMs: 0,
@@ -651,33 +682,31 @@ public final class SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceI
    */
   public func createSecureConfig(options: SecurityConfigOptions) async -> SecurityConfigDTO {
     // Map security options to the appropriate enum values
-    
+
     // Determine the encryption algorithm based on the hardware acceleration setting
-    let encryption: EncryptionAlgorithm
-    if options.useHardwareAcceleration {
-      encryption = .aes256GCM  // Hardware-accelerated GCM is often available
+    let encryption: EncryptionAlgorithm=if options.useHardwareAcceleration {
+      .aes256GCM // Hardware-accelerated GCM is often available
     } else {
-      encryption = .aes256CBC  // CBC as fallback for software implementations
-    }
-    
-    // Determine the hash algorithm based on the key derivation iterations
-    let hash: HashAlgorithm
-    if options.keyDerivationIterations > 200_000 {
-      hash = .sha512  // Use stronger hash for high-security settings
-    } else {
-      hash = .sha256  // Default hash
-    }
-    
-    // Determine provider type based on hardware acceleration
-    let provider: SecurityProviderType
-    if options.useHardwareAcceleration {
-      provider = .cryptoKit  // CryptoKit supports hardware acceleration on Apple platforms
-    } else {
-      provider = .basic  // Basic provider for software-only implementations
+      .aes256CBC // CBC as fallback for software implementations
     }
 
-    // Create a new SecurityConfigOptions instance with the same settings but ensure metadata is preserved
-    let configOptions = SecurityConfigOptions(
+    // Determine the hash algorithm based on the key derivation iterations
+    let hash: HashAlgorithm=if options.keyDerivationIterations > 200_000 {
+      .sha512 // Use stronger hash for high-security settings
+    } else {
+      .sha256 // Default hash
+    }
+
+    // Determine provider type based on hardware acceleration
+    let provider: SecurityProviderType=if options.useHardwareAcceleration {
+      .cryptoKit // CryptoKit supports hardware acceleration on Apple platforms
+    } else {
+      .basic // Basic provider for software-only implementations
+    }
+
+    // Create a new SecurityConfigOptions instance with the same settings but ensure metadata is
+    // preserved
+    let configOptions=SecurityConfigOptions(
       enableDetailedLogging: options.enableDetailedLogging,
       keyDerivationIterations: options.keyDerivationIterations,
       memoryLimitBytes: options.memoryLimitBytes,
@@ -704,8 +733,8 @@ public final class SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceI
    - Throws: Error if random generation fails
    */
   private func generateRandomBytes(count: Int) async throws -> [UInt8] {
-    var bytes = [UInt8](repeating: 0, count: count)
-    let status = SecRandomCopyBytes(kSecRandomDefault, count, &bytes)
+    var bytes=[UInt8](repeating: 0, count: count)
+    let status=SecRandomCopyBytes(kSecRandomDefault, count, &bytes)
 
     guard status == errSecSuccess else {
       throw SecurityProtocolError.invalidMessageFormat(
@@ -728,11 +757,11 @@ public final class SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceI
     guard bytes1.count == bytes2.count else { return false }
 
     // Using a constant-time comparison to prevent timing attacks
-    var result: UInt8 = 0
+    var result: UInt8=0
     for i in 0..<bytes1.count {
       result |= bytes1[i] ^ bytes2[i]
     }
-    
+
     return result == 0
   }
 }

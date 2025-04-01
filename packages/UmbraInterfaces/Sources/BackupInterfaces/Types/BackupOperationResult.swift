@@ -28,12 +28,12 @@ Success: Equatable {
    */
   public init(
     value: Success,
-    progressStream: AsyncStream<BackupProgressInfo>? = nil,
-    metadata: BackupOperationMetadata? = nil
+    progressStream: AsyncStream<BackupProgressInfo>?=nil,
+    metadata: BackupOperationMetadata?=nil
   ) {
-    self.value = value
-    self.progressStream = progressStream
-    self.metadata = metadata
+    self.value=value
+    self.progressStream=progressStream
+    self.metadata=metadata
   }
 
   /**
@@ -47,18 +47,18 @@ Success: Equatable {
    */
   public init(
     value: Success,
-    progressStream: AsyncStream<BackupProgressInfo>? = nil,
+    progressStream: AsyncStream<BackupProgressInfo>?=nil,
     operationType: String,
-    additionalInfo: [String: String] = [:]
+    additionalInfo: [String: String]=[:]
   ) {
-    let now = Date()
-    let metadata = BackupOperationMetadata(
+    let now=Date()
+    let metadata=BackupOperationMetadata(
       startTime: now,
       endTime: now,
       metadata: [.operationType: operationType],
       additionalInfo: additionalInfo
     )
-    
+
     self.init(
       value: value,
       progressStream: progressStream,
@@ -83,7 +83,7 @@ Success: Equatable {
   ) -> Bool {
     // Compare only the value and metadata, not the progressStream
     // as AsyncStream doesn't conform to Equatable
-    let metadataEqual: Bool = switch (lhs.metadata, rhs.metadata) {
+    let metadataEqual: Bool=switch (lhs.metadata, rhs.metadata) {
       case (.none, .none):
         true
       case let (.some(lhsMetadata), .some(rhsMetadata)):
@@ -94,7 +94,7 @@ Success: Equatable {
 
     return lhs.value == rhs.value && metadataEqual
   }
-  
+
   /**
    * Returns a new response with updated metadata.
    *
@@ -102,13 +102,13 @@ Success: Equatable {
    * - Returns: A new response with the updated metadata
    */
   public func with(metadata: BackupOperationMetadata) -> BackupOperationResponse<Success> {
-    return BackupOperationResponse(
-      value: self.value,
-      progressStream: self.progressStream,
+    BackupOperationResponse(
+      value: value,
+      progressStream: progressStream,
       metadata: metadata
     )
   }
-  
+
   /**
    * Returns a new response with the specified metadata key-value added.
    *
@@ -121,17 +121,17 @@ Success: Equatable {
     key: BackupOperationMetadata.MetadataKey,
     value: String
   ) -> BackupOperationResponse<Success> {
-    guard let existingMetadata = metadata else {
+    guard let existingMetadata=metadata else {
       // If no metadata exists, create new metadata with current timestamp
-      let now = Date()
-      let newMetadata = BackupOperationMetadata(
+      let now=Date()
+      let newMetadata=BackupOperationMetadata(
         startTime: now,
         endTime: now,
         metadata: [key: value]
       )
       return with(metadata: newMetadata)
     }
-    
+
     return with(metadata: existingMetadata.with(key: key, value: value))
   }
 }
@@ -170,14 +170,14 @@ public struct BackupOperationMetadata: Sendable, Equatable {
   public init(
     startTime: Date,
     endTime: Date,
-    metadata: [MetadataKey: String] = [:],
-    additionalInfo: [String: String] = [:]
+    metadata: [MetadataKey: String]=[:],
+    additionalInfo: [String: String]=[:]
   ) {
-    self.startTime = startTime
-    self.endTime = endTime
-    self.duration = endTime.timeIntervalSince(startTime)
-    self.operationType = metadata[.operationType]
-    self.additionalInfo = additionalInfo
+    self.startTime=startTime
+    self.endTime=endTime
+    duration=endTime.timeIntervalSince(startTime)
+    operationType=metadata[.operationType]
+    self.additionalInfo=additionalInfo
   }
 
   public enum MetadataKey: String, Equatable, Hashable {
@@ -193,8 +193,8 @@ public struct BackupOperationMetadata: Sendable, Equatable {
    * - Returns: A new metadata with the added key-value
    */
   public func with(key: MetadataKey, value: String) -> BackupOperationMetadata {
-    var newMetadata = self
-    newMetadata.additionalInfo[key.rawValue] = value
+    var newMetadata=self
+    newMetadata.additionalInfo[key.rawValue]=value
     return newMetadata
   }
 }

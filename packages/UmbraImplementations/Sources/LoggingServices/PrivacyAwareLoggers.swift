@@ -29,7 +29,7 @@ public protocol DomainLogger: Sendable {
 
   /**
    Logs a loggable error with enhanced privacy controls.
-   
+
    - Parameters:
      - error: The error to log.
      - severity: The severity to use.
@@ -50,21 +50,21 @@ public struct BaseDomainLogger: DomainLogger {
   /// Create a new domain logger
   /// - Parameter logger: The underlying logging protocol
   public init(logger: LoggingProtocol) {
-    self.logger = logger
+    self.logger=logger
   }
 
   /**
    Logs an operation start with contextual information.
-   
+
    - Parameters:
       - context: The domain-specific log context
       - message: Optional custom message
    */
-  public func logOperationStart<T: LogContextDTO>(
-    context: T,
-    message: String? = nil
+  public func logOperationStart(
+    context: some LogContextDTO,
+    message: String?=nil
   ) async {
-    let logMessage = message ?? "Starting operation"
+    let logMessage=message ?? "Starting operation"
     await logger.info(
       logMessage,
       metadata: context.toPrivacyMetadata(),
@@ -74,75 +74,75 @@ public struct BaseDomainLogger: DomainLogger {
 
   /**
    Logs an operation success with contextual information.
-   
+
    - Parameters:
       - context: The domain-specific log context
       - result: Optional operation result
       - message: Optional custom message
    */
-  public func logOperationSuccess<T: LogContextDTO, R>(
-    context: T,
-    result: R?,
-    message: String? = nil
+  public func logOperationSuccess(
+    context: some LogContextDTO,
+    result: (some Any)?,
+    message: String?=nil
   ) async {
-    var metadata = context.toPrivacyMetadata()
+    var metadata=context.toPrivacyMetadata()
 
     if let result {
       // Add result information if available and convertible to string
-      if let stringValue = result as? CustomStringConvertible {
-        metadata["result"] = PrivacyMetadataValue(
+      if let stringValue=result as? CustomStringConvertible {
+        metadata["result"]=PrivacyMetadataValue(
           value: stringValue.description,
           privacy: .private
         )
       }
     }
 
-    let logMessage = message ?? "Operation completed successfully"
+    let logMessage=message ?? "Operation completed successfully"
     await logger.info(logMessage, metadata: metadata, source: context.getSource())
   }
 
   /**
    Logs an operation error with contextual information.
-   
+
    - Parameters:
       - context: The domain-specific log context
       - error: The error that occurred
       - message: Optional custom message
    */
-  public func logOperationError<T: LogContextDTO>(
-    context: T,
+  public func logOperationError(
+    context: some LogContextDTO,
     error: Error,
-    message: String? = nil
+    message: String?=nil
   ) async {
-    var metadata = context.toPrivacyMetadata()
+    var metadata=context.toPrivacyMetadata()
 
-    if let loggableError = error as? LoggableError {
+    if let loggableError=error as? LoggableError {
       // Merge the privacy-aware error metadata
-      let errorMetadata = loggableError.getPrivacyMetadata()
+      let errorMetadata=loggableError.getPrivacyMetadata()
       for key in errorMetadata.entries() {
-        if let value = errorMetadata[key] {
-          metadata[key] = value
+        if let value=errorMetadata[key] {
+          metadata[key]=value
         }
       }
     } else {
       // Handle standard errors
-      metadata["errorDescription"] = PrivacyMetadataValue(
+      metadata["errorDescription"]=PrivacyMetadataValue(
         value: error.localizedDescription,
         privacy: .private
       )
-      metadata["errorType"] = PrivacyMetadataValue(
+      metadata["errorType"]=PrivacyMetadataValue(
         value: String(describing: type(of: error)),
         privacy: .private
       )
     }
 
-    let logMessage = message ?? "Operation failed"
+    let logMessage=message ?? "Operation failed"
     await logger.error(logMessage, metadata: metadata, source: context.getSource())
   }
 
   /**
    Logs a loggable error with enhanced privacy controls.
-   
+
    - Parameters:
      - error: The error to log.
      - severity: The severity to use.
@@ -151,17 +151,17 @@ public struct BaseDomainLogger: DomainLogger {
   public func logLoggableError(
     _ error: LoggableError,
     severity: LogLevel,
-    message: String? = nil
+    message: String?=nil
   ) async {
     // Use the error's built-in privacy metadata
-    let metadata = error.getPrivacyMetadata()
-    
+    let metadata=error.getPrivacyMetadata()
+
     // Get source information if available
-    let source = error.getSource()
-    
+    let source=error.getSource()
+
     // Get the message or use the error's log message
-    let logMessage = message ?? error.getLogMessage()
-    
+    let logMessage=message ?? error.getLogMessage()
+
     // Log the error
     await logger.log(severity, logMessage, metadata: metadata, source: source)
   }
@@ -175,7 +175,7 @@ public struct SnapshotLogger {
   /// Create a new snapshot logger
   /// - Parameter logger: The underlying logging protocol
   public init(logger: LoggingProtocol) {
-    domainLogger = BaseDomainLogger(logger: logger)
+    domainLogger=BaseDomainLogger(logger: logger)
   }
 
   /// Log a snapshot operation start
@@ -187,16 +187,16 @@ public struct SnapshotLogger {
   public func logOperationStart(
     snapshotID: String,
     operation: String,
-    additionalContext: LogMetadataDTOCollection = LogMetadataDTOCollection(),
-    message: String? = nil
+    additionalContext: LogMetadataDTOCollection=LogMetadataDTOCollection(),
+    message: String?=nil
   ) async {
-    let context = SnapshotLogContext(
+    let context=SnapshotLogContext(
       snapshotID: snapshotID,
       operation: operation,
       additionalContext: additionalContext
     )
 
-    let defaultMessage = "Starting snapshot \(operation) operation"
+    let defaultMessage="Starting snapshot \(operation) operation"
     await domainLogger.logOperationStart(context: context, message: message ?? defaultMessage)
   }
 
@@ -210,17 +210,17 @@ public struct SnapshotLogger {
   public func logOperationSuccess(
     snapshotID: String,
     operation: String,
-    result: (some Sendable)? = nil,
-    additionalContext: LogMetadataDTOCollection = LogMetadataDTOCollection(),
-    message: String? = nil
+    result: (some Sendable)?=nil,
+    additionalContext: LogMetadataDTOCollection=LogMetadataDTOCollection(),
+    message: String?=nil
   ) async {
-    let context = SnapshotLogContext(
+    let context=SnapshotLogContext(
       snapshotID: snapshotID,
       operation: operation,
       additionalContext: additionalContext
     )
 
-    let defaultMessage = "Snapshot \(operation) completed successfully"
+    let defaultMessage="Snapshot \(operation) completed successfully"
     await domainLogger.logOperationSuccess(
       context: context,
       result: result,
@@ -239,16 +239,16 @@ public struct SnapshotLogger {
     snapshotID: String,
     operation: String,
     error: Error,
-    additionalContext: LogMetadataDTOCollection = LogMetadataDTOCollection(),
-    message: String? = nil
+    additionalContext: LogMetadataDTOCollection=LogMetadataDTOCollection(),
+    message: String?=nil
   ) async {
-    let context = SnapshotLogContext(
+    let context=SnapshotLogContext(
       snapshotID: snapshotID,
       operation: operation,
       additionalContext: additionalContext
     )
 
-    let defaultMessage = "Snapshot \(operation) operation failed"
+    let defaultMessage="Snapshot \(operation) operation failed"
     await domainLogger.logOperationError(
       context: context,
       error: error,
@@ -265,7 +265,7 @@ public struct KeyManagementLogger {
   /// Create a new key management logger
   /// - Parameter logger: The underlying logging protocol
   public init(logger: LoggingProtocol) {
-    domainLogger = BaseDomainLogger(logger: logger)
+    domainLogger=BaseDomainLogger(logger: logger)
   }
 
   /// Log a key management operation start
@@ -277,16 +277,16 @@ public struct KeyManagementLogger {
   public func logOperationStart(
     keyIdentifier: String,
     operation: String,
-    additionalContext: LogMetadataDTOCollection = LogMetadataDTOCollection(),
-    message: String? = nil
+    additionalContext: LogMetadataDTOCollection=LogMetadataDTOCollection(),
+    message: String?=nil
   ) async {
-    let context = KeyManagementLogContext(
+    let context=KeyManagementLogContext(
       keyIdentifier: keyIdentifier,
       operation: operation,
       additionalContext: additionalContext
     )
 
-    let defaultMessage = "Starting key \(operation) operation"
+    let defaultMessage="Starting key \(operation) operation"
     await domainLogger.logOperationStart(context: context, message: message ?? defaultMessage)
   }
 
@@ -300,17 +300,17 @@ public struct KeyManagementLogger {
   public func logOperationSuccess(
     keyIdentifier: String,
     operation: String,
-    result: (some Sendable)? = nil,
-    additionalContext: LogMetadataDTOCollection = LogMetadataDTOCollection(),
-    message: String? = nil
+    result: (some Sendable)?=nil,
+    additionalContext: LogMetadataDTOCollection=LogMetadataDTOCollection(),
+    message: String?=nil
   ) async {
-    let context = KeyManagementLogContext(
+    let context=KeyManagementLogContext(
       keyIdentifier: keyIdentifier,
       operation: operation,
       additionalContext: additionalContext
     )
 
-    let defaultMessage = "Key \(operation) completed successfully"
+    let defaultMessage="Key \(operation) completed successfully"
     await domainLogger.logOperationSuccess(
       context: context,
       result: result,
@@ -329,16 +329,16 @@ public struct KeyManagementLogger {
     keyIdentifier: String,
     operation: String,
     error: Error,
-    additionalContext: LogMetadataDTOCollection = LogMetadataDTOCollection(),
-    message: String? = nil
+    additionalContext: LogMetadataDTOCollection=LogMetadataDTOCollection(),
+    message: String?=nil
   ) async {
-    let context = KeyManagementLogContext(
+    let context=KeyManagementLogContext(
       keyIdentifier: keyIdentifier,
       operation: operation,
       additionalContext: additionalContext
     )
 
-    let defaultMessage = "Key \(operation) operation failed"
+    let defaultMessage="Key \(operation) operation failed"
     await domainLogger.logOperationError(
       context: context,
       error: error,
@@ -362,9 +362,9 @@ public struct KeychainLogger {
    - Parameter logger: The underlying logger to use for logging operations.
    - Parameter domain: The domain for this logger.
    */
-  public init(logger: LoggingProtocol, domain: String = "Keychain") {
-    self.logger = logger
-    self.domain = domain
+  public init(logger: LoggingProtocol, domain: String="Keychain") {
+    self.logger=logger
+    self.domain=domain
   }
 
   /**
@@ -380,44 +380,44 @@ public struct KeychainLogger {
   public func logOperationStart(
     account: String,
     operation: String,
-    keyIdentifier: String? = nil,
-    additionalContext: LogMetadataDTOCollection? = nil,
-    message: String? = nil
+    keyIdentifier: String?=nil,
+    additionalContext: LogMetadataDTOCollection?=nil,
+    message: String?=nil
   ) async {
     // Create base metadata with operation information
-    var context = LogMetadataDTOCollection()
+    var context=LogMetadataDTOCollection()
       .withPrivate(key: "account", value: account)
       .withPublic(key: "operation", value: operation)
-    
+
     // Add key identifier if available
     if let keyIdentifier {
-      context = context.withPrivate(key: "keyIdentifier", value: keyIdentifier)
+      context=context.withPrivate(key: "keyIdentifier", value: keyIdentifier)
     }
-    
+
     // Merge with additional context if provided
     if let additionalContext {
-      context = context.merging(with: additionalContext)
+      context=context.merging(with: additionalContext)
     }
-    
+
     // Create the keychain context
-    let keychainContext = KeychainLogContext(
+    let keychainContext=KeychainLogContext(
       account: account,
       operation: operation,
       additionalContext: context
     )
 
     // Create the log message
-    let defaultMessage = "Starting keychain operation: \(operation)"
-    let logMessage = message ?? defaultMessage
-    let source = keychainContext.source ?? "KeychainLogger.\(#function)"
-    
+    let defaultMessage="Starting keychain operation: \(operation)"
+    let logMessage=message ?? defaultMessage
+    let source=keychainContext.source ?? "KeychainLogger.\(#function)"
+
     // Extract privacy metadata for logging
-    let privacyMetadata = keychainContext.metadata.toPrivacyMetadata()
-    
+    let privacyMetadata=keychainContext.metadata.toPrivacyMetadata()
+
     // Log the operation start
     await logger.info(logMessage, metadata: privacyMetadata, source: source)
   }
-  
+
   /**
    Logs an error that occurred during a keychain operation.
 
@@ -433,42 +433,42 @@ public struct KeychainLogger {
     account: String,
     operation: String,
     error: Error,
-    keyIdentifier: String? = nil,
-    additionalContext: LogMetadataDTOCollection? = nil,
-    message: String? = nil
+    keyIdentifier: String?=nil,
+    additionalContext: LogMetadataDTOCollection?=nil,
+    message: String?=nil
   ) async {
     // Create base metadata with operation and error information
-    var context = LogMetadataDTOCollection()
+    var context=LogMetadataDTOCollection()
       .withPrivate(key: "account", value: account)
       .withPublic(key: "operation", value: operation)
       .withPrivate(key: "error", value: error.localizedDescription)
       .withPrivate(key: "errorType", value: String(describing: type(of: error)))
-    
+
     // Add key identifier if available
     if let keyIdentifier {
-      context = context.withPrivate(key: "keyIdentifier", value: keyIdentifier)
+      context=context.withPrivate(key: "keyIdentifier", value: keyIdentifier)
     }
-    
+
     // Merge with additional context if provided
     if let additionalContext {
-      context = context.merging(with: additionalContext)
+      context=context.merging(with: additionalContext)
     }
-    
+
     // Create the keychain context
-    let keychainContext = KeychainLogContext(
+    let keychainContext=KeychainLogContext(
       account: account,
       operation: operation,
       additionalContext: context
     )
-    
+
     // Create the log message
-    let defaultMessage = "Error during keychain operation: \(operation)"
-    let logMessage = message ?? defaultMessage
-    let source = keychainContext.source ?? "KeychainLogger.\(#function)"
-    
+    let defaultMessage="Error during keychain operation: \(operation)"
+    let logMessage=message ?? defaultMessage
+    let source=keychainContext.source ?? "KeychainLogger.\(#function)"
+
     // Extract privacy metadata for logging
-    let privacyMetadata = keychainContext.metadata.toPrivacyMetadata()
-    
+    let privacyMetadata=keychainContext.metadata.toPrivacyMetadata()
+
     // Log the error
     await logger.error(logMessage, metadata: privacyMetadata, source: source)
   }
@@ -485,19 +485,19 @@ public struct CryptoLogger {
 
   /**
    Initialises a new instance of CryptoLogger.
-   
+
    - Parameters:
       - logger: The underlying logger to use.
       - domain: The domain for this logger.
    */
-  public init(logger: LoggingProtocol, domain: String = "Crypto") {
-    self.logger = logger
-    self.domain = domain
+  public init(logger: LoggingProtocol, domain: String="Crypto") {
+    self.logger=logger
+    self.domain=domain
   }
 
   /**
    Logs a cryptographic operation start with enhanced privacy controls.
-   
+
    - Parameters:
       - operation: The operation being performed.
       - algorithm: Optional cryptographic algorithm used.
@@ -507,52 +507,52 @@ public struct CryptoLogger {
    */
   public func logOperationStart(
     operation: String,
-    algorithm: String? = nil,
-    keyID: String? = nil,
-    additionalContext: LogMetadataDTOCollection? = nil,
-    message: String? = nil
+    algorithm: String?=nil,
+    keyID: String?=nil,
+    additionalContext: LogMetadataDTOCollection?=nil,
+    message: String?=nil
   ) async {
     // Create base metadata with operation information
-    var context = LogMetadataDTOCollection()
+    var context=LogMetadataDTOCollection()
       .withPublic(key: "operation", value: operation)
-    
+
     // Add algorithm information if available
     if let algorithm {
-      context = context.withPublic(key: "algorithm", value: algorithm)
+      context=context.withPublic(key: "algorithm", value: algorithm)
     }
-    
+
     // Add key ID if available (as private data)
     if let keyID {
-      context = context.withPrivate(key: "keyID", value: keyID)
+      context=context.withPrivate(key: "keyID", value: keyID)
     }
-    
+
     // Merge with additional context if provided
     if let additionalContext {
-      context = context.merging(with: additionalContext)
+      context=context.merging(with: additionalContext)
     }
-    
+
     // Create the crypto context
-    let cryptoContext = CryptoLogContext(
+    let cryptoContext=CryptoLogContext(
       operation: operation,
       algorithm: algorithm,
       additionalContext: context
     )
-    
+
     // Create the log message
-    let defaultMessage = "Starting cryptographic operation: \(operation)"
-    let logMessage = message ?? defaultMessage
-    let source = cryptoContext.source ?? "CryptoLogger.\(#function)"
-    
+    let defaultMessage="Starting cryptographic operation: \(operation)"
+    let logMessage=message ?? defaultMessage
+    let source=cryptoContext.source ?? "CryptoLogger.\(#function)"
+
     // Extract privacy metadata for logging
-    let privacyMetadata = cryptoContext.metadata.toPrivacyMetadata()
-    
+    let privacyMetadata=cryptoContext.metadata.toPrivacyMetadata()
+
     // Log the operation start
     await logger.info(logMessage, metadata: privacyMetadata, source: source)
   }
-  
+
   /**
    Logs an error that occurred during a cryptographic operation.
-   
+
    - Parameters:
       - operation: The operation during which the error occurred.
       - error: The error that occurred.
@@ -564,47 +564,47 @@ public struct CryptoLogger {
   public func logError(
     operation: String,
     error: Error,
-    algorithm: String? = nil,
-    keyID: String? = nil,
-    additionalContext: LogMetadataDTOCollection? = nil,
-    message: String? = nil
+    algorithm: String?=nil,
+    keyID: String?=nil,
+    additionalContext: LogMetadataDTOCollection?=nil,
+    message: String?=nil
   ) async {
     // Create base metadata with operation and error information
-    var context = LogMetadataDTOCollection()
+    var context=LogMetadataDTOCollection()
       .withPublic(key: "operation", value: operation)
       .withPrivate(key: "error", value: error.localizedDescription)
       .withPrivate(key: "errorType", value: String(describing: type(of: error)))
-    
+
     // Add algorithm information if available
     if let algorithm {
-      context = context.withPublic(key: "algorithm", value: algorithm)
+      context=context.withPublic(key: "algorithm", value: algorithm)
     }
-    
+
     // Add key ID if available (as private data)
     if let keyID {
-      context = context.withPrivate(key: "keyID", value: keyID)
+      context=context.withPrivate(key: "keyID", value: keyID)
     }
-    
+
     // Merge with additional context if provided
     if let additionalContext {
-      context = context.merging(with: additionalContext)
+      context=context.merging(with: additionalContext)
     }
-    
+
     // Create the crypto context
-    let cryptoContext = CryptoLogContext(
+    let cryptoContext=CryptoLogContext(
       operation: operation,
       algorithm: algorithm,
       additionalContext: context
     )
-    
+
     // Create the log message
-    let defaultMessage = "Error during cryptographic operation: \(operation)"
-    let logMessage = message ?? defaultMessage
-    let source = cryptoContext.source ?? "CryptoLogger.\(#function)"
-    
+    let defaultMessage="Error during cryptographic operation: \(operation)"
+    let logMessage=message ?? defaultMessage
+    let source=cryptoContext.source ?? "CryptoLogger.\(#function)"
+
     // Extract privacy metadata for logging
-    let privacyMetadata = cryptoContext.metadata.toPrivacyMetadata()
-    
+    let privacyMetadata=cryptoContext.metadata.toPrivacyMetadata()
+
     // Log the error
     await logger.error(logMessage, metadata: privacyMetadata, source: source)
   }
@@ -618,19 +618,19 @@ public struct CryptoLogger {
  */
 public class EnhancedErrorLogger: ErrorLoggingProtocol {
   private let logger: LoggingProtocol
-  
+
   /**
    Initialises a new instance of EnhancedErrorLogger.
-   
+
    - Parameter logger: The underlying logger to use.
    */
   public init(logger: LoggingProtocol) {
-    self.logger = logger
+    self.logger=logger
   }
-  
+
   /**
    Logs a loggable error with enhanced privacy controls.
-   
+
    - Parameters:
      - error: The loggable error to log.
      - level: The log level to use.
@@ -641,16 +641,16 @@ public class EnhancedErrorLogger: ErrorLoggingProtocol {
     level: LogLevel,
     message: String?
   ) async {
-    let metadata = error.getPrivacyMetadata()
-    let source = error.getSource()
-    let logMessage = message ?? error.getLogMessage()
-    
+    let metadata=error.getPrivacyMetadata()
+    let source=error.getSource()
+    let logMessage=message ?? error.getLogMessage()
+
     await logger.log(level, logMessage, metadata: metadata, source: source)
   }
-  
+
   /**
    Logs an error with privacy controls.
-   
+
    - Parameters:
      - error: The error to log.
      - level: The log level to use.
@@ -665,13 +665,13 @@ public class EnhancedErrorLogger: ErrorLoggingProtocol {
     source: String,
     message: String?
   ) async {
-    let logMessage = message ?? "Error: \(error.localizedDescription)"
+    let logMessage=message ?? "Error: \(error.localizedDescription)"
     await logger.log(level, logMessage, metadata: metadata, source: source)
   }
-  
+
   /**
    Logs an error with contextual information.
-   
+
    - Parameters:
      - error: The error to log.
      - context: The error context containing privacy metadata.
@@ -680,18 +680,18 @@ public class EnhancedErrorLogger: ErrorLoggingProtocol {
   public func logContextualError(
     _ error: Error,
     context: ErrorLogContext,
-    message: String? = nil
+    message: String?=nil
   ) async {
-    let metadata = context.metadata.toPrivacyMetadata()
-    let source = context.source ?? #function
-    let logMessage = message ?? "Error in \(context.domainName): \(error.localizedDescription)"
-    
+    let metadata=context.metadata.toPrivacyMetadata()
+    let source=context.source ?? #function
+    let logMessage=message ?? "Error in \(context.domainName): \(error.localizedDescription)"
+
     await logger.error(logMessage, metadata: metadata, source: source)
   }
-  
+
   /**
    Logs a structured error with enhanced privacy controls.
-   
+
    - Parameters:
       - error: The error to log.
       - level: The log level to use (default: .error).
@@ -701,39 +701,39 @@ public class EnhancedErrorLogger: ErrorLoggingProtocol {
   public func logStructuredError(
     _ error: Error,
     level: LogLevel = .error,
-    message: String? = nil,
-    source: String? = nil
+    message: String?=nil,
+    source: String?=nil
   ) async {
-    if let loggableError = error as? LoggableError {
+    if let loggableError=error as? LoggableError {
       // Use the error's built-in privacy metadata
-      let metadata = loggableError.getPrivacyMetadata()
-      
+      let metadata=loggableError.getPrivacyMetadata()
+
       // Get source information if available
-      let errorSource = source ?? loggableError.getSource()
-      
+      let errorSource=source ?? loggableError.getSource()
+
       // Use the provided message or the error's log message
-      let logMessage = message ?? loggableError.getLogMessage()
-      
+      let logMessage=message ?? loggableError.getLogMessage()
+
       // Log the structured error
       await logger.log(level, logMessage, metadata: metadata, source: errorSource)
     } else {
       // For standard errors, create basic metadata
-      var metadata = PrivacyMetadata()
-      metadata["errorDescription"] = PrivacyMetadataValue(
+      var metadata=PrivacyMetadata()
+      metadata["errorDescription"]=PrivacyMetadataValue(
         value: error.localizedDescription,
         privacy: .private
       )
-      metadata["errorType"] = PrivacyMetadataValue(
+      metadata["errorType"]=PrivacyMetadataValue(
         value: String(describing: type(of: error)),
         privacy: .public
       )
-      
+
       // Create a default message if none provided
-      let logMessage = message ?? "Error: \(error.localizedDescription)"
-      
+      let logMessage=message ?? "Error: \(error.localizedDescription)"
+
       // Use provided source or fallback
-      let errorSource = source ?? "\(type(of: self)).\(#function)"
-      
+      let errorSource=source ?? "\(type(of: self)).\(#function)"
+
       // Log the standard error
       await logger.log(level, logMessage, metadata: metadata, source: errorSource)
     }
@@ -753,19 +753,19 @@ public struct FileSystemLogger {
 
   /**
    Initialises a new instance of FileSystemLogger.
-   
+
    - Parameters:
       - logger: The underlying logger to use.
       - domain: The domain for this logger.
    */
-  public init(logger: LoggingProtocol, domain: String = "FileSystem") {
-    self.logger = logger
-    self.domain = domain
+  public init(logger: LoggingProtocol, domain: String="FileSystem") {
+    self.logger=logger
+    self.domain=domain
   }
 
   /**
    Logs a file system operation with enhanced privacy controls.
-   
+
    - Parameters:
       - operation: The operation being performed.
       - path: Optional path associated with the operation.
@@ -775,48 +775,48 @@ public struct FileSystemLogger {
    */
   public func logOperation(
     _ operation: String,
-    path: String? = nil,
+    path: String?=nil,
     level: LogLevel = .info,
-    message: String? = nil,
-    additionalContext: LogMetadataDTOCollection? = nil
+    message: String?=nil,
+    additionalContext: LogMetadataDTOCollection?=nil
   ) async {
     // Create a file system context with the operation and path
-    let fsContext = FileSystemLogContext(
+    let fsContext=FileSystemLogContext(
       operation: operation,
       path: path,
       additionalContext: additionalContext ?? LogMetadataDTOCollection()
     )
-    
-    let defaultMessage = path != nil ? 
-      "File system operation \(operation) on path" : 
+
+    let defaultMessage=path != nil ?
+      "File system operation \(operation) on path" :
       "File system operation: \(operation)"
-    
-    let logMessage = message ?? defaultMessage
-    let source = fsContext.source ?? "FileSystemLogger.\(#function)"
-    
+
+    let logMessage=message ?? defaultMessage
+    let source=fsContext.source ?? "FileSystemLogger.\(#function)"
+
     // Extract privacy metadata for logging
-    let privacyMetadata = fsContext.metadata.toPrivacyMetadata()
-    
+    let privacyMetadata=fsContext.metadata.toPrivacyMetadata()
+
     // Log with the appropriate level
     switch level {
-    case .trace:
-      await logger.trace(logMessage, metadata: privacyMetadata, source: source)
-    case .debug:
-      await logger.debug(logMessage, metadata: privacyMetadata, source: source)
-    case .info:
-      await logger.info(logMessage, metadata: privacyMetadata, source: source)
-    case .warning:
-      await logger.warning(logMessage, metadata: privacyMetadata, source: source)
-    case .error:
-      await logger.error(logMessage, metadata: privacyMetadata, source: source)
-    case .critical:
-      await logger.critical(logMessage, metadata: privacyMetadata, source: source)
+      case .trace:
+        await logger.trace(logMessage, metadata: privacyMetadata, source: source)
+      case .debug:
+        await logger.debug(logMessage, metadata: privacyMetadata, source: source)
+      case .info:
+        await logger.info(logMessage, metadata: privacyMetadata, source: source)
+      case .warning:
+        await logger.warning(logMessage, metadata: privacyMetadata, source: source)
+      case .error:
+        await logger.error(logMessage, metadata: privacyMetadata, source: source)
+      case .critical:
+        await logger.critical(logMessage, metadata: privacyMetadata, source: source)
     }
   }
-  
+
   /**
    Logs an error that occurred during a file system operation.
-   
+
    - Parameters:
       - operation: The operation during which the error occurred.
       - error: The error that occurred.
@@ -826,32 +826,32 @@ public struct FileSystemLogger {
    */
   public func logError(
     operation: String,
-    error: Error,
-    path: String? = nil,
-    additionalContext: LogMetadataDTOCollection? = nil,
-    message: String? = nil
+    error _: Error,
+    path: String?=nil,
+    additionalContext: LogMetadataDTOCollection?=nil,
+    message: String?=nil
   ) async {
     // Create a file system context with the operation and path
-    let fsContext = FileSystemLogContext(
+    let fsContext=FileSystemLogContext(
       operation: operation,
       path: path,
       additionalContext: additionalContext ?? LogMetadataDTOCollection()
     )
-    
-    let defaultMessage = "Error during file system operation: \(operation)"
-    let logMessage = message ?? defaultMessage
-    let source = fsContext.source ?? "FileSystemLogger.\(#function)"
-    
+
+    let defaultMessage="Error during file system operation: \(operation)"
+    let logMessage=message ?? defaultMessage
+    let source=fsContext.source ?? "FileSystemLogger.\(#function)"
+
     // Extract privacy metadata for logging
-    let privacyMetadata = fsContext.metadata.toPrivacyMetadata()
-    
+    let privacyMetadata=fsContext.metadata.toPrivacyMetadata()
+
     await logger.error(logMessage, metadata: privacyMetadata, source: source)
   }
-  
+
   /**
    Safely logs a file path with appropriate privacy controls.
    Provides special handling to ensure path components are properly protected.
-   
+
    - Parameters:
       - path: The file path to log.
       - operation: The operation being performed on the path.
@@ -862,16 +862,16 @@ public struct FileSystemLogger {
     _ path: String,
     operation: String,
     level: LogLevel = .info,
-    additionalContext: LogMetadataDTOCollection? = nil
+    additionalContext: LogMetadataDTOCollection?=nil
   ) async {
     // Create a file system context directly - it already handles path privacy
-    let fsContext = FileSystemLogContext(
+    let fsContext=FileSystemLogContext(
       operation: operation,
       path: path,
       additionalContext: additionalContext ?? LogMetadataDTOCollection()
     )
-    
-    let message = switch level {
+
+    let message=switch level {
       case .trace:
         "Trace file operation: \(operation)"
       case .debug:
@@ -885,58 +885,58 @@ public struct FileSystemLogger {
       case .critical:
         "Critical error during file operation: \(operation)"
     }
-    
-    let source = fsContext.source ?? "FileSystemLogger.\(#function)"
-    let privacyMetadata = fsContext.metadata.toPrivacyMetadata()
-    
+
+    let source=fsContext.source ?? "FileSystemLogger.\(#function)"
+    let privacyMetadata=fsContext.metadata.toPrivacyMetadata()
+
     // Log with the appropriate level
     switch level {
-    case .trace:
-      await logger.trace(message, metadata: privacyMetadata, source: source)
-    case .debug:
-      await logger.debug(message, metadata: privacyMetadata, source: source)
-    case .info:
-      await logger.info(message, metadata: privacyMetadata, source: source)
-    case .warning:
-      await logger.warning(message, metadata: privacyMetadata, source: source)
-    case .error:
-      await logger.error(message, metadata: privacyMetadata, source: source)
-    case .critical:
-      await logger.critical(message, metadata: privacyMetadata, source: source)
+      case .trace:
+        await logger.trace(message, metadata: privacyMetadata, source: source)
+      case .debug:
+        await logger.debug(message, metadata: privacyMetadata, source: source)
+      case .info:
+        await logger.info(message, metadata: privacyMetadata, source: source)
+      case .warning:
+        await logger.warning(message, metadata: privacyMetadata, source: source)
+      case .error:
+        await logger.error(message, metadata: privacyMetadata, source: source)
+      case .critical:
+        await logger.critical(message, metadata: privacyMetadata, source: source)
     }
   }
 }
 
 /**
  A protocol for structured error logging.
- 
+
  This protocol defines methods for logging structured errors with privacy controls.
  */
 public protocol ErrorLoggingProtocol {
   /**
-   Logs a loggable error with enhanced privacy controls.
-   
-   - Parameters:
-     - error: The loggable error to log.
-     - level: The log level to use.
-     - message: Optional custom message override.
-  */
+    Logs a loggable error with enhanced privacy controls.
+
+    - Parameters:
+      - error: The loggable error to log.
+      - level: The log level to use.
+      - message: Optional custom message override.
+   */
   func logLoggableError(
     _ error: LoggableError,
     level: LogLevel,
     message: String?
   ) async
-  
+
   /**
-   Logs an error with enhanced privacy controls.
-   
-   - Parameters:
-     - error: The error to log.
-     - level: The log level to use.
-     - metadata: Privacy metadata for the error.
-     - source: The source component that generated the log.
-     - message: Optional custom message override.
-  */
+    Logs an error with enhanced privacy controls.
+
+    - Parameters:
+      - error: The error to log.
+      - level: The log level to use.
+      - metadata: Privacy metadata for the error.
+      - source: The source component that generated the log.
+      - message: Optional custom message override.
+   */
   func logError(
     _ error: Error,
     level: LogLevel,

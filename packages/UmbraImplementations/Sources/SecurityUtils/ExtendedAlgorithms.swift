@@ -194,16 +194,16 @@ public enum ExtendedHashAlgorithm: String, Sendable, Equatable {
 extension SecurityConfigDTO {
   /// Get the extended algorithm representation, if applicable
   public var extendedAlgorithm: ExtendedAlgorithm? {
-    return ExtendedAlgorithm(from: encryptionAlgorithm.rawValue)
+    ExtendedAlgorithm(from: encryptionAlgorithm.rawValue)
   }
 
   /// Get the extended mode representation, if applicable
   public var extendedMode: ExtendedMode? {
     // Access mode information from encryptionAlgorithm if available
     // Use runtime check to determine if mode exists on encryptionAlgorithm
-    let mirror = Mirror(reflecting: encryptionAlgorithm)
+    let mirror=Mirror(reflecting: encryptionAlgorithm)
     for child in mirror.children {
-      if child.label == "mode", let modeString = child.value as? String {
+      if child.label == "mode", let modeString=child.value as? String {
         return ExtendedMode(from: modeString)
       }
     }
@@ -212,7 +212,7 @@ extension SecurityConfigDTO {
 
   /// Get the extended hash algorithm representation, if applicable
   public var extendedHashAlgorithm: ExtendedHashAlgorithm? {
-    return ExtendedHashAlgorithm(from: hashAlgorithm.rawValue)
+    ExtendedHashAlgorithm(from: hashAlgorithm.rawValue)
   }
 }
 
@@ -228,54 +228,59 @@ public struct ExtendedSecurityConfig {
   /// Initialize with extended options
   public init(
     algorithm: ExtendedAlgorithm,
-    mode: ExtendedMode? = nil,
-    keySize: Int? = nil,
+    mode: ExtendedMode?=nil,
+    keySize: Int?=nil,
     hashAlgorithm: ExtendedHashAlgorithm = .sha256,
     providerType: SecurityProviderType = .basic,
-    options: [String: String] = [:]
+    options: [String: String]=[:]
   ) {
-    self.algorithm = algorithm
-    self.mode = mode
-    self.keySize = keySize ?? algorithm.recommendedKeySize
-    self.hashAlgorithm = hashAlgorithm
-    self.providerType = providerType
-    self.options = options
+    self.algorithm=algorithm
+    self.mode=mode
+    self.keySize=keySize ?? algorithm.recommendedKeySize
+    self.hashAlgorithm=hashAlgorithm
+    self.providerType=providerType
+    self.options=options
   }
 
   /// Convert to core SecurityConfigDTO
   public func toConfigDTO() -> SecurityConfigDTO {
     // Create encryption algorithm from rawValue
-    let encryptionAlg = EncryptionAlgorithm(rawValue: algorithm.coreAlgorithmString)!
-    
+    let encryptionAlg=EncryptionAlgorithm(rawValue: algorithm.coreAlgorithmString)!
+
     // Create hash algorithm from rawValue
-    let hashAlg = HashAlgorithm(rawValue: hashAlgorithm.coreHashAlgorithmString)!
-    
+    let hashAlg=HashAlgorithm(rawValue: hashAlgorithm.coreHashAlgorithmString)!
+
     // Create security config options if needed
     let configOptions: SecurityConfigOptions?
     if options.isEmpty {
-      configOptions = nil
+      configOptions=nil
     } else {
       // Extract specific known options if they exist
-      let enableLogging = options["enableDetailedLogging"].flatMap { $0 == "true" } ?? false
-      let keyIterations = options["keyDerivationIterations"].flatMap { Int($0) } ?? 100_000
-      let memoryLimit = options["memoryLimitBytes"].flatMap { Int($0) } ?? 65536
-      let useHardware = options["useHardwareAcceleration"].flatMap { $0 == "true" } ?? true
-      let timeout = options["operationTimeoutSeconds"].flatMap { TimeInterval($0) } ?? 30.0
-      let verify = options["verifyOperations"].flatMap { $0 == "true" } ?? true
-      
+      let enableLogging=options["enableDetailedLogging"].flatMap { $0 == "true" } ?? false
+      let keyIterations=options["keyDerivationIterations"].flatMap { Int($0) } ?? 100_000
+      let memoryLimit=options["memoryLimitBytes"].flatMap { Int($0) } ?? 65536
+      let useHardware=options["useHardwareAcceleration"].flatMap { $0 == "true" } ?? true
+      let timeout=options["operationTimeoutSeconds"].flatMap { TimeInterval($0) } ?? 30.0
+      let verify=options["verifyOperations"].flatMap { $0 == "true" } ?? true
+
       // Put any remaining options into metadata
-      var metadata: [String: String]? = nil
-      let knownKeys = ["enableDetailedLogging", "keyDerivationIterations", 
-                       "memoryLimitBytes", "useHardwareAcceleration", 
-                       "operationTimeoutSeconds", "verifyOperations"]
-      
-      let remainingOptions = options.filter { !knownKeys.contains($0.key) }
+      var metadata: [String: String]?=nil
+      let knownKeys=[
+        "enableDetailedLogging",
+        "keyDerivationIterations",
+        "memoryLimitBytes",
+        "useHardwareAcceleration",
+        "operationTimeoutSeconds",
+        "verifyOperations"
+      ]
+
+      let remainingOptions=options.filter { !knownKeys.contains($0.key) }
       if !remainingOptions.isEmpty {
-        metadata = remainingOptions
+        metadata=remainingOptions
       }
-      
+
       // Create SecurityConfigOptions with individual parameters
-      configOptions = SecurityConfigOptions(
+      configOptions=SecurityConfigOptions(
         enableDetailedLogging: enableLogging,
         keyDerivationIterations: keyIterations,
         memoryLimitBytes: memoryLimit,

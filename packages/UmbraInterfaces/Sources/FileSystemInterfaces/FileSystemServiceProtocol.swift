@@ -16,7 +16,7 @@ import FileSystemTypes
      // Private state should be isolated within the actor
      private let fileManager: FileManagerProtocol
      private let logger: PrivacyAwareLoggingProtocol
-     
+
      // All function implementations must use 'await' appropriately when
      // accessing actor-isolated state or calling other actor methods
  }
@@ -31,7 +31,7 @@ import FileSystemTypes
  // Public non-actor class that conforms to protocol
  public final class FileSystemService: FileSystemServiceProtocol {
      private let actor: FileSystemServiceActor
-     
+
      // Forward all protocol methods to the actor
      public func createDirectory(...) async throws {
          try await actor.createDirectory(...)
@@ -336,17 +336,17 @@ public protocol FileSystemServiceProtocol: Sendable {
 public struct FileMetadataOptions: Sendable, Equatable {
   /// Whether to resolve symbolic links
   public let resolveSymlinks: Bool
-  
+
   /// Resource keys to include in the metadata
   public let resourceKeys: Set<FileResourceKey>
-  
+
   /// Creates new file metadata options
   public init(
-    resolveSymlinks: Bool = true,
-    resourceKeys: Set<FileResourceKey> = []
+    resolveSymlinks: Bool=true,
+    resourceKeys: Set<FileResourceKey>=[]
   ) {
-    self.resolveSymlinks = resolveSymlinks
-    self.resourceKeys = resourceKeys
+    self.resolveSymlinks=resolveSymlinks
+    self.resourceKeys=resourceKeys
   }
 }
 
@@ -356,17 +356,17 @@ public struct FileMetadataOptions: Sendable, Equatable {
 public struct FileReadOptions: Sendable, Equatable {
   /// Whether to use uncached I/O
   public let uncached: Bool
-  
+
   /// Maximum buffer size for reading
   public let bufferSize: Int?
-  
+
   /// Creates new file read options
   public init(
-    uncached: Bool = false,
-    bufferSize: Int? = nil
+    uncached: Bool=false,
+    bufferSize: Int?=nil
   ) {
-    self.uncached = uncached
-    self.bufferSize = bufferSize
+    self.uncached=uncached
+    self.bufferSize=bufferSize
   }
 }
 
@@ -376,27 +376,27 @@ public struct FileReadOptions: Sendable, Equatable {
 public struct FileWriteOptions: Sendable, Equatable {
   /// Whether to create the file if it doesn't exist
   public let createIfNeeded: Bool
-  
+
   /// Whether to atomically write the file
   public let atomicWrite: Bool
-  
+
   /// Whether to use uncached I/O
   public let uncached: Bool
-  
+
   /// File attributes to set when creating the file
   public let attributes: FileAttributes?
-  
+
   /// Creates new file write options
   public init(
-    createIfNeeded: Bool = true,
-    atomicWrite: Bool = false,
-    uncached: Bool = false,
-    attributes: FileAttributes? = nil
+    createIfNeeded: Bool=true,
+    atomicWrite: Bool=false,
+    uncached: Bool=false,
+    attributes: FileAttributes?=nil
   ) {
-    self.createIfNeeded = createIfNeeded
-    self.atomicWrite = atomicWrite
-    self.uncached = uncached
-    self.attributes = attributes
+    self.createIfNeeded=createIfNeeded
+    self.atomicWrite=atomicWrite
+    self.uncached=uncached
+    self.attributes=attributes
   }
 }
 
@@ -406,17 +406,17 @@ public struct FileWriteOptions: Sendable, Equatable {
 public struct DeleteOptions: Sendable, Equatable {
   /// Whether to recursively delete directory contents
   public let recursive: Bool
-  
+
   /// Whether to securely erase file contents before deletion
   public let secureErase: Bool
-  
+
   /// Creates new delete options
   public init(
-    recursive: Bool = false,
-    secureErase: Bool = false
+    recursive: Bool=false,
+    secureErase: Bool=false
   ) {
-    self.recursive = recursive
-    self.secureErase = secureErase
+    self.recursive=recursive
+    self.secureErase=secureErase
   }
 }
 
@@ -426,22 +426,22 @@ public struct DeleteOptions: Sendable, Equatable {
 public struct CopyOptions: Sendable, Equatable {
   /// Whether to replace existing items at the destination
   public let replaceExisting: Bool
-  
+
   /// Whether to recursively copy directory contents
   public let recursive: Bool
-  
+
   /// Whether to preserve file attributes during copy
   public let preserveAttributes: Bool
-  
+
   /// Creates new copy options
   public init(
-    replaceExisting: Bool = false,
-    recursive: Bool = false,
-    preserveAttributes: Bool = true
+    replaceExisting: Bool=false,
+    recursive: Bool=false,
+    preserveAttributes: Bool=true
   ) {
-    self.replaceExisting = replaceExisting
-    self.recursive = recursive
-    self.preserveAttributes = preserveAttributes
+    self.replaceExisting=replaceExisting
+    self.recursive=recursive
+    self.preserveAttributes=preserveAttributes
   }
 }
 
@@ -451,10 +451,10 @@ public struct CopyOptions: Sendable, Equatable {
 public struct MoveOptions: Sendable, Equatable {
   /// Whether to replace existing items at the destination
   public let replaceExisting: Bool
-  
+
   /// Creates new move options
-  public init(replaceExisting: Bool = false) {
-    self.replaceExisting = replaceExisting
+  public init(replaceExisting: Bool=false) {
+    self.replaceExisting=replaceExisting
   }
 }
 
@@ -464,17 +464,17 @@ public struct MoveOptions: Sendable, Equatable {
 public struct DirectoryListOptions: Sendable, Equatable {
   /// Whether to include hidden files in the listing
   public let includeHidden: Bool
-  
+
   /// File types to include in the listing
   public let fileTypes: Set<FileType>?
-  
+
   /// Creates new directory list options
   public init(
-    includeHidden: Bool = false,
-    fileTypes: Set<FileType>? = nil
+    includeHidden: Bool=false,
+    fileTypes: Set<FileType>?=nil
   ) {
-    self.includeHidden = includeHidden
-    self.fileTypes = fileTypes
+    self.includeHidden=includeHidden
+    self.fileTypes=fileTypes
   }
 }
 
@@ -484,22 +484,22 @@ public struct DirectoryListOptions: Sendable, Equatable {
 public struct RecursiveDirectoryListOptions: Sendable, Equatable {
   /// Whether to include hidden files in the listing
   public let includeHidden: Bool
-  
+
   /// File types to include in the listing
   public let fileTypes: Set<FileType>?
-  
+
   /// Maximum depth to recurse (nil for unlimited)
   public let maxDepth: Int?
-  
+
   /// Creates new recursive directory list options
   public init(
-    includeHidden: Bool = false,
-    fileTypes: Set<FileType>? = nil,
-    maxDepth: Int? = nil
+    includeHidden: Bool=false,
+    fileTypes: Set<FileType>?=nil,
+    maxDepth: Int?=nil
   ) {
-    self.includeHidden = includeHidden
-    self.fileTypes = fileTypes
-    self.maxDepth = maxDepth
+    self.includeHidden=includeHidden
+    self.fileTypes=fileTypes
+    self.maxDepth=maxDepth
   }
 }
 
@@ -509,10 +509,10 @@ public struct RecursiveDirectoryListOptions: Sendable, Equatable {
 public struct ExtendedAttributeOptions: Sendable, Equatable {
   /// Whether to follow symbolic links
   public let followSymlinks: Bool
-  
+
   /// Creates new extended attribute options
-  public init(followSymlinks: Bool = true) {
-    self.followSymlinks = followSymlinks
+  public init(followSymlinks: Bool=true) {
+    self.followSymlinks=followSymlinks
   }
 }
 
@@ -522,16 +522,16 @@ public struct ExtendedAttributeOptions: Sendable, Equatable {
 public struct TemporaryFileOptions: Sendable, Equatable {
   /// Whether to securely delete the file upon process exit
   public let deleteOnExit: Bool
-  
+
   /// File attributes to set when creating the file
   public let attributes: FileAttributes?
-  
+
   /// Creates new temporary file options
   public init(
-    deleteOnExit: Bool = true,
-    attributes: FileAttributes? = nil
+    deleteOnExit: Bool=true,
+    attributes: FileAttributes?=nil
   ) {
-    self.deleteOnExit = deleteOnExit
-    self.attributes = attributes
+    self.deleteOnExit=deleteOnExit
+    self.attributes=attributes
   }
 }

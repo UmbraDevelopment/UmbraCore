@@ -50,7 +50,7 @@ public struct SendableCryptoMaterial: Sendable, Equatable {
    - Parameter bytes: The bytes to store
    */
   public init(bytes: [UInt8]) {
-    self.bytes = bytes
+    self.bytes=bytes
   }
 
   /**
@@ -71,14 +71,14 @@ public struct SendableCryptoMaterial: Sendable, Equatable {
    - Throws: Error if secure random generation fails
    */
   public static func randomBytes(count: Int) throws -> SendableCryptoMaterial {
-    var bytes = [UInt8](repeating: 0, count: count)
-    
+    var bytes=[UInt8](repeating: 0, count: count)
+
     // Generate random bytes using system crypto
-    let status = SecRandomCopyBytes(kSecRandomDefault, count, &bytes)
+    let status=SecRandomCopyBytes(kSecRandomDefault, count, &bytes)
     guard status == errSecSuccess else {
       throw SendableCryptoMaterialError.randomGenerationFailed
     }
-    
+
     return SendableCryptoMaterial(bytes: bytes)
   }
 
@@ -124,41 +124,41 @@ extension SendableCryptoMaterial {
    - Throws: SendableCryptoMaterialError if the string is invalid
    */
   public init(hexString: String) throws {
-    let hexString = hexString.replacingOccurrences(of: " ", with: "")
-    
+    let hexString=hexString.replacingOccurrences(of: " ", with: "")
+
     // Validate string length
     guard hexString.count % 2 == 0 else {
       throw SendableCryptoMaterialError.invalidHexString
     }
-    
+
     // Convert hex string to bytes
-    var bytes = [UInt8]()
-    var index = hexString.startIndex
-    
+    var bytes=[UInt8]()
+    var index=hexString.startIndex
+
     while index < hexString.endIndex {
-      let nextIndex = hexString.index(index, offsetBy: 2)
-      let byteString = hexString[index..<nextIndex]
-      
-      guard let byte = UInt8(byteString, radix: 16) else {
+      let nextIndex=hexString.index(index, offsetBy: 2)
+      let byteString=hexString[index..<nextIndex]
+
+      guard let byte=UInt8(byteString, radix: 16) else {
         throw SendableCryptoMaterialError.invalidHexString
       }
-      
+
       bytes.append(byte)
-      index = nextIndex
+      index=nextIndex
     }
-    
+
     self.init(bytes: bytes)
   }
-  
+
   /**
    Converts the secure data to a hexadecimal string.
 
    - Parameter uppercase: Whether to use uppercase letters
    - Returns: Hexadecimal string representation
    */
-  public func toHexString(uppercase: Bool = false) -> String {
+  public func toHexString(uppercase: Bool=false) -> String {
     withUnsafeBytes { bytes in
-      let format = uppercase ? "%02X" : "%02x"
+      let format=uppercase ? "%02X" : "%02x"
       return bytes.map { String(format: format, $0) }.joined()
     }
   }
@@ -170,10 +170,10 @@ extension SendableCryptoMaterial {
 extension SendableCryptoMaterial {
   /**
    Converts to a byte array for use with actor-based APIs.
-   
+
    - Note: This method should generally only be called by actor implementations
      to minimize exposure of the raw bytes outside of isolated contexts.
-   
+
    - Returns: Array of bytes
    */
   public func toByteArray() -> [UInt8] {

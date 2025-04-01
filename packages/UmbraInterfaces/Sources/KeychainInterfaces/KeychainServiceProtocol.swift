@@ -17,7 +17,7 @@ import Foundation
      // Private state should be isolated within the actor
      private let serviceIdentifier: String
      private let logger: PrivacyAwareLoggingProtocol
-     
+
      // All function implementations must use 'await' appropriately when
      // accessing actor-isolated state or calling other actor methods
  }
@@ -32,7 +32,7 @@ import Foundation
  // Public non-actor class that conforms to protocol
  public final class KeychainService: KeychainServiceProtocol {
      private let actor: KeychainServiceActor
-     
+
      // Forward all protocol methods to the actor
      public func storePassword(...) async throws {
          try await actor.storePassword(...)
@@ -54,7 +54,7 @@ import Foundation
  let keychainService = await KeychainServices.createService()
 
  // Store a password
- try await keychainService.storePassword("securePassword123", 
+ try await keychainService.storePassword("securePassword123",
                                        for: "userAccount",
                                        keychainOptions: .standard)
 
@@ -195,22 +195,22 @@ public protocol KeychainServiceProtocol: Sendable {
 
 /**
  Configuration options for keychain operations.
- 
+
  These options allow customisation of how items are stored in and retrieved
  from the keychain, including access controls, synchronisation behaviour,
  and item attributes.
  */
 public struct KeychainOptions: Sendable, Equatable {
   /// Standard options for most operations
-  public static let standard = KeychainOptions()
-  
+  public static let standard=KeychainOptions()
+
   /// Secure options with higher security requirements
-  public static let secure = KeychainOptions(
+  public static let secure=KeychainOptions(
     accessLevel: .whenUnlockedThisDeviceOnly,
     authenticationType: .biometryAny,
     synchronisable: false
   )
-  
+
   /// Access level for the keychain item
   public enum AccessLevel: String, Sendable, Equatable {
     /// Item data can be accessed only while the device is unlocked
@@ -224,7 +224,7 @@ public struct KeychainOptions: Sendable, Equatable {
     /// Item data can be accessed only when the device is unlocked or when using biometrics
     case whenPasscodeSetThisDeviceOnly
   }
-  
+
   /// Authentication type required to access the item
   public enum AuthenticationType: String, Sendable, Equatable {
     /// No authentication required
@@ -238,34 +238,34 @@ public struct KeychainOptions: Sendable, Equatable {
     /// Device passcode authentication
     case devicePasscode
   }
-  
+
   /// Access level for the keychain item
   public let accessLevel: AccessLevel
-  
+
   /// Authentication type required to access the item
   public let authenticationType: AuthenticationType
-  
+
   /// Whether the item should be synchronised across devices
   public let synchronisable: Bool
-  
+
   /// Application tag for cryptographic keys
   public let applicationTag: Data?
-  
+
   /// Whether to use a case-sensitive account when searching
   public let caseSensitiveAccount: Bool
-  
+
   /// Creates new keychain options
   public init(
     accessLevel: AccessLevel = .whenUnlocked,
     authenticationType: AuthenticationType = .none,
-    synchronisable: Bool = true,
-    applicationTag: Data? = nil,
-    caseSensitiveAccount: Bool = true
+    synchronisable: Bool=true,
+    applicationTag: Data?=nil,
+    caseSensitiveAccount: Bool=true
   ) {
-    self.accessLevel = accessLevel
-    self.authenticationType = authenticationType
-    self.synchronisable = synchronisable
-    self.applicationTag = applicationTag
-    self.caseSensitiveAccount = caseSensitiveAccount
+    self.accessLevel=accessLevel
+    self.authenticationType=authenticationType
+    self.synchronisable=synchronisable
+    self.applicationTag=applicationTag
+    self.caseSensitiveAccount=caseSensitiveAccount
   }
 }

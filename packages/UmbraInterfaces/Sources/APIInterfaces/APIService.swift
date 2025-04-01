@@ -15,7 +15,7 @@
      // Private state should be isolated within the actor
      private let networkClient: NetworkClient
      private let logger: PrivacyAwareLoggingProtocol
-     
+
      // All function implementations must use 'await' appropriately when
      // accessing actor-isolated state or calling other actor methods
  }
@@ -30,7 +30,7 @@
  // Public non-actor class that conforms to protocol
  public final class APIServiceImpl: APIService {
      private let actor: APIServiceActor
-     
+
      // Forward all protocol methods to the actor
      public func execute<T>(_ operation: T) async throws -> T.ResultType where T: APIOperation {
          try await actor.execute(operation)
@@ -91,25 +91,25 @@ public protocol APIService: Sendable {
     _ operation: T,
     options: APIExecutionOptions?
   ) async -> APIResult<T.ResultType>
-  
+
   /**
    Cancels all in-progress API operations.
-   
+
    - Parameter options: Configuration options for cancellation
    */
   func cancelAllOperations(options: APICancellationOptions?) async
-  
+
   /**
    Cancels a specific API operation by its identifier.
-   
+
    - Parameters:
       - operationId: The identifier of the operation to cancel
       - options: Configuration options for cancellation
-   
+
    - Returns: True if the operation was found and cancelled, false otherwise
    */
   func cancelOperation(
-    withId operationId: String,
+    withID operationID: String,
     options: APICancellationOptions?
   ) async -> Bool
 }
@@ -158,49 +158,49 @@ public protocol DomainAPIService<SupportedDomain>: APIService {
  */
 public struct APIExecutionOptions: Sendable, Equatable {
   /// Standard options for most operations
-  public static let standard = APIExecutionOptions()
-  
+  public static let standard=APIExecutionOptions()
+
   /// Default timeout in seconds
-  public static let defaultTimeout = 60
-  
+  public static let defaultTimeout=60
+
   /// Timeout in seconds (nil means no timeout)
   public let timeout: Int?
-  
+
   /// Whether to retry failed operations
   public let retryEnabled: Bool
-  
+
   /// Maximum number of retry attempts
   public let maxRetries: Int
-  
+
   /// Priority level for the operation
   public let priority: APIPriority
-  
+
   /// Whether to use cached responses if available
   public let useCache: Bool
-  
+
   /// Authentication level required for this operation
   public let authenticationLevel: APIAuthenticationLevel
-  
+
   /// Additional request headers
   public let additionalHeaders: [String: String]
-  
+
   /// Creates new API execution options
   public init(
-    timeout: Int? = defaultTimeout,
-    retryEnabled: Bool = true,
-    maxRetries: Int = 3,
+    timeout: Int?=defaultTimeout,
+    retryEnabled: Bool=true,
+    maxRetries: Int=3,
     priority: APIPriority = .normal,
-    useCache: Bool = true,
+    useCache: Bool=true,
     authenticationLevel: APIAuthenticationLevel = .standard,
-    additionalHeaders: [String: String] = [:]
+    additionalHeaders: [String: String]=[:]
   ) {
-    self.timeout = timeout
-    self.retryEnabled = retryEnabled
-    self.maxRetries = maxRetries
-    self.priority = priority
-    self.useCache = useCache
-    self.authenticationLevel = authenticationLevel
-    self.additionalHeaders = additionalHeaders
+    self.timeout=timeout
+    self.retryEnabled=retryEnabled
+    self.maxRetries=maxRetries
+    self.priority=priority
+    self.useCache=useCache
+    self.authenticationLevel=authenticationLevel
+    self.additionalHeaders=additionalHeaders
   }
 }
 
@@ -210,20 +210,22 @@ public struct APIExecutionOptions: Sendable, Equatable {
 public enum APIPriority: String, Sendable, Equatable, Comparable {
   /// High priority operations - for critical user-facing tasks
   case high
-  
+
   /// Normal priority operations - default for most operations
   case normal
-  
+
   /// Low priority operations - for background tasks
   case low
-  
+
   /// Background priority operations - for maintenance and housekeeping
   case background
-  
+
   public static func < (lhs: APIPriority, rhs: APIPriority) -> Bool {
-    let order: [APIPriority] = [.background, .low, .normal, .high]
-    guard let lhsIndex = order.firstIndex(of: lhs),
-          let rhsIndex = order.firstIndex(of: rhs) else {
+    let order: [APIPriority]=[.background, .low, .normal, .high]
+    guard
+      let lhsIndex=order.firstIndex(of: lhs),
+      let rhsIndex=order.firstIndex(of: rhs)
+    else {
       return false
     }
     return lhsIndex < rhsIndex
@@ -236,13 +238,13 @@ public enum APIPriority: String, Sendable, Equatable, Comparable {
 public enum APIAuthenticationLevel: String, Sendable, Equatable {
   /// No authentication required
   case none
-  
+
   /// Standard authentication (default user credentials)
   case standard
-  
+
   /// Elevated privileges required
   case elevated
-  
+
   /// Administrative privileges required
   case administrative
 }
@@ -253,21 +255,21 @@ public enum APIAuthenticationLevel: String, Sendable, Equatable {
 public struct APICancellationOptions: Sendable, Equatable {
   /// Whether to force immediate cancellation
   public let force: Bool
-  
+
   /// Whether to wait for cancellation to complete
   public let waitForCompletion: Bool
-  
+
   /// Timeout in seconds for waiting (nil means no timeout)
   public let timeout: Int?
-  
+
   /// Creates new API cancellation options
   public init(
-    force: Bool = false,
-    waitForCompletion: Bool = true,
-    timeout: Int? = 5
+    force: Bool=false,
+    waitForCompletion: Bool=true,
+    timeout: Int?=5
   ) {
-    self.force = force
-    self.waitForCompletion = waitForCompletion
-    self.timeout = timeout
+    self.force=force
+    self.waitForCompletion=waitForCompletion
+    self.timeout=timeout
   }
 }

@@ -16,7 +16,7 @@ import UmbraErrors
      // Private state should be isolated within the actor
      private let serviceRegistry: ServiceRegistry
      private let logger: PrivacyAwareLoggingProtocol
-     
+
      // All function implementations must use 'await' appropriately when
      // accessing actor-isolated state or calling other actor methods
  }
@@ -31,7 +31,7 @@ import UmbraErrors
  // Public non-actor class that conforms to protocol
  public final class CoreService: CoreServiceProtocol {
      private let actor: CoreServiceActor
-     
+
      // Forward all protocol methods to the actor
      public func getCryptoService() async throws -> CoreCryptoServiceProtocol {
          try await actor.getCryptoService()
@@ -100,7 +100,7 @@ public protocol CoreServiceProtocol: Sendable {
    - Throws: CoreError if service not available
    */
   func getSecurityService() async throws -> CoreSecurityProviderProtocol
-  
+
   /**
    Gets a logger configured for a specific domain
 
@@ -116,7 +116,7 @@ public protocol CoreServiceProtocol: Sendable {
    Shuts down all services
 
    Performs necessary cleanup and orderly shutdown of all managed services.
-   
+
    - Parameter options: Configuration options for shutdown
    */
   func shutdown(options: ShutdownOptions?) async
@@ -127,26 +127,26 @@ public protocol CoreServiceProtocol: Sendable {
  */
 public struct CoreServiceOptions: Sendable, Equatable {
   /// Standard options for most scenarios
-  public static let standard = CoreServiceOptions()
-  
+  public static let standard=CoreServiceOptions()
+
   /// Whether to enable debug features
   public let debugMode: Bool
-  
+
   /// Environment configuration
   public let environment: CoreEnvironment
-  
+
   /// Configuration for logging
   public let logging: LoggingConfiguration
-  
+
   /// Creates new core service options
   public init(
-    debugMode: Bool = false,
+    debugMode: Bool=false,
     environment: CoreEnvironment = .production,
     logging: LoggingConfiguration = .standard
   ) {
-    self.debugMode = debugMode
-    self.environment = environment
-    self.logging = logging
+    self.debugMode=debugMode
+    self.environment=environment
+    self.logging=logging
   }
 }
 
@@ -156,13 +156,13 @@ public struct CoreServiceOptions: Sendable, Equatable {
 public enum CoreEnvironment: String, Sendable, Equatable {
   /// Development environment
   case development
-  
+
   /// Testing environment
   case testing
-  
+
   /// Staging environment
   case staging
-  
+
   /// Production environment
   case production
 }
@@ -172,31 +172,31 @@ public enum CoreEnvironment: String, Sendable, Equatable {
  */
 public struct LoggingConfiguration: Sendable, Equatable {
   /// Standard configuration for most scenarios
-  public static let standard = LoggingConfiguration()
-  
+  public static let standard=LoggingConfiguration()
+
   /// Minimum log level to record
   public let minimumLevel: LogLevel
-  
+
   /// Whether to enable privacy redaction in logs
   public let privacyRedactionEnabled: Bool
-  
+
   /// Maximum size of log files
   public let maxLogFileSizeMB: Int
-  
+
   /// Maximum age of log files in days
   public let maxLogAgeInDays: Int
-  
+
   /// Creates new logging configuration
   public init(
     minimumLevel: LogLevel = .info,
-    privacyRedactionEnabled: Bool = true,
-    maxLogFileSizeMB: Int = 10,
-    maxLogAgeInDays: Int = 7
+    privacyRedactionEnabled: Bool=true,
+    maxLogFileSizeMB: Int=10,
+    maxLogAgeInDays: Int=7
   ) {
-    self.minimumLevel = minimumLevel
-    self.privacyRedactionEnabled = privacyRedactionEnabled
-    self.maxLogFileSizeMB = maxLogFileSizeMB
-    self.maxLogAgeInDays = maxLogAgeInDays
+    self.minimumLevel=minimumLevel
+    self.privacyRedactionEnabled=privacyRedactionEnabled
+    self.maxLogFileSizeMB=maxLogFileSizeMB
+    self.maxLogAgeInDays=maxLogAgeInDays
   }
 }
 
@@ -206,26 +206,28 @@ public struct LoggingConfiguration: Sendable, Equatable {
 public enum LogLevel: String, Sendable, Equatable, Comparable {
   /// Detailed debugging information
   case trace
-  
+
   /// Debugging information
   case debug
-  
+
   /// General information
   case info
-  
+
   /// Warning conditions
   case warning
-  
+
   /// Error conditions
   case error
-  
+
   /// Critical failures
   case critical
-  
+
   public static func < (lhs: LogLevel, rhs: LogLevel) -> Bool {
-    let order: [LogLevel] = [.trace, .debug, .info, .warning, .error, .critical]
-    guard let lhsIndex = order.firstIndex(of: lhs),
-          let rhsIndex = order.firstIndex(of: rhs) else {
+    let order: [LogLevel]=[.trace, .debug, .info, .warning, .error, .critical]
+    guard
+      let lhsIndex=order.firstIndex(of: lhs),
+      let rhsIndex=order.firstIndex(of: rhs)
+    else {
       return false
     }
     return lhsIndex < rhsIndex
@@ -238,25 +240,25 @@ public enum LogLevel: String, Sendable, Equatable, Comparable {
 public enum LoggingDomain: String, Sendable, Equatable, CaseIterable {
   /// Core system operations
   case core
-  
+
   /// Security operations
   case security
-  
+
   /// Cryptographic operations
   case crypto
-  
+
   /// Backup operations
   case backup
-  
+
   /// File system operations
   case fileSystem
-  
+
   /// Network operations
   case network
-  
+
   /// API operations
   case api
-  
+
   /// User interface
   case ui
 }
@@ -266,20 +268,20 @@ public enum LoggingDomain: String, Sendable, Equatable, CaseIterable {
  */
 public struct ShutdownOptions: Sendable, Equatable {
   /// Standard options for most scenarios
-  public static let standard = ShutdownOptions()
-  
+  public static let standard=ShutdownOptions()
+
   /// Whether to force immediate shutdown
   public let force: Bool
-  
+
   /// Maximum time to wait for graceful shutdown in seconds
   public let timeoutSeconds: Int
-  
+
   /// Creates new shutdown options
   public init(
-    force: Bool = false,
-    timeoutSeconds: Int = 10
+    force: Bool=false,
+    timeoutSeconds: Int=10
   ) {
-    self.force = force
-    self.timeoutSeconds = timeoutSeconds
+    self.force=force
+    self.timeoutSeconds=timeoutSeconds
   }
 }

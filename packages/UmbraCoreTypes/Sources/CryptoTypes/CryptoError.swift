@@ -2,7 +2,8 @@ import Foundation
 import LoggingTypes
 
 /// Errors that can occur during cryptographic operations.
-public enum CryptoError: Error, Sendable, Equatable, CustomStringConvertible, LocalizedError, LoggableErrorProtocol {
+public enum CryptoError: Error, Sendable, Equatable, CustomStringConvertible, LocalizedError,
+LoggableErrorProtocol {
   // MARK: - Key Management Errors
 
   /// Failed to generate a secure random key.
@@ -189,95 +190,96 @@ public enum CryptoError: Error, Sendable, Equatable, CustomStringConvertible, Lo
   /// Get the privacy metadata for this error
   /// - Returns: Privacy metadata for logging this error
   public func getPrivacyMetadata() -> PrivacyMetadata {
-    var metadata = PrivacyMetadata()
-    
+    var metadata=PrivacyMetadata()
+
     // Add domain and error type info
-    metadata["errorDomain"] = PrivacyMetadataValue(value: "Crypto", privacy: .public)
-    metadata["errorType"] = PrivacyMetadataValue(value: String(describing: type(of: self)), privacy: .public)
-    
+    metadata["errorDomain"]=PrivacyMetadataValue(value: "Crypto", privacy: .public)
+    metadata["errorType"]=PrivacyMetadataValue(value: String(describing: type(of: self)),
+                                               privacy: .public)
+
     // Add common context for all error types
     switch self {
-    case let .keyGenerationFailed(reason):
-      metadata["errorReason"] = PrivacyMetadataValue(value: reason, privacy: .private)
-      metadata["operation"] = PrivacyMetadataValue(value: "keyGeneration", privacy: .public)
-      
-    case let .invalidKey(reason):
-      metadata["errorReason"] = PrivacyMetadataValue(value: reason, privacy: .private)
-      metadata["operation"] = PrivacyMetadataValue(value: "keyValidation", privacy: .public)
-      
-    case let .keyNotFound(identifier):
-      // Key IDs are sensitive, so mark as private
-      metadata["keyIdentifier"] = PrivacyMetadataValue(value: identifier, privacy: .private)
-      metadata["operation"] = PrivacyMetadataValue(value: "keyAccess", privacy: .public)
-      
-    case let .keyDerivationFailed(reason):
-      metadata["errorReason"] = PrivacyMetadataValue(value: reason, privacy: .private)
-      metadata["operation"] = PrivacyMetadataValue(value: "keyDerivation", privacy: .public)
-      
-    case let .insufficientEntropy(required, available):
-      metadata["requiredEntropy"] = PrivacyMetadataValue(value: "\(required)", privacy: .public)
-      metadata["availableEntropy"] = PrivacyMetadataValue(value: "\(available)", privacy: .public)
-      metadata["operation"] = PrivacyMetadataValue(value: "entropyGeneration", privacy: .public)
-      
-    case let .encryptionFailed(reason):
-      metadata["errorReason"] = PrivacyMetadataValue(value: reason, privacy: .private)
-      metadata["operation"] = PrivacyMetadataValue(value: "encryption", privacy: .public)
-      
-    case let .decryptionFailed(reason):
-      metadata["errorReason"] = PrivacyMetadataValue(value: reason, privacy: .private)
-      metadata["operation"] = PrivacyMetadataValue(value: "decryption", privacy: .public)
-      
-    case let .invalidInput(reason):
-      metadata["errorReason"] = PrivacyMetadataValue(value: reason, privacy: .private)
-      metadata["operation"] = PrivacyMetadataValue(value: "dataValidation", privacy: .public)
-      
-    case let .invalidAlgorithm(reason):
-      metadata["errorReason"] = PrivacyMetadataValue(value: reason, privacy: .private)
-      metadata["operation"] = PrivacyMetadataValue(value: "algorithmSupport", privacy: .public)
-      
-    case let .algorithmVersionMismatch(expected, received):
-      metadata["expectedVersion"] = PrivacyMetadataValue(value: expected, privacy: .public)
-      metadata["receivedVersion"] = PrivacyMetadataValue(value: received, privacy: .public)
-      metadata["operation"] = PrivacyMetadataValue(value: "algorithmVersion", privacy: .public)
-      
-    case let .unsupportedOperation(reason):
-      metadata["errorReason"] = PrivacyMetadataValue(value: reason, privacy: .private)
-      metadata["operation"] = PrivacyMetadataValue(value: "operationSupport", privacy: .public)
-      
-    case let .resourceUnavailable(resource):
-      metadata["resource"] = PrivacyMetadataValue(value: resource, privacy: .public)
-      metadata["operation"] = PrivacyMetadataValue(value: "resourceAccess", privacy: .public)
-      
-    case let .memoryError(reason):
-      metadata["errorReason"] = PrivacyMetadataValue(value: reason, privacy: .private)
-      metadata["operation"] = PrivacyMetadataValue(value: "memoryAccess", privacy: .public)
-      
-    case let .operationFailed(reason):
-      metadata["errorReason"] = PrivacyMetadataValue(value: reason, privacy: .private)
-      metadata["operation"] = PrivacyMetadataValue(value: "operationExecution", privacy: .public)
-      
-    case let .integrityCheckFailed(reason):
-      metadata["errorReason"] = PrivacyMetadataValue(value: reason, privacy: .private)
-      metadata["operation"] = PrivacyMetadataValue(value: "integrityCheck", privacy: .public)
-      
-    case let .invalidPadding(reason):
-      metadata["errorReason"] = PrivacyMetadataValue(value: reason, privacy: .private)
-      metadata["operation"] = PrivacyMetadataValue(value: "paddingValidation", privacy: .public)
+      case let .keyGenerationFailed(reason):
+        metadata["errorReason"]=PrivacyMetadataValue(value: reason, privacy: .private)
+        metadata["operation"]=PrivacyMetadataValue(value: "keyGeneration", privacy: .public)
+
+      case let .invalidKey(reason):
+        metadata["errorReason"]=PrivacyMetadataValue(value: reason, privacy: .private)
+        metadata["operation"]=PrivacyMetadataValue(value: "keyValidation", privacy: .public)
+
+      case let .keyNotFound(identifier):
+        // Key IDs are sensitive, so mark as private
+        metadata["keyIdentifier"]=PrivacyMetadataValue(value: identifier, privacy: .private)
+        metadata["operation"]=PrivacyMetadataValue(value: "keyAccess", privacy: .public)
+
+      case let .keyDerivationFailed(reason):
+        metadata["errorReason"]=PrivacyMetadataValue(value: reason, privacy: .private)
+        metadata["operation"]=PrivacyMetadataValue(value: "keyDerivation", privacy: .public)
+
+      case let .insufficientEntropy(required, available):
+        metadata["requiredEntropy"]=PrivacyMetadataValue(value: "\(required)", privacy: .public)
+        metadata["availableEntropy"]=PrivacyMetadataValue(value: "\(available)", privacy: .public)
+        metadata["operation"]=PrivacyMetadataValue(value: "entropyGeneration", privacy: .public)
+
+      case let .encryptionFailed(reason):
+        metadata["errorReason"]=PrivacyMetadataValue(value: reason, privacy: .private)
+        metadata["operation"]=PrivacyMetadataValue(value: "encryption", privacy: .public)
+
+      case let .decryptionFailed(reason):
+        metadata["errorReason"]=PrivacyMetadataValue(value: reason, privacy: .private)
+        metadata["operation"]=PrivacyMetadataValue(value: "decryption", privacy: .public)
+
+      case let .invalidInput(reason):
+        metadata["errorReason"]=PrivacyMetadataValue(value: reason, privacy: .private)
+        metadata["operation"]=PrivacyMetadataValue(value: "dataValidation", privacy: .public)
+
+      case let .invalidAlgorithm(reason):
+        metadata["errorReason"]=PrivacyMetadataValue(value: reason, privacy: .private)
+        metadata["operation"]=PrivacyMetadataValue(value: "algorithmSupport", privacy: .public)
+
+      case let .algorithmVersionMismatch(expected, received):
+        metadata["expectedVersion"]=PrivacyMetadataValue(value: expected, privacy: .public)
+        metadata["receivedVersion"]=PrivacyMetadataValue(value: received, privacy: .public)
+        metadata["operation"]=PrivacyMetadataValue(value: "algorithmVersion", privacy: .public)
+
+      case let .unsupportedOperation(reason):
+        metadata["errorReason"]=PrivacyMetadataValue(value: reason, privacy: .private)
+        metadata["operation"]=PrivacyMetadataValue(value: "operationSupport", privacy: .public)
+
+      case let .resourceUnavailable(resource):
+        metadata["resource"]=PrivacyMetadataValue(value: resource, privacy: .public)
+        metadata["operation"]=PrivacyMetadataValue(value: "resourceAccess", privacy: .public)
+
+      case let .memoryError(reason):
+        metadata["errorReason"]=PrivacyMetadataValue(value: reason, privacy: .private)
+        metadata["operation"]=PrivacyMetadataValue(value: "memoryAccess", privacy: .public)
+
+      case let .operationFailed(reason):
+        metadata["errorReason"]=PrivacyMetadataValue(value: reason, privacy: .private)
+        metadata["operation"]=PrivacyMetadataValue(value: "operationExecution", privacy: .public)
+
+      case let .integrityCheckFailed(reason):
+        metadata["errorReason"]=PrivacyMetadataValue(value: reason, privacy: .private)
+        metadata["operation"]=PrivacyMetadataValue(value: "integrityCheck", privacy: .public)
+
+      case let .invalidPadding(reason):
+        metadata["errorReason"]=PrivacyMetadataValue(value: reason, privacy: .private)
+        metadata["operation"]=PrivacyMetadataValue(value: "paddingValidation", privacy: .public)
     }
-    
+
     return metadata
   }
-  
+
   /// Get the source information for this error
   /// - Returns: Source information (e.g., file, function, line)
   public func getSource() -> String {
-    return "CryptoError"
+    "CryptoError"
   }
-  
+
   /// Get the log message for this error
   /// - Returns: A descriptive message appropriate for logging
   public func getLogMessage() -> String {
-    return self.localizedDescription
+    localizedDescription
   }
 
   /// The appropriate privacy classification for this error
@@ -288,7 +290,7 @@ public enum CryptoError: Error, Sendable, Equatable, CustomStringConvertible, Lo
         .private
       case .invalidKey:
         .private
-      case .keyNotFound where self.isSystemKey:
+      case .keyNotFound where isSystemKey:
         .sensitive // System keys get higher protection
       case .keyNotFound:
         .private
@@ -296,7 +298,6 @@ public enum CryptoError: Error, Sendable, Equatable, CustomStringConvertible, Lo
         .private
       case .insufficientEntropy:
         .public // Not sensitive, just system state
-
       // Encryption/Decryption errors
       case .encryptionFailed, .decryptionFailed:
         .private
@@ -304,17 +305,14 @@ public enum CryptoError: Error, Sendable, Equatable, CustomStringConvertible, Lo
         .sensitive // Could indicate tampering attempts
       case .invalidPadding:
         .private
-
       // Input/Algorithm errors (generally less sensitive)
       case .invalidInput, .invalidAlgorithm, .algorithmVersionMismatch, .unsupportedOperation:
         .public
-
       // System/Resource errors
       case .resourceUnavailable:
         .public
       case .memoryError:
         .public
-
       // General errors have default protection
       case .operationFailed:
         .private
@@ -325,48 +323,48 @@ public enum CryptoError: Error, Sendable, Equatable, CustomStringConvertible, Lo
 
   /// Additional metadata for logging this error
   public var loggingMetadata: LogMetadataDTOCollection {
-    var metadata = LogMetadataDTOCollection()
+    var metadata=LogMetadataDTOCollection()
       .withPublic(key: "errorDomain", value: "Crypto")
       .withPublic(key: "errorType", value: String(describing: type(of: self)))
 
     // Add case-specific metadata with appropriate privacy
     switch self {
-      case .keyGenerationFailed(let reason):
-        metadata = metadata.withPrivate(key: "reason", value: reason)
-      case .invalidKey(let reason):
-        metadata = metadata.withPrivate(key: "reason", value: reason)
-      case .keyNotFound(let identifier):
-        metadata = metadata.withPrivate(key: "identifier", value: identifier)
-      case .keyDerivationFailed(let reason):
-        metadata = metadata.withPrivate(key: "reason", value: reason)
-      case .insufficientEntropy(let required, let available):
-        metadata = metadata
+      case let .keyGenerationFailed(reason):
+        metadata=metadata.withPrivate(key: "reason", value: reason)
+      case let .invalidKey(reason):
+        metadata=metadata.withPrivate(key: "reason", value: reason)
+      case let .keyNotFound(identifier):
+        metadata=metadata.withPrivate(key: "identifier", value: identifier)
+      case let .keyDerivationFailed(reason):
+        metadata=metadata.withPrivate(key: "reason", value: reason)
+      case let .insufficientEntropy(required, available):
+        metadata=metadata
           .withPublic(key: "requiredEntropy", value: String(required))
           .withPublic(key: "availableEntropy", value: String(available))
-      case .encryptionFailed(let reason):
-        metadata = metadata.withPrivate(key: "reason", value: reason)
-      case .decryptionFailed(let reason):
-        metadata = metadata.withPrivate(key: "reason", value: reason)
-      case .integrityCheckFailed(let reason):
-        metadata = metadata.withPrivate(key: "reason", value: reason)
-      case .invalidPadding(let reason):
-        metadata = metadata.withPrivate(key: "reason", value: reason)
-      case .invalidInput(let reason):
-        metadata = metadata.withPublic(key: "reason", value: reason)
-      case .invalidAlgorithm(let reason):
-        metadata = metadata.withPublic(key: "reason", value: reason)
-      case .algorithmVersionMismatch(let expected, let received):
-        metadata = metadata
+      case let .encryptionFailed(reason):
+        metadata=metadata.withPrivate(key: "reason", value: reason)
+      case let .decryptionFailed(reason):
+        metadata=metadata.withPrivate(key: "reason", value: reason)
+      case let .integrityCheckFailed(reason):
+        metadata=metadata.withPrivate(key: "reason", value: reason)
+      case let .invalidPadding(reason):
+        metadata=metadata.withPrivate(key: "reason", value: reason)
+      case let .invalidInput(reason):
+        metadata=metadata.withPublic(key: "reason", value: reason)
+      case let .invalidAlgorithm(reason):
+        metadata=metadata.withPublic(key: "reason", value: reason)
+      case let .algorithmVersionMismatch(expected, received):
+        metadata=metadata
           .withPublic(key: "expectedVersion", value: expected)
           .withPublic(key: "receivedVersion", value: received)
-      case .unsupportedOperation(let reason):
-        metadata = metadata.withPublic(key: "reason", value: reason)
-      case .resourceUnavailable(let resource):
-        metadata = metadata.withPublic(key: "resource", value: resource)
-      case .memoryError(let reason):
-        metadata = metadata.withPublic(key: "reason", value: reason)
-      case .operationFailed(let reason):
-        metadata = metadata.withPrivate(key: "reason", value: reason)
+      case let .unsupportedOperation(reason):
+        metadata=metadata.withPublic(key: "reason", value: reason)
+      case let .resourceUnavailable(resource):
+        metadata=metadata.withPublic(key: "resource", value: resource)
+      case let .memoryError(reason):
+        metadata=metadata.withPublic(key: "reason", value: reason)
+      case let .operationFailed(reason):
+        metadata=metadata.withPrivate(key: "reason", value: reason)
       default:
         break
     }
@@ -376,12 +374,12 @@ public enum CryptoError: Error, Sendable, Equatable, CustomStringConvertible, Lo
 
   /// A human-readable description suitable for logging
   public var loggingDescription: String {
-    self.localizedDescription
+    localizedDescription
   }
 
   /// Helper to determine if a key is a system key
   private var isSystemKey: Bool {
-    if case let .keyNotFound(identifier) = self {
+    if case let .keyNotFound(identifier)=self {
       return identifier.hasPrefix("system.") || identifier.hasPrefix("master.")
     }
     return false

@@ -28,7 +28,7 @@ public struct SecurityKeyDTO: Sendable, Equatable {
     self.keyData=keyData
     self.metadata=metadata
   }
-  
+
   /// Equality operator implementation that compares all properties.
   /// - Parameters:
   ///   - lhs: Left-hand side SecurityKeyDTO
@@ -36,12 +36,14 @@ public struct SecurityKeyDTO: Sendable, Equatable {
   /// - Returns: True if the DTOs are considered equal
   public static func == (lhs: SecurityKeyDTO, rhs: SecurityKeyDTO) -> Bool {
     // First check the simple properties
-    guard lhs.id == rhs.id &&
-          lhs.algorithm == rhs.algorithm &&
-          lhs.metadata == rhs.metadata else {
+    guard
+      lhs.id == rhs.id &&
+      lhs.algorithm == rhs.algorithm &&
+      lhs.metadata == rhs.metadata
+    else {
       return false
     }
-    
+
     // Then compare the key data bytes
     // Using a constant-time comparison would be better for production code
     return lhs.keyData == rhs.keyData

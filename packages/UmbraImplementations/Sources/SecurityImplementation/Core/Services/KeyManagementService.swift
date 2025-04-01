@@ -1,7 +1,7 @@
+import CoreSecurityTypes
 import Foundation
 import LoggingInterfaces
 import SecurityCoreInterfaces
-import CoreSecurityTypes
 
 /**
  # Key Management Service

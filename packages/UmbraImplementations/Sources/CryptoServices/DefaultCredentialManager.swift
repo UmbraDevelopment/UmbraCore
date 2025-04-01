@@ -1,13 +1,13 @@
 import CryptoInterfaces
 import CryptoTypes
 import DomainSecurityTypes
-import UmbraErrors
-import UmbraErrorsCore
-import UmbraErrorsDTOs
 import Foundation
 import LoggingInterfaces
 import SecurityCoreInterfaces
 import SecurityInterfaces
+import UmbraErrors
+import UmbraErrorsCore
+import UmbraErrorsDTOs
 
 /// Default implementation of CredentialManagerProtocol using a SecureStorageProvider
 public actor DefaultCredentialManager: CredentialManagerProtocol {
@@ -22,8 +22,8 @@ public actor DefaultCredentialManager: CredentialManagerProtocol {
   ///   - storageProvider: The storage provider to use
   ///   - cryptoService: The crypto service to use
   public init(storageProvider: SecureStorageProvider, cryptoService: CryptoServiceProtocol) {
-    self.storageProvider = storageProvider
-    self.cryptoService = cryptoService
+    self.storageProvider=storageProvider
+    self.cryptoService=cryptoService
   }
 
   /// Save a credential securely
@@ -35,8 +35,8 @@ public actor DefaultCredentialManager: CredentialManagerProtocol {
     // This is a simplified implementation that delegates to the storage provider
     do {
       try await storageProvider.securelyStore(data: data, withIdentifier: identifier, options: nil)
-    } catch let error {
-      let context = ErrorContext([
+    } catch {
+      let context=ErrorContext([
         "identifier": identifier,
         "error": error.localizedDescription
       ])
@@ -55,8 +55,8 @@ public actor DefaultCredentialManager: CredentialManagerProtocol {
   public func retrieve(forIdentifier identifier: String) async throws -> Data {
     do {
       return try await storageProvider.retrieveSecureData(withIdentifier: identifier)
-    } catch let error {
-      let context = ErrorContext([
+    } catch {
+      let context=ErrorContext([
         "identifier": identifier,
         "error": error.localizedDescription
       ])
@@ -74,8 +74,8 @@ public actor DefaultCredentialManager: CredentialManagerProtocol {
   public func delete(forIdentifier identifier: String) async throws {
     do {
       try await storageProvider.deleteSecureData(withIdentifier: identifier)
-    } catch let error {
-      let context = ErrorContext([
+    } catch {
+      let context=ErrorContext([
         "identifier": identifier,
         "error": error.localizedDescription
       ])
@@ -93,7 +93,7 @@ public actor DefaultCredentialManager: CredentialManagerProtocol {
   /// - Returns: True if the credential exists, false otherwise
   public func exists(forIdentifier identifier: String) async -> Bool {
     do {
-      _ = try await storageProvider.retrieveSecureData(withIdentifier: identifier)
+      _=try await storageProvider.retrieveSecureData(withIdentifier: identifier)
       return true
     } catch {
       return false

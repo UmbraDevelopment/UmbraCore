@@ -17,7 +17,7 @@ import Foundation
  *     // Private state should be isolated within the actor
  *     private var activeOperations: [UUID: BackupOperation] = [:]
  *     private let fileManager: FileManagerProtocol
- *     
+ *
  *     // All function implementations must use 'await' appropriately when
  *     // accessing actor-isolated state or calling other actor methods
  * }
@@ -32,7 +32,7 @@ import Foundation
  * // Public non-actor class that conforms to protocol
  * public final class BackupService: BackupServiceProtocol {
  *     private let actor: BackupServiceActor
- *     
+ *
  *     // Forward all protocol methods to the actor
  *     public func createBackup(...) async -> Result<...> {
  *         await actor.createBackup(...)

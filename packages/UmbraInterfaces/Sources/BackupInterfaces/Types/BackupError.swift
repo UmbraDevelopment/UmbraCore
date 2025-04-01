@@ -1,6 +1,6 @@
 import Foundation
-import UmbraErrors
 import LoggingInterfaces
+import UmbraErrors
 
 /// Comprehensive error type for backup operations
 ///
@@ -116,10 +116,10 @@ public enum BackupError: Error, CustomNSError, LocalizedError {
       case let .maintenanceFailure(reason):
         return "Repository maintenance failed: \(reason.asErrorDetail())"
       case let .insufficientDiskSpace(available, required):
-        let availableMB = Double(available) / 1_048_576.0
-        let requiredMB = Double(required) / 1_048_576.0
-        let availableFormatted = String(format: "%.1f", availableMB).asPublicInfo()
-        let requiredFormatted = String(format: "%.1f", requiredMB).asPublicInfo()
+        let availableMB=Double(available) / 1_048_576.0
+        let requiredMB=Double(required) / 1_048_576.0
+        let availableFormatted=String(format: "%.1f", availableMB).asPublicInfo()
+        let requiredFormatted=String(format: "%.1f", requiredMB).asPublicInfo()
         return "Insufficient disk space: \(availableFormatted) MB available, \(requiredFormatted) MB required"
       case .operationCancelled:
         return "Backup operation was cancelled"

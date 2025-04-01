@@ -25,9 +25,9 @@ extension BackupProgressInfo {
     )
   {
     var continuation: AsyncStream<BackupProgressInfo>.Continuation!
-    let stream = AsyncStream<BackupProgressInfo> { cont in
-      continuation = cont
-      cont.onTermination = { @Sendable _ in
+    let stream=AsyncStream<BackupProgressInfo> { cont in
+      continuation=cont
+      cont.onTermination={ @Sendable _ in
         // Handle stream termination if needed
       }
     }
@@ -41,7 +41,7 @@ extension BackupProgressInfo {
     update: (BackupProgressInfo) -> Void,
     complete: () -> Void
   ) {
-    let (stream, continuation) = createStream()
+    let (stream, continuation)=createStream()
 
     // Send initial progress
     continuation.yield(.initialising())
@@ -73,7 +73,7 @@ extension Task where Success == Never, Failure == Never {
     action: @escaping (AsyncStream<BackupProgressInfo>.Continuation) async throws -> Void
   ) -> Task {
     Task {
-      let (_, continuation) = BackupProgressInfo.createStream()
+      let (_, continuation)=BackupProgressInfo.createStream()
 
       do {
         try await action(continuation)
@@ -119,7 +119,7 @@ public actor AsyncProgressReporter: AsyncProgressReporting {
   private var streams: [BackupOperation: (
     stream: AsyncStream<BackupProgressInfo>,
     continuation: AsyncStream<BackupProgressInfo>.Continuation
-  )] = [:]
+  )]=[:]
 
   /// Initialises a new async progress reporter
   public init() {}
@@ -131,7 +131,7 @@ public actor AsyncProgressReporter: AsyncProgressReporting {
   -> AsyncStream<BackupProgressInfo> {
     // Since we need actor isolation for this function, we'll create a stream here
     // and keep updating it from the actor-isolated methods
-    let (stream, continuation) = BackupProgressInfo.createStream()
+    let (stream, continuation)=BackupProgressInfo.createStream()
 
     // Initialize with creating phase
     continuation.yield(BackupProgressInfo.initialising())
@@ -149,7 +149,7 @@ public actor AsyncProgressReporter: AsyncProgressReporting {
     operation: BackupOperation,
     continuation: AsyncStream<BackupProgressInfo>.Continuation
   ) {
-    streams[operation] = (BackupProgressInfo.createStream().0, continuation)
+    streams[operation]=(BackupProgressInfo.createStream().0, continuation)
   }
 
   /// Report progress for an operation
@@ -170,7 +170,7 @@ public actor AsyncProgressReporter: AsyncProgressReporting {
     _ progress: BackupProgressInfo,
     for operation: BackupOperation
   ) {
-    if let continuation = streams[operation]?.continuation {
+    if let continuation=streams[operation]?.continuation {
       continuation.yield(progress)
     }
   }
@@ -185,7 +185,7 @@ public actor AsyncProgressReporter: AsyncProgressReporting {
 
   /// Complete operation internally (actor-isolated)
   private func completeOperationInternally(_ operation: BackupOperation) {
-    if let continuation = streams[operation]?.continuation {
+    if let continuation=streams[operation]?.continuation {
       continuation.yield(BackupProgressInfo.completed())
       continuation.finish()
       streams.removeValue(forKey: operation)

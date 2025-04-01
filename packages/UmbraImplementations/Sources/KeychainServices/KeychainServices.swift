@@ -43,12 +43,12 @@
 /// All implementations use Swift actors to ensure thread safety and proper
 /// isolation of state.
 
+import CoreSecurityTypes
 import Foundation
 import KeychainInterfaces
 import LoggingInterfaces
 import LoggingTypes
 import SecurityCoreInterfaces
-import CoreSecurityTypes
 import UmbraErrors
 
 /// Convenience access to KeychainServiceFactory
