@@ -21,5 +21,8 @@ umbra_swift_library(
         "//packages/UmbraInterfaces/Sources/LoggingInterfaces",
         "//packages/UmbraInterfaces/Sources/LoggingWrapperInterfaces",
         "//packages/UmbraImplementations/Sources/LoggingWrapperServices",
+        "//packages/UmbraCoreTypes/Sources/CoreDTOs",              # Added for DTO compatibility
+        "//packages/UmbraCoreTypes/Sources/SecurityInterfaces",    # Added for security logging
+        "//packages/UmbraCoreTypes/Sources/CryptoTypes",           # Added for crypto logging
     ],
 )
