@@ -3,13 +3,14 @@ try-import %workspace%/.bazelrc.user
 
 # Platform configuration
 build --apple_platform_type=macos
-build --macos_minimum_os=14.7.4
 build --cpu=darwin_arm64
 build --host_cpu=darwin_arm64
 build --platforms=//:macos_arm64
 build --apple_crosstool_top=@local_config_apple_cc//:toolchain
 build --crosstool_top=@local_config_apple_cc//:toolchain
 build --host_crosstool_top=@local_config_apple_cc//:toolchain
+build --xcode_version=16.3.0
+build --define=APPLE_SDK_PLATFORM=MacOSX
 
 # Swift compiler flags for target platform consistency
 # Note: We rely on the compiler_options.bzl settings instead of setting Swift flags here
@@ -26,8 +27,7 @@ test --test_env=DYLD_FRAMEWORK_PATH
 test --test_env=DEVELOPER_DIR
 test --test_env=SWIFT_DETERMINISTIC_HASHING=1
 test --test_env=SDKROOT
-test --test_env=MACOS_SDK_VERSION=15.4
-test --test_env=XCODE_VERSION_OVERRIDE=16.2.0.16C5032a
+test --test_env=XCODE_VERSION_OVERRIDE=16.3.0
 test --test_env=PLATFORM_NAME=macosx
 test --test_verbose_timeout_warnings
 test --test_summary=detailed

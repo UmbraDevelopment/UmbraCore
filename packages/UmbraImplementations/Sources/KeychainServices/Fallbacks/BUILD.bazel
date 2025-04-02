@@ -1,0 +1,15 @@
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
+
+umbra_swift_library(
+    name = "Fallbacks",
+    srcs = glob(["*.swift"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//packages/UmbraCoreTypes/Sources/CoreInterfaces",
+        "//packages/UmbraCoreTypes/Sources/CoreSecurityTypes",
+        "//packages/UmbraCoreTypes/Sources/KeychainTypes",
+        "//packages/UmbraCoreTypes/Sources/UmbraErrors",
+        "//packages/UmbraInterfaces/Sources/KeychainInterfaces",
+        "//packages/UmbraInterfaces/Sources/SecurityCoreInterfaces",
+    ],
+)

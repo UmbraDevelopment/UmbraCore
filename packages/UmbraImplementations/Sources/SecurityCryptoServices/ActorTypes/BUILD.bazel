@@ -15,6 +15,7 @@ umbra_swift_library(
         "//packages/UmbraInterfaces/Sources/SecurityCoreInterfaces",
         "//packages/UmbraInterfaces/Sources/LoggingInterfaces",
         "//packages/UmbraCoreTypes/Sources/LoggingTypes",
+        "//packages/UmbraImplementations/Sources/LoggingServices",
         "//packages/UmbraImplementations/Sources/SecurityProviders",  # Important dependency for SecurityProviderFactory
         "//packages/UmbraImplementations/Sources/SecurityCryptoServices/ProviderFactories:ProviderFactories",  # Provider factory implementations
     ],
