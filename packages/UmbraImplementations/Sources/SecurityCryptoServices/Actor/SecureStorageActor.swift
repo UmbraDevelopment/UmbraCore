@@ -42,7 +42,7 @@ public actor SecureStorageActor {
 
   /// Secure logger for privacy-aware logging
   private let secureLogger: SecureLoggerActor
-  
+
   /// Legacy logger interface for compatibility with existing systems
   private let logger: LoggingProtocol
 
@@ -53,10 +53,10 @@ public actor SecureStorageActor {
   private let storageURL: URL
 
   // MARK: - Initialisation
-  
+
   /**
    Initialises a new secure storage actor with the specified crypto service and logger.
-   
+
    - Parameters:
       - cryptoService: The crypto service actor to use for cryptographic operations
       - logger: The logger for recording operations (will be replaced with secureLogger in future versions)
@@ -66,35 +66,35 @@ public actor SecureStorageActor {
   public init(
     cryptoService: CryptoServiceActor,
     logger: LoggingProtocol,
-    secureLogger: SecureLoggerActor? = nil,
-    storageLocation: URL? = nil
+    secureLogger: SecureLoggerActor?=nil,
+    storageLocation: URL?=nil
   ) {
-    self.cryptoService = cryptoService
-    self.logger = logger
-    self.secureLogger = secureLogger ?? SecureLoggerActor(
+    self.cryptoService=cryptoService
+    self.logger=logger
+    self.secureLogger=secureLogger ?? SecureLoggerActor(
       subsystem: "com.umbra.securitycryptoservices",
       category: "SecureStorage"
     )
-    
-    if let storageLocation = storageLocation {
-      self.storageURL = storageLocation
+
+    if let storageLocation {
+      storageURL=storageLocation
     } else {
-      let fileManager = FileManager.default
-      let defaultURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+      let fileManager=FileManager.default
+      let defaultURL=fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         .appendingPathComponent("com.umbra.keys", isDirectory: true)
-      
+
       // Create directory if it doesn't exist
       if !fileManager.fileExists(atPath: defaultURL.path) {
         try? fileManager.createDirectory(at: defaultURL, withIntermediateDirectories: true)
       }
-      
-      self.storageURL = defaultURL
+
+      storageURL=defaultURL
     }
   }
-  
+
   /**
    Initialises a new secure storage actor with the specified provider type and logger.
-   
+
    - Parameters:
       - providerType: The type of security provider to use
       - logger: The logger for recording operations
@@ -104,37 +104,38 @@ public actor SecureStorageActor {
   public init(
     providerType: SecurityProviderType,
     logger: LoggingProtocol,
-    secureLogger: SecureLoggerActor? = nil,
-    storageLocation: URL? = nil
+    secureLogger: SecureLoggerActor?=nil,
+    storageLocation: URL?=nil
   ) async {
-    self.logger = logger
-    self.secureLogger = secureLogger ?? SecureLoggerActor(
+    self.logger=logger
+    self.secureLogger=secureLogger ?? SecureLoggerActor(
       subsystem: "com.umbra.securitycryptoservices",
       category: "SecureStorage"
     )
-    
+
     // Create the crypto service with the specified provider type
-    self.cryptoService = await CryptoServicesFactory.createCryptoServiceActor(
+    cryptoService=await CryptoServicesFactory.createCryptoServiceActor(
       providerType: providerType,
       logger: logger
     )
-    
-    if let storageLocation = storageLocation {
-      self.storageURL = storageLocation
+
+    if let storageLocation {
+      storageURL=storageLocation
     } else {
-      let fileManager = FileManager.default
-      let defaultURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+      let fileManager=FileManager.default
+      let defaultURL=fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         .appendingPathComponent("com.umbra.keys", isDirectory: true)
-      
+
       // Create directory if it doesn't exist
       if !fileManager.fileExists(atPath: defaultURL.path) {
         try? fileManager.createDirectory(at: defaultURL, withIntermediateDirectories: true)
       }
-      
-      self.storageURL = defaultURL
+
+      storageURL=defaultURL
     }
-    
-    await secureLogger.info("SecureStorageActor initialised with provider type: \(providerType.rawValue)")
+
+    await secureLogger
+      .info("SecureStorageActor initialised with provider type: \(providerType.rawValue)")
   }
 
   // MARK: - Key Storage Operations
@@ -183,7 +184,10 @@ public actor SecureStorageActor {
         self.keyCache[identifier]=[UInt8](secureKey)
       }
 
-      await secureLogger.info("Successfully stored key with identifier: \(identifier)", metadata: nil)
+      await secureLogger.info(
+        "Successfully stored key with identifier: \(identifier)",
+        metadata: nil
+      )
     } catch {
       await secureLogger.error("Failed to store key: \(error.localizedDescription)", metadata: nil)
 
@@ -236,10 +240,16 @@ public actor SecureStorageActor {
       // Update cache with a secured copy
       keyCache[identifier]=MemoryProtection.secureDataCopy(key)
 
-      await secureLogger.info("Successfully retrieved key with identifier: \(identifier)", metadata: nil)
+      await secureLogger.info(
+        "Successfully retrieved key with identifier: \(identifier)",
+        metadata: nil
+      )
       return key
     } catch {
-      await secureLogger.error("Failed to retrieve key: \(error.localizedDescription)", metadata: nil)
+      await secureLogger.error(
+        "Failed to retrieve key: \(error.localizedDescription)",
+        metadata: nil
+      )
 
       if let secError=error as? SecurityProtocolError {
         throw secError
@@ -280,7 +290,10 @@ public actor SecureStorageActor {
         keyCache.removeValue(forKey: identifier)
       }
 
-      await secureLogger.info("Successfully deleted key with identifier: \(identifier)", metadata: nil)
+      await secureLogger.info(
+        "Successfully deleted key with identifier: \(identifier)",
+        metadata: nil
+      )
       return true
     } catch {
       await secureLogger.error(

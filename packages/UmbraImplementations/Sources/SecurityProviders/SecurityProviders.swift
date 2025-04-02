@@ -35,7 +35,7 @@
 
  ## Actor-Based Concurrency
 
- The SecurityProviderImpl uses Swift's actor model to ensure thread safety and 
+ The SecurityProviderImpl uses Swift's actor model to ensure thread safety and
  proper isolation of mutable state. This follows the Alpha Dot Five architecture
  principles for safe concurrency.
 

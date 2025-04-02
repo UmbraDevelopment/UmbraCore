@@ -39,10 +39,10 @@ public struct BookmarkValidationResultDTO: Sendable {
     updatedBookmark: [UInt8]?,
     url: URL
   ) {
-    self.isValid = isValid
-    self.isStale = isStale
-    self.updatedBookmark = updatedBookmark
-    self.url = url
+    self.isValid=isValid
+    self.isStale=isStale
+    self.updatedBookmark=updatedBookmark
+    self.url=url
   }
 
   /// Creates a result indicating the bookmark is valid and not stale

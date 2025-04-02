@@ -29,7 +29,7 @@
  defer {
      MemoryProtection.secureZero(&sensitiveData)
  }
- 
+
  // Use with automatic cleanup
  let result = MemoryProtection.withSecureTemporaryData(initialValue) { buffer in
      // Process sensitive data
@@ -47,4 +47,4 @@
 @_exported import UmbraErrors
 
 // Public exports
-public typealias DefaultSecurityUtils = SecurityUtilities
+public typealias DefaultSecurityUtils=SecurityUtilities

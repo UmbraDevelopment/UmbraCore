@@ -111,18 +111,18 @@ struct SnapshotResultParser {
     }
   }
 
-  /// Parses the output of a compare command into a SnapshotDifference
+  /// Parses the output of a compare command into a BackupSnapshotDifference
   /// - Parameters:
   ///   - output: Command output to parse
   ///   - snapshotID1: First snapshot ID in the comparison
   ///   - snapshotID2: Second snapshot ID in the comparison
-  /// - Returns: Parsed SnapshotDifference object
+  /// - Returns: Parsed BackupSnapshotDifference object
   /// - Throws: BackupError if parsing fails
   func parseComparisonResult(
     output: String,
     snapshotID1: String,
     snapshotID2: String
-  ) throws -> SnapshotDifference {
+  ) throws -> BackupSnapshotDifference {
     guard let data=output.data(using: .utf8) else {
       throw BackupError.parsingError(details: "Failed to convert output to data")
     }
@@ -187,7 +187,7 @@ struct SnapshotResultParser {
         )
       } ?? []
 
-      return SnapshotDifference(
+      return BackupSnapshotDifference(
         snapshotID1: snapshotID1,
         snapshotID2: snapshotID2,
         addedCount: addedFiles.count,
@@ -275,7 +275,7 @@ struct SnapshotResultParser {
     }
   }
 
-  /// Parses the output of a verification command into a VerificationResult
+  /// Parses the output of a verification command into a BackupVerificationResultDTO
   /// - Parameters:
   ///   - repositoryCheck: Output from repository check command
   ///   - dataIntegrityCheck: Output from data integrity check command
@@ -284,7 +284,7 @@ struct SnapshotResultParser {
   func parseVerificationResult(
     repositoryCheck: String,
     dataIntegrityCheck: String
-  ) throws -> VerificationResult {
+  ) throws -> BackupVerificationResultDTO {
     // Check for errors in repository check output
     let repositoryValid = !repositoryCheck.contains("error")
 
@@ -317,7 +317,7 @@ struct SnapshotResultParser {
     let endTime=Date()
 
     // Create and return verification result
-    return VerificationResult(
+    return BackupVerificationResultDTO(
       successful: repositoryValid && dataIntegrityValid,
       issues: issues,
       startTime: startTime,
@@ -429,7 +429,7 @@ struct SnapshotResultParser {
    * - Returns: Parsed snapshot difference
    * - Throws: BackupError if parsing fails
    */
-  func parseSnapshotDifference(output: String) throws -> SnapshotDifference {
+  func parseSnapshotDifference(output: String) throws -> BackupSnapshotDifference {
     guard let data=output.data(using: .utf8) else {
       throw BackupError.parsingError(details: "Failed to convert output to data")
     }
@@ -508,7 +508,7 @@ struct SnapshotResultParser {
       let removedSnapshotFiles=removedFiles.map(convertToSnapshotFile)
       let modifiedSnapshotFiles=modifiedFiles.map(convertToSnapshotFile)
 
-      return SnapshotDifference(
+      return BackupSnapshotDifference(
         snapshotID1: "unknown1", // These would need to be passed in from outside
         snapshotID2: "unknown2", // These would need to be passed in from outside
         addedCount: addedFiles.count,

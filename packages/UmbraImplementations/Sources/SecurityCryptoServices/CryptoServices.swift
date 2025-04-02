@@ -9,7 +9,7 @@ import SecurityCoreInterfaces
 
  Main entry point for the cryptographic services in UmbraCore following
  the Alpha Dot Five architecture principles with actor-based concurrency.
- 
+
  This provides factory methods to access various cryptographic services
  through a clean interface that avoids implementation details.
 
@@ -39,7 +39,7 @@ public enum CryptoServices {
    - Returns: A new actor-based implementation of CryptoServiceProtocol
    */
   public static func createCryptoService(
-    providerType: SecurityProviderType? = nil,
+    providerType: SecurityProviderType?=nil,
     logger: LoggingProtocol
   ) async -> any CryptoServiceProtocol {
     await CryptoServicesFactory.createCryptoService(
@@ -60,8 +60,8 @@ public enum CryptoServices {
    - Returns: A new actor-based implementation of SecureStorageProtocol
    */
   public static func createSecureStorage(
-    providerType: SecurityProviderType? = nil,
-    storageURL: URL? = nil,
+    providerType: SecurityProviderType?=nil,
+    storageURL: URL?=nil,
     logger: LoggingProtocol
   ) async -> any SecureStorageProtocol {
     await CryptoServicesFactory.createSecureStorage(

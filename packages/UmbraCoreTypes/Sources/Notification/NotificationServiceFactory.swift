@@ -88,12 +88,12 @@ private final class DefaultNotificationService: NotificationServiceProtocol {
 
     // Safely send observer to actor using a detached task to avoid data races
     // with the non-Sendable NSObjectProtocol observer
-    let observerCopy = observer // Make a local copy of the observer
-    
+    let observerCopy=observer // Make a local copy of the observer
+
     // Create nonisolated copies to prevent task isolation issues in Swift 6
-    let nonisolatedActor = observationActor
-    let nonisolatedID = observerID
-    
+    let nonisolatedActor=observationActor
+    let nonisolatedID=observerID
+
     // Use a @Sendable closure with nonisolated function
     Task.detached { @Sendable in
       // Call nonisolated helper function to avoid capturing isolated state
@@ -141,9 +141,9 @@ private final class DefaultNotificationService: NotificationServiceProtocol {
 
       // Safely store each observer with its unique ID
       // Create nonisolated copy to prevent task isolation issues in Swift 6
-      let nonisolatedActor = observationActor
-      let nonisolatedID = uniqueID
-      
+      let nonisolatedActor=observationActor
+      let nonisolatedID=uniqueID
+
       // Use a @Sendable closure with nonisolated function
       Task { @Sendable in
         // Call nonisolated helper function to avoid capturing isolated state
@@ -192,25 +192,24 @@ private final class DefaultNotificationService: NotificationServiceProtocol {
   /// - Returns: A notification DTO properly converted for use in Alpha Dot Five architecture
   private nonisolated func createDTO(from notification: Notification) -> NotificationDTO {
     // Convert [AnyHashable: Any]? to [String: String] for Sendable compliance
-    let userInfo = notification.userInfo?
+    let userInfo=notification.userInfo?
       .reduce(into: [String: String]()) { result, pair in
-        if let key = pair.key as? String {
-          if let stringValue = pair.value as? String {
-            result[key] = stringValue
+        if let key=pair.key as? String {
+          if let stringValue=pair.value as? String {
+            result[key]=stringValue
           } else {
-            result[key] = "\(pair.value)"
+            result[key]="\(pair.value)"
           }
         }
       } ?? [:]
-    
+
     // Convert sender to string representation for type safety
-    let senderString: String?
-    if let sender = notification.object {
-      senderString = "\(sender)"
+    let senderString: String?=if let sender=notification.object {
+      "\(sender)"
     } else {
-      senderString = nil
+      nil
     }
-    
+
     return NotificationDTO(
       name: notification.name.rawValue,
       sender: senderString,
@@ -229,7 +228,7 @@ private final class DefaultNotificationService: NotificationServiceProtocol {
     forID id: String
   ) async {
     // Ensure the observer conforms to NSObjectProtocol as required by the actor
-    if let protocolObserver = observer as? NSObjectProtocol {
+    if let protocolObserver=observer as? NSObjectProtocol {
       await actor.storeObserver(protocolObserver, forID: id)
     } else {
       // Log error if observer doesn't conform to NSObjectProtocol

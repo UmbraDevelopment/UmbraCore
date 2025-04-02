@@ -30,7 +30,7 @@ public actor CryptoServiceMonitor: CryptoServiceMonitorProtocol {
   private let eventStream: CryptoEventStream
 
   /// Whether the monitor is currently active
-  private var isActive: Bool = false
+  private var isActive: Bool=false
 
   /**
    Initialises a new crypto service monitor.
@@ -38,9 +38,9 @@ public actor CryptoServiceMonitor: CryptoServiceMonitorProtocol {
    - Parameter logger: Logger for recording operations and errors
    */
   public init(logger: LoggingProtocol) {
-    self.logger = logger
-    cryptoLogger = CryptoMonitorLogger(logger: logger)
-    eventStream = CryptoEventStream()
+    self.logger=logger
+    cryptoLogger=CryptoMonitorLogger(logger: logger)
+    eventStream=CryptoEventStream()
   }
 
   /**
@@ -59,7 +59,7 @@ public actor CryptoServiceMonitor: CryptoServiceMonitorProtocol {
       return false
     }
 
-    isActive = true
+    isActive=true
 
     await cryptoLogger.logOperationSuccess(
       operation: "startMonitoring",
@@ -86,7 +86,7 @@ public actor CryptoServiceMonitor: CryptoServiceMonitorProtocol {
       return false
     }
 
-    isActive = false
+    isActive=false
     eventStream.complete()
 
     await cryptoLogger.logOperationSuccess(
@@ -214,13 +214,13 @@ private final class CryptoEventStream: @unchecked Sendable {
   init() {
     // Create the stream and capture the continuation
     var continuation: AsyncStream<CryptoEventDTO>.Continuation!
-    stream = AsyncStream { cont in
-      continuation = cont
-      cont.onTermination = { @Sendable _ in
+    stream=AsyncStream { cont in
+      continuation=cont
+      cont.onTermination={ @Sendable _ in
         // Clean up resources if needed
       }
     }
-    self.continuation = continuation
+    self.continuation=continuation
   }
 
   /**
@@ -252,12 +252,12 @@ private struct CryptoMonitorLogger {
   private let logger: LoggingProtocol
 
   init(logger: LoggingProtocol) {
-    self.logger = logger
+    self.logger=logger
   }
 
   func logOperationStart(
     operation: String,
-    additionalContext: LogMetadataDTOCollection? = nil
+    additionalContext: LogMetadataDTOCollection?=nil
   ) async {
     await logger.log(
       level: .debug,
@@ -268,7 +268,7 @@ private struct CryptoMonitorLogger {
 
   func logOperationSuccess(
     operation: String,
-    additionalContext: LogMetadataDTOCollection? = nil
+    additionalContext: LogMetadataDTOCollection?=nil
   ) async {
     await logger.log(
       level: .debug,
@@ -280,10 +280,10 @@ private struct CryptoMonitorLogger {
   func logOperationWarning(
     operation: String,
     message: String,
-    additionalContext: LogMetadataDTOCollection? = nil
+    additionalContext: LogMetadataDTOCollection?=nil
   ) async {
-    var context = additionalContext ?? LogMetadataDTOCollection()
-    context = context.withPrivate(key: "warning", value: message)
+    var context=additionalContext ?? LogMetadataDTOCollection()
+    context=context.withPrivate(key: "warning", value: message)
 
     await logger.log(
       level: .warning,
@@ -295,10 +295,10 @@ private struct CryptoMonitorLogger {
   func logOperationError(
     operation: String,
     error: Error,
-    additionalContext: LogMetadataDTOCollection? = nil
+    additionalContext: LogMetadataDTOCollection?=nil
   ) async {
-    var context = additionalContext ?? LogMetadataDTOCollection()
-    context = context.withPrivate(key: "error", value: "\(error)")
+    var context=additionalContext ?? LogMetadataDTOCollection()
+    context=context.withPrivate(key: "error", value: "\(error)")
 
     await logger.log(
       level: .error,

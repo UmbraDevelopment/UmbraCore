@@ -221,7 +221,7 @@ public actor KeychainSecurityActor {
       )
 
       // Add the data to the config options
-      let configOptions = SecurityConfigOptions(
+      let configOptions=SecurityConfigOptions(
         enableDetailedLogging: false,
         useHardwareAcceleration: true,
         verifyOperations: true,
@@ -231,7 +231,7 @@ public actor KeychainSecurityActor {
       )
 
       // Create the config with our options
-      let decryptionConfig = SecurityConfigDTO(
+      let decryptionConfig=SecurityConfigDTO(
         encryptionAlgorithm: .aes256GCM,
         hashAlgorithm: .sha256,
         providerType: .basic,
@@ -360,9 +360,9 @@ public actor KeychainSecurityActor {
   private func generateAESKey() async throws -> Data {
     // Generate a new secure random key for AES-256 (32 bytes)
     // We need to create a SecurityConfigDTO for AES-256 encryption
-    let configOptions = SecurityConfigOptions()
+    let configOptions=SecurityConfigOptions()
 
-    let config = SecurityConfigDTO(
+    let config=SecurityConfigDTO(
       encryptionAlgorithm: .aes256GCM,
       hashAlgorithm: .sha256,
       providerType: .basic,

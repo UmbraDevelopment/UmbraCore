@@ -136,7 +136,7 @@ public enum BackupError: Error, CustomNSError, LocalizedError {
       case let .timeoutError(operation, _):
         return "Operation timed out: \(operation.asPublicInfo())"
       case let .genericError(reason):
-        return "Backup error: \(reason.asErrorDetail())"
+        return "Backup error: \(reason.asErrorDetail().content)"
     }
   }
 
@@ -178,7 +178,7 @@ public enum BackupError: Error, CustomNSError, LocalizedError {
       case let .timeoutError(_, details):
         "The operation timed out: \(details.asErrorDetail())"
       case let .genericError(reason):
-        reason.asErrorDetail()
+        reason.asErrorDetail().content
     }
   }
 

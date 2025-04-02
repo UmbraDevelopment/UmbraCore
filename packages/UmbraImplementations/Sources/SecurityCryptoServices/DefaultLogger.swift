@@ -22,19 +22,19 @@ import OSLog
 public final class DefaultLogger: LoggingProtocol {
   /// Secure logger actor for thread-safe logging
   private let secureLogger: SecureLoggerActor
-  
+
   /// Category name for this logger
   private let category: String
-  
+
   /// Convenience property to access the logging actor
   public var loggingActor: LoggingActor {
     SimpleLoggingActor(secureLogger: secureLogger, category: category)
   }
 
   /// Initialise a new logger with the default subsystem and category
-  public init(category: String = "CryptoServices") {
-    self.category = category
-    self.secureLogger = SecureLoggerActor(
+  public init(category: String="CryptoServices") {
+    self.category=category
+    secureLogger=SecureLoggerActor(
       subsystem: "com.umbra.securitycryptoservices",
       category: category,
       includeTimestamps: true
@@ -49,40 +49,41 @@ public final class DefaultLogger: LoggingProtocol {
     source: String
   ) async {
     // Convert LogLevel to UmbraLogLevel
-    let umbraLevel: LoggingTypes.UmbraLogLevel
-    switch level {
+    let umbraLevel: LoggingTypes.UmbraLogLevel=switch level {
       case .trace, .debug:
-        umbraLevel = .debug
+        .debug
       case .info:
-        umbraLevel = .info
+        .info
       case .warning:
-        umbraLevel = .warning
+        .warning
       case .error:
-        umbraLevel = .error
+        .error
       case .critical:
-        umbraLevel = .critical
+        .critical
     }
-    
+
     // Convert metadata to privacy-tagged values if present
     var privacyMetadata: [String: PrivacyTaggedValue]?
-    if let metadata = metadata {
-      var metadataMap: [String: PrivacyTaggedValue] = [:]
+    if let metadata {
+      var metadataMap: [String: PrivacyTaggedValue]=[:]
       for (key, value) in metadata {
         // Determine appropriate privacy level based on key naming conventions
-        let privacyLevel: LogPrivacyLevel
-        if key.hasSuffix("Password") || key.hasSuffix("Token") || key.hasSuffix("Key") {
-          privacyLevel = .sensitive
+        let privacyLevel: LogPrivacyLevel=if
+          key.hasSuffix("Password") || key
+            .hasSuffix("Token") || key.hasSuffix("Key")
+        {
+          .sensitive
         } else if key.hasSuffix("Id") || key.hasSuffix("Email") || key.hasSuffix("Name") {
-          privacyLevel = .private
+          .private
         } else {
-          privacyLevel = .public
+          .public
         }
-        
-        metadataMap[key] = PrivacyTaggedValue(value: value, privacyLevel: privacyLevel)
+
+        metadataMap[key]=PrivacyTaggedValue(value: value, privacyLevel: privacyLevel)
       }
-      privacyMetadata = metadataMap
+      privacyMetadata=metadataMap
     }
-    
+
     await secureLogger.log(
       level: umbraLevel,
       message: "[\(source)] \(message)",
@@ -127,14 +128,14 @@ public final class DefaultLogger: LoggingProtocol {
 actor SimpleLoggingActor: LoggingActor {
   /// The secure logger actor for delegating log operations
   private let secureLogger: SecureLoggerActor
-  
+
   /// Category for this logger
   private let category: String
-  
+
   /// Initialise with a secure logger actor
   init(secureLogger: SecureLoggerActor, category: String) {
-    self.secureLogger = secureLogger
-    self.category = category
+    self.secureLogger=secureLogger
+    self.category=category
   }
 
   /// Log a message at the specified level
@@ -145,40 +146,41 @@ actor SimpleLoggingActor: LoggingActor {
     source: String
   ) async {
     // Convert LogLevel to UmbraLogLevel
-    let umbraLevel: LoggingTypes.UmbraLogLevel
-    switch level {
+    let umbraLevel: LoggingTypes.UmbraLogLevel=switch level {
       case .trace, .debug:
-        umbraLevel = .debug
+        .debug
       case .info:
-        umbraLevel = .info
+        .info
       case .warning:
-        umbraLevel = .warning
+        .warning
       case .error:
-        umbraLevel = .error
+        .error
       case .critical:
-        umbraLevel = .critical
+        .critical
     }
-    
+
     // Convert metadata to privacy-tagged values if present
     var privacyMetadata: [String: PrivacyTaggedValue]?
-    if let metadata = metadata {
-      var metadataMap: [String: PrivacyTaggedValue] = [:]
+    if let metadata {
+      var metadataMap: [String: PrivacyTaggedValue]=[:]
       for (key, value) in metadata {
         // Determine appropriate privacy level based on key naming conventions
-        let privacyLevel: LogPrivacyLevel
-        if key.hasSuffix("Password") || key.hasSuffix("Token") || key.hasSuffix("Key") {
-          privacyLevel = .sensitive
+        let privacyLevel: LogPrivacyLevel=if
+          key.hasSuffix("Password") || key
+            .hasSuffix("Token") || key.hasSuffix("Key")
+        {
+          .sensitive
         } else if key.hasSuffix("Id") || key.hasSuffix("Email") || key.hasSuffix("Name") {
-          privacyLevel = .private
+          .private
         } else {
-          privacyLevel = .public
+          .public
         }
-        
-        metadataMap[key] = PrivacyTaggedValue(value: value, privacyLevel: privacyLevel)
+
+        metadataMap[key]=PrivacyTaggedValue(value: value, privacyLevel: privacyLevel)
       }
-      privacyMetadata = metadataMap
+      privacyMetadata=metadataMap
     }
-    
+
     await secureLogger.log(
       level: umbraLevel,
       message: "[\(source)] \(message)",

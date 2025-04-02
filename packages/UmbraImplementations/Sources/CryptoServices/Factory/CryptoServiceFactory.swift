@@ -47,7 +47,7 @@ public enum CryptoServiceFactory {
   public static func createDefault() async -> CryptoServiceProtocol {
     await createDefaultService()
   }
-  
+
   /**
    Creates a default implementation of CryptoServiceProtocol with optional custom loggers.
 
@@ -60,14 +60,14 @@ public enum CryptoServiceFactory {
    - Returns: A DefaultCryptoServiceImpl instance with configured loggers
    */
   public static func createDefaultService(
-    logger: LoggingProtocol? = nil,
-    secureLogger: SecureLoggerActor? = nil
+    logger: LoggingProtocol?=nil,
+    secureLogger: SecureLoggerActor?=nil
   ) async -> CryptoServiceProtocol {
     // Create a secure logger if not provided
-    let actualSecureLogger = secureLogger ?? await LoggingServices.createSecureLogger(
+    let actualSecureLogger=secureLogger ?? await LoggingServices.createSecureLogger(
       category: "CryptoOperations"
     )
-    
+
     return await DefaultCryptoServiceImpl(
       logger: logger,
       secureLogger: actualSecureLogger
@@ -88,13 +88,13 @@ public enum CryptoServiceFactory {
   ) async -> CryptoServiceProtocol {
     await MockCryptoServiceImpl(configuration: configuration)
   }
-  
+
   /**
    Creates a secure implementation that stores sensitive data in secure storage.
-   
+
    This implementation enhances security by storing sensitive data in secure storage
    rather than keeping it in memory, reducing exposure to memory-based attacks.
-   
+
    - Parameters:
      - wrapped: Optional base implementation (a default will be created if nil)
      - secureStorage: Secure storage implementation
@@ -102,15 +102,15 @@ public enum CryptoServiceFactory {
    - Returns: A secure CryptoServiceProtocol implementation
    */
   public static func createSecureService(
-    wrapped: CryptoServiceProtocol? = nil,
+    wrapped: CryptoServiceProtocol?=nil,
     secureStorage: SecureStorageProtocol,
-    secureLogger: SecureLoggerActor? = nil
+    secureLogger: SecureLoggerActor?=nil
   ) async -> CryptoServiceProtocol {
-    let baseImplementation = wrapped ?? await createDefaultService()
-    let actualSecureLogger = secureLogger ?? await LoggingServices.createSecureLogger(
+    let baseImplementation=wrapped ?? await createDefaultService()
+    let actualSecureLogger=secureLogger ?? await LoggingServices.createSecureLogger(
       category: "SecureCryptoService"
     )
-    
+
     // Pass secure logger to SecureCryptoServiceImpl when it supports it
     return await SecureCryptoServiceImpl(
       wrapped: baseImplementation,
@@ -133,17 +133,17 @@ public enum CryptoServiceFactory {
   public static func createLoggingDecorator(
     wrapped: CryptoServiceProtocol,
     logger: LoggingProtocol,
-    secureLogger: SecureLoggerActor? = nil
+    secureLogger: SecureLoggerActor?=nil
   ) async -> CryptoServiceProtocol {
     // If secure logger is provided, create enhanced logging implementation
-    if let secureLogger = secureLogger {
+    if let secureLogger {
       return await EnhancedLoggingCryptoServiceImpl(
         wrapped: wrapped,
         logger: logger,
         secureLogger: secureLogger
       )
     }
-    
+
     // Fall back to standard logging implementation
     return await LoggingCryptoServiceImpl(wrapped: wrapped, logger: logger)
   }
@@ -176,21 +176,21 @@ public actor MockCryptoServiceImpl: CryptoServiceProtocol {
 
     /// Initialize with default values or customize behavior
     public init(
-      encryptionShouldSucceed: Bool = true,
-      decryptionShouldSucceed: Bool = true,
-      hashingShouldSucceed: Bool = true,
-      hashVerificationShouldSucceed: Bool = true,
-      keyDerivationShouldSucceed: Bool = true,
-      randomGenerationShouldSucceed: Bool = true,
-      hmacGenerationShouldSucceed: Bool = true
+      encryptionShouldSucceed: Bool=true,
+      decryptionShouldSucceed: Bool=true,
+      hashingShouldSucceed: Bool=true,
+      hashVerificationShouldSucceed: Bool=true,
+      keyDerivationShouldSucceed: Bool=true,
+      randomGenerationShouldSucceed: Bool=true,
+      hmacGenerationShouldSucceed: Bool=true
     ) {
-      self.encryptionShouldSucceed = encryptionShouldSucceed
-      self.decryptionShouldSucceed = decryptionShouldSucceed
-      self.hashingShouldSucceed = hashingShouldSucceed
-      self.hashVerificationShouldSucceed = hashVerificationShouldSucceed
-      self.keyDerivationShouldSucceed = keyDerivationShouldSucceed
-      self.randomGenerationShouldSucceed = randomGenerationShouldSucceed
-      self.hmacGenerationShouldSucceed = hmacGenerationShouldSucceed
+      self.encryptionShouldSucceed=encryptionShouldSucceed
+      self.decryptionShouldSucceed=decryptionShouldSucceed
+      self.hashingShouldSucceed=hashingShouldSucceed
+      self.hashVerificationShouldSucceed=hashVerificationShouldSucceed
+      self.keyDerivationShouldSucceed=keyDerivationShouldSucceed
+      self.randomGenerationShouldSucceed=randomGenerationShouldSucceed
+      self.hmacGenerationShouldSucceed=hmacGenerationShouldSucceed
     }
   }
 
@@ -198,8 +198,8 @@ public actor MockCryptoServiceImpl: CryptoServiceProtocol {
   private let configuration: Configuration
 
   /// Initialize with specific configuration
-  public init(configuration: Configuration = Configuration()) {
-    self.configuration = configuration
+  public init(configuration: Configuration=Configuration()) {
+    self.configuration=configuration
   }
 
   public func encrypt(
@@ -211,7 +211,7 @@ public actor MockCryptoServiceImpl: CryptoServiceProtocol {
     }
 
     // Create a mock encrypted result
-    let encryptedData = [UInt8](
+    let encryptedData=[UInt8](
       repeating: 0x42,
       count: data.count + 16
     ) // Add 16 bytes for mock IV/padding
@@ -228,7 +228,7 @@ public actor MockCryptoServiceImpl: CryptoServiceProtocol {
     }
 
     // Create a mock decrypted result
-    let decryptedData = [UInt8](repeating: 0x41, count: max(
+    let decryptedData=[UInt8](repeating: 0x41, count: max(
       0,
       data.count - 16
     )) // Remove 16 bytes for mock IV/padding
@@ -242,7 +242,7 @@ public actor MockCryptoServiceImpl: CryptoServiceProtocol {
     }
 
     // Create a mock hash (fixed length of 32 bytes for SHA-256)
-    let hash = [UInt8](repeating: 0x43, count: 32)
+    let hash=[UInt8](repeating: 0x43, count: 32)
 
     return .success(hash)
   }
@@ -281,14 +281,14 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
 
   /**
    Initialises a new logging-enhanced crypto service.
-   
+
    - Parameters:
      - wrapped: The underlying crypto service to wrap
      - logger: The logger to use
    */
   public init(wrapped: CryptoServiceProtocol, logger: LoggingProtocol) {
-    self.wrapped = wrapped
-    self.logger = logger
+    self.wrapped=wrapped
+    self.logger=logger
   }
 
   public func encrypt(
@@ -296,31 +296,31 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
     keyIdentifier: String,
     options: EncryptionOptions?
   ) async -> Result<String, SecurityProtocolError> {
-    var metadata = LoggingTypes.PrivacyMetadata()
-    metadata["dataId"] = LoggingTypes.PrivacyMetadataValue(value: dataIdentifier, privacy: .hash)
-    metadata["keyId"] = LoggingTypes.PrivacyMetadataValue(value: keyIdentifier, privacy: .hash)
+    var metadata=LoggingTypes.PrivacyMetadata()
+    metadata["dataId"]=LoggingTypes.PrivacyMetadataValue(value: dataIdentifier, privacy: .hash)
+    metadata["keyId"]=LoggingTypes.PrivacyMetadataValue(value: keyIdentifier, privacy: .hash)
 
     await logger.debug("Starting encryption operation", metadata: metadata, source: "CryptoService")
 
-    let result = await wrapped.encrypt(
+    let result=await wrapped.encrypt(
       dataIdentifier: dataIdentifier,
       keyIdentifier: keyIdentifier,
       options: options
     )
 
     switch result {
-    case .success:
-      await logger.debug(
-        "Encryption completed successfully",
-        metadata: metadata,
-        source: "CryptoService"
-      )
-    case let .failure(error):
-      await logger.error(
-        "Encryption failed: \(error.localizedDescription)",
-        metadata: metadata,
-        source: "CryptoService"
-      )
+      case .success:
+        await logger.debug(
+          "Encryption completed successfully",
+          metadata: metadata,
+          source: "CryptoService"
+        )
+      case let .failure(error):
+        await logger.error(
+          "Encryption failed: \(error.localizedDescription)",
+          metadata: metadata,
+          source: "CryptoService"
+        )
     }
 
     return result
@@ -331,23 +331,35 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
     keyIdentifier: String,
     options: DecryptionOptions?
   ) async -> Result<String, SecurityProtocolError> {
-    await logger.debug("LoggingCryptoService: Starting decryption operation for data identifier: \(encryptedDataIdentifier)", metadata: nil, source: "LoggingCryptoService")
-    
-    let startTime = Date()
-    let result = await wrapped.decrypt(
+    await logger.debug(
+      "LoggingCryptoService: Starting decryption operation for data identifier: \(encryptedDataIdentifier)",
+      metadata: nil,
+      source: "LoggingCryptoService"
+    )
+
+    let startTime=Date()
+    let result=await wrapped.decrypt(
       encryptedDataIdentifier: encryptedDataIdentifier,
       keyIdentifier: keyIdentifier,
       options: options
     )
-    let elapsedTime = Date().timeIntervalSince(startTime) * 1000
-    
+    let elapsedTime=Date().timeIntervalSince(startTime) * 1000
+
     switch result {
-    case .success(let identifier):
-      await logger.debug("LoggingCryptoService: Decryption completed successfully in \(elapsedTime) ms", metadata: nil, source: "LoggingCryptoService")
-      return .success(identifier)
-    case .failure(let error):
-      await logger.error("LoggingCryptoService: Decryption failed: \(error.localizedDescription)", metadata: nil, source: "LoggingCryptoService")
-      return .failure(error)
+      case let .success(identifier):
+        await logger.debug(
+          "LoggingCryptoService: Decryption completed successfully in \(elapsedTime) ms",
+          metadata: nil,
+          source: "LoggingCryptoService"
+        )
+        return .success(identifier)
+      case let .failure(error):
+        await logger.error(
+          "LoggingCryptoService: Decryption failed: \(error.localizedDescription)",
+          metadata: nil,
+          source: "LoggingCryptoService"
+        )
+        return .failure(error)
     }
   }
 
@@ -355,22 +367,34 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
     dataIdentifier: String,
     options: HashingOptions?
   ) async -> Result<String, SecurityProtocolError> {
-    await logger.debug("LoggingCryptoService: Starting hash operation for data identifier: \(dataIdentifier)", metadata: nil, source: "LoggingCryptoService")
-    
-    let startTime = Date()
-    let result = await wrapped.hash(
+    await logger.debug(
+      "LoggingCryptoService: Starting hash operation for data identifier: \(dataIdentifier)",
+      metadata: nil,
+      source: "LoggingCryptoService"
+    )
+
+    let startTime=Date()
+    let result=await wrapped.hash(
       dataIdentifier: dataIdentifier,
       options: options
     )
-    let elapsedTime = Date().timeIntervalSince(startTime) * 1000
-    
+    let elapsedTime=Date().timeIntervalSince(startTime) * 1000
+
     switch result {
-    case .success(let identifier):
-      await logger.debug("LoggingCryptoService: Hashing completed successfully in \(elapsedTime) ms", metadata: nil, source: "LoggingCryptoService")
-      return .success(identifier)
-    case .failure(let error):
-      await logger.error("LoggingCryptoService: Hashing failed: \(error.localizedDescription)", metadata: nil, source: "LoggingCryptoService")
-      return .failure(error)
+      case let .success(identifier):
+        await logger.debug(
+          "LoggingCryptoService: Hashing completed successfully in \(elapsedTime) ms",
+          metadata: nil,
+          source: "LoggingCryptoService"
+        )
+        return .success(identifier)
+      case let .failure(error):
+        await logger.error(
+          "LoggingCryptoService: Hashing failed: \(error.localizedDescription)",
+          metadata: nil,
+          source: "LoggingCryptoService"
+        )
+        return .failure(error)
     }
   }
 
@@ -379,23 +403,35 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
     hashIdentifier: String,
     options: HashingOptions?
   ) async -> Result<Bool, SecurityProtocolError> {
-    await logger.debug("LoggingCryptoService: Verifying hash for data identifier: \(dataIdentifier)", metadata: nil, source: "LoggingCryptoService")
-    
-    let startTime = Date()
-    let result = await wrapped.verifyHash(
+    await logger.debug(
+      "LoggingCryptoService: Verifying hash for data identifier: \(dataIdentifier)",
+      metadata: nil,
+      source: "LoggingCryptoService"
+    )
+
+    let startTime=Date()
+    let result=await wrapped.verifyHash(
       dataIdentifier: dataIdentifier,
       hashIdentifier: hashIdentifier,
       options: options
     )
-    let elapsedTime = Date().timeIntervalSince(startTime) * 1000
-    
+    let elapsedTime=Date().timeIntervalSince(startTime) * 1000
+
     switch result {
-    case .success(let matches):
-      await logger.debug("LoggingCryptoService: Hash verification completed (matches: \(matches)) in \(elapsedTime) ms", metadata: nil, source: "LoggingCryptoService")
-      return .success(matches)
-    case .failure(let error):
-      await logger.error("LoggingCryptoService: Hash verification failed: \(error.localizedDescription)", metadata: nil, source: "LoggingCryptoService")
-      return .failure(error)
+      case let .success(matches):
+        await logger.debug(
+          "LoggingCryptoService: Hash verification completed (matches: \(matches)) in \(elapsedTime) ms",
+          metadata: nil,
+          source: "LoggingCryptoService"
+        )
+        return .success(matches)
+      case let .failure(error):
+        await logger.error(
+          "LoggingCryptoService: Hash verification failed: \(error.localizedDescription)",
+          metadata: nil,
+          source: "LoggingCryptoService"
+        )
+        return .failure(error)
     }
   }
 
@@ -403,22 +439,34 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
     length: Int,
     options: KeyGenerationOptions?
   ) async -> Result<String, SecurityProtocolError> {
-    await logger.debug("LoggingCryptoService: Generating key of length \(length) bits", metadata: nil, source: "LoggingCryptoService")
-    
-    let startTime = Date()
-    let result = await wrapped.generateKey(
+    await logger.debug(
+      "LoggingCryptoService: Generating key of length \(length) bits",
+      metadata: nil,
+      source: "LoggingCryptoService"
+    )
+
+    let startTime=Date()
+    let result=await wrapped.generateKey(
       length: length,
       options: options
     )
-    let elapsedTime = Date().timeIntervalSince(startTime) * 1000
-    
+    let elapsedTime=Date().timeIntervalSince(startTime) * 1000
+
     switch result {
-    case .success(let identifier):
-      await logger.debug("LoggingCryptoService: Key generation completed successfully in \(elapsedTime) ms", metadata: nil, source: "LoggingCryptoService")
-      return .success(identifier)
-    case .failure(let error):
-      await logger.error("LoggingCryptoService: Key generation failed: \(error.localizedDescription)", metadata: nil, source: "LoggingCryptoService")
-      return .failure(error)
+      case let .success(identifier):
+        await logger.debug(
+          "LoggingCryptoService: Key generation completed successfully in \(elapsedTime) ms",
+          metadata: nil,
+          source: "LoggingCryptoService"
+        )
+        return .success(identifier)
+      case let .failure(error):
+        await logger.error(
+          "LoggingCryptoService: Key generation failed: \(error.localizedDescription)",
+          metadata: nil,
+          source: "LoggingCryptoService"
+        )
+        return .failure(error)
     }
   }
 
@@ -426,43 +474,67 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
     _ data: [UInt8],
     customIdentifier: String?
   ) async -> Result<String, SecurityProtocolError> {
-    await logger.debug("LoggingCryptoService: Importing data with\(customIdentifier != nil ? " custom identifier: \(customIdentifier!)" : "out custom identifier")", metadata: nil, source: "LoggingCryptoService")
-    
-    let startTime = Date()
-    let result = await wrapped.importData(
+    await logger.debug(
+      "LoggingCryptoService: Importing data with\(customIdentifier != nil ? " custom identifier: \(customIdentifier!)" : "out custom identifier")",
+      metadata: nil,
+      source: "LoggingCryptoService"
+    )
+
+    let startTime=Date()
+    let result=await wrapped.importData(
       data,
       customIdentifier: customIdentifier
     )
-    let elapsedTime = Date().timeIntervalSince(startTime) * 1000
-    
+    let elapsedTime=Date().timeIntervalSince(startTime) * 1000
+
     switch result {
-    case .success(let identifier):
-      await logger.debug("LoggingCryptoService: Data import completed successfully in \(elapsedTime) ms", metadata: nil, source: "LoggingCryptoService")
-      return .success(identifier)
-    case .failure(let error):
-      await logger.error("LoggingCryptoService: Data import failed: \(error.localizedDescription)", metadata: nil, source: "LoggingCryptoService")
-      return .failure(error)
+      case let .success(identifier):
+        await logger.debug(
+          "LoggingCryptoService: Data import completed successfully in \(elapsedTime) ms",
+          metadata: nil,
+          source: "LoggingCryptoService"
+        )
+        return .success(identifier)
+      case let .failure(error):
+        await logger.error(
+          "LoggingCryptoService: Data import failed: \(error.localizedDescription)",
+          metadata: nil,
+          source: "LoggingCryptoService"
+        )
+        return .failure(error)
     }
   }
 
   public func exportData(
     identifier: String
   ) async -> Result<[UInt8], SecurityProtocolError> {
-    await logger.debug("LoggingCryptoService: Exporting data for identifier: \(identifier)", metadata: nil, source: "LoggingCryptoService")
-    
-    let startTime = Date()
-    let result = await wrapped.exportData(
+    await logger.debug(
+      "LoggingCryptoService: Exporting data for identifier: \(identifier)",
+      metadata: nil,
+      source: "LoggingCryptoService"
+    )
+
+    let startTime=Date()
+    let result=await wrapped.exportData(
       identifier: identifier
     )
-    let elapsedTime = Date().timeIntervalSince(startTime) * 1000
-    
+    let elapsedTime=Date().timeIntervalSince(startTime) * 1000
+
     switch result {
-    case .success(let data):
-      await logger.debug("LoggingCryptoService: Data export completed successfully in \(elapsedTime) ms", metadata: nil, source: "LoggingCryptoService")
-      return .success(data)
-    case .failure(let error):
-      await logger.error("LoggingCryptoService: Data export failed: \(error.localizedDescription)", metadata: nil, source: "LoggingCryptoService")
-      return .failure(error)
+      case let .success(data):
+        await logger.debug(
+          "LoggingCryptoService: Data export completed successfully in \(elapsedTime) ms",
+          metadata: nil,
+          source: "LoggingCryptoService"
+        )
+        return .success(data)
+      case let .failure(error):
+        await logger.error(
+          "LoggingCryptoService: Data export failed: \(error.localizedDescription)",
+          metadata: nil,
+          source: "LoggingCryptoService"
+        )
+        return .failure(error)
     }
   }
 }
@@ -480,7 +552,7 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
 
   /// The standard logger
   private let logger: LoggingProtocol
-  
+
   /// The secure logger for privacy-aware logging
   private let secureLogger: SecureLoggerActor
 
@@ -497,17 +569,21 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     logger: LoggingProtocol,
     secureLogger: SecureLoggerActor
   ) {
-    self.wrapped = wrapped
-    self.logger = logger
-    self.secureLogger = secureLogger
+    self.wrapped=wrapped
+    self.logger=logger
+    self.secureLogger=secureLogger
   }
 
   public func encrypt(
     data: [UInt8],
     using key: [UInt8]
   ) async -> Result<[UInt8], SecurityProtocolError> {
-    await logger.debug("EnhancedLoggingCryptoService: Encrypting data of size \(data.count) with key of size \(key.count)", metadata: nil, source: "EnhancedLoggingCryptoService")
-    
+    await logger.debug(
+      "EnhancedLoggingCryptoService: Encrypting data of size \(data.count) with key of size \(key.count)",
+      metadata: nil,
+      source: "EnhancedLoggingCryptoService"
+    )
+
     // Log with privacy tagging
     await secureLogger.securityEvent(
       action: "Encryption",
@@ -520,46 +596,55 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
         "operation": PrivacyTaggedValue(value: "start", privacyLevel: .public)
       ]
     )
-    
-    let startTime = Date()
-    let result = await wrapped.encrypt(data: data, using: key)
-    let duration = Date().timeIntervalSince(startTime)
-    
+
+    let startTime=Date()
+    let result=await wrapped.encrypt(data: data, using: key)
+    let duration=Date().timeIntervalSince(startTime)
+
     switch result {
-    case .success(let encryptedData):
-      await logger.info("EnhancedLoggingCryptoService: Encryption succeeded in \(duration) seconds", metadata: nil, source: "EnhancedLoggingCryptoService")
-      
-      // Log success with privacy tagging
-      await secureLogger.securityEvent(
-        action: "Encryption",
-        status: .success,
-        subject: nil,
-        resource: nil,
-        additionalMetadata: [
-          "dataSize": PrivacyTaggedValue(value: data.count, privacyLevel: .public),
-          "resultSize": PrivacyTaggedValue(value: encryptedData.count, privacyLevel: .public),
-          "durationMs": PrivacyTaggedValue(value: Int(duration * 1000), privacyLevel: .public),
-          "operation": PrivacyTaggedValue(value: "complete", privacyLevel: .public)
-        ]
-      )
-      
-    case .failure(let error):
-      await logger.error("EnhancedLoggingCryptoService: Encryption failed in \(duration) seconds: \(error.localizedDescription)", metadata: nil, source: "EnhancedLoggingCryptoService")
-      
-      // Log failure with privacy tagging
-      await secureLogger.securityEvent(
-        action: "Encryption",
-        status: .failed,
-        subject: nil,
-        resource: nil,
-        additionalMetadata: [
-          "error": PrivacyTaggedValue(value: error.localizedDescription, privacyLevel: .public),
-          "errorCode": PrivacyTaggedValue(value: String(describing: error), privacyLevel: .public),
-          "durationMs": PrivacyTaggedValue(value: Int(duration * 1000), privacyLevel: .public)
-        ]
-      )
+      case let .success(encryptedData):
+        await logger.info(
+          "EnhancedLoggingCryptoService: Encryption succeeded in \(duration) seconds",
+          metadata: nil,
+          source: "EnhancedLoggingCryptoService"
+        )
+
+        // Log success with privacy tagging
+        await secureLogger.securityEvent(
+          action: "Encryption",
+          status: .success,
+          subject: nil,
+          resource: nil,
+          additionalMetadata: [
+            "dataSize": PrivacyTaggedValue(value: data.count, privacyLevel: .public),
+            "resultSize": PrivacyTaggedValue(value: encryptedData.count, privacyLevel: .public),
+            "durationMs": PrivacyTaggedValue(value: Int(duration * 1000), privacyLevel: .public),
+            "operation": PrivacyTaggedValue(value: "complete", privacyLevel: .public)
+          ]
+        )
+
+      case let .failure(error):
+        await logger.error(
+          "EnhancedLoggingCryptoService: Encryption failed in \(duration) seconds: \(error.localizedDescription)",
+          metadata: nil,
+          source: "EnhancedLoggingCryptoService"
+        )
+
+        // Log failure with privacy tagging
+        await secureLogger.securityEvent(
+          action: "Encryption",
+          status: .failed,
+          subject: nil,
+          resource: nil,
+          additionalMetadata: [
+            "error": PrivacyTaggedValue(value: error.localizedDescription, privacyLevel: .public),
+            "errorCode": PrivacyTaggedValue(value: String(describing: error),
+                                            privacyLevel: .public),
+            "durationMs": PrivacyTaggedValue(value: Int(duration * 1000), privacyLevel: .public)
+          ]
+        )
     }
-    
+
     return result
   }
 
@@ -567,8 +652,12 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     data: [UInt8],
     using key: [UInt8]
   ) async -> Result<[UInt8], SecurityProtocolError> {
-    await logger.debug("EnhancedLoggingCryptoService: Decrypting data of size \(data.count) with key of size \(key.count)", metadata: nil, source: "EnhancedLoggingCryptoService")
-    
+    await logger.debug(
+      "EnhancedLoggingCryptoService: Decrypting data of size \(data.count) with key of size \(key.count)",
+      metadata: nil,
+      source: "EnhancedLoggingCryptoService"
+    )
+
     // Log with privacy tagging
     await secureLogger.securityEvent(
       action: "Decryption",
@@ -581,52 +670,65 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
         "operation": PrivacyTaggedValue(value: "start", privacyLevel: .public)
       ]
     )
-    
-    let startTime = Date()
-    let result = await wrapped.decrypt(data: data, using: key)
-    let duration = Date().timeIntervalSince(startTime)
-    
+
+    let startTime=Date()
+    let result=await wrapped.decrypt(data: data, using: key)
+    let duration=Date().timeIntervalSince(startTime)
+
     switch result {
-    case .success(let decryptedData):
-      await logger.info("EnhancedLoggingCryptoService: Decryption succeeded in \(duration) seconds", metadata: nil, source: "EnhancedLoggingCryptoService")
-      
-      // Log success with privacy tagging
-      await secureLogger.securityEvent(
-        action: "Decryption",
-        status: .success,
-        subject: nil,
-        resource: nil,
-        additionalMetadata: [
-          "dataSize": PrivacyTaggedValue(value: data.count, privacyLevel: .public),
-          "resultSize": PrivacyTaggedValue(value: decryptedData.count, privacyLevel: .public),
-          "durationMs": PrivacyTaggedValue(value: Int(duration * 1000), privacyLevel: .public),
-          "operation": PrivacyTaggedValue(value: "complete", privacyLevel: .public)
-        ]
-      )
-      
-    case .failure(let error):
-      await logger.error("EnhancedLoggingCryptoService: Decryption failed in \(duration) seconds: \(error.localizedDescription)", metadata: nil, source: "EnhancedLoggingCryptoService")
-      
-      // Log failure with privacy tagging
-      await secureLogger.securityEvent(
-        action: "Decryption",
-        status: .failed,
-        subject: nil,
-        resource: nil,
-        additionalMetadata: [
-          "error": PrivacyTaggedValue(value: error.localizedDescription, privacyLevel: .public),
-          "errorCode": PrivacyTaggedValue(value: String(describing: error), privacyLevel: .public),
-          "durationMs": PrivacyTaggedValue(value: Int(duration * 1000), privacyLevel: .public)
-        ]
-      )
+      case let .success(decryptedData):
+        await logger.info(
+          "EnhancedLoggingCryptoService: Decryption succeeded in \(duration) seconds",
+          metadata: nil,
+          source: "EnhancedLoggingCryptoService"
+        )
+
+        // Log success with privacy tagging
+        await secureLogger.securityEvent(
+          action: "Decryption",
+          status: .success,
+          subject: nil,
+          resource: nil,
+          additionalMetadata: [
+            "dataSize": PrivacyTaggedValue(value: data.count, privacyLevel: .public),
+            "resultSize": PrivacyTaggedValue(value: decryptedData.count, privacyLevel: .public),
+            "durationMs": PrivacyTaggedValue(value: Int(duration * 1000), privacyLevel: .public),
+            "operation": PrivacyTaggedValue(value: "complete", privacyLevel: .public)
+          ]
+        )
+
+      case let .failure(error):
+        await logger.error(
+          "EnhancedLoggingCryptoService: Decryption failed in \(duration) seconds: \(error.localizedDescription)",
+          metadata: nil,
+          source: "EnhancedLoggingCryptoService"
+        )
+
+        // Log failure with privacy tagging
+        await secureLogger.securityEvent(
+          action: "Decryption",
+          status: .failed,
+          subject: nil,
+          resource: nil,
+          additionalMetadata: [
+            "error": PrivacyTaggedValue(value: error.localizedDescription, privacyLevel: .public),
+            "errorCode": PrivacyTaggedValue(value: String(describing: error),
+                                            privacyLevel: .public),
+            "durationMs": PrivacyTaggedValue(value: Int(duration * 1000), privacyLevel: .public)
+          ]
+        )
     }
-    
+
     return result
   }
 
   public func hash(data: [UInt8]) async -> Result<[UInt8], SecurityProtocolError> {
-    await logger.debug("EnhancedLoggingCryptoService: Hashing data of size \(data.count)", metadata: nil, source: "EnhancedLoggingCryptoService")
-    
+    await logger.debug(
+      "EnhancedLoggingCryptoService: Hashing data of size \(data.count)",
+      metadata: nil,
+      source: "EnhancedLoggingCryptoService"
+    )
+
     // Log with privacy tagging
     await secureLogger.securityEvent(
       action: "Hash",
@@ -638,46 +740,55 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
         "operation": PrivacyTaggedValue(value: "start", privacyLevel: .public)
       ]
     )
-    
-    let startTime = Date()
-    let result = await wrapped.hash(data: data)
-    let duration = Date().timeIntervalSince(startTime)
-    
+
+    let startTime=Date()
+    let result=await wrapped.hash(data: data)
+    let duration=Date().timeIntervalSince(startTime)
+
     switch result {
-    case .success(let hash):
-      await logger.info("EnhancedLoggingCryptoService: Hashing succeeded in \(duration) seconds", metadata: nil, source: "EnhancedLoggingCryptoService")
-      
-      // Log success with privacy tagging
-      await secureLogger.securityEvent(
-        action: "Hash",
-        status: .success,
-        subject: nil,
-        resource: nil,
-        additionalMetadata: [
-          "dataSize": PrivacyTaggedValue(value: data.count, privacyLevel: .public),
-          "hashSize": PrivacyTaggedValue(value: hash.count, privacyLevel: .public),
-          "durationMs": PrivacyTaggedValue(value: Int(duration * 1000), privacyLevel: .public),
-          "operation": PrivacyTaggedValue(value: "complete", privacyLevel: .public)
-        ]
-      )
-      
-    case .failure(let error):
-      await logger.error("EnhancedLoggingCryptoService: Hashing failed in \(duration) seconds: \(error.localizedDescription)", metadata: nil, source: "EnhancedLoggingCryptoService")
-      
-      // Log failure with privacy tagging
-      await secureLogger.securityEvent(
-        action: "Hash",
-        status: .failed,
-        subject: nil,
-        resource: nil,
-        additionalMetadata: [
-          "error": PrivacyTaggedValue(value: error.localizedDescription, privacyLevel: .public),
-          "errorCode": PrivacyTaggedValue(value: String(describing: error), privacyLevel: .public),
-          "durationMs": PrivacyTaggedValue(value: Int(duration * 1000), privacyLevel: .public)
-        ]
-      )
+      case let .success(hash):
+        await logger.info(
+          "EnhancedLoggingCryptoService: Hashing succeeded in \(duration) seconds",
+          metadata: nil,
+          source: "EnhancedLoggingCryptoService"
+        )
+
+        // Log success with privacy tagging
+        await secureLogger.securityEvent(
+          action: "Hash",
+          status: .success,
+          subject: nil,
+          resource: nil,
+          additionalMetadata: [
+            "dataSize": PrivacyTaggedValue(value: data.count, privacyLevel: .public),
+            "hashSize": PrivacyTaggedValue(value: hash.count, privacyLevel: .public),
+            "durationMs": PrivacyTaggedValue(value: Int(duration * 1000), privacyLevel: .public),
+            "operation": PrivacyTaggedValue(value: "complete", privacyLevel: .public)
+          ]
+        )
+
+      case let .failure(error):
+        await logger.error(
+          "EnhancedLoggingCryptoService: Hashing failed in \(duration) seconds: \(error.localizedDescription)",
+          metadata: nil,
+          source: "EnhancedLoggingCryptoService"
+        )
+
+        // Log failure with privacy tagging
+        await secureLogger.securityEvent(
+          action: "Hash",
+          status: .failed,
+          subject: nil,
+          resource: nil,
+          additionalMetadata: [
+            "error": PrivacyTaggedValue(value: error.localizedDescription, privacyLevel: .public),
+            "errorCode": PrivacyTaggedValue(value: String(describing: error),
+                                            privacyLevel: .public),
+            "durationMs": PrivacyTaggedValue(value: Int(duration * 1000), privacyLevel: .public)
+          ]
+        )
     }
-    
+
     return result
   }
 
@@ -685,8 +796,12 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     data: [UInt8],
     matches expectedHash: [UInt8]
   ) async -> Result<Bool, SecurityProtocolError> {
-    await logger.debug("EnhancedLoggingCryptoService: Verifying hash for data of size \(data.count)", metadata: nil, source: "EnhancedLoggingCryptoService")
-    
+    await logger.debug(
+      "EnhancedLoggingCryptoService: Verifying hash for data of size \(data.count)",
+      metadata: nil,
+      source: "EnhancedLoggingCryptoService"
+    )
+
     // Log with privacy tagging
     await secureLogger.securityEvent(
       action: "HashVerification",
@@ -699,45 +814,55 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
         "operation": PrivacyTaggedValue(value: "start", privacyLevel: .public)
       ]
     )
-    
-    let startTime = Date()
-    let result = await wrapped.verifyHash(data: data, matches: expectedHash)
-    let duration = Date().timeIntervalSince(startTime)
-    
+
+    let startTime=Date()
+    let result=await wrapped.verifyHash(data: data, matches: expectedHash)
+    let duration=Date().timeIntervalSince(startTime)
+
     switch result {
-    case .success(let verified):
-      await logger.info("EnhancedLoggingCryptoService: Hash verification succeeded in \(duration) seconds, result: \(verified)", metadata: nil, source: "EnhancedLoggingCryptoService")
-      
-      // Log success with privacy tagging
-      await secureLogger.securityEvent(
-        action: "HashVerification",
-        status: .success,
-        subject: nil,
-        resource: nil,
-        additionalMetadata: [
-          "result": PrivacyTaggedValue(value: verified ? "verified" : "mismatch", privacyLevel: .public),
-          "durationMs": PrivacyTaggedValue(value: Int(duration * 1000), privacyLevel: .public),
-          "operation": PrivacyTaggedValue(value: "complete", privacyLevel: .public)
-        ]
-      )
-      
-    case .failure(let error):
-      await logger.error("EnhancedLoggingCryptoService: Hash verification failed in \(duration) seconds: \(error.localizedDescription)", metadata: nil, source: "EnhancedLoggingCryptoService")
-      
-      // Log failure with privacy tagging
-      await secureLogger.securityEvent(
-        action: "HashVerification",
-        status: .failed,
-        subject: nil,
-        resource: nil,
-        additionalMetadata: [
-          "error": PrivacyTaggedValue(value: error.localizedDescription, privacyLevel: .public),
-          "errorCode": PrivacyTaggedValue(value: String(describing: error), privacyLevel: .public),
-          "durationMs": PrivacyTaggedValue(value: Int(duration * 1000), privacyLevel: .public)
-        ]
-      )
+      case let .success(verified):
+        await logger.info(
+          "EnhancedLoggingCryptoService: Hash verification succeeded in \(duration) seconds, result: \(verified)",
+          metadata: nil,
+          source: "EnhancedLoggingCryptoService"
+        )
+
+        // Log success with privacy tagging
+        await secureLogger.securityEvent(
+          action: "HashVerification",
+          status: .success,
+          subject: nil,
+          resource: nil,
+          additionalMetadata: [
+            "result": PrivacyTaggedValue(value: verified ? "verified" : "mismatch",
+                                         privacyLevel: .public),
+            "durationMs": PrivacyTaggedValue(value: Int(duration * 1000), privacyLevel: .public),
+            "operation": PrivacyTaggedValue(value: "complete", privacyLevel: .public)
+          ]
+        )
+
+      case let .failure(error):
+        await logger.error(
+          "EnhancedLoggingCryptoService: Hash verification failed in \(duration) seconds: \(error.localizedDescription)",
+          metadata: nil,
+          source: "EnhancedLoggingCryptoService"
+        )
+
+        // Log failure with privacy tagging
+        await secureLogger.securityEvent(
+          action: "HashVerification",
+          status: .failed,
+          subject: nil,
+          resource: nil,
+          additionalMetadata: [
+            "error": PrivacyTaggedValue(value: error.localizedDescription, privacyLevel: .public),
+            "errorCode": PrivacyTaggedValue(value: String(describing: error),
+                                            privacyLevel: .public),
+            "durationMs": PrivacyTaggedValue(value: Int(duration * 1000), privacyLevel: .public)
+          ]
+        )
     }
-    
+
     return result
   }
 }
@@ -752,7 +877,7 @@ public actor SecureCryptoServiceImpl: CryptoServiceProtocol {
 
   /// The wrapped implementation that does the actual cryptographic work
   private let wrapped: CryptoServiceProtocol
-  
+
   /// The secure storage used for handling sensitive data
   public nonisolated var secureStorage: SecureStorageProtocol {
     wrapped.secureStorage
@@ -772,7 +897,7 @@ public actor SecureCryptoServiceImpl: CryptoServiceProtocol {
   }
 
   // MARK: - Protocol Implementation
-  
+
   public func encrypt(
     dataIdentifier: String,
     keyIdentifier: String,
@@ -784,7 +909,7 @@ public actor SecureCryptoServiceImpl: CryptoServiceProtocol {
       options: options
     )
   }
-  
+
   public func decrypt(
     encryptedDataIdentifier: String,
     keyIdentifier: String,
@@ -796,7 +921,7 @@ public actor SecureCryptoServiceImpl: CryptoServiceProtocol {
       options: options
     )
   }
-  
+
   public func hash(
     dataIdentifier: String,
     options: HashingOptions?
@@ -806,7 +931,7 @@ public actor SecureCryptoServiceImpl: CryptoServiceProtocol {
       options: options
     )
   }
-  
+
   public func verifyHash(
     dataIdentifier: String,
     hashIdentifier: String,
@@ -818,7 +943,7 @@ public actor SecureCryptoServiceImpl: CryptoServiceProtocol {
       options: options
     )
   }
-  
+
   public func generateKey(
     length: Int,
     options: KeyGenerationOptions?
@@ -828,7 +953,7 @@ public actor SecureCryptoServiceImpl: CryptoServiceProtocol {
       options: options
     )
   }
-  
+
   public func importData(
     _ data: [UInt8],
     customIdentifier: String?
@@ -838,7 +963,7 @@ public actor SecureCryptoServiceImpl: CryptoServiceProtocol {
       customIdentifier: customIdentifier
     )
   }
-  
+
   public func exportData(
     identifier: String
   ) async -> Result<[UInt8], SecurityProtocolError> {
@@ -846,41 +971,41 @@ public actor SecureCryptoServiceImpl: CryptoServiceProtocol {
       identifier: identifier
     )
   }
-  
+
   // MARK: - Legacy Methods
-  
+
   public func encrypt(
     data: [UInt8],
     using key: [UInt8]
   ) async -> Result<[UInt8], SecurityProtocolError> {
     // Convert legacy call to new protocol format
-    let dataId = UUID().uuidString
-    let keyId = UUID().uuidString
-    
+    let dataID=UUID().uuidString
+    let keyID=UUID().uuidString
+
     // Store data and key
-    let dataImport = await importData(data, customIdentifier: dataId)
-    guard case .success = dataImport else {
+    let dataImport=await importData(data, customIdentifier: dataID)
+    guard case .success=dataImport else {
       return .failure(.storageError("Failed to store data for encryption"))
     }
-    
-    let keyImport = await importData(key, customIdentifier: keyId)
-    guard case .success = keyImport else {
+
+    let keyImport=await importData(key, customIdentifier: keyID)
+    guard case .success=keyImport else {
       return .failure(.storageError("Failed to store key for encryption"))
     }
-    
+
     // Perform encryption
-    let encryptResult = await encrypt(
-      dataIdentifier: dataId,
-      keyIdentifier: keyId,
+    let encryptResult=await encrypt(
+      dataIdentifier: dataID,
+      keyIdentifier: keyID,
       options: nil
     )
-    
+
     // Return result
     switch encryptResult {
-    case .success(let encryptedId):
-      return await exportData(identifier: encryptedId)
-    case .failure(let error):
-      return .failure(error)
+      case let .success(encryptedID):
+        return await exportData(identifier: encryptedID)
+      case let .failure(error):
+        return .failure(error)
     }
   }
 
@@ -889,58 +1014,58 @@ public actor SecureCryptoServiceImpl: CryptoServiceProtocol {
     using key: [UInt8]
   ) async -> Result<[UInt8], SecurityProtocolError> {
     // Convert legacy call to new protocol format
-    let dataId = UUID().uuidString
-    let keyId = UUID().uuidString
-    
+    let dataID=UUID().uuidString
+    let keyID=UUID().uuidString
+
     // Store data and key
-    let dataImport = await importData(data, customIdentifier: dataId)
-    guard case .success = dataImport else {
+    let dataImport=await importData(data, customIdentifier: dataID)
+    guard case .success=dataImport else {
       return .failure(.storageError("Failed to store data for decryption"))
     }
-    
-    let keyImport = await importData(key, customIdentifier: keyId)
-    guard case .success = keyImport else {
+
+    let keyImport=await importData(key, customIdentifier: keyID)
+    guard case .success=keyImport else {
       return .failure(.storageError("Failed to store key for decryption"))
     }
-    
+
     // Perform decryption
-    let decryptResult = await decrypt(
-      encryptedDataIdentifier: dataId,
-      keyIdentifier: keyId,
+    let decryptResult=await decrypt(
+      encryptedDataIdentifier: dataID,
+      keyIdentifier: keyID,
       options: nil
     )
-    
+
     // Return result
     switch decryptResult {
-    case .success(let decryptedId):
-      return await exportData(identifier: decryptedId)
-    case .failure(let error):
-      return .failure(error)
+      case let .success(decryptedID):
+        return await exportData(identifier: decryptedID)
+      case let .failure(error):
+        return .failure(error)
     }
   }
 
   public func hash(data: [UInt8]) async -> Result<[UInt8], SecurityProtocolError> {
     // Convert legacy call to new protocol format
-    let dataId = UUID().uuidString
-    
+    let dataID=UUID().uuidString
+
     // Store data
-    let dataImport = await importData(data, customIdentifier: dataId)
-    guard case .success = dataImport else {
+    let dataImport=await importData(data, customIdentifier: dataID)
+    guard case .success=dataImport else {
       return .failure(.storageError("Failed to store data for hashing"))
     }
-    
+
     // Perform hashing
-    let hashResult = await hash(
-      dataIdentifier: dataId,
+    let hashResult=await hash(
+      dataIdentifier: dataID,
       options: nil
     )
-    
+
     // Return result
     switch hashResult {
-    case .success(let hashId):
-      return await exportData(identifier: hashId)
-    case .failure(let error):
-      return .failure(error)
+      case let .success(hashID):
+        return await exportData(identifier: hashID)
+      case let .failure(error):
+        return .failure(error)
     }
   }
 
@@ -949,24 +1074,24 @@ public actor SecureCryptoServiceImpl: CryptoServiceProtocol {
     expectedHash: [UInt8]
   ) async -> Result<Bool, SecurityProtocolError> {
     // Convert legacy call to new protocol format
-    let dataId = UUID().uuidString
-    let hashId = UUID().uuidString
-    
+    let dataID=UUID().uuidString
+    let hashID=UUID().uuidString
+
     // Store data and hash
-    let dataImport = await importData(data, customIdentifier: dataId)
-    guard case .success = dataImport else {
+    let dataImport=await importData(data, customIdentifier: dataID)
+    guard case .success=dataImport else {
       return .failure(.storageError("Failed to store data for hash verification"))
     }
-    
-    let hashImport = await importData(expectedHash, customIdentifier: hashId)
-    guard case .success = hashImport else {
+
+    let hashImport=await importData(expectedHash, customIdentifier: hashID)
+    guard case .success=hashImport else {
       return .failure(.storageError("Failed to store hash for verification"))
     }
-    
+
     // Perform verification
     return await verifyHash(
-      dataIdentifier: dataId,
-      hashIdentifier: hashId,
+      dataIdentifier: dataID,
+      hashIdentifier: hashID,
       options: nil
     )
   }
@@ -995,20 +1120,20 @@ public struct CryptoServiceOptions: Sendable {
   ///   - preferredKeySize: Preferred key size in bytes (default: 32 for AES-256)
   ///   - ivSize: Size of initialisation vector in bytes (default: 12)
   public init(
-    defaultIterations: Int = 10000,
-    preferredKeySize: Int = 32,
-    ivSize: Int = 12
+    defaultIterations: Int=10000,
+    preferredKeySize: Int=32,
+    ivSize: Int=12
   ) {
-    self.defaultIterations = defaultIterations
-    self.preferredKeySize = preferredKeySize
-    self.ivSize = ivSize
+    self.defaultIterations=defaultIterations
+    self.preferredKeySize=preferredKeySize
+    self.ivSize=ivSize
   }
 
   /// Default options suitable for most applications
-  public static let `default` = CryptoServiceOptions()
+  public static let `default`=CryptoServiceOptions()
 
   /// High security options with increased iteration count
-  public static let highSecurity = CryptoServiceOptions(
+  public static let highSecurity=CryptoServiceOptions(
     defaultIterations: 100_000,
     preferredKeySize: 32,
     ivSize: 16

@@ -25,19 +25,19 @@ public protocol LoggableErrorProtocol: Error {
 public struct LoggableErrorDTO: Sendable, Equatable {
   /// The underlying error
   public let error: Error
-  
+
   /// Privacy metadata for this error
   public let metadata: PrivacyMetadata
-  
+
   /// Source information for this error
   public let source: String
-  
+
   /// Custom log message for this error
   public let message: String?
-  
+
   /// Optional domain context for the error
   public let context: LogContextDTO?
-  
+
   /// Creates a new LoggableErrorDTO with privacy controls
   ///
   /// - Parameters:
@@ -50,16 +50,16 @@ public struct LoggableErrorDTO: Sendable, Equatable {
     error: Error,
     source: String,
     metadata: PrivacyMetadata,
-    message: String? = nil,
-    context: LogContextDTO? = nil
+    message: String?=nil,
+    context: LogContextDTO?=nil
   ) {
-    self.error = error
-    self.source = source
-    self.metadata = metadata
-    self.message = message
-    self.context = context
+    self.error=error
+    self.source=source
+    self.metadata=metadata
+    self.message=message
+    self.context=context
   }
-  
+
   /// Creates a new LoggableErrorDTO with a LogMetadataDTOCollection
   ///
   /// - Parameters:
@@ -72,23 +72,23 @@ public struct LoggableErrorDTO: Sendable, Equatable {
     error: Error,
     source: String,
     metadataCollection: LogMetadataDTOCollection,
-    message: String? = nil,
-    context: LogContextDTO? = nil
+    message: String?=nil,
+    context: LogContextDTO?=nil
   ) {
-    self.error = error
-    self.source = source
-    self.metadata = metadataCollection.toPrivacyMetadata()
-    self.message = message
-    self.context = context
+    self.error=error
+    self.source=source
+    metadata=metadataCollection.toPrivacyMetadata()
+    self.message=message
+    self.context=context
   }
-  
+
   /// Equality cannot be automatically synthesized due to Error not conforming to Equatable
   public static func == (lhs: LoggableErrorDTO, rhs: LoggableErrorDTO) -> Bool {
     // Compare everything except the error itself (which may not be Equatable)
     lhs.source == rhs.source &&
-    lhs.metadata == rhs.metadata &&
-    lhs.message == rhs.message &&
-    lhs.context?.domainName == rhs.context?.domainName
+      lhs.metadata == rhs.metadata &&
+      lhs.message == rhs.message &&
+      lhs.context?.domainName == rhs.context?.domainName
   }
 }
 
@@ -99,15 +99,15 @@ extension LoggableErrorDTO {
   /// - Parameter additionalMetadata: Additional metadata to include
   /// - Returns: A new DTO with merged metadata
   public func withAdditionalMetadata(_ additionalMetadata: PrivacyMetadata) -> LoggableErrorDTO {
-    var newMetadata = metadata
-    
+    var newMetadata=metadata
+
     // Merge the additional metadata
     for key in additionalMetadata.entries() {
-      if let value = additionalMetadata[key] {
-        newMetadata[key] = value
+      if let value=additionalMetadata[key] {
+        newMetadata[key]=value
       }
     }
-    
+
     return LoggableErrorDTO(
       error: error,
       source: source,
@@ -116,7 +116,7 @@ extension LoggableErrorDTO {
       context: context
     )
   }
-  
+
   /// Returns a new LoggableErrorDTO with an updated message
   ///
   /// - Parameter message: The custom message to use
@@ -130,7 +130,7 @@ extension LoggableErrorDTO {
       context: context
     )
   }
-  
+
   /// Returns a new LoggableErrorDTO with a specific domain context
   ///
   /// - Parameter context: The domain-specific context to associate
@@ -153,19 +153,19 @@ extension LoggableErrorDTO: LoggableErrorProtocol {
   public func getPrivacyMetadata() -> PrivacyMetadata {
     metadata
   }
-  
+
   /// Get the source information for this error
   /// - Returns: Source information (e.g., file, function, line)
   public func getSource() -> String {
     source
   }
-  
+
   /// Get the log message for this error
   /// - Returns: A descriptive message appropriate for logging
   public func getLogMessage() -> String {
     message ?? "Error: \(error.localizedDescription)"
   }
-  
+
   /// Get the underlying error
   /// - Returns: The wrapped error
   public func getError() -> Error {

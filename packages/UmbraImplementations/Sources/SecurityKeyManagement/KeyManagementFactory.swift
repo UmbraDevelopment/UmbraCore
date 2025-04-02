@@ -9,7 +9,7 @@ import UmbraErrors
 /**
  # KeyManagementFactory
 
- A factory for creating key management service components following the Alpha Dot Five 
+ A factory for creating key management service components following the Alpha Dot Five
  architecture principles with actor-based concurrency.
 
  This factory handles the proper instantiation of all key management services whilst
@@ -39,7 +39,7 @@ public enum KeyManagementFactory {
     logger: LoggingProtocol?=nil
   ) async -> any KeyManagementProtocol {
     // Get a key storage implementation
-    let keyStore = createKeyStorage(logger: logger)
+    let keyStore=createKeyStorage(logger: logger)
 
     // Create and return the actor implementation
     return await KeyManagementActor(

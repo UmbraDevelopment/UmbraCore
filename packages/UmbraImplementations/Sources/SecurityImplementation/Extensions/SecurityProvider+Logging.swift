@@ -19,9 +19,9 @@ import SecurityCoreInterfaces
  - Operation outcomes are always logged with appropriate privacy levels
  - Error details are captured without exposing sensitive information
  - Performance metrics are included where appropriate
- 
+
  ## Privacy-Aware Logging
- 
+
  This extension implements privacy-aware logging through SecureLoggerActor,
  ensuring that sensitive information is properly tagged with privacy levels
  according to the Alpha Dot Five architecture principles.
@@ -36,9 +36,9 @@ extension CoreSecurityProviderService {
    */
   func logOperationStart(operation: SecurityOperation, config: SecurityConfigDTO) async {
     // Create a safe version of config - don't log auth data
-    let safeConfig = "Algorithm: \(config.encryptionAlgorithm), Mode: \(config.options?["mode"] ?? "none")"
+    let safeConfig="Algorithm: \(config.encryptionAlgorithm), Mode: \(config.options?["mode"] ?? "none")"
 
-    let metadata = PrivacyMetadata([
+    let metadata=PrivacyMetadata([
       "operation": (value: operation.description, privacy: .public),
       "configuration": (value: safeConfig, privacy: .public),
       "timestamp": (value: "\(Date())", privacy: .public)
@@ -49,7 +49,7 @@ extension CoreSecurityProviderService {
       metadata: metadata,
       source: "SecurityProvider.logOperationStart"
     )
-    
+
     // Log with secure logger for enhanced privacy awareness
     await secureLogger.securityEvent(
       action: operation.description,
@@ -79,7 +79,7 @@ extension CoreSecurityProviderService {
     result: SecurityResultDTO
   ) async {
     // Create a success log with detailed metrics
-    let metadata = PrivacyMetadata([
+    let metadata=PrivacyMetadata([
       "operation": (value: operation.description, privacy: .public),
       "status": (value: "success", privacy: .public),
       "durationMs": (value: String(format: "%.2f", durationMs), privacy: .public),
@@ -91,7 +91,7 @@ extension CoreSecurityProviderService {
       metadata: metadata,
       source: "SecurityProvider.logOperationSuccess"
     )
-    
+
     // Log success with secure logger
     await secureLogger.securityEvent(
       action: operation.description,
@@ -119,7 +119,7 @@ extension CoreSecurityProviderService {
     error: Error,
     duration: Double
   ) async {
-    let metadata = PrivacyMetadata([
+    let metadata=PrivacyMetadata([
       "operation": (value: operation.description, privacy: .public),
       "status": (value: "failure", privacy: .public),
       "errorType": (value: "\(type(of: error))", privacy: .public),
@@ -127,7 +127,7 @@ extension CoreSecurityProviderService {
     ])
 
     // Create a safe error message that doesn't expose sensitive data
-    let safeError = if let securityError = error as? SecurityProtocolError {
+    let safeError=if let securityError=error as? SecurityProtocolError {
       "SecurityError: \(securityError.localizedDescription)"
     } else {
       "Error: \(type(of: error))"
@@ -138,7 +138,7 @@ extension CoreSecurityProviderService {
       metadata: metadata,
       source: "SecurityProvider.logOperationFailure"
     )
-    
+
     // Log failure with secure logger
     await secureLogger.securityEvent(
       action: operation.description,
@@ -148,7 +148,8 @@ extension CoreSecurityProviderService {
       additionalMetadata: [
         "operation": PrivacyTaggedValue(value: "error", privacyLevel: .public),
         "durationMs": PrivacyTaggedValue(value: Int(duration), privacyLevel: .public),
-        "errorType": PrivacyTaggedValue(value: String(describing: type(of: error)), privacyLevel: .public),
+        "errorType": PrivacyTaggedValue(value: String(describing: type(of: error)),
+                                        privacyLevel: .public),
         "errorDescription": PrivacyTaggedValue(value: safeError, privacyLevel: .public)
       ]
     )
@@ -165,35 +166,35 @@ extension CoreSecurityProviderService {
   func logInfo(
     _ message: String,
     operation: String,
-    additionalMetadata: [String: String] = [:]
+    additionalMetadata: [String: String]=[:]
   ) async {
-    var metadataDict: [String: (value: Any, privacy: LogPrivacyLevel)] = [
+    var metadataDict: [String: (value: Any, privacy: LogPrivacyLevel)]=[
       "securityOperation": (value: operation, privacy: .public)
     ]
 
     // Add additional metadata
     for (key, value) in additionalMetadata {
-      metadataDict[key] = (value: value, privacy: .public)
+      metadataDict[key]=(value: value, privacy: .public)
     }
 
-    let metadata = PrivacyMetadata(metadataDict)
+    let metadata=PrivacyMetadata(metadataDict)
 
     await logger.info(
       message,
       metadata: metadata,
       source: "SecurityProvider.logInfo"
     )
-    
+
     // Prepare privacy-tagged metadata for secure logger
-    var secureMetadata: [String: PrivacyTaggedValue] = [
+    var secureMetadata: [String: PrivacyTaggedValue]=[
       "operation": PrivacyTaggedValue(value: operation, privacyLevel: .public)
     ]
-    
+
     // Add additional metadata with privacy tagging
     for (key, value) in additionalMetadata {
-      secureMetadata[key] = PrivacyTaggedValue(value: value, privacyLevel: .public)
+      secureMetadata[key]=PrivacyTaggedValue(value: value, privacyLevel: .public)
     }
-    
+
     // Log with secure logger
     await secureLogger.securityEvent(
       action: "InfoEvent",
@@ -215,35 +216,35 @@ extension CoreSecurityProviderService {
   func logWarning(
     _ message: String,
     operation: String,
-    additionalMetadata: [String: String] = [:]
+    additionalMetadata: [String: String]=[:]
   ) async {
-    var metadataDict: [String: (value: Any, privacy: LogPrivacyLevel)] = [
+    var metadataDict: [String: (value: Any, privacy: LogPrivacyLevel)]=[
       "securityOperation": (value: operation, privacy: .public)
     ]
 
     // Add additional metadata
     for (key, value) in additionalMetadata {
-      metadataDict[key] = (value: value, privacy: .public)
+      metadataDict[key]=(value: value, privacy: .public)
     }
 
-    let metadata = PrivacyMetadata(metadataDict)
+    let metadata=PrivacyMetadata(metadataDict)
 
     await logger.warning(
       message,
       metadata: metadata,
       source: "SecurityProvider.logWarning"
     )
-    
+
     // Prepare privacy-tagged metadata for secure logger
-    var secureMetadata: [String: PrivacyTaggedValue] = [
+    var secureMetadata: [String: PrivacyTaggedValue]=[
       "operation": PrivacyTaggedValue(value: operation, privacyLevel: .public)
     ]
-    
+
     // Add additional metadata with privacy tagging
     for (key, value) in additionalMetadata {
-      secureMetadata[key] = PrivacyTaggedValue(value: value, privacyLevel: .public)
+      secureMetadata[key]=PrivacyTaggedValue(value: value, privacyLevel: .public)
     }
-    
+
     // Log with secure logger
     await secureLogger.securityEvent(
       action: "WarningEvent",
@@ -253,13 +254,13 @@ extension CoreSecurityProviderService {
       additionalMetadata: secureMetadata
     )
   }
-  
+
   /**
    Logs a sensitive security event with appropriate privacy controls.
-   
+
    This method provides enhanced privacy controls for logging sensitive security events,
    ensuring that all sensitive information is properly tagged with privacy levels.
-   
+
    - Parameters:
      - action: The security action being performed
      - status: The status of the action (success, warning, failed)
@@ -272,7 +273,7 @@ extension CoreSecurityProviderService {
     status: SecurityEventStatus,
     subject: String?,
     resource: String?,
-    metadata: [String: PrivacyTaggedValue] = [:]
+    metadata: [String: PrivacyTaggedValue]=[:]
   ) async {
     // Log with secure logger for enhanced privacy awareness
     await secureLogger.securityEvent(
@@ -282,41 +283,41 @@ extension CoreSecurityProviderService {
       resource: resource,
       additionalMetadata: metadata
     )
-    
+
     // Also log a summary to the standard logger (with sensitive data redacted)
-    var standardMetadata: [String: String] = [
+    var standardMetadata: [String: String]=[
       "action": action,
       "status": status.rawValue
     ]
-    
-    if let subject = subject {
-      standardMetadata["subject"] = "[REDACTED]"
+
+    if let subject {
+      standardMetadata["subject"]="[REDACTED]"
     }
-    
-    if let resource = resource {
-      standardMetadata["resource"] = resource
+
+    if let resource {
+      standardMetadata["resource"]=resource
     }
-    
+
     // Log at appropriate level based on status
     switch status {
-    case .success:
-      await logger.info(
-        "Security event: \(action)",
-        metadata: standardMetadata,
-        source: "SecurityProvider.logSecurityEvent"
-      )
-    case .warning:
-      await logger.warning(
-        "Security event warning: \(action)",
-        metadata: standardMetadata,
-        source: "SecurityProvider.logSecurityEvent"
-      )
-    case .failed:
-      await logger.error(
-        "Security event failure: \(action)",
-        metadata: standardMetadata,
-        source: "SecurityProvider.logSecurityEvent"
-      )
+      case .success:
+        await logger.info(
+          "Security event: \(action)",
+          metadata: standardMetadata,
+          source: "SecurityProvider.logSecurityEvent"
+        )
+      case .warning:
+        await logger.warning(
+          "Security event warning: \(action)",
+          metadata: standardMetadata,
+          source: "SecurityProvider.logSecurityEvent"
+        )
+      case .failed:
+        await logger.error(
+          "Security event failure: \(action)",
+          metadata: standardMetadata,
+          source: "SecurityProvider.logSecurityEvent"
+        )
     }
   }
 }

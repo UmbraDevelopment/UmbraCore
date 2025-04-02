@@ -48,7 +48,7 @@ public protocol SnapshotServiceProtocol: Sendable {
     snapshotID1: String,
     snapshotID2: String,
     path: URL?
-  ) async throws -> (SnapshotDifference, AsyncStream<BackupProgressInfo>)
+  ) async throws -> (BackupSnapshotDifference, AsyncStream<BackupProgressInfo>)
 
   /// Updates tags for a snapshot
   /// - Parameters:
@@ -120,7 +120,7 @@ public protocol SnapshotServiceProtocol: Sendable {
   func verifySnapshot(
     snapshotID: String,
     level: VerificationLevel
-  ) async throws -> (VerificationResult, AsyncStream<BackupProgressInfo>)
+  ) async throws -> (BackupVerificationResultDTO, AsyncStream<BackupProgressInfo>)
 
   /// Copies a snapshot to another repository
   /// - Parameters:

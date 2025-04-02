@@ -140,7 +140,7 @@ public protocol BackupCoordinatorProtocol: Sendable {
     snapshotID: String,
     progressReporter: BackupProgressReporter?,
     cancellationToken: BackupCancellationToken?
-  ) async throws -> VerificationResult
+  ) async throws -> BackupVerificationResultDTO
 
   /// Performs a maintenance operation on the repository
   /// - Parameters:

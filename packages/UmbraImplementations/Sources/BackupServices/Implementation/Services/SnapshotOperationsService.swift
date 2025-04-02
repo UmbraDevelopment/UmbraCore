@@ -425,7 +425,7 @@ public actor SnapshotOperationsService {
     parameters: SnapshotVerifyParameters,
     progressReporter: BackupProgressReporter?,
     cancellationToken: BackupCancellationToken?
-  ) async throws -> VerificationResult {
+  ) async throws -> BackupVerificationResultDTO {
     try await operationExecutor.execute(
       parameters: parameters,
       progressReporter: progressReporter,

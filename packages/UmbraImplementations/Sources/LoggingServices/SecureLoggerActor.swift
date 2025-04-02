@@ -1,14 +1,14 @@
 import Foundation
-import os.log
 import LoggingInterfaces
 import LoggingTypes
+import os.log
 
 /**
  # SecureLoggerActor
 
  An actor-based implementation of a secure, privacy-aware logger designed for
  security-sensitive applications following the Alpha Dot Five architecture principles.
- 
+
  This logger builds upon the system logging facilities while adding privacy
  controls, contextual information, and security-focused features designed
  to prevent sensitive data exposure.
@@ -60,7 +60,7 @@ public actor SecureLoggerActor: SecureLoggingProtocol {
 
   /// Whether to include timestamps in console logs for better correlation
   private let includeTimestamps: Bool
-  
+
   /// The logging service actor for integration with the wider logging system
   private let loggingServiceActor: LoggingServiceActor?
 
@@ -74,16 +74,16 @@ public actor SecureLoggerActor: SecureLoggingProtocol {
       - loggingServiceActor: Optional logging service actor for integration with the wider logging system
    */
   public init(
-    subsystem: String = "com.umbra.security",
+    subsystem: String="com.umbra.security",
     category: String,
-    includeTimestamps: Bool = true,
-    loggingServiceActor: LoggingServiceActor? = nil
+    includeTimestamps: Bool=true,
+    loggingServiceActor: LoggingServiceActor?=nil
   ) {
-    self.subsystem = subsystem
-    self.category = category
-    self.includeTimestamps = includeTimestamps
-    self.logger = Logger(subsystem: subsystem, category: category)
-    self.loggingServiceActor = loggingServiceActor
+    self.subsystem=subsystem
+    self.category=category
+    self.includeTimestamps=includeTimestamps
+    logger=Logger(subsystem: subsystem, category: category)
+    self.loggingServiceActor=loggingServiceActor
   }
 
   /**
@@ -96,7 +96,7 @@ public actor SecureLoggerActor: SecureLoggingProtocol {
       - message: The message to log
       - metadata: Optional metadata to include with the log entry
    */
-  public func debug(_ message: String, metadata: [String: PrivacyTaggedValue]? = nil) async {
+  public func debug(_ message: String, metadata: [String: PrivacyTaggedValue]?=nil) async {
     await log(level: .debug, message: message, metadata: metadata)
   }
 
@@ -110,7 +110,7 @@ public actor SecureLoggerActor: SecureLoggingProtocol {
       - message: The message to log
       - metadata: Optional metadata to include with the log entry
    */
-  public func info(_ message: String, metadata: [String: PrivacyTaggedValue]? = nil) async {
+  public func info(_ message: String, metadata: [String: PrivacyTaggedValue]?=nil) async {
     await log(level: .info, message: message, metadata: metadata)
   }
 
@@ -124,7 +124,7 @@ public actor SecureLoggerActor: SecureLoggingProtocol {
       - message: The message to log
       - metadata: Optional metadata to include with the log entry
    */
-  public func warning(_ message: String, metadata: [String: PrivacyTaggedValue]? = nil) async {
+  public func warning(_ message: String, metadata: [String: PrivacyTaggedValue]?=nil) async {
     await log(level: .warning, message: message, metadata: metadata)
   }
 
@@ -138,7 +138,7 @@ public actor SecureLoggerActor: SecureLoggingProtocol {
       - message: The message to log
       - metadata: Optional metadata to include with the log entry
    */
-  public func error(_ message: String, metadata: [String: PrivacyTaggedValue]? = nil) async {
+  public func error(_ message: String, metadata: [String: PrivacyTaggedValue]?=nil) async {
     await log(level: .error, message: message, metadata: metadata)
   }
 
@@ -152,7 +152,7 @@ public actor SecureLoggerActor: SecureLoggingProtocol {
       - message: The message to log
       - metadata: Optional metadata to include with the log entry
    */
-  public func critical(_ message: String, metadata: [String: PrivacyTaggedValue]? = nil) async {
+  public func critical(_ message: String, metadata: [String: PrivacyTaggedValue]?=nil) async {
     await log(level: .critical, message: message, metadata: metadata)
   }
 
@@ -171,65 +171,65 @@ public actor SecureLoggerActor: SecureLoggingProtocol {
   public func log(
     level: LoggingTypes.UmbraLogLevel,
     message: String,
-    metadata: [String: PrivacyTaggedValue]? = nil
+    metadata: [String: PrivacyTaggedValue]?=nil
   ) async {
     // Prepare log message with timestamp if needed
-    var logMessage = message
+    var logMessage=message
     if includeTimestamps {
-      let dateFormatter = DateFormatter()
-      dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
-      let timestamp = dateFormatter.string(from: Date())
-      logMessage = "[\(timestamp)] \(logMessage)"
+      let dateFormatter=DateFormatter()
+      dateFormatter.dateFormat="yyyy-MM-dd HH:mm:ss.SSS"
+      let timestamp=dateFormatter.string(from: Date())
+      logMessage="[\(timestamp)] \(logMessage)"
     }
-    
+
     // Log to system logger with appropriate privacy handling
     switch level {
-    case .verbose, .debug:
-      logger.debug("\(logMessage, privacy: .public)")
-    case .info:
-      logger.info("\(logMessage, privacy: .public)")
-    case .warning:
-      logger.warning("\(logMessage, privacy: .public)")
-    case .error:
-      logger.error("\(logMessage, privacy: .public)")
-    case .critical:
-      logger.critical("\(logMessage, privacy: .public)")
+      case .verbose, .debug:
+        logger.debug("\(logMessage, privacy: .public)")
+      case .info:
+        logger.info("\(logMessage, privacy: .public)")
+      case .warning:
+        logger.warning("\(logMessage, privacy: .public)")
+      case .error:
+        logger.error("\(logMessage, privacy: .public)")
+      case .critical:
+        logger.critical("\(logMessage, privacy: .public)")
     }
-    
+
     // If we have a logging service actor, also log through that system
-    if let loggingServiceActor = loggingServiceActor {
+    if let loggingServiceActor {
       // Convert metadata to the format expected by the logging service
       var convertedMetadata: LoggingTypes.LogMetadata?
       if let metadata {
-        var metadataDict = LoggingTypes.LogMetadata()
+        var metadataDict=LoggingTypes.LogMetadata()
         for (key, value) in metadata {
           // Extract the actual value from our strongly-typed enum
-          let stringValue: String = switch value.value {
-          case .string(let stringValue):
-            stringValue
-          case .number(let numberString):
-            numberString
-          case .bool(let boolValue):
-            String(describing: boolValue)
+          let stringValue: String=switch value.value {
+            case let .string(stringValue):
+              stringValue
+            case let .number(numberString):
+              numberString
+            case let .bool(boolValue):
+              String(describing: boolValue)
           }
-          
+
           switch value.privacyLevel {
-          case .public:
-            metadataDict[key] = stringValue
-          case .private:
-            metadataDict[key + ".private"] = stringValue
-          case .sensitive:
-            metadataDict[key + ".sensitive"] = "[REDACTED]"
-          case .hash, .auto:
-            // Handle these cases according to your privacy requirements
-            metadataDict[key + ".private"] = stringValue
+            case .public:
+              metadataDict[key]=stringValue
+            case .private:
+              metadataDict[key + ".private"]=stringValue
+            case .sensitive:
+              metadataDict[key + ".sensitive"]="[REDACTED]"
+            case .hash, .auto:
+              // Handle these cases according to your privacy requirements
+              metadataDict[key + ".private"]=stringValue
           }
         }
-        convertedMetadata = metadataDict
+        convertedMetadata=metadataDict
       } else {
-        convertedMetadata = nil
+        convertedMetadata=nil
       }
-      
+
       // Log through the logging service actor
       await loggingServiceActor.log(
         level: level,
@@ -239,13 +239,13 @@ public actor SecureLoggerActor: SecureLoggingProtocol {
       )
     }
   }
-  
+
   /**
    Log a security event with detailed contextual information.
-   
+
    Security events are important for audit trails and security monitoring. They
    include additional contextual information to help with security analysis.
-   
+
    - Parameters:
       - action: The security action that occurred
       - status: The outcome status of the action
@@ -256,29 +256,29 @@ public actor SecureLoggerActor: SecureLoggingProtocol {
   public func securityEvent(
     action: String,
     status: SecurityEventStatus,
-    subject: String? = nil,
-    resource: String? = nil,
-    additionalMetadata: [String: PrivacyTaggedValue]? = nil
+    subject: String?=nil,
+    resource: String?=nil,
+    additionalMetadata: [String: PrivacyTaggedValue]?=nil
   ) async {
-    var metadata: [String: PrivacyTaggedValue] = [
+    var metadata: [String: PrivacyTaggedValue]=[
       "action": PrivacyTaggedValue(value: .string(action), privacyLevel: .public),
       "status": PrivacyTaggedValue(value: .string(status.rawValue), privacyLevel: .public)
     ]
-    
-    if let subject = subject {
-      metadata["subject"] = PrivacyTaggedValue(value: .string(subject), privacyLevel: .private)
+
+    if let subject {
+      metadata["subject"]=PrivacyTaggedValue(value: .string(subject), privacyLevel: .private)
     }
-    
-    if let resource = resource {
-      metadata["resource"] = PrivacyTaggedValue(value: .string(resource), privacyLevel: .private)
+
+    if let resource {
+      metadata["resource"]=PrivacyTaggedValue(value: .string(resource), privacyLevel: .private)
     }
-    
-    if let additionalMetadata = additionalMetadata {
+
+    if let additionalMetadata {
       for (key, value) in additionalMetadata {
-        metadata[key] = value
+        metadata[key]=value
       }
     }
-    
+
     await log(
       level: .info,
       message: "Security event: \(action) - \(status.rawValue)",
@@ -292,16 +292,16 @@ public actor SecureLoggerActor: SecureLoggingProtocol {
  */
 public enum SecurityEventStatus: String, Sendable {
   /// Action was attempted but access was denied
-  case denied = "DENIED"
-  
+  case denied="DENIED"
+
   /// Action was successful
-  case success = "SUCCESS"
-  
+  case success="SUCCESS"
+
   /// Action failed due to an error, not a deliberate denial
-  case failed = "FAILED"
-  
+  case failed="FAILED"
+
   /// Action was attempted but the system was unable to determine if it succeeded
-  case unknown = "UNKNOWN"
+  case unknown="UNKNOWN"
 }
 
 /**
@@ -319,56 +319,59 @@ public enum PrivacyMetadataValue: Sendable {
 public struct PrivacyTaggedValue: Sendable {
   /// The privacy-safe value to log
   public let value: PrivacyMetadataValue
-  
+
   /// The privacy level indicating how this value should be handled in logs
   public let privacyLevel: LoggingTypes.LogPrivacyLevel
-  
+
   /**
    Create a new privacy-tagged value.
-   
+
    - Parameters:
       - value: The actual value to log
       - privacyLevel: The privacy level for this value
    */
   public init(value: PrivacyMetadataValue, privacyLevel: LoggingTypes.LogPrivacyLevel) {
-    self.value = value
-    self.privacyLevel = privacyLevel
+    self.value=value
+    self.privacyLevel=privacyLevel
   }
-  
+
   /**
    Convenience initialiser for string values.
-   
+
    - Parameters:
       - stringValue: String value to log
       - privacyLevel: The privacy level for this value
    */
   public init(stringValue: String, privacyLevel: LoggingTypes.LogPrivacyLevel) {
-    self.value = .string(stringValue)
-    self.privacyLevel = privacyLevel
+    value = .string(stringValue)
+    self.privacyLevel=privacyLevel
   }
-  
+
   /**
    Convenience initialiser for numeric values.
-   
+
    - Parameters:
       - numericValue: Numeric value to log
       - privacyLevel: The privacy level for this value
    */
-  public init<T: Numeric & CustomStringConvertible>(numericValue: T, privacyLevel: LoggingTypes.LogPrivacyLevel) {
-    self.value = .number(String(describing: numericValue))
-    self.privacyLevel = privacyLevel
+  public init(
+    numericValue: some Numeric & CustomStringConvertible,
+    privacyLevel: LoggingTypes.LogPrivacyLevel
+  ) {
+    value = .number(String(describing: numericValue))
+    self.privacyLevel=privacyLevel
   }
-  
+
   /**
    Convenience initialiser for boolean values.
-   
+
    - Parameters:
       - boolValue: Boolean value to log
       - privacyLevel: The privacy level for this value
    */
   public init(boolValue: Bool, privacyLevel: LoggingTypes.LogPrivacyLevel) {
-    self.value = .bool(boolValue)
-    self.privacyLevel = privacyLevel
+    value = .bool(boolValue)
+    self.privacyLevel=privacyLevel
   }
 }
 
@@ -380,27 +383,27 @@ public protocol SecureLoggingProtocol {
    Logs a message at the debug level.
    */
   func debug(_ message: String, metadata: [String: PrivacyTaggedValue]?) async
-  
+
   /**
    Logs a message at the info level.
    */
   func info(_ message: String, metadata: [String: PrivacyTaggedValue]?) async
-  
+
   /**
    Logs a message at the warning level.
    */
   func warning(_ message: String, metadata: [String: PrivacyTaggedValue]?) async
-  
+
   /**
    Logs a message at the error level.
    */
   func error(_ message: String, metadata: [String: PrivacyTaggedValue]?) async
-  
+
   /**
    Logs a message at the critical level.
    */
   func critical(_ message: String, metadata: [String: PrivacyTaggedValue]?) async
-  
+
   /**
    Logs a message with the specified level and metadata.
    */
@@ -409,7 +412,7 @@ public protocol SecureLoggingProtocol {
     message: String,
     metadata: [String: PrivacyTaggedValue]?
   ) async
-  
+
   /**
    Log a security event with detailed contextual information.
    */

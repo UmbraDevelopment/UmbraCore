@@ -8,27 +8,32 @@ import UmbraErrors
 
 /// A simple no-operation implementation of LoggingProtocol for use when no logger is provided
 private final class LoggingProtocol_NoOp: LoggingProtocol, @unchecked Sendable {
-  
+
   private let _loggingActor: LoggingActor
-  
+
   public var loggingActor: LoggingActor {
     _loggingActor
   }
-  
+
   init() {
-    self._loggingActor = LoggingActor(destinations: [])
+    _loggingActor=LoggingActor(destinations: [])
   }
-  
-  func trace(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
-  func debug(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
-  func info(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
-  func warning(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
-  func error(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
-  func critical(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
-  
-  func logMessage(_ level: LogLevel, _ message: String, context: LogContext) async {}
-  
-  func logSensitive(_ level: LogLevel, _ message: String, sensitiveValues: [String : Any], source: String) async {}
+
+  func trace(_: String, metadata _: PrivacyMetadata?, source _: String) async {}
+  func debug(_: String, metadata _: PrivacyMetadata?, source _: String) async {}
+  func info(_: String, metadata _: PrivacyMetadata?, source _: String) async {}
+  func warning(_: String, metadata _: PrivacyMetadata?, source _: String) async {}
+  func error(_: String, metadata _: PrivacyMetadata?, source _: String) async {}
+  func critical(_: String, metadata _: PrivacyMetadata?, source _: String) async {}
+
+  func logMessage(_: LogLevel, _: String, context _: LogContext) async {}
+
+  func logSensitive(
+    _: LogLevel,
+    _: String,
+    sensitiveValues _: [String: Any],
+    source _: String
+  ) async {}
 }
 
 /**
@@ -44,11 +49,11 @@ private final class LoggingProtocol_NoOp: LoggingProtocol, @unchecked Sendable {
 
 /// Basic key types supported by the BasicKeyManager
 public enum KeyType: String, Sendable, Equatable, Codable {
-  case aes128 = "AES128"
-  case aes256 = "AES256"
-  case rsaPrivate = "RSAPrivate"
-  case rsaPublic = "RSAPublic"
-  case hmac = "HMAC"
+  case aes128="AES128"
+  case aes256="AES256"
+  case rsaPrivate="RSAPrivate"
+  case rsaPublic="RSAPublic"
+  case hmac="HMAC"
 }
 
 /// Error types specific to key management operations
@@ -65,7 +70,7 @@ public enum KeyManagementError: Error, Equatable {
 
 public final class BasicKeyManager: KeyManagementProtocol, @unchecked Sendable {
   /// In-memory storage for keys
-  private var keyStore: [String: [UInt8]] = [:]
+  private var keyStore: [String: [UInt8]]=[:]
 
   /// Logger for operations
   private let logger: LoggingProtocol
@@ -76,7 +81,7 @@ public final class BasicKeyManager: KeyManagementProtocol, @unchecked Sendable {
    - Parameter logger: Logger for recording operations
    */
   public init(logger: LoggingProtocol?=nil) {
-    self.logger = logger ?? LoggingProtocol_NoOp()
+    self.logger=logger ?? LoggingProtocol_NoOp()
   }
 
   /**
@@ -87,7 +92,7 @@ public final class BasicKeyManager: KeyManagementProtocol, @unchecked Sendable {
    */
   public func retrieveKey(withIdentifier identifier: String) async
   -> Result<[UInt8], SecurityProtocolError> {
-    if let key = keyStore[identifier] {
+    if let key=keyStore[identifier] {
       await logger.debug(
         "Retrieved key with identifier: \(identifier)",
         metadata: nil,
@@ -100,7 +105,9 @@ public final class BasicKeyManager: KeyManagementProtocol, @unchecked Sendable {
         metadata: nil,
         source: "BasicKeyManager"
       )
-      return .failure(.invalidMessageFormat(details: "Key not found with identifier: \(identifier)"))
+      return .failure(
+        .invalidMessageFormat(details: "Key not found with identifier: \(identifier)")
+      )
     }
   }
 
@@ -116,7 +123,7 @@ public final class BasicKeyManager: KeyManagementProtocol, @unchecked Sendable {
     _ key: [UInt8],
     withIdentifier identifier: String
   ) async -> Result<Void, SecurityProtocolError> {
-    keyStore[identifier] = key
+    keyStore[identifier]=key
     await logger.debug(
       "Stored key with identifier: \(identifier)",
       metadata: nil,
@@ -146,13 +153,15 @@ public final class BasicKeyManager: KeyManagementProtocol, @unchecked Sendable {
         metadata: nil,
         source: "BasicKeyManager"
       )
-      return .failure(.invalidMessageFormat(details: "Key not found with identifier: \(identifier)"))
+      return .failure(
+        .invalidMessageFormat(details: "Key not found with identifier: \(identifier)")
+      )
     }
   }
 
   /**
    Rotates a security key, creating a new key and optionally re-encrypting data.
-   
+
    - Parameters:
      - identifier: A string identifying the key to rotate.
      - dataToReencrypt: Optional data to re-encrypt with the new key.
@@ -170,33 +179,33 @@ public final class BasicKeyManager: KeyManagementProtocol, @unchecked Sendable {
       metadata: nil,
       source: "BasicKeyManager"
     )
-    
+
     // Generate a new key (using AES-256 as a default)
-    let newKeyBytes = try? await generateRandomBytes(count: 32)
-    guard let newKeyBytes = newKeyBytes else {
+    let newKeyBytes=try? await generateRandomBytes(count: 32)
+    guard let newKeyBytes else {
       return .failure(.invalidMessageFormat(details: "Failed to generate new key"))
     }
-    
+
     // Store the new key with the same identifier
-    let storeResult = await storeKey(newKeyBytes, withIdentifier: identifier)
-    if case let .failure(error) = storeResult {
+    let storeResult=await storeKey(newKeyBytes, withIdentifier: identifier)
+    if case let .failure(error)=storeResult {
       return .failure(error)
     }
-    
+
     // If there's data to re-encrypt, mock the re-encryption
-    var reencryptedData: [UInt8]? = nil
-    if let dataToReencrypt = dataToReencrypt {
+    var reencryptedData: [UInt8]?=nil
+    if let dataToReencrypt {
       // In a real implementation, this would use the new key to re-encrypt the data
       // For this fallback, we'll just mock the re-encryption
-      reencryptedData = dataToReencrypt
+      reencryptedData=dataToReencrypt
     }
-    
+
     return .success((newKey: newKeyBytes, reencryptedData: reencryptedData))
   }
 
   /**
    Lists all available key identifiers.
-   
+
    - Returns: An array of key identifiers or an error.
    */
   public func listKeyIdentifiers() async -> Result<[String], SecurityProtocolError> {
@@ -216,13 +225,14 @@ public final class BasicKeyManager: KeyManagementProtocol, @unchecked Sendable {
    - Throws: Error if random byte generation fails
    */
   private func generateRandomBytes(count: Int) async throws -> [UInt8] {
-    var bytes = [UInt8](repeating: 0, count: count)
-    let status = SecRandomCopyBytes(kSecRandomDefault, count, &bytes)
-    
+    var bytes=[UInt8](repeating: 0, count: count)
+    let status=SecRandomCopyBytes(kSecRandomDefault, count, &bytes)
+
     if status == errSecSuccess {
       return bytes
     } else {
-      throw KeyManagementError.keyGenerationFailed(reason: "SecRandomCopyBytes failed with status \(status)")
+      throw KeyManagementError
+        .keyGenerationFailed(reason: "SecRandomCopyBytes failed with status \(status)")
     }
   }
 }

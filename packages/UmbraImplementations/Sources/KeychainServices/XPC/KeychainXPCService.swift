@@ -107,7 +107,7 @@ public actor KeychainXPCService: KeychainServiceProtocol {
   ) async throws {
     await log(.info, "Storing password for account: \(account)")
 
-    let request = KeychainStoreRequest(
+    let request=KeychainStoreRequest(
       type: .password,
       account: account,
       serviceIdentifier: serviceIdentifier,
@@ -140,7 +140,7 @@ public actor KeychainXPCService: KeychainServiceProtocol {
   ) async throws -> String {
     await log(.info, "Retrieving password for account: \(account)")
 
-    let request = KeychainRetrieveRequest(
+    let request=KeychainRetrieveRequest(
       type: .password,
       account: account,
       serviceIdentifier: serviceIdentifier,
@@ -148,7 +148,7 @@ public actor KeychainXPCService: KeychainServiceProtocol {
     )
 
     do {
-      let response = try await sendRequestForStringResponse(request, to: .retrievePassword)
+      let response=try await sendRequestForStringResponse(request, to: .retrievePassword)
       await log(.info, "Password retrieved successfully for account: \(account)")
       return response.value
     } catch {
@@ -172,7 +172,7 @@ public actor KeychainXPCService: KeychainServiceProtocol {
   ) async throws {
     await log(.info, "Deleting password for account: \(account)")
 
-    let request = KeychainDeleteRequest(
+    let request=KeychainDeleteRequest(
       type: .password,
       account: account,
       serviceIdentifier: serviceIdentifier,
@@ -205,7 +205,7 @@ public actor KeychainXPCService: KeychainServiceProtocol {
   ) async throws {
     await log(.info, "Storing data for account: \(account)")
 
-    let request = KeychainStoreRequest(
+    let request=KeychainStoreRequest(
       type: .data,
       account: account,
       serviceIdentifier: serviceIdentifier,
@@ -238,7 +238,7 @@ public actor KeychainXPCService: KeychainServiceProtocol {
   ) async throws -> Data {
     await log(.info, "Retrieving data for account: \(account)")
 
-    let request = KeychainRetrieveRequest(
+    let request=KeychainRetrieveRequest(
       type: .data,
       account: account,
       serviceIdentifier: serviceIdentifier,
@@ -246,7 +246,7 @@ public actor KeychainXPCService: KeychainServiceProtocol {
     )
 
     do {
-      let response = try await sendRequestForDataResponse(request, to: .retrieveData)
+      let response=try await sendRequestForDataResponse(request, to: .retrieveData)
       await log(.info, "Data retrieved successfully for account: \(account)")
       return response.value
     } catch {
@@ -270,7 +270,7 @@ public actor KeychainXPCService: KeychainServiceProtocol {
   ) async throws {
     await log(.info, "Deleting data for account: \(account)")
 
-    let request = KeychainDeleteRequest(
+    let request=KeychainDeleteRequest(
       type: .data,
       account: account,
       serviceIdentifier: serviceIdentifier,
@@ -301,14 +301,14 @@ public actor KeychainXPCService: KeychainServiceProtocol {
   ) async throws -> Bool {
     await log(.debug, "Checking if password exists for account: \(account)")
 
-    let request = KeychainExistsRequest(
+    let request=KeychainExistsRequest(
       account: account,
       serviceIdentifier: serviceIdentifier,
       keychainOptions: keychainOptions
     )
 
     do {
-      let response = try await sendRequestForBoolResponse(request, to: .passwordExists)
+      let response=try await sendRequestForBoolResponse(request, to: .passwordExists)
       await log(.debug, "Password existence check complete for account: \(account)")
       return response.value
     } catch {

@@ -499,8 +499,10 @@ public actor BackupCoordinatorImpl: BackupCoordinatorProtocol {
   /// - Returns: Verification result
   /// - Throws: `BackupError` if verification fails
   public func verifySnapshot(
-    snapshotID: String
-  ) async throws -> VerificationResult {
+    snapshotID: String,
+    progressReporter _: BackupProgressReporter?=nil,
+    cancellationToken _: BackupCancellationToken?=nil
+  ) async throws -> BackupVerificationResultDTO {
     let metadata=LogMetadata([
       "snapshotID": snapshotID
     ])

@@ -16,9 +16,9 @@ import LoggingTypes
  - Provides standardised operation-specific error handling
  - Creates consistent SecurityResultDTO objects for error conditions
  - Captures performance metrics alongside error information
- 
+
  ## Privacy-Aware Logging
- 
+
  Implements privacy-aware error logging through SecureLoggerActor, ensuring that
  sensitive information in error contexts is properly tagged with privacy levels
  according to the Alpha Dot Five architecture principles.
@@ -28,10 +28,10 @@ final class SecurityOperationsErrorHandler {
    The logger instance for recording general errors
    */
   private let logger: LoggingInterfaces.LoggingProtocol
-  
+
   /**
    The secure logger for privacy-aware logging of sensitive error information
-   
+
    This logger ensures proper privacy tagging for all security-sensitive error details
    in accordance with Alpha Dot Five architecture principles.
    */
@@ -52,16 +52,16 @@ final class SecurityOperationsErrorHandler {
    */
   init(
     logger: LoggingInterfaces.LoggingProtocol,
-    secureLogger: SecureLoggerActor? = nil,
+    secureLogger: SecureLoggerActor?=nil,
     coreErrorHandler: SecurityErrorHandler
   ) {
-    self.logger = logger
-    self.secureLogger = secureLogger ?? SecureLoggerActor(
+    self.logger=logger
+    self.secureLogger=secureLogger ?? SecureLoggerActor(
       subsystem: "com.umbra.security",
       category: "SecurityOperationsErrorHandler",
       includeTimestamps: true
     )
-    self.coreErrorHandler = coreErrorHandler
+    self.coreErrorHandler=coreErrorHandler
   }
 
   /**
@@ -81,10 +81,10 @@ final class SecurityOperationsErrorHandler {
     startTime: Date
   ) async -> SecurityResultDTO {
     // Calculate duration before failure
-    let duration = Date().timeIntervalSince(startTime) * 1000
+    let duration=Date().timeIntervalSince(startTime) * 1000
 
     // Create error metadata for logging
-    let errorMetadata: LoggingInterfaces.LogMetadata = createErrorMetadata(
+    let errorMetadata: LoggingInterfaces.LogMetadata=createErrorMetadata(
       error: error,
       operation: operation,
       operationID: operationID,
@@ -96,7 +96,7 @@ final class SecurityOperationsErrorHandler {
       "Security operation failed: \(operation.description) - \(error.localizedDescription)",
       metadata: errorMetadata
     )
-    
+
     // Log with secure logger for enhanced privacy awareness
     await secureLogger.securityEvent(
       action: "SecurityOperationError",
@@ -107,8 +107,10 @@ final class SecurityOperationsErrorHandler {
         "operationId": PrivacyTaggedValue(value: operationID, privacyLevel: .public),
         "operation": PrivacyTaggedValue(value: operation.rawValue, privacyLevel: .public),
         "durationMs": PrivacyTaggedValue(value: Int(duration), privacyLevel: .public),
-        "errorType": PrivacyTaggedValue(value: String(describing: type(of: error)), privacyLevel: .public),
-        "errorDescription": PrivacyTaggedValue(value: sanitizeErrorMessage(error.localizedDescription), privacyLevel: .restricted)
+        "errorType": PrivacyTaggedValue(value: String(describing: type(of: error)),
+                                        privacyLevel: .public),
+        "errorDescription": PrivacyTaggedValue(value: sanitizeErrorMessage(error
+            .localizedDescription), privacyLevel: .restricted)
       ]
     )
 
@@ -154,8 +156,8 @@ final class SecurityOperationsErrorHandler {
     duration: Double
   ) -> SecurityResultDTO {
     // Create a safe error message
-    let safeErrorMessage = sanitizeErrorMessage(error.localizedDescription)
-    
+    let safeErrorMessage=sanitizeErrorMessage(error.localizedDescription)
+
     return SecurityResultDTO(
       status: .failure,
       data: nil,
@@ -166,7 +168,7 @@ final class SecurityOperationsErrorHandler {
       ]
     )
   }
-  
+
   /**
    Logs a detailed security error with privacy controls
 
@@ -179,42 +181,44 @@ final class SecurityOperationsErrorHandler {
   func logSecurityError(
     _ error: Error,
     operation: SecurityOperation,
-    context: [String: String] = [:],
-    sensitiveData: [String: Any] = [:]
+    context: [String: String]=[:],
+    sensitiveData: [String: Any]=[:]
   ) async {
     // Log to standard logger with sanitized information
-    var standardMetadata: [String: String] = [
+    var standardMetadata: [String: String]=[
       "errorType": String(describing: type(of: error)),
       "operation": operation.rawValue
     ]
-    
+
     // Add context to standard metadata
     for (key, value) in context {
-      standardMetadata[key] = value
+      standardMetadata[key]=value
     }
-    
+
     await logger.error(
       "Security error in \(operation.description): \(sanitizeErrorMessage(error.localizedDescription))",
       metadata: standardMetadata
     )
-    
+
     // Create privacy-tagged metadata for secure logger
-    var secureMetadata: [String: PrivacyTaggedValue] = [
-      "errorType": PrivacyTaggedValue(value: String(describing: type(of: error)), privacyLevel: .public),
+    var secureMetadata: [String: PrivacyTaggedValue]=[
+      "errorType": PrivacyTaggedValue(value: String(describing: type(of: error)),
+                                      privacyLevel: .public),
       "operation": PrivacyTaggedValue(value: operation.rawValue, privacyLevel: .public),
-      "errorDescription": PrivacyTaggedValue(value: error.localizedDescription, privacyLevel: .restricted)
+      "errorDescription": PrivacyTaggedValue(value: error.localizedDescription,
+                                             privacyLevel: .restricted)
     ]
-    
+
     // Add context with privacy tagging
     for (key, value) in context {
-      secureMetadata[key] = PrivacyTaggedValue(value: value, privacyLevel: .public)
+      secureMetadata[key]=PrivacyTaggedValue(value: value, privacyLevel: .public)
     }
-    
+
     // Add sensitive data with appropriate privacy levels
     for (key, value) in sensitiveData {
-      secureMetadata[key] = PrivacyTaggedValue(value: value, privacyLevel: .sensitive)
+      secureMetadata[key]=PrivacyTaggedValue(value: value, privacyLevel: .sensitive)
     }
-    
+
     // Log with secure logger for enhanced privacy awareness
     await secureLogger.securityEvent(
       action: "SecurityError",
@@ -224,23 +228,25 @@ final class SecurityOperationsErrorHandler {
       additionalMetadata: secureMetadata
     )
   }
-  
+
   /**
    Sanitises error messages to remove potential sensitive information
-   
+
    - Parameter message: The original error message
    - Returns: A sanitised version of the message safe for logging
    */
   private func sanitizeErrorMessage(_ message: String) -> String {
     // Check for potential sensitive patterns like keys, tokens, passwords
-    if message.contains("key") ||
-       message.contains("token") ||
-       message.contains("password") ||
-       message.contains("credential") ||
-       message.contains("secret") {
+    if
+      message.contains("key") ||
+      message.contains("token") ||
+      message.contains("password") ||
+      message.contains("credential") ||
+      message.contains("secret")
+    {
       return "[SENSITIVE ERROR DETAILS REDACTED]"
     }
-    
+
     // For other error messages, return as is
     return message
   }

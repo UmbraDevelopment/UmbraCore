@@ -181,51 +181,33 @@ public struct BackupImportResult: Sendable, Equatable {
 }
 
 /**
- * Represents a comparison between two snapshots.
+ * Represents the result of a backup count operation.
  */
-public struct BackupSnapshotComparisonResult: Sendable, Equatable {
-  /// Files that were added in the newer snapshot
-  public let addedFiles: [FileInfo]
+public struct BackupCountResult: Sendable, Equatable {
+  /// Total number of snapshots
+  public let totalSnapshots: Int
 
-  /// Files that were modified between snapshots
-  public let modifiedFiles: [FileInfo]
+  /// Total size of all snapshots in bytes
+  public let totalSize: UInt64
 
-  /// Files that were removed in the newer snapshot
-  public let removedFiles: [FileInfo]
-
-  /// Files that remained unchanged between snapshots
-  public let unchangedFiles: [FileInfo]
-
-  /// Total number of changes between snapshots
-  public let totalChangeCount: Int
-
-  /// When the comparison was performed
-  public let comparisonDate: Date
+  /// Time when the count was performed
+  public let countDate: Date
 
   /**
-   * Initialises a new snapshot comparison result.
+   * Initialises a new count result.
    *
    * - Parameters:
-   *   - addedFiles: Files that were added in the newer snapshot
-   *   - modifiedFiles: Files that were modified between snapshots
-   *   - removedFiles: Files that were removed in the newer snapshot
-   *   - unchangedFiles: Files that remained unchanged between snapshots
-   *   - totalChangeCount: Total number of changes between snapshots
-   *   - comparisonDate: When the comparison was performed
+   *   - totalSnapshots: Total number of snapshots
+   *   - totalSize: Total size of all snapshots in bytes
+   *   - countDate: Time when the count was performed
    */
   public init(
-    addedFiles: [FileInfo],
-    modifiedFiles: [FileInfo],
-    removedFiles: [FileInfo],
-    unchangedFiles: [FileInfo],
-    totalChangeCount: Int,
-    comparisonDate: Date=Date()
+    totalSnapshots: Int,
+    totalSize: UInt64,
+    countDate: Date=Date()
   ) {
-    self.addedFiles=addedFiles
-    self.modifiedFiles=modifiedFiles
-    self.removedFiles=removedFiles
-    self.unchangedFiles=unchangedFiles
-    self.totalChangeCount=totalChangeCount
-    self.comparisonDate=comparisonDate
+    self.totalSnapshots=totalSnapshots
+    self.totalSize=totalSize
+    self.countDate=countDate
   }
 }

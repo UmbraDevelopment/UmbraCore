@@ -28,7 +28,7 @@
 
  // Later, resolve and access the bookmark
  let resolveResult = await bookmarkService.resolveBookmark(
-     withIdentifier: bookmarkId,
+     withIdentifier: bookmarkID,
      startAccess: true
  )
  ```

@@ -51,19 +51,19 @@ public actor CryptoServiceActor {
       - providerType: The type of security provider to use
       - logger: Logger for recording operations
    */
-  public init(providerType: SecurityProviderType? = nil, logger: LoggingProtocol) {
-    self.logger = logger
+  public init(providerType: SecurityProviderType?=nil, logger: LoggingProtocol) {
+    self.logger=logger
 
     // Create provider based on specified type or best available
     do {
       if let providerType {
-        provider = try SecurityProviderFactory.createProvider(type: providerType)
+        provider=try SecurityProviderFactory.createProvider(type: providerType)
       } else {
-        provider = try SecurityProviderFactory.createBestAvailableProvider()
+        provider=try SecurityProviderFactory.createBestAvailableProvider()
       }
 
       // Create default configuration for this provider
-      defaultConfig = SecurityConfigDTO.aesEncryption(providerType: provider.providerType)
+      defaultConfig=SecurityConfigDTO.aesEncryption(providerType: provider.providerType)
 
       Task {
         await logger.info(
@@ -73,8 +73,8 @@ public actor CryptoServiceActor {
       }
     } catch {
       // Fall back to basic provider if there's an issue
-      provider = SecurityProviderFactory.createDefaultProvider()
-      defaultConfig = SecurityConfigDTO.aesEncryption(providerType: .basic)
+      provider=SecurityProviderFactory.createDefaultProvider()
+      defaultConfig=SecurityConfigDTO.aesEncryption(providerType: .basic)
 
       Task {
         await logger.warning(
@@ -93,9 +93,9 @@ public actor CryptoServiceActor {
    */
   public func setProvider(_ type: SecurityProviderType) -> Bool {
     do {
-      let newProvider = try SecurityProviderFactory.createProvider(type: type)
-      provider = newProvider
-      defaultConfig = SecurityConfigDTO.aesEncryption(providerType: type)
+      let newProvider=try SecurityProviderFactory.createProvider(type: type)
+      provider=newProvider
+      defaultConfig=SecurityConfigDTO.aesEncryption(providerType: type)
 
       Task {
         await logger.info("Changed security provider to: \(type.rawValue)", metadata: nil)
@@ -127,15 +127,15 @@ public actor CryptoServiceActor {
   public func encrypt(
     data: [UInt8],
     using key: [UInt8],
-    config: SecurityConfigDTO? = nil
+    config: SecurityConfigDTO?=nil
   ) async throws -> [UInt8] {
-    let dataBytes = Data(data)
-    let keyBytes = Data(key)
+    let dataBytes=Data(data)
+    let keyBytes=Data(key)
 
     // Generate IV using the provider
     let iv: Data
     do {
-      iv = try provider.generateIV(size: 16)
+      iv=try provider.generateIV(size: 16)
     } catch {
       await logger.error("Failed to generate IV: \(error.localizedDescription)", metadata: nil)
       throw SecurityProtocolError
@@ -143,11 +143,11 @@ public actor CryptoServiceActor {
     }
 
     // Use provided config or default
-    let operationConfig = config ?? defaultConfig
+    let operationConfig=config ?? defaultConfig
 
     // Encrypt data
     do {
-      let encryptedData = try provider.encrypt(
+      let encryptedData=try provider.encrypt(
         plaintext: dataBytes,
         key: keyBytes,
         iv: iv,
@@ -155,7 +155,7 @@ public actor CryptoServiceActor {
       )
 
       // Prepend IV to encrypted data for later decryption
-      var result = Data(capacity: iv.count + encryptedData.count)
+      var result=Data(capacity: iv.count + encryptedData.count)
       result.append(iv)
       result.append(encryptedData)
 
@@ -163,7 +163,7 @@ public actor CryptoServiceActor {
     } catch {
       await logger.error("Encryption failed: \(error.localizedDescription)", metadata: nil)
 
-      if let secError = error as? SecurityProtocolError {
+      if let secError=error as? SecurityProtocolError {
         throw secError
       } else {
         throw SecurityProtocolError
@@ -185,10 +185,10 @@ public actor CryptoServiceActor {
   public func decrypt(
     data: [UInt8],
     using key: [UInt8],
-    config: SecurityConfigDTO? = nil
+    config: SecurityConfigDTO?=nil
   ) async throws -> [UInt8] {
-    let dataBytes = Data(data)
-    let keyBytes = Data(key)
+    let dataBytes=Data(data)
+    let keyBytes=Data(key)
 
     // Validate minimum length (IV + at least some ciphertext)
     guard dataBytes.count > 16 else {
@@ -197,15 +197,15 @@ public actor CryptoServiceActor {
     }
 
     // Extract IV and ciphertext
-    let iv = dataBytes.prefix(16)
-    let ciphertext = dataBytes.dropFirst(16)
+    let iv=dataBytes.prefix(16)
+    let ciphertext=dataBytes.dropFirst(16)
 
     // Use provided config or default
-    let operationConfig = config ?? defaultConfig
+    let operationConfig=config ?? defaultConfig
 
     // Decrypt data
     do {
-      let decryptedData = try provider.decrypt(
+      let decryptedData=try provider.decrypt(
         ciphertext: ciphertext,
         key: keyBytes,
         iv: iv,
@@ -216,7 +216,7 @@ public actor CryptoServiceActor {
     } catch {
       await logger.error("Decryption failed: \(error.localizedDescription)", metadata: nil)
 
-      if let secError = error as? SecurityProtocolError {
+      if let secError=error as? SecurityProtocolError {
         throw secError
       } else {
         throw SecurityProtocolError
@@ -235,17 +235,17 @@ public actor CryptoServiceActor {
    - Throws: SecurityProtocolError if key generation fails
    */
   public func generateKey(
-    bitLength: Int = 256,
-    config: SecurityConfigDTO? = nil
+    bitLength: Int=256,
+    config: SecurityConfigDTO?=nil
   ) async throws -> [UInt8] {
     // Calculate byte length from bit length
-    let byteLength = (bitLength + 7) / 8
+    let byteLength=(bitLength + 7) / 8
 
     // Use provided config or default
-    let operationConfig = config ?? defaultConfig
+    let operationConfig=config ?? defaultConfig
 
     do {
-      let keyData = try provider.generateKey(size: byteLength, config: operationConfig)
+      let keyData=try provider.generateKey(size: byteLength, config: operationConfig)
       return [UInt8](keyData)
     } catch {
       await logger.error(
@@ -253,7 +253,7 @@ public actor CryptoServiceActor {
         metadata: nil
       )
 
-      if let secError = error as? SecurityProtocolError {
+      if let secError=error as? SecurityProtocolError {
         throw secError
       } else {
         throw SecurityProtocolError
@@ -276,12 +276,12 @@ public actor CryptoServiceActor {
     algorithm: HashAlgorithm = .sha256
   ) async throws -> [UInt8] {
     do {
-      let hashData = try provider.hash(data: Data(data), algorithm: algorithm)
+      let hashData=try provider.hash(data: Data(data), algorithm: algorithm)
       return [UInt8](hashData)
     } catch {
       await logger.error("Hashing failed: \(error.localizedDescription)", metadata: nil)
 
-      if let secError = error as? SecurityProtocolError {
+      if let secError=error as? SecurityProtocolError {
         throw secError
       } else {
         throw SecurityProtocolError
@@ -304,7 +304,7 @@ public actor CryptoServiceActor {
       return false
     }
 
-    var result: UInt8 = 0
+    var result: UInt8=0
     for i in 0..<hash.count {
       result |= hash[i] ^ expected[i]
     }
@@ -324,19 +324,19 @@ public actor CryptoServiceActor {
   public func encryptBatch(
     dataItems: [[UInt8]],
     using key: [UInt8],
-    config: SecurityConfigDTO? = nil
+    config: SecurityConfigDTO?=nil
   ) async throws -> [[UInt8]] {
     try await withThrowingTaskGroup(of: (Int, [UInt8]).self) { group in
       // Add tasks for each item
       for (index, item) in dataItems.enumerated() {
         group.addTask {
-          let encrypted = try await self.encrypt(data: item, using: key, config: config)
+          let encrypted=try await self.encrypt(data: item, using: key, config: config)
           return (index, encrypted)
         }
       }
 
       // Collect results maintaining original order
-      var results = [(Int, [UInt8])]()
+      var results=[(Int, [UInt8])]()
       for try await result in group {
         results.append(result)
       }
@@ -359,19 +359,19 @@ public actor CryptoServiceActor {
   public func decryptBatch(
     dataItems: [[UInt8]],
     using key: [UInt8],
-    config: SecurityConfigDTO? = nil
+    config: SecurityConfigDTO?=nil
   ) async throws -> [[UInt8]] {
     try await withThrowingTaskGroup(of: (Int, [UInt8]).self) { group in
       // Add tasks for each item
       for (index, item) in dataItems.enumerated() {
         group.addTask {
-          let decrypted = try await self.decrypt(data: item, using: key, config: config)
+          let decrypted=try await self.decrypt(data: item, using: key, config: config)
           return (index, decrypted)
         }
       }
 
       // Collect results maintaining original order
-      var results = [(Int, [UInt8])]()
+      var results=[(Int, [UInt8])]()
       for try await result in group {
         results.append(result)
       }

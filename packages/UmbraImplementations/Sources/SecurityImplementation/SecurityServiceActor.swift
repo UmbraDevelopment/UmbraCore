@@ -25,7 +25,7 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
 
   /// The standard logger used for general logging
   private let logger: LoggingInterfaces.LoggingProtocol
-  
+
   /// The secure logger used for privacy-aware logging of sensitive operations
   private let secureLogger: SecureLoggerActor
 
@@ -33,10 +33,10 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
   private var configuration: SecurityConfigurationDTO
 
   /// Flag indicating if service has been initialised
-  private var isInitialised: Bool = false
+  private var isInitialised: Bool=false
 
   /// Internal store for event subscribers
-  private var eventSubscribers: [UUID: AsyncStream<SecurityEventDTO>.Continuation] = [:]
+  private var eventSubscribers: [UUID: AsyncStream<SecurityEventDTO>.Continuation]=[:]
 
   /// Unique identifier for this security service instance
   private let serviceIdentifier: UUID = .init()
@@ -51,17 +51,17 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
   public init(
     cryptoService: any CryptoServiceProtocol,
     logger: LoggingInterfaces.LoggingProtocol,
-    secureLogger: SecureLoggerActor? = nil
+    secureLogger: SecureLoggerActor?=nil
   ) {
-    self.cryptoService = cryptoService
-    self.logger = logger
-    self.secureLogger = secureLogger ?? SecureLoggerActor(
+    self.cryptoService=cryptoService
+    self.logger=logger
+    self.secureLogger=secureLogger ?? SecureLoggerActor(
       subsystem: "com.umbra.security",
       category: "SecurityService",
       includeTimestamps: true
     )
     configuration = .default
-    isInitialised = false
+    isInitialised=false
   }
 
   /// Initialises the security service
@@ -79,7 +79,7 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
       ]),
       source: "SecurityServiceActor.initialise"
     )
-    
+
     // Log with secure logger for enhanced privacy awareness
     await secureLogger.securityEvent(
       action: "SecurityServiceInitialisation",
@@ -105,12 +105,12 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
           "error": PrivacyTaggedValue(value: "CryptoService unavailable", privacyLevel: .public)
         ]
       )
-      
+
       throw UmbraErrors.SecurityError.serviceUnavailable
     }
 
     // Mark as initialised
-    isInitialised = true
+    isInitialised=true
 
     await logger.info(
       "Security service initialised successfully",
@@ -119,7 +119,7 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
       ]),
       source: "SecurityServiceActor.initialise"
     )
-    
+
     // Log successful initialisation with secure logger
     await secureLogger.securityEvent(
       action: "SecurityServiceInitialisation",
@@ -160,7 +160,7 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
         "data_length": String(data.count)
       ]
     )
-    
+
     // Log with secure logger for enhanced privacy awareness
     await secureLogger.securityEvent(
       action: "DataSecurity",
@@ -168,8 +168,10 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
       subject: nil,
       resource: nil,
       additionalMetadata: [
-        "operation": PrivacyTaggedValue(value: securityContext.operationType.rawValue, privacyLevel: .public),
-        "securityLevel": PrivacyTaggedValue(value: securityContext.securityLevel.rawValue, privacyLevel: .public),
+        "operation": PrivacyTaggedValue(value: securityContext.operationType.rawValue,
+                                        privacyLevel: .public),
+        "securityLevel": PrivacyTaggedValue(value: securityContext.securityLevel.rawValue,
+                                            privacyLevel: .public),
         "dataSize": PrivacyTaggedValue(value: data.count, privacyLevel: .public),
         "phase": PrivacyTaggedValue(value: "start", privacyLevel: .public)
       ]
@@ -178,7 +180,7 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
     switch securityContext.operationType {
       case .encryption:
         // Delegate to crypto service for encryption
-        let result = await cryptoService.encrypt(
+        let result=await cryptoService.encrypt(
           data: data,
           keyIdentifier: securityContext.keyIdentifier,
           options: securityContext.cryptoOptions
@@ -194,7 +196,7 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
                 "result_length": String(encryptedData.count)
               ]
             )
-            
+
             // Log success with secure logger
             await secureLogger.securityEvent(
               action: "DataSecurity",
@@ -202,7 +204,8 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
               subject: nil,
               resource: nil,
               additionalMetadata: [
-                "operation": PrivacyTaggedValue(value: securityContext.operationType.rawValue, privacyLevel: .public),
+                "operation": PrivacyTaggedValue(value: securityContext.operationType.rawValue,
+                                                privacyLevel: .public),
                 "resultSize": PrivacyTaggedValue(value: encryptedData.count, privacyLevel: .public),
                 "phase": PrivacyTaggedValue(value: "complete", privacyLevel: .public)
               ]
@@ -219,7 +222,7 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
                 "error": error.localizedDescription
               ]
             )
-            
+
             // Log failure with secure logger
             await secureLogger.securityEvent(
               action: "DataSecurity",
@@ -227,8 +230,10 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
               subject: nil,
               resource: nil,
               additionalMetadata: [
-                "operation": PrivacyTaggedValue(value: securityContext.operationType.rawValue, privacyLevel: .public),
-                "error": PrivacyTaggedValue(value: error.localizedDescription, privacyLevel: .public),
+                "operation": PrivacyTaggedValue(value: securityContext.operationType.rawValue,
+                                                privacyLevel: .public),
+                "error": PrivacyTaggedValue(value: error.localizedDescription,
+                                            privacyLevel: .public),
                 "phase": PrivacyTaggedValue(value: "error", privacyLevel: .public)
               ]
             )
@@ -246,12 +251,13 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
           subject: nil,
           resource: nil,
           additionalMetadata: [
-            "operation": PrivacyTaggedValue(value: securityContext.operationType.rawValue, privacyLevel: .public),
+            "operation": PrivacyTaggedValue(value: securityContext.operationType.rawValue,
+                                            privacyLevel: .public),
             "error": PrivacyTaggedValue(value: "Unsupported operation", privacyLevel: .public),
             "phase": PrivacyTaggedValue(value: "validation", privacyLevel: .public)
           ]
         )
-        
+
         throw UmbraErrors.SecurityError.invalidOperation(
           reason: "Operation type \(securityContext.operationType.rawValue) not supported for securing data"
         )
@@ -279,7 +285,7 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
         "data_length": String(securedData.count)
       ]
     )
-    
+
     // Log with secure logger for enhanced privacy awareness
     await secureLogger.securityEvent(
       action: "DataRetrieval",
@@ -287,8 +293,10 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
       subject: nil,
       resource: nil,
       additionalMetadata: [
-        "operation": PrivacyTaggedValue(value: securityContext.operationType.rawValue, privacyLevel: .public),
-        "securityLevel": PrivacyTaggedValue(value: securityContext.securityLevel.rawValue, privacyLevel: .public),
+        "operation": PrivacyTaggedValue(value: securityContext.operationType.rawValue,
+                                        privacyLevel: .public),
+        "securityLevel": PrivacyTaggedValue(value: securityContext.securityLevel.rawValue,
+                                            privacyLevel: .public),
         "dataSize": PrivacyTaggedValue(value: securedData.count, privacyLevel: .public),
         "phase": PrivacyTaggedValue(value: "start", privacyLevel: .public)
       ]
@@ -297,7 +305,7 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
     switch securityContext.operationType {
       case .decryption:
         // Delegate to crypto service for decryption
-        let result = await cryptoService.decrypt(
+        let result=await cryptoService.decrypt(
           encryptedData: securedData,
           keyIdentifier: securityContext.keyIdentifier,
           options: securityContext.cryptoOptions
@@ -313,7 +321,7 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
                 "result_length": String(decryptedData.count)
               ]
             )
-            
+
             // Log success with secure logger
             await secureLogger.securityEvent(
               action: "DataRetrieval",
@@ -321,7 +329,8 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
               subject: nil,
               resource: nil,
               additionalMetadata: [
-                "operation": PrivacyTaggedValue(value: securityContext.operationType.rawValue, privacyLevel: .public),
+                "operation": PrivacyTaggedValue(value: securityContext.operationType.rawValue,
+                                                privacyLevel: .public),
                 "resultSize": PrivacyTaggedValue(value: decryptedData.count, privacyLevel: .public),
                 "phase": PrivacyTaggedValue(value: "complete", privacyLevel: .public)
               ]
@@ -338,7 +347,7 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
                 "error": error.localizedDescription
               ]
             )
-            
+
             // Log failure with secure logger
             await secureLogger.securityEvent(
               action: "DataRetrieval",
@@ -346,8 +355,10 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
               subject: nil,
               resource: nil,
               additionalMetadata: [
-                "operation": PrivacyTaggedValue(value: securityContext.operationType.rawValue, privacyLevel: .public),
-                "error": PrivacyTaggedValue(value: error.localizedDescription, privacyLevel: .public),
+                "operation": PrivacyTaggedValue(value: securityContext.operationType.rawValue,
+                                                privacyLevel: .public),
+                "error": PrivacyTaggedValue(value: error.localizedDescription,
+                                            privacyLevel: .public),
                 "phase": PrivacyTaggedValue(value: "error", privacyLevel: .public)
               ]
             )
@@ -365,12 +376,13 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
           subject: nil,
           resource: nil,
           additionalMetadata: [
-            "operation": PrivacyTaggedValue(value: securityContext.operationType.rawValue, privacyLevel: .public),
+            "operation": PrivacyTaggedValue(value: securityContext.operationType.rawValue,
+                                            privacyLevel: .public),
             "error": PrivacyTaggedValue(value: "Unsupported operation", privacyLevel: .public),
             "phase": PrivacyTaggedValue(value: "validation", privacyLevel: .public)
           ]
         )
-        
+
         throw UmbraErrors.SecurityError.invalidOperation(
           reason: "Operation type \(securityContext.operationType.rawValue) not supported for retrieving secured data"
         )
@@ -404,7 +416,7 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
         "url_scheme": url.scheme ?? "unknown"
       ]
     )
-    
+
     // Log with secure logger for enhanced privacy awareness
     await secureLogger.securityEvent(
       action: "BookmarkCreation",
@@ -420,7 +432,7 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
 
     do {
       // Create bookmark data (placeholder implementation)
-      let bookmarkData = try url.bookmarkData(
+      let bookmarkData=try url.bookmarkData(
         options: .minimalBookmark,
         includingResourceValuesForKeys: nil,
         relativeTo: nil
@@ -448,7 +460,7 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
           "error": error.localizedDescription
         ]
       )
-      
+
       // Log failure with secure logger
       await secureLogger.securityEvent(
         action: "BookmarkCreation",
@@ -482,7 +494,7 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
         "data_length": String(bookmarkData.count)
       ]
     )
-    
+
     // Log with secure logger for enhanced privacy awareness
     await secureLogger.securityEvent(
       action: "BookmarkResolution",
@@ -497,11 +509,11 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
 
     do {
       // Convert to Data for resolution
-      let bookmark = Data(bookmarkData)
+      let bookmark=Data(bookmarkData)
 
       // Resolve bookmark
-      var isStale = false
-      let url = try URL(
+      var isStale=false
+      let url=try URL(
         resolvingBookmarkData: bookmark,
         options: .withoutUI,
         relativeTo: nil,
@@ -517,7 +529,7 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
           "url_scheme": url.scheme ?? "unknown"
         ]
       )
-      
+
       // Log success with secure logger
       await secureLogger.securityEvent(
         action: "BookmarkResolution",
@@ -541,7 +553,7 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
           "error": error.localizedDescription
         ]
       )
-      
+
       // Log failure with secure logger
       await secureLogger.securityEvent(
         action: "BookmarkResolution",
@@ -581,7 +593,7 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
         "data_length": String(data.count)
       ]
     )
-    
+
     // Log with secure logger for enhanced privacy awareness
     await secureLogger.securityEvent(
       action: "IntegrityVerification",
@@ -589,7 +601,8 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
       subject: nil,
       resource: nil,
       additionalMetadata: [
-        "method": PrivacyTaggedValue(value: verificationContext.method.rawValue, privacyLevel: .public),
+        "method": PrivacyTaggedValue(value: verificationContext.method.rawValue,
+                                     privacyLevel: .public),
         "dataSize": PrivacyTaggedValue(value: data.count, privacyLevel: .public),
         "phase": PrivacyTaggedValue(value: "start", privacyLevel: .public)
       ]
@@ -598,7 +611,7 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
     switch verificationContext.method {
       case .hash:
         // Verify hash
-        guard let expectedHash = verificationContext.expectedValue else {
+        guard let expectedHash=verificationContext.expectedValue else {
           // Log error with secure logger
           await secureLogger.securityEvent(
             action: "IntegrityVerification",
@@ -610,17 +623,17 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
               "phase": PrivacyTaggedValue(value: "validation", privacyLevel: .public)
             ]
           )
-          
+
           throw UmbraErrors.SecurityError.invalidVerificationContext(
             reason: "Expected hash value is missing"
           )
         }
 
         // Convert expected hash to bytes
-        let expectedHashBytes = [UInt8](expectedHash)
+        let expectedHashBytes=[UInt8](expectedHash)
 
         // Delegate to crypto service for hash verification
-        let result = await cryptoService.verifyHash(
+        let result=await cryptoService.verifyHash(
           data: data,
           matches: expectedHashBytes
         )
@@ -635,7 +648,7 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
                 "result": verified ? "verified" : "not_verified"
               ]
             )
-            
+
             // Log result with secure logger
             await secureLogger.securityEvent(
               action: "IntegrityVerification",
@@ -643,7 +656,8 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
               subject: nil,
               resource: nil,
               additionalMetadata: [
-                "result": PrivacyTaggedValue(value: verified ? "verified" : "mismatch", privacyLevel: .public),
+                "result": PrivacyTaggedValue(value: verified ? "verified" : "mismatch",
+                                             privacyLevel: .public),
                 "phase": PrivacyTaggedValue(value: "complete", privacyLevel: .public)
               ]
             )
@@ -659,7 +673,7 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
                 "error": error.localizedDescription
               ]
             )
-            
+
             // Log failure with secure logger
             await secureLogger.securityEvent(
               action: "IntegrityVerification",
@@ -667,7 +681,8 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
               subject: nil,
               resource: nil,
               additionalMetadata: [
-                "error": PrivacyTaggedValue(value: error.localizedDescription, privacyLevel: .public),
+                "error": PrivacyTaggedValue(value: error.localizedDescription,
+                                            privacyLevel: .public),
                 "phase": PrivacyTaggedValue(value: "error", privacyLevel: .public)
               ]
             )
@@ -685,12 +700,14 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
           subject: nil,
           resource: nil,
           additionalMetadata: [
-            "method": PrivacyTaggedValue(value: verificationContext.method.rawValue, privacyLevel: .public),
-            "error": PrivacyTaggedValue(value: "Unsupported verification method", privacyLevel: .public),
+            "method": PrivacyTaggedValue(value: verificationContext.method.rawValue,
+                                         privacyLevel: .public),
+            "error": PrivacyTaggedValue(value: "Unsupported verification method",
+                                        privacyLevel: .public),
             "phase": PrivacyTaggedValue(value: "validation", privacyLevel: .public)
           ]
         )
-        
+
         throw UmbraErrors.SecurityError.invalidVerificationMethod(
           reason: "Verification method \(verificationContext.method.rawValue) is not supported"
         )
@@ -702,23 +719,23 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
   /// - Returns: An async stream of security events
   public func subscribeToEvents(filter: SecurityEventFilterDTO) -> AsyncStream<SecurityEventDTO> {
     var continuation: AsyncStream<SecurityEventDTO>.Continuation!
-    
-    let stream = AsyncStream<SecurityEventDTO> { newContinuation in
-      continuation = newContinuation
-      
+
+    let stream=AsyncStream<SecurityEventDTO> { newContinuation in
+      continuation=newContinuation
+
       // Store the continuation for later use
-      let subscriberId = UUID()
-      eventSubscribers[subscriberId] = continuation
-      
+      let subscriberID=UUID()
+      eventSubscribers[subscriberID]=continuation
+
       // Clean up when the stream is cancelled
-      continuation.onTermination = { [weak self] _ in
+      continuation.onTermination={ [weak self] _ in
         Task { [weak self] in
-          guard let self = self else { return }
-          await self.removeSubscriber(id: subscriberId)
+          guard let self else { return }
+          await removeSubscriber(id: subscriberID)
         }
       }
     }
-    
+
     // Log subscription with secure logger
     Task {
       await secureLogger.securityEvent(
@@ -727,20 +744,21 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
         subject: nil,
         resource: nil,
         additionalMetadata: [
-          "eventTypes": PrivacyTaggedValue(value: filter.eventTypes.map { $0.rawValue }.joined(separator: ","), privacyLevel: .public),
+          "eventTypes": PrivacyTaggedValue(value: filter.eventTypes.map(\.rawValue)
+            .joined(separator: ","), privacyLevel: .public),
           "phase": PrivacyTaggedValue(value: "start", privacyLevel: .public)
         ]
       )
     }
-    
+
     return stream
   }
-  
+
   /// Removes a subscriber from the event subscribers
   /// - Parameter id: The ID of the subscriber to remove
   private func removeSubscriber(id: UUID) {
-    eventSubscribers[id] = nil
-    
+    eventSubscribers[id]=nil
+
     // Log unsubscription with secure logger
     Task {
       await secureLogger.securityEvent(
@@ -755,7 +773,7 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
       )
     }
   }
-  
+
   /// Emits a security event to all subscribers
   /// - Parameter event: The event to emit
   private func emitEvent(_ event: SecurityEventDTO) async {
@@ -770,7 +788,7 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
         "subscriberCount": PrivacyTaggedValue(value: eventSubscribers.count, privacyLevel: .public)
       ]
     )
-    
+
     // Send to all subscribers
     for (_, continuation) in eventSubscribers {
       continuation.yield(event)
@@ -789,14 +807,15 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
       subject: nil,
       resource: nil,
       additionalMetadata: [
-        "operationType": PrivacyTaggedValue(value: config.operationType.rawValue, privacyLevel: .public),
+        "operationType": PrivacyTaggedValue(value: config.operationType.rawValue,
+                                            privacyLevel: .public),
         "phase": PrivacyTaggedValue(value: "start", privacyLevel: .public)
       ]
     )
 
     // Implementation would go here
     // For now, we'll throw an error since this is a stub
-    
+
     // Log failure with secure logger
     await secureLogger.securityEvent(
       action: "SecureDelete",
@@ -808,7 +827,7 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
         "phase": PrivacyTaggedValue(value: "error", privacyLevel: .public)
       ]
     )
-    
+
     throw UmbraErrors.SecurityError.notImplemented(
       reason: "Secure delete operation is not yet implemented"
     )

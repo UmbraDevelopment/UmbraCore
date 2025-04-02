@@ -16,7 +16,7 @@ Success: Equatable {
   public let progressStream: AsyncStream<BackupProgressInfo>?
 
   /// Strongly-typed metadata about the operation
-  public let metadata: BackupOperationMetadata?
+  public let metadata: BackupOperationResultMetadata?
 
   /**
    * Creates a new operation response.
@@ -29,7 +29,7 @@ Success: Equatable {
   public init(
     value: Success,
     progressStream: AsyncStream<BackupProgressInfo>?=nil,
-    metadata: BackupOperationMetadata?=nil
+    metadata: BackupOperationResultMetadata?=nil
   ) {
     self.value=value
     self.progressStream=progressStream
@@ -52,7 +52,7 @@ Success: Equatable {
     additionalInfo: [String: String]=[:]
   ) {
     let now=Date()
-    let metadata=BackupOperationMetadata(
+    let metadata=BackupOperationResultMetadata(
       startTime: now,
       endTime: now,
       metadata: [.operationType: operationType],
@@ -101,7 +101,7 @@ Success: Equatable {
    * - Parameter metadata: The new metadata
    * - Returns: A new response with the updated metadata
    */
-  public func with(metadata: BackupOperationMetadata) -> BackupOperationResponse<Success> {
+  public func with(metadata: BackupOperationResultMetadata) -> BackupOperationResponse<Success> {
     BackupOperationResponse(
       value: value,
       progressStream: progressStream,
@@ -118,13 +118,13 @@ Success: Equatable {
    * - Returns: A new response with the added metadata
    */
   public func with(
-    key: BackupOperationMetadata.MetadataKey,
+    key: BackupOperationResultMetadata.MetadataKey,
     value: String
   ) -> BackupOperationResponse<Success> {
     guard let existingMetadata=metadata else {
       // If no metadata exists, create new metadata with current timestamp
       let now=Date()
-      let newMetadata=BackupOperationMetadata(
+      let newMetadata=BackupOperationResultMetadata(
         startTime: now,
         endTime: now,
         metadata: [key: value]
@@ -137,12 +137,12 @@ Success: Equatable {
 }
 
 /**
- * Metadata about a backup operation.
+ * Metadata for a backup operation result.
  *
  * This structure provides standardised metadata for all backup operations,
  * including timing information and operation-specific parameters.
  */
-public struct BackupOperationMetadata: Sendable, Equatable {
+public struct BackupOperationResultMetadata: Sendable, Equatable {
   /// The time the operation started
   public let startTime: Date
 
@@ -192,7 +192,7 @@ public struct BackupOperationMetadata: Sendable, Equatable {
    *   - value: The value to store
    * - Returns: A new metadata with the added key-value
    */
-  public func with(key: MetadataKey, value: String) -> BackupOperationMetadata {
+  public func with(key: MetadataKey, value: String) -> BackupOperationResultMetadata {
     var newMetadata=self
     newMetadata.additionalInfo[key.rawValue]=value
     return newMetadata

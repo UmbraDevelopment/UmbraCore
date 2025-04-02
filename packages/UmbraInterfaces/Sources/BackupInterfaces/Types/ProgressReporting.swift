@@ -158,6 +158,22 @@ public struct BackupProgressInfo: Sendable, Equatable {
     self.isCancellable=isCancellable
   }
 
+  /// Custom equality implementation
+  public static func == (lhs: BackupProgressInfo, rhs: BackupProgressInfo) -> Bool {
+    // Compare all fields except error
+    lhs.phase == rhs.phase &&
+    lhs.percentComplete == rhs.percentComplete &&
+    lhs.itemsProcessed == rhs.itemsProcessed &&
+    lhs.totalItems == rhs.totalItems &&
+    lhs.bytesProcessed == rhs.bytesProcessed &&
+    lhs.totalBytes == rhs.totalBytes &&
+    lhs.estimatedTimeRemaining == rhs.estimatedTimeRemaining &&
+    lhs.details == rhs.details &&
+    lhs.isCancellable == rhs.isCancellable &&
+    // For errors, just check if both are nil or both are non-nil
+    (lhs.error == nil) == (rhs.error == nil)
+  }
+
   /// Creates a progress in the initialising phase
   public static func initialising() -> BackupProgressInfo {
     BackupProgressInfo(
@@ -323,36 +339,45 @@ public struct BackupProgressInfo: Sendable, Equatable {
 public protocol ProgressCancellationToken: Sendable {
   /// Checks if the operation has been cancelled
   var isCancelled: Bool { get }
-
+  
   /// Attempts to cancel the operation
   func cancel()
 }
 
 /// Simple implementation of a cancellation token
-public final class SimpleCancellationToken: ProgressCancellationToken {
+public final class SimpleCancellationToken: BackupCancellationToken {
   /// Actor to safely manage the mutable state
-  private let stateManager=CancellationStateManager()
-
+  private let stateManager = CancellationStateManager()
+  
   /// The action to perform when cancellation is requested
-  private let onCancel: () -> Void
-
+  private let onCancel: @Sendable () -> Void
+  
+  /// Tracks the last known cancellation state for sync access
+  private var _isCancelled: Bool = false
+  
   /// Creates a new cancellation token
   /// - Parameter onCancel: Action to perform when cancellation is requested
-  public init(onCancel: @escaping () -> Void={}) {
-    self.onCancel=onCancel
+  public init(onCancel: @escaping @Sendable () -> Void = {}) {
+    self.onCancel = onCancel
   }
-
-  /// Checks if the operation has been cancelled
+  
+  /// Checks if the operation has been cancelled (synchronous access to last known state)
   public var isCancelled: Bool {
+    _isCancelled
+  }
+  
+  /// Checks asynchronously if the operation has been cancelled (safe actor access)
+  public var isCancelledAsync: Bool {
     get async {
       await stateManager.isCancelled
     }
   }
-
+  
   /// Attempts to cancel the operation
   public func cancel() {
     Task {
       await stateManager.setCancelled()
+      _isCancelled = true
       onCancel()
     }
   }

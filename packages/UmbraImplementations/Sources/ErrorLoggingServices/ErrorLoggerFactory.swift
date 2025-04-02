@@ -43,7 +43,8 @@ public enum ErrorLoggerFactory {
 
    - Returns: An actor-based error logger with default settings
    */
-  public static func createDefaultErrorLogger() async -> ErrorLoggingInterfaces.ErrorLoggingProtocol {
+  public static func createDefaultErrorLogger() async -> ErrorLoggingInterfaces
+  .ErrorLoggingProtocol {
     // Get the default logging service
     let loggingService=LoggingServiceFactory.createStandardLogger(
       minimumLevel: .info
@@ -190,12 +191,12 @@ public enum ErrorLoggerFactory {
 
   /**
    Create a comprehensive error logger with enhanced privacy controls and domain filtering.
-   
+
    - Parameters:
      - domains: The domains to include in logging
      - minimumLevel: The minimum level to log
      - configuration: Optional configuration for logger behaviour
-   
+
    - Returns: A properly configured error logger
    */
   public static func createPrivacyAwareErrorLogger(

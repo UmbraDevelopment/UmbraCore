@@ -32,7 +32,13 @@ public struct FileAttributes: Sendable, Equatable {
   public let flags: UInt
 
   /// Additional attributes as a dictionary
-  public let extendedAttributes: [String: Any]
+  /// Note: Using @unchecked Sendable as [String: Any] isn't Sendable by default
+  @available(
+    *,
+    deprecated,
+    message: "This property will be replaced with a safer alternative in Swift 6"
+  )
+  public let extendedAttributes: @unchecked Sendable[String: Any]
 
   /// Creates a new file attributes instance
   public init(

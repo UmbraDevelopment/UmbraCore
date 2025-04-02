@@ -152,7 +152,7 @@ public protocol BackupServiceProtocol: Sendable {
   func verifyBackup(
     snapshotID: String?,
     verifyOptions: VerifyOptions?
-  ) async -> Result<BackupOperationResponse<VerificationResult>, BackupOperationError>
+  ) async -> Result<BackupOperationResponse<BackupVerificationResultDTO>, BackupOperationError>
 
   /**
    * Cancels an ongoing backup operation.

@@ -6,13 +6,13 @@ import SecurityCoreInterfaces
 /// This is a simplified implementation for the Alpha Dot Five architecture refactoring.
 public struct SecurityConfigurationDTO: Sendable, Equatable {
   /// The security level to use
-  public let securityLevel: SecurityLevelDTO
+  public let securityLevel: CoreSecurityTypes.SecurityLevelDTO
 
   /// The logging level for security operations
-  public let loggingLevel: SecurityLogLevelDTO
+  public let loggingLevel: CoreSecurityTypes.SecurityLogLevelDTO
 
   /// Options for secure random number generation
-  public let randomizationOptions: RandomizationOptionsDTO
+  public let randomizationOptions: CoreSecurityTypes.RandomizationOptionsDTO
 
   /// Creates a new security configuration
   /// - Parameters:
@@ -20,9 +20,9 @@ public struct SecurityConfigurationDTO: Sendable, Equatable {
   ///   - loggingLevel: The logging level for security operations
   ///   - randomizationOptions: Options for secure random number generation
   public init(
-    securityLevel: SecurityLevelDTO = .standard,
-    loggingLevel: SecurityLogLevelDTO = .warning,
-    randomizationOptions: RandomizationOptionsDTO = .default
+    securityLevel: CoreSecurityTypes.SecurityLevelDTO = .standard,
+    loggingLevel: CoreSecurityTypes.SecurityLogLevelDTO = .warning,
+    randomizationOptions: CoreSecurityTypes.RandomizationOptionsDTO = .default
   ) {
     self.securityLevel=securityLevel
     self.loggingLevel=loggingLevel
@@ -36,7 +36,7 @@ public struct SecurityConfigurationDTO: Sendable, Equatable {
   public static let highSecurity=SecurityConfigurationDTO(
     securityLevel: .high,
     loggingLevel: .debug,
-    randomizationOptions: .highSecurity
+    randomizationOptions: .highEntropy
   )
 
   /// Performance optimized configuration
@@ -47,94 +47,51 @@ public struct SecurityConfigurationDTO: Sendable, Equatable {
   )
 }
 
-/// The logging level for security operations
-public enum SecurityLogLevelDTO: String, Sendable, Equatable, CaseIterable {
-  /// Debug level logging
-  case debug
+/// The type of security event
+public enum SecurityEventTypeDTO: String, Sendable, Equatable, CaseIterable {
+  /// Initialisation event
+  case initialisation
 
-  /// Information level logging
-  case information
+  /// Configuration event
+  case configuration
 
-  /// Warning level logging
-  case warning
+  /// Operation event
+  case operation
 
-  /// Error level logging
+  /// Error event
   case error
 
-  /// Critical error level logging
+  /// Warning event
+  case warning
+}
+
+/// The severity level of a security event
+public enum SecurityEventSeverityDTO: String, Sendable, Equatable, CaseIterable, Comparable {
+  /// Debug level event
+  case debug
+
+  /// Informational level event
+  case informational
+
+  /// Warning level event
+  case warning
+
+  /// Error level event
+  case error
+
+  /// Critical level event
   case critical
-}
 
-/// The security level for security operations
-public enum SecurityLevelDTO: String, Sendable, Equatable, CaseIterable {
-  /// Basic security, optimised for performance
-  case basic
-
-  /// Standard security suitable for most applications
-  case standard
-
-  /// High security for sensitive applications
-  case high
-}
-
-/// Options for randomization in security operations
-public struct RandomizationOptionsDTO: Sendable, Equatable {
-  /// The entropy source to use
-  public let entropySource: EntropySourceDTO
-
-  /// The security level for randomization
-  public let securityLevel: RandomizationSecurityLevelDTO
-
-  /// Creates new randomization options
-  /// - Parameters:
-  ///   - entropySource: The entropy source to use
-  ///   - securityLevel: The security level for randomization
-  public init(
-    entropySource: EntropySourceDTO = .hybrid,
-    securityLevel: RandomizationSecurityLevelDTO = .standard
-  ) {
-    self.entropySource=entropySource
-    self.securityLevel=securityLevel
+  public static func < (lhs: SecurityEventSeverityDTO, rhs: SecurityEventSeverityDTO) -> Bool {
+    let order: [SecurityEventSeverityDTO]=[.debug, .informational, .warning, .error, .critical]
+    guard
+      let lhsIndex=order.firstIndex(of: lhs),
+      let rhsIndex=order.firstIndex(of: rhs)
+    else {
+      return false
+    }
+    return lhsIndex < rhsIndex
   }
-
-  /// Default randomization options
-  public static let `default`=RandomizationOptionsDTO()
-
-  /// High security randomization options
-  public static let highSecurity=RandomizationOptionsDTO(
-    entropySource: .hardware,
-    securityLevel: .high
-  )
-
-  /// Fast randomization options
-  public static let fast=RandomizationOptionsDTO(
-    entropySource: .system,
-    securityLevel: .basic
-  )
-}
-
-/// The entropy source for randomization
-public enum EntropySourceDTO: String, Sendable, Equatable, CaseIterable {
-  /// System entropy source
-  case system
-
-  /// Hardware entropy source if available
-  case hardware
-
-  /// Hybrid entropy source combining multiple sources
-  case hybrid
-}
-
-/// The security level for randomization
-public enum RandomizationSecurityLevelDTO: String, Sendable, Equatable, CaseIterable {
-  /// Basic security, optimised for performance
-  case basic
-
-  /// Standard security suitable for most applications
-  case standard
-
-  /// High security for sensitive applications
-  case high
 }
 
 /// Security event data transfer object
@@ -194,60 +151,13 @@ public struct SecurityEventDTO: Sendable, Equatable {
   }
 }
 
-/// The type of security event
-public enum SecurityEventTypeDTO: String, Sendable, Equatable, CaseIterable {
-  /// Initialisation event
-  case initialisation
-
-  /// Configuration event
-  case configuration
-
-  /// Operation event
-  case operation
-
-  /// Error event
-  case error
-
-  /// Warning event
-  case warning
-}
-
-/// The severity level of a security event
-public enum SecurityEventSeverityDTO: String, Sendable, Equatable, CaseIterable, Comparable {
-  /// Debug level event
-  case debug
-
-  /// Informational level event
-  case informational
-
-  /// Warning level event
-  case warning
-
-  /// Error level event
-  case error
-
-  /// Critical level event
-  case critical
-
-  public static func < (lhs: SecurityEventSeverityDTO, rhs: SecurityEventSeverityDTO) -> Bool {
-    let order: [SecurityEventSeverityDTO]=[.debug, .informational, .warning, .error, .critical]
-    guard
-      let lhsIndex=order.firstIndex(of: lhs),
-      let rhsIndex=order.firstIndex(of: rhs)
-    else {
-      return false
-    }
-    return lhsIndex < rhsIndex
-  }
-}
-
 /// Security context data transfer object
 public struct SecurityContextDTO: Sendable, Equatable {
   /// The operation type
   public let operationType: SecurityOperationTypeDTO
 
   /// The security level
-  public let securityLevel: SecurityLevelDTO
+  public let securityLevel: CoreSecurityTypes.SecurityLevelDTO
 
   /// The key identifier
   public let keyIdentifier: String
@@ -267,7 +177,7 @@ public struct SecurityContextDTO: Sendable, Equatable {
   ///   - metadata: Additional metadata
   public init(
     operationType: SecurityOperationTypeDTO,
-    securityLevel: SecurityLevelDTO = .standard,
+    securityLevel: CoreSecurityTypes.SecurityLevelDTO = .standard,
     keyIdentifier: String,
     cryptoOptions: [String: String]=[:],
     metadata: [String: String]=[:]

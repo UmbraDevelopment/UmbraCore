@@ -27,10 +27,10 @@ public enum SecurityProtocolError: Error, Equatable, Sendable {
 
   /// State machine error
   case invalidState(expected: String, actual: String)
-  
+
   /// Input validation error
   case inputError(_ message: String)
-  
+
   /// Operation failed with detailed reason
   case operationFailed(reason: String)
 

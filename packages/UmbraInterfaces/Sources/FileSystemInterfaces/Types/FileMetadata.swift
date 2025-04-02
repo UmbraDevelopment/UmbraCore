@@ -1,3 +1,4 @@
+import FileSystemTypes
 import Foundation
 
 /**
@@ -14,7 +15,13 @@ public struct FileMetadata: Sendable, Equatable {
   public let attributes: FileAttributes
 
   /// Resource values, keyed by resource key
-  public let resourceValues: [FileResourceKey: Any]
+  /// Note: Using @unchecked Sendable as [FileResourceKey: Any] isn't Sendable by default
+  @available(
+    *,
+    deprecated,
+    message: "This property will be replaced with a safer alternative in Swift 6"
+  )
+  public let resourceValues: @unchecked Sendable[FileResourceKey: Any]
 
   /// Whether the file exists
   public let exists: Bool
@@ -30,5 +37,12 @@ public struct FileMetadata: Sendable, Equatable {
     self.attributes=attributes
     self.resourceValues=resourceValues
     self.exists=exists
+  }
+
+  /// Custom equality implementation that ignores resourceValues which isn't Equatable
+  public static func == (lhs: FileMetadata, rhs: FileMetadata) -> Bool {
+    lhs.path == rhs.path &&
+      lhs.attributes == rhs.attributes &&
+      lhs.exists == rhs.exists
   }
 }

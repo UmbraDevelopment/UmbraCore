@@ -41,11 +41,11 @@ public enum CryptoServicesFactory {
    - Returns: A new actor-based implementation of CryptoServiceProtocol
    */
   public static func createCryptoService(
-    providerType: SecurityProviderType? = nil,
+    providerType: SecurityProviderType?=nil,
     logger: LoggingProtocol
   ) async -> any CryptoServiceProtocol {
     // Import the actor from the implementations module and initialise it
-    let impl = CryptoActorImplementations.CryptoServiceActor(
+    let impl=CryptoActorImplementations.CryptoServiceActor(
       providerType: providerType,
       logger: logger
     )
@@ -66,12 +66,12 @@ public enum CryptoServicesFactory {
    - Returns: A new actor-based implementation of SecureStorageProtocol
    */
   public static func createSecureStorage(
-    providerType: SecurityProviderType? = nil,
-    storageURL: URL? = nil,
+    providerType: SecurityProviderType?=nil,
+    storageURL: URL?=nil,
     logger: LoggingProtocol
   ) async -> any SecureStorageProtocol {
     // Create secure storage with the specified parameters
-    let impl = CryptoActorImplementations.SecureStorageActor(
+    let impl=CryptoActorImplementations.SecureStorageActor(
       providerType: providerType,
       storageURL: storageURL,
       logger: logger
@@ -93,7 +93,7 @@ public enum CryptoServicesFactory {
     logger: LoggingProtocol
   ) async -> any ProviderRegistryProtocol {
     // Create provider registry
-    let impl = CryptoActorImplementations.ProviderRegistryActor(
+    let impl=CryptoActorImplementations.ProviderRegistryActor(
       logger: logger
     )
 

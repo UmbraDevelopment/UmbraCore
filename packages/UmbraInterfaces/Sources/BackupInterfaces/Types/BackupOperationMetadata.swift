@@ -1,5 +1,6 @@
 import Foundation
 import LoggingInterfaces
+import LoggingTypes
 
 /**
  * Strongly-typed metadata for backup operations.
@@ -113,7 +114,7 @@ public struct BackupOperationMetadata: Sendable, Equatable {
   public func withAdditional(
     key: String,
     value: String,
-    privacy _: LogPrivacyLevel = .private
+    privacy: LogPrivacy = .private
   ) -> BackupOperationMetadata {
     var newAdditionalInfo=additionalInfo
     newAdditionalInfo[key]=value
@@ -136,7 +137,7 @@ public struct BackupOperationMetadata: Sendable, Equatable {
 
     // Add type-safe metadata with appropriate privacy levels
     for (key, value) in metadata {
-      let privacyLevel: LogPrivacyLevel=privacyLevelForKey(key)
+      let privacyLevel = privacyLevelForKey(key)
       result[key.rawValue]=value.withPrivacyLevel(privacyLevel)
     }
 
@@ -159,13 +160,13 @@ public struct BackupOperationMetadata: Sendable, Equatable {
    * - Parameter key: The metadata key
    * - Returns: The appropriate privacy level
    */
-  private func privacyLevelForKey(_ key: MetadataKey) -> LogPrivacyLevel {
+  private func privacyLevelForKey(_ key: MetadataKey) -> LogPrivacy {
     switch key {
       case .operationType, .compressionLevel, .verificationEnabled, .priority, .excludedCount,
            .includedCount:
         .public
       case .hostname:
-        .restricted
+        .private
       case .repositoryID, .snapshotID, .targetPath:
         .private
     }

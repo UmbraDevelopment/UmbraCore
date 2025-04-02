@@ -109,7 +109,10 @@ public actor SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceInitial
         case let .success(key):
           return key
         case let .failure(error):
-          throw SecurityProtocolError.inputError("Failed to retrieve key with identifier \(keyID): \(error.localizedDescription)")
+          throw SecurityProtocolError
+            .inputError(
+              "Failed to retrieve key with identifier \(keyID): \(error.localizedDescription)"
+            )
       }
     }
 
@@ -140,10 +143,14 @@ public actor SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceInitial
     switch result {
       case let .success(encryptedDataIdentifier):
         // Retrieve the encrypted data using the identifier
-        if let encryptedData = await retrieveDataForOperation(withIdentifier: encryptedDataIdentifier) {
-            return encryptedData
+        if
+          let encryptedData=await retrieveDataForOperation(
+            withIdentifier: encryptedDataIdentifier
+          )
+        {
+          return encryptedData
         } else {
-            throw SecurityProtocolError.inputError("Failed to retrieve encrypted data")
+          throw SecurityProtocolError.inputError("Failed to retrieve encrypted data")
         }
       case let .failure(error):
         throw error
@@ -171,10 +178,14 @@ public actor SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceInitial
     switch result {
       case let .success(decryptedDataIdentifier):
         // Retrieve the decrypted data using the identifier
-        if let decryptedData = await retrieveDataForOperation(withIdentifier: decryptedDataIdentifier) {
-            return decryptedData
+        if
+          let decryptedData=await retrieveDataForOperation(
+            withIdentifier: decryptedDataIdentifier
+          )
+        {
+          return decryptedData
         } else {
-            throw SecurityProtocolError.inputError("Failed to retrieve decrypted data")
+          throw SecurityProtocolError.inputError("Failed to retrieve decrypted data")
         }
       case let .failure(error):
         throw error
@@ -183,14 +194,14 @@ public actor SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceInitial
 
   /**
    Handles implementation of the hash function required by SecurityProviderProtocol.
-   
+
    - Parameter config: Configuration for the hash operation
    - Returns: Result DTO with the computed hash
    - Throws: Security errors if hashing fails
    */
   public func hash(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
-    let operation = SecurityOperation.hash
-    let handler = OperationsHandler(cryptoService: cryptoServiceImpl, keyManager: keyManagerImpl)
+    let operation=SecurityOperation.hash
+    let handler=OperationsHandler(cryptoService: cryptoServiceImpl, keyManager: keyManagerImpl)
     return await handler.handleOperation(operation: operation, config: config)
   }
 
@@ -206,8 +217,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceInitial
   public func sign(_ data: [UInt8], key: [UInt8]) async throws -> [UInt8] {
     // This is a placeholder implementation
     // For now, we'll just concatenate the data and key and hash them to create a signature
-    let dataIdentifier = await storeDataForOperation(data + key)
-    let result = await cryptoServiceImpl.hash(
+    let dataIdentifier=await storeDataForOperation(data + key)
+    let result=await cryptoServiceImpl.hash(
       dataIdentifier: dataIdentifier,
       options: HashingOptions(algorithm: .sha256)
     )
@@ -215,10 +226,10 @@ public actor SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceInitial
     switch result {
       case let .success(signatureIdentifier):
         // Retrieve the signature using the identifier
-        if let signatureData = await retrieveDataForOperation(withIdentifier: signatureIdentifier) {
-            return signatureData
+        if let signatureData=await retrieveDataForOperation(withIdentifier: signatureIdentifier) {
+          return signatureData
         } else {
-            throw SecurityProtocolError.inputError("Failed to retrieve signature data")
+          throw SecurityProtocolError.inputError("Failed to retrieve signature data")
         }
       case let .failure(error):
         throw error
@@ -258,7 +269,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceInitial
       case .deleteKey:
         return try await secureDelete(config: config)
       case .deriveKey:
-        throw SecurityProtocolError.inputError("Operation \(operation) not supported in this implementation")
+        throw SecurityProtocolError
+          .inputError("Operation \(operation) not supported in this implementation")
     }
   }
 
@@ -352,33 +364,33 @@ public actor SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceInitial
 
   private func storeDataForOperation(_ data: [UInt8]) async -> String {
     // Generate a unique identifier
-    let identifier = UUID().uuidString
-    
+    let identifier=UUID().uuidString
+
     // Store the data using the crypto service's secure storage
-    let result = await cryptoServiceImpl.secureStorage.storeData(data, withIdentifier: identifier)
-    
+    let result=await cryptoServiceImpl.secureStorage.storeData(data, withIdentifier: identifier)
+
     // Handle the result
     switch result {
-    case .success:
+      case .success:
         return identifier
-    case .failure(let error):
+      case let .failure(error):
         // Log error if possible, but return the identifier anyway
         // as it may be needed for the calling function's signature
         print("Warning: Failed to store data: \(error.localizedDescription)")
         return identifier
     }
   }
-  
+
   /// Retrieves data securely using an identifier
   /// - Parameter identifier: The identifier for the stored data
   /// - Returns: The retrieved binary data or nil if retrieval failed
   private func retrieveDataForOperation(withIdentifier identifier: String) async -> [UInt8]? {
-    let result = await cryptoServiceImpl.secureStorage.retrieveData(withIdentifier: identifier)
-    
+    let result=await cryptoServiceImpl.secureStorage.retrieveData(withIdentifier: identifier)
+
     switch result {
-    case .success(let data):
+      case let .success(data):
         return data
-    case .failure(let error):
+      case let .failure(error):
         // Log error if possible
         print("Warning: Failed to retrieve data: \(error.localizedDescription)")
         return nil
@@ -391,8 +403,11 @@ public actor SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceInitial
    - Parameter config: Security configuration for the operation
    - Returns: Security result DTO
    */
-  private func handleSecurityOperation(with config: SecurityConfigDTO, operation: SecurityOperation) async -> SecurityResultDTO {
-    let handler = OperationsHandler(cryptoService: cryptoServiceImpl, keyManager: keyManagerImpl)
+  private func handleSecurityOperation(
+    with config: SecurityConfigDTO,
+    operation: SecurityOperation
+  ) async -> SecurityResultDTO {
+    let handler=OperationsHandler(cryptoService: cryptoServiceImpl, keyManager: keyManagerImpl)
     return await handler.handleOperation(operation: operation, config: config)
   }
 
@@ -404,8 +419,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceInitial
    - Throws: Security errors if verification fails
    */
   public func verify(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
-    let operation = SecurityOperation.verify
-    let handler = OperationsHandler(cryptoService: cryptoServiceImpl, keyManager: keyManagerImpl)
+    let operation=SecurityOperation.verify
+    let handler=OperationsHandler(cryptoService: cryptoServiceImpl, keyManager: keyManagerImpl)
     return await handler.handleOperation(operation: operation, config: config)
   }
 
@@ -417,8 +432,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceInitial
    - Throws: Security errors if encryption fails
    */
   public func encrypt(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
-    let operation = SecurityOperation.encrypt
-    let handler = OperationsHandler(cryptoService: cryptoServiceImpl, keyManager: keyManagerImpl)
+    let operation=SecurityOperation.encrypt
+    let handler=OperationsHandler(cryptoService: cryptoServiceImpl, keyManager: keyManagerImpl)
     return await handler.handleOperation(operation: operation, config: config)
   }
 
@@ -430,8 +445,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceInitial
    - Throws: Protocol violation errors
    */
   public func decrypt(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
-    let operation = SecurityOperation.decrypt
-    let handler = OperationsHandler(cryptoService: cryptoServiceImpl, keyManager: keyManagerImpl)
+    let operation=SecurityOperation.decrypt
+    let handler=OperationsHandler(cryptoService: cryptoServiceImpl, keyManager: keyManagerImpl)
     return await handler.handleOperation(operation: operation, config: config)
   }
 
@@ -649,8 +664,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceInitial
    - Throws: Protocol violation errors
    */
   public func sign(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
-    let operation = SecurityOperation.sign
-    let handler = OperationsHandler(cryptoService: cryptoServiceImpl, keyManager: keyManagerImpl)
+    let operation=SecurityOperation.sign
+    let handler=OperationsHandler(cryptoService: cryptoServiceImpl, keyManager: keyManagerImpl)
     return await handler.handleOperation(operation: operation, config: config)
   }
 }

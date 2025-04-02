@@ -46,10 +46,10 @@ public enum SecureLoggerFactory {
    - Returns: A new SecureLoggerActor instance
    */
   public static func createSecureLogger(
-    subsystem: String = "com.umbra.security",
+    subsystem: String="com.umbra.security",
     category: String,
-    includeTimestamps: Bool = true,
-    loggingServiceActor: LoggingServiceActor? = nil
+    includeTimestamps: Bool=true,
+    loggingServiceActor: LoggingServiceActor?=nil
   ) -> SecureLoggerActor {
     SecureLoggerActor(
       subsystem: subsystem,
@@ -58,7 +58,7 @@ public enum SecureLoggerFactory {
       loggingServiceActor: loggingServiceActor
     )
   }
-  
+
   /**
    Creates a secure logger actor that integrates with the default logging system.
 
@@ -73,13 +73,13 @@ public enum SecureLoggerFactory {
    - Returns: A new SecureLoggerActor instance integrated with the default logging service
    */
   public static func createIntegratedSecureLogger(
-    subsystem: String = "com.umbra.security",
+    subsystem: String="com.umbra.security",
     category: String,
-    includeTimestamps: Bool = true
+    includeTimestamps: Bool=true
   ) async -> SecureLoggerActor {
     // Create a logging service actor
-    let loggingServiceActor = await LoggingServiceFactory.createDefaultService()
-    
+    let loggingServiceActor=await LoggingServiceFactory.createDefaultService()
+
     // Create a secure logger that integrates with the logging service
     return SecureLoggerActor(
       subsystem: subsystem,

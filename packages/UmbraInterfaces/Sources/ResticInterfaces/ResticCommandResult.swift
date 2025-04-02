@@ -15,74 +15,74 @@ public enum ResticDataValue: Sendable, Equatable {
   case dictionary([String: ResticDataValue])
   /// Null value
   case null
-  
+
   /// Creates a ResticDataValue from a JSON-compatible value
   /// - Parameter value: Value to convert
   /// - Returns: Corresponding ResticDataValue or nil if not convertible
   public static func from(_ value: Any) -> ResticDataValue? {
     switch value {
-    case let string as String:
-      return .string(string)
-    case let number as NSNumber:
-      // Handle boolean special case
-      if CFGetTypeID(number) == CFBooleanGetTypeID() {
-        return .boolean(number.boolValue)
-      }
-      return .number(number.doubleValue)
-    case let bool as Bool:
-      return .boolean(bool)
-    case let array as [Any]:
-      let converted = array.compactMap { from($0) }
-      // Only return if all elements were convertible
-      guard converted.count == array.count else { return nil }
-      return .array(converted)
-    case let dict as [String: Any]:
-      var result = [String: ResticDataValue]()
-      for (key, value) in dict {
-        guard let converted = from(value) else { return nil }
-        result[key] = converted
-      }
-      return .dictionary(result)
-    case is NSNull:
-      return .null
-    default:
-      return nil
+      case let string as String:
+        return .string(string)
+      case let number as NSNumber:
+        // Handle boolean special case
+        if CFGetTypeID(number) == CFBooleanGetTypeID() {
+          return .boolean(number.boolValue)
+        }
+        return .number(number.doubleValue)
+      case let bool as Bool:
+        return .boolean(bool)
+      case let array as [Any]:
+        let converted=array.compactMap { from($0) }
+        // Only return if all elements were convertible
+        guard converted.count == array.count else { return nil }
+        return .array(converted)
+      case let dict as [String: Any]:
+        var result=[String: ResticDataValue]()
+        for (key, value) in dict {
+          guard let converted=from(value) else { return nil }
+          result[key]=converted
+        }
+        return .dictionary(result)
+      case is NSNull:
+        return .null
+      default:
+        return nil
     }
   }
-  
+
   /// Accessor for string values
   public var stringValue: String? {
-    guard case let .string(value) = self else { return nil }
+    guard case let .string(value)=self else { return nil }
     return value
   }
-  
+
   /// Accessor for number values
   public var numberValue: Double? {
-    guard case let .number(value) = self else { return nil }
+    guard case let .number(value)=self else { return nil }
     return value
   }
-  
+
   /// Accessor for boolean values
   public var boolValue: Bool? {
-    guard case let .boolean(value) = self else { return nil }
+    guard case let .boolean(value)=self else { return nil }
     return value
   }
-  
+
   /// Accessor for array values
   public var arrayValue: [ResticDataValue]? {
-    guard case let .array(value) = self else { return nil }
+    guard case let .array(value)=self else { return nil }
     return value
   }
-  
+
   /// Accessor for dictionary values
   public var dictionaryValue: [String: ResticDataValue]? {
-    guard case let .dictionary(value) = self else { return nil }
+    guard case let .dictionary(value)=self else { return nil }
     return value
   }
-  
+
   /// Determines if this value represents null
   public var isNull: Bool {
-    guard case .null = self else { return false }
+    guard case .null=self else { return false }
     return true
   }
 }
@@ -144,15 +144,15 @@ public struct ResticCommandResult: Sendable {
     self.exitCode=exitCode
     isSuccess=exitCode == 0
     self.duration=duration
-    
+
     // Convert untyped data to typed format
-    var typedData = [String: ResticDataValue]()
+    var typedData=[String: ResticDataValue]()
     for (key, value) in untypedData {
-      if let converted = ResticDataValue.from(value) {
-        typedData[key] = converted
+      if let converted=ResticDataValue.from(value) {
+        typedData[key]=converted
       }
     }
-    self.data=typedData
+    data=typedData
   }
 
   /// Creates a successful result.
@@ -165,7 +165,7 @@ public struct ResticCommandResult: Sendable {
   public static func success(
     output: String,
     duration: TimeInterval=0,
-    data: [String: ResticDataValue]=[:] 
+    data: [String: ResticDataValue]=[:]
   ) -> ResticCommandResult {
     ResticCommandResult(
       output: output,
@@ -187,7 +187,7 @@ public struct ResticCommandResult: Sendable {
     output: String,
     exitCode: Int=1,
     duration: TimeInterval=0,
-    data: [String: ResticDataValue]=[:] 
+    data: [String: ResticDataValue]=[:]
   ) -> ResticCommandResult {
     ResticCommandResult(
       output: output,

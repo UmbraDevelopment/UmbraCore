@@ -27,8 +27,8 @@ public enum CryptoXPCServiceFactory {
     logger: LoggingProtocol
   ) async -> CryptoXPCServiceActor {
     // Create dependencies
-    let cryptoProvider = await CryptoProviderFactory.createDefault(logger: logger)
-    let keyStore = await KeyStoreFactory.createDefault(logger: logger)
+    let cryptoProvider=await CryptoProviderFactory.createDefault(logger: logger)
+    let keyStore=await KeyStoreFactory.createDefault(logger: logger)
 
     // Create and return service actor
     return CryptoXPCServiceActor(
@@ -40,7 +40,7 @@ public enum CryptoXPCServiceFactory {
 
   /**
    Creates a CryptoXPCService with custom dependencies.
-   
+
    This method is marked as async to maintain consistency with the
    other factory methods and follow Alpha Dot Five architecture patterns.
 
@@ -56,7 +56,7 @@ public enum CryptoXPCServiceFactory {
     keyStore: KeyStoreProtocol,
     logger: LoggingProtocol
   ) async -> CryptoXPCServiceActor {
-    return CryptoXPCServiceActor(
+    CryptoXPCServiceActor(
       cryptoProvider: cryptoProvider,
       keyStore: keyStore,
       logger: logger
@@ -78,8 +78,8 @@ public enum CryptoXPCServiceFactory {
     logger: LoggingProtocol
   ) async -> CryptoXPCServiceActor {
     // Create test dependencies
-    let cryptoProvider = await CryptoProviderFactory.createForTesting(logger: logger)
-    let keyStore = await KeyStoreFactory.createInMemory(logger: logger)
+    let cryptoProvider=await CryptoProviderFactory.createForTesting(logger: logger)
+    let keyStore=await KeyStoreFactory.createInMemory(logger: logger)
 
     // Create and return service actor
     return CryptoXPCServiceActor(

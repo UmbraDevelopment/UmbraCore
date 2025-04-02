@@ -92,22 +92,23 @@ public enum KeychainServices {
       actualKeyManager=providedKeyManager
     } else {
       // Use the shared factory instance with proper async/await handling
-      @MainActor func getFactory() -> KeyManagerAsyncFactory {
-        return KeyManagerAsyncFactory.shared
+      @MainActor
+      func getFactory() -> KeyManagerAsyncFactory {
+        KeyManagerAsyncFactory.shared
       }
-      
-      let factory = await getFactory()
+
+      let factory=await getFactory()
       if await factory.tryInitialize() {
         do {
-          let createdKeyManager = try await factory.createKeyManager()
-          actualKeyManager = createdKeyManager
+          let createdKeyManager=try await factory.createKeyManager()
+          actualKeyManager=createdKeyManager
         } catch {
           // Fall back to SimpleKeyManager if factory throws an error
-          actualKeyManager = SimpleKeyManager(logger: logger ?? KeychainDefaultLogger())
+          actualKeyManager=SimpleKeyManager(logger: logger ?? DefaultLogger())
         }
       } else {
         // Fall back to SimpleKeyManager if factory initialization fails
-        actualKeyManager=SimpleKeyManager(logger: logger ?? KeychainDefaultLogger())
+        actualKeyManager=SimpleKeyManager(logger: logger ?? DefaultLogger())
       }
     }
 
@@ -155,7 +156,7 @@ public struct SimpleKeyManager: KeyManagementProtocol {
   public func generateKey(
     size: Int,
     type: KeyType,
-    persistent: Bool
+    persistent _: Bool
   ) async throws -> String {
     await logger.warning(
       "Using simple key manager implementation for key generation - this is not secure for production",

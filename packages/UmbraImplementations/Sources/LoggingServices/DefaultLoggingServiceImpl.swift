@@ -126,7 +126,10 @@ public final class DefaultLoggingServiceImpl: LoggingProtocol {
     var result=PrivacyMetadata()
     for (key, value) in metadata.asDictionary {
       // Default to private privacy level for all converted metadata
-      result[key]=LoggingTypes.PrivacyMetadataValue(value: value, privacy: LoggingTypes.LogPrivacyLevel.private)
+      result[key]=LoggingTypes.PrivacyMetadataValue(
+        value: value,
+        privacy: LoggingTypes.LogPrivacyLevel.private
+      )
     }
     return result
   }

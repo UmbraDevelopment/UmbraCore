@@ -157,7 +157,7 @@ public actor XPCServiceActor: XPCServiceProtocol {
 
           do {
             // Handle two cases: types that conform to NSSecureCoding and types that support JSON
-            if let decodable = R.self as? NSSecureCoding.Type {
+            if let decodable=R.self as? NSSecureCoding.Type {
               // Use NSKeyedUnarchiver for NSSecureCoding types
               let messageObject=try NSKeyedUnarchiver.unarchivedObject(
                 ofClasses: [decodable as AnyClass],
@@ -212,7 +212,8 @@ public actor XPCServiceActor: XPCServiceProtocol {
       // Decode the message
       do {
         // Handle two cases: types that conform to NSSecureCoding and types that support JSON
-        if let decodable=T.self as? NSSecureCoding.Type,
+        if
+          let decodable=T.self as? NSSecureCoding.Type,
           let messageObject=try NSKeyedUnarchiver.unarchivedObject(
             ofClasses: [decodable as AnyClass],
             from: data

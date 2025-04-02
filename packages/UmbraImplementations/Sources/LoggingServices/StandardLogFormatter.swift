@@ -8,134 +8,140 @@ import LoggingTypes
 /// following the Alpha Dot Five architecture guidelines.
 public struct StandardLogFormatter: LogFormatterProtocol, Sendable {
   /// Configuration for the formatter
-  private var includeTimestamp: Bool = true
-  private var includeLevel: Bool = true
-  private var includeSource: Bool = true
-  private var includeMetadata: Bool = true
-  
+  private var includeTimestamp: Bool=true
+  private var includeLevel: Bool=true
+  private var includeSource: Bool=true
+  private var includeMetadata: Bool=true
+
   /// Create a new standard log formatter with default settings
   public init() {}
-  
+
   /// Format a log entry into a string representation
   /// - Parameter entry: The log entry to format
   /// - Returns: Formatted string representation of the log entry
   public func format(_ entry: LogEntry) -> String {
     // Base message
-    var formattedMessage = ""
-    
+    var formattedMessage=""
+
     // Add timestamp if configured
     if includeTimestamp {
       // Convert LogTimestamp to TimePointAdapter
-      let timePointAdapter = TimePointAdapter(timeIntervalSince1970: entry.timestamp.secondsSinceEpoch)
+      let timePointAdapter=TimePointAdapter(
+        timeIntervalSince1970: entry.timestamp
+          .secondsSinceEpoch
+      )
       formattedMessage += "[\(formatTimestamp(timePointAdapter))]"
     }
-    
+
     // Add log level if configured
     if includeLevel {
       // Convert LogLevel to UmbraLogLevel
-      let umbraLevel = convertToUmbraLogLevel(entry.level)
-      let levelString = formatLogLevel(umbraLevel)
+      let umbraLevel=convertToUmbraLogLevel(entry.level)
+      let levelString=formatLogLevel(umbraLevel)
       formattedMessage += (formattedMessage.isEmpty ? "" : " ") + "[\(levelString)]"
     }
-    
+
     // Add source if available and configured
     if includeSource {
       formattedMessage += (formattedMessage.isEmpty ? "" : " ") + "[\(entry.source)]"
     }
-    
+
     // Add the message content
     formattedMessage += (formattedMessage.isEmpty ? "" : " ") + entry.message
-    
+
     // Add metadata if available and configured
-    if includeMetadata, let metadata = entry.metadata {
-      if let metadataString = formatMetadata(convertToLogMetadata(metadata)), !metadataString.isEmpty {
+    if includeMetadata, let metadata=entry.metadata {
+      if
+        let metadataString=formatMetadata(convertToLogMetadata(metadata)),
+        !metadataString.isEmpty
+      {
         formattedMessage += "\nMetadata: \(metadataString)"
       }
     }
-    
+
     return formattedMessage
   }
-  
+
   /// Convert PrivacyMetadata to LogMetadata
   /// - Parameter metadata: PrivacyMetadata to convert
   /// - Returns: Converted LogMetadata
   private func convertToLogMetadata(_ metadata: PrivacyMetadata) -> LogMetadata {
-    var logMetadata = LogMetadata()
+    var logMetadata=LogMetadata()
     for (key, value) in metadata.entriesDict() {
       // Convert PrivacyMetadataValue to string
-      logMetadata[key] = value.valueString 
+      logMetadata[key]=value.valueString
     }
     return logMetadata
   }
-  
+
   /// Convert LogLevel to UmbraLogLevel
   /// - Parameter level: LogLevel to convert
   /// - Returns: Equivalent UmbraLogLevel
   private func convertToUmbraLogLevel(_ level: LogLevel) -> UmbraLogLevel {
     switch level {
-    case .trace:
-      return .verbose
-    case .debug:
-      return .debug
-    case .info:
-      return .info
-    case .warning:
-      return .warning
-    case .error:
-      return .error
-    case .critical:
-      return .critical
+      case .trace:
+        .verbose
+      case .debug:
+        .debug
+      case .info:
+        .info
+      case .warning:
+        .warning
+      case .error:
+        .error
+      case .critical:
+        .critical
     }
   }
-  
+
   /// Format metadata to a string
   /// - Parameter metadata: Metadata to format
   /// - Returns: Formatted string representation of the metadata
   public func formatMetadata(_ metadata: LoggingTypes.LogMetadata?) -> String? {
-    guard let metadata = metadata else {
+    guard let metadata else {
       return nil
     }
-    
-    let metadataStrings = metadata.asDictionary.map { key, value in
-      return "\(key): \(value)"
+
+    let metadataStrings=metadata.asDictionary.map { key, value in
+      "\(key): \(value)"
     }
-    
+
     if metadataStrings.isEmpty {
       return nil
     }
-    
+
     return "{ \(metadataStrings.joined(separator: ", ")) }"
   }
-  
+
   /// Format a timestamp to a string
   /// - Parameter timestamp: The timestamp to format
   /// - Returns: Formatted string representation of the timestamp
   public func formatTimestamp(_ timestamp: LoggingTypes.TimePointAdapter) -> String {
-    let dateFormatter = DateFormatter()
-    dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
+    let dateFormatter=DateFormatter()
+    dateFormatter.dateFormat="yyyy-MM-dd HH:mm:ss.SSS"
     return dateFormatter.string(from: Date(timeIntervalSince1970: timestamp.timeIntervalSince1970))
   }
-  
+
   /// Format a log level to a string
   /// - Parameter level: The log level to format
   /// - Returns: Formatted string representation of the log level
   public func formatLogLevel(_ level: LoggingTypes.UmbraLogLevel) -> String {
     switch level {
-    case .verbose:
-      return "TRACE"
-    case .debug:
-      return "DEBUG"
-    case .info:
-      return "INFO"
-    case .warning:
-      return "WARNING"
-    case .error:
-      return "ERROR"
-    case .critical:
-      return "CRITICAL"
+      case .verbose:
+        "TRACE"
+      case .debug:
+        "DEBUG"
+      case .info:
+        "INFO"
+      case .warning:
+        "WARNING"
+      case .error:
+        "ERROR"
+      case .critical:
+        "CRITICAL"
     }
   }
-  
+
   /// Customise the format based on configuration
   /// - Parameters:
   ///   - includeTimestamp: Whether to include timestamps in the output
@@ -149,11 +155,11 @@ public struct StandardLogFormatter: LogFormatterProtocol, Sendable {
     includeSource: Bool,
     includeMetadata: Bool
   ) -> any LogFormatterProtocol {
-    var formatter = self
-    formatter.includeTimestamp = includeTimestamp
-    formatter.includeLevel = includeLevel
-    formatter.includeSource = includeSource
-    formatter.includeMetadata = includeMetadata
+    var formatter=self
+    formatter.includeTimestamp=includeTimestamp
+    formatter.includeLevel=includeLevel
+    formatter.includeSource=includeSource
+    formatter.includeMetadata=includeMetadata
     return formatter
   }
 }

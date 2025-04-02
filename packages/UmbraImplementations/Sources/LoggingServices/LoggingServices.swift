@@ -80,21 +80,21 @@ public enum LoggingServices {
   ) async -> LoggingServiceActor {
     await LoggingServiceFactory.createService(destinations: destinations)
   }
-  
+
   /**
    Creates a secure logger for privacy-aware logging of sensitive operations.
-   
+
    - Parameters:
      - subsystem: The subsystem identifier (defaults to security subsystem)
      - category: The category for this logger (typically the component name)
      - includeTimestamps: Whether to include timestamps in log messages
-   
+
    - Returns: A new secure logger actor integrated with the default logging service
    */
   public static func createSecureLogger(
-    subsystem: String = "com.umbra.security",
+    subsystem: String="com.umbra.security",
     category: String,
-    includeTimestamps: Bool = true
+    includeTimestamps: Bool=true
   ) async -> SecureLoggerActor {
     await SecureLoggerFactory.createIntegratedSecureLogger(
       subsystem: subsystem,

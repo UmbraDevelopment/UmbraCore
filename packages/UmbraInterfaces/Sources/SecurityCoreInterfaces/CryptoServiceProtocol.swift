@@ -4,7 +4,8 @@ import Foundation
 import UmbraErrors
 
 /// Protocol defining cryptographic service operations in a Foundation-independent manner.
-/// All operations use Result types for proper error handling and follow the Alpha Dot Five architecture principles.
+/// All operations use Result types for proper error handling and follow the Alpha Dot Five
+/// architecture principles.
 public protocol CryptoServiceProtocol: Sendable {
   /// The secure storage used for handling sensitive data
   var secureStorage: SecureStorageProtocol { get }
@@ -51,7 +52,7 @@ public protocol CryptoServiceProtocol: Sendable {
     hashIdentifier: String,
     options: HashingOptions?
   ) async -> Result<Bool, SecurityProtocolError>
-  
+
   /// Generates a cryptographic key and stores it securely.
   /// - Parameters:
   ///   - length: The length of the key to generate in bytes.
@@ -61,17 +62,18 @@ public protocol CryptoServiceProtocol: Sendable {
     length: Int,
     options: KeyGenerationOptions?
   ) async -> Result<String, SecurityProtocolError>
-  
+
   /// Imports data into secure storage for use with cryptographic operations.
   /// - Parameters:
   ///   - data: The raw data to store securely.
-  ///   - customIdentifier: Optional custom identifier for the data. If nil, a random identifier is generated.
+  ///   - customIdentifier: Optional custom identifier for the data. If nil, a random identifier is
+  /// generated.
   /// - Returns: The identifier for the data in secure storage, or an error.
   func importData(
     _ data: [UInt8],
     customIdentifier: String?
   ) async -> Result<String, SecurityProtocolError>
-  
+
   /// Exports data from secure storage.
   /// - Parameter identifier: The identifier of the data to export.
   /// - Returns: The raw data, or an error.
@@ -85,17 +87,17 @@ public protocol CryptoServiceProtocol: Sendable {
 public struct EncryptionOptions: Sendable {
   /// The encryption algorithm to use.
   public let algorithm: CoreSecurityTypes.EncryptionAlgorithm
-  
+
   /// Optional authenticated data for AEAD algorithms.
   public let authenticatedData: [UInt8]?
-  
+
   /// Initialises encryption options with defaults.
   public init(
     algorithm: CoreSecurityTypes.EncryptionAlgorithm = .aes256CBC,
-    authenticatedData: [UInt8]? = nil
+    authenticatedData: [UInt8]?=nil
   ) {
-    self.algorithm = algorithm
-    self.authenticatedData = authenticatedData
+    self.algorithm=algorithm
+    self.authenticatedData=authenticatedData
   }
 }
 
@@ -103,17 +105,17 @@ public struct EncryptionOptions: Sendable {
 public struct DecryptionOptions: Sendable {
   /// The decryption algorithm to use.
   public let algorithm: CoreSecurityTypes.EncryptionAlgorithm
-  
+
   /// Optional authenticated data for AEAD algorithms.
   public let authenticatedData: [UInt8]?
-  
+
   /// Initialises decryption options with defaults.
   public init(
     algorithm: CoreSecurityTypes.EncryptionAlgorithm = .aes256CBC,
-    authenticatedData: [UInt8]? = nil
+    authenticatedData: [UInt8]?=nil
   ) {
-    self.algorithm = algorithm
-    self.authenticatedData = authenticatedData
+    self.algorithm=algorithm
+    self.authenticatedData=authenticatedData
   }
 }
 
@@ -121,10 +123,10 @@ public struct DecryptionOptions: Sendable {
 public struct HashingOptions: Sendable {
   /// The hash algorithm to use.
   public let algorithm: CoreSecurityTypes.HashAlgorithm
-  
+
   /// Initialises hashing options with defaults.
   public init(algorithm: CoreSecurityTypes.HashAlgorithm = .sha256) {
-    self.algorithm = algorithm
+    self.algorithm=algorithm
   }
 }
 
@@ -132,86 +134,86 @@ public struct HashingOptions: Sendable {
 public struct KeyGenerationOptions: Sendable {
   /// Whether to store the key in long-term persistent storage.
   public let persistent: Bool
-  
+
   /// The key type to generate.
   public let keyType: KeyType
-  
+
   /// Initialises key generation options with defaults.
-  public init(persistent: Bool = true, keyType: KeyType = .symmetric) {
-    self.persistent = persistent
-    self.keyType = keyType
+  public init(persistent: Bool=true, keyType: KeyType = .symmetric) {
+    self.persistent=persistent
+    self.keyType=keyType
   }
 }
 
 /// Supported key types.
 public enum KeyType: UInt8, Sendable {
-  case symmetric = 0
-  case asymmetric = 1
-  case hybrid = 2
+  case symmetric=0
+  case asymmetric=1
+  case hybrid=2
 }
 
 /// Data transfer object for cryptographic operations.
 /// Used for passing cryptographic functions between processes.
 public struct CryptoServiceDto: Sendable {
   /// Type alias for encrypt function
-  public typealias EncryptFunction = @Sendable (
+  public typealias EncryptFunction=@Sendable (
     String, String, EncryptionOptions?
   ) async -> Result<String, SecurityProtocolError>
-  
+
   /// Type alias for decrypt function
-  public typealias DecryptFunction = @Sendable (
+  public typealias DecryptFunction=@Sendable (
     String, String, DecryptionOptions?
   ) async -> Result<String, SecurityProtocolError>
-  
+
   /// Type alias for hash function
-  public typealias HashFunction = @Sendable (
+  public typealias HashFunction=@Sendable (
     String, HashingOptions?
   ) async -> Result<String, SecurityProtocolError>
-  
+
   /// Type alias for verify hash function
-  public typealias VerifyHashFunction = @Sendable (
+  public typealias VerifyHashFunction=@Sendable (
     String, String, HashingOptions?
   ) async -> Result<Bool, SecurityProtocolError>
-  
+
   /// Type alias for generate key function
-  public typealias GenerateKeyFunction = @Sendable (
+  public typealias GenerateKeyFunction=@Sendable (
     Int, KeyGenerationOptions?
   ) async -> Result<String, SecurityProtocolError>
-  
+
   /// Type alias for import data function
-  public typealias ImportDataFunction = @Sendable (
+  public typealias ImportDataFunction=@Sendable (
     [UInt8], String?
   ) async -> Result<String, SecurityProtocolError>
-  
+
   /// Type alias for export data function
-  public typealias ExportDataFunction = @Sendable (
+  public typealias ExportDataFunction=@Sendable (
     String
   ) async -> Result<[UInt8], SecurityProtocolError>
-  
+
   /// The secure storage for this DTO
   public let secureStorage: SecureStorageProtocol
-  
+
   /// Function to encrypt data
   public let encrypt: EncryptFunction
-  
+
   /// Function to decrypt data
   public let decrypt: DecryptFunction
-  
+
   /// Function to hash data
   public let hash: HashFunction
-  
+
   /// Function to verify hash
   public let verifyHash: VerifyHashFunction
-  
+
   /// Function to generate key
   public let generateKey: GenerateKeyFunction
-  
+
   /// Function to import data
   public let importData: ImportDataFunction
-  
+
   /// Function to export data
   public let exportData: ExportDataFunction
-  
+
   /// Initialises a new DTO from the given functions
   public init(
     secureStorage: SecureStorageProtocol,
@@ -223,14 +225,14 @@ public struct CryptoServiceDto: Sendable {
     importData: @escaping ImportDataFunction,
     exportData: @escaping ExportDataFunction
   ) {
-    self.secureStorage = secureStorage
-    self.encrypt = encrypt
-    self.decrypt = decrypt
-    self.hash = hash
-    self.verifyHash = verifyHash
-    self.generateKey = generateKey
-    self.importData = importData
-    self.exportData = exportData
+    self.secureStorage=secureStorage
+    self.encrypt=encrypt
+    self.decrypt=decrypt
+    self.hash=hash
+    self.verifyHash=verifyHash
+    self.generateKey=generateKey
+    self.importData=importData
+    self.exportData=exportData
   }
 }
 
@@ -240,9 +242,9 @@ extension CryptoServiceDto {
   public func toProtocol() -> some CryptoServiceProtocol {
     struct ProtocolAdapter: CryptoServiceProtocol {
       let dto: CryptoServiceDto
-      
+
       var secureStorage: SecureStorageProtocol { dto.secureStorage }
-      
+
       func encrypt(
         dataIdentifier: String,
         keyIdentifier: String,
@@ -250,7 +252,7 @@ extension CryptoServiceDto {
       ) async -> Result<String, SecurityProtocolError> {
         await dto.encrypt(dataIdentifier, keyIdentifier, options)
       }
-      
+
       func decrypt(
         encryptedDataIdentifier: String,
         keyIdentifier: String,
@@ -258,14 +260,14 @@ extension CryptoServiceDto {
       ) async -> Result<String, SecurityProtocolError> {
         await dto.decrypt(encryptedDataIdentifier, keyIdentifier, options)
       }
-      
+
       func hash(
         dataIdentifier: String,
         options: HashingOptions?
       ) async -> Result<String, SecurityProtocolError> {
         await dto.hash(dataIdentifier, options)
       }
-      
+
       func verifyHash(
         dataIdentifier: String,
         hashIdentifier: String,
@@ -273,28 +275,28 @@ extension CryptoServiceDto {
       ) async -> Result<Bool, SecurityProtocolError> {
         await dto.verifyHash(dataIdentifier, hashIdentifier, options)
       }
-      
+
       func generateKey(
         length: Int,
         options: KeyGenerationOptions?
       ) async -> Result<String, SecurityProtocolError> {
         await dto.generateKey(length, options)
       }
-      
+
       func importData(
         _ data: [UInt8],
         customIdentifier: String?
       ) async -> Result<String, SecurityProtocolError> {
         await dto.importData(data, customIdentifier)
       }
-      
+
       func exportData(
         identifier: String
       ) async -> Result<[UInt8], SecurityProtocolError> {
         await dto.exportData(identifier)
       }
     }
-    
+
     return ProtocolAdapter(dto: self)
   }
 }

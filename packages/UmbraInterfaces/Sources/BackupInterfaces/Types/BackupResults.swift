@@ -28,6 +28,9 @@ public struct BackupResult: Sendable, Equatable {
 
   /// Paths excluded from the backup
   public let excludedPaths: [URL]
+  
+  /// Whether the operation was successful
+  public let successful: Bool
 
   /// Creates a new backup result
   /// - Parameters:
@@ -40,28 +43,39 @@ public struct BackupResult: Sendable, Equatable {
   ///   - tags: Tags associated with the backup
   ///   - includedPaths: Paths included in the backup
   ///   - excludedPaths: Paths excluded from the backup
+  ///   - successful: Whether the operation was successful
   public init(
     snapshotID: String,
-    creationTime: Date,
+    creationTime: Date = Date(),
     totalSize: UInt64,
     fileCount: Int,
     addedSize: UInt64,
     duration: TimeInterval,
-    tags: [String],
-    includedPaths: [URL],
-    excludedPaths: [URL]
+    tags: [String] = [],
+    includedPaths: [URL] = [],
+    excludedPaths: [URL] = [],
+    successful: Bool = true
   ) {
-    self.snapshotID=snapshotID
-    self.creationTime=creationTime
-    self.totalSize=totalSize
-    self.fileCount=fileCount
-    self.addedSize=addedSize
-    self.duration=duration
-    self.tags=tags
-    self.includedPaths=includedPaths
-    self.excludedPaths=excludedPaths
+    self.snapshotID = snapshotID
+    self.creationTime = creationTime
+    self.totalSize = totalSize
+    self.fileCount = fileCount
+    self.addedSize = addedSize
+    self.duration = duration
+    self.tags = tags
+    self.includedPaths = includedPaths
+    self.excludedPaths = excludedPaths
+    self.successful = successful
   }
 }
+
+/// Type alias for backup creation result
+/// This is the result returned when creating a new backup
+public typealias BackupCreateResult = BackupResult
+
+/// Type alias for backup restore result
+/// This is the result returned when restoring from a backup
+public typealias BackupRestoreResult = RestoreResult
 
 /// Result of a restore operation
 public struct RestoreResult: Sendable, Equatable {
@@ -99,12 +113,12 @@ public struct RestoreResult: Sendable, Equatable {
     duration: TimeInterval,
     targetPath: URL
   ) {
-    self.snapshotID=snapshotID
-    self.restoreTime=restoreTime
-    self.totalSize=totalSize
-    self.fileCount=fileCount
-    self.duration=duration
-    self.targetPath=targetPath
+    self.snapshotID = snapshotID
+    self.restoreTime = restoreTime
+    self.totalSize = totalSize
+    self.fileCount = fileCount
+    self.duration = duration
+    self.targetPath = targetPath
   }
 }
 
@@ -132,12 +146,12 @@ public struct BRDeleteResult: Sendable, Equatable {
     snapshotID: String,
     deletionTime: Date,
     successful: Bool,
-    spaceSaved: UInt64?=nil
+    spaceSaved: UInt64? = nil
   ) {
-    self.snapshotID=snapshotID
-    self.deletionTime=deletionTime
-    self.successful=successful
-    self.spaceSaved=spaceSaved
+    self.snapshotID = snapshotID
+    self.deletionTime = deletionTime
+    self.successful = successful
+    self.spaceSaved = spaceSaved
   }
 }
 
@@ -177,17 +191,17 @@ public struct MaintenanceResult: Sendable, Equatable {
     maintenanceType: MaintenanceType,
     maintenanceTime: Date,
     successful: Bool,
-    spaceOptimised: UInt64?=nil,
+    spaceOptimised: UInt64? = nil,
     duration: TimeInterval,
-    issuesFound: [String]=[],
-    issuesFixed: [String]=[]
+    issuesFound: [String] = [],
+    issuesFixed: [String] = []
   ) {
-    self.maintenanceType=maintenanceType
-    self.maintenanceTime=maintenanceTime
-    self.successful=successful
-    self.spaceOptimised=spaceOptimised
-    self.duration=duration
-    self.issuesFound=issuesFound
-    self.issuesFixed=issuesFixed
+    self.maintenanceType = maintenanceType
+    self.maintenanceTime = maintenanceTime
+    self.successful = successful
+    self.spaceOptimised = spaceOptimised
+    self.duration = duration
+    self.issuesFound = issuesFound
+    self.issuesFixed = issuesFixed
   }
 }

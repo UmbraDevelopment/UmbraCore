@@ -4,12 +4,12 @@ import Foundation
 ///
 /// This type encapsulates the outcome of verifying a snapshot's integrity,
 /// including overall status, any issues found, and timing information.
-public struct BackupVerificationResult: Sendable, Equatable {
+public struct BackupVerificationResultDTO: Sendable, Equatable {
   /// Indicates whether the verification was successful
   public let successful: Bool
 
   /// List of issues found during verification
-  public let issues: [BackupVerificationIssue]
+  public let issues: [BackupVerificationIssueDTO]
 
   /// Start time of the verification
   public let startTime: Date
@@ -30,7 +30,7 @@ public struct BackupVerificationResult: Sendable, Equatable {
   ///   - endTime: End time of the verification
   public init(
     successful: Bool,
-    issues: [BackupVerificationIssue],
+    issues: [BackupVerificationIssueDTO],
     startTime: Date,
     endTime: Date
   ) {
@@ -45,7 +45,7 @@ public struct BackupVerificationResult: Sendable, Equatable {
 ///
 /// This type describes a specific problem encountered during
 /// verification, including its severity and affected files.
-public struct BackupVerificationIssue: Sendable, Equatable {
+public struct BackupVerificationIssueDTO: Sendable, Equatable {
   /// Type of verification issue
   public enum IssueType: String, Sendable, Equatable {
     /// Missing data in the repository

@@ -240,7 +240,7 @@ public actor KeychainSecurityActor {
 
     do {
       // Retrieve the encrypted data from keychain (we only care if it succeeds)
-      _ = try await keychainService.retrieveData(for: account, keychainOptions: nil)
+      _=try await keychainService.retrieveData(for: account, keychainOptions: nil)
 
       // Prepare decryption configuration with options
       let configOptions=SecurityConfigOptions(

@@ -5,34 +5,34 @@ import LoggingTypes
 
 /**
  # SecurityLogger
- 
+
  A specialised domain logger for security operations following
  the Alpha Dot Five architecture principles.
- 
+
  This actor provides logging functionality specific to security operations,
  with enhanced privacy controls and contextual information. It uses the
  SecureLoggerActor internally for privacy-aware logging.
- 
+
  ## Security Features
- 
+
  * Privacy-aware logging with proper data classification
  * Structured metadata for improved analysis
  * Contextual information for security auditing
  * Thread safety through actor isolation
- 
+
  ## Usage Example
- 
+
  ```swift
  // Create a security logger
  let loggingService = await LoggingServiceFactory.createDefaultService()
  let securityLogger = SecurityLogger(loggingService: loggingService)
- 
+
  // Log security operations with proper context
  await securityLogger.logOperationStart(
    keyIdentifier: "master-key",
    operation: "encrypt"
  )
- 
+
  // Log operation success
  await securityLogger.logOperationSuccess(
    keyIdentifier: "master-key",
@@ -43,22 +43,22 @@ import LoggingTypes
  */
 public actor SecurityLogger: DomainLoggerProtocol {
   /// The domain name for this logger
-  public let domainName: String = "Security"
+  public let domainName: String="Security"
 
   /// The underlying logging service
   private let loggingService: LoggingServiceProtocol
-  
+
   /// The secure logger for privacy-aware logging
   private let secureLogger: SecureLoggerActor
 
   /**
    Creates a new security logger with the specified logging service.
-   
+
    - Parameter loggingService: The underlying logging service to use
    */
   public init(loggingService: LoggingServiceProtocol) {
-    self.loggingService = loggingService
-    self.secureLogger = SecureLoggerActor(
+    self.loggingService=loggingService
+    secureLogger=SecureLoggerActor(
       subsystem: "com.umbra.security",
       category: "SecurityOperations",
       includeTimestamps: true
@@ -67,13 +67,13 @@ public actor SecurityLogger: DomainLoggerProtocol {
 
   /**
    Log a message with the specified level
-   
+
    - Parameters:
      - level: The log level
      - message: The message to log
    */
   public func log(_ level: LogLevel, _ message: String) async {
-    let formattedMessage = "[\(domainName)] \(message)"
+    let formattedMessage="[\(domainName)] \(message)"
 
     // Use the appropriate level-specific method
     switch level {
@@ -90,16 +90,16 @@ public actor SecurityLogger: DomainLoggerProtocol {
       case .critical:
         await loggingService.critical(formattedMessage, metadata: nil, source: domainName)
     }
-    
+
     // Also log through secure logger for enhanced privacy controls
-    let secureLevel: UmbraLogLevel = switch level {
+    let secureLevel: UmbraLogLevel=switch level {
       case .trace, .debug: .debug
       case .info: .info
       case .warning: .warning
       case .error: .error
       case .critical: .critical
     }
-    
+
     await secureLogger.log(level: secureLevel, message: message, metadata: nil)
   }
 
@@ -135,17 +135,17 @@ public actor SecurityLogger: DomainLoggerProtocol {
 
   /**
    Log a message with the specified context
-   
+
    - Parameters:
      - level: The log level
      - message: The message to log
      - context: Additional context information
    */
   public func logWithContext(_ level: LogLevel, _ message: String, context: LogContextDTO) async {
-    let formattedMessage = "[\(domainName)] \(message)"
+    let formattedMessage="[\(domainName)] \(message)"
 
     // Convert LogContextDTO to LogMetadata using our extension
-    let logMetadata = context.asLogMetadata()
+    let logMetadata=context.asLogMetadata()
 
     // Use the appropriate method based on the log level
     switch level {
@@ -162,38 +162,40 @@ public actor SecurityLogger: DomainLoggerProtocol {
       case .critical:
         await loggingService.critical(formattedMessage, metadata: logMetadata, source: domainName)
     }
-    
+
     // Also log through secure logger with privacy controls
-    let secureLevel: UmbraLogLevel = switch level {
+    let secureLevel: UmbraLogLevel=switch level {
       case .trace, .debug: .debug
       case .info: .info
       case .warning: .warning
       case .error: .error
       case .critical: .critical
     }
-    
+
     // Convert to privacy-tagged metadata
-    var privacyMetadata: [String: PrivacyTaggedValue] = [:]
+    var privacyMetadata: [String: PrivacyTaggedValue]=[:]
     for (key, value) in context.parameters {
       // Apply privacy tag based on key naming conventions
-      let privacyLevel: LogPrivacyLevel
-      if key.hasSuffix("Password") || key.hasSuffix("Token") || key.hasSuffix("Key") {
-        privacyLevel = .sensitive
+      let privacyLevel: LogPrivacyLevel=if
+        key.hasSuffix("Password") || key
+          .hasSuffix("Token") || key.hasSuffix("Key")
+      {
+        .sensitive
       } else if key.hasSuffix("Id") || key.hasSuffix("Email") || key.hasSuffix("Name") {
-        privacyLevel = .private
+        .private
       } else {
-        privacyLevel = .public
+        .public
       }
-      
-      privacyMetadata[key] = PrivacyTaggedValue(value: value, privacyLevel: privacyLevel)
+
+      privacyMetadata[key]=PrivacyTaggedValue(value: value, privacyLevel: privacyLevel)
     }
-    
+
     await secureLogger.log(level: secureLevel, message: message, metadata: privacyMetadata)
   }
 
   /**
    Log a security operation start event.
-   
+
    - Parameters:
      - keyIdentifier: The identifier of the key being operated on
      - operation: The name of the operation
@@ -202,19 +204,19 @@ public actor SecurityLogger: DomainLoggerProtocol {
   public func logOperationStart(
     keyIdentifier: String,
     operation: String,
-    details: String? = nil
+    details: String?=nil
   ) async {
-    var context = LogContextDTO()
-    context.parameters["keyId"] = keyIdentifier
-    context.parameters["operation"] = operation
-    
-    if let details = details {
-      context.parameters["details"] = details
+    var context=LogContextDTO()
+    context.parameters["keyId"]=keyIdentifier
+    context.parameters["operation"]=operation
+
+    if let details {
+      context.parameters["details"]=details
     }
-    
+
     // Log with standard logging
     await logWithContext(.info, "Started \(operation) operation", context: context)
-    
+
     // Log as a security event with proper privacy controls
     await secureLogger.securityEvent(
       action: operation,
@@ -230,7 +232,7 @@ public actor SecurityLogger: DomainLoggerProtocol {
 
   /**
    Log a security operation success event.
-   
+
    - Parameters:
      - keyIdentifier: The identifier of the key being operated on
      - operation: The name of the operation
@@ -239,20 +241,20 @@ public actor SecurityLogger: DomainLoggerProtocol {
   public func logOperationSuccess(
     keyIdentifier: String,
     operation: String,
-    details: String? = nil
+    details: String?=nil
   ) async {
-    var context = LogContextDTO()
-    context.parameters["keyId"] = keyIdentifier
-    context.parameters["operation"] = operation
-    context.parameters["status"] = "success"
-    
-    if let details = details {
-      context.parameters["details"] = details
+    var context=LogContextDTO()
+    context.parameters["keyId"]=keyIdentifier
+    context.parameters["operation"]=operation
+    context.parameters["status"]="success"
+
+    if let details {
+      context.parameters["details"]=details
     }
-    
+
     // Log with standard logging
     await logWithContext(.info, "Successfully completed \(operation) operation", context: context)
-    
+
     // Log as a security event with proper privacy controls
     await secureLogger.securityEvent(
       action: operation,
@@ -268,7 +270,7 @@ public actor SecurityLogger: DomainLoggerProtocol {
 
   /**
    Log a security operation error event.
-   
+
    - Parameters:
      - keyIdentifier: The identifier of the key being operated on
      - operation: The name of the operation
@@ -279,25 +281,25 @@ public actor SecurityLogger: DomainLoggerProtocol {
     keyIdentifier: String,
     operation: String,
     error: Error,
-    details: String? = nil
+    details: String?=nil
   ) async {
-    var context = LogContextDTO()
-    context.parameters["keyId"] = keyIdentifier
-    context.parameters["operation"] = operation
-    context.parameters["status"] = "error"
-    context.parameters["errorDescription"] = error.localizedDescription
-    
-    if let details = details {
-      context.parameters["details"] = details
+    var context=LogContextDTO()
+    context.parameters["keyId"]=keyIdentifier
+    context.parameters["operation"]=operation
+    context.parameters["status"]="error"
+    context.parameters["errorDescription"]=error.localizedDescription
+
+    if let details {
+      context.parameters["details"]=details
     }
-    
+
     // Log with standard logging
     await logWithContext(
-      .error, 
-      "Error during \(operation) operation: \(error.localizedDescription)", 
+      .error,
+      "Error during \(operation) operation: \(error.localizedDescription)",
       context: context
     )
-    
+
     // Log as a security event with proper privacy controls
     await secureLogger.securityEvent(
       action: operation,
@@ -305,7 +307,8 @@ public actor SecurityLogger: DomainLoggerProtocol {
       subject: nil,
       resource: keyIdentifier,
       additionalMetadata: [
-        "errorDescription": PrivacyTaggedValue(value: error.localizedDescription, privacyLevel: .public),
+        "errorDescription": PrivacyTaggedValue(value: error.localizedDescription,
+                                               privacyLevel: .public),
         "details": PrivacyTaggedValue(value: details ?? "N/A", privacyLevel: .public)
       ]
     )

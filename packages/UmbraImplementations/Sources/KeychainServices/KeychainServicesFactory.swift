@@ -42,7 +42,7 @@ public enum KeychainServicesFactory {
     logger: LoggingProtocol?=nil
   ) async -> any KeychainServiceProtocol {
     // Use the standard implementation but return as protocol type
-    let actualLogger=logger ?? KeychainDefaultLogger()
+    let actualLogger=logger ?? DefaultLogger()
 
     return KeychainServiceImpl(
       serviceIdentifier: serviceIdentifier ?? defaultServiceIdentifier,
@@ -75,14 +75,15 @@ public enum KeychainServicesFactory {
       await createKeychainService(logger: logger)
     }
 
-    let actualLogger=logger ?? KeychainDefaultLogger()
+    let actualLogger=logger ?? DefaultLogger()
 
     // For key manager, we need to dynamically load it from SecurityKeyManagement
     let actualKeyManager: (any KeyManagementProtocol)
-    
+
     // Use a helper function to handle the async factory properly
-    @MainActor func createKeyManager() async -> KeyManagementProtocol {
-      let factory = KeyManagerAsyncFactory.shared
+    @MainActor
+    func createKeyManager() async -> KeyManagementProtocol {
+      let factory=KeyManagerAsyncFactory.shared
       if await factory.tryInitialize() {
         do {
           return try await factory.createKeyManager()
@@ -95,9 +96,9 @@ public enum KeychainServicesFactory {
         return SimpleKeyManager(logger: actualLogger)
       }
     }
-    
+
     // Await the key manager creation
-    actualKeyManager = await createKeyManager()
+    actualKeyManager=await createKeyManager()
 
     // Create and return the security implementation
     return KeychainSecurityImpl(

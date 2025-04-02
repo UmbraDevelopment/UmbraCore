@@ -54,7 +54,7 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
   public func storePassword(
     _ password: String,
     for account: String,
-    keychainOptions: KeychainOptions?
+    keychainOptions _: KeychainOptions?
   ) async throws {
     await logger.debug(
       "Storing password for account: \(account) in memory",
@@ -101,7 +101,7 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
    */
   public func retrievePassword(
     for account: String,
-    keychainOptions: KeychainOptions?
+    keychainOptions _: KeychainOptions?
   ) async throws -> String {
     await logger.debug(
       "Retrieving password for account: \(account) from memory",
@@ -142,7 +142,7 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
    */
   public func deletePassword(
     for account: String,
-    keychainOptions: KeychainOptions?
+    keychainOptions _: KeychainOptions?
   ) async throws {
     await logger.debug(
       "Deleting password for account: \(account) from memory",
@@ -185,7 +185,7 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
   public func storeData(
     _ data: Data,
     for account: String,
-    keychainOptions: KeychainOptions?
+    keychainOptions _: KeychainOptions?
   ) async throws {
     await logger.debug(
       "Storing data for account: \(account) in memory",
@@ -232,7 +232,7 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
    */
   public func retrieveData(
     for account: String,
-    keychainOptions: KeychainOptions?
+    keychainOptions _: KeychainOptions?
   ) async throws -> Data {
     await logger.debug(
       "Retrieving data for account: \(account) from memory",
@@ -273,7 +273,7 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
    */
   public func deleteData(
     for account: String,
-    keychainOptions: KeychainOptions?
+    keychainOptions _: KeychainOptions?
   ) async throws {
     await logger.debug(
       "Deleting data for account: \(account) from memory",
@@ -314,9 +314,9 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
    - Throws: KeychainError if the password doesn't exist
    */
   public func updatePassword(
-    _ newPassword: String, 
+    _ newPassword: String,
     for account: String,
-    keychainOptions: KeychainOptions?
+    keychainOptions _: KeychainOptions?
   ) async throws {
     await logger.debug(
       "Updating password for account: \(account) in memory",
@@ -362,7 +362,7 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
    */
   public func passwordExists(
     for account: String,
-    keychainOptions: KeychainOptions?
+    keychainOptions _: KeychainOptions?
   ) async throws -> Bool {
     await logger.debug(
       "Checking if password exists for account: \(account) in memory",

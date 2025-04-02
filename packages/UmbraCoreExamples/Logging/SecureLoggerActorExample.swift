@@ -5,28 +5,28 @@ import LoggingTypes
 
 /**
  # Secure Logger Actor Example
- 
+
  This example demonstrates how to use the new SecureLoggerActor for privacy-aware
  logging in security-sensitive applications following the Alpha Dot Five
  architecture principles.
- 
+
  The SecureLoggerActor provides specific features for handling sensitive data:
- 
+
  1. **Privacy Tagging**: Explicit marking of data sensitivity levels
  2. **Actor Isolation**: Thread-safe logging through Swift actors
  3. **Structured Security Events**: Specific methods for logging security operations
  4. **Integration**: Works with the broader logging infrastructure
- 
+
  ## Key Privacy Concepts
- 
+
  In privacy-aware logging, data is categorised into three levels:
- 
+
  - **Public**: Information that can be safely logged in plain text
  - **Private**: Information that should be redacted in most contexts
  - **Sensitive**: Information that should never appear in logs
- 
+
  ## Usage Guidelines
- 
+
  - Always explicitly tag data with privacy levels
  - Use security events for operational logging
  - Never log credentials even with privacy markers
@@ -35,24 +35,24 @@ import LoggingTypes
 public struct SecureLoggerActorExample {
   /// The secure logger instance
   private let secureLogger: SecureLoggerActor
-  
+
   /**
    Creates a new example with a secure logger instance.
-   
+
    - Parameter secureLogger: Optional secure logger (will create one if not provided)
    */
-  public init(secureLogger: SecureLoggerActor? = nil) {
-    if let secureLogger = secureLogger {
-      self.secureLogger = secureLogger
+  public init(secureLogger: SecureLoggerActor?=nil) {
+    if let secureLogger {
+      self.secureLogger=secureLogger
     } else {
       // Create a new secure logger with default settings
-      self.secureLogger = SecureLoggerActor(
+      self.secureLogger=SecureLoggerActor(
         subsystem: "com.umbra.example",
         category: "SecureLoggerExample"
       )
     }
   }
-  
+
   /**
    Demonstrates basic secure logging with privacy tagging.
    */
@@ -65,7 +65,7 @@ public struct SecureLoggerActorExample {
         "environment": PrivacyTaggedValue(value: "production", privacyLevel: .public)
       ]
     )
-    
+
     // Log containing both public and private data
     await secureLogger.info(
       "User login successful",
@@ -75,7 +75,7 @@ public struct SecureLoggerActorExample {
         "ipAddress": PrivacyTaggedValue(value: "192.168.1.100", privacyLevel: .private)
       ]
     )
-    
+
     // Log containing sensitive data that will be fully redacted
     await secureLogger.info(
       "Payment processed",
@@ -86,7 +86,7 @@ public struct SecureLoggerActorExample {
       ]
     )
   }
-  
+
   /**
    Demonstrates logging security events with proper context.
    */
@@ -95,7 +95,7 @@ public struct SecureLoggerActorExample {
     await secureLogger.securityEvent(
       action: "UserAuthentication",
       status: .success,
-      subject: "jane.smith@example.com",  // Automatically handled as private
+      subject: "jane.smith@example.com", // Automatically handled as private
       resource: "UserAccount",
       additionalMetadata: [
         "ipAddress": PrivacyTaggedValue(value: "192.168.1.100", privacyLevel: .private),
@@ -103,7 +103,7 @@ public struct SecureLoggerActorExample {
         "sessionId": PrivacyTaggedValue(value: "sess_123456", privacyLevel: .public)
       ]
     )
-    
+
     // Log a failed encryption operation
     await secureLogger.securityEvent(
       action: "DataEncryption",
@@ -115,7 +115,7 @@ public struct SecureLoggerActorExample {
         "errorMessage": PrivacyTaggedValue(value: "Invalid key format", privacyLevel: .public)
       ]
     )
-    
+
     // Log a denied access attempt
     await secureLogger.securityEvent(
       action: "FileAccess",
@@ -128,18 +128,18 @@ public struct SecureLoggerActorExample {
       ]
     )
   }
-  
+
   /**
    Demonstrates error handling with privacy-aware logging.
    */
   public func demonstrateErrorLogging() async {
     // Simulate an error
-    let error = NSError(
+    let error=NSError(
       domain: "com.umbra.example",
       code: 404,
       userInfo: [NSLocalizedDescriptionKey: "Resource not found"]
     )
-    
+
     // Log the error with privacy context
     await secureLogger.error(
       "Failed to access resource",
@@ -151,7 +151,7 @@ public struct SecureLoggerActorExample {
       ]
     )
   }
-  
+
   /**
    Demonstrates practical usage of the secure logger in a real-world scenario.
    */
@@ -166,7 +166,7 @@ public struct SecureLoggerActorExample {
         "amount": PrivacyTaggedValue(value: "250.00 GBP", privacyLevel: .public)
       ]
     )
-    
+
     // 2. Log a security event for the transaction validation
     await secureLogger.securityEvent(
       action: "TransactionValidation",
@@ -178,11 +178,11 @@ public struct SecureLoggerActorExample {
         "ruleOutcome": PrivacyTaggedValue(value: "passed", privacyLevel: .public)
       ]
     )
-    
+
     // 3. Simulate some processing and log the completion (with potential error handling)
     do {
       // Simulate processing...
-      
+
       // 4. Log successful completion
       await secureLogger.info(
         "Transaction completed successfully",
@@ -198,13 +198,14 @@ public struct SecureLoggerActorExample {
         "Transaction processing failed",
         metadata: [
           "transactionId": PrivacyTaggedValue(value: "txn_abc123", privacyLevel: .public),
-          "errorMessage": PrivacyTaggedValue(value: error.localizedDescription, privacyLevel: .public),
+          "errorMessage": PrivacyTaggedValue(value: error.localizedDescription,
+                                             privacyLevel: .public),
           "currentStage": PrivacyTaggedValue(value: "payment_processing", privacyLevel: .public)
         ]
       )
     }
   }
-  
+
   /**
    Best practices for logging in cryptographic operations.
    */
@@ -218,7 +219,7 @@ public struct SecureLoggerActorExample {
         "keyIdentifier": PrivacyTaggedValue(value: "key_master_2024", privacyLevel: .private)
       ]
     )
-    
+
     // 2. Log security event for key access
     await secureLogger.securityEvent(
       action: "KeyAccess",
@@ -230,7 +231,7 @@ public struct SecureLoggerActorExample {
         "keyType": PrivacyTaggedValue(value: "AES-256", privacyLevel: .public)
       ]
     )
-    
+
     // 3. Log completion with appropriate metrics but no sensitive data
     await secureLogger.info(
       "Encryption operation completed",
@@ -249,20 +250,20 @@ public struct SecureLoggerActorExample {
  */
 public func runSecureLoggerExamples() async {
   print("Running Secure Logger Actor Examples...")
-  
+
   // Create a secure logger instance
-  let secureLogger = await LoggingServices.createSecureLogger(
+  let secureLogger=await LoggingServices.createSecureLogger(
     category: "SecureLoggerExamples"
   )
-  
+
   // Create and run the examples
-  let examples = SecureLoggerActorExample(secureLogger: secureLogger)
-  
+  let examples=SecureLoggerActorExample(secureLogger: secureLogger)
+
   await examples.demonstrateBasicSecureLogging()
   await examples.demonstrateSecurityEventLogging()
   await examples.demonstrateErrorLogging()
   await examples.demonstrateSecureTransactionProcessing()
   await examples.demonstrateCryptographicOperationLogging()
-  
+
   print("Examples completed. Check logs for output.")
 }

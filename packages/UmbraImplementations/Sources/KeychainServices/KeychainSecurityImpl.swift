@@ -642,24 +642,27 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
 
   /**
    Converts KeychainAccessOptions to KeychainOptions
-   
+
    This helper function bridges the gap between the legacy KeychainAccessOptions type
    and the newer KeychainOptions type used in the updated protocol.
-   
+
    - Parameter options: The legacy KeychainAccessOptions to convert
    - Returns: Equivalent KeychainOptions or nil if input is nil
    */
-  private func accessOptionsToKeychainOptions(_ options: KeychainInterfaces.KeychainAccessOptions?) -> KeychainInterfaces.KeychainOptions? {
-    guard let options = options else {
+  private func accessOptionsToKeychainOptions(
+    _ options: KeychainInterfaces
+      .KeychainAccessOptions?
+  ) -> KeychainInterfaces.KeychainOptions? {
+    guard let options else {
       return nil
     }
-    
+
     // Map access options to the new KeychainOptions structure
     // Default to the most common access level if nothing specific matches
     var accessLevel: KeychainInterfaces.KeychainOptions.AccessLevel = .whenUnlockedThisDeviceOnly
     let authenticationType: KeychainInterfaces.KeychainOptions.AuthenticationType = .none
     let synchronisable = !options.contains(.thisDeviceOnly)
-    
+
     // Map access control options based on the actual available options
     if options.contains(.whenUnlocked) && !options.contains(.thisDeviceOnly) {
       accessLevel = .whenUnlocked
@@ -670,7 +673,7 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
     } else if options.contains(.accessibleWhenUnlockedThisDeviceOnly) {
       accessLevel = .whenUnlockedThisDeviceOnly
     }
-    
+
     return KeychainInterfaces.KeychainOptions(
       accessLevel: accessLevel,
       authenticationType: authenticationType,

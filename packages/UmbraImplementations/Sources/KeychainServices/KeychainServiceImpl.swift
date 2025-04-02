@@ -53,7 +53,7 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
   public func storePassword(
     _ password: String,
     for account: String,
-    keychainOptions: KeychainOptions? = nil
+    keychainOptions: KeychainOptions?=nil
   ) async throws {
     await logger.debug(
       "Storing password for account: \(account)",
@@ -70,53 +70,53 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
     }
 
     // Convert password to data
-    guard let passwordData = password.data(using: .utf8) else {
+    guard let passwordData=password.data(using: .utf8) else {
       throw KeychainError.invalidDataFormat("Unable to convert password to data")
     }
 
     // Determine access options
-    var securityAccessibility: CFString = kSecAttrAccessibleWhenUnlocked
-    if let accessLevel = keychainOptions?.accessLevel {
+    var securityAccessibility: CFString=kSecAttrAccessibleWhenUnlocked
+    if let accessLevel=keychainOptions?.accessLevel {
       switch accessLevel {
-      case .whenUnlocked:
-        securityAccessibility = kSecAttrAccessibleWhenUnlocked
-      case .whenUnlockedThisDeviceOnly:
-        securityAccessibility = kSecAttrAccessibleWhenUnlockedThisDeviceOnly
-      case .always:
-        securityAccessibility = kSecAttrAccessibleAlways
-      case .alwaysThisDeviceOnly:
-        securityAccessibility = kSecAttrAccessibleAlwaysThisDeviceOnly
-      case .whenPasscodeSetThisDeviceOnly:
-        securityAccessibility = kSecAttrAccessibleWhenPasscodeSetThisDeviceOnly
+        case .whenUnlocked:
+          securityAccessibility=kSecAttrAccessibleWhenUnlocked
+        case .whenUnlockedThisDeviceOnly:
+          securityAccessibility=kSecAttrAccessibleWhenUnlockedThisDeviceOnly
+        case .always:
+          securityAccessibility=kSecAttrAccessibleAlways
+        case .alwaysThisDeviceOnly:
+          securityAccessibility=kSecAttrAccessibleAlwaysThisDeviceOnly
+        case .whenPasscodeSetThisDeviceOnly:
+          securityAccessibility=kSecAttrAccessibleWhenPasscodeSetThisDeviceOnly
       }
     }
 
     // Create the keychain query
-    let query: [String: Any] = [
+    let query: [String: Any]=[
       kSecClass as String: kSecClassGenericPassword,
       kSecAttrService as String: serviceIdentifier,
       kSecAttrAccount as String: account,
       kSecValueData as String: passwordData,
       kSecAttrAccessible as String: securityAccessibility
     ]
-    
+
     // Add authentication options if specified
-    if let authType = keychainOptions?.authenticationType {
+    if let authType=keychainOptions?.authenticationType {
       switch authType {
-      case .none:
-        // No additional authentication required
-        break
-      case .biometryAny, .biometryFaceID, .biometryTouchID:
-        // These would require additional setup, but for now we'll just acknowledge them
-        break
-      case .devicePasscode:
-        // This would require additional security setup
-        break
+        case .none:
+          // No additional authentication required
+          break
+        case .biometryAny, .biometryFaceID, .biometryTouchID:
+          // These would require additional setup, but for now we'll just acknowledge them
+          break
+        case .devicePasscode:
+          // This would require additional security setup
+          break
       }
     }
 
     // Add the item to the keychain
-    let status = SecItemAdd(query as CFDictionary, nil)
+    let status=SecItemAdd(query as CFDictionary, nil)
 
     if status == errSecSuccess {
       await logger.info(
@@ -132,7 +132,7 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
       )
       throw KeychainError.itemAlreadyExists
     } else {
-      let error = KeychainError.fromOSStatus(status)
+      let error=KeychainError.fromOSStatus(status)
       await logger.error(
         "Failed to store password: \(error)",
         metadata: nil,
@@ -154,7 +154,7 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
    */
   public func retrievePassword(
     for account: String,
-    keychainOptions: KeychainOptions? = nil
+    keychainOptions: KeychainOptions?=nil
   ) async throws -> String {
     await logger.debug(
       "Retrieving password for account: \(account)",
@@ -167,36 +167,36 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
     }
 
     // Create the query
-    var query: [String: Any] = [
+    var query: [String: Any]=[
       kSecClass as String: kSecClassGenericPassword,
       kSecAttrService as String: serviceIdentifier,
       kSecAttrAccount as String: account,
       kSecReturnData as String: true,
       kSecMatchLimit as String: kSecMatchLimitOne
     ]
-    
+
     // Add authentication options if specified
-    if let authType = keychainOptions?.authenticationType {
+    if let authType=keychainOptions?.authenticationType {
       switch authType {
-      case .none:
-        // No additional authentication required
-        break
-      case .biometryAny, .biometryFaceID, .biometryTouchID:
-        // These would require additional setup, but for now we'll just acknowledge them
-        break
-      case .devicePasscode:
-        // This would require additional security setup
-        break
+        case .none:
+          // No additional authentication required
+          break
+        case .biometryAny, .biometryFaceID, .biometryTouchID:
+          // These would require additional setup, but for now we'll just acknowledge them
+          break
+        case .devicePasscode:
+          // This would require additional security setup
+          break
       }
     }
 
     // Execute the query
     var result: AnyObject?
-    let status = SecItemCopyMatching(query as CFDictionary, &result)
+    let status=SecItemCopyMatching(query as CFDictionary, &result)
 
-    if status == errSecSuccess, let passwordData = result as? Data {
+    if status == errSecSuccess, let passwordData=result as? Data {
       // Convert data to string
-      guard let password = String(data: passwordData, encoding: .utf8) else {
+      guard let password=String(data: passwordData, encoding: .utf8) else {
         await logger.error(
           "Retrieved data couldn't be converted to a string",
           metadata: nil,
@@ -220,7 +220,7 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
         )
         throw KeychainError.itemNotFound
       } else {
-        let error = KeychainError.fromOSStatus(status)
+        let error=KeychainError.fromOSStatus(status)
         await logger.error(
           "Failed to retrieve password: \(error)",
           metadata: nil,
@@ -230,60 +230,60 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
       }
     }
   }
-  
+
   /**
    Updates an existing password in the keychain.
-   
+
    - Parameters:
       - newPassword: The new password to store
       - account: The account identifier for the password
       - keychainOptions: Options for configuring keychain access
-      
+
    - Throws: KeychainError if the password doesn't exist or the update fails
    */
   public func updatePassword(
     _ newPassword: String,
     for account: String,
-    keychainOptions: KeychainOptions? = nil
+    keychainOptions: KeychainOptions?=nil
   ) async throws {
     await logger.debug(
       "Updating password for account: \(account)",
       metadata: nil,
       source: "KeychainService"
     )
-    
+
     guard !newPassword.isEmpty else {
       throw KeychainError.invalidParameter("New password cannot be empty")
     }
-    
+
     guard !account.isEmpty else {
       throw KeychainError.invalidParameter("Account identifier cannot be empty")
     }
-    
+
     // First check if the password exists
-    if try !(await passwordExists(for: account, keychainOptions: keychainOptions)) {
+    if try await !(passwordExists(for: account, keychainOptions: keychainOptions)) {
       throw KeychainError.itemNotFound
     }
-    
+
     // Convert password to data
-    guard let passwordData = newPassword.data(using: .utf8) else {
+    guard let passwordData=newPassword.data(using: .utf8) else {
       throw KeychainError.invalidDataFormat("Unable to convert password to data")
     }
-    
+
     // Create the query to find the item
-    let query: [String: Any] = [
+    let query: [String: Any]=[
       kSecClass as String: kSecClassGenericPassword,
       kSecAttrService as String: serviceIdentifier,
       kSecAttrAccount as String: account
     ]
-    
+
     // Attributes to update
-    let attributes: [String: Any] = [
+    let attributes: [String: Any]=[
       kSecValueData as String: passwordData
     ]
-    
+
     // Update the item
-    let status = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
+    let status=SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
 
     if status == errSecSuccess {
       await logger.info(
@@ -292,7 +292,7 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
         source: "KeychainService"
       )
     } else {
-      let error = KeychainError.fromOSStatus(status)
+      let error=KeychainError.fromOSStatus(status)
       await logger.error(
         "Failed to update password: \(error)",
         metadata: nil,
@@ -301,43 +301,43 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
       throw error
     }
   }
-  
+
   /**
    Checks if a password exists in the keychain.
-   
+
    - Parameters:
       - account: The account identifier for the password
       - keychainOptions: Options for configuring keychain access
-      
+
    - Returns: True if the password exists, false otherwise
    - Throws: KeychainError if the operation fails
    */
   public func passwordExists(
     for account: String,
-    keychainOptions: KeychainOptions? = nil
+    keychainOptions _: KeychainOptions?=nil
   ) async throws -> Bool {
     await logger.debug(
       "Checking if password exists for account: \(account)",
       metadata: nil,
       source: "KeychainService"
     )
-    
+
     guard !account.isEmpty else {
       throw KeychainError.invalidParameter("Account identifier cannot be empty")
     }
-    
+
     // Create the query
-    let query: [String: Any] = [
+    let query: [String: Any]=[
       kSecClass as String: kSecClassGenericPassword,
       kSecAttrService as String: serviceIdentifier,
       kSecAttrAccount as String: account,
       kSecReturnData as String: false,
       kSecMatchLimit as String: kSecMatchLimitOne
     ]
-    
+
     // Execute the query
-    let status = SecItemCopyMatching(query as CFDictionary, nil)
-    
+    let status=SecItemCopyMatching(query as CFDictionary, nil)
+
     if status == errSecSuccess {
       await logger.debug(
         "Password exists for account: \(account)",
@@ -353,7 +353,7 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
       )
       return false
     } else {
-      let error = KeychainError.fromOSStatus(status)
+      let error=KeychainError.fromOSStatus(status)
       await logger.error(
         "Failed to check if password exists: \(error)",
         metadata: nil,
@@ -374,7 +374,7 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
    */
   public func deletePassword(
     for account: String,
-    keychainOptions: KeychainOptions? = nil
+    keychainOptions _: KeychainOptions?=nil
   ) async throws {
     await logger.debug(
       "Deleting password for account: \(account)",
@@ -433,7 +433,7 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
   public func storeData(
     _ data: Data,
     for account: String,
-    keychainOptions: KeychainOptions? = nil
+    keychainOptions: KeychainOptions?=nil
   ) async throws {
     await logger.debug(
       "Storing data for account: \(account)",
@@ -450,24 +450,24 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
     }
 
     // Determine access options
-    var securityAccessibility: CFString = kSecAttrAccessibleWhenUnlocked
-    if let accessLevel = keychainOptions?.accessLevel {
+    var securityAccessibility: CFString=kSecAttrAccessibleWhenUnlocked
+    if let accessLevel=keychainOptions?.accessLevel {
       switch accessLevel {
-      case .whenUnlocked:
-        securityAccessibility = kSecAttrAccessibleWhenUnlocked
-      case .whenUnlockedThisDeviceOnly:
-        securityAccessibility = kSecAttrAccessibleWhenUnlockedThisDeviceOnly
-      case .always:
-        securityAccessibility = kSecAttrAccessibleAlways
-      case .alwaysThisDeviceOnly:
-        securityAccessibility = kSecAttrAccessibleAlwaysThisDeviceOnly
-      case .whenPasscodeSetThisDeviceOnly:
-        securityAccessibility = kSecAttrAccessibleWhenPasscodeSetThisDeviceOnly
+        case .whenUnlocked:
+          securityAccessibility=kSecAttrAccessibleWhenUnlocked
+        case .whenUnlockedThisDeviceOnly:
+          securityAccessibility=kSecAttrAccessibleWhenUnlockedThisDeviceOnly
+        case .always:
+          securityAccessibility=kSecAttrAccessibleAlways
+        case .alwaysThisDeviceOnly:
+          securityAccessibility=kSecAttrAccessibleAlwaysThisDeviceOnly
+        case .whenPasscodeSetThisDeviceOnly:
+          securityAccessibility=kSecAttrAccessibleWhenPasscodeSetThisDeviceOnly
       }
     }
 
     // Create the keychain query
-    let query: [String: Any] = [
+    let query: [String: Any]=[
       kSecClass as String: kSecClassGenericPassword,
       kSecAttrService as String: serviceIdentifier,
       kSecAttrAccount as String: account,
@@ -476,7 +476,7 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
     ]
 
     // Add the item to the keychain
-    let status = SecItemAdd(query as CFDictionary, nil)
+    let status=SecItemAdd(query as CFDictionary, nil)
 
     if status == errSecSuccess {
       await logger.info(
@@ -492,7 +492,7 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
       )
       throw KeychainError.itemAlreadyExists
     } else {
-      let error = KeychainError.fromOSStatus(status)
+      let error=KeychainError.fromOSStatus(status)
       await logger.error(
         "Failed to store data: \(error)",
         metadata: nil,
@@ -514,7 +514,7 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
    */
   public func retrieveData(
     for account: String,
-    keychainOptions: KeychainOptions? = nil
+    keychainOptions: KeychainOptions?=nil
   ) async throws -> Data {
     await logger.debug(
       "Retrieving data for account: \(account)",
@@ -527,34 +527,34 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
     }
 
     // Create the query
-    var query: [String: Any] = [
+    var query: [String: Any]=[
       kSecClass as String: kSecClassGenericPassword,
       kSecAttrService as String: serviceIdentifier,
       kSecAttrAccount as String: account,
       kSecReturnData as String: true,
       kSecMatchLimit as String: kSecMatchLimitOne
     ]
-    
+
     // Add authentication options if specified
-    if let authType = keychainOptions?.authenticationType {
+    if let authType=keychainOptions?.authenticationType {
       switch authType {
-      case .none:
-        // No additional authentication required
-        break
-      case .biometryAny, .biometryFaceID, .biometryTouchID:
-        // These would require additional setup, but for now we'll just acknowledge them
-        break
-      case .devicePasscode:
-        // This would require additional security setup
-        break
+        case .none:
+          // No additional authentication required
+          break
+        case .biometryAny, .biometryFaceID, .biometryTouchID:
+          // These would require additional setup, but for now we'll just acknowledge them
+          break
+        case .devicePasscode:
+          // This would require additional security setup
+          break
       }
     }
 
     // Execute the query
     var result: AnyObject?
-    let status = SecItemCopyMatching(query as CFDictionary, &result)
+    let status=SecItemCopyMatching(query as CFDictionary, &result)
 
-    if status == errSecSuccess, let data = result as? Data {
+    if status == errSecSuccess, let data=result as? Data {
       await logger.info(
         "Successfully retrieved data for account: \(account)",
         metadata: nil,
@@ -570,7 +570,7 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
         )
         throw KeychainError.itemNotFound
       } else {
-        let error = KeychainError.fromOSStatus(status)
+        let error=KeychainError.fromOSStatus(status)
         await logger.error(
           "Failed to retrieve data: \(error)",
           metadata: nil,
@@ -592,7 +592,7 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
    */
   public func deleteData(
     for account: String,
-    keychainOptions: KeychainOptions? = nil
+    keychainOptions _: KeychainOptions?=nil
   ) async throws {
     await logger.debug(
       "Deleting data for account: \(account)",
@@ -605,14 +605,14 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
     }
 
     // Create the query
-    let query: [String: Any] = [
+    let query: [String: Any]=[
       kSecClass as String: kSecClassGenericPassword,
       kSecAttrService as String: serviceIdentifier,
       kSecAttrAccount as String: account
     ]
 
     // Delete the item
-    let status = SecItemDelete(query as CFDictionary)
+    let status=SecItemDelete(query as CFDictionary)
 
     if status == errSecSuccess {
       await logger.info(
@@ -628,7 +628,7 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
       )
       throw KeychainError.itemNotFound
     } else {
-      let error = KeychainError.fromOSStatus(status)
+      let error=KeychainError.fromOSStatus(status)
       await logger.error(
         "Failed to delete data: \(error)",
         metadata: nil,
@@ -657,7 +657,7 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
     }
 
     // Create the query
-    let query: [String: Any] = [
+    let query: [String: Any]=[
       kSecClass as String: kSecClassGenericPassword,
       kSecAttrService as String: serviceIdentifier,
       kSecAttrAccount as String: account,
@@ -666,7 +666,7 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
     ]
 
     // Execute the query
-    let status = SecItemCopyMatching(query as CFDictionary, nil)
+    let status=SecItemCopyMatching(query as CFDictionary, nil)
     return status == errSecSuccess
   }
 
@@ -705,24 +705,24 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
     }
 
     // Convert password to data
-    guard let passwordData = newPassword.data(using: .utf8) else {
+    guard let passwordData=newPassword.data(using: .utf8) else {
       throw KeychainError.invalidDataFormat("Unable to convert password to data")
     }
 
     // Create the search query
-    let query: [String: Any] = [
+    let query: [String: Any]=[
       kSecClass as String: kSecClassGenericPassword,
       kSecAttrService as String: serviceIdentifier,
       kSecAttrAccount as String: account
     ]
 
     // Create the update attributes
-    let attributes: [String: Any] = [
+    let attributes: [String: Any]=[
       kSecValueData as String: passwordData
     ]
 
     // Update the item
-    let status = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
+    let status=SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
 
     if status == errSecSuccess {
       await logger.info(
@@ -731,7 +731,7 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
         source: "KeychainService"
       )
     } else {
-      let error = KeychainError.fromOSStatus(status)
+      let error=KeychainError.fromOSStatus(status)
       await logger.error(
         "Failed to update password: \(error)",
         metadata: nil,

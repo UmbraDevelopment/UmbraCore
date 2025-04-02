@@ -1,5 +1,6 @@
 import Foundation
 import LoggingInterfaces
+import LoggingTypes
 
 /**
  * Privacy-aware string extension for backup-related data.
@@ -9,6 +10,19 @@ import LoggingInterfaces
  * marked with appropriate privacy levels.
  */
 extension String {
+  /**
+   * Adds privacy level annotation to a string.
+   *
+   * This is a convenience method to create a PrivacyAnnotatedString with
+   * the specified privacy level.
+   *
+   * - Parameter level: The privacy level to apply to the string
+   * - Returns: A privacy-annotated string with the specified level
+   */
+  public func withPrivacyLevel(_ level: LogPrivacy) -> PrivacyAnnotatedString {
+    PrivacyAnnotatedString(self, privacy: level)
+  }
+
   /**
    * Returns a privacy-annotated string for backup paths.
    *
@@ -30,7 +44,7 @@ extension String {
    * - Returns: A string with privacy annotation for backup identifiers
    */
   public func asBackupID() -> PrivacyAnnotatedString {
-    withPrivacyLevel(.restricted)
+    withPrivacyLevel(.private)
   }
 
   /**
@@ -41,7 +55,7 @@ extension String {
    * - Returns: A string with privacy annotation for backup tags
    */
   public func asBackupTag() -> PrivacyAnnotatedString {
-    withPrivacyLevel(.restricted)
+    withPrivacyLevel(.private)
   }
 
   /**
@@ -118,7 +132,7 @@ extension URL {
    */
   public func asRedactedPath() -> PrivacyAnnotatedString {
     let lastComponent=lastPathComponent
-    return "...\\\(lastComponent)".withPrivacyLevel(.restricted)
+    return "...\\\(lastComponent)".withPrivacyLevel(.private)
   }
 }
 
@@ -141,7 +155,7 @@ extension [String] {
    * - Returns: A privacy-annotated string representing the tags
    */
   public func asBackupTags() -> PrivacyAnnotatedString {
-    description.withPrivacyLevel(.restricted)
+    description.withPrivacyLevel(.private)
   }
 }
 
@@ -166,6 +180,6 @@ extension [URL] {
    */
   public func asRedactedPaths() -> PrivacyAnnotatedString {
     let components=map(\.lastPathComponent)
-    return components.description.withPrivacyLevel(.restricted)
+    return components.description.withPrivacyLevel(.private)
   }
 }

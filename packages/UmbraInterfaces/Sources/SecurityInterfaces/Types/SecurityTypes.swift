@@ -172,7 +172,7 @@ public struct SignatureResult: Sendable, Equatable {
 /**
  Result of a signature verification operation.
  */
-public struct VerificationResult: Sendable, Equatable {
+public struct SecurityVerificationResultDTO: Sendable, Equatable {
   /// Whether the signature is valid
   public let isValid: Bool
 

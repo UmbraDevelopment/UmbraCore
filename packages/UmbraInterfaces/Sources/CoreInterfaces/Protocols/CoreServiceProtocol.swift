@@ -1,6 +1,6 @@
 import Foundation
-import UmbraErrors
 import LoggingInterfaces
+import UmbraErrors
 
 /**
  # Core Service Protocol
