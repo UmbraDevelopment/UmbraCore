@@ -128,7 +128,7 @@ final class OperationsHandler {
   ///   - operation: The security operation type
   /// - Returns: A SecurityResultDTO representing the result
   private func resultToDTO(
-    _ result: Result<some Any, SecurityProtocolError>,
+    _ result: Result<some Any, CoreSecurityTypes.SecurityProtocolError>,
     operation: SecurityOperation
   ) async -> SecurityResultDTO {
     // NOTE: In a production implementation, we would measure execution time
@@ -203,10 +203,12 @@ final class OperationsHandler {
 
         // Perform encryption with the key and data
         return await resultToDTO(
-          cryptoService.encrypt(
-            dataIdentifier: importDataForOperation([UInt8](inputData)),
-            keyIdentifier: importDataForOperation(key),
-            options: EncryptionOptions(algorithm: .aes256CBC)
+          convertStorageResult(
+            await cryptoService.encrypt(
+              dataIdentifier: await importDataForOperation([UInt8](inputData)),
+              keyIdentifier: await importDataForOperation(key),
+              options: EncryptionOptions(algorithm: .aes256CBC)
+            )
           ),
           operation: operation
         )
@@ -247,10 +249,12 @@ final class OperationsHandler {
 
         // Perform decryption with the key and data
         return await resultToDTO(
-          cryptoService.decrypt(
-            encryptedDataIdentifier: importDataForOperation([UInt8](inputData)),
-            keyIdentifier: importDataForOperation(key),
-            options: DecryptionOptions(algorithm: .aes256CBC)
+          convertStorageResult(
+            await cryptoService.decrypt(
+              encryptedDataIdentifier: await importDataForOperation([UInt8](inputData)),
+              keyIdentifier: await importDataForOperation(key),
+              options: DecryptionOptions(algorithm: .aes256CBC)
+            )
           ),
           operation: operation
         )
@@ -286,9 +290,11 @@ final class OperationsHandler {
 
     // Perform hashing
     return await resultToDTO(
-      cryptoService.hash(
-        dataIdentifier: importDataForOperation([UInt8](inputData)),
-        options: HashingOptions(algorithm: .sha256)
+      convertStorageResult(
+        await cryptoService.hash(
+          dataIdentifier: await importDataForOperation([UInt8](inputData)),
+          options: HashingOptions(algorithm: .sha256)
+        )
       ),
       operation: operation
     )
@@ -298,13 +304,13 @@ final class OperationsHandler {
   /// - Parameter config: Configuration to extract key information from
   /// - Returns: Result with the key bytes or an error
   private func retrieveKeyForOperation(_ config: SecurityConfigDTO) async
-  -> Result<[UInt8], SecurityProtocolError> {
+  -> Result<[UInt8], CoreSecurityTypes.SecurityProtocolError> {
     // Check if a key is directly provided in options
     if let keyData=config.options?.metadata?["key"], let key=Data(base64Encoded: keyData) {
       return .success(Array(key))
     } else if config.options?.metadata?["key"] != nil {
       // Key is present but not valid base64
-      return .failure(.invalidMessageFormat(details: "Invalid key format"))
+      return .failure(CoreSecurityTypes.SecurityProtocolError.invalidMessageFormat(details: "Invalid key format"))
     }
 
     // Check if a key identifier is provided
@@ -319,12 +325,61 @@ final class OperationsHandler {
           // Key not found or other error
           // Fall through to the error case
           return .failure(
-            .invalidMessageFormat(details: "Key not found: \(keyID)")
+            CoreSecurityTypes.SecurityProtocolError.invalidMessageFormat(details: "Key not found: \(keyID)")
           )
       }
     }
 
     // No key provided or found
-    return .failure(.invalidMessageFormat(details: "No key provided for operation"))
+    return .failure(CoreSecurityTypes.SecurityProtocolError.invalidMessageFormat(details: "No key provided for operation"))
+  }
+
+  /**
+   Converts a SecurityStorageError to a SecurityProtocolError.
+   This is needed because the CryptoServiceProtocol now uses SecurityStorageError.
+   
+   - Parameter storageError: The storage error to convert
+   - Returns: An equivalent protocol error
+   */
+  private func convertStorageErrorToProtocolError(_ storageError: SecurityStorageError) -> CoreSecurityTypes.SecurityProtocolError {
+    switch storageError {
+    case .storageUnavailable:
+      return .operationFailed(reason: "Secure storage is not available")
+    case .dataNotFound:
+      return .operationFailed(reason: "Data not found in secure storage")
+    case .keyNotFound:
+      return .operationFailed(reason: "Key not found in secure storage")
+    case .hashNotFound:
+      return .operationFailed(reason: "Hash not found in secure storage")
+    case .encryptionFailed:
+      return .operationFailed(reason: "Encryption operation failed")
+    case .decryptionFailed:
+      return .operationFailed(reason: "Decryption operation failed")
+    case .hashingFailed:
+      return .operationFailed(reason: "Hashing operation failed")
+    case .hashVerificationFailed:
+      return .operationFailed(reason: "Hash verification failed")
+    case .keyGenerationFailed:
+      return .operationFailed(reason: "Key generation failed")
+    case .unsupportedOperation:
+      return .operationFailed(reason: "The operation is not supported")
+    case .implementationUnavailable:
+      return .operationFailed(reason: "The protocol implementation is not available")
+    }
+  }
+  
+  /**
+   Converts a Result with SecurityStorageError to a Result with SecurityProtocolError.
+   
+   - Parameter result: The storage result to convert
+   - Returns: An equivalent result with protocol error
+   */
+  private func convertStorageResult<T>(_ result: Result<T, SecurityStorageError>) -> Result<T, CoreSecurityTypes.SecurityProtocolError> {
+    switch result {
+    case .success(let value):
+      return .success(value)
+    case .failure(let error):
+      return .failure(convertStorageErrorToProtocolError(error))
+    }
   }
 }

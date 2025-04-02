@@ -1,0 +1,5 @@
+# Local overrides with highest precedence
+# This file should be loaded after all other .bazelrc files
+
+# Force the correct SDK version for Xcode 16.3
+build --action_env=APPLE_SDK_VERSION_OVERRIDE=16.3

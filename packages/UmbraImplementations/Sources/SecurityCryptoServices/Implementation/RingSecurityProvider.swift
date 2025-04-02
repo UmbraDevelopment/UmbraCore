@@ -1,7 +1,7 @@
 import Foundation
 import SecurityCoreInterfaces
-import SecurityCoreTypes
-import SecurityTypes
+import CoreSecurityTypes
+import DomainSecurityTypes
 import UmbraErrors
 
 /**
@@ -301,8 +301,8 @@ import UmbraErrors
     public init() {}
 
     public func initialize() async throws {
-      throw SecurityErrorDomain.unsupportedOperation(
-        reason: "Ring crypto library is not available on this platform"
+      throw UmbraErrors.Security.Core.unsupportedOperation(
+        "Ring crypto library is not available on this platform"
       )
     }
 
@@ -310,8 +310,8 @@ import UmbraErrors
       data _: [UInt8],
       using _: [UInt8]
     ) async -> Result<[UInt8], Error> {
-      .failure(SecurityErrorDomain.unsupportedOperation(
-        reason: "Ring crypto library is not available on this platform"
+      .failure(UmbraErrors.Security.Core.unsupportedOperation(
+        "Ring crypto library is not available on this platform"
       ))
     }
 
@@ -319,20 +319,20 @@ import UmbraErrors
       data _: [UInt8],
       using _: [UInt8]
     ) async -> Result<[UInt8], Error> {
-      .failure(SecurityErrorDomain.unsupportedOperation(
-        reason: "Ring crypto library is not available on this platform"
+      .failure(UmbraErrors.Security.Core.unsupportedOperation(
+        "Ring crypto library is not available on this platform"
       ))
     }
 
     public func generateKey(size _: Int) async -> Result<[UInt8], Error> {
-      .failure(SecurityErrorDomain.unsupportedOperation(
-        reason: "Ring crypto library is not available on this platform"
+      .failure(UmbraErrors.Security.Core.unsupportedOperation(
+        "Ring crypto library is not available on this platform"
       ))
     }
 
     public func hash(data _: [UInt8]) async -> Result<[UInt8], Error> {
-      .failure(SecurityErrorDomain.unsupportedOperation(
-        reason: "Ring crypto library is not available on this platform"
+      .failure(UmbraErrors.Security.Core.unsupportedOperation(
+        "Ring crypto library is not available on this platform"
       ))
     }
   }

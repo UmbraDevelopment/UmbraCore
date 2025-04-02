@@ -135,3 +135,6 @@ build:local_build --define=build_environment=local
 
 # Default environment detection flag - always set to nonlocal by default
 build --define=build_environment=nonlocal
+
+# Import local overrides with highest precedence (after all other settings)
+try-import %workspace%/.bazelrc.local

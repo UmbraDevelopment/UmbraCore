@@ -1,8 +1,9 @@
 import CommonCrypto
 import Foundation
 import SecurityCoreInterfaces
-import SecurityCoreTypes
-import SecurityTypes
+import CoreSecurityTypes
+import DomainSecurityTypes
+import UmbraErrors
 
 /**
  # BasicSecurityProvider
@@ -53,17 +54,17 @@ public struct BasicSecurityProvider: EncryptionProviderProtocol {
     config: SecurityConfigDTO
   ) throws -> Data {
     guard let algorithm=getAlgorithm(config: config) else {
-      throw SecurityProtocolError.invalidInput("Invalid or unsupported algorithm")
+      throw UmbraErrors.Security.Core.invalidInput("Invalid or unsupported algorithm")
     }
 
     // Validate key size
-    guard validateKeySize(key.count, algorithm: config.algorithm) != nil else {
-      throw SecurityProtocolError.invalidInput("Invalid key size for algorithm \(config.algorithm)")
+    guard validateKeySize(key.count, algorithm: config.encryptionAlgorithm) != nil else {
+      throw UmbraErrors.Security.Core.invalidInput("Invalid key size for algorithm \(config.encryptionAlgorithm)")
     }
 
     // Validate IV
     guard iv.count == kCCBlockSizeAES128 else {
-      throw SecurityProtocolError.invalidInput("Invalid IV size, must be 16 bytes for AES-CBC")
+      throw UmbraErrors.Security.Core.invalidInput("Invalid IV size, must be 16 bytes for AES-CBC")
     }
 
     // Create cryptor
@@ -79,8 +80,7 @@ public struct BasicSecurityProvider: EncryptionProviderProtocol {
     )
 
     guard status == kCCSuccess, let cryptorRef else {
-      throw SecurityProtocolError
-        .cryptographicError("Failed to create encryption context with status \(status)")
+      throw UmbraErrors.Security.Core.cryptographicError("Failed to create encryption context with status \(status)")
     }
 
     defer {
@@ -109,8 +109,7 @@ public struct BasicSecurityProvider: EncryptionProviderProtocol {
     }
 
     guard status == kCCSuccess else {
-      throw SecurityProtocolError
-        .cryptographicError("Encryption update failed with status \(status)")
+      throw UmbraErrors.Security.Core.cryptographicError("Encryption update failed with status \(status)")
     }
 
     var finalBytesProcessed=0
@@ -133,8 +132,7 @@ public struct BasicSecurityProvider: EncryptionProviderProtocol {
     }
 
     guard status == kCCSuccess else {
-      throw SecurityProtocolError
-        .cryptographicError("Encryption finalization failed with status \(status)")
+      throw UmbraErrors.Security.Core.cryptographicError("Encryption finalization failed with status \(status)")
     }
 
     return Data(outputBuffer.prefix(bytesProcessed + finalBytesProcessed))
@@ -158,17 +156,17 @@ public struct BasicSecurityProvider: EncryptionProviderProtocol {
     config: SecurityConfigDTO
   ) throws -> Data {
     guard let algorithm=getAlgorithm(config: config) else {
-      throw SecurityProtocolError.invalidInput("Invalid or unsupported algorithm")
+      throw UmbraErrors.Security.Core.invalidInput("Invalid or unsupported algorithm")
     }
 
     // Validate key size
-    guard validateKeySize(key.count, algorithm: config.algorithm) != nil else {
-      throw SecurityProtocolError.invalidInput("Invalid key size for algorithm \(config.algorithm)")
+    guard validateKeySize(key.count, algorithm: config.encryptionAlgorithm) != nil else {
+      throw UmbraErrors.Security.Core.invalidInput("Invalid key size for algorithm \(config.encryptionAlgorithm)")
     }
 
     // Validate IV
     guard iv.count == kCCBlockSizeAES128 else {
-      throw SecurityProtocolError.invalidInput("Invalid IV size, must be 16 bytes for AES-CBC")
+      throw UmbraErrors.Security.Core.invalidInput("Invalid IV size, must be 16 bytes for AES-CBC")
     }
 
     // Create cryptor
@@ -184,8 +182,7 @@ public struct BasicSecurityProvider: EncryptionProviderProtocol {
     )
 
     guard status == kCCSuccess, let cryptorRef else {
-      throw SecurityProtocolError
-        .cryptographicError("Failed to create decryption context with status \(status)")
+      throw UmbraErrors.Security.Core.cryptographicError("Failed to create decryption context with status \(status)")
     }
 
     defer {
@@ -214,8 +211,7 @@ public struct BasicSecurityProvider: EncryptionProviderProtocol {
     }
 
     guard status == kCCSuccess else {
-      throw SecurityProtocolError
-        .cryptographicError("Decryption update failed with status \(status)")
+      throw UmbraErrors.Security.Core.cryptographicError("Decryption update failed with status \(status)")
     }
 
     var finalBytesProcessed=0
@@ -238,8 +234,7 @@ public struct BasicSecurityProvider: EncryptionProviderProtocol {
     }
 
     guard status == kCCSuccess else {
-      throw SecurityProtocolError
-        .cryptographicError("Decryption finalization failed with status \(status)")
+      throw UmbraErrors.Security.Core.cryptographicError("Decryption finalization failed with status \(status)")
     }
 
     return Data(outputBuffer.prefix(bytesProcessed + finalBytesProcessed))
@@ -257,7 +252,7 @@ public struct BasicSecurityProvider: EncryptionProviderProtocol {
   public func generateKey(size: Int, config _: SecurityConfigDTO) throws -> Data {
     // Validate key size
     guard size == 128 || size == 192 || size == 256 else {
-      throw SecurityProtocolError.invalidInput("Invalid key size, must be 128, 192, or 256 bits")
+      throw UmbraErrors.Security.Core.invalidInput("Invalid key size, must be 128, 192, or 256 bits")
     }
 
     let keyBytes=size / 8
@@ -269,7 +264,7 @@ public struct BasicSecurityProvider: EncryptionProviderProtocol {
     }
 
     guard result == errSecSuccess else {
-      throw SecurityProtocolError.cryptographicError("Key generation failed with status \(result)")
+      throw UmbraErrors.Security.Core.cryptographicError("Key generation failed with status \(result)")
     }
 
     return keyData
@@ -285,7 +280,7 @@ public struct BasicSecurityProvider: EncryptionProviderProtocol {
    */
   public func generateIV(size: Int) throws -> Data {
     guard size > 0 else {
-      throw SecurityProtocolError.invalidInput("IV size must be greater than 0")
+      throw UmbraErrors.Security.Core.invalidInput("IV size must be greater than 0")
     }
 
     var ivData=Data(count: size)
@@ -296,7 +291,7 @@ public struct BasicSecurityProvider: EncryptionProviderProtocol {
     }
 
     guard result == errSecSuccess else {
-      throw SecurityProtocolError.cryptographicError("IV generation failed with status \(result)")
+      throw UmbraErrors.Security.Core.cryptographicError("IV generation failed with status \(result)")
     }
 
     return ivData
@@ -338,7 +333,7 @@ public struct BasicSecurityProvider: EncryptionProviderProtocol {
         return Data(hashBytes)
 
       default:
-        throw SecurityProtocolError.unsupportedOperation(name: "Hash algorithm \(algorithm)")
+        throw UmbraErrors.Security.Core.unsupportedOperation(name: "Hash algorithm \(algorithm)")
     }
   }
 
@@ -360,11 +355,11 @@ public struct BasicSecurityProvider: EncryptionProviderProtocol {
   }
 
   private func getAlgorithm(config: SecurityConfigDTO) -> CCAlgorithm? {
-    switch config.algorithm.uppercased() {
-      case "AES":
-        CCAlgorithm(kCCAlgorithmAES)
+    switch config.encryptionAlgorithm {
+      case .aes128CBC, .aes192CBC, .aes256CBC:
+        return CCAlgorithm(kCCAlgorithmAES)
       default:
-        nil
+        return nil
     }
   }
 }

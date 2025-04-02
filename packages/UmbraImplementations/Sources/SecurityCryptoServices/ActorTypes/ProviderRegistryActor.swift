@@ -40,26 +40,14 @@ import UmbraErrors
  let provider = try await registry.selectProvider()
  ```
  */
-public actor ProviderRegistryActor {
+public actor ProviderRegistryActor: ProviderRegistryProtocol {
   // MARK: - Types
 
   /// Function that creates a provider instance
   public typealias ProviderFactory=@Sendable () throws -> EncryptionProviderProtocol
 
-  /// Security capability flags
-  public enum SecurityCapability: String, CaseIterable, Sendable {
-    /// Standard encryption operations
-    case standardEncryption
-
-    /// FIPS compliant operations
-    case fipsCompliant
-
-    /// High-performance optimisations
-    case highPerformance
-
-    /// Low-power optimisations
-    case lowPower
-  }
+  /// Provider capability flags
+  public typealias ProviderCapability = CoreSecurityTypes.ProviderCapability
 
   // MARK: - Properties
 
@@ -68,6 +56,9 @@ public actor ProviderRegistryActor {
 
   /// Logger for recording operations
   private let logger: LoggingProtocol
+  
+  /// Preferred provider types for specific capabilities
+  private var preferredProviders: [ProviderCapability: SecurityProviderType] = [:]
 
   /// Configuration options for the registry
   public struct Configuration: Sendable {
@@ -268,7 +259,7 @@ public actor ProviderRegistryActor {
    - Throws: Error if no suitable provider can be found
    */
   public func selectProvider(
-    capabilities: [SecurityCapability]=[]
+    capabilities: [ProviderCapability]=[]
   ) async throws -> EncryptionProviderProtocol {
     let effectiveCapabilities=capabilities.isEmpty ? [.standardEncryption] : capabilities
     await logger.debug(
@@ -406,5 +397,28 @@ public actor ProviderRegistryActor {
     throw SecurityServiceError.providerError(
       "No FIPS-compliant provider could be instantiated"
     )
+  }
+
+  /**
+   Sets the preferred provider type for specific capabilities.
+   
+   - Parameters:
+     - type: The provider type to set as preferred
+     - capabilities: The capabilities that this provider is preferred for
+   */
+  public func setPreferredProvider(
+    type: SecurityProviderType,
+    forCapabilities capabilities: [ProviderCapability]
+  ) async {
+    await logger.debug(
+      "Setting preferred provider \(type.rawValue) for capabilities: \(capabilities.map(\.rawValue).joined(separator: ", "))",
+      metadata: PrivacyMetadata(),
+      source: "ProviderRegistry"
+    )
+    
+    // Update preferred providers map
+    for capability in capabilities {
+      preferredProviders[capability] = type
+    }
   }
 }

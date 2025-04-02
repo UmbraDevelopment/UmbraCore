@@ -19,7 +19,7 @@ import SecurityCoreInterfaces
  // Create a crypto service with a specific provider
  let logger = YourLoggerImplementation()
  let cryptoService = await CryptoServices.createCryptoService(
-     providerType: .apple,
+     providerType: .cryptoKit,
      logger: logger
  )
 
@@ -34,12 +34,12 @@ public enum CryptoServices {
    Alpha Dot Five architecture.
 
    - Parameters:
-      - providerType: The type of security provider to use (optional)
+      - providerType: The type of security provider to use
       - logger: Logger for recording operations
    - Returns: A new actor-based implementation of CryptoServiceProtocol
    */
   public static func createCryptoService(
-    providerType: SecurityProviderType?=nil,
+    providerType: SecurityProviderType,
     logger: LoggingProtocol
   ) async -> any CryptoServiceProtocol {
     await CryptoServicesFactory.createCryptoService(
@@ -54,14 +54,14 @@ public enum CryptoServices {
    Alpha Dot Five architecture.
 
    - Parameters:
-      - providerType: The type of security provider to use (optional)
-      - storageURL: Custom URL for key storage (optional)
+      - providerType: The type of security provider to use
+      - storageURL: Custom URL for key storage
       - logger: Logger for recording operations
    - Returns: A new actor-based implementation of SecureStorageProtocol
    */
   public static func createSecureStorage(
-    providerType: SecurityProviderType?=nil,
-    storageURL: URL?=nil,
+    providerType: SecurityProviderType,
+    storageURL: URL,
     logger: LoggingProtocol
   ) async -> any SecureStorageProtocol {
     await CryptoServicesFactory.createSecureStorage(

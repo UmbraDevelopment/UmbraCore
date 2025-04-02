@@ -6,6 +6,7 @@ import LoggingServices
 import LoggingTypes
 import ProviderFactories
 import SecurityCoreInterfaces
+import UmbraErrors
 
 /**
  # CryptoServiceActor
@@ -21,7 +22,8 @@ import SecurityCoreInterfaces
 
  ```swift
  // Create the actor with a specific provider type
- let cryptoService = CryptoServiceActor(providerType: .apple, logger: logger)
+ let logger = DefaultLogger()
+ let cryptoService = CryptoServiceActor(providerType: .cryptoKit, logger: logger)
 
  // Perform operations asynchronously
  let encryptedData = try await cryptoService.encrypt(data: myData, using: myKey)
@@ -33,7 +35,7 @@ import SecurityCoreInterfaces
  Mutable state is properly contained within the actor and cannot be accessed from
  outside except through the defined async interfaces.
  */
-public actor CryptoServiceActor {
+public actor CryptoServiceActor: CryptoServiceProtocol {
   // MARK: - Properties
 
   /// The underlying security provider implementation
@@ -47,37 +49,201 @@ public actor CryptoServiceActor {
 
   /// The source identifier for logging
   private let logSource = "CryptoService"
-
-  /// Configuration options for cryptographic operations
-  private var defaultConfig: SecurityConfigDTO
+  
+  /// The secure storage used for handling sensitive data
+  public let secureStorage: SecureStorageProtocol
+  
+  /// Default security configuration
+  private let defaultConfig: SecurityConfigDTO
+  
+  // MARK: - CryptoServiceProtocol Methods
+  
+  /// Encrypts binary data using a key from secure storage.
+  public func encrypt(
+    dataIdentifier: String,
+    keyIdentifier: String,
+    options: EncryptionOptions?
+  ) async -> Result<String, SecurityStorageError> {
+    do {
+      // Retrieve data and key from secure storage
+      let dataResult = await secureStorage.retrieve(identifier: dataIdentifier)
+      let keyResult = await secureStorage.retrieve(identifier: keyIdentifier)
+      
+      guard case let .success(data) = dataResult else {
+        return .failure(.dataNotFound)
+      }
+      
+      guard case let .success(key) = keyResult else {
+        return .failure(.keyNotFound)
+      }
+      
+      // Encrypt the data
+      let encryptResult = await encrypt(data: data, using: key)
+      
+      guard case let .success(encryptedData) = encryptResult else {
+        return .failure(.encryptionFailed)
+      }
+      
+      // Store the encrypted data
+      return await secureStorage.store(encryptedData, customIdentifier: nil)
+    } catch {
+      return .failure(.encryptionFailed)
+    }
+  }
+  
+  /// Decrypts binary data using a key from secure storage.
+  public func decrypt(
+    encryptedDataIdentifier: String,
+    keyIdentifier: String,
+    options: DecryptionOptions?
+  ) async -> Result<String, SecurityStorageError> {
+    do {
+      // Retrieve encrypted data and key from secure storage
+      let dataResult = await secureStorage.retrieve(identifier: encryptedDataIdentifier)
+      let keyResult = await secureStorage.retrieve(identifier: keyIdentifier)
+      
+      guard case let .success(encryptedData) = dataResult else {
+        return .failure(.dataNotFound)
+      }
+      
+      guard case let .success(key) = keyResult else {
+        return .failure(.keyNotFound)
+      }
+      
+      // Decrypt the data
+      let decryptResult = await decrypt(data: encryptedData, using: key)
+      
+      guard case let .success(decryptedData) = decryptResult else {
+        return .failure(.decryptionFailed)
+      }
+      
+      // Store the decrypted data
+      return await secureStorage.store(decryptedData, customIdentifier: nil)
+    } catch {
+      return .failure(.decryptionFailed)
+    }
+  }
+  
+  /// Computes a cryptographic hash of data in secure storage.
+  public func hash(
+    dataIdentifier: String,
+    options: HashingOptions?
+  ) async -> Result<String, SecurityStorageError> {
+    do {
+      // Retrieve data from secure storage
+      let dataResult = await secureStorage.retrieve(identifier: dataIdentifier)
+      
+      guard case let .success(data) = dataResult else {
+        return .failure(.dataNotFound)
+      }
+      
+      // Hash the data
+      let algorithm = options?.algorithm ?? defaultConfig.hashAlgorithm
+      let hashResult = await hash(data: data, algorithm: algorithm)
+      
+      guard case let .success(hashedData) = hashResult else {
+        return .failure(.hashingFailed)
+      }
+      
+      // Store the hash
+      return await secureStorage.store(hashedData, customIdentifier: nil)
+    } catch {
+      return .failure(.hashingFailed)
+    }
+  }
+  
+  /// Verifies a cryptographic hash against the expected value, both stored securely.
+  public func verifyHash(
+    dataIdentifier: String,
+    hashIdentifier: String,
+    options: HashingOptions?
+  ) async -> Result<Bool, SecurityStorageError> {
+    do {
+      // Retrieve data and expected hash from secure storage
+      let dataResult = await secureStorage.retrieve(identifier: dataIdentifier)
+      let expectedHashResult = await secureStorage.retrieve(identifier: hashIdentifier)
+      
+      guard case let .success(data) = dataResult else {
+        return .failure(.dataNotFound)
+      }
+      
+      guard case let .success(expectedHash) = expectedHashResult else {
+        return .failure(.hashNotFound)
+      }
+      
+      // Compute hash of the data
+      let algorithm = options?.algorithm ?? defaultConfig.hashAlgorithm
+      let hashResult = await hash(data: data, algorithm: algorithm)
+      
+      guard case let .success(computedHash) = hashResult else {
+        return .failure(.hashingFailed)
+      }
+      
+      // Compare hashes
+      return .success(computedHash == expectedHash)
+    } catch {
+      return .failure(.hashVerificationFailed)
+    }
+  }
+  
+  /// Generates a cryptographic key and stores it securely.
+  public func generateKey(
+    length: Int,
+    options: KeyGenerationOptions?
+  ) async -> Result<String, SecurityStorageError> {
+    do {
+      let keyGenResult = await generateKey(size: length)
+      
+      guard case let .success(key) = keyGenResult else {
+        return .failure(.keyGenerationFailed)
+      }
+      
+      // Store the key
+      return await secureStorage.store(key, customIdentifier: options?.customIdentifier)
+    } catch {
+      return .failure(.keyGenerationFailed)
+    }
+  }
+  
+  /// Imports data into secure storage for use with cryptographic operations.
+  public func importData(
+    _ data: [UInt8],
+    customIdentifier: String?
+  ) async -> Result<String, SecurityStorageError> {
+    await secureStorage.store(data, customIdentifier: customIdentifier)
+  }
+  
+  /// Exports data from secure storage.
+  public func exportData(
+    identifier: String
+  ) async -> Result<[UInt8], SecurityStorageError> {
+    await secureStorage.retrieve(identifier: identifier)
+  }
 
   // MARK: - Initialisation
 
   /**
-   Initialises a new CryptoServiceActor with the specified security provider.
+   Initialises a new cryptographic service actor with the specified provider type.
 
    - Parameters:
-      - providerType: Optional type of provider to use; defaults to best available
-      - logger: Optional logger to use; defaults to standard logger
+    - providerType: The type of security provider to use
+    - logger: The logger to use for recording operations
    */
-  public init(providerType: SecurityProviderType? = nil, logger: LoggingProtocol?) {
-    // Use the provided logger or create a default one
-    self.logger = logger ?? NullLogger()
-    logAdapter = DomainLogAdapter(logger: self.logger, domain: "CryptoService")
+  public init(
+    providerType: SecurityProviderType,
+    logger: LoggingProtocol,
+    secureStorage: SecureStorageProtocol? = nil
+  ) {
+    // Create the provider factory
+    let factory = SecurityProviderFactoryImpl.self
 
+    // Attempt to create the provider
     do {
-      if let providerType {
-        provider = try SecurityProviderFactoryImpl.createProvider(type: providerType)
-      } else {
-        provider = try SecurityProviderFactoryImpl.createBestAvailableProvider()
-      }
-
-      // If the provider successfully initialises, set the default config
+      provider = try factory.createProvider(type: providerType)
       defaultConfig = SecurityConfigDTO(
-        encryptionAlgorithm: .aes256GCM,
+        encryptionAlgorithm: .aes256CBC,
         hashAlgorithm: .sha256,
-        providerType: provider.providerType,
-        options: SecurityConfigOptions()
+        providerType: providerType
       )
     } catch {
       // If provider creation fails, use a fallback provider
@@ -85,46 +251,28 @@ public actor CryptoServiceActor {
       defaultConfig = SecurityConfigDTO(
         encryptionAlgorithm: .aes256CBC,
         hashAlgorithm: .sha256,
-        providerType: .basic,
-        options: SecurityConfigOptions()
+        providerType: .basic
       )
-
-      Task {
-        await logAdapter.warning(
-          "Failed to create preferred provider, using fallback: \(error.localizedDescription)",
-          source: logSource
-        )
-      }
     }
-  }
 
-  /**
-   Changes the active security provider.
-
-   - Parameter type: The provider type to switch to
-   - Throws: SecurityServiceError if the provider cannot be created
-   */
-  public func changeProvider(to type: SecurityProviderType) async throws {
-    await logAdapter.debug(
-      "Changing security provider to: \(type.rawValue)",
-      source: logSource
-    )
-
-    do {
-      let newProvider = try SecurityProviderFactoryImpl.createProvider(type: type)
-      provider = newProvider
-
-      await logAdapter.debug(
-        "Security provider changed successfully to: \(type.rawValue)",
-        source: logSource
+    self.logger = logger
+    
+    // Create or use provided secure storage
+    if let providedStorage = secureStorage {
+      self.secureStorage = providedStorage
+    } else {
+      // Create default secure storage (temporary in-memory solution)
+      let storageURL = URL(fileURLWithPath: NSTemporaryDirectory())
+        .appendingPathComponent("com.umbra.securestorage")
+      self.secureStorage = SecureStorageActor(
+        providerType: providerType,
+        storageURL: storageURL,
+        logger: logger
       )
-    } catch {
-      await logAdapter.error(
-        "Failed to change provider: \(error.localizedDescription)",
-        source: logSource
-      )
-      throw SecurityServiceError.providerError(error.localizedDescription)
     }
+    
+    // Create domain log adapter
+    logAdapter = DomainLogAdapter(logger: logger)
   }
 
   /**

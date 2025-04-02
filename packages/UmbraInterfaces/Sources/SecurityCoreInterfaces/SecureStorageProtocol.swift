@@ -12,21 +12,21 @@ public protocol SecureStorageProtocol: Sendable {
   ///   - identifier: A string identifier for the stored data.
   /// - Returns: Success or an error.
   func storeData(_ data: [UInt8], withIdentifier identifier: String) async
-    -> Result<Void, SecurityProtocolError>
+    -> Result<Void, SecurityStorageError>
 
   /// Retrieves data securely by its identifier.
   /// - Parameter identifier: A string identifying the data to retrieve.
   /// - Returns: The retrieved data as a byte array or an error.
   func retrieveData(withIdentifier identifier: String) async
-    -> Result<[UInt8], SecurityProtocolError>
+    -> Result<[UInt8], SecurityStorageError>
 
   /// Deletes data securely by its identifier.
   /// - Parameter identifier: A string identifying the data to delete.
   /// - Returns: Success or an error.
   func deleteData(withIdentifier identifier: String) async
-    -> Result<Void, SecurityProtocolError>
+    -> Result<Void, SecurityStorageError>
 
   /// Lists all available data identifiers.
   /// - Returns: An array of data identifiers or an error.
-  func listDataIdentifiers() async -> Result<[String], SecurityProtocolError>
+  func listDataIdentifiers() async -> Result<[String], SecurityStorageError>
 }

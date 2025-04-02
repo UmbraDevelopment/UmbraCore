@@ -20,7 +20,7 @@ public protocol CryptoServiceProtocol: Sendable {
     dataIdentifier: String,
     keyIdentifier: String,
     options: EncryptionOptions?
-  ) async -> Result<String, SecurityProtocolError>
+  ) async -> Result<String, SecurityStorageError>
 
   /// Decrypts binary data using a key from secure storage.
   /// - Parameters:
@@ -32,7 +32,7 @@ public protocol CryptoServiceProtocol: Sendable {
     encryptedDataIdentifier: String,
     keyIdentifier: String,
     options: DecryptionOptions?
-  ) async -> Result<String, SecurityProtocolError>
+  ) async -> Result<String, SecurityStorageError>
 
   /// Computes a cryptographic hash of data in secure storage.
   /// - Parameter dataIdentifier: Identifier of the data to hash in secure storage.
@@ -40,7 +40,7 @@ public protocol CryptoServiceProtocol: Sendable {
   func hash(
     dataIdentifier: String,
     options: HashingOptions?
-  ) async -> Result<String, SecurityProtocolError>
+  ) async -> Result<String, SecurityStorageError>
 
   /// Verifies a cryptographic hash against the expected value, both stored securely.
   /// - Parameters:
@@ -51,7 +51,7 @@ public protocol CryptoServiceProtocol: Sendable {
     dataIdentifier: String,
     hashIdentifier: String,
     options: HashingOptions?
-  ) async -> Result<Bool, SecurityProtocolError>
+  ) async -> Result<Bool, SecurityStorageError>
 
   /// Generates a cryptographic key and stores it securely.
   /// - Parameters:
@@ -61,7 +61,7 @@ public protocol CryptoServiceProtocol: Sendable {
   func generateKey(
     length: Int,
     options: KeyGenerationOptions?
-  ) async -> Result<String, SecurityProtocolError>
+  ) async -> Result<String, SecurityStorageError>
 
   /// Imports data into secure storage for use with cryptographic operations.
   /// - Parameters:
@@ -72,7 +72,7 @@ public protocol CryptoServiceProtocol: Sendable {
   func importData(
     _ data: [UInt8],
     customIdentifier: String?
-  ) async -> Result<String, SecurityProtocolError>
+  ) async -> Result<String, SecurityStorageError>
 
   /// Exports data from secure storage.
   /// - Parameter identifier: The identifier of the data to export.
@@ -80,7 +80,7 @@ public protocol CryptoServiceProtocol: Sendable {
   /// - Warning: Use with caution as this exposes sensitive data.
   func exportData(
     identifier: String
-  ) async -> Result<[UInt8], SecurityProtocolError>
+  ) async -> Result<[UInt8], SecurityStorageError>
 }
 
 /// Configuration options for encryption.
@@ -158,37 +158,37 @@ public struct CryptoServiceDto: Sendable {
   /// Type alias for encrypt function
   public typealias EncryptFunction=@Sendable (
     String, String, EncryptionOptions?
-  ) async -> Result<String, SecurityProtocolError>
+  ) async -> Result<String, SecurityStorageError>
 
   /// Type alias for decrypt function
   public typealias DecryptFunction=@Sendable (
     String, String, DecryptionOptions?
-  ) async -> Result<String, SecurityProtocolError>
+  ) async -> Result<String, SecurityStorageError>
 
   /// Type alias for hash function
   public typealias HashFunction=@Sendable (
     String, HashingOptions?
-  ) async -> Result<String, SecurityProtocolError>
+  ) async -> Result<String, SecurityStorageError>
 
   /// Type alias for verify hash function
   public typealias VerifyHashFunction=@Sendable (
     String, String, HashingOptions?
-  ) async -> Result<Bool, SecurityProtocolError>
+  ) async -> Result<Bool, SecurityStorageError>
 
   /// Type alias for generate key function
   public typealias GenerateKeyFunction=@Sendable (
     Int, KeyGenerationOptions?
-  ) async -> Result<String, SecurityProtocolError>
+  ) async -> Result<String, SecurityStorageError>
 
   /// Type alias for import data function
   public typealias ImportDataFunction=@Sendable (
     [UInt8], String?
-  ) async -> Result<String, SecurityProtocolError>
+  ) async -> Result<String, SecurityStorageError>
 
   /// Type alias for export data function
   public typealias ExportDataFunction=@Sendable (
     String
-  ) async -> Result<[UInt8], SecurityProtocolError>
+  ) async -> Result<[UInt8], SecurityStorageError>
 
   /// The secure storage for this DTO
   public let secureStorage: SecureStorageProtocol
@@ -249,7 +249,7 @@ extension CryptoServiceDto {
         dataIdentifier: String,
         keyIdentifier: String,
         options: EncryptionOptions?
-      ) async -> Result<String, SecurityProtocolError> {
+      ) async -> Result<String, SecurityStorageError> {
         await dto.encrypt(dataIdentifier, keyIdentifier, options)
       }
 
@@ -257,14 +257,14 @@ extension CryptoServiceDto {
         encryptedDataIdentifier: String,
         keyIdentifier: String,
         options: DecryptionOptions?
-      ) async -> Result<String, SecurityProtocolError> {
+      ) async -> Result<String, SecurityStorageError> {
         await dto.decrypt(encryptedDataIdentifier, keyIdentifier, options)
       }
 
       func hash(
         dataIdentifier: String,
         options: HashingOptions?
-      ) async -> Result<String, SecurityProtocolError> {
+      ) async -> Result<String, SecurityStorageError> {
         await dto.hash(dataIdentifier, options)
       }
 
@@ -272,27 +272,27 @@ extension CryptoServiceDto {
         dataIdentifier: String,
         hashIdentifier: String,
         options: HashingOptions?
-      ) async -> Result<Bool, SecurityProtocolError> {
+      ) async -> Result<Bool, SecurityStorageError> {
         await dto.verifyHash(dataIdentifier, hashIdentifier, options)
       }
 
       func generateKey(
         length: Int,
         options: KeyGenerationOptions?
-      ) async -> Result<String, SecurityProtocolError> {
+      ) async -> Result<String, SecurityStorageError> {
         await dto.generateKey(length, options)
       }
 
       func importData(
         _ data: [UInt8],
         customIdentifier: String?
-      ) async -> Result<String, SecurityProtocolError> {
+      ) async -> Result<String, SecurityStorageError> {
         await dto.importData(data, customIdentifier)
       }
 
       func exportData(
         identifier: String
-      ) async -> Result<[UInt8], SecurityProtocolError> {
+      ) async -> Result<[UInt8], SecurityStorageError> {
         await dto.exportData(identifier)
       }
     }

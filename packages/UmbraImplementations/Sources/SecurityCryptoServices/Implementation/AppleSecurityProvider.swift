@@ -1,7 +1,7 @@
 import Foundation
 import SecurityCoreInterfaces
-import SecurityCoreTypes
-import SecurityTypes
+import CoreSecurityTypes
+import DomainSecurityTypes
 import UmbraErrors
 
 #if canImport(CryptoKit)
@@ -33,7 +33,7 @@ import UmbraErrors
    */
   public actor AppleSecurityProvider: CryptoServiceProtocol, AsyncServiceInitializable {
     /// The type of provider implementation (accessible from any actor context)
-    public nonisolated let providerType: SecurityProviderType = .apple
+    public nonisolated let providerType: SecurityProviderType = .cryptoKit
 
     /// Initialises a new Apple security provider
     public init() {}
@@ -68,8 +68,8 @@ import UmbraErrors
         // Combine nonce and sealed data for storage/transmission
         // Format: [Nonce][Tag][Ciphertext]
         guard let combined=sealedBox.combined else {
-          throw SecurityErrorDomain.cryptographicError(
-            reason: "Failed to generate combined ciphertext output"
+          throw UmbraErrors.Security.Core.cryptographicError(
+            "Failed to generate combined ciphertext output"
           )
         }
 
@@ -130,8 +130,8 @@ import UmbraErrors
             let key=SymmetricKey(size: .bits256)
             return .success(key.withUnsafeBytes { [UInt8]($0) })
           default:
-            throw SecurityErrorDomain.invalidInput(
-              reason: "Invalid key size, must be 128, 192, or 256 bits"
+            throw UmbraErrors.Security.Core.invalidInput(
+              "Invalid key size, must be 128, 192, or 256 bits"
             )
         }
       } catch {
@@ -162,7 +162,7 @@ import UmbraErrors
 
      - Parameter key: The key as byte array
      - Returns: A CryptoKit SymmetricKey
-     - Throws: SecurityErrorDomain if key conversion fails
+     - Throws: UmbraErrors.Security.Core if key conversion fails
      */
     private func getCryptoKitSymmetricKey(from key: [UInt8]) throws -> SymmetricKey {
       let keySize=key.count * 8
@@ -172,20 +172,17 @@ import UmbraErrors
         case 128, 192, 256:
           return SymmetricKey(data: Data(key))
         default:
-          throw SecurityErrorDomain.invalidInput(
-            reason: "Invalid key size: \(keySize) bits. Must be 128, 192, or 256 bits."
+          throw UmbraErrors.Security.Core.invalidInput(
+            "Invalid key size: \(keySize) bits. Must be 128, 192, or 256 bits."
           )
       }
     }
 
     /**
-     Maps any error to the appropriate SecurityErrorDomain case
-
-     - Parameter error: The original error
-     - Returns: A SecurityErrorDomain error
+     Maps errors to the security error domain for consistent error handling
      */
     private func mapToSecurityErrorDomain(_ error: Error) -> Error {
-      if let securityError=error as? SecurityErrorDomain {
+      if let securityError=error as? UmbraErrors.Security.Core {
         return securityError
       }
 
@@ -193,44 +190,48 @@ import UmbraErrors
       if let cryptoKitError=error as? CryptoKitError {
         switch cryptoKitError {
           case .incorrectKeySize:
-            return SecurityErrorDomain.invalidKey(
-              reason: "CryptoKit error: incorrect key size"
+            return UmbraErrors.Security.Core.invalidInput(
+              "CryptoKit error: incorrect key size"
             )
           case .incorrectParameterSize:
-            return SecurityErrorDomain.invalidInput(
-              reason: "CryptoKit error: incorrect parameter size"
+            return UmbraErrors.Security.Core.invalidInput(
+              "CryptoKit error: incorrect parameter size"
             )
           case .authenticationFailure:
-            return SecurityErrorDomain.authenticationFailure(
-              reason: "CryptoKit error: authentication tag verification failed"
+            return UmbraErrors.Security.Core.authenticationFailed(
+              "CryptoKit error: authentication tag verification failed"
             )
           case .underlyingCoreCryptoError:
-            return SecurityErrorDomain.cryptographicError(
-              reason: "CryptoKit error: underlying CoreCrypto operation failed"
+            return UmbraErrors.Security.Core.cryptographicError(
+              "CryptoKit error: underlying CoreCrypto operation failed"
+            )
+          case .wrapFailure, .unwrapFailure, .invalidParameter:
+            return UmbraErrors.Security.Core.cryptographicError(
+              "CryptoKit specific error: \(cryptoKitError)"
             )
           @unknown default:
-            return SecurityErrorDomain.cryptographicError(
-              reason: "Unknown CryptoKit error: \(cryptoKitError)"
+            return UmbraErrors.Security.Core.cryptographicError(
+              "Unknown CryptoKit error: \(cryptoKitError)"
             )
         }
       }
 
       // Handle other error types
-      return SecurityErrorDomain.cryptographicError(
-        reason: "Cryptographic operation failed: \(error.localizedDescription)"
+      return UmbraErrors.Security.Core.cryptographicError(
+        "Cryptographic operation failed: \(error.localizedDescription)"
       )
     }
   }
 #else
   // Empty placeholder for when CryptoKit is not available
   public actor AppleSecurityProvider: CryptoServiceProtocol, AsyncServiceInitializable {
-    public nonisolated let providerType: SecurityProviderType = .apple
+    public nonisolated let providerType: SecurityProviderType = .cryptoKit
 
     public init() {}
 
     public func initialize() async throws {
-      throw SecurityErrorDomain.unsupportedOperation(
-        reason: "CryptoKit is not available on this platform"
+      throw UmbraErrors.Security.Core.unsupportedOperation(
+        "CryptoKit is not available on this platform"
       )
     }
 
@@ -238,8 +239,8 @@ import UmbraErrors
       data _: [UInt8],
       using _: [UInt8]
     ) async -> Result<[UInt8], Error> {
-      .failure(SecurityErrorDomain.unsupportedOperation(
-        reason: "CryptoKit is not available on this platform"
+      .failure(UmbraErrors.Security.Core.unsupportedOperation(
+        "CryptoKit is not available on this platform"
       ))
     }
 
@@ -247,20 +248,20 @@ import UmbraErrors
       data _: [UInt8],
       using _: [UInt8]
     ) async -> Result<[UInt8], Error> {
-      .failure(SecurityErrorDomain.unsupportedOperation(
-        reason: "CryptoKit is not available on this platform"
+      .failure(UmbraErrors.Security.Core.unsupportedOperation(
+        "CryptoKit is not available on this platform"
       ))
     }
 
     public func generateKey(size _: Int) async -> Result<[UInt8], Error> {
-      .failure(SecurityErrorDomain.unsupportedOperation(
-        reason: "CryptoKit is not available on this platform"
+      .failure(UmbraErrors.Security.Core.unsupportedOperation(
+        "CryptoKit is not available on this platform"
       ))
     }
 
     public func hash(data _: [UInt8]) async -> Result<[UInt8], Error> {
-      .failure(SecurityErrorDomain.unsupportedOperation(
-        reason: "CryptoKit is not available on this platform"
+      .failure(UmbraErrors.Security.Core.unsupportedOperation(
+        "CryptoKit is not available on this platform"
       ))
     }
   }

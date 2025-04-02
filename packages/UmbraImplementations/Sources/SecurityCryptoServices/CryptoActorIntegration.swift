@@ -1,10 +1,15 @@
 import Foundation
 import LoggingInterfaces
 import SecurityCoreInterfaces
-import SecurityCoreTypes
-import SecurityTypes
+import CoreSecurityTypes
+import DomainSecurityTypes
 import UmbraErrors
 
-// Re-export the actor types from the ActorTypes directory
-// This approach avoids conflicts with Swift's native 'actor' keyword
-@_exported import CryptoActorImplementations
+// Create a namespace to avoid conflicts with Swift's native 'actor' keyword
+// and provide access to our actor implementations
+public enum CryptoActorImplementations {
+    // Re-export the actor types from the implementation files
+    public typealias CryptoServiceActor = SecurityCryptoServices.CryptoServiceActor
+    public typealias ProviderRegistryActor = SecurityCryptoServices.ProviderRegistryActor
+    public typealias SecureStorageActor = SecurityCryptoServices.SecureStorageActor
+}

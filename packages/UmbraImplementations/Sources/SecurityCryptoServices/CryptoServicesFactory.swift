@@ -21,7 +21,7 @@ import UmbraErrors
  // Create a crypto service with a specific provider
  let logger = DefaultLogger()
  let cryptoService = await CryptoServicesFactory.createCryptoService(
-     providerType: .apple,
+     providerType: .cryptoKit,
      logger: logger
  )
 
@@ -36,16 +36,16 @@ public enum CryptoServicesFactory {
    Alpha Dot Five architecture.
 
    - Parameters:
-      - providerType: The type of security provider to use (optional)
+      - providerType: The type of security provider to use
       - logger: Logger for recording operations
    - Returns: A new actor-based implementation of CryptoServiceProtocol
    */
   public static func createCryptoService(
-    providerType: SecurityProviderType?=nil,
+    providerType: SecurityProviderType,
     logger: LoggingProtocol
   ) async -> any CryptoServiceProtocol {
     // Import the actor from the implementations module and initialise it
-    let impl=CryptoActorImplementations.CryptoServiceActor(
+    let impl = CryptoActorImplementations.CryptoServiceActor(
       providerType: providerType,
       logger: logger
     )
@@ -60,18 +60,18 @@ public enum CryptoServicesFactory {
    Alpha Dot Five architecture.
 
    - Parameters:
-      - providerType: The type of security provider to use (optional)
-      - storageURL: Custom URL for key storage (optional)
+      - providerType: The type of security provider to use
+      - storageURL: Custom URL for key storage
       - logger: Logger for recording operations
    - Returns: A new actor-based implementation of SecureStorageProtocol
    */
   public static func createSecureStorage(
-    providerType: SecurityProviderType?=nil,
-    storageURL: URL?=nil,
+    providerType: SecurityProviderType,
+    storageURL: URL,
     logger: LoggingProtocol
   ) async -> any SecureStorageProtocol {
     // Create secure storage with the specified parameters
-    let impl=CryptoActorImplementations.SecureStorageActor(
+    let impl = CryptoActorImplementations.SecureStorageActor(
       providerType: providerType,
       storageURL: storageURL,
       logger: logger
@@ -93,7 +93,7 @@ public enum CryptoServicesFactory {
     logger: LoggingProtocol
   ) async -> any ProviderRegistryProtocol {
     // Create provider registry
-    let impl=CryptoActorImplementations.ProviderRegistryActor(
+    let impl = CryptoActorImplementations.ProviderRegistryActor(
       logger: logger
     )
 
