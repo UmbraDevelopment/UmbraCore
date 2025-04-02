@@ -51,6 +51,8 @@ public enum SecurityProviderFactoryImpl {
         case .ring:
             return try RingProvider()
         case .basic:
+            // WARNING: FallbackEncryptionProvider is deprecated and should only be used
+            // as a last resort. Consider using a more secure provider if available.
             return FallbackEncryptionProvider()
         case .system:
             #if os(macOS) || os(iOS) || os(watchOS) || os(tvOS)
@@ -110,12 +112,27 @@ public enum SecurityProviderFactoryImpl {
      - Returns: A default encryption provider
      */
     public static func createDefaultProvider() -> EncryptionProviderProtocol {
-        do {
-            return try createBestAvailableProvider()
-        } catch {
-            // Always fall back to the basic provider rather than failing
-            return FallbackEncryptionProvider()
+        // Try to create providers in order of security preference
+        let providerTypes: [SecurityProviderType] = [
+            .cryptoKit,
+            .ring,
+            .system
+        ]
+        
+        // Try each provider in sequence before falling back to basic
+        for providerType in providerTypes {
+            do {
+                return try createProvider(type: providerType)
+            } catch {
+                // Continue to next provider
+                continue
+            }
         }
+        
+        // Only use FallbackEncryptionProvider as a last resort
+        // WARNING: This provides minimal security and should be replaced
+        // with a more secure provider as soon as possible
+        return FallbackEncryptionProvider()
     }
 }
 

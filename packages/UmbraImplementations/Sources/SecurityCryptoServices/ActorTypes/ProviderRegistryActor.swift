@@ -70,6 +70,9 @@ public actor ProviderRegistryActor: ProviderRegistryProtocol {
 
     /// Whether to allow fallback to less secure providers when necessary
     public let allowFallbackProviders: Bool
+    
+    /// Provider types that are considered FIPS compliant
+    public let fipsCompliantProviders: [SecurityProviderType]
 
     /**
      Initialises a new Configuration with specified options.
@@ -78,15 +81,18 @@ public actor ProviderRegistryActor: ProviderRegistryProtocol {
         - autoRegisterStandardProviders: Whether to register standard providers automatically
         - preferredProviderType: The preferred provider type to use when available
         - allowFallbackProviders: Whether to allow fallback to less secure providers
+        - fipsCompliantProviders: Provider types that are FIPS compliant
      */
     public init(
       autoRegisterStandardProviders: Bool=true,
       preferredProviderType: SecurityProviderType?=nil,
-      allowFallbackProviders: Bool=true
+      allowFallbackProviders: Bool=true,
+      fipsCompliantProviders: [SecurityProviderType]=[.ring]
     ) {
       self.autoRegisterStandardProviders=autoRegisterStandardProviders
       self.preferredProviderType=preferredProviderType
       self.allowFallbackProviders=allowFallbackProviders
+      self.fipsCompliantProviders=fipsCompliantProviders
     }
   }
 
@@ -420,5 +426,55 @@ public actor ProviderRegistryActor: ProviderRegistryProtocol {
     for capability in capabilities {
       preferredProviders[capability] = type
     }
+  }
+  
+  /**
+   Selects a provider based on the specified provider type.
+   
+   - Parameter type: The specific provider type to select
+   - Returns: An encryption provider of the specified type
+   - Throws: Error if the provider cannot be instantiated
+   */
+  public func selectProvider(type: SecurityProviderType) async throws -> EncryptionProviderProtocol {
+    await logger.debug(
+      "Selecting provider of type: \(type.rawValue)",
+      metadata: PrivacyMetadata(),
+      source: "ProviderRegistry"
+    )
+    
+    guard let factory = providerFactories[type] else {
+      throw SecurityServiceError.providerError("Provider of type \(type.rawValue) is not available")
+    }
+    
+    return try factory()
+  }
+  
+  /**
+   Checks if any registered provider offers FIPS compliance.
+   
+   - Returns: `true` if a FIPS-compliant provider is available, `false` otherwise
+   */
+  public func hasFIPSCompliantProvider() async -> Bool {
+    await logger.debug(
+      "Checking for FIPS-compliant providers",
+      metadata: PrivacyMetadata(),
+      source: "ProviderRegistry"
+    )
+    
+    // Check if any provider types are registered as FIPS-compliant
+    for (type, factory) in providerFactories {
+      if configuration.fipsCompliantProviders.contains(type) {
+        // Try to instantiate the provider to verify it's available
+        do {
+          let _ = try factory()
+          return true
+        } catch {
+          // This provider failed, continue checking others
+          continue
+        }
+      }
+    }
+    
+    return false
   }
 }
