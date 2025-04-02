@@ -91,17 +91,23 @@ public enum KeychainServices {
     if let providedKeyManager=keyManager {
       actualKeyManager=providedKeyManager
     } else {
-      do {
-        let factory=try await KeyManagerAsyncFactory.createInstance()
-        if let createdKeyManager=await factory.createKeyManager() {
-          actualKeyManager=createdKeyManager
-        } else {
-          // Fall back to SimpleKeyManager if the factory failed to create a key manager
-          actualKeyManager=SimpleKeyManager(logger: logger ?? DefaultLogger())
+      // Use the shared factory instance with proper async/await handling
+      @MainActor func getFactory() -> KeyManagerAsyncFactory {
+        return KeyManagerAsyncFactory.shared
+      }
+      
+      let factory = await getFactory()
+      if await factory.tryInitialize() {
+        do {
+          let createdKeyManager = try await factory.createKeyManager()
+          actualKeyManager = createdKeyManager
+        } catch {
+          // Fall back to SimpleKeyManager if factory throws an error
+          actualKeyManager = SimpleKeyManager(logger: logger ?? KeychainDefaultLogger())
         }
-      } catch {
-        // Fall back to SimpleKeyManager if we can't create the proper key manager
-        actualKeyManager=SimpleKeyManager(logger: logger ?? DefaultLogger())
+      } else {
+        // Fall back to SimpleKeyManager if factory initialization fails
+        actualKeyManager=SimpleKeyManager(logger: logger ?? KeychainDefaultLogger())
       }
     }
 
@@ -153,7 +159,7 @@ public struct SimpleKeyManager: KeyManagementProtocol {
   ) async throws -> String {
     await logger.warning(
       "Using simple key manager implementation for key generation - this is not secure for production",
-      metadata: createPrivacyMetadata(from: ["keyType": type.rawValue, "size": String(size)]),
+      metadata: createPrivacyMetadata(from: ["keyType": "\(type.rawValue)", "size": "\(size)"]),
       source: "SimpleKeyManager"
     )
 

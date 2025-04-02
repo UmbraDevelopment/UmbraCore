@@ -43,7 +43,7 @@ private final class MockCryptoService: CryptoServiceProtocol {
   /// Computes a hash of binary data directly
   public func hash(
     data: [UInt8],
-    using algorithm: SecurityCoreInterfaces.HashAlgorithm
+    using algorithm: CoreSecurityTypes.HashAlgorithm
   ) async -> Result<[UInt8], SecurityProtocolError> {
     return .success(Array(repeating: 0, count: 32)) // Mock 32-byte hash
   }
@@ -52,7 +52,7 @@ private final class MockCryptoService: CryptoServiceProtocol {
   public func verifyHash(
     data: [UInt8],
     expectedHash: [UInt8],
-    using algorithm: SecurityCoreInterfaces.HashAlgorithm
+    using algorithm: CoreSecurityTypes.HashAlgorithm
   ) async -> Result<Bool, SecurityProtocolError> {
     return .success(true) // Mock implementation always returns true
   }
@@ -216,9 +216,24 @@ public final class ApplicationSecurityProviderImpl: SecurityProviderProtocol {
   }
   
   public func keyManager() async -> any SecurityCoreInterfaces.KeyManagementProtocol {
-    // Return a basic key manager for now - this will be enhanced as part of the Alpha Dot Five refactoring
-    // Use the existing BasicKeyManager implementation that follows the Alpha Dot Five architecture
-    return BasicKeyManager(logger: logger)
+    // Handle @MainActor access correctly
+    @MainActor func getFactory() -> KeyManagerAsyncFactory {
+      return KeyManagerAsyncFactory.shared
+    }
+    
+    // Get the factory with proper async/await handling
+    let factory = await getFactory()
+    if await factory.tryInitialize() {
+      do {
+        return try await factory.createKeyManager()
+      } catch {
+        // If factory creation fails, return a simple key manager implementation
+        return SimpleKeyManager(logger: logger)
+      }
+    } else {
+      // Fallback to simple implementation if factory initialization fails
+      return SimpleKeyManager(logger: logger)
+    }
   }
   
   // MARK: - Core Operations

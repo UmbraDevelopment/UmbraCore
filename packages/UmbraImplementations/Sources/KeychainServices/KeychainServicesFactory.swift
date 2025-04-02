@@ -42,7 +42,7 @@ public enum KeychainServicesFactory {
     logger: LoggingProtocol?=nil
   ) async -> any KeychainServiceProtocol {
     // Use the standard implementation but return as protocol type
-    let actualLogger=logger ?? DefaultLogger()
+    let actualLogger=logger ?? KeychainDefaultLogger()
 
     return KeychainServiceImpl(
       serviceIdentifier: serviceIdentifier ?? defaultServiceIdentifier,
@@ -75,25 +75,34 @@ public enum KeychainServicesFactory {
       await createKeychainService(logger: logger)
     }
 
-    let actualLogger=logger ?? DefaultLogger()
+    let actualLogger=logger ?? KeychainDefaultLogger()
 
     // For key manager, we need to dynamically load it from SecurityKeyManagement
-    let actualKeyManager: (any KeyManagementProtocol)?
-      // Try to create key manager using dynamic loading
-      = if
-      let factory=try? await KeyManagerAsyncFactory.createInstance(),
-      let keyManager=await factory.createKeyManager()
-    {
-      keyManager
-    } else {
-      // Fallback to a basic implementation
-      SimpleKeyManager(logger: actualLogger)
+    let actualKeyManager: (any KeyManagementProtocol)
+    
+    // Use a helper function to handle the async factory properly
+    @MainActor func createKeyManager() async -> KeyManagementProtocol {
+      let factory = KeyManagerAsyncFactory.shared
+      if await factory.tryInitialize() {
+        do {
+          return try await factory.createKeyManager()
+        } catch {
+          // Fallback to a basic implementation on error
+          return SimpleKeyManager(logger: actualLogger)
+        }
+      } else {
+        // Fallback to a basic implementation if initialization fails
+        return SimpleKeyManager(logger: actualLogger)
+      }
     }
+    
+    // Await the key manager creation
+    actualKeyManager = await createKeyManager()
 
     // Create and return the security implementation
     return KeychainSecurityImpl(
       keychainService: actualKeychainService,
-      keyManager: actualKeyManager ?? SimpleKeyManager(logger: actualLogger),
+      keyManager: actualKeyManager,
       logger: actualLogger
     )
   }

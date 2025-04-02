@@ -7,7 +7,7 @@ import LoggingTypes
  This error type follows the Alpha Dot Five architecture pattern for domain-specific errors
  with detailed information and proper Sendable conformance for actor isolation.
  */
-public enum KeyManagementError: Error, Equatable, Sendable, LoggableError {
+public enum KeyManagementError: Error, Equatable, Sendable {
   /// Key not found with the specified identifier
   case keyNotFound(identifier: String)
 
@@ -19,12 +19,18 @@ public enum KeyManagementError: Error, Equatable, Sendable, LoggableError {
 
   /// Invalid input provided to operation
   case invalidInput(details: String)
-
+  
   /// Key rotation failed
   case keyRotationFailed(reason: String)
-
-  /// Key management operation failed
-  case keyManagementError(details: String)
+  
+  /// Key verification failed
+  case keyVerificationFailed(reason: String)
+  
+  /// Key export failed
+  case keyExportFailed(reason: String)
+  
+  /// Key import failed
+  case keyImportFailed(reason: String)
 
   /// Creates a human-readable description of the error
   public var localizedDescription: String {
@@ -32,32 +38,81 @@ public enum KeyManagementError: Error, Equatable, Sendable, LoggableError {
       case let .keyNotFound(identifier):
         "Key not found with identifier: \(identifier)"
       case let .keyCreationFailed(reason):
-        "Key creation failed: \(reason)"
+        "Failed to create key: \(reason)"
       case let .keyStorageFailed(reason):
-        "Key storage failed: \(reason)"
+        "Failed to store key: \(reason)"
       case let .invalidInput(details):
         "Invalid input: \(details)"
       case let .keyRotationFailed(reason):
-        "Key rotation failed: \(reason)"
-      case let .keyManagementError(details):
-        "Key management error: \(details)"
+        "Failed to rotate key: \(reason)"
+      case let .keyVerificationFailed(reason):
+        "Failed to verify key: \(reason)"
+      case let .keyExportFailed(reason):
+        "Failed to export key: \(reason)"
+      case let .keyImportFailed(reason):
+        "Failed to import key: \(reason)"
     }
   }
+}
 
-  /// Returns an error code for this error
-  public var errorCode: String {
+// MARK: - LoggableErrorProtocol Conformance
+
+extension KeyManagementError: LoggingTypes.LoggableErrorProtocol {
+  /// Get the privacy metadata for this error
+  /// - Returns: Privacy metadata for logging this error
+  public func getPrivacyMetadata() -> PrivacyMetadata {
+    var metadata = PrivacyMetadata()
+    
+    // Add standard error information with appropriate privacy level
+    let classification = privacyClassification
+    metadata["error_type"] = PrivacyMetadataValue(value: "key_management_error", privacy: .public)
+    metadata["error_code"] = PrivacyMetadataValue(value: errorCode, privacy: .public)
+    
+    // Add specific details with privacy controls
     switch self {
-      case .keyNotFound: "KM001"
-      case .keyCreationFailed: "KM002"
-      case .keyStorageFailed: "KM003"
-      case .invalidInput: "KM004"
-      case .keyRotationFailed: "KM005"
-      case .keyManagementError: "KM006"
+      case let .keyNotFound(identifier):
+        metadata["identifier"] = PrivacyMetadataValue(value: identifier, privacy: classification.toLogPrivacyLevel())
+        metadata["error_detail"] = PrivacyMetadataValue(value: "key_not_found", privacy: .public)
+      case let .keyCreationFailed(reason):
+        metadata["reason"] = PrivacyMetadataValue(value: reason, privacy: classification.toLogPrivacyLevel())
+        metadata["error_detail"] = PrivacyMetadataValue(value: "creation_failed", privacy: .public)
+      case let .keyStorageFailed(reason):
+        metadata["reason"] = PrivacyMetadataValue(value: reason, privacy: classification.toLogPrivacyLevel())
+        metadata["error_detail"] = PrivacyMetadataValue(value: "storage_failed", privacy: .public)
+      case let .invalidInput(details):
+        metadata["details"] = PrivacyMetadataValue(value: details, privacy: classification.toLogPrivacyLevel())
+        metadata["error_detail"] = PrivacyMetadataValue(value: "invalid_input", privacy: .public)
+      case let .keyRotationFailed(reason):
+        metadata["reason"] = PrivacyMetadataValue(value: reason, privacy: classification.toLogPrivacyLevel())
+        metadata["error_detail"] = PrivacyMetadataValue(value: "rotation_failed", privacy: .public)
+      case let .keyVerificationFailed(reason):
+        metadata["reason"] = PrivacyMetadataValue(value: reason, privacy: classification.toLogPrivacyLevel())
+        metadata["error_detail"] = PrivacyMetadataValue(value: "verification_failed", privacy: .public)
+      case let .keyExportFailed(reason):
+        metadata["reason"] = PrivacyMetadataValue(value: reason, privacy: classification.toLogPrivacyLevel())
+        metadata["error_detail"] = PrivacyMetadataValue(value: "export_failed", privacy: .public)
+      case let .keyImportFailed(reason):
+        metadata["reason"] = PrivacyMetadataValue(value: reason, privacy: classification.toLogPrivacyLevel())
+        metadata["error_detail"] = PrivacyMetadataValue(value: "import_failed", privacy: .public)
     }
+    
+    return metadata
   }
-
-  /// The appropriate privacy classification for this error
-  public var privacyClassification: PrivacyClassification {
+  
+  /// Get the source information for this error
+  /// - Returns: Source information (e.g., file, function, line)
+  public func getSource() -> String {
+    "KeyManagementError"
+  }
+  
+  /// Get the log message for this error
+  /// - Returns: A descriptive message appropriate for logging
+  public func getLogMessage() -> String {
+    "[\(errorCode)] \(localizedDescription)"
+  }
+  
+  /// Returns a privacy classification for the error
+  public var privacyClassification: LoggingTypes.PrivacyClassification {
     switch self {
       case let .keyNotFound(identifier) where identifier.contains("master"):
         // Master keys are particularly sensitive
@@ -65,44 +120,53 @@ public enum KeyManagementError: Error, Equatable, Sendable, LoggableError {
       case .keyNotFound:
         // Regular key identifiers are private
         .private
-      case .keyCreationFailed, .keyStorageFailed, .keyRotationFailed:
-        // Operation failures are private
+      case .keyCreationFailed, .keyStorageFailed, .keyRotationFailed, 
+           .keyVerificationFailed, .keyExportFailed, .keyImportFailed:
+        // Details about key operations should be private
         .private
       case .invalidInput:
-        // Input validation errors can be public
-        .public
-      case .keyManagementError:
-        // General errors are private by default
+        // Input details might contain sensitive information
         .private
     }
   }
-
-  /// Additional metadata for logging this error
-  public var loggingMetadata: LogMetadataDTOCollection {
-    var metadata=LogMetadataDTOCollection()
-      .withPublic(key: "errorCode", value: errorCode)
-      .withPublic(key: "errorType", value: String(describing: type(of: self)))
-
+  
+  /// Unique error code for the error
+  private var errorCode: String {
     switch self {
-      case let .keyNotFound(identifier):
-        metadata=metadata.withPrivate(key: "identifier", value: identifier)
-      case let .keyCreationFailed(reason):
-        metadata=metadata.withPrivate(key: "reason", value: reason)
-      case let .keyStorageFailed(reason):
-        metadata=metadata.withPrivate(key: "reason", value: reason)
-      case let .invalidInput(details):
-        metadata=metadata.withPublic(key: "details", value: details)
-      case let .keyRotationFailed(reason):
-        metadata=metadata.withPrivate(key: "reason", value: reason)
-      case let .keyManagementError(details):
-        metadata=metadata.withPrivate(key: "details", value: details)
+      case .keyNotFound: "KM001"
+      case .keyCreationFailed: "KM002"
+      case .keyStorageFailed: "KM003"
+      case .invalidInput: "KM004"
+      case .keyRotationFailed: "KM005"
+      case .keyVerificationFailed: "KM006"
+      case .keyExportFailed: "KM007"
+      case .keyImportFailed: "KM008"
     }
-
-    return metadata
   }
+  
+  /// Categorises the reason string without revealing sensitive content
+  private func categorizeReason(_ reason: String) -> String {
+    if reason.contains("permission") || reason.contains("access") {
+      return "permission_related"
+    } else if reason.contains("format") || reason.contains("corrupt") {
+      return "data_integrity"
+    } else if reason.contains("timeout") || reason.contains("unavailable") {
+      return "availability"
+    } else {
+      return "general"
+    }
+  }
+}
 
-  /// A human-readable description suitable for logging
-  public var loggingDescription: String {
-    "[\(errorCode)] \(localizedDescription)"
+/// Extension to convert PrivacyClassification to LogPrivacyLevel
+extension LoggingTypes.PrivacyClassification {
+  /// Convert to LogPrivacyLevel
+  func toLogPrivacyLevel() -> LoggingTypes.LogPrivacyLevel {
+    switch self {
+      case .public: return .public
+      case .private: return .private
+      case .sensitive: return .sensitive
+      default: return .auto
+    }
   }
 }

@@ -603,7 +603,7 @@ public final class Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked S
     public func logSensitive(
       _ level: LoggingTypes.LogLevel,
       _ message: String,
-      sensitiveValues: [String: Any],
+      sensitiveValues: LoggingTypes.LogMetadata,
       source: String
     ) async {
       // Generate a proper LogContext for the message - avoid manipulating PrivacyMetadata directly
@@ -617,7 +617,7 @@ public final class Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked S
 
       // Add sensitive values to the message - as SwiftyBeaver doesn't support multi-level privacy
       var finalMessage=message
-      for (key, _) in sensitiveValues {
+      for (key, _) in sensitiveValues.entriesDict() {
         finalMessage += " [SENSITIVE \(key): <redacted>]"
       }
 

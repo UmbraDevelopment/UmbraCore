@@ -223,7 +223,7 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
     metadata=metadata.withPublic(key: "notificationType", value: "error")
     metadata=metadata.withPublic(key: "errorType", value: String(describing: type(of: error)))
 
-    // For LoggableError types, use defined privacy classification
+    // For LoggableErrorDTO types, use defined privacy classification
     if let loggableError=error as? LoggableErrorProtocol {
       // Extract public metadata from the error's privacy metadata
       let errorMetadata=loggableError.getPrivacyMetadata()

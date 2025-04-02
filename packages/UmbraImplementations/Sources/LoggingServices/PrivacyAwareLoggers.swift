@@ -36,7 +36,7 @@ public protocol DomainLogger: Sendable {
      - message: Optional custom message override.
    */
   func logLoggableError(
-    _ error: LoggableError,
+    _ error: LoggableErrorDTO,
     severity: LogLevel,
     message: String?
   ) async
@@ -116,7 +116,7 @@ public struct BaseDomainLogger: DomainLogger {
   ) async {
     var metadata=context.toPrivacyMetadata()
 
-    if let loggableError=error as? LoggableError {
+    if let loggableError=error as? LoggableErrorDTO {
       // Merge the privacy-aware error metadata
       let errorMetadata=loggableError.getPrivacyMetadata()
       for key in errorMetadata.entries() {
@@ -149,7 +149,7 @@ public struct BaseDomainLogger: DomainLogger {
      - message: Optional custom message override.
    */
   public func logLoggableError(
-    _ error: LoggableError,
+    _ error: LoggableErrorDTO,
     severity: LogLevel,
     message: String?
   ) async {
@@ -637,7 +637,7 @@ public class EnhancedErrorLogger: LegacyErrorLoggingProtocol {
      - message: Optional custom message override.
    */
   public func logLoggableError(
-    _ error: LoggableError,
+    _ error: LoggableErrorDTO,
     level: LogLevel,
     message: String?
   ) async {
@@ -712,7 +712,7 @@ public class EnhancedErrorLogger: LegacyErrorLoggingProtocol {
     message: String?=nil,
     source: String?=nil
   ) async {
-    if let loggableError=error as? LoggableError {
+    if let loggableError=error as? LoggableErrorDTO {
       // Use the error's built-in privacy metadata
       let metadata=loggableError.getPrivacyMetadata()
 
@@ -763,7 +763,7 @@ public protocol LegacyErrorLoggingProtocol {
       - message: Optional custom message override.
    */
   func logLoggableError(
-    _ error: LoggableError,
+    _ error: LoggableErrorDTO,
     level: LogLevel,
     message: String?
   ) async

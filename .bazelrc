@@ -11,6 +11,8 @@ build --crosstool_top=@local_config_apple_cc//:toolchain
 build --host_crosstool_top=@local_config_apple_cc//:toolchain
 build --xcode_version=16.3.0
 build --define=APPLE_SDK_PLATFORM=MacOSX
+# Explicitly unset any SDK version override to ensure Xcode's built-in SDK is used
+build --action_env=APPLE_SDK_VERSION_OVERRIDE=
 
 # Swift compiler flags for target platform consistency
 # Note: We rely on the compiler_options.bzl settings instead of setting Swift flags here

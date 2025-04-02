@@ -1,4 +1,5 @@
 import Darwin
+import os.lock
 
 /**
  # API Operation Protocol
@@ -58,7 +59,6 @@ public protocol APIOperation: Sendable {
 /// Operation ID generation
 private enum OperationIDGenerator {
   /// Thread-safe atomic counter
-  @Sendable
   private static var counter=0
 
   /// Internal lock for thread safety
@@ -79,7 +79,7 @@ private enum OperationIDGenerator {
 
 /// Simple lock for thread safety
 private final class Lock {
-  private var _lock=OS_UNFAIR_LOCK_INIT
+  private var _lock=os_unfair_lock()
 
   func withLock<T>(_ work: () -> T) -> T {
     os_unfair_lock_lock(&_lock)

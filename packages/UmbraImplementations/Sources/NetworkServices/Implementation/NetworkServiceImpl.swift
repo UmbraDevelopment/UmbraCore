@@ -366,11 +366,11 @@ public actor NetworkServiceImpl: NetworkServiceProtocol {
   private func mapURLErrorToNetworkError(_ error: URLError) -> NetworkError {
     switch error.code {
       case .badURL:
-        .invalidURL(error.failureURLString ?? "Unknown URL")
+        .invalidURL(error.failingURL?.absoluteString ?? "Unknown URL")
       case .timedOut:
         .timeout(seconds: defaultTimeoutInterval)
       case .cannotFindHost:
-        .hostNotFound(hostname: error.failureURLString ?? "Unknown host")
+        .hostNotFound(hostname: error.failingURL?.absoluteString ?? "Unknown host")
       case .cannotConnectToHost:
         .connectionFailed(reason: error.localizedDescription)
       case .networkConnectionLost:
@@ -384,7 +384,7 @@ public actor NetworkServiceImpl: NetworkServiceProtocol {
       case .secureConnectionFailed:
         .secureConnectionFailed(reason: error.localizedDescription)
       case .resourceUnavailable:
-        .resourceNotFound(path: error.failureURLString ?? "Unknown resource")
+        .resourceNotFound(path: error.failingURL?.absoluteString ?? "Unknown resource")
       case .dataNotAllowed:
         .networkUnavailable
       default:

@@ -30,6 +30,18 @@ public enum ResticError: Error, Sendable {
   /// Permission denied for a path
   case permissionDenied(path: String)
 
+  /// Executable not found at specified path
+  case executableNotFound(String)
+
+  /// Command failed with specific exit code and output
+  case commandFailed(exitCode: Int, output: String)
+
+  /// Credential error occurred during secure storage operations
+  case credentialError(String)
+
+  /// Repository already exists
+  case repositoryExists(String)
+
   /// Invalid configuration provided
   case invalidConfiguration(String)
 
@@ -74,6 +86,14 @@ extension ResticError: LocalizedError {
         "Invalid repository password"
       case let .permissionDenied(path):
         "Permission denied for path: \(path)"
+      case let .executableNotFound(path):
+        "Executable not found at path: \(path)"
+      case let .commandFailed(exitCode, output):
+        "Command failed with exit code \(exitCode): \(output)"
+      case let .credentialError(message):
+        "Credential error: \(message)"
+      case let .repositoryExists(path):
+        "Repository already exists at path: \(path)"
       case let .invalidConfiguration(message):
         "Invalid configuration: \(message)"
       case let .invalidData(message):
@@ -111,6 +131,14 @@ extension ResticError: LocalizedError {
         "The provided password was incorrect for this repository"
       case let .permissionDenied(path):
         "The application does not have sufficient permissions to access \(path)"
+      case let .executableNotFound(path):
+        "Could not find the executable at \(path)"
+      case let .commandFailed(exitCode, _):
+        "The command exited with non-zero exit code: \(exitCode)"
+      case let .credentialError(message):
+        "A credential error occurred: \(message)"
+      case let .repositoryExists(path):
+        "A repository already exists at \(path)"
       case let .invalidConfiguration(message):
         "The provided configuration is invalid: \(message)"
       case let .invalidData(message):
@@ -146,6 +174,14 @@ extension ResticError: LocalizedError {
         "Check the repository password and try again."
       case .permissionDenied:
         "Adjust file system permissions or run with elevated privileges."
+      case .executableNotFound:
+        "Verify the executable path and ensure it exists and is accessible."
+      case .commandFailed:
+        "Check the command output and adjust the command or parameters as needed."
+      case .credentialError:
+        "Check your credentials and try again."
+      case .repositoryExists:
+        "Choose a different path for the repository."
       case .invalidConfiguration:
         "Review your configuration settings and correct any errors."
       case .invalidData:
