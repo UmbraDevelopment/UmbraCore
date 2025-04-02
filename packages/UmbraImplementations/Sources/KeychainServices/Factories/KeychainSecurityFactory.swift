@@ -64,27 +64,27 @@ final class KeychainSecureStorage: SecureStorageProtocol {
   public func storeData(
     _ data: [UInt8],
     withIdentifier identifier: String
-  ) async -> Result<Void, SecurityProtocolError> {
+  ) async -> Result<Void, SecurityStorageError> {
     await store.store(data, forKey: identifier)
     return .success(())
   }
 
   public func retrieveData(withIdentifier identifier: String) async
-  -> Result<[UInt8], SecurityProtocolError> {
+  -> Result<[UInt8], SecurityStorageError> {
     if let data=await store.retrieve(forKey: identifier) {
       .success(data)
     } else {
-      .failure(.inputError("Item not found with identifier: \(identifier)"))
+      .failure(.dataNotFound)
     }
   }
 
   public func deleteData(withIdentifier identifier: String) async
-  -> Result<Void, SecurityProtocolError> {
+  -> Result<Void, SecurityStorageError> {
     await store.delete(forKey: identifier)
     return .success(())
   }
 
-  public func listDataIdentifiers() async -> Result<[String], SecurityProtocolError> {
+  public func listDataIdentifiers() async -> Result<[String], SecurityStorageError> {
     await .success(store.allKeys())
   }
 }
@@ -111,37 +111,40 @@ final class BasicCryptoService: CryptoServiceProtocol {
     dataIdentifier: String,
     keyIdentifier: String,
     options _: EncryptionOptions?
-  ) async -> Result<String, SecurityProtocolError> {
+  ) async -> Result<String, SecurityStorageError> {
     // Get the data from secure storage
     let dataResult=await secureStorage.retrieveData(withIdentifier: dataIdentifier)
 
     switch dataResult {
       case let .success(data):
-        // Get the key from secure storage
+        // Attempt to retrieve the key
         let keyResult=await secureStorage.retrieveData(withIdentifier: keyIdentifier)
 
         switch keyResult {
-          case let .success(key):
+          case .success(_):
             // In a real implementation, this would perform actual encryption
             // Here we just store the original data with a new identifier
-            let encryptedIdentifier="encrypted_\(UUID().uuidString)"
-            let storeResult=await secureStorage.storeData(data, withIdentifier: encryptedIdentifier)
+            let encryptedIdentifier="encrypted-\(dataIdentifier)"
+            // Store the "encrypted" data back
+            _ = await secureStorage.storeData(data, withIdentifier: encryptedIdentifier)
+            return .success(encryptedIdentifier)
 
-            switch storeResult {
-              case .success:
-                return .success(encryptedIdentifier)
-              case let .failure(error):
-                return .failure(
-                  .operationFailed(reason: "Storage error: \(error.localizedDescription)")
-                )
-            }
-          case let .failure(error):
-            return .failure(
-              .operationFailed(reason: "Failed to retrieve key: \(error.localizedDescription)")
+          case .failure:
+            await logger.warning(
+              "Key not found for encryption: \(keyIdentifier)",
+              metadata: nil as PrivacyMetadata?,
+              source: "BasicCryptoService"
             )
+            return .failure(.keyNotFound)
         }
-      case let .failure(error):
-        return .failure(.inputError("Failed to retrieve data: \(error.localizedDescription)"))
+
+      case .failure:
+        await logger.warning(
+          "Data not found for encryption: \(dataIdentifier)",
+          metadata: nil as PrivacyMetadata?,
+          source: "BasicCryptoService"
+        )
+        return .failure(.dataNotFound)
     }
   }
 
@@ -149,74 +152,66 @@ final class BasicCryptoService: CryptoServiceProtocol {
     encryptedDataIdentifier: String,
     keyIdentifier: String,
     options _: DecryptionOptions?
-  ) async -> Result<String, SecurityProtocolError> {
-    // Get the encrypted data from secure storage
+  ) async -> Result<String, SecurityStorageError> {
+    // Get the data from secure storage
     let dataResult=await secureStorage.retrieveData(withIdentifier: encryptedDataIdentifier)
 
     switch dataResult {
-      case let .success(encryptedData):
-        // Get the key from secure storage
+      case let .success(data):
+        // Attempt to retrieve the key
         let keyResult=await secureStorage.retrieveData(withIdentifier: keyIdentifier)
 
         switch keyResult {
-          case .success:
+          case .success(_):
             // In a real implementation, this would perform actual decryption
             // Here we just store the original data with a new identifier
-            let decryptedIdentifier="decrypted_\(UUID().uuidString)"
-            let storeResult=await secureStorage.storeData(
-              encryptedData,
-              withIdentifier: decryptedIdentifier
-            )
+            let decryptedIdentifier="decrypted-\(encryptedDataIdentifier)"
+            // Store the "decrypted" data back
+            _ = await secureStorage.storeData(data, withIdentifier: decryptedIdentifier)
+            return .success(decryptedIdentifier)
 
-            switch storeResult {
-              case .success:
-                return .success(decryptedIdentifier)
-              case let .failure(error):
-                return .failure(
-                  .operationFailed(reason: "Storage error: \(error.localizedDescription)")
-                )
-            }
-          case let .failure(error):
-            return .failure(
-              .operationFailed(reason: "Failed to retrieve key: \(error.localizedDescription)")
+          case .failure:
+            await logger.warning(
+              "Key not found for decryption: \(keyIdentifier)",
+              metadata: nil as PrivacyMetadata?,
+              source: "BasicCryptoService"
             )
+            return .failure(.keyNotFound)
         }
-      case let .failure(error):
-        return .failure(
-          .inputError("Failed to retrieve encrypted data: \(error.localizedDescription)")
+
+      case .failure:
+        await logger.warning(
+          "Data not found for decryption: \(encryptedDataIdentifier)",
+          metadata: nil as PrivacyMetadata?,
+          source: "BasicCryptoService"
         )
+        return .failure(.dataNotFound)
     }
   }
 
   public func hash(
     dataIdentifier: String,
     options _: HashingOptions?
-  ) async -> Result<String, SecurityProtocolError> {
+  ) async -> Result<String, SecurityStorageError> {
     // Get the data from secure storage
     let dataResult=await secureStorage.retrieveData(withIdentifier: dataIdentifier)
 
     switch dataResult {
-      case .success:
-        // For testing purposes, create a dummy hash (in a real implementation, this would be a real
-        // hash)
-        // Convert Data to [UInt8] array for SecureStorage
-        let hashData=[UInt8](repeating: 0, count: 32)
-        let hashIdentifier="hash_\(UUID().uuidString)"
+      case let .success(_):
+        // In a real implementation, this would perform actual hashing
+        // Here we just store a placeholder "hash" value
+        let hashedIdentifier="hashed-\(dataIdentifier)"
+        let hashValue: [UInt8]=Array(repeating: 0, count: 32) // Mock 32-byte hash
+        _ = await secureStorage.storeData(hashValue, withIdentifier: hashedIdentifier)
+        return .success(hashedIdentifier)
 
-        let storeResult=await secureStorage.storeData(hashData, withIdentifier: hashIdentifier)
-
-        switch storeResult {
-          case .success:
-            return .success(hashIdentifier)
-          case let .failure(error):
-            return .failure(
-              .operationFailed(reason: "Storage error: \(error.localizedDescription)")
-            )
-        }
-      case let .failure(error):
-        return .failure(
-          .inputError("Failed to retrieve data for hashing: \(error.localizedDescription)")
+      case .failure:
+        await logger.warning(
+          "Data not found for hashing: \(dataIdentifier)",
+          metadata: nil as PrivacyMetadata?,
+          source: "BasicCryptoService"
         )
+        return .failure(.dataNotFound)
     }
   }
 
@@ -224,76 +219,76 @@ final class BasicCryptoService: CryptoServiceProtocol {
     dataIdentifier: String,
     hashIdentifier: String,
     options _: HashingOptions?
-  ) async -> Result<Bool, SecurityProtocolError> {
+  ) async -> Result<Bool, SecurityStorageError> {
     // Get the data from secure storage
     let dataResult=await secureStorage.retrieveData(withIdentifier: dataIdentifier)
 
     switch dataResult {
-      case .success:
+      case .success(_):
         // Get the hash from secure storage
         let hashResult=await secureStorage.retrieveData(withIdentifier: hashIdentifier)
 
         switch hashResult {
-          case .success:
-            // In a real implementation, this would compute and verify an actual hash
-            // Here we just return true for testing purposes
+          case .success(_):
+            // In a real implementation, this would perform actual hash verification
+            // Here we just return true as a simple mock
             return .success(true)
-          case let .failure(error):
-            return .failure(.inputError("Failed to retrieve hash: \(error.localizedDescription)"))
+
+          case .failure:
+            await logger.warning(
+              "Hash not found for verification: \(hashIdentifier)",
+              metadata: nil as PrivacyMetadata?,
+              source: "BasicCryptoService"
+            )
+            return .failure(.hashNotFound)
         }
-      case let .failure(error):
-        return .failure(
-          .inputError(
-            "Failed to retrieve data for hash verification: \(error.localizedDescription)"
-          )
+
+      case .failure:
+        await logger.warning(
+          "Data not found for hash verification: \(dataIdentifier)",
+          metadata: nil as PrivacyMetadata?,
+          source: "BasicCryptoService"
         )
+        return .failure(.dataNotFound)
     }
   }
 
   public func generateKey(
     length: Int,
     options _: KeyGenerationOptions?
-  ) async -> Result<String, SecurityProtocolError> {
-    // In a real implementation, this would generate a cryptographic key
-    // Here we just create a random key with [UInt8] for compatibility with SecureStorage
-    let keyBytes=[UInt8](repeating: 0, count: length / 8) // Convert bits to bytes
-    let keyIdentifier="key_\(UUID().uuidString)"
-
-    let storeResult=await secureStorage.storeData(keyBytes, withIdentifier: keyIdentifier)
+  ) async -> Result<String, SecurityStorageError> {
+    // In a real implementation, this would generate a secure random key
+    // Here we just create a placeholder key
+    let keyData: [UInt8]=Array(repeating: 0, count: length)
+    let keyIdentifier="key-\(UUID().uuidString)"
+    let storeResult=await secureStorage.storeData(keyData, withIdentifier: keyIdentifier)
 
     switch storeResult {
       case .success:
         return .success(keyIdentifier)
       case let .failure(error):
-        return .failure(.operationFailed(reason: "Storage error: \(error.localizedDescription)"))
+        return .failure(error)
     }
   }
 
   public func importData(
     _ data: [UInt8],
     customIdentifier: String?
-  ) async -> Result<String, SecurityProtocolError> {
-    let identifier=customIdentifier ?? "imported_\(UUID().uuidString)"
+  ) async -> Result<String, SecurityStorageError> {
+    let identifier=customIdentifier ?? "imported-\(UUID().uuidString)"
     let storeResult=await secureStorage.storeData(data, withIdentifier: identifier)
 
     switch storeResult {
       case .success:
         return .success(identifier)
       case let .failure(error):
-        return .failure(.operationFailed(reason: "Storage error: \(error.localizedDescription)"))
+        return .failure(error)
     }
   }
 
   public func exportData(
     identifier: String
-  ) async -> Result<[UInt8], SecurityProtocolError> {
-    let retrieveResult=await secureStorage.retrieveData(withIdentifier: identifier)
-
-    switch retrieveResult {
-      case let .success(data):
-        return .success(data) // data is already [UInt8], no conversion needed
-      case let .failure(error):
-        return .failure(.operationFailed(reason: "Storage error: \(error.localizedDescription)"))
-    }
+  ) async -> Result<[UInt8], SecurityStorageError> {
+    await secureStorage.retrieveData(withIdentifier: identifier)
   }
 }

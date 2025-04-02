@@ -167,7 +167,7 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
     }
 
     // Create the query
-    var query: [String: Any]=[
+    let query: [String: Any]=[
       kSecClass as String: kSecClassGenericPassword,
       kSecAttrService as String: serviceIdentifier,
       kSecAttrAccount as String: account,
@@ -527,7 +527,7 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
     }
 
     // Create the query
-    var query: [String: Any]=[
+    let query: [String: Any]=[
       kSecClass as String: kSecClassGenericPassword,
       kSecAttrService as String: serviceIdentifier,
       kSecAttrAccount as String: account,

@@ -27,7 +27,7 @@ private final class MockCryptoService: CryptoServiceProtocol {
     data: [UInt8],
     using _: [UInt8],
     options _: EncryptionOptions?
-  ) async -> Result<[UInt8], SecurityProtocolError> {
+  ) async -> Result<[UInt8], SecurityStorageError> {
     .success(data) // Mock implementation returns input data
   }
 
@@ -36,7 +36,7 @@ private final class MockCryptoService: CryptoServiceProtocol {
     data: [UInt8],
     using _: [UInt8],
     options _: DecryptionOptions?
-  ) async -> Result<[UInt8], SecurityProtocolError> {
+  ) async -> Result<[UInt8], SecurityStorageError> {
     .success(data) // Mock implementation returns input data
   }
 
@@ -44,7 +44,7 @@ private final class MockCryptoService: CryptoServiceProtocol {
   public func hash(
     data _: [UInt8],
     using _: CoreSecurityTypes.HashAlgorithm
-  ) async -> Result<[UInt8], SecurityProtocolError> {
+  ) async -> Result<[UInt8], SecurityStorageError> {
     .success(Array(repeating: 0, count: 32)) // Mock 32-byte hash
   }
 
@@ -53,7 +53,7 @@ private final class MockCryptoService: CryptoServiceProtocol {
     data _: [UInt8],
     expectedHash _: [UInt8],
     using _: CoreSecurityTypes.HashAlgorithm
-  ) async -> Result<Bool, SecurityProtocolError> {
+  ) async -> Result<Bool, SecurityStorageError> {
     .success(true) // Mock implementation always returns true
   }
 
@@ -64,7 +64,7 @@ private final class MockCryptoService: CryptoServiceProtocol {
     dataIdentifier: String,
     keyIdentifier _: String,
     options _: EncryptionOptions?
-  ) async -> Result<String, SecurityProtocolError> {
+  ) async -> Result<String, SecurityStorageError> {
     .success("encrypted-\(dataIdentifier)")
   }
 
@@ -73,7 +73,7 @@ private final class MockCryptoService: CryptoServiceProtocol {
     encryptedDataIdentifier: String,
     keyIdentifier _: String,
     options _: DecryptionOptions?
-  ) async -> Result<String, SecurityProtocolError> {
+  ) async -> Result<String, SecurityStorageError> {
     .success("decrypted-\(encryptedDataIdentifier)")
   }
 
@@ -81,7 +81,7 @@ private final class MockCryptoService: CryptoServiceProtocol {
   public func hash(
     dataIdentifier: String,
     options _: HashingOptions?
-  ) async -> Result<String, SecurityProtocolError> {
+  ) async -> Result<String, SecurityStorageError> {
     .success("hashed-\(dataIdentifier)")
   }
 
@@ -90,7 +90,7 @@ private final class MockCryptoService: CryptoServiceProtocol {
     dataIdentifier _: String,
     hashIdentifier _: String,
     options _: HashingOptions?
-  ) async -> Result<Bool, SecurityProtocolError> {
+  ) async -> Result<Bool, SecurityStorageError> {
     .success(true)
   }
 
@@ -98,7 +98,7 @@ private final class MockCryptoService: CryptoServiceProtocol {
   public func generateKey(
     length _: Int,
     options _: KeyGenerationOptions?
-  ) async -> Result<String, SecurityProtocolError> {
+  ) async -> Result<String, SecurityStorageError> {
     .success("generated-key-\(UUID().uuidString)")
   }
 
@@ -106,7 +106,7 @@ private final class MockCryptoService: CryptoServiceProtocol {
   public func importData(
     _: [UInt8],
     customIdentifier: String?
-  ) async -> Result<String, SecurityProtocolError> {
+  ) async -> Result<String, SecurityStorageError> {
     let identifier=customIdentifier ?? "imported-\(UUID().uuidString)"
     return .success(identifier)
   }
@@ -114,7 +114,7 @@ private final class MockCryptoService: CryptoServiceProtocol {
   /// Exports data from secure storage
   public func exportData(
     identifier _: String
-  ) async -> Result<[UInt8], SecurityProtocolError> {
+  ) async -> Result<[UInt8], SecurityStorageError> {
     .success([0xAA, 0xBB, 0xCC])
   }
 }
@@ -154,27 +154,27 @@ private final class ApplicationSecureStorage: SecureStorageProtocol {
   public func storeData(
     _ data: [UInt8],
     withIdentifier identifier: String
-  ) async -> Result<Void, SecurityProtocolError> {
+  ) async -> Result<Void, SecurityStorageError> {
     await storage.store(data, forIdentifier: identifier)
     return .success(())
   }
 
   public func retrieveData(withIdentifier identifier: String) async
-  -> Result<[UInt8], SecurityProtocolError> {
+  -> Result<[UInt8], SecurityStorageError> {
     if let data=await storage.retrieve(forIdentifier: identifier) {
       .success(data)
     } else {
-      .failure(.invalidMessageFormat(details: "Item with identifier \(identifier) not found"))
+      .failure(.dataNotFound)
     }
   }
 
   public func deleteData(withIdentifier identifier: String) async
-  -> Result<Void, SecurityProtocolError> {
+  -> Result<Void, SecurityStorageError> {
     await storage.delete(forIdentifier: identifier)
     return .success(())
   }
 
-  public func listDataIdentifiers() async -> Result<[String], SecurityProtocolError> {
+  public func listDataIdentifiers() async -> Result<[String], SecurityStorageError> {
     let identifiers=await storage.listIdentifiers()
     return .success(identifiers)
   }
