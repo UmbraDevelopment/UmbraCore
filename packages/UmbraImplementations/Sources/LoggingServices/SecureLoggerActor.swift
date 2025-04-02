@@ -1,7 +1,7 @@
 import Foundation
+import os.log
 import LoggingInterfaces
 import LoggingTypes
-import os.log
 
 /**
  # SecureLoggerActor
@@ -198,18 +198,31 @@ public actor SecureLoggerActor: SecureLoggingProtocol {
     
     // If we have a logging service actor, also log through that system
     if let loggingServiceActor = loggingServiceActor {
-      // Convert privacy-tagged metadata to standard log metadata
-      let convertedMetadata: LoggingTypes.LogMetadata?
-      if let metadata = metadata {
-        var metadataDict = [String: Any]()
+      // Convert metadata to the format expected by the logging service
+      var convertedMetadata: LoggingTypes.LogMetadata?
+      if let metadata {
+        var metadataDict = LoggingTypes.LogMetadata()
         for (key, value) in metadata {
+          // Extract the actual value from our strongly-typed enum
+          let stringValue: String = switch value.value {
+          case .string(let stringValue):
+            stringValue
+          case .number(let numberString):
+            numberString
+          case .bool(let boolValue):
+            String(describing: boolValue)
+          }
+          
           switch value.privacyLevel {
           case .public:
-            metadataDict[key] = value.value
+            metadataDict[key] = stringValue
           case .private:
-            metadataDict[key + ".private"] = value.value
+            metadataDict[key + ".private"] = stringValue
           case .sensitive:
             metadataDict[key + ".sensitive"] = "[REDACTED]"
+          case .hash, .auto:
+            // Handle these cases according to your privacy requirements
+            metadataDict[key + ".private"] = stringValue
           }
         }
         convertedMetadata = metadataDict
@@ -248,16 +261,16 @@ public actor SecureLoggerActor: SecureLoggingProtocol {
     additionalMetadata: [String: PrivacyTaggedValue]? = nil
   ) async {
     var metadata: [String: PrivacyTaggedValue] = [
-      "action": PrivacyTaggedValue(value: action, privacyLevel: .public),
-      "status": PrivacyTaggedValue(value: status.rawValue, privacyLevel: .public)
+      "action": PrivacyTaggedValue(value: .string(action), privacyLevel: .public),
+      "status": PrivacyTaggedValue(value: .string(status.rawValue), privacyLevel: .public)
     ]
     
     if let subject = subject {
-      metadata["subject"] = PrivacyTaggedValue(value: subject, privacyLevel: .private)
+      metadata["subject"] = PrivacyTaggedValue(value: .string(subject), privacyLevel: .private)
     }
     
     if let resource = resource {
-      metadata["resource"] = PrivacyTaggedValue(value: resource, privacyLevel: .private)
+      metadata["resource"] = PrivacyTaggedValue(value: .string(resource), privacyLevel: .private)
     }
     
     if let additionalMetadata = additionalMetadata {
@@ -277,7 +290,7 @@ public actor SecureLoggerActor: SecureLoggingProtocol {
 /**
  The status of a security event for structured logging.
  */
-public enum SecurityEventStatus: String {
+public enum SecurityEventStatus: String, Sendable {
   /// Action was attempted but access was denied
   case denied = "DENIED"
   
@@ -294,12 +307,21 @@ public enum SecurityEventStatus: String {
 /**
  A value with an associated privacy level for secure logging.
  */
-public struct PrivacyTaggedValue {
-  /// The actual value to log
-  public let value: Any
+public enum PrivacyMetadataValue: Sendable {
+  case string(String)
+  case number(String)
+  case bool(Bool)
+}
+
+/**
+ A value with an associated privacy level for secure logging.
+ */
+public struct PrivacyTaggedValue: Sendable {
+  /// The privacy-safe value to log
+  public let value: PrivacyMetadataValue
   
   /// The privacy level indicating how this value should be handled in logs
-  public let privacyLevel: LogPrivacyLevel
+  public let privacyLevel: LoggingTypes.LogPrivacyLevel
   
   /**
    Create a new privacy-tagged value.
@@ -308,24 +330,46 @@ public struct PrivacyTaggedValue {
       - value: The actual value to log
       - privacyLevel: The privacy level for this value
    */
-  public init(value: Any, privacyLevel: LogPrivacyLevel) {
+  public init(value: PrivacyMetadataValue, privacyLevel: LoggingTypes.LogPrivacyLevel) {
     self.value = value
     self.privacyLevel = privacyLevel
   }
-}
-
-/**
- Privacy level for logged data to control how information is handled in logs.
- */
-public enum LogPrivacyLevel {
-  /// Public data that can be logged in plain text with no redaction
-  case `public`
   
-  /// Private data that should be redacted in logs but may be visible to authorised personnel
-  case `private`
+  /**
+   Convenience initialiser for string values.
+   
+   - Parameters:
+      - stringValue: String value to log
+      - privacyLevel: The privacy level for this value
+   */
+  public init(stringValue: String, privacyLevel: LoggingTypes.LogPrivacyLevel) {
+    self.value = .string(stringValue)
+    self.privacyLevel = privacyLevel
+  }
   
-  /// Sensitive data that should be completely masked in all contexts
-  case sensitive
+  /**
+   Convenience initialiser for numeric values.
+   
+   - Parameters:
+      - numericValue: Numeric value to log
+      - privacyLevel: The privacy level for this value
+   */
+  public init<T: Numeric & CustomStringConvertible>(numericValue: T, privacyLevel: LoggingTypes.LogPrivacyLevel) {
+    self.value = .number(String(describing: numericValue))
+    self.privacyLevel = privacyLevel
+  }
+  
+  /**
+   Convenience initialiser for boolean values.
+   
+   - Parameters:
+      - boolValue: Boolean value to log
+      - privacyLevel: The privacy level for this value
+   */
+  public init(boolValue: Bool, privacyLevel: LoggingTypes.LogPrivacyLevel) {
+    self.value = .bool(boolValue)
+    self.privacyLevel = privacyLevel
+  }
 }
 
 /**

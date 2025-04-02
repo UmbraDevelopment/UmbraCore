@@ -178,7 +178,7 @@ public actor LoggingServiceActor: LoggingServiceProtocol {
         var result=PrivacyMetadata()
         for (key, value) in metadata.asDictionary {
           // Default to private privacy level for all converted metadata
-          result[key]=PrivacyMetadataValue(value: value, privacy: .private)
+          result[key]=LoggingTypes.PrivacyMetadataValue(value: value, privacy: LoggingTypes.LogPrivacyLevel.private)
         }
         return result
       }
@@ -334,7 +334,6 @@ public actor LoggingServiceActor: LoggingServiceProtocol {
       case .warning: 3
       case .error: 4
       case .critical: 5
-      default: 2 // Default to info
     }
 
     let minLevel=switch minimumLogLevel {
@@ -470,7 +469,6 @@ public struct DefaultLogFormatter: LoggingInterfaces.LogFormatterProtocol, Senda
       case .warning: "WARN"
       case .error: "ERROR"
       case .critical: "CRIT"
-      default: "UNKNOWN"
     }
   }
 

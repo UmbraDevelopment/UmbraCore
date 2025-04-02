@@ -140,15 +140,15 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
   public func logSensitive(
     _ level: LogLevel,
     _ message: String,
-    sensitiveValues: [String: Any],
+    sensitiveValues: LoggingTypes.LogMetadata,
     source: String
   ) async {
     // Convert sensitive values to metadata with privacy annotations
     var privacyMetadata=PrivacyMetadata()
-    for (key, value) in sensitiveValues {
-      privacyMetadata[key]=PrivacyMetadataValue(
-        value: String(describing: value),
-        privacy: .sensitive
+    for (key, value) in sensitiveValues.asDictionary {
+      privacyMetadata[key]=LoggingTypes.PrivacyMetadataValue(
+        value: value,
+        privacy: LoggingTypes.LogPrivacyLevel.sensitive
       )
     }
 
@@ -158,16 +158,8 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
       metadata: privacyMetadata
     )
 
-    // Write to the backend
-    await backend.writeLog(
-      level: level,
-      message: message,
-      context: context,
-      subsystem: identifier
-    )
-
-    // Also log to the logging actor for compatibility
-    await loggingActor.log(level: level, message: message, context: context)
+    // Log the message with custom metadata
+    await logMessage(level, message, context: context)
   }
 
   /// Log an error with privacy controls
@@ -178,7 +170,7 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
   ///   - source: The component that generated the log
   public func logError(
     _ error: Error,
-    privacyLevel: LogPrivacyLevel,
+    privacyLevel: LoggingTypes.LogPrivacyLevel,
     metadata: PrivacyMetadata?,
     source: String
   ) async {
@@ -195,9 +187,9 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
 
     // Add error metadata
     var combinedMetadata=metadata ?? PrivacyMetadata()
-    combinedMetadata["errorType"]=PrivacyMetadataValue(
+    combinedMetadata["errorType"]=LoggingTypes.PrivacyMetadataValue(
       value: String(describing: type(of: error)),
-      privacy: .public
+      privacy: LoggingTypes.LogPrivacyLevel.public
     )
 
     // Log the error with privacy controls

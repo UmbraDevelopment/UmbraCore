@@ -31,12 +31,12 @@ public protocol PrivacyAwareLoggingProtocol: LoggingProtocol {
   /// - Parameters:
   ///   - level: The severity level of the log
   ///   - message: The basic message without sensitive content
-  ///   - sensitiveValues: Sensitive values that should be automatically handled
+  ///   - sensitiveValues: Sensitive values that should be handled with privacy controls
   ///   - source: The component that generated the log
   func logSensitive(
     _ level: LogLevel,
     _ message: String,
-    sensitiveValues: [String: Any],
+    sensitiveValues: LoggingTypes.LogMetadata,
     source: String
   ) async
 
@@ -59,11 +59,11 @@ extension PrivacyAwareLoggingProtocol {
   /// Log sensitive information with a default info level
   /// - Parameters:
   ///   - message: The basic message without sensitive content
-  ///   - sensitiveValues: Sensitive values that should be automatically handled
+  ///   - sensitiveValues: Sensitive values that should be handled with privacy controls
   ///   - source: The component that generated the log
   public func logSensitive(
     _ message: String,
-    sensitiveValues: [String: Any],
+    sensitiveValues: LoggingTypes.LogMetadata,
     source: String
   ) async {
     await logSensitive(.info, message, sensitiveValues: sensitiveValues, source: source)

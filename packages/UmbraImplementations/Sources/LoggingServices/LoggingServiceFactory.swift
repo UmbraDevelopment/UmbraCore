@@ -49,6 +49,34 @@ public enum LoggingServiceFactory {
       formatter: formatter
     )
   }
+  
+  /// Create a default logging service with standard configuration
+  /// - Returns: A configured logging service actor with default settings
+  public static func createDefaultService() async -> LoggingServiceActor {
+    // Create a standard logger with info level and default formatter
+    let actor = createStandardLogger(
+      minimumLevel: .info,
+      formatter: StandardLogFormatter()
+    )
+    
+    // Return the configured actor
+    return actor
+  }
+  
+  /// Create a logging service with custom destinations
+  /// - Parameter destinations: The log destinations to use
+  /// - Returns: A configured logging service actor with the specified destinations
+  public static func createService(destinations: [LoggingTypes.LogDestination]) async -> LoggingServiceActor {
+    // Create a logger with the specified destinations
+    let actor = LoggingServiceActor(
+      destinations: destinations,
+      minimumLogLevel: .info,
+      formatter: StandardLogFormatter()
+    )
+    
+    // Return the configured actor
+    return actor
+  }
 
   /// Create a production logging service with file and console output
   /// - Parameters:

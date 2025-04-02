@@ -15,7 +15,7 @@ public enum PrivacyAwareLoggingFactory {
     minimumLevel: LogLevel = .info,
     identifier: String,
     backend: LoggingBackend?=nil,
-    privacyLevel _: LogPrivacyLevel = .auto
+    privacyLevel _: LoggingTypes.LogPrivacyLevel = .auto
   ) -> any PrivacyAwareLoggingProtocol {
     // Use the provided backend or create a default OSLogPrivacyBackend
     let loggingBackend=backend ?? OSLogPrivacyBackend(subsystem: identifier)

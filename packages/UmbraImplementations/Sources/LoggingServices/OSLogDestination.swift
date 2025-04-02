@@ -90,7 +90,7 @@ public struct OSLogDestination: LoggingTypes.LogDestination {
   /// - Returns: Tuple with message and metadata privacy levels
   private func extractPrivacySettings(from metadata: PrivacyMetadata?)
   -> (messagePrivacy: OSLogPrivacy, metadataPrivacy: OSLogPrivacy) {
-    guard let metadata else {
+    guard metadata != nil else {
       return (.private, .private)
     }
 
@@ -154,7 +154,6 @@ public struct OSLogDestination: LoggingTypes.LogDestination {
       case .warning: 3
       case .error: 4
       case .critical: 5
-      default: 2 // Default to info level
     }
 
     let minLevelValue=switch minimumLevel {
@@ -187,7 +186,6 @@ public struct OSLogDestination: LoggingTypes.LogDestination {
       case .warning: .warning
       case .error: .error
       case .critical: .critical
-      default: .info
     }
     let type=osLogType(for: umbraLevel)
 

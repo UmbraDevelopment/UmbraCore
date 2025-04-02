@@ -90,9 +90,9 @@ public struct BaseDomainLogger: DomainLogger {
     if let result {
       // Add result information if available and convertible to string
       if let stringValue=result as? CustomStringConvertible {
-        metadata["result"]=PrivacyMetadataValue(
+        metadata["result"]=LoggingTypes.PrivacyMetadataValue(
           value: stringValue.description,
-          privacy: .private
+          privacy: LoggingTypes.LogPrivacyLevel.private
         )
       }
     }
@@ -126,13 +126,13 @@ public struct BaseDomainLogger: DomainLogger {
       }
     } else {
       // Handle standard errors
-      metadata["errorDescription"]=PrivacyMetadataValue(
+      metadata["errorDescription"]=LoggingTypes.PrivacyMetadataValue(
         value: error.localizedDescription,
-        privacy: .private
+        privacy: LoggingTypes.LogPrivacyLevel.private
       )
-      metadata["errorType"]=PrivacyMetadataValue(
+      metadata["errorType"]=LoggingTypes.PrivacyMetadataValue(
         value: String(describing: type(of: error)),
-        privacy: .private
+        privacy: LoggingTypes.LogPrivacyLevel.public
       )
     }
 
@@ -682,7 +682,15 @@ public class EnhancedErrorLogger: LegacyErrorLoggingProtocol {
     context: ErrorLogContext,
     message: String?=nil
   ) async {
-    let metadata=context.metadata.toPrivacyMetadata()
+    var metadata=context.metadata.toPrivacyMetadata()
+    metadata["errorDescription"]=LoggingTypes.PrivacyMetadataValue(
+      value: error.localizedDescription,
+      privacy: LoggingTypes.LogPrivacyLevel.private
+    )
+    metadata["errorType"]=LoggingTypes.PrivacyMetadataValue(
+      value: String(describing: type(of: error)),
+      privacy: LoggingTypes.LogPrivacyLevel.public
+    )
     let source=context.source ?? #function
     let logMessage=message ?? "Error in \(context.domainName): \(error.localizedDescription)"
 
@@ -719,13 +727,13 @@ public class EnhancedErrorLogger: LegacyErrorLoggingProtocol {
     } else {
       // For standard errors, create basic metadata
       var metadata=PrivacyMetadata()
-      metadata["errorDescription"]=PrivacyMetadataValue(
+      metadata["errorDescription"]=LoggingTypes.PrivacyMetadataValue(
         value: error.localizedDescription,
-        privacy: .private
+        privacy: LoggingTypes.LogPrivacyLevel.private
       )
-      metadata["errorType"]=PrivacyMetadataValue(
+      metadata["errorType"]=LoggingTypes.PrivacyMetadataValue(
         value: String(describing: type(of: error)),
-        privacy: .public
+        privacy: LoggingTypes.LogPrivacyLevel.public
       )
 
       // Create a default message if none provided
