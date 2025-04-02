@@ -5,9 +5,7 @@ import SecurityCoreInterfaces
 import UmbraErrors
 
 /**
- # SecurityProviderImpl
-
- Thread-safe implementation of the SecurityProviderProtocol that follows the architecture.
+ SecurityProviderImpl actor implementation.
 
  This implementation coordinates between cryptographic services and key management systems,
  providing a unified interface for all security operations while ensuring proper isolation
@@ -17,8 +15,8 @@ import UmbraErrors
 
  This implementation follows these core principles:
 
- 1. **Actor-Based Concurrency**: While not an actor itself, it uses thread-safe access patterns
-    that complement Swift's structured concurrency model.
+ 1. **Actor-Based Concurrency**: Implemented as a Swift actor to ensure thread safety
+    through Swift's structured concurrency model.
 
  2. **Provider Abstraction**: Supports multiple cryptographic implementations:
     - Basic/fallback provider (AES-CBC implementation)
@@ -30,7 +28,7 @@ import UmbraErrors
 
  4. **Type Safety**: Uses strongly-typed interfaces that make illegal states unrepresentable.
  */
-public final class SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceInitializable {
+public actor SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceInitializable {
   // MARK: - Private Properties
 
   /// The crypto service for cryptographic operations
@@ -38,9 +36,6 @@ public final class SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceI
 
   /// The key manager for key operations
   private let keyManagerImpl: KeyManagementProtocol
-
-  /// Lock for thread-safe access
-  private let lock=NSLock()
 
   // MARK: - Initialisation
 
@@ -87,20 +82,6 @@ public final class SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceI
     keyManagerImpl
   }
 
-  // MARK: - Thread Safety
-
-  /**
-   Execute a closure with thread-safe access to provider state.
-
-   - Parameter work: The work to execute with the lock held
-   - Returns: Whatever the work closure returns
-   */
-  private func withThreadSafety<T>(_ work: () throws -> T) rethrows -> T {
-    lock.lock()
-    defer { lock.unlock() }
-    return try work()
-  }
-
   // MARK: - Private Helpers
 
   /**
@@ -128,9 +109,7 @@ public final class SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceI
         case let .success(key):
           return key
         case let .failure(error):
-          throw SecurityProtocolError.invalidMessageFormat(
-            details: "Failed to retrieve key with identifier \(keyID): \(error.localizedDescription)"
-          )
+          throw SecurityProtocolError.inputError("Failed to retrieve key with identifier \(keyID): \(error.localizedDescription)")
       }
     }
 
@@ -140,169 +119,320 @@ public final class SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceI
 
   // MARK: - SecurityProviderProtocol Core Implementation
 
-  /// Encrypt binary data using the provider's encryption mechanism
-  /// - Parameters:
-  ///   - data: Data to encrypt
-  ///   - key: Encryption key
-  /// - Returns: Encrypted data
-  /// - Throws: SecurityProtocolError if encryption fails
+  /**
+   Encrypts binary data with the provided key.
+
+   - Parameters:
+     - data: Data to encrypt
+     - key: Encryption key
+   - Returns: Encrypted data
+   - Throws: Security protocol errors if encryption fails
+   */
   public func encrypt(_ data: [UInt8], key: [UInt8]) async throws -> [UInt8] {
-    let result=await cryptoServiceImpl.encrypt(data: data, using: key)
+    let dataIdentifier=await storeDataForOperation(data)
+    let keyIdentifier=await storeDataForOperation(key)
+    let result=await cryptoServiceImpl.encrypt(
+      dataIdentifier: dataIdentifier,
+      keyIdentifier: keyIdentifier,
+      options: EncryptionOptions(algorithm: .aes256CBC)
+    )
 
     switch result {
-      case let .success(encryptedData):
-        return encryptedData
+      case let .success(encryptedDataIdentifier):
+        // Retrieve the encrypted data using the identifier
+        if let encryptedData = await retrieveDataForOperation(withIdentifier: encryptedDataIdentifier) {
+            return encryptedData
+        } else {
+            throw SecurityProtocolError.inputError("Failed to retrieve encrypted data")
+        }
       case let .failure(error):
-        throw SecurityProtocolError.invalidMessageFormat(
-          details: "Encryption failed: \(error.localizedDescription)"
-        )
+        throw error
     }
   }
 
-  /// Decrypt binary data using the provider's decryption mechanism
-  /// - Parameters:
-  ///   - data: Data to decrypt
-  ///   - key: Decryption key
-  /// - Returns: Decrypted data
-  /// - Throws: SecurityProtocolError if decryption fails
+  /**
+   Decrypts binary data with the provided key.
+
+   - Parameters:
+     - data: Encrypted data to decrypt
+     - key: Decryption key
+   - Returns: Decrypted data
+   - Throws: Security protocol errors if decryption fails
+   */
   public func decrypt(_ data: [UInt8], key: [UInt8]) async throws -> [UInt8] {
-    let result=await cryptoServiceImpl.decrypt(data: data, using: key)
+    let encryptedDataIdentifier=await storeDataForOperation(data)
+    let keyIdentifier=await storeDataForOperation(key)
+    let result=await cryptoServiceImpl.decrypt(
+      encryptedDataIdentifier: encryptedDataIdentifier,
+      keyIdentifier: keyIdentifier,
+      options: DecryptionOptions(algorithm: .aes256CBC)
+    )
 
     switch result {
-      case let .success(decryptedData):
-        return decryptedData
+      case let .success(decryptedDataIdentifier):
+        // Retrieve the decrypted data using the identifier
+        if let decryptedData = await retrieveDataForOperation(withIdentifier: decryptedDataIdentifier) {
+            return decryptedData
+        } else {
+            throw SecurityProtocolError.inputError("Failed to retrieve decrypted data")
+        }
       case let .failure(error):
-        throw SecurityProtocolError.invalidMessageFormat(
-          details: "Decryption failed: \(error.localizedDescription)"
-        )
+        throw error
     }
   }
 
-  /// Generate a cryptographically secure random key
-  /// - Parameter length: Length of the key in bytes
-  /// - Returns: Generated key
-  /// - Throws: SecurityProtocolError if key generation fails
-  public func generateKey(length: Int) async throws -> [UInt8] {
-    try await generateRandomBytes(count: length)
+  /**
+   Handles implementation of the hash function required by SecurityProviderProtocol.
+   
+   - Parameter config: Configuration for the hash operation
+   - Returns: Result DTO with the computed hash
+   - Throws: Security errors if hashing fails
+   */
+  public func hash(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+    let operation = SecurityOperation.hash
+    let handler = OperationsHandler(cryptoService: cryptoServiceImpl, keyManager: keyManagerImpl)
+    return await handler.handleOperation(operation: operation, config: config)
   }
 
-  /// Hash data using the provider's hashing mechanism
-  /// - Parameter data: Data to hash
-  /// - Returns: Hash of the data
-  /// - Throws: SecurityProtocolError if hashing fails
-  public func hash(_ data: [UInt8]) async throws -> [UInt8] {
-    let result=await cryptoServiceImpl.hash(data: data)
+  /**
+   Signs data with the provided key.
+
+   - Parameters:
+     - data: Data to sign
+     - key: Signing key
+   - Returns: Signature
+   - Throws: Security protocol errors if signing fails
+   */
+  public func sign(_ data: [UInt8], key: [UInt8]) async throws -> [UInt8] {
+    // This is a placeholder implementation
+    // For now, we'll just concatenate the data and key and hash them to create a signature
+    let dataIdentifier = await storeDataForOperation(data + key)
+    let result = await cryptoServiceImpl.hash(
+      dataIdentifier: dataIdentifier,
+      options: HashingOptions(algorithm: .sha256)
+    )
 
     switch result {
-      case let .success(hashData):
-        return hashData
+      case let .success(signatureIdentifier):
+        // Retrieve the signature using the identifier
+        if let signatureData = await retrieveDataForOperation(withIdentifier: signatureIdentifier) {
+            return signatureData
+        } else {
+            throw SecurityProtocolError.inputError("Failed to retrieve signature data")
+        }
       case let .failure(error):
-        throw SecurityProtocolError.invalidMessageFormat(
-          details: "Hashing failed: \(error.localizedDescription)"
-        )
+        throw error
     }
   }
 
-  // MARK: - SecurityProvider Implementation
+  /**
+   Handles a security operation with the appropriate handler.
+
+   - Parameters:
+     - operation: The security operation to perform
+     - config: Configuration for the operation
+   - Returns: Result DTO with operation results
+   - Throws: Security errors if the operation fails
+   */
+  public func performSecureOperation(
+    operation: SecurityOperation,
+    config: SecurityConfigDTO
+  ) async throws -> SecurityResultDTO {
+    switch operation {
+      case .encrypt:
+        return try await encrypt(config: config)
+      case .decrypt:
+        return try await decrypt(config: config)
+      case .hash:
+        return try await hash(config: config)
+      case .generateRandom:
+        return try await generateKey(config: config)
+      case .sign:
+        return try await sign(config: config)
+      case .verify:
+        return try await verify(config: config)
+      case .storeKey:
+        return try await secureStore(config: config)
+      case .retrieveKey:
+        return try await secureRetrieve(config: config)
+      case .deleteKey:
+        return try await secureDelete(config: config)
+      case .deriveKey:
+        throw SecurityProtocolError.inputError("Operation \(operation) not supported in this implementation")
+    }
+  }
+
+  /**
+   Creates a secure configuration based on the provided options
+   - Parameter options: Configuration options for secure operations
+   - Returns: A properly configured SecurityConfigDTO
+   */
+  public func createSecureConfig(options: SecurityConfigOptions) async -> SecurityConfigDTO {
+    // Map security options to the appropriate enum values
+
+    // Determine the encryption algorithm based on the hardware acceleration setting
+    let encryption: CoreSecurityTypes.EncryptionAlgorithm=if options.useHardwareAcceleration {
+      .aes256GCM // Hardware-accelerated GCM is often available
+    } else {
+      .aes256CBC // CBC as fallback for software implementations
+    }
+
+    // Determine the hash algorithm based on the key derivation iterations
+    let hash: CoreSecurityTypes.HashAlgorithm=if options.keyDerivationIterations > 200_000 {
+      .sha512 // Use stronger hash for high-security settings
+    } else {
+      .sha256 // Default hash
+    }
+
+    // Determine provider type based on hardware acceleration
+    let provider: SecurityProviderType=if options.useHardwareAcceleration {
+      .cryptoKit // CryptoKit supports hardware acceleration on Apple platforms
+    } else {
+      .basic // Basic provider for software-only implementations
+    }
+
+    // Create a new SecurityConfigOptions instance with the same settings but ensure metadata is
+    // preserved
+    let configOptions=SecurityConfigOptions(
+      enableDetailedLogging: options.enableDetailedLogging,
+      keyDerivationIterations: options.keyDerivationIterations,
+      memoryLimitBytes: options.memoryLimitBytes,
+      useHardwareAcceleration: options.useHardwareAcceleration,
+      operationTimeoutSeconds: options.operationTimeoutSeconds,
+      verifyOperations: options.verifyOperations,
+      metadata: options.metadata
+    )
+
+    // Create the DTO with the proper enum values
+    return SecurityConfigDTO(
+      encryptionAlgorithm: encryption,
+      hashAlgorithm: hash,
+      providerType: provider,
+      options: configOptions
+    )
+  }
+
+  /**
+   Generates cryptographically secure random bytes.
+
+   - Parameter count: Number of random bytes to generate
+   - Returns: Array of random bytes
+   - Throws: Error if random generation fails
+   */
+  private func generateRandomBytes(count: Int) async throws -> [UInt8] {
+    var bytes=[UInt8](repeating: 0, count: count)
+    let status=SecRandomCopyBytes(kSecRandomDefault, count, &bytes)
+
+    guard status == errSecSuccess else {
+      throw SecurityProtocolError.inputError("Failed to generate random bytes: \(status)")
+    }
+
+    return bytes
+  }
+
+  /**
+   Helper method to compare two byte arrays.
+
+   - Parameters:
+     - bytes1: First byte array
+     - bytes2: Second byte array
+   - Returns: True if the bytes are identical, false otherwise
+   */
+  private func compareBytes(_ bytes1: [UInt8], _ bytes2: [UInt8]) -> Bool {
+    guard bytes1.count == bytes2.count else { return false }
+
+    // Using a constant-time comparison to prevent timing attacks
+    var result: UInt8=0
+    for i in 0..<bytes1.count {
+      result |= bytes1[i] ^ bytes2[i]
+    }
+
+    return result == 0
+  }
+
+  private func storeDataForOperation(_ data: [UInt8]) async -> String {
+    // Generate a unique identifier
+    let identifier = UUID().uuidString
+    
+    // Store the data using the crypto service's secure storage
+    let result = await cryptoServiceImpl.secureStorage.storeData(data, withIdentifier: identifier)
+    
+    // Handle the result
+    switch result {
+    case .success:
+        return identifier
+    case .failure(let error):
+        // Log error if possible, but return the identifier anyway
+        // as it may be needed for the calling function's signature
+        print("Warning: Failed to store data: \(error.localizedDescription)")
+        return identifier
+    }
+  }
+  
+  /// Retrieves data securely using an identifier
+  /// - Parameter identifier: The identifier for the stored data
+  /// - Returns: The retrieved binary data or nil if retrieval failed
+  private func retrieveDataForOperation(withIdentifier identifier: String) async -> [UInt8]? {
+    let result = await cryptoServiceImpl.secureStorage.retrieveData(withIdentifier: identifier)
+    
+    switch result {
+    case .success(let data):
+        return data
+    case .failure(let error):
+        // Log error if possible
+        print("Warning: Failed to retrieve data: \(error.localizedDescription)")
+        return nil
+    }
+  }
+
+  /**
+   Handles a security operation with OperationsHandler.
+
+   - Parameter config: Security configuration for the operation
+   - Returns: Security result DTO
+   */
+  private func handleSecurityOperation(with config: SecurityConfigDTO, operation: SecurityOperation) async -> SecurityResultDTO {
+    let handler = OperationsHandler(cryptoService: cryptoServiceImpl, keyManager: keyManagerImpl)
+    return await handler.handleOperation(operation: operation, config: config)
+  }
+
+  /**
+   Verifies a cryptographic signature against the provided data.
+
+   - Parameter config: Configuration for the verification operation
+   - Returns: Result DTO with verification result
+   - Throws: Security errors if verification fails
+   */
+  public func verify(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+    let operation = SecurityOperation.verify
+    let handler = OperationsHandler(cryptoService: cryptoServiceImpl, keyManager: keyManagerImpl)
+    return await handler.handleOperation(operation: operation, config: config)
+  }
 
   /**
    Performs encryption using the provided configuration.
 
-   - Parameter config: Configuration parameters for the encryption operation
+   - Parameter config: Configuration for the encryption operation
    - Returns: Result DTO with encrypted data and metadata
    - Throws: Security errors if encryption fails
    */
   public func encrypt(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
-    // Extract necessary parameters from config
-    guard config.options != nil else {
-      throw SecurityProtocolError.invalidMessageFormat(details: "Missing configuration options")
-    }
-
-    guard
-      let dataString=config.options?.metadata?["data"],
-      let inputData=Data(base64Encoded: dataString)
-    else {
-      throw SecurityProtocolError
-        .invalidMessageFormat(details: "Missing or invalid data for encryption operation")
-    }
-
-    guard let key=try await getKeyForOperation(config: config, operation: .encrypt) else {
-      throw SecurityProtocolError.invalidState(
-        expected: "Key available",
-        actual: "No key found for encryption operation"
-      )
-    }
-
-    // Perform encryption
-    let result=await cryptoServiceImpl.encrypt(data: [UInt8](inputData), using: key)
-
-    // Process result
-    switch result {
-      case let .success(encryptedData):
-        return .success(
-          resultData: Data(encryptedData),
-          executionTimeMs: 0, // We should implement proper timing in production
-          metadata: [
-            "operation": "encrypt"
-          ]
-        )
-      case let .failure(error):
-        return .failure(
-          errorDetails: "Encryption failed: \(error.localizedDescription)",
-          executionTimeMs: 0, // We should implement proper timing in production
-          metadata: nil
-        )
-    }
+    let operation = SecurityOperation.encrypt
+    let handler = OperationsHandler(cryptoService: cryptoServiceImpl, keyManager: keyManagerImpl)
+    return await handler.handleOperation(operation: operation, config: config)
   }
 
   /**
    Performs decryption using the provided configuration.
 
    - Parameter config: Configuration parameters for the decryption operation
-   - Returns: Result DTO with decrypted data and metadata
-   - Throws: Security errors if decryption fails
+   - Returns: SecurityResultDTO with the decryption result
+   - Throws: Protocol violation errors
    */
   public func decrypt(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
-    // Extract necessary parameters from config
-    guard config.options != nil else {
-      throw SecurityProtocolError.invalidMessageFormat(details: "Missing configuration options")
-    }
-
-    guard
-      let dataString=config.options?.metadata?["data"],
-      let inputData=Data(base64Encoded: dataString)
-    else {
-      throw SecurityProtocolError
-        .invalidMessageFormat(details: "Missing or invalid data for decryption operation")
-    }
-
-    guard let key=try await getKeyForOperation(config: config, operation: .decrypt) else {
-      throw SecurityProtocolError.invalidState(
-        expected: "Key available",
-        actual: "No key found for decryption operation"
-      )
-    }
-
-    // Perform decryption
-    let result=await cryptoServiceImpl.decrypt(data: [UInt8](inputData), using: key)
-
-    // Process result
-    switch result {
-      case let .success(decryptedData):
-        return .success(
-          resultData: Data(decryptedData),
-          executionTimeMs: 0, // We should implement proper timing in production
-          metadata: [
-            "operation": "decrypt"
-          ]
-        )
-      case let .failure(error):
-        return .failure(
-          errorDetails: "Decryption failed: \(error.localizedDescription)",
-          executionTimeMs: 0, // We should implement proper timing in production
-          metadata: nil
-        )
-    }
+    let operation = SecurityOperation.decrypt
+    let handler = OperationsHandler(cryptoService: cryptoServiceImpl, keyManager: keyManagerImpl)
+    return await handler.handleOperation(operation: operation, config: config)
   }
 
   /**
@@ -349,47 +479,14 @@ public final class SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceI
   }
 
   /**
-   Computes a cryptographic hash of the provided data.
+   Generate a cryptographically secure random key.
 
-   - Parameter config: Configuration for the hash operation
-   - Returns: Result DTO with the computed hash
-   - Throws: Security errors if hashing fails
+   - Parameter length: Length of the key in bytes
+   - Returns: Generated key
+   - Throws: SecurityProtocolError if key generation fails
    */
-  public func hash(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
-    // Extract necessary parameters from config
-    guard config.options != nil else {
-      throw SecurityProtocolError.invalidMessageFormat(details: "Missing configuration options")
-    }
-
-    guard
-      let dataString=config.options?.metadata?["data"],
-      let inputData=Data(base64Encoded: dataString)
-    else {
-      throw SecurityProtocolError
-        .invalidMessageFormat(details: "Missing or invalid data for hash operation")
-    }
-
-    // Perform hash operation
-    let result=await cryptoServiceImpl.hash(data: [UInt8](inputData))
-
-    // Process result
-    switch result {
-      case let .success(hashedData):
-        return .success(
-          resultData: Data(hashedData),
-          executionTimeMs: 0, // We should implement proper timing in production
-          metadata: [
-            "operation": "hash",
-            "algorithm": config.hashAlgorithm.rawValue
-          ]
-        )
-      case let .failure(error):
-        return .failure(
-          errorDetails: "Hashing failed: \(error.localizedDescription)",
-          executionTimeMs: 0, // We should implement proper timing in production
-          metadata: nil
-        )
-    }
+  public func generateKey(length: Int) async throws -> [UInt8] {
+    try await generateRandomBytes(count: length)
   }
 
   /**
@@ -402,20 +499,30 @@ public final class SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceI
   public func secureStore(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
     // Extract necessary parameters from config
     guard config.options != nil else {
-      throw SecurityProtocolError.invalidMessageFormat(details: "Missing configuration options")
+      return SecurityResultDTO.failure(
+        errorDetails: "Missing configuration options",
+        executionTimeMs: 0,
+        metadata: ["operation": "secureStore"]
+      )
     }
 
     guard
       let dataString=config.options?.metadata?["data"],
       let inputData=Data(base64Encoded: dataString)
     else {
-      throw SecurityProtocolError
-        .invalidMessageFormat(details: "Missing or invalid data for secure storage operation")
+      return SecurityResultDTO.failure(
+        errorDetails: "Missing or invalid data for secure storage operation",
+        executionTimeMs: 0,
+        metadata: ["operation": "secureStore"]
+      )
     }
 
     guard let identifier=config.options?.metadata?["identifier"] else {
-      throw SecurityProtocolError
-        .invalidMessageFormat(details: "Missing identifier for secure storage operation")
+      return SecurityResultDTO.failure(
+        errorDetails: "Missing identifier for secure storage operation",
+        executionTimeMs: 0,
+        metadata: ["operation": "secureStore"]
+      )
     }
 
     // Store the data
@@ -423,7 +530,7 @@ public final class SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceI
 
     switch storeResult {
       case .success:
-        return .success(
+        return SecurityResultDTO.success(
           resultData: nil,
           executionTimeMs: 0, // We should implement proper timing in production
           metadata: [
@@ -432,10 +539,10 @@ public final class SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceI
           ]
         )
       case let .failure(error):
-        return .failure(
+        return SecurityResultDTO.failure(
           errorDetails: "Secure storage failed: \(error.localizedDescription)",
-          executionTimeMs: 0, // We should implement proper timing in production
-          metadata: nil
+          executionTimeMs: 0,
+          metadata: ["operation": "secureStore"]
         )
     }
   }
@@ -450,12 +557,19 @@ public final class SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceI
   public func secureRetrieve(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
     // Extract necessary parameters from config
     guard config.options != nil else {
-      throw SecurityProtocolError.invalidMessageFormat(details: "Missing configuration options")
+      return SecurityResultDTO.failure(
+        errorDetails: "Missing configuration options",
+        executionTimeMs: 0,
+        metadata: ["operation": "secureRetrieve"]
+      )
     }
 
     guard let identifier=config.options?.metadata?["identifier"] else {
-      throw SecurityProtocolError
-        .invalidMessageFormat(details: "Missing identifier for secure retrieval operation")
+      return SecurityResultDTO.failure(
+        errorDetails: "Missing identifier for secure retrieval operation",
+        executionTimeMs: 0,
+        metadata: ["operation": "secureRetrieve"]
+      )
     }
 
     // Retrieve the data
@@ -463,7 +577,7 @@ public final class SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceI
 
     switch retrieveResult {
       case let .success(data):
-        return .success(
+        return SecurityResultDTO.success(
           resultData: Data(data),
           executionTimeMs: 0, // We should implement proper timing in production
           metadata: [
@@ -472,10 +586,10 @@ public final class SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceI
           ]
         )
       case let .failure(error):
-        return .failure(
+        return SecurityResultDTO.failure(
           errorDetails: "Secure retrieval failed: \(error.localizedDescription)",
-          executionTimeMs: 0, // We should implement proper timing in production
-          metadata: nil
+          executionTimeMs: 0,
+          metadata: ["operation": "secureRetrieve"]
         )
     }
   }
@@ -490,12 +604,19 @@ public final class SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceI
   public func secureDelete(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
     // Extract necessary parameters from config
     guard config.options != nil else {
-      throw SecurityProtocolError.invalidMessageFormat(details: "Missing configuration options")
+      return SecurityResultDTO.failure(
+        errorDetails: "Missing configuration options",
+        executionTimeMs: 0,
+        metadata: ["operation": "secureDelete"]
+      )
     }
 
     guard let identifier=config.options?.metadata?["identifier"] else {
-      throw SecurityProtocolError
-        .invalidMessageFormat(details: "Missing identifier for secure deletion operation")
+      return SecurityResultDTO.failure(
+        errorDetails: "Missing identifier for secure deletion operation",
+        executionTimeMs: 0,
+        metadata: ["operation": "secureDelete"]
+      )
     }
 
     // Delete the data
@@ -503,7 +624,7 @@ public final class SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceI
 
     switch deleteResult {
       case .success:
-        return .success(
+        return SecurityResultDTO.success(
           resultData: nil,
           executionTimeMs: 0, // We should implement proper timing in production
           metadata: [
@@ -512,10 +633,10 @@ public final class SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceI
           ]
         )
       case let .failure(error):
-        return .failure(
+        return SecurityResultDTO.failure(
           errorDetails: "Secure deletion failed: \(error.localizedDescription)",
-          executionTimeMs: 0, // We should implement proper timing in production
-          metadata: nil
+          executionTimeMs: 0,
+          metadata: ["operation": "secureDelete"]
         )
     }
   }
@@ -525,243 +646,11 @@ public final class SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceI
 
    - Parameter config: Configuration for the signing operation
    - Returns: Result DTO with signature data
-   - Throws: Security errors if signing fails
+   - Throws: Protocol violation errors
    */
   public func sign(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
-    // Extract necessary parameters
-    guard config.options != nil else {
-      throw SecurityProtocolError.invalidMessageFormat(details: "Missing configuration options")
-    }
-
-    guard
-      let dataString=config.options?.metadata?["data"],
-      let inputData=Data(base64Encoded: dataString)
-    else {
-      throw SecurityProtocolError
-        .invalidMessageFormat(details: "Missing or invalid data for sign operation")
-    }
-
-    guard let key=try await getKeyForOperation(config: config, operation: .sign) else {
-      throw SecurityProtocolError.invalidState(
-        expected: "Key available",
-        actual: "No key found for sign operation"
-      )
-    }
-
-    // For now, we'll just return a basic HMAC as signature since full signing implementation
-    // would depend on specific algorithms that might not be in scope
-    let result=await cryptoServiceImpl.hash(data: [UInt8](inputData) + key)
-
-    switch result {
-      case let .success(signatureData):
-        return .success(
-          resultData: Data(signatureData),
-          executionTimeMs: 0, // We should implement proper timing in production
-          metadata: [
-            "operation": "sign",
-            "algorithm": config.encryptionAlgorithm.rawValue
-          ]
-        )
-      case let .failure(error):
-        return .failure(
-          errorDetails: "Signing failed: \(error.localizedDescription)",
-          executionTimeMs: 0, // We should implement proper timing in production
-          metadata: nil
-        )
-    }
-  }
-
-  /**
-   Verifies a cryptographic signature against the provided data.
-
-   - Parameter config: Configuration for the verification operation
-   - Returns: Result DTO with verification result
-   - Throws: Security errors if verification fails
-   */
-  public func verify(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
-    // Extract necessary parameters
-    guard config.options != nil else {
-      throw SecurityProtocolError.invalidMessageFormat(details: "Missing configuration options")
-    }
-
-    guard
-      let dataString=config.options?.metadata?["data"],
-      let inputData=Data(base64Encoded: dataString)
-    else {
-      throw SecurityProtocolError
-        .invalidMessageFormat(details: "Missing or invalid data for verification operation")
-    }
-
-    guard
-      let signatureString=config.options?.metadata?["signature"],
-      let signatureData=Data(base64Encoded: signatureString)
-    else {
-      throw SecurityProtocolError
-        .invalidMessageFormat(details: "Missing or invalid signature for verification operation")
-    }
-
-    guard let key=try await getKeyForOperation(config: config, operation: .verify) else {
-      throw SecurityProtocolError.invalidState(
-        expected: "Key available",
-        actual: "No key found for verification operation"
-      )
-    }
-
-    // For now, we'll use a simple approach similar to the sign operation
-    let result=await cryptoServiceImpl.hash(data: [UInt8](inputData) + key)
-
-    switch result {
-      case let .success(computedSignature):
-        // Compare the computed signature with the provided one
-        let isValid=compareBytes([UInt8](signatureData), computedSignature)
-
-        return .success(
-          resultData: nil,
-          executionTimeMs: 0,
-          metadata: [
-            "operation": "verify",
-            "isValid": isValid ? "true" : "false"
-          ]
-        )
-      case let .failure(error):
-        return .failure(
-          errorDetails: "Verification failed: \(error.localizedDescription)",
-          executionTimeMs: 0,
-          metadata: nil
-        )
-    }
-  }
-
-  /**
-   Handles a security operation with the appropriate handler.
-
-   - Parameters:
-     - operation: The security operation to perform
-     - config: Configuration for the operation
-   - Returns: Result DTO with operation results
-   - Throws: Security errors if the operation fails
-   */
-  public func performSecureOperation(
-    operation: SecurityOperation,
-    config: SecurityConfigDTO
-  ) async throws -> SecurityResultDTO {
-    switch operation {
-      case .encrypt:
-        return try await encrypt(config: config)
-      case .decrypt:
-        return try await decrypt(config: config)
-      case .hash:
-        return try await hash(config: config)
-      case .generateRandom:
-        return try await generateKey(config: config)
-      case .sign:
-        return try await sign(config: config)
-      case .verify:
-        return try await verify(config: config)
-      case .storeKey:
-        return try await secureStore(config: config)
-      case .retrieveKey:
-        return try await secureRetrieve(config: config)
-      case .deleteKey:
-        return try await secureDelete(config: config)
-      case .deriveKey:
-        throw SecurityProtocolError.invalidMessageFormat(
-          details: "Operation \(operation) not supported in this implementation"
-        )
-    }
-  }
-
-  /**
-   Creates a secure configuration with type-safe, Sendable-compliant options.
-
-   This method provides a Swift 6-compatible way to create security configurations
-   that can safely cross actor boundaries.
-
-   - Parameter options: Type-safe options structure that conforms to Sendable
-   - Returns: A properly configured SecurityConfigDTO
-   */
-  public func createSecureConfig(options: SecurityConfigOptions) async -> SecurityConfigDTO {
-    // Map security options to the appropriate enum values
-
-    // Determine the encryption algorithm based on the hardware acceleration setting
-    let encryption: EncryptionAlgorithm=if options.useHardwareAcceleration {
-      .aes256GCM // Hardware-accelerated GCM is often available
-    } else {
-      .aes256CBC // CBC as fallback for software implementations
-    }
-
-    // Determine the hash algorithm based on the key derivation iterations
-    let hash: HashAlgorithm=if options.keyDerivationIterations > 200_000 {
-      .sha512 // Use stronger hash for high-security settings
-    } else {
-      .sha256 // Default hash
-    }
-
-    // Determine provider type based on hardware acceleration
-    let provider: SecurityProviderType=if options.useHardwareAcceleration {
-      .cryptoKit // CryptoKit supports hardware acceleration on Apple platforms
-    } else {
-      .basic // Basic provider for software-only implementations
-    }
-
-    // Create a new SecurityConfigOptions instance with the same settings but ensure metadata is
-    // preserved
-    let configOptions=SecurityConfigOptions(
-      enableDetailedLogging: options.enableDetailedLogging,
-      keyDerivationIterations: options.keyDerivationIterations,
-      memoryLimitBytes: options.memoryLimitBytes,
-      useHardwareAcceleration: options.useHardwareAcceleration,
-      operationTimeoutSeconds: options.operationTimeoutSeconds,
-      verifyOperations: options.verifyOperations,
-      metadata: options.metadata
-    )
-
-    // Create the DTO with the proper enum values
-    return SecurityConfigDTO(
-      encryptionAlgorithm: encryption,
-      hashAlgorithm: hash,
-      providerType: provider,
-      options: configOptions
-    )
-  }
-
-  /**
-   Generates cryptographically secure random bytes.
-
-   - Parameter count: Number of random bytes to generate
-   - Returns: Array of random bytes
-   - Throws: Error if random generation fails
-   */
-  private func generateRandomBytes(count: Int) async throws -> [UInt8] {
-    var bytes=[UInt8](repeating: 0, count: count)
-    let status=SecRandomCopyBytes(kSecRandomDefault, count, &bytes)
-
-    guard status == errSecSuccess else {
-      throw SecurityProtocolError.invalidMessageFormat(
-        details: "Failed to generate random bytes: \(status)"
-      )
-    }
-
-    return bytes
-  }
-
-  /**
-   Helper method to compare two byte arrays.
-
-   - Parameters:
-     - bytes1: First byte array
-     - bytes2: Second byte array
-   - Returns: True if the bytes are identical, false otherwise
-   */
-  private func compareBytes(_ bytes1: [UInt8], _ bytes2: [UInt8]) -> Bool {
-    guard bytes1.count == bytes2.count else { return false }
-
-    // Using a constant-time comparison to prevent timing attacks
-    var result: UInt8=0
-    for i in 0..<bytes1.count {
-      result |= bytes1[i] ^ bytes2[i]
-    }
-
-    return result == 0
+    let operation = SecurityOperation.sign
+    let handler = OperationsHandler(cryptoService: cryptoServiceImpl, keyManager: keyManagerImpl)
+    return await handler.handleOperation(operation: operation, config: config)
   }
 }

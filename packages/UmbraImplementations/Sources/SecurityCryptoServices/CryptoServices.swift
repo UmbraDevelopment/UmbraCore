@@ -7,7 +7,9 @@ import SecurityCoreInterfaces
 /**
  # CryptoServices
 
- Main entry point for the cryptographic services in UmbraCore.
+ Main entry point for the cryptographic services in UmbraCore following
+ the Alpha Dot Five architecture principles with actor-based concurrency.
+ 
  This provides factory methods to access various cryptographic services
  through a clean interface that avoids implementation details.
 
@@ -16,29 +18,31 @@ import SecurityCoreInterfaces
  ```swift
  // Create a crypto service with a specific provider
  let logger = YourLoggerImplementation()
- let cryptoService = CryptoServices.createCryptoService(
+ let cryptoService = await CryptoServices.createCryptoService(
      providerType: .apple,
      logger: logger
  )
 
- // Encrypt data
+ // Encrypt data - note the await keyword for actor method calls
  let encryptedData = try await cryptoService.encrypt(data: secureData, using: secureKey)
  ```
  */
 public enum CryptoServices {
   /**
    Creates a new crypto service with the specified provider type.
+   The implementation follows the actor-based concurrency model of the
+   Alpha Dot Five architecture.
 
    - Parameters:
       - providerType: The type of security provider to use (optional)
       - logger: Logger for recording operations
-   - Returns: A new implementation of CryptoServiceProtocol
+   - Returns: A new actor-based implementation of CryptoServiceProtocol
    */
   public static func createCryptoService(
-    providerType: SecurityProviderType?=nil,
+    providerType: SecurityProviderType? = nil,
     logger: LoggingProtocol
-  ) -> any CryptoServiceProtocol {
-    CryptoServicesFactory.createCryptoService(
+  ) async -> any CryptoServiceProtocol {
+    await CryptoServicesFactory.createCryptoService(
       providerType: providerType,
       logger: logger
     )
@@ -46,19 +50,21 @@ public enum CryptoServices {
 
   /**
    Creates a new secure storage service for key management.
+   The implementation follows the actor-based concurrency model of the
+   Alpha Dot Five architecture.
 
    - Parameters:
       - providerType: The type of security provider to use (optional)
       - storageURL: Custom URL for key storage (optional)
       - logger: Logger for recording operations
-   - Returns: A new implementation of SecureStorageProtocol
+   - Returns: A new actor-based implementation of SecureStorageProtocol
    */
   public static func createSecureStorage(
-    providerType: SecurityProviderType?=nil,
-    storageURL: URL?=nil,
+    providerType: SecurityProviderType? = nil,
+    storageURL: URL? = nil,
     logger: LoggingProtocol
-  ) -> any SecureStorageProtocol {
-    CryptoServicesFactory.createSecureStorage(
+  ) async -> any SecureStorageProtocol {
+    await CryptoServicesFactory.createSecureStorage(
       providerType: providerType,
       storageURL: storageURL,
       logger: logger
@@ -67,14 +73,16 @@ public enum CryptoServices {
 
   /**
    Creates a new provider registry for managing security providers.
+   The implementation follows the actor-based concurrency model of the
+   Alpha Dot Five architecture.
 
    - Parameter logger: Logger for recording operations
-   - Returns: A new implementation of ProviderRegistryProtocol
+   - Returns: A new actor-based implementation of ProviderRegistryProtocol
    */
   public static func createProviderRegistry(
     logger: LoggingProtocol
-  ) -> any ProviderRegistryProtocol {
-    CryptoServicesFactory.createProviderRegistry(
+  ) async -> any ProviderRegistryProtocol {
+    await CryptoServicesFactory.createProviderRegistry(
       logger: logger
     )
   }

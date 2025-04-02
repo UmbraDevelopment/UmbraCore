@@ -2,8 +2,9 @@ import CoreSecurityTypes
 import DomainSecurityTypes
 import Foundation
 import LoggingInterfaces
+import LoggingServices
+import SecurityCore
 import SecurityCoreInterfaces
-import SecurityUtils
 
 /**
  # SecureStorageActor
@@ -19,7 +20,8 @@ import SecurityUtils
 
  ```swift
  // Create the actor with a specific provider type
- let secureStorage = SecureStorageActor(providerType: .apple, logger: logger)
+ let secureLogger = await LoggingServices.createSecureLogger(category: "SecureStorage")
+ let secureStorage = SecureStorageActor(providerType: .apple, secureLogger: secureLogger)
 
  // Store and retrieve keys securely
  try await secureStorage.storeKey(key, withIdentifier: "master-key")
@@ -38,7 +40,10 @@ public actor SecureStorageActor {
   /// The underlying crypto service for encryption/decryption
   private let cryptoService: CryptoServiceActor
 
-  /// Logger for recording operations
+  /// Secure logger for privacy-aware logging
+  private let secureLogger: SecureLoggerActor
+  
+  /// Legacy logger interface for compatibility with existing systems
   private let logger: LoggingProtocol
 
   /// In-memory cache of recently used keys (identifier -> key)
@@ -48,47 +53,88 @@ public actor SecureStorageActor {
   private let storageURL: URL
 
   // MARK: - Initialisation
-
+  
   /**
-   Initialises a new secure storage actor.
-
+   Initialises a new secure storage actor with the specified crypto service and logger.
+   
    - Parameters:
-      - providerType: The type of security provider to use
-      - storageURL: Custom URL for key storage (defaults to app support directory)
-      - logger: Logger for recording operations
+      - cryptoService: The crypto service actor to use for cryptographic operations
+      - logger: The logger for recording operations (will be replaced with secureLogger in future versions)
+      - secureLogger: The secure logger for privacy-aware logging
+      - storageLocation: The URL where encrypted keys will be stored
    */
   public init(
-    providerType: SecurityProviderType?=nil,
-    storageURL: URL?=nil,
-    logger: LoggingProtocol
+    cryptoService: CryptoServiceActor,
+    logger: LoggingProtocol,
+    secureLogger: SecureLoggerActor? = nil,
+    storageLocation: URL? = nil
   ) {
-    self.logger=logger
-    cryptoService=CryptoServiceActor(providerType: providerType, logger: logger)
-
-    // Set up storage location
-    if let customURL=storageURL {
-      self.storageURL=customURL
-    } else {
-      // Default to app support directory
-      let fileManager=FileManager.default
-      let appSupportURL=fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask)
-        .first!
-      self.storageURL=appSupportURL.appendingPathComponent("UmbraSecureStorage", isDirectory: true)
-    }
-
-    // Ensure storage directory exists
-    try? FileManager.default.createDirectory(
-      at: self.storageURL,
-      withIntermediateDirectories: true,
-      attributes: nil
+    self.cryptoService = cryptoService
+    self.logger = logger
+    self.secureLogger = secureLogger ?? SecureLoggerActor(
+      subsystem: "com.umbra.securitycryptoservices",
+      category: "SecureStorage"
     )
-
-    Task {
-      await logger.info(
-        "Initialised SecureStorageActor with storage at: \(self.storageURL.path)",
-        metadata: nil
-      )
+    
+    if let storageLocation = storageLocation {
+      self.storageURL = storageLocation
+    } else {
+      let fileManager = FileManager.default
+      let defaultURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        .appendingPathComponent("com.umbra.keys", isDirectory: true)
+      
+      // Create directory if it doesn't exist
+      if !fileManager.fileExists(atPath: defaultURL.path) {
+        try? fileManager.createDirectory(at: defaultURL, withIntermediateDirectories: true)
+      }
+      
+      self.storageURL = defaultURL
     }
+  }
+  
+  /**
+   Initialises a new secure storage actor with the specified provider type and logger.
+   
+   - Parameters:
+      - providerType: The type of security provider to use
+      - logger: The logger for recording operations
+      - secureLogger: The secure logger for privacy-aware logging (optional, will be created if not provided)
+      - storageLocation: The URL where encrypted keys will be stored (optional)
+   */
+  public init(
+    providerType: SecurityProviderType,
+    logger: LoggingProtocol,
+    secureLogger: SecureLoggerActor? = nil,
+    storageLocation: URL? = nil
+  ) async {
+    self.logger = logger
+    self.secureLogger = secureLogger ?? SecureLoggerActor(
+      subsystem: "com.umbra.securitycryptoservices",
+      category: "SecureStorage"
+    )
+    
+    // Create the crypto service with the specified provider type
+    self.cryptoService = await CryptoServicesFactory.createCryptoServiceActor(
+      providerType: providerType,
+      logger: logger
+    )
+    
+    if let storageLocation = storageLocation {
+      self.storageURL = storageLocation
+    } else {
+      let fileManager = FileManager.default
+      let defaultURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        .appendingPathComponent("com.umbra.keys", isDirectory: true)
+      
+      // Create directory if it doesn't exist
+      if !fileManager.fileExists(atPath: defaultURL.path) {
+        try? fileManager.createDirectory(at: defaultURL, withIntermediateDirectories: true)
+      }
+      
+      self.storageURL = defaultURL
+    }
+    
+    await secureLogger.info("SecureStorageActor initialised with provider type: \(providerType.rawValue)")
   }
 
   // MARK: - Key Storage Operations
@@ -114,7 +160,7 @@ public actor SecureStorageActor {
     // Check if key exists and we're not overwriting
     let keyURL=storageURL.appendingPathComponent("\(identifier).key")
     if FileManager.default.fileExists(atPath: keyURL.path) && !overwrite {
-      await logger.warning(
+      await secureLogger.warning(
         "Key with identifier '\(identifier)' already exists and overwrite is false",
         metadata: nil
       )
@@ -137,9 +183,9 @@ public actor SecureStorageActor {
         self.keyCache[identifier]=[UInt8](secureKey)
       }
 
-      await logger.info("Successfully stored key with identifier: \(identifier)", metadata: nil)
+      await secureLogger.info("Successfully stored key with identifier: \(identifier)", metadata: nil)
     } catch {
-      await logger.error("Failed to store key: \(error.localizedDescription)", metadata: nil)
+      await secureLogger.error("Failed to store key: \(error.localizedDescription)", metadata: nil)
 
       if let secError=error as? SecurityProtocolError {
         throw secError
@@ -172,7 +218,7 @@ public actor SecureStorageActor {
 
     // Check if key exists
     guard FileManager.default.fileExists(atPath: keyURL.path) else {
-      await logger.error("Key with identifier '\(identifier)' not found", metadata: nil)
+      await secureLogger.error("Key with identifier '\(identifier)' not found", metadata: nil)
       throw SecurityProtocolError.invalidInput("Key with identifier '\(identifier)' not found")
     }
 
@@ -190,10 +236,10 @@ public actor SecureStorageActor {
       // Update cache with a secured copy
       keyCache[identifier]=MemoryProtection.secureDataCopy(key)
 
-      await logger.info("Successfully retrieved key with identifier: \(identifier)", metadata: nil)
+      await secureLogger.info("Successfully retrieved key with identifier: \(identifier)", metadata: nil)
       return key
     } catch {
-      await logger.error("Failed to retrieve key: \(error.localizedDescription)", metadata: nil)
+      await secureLogger.error("Failed to retrieve key: \(error.localizedDescription)", metadata: nil)
 
       if let secError=error as? SecurityProtocolError {
         throw secError
@@ -216,7 +262,7 @@ public actor SecureStorageActor {
 
     // Check if key exists
     guard FileManager.default.fileExists(atPath: keyURL.path) else {
-      await logger.warning(
+      await secureLogger.warning(
         "Key with identifier '\(identifier)' not found for deletion",
         metadata: nil
       )
@@ -234,10 +280,10 @@ public actor SecureStorageActor {
         keyCache.removeValue(forKey: identifier)
       }
 
-      await logger.info("Successfully deleted key with identifier: \(identifier)", metadata: nil)
+      await secureLogger.info("Successfully deleted key with identifier: \(identifier)", metadata: nil)
       return true
     } catch {
-      await logger.error(
+      await secureLogger.error(
         "Failed to delete key '\(identifier)': \(error.localizedDescription)",
         metadata: nil
       )
@@ -295,14 +341,14 @@ public actor SecureStorageActor {
             )
           }
 
-        await self.logger.info(
+        await self.secureLogger.info(
           "Successfully rotated key '\(identifier)' and re-encrypted \(dataItems.count) data items",
           metadata: nil
         )
 
         return reencryptedItems
       } else {
-        await self.logger.info("Successfully rotated key '\(identifier)'", metadata: nil)
+        await self.secureLogger.info("Successfully rotated key '\(identifier)'", metadata: nil)
         return nil
       }
     }
@@ -345,14 +391,14 @@ public actor SecureStorageActor {
               // Write encrypted master key to storage
               try Data(encryptedMasterKey).write(to: masterKeyURL)
 
-              await self.logger.info("Generated and stored new master key", metadata: nil)
+              await self.secureLogger.info("Generated and stored new master key", metadata: nil)
 
               // Return a copy of the master key
               return [UInt8](protectedMasterKey)
             }
         }
       } catch {
-        await logger.error(
+        await secureLogger.error(
           "Failed to generate master key: \(error.localizedDescription)",
           metadata: nil
         )
@@ -387,7 +433,7 @@ public actor SecureStorageActor {
           return masterKey
         }
     } catch {
-      await logger.error(
+      await secureLogger.error(
         "Failed to retrieve master key: \(error.localizedDescription)",
         metadata: nil
       )
@@ -432,12 +478,12 @@ public actor SecureStorageActor {
 
     // Log the cache clearing operation
     Task {
-      await logger.info("Cleared key cache", metadata: nil)
+      await secureLogger.info("Cleared key cache", metadata: nil)
     }
   }
 
   /**
-   Deinitializes the actor, ensuring all sensitive data is cleared.
+   Deinitialises the actor, ensuring all sensitive data is cleared.
    */
   deinit {
     // Ensure all cached keys are securely zeroed

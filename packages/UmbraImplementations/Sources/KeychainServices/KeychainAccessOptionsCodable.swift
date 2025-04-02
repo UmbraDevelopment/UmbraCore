@@ -4,7 +4,7 @@ import KeychainInterfaces
 /**
  # KeychainAccessOptionsAdapter
 
- Extension to provide conversion methods for KeychainAccessOptions
+ Extension to provide conversion methods for KeychainInterfaces.KeychainAccessOptions
  This adapter ensures backward compatibility with existing code while using
  the canonical KeychainAccessOptions from KeychainInterfaces.
  */
@@ -22,8 +22,5 @@ extension KeychainInterfaces.KeychainAccessOptions {
   }
 }
 
-/**
- Typealias to maintain backward compatibility with existing code
- while using the canonical version from KeychainInterfaces.
- */
-public typealias KeychainAccessOptions=KeychainInterfaces.KeychainAccessOptions
+// We removed the typealias as per requirements to reference resources directly
+// All code should directly reference KeychainInterfaces.KeychainAccessOptions

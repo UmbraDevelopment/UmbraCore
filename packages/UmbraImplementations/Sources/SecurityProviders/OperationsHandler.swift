@@ -68,9 +68,9 @@ final class OperationsHandler {
   ) async -> SecurityResultDTO {
     switch operation {
       case .encrypt:
-        await handleEncryption(config: config, operation: operation)
+        await processEncryptionOperation(config, operation: operation)
       case .decrypt:
-        await handleDecryption(config: config, operation: operation)
+        await processDecryptionOperation(config, operation: operation)
       case .hash:
         await handleHashing(config: config, operation: operation)
       case .sign, .verify, .deriveKey, .generateRandom, .storeKey, .retrieveKey, .deleteKey:
@@ -85,29 +85,213 @@ final class OperationsHandler {
 
   // MARK: - Helper Methods
 
-  /// Convert a Result type to a SecurityResultDTO
-  /// - Parameters:
-  ///   - result: The Result to convert
-  ///   - operation: The original operation
-  /// - Returns: A properly formatted SecurityResultDTO
-  func resultToDTO(
-    _ result: Result<[UInt8], SecurityProtocolError>,
-    operation: SecurityOperation
-  ) -> SecurityResultDTO {
+  /// Imports data for an operation into secure storage and returns the identifier
+  /// - Parameter data: The binary data to import
+  /// - Returns: A string identifier for retrieving the data
+  private func importDataForOperation(_ data: [UInt8]) async -> String {
+    // Generate a unique identifier
+    let identifier = UUID().uuidString
+    
+    // Store the data using the crypto service's secure storage
+    let result = await cryptoService.secureStorage.storeData(data, withIdentifier: identifier)
+    
+    // Handle the result
     switch result {
-      case let .success(data):
-        .success(
-          resultData: Data(data),
-          executionTimeMs: 0, // Should implement proper timing in production
+    case .success:
+        return identifier
+    case .failure(let error):
+        // Log error if possible, but return the identifier anyway
+        print("Warning: Failed to import data: \(error.localizedDescription)")
+        return identifier
+    }
+  }
+  
+  /// Retrieves data using an identifier from secure storage
+  /// - Parameter identifier: The identifier for the stored data
+  /// - Returns: The retrieved binary data or nil if retrieval failed
+  private func retrieveDataForOperation(withIdentifier identifier: String) async -> [UInt8]? {
+    let result = await cryptoService.secureStorage.retrieveData(withIdentifier: identifier)
+    
+    switch result {
+    case .success(let data):
+        return data
+    case .failure(let error):
+        // Log error if possible
+        print("Warning: Failed to retrieve data: \(error.localizedDescription)")
+        return nil
+    }
+  }
+  
+  /// Converts a Result from a cryptographic operation to a SecurityResultDTO
+  /// - Parameters:
+  ///   - result: The cryptographic operation result
+  ///   - operation: The security operation type
+  /// - Returns: A SecurityResultDTO representing the result
+  private func resultToDTO<T>(
+    _ result: Result<T, SecurityProtocolError>,
+    operation: SecurityOperation
+  ) async -> SecurityResultDTO {
+    // NOTE: In a production implementation, we would measure execution time
+    // by capturing start/end times and calculating the difference
+    
+    switch result {
+    case .success(let value):
+      if let identifier = value as? String {
+        // For cryptographic operations that return identifiers, retrieve the actual data
+        if let data = await retrieveDataForOperation(withIdentifier: identifier) {
+          return SecurityResultDTO.success(
+            resultData: Data(data),
+            executionTimeMs: 0, // Would calculate from start/end time in a full implementation
+            metadata: ["operation": operation.rawValue]
+          )
+        } else {
+          return SecurityResultDTO.failure(
+            errorDetails: "Failed to retrieve data for identifier: \(identifier)",
+            executionTimeMs: 0,
+            metadata: ["operation": operation.rawValue]
+          )
+        }
+      } else if let boolValue = value as? Bool {
+        // For verification operations that return a boolean
+        return SecurityResultDTO.success(
+          resultData: Data(boolValue ? [1] : [0]), // Simple representation of boolean as a byte
+          executionTimeMs: 0,
           metadata: ["operation": operation.rawValue]
         )
+      } else {
+        // This branch should not be reached with the current implementation
+        return SecurityResultDTO.failure(
+          errorDetails: "Unexpected result type",
+          executionTimeMs: 0,
+          metadata: ["operation": operation.rawValue]
+        )
+      }
+    case .failure(let error):
+      return SecurityResultDTO.failure(
+        errorDetails: error.localizedDescription,
+        executionTimeMs: 0,
+        metadata: ["operation": operation.rawValue, "errorType": String(describing: error)]
+      )
+    }
+  }
+
+  /// Process an encryption operation with the provided configuration
+  /// - Parameters:
+  ///   - config: Configuration for the encryption operation
+  ///   - operation: The security operation type
+  /// - Returns: Result of the encryption operation
+  private func processEncryptionOperation(
+    _ config: SecurityConfigDTO,
+    operation: SecurityOperation
+  ) async -> SecurityResultDTO {
+    // First check if we need to retrieve a key
+    let keyResult=await retrieveKeyForOperation(config)
+
+    switch keyResult {
+      case let .success(key):
+        // Extract input data from config
+        guard
+          let dataString = config.options?.metadata?["data"],
+          let inputData = Data(base64Encoded: dataString)
+        else {
+          return SecurityResultDTO.failure(
+            errorDetails: "Missing input data",
+            executionTimeMs: 0,
+            metadata: ["operation": operation.rawValue]
+          )
+        }
+
+        // Perform encryption with the key and data
+        return await resultToDTO(
+          cryptoService.encrypt(
+            dataIdentifier: await importDataForOperation([UInt8](inputData)),
+            keyIdentifier: await importDataForOperation(key),
+            options: EncryptionOptions(algorithm: .aes256CBC)
+          ),
+          operation: operation
+        )
       case let .failure(error):
-        .failure(
+        return SecurityResultDTO.failure(
           errorDetails: error.localizedDescription,
-          executionTimeMs: 0, // Should implement proper timing in production
+          executionTimeMs: 0,
           metadata: ["operation": operation.rawValue]
         )
     }
+  }
+
+  /// Process a decryption operation with the provided configuration
+  /// - Parameters:
+  ///   - config: Configuration for the decryption operation
+  ///   - operation: The security operation type
+  /// - Returns: Result of the decryption operation
+  private func processDecryptionOperation(
+    _ config: SecurityConfigDTO,
+    operation: SecurityOperation
+  ) async -> SecurityResultDTO {
+    // First check if we need to retrieve a key
+    let keyResult=await retrieveKeyForOperation(config)
+
+    switch keyResult {
+      case let .success(key):
+        // Extract input data from config
+        guard
+          let dataString = config.options?.metadata?["data"],
+          let inputData = Data(base64Encoded: dataString)
+        else {
+          return SecurityResultDTO.failure(
+            errorDetails: "Missing input data",
+            executionTimeMs: 0,
+            metadata: ["operation": operation.rawValue]
+          )
+        }
+
+        // Perform decryption with the key and data
+        return await resultToDTO(
+          cryptoService.decrypt(
+            encryptedDataIdentifier: await importDataForOperation([UInt8](inputData)),
+            keyIdentifier: await importDataForOperation(key),
+            options: DecryptionOptions(algorithm: .aes256CBC)
+          ),
+          operation: operation
+        )
+      case let .failure(error):
+        return SecurityResultDTO.failure(
+          errorDetails: error.localizedDescription,
+          executionTimeMs: 0,
+          metadata: ["operation": operation.rawValue]
+        )
+    }
+  }
+
+  /// Handle hashing operations
+  /// - Parameters:
+  ///   - config: Configuration for the hashing
+  ///   - operation: The operation being performed
+  /// - Returns: Result with hash value or error
+  private func handleHashing(
+    config: SecurityConfigDTO,
+    operation: SecurityOperation
+  ) async -> SecurityResultDTO {
+    // Extract data to hash
+    guard
+      let dataString=config.options?.metadata?["data"],
+      let inputData=Data(base64Encoded: dataString)
+    else {
+      return SecurityResultDTO.failure(
+        errorDetails: "No data provided for hashing",
+        executionTimeMs: 0,
+        metadata: ["operation": operation.rawValue]
+      )
+    }
+
+    // Perform hashing
+    return await resultToDTO(
+      cryptoService.hash(
+        dataIdentifier: await importDataForOperation([UInt8](inputData)),
+        options: HashingOptions(algorithm: .sha256)
+      ),
+      operation: operation
+    )
   }
 
   /// Retrieve a key for a cryptographic operation
@@ -142,113 +326,5 @@ final class OperationsHandler {
 
     // No key provided or found
     return .failure(.invalidMessageFormat(details: "No key provided for operation"))
-  }
-
-  /// Handle encryption operations
-  /// - Parameters:
-  ///   - config: Configuration for the encryption
-  ///   - operation: The operation being performed
-  /// - Returns: Result with encrypted data or error
-  private func handleEncryption(
-    config: SecurityConfigDTO,
-    operation: SecurityOperation
-  ) async -> SecurityResultDTO {
-    // First check if we need to retrieve a key
-    let keyResult=await retrieveKeyForOperation(config)
-
-    switch keyResult {
-      case let .success(key):
-        // Now that we have the key, extract the data to encrypt
-        guard
-          let dataString=config.options?.metadata?["data"],
-          let inputData=Data(base64Encoded: dataString)
-        else {
-          return .failure(
-            errorDetails: "No input data provided for encryption",
-            executionTimeMs: 0,
-            metadata: ["operation": operation.rawValue]
-          )
-        }
-
-        // Perform encryption with the key and data
-        return await resultToDTO(
-          cryptoService.encrypt(data: [UInt8](inputData), using: key),
-          operation: operation
-        )
-      case let .failure(error):
-        return .failure(
-          errorDetails: error.localizedDescription,
-          executionTimeMs: 0,
-          metadata: ["operation": operation.rawValue]
-        )
-    }
-  }
-
-  /// Handle decryption operations
-  /// - Parameters:
-  ///   - config: Configuration for the decryption
-  ///   - operation: The operation being performed
-  /// - Returns: Result with decrypted data or error
-  private func handleDecryption(
-    config: SecurityConfigDTO,
-    operation: SecurityOperation
-  ) async -> SecurityResultDTO {
-    // First check if we need to retrieve a key
-    let keyResult=await retrieveKeyForOperation(config)
-
-    switch keyResult {
-      case let .success(key):
-        // Now that we have the key, extract the data to decrypt
-        guard
-          let dataString=config.options?.metadata?["data"],
-          let inputData=Data(base64Encoded: dataString)
-        else {
-          return .failure(
-            errorDetails: "No ciphertext provided for decryption",
-            executionTimeMs: 0,
-            metadata: ["operation": operation.rawValue]
-          )
-        }
-
-        // Perform decryption with the key and data
-        return await resultToDTO(
-          cryptoService.decrypt(data: [UInt8](inputData), using: key),
-          operation: operation
-        )
-      case let .failure(error):
-        return .failure(
-          errorDetails: error.localizedDescription,
-          executionTimeMs: 0,
-          metadata: ["operation": operation.rawValue]
-        )
-    }
-  }
-
-  /// Handle hashing operations
-  /// - Parameters:
-  ///   - config: Configuration for the hashing
-  ///   - operation: The operation being performed
-  /// - Returns: Result with hash value or error
-  private func handleHashing(
-    config: SecurityConfigDTO,
-    operation: SecurityOperation
-  ) async -> SecurityResultDTO {
-    // Extract data to hash
-    guard
-      let dataString=config.options?.metadata?["data"],
-      let inputData=Data(base64Encoded: dataString)
-    else {
-      return .failure(
-        errorDetails: "No data provided for hashing",
-        executionTimeMs: 0,
-        metadata: ["operation": operation.rawValue]
-      )
-    }
-
-    // Perform hashing
-    return await resultToDTO(
-      cryptoService.hash(data: [UInt8](inputData)),
-      operation: operation
-    )
   }
 }

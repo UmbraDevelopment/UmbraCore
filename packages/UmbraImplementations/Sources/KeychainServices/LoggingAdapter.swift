@@ -20,8 +20,7 @@ public final class LoggingAdapter: LoggingProtocol, CoreLoggingProtocol {
     _loggingActor
   }
 
-  /// Type alias for custom metadata to maintain compatibility with legacy systems
-  public typealias CustomMetadata=[String: String]
+  // Removed CustomMetadata typealias - directly use [String: String] instead
 
   /**
    Create a new logging adapter wrapping the given logging service.
@@ -76,12 +75,12 @@ public final class LoggingAdapter: LoggingProtocol, CoreLoggingProtocol {
   }
 
   /// Extract legacy metadata format from privacy metadata
-  private func extractLegacyMetadata(from privacyMetadata: PrivacyMetadata?) -> CustomMetadata? {
+  private func extractLegacyMetadata(from privacyMetadata: PrivacyMetadata?) -> [String: String]? {
     guard let privacyMetadata, !privacyMetadata.isEmpty else {
       return nil
     }
 
-    var result=CustomMetadata()
+    var result=[String: String]()
     for (key, value) in privacyMetadata.entriesDict() {
       result[key]=value.valueString
     }
@@ -89,7 +88,7 @@ public final class LoggingAdapter: LoggingProtocol, CoreLoggingProtocol {
   }
 
   /// Log a debug message
-  public func debug(_ message: String, metadata: CustomMetadata?, source: String?) async {
+  public func debug(_ message: String, metadata: [String: String]?, source: String?) async {
     let context=buildLogContext(metadata: metadata, source: source)
     // Convert our custom metadata to nil if empty to match LoggingServiceProtocol expectations
     let systemMetadata: LoggingTypes.LogMetadata?=convertToSystemMetadata(metadata)
@@ -98,7 +97,7 @@ public final class LoggingAdapter: LoggingProtocol, CoreLoggingProtocol {
   }
 
   /// Log an info message
-  public func info(_ message: String, metadata: CustomMetadata?, source: String?) async {
+  public func info(_ message: String, metadata: [String: String]?, source: String?) async {
     let context=buildLogContext(metadata: metadata, source: source)
     let systemMetadata: LoggingTypes.LogMetadata?=convertToSystemMetadata(metadata)
     await loggingService.info(message, metadata: systemMetadata, source: source)
@@ -106,7 +105,7 @@ public final class LoggingAdapter: LoggingProtocol, CoreLoggingProtocol {
   }
 
   /// Log a warning message
-  public func warning(_ message: String, metadata: CustomMetadata?, source: String?) async {
+  public func warning(_ message: String, metadata: [String: String]?, source: String?) async {
     let context=buildLogContext(metadata: metadata, source: source)
     let systemMetadata: LoggingTypes.LogMetadata?=convertToSystemMetadata(metadata)
     await loggingService.warning(message, metadata: systemMetadata, source: source)
@@ -114,7 +113,7 @@ public final class LoggingAdapter: LoggingProtocol, CoreLoggingProtocol {
   }
 
   /// Log an error message
-  public func error(_ message: String, metadata: CustomMetadata?, source: String?) async {
+  public func error(_ message: String, metadata: [String: String]?, source: String?) async {
     let context=buildLogContext(metadata: metadata, source: source)
     let systemMetadata: LoggingTypes.LogMetadata?=convertToSystemMetadata(metadata)
     await loggingService.error(message, metadata: systemMetadata, source: source)
@@ -122,7 +121,7 @@ public final class LoggingAdapter: LoggingProtocol, CoreLoggingProtocol {
   }
 
   /// Log a critical error message
-  public func critical(_ message: String, metadata: CustomMetadata?, source: String?) async {
+  public func critical(_ message: String, metadata: [String: String]?, source: String?) async {
     let context=buildLogContext(metadata: metadata, source: source)
     let systemMetadata: LoggingTypes.LogMetadata?=convertToSystemMetadata(metadata)
     await loggingService.critical(message, metadata: systemMetadata, source: source)
@@ -130,7 +129,7 @@ public final class LoggingAdapter: LoggingProtocol, CoreLoggingProtocol {
   }
 
   /// Convert our custom metadata to the system LogMetadata type
-  private func convertToSystemMetadata(_ metadata: CustomMetadata?) -> LoggingTypes.LogMetadata? {
+  private func convertToSystemMetadata(_ metadata: [String: String]?) -> LoggingTypes.LogMetadata? {
     guard let metadata, !metadata.isEmpty else {
       return nil
     }
@@ -143,7 +142,7 @@ public final class LoggingAdapter: LoggingProtocol, CoreLoggingProtocol {
   }
 
   /// Build a log context for logging
-  private func buildLogContext(metadata: CustomMetadata?, source: String?) -> LogContext {
+  private func buildLogContext(metadata: [String: String]?, source: String?) -> LogContext {
     let sourceValue=source ?? "KeychainServices"
     let timestamp=LogTimestamp(secondsSinceEpoch: Date().timeIntervalSince1970)
     let privacyMetadata=createPrivacyMetadata(from: metadata)
@@ -151,7 +150,7 @@ public final class LoggingAdapter: LoggingProtocol, CoreLoggingProtocol {
   }
 
   /// Create privacy metadata from legacy metadata
-  private func createPrivacyMetadata(from metadata: CustomMetadata?) -> PrivacyMetadata? {
+  private func createPrivacyMetadata(from metadata: [String: String]?) -> PrivacyMetadata? {
     guard let metadata, !metadata.isEmpty else {
       return nil
     }

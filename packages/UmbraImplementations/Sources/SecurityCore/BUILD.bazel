@@ -1,0 +1,13 @@
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+
+swift_library(
+    name = "SecurityCore",
+    srcs = glob(["**/*.swift"]),
+    module_name = "SecurityCore",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//packages/UmbraInterfaces/Sources/CoreSecurityTypes",
+        "//packages/UmbraInterfaces/Sources/DomainSecurityTypes",
+        "//packages/UmbraCore/Sources/UmbraErrors",
+    ],
+)

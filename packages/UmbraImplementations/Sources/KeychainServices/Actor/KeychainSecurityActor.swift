@@ -131,7 +131,14 @@ public actor KeychainSecurityActor {
         encryptionAlgorithm: .aes256GCM,
         hashAlgorithm: .sha256,
         providerType: .basic,
-        options: SecurityConfigOptions(metadata: options)
+        options: SecurityConfigOptions(
+          enableDetailedLogging: false,
+          useHardwareAcceleration: true,
+          verifyOperations: true,
+          metadata: [
+            "encryptedData": secretData.base64EncodedString()
+          ]
+        )
       )
 
       // Encrypt the data
@@ -140,20 +147,13 @@ public actor KeychainSecurityActor {
       )
 
       // Extract the encrypted data from the result
-      guard let resultData=encryptionResult.data else {
-        throw KeychainError.dataConversionError
-      }
-
-      // Convert SecureBytes to regular Data by using its base64 encoding method
-      // and then converting back to Data - avoids direct access to private storage
-      let base64String=resultData.base64EncodedString()
-      guard let encryptedData=Data(base64Encoded: base64String) else {
+      guard let resultData=encryptionResult.resultData else {
         throw KeychainError.dataConversionError
       }
 
       // Store the encrypted data in the keychain
       try await keychainService.storeData(
-        encryptedData,
+        resultData,
         for: account,
         keychainOptions: KeychainOptions.standard
       )
@@ -220,20 +220,21 @@ public actor KeychainSecurityActor {
         keychainOptions: KeychainOptions.standard
       )
 
-      // Prepare configuration options
-      let configOptions=SecurityConfigOptions(
-        keyIdentifier: keyID,
-        additionalParameters: [
-          "algorithm": "AES256GCM",
-          "data": encryptedData.base64EncodedString()
+      // Add the data to the config options
+      let configOptions = SecurityConfigOptions(
+        enableDetailedLogging: false,
+        useHardwareAcceleration: true,
+        verifyOperations: true,
+        metadata: [
+          "encryptedData": encryptedData.base64EncodedString()
         ]
       )
 
       // Create the config with our options
-      let decryptionConfig=SecurityConfigDTO(
-        encryptionAlgorithm: .aes256gcm,
+      let decryptionConfig = SecurityConfigDTO(
+        encryptionAlgorithm: .aes256GCM,
         hashAlgorithm: .sha256,
-        providerType: .standard,
+        providerType: .basic,
         options: configOptions
       )
 
@@ -243,19 +244,12 @@ public actor KeychainSecurityActor {
       )
 
       // Extract the decrypted data from the result
-      guard let resultData=decryptionResult.data else {
-        throw KeychainError.dataConversionError
-      }
-
-      // Convert SecureBytes to regular Data by using its base64 encoding method
-      // and then converting back to Data - avoids direct access to private storage
-      let base64String=resultData.base64EncodedString()
-      guard let decryptedData=Data(base64Encoded: base64String) else {
+      guard let resultData=decryptionResult.resultData else {
         throw KeychainError.dataConversionError
       }
 
       // Convert to string
-      guard let secretString=String(data: decryptedData, encoding: .utf8) else {
+      guard let secretString=String(data: resultData, encoding: .utf8) else {
         throw KeychainError.dataConversionError
       }
 
@@ -363,29 +357,27 @@ public actor KeychainSecurityActor {
   }
 
   /// Generate a new AES-256 key
-  private func generateAESKey() async throws -> SecureBytes {
+  private func generateAESKey() async throws -> Data {
     // Generate a new secure random key for AES-256 (32 bytes)
     // We need to create a SecurityConfigDTO for AES-256 encryption
-    let configOptions=[
-      "algorithm": "AES256GCM"
-    ]
+    let configOptions = SecurityConfigOptions()
 
-    let config=SecurityConfigDTO(
-      algorithm: "AES256GCM",
-      keySize: 256,
+    let config = SecurityConfigDTO(
+      encryptionAlgorithm: .aes256GCM,
+      hashAlgorithm: .sha256,
+      providerType: .basic,
       options: configOptions
     )
 
-    let result=try await securityProvider.generateKey(
-      config: config
-    )
+    // Generate the key
+    let result=try await securityProvider.generateKey(config: config)
 
-    // Extract the key data from the result
-    guard let secureBytes=result.data else {
-      throw KeychainError.dataConversionError
+    // Extract the key data
+    guard let keyData=result.resultData else {
+      throw KeychainError.keyGenerationError
     }
 
-    return secureBytes
+    return keyData
   }
 }
 
@@ -399,6 +391,8 @@ public enum KeychainError: Error, LocalizedError {
   case keychainOperationFailed(String)
   /// A security operation failed
   case securityOperationFailed(String)
+  /// Key generation failed
+  case keyGenerationError
 
   public var errorDescription: String? {
     switch self {
@@ -408,6 +402,8 @@ public enum KeychainError: Error, LocalizedError {
         "Keychain operation failed: \(message)"
       case let .securityOperationFailed(error):
         "Security operation failed: \(error)"
+      case .keyGenerationError:
+        "Failed to generate key"
     }
   }
 }

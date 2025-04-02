@@ -1,5 +1,21 @@
+import CoreSecurityTypes
 import CryptoTypes
 import Foundation
+
+/// Security level to apply for security operations
+public enum SecurityLevelDTO: String, Sendable, Equatable, CaseIterable {
+  /// Standard security level suitable for most operations
+  case standard = "Standard"
+  
+  /// Enhanced security with stronger algorithms and longer keys
+  case enhanced = "Enhanced"
+  
+  /// High security level for sensitive operations
+  case high = "High"
+  
+  /// Maximum security level with strongest available protection
+  case maximum = "Maximum"
+}
 
 /// Data transfer object representing the security context for operations.
 ///

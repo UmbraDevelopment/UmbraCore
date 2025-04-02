@@ -151,7 +151,7 @@ public struct BaseDomainLogger: DomainLogger {
   public func logLoggableError(
     _ error: LoggableError,
     severity: LogLevel,
-    message: String?=nil
+    message: String?
   ) async {
     // Use the error's built-in privacy metadata
     let metadata=error.getPrivacyMetadata()
@@ -616,7 +616,7 @@ public struct CryptoLogger {
  This logger is specialised for error operations, providing appropriate
  privacy controls for logging errors, their sources, and contextual metadata.
  */
-public class EnhancedErrorLogger: ErrorLoggingProtocol {
+public class EnhancedErrorLogger: LegacyErrorLoggingProtocol {
   private let logger: LoggingProtocol
 
   /**
@@ -738,6 +738,45 @@ public class EnhancedErrorLogger: ErrorLoggingProtocol {
       await logger.log(level, logMessage, metadata: metadata, source: errorSource)
     }
   }
+}
+
+/**
+ A protocol for structured error logging.
+
+ This protocol defines methods for logging structured errors with privacy controls.
+ */
+public protocol LegacyErrorLoggingProtocol {
+  /**
+    Logs a loggable error with enhanced privacy controls.
+
+    - Parameters:
+      - error: The loggable error to log.
+      - level: The log level to use.
+      - message: Optional custom message override.
+   */
+  func logLoggableError(
+    _ error: LoggableError,
+    level: LogLevel,
+    message: String?
+  ) async
+
+  /**
+    Logs an error with enhanced privacy controls.
+
+    - Parameters:
+      - error: The error to log.
+      - level: The log level to use.
+      - metadata: Privacy metadata for the error.
+      - source: The source component that generated the log.
+      - message: Optional custom message override.
+   */
+  func logError(
+    _ error: Error,
+    level: LogLevel,
+    metadata: PrivacyMetadata?,
+    source: String,
+    message: String?
+  ) async
 }
 
 /**
@@ -905,43 +944,4 @@ public struct FileSystemLogger {
         await logger.critical(message, metadata: privacyMetadata, source: source)
     }
   }
-}
-
-/**
- A protocol for structured error logging.
-
- This protocol defines methods for logging structured errors with privacy controls.
- */
-public protocol ErrorLoggingProtocol {
-  /**
-    Logs a loggable error with enhanced privacy controls.
-
-    - Parameters:
-      - error: The loggable error to log.
-      - level: The log level to use.
-      - message: Optional custom message override.
-   */
-  func logLoggableError(
-    _ error: LoggableError,
-    level: LogLevel,
-    message: String?
-  ) async
-
-  /**
-    Logs an error with enhanced privacy controls.
-
-    - Parameters:
-      - error: The error to log.
-      - level: The log level to use.
-      - metadata: Privacy metadata for the error.
-      - source: The source component that generated the log.
-      - message: Optional custom message override.
-   */
-  func logError(
-    _ error: Error,
-    level: LogLevel,
-    metadata: PrivacyMetadata?,
-    source: String,
-    message: String?
-  ) async
 }

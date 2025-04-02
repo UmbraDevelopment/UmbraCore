@@ -146,37 +146,37 @@ public struct SimpleKeyManager: KeyManagementProtocol {
   }
 
   // Implementation of generateKey method from KeyManagementProtocol
-  public func generateKey(with config: KeyGenerationConfig) async throws -> KeyGenerationResult {
+  public func generateKey(
+    size: Int,
+    type: KeyType,
+    persistent: Bool
+  ) async throws -> String {
     await logger.warning(
       "Using simple key manager implementation for key generation - this is not secure for production",
-      metadata: createPrivacyMetadata(from: ["algorithm": config.algorithm.rawValue]),
+      metadata: createPrivacyMetadata(from: ["keyType": type.rawValue, "size": String(size)]),
       source: "SimpleKeyManager"
     )
 
     // Generate a simple UUID-based key identifier
     let keyIdentifier="generated-key-\(UUID().uuidString)"
 
-    return KeyGenerationResult(
-      keyIdentifier: keyIdentifier,
-      algorithm: config.algorithm,
-      metadata: config.metadata
-    )
+    return keyIdentifier
   }
 
   public func retrieveKey(withIdentifier _: String) async
-  -> Result<SecureBytes, SecurityProtocolError> {
+  -> Result<[UInt8], SecurityProtocolError> {
     await logger.warning(
       "Attempted to retrieve key with a simple key manager implementation",
       metadata: nil,
       source: "SimpleKeyManager"
     )
     return .failure(
-      .unsupportedOperation(name: "Simple implementation does not support key retrieval")
+      .operationFailed(reason: "Simple implementation does not support key retrieval")
     )
   }
 
   public func storeKey(
-    _: SecureBytes,
+    _: [UInt8],
     withIdentifier _: String
   ) async -> Result<Void, SecurityProtocolError> {
     await logger.warning(
@@ -185,7 +185,7 @@ public struct SimpleKeyManager: KeyManagementProtocol {
       source: "SimpleKeyManager"
     )
     return .failure(
-      .unsupportedOperation(name: "Simple implementation does not support key storage")
+      .operationFailed(reason: "Simple implementation does not support key storage")
     )
   }
 
@@ -196,21 +196,21 @@ public struct SimpleKeyManager: KeyManagementProtocol {
       source: "SimpleKeyManager"
     )
     return .failure(
-      .unsupportedOperation(name: "Simple implementation does not support key deletion")
+      .operationFailed(reason: "Simple implementation does not support key deletion")
     )
   }
 
   public func rotateKey(
     withIdentifier _: String,
-    dataToReencrypt _: SecureBytes?
-  ) async -> Result<(newKey: SecureBytes, reencryptedData: SecureBytes?), SecurityProtocolError> {
+    dataToReencrypt _: [UInt8]?
+  ) async -> Result<(newKey: [UInt8], reencryptedData: [UInt8]?), SecurityProtocolError> {
     await logger.warning(
       "Attempted to rotate key with a simple key manager implementation",
       metadata: nil,
       source: "SimpleKeyManager"
     )
     return .failure(
-      .unsupportedOperation(name: "Simple implementation does not support key rotation")
+      .operationFailed(reason: "Simple implementation does not support key rotation")
     )
   }
 
@@ -221,7 +221,7 @@ public struct SimpleKeyManager: KeyManagementProtocol {
       source: "SimpleKeyManager"
     )
     return .failure(
-      .unsupportedOperation(name: "Simple implementation does not support listing key identifiers")
+      .operationFailed(reason: "Simple implementation does not support listing key identifiers")
     )
   }
 }

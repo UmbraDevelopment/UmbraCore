@@ -96,23 +96,23 @@ public actor KeychainXPCService: KeychainServiceProtocol {
    - Parameters:
       - password: The password string to store
       - account: The account identifier for the password
-      - accessOptions: Optional access control options
+      - keychainOptions: Optional keychain configuration options
 
    - Throws: KeychainError if the operation fails
    */
   public func storePassword(
     _ password: String,
     for account: String,
-    accessOptions: KeychainAccessOptions?=nil
+    keychainOptions: KeychainOptions?
   ) async throws {
     await log(.info, "Storing password for account: \(account)")
 
-    let request=KeychainStoreRequest(
+    let request = KeychainStoreRequest(
       type: .password,
       account: account,
       serviceIdentifier: serviceIdentifier,
       stringValue: password,
-      accessOptions: accessOptions
+      keychainOptions: keychainOptions
     )
 
     do {
@@ -127,22 +127,28 @@ public actor KeychainXPCService: KeychainServiceProtocol {
   /**
    Retrieves a password from the keychain via XPC.
 
-   - Parameter account: The account identifier for the password
+   - Parameters:
+      - account: The account identifier for the password
+      - keychainOptions: Optional keychain configuration options
 
    - Returns: The stored password as a string
    - Throws: KeychainError if the password doesn't exist or retrieval fails
    */
-  public func retrievePassword(for account: String) async throws -> String {
+  public func retrievePassword(
+    for account: String,
+    keychainOptions: KeychainOptions?
+  ) async throws -> String {
     await log(.info, "Retrieving password for account: \(account)")
 
-    let request=KeychainRetrieveRequest(
+    let request = KeychainRetrieveRequest(
       type: .password,
       account: account,
-      serviceIdentifier: serviceIdentifier
+      serviceIdentifier: serviceIdentifier,
+      keychainOptions: keychainOptions
     )
 
     do {
-      let response=try await sendRequestForStringResponse(request, to: .retrievePassword)
+      let response = try await sendRequestForStringResponse(request, to: .retrievePassword)
       await log(.info, "Password retrieved successfully for account: \(account)")
       return response.value
     } catch {
@@ -154,17 +160,23 @@ public actor KeychainXPCService: KeychainServiceProtocol {
   /**
    Deletes a password from the keychain via XPC.
 
-   - Parameter account: The account identifier for the password to delete
+   - Parameters:
+      - account: The account identifier for the password to delete
+      - keychainOptions: Optional keychain configuration options
 
    - Throws: KeychainError if the deletion fails
    */
-  public func deletePassword(for account: String) async throws {
+  public func deletePassword(
+    for account: String,
+    keychainOptions: KeychainOptions?
+  ) async throws {
     await log(.info, "Deleting password for account: \(account)")
 
-    let request=KeychainDeleteRequest(
+    let request = KeychainDeleteRequest(
       type: .password,
       account: account,
-      serviceIdentifier: serviceIdentifier
+      serviceIdentifier: serviceIdentifier,
+      keychainOptions: keychainOptions
     )
 
     do {
@@ -182,23 +194,23 @@ public actor KeychainXPCService: KeychainServiceProtocol {
    - Parameters:
       - data: The binary data to store
       - account: The account identifier for the data
-      - accessOptions: Optional access control options
+      - keychainOptions: Optional keychain configuration options
 
    - Throws: KeychainError if the operation fails
    */
   public func storeData(
     _ data: Data,
     for account: String,
-    accessOptions: KeychainAccessOptions?=nil
+    keychainOptions: KeychainOptions?
   ) async throws {
     await log(.info, "Storing data for account: \(account)")
 
-    let request=KeychainStoreRequest(
+    let request = KeychainStoreRequest(
       type: .data,
       account: account,
       serviceIdentifier: serviceIdentifier,
       dataValue: data,
-      accessOptions: accessOptions
+      keychainOptions: keychainOptions
     )
 
     do {
@@ -213,22 +225,28 @@ public actor KeychainXPCService: KeychainServiceProtocol {
   /**
    Retrieves binary data from the keychain via XPC.
 
-   - Parameter account: The account identifier for the data
+   - Parameters:
+      - account: The account identifier for the data
+      - keychainOptions: Optional keychain configuration options
 
    - Returns: The stored data
    - Throws: KeychainError if the data doesn't exist or retrieval fails
    */
-  public func retrieveData(for account: String) async throws -> Data {
+  public func retrieveData(
+    for account: String,
+    keychainOptions: KeychainOptions?
+  ) async throws -> Data {
     await log(.info, "Retrieving data for account: \(account)")
 
-    let request=KeychainRetrieveRequest(
+    let request = KeychainRetrieveRequest(
       type: .data,
       account: account,
-      serviceIdentifier: serviceIdentifier
+      serviceIdentifier: serviceIdentifier,
+      keychainOptions: keychainOptions
     )
 
     do {
-      let response=try await sendRequestForDataResponse(request, to: .retrieveData)
+      let response = try await sendRequestForDataResponse(request, to: .retrieveData)
       await log(.info, "Data retrieved successfully for account: \(account)")
       return response.value
     } catch {
@@ -240,17 +258,23 @@ public actor KeychainXPCService: KeychainServiceProtocol {
   /**
    Deletes binary data from the keychain via XPC.
 
-   - Parameter account: The account identifier for the data to delete
+   - Parameters:
+      - account: The account identifier for the data to delete
+      - keychainOptions: Optional keychain configuration options
 
    - Throws: KeychainError if the deletion fails
    */
-  public func deleteData(for account: String) async throws {
+  public func deleteData(
+    for account: String,
+    keychainOptions: KeychainOptions?
+  ) async throws {
     await log(.info, "Deleting data for account: \(account)")
 
-    let request=KeychainDeleteRequest(
+    let request = KeychainDeleteRequest(
       type: .data,
       account: account,
-      serviceIdentifier: serviceIdentifier
+      serviceIdentifier: serviceIdentifier,
+      keychainOptions: keychainOptions
     )
 
     do {
@@ -265,25 +289,31 @@ public actor KeychainXPCService: KeychainServiceProtocol {
   /**
    Checks if a password exists for the specified account.
 
-   - Parameter account: The account identifier to check
+   - Parameters:
+      - account: The account identifier to check
+      - keychainOptions: Optional keychain configuration options
 
    - Returns: True if a password exists for the account, false otherwise
    */
-  public func passwordExists(for account: String) async -> Bool {
+  public func passwordExists(
+    for account: String,
+    keychainOptions: KeychainOptions?
+  ) async throws -> Bool {
     await log(.debug, "Checking if password exists for account: \(account)")
 
-    let request=KeychainExistsRequest(
+    let request = KeychainExistsRequest(
       account: account,
-      serviceIdentifier: serviceIdentifier
+      serviceIdentifier: serviceIdentifier,
+      keychainOptions: keychainOptions
     )
 
     do {
-      let response=try await sendRequestForBoolResponse(request, to: .passwordExists)
+      let response = try await sendRequestForBoolResponse(request, to: .passwordExists)
       await log(.debug, "Password existence check complete for account: \(account)")
       return response.value
     } catch {
       await log(.warning, "Error checking password existence: \(error)")
-      return false
+      throw mapError(error, operation: "check password existence")
     }
   }
 
@@ -293,27 +323,26 @@ public actor KeychainXPCService: KeychainServiceProtocol {
    - Parameters:
       - newPassword: The new password to store
       - account: The account identifier for the password
+      - keychainOptions: Optional keychain configuration options
 
    - Throws: KeychainError if the operation fails or the password doesn't exist
    */
-  public func updatePassword(_ newPassword: String, for account: String) async throws {
+  public func updatePassword(
+    _ newPassword: String,
+    for account: String,
+    keychainOptions: KeychainOptions?
+  ) async throws {
     await log(.debug, "Updating password for account: \(account)")
 
-    let request=KeychainStoreRequest(
-      type: .password,
-      account: account,
-      serviceIdentifier: serviceIdentifier,
-      stringValue: newPassword,
-      accessOptions: nil
-    )
-
-    do {
-      try await sendVoidRequest(request, to: .updatePassword)
-      await log(.info, "Password updated successfully for account: \(account)")
-    } catch {
-      await log(.error, "Failed to update password: \(error)")
-      throw mapError(error, operation: "update password")
+    // First check if the password exists
+    if try await passwordExists(for: account, keychainOptions: keychainOptions) {
+      // If it exists, delete it first and then store the new one
+      try await deletePassword(for: account, keychainOptions: keychainOptions)
     }
+
+    // Store the new password
+    try await storePassword(newPassword, for: account, keychainOptions: keychainOptions)
+    await log(.info, "Password updated successfully for account: \(account)")
   }
 
   // MARK: - Private Helper Methods
@@ -524,7 +553,7 @@ private struct KeychainStoreRequest: Sendable, Codable {
   let serviceIdentifier: String
   let stringValue: String?
   let dataValue: Data?
-  let accessOptions: KeychainAccessOptions?
+  let keychainOptions: KeychainOptions?
 
   init(
     type: KeychainItemType,
@@ -532,14 +561,14 @@ private struct KeychainStoreRequest: Sendable, Codable {
     serviceIdentifier: String,
     stringValue: String?=nil,
     dataValue: Data?=nil,
-    accessOptions: KeychainAccessOptions?=nil
+    keychainOptions: KeychainOptions?=nil
   ) {
     self.type=type
     self.account=account
     self.serviceIdentifier=serviceIdentifier
     self.stringValue=stringValue
     self.dataValue=dataValue
-    self.accessOptions=accessOptions
+    self.keychainOptions=keychainOptions
   }
 }
 
@@ -550,6 +579,19 @@ private struct KeychainRetrieveRequest: Sendable, Codable {
   let type: KeychainItemType
   let account: String
   let serviceIdentifier: String
+  let keychainOptions: KeychainOptions?
+
+  init(
+    type: KeychainItemType,
+    account: String,
+    serviceIdentifier: String,
+    keychainOptions: KeychainOptions?=nil
+  ) {
+    self.type=type
+    self.account=account
+    self.serviceIdentifier=serviceIdentifier
+    self.keychainOptions=keychainOptions
+  }
 }
 
 /**
@@ -559,6 +601,19 @@ private struct KeychainDeleteRequest: Sendable, Codable {
   let type: KeychainItemType
   let account: String
   let serviceIdentifier: String
+  let keychainOptions: KeychainOptions?
+
+  init(
+    type: KeychainItemType,
+    account: String,
+    serviceIdentifier: String,
+    keychainOptions: KeychainOptions?=nil
+  ) {
+    self.type=type
+    self.account=account
+    self.serviceIdentifier=serviceIdentifier
+    self.keychainOptions=keychainOptions
+  }
 }
 
 /**
@@ -567,6 +622,17 @@ private struct KeychainDeleteRequest: Sendable, Codable {
 private struct KeychainExistsRequest: Sendable, Codable {
   let account: String
   let serviceIdentifier: String
+  let keychainOptions: KeychainOptions?
+
+  init(
+    account: String,
+    serviceIdentifier: String,
+    keychainOptions: KeychainOptions?=nil
+  ) {
+    self.account=account
+    self.serviceIdentifier=serviceIdentifier
+    self.keychainOptions=keychainOptions
+  }
 }
 
 /**

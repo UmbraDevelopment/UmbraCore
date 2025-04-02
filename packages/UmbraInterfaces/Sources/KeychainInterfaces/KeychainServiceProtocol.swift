@@ -200,7 +200,7 @@ public protocol KeychainServiceProtocol: Sendable {
  from the keychain, including access controls, synchronisation behaviour,
  and item attributes.
  */
-public struct KeychainOptions: Sendable, Equatable {
+public struct KeychainOptions: Sendable, Equatable, Codable {
   /// Standard options for most operations
   public static let standard=KeychainOptions()
 
@@ -212,7 +212,7 @@ public struct KeychainOptions: Sendable, Equatable {
   )
 
   /// Access level for the keychain item
-  public enum AccessLevel: String, Sendable, Equatable {
+  public enum AccessLevel: String, Sendable, Equatable, Codable {
     /// Item data can be accessed only while the device is unlocked
     case whenUnlocked
     /// Item data can be accessed only while the device is unlocked by this device only
@@ -226,7 +226,7 @@ public struct KeychainOptions: Sendable, Equatable {
   }
 
   /// Authentication type required to access the item
-  public enum AuthenticationType: String, Sendable, Equatable {
+  public enum AuthenticationType: String, Sendable, Equatable, Codable {
     /// No authentication required
     case none
     /// Any biometry authentication (Face ID or Touch ID)

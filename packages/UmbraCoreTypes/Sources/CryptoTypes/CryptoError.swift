@@ -251,7 +251,7 @@ LoggableErrorProtocol {
         metadata["operation"]=PrivacyMetadataValue(value: "resourceAccess", privacy: .public)
 
       case let .memoryError(reason):
-        metadata["errorReason"]=PrivacyMetadataValue(value: reason, privacy: .private)
+        metadata["errorReason"]=PrivacyMetadataValue(value: reason, privacy: .public)
         metadata["operation"]=PrivacyMetadataValue(value: "memoryAccess", privacy: .public)
 
       case let .operationFailed(reason):
@@ -316,8 +316,6 @@ LoggableErrorProtocol {
       // General errors have default protection
       case .operationFailed:
         .private
-      default:
-        .private
     }
   }
 
@@ -365,8 +363,6 @@ LoggableErrorProtocol {
         metadata=metadata.withPublic(key: "reason", value: reason)
       case let .operationFailed(reason):
         metadata=metadata.withPrivate(key: "reason", value: reason)
-      default:
-        break
     }
 
     return metadata

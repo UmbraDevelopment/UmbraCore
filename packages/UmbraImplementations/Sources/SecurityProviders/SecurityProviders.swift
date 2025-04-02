@@ -7,7 +7,7 @@
 
  ## Components
 
- - SecurityProviderImpl: The primary implementation of the SecurityProviderProtocol
+ - SecurityProviderImpl: The primary actor-based implementation of the SecurityProviderProtocol
  - Core supporting components:
    - SecurityProviderCore: The central implementation of security provider functionality
    - OperationsHandler: Routes security operations to appropriate handlers
@@ -16,7 +16,8 @@
 
  ## Usage
 
- The SecurityProviderImpl can be instantiated directly or through dependency injection:
+ The SecurityProviderImpl can be instantiated directly or through dependency injection.
+ Since it's implemented as an actor, all method calls must be awaited:
 
  ```swift
  // Using default implementations
@@ -27,7 +28,16 @@
    cryptoService: customCryptoService,
    keyManager: customKeyManager
  )
+
+ // Calling methods requires await
+ let result = try await securityProvider.encrypt(config: config)
  ```
+
+ ## Actor-Based Concurrency
+
+ The SecurityProviderImpl uses Swift's actor model to ensure thread safety and 
+ proper isolation of mutable state. This follows the Alpha Dot Five architecture
+ principles for safe concurrency.
 
  ## Documentation Notes
 

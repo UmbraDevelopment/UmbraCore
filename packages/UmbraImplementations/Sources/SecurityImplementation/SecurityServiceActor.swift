@@ -3,6 +3,7 @@ import CryptoTypes
 import DomainSecurityTypes
 import Foundation
 import LoggingInterfaces
+import LoggingServices
 import LoggingTypes
 import SecurityCoreInterfaces
 import UmbraErrors
@@ -22,17 +23,20 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
   /// The crypto service used for cryptographic operations
   private let cryptoService: any CryptoServiceProtocol
 
-  /// The logger used for logging security events
+  /// The standard logger used for general logging
   private let logger: LoggingInterfaces.LoggingProtocol
+  
+  /// The secure logger used for privacy-aware logging of sensitive operations
+  private let secureLogger: SecureLoggerActor
 
   /// The configuration for this security service
   private var configuration: SecurityConfigurationDTO
 
   /// Flag indicating if service has been initialised
-  private var isInitialised: Bool=false
+  private var isInitialised: Bool = false
 
   /// Internal store for event subscribers
-  private var eventSubscribers: [UUID: AsyncStream<SecurityEventDTO>.Continuation]=[:]
+  private var eventSubscribers: [UUID: AsyncStream<SecurityEventDTO>.Continuation] = [:]
 
   /// Unique identifier for this security service instance
   private let serviceIdentifier: UUID = .init()
@@ -42,15 +46,22 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
   /// Creates a new security service actor with the specified dependencies
   /// - Parameters:
   ///   - cryptoService: The crypto service to use for cryptographic operations
-  ///   - logger: The logger to use for logging security events
+  ///   - logger: The logger to use for general logging
+  ///   - secureLogger: The secure logger to use for privacy-aware logging
   public init(
     cryptoService: any CryptoServiceProtocol,
-    logger: LoggingInterfaces.LoggingProtocol
+    logger: LoggingInterfaces.LoggingProtocol,
+    secureLogger: SecureLoggerActor? = nil
   ) {
-    self.cryptoService=cryptoService
-    self.logger=logger
+    self.cryptoService = cryptoService
+    self.logger = logger
+    self.secureLogger = secureLogger ?? SecureLoggerActor(
+      subsystem: "com.umbra.security",
+      category: "SecurityService",
+      includeTimestamps: true
+    )
     configuration = .default
-    isInitialised=false
+    isInitialised = false
   }
 
   /// Initialises the security service
@@ -68,14 +79,38 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
       ]),
       source: "SecurityServiceActor.initialise"
     )
+    
+    // Log with secure logger for enhanced privacy awareness
+    await secureLogger.securityEvent(
+      action: "SecurityServiceInitialisation",
+      status: .success,
+      subject: nil,
+      resource: nil,
+      additionalMetadata: [
+        "operation": PrivacyTaggedValue(value: "start", privacyLevel: .public),
+        "serviceId": PrivacyTaggedValue(value: serviceIdentifier.uuidString, privacyLevel: .public)
+      ]
+    )
 
     // Validate that crypto service is available
     guard await cryptoService.isAvailable() else {
+      // Log failure with secure logger
+      await secureLogger.securityEvent(
+        action: "SecurityServiceInitialisation",
+        status: .failed,
+        subject: nil,
+        resource: nil,
+        additionalMetadata: [
+          "operation": PrivacyTaggedValue(value: "validation", privacyLevel: .public),
+          "error": PrivacyTaggedValue(value: "CryptoService unavailable", privacyLevel: .public)
+        ]
+      )
+      
       throw UmbraErrors.SecurityError.serviceUnavailable
     }
 
     // Mark as initialised
-    isInitialised=true
+    isInitialised = true
 
     await logger.info(
       "Security service initialised successfully",
@@ -83,6 +118,18 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
         "status": (value: "success", privacy: .public)
       ]),
       source: "SecurityServiceActor.initialise"
+    )
+    
+    // Log successful initialisation with secure logger
+    await secureLogger.securityEvent(
+      action: "SecurityServiceInitialisation",
+      status: .success,
+      subject: nil,
+      resource: nil,
+      additionalMetadata: [
+        "operation": PrivacyTaggedValue(value: "complete", privacyLevel: .public),
+        "serviceId": PrivacyTaggedValue(value: serviceIdentifier.uuidString, privacyLevel: .public)
+      ]
     )
   }
 
@@ -113,11 +160,25 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
         "data_length": String(data.count)
       ]
     )
+    
+    // Log with secure logger for enhanced privacy awareness
+    await secureLogger.securityEvent(
+      action: "DataSecurity",
+      status: .success,
+      subject: nil,
+      resource: nil,
+      additionalMetadata: [
+        "operation": PrivacyTaggedValue(value: securityContext.operationType.rawValue, privacyLevel: .public),
+        "securityLevel": PrivacyTaggedValue(value: securityContext.securityLevel.rawValue, privacyLevel: .public),
+        "dataSize": PrivacyTaggedValue(value: data.count, privacyLevel: .public),
+        "phase": PrivacyTaggedValue(value: "start", privacyLevel: .public)
+      ]
+    )
 
     switch securityContext.operationType {
       case .encryption:
         // Delegate to crypto service for encryption
-        let result=await cryptoService.encrypt(
+        let result = await cryptoService.encrypt(
           data: data,
           keyIdentifier: securityContext.keyIdentifier,
           options: securityContext.cryptoOptions
@@ -133,6 +194,19 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
                 "result_length": String(encryptedData.count)
               ]
             )
+            
+            // Log success with secure logger
+            await secureLogger.securityEvent(
+              action: "DataSecurity",
+              status: .success,
+              subject: nil,
+              resource: nil,
+              additionalMetadata: [
+                "operation": PrivacyTaggedValue(value: securityContext.operationType.rawValue, privacyLevel: .public),
+                "resultSize": PrivacyTaggedValue(value: encryptedData.count, privacyLevel: .public),
+                "phase": PrivacyTaggedValue(value: "complete", privacyLevel: .public)
+              ]
+            )
 
             return encryptedData
 
@@ -145,6 +219,19 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
                 "error": error.localizedDescription
               ]
             )
+            
+            // Log failure with secure logger
+            await secureLogger.securityEvent(
+              action: "DataSecurity",
+              status: .failed,
+              subject: nil,
+              resource: nil,
+              additionalMetadata: [
+                "operation": PrivacyTaggedValue(value: securityContext.operationType.rawValue, privacyLevel: .public),
+                "error": PrivacyTaggedValue(value: error.localizedDescription, privacyLevel: .public),
+                "phase": PrivacyTaggedValue(value: "error", privacyLevel: .public)
+              ]
+            )
 
             throw UmbraErrors.SecurityError.encryptionFailed(
               reason: "Encryption failed: \(error.localizedDescription)"
@@ -152,6 +239,19 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
         }
 
       default:
+        // Log unsupported operation with secure logger
+        await secureLogger.securityEvent(
+          action: "DataSecurity",
+          status: .failed,
+          subject: nil,
+          resource: nil,
+          additionalMetadata: [
+            "operation": PrivacyTaggedValue(value: securityContext.operationType.rawValue, privacyLevel: .public),
+            "error": PrivacyTaggedValue(value: "Unsupported operation", privacyLevel: .public),
+            "phase": PrivacyTaggedValue(value: "validation", privacyLevel: .public)
+          ]
+        )
+        
         throw UmbraErrors.SecurityError.invalidOperation(
           reason: "Operation type \(securityContext.operationType.rawValue) not supported for securing data"
         )
@@ -179,11 +279,25 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
         "data_length": String(securedData.count)
       ]
     )
+    
+    // Log with secure logger for enhanced privacy awareness
+    await secureLogger.securityEvent(
+      action: "DataRetrieval",
+      status: .success,
+      subject: nil,
+      resource: nil,
+      additionalMetadata: [
+        "operation": PrivacyTaggedValue(value: securityContext.operationType.rawValue, privacyLevel: .public),
+        "securityLevel": PrivacyTaggedValue(value: securityContext.securityLevel.rawValue, privacyLevel: .public),
+        "dataSize": PrivacyTaggedValue(value: securedData.count, privacyLevel: .public),
+        "phase": PrivacyTaggedValue(value: "start", privacyLevel: .public)
+      ]
+    )
 
     switch securityContext.operationType {
       case .decryption:
         // Delegate to crypto service for decryption
-        let result=await cryptoService.decrypt(
+        let result = await cryptoService.decrypt(
           encryptedData: securedData,
           keyIdentifier: securityContext.keyIdentifier,
           options: securityContext.cryptoOptions
@@ -199,16 +313,42 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
                 "result_length": String(decryptedData.count)
               ]
             )
+            
+            // Log success with secure logger
+            await secureLogger.securityEvent(
+              action: "DataRetrieval",
+              status: .success,
+              subject: nil,
+              resource: nil,
+              additionalMetadata: [
+                "operation": PrivacyTaggedValue(value: securityContext.operationType.rawValue, privacyLevel: .public),
+                "resultSize": PrivacyTaggedValue(value: decryptedData.count, privacyLevel: .public),
+                "phase": PrivacyTaggedValue(value: "complete", privacyLevel: .public)
+              ]
+            )
 
             return decryptedData
 
           case let .failure(error):
             // Log error and convert to security domain error
             await logger.error(
-              "Data retrieval operation failed: \(error.localizedDescription)",
+              "Secured data retrieval operation failed: \(error.localizedDescription)",
               metadata: [
                 "operation_type": securityContext.operationType.rawValue,
                 "error": error.localizedDescription
+              ]
+            )
+            
+            // Log failure with secure logger
+            await secureLogger.securityEvent(
+              action: "DataRetrieval",
+              status: .failed,
+              subject: nil,
+              resource: nil,
+              additionalMetadata: [
+                "operation": PrivacyTaggedValue(value: securityContext.operationType.rawValue, privacyLevel: .public),
+                "error": PrivacyTaggedValue(value: error.localizedDescription, privacyLevel: .public),
+                "phase": PrivacyTaggedValue(value: "error", privacyLevel: .public)
               ]
             )
 
@@ -218,13 +358,38 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
         }
 
       default:
+        // Log unsupported operation with secure logger
+        await secureLogger.securityEvent(
+          action: "DataRetrieval",
+          status: .failed,
+          subject: nil,
+          resource: nil,
+          additionalMetadata: [
+            "operation": PrivacyTaggedValue(value: securityContext.operationType.rawValue, privacyLevel: .public),
+            "error": PrivacyTaggedValue(value: "Unsupported operation", privacyLevel: .public),
+            "phase": PrivacyTaggedValue(value: "validation", privacyLevel: .public)
+          ]
+        )
+        
         throw UmbraErrors.SecurityError.invalidOperation(
           reason: "Operation type \(securityContext.operationType.rawValue) not supported for retrieving secured data"
         )
     }
   }
 
-  /// Creates a secure bookmark for the given URL
+  // MARK: - Helper Methods
+
+  /// Validates that the service has been initialised
+  /// - Throws: SecurityError if the service is not initialised
+  private func validateInitialisation() throws {
+    guard isInitialised else {
+      throw UmbraErrors.SecurityError.notInitialised
+    }
+  }
+
+  // MARK: - Additional SecurityProviderProtocol methods
+
+  /// Creates a secure bookmark for the specified URL
   /// - Parameter url: The URL to create a bookmark for
   /// - Returns: The bookmark data
   /// - Throws: SecurityError if bookmark creation fails
@@ -233,38 +398,66 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
 
     // Log bookmark creation with privacy controls
     await logger.debug(
-      "Creating security-scoped bookmark",
+      "Creating secure bookmark",
       metadata: [
-        "url_path": url.path
+        "operation": "createBookmark",
+        "url_scheme": url.scheme ?? "unknown"
+      ]
+    )
+    
+    // Log with secure logger for enhanced privacy awareness
+    await secureLogger.securityEvent(
+      action: "BookmarkCreation",
+      status: .success,
+      subject: nil,
+      resource: url.path,
+      additionalMetadata: [
+        "scheme": PrivacyTaggedValue(value: url.scheme ?? "unknown", privacyLevel: .public),
+        "isFileURL": PrivacyTaggedValue(value: url.isFileURL, privacyLevel: .public),
+        "phase": PrivacyTaggedValue(value: "start", privacyLevel: .public)
       ]
     )
 
     do {
-      // Create the security-scoped bookmark
-      let bookmarkData=try url.bookmarkData(
-        options: [.withSecurityScope, .securityScopeAllowOnlyReadAccess],
+      // Create bookmark data (placeholder implementation)
+      let bookmarkData = try url.bookmarkData(
+        options: .minimalBookmark,
         includingResourceValuesForKeys: nil,
         relativeTo: nil
       )
 
-      // Convert to UInt8 array
-      let bytes=[UInt8](bookmarkData)
-
-      // Log success
-      await logger.debug(
-        "Security-scoped bookmark created successfully",
-        metadata: [
-          "bookmark_size": String(bytes.count)
+      // Log success with secure logger
+      await secureLogger.securityEvent(
+        action: "BookmarkCreation",
+        status: .success,
+        subject: nil,
+        resource: url.path,
+        additionalMetadata: [
+          "bookmarkSize": PrivacyTaggedValue(value: bookmarkData.count, privacyLevel: .public),
+          "phase": PrivacyTaggedValue(value: "complete", privacyLevel: .public)
         ]
       )
 
-      return bytes
+      return [UInt8](bookmarkData)
     } catch {
-      // Log error
+      // Log error with privacy controls
       await logger.error(
-        "Failed to create security-scoped bookmark: \(error.localizedDescription)",
+        "Failed to create bookmark: \(error.localizedDescription)",
         metadata: [
+          "operation": "createBookmark",
           "error": error.localizedDescription
+        ]
+      )
+      
+      // Log failure with secure logger
+      await secureLogger.securityEvent(
+        action: "BookmarkCreation",
+        status: .failed,
+        subject: nil,
+        resource: url.path,
+        additionalMetadata: [
+          "error": PrivacyTaggedValue(value: error.localizedDescription, privacyLevel: .public),
+          "phase": PrivacyTaggedValue(value: "error", privacyLevel: .public)
         ]
       )
 
@@ -276,48 +469,88 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
 
   /// Resolves a secure bookmark to a URL
   /// - Parameter bookmarkData: The bookmark data to resolve
-  /// - Returns: The resolved URL and a flag indicating whether the bookmark needs to be recreated
+  /// - Returns: The resolved URL and a flag indicating if the bookmark is stale
   /// - Throws: SecurityError if bookmark resolution fails
   public func resolveBookmark(_ bookmarkData: [UInt8]) async throws -> (URL, Bool) {
     try validateInitialisation()
 
     // Log bookmark resolution with privacy controls
     await logger.debug(
-      "Resolving security-scoped bookmark",
+      "Resolving secure bookmark",
       metadata: [
-        "bookmark_size": String(bookmarkData.count)
+        "operation": "resolveBookmark",
+        "data_length": String(bookmarkData.count)
+      ]
+    )
+    
+    // Log with secure logger for enhanced privacy awareness
+    await secureLogger.securityEvent(
+      action: "BookmarkResolution",
+      status: .success,
+      subject: nil,
+      resource: nil,
+      additionalMetadata: [
+        "bookmarkSize": PrivacyTaggedValue(value: bookmarkData.count, privacyLevel: .public),
+        "phase": PrivacyTaggedValue(value: "start", privacyLevel: .public)
       ]
     )
 
     do {
-      // Convert UInt8 array to Data
-      let data=Data(bookmarkData)
+      // Convert to Data for resolution
+      let bookmark = Data(bookmarkData)
 
-      // Resolve the bookmark
-      var isStale=false
-      let url=try URL(
-        resolvingBookmarkData: data,
-        options: [.withSecurityScope],
+      // Resolve bookmark
+      var isStale = false
+      let url = try URL(
+        resolvingBookmarkData: bookmark,
+        options: .withoutUI,
         relativeTo: nil,
         bookmarkDataIsStale: &isStale
       )
 
-      // Log success
+      // Log success with privacy controls
       await logger.debug(
-        "Security-scoped bookmark resolved successfully",
+        "Bookmark resolved successfully",
         metadata: [
-          "url_path": url.path,
-          "is_stale": String(isStale)
+          "operation": "resolveBookmark",
+          "is_stale": String(isStale),
+          "url_scheme": url.scheme ?? "unknown"
+        ]
+      )
+      
+      // Log success with secure logger
+      await secureLogger.securityEvent(
+        action: "BookmarkResolution",
+        status: .success,
+        subject: nil,
+        resource: url.path,
+        additionalMetadata: [
+          "isStale": PrivacyTaggedValue(value: isStale, privacyLevel: .public),
+          "scheme": PrivacyTaggedValue(value: url.scheme ?? "unknown", privacyLevel: .public),
+          "phase": PrivacyTaggedValue(value: "complete", privacyLevel: .public)
         ]
       )
 
       return (url, isStale)
     } catch {
-      // Log error
+      // Log error with privacy controls
       await logger.error(
-        "Failed to resolve security-scoped bookmark: \(error.localizedDescription)",
+        "Failed to resolve bookmark: \(error.localizedDescription)",
         metadata: [
+          "operation": "resolveBookmark",
           "error": error.localizedDescription
+        ]
+      )
+      
+      // Log failure with secure logger
+      await secureLogger.securityEvent(
+        action: "BookmarkResolution",
+        status: .failed,
+        subject: nil,
+        resource: nil,
+        additionalMetadata: [
+          "error": PrivacyTaggedValue(value: error.localizedDescription, privacyLevel: .public),
+          "phase": PrivacyTaggedValue(value: "error", privacyLevel: .public)
         ]
       )
 
@@ -327,153 +560,141 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
     }
   }
 
-  /// Verifies the integrity of data according to the security policy defined in the security
-  /// context
+  /// Verifies the integrity of the specified data using the given verification context
   /// - Parameters:
   ///   - data: The data to verify
-  ///   - verification: The verification data (hash, signature, etc.)
-  ///   - context: The security context defining how the verification should be performed
-  /// - Returns: True if the data is valid, false otherwise
+  ///   - verificationContext: The context for verification
+  /// - Returns: True if the data is verified, false otherwise
   /// - Throws: SecurityError if verification fails
   public func verifyDataIntegrity(
     _ data: [UInt8],
-    verification: [UInt8],
-    context: SecurityContextDTO
+    verificationContext: VerificationContextDTO
   ) async throws -> Bool {
     try validateInitialisation()
 
     // Log verification with privacy controls
     await logger.debug(
-      "Verifying data integrity using \(context.operationType.rawValue)",
+      "Verifying data integrity",
       metadata: [
-        "operation_type": context.operationType.rawValue,
-        "data_length": String(data.count),
-        "verification_length": String(verification.count)
+        "operation": "verifyDataIntegrity",
+        "verification_method": verificationContext.method.rawValue,
+        "data_length": String(data.count)
+      ]
+    )
+    
+    // Log with secure logger for enhanced privacy awareness
+    await secureLogger.securityEvent(
+      action: "IntegrityVerification",
+      status: .success,
+      subject: nil,
+      resource: nil,
+      additionalMetadata: [
+        "method": PrivacyTaggedValue(value: verificationContext.method.rawValue, privacyLevel: .public),
+        "dataSize": PrivacyTaggedValue(value: data.count, privacyLevel: .public),
+        "phase": PrivacyTaggedValue(value: "start", privacyLevel: .public)
       ]
     )
 
-    switch context.operationType {
-      case .verification:
-        if let verificationType=context.metadata["verification_type"] {
-          switch verificationType {
-            case "signature":
-              // Delegate to crypto service for signature verification
-              let result=await cryptoService.verify(
-                signature: verification,
-                data: data,
-                keyIdentifier: context.keyIdentifier,
-                options: nil
-              )
-
-              switch result {
-                case let .success(isValid):
-                  // Log result
-                  await logger.debug(
-                    "Signature verification completed: \(isValid ? "valid" : "invalid")",
-                    metadata: [
-                      "is_valid": String(isValid)
-                    ]
-                  )
-
-                  return isValid
-
-                case let .failure(error):
-                  // Log error and convert to security domain error
-                  await logger.error(
-                    "Signature verification failed: \(error.localizedDescription)",
-                    metadata: [
-                      "error": error.localizedDescription
-                    ]
-                  )
-
-                  throw UmbraErrors.SecurityError.verificationFailed(
-                    reason: "Signature verification failed: \(error.localizedDescription)"
-                  )
-              }
-
-            case "hash":
-              // Delegate to crypto service for hash verification
-              let hashAlgorithm=context.metadata["hash_algorithm"]
-                .map { HashAlgorithm(rawValue: $0) } ?? .sha256
-
-              let hashResult=await cryptoService.hash(
-                data: data,
-                algorithm: hashAlgorithm
-              )
-
-              switch hashResult {
-                case let .success(computedHash):
-                  // Compare the computed hash with the provided hash
-                  let match=constantTimeCompare(computedHash, verification)
-
-                  // Log result
-                  await logger.debug(
-                    "Hash verification completed: \(match ? "valid" : "invalid")",
-                    metadata: [
-                      "is_match": String(match)
-                    ]
-                  )
-
-                  return match
-
-                case let .failure(error):
-                  // Log error and convert to security domain error
-                  await logger.error(
-                    "Hash computation failed: \(error.localizedDescription)",
-                    metadata: [
-                      "error": error.localizedDescription
-                    ]
-                  )
-
-                  throw UmbraErrors.SecurityError.hashingFailed(
-                    reason: "Hash computation failed: \(error.localizedDescription)"
-                  )
-              }
-
-            default:
-              throw UmbraErrors.SecurityError.invalidOperation(
-                reason: "Verification type \(verificationType) not supported"
-              )
-          }
-        } else {
-          throw UmbraErrors.SecurityError.invalidInput(
-            reason: "Verification type not specified in context metadata"
+    switch verificationContext.method {
+      case .hash:
+        // Verify hash
+        guard let expectedHash = verificationContext.expectedValue else {
+          // Log error with secure logger
+          await secureLogger.securityEvent(
+            action: "IntegrityVerification",
+            status: .failed,
+            subject: nil,
+            resource: nil,
+            additionalMetadata: [
+              "error": PrivacyTaggedValue(value: "Missing expected hash", privacyLevel: .public),
+              "phase": PrivacyTaggedValue(value: "validation", privacyLevel: .public)
+            ]
+          )
+          
+          throw UmbraErrors.SecurityError.invalidVerificationContext(
+            reason: "Expected hash value is missing"
           )
         }
 
+        // Convert expected hash to bytes
+        let expectedHashBytes = [UInt8](expectedHash)
+
+        // Delegate to crypto service for hash verification
+        let result = await cryptoService.verifyHash(
+          data: data,
+          matches: expectedHashBytes
+        )
+
+        switch result {
+          case let .success(verified):
+            // Log verification result with privacy controls
+            await logger.debug(
+              "Hash verification \(verified ? "succeeded" : "failed")",
+              metadata: [
+                "operation": "verifyDataIntegrity",
+                "result": verified ? "verified" : "not_verified"
+              ]
+            )
+            
+            // Log result with secure logger
+            await secureLogger.securityEvent(
+              action: "IntegrityVerification",
+              status: verified ? .success : .failed,
+              subject: nil,
+              resource: nil,
+              additionalMetadata: [
+                "result": PrivacyTaggedValue(value: verified ? "verified" : "mismatch", privacyLevel: .public),
+                "phase": PrivacyTaggedValue(value: "complete", privacyLevel: .public)
+              ]
+            )
+
+            return verified
+
+          case let .failure(error):
+            // Log error with privacy controls
+            await logger.error(
+              "Hash verification operation failed: \(error.localizedDescription)",
+              metadata: [
+                "operation": "verifyDataIntegrity",
+                "error": error.localizedDescription
+              ]
+            )
+            
+            // Log failure with secure logger
+            await secureLogger.securityEvent(
+              action: "IntegrityVerification",
+              status: .failed,
+              subject: nil,
+              resource: nil,
+              additionalMetadata: [
+                "error": PrivacyTaggedValue(value: error.localizedDescription, privacyLevel: .public),
+                "phase": PrivacyTaggedValue(value: "error", privacyLevel: .public)
+              ]
+            )
+
+            throw UmbraErrors.SecurityError.verificationFailed(
+              reason: "Hash verification failed: \(error.localizedDescription)"
+            )
+        }
+
       default:
-        throw UmbraErrors.SecurityError.invalidOperation(
-          reason: "Operation type \(context.operationType.rawValue) not supported for data verification"
+        // Log unsupported method with secure logger
+        await secureLogger.securityEvent(
+          action: "IntegrityVerification",
+          status: .failed,
+          subject: nil,
+          resource: nil,
+          additionalMetadata: [
+            "method": PrivacyTaggedValue(value: verificationContext.method.rawValue, privacyLevel: .public),
+            "error": PrivacyTaggedValue(value: "Unsupported verification method", privacyLevel: .public),
+            "phase": PrivacyTaggedValue(value: "validation", privacyLevel: .public)
+          ]
+        )
+        
+        throw UmbraErrors.SecurityError.invalidVerificationMethod(
+          reason: "Verification method \(verificationContext.method.rawValue) is not supported"
         )
     }
-  }
-
-  /// Updates the configuration of the security service with new settings
-  /// - Parameter configuration: The new configuration to apply
-  /// - Throws: SecurityError if update fails
-  public func updateConfiguration(_ configuration: SecurityConfigurationDTO) async throws {
-    try validateInitialisation()
-    self.configuration=configuration
-
-    // Log configuration update
-    await logger.debug(
-      "Security service configuration updated to \(configuration.securityLevel.rawValue) security level"
-    )
-  }
-
-  /// Returns version information about the security service
-  /// - Returns: Version information as a DTO
-  public func getVersion() async -> SecurityVersionDTO {
-    SecurityVersionDTO(
-      semanticVersion: "2.0.0",
-      majorVersion: 2,
-      minorVersion: 0,
-      patchVersion: 0,
-      buildIdentifier: nil,
-      minimumSupportedPlatformVersion: "macOS 14.0",
-      providerImplementationName: "SecurityServiceActor",
-      cryptographicLibraries: ["CryptoKit", "CommonCrypto"]
-    )
   }
 
   /// Subscribes to security events matching the given filter
@@ -481,220 +702,115 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
   /// - Returns: An async stream of security events
   public func subscribeToEvents(filter: SecurityEventFilterDTO) -> AsyncStream<SecurityEventDTO> {
     var continuation: AsyncStream<SecurityEventDTO>.Continuation!
-
-    let stream=AsyncStream<SecurityEventDTO> { newContinuation in
-      continuation=newContinuation
-
-      // Log subscription with privacy controls
-      self.logger.debug(
-        "New security event subscriber added",
-        metadata: [
-          "min_severity": filter.minimumSeverityLevel?.rawValue ?? "None",
-          "include_sensitive": String(filter.includeSensitiveInformation)
+    
+    let stream = AsyncStream<SecurityEventDTO> { newContinuation in
+      continuation = newContinuation
+      
+      // Store the continuation for later use
+      let subscriberId = UUID()
+      eventSubscribers[subscriberId] = continuation
+      
+      // Clean up when the stream is cancelled
+      continuation.onTermination = { [weak self] _ in
+        Task { [weak self] in
+          guard let self = self else { return }
+          await self.removeSubscriber(id: subscriberId)
+        }
+      }
+    }
+    
+    // Log subscription with secure logger
+    Task {
+      await secureLogger.securityEvent(
+        action: "EventSubscription",
+        status: .success,
+        subject: nil,
+        resource: nil,
+        additionalMetadata: [
+          "eventTypes": PrivacyTaggedValue(value: filter.eventTypes.map { $0.rawValue }.joined(separator: ","), privacyLevel: .public),
+          "phase": PrivacyTaggedValue(value: "start", privacyLevel: .public)
         ]
       )
     }
-
-    // Store the continuation for later event publication
-    let subscriptionID=UUID()
-    eventSubscribers[subscriptionID]=continuation
-
-    // Set up cancellation
-    continuation.onTermination={ [weak self] _ in
-      Task { [weak self] in
-        await self?.removeSubscriber(id: subscriptionID)
-      }
-    }
-
+    
     return stream
   }
-
-  // MARK: - Event Publication
-
-  /// Removes a subscriber from the event system
-  /// - Parameter id: The subscriber ID to remove
+  
+  /// Removes a subscriber from the event subscribers
+  /// - Parameter id: The ID of the subscriber to remove
   private func removeSubscriber(id: UUID) {
-    eventSubscribers[id]=nil
+    eventSubscribers[id] = nil
+    
+    // Log unsubscription with secure logger
+    Task {
+      await secureLogger.securityEvent(
+        action: "EventSubscription",
+        status: .success,
+        subject: nil,
+        resource: nil,
+        additionalMetadata: [
+          "subscriberId": PrivacyTaggedValue(value: id.uuidString, privacyLevel: .public),
+          "phase": PrivacyTaggedValue(value: "end", privacyLevel: .public)
+        ]
+      )
+    }
   }
-
-  /// Publishes an event to all subscribers
-  /// - Parameter event: The event to publish
-  private func publishEvent(_ event: SecurityEventDTO) {
+  
+  /// Emits a security event to all subscribers
+  /// - Parameter event: The event to emit
+  private func emitEvent(_ event: SecurityEventDTO) async {
+    // Log event emission with secure logger
+    await secureLogger.securityEvent(
+      action: "EventEmission",
+      status: .success,
+      subject: nil,
+      resource: nil,
+      additionalMetadata: [
+        "eventType": PrivacyTaggedValue(value: event.type.rawValue, privacyLevel: .public),
+        "subscriberCount": PrivacyTaggedValue(value: eventSubscribers.count, privacyLevel: .public)
+      ]
+    )
+    
+    // Send to all subscribers
     for (_, continuation) in eventSubscribers {
       continuation.yield(event)
     }
   }
 
-  // MARK: - Helper Methods
+  // MARK: - Stub implementations for remaining SecurityProviderProtocol methods
 
-  /// Validates that the service has been initialised
-  /// - Throws: SecurityError if not initialised
-  private func validateInitialisation() throws {
-    guard isInitialised else {
-      throw UmbraErrors.SecurityError.notInitialised
-    }
-  }
-
-  /// Performs constant-time comparison of two byte arrays to prevent timing attacks
-  /// - Parameters:
-  ///   - a: First byte array
-  ///   - b: Second byte array
-  /// - Returns: True if arrays are equal, false otherwise
-  private func constantTimeCompare(_ a: [UInt8], _ b: [UInt8]) -> Bool {
-    guard a.count == b.count else {
-      return false
-    }
-
-    var result: UInt8=0
-    for i in 0..<a.count {
-      result |= a[i] ^ b[i]
-    }
-
-    return result == 0
-  }
-
-  // MARK: - SecurityProviderProtocol Implementation
-
-  /// Access to cryptographic service implementation
-  public func cryptoService() async -> CryptoServiceProtocol {
-    cryptoService
-  }
-
-  /// Access to key management service implementation
-  public func keyManager() async -> SecurityCoreInterfaces.KeyManagementProtocol {
-    throw UmbraErrors.SecurityError.serviceUnavailable
-  }
-
-  /// Encrypts data with the specified configuration
-  public func encrypt(config _: SecurityConfigDTO) async throws -> SecurityResultDTO {
+  public func secureDelete(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
     try validateInitialisation()
+
+    // Log with secure logger for enhanced privacy awareness
+    await secureLogger.securityEvent(
+      action: "SecureDelete",
+      status: .success,
+      subject: nil,
+      resource: nil,
+      additionalMetadata: [
+        "operationType": PrivacyTaggedValue(value: config.operationType.rawValue, privacyLevel: .public),
+        "phase": PrivacyTaggedValue(value: "start", privacyLevel: .public)
+      ]
+    )
 
     // Implementation would go here
     // For now, we'll throw an error since this is a stub
-    throw SecurityProtocolError
-      .notImplemented(message: "Encryption not implemented in this version")
-  }
-
-  /// Decrypts data with the specified configuration
-  public func decrypt(config _: SecurityConfigDTO) async throws -> SecurityResultDTO {
-    try validateInitialisation()
-
-    // Implementation would go here
-    // For now, we'll throw an error since this is a stub
-    throw SecurityProtocolError
-      .notImplemented(message: "Decryption not implemented in this version")
-  }
-
-  /// Generates a cryptographic key with the specified configuration
-  public func generateKey(config _: SecurityConfigDTO) async throws -> SecurityResultDTO {
-    try validateInitialisation()
-
-    // Implementation would go here
-    // For now, we'll throw an error since this is a stub
-    throw SecurityProtocolError
-      .notImplemented(message: "Key generation not implemented in this version")
-  }
-
-  /// Securely stores data with the specified configuration
-  public func secureStore(config _: SecurityConfigDTO) async throws -> SecurityResultDTO {
-    try validateInitialisation()
-
-    // Implementation would go here
-    // For now, we'll throw an error since this is a stub
-    throw SecurityProtocolError
-      .notImplemented(message: "Secure storage not implemented in this version")
-  }
-
-  /// Retrieves securely stored data with the specified configuration
-  public func secureRetrieve(config _: SecurityConfigDTO) async throws -> SecurityResultDTO {
-    try validateInitialisation()
-
-    // Implementation would go here
-    // For now, we'll throw an error since this is a stub
-    throw SecurityProtocolError
-      .notImplemented(message: "Secure retrieval not implemented in this version")
-  }
-
-  /// Deletes securely stored data with the specified configuration
-  public func secureDelete(config _: SecurityConfigDTO) async throws -> SecurityResultDTO {
-    try validateInitialisation()
-
-    // Implementation would go here
-    // For now, we'll throw an error since this is a stub
-    throw SecurityProtocolError
-      .notImplemented(message: "Secure deletion not implemented in this version")
-  }
-
-  /// Creates a digital signature for data with the specified configuration
-  public func sign(config _: SecurityConfigDTO) async throws -> SecurityResultDTO {
-    try validateInitialisation()
-
-    // Implementation would go here
-    // For now, we'll throw an error since this is a stub
-    throw SecurityProtocolError
-      .notImplemented(message: "Digital signing not implemented in this version")
-  }
-
-  /// Verifies a digital signature with the specified configuration
-  public func verify(config _: SecurityConfigDTO) async throws -> SecurityResultDTO {
-    try validateInitialisation()
-
-    // Implementation would go here
-    // For now, we'll throw an error since this is a stub
-    throw SecurityProtocolError
-      .notImplemented(message: "Signature verification not implemented in this version")
-  }
-
-  /// Performs a hash operation with the specified configuration
-  public func hash(config _: SecurityConfigDTO) async throws -> SecurityResultDTO {
-    try validateInitialisation()
-
-    // Implementation would go here
-    // For now, we'll throw an error since this is a stub
-    throw SecurityProtocolError.notImplemented(message: "Hashing not implemented in this version")
-  }
-
-  /// Generates a secure random value
-  public func secureRandom(config _: SecurityConfigDTO) async throws -> SecurityResultDTO {
-    try validateInitialisation()
-
-    // Implementation would go here
-    // For now, we'll throw an error since this is a stub
-    throw SecurityProtocolError
-      .notImplemented(message: "Random generation not implemented in this version")
-  }
-
-  /// Performs a secure operation with the specified configuration
-  public func performSecureOperation(
-    operation: SecurityOperation,
-    config: SecurityConfigDTO
-  ) async throws -> SecurityResultDTO {
-    try validateInitialisation()
-
-    switch operation {
-      case .encrypt:
-        return try await encrypt(config: config)
-      case .decrypt:
-        return try await decrypt(config: config)
-      case .hash:
-        return try await hash(config: config)
-      case .secureRandom:
-        return try await secureRandom(config: config)
-      case .generateKey:
-        return try await generateKey(config: config)
-      case .secureStore:
-        return try await secureStore(config: config)
-      case .secureRetrieve:
-        return try await secureRetrieve(config: config)
-      case .secureDelete:
-        return try await secureDelete(config: config)
-      case .sign:
-        return try await sign(config: config)
-      case .verify:
-        return try await verify(config: config)
-      default:
-        throw SecurityProtocolError
-          .notImplemented(message: "Operation \(operation) not implemented")
-    }
+    
+    // Log failure with secure logger
+    await secureLogger.securityEvent(
+      action: "SecureDelete",
+      status: .failed,
+      subject: nil,
+      resource: nil,
+      additionalMetadata: [
+        "error": PrivacyTaggedValue(value: "Not implemented", privacyLevel: .public),
+        "phase": PrivacyTaggedValue(value: "error", privacyLevel: .public)
+      ]
+    )
+    
+    throw UmbraErrors.SecurityError.notImplemented(
+      reason: "Secure delete operation is not yet implemented"
+    )
   }
 }

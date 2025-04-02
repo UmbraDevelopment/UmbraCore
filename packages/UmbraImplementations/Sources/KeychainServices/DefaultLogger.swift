@@ -46,49 +46,52 @@ public final class DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
   }
 
   /// Log a debug message
-  public func debug(_ message: String, metadata: LogMetadata?, source: String?) async {
+  public func debug(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String?) async {
     let logContext=buildLogContext(metadata: metadata, source: source)
     logger.debug("\(message, privacy: .public)")
     await loggingActor.log(level: .debug, message: message, context: logContext)
   }
 
   /// Log an info message
-  public func info(_ message: String, metadata: LogMetadata?, source: String?) async {
+  public func info(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String?) async {
     let logContext=buildLogContext(metadata: metadata, source: source)
     logger.info("\(message, privacy: .public)")
     await loggingActor.log(level: .info, message: message, context: logContext)
   }
 
   /// Log a warning message
-  public func warning(_ message: String, metadata: LogMetadata?, source: String?) async {
+  public func warning(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String?) async {
     let logContext=buildLogContext(metadata: metadata, source: source)
     logger.warning("\(message, privacy: .public)")
     await loggingActor.log(level: .warning, message: message, context: logContext)
   }
 
   /// Log an error message
-  public func error(_ message: String, metadata: LogMetadata?, source: String?) async {
+  public func error(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String?) async {
     let logContext=buildLogContext(metadata: metadata, source: source)
     logger.error("\(message, privacy: .public)")
     await loggingActor.log(level: .error, message: message, context: logContext)
   }
 
   /// Log a critical error message
-  public func critical(_ message: String, metadata: LogMetadata?, source: String?) async {
+  public func critical(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String?) async {
     let logContext=buildLogContext(metadata: metadata, source: source)
     logger.critical("\(message, privacy: .public)")
     await loggingActor.log(level: .critical, message: message, context: logContext)
   }
 
-  /// Build a log context for logging
-  private func buildLogContext(metadata: LogMetadata?, source: String?) -> LogContext {
-    var context=LogContext(timestamp: Date())
-    if let metadata {
-      context.metadata=metadata
-    }
-    if let source {
-      context.source=source
-    }
+  /**
+   Build a log context with the given parameters.
+   */
+  private func buildLogContext(
+    metadata: LoggingTypes.PrivacyMetadata? = nil,
+    source: String? = nil
+  ) -> LogContext {
+    let context = LogContext(
+      source: source ?? "KeychainServices",
+      metadata: metadata,
+      timestamp: LogTimestamp(secondsSinceEpoch: Date().timeIntervalSince1970)
+    )
     return context
   }
 }

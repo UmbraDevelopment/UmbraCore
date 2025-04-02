@@ -211,10 +211,13 @@ public enum ErrorPrivacyLevel: String, Sendable, Equatable, Comparable {
 
 /**
  A strategy for recovering from a specific error.
+
+ The recovery action is marked as @Sendable to ensure it can be safely executed
+ concurrently.
  */
-public struct ErrorRecoveryStrategy<E: Error, Outcome>: Sendable {
+public struct ErrorRecoveryStrategy<E: Error, Outcome: Sendable>: Sendable {
   /// The recovery action to attempt
-  public let action: (E, ErrorContext) async -> Outcome?
+  public let action: @Sendable (E, ErrorContext) async -> Outcome?
 
   /// Description of this recovery strategy for logging
   public let description: String
@@ -222,7 +225,7 @@ public struct ErrorRecoveryStrategy<E: Error, Outcome>: Sendable {
   /// Creates a new error recovery strategy
   public init(
     description: String,
-    action: @escaping (E, ErrorContext) async -> Outcome?
+    action: @escaping @Sendable (E, ErrorContext) async -> Outcome?
   ) {
     self.description=description
     self.action=action
@@ -231,8 +234,11 @@ public struct ErrorRecoveryStrategy<E: Error, Outcome>: Sendable {
 
 /**
  Result of attempting error recovery.
+
+ The Outcome generic parameter is constrained to Sendable to ensure the result
+ can be safely returned from concurrent operations.
  */
-public enum ErrorRecoveryResult<Outcome>: Sendable {
+public enum ErrorRecoveryResult<Outcome: Sendable>: Sendable {
   /// Recovery was successful
   case recovered(Outcome)
 

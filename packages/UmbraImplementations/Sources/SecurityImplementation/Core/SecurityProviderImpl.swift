@@ -1,6 +1,8 @@
 import CoreSecurityTypes
 import Foundation
 import LoggingInterfaces
+import LoggingServices
+import LoggingTypes
 import SecurityCoreInterfaces
 
 /**
@@ -18,6 +20,12 @@ import SecurityCoreInterfaces
 
  Centralises access control, encryption, signing, and key management through
  a unified interface with comprehensive logging and error handling.
+ 
+ ## Privacy-Aware Logging
+ 
+ Implements privacy-aware logging through SecureLoggerActor, ensuring that
+ sensitive information is properly tagged with privacy levels according to the
+ Alpha Dot Five architecture principles.
  */
 // Using @preconcurrency to resolve protocol conformance issues with isolated methods
 @preconcurrency
@@ -39,9 +47,17 @@ public actor CoreSecurityProviderService: SecurityProviderProtocol, AsyncService
   public let keyManager: KeyManagementProtocol
 
   /**
-   The logger instance for recording operation details
+   The standard logger instance for recording general operation details
    */
   let logger: LoggingInterfaces.LoggingProtocol
+  
+  /**
+   The secure logger for privacy-aware logging of sensitive security operations
+   
+   This logger ensures proper privacy tagging for all security-sensitive information
+   in accordance with the Alpha Dot Five architecture principles.
+   */
+  private let secureLogger: SecureLoggerActor
 
   // MARK: - Service Components
 
@@ -66,41 +82,48 @@ public actor CoreSecurityProviderService: SecurityProviderProtocol, AsyncService
   private let hashingService: HashingService
 
   /**
-   Initializes the security provider with all required services.
+   Initialises the security provider with all required services.
 
    - Parameters:
      - cryptoService: Service for cryptographic operations
      - keyManager: Service for key management operations
-     - logger: Logger for security operations
+     - logger: Logger for general operations
+     - secureLogger: Secure logger for privacy-aware logging (will be created if nil)
    */
   public init(
     cryptoService: SecurityCoreInterfaces.CryptoServiceProtocol,
     keyManager: KeyManagementProtocol,
-    logger: LoggingInterfaces.LoggingProtocol
+    logger: LoggingInterfaces.LoggingProtocol,
+    secureLogger: SecureLoggerActor? = nil
   ) {
-    self.cryptoService=cryptoService
-    self.keyManager=keyManager
-    self.logger=logger
+    self.cryptoService = cryptoService
+    self.keyManager = keyManager
+    self.logger = logger
+    self.secureLogger = secureLogger ?? SecureLoggerActor(
+      subsystem: "com.umbra.security",
+      category: "SecurityProvider",
+      includeTimestamps: true
+    )
 
     // Initialize component services
-    encryptionService=EncryptionService(
+    encryptionService = EncryptionService(
       cryptoService: cryptoService,
       logger: logger
     )
 
-    hashingService=HashingService(
+    hashingService = HashingService(
       cryptoService: cryptoService,
       logger: logger
     )
 
-    signatureService=SignatureService(
+    signatureService = SignatureService(
       cryptoService: cryptoService,
       keyManagementService: keyManager,
       logger: logger
     )
 
     // Initialise the secure storage service
-    storageService=SecureStorageService(
+    storageService = SecureStorageService(
       cryptoService: cryptoService,
       logger: logger
     )
@@ -116,12 +139,36 @@ public actor CoreSecurityProviderService: SecurityProviderProtocol, AsyncService
    */
   public func initialize() async throws {
     await logger.info("Initializing security provider service")
+    
+    // Log with secure logger for enhanced privacy awareness
+    await secureLogger.securityEvent(
+      action: "SecurityProviderInitialisation",
+      status: .success,
+      subject: nil,
+      resource: nil,
+      additionalMetadata: [
+        "operation": PrivacyTaggedValue(value: "start", privacyLevel: .public),
+        "provider": PrivacyTaggedValue(value: "CoreSecurityProviderService", privacyLevel: .public)
+      ]
+    )
 
     // Initialize dependencies
     try await cryptoService.initialize()
     try await keyManager.initialize()
 
     await logger.info("Security provider service initialized successfully")
+    
+    // Log successful initialisation with secure logger
+    await secureLogger.securityEvent(
+      action: "SecurityProviderInitialisation",
+      status: .success,
+      subject: nil,
+      resource: nil,
+      additionalMetadata: [
+        "operation": PrivacyTaggedValue(value: "complete", privacyLevel: .public),
+        "provider": PrivacyTaggedValue(value: "CoreSecurityProviderService", privacyLevel: .public)
+      ]
+    )
   }
 
   // MARK: - SecurityProviderProtocol Implementation
@@ -153,7 +200,68 @@ public actor CoreSecurityProviderService: SecurityProviderProtocol, AsyncService
    - Returns: Result containing encrypted data or error
    */
   public func encrypt(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
-    try await encryptionService.encrypt(config: config)
+    // Create operation ID for tracing
+    let operationID = UUID().uuidString
+    let startTime = Date()
+    
+    // Log with secure logger for enhanced privacy awareness
+    await secureLogger.securityEvent(
+      action: "Encryption",
+      status: .success,
+      subject: nil,
+      resource: nil,
+      additionalMetadata: [
+        "operationId": PrivacyTaggedValue(value: operationID, privacyLevel: .public),
+        "operation": PrivacyTaggedValue(value: "start", privacyLevel: .public),
+        "operationType": PrivacyTaggedValue(value: config.operationType.rawValue, privacyLevel: .public),
+        "dataSize": PrivacyTaggedValue(value: config.inputData?.count ?? 0, privacyLevel: .public),
+        "hasKey": PrivacyTaggedValue(value: config.keyIdentifier != nil, privacyLevel: .public)
+      ]
+    )
+    
+    do {
+      // Delegate to encryption service
+      let result = try await encryptionService.encrypt(config: config)
+      
+      // Calculate operation duration
+      let duration = Date().timeIntervalSince(startTime)
+      
+      // Log success with secure logger
+      await secureLogger.securityEvent(
+        action: "Encryption",
+        status: .success,
+        subject: nil,
+        resource: nil,
+        additionalMetadata: [
+          "operationId": PrivacyTaggedValue(value: operationID, privacyLevel: .public),
+          "operation": PrivacyTaggedValue(value: "complete", privacyLevel: .public),
+          "durationMs": PrivacyTaggedValue(value: Int(duration * 1000), privacyLevel: .public),
+          "resultSize": PrivacyTaggedValue(value: result.data?.count ?? 0, privacyLevel: .public)
+        ]
+      )
+      
+      return result
+    } catch {
+      // Calculate operation duration
+      let duration = Date().timeIntervalSince(startTime)
+      
+      // Log failure with secure logger
+      await secureLogger.securityEvent(
+        action: "Encryption",
+        status: .failed,
+        subject: nil,
+        resource: nil,
+        additionalMetadata: [
+          "operationId": PrivacyTaggedValue(value: operationID, privacyLevel: .public),
+          "operation": PrivacyTaggedValue(value: "error", privacyLevel: .public),
+          "durationMs": PrivacyTaggedValue(value: Int(duration * 1000), privacyLevel: .public),
+          "errorType": PrivacyTaggedValue(value: String(describing: type(of: error)), privacyLevel: .public),
+          "errorDescription": PrivacyTaggedValue(value: error.localizedDescription, privacyLevel: .public)
+        ]
+      )
+      
+      throw error
+    }
   }
 
   /**
@@ -165,7 +273,68 @@ public actor CoreSecurityProviderService: SecurityProviderProtocol, AsyncService
    - Returns: Result containing decrypted data or error
    */
   public func decrypt(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
-    try await encryptionService.decrypt(config: config)
+    // Create operation ID for tracing
+    let operationID = UUID().uuidString
+    let startTime = Date()
+    
+    // Log with secure logger for enhanced privacy awareness
+    await secureLogger.securityEvent(
+      action: "Decryption",
+      status: .success,
+      subject: nil,
+      resource: nil,
+      additionalMetadata: [
+        "operationId": PrivacyTaggedValue(value: operationID, privacyLevel: .public),
+        "operation": PrivacyTaggedValue(value: "start", privacyLevel: .public),
+        "operationType": PrivacyTaggedValue(value: config.operationType.rawValue, privacyLevel: .public),
+        "dataSize": PrivacyTaggedValue(value: config.inputData?.count ?? 0, privacyLevel: .public),
+        "hasKey": PrivacyTaggedValue(value: config.keyIdentifier != nil, privacyLevel: .public)
+      ]
+    )
+    
+    do {
+      // Delegate to encryption service
+      let result = try await encryptionService.decrypt(config: config)
+      
+      // Calculate operation duration
+      let duration = Date().timeIntervalSince(startTime)
+      
+      // Log success with secure logger
+      await secureLogger.securityEvent(
+        action: "Decryption",
+        status: .success,
+        subject: nil,
+        resource: nil,
+        additionalMetadata: [
+          "operationId": PrivacyTaggedValue(value: operationID, privacyLevel: .public),
+          "operation": PrivacyTaggedValue(value: "complete", privacyLevel: .public),
+          "durationMs": PrivacyTaggedValue(value: Int(duration * 1000), privacyLevel: .public),
+          "resultSize": PrivacyTaggedValue(value: result.data?.count ?? 0, privacyLevel: .public)
+        ]
+      )
+      
+      return result
+    } catch {
+      // Calculate operation duration
+      let duration = Date().timeIntervalSince(startTime)
+      
+      // Log failure with secure logger
+      await secureLogger.securityEvent(
+        action: "Decryption",
+        status: .failed,
+        subject: nil,
+        resource: nil,
+        additionalMetadata: [
+          "operationId": PrivacyTaggedValue(value: operationID, privacyLevel: .public),
+          "operation": PrivacyTaggedValue(value: "error", privacyLevel: .public),
+          "durationMs": PrivacyTaggedValue(value: Int(duration * 1000), privacyLevel: .public),
+          "errorType": PrivacyTaggedValue(value: String(describing: type(of: error)), privacyLevel: .public),
+          "errorDescription": PrivacyTaggedValue(value: error.localizedDescription, privacyLevel: .public)
+        ]
+      )
+      
+      throw error
+    }
   }
 
   /**
@@ -177,35 +346,100 @@ public actor CoreSecurityProviderService: SecurityProviderProtocol, AsyncService
    - Returns: Result containing key identifier or error
    */
   public func generateKey(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
-    // Log the operation
+    // Create operation ID for tracing
+    let operationID = UUID().uuidString
+    let startTime = Date()
+    
+    // Log operation with standard logger
     await logger.info(
       "Generating cryptographic key",
       metadata: ["keyType": config.keyType.rawValue],
       source: "CoreSecurityProvider"
     )
-
-    // Process the request through the key management service
-    let result=try await keyManager.generateKey(
-      type: config.keyType,
-      size: config.keySize,
-      metadata: config.metadata
-    )
-
-    // Create result data
-    let resultDTO=SecurityResultDTO(
+    
+    // Log with secure logger for enhanced privacy awareness
+    await secureLogger.securityEvent(
+      action: "KeyGeneration",
       status: .success,
-      data: Data(result.identifier.utf8),
-      metadata: ["keyType": config.keyType.rawValue, "keySize": String(config.keySize)]
+      subject: nil,
+      resource: nil,
+      additionalMetadata: [
+        "operationId": PrivacyTaggedValue(value: operationID, privacyLevel: .public),
+        "operation": PrivacyTaggedValue(value: "start", privacyLevel: .public),
+        "keyType": PrivacyTaggedValue(value: config.keyType.rawValue, privacyLevel: .public),
+        "keySize": PrivacyTaggedValue(value: config.keySize, privacyLevel: .public)
+      ]
     )
 
-    // Log completion
-    await logger.info(
-      "Key generation completed successfully",
-      metadata: ["keyType": config.keyType.rawValue],
-      source: "CoreSecurityProvider"
-    )
+    do {
+      // Process the request through the key management service
+      let result = try await keyManager.generateKey(
+        type: config.keyType,
+        size: config.keySize,
+        metadata: config.metadata
+      )
+      
+      // Calculate operation duration
+      let duration = Date().timeIntervalSince(startTime)
 
-    return resultDTO
+      // Create result data
+      let resultDTO = SecurityResultDTO(
+        status: .success,
+        data: Data(result.identifier.utf8),
+        metadata: ["keyType": config.keyType.rawValue, "keySize": String(config.keySize)]
+      )
+      
+      // Log success with secure logger
+      await secureLogger.securityEvent(
+        action: "KeyGeneration",
+        status: .success,
+        subject: nil,
+        resource: result.identifier,
+        additionalMetadata: [
+          "operationId": PrivacyTaggedValue(value: operationID, privacyLevel: .public),
+          "operation": PrivacyTaggedValue(value: "complete", privacyLevel: .public),
+          "durationMs": PrivacyTaggedValue(value: Int(duration * 1000), privacyLevel: .public),
+          "keyType": PrivacyTaggedValue(value: config.keyType.rawValue, privacyLevel: .public)
+        ]
+      )
+
+      // Log completion
+      await logger.info(
+        "Key generation completed successfully",
+        metadata: ["keyType": config.keyType.rawValue, "keyId": result.identifier],
+        source: "CoreSecurityProvider"
+      )
+
+      return resultDTO
+    } catch {
+      // Calculate operation duration
+      let duration = Date().timeIntervalSince(startTime)
+      
+      // Log failure with secure logger
+      await secureLogger.securityEvent(
+        action: "KeyGeneration",
+        status: .failed,
+        subject: nil,
+        resource: nil,
+        additionalMetadata: [
+          "operationId": PrivacyTaggedValue(value: operationID, privacyLevel: .public),
+          "operation": PrivacyTaggedValue(value: "error", privacyLevel: .public),
+          "durationMs": PrivacyTaggedValue(value: Int(duration * 1000), privacyLevel: .public),
+          "errorType": PrivacyTaggedValue(value: String(describing: type(of: error)), privacyLevel: .public),
+          "errorDescription": PrivacyTaggedValue(value: error.localizedDescription, privacyLevel: .public),
+          "keyType": PrivacyTaggedValue(value: config.keyType.rawValue, privacyLevel: .public)
+        ]
+      )
+
+      // Log error
+      await logger.error(
+        "Key generation failed: \(error.localizedDescription)",
+        metadata: ["keyType": config.keyType.rawValue, "error": error.localizedDescription],
+        source: "CoreSecurityProvider"
+      )
+
+      throw error
+    }
   }
 
   /**

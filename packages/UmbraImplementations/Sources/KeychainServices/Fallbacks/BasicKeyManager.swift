@@ -2,8 +2,34 @@ import CoreSecurityTypes
 import DomainSecurityTypes
 import Foundation
 import LoggingInterfaces
+import LoggingTypes
 import SecurityCoreInterfaces
 import UmbraErrors
+
+/// A simple no-operation implementation of LoggingProtocol for use when no logger is provided
+private final class LoggingProtocol_NoOp: LoggingProtocol, @unchecked Sendable {
+  
+  private let _loggingActor: LoggingActor
+  
+  public var loggingActor: LoggingActor {
+    _loggingActor
+  }
+  
+  init() {
+    self._loggingActor = LoggingActor(destinations: [])
+  }
+  
+  func trace(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
+  func debug(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
+  func info(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
+  func warning(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
+  func error(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
+  func critical(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
+  
+  func logMessage(_ level: LogLevel, _ message: String, context: LogContext) async {}
+  
+  func logSensitive(_ level: LogLevel, _ message: String, sensitiveValues: [String : Any], source: String) async {}
+}
 
 /**
  # BasicKeyManager
@@ -17,12 +43,12 @@ import UmbraErrors
  */
 
 /// Basic key types supported by the BasicKeyManager
-public enum KeyType {
-  case aes128
-  case aes256
-  case rsaPrivate
-  case rsaPublic
-  case hmac
+public enum KeyType: String, Sendable, Equatable, Codable {
+  case aes128 = "AES128"
+  case aes256 = "AES256"
+  case rsaPrivate = "RSAPrivate"
+  case rsaPublic = "RSAPublic"
+  case hmac = "HMAC"
 }
 
 /// Error types specific to key management operations
@@ -39,7 +65,7 @@ public enum KeyManagementError: Error, Equatable {
 
 public final class BasicKeyManager: KeyManagementProtocol, @unchecked Sendable {
   /// In-memory storage for keys
-  private var keyStore: [String: SecureBytes]=[:]
+  private var keyStore: [String: [UInt8]] = [:]
 
   /// Logger for operations
   private let logger: LoggingProtocol
@@ -50,7 +76,7 @@ public final class BasicKeyManager: KeyManagementProtocol, @unchecked Sendable {
    - Parameter logger: Logger for recording operations
    */
   public init(logger: LoggingProtocol?=nil) {
-    self.logger=logger ?? DefaultLogger()
+    self.logger = logger ?? LoggingProtocol_NoOp()
   }
 
   /**
@@ -60,8 +86,8 @@ public final class BasicKeyManager: KeyManagementProtocol, @unchecked Sendable {
    - Returns: A result containing the key or an error
    */
   public func retrieveKey(withIdentifier identifier: String) async
-  -> Result<SecureBytes, SecurityProtocolError> {
-    if let key=keyStore[identifier] {
+  -> Result<[UInt8], SecurityProtocolError> {
+    if let key = keyStore[identifier] {
       await logger.debug(
         "Retrieved key with identifier: \(identifier)",
         metadata: nil,
@@ -69,12 +95,12 @@ public final class BasicKeyManager: KeyManagementProtocol, @unchecked Sendable {
       )
       return .success(key)
     } else {
-      await logger.error(
-        "Failed to retrieve key with identifier: \(identifier)",
+      await logger.warning(
+        "Key not found with identifier: \(identifier)",
         metadata: nil,
         source: "BasicKeyManager"
       )
-      return .failure(.keyNotFound(identifier: identifier))
+      return .failure(.invalidMessageFormat(details: "Key not found with identifier: \(identifier)"))
     }
   }
 
@@ -87,10 +113,10 @@ public final class BasicKeyManager: KeyManagementProtocol, @unchecked Sendable {
    - Returns: A result indicating success or an error
    */
   public func storeKey(
-    _ key: SecureBytes,
+    _ key: [UInt8],
     withIdentifier identifier: String
   ) async -> Result<Void, SecurityProtocolError> {
-    keyStore[identifier]=key
+    keyStore[identifier] = key
     await logger.debug(
       "Stored key with identifier: \(identifier)",
       metadata: nil,
@@ -115,183 +141,88 @@ public final class BasicKeyManager: KeyManagementProtocol, @unchecked Sendable {
       )
       return .success(())
     } else {
-      await logger.error(
-        "Failed to delete key with identifier: \(identifier)",
+      await logger.warning(
+        "Key not found with identifier: \(identifier)",
         metadata: nil,
         source: "BasicKeyManager"
       )
-      return .failure(.keyNotFound(identifier: identifier))
+      return .failure(.invalidMessageFormat(details: "Key not found with identifier: \(identifier)"))
     }
   }
 
   /**
-   Generate a cryptographic key with the specified configuration.
-
-   - Parameter config: The configuration for generating the key
-   - Returns: The result of the key generation operation
-   - Throws: Error if key generation fails
+   Rotates a security key, creating a new key and optionally re-encrypting data.
+   
+   - Parameters:
+     - identifier: A string identifying the key to rotate.
+     - dataToReencrypt: Optional data to re-encrypt with the new key.
+   - Returns: The new key and re-encrypted data (if provided) or an error.
    */
-  public func generateKey(with config: KeyGenerationConfig) async throws -> KeyGenerationResult {
+  public func rotateKey(
+    withIdentifier identifier: String,
+    dataToReencrypt: [UInt8]?
+  ) async -> Result<(
+    newKey: [UInt8],
+    reencryptedData: [UInt8]?
+  ), SecurityProtocolError> {
     await logger.warning(
-      "Using BasicKeyManager to generate a key with configuration - this is not secure for production",
+      "Using BasicKeyManager to rotate a key - this is not secure for production use",
       metadata: nil,
       source: "BasicKeyManager"
     )
-
-    // Generate a key based on the specified algorithm
-    let keySize=switch config.algorithm {
-      case .aes256:
-        256
-      case .ecdsaP256:
-        256
-      case .ecdsaP384:
-        384
-      case .ed25519:
-        256
+    
+    // Generate a new key (using AES-256 as a default)
+    let newKeyBytes = try? await generateRandomBytes(count: 32)
+    guard let newKeyBytes = newKeyBytes else {
+      return .failure(.invalidMessageFormat(details: "Failed to generate new key"))
     }
-
-    let keyBytes=try await generateRandomBytes(count: keySize / 8)
-    let key=SecureBytes(Data(keyBytes))
-
-    // Generate a unique identifier
-    let keyIdentifier=UUID().uuidString
-
-    // Store the key with the identifier
-    let storeResult=await storeKey(key, withIdentifier: keyIdentifier)
-
-    if case let .failure(error)=storeResult {
-      throw error
+    
+    // Store the new key with the same identifier
+    let storeResult = await storeKey(newKeyBytes, withIdentifier: identifier)
+    if case let .failure(error) = storeResult {
+      return .failure(error)
     }
-
-    // Return the key generation result
-    return KeyGenerationResult(
-      keyIdentifier: keyIdentifier,
-      algorithm: config.algorithm,
-      metadata: config.metadata
-    )
+    
+    // If there's data to re-encrypt, mock the re-encryption
+    var reencryptedData: [UInt8]? = nil
+    if let dataToReencrypt = dataToReencrypt {
+      // In a real implementation, this would use the new key to re-encrypt the data
+      // For this fallback, we'll just mock the re-encryption
+      reencryptedData = dataToReencrypt
+    }
+    
+    return .success((newKey: newKeyBytes, reencryptedData: reencryptedData))
   }
 
   /**
-   Generate a new cryptographic key of the specified type.
-
-   - Parameter type: The type of key to generate
-   - Returns: A result containing the generated key or an error
+   Lists all available key identifiers.
+   
+   - Returns: An array of key identifiers or an error.
    */
-  public func generateKey(ofType type: KeyType) async throws -> SecureBytes {
-    // This is a very basic implementation that would not be secure in production
-    await logger
-      .warning(
-        "Using BasicKeyManager to generate a key - this is not secure for production use",
-        metadata: nil,
-        source: "BasicKeyManager"
-      )
-
-    var keyData=switch type {
-      case .aes128:
-        [UInt8](repeating: 0, count: 16)
-      case .aes256:
-        [UInt8](repeating: 0, count: 32)
-      case .rsaPrivate:
-        [UInt8](repeating: 0, count: 256)
-      case .rsaPublic:
-        [UInt8](repeating: 0, count: 128)
-      case .hmac:
-        [UInt8](repeating: 0, count: 32)
-    }
-
-    // Fill with random data
-    for i in 0..<keyData.count {
-      keyData[i]=UInt8.random(in: 0...255)
-    }
-
-    return SecureBytes(Data(keyData))
+  public func listKeyIdentifiers() async -> Result<[String], SecurityProtocolError> {
+    await logger.debug(
+      "Listing key identifiers",
+      metadata: nil,
+      source: "BasicKeyManager"
+    )
+    return .success(Array(keyStore.keys))
   }
 
   /**
    Generate random bytes securely.
 
    - Parameter count: Number of bytes to generate
-   - Returns: Data containing the random bytes
-   - Throws: Error if secure random generation fails
+   - Returns: Array of random bytes
+   - Throws: Error if random byte generation fails
    */
-  private func generateRandomBytes(count: Int) async throws -> Data {
-    var bytes=[UInt8](repeating: 0, count: count)
-    let status=SecRandomCopyBytes(kSecRandomDefault, count, &bytes)
-
-    guard status == errSecSuccess else {
-      throw SecurityProtocolError
-        .keyNotFound(identifier: "Failed to generate secure random bytes: \(status)")
+  private func generateRandomBytes(count: Int) async throws -> [UInt8] {
+    var bytes = [UInt8](repeating: 0, count: count)
+    let status = SecRandomCopyBytes(kSecRandomDefault, count, &bytes)
+    
+    if status == errSecSuccess {
+      return bytes
+    } else {
+      throw KeyManagementError.keyGenerationFailed(reason: "SecRandomCopyBytes failed with status \(status)")
     }
-
-    return Data(bytes)
-  }
-
-  /**
-   Rotates a key with the specified identifier and optionally re-encrypts data.
-
-   - Parameters:
-     - identifier: The identifier of the key to rotate
-     - dataToReencrypt: Optional data to re-encrypt with the new key
-   - Returns: A result containing the new key and re-encrypted data, or an error
-   */
-  public func rotateKey(
-    withIdentifier identifier: String,
-    dataToReencrypt: SecureBytes?
-  ) async -> Result<(newKey: SecureBytes, reencryptedData: SecureBytes?), SecurityProtocolError> {
-    await logger.warning(
-      "Using BasicKeyManager to rotate a key - this is not secure for production use",
-      metadata: nil,
-      source: "BasicKeyManager"
-    )
-
-    // Create a new random key
-    let newKey=SecureBytes(Data((0..<32).map { _ in UInt8.random(in: 0...255) }))
-
-    // Store the new key with the same identifier
-    let storeResult=await storeKey(newKey, withIdentifier: identifier)
-
-    switch storeResult {
-      case .success:
-        // If there's data to re-encrypt, we would do it here.
-        // For this simple implementation, we just return the data unchanged
-        return .success((newKey: newKey, reencryptedData: dataToReencrypt))
-      case let .failure(error):
-        return .failure(error)
-    }
-  }
-
-  /**
-   Lists all available key identifiers.
-
-   - Returns: An array of key identifiers or an error
-   */
-  public func listKeyIdentifiers() async -> Result<[String], SecurityProtocolError> {
-    .success(Array(keyStore.keys))
-  }
-
-  /**
-   Resets a key by generating a new one and replacing the old one with the same identifier.
-
-   - Parameter identifier: The identifier of the key to reset
-   - Returns: Result indicating success or failure with error
-   */
-  public func resetKey(withIdentifier identifier: String) async -> Result<Void, Error> {
-    await logger.info(
-      "Resetting key with identifier \(identifier)",
-      metadata: nil,
-      source: "BasicKeyManager"
-    )
-
-    guard keyStore[identifier] != nil else {
-      return .failure(KeyManagementError.keyNotFound(identifier: identifier))
-    }
-
-    // Create a new random key
-    let newKey=SecureBytes(Data((0..<32).map { _ in UInt8.random(in: 0...255) }))
-
-    // Store the new key with the same identifier
-    keyStore[identifier]=newKey
-
-    return .success(())
   }
 }

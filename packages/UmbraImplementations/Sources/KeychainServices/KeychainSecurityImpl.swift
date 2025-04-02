@@ -79,7 +79,7 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
     let keyID=keyIdentifierForAccount(account)
     let keyResult=await keyManager.retrieveKey(withIdentifier: keyID)
 
-    let key: SecureBytes
+    let key: [UInt8]
 
     switch keyResult {
       case let .success(existingKey):
@@ -118,7 +118,7 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
     try await keychainService.storeData(
       encryptedData,
       for: account,
-      accessOptions: accessOptions
+      keychainOptions: accessOptionsToKeychainOptions(accessOptions)
     )
 
     await logger.info(
@@ -155,7 +155,7 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
     )
 
     // Get or generate the encryption key
-    let key: SecureBytes
+    let key: [UInt8]
     let keyResult=await keyManager.retrieveKey(withIdentifier: keyID)
 
     switch keyResult {
@@ -195,7 +195,7 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
     try await keychainService.storeData(
       encryptedData,
       for: account,
-      accessOptions: accessOptions
+      keychainOptions: accessOptionsToKeychainOptions(accessOptions)
     )
 
     await logger.info(
@@ -228,7 +228,10 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
     }
 
     // Get encrypted data from keychain
-    let encryptedData=try await keychainService.retrieveData(for: account)
+    let encryptedData=try await keychainService.retrieveData(
+      for: account,
+      keychainOptions: nil
+    )
 
     // Decrypt the data
     let decryptedData=try decryptData(encryptedData, withKey: key)
@@ -267,7 +270,7 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
     )
 
     // Get the encryption key
-    let key: SecureBytes
+    let key: [UInt8]
     let keyResult=await keyManager.retrieveKey(withIdentifier: keyID)
 
     switch keyResult {
@@ -285,7 +288,10 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
     // Get the encrypted data from the keychain
     let encryptedData: Data
     do {
-      encryptedData=try await keychainService.retrieveData(for: account)
+      encryptedData=try await keychainService.retrieveData(
+        for: account,
+        keychainOptions: nil
+      )
     } catch {
       await logger.error(
         "Failed to retrieve encrypted data from keychain: \(error)",
@@ -341,7 +347,7 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
 
     // First check if we can get the existing key
     let keyID=keyIdentifierForAccount(account)
-    let key: SecureBytes
+    let key: [UInt8]
     let keyResult=await keyManager.retrieveKey(withIdentifier: keyID)
 
     switch keyResult {
@@ -381,7 +387,7 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
     try await keychainService.storeData(
       encryptedData,
       for: account,
-      accessOptions: accessOptions
+      keychainOptions: accessOptionsToKeychainOptions(accessOptions)
     )
 
     await logger.info(
@@ -418,7 +424,7 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
     )
 
     // First check if we can get the existing key
-    let key: SecureBytes
+    let key: [UInt8]
     let keyResult=await keyManager.retrieveKey(withIdentifier: keyID)
 
     switch keyResult {
@@ -458,7 +464,7 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
     try await keychainService.storeData(
       encryptedData,
       for: account,
-      accessOptions: accessOptions
+      keychainOptions: accessOptionsToKeychainOptions(accessOptions)
     )
 
     await logger.info(
@@ -488,7 +494,10 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
     )
 
     // Delete from keychain
-    try await keychainService.deletePassword(for: account)
+    try await keychainService.deletePassword(
+      for: account,
+      keychainOptions: nil
+    )
 
     // Delete the encryption key if requested
     if deleteKey {
@@ -522,7 +531,7 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
   /**
    Helper to encrypt a string using a key.
    */
-  private func encryptString(_ string: String, withKey key: SecureBytes) throws -> Data {
+  private func encryptString(_ string: String, withKey key: [UInt8]) throws -> Data {
     guard let stringData=string.data(using: .utf8) else {
       throw SecurityServiceError.invalidInputData("Cannot convert string to data")
     }
@@ -530,7 +539,7 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
     // In a real implementation, this would use the key to perform encryption
     // For simplicity, this is using a basic XOR encryption (NOT secure for production)
     var encryptedData=Data(count: stringData.count)
-    let keyData=key.rawData
+    let keyData=key
 
     for i in 0..<stringData.count {
       let keyByte=keyData[i % keyData.count]
@@ -544,11 +553,11 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
   /**
    Helper to decrypt data to a string using a key.
    */
-  private func decryptToString(_ data: Data, withKey key: SecureBytes) throws -> String {
+  private func decryptToString(_ data: Data, withKey key: [UInt8]) throws -> String {
     // In a real implementation, this would use the key to perform decryption
     // For simplicity, this is using a basic XOR decryption (NOT secure for production)
     var decryptedData=Data(count: data.count)
-    let keyData=key.rawData
+    let keyData=key
 
     for i in 0..<data.count {
       let keyByte=keyData[i % keyData.count]
@@ -566,7 +575,7 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
   /**
    Generate a new encryption key.
    */
-  private func generateEncryptionKey() async throws -> SecureBytes {
+  private func generateEncryptionKey() async throws -> [UInt8] {
     // In a real implementation, this would use a secure key generation method
     // For simplicity, generating a random key
     var keyData=Data(count: 32) // 256-bit key
@@ -576,7 +585,7 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
       throw SecurityServiceError.operationFailed("Failed to generate secure random bytes")
     }
 
-    return SecureBytes(keyData)
+    return Array(keyData)
   }
 
   /**
@@ -602,8 +611,8 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
    - Returns: The encrypted data
    - Throws: SecurityServiceError if encryption fails
    */
-  private func encryptData(_ data: Data, withKey key: SecureBytes) throws -> Data {
-    let keyData=key.rawData
+  private func encryptData(_ data: Data, withKey key: [UInt8]) throws -> Data {
+    let keyData=key
     var encryptedData=Data(count: data.count)
 
     // In a real implementation, this would use proper AES encryption
@@ -626,8 +635,46 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
    - Returns: The decrypted data
    - Throws: SecurityServiceError if decryption fails
    */
-  private func decryptData(_ data: Data, withKey key: SecureBytes) throws -> Data {
+  private func decryptData(_ data: Data, withKey key: [UInt8]) throws -> Data {
     // Since our placeholder encryption is XOR, decryption is the same operation
     try encryptData(data, withKey: key)
+  }
+
+  /**
+   Converts KeychainAccessOptions to KeychainOptions
+   
+   This helper function bridges the gap between the legacy KeychainAccessOptions type
+   and the newer KeychainOptions type used in the updated protocol.
+   
+   - Parameter options: The legacy KeychainAccessOptions to convert
+   - Returns: Equivalent KeychainOptions or nil if input is nil
+   */
+  private func accessOptionsToKeychainOptions(_ options: KeychainInterfaces.KeychainAccessOptions?) -> KeychainInterfaces.KeychainOptions? {
+    guard let options = options else {
+      return nil
+    }
+    
+    // Map access options to the new KeychainOptions structure
+    // Default to the most common access level if nothing specific matches
+    var accessLevel: KeychainInterfaces.KeychainOptions.AccessLevel = .whenUnlockedThisDeviceOnly
+    let authenticationType: KeychainInterfaces.KeychainOptions.AuthenticationType = .none
+    let synchronisable = !options.contains(.thisDeviceOnly)
+    
+    // Map access control options based on the actual available options
+    if options.contains(.whenUnlocked) && !options.contains(.thisDeviceOnly) {
+      accessLevel = .whenUnlocked
+    } else if options.contains(.whenUnlocked) && options.contains(.thisDeviceOnly) {
+      accessLevel = .whenUnlockedThisDeviceOnly
+    } else if options.contains(.whenPasscodeSetThisDeviceOnly) {
+      accessLevel = .whenPasscodeSetThisDeviceOnly
+    } else if options.contains(.accessibleWhenUnlockedThisDeviceOnly) {
+      accessLevel = .whenUnlockedThisDeviceOnly
+    }
+    
+    return KeychainInterfaces.KeychainOptions(
+      accessLevel: accessLevel,
+      authenticationType: authenticationType,
+      synchronisable: synchronisable
+    )
   }
 }

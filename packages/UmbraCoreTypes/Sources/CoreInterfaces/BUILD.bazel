@@ -17,6 +17,7 @@ umbra_swift_library(
     visibility = ["//visibility:public"],
     deps = [
         "//packages/UmbraCoreTypes/Sources/CoreDTOs",
+        "//packages/UmbraCoreTypes/Sources/DateTimeTypes",
         "//packages/UmbraCoreTypes/Sources/UmbraErrors",
     ],
 )

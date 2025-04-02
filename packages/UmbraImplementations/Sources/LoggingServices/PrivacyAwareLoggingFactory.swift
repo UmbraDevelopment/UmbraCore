@@ -111,13 +111,13 @@ public enum PrivacyAwareLoggingFactory {
     CryptoLogger(logger: logger)
   }
 
-  /// Creates a logger specialised for error logging with privacy controls.
+  /// Creates an error logger with enhanced privacy controls.
   ///
   /// - Parameter logger: The base logger to use
   /// - Returns: An error logger with privacy controls
   public static func createErrorLogger(
     logger: LoggingProtocol
-  ) -> EnhancedErrorLogger {
+  ) -> LegacyErrorLoggingProtocol {
     EnhancedErrorLogger(logger: logger)
   }
 

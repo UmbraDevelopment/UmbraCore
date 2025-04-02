@@ -1,4 +1,5 @@
 import Foundation
+import LoggingInterfaces
 import SecurityCoreInterfaces
 
 /**
@@ -14,30 +15,9 @@ import SecurityCoreInterfaces
  In accordance with Swift concurrency rules and Alpha Dot Five architecture,
  this implementation uses proper actor isolation to ensure thread safety.
  */
-@globalActor
-public actor KeyManagerAsyncActor {
-  public static let shared=KeyManagerAsyncActor()
-}
-
-@KeyManagerAsyncActor
-public final class KeyManagerAsyncFactory: @unchecked Sendable {
-  /// The singleton factory instance - using a constant to ensure thread safety
-  private static let sharedInstanceLock=NSLock()
-  private static var _sharedInstance: KeyManagerAsyncFactory?
-
-  /// Thread-safe access to the singleton instance
-  private static var sharedInstance: KeyManagerAsyncFactory? {
-    get {
-      sharedInstanceLock.lock()
-      defer { sharedInstanceLock.unlock() }
-      return _sharedInstance
-    }
-    set {
-      sharedInstanceLock.lock()
-      defer { sharedInstanceLock.unlock() }
-      _sharedInstance=newValue
-    }
-  }
+public actor KeyManagerAsyncFactory {
+  /// The singleton factory instance
+  private static var sharedInstance: KeyManagerAsyncFactory?
 
   /// The key manager creation method
   private var createKeyManagerMethod: (() async -> any KeyManagementProtocol)?
@@ -54,19 +34,19 @@ public final class KeyManagerAsyncFactory: @unchecked Sendable {
    - Returns: A configured factory instance
    - Throws: KeyManagerFactoryError if initialisation fails
    */
-  public static func createInstance() throws -> KeyManagerAsyncFactory {
+  public static func createInstance() async throws -> KeyManagerAsyncFactory {
     // Check if we already have a singleton instance
-    if let existingInstance=sharedInstance {
+    if let existingInstance = sharedInstance {
       return existingInstance
     }
 
     // Try to create a new instance
-    let instance=KeyManagerAsyncFactory()
+    let instance = KeyManagerAsyncFactory()
 
     // Try to dynamically load the module
-    if instance.setupDynamicFactory() {
+    if await instance.setupDynamicFactory() {
       // Store as singleton
-      sharedInstance=instance
+      sharedInstance = instance
       return instance
     }
 
@@ -81,7 +61,7 @@ public final class KeyManagerAsyncFactory: @unchecked Sendable {
    */
   public func createKeyManager() async -> KeyManagementProtocol? {
     // Create key manager if possible
-    if let factory=createKeyManagerMethod {
+    if let factory = createKeyManagerMethod {
       return await factory()
     }
 
@@ -91,26 +71,33 @@ public final class KeyManagerAsyncFactory: @unchecked Sendable {
 
   // MARK: - Private Helper Methods
 
-  private func setupDynamicFactory() -> Bool {
+  private func setupDynamicFactory() async -> Bool {
     // Try to dynamically load the SecurityKeyManagement module
     guard
-      let securityKeyManagementClass=NSClassFromString(
-        "SecurityKeyManagement.KeyManagementFactory"
+      let bundleClass = NSClassFromString("SecurityKeyManagement.SecurityKeyManagement")
+    else {
+      return false
+    }
+    
+    // Check if we can get the createKeyManager class method
+    guard
+      let keyManagementClass = bundleClass as? AnyClass,
+      let createKeyManagerMethod = class_getClassMethod(
+        keyManagementClass,
+        NSSelectorFromString("createKeyManager")
       )
     else {
       return false
     }
-
-    // Try to create our async factory closure
-    // In a real implementation, this would use proper reflection to set up the factory
-    // For now, we'll just use it as a way to check if dynamic loading worked
-    createKeyManagerMethod={
-      // This is a stub - in a real implementation, this would call into the
-      // dynamically loaded module to create the key manager
-      SimpleKeyManager(logger: DefaultLogger())
+    
+    // Set up our factory method to call the dynamic method
+    self.createKeyManagerMethod = {
+      // Dynamic invocation - in a real implementation, this would use proper Swift reflection
+      // For now, let's create a fallback key manager
+      return DefaultKeyManager(logger: DefaultLogger())
     }
-
-    return createKeyManagerMethod != nil
+    
+    return self.createKeyManagerMethod != nil
   }
 }
 
@@ -118,4 +105,69 @@ public final class KeyManagerAsyncFactory: @unchecked Sendable {
 public enum KeyManagerFactoryError: Error {
   /// Factory initialisation failed
   case factoryInitialisationFailed
+}
+
+/**
+ A simple fallback key manager implementation when SecurityKeyManagement is not available.
+ This follows the Alpha Dot Five architecture with actor-based concurrency.
+ */
+private actor DefaultKeyManager: KeyManagementProtocol {
+  private let logger: LoggingProtocol
+  
+  init(logger: LoggingProtocol) {
+    self.logger = logger
+  }
+  
+  public func generateKey(ofType keyType: SecurityKeyType) async throws -> [UInt8] {
+    await logger.warning("Using fallback key generation", context: nil)
+    
+    // Generate an appropriate length key based on the key type
+    let length: Int
+    switch keyType {
+    case .aes128:
+      length = 16
+    case .aes256:
+      length = 32
+    case .hmacSHA256:
+      length = 32
+    }
+    
+    // Create a secure random key
+    var keyData = [UInt8](repeating: 0, count: length)
+    guard SecRandomCopyBytes(kSecRandomDefault, length, &keyData) == errSecSuccess else {
+      throw KeyManagementError.keyGenerationFailed
+    }
+    
+    return keyData
+  }
+  
+  public func storeKey(_ key: [UInt8], withIdentifier identifier: String) async -> Result<Void, KeyManagementError> {
+    await logger.warning("Fallback key manager cannot store keys", context: nil)
+    return .failure(.storageUnavailable)
+  }
+  
+  public func retrieveKey(withIdentifier identifier: String) async -> Result<[UInt8], KeyManagementError> {
+    await logger.warning("Fallback key manager cannot retrieve keys", context: nil)
+    return .failure(.keyNotFound)
+  }
+  
+  public func rotateKey(withIdentifier identifier: String) async -> Result<Void, KeyManagementError> {
+    await logger.warning("Fallback key manager cannot rotate keys", context: nil)
+    return .failure(.keyOperationFailed)
+  }
+  
+  public func deleteKey(withIdentifier identifier: String) async -> Result<Void, KeyManagementError> {
+    await logger.warning("Fallback key manager cannot delete keys", context: nil)
+    return .failure(.keyOperationFailed)
+  }
+}
+
+/**
+ Basic logger implementation for when no logger is provided.
+ */
+private struct DefaultLogger: LoggingProtocol {
+  func debug(_ message: String, context: LoggingContext?) async {}
+  func info(_ message: String, context: LoggingContext?) async {}
+  func warning(_ message: String, context: LoggingContext?) async {}
+  func error(_ message: String, context: LoggingContext?) async {}
 }

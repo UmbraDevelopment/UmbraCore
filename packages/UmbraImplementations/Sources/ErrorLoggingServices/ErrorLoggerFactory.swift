@@ -43,7 +43,7 @@ public enum ErrorLoggerFactory {
 
    - Returns: An actor-based error logger with default settings
    */
-  public static func createDefaultErrorLogger() async -> ErrorLoggingProtocol {
+  public static func createDefaultErrorLogger() async -> ErrorLoggingInterfaces.ErrorLoggingProtocol {
     // Get the default logging service
     let loggingService=LoggingServiceFactory.createStandardLogger(
       minimumLevel: .info
@@ -67,7 +67,7 @@ public enum ErrorLoggerFactory {
   public static func createErrorLogger(
     configuration: ErrorLoggerConfiguration,
     loggerIdentifier _: String="ErrorLogger"
-  ) async -> ErrorLoggingProtocol {
+  ) async -> ErrorLoggingInterfaces.ErrorLoggingProtocol {
     // Get a logging service with appropriate level
     let loggingService=LoggingServiceFactory.createStandardLogger(
       minimumLevel: configuration.globalMinimumLevel.toUmbraLogLevel()
@@ -93,7 +93,7 @@ public enum ErrorLoggerFactory {
     subsystem: String,
     category: String,
     configuration: ErrorLoggerConfiguration?=nil
-  ) async -> ErrorLoggingProtocol {
+  ) async -> ErrorLoggingInterfaces.ErrorLoggingProtocol {
     // Create an OSLog-based logger
     let osLogger=LoggingServiceFactory.createOSLogger(
       subsystem: subsystem,
@@ -127,7 +127,7 @@ public enum ErrorLoggerFactory {
     osLogSubsystem: String,
     osLogCategory: String,
     configuration: ErrorLoggerConfiguration?=nil
-  ) async -> ErrorLoggingProtocol {
+  ) async -> ErrorLoggingInterfaces.ErrorLoggingProtocol {
     // Create a comprehensive logger with multiple destinations
     let loggingService=LoggingServiceFactory.createComprehensiveLogger(
       subsystem: osLogSubsystem,
@@ -166,13 +166,48 @@ public enum ErrorLoggerFactory {
     domains: [String],
     minimumLevel: ErrorLoggingLevel,
     configuration: ErrorLoggerConfiguration?=nil
-  ) async -> ErrorLoggingProtocol {
+  ) async -> ErrorLoggingInterfaces.ErrorLoggingProtocol {
     // Create base logger with appropriate configuration
     let config=configuration ?? ErrorLoggerConfiguration(
       globalMinimumLevel: .warning,
       includeSourceInfo: true
     )
 
+    let loggingService=LoggingServiceFactory.createStandardLogger(
+      minimumLevel: minimumLevel.toUmbraLogLevel()
+    )
+
+    // Create the error logger
+    let errorLogger=ErrorLoggerActor(logger: loggingService, configuration: config)
+
+    // Set up domain filters
+    for domain in domains {
+      await errorLogger.setLogLevel(minimumLevel, forDomain: domain)
+    }
+
+    return errorLogger
+  }
+
+  /**
+   Create a comprehensive error logger with enhanced privacy controls and domain filtering.
+   
+   - Parameters:
+     - domains: The domains to include in logging
+     - minimumLevel: The minimum level to log
+     - configuration: Optional configuration for logger behaviour
+   
+   - Returns: A properly configured error logger
+   */
+  public static func createPrivacyAwareErrorLogger(
+    domains: [String],
+    minimumLevel: ErrorLoggingLevel,
+    configuration: ErrorLoggerConfiguration?=nil
+  ) async -> ErrorLoggingInterfaces.ErrorLoggingProtocol {
+    // Create base logger with appropriate configuration
+    let config=configuration ?? ErrorLoggerConfiguration(
+      globalMinimumLevel: .warning,
+      includeSourceInfo: true
+    )
     let loggingService=LoggingServiceFactory.createStandardLogger(
       minimumLevel: minimumLevel.toUmbraLogLevel()
     )

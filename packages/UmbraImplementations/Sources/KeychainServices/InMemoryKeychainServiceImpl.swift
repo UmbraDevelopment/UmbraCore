@@ -42,19 +42,19 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
   }
 
   /**
-   Stores a password in memory.
+   Stores a password securely.
 
    - Parameters:
-      - password: The password string to store
-      - account: The account identifier for the password
-      - accessOptions: Ignored in the in-memory implementation
+     - password: The password string to store
+     - account: The account identifier
+     - keychainOptions: Optional keychain configuration options
 
    - Throws: KeychainError if the operation fails
    */
   public func storePassword(
     _ password: String,
     for account: String,
-    accessOptions _: KeychainAccessOptions?=nil
+    keychainOptions: KeychainOptions?
   ) async throws {
     await logger.debug(
       "Storing password for account: \(account) in memory",
@@ -90,14 +90,19 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
   }
 
   /**
-   Retrieves a password from memory.
+   Retrieves a password.
 
-   - Parameter account: The account identifier for the password
+   - Parameters:
+     - account: The account identifier
+     - keychainOptions: Optional keychain configuration options
 
-   - Returns: The stored password as a string
+   - Returns: The stored password
    - Throws: KeychainError if the password doesn't exist
    */
-  public func retrievePassword(for account: String) async throws -> String {
+  public func retrievePassword(
+    for account: String,
+    keychainOptions: KeychainOptions?
+  ) async throws -> String {
     await logger.debug(
       "Retrieving password for account: \(account) from memory",
       metadata: nil,
@@ -109,14 +114,7 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
     }
 
     // Retrieve the password
-    if let password=passwordStorage[account] {
-      await logger.info(
-        "Successfully retrieved password for account: \(account) from memory",
-        metadata: nil,
-        source: "InMemoryKeychainService"
-      )
-      return password
-    } else {
+    guard let password=passwordStorage[account] else {
       await logger.warning(
         "No password found for account: \(account) in memory",
         metadata: nil,
@@ -124,16 +122,28 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
       )
       throw KeychainError.itemNotFound
     }
+
+    await logger.info(
+      "Successfully retrieved password for account: \(account) from memory",
+      metadata: nil,
+      source: "InMemoryKeychainService"
+    )
+    return password
   }
 
   /**
-   Deletes a password from memory.
+   Deletes a password.
 
-   - Parameter account: The account identifier for the password to delete
+   - Parameters:
+     - account: The account identifier
+     - keychainOptions: Optional keychain configuration options
 
-   - Throws: KeychainError if the password doesn't exist
+   - Throws: KeychainError if the operation fails
    */
-  public func deletePassword(for account: String) async throws {
+  public func deletePassword(
+    for account: String,
+    keychainOptions: KeychainOptions?
+  ) async throws {
     await logger.debug(
       "Deleting password for account: \(account) from memory",
       metadata: nil,
@@ -163,19 +173,19 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
   }
 
   /**
-   Stores binary data in memory.
+   Stores binary data securely.
 
    - Parameters:
-      - data: The binary data to store
-      - account: The account identifier for the data
-      - accessOptions: Ignored in the in-memory implementation
+     - data: The data to store
+     - account: The account identifier
+     - keychainOptions: Optional keychain configuration options
 
    - Throws: KeychainError if the operation fails
    */
   public func storeData(
     _ data: Data,
     for account: String,
-    accessOptions _: KeychainAccessOptions?=nil
+    keychainOptions: KeychainOptions?
   ) async throws {
     await logger.debug(
       "Storing data for account: \(account) in memory",
@@ -211,14 +221,19 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
   }
 
   /**
-   Retrieves binary data from memory.
+   Retrieves binary data.
 
-   - Parameter account: The account identifier for the data
+   - Parameters:
+     - account: The account identifier
+     - keychainOptions: Optional keychain configuration options
 
    - Returns: The stored data
    - Throws: KeychainError if the data doesn't exist
    */
-  public func retrieveData(for account: String) async throws -> Data {
+  public func retrieveData(
+    for account: String,
+    keychainOptions: KeychainOptions?
+  ) async throws -> Data {
     await logger.debug(
       "Retrieving data for account: \(account) from memory",
       metadata: nil,
@@ -230,14 +245,7 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
     }
 
     // Retrieve the data
-    if let data=dataStorage[account] {
-      await logger.info(
-        "Successfully retrieved data for account: \(account) from memory",
-        metadata: nil,
-        source: "InMemoryKeychainService"
-      )
-      return data
-    } else {
+    guard let data=dataStorage[account] else {
       await logger.warning(
         "No data found for account: \(account) in memory",
         metadata: nil,
@@ -245,16 +253,28 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
       )
       throw KeychainError.itemNotFound
     }
+
+    await logger.info(
+      "Successfully retrieved data for account: \(account) from memory",
+      metadata: nil,
+      source: "InMemoryKeychainService"
+    )
+    return data
   }
 
   /**
-   Deletes binary data from memory.
+   Deletes binary data.
 
-   - Parameter account: The account identifier for the data to delete
+   - Parameters:
+     - account: The account identifier
+     - keychainOptions: Optional keychain configuration options
 
-   - Throws: KeychainError if the data doesn't exist
+   - Throws: KeychainError if the operation fails
    */
-  public func deleteData(for account: String) async throws {
+  public func deleteData(
+    for account: String,
+    keychainOptions: KeychainOptions?
+  ) async throws {
     await logger.debug(
       "Deleting data for account: \(account) from memory",
       metadata: nil,
@@ -284,34 +304,22 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
   }
 
   /**
-   Checks if a password exists for the specified account.
-
-   - Parameter account: The account identifier to check
-
-   - Returns: True if a password exists for the account, false otherwise
-   */
-  public func passwordExists(for account: String) async -> Bool {
-    await logger.debug(
-      "Checking if password exists for account: \(account)",
-      metadata: nil,
-      source: "InMemoryKeychainService"
-    )
-
-    return passwordStorage[account] != nil
-  }
-
-  /**
-   Updates an existing password in memory.
+   Updates an existing password.
 
    - Parameters:
-      - newPassword: The new password to store
-      - account: The account identifier for the password
+     - newPassword: The new password to store
+     - account: The account identifier
+     - keychainOptions: Optional keychain configuration options
 
-   - Throws: KeychainError if the password doesn't exist or the operation fails
+   - Throws: KeychainError if the password doesn't exist
    */
-  public func updatePassword(_ newPassword: String, for account: String) async throws {
+  public func updatePassword(
+    _ newPassword: String, 
+    for account: String,
+    keychainOptions: KeychainOptions?
+  ) async throws {
     await logger.debug(
-      "Updating password for account: \(account)",
+      "Updating password for account: \(account) in memory",
       metadata: nil,
       source: "InMemoryKeychainService"
     )
@@ -341,6 +349,32 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
       metadata: nil,
       source: "InMemoryKeychainService"
     )
+  }
+
+  /**
+   Checks if a password exists.
+
+   - Parameters:
+     - account: The account identifier
+     - keychainOptions: Optional keychain configuration options
+
+   - Returns: `true` if the password exists, `false` otherwise
+   */
+  public func passwordExists(
+    for account: String,
+    keychainOptions: KeychainOptions?
+  ) async throws -> Bool {
+    await logger.debug(
+      "Checking if password exists for account: \(account) in memory",
+      metadata: nil,
+      source: "InMemoryKeychainService"
+    )
+
+    guard !account.isEmpty else {
+      throw KeychainError.invalidParameter("Account identifier cannot be empty")
+    }
+
+    return passwordStorage[account] != nil
   }
 
   /**

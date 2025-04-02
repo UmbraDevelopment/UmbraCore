@@ -6,10 +6,16 @@ import UmbraErrors
 /**
  # SecurityProviderProtocol
 
- Top-level protocol defining a complete security provider following the architecture.
+ Top-level protocol defining a complete security provider following the Alpha Dot Five architecture.
 
  This protocol consolidates cryptographic operations, key management, and security configuration
  into a cohesive interface for secure operations across the UmbraCore platform.
+
+ ## Actor-Based Implementation
+
+ This protocol is designed to be implemented by actors for thread safety and isolation.
+ All methods are marked as `async` to support actor isolation, ensuring proper
+ concurrency safety when accessing shared state.
 
  ## Responsibilities
 

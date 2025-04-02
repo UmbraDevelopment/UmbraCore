@@ -84,14 +84,14 @@ public protocol CryptoServiceProtocol: Sendable {
 /// Configuration options for encryption.
 public struct EncryptionOptions: Sendable {
   /// The encryption algorithm to use.
-  public let algorithm: EncryptionAlgorithm
+  public let algorithm: CoreSecurityTypes.EncryptionAlgorithm
   
   /// Optional authenticated data for AEAD algorithms.
   public let authenticatedData: [UInt8]?
   
   /// Initialises encryption options with defaults.
   public init(
-    algorithm: EncryptionAlgorithm = .aes256CBC,
+    algorithm: CoreSecurityTypes.EncryptionAlgorithm = .aes256CBC,
     authenticatedData: [UInt8]? = nil
   ) {
     self.algorithm = algorithm
@@ -102,14 +102,14 @@ public struct EncryptionOptions: Sendable {
 /// Configuration options for decryption.
 public struct DecryptionOptions: Sendable {
   /// The decryption algorithm to use.
-  public let algorithm: EncryptionAlgorithm
+  public let algorithm: CoreSecurityTypes.EncryptionAlgorithm
   
   /// Optional authenticated data for AEAD algorithms.
   public let authenticatedData: [UInt8]?
   
   /// Initialises decryption options with defaults.
   public init(
-    algorithm: EncryptionAlgorithm = .aes256CBC,
+    algorithm: CoreSecurityTypes.EncryptionAlgorithm = .aes256CBC,
     authenticatedData: [UInt8]? = nil
   ) {
     self.algorithm = algorithm
@@ -120,10 +120,10 @@ public struct DecryptionOptions: Sendable {
 /// Configuration options for hashing.
 public struct HashingOptions: Sendable {
   /// The hash algorithm to use.
-  public let algorithm: HashAlgorithm
+  public let algorithm: CoreSecurityTypes.HashAlgorithm
   
   /// Initialises hashing options with defaults.
-  public init(algorithm: HashAlgorithm = .sha256) {
+  public init(algorithm: CoreSecurityTypes.HashAlgorithm = .sha256) {
     self.algorithm = algorithm
   }
 }
@@ -143,26 +143,11 @@ public struct KeyGenerationOptions: Sendable {
   }
 }
 
-/// Supported encryption algorithms.
-public enum EncryptionAlgorithm: UInt8, Sendable {
-  case aes256CBC = 0
-  case aes256GCM = 1
-  case chaCha20Poly1305 = 2
-}
-
-/// Supported hash algorithms.
-public enum HashAlgorithm: UInt8, Sendable {
-  case sha256 = 0
-  case sha384 = 1
-  case sha512 = 2
-  case blake2b = 3
-}
-
 /// Supported key types.
 public enum KeyType: UInt8, Sendable {
   case symmetric = 0
   case asymmetric = 1
-  case hmac = 2
+  case hybrid = 2
 }
 
 /// Data transfer object for cryptographic operations.

@@ -27,6 +27,12 @@ public enum SecurityProtocolError: Error, Equatable, Sendable {
 
   /// State machine error
   case invalidState(expected: String, actual: String)
+  
+  /// Input validation error
+  case inputError(_ message: String)
+  
+  /// Operation failed with detailed reason
+  case operationFailed(reason: String)
 
   /// Creates a human-readable description of the error
   public var localizedDescription: String {
@@ -45,6 +51,10 @@ public enum SecurityProtocolError: Error, Equatable, Sendable {
         "Protocol operation '\(operationName)' timed out after \(limit) seconds"
       case let .invalidState(expected, actual):
         "Invalid protocol state: expected '\(expected)', but was in '\(actual)'"
+      case let .inputError(message):
+        "Input validation error: \(message)"
+      case let .operationFailed(reason):
+        "Operation failed: \(reason)"
     }
   }
 
@@ -58,6 +68,8 @@ public enum SecurityProtocolError: Error, Equatable, Sendable {
       case .sequenceViolation: 1005
       case .timeout: 1006
       case .invalidState: 1007
+      case .inputError: 1008
+      case .operationFailed: 1009
     }
   }
 }

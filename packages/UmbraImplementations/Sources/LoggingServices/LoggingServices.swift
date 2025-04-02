@@ -7,6 +7,7 @@
 /// - **ConsoleLogDestination**: Log destination that writes to standard output
 /// - **FileLogDestination**: Log destination that writes to files with rotation support
 /// - **LoggingServiceFactory**: Convenience factory for creating common logger configurations
+/// - **SecureLoggerActor**: Privacy-focused actor for security-sensitive logging
 ///
 /// ## Usage Example
 ///
@@ -24,6 +25,19 @@
 /// let prodLogger = LoggingServiceFactory.createProductionLogger(
 ///     logDirectoryPath: "/var/log/myapp"
 /// )
+///
+/// // Create a secure logger for security operations
+/// let secureLogger = await LoggingServices.createSecureLogger(category: "Authentication")
+///
+/// // Log a security event with proper privacy tagging
+/// await secureLogger.securityEvent(
+///   action: "UserLogin",
+///   status: .success,
+///   subject: "user@example.com",  // Will be handled as private data
+///   additionalMetadata: [
+///     "ipAddress": PrivacyTaggedValue(value: "192.168.1.1", privacyLevel: .private)
+///   ]
+/// )
 /// ```
 ///
 /// ## Alpha Dot Five Compliance
@@ -40,3 +54,52 @@
 
 @_exported import LoggingInterfaces
 @_exported import LoggingTypes
+
+/**
+ Main entry point for logging services, providing factory methods
+ to create various logging components.
+ */
+public enum LoggingServices {
+  /**
+   Creates a logging service with default configuration.
+
+   - Returns: A new logging service actor
+   */
+  public static func createLogger() async -> LoggingServiceActor {
+    await LoggingServiceFactory.createDefaultService()
+  }
+
+  /**
+   Creates a logging service with the specified destinations.
+
+   - Parameter destinations: The log destinations to use
+   - Returns: A new logging service actor
+   */
+  public static func createLogger(
+    destinations: [LoggingTypes.LogDestination]
+  ) async -> LoggingServiceActor {
+    await LoggingServiceFactory.createService(destinations: destinations)
+  }
+  
+  /**
+   Creates a secure logger for privacy-aware logging of sensitive operations.
+   
+   - Parameters:
+     - subsystem: The subsystem identifier (defaults to security subsystem)
+     - category: The category for this logger (typically the component name)
+     - includeTimestamps: Whether to include timestamps in log messages
+   
+   - Returns: A new secure logger actor integrated with the default logging service
+   */
+  public static func createSecureLogger(
+    subsystem: String = "com.umbra.security",
+    category: String,
+    includeTimestamps: Bool = true
+  ) async -> SecureLoggerActor {
+    await SecureLoggerFactory.createIntegratedSecureLogger(
+      subsystem: subsystem,
+      category: category,
+      includeTimestamps: includeTimestamps
+    )
+  }
+}
