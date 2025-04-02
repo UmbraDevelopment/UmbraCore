@@ -2,7 +2,7 @@ import Foundation
 import ResticInterfaces
 
 /// Represents a Restic command action type
-public enum ResticCommandAction: String {
+public enum ResticCommandAction: String, Sendable {
   case backup
   case restore
   case check

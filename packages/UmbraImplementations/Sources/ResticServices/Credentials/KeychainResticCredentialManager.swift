@@ -1,6 +1,8 @@
 import Foundation
 import KeychainServices
+import KeychainInterfaces
 import LoggingInterfaces
+import LoggingTypes
 import ResticInterfaces
 import UmbraErrors
 
@@ -11,7 +13,7 @@ public actor KeychainResticCredentialManager: ResticCredentialManager {
   private let serviceIdentifier: String
 
   /// Keychain security provider used for secure storage
-  private let keychain: any KeychainSecurityProvider
+  private let keychain: any KeychainSecurityProtocol
 
   /// Logger for security-related operations
   private let logger: any LoggingProtocol
@@ -24,7 +26,7 @@ public actor KeychainResticCredentialManager: ResticCredentialManager {
   ///   - logger: Logger for security operations
   public init(
     serviceIdentifier: String="com.umbra.restic-repositories",
-    keychain: any KeychainSecurityProvider,
+    keychain: any KeychainSecurityProtocol,
     logger: any LoggingProtocol
   ) {
     self.serviceIdentifier=serviceIdentifier
@@ -40,41 +42,48 @@ public actor KeychainResticCredentialManager: ResticCredentialManager {
   public func getCredentials(for repository: String) async throws -> ResticCredentials {
     await logger.debug(
       "Retrieving credentials for repository",
-      metadata: ["repository": .string(repository)],
+      metadata: PrivacyMetadata([
+        "repository": (value: repository, privacy: .private)
+      ]),
       source: "KeychainResticCredentialManager"
     )
-
+    
     do {
-      let passwordData=try await keychain.getSecurePasswordData(
-        service: serviceIdentifier,
-        account: makeAccountIdentifier(for: repository)
+      let secret = try await keychain.retrieveEncryptedSecret(
+        forAccount: makeAccountIdentifier(for: repository),
+        serviceIdentifier: serviceIdentifier
       )
-
-      guard let password=String(data: passwordData, encoding: .utf8) else {
-        throw ResticError.credentialError("Unable to decode stored password")
-      }
-
-      // For simplicity, we're not storing additional environment variables yet
+      
+      await logger.debug(
+        "Successfully retrieved credentials",
+        metadata: PrivacyMetadata([
+          "repository": (value: repository, privacy: .private)
+        ]),
+        source: "KeychainResticCredentialManager"
+      )
+      
       return ResticCredentials(
         repositoryIdentifier: repository,
-        password: password
+        password: secret
       )
     } catch {
       await logger.error(
-        error,
-        privacyLevel: .sensitive,
+        "Failed to retrieve credentials: \(error.localizedDescription)",
+        metadata: PrivacyMetadata([
+          "repository": (value: repository, privacy: .private),
+          "error": (value: error.localizedDescription, privacy: .private)
+        ]),
         source: "KeychainResticCredentialManager"
       )
-      throw ResticError
-        .credentialError("Failed to retrieve credentials: \(error.localizedDescription)")
+      throw ResticError.credentialError("Could not retrieve credentials for repository")
     }
   }
-
+  
   /// Stores credentials for a specific repository
   ///
   /// - Parameters:
   ///   - credentials: The credentials to store
-  ///   - repository: The repository identifier to associate with these credentials
+  ///   - repository: The repository identifier to store credentials for
   /// - Throws: SecurityError if credentials cannot be stored
   public func storeCredentials(
     _ credentials: ResticCredentials,
@@ -82,79 +91,76 @@ public actor KeychainResticCredentialManager: ResticCredentialManager {
   ) async throws {
     await logger.debug(
       "Storing credentials for repository",
-      metadata: ["repository": .string(repository)],
+      metadata: PrivacyMetadata([
+        "repository": (value: repository, privacy: .private)
+      ]),
       source: "KeychainResticCredentialManager"
     )
-
-    guard let passwordData=credentials.password.data(using: .utf8) else {
-      throw ResticError.credentialError("Unable to encode password as data")
-    }
-
+    
     do {
-      try await keychain.storeSecurePasswordData(
-        passwordData,
-        service: serviceIdentifier,
-        account: makeAccountIdentifier(for: repository)
+      try await keychain.storeEncryptedSecret(
+        credentials.password,
+        forAccount: makeAccountIdentifier(for: repository),
+        keyIdentifier: nil,
+        accessOptions: nil
       )
-
+      
       await logger.info(
-        "Successfully stored credentials for repository",
-        metadata: ["repository": .string(repository)],
+        "Successfully stored credentials",
+        metadata: PrivacyMetadata([
+          "repository": (value: repository, privacy: .private)
+        ]),
         source: "KeychainResticCredentialManager"
       )
     } catch {
       await logger.error(
-        error,
-        privacyLevel: .sensitive,
-        source: "KeychainResticCredentialManager",
-        metadata: ["repository": .string(repository)]
+        "Failed to store credentials: \(error.localizedDescription)",
+        metadata: PrivacyMetadata([
+          "repository": (value: repository, privacy: .private),
+          "error": (value: error.localizedDescription, privacy: .private)
+        ]),
+        source: "KeychainResticCredentialManager"
       )
-      throw ResticError
-        .credentialError("Failed to store credentials: \(error.localizedDescription)")
+      throw ResticError.credentialError("Failed to store credentials for repository")
     }
   }
-
-  /// Removes stored credentials for a specific repository
+  
+  /// Removes credentials for a specific repository
   ///
   /// - Parameter repository: The repository identifier to remove credentials for
   /// - Throws: SecurityError if credentials cannot be removed
   public func removeCredentials(for repository: String) async throws {
     await logger.debug(
       "Removing credentials for repository",
-      metadata: ["repository": .string(repository)],
+      metadata: PrivacyMetadata([
+        "repository": (value: repository, privacy: .private)
+      ]),
       source: "KeychainResticCredentialManager"
     )
-
+    
     do {
-      try await keychain.deleteSecureItem(
-        service: serviceIdentifier,
-        account: makeAccountIdentifier(for: repository)
+      try await keychain.removeItem(
+        forAccount: makeAccountIdentifier(for: repository),
+        serviceIdentifier: serviceIdentifier
       )
-
+      
       await logger.info(
         "Successfully removed credentials for repository",
-        metadata: ["repository": .string(repository)],
+        metadata: PrivacyMetadata([
+          "repository": (value: repository, privacy: .private)
+        ]),
         source: "KeychainResticCredentialManager"
       )
     } catch {
       await logger.error(
-        error,
-        privacyLevel: .public,
-        source: "KeychainResticCredentialManager",
-        metadata: ["repository": .string(repository)]
+        "Failed to remove credentials: \(error.localizedDescription)",
+        metadata: PrivacyMetadata([
+          "repository": (value: repository, privacy: .private),
+          "error": (value: error.localizedDescription, privacy: .private)
+        ]),
+        source: "KeychainResticCredentialManager"
       )
-
-      // If the error is "item not found", consider this a success
-      if
-        let keychainError=error as? KeychainError,
-        case .itemNotFound=keychainError
-      {
-        // Not an error, item was already removed
-        return
-      }
-
-      throw ResticError
-        .credentialError("Failed to remove credentials: \(error.localizedDescription)")
+      throw ResticError.credentialError("Failed to remove credentials for repository")
     }
   }
 
@@ -164,9 +170,9 @@ public actor KeychainResticCredentialManager: ResticCredentialManager {
   /// - Returns: True if credentials exist, false otherwise
   public func hasCredentials(for repository: String) async -> Bool {
     do {
-      _=try await keychain.getSecurePasswordData(
-        service: serviceIdentifier,
-        account: makeAccountIdentifier(for: repository)
+      _=try await keychain.retrieveEncryptedSecret(
+        forAccount: makeAccountIdentifier(for: repository),
+        serviceIdentifier: serviceIdentifier
       )
       return true
     } catch {

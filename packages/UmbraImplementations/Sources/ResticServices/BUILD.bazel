@@ -13,7 +13,9 @@ umbra_swift_library(
         "//packages/UmbraCoreTypes/Sources/UmbraErrors",
         "//packages/UmbraInterfaces/Sources/ResticInterfaces",
         "//packages/UmbraInterfaces/Sources/LoggingInterfaces",
+        "//packages/UmbraInterfaces/Sources/KeychainInterfaces",
         "//packages/UmbraImplementations/Sources/KeychainServices",
         "//packages/UmbraCoreTypes/Sources/LoggingTypes",
+        "//packages/UmbraImplementations/Sources/LoggingServices",
     ],
 )

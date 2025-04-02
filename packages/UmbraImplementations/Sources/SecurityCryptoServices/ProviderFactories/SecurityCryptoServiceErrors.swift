@@ -20,6 +20,9 @@ public enum SecurityServiceError: Error, LocalizedError {
 
   /// Error in key management
   case keyManagementError(String)
+  
+  /// Cryptographic operation failed
+  case cryptographicError(String)
 
   public var errorDescription: String? {
     switch self {
@@ -33,6 +36,8 @@ public enum SecurityServiceError: Error, LocalizedError {
         "Invalid input data: \(message)"
       case let .keyManagementError(message):
         "Key management error: \(message)"
+      case let .cryptographicError(message):
+        "Cryptographic error: \(message)"
     }
   }
 }

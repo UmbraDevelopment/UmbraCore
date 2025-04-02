@@ -7,18 +7,33 @@ import ResticInterfaces
 ///
 /// This actor-based implementation provides proper isolation for concurrent operations,
 /// ensuring thread safety while maintaining high performance for Restic operations.
-public actor ResticServiceImpl: ResticServiceProtocol {
+@preconcurrency public actor ResticServiceImpl: ResticServiceProtocol {
   /// The path to the Restic executable
   public let executablePath: String
 
   /// The default repository location, if set
+  public var defaultRepository: String? {
+    get { _defaultRepository }
+    set { _defaultRepository = newValue }
+  }
   private var _defaultRepository: String?
 
+  /// The default repository password, if set
+  public var defaultPassword: String? {
+    get { _defaultPassword }
+    set { _defaultPassword = newValue }
+  }
+  private var _defaultPassword: String?
+
   /// Progress reporting delegate for receiving operation updates
+  public var progressDelegate: (any ResticProgressReporting)? {
+    get { _progressDelegate }
+    set { _progressDelegate = newValue }
+  }
   private var _progressDelegate: (any ResticProgressReporting)?
 
-  /// The logger for operation tracking
-  private let logger: any LoggingProtocol
+  /// The domain-specific logger for operation tracking
+  private let resticLogger: ResticLogger
 
   /// The progress parser for tracking operation progress
   private var progressParser: ResticProgressParser?
@@ -44,17 +59,18 @@ public actor ResticServiceImpl: ResticServiceProtocol {
   ) throws {
     self.executablePath=executablePath
     _defaultRepository=defaultRepository
+    _defaultPassword=nil
     _progressDelegate=progressDelegate
-    self.logger=logger
+    self.resticLogger=ResticLogger(logger: logger)
     self.credentialManager=credentialManager
 
     if let progressDelegate {
-      progressParser=ResticProgressParser(delegate: progressDelegate)
+      self.progressParser=ResticProgressParser(delegate: progressDelegate)
     }
 
-    // Validate that the executable exists and is accessible
+    // Validate executable exists
     let fileManager=FileManager.default
-    guard fileManager.fileExists(atPath: executablePath) else {
+    if !fileManager.fileExists(atPath: executablePath) {
       throw ResticError.executableNotFound(executablePath)
     }
 
@@ -66,7 +82,7 @@ public actor ResticServiceImpl: ResticServiceProtocol {
       throw ResticError.invalidParameter("Restic executable path is a directory")
     }
 
-    await logger.info(
+    await resticLogger.info(
       "Initialised ResticServiceImpl with executable: \(executablePath)",
       metadata: [
         "executable": .string(executablePath),
@@ -81,90 +97,157 @@ public actor ResticServiceImpl: ResticServiceProtocol {
 
   /// Domain-specific logging context for backup operations
   private struct BackupLogContext: LoggingTypes.LogContextDTO {
-    let source: String
-    let metadata: LoggingTypes.LogMetadata?
-    let correlationID: LoggingTypes.LogIdentifier
-    let timestamp: LoggingTypes.LogTimestamp
+    let domainName: String = "ResticService"
+    let source: String?
+    let metadata: LoggingTypes.LogMetadataDTOCollection
+    let correlationID: String?
     let repository: String
     let paths: [String]
     let tag: String?
-
+    
     init(
       repository: String,
       paths: [String],
       tag: String?,
-      metadata: LoggingTypes.LogMetadata?=nil
+      metadata: LoggingTypes.LogMetadataDTOCollection = LoggingTypes.LogMetadataDTOCollection()
     ) {
-      source="ResticService.Backup"
-      self.metadata=metadata
-      correlationID=LoggingTypes.LogIdentifier.unique()
-      timestamp=LoggingTypes.LogTimestamp(secondsSinceEpoch: Date().timeIntervalSince1970)
-      self.repository=repository
-      self.paths=paths
-      self.tag=tag
+      source = "ResticService.Backup"
+      self.metadata = metadata
+      correlationID = UUID().uuidString
+      self.repository = repository
+      self.paths = paths
+      self.tag = tag
+    }
+    
+    func toPrivacyMetadata() -> LoggingTypes.PrivacyMetadata {
+      return metadata.toPrivacyMetadata()
+    }
+    
+    func getSource() -> String {
+      return source ?? "ResticService.Backup"
+    }
+    
+    func toMetadata() -> LoggingTypes.LogMetadataDTOCollection {
+      var result = metadata
+        .withPrivate(key: "repository", value: repository)
+      
+      // Add paths as a comma-separated string
+      if !paths.isEmpty {
+        result = result.withPrivate(key: "paths", value: paths.joined(separator: ", "))
+      }
+      
+      // Add tag if available
+      if let tag = tag {
+        result = result.withPrivate(key: "tag", value: tag)
+      }
+      
+      return result
+    }
+    
+    func withUpdatedMetadata(_ metadata: LoggingTypes.LogMetadataDTOCollection) -> BackupLogContext {
+      return BackupLogContext(
+        repository: repository,
+        paths: paths,
+        tag: tag,
+        metadata: self.metadata.merging(with: metadata)
+      )
     }
   }
 
   /// Domain-specific logging context for restore operations
   private struct RestoreLogContext: LoggingTypes.LogContextDTO {
-    let source: String
-    let metadata: LoggingTypes.LogMetadata?
-    let correlationID: LoggingTypes.LogIdentifier
-    let timestamp: LoggingTypes.LogTimestamp
+    let domainName: String = "ResticService"
+    let source: String?
+    let metadata: LoggingTypes.LogMetadataDTOCollection
+    let correlationID: String?
     let repository: String
     let snapshot: String
     let target: String
-
+    
     init(
       repository: String,
       snapshot: String,
       target: String,
-      metadata: LoggingTypes.LogMetadata?=nil
+      metadata: LoggingTypes.LogMetadataDTOCollection = LoggingTypes.LogMetadataDTOCollection()
     ) {
-      source="ResticService.Restore"
-      self.metadata=metadata
-      correlationID=LoggingTypes.LogIdentifier.unique()
-      timestamp=LoggingTypes.LogTimestamp(secondsSinceEpoch: Date().timeIntervalSince1970)
-      self.repository=repository
-      self.snapshot=snapshot
-      self.target=target
+      source = "ResticService.Restore"
+      self.metadata = metadata
+      correlationID = UUID().uuidString
+      self.repository = repository
+      self.snapshot = snapshot
+      self.target = target
+    }
+    
+    func toPrivacyMetadata() -> LoggingTypes.PrivacyMetadata {
+      return metadata.toPrivacyMetadata()
+    }
+    
+    func getSource() -> String {
+      return source ?? "ResticService.Restore"
+    }
+    
+    func toMetadata() -> LoggingTypes.LogMetadataDTOCollection {
+      return metadata
+        .withPrivate(key: "repository", value: repository)
+        .withPrivate(key: "snapshot", value: snapshot)
+        .withPrivate(key: "target", value: target)
+    }
+    
+    func withUpdatedMetadata(_ metadata: LoggingTypes.LogMetadataDTOCollection) -> RestoreLogContext {
+      return RestoreLogContext(
+        repository: repository,
+        snapshot: snapshot,
+        target: target,
+        metadata: self.metadata.merging(with: metadata)
+      )
     }
   }
 
   /// Domain-specific logging context for maintenance operations
   private struct MaintenanceLogContext: LoggingTypes.LogContextDTO {
-    let source: String
-    let metadata: LoggingTypes.LogMetadata?
-    let correlationID: LoggingTypes.LogIdentifier
-    let timestamp: LoggingTypes.LogTimestamp
+    let domainName: String = "ResticService"
+    let source: String?
+    let metadata: LoggingTypes.LogMetadataDTOCollection
+    let correlationID: String?
     let repository: String
     let operationType: String
-
+    
     init(
       repository: String,
       operationType: String,
-      metadata: LoggingTypes.LogMetadata?=nil
+      metadata: LoggingTypes.LogMetadataDTOCollection = LoggingTypes.LogMetadataDTOCollection()
     ) {
-      source="ResticService.Maintenance"
-      self.metadata=metadata
-      correlationID=LoggingTypes.LogIdentifier.unique()
-      timestamp=LoggingTypes.LogTimestamp(secondsSinceEpoch: Date().timeIntervalSince1970)
-      self.repository=repository
-      self.operationType=operationType
+      source = "ResticService.Maintenance"
+      self.metadata = metadata
+      correlationID = UUID().uuidString
+      self.repository = repository
+      self.operationType = operationType
+    }
+    
+    func toPrivacyMetadata() -> LoggingTypes.PrivacyMetadata {
+      return metadata.toPrivacyMetadata()
+    }
+    
+    func getSource() -> String {
+      return source ?? "ResticService.Maintenance"
+    }
+    
+    func toMetadata() -> LoggingTypes.LogMetadataDTOCollection {
+      return metadata
+        .withPrivate(key: "repository", value: repository)
+        .withPrivate(key: "operationType", value: operationType)
+    }
+    
+    func withUpdatedMetadata(_ metadata: LoggingTypes.LogMetadataDTOCollection) -> MaintenanceLogContext {
+      return MaintenanceLogContext(
+        repository: repository,
+        operationType: operationType,
+        metadata: self.metadata.merging(with: metadata)
+      )
     }
   }
 
   // MARK: - Property Accessors
-
-  /// Get the default repository
-  public func getDefaultRepository() -> String? {
-    _defaultRepository
-  }
-
-  /// Set the default repository
-  public func setDefaultRepository(_ repository: String?) {
-    _defaultRepository=repository
-  }
 
   /// Get the progress delegate
   public func getProgressDelegate() -> (any ResticProgressReporting)? {
@@ -196,19 +279,22 @@ public actor ResticServiceImpl: ResticServiceProtocol {
   public func execute(_ command: ResticCommand) async throws -> String {
     try command.validate()
 
-    await logger.info(
-      "Executing Restic command: \(command.commandString)",
-      metadata: [
-        "command": .string(command.commandString),
-        "arguments": .array(command.arguments.map { .string($0) })
-      ],
+    let arguments = command.arguments
+    let commandString = arguments.joined(separator: " ")
+    
+    await resticLogger.info(
+      "Executing Restic command: \(commandString)",
+      metadata: PrivacyMetadata([
+        "command": (value: commandString, privacy: .private),
+        "arguments": (value: arguments.joined(separator: " "), privacy: .private)
+      ]),
       source: "ResticService"
     )
 
     // Create and configure the process
     let process=Process()
     process.executableURL=URL(fileURLWithPath: executablePath)
-    process.arguments=command.arguments
+    process.arguments=arguments
 
     // Set environment variables
     var environment=ProcessInfo.processInfo.environment
@@ -239,13 +325,13 @@ public actor ResticServiceImpl: ResticServiceProtocol {
       try process.run()
       process.waitUntilExit()
     } catch {
-      await logger.error(
-        error,
+      await resticLogger.error(
+        "Restic command failed to launch",
         privacyLevel: .public,
         source: "ResticService",
-        metadata: [
-          "command": .string(command.commandString)
-        ]
+        metadata: PrivacyMetadata([
+          "command": (value: commandString, privacy: .private)
+        ])
       )
       throw ResticError.executionFailed("Failed to execute Restic: \(error.localizedDescription)")
     }
@@ -262,25 +348,25 @@ public actor ResticServiceImpl: ResticServiceProtocol {
     let duration=Date().timeIntervalSince(startTime)
 
     // Log completion
-    await logger.debug(
+    await resticLogger.debug(
       "Restic command completed with exit code \(exitCode) in \(String(format: "%.2f", duration))s",
-      metadata: [
-        "command": .string(command.commandString),
-        "exitCode": .number(Double(exitCode)),
-        "duration": .number(duration)
-      ],
+      metadata: PrivacyMetadata([
+        "command": (value: commandString, privacy: .private),
+        "exitCode": (value: exitCode, privacy: .public),
+        "duration": (value: duration, privacy: .public)
+      ]),
       source: "ResticService"
     )
 
     if exitCode != 0 {
       // Log the error output with appropriate privacy controls
-      await logger.error(
+      await resticLogger.error(
         "Restic command failed with exit code \(exitCode)",
-        metadata: [
-          "command": .string(command.commandString),
-          "exitCode": .number(Double(exitCode)),
-          "errorOutput": .string(errorOutput)
-        ],
+        metadata: PrivacyMetadata([
+          "command": (value: commandString, privacy: .private),
+          "exitCode": (value: exitCode, privacy: .public),
+          "errorOutput": (value: errorOutput, privacy: .sensitive)
+        ]),
         source: "ResticService"
       )
 
@@ -345,11 +431,11 @@ public actor ResticServiceImpl: ResticServiceProtocol {
         for: location
       )
 
-      await logger.info(
+      await resticLogger.info(
         "Stored credentials for new repository",
-        metadata: [
-          "repository": .string(location)
-        ],
+        metadata: PrivacyMetadata([
+          "repository": (value: location, privacy: .private)
+        ]),
         source: "ResticService"
       )
     }
@@ -357,9 +443,9 @@ public actor ResticServiceImpl: ResticServiceProtocol {
     return ResticCommandResult.success(
       output: output,
       duration: duration,
-      data: [
-        "repository": .string(location)
-      ]
+      data: convertToResticData(PrivacyMetadata([
+        "repository": (value: location, privacy: .private)
+      ]))
     )
   }
 
@@ -371,7 +457,7 @@ public actor ResticServiceImpl: ResticServiceProtocol {
   public func checkRepository(at location: String?) async throws -> ResticCommandResult {
     let startTime=Date()
 
-    let repoLocation=location ?? getDefaultRepository()
+    let repoLocation=location ?? defaultRepository
     guard let repoLocation else {
       throw ResticError.missingParameter("Repository location is required")
     }
@@ -393,7 +479,9 @@ public actor ResticServiceImpl: ResticServiceProtocol {
     return ResticCommandResult.success(
       output: output,
       duration: duration,
-      data: ["repository": .string(repoLocation)]
+      data: convertToResticData(PrivacyMetadata([
+        "repository": (value: repoLocation, privacy: .private)
+      ]))
     )
   }
 
@@ -410,7 +498,7 @@ public actor ResticServiceImpl: ResticServiceProtocol {
   ) async throws -> ResticCommandResult {
     let startTime=Date()
 
-    let repoLocation=location ?? getDefaultRepository()
+    let repoLocation=location ?? defaultRepository
     guard let repoLocation else {
       throw ResticError.missingParameter("Repository location is required")
     }
@@ -432,10 +520,10 @@ public actor ResticServiceImpl: ResticServiceProtocol {
     return ResticCommandResult.success(
       output: output,
       duration: duration,
-      data: [
-        "repository": .string(repoLocation),
-        "tag": .string(tag)
-      ]
+      data: convertToResticData(PrivacyMetadata([
+        "repository": (value: repoLocation, privacy: .private),
+        "tag": (value: tag ?? "none", privacy: .public)
+      ]))
     )
   }
 
@@ -457,7 +545,7 @@ public actor ResticServiceImpl: ResticServiceProtocol {
     let startTime=Date()
 
     // Determine repository location
-    let repoLocation=repository ?? getDefaultRepository()
+    let repoLocation=repository ?? defaultRepository
     guard let repoLocation else {
       throw ResticError.missingParameter("Repository location not specified and no default set")
     }
@@ -469,12 +557,24 @@ public actor ResticServiceImpl: ResticServiceProtocol {
       do {
         let credentials=try await credentialManager.getCredentials(for: repoLocation)
         repoPassword=credentials.password
+      } catch let resticError as ResticError {
+        await resticLogger.error(
+          "Failed to retrieve credentials",
+          metadata: PrivacyMetadata([
+            "repository": (value: repoLocation, privacy: .private),
+            "errorDescription": (value: resticError.logDescription, privacy: .sensitive)
+          ]),
+          source: "ResticService.Backup"
+        )
+        repoPassword=nil
       } catch {
-        await logger.error(
-          error,
-          privacyLevel: .sensitive,
-          source: "ResticService.Backup",
-          metadata: ["repository": .string(repoLocation)]
+        await resticLogger.error(
+          "Unexpected error retrieving credentials",
+          metadata: PrivacyMetadata([
+            "repository": (value: repoLocation, privacy: .private),
+            "errorDescription": (value: error.localizedDescription, privacy: .sensitive)
+          ]),
+          source: "ResticService.Backup"
         )
         repoPassword=nil
       }
@@ -498,7 +598,7 @@ public actor ResticServiceImpl: ResticServiceProtocol {
       tag: tag
     )
 
-    await logger.info(
+    await resticLogger.info(
       "Starting backup operation",
       metadata: [
         "repository": .string(repoLocation),
@@ -526,7 +626,7 @@ public actor ResticServiceImpl: ResticServiceProtocol {
       )
     }
 
-    await logger.info(
+    await resticLogger.info(
       "Backup completed",
       metadata: [
         "repository": .string(repoLocation),
@@ -541,11 +641,11 @@ public actor ResticServiceImpl: ResticServiceProtocol {
     return ResticCommandResult.success(
       output: output,
       duration: duration,
-      data: [
-        "repository": .string(repoLocation),
-        "paths": .array(paths.map { .string($0) }),
-        "tag": tag.map { .string($0) } ?? .null
-      ]
+      data: convertToResticData(PrivacyMetadata([
+        "repository": (value: repoLocation, privacy: .private),
+        "paths": (value: paths, privacy: .public),
+        "tag": (value: tag ?? "none", privacy: .public)
+      ]))
     )
   }
 
@@ -567,7 +667,7 @@ public actor ResticServiceImpl: ResticServiceProtocol {
     let startTime=Date()
 
     // Determine repository location
-    let repoLocation=repository ?? getDefaultRepository()
+    let repoLocation=repository ?? defaultRepository
     guard let repoLocation else {
       throw ResticError.missingParameter("Repository location not specified and no default set")
     }
@@ -579,12 +679,24 @@ public actor ResticServiceImpl: ResticServiceProtocol {
       do {
         let credentials=try await credentialManager.getCredentials(for: repoLocation)
         repoPassword=credentials.password
+      } catch let resticError as ResticError {
+        await resticLogger.error(
+          "Failed to retrieve credentials for restore",
+          metadata: PrivacyMetadata([
+            "repository": (value: repoLocation, privacy: .private),
+            "errorDescription": (value: resticError.logDescription, privacy: .sensitive)
+          ]),
+          source: "ResticService.Restore"
+        )
+        repoPassword=nil
       } catch {
-        await logger.error(
-          error,
-          privacyLevel: .sensitive,
-          source: "ResticService.Restore",
-          metadata: ["repository": .string(repoLocation)]
+        await resticLogger.error(
+          "Unexpected error retrieving credentials for restore",
+          metadata: PrivacyMetadata([
+            "repository": (value: repoLocation, privacy: .private),
+            "errorDescription": (value: error.localizedDescription, privacy: .sensitive)
+          ]),
+          source: "ResticService.Restore"
         )
         repoPassword=nil
       }
@@ -599,15 +711,15 @@ public actor ResticServiceImpl: ResticServiceProtocol {
       target: target
     )
 
-    await logger.info(
+    await resticLogger.info(
       "Starting restore operation",
-      metadata: [
-        "repository": .string(repoLocation),
-        "snapshot": .string(snapshot),
-        "target": .string(target),
-        "paths": .array(paths.map { .string($0) })
-      ],
-      context: logContext
+      metadata: PrivacyMetadata([
+        "repository": (value: repoLocation, privacy: .private),
+        "snapshot": (value: snapshot, privacy: .public),
+        "target": (value: target, privacy: .public),
+        "paths": (value: paths?.joined(separator: ", ") ?? "all", privacy: .public)
+      ]),
+      source: "ResticService.Restore"
     )
 
     // Create and execute restore command
@@ -622,27 +734,27 @@ public actor ResticServiceImpl: ResticServiceProtocol {
     let output=try await execute(command)
     let duration=Date().timeIntervalSince(startTime)
 
-    await logger.info(
+    await resticLogger.info(
       "Restore completed",
-      metadata: [
-        "repository": .string(repoLocation),
-        "snapshot": .string(snapshot),
-        "target": .string(target),
-        "paths": .array(paths.map { .string($0) }),
-        "duration": .number(duration)
-      ],
-      context: logContext
+      metadata: PrivacyMetadata([
+        "repository": (value: repoLocation, privacy: .private),
+        "snapshot": (value: snapshot, privacy: .public),
+        "target": (value: target, privacy: .public),
+        "paths": (value: paths?.joined(separator: ", ") ?? "all", privacy: .public),
+        "duration": (value: duration, privacy: .public)
+      ]),
+      source: "ResticService.Restore"
     )
 
     return ResticCommandResult.success(
       output: output,
       duration: duration,
-      data: [
-        "repository": .string(repoLocation),
-        "snapshot": .string(snapshot),
-        "target": .string(target),
-        "paths": .array(paths.map { .string($0) })
-      ]
+      data: convertToResticData(PrivacyMetadata([
+        "repository": (value: repoLocation, privacy: .private),
+        "snapshot": (value: snapshot, privacy: .public),
+        "target": (value: target, privacy: .public),
+        "paths": (value: paths, privacy: .public)
+      ]))
     )
   }
 
@@ -654,7 +766,7 @@ public actor ResticServiceImpl: ResticServiceProtocol {
   public func maintenance(type: ResticMaintenanceType) async throws -> ResticCommandResult {
     let startTime=Date()
 
-    let repoLocation=getDefaultRepository()
+    let repoLocation=defaultRepository
     guard let repoLocation else {
       throw ResticError.missingParameter("Repository location is required")
     }
@@ -673,29 +785,60 @@ public actor ResticServiceImpl: ResticServiceProtocol {
     let output=try await execute(command)
     let duration=Date().timeIntervalSince(startTime)
 
-    await logger.info(
+    await resticLogger.info(
       "Maintenance completed",
-      metadata: [
-        "repository": .string(repoLocation),
-        "maintenance_type": .string(type.rawValue)
-      ],
-      context: MaintenanceLogContext(
-        repository: repoLocation,
-        operationType: type.rawValue
-      )
+      metadata: PrivacyMetadata([
+        "repository": (value: repoLocation, privacy: .private),
+        "maintenance_type": (value: type.rawValue, privacy: .public)
+      ]),
+      source: "ResticService.Maintenance"
     )
 
     return ResticCommandResult.success(
       output: output,
       duration: duration,
-      data: [
-        "repository": .string(repoLocation),
-        "maintenance_type": .string(type.rawValue)
-      ]
+      data: convertToResticData(PrivacyMetadata([
+        "repository": (value: repoLocation, privacy: .private),
+        "maintenance_type": (value: type.rawValue, privacy: .public)
+      ]))
     )
   }
 
   // MARK: - Helper Methods
+
+  /// Converts PrivacyMetadata to the format required by ResticCommandResult
+  ///
+  /// - Parameter metadata: The privacy metadata to convert
+  /// - Returns: Dictionary in the format expected by ResticCommandResult
+  private func convertToResticData(_ metadata: PrivacyMetadata) -> [String: ResticDataValue] {
+    var result: [String: ResticDataValue] = [:]
+    
+    for (key, entry) in metadata.entries {
+      // Extract the value and convert it to ResticDataValue
+      switch entry.value {
+      case let stringValue as String:
+        result[key] = .string(stringValue)
+      case let intValue as Int:
+        result[key] = .number(Double(intValue))
+      case let doubleValue as Double:
+        result[key] = .number(doubleValue)
+      case let boolValue as Bool:
+        result[key] = .boolean(boolValue)
+      case let arrayValue as [String]:
+        result[key] = .array(arrayValue.map { .string($0) })
+      case let optionalString as String?:
+        if let string = optionalString {
+          result[key] = .string(string)
+        } else {
+          result[key] = .null
+        }
+      default:
+        result[key] = .string(String(describing: entry.value))
+      }
+    }
+    
+    return result
+  }
 
   /// Builds options for a backup command
   ///

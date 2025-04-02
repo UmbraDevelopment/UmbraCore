@@ -617,7 +617,7 @@ public final class Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked S
 
       // Add sensitive values to the message - as SwiftyBeaver doesn't support multi-level privacy
       var finalMessage=message
-      for (key, _) in sensitiveValues.entriesDict() {
+      for (key, value) in sensitiveValues.asDictionary {
         finalMessage += " [SENSITIVE \(key): <redacted>]"
       }
 

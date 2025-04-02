@@ -126,10 +126,17 @@ public actor ProviderRegistryActor {
         return try SecurityProviderFactoryImpl.createProvider(type: .basic)
       }
 
-      // Apple provider if available
+      // System provider if available
+      #if canImport(Security)
+        providerFactories[.system]={ @Sendable in
+          return try SecurityProviderFactoryImpl.createProvider(type: .system)
+        }
+      #endif
+
+      // CryptoKit provider if available
       #if canImport(CryptoKit) && (os(macOS) || os(iOS) || os(watchOS) || os(tvOS))
-        providerFactories[.apple]={ @Sendable in
-          return try SecurityProviderFactoryImpl.createProvider(type: .apple)
+        providerFactories[.cryptoKit]={ @Sendable in
+          return try SecurityProviderFactoryImpl.createProvider(type: .cryptoKit)
         }
       #endif
 
@@ -156,35 +163,38 @@ public actor ProviderRegistryActor {
     type: SecurityProviderType,
     factory: @escaping @Sendable () throws -> EncryptionProviderProtocol
   ) async throws {
-    await logger.debug("Registering provider of type: \(type)", metadata: LogMetadata())
+    await logger.debug("Registering provider of type: \(type)", metadata: PrivacyMetadata(), source: "ProviderRegistry")
 
     // Check if provider already exists
     if providerFactories[type] != nil {
       await logger.warning(
         "Provider of type \(type) already registered, will be replaced",
-        metadata: LogMetadata()
+        metadata: PrivacyMetadata(),
+        source: "ProviderRegistry"
       )
     }
 
-    // Register the provider factory
-    providerFactories[type]=factory
-
-    // Verify the provider can be instantiated
+    // Verify factory by creating a provider
     do {
       let provider=try factory()
       await logger.debug(
-        "Successfully verified provider: \(type) - \(provider.providerType.description)",
-        metadata: LogMetadata()
+        "Successfully verified provider: \(type) - \(provider.providerType.rawValue)",
+        metadata: PrivacyMetadata(),
+        source: "ProviderRegistry"
       )
     } catch {
       // Remove the factory if it fails verification
       providerFactories.removeValue(forKey: type)
       await logger.error(
         "Provider factory verification failed: \(error.localizedDescription)",
-        metadata: LogMetadata()
+        metadata: PrivacyMetadata(),
+        source: "ProviderRegistry"
       )
       throw error
     }
+
+    // Store the factory
+    providerFactories[type] = factory
   }
 
   /**
@@ -195,7 +205,7 @@ public actor ProviderRegistryActor {
    */
   @discardableResult
   public func unregisterProvider(type: SecurityProviderType) async -> Bool {
-    await logger.debug("Unregistering provider of type: \(type)", metadata: LogMetadata())
+    await logger.debug("Unregistering provider of type: \(type)", metadata: PrivacyMetadata(), source: "ProviderRegistry")
     return providerFactories.removeValue(forKey: type) != nil
   }
 
@@ -215,34 +225,34 @@ public actor ProviderRegistryActor {
    - Throws: Error if any provider instantiation fails
    */
   public func listAvailableProviders() async throws -> [EncryptionProviderProtocol] {
-    var providers: [EncryptionProviderProtocol]=[]
-    var failedTypes: [SecurityProviderType]=[]
+    var providers = [EncryptionProviderProtocol]()
+    var failedTypes = [SecurityProviderType]()
 
-    // Create instances of all registered providers
     for (type, factory) in providerFactories {
       do {
-        let provider=try factory()
+        let provider = try factory()
         providers.append(provider)
         await logger.debug(
-          "Successfully instantiated provider: \(type) - \(provider.providerType.description)",
-          metadata: LogMetadata()
+          "Successfully instantiated provider: \(type) - \(provider.providerType.rawValue)",
+          metadata: PrivacyMetadata(),
+          source: "ProviderRegistry"
         )
       } catch {
         failedTypes.append(type)
         await logger.warning(
           "Failed to instantiate provider \(type): \(error.localizedDescription)",
-          metadata: LogMetadata()
+          metadata: PrivacyMetadata(),
+          source: "ProviderRegistry"
         )
       }
     }
 
     // If no providers could be instantiated, that's an error
     if providers.isEmpty && !providerFactories.isEmpty {
-      await logger.error("No encryption providers could be instantiated", metadata: LogMetadata())
-      throw SecurityProtocolError
-        .unsupportedOperation(
-          name: "No encryption providers could be instantiated. Failed types: \(failedTypes.map(\.description).joined(separator: ", "))"
-        )
+      await logger.error("No encryption providers could be instantiated", metadata: PrivacyMetadata(), source: "ProviderRegistry")
+      throw SecurityServiceError.providerError(
+        "No encryption providers could be instantiated. Failed types: \(failedTypes.map(\.rawValue).joined(separator: ", "))"
+      )
     }
 
     return providers
@@ -263,7 +273,8 @@ public actor ProviderRegistryActor {
     let effectiveCapabilities=capabilities.isEmpty ? [.standardEncryption] : capabilities
     await logger.debug(
       "Selecting provider for capabilities: \(effectiveCapabilities.map(\.rawValue).joined(separator: ", "))",
-      metadata: LogMetadata()
+      metadata: PrivacyMetadata(),
+      source: "ProviderRegistry"
     )
 
     // If FIPS compliance is required, use specific selection logic
@@ -279,14 +290,16 @@ public actor ProviderRegistryActor {
       do {
         let provider=try factory()
         await logger.debug(
-          "Using preferred provider: \(preferredType) - \(provider.providerType.description)",
-          metadata: LogMetadata()
+          "Using preferred provider: \(preferredType) - \(provider.providerType.rawValue)",
+          metadata: PrivacyMetadata(),
+          source: "ProviderRegistry"
         )
         return provider
       } catch {
         await logger.warning(
           "Preferred provider \(preferredType) failed to instantiate: \(error.localizedDescription)",
-          metadata: LogMetadata()
+          metadata: PrivacyMetadata(),
+          source: "ProviderRegistry"
         )
         // Continue to try other providers
       }
@@ -299,8 +312,9 @@ public actor ProviderRegistryActor {
     // so we'll use a simple ranking system based on provider type
     if let provider=providers.first {
       await logger.debug(
-        "Selected provider: \(provider.providerType.description)",
-        metadata: LogMetadata()
+        "Selected provider: \(provider.providerType.rawValue)",
+        metadata: PrivacyMetadata(),
+        source: "ProviderRegistry"
       )
       return provider
     }
@@ -309,7 +323,8 @@ public actor ProviderRegistryActor {
     if configuration.allowFallbackProviders {
       await logger.warning(
         "No provider found meeting all capabilities, attempting fallback",
-        metadata: LogMetadata()
+        metadata: PrivacyMetadata(),
+        source: "ProviderRegistry"
       )
 
       // Try to get any working provider
@@ -317,22 +332,24 @@ public actor ProviderRegistryActor {
         do {
           let provider=try factory()
           await logger.warning(
-            "Using fallback provider: \(provider.providerType.description)",
-            metadata: LogMetadata()
+            "Using fallback provider: \(provider.providerType.rawValue)",
+            metadata: PrivacyMetadata(),
+            source: "ProviderRegistry"
           )
           return provider
         } catch {
           await logger.error(
             "Fallback provider failed to instantiate: \(error.localizedDescription)",
-            metadata: LogMetadata()
+            metadata: PrivacyMetadata(),
+            source: "ProviderRegistry"
           )
         }
       }
     }
 
     // No suitable provider found
-    throw SecurityProtocolError.unsupportedOperation(
-      name: "No provider meeting capabilities: \(effectiveCapabilities.map(\.rawValue).joined(separator: ", "))"
+    throw SecurityServiceError.providerError(
+      "No provider meeting capabilities: \(effectiveCapabilities.map(\.rawValue).joined(separator: ", "))"
     )
   }
 
@@ -343,7 +360,7 @@ public actor ProviderRegistryActor {
    - Throws: Error if no FIPS-compliant provider is available
    */
   private func selectProviderForFipsCompliance() async throws -> EncryptionProviderProtocol {
-    await logger.debug("Selecting FIPS-compliant provider", metadata: LogMetadata())
+    await logger.debug("Selecting FIPS-compliant provider", metadata: PrivacyMetadata(), source: "ProviderRegistry")
 
     // In a real implementation, we would check which providers are FIPS certified
     // For now, we'll prefer Ring as it's based on a FIPS-validated library
@@ -351,39 +368,43 @@ public actor ProviderRegistryActor {
       do {
         let provider=try factory()
         await logger.debug(
-          "Selected FIPS-compliant provider: \(provider.providerType.description)",
-          metadata: LogMetadata()
+          "Selected FIPS-compliant provider: \(provider.providerType.rawValue)",
+          metadata: PrivacyMetadata(),
+          source: "ProviderRegistry"
         )
         return provider
       } catch {
         await logger.warning(
           "FIPS-compliant provider .ring failed to instantiate: \(error.localizedDescription)",
-          metadata: LogMetadata()
+          metadata: PrivacyMetadata(),
+          source: "ProviderRegistry"
         )
         // Continue to try other providers
       }
     }
 
-    // Check if Apple provider is available as a potential fallback for FIPS
-    if let factory=providerFactories[.apple] {
+    // Check if System provider is available as a potential fallback for FIPS
+    if let factory = providerFactories[.system] {
       do {
-        let provider=try factory()
+        let provider = try factory()
         await logger.warning(
-          "Using Apple provider as fallback for FIPS compliance: \(provider.providerType.description)",
-          metadata: LogMetadata()
+          "Using System provider as fallback for FIPS compliance: \(provider.providerType.rawValue)",
+          metadata: PrivacyMetadata(),
+          source: "ProviderRegistry"
         )
         return provider
       } catch {
         await logger.error(
-          "Apple provider FIPS fallback failed to instantiate: \(error.localizedDescription)",
-          metadata: LogMetadata()
+          "System provider FIPS fallback failed to instantiate: \(error.localizedDescription)",
+          metadata: PrivacyMetadata(),
+          source: "ProviderRegistry"
         )
       }
     }
 
     // No FIPS-compliant provider found
-    throw SecurityProtocolError.unsupportedOperation(
-      name: "No FIPS-compliant provider could be instantiated"
+    throw SecurityServiceError.providerError(
+      "No FIPS-compliant provider could be instantiated"
     )
   }
 }

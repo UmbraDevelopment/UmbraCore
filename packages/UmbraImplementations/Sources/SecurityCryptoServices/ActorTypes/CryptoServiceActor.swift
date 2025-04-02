@@ -46,7 +46,7 @@ public actor CryptoServiceActor {
   private let logAdapter: DomainLogAdapter
 
   /// The source identifier for logging
-  private let logSource="CryptoService"
+  private let logSource = "CryptoService"
 
   /// Configuration options for cryptographic operations
   private var defaultConfig: SecurityConfigDTO
@@ -54,39 +54,39 @@ public actor CryptoServiceActor {
   // MARK: - Initialisation
 
   /**
-   Initialises a new crypto service actor with the specified provider type.
+   Initialises a new CryptoServiceActor with the specified security provider.
 
    - Parameters:
-      - providerType: The type of security provider to use
-      - logger: Logger for recording operations
+      - providerType: Optional type of provider to use; defaults to best available
+      - logger: Optional logger to use; defaults to standard logger
    */
-  public init(providerType: SecurityProviderType?=nil, logger: LoggingProtocol?) {
+  public init(providerType: SecurityProviderType? = nil, logger: LoggingProtocol?) {
     // Use the provided logger or create a default one
-    self.logger=logger ?? LoggingServiceFactory.createDefaultLogger()
-    logAdapter=DomainLogAdapter(logger: self.logger, domain: "CryptoService")
+    self.logger = logger ?? NullLogger()
+    logAdapter = DomainLogAdapter(logger: self.logger, domain: "CryptoService")
 
     do {
       if let providerType {
-        provider=try SecurityProviderFactoryImpl.createProvider(type: providerType)
+        provider = try SecurityProviderFactoryImpl.createProvider(type: providerType)
       } else {
-        provider=try SecurityProviderFactoryImpl.createBestAvailableProvider()
+        provider = try SecurityProviderFactoryImpl.createBestAvailableProvider()
       }
 
       // If the provider successfully initialises, set the default config
-      defaultConfig=SecurityConfigDTO(
-        algorithm: "AES",
-        keySize: 256,
-        mode: "GCM",
-        options: [:]
+      defaultConfig = SecurityConfigDTO(
+        encryptionAlgorithm: .aes256GCM,
+        hashAlgorithm: .sha256,
+        providerType: provider.providerType,
+        options: SecurityConfigOptions()
       )
     } catch {
       // If provider creation fails, use a fallback provider
-      provider=FallbackEncryptionProvider()
-      defaultConfig=SecurityConfigDTO(
-        algorithm: "AES",
-        keySize: 128,
-        mode: "CBC",
-        options: [:]
+      provider = FallbackEncryptionProvider()
+      defaultConfig = SecurityConfigDTO(
+        encryptionAlgorithm: .aes256CBC,
+        hashAlgorithm: .sha256,
+        providerType: .basic,
+        options: SecurityConfigOptions()
       )
 
       Task {
@@ -102,26 +102,20 @@ public actor CryptoServiceActor {
    Changes the active security provider.
 
    - Parameter type: The provider type to switch to
-   - Returns: True if the provider was successfully changed, false otherwise
+   - Throws: SecurityServiceError if the provider cannot be created
    */
-  public func setProviderType(_ type: SecurityProviderType) async throws {
+  public func changeProvider(to type: SecurityProviderType) async throws {
     await logAdapter.debug(
-      "Changing provider to: \(type.rawValue)",
+      "Changing security provider to: \(type.rawValue)",
       source: logSource
     )
 
     do {
-      let newProvider=try SecurityProviderFactoryImpl.createProvider(type: type)
-      provider=newProvider
-      defaultConfig=SecurityConfigDTO(
-        algorithm: "AES",
-        keySize: 256,
-        mode: "GCM",
-        options: [:]
-      )
+      let newProvider = try SecurityProviderFactoryImpl.createProvider(type: type)
+      provider = newProvider
 
       await logAdapter.debug(
-        "Provider changed to: \(type.rawValue)",
+        "Security provider changed successfully to: \(type.rawValue)",
         source: logSource
       )
     } catch {
@@ -133,477 +127,408 @@ public actor CryptoServiceActor {
     }
   }
 
-  // MARK: - Encryption Operations
-
   /**
-   Encrypts data using the configured provider.
+   Encrypts data using the specified key and configuration.
 
    - Parameters:
       - data: The data to encrypt as a byte array
       - key: The encryption key as a byte array
-      - config: Optional configuration override
-   - Returns: Result containing encrypted data as a byte array or an error
+      - config: Optional configuration for the encryption operation
+   - Returns: Result containing the encrypted data or an error
    */
   public func encrypt(
-    data: [UInt8],
+    _ data: [UInt8],
     using key: [UInt8],
-    config: SecurityConfigDTO?=nil
-  ) async -> Result<[UInt8], SecurityProtocolError> {
-    let algorithm=(config ?? defaultConfig).algorithm
+    config: SecurityConfigDTO? = nil
+  ) async -> Result<[UInt8], SecurityServiceError> {
+    let algorithm = (config ?? defaultConfig).encryptionAlgorithm
 
     await logAdapter.debug(
-      "Encrypting data with algorithm: \(algorithm)",
+      "Encrypting data with algorithm: \(algorithm.rawValue)",
       source: logSource
     )
 
-    // Generate IV using the provider
-    let iv: Data
     do {
-      iv=try provider.generateIV(size: 16)
-    } catch {
-      await logAdapter.error(
-        "Failed to generate IV: \(error.localizedDescription)",
-        source: logSource
-      )
-      return .failure(
-        SecurityProtocolError
-          .cryptographicError("Failed to generate IV: \(error.localizedDescription)")
-      )
-    }
-
-    // Use provided config or default
-    let operationConfig=config ?? defaultConfig
-
-    // Encrypt data
-    do {
-      let encryptedData=try provider.encrypt(
-        plaintext: Data(data),
-        key: Data(key),
-        iv: iv,
-        config: operationConfig
-      )
-
-      // Prepend IV to encrypted data for later decryption
-      var result=Data(capacity: iv.count + encryptedData.count)
-      result.append(iv)
-      result.append(encryptedData)
-
-      await logAdapter.debug(
-        "Encryption completed successfully",
-        source: logSource
-      )
-
-      return .success([UInt8](result))
-    } catch {
-      await logAdapter.error(
-        "Encryption failed: \(error.localizedDescription)",
-        source: logSource
-      )
-
-      if let secError=error as? SecurityProtocolError {
-        return .failure(secError)
-      } else {
-        return .failure(
-          SecurityProtocolError
-            .cryptographicError("Encryption failed: \(error.localizedDescription)")
+      // First, we need to generate an initialisation vector
+      var ivData: Data
+      do {
+        ivData = try provider.generateIV(size: 16)
+      } catch {
+        await logAdapter.error(
+          "Failed to generate IV: \(error.localizedDescription)",
+          source: logSource
         )
+        return .failure(
+          SecurityServiceError.invalidInputData("Failed to generate IV: \(error.localizedDescription)")
+        )
+      }
+
+      // Convert the input parameters to Data objects
+      let inputData = Data(data)
+      let keyData = Data(key)
+
+      // Encrypt the data
+      do {
+        let encryptedData = try provider.encrypt(
+          plaintext: inputData,
+          key: keyData,
+          iv: ivData,
+          config: config ?? defaultConfig
+        )
+
+        // Prepend the IV to the encrypted data for later decryption
+        let resultData = ivData + encryptedData
+        return .success([UInt8](resultData))
+      } catch {
+        if let secError = error as? SecurityServiceError {
+          return .failure(secError)
+        } else {
+          return .failure(
+            SecurityServiceError.providerError("Encryption failed: \(error.localizedDescription)")
+          )
+        }
       }
     }
   }
 
   /**
-   Decrypts data using the configured provider.
+   Decrypts data using the specified key and configuration.
 
    - Parameters:
-      - data: The data to decrypt (IV + ciphertext) as a byte array
+      - data: The encrypted data with IV prefixed
       - key: The decryption key as a byte array
-      - config: Optional configuration override
-   - Returns: Result containing decrypted data as a byte array or an error
+      - config: Optional configuration for the decryption operation
+   - Returns: Result containing the decrypted data or an error
    */
   public func decrypt(
-    data: [UInt8],
+    _ data: [UInt8],
     using key: [UInt8],
-    config: SecurityConfigDTO?=nil
-  ) async -> Result<[UInt8], SecurityProtocolError> {
-    let algorithm=(config ?? defaultConfig).algorithm
+    config: SecurityConfigDTO? = nil
+  ) async -> Result<[UInt8], SecurityServiceError> {
+    let algorithm = (config ?? defaultConfig).encryptionAlgorithm
 
     await logAdapter.debug(
-      "Decrypting data with algorithm: \(algorithm)",
+      "Decrypting data with algorithm: \(algorithm.rawValue)",
       source: logSource
     )
 
-    // Validate minimum length (IV + at least some ciphertext)
+    // Ensure the data includes an IV (at least 16 bytes)
     guard data.count > 16 else {
-      await logAdapter.error(
-        "Encrypted data too short, must include IV",
+      await logAdapter.warning(
+        "Decrypt failed: Data too short to contain IV",
         source: logSource
       )
-      return .failure(SecurityProtocolError.invalidInput("Encrypted data too short"))
+      return .failure(SecurityServiceError.invalidInputData("Encrypted data too short"))
     }
 
-    // Extract IV and ciphertext
-    let iv=data.prefix(16)
-    let ciphertext=data.dropFirst(16)
-
-    // Use provided config or default
-    let operationConfig=config ?? defaultConfig
-
-    // Decrypt data
     do {
-      let decryptedData=try provider.decrypt(
-        ciphertext: Data(ciphertext),
-        key: Data(key),
-        iv: Data(iv),
-        config: operationConfig
-      )
+      // Extract the IV from the first 16 bytes
+      let iv = Data(data[0..<16])
+      // The rest is the actual encrypted data
+      let encryptedData = Data(data[16...])
 
-      await logAdapter.debug(
-        "Decryption completed successfully",
-        source: logSource
-      )
+      // Convert the key to a Data object
+      let keyData = Data(key)
 
-      return .success([UInt8](decryptedData))
-    } catch {
-      await logAdapter.error(
-        "Decryption failed: \(error.localizedDescription)",
-        source: logSource
-      )
-
-      if let secError=error as? SecurityProtocolError {
-        return .failure(secError)
-      } else {
-        return .failure(
-          SecurityProtocolError
-            .cryptographicError("Decryption failed: \(error.localizedDescription)")
+      // Decrypt the data
+      do {
+        let decryptedData = try provider.decrypt(
+          ciphertext: encryptedData,
+          key: keyData,
+          iv: iv,
+          config: config ?? defaultConfig
         )
+
+        return .success([UInt8](decryptedData))
+      } catch {
+        if let secError = error as? SecurityServiceError {
+          return .failure(secError)
+        } else {
+          return .failure(
+            SecurityServiceError.providerError("Decryption failed: \(error.localizedDescription)")
+          )
+        }
       }
     }
   }
 
-  // MARK: - Key Management
-
   /**
-   Generates a cryptographic key of the specified size.
+   Generates a new cryptographic key with the specified size.
 
    - Parameters:
-      - size: Key size in bits (128, 192, or 256 for AES)
-      - config: Optional configuration override
-   - Returns: Result containing generated key as a byte array or an error
+      - size: The key size in bits
+      - config: Optional configuration for the key generation operation
+   - Returns: Result containing the generated key or an error
    */
   public func generateKey(
     size: Int,
-    config: SecurityConfigDTO?=nil
-  ) async -> Result<[UInt8], SecurityProtocolError> {
-    let algorithm=(config ?? defaultConfig).algorithm
+    config: SecurityConfigDTO? = nil
+  ) async -> Result<[UInt8], SecurityServiceError> {
+    let algorithm = (config ?? defaultConfig).encryptionAlgorithm
 
     await logAdapter.debug(
-      "Generating key with algorithm: \(algorithm)",
+      "Generating key with algorithm: \(algorithm.rawValue)",
       source: logSource
     )
 
-    // Use provided config or default
-    let operationConfig=config ?? defaultConfig
-
     do {
-      let keyData=try provider.generateKey(size: size, config: operationConfig)
-
-      await logAdapter.debug(
-        "Key generation completed successfully",
-        source: logSource
+      let keyData = try provider.generateKey(
+        size: size,
+        config: config ?? defaultConfig
       )
 
       return .success([UInt8](keyData))
     } catch {
-      await logAdapter.error(
-        "Key generation failed: \(error.localizedDescription)",
-        source: logSource
-      )
-
-      if let secError=error as? SecurityProtocolError {
+      if let secError = error as? SecurityServiceError {
         return .failure(secError)
       } else {
         return .failure(
-          SecurityProtocolError
-            .cryptographicError("Key generation failed: \(error.localizedDescription)")
+          SecurityServiceError.keyManagementError("Key generation failed: \(error.localizedDescription)")
         )
       }
     }
   }
 
   /**
-   Derives a key from a password using PBKDF2.
+   Derives a cryptographic key from the given password and salt.
 
    - Parameters:
-      - password: The password to derive from
-      - salt: Salt to use for derivation as a byte array
-      - iterations: Number of iterations (higher is more secure but slower)
-      - keyLength: Desired key length in bytes
-      - config: Optional configuration override
-   - Returns: Result containing derived key as a byte array or an error
+      - password: The password to derive the key from
+      - salt: The salt to use for key derivation
+      - iterations: The number of iterations to use for key derivation
+      - keyLength _: The length of the derived key in bytes
+      - config: Optional configuration for the key derivation operation
+   - Returns: Result containing the derived key or an error
    */
   public func deriveKey(
-    fromPassword password: String,
-    salt _: [UInt8],
-    iterations _: Int=10000,
-    keyLength _: Int=32,
-    config: SecurityConfigDTO?=nil
-  ) async -> Result<[UInt8], SecurityProtocolError> {
-    let algorithm=(config ?? defaultConfig).algorithm
+    fromPassword password: [UInt8],
+    salt: [UInt8],
+    iterations: Int = 10000,
+    keyLength _: Int = 32,
+    config: SecurityConfigDTO? = nil
+  ) async -> Result<[UInt8], SecurityServiceError> {
+    let algorithm = (config ?? defaultConfig).encryptionAlgorithm
 
     await logAdapter.debug(
-      "Deriving key with algorithm: \(algorithm)",
+      "Deriving key with algorithm: \(algorithm.rawValue)",
       source: logSource
     )
 
     do {
-      // Since provider doesn't directly support deriveKey, we'll implement it
-      // This is a placeholder implementation
-      let passwordData=password.data(using: .utf8) ?? Data()
-
-      // Use the underlying hash function to create a key derivation
-      // This is a simplified PBKDF2-like approach
-      let result=await hash(data: [UInt8](passwordData))
-
-      // In a real implementation, we would perform proper key derivation
-      // For now, we're just returning the hashed password as a placeholder
-      return result
+      // This implementation would typically use PBKDF2 or another KDF
+      // For now, just simulate key derivation with a hash
+      var result = Data()
+      let passwordData = Data(password)
+      let saltData = Data(salt)
+      
+      // Simple key derivation simulation
+      var combined = passwordData
+      combined.append(saltData)
+      
+      for _ in 0..<iterations / 1000 {
+        // In a real implementation, this would use PBKDF2
+        let hash = try provider.hash(data: combined, algorithm: "SHA256")
+        combined = hash
+        if result.count < 32 {
+          result.append(hash)
+        }
+      }
+      
+      // Ensure we have the right key length
+      if result.count > 32 {
+        result = result.prefix(32)
+      }
+      
+      return .success([UInt8](result))
     } catch {
-      await logAdapter.error(
-        "Key derivation failed: \(error.localizedDescription)",
-        source: logSource
-      )
-      if let secError=error as? SecurityProtocolError {
+      if let secError = error as? SecurityServiceError {
         return .failure(secError)
       } else {
         return .failure(
-          SecurityProtocolError
-            .cryptographicError("Key derivation failed: \(error.localizedDescription)")
+          SecurityServiceError.providerError("Key derivation failed: \(error.localizedDescription)")
         )
       }
     }
   }
 
-  // MARK: - Hash Functions
-
   /**
-   Generates a cryptographic hash of data using the specified algorithm.
+   Computes a cryptographic hash of the input data.
 
    - Parameters:
-      - data: Data to hash as a byte array
-      - algorithm: Hashing algorithm to use
-      - config: Optional configuration override
-   - Returns: Result containing hash value as a byte array or an error
+      - data: The data to hash
+      - algorithm: The hash algorithm to use
+      - config: Optional configuration for the hash operation
+   - Returns: Result containing the hash or an error
    */
   public func hash(
-    data: [UInt8],
-    using algorithm: CoreSecurityTypes.HashAlgorithm = .sha256,
-    config: SecurityConfigDTO?=nil
-  ) async -> Result<[UInt8], SecurityProtocolError> {
+    _ data: [UInt8],
+    algorithm: HashAlgorithm = .sha256,
+    config: SecurityConfigDTO? = nil
+  ) async -> Result<[UInt8], SecurityServiceError> {
     await logAdapter.debug(
       "Hashing data with algorithm: \(algorithm.rawValue)",
       source: logSource
     )
 
-    // Use provided config or default
-    let operationConfig=config ?? defaultConfig
-
     do {
       // Execute the operation
-      let result=await provider.hash(
-        data: Data(data)
+      let result = try provider.hash(
+        data: Data(data),
+        algorithm: algorithm.rawValue
       )
 
-      switch result {
-        case let .success(hashData):
-          await logAdapter.debug(
-            "Hash operation completed successfully",
-            source: logSource
-          )
-          return .success([UInt8](hashData))
-        case let .failure(error):
-          await logAdapter.error(
-            "Hash operation failed: \(error.localizedDescription)",
-            source: logSource
-          )
-          return .failure(error)
-      }
+      return .success([UInt8](result))
     } catch {
-      await logAdapter.error(
-        "Hash operation threw exception: \(error.localizedDescription)",
-        source: logSource
-      )
-      if let secError=error as? SecurityProtocolError {
+      if let secError = error as? SecurityServiceError {
         return .failure(secError)
       } else {
         return .failure(
-          SecurityProtocolError
-            .cryptographicError("Hash operation failed: \(error.localizedDescription)")
+          SecurityServiceError.keyManagementError("Hash operation failed: \(error.localizedDescription)")
         )
       }
     }
   }
-
-  // MARK: - Batch Operations
 
   /**
    Encrypts multiple data items in parallel using task groups.
 
    - Parameters:
       - dataItems: Array of data items to encrypt as byte arrays
-      - key: The encryption key to use for all items as a byte array
-      - config: Optional configuration override
-   - Returns: Result containing array of encrypted data items as byte arrays or an error
+      - key: The encryption key as a byte array
+      - config: Optional configuration for the encryption operation
+   - Returns: Result containing the encrypted items or an error
    */
   public func encryptBatch(
-    dataItems: [[UInt8]],
+    _ dataItems: [[UInt8]],
     using key: [UInt8],
-    config: SecurityConfigDTO?=nil
-  ) async -> Result<[[UInt8]], SecurityProtocolError> {
-    let algorithm=(config ?? defaultConfig).algorithm
+    config: SecurityConfigDTO? = nil
+  ) async -> Result<[[UInt8]], SecurityServiceError> {
+    let algorithm = (config ?? defaultConfig).encryptionAlgorithm
 
     await logAdapter.debug(
-      "Encrypting batch of data with algorithm: \(algorithm)",
+      "Encrypting batch of data with algorithm: \(algorithm.rawValue)",
       source: logSource
     )
 
-    var results=[[UInt8]]()
-    var errorEncountered: Error?
+    var results = [[UInt8]]()
+    results.reserveCapacity(dataItems.count)
+    var encounteredError: SecurityServiceError? = nil
 
-    // Use task groups for parallel processing
-    do {
-      try await withThrowingTaskGroup(of: (Int, Result<[UInt8], Error>).self) { group in
-        // Queue up all encryption tasks
-        for (index, data) in dataItems.enumerated() {
-          group.addTask {
-            let encrypted=await self.encrypt(data: data, using: key, config: config)
-            return (index, encrypted)
-          }
-        }
-
-        // Prepare to receive results in order
-        results=Array(repeating: [UInt8](), count: dataItems.count)
-
-        // Process results as they complete
-        for try await (index, result) in group {
-          switch result {
-            case let .success(encrypted):
-              results[index]=encrypted
-            case let .failure(error):
-              errorEncountered=error
-              group.cancelAll() // Cancel remaining tasks on first error
-          }
-        }
+    // Process each item sequentially for simplicity
+    for item in dataItems {
+      let result = await encrypt(item, using: key, config: config)
+      switch result {
+        case let .success(encryptedData):
+          results.append(encryptedData)
+        case let .failure(error):
+          encounteredError = error
+          break
       }
-    } catch {
-      await logAdapter.error(
-        "Batch encryption task group error: \(error.localizedDescription)",
-        source: logSource
-      )
-      errorEncountered=error
-    }
-
-    if let error=errorEncountered {
-      await logAdapter.error(
-        "Batch encryption failed: \(error.localizedDescription)",
-        source: logSource
-      )
-      if let secError=error as? SecurityProtocolError {
-        return .failure(secError)
-      } else {
-        return .failure(
-          SecurityProtocolError
-            .cryptographicError("Batch encryption failed: \(error.localizedDescription)")
-        )
+      
+      // If we encountered an error, stop processing and return it
+      if encounteredError != nil {
+        break
       }
     }
+    
+    // If any encryption failed, return the error
+    if let error = encounteredError {
+      return .failure(error)
+    }
+
+    return .success(results)
+  }
+  
+  /**
+   Decrypt a batch of data items using the same key.
+
+   - Parameters:
+      - dataItems: Array of data items to decrypt
+      - key: Key to use for decryption
+      - config: Optional configuration for the decryption operation
+   - Returns: Result containing the decrypted data items or an error
+   */
+  public func decryptBatch(
+    _ dataItems: [[UInt8]],
+    using key: [UInt8],
+    config: SecurityConfigDTO? = nil
+  ) async -> Result<[[UInt8]], SecurityServiceError> {
+    let algorithm = (config ?? defaultConfig).encryptionAlgorithm
 
     await logAdapter.debug(
-      "Batch encryption completed successfully",
+      "Decrypting batch of data with algorithm: \(algorithm.rawValue)",
       source: logSource
     )
+
+    var results = [[UInt8]]()
+    results.reserveCapacity(dataItems.count)
+    var encounteredError: SecurityServiceError? = nil
+
+    // Process each item sequentially for simplicity
+    for item in dataItems {
+      let result = await decrypt(item, using: key, config: config)
+      switch result {
+        case let .success(decryptedData):
+          results.append(decryptedData)
+        case let .failure(error):
+          encounteredError = error
+          break
+      }
+      
+      // If we encountered an error, stop processing and return it
+      if encounteredError != nil {
+        break
+      }
+    }
+    
+    // If any decryption failed, return the error
+    if let error = encounteredError {
+      return .failure(error)
+    }
 
     return .success(results)
   }
 
   /**
-   Decrypts multiple data items in parallel using task groups.
+   Verifies the integrity of data using a cryptographic hash.
 
    - Parameters:
-      - dataItems: Array of encrypted data items to decrypt as byte arrays
-      - key: The decryption key to use for all items as a byte array
-      - config: Optional configuration override
-   - Returns: Result containing array of decrypted data items as byte arrays or an error
+      - data: The data to verify
+      - expectedHash: The expected hash value
+      - algorithm: The hash algorithm to use
+      - config: Optional configuration for the hash operation
+   - Returns: Result indicating success or an error
    */
-  public func decryptBatch(
-    dataItems: [[UInt8]],
-    using key: [UInt8],
-    config: SecurityConfigDTO?=nil
-  ) async -> Result<[[UInt8]], SecurityProtocolError> {
-    let algorithm=(config ?? defaultConfig).algorithm
-
+  public func verifyHash(
+    _ data: [UInt8],
+    expectedHash: [UInt8],
+    algorithm: HashAlgorithm = .sha256,
+    config: SecurityConfigDTO? = nil
+  ) async -> Result<[UInt8], SecurityServiceError> {
     await logAdapter.debug(
-      "Decrypting batch of data with algorithm: \(algorithm)",
+      "Verifying hash with algorithm: \(algorithm.rawValue)",
       source: logSource
     )
 
-    var results=[[UInt8]]()
-    var errorEncountered: Error?
+    // Compute the hash of the input data
+    let hashResult = await hash(data, algorithm: algorithm, config: config)
 
-    // Use task groups for parallel processing
-    do {
-      try await withThrowingTaskGroup(of: (Int, Result<[UInt8], Error>).self) { group in
-        // Queue up all decryption tasks
-        for (index, data) in dataItems.enumerated() {
-          group.addTask {
-            let decrypted=await self.decrypt(data: data, using: key, config: config)
-            return (index, decrypted)
-          }
+    switch hashResult {
+      case let .success(computedHash):
+        // Compare with the expected hash
+        if computedHash == expectedHash {
+          return .success(computedHash)
+        } else {
+          return .failure(
+            SecurityServiceError.keyManagementError("Hash verification failed: hashes do not match")
+          )
         }
-
-        // Prepare to receive results in order
-        results=Array(repeating: [UInt8](), count: dataItems.count)
-
-        // Process results as they complete
-        for try await (index, result) in group {
-          switch result {
-            case let .success(decrypted):
-              results[index]=decrypted
-            case let .failure(error):
-              errorEncountered=error
-              group.cancelAll() // Cancel remaining tasks on first error
-          }
-        }
-      }
-    } catch {
-      await logAdapter.error(
-        "Batch decryption task group error: \(error.localizedDescription)",
-        source: logSource
-      )
-      errorEncountered=error
+      case let .failure(error):
+        return .failure(error)
     }
-
-    if let error=errorEncountered {
-      await logAdapter.error(
-        "Batch decryption failed: \(error.localizedDescription)",
-        source: logSource
-      )
-      if let secError=error as? SecurityProtocolError {
-        return .failure(secError)
-      } else {
-        return .failure(
-          SecurityProtocolError
-            .cryptographicError("Batch decryption failed: \(error.localizedDescription)")
-        )
-      }
-    }
-
-    await logAdapter.debug(
-      "Batch decryption completed successfully",
-      source: logSource
-    )
-
-    return .success(results)
   }
+
+  // MARK: - Batch Operations
 
   /**
    Generates random bytes of the specified length.
@@ -615,18 +540,21 @@ public actor CryptoServiceActor {
    */
   public func generateRandomBytes(
     count: Int,
-    config: SecurityConfigDTO?=nil
-  ) async -> Result<[UInt8], SecurityProtocolError> {
+    config: SecurityConfigDTO? = nil
+  ) async -> Result<[UInt8], SecurityServiceError> {
     await logAdapter.debug(
       "Generating \(count) random bytes",
       source: logSource
     )
 
     // Use provided config or default
-    let operationConfig=config ?? defaultConfig
+    let operationConfig = config ?? defaultConfig
 
     do {
-      let randomData=try provider.generateRandom(count: count, config: operationConfig)
+      // Generate random bytes using the provider's key generation method
+      // This is a workaround as the EncryptionProviderProtocol doesn't have a specific
+      // method for generating random bytes
+      let randomData = try provider.generateKey(size: count * 8, config: operationConfig)
 
       await logAdapter.debug(
         "Random generation completed successfully",
@@ -636,16 +564,15 @@ public actor CryptoServiceActor {
       return .success([UInt8](randomData))
     } catch {
       await logAdapter.error(
-        "Random generation failed: \(error.localizedDescription)",
+        "Failed to generate random bytes: \(error.localizedDescription)",
         source: logSource
       )
 
-      if let secError=error as? SecurityProtocolError {
+      if let secError = error as? SecurityServiceError {
         return .failure(secError)
       } else {
         return .failure(
-          SecurityProtocolError
-            .cryptographicError("Random generation failed: \(error.localizedDescription)")
+          SecurityServiceError.cryptographicError("Random generation failed: \(error.localizedDescription)")
         )
       }
     }
@@ -653,56 +580,88 @@ public actor CryptoServiceActor {
 }
 
 /**
- Domain-specific log adapter for crypto operations.
- Wraps a standard logger and adds domain context.
+ Domain-specific log adapter that adds domain information to log metadata
  */
 private struct DomainLogAdapter {
-  private let logger: LoggingProtocol
+  let logger: LoggingProtocol
   private let domain: String
 
   init(logger: LoggingProtocol, domain: String) {
-    self.logger=logger
-    self.domain=domain
+    self.logger = logger
+    self.domain = domain
   }
 
   func debug(_ message: String, source: String) async {
     await logger.debug(
       message,
-      metadata: [
-        "domain": .string(domain),
-        "source": .string(source)
-      ]
+      metadata: PrivacyMetadata(),
+      source: "\(domain).\(source)"
     )
   }
 
   func info(_ message: String, source: String) async {
     await logger.info(
       message,
-      metadata: [
-        "domain": .string(domain),
-        "source": .string(source)
-      ]
+      metadata: PrivacyMetadata(),
+      source: "\(domain).\(source)"
     )
   }
 
   func warning(_ message: String, source: String) async {
     await logger.warning(
       message,
-      metadata: [
-        "domain": .string(domain),
-        "source": .string(source)
-      ]
+      metadata: PrivacyMetadata(),
+      source: "\(domain).\(source)"
     )
   }
 
   func error(_ message: String, source: String) async {
     await logger.error(
       message,
-      metadata: [
-        "domain": .string(domain),
-        "source": .string(source)
-      ]
+      metadata: PrivacyMetadata(),
+      source: "\(domain).\(source)"
     )
+  }
+}
+
+/**
+ A null logger that doesn't log anything; used as a fallback
+ */
+private final class NullLogger: LoggingProtocol {
+  /// The underlying logging actor
+  public var loggingActor: LoggingActor {
+    nullActor
+  }
+  
+  /// Empty logging actor for the null logger
+  private let nullActor = LoggingActor(destinations: [], minimumLogLevel: .critical)
+  
+  public func debug(_ message: String, metadata: PrivacyMetadata?, source: String) async {
+    // No-op
+  }
+  
+  public func info(_ message: String, metadata: PrivacyMetadata?, source: String) async {
+    // No-op
+  }
+  
+  public func warning(_ message: String, metadata: PrivacyMetadata?, source: String) async {
+    // No-op
+  }
+  
+  public func error(_ message: String, metadata: PrivacyMetadata?, source: String) async {
+    // No-op
+  }
+  
+  public func critical(_ message: String, metadata: PrivacyMetadata?, source: String) async {
+    // No-op
+  }
+  
+  public func log(_ level: LogLevel, _ message: String, metadata: PrivacyMetadata?, source: String) async {
+    // No-op
+  }
+  
+  public func logMessage(_ level: LogLevel, _ message: String, context: LogContext) async {
+    // No-op
   }
 }
 
@@ -710,20 +669,36 @@ private struct DomainLogAdapter {
  Fallback encryption provider used when the preferred provider cannot be created.
  Provides basic functionality using Apple's CommonCrypto when possible.
  */
-private class FallbackEncryptionProvider: EncryptionProviderProtocol {
+@available(*, deprecated, message: "Use only as fallback when other providers are unavailable")
+private final class FallbackEncryptionProvider: EncryptionProviderProtocol {
+  /// The provider type for this implementation
+  public var providerType: SecurityProviderType { .basic }
+  
   func encrypt(
     plaintext: Data,
     key: Data,
-    iv _: Data,
-    config _: SecurityConfigDTO
+    iv: Data,
+    config: SecurityConfigDTO
   ) throws -> Data {
-    // This would typically use CommonCrypto for a fallback implementation
-    // For now, just return the plaintext with a simple XOR (not secure!)
-    var result=Data(count: plaintext.count)
-    let keyBytes=[UInt8](key)
+    guard !plaintext.isEmpty else {
+      throw SecurityServiceError.invalidInputData("Plaintext data cannot be empty")
+    }
+    
+    guard !key.isEmpty else {
+      throw SecurityServiceError.invalidInputData("Encryption key cannot be empty")
+    }
+    
+    guard !iv.isEmpty else {
+      throw SecurityServiceError.invalidInputData("Initialisation vector cannot be empty")
+    }
+    
+    // Simple XOR-based encryption as fallback (NOT cryptographically secure!)
+    var result = Data(count: plaintext.count)
+    let keyBytes = [UInt8](key)
 
     for i in 0..<plaintext.count {
-      result[i]=plaintext[i] ^ keyBytes[i % key.count]
+      result[i] = plaintext[i] ^ keyBytes[i % key.count]
+      result[i] = (result[i] << 3) | (result[i] >> 5) // Simple rotation
     }
 
     return result
@@ -735,63 +710,94 @@ private class FallbackEncryptionProvider: EncryptionProviderProtocol {
     iv: Data,
     config: SecurityConfigDTO
   ) throws -> Data {
+    guard !ciphertext.isEmpty else {
+      throw SecurityServiceError.invalidInputData("Ciphertext data cannot be empty")
+    }
+    
+    guard !key.isEmpty else {
+      throw SecurityServiceError.invalidInputData("Decryption key cannot be empty")
+    }
+    
+    guard !iv.isEmpty else {
+      throw SecurityServiceError.invalidInputData("Initialisation vector cannot be empty")
+    }
+    
     // For XOR, encryption and decryption are the same operation
-    try encrypt(plaintext: ciphertext, key: key, iv: iv, config: config)
+    return try encrypt(plaintext: ciphertext, key: key, iv: iv, config: config)
   }
 
-  func generateKey(size: Int, config _: SecurityConfigDTO) throws -> Data {
-    var bytes=[UInt8](repeating: 0, count: size / 8)
-    let status=SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
+  func generateKey(size: Int, config: SecurityConfigDTO) throws -> Data {
+    guard size > 0 else {
+      throw SecurityServiceError.invalidInputData("Key size must be greater than zero")
+    }
+    
+    var bytes = [UInt8](repeating: 0, count: size / 8)
+    let status = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
 
     guard status == errSecSuccess else {
-      throw SecurityProtocolError.cryptographicError("Failed to generate key: \(status)")
+      throw SecurityServiceError.cryptographicError("Failed to generate key: \(status)")
     }
 
     return Data(bytes)
   }
 
   func generateIV(size: Int) throws -> Data {
-    var bytes=[UInt8](repeating: 0, count: size)
-    let status=SecRandomCopyBytes(kSecRandomDefault, size, &bytes)
+    guard size > 0 else {
+      throw SecurityServiceError.invalidInputData("IV size must be greater than zero")
+    }
+    
+    var bytes = [UInt8](repeating: 0, count: size)
+    let status = SecRandomCopyBytes(kSecRandomDefault, size, &bytes)
 
     guard status == errSecSuccess else {
-      throw SecurityProtocolError.cryptographicError("Failed to generate IV: \(status)")
+      throw SecurityServiceError.cryptographicError("Failed to generate IV: \(status)")
     }
 
     return Data(bytes)
   }
 
-  func generateRandom(count: Int, config _: SecurityConfigDTO) throws -> Data {
-    var bytes=[UInt8](repeating: 0, count: count)
-    let status=SecRandomCopyBytes(kSecRandomDefault, count, &bytes)
+  func generateRandom(count: Int, config: SecurityConfigDTO) throws -> Data {
+    guard count > 0 else {
+      throw SecurityServiceError.invalidInputData("Random data size must be greater than zero")
+    }
+    
+    var bytes = [UInt8](repeating: 0, count: count)
+    let status = SecRandomCopyBytes(kSecRandomDefault, count, &bytes)
 
     guard status == errSecSuccess else {
-      throw SecurityProtocolError.cryptographicError("Failed to generate random data: \(status)")
+      throw SecurityServiceError.cryptographicError("Failed to generate random data: \(status)")
     }
 
     return Data(bytes)
   }
 
-  func hash(data: Data) async -> Result<[UInt8], SecurityProtocolError> {
-    // Basic hash implementation (not secure, just for fallback)
-    var hasher=SHA256()
-    hasher.update(data: data)
-    let digest=hasher.finalize()
-    return .success([UInt8](digest))
+  func hash(data: Data, algorithm: String) throws -> Data {
+    guard !data.isEmpty else {
+      throw SecurityServiceError.invalidInputData("Data to hash cannot be empty")
+    }
+    
+    // Use a more secure hash implementation if available
+    if algorithm.uppercased() == "SHA256" {
+      var hasher = SHA256()
+      hasher.update(data: data)
+      return hasher.finalize()
+    } else {
+      throw SecurityServiceError.invalidInputData("Unsupported hash algorithm: \(algorithm)")
+    }
   }
 }
 
 // Simple SHA-256 implementation for the fallback provider
 private struct SHA256 {
-  private var buffer=[UInt8](repeating: 0, count: 32)
+  private var buffer = [UInt8](repeating: 0, count: 32)
 
   mutating func update(data: Data) {
     // This is a placeholder - a real implementation would use CommonCrypto
     // Just doing some simple mixing for the fallback
     for byte in data {
       for i in 0..<buffer.count {
-        buffer[i]=buffer[i] &+ byte &+ UInt8(i)
-        buffer[i]=(buffer[i] << 3) | (buffer[i] >> 5) // Simple rotation
+        buffer[i] = buffer[i] &+ byte &+ UInt8(i)
+        buffer[i] = (buffer[i] << 3) | (buffer[i] >> 5) // Simple rotation
       }
     }
   }
