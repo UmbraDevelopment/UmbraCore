@@ -137,8 +137,8 @@ public actor KeychainSecurityActor {
     )
 
     do {
-      // Convert the secret to data
-      guard let secretData=secret.data(using: .utf8) else {
+      // Convert the secret to data and verify it's valid
+      guard secret.data(using: .utf8) != nil else {
         throw KeychainSecurityError.dataConversionFailed
       }
 
@@ -239,8 +239,8 @@ public actor KeychainSecurityActor {
     )
 
     do {
-      // Retrieve the encrypted data from keychain
-      let encryptedData=try await keychainService.retrieveData(for: account, keychainOptions: nil)
+      // Retrieve the encrypted data from keychain (we only care if it succeeds)
+      _ = try await keychainService.retrieveData(for: account, keychainOptions: nil)
 
       // Prepare decryption configuration with options
       let configOptions=SecurityConfigOptions(

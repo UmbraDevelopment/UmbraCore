@@ -88,9 +88,20 @@ private final class DefaultNotificationService: NotificationServiceProtocol {
 
     // Safely send observer to actor using a detached task to avoid data races
     // with the non-Sendable NSObjectProtocol observer
-    let observerCopy=observer // Make a local copy of the observer
-    Task.detached { [observationActor, observerID] in
-      await observationActor.storeObserver(observerCopy, forID: observerID)
+    let observerCopy = observer // Make a local copy of the observer
+    
+    // Create nonisolated copies to prevent task isolation issues in Swift 6
+    let nonisolatedActor = observationActor
+    let nonisolatedID = observerID
+    
+    // Use a @Sendable closure with nonisolated function
+    Task.detached { @Sendable in
+      // Call nonisolated helper function to avoid capturing isolated state
+      await self.storeObserverWithActor(
+        nonisolatedActor,
+        observer: observerCopy,
+        forID: nonisolatedID
+      )
     }
 
     return observerID
@@ -129,8 +140,18 @@ private final class DefaultNotificationService: NotificationServiceProtocol {
       }
 
       // Safely store each observer with its unique ID
-      Task { [observationActor] in
-        await observationActor.storeObserver(observer, forID: uniqueID)
+      // Create nonisolated copy to prevent task isolation issues in Swift 6
+      let nonisolatedActor = observationActor
+      let nonisolatedID = uniqueID
+      
+      // Use a @Sendable closure with nonisolated function
+      Task { @Sendable in
+        // Call nonisolated helper function to avoid capturing isolated state
+        await self.storeObserverWithActor(
+          nonisolatedActor,
+          observer: observer,
+          forID: nonisolatedID
+        )
       }
     }
 
@@ -166,27 +187,54 @@ private final class DefaultNotificationService: NotificationServiceProtocol {
     }
   }
 
-  /// Create a NotificationDTO from a Foundation Notification
-  /// - Parameter notification: The notification to observe
-  /// - Returns: A NotificationDTO representation
+  /// Create a NotificationDTO from a Foundation notification
+  /// - Parameter notification: The Foundation notification
+  /// - Returns: A notification DTO properly converted for use in Alpha Dot Five architecture
   private nonisolated func createDTO(from notification: Notification) -> NotificationDTO {
-    // Convert [AnyHashable: Any]? to [String: String]
-    let userInfo=notification.userInfo?
+    // Convert [AnyHashable: Any]? to [String: String] for Sendable compliance
+    let userInfo = notification.userInfo?
       .reduce(into: [String: String]()) { result, pair in
-        if let key=pair.key as? String {
-          if let stringValue=pair.value as? String {
-            result[key]=stringValue
+        if let key = pair.key as? String {
+          if let stringValue = pair.value as? String {
+            result[key] = stringValue
           } else {
-            result[key]="\(pair.value)"
+            result[key] = "\(pair.value)"
           }
         }
       } ?? [:]
-
+    
+    // Convert sender to string representation for type safety
+    let senderString: String?
+    if let sender = notification.object {
+      senderString = "\(sender)"
+    } else {
+      senderString = nil
+    }
+    
     return NotificationDTO(
       name: notification.name.rawValue,
-      sender: (notification.object as? String) ?? "unknown",
+      sender: senderString,
       userInfo: userInfo
     )
+  }
+
+  /// Nonisolated helper function to store an observer with an actor
+  /// - Parameters:
+  ///   - actor: The actor to store the observer with
+  ///   - observer: The observer to store
+  ///   - id: The ID to associate with the observer
+  private nonisolated func storeObserverWithActor(
+    _ actor: ObservationActor,
+    observer: Any,
+    forID id: String
+  ) async {
+    // Ensure the observer conforms to NSObjectProtocol as required by the actor
+    if let protocolObserver = observer as? NSObjectProtocol {
+      await actor.storeObserver(protocolObserver, forID: id)
+    } else {
+      // Log error if observer doesn't conform to NSObjectProtocol
+      print("Error: Observer does not conform to NSObjectProtocol")
+    }
   }
 }
 
