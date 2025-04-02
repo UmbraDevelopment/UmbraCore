@@ -1,7 +1,9 @@
-# Import user-specific configurations if present
-try-import %workspace%/.bazelrc.user
+# UmbraCore Consolidated Bazel Configuration
+# Last Updated: 02 April 2025
 
-# Platform configuration
+# ====================================================
+# Platform Configuration
+# ====================================================
 build --apple_platform_type=macos
 build --cpu=darwin_arm64
 build --host_cpu=darwin_arm64
@@ -11,19 +13,14 @@ build --crosstool_top=@local_config_apple_cc//:toolchain
 build --host_crosstool_top=@local_config_apple_cc//:toolchain
 build --xcode_version=16.3.0
 build --define=APPLE_SDK_PLATFORM=MacOSX
-# Explicitly unset any SDK version override to ensure Xcode's built-in SDK is used
-build --action_env=APPLE_SDK_VERSION_OVERRIDE=
+# Force the correct SDK version for Xcode 16.3
+build --action_env=APPLE_SDK_VERSION_OVERRIDE=16.3
 # Additional guard to make sure SDK version is not overridden elsewhere
 build --noenable_platform_specific_config
-# Swift compiler flags for target platform consistency
-# Note: We rely on the compiler_options.bzl settings instead of setting Swift flags here
 
-# Import Swift-specific configurations
-# import ./.bazelrc.swift
-# Enable Swift ARM64 config by default
-# build --config=swift_arm64
-
-# Test configuration
+# ====================================================
+# Test Configuration
+# ====================================================
 test --test_output=errors
 test --test_env=DYLD_LIBRARY_PATH
 test --test_env=DYLD_FRAMEWORK_PATH
@@ -37,7 +34,9 @@ test --test_summary=detailed
 test --build_tests_only
 test --test_strategy=exclusive
 
-# Swift specific settings
+# ====================================================
+# Swift Settings
+# ====================================================
 build --features=swift.use_global_module_cache
 build --features=swift.enable_batch_mode
 build --features=swift.enable_concurrency_checking
@@ -46,50 +45,78 @@ build --strategy=SwiftCompile=worker
 build --worker_max_instances=4
 # build --worker_sandboxing
 
-# C++ settings for crypto dependencies
+# ====================================================
+# C++ Settings
+# ====================================================
 build --cxxopt=-std=c++14
 
-# Environment setup
+# ====================================================
+# Environment Settings
+# ====================================================
 build --action_env=PATH
 build --action_env=CC=clang
 
-# Cache optimization settings
+# ====================================================
+# Cache Optimization
+# ====================================================
 build --disk_cache=~/.cache/bazel-disk
 build --repository_cache=~/.cache/bazel-repo
 build --experimental_repository_cache_hardlinks
 build --noexperimental_check_output_files
 build --experimental_remote_merkle_tree_cache
 
-# Memory usage optimizations
+# ====================================================
+# Memory Usage Optimizations
+# ====================================================
 startup --host_jvm_args=-Xmx4g
 build --experimental_reuse_sandbox_directories
 build --experimental_merged_skyframe_analysis_execution
 
-# Coverage settings
+# ====================================================
+# Coverage Settings
+# ====================================================
 coverage --instrument_test_targets
 coverage --combined_report=lcov
 coverage --coverage_report_generator=@bazel_tools//tools/test/CoverageOutputGenerator/java/com/google/devtools/coverageoutputgenerator:Main
 coverage --instrumentation_filter="^//Sources"
 
-# Performance optimizations
+# ====================================================
+# Performance Optimizations
+# ====================================================
 build --incompatible_strict_action_env
 build --remote_local_fallback
 build --spawn_strategy=local,sandboxed
 # build --sandbox_default_allow_network=false
 
+# ====================================================
+# Special Behaviors
+# ====================================================
 # Keep previous glob behavior (allow empty glob patterns)
 build --noincompatible_disallow_empty_glob
 
 # Exclude problematic directories
 build --deleted_packages=.build/checkouts/swift-syntax
 
-# Build configurations
+# ====================================================
+# Warning Suppression
+# ====================================================
+# Configuration to suppress external warnings
+build:suppress_external --features=swift.suppress_warnings
+
+# Configuration that focuses warnings on your code but suppresses them in external dependencies
+build:clean_warnings --config=suppress_external
+
+# ====================================================
+# Build Configurations
+# ====================================================
+# Debug configuration
 build:debug -c dbg
 build:debug --swiftcopt=-g
 build:debug --swiftcopt=-Onone
 build:debug --swiftcopt=-enable-testing
 build:debug --swiftcopt=-DDEBUG
 
+# Release configuration
 build:release -c opt
 build:release --workspace_status_command=tools/workspace_status.sh
 
@@ -111,17 +138,12 @@ build:ci_tests --config=withtests
 build:ci_tests --test_tag_filters=-problematic
 build:ci_tests --test_env=BAZEL_TEST_TIMEOUT=300
 
-# Production build configuration using targets from production_targets.txt
+# Production build using targets from production_targets.txt
 build:prod --compilation_mode=opt
 build:prod --build_tests_only=false
 build:prod --build_tag_filters=-test,-tests
 # Use targets from production_targets.txt file
 build:prod --target_pattern_file=production_targets.txt
-
-# Production build configuration
-build:prod --compilation_mode=opt
-build:prod --build_tests_only=false
-build:prod --build_tag_filters=-test,-tests
 
 # DocC documentation build configuration
 build:docc --compilation_mode=opt
@@ -130,11 +152,30 @@ build:docc --build_tag_filters=-test,-tests
 build:docc --define=build_environment=ci
 build:docc --output_groups=+docc
 
+# ====================================================
+# Development Configurations
+# ====================================================
+# Configuration for development that combines warning suppression with debug settings
+build:dev --config=debug
+build:dev --config=clean_warnings
+build:dev --keep_going
+
+# Configuration for CI builds that maintains all warnings
+build:ci --config=debug
+build:ci --keep_going
+
+# ====================================================
+# Environment Detection
+# ====================================================
 # Local build configuration - used to identify local builds for DocC
 build:local_build --define=build_environment=local
 
 # Default environment detection flag - always set to nonlocal by default
 build --define=build_environment=nonlocal
 
-# Import local overrides with highest precedence (after all other settings)
-try-import %workspace%/.bazelrc.local
+# ====================================================
+# User Overrides
+# ====================================================
+# Allow users to have their own configurations that override the above settings
+# This should be the very last line in .bazelrc
+try-import %workspace%/.bazelrc.user

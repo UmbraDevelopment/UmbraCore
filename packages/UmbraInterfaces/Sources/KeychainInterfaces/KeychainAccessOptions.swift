@@ -36,7 +36,7 @@ public struct KeychainAccessOptions: OptionSet, Sendable, Codable {
     self.rawValue=rawValue
   }
 
-  /// Item data can only be accessed while the device is unlocked
+  /// Item data can only be accessed while the device is unlocked for the current user
   public static let whenUnlocked=KeychainAccessOptions(rawValue: 1 << 0)
 
   /// Item data can only be accessed once per unlock
@@ -62,12 +62,12 @@ public struct KeychainAccessOptions: OptionSet, Sendable, Codable {
     } else if contains(.accessibleWhenUnlockedThisDeviceOnly) {
       kSecAttrAccessibleWhenUnlockedThisDeviceOnly
     } else if contains([.whenUnlocked, .thisDeviceOnly]) {
-      kSecAttrAccessibleWhenUnlockedThisDeviceOnly
+      kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
     } else if contains(.whenUnlocked) {
-      kSecAttrAccessibleWhenUnlockedThisDeviceOnly
+      kSecAttrAccessibleAfterFirstUnlock
     } else {
       // Default to most secure option if nothing specific is selected
-      kSecAttrAccessibleWhenUnlockedThisDeviceOnly
+      kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
     }
   }
 }

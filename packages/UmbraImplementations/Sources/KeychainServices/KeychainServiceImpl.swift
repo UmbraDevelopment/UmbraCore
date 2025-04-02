@@ -83,9 +83,9 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
         case .whenUnlockedThisDeviceOnly:
           securityAccessibility=kSecAttrAccessibleWhenUnlockedThisDeviceOnly
         case .always:
-          securityAccessibility=kSecAttrAccessibleAlways
+          securityAccessibility=kSecAttrAccessibleAfterFirstUnlock
         case .alwaysThisDeviceOnly:
-          securityAccessibility=kSecAttrAccessibleAlwaysThisDeviceOnly
+          securityAccessibility=kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
         case .whenPasscodeSetThisDeviceOnly:
           securityAccessibility=kSecAttrAccessibleWhenPasscodeSetThisDeviceOnly
       }
@@ -458,9 +458,9 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
         case .whenUnlockedThisDeviceOnly:
           securityAccessibility=kSecAttrAccessibleWhenUnlockedThisDeviceOnly
         case .always:
-          securityAccessibility=kSecAttrAccessibleAlways
+          securityAccessibility=kSecAttrAccessibleAfterFirstUnlock
         case .alwaysThisDeviceOnly:
-          securityAccessibility=kSecAttrAccessibleAlwaysThisDeviceOnly
+          securityAccessibility=kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
         case .whenPasscodeSetThisDeviceOnly:
           securityAccessibility=kSecAttrAccessibleWhenPasscodeSetThisDeviceOnly
       }
