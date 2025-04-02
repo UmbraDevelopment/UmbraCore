@@ -451,13 +451,49 @@ public actor SecurityBookmarkActor {
   }
 }
 
+// MARK: - Extension for LogMetadataDTOCollection to convert to PrivacyMetadata
+
+extension LogMetadataDTOCollection {
+  /// Converts LogMetadataDTOCollection to PrivacyMetadata for use with PrivacyAwareLoggingProtocol
+  /// 
+  /// This extension allows for seamless integration between the DTO-based metadata system
+  /// and the logging protocol's expected types.
+  func toPrivacyMetadata() -> PrivacyMetadata {
+    var result = PrivacyMetadata()
+    
+    for entry in entries {
+      // Map the privacy level from LogMetadataDTO to LogPrivacyLevel
+      let privacyLevel: LogPrivacyLevel
+      switch entry.privacyLevel {
+      case .public:
+        privacyLevel = .public
+      case .private:
+        privacyLevel = .private
+      case .sensitive:
+        privacyLevel = .sensitive
+      case .hash:
+        privacyLevel = .hash
+      case .auto:
+        // For auto privacy classification, default to private for safety
+        privacyLevel = .private
+      }
+      
+      // Create PrivacyMetadataValue with correct parameter labels
+      result[entry.key] = PrivacyMetadataValue(value: entry.value, privacy: privacyLevel)
+    }
+    
+    return result
+  }
+}
+
 /**
  * BookmarkLogger - Helper for logging security bookmark operations
  * with proper privacy controls and context handling.
  */
-private actor BookmarkLogger {
+class BookmarkLogger {
   /// The underlying logger for recording operations
   private let logger: PrivacyAwareLoggingProtocol
+  private let source: String = "BookmarkServices"
 
   init(logger: PrivacyAwareLoggingProtocol) {
     self.logger = logger
@@ -468,11 +504,12 @@ private actor BookmarkLogger {
     operation: String,
     additionalContext: LogMetadataDTOCollection? = nil
   ) async {
+    let message = PrivacyString(stringLiteral: "Starting bookmark operation: \(operation)")
     await logger.log(
-      level: .debug,
-      domain: .security,
-      "Starting bookmark operation: \(operation)",
-      metadata: additionalContext
+      .debug,
+      message,
+      metadata: additionalContext?.toPrivacyMetadata(),
+      source: source
     )
   }
 
@@ -481,11 +518,12 @@ private actor BookmarkLogger {
     operation: String,
     additionalContext: LogMetadataDTOCollection? = nil
   ) async {
+    let message = PrivacyString(stringLiteral: "Bookmark operation completed successfully: \(operation)")
     await logger.log(
-      level: .debug,
-      domain: .security,
-      "Bookmark operation completed successfully: \(operation)",
-      metadata: additionalContext
+      .debug,
+      message,
+      metadata: additionalContext?.toPrivacyMetadata(),
+      source: source
     )
   }
 
@@ -498,11 +536,12 @@ private actor BookmarkLogger {
     var context = additionalContext ?? LogMetadataDTOCollection()
     context = context.withPrivate(key: "warning", value: message)
 
+    let logMessage = PrivacyString(stringLiteral: "Bookmark operation warning: \(operation)")
     await logger.log(
-      level: .warning,
-      domain: .security,
-      "Bookmark operation warning: \(operation)",
-      metadata: context
+      .warning,
+      logMessage,
+      metadata: context.toPrivacyMetadata(),
+      source: source
     )
   }
 
@@ -515,11 +554,12 @@ private actor BookmarkLogger {
     var context = additionalContext ?? LogMetadataDTOCollection()
     context = context.withPrivate(key: "error", value: "\(error)")
 
+    let logMessage = PrivacyString(stringLiteral: "Bookmark operation failed: \(operation)")
     await logger.log(
-      level: .error,
-      domain: .security,
-      "Bookmark operation failed: \(operation)",
-      metadata: context
+      .error,
+      logMessage,
+      metadata: context.toPrivacyMetadata(),
+      source: source
     )
   }
 }
