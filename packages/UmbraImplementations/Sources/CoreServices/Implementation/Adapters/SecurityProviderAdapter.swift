@@ -1,7 +1,7 @@
 import CoreInterfaces
 import Foundation
 import SecurityCoreInterfaces
-import SecurityCoreTypes
+import CoreSecurityTypes
 
 /**
  # Security Provider Adapter
