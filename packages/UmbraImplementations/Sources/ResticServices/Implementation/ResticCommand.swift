@@ -18,7 +18,7 @@ public enum ResticCommandAction: String, Sendable {
 }
 
 /// A structured representation of a Restic command
-public struct ResticCommand: Sendable {
+public struct ResticCommand: ResticInterfaces.ResticCommand, Sendable {
   /// The command action to execute
   public let action: ResticCommandAction
 
@@ -36,6 +36,11 @@ public struct ResticCommand: Sendable {
 
   /// Whether to track progress for this command
   public let trackProgress: Bool
+  
+  /// Environment variables for the command
+  public var environment: [String: String] {
+    return [:]  // Default implementation returns empty dictionary
+  }
 
   /// Constructs the full command string including all arguments and options
   public var commandString: String {

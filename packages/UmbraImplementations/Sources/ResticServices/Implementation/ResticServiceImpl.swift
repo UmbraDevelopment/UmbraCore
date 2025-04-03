@@ -23,28 +23,102 @@ import ResticInterfaces
   /// Private storage for default repository
   private var _defaultRepository: String?
   
-  /// The default repository location
-  public var defaultRepository: String? {
-    get { _defaultRepository }
-    set { _defaultRepository = newValue }
+  /// Gets the default repository location in an async context
+  /// - Returns: The default repository location if set
+  private func getDefaultRepository() async -> String? {
+    return _defaultRepository
   }
   
   /// Private storage for default password
   private var _defaultPassword: String?
   
-  /// The default password for repositories
-  public var defaultPassword: String? {
-    get { _defaultPassword }
-    set { _defaultPassword = newValue }
+  /// Gets the default password in an async context
+  /// - Returns: The default password if set
+  private func getDefaultPassword() async -> String? {
+    return _defaultPassword
   }
   
   /// Private storage for progress delegate
   private var _progressDelegate: ResticProgressReporting?
   
+  /// Gets the progress delegate in an async context 
+  /// - Returns: The progress delegate if set
+  private func getProgressDelegate() async -> ResticProgressReporting? {
+    return _progressDelegate
+  }
+  
+  /// The default repository location
+  public nonisolated var defaultRepository: String? {
+    get {
+      // Using a safer but less ideal synchronous approach - not recommended for production use
+      // For a production app, a better approach would be to use a shared actor or properly 
+      // design the architecture to avoid blocking synchronous access to actor state
+      let semaphore = DispatchSemaphore(value: 0)
+      var result: String?
+      
+      Task {
+        result = await getDefaultRepository()
+        semaphore.signal()
+      }
+      
+      // Wait with a timeout to avoid potential deadlocks
+      _ = semaphore.wait(timeout: .now() + 0.1)
+      return result
+    }
+    set { Task { await setDefaultRepository(newValue) } }
+  }
+  
+  /// Internal method to set the default repository value in an isolated context
+  private func setDefaultRepository(_ value: String?) {
+    _defaultRepository = value
+  }
+  
+  /// The default password for repositories
+  public nonisolated var defaultPassword: String? {
+    get {
+      // Using a safer but less ideal synchronous approach - not recommended for production use
+      let semaphore = DispatchSemaphore(value: 0)
+      var result: String?
+      
+      Task {
+        result = await getDefaultPassword()
+        semaphore.signal()
+      }
+      
+      // Wait with a timeout to avoid potential deadlocks
+      _ = semaphore.wait(timeout: .now() + 0.1)
+      return result
+    }
+    set { Task { await setDefaultPassword(newValue) } }
+  }
+  
+  /// Internal method to set the default password value in an isolated context
+  private func setDefaultPassword(_ value: String?) {
+    _defaultPassword = value
+  }
+  
   /// Progress delegate for tracking operations
-  public var progressDelegate: ResticProgressReporting? {
-    get { _progressDelegate }
-    set { _progressDelegate = newValue }
+  public nonisolated var progressDelegate: ResticProgressReporting? {
+    get {
+      // Using a safer but less ideal synchronous approach - not recommended for production use
+      let semaphore = DispatchSemaphore(value: 0)
+      var result: ResticProgressReporting?
+      
+      Task {
+        result = await getProgressDelegate()
+        semaphore.signal()
+      }
+      
+      // Wait with a timeout to avoid potential deadlocks
+      _ = semaphore.wait(timeout: .now() + 0.1)
+      return result
+    }
+    set { Task { await setProgressDelegate(newValue) } }
+  }
+  
+  /// Internal method to set the progress delegate in an isolated context
+  private func setProgressDelegate(_ value: ResticProgressReporting?) {
+    _progressDelegate = value
   }
   
   /// Creates a new Restic service with the specified configuration
@@ -102,7 +176,7 @@ import ResticInterfaces
     
     // Create init command
     let command = ResticCommand(
-      action: .init,
+      action: .`init`,
       repository: location,
       password: password,
       arguments: [],
@@ -111,7 +185,7 @@ import ResticInterfaces
     )
     
     // Execute the command
-    let output = try await execute(command)
+    let output = try await execute(command as any ResticInterfaces.ResticCommand)
     let duration = Date().timeIntervalSince(startTime)
     
     // Store the credentials for future use
@@ -135,52 +209,61 @@ import ResticInterfaces
   /// - Parameter command: The command to execute
   /// - Returns: The command output as a string
   /// - Throws: ResticError if the command fails
-  public func execute(_ command: ResticCommand) async throws -> String {
-    guard let command = command as? ResticCommand else {
-      throw ResticError.invalidCommand("Command must be a ResticCommand instance")
+  public func execute(_ command: any ResticInterfaces.ResticCommand) async throws -> String {
+    // We only support our internal ResticCommand implementation
+    guard let resticCommand = command as? ResticServices.ResticCommand else {
+      throw ResticError.invalidCommand("Command must be a ResticServices.ResticCommand instance")
     }
     
     // Validate the command
-    try validateCommand(command)
+    try await validateCommand(resticCommand)
     
     // Log command execution with privacy protection
     await resticLogger.debug(
-      "Executing Restic command: \(command.action.rawValue)",
+      "Executing Restic command: \(resticCommand.action.rawValue)",
       metadata: PrivacyMetadata([
-        "command": (value: command.action.rawValue, privacy: .public),
-        "repository": (value: command.repository, privacy: .private)
+        "command": (value: resticCommand.action.rawValue, privacy: .public),
+        "repository": (value: resticCommand.repository, privacy: .private)
       ]),
       source: "ResticServiceImpl"
     )
     
     // Build the command line
-    var arguments = [command.action.rawValue]
+    var arguments = [resticCommand.action.rawValue]
     
     // Add repository
-    if !command.repository.isEmpty {
+    if !resticCommand.repository.isEmpty {
       arguments.append("--repo")
-      arguments.append(command.repository)
-    } else if let defaultRepo = defaultRepository, !defaultRepo.isEmpty {
-      arguments.append("--repo")
-      arguments.append(defaultRepo)
+      arguments.append(resticCommand.repository)
+    } else {
+      // Get isolated property once
+      let defaultRepo = await getDefaultRepository()
+      if let defaultRepo = defaultRepo, !defaultRepo.isEmpty {
+        arguments.append("--repo")
+        arguments.append(defaultRepo)
+      }
     }
     
     // Add password
-    if let cmdPassword = command.password, !cmdPassword.isEmpty {
+    if let cmdPassword = resticCommand.password, !cmdPassword.isEmpty {
       arguments.append("--password")
       arguments.append(cmdPassword)
-    } else if let defaultPwd = defaultPassword, !defaultPwd.isEmpty {
-      arguments.append("--password")
-      arguments.append(defaultPwd)
+    } else {
+      // Get isolated property once
+      let defaultPwd = await getDefaultPassword()
+      if let defaultPwd = defaultPwd, !defaultPwd.isEmpty {
+        arguments.append("--password")
+        arguments.append(defaultPwd)
+      }
     }
     
     // Add any additional arguments
-    if !command.arguments.isEmpty {
-      arguments.append(contentsOf: command.arguments)
+    if !resticCommand.arguments.isEmpty {
+      arguments.append(contentsOf: resticCommand.arguments)
     }
     
     // Add options
-    for (key, value) in command.options {
+    for (key, value) in resticCommand.options {
       if key.count == 1 {
         arguments.append("-\(key)")
       } else {
@@ -210,7 +293,7 @@ import ResticInterfaces
       await resticLogger.error(
         "Failed to launch Restic process",
         metadata: PrivacyMetadata([
-          "command": (value: command.action.rawValue, privacy: .public),
+          "command": (value: resticCommand.action.rawValue, privacy: .public),
           "error": (value: error.localizedDescription, privacy: .private)
         ]),
         source: "ResticServiceImpl"
@@ -238,7 +321,7 @@ import ResticInterfaces
       await resticLogger.error(
         "Restic command failed with exit code \(process.terminationStatus)",
         metadata: PrivacyMetadata([
-          "command": (value: command.action.rawValue, privacy: .public),
+          "command": (value: resticCommand.action.rawValue, privacy: .public),
           "exitCode": (value: process.terminationStatus, privacy: .public),
           "error": (value: errorOutput, privacy: .private)
         ]),
@@ -255,7 +338,7 @@ import ResticInterfaces
     await resticLogger.debug(
       "Restic command executed successfully",
       metadata: PrivacyMetadata([
-        "command": (value: command.action.rawValue, privacy: .public)
+        "command": (value: resticCommand.action.rawValue, privacy: .public)
       ]),
       source: "ResticServiceImpl"
     )
@@ -272,25 +355,25 @@ import ResticInterfaces
     let startTime = Date()
     
     // Use provided repository or default
-    let repoLocation = location ?? defaultRepository
+    let currentDefaultRepo = await getDefaultRepository()
+    let repoLocation = location ?? currentDefaultRepo
     
     // Ensure we have a repository location
     guard let repoLocation = repoLocation, !repoLocation.isEmpty else {
-      throw ResticError.invalidParameter("No repository location provided")
+      throw ResticError.invalidParameter("No repository location specified")
     }
     
-    // Create check command
     let command = ResticCommand(
       action: .check,
       repository: repoLocation,
-      password: defaultPassword,
+      password: await getDefaultPassword(),
       arguments: [],
       options: [:],
       trackProgress: false
     )
     
     // Execute the command
-    let output = try await execute(command)
+    let output = try await execute(command as any ResticInterfaces.ResticCommand)
     let duration = Date().timeIntervalSince(startTime)
     
     return ResticCommandResult(
@@ -311,15 +394,16 @@ import ResticInterfaces
     let startTime = Date()
     
     // Use provided repository or default
-    let repoLocation = location ?? defaultRepository
+    let currentDefaultRepo = await getDefaultRepository()
+    let repoLocation = location ?? currentDefaultRepo
     
     // Ensure we have a repository location
     guard let repoLocation = repoLocation, !repoLocation.isEmpty else {
-      throw ResticError.invalidParameter("No repository location provided")
+      throw ResticError.invalidParameter("No repository location specified")
     }
     
     // Build arguments
-    var arguments: [String] = ["--json"]
+    var arguments: [String] = []
     
     // Add tag filter if provided
     if let tag = tag, !tag.isEmpty {
@@ -327,18 +411,17 @@ import ResticInterfaces
       arguments.append(tag)
     }
     
-    // Create snapshots command
     let command = ResticCommand(
       action: .snapshots,
       repository: repoLocation,
-      password: defaultPassword,
+      password: await getDefaultPassword(),
       arguments: arguments,
       options: [:],
       trackProgress: false
     )
     
     // Execute the command
-    let output = try await execute(command)
+    let output = try await execute(command as any ResticInterfaces.ResticCommand)
     let duration = Date().timeIntervalSince(startTime)
     
     return ResticCommandResult(
@@ -359,20 +442,20 @@ import ResticInterfaces
   public func backup(paths: [String], tag: String?, excludes: [String]?) async throws -> ResticCommandResult {
     let startTime = Date()
     
-    // Ensure we have paths to back up
+    // Validate input paths
     guard !paths.isEmpty else {
       throw ResticError.invalidParameter("No paths provided for backup")
     }
     
     // Use provided repository or default
-    let repoLocation = defaultRepository
+    let currentDefaultRepo = await getDefaultRepository()
     
     // Ensure we have a repository location
-    guard let repoLocation = repoLocation, !repoLocation.isEmpty else {
-      throw ResticError.invalidParameter("No repository location provided")
+    guard let repoLocation = currentDefaultRepo, !repoLocation.isEmpty else {
+      throw ResticError.invalidParameter("No repository location specified")
     }
     
-    // Build arguments for backup
+    // Build arguments
     var arguments = paths
     
     // Add tag if provided
@@ -381,26 +464,25 @@ import ResticInterfaces
       arguments.append(tag)
     }
     
-    // Add exclude patterns if provided
+    // Add excludes if provided
     if let excludes = excludes, !excludes.isEmpty {
-      for pattern in excludes {
+      for exclude in excludes {
         arguments.append("--exclude")
-        arguments.append(pattern)
+        arguments.append(exclude)
       }
     }
     
-    // Create backup command
     let command = ResticCommand(
       action: .backup,
       repository: repoLocation,
-      password: defaultPassword,
+      password: await getDefaultPassword(),
       arguments: arguments,
       options: [:],
       trackProgress: true
     )
     
     // Execute the command
-    let output = try await execute(command)
+    let output = try await execute(command as any ResticInterfaces.ResticCommand)
     let duration = Date().timeIntervalSince(startTime)
     
     return ResticCommandResult(
@@ -422,39 +504,47 @@ import ResticInterfaces
     let startTime = Date()
     
     // Use default repository
-    let repoLocation = defaultRepository
+    let currentDefaultRepo = await getDefaultRepository()
     
     // Ensure we have a repository location
-    guard let repoLocation = repoLocation, !repoLocation.isEmpty else {
-      throw ResticError.invalidParameter("No repository location provided")
+    guard let repoLocation = currentDefaultRepo, !repoLocation.isEmpty else {
+      throw ResticError.invalidParameter("No repository location specified")
     }
     
-    // Build arguments for restore
-    var arguments = [
-      snapshot,
-      "--target", target
-    ]
+    // Validate snapshot ID
+    guard !snapshot.isEmpty else {
+      throw ResticError.invalidParameter("Snapshot ID cannot be empty")
+    }
     
-    // Add specific paths to restore if provided
+    // Validate target path
+    guard !target.isEmpty else {
+      throw ResticError.invalidParameter("Target path cannot be empty")
+    }
+    
+    // Build arguments
+    var arguments = [snapshot]
+    
+    // Add target path
+    arguments.append("--target")
+    arguments.append(target)
+    
+    // Add specific paths if provided
     if let paths = paths, !paths.isEmpty {
-      for path in paths {
-        arguments.append("--include")
-        arguments.append(path)
-      }
+      arguments.append("--include")
+      arguments.append(contentsOf: paths)
     }
     
-    // Create restore command
     let command = ResticCommand(
       action: .restore,
       repository: repoLocation,
-      password: defaultPassword,
+      password: await getDefaultPassword(),
       arguments: arguments,
       options: [:],
       trackProgress: true
     )
     
     // Execute the command
-    let output = try await execute(command)
+    let output = try await execute(command as any ResticInterfaces.ResticCommand)
     let duration = Date().timeIntervalSince(startTime)
     
     return ResticCommandResult(
@@ -473,28 +563,38 @@ import ResticInterfaces
     let startTime = Date()
     
     // Use default repository
-    let repoLocation = defaultRepository
+    let currentDefaultRepo = await getDefaultRepository()
     
     // Ensure we have a repository location
-    guard let repoLocation = repoLocation, !repoLocation.isEmpty else {
-      throw ResticError.invalidParameter("No repository location provided")
+    guard let repoLocation = currentDefaultRepo, !repoLocation.isEmpty else {
+      throw ResticError.invalidParameter("No repository location specified")
     }
     
-    // Map maintenance type to command and arguments
-    let (action, arguments) = mapMaintenanceTypeToCommand(type)
+    // Determine action based on maintenance type
+    let action: ResticCommandAction
+    var arguments: [String] = []
     
-    // Create maintenance command
+    switch type {
+      case .prune:
+        action = .prune
+      case .check:
+        action = .check
+      case .rebuildIndex:
+        action = .check
+        arguments.append("--rebuild-index")
+    }
+    
     let command = ResticCommand(
       action: action,
       repository: repoLocation,
-      password: defaultPassword,
+      password: await getDefaultPassword(),
       arguments: arguments,
       options: [:],
       trackProgress: false
     )
     
     // Execute the command
-    let output = try await execute(command)
+    let output = try await execute(command as any ResticInterfaces.ResticCommand)
     let duration = Date().timeIntervalSince(startTime)
     
     return ResticCommandResult(
@@ -523,14 +623,18 @@ import ResticInterfaces
   ///
   /// - Parameter command: The command to validate
   /// - Throws: ResticError if validation fails
-  private func validateCommand(_ command: ResticCommand) throws {
+  private func validateCommand(_ command: ResticCommand) async throws {
+    // Get isolated state once to avoid multiple awaits in expressions
+    let defaultRepo = await getDefaultRepository()
+    let defaultPwd = await getDefaultPassword()
+    
     // Ensure the repository is valid
-    if command.repository.isEmpty && (defaultRepository == nil || defaultRepository!.isEmpty) {
+    if command.repository.isEmpty && (defaultRepo == nil || defaultRepo!.isEmpty) {
       throw ResticError.invalidParameter("No repository specified and no default repository set")
     }
     
     // Ensure we have a password (when not using init command)
-    if command.action != .init && command.password == nil && defaultPassword == nil {
+    if command.action != .`init` && command.password == nil && defaultPwd == nil {
       throw ResticError.invalidParameter("No password specified and no default password set")
     }
   }
