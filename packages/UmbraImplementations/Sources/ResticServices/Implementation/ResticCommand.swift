@@ -2,7 +2,7 @@ import Foundation
 import ResticInterfaces
 
 /// Represents a Restic command action type
-public enum ResticCommandAction: String, Sendable {
+public enum ResticCommandAction: String, Sendable, Codable {
   case backup
   case restore
   case check
@@ -18,7 +18,7 @@ public enum ResticCommandAction: String, Sendable {
 }
 
 /// A structured representation of a Restic command
-public struct ResticCommand: ResticInterfaces.ResticCommand, Sendable {
+public struct ResticCommand: ResticInterfaces.ResticCommand, Codable, Sendable {
   /// The command action to execute
   public let action: ResticCommandAction
 
@@ -39,7 +39,14 @@ public struct ResticCommand: ResticInterfaces.ResticCommand, Sendable {
   
   /// Environment variables for the command
   public var environment: [String: String] {
-    return [:]  // Default implementation returns empty dictionary
+    var env: [String: String] = [:]
+    
+    // Set password in environment if provided
+    if let pwd = password, !pwd.isEmpty {
+      env["RESTIC_PASSWORD"] = pwd
+    }
+    
+    return env
   }
 
   /// Constructs the full command string including all arguments and options

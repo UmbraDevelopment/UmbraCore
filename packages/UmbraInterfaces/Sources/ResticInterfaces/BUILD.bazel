@@ -13,5 +13,6 @@ umbra_swift_library(
     deps = [
         "//packages/UmbraCoreTypes/Sources/UmbraErrors",
         "//packages/UmbraCoreTypes/Sources/LoggingTypes",
+        "//packages/UmbraInterfaces/Sources/XPCProtocolsCore",
     ],
 )

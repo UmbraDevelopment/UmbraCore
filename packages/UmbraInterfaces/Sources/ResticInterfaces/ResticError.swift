@@ -298,7 +298,7 @@ extension ResticError {
     case .executionTimeout:
       return "Command execution timed out"
     case .repositoryNotFound(let path):
-      return "Repository not found at path"
+      return "Repository not found at path: \(path)"
     case .invalidPassword:
       return "Invalid repository password"
     case .permissionDenied:

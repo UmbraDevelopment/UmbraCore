@@ -17,5 +17,10 @@ umbra_swift_library(
         "//packages/UmbraImplementations/Sources/KeychainServices",
         "//packages/UmbraCoreTypes/Sources/LoggingTypes",
         "//packages/UmbraImplementations/Sources/LoggingServices",
+        "//packages/UmbraInterfaces/Sources/XPCProtocolsCore",
+        "//packages/UmbraImplementations/Sources/XPCServices",
+        "//packages/UmbraInterfaces/Sources/SecurityCoreInterfaces",
+        "//packages/UmbraInterfaces/Sources/SecurityInterfaces",
+        "//packages/UmbraImplementations/Sources/SecurityUtils",
     ],
 )
