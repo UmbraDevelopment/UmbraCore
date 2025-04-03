@@ -60,9 +60,7 @@ public actor CryptoServiceMonitor {
    - Returns: Boolean indicating if monitoring started successfully
    */
   public func startMonitoring() async -> Bool {
-    logger.info(
-      message: "Starting crypto service monitoring",
-      metadata: PrivacyMetadata())
+    await logger.info("Starting crypto service monitoring", metadata: PrivacyMetadata(), source: "CryptoServiceMonitor.startMonitoring")
     
     // Reset event storage
     events = []
@@ -78,9 +76,7 @@ public actor CryptoServiceMonitor {
    - Returns: Boolean indicating if monitoring stopped successfully
    */
   public func stopMonitoring() async -> Bool {
-    logger.info(
-      message: "Stopping crypto service monitoring",
-      metadata: PrivacyMetadata())
+    await logger.info("Stopping crypto service monitoring", metadata: PrivacyMetadata(), source: "CryptoServiceMonitor.stopMonitoring")
     
     // No cleanup needed for in-memory monitoring
     return true
@@ -94,9 +90,7 @@ public actor CryptoServiceMonitor {
    - Parameter event: The event to record
    */
   public func recordEvent(_ event: CryptoEventDTO) async {
-    logger.trace(
-      message: "Recording crypto event: \(event.operation)",
-      metadata: PrivacyMetadata())
+    await logger.trace("Recording crypto event: \(event.operation)", metadata: PrivacyMetadata(), source: "CryptoServiceMonitor.recordEvent")
     
     // Add to event history with capacity management
     events.append(event)
@@ -115,9 +109,7 @@ public actor CryptoServiceMonitor {
    - Parameter events: Array of events to record
    */
   public func recordEvents(_ events: [CryptoEventDTO]) async {
-    logger.trace(
-      message: "Recording \(events.count) crypto events",
-      metadata: PrivacyMetadata())
+    await logger.trace("Recording \(events.count) crypto events", metadata: PrivacyMetadata(), source: "CryptoServiceMonitor.recordEvents")
     
     // Add all events
     self.events.append(contentsOf: events)
@@ -156,9 +148,7 @@ public actor CryptoServiceMonitor {
    - Returns: Boolean indicating successful clearing
    */
   public func clearEvents() async -> Bool {
-    logger.info(
-      message: "Clearing all crypto events",
-      metadata: PrivacyMetadata())
+    await logger.info("Clearing all crypto events", metadata: PrivacyMetadata(), source: "CryptoServiceMonitor.clearEvents")
     
     events = []
     return true

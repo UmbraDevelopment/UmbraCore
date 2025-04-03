@@ -62,7 +62,7 @@ public actor CryptoXPCServiceActor {
     self.cryptoProvider = cryptoProvider
     self.secureStorage = secureStorage
     self.logger = logger
-    self.monitor = CryptoServiceMonitor()
+    self.monitor = CryptoServiceMonitor(logger: logger)
   }
   
   // MARK: - Private methods
@@ -235,7 +235,7 @@ public actor CryptoXPCServiceActor {
   /// - Returns: A result with the ID for the random data or an error
   public func generateRandomBytes(
     length: Int,
-    options: RandomizationOptionsDTO?
+    options: CoreSecurityTypes.RandomizationOptionsDTO?
   ) async -> Result<String, UmbraErrorsDTOs.ErrorDTO> {
     await logger.trace(
       "Starting generateRandomBytes operation",
