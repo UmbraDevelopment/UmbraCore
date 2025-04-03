@@ -228,9 +228,8 @@ extension ResticError {
       metadata["detail"] = PrivacyMetadataValue(value: message, privacy: .private)
     case .executionTimeout:
       metadata["error_type"] = PrivacyMetadataValue(value: "execution_timeout", privacy: .public)
-    case .repositoryNotFound(let path):
+    case .repositoryNotFound(_):
       metadata["error_type"] = PrivacyMetadataValue(value: "repository_not_found", privacy: .public)
-      metadata["path"] = PrivacyMetadataValue(value: path, privacy: .private)
     case .invalidPassword:
       metadata["error_type"] = PrivacyMetadataValue(value: "invalid_password", privacy: .public)
     case .permissionDenied(let path):
@@ -297,7 +296,7 @@ extension ResticError {
       return "Invalid command: \(message)"
     case .executionTimeout:
       return "Command execution timed out"
-    case .repositoryNotFound(let path):
+    case .repositoryNotFound(_):
       return "Repository not found at path"
     case .invalidPassword:
       return "Invalid repository password"

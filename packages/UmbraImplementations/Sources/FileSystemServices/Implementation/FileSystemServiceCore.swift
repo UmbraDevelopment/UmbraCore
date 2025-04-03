@@ -96,64 +96,131 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
   /**
    Gets metadata for a file or directory at the specified path.
 
-   - Parameter path: The path to get metadata for
-   - Returns: The metadata, or nil if the item doesn't exist
+   If the path doesn't exist, returns nil instead of throwing an error. 
+   This is useful for checking existence without causing an error path.
+
+   - Parameter path: The file path to check
+   - Returns: File metadata or nil if the path doesn't exist
    - Throws: `FileSystemError.readError` if the operation fails for reasons other than non-existence
    */
-  public func getMetadata(at path: FilePath) async throws -> FileSystemMetadata? {
+  public func getFileMetadata(at path: FilePath, options: FileMetadataOptions?) async throws -> FileMetadata {
     guard !path.path.isEmpty else {
-      return nil
+      throw FileSystemError.invalidPath("Path cannot be empty")
     }
-
+    
     do {
-      let url=URL(fileURLWithPath: path.path)
-      let resourceValues=try url.resourceValues(forKeys: [
+      let url = URL(fileURLWithPath: path.path)
+      
+      // Build a set of resource keys to fetch
+      var resourceKeys: Set<URLResourceKey> = [
         .isDirectoryKey,
         .fileSizeKey,
         .contentModificationDateKey,
         .creationDateKey,
         .isSymbolicLinkKey,
         .isReadableKey,
-        .isWritableKey
-      ])
-
-      let isDirectory=resourceValues.isDirectory ?? false
-      let size=resourceValues.fileSize ?? 0
-      let modificationDate=resourceValues.contentModificationDate ?? Date()
-      let creationDate=resourceValues.creationDate ?? Date()
-      let isSymbolicLink=resourceValues.isSymbolicLink ?? false
-
-      // Determine the item type
-      let itemType: FileSystemItemType=isDirectory ? .directory :
-        isSymbolicLink ? .symbolicLink : .file
-
-      let metadata=FileSystemMetadata(
-        path: path,
-        itemType: itemType,
+        .isWritableKey,
+        .fileOwnerAccountIDKey,
+        .fileGroupOwnerAccountIDKey,
+        .filePosixPermissionsKey
+      ]
+      
+      // Add any additional keys requested by the caller
+      if let options = options {
+        for key in options.resourceKeys {
+          if let urlKey = key.toURLResourceKey() {
+            resourceKeys.insert(urlKey)
+          }
+        }
+      }
+      
+      // Fetch resource values from the URL
+      let urlResourceValues = try url.resourceValues(forKeys: resourceKeys)
+      
+      // Convert URLResourceValues to our safe dictionary type
+      var safeResourceValues = [FileResourceKey: SafeAttributeValue]()
+      
+      // Convert each resource value to our SafeAttributeValue type
+      for key in resourceKeys {
+        if let value = urlResourceValues.allValues[key], 
+           let safeValue = SafeAttributeValue(from: value) {
+          if let fileKey = FileResourceKey(fromURLResourceKey: key) {
+            safeResourceValues[fileKey] = safeValue
+          }
+        }
+      }
+      
+      // Extract basic file attributes
+      let isDirectory = urlResourceValues.isDirectory ?? false
+      let size = urlResourceValues.fileSize ?? 0
+      let modificationDate = urlResourceValues.contentModificationDate ?? Date()
+      let creationDate = urlResourceValues.creationDate ?? Date()
+      let ownerID = urlResourceValues.fileOwnerAccountID.flatMap(UInt.init) ?? 0
+      let groupID = urlResourceValues.fileGroupOwnerAccountID.flatMap(UInt.init) ?? 0
+      let permissions = urlResourceValues.filePosixPermissions ?? 0
+      
+      // Create file attributes
+      let fileAttributes = FileAttributes(
         size: UInt64(size),
         creationDate: creationDate,
-        modificationDate: modificationDate
+        modificationDate: modificationDate,
+        accessDate: nil, // Not available through URLResourceValues
+        ownerID: ownerID,
+        groupID: groupID,
+        permissions: UInt16(permissions),
+        fileType: nil, // Could populate from UTI if needed
+        creator: nil,  // macOS specific, not usually needed
+        flags: 0,      // Would need to be extracted separately
+        safeExtendedAttributes: [:] // Would need separate call to get extended attributes
       )
-
-      await logger.debug("Retrieved metadata for \(path.path)", metadata: nil)
-
+      
+      // Determine if the file exists
+      let exists = true // If we got this far, the file exists
+      
+      // Create and return the file metadata
+      let metadata = FileMetadata(
+        path: path,
+        attributes: fileAttributes,
+        safeResourceValues: safeResourceValues,
+        exists: exists
+      )
+      
+      await logger.debug("Retrieved metadata for \(path.path)", metadata: LoggingMetadata.empty)
+      
       return metadata
     } catch {
-      // If the file doesn't exist, return nil instead of throwing an error
-      if
-        (error as NSError).domain == NSCocoaErrorDomain &&
-        (error as NSError).code == NSFileReadNoSuchFileError
-      {
-        return nil
+      // If the file doesn't exist, create a metadata object with exists=false
+      if (error as NSError).domain == NSCocoaErrorDomain &&
+         (error as NSError).code == NSFileReadNoSuchFileError {
+        
+        // Create minimal metadata for non-existent file
+        let emptyAttributes = FileAttributes(
+          size: 0,
+          creationDate: Date(),
+          modificationDate: Date(),
+          accessDate: nil,
+          ownerID: 0,
+          groupID: 0,
+          permissions: 0,
+          safeExtendedAttributes: [:]
+        )
+        
+        return FileMetadata(
+          path: path,
+          attributes: emptyAttributes,
+          safeResourceValues: [:],
+          exists: false
+        )
       }
-
+      
       await logger.error(
         "Failed to get metadata for \(path.path): \(error.localizedDescription)",
-        metadata: nil
+        metadata: LoggingMetadata.empty
       )
-      throw FileSystemInterfaces.FileSystemError.readError(
+      
+      throw FileSystemError.readError(
         path: path.path,
-        reason: error.localizedDescription
+        reason: "Failed to get metadata: \(error.localizedDescription)"
       )
     }
   }

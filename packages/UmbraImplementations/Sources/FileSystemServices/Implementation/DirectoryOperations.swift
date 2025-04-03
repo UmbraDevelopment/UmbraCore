@@ -1,7 +1,9 @@
 import FileSystemInterfaces
 import FileSystemTypes
 import Foundation
+import LoggingInterfaces
 import LoggingTypes
+import Darwin.C
 
 /**
  # Directory Operations Extension
@@ -15,40 +17,42 @@ extension FileSystemServiceImpl {
 
    - Parameters:
       - path: The directory path to create
-      - withIntermediates: Whether to create intermediate directories
+      - createIntermediates: Whether to create intermediate directories
+      - attributes: Optional file attributes to set on the created directory
    - Throws: `FileSystemError.writeError` if the directory cannot be created
              `FileSystemError.pathAlreadyExists` if a file already exists at the path
    */
   public func createDirectory(
     at path: FilePath,
-    withIntermediates: Bool=true
+    createIntermediates: Bool = true,
+    attributes: FileAttributes? = nil
   ) async throws {
     guard !path.path.isEmpty else {
-      throw FileSystemInterfaces.FileSystemError.invalidPath(
-        path: "",
+      throw FileSystemError.invalidPath(
+        path: path.path,
         reason: "Empty path provided"
       )
     }
 
-    let url=URL(fileURLWithPath: path.path)
+    let url = URL(fileURLWithPath: path.path)
 
     // Check if a file (not directory) already exists at this path
     if fileManager.fileExists(atPath: path.path) {
-      var isDir: ObjCBool=false
+      var isDir: ObjCBool = false
       fileManager.fileExists(atPath: path.path, isDirectory: &isDir)
 
       if !isDir.boolValue {
         await logger.warning(
           "Cannot create directory, file exists at path: \(path.path)",
-          metadata: nil,
+          metadata: PrivacyMetadata(),
           source: "FileSystemService"
         )
-        throw FileSystemInterfaces.FileSystemError.pathAlreadyExists(path: path.path)
-      } else if !withIntermediates {
+        throw FileSystemError.pathAlreadyExists(path: path.path)
+      } else if !createIntermediates {
         // Directory already exists, which is fine
         await logger.debug(
           "Directory already exists at \(path.path)",
-          metadata: nil,
+          metadata: PrivacyMetadata(),
           source: "FileSystemService"
         )
         return
@@ -56,27 +60,126 @@ extension FileSystemServiceImpl {
     }
 
     do {
+      // Convert our FileAttributes to the format expected by FileManager
+      var fileManagerAttributes: [FileAttributeKey: Any]? = nil
+      
+      if let attributes = attributes {
+        fileManagerAttributes = [:]
+        
+        // Map the attributes to FileManager's expected format
+        if attributes.creationDate != Date(timeIntervalSince1970: 0) {
+          fileManagerAttributes?[.creationDate] = attributes.creationDate
+        }
+        
+        if attributes.modificationDate != Date(timeIntervalSince1970: 0) {
+          fileManagerAttributes?[.modificationDate] = attributes.modificationDate
+        }
+        
+        if attributes.permissions != 0 {
+          fileManagerAttributes?[.posixPermissions] = Int16(attributes.permissions)
+        }
+        
+        if attributes.ownerID != 0 {
+          fileManagerAttributes?[.ownerAccountID] = NSNumber(value: attributes.ownerID)
+        }
+        
+        if attributes.groupID != 0 {
+          fileManagerAttributes?[.groupOwnerAccountID] = NSNumber(value: attributes.groupID)
+        }
+        
+        // Note: Extended attributes would need a separate call to set them,
+        // as they're not supported directly by the createDirectory API
+      }
+      
       try fileManager.createDirectory(
         at: url,
-        withIntermediateDirectories: withIntermediates,
-        attributes: nil
+        withIntermediateDirectories: createIntermediates,
+        attributes: fileManagerAttributes
       )
+
+      // If we have any extended attributes, set them after creation
+      if let attributes = attributes, !attributes.safeExtendedAttributes.isEmpty {
+        for (key, value) in attributes.safeExtendedAttributes {
+          // Convert the SafeAttributeValue to a Foundation-compatible type
+          if let data = convertSafeAttributeToData(value) {
+            try url.withUnsafeFileSystemRepresentation { fileSystemPath in
+              // Set the extended attribute using the low-level C API
+              let result = setxattr(
+                fileSystemPath,
+                key,
+                [UInt8](data),
+                data.count,
+                0,
+                0
+              )
+              
+              if result != 0 {
+                let error = errno
+                throw FileSystemError.writeError(
+                  path: path.path,
+                  reason: "Failed to set extended attribute: \(String(cString: strerror(error)))"
+                )
+              }
+            }
+          }
+        }
+      }
 
       await logger.debug(
         "Created directory at \(path.path)",
-        metadata: nil,
+        metadata: PrivacyMetadata(),
         source: "FileSystemService"
       )
     } catch {
       await logger.error(
         "Failed to create directory at \(path.path): \(error.localizedDescription)",
-        metadata: nil,
+        metadata: PrivacyMetadata(),
         source: "FileSystemService"
       )
-      throw FileSystemInterfaces.FileSystemError.writeError(
+      throw FileSystemError.writeError(
         path: path.path,
         reason: error.localizedDescription
       )
+    }
+  }
+  
+  /**
+   Converts a SafeAttributeValue to Data for use with extended attributes.
+   
+   - Parameter value: The SafeAttributeValue to convert
+   - Returns: Data representation if possible, nil otherwise
+   */
+  private func convertSafeAttributeToData(_ value: SafeAttributeValue) -> Data? {
+    switch value {
+    case .string(let strValue):
+      return strValue.data(using: .utf8)
+    case .int(let intValue):
+      return withUnsafeBytes(of: intValue) { Data($0) }
+    case .uint(let uintValue):
+      return withUnsafeBytes(of: uintValue) { Data($0) }
+    case .int64(let int64Value):
+      return withUnsafeBytes(of: int64Value) { Data($0) }
+    case .uint64(let uint64Value):
+      return withUnsafeBytes(of: uint64Value) { Data($0) }
+    case .bool(let boolValue):
+      return withUnsafeBytes(of: boolValue) { Data($0) }
+    case .date(let dateValue):
+      return withUnsafeBytes(of: dateValue.timeIntervalSince1970) { Data($0) }
+    case .double(let doubleValue):
+      return withUnsafeBytes(of: doubleValue) { Data($0) }
+    case .data(let dataValue):
+      return dataValue
+    case .url(let urlValue):
+      return urlValue.absoluteString.data(using: .utf8)
+    case .array, .dictionary:
+      // These would need more complex serialization (e.g., JSON)
+      do {
+        let encoder = JSONEncoder()
+        let data = try encoder.encode(String(describing: value))
+        return data
+      } catch {
+        return nil
+      }
     }
   }
 
@@ -93,7 +196,7 @@ extension FileSystemServiceImpl {
   public func isDirectoryEmpty(at path: FilePath) async throws -> Bool {
     guard !path.path.isEmpty else {
       throw FileSystemInterfaces.FileSystemError.invalidPath(
-        path: "",
+        path: path.path,
         reason: "Empty path provided"
       )
     }
@@ -120,7 +223,7 @@ extension FileSystemServiceImpl {
 
       await logger.debug(
         "Checked if directory is empty at \(path.path): \(isEmpty)",
-        metadata: nil,
+        metadata: PrivacyMetadata(),
         source: "FileSystemService"
       )
 
@@ -128,7 +231,7 @@ extension FileSystemServiceImpl {
     } catch {
       await logger.error(
         "Failed to check if directory is empty at \(path.path): \(error.localizedDescription)",
-        metadata: nil,
+        metadata: PrivacyMetadata(),
         source: "FileSystemService"
       )
       throw FileSystemInterfaces.FileSystemError.readError(

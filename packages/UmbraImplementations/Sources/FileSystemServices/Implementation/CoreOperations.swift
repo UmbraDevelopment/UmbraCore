@@ -307,16 +307,16 @@ extension FileSystemServiceImpl {
    Moves an item from one path to another (alias for move(from:to:overwrite:)).
 
    - Parameters:
-      - source: The source path
-      - destination: The destination path
+      - sourcePath: The source path
+      - destinationPath: The destination path
       - overwrite: Whether to overwrite existing files
    - Throws: `FileSystemError` if the operation fails
    */
   public func moveItem(
-    at source: FilePath,
-    to destination: FilePath,
-    overwrite: Bool=false
+    from sourcePath: FilePath,
+    to destinationPath: FilePath,
+    overwrite: Bool = false
   ) async throws {
-    try await move(from: source, to: destination, overwrite: overwrite)
+    try await move(from: sourcePath, to: destinationPath, overwrite: overwrite)
   }
 }
