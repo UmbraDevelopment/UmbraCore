@@ -1,706 +1,431 @@
-import CoreDTOs
-import CryptoTypes
-import DomainSecurityTypes
+import Foundation
+import CryptoInterfaces
 import LoggingInterfaces
+import LoggingTypes
 import SecurityCoreInterfaces
+import SecurityInterfaces
+import SecurityInterfacesDTOs
 import UmbraErrors
-import XPCProtocolsCore
-
-/**
- # CryptoXPCServiceActor
-
- Provides cryptographic operations via XPC with proper actor isolation.
-
- This actor encapsulates all cryptographic operations and ensures thread safety
- through Swift concurrency. It handles:
- - Encryption and decryption operations
- - Key management
- - Cryptographic signing and verification
- - Secure random generation
-
- All operations follow the Alpha Dot Five architecture with:
- - Foundation-independent DTOs for data exchange
- - Domain-specific error types
- - Proper actor isolation for all mutable state
- */
-public actor CryptoXPCServiceActor: CryptoXPCServiceProtocol {
-  // MARK: - Private properties
-
-  /// Logger for recording operations and errors
-  private let logger: LoggingProtocol
-
-  /// Domain-specific logger for crypto operations
-  private let cryptoLogger: CryptoLogger
-
-  /// Crypto provider for performing operations
-  private let cryptoProvider: CryptoProviderProtocol
-
-  /// Key store for key management
-  private let keyStore: KeyStoreProtocol
-
-  // MARK: - Initialisation
-
-  /**
-   Initialises a new crypto XPC service actor.
-
-   - Parameters:
-      - cryptoProvider: The provider for cryptographic operations
-      - keyStore: The storage for cryptographic keys
-      - logger: Logger for recording operations and errors
-   */
-  public init(
-    cryptoProvider: CryptoProviderProtocol,
-    keyStore: KeyStoreProtocol,
-    logger: LoggingProtocol
-  ) {
-    self.cryptoProvider=cryptoProvider
-    self.keyStore=keyStore
-    self.logger=logger
-    cryptoLogger=CryptoLogger(logger: logger)
-  }
-
-  // MARK: - Encryption Operations
-
-  /**
-   Encrypts data using the specified key.
-
-   - Parameters:
-      - data: The data to encrypt as SecureBytes
-      - keyIdentifier: The identifier of the key to use
-      - options: Optional configuration options
-
-   - Returns: Result with encrypted data as SecureBytes or error
-   */
-  public func encrypt(
-    data: SecureBytes,
-    keyIdentifier: String,
-    options: CryptoOperationOptionsDTO?=nil
-  ) async -> Result<SecureBytes, UmbraErrors.Crypto.Core> {
-    await cryptoLogger.logOperationStart(
-      operation: "encrypt",
-      additionalContext: LogMetadataDTOCollection()
-        .withPrivate(key: "keyIdentifier", value: keyIdentifier)
-        .withPrivate(key: "dataSize", value: String(data.bytes.count))
-    )
-
-    // Validate input
-    guard !keyIdentifier.isEmpty else {
-      let error=UmbraErrors.Crypto.Core.invalidInput("Empty key identifier")
-      await cryptoLogger.logOperationError(
-        operation: "encrypt",
-        error: error
-      )
-      return .failure(error)
-    }
-
-    // Retrieve key
-    let keyResult=await keyStore.retrieveKey(identifier: keyIdentifier)
-
-    switch keyResult {
-      case let .success(key):
-        let encryptResult=await cryptoProvider.encrypt(data: data, key: key, options: options)
-
-        switch encryptResult {
-          case let .success(encryptedData):
-            await cryptoLogger.logOperationSuccess(
-              operation: "encrypt",
-              additionalContext: LogMetadataDTOCollection()
-                .withPrivate(key: "resultSize", value: String(encryptedData.bytes.count))
-            )
-            return .success(encryptedData)
-
-          case let .failure(error):
-            await cryptoLogger.logOperationError(
-              operation: "encrypt",
-              error: error
-            )
-            return .failure(error)
-        }
-
-      case let .failure(error):
-        let cryptoError=UmbraErrors.Crypto.Core.keyError("Failed to retrieve key: \(error)")
-        await cryptoLogger.logOperationError(
-          operation: "encrypt",
-          error: cryptoError
-        )
-        return .failure(cryptoError)
-    }
-  }
-
-  /**
-   Decrypts data using the specified key.
-
-   - Parameters:
-      - encryptedData: The encrypted data as SecureBytes
-      - keyIdentifier: The identifier of the key to use
-      - options: Optional configuration options
-
-   - Returns: Result with decrypted data as SecureBytes or error
-   */
-  public func decrypt(
-    encryptedData: SecureBytes,
-    keyIdentifier: String,
-    options: CryptoOperationOptionsDTO?=nil
-  ) async -> Result<SecureBytes, UmbraErrors.Crypto.Core> {
-    await cryptoLogger.logOperationStart(
-      operation: "decrypt",
-      additionalContext: LogMetadataDTOCollection()
-        .withPrivate(key: "keyIdentifier", value: keyIdentifier)
-        .withPrivate(key: "dataSize", value: String(encryptedData.bytes.count))
-    )
-
-    // Validate input
-    guard !keyIdentifier.isEmpty else {
-      let error=UmbraErrors.Crypto.Core.invalidInput("Empty key identifier")
-      await cryptoLogger.logOperationError(
-        operation: "decrypt",
-        error: error
-      )
-      return .failure(error)
-    }
-
-    // Retrieve key
-    let keyResult=await keyStore.retrieveKey(identifier: keyIdentifier)
-
-    switch keyResult {
-      case let .success(key):
-        let decryptResult=await cryptoProvider.decrypt(
-          encryptedData: encryptedData,
-          key: key,
-          options: options
-        )
-
-        switch decryptResult {
-          case let .success(decryptedData):
-            await cryptoLogger.logOperationSuccess(
-              operation: "decrypt",
-              additionalContext: LogMetadataDTOCollection()
-                .withPrivate(key: "resultSize", value: String(decryptedData.bytes.count))
-            )
-            return .success(decryptedData)
-
-          case let .failure(error):
-            await cryptoLogger.logOperationError(
-              operation: "decrypt",
-              error: error
-            )
-            return .failure(error)
-        }
-
-      case let .failure(error):
-        let cryptoError=UmbraErrors.Crypto.Core.keyError("Failed to retrieve key: \(error)")
-        await cryptoLogger.logOperationError(
-          operation: "decrypt",
-          error: cryptoError
-        )
-        return .failure(cryptoError)
-    }
-  }
-
-  // MARK: - Key Management
-
-  /**
-   Generates a new cryptographic key.
-
-   - Parameters:
-      - options: Key generation options including strength and algorithm
-      - metadata: Optional metadata to associate with the key
-
-   - Returns: Result with key identifier or error
-   */
-  public func generateKey(
-    options: KeyGenerationOptionsDTO,
-    metadata: KeyMetadataDTO?=nil
-  ) async -> Result<String, UmbraErrors.Crypto.Core> {
-    await cryptoLogger.logOperationStart(
-      operation: "generateKey",
-      additionalContext: LogMetadataDTOCollection()
-        .withPrivate(key: "algorithm", value: options.algorithm.rawValue)
-        .withPrivate(key: "keySize", value: String(options.keySize))
-    )
-
-    // Generate key
-    let generateResult=await cryptoProvider.generateKey(options: options)
-
-    switch generateResult {
-      case let .success(key):
-        // Create metadata if not provided
-        let keyMetadata=metadata ?? KeyMetadataDTO(
-          algorithm: options.algorithm,
-          keySize: options.keySize,
-          creationDate: TimePointDTO.now(),
-          name: "Generated key",
-          description: "Automatically generated key",
-          tags: []
-        )
-
-        // Store key with metadata
-        let storeResult=await keyStore.storeKey(key: key, metadata: keyMetadata)
-
-        switch storeResult {
-          case let .success(identifier):
-            await cryptoLogger.logOperationSuccess(
-              operation: "generateKey",
-              additionalContext: LogMetadataDTOCollection()
-                .withPrivate(key: "identifier", value: identifier)
-            )
-            return .success(identifier)
-
-          case let .failure(error):
-            let cryptoError=UmbraErrors.Crypto.Core.keyError(
-              "Failed to store generated key: \(error)"
-            )
-            await cryptoLogger.logOperationError(
-              operation: "generateKey",
-              error: cryptoError
-            )
-            return .failure(cryptoError)
-        }
-
-      case let .failure(error):
-        await cryptoLogger.logOperationError(
-          operation: "generateKey",
-          error: error
-        )
-        return .failure(error)
-    }
-  }
-
-  /**
-   Exports a cryptographic key.
-
-   - Parameter keyIdentifier: The identifier of the key to export
-
-   - Returns: Result with the key material as SecureBytes or error
-   */
-  public func exportKey(
-    keyIdentifier: String
-  ) async -> Result<SecureBytes, UmbraErrors.Crypto.Core> {
-    await cryptoLogger.logOperationStart(
-      operation: "exportKey",
-      additionalContext: LogMetadataDTOCollection()
-        .withPrivate(key: "keyIdentifier", value: keyIdentifier)
-    )
-
-    // Validate input
-    guard !keyIdentifier.isEmpty else {
-      let error=UmbraErrors.Crypto.Core.invalidInput("Empty key identifier")
-      await cryptoLogger.logOperationError(
-        operation: "exportKey",
-        error: error
-      )
-      return .failure(error)
-    }
-
-    // Export key
-    let exportResult=await keyStore.exportKey(identifier: keyIdentifier)
-
-    switch exportResult {
-      case let .success(keyData):
-        await cryptoLogger.logOperationSuccess(
-          operation: "exportKey",
-          additionalContext: LogMetadataDTOCollection()
-            .withPrivate(key: "keyDataSize", value: String(keyData.bytes.count))
-        )
-        return .success(keyData)
-
-      case let .failure(error):
-        let cryptoError=UmbraErrors.Crypto.Core.keyError("Failed to export key: \(error)")
-        await cryptoLogger.logOperationError(
-          operation: "exportKey",
-          error: cryptoError
-        )
-        return .failure(cryptoError)
-    }
-  }
-
-  /**
-   Imports a cryptographic key.
-
-   - Parameters:
-      - keyData: The key material as SecureBytes
-      - metadata: Metadata for the imported key
-
-   - Returns: Result with key identifier or error
-   */
-  public func importKey(
-    keyData: SecureBytes,
-    metadata: KeyMetadataDTO
-  ) async -> Result<String, UmbraErrors.Crypto.Core> {
-    await cryptoLogger.logOperationStart(
-      operation: "importKey",
-      additionalContext: LogMetadataDTOCollection()
-        .withPrivate(key: "keyDataSize", value: String(keyData.bytes.count))
-        .withPrivate(key: "algorithm", value: metadata.algorithm.rawValue)
-    )
-
-    // Import key
-    let importResult=await cryptoProvider.validateKey(keyData: keyData, metadata: metadata)
-
-    switch importResult {
-      case let .success(key):
-        // Store key with metadata
-        let storeResult=await keyStore.storeKey(key: key, metadata: metadata)
-
-        switch storeResult {
-          case let .success(identifier):
-            await cryptoLogger.logOperationSuccess(
-              operation: "importKey",
-              additionalContext: LogMetadataDTOCollection()
-                .withPrivate(key: "identifier", value: identifier)
-            )
-            return .success(identifier)
-
-          case let .failure(error):
-            let cryptoError=UmbraErrors.Crypto.Core.keyError(
-              "Failed to store imported key: \(error)"
-            )
-            await cryptoLogger.logOperationError(
-              operation: "importKey",
-              error: cryptoError
-            )
-            return .failure(cryptoError)
-        }
-
-      case let .failure(error):
-        await cryptoLogger.logOperationError(
-          operation: "importKey",
-          error: error
-        )
-        return .failure(error)
-    }
-  }
-
-  /**
-   Deletes a cryptographic key.
-
-   - Parameter keyIdentifier: The identifier of the key to delete
-
-   - Returns: Result with success flag or error
-   */
-  public func deleteKey(
-    keyIdentifier: String
-  ) async -> Result<Bool, UmbraErrors.Crypto.Core> {
-    await cryptoLogger.logOperationStart(
-      operation: "deleteKey",
-      additionalContext: LogMetadataDTOCollection()
-        .withPrivate(key: "keyIdentifier", value: keyIdentifier)
-    )
-
-    // Validate input
-    guard !keyIdentifier.isEmpty else {
-      let error=UmbraErrors.Crypto.Core.invalidInput("Empty key identifier")
-      await cryptoLogger.logOperationError(
-        operation: "deleteKey",
-        error: error
-      )
-      return .failure(error)
-    }
-
-    // Delete key
-    let deleteResult=await keyStore.deleteKey(identifier: keyIdentifier)
-
-    switch deleteResult {
-      case .success:
-        await cryptoLogger.logOperationSuccess(
-          operation: "deleteKey",
-          additionalContext: LogMetadataDTOCollection()
-            .withPrivate(key: "keyIdentifier", value: keyIdentifier)
-        )
-        return .success(true)
-
-      case let .failure(error):
-        let cryptoError=UmbraErrors.Crypto.Core.keyError("Failed to delete key: \(error)")
-        await cryptoLogger.logOperationError(
-          operation: "deleteKey",
-          error: cryptoError
-        )
-        return .failure(cryptoError)
-    }
-  }
-
-  // MARK: - Signing and Verification
-
-  /**
-   Signs data using the specified key.
-
-   - Parameters:
-      - data: The data to sign
-      - keyIdentifier: The identifier of the signing key
-      - options: Optional signing options
-
-   - Returns: Result with signature as SecureBytes or error
-   */
-  public func sign(
-    data: SecureBytes,
-    keyIdentifier: String,
-    options: SigningOptionsDTO?=nil
-  ) async -> Result<SecureBytes, UmbraErrors.Crypto.Core> {
-    await cryptoLogger.logOperationStart(
-      operation: "sign",
-      additionalContext: LogMetadataDTOCollection()
-        .withPrivate(key: "keyIdentifier", value: keyIdentifier)
-        .withPrivate(key: "dataSize", value: String(data.bytes.count))
-    )
-
-    // Validate input
-    guard !keyIdentifier.isEmpty else {
-      let error=UmbraErrors.Crypto.Core.invalidInput("Empty key identifier")
-      await cryptoLogger.logOperationError(
-        operation: "sign",
-        error: error
-      )
-      return .failure(error)
-    }
-
-    // Retrieve key
-    let keyResult=await keyStore.retrieveKey(identifier: keyIdentifier)
-
-    switch keyResult {
-      case let .success(key):
-        let signResult=await cryptoProvider.sign(data: data, key: key, options: options)
-
-        switch signResult {
-          case let .success(signature):
-            await cryptoLogger.logOperationSuccess(
-              operation: "sign",
-              additionalContext: LogMetadataDTOCollection()
-                .withPrivate(key: "signatureSize", value: String(signature.bytes.count))
-            )
-            return .success(signature)
-
-          case let .failure(error):
-            await cryptoLogger.logOperationError(
-              operation: "sign",
-              error: error
-            )
-            return .failure(error)
-        }
-
-      case let .failure(error):
-        let cryptoError=UmbraErrors.Crypto.Core.keyError("Failed to retrieve key: \(error)")
-        await cryptoLogger.logOperationError(
-          operation: "sign",
-          error: cryptoError
-        )
-        return .failure(cryptoError)
-    }
-  }
-
-  /**
-   Verifies a signature against data using the specified key.
-
-   - Parameters:
-      - signature: The signature to verify
-      - data: The original data
-      - keyIdentifier: The identifier of the verification key
-      - options: Optional verification options
-
-   - Returns: Result with verification result or error
-   */
-  public func verify(
-    signature: SecureBytes,
-    data: SecureBytes,
-    keyIdentifier: String,
-    options: SigningOptionsDTO?=nil
-  ) async -> Result<Bool, UmbraErrors.Crypto.Core> {
-    await cryptoLogger.logOperationStart(
-      operation: "verify",
-      additionalContext: LogMetadataDTOCollection()
-        .withPrivate(key: "keyIdentifier", value: keyIdentifier)
-        .withPrivate(key: "dataSize", value: String(data.bytes.count))
-        .withPrivate(key: "signatureSize", value: String(signature.bytes.count))
-    )
-
-    // Validate input
-    guard !keyIdentifier.isEmpty else {
-      let error=UmbraErrors.Crypto.Core.invalidInput("Empty key identifier")
-      await cryptoLogger.logOperationError(
-        operation: "verify",
-        error: error
-      )
-      return .failure(error)
-    }
-
-    // Retrieve key
-    let keyResult=await keyStore.retrieveKey(identifier: keyIdentifier)
-
-    switch keyResult {
-      case let .success(key):
-        let verifyResult=await cryptoProvider.verify(
-          signature: signature,
-          data: data,
-          key: key,
-          options: options
-        )
-
-        switch verifyResult {
-          case let .success(isValid):
-            await cryptoLogger.logOperationSuccess(
-              operation: "verify",
-              additionalContext: LogMetadataDTOCollection()
-                .withPrivate(key: "isValid", value: String(isValid))
-            )
-            return .success(isValid)
-
-          case let .failure(error):
-            await cryptoLogger.logOperationError(
-              operation: "verify",
-              error: error
-            )
-            return .failure(error)
-        }
-
-      case let .failure(error):
-        let cryptoError=UmbraErrors.Crypto.Core.keyError("Failed to retrieve key: \(error)")
-        await cryptoLogger.logOperationError(
-          operation: "verify",
-          error: cryptoError
-        )
-        return .failure(cryptoError)
-    }
-  }
-
-  // MARK: - Utility Functions
-
-  /**
-   Generates secure random bytes.
-
-   - Parameter length: Number of random bytes to generate
-
-   - Returns: Result with random bytes as SecureBytes or error
-   */
-  public func generateRandomBytes(
-    length: Int
-  ) async -> Result<SecureBytes, UmbraErrors.Crypto.Core> {
-    await cryptoLogger.logOperationStart(
-      operation: "generateRandomBytes",
-      additionalContext: LogMetadataDTOCollection()
-        .withPublic(key: "length", value: String(length))
-    )
-
-    // Validate input
-    guard length > 0 else {
-      let error=UmbraErrors.Crypto.Core.invalidInput("Length must be greater than zero")
-      await cryptoLogger.logOperationError(
-        operation: "generateRandomBytes",
-        error: error
-      )
-      return .failure(error)
-    }
-
-    // Generate random bytes
-    let randomResult=await cryptoProvider.generateRandomBytes(length: length)
-
-    switch randomResult {
-      case let .success(randomBytes):
-        await cryptoLogger.logOperationSuccess(
-          operation: "generateRandomBytes",
-          additionalContext: LogMetadataDTOCollection()
-            .withPublic(key: "generated", value: String(randomBytes.bytes.count))
-        )
-        return .success(randomBytes)
-
-      case let .failure(error):
-        await cryptoLogger.logOperationError(
-          operation: "generateRandomBytes",
-          error: error
-        )
-        return .failure(error)
-    }
-  }
-
-  /**
-   Calculates a hash of the provided data.
-
-   - Parameters:
-      - data: The data to hash
-      - algorithm: The hashing algorithm to use
-
-   - Returns: Result with hash as SecureBytes or error
-   */
-  public func hash(
-    data: SecureBytes,
-    algorithm: HashAlgorithm
-  ) async -> Result<SecureBytes, UmbraErrors.Crypto.Core> {
-    await cryptoLogger.logOperationStart(
-      operation: "hash",
-      additionalContext: LogMetadataDTOCollection()
-        .withPrivate(key: "dataSize", value: String(data.bytes.count))
-        .withPublic(key: "algorithm", value: algorithm.rawValue)
-    )
-
-    // Calculate hash
-    let hashResult=await cryptoProvider.hash(data: data, algorithm: algorithm)
-
-    switch hashResult {
-      case let .success(hashValue):
-        await cryptoLogger.logOperationSuccess(
-          operation: "hash",
-          additionalContext: LogMetadataDTOCollection()
-            .withPublic(key: "hashSize", value: String(hashValue.bytes.count))
-        )
-        return .success(hashValue)
-
-      case let .failure(error):
-        await cryptoLogger.logOperationError(
-          operation: "hash",
-          error: error
-        )
-        return .failure(error)
-    }
+import UmbraErrorsDTOs
+import SecurityInterfacesTypes
+import CryptoTypes
+import CoreSecurityTypes
+
+/// Define a Crypto error domain for this service
+enum CryptoError {
+  static let domain = "Crypto"
+  
+  enum ErrorCode: Int {
+    case serviceUnavailable = 1000
+    case encryptionFailed = 1001
+    case decryptionFailed = 1002
+    case invalidParameters = 1003
+    case storageUnavailable = 1004
+    case storageFailed = 1005
+    case randomGenerationFailed = 1006
+    case hashingFailed = 1007
+    case notImplemented = 1008
   }
 }
 
-/**
- # CryptoLogger
-
- Domain-specific logger for cryptographic operations.
-
- This logger provides standardised logging for all cryptographic operations
- with proper privacy controls and context handling.
- */
-private struct CryptoLogger {
-  private let logger: LoggingProtocol
-
-  init(logger: LoggingProtocol) {
-    self.logger=logger
+/// An actor that provides cryptographic services through XPC
+public actor CryptoXPCServiceActor {
+  // MARK: - Private properties
+  
+  /// Security provider for cryptographic operations
+  private let cryptoProvider: (any SecurityProviderProtocol)?
+  
+  /// Secure storage for persisting cryptographic materials
+  private let secureStorage: (any SecureStorageProtocol)?
+  
+  /// Logger for the service
+  private let logger: any LoggingProtocol
+  
+  /// The crypto service instance
+  private var cryptoService: (any CryptoServiceProtocol)? = nil
+  
+  /// The service monitor for tracking operation
+  private let monitor: CryptoServiceMonitor
+  
+  // MARK: - Initialisation
+  
+  /// Creates a new CryptoXPCService actor
+  /// - Parameters:
+  ///   - cryptoProvider: The provider for cryptographic services
+  ///   - secureStorage: The secure storage implementation
+  ///   - logger: The logger to use
+  public init(
+    cryptoProvider: (any SecurityProviderProtocol)?,
+    secureStorage: (any SecureStorageProtocol)?,
+    logger: any LoggingProtocol
+  ) {
+    self.cryptoProvider = cryptoProvider
+    self.secureStorage = secureStorage
+    self.logger = logger
+    self.monitor = CryptoServiceMonitor()
   }
-
-  func logOperationStart(
-    operation: String,
-    additionalContext: LogMetadataDTOCollection?=nil
-  ) async {
-    await logger.log(
-      level: .debug,
-      message: "Starting crypto operation: \(operation)",
-      metadata: additionalContext
-    )
+  
+  // MARK: - Private methods
+  
+  /// Gets a crypto service instance, creating one if needed
+  /// - Returns: A crypto service or nil if unavailable
+  private func getCryptoService() async -> (any CryptoServiceProtocol)? {
+    // Return existing service if available
+    if let cryptoService = self.cryptoService {
+      return cryptoService
+    }
+    
+    // Create a new service if we can
+    guard let provider = cryptoProvider else {
+      await logger.error(
+        "Failed to get crypto service: No provider available",
+        metadata: PrivacyMetadata(),
+        source: "CryptoXPCServiceActor.getCryptoService")
+      return nil
+    }
+    
+    // Get the service from the provider
+    let service = await provider.cryptoService()
+    self.cryptoService = service
+    return service
   }
-
-  func logOperationSuccess(
-    operation: String,
-    additionalContext: LogMetadataDTOCollection?=nil
-  ) async {
-    await logger.log(
-      level: .debug,
-      message: "Successfully completed crypto operation: \(operation)",
-      metadata: additionalContext
+  
+  // MARK: - Public API
+  
+  /// Encrypts data with the given options
+  /// - Parameters:
+  ///   - dataId: Identifier for the data to encrypt
+  ///   - keyId: Identifier for the encryption key
+  ///   - options: Options for the encryption operation
+  /// - Returns: A result with the encrypted data ID or an error
+  public func encrypt(
+    dataId: String,
+    keyId: String,
+    options: CryptoOperationOptionsDTO?
+  ) async -> Result<String, UmbraErrorsDTOs.ErrorDTO> {
+    await logger.trace(
+      "Starting encrypt operation",
+      metadata: PrivacyMetadata(),
+      source: "CryptoXPCServiceActor.encrypt")
+    
+    guard let cryptoService = await getCryptoService() else {
+      let error = UmbraErrorsDTOs.ErrorDTO(
+        identifier: "crypto.service.unavailable",
+        domain: CryptoError.domain,
+        description: "Crypto service unavailable",
+        code: CryptoError.ErrorCode.serviceUnavailable.rawValue,
+        contextData: ["operation": "encrypt"]
+      )
+      await logger.error(
+        "Crypto service unavailable",
+        metadata: PrivacyMetadata(),
+        source: "CryptoXPCServiceActor.encrypt")
+      return .failure(error)
+    }
+    
+    // Create the encryption options
+    let encryptionOptions = EncryptionOptions(
+      algorithm: .aes256GCM,
+      authenticatedData: nil
     )
+    
+    // Perform the encryption
+    let encryptResult = await cryptoService.encrypt(
+      dataIdentifier: dataId,
+      keyIdentifier: keyId,
+      options: encryptionOptions)
+    
+    // Handle the result
+    switch encryptResult {
+      case .success(let encryptedDataId):
+        await logger.debug(
+          "Encryption successful",
+          metadata: PrivacyMetadata(),
+          source: "CryptoXPCServiceActor.encrypt")
+        return .success(encryptedDataId)
+        
+      case .failure(let error):
+        let cryptoError = UmbraErrorsDTOs.ErrorDTO(
+          identifier: "crypto.encryption.failed",
+          domain: CryptoError.domain,
+          description: "Failed to encrypt the data",
+          code: CryptoError.ErrorCode.encryptionFailed.rawValue,
+          contextData: ["underlyingError": String(describing: error)]
+        )
+        await logger.error(
+          "Encryption failed", 
+          metadata: PrivacyMetadata(),
+          source: "CryptoXPCServiceActor.encrypt")
+        return .failure(cryptoError)
+    }
   }
-
-  func logOperationError(
-    operation: String,
-    error: Error,
-    additionalContext: LogMetadataDTOCollection?=nil
-  ) async {
-    var context=additionalContext ?? LogMetadataDTOCollection()
-    context=context.withPrivate(key: "error", value: "\(error)")
-
-    await logger.log(
-      level: .error,
-      message: "Failed crypto operation: \(operation)",
-      metadata: context
+  
+  /// Decrypts data with the given options
+  /// - Parameters:
+  ///   - dataId: Identifier for the data to decrypt
+  ///   - keyId: Identifier for the decryption key
+  ///   - options: Options for the decryption operation
+  /// - Returns: A result with the decrypted data ID or an error
+  public func decrypt(
+    dataId: String,
+    keyId: String,
+    options: CryptoOperationOptionsDTO?
+  ) async -> Result<String, UmbraErrorsDTOs.ErrorDTO> {
+    await logger.trace(
+      "Starting decrypt operation",
+      metadata: PrivacyMetadata(),
+      source: "CryptoXPCServiceActor.decrypt")
+    
+    guard let cryptoService = await getCryptoService() else {
+      let error = UmbraErrorsDTOs.ErrorDTO(
+        identifier: "crypto.service.unavailable",
+        domain: CryptoError.domain,
+        description: "The cryptographic service is not available",
+        code: CryptoError.ErrorCode.serviceUnavailable.rawValue,
+        contextData: ["operation": "decrypt"]
+      )
+      await logger.error(
+        "Crypto service unavailable",
+        metadata: PrivacyMetadata(),
+        source: "CryptoXPCServiceActor.decrypt")
+      return .failure(error)
+    }
+    
+    // Create the decryption options
+    let decryptionOptions = DecryptionOptions(
+      algorithm: .aes256GCM,
+      authenticatedData: nil
     )
+    
+    // Perform the decryption
+    let decryptResult = await cryptoService.decrypt(
+      encryptedDataIdentifier: dataId,
+      keyIdentifier: keyId,
+      options: decryptionOptions)
+    
+    // Handle the result
+    switch decryptResult {
+      case .success(let decryptedDataId):
+        await logger.debug(
+          "Decryption successful",
+          metadata: PrivacyMetadata(),
+          source: "CryptoXPCServiceActor.decrypt")
+        return .success(decryptedDataId)
+        
+      case .failure(let error):
+        let cryptoError = UmbraErrorsDTOs.ErrorDTO(
+          identifier: "crypto.decryption.failed",
+          domain: CryptoError.domain,
+          description: "Failed to decrypt the data",
+          code: CryptoError.ErrorCode.decryptionFailed.rawValue,
+          contextData: ["underlyingError": String(describing: error)]
+        )
+        await logger.error(
+          "Decryption failed", 
+          metadata: PrivacyMetadata(),
+          source: "CryptoXPCServiceActor.decrypt")
+        return .failure(cryptoError)
+    }
+  }
+  
+  /// Generates random bytes with the given length
+  /// - Parameters:
+  ///   - length: The number of random bytes to generate
+  ///   - options: Options for the randomization operation
+  /// - Returns: A result with the ID for the random data or an error
+  public func generateRandomBytes(
+    length: Int,
+    options: RandomizationOptionsDTO?
+  ) async -> Result<String, UmbraErrorsDTOs.ErrorDTO> {
+    await logger.trace(
+      "Starting generateRandomBytes operation",
+      metadata: PrivacyMetadata(),
+      source: "CryptoXPCServiceActor.generateRandomBytes")
+    
+    // Validate input
+    if length <= 0 {
+      let error = UmbraErrorsDTOs.ErrorDTO(
+        identifier: "crypto.random.invalid_length",
+        domain: CryptoError.domain,
+        description: "Length must be greater than zero",
+        code: CryptoError.ErrorCode.invalidParameters.rawValue,
+        contextData: ["length": String(length)]
+      )
+      await logger.error(
+        "Invalid length for random bytes", 
+        metadata: PrivacyMetadata(),
+        source: "CryptoXPCServiceActor.generateRandomBytes")
+      return .failure(error)
+    }
+    
+    // Generate random bytes
+    var randomBuffer = [UInt8](repeating: 0, count: length)
+    let status = SecRandomCopyBytes(kSecRandomDefault, length, &randomBuffer)
+    
+    if status == 0 {
+      // Successfully generated random bytes
+      guard let cryptoService = await getCryptoService() else {
+        let error = UmbraErrorsDTOs.ErrorDTO(
+          identifier: "crypto.service.unavailable",
+          domain: CryptoError.domain,
+          description: "Crypto service unavailable",
+          code: CryptoError.ErrorCode.serviceUnavailable.rawValue,
+          contextData: ["operation": "generateRandomBytes"]
+        )
+        await logger.error(
+          "Crypto service unavailable for storing random data", 
+          metadata: PrivacyMetadata(),
+          source: "CryptoXPCServiceActor.generateRandomBytes")
+        return .failure(error)
+      }
+      
+      // Store the random bytes using the crypto service
+      let importResult = await cryptoService.importData(randomBuffer, customIdentifier: nil)
+      
+      // Process the result
+      switch importResult {
+        case .success(let dataId):
+          await logger.debug(
+            "Random data generation successful",
+            metadata: PrivacyMetadata(),
+            source: "CryptoXPCServiceActor.generateRandomBytes")
+          return .success(dataId)
+          
+        case .failure(let error):
+          let cryptoError = UmbraErrorsDTOs.ErrorDTO(
+            identifier: "crypto.random.storage_failed",
+            domain: CryptoError.domain,
+            description: "The random data was generated but could not be stored",
+            code: CryptoError.ErrorCode.storageFailed.rawValue,
+            contextData: ["underlyingError": String(describing: error)]
+          )
+          await logger.error(
+            "Failed to store random data", 
+            metadata: PrivacyMetadata(),
+            source: "CryptoXPCServiceActor.generateRandomBytes")
+          return .failure(cryptoError)
+      }
+    } else {
+      let cryptoError = UmbraErrorsDTOs.ErrorDTO(
+        identifier: "crypto.random.generation_failed",
+        domain: CryptoError.domain,
+        description: "The system crypto service failed to generate random bytes",
+        code: CryptoError.ErrorCode.randomGenerationFailed.rawValue,
+        contextData: ["status": String(status)]
+      )
+      await logger.error(
+        "Random data generation failed", 
+        metadata: PrivacyMetadata(),
+        source: "CryptoXPCServiceActor.generateRandomBytes")
+      return .failure(cryptoError)
+    }
+  }
+  
+  /// Computes a hash of the given data
+  /// - Parameters:
+  ///   - dataId: Identifier for the data to hash
+  ///   - algorithm: The hash algorithm to use
+  ///   - options: Options for the hash operation
+  /// - Returns: A result with the ID for the hash result or an error
+  public func hash(
+    dataIdentifier: String,
+    algorithm: CoreSecurityTypes.HashAlgorithm,
+    options: CryptoOperationOptionsDTO?
+  ) async -> Result<String, UmbraErrorsDTOs.ErrorDTO> {
+    await logger.trace(
+      "Starting hash operation",
+      metadata: PrivacyMetadata(),
+      source: "CryptoXPCServiceActor.hash")
+    
+    guard let cryptoService = await getCryptoService() else {
+      let error = UmbraErrorsDTOs.ErrorDTO(
+        identifier: "crypto.service.unavailable",
+        domain: CryptoError.domain,
+        description: "The cryptographic service is not available",
+        code: CryptoError.ErrorCode.serviceUnavailable.rawValue,
+        contextData: ["operation": "hash"]
+      )
+      await logger.error(
+        "Crypto service unavailable",
+        metadata: PrivacyMetadata(),
+        source: "CryptoXPCServiceActor.hash")
+      return .failure(error)
+    }
+    
+    // Create the options object
+    let hashingOptions = HashingOptions(algorithm: algorithm)
+    
+    // Perform the hash operation
+    let hashResult = await cryptoService.hash(
+      dataIdentifier: dataIdentifier,
+      options: hashingOptions)
+    
+    // Handle the result
+    switch hashResult {
+      case .success(let resultId):
+        await logger.debug(
+          "Hash operation successful",
+          metadata: PrivacyMetadata(),
+          source: "CryptoXPCServiceActor.hash")
+        return .success(resultId)
+        
+      case .failure(let error):
+        let cryptoError = UmbraErrorsDTOs.ErrorDTO(
+          identifier: "crypto.hash.failed",
+          domain: CryptoError.domain,
+          description: "Failed to hash the data",
+          code: CryptoError.ErrorCode.hashingFailed.rawValue,
+          contextData: ["underlyingError": String(describing: error)]
+        )
+        await logger.error(
+          "Hash operation failed", 
+          metadata: PrivacyMetadata(),
+          source: "CryptoXPCServiceActor.hash")
+        return .failure(cryptoError)
+    }
+  }
+  
+  /// Signs data with a given key
+  /// - Parameters:
+  ///   - dataId: The data to sign
+  ///   - keyId: The key to use for signing
+  ///   - metadata: Additional metadata for the signing operation
+  /// - Returns: A result with the signature or an error
+  public func sign(
+    dataId: String,
+    keyId: String,
+    metadata: Any?
+  ) async -> Result<String, UmbraErrorsDTOs.ErrorDTO> {
+    let error = UmbraErrorsDTOs.ErrorDTO(
+      identifier: "crypto.operation.not_implemented",
+      domain: CryptoError.domain,
+      description: "This functionality is not yet implemented",
+      code: CryptoError.ErrorCode.notImplemented.rawValue,
+      contextData: ["operation": "sign"]
+    )
+    return .failure(error)
+  }
+  
+  /// Verifies a signature against data
+  /// - Parameters:
+  ///   - signatureId: The signature to verify
+  ///   - dataId: The data to verify against
+  ///   - keyId: The key to use for verification
+  ///   - metadata: Additional metadata for the verification operation
+  /// - Returns: A result with a verification token or an error
+  public func verify(
+    signatureId: String,
+    dataId: String,
+    keyId: String,
+    metadata: Any
+  ) async -> Result<String, UmbraErrorsDTOs.ErrorDTO> {
+    let error = UmbraErrorsDTOs.ErrorDTO(
+      identifier: "crypto.operation.not_implemented",
+      domain: CryptoError.domain,
+      description: "This functionality is not yet implemented",
+      code: CryptoError.ErrorCode.notImplemented.rawValue,
+      contextData: ["operation": "verify"]
+    )
+    return .failure(error)
   }
 }

@@ -2,6 +2,8 @@ import CoreDTOs
 import DomainSecurityTypes
 import Foundation
 import UmbraErrors
+import UmbraErrorsDomains
+import SecurityInterfacesDTOs
 
 /**
  # SecurityBookmarkProtocol

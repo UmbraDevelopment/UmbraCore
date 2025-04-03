@@ -2,19 +2,22 @@ load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 swift_library(
     name = "CryptoXPCServices",
-    srcs = glob([
-        "**/*.swift",
-    ]),
     module_name = "CryptoXPCServices",
+    srcs = glob(["**/*.swift"]),
     visibility = ["//visibility:public"],
     deps = [
-        "//packages/UmbraCoreTypes/Sources/CoreSecurityTypes",
-        "//packages/UmbraCoreTypes/Sources/CryptoTypes",
-        "//packages/UmbraCoreTypes/Sources/DomainSecurityTypes",
-        "//packages/UmbraCoreTypes/Sources/UmbraErrors",
-        "//packages/UmbraInterfaces/Sources/CryptoInterfaces",
-        "//packages/UmbraInterfaces/Sources/LoggingInterfaces",
-        "//packages/UmbraInterfaces/Sources/SecurityCoreInterfaces",
-        "//packages/UmbraInterfaces/Sources/XPCProtocolsCore",
+        "//packages/UmbraCoreTypes/Sources/CoreSecurityTypes:CoreSecurityTypes",
+        "//packages/UmbraInterfaces/Sources/CryptoInterfaces:CryptoInterfaces",
+        "//packages/UmbraCoreTypes/Sources/CryptoTypes:CryptoTypes",
+        "//packages/UmbraInterfaces/Sources/LoggingInterfaces:LoggingInterfaces",
+        "//packages/UmbraCoreTypes/Sources/LoggingTypes:LoggingTypes",
+        "//packages/UmbraCoreTypes/Sources/SecurityInterfaces:SecurityInterfaces",
+        "//packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols:SecurityInterfacesProtocols",
+        "//packages/UmbraCoreTypes/Sources/SecurityInterfaces/DTOs:SecurityInterfacesDTOs",
+        "//packages/UmbraCoreTypes/Sources/SecurityInterfaces/Types:SecurityInterfacesTypes",
+        "//packages/UmbraInterfaces/Sources/SecurityCoreInterfaces:SecurityCoreInterfaces",
+        "//packages/UmbraCoreTypes/Sources/UmbraErrors:UmbraErrors",
+        "//packages/UmbraCoreTypes/Sources/UmbraErrors/Domains:UmbraErrorsDomains",
+        "//packages/UmbraCoreTypes/Sources/UmbraErrors/DTOs:UmbraErrorsDTOs",
     ],
 )

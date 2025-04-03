@@ -1,6 +1,8 @@
 import DomainSecurityTypes
 import Foundation
 import UmbraErrors
+import UmbraErrorsDomains
+import UmbraErrorsDTOs
 
 /// Adapter for SecurityProviderProtocol implementations
 ///
@@ -17,7 +19,7 @@ public final class SecurityProviderAdapter {
     self.provider=provider
   }
 
-  /// Encrypt data using the provider's encryption mechanism
+  /// Encrypts data with the specified key
   /// - Parameters:
   ///   - data: Data to encrypt
   ///   - key: Encryption key
@@ -31,16 +33,16 @@ public final class SecurityProviderAdapter {
       return .success(encryptedData)
     } catch {
       let errorDTO=SecurityErrorDTO(
-        domain: "Security.Adapter",
-        code: 1001,
+        type: .encryption,
         description: "Encryption failed: \(error.localizedDescription)",
-        info: ["originalError": error.localizedDescription]
+        context: ["operation": "encrypt"],
+        underlyingError: error
       )
       return .failure(errorDTO)
     }
   }
 
-  /// Decrypt data using the provider's decryption mechanism
+  /// Decrypts data with the specified key
   /// - Parameters:
   ///   - data: Data to decrypt
   ///   - key: Decryption key
@@ -54,16 +56,16 @@ public final class SecurityProviderAdapter {
       return .success(decryptedData)
     } catch {
       let errorDTO=SecurityErrorDTO(
-        domain: "Security.Adapter",
-        code: 1002,
+        type: .decryption,
         description: "Decryption failed: \(error.localizedDescription)",
-        info: ["originalError": error.localizedDescription]
+        context: ["operation": "decrypt"],
+        underlyingError: error
       )
       return .failure(errorDTO)
     }
   }
 
-  /// Generate a cryptographically secure random key
+  /// Generates a cryptographic key of the specified length
   /// - Parameter length: Length of the key in bytes
   /// - Returns: Result containing either generated key or an error
   public func generateKey(length: Int) async -> Result<SecureBytes, SecurityErrorDTO> {
@@ -72,16 +74,16 @@ public final class SecurityProviderAdapter {
       return .success(key)
     } catch {
       let errorDTO=SecurityErrorDTO(
-        domain: "Security.Adapter",
-        code: 1003,
+        type: .keyManagement,
         description: "Key generation failed: \(error.localizedDescription)",
-        info: ["originalError": error.localizedDescription]
+        context: ["operation": "generateKey", "length": "\(length)"],
+        underlyingError: error
       )
       return .failure(errorDTO)
     }
   }
 
-  /// Hash data using the provider's hashing mechanism
+  /// Hashes the provided data
   /// - Parameter data: Data to hash
   /// - Returns: Result containing either hashed data or an error
   public func hash(_ data: SecureBytes) async -> Result<SecureBytes, SecurityErrorDTO> {
@@ -90,10 +92,10 @@ public final class SecurityProviderAdapter {
       return .success(hashedData)
     } catch {
       let errorDTO=SecurityErrorDTO(
-        domain: "Security.Adapter",
-        code: 1004,
+        type: .encryption,
         description: "Hashing failed: \(error.localizedDescription)",
-        info: ["originalError": error.localizedDescription]
+        context: ["operation": "hash"],
+        underlyingError: error
       )
       return .failure(errorDTO)
     }
