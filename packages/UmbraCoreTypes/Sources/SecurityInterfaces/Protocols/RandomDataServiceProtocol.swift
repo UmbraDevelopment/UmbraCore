@@ -1,4 +1,5 @@
 import Foundation
+import SecurityInterfacesDTOs
 
 /// Protocol defining the interface for secure random data generation services.
 ///
@@ -8,7 +9,7 @@ public protocol RandomDataServiceProtocol: Sendable {
   /// Initialises the random data service with the specified configuration
   /// - Parameter configuration: Configuration options for random data generation
   /// - Throws: SecurityError if initialisation fails
-  func initialise(configuration: RandomizationOptionsDTO) async throws
+  func initialise(configuration: SecurityInterfacesDTOs.RandomizationOptionsDTO) async throws
 
   /// Generates a random double value between 0.0 and 1.0
   /// - Returns: A random double value

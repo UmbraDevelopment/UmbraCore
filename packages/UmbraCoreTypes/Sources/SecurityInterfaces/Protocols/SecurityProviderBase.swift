@@ -1,6 +1,10 @@
 import DomainSecurityTypes
 import Foundation
 import UmbraErrors
+import UmbraErrorsDomains
+import UmbraErrorsDTOs
+import SecurityInterfacesDTOs
+import SecurityCoreInterfaces
 
 /// Base protocol for security providers
 /// This protocol is designed to be Foundation-free and serve as a base for more specific security

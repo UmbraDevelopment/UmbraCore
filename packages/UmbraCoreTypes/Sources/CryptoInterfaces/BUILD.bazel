@@ -1,0 +1,23 @@
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
+
+# CryptoInterfaces module for the Alpha Dot Five architecture
+# This module provides cryptographic interfaces and protocols for the UmbraCore framework.
+umbra_swift_library(
+    name = "CryptoInterfaces",
+    srcs = glob(
+        [
+            "*.swift",
+            "**/*.swift",
+        ],
+        allow_empty = True,
+    ),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//packages/UmbraCoreTypes/Sources/UmbraErrors",
+        "//packages/UmbraCoreTypes/Sources/UmbraErrors/DTOs:UmbraErrorsDTOs",
+        "//packages/UmbraCoreTypes/Sources/CryptoTypes",
+        "//packages/UmbraCoreTypes/Sources/DomainSecurityTypes",
+        "//packages/UmbraCoreTypes/Sources/CoreSecurityTypes",
+        "//packages/UmbraCoreTypes/Sources/CoreDTOs",
+    ],
+)

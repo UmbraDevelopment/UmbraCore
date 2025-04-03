@@ -1,0 +1,1709 @@
+{
+  "summary": {
+    "total_missing_type_occurrences": 96,
+    "unique_missing_types": 14,
+    "affected_files": 7,
+    "affected_modules": 1
+  },
+  "by_type": {
+    "RandomizationOptionsDTO": [
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/RandomDataServiceProtocol.swift",
+        "line_number": 11,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/RandomDataServiceProtocol.swift:11:34: error: cannot find type 'RandomizationOptionsDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/RandomDataServiceProtocol.swift",
+        "line_number": 11,
+        "error_message": "|                                  `- error: cannot find type 'RandomizationOptionsDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/RandomDataServiceProtocol.swift",
+        "line_number": 11,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/RandomDataServiceProtocol.swift:11:34: error: cannot find type 'RandomizationOptionsDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/RandomDataServiceProtocol.swift",
+        "line_number": 11,
+        "error_message": "|                                  `- error: cannot find type 'RandomizationOptionsDTO' in scope"
+      }
+    ],
+    "BookmarkValidationResultDTO": [
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityBookmarkProtocol.swift",
+        "line_number": 82,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityBookmarkProtocol.swift:82:21: error: cannot find type 'BookmarkValidationResultDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityBookmarkProtocol.swift",
+        "line_number": 82,
+        "error_message": "|                     `- error: cannot find type 'BookmarkValidationResultDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityBookmarkProtocol.swift",
+        "line_number": 82,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityBookmarkProtocol.swift:82:21: error: cannot find type 'BookmarkValidationResultDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityBookmarkProtocol.swift",
+        "line_number": 82,
+        "error_message": "|                     `- error: cannot find type 'BookmarkValidationResultDTO' in scope"
+      }
+    ],
+    "SecurityErrorDTO": [
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift",
+        "line_number": 15,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift:15:44: error: cannot find type 'SecurityErrorDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift",
+        "line_number": 15,
+        "error_message": "|                                            `- error: cannot find type 'SecurityErrorDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift",
+        "line_number": 30,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift:30:51: error: cannot find type 'SecurityErrorDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift",
+        "line_number": 30,
+        "error_message": "|                                                   `- error: cannot find type 'SecurityErrorDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift",
+        "line_number": 54,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift:54:51: error: cannot find type 'SecurityErrorDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift",
+        "line_number": 54,
+        "error_message": "|                                                   `- error: cannot find type 'SecurityErrorDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift",
+        "line_number": 15,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift:15:44: error: cannot find type 'SecurityErrorDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift",
+        "line_number": 15,
+        "error_message": "|                                            `- error: cannot find type 'SecurityErrorDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift",
+        "line_number": 30,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift:30:51: error: cannot find type 'SecurityErrorDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift",
+        "line_number": 30,
+        "error_message": "|                                                   `- error: cannot find type 'SecurityErrorDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift",
+        "line_number": 54,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift:54:51: error: cannot find type 'SecurityErrorDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift",
+        "line_number": 54,
+        "error_message": "|                                                   `- error: cannot find type 'SecurityErrorDTO' in scope"
+      }
+    ],
+    "SecurityProviderProtocol": [
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift",
+        "line_number": 42,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift:42:29: error: cannot find type 'SecurityProviderProtocol' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift",
+        "line_number": 42,
+        "error_message": "|                             `- error: cannot find type 'SecurityProviderProtocol' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift",
+        "line_number": 46,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift:46:29: error: cannot find type 'SecurityProviderProtocol' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift",
+        "line_number": 46,
+        "error_message": "|                             `- error: cannot find type 'SecurityProviderProtocol' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift",
+        "line_number": 42,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift:42:29: error: cannot find type 'SecurityProviderProtocol' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift",
+        "line_number": 42,
+        "error_message": "|                             `- error: cannot find type 'SecurityProviderProtocol' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift",
+        "line_number": 46,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift:46:29: error: cannot find type 'SecurityProviderProtocol' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift",
+        "line_number": 46,
+        "error_message": "|                             `- error: cannot find type 'SecurityProviderProtocol' in scope"
+      }
+    ],
+    "SecurityConfigurationDTO": [
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+        "line_number": 13,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift:13:34: error: cannot find type 'SecurityConfigurationDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+        "line_number": 13,
+        "error_message": "|                                  `- error: cannot find type 'SecurityConfigurationDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+        "line_number": 13,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift:13:34: error: cannot find type 'SecurityConfigurationDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+        "line_number": 13,
+        "error_message": "|                                  `- error: cannot find type 'SecurityConfigurationDTO' in scope"
+      }
+    ],
+    "SecurityContextDTO": [
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+        "line_number": 21,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift:21:53: error: cannot find type 'SecurityContextDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+        "line_number": 21,
+        "error_message": "|                                                     `- error: cannot find type 'SecurityContextDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+        "line_number": 31,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift:31:22: error: cannot find type 'SecurityContextDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+        "line_number": 31,
+        "error_message": "|                      `- error: cannot find type 'SecurityContextDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+        "line_number": 57,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift:57:14: error: cannot find type 'SecurityContextDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+        "line_number": 57,
+        "error_message": "|              `- error: cannot find type 'SecurityContextDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+        "line_number": 21,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift:21:53: error: cannot find type 'SecurityContextDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+        "line_number": 21,
+        "error_message": "|                                                     `- error: cannot find type 'SecurityContextDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+        "line_number": 31,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift:31:22: error: cannot find type 'SecurityContextDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+        "line_number": 31,
+        "error_message": "|                      `- error: cannot find type 'SecurityContextDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+        "line_number": 57,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift:57:14: error: cannot find type 'SecurityContextDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+        "line_number": 57,
+        "error_message": "|              `- error: cannot find type 'SecurityContextDTO' in scope"
+      }
+    ],
+    "SecurityVersionDTO": [
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+        "line_number": 62,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift:62:30: error: cannot find type 'SecurityVersionDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+        "line_number": 62,
+        "error_message": "|                              `- error: cannot find type 'SecurityVersionDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+        "line_number": 62,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift:62:30: error: cannot find type 'SecurityVersionDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+        "line_number": 62,
+        "error_message": "|                              `- error: cannot find type 'SecurityVersionDTO' in scope"
+      }
+    ],
+    "SecurityEventDTO": [
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+        "line_number": 67,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift:67:73: error: cannot find type 'SecurityEventDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+        "line_number": 67,
+        "error_message": "|                                                                         `- error: cannot find type 'SecurityEventDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+        "line_number": 67,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift:67:73: error: cannot find type 'SecurityEventDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+        "line_number": 67,
+        "error_message": "|                                                                         `- error: cannot find type 'SecurityEventDTO' in scope"
+      }
+    ],
+    "SecurityEventFilterDTO": [
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+        "line_number": 67,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift:67:34: error: cannot find type 'SecurityEventFilterDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+        "line_number": 67,
+        "error_message": "|                                  `- error: cannot find type 'SecurityEventFilterDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+        "line_number": 67,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift:67:34: error: cannot find type 'SecurityEventFilterDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+        "line_number": 67,
+        "error_message": "|                                  `- error: cannot find type 'SecurityEventFilterDTO' in scope"
+      }
+    ],
+    "CryptoServiceMonitorProtocol": [
+      {
+        "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoServiceMonitor.swift",
+        "line_number": 22,
+        "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoServiceMonitor.swift:22:36: error: cannot find type 'CryptoServiceMonitorProtocol' in scope"
+      },
+      {
+        "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoServiceMonitor.swift",
+        "line_number": 22,
+        "error_message": "|                                    `- error: cannot find type 'CryptoServiceMonitorProtocol' in scope"
+      },
+      {
+        "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoServiceMonitor.swift",
+        "line_number": 22,
+        "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoServiceMonitor.swift:22:36: error: cannot find type 'CryptoServiceMonitorProtocol' in scope"
+      },
+      {
+        "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoServiceMonitor.swift",
+        "line_number": 22,
+        "error_message": "|                                    `- error: cannot find type 'CryptoServiceMonitorProtocol' in scope"
+      }
+    ],
+    "CryptoProviderProtocol": [
+      {
+        "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+        "line_number": 36,
+        "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift:36:31: error: cannot find type 'CryptoProviderProtocol' in scope"
+      },
+      {
+        "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+        "line_number": 36,
+        "error_message": "|                               `- error: cannot find type 'CryptoProviderProtocol' in scope"
+      },
+      {
+        "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+        "line_number": 52,
+        "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift:52:21: error: cannot find type 'CryptoProviderProtocol' in scope"
+      },
+      {
+        "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+        "line_number": 52,
+        "error_message": "|                     `- error: cannot find type 'CryptoProviderProtocol' in scope"
+      },
+      {
+        "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceFactory.swift",
+        "line_number": 55,
+        "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceFactory.swift:55:21: error: cannot find type 'CryptoProviderProtocol' in scope"
+      },
+      {
+        "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceFactory.swift",
+        "line_number": 55,
+        "error_message": "|                     `- error: cannot find type 'CryptoProviderProtocol' in scope"
+      },
+      {
+        "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+        "line_number": 36,
+        "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift:36:31: error: cannot find type 'CryptoProviderProtocol' in scope"
+      },
+      {
+        "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+        "line_number": 36,
+        "error_message": "|                               `- error: cannot find type 'CryptoProviderProtocol' in scope"
+      },
+      {
+        "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+        "line_number": 52,
+        "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift:52:21: error: cannot find type 'CryptoProviderProtocol' in scope"
+      },
+      {
+        "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+        "line_number": 52,
+        "error_message": "|                     `- error: cannot find type 'CryptoProviderProtocol' in scope"
+      },
+      {
+        "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceFactory.swift",
+        "line_number": 55,
+        "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceFactory.swift:55:21: error: cannot find type 'CryptoProviderProtocol' in scope"
+      },
+      {
+        "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceFactory.swift",
+        "line_number": 55,
+        "error_message": "|                     `- error: cannot find type 'CryptoProviderProtocol' in scope"
+      }
+    ],
+    "KeyStoreProtocol": [
+      {
+        "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+        "line_number": 39,
+        "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift:39:25: error: cannot find type 'KeyStoreProtocol' in scope"
+      },
+      {
+        "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+        "line_number": 39,
+        "error_message": "|                         `- error: cannot find type 'KeyStoreProtocol' in scope"
+      },
+      {
+        "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+        "line_number": 53,
+        "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift:53:15: error: cannot find type 'KeyStoreProtocol' in scope"
+      },
+      {
+        "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+        "line_number": 53,
+        "error_message": "|               `- error: cannot find type 'KeyStoreProtocol' in scope"
+      },
+      {
+        "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceFactory.swift",
+        "line_number": 56,
+        "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceFactory.swift:56:15: error: cannot find type 'KeyStoreProtocol' in scope"
+      },
+      {
+        "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceFactory.swift",
+        "line_number": 56,
+        "error_message": "|               `- error: cannot find type 'KeyStoreProtocol' in scope"
+      },
+      {
+        "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+        "line_number": 39,
+        "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift:39:25: error: cannot find type 'KeyStoreProtocol' in scope"
+      },
+      {
+        "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+        "line_number": 39,
+        "error_message": "|                         `- error: cannot find type 'KeyStoreProtocol' in scope"
+      },
+      {
+        "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+        "line_number": 53,
+        "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift:53:15: error: cannot find type 'KeyStoreProtocol' in scope"
+      },
+      {
+        "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+        "line_number": 53,
+        "error_message": "|               `- error: cannot find type 'KeyStoreProtocol' in scope"
+      },
+      {
+        "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceFactory.swift",
+        "line_number": 56,
+        "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceFactory.swift:56:15: error: cannot find type 'KeyStoreProtocol' in scope"
+      },
+      {
+        "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceFactory.swift",
+        "line_number": 56,
+        "error_message": "|               `- error: cannot find type 'KeyStoreProtocol' in scope"
+      }
+    ],
+    "KeyMetadataDTO": [
+      {
+        "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+        "line_number": 213,
+        "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift:213:15: error: cannot find type 'KeyMetadataDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+        "line_number": 213,
+        "error_message": "|               `- error: cannot find type 'KeyMetadataDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+        "line_number": 328,
+        "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift:328:15: error: cannot find type 'KeyMetadataDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+        "line_number": 328,
+        "error_message": "|               `- error: cannot find type 'KeyMetadataDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+        "line_number": 213,
+        "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift:213:15: error: cannot find type 'KeyMetadataDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+        "line_number": 213,
+        "error_message": "|               `- error: cannot find type 'KeyMetadataDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+        "line_number": 328,
+        "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift:328:15: error: cannot find type 'KeyMetadataDTO' in scope"
+      },
+      {
+        "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+        "line_number": 328,
+        "error_message": "|               `- error: cannot find type 'KeyMetadataDTO' in scope"
+      }
+    ],
+    "CryptoXPCServiceProtocol": [
+      {
+        "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+        "line_number": 26,
+        "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift:26:37: error: cannot find type 'CryptoXPCServiceProtocol' in scope"
+      },
+      {
+        "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+        "line_number": 26,
+        "error_message": "|                                     `- error: cannot find type 'CryptoXPCServiceProtocol' in scope"
+      },
+      {
+        "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+        "line_number": 26,
+        "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift:26:37: error: cannot find type 'CryptoXPCServiceProtocol' in scope"
+      },
+      {
+        "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+        "line_number": 26,
+        "error_message": "|                                     `- error: cannot find type 'CryptoXPCServiceProtocol' in scope"
+      }
+    ]
+  },
+  "by_file": {
+    "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/RandomDataServiceProtocol.swift": [
+      {
+        "type_name": "RandomizationOptionsDTO",
+        "line_number": 11,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/RandomDataServiceProtocol.swift:11:34: error: cannot find type 'RandomizationOptionsDTO' in scope"
+      },
+      {
+        "type_name": "RandomizationOptionsDTO",
+        "line_number": 11,
+        "error_message": "|                                  `- error: cannot find type 'RandomizationOptionsDTO' in scope"
+      },
+      {
+        "type_name": "RandomizationOptionsDTO",
+        "line_number": 11,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/RandomDataServiceProtocol.swift:11:34: error: cannot find type 'RandomizationOptionsDTO' in scope"
+      },
+      {
+        "type_name": "RandomizationOptionsDTO",
+        "line_number": 11,
+        "error_message": "|                                  `- error: cannot find type 'RandomizationOptionsDTO' in scope"
+      }
+    ],
+    "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityBookmarkProtocol.swift": [
+      {
+        "type_name": "BookmarkValidationResultDTO",
+        "line_number": 82,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityBookmarkProtocol.swift:82:21: error: cannot find type 'BookmarkValidationResultDTO' in scope"
+      },
+      {
+        "type_name": "BookmarkValidationResultDTO",
+        "line_number": 82,
+        "error_message": "|                     `- error: cannot find type 'BookmarkValidationResultDTO' in scope"
+      },
+      {
+        "type_name": "BookmarkValidationResultDTO",
+        "line_number": 82,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityBookmarkProtocol.swift:82:21: error: cannot find type 'BookmarkValidationResultDTO' in scope"
+      },
+      {
+        "type_name": "BookmarkValidationResultDTO",
+        "line_number": 82,
+        "error_message": "|                     `- error: cannot find type 'BookmarkValidationResultDTO' in scope"
+      }
+    ],
+    "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift": [
+      {
+        "type_name": "SecurityErrorDTO",
+        "line_number": 15,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift:15:44: error: cannot find type 'SecurityErrorDTO' in scope"
+      },
+      {
+        "type_name": "SecurityErrorDTO",
+        "line_number": 15,
+        "error_message": "|                                            `- error: cannot find type 'SecurityErrorDTO' in scope"
+      },
+      {
+        "type_name": "SecurityErrorDTO",
+        "line_number": 30,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift:30:51: error: cannot find type 'SecurityErrorDTO' in scope"
+      },
+      {
+        "type_name": "SecurityErrorDTO",
+        "line_number": 30,
+        "error_message": "|                                                   `- error: cannot find type 'SecurityErrorDTO' in scope"
+      },
+      {
+        "type_name": "SecurityProviderProtocol",
+        "line_number": 42,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift:42:29: error: cannot find type 'SecurityProviderProtocol' in scope"
+      },
+      {
+        "type_name": "SecurityProviderProtocol",
+        "line_number": 42,
+        "error_message": "|                             `- error: cannot find type 'SecurityProviderProtocol' in scope"
+      },
+      {
+        "type_name": "SecurityProviderProtocol",
+        "line_number": 46,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift:46:29: error: cannot find type 'SecurityProviderProtocol' in scope"
+      },
+      {
+        "type_name": "SecurityProviderProtocol",
+        "line_number": 46,
+        "error_message": "|                             `- error: cannot find type 'SecurityProviderProtocol' in scope"
+      },
+      {
+        "type_name": "SecurityErrorDTO",
+        "line_number": 54,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift:54:51: error: cannot find type 'SecurityErrorDTO' in scope"
+      },
+      {
+        "type_name": "SecurityErrorDTO",
+        "line_number": 54,
+        "error_message": "|                                                   `- error: cannot find type 'SecurityErrorDTO' in scope"
+      },
+      {
+        "type_name": "SecurityErrorDTO",
+        "line_number": 15,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift:15:44: error: cannot find type 'SecurityErrorDTO' in scope"
+      },
+      {
+        "type_name": "SecurityErrorDTO",
+        "line_number": 15,
+        "error_message": "|                                            `- error: cannot find type 'SecurityErrorDTO' in scope"
+      },
+      {
+        "type_name": "SecurityErrorDTO",
+        "line_number": 30,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift:30:51: error: cannot find type 'SecurityErrorDTO' in scope"
+      },
+      {
+        "type_name": "SecurityErrorDTO",
+        "line_number": 30,
+        "error_message": "|                                                   `- error: cannot find type 'SecurityErrorDTO' in scope"
+      },
+      {
+        "type_name": "SecurityProviderProtocol",
+        "line_number": 42,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift:42:29: error: cannot find type 'SecurityProviderProtocol' in scope"
+      },
+      {
+        "type_name": "SecurityProviderProtocol",
+        "line_number": 42,
+        "error_message": "|                             `- error: cannot find type 'SecurityProviderProtocol' in scope"
+      },
+      {
+        "type_name": "SecurityProviderProtocol",
+        "line_number": 46,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift:46:29: error: cannot find type 'SecurityProviderProtocol' in scope"
+      },
+      {
+        "type_name": "SecurityProviderProtocol",
+        "line_number": 46,
+        "error_message": "|                             `- error: cannot find type 'SecurityProviderProtocol' in scope"
+      },
+      {
+        "type_name": "SecurityErrorDTO",
+        "line_number": 54,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift:54:51: error: cannot find type 'SecurityErrorDTO' in scope"
+      },
+      {
+        "type_name": "SecurityErrorDTO",
+        "line_number": 54,
+        "error_message": "|                                                   `- error: cannot find type 'SecurityErrorDTO' in scope"
+      }
+    ],
+    "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift": [
+      {
+        "type_name": "SecurityConfigurationDTO",
+        "line_number": 13,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift:13:34: error: cannot find type 'SecurityConfigurationDTO' in scope"
+      },
+      {
+        "type_name": "SecurityConfigurationDTO",
+        "line_number": 13,
+        "error_message": "|                                  `- error: cannot find type 'SecurityConfigurationDTO' in scope"
+      },
+      {
+        "type_name": "SecurityContextDTO",
+        "line_number": 21,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift:21:53: error: cannot find type 'SecurityContextDTO' in scope"
+      },
+      {
+        "type_name": "SecurityContextDTO",
+        "line_number": 21,
+        "error_message": "|                                                     `- error: cannot find type 'SecurityContextDTO' in scope"
+      },
+      {
+        "type_name": "SecurityContextDTO",
+        "line_number": 31,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift:31:22: error: cannot find type 'SecurityContextDTO' in scope"
+      },
+      {
+        "type_name": "SecurityContextDTO",
+        "line_number": 31,
+        "error_message": "|                      `- error: cannot find type 'SecurityContextDTO' in scope"
+      },
+      {
+        "type_name": "SecurityContextDTO",
+        "line_number": 57,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift:57:14: error: cannot find type 'SecurityContextDTO' in scope"
+      },
+      {
+        "type_name": "SecurityContextDTO",
+        "line_number": 57,
+        "error_message": "|              `- error: cannot find type 'SecurityContextDTO' in scope"
+      },
+      {
+        "type_name": "SecurityVersionDTO",
+        "line_number": 62,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift:62:30: error: cannot find type 'SecurityVersionDTO' in scope"
+      },
+      {
+        "type_name": "SecurityVersionDTO",
+        "line_number": 62,
+        "error_message": "|                              `- error: cannot find type 'SecurityVersionDTO' in scope"
+      },
+      {
+        "type_name": "SecurityEventDTO",
+        "line_number": 67,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift:67:73: error: cannot find type 'SecurityEventDTO' in scope"
+      },
+      {
+        "type_name": "SecurityEventDTO",
+        "line_number": 67,
+        "error_message": "|                                                                         `- error: cannot find type 'SecurityEventDTO' in scope"
+      },
+      {
+        "type_name": "SecurityEventFilterDTO",
+        "line_number": 67,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift:67:34: error: cannot find type 'SecurityEventFilterDTO' in scope"
+      },
+      {
+        "type_name": "SecurityEventFilterDTO",
+        "line_number": 67,
+        "error_message": "|                                  `- error: cannot find type 'SecurityEventFilterDTO' in scope"
+      },
+      {
+        "type_name": "SecurityConfigurationDTO",
+        "line_number": 13,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift:13:34: error: cannot find type 'SecurityConfigurationDTO' in scope"
+      },
+      {
+        "type_name": "SecurityConfigurationDTO",
+        "line_number": 13,
+        "error_message": "|                                  `- error: cannot find type 'SecurityConfigurationDTO' in scope"
+      },
+      {
+        "type_name": "SecurityContextDTO",
+        "line_number": 21,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift:21:53: error: cannot find type 'SecurityContextDTO' in scope"
+      },
+      {
+        "type_name": "SecurityContextDTO",
+        "line_number": 21,
+        "error_message": "|                                                     `- error: cannot find type 'SecurityContextDTO' in scope"
+      },
+      {
+        "type_name": "SecurityContextDTO",
+        "line_number": 31,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift:31:22: error: cannot find type 'SecurityContextDTO' in scope"
+      },
+      {
+        "type_name": "SecurityContextDTO",
+        "line_number": 31,
+        "error_message": "|                      `- error: cannot find type 'SecurityContextDTO' in scope"
+      },
+      {
+        "type_name": "SecurityContextDTO",
+        "line_number": 57,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift:57:14: error: cannot find type 'SecurityContextDTO' in scope"
+      },
+      {
+        "type_name": "SecurityContextDTO",
+        "line_number": 57,
+        "error_message": "|              `- error: cannot find type 'SecurityContextDTO' in scope"
+      },
+      {
+        "type_name": "SecurityVersionDTO",
+        "line_number": 62,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift:62:30: error: cannot find type 'SecurityVersionDTO' in scope"
+      },
+      {
+        "type_name": "SecurityVersionDTO",
+        "line_number": 62,
+        "error_message": "|                              `- error: cannot find type 'SecurityVersionDTO' in scope"
+      },
+      {
+        "type_name": "SecurityEventDTO",
+        "line_number": 67,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift:67:73: error: cannot find type 'SecurityEventDTO' in scope"
+      },
+      {
+        "type_name": "SecurityEventDTO",
+        "line_number": 67,
+        "error_message": "|                                                                         `- error: cannot find type 'SecurityEventDTO' in scope"
+      },
+      {
+        "type_name": "SecurityEventFilterDTO",
+        "line_number": 67,
+        "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift:67:34: error: cannot find type 'SecurityEventFilterDTO' in scope"
+      },
+      {
+        "type_name": "SecurityEventFilterDTO",
+        "line_number": 67,
+        "error_message": "|                                  `- error: cannot find type 'SecurityEventFilterDTO' in scope"
+      }
+    ],
+    "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoServiceMonitor.swift": [
+      {
+        "type_name": "CryptoServiceMonitorProtocol",
+        "line_number": 22,
+        "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoServiceMonitor.swift:22:36: error: cannot find type 'CryptoServiceMonitorProtocol' in scope"
+      },
+      {
+        "type_name": "CryptoServiceMonitorProtocol",
+        "line_number": 22,
+        "error_message": "|                                    `- error: cannot find type 'CryptoServiceMonitorProtocol' in scope"
+      },
+      {
+        "type_name": "CryptoServiceMonitorProtocol",
+        "line_number": 22,
+        "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoServiceMonitor.swift:22:36: error: cannot find type 'CryptoServiceMonitorProtocol' in scope"
+      },
+      {
+        "type_name": "CryptoServiceMonitorProtocol",
+        "line_number": 22,
+        "error_message": "|                                    `- error: cannot find type 'CryptoServiceMonitorProtocol' in scope"
+      }
+    ],
+    "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift": [
+      {
+        "type_name": "CryptoProviderProtocol",
+        "line_number": 36,
+        "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift:36:31: error: cannot find type 'CryptoProviderProtocol' in scope"
+      },
+      {
+        "type_name": "CryptoProviderProtocol",
+        "line_number": 36,
+        "error_message": "|                               `- error: cannot find type 'CryptoProviderProtocol' in scope"
+      },
+      {
+        "type_name": "KeyStoreProtocol",
+        "line_number": 39,
+        "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift:39:25: error: cannot find type 'KeyStoreProtocol' in scope"
+      },
+      {
+        "type_name": "KeyStoreProtocol",
+        "line_number": 39,
+        "error_message": "|                         `- error: cannot find type 'KeyStoreProtocol' in scope"
+      },
+      {
+        "type_name": "CryptoProviderProtocol",
+        "line_number": 52,
+        "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift:52:21: error: cannot find type 'CryptoProviderProtocol' in scope"
+      },
+      {
+        "type_name": "CryptoProviderProtocol",
+        "line_number": 52,
+        "error_message": "|                     `- error: cannot find type 'CryptoProviderProtocol' in scope"
+      },
+      {
+        "type_name": "KeyStoreProtocol",
+        "line_number": 53,
+        "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift:53:15: error: cannot find type 'KeyStoreProtocol' in scope"
+      },
+      {
+        "type_name": "KeyStoreProtocol",
+        "line_number": 53,
+        "error_message": "|               `- error: cannot find type 'KeyStoreProtocol' in scope"
+      },
+      {
+        "type_name": "KeyMetadataDTO",
+        "line_number": 213,
+        "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift:213:15: error: cannot find type 'KeyMetadataDTO' in scope"
+      },
+      {
+        "type_name": "KeyMetadataDTO",
+        "line_number": 213,
+        "error_message": "|               `- error: cannot find type 'KeyMetadataDTO' in scope"
+      },
+      {
+        "type_name": "KeyMetadataDTO",
+        "line_number": 328,
+        "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift:328:15: error: cannot find type 'KeyMetadataDTO' in scope"
+      },
+      {
+        "type_name": "KeyMetadataDTO",
+        "line_number": 328,
+        "error_message": "|               `- error: cannot find type 'KeyMetadataDTO' in scope"
+      },
+      {
+        "type_name": "CryptoXPCServiceProtocol",
+        "line_number": 26,
+        "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift:26:37: error: cannot find type 'CryptoXPCServiceProtocol' in scope"
+      },
+      {
+        "type_name": "CryptoXPCServiceProtocol",
+        "line_number": 26,
+        "error_message": "|                                     `- error: cannot find type 'CryptoXPCServiceProtocol' in scope"
+      },
+      {
+        "type_name": "CryptoProviderProtocol",
+        "line_number": 36,
+        "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift:36:31: error: cannot find type 'CryptoProviderProtocol' in scope"
+      },
+      {
+        "type_name": "CryptoProviderProtocol",
+        "line_number": 36,
+        "error_message": "|                               `- error: cannot find type 'CryptoProviderProtocol' in scope"
+      },
+      {
+        "type_name": "KeyStoreProtocol",
+        "line_number": 39,
+        "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift:39:25: error: cannot find type 'KeyStoreProtocol' in scope"
+      },
+      {
+        "type_name": "KeyStoreProtocol",
+        "line_number": 39,
+        "error_message": "|                         `- error: cannot find type 'KeyStoreProtocol' in scope"
+      },
+      {
+        "type_name": "CryptoProviderProtocol",
+        "line_number": 52,
+        "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift:52:21: error: cannot find type 'CryptoProviderProtocol' in scope"
+      },
+      {
+        "type_name": "CryptoProviderProtocol",
+        "line_number": 52,
+        "error_message": "|                     `- error: cannot find type 'CryptoProviderProtocol' in scope"
+      },
+      {
+        "type_name": "KeyStoreProtocol",
+        "line_number": 53,
+        "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift:53:15: error: cannot find type 'KeyStoreProtocol' in scope"
+      },
+      {
+        "type_name": "KeyStoreProtocol",
+        "line_number": 53,
+        "error_message": "|               `- error: cannot find type 'KeyStoreProtocol' in scope"
+      },
+      {
+        "type_name": "KeyMetadataDTO",
+        "line_number": 213,
+        "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift:213:15: error: cannot find type 'KeyMetadataDTO' in scope"
+      },
+      {
+        "type_name": "KeyMetadataDTO",
+        "line_number": 213,
+        "error_message": "|               `- error: cannot find type 'KeyMetadataDTO' in scope"
+      },
+      {
+        "type_name": "KeyMetadataDTO",
+        "line_number": 328,
+        "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift:328:15: error: cannot find type 'KeyMetadataDTO' in scope"
+      },
+      {
+        "type_name": "KeyMetadataDTO",
+        "line_number": 328,
+        "error_message": "|               `- error: cannot find type 'KeyMetadataDTO' in scope"
+      },
+      {
+        "type_name": "CryptoXPCServiceProtocol",
+        "line_number": 26,
+        "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift:26:37: error: cannot find type 'CryptoXPCServiceProtocol' in scope"
+      },
+      {
+        "type_name": "CryptoXPCServiceProtocol",
+        "line_number": 26,
+        "error_message": "|                                     `- error: cannot find type 'CryptoXPCServiceProtocol' in scope"
+      }
+    ],
+    "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceFactory.swift": [
+      {
+        "type_name": "CryptoProviderProtocol",
+        "line_number": 55,
+        "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceFactory.swift:55:21: error: cannot find type 'CryptoProviderProtocol' in scope"
+      },
+      {
+        "type_name": "CryptoProviderProtocol",
+        "line_number": 55,
+        "error_message": "|                     `- error: cannot find type 'CryptoProviderProtocol' in scope"
+      },
+      {
+        "type_name": "KeyStoreProtocol",
+        "line_number": 56,
+        "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceFactory.swift:56:15: error: cannot find type 'KeyStoreProtocol' in scope"
+      },
+      {
+        "type_name": "KeyStoreProtocol",
+        "line_number": 56,
+        "error_message": "|               `- error: cannot find type 'KeyStoreProtocol' in scope"
+      },
+      {
+        "type_name": "CryptoProviderProtocol",
+        "line_number": 55,
+        "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceFactory.swift:55:21: error: cannot find type 'CryptoProviderProtocol' in scope"
+      },
+      {
+        "type_name": "CryptoProviderProtocol",
+        "line_number": 55,
+        "error_message": "|                     `- error: cannot find type 'CryptoProviderProtocol' in scope"
+      },
+      {
+        "type_name": "KeyStoreProtocol",
+        "line_number": 56,
+        "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceFactory.swift:56:15: error: cannot find type 'KeyStoreProtocol' in scope"
+      },
+      {
+        "type_name": "KeyStoreProtocol",
+        "line_number": 56,
+        "error_message": "|               `- error: cannot find type 'KeyStoreProtocol' in scope"
+      }
+    ]
+  },
+  "by_module": {
+    "packages": {
+      "count": 96,
+      "types": [
+        "SecurityVersionDTO",
+        "CryptoXPCServiceProtocol",
+        "KeyStoreProtocol",
+        "SecurityContextDTO",
+        "BookmarkValidationResultDTO",
+        "KeyMetadataDTO",
+        "SecurityEventFilterDTO",
+        "RandomizationOptionsDTO",
+        "SecurityErrorDTO",
+        "SecurityEventDTO",
+        "CryptoServiceMonitorProtocol",
+        "SecurityConfigurationDTO",
+        "CryptoProviderProtocol",
+        "SecurityProviderProtocol"
+      ]
+    }
+  },
+  "all_occurrences": [
+    {
+      "type_name": "RandomizationOptionsDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/RandomDataServiceProtocol.swift",
+      "line_number": 11,
+      "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/RandomDataServiceProtocol.swift:11:34: error: cannot find type 'RandomizationOptionsDTO' in scope",
+      "output_line": 20
+    },
+    {
+      "type_name": "RandomizationOptionsDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/RandomDataServiceProtocol.swift",
+      "line_number": 11,
+      "error_message": "|                                  `- error: cannot find type 'RandomizationOptionsDTO' in scope",
+      "output_line": 24
+    },
+    {
+      "type_name": "BookmarkValidationResultDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityBookmarkProtocol.swift",
+      "line_number": 82,
+      "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityBookmarkProtocol.swift:82:21: error: cannot find type 'BookmarkValidationResultDTO' in scope",
+      "output_line": 68
+    },
+    {
+      "type_name": "BookmarkValidationResultDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityBookmarkProtocol.swift",
+      "line_number": 82,
+      "error_message": "|                     `- error: cannot find type 'BookmarkValidationResultDTO' in scope",
+      "output_line": 72
+    },
+    {
+      "type_name": "SecurityErrorDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift",
+      "line_number": 15,
+      "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift:15:44: error: cannot find type 'SecurityErrorDTO' in scope",
+      "output_line": 84
+    },
+    {
+      "type_name": "SecurityErrorDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift",
+      "line_number": 15,
+      "error_message": "|                                            `- error: cannot find type 'SecurityErrorDTO' in scope",
+      "output_line": 88
+    },
+    {
+      "type_name": "SecurityErrorDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift",
+      "line_number": 30,
+      "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift:30:51: error: cannot find type 'SecurityErrorDTO' in scope",
+      "output_line": 92
+    },
+    {
+      "type_name": "SecurityErrorDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift",
+      "line_number": 30,
+      "error_message": "|                                                   `- error: cannot find type 'SecurityErrorDTO' in scope",
+      "output_line": 96
+    },
+    {
+      "type_name": "SecurityProviderProtocol",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift",
+      "line_number": 42,
+      "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift:42:29: error: cannot find type 'SecurityProviderProtocol' in scope",
+      "output_line": 100
+    },
+    {
+      "type_name": "SecurityProviderProtocol",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift",
+      "line_number": 42,
+      "error_message": "|                             `- error: cannot find type 'SecurityProviderProtocol' in scope",
+      "output_line": 104
+    },
+    {
+      "type_name": "SecurityProviderProtocol",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift",
+      "line_number": 46,
+      "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift:46:29: error: cannot find type 'SecurityProviderProtocol' in scope",
+      "output_line": 108
+    },
+    {
+      "type_name": "SecurityProviderProtocol",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift",
+      "line_number": 46,
+      "error_message": "|                             `- error: cannot find type 'SecurityProviderProtocol' in scope",
+      "output_line": 112
+    },
+    {
+      "type_name": "SecurityErrorDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift",
+      "line_number": 54,
+      "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift:54:51: error: cannot find type 'SecurityErrorDTO' in scope",
+      "output_line": 116
+    },
+    {
+      "type_name": "SecurityErrorDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift",
+      "line_number": 54,
+      "error_message": "|                                                   `- error: cannot find type 'SecurityErrorDTO' in scope",
+      "output_line": 120
+    },
+    {
+      "type_name": "SecurityConfigurationDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+      "line_number": 13,
+      "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift:13:34: error: cannot find type 'SecurityConfigurationDTO' in scope",
+      "output_line": 124
+    },
+    {
+      "type_name": "SecurityConfigurationDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+      "line_number": 13,
+      "error_message": "|                                  `- error: cannot find type 'SecurityConfigurationDTO' in scope",
+      "output_line": 128
+    },
+    {
+      "type_name": "SecurityContextDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+      "line_number": 21,
+      "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift:21:53: error: cannot find type 'SecurityContextDTO' in scope",
+      "output_line": 132
+    },
+    {
+      "type_name": "SecurityContextDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+      "line_number": 21,
+      "error_message": "|                                                     `- error: cannot find type 'SecurityContextDTO' in scope",
+      "output_line": 136
+    },
+    {
+      "type_name": "SecurityContextDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+      "line_number": 31,
+      "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift:31:22: error: cannot find type 'SecurityContextDTO' in scope",
+      "output_line": 140
+    },
+    {
+      "type_name": "SecurityContextDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+      "line_number": 31,
+      "error_message": "|                      `- error: cannot find type 'SecurityContextDTO' in scope",
+      "output_line": 144
+    },
+    {
+      "type_name": "SecurityContextDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+      "line_number": 57,
+      "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift:57:14: error: cannot find type 'SecurityContextDTO' in scope",
+      "output_line": 148
+    },
+    {
+      "type_name": "SecurityContextDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+      "line_number": 57,
+      "error_message": "|              `- error: cannot find type 'SecurityContextDTO' in scope",
+      "output_line": 152
+    },
+    {
+      "type_name": "SecurityVersionDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+      "line_number": 62,
+      "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift:62:30: error: cannot find type 'SecurityVersionDTO' in scope",
+      "output_line": 156
+    },
+    {
+      "type_name": "SecurityVersionDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+      "line_number": 62,
+      "error_message": "|                              `- error: cannot find type 'SecurityVersionDTO' in scope",
+      "output_line": 160
+    },
+    {
+      "type_name": "SecurityEventDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+      "line_number": 67,
+      "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift:67:73: error: cannot find type 'SecurityEventDTO' in scope",
+      "output_line": 164
+    },
+    {
+      "type_name": "SecurityEventDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+      "line_number": 67,
+      "error_message": "|                                                                         `- error: cannot find type 'SecurityEventDTO' in scope",
+      "output_line": 168
+    },
+    {
+      "type_name": "SecurityEventFilterDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+      "line_number": 67,
+      "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift:67:34: error: cannot find type 'SecurityEventFilterDTO' in scope",
+      "output_line": 172
+    },
+    {
+      "type_name": "SecurityEventFilterDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+      "line_number": 67,
+      "error_message": "|                                  `- error: cannot find type 'SecurityEventFilterDTO' in scope",
+      "output_line": 176
+    },
+    {
+      "type_name": "RandomizationOptionsDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/RandomDataServiceProtocol.swift",
+      "line_number": 11,
+      "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/RandomDataServiceProtocol.swift:11:34: error: cannot find type 'RandomizationOptionsDTO' in scope",
+      "output_line": 179
+    },
+    {
+      "type_name": "RandomizationOptionsDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/RandomDataServiceProtocol.swift",
+      "line_number": 11,
+      "error_message": "|                                  `- error: cannot find type 'RandomizationOptionsDTO' in scope",
+      "output_line": 183
+    },
+    {
+      "type_name": "BookmarkValidationResultDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityBookmarkProtocol.swift",
+      "line_number": 82,
+      "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityBookmarkProtocol.swift:82:21: error: cannot find type 'BookmarkValidationResultDTO' in scope",
+      "output_line": 227
+    },
+    {
+      "type_name": "BookmarkValidationResultDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityBookmarkProtocol.swift",
+      "line_number": 82,
+      "error_message": "|                     `- error: cannot find type 'BookmarkValidationResultDTO' in scope",
+      "output_line": 231
+    },
+    {
+      "type_name": "SecurityErrorDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift",
+      "line_number": 15,
+      "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift:15:44: error: cannot find type 'SecurityErrorDTO' in scope",
+      "output_line": 243
+    },
+    {
+      "type_name": "SecurityErrorDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift",
+      "line_number": 15,
+      "error_message": "|                                            `- error: cannot find type 'SecurityErrorDTO' in scope",
+      "output_line": 247
+    },
+    {
+      "type_name": "SecurityErrorDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift",
+      "line_number": 30,
+      "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift:30:51: error: cannot find type 'SecurityErrorDTO' in scope",
+      "output_line": 251
+    },
+    {
+      "type_name": "SecurityErrorDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift",
+      "line_number": 30,
+      "error_message": "|                                                   `- error: cannot find type 'SecurityErrorDTO' in scope",
+      "output_line": 255
+    },
+    {
+      "type_name": "SecurityProviderProtocol",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift",
+      "line_number": 42,
+      "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift:42:29: error: cannot find type 'SecurityProviderProtocol' in scope",
+      "output_line": 259
+    },
+    {
+      "type_name": "SecurityProviderProtocol",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift",
+      "line_number": 42,
+      "error_message": "|                             `- error: cannot find type 'SecurityProviderProtocol' in scope",
+      "output_line": 263
+    },
+    {
+      "type_name": "SecurityProviderProtocol",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift",
+      "line_number": 46,
+      "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift:46:29: error: cannot find type 'SecurityProviderProtocol' in scope",
+      "output_line": 267
+    },
+    {
+      "type_name": "SecurityProviderProtocol",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift",
+      "line_number": 46,
+      "error_message": "|                             `- error: cannot find type 'SecurityProviderProtocol' in scope",
+      "output_line": 271
+    },
+    {
+      "type_name": "SecurityErrorDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift",
+      "line_number": 54,
+      "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift:54:51: error: cannot find type 'SecurityErrorDTO' in scope",
+      "output_line": 275
+    },
+    {
+      "type_name": "SecurityErrorDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityProviderBase.swift",
+      "line_number": 54,
+      "error_message": "|                                                   `- error: cannot find type 'SecurityErrorDTO' in scope",
+      "output_line": 279
+    },
+    {
+      "type_name": "SecurityConfigurationDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+      "line_number": 13,
+      "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift:13:34: error: cannot find type 'SecurityConfigurationDTO' in scope",
+      "output_line": 283
+    },
+    {
+      "type_name": "SecurityConfigurationDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+      "line_number": 13,
+      "error_message": "|                                  `- error: cannot find type 'SecurityConfigurationDTO' in scope",
+      "output_line": 287
+    },
+    {
+      "type_name": "SecurityContextDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+      "line_number": 21,
+      "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift:21:53: error: cannot find type 'SecurityContextDTO' in scope",
+      "output_line": 291
+    },
+    {
+      "type_name": "SecurityContextDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+      "line_number": 21,
+      "error_message": "|                                                     `- error: cannot find type 'SecurityContextDTO' in scope",
+      "output_line": 295
+    },
+    {
+      "type_name": "SecurityContextDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+      "line_number": 31,
+      "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift:31:22: error: cannot find type 'SecurityContextDTO' in scope",
+      "output_line": 299
+    },
+    {
+      "type_name": "SecurityContextDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+      "line_number": 31,
+      "error_message": "|                      `- error: cannot find type 'SecurityContextDTO' in scope",
+      "output_line": 303
+    },
+    {
+      "type_name": "SecurityContextDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+      "line_number": 57,
+      "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift:57:14: error: cannot find type 'SecurityContextDTO' in scope",
+      "output_line": 307
+    },
+    {
+      "type_name": "SecurityContextDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+      "line_number": 57,
+      "error_message": "|              `- error: cannot find type 'SecurityContextDTO' in scope",
+      "output_line": 311
+    },
+    {
+      "type_name": "SecurityVersionDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+      "line_number": 62,
+      "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift:62:30: error: cannot find type 'SecurityVersionDTO' in scope",
+      "output_line": 315
+    },
+    {
+      "type_name": "SecurityVersionDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+      "line_number": 62,
+      "error_message": "|                              `- error: cannot find type 'SecurityVersionDTO' in scope",
+      "output_line": 319
+    },
+    {
+      "type_name": "SecurityEventDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+      "line_number": 67,
+      "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift:67:73: error: cannot find type 'SecurityEventDTO' in scope",
+      "output_line": 323
+    },
+    {
+      "type_name": "SecurityEventDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+      "line_number": 67,
+      "error_message": "|                                                                         `- error: cannot find type 'SecurityEventDTO' in scope",
+      "output_line": 327
+    },
+    {
+      "type_name": "SecurityEventFilterDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+      "line_number": 67,
+      "error_message": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift:67:34: error: cannot find type 'SecurityEventFilterDTO' in scope",
+      "output_line": 331
+    },
+    {
+      "type_name": "SecurityEventFilterDTO",
+      "file_path": "packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols/SecurityServiceProtocol.swift",
+      "line_number": 67,
+      "error_message": "|                                  `- error: cannot find type 'SecurityEventFilterDTO' in scope",
+      "output_line": 335
+    },
+    {
+      "type_name": "CryptoServiceMonitorProtocol",
+      "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoServiceMonitor.swift",
+      "line_number": 22,
+      "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoServiceMonitor.swift:22:36: error: cannot find type 'CryptoServiceMonitorProtocol' in scope",
+      "output_line": 1489
+    },
+    {
+      "type_name": "CryptoServiceMonitorProtocol",
+      "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoServiceMonitor.swift",
+      "line_number": 22,
+      "error_message": "|                                    `- error: cannot find type 'CryptoServiceMonitorProtocol' in scope",
+      "output_line": 1493
+    },
+    {
+      "type_name": "CryptoProviderProtocol",
+      "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+      "line_number": 36,
+      "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift:36:31: error: cannot find type 'CryptoProviderProtocol' in scope",
+      "output_line": 1497
+    },
+    {
+      "type_name": "CryptoProviderProtocol",
+      "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+      "line_number": 36,
+      "error_message": "|                               `- error: cannot find type 'CryptoProviderProtocol' in scope",
+      "output_line": 1501
+    },
+    {
+      "type_name": "KeyStoreProtocol",
+      "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+      "line_number": 39,
+      "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift:39:25: error: cannot find type 'KeyStoreProtocol' in scope",
+      "output_line": 1505
+    },
+    {
+      "type_name": "KeyStoreProtocol",
+      "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+      "line_number": 39,
+      "error_message": "|                         `- error: cannot find type 'KeyStoreProtocol' in scope",
+      "output_line": 1509
+    },
+    {
+      "type_name": "CryptoProviderProtocol",
+      "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+      "line_number": 52,
+      "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift:52:21: error: cannot find type 'CryptoProviderProtocol' in scope",
+      "output_line": 1513
+    },
+    {
+      "type_name": "CryptoProviderProtocol",
+      "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+      "line_number": 52,
+      "error_message": "|                     `- error: cannot find type 'CryptoProviderProtocol' in scope",
+      "output_line": 1517
+    },
+    {
+      "type_name": "KeyStoreProtocol",
+      "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+      "line_number": 53,
+      "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift:53:15: error: cannot find type 'KeyStoreProtocol' in scope",
+      "output_line": 1521
+    },
+    {
+      "type_name": "KeyStoreProtocol",
+      "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+      "line_number": 53,
+      "error_message": "|               `- error: cannot find type 'KeyStoreProtocol' in scope",
+      "output_line": 1525
+    },
+    {
+      "type_name": "KeyMetadataDTO",
+      "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+      "line_number": 213,
+      "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift:213:15: error: cannot find type 'KeyMetadataDTO' in scope",
+      "output_line": 1569
+    },
+    {
+      "type_name": "KeyMetadataDTO",
+      "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+      "line_number": 213,
+      "error_message": "|               `- error: cannot find type 'KeyMetadataDTO' in scope",
+      "output_line": 1573
+    },
+    {
+      "type_name": "KeyMetadataDTO",
+      "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+      "line_number": 328,
+      "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift:328:15: error: cannot find type 'KeyMetadataDTO' in scope",
+      "output_line": 1593
+    },
+    {
+      "type_name": "KeyMetadataDTO",
+      "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+      "line_number": 328,
+      "error_message": "|               `- error: cannot find type 'KeyMetadataDTO' in scope",
+      "output_line": 1597
+    },
+    {
+      "type_name": "CryptoXPCServiceProtocol",
+      "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+      "line_number": 26,
+      "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift:26:37: error: cannot find type 'CryptoXPCServiceProtocol' in scope",
+      "output_line": 1705
+    },
+    {
+      "type_name": "CryptoXPCServiceProtocol",
+      "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+      "line_number": 26,
+      "error_message": "|                                     `- error: cannot find type 'CryptoXPCServiceProtocol' in scope",
+      "output_line": 1709
+    },
+    {
+      "type_name": "CryptoProviderProtocol",
+      "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceFactory.swift",
+      "line_number": 55,
+      "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceFactory.swift:55:21: error: cannot find type 'CryptoProviderProtocol' in scope",
+      "output_line": 1713
+    },
+    {
+      "type_name": "CryptoProviderProtocol",
+      "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceFactory.swift",
+      "line_number": 55,
+      "error_message": "|                     `- error: cannot find type 'CryptoProviderProtocol' in scope",
+      "output_line": 1717
+    },
+    {
+      "type_name": "KeyStoreProtocol",
+      "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceFactory.swift",
+      "line_number": 56,
+      "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceFactory.swift:56:15: error: cannot find type 'KeyStoreProtocol' in scope",
+      "output_line": 1721
+    },
+    {
+      "type_name": "KeyStoreProtocol",
+      "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceFactory.swift",
+      "line_number": 56,
+      "error_message": "|               `- error: cannot find type 'KeyStoreProtocol' in scope",
+      "output_line": 1725
+    },
+    {
+      "type_name": "CryptoServiceMonitorProtocol",
+      "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoServiceMonitor.swift",
+      "line_number": 22,
+      "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoServiceMonitor.swift:22:36: error: cannot find type 'CryptoServiceMonitorProtocol' in scope",
+      "output_line": 1728
+    },
+    {
+      "type_name": "CryptoServiceMonitorProtocol",
+      "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoServiceMonitor.swift",
+      "line_number": 22,
+      "error_message": "|                                    `- error: cannot find type 'CryptoServiceMonitorProtocol' in scope",
+      "output_line": 1732
+    },
+    {
+      "type_name": "CryptoProviderProtocol",
+      "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+      "line_number": 36,
+      "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift:36:31: error: cannot find type 'CryptoProviderProtocol' in scope",
+      "output_line": 1864
+    },
+    {
+      "type_name": "CryptoProviderProtocol",
+      "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+      "line_number": 36,
+      "error_message": "|                               `- error: cannot find type 'CryptoProviderProtocol' in scope",
+      "output_line": 1868
+    },
+    {
+      "type_name": "KeyStoreProtocol",
+      "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+      "line_number": 39,
+      "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift:39:25: error: cannot find type 'KeyStoreProtocol' in scope",
+      "output_line": 1872
+    },
+    {
+      "type_name": "KeyStoreProtocol",
+      "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+      "line_number": 39,
+      "error_message": "|                         `- error: cannot find type 'KeyStoreProtocol' in scope",
+      "output_line": 1876
+    },
+    {
+      "type_name": "CryptoProviderProtocol",
+      "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+      "line_number": 52,
+      "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift:52:21: error: cannot find type 'CryptoProviderProtocol' in scope",
+      "output_line": 1880
+    },
+    {
+      "type_name": "CryptoProviderProtocol",
+      "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+      "line_number": 52,
+      "error_message": "|                     `- error: cannot find type 'CryptoProviderProtocol' in scope",
+      "output_line": 1884
+    },
+    {
+      "type_name": "KeyStoreProtocol",
+      "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+      "line_number": 53,
+      "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift:53:15: error: cannot find type 'KeyStoreProtocol' in scope",
+      "output_line": 1888
+    },
+    {
+      "type_name": "KeyStoreProtocol",
+      "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+      "line_number": 53,
+      "error_message": "|               `- error: cannot find type 'KeyStoreProtocol' in scope",
+      "output_line": 1892
+    },
+    {
+      "type_name": "KeyMetadataDTO",
+      "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+      "line_number": 213,
+      "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift:213:15: error: cannot find type 'KeyMetadataDTO' in scope",
+      "output_line": 1936
+    },
+    {
+      "type_name": "KeyMetadataDTO",
+      "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+      "line_number": 213,
+      "error_message": "|               `- error: cannot find type 'KeyMetadataDTO' in scope",
+      "output_line": 1940
+    },
+    {
+      "type_name": "KeyMetadataDTO",
+      "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+      "line_number": 328,
+      "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift:328:15: error: cannot find type 'KeyMetadataDTO' in scope",
+      "output_line": 1960
+    },
+    {
+      "type_name": "KeyMetadataDTO",
+      "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+      "line_number": 328,
+      "error_message": "|               `- error: cannot find type 'KeyMetadataDTO' in scope",
+      "output_line": 1964
+    },
+    {
+      "type_name": "CryptoXPCServiceProtocol",
+      "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+      "line_number": 26,
+      "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift:26:37: error: cannot find type 'CryptoXPCServiceProtocol' in scope",
+      "output_line": 2072
+    },
+    {
+      "type_name": "CryptoXPCServiceProtocol",
+      "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceActor.swift",
+      "line_number": 26,
+      "error_message": "|                                     `- error: cannot find type 'CryptoXPCServiceProtocol' in scope",
+      "output_line": 2076
+    },
+    {
+      "type_name": "CryptoProviderProtocol",
+      "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceFactory.swift",
+      "line_number": 55,
+      "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceFactory.swift:55:21: error: cannot find type 'CryptoProviderProtocol' in scope",
+      "output_line": 2368
+    },
+    {
+      "type_name": "CryptoProviderProtocol",
+      "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceFactory.swift",
+      "line_number": 55,
+      "error_message": "|                     `- error: cannot find type 'CryptoProviderProtocol' in scope",
+      "output_line": 2372
+    },
+    {
+      "type_name": "KeyStoreProtocol",
+      "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceFactory.swift",
+      "line_number": 56,
+      "error_message": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceFactory.swift:56:15: error: cannot find type 'KeyStoreProtocol' in scope",
+      "output_line": 2376
+    },
+    {
+      "type_name": "KeyStoreProtocol",
+      "file_path": "packages/UmbraImplementations/Sources/CryptoXPCServices/CryptoXPCServiceFactory.swift",
+      "line_number": 56,
+      "error_message": "|               `- error: cannot find type 'KeyStoreProtocol' in scope",
+      "output_line": 2380
+    }
+  ]
+}

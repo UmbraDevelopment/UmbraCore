@@ -1,6 +1,7 @@
 import CryptoTypes
 import DomainSecurityTypes
 import UmbraErrors
+import UmbraErrorsDTOs
 
 /**
  # CryptoXPCServiceProtocol
@@ -11,7 +12,7 @@ import UmbraErrors
  operations that can be performed across process boundaries using
  XPC communication, following the Alpha Dot Five architecture.
 
- All methods are designed to work with Foundation-independent DTOs,
+ All methods are designed to work with secure identifier-based data access,
  use proper domain-specific errors, and follow Swift concurrency best practices.
  */
 public protocol CryptoXPCServiceProtocol: Sendable {
@@ -21,33 +22,33 @@ public protocol CryptoXPCServiceProtocol: Sendable {
    Encrypts data using the specified key.
 
    - Parameters:
-      - data: The data to encrypt as SecureBytes
+      - dataIdentifier: Identifier for the data to encrypt in secure storage
       - keyIdentifier: The identifier of the key to use
       - options: Optional configuration options
 
-   - Returns: Result with encrypted data as SecureBytes or error
+   - Returns: Result with identifier for the encrypted data or error
    */
   func encrypt(
-    data: SecureBytes,
+    dataIdentifier: String,
     keyIdentifier: String,
     options: CryptoOperationOptionsDTO?
-  ) async -> Result<SecureBytes, UmbraErrors.Crypto.Core>
+  ) async -> Result<String, UmbraErrorsDTOs.ErrorDTO>
 
   /**
    Decrypts data using the specified key.
 
    - Parameters:
-      - encryptedData: The encrypted data as SecureBytes
+      - encryptedDataIdentifier: Identifier for the encrypted data in secure storage
       - keyIdentifier: The identifier of the key to use
       - options: Optional configuration options
 
-   - Returns: Result with decrypted data as SecureBytes or error
+   - Returns: Result with identifier for the decrypted data or error
    */
   func decrypt(
-    encryptedData: SecureBytes,
+    encryptedDataIdentifier: String,
     keyIdentifier: String,
     options: CryptoOperationOptionsDTO?
-  ) async -> Result<SecureBytes, UmbraErrors.Crypto.Core>
+  ) async -> Result<String, UmbraErrorsDTOs.ErrorDTO>
 
   // MARK: - Key Management
 
@@ -63,32 +64,32 @@ public protocol CryptoXPCServiceProtocol: Sendable {
   func generateKey(
     options: KeyGenerationOptionsDTO,
     metadata: KeyMetadataDTO?
-  ) async -> Result<String, UmbraErrors.Crypto.Core>
+  ) async -> Result<String, UmbraErrorsDTOs.ErrorDTO>
 
   /**
    Exports a cryptographic key.
 
    - Parameter keyIdentifier: The identifier of the key to export
 
-   - Returns: Result with the key material as SecureBytes or error
+   - Returns: Result with the data identifier for key material or error
    */
   func exportKey(
     keyIdentifier: String
-  ) async -> Result<SecureBytes, UmbraErrors.Crypto.Core>
+  ) async -> Result<String, UmbraErrorsDTOs.ErrorDTO>
 
   /**
    Imports a cryptographic key.
 
    - Parameters:
-      - keyData: The key material as SecureBytes
+      - keyDataIdentifier: Identifier for the key material in secure storage
       - metadata: Metadata for the imported key
 
    - Returns: Result with key identifier or error
    */
   func importKey(
-    keyData: SecureBytes,
+    keyDataIdentifier: String,
     metadata: KeyMetadataDTO
-  ) async -> Result<String, UmbraErrors.Crypto.Core>
+  ) async -> Result<String, UmbraErrorsDTOs.ErrorDTO>
 
   /**
    Deletes a cryptographic key.
@@ -99,7 +100,7 @@ public protocol CryptoXPCServiceProtocol: Sendable {
    */
   func deleteKey(
     keyIdentifier: String
-  ) async -> Result<Bool, UmbraErrors.Crypto.Core>
+  ) async -> Result<Bool, UmbraErrorsDTOs.ErrorDTO>
 
   // MARK: - Signing and Verification
 
@@ -107,35 +108,35 @@ public protocol CryptoXPCServiceProtocol: Sendable {
    Signs data using the specified key.
 
    - Parameters:
-      - data: The data to sign
+      - dataIdentifier: Identifier for the data to sign in secure storage
       - keyIdentifier: The identifier of the signing key
       - options: Optional signing options
 
-   - Returns: Result with signature as SecureBytes or error
+   - Returns: Result with identifier for the signature data or error
    */
   func sign(
-    data: SecureBytes,
+    dataIdentifier: String,
     keyIdentifier: String,
     options: SigningOptionsDTO?
-  ) async -> Result<SecureBytes, UmbraErrors.Crypto.Core>
+  ) async -> Result<String, UmbraErrorsDTOs.ErrorDTO>
 
   /**
    Verifies a signature against data using the specified key.
 
    - Parameters:
-      - signature: The signature to verify
-      - data: The original data
+      - signatureIdentifier: Identifier for the signature in secure storage
+      - dataIdentifier: Identifier for the original data in secure storage
       - keyIdentifier: The identifier of the verification key
       - options: Optional verification options
 
    - Returns: Result with verification result or error
    */
   func verify(
-    signature: SecureBytes,
-    data: SecureBytes,
+    signatureIdentifier: String,
+    dataIdentifier: String,
     keyIdentifier: String,
     options: SigningOptionsDTO?
-  ) async -> Result<Bool, UmbraErrors.Crypto.Core>
+  ) async -> Result<Bool, UmbraErrorsDTOs.ErrorDTO>
 
   // MARK: - Utility Functions
 
@@ -144,23 +145,22 @@ public protocol CryptoXPCServiceProtocol: Sendable {
 
    - Parameter length: Number of random bytes to generate
 
-   - Returns: Result with random bytes as SecureBytes or error
+   - Returns: Result with identifier for the random data or error
    */
   func generateRandomBytes(
     length: Int
-  ) async -> Result<SecureBytes, UmbraErrors.Crypto.Core>
+  ) async -> Result<String, UmbraErrorsDTOs.ErrorDTO>
 
   /**
-   Calculates a hash of the provided data.
+   Computes a cryptographic hash of the provided data.
 
    - Parameters:
-      - data: The data to hash
-      - algorithm: The hashing algorithm to use
-
-   - Returns: Result with hash as SecureBytes or error
+     - dataIdentifier: Identifier for the data to hash in secure storage
+     - algorithm: Hash algorithm to use
+   - Returns: Result with identifier for the hash data or error
    */
   func hash(
-    data: SecureBytes,
-    algorithm: HashAlgorithm
-  ) async -> Result<SecureBytes, UmbraErrors.Crypto.Core>
+    dataIdentifier: String,
+    algorithm: CoreSecurityTypes.HashAlgorithm
+  ) async -> Result<String, UmbraErrorsDTOs.ErrorDTO>
 }

@@ -1,14 +1,9 @@
-load("//bazel:swift_rules.bzl", "umbra_swift_library")
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
-umbra_swift_library(
+swift_library(
     name = "SecurityUtils",
-    srcs = glob(
-        [
-            "*.swift",
-            "**/*.swift",
-        ],
-        allow_empty = False,
-    ),
+    srcs = glob(["**/*.swift"]),
+    module_name = "SecurityUtils",
     visibility = ["//visibility:public"],
     deps = [
         "//packages/UmbraCoreTypes/Sources/CoreDTOs",
@@ -17,8 +12,13 @@ umbra_swift_library(
         "//packages/UmbraCoreTypes/Sources/ErrorCoreTypes",
         "//packages/UmbraCoreTypes/Sources/KeyManagementTypes",
         "//packages/UmbraCoreTypes/Sources/LoggingTypes",
+        "//packages/UmbraCoreTypes/Sources/SecurityInterfaces",
+        "//packages/UmbraCoreTypes/Sources/SecurityInterfaces/DTOs:SecurityInterfacesDTOs",
+        "//packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols:SecurityInterfacesProtocols",
         "//packages/UmbraCoreTypes/Sources/UmbraErrors",
+        "//packages/UmbraCoreTypes/Sources/UmbraErrors/Domains:UmbraErrorsDomains",
         "//packages/UmbraInterfaces/Sources/LoggingInterfaces",
         "//packages/UmbraInterfaces/Sources/SecurityCoreInterfaces",
+        "//packages/UmbraImplementations/Sources/SecurityCore",
     ],
 )
