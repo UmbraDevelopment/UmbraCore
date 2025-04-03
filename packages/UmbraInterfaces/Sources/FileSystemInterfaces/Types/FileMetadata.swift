@@ -4,24 +4,18 @@ import Foundation
 /**
  Represents metadata about a file in the file system.
 
- This structure encapsulates information about a file, including its attributes,
+ This structure provides a rich set of metadata about files, including paths,
  resource values, and other metadata that might be relevant to the application.
  */
 public struct FileMetadata: Sendable, Equatable {
   /// The path to the file
   public let path: FilePath
-
+  
   /// File attributes
   public let attributes: FileAttributes
 
-  /// Resource values, keyed by resource key
-  /// Note: Using @unchecked Sendable as [FileResourceKey: Any] isn't Sendable by default
-  @available(
-    *,
-    deprecated,
-    message: "This property will be replaced with a safer alternative in Swift 6"
-  )
-  public let resourceValues: @unchecked Sendable[FileResourceKey: Any]
+  /// Type-safe resource values, keyed by resource key
+  public let safeResourceValues: [FileResourceKey: SafeAttributeValue]
 
   /// Whether the file exists
   public let exists: Bool
@@ -30,19 +24,39 @@ public struct FileMetadata: Sendable, Equatable {
   public init(
     path: FilePath,
     attributes: FileAttributes,
-    resourceValues: [FileResourceKey: Any]=[:],
-    exists: Bool=true
+    safeResourceValues: [FileResourceKey: SafeAttributeValue] = [:],
+    exists: Bool = true
   ) {
-    self.path=path
-    self.attributes=attributes
-    self.resourceValues=resourceValues
-    self.exists=exists
+    self.path = path
+    self.attributes = attributes
+    self.safeResourceValues = safeResourceValues
+    self.exists = exists
+  }
+  
+  /// Convenience initializer that converts legacy resource values to safe values
+  public init(
+    path: FilePath,
+    attributes: FileAttributes,
+    resourceValues: [FileResourceKey: Any] = [:],
+    exists: Bool = true
+  ) {
+    let safeValues = resourceValues.compactMapValues { value in 
+      SafeAttributeValue(from: value)
+    }
+    
+    self.init(
+      path: path,
+      attributes: attributes,
+      safeResourceValues: safeValues,
+      exists: exists
+    )
   }
 
-  /// Custom equality implementation that ignores resourceValues which isn't Equatable
+  /// Custom equality implementation
   public static func == (lhs: FileMetadata, rhs: FileMetadata) -> Bool {
     lhs.path == rhs.path &&
       lhs.attributes == rhs.attributes &&
+      lhs.safeResourceValues == rhs.safeResourceValues &&
       lhs.exists == rhs.exists
   }
 }

@@ -3,79 +3,37 @@ import FileSystemTypes
 /**
  # File System Service Protocol
 
- A foundation-independent interface for file system operations that provides a
- clean abstraction layer for handling files and directories in a secure manner.
+ Protocol defining a cross-platform file system service that provides access
+ to files, directories, and their metadata in a secure, sandbox-compliant manner
+ with proper type safety.
 
- ## Actor-Based Implementation
+ The service handles operations such as:
+ - Creating, reading, writing, and deleting files
+ - Creating and managing directories
+ - Retrieving and manipulating file metadata and attributes
+ - Managing security-scoped bookmarks for sandbox compliance
 
- Implementations of this protocol MUST use Swift actors to ensure proper
- state isolation and thread safety for file system operations:
-
- ```swift
- actor FileSystemServiceActor: FileSystemServiceProtocol {
-     // Private state should be isolated within the actor
-     private let fileManager: FileManagerProtocol
-     private let logger: PrivacyAwareLoggingProtocol
-
-     // All function implementations must use 'await' appropriately when
-     // accessing actor-isolated state or calling other actor methods
- }
- ```
-
- ## Protocol Forwarding
-
- To support proper protocol conformance while maintaining actor isolation,
- implementations should consider using the protocol forwarding pattern:
-
- ```swift
- // Public non-actor class that conforms to protocol
- public final class FileSystemService: FileSystemServiceProtocol {
-     private let actor: FileSystemServiceActor
-
-     // Forward all protocol methods to the actor
-     public func createDirectory(...) async throws {
-         try await actor.createDirectory(...)
-     }
- }
- ```
-
- ## Privacy Considerations
-
- File system operations often involve sensitive file paths. Implementations must:
- - Use privacy-aware logging for file paths
- - Apply proper redaction to sensitive path components in logs
- - Handle permissions and access errors without revealing sensitive information
- - Implement secure deletion where appropriate
-
- ## Purpose
-
- This protocol defines the essential operations needed for file manipulation
- without tying to specific implementation details or underlying frameworks.
- By using this protocol, applications can:
-
- - Perform common file system operations with a consistent interface
- - Swap implementations for testing or platform-specific optimisations
- - Handle errors in a structured and predictable manner
- - Maintain security boundaries through typed interfaces
-
- ## Key Feature Areas
-
- The protocol is organised into several functional areas:
-
- 1. **Core Operations**: Reading, writing, and deleting files
- 2. **Directory Management**: Creating, listing, and navigating directories
- 3. **Path Manipulation**: Working with file paths and references
- 4. **Extended Attributes**: Storing metadata alongside files
- 5. **Temporary Files**: Creating and working with ephemeral file storage
+ All operations are designed to be thread-safe and can be used from multiple actors
+ without concern for data races. Methods are asynchronous where appropriate to
+ prevent blocking the caller.
 
  ## Error Handling
 
- This protocol uses Swift's throwing mechanism with the `FileSystemError` enum
- for consistent error handling. Each error provides specific information about
- what went wrong, enabling callers to handle failures appropriately.
- */
-import Foundation
+ All methods can throw FileSystemError to indicate various failure scenarios
+ such as permission issues, file not found, etc. Many operations also provide
+ detailed error information in the thrown error.
 
+ ## Security Considerations
+
+ The implementation is designed to follow best practices for security and 
+ sandbox compliance as per your requirements memory. It:
+
+ - Properly handles security-scoped bookmarks
+ - Uses appropriate permission levels
+ - Manages access to files correctly
+ - Securely disposes of temporary resources
+ - Follows principle of least privilege
+ */
 public protocol FileSystemServiceProtocol: Sendable {
 
   // MARK: - Core File & Directory Operations
@@ -84,15 +42,83 @@ public protocol FileSystemServiceProtocol: Sendable {
    Checks if a file exists at the specified path.
 
    - Parameter path: The file path to check
-   - Returns: Boolean indicating whether the file exists
+   - Returns: Whether the file exists
+   - Throws: FileSystemError if the existence check fails
    */
-  func fileExists(at path: FilePath) async -> Bool
+  func fileExists(at path: FilePath) async throws -> Bool
 
   /**
-   Retrieves metadata about a file or directory.
+   Checks if a directory exists at the specified path.
 
-   This method collects information about size, dates, and other attributes
-   of the specified file system item.
+   - Parameter path: The directory path to check
+   - Returns: Whether the directory exists
+   - Throws: FileSystemError if the existence check fails
+   */
+  func directoryExists(at path: FilePath) async throws -> Bool
+
+  /**
+   Lists the contents of a directory.
+
+   - Parameter path: The directory to list
+   - Parameter includeHidden: Whether to include hidden files
+   - Returns: Array of file paths for directory contents
+   - Throws: FileSystemError if the directory cannot be read
+   */
+  func listDirectory(
+    at path: FilePath,
+    includeHidden: Bool
+  ) async throws -> [FilePath]
+
+  /**
+   Lists the contents of a directory recursively.
+
+   - Parameter path: The directory to list
+   - Parameter includeHidden: Whether to include hidden files
+   - Returns: Array of file paths for all files and directories
+   - Throws: FileSystemError if the directory cannot be read
+   */
+  func listDirectoryRecursive(
+    at path: FilePath,
+    includeHidden: Bool
+  ) async throws -> [FilePath]
+
+  /**
+   Creates a file at the specified path.
+
+   - Parameter path: The path where the file should be created
+   - Parameter data: The data to write to the file
+   - Parameter overwrite: Whether to overwrite an existing file
+   - Throws: FileSystemError if the file cannot be created
+   */
+  func createFile(
+    at path: FilePath,
+    data: Data,
+    overwrite: Bool
+  ) async throws
+
+  /**
+   Reads the contents of a file.
+
+   - Parameter path: The file to read
+   - Returns: The file data
+   - Throws: FileSystemError if the file cannot be read
+   */
+  func readFile(at path: FilePath) async throws -> Data
+
+  /**
+   Updates a file with new data.
+
+   - Parameter path: The file to update
+   - Parameter data: The new data to write
+   - Throws: FileSystemError if the file cannot be updated
+   */
+  func updateFile(
+    at path: FilePath,
+    data: Data
+  ) async throws
+
+  /**
+   Gets the metadata for a file.
 
    - Parameter path: The file path to check
    - Parameter options: Configuration options for metadata retrieval
@@ -119,213 +145,191 @@ public protocol FileSystemServiceProtocol: Sendable {
   ) async throws
 
   /**
-   Reads the contents of a file as binary data.
+   Deletes a file at the specified path.
 
-   - Parameter path: Path to the file to read
-   - Parameter options: Configuration options for file reading
-   - Returns: The file's contents as an array of bytes
-   - Throws: FileSystemError if the file cannot be read
+   - Parameter path: The file to delete
+   - Parameter secure: Whether to securely overwrite the file before deletion
+   - Throws: FileSystemError if the file cannot be deleted
    */
-  func readFile(
+  func deleteFile(
     at path: FilePath,
-    options: FileReadOptions?
-  ) async throws -> [UInt8]
-
-  /**
-   Writes binary data to a file.
-
-   - Parameters:
-     - data: The bytes to write
-     - path: The file path to write to
-     - options: Configuration options for file writing
-   - Throws: FileSystemError if the write operation fails
-   */
-  func writeFile(
-    _ data: [UInt8],
-    to path: FilePath,
-    options: FileWriteOptions?
+    secure: Bool
   ) async throws
 
   /**
-   Appends binary data to an existing file.
+   Deletes a directory and all its contents.
 
-   - Parameters:
-     - data: The bytes to append
-     - path: The file path to append to
-     - options: Configuration options for file appending
-   - Throws: FileSystemError if the append operation fails
+   - Parameter path: The directory to delete
+   - Parameter secure: Whether to securely overwrite all files
+   - Throws: FileSystemError if the directory cannot be deleted
    */
-  func appendData(
-    _ data: [UInt8],
-    to path: FilePath,
-    options: FileWriteOptions?
-  ) async throws
-
-  /**
-   Deletes a file or directory.
-
-   - Parameter path: Path to delete
-   - Parameter options: Configuration options for deletion
-   - Throws: FileSystemError if the deletion fails
-   */
-  func delete(
+  func deleteDirectory(
     at path: FilePath,
-    options: DeleteOptions?
+    secure: Bool
   ) async throws
 
   /**
-   Copies an item from one location to another.
+   Moves a file or directory.
 
-   - Parameters:
-     - sourcePath: The path to copy from
-     - destinationPath: The path to copy to
-     - options: Configuration options for the copy operation
-   - Throws: FileSystemError if the copy operation fails
-   */
-  func copy(
-    from sourcePath: FilePath,
-    to destinationPath: FilePath,
-    options: CopyOptions?
-  ) async throws
-
-  /**
-   Moves an item from one location to another.
-
-   - Parameters:
-     - sourcePath: The path to move from
-     - destinationPath: The path to move to
-     - options: Configuration options for the move operation
+   - Parameter sourcePath: The source path
+   - Parameter destinationPath: The destination path
+   - Parameter overwrite: Whether to overwrite the destination if it exists
    - Throws: FileSystemError if the move operation fails
    */
-  func move(
+  func moveItem(
     from sourcePath: FilePath,
     to destinationPath: FilePath,
-    options: MoveOptions?
+    overwrite: Bool
   ) async throws
 
-  // MARK: - Directory Contents
-
   /**
-   Lists the contents of a directory.
+   Copies a file or directory.
 
-   - Parameter directoryPath: The directory to list
-   - Parameter options: Configuration options for directory listing
-   - Returns: An array of file paths within the directory
-   - Throws: FileSystemError if the directory cannot be read
+   - Parameter sourcePath: The source path
+   - Parameter destinationPath: The destination path
+   - Parameter overwrite: Whether to overwrite the destination if it exists
+   - Throws: FileSystemError if the copy operation fails
    */
-  func listDirectory(
-    at directoryPath: FilePath,
-    options: DirectoryListOptions?
-  ) async throws -> [FilePath]
-
-  /**
-   Recursively lists the contents of a directory.
-
-   - Parameter directoryPath: The directory to list
-   - Parameter options: Configuration options for recursive directory listing
-   - Returns: An array of file paths within the directory and its subdirectories
-   - Throws: FileSystemError if the directory cannot be read
-   */
-  func listDirectoryRecursively(
-    at directoryPath: FilePath,
-    options: RecursiveDirectoryListOptions?
-  ) async throws -> [FilePath]
+  func copyItem(
+    from sourcePath: FilePath,
+    to destinationPath: FilePath,
+    overwrite: Bool
+  ) async throws
 
   // MARK: - Extended Attributes
 
   /**
-   Sets an extended attribute on a file.
-
-   - Parameters:
-     - attribute: The attribute name
-     - value: The attribute value
-     - path: The file path
-     - options: Configuration options for setting extended attributes
-   - Throws: FileSystemError if the attribute cannot be set
-   */
-  func setExtendedAttribute(
-    named attribute: String,
-    value: [UInt8],
-    for path: FilePath,
-    options: ExtendedAttributeOptions?
-  ) async throws
-
-  /**
    Retrieves an extended attribute from a file.
 
-   - Parameters:
-     - attribute: The attribute name
-     - path: The file path
-     - options: Configuration options for getting extended attributes
-   - Returns: The attribute value as binary data
+   - Parameter path: The file to query
+   - Parameter attributeName: The name of the extended attribute
+   - Returns: The attribute value as a SafeAttributeValue
    - Throws: FileSystemError if the attribute cannot be retrieved
    */
   func getExtendedAttribute(
-    named attribute: String,
-    for path: FilePath,
-    options: ExtendedAttributeOptions?
-  ) async throws -> [UInt8]
+    at path: FilePath,
+    name attributeName: String
+  ) async throws -> SafeAttributeValue
+
+  /**
+   Sets an extended attribute on a file.
+
+   - Parameter path: The file to modify
+   - Parameter attributeName: The name of the extended attribute
+   - Parameter attributeValue: The value to set
+   - Throws: FileSystemError if the attribute cannot be set
+   */
+  func setExtendedAttribute(
+    at path: FilePath,
+    name attributeName: String,
+    value attributeValue: SafeAttributeValue
+  ) async throws
 
   /**
    Lists all extended attributes for a file.
 
-   - Parameter path: The file path
-   - Parameter options: Configuration options for listing extended attributes
+   - Parameter path: The file to query
    - Returns: An array of attribute names
-   - Throws: FileSystemError if the attributes cannot be listed
+   - Throws: FileSystemError if the attributes cannot be retrieved
    */
   func listExtendedAttributes(
-    for path: FilePath,
-    options: ExtendedAttributeOptions?
+    at path: FilePath
   ) async throws -> [String]
 
   /**
    Removes an extended attribute from a file.
 
-   - Parameters:
-     - attribute: The attribute name
-     - path: The file path
-     - options: Configuration options for removing extended attributes
+   - Parameter path: The file to modify
+   - Parameter attributeName: The name of the attribute to remove
    - Throws: FileSystemError if the attribute cannot be removed
    */
   func removeExtendedAttribute(
-    named attribute: String,
-    for path: FilePath,
-    options: ExtendedAttributeOptions?
+    at path: FilePath,
+    name attributeName: String
   ) async throws
 
-  // MARK: - Path Utilities
+  // MARK: - URL and Bookmark Operations
 
   /**
-   Determines if a path is a subpath of another path.
+   Converts a file path to a URL.
 
-   This method checks if one path is contained within another path
-   in the directory hierarchy.
-
-   - Parameters:
-     - path: The path to check
-     - possibleParent: The potential parent path
-   - Returns: True if path is a subpath of possibleParent
+   - Parameter path: The file path to convert
+   - Returns: The equivalent URL
+   - Throws: FileSystemError if the conversion fails
    */
-  func isSubpath(
-    _ path: FilePath,
-    of possibleParent: FilePath
-  ) async -> Bool
+  func pathToURL(_ path: FilePath) async throws -> URL
 
   /**
-   Creates a uniquely named temporary file.
+   Creates a security-scoped bookmark for a file.
 
-   - Parameter directory: Optional directory where the temp file should be created
-   - Parameter prefix: Optional prefix for the temp file name
-   - Parameter suffix: Optional suffix (extension) for the temp file name
-   - Parameter options: Configuration options for temporary file creation
-   - Returns: Path to the created temporary file
+   - Parameter path: The file path to bookmark
+   - Parameter readOnly: Whether the bookmark should be read-only
+   - Returns: The bookmark data
+   - Throws: FileSystemError if the bookmark cannot be created
+   */
+  func createSecurityBookmark(
+    for path: FilePath,
+    readOnly: Bool
+  ) async throws -> Data
+
+  /**
+   Resolves a security-scoped bookmark.
+
+   - Parameter bookmark: The bookmark data
+   - Returns: The resolved file path and whether the bookmark was stale
+   - Throws: FileSystemError if the bookmark cannot be resolved
+   */
+  func resolveSecurityBookmark(
+    _ bookmark: Data
+  ) async throws -> (FilePath, Bool)
+
+  /**
+   Starts accessing a bookmarked resource.
+
+   - Parameter path: The path to access
+   - Returns: Whether access was granted
+   - Throws: FileSystemError if access cannot be started
+   */
+  func startAccessingSecurityScopedResource(
+    at path: FilePath
+  ) async throws -> Bool
+
+  /**
+   Stops accessing a bookmarked resource.
+
+   - Parameter path: The path to stop accessing
+   */
+  func stopAccessingSecurityScopedResource(
+    at path: FilePath
+  ) async
+
+  // MARK: - Temporary Files
+
+  /**
+   Creates a temporary file in the system's temporary directory.
+
+   - Parameter prefix: Optional prefix for the filename
+   - Parameter suffix: Optional suffix for the filename
+   - Parameter options: Configuration options for the temporary file
+   - Returns: Path to the temporary file
    - Throws: FileSystemError if the temporary file cannot be created
    */
   func createTemporaryFile(
-    inDirectory directory: FilePath?,
     prefix: String?,
     suffix: String?,
+    options: TemporaryFileOptions?
+  ) async throws -> FilePath
+
+  /**
+   Creates a temporary directory in the system's temporary directory.
+
+   - Parameter prefix: Optional prefix for the directory name
+   - Parameter options: Configuration options for the temporary directory
+   - Returns: Path to the temporary directory
+   - Throws: FileSystemError if the temporary directory cannot be created
+   */
+  func createTemporaryDirectory(
+    prefix: String?,
     options: TemporaryFileOptions?
   ) async throws -> FilePath
 }
@@ -337,182 +341,139 @@ public struct FileMetadataOptions: Sendable, Equatable {
   /// Whether to resolve symbolic links
   public let resolveSymlinks: Bool
 
-  /// Resource keys to include in the metadata
-  public let resourceKeys: Set<FileResourceKey>
+  /// Resource keys to fetch
+  public let resourceKeys: [FileResourceKey]
 
   /// Creates new file metadata options
   public init(
-    resolveSymlinks: Bool=true,
-    resourceKeys: Set<FileResourceKey>=[]
+    resolveSymlinks: Bool = true,
+    resourceKeys: [FileResourceKey] = []
   ) {
-    self.resolveSymlinks=resolveSymlinks
-    self.resourceKeys=resourceKeys
+    self.resolveSymlinks = resolveSymlinks
+    self.resourceKeys = resourceKeys
   }
 }
 
 /**
- Options for reading files.
+ Result of file system operation that returns file content.
  */
-public struct FileReadOptions: Sendable, Equatable {
-  /// Whether to use uncached I/O
-  public let uncached: Bool
+public struct FileContent: Sendable, Equatable {
+  /// The file data
+  public let data: Data
 
-  /// Maximum buffer size for reading
-  public let bufferSize: Int?
+  /// File path
+  public let path: FilePath
 
-  /// Creates new file read options
-  public init(
-    uncached: Bool=false,
-    bufferSize: Int?=nil
-  ) {
-    self.uncached=uncached
-    self.bufferSize=bufferSize
-  }
-}
-
-/**
- Options for writing to files.
- */
-public struct FileWriteOptions: Sendable, Equatable {
-  /// Whether to create the file if it doesn't exist
-  public let createIfNeeded: Bool
-
-  /// Whether to atomically write the file
-  public let atomicWrite: Bool
-
-  /// Whether to use uncached I/O
-  public let uncached: Bool
-
-  /// File attributes to set when creating the file
+  /// File attributes
   public let attributes: FileAttributes?
 
-  /// Creates new file write options
+  /// Creates a new file content result
   public init(
-    createIfNeeded: Bool=true,
-    atomicWrite: Bool=false,
-    uncached: Bool=false,
+    data: Data,
+    path: FilePath,
     attributes: FileAttributes?=nil
   ) {
-    self.createIfNeeded=createIfNeeded
-    self.atomicWrite=atomicWrite
-    self.uncached=uncached
-    self.attributes=attributes
+    self.data = data
+    self.path = path
+    self.attributes = attributes
   }
 }
 
 /**
- Options for deleting files or directories.
+ Result of batch file read operations.
  */
-public struct DeleteOptions: Sendable, Equatable {
-  /// Whether to recursively delete directory contents
-  public let recursive: Bool
+public struct BatchFileReadResult: Sendable {
+  /// Files that were successfully read
+  public let successfulReads: [FileContent]
 
-  /// Whether to securely erase file contents before deletion
-  public let secureErase: Bool
+  /// Files that failed to read with associated errors
+  public let failedReads: [FilePath: Error]
 
-  /// Creates new delete options
+  /// Creates a new batch read result
   public init(
-    recursive: Bool=false,
-    secureErase: Bool=false
+    successfulReads: [FileContent] = [],
+    failedReads: [FilePath: Error] = [:]
   ) {
-    self.recursive=recursive
-    self.secureErase=secureErase
+    self.successfulReads = successfulReads
+    self.failedReads = failedReads
+  }
+}
+
+extension BatchFileReadResult: Equatable {
+  public static func == (lhs: BatchFileReadResult, rhs: BatchFileReadResult) -> Bool {
+    // We can compare the successful reads directly
+    guard lhs.successfulReads == rhs.successfulReads else {
+      return false
+    }
+    
+    // For error dictionaries, we compare the keys but not the Error values
+    // (since Error doesn't conform to Equatable)
+    guard lhs.failedReads.keys.count == rhs.failedReads.keys.count else {
+      return false
+    }
+    
+    // Check that all keys in lhs are present in rhs
+    for key in lhs.failedReads.keys {
+      guard rhs.failedReads[key] != nil else {
+        return false
+      }
+    }
+    
+    return true
   }
 }
 
 /**
- Options for copying files or directories.
+ Type of file system item.
  */
-public struct CopyOptions: Sendable, Equatable {
-  /// Whether to replace existing items at the destination
-  public let replaceExisting: Bool
+public enum FileSystemItemType: String, Sendable, Equatable, CaseIterable {
+  /// Regular file
+  case file
 
-  /// Whether to recursively copy directory contents
-  public let recursive: Bool
+  /// Directory
+  case directory
 
-  /// Whether to preserve file attributes during copy
-  public let preserveAttributes: Bool
+  /// Symbolic link
+  case symlink
 
-  /// Creates new copy options
+  /// Socket
+  case socket
+
+  /// Character special device
+  case characterSpecial
+
+  /// Block special device
+  case blockSpecial
+
+  /// Named pipe (FIFO)
+  case fifo
+
+  /// Unknown type
+  case unknown
+}
+
+/**
+ File system item entry.
+ */
+public struct FileSystemItem: Sendable, Equatable {
+  /// Path to the item
+  public let path: FilePath
+
+  /// Type of file system item
+  public let type: FileSystemItemType
+
+  /// Attributes of the item
+  public let attributes: FileAttributes?
+
+  /// Initialize a new file system item
   public init(
-    replaceExisting: Bool=false,
-    recursive: Bool=false,
-    preserveAttributes: Bool=true
+    path: FilePath,
+    type: FileSystemItemType,
+    attributes: FileAttributes?=nil
   ) {
-    self.replaceExisting=replaceExisting
-    self.recursive=recursive
-    self.preserveAttributes=preserveAttributes
-  }
-}
-
-/**
- Options for moving files or directories.
- */
-public struct MoveOptions: Sendable, Equatable {
-  /// Whether to replace existing items at the destination
-  public let replaceExisting: Bool
-
-  /// Creates new move options
-  public init(replaceExisting: Bool=false) {
-    self.replaceExisting=replaceExisting
-  }
-}
-
-/**
- Options for listing directory contents.
- */
-public struct DirectoryListOptions: Sendable, Equatable {
-  /// Whether to include hidden files in the listing
-  public let includeHidden: Bool
-
-  /// File types to include in the listing
-  public let fileTypes: Set<FileType>?
-
-  /// Creates new directory list options
-  public init(
-    includeHidden: Bool=false,
-    fileTypes: Set<FileType>?=nil
-  ) {
-    self.includeHidden=includeHidden
-    self.fileTypes=fileTypes
-  }
-}
-
-/**
- Options for recursive directory listing.
- */
-public struct RecursiveDirectoryListOptions: Sendable, Equatable {
-  /// Whether to include hidden files in the listing
-  public let includeHidden: Bool
-
-  /// File types to include in the listing
-  public let fileTypes: Set<FileType>?
-
-  /// Maximum depth to recurse (nil for unlimited)
-  public let maxDepth: Int?
-
-  /// Creates new recursive directory list options
-  public init(
-    includeHidden: Bool=false,
-    fileTypes: Set<FileType>?=nil,
-    maxDepth: Int?=nil
-  ) {
-    self.includeHidden=includeHidden
-    self.fileTypes=fileTypes
-    self.maxDepth=maxDepth
-  }
-}
-
-/**
- Options for working with extended attributes.
- */
-public struct ExtendedAttributeOptions: Sendable, Equatable {
-  /// Whether to follow symbolic links
-  public let followSymlinks: Bool
-
-  /// Creates new extended attribute options
-  public init(followSymlinks: Bool=true) {
-    self.followSymlinks=followSymlinks
+    self.path = path
+    self.type = type
+    self.attributes = attributes
   }
 }
 
@@ -526,12 +487,12 @@ public struct TemporaryFileOptions: Sendable, Equatable {
   /// File attributes to set when creating the file
   public let attributes: FileAttributes?
 
-  /// Creates new temporary file options
+  /// Initialize temporary file options
   public init(
-    deleteOnExit: Bool=true,
-    attributes: FileAttributes?=nil
+    deleteOnExit: Bool = true,
+    attributes: FileAttributes? = nil
   ) {
-    self.deleteOnExit=deleteOnExit
-    self.attributes=attributes
+    self.deleteOnExit = deleteOnExit
+    self.attributes = attributes
   }
 }
