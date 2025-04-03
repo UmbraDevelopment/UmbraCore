@@ -53,23 +53,29 @@ public struct BasicSecurityProvider: EncryptionProviderProtocol {
     iv: Data,
     config: SecurityConfigDTO
   ) throws -> Data {
-    guard let algorithm=getAlgorithm(config: config) else {
-      throw UmbraErrors.Security.Core.invalidInput("Invalid or unsupported algorithm")
+    guard let algorithm = getAlgorithm(config: config) else {
+      throw CoreSecurityError.invalidInput("Invalid or unsupported algorithm")
     }
 
     // Validate key size
     guard validateKeySize(key.count, algorithm: config.encryptionAlgorithm) != nil else {
-      throw UmbraErrors.Security.Core.invalidInput("Invalid key size for algorithm \(config.encryptionAlgorithm)")
+      throw CoreSecurityError.invalidInput("Invalid key size for algorithm \(config.encryptionAlgorithm)")
     }
 
-    // Validate IV
-    guard iv.count == kCCBlockSizeAES128 else {
-      throw UmbraErrors.Security.Core.invalidInput("Invalid IV size, must be 16 bytes for AES-CBC")
+    // Validate IV size (must be 16 bytes for AES-CBC)
+    guard iv.count == 16 else {
+      throw CoreSecurityError.invalidInput("Invalid IV size, must be 16 bytes for AES-CBC")
     }
 
-    // Create cryptor
-    var cryptorRef: CCCryptorRef?
-    var status=CCCryptorCreate(
+    // Calculate buffer sizes for encryption
+    let dataLength = plaintext.count
+    let bufferSize = dataLength + kCCBlockSizeAES128
+    var encryptedBytes = [UInt8](repeating: 0, count: bufferSize)
+    var encryptedLength = 0
+
+    // Setup encryption context
+    var cryptorRef: CCCryptorRef? = nil
+    var status = CCCryptorCreate(
       CCOperation(kCCEncrypt),
       algorithm,
       CCOptions(kCCOptionPKCS7Padding),
@@ -79,63 +85,78 @@ public struct BasicSecurityProvider: EncryptionProviderProtocol {
       &cryptorRef
     )
 
-    guard status == kCCSuccess, let cryptorRef else {
-      throw UmbraErrors.Security.Core.cryptographicError("Failed to create encryption context with status \(status)")
+    // Check context creation
+    guard status == kCCSuccess, cryptorRef != nil else {
+      throw CoreSecurityError.cryptoError("Failed to create encryption context with status \(status)")
     }
 
     defer {
+      // Always release the cryptor when done
       CCCryptorRelease(cryptorRef)
     }
 
-    // Determine buffer size
-    let outputLength=CCCryptorGetOutputLength(cryptorRef, plaintext.count, true)
-    var outputBuffer=[UInt8](repeating: 0, count: outputLength)
+    // Process the data in chunks
+    let chunkSize = 64 * 1024 // 64KB chunks
+    var offset = 0
 
-    // Process the data
-    var bytesProcessed=0
-    status=plaintext.withUnsafeBytes { plaintextBytes -> CCCryptorStatus in
-      guard let plaintextPtr=plaintextBytes.baseAddress else {
-        return CCCryptorStatus(kCCMemoryFailure)
+    while offset < dataLength {
+      let chunkLength = min(chunkSize, dataLength - offset)
+      var bytesEncrypted = 0
+
+      // Create a pointer to the current position in the output buffer
+      let outputPos = offset + Int(encryptedLength)
+      let outputBuffer = UnsafeMutableRawPointer(&encryptedBytes).bindMemory(
+        to: UInt8.self,
+        capacity: bufferSize
+      ) + outputPos
+
+      // Update with the current chunk
+      status = plaintext.withUnsafeBytes { plainBytes in
+        let plainBuffer = plainBytes.baseAddress!.bindMemory(
+          to: UInt8.self,
+          capacity: dataLength
+        ) + offset
+
+        return CCCryptorUpdate(
+          cryptorRef,
+          plainBuffer,
+          chunkLength,
+          outputBuffer,
+          bufferSize - outputPos,
+          &bytesEncrypted
+        )
       }
 
-      return CCCryptorUpdate(
-        cryptorRef,
-        plaintextPtr,
-        plaintext.count,
-        &outputBuffer,
-        outputLength,
-        &bytesProcessed
-      )
-    }
-
-    guard status == kCCSuccess else {
-      throw UmbraErrors.Security.Core.cryptographicError("Encryption update failed with status \(status)")
-    }
-
-    var finalBytesProcessed=0
-
-    // Use proper pointer arithmetic with withUnsafeMutableBytes
-    status=outputBuffer.withUnsafeMutableBytes { outputBufferBytes -> CCCryptorStatus in
-      guard let basePtr=outputBufferBytes.baseAddress else {
-        return CCCryptorStatus(kCCMemoryFailure)
+      guard status == kCCSuccess else {
+        throw CoreSecurityError.cryptoError("Encryption update failed with status \(status)")
       }
 
-      // Advance the pointer by bytesProcessed
-      let advancedPtr=basePtr.advanced(by: bytesProcessed)
-
-      return CCCryptorFinal(
-        cryptorRef,
-        advancedPtr,
-        outputLength - bytesProcessed,
-        &finalBytesProcessed
-      )
+      encryptedLength += bytesEncrypted
+      offset += chunkLength
     }
+
+    // Finalize encryption
+    var finalSize = 0
+    let finalizePos = Int(encryptedLength)
+    let finalizeBuffer = UnsafeMutableRawPointer(&encryptedBytes).bindMemory(
+      to: UInt8.self,
+      capacity: bufferSize
+    ) + finalizePos
+
+    status = CCCryptorFinal(
+      cryptorRef,
+      finalizeBuffer,
+      bufferSize - finalizePos,
+      &finalSize
+    )
 
     guard status == kCCSuccess else {
-      throw UmbraErrors.Security.Core.cryptographicError("Encryption finalization failed with status \(status)")
+      throw CoreSecurityError.cryptoError("Encryption finalization failed with status \(status)")
     }
 
-    return Data(outputBuffer.prefix(bytesProcessed + finalBytesProcessed))
+    // Create final encrypted data
+    encryptedLength += finalSize
+    return Data(bytes: encryptedBytes, count: encryptedLength)
   }
 
   /**
@@ -144,9 +165,9 @@ public struct BasicSecurityProvider: EncryptionProviderProtocol {
    - Parameters:
       - ciphertext: Data to decrypt
       - key: Decryption key
-      - iv: Initialisation vector (must be 16 bytes)
+      - iv: Initialisation vector (must match the one used for encryption)
       - config: Additional configuration options
-   - Returns: Decrypted plaintext
+   - Returns: Decrypted data
    - Throws: CryptoError if decryption fails
    */
   public func decrypt(
@@ -155,23 +176,29 @@ public struct BasicSecurityProvider: EncryptionProviderProtocol {
     iv: Data,
     config: SecurityConfigDTO
   ) throws -> Data {
-    guard let algorithm=getAlgorithm(config: config) else {
-      throw UmbraErrors.Security.Core.invalidInput("Invalid or unsupported algorithm")
+    guard let algorithm = getAlgorithm(config: config) else {
+      throw CoreSecurityError.invalidInput("Invalid or unsupported algorithm")
     }
 
     // Validate key size
     guard validateKeySize(key.count, algorithm: config.encryptionAlgorithm) != nil else {
-      throw UmbraErrors.Security.Core.invalidInput("Invalid key size for algorithm \(config.encryptionAlgorithm)")
+      throw CoreSecurityError.invalidInput("Invalid key size for algorithm \(config.encryptionAlgorithm)")
     }
 
-    // Validate IV
-    guard iv.count == kCCBlockSizeAES128 else {
-      throw UmbraErrors.Security.Core.invalidInput("Invalid IV size, must be 16 bytes for AES-CBC")
+    // Validate IV size (must be 16 bytes for AES-CBC)
+    guard iv.count == 16 else {
+      throw CoreSecurityError.invalidInput("Invalid IV size, must be 16 bytes for AES-CBC")
     }
 
-    // Create cryptor
-    var cryptorRef: CCCryptorRef?
-    var status=CCCryptorCreate(
+    // Calculate buffer sizes for decryption
+    let dataLength = ciphertext.count
+    let bufferSize = dataLength + kCCBlockSizeAES128
+    var decryptedBytes = [UInt8](repeating: 0, count: bufferSize)
+    var decryptedLength = 0
+
+    // Setup decryption context
+    var cryptorRef: CCCryptorRef? = nil
+    var status = CCCryptorCreate(
       CCOperation(kCCDecrypt),
       algorithm,
       CCOptions(kCCOptionPKCS7Padding),
@@ -181,63 +208,78 @@ public struct BasicSecurityProvider: EncryptionProviderProtocol {
       &cryptorRef
     )
 
-    guard status == kCCSuccess, let cryptorRef else {
-      throw UmbraErrors.Security.Core.cryptographicError("Failed to create decryption context with status \(status)")
+    // Check context creation
+    guard status == kCCSuccess, cryptorRef != nil else {
+      throw CoreSecurityError.cryptoError("Failed to create decryption context with status \(status)")
     }
 
     defer {
+      // Always release the cryptor when done
       CCCryptorRelease(cryptorRef)
     }
 
-    // Determine buffer size
-    let outputLength=CCCryptorGetOutputLength(cryptorRef, ciphertext.count, true)
-    var outputBuffer=[UInt8](repeating: 0, count: outputLength)
+    // Process the data in chunks
+    let chunkSize = 64 * 1024 // 64KB chunks
+    var offset = 0
 
-    // Process the data
-    var bytesProcessed=0
-    status=ciphertext.withUnsafeBytes { ciphertextBytes -> CCCryptorStatus in
-      guard let ciphertextPtr=ciphertextBytes.baseAddress else {
-        return CCCryptorStatus(kCCMemoryFailure)
+    while offset < dataLength {
+      let chunkLength = min(chunkSize, dataLength - offset)
+      var bytesDecrypted = 0
+
+      // Create a pointer to the current position in the output buffer
+      let outputPos = offset + Int(decryptedLength)
+      let outputBuffer = UnsafeMutableRawPointer(&decryptedBytes).bindMemory(
+        to: UInt8.self,
+        capacity: bufferSize
+      ) + outputPos
+
+      // Update with the current chunk
+      status = ciphertext.withUnsafeBytes { cipherBytes in
+        let cipherBuffer = cipherBytes.baseAddress!.bindMemory(
+          to: UInt8.self,
+          capacity: dataLength
+        ) + offset
+
+        return CCCryptorUpdate(
+          cryptorRef,
+          cipherBuffer,
+          chunkLength,
+          outputBuffer,
+          bufferSize - outputPos,
+          &bytesDecrypted
+        )
       }
 
-      return CCCryptorUpdate(
-        cryptorRef,
-        ciphertextPtr,
-        ciphertext.count,
-        &outputBuffer,
-        outputLength,
-        &bytesProcessed
-      )
-    }
-
-    guard status == kCCSuccess else {
-      throw UmbraErrors.Security.Core.cryptographicError("Decryption update failed with status \(status)")
-    }
-
-    var finalBytesProcessed=0
-
-    // Use proper pointer arithmetic with withUnsafeMutableBytes
-    status=outputBuffer.withUnsafeMutableBytes { outputBufferBytes -> CCCryptorStatus in
-      guard let basePtr=outputBufferBytes.baseAddress else {
-        return CCCryptorStatus(kCCMemoryFailure)
+      guard status == kCCSuccess else {
+        throw CoreSecurityError.cryptoError("Decryption update failed with status \(status)")
       }
 
-      // Advance the pointer by bytesProcessed
-      let advancedPtr=basePtr.advanced(by: bytesProcessed)
-
-      return CCCryptorFinal(
-        cryptorRef,
-        advancedPtr,
-        outputLength - bytesProcessed,
-        &finalBytesProcessed
-      )
+      decryptedLength += bytesDecrypted
+      offset += chunkLength
     }
+
+    // Finalize decryption
+    var finalSize = 0
+    let finalizePos = Int(decryptedLength)
+    let finalizeBuffer = UnsafeMutableRawPointer(&decryptedBytes).bindMemory(
+      to: UInt8.self,
+      capacity: bufferSize
+    ) + finalizePos
+
+    status = CCCryptorFinal(
+      cryptorRef,
+      finalizeBuffer,
+      bufferSize - finalizePos,
+      &finalSize
+    )
 
     guard status == kCCSuccess else {
-      throw UmbraErrors.Security.Core.cryptographicError("Decryption finalization failed with status \(status)")
+      throw CoreSecurityError.cryptoError("Decryption finalization failed with status \(status)")
     }
 
-    return Data(outputBuffer.prefix(bytesProcessed + finalBytesProcessed))
+    // Create final decrypted data
+    decryptedLength += finalSize
+    return Data(bytes: decryptedBytes, count: decryptedLength)
   }
 
   /**
@@ -252,19 +294,19 @@ public struct BasicSecurityProvider: EncryptionProviderProtocol {
   public func generateKey(size: Int, config _: SecurityConfigDTO) throws -> Data {
     // Validate key size
     guard size == 128 || size == 192 || size == 256 else {
-      throw UmbraErrors.Security.Core.invalidInput("Invalid key size, must be 128, 192, or 256 bits")
+      throw CoreSecurityError.invalidInput("Invalid key size, must be 128, 192, or 256 bits")
     }
 
-    let keyBytes=size / 8
-    var keyData=Data(count: keyBytes)
+    let keyBytes = size / 8
+    var keyData = Data(count: keyBytes)
 
-    let result=keyData.withUnsafeMutableBytes { bytes in
-      guard let baseAddress=bytes.baseAddress else { return Int32(errSecAllocate) }
+    let result = keyData.withUnsafeMutableBytes { bytes in
+      guard let baseAddress = bytes.baseAddress else { return Int32(errSecAllocate) }
       return SecRandomCopyBytes(kSecRandomDefault, keyBytes, baseAddress)
     }
 
     guard result == errSecSuccess else {
-      throw UmbraErrors.Security.Core.cryptographicError("Key generation failed with status \(result)")
+      throw CoreSecurityError.cryptoError("Key generation failed with status \(result)")
     }
 
     return keyData
@@ -280,18 +322,18 @@ public struct BasicSecurityProvider: EncryptionProviderProtocol {
    */
   public func generateIV(size: Int) throws -> Data {
     guard size > 0 else {
-      throw UmbraErrors.Security.Core.invalidInput("IV size must be greater than 0")
+      throw CoreSecurityError.invalidInput("IV size must be greater than 0")
     }
 
-    var ivData=Data(count: size)
+    var ivData = Data(count: size)
 
-    let result=ivData.withUnsafeMutableBytes { bytes in
-      guard let baseAddress=bytes.baseAddress else { return Int32(errSecAllocate) }
+    let result = ivData.withUnsafeMutableBytes { bytes in
+      guard let baseAddress = bytes.baseAddress else { return Int32(errSecAllocate) }
       return SecRandomCopyBytes(kSecRandomDefault, size, baseAddress)
     }
 
     guard result == errSecSuccess else {
-      throw UmbraErrors.Security.Core.cryptographicError("IV generation failed with status \(result)")
+      throw CoreSecurityError.cryptoError("IV generation failed with status \(result)")
     }
 
     return ivData
@@ -309,38 +351,35 @@ public struct BasicSecurityProvider: EncryptionProviderProtocol {
   public func hash(data: Data, algorithm: String) throws -> Data {
     switch algorithm.uppercased() {
       case "SHA256":
-        var hashBytes=[UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
+        var hashBytes = [UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
         data.withUnsafeBytes { dataBytes in
-          guard let baseAddress=dataBytes.baseAddress else { return }
-          CC_SHA256(baseAddress, CC_LONG(data.count), &hashBytes)
+          _ = CC_SHA256(dataBytes.baseAddress, CC_LONG(data.count), &hashBytes)
         }
         return Data(hashBytes)
 
       case "SHA384":
-        var hashBytes=[UInt8](repeating: 0, count: Int(CC_SHA384_DIGEST_LENGTH))
+        var hashBytes = [UInt8](repeating: 0, count: Int(CC_SHA384_DIGEST_LENGTH))
         data.withUnsafeBytes { dataBytes in
-          guard let baseAddress=dataBytes.baseAddress else { return }
-          CC_SHA384(baseAddress, CC_LONG(data.count), &hashBytes)
+          _ = CC_SHA384(dataBytes.baseAddress, CC_LONG(data.count), &hashBytes)
         }
         return Data(hashBytes)
 
       case "SHA512":
-        var hashBytes=[UInt8](repeating: 0, count: Int(CC_SHA512_DIGEST_LENGTH))
+        var hashBytes = [UInt8](repeating: 0, count: Int(CC_SHA512_DIGEST_LENGTH))
         data.withUnsafeBytes { dataBytes in
-          guard let baseAddress=dataBytes.baseAddress else { return }
-          CC_SHA512(baseAddress, CC_LONG(data.count), &hashBytes)
+          _ = CC_SHA512(dataBytes.baseAddress, CC_LONG(data.count), &hashBytes)
         }
         return Data(hashBytes)
 
       default:
-        throw UmbraErrors.Security.Core.unsupportedOperation(name: "Hash algorithm \(algorithm)")
+        throw CoreSecurityError.invalidInput("Unsupported hash algorithm: \(algorithm)")
     }
   }
 
   // MARK: - Private Helpers
 
   private func validateKeySize(_ keySize: Int, algorithm: String) -> Int? {
-    let keySizeBits=keySize * 8
+    let keySizeBits = keySize * 8
 
     switch algorithm.uppercased() {
       case "AES":

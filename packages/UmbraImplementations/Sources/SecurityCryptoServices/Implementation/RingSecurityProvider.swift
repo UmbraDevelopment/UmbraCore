@@ -44,15 +44,28 @@ import UmbraErrors
   public actor RingSecurityProvider: CryptoServiceProtocol, AsyncServiceInitializable {
     /// The type of provider implementation
     public nonisolated let providerType: SecurityProviderType = .ring
-
+    
+    /// Secure storage for sensitive data
+    public let secureStorage: SecureStorageProtocol
+    
     /// Initialises a new Ring security provider
-    public init() {}
+    /// - Parameter secureStorage: The secure storage to use
+    public init(secureStorage: SecureStorageProtocol) {
+      self.secureStorage = secureStorage
+    }
 
     /// Initializes the service, establishing any necessary FFI connections
     public func initialize() async throws {
-      // Setup any necessary FFI initialization here
-      // For now this is a no-op as the initialization happens on first use
+      // Verify that the Ring FFI is accessible
+      let version = RingFFI_GetVersion()
+      if version <= 0 {
+        throw CoreSecurityError.configurationError(
+          "Ring FFI initialization failed: invalid version number \(version)"
+        )
+      }
     }
+
+    // MARK: - Low-level Cryptographic Functions
 
     /**
      Encrypts data using AES-GCM via Ring.
@@ -60,33 +73,47 @@ import UmbraErrors
      - Parameters:
         - data: Data to encrypt
         - key: Encryption key
-     - Returns: Result with encrypted data or error
+     - Returns: Encrypted data or error
      */
     public func encrypt(
       data: [UInt8],
       using key: [UInt8]
     ) async -> Result<[UInt8], Error> {
       do {
-        // Generate a random 12-byte IV for AES-GCM
-        let iv=try generateIV(size: 12)
+        // Validate key size
+        if key.count != 32 {
+          throw CoreSecurityError.invalidKey(
+            "Ring requires a 256-bit (32-byte) key"
+          )
+        }
 
-        // Call the Ring FFI to encrypt
-        var encryptedData=RingFFI_AES_GCM_Encrypt(
-          data,
-          data.count,
-          key,
-          key.count,
-          iv,
-          iv.count
-        )
+        // Generate a random nonce
+        var nonce = [UInt8](repeating: 0, count: 12) // 96-bit nonce for AES-GCM
+        let nonceResult = RingFFI_RandomBytes(&nonce, nonce.count)
+        if nonceResult != 0 {
+          throw CoreSecurityError.cryptoError(
+            "Failed to generate random nonce: error code \(nonceResult)"
+          )
+        }
 
-        // Combine IV and encrypted data for storage/transmission
-        // Format: [IV (12 bytes)][Encrypted Data]
-        let result=iv + encryptedData
+        // Allocate buffer for encrypted data
+        // Size = original data + tag (16 bytes) + nonce (12 bytes)
+        let outputSize = data.count + 16 + 12
+        var output = [UInt8](repeating: 0, count: outputSize)
 
-        return .success(result)
+        // Perform encryption
+        let encResult = RingFFI_Encrypt(&output, data, data.count, key, key.count, nonce, nonce.count)
+        if encResult <= 0 {
+          throw CoreSecurityError.cryptoError(
+            "Encryption failed: error code \(encResult)"
+          )
+        }
+
+        // Trim to actual size (encResult contains the actual output size)
+        let actualOutput = Array(output.prefix(Int(encResult)))
+        return .success(actualOutput)
       } catch {
-        return .failure(mapToSecurityErrorDomain(error))
+        return .failure(error)
       }
     }
 
@@ -94,214 +121,434 @@ import UmbraErrors
      Decrypts data using AES-GCM via Ring.
 
      - Parameters:
-        - data: Data to decrypt (must include IV as prefix)
+        - data: Data to decrypt (must include nonce and tag)
         - key: Decryption key
-     - Returns: Result with decrypted data or error
+     - Returns: Decrypted data or error
      */
     public func decrypt(
       data: [UInt8],
       using key: [UInt8]
     ) async -> Result<[UInt8], Error> {
       do {
-        // Validate ciphertext length (must at least have IV)
-        guard data.count >= 12 else {
-          throw SecurityErrorDomain.invalidInput(
-            reason: "Invalid ciphertext, must be at least 16 bytes"
+        // Validate key size
+        if key.count != 32 {
+          throw CoreSecurityError.invalidKey(
+            "Ring requires a 256-bit (32-byte) key"
           )
         }
 
-        // Extract IV from the first 12 bytes
-        let iv=Array(data.prefix(12))
-
-        // Extract encrypted data (everything after the IV)
-        let encryptedData=Array(data.dropFirst(12))
-
-        // Call the Ring FFI to decrypt
-        var decryptedData=RingFFI_AES_GCM_Decrypt(
-          encryptedData,
-          encryptedData.count,
-          key,
-          key.count,
-          iv,
-          iv.count
-        )
-
-        if decryptedData.isEmpty {
-          throw SecurityErrorDomain.cryptographicError(
-            reason: "Decryption failed using Ring AES-GCM"
+        // Validate input size (must be at least nonce + tag size)
+        if data.count < (12 + 16) {
+          throw CoreSecurityError.invalidInput(
+            "Encrypted data is too small: missing nonce or tag"
           )
         }
 
-        return .success(decryptedData)
+        // Extract nonce from input (first 12 bytes)
+        let nonce = Array(data.prefix(12))
+
+        // Allocate buffer for decrypted data (max size is input size - nonce - tag)
+        let outputSize = data.count - 12 - 16
+        var output = [UInt8](repeating: 0, count: outputSize)
+
+        // Perform decryption
+        let decResult = RingFFI_Decrypt(&output, data[12...], data.count - 12, key, key.count, nonce, nonce.count)
+        if decResult <= 0 {
+          throw CoreSecurityError.cryptoError(
+            "Decryption failed: error code \(decResult)"
+          )
+        }
+
+        // Trim to actual size (decResult contains the actual output size)
+        let actualOutput = Array(output.prefix(Int(decResult)))
+        return .success(actualOutput)
       } catch {
-        return .failure(mapToSecurityErrorDomain(error))
+        return .failure(error)
       }
     }
 
     /**
-     Generates a cryptographic key of the specified size.
+     Generates a cryptographically secure random key using Ring.
 
-     - Parameter size: Key size in bits (128, 192, or 256)
-     - Returns: Result with generated key or error
+     - Parameter size: Size of the key in bits
+     - Returns: Generated key or error
      */
     public func generateKey(size: Int) async -> Result<[UInt8], Error> {
       do {
-        // Validate key size
-        guard size == 128 || size == 192 || size == 256 else {
-          throw SecurityErrorDomain.invalidInput(
-            reason: "Invalid key size, must be 128, 192, or 256 bits"
+        // Ring prefers 256-bit keys for AES-GCM
+        if size != 256 {
+          throw CoreSecurityError.invalidInput(
+            "Ring provider only supports 256-bit keys"
           )
         }
 
-        // Convert bits to bytes
-        let sizeInBytes=size / 8
-
-        // Generate random bytes for the key
-        var keyData=[UInt8](repeating: 0, count: sizeInBytes)
-        let result=RingFFI_GenerateRandomBytes(&keyData, sizeInBytes)
-
+        let keySize = size / 8 // Convert bits to bytes
+        var key = [UInt8](repeating: 0, count: keySize)
+        let result = RingFFI_RandomBytes(&key, keySize)
         if result != 0 {
-          throw SecurityErrorDomain.cryptographicError(
-            reason: "Key generation failed using Ring"
+          throw CoreSecurityError.cryptoError(
+            "Failed to generate random key: error code \(result)"
           )
         }
 
-        return .success(keyData)
+        return .success(key)
       } catch {
-        return .failure(mapToSecurityErrorDomain(error))
+        return .failure(error)
       }
     }
 
     /**
-     Generates a random initialization vector (IV) of the specified size.
+     Creates a cryptographic hash of the data using SHA-256 via Ring.
 
-     - Parameter size: IV size in bytes
-     - Returns: Generated IV
-     - Throws: SecurityErrorDomain if generation fails
-     */
-    private func generateIV(size: Int) throws -> [UInt8] {
-      // Validate size
-      guard size > 0 else {
-        throw SecurityErrorDomain.invalidInput(
-          reason: "IV size must be greater than 0"
-        )
-      }
-
-      // Generate random bytes for the IV
-      var ivData=[UInt8](repeating: 0, count: size)
-      let result=RingFFI_GenerateRandomBytes(&ivData, size)
-
-      if result != 0 {
-        throw SecurityErrorDomain.cryptographicError(
-          reason: "IV generation failed using Ring"
-        )
-      }
-
-      return ivData
-    }
-
-    /**
-     Computes a cryptographic hash of the provided data.
-
-     - Parameters:
-        - data: Data to hash
-     - Returns: Result with hash value or error
+     - Parameter data: Data to hash
+     - Returns: Hash value or error
      */
     public func hash(data: [UInt8]) async -> Result<[UInt8], Error> {
       do {
         // Default to SHA-256
-        var hashData=[UInt8](repeating: 0, count: 32) // SHA-256 is 32 bytes
-        let result=RingFFI_SHA256(&hashData, data, data.count)
-
+        var hashData = [UInt8](repeating: 0, count: 32) // SHA-256 is 32 bytes
+        let result = RingFFI_SHA256(&hashData, data, data.count)
         if result != 0 {
-          throw SecurityErrorDomain.cryptographicError(
-            reason: "Hash computation failed using Ring SHA-256"
+          throw CoreSecurityError.cryptoError(
+            "Hashing operation failed: error code \(result)"
           )
         }
 
         return .success(hashData)
       } catch {
-        return .failure(mapToSecurityErrorDomain(error))
+        return .failure(error)
       }
     }
-
-    /**
-     Maps any error to the appropriate SecurityErrorDomain case
-
-     - Parameter error: The original error
-     - Returns: A SecurityErrorDomain error
-     */
-    private func mapToSecurityErrorDomain(_ error: Error) -> Error {
-      if let securityError=error as? SecurityErrorDomain {
-        return securityError
+    
+    // MARK: - CryptoServiceProtocol Implementation
+    
+    /// Encrypts binary data using a key from secure storage.
+    /// - Parameters:
+    ///   - dataIdentifier: Identifier of the data in secure storage.
+    ///   - keyIdentifier: Identifier of the encryption key in secure storage.
+    ///   - options: Optional encryption configuration.
+    /// - Returns: Identifier for the encrypted data in secure storage, or an error.
+    public func encrypt(
+      dataIdentifier: String,
+      keyIdentifier: String,
+      options: EncryptionOptions?
+    ) async -> Result<String, SecurityStorageError> {
+      do {
+        // Retrieve data and key from secure storage
+        let dataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
+        let keyResult = await secureStorage.retrieveData(withIdentifier: keyIdentifier)
+        
+        guard case let .success(data) = dataResult else {
+          return .failure(.dataNotFound)
+        }
+        
+        guard case let .success(key) = keyResult else {
+          return .failure(.keyNotFound)
+        }
+        
+        // Encrypt the data
+        let encryptResult = await encrypt(data: data, using: key)
+        
+        guard case let .success(encryptedData) = encryptResult else {
+          return .failure(.encryptionFailed)
+        }
+        
+        // Store the encrypted data
+        let identifier = UUID().uuidString
+        let storeResult = await secureStorage.storeData(encryptedData, withIdentifier: identifier)
+        
+        guard case .success = storeResult else {
+          return .failure(.storageUnavailable)
+        }
+        
+        return .success(identifier)
+      } catch {
+        return .failure(.encryptionFailed)
       }
-
-      return SecurityErrorDomain.cryptographicError(
-        reason: "Ring cryptographic operation failed: \(error.localizedDescription)"
-      )
+    }
+    
+    /// Decrypts binary data using a key from secure storage.
+    /// - Parameters:
+    ///   - encryptedDataIdentifier: Identifier of the encrypted data in secure storage.
+    ///   - keyIdentifier: Identifier of the decryption key in secure storage.
+    ///   - options: Optional decryption configuration.
+    /// - Returns: Identifier for the decrypted data in secure storage, or an error.
+    public func decrypt(
+      encryptedDataIdentifier: String,
+      keyIdentifier: String,
+      options: DecryptionOptions?
+    ) async -> Result<String, SecurityStorageError> {
+      do {
+        // Retrieve encrypted data and key from secure storage
+        let dataResult = await secureStorage.retrieveData(withIdentifier: encryptedDataIdentifier)
+        let keyResult = await secureStorage.retrieveData(withIdentifier: keyIdentifier)
+        
+        guard case let .success(encryptedData) = dataResult else {
+          return .failure(.dataNotFound)
+        }
+        
+        guard case let .success(key) = keyResult else {
+          return .failure(.keyNotFound)
+        }
+        
+        // Decrypt the data
+        let decryptResult = await decrypt(data: encryptedData, using: key)
+        
+        guard case let .success(decryptedData) = decryptResult else {
+          return .failure(.decryptionFailed)
+        }
+        
+        // Store the decrypted data
+        let identifier = UUID().uuidString
+        let storeResult = await secureStorage.storeData(decryptedData, withIdentifier: identifier)
+        
+        guard case .success = storeResult else {
+          return .failure(.storageUnavailable)
+        }
+        
+        return .success(identifier)
+      } catch {
+        return .failure(.decryptionFailed)
+      }
+    }
+    
+    /// Creates a cryptographic hash of data in secure storage.
+    /// - Parameters:
+    ///   - dataIdentifier: Identifier of the data to hash in secure storage.
+    ///   - options: Optional hashing configuration.
+    /// - Returns: Identifier for the hash in secure storage, or an error.
+    public func hash(
+      dataIdentifier: String,
+      options: HashingOptions?
+    ) async -> Result<String, SecurityStorageError> {
+      do {
+        // Retrieve data from secure storage
+        let dataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
+        
+        guard case let .success(data) = dataResult else {
+          return .failure(.dataNotFound)
+        }
+        
+        // Hash the data
+        let hashResult = await hash(data: data)
+        
+        guard case let .success(hashData) = hashResult else {
+          return .failure(.operationFailed("Hashing failed"))
+        }
+        
+        // Store the hash
+        let identifier = UUID().uuidString
+        let storeResult = await secureStorage.storeData(hashData, withIdentifier: identifier)
+        
+        guard case .success = storeResult else {
+          return .failure(.storageUnavailable)
+        }
+        
+        return .success(identifier)
+      } catch {
+        return .failure(.operationFailed("Hashing operation failed: \(error.localizedDescription)"))
+      }
+    }
+    
+    /// Verifies that data matches an expected hash.
+    /// - Parameters:
+    ///   - dataIdentifier: Identifier of the data to verify in secure storage.
+    ///   - hashIdentifier: Identifier of the expected hash in secure storage.
+    ///   - options: Optional hashing configuration.
+    /// - Returns: `true` if the hash matches, `false` if not, or an error.
+    public func verifyHash(
+      dataIdentifier: String,
+      hashIdentifier: String,
+      options: HashingOptions?
+    ) async -> Result<Bool, SecurityStorageError> {
+      do {
+        // Retrieve data and expected hash from secure storage
+        let dataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
+        let hashResult = await secureStorage.retrieveData(withIdentifier: hashIdentifier)
+        
+        guard case let .success(data) = dataResult else {
+          return .failure(.dataNotFound)
+        }
+        
+        guard case let .success(expectedHash) = hashResult else {
+          return .failure(.dataNotFound)
+        }
+        
+        // Compute hash of the data
+        let computedHashResult = await hash(data: data)
+        
+        guard case let .success(computedHash) = computedHashResult else {
+          return .failure(.operationFailed("Hashing failed"))
+        }
+        
+        // Compare hashes (constant-time comparison)
+        let match = constantTimeCompare(computedHash, expectedHash)
+        
+        return .success(match)
+      } catch {
+        return .failure(.operationFailed("Hash verification failed: \(error.localizedDescription)"))
+      }
+    }
+    
+    /// Generates a cryptographic key and stores it in secure storage.
+    /// - Parameters:
+    ///   - length: Key length in bits.
+    ///   - options: Optional key generation configuration.
+    /// - Returns: Identifier for the generated key in secure storage, or an error.
+    public func generateKey(
+      length: Int,
+      options: KeyGenerationOptions?
+    ) async -> Result<String, SecurityStorageError> {
+      do {
+        // Generate random key
+        let keyGenResult = await generateKey(size: length)
+        
+        guard case let .success(key) = keyGenResult else {
+          return .failure(.operationFailed("Key generation failed"))
+        }
+        
+        // Store the key in secure storage
+        let identifier = UUID().uuidString
+        let storeResult = await secureStorage.storeData(key, withIdentifier: identifier)
+        
+        guard case .success = storeResult else {
+          return .failure(.storageUnavailable)
+        }
+        
+        return .success(identifier)
+      } catch {
+        return .failure(.operationFailed("Key generation failed: \(error.localizedDescription)"))
+      }
+    }
+    
+    /// Imports raw data into secure storage.
+    /// - Parameters:
+    ///   - data: The data to import.
+    ///   - customIdentifier: Optional custom identifier. If nil, a random identifier is
+    ///   generated.
+    /// - Returns: The identifier for the data in secure storage, or an error.
+    public func importData(
+      _ data: [UInt8],
+      customIdentifier: String?
+    ) async -> Result<String, SecurityStorageError> {
+      let identifier = customIdentifier ?? UUID().uuidString
+      let storeResult = await secureStorage.storeData(data, withIdentifier: identifier)
+      
+      guard case .success = storeResult else {
+        return .failure(.storageUnavailable)
+      }
+      
+      return .success(identifier)
+    }
+    
+    /// Exports data from secure storage as raw bytes.
+    /// - Parameter identifier: The identifier of the data to export.
+    /// - Returns: The raw data, or an error.
+    /// - Warning: Use with caution as this exposes sensitive data.
+    public func exportData(
+      identifier: String
+    ) async -> Result<[UInt8], SecurityStorageError> {
+      await secureStorage.retrieveData(withIdentifier: identifier)
+    }
+    
+    // MARK: - Helper Functions
+    
+    /// Performs a constant-time comparison of two byte arrays to prevent timing attacks
+    private func constantTimeCompare(_ a: [UInt8], _ b: [UInt8]) -> Bool {
+      guard a.count == b.count else {
+        return false
+      }
+      
+      var result: UInt8 = 0
+      for i in 0..<a.count {
+        result |= a[i] ^ b[i]
+      }
+      
+      return result == 0
     }
   }
 
   // MARK: - FFI Function Declarations
 
   /// Encrypts data using AES-GCM
-  private func RingFFI_AES_GCM_Encrypt(
-    _: [UInt8],
-    _: Int,
-    _: [UInt8],
-    _: Int,
-    _: [UInt8],
-    _: Int
-  ) -> [UInt8] {
+  @_silgen_name("Ring_Encrypt")
+  func RingFFI_Encrypt(
+    _ output: UnsafeMutablePointer<UInt8>,
+    _ input: UnsafePointer<UInt8>,
+    _ inputLen: Int,
+    _ key: UnsafePointer<UInt8>,
+    _ keyLen: Int,
+    _ nonce: UnsafePointer<UInt8>,
+    _ nonceLen: Int
+  ) -> Int32 {
     // FFI implementation would be here
-    // This is a placeholder that returns empty data
-    []
+    // This is a placeholder that returns success (0)
+    0
   }
 
   /// Decrypts data using AES-GCM
-  private func RingFFI_AES_GCM_Decrypt(
-    _: [UInt8],
-    _: Int,
-    _: [UInt8],
-    _: Int,
-    _: [UInt8],
-    _: Int
-  ) -> [UInt8] {
+  @_silgen_name("Ring_Decrypt")
+  func RingFFI_Decrypt(
+    _ output: UnsafeMutablePointer<UInt8>,
+    _ input: UnsafePointer<UInt8>,
+    _ inputLen: Int,
+    _ key: UnsafePointer<UInt8>,
+    _ keyLen: Int,
+    _ nonce: UnsafePointer<UInt8>,
+    _ nonceLen: Int
+  ) -> Int32 {
     // FFI implementation would be here
-    // This is a placeholder that returns empty data
-    []
+    // This is a placeholder that returns success (0)
+    0
   }
 
   /// Generates cryptographically secure random bytes
-  private func RingFFI_GenerateRandomBytes(
-    _: inout [UInt8],
-    _: Int
-  ) -> Int {
+  @_silgen_name("Ring_RandomBytes")
+  func RingFFI_RandomBytes(
+    _ output: UnsafeMutablePointer<UInt8>,
+    _ count: Int
+  ) -> Int32 {
     // FFI implementation would be here
     // This is a placeholder that returns success (0)
     0
   }
 
   /// Computes SHA-256 hash
-  private func RingFFI_SHA256(
-    _: inout [UInt8],
-    _: [UInt8],
-    _: Int
-  ) -> Int {
+  @_silgen_name("Ring_SHA256")
+  func RingFFI_SHA256(
+    _ output: UnsafeMutablePointer<UInt8>,
+    _ input: UnsafePointer<UInt8>,
+    _ inputLen: Int
+  ) -> Int32 {
     // FFI implementation would be here
     // This is a placeholder that returns success (0)
     0
+  }
+
+  /// Returns the Ring library version
+  @_silgen_name("Ring_GetVersion")
+  func RingFFI_GetVersion() -> Int32 {
+    // FFI implementation would be here
+    // This is a placeholder that returns a valid version number
+    1
   }
 
 #else
   // Empty placeholder when Ring is not available
   public actor RingSecurityProvider: CryptoServiceProtocol, AsyncServiceInitializable {
     public nonisolated let providerType: SecurityProviderType = .ring
-
-    public init() {}
+    
+    /// Secure storage for sensitive data
+    public let secureStorage: SecureStorageProtocol
+    
+    /// Initialises a new Ring security provider
+    /// - Parameter secureStorage: The secure storage to use
+    public init(secureStorage: SecureStorageProtocol) {
+      self.secureStorage = secureStorage
+    }
 
     public func initialize() async throws {
-      throw UmbraErrors.Security.Core.unsupportedOperation(
+      throw CoreSecurityError.algorithmNotSupported(
         "Ring crypto library is not available on this platform"
       )
     }
@@ -310,7 +557,7 @@ import UmbraErrors
       data _: [UInt8],
       using _: [UInt8]
     ) async -> Result<[UInt8], Error> {
-      .failure(UmbraErrors.Security.Core.unsupportedOperation(
+      .failure(CoreSecurityError.algorithmNotSupported(
         "Ring crypto library is not available on this platform"
       ))
     }
@@ -319,21 +566,112 @@ import UmbraErrors
       data _: [UInt8],
       using _: [UInt8]
     ) async -> Result<[UInt8], Error> {
-      .failure(UmbraErrors.Security.Core.unsupportedOperation(
+      .failure(CoreSecurityError.algorithmNotSupported(
         "Ring crypto library is not available on this platform"
       ))
     }
 
     public func generateKey(size _: Int) async -> Result<[UInt8], Error> {
-      .failure(UmbraErrors.Security.Core.unsupportedOperation(
+      .failure(CoreSecurityError.algorithmNotSupported(
         "Ring crypto library is not available on this platform"
       ))
     }
 
     public func hash(data _: [UInt8]) async -> Result<[UInt8], Error> {
-      .failure(UmbraErrors.Security.Core.unsupportedOperation(
+      .failure(CoreSecurityError.algorithmNotSupported(
         "Ring crypto library is not available on this platform"
       ))
+    }
+    
+    // MARK: - CryptoServiceProtocol Implementation
+    
+    /// Encrypts binary data using a key from secure storage.
+    /// - Parameters:
+    ///   - dataIdentifier: Identifier of the data in secure storage.
+    ///   - keyIdentifier: Identifier of the encryption key in secure storage.
+    ///   - options: Optional encryption configuration.
+    /// - Returns: Identifier for the encrypted data in secure storage, or an error.
+    public func encrypt(
+      dataIdentifier: String,
+      keyIdentifier: String,
+      options: EncryptionOptions?
+    ) async -> Result<String, SecurityStorageError> {
+      .failure(.operationFailed("Ring crypto library is not available on this platform"))
+    }
+    
+    /// Decrypts binary data using a key from secure storage.
+    /// - Parameters:
+    ///   - encryptedDataIdentifier: Identifier of the encrypted data in secure storage.
+    ///   - keyIdentifier: Identifier of the decryption key in secure storage.
+    ///   - options: Optional decryption configuration.
+    /// - Returns: Identifier for the decrypted data in secure storage, or an error.
+    public func decrypt(
+      encryptedDataIdentifier: String,
+      keyIdentifier: String,
+      options: DecryptionOptions?
+    ) async -> Result<String, SecurityStorageError> {
+      .failure(.operationFailed("Ring crypto library is not available on this platform"))
+    }
+    
+    /// Creates a cryptographic hash of data in secure storage.
+    /// - Parameters:
+    ///   - dataIdentifier: Identifier of the data to hash in secure storage.
+    ///   - options: Optional hashing configuration.
+    /// - Returns: Identifier for the hash in secure storage, or an error.
+    public func hash(
+      dataIdentifier: String,
+      options: HashingOptions?
+    ) async -> Result<String, SecurityStorageError> {
+      .failure(.operationFailed("Ring crypto library is not available on this platform"))
+    }
+    
+    /// Verifies that data matches an expected hash.
+    /// - Parameters:
+    ///   - dataIdentifier: Identifier of the data to verify in secure storage.
+    ///   - hashIdentifier: Identifier of the expected hash in secure storage.
+    ///   - options: Optional hashing configuration.
+    /// - Returns: `true` if the hash matches, `false` if not, or an error.
+    public func verifyHash(
+      dataIdentifier: String,
+      hashIdentifier: String,
+      options: HashingOptions?
+    ) async -> Result<Bool, SecurityStorageError> {
+      .failure(.operationFailed("Ring crypto library is not available on this platform"))
+    }
+    
+    /// Generates a cryptographic key and stores it in secure storage.
+    /// - Parameters:
+    ///   - length: Key length in bits.
+    ///   - options: Optional key generation configuration.
+    /// - Returns: Identifier for the generated key in secure storage, or an error.
+    public func generateKey(
+      length: Int,
+      options: KeyGenerationOptions?
+    ) async -> Result<String, SecurityStorageError> {
+      .failure(.operationFailed("Ring crypto library is not available on this platform"))
+    }
+    
+    /// Imports raw data into secure storage.
+    /// - Parameters:
+    ///   - data: The data to import.
+    ///   - customIdentifier: Optional custom identifier. If nil, a random identifier is
+    ///   generated.
+    /// - Returns: The identifier for the data in secure storage, or an error.
+    public func importData(
+      _ data: [UInt8],
+      customIdentifier: String?
+    ) async -> Result<String, SecurityStorageError> {
+      .failure(.operationFailed("Ring crypto library is not available on this platform"))
+    }
+    
+    /// Exports data from secure storage as raw bytes.
+    /// - Parameter identifier: The identifier of the data to export.
+    /// - Returns: The raw data, or an error.
+    /// - Warning: Use with caution as this exposes sensitive data.
+    public func exportData(
+      identifier: String
+    ) async -> Result<[UInt8], SecurityStorageError> {
+      .failure(.operationFailed("Ring crypto library is not available on this platform"))
     }
   }
 #endif

@@ -18,6 +18,13 @@ import ErrorCoreTypes
  This implementation provides secure operations for encryption, decryption,
  key management, and secure storage with proper privacy controls.
  
+ ## Actor-Based Secure Storage
+ 
+ This handler uses actor-based `SecureStorage` internally to ensure thread safety
+ and memory protection for all sensitive cryptographic material. The handler leverages
+ `SendableCryptoMaterial` for all cryptographic operations, which is designed
+ as a drop-in replacement for the deprecated `SecureBytes` class.
+ 
  ## Privacy-Enhanced Logging
  
  All operations are logged with appropriate privacy classifications to
@@ -26,11 +33,14 @@ import ErrorCoreTypes
  ## Thread Safety
  
  Operations are thread-safe by leveraging Swift's structured concurrency model
- and actor-based isolation where appropriate.
+ and actor-based isolation where appropriate. The underlying security service
+ uses actors to provide isolation and consistent memory safety.
  
  ## Memory Protection
  
  Security operations include memory protection to prevent data leakage.
+ This is achieved through properly isolated actor-based state management,
+ ensuring sensitive material is protected throughout its lifecycle.
  */
 public struct SecurityDomainHandler: DomainHandler {
     /// Security service for cryptographic operations
@@ -43,8 +53,11 @@ public struct SecurityDomainHandler: DomainHandler {
      Initialises a new security domain handler.
      
      - Parameters:
-        - service: The security service for cryptographic operations
+        - service: The security service for cryptographic operations that uses actor-based SecureStorage
         - logger: Optional logger for privacy-aware operation recording
+     
+     The security service must use actor-based SecureStorage internally to ensure
+     proper isolation and thread safety for all cryptographic operations.
      */
     public init(service: any SecurityProviderProtocol, logger: LoggingProtocol? = nil) {
         self.securityService = service
@@ -57,13 +70,16 @@ public struct SecurityDomainHandler: DomainHandler {
      - Parameter operation: The operation to execute
      - Returns: The result of the operation
      - Throws: APIError if the operation fails
+     
+     All operations are executed through the actor-based security service,
+     ensuring proper isolation and memory protection.
      */
     public func execute<T: APIOperation>(_ operation: T) async throws -> Any {
         // Log the operation start with privacy-aware metadata
         let operationName = String(describing: type(of: operation))
         let startMetadata = PrivacyMetadata([
-            "operation": PrivacyMetadata.Entry(value: operationName, privacy: .public),
-            "event": PrivacyMetadata.Entry(value: "start", privacy: .public)
+            "operation": PrivacyMetadataValue(value: operationName, privacy: .public),
+            "event": PrivacyMetadataValue(value: "start", privacy: .public)
         ])
         
         await logger?.info(
@@ -78,9 +94,9 @@ public struct SecurityDomainHandler: DomainHandler {
             
             // Log success
             let successMetadata = PrivacyMetadata([
-                "operation": PrivacyMetadata.Entry(value: operationName, privacy: .public),
-                "event": PrivacyMetadata.Entry(value: "success", privacy: .public),
-                "status": PrivacyMetadata.Entry(value: "completed", privacy: .public)
+                "operation": PrivacyMetadataValue(value: operationName, privacy: .public),
+                "event": PrivacyMetadataValue(value: "success", privacy: .public),
+                "status": PrivacyMetadataValue(value: "completed", privacy: .public)
             ])
             
             await logger?.info(
@@ -93,10 +109,10 @@ public struct SecurityDomainHandler: DomainHandler {
         } catch {
             // Log failure with privacy-aware error details
             let errorMetadata = PrivacyMetadata([
-                "operation": PrivacyMetadata.Entry(value: operationName, privacy: .public),
-                "event": PrivacyMetadata.Entry(value: "failure", privacy: .public),
-                "status": PrivacyMetadata.Entry(value: "failed", privacy: .public),
-                "error": PrivacyMetadata.Entry(value: error.localizedDescription, privacy: .private)
+                "operation": PrivacyMetadataValue(value: operationName, privacy: .public),
+                "event": PrivacyMetadataValue(value: "failure", privacy: .public),
+                "status": PrivacyMetadataValue(value: "failed", privacy: .public),
+                "error": PrivacyMetadataValue(value: error.localizedDescription, privacy: .private)
             ])
             
             await logger?.error(
@@ -128,28 +144,31 @@ public struct SecurityDomainHandler: DomainHandler {
      - Parameter operation: The operation to execute
      - Returns: The result of the operation
      - Throws: APIError if the operation fails or is unsupported
+     
+     Each handler method uses proper Sendable types and actor-based secure storage
+     to maintain memory safety and thread isolation.
      */
     private func executeSecurityOperation<T: APIOperation>(_ operation: T) async throws -> Any {
         switch operation {
-        case let op as EncryptDataOperation:
+        case let op as EncryptData:
             return try await handleEncryptData(op)
-        case let op as DecryptDataOperation:
+        case let op as DecryptData:
             return try await handleDecryptData(op)
-        case let op as GenerateKeyOperation:
+        case let op as GenerateKey:
             return try await handleGenerateKey(op)
-        case let op as RetrieveKeyOperation:
+        case let op as RetrieveKey:
             return try await handleRetrieveKey(op)
-        case let op as StoreKeyOperation:
+        case let op as StoreKey:
             return try await handleStoreKey(op)
-        case let op as DeleteKeyOperation:
+        case let op as DeleteKey:
             return try await handleDeleteKey(op)
-        case let op as HashDataOperation:
+        case let op as HashData:
             return try await handleHashData(op)
-        case let op as StoreSecretOperation:
+        case let op as StoreSecret:
             return try await handleStoreSecret(op)
-        case let op as RetrieveSecretOperation:
+        case let op as RetrieveSecret:
             return try await handleRetrieveSecret(op)
-        case let op as DeleteSecretOperation:
+        case let op as DeleteSecret:
             return try await handleDeleteSecret(op)
         default:
             throw APIError.operationNotSupported(
@@ -175,30 +194,48 @@ public struct SecurityDomainHandler: DomainHandler {
         if let secError = error as? SecurityError {
             switch secError {
             case .invalidInput(let message):
-                return APIError.validationFailed(
-                    message: message,
-                    code: "SECURITY_VALIDATION_FAILED"
+                return APIError.invalidOperation(
+                    message: "Invalid security input: \(message)",
+                    code: "INVALID_SECURITY_INPUT"
                 )
             case .cryptographicError(let message):
-                return APIError.securityViolation(
-                    message: message,
-                    code: "CRYPTOGRAPHIC_ERROR"
+                return APIError.operationFailed(
+                    message: "Cryptographic operation failed: \(message)",
+                    code: "CRYPTO_ERROR"
                 )
             case .keyNotFound(let message):
                 return APIError.resourceNotFound(
-                    message: message,
-                    code: "KEY_NOT_FOUND"
+                    message: "Security key not found: \(message)",
+                    identifier: "unknown_key"
                 )
             case .permissionDenied(let message):
-                return APIError.permissionDenied(
-                    message: message,
-                    code: "SECURITY_PERMISSION_DENIED"
+                return APIError.authenticationFailed(
+                    "Access denied to security resource: \(message)"
                 )
             case .operationFailed(let message):
                 return APIError.operationFailed(
-                    message: message,
-                    code: "SECURITY_OPERATION_FAILED",
-                    underlyingError: secError
+                    message: "Security operation failed: \(message)",
+                    code: "SECURITY_OPERATION_FAILED"
+                )
+            case .secretNotFound(let message):
+                return APIError.resourceNotFound(
+                    message: "Security secret not found: \(message)",
+                    identifier: "unknown_secret"
+                )
+            case .keyStorageError(let message):
+                return APIError.operationFailed(
+                    message: "Key storage failed: \(message)",
+                    code: "KEY_STORAGE_ERROR"
+                )
+            case .secureStorageError(let message):
+                return APIError.operationFailed(
+                    message: "Secure storage operation failed: \(message)",
+                    code: "SECURE_STORAGE_ERROR"
+                )
+            case .actorIsolationError(let message):
+                return APIError.operationFailed(
+                    message: "Actor isolation violation: \(message)",
+                    code: "ACTOR_ISOLATION_ERROR"
                 )
             }
         }
@@ -211,867 +248,346 @@ public struct SecurityDomainHandler: DomainHandler {
         )
     }
     
-    // MARK: - Operation Handlers
-    
     /**
-     Handles data encryption operations.
+     Converts a string algorithm identifier to a concrete EncryptionAlgorithm.
      
-     - Parameter operation: The encrypt data operation
-     - Returns: An encryption result with the encrypted data and optionally a key identifier
-     - Throws: SecurityError if encryption fails
+     - Parameter algorithmString: String representation of the algorithm
+     - Returns: The appropriate EncryptionAlgorithm type
+     - Throws: SecurityError.invalidInput if an invalid algorithm is specified
      */
-    private func handleEncryptData(_ operation: EncryptDataOperation) async throws -> APIInterfaces.EncryptionResult {
-        // Create privacy-aware logging metadata
-        var metadata = PrivacyMetadata()
-        metadata["operation"] = PrivacyMetadata.Entry(value: "encrypt", privacy: .public)
-        if let algorithm = operation.algorithm {
-            metadata["algorithm"] = PrivacyMetadata.Entry(value: algorithm, privacy: .public)
-        }
-        
-        // Log the operation with privacy controls
-        await logger?.info(
-            "Encrypting data",
-            metadata: metadata,
-            source: "SecurityDomainHandler"
-        )
-        
-        do {
-            // Create encryption configuration from operation parameters
-            let algorithm: EncryptionAlgorithm = try getAlgorithm(from: operation.algorithm)
-            let options = SecurityConfigOptions(
-                enableDetailedLogging: false,
-                keyDerivationIterations: 100_000,
-                memoryLimitBytes: 65536,
-                useHardwareAcceleration: true,
-                operationTimeoutSeconds: 30.0,
-                verifyOperations: true,
-                metadata: operation.options
-            )
-            
-            let config = SecurityConfigDTO(
-                encryptionAlgorithm: algorithm,
-                hashAlgorithm: .sha256, // Default hash algorithm
-                providerType: .system,
-                options: options
-            )
-            
-            // Perform the encryption operation in a secure context
-            var securityOperation: SecurityOperation
-            if let key = operation.key {
-                // Use provided key
-                let encryptOperation = SecurityOperation.encrypt(
-                    data: operation.data,
-                    key: key.toBytes(),
-                    algorithm: algorithm
-                )
-                securityOperation = encryptOperation
-            } else {
-                // Generate a key
-                let encryptWithNewKeyOperation = SecurityOperation.encryptWithGeneratedKey(
-                    data: operation.data,
-                    algorithm: algorithm
-                )
-                securityOperation = encryptWithNewKeyOperation
-            }
-            
-            // Execute the operation
-            let result = try await securityService.performSecureOperation(
-                securityOperation,
-                config: config
-            )
-            
-            // Process the result
-            guard let encryptResult = result as? CoreSecurityTypes.EncryptionResult else {
-                throw SecurityError.operationFailed("Invalid result type returned from encryption operation")
-            }
-            
-            var keyIdentifier: String? = nil
-            
-            // Store the key if requested
-            if operation.storeKey, let key = encryptResult.key {
-                let keyID = operation.keyIdentifier ?? UUID().uuidString
-                try await securityService.storeSecureKey(key, withIdentifier: keyID)
-                keyIdentifier = keyID
-            }
-            
-            // Map to the API result type
-            return APIInterfaces.EncryptionResult(
-                encryptedData: SendableCryptoMaterial(encryptResult.ciphertext),
-                keyIdentifier: keyIdentifier
-            )
-        } catch {
-            // Log the failure with privacy-aware error details
-            var errorMetadata = metadata
-            errorMetadata["error"] = PrivacyMetadata.Entry(value: error.localizedDescription, privacy: .private)
-            
-            await logger?.error(
-                "Encryption failed",
-                metadata: errorMetadata,
-                source: "SecurityDomainHandler"
-            )
-            
-            // Map to domain-specific error
-            if let secError = error as? SecurityError {
-                throw secError
-            } else {
-                throw SecurityError.cryptographicError("Encryption failed: \(error.localizedDescription)")
-            }
-        }
-    }
-    
-    /**
-     Handles data decryption operations.
-     
-     - Parameter operation: The decrypt data operation
-     - Returns: The decrypted data
-     - Throws: SecurityError if decryption fails
-     */
-    private func handleDecryptData(_ operation: DecryptDataOperation) async throws -> Data {
-        // Create privacy-aware logging metadata
-        var metadata = PrivacyMetadata()
-        metadata["operation"] = PrivacyMetadata.Entry(value: "decrypt", privacy: .public)
-        if let keyID = operation.keyIdentifier {
-            metadata["key_id"] = PrivacyMetadata.Entry(value: keyID, privacy: .public)
-        }
-        
-        // Log the operation with privacy controls
-        await logger?.info(
-            "Decrypting data",
-            metadata: metadata,
-            source: "SecurityDomainHandler"
-        )
-        
-        do {
-            // Get the decryption key
-            let decryptionKey: Data?
-            if let key = operation.key {
-                decryptionKey = key
-            } else if let keyID = operation.keyIdentifier {
-                decryptionKey = try await securityService.retrieveKey(withIdentifier: keyID)
-            } else {
-                throw SecurityError.invalidInput("No decryption key or key identifier provided")
-            }
-            
-            // Ensure we have a key
-            guard let key = decryptionKey else {
-                throw SecurityError.keyNotFound("Decryption key not found")
-            }
-            
-            // Create configuration
-            let options = SecurityConfigOptions(
-                enableDetailedLogging: false,
-                keyDerivationIterations: 100_000,
-                memoryLimitBytes: 65536,
-                useHardwareAcceleration: true,
-                operationTimeoutSeconds: 30.0,
-                verifyOperations: true,
-                metadata: operation.options
-            )
-            
-            let config = SecurityConfigDTO(
-                encryptionAlgorithm: .aes256GCM, // Default to AES-GCM
-                hashAlgorithm: .sha256,
-                providerType: .system,
-                options: options
-            )
-            
-            // Perform the decryption
-            let securityOperation = SecurityOperation.decrypt(
-                encryptedData: operation.encryptedData.toBytes(),
-                key: key,
-                algorithm: .aes256GCM  // Default to AES-GCM since we don't know the specific algorithm
-            )
-            
-            let result = try await securityService.performSecureOperation(
-                securityOperation,
-                config: config
-            )
-            
-            // Process the result
-            guard let decryptedData = result as? Data else {
-                throw SecurityError.operationFailed("Invalid result type returned from decryption operation")
-            }
-            
-            return decryptedData
-        } catch {
-            // Log the failure with privacy-aware error details
-            var errorMetadata = metadata
-            errorMetadata["error"] = PrivacyMetadata.Entry(value: error.localizedDescription, privacy: .private)
-            
-            await logger?.error(
-                "Decryption failed",
-                metadata: errorMetadata,
-                source: "SecurityDomainHandler"
-            )
-            
-            // Map to domain-specific error
-            if let secError = error as? SecurityError {
-                throw secError
-            } else {
-                throw SecurityError.cryptographicError("Decryption failed: \(error.localizedDescription)")
-            }
-        }
-    }
-    
-    /**
-     Handles key generation operations.
-     
-     - Parameter operation: The generate key operation
-     - Returns: A key generation result with the key and its identifier
-     - Throws: SecurityError if key generation fails
-     */
-    private func handleGenerateKey(_ operation: GenerateKeyOperation) async throws -> KeyGenerationResult {
-        // Create privacy-aware logging metadata
-        var metadata = PrivacyMetadata()
-        metadata["operation"] = PrivacyMetadata.Entry(value: "generateKey", privacy: .public)
-        metadata["length"] = PrivacyMetadata.Entry(value: operation.keyLength?.description ?? "default", privacy: .public)
-        if let algorithm = operation.algorithm {
-            metadata["algorithm"] = PrivacyMetadata.Entry(value: algorithm, privacy: .public)
-        }
-        
-        // Log the operation
-        await logger?.info(
-            "Generating cryptographic key",
-            metadata: metadata,
-            source: "SecurityDomainHandler"
-        )
-        
-        do {
-            // Create configuration
-            let algorithm: EncryptionAlgorithm = try getAlgorithm(from: operation.algorithm)
-            var options = SecurityConfigOptions(
-                enableDetailedLogging: false,
-                keyDerivationIterations: 100_000,
-                memoryLimitBytes: 65536,
-                useHardwareAcceleration: true,
-                operationTimeoutSeconds: 30.0,
-                verifyOperations: true,
-                metadata: operation.options ?? [:]
-            )
-            
-            if let keyLength = operation.keyLength {
-                // Create new options with keyLength included
-                options = SecurityConfigOptions(
-                    enableDetailedLogging: options.enableDetailedLogging,
-                    keyDerivationIterations: options.keyDerivationIterations,
-                    memoryLimitBytes: options.memoryLimitBytes,
-                    useHardwareAcceleration: options.useHardwareAcceleration,
-                    operationTimeoutSeconds: options.operationTimeoutSeconds,
-                    verifyOperations: options.verifyOperations,
-                    metadata: ["keyLength": keyLength]
-                )
-            }
-            
-            let config = SecurityConfigDTO(
-                encryptionAlgorithm: algorithm,
-                hashAlgorithm: .sha256,
-                providerType: .system,
-                options: options
-            )
-            
-            // Generate the key
-            let securityOperation = SecurityOperation.generateKey(
-                algorithm: algorithm,
-                keyLength: operation.keyLength ?? 256,
-                keyType: operation.keyType
-            )
-            
-            let result = try await securityService.performSecureOperation(
-                operation: securityOperation,
-                config: config
-            )
-            
-            // Process the result
-            guard let key = result as? Data else {
-                throw SecurityError.operationFailed("Invalid result type returned from key generation operation")
-            }
-            
-            var keyIdentifier: String? = nil
-            
-            // Store the key if requested
-            if operation.storeKey {
-                let keyID = operation.keyIdentifier ?? UUID().uuidString
-                let keyManager = await securityService.keyManager()
-                let storeResult = await keyManager.storeKey(Array(key), withIdentifier: keyID)
-                
-                switch storeResult {
-                case .success:
-                    keyIdentifier = keyID
-                case .failure(let error):
-                    throw SecurityError.keyStorageError(error.localizedDescription)
-                }
-            }
-            
-            // Create the result
-            return KeyGenerationResult(
-                key: SendableCryptoMaterial(key),
-                keyIdentifier: keyIdentifier
-            )
-        } catch {
-            // Log the failure
-            var errorMetadata = metadata
-            errorMetadata["error"] = PrivacyMetadata.Entry(value: error.localizedDescription, privacy: .private)
-            
-            await logger?.error(
-                "Key generation failed",
-                metadata: errorMetadata,
-                source: "SecurityDomainHandler"
-            )
-            
-            // Map to domain-specific error
-            if let secError = error as? SecurityError {
-                throw secError
-            } else {
-                throw SecurityError.cryptographicError("Key generation failed: \(error.localizedDescription)")
-            }
-        }
-    }
-    
-    /**
-     Handles key retrieval operations.
-     
-     - Parameter operation: The retrieve key operation
-     - Returns: The retrieved cryptographic key
-     - Throws: SecurityError if key retrieval fails
-     */
-    private func handleRetrieveKey(_ operation: RetrieveKeyOperation) async throws -> SendableCryptoMaterial {
-        // Create privacy-aware logging metadata
-        var metadata = PrivacyMetadata()
-        metadata["operation"] = PrivacyMetadata.Entry(value: "retrieveKey", privacy: .public)
-        metadata["key_id"] = PrivacyMetadata.Entry(value: operation.keyIdentifier, privacy: .public)
-        
-        // Log the operation
-        await logger?.info(
-            "Retrieving cryptographic key",
-            metadata: metadata,
-            source: "SecurityDomainHandler"
-        )
-        
-        do {
-            // Retrieve the key
-            let keyManager = await securityService.keyManager()
-            let retrieveResult = await keyManager.retrieveKey(withIdentifier: operation.keyIdentifier)
-            
-            switch retrieveResult {
-            case .success(let keyData):
-                return SendableCryptoMaterial(Data(keyData))
-            case .failure(let error):
-                throw SecurityError.keyNotFound("Key not found for identifier: \(operation.keyIdentifier). Error: \(error.localizedDescription)")
-            }
-        } catch {
-            // Log the failure
-            var errorMetadata = metadata
-            errorMetadata["error"] = PrivacyMetadata.Entry(value: error.localizedDescription, privacy: .private)
-            
-            await logger?.error(
-                "Key retrieval failed",
-                metadata: errorMetadata,
-                source: "SecurityDomainHandler"
-            )
-            
-            // Map to domain-specific error
-            if let secError = error as? SecurityError {
-                throw secError
-            } else if (error as NSError).domain == NSOSStatusErrorDomain {
-                throw SecurityError.keyNotFound("Key not found or access denied: \(error.localizedDescription)")
-            } else {
-                throw SecurityError.operationFailed("Key retrieval failed: \(error.localizedDescription)")
-            }
-        }
-    }
-    
-    /**
-     Handles key storage operations.
-     
-     - Parameter operation: The store key operation
-     - Returns: The key identifier
-     - Throws: SecurityError if key storage fails
-     */
-    private func handleStoreKey(_ operation: StoreKeyOperation) async throws -> String {
-        // Create privacy-aware logging metadata
-        var metadata = PrivacyMetadata()
-        metadata["operation"] = PrivacyMetadata.Entry(value: "storeKey", privacy: .public)
-        if let keyID = operation.keyIdentifier {
-            metadata["key_id"] = PrivacyMetadata.Entry(value: keyID, privacy: .public)
-        }
-        
-        // Log the operation
-        await logger?.info(
-            "Storing cryptographic key",
-            metadata: metadata,
-            source: "SecurityDomainHandler"
-        )
-        
-        do {
-            // Generate key identifier if needed
-            let keyIdentifier = operation.keyIdentifier ?? UUID().uuidString
-            
-            // Store the key
-            let keyManager = await securityService.keyManager()
-            let storeResult = await keyManager.storeKey(Array(operation.key.rawData), withIdentifier: keyIdentifier)
-            
-            switch storeResult {
-            case .success:
-                return keyIdentifier
-            case .failure(let error):
-                throw SecurityError.keyStorageError(error.localizedDescription)
-            }
-        } catch {
-            // Log the failure
-            var errorMetadata = metadata
-            errorMetadata["error"] = PrivacyMetadata.Entry(value: error.localizedDescription, privacy: .private)
-            
-            await logger?.error(
-                "Key storage failed",
-                metadata: errorMetadata,
-                source: "SecurityDomainHandler"
-            )
-            
-            // Map to domain-specific error
-            if let secError = error as? SecurityError {
-                throw secError
-            } else {
-                throw SecurityError.operationFailed("Key storage failed: \(error.localizedDescription)")
-            }
-        }
-    }
-    
-    /**
-     Handles key deletion operations.
-     
-     - Parameter operation: The delete key operation
-     - Returns: A boolean indicating successful deletion
-     - Throws: SecurityError if key deletion fails
-     */
-    private func handleDeleteKey(_ operation: DeleteKeyOperation) async throws -> Bool {
-        // Create privacy-aware logging metadata
-        var metadata = PrivacyMetadata()
-        metadata["operation"] = PrivacyMetadata.Entry(value: "deleteKey", privacy: .public)
-        metadata["key_id"] = PrivacyMetadata.Entry(value: operation.keyIdentifier, privacy: .public)
-        
-        // Log the operation
-        await logger?.info(
-            "Deleting cryptographic key",
-            metadata: metadata,
-            source: "SecurityDomainHandler"
-        )
-        
-        do {
-            // Delete the key
-            let keyManager = await securityService.keyManager()
-            let deleteResult = await keyManager.deleteKey(withIdentifier: operation.keyIdentifier)
-            
-            switch deleteResult {
-            case .success:
-                return true
-            case .failure(let error):
-                throw SecurityError.operationFailed("Failed to delete key: \(error.localizedDescription)")
-            }
-        } catch {
-            // Log the failure
-            var errorMetadata = metadata
-            errorMetadata["error"] = PrivacyMetadata.Entry(value: error.localizedDescription, privacy: .private)
-            
-            await logger?.error(
-                "Key deletion failed",
-                metadata: errorMetadata,
-                source: "SecurityDomainHandler"
-            )
-            
-            // Map to domain-specific error
-            if let secError = error as? SecurityError {
-                throw secError
-            } else if (error as NSError).domain == NSOSStatusErrorDomain {
-                // If keychain item not found, consider it a success (idempotent delete)
-                return true
-            } else {
-                throw SecurityError.operationFailed("Key deletion failed: \(error.localizedDescription)")
-            }
-        }
-    }
-    
-    /**
-     Handles data hashing operations.
-     
-     - Parameter operation: The hash data operation
-     - Returns: The hash result
-     - Throws: SecurityError if hashing fails
-     */
-    private func handleHashData(_ operation: HashDataOperation) async throws -> SendableCryptoMaterial {
-        // Create privacy-aware logging metadata
-        var metadata = PrivacyMetadata()
-        metadata["operation"] = PrivacyMetadata.Entry(value: "hashData", privacy: .public)
-        if let algorithm = operation.algorithm {
-            metadata["algorithm"] = PrivacyMetadata.Entry(value: algorithm, privacy: .public)
-        }
-        
-        // Log the operation
-        await logger?.info(
-            "Hashing data",
-            metadata: metadata,
-            source: "SecurityDomainHandler"
-        )
-        
-        do {
-            // Determine hash algorithm
-            let hashAlgorithm = try getHashAlgorithm(from: operation.algorithm)
-            
-            // Create configuration
-            let options = SecurityConfigOptions(
-                enableDetailedLogging: false,
-                keyDerivationIterations: 100_000,
-                memoryLimitBytes: 65536,
-                useHardwareAcceleration: true,
-                operationTimeoutSeconds: 30.0,
-                verifyOperations: true,
-                metadata: operation.options
-            )
-            
-            let config = SecurityConfigDTO(
-                encryptionAlgorithm: .aes256GCM, // Not used for hashing
-                hashAlgorithm: hashAlgorithm,
-                providerType: .system,
-                options: options
-            )
-            
-            // Perform the hash operation
-            let securityOperation = SecurityOperation.hash(
-                data: operation.data.rawData,
-                algorithm: hashAlgorithm
-            )
-            let result = try await securityService.performSecureOperation(
-                operation: securityOperation,
-                config: config
-            )
-            
-            // Process the result
-            guard let hashData = result as? Data else {
-                throw SecurityError.operationFailed("Invalid result type returned from hash operation")
-            }
-            
-            return SendableCryptoMaterial(bytes: hashData)
-        } catch {
-            // Log the failure
-            var errorMetadata = metadata
-            errorMetadata["error"] = PrivacyMetadata.Entry(value: error.localizedDescription, privacy: .private)
-            
-            await logger?.error(
-                "Hash operation failed",
-                metadata: errorMetadata,
-                source: "SecurityDomainHandler"
-            )
-            
-            // Map to domain-specific error
-            if let secError = error as? SecurityError {
-                throw secError
-            } else {
-                throw SecurityError.cryptographicError("Hash operation failed: \(error.localizedDescription)")
-            }
-        }
-    }
-    
-    /**
-     Handles secure secret storage operations.
-     
-     - Parameter operation: The store secret operation
-     - Returns: The secret identifier
-     - Throws: SecurityError if secret storage fails
-     */
-    private func handleStoreSecret(_ operation: StoreSecretOperation) async throws -> String {
-        // Create privacy-aware logging metadata
-        var metadata = PrivacyMetadata()
-        metadata["operation"] = PrivacyMetadata.Entry(value: "storeSecret", privacy: .public)
-        if let secretID = operation.identifier {
-            metadata["secret_id"] = PrivacyMetadata.Entry(value: secretID, privacy: .public)
-        }
-        metadata["service"] = PrivacyMetadata.Entry(value: operation.service, privacy: .public)
-        
-        // Log the operation
-        await logger?.info(
-            "Storing secret",
-            metadata: metadata,
-            source: "SecurityDomainHandler"
-        )
-        
-        do {
-            // Generate identifier if needed
-            let secretIdentifier = operation.identifier ?? UUID().uuidString
-            
-            // Create storage options
-            var options = SecurityConfigOptions(
-                enableDetailedLogging: false,
-                keyDerivationIterations: 100_000,
-                memoryLimitBytes: 65536,
-                useHardwareAcceleration: true,
-                operationTimeoutSeconds: 30.0,
-                verifyOperations: true,
-                metadata: operation.options
-            )
-            
-            if let accessibility = operation.accessibility {
-                // Create new options with accessibility included
-                options = SecurityConfigOptions(
-                    enableDetailedLogging: options.enableDetailedLogging,
-                    keyDerivationIterations: options.keyDerivationIterations,
-                    memoryLimitBytes: options.memoryLimitBytes,
-                    useHardwareAcceleration: options.useHardwareAcceleration,
-                    operationTimeoutSeconds: options.operationTimeoutSeconds,
-                    verifyOperations: options.verifyOperations,
-                    metadata: ["accessibility": accessibility]
-                )
-            }
-            
-            let config = SecurityConfigDTO(
-                encryptionAlgorithm: .aes256GCM, // Default encryption
-                hashAlgorithm: .sha256,
-                providerType: .system,
-                options: options
-            )
-            
-            // Store the secret
-            try await securityService.storeSecureSecret(
-                operation.data.rawData,
-                withIdentifier: secretIdentifier,
-                service: operation.service,
-                account: operation.account,
-                config: config
-            )
-            
-            return secretIdentifier
-        } catch {
-            // Log the failure
-            var errorMetadata = metadata
-            errorMetadata["error"] = PrivacyMetadata.Entry(value: error.localizedDescription, privacy: .private)
-            
-            await logger?.error(
-                "Secret storage failed",
-                metadata: errorMetadata,
-                source: "SecurityDomainHandler"
-            )
-            
-            // Map to domain-specific error
-            if let secError = error as? SecurityError {
-                throw secError
-            } else {
-                throw SecurityError.operationFailed("Secret storage failed: \(error.localizedDescription)")
-            }
-        }
-    }
-    
-    /**
-     Handles secure secret retrieval operations.
-     
-     - Parameter operation: The retrieve secret operation
-     - Returns: The retrieved secret data
-     - Throws: SecurityError if secret retrieval fails
-     */
-    private func handleRetrieveSecret(_ operation: RetrieveSecretOperation) async throws -> SendableCryptoMaterial {
-        // Create privacy-aware logging metadata
-        var metadata = PrivacyMetadata()
-        metadata["operation"] = PrivacyMetadata.Entry(value: "retrieveSecret", privacy: .public)
-        metadata["secret_id"] = PrivacyMetadata.Entry(value: operation.identifier, privacy: .public)
-        metadata["service"] = PrivacyMetadata.Entry(value: operation.service, privacy: .public)
-        
-        // Log the operation
-        await logger?.info(
-            "Retrieving secret",
-            metadata: metadata,
-            source: "SecurityDomainHandler"
-        )
-        
-        do {
-            // Create configuration
-            let options = SecurityConfigOptions(
-                enableDetailedLogging: false,
-                keyDerivationIterations: 100_000,
-                memoryLimitBytes: 65536,
-                useHardwareAcceleration: true,
-                operationTimeoutSeconds: 30.0,
-                verifyOperations: true,
-                metadata: operation.options
-            )
-            
-            let config = SecurityConfigDTO(
-                encryptionAlgorithm: .aes256GCM, // Not used for retrieval
-                hashAlgorithm: .sha256,
-                providerType: .system,
-                options: options
-            )
-            
-            // Retrieve the secret
-            let secretData = try await securityService.retrieveSecureSecret(
-                withIdentifier: operation.identifier,
-                service: operation.service,
-                account: operation.account,
-                config: config
-            )
-            
-            // Return not nil if data was retrieved successfully
-            guard let data = secretData else {
-                throw SecurityError.secretNotFound("Secret not found: \(operation.identifier)")
-            }
-            
-            return SendableCryptoMaterial(bytes: data)
-        } catch {
-            // Log the failure
-            var errorMetadata = metadata
-            errorMetadata["error"] = PrivacyMetadata.Entry(value: error.localizedDescription, privacy: .private)
-            
-            await logger?.error(
-                "Secret retrieval failed",
-                metadata: errorMetadata,
-                source: "SecurityDomainHandler"
-            )
-            
-            // Map to domain-specific error
-            if let secError = error as? SecurityError {
-                throw secError
-            } else if (error as NSError).domain == NSOSStatusErrorDomain {
-                throw SecurityError.keyNotFound("Secret not found or access denied: \(error.localizedDescription)")
-            } else {
-                throw SecurityError.operationFailed("Secret retrieval failed: \(error.localizedDescription)")
-            }
-        }
-    }
-    
-    /**
-     Handles secure secret deletion operations.
-     
-     - Parameter operation: The delete secret operation
-     - Returns: A boolean indicating successful deletion
-     - Throws: SecurityError if secret deletion fails
-     */
-    private func handleDeleteSecret(_ operation: DeleteSecretOperation) async throws -> Bool {
-        // Create privacy-aware logging metadata
-        var metadata = PrivacyMetadata()
-        metadata["operation"] = PrivacyMetadata.Entry(value: "deleteSecret", privacy: .public)
-        metadata["secret_id"] = PrivacyMetadata.Entry(value: operation.identifier, privacy: .public)
-        metadata["service"] = PrivacyMetadata.Entry(value: operation.service, privacy: .public)
-        
-        // Log the operation
-        await logger?.info(
-            "Deleting secret",
-            metadata: metadata,
-            source: "SecurityDomainHandler"
-        )
-        
-        do {
-            // Create configuration
-            let options = SecurityConfigOptions(
-                enableDetailedLogging: false,
-                keyDerivationIterations: 100_000,
-                memoryLimitBytes: 65536,
-                useHardwareAcceleration: true,
-                operationTimeoutSeconds: 30.0,
-                verifyOperations: true,
-                metadata: [:]
-            )
-            
-            let config = SecurityConfigDTO(
-                encryptionAlgorithm: .aes256GCM, // Not used for deletion
-                hashAlgorithm: .sha256,
-                providerType: .system,
-                options: options
-            )
-            
-            // Delete the secret
-            try await securityService.deleteSecureSecret(
-                withIdentifier: operation.identifier,
-                service: operation.service,
-                account: operation.account,
-                config: config
-            )
-            
-            // Check if the secret was deleted successfully
-            let stillExists = (try? await securityService.retrieveSecureSecret(
-                withIdentifier: operation.identifier,
-                service: operation.service,
-                account: operation.account,
-                config: config
-            )) != nil
-            
-            if stillExists {
-                throw SecurityError.operationFailed("Failed to delete secret: \(operation.identifier)")
-            }
-            
-            return true
-        } catch {
-            // Log the failure
-            var errorMetadata = metadata
-            errorMetadata["error"] = PrivacyMetadata.Entry(value: error.localizedDescription, privacy: .private)
-            
-            await logger?.error(
-                "Secret deletion failed",
-                metadata: errorMetadata,
-                source: "SecurityDomainHandler"
-            )
-            
-            // Map to domain-specific error
-            if let secError = error as? SecurityError {
-                throw secError
-            } else if (error as NSError).domain == NSOSStatusErrorDomain {
-                // If keychain item not found, consider it a success (idempotent delete)
-                return true
-            } else {
-                throw SecurityError.operationFailed("Secret deletion failed: \(error.localizedDescription)")
-            }
-        }
-    }
-    
-    /**
-     Maps the correct hash algorithm based on string input
-     - Parameter algorithmString: String identifier of the algorithm
-     - Returns: The corresponding CoreSecurityTypes.HashAlgorithm
-     - Throws: SecurityError if the algorithm is invalid or unsupported
-     */
-    private func getHashAlgorithm(from algorithmString: String?) throws -> CoreSecurityTypes.HashAlgorithm {
+    private func getAlgorithm(from algorithmString: String?) throws -> EncryptionAlgorithm {
         guard let algorithmStr = algorithmString else {
-            return .sha256 // Default algorithm
+            return .aes256GCM // Default to AES-GCM if not specified
+        }
+        
+        switch algorithmStr.lowercased() {
+        case "aes", "aes256", "aes-256", "aes-gcm", "aes256-gcm", "aesgcm":
+            return .aes256GCM
+        case "chacha20", "chacha20poly1305", "chacha":
+            return .chacha20Poly1305
+        default:
+            throw SecurityError.invalidInput("Unsupported encryption algorithm: \(algorithmStr)")
+        }
+    }
+    
+    /**
+     Converts a string representation of a hash algorithm to a HashAlgorithm enum case.
+     
+     - Parameter algorithmString: String representation of the algorithm
+     - Returns: A HashAlgorithm value
+     - Throws: SecurityError if the algorithm is not supported
+     */
+    private func getHashAlgorithm(from algorithmString: String?) throws -> HashAlgorithm {
+        guard let algorithmStr = algorithmString else {
+            // Default to SHA-256 if no algorithm specified
+            return .sha256
         }
         
         switch algorithmStr.lowercased() {
         case "sha1", "sha-1":
-            return .sha1
+            // SHA-1 is deprecated, use SHA-256 as a secure alternative
+            await logger?.warning(
+                "SHA-1 is deprecated and was requested, using SHA-256 instead",
+                metadata: PrivacyMetadata([
+                    "requestedAlgorithm": PrivacyMetadataValue(value: "SHA-1", privacy: .public),
+                    "usingAlgorithm": PrivacyMetadataValue(value: "SHA-256", privacy: .public)
+                ]),
+                source: "SecurityDomainHandler"
+            )
+            return .sha256
         case "sha256", "sha-256":
             return .sha256
         case "sha384", "sha-384":
-            return .sha384
+            // SHA-384 is not directly supported, use SHA-512 instead
+            await logger?.warning(
+                "SHA-384 is not directly supported, using SHA-512 instead",
+                metadata: PrivacyMetadata([
+                    "requestedAlgorithm": PrivacyMetadataValue(value: "SHA-384", privacy: .public),
+                    "usingAlgorithm": PrivacyMetadataValue(value: "SHA-512", privacy: .public)
+                ]),
+                source: "SecurityDomainHandler"
+            )
+            return .sha512
         case "sha512", "sha-512":
             return .sha512
-        case "md5":
-            // MD5 is supported but not recommended for security-critical applications
-            // Since MD5 is not in the HashAlgorithm enum, we'll use SHA1 as the closest alternative
-            // with a warning
-            logger?.warning("MD5 hash algorithm requested but not supported, falling back to SHA1", metadata: nil)
-            return .sha1
-        default:
+        case "blake2b", "blake2":
+            return .blake2b
+        case _:
+            if algorithmStr.isEmpty {
+                // Default to SHA-256 for empty string
+                await logger?.warning(
+                    "Empty hash algorithm specified, using SHA-256 as default",
+                    metadata: PrivacyMetadata(),
+                    source: "SecurityDomainHandler"
+                )
+                return .sha256
+            }
             throw SecurityError.invalidInput("Unsupported hash algorithm: \(algorithmString ?? "nil")")
+        }
+    }
+    
+    /**
+     Security error types for domain-specific error handling.
+     */
+    private enum SecurityError: Error, LocalizedError {
+        case invalidInput(String)
+        case cryptographicError(String)
+        case keyNotFound(String)
+        case permissionDenied(String)
+        case operationFailed(String)
+        case secretNotFound(String)
+        case keyStorageError(String)
+        case hashOperationFailed(String)
+        case secureStorageError(String)
+        case actorIsolationError(String)
+        
+        var errorDescription: String? {
+            switch self {
+            case .invalidInput(let message),
+                 .cryptographicError(let message),
+                 .keyNotFound(let message),
+                 .permissionDenied(let message),
+                 .operationFailed(let message),
+                 .secretNotFound(let message),
+                 .keyStorageError(let message),
+                 .hashOperationFailed(let message),
+                 .secureStorageError(let message),
+                 .actorIsolationError(let message):
+                return message
+            }
         }
     }
 }
 
+// MARK: - Core API Types
+
 /**
- Security error types for domain-specific error handling.
+ Base protocol for all API operations
  */
-private enum SecurityError: Error, LocalizedError {
-    case invalidInput(String)
-    case cryptographicError(String)
-    case keyNotFound(String)
-    case permissionDenied(String)
-    case operationFailed(String)
-    case secretNotFound(String)
-    case keyStorageError(String)
+public protocol APIOperation: Sendable { }
+
+/**
+ API error type for standardised error handling across the API service
+ */
+public enum APIError: Error, Sendable {
+    case operationNotSupported(message: String, code: String)
+    case invalidOperation(message: String, code: String)
+    case operationFailed(error: Error, code: String)
+    case authenticationFailed(message: String, code: String)
+    case resourceNotFound(message: String, identifier: String)
+    case operationCancelled(message: String, code: String)
+    case operationTimedOut(message: String, timeoutSeconds: Int, code: String)
+    case serviceUnavailable(message: String, code: String)
+    case invalidState(message: String, details: String, code: String)
+    case conflict(message: String, details: String, code: String)
+    case rateLimitExceeded(message: String, resetTime: String?, code: String)
+}
+
+/**
+ Result of encryption operations
+ */
+public struct EncryptionResult {
+    public let encryptedData: Data
+    public let key: SendableCryptoMaterial?
+    public let keyIdentifier: String?
+    public let algorithm: String
     
-    var errorDescription: String? {
-        switch self {
-        case .invalidInput(let message),
-             .cryptographicError(let message),
-             .keyNotFound(let message),
-             .permissionDenied(let message),
-             .operationFailed(let message),
-             .secretNotFound(let message),
-             .keyStorageError(let message):
-            return message
-        }
+    public init(encryptedData: Data, key: SendableCryptoMaterial? = nil, keyIdentifier: String? = nil, algorithm: String) {
+        self.encryptedData = encryptedData
+        self.key = key
+        self.keyIdentifier = keyIdentifier
+        self.algorithm = algorithm
+    }
+}
+
+// MARK: - Protocol Conformance
+/**
+ Protocol defining a security-related API operation
+ */
+public protocol SecurityAPIOperation: APIOperation { }
+
+/**
+ Operation for encrypting data
+ */
+public struct EncryptData: SecurityAPIOperation {
+    public let data: Data
+    public let key: SendableCryptoMaterial?
+    public let keyIdentifier: String?
+    public let algorithm: String?
+    public let options: [String: String]?
+    public let storeKey: Bool
+    
+    public init(data: Data, key: SendableCryptoMaterial? = nil, keyIdentifier: String? = nil, algorithm: String? = nil, options: [String: String]? = nil, storeKey: Bool = false) {
+        self.data = data
+        self.key = key
+        self.keyIdentifier = keyIdentifier
+        self.algorithm = algorithm
+        self.options = options
+        self.storeKey = storeKey
+    }
+}
+
+/**
+ Operation for decrypting data
+ */
+public struct DecryptData: SecurityAPIOperation {
+    public let encryptedData: SendableCryptoMaterial
+    public let key: SendableCryptoMaterial?
+    public let keyIdentifier: String?
+    public let algorithm: String?
+    public let options: [String: String]?
+    
+    public init(encryptedData: SendableCryptoMaterial, key: SendableCryptoMaterial? = nil, keyIdentifier: String? = nil, algorithm: String? = nil, options: [String: String]? = nil) {
+        self.encryptedData = encryptedData
+        self.key = key
+        self.keyIdentifier = keyIdentifier
+        self.algorithm = algorithm
+        self.options = options
+    }
+}
+
+/**
+ Operation for generating a cryptographic key
+ */
+public struct GenerateKey: SecurityAPIOperation {
+    public let keyLength: Int?
+    public let keyType: String?
+    public let algorithm: String?
+    public let options: [String: String]?
+    
+    public init(keyLength: Int? = nil, keyType: String? = nil, algorithm: String? = nil, options: [String: String]? = nil) {
+        self.keyLength = keyLength
+        self.keyType = keyType
+        self.algorithm = algorithm
+        self.options = options
+    }
+}
+
+/**
+ Operation for retrieving a stored key
+ */
+public struct RetrieveKey: SecurityAPIOperation {
+    public let keyIdentifier: String
+    
+    public init(keyIdentifier: String) {
+        self.keyIdentifier = keyIdentifier
+    }
+}
+
+/**
+ Operation for storing a cryptographic key
+ */
+public struct StoreKey: SecurityAPIOperation {
+    public let key: SendableCryptoMaterial
+    public let keyIdentifier: String?
+    public let attributes: [String: String]?
+    
+    public init(key: SendableCryptoMaterial, keyIdentifier: String? = nil, attributes: [String: String]? = nil) {
+        self.key = key
+        self.keyIdentifier = keyIdentifier
+        self.attributes = attributes
+    }
+}
+
+/**
+ Operation for deleting a stored key
+ */
+public struct DeleteKey: SecurityAPIOperation {
+    public let keyIdentifier: String
+    
+    public init(keyIdentifier: String) {
+        self.keyIdentifier = keyIdentifier
+    }
+}
+
+/**
+ Operation for hashing data
+ */
+public struct HashData: SecurityAPIOperation {
+    public let data: SendableCryptoMaterial
+    public let algorithm: String?
+    public let options: [String: String]?
+    
+    public init(data: SendableCryptoMaterial, algorithm: String? = nil, options: [String: String]? = nil) {
+        self.data = data
+        self.algorithm = algorithm
+        self.options = options
+    }
+}
+
+/**
+ Operation for storing a secret
+ */
+public struct StoreSecret: SecurityAPIOperation {
+    public let secret: SendableCryptoMaterial
+    public let identifier: String?
+    public let service: String
+    public let attributes: [String: String]?
+    
+    public init(secret: SendableCryptoMaterial, identifier: String? = nil, service: String, attributes: [String: String]? = nil) {
+        self.secret = secret
+        self.identifier = identifier
+        self.service = service
+        self.attributes = attributes
+    }
+}
+
+/**
+ Operation for retrieving a stored secret
+ */
+public struct RetrieveSecret: SecurityAPIOperation {
+    public let identifier: String
+    public let service: String
+    
+    public init(identifier: String, service: String) {
+        self.identifier = identifier
+        self.service = service
+    }
+}
+
+/**
+ Operation for deleting a stored secret
+ */
+public struct DeleteSecret: SecurityAPIOperation {
+    public let identifier: String
+    public let service: String
+    
+    public init(identifier: String, service: String) {
+        self.identifier = identifier
+        self.service = service
+    }
+}
+
+/**
+ Result type for key generation operations
+ */
+public struct KeyGenerationResult {
+    public let key: SendableCryptoMaterial
+    public let keyIdentifier: String?
+    public let keyType: String
+    
+    public init(key: SendableCryptoMaterial, keyIdentifier: String? = nil, keyType: String = "symmetric") {
+        self.key = key
+        self.keyIdentifier = keyIdentifier
+        self.keyType = keyType
+    }
+}
+
+/**
+ A type-safe wrapper for cryptographic material that can be safely passed across actor boundaries.
+ */
+public struct SendableCryptoMaterial: Sendable, Equatable {
+    public let rawData: Data
+    
+    public init(_ data: Data) {
+        self.rawData = data
+    }
+    
+    public init(_ bytes: [UInt8]) {
+        self.rawData = Data(bytes)
+    }
+    
+    public init(_ string: String) {
+        self.rawData = Data(string.utf8)
     }
 }

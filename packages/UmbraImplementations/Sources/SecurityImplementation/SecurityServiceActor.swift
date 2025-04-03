@@ -6,6 +6,7 @@ import LoggingInterfaces
 import LoggingServices
 import LoggingTypes
 import SecurityCoreInterfaces
+import SecurityInterfaces
 import UmbraErrors
 
 /// Actor implementation of the SecurityProviderProtocol that provides thread-safe
@@ -65,10 +66,10 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
   }
 
   /// Initialises the security service
-  /// - Throws: SecurityError if initialisation fails
+  /// - Throws: CoreSecurityError if initialisation fails
   public func initialise() async throws {
     guard !isInitialised else {
-      throw UmbraErrors.SecurityError.alreadyInitialised
+      throw CoreSecurityError.configurationError("Security service is already initialised")
     }
 
     // Log initialisation event with privacy controls
@@ -106,7 +107,7 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
         ]
       )
 
-      throw UmbraErrors.SecurityError.serviceUnavailable
+      throw CoreSecurityError.serviceUnavailable
     }
 
     // Mark as initialised
@@ -134,7 +135,7 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
   }
 
   /// Initialize the security service (American spelling for AsyncServiceInitializable conformance)
-  /// - Throws: SecurityError if initialization fails
+  /// - Throws: CoreSecurityError if initialization fails
   public func initialize() async throws {
     try await initialise()
   }
@@ -144,7 +145,7 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
   ///   - data: The data to secure
   ///   - context: The security context defining how the data should be secured
   /// - Returns: The secured data
-  /// - Throws: SecurityError if the operation fails
+  /// - Throws: CoreSecurityError if the operation fails
   public func secureData(
     _ data: [UInt8],
     securityContext: SecurityContextDTO
@@ -238,7 +239,7 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
               ]
             )
 
-            throw UmbraErrors.SecurityError.encryptionFailed(
+            throw CoreSecurityError.encryptionFailed(
               reason: "Encryption failed: \(error.localizedDescription)"
             )
         }
@@ -258,7 +259,7 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
           ]
         )
 
-        throw UmbraErrors.SecurityError.invalidOperation(
+        throw CoreSecurityError.invalidOperation(
           reason: "Operation type \(securityContext.operationType.rawValue) not supported for securing data"
         )
     }
@@ -269,7 +270,7 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
   ///   - securedData: The secured data to retrieve
   ///   - context: The security context defining how the data should be retrieved
   /// - Returns: The original data
-  /// - Throws: SecurityError if the operation fails
+  /// - Throws: CoreSecurityError if the operation fails
   public func retrieveSecuredData(
     _ securedData: [UInt8],
     securityContext: SecurityContextDTO
@@ -363,7 +364,7 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
               ]
             )
 
-            throw UmbraErrors.SecurityError.decryptionFailed(
+            throw CoreSecurityError.decryptionFailed(
               reason: "Decryption failed: \(error.localizedDescription)"
             )
         }
@@ -383,7 +384,7 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
           ]
         )
 
-        throw UmbraErrors.SecurityError.invalidOperation(
+        throw CoreSecurityError.invalidOperation(
           reason: "Operation type \(securityContext.operationType.rawValue) not supported for retrieving secured data"
         )
     }
@@ -392,10 +393,10 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
   // MARK: - Helper Methods
 
   /// Validates that the service has been initialised
-  /// - Throws: SecurityError if the service is not initialised
+  /// - Throws: CoreSecurityError if the service is not initialised
   private func validateInitialisation() throws {
     guard isInitialised else {
-      throw UmbraErrors.SecurityError.notInitialised
+      throw CoreSecurityError.notInitialised
     }
   }
 
@@ -404,7 +405,7 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
   /// Creates a secure bookmark for the specified URL
   /// - Parameter url: The URL to create a bookmark for
   /// - Returns: The bookmark data
-  /// - Throws: SecurityError if bookmark creation fails
+  /// - Throws: BookmarkSecurityError if bookmark creation fails
   public func createBookmark(for url: URL) async throws -> [UInt8] {
     try validateInitialisation()
 
@@ -473,7 +474,7 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
         ]
       )
 
-      throw UmbraErrors.SecurityError.bookmarkCreationFailed(
+      throw BookmarkSecurityError.operationFailed(
         reason: "Failed to create bookmark: \(error.localizedDescription)"
       )
     }
@@ -482,7 +483,7 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
   /// Resolves a secure bookmark to a URL
   /// - Parameter bookmarkData: The bookmark data to resolve
   /// - Returns: The resolved URL and a flag indicating if the bookmark is stale
-  /// - Throws: SecurityError if bookmark resolution fails
+  /// - Throws: BookmarkSecurityError if bookmark resolution fails
   public func resolveBookmark(_ bookmarkData: [UInt8]) async throws -> (URL, Bool) {
     try validateInitialisation()
 
@@ -566,7 +567,7 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
         ]
       )
 
-      throw UmbraErrors.SecurityError.bookmarkResolutionFailed(
+      throw BookmarkSecurityError.operationFailed(
         reason: "Failed to resolve bookmark: \(error.localizedDescription)"
       )
     }
@@ -577,7 +578,7 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
   ///   - data: The data to verify
   ///   - verificationContext: The context for verification
   /// - Returns: True if the data is verified, false otherwise
-  /// - Throws: SecurityError if verification fails
+  /// - Throws: CoreSecurityError if verification fails
   public func verifyDataIntegrity(
     _ data: [UInt8],
     verificationContext: VerificationContextDTO
@@ -624,7 +625,7 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
             ]
           )
 
-          throw UmbraErrors.SecurityError.invalidVerificationContext(
+          throw CoreSecurityError.invalidVerificationContext(
             reason: "Expected hash value is missing"
           )
         }
@@ -687,7 +688,7 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
               ]
             )
 
-            throw UmbraErrors.SecurityError.verificationFailed(
+            throw CoreSecurityError.verificationFailed(
               reason: "Hash verification failed: \(error.localizedDescription)"
             )
         }
@@ -708,7 +709,7 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
           ]
         )
 
-        throw UmbraErrors.SecurityError.invalidVerificationMethod(
+        throw CoreSecurityError.invalidVerificationMethod(
           reason: "Verification method \(verificationContext.method.rawValue) is not supported"
         )
     }
@@ -828,7 +829,7 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
       ]
     )
 
-    throw UmbraErrors.SecurityError.notImplemented(
+    throw CoreSecurityError.notImplemented(
       reason: "Secure delete operation is not yet implemented"
     )
   }

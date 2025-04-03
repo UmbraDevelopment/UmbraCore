@@ -214,8 +214,8 @@ public struct RepositoryDomainHandler: DomainHandler {
     private func handleListRepositories(_ operation: ListRepositoriesOperation) async throws -> [RepositoryInfo] {
         // Create privacy-aware logging metadata
         let metadata = PrivacyMetadata([
-            "operation": .public("listRepositories"),
-            "include_details": .public(operation.includeDetails.description)
+            "operation": PrivacyMetadataValue(value: "listRepositories", privacy: .public),
+            "include_details": PrivacyMetadataValue(value: operation.includeDetails.description, privacy: .public)
         ])
         
         await logger?.info(
@@ -241,8 +241,9 @@ public struct RepositoryDomainHandler: DomainHandler {
             var info = RepositoryInfo(
                 id: repository.identifier,
                 name: repository.name,
+                location: repository.url,
                 status: mapRepositoryState(repository.status),
-                path: repository.url.absoluteString
+                itemCount: 0
             )
             
             // If includeDetails is true, get additional information
@@ -263,7 +264,7 @@ public struct RepositoryDomainHandler: DomainHandler {
         
         // Log the result count
         let resultMetadata = metadata.merging(PrivacyMetadata([
-            "count": .public(String(repositoryInfos.count))
+            "count": PrivacyMetadataValue(value: String(repositoryInfos.count), privacy: .public)
         ]))
         
         await logger?.info(
@@ -285,9 +286,9 @@ public struct RepositoryDomainHandler: DomainHandler {
     private func handleGetRepository(_ operation: GetRepositoryOperation) async throws -> RepositoryDetails {
         // Create privacy-aware logging metadata
         let metadata = PrivacyMetadata([
-            "operation": .public("getRepository"),
-            "repository_id": .public(operation.repositoryID),
-            "include_snapshots": .public(operation.includeSnapshots.description)
+            "operation": PrivacyMetadataValue(value: "getRepository", privacy: .public),
+            "repository_id": PrivacyMetadataValue(value: operation.repositoryID, privacy: .public),
+            "include_snapshots": PrivacyMetadataValue(value: operation.includeSnapshots.description, privacy: .public)
         ])
         
         await logger?.info(
@@ -306,8 +307,9 @@ public struct RepositoryDomainHandler: DomainHandler {
         let basicInfo = RepositoryInfo(
             id: repository.identifier,
             name: repository.name,
+            location: repository.url,
             status: mapRepositoryState(repository.status),
-            path: repository.url.absoluteString
+            itemCount: 0
         ).withDetails(
             size: stats.totalSize,
             itemCount: stats.totalItems,
@@ -318,15 +320,16 @@ public struct RepositoryDomainHandler: DomainHandler {
         let details = RepositoryDetails(
             basicInfo: basicInfo,
             creationDate: repository.creationDate,
-            lastValidated: stats.lastValidation,
-            configuration: repository.configuration,
+            lastUpdated: stats.lastValidation,
+            totalSizeBytes: stats.totalSize,
+            metadata: [:],
             snapshots: operation.includeSnapshots ? try await getRepositorySnapshots(repository.identifier) : []
         )
         
         await logger?.info(
             "Repository details retrieved",
             metadata: metadata.merging(PrivacyMetadata([
-                "status": .public("success")
+                "status": PrivacyMetadataValue(value: "success", privacy: .public)
             ])),
             source: "RepositoryDomainHandler"
         )
@@ -344,9 +347,9 @@ public struct RepositoryDomainHandler: DomainHandler {
     private func handleCreateRepository(_ operation: CreateRepositoryOperation) async throws -> RepositoryInfo {
         // Create privacy-aware logging metadata
         let metadata = PrivacyMetadata([
-            "operation": .public("createRepository"),
-            "name": .public(operation.parameters.name),
-            "location": .private(operation.parameters.location.absoluteString)
+            "operation": PrivacyMetadataValue(value: "createRepository", privacy: .public),
+            "name": PrivacyMetadataValue(value: operation.parameters.name, privacy: .public),
+            "location": PrivacyMetadataValue(value: operation.parameters.location.absoluteString, privacy: .private)
         ])
         
         await logger?.info(
@@ -362,15 +365,16 @@ public struct RepositoryDomainHandler: DomainHandler {
         let basicInfo = RepositoryInfo(
             id: repository.identifier,
             name: repository.name,
+            location: repository.url,
             status: mapRepositoryState(repository.status),
-            path: repository.url.absoluteString
+            itemCount: 0
         )
         
         await logger?.info(
             "Repository created successfully",
             metadata: metadata.merging(PrivacyMetadata([
-                "repository_id": .public(repository.identifier),
-                "status": .public("success")
+                "repository_id": PrivacyMetadataValue(value: repository.identifier, privacy: .public),
+                "status": PrivacyMetadataValue(value: "success", privacy: .public)
             ])),
             source: "RepositoryDomainHandler"
         )
@@ -388,8 +392,8 @@ public struct RepositoryDomainHandler: DomainHandler {
     private func handleUpdateRepository(_ operation: UpdateRepositoryOperation) async throws -> RepositoryInfo {
         // Create privacy-aware logging metadata
         let metadata = PrivacyMetadata([
-            "operation": .public("updateRepository"),
-            "repository_id": .public(operation.repositoryID)
+            "operation": PrivacyMetadataValue(value: "updateRepository", privacy: .public),
+            "repository_id": PrivacyMetadataValue(value: operation.repositoryID, privacy: .public)
         ])
         
         await logger?.info(
@@ -423,14 +427,15 @@ public struct RepositoryDomainHandler: DomainHandler {
             let updatedInfo = RepositoryInfo(
                 id: updatedRepository.identifier,
                 name: updatedRepository.name,
+                location: updatedRepository.url,
                 status: mapRepositoryState(updatedRepository.status),
-                path: updatedRepository.url.absoluteString
+                itemCount: 0
             )
             
             await logger?.info(
                 "Repository updated successfully",
                 metadata: metadata.merging(PrivacyMetadata([
-                    "status": PrivacyMetadata.Entry(value: "success", privacy: .public)
+                    "status": PrivacyMetadataValue(value: "success", privacy: .public)
                 ])),
                 source: "RepositoryDomainHandler"
             )
@@ -453,9 +458,9 @@ public struct RepositoryDomainHandler: DomainHandler {
     private func handleDeleteRepository(_ operation: DeleteRepositoryOperation) async throws -> Void {
         // Create privacy-aware logging metadata
         let metadata = PrivacyMetadata([
-            "operation": PrivacyMetadata.Entry(value: "deleteRepository", privacy: .public),
-            "repository_id": PrivacyMetadata.Entry(value: operation.repositoryID, privacy: .public),
-            "force": PrivacyMetadata.Entry(value: operation.force.description, privacy: .public)
+            "operation": PrivacyMetadataValue(value: "deleteRepository", privacy: .public),
+            "repository_id": PrivacyMetadataValue(value: operation.repositoryID, privacy: .public),
+            "force": PrivacyMetadataValue(value: operation.force.description, privacy: .public)
         ])
         
         await logger?.info(
@@ -484,7 +489,7 @@ public struct RepositoryDomainHandler: DomainHandler {
         await logger?.info(
             "Repository deleted successfully",
             metadata: metadata.merging(PrivacyMetadata([
-                "status": PrivacyMetadata.Entry(value: "success", privacy: .public)
+                "status": PrivacyMetadataValue(value: "success", privacy: .public)
             ])),
             source: "RepositoryDomainHandler"
         )
@@ -499,15 +504,15 @@ public struct RepositoryDomainHandler: DomainHandler {
         case .ready:
             return .ready
         case .uninitialized:
-            return .initialising
+            return .initializing
         case .maintenance:
-            return .modifying
+            return .syncing
         case .locked:
             return .locked
         case .corrupted:
-            return .damaged
+            return .error
         case .closed:
-            return .repairing
+            return .unknown
         }
     }
     
@@ -517,4 +522,130 @@ public struct RepositoryDomainHandler: DomainHandler {
         // For now, return an empty array
         return []
     }
+}
+
+// MARK: - API Types
+
+/**
+ Basic information about a repository
+ */
+public struct RepositoryInfo: Sendable, Equatable, Identifiable {
+    public let id: String
+    public let name: String
+    public let location: URL
+    public let status: RepositoryStatus
+    public let itemCount: Int
+    
+    public init(id: String, name: String, location: URL, status: RepositoryStatus = .ready, itemCount: Int = 0) {
+        self.id = id
+        self.name = name
+        self.location = location
+        self.status = status
+        self.itemCount = itemCount
+    }
+    
+    public func withDetails(size: UInt64, itemCount: Int, lastModified: Date?) -> RepositoryInfo {
+        return RepositoryInfo(
+            id: id,
+            name: name,
+            location: location,
+            status: status,
+            itemCount: itemCount
+        )
+    }
+}
+
+/**
+ Detailed repository information including metadata
+ */
+public struct RepositoryDetails: Sendable, Equatable {
+    public let basicInfo: RepositoryInfo
+    public let creationDate: Date
+    public let lastUpdated: Date?
+    public let totalSizeBytes: UInt64
+    public let metadata: [String: String]
+    public let snapshots: [SnapshotInfo]?
+    
+    public init(
+        basicInfo: RepositoryInfo,
+        creationDate: Date,
+        lastUpdated: Date? = nil,
+        totalSizeBytes: UInt64 = 0,
+        metadata: [String: String] = [:],
+        snapshots: [SnapshotInfo]? = nil
+    ) {
+        self.basicInfo = basicInfo
+        self.creationDate = creationDate
+        self.lastUpdated = lastUpdated
+        self.totalSizeBytes = totalSizeBytes
+        self.metadata = metadata
+        self.snapshots = snapshots
+    }
+}
+
+/**
+ Snapshot information within a repository
+ */
+public struct SnapshotInfo: Sendable, Equatable, Identifiable {
+    public let id: String
+    public let name: String
+    public let creationDate: Date
+    public let sizeBytes: UInt64
+    public let status: SnapshotStatus
+    
+    public init(
+        id: String,
+        name: String,
+        creationDate: Date,
+        sizeBytes: UInt64 = 0,
+        status: SnapshotStatus = .complete
+    ) {
+        self.id = id
+        self.name = name
+        self.creationDate = creationDate
+        self.sizeBytes = sizeBytes
+        self.status = status
+    }
+}
+
+/**
+ Status of a repository
+ */
+public enum RepositoryStatus: String, Sendable, Codable, CaseIterable {
+    case ready
+    case initializing
+    case syncing
+    case locked
+    case error
+    case unknown
+}
+
+/**
+ Status of a snapshot
+ */
+public enum SnapshotStatus: String, Sendable, Codable, CaseIterable {
+    case pending
+    case inProgress
+    case complete
+    case failed
+    case corrupted
+}
+
+// MARK: - Error Handling
+
+/**
+ API error type for standardised error handling across the API service
+ */
+public enum APIError: Error, Sendable {
+    case operationNotSupported(message: String, code: String)
+    case invalidOperation(message: String, code: String)
+    case operationFailed(error: Error, code: String)
+    case authenticationFailed(message: String, code: String)
+    case resourceNotFound(message: String, identifier: String)
+    case operationCancelled(message: String, code: String)
+    case operationTimedOut(message: String, timeoutSeconds: Int, code: String)
+    case serviceUnavailable(message: String, code: String)
+    case invalidState(message: String, details: String, code: String)
+    case conflict(message: String, details: String, code: String)
+    case rateLimitExceeded(message: String, resetTime: String?, code: String)
 }
