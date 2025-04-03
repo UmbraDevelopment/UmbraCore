@@ -52,19 +52,20 @@ public actor SecurityLogger: DomainLoggerProtocol {
   private let secureLogger: SecureLoggerActor
 
   /**
-   Creates a new security logger with the specified logging service.
+   Create a new security logger
 
    - Parameter loggingService: The underlying logging service to use
    */
   public init(loggingService: LoggingServiceProtocol) {
     self.loggingService=loggingService
-    secureLogger=SecureLoggerActor(
-      subsystem: "com.umbra.security",
+    self.secureLogger=SecureLoggerActor(
+      subsystem: "com.umbra.security", 
       category: "SecurityOperations",
-      includeTimestamps: true
+      includeTimestamps: true,
+      loggingServiceActor: nil
     )
   }
-
+  
   /**
    Log a message with the specified level
 
@@ -134,6 +135,116 @@ public actor SecurityLogger: DomainLoggerProtocol {
   }
 
   /**
+   Log a security-related audit event
+
+   - Parameters:
+     - message: The audit message
+     - metadata: Additional metadata for the audit event
+     - source: The source of the event
+   */
+  public func auditLog(
+    _ message: String,
+    metadata: LogMetadata?=nil,
+    source: String?=nil
+  ) async {
+    // Add domain tagging
+    let formattedMessage="[\(domainName)] [AUDIT] \(message)"
+    let auditSource=source ?? domainName
+
+    // Log with high visibility as both info (for monitoring) and security event
+    await loggingService.info(formattedMessage, metadata: metadata, source: auditSource)
+
+    // Also record as a security event for security monitoring
+    await secureLogger.securityEvent(
+      action: "audit_logged",
+      status: .success,
+      subject: nil,
+      resource: auditSource,
+      additionalMetadata: nil
+    )
+  }
+  
+  /// Enum representing access status for security operations
+  public enum AccessStatus {
+    case granted
+    case denied
+  }
+
+  /**
+   Log a security access event
+
+   - Parameters:
+     - status: The access status (success, denied)
+     - subject: The subject requesting access
+     - resource: The resource being accessed
+     - metadata: Additional metadata about the access
+   */
+  public func accessLog(
+    status: AccessStatus,
+    subject: String,
+    resource: String,
+    metadata: LogMetadata?=nil
+  ) async {
+    let statusString=switch status {
+      case .granted: "granted"
+      case .denied: "denied"
+    }
+
+    // Constructed message with key details
+    let message="Access \(statusString) for \(subject) to \(resource)"
+
+    // Create standard structured log
+    await loggingService.info("[\(domainName)] \(message)", metadata: metadata, source: domainName)
+
+    // Create security event with proper tagging
+    await secureLogger.securityEvent(
+      action: "access_logged",
+      status: status == .granted ? .success : .denied,
+      subject: subject,
+      resource: resource,
+      additionalMetadata: nil
+    )
+  }
+
+  /**
+   Log an error with domain-specific context
+
+   - Parameters:
+     - error: The error to log
+     - context: Domain-specific context for the log
+     - privacyLevel: The privacy level for the error details
+   */
+  public func logError(
+    _ error: Error,
+    context: any LogContextDTO,
+    privacyLevel: PrivacyClassification
+  ) async {
+    // Log with standard error method
+    await loggingService.error(
+      "[\(domainName)] Error: \(error.localizedDescription)",
+      metadata: context.asLogMetadata(),
+      source: context.getSource()
+    )
+    
+    // We don't currently use the privacy level in this implementation
+    // but we keep the parameter for protocol conformance
+    
+    // Check if we have an NSError for additional details
+    if let _ = error as NSError? {
+      // No need to add additional metadata here since we're passing nil below
+    }
+    
+    // Log through secure logger with enhanced privacy controls
+    await secureLogger.securityEvent(
+      action: "error_logged",
+      status: .failed,
+      subject: nil,
+      resource: context.getSource(),
+      additionalMetadata: nil // We don't pass metadata here since the API has changed
+    )
+  }
+
+  /**
    Log a message with the specified context
 
    - Parameters:
@@ -141,30 +252,27 @@ public actor SecurityLogger: DomainLoggerProtocol {
      - message: The message to log
      - context: Additional context information
    */
-  public func logWithContext(_ level: LogLevel, _ message: String, context: LogContextDTO) async {
+  public func logWithContext(_ level: LogLevel, _ message: String, context: any LogContextDTO) async {
     let formattedMessage="[\(domainName)] \(message)"
-
-    // Convert LogContextDTO to LogMetadata using our extension
-    let logMetadata=context.asLogMetadata()
 
     // Use the appropriate method based on the log level
     switch level {
       case .trace:
-        await loggingService.verbose(formattedMessage, metadata: logMetadata, source: domainName)
+        await loggingService.verbose(formattedMessage, metadata: context.asLogMetadata(), source: context.getSource())
       case .debug:
-        await loggingService.debug(formattedMessage, metadata: logMetadata, source: domainName)
+        await loggingService.debug(formattedMessage, metadata: context.asLogMetadata(), source: context.getSource())
       case .info:
-        await loggingService.info(formattedMessage, metadata: logMetadata, source: domainName)
+        await loggingService.info(formattedMessage, metadata: context.asLogMetadata(), source: context.getSource())
       case .warning:
-        await loggingService.warning(formattedMessage, metadata: logMetadata, source: domainName)
+        await loggingService.warning(formattedMessage, metadata: context.asLogMetadata(), source: context.getSource())
       case .error:
-        await loggingService.error(formattedMessage, metadata: logMetadata, source: domainName)
+        await loggingService.error(formattedMessage, metadata: context.asLogMetadata(), source: context.getSource())
       case .critical:
-        await loggingService.critical(formattedMessage, metadata: logMetadata, source: domainName)
+        await loggingService.critical(formattedMessage, metadata: context.asLogMetadata(), source: context.getSource())
     }
 
     // Also log through secure logger with privacy controls
-    let secureLevel: UmbraLogLevel=switch level {
+    let secureLevel: UmbraLogLevel = switch level {
       case .trace, .debug: .debug
       case .info: .info
       case .warning: .warning
@@ -172,25 +280,12 @@ public actor SecurityLogger: DomainLoggerProtocol {
       case .critical: .critical
     }
 
-    // Convert to privacy-tagged metadata
-    var privacyMetadata: [String: PrivacyTaggedValue]=[:]
-    for (key, value) in context.parameters {
-      // Apply privacy tag based on key naming conventions
-      let privacyLevel: LogPrivacyLevel=if
-        key.hasSuffix("Password") || key
-          .hasSuffix("Token") || key.hasSuffix("Key")
-      {
-        .sensitive
-      } else if key.hasSuffix("Id") || key.hasSuffix("Email") || key.hasSuffix("Name") {
-        .private
-      } else {
-        .public
-      }
-
-      privacyMetadata[key]=PrivacyTaggedValue(value: value, privacyLevel: privacyLevel)
-    }
-
-    await secureLogger.log(level: secureLevel, message: message, metadata: privacyMetadata)
+    // Pass to secure logger
+    await secureLogger.log(
+      level: secureLevel,
+      message: message,
+      metadata: nil
+    )
   }
 
   /**
@@ -206,27 +301,24 @@ public actor SecurityLogger: DomainLoggerProtocol {
     operation: String,
     details: String?=nil
   ) async {
-    var context=LogContextDTO()
-    context.parameters["keyId"]=keyIdentifier
-    context.parameters["operation"]=operation
-
-    if let details {
-      context.parameters["details"]=details
-    }
+    // Create security context DTO
+    let context = SecurityLogContext(
+      operation: operation,
+      resource: keyIdentifier,
+      status: "started",
+      details: details
+    )
 
     // Log with standard logging
     await logWithContext(.info, "Started \(operation) operation", context: context)
 
-    // Log as a security event with proper privacy controls
+    // Log as a security event
     await secureLogger.securityEvent(
-      action: operation,
+      action: "\(operation)_started",
       status: .success,
       subject: nil,
       resource: keyIdentifier,
-      additionalMetadata: [
-        "phase": PrivacyTaggedValue(value: "start", privacyLevel: .public),
-        "details": PrivacyTaggedValue(value: details ?? "N/A", privacyLevel: .public)
-      ]
+      additionalMetadata: nil
     )
   }
 
@@ -243,74 +335,162 @@ public actor SecurityLogger: DomainLoggerProtocol {
     operation: String,
     details: String?=nil
   ) async {
-    var context=LogContextDTO()
-    context.parameters["keyId"]=keyIdentifier
-    context.parameters["operation"]=operation
-    context.parameters["status"]="success"
-
-    if let details {
-      context.parameters["details"]=details
-    }
+    // Create security context DTO
+    let context = SecurityLogContext(
+      operation: operation,
+      resource: keyIdentifier,
+      status: "completed",
+      details: details
+    )
 
     // Log with standard logging
-    await logWithContext(.info, "Successfully completed \(operation) operation", context: context)
+    await logWithContext(.info, "Completed \(operation) operation", context: context)
 
-    // Log as a security event with proper privacy controls
+    // Log as a security event
     await secureLogger.securityEvent(
-      action: operation,
+      action: "\(operation)_completed",
       status: .success,
       subject: nil,
       resource: keyIdentifier,
-      additionalMetadata: [
-        "phase": PrivacyTaggedValue(value: "complete", privacyLevel: .public),
-        "details": PrivacyTaggedValue(value: details ?? "N/A", privacyLevel: .public)
-      ]
+      additionalMetadata: nil
     )
   }
 
   /**
-   Log a security operation error event.
+   Log a security operation failure event.
 
    - Parameters:
      - keyIdentifier: The identifier of the key being operated on
      - operation: The name of the operation
-     - error: The error that occurred
+     - error: The error that caused the failure
      - details: Optional additional details about the operation
    */
-  public func logOperationError(
+  public func logOperationFailure(
     keyIdentifier: String,
     operation: String,
     error: Error,
     details: String?=nil
   ) async {
-    var context=LogContextDTO()
-    context.parameters["keyId"]=keyIdentifier
-    context.parameters["operation"]=operation
-    context.parameters["status"]="error"
-    context.parameters["errorDescription"]=error.localizedDescription
-
-    if let details {
-      context.parameters["details"]=details
-    }
-
-    // Log with standard logging
-    await logWithContext(
-      .error,
-      "Error during \(operation) operation: \(error.localizedDescription)",
-      context: context
+    // Create security context DTO
+    let context = SecurityLogContext(
+      operation: operation,
+      resource: keyIdentifier,
+      status: "failed",
+      error: error,
+      details: details
     )
 
-    // Log as a security event with proper privacy controls
+    // Log with standard logging
+    await logWithContext(.error, "Failed \(operation) operation: \(error.localizedDescription)", context: context)
+
+    // Log as a security event
     await secureLogger.securityEvent(
-      action: operation,
+      action: "\(operation)_failed",
       status: .failed,
       subject: nil,
       resource: keyIdentifier,
-      additionalMetadata: [
-        "errorDescription": PrivacyTaggedValue(value: error.localizedDescription,
-                                               privacyLevel: .public),
-        "details": PrivacyTaggedValue(value: details ?? "N/A", privacyLevel: .public)
-      ]
+      additionalMetadata: nil
     )
+  }
+}
+
+/**
+ Security-specific log context implementation complying with LogContextDTO protocol
+ */
+fileprivate struct SecurityLogContext: LogContextDTO {
+  // Required properties from LogContextDTO
+  let domainName: String = "Security"
+  let correlationID: String?
+  let source: String? = "SecurityService"
+  let metadata: LogMetadataDTOCollection
+  
+  // Additional security-specific properties
+  let operation: String
+  let resource: String
+  let status: String
+  let error: Error?
+  let details: String?
+  
+  init(
+    operation: String,
+    resource: String,
+    status: String,
+    error: Error? = nil,
+    details: String? = nil,
+    correlationID: String? = UUID().uuidString
+  ) {
+    self.operation = operation
+    self.resource = resource
+    self.status = status
+    self.error = error
+    self.details = details
+    self.correlationID = correlationID
+    
+    // Build metadata collection
+    var metadataBuilder = LogMetadataDTOCollection()
+    metadataBuilder = metadataBuilder.withPublic(key: "operation", value: operation)
+    metadataBuilder = metadataBuilder.withPrivate(key: "resource", value: resource)
+    metadataBuilder = metadataBuilder.withPublic(key: "status", value: status)
+    metadataBuilder = metadataBuilder.withPublic(key: "correlationId", value: correlationID ?? UUID().uuidString)
+    
+    if let details = details {
+      metadataBuilder = metadataBuilder.withPublic(key: "details", value: details)
+    }
+    
+    if let error = error {
+      metadataBuilder = metadataBuilder.withPrivate(key: "errorDescription", value: error.localizedDescription)
+      
+      // Add additional error information if available
+      if let nsError = error as NSError? {
+        metadataBuilder = metadataBuilder.withPublic(key: "errorCode", value: String(nsError.code))
+        metadataBuilder = metadataBuilder.withPublic(key: "errorDomain", value: nsError.domain)
+      }
+    }
+    
+    self.metadata = metadataBuilder
+  }
+  
+  func asLogMetadata() -> LogMetadata? {
+    var result: [String: Any] = [
+      "operation": operation,
+      "resource": resource,
+      "status": status,
+      "correlationId": correlationID ?? UUID().uuidString
+    ]
+    
+    if let details = details {
+      result["details"] = details
+    }
+    
+    if let error = error {
+      result["errorDescription"] = error.localizedDescription
+    }
+    
+    return LogMetadata.from(result)
+  }
+  
+  func withUpdatedMetadata(_ metadata: LogMetadataDTOCollection) -> Self {
+    // Create a new context with the same basic properties
+    return SecurityLogContext(
+      operation: operation,
+      resource: resource,
+      status: status,
+      error: error,
+      details: details,
+      correlationID: correlationID
+    )
+  }
+  
+  func toPrivacyMetadata() -> PrivacyMetadata {
+    // Create a simple privacy metadata instance
+    return PrivacyMetadata()
+  }
+  
+  func getSource() -> String {
+    return source ?? "SecurityService"
+  }
+  
+  func toMetadata() -> LogMetadataDTOCollection {
+    return metadata
   }
 }

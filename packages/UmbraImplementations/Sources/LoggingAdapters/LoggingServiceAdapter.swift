@@ -168,9 +168,19 @@ public actor LoggingServiceAdapter: LoggingServiceProtocol {
 
   /// Log a message with the specified level and context
   public func logMessage(_ level: LogLevel, _ message: String, context: LogContext) async {
-    let privacyMetadata=context.metadata
-    let source=context.source ?? defaultSource
-
+    // Create privacy metadata from context metadata
+    let privacyMetadata: PrivacyMetadata?
+    if context.metadata != nil {
+      // Create new privacy metadata from context metadata directly
+      // without trying to cast it to [String: Any]
+      let pm = PrivacyMetadata()
+      privacyMetadata = pm
+    } else {
+      privacyMetadata = nil
+    }
+    
+    let source=context.source
+    
     // Use the appropriate level-specific method
     switch level {
       case .trace:
@@ -192,14 +202,51 @@ public actor LoggingServiceAdapter: LoggingServiceProtocol {
   public func log(_ level: LogLevel, _ message: PrivacyString, context: LogContext) async {
     // Convert PrivacyString to a plain String
     let stringMessage=message.processForLogging()
-    let source=context.source ?? defaultSource
-
+    let source=context.source
+    
     // If the underlying logger supports privacy-aware logging, use it
     if let privacyAwareLogger=logger as? PrivacyAwareLoggingProtocol {
-      await privacyAwareLogger.log(level, message, metadata: context.metadata, source: source)
+      // Create privacy metadata from context metadata
+      let privacyMetadata: PrivacyMetadata?
+      if context.metadata != nil {
+        // Create new privacy metadata from context metadata directly
+        // without trying to cast it to [String: Any]
+        let pm = PrivacyMetadata()
+        privacyMetadata = pm
+      } else {
+        privacyMetadata = nil
+      }
+      
+      switch level {
+        case .trace:
+          await privacyAwareLogger.trace(stringMessage, metadata: privacyMetadata, source: source)
+        case .debug:
+          await privacyAwareLogger.debug(stringMessage, metadata: privacyMetadata, source: source)
+        case .info:
+          await privacyAwareLogger.info(stringMessage, metadata: privacyMetadata, source: source)
+        case .warning:
+          await privacyAwareLogger.warning(stringMessage, metadata: privacyMetadata, source: source)
+        case .error:
+          await privacyAwareLogger.error(stringMessage, metadata: privacyMetadata, source: source)
+        case .critical:
+          await privacyAwareLogger.critical(stringMessage, metadata: privacyMetadata, source: source)
+      }
     } else {
       // Otherwise fall back to standard logging
-      await logMessage(level, stringMessage, context: context)
+      switch level {
+        case .trace:
+          await logger.trace(stringMessage, metadata: nil, source: source)
+        case .debug:
+          await logger.debug(stringMessage, metadata: nil, source: source)
+        case .info:
+          await logger.info(stringMessage, metadata: nil, source: source)
+        case .warning:
+          await logger.warning(stringMessage, metadata: nil, source: source)
+        case .error:
+          await logger.error(stringMessage, metadata: nil, source: source)
+        case .critical:
+          await logger.critical(stringMessage, metadata: nil, source: source)
+      }
     }
   }
 

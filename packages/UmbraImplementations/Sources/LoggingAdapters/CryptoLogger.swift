@@ -109,7 +109,7 @@ public actor CryptoLogger: DomainLoggerProtocol {
     metadata: LogMetadataDTOCollection,
     level: LogLevel = .info
   ) async {
-    var context=CryptoLogContext(
+    let context=CryptoLogContext(
       operation: operation,
       algorithm: algorithm
     )

@@ -43,7 +43,7 @@ public struct ResticLogger: LoggingInterfaces.DomainLogger, CoreLoggingProtocol,
       level,
       message,
       metadata: context.toPrivacyMetadata(),
-      source: context.getSource() ?? domainName
+      source: context.getSource()
     )
   }
   
@@ -62,7 +62,7 @@ public struct ResticLogger: LoggingInterfaces.DomainLogger, CoreLoggingProtocol,
       level,
       message,
       metadata: context.toPrivacyMetadata(),
-      source: context.getSource() ?? domainName
+      source: context.getSource()
     )
   }
   
@@ -83,6 +83,78 @@ public struct ResticLogger: LoggingInterfaces.DomainLogger, CoreLoggingProtocol,
       metadata: context.metadata,
       source: context.source
     )
+  }
+  
+  /// Log an error with context and privacy classification
+  ///
+  /// - Parameters:
+  ///   - error: The error to log
+  ///   - context: The domain-specific context
+  ///   - privacyLevel: The privacy level for the error details
+  public func logError(
+    _ error: Error,
+    context: any LogContextDTO, 
+    privacyLevel: PrivacyClassification
+  ) async {
+    // Determine privacy level for errors
+    let logPrivacyLevel: LogPrivacyLevel = switch privacyLevel {
+      case .public: .public
+      case .private: .private
+      case .sensitive: .sensitive
+    }
+    
+    // Format error message with context
+    let message = "Error in Restic operation: \(error.localizedDescription)"
+    
+    // Create privacy metadata for the error
+    var metadata = context.toPrivacyMetadata()
+    metadata.add(key: "errorDescription", value: error.localizedDescription, privacy: logPrivacyLevel)
+    
+    if let loggableError = error as? LoggableErrorProtocol {
+      // Add additional error context if available
+      metadata.merge(with: loggableError.getPrivacyMetadata())
+    }
+    
+    // Log through underlying logger with appropriate metadata
+    await underlyingLogger.log(.error, message, metadata: metadata, source: context.getSource())
+  }
+  
+  /// Log sensitive information with appropriate privacy controls
+  ///
+  /// - Parameters:
+  ///   - level: The severity level
+  ///   - message: The basic message without sensitive content
+  ///   - sensitiveValues: Sensitive values that should be handled with privacy controls
+  ///   - source: The component source
+  public func logSensitive(
+    _ level: LogLevel,
+    _ message: String,
+    sensitiveValues: LoggingTypes.LogMetadata,
+    source: String
+  ) async {
+    // Convert standard LogMetadata to privacy-aware metadata
+    var privacyMetadata = PrivacyMetadata()
+    
+    if let values = sensitiveValues {
+      for (key, value) in values {
+        let privacyLevel: LogPrivacyLevel
+        
+        // Apply privacy levels based on key naming patterns
+        if key.hasSuffix("Password") || key.hasSuffix("Secret") || key.hasSuffix("Key") {
+          privacyLevel = .sensitive
+        } else if key.hasSuffix("Id") || key.hasSuffix("Email") || key.hasSuffix("Name") {
+          privacyLevel = .private
+        } else {
+          privacyLevel = .public
+        }
+        
+        // Add to privacy metadata with appropriate privacy level
+        privacyMetadata.add(key: key, value: value, privacy: privacyLevel)
+      }
+    }
+    
+    // Log through underlying logger with privacy metadata
+    await underlyingLogger.log(level, message, metadata: privacyMetadata, source: source)
   }
   
   /// Log a message with specific level, metadata and source
@@ -253,43 +325,77 @@ public struct ResticLogger: LoggingInterfaces.DomainLogger, CoreLoggingProtocol,
     await log(.critical, message, metadata: metadata, source: source, file: file, function: function, line: line)
   }
   
-  /// Log an error with privacy-enhanced details
+  // MARK: - Privacy-Aware Logging Protocol Compliance
+  
+  /// Log a trace message with privacy annotations
   ///
   /// - Parameters:
-  ///   - error: The error to log
-  ///   - metadata: Additional metadata
-  ///   - source: Source context
-  ///   - file: Source file
-  ///   - function: Source function
-  ///   - line: Source line number
-  public func error(
-    _ error: any Error,
-    metadata: PrivacyMetadata? = nil,
-    source: String? = nil,
-    file: String = #file,
-    function: String = #function,
-    line: UInt = #line
+  ///   - message: The privacy-annotated message
+  ///   - source: The source context
+  public func trace(
+    _ message: PrivacyString,
+    source: String
   ) async {
-    if let loggableError = error as? LoggableErrorProtocol {
-      await log(
-        .error,
-        loggableError.getLogMessage(),
-        metadata: metadata,
-        source: source ?? domainName,
-        file: file,
-        function: function,
-        line: line
-      )
-    } else {
-      await log(
-        .error,
-        error.localizedDescription,
-        metadata: metadata,
-        source: source ?? domainName,
-        file: file,
-        function: function,
-        line: line
-      )
-    }
+    await log(.trace, message, metadata: nil, source: source)
+  }
+  
+  /// Log a debug message with privacy annotations
+  ///
+  /// - Parameters:
+  ///   - message: The privacy-annotated message
+  ///   - source: The source context
+  public func debug(
+    _ message: PrivacyString,
+    source: String
+  ) async {
+    await log(.debug, message, metadata: nil, source: source)
+  }
+  
+  /// Log an info message with privacy annotations
+  ///
+  /// - Parameters:
+  ///   - message: The privacy-annotated message
+  ///   - source: The source context
+  public func info(
+    _ message: PrivacyString,
+    source: String
+  ) async {
+    await log(.info, message, metadata: nil, source: source)
+  }
+  
+  /// Log a warning message with privacy annotations
+  ///
+  /// - Parameters:
+  ///   - message: The privacy-annotated message
+  ///   - source: The source context
+  public func warning(
+    _ message: PrivacyString,
+    source: String
+  ) async {
+    await log(.warning, message, metadata: nil, source: source)
+  }
+  
+  /// Log an error message with privacy annotations
+  ///
+  /// - Parameters:
+  ///   - message: The privacy-annotated message
+  ///   - source: The source context
+  public func error(
+    _ message: PrivacyString,
+    source: String
+  ) async {
+    await log(.error, message, metadata: nil, source: source)
+  }
+  
+  /// Log a critical message with privacy annotations
+  ///
+  /// - Parameters:
+  ///   - message: The privacy-annotated message
+  ///   - source: The source context
+  public func critical(
+    _ message: PrivacyString,
+    source: String
+  ) async {
+    await log(.critical, message, metadata: nil, source: source)
   }
 }
