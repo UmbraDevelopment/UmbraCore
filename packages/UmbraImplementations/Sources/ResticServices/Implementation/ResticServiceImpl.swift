@@ -3,535 +3,303 @@ import LoggingInterfaces
 import LoggingTypes
 import ResticInterfaces
 
-/// Thread-safe implementation of the ResticServiceProtocol using Swift concurrency.
+/// Implementation of the Restic service for interfacing with the Restic command-line tool.
 ///
 /// This actor-based implementation provides proper isolation for concurrent operations,
 /// ensuring thread safety while maintaining high performance for Restic operations.
 @preconcurrency public actor ResticServiceImpl: ResticServiceProtocol {
   /// The path to the Restic executable
   public let executablePath: String
-
-  /// The default repository location, if set (actor-isolated)
+  
+  /// The logger for the service
+  private let logger: any LoggingProtocol
+  
+  /// Restic-specific logger for formatted logging
+  private let resticLogger: ResticLogger
+  
+  /// Credential manager for repository passwords
+  private let credentialManager: ResticCredentialManager
+  
+  /// Private storage for default repository
   private var _defaultRepository: String?
   
-  /// The default repository password, if set (actor-isolated)
+  /// The default repository location
+  public var defaultRepository: String? {
+    get { _defaultRepository }
+    set { _defaultRepository = newValue }
+  }
+  
+  /// Private storage for default password
   private var _defaultPassword: String?
   
-  /// Progress reporting delegate for receiving operation updates (actor-isolated)
-  private var _progressDelegate: (any ResticProgressReporting)?
-  
-  /// Nonisolated accessor for default repository to satisfy protocol requirements
-  public nonisolated var defaultRepository: String? {
-    get {
-      Task {
-        await _defaultRepository
-      }.result.success ?? nil
-    }
-    set {
-      Task {
-        await setDefaultRepository(newValue)
-      }
-    }
+  /// The default password for repositories
+  public var defaultPassword: String? {
+    get { _defaultPassword }
+    set { _defaultPassword = newValue }
   }
   
-  /// Nonisolated accessor for default password to satisfy protocol requirements
-  public nonisolated var defaultPassword: String? {
-    get {
-      Task {
-        await _defaultPassword
-      }.result.success ?? nil
-    }
-    set {
-      Task {
-        await setDefaultPassword(newValue)
-      }
-    }
+  /// Private storage for progress delegate
+  private var _progressDelegate: ResticProgressReporting?
+  
+  /// Progress delegate for tracking operations
+  public var progressDelegate: ResticProgressReporting? {
+    get { _progressDelegate }
+    set { _progressDelegate = newValue }
   }
   
-  /// Nonisolated accessor for progress delegate to satisfy protocol requirements
-  public nonisolated var progressDelegate: (any ResticProgressReporting)? {
-    get {
-      Task {
-        await _progressDelegate
-      }.result.success ?? nil
-    }
-    set {
-      Task {
-        await setProgressDelegate(newValue)
-      }
-    }
-  }
-  
-  /// Helper method to set the default repository with proper isolation
-  private func setDefaultRepository(_ value: String?) async {
-    _defaultRepository = value
-  }
-  
-  /// Helper method to set the default password with proper isolation
-  private func setDefaultPassword(_ value: String?) async {
-    _defaultPassword = value
-  }
-  
-  /// Helper method to set the progress delegate with proper isolation
-  private func setProgressDelegate(_ value: (any ResticProgressReporting)?) async {
-    _progressDelegate = value
-  }
-
-  /// The domain-specific logger for operation tracking
-  private let resticLogger: ResticLogger
-
-  /// The progress parser for tracking operation progress
-  private var progressParser: ResticProgressParser?
-
-  /// The secure credential manager for repository passwords
-  private let credentialManager: any ResticCredentialManager
-
-  /// Creates a new ResticServiceImpl instance with secure credential management.
+  /// Creates a new Restic service with the specified configuration
   ///
   /// - Parameters:
-  ///   - executablePath: The path to the Restic executable
-  ///   - defaultRepository: Optional default repository location
-  ///   - credentialManager: The secure credential manager for repository access
+  ///   - executablePath: Path to the Restic executable
+  ///   - logger: Logger for operation logs
+  ///   - credentialManager: Manager for repository credentials
+  ///   - defaultRepository: Optional default repository
+  ///   - defaultPassword: Optional default repository password
   ///   - progressDelegate: Optional delegate for progress reporting
-  ///   - logger: Logger for operation tracking
-  /// - Throws: ResticError if the executable cannot be found or accessed
   public init(
     executablePath: String,
-    defaultRepository: String?=nil,
-    credentialManager: any ResticCredentialManager,
-    progressDelegate: (any ResticProgressReporting)?=nil,
-    logger: any LoggingProtocol
-  ) throws {
-    self.executablePath=executablePath
-    _defaultRepository=defaultRepository
-    _defaultPassword=nil
-    _progressDelegate=progressDelegate
-    self.resticLogger=ResticLogger(logger: logger)
-    self.credentialManager=credentialManager
-
-    if let progressDelegate {
-      self.progressParser=ResticProgressParser(delegate: progressDelegate)
-    }
-
-    // Validate executable exists
-    let fileManager=FileManager.default
-    if !fileManager.fileExists(atPath: executablePath) {
-      throw ResticError.executableNotFound(executablePath)
-    }
-
-    var isDirectory: ObjCBool=false
-    guard
-      fileManager.fileExists(atPath: executablePath, isDirectory: &isDirectory),
-      !isDirectory.boolValue
-    else {
-      throw ResticError.invalidParameter("Restic executable path is a directory")
-    }
-
-    await resticLogger.info(
-      "Initialised ResticServiceImpl with executable: \(executablePath)",
-      metadata: [
-        "executable": .string(executablePath),
-        "default_repository": defaultRepository.map { .string($0) } ?? .null,
-        "using_secure_credentials": .boolean(true)
-      ],
-      source: "ResticService"
-    )
-  }
-
-  // MARK: - Private Types
-
-  /// Domain-specific logging context for backup operations
-  private struct BackupLogContext: LoggingTypes.LogContextDTO {
-    let domainName: String = "ResticService"
-    let source: String?
-    let metadata: LoggingTypes.LogMetadataDTOCollection
-    let correlationID: String?
-    let repository: String
-    let paths: [String]
-    let tag: String?
+    logger: any LoggingProtocol,
+    credentialManager: ResticCredentialManager,
+    defaultRepository: String? = nil,
+    defaultPassword: String? = nil,
+    progressDelegate: ResticProgressReporting? = nil
+  ) {
+    self.executablePath = executablePath
+    self.logger = logger
+    self.resticLogger = ResticLogger(logger: logger)
+    self.credentialManager = credentialManager
+    self._defaultRepository = defaultRepository
+    self._defaultPassword = defaultPassword
+    self._progressDelegate = progressDelegate
     
-    init(
-      repository: String,
-      paths: [String],
-      tag: String?,
-      metadata: LoggingTypes.LogMetadataDTOCollection = LoggingTypes.LogMetadataDTOCollection()
-    ) {
-      source = "ResticService.Backup"
-      self.metadata = metadata
-      correlationID = UUID().uuidString
-      self.repository = repository
-      self.paths = paths
-      self.tag = tag
-    }
-    
-    func toPrivacyMetadata() -> LoggingTypes.PrivacyMetadata {
-      return metadata.toPrivacyMetadata()
-    }
-    
-    func getSource() -> String {
-      return source ?? "ResticService.Backup"
-    }
-    
-    func toMetadata() -> LoggingTypes.LogMetadataDTOCollection {
-      var result = metadata
-        .withPrivate(key: "repository", value: repository)
-      
-      // Add paths as a comma-separated string
-      if !paths.isEmpty {
-        result = result.withPrivate(key: "paths", value: paths.joined(separator: ", "))
-      }
-      
-      // Add tag if available
-      if let tag = tag {
-        result = result.withPrivate(key: "tag", value: tag)
-      }
-      
-      return result
-    }
-    
-    func withUpdatedMetadata(_ metadata: LoggingTypes.LogMetadataDTOCollection) -> BackupLogContext {
-      return BackupLogContext(
-        repository: repository,
-        paths: paths,
-        tag: tag,
-        metadata: self.metadata.merging(with: metadata)
+    // Log initialisation with privacy-aware metadata
+    Task {
+      await resticLogger.debug(
+        "Initializing Restic service",
+        metadata: PrivacyMetadata([
+          "executablePath": (value: executablePath, privacy: .public),
+          "defaultRepository": (value: defaultRepository ?? "none", privacy: .private),
+          "hasDefaultPassword": (value: defaultPassword != nil ? "yes" : "no", privacy: .public),
+          "hasProgressDelegate": (value: progressDelegate != nil ? "yes" : "no", privacy: .public)
+        ]),
+        source: "ResticServiceImpl"
       )
     }
   }
-
-  /// Domain-specific logging context for restore operations
-  private struct RestoreLogContext: LoggingTypes.LogContextDTO {
-    let domainName: String = "ResticService"
-    let source: String?
-    let metadata: LoggingTypes.LogMetadataDTOCollection
-    let correlationID: String?
-    let repository: String
-    let snapshot: String
-    let target: String
-    
-    init(
-      repository: String,
-      snapshot: String,
-      target: String,
-      metadata: LoggingTypes.LogMetadataDTOCollection = LoggingTypes.LogMetadataDTOCollection()
-    ) {
-      source = "ResticService.Restore"
-      self.metadata = metadata
-      correlationID = UUID().uuidString
-      self.repository = repository
-      self.snapshot = snapshot
-      self.target = target
-    }
-    
-    func toPrivacyMetadata() -> LoggingTypes.PrivacyMetadata {
-      return metadata.toPrivacyMetadata()
-    }
-    
-    func getSource() -> String {
-      return source ?? "ResticService.Restore"
-    }
-    
-    func toMetadata() -> LoggingTypes.LogMetadataDTOCollection {
-      return metadata
-        .withPrivate(key: "repository", value: repository)
-        .withPrivate(key: "snapshot", value: snapshot)
-        .withPrivate(key: "target", value: target)
-    }
-    
-    func withUpdatedMetadata(_ metadata: LoggingTypes.LogMetadataDTOCollection) -> RestoreLogContext {
-      return RestoreLogContext(
-        repository: repository,
-        snapshot: snapshot,
-        target: target,
-        metadata: self.metadata.merging(with: metadata)
-      )
-    }
-  }
-
-  /// Domain-specific logging context for maintenance operations
-  private struct MaintenanceLogContext: LoggingTypes.LogContextDTO {
-    let domainName: String = "ResticService"
-    let source: String?
-    let metadata: LoggingTypes.LogMetadataDTOCollection
-    let correlationID: String?
-    let repository: String
-    let operationType: String
-    
-    init(
-      repository: String,
-      operationType: String,
-      metadata: LoggingTypes.LogMetadataDTOCollection = LoggingTypes.LogMetadataDTOCollection()
-    ) {
-      source = "ResticService.Maintenance"
-      self.metadata = metadata
-      correlationID = UUID().uuidString
-      self.repository = repository
-      self.operationType = operationType
-    }
-    
-    func toPrivacyMetadata() -> LoggingTypes.PrivacyMetadata {
-      return metadata.toPrivacyMetadata()
-    }
-    
-    func getSource() -> String {
-      return source ?? "ResticService.Maintenance"
-    }
-    
-    func toMetadata() -> LoggingTypes.LogMetadataDTOCollection {
-      return metadata
-        .withPrivate(key: "repository", value: repository)
-        .withPrivate(key: "operationType", value: operationType)
-    }
-    
-    func withUpdatedMetadata(_ metadata: LoggingTypes.LogMetadataDTOCollection) -> MaintenanceLogContext {
-      return MaintenanceLogContext(
-        repository: repository,
-        operationType: operationType,
-        metadata: self.metadata.merging(with: metadata)
-      )
-    }
-  }
-
-  // MARK: - Property Accessors
-
-  /// Get the progress delegate
-  public func getProgressDelegate() -> (any ResticProgressReporting)? {
-    _progressDelegate
-  }
-
-  /// Set the progress delegate
-  public func setProgressDelegate(_ delegate: (any ResticProgressReporting)?) {
-    _progressDelegate=delegate
-    if let delegate {
-      progressParser=ResticProgressParser(delegate: delegate)
-    } else {
-      progressParser=nil
-    }
-  }
-
-  /// Represents the setup for a Restic process execution
-  private struct ProcessSetup {
-    let process: Process
-    let outputPipe: Pipe
-    let errorPipe: Pipe
-  }
-
-  /// Execute a ResticCommand with proper error handling
-  ///
-  /// - Parameter command: The command to execute
-  /// - Returns: The raw output string from the command
-  /// - Throws: ResticError if the command fails
-  public func execute(_ command: any ResticCommand) async throws -> String {
-    if let specificCommand = command as? ResticCommand {
-      try specificCommand.validate()
-    }
-    
-    let arguments = (command as? ResticCommand)?.arguments ?? []
-    let commandString = arguments.joined(separator: " ")
-    
-    await resticLogger.info(
-      "Executing Restic command: \(commandString)",
-      metadata: [
-        "command": .string(commandString),
-        "arguments": .array(arguments.map { .string($0) })
-      ],
-      source: "ResticService"
-    )
-
-    // Create and configure the process
-    let process=Process()
-    process.executableURL=URL(fileURLWithPath: executablePath)
-    process.arguments=arguments
-
-    // Set environment variables
-    var environment=ProcessInfo.processInfo.environment
-    if let password=(command as? ResticCommand)?.password {
-      environment["RESTIC_PASSWORD"]=password
-    } else if
-      let repository=(command as? ResticCommand)?.repository,
-      let credentials=try await credentialManager.getCredentials(for: repository)
-    {
-      environment["RESTIC_PASSWORD"]=credentials.password
-    }
-    process.environment=environment
-
-    // Configure output pipes
-    let outputPipe=Pipe()
-    let errorPipe=Pipe()
-    process.standardOutput=outputPipe
-    process.standardError=errorPipe
-
-    // Track progress if requested and delegate is available
-    if (command as? ResticCommand)?.trackProgress ?? false, let progressParser {
-      // Configure progress parsing here
-    }
-
-    // Start the process
-    let startTime=Date()
-    do {
-      try process.run()
-      process.waitUntilExit()
-    } catch {
-      await resticLogger.error(
-        "Restic command failed to launch",
-        metadata: [
-          "command": .string(commandString),
-          "error": .string(error.localizedDescription)
-        ],
-        source: "ResticService"
-      )
-      throw ResticError.executionFailed("Failed to execute Restic: \(error.localizedDescription)")
-    }
-
-    // Read output
-    let outputData=outputPipe.fileHandleForReading.readDataToEndOfFile()
-    let errorData=errorPipe.fileHandleForReading.readDataToEndOfFile()
-
-    let output=String(data: outputData, encoding: .utf8) ?? ""
-    let errorOutput=String(data: errorData, encoding: .utf8) ?? ""
-
-    // Check exit status
-    let exitCode=Int(process.terminationStatus)
-    let duration=Date().timeIntervalSince(startTime)
-
-    // Log completion
-    await resticLogger.debug(
-      "Restic command completed with exit code \(exitCode) in \(String(format: "%.2f", duration))s",
-      metadata: [
-        "command": .string(commandString),
-        "exitCode": .number(Double(exitCode)),
-        "duration": .number(duration)
-      ],
-      source: "ResticService"
-    )
-
-    if exitCode != 0 {
-      // Log the error output with appropriate privacy controls
-      await resticLogger.error(
-        "Restic command failed with exit code \(exitCode)",
-        metadata: [
-          "command": .string(commandString),
-          "exitCode": .number(Double(exitCode)),
-          "error": .string(errorOutput)
-        ],
-        source: "ResticService"
-      )
-
-      throw ResticError.commandFailed(
-        exitCode: exitCode,
-        output: errorOutput.isEmpty ? output : errorOutput
-      )
-    }
-
-    return output
-  }
-
+  
   /// Initialises a new repository
   ///
   /// - Parameters:
-  ///   - location: The location where the repository should be created
-  ///   - password: The password to use for the repository (if nil, uses default)
-  /// - Returns: The result of the initialisation command
-  /// - Throws: ResticError if the repository cannot be initialised
-  public func initRepository(
+  ///   - location: Repository location (path or URL)
+  ///   - password: Repository password
+  /// - Returns: Result of the initialisation
+  /// - Throws: ResticError if initialisation fails
+  public func initialiseRepository(
     at location: String,
-    password: String?=nil
+    password: String
   ) async throws -> ResticCommandResult {
-    let startTime=Date()
-
-    // Check if repository already exists
-    if try await checkIfRepositoryExists(at: location) {
-      throw ResticError.repositoryExists(location)
-    }
-
-    // Create init command with provided or default password
-    let repoPassword: String
-    if let password {
-      repoPassword=password
-    } else {
-      // Try to get from credential manager if repository already registered
-      do {
-        let credentials=try await credentialManager.getCredentials(for: location)
-        repoPassword=credentials.password
-      } catch {
-        throw ResticError.credentialError("No password provided and no default password available")
-      }
-    }
-
-    let command=ResticCommand(
+    let startTime = Date()
+    
+    // Create init command
+    let command = ResticCommand(
       action: .init,
       repository: location,
-      password: repoPassword
+      password: password,
+      arguments: [],
+      options: [:],
+      trackProgress: false
     )
-
+    
     // Execute the command
-    let output=try await execute(command)
-    let duration=Date().timeIntervalSince(startTime)
-
-    // Store the credentials securely for future access
-    if ! await credentialManager.hasCredentials(for: location) {
-      try await credentialManager.storeCredentials(
-        ResticCredentials(
-          repositoryIdentifier: location,
-          password: repoPassword
-        ),
-        for: location
-      )
-
-      await resticLogger.info(
-        "Stored credentials for new repository",
-        metadata: [
-          "repository": .string(location)
-        ],
-        source: "ResticService"
-      )
-    }
-
-    return ResticCommandResult.success(
+    let output = try await execute(command)
+    let duration = Date().timeIntervalSince(startTime)
+    
+    // Store the credentials for future use
+    try await credentialManager.storeCredentials(
+      ResticCredentials(
+        repositoryIdentifier: location,
+        password: password
+      ),
+      for: location
+    )
+    
+    return ResticCommandResult(
       output: output,
-      duration: duration,
-      data: [
-        "repository": .string(location)
-      ]
+      exitCode: 0,
+      duration: duration
     )
   }
-
+  
+  /// Executes a Restic command
+  ///
+  /// - Parameter command: The command to execute
+  /// - Returns: The command output as a string
+  /// - Throws: ResticError if the command fails
+  public func execute(_ command: ResticCommand) async throws -> String {
+    guard let command = command as? ResticCommand else {
+      throw ResticError.invalidCommand("Command must be a ResticCommand instance")
+    }
+    
+    // Validate the command
+    try validateCommand(command)
+    
+    // Log command execution with privacy protection
+    await resticLogger.debug(
+      "Executing Restic command: \(command.action.rawValue)",
+      metadata: PrivacyMetadata([
+        "command": (value: command.action.rawValue, privacy: .public),
+        "repository": (value: command.repository, privacy: .private)
+      ]),
+      source: "ResticServiceImpl"
+    )
+    
+    // Build the command line
+    var arguments = [command.action.rawValue]
+    
+    // Add repository
+    if !command.repository.isEmpty {
+      arguments.append("--repo")
+      arguments.append(command.repository)
+    } else if let defaultRepo = defaultRepository, !defaultRepo.isEmpty {
+      arguments.append("--repo")
+      arguments.append(defaultRepo)
+    }
+    
+    // Add password
+    if let cmdPassword = command.password, !cmdPassword.isEmpty {
+      arguments.append("--password")
+      arguments.append(cmdPassword)
+    } else if let defaultPwd = defaultPassword, !defaultPwd.isEmpty {
+      arguments.append("--password")
+      arguments.append(defaultPwd)
+    }
+    
+    // Add any additional arguments
+    if !command.arguments.isEmpty {
+      arguments.append(contentsOf: command.arguments)
+    }
+    
+    // Add options
+    for (key, value) in command.options {
+      if key.count == 1 {
+        arguments.append("-\(key)")
+      } else {
+        arguments.append("--\(key)")
+      }
+      
+      if !value.isEmpty {
+        arguments.append(value)
+      }
+    }
+    
+    // Create and configure process
+    let process = Process()
+    process.executableURL = URL(fileURLWithPath: executablePath)
+    process.arguments = arguments
+    
+    // Set up pipes for output
+    let outputPipe = Pipe()
+    let errorPipe = Pipe()
+    process.standardOutput = outputPipe
+    process.standardError = errorPipe
+    
+    // Launch process
+    do {
+      try process.run()
+    } catch {
+      await resticLogger.error(
+        "Failed to launch Restic process",
+        metadata: PrivacyMetadata([
+          "command": (value: command.action.rawValue, privacy: .public),
+          "error": (value: error.localizedDescription, privacy: .private)
+        ]),
+        source: "ResticServiceImpl"
+      )
+      
+      throw ResticError.commandFailed(
+        exitCode: -1,
+        output: "Failed to launch process: \(error.localizedDescription)"
+      )
+    }
+    
+    // Wait for process to complete
+    process.waitUntilExit()
+    
+    // Read output and error data
+    let outputData = try outputPipe.fileHandleForReading.readToEnd() ?? Data()
+    let errorData = try errorPipe.fileHandleForReading.readToEnd() ?? Data()
+    
+    // Convert to strings
+    let output = String(data: outputData, encoding: .utf8) ?? ""
+    let errorOutput = String(data: errorData, encoding: .utf8) ?? ""
+    
+    // Check for errors
+    if process.terminationStatus != 0 {
+      await resticLogger.error(
+        "Restic command failed with exit code \(process.terminationStatus)",
+        metadata: PrivacyMetadata([
+          "command": (value: command.action.rawValue, privacy: .public),
+          "exitCode": (value: process.terminationStatus, privacy: .public),
+          "error": (value: errorOutput, privacy: .private)
+        ]),
+        source: "ResticServiceImpl"
+      )
+      
+      throw ResticError.commandFailed(
+        exitCode: Int(process.terminationStatus),
+        output: errorOutput
+      )
+    }
+    
+    // Log successful execution
+    await resticLogger.debug(
+      "Restic command executed successfully",
+      metadata: PrivacyMetadata([
+        "command": (value: command.action.rawValue, privacy: .public)
+      ]),
+      source: "ResticServiceImpl"
+    )
+    
+    return output
+  }
+  
   /// Checks repository health
   ///
   /// - Parameter location: Optional repository location (uses default if nil)
   /// - Returns: Result of the repository check
   /// - Throws: ResticError if the check fails
   public func checkRepository(at location: String?) async throws -> ResticCommandResult {
-    let startTime=Date()
-
-    let repoLocation=location ?? defaultRepository
-    guard let repoLocation else {
-      throw ResticError.missingParameter("Repository location is required")
+    let startTime = Date()
+    
+    // Use provided repository or default
+    let repoLocation = location ?? defaultRepository
+    
+    // Ensure we have a repository location
+    guard let repoLocation = repoLocation, !repoLocation.isEmpty else {
+      throw ResticError.invalidParameter("No repository location provided")
     }
-
-    let options=ResticCommonOptions(
+    
+    // Create check command
+    let command = ResticCommand(
+      action: .check,
       repository: repoLocation,
-      password: nil,
-      jsonOutput: true
+      password: defaultPassword,
+      arguments: [],
+      options: [:],
+      trackProgress: false
     )
-
-    let command=ResticCheckCommandImpl(
-      readData: false,
-      commonOptions: options
-    )
-
-    let output=try await execute(command)
-    let duration=Date().timeIntervalSince(startTime)
-
-    return ResticCommandResult.success(
+    
+    // Execute the command
+    let output = try await execute(command)
+    let duration = Date().timeIntervalSince(startTime)
+    
+    return ResticCommandResult(
       output: output,
-      duration: duration,
-      data: [
-        "repository": .string(repoLocation)
-      ]
+      exitCode: 0,
+      duration: duration
     )
   }
-
+  
   /// Lists snapshots in the repository
   ///
   /// - Parameters:
@@ -539,420 +307,231 @@ import ResticInterfaces
   ///   - tag: Optional tag to filter snapshots
   /// - Returns: Result containing snapshot information
   /// - Throws: ResticError if the listing fails
-  public func listSnapshots(
-    at location: String?,
-    tag: String?
-  ) async throws -> ResticCommandResult {
-    let startTime=Date()
-
-    let repoLocation=location ?? defaultRepository
-    guard let repoLocation else {
-      throw ResticError.missingParameter("Repository location is required")
+  public func listSnapshots(at location: String?, tag: String?) async throws -> ResticCommandResult {
+    let startTime = Date()
+    
+    // Use provided repository or default
+    let repoLocation = location ?? defaultRepository
+    
+    // Ensure we have a repository location
+    guard let repoLocation = repoLocation, !repoLocation.isEmpty else {
+      throw ResticError.invalidParameter("No repository location provided")
     }
-
-    let options=ResticCommonOptions(
+    
+    // Build arguments
+    var arguments: [String] = ["--json"]
+    
+    // Add tag filter if provided
+    if let tag = tag, !tag.isEmpty {
+      arguments.append("--tag")
+      arguments.append(tag)
+    }
+    
+    // Create snapshots command
+    let command = ResticCommand(
+      action: .snapshots,
       repository: repoLocation,
-      password: nil,
-      jsonOutput: true
+      password: defaultPassword,
+      arguments: arguments,
+      options: [:],
+      trackProgress: false
     )
-
-    let command=ResticSnapshotsCommandImpl(
-      tag: tag,
-      commonOptions: options
-    )
-
-    let output=try await execute(command)
-    let duration=Date().timeIntervalSince(startTime)
-
-    return ResticCommandResult.success(
+    
+    // Execute the command
+    let output = try await execute(command)
+    let duration = Date().timeIntervalSince(startTime)
+    
+    return ResticCommandResult(
       output: output,
-      duration: duration,
-      data: [
-        "repository": .string(repoLocation),
-        "tag": tag.map { .string($0) } ?? .null
-      ]
+      exitCode: 0,
+      duration: duration
     )
   }
-
-  /// Performs a backup of the specified paths
+  
+  /// Creates a backup
   ///
   /// - Parameters:
-  ///   - paths: Paths to back up
-  ///   - repository: Optional repository location (uses default if nil)
-  ///   - tag: Optional tag to attach to the backup
-  ///   - excludes: Paths to exclude from the backup
-  /// - Returns: Result of the backup command
+  ///   - paths: Array of paths to backup
+  ///   - tag: Optional tag for the backup
+  ///   - excludes: Optional array of exclude patterns
+  /// - Returns: Result with backup information
   /// - Throws: ResticError if the backup fails
-  public func backup(
-    paths: [String],
-    to repository: String?=nil,
-    tag: String?=nil,
-    excludes: [String]=[]
-  ) async throws -> ResticCommandResult {
-    let startTime=Date()
-
-    // Determine repository location
-    let repoLocation=repository ?? defaultRepository
-    guard let repoLocation else {
-      throw ResticError.missingParameter("Repository location not specified and no default set")
+  public func backup(paths: [String], tag: String?, excludes: [String]?) async throws -> ResticCommandResult {
+    let startTime = Date()
+    
+    // Ensure we have paths to back up
+    guard !paths.isEmpty else {
+      throw ResticError.invalidParameter("No paths provided for backup")
     }
-
-    // Get password from credential manager if available
-    let repoPassword: String?
-    if await credentialManager.hasCredentials(for: repoLocation) {
-      // Get from credential manager if available
-      do {
-        let credentials=try await credentialManager.getCredentials(for: repoLocation)
-        repoPassword=credentials.password
-      } catch let resticError as ResticError {
-        await resticLogger.error(
-          "Failed to retrieve credentials",
-          metadata: [
-            "repository": .string(repoLocation),
-            "error": .string(resticError.logDescription)
-          ],
-          source: "ResticService.Backup"
-        )
-        repoPassword=nil
-      } catch {
-        await resticLogger.error(
-          "Unexpected error retrieving credentials",
-          metadata: [
-            "repository": .string(repoLocation),
-            "error": .string(error.localizedDescription)
-          ],
-          source: "ResticService.Backup"
-        )
-        repoPassword=nil
+    
+    // Use provided repository or default
+    let repoLocation = defaultRepository
+    
+    // Ensure we have a repository location
+    guard let repoLocation = repoLocation, !repoLocation.isEmpty else {
+      throw ResticError.invalidParameter("No repository location provided")
+    }
+    
+    // Build arguments for backup
+    var arguments = paths
+    
+    // Add tag if provided
+    if let tag = tag, !tag.isEmpty {
+      arguments.append("--tag")
+      arguments.append(tag)
+    }
+    
+    // Add exclude patterns if provided
+    if let excludes = excludes, !excludes.isEmpty {
+      for pattern in excludes {
+        arguments.append("--exclude")
+        arguments.append(pattern)
       }
-    } else {
-      repoPassword=nil
     }
-
+    
     // Create backup command
-    let command=ResticCommand(
+    let command = ResticCommand(
       action: .backup,
       repository: repoLocation,
-      password: repoPassword,
-      arguments: paths,
-      options: buildBackupOptions(tag: tag, excludes: excludes)
+      password: defaultPassword,
+      arguments: arguments,
+      options: [:],
+      trackProgress: true
     )
-
-    // Create backup context for logging
-    let logContext=BackupLogContext(
-      repository: repoLocation,
-      paths: paths,
-      tag: tag
-    )
-
-    await resticLogger.info(
-      "Starting backup operation",
-      metadata: logContext.toMetadata(),
-      source: logContext.getSource()
-    )
-
-    // Execute backup command
-    let output=try await execute(command)
-    let duration=Date().timeIntervalSince(startTime)
-
-    // Store credentials if successful and not already stored
-    if
-      let repoPassword,
-      ! await credentialManager.hasCredentials(for: repoLocation)
-    {
-      try? await credentialManager.storeCredentials(
-        ResticCredentials(
-          repositoryIdentifier: repoLocation,
-          password: repoPassword
-        ),
-        for: repoLocation
-      )
-    }
-
-    await resticLogger.info(
-      "Backup completed",
-      metadata: logContext.toMetadata().merging(with: [
-        "duration": .number(duration)
-      ]),
-      source: logContext.getSource()
-    )
-
-    return ResticCommandResult.success(
+    
+    // Execute the command
+    let output = try await execute(command)
+    let duration = Date().timeIntervalSince(startTime)
+    
+    return ResticCommandResult(
       output: output,
-      duration: duration,
-      data: [
-        "repository": .string(repoLocation),
-        "paths": .array(paths.map { .string($0) }),
-        "tag": tag.map { .string($0) } ?? .null
-      ]
+      exitCode: 0,
+      duration: duration
     )
   }
-
-  /// Restores files from a snapshot
+  
+  /// Restores from a backup
   ///
   /// - Parameters:
   ///   - snapshot: Snapshot ID to restore from
-  ///   - target: Target directory to restore to
-  ///   - repository: Optional repository location (uses default if nil)
-  ///   - paths: Optional specific paths to restore (restores all if nil)
-  /// - Returns: Result of the restore command
+  ///   - target: Target path for restoration
+  ///   - paths: Optional specific paths to restore
+  /// - Returns: Result with restore information
   /// - Throws: ResticError if the restore fails
-  public func restore(
-    snapshot: String,
-    to target: String,
-    from repository: String?=nil,
-    paths: [String]=[]
-  ) async throws -> ResticCommandResult {
-    let startTime=Date()
-
-    // Determine repository location
-    let repoLocation=repository ?? defaultRepository
-    guard let repoLocation else {
-      throw ResticError.missingParameter("Repository location not specified and no default set")
+  public func restore(snapshot: String, to target: String, paths: [String]?) async throws -> ResticCommandResult {
+    let startTime = Date()
+    
+    // Use default repository
+    let repoLocation = defaultRepository
+    
+    // Ensure we have a repository location
+    guard let repoLocation = repoLocation, !repoLocation.isEmpty else {
+      throw ResticError.invalidParameter("No repository location provided")
     }
-
-    // Get password from credential manager if available
-    let repoPassword: String?
-    if await credentialManager.hasCredentials(for: repoLocation) {
-      // Get from credential manager if available
-      do {
-        let credentials=try await credentialManager.getCredentials(for: repoLocation)
-        repoPassword=credentials.password
-      } catch let resticError as ResticError {
-        await resticLogger.error(
-          "Failed to retrieve credentials for restore",
-          metadata: [
-            "repository": .string(repoLocation),
-            "error": .string(resticError.logDescription)
-          ],
-          source: "ResticService.Restore"
-        )
-        repoPassword=nil
-      } catch {
-        await resticLogger.error(
-          "Unexpected error retrieving credentials for restore",
-          metadata: [
-            "repository": .string(repoLocation),
-            "error": .string(error.localizedDescription)
-          ],
-          source: "ResticService.Restore"
-        )
-        repoPassword=nil
+    
+    // Build arguments for restore
+    var arguments = [
+      snapshot,
+      "--target", target
+    ]
+    
+    // Add specific paths to restore if provided
+    if let paths = paths, !paths.isEmpty {
+      for path in paths {
+        arguments.append("--include")
+        arguments.append(path)
       }
-    } else {
-      repoPassword=nil
     }
-
-    // Create context for logging
-    let logContext=RestoreLogContext(
-      repository: repoLocation,
-      snapshot: snapshot,
-      target: target
-    )
-
-    await resticLogger.info(
-      "Starting restore operation",
-      metadata: logContext.toMetadata().merging(with: [
-        "paths": paths.isEmpty ? .null : .array(paths.map { .string($0) })
-      ]),
-      source: logContext.getSource()
-    )
-
-    // Create and execute restore command
-    let command=ResticCommand(
+    
+    // Create restore command
+    let command = ResticCommand(
       action: .restore,
       repository: repoLocation,
-      password: repoPassword,
-      arguments: [snapshot],
-      options: buildRestoreOptions(target: target, paths: paths)
+      password: defaultPassword,
+      arguments: arguments,
+      options: [:],
+      trackProgress: true
     )
-
-    let output=try await execute(command)
-    let duration=Date().timeIntervalSince(startTime)
-
-    await resticLogger.info(
-      "Restore completed",
-      metadata: logContext.toMetadata().merging(with: [
-        "paths": paths.isEmpty ? .null : .array(paths.map { .string($0) }),
-        "duration": .number(duration)
-      ]),
-      source: logContext.getSource()
-    )
-
-    return ResticCommandResult.success(
+    
+    // Execute the command
+    let output = try await execute(command)
+    let duration = Date().timeIntervalSince(startTime)
+    
+    return ResticCommandResult(
       output: output,
-      duration: duration,
-      data: [
-        "repository": .string(repoLocation),
-        "snapshot": .string(snapshot),
-        "target": .string(target),
-        "paths": paths.isEmpty ? .null : .array(paths.map { .string($0) })
-      ]
+      exitCode: 0,
+      duration: duration
     )
   }
-
+  
   /// Performs repository maintenance
   ///
   /// - Parameter type: Type of maintenance operation
   /// - Returns: Result with maintenance information
   /// - Throws: ResticError if the maintenance fails
   public func maintenance(type: ResticMaintenanceType) async throws -> ResticCommandResult {
-    let startTime=Date()
-
-    let repoLocation=defaultRepository
-    guard let repoLocation else {
-      throw ResticError.missingParameter("Repository location is required")
+    let startTime = Date()
+    
+    // Use default repository
+    let repoLocation = defaultRepository
+    
+    // Ensure we have a repository location
+    guard let repoLocation = repoLocation, !repoLocation.isEmpty else {
+      throw ResticError.invalidParameter("No repository location provided")
     }
-
-    let options=ResticCommonOptions(
+    
+    // Map maintenance type to command and arguments
+    let (action, arguments) = mapMaintenanceTypeToCommand(type)
+    
+    // Create maintenance command
+    let command = ResticCommand(
+      action: action,
       repository: repoLocation,
-      password: nil,
-      jsonOutput: true
+      password: defaultPassword,
+      arguments: arguments,
+      options: [:],
+      trackProgress: false
     )
-
-    let command=ResticMaintenanceCommandImpl(
-      maintenanceType: type,
-      commonOptions: options
-    )
-
-    let output=try await execute(command)
-    let duration=Date().timeIntervalSince(startTime)
-
-    await resticLogger.info(
-      "Maintenance completed",
-      metadata: [
-        "repository": .string(repoLocation),
-        "maintenance_type": .string(type.rawValue)
-      ],
-      source: "ResticService.Maintenance"
-    )
-
-    return ResticCommandResult.success(
+    
+    // Execute the command
+    let output = try await execute(command)
+    let duration = Date().timeIntervalSince(startTime)
+    
+    return ResticCommandResult(
       output: output,
-      duration: duration,
-      data: [
-        "repository": .string(repoLocation),
-        "maintenance_type": .string(type.rawValue)
-      ]
+      exitCode: 0,
+      duration: duration
     )
   }
-
-  // MARK: - Helper Methods
-
-  /// Converts PrivacyMetadata to the format required by ResticCommandResult
+  
+  /// Maps maintenance type to command and arguments
   ///
-  /// - Parameter metadata: The privacy metadata to convert
-  /// - Returns: Dictionary in the format expected by ResticCommandResult
-  private func convertToResticData(_ metadata: PrivacyMetadata) -> [String: ResticDataValue] {
-    var result: [String: ResticDataValue] = [:]
-    
-    for (key, entry) in metadata.entries {
-      // Extract the value and convert it to ResticDataValue
-      switch entry.value {
-      case let stringValue as String:
-        result[key] = .string(stringValue)
-      case let intValue as Int:
-        result[key] = .number(Double(intValue))
-      case let doubleValue as Double:
-        result[key] = .number(doubleValue)
-      case let boolValue as Bool:
-        result[key] = .boolean(boolValue)
-      case let arrayValue as [String]:
-        result[key] = .array(arrayValue.map { .string($0) })
-      case let optionalString as String?:
-        if let string = optionalString {
-          result[key] = .string(string)
-        } else {
-          result[key] = .null
-        }
-      default:
-        result[key] = .string(String(describing: entry.value))
-      }
+  /// - Parameter type: The maintenance operation type
+  /// - Returns: Tuple with command action and arguments
+  private func mapMaintenanceTypeToCommand(_ type: ResticMaintenanceType) -> (ResticCommandAction, [String]) {
+    switch type {
+    case .prune:
+      return (.prune, [])
+    case .check:
+      return (.check, [])
+    case .rebuildIndex:
+      return (.check, ["--rebuild-index"])
+    }
+  }
+  
+  /// Validates a command before execution
+  ///
+  /// - Parameter command: The command to validate
+  /// - Throws: ResticError if validation fails
+  private func validateCommand(_ command: ResticCommand) throws {
+    // Ensure the repository is valid
+    if command.repository.isEmpty && (defaultRepository == nil || defaultRepository!.isEmpty) {
+      throw ResticError.invalidParameter("No repository specified and no default repository set")
     }
     
-    return result
-  }
-
-  /// Builds options for a backup command
-  ///
-  /// - Parameters:
-  ///   - tag: Optional tag to associate with the backup
-  ///   - excludes: Paths to exclude from the backup
-  /// - Returns: Dictionary of options for the backup command
-  private func buildBackupOptions(tag: String?, excludes: [String]) -> [String: String] {
-    var options=["json": "true"]
-
-    if let tag {
-      options["tag"]=tag
-    }
-
-    for excludePath in excludes {
-      options["exclude"]=(options["exclude"] ?? "") + "\(excludePath),"
-    }
-
-    // Remove trailing comma from excludes if present
-    if let excludeString=options["exclude"], excludeString.hasSuffix(",") {
-      options["exclude"]=String(excludeString.dropLast())
-    }
-
-    return options
-  }
-
-  /// Builds options for a restore command
-  ///
-  /// - Parameters:
-  ///   - target: Target directory to restore to
-  ///   - paths: Optional specific paths to restore
-  /// - Returns: Dictionary of options for the restore command
-  private func buildRestoreOptions(target: String, paths: [String]) -> [String: String] {
-    var options: [String: String]=[
-      "json": "true",
-      "target": target
-    ]
-
-    if !paths.isEmpty {
-      options["include"]=paths.joined(separator: ",")
-    }
-
-    return options
-  }
-
-  /// Checks if a repository exists at the given location
-  ///
-  /// - Parameter location: The location to check
-  /// - Returns: True if the repository exists, false otherwise
-  private func checkIfRepositoryExists(at location: String) async throws -> Bool {
-    do {
-      let command=ResticCommand(
-        action: .check,
-        repository: location,
-        password: nil
-      )
-
-      _=try await execute(command)
-      return true
-    } catch {
-      // If we get a specific error indicating the repository doesn't exist,
-      // return false. Otherwise, rethrow the error.
-      if
-        let resticError=error as? ResticError,
-        case let .commandFailed(exitCode, output)=resticError,
-        exitCode != 0 && output.contains("repository not found")
-      {
-        return false
-      }
-
-      // Credential errors or other errors that don't specifically indicate
-      // the repository doesn't exist should be rethrown
-      if
-        let resticError=error as? ResticError,
-        case .credentialError=resticError
-      {
-        throw error
-      }
-
-      // Otherwise, assume the repository doesn't exist
-      return false
+    // Ensure we have a password (when not using init command)
+    if command.action != .init && command.password == nil && defaultPassword == nil {
+      throw ResticError.invalidParameter("No password specified and no default password set")
     }
   }
 }

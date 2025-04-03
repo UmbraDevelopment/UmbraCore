@@ -93,24 +93,24 @@ public struct ResticCommand: Sendable {
   ///
   /// - Throws: ResticError if the command is invalid
   public func validate() throws {
-    if repository.isEmpty {
-      throw ResticError.missingParameter("Repository location is required")
+    if repository.isEmpty, action != .`init` {
+      throw ResticError.missingParameter("Repository is required for all commands except init")
     }
-
+    
     // Action-specific validation
     switch action {
       case .backup:
         if arguments.isEmpty {
-          throw ResticError.missingParameter("At least one backup path is required")
+          throw ResticError.missingParameter("Backup paths are required")
         }
       case .restore:
         if arguments.isEmpty {
           throw ResticError.missingParameter("Snapshot ID is required for restore")
         }
-        if !options.keys.contains("target") {
+        guard options["target"] != nil else {
           throw ResticError.missingParameter("Target path is required for restore")
         }
-      case .init:
+      case .`init`:
         // The repository might not exist yet for init, so no repository validation
         break
       default:
