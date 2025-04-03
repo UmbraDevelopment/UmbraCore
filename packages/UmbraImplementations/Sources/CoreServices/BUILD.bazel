@@ -17,5 +17,8 @@ umbra_swift_library(
         "//packages/UmbraCoreTypes/Sources/CoreDTOs",
         "//packages/UmbraInterfaces/Sources/SecurityCoreInterfaces",
         "//packages/UmbraImplementations/Sources/LoggingServices",
+        "//packages/UmbraInterfaces/Sources/CryptoInterfaces",
+        "//packages/UmbraCoreTypes/Sources/CoreSecurityTypes",
+        "//packages/UmbraImplementations/Sources/CryptoServices",
     ],
 )

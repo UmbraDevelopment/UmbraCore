@@ -1,5 +1,5 @@
 import ConfigInterfaces
-import CoreTypesInterfaces
+import CoreInterfaces
 import DateTimeTypes
 import LoggingInterfaces
 import UmbraErrors
