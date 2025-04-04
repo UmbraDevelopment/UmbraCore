@@ -39,4 +39,16 @@ public struct SecurityConfigDTO: Sendable, Equatable {
     self.providerType=providerType
     self.options=options
   }
+  
+  /// Creates a standard AES encryption configuration for the specified provider
+  /// - Parameter providerType: The security provider type to use
+  /// - Returns: A configuration with AES-256-CBC encryption and SHA-256 hashing
+  public static func aesEncryption(providerType: SecurityProviderType) -> SecurityConfigDTO {
+    SecurityConfigDTO(
+      encryptionAlgorithm: .aes256CBC,
+      hashAlgorithm: .sha256,
+      providerType: providerType,
+      options: nil
+    )
+  }
 }

@@ -18,6 +18,9 @@ public final class DefaultLogger: LoggingProtocol {
   
   /// The underlying logging actor
   public let loggingActor: LoggingActor
+
+  /// Default source identifier for log messages
+  private let defaultSource = "SecurityCryptoServices"
   
   /// Initialise a new logger with the default subsystem and category
   public init() {
@@ -38,26 +41,44 @@ public final class DefaultLogger: LoggingProtocol {
         logger.error("\(message)")
       case .critical:
         logger.critical("\(message)")
+      case .trace:
+        logger.debug("\(message) [TRACE]")
     }
   }
 
   /// Log debug message
-  public func debug(_ message: String, metadata: LogMetadata?) async {
-    await logMessage(.debug, message, context: LogContext(metadata: metadata ?? [:]))
+  public func debug(_ message: String, metadata: LogMetadataDTOCollection? = nil, source: String? = nil) async {
+    let logContext = LogContext(
+      source: source ?? defaultSource,
+      metadata: metadata?.toPrivacyMetadata()
+    )
+    await logMessage(.debug, message, context: logContext)
   }
 
   /// Log info message
-  public func info(_ message: String, metadata: LogMetadata?) async {
-    await logMessage(.info, message, context: LogContext(metadata: metadata ?? [:]))
+  public func info(_ message: String, metadata: LogMetadataDTOCollection? = nil, source: String? = nil) async {
+    let logContext = LogContext(
+      source: source ?? defaultSource,
+      metadata: metadata?.toPrivacyMetadata()
+    )
+    await logMessage(.info, message, context: logContext)
   }
 
   /// Log warning message
-  public func warning(_ message: String, metadata: LogMetadata?) async {
-    await logMessage(.warning, message, context: LogContext(metadata: metadata ?? [:]))
+  public func warning(_ message: String, metadata: LogMetadataDTOCollection? = nil, source: String? = nil) async {
+    let logContext = LogContext(
+      source: source ?? defaultSource,
+      metadata: metadata?.toPrivacyMetadata()
+    )
+    await logMessage(.warning, message, context: logContext)
   }
 
   /// Log error message
-  public func error(_ message: String, metadata: LogMetadata?) async {
-    await logMessage(.error, message, context: LogContext(metadata: metadata ?? [:]))
+  public func error(_ message: String, metadata: LogMetadataDTOCollection? = nil, source: String? = nil) async {
+    let logContext = LogContext(
+      source: source ?? defaultSource,
+      metadata: metadata?.toPrivacyMetadata()
+    )
+    await logMessage(.error, message, context: logContext)
   }
 }

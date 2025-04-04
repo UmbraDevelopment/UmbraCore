@@ -34,13 +34,265 @@ import UmbraErrors
   public actor AppleSecurityProvider: CryptoServiceProtocol, AsyncServiceInitializable {
     /// The type of provider implementation (accessible from any actor context)
     public nonisolated let providerType: SecurityProviderType = .cryptoKit
+    
+    /// The secure storage used for handling sensitive data
+    public let secureStorage: SecureStorageProtocol
+    
+    /// Default configuration for operations
+    private let defaultConfig: SecurityConfigDTO
 
     /// Initialises a new Apple security provider
-    public init() {}
+    public init(secureStorage: SecureStorageProtocol) {
+        self.secureStorage = secureStorage
+        self.defaultConfig = SecurityConfigDTO(
+            encryptionAlgorithm: .aes256GCM,
+            hashAlgorithm: .sha256,
+            providerType: .cryptoKit,
+            options: nil
+        )
+    }
 
     /// Initializes the service, performing any necessary setup
     public func initialize() async throws {
       // No additional setup needed for CryptoKit
+    }
+
+    // MARK: - CryptoServiceProtocol Implementation
+    
+    /// Encrypts binary data using a key from secure storage.
+    /// - Parameters:
+    ///   - dataIdentifier: Identifier of the data to encrypt in secure storage.
+    ///   - keyIdentifier: Identifier of the encryption key in secure storage.
+    ///   - options: Optional encryption configuration.
+    /// - Returns: Identifier for the encrypted data in secure storage, or an error.
+    public func encrypt(
+      dataIdentifier: String,
+      keyIdentifier: String,
+      options: EncryptionOptions?
+    ) async -> Result<String, SecurityStorageError> {
+      // Retrieve the data to encrypt
+      let dataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
+      guard case let .success(data) = dataResult else {
+        if case let .failure(error) = dataResult {
+          return .failure(error)
+        }
+        return .failure(.dataNotFound)
+      }
+      
+      // Retrieve the encryption key
+      let keyResult = await secureStorage.retrieveData(withIdentifier: keyIdentifier)
+      guard case let .success(key) = keyResult else {
+        if case let .failure(error) = keyResult {
+          return .failure(error)
+        }
+        return .failure(.dataNotFound)
+      }
+      
+      // Perform encryption
+      let encryptResult = await encrypt(data: data, using: key)
+      switch encryptResult {
+        case .success(let encryptedData):
+          // Generate a storage identifier for the encrypted data
+          let encryptedIdentifier = "encrypted_\(UUID().uuidString)"
+          
+          // Store the encrypted data
+          let storeResult = await secureStorage.storeData(encryptedData, withIdentifier: encryptedIdentifier)
+          switch storeResult {
+            case .success:
+              return .success(encryptedIdentifier)
+            case .failure(let error):
+              return .failure(error)
+          }
+        case .failure(let error):
+          return .failure(.operationFailed(error.localizedDescription))
+      }
+    }
+    
+    /// Decrypts binary data using a key from secure storage.
+    /// - Parameters:
+    ///   - encryptedDataIdentifier: Identifier of the encrypted data in secure storage.
+    ///   - keyIdentifier: Identifier of the decryption key in secure storage.
+    ///   - options: Optional decryption configuration.
+    /// - Returns: Identifier for the decrypted data in secure storage, or an error.
+    public func decrypt(
+      encryptedDataIdentifier: String,
+      keyIdentifier: String,
+      options: DecryptionOptions?
+    ) async -> Result<String, SecurityStorageError> {
+      // Retrieve the encrypted data
+      let encryptedDataResult = await secureStorage.retrieveData(withIdentifier: encryptedDataIdentifier)
+      guard case let .success(encryptedData) = encryptedDataResult else {
+        if case let .failure(error) = encryptedDataResult {
+          return .failure(error)
+        }
+        return .failure(.dataNotFound)
+      }
+      
+      // Retrieve the decryption key
+      let keyResult = await secureStorage.retrieveData(withIdentifier: keyIdentifier)
+      guard case let .success(key) = keyResult else {
+        if case let .failure(error) = keyResult {
+          return .failure(error)
+        }
+        return .failure(.dataNotFound)
+      }
+      
+      // Perform decryption
+      let decryptResult = await decrypt(data: encryptedData, using: key)
+      switch decryptResult {
+        case .success(let decryptedData):
+          // Generate a storage identifier for the decrypted data
+          let decryptedIdentifier = "decrypted_\(UUID().uuidString)"
+          
+          // Store the decrypted data
+          let storeResult = await secureStorage.storeData(decryptedData, withIdentifier: decryptedIdentifier)
+          switch storeResult {
+            case .success:
+              return .success(decryptedIdentifier)
+            case .failure(let error):
+              return .failure(error)
+          }
+        case .failure(let error):
+          return .failure(.operationFailed(error.localizedDescription))
+      }
+    }
+    
+    /// Computes a cryptographic hash of data in secure storage.
+    /// - Parameter dataIdentifier: Identifier of the data to hash in secure storage.
+    /// - Returns: Identifier for the hash in secure storage, or an error.
+    public func hash(
+      dataIdentifier: String,
+      options: HashingOptions?
+    ) async -> Result<String, SecurityStorageError> {
+      // Retrieve the data to hash
+      let dataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
+      guard case let .success(data) = dataResult else {
+        if case let .failure(error) = dataResult {
+          return .failure(error)
+        }
+        return .failure(.dataNotFound)
+      }
+      
+      // Compute the hash
+      let hashResult = await hash(data: data)
+      switch hashResult {
+        case .success(let hashValue):
+          // Generate a storage identifier for the hash
+          let hashIdentifier = "hash_\(UUID().uuidString)"
+          
+          // Store the hash
+          let storeResult = await secureStorage.storeData(hashValue, withIdentifier: hashIdentifier)
+          switch storeResult {
+            case .success:
+              return .success(hashIdentifier)
+            case .failure(let error):
+              return .failure(error)
+          }
+        case .failure(let error):
+          return .failure(.operationFailed(error.localizedDescription))
+      }
+    }
+    
+    /// Verifies a cryptographic hash against the expected value, both stored securely.
+    /// - Parameters:
+    ///   - dataIdentifier: Identifier of the data to verify in secure storage.
+    ///   - hashIdentifier: Identifier of the expected hash in secure storage.
+    /// - Returns: `true` if the hash matches, `false` if not, or an error.
+    public func verifyHash(
+      dataIdentifier: String,
+      hashIdentifier: String,
+      options: HashingOptions?
+    ) async -> Result<Bool, SecurityStorageError> {
+      // Retrieve the data to verify
+      let dataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
+      guard case let .success(data) = dataResult else {
+        if case let .failure(error) = dataResult {
+          return .failure(error)
+        }
+        return .failure(.dataNotFound)
+      }
+      
+      // Retrieve the expected hash
+      let expectedHashResult = await secureStorage.retrieveData(withIdentifier: hashIdentifier)
+      guard case let .success(expectedHash) = expectedHashResult else {
+        if case let .failure(error) = expectedHashResult {
+          return .failure(error)
+        }
+        return .failure(.dataNotFound)
+      }
+      
+      // Compute the hash of the data
+      let hashResult = await hash(data: data)
+      switch hashResult {
+        case .success(let computedHash):
+          // Compare the hashes
+          let match = (computedHash == expectedHash)
+          return .success(match)
+        case .failure(let error):
+          return .failure(.operationFailed(error.localizedDescription))
+      }
+    }
+    
+    /// Generates a cryptographic key and stores it securely.
+    /// - Parameters:
+    ///   - length: The length of the key to generate in bytes.
+    ///   - options: Optional key generation configuration.
+    /// - Returns: Identifier for the generated key in secure storage, or an error.
+    public func generateKey(
+      length: Int,
+      options: KeyGenerationOptions?
+    ) async -> Result<String, SecurityStorageError> {
+      // Generate the key (convert length from bytes to bits)
+      let keyResult = await generateKey(size: length * 8)
+      switch keyResult {
+        case .success(let keyData):
+          // Generate a storage identifier for the key
+          let keyIdentifier = "key_\(UUID().uuidString)"
+          
+          // Store the key
+          let storeResult = await secureStorage.storeData(keyData, withIdentifier: keyIdentifier)
+          switch storeResult {
+            case .success:
+              return .success(keyIdentifier)
+            case .failure(let error):
+              return .failure(error)
+          }
+        case .failure(let error):
+          return .failure(.operationFailed(error.localizedDescription))
+      }
+    }
+    
+    /// Imports data into secure storage for use with cryptographic operations.
+    /// - Parameters:
+    ///   - data: The raw data to store securely.
+    ///   - customIdentifier: Optional custom identifier for the data. If nil, a random identifier is generated.
+    /// - Returns: The identifier for the data in secure storage, or an error.
+    public func importData(
+      _ data: [UInt8],
+      customIdentifier: String?
+    ) async -> Result<String, SecurityStorageError> {
+      // Generate an identifier if none provided
+      let identifier = customIdentifier ?? "imported_\(UUID().uuidString)"
+      
+      // Store the data
+      let storeResult = await secureStorage.storeData(data, withIdentifier: identifier)
+      switch storeResult {
+        case .success:
+          return .success(identifier)
+        case .failure(let error):
+          return .failure(error)
+      }
+    }
+    
+    /// Exports data from secure storage.
+    /// - Parameter identifier: The identifier of the data to export.
+    /// - Returns: The raw data, or an error.
+    /// - Warning: Use with caution as this exposes sensitive data.
+    public func exportData(
+      identifier: String
+    ) async -> Result<[UInt8], SecurityStorageError> {
+      // Retrieve the data
+      return await secureStorage.retrieveData(withIdentifier: identifier)
     }
 
     /**
@@ -57,17 +309,17 @@ import UmbraErrors
     ) async -> Result<[UInt8], Error> {
       do {
         // Generate a random nonce for encryption
-        let nonce=try AES.GCM.Nonce()
+        let nonce = AES.GCM.Nonce()
 
         // Convert byte array to CryptoKit key format
-        let cryptoKitKey=try getCryptoKitSymmetricKey(from: key)
+        let cryptoKitKey = try getCryptoKitSymmetricKey(from: key)
 
         // Perform the encryption
-        let sealedBox=try AES.GCM.seal(Data(data), using: cryptoKitKey, nonce: nonce)
+        let sealedBox = try AES.GCM.seal(Data(data), using: cryptoKitKey, nonce: nonce)
 
         // Combine nonce and sealed data for storage/transmission
         // Format: [Nonce][Tag][Ciphertext]
-        guard let combined=sealedBox.combined else {
+        guard let combined = sealedBox.combined else {
           throw CoreSecurityError.cryptoError(
             "Failed to generate combined ciphertext output"
           )
@@ -93,13 +345,13 @@ import UmbraErrors
     ) async -> Result<[UInt8], Error> {
       do {
         // Create a sealed box from the combined format
-        let sealedBox=try AES.GCM.SealedBox(combined: Data(data))
+        let sealedBox = try AES.GCM.SealedBox(combined: Data(data))
 
         // Convert byte array to CryptoKit key format
-        let cryptoKitKey=try getCryptoKitSymmetricKey(from: key)
+        let cryptoKitKey = try getCryptoKitSymmetricKey(from: key)
 
         // Perform the decryption
-        let decryptedData=try AES.GCM.open(sealedBox, using: cryptoKitKey)
+        let decryptedData = try AES.GCM.open(sealedBox, using: cryptoKitKey)
 
         return .success([UInt8](decryptedData))
       } catch {
@@ -116,18 +368,18 @@ import UmbraErrors
     public func generateKey(size: Int) async -> Result<[UInt8], Error> {
       do {
         // Convert bits to bytes
-        let keySize=size / 8
+        let keySize = size / 8
 
         // CryptoKit supports 128, 192, and 256-bit keys for AES
         switch keySize {
           case 16: // 128 bits
-            let key=SymmetricKey(size: .bits128)
+            let key = SymmetricKey(size: .bits128)
             return .success(key.withUnsafeBytes { [UInt8]($0) })
           case 24: // 192 bits
-            let key=SymmetricKey(size: .bits192)
+            let key = SymmetricKey(size: .bits192)
             return .success(key.withUnsafeBytes { [UInt8]($0) })
           case 32: // 256 bits
-            let key=SymmetricKey(size: .bits256)
+            let key = SymmetricKey(size: .bits256)
             return .success(key.withUnsafeBytes { [UInt8]($0) })
           default:
             throw CoreSecurityError.invalidInput(
@@ -146,13 +398,9 @@ import UmbraErrors
      - Returns: Result with hash value or error
      */
     public func hash(data: [UInt8]) async -> Result<[UInt8], Error> {
-      do {
-        // Default to SHA-256
-        let hashData=SHA256.hash(data: Data(data))
-        return .success([UInt8](Data(hashData)))
-      } catch {
-        return .failure(mapToSecurityErrorDomain(error))
-      }
+      // Default to SHA-256
+      let hashData = SHA256.hash(data: Data(data))
+      return .success([UInt8](Data(hashData)))
     }
 
     // MARK: - Helper Methods
@@ -165,7 +413,7 @@ import UmbraErrors
      - Throws: CoreSecurityError if key conversion fails
      */
     private func getCryptoKitSymmetricKey(from key: [UInt8]) throws -> SymmetricKey {
-      let keySize=key.count * 8
+      let keySize = key.count * 8
 
       // Validate key size
       switch keySize {
@@ -182,43 +430,35 @@ import UmbraErrors
      Maps errors to the security error domain for consistent error handling
      */
     private func mapToSecurityErrorDomain(_ error: Error) -> Error {
-      if let securityError=error as? CoreSecurityError {
+      if let securityError = error as? CoreSecurityError {
         return securityError
       }
 
-      // CryptoKit specific error handling
-      if let cryptoKitError=error as? CryptoKitError {
-        switch cryptoKitError {
-          case .incorrectKeySize:
+      // Map CryptoKit errors
+      let nsError = error as NSError
+      if nsError.domain == "CryptoKit" {
+        switch nsError.code {
+          case -1:
             return CoreSecurityError.invalidInput(
-              "CryptoKit error: incorrect key size"
+              "CryptoKit error: invalid input parameters"
             )
-          case .incorrectParameterSize:
-            return CoreSecurityError.invalidInput(
-              "CryptoKit error: incorrect parameter size"
+          case -2:
+            return CoreSecurityError.keyManagementError(
+              "CryptoKit error: key generation failed"
             )
-          case .authenticationFailure:
+          case -3:
             return CoreSecurityError.authenticationFailed(
               "CryptoKit error: authentication tag verification failed"
             )
-          case .underlyingCoreCryptoError:
+          default:
             return CoreSecurityError.cryptoError(
-              "CryptoKit error: underlying CoreCrypto operation failed"
-            )
-          case .wrapFailure, .unwrapFailure, .invalidParameter:
-            return CoreSecurityError.cryptoError(
-              "CryptoKit specific error: \(cryptoKitError)"
-            )
-          @unknown default:
-            return CoreSecurityError.cryptoError(
-              "Unknown CryptoKit error: \(cryptoKitError)"
+              "CryptoKit error: \(nsError.localizedDescription)"
             )
         }
       }
 
-      // Handle other error types
-      return CoreSecurityError.cryptoError(
-        "Cryptographic operation failed: \(error.localizedDescription)"
+      return CoreSecurityError.unknownError(
+        "Unrecognized error: \(error.localizedDescription)"
       )
     }
   }
@@ -226,20 +466,90 @@ import UmbraErrors
   // Empty placeholder for when CryptoKit is not available
   public actor AppleSecurityProvider: CryptoServiceProtocol, AsyncServiceInitializable {
     public nonisolated let providerType: SecurityProviderType = .cryptoKit
-
-    public init() {}
-
+    
+    /// The secure storage used for handling sensitive data
+    public let secureStorage: SecureStorageProtocol
+    
+    /// Initialises a new Apple security provider
+    public init(secureStorage: SecureStorageProtocol) {
+        self.secureStorage = secureStorage
+    }
+    
+    /// Initializes the service
     public func initialize() async throws {
-      throw CoreSecurityError.unsupportedOperation(
+      // No initialization needed for non-CryptoKit implementation
+    }
+
+    public func encrypt(
+      dataIdentifier: String,
+      keyIdentifier: String,
+      options: EncryptionOptions?
+    ) async -> Result<String, SecurityStorageError> {
+      .failure(.operationFailed(
         "CryptoKit is not available on this platform"
-      )
+      ))
+    }
+
+    public func decrypt(
+      encryptedDataIdentifier: String,
+      keyIdentifier: String,
+      options: DecryptionOptions?
+    ) async -> Result<String, SecurityStorageError> {
+      .failure(.operationFailed(
+        "CryptoKit is not available on this platform"
+      ))
+    }
+
+    public func hash(
+      dataIdentifier: String,
+      options: HashingOptions?
+    ) async -> Result<String, SecurityStorageError> {
+      .failure(.operationFailed(
+        "CryptoKit is not available on this platform"
+      ))
+    }
+
+    public func verifyHash(
+      dataIdentifier: String,
+      hashIdentifier: String,
+      options: HashingOptions?
+    ) async -> Result<Bool, SecurityStorageError> {
+      .failure(.operationFailed(
+        "CryptoKit is not available on this platform"
+      ))
+    }
+
+    public func generateKey(
+      length: Int,
+      options: KeyGenerationOptions?
+    ) async -> Result<String, SecurityStorageError> {
+      .failure(.operationFailed(
+        "CryptoKit is not available on this platform"
+      ))
+    }
+
+    public func importData(
+      _ data: [UInt8],
+      customIdentifier: String?
+    ) async -> Result<String, SecurityStorageError> {
+      .failure(.operationFailed(
+        "CryptoKit is not available on this platform"
+      ))
+    }
+
+    public func exportData(
+      identifier: String
+    ) async -> Result<[UInt8], SecurityStorageError> {
+      .failure(.operationFailed(
+        "CryptoKit is not available on this platform"
+      ))
     }
 
     public func encrypt(
       data _: [UInt8],
       using _: [UInt8]
     ) async -> Result<[UInt8], Error> {
-      .failure(CoreSecurityError.unsupportedOperation(
+      .failure(CoreSecurityError.cryptoError(
         "CryptoKit is not available on this platform"
       ))
     }
@@ -248,19 +558,19 @@ import UmbraErrors
       data _: [UInt8],
       using _: [UInt8]
     ) async -> Result<[UInt8], Error> {
-      .failure(CoreSecurityError.unsupportedOperation(
+      .failure(CoreSecurityError.cryptoError(
         "CryptoKit is not available on this platform"
       ))
     }
 
     public func generateKey(size _: Int) async -> Result<[UInt8], Error> {
-      .failure(CoreSecurityError.unsupportedOperation(
+      .failure(CoreSecurityError.cryptoError(
         "CryptoKit is not available on this platform"
       ))
     }
 
     public func hash(data _: [UInt8]) async -> Result<[UInt8], Error> {
-      .failure(CoreSecurityError.unsupportedOperation(
+      .failure(CoreSecurityError.cryptoError(
         "CryptoKit is not available on this platform"
       ))
     }

@@ -365,6 +365,8 @@ final class OperationsHandler {
       return .operationFailed(reason: "The operation is not supported")
     case .implementationUnavailable:
       return .operationFailed(reason: "The protocol implementation is not available")
+    case .operationFailed(let message):
+      return .operationFailed(reason: message)
     }
   }
   

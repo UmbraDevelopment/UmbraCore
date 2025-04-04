@@ -44,9 +44,24 @@ public enum CryptoServicesFactory {
     providerType: SecurityProviderType,
     logger: LoggingProtocol
   ) async -> any CryptoServiceProtocol {
-    // Import the actor from the implementations module and initialise it
-    let impl = CryptoActorImplementations.CryptoServiceActor(
+    // Create the secure storage first
+    let storageURL = URL(fileURLWithPath: NSTemporaryDirectory())
+      .appendingPathComponent("UmbraSecureStorage", isDirectory: true)
+      .appendingPathComponent(UUID().uuidString)
+    
+    let secureStorage = await createSecureStorage(
       providerType: providerType,
+      storageURL: storageURL,
+      logger: logger
+    )
+    
+    // Create the provider registry
+    let providerRegistry = await createProviderRegistry(logger: logger)
+    
+    // Now create the crypto service with the dependencies
+    let impl = await CryptoActorIntegration.CryptoServiceActor(
+      providerRegistry: providerRegistry,
+      secureStorage: secureStorage,
       logger: logger
     )
 
@@ -71,7 +86,7 @@ public enum CryptoServicesFactory {
     logger: LoggingProtocol
   ) async -> any SecureStorageProtocol {
     // Create secure storage with the specified parameters
-    let impl = CryptoActorImplementations.SecureStorageActor(
+    let impl = CryptoActorIntegration.SecureStorageActor(
       providerType: providerType,
       storageURL: storageURL,
       logger: logger
@@ -93,7 +108,7 @@ public enum CryptoServicesFactory {
     logger: LoggingProtocol
   ) async -> any ProviderRegistryProtocol {
     // Create provider registry
-    let impl = CryptoActorImplementations.ProviderRegistryActor(
+    let impl = CryptoActorIntegration.ProviderRegistryActor(
       logger: logger
     )
 
