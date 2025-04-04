@@ -17,7 +17,7 @@ import SecurityKeyTypes
  ```swift
  // Create a key manager with a logger
  let logger = YourLoggerImplementation()
- let keyManager = await SecurityKeyManagement.createKeyManager(
+ let keyManager = SecurityKeyManagement.createKeyManager(
      logger: logger
  )
 
@@ -35,9 +35,9 @@ public enum SecurityKeyManagement {
    - Returns: A new actor-based implementation of KeyManagementProtocol
    */
   public static func createKeyManager(
-    logger: LoggingProtocol?=nil
-  ) async -> any KeyManagementProtocol {
-    await KeyManagementFactory.createKeyManager(logger: logger)
+    logger: LoggingServiceProtocol?=nil
+  ) -> any KeyManagementProtocol {
+    KeyManagementFactory.createKeyManager(logger: logger)
   }
 
   /**
@@ -47,7 +47,7 @@ public enum SecurityKeyManagement {
    - Returns: A new implementation of KeyStorage
    */
   public static func createKeyStorage(
-    logger: LoggingProtocol?=nil
+    logger: LoggingServiceProtocol?=nil
   ) -> any KeyStorage {
     KeyManagementFactory.createKeyStorage(logger: logger)
   }

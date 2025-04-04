@@ -12,24 +12,43 @@ import LoggingTypes
  allowing for immutable context objects and thread safety.
  */
 public struct BackupLogContext: LogContextDTO {
+  /// The domain name for this context
+  public let domainName: String = "BackupServices"
+  
+  /// Correlation identifier for tracing related logs
+  public let correlationID: String?
+  
+  /// Source information for logging
+  public let source: String?
+  
+  /// Privacy-aware metadata for this log context
+  public var metadata: LogMetadataDTOCollection
+  
   /// Dictionary of metadata entries with privacy annotations
-  private var entries: [String: PrivacyMetadataValue]=[:]
+  private var entries: [String: PrivacyMetadataValue] = [:]
 
   /// Current operation being performed
   public var operation: String? {
-    if let value=entries["operation"]?.valueString {
+    if let value = entries["operation"]?.valueString {
       return value
     }
     return nil
   }
 
   /// Initialises an empty backup log context
-  public init() {}
+  public init(correlationID: String? = nil, source: String? = nil) {
+    self.correlationID = correlationID
+    self.source = source
+    self.metadata = LogMetadataDTOCollection()
+  }
 
   /// Gets the source of this log context
   /// - Returns: The source identifier for logging
   public func getSource() -> String {
-    if let op=operation {
+    if let source = source {
+      return source
+    }
+    if let op = operation {
       return "BackupService.\(op)"
     }
     return "BackupService"
@@ -38,10 +57,10 @@ public struct BackupLogContext: LogContextDTO {
   /// Converts the context to privacy metadata for logging
   /// - Returns: Privacy metadata with appropriate annotations
   public func toPrivacyMetadata() -> PrivacyMetadata {
-    var metadata=PrivacyMetadata()
+    var metadata = PrivacyMetadata()
 
     for (key, value) in entries {
-      metadata[key]=value
+      metadata[key] = value
     }
 
     return metadata
@@ -49,112 +68,62 @@ public struct BackupLogContext: LogContextDTO {
 
   /// Gets the metadata for this log context
   /// - Returns: Log metadata with appropriate privacy annotations
-  public func getMetadata() -> PrivacyMetadata {
-    toPrivacyMetadata()
+  public func toMetadata() -> LogMetadataDTOCollection {
+    return metadata
+  }
+  
+  /// Creates a new context with updated metadata
+  /// - Parameter metadata: The new metadata collection
+  /// - Returns: A new log context with updated metadata
+  public func withUpdatedMetadata(_ metadata: LogMetadataDTOCollection) -> BackupLogContext {
+    var newContext = self
+    newContext.metadata = metadata
+    return newContext
   }
 
-  /// Adds a general key-value pair to the context
+  /// Adds a public metadata entry
   /// - Parameters:
   ///   - key: The metadata key
-  ///   - value: The value to store
-  ///   - privacy: Privacy level for the data
-  /// - Returns: A new context with the added information
-  public func with(key: String, value: String, privacy: LogPrivacyLevel) -> BackupLogContext {
-    var newContext=self
-    newContext.entries[key]=PrivacyMetadataValue(value: value, privacy: privacy)
+  ///   - value: The metadata value
+  /// - Returns: A new context with the added metadata
+  public func withPublic(key: String, value: String) -> BackupLogContext {
+    var newContext = self
+    let metadataValue = PrivacyMetadataValue(value: value, privacy: .public)
+    newContext.entries[key] = metadataValue
+    newContext.metadata = newContext.metadata.withPublic(key: key, value: value)
     return newContext
   }
 
-  /// Adds operation information to the context
-  /// - Parameter operation: The operation being performed
-  /// - Returns: A new context with the added information
-  public func with(operation: String) -> BackupLogContext {
-    var newContext=self
-    newContext.entries["operation"]=PrivacyMetadataValue(value: operation, privacy: .public)
-    return newContext
-  }
-
-  /// Adds sources information to the context
+  /// Adds a private metadata entry
   /// - Parameters:
-  ///   - sources: List of source paths
-  ///   - privacy: The privacy level to apply
-  /// - Returns: A new context with the added information
-  public func with(sources: [URL], privacy: LogPrivacyLevel) -> BackupLogContext {
-    var newContext=self
-
-    newContext.entries["sources"]=PrivacyMetadataValue(
-      value: sources.map(\.path).joined(separator: ", "),
-      privacy: privacy
-    )
+  ///   - key: The metadata key
+  ///   - value: The metadata value
+  /// - Returns: A new context with the added metadata
+  public func withPrivate(key: String, value: String) -> BackupLogContext {
+    var newContext = self
+    let metadataValue = PrivacyMetadataValue(value: value, privacy: .private)
+    newContext.entries[key] = metadataValue
+    newContext.metadata = newContext.metadata.withPrivate(key: key, value: value)
     return newContext
   }
 
-  /// Adds exclude paths information to the context
+  /// Adds a sensitive metadata entry
   /// - Parameters:
-  ///   - excludePaths: Paths to exclude from backup
-  ///   - privacy: The privacy level to apply
-  /// - Returns: A new context with the added information
-  public func with(excludePaths: [String], privacy: LogPrivacyLevel) -> BackupLogContext {
-    var newContext=self
-
-    newContext.entries["excludePaths"]=PrivacyMetadataValue(
-      value: excludePaths.joined(separator: ", "),
-      privacy: privacy
-    )
+  ///   - key: The metadata key
+  ///   - value: The metadata value
+  /// - Returns: A new context with the added metadata
+  public func withSensitive(key: String, value: String) -> BackupLogContext {
+    var newContext = self
+    let metadataValue = PrivacyMetadataValue(value: value, privacy: .sensitive)
+    newContext.entries[key] = metadataValue
+    newContext.metadata = newContext.metadata.withSensitive(key: key, value: value)
     return newContext
   }
 
-  /// Adds include paths information to the context
-  /// - Parameters:
-  ///   - includePaths: Paths to include in backup
-  ///   - privacy: The privacy level to apply
-  /// - Returns: A new context with the added information
-  public func with(includePaths: [String], privacy: LogPrivacyLevel) -> BackupLogContext {
-    var newContext=self
-
-    newContext.entries["includePaths"]=PrivacyMetadataValue(
-      value: includePaths.joined(separator: ", "),
-      privacy: privacy
-    )
-    return newContext
-  }
-
-  /// Adds tags information to the context
-  /// - Parameters:
-  ///   - tags: List of tags
-  ///   - privacy: The privacy level to apply
-  /// - Returns: A new context with the added information
-  public func with(tags: [String], privacy: LogPrivacyLevel) -> BackupLogContext {
-    var newContext=self
-
-    newContext.entries["tags"]=PrivacyMetadataValue(
-      value: tags.joined(separator: ", "),
-      privacy: privacy
-    )
-    return newContext
-  }
-
-  /// Adds repository ID to the context
-  /// - Parameters:
-  ///   - repositoryID: The repository identifier
-  ///   - privacy: The privacy level to apply
-  /// - Returns: A new context with the added information
-  public func with(repositoryID: String?, privacy: LogPrivacyLevel) -> BackupLogContext {
-    guard let repositoryID, !repositoryID.isEmpty else { return self }
-
-    var newContext=self
-    newContext.entries["repositoryID"]=PrivacyMetadataValue(value: repositoryID, privacy: privacy)
-    return newContext
-  }
-
-  /// Adds snapshot ID to the context
-  /// - Parameters:
-  ///   - snapshotID: The snapshot identifier
-  ///   - privacy: The privacy level to apply
-  /// - Returns: A new context with the added information
-  public func with(snapshotID: String, privacy: LogPrivacyLevel) -> BackupLogContext {
-    var newContext=self
-    newContext.entries["snapshotID"]=PrivacyMetadataValue(value: snapshotID, privacy: privacy)
-    return newContext
+  /// Adds an operation name to the context
+  /// - Parameter operation: The operation name
+  /// - Returns: A new context with the operation
+  public func withOperation(_ operation: String) -> BackupLogContext {
+    withPublic(key: "operation", value: operation)
   }
 }

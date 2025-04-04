@@ -10,8 +10,6 @@ umbra_swift_library(
         exclude = [
             "**/*Test.swift",
             "**/*.generated.swift",
-            "Actor/**/*.swift",  # Exclude old Actor directory files 
-            "ActorTypes/**/*.swift",  # Exclude ActorTypes directory files as they'll be in a separate target
         ],
         allow_empty = False,
     ),
@@ -28,8 +26,7 @@ umbra_swift_library(
         "//packages/UmbraImplementations/Sources/SecurityProviders",
         "//packages/UmbraImplementations/Sources/LoggingAdapters", # Added for privacy-enhanced logging
         "//packages/UmbraImplementations/Sources/SecurityUtils", # Added for SecurityUtils module
-        # Include the modules
-        "//packages/UmbraImplementations/Sources/SecurityKeyManagement/ActorTypes:KeyManagementActor",
+        # Include the storage and types modules
         "//packages/UmbraImplementations/Sources/SecurityKeyManagement/Storage:KeyStorage",
         "//packages/UmbraImplementations/Sources/SecurityKeyManagement/Types:SecurityKeyTypes",
     ],

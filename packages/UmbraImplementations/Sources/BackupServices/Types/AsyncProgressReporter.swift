@@ -90,9 +90,9 @@ extension AsyncProgressReporter where Progress == BackupProgressInfo {
         totalBytes: 0,
         details: detail
       )
-      await reportProgress(completionProgress)
+      reportProgress(completionProgress)
     } else {
-      await reportProgress(.completed())
+      reportProgress(.completed())
     }
   }
 
@@ -112,7 +112,7 @@ extension AsyncProgressReporter where Progress == BackupProgressInfo {
       details: detail ?? "Operation cancelled",
       isCancellable: false
     )
-    await reportProgress(cancellationProgress)
+    reportProgress(cancellationProgress)
   }
 
   /**
@@ -134,7 +134,7 @@ extension AsyncProgressReporter where Progress == BackupProgressInfo {
       details: detail ?? "Operation failed: \(error.localizedDescription)",
       isCancellable: false
     )
-    await reportProgress(errorProgress)
+    reportProgress(errorProgress)
   }
 }
 
