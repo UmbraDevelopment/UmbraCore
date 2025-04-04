@@ -65,7 +65,7 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
     for url: URL,
     readOnly: Bool,
     storageIdentifier: String? = nil
-  ) async -> Result<String, BookmarkSecurityError> {
+  ) async -> Result<String, UmbraErrors.Security.Bookmark> {
     var metadata=LogMetadataDTOCollection()
     metadata=metadata.withSensitive(key: "url", value: url.path)
     metadata=metadata.withPublic(key: "readOnly", value: String(readOnly))
@@ -115,13 +115,13 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
           return .success(identifier)
           
         case let .failure(error):
-          throw BookmarkSecurityError.operationFailed(
+          throw UmbraErrors.Security.Bookmark.operationFailed(
             "Failed to store bookmark data: \(error)"
           )
       }
     } catch {
-      let bookmarkError = error as? BookmarkSecurityError ?? 
-        BookmarkSecurityError.cannotCreateBookmark(
+      let bookmarkError = error as? UmbraErrors.Security.Bookmark ?? 
+        UmbraErrors.Security.Bookmark.cannotCreateBookmark(
           "Failed to create security-scoped bookmark: \(error.localizedDescription)"
         )
       
@@ -149,7 +149,7 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
     withIdentifier storageIdentifier: String,
     startAccess: Bool=false,
     recreateIfStale: Bool=false
-  ) async -> Result<(URL, Bool), BookmarkSecurityError> {
+  ) async -> Result<(URL, Bool), UmbraErrors.Security.Bookmark> {
     var metadata=LogMetadataDTOCollection()
     metadata=metadata.withPrivate(key: "identifier", value: storageIdentifier)
     
@@ -232,7 +232,7 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
           
           return .success((resolvedURL, isStale))
         } catch {
-          let bookmarkError = BookmarkSecurityError.cannotResolveURL(
+          let bookmarkError = UmbraErrors.Security.Bookmark.cannotResolveURL(
             "Failed to resolve security-scoped bookmark: \(error.localizedDescription)"
           )
           
@@ -246,7 +246,7 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
         }
         
       case let .failure(error):
-        let bookmarkError = BookmarkSecurityError.invalidBookmark(
+        let bookmarkError = UmbraErrors.Security.Bookmark.invalidBookmark(
           "Failed to retrieve bookmark data: \(error)"
         )
         
@@ -266,7 +266,7 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
    - Parameter storageIdentifier: The identifier of the bookmark to resolve
    - Returns: Result with the resolved URL and stale status
    */
-  public func resolveBookmark(withIdentifier storageIdentifier: String) async -> Result<(URL, Bool), BookmarkSecurityError> {
+  public func resolveBookmark(withIdentifier storageIdentifier: String) async -> Result<(URL, Bool), UmbraErrors.Security.Bookmark> {
     // Call our enhanced implementation with default parameters
     return await resolveBookmark(
       withIdentifier: storageIdentifier,
@@ -287,7 +287,7 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
   public func validateBookmark(
     withIdentifier storageIdentifier: String,
     recreateIfStale: Bool=true
-  ) async -> Result<BookmarkValidationResultDTO, BookmarkSecurityError> {
+  ) async -> Result<BookmarkValidationResultDTO, UmbraErrors.Security.Bookmark> {
     var metadata=LogMetadataDTOCollection()
     metadata=metadata.withPrivate(key: "identifier", value: storageIdentifier)
     metadata=metadata.withPublic(key: "recreateIfStale", value: String(recreateIfStale))
@@ -364,7 +364,7 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
    - Parameter url: The URL of the resource to access
    - Returns: Result with the number of active accessors or error
    */
-  public func startAccessing(_ url: URL) async -> Result<Bool, BookmarkSecurityError> {
+  public func startAccessing(_ url: URL) async -> Result<Bool, UmbraErrors.Security.Bookmark> {
     var metadata=LogMetadataDTOCollection()
     metadata=metadata.withSensitive(key: "url", value: url.path)
     
@@ -375,7 +375,7 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
     
     // Try to start accessing the resource
     guard url.startAccessingSecurityScopedResource() else {
-      let error = BookmarkSecurityError.accessDenied(
+      let error = UmbraErrors.Security.Bookmark.accessDenied(
         "Failed to start accessing security-scoped resource"
       )
       
@@ -411,7 +411,7 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
    - Parameter url: The URL of the resource to stop accessing
    - Returns: Result with the remaining number of active accessors or error
    */
-  public func stopAccessing(_ url: URL) async -> Result<Int, BookmarkSecurityError> {
+  public func stopAccessing(_ url: URL) async -> Result<Int, UmbraErrors.Security.Bookmark> {
     var metadata=LogMetadataDTOCollection()
     metadata=metadata.withSensitive(key: "url", value: url.path)
     
@@ -422,7 +422,7 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
     
     // Check if we're tracking this resource
     guard let currentCount=activeResources[url], currentCount > 0 else {
-      let error = BookmarkSecurityError.notAccessing(
+      let error = UmbraErrors.Security.Bookmark.notAccessing(
         "Not currently accessing security-scoped resource"
       )
       

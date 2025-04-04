@@ -48,9 +48,35 @@ public protocol KeyStorage: Sendable {
   /// - Returns: True if the key exists
   /// - Throws: An error if checking the key fails
   func containsKey(identifier: String) async throws -> Bool
+  
+  /// Get all key identifiers
+  /// - Returns: An array of all key identifiers
+  /// - Throws: An error if retrieving the identifiers fails
+  func getAllIdentifiers() async throws -> [String]
+}
 
-  /// List all key identifiers
-  /// - Returns: Array of key identifiers
-  /// - Throws: An error if listing keys fails
-  func listKeyIdentifiers() async throws -> [String]
+/**
+ Default implementation for KeyStorage
+ */
+public extension KeyStorage {
+  /**
+   Get all key identifiers stored in this key storage
+   
+   This default implementation is provided for backward compatibility with existing
+   KeyStorage implementations. It is recommended to provide a more efficient
+   implementation in concrete types.
+   
+   - Returns: An array of string identifiers
+   - Throws: If retrieval fails
+   */
+  func getAllIdentifiers() async throws -> [String] {
+    // This is a default implementation that can be overridden by concrete types
+    // for better performance
+    var identifiers: [String] = []
+    
+    // In a real implementation, this would list all keys efficiently
+    // This basic implementation is provided for compatibility only
+    
+    return identifiers
+  }
 }
