@@ -43,6 +43,68 @@ public struct BackupLogger {
   }
 
   /**
+   * Logs successful operation completion with a specific result.
+   *
+   * - Parameters:
+   *   - context: The logging context
+   *   - result: The operation result
+   */
+  public func logOperationSuccess<T>(
+    context: BackupLogContext,
+    result: T
+  ) async {
+    let enhancedContext = context.withPublic(
+      key: "result_type",
+      value: String(describing: T.self)
+    )
+    
+    await logger.info(
+      context: enhancedContext,
+      message: "Operation completed successfully"
+    )
+  }
+  
+  /**
+   * Logs successful operation completion with a message.
+   *
+   * - Parameters:
+   *   - context: The logging context
+   *   - message: Success message to log
+   */
+  public func logOperationSuccess(
+    context: BackupLogContext,
+    message: String
+  ) async {
+    await logger.info(
+      context: context,
+      message: message
+    )
+  }
+  
+  /**
+   * Logs operation failure.
+   *
+   * - Parameters:
+   *   - context: The logging context
+   *   - error: The error that caused the failure
+   */
+  public func logOperationFailure(
+    context: BackupLogContext,
+    error: Error
+  ) async {
+    let enhancedContext = context.withPublic(
+      key: "error_type",
+      value: String(describing: type(of: error))
+    )
+    
+    await logger.error(
+      context: enhancedContext,
+      message: "Operation failed: \(error.localizedDescription)",
+      error: error
+    )
+  }
+
+  /**
    * Logs the successful completion of a backup operation.
    *
    * - Parameters:

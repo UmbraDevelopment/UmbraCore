@@ -3,6 +3,7 @@ import DomainSecurityTypes
 import Foundation
 import LoggingInterfaces
 import SecurityCoreInterfaces
+import CryptoServices
 
 /**
  # CryptoServices
@@ -42,7 +43,7 @@ public enum CryptoServices {
     providerType: SecurityProviderType,
     logger: LoggingProtocol
   ) async -> any CryptoServiceProtocol {
-    await CryptoServicesFactory.createCryptoService(
+    await CryptoServiceFactory.createWithProvider(
       providerType: providerType,
       logger: logger
     )
@@ -64,7 +65,7 @@ public enum CryptoServices {
     storageURL: URL,
     logger: LoggingProtocol
   ) async -> any SecureStorageProtocol {
-    await CryptoServicesFactory.createSecureStorage(
+    await CryptoServiceFactory.createSecureStorage(
       providerType: providerType,
       storageURL: storageURL,
       logger: logger
@@ -82,7 +83,7 @@ public enum CryptoServices {
   public static func createProviderRegistry(
     logger: LoggingProtocol
   ) async -> any ProviderRegistryProtocol {
-    await CryptoServicesFactory.createProviderRegistry(
+    await CryptoServiceFactory.createProviderRegistry(
       logger: logger
     )
   }

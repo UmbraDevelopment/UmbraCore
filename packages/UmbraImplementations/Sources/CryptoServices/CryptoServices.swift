@@ -22,7 +22,7 @@ import SecurityCoreInterfaces
 
  ```swift
  // Create a default implementation
- let cryptoService = await CryptoServices.createDefault()
+ let cryptoService = await CryptoServices.createDefault(secureStorage: SecureStorage())
 
  // Encrypt some data
  let data: [UInt8] = [1, 2, 3, 4]
@@ -46,22 +46,29 @@ import SecurityCoreInterfaces
 public enum CryptoServices {
   /**
    Creates a default implementation of CryptoServiceProtocol.
-
+   
+   - Parameter secureStorage: The secure storage implementation to use
    - Returns: A CryptoServiceProtocol implementation
    */
-  public static func createDefault() async -> CryptoServiceProtocol {
-    await CryptoServiceFactory.createDefault()
+  public static func createDefault(
+    secureStorage: SecureStorageProtocol
+  ) async -> CryptoServiceProtocol {
+    await CryptoServiceFactory.createDefault(secureStorage: secureStorage)
   }
 
   /**
    Creates a crypto service with logging capabilities.
-
-   - Parameter logger: Optional logger to use, default logger will be used if nil
+   
+   - Parameters:
+     - secureStorage: The secure storage implementation to use
+     - logger: Optional logger to use, default logger will be used if nil
    - Returns: A CryptoServiceProtocol implementation with logging
    */
-  public static func createWithLogging(logger: LoggingProtocol) async
-  -> CryptoServiceProtocol {
-    let defaultService=await CryptoServiceFactory.createDefault()
+  public static func createWithLogging(
+    secureStorage: SecureStorageProtocol,
+    logger: LoggingProtocol
+  ) async -> CryptoServiceProtocol {
+    let defaultService = await CryptoServiceFactory.createDefault(secureStorage: secureStorage)
     return await CryptoServiceFactory.createLoggingDecorator(
       wrapped: defaultService,
       logger: logger
@@ -70,14 +77,20 @@ public enum CryptoServices {
 
   /**
    Creates a mock implementation of CryptoServiceProtocol for testing.
-
-   - Parameter configuration: Configuration for the mock behavior
+   
+   - Parameters:
+     - secureStorage: The secure storage implementation to use
+     - configuration: Configuration for the mock behavior
    - Returns: A mock CryptoServiceProtocol implementation
    */
   public static func createMock(
+    secureStorage: SecureStorageProtocol,
     configuration: MockCryptoServiceImpl.Configuration = .init()
   ) async -> CryptoServiceProtocol {
-    await CryptoServiceFactory.createMock(configuration: configuration)
+    await CryptoServiceFactory.createMock(
+      secureStorage: secureStorage,
+      configuration: configuration
+    )
   }
 }
 
