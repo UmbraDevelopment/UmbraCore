@@ -39,9 +39,12 @@ public actor MockCryptoService: CryptoServiceProtocol {
   /// A minimal empty logger for when none is provided
   private struct EmptyLogger: LoggingProtocol {
     /// The underlying logging actor, required by CoreLoggingProtocol
-    public let loggingActor: LoggingActor = EmptyLoggingActor()
+    public let loggingActor: LoggingActor = MockLoggingActor()
     
     /// Implementation of the core logging method
+    public func logMessage(_ level: LogLevel, _ message: String, context: LogContext) async {}
+    
+    /// Implementation of the standard logging method
     func log(_ level: LogLevel, _ message: String, metadata: PrivacyMetadata?, source: String) async {}
     
     /// Implementation of trace level logging
@@ -61,15 +64,17 @@ public actor MockCryptoService: CryptoServiceProtocol {
     
     /// Implementation of critical level logging
     func critical(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
-    
-    /// Implementation required by PrivacyAwareLoggingProtocol
-    func logMessage(_ level: LogLevel, _ message: String, context: LogContext) async {}
   }
   
   /// A minimal empty logging actor implementation
-  private actor EmptyLoggingActor: LoggingActor {
+  private class MockLoggingActor: LoggingActor {
+    /// Initialize with empty destinations
+    init() {
+      super.init(destinations: [], minimumLogLevel: .info)
+    }
+    
     /// Implementation of the core logging method for the actor
-    func log(_ level: LogLevel, _ message: String, metadata: PrivacyMetadata?, source: String) async {}
+    override func log(_ level: LogLevel, _ message: String, metadata: PrivacyMetadata?, source: String) async {}
   }
 
   /// Encrypts binary data using a key from secure storage (mock implementation).

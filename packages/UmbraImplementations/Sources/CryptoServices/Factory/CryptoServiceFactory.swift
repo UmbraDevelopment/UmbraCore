@@ -962,13 +962,13 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     let context = createEnhancedLogContext(
       operation: "encrypt",
       identifiers: [
-        "dataIdentifier": PrivacyLevel.private,
-        "keyIdentifier": PrivacyLevel.private
+        "dataIdentifier": .private,
+        "keyIdentifier": .private
       ]
     )
 
     // Log operation start with privacy controls
-    await logger.debug("Starting encryption operation", context: context)
+    await logger.debug("Starting encryption operation", metadata: context.metadata, source: context.source)
 
     // Perform the operation
     let result = await wrapped.encrypt(
@@ -983,17 +983,19 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
       var resultContext = context
       resultContext.metadata.add(
         key: "resultIdentifier",
-        value: LogMetadataDTO(stringValue: identifier, privacyLevel: .private)
+        value: identifier,
+        privacyLevel: .private
       )
-      await logger.info("Encryption completed successfully", context: resultContext)
+      await logger.info("Encryption completed successfully", metadata: resultContext.metadata, source: resultContext.source)
       return .success(identifier)
     case .failure(let error):
       var errorContext = context
       errorContext.metadata.add(
         key: "error",
-        value: LogMetadataDTO(stringValue: error.localizedDescription, privacyLevel: .public)
+        value: error.localizedDescription,
+        privacyLevel: .public
       )
-      await logger.error("Encryption failed: \(error.localizedDescription)", context: errorContext)
+      await logger.error("Encryption failed: \(error.localizedDescription)", metadata: errorContext.metadata, source: errorContext.source)
       return .failure(error)
     }
   }
@@ -1015,13 +1017,13 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     let context = createEnhancedLogContext(
       operation: "decrypt",
       identifiers: [
-        "encryptedDataIdentifier": PrivacyLevel.private,
-        "keyIdentifier": PrivacyLevel.private
+        "encryptedDataIdentifier": .private,
+        "keyIdentifier": .private
       ]
     )
 
     // Log operation start with privacy controls
-    await logger.debug("Starting decryption operation", context: context)
+    await logger.debug("Starting decryption operation", metadata: context.metadata, source: context.source)
 
     // Perform the operation
     let result = await wrapped.decrypt(
@@ -1036,17 +1038,19 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
       var resultContext = context
       resultContext.metadata.add(
         key: "resultIdentifier",
-        value: LogMetadataDTO(stringValue: identifier, privacyLevel: .private)
+        value: identifier,
+        privacyLevel: .private
       )
-      await logger.info("Decryption completed successfully", context: resultContext)
+      await logger.info("Decryption completed successfully", metadata: resultContext.metadata, source: resultContext.source)
       return .success(identifier)
     case .failure(let error):
       var errorContext = context
       errorContext.metadata.add(
         key: "error",
-        value: LogMetadataDTO(stringValue: error.localizedDescription, privacyLevel: .public)
+        value: error.localizedDescription,
+        privacyLevel: .public
       )
-      await logger.error("Decryption failed: \(error.localizedDescription)", context: errorContext)
+      await logger.error("Decryption failed: \(error.localizedDescription)", metadata: errorContext.metadata, source: errorContext.source)
       return .failure(error)
     }
   }
@@ -1064,12 +1068,12 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     let context = createEnhancedLogContext(
       operation: "hash",
       identifiers: [
-        "dataIdentifier": PrivacyLevel.private
+        "dataIdentifier": .private
       ]
     )
 
     // Log operation start with privacy controls
-    await logger.debug("Starting hash operation", context: context)
+    await logger.debug("Starting hash operation", metadata: context.metadata, source: context.source)
 
     // Perform the operation
     let result = await wrapped.hash(
@@ -1083,17 +1087,19 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
       var resultContext = context
       resultContext.metadata.add(
         key: "resultIdentifier",
-        value: LogMetadataDTO(stringValue: identifier, privacyLevel: .private)
+        value: identifier,
+        privacyLevel: .private
       )
-      await logger.info("Hash operation completed successfully", context: resultContext)
+      await logger.info("Hash operation completed successfully", metadata: resultContext.metadata, source: resultContext.source)
       return .success(identifier)
     case .failure(let error):
       var errorContext = context
       errorContext.metadata.add(
         key: "error",
-        value: LogMetadataDTO(stringValue: error.localizedDescription, privacyLevel: .public)
+        value: error.localizedDescription,
+        privacyLevel: .public
       )
-      await logger.error("Hash operation failed: \(error.localizedDescription)", context: errorContext)
+      await logger.error("Hash operation failed: \(error.localizedDescription)", metadata: errorContext.metadata, source: errorContext.source)
       return .failure(error)
     }
   }
@@ -1114,13 +1120,13 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     let context = createEnhancedLogContext(
       operation: "verifyHash",
       identifiers: [
-        "dataIdentifier": PrivacyLevel.private,
-        "hashIdentifier": PrivacyLevel.private
+        "dataIdentifier": .private,
+        "hashIdentifier": .private
       ]
     )
 
     // Log operation start with privacy controls
-    await logger.debug("Starting hash verification", context: context)
+    await logger.debug("Starting hash verification", metadata: context.metadata, source: context.source)
 
     // Perform the operation
     let result = await wrapped.verifyHash(
@@ -1135,18 +1141,20 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
       var resultContext = context
       resultContext.metadata.add(
         key: "verified",
-        value: LogMetadataDTO(stringValue: String(verified), privacyLevel: .public)
+        value: String(verified),
+        privacyLevel: .public
       )
       let status = verified ? "verified" : "failed verification"
-      await logger.info("Hash verification completed: \(status)", context: resultContext)
+      await logger.info("Hash verification completed: \(status)", metadata: resultContext.metadata, source: resultContext.source)
       return .success(verified)
     case .failure(let error):
       var errorContext = context
       errorContext.metadata.add(
         key: "error",
-        value: LogMetadataDTO(stringValue: error.localizedDescription, privacyLevel: .public)
+        value: error.localizedDescription,
+        privacyLevel: .public
       )
-      await logger.error("Hash verification failed: \(error.localizedDescription)", context: errorContext)
+      await logger.error("Hash verification failed: \(error.localizedDescription)", metadata: errorContext.metadata, source: errorContext.source)
       return .failure(error)
     }
   }
@@ -1171,11 +1179,12 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     // Add key length with public privacy level
     context.metadata.add(
       key: "keyLength",
-      value: LogMetadataDTO(stringValue: String(length), privacyLevel: .public)
+      value: String(length),
+      privacyLevel: .public
     )
 
     // Log operation start with privacy controls
-    await logger.debug("Starting key generation", context: context)
+    await logger.debug("Starting key generation", metadata: context.metadata, source: context.source)
 
     // Perform the operation
     let result = await wrapped.generateKey(
@@ -1189,17 +1198,19 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
       var resultContext = context
       resultContext.metadata.add(
         key: "keyIdentifier",
-        value: LogMetadataDTO(stringValue: identifier, privacyLevel: .private)
+        value: identifier,
+        privacyLevel: .private
       )
-      await logger.info("Key generation completed successfully", context: resultContext)
+      await logger.info("Key generation completed successfully", metadata: resultContext.metadata, source: resultContext.source)
       return .success(identifier)
     case .failure(let error):
       var errorContext = context
       errorContext.metadata.add(
         key: "error",
-        value: LogMetadataDTO(stringValue: error.localizedDescription, privacyLevel: .public)
+        value: error.localizedDescription,
+        privacyLevel: .public
       )
-      await logger.error("Key generation failed: \(error.localizedDescription)", context: errorContext)
+      await logger.error("Key generation failed: \(error.localizedDescription)", metadata: errorContext.metadata, source: errorContext.source)
       return .failure(error)
     }
   }
@@ -1225,18 +1236,20 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     // Add data size with public privacy level
     context.metadata.add(
       key: "dataSize",
-      value: LogMetadataDTO(stringValue: String(data.count), privacyLevel: .public)
+      value: String(data.count),
+      privacyLevel: .public
     )
 
     if let customIdentifier = customIdentifier {
       context.metadata.add(
         key: "customIdentifier",
-        value: LogMetadataDTO(stringValue: customIdentifier, privacyLevel: .private)
+        value: customIdentifier,
+        privacyLevel: .private
       )
     }
 
     // Log operation start with privacy controls
-    await logger.debug("Starting data import", context: context)
+    await logger.debug("Starting data import", metadata: context.metadata, source: context.source)
 
     // Perform the operation
     let result = await wrapped.importData(
@@ -1250,17 +1263,19 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
       var resultContext = context
       resultContext.metadata.add(
         key: "resultIdentifier",
-        value: LogMetadataDTO(stringValue: identifier, privacyLevel: .private)
+        value: identifier,
+        privacyLevel: .private
       )
-      await logger.info("Data import completed successfully", context: resultContext)
+      await logger.info("Data import completed successfully", metadata: resultContext.metadata, source: resultContext.source)
       return .success(identifier)
     case .failure(let error):
       var errorContext = context
       errorContext.metadata.add(
         key: "error",
-        value: LogMetadataDTO(stringValue: error.localizedDescription, privacyLevel: .public)
+        value: error.localizedDescription,
+        privacyLevel: .public
       )
-      await logger.error("Data import failed: \(error.localizedDescription)", context: errorContext)
+      await logger.error("Data import failed: \(error.localizedDescription)", metadata: errorContext.metadata, source: errorContext.source)
       return .failure(error)
     }
   }
@@ -1278,17 +1293,18 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     let context = createEnhancedLogContext(
       operation: "exportData",
       identifiers: [
-        "identifier": PrivacyLevel.private
+        "identifier": .private
       ]
     )
 
     // Log operation start with privacy controls
-    await logger.debug("Starting data export", context: context)
+    await logger.debug("Starting data export", metadata: context.metadata, source: context.source)
 
     // Log warning about data exposure
     await logger.warning(
       "Exporting data from secure storage exposes sensitive material",
-      context: context
+      metadata: context.metadata,
+      source: context.source
     )
 
     // Perform the operation
@@ -1302,17 +1318,19 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
       var resultContext = context
       resultContext.metadata.add(
         key: "dataSize",
-        value: LogMetadataDTO(stringValue: String(data.count), privacyLevel: .public)
+        value: String(data.count),
+        privacyLevel: .public
       )
-      await logger.info("Data export completed successfully", context: resultContext)
+      await logger.info("Data export completed successfully", metadata: resultContext.metadata, source: resultContext.source)
       return .success(data)
     case .failure(let error):
       var errorContext = context
       errorContext.metadata.add(
         key: "error",
-        value: LogMetadataDTO(stringValue: error.localizedDescription, privacyLevel: .public)
+        value: error.localizedDescription,
+        privacyLevel: .public
       )
-      await logger.error("Data export failed: \(error.localizedDescription)", context: errorContext)
+      await logger.error("Data export failed: \(error.localizedDescription)", metadata: errorContext.metadata, source: errorContext.source)
       return .failure(error)
     }
   }
@@ -1329,7 +1347,7 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
    */
   private func createEnhancedLogContext(
     operation: String,
-    identifiers: [String: PrivacyLevel]
+    identifiers: [String: PrivacyClassification]
   ) -> EnhancedCryptoLogContext {
     var context = EnhancedCryptoLogContext(
       domainName: "CryptoServices",
@@ -1340,14 +1358,16 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     // Add operation with public privacy level
     context.metadata.add(
       key: "operation",
-      value: LogMetadataDTO(stringValue: operation, privacyLevel: .public)
+      value: operation,
+      privacyLevel: .public
     )
 
     // Add identifiers with their specified privacy levels
     for (key, privacyLevel) in identifiers {
       context.metadata.add(
         key: key,
-        value: LogMetadataDTO(stringValue: "sensitive", privacyLevel: privacyLevel)
+        value: "sensitive",
+        privacyLevel: privacyLevel
       )
     }
 

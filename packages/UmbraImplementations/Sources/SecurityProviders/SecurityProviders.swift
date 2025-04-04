@@ -7,26 +7,21 @@
 
  ## Components
 
- - SecurityProviderImpl: The primary actor-based implementation of the SecurityProviderProtocol
- - Core supporting components:
-   - SecurityProviderCore: The central implementation of security provider functionality
-   - OperationsHandler: Routes security operations to appropriate handlers
-   - ConfigBuilder: Creates and validates security configurations
-   - Utilities: Utility functions for data conversion and formatting
+ - SecurityProviderCore: The central implementation of security provider functionality
+ - OperationsHandler: Routes security operations to appropriate handlers
+ - ConfigBuilder: Creates and validates security configurations
+ - Utilities: Utility functions for data conversion and formatting
 
  ## Usage
 
- The SecurityProviderImpl can be instantiated directly or through dependency injection.
- Since it's implemented as an actor, all method calls must be awaited:
+ Security provider implementations should be instantiated directly or through dependency injection.
+ Since security operations are typically asynchronous, all method calls must be awaited:
 
  ```swift
- // Using default implementations
- let securityProvider = SecurityProviderImpl()
-
- // With custom implementations
- let securityProvider = SecurityProviderImpl(
-   cryptoService: customCryptoService,
-   keyManager: customKeyManager
+ // With appropriate implementations
+ let securityProvider = YourSecurityProviderImplementation(
+   cryptoService: cryptoService,
+   keyManager: keyManager
  )
 
  // Calling methods requires await
@@ -35,7 +30,7 @@
 
  ## Actor-Based Concurrency
 
- The SecurityProviderImpl uses Swift's actor model to ensure thread safety and
+ Security provider implementations use Swift's actor model to ensure thread safety and
  proper isolation of mutable state. This follows the Alpha Dot Five architecture
  principles for safe concurrency.
 
@@ -54,5 +49,5 @@
 // Export public interfaces from this module
 @_exported import SecurityCoreInterfaces
 
-// Public exports
-public typealias DefaultSecurityProvider=SecurityProviderImpl
+// Note: This module provides underlying implementations for security providers.
+// Specific implementations should be created directly rather than using typealiases.

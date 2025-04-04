@@ -65,7 +65,7 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
     
     // Extract metadata and source from context
     let metadata = context.metadata
-    let source = context.source ?? "LoggingCryptoService"
+    let source = context.source
     
     // Log the beginning of the operation
     await logger.debug("Starting encryption operation", metadata: metadata, source: source)
@@ -110,7 +110,7 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
     
     // Extract metadata and source from context
     let metadata = context.metadata
-    let source = context.source ?? "LoggingCryptoService"
+    let source = context.source
     
     // Log the beginning of the operation
     await logger.debug("Starting decryption operation", metadata: metadata, source: source)
@@ -152,7 +152,7 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
     
     // Extract metadata and source from context
     let metadata = context.metadata
-    let source = context.source ?? "LoggingCryptoService"
+    let source = context.source
     
     // Log the beginning of the operation
     await logger.debug("Starting hash operation", metadata: metadata, source: source)
@@ -196,7 +196,7 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
     
     // Extract metadata and source from context
     let metadata = context.metadata
-    let source = context.source ?? "LoggingCryptoService"
+    let source = context.source
     
     // Log the beginning of the operation
     await logger.debug("Starting hash verification", metadata: metadata, source: source)
@@ -240,7 +240,7 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
     
     // Extract metadata and source from context
     let metadata = context.metadata
-    let source = context.source ?? "LoggingCryptoService"
+    let source = context.source
     
     // Log the beginning of the operation
     await logger.debug("Starting key generation", metadata: metadata, source: source)
@@ -283,7 +283,7 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
     
     // Extract metadata and source from context
     let metadata = context.metadata
-    let source = context.source ?? "LoggingCryptoService"
+    let source = context.source
     
     // Log the beginning of the operation
     await logger.debug("Starting data import", metadata: metadata, source: source)
@@ -323,7 +323,7 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
     
     // Extract metadata and source from context
     let metadata = context.metadata
-    let source = context.source ?? "LoggingCryptoService"
+    let source = context.source
     
     // Log the beginning of the operation
     await logger.debug("Starting data export", metadata: metadata, source: source)
@@ -346,48 +346,42 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
 }
 
 /**
- Context for logging crypto operations 
+ Enhanced logging context specifically for cryptographic operations.
  
- Provides structured context information for privacy-aware logging in cryptographic operations.
  Follows the Alpha Dot Five architecture guidelines for privacy-preserving logging.
  */
-private struct CryptoLogContext: LogContext {
+private struct CryptoLogContext {
   /// The domain name for the logging context
   var domainName: String
   
-  /// The source of the log message (component name)
-  var source: String?
+  /// The source component identifier
+  var source: String
   
-  /// Correlation ID for tracing related operations
+  /// The operation being performed
+  var operation: String
+  
+  /// The correlation ID for tracing
   var correlationID: String?
   
-  /// Privacy-aware metadata for the log message
-  var metadata: PrivacyMetadata = PrivacyMetadata()
+  /// Metadata collection with privacy controls
+  var metadata: PrivacyMetadata
   
-  /// Additional parameters for the log context
-  var parameters: [String: Any] = [:]
-  
-  /**
-   Initialises a new crypto logging context
-   
-   - Parameters:
-     - domainName: The domain this log belongs to
-     - source: The source component generating the log
-     - operation: The cryptographic operation being performed
-   */
-  init(domainName: String, source: String? = nil, operation: String) {
+  /// Initializes a new context with the specified metadata
+  init(
+    domainName: String,
+    source: String,
+    operation: String,
+    correlationID: String? = nil
+  ) {
     self.domainName = domainName
     self.source = source
-    self.parameters["operation"] = operation
-    
-    // Create a correlation ID for tracing related operations
-    self.correlationID = UUID().uuidString
+    self.operation = operation
+    self.correlationID = correlationID
     
     // Add operation to metadata for structured logging
-    self.metadata = PrivacyMetadata([
-      "operation": .public(operation),
-      "component": .public("CryptoServices"),
-      "correlationId": .public(self.correlationID ?? "unknown")
-    ])
+    self.metadata = PrivacyMetadata()
+    self.metadata.add(key: "operation", value: operation, privacyLevel: .public)
+    self.metadata.add(key: "component", value: "CryptoServices", privacyLevel: .public)
+    self.metadata.add(key: "correlationId", value: self.correlationID ?? "unknown", privacyLevel: .public)
   }
 }

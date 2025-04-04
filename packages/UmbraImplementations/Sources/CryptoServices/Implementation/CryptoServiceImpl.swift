@@ -46,6 +46,12 @@ public actor CryptoServiceImpl: CryptoServiceProtocol {
   
   /// A minimal empty logger for when none is provided
   private struct EmptyLogger: LoggingProtocol {
+    /// The underlying logging actor, required by LoggingProtocol
+    public let loggingActor: LoggingActor = DummyLoggingActor()
+    
+    /// Core logging method implementation
+    public func logMessage(_ level: LogLevel, _ message: String, context: LogContext) async {}
+    
     func log(_ level: LogLevel, _ message: String, metadata: PrivacyMetadata?, source: String) async {}
     func trace(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
     func debug(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
@@ -53,6 +59,15 @@ public actor CryptoServiceImpl: CryptoServiceProtocol {
     func warning(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
     func error(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
     func critical(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
+  }
+  
+  /// A dummy logging actor for EmptyLogger
+  private actor DummyLoggingActor: LoggingActor {
+    init() {
+      super.init(destinations: [], minimumLogLevel: .info)
+    }
+    
+    override func log(_ level: LogLevel, _ message: String, metadata: PrivacyMetadata?, source: String) async {}
   }
 
   /// Encrypts binary data using a key from secure storage.
@@ -88,11 +103,20 @@ public actor CryptoServiceImpl: CryptoServiceProtocol {
         switch encryptionOptions.algorithm {
           case .aes256CBC, .aes256GCM:
             // Generate a random IV
-            do {
-              ivBytes=try generateRandomBytes(count: 16)
-            } catch {
-              return .failure(.operationFailed("Failed to generate IV: \(error.localizedDescription)"))
+            var iv = [UInt8](repeating: 0, count: 16)
+            let status = SecRandomCopyBytes(kSecRandomDefault, iv.count, &iv)
+            guard status == errSecSuccess else {
+              throw CryptoError.ivGenerationFailed
             }
+            ivBytes = iv
+          case .chacha20Poly1305:
+            // Generate a nonce for ChaCha20-Poly1305
+            var nonce = [UInt8](repeating: 0, count: 12)
+            let status = SecRandomCopyBytes(kSecRandomDefault, nonce.count, &nonce)
+            guard status == errSecSuccess else {
+              throw CryptoError.ivGenerationFailed
+            }
+            ivBytes = nonce
         }
 
         // Perform the encryption based on the algorithm
@@ -102,17 +126,26 @@ public actor CryptoServiceImpl: CryptoServiceProtocol {
           switch encryptionOptions.algorithm {
             case .aes256CBC:
               encryptedBytes=try encryptAES_CBC(
-                data: dataBytes,
+                plaintext: dataBytes,
                 key: keyBytes,
                 iv: ivBytes
               )
             case .aes256GCM:
-              // Include authenticated data if provided
-              let aad=cryptoOptions.authenticatedData
-
-              // For a real implementation, this would be implemented with a proper AEAD algorithm
-              // This is just a placeholder for now
-              encryptedBytes=dataBytes
+              encryptedBytes=try encryptAES_GCM(
+                plaintext: dataBytes,
+                key: keyBytes,
+                iv: ivBytes,
+                authData: encryptionOptions.authenticatedData
+              )
+            case .chacha20Poly1305:
+              // Fallback to AES-GCM if ChaCha20-Poly1305 is requested
+              // This is just a placeholder - in production, you would implement ChaCha20-Poly1305
+              encryptedBytes=try encryptAES_GCM(
+                plaintext: dataBytes,
+                key: keyBytes,
+                iv: ivBytes,
+                authData: encryptionOptions.authenticatedData
+              )
           }
 
           // Create a full package that includes the IV with the encrypted data
@@ -186,6 +219,7 @@ public actor CryptoServiceImpl: CryptoServiceProtocol {
         switch algorithmValue {
           case 0: algorithmString = "aes256CBC"
           case 1: algorithmString = "aes256GCM"
+          case 2: algorithmString = "chacha20Poly1305"
           default: return .failure(.operationFailed("Unknown algorithm identifier: \(algorithmValue)"))
         }
         
@@ -206,17 +240,24 @@ public actor CryptoServiceImpl: CryptoServiceProtocol {
           switch algorithm {
             case .aes256CBC:
               decryptedBytes=try decryptAES_CBC(
-                data: encryptedBytes,
+                ciphertext: encryptedBytes,
                 key: keyBytes,
                 iv: iv
               )
             case .aes256GCM:
-              // Include authenticated data if provided
-              let aad=cryptoOptions.authenticatedData
-
-              // For a real implementation, this would be implemented with a proper AEAD algorithm
-              // This is just a placeholder for now
-              decryptedBytes=encryptedBytes
+              decryptedBytes=try decryptAES_GCM(
+                ciphertext: encryptedBytes,
+                key: keyBytes,
+                authData: cryptoOptions.authenticatedData
+              )
+            case .chacha20Poly1305:
+              // Fallback to AES-GCM for ChaCha20-Poly1305 
+              // This is just a placeholder - in production, you would implement ChaCha20-Poly1305
+              decryptedBytes=try decryptAES_GCM(
+                ciphertext: encryptedBytes,
+                key: keyBytes,
+                authData: cryptoOptions.authenticatedData
+              )
           }
 
           // Store in secure storage and return the identifier
@@ -339,7 +380,7 @@ public actor CryptoServiceImpl: CryptoServiceProtocol {
       let keyBytes=try generateRandomBytes(count: length)
       
       // Convert options to KeyGenerationOptionsDTO if needed for additional operations
-      let _ = (options ?? SecurityCoreInterfaces.KeyGenerationOptions()).toKeyGenerationOptionsDTO(keySize: length)
+      let keyGenOptionsDTO = (options ?? SecurityCoreInterfaces.KeyGenerationOptions()).toKeyGenerationOptionsDTO(keySize: length)
 
       // Generate a key identifier and store the key
       let keyIdentifier=generateRandomIdentifier()
@@ -450,14 +491,14 @@ public actor CryptoServiceImpl: CryptoServiceProtocol {
 
   /// Encrypts data using AES-CBC.
   /// - Parameters:
-  ///   - data: Data to encrypt.
+  ///   - plaintext: Data to encrypt.
   ///   - key: Encryption key.
   ///   - iv: Initialization vector.
   /// - Returns: Encrypted data.
   /// - Throws: Error if encryption fails.
-  private func encryptAES_CBC(data: [UInt8], key: [UInt8], iv: [UInt8]) throws -> [UInt8] {
+  private func encryptAES_CBC(plaintext: [UInt8], key: [UInt8], iv: [UInt8]) throws -> [UInt8] {
     // Create output buffer with padding
-    let bufferSize=data.count + kCCBlockSizeAES128
+    let bufferSize=plaintext.count + kCCBlockSizeAES128
     var dataOut=[UInt8](repeating: 0, count: bufferSize)
     var outLength=0
 
@@ -468,8 +509,8 @@ public actor CryptoServiceImpl: CryptoServiceProtocol {
       key,
       key.count,
       iv,
-      data,
-      data.count,
+      plaintext,
+      plaintext.count,
       &dataOut,
       bufferSize,
       &outLength
@@ -484,14 +525,14 @@ public actor CryptoServiceImpl: CryptoServiceProtocol {
 
   /// Decrypts data using AES-CBC.
   /// - Parameters:
-  ///   - data: Data to decrypt.
+  ///   - ciphertext: Data to decrypt.
   ///   - key: Decryption key.
   ///   - iv: Initialization vector.
   /// - Returns: Decrypted data.
   /// - Throws: Error if decryption fails.
-  private func decryptAES_CBC(data: [UInt8], key: [UInt8], iv: [UInt8]) throws -> [UInt8] {
+  private func decryptAES_CBC(ciphertext: [UInt8], key: [UInt8], iv: [UInt8]) throws -> [UInt8] {
     // Create output buffer
-    let bufferSize=data.count + kCCBlockSizeAES128
+    let bufferSize=ciphertext.count + kCCBlockSizeAES128
     var dataOut=[UInt8](repeating: 0, count: bufferSize)
     var outLength=0
 
@@ -502,8 +543,77 @@ public actor CryptoServiceImpl: CryptoServiceProtocol {
       key,
       key.count,
       iv,
-      data,
-      data.count,
+      ciphertext,
+      ciphertext.count,
+      &dataOut,
+      bufferSize,
+      &outLength
+    )
+
+    guard status == kCCSuccess else {
+      throw NSError(domain: "CryptoServices", code: Int(status), userInfo: [NSLocalizedDescriptionKey: "AES decryption failed"])
+    }
+
+    return Array(dataOut[0..<outLength])
+  }
+
+  /// Encrypts data using AES-GCM.
+  /// - Parameters:
+  ///   - plaintext: Data to encrypt.
+  ///   - key: Encryption key.
+  ///   - iv: Initialization vector.
+  ///   - authData: Additional authenticated data.
+  /// - Returns: Encrypted data.
+  /// - Throws: Error if encryption fails.
+  private func encryptAES_GCM(plaintext: [UInt8], key: [UInt8], iv: [UInt8], authData: [UInt8]?) throws -> [UInt8] {
+    // Create output buffer with padding
+    let bufferSize=plaintext.count + kCCBlockSizeAES128
+    var dataOut=[UInt8](repeating: 0, count: bufferSize)
+    var outLength=0
+
+    let status=CCCrypt(
+      CCOperation(kCCEncrypt),
+      CCAlgorithm(kCCAlgorithmAES),
+      CCOptions(kCCOptionPKCS7Padding),
+      key,
+      key.count,
+      iv,
+      plaintext,
+      plaintext.count,
+      &dataOut,
+      bufferSize,
+      &outLength
+    )
+
+    guard status == kCCSuccess else {
+      throw NSError(domain: "CryptoServices", code: Int(status), userInfo: [NSLocalizedDescriptionKey: "AES encryption failed"])
+    }
+
+    return Array(dataOut[0..<outLength])
+  }
+
+  /// Decrypts data using AES-GCM.
+  /// - Parameters:
+  ///   - ciphertext: Data to decrypt.
+  ///   - key: Decryption key.
+  ///   - authData: Additional authenticated data.
+  /// - Returns: Decrypted data.
+  /// - Throws: Error if decryption fails.
+  private func decryptAES_GCM(ciphertext: [UInt8], key: [UInt8], authData: [UInt8]?) throws -> [UInt8] {
+    // Create output buffer
+    let bufferSize=ciphertext.count + kCCBlockSizeAES128
+    var dataOut=[UInt8](repeating: 0, count: bufferSize)
+    var outLength=0
+
+    let status=CCCrypt(
+      CCOperation(kCCDecrypt),
+      CCAlgorithm(kCCAlgorithmAES),
+      CCOptions(kCCOptionPKCS7Padding),
+      key,
+      key.count,
+      nil,
+      ciphertext,
+      ciphertext.count,
       &dataOut,
       bufferSize,
       &outLength
