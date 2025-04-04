@@ -114,7 +114,7 @@ public actor SecureStorageActor {
     )
 
     // Create the crypto service with the specified provider type
-    cryptoService=await CryptoServicesFactory.createCryptoServiceActor(
+    cryptoService=await CryptoServiceFactory.createWithProvider(
       providerType: providerType,
       logger: logger
     )

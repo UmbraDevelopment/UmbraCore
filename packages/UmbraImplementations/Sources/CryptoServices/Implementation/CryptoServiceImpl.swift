@@ -1,7 +1,9 @@
 import CommonCrypto
 import CoreSecurityTypes
+import CryptoTypes
 import DomainSecurityTypes
 import Foundation
+import LoggingInterfaces
 import SecurityCoreInterfaces
 import UmbraErrors
 
@@ -19,7 +21,10 @@ public actor CryptoServiceImpl: CryptoServiceProtocol {
   private let options: CryptoServiceOptions
 
   /// The secure storage used for handling sensitive data
-  public let secureStorage: SecureStorageProtocol
+  public nonisolated let secureStorage: SecureStorageProtocol
+  
+  /// Logger for operations
+  private let logger: LoggingProtocol
 
   /// The key size for AES-256 keys in bytes
   private let aes256KeySize=32
@@ -27,13 +32,27 @@ public actor CryptoServiceImpl: CryptoServiceProtocol {
   /// Create a new crypto service instance
   /// - Parameters:
   ///   - options: Optional configuration options
-  ///   - secureStorage: The secure storage to use (creates a new one if not provided)
+  ///   - secureStorage: The secure storage to use for cryptographic operations
+  ///   - logger: The logger to use for recording operations
   public init(
-    options: CryptoServiceOptions=CryptoServiceOptions(),
-    secureStorage: SecureStorageProtocol?=nil
+    options: CryptoServiceOptions = CryptoServiceOptions(),
+    secureStorage: SecureStorageProtocol,
+    logger: LoggingProtocol?=nil
   ) {
     self.options=options
-    self.secureStorage=secureStorage ?? SecureStorage()
+    self.logger=logger ?? EmptyLogger()
+    self.secureStorage = secureStorage
+  }
+  
+  /// A minimal empty logger for when none is provided
+  private struct EmptyLogger: LoggingProtocol {
+    func log(_ level: LogLevel, _ message: String, metadata: PrivacyMetadata?, source: String) async {}
+    func trace(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
+    func debug(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
+    func info(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
+    func warning(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
+    func error(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
+    func critical(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
   }
 
   /// Encrypts binary data using a key from secure storage.
@@ -45,8 +64,8 @@ public actor CryptoServiceImpl: CryptoServiceProtocol {
   public func encrypt(
     dataIdentifier: String,
     keyIdentifier: String,
-    options: EncryptionOptions?
-  ) async -> Result<String, SecurityProtocolError> {
+    options: SecurityCoreInterfaces.EncryptionOptions?
+  ) async -> Result<String, SecurityStorageError> {
     // Retrieve data from secure storage
     let dataResult=await secureStorage.retrieveData(withIdentifier: dataIdentifier)
     let keyResult=await secureStorage.retrieveData(withIdentifier: keyIdentifier)
@@ -54,12 +73,15 @@ public actor CryptoServiceImpl: CryptoServiceProtocol {
     // Check for errors in retrieving data or key
     switch (dataResult, keyResult) {
       case let (.failure(error), _):
-        return .failure(.cryptoOperationFailed(underlyingError: error))
+        return .failure(error)
       case let (_, .failure(error)):
-        return .failure(.cryptoOperationFailed(underlyingError: error))
+        return .failure(error)
       case let (.success(dataBytes), .success(keyBytes)):
         // Use encryption options or defaults
-        let encryptionOptions=options ?? EncryptionOptions()
+        let encryptionOptions=options ?? SecurityCoreInterfaces.EncryptionOptions()
+        
+        // Convert to CryptoOperationOptionsDTO
+        let cryptoOptions = encryptionOptions.toCryptoOperationOptionsDTO()
 
         // Generate IV for encryption algorithms that require it
         let ivBytes: [UInt8]
@@ -69,14 +91,7 @@ public actor CryptoServiceImpl: CryptoServiceProtocol {
             do {
               ivBytes=try generateRandomBytes(count: 16)
             } catch {
-              return .failure(.cryptoOperationFailed(underlyingError: error))
-            }
-          case .chaCha20Poly1305:
-            // Generate a random nonce (12 bytes for ChaCha20Poly1305)
-            do {
-              ivBytes=try generateRandomBytes(count: 12)
-            } catch {
-              return .failure(.cryptoOperationFailed(underlyingError: error))
+              return .failure(.operationFailed("Failed to generate IV: \(error.localizedDescription)"))
             }
         }
 
@@ -93,14 +108,7 @@ public actor CryptoServiceImpl: CryptoServiceProtocol {
               )
             case .aes256GCM:
               // Include authenticated data if provided
-              let aad=encryptionOptions.authenticatedData
-
-              // For a real implementation, this would be implemented with a proper AEAD algorithm
-              // This is just a placeholder for now
-              encryptedBytes=dataBytes
-            case .chaCha20Poly1305:
-              // Include authenticated data if provided
-              let aad=encryptionOptions.authenticatedData
+              let aad=cryptoOptions.authenticatedData
 
               // For a real implementation, this would be implemented with a proper AEAD algorithm
               // This is just a placeholder for now
@@ -110,7 +118,7 @@ public actor CryptoServiceImpl: CryptoServiceProtocol {
           // Create a full package that includes the IV with the encrypted data
           // Format: [algorithm (1 byte)][iv length (1 byte)][iv (variable)][encrypted data]
           var resultBytes=[UInt8]()
-          resultBytes.append(encryptionOptions.algorithm.rawValue)
+          resultBytes.append(encryptionOptions.algorithm.rawValue.first?.asciiValue ?? 0)
           resultBytes.append(UInt8(ivBytes.count))
           resultBytes.append(contentsOf: ivBytes)
           resultBytes.append(contentsOf: encryptedBytes)
@@ -126,10 +134,10 @@ public actor CryptoServiceImpl: CryptoServiceProtocol {
             case .success:
               return .success(outputIdentifier)
             case let .failure(error):
-              return .failure(.cryptoOperationFailed(underlyingError: error))
+              return .failure(error)
           }
         } catch {
-          return .failure(.cryptoOperationFailed(underlyingError: error))
+          return .failure(.encryptionFailed)
         }
     }
   }
@@ -143,8 +151,8 @@ public actor CryptoServiceImpl: CryptoServiceProtocol {
   public func decrypt(
     encryptedDataIdentifier: String,
     keyIdentifier: String,
-    options: DecryptionOptions?
-  ) async -> Result<String, SecurityProtocolError> {
+    options: SecurityCoreInterfaces.DecryptionOptions?
+  ) async -> Result<String, SecurityStorageError> {
     // Retrieve data from secure storage
     let encryptedDataResult=await secureStorage
       .retrieveData(withIdentifier: encryptedDataIdentifier)
@@ -153,32 +161,43 @@ public actor CryptoServiceImpl: CryptoServiceProtocol {
     // Check for errors in retrieving data or key
     switch (encryptedDataResult, keyResult) {
       case let (.failure(error), _):
-        return .failure(.cryptoOperationFailed(underlyingError: error))
+        return .failure(error)
       case let (_, .failure(error)):
-        return .failure(.cryptoOperationFailed(underlyingError: error))
+        return .failure(error)
       case let (.success(encryptedPackage), .success(keyBytes)):
         // Parse the encrypted package
         // Format: [algorithm (1 byte)][iv length (1 byte)][iv (variable)][encrypted data]
         guard encryptedPackage.count >= 2 else {
-          return .failure(.invalidData)
+          return .failure(.operationFailed("Invalid encrypted data format"))
         }
 
         let algorithmValue=encryptedPackage[0]
         let ivLength=Int(encryptedPackage[1])
 
         guard encryptedPackage.count >= 2 + ivLength else {
-          return .failure(.invalidData)
+          return .failure(.operationFailed("Invalid encrypted data format: insufficient data for IV"))
         }
 
         let iv=Array(encryptedPackage[2..<(2 + ivLength)])
         let encryptedBytes=Array(encryptedPackage[(2 + ivLength)...])
 
-        guard let algorithm=EncryptionAlgorithm(rawValue: algorithmValue) else {
-          return .failure(.unsupportedAlgorithm)
+        // Convert byte value back to string for rawValue lookup
+        let algorithmString: String
+        switch algorithmValue {
+          case 0: algorithmString = "aes256CBC"
+          case 1: algorithmString = "aes256GCM"
+          default: return .failure(.operationFailed("Unknown algorithm identifier: \(algorithmValue)"))
+        }
+        
+        guard let algorithm = CoreSecurityTypes.EncryptionAlgorithm(rawValue: algorithmString) else {
+          return .failure(.operationFailed("Unsupported encryption algorithm"))
         }
 
         // Use decryption options or defaults
-        let decryptionOptions=options ?? DecryptionOptions(algorithm: algorithm)
+        let decryptionOptions = options ?? SecurityCoreInterfaces.DecryptionOptions(algorithm: algorithm)
+        
+        // Convert to CryptoOperationOptionsDTO
+        let cryptoOptions = decryptionOptions.toCryptoOperationOptionsDTO()
 
         // Perform the decryption based on the algorithm
         do {
@@ -193,21 +212,14 @@ public actor CryptoServiceImpl: CryptoServiceProtocol {
               )
             case .aes256GCM:
               // Include authenticated data if provided
-              let aad=decryptionOptions.authenticatedData
-
-              // For a real implementation, this would be implemented with a proper AEAD algorithm
-              // This is just a placeholder for now
-              decryptedBytes=encryptedBytes
-            case .chaCha20Poly1305:
-              // Include authenticated data if provided
-              let aad=decryptionOptions.authenticatedData
+              let aad=cryptoOptions.authenticatedData
 
               // For a real implementation, this would be implemented with a proper AEAD algorithm
               // This is just a placeholder for now
               decryptedBytes=encryptedBytes
           }
 
-          // Store the decrypted data in secure storage and return the identifier
+          // Store in secure storage and return the identifier
           let outputIdentifier=generateRandomIdentifier()
           let storeResult=await secureStorage.storeData(
             decryptedBytes,
@@ -218,10 +230,10 @@ public actor CryptoServiceImpl: CryptoServiceProtocol {
             case .success:
               return .success(outputIdentifier)
             case let .failure(error):
-              return .failure(.cryptoOperationFailed(underlyingError: error))
+              return .failure(error)
           }
         } catch {
-          return .failure(.cryptoOperationFailed(underlyingError: error))
+          return .failure(.decryptionFailed)
         }
     }
   }
@@ -231,37 +243,40 @@ public actor CryptoServiceImpl: CryptoServiceProtocol {
   /// - Returns: Identifier for the hash in secure storage, or an error.
   public func hash(
     dataIdentifier: String,
-    options: HashingOptions?
-  ) async -> Result<String, SecurityProtocolError> {
+    options: SecurityCoreInterfaces.HashingOptions?
+  ) async -> Result<String, SecurityStorageError> {
     // Retrieve data from secure storage
     let dataResult=await secureStorage.retrieveData(withIdentifier: dataIdentifier)
 
     switch dataResult {
       case let .failure(error):
-        return .failure(.cryptoOperationFailed(underlyingError: error))
+        return .failure(error)
       case let .success(dataBytes):
         // Use hashing options or defaults
-        let hashingOptions=options ?? HashingOptions()
+        let hashingOptions = options ?? SecurityCoreInterfaces.HashingOptions()
+        
+        // Get the hash algorithm from the options
+        let hashAlgorithm = hashingOptions.algorithm
 
         do {
           // Compute the hash
-          let hashedBytes=try computeHash(data: dataBytes, algorithm: hashingOptions.algorithm)
+          let hashBytes=try computeHash(data: dataBytes, algorithm: hashAlgorithm)
 
-          // Store the hash in secure storage and return the identifier
-          let outputIdentifier=generateRandomIdentifier()
+          // Store in secure storage and return the identifier
+          let hashIdentifier=generateRandomIdentifier()
           let storeResult=await secureStorage.storeData(
-            hashedBytes,
-            withIdentifier: outputIdentifier
+            hashBytes,
+            withIdentifier: hashIdentifier
           )
 
           switch storeResult {
             case .success:
-              return .success(outputIdentifier)
+              return .success(hashIdentifier)
             case let .failure(error):
-              return .failure(.cryptoOperationFailed(underlyingError: error))
+              return .failure(error)
           }
         } catch {
-          return .failure(.cryptoOperationFailed(underlyingError: error))
+          return .failure(.hashingFailed)
         }
     }
   }
@@ -274,8 +289,8 @@ public actor CryptoServiceImpl: CryptoServiceProtocol {
   public func verifyHash(
     dataIdentifier: String,
     hashIdentifier: String,
-    options: HashingOptions?
-  ) async -> Result<Bool, SecurityProtocolError> {
+    options: SecurityCoreInterfaces.HashingOptions?
+  ) async -> Result<Bool, SecurityStorageError> {
     // Retrieve data and expected hash from secure storage
     let dataResult=await secureStorage.retrieveData(withIdentifier: dataIdentifier)
     let expectedHashResult=await secureStorage.retrieveData(withIdentifier: hashIdentifier)
@@ -283,24 +298,29 @@ public actor CryptoServiceImpl: CryptoServiceProtocol {
     // Check for errors in retrieving data or expected hash
     switch (dataResult, expectedHashResult) {
       case let (.failure(error), _):
-        return .failure(.cryptoOperationFailed(underlyingError: error))
+        return .failure(error)
       case let (_, .failure(error)):
-        return .failure(.cryptoOperationFailed(underlyingError: error))
+        return .failure(error)
       case let (.success(dataBytes), .success(expectedHashBytes)):
         // Use hashing options or defaults
-        let hashingOptions=options ?? HashingOptions()
+        let hashingOptions = options ?? SecurityCoreInterfaces.HashingOptions()
+        
+        // Get the hash algorithm from the options
+        let hashAlgorithm = hashingOptions.algorithm
 
         do {
-          // Compute the hash of the data
-          let computedHash=try computeHash(data: dataBytes, algorithm: hashingOptions.algorithm)
+          // Compute the hash
+          let computedHashBytes=try computeHash(data: dataBytes, algorithm: hashAlgorithm)
 
-          // Compare the computed hash with the expected hash
-          let hashesMatch=computedHash.count == expectedHashBytes.count &&
-            zip(computedHash, expectedHashBytes).allSatisfy { $0 == $1 }
+          // Compare the hashes (constant-time comparison)
+          let matches=constantTimeCompare(
+            computedHashBytes,
+            expectedHashBytes
+          )
 
-          return .success(hashesMatch)
+          return .success(matches)
         } catch {
-          return .failure(.cryptoOperationFailed(underlyingError: error))
+          return .failure(.hashVerificationFailed)
         }
     }
   }
@@ -312,13 +332,16 @@ public actor CryptoServiceImpl: CryptoServiceProtocol {
   /// - Returns: Identifier for the generated key in secure storage, or an error.
   public func generateKey(
     length: Int,
-    options _: KeyGenerationOptions?
-  ) async -> Result<String, SecurityProtocolError> {
+    options: SecurityCoreInterfaces.KeyGenerationOptions?
+  ) async -> Result<String, SecurityStorageError> {
     do {
       // Generate random bytes for the key
       let keyBytes=try generateRandomBytes(count: length)
+      
+      // Convert options to KeyGenerationOptionsDTO if needed for additional operations
+      let _ = (options ?? SecurityCoreInterfaces.KeyGenerationOptions()).toKeyGenerationOptionsDTO(keySize: length)
 
-      // Store the key in secure storage and return the identifier
+      // Generate a key identifier and store the key
       let keyIdentifier=generateRandomIdentifier()
       let storeResult=await secureStorage.storeData(keyBytes, withIdentifier: keyIdentifier)
 
@@ -326,10 +349,10 @@ public actor CryptoServiceImpl: CryptoServiceProtocol {
         case .success:
           return .success(keyIdentifier)
         case let .failure(error):
-          return .failure(.cryptoOperationFailed(underlyingError: error))
+          return .failure(error)
       }
     } catch {
-      return .failure(.cryptoOperationFailed(underlyingError: error))
+      return .failure(.keyGenerationFailed)
     }
   }
 
@@ -342,19 +365,14 @@ public actor CryptoServiceImpl: CryptoServiceProtocol {
   public func importData(
     _ data: [UInt8],
     customIdentifier: String?
-  ) async -> Result<String, SecurityProtocolError> {
+  ) async -> Result<String, SecurityStorageError> {
     // Use the provided identifier or generate a random one
     let identifier=customIdentifier ?? generateRandomIdentifier()
 
-    // Store the data in secure storage
+    // Store the data
     let storeResult=await secureStorage.storeData(data, withIdentifier: identifier)
 
-    switch storeResult {
-      case .success:
-        return .success(identifier)
-      case let .failure(error):
-        return .failure(error)
-    }
+    return storeResult.map { identifier }
   }
 
   /// Exports data from secure storage.
@@ -363,75 +381,85 @@ public actor CryptoServiceImpl: CryptoServiceProtocol {
   /// - Warning: Use with caution as this exposes sensitive data.
   public func exportData(
     identifier: String
-  ) async -> Result<[UInt8], SecurityProtocolError> {
+  ) async -> Result<[UInt8], SecurityStorageError> {
     // Retrieve the data from secure storage
     await secureStorage.retrieveData(withIdentifier: identifier)
   }
 
-  // MARK: - Private Helper Methods
+  // MARK: - Utility Methods
 
-  /// Generates random bytes for cryptographic operations
-  /// - Parameter count: Number of random bytes to generate
-  /// - Returns: Array of random bytes
-  /// - Throws: CryptoServiceError if random generation fails
+  /// Generates cryptographically secure random bytes.
+  /// - Parameter count: Number of random bytes to generate.
+  /// - Returns: An array of random bytes.
+  /// - Throws: Error if generation fails.
   private func generateRandomBytes(count: Int) throws -> [UInt8] {
     var bytes=[UInt8](repeating: 0, count: count)
     let status=SecRandomCopyBytes(kSecRandomDefault, count, &bytes)
 
     guard status == errSecSuccess else {
-      throw SecurityProtocolError.randomGenerationFailed
+      throw NSError(domain: "CryptoServices", code: Int(status), userInfo: [NSLocalizedDescriptionKey: "Failed to generate random bytes"])
     }
 
     return bytes
   }
 
-  /// Generates a random identifier for secure storage
-  /// - Returns: A random identifier string
+  /// Generates a random identifier for stored data.
+  /// - Returns: A string identifier based on a UUID.
   private func generateRandomIdentifier() -> String {
-    "crypto-\(UUID().uuidString.lowercased())"
+    "cs-\(UUID().uuidString.lowercased())"
   }
 
-  /// Computes a hash of the data using the specified algorithm
+  /// Computes a hash of the data using the specified algorithm.
   /// - Parameters:
-  ///   - data: Data to hash
-  ///   - algorithm: Hash algorithm to use
-  /// - Returns: Computed hash
-  /// - Throws: CryptoServiceError if hashing fails
-  private func computeHash(data: [UInt8], algorithm: HashAlgorithm) throws -> [UInt8] {
-    // Implementation depends on algorithm
+  ///   - data: Data to hash.
+  ///   - algorithm: Hash algorithm to use.
+  /// - Returns: Hash value as bytes.
+  /// - Throws: Error if hashing fails.
+  private func computeHash(data: [UInt8], algorithm: CoreSecurityTypes.HashAlgorithm) throws -> [UInt8] {
     switch algorithm {
       case .sha256:
         var hash=[UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
         CC_SHA256(data, CC_LONG(data.count), &hash)
-        return hash
-      case .sha384:
-        var hash=[UInt8](repeating: 0, count: Int(CC_SHA384_DIGEST_LENGTH))
-        CC_SHA384(data, CC_LONG(data.count), &hash)
         return hash
       case .sha512:
         var hash=[UInt8](repeating: 0, count: Int(CC_SHA512_DIGEST_LENGTH))
         CC_SHA512(data, CC_LONG(data.count), &hash)
         return hash
       default:
-        throw SecurityProtocolError.unsupportedAlgorithm
+        throw NSError(domain: "CryptoServices", code: -1001, userInfo: [NSLocalizedDescriptionKey: "Unsupported algorithm"])
     }
   }
 
-  // MARK: - AES Encryption/Decryption Methods
-
-  /// Encrypts data using AES-CBC
+  /// Compares two byte arrays in constant time to prevent timing attacks.
   /// - Parameters:
-  ///   - data: Data to encrypt
-  ///   - key: Encryption key
-  ///   - iv: Initialization vector
-  /// - Returns: Encrypted data
-  /// - Throws: CryptoServiceError if encryption fails
+  ///   - lhs: First byte array.
+  ///   - rhs: Second byte array.
+  /// - Returns: True if arrays match, false otherwise.
+  private func constantTimeCompare(_ lhs: [UInt8], _ rhs: [UInt8]) -> Bool {
+    guard lhs.count == rhs.count else {
+      return false
+    }
+
+    var result: UInt8=0
+    for i in 0..<lhs.count {
+      result |= lhs[i] ^ rhs[i]
+    }
+
+    return result == 0
+  }
+
+  /// Encrypts data using AES-CBC.
+  /// - Parameters:
+  ///   - data: Data to encrypt.
+  ///   - key: Encryption key.
+  ///   - iv: Initialization vector.
+  /// - Returns: Encrypted data.
+  /// - Throws: Error if encryption fails.
   private func encryptAES_CBC(data: [UInt8], key: [UInt8], iv: [UInt8]) throws -> [UInt8] {
-    // Implementation of AES-CBC encryption
-    // This uses CommonCrypto
+    // Create output buffer with padding
+    let bufferSize=data.count + kCCBlockSizeAES128
+    var dataOut=[UInt8](repeating: 0, count: bufferSize)
     var outLength=0
-    var dataOutAvailable=data.count + kCCBlockSizeAES128
-    var dataOut=[UInt8](repeating: 0, count: dataOutAvailable)
 
     let status=CCCrypt(
       CCOperation(kCCEncrypt),
@@ -443,30 +471,29 @@ public actor CryptoServiceImpl: CryptoServiceProtocol {
       data,
       data.count,
       &dataOut,
-      dataOutAvailable,
+      bufferSize,
       &outLength
     )
 
     guard status == kCCSuccess else {
-      throw SecurityProtocolError.encryptionFailed
+      throw NSError(domain: "CryptoServices", code: Int(status), userInfo: [NSLocalizedDescriptionKey: "AES encryption failed"])
     }
 
     return Array(dataOut[0..<outLength])
   }
 
-  /// Decrypts data using AES-CBC
+  /// Decrypts data using AES-CBC.
   /// - Parameters:
-  ///   - data: Data to decrypt
-  ///   - key: Decryption key
-  ///   - iv: Initialization vector
-  /// - Returns: Decrypted data
-  /// - Throws: CryptoServiceError if decryption fails
+  ///   - data: Data to decrypt.
+  ///   - key: Decryption key.
+  ///   - iv: Initialization vector.
+  /// - Returns: Decrypted data.
+  /// - Throws: Error if decryption fails.
   private func decryptAES_CBC(data: [UInt8], key: [UInt8], iv: [UInt8]) throws -> [UInt8] {
-    // Implementation of AES-CBC decryption
-    // This uses CommonCrypto
+    // Create output buffer
+    let bufferSize=data.count + kCCBlockSizeAES128
+    var dataOut=[UInt8](repeating: 0, count: bufferSize)
     var outLength=0
-    var dataOutAvailable=data.count + kCCBlockSizeAES128
-    var dataOut=[UInt8](repeating: 0, count: dataOutAvailable)
 
     let status=CCCrypt(
       CCOperation(kCCDecrypt),
@@ -478,12 +505,12 @@ public actor CryptoServiceImpl: CryptoServiceProtocol {
       data,
       data.count,
       &dataOut,
-      dataOutAvailable,
+      bufferSize,
       &outLength
     )
 
     guard status == kCCSuccess else {
-      throw SecurityProtocolError.decryptionFailed
+      throw NSError(domain: "CryptoServices", code: Int(status), userInfo: [NSLocalizedDescriptionKey: "AES decryption failed"])
     }
 
     return Array(dataOut[0..<outLength])

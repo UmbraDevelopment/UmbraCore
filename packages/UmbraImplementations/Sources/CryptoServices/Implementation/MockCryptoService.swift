@@ -1,6 +1,9 @@
 import CoreSecurityTypes
+import CryptoTypes
 import DomainSecurityTypes
 import Foundation
+import LoggingInterfaces
+import LoggingServices
 import SecurityCoreInterfaces
 import UmbraErrors
 
@@ -16,14 +19,32 @@ import UmbraErrors
  */
 public actor MockCryptoService: CryptoServiceProtocol {
   /// The secure storage used for sensitive material
-  public let secureStorage: SecureStorageProtocol
+  public nonisolated let secureStorage: SecureStorageProtocol
 
   /// Record of all method calls for verification
   private(set) var callHistory: [String]=[]
 
+  /// Logger for operations
+  private let logger: LoggingProtocol
+
   /// Initialises a mock service with a new secure storage instance
-  public init(secureStorage: SecureStorageProtocol?=nil) {
-    self.secureStorage=secureStorage ?? SecureStorage()
+  public init(
+    secureStorage: SecureStorageProtocol,
+    logger: LoggingProtocol?=nil
+  ) {
+    self.logger = logger ?? EmptyLogger()
+    self.secureStorage = secureStorage
+  }
+  
+  /// A minimal empty logger for when none is provided
+  private struct EmptyLogger: LoggingProtocol {
+    func log(_ level: LogLevel, _ message: String, metadata: PrivacyMetadata?, source: String) async {}
+    func trace(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
+    func debug(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
+    func info(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
+    func warning(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
+    func error(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
+    func critical(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
   }
 
   /// Encrypts binary data using a key from secure storage (mock implementation).
@@ -35,30 +56,26 @@ public actor MockCryptoService: CryptoServiceProtocol {
   public func encrypt(
     dataIdentifier: String,
     keyIdentifier: String,
-    options _: EncryptionOptions?
-  ) async -> Result<String, SecurityProtocolError> {
-    callHistory
-      .append("encrypt(dataIdentifier: \(dataIdentifier), keyIdentifier: \(keyIdentifier))")
-
-    // For mock purposes, just return the data as-is with a new identifier
-    let dataResult=await secureStorage.retrieveData(withIdentifier: dataIdentifier)
-
-    switch dataResult {
-      case let .success(data):
-        // Create a mock result identifier
-        let resultIdentifier="mock-encrypted-\(UUID().uuidString)"
-        // Store the same data under the new identifier (this is a mock!)
-        let storeResult=await secureStorage.storeData(data, withIdentifier: resultIdentifier)
-
-        switch storeResult {
-          case .success:
-            return .success(resultIdentifier)
-          case let .failure(error):
-            return .failure(error)
-        }
-      case let .failure(error):
-        return .failure(error)
+    options: SecurityCoreInterfaces.EncryptionOptions?
+  ) async -> Result<String, SecurityStorageError> {
+    // Record this call in the history
+    callHistory.append("encrypt(\(dataIdentifier), \(keyIdentifier))")
+    
+    // For mock purposes, we'll return predictable results based on input
+    if dataIdentifier.isEmpty {
+      return .failure(.dataNotFound)
     }
+
+    if keyIdentifier.isEmpty {
+      return .failure(.keyNotFound)
+    }
+
+    // Convert our options to CryptoOperationOptionsDTO for full compatibility testing
+    let _ = (options ?? SecurityCoreInterfaces.EncryptionOptions()).toCryptoOperationOptionsDTO()
+
+    // Generate a mock encrypted identifier
+    let mockEncryptedId = "encrypted-\(dataIdentifier)-with-\(keyIdentifier)"
+    return .success(mockEncryptedId)
   }
 
   /// Decrypts binary data using a key from secure storage (mock implementation).
@@ -70,32 +87,23 @@ public actor MockCryptoService: CryptoServiceProtocol {
   public func decrypt(
     encryptedDataIdentifier: String,
     keyIdentifier: String,
-    options _: DecryptionOptions?
-  ) async -> Result<String, SecurityProtocolError> {
-    callHistory
-      .append(
-        "decrypt(encryptedDataIdentifier: \(encryptedDataIdentifier), keyIdentifier: \(keyIdentifier))"
-      )
-
-    // For mock purposes, just return the data as-is with a new identifier
-    let dataResult=await secureStorage.retrieveData(withIdentifier: encryptedDataIdentifier)
-
-    switch dataResult {
-      case let .success(data):
-        // Create a mock result identifier
-        let resultIdentifier="mock-decrypted-\(UUID().uuidString)"
-        // Store the same data under the new identifier (this is a mock!)
-        let storeResult=await secureStorage.storeData(data, withIdentifier: resultIdentifier)
-
-        switch storeResult {
-          case .success:
-            return .success(resultIdentifier)
-          case let .failure(error):
-            return .failure(error)
-        }
-      case let .failure(error):
-        return .failure(error)
+    options: SecurityCoreInterfaces.DecryptionOptions?
+  ) async -> Result<String, SecurityStorageError> {
+    // Record this call in the history
+    callHistory.append("decrypt(\(encryptedDataIdentifier), \(keyIdentifier))")
+    
+    if encryptedDataIdentifier.isEmpty || keyIdentifier.isEmpty {
+      return .failure(.operationFailed("Empty identifier"))
     }
+    
+    // Convert our options to CryptoOperationOptionsDTO for full compatibility testing
+    let _ = (options ?? SecurityCoreInterfaces.DecryptionOptions()).toCryptoOperationOptionsDTO()
+    
+    // Generate a mock decrypted identifier
+    let mockDecryptedId = "decrypted-\(encryptedDataIdentifier)-with-\(keyIdentifier)"
+    
+    // Mock success
+    return .success(mockDecryptedId)
   }
 
   /// Computes a cryptographic hash of data in secure storage (mock implementation).
@@ -103,22 +111,17 @@ public actor MockCryptoService: CryptoServiceProtocol {
   /// - Returns: Identifier for the hash in secure storage, or an error.
   public func hash(
     dataIdentifier: String,
-    options _: HashingOptions?
-  ) async -> Result<String, SecurityProtocolError> {
-    callHistory.append("hash(dataIdentifier: \(dataIdentifier))")
-
-    // For mock purposes, just create a fixed mock hash
-    let mockHash: [UInt8]=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
-    let hashIdentifier="mock-hash-\(UUID().uuidString)"
-
-    let storeResult=await secureStorage.storeData(mockHash, withIdentifier: hashIdentifier)
-
-    switch storeResult {
-      case .success:
-        return .success(hashIdentifier)
-      case let .failure(error):
-        return .failure(error)
+    options: SecurityCoreInterfaces.HashingOptions?
+  ) async -> Result<String, SecurityStorageError> {
+    // Record this call in the history
+    callHistory.append("hash(\(dataIdentifier))")
+    
+    if dataIdentifier.isEmpty {
+      return .failure(.operationFailed("Empty data identifier"))
     }
+    
+    // Mock success with an identifier that includes a hash code
+    return .success("hash-\(dataIdentifier.hashValue)")
   }
 
   /// Verifies a cryptographic hash against the expected value (mock implementation).
@@ -129,24 +132,17 @@ public actor MockCryptoService: CryptoServiceProtocol {
   public func verifyHash(
     dataIdentifier: String,
     hashIdentifier: String,
-    options _: HashingOptions?
-  ) async -> Result<Bool, SecurityProtocolError> {
-    callHistory
-      .append("verifyHash(dataIdentifier: \(dataIdentifier), hashIdentifier: \(hashIdentifier))")
-
-    // Check if the identifiers exist
-    let dataResult=await secureStorage.retrieveData(withIdentifier: dataIdentifier)
-    let hashResult=await secureStorage.retrieveData(withIdentifier: hashIdentifier)
-
-    switch (dataResult, hashResult) {
-      case (.success, .success):
-        // For mock purposes, always return true
-        return .success(true)
-      case let (.failure(error), _):
-        return .failure(error)
-      case let (_, .failure(error)):
-        return .failure(error)
+    options: SecurityCoreInterfaces.HashingOptions?
+  ) async -> Result<Bool, SecurityStorageError> {
+    // Record this call in the history
+    callHistory.append("verifyHash(\(dataIdentifier), \(hashIdentifier))")
+    
+    if dataIdentifier.isEmpty || hashIdentifier.isEmpty {
+      return .failure(.operationFailed("Empty identifier"))
     }
+    
+    // Always return success for mocking purposes
+    return .success(true)
   }
 
   /// Generates a cryptographic key and stores it securely (mock implementation).
@@ -156,25 +152,22 @@ public actor MockCryptoService: CryptoServiceProtocol {
   /// - Returns: Identifier for the generated key in secure storage, or an error.
   public func generateKey(
     length: Int,
-    options _: KeyGenerationOptions?
-  ) async -> Result<String, SecurityProtocolError> {
-    callHistory.append("generateKey(length: \(length))")
-
-    // Create a mock key of the requested length
-    let mockKey=Array(repeating: UInt8(0), count: length)
-    let keyIdentifier="mock-key-\(UUID().uuidString)"
-
-    let storeResult=await secureStorage.storeData(mockKey, withIdentifier: keyIdentifier)
-
-    switch storeResult {
-      case .success:
-        return .success(keyIdentifier)
-      case let .failure(error):
-        return .failure(error)
+    options: SecurityCoreInterfaces.KeyGenerationOptions?
+  ) async -> Result<String, SecurityStorageError> {
+    // Record this call in the history
+    callHistory.append("generateKey(\(length))")
+    
+    if length <= 0 {
+      return .failure(.operationFailed("Invalid key length"))
     }
+    
+    // Mock key generation
+    let keyIdentifier = "key-\(UUID().uuidString.prefix(8))-\(length)"
+    
+    return .success(keyIdentifier)
   }
 
-  /// Imports data into secure storage for cryptographic operations (mock implementation).
+  /// Imports data into mock secure storage.
   /// - Parameters:
   ///   - data: The raw data to store securely.
   ///   - customIdentifier: Optional custom identifier for the data.
@@ -182,31 +175,36 @@ public actor MockCryptoService: CryptoServiceProtocol {
   public func importData(
     _ data: [UInt8],
     customIdentifier: String?
-  ) async -> Result<String, SecurityProtocolError> {
-    let identifier=customIdentifier ?? "mock-import-\(UUID().uuidString)"
-    callHistory
-      .append(
-        "importData(bytes: \(data.count), customIdentifier: \(String(describing: customIdentifier)))"
-      )
-
-    let storeResult=await secureStorage.storeData(data, withIdentifier: identifier)
-
-    switch storeResult {
-      case .success:
-        return .success(identifier)
-      case let .failure(error):
-        return .failure(error)
+  ) async -> Result<String, SecurityStorageError> {
+    // Record this call in the history
+    callHistory.append("importData(\(data.count) bytes)")
+    
+    if data.isEmpty {
+      return .failure(.operationFailed("Empty data cannot be imported"))
     }
+
+    let identifier = customIdentifier ?? "data-\(UUID().uuidString.prefix(8))"
+    
+    // Actually store in the secure storage for demonstration
+    let storeResult = await secureStorage.storeData(data, withIdentifier: identifier)
+    
+    return storeResult.map { identifier }
   }
 
-  /// Exports data from secure storage (mock implementation).
+  /// Exports data from mock secure storage.
   /// - Parameter identifier: The identifier of the data to export.
   /// - Returns: The raw data, or an error.
   public func exportData(
     identifier: String
-  ) async -> Result<[UInt8], SecurityProtocolError> {
-    callHistory.append("exportData(identifier: \(identifier))")
-
+  ) async -> Result<[UInt8], SecurityStorageError> {
+    // Record this call in the history
+    callHistory.append("exportData(\(identifier))")
+    
+    if identifier.isEmpty {
+      return .failure(.operationFailed("Empty identifier"))
+    }
+    
+    // Try to retrieve from secure storage
     return await secureStorage.retrieveData(withIdentifier: identifier)
   }
 }

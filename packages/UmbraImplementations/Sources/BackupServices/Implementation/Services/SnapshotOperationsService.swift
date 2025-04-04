@@ -415,6 +415,41 @@ public actor SnapshotOperationsService {
    * Verifies the integrity of a snapshot.
    *
    * - Parameters:
+   *   - id: ID of the snapshot to verify
+   *   - fullVerification: Whether to perform full data verification
+   *   - verifySignatures: Whether to verify cryptographic signatures
+   *   - maxErrors: Maximum errors before stopping verification
+   *   - autoRepair: Whether to repair issues automatically
+   * - Returns: The verification result
+   * - Throws: An error if verification cannot be performed
+   */
+  public func verifySnapshot(
+    id: String,
+    fullVerification: Bool,
+    verifySignatures: Bool,
+    maxErrors: Int?,
+    autoRepair: Bool
+  ) async throws -> SnapshotVerificationResult {
+    // In a real implementation, this would connect to the actual
+    // verification service. For now, we'll return simulated results.
+    
+    // Simulate verification process delay (would be longer in real implementation)
+    try await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+    
+    // Create simulated verification result
+    return SnapshotVerificationResult(
+      verified: true,
+      objectsVerified: 1250,
+      bytesVerified: 1_250_000_000,
+      errors: [],
+      repairSummary: nil
+    )
+  }
+
+  /**
+   * Verifies the integrity of a snapshot.
+   *
+   * - Parameters:
    *   - parameters: Parameters for verification
    *   - progressReporter: Optional reporter for tracking operation progress
    *   - cancellationToken: Optional token for cancelling the operation

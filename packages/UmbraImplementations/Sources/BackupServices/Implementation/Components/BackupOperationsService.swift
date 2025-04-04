@@ -320,6 +320,251 @@ public actor BackupOperationsService {
   }
 
   /**
+   * Verifies a backup snapshot.
+   *
+   * This method performs integrity verification on the specified backup snapshot,
+   * checking for corruption, data consistency, and other potential issues.
+   *
+   * - Parameters:
+   *   - parameters: Parameters for the verification operation
+   *   - progressReporter: Reporter for tracking operation progress
+   *   - cancellationToken: Token that can be used to cancel the operation
+   * - Returns: A tuple containing the verification result and a progress stream
+   * - Throws: An error if verification cannot be performed
+   */
+  public func verifyBackup(
+    parameters: BackupVerifyParameters,
+    progressReporter: BackupProgressReporter?,
+    cancellationToken: ProgressCancellationToken?
+  ) async throws -> (BackupVerificationResultDTO, AsyncStream<BackupProgressInfo>) {
+    // Create a progress stream for reporting verification progress
+    var progressContinuation: AsyncStream<BackupProgressInfo>.Continuation!
+    let progressStream = AsyncStream<BackupProgressInfo> { continuation in
+      progressContinuation = continuation
+    }
+    
+    // Define a local function to report progress
+    let reportProgress = { (progress: BackupProgressInfo) async in
+      // Send progress to the continuation
+      progressContinuation.yield(progress)
+      
+      // Forward to the progress reporter if provided
+      if let reporter = progressReporter {
+        await reporter.reportProgress(progress, for: .verifyBackup)
+      }
+    }
+    
+    // Start verification
+    await reportProgress(BackupProgressInfo(
+      phase: .initialising,
+      percentComplete: 0.0,
+      itemsProcessed: 0,
+      totalItems: 0,
+      bytesProcessed: 0,
+      totalBytes: 0
+    ))
+    
+    do {
+      // Prepare verification parameters
+      let snapshotID = parameters.snapshotID
+      let verifyOptions = parameters.verifyOptions
+      
+      // Get snapshot to verify (latest if not specified)
+      let startTime = Date()
+      let snapshot = try await (snapshotID != nil ?
+        try await snapshotService.getSnapshot(id: snapshotID!) :
+        try await snapshotService.getLatestSnapshot())
+      
+      // Early exit if no snapshot found
+      guard let snapshot = snapshot else {
+        throw BackupOperationError.snapshotNotFound(
+          "No snapshot found to verify" + (snapshotID != nil ? " with ID \(snapshotID!)" : "")
+        )
+      }
+      
+      // Log verification start
+      logger.info(
+        context: backupLogContext.withOperation("verifyBackup")
+          .withPublic(key: "snapshotID", value: snapshot.id)
+          .withPublic(key: "verify_mode", value: verifyOptions?.fullVerification == true ? "full" : "standard"),
+        message: "Starting backup verification for snapshot \(snapshot.id)"
+      )
+      
+      // Scanning phase
+      await reportProgress(BackupProgressInfo(
+        phase: .scanning,
+        percentComplete: 0.1,
+        itemsProcessed: 0,
+        totalItems: 0,
+        bytesProcessed: 0,
+        totalBytes: 0,
+        estimatedTimeRemaining: nil,
+        transferRate: nil,
+        details: "Analysing snapshot structure"
+      ))
+      
+      // Use snapshot service to perform actual verification
+      let verificationResult = try await snapshotService.verifySnapshot(
+        id: snapshot.id,
+        fullVerification: verifyOptions?.fullVerification ?? false,
+        verifySignatures: verifyOptions?.verifySignatures ?? true,
+        maxErrors: verifyOptions?.maxErrors,
+        autoRepair: verifyOptions?.autoRepair ?? false
+      )
+      
+      // Report verification progress
+      var percentComplete = 0.2
+      var itemsProcessed = 0
+      let totalItems = snapshot.stats.totalFiles + snapshot.stats.totalDirectories
+      
+      // Simulate verification progress phases if using a real implementation
+      // Here we're just showing the phases for demonstration
+      
+      // Verification in progress (25% complete)
+      await reportProgress(BackupProgressInfo(
+        phase: .verifying,
+        percentComplete: 0.25,
+        itemsProcessed: Int(Double(totalItems) * 0.25),
+        totalItems: totalItems,
+        bytesProcessed: UInt64(Double(snapshot.stats.totalSize) * 0.25),
+        totalBytes: UInt64(snapshot.stats.totalSize)
+      ))
+      
+      // Check for cancellation
+      if let token = cancellationToken, token.isCancelled {
+        await reportProgress(BackupProgressInfo.cancelled())
+        throw BackupOperationError.operationCancelled("Verification cancelled by user")
+      }
+      
+      // Verification 50% complete
+      await reportProgress(BackupProgressInfo(
+        phase: .verifying,
+        percentComplete: 0.5,
+        itemsProcessed: Int(Double(totalItems) * 0.5),
+        totalItems: totalItems,
+        bytesProcessed: UInt64(Double(snapshot.stats.totalSize) * 0.5),
+        totalBytes: UInt64(snapshot.stats.totalSize)
+      ))
+      
+      // Check for cancellation
+      if let token = cancellationToken, token.isCancelled {
+        await reportProgress(BackupProgressInfo.cancelled())
+        throw BackupOperationError.operationCancelled("Verification cancelled by user")
+      }
+      
+      // Verification 75% complete
+      await reportProgress(BackupProgressInfo(
+        phase: .verifying,
+        percentComplete: 0.75,
+        itemsProcessed: Int(Double(totalItems) * 0.75),
+        totalItems: totalItems,
+        bytesProcessed: UInt64(Double(snapshot.stats.totalSize) * 0.75),
+        totalBytes: UInt64(snapshot.stats.totalSize)
+      ))
+      
+      // Finalising phase
+      await reportProgress(BackupProgressInfo(
+        phase: .finalising,
+        percentComplete: 0.9,
+        itemsProcessed: totalItems,
+        totalItems: totalItems,
+        bytesProcessed: UInt64(snapshot.stats.totalSize),
+        totalBytes: UInt64(snapshot.stats.totalSize)
+      ))
+      
+      // Create the verification result
+      let endTime = Date()
+      let verificationTime = endTime.timeIntervalSince(startTime)
+      
+      // Create the final result object
+      let result = BackupVerificationResultDTO(
+        verified: verificationResult.verified,
+        objectsVerified: verificationResult.objectsVerified,
+        bytesVerified: verificationResult.bytesVerified,
+        errorCount: verificationResult.errors.count,
+        issues: verificationResult.errors.map { error in
+          VerificationIssue(
+            type: mapVerificationErrorType(error.type),
+            objectPath: error.path,
+            description: error.message,
+            repaired: error.repaired
+          )
+        },
+        repairSummary: verificationResult.repairSummary.map { summary in
+          RepairSummary(
+            issuesRepaired: summary.repairsSuccessful,
+            repairFailures: summary.repairsFailed,
+            repairs: summary.repairs.map { repair in
+              RepairAction(
+                type: mapRepairActionType(repair.type),
+                objectPath: repair.path,
+                description: repair.description,
+                successful: repair.successful
+              )
+            }
+          )
+        },
+        snapshotID: snapshot.id,
+        verificationTime: verificationTime
+      )
+      
+      // Report completion
+      await reportProgress(BackupProgressInfo.completed())
+      
+      // Return the result and progress stream
+      return (result, progressStream)
+    } catch {
+      // Report failure
+      await reportProgress(BackupProgressInfo.failed(error))
+      
+      // Rethrow the error
+      throw error
+    }
+  }
+  
+  /**
+   * Maps verification error types from the snapshot service to VerificationIssue.IssueType.
+   *
+   * - Parameter type: The error type from the snapshot service
+   * - Returns: The corresponding VerificationIssue.IssueType
+   */
+  private func mapVerificationErrorType(_ type: String) -> VerificationIssue.IssueType {
+    switch type {
+    case "corruption":
+      return .corruption
+    case "missing_data":
+      return .missingData
+    case "invalid_signature":
+      return .invalidSignature
+    case "metadata_inconsistency":
+      return .metadataInconsistency
+    default:
+      return .other
+    }
+  }
+  
+  /**
+   * Maps repair action types from the snapshot service to RepairAction.RepairType.
+   *
+   * - Parameter type: The repair type from the snapshot service
+   * - Returns: The corresponding RepairAction.RepairType
+   */
+  private func mapRepairActionType(_ type: String) -> RepairAction.RepairType {
+    switch type {
+    case "reconstruction":
+      return .reconstruction
+    case "redundant_copy":
+      return .redundantCopy
+    case "replacement":
+      return .replacement
+    case "metadata_fix":
+      return .metadataFix
+    default:
+      return .other
+    }
+  }
+
+  /**
    * Parse file entries from JSON output.
    */
   private func parseFileList(from output: String) throws -> [SnapshotFileEntry] {

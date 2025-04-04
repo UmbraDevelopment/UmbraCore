@@ -7,6 +7,8 @@ import LoggingServices
 import SecurityCoreInterfaces
 import SecurityInterfaces // Temporary, until we fully migrate SecureStorageConfig
 import UmbraErrors
+import CoreSecurityTypes
+import CryptoActorImplementations // Import actor implementations directly
 
 /**
  # CryptoServiceFactory
@@ -16,136 +18,267 @@ import UmbraErrors
  of providing asynchronous factory methods that return actor-based
  implementations.
 
- ## Usage Example
+ This is the canonical factory for all cryptographic service implementations
+ in the UmbraCore project, consolidating functionality previously split between
+ multiple factory implementations.
 
+ ## Usage Examples
+
+ ### Standard Implementation
  ```swift
  // Create a default implementation
- let cryptoService = await CryptoServiceFactory.createDefault()
+ let cryptoService = await CryptoServiceFactory.createDefault(secureStorage: mySecureStorage)
 
  // Create a service with custom secure logger
  let customService = await CryptoServiceFactory.createDefaultService(
+   secureStorage: mySecureStorage,
    secureLogger: mySecureLogger
  )
+ ```
 
+ ### Security Provider-Specific Implementations
+ ```swift
+ // Create a service with a specific provider type
+ let cryptoService = await CryptoServiceFactory.createWithProvider(
+   providerType: .cryptoKit,
+   logger: myLogger
+ )
+ ```
+
+ ### Logging and Testing Implementations
+ ```swift
  // Create a logging implementation
  let loggingService = await CryptoServiceFactory.createLoggingDecorator(
    wrapped: cryptoService,
    logger: myLogger,
    secureLogger: mySecureLogger
  )
+
+ // Create a mock implementation for testing
+ let mockService = await CryptoServiceFactory.createMock()
  ```
  */
 public enum CryptoServiceFactory {
+  // MARK: - Standard Implementations
+
   /**
-   Creates a default implementation of CryptoServiceProtocol.
+   Creates a default crypto service implementation.
 
-   This implementation uses the Alpha Dot Five architecture principles,
-   providing robust security capabilities with proper isolation and privacy-aware logging.
-
-   - Returns: A CryptoServiceProtocol implementation with secure logging enabled
+   - Parameter secureStorage: Optional secure storage service to use
+   - Returns: A CryptoServiceProtocol implementation
    */
-  public static func createDefault() async -> CryptoServiceProtocol {
-    await createDefaultService()
+  public static func createDefault(
+    secureStorage: SecureStorageProtocol? = nil
+  ) async -> CryptoServiceProtocol {
+    await createDefaultService(secureStorage: secureStorage)
   }
 
   /**
-   Creates a default implementation of CryptoServiceProtocol with optional custom loggers.
-
-   This implementation provides full cryptographic capabilities following
-   the Alpha Dot Five architecture with proper privacy controls for logging.
+   Creates a standard crypto service implementation with custom loggers.
 
    - Parameters:
-     - logger: Optional logger for standard logging (a default will be created if nil)
-     - secureLogger: Optional secure logger for privacy-aware logging (a default will be created if nil)
-   - Returns: A DefaultCryptoServiceImpl instance with configured loggers
+     - secureStorage: Optional secure storage service to use
+     - logger: Logger for operations
+     - secureLogger: Privacy-aware secure logger for sensitive operations
+   - Returns: A CryptoServiceProtocol implementation
    */
   public static func createDefaultService(
-    logger: LoggingProtocol?=nil,
-    secureLogger: SecureLoggerActor?=nil
+    secureStorage: SecureStorageProtocol? = nil,
+    logger: LoggingProtocol? = nil,
+    secureLogger: PrivacyAwareLoggingProtocol? = nil
   ) async -> CryptoServiceProtocol {
-    // Create a secure logger if not provided
-    let actualSecureLogger=secureLogger ?? await LoggingServices.createSecureLogger(
-      category: "CryptoOperations"
+    let actualLogger = logger ?? DefaultLogger(subsystem: "com.umbra.crypto", category: "CryptoService")
+    let actualSecureLogger = secureLogger
+    
+    let service = await DefaultCryptoServiceImpl(
+      secureStorage: secureStorage,
+      logger: actualLogger
     )
-
-    return await DefaultCryptoServiceImpl(
-      logger: logger,
-      secureLogger: actualSecureLogger
-    )
+    
+    if let actualSecureLogger = actualSecureLogger {
+      // Create enhanced privacy-aware logging implementation
+      return await EnhancedLoggingCryptoServiceImpl(
+        wrapped: service,
+        logger: actualLogger,
+        secureLogger: actualSecureLogger
+      )
+    } else {
+      // Create standard logging implementation
+      return await LoggingCryptoServiceImpl(
+        wrapped: service,
+        logger: actualLogger
+      )
+    }
   }
 
   /**
-   Creates a mock implementation of CryptoServiceProtocol.
+   Creates a high security crypto service implementation.
 
-   This implementation is useful for testing and does not perform
-   actual cryptographic operations.
+   - Parameters:
+     - secureStorage: Optional secure storage service to use
+     - logger: Logger for operations
+   - Returns: A CryptoServiceProtocol implementation with enhanced security
+   */
+  public static func createHighSecurityService(
+    secureStorage: SecureStorageProtocol? = nil,
+    logger: LoggingProtocol? = nil
+  ) async -> CryptoServiceProtocol {
+    let actualLogger = logger ?? DefaultLogger(subsystem: "com.umbra.crypto", category: "HighSecurityCryptoService")
+    
+    // Create secure service with enhanced parameters
+    let service = await SecureCryptoServiceImpl(
+      wrapped: await DefaultCryptoServiceImpl(
+        secureStorage: secureStorage,
+        logger: actualLogger,
+        options: CryptoServiceOptions(
+          defaultIterations: 10000, // Higher iteration count for PBKDF2
+          enforceStrongKeys: true
+        )
+      ),
+      logger: actualLogger
+    )
+    
+    return await LoggingCryptoServiceImpl(
+      wrapped: service,
+      logger: actualLogger
+    )
+  }
+  
+  // MARK: - Provider-Specific Implementations
+  
+  /**
+   Creates a new crypto service with the specified provider type.
+   The implementation follows the actor-based concurrency model of the
+   Alpha Dot Five architecture.
 
-   - Parameter configuration: Configuration options for the mock
+   - Parameters:
+      - providerType: The type of security provider to use
+      - logger: Logger for recording operations
+   - Returns: A new actor-based implementation of CryptoServiceProtocol
+   */
+  public static func createWithProvider(
+    providerType: SecurityProviderType,
+    logger: LoggingProtocol? = nil
+  ) async -> CryptoServiceProtocol {
+    let actualLogger = logger ?? DefaultLogger(subsystem: "com.umbra.crypto", category: "CryptoService")
+    
+    // Create the secure storage first
+    let storageURL = URL(fileURLWithPath: NSTemporaryDirectory())
+      .appendingPathComponent("UmbraSecureStorage", isDirectory: true)
+      .appendingPathComponent(UUID().uuidString)
+    
+    let secureStorage = await createSecureStorage(
+      providerType: providerType,
+      storageURL: storageURL,
+      logger: actualLogger
+    )
+    
+    // Create the provider registry
+    let providerRegistry = await createProviderRegistry(logger: actualLogger)
+    
+    // Create a crypto service implementation using the actor-based model
+    // The CryptoServiceActor is imported directly from CryptoActorImplementations
+    let cryptoService = await CryptoServiceActor(
+      providerRegistry: providerRegistry,
+      secureStorage: secureStorage,
+      logger: actualLogger
+    )
+    
+    // Return the actor as the protocol type
+    return cryptoService
+  }
+  
+  /**
+   Creates a new secure storage service for key management.
+   The implementation follows the actor-based concurrency model of the
+   Alpha Dot Five architecture.
+
+   - Parameters:
+      - providerType: The type of security provider to use
+      - storageURL: Custom URL for key storage
+      - logger: Logger for recording operations
+   - Returns: A new secure storage implementation
+   */
+  public static func createSecureStorage(
+    providerType: SecurityProviderType,
+    storageURL: URL,
+    logger: LoggingProtocol
+  ) async -> SecureStorageProtocol {
+    // Create secure storage actor with the specified parameters
+    // SecureStorageActor is imported directly from CryptoActorImplementations
+    return SecureStorageActor(
+      providerType: providerType,
+      storageURL: storageURL,
+      logger: logger
+    )
+  }
+  
+  /**
+   Creates a new provider registry for managing security providers.
+   The implementation follows the actor-based concurrency model of the
+   Alpha Dot Five architecture.
+
+   - Parameter logger: Logger for recording operations
+   - Returns: A new provider registry implementation
+   */
+  public static func createProviderRegistry(
+    logger: LoggingProtocol
+  ) async -> ProviderRegistryProtocol {
+    // Create provider registry actor
+    // ProviderRegistryActor is imported directly from CryptoActorImplementations
+    return ProviderRegistryActor(
+      logger: logger
+    )
+  }
+
+  // MARK: - Testing & Logging Implementations
+
+  /**
+   Creates a mock implementation of CryptoServiceProtocol for testing.
+
+   - Parameters:
+     - configuration: Configuration for the mock service
+     - logger: Logger for operations
    - Returns: A mock CryptoServiceProtocol implementation
    */
   public static func createMock(
-    configuration: MockCryptoServiceImpl.Configuration = .init()
+    configuration: MockCryptoServiceImpl.Configuration = .init(),
+    logger: LoggingProtocol? = nil
   ) async -> CryptoServiceProtocol {
-    await MockCryptoServiceImpl(configuration: configuration)
-  }
-
-  /**
-   Creates a secure implementation that stores sensitive data in secure storage.
-
-   This implementation enhances security by storing sensitive data in secure storage
-   rather than keeping it in memory, reducing exposure to memory-based attacks.
-
-   - Parameters:
-     - wrapped: Optional base implementation (a default will be created if nil)
-     - secureStorage: Secure storage implementation
-     - secureLogger: Optional secure logger for privacy-aware logging
-   - Returns: A secure CryptoServiceProtocol implementation
-   */
-  public static func createSecureService(
-    wrapped: CryptoServiceProtocol?=nil,
-    secureStorage: SecureStorageProtocol,
-    secureLogger: SecureLoggerActor?=nil
-  ) async -> CryptoServiceProtocol {
-    let baseImplementation=wrapped ?? await createDefaultService()
-    let actualSecureLogger=secureLogger ?? await LoggingServices.createSecureLogger(
-      category: "SecureCryptoService"
-    )
-
-    // Pass secure logger to SecureCryptoServiceImpl when it supports it
-    return await SecureCryptoServiceImpl(
-      wrapped: baseImplementation,
-      secureStorage: secureStorage
+    let actualLogger = logger ?? DefaultLogger(subsystem: "com.umbra.crypto", category: "MockCryptoService")
+    
+    return await MockCryptoServiceImpl(
+      configuration: configuration,
+      logger: actualLogger
     )
   }
 
   /**
-   Creates a logging decorator for any CryptoServiceProtocol implementation.
-
-   This logs all cryptographic operations before delegating to the wrapped implementation.
-   When a secure logger is provided, it uses privacy-aware logging for sensitive operations.
+   Creates a logging decorator around any CryptoServiceProtocol implementation.
 
    - Parameters:
-     - wrapped: The implementation to wrap
-     - logger: The logger to use for standard logging
-     - secureLogger: Optional secure logger for privacy-aware logging
-   - Returns: A logging decorator for the wrapped implementation
+     - wrapped: The implementation to wrap with logging
+     - logger: Logger for operations
+     - secureLogger: Optional secure logger for sensitive data
+   - Returns: A CryptoServiceProtocol implementation with logging
    */
   public static func createLoggingDecorator(
     wrapped: CryptoServiceProtocol,
     logger: LoggingProtocol,
-    secureLogger: SecureLoggerActor?=nil
+    secureLogger: PrivacyAwareLoggingProtocol? = nil
   ) async -> CryptoServiceProtocol {
-    // If secure logger is provided, create enhanced logging implementation
-    if let secureLogger {
+    if let secureLogger = secureLogger {
       return await EnhancedLoggingCryptoServiceImpl(
         wrapped: wrapped,
         logger: logger,
         secureLogger: secureLogger
       )
+    } else {
+      return await LoggingCryptoServiceImpl(
+        wrapped: wrapped,
+        logger: logger
+      )
     }
-
-    // Fall back to standard logging implementation
-    return await LoggingCryptoServiceImpl(wrapped: wrapped, logger: logger)
   }
 }
 
@@ -159,104 +292,176 @@ public enum CryptoServiceFactory {
 public actor MockCryptoServiceImpl: CryptoServiceProtocol {
   /// Configuration options for the mock
   public struct Configuration: Sendable {
-    /// Whether encryption should succeed
-    public let encryptionShouldSucceed: Bool
-    /// Whether decryption should succeed
-    public let decryptionShouldSucceed: Bool
-    /// Whether hashing should succeed
-    public let hashingShouldSucceed: Bool
-    /// Whether hash verification should succeed
-    public let hashVerificationShouldSucceed: Bool
-    /// Whether key derivation should succeed
-    public let keyDerivationShouldSucceed: Bool
-    /// Whether random generation should succeed
-    public let randomGenerationShouldSucceed: Bool
-    /// Whether HMAC generation should succeed
-    public let hmacGenerationShouldSucceed: Bool
-
-    /// Initialize with default values or customize behavior
+    /// Whether encryption operations should succeed
+    public let encryptionSucceeds: Bool
+    
+    /// Whether decryption operations should succeed
+    public let decryptionSucceeds: Bool
+    
+    /// Whether hash operations should succeed
+    public let hashingSucceeds: Bool
+    
+    /// Whether verification operations should succeed
+    public let verificationSucceeds: Bool
+    
+    /// Whether key generation operations should succeed
+    public let keyGenerationSucceeds: Bool
+    
+    /// Whether data import operations should succeed
+    public let dataImportSucceeds: Bool
+    
+    /// Whether data export operations should succeed
+    public let dataExportSucceeds: Bool
+    
+    /// Initialise with default configuration (all operations succeed)
     public init(
-      encryptionShouldSucceed: Bool=true,
-      decryptionShouldSucceed: Bool=true,
-      hashingShouldSucceed: Bool=true,
-      hashVerificationShouldSucceed: Bool=true,
-      keyDerivationShouldSucceed: Bool=true,
-      randomGenerationShouldSucceed: Bool=true,
-      hmacGenerationShouldSucceed: Bool=true
+      encryptionSucceeds: Bool = true,
+      decryptionSucceeds: Bool = true,
+      hashingSucceeds: Bool = true,
+      verificationSucceeds: Bool = true,
+      keyGenerationSucceeds: Bool = true,
+      dataImportSucceeds: Bool = true,
+      dataExportSucceeds: Bool = true
     ) {
-      self.encryptionShouldSucceed=encryptionShouldSucceed
-      self.decryptionShouldSucceed=decryptionShouldSucceed
-      self.hashingShouldSucceed=hashingShouldSucceed
-      self.hashVerificationShouldSucceed=hashVerificationShouldSucceed
-      self.keyDerivationShouldSucceed=keyDerivationShouldSucceed
-      self.randomGenerationShouldSucceed=randomGenerationShouldSucceed
-      self.hmacGenerationShouldSucceed=hmacGenerationShouldSucceed
+      self.encryptionSucceeds = encryptionSucceeds
+      self.decryptionSucceeds = decryptionSucceeds
+      self.hashingSucceeds = hashingSucceeds
+      self.verificationSucceeds = verificationSucceeds
+      self.keyGenerationSucceeds = keyGenerationSucceeds
+      self.dataImportSucceeds = dataImportSucceeds
+      self.dataExportSucceeds = dataExportSucceeds
     }
   }
-
-  /// The mock configuration
+  
+  /// The mock secure storage
+  public nonisolated let secureStorage: SecureStorageProtocol
+  
+  /// The configuration for this mock
   private let configuration: Configuration
-
+  
   /// Initialize with specific configuration
-  public init(configuration: Configuration=Configuration()) {
-    self.configuration=configuration
+  public init(
+    secureStorage: SecureStorageProtocol,
+    configuration: Configuration=Configuration()
+  ) {
+    self.secureStorage = secureStorage
+    self.configuration = configuration
   }
-
+  
+  /// Encrypts binary data using a key from secure storage.
+  /// - Parameters:
+  ///   - dataIdentifier: Identifier of the data to encrypt in secure storage.
+  ///   - keyIdentifier: Identifier of the encryption key in secure storage.
+  ///   - options: Optional encryption configuration.
+  /// - Returns: Identifier for the encrypted data in secure storage, or an error.
   public func encrypt(
-    data: [UInt8],
-    using _: [UInt8]
-  ) async -> Result<[UInt8], SecurityProtocolError> {
-    guard configuration.encryptionShouldSucceed else {
-      return .failure(.operationFailed("Mock encryption configured to fail"))
+    dataIdentifier: String,
+    keyIdentifier: String,
+    options: EncryptionOptions?
+  ) async -> Result<String, SecurityStorageError> {
+    if configuration.encryptionSucceeds {
+      return .success("mock_encrypted_\(UUID().uuidString)")
+    } else {
+      return .failure(.operationFailed(reason: "Mock encryption failure"))
     }
-
-    // Create a mock encrypted result
-    let encryptedData=[UInt8](
-      repeating: 0x42,
-      count: data.count + 16
-    ) // Add 16 bytes for mock IV/padding
-
-    return .success(encryptedData)
   }
-
+  
+  /// Decrypts binary data using a key from secure storage.
+  /// - Parameters:
+  ///   - encryptedDataIdentifier: Identifier of the encrypted data in secure storage.
+  ///   - keyIdentifier: Identifier of the decryption key in secure storage.
+  ///   - options: Optional decryption configuration.
+  /// - Returns: Identifier for the decrypted data in secure storage, or an error.
   public func decrypt(
-    data: [UInt8],
-    using _: [UInt8]
-  ) async -> Result<[UInt8], SecurityProtocolError> {
-    guard configuration.decryptionShouldSucceed else {
-      return .failure(.operationFailed("Mock decryption configured to fail"))
+    encryptedDataIdentifier: String,
+    keyIdentifier: String,
+    options: DecryptionOptions?
+  ) async -> Result<String, SecurityStorageError> {
+    if configuration.decryptionSucceeds {
+      return .success("mock_decrypted_\(UUID().uuidString)")
+    } else {
+      return .failure(.operationFailed(reason: "Mock decryption failure"))
     }
-
-    // Create a mock decrypted result
-    let decryptedData=[UInt8](repeating: 0x41, count: max(
-      0,
-      data.count - 16
-    )) // Remove 16 bytes for mock IV/padding
-
-    return .success(decryptedData)
   }
-
-  public func hash(data _: [UInt8]) async -> Result<[UInt8], SecurityProtocolError> {
-    guard configuration.hashingShouldSucceed else {
-      return .failure(.operationFailed("Mock hashing configured to fail"))
+  
+  /// Computes a cryptographic hash of data in secure storage.
+  /// - Parameter dataIdentifier: Identifier of the data to hash in secure storage.
+  /// - Returns: Identifier for the hash in secure storage, or an error.
+  public func hash(
+    dataIdentifier: String,
+    options: HashingOptions?
+  ) async -> Result<String, SecurityStorageError> {
+    if configuration.hashingSucceeds {
+      return .success("mock_hash_\(UUID().uuidString)")
+    } else {
+      return .failure(.operationFailed(reason: "Mock hashing failure"))
     }
-
-    // Create a mock hash (fixed length of 32 bytes for SHA-256)
-    let hash=[UInt8](repeating: 0x43, count: 32)
-
-    return .success(hash)
   }
-
+  
+  /// Verifies a cryptographic hash against the expected value, both stored securely.
+  /// - Parameters:
+  ///   - dataIdentifier: Identifier of the data to verify in secure storage.
+  ///   - hashIdentifier: Identifier of the expected hash in secure storage.
+  /// - Returns: `true` if the hash matches, `false` if not, or an error.
   public func verifyHash(
-    data _: [UInt8],
-    expectedHash _: [UInt8]
-  ) async -> Result<Bool, SecurityProtocolError> {
-    guard configuration.hashVerificationShouldSucceed else {
-      return .failure(.operationFailed("Mock hash verification configured to fail"))
+    dataIdentifier: String,
+    hashIdentifier: String,
+    options: HashingOptions?
+  ) async -> Result<Bool, SecurityStorageError> {
+    if configuration.verificationSucceeds {
+      return .success(true)
+    } else {
+      return .failure(.operationFailed(reason: "Mock verification failure"))
     }
-
-    // Always return true for successful verification in mock
-    return .success(true)
+  }
+  
+  /// Generates a cryptographic key and stores it securely.
+  /// - Parameters:
+  ///   - length: The length of the key to generate in bytes.
+  ///   - options: Optional key generation configuration.
+  /// - Returns: Identifier for the generated key in secure storage, or an error.
+  public func generateKey(
+    length: Int,
+    options: KeyGenerationOptions?
+  ) async -> Result<String, SecurityStorageError> {
+    if configuration.keyGenerationSucceeds {
+      return .success("mock_key_\(UUID().uuidString)")
+    } else {
+      return .failure(.operationFailed(reason: "Mock key generation failure"))
+    }
+  }
+  
+  /// Imports data into secure storage for use with cryptographic operations.
+  /// - Parameters:
+  ///   - data: The raw data to store securely.
+  ///   - customIdentifier: Optional custom identifier for the data. If nil, a random identifier is
+  /// generated.
+  /// - Returns: The identifier for the data in secure storage, or an error.
+  public func importData(
+    _ data: [UInt8],
+    customIdentifier: String?
+  ) async -> Result<String, SecurityStorageError> {
+    if configuration.dataImportSucceeds {
+      let identifier = customIdentifier ?? "mock_imported_\(UUID().uuidString)"
+      return .success(identifier)
+    } else {
+      return .failure(.operationFailed(reason: "Mock data import failure"))
+    }
+  }
+  
+  /// Exports data from secure storage.
+  /// - Parameter identifier: The identifier of the data to export.
+  /// - Returns: The raw data, or an error.
+  /// - Warning: Use with caution as this exposes sensitive data.
+  public func exportData(
+    identifier: String
+  ) async -> Result<[UInt8], SecurityStorageError> {
+    if configuration.dataExportSucceeds {
+      // Return some mock data
+      return .success([1, 2, 3, 4, 5])
+    } else {
+      return .failure(.dataNotFound(identifier: identifier))
+    }
   }
 }
 
@@ -550,320 +755,455 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
   /// The wrapped implementation
   private let wrapped: CryptoServiceProtocol
 
-  /// The standard logger
-  private let logger: LoggingProtocol
+  /// Enhanced privacy-aware logger
+  private let logger: PrivacyAwareLoggingProtocol
 
-  /// The secure logger for privacy-aware logging
-  private let secureLogger: SecureLoggerActor
+  /// The secure storage used for handling sensitive data
+  public nonisolated var secureStorage: SecureStorageProtocol {
+    wrapped.secureStorage
+  }
 
   /**
-   Initialises a new enhanced logging crypto service.
+   Initialise with a wrapped implementation and privacy-aware logger
 
    - Parameters:
-     - wrapped: The implementation to wrap
-     - logger: The standard logger
-     - secureLogger: The secure logger for privacy-aware logging
+     - wrapped: The implementation to delegate to
+     - logger: Privacy-aware logger for secure logging
    */
-  public init(
-    wrapped: CryptoServiceProtocol,
-    logger: LoggingProtocol,
-    secureLogger: SecureLoggerActor
-  ) {
-    self.wrapped=wrapped
-    self.logger=logger
-    self.secureLogger=secureLogger
+  public init(wrapped: CryptoServiceProtocol, logger: PrivacyAwareLoggingProtocol) {
+    self.wrapped = wrapped
+    self.logger = logger
   }
 
+  /**
+   Encrypts binary data using a key from secure storage.
+   - Parameters:
+     - dataIdentifier: Identifier of the data to encrypt in secure storage.
+     - keyIdentifier: Identifier of the encryption key in secure storage.
+     - options: Optional encryption configuration.
+   - Returns: Identifier for the encrypted data in secure storage, or an error.
+   */
   public func encrypt(
-    data: [UInt8],
-    using key: [UInt8]
-  ) async -> Result<[UInt8], SecurityProtocolError> {
-    await logger.debug(
-      "EnhancedLoggingCryptoService: Encrypting data of size \(data.count) with key of size \(key.count)",
-      metadata: nil,
-      source: "EnhancedLoggingCryptoService"
-    )
-
-    // Log with privacy tagging
-    await secureLogger.securityEvent(
-      action: "Encryption",
-      status: .success,
-      subject: nil,
-      resource: nil,
-      additionalMetadata: [
-        "dataSize": PrivacyTaggedValue(value: data.count, privacyLevel: .public),
-        "keySize": PrivacyTaggedValue(value: key.count, privacyLevel: .public),
-        "operation": PrivacyTaggedValue(value: "start", privacyLevel: .public)
+    dataIdentifier: String,
+    keyIdentifier: String,
+    options: EncryptionOptions?
+  ) async -> Result<String, SecurityStorageError> {
+    // Create an enhanced log context with proper privacy tags
+    let context = createEnhancedLogContext(
+      operation: "encrypt",
+      identifiers: [
+        "dataIdentifier": PrivacyLevel.private,
+        "keyIdentifier": PrivacyLevel.private
       ]
     )
 
-    let startTime=Date()
-    let result=await wrapped.encrypt(data: data, using: key)
-    let duration=Date().timeIntervalSince(startTime)
+    // Log operation start with privacy controls
+    await logger.debug("Starting encryption operation", context: context)
 
+    // Perform the operation
+    let result = await wrapped.encrypt(
+      dataIdentifier: dataIdentifier,
+      keyIdentifier: keyIdentifier,
+      options: options
+    )
+
+    // Log the result with appropriate privacy controls
     switch result {
-      case let .success(encryptedData):
-        await logger.info(
-          "EnhancedLoggingCryptoService: Encryption succeeded in \(duration) seconds",
-          metadata: nil,
-          source: "EnhancedLoggingCryptoService"
-        )
-
-        // Log success with privacy tagging
-        await secureLogger.securityEvent(
-          action: "Encryption",
-          status: .success,
-          subject: nil,
-          resource: nil,
-          additionalMetadata: [
-            "dataSize": PrivacyTaggedValue(value: data.count, privacyLevel: .public),
-            "resultSize": PrivacyTaggedValue(value: encryptedData.count, privacyLevel: .public),
-            "durationMs": PrivacyTaggedValue(value: Int(duration * 1000), privacyLevel: .public),
-            "operation": PrivacyTaggedValue(value: "complete", privacyLevel: .public)
-          ]
-        )
-
-      case let .failure(error):
-        await logger.error(
-          "EnhancedLoggingCryptoService: Encryption failed in \(duration) seconds: \(error.localizedDescription)",
-          metadata: nil,
-          source: "EnhancedLoggingCryptoService"
-        )
-
-        // Log failure with privacy tagging
-        await secureLogger.securityEvent(
-          action: "Encryption",
-          status: .failed,
-          subject: nil,
-          resource: nil,
-          additionalMetadata: [
-            "error": PrivacyTaggedValue(value: error.localizedDescription, privacyLevel: .public),
-            "errorCode": PrivacyTaggedValue(value: String(describing: error),
-                                            privacyLevel: .public),
-            "durationMs": PrivacyTaggedValue(value: Int(duration * 1000), privacyLevel: .public)
-          ]
-        )
+    case .success(let identifier):
+      var resultContext = context
+      resultContext.metadata.add(
+        key: "resultIdentifier",
+        value: LogMetadataDTO(stringValue: identifier, privacyLevel: .private)
+      )
+      await logger.info("Encryption completed successfully", context: resultContext)
+      return .success(identifier)
+    case .failure(let error):
+      var errorContext = context
+      errorContext.metadata.add(
+        key: "error",
+        value: LogMetadataDTO(stringValue: error.localizedDescription, privacyLevel: .public)
+      )
+      await logger.error("Encryption failed: \(error.localizedDescription)", context: errorContext)
+      return .failure(error)
     }
-
-    return result
   }
 
+  /**
+   Decrypts binary data using a key from secure storage.
+   - Parameters:
+     - encryptedDataIdentifier: Identifier of the encrypted data in secure storage.
+     - keyIdentifier: Identifier of the decryption key in secure storage.
+     - options: Optional decryption configuration.
+   - Returns: Identifier for the decrypted data in secure storage, or an error.
+   */
   public func decrypt(
-    data: [UInt8],
-    using key: [UInt8]
-  ) async -> Result<[UInt8], SecurityProtocolError> {
-    await logger.debug(
-      "EnhancedLoggingCryptoService: Decrypting data of size \(data.count) with key of size \(key.count)",
-      metadata: nil,
-      source: "EnhancedLoggingCryptoService"
-    )
-
-    // Log with privacy tagging
-    await secureLogger.securityEvent(
-      action: "Decryption",
-      status: .success,
-      subject: nil,
-      resource: nil,
-      additionalMetadata: [
-        "dataSize": PrivacyTaggedValue(value: data.count, privacyLevel: .public),
-        "keySize": PrivacyTaggedValue(value: key.count, privacyLevel: .public),
-        "operation": PrivacyTaggedValue(value: "start", privacyLevel: .public)
+    encryptedDataIdentifier: String,
+    keyIdentifier: String,
+    options: DecryptionOptions?
+  ) async -> Result<String, SecurityStorageError> {
+    // Create an enhanced log context with proper privacy tags
+    let context = createEnhancedLogContext(
+      operation: "decrypt",
+      identifiers: [
+        "encryptedDataIdentifier": PrivacyLevel.private,
+        "keyIdentifier": PrivacyLevel.private
       ]
     )
 
-    let startTime=Date()
-    let result=await wrapped.decrypt(data: data, using: key)
-    let duration=Date().timeIntervalSince(startTime)
+    // Log operation start with privacy controls
+    await logger.debug("Starting decryption operation", context: context)
 
-    switch result {
-      case let .success(decryptedData):
-        await logger.info(
-          "EnhancedLoggingCryptoService: Decryption succeeded in \(duration) seconds",
-          metadata: nil,
-          source: "EnhancedLoggingCryptoService"
-        )
-
-        // Log success with privacy tagging
-        await secureLogger.securityEvent(
-          action: "Decryption",
-          status: .success,
-          subject: nil,
-          resource: nil,
-          additionalMetadata: [
-            "dataSize": PrivacyTaggedValue(value: data.count, privacyLevel: .public),
-            "resultSize": PrivacyTaggedValue(value: decryptedData.count, privacyLevel: .public),
-            "durationMs": PrivacyTaggedValue(value: Int(duration * 1000), privacyLevel: .public),
-            "operation": PrivacyTaggedValue(value: "complete", privacyLevel: .public)
-          ]
-        )
-
-      case let .failure(error):
-        await logger.error(
-          "EnhancedLoggingCryptoService: Decryption failed in \(duration) seconds: \(error.localizedDescription)",
-          metadata: nil,
-          source: "EnhancedLoggingCryptoService"
-        )
-
-        // Log failure with privacy tagging
-        await secureLogger.securityEvent(
-          action: "Decryption",
-          status: .failed,
-          subject: nil,
-          resource: nil,
-          additionalMetadata: [
-            "error": PrivacyTaggedValue(value: error.localizedDescription, privacyLevel: .public),
-            "errorCode": PrivacyTaggedValue(value: String(describing: error),
-                                            privacyLevel: .public),
-            "durationMs": PrivacyTaggedValue(value: Int(duration * 1000), privacyLevel: .public)
-          ]
-        )
-    }
-
-    return result
-  }
-
-  public func hash(data: [UInt8]) async -> Result<[UInt8], SecurityProtocolError> {
-    await logger.debug(
-      "EnhancedLoggingCryptoService: Hashing data of size \(data.count)",
-      metadata: nil,
-      source: "EnhancedLoggingCryptoService"
+    // Perform the operation
+    let result = await wrapped.decrypt(
+      encryptedDataIdentifier: encryptedDataIdentifier,
+      keyIdentifier: keyIdentifier,
+      options: options
     )
 
-    // Log with privacy tagging
-    await secureLogger.securityEvent(
-      action: "Hash",
-      status: .success,
-      subject: nil,
-      resource: nil,
-      additionalMetadata: [
-        "dataSize": PrivacyTaggedValue(value: data.count, privacyLevel: .public),
-        "operation": PrivacyTaggedValue(value: "start", privacyLevel: .public)
+    // Log the result with appropriate privacy controls
+    switch result {
+    case .success(let identifier):
+      var resultContext = context
+      resultContext.metadata.add(
+        key: "resultIdentifier",
+        value: LogMetadataDTO(stringValue: identifier, privacyLevel: .private)
+      )
+      await logger.info("Decryption completed successfully", context: resultContext)
+      return .success(identifier)
+    case .failure(let error):
+      var errorContext = context
+      errorContext.metadata.add(
+        key: "error",
+        value: LogMetadataDTO(stringValue: error.localizedDescription, privacyLevel: .public)
+      )
+      await logger.error("Decryption failed: \(error.localizedDescription)", context: errorContext)
+      return .failure(error)
+    }
+  }
+
+  /**
+   Computes a cryptographic hash of data in secure storage.
+   - Parameter dataIdentifier: Identifier of the data to hash in secure storage.
+   - Returns: Identifier for the hash in secure storage, or an error.
+   */
+  public func hash(
+    dataIdentifier: String,
+    options: HashingOptions?
+  ) async -> Result<String, SecurityStorageError> {
+    // Create an enhanced log context with proper privacy tags
+    let context = createEnhancedLogContext(
+      operation: "hash",
+      identifiers: [
+        "dataIdentifier": PrivacyLevel.private
       ]
     )
 
-    let startTime=Date()
-    let result=await wrapped.hash(data: data)
-    let duration=Date().timeIntervalSince(startTime)
+    // Log operation start with privacy controls
+    await logger.debug("Starting hash operation", context: context)
 
+    // Perform the operation
+    let result = await wrapped.hash(
+      dataIdentifier: dataIdentifier,
+      options: options
+    )
+
+    // Log the result with appropriate privacy controls
     switch result {
-      case let .success(hash):
-        await logger.info(
-          "EnhancedLoggingCryptoService: Hashing succeeded in \(duration) seconds",
-          metadata: nil,
-          source: "EnhancedLoggingCryptoService"
-        )
-
-        // Log success with privacy tagging
-        await secureLogger.securityEvent(
-          action: "Hash",
-          status: .success,
-          subject: nil,
-          resource: nil,
-          additionalMetadata: [
-            "dataSize": PrivacyTaggedValue(value: data.count, privacyLevel: .public),
-            "hashSize": PrivacyTaggedValue(value: hash.count, privacyLevel: .public),
-            "durationMs": PrivacyTaggedValue(value: Int(duration * 1000), privacyLevel: .public),
-            "operation": PrivacyTaggedValue(value: "complete", privacyLevel: .public)
-          ]
-        )
-
-      case let .failure(error):
-        await logger.error(
-          "EnhancedLoggingCryptoService: Hashing failed in \(duration) seconds: \(error.localizedDescription)",
-          metadata: nil,
-          source: "EnhancedLoggingCryptoService"
-        )
-
-        // Log failure with privacy tagging
-        await secureLogger.securityEvent(
-          action: "Hash",
-          status: .failed,
-          subject: nil,
-          resource: nil,
-          additionalMetadata: [
-            "error": PrivacyTaggedValue(value: error.localizedDescription, privacyLevel: .public),
-            "errorCode": PrivacyTaggedValue(value: String(describing: error),
-                                            privacyLevel: .public),
-            "durationMs": PrivacyTaggedValue(value: Int(duration * 1000), privacyLevel: .public)
-          ]
-        )
+    case .success(let identifier):
+      var resultContext = context
+      resultContext.metadata.add(
+        key: "resultIdentifier",
+        value: LogMetadataDTO(stringValue: identifier, privacyLevel: .private)
+      )
+      await logger.info("Hash operation completed successfully", context: resultContext)
+      return .success(identifier)
+    case .failure(let error):
+      var errorContext = context
+      errorContext.metadata.add(
+        key: "error",
+        value: LogMetadataDTO(stringValue: error.localizedDescription, privacyLevel: .public)
+      )
+      await logger.error("Hash operation failed: \(error.localizedDescription)", context: errorContext)
+      return .failure(error)
     }
-
-    return result
   }
 
+  /**
+   Verifies a cryptographic hash against the expected value, both stored securely.
+   - Parameters:
+     - dataIdentifier: Identifier of the data to verify in secure storage.
+     - hashIdentifier: Identifier of the expected hash in secure storage.
+   - Returns: `true` if the hash matches, `false` if not, or an error.
+   */
   public func verifyHash(
-    data: [UInt8],
-    matches expectedHash: [UInt8]
-  ) async -> Result<Bool, SecurityProtocolError> {
-    await logger.debug(
-      "EnhancedLoggingCryptoService: Verifying hash for data of size \(data.count)",
-      metadata: nil,
-      source: "EnhancedLoggingCryptoService"
-    )
-
-    // Log with privacy tagging
-    await secureLogger.securityEvent(
-      action: "HashVerification",
-      status: .success,
-      subject: nil,
-      resource: nil,
-      additionalMetadata: [
-        "dataSize": PrivacyTaggedValue(value: data.count, privacyLevel: .public),
-        "hashSize": PrivacyTaggedValue(value: expectedHash.count, privacyLevel: .public),
-        "operation": PrivacyTaggedValue(value: "start", privacyLevel: .public)
+    dataIdentifier: String,
+    hashIdentifier: String,
+    options: HashingOptions?
+  ) async -> Result<Bool, SecurityStorageError> {
+    // Create an enhanced log context with proper privacy tags
+    let context = createEnhancedLogContext(
+      operation: "verifyHash",
+      identifiers: [
+        "dataIdentifier": PrivacyLevel.private,
+        "hashIdentifier": PrivacyLevel.private
       ]
     )
 
-    let startTime=Date()
-    let result=await wrapped.verifyHash(data: data, matches: expectedHash)
-    let duration=Date().timeIntervalSince(startTime)
+    // Log operation start with privacy controls
+    await logger.debug("Starting hash verification", context: context)
 
+    // Perform the operation
+    let result = await wrapped.verifyHash(
+      dataIdentifier: dataIdentifier,
+      hashIdentifier: hashIdentifier,
+      options: options
+    )
+
+    // Log the result with appropriate privacy controls
     switch result {
-      case let .success(verified):
-        await logger.info(
-          "EnhancedLoggingCryptoService: Hash verification succeeded in \(duration) seconds, result: \(verified)",
-          metadata: nil,
-          source: "EnhancedLoggingCryptoService"
-        )
+    case .success(let verified):
+      var resultContext = context
+      resultContext.metadata.add(
+        key: "verified",
+        value: LogMetadataDTO(stringValue: String(verified), privacyLevel: .public)
+      )
+      let status = verified ? "verified" : "failed verification"
+      await logger.info("Hash verification completed: \(status)", context: resultContext)
+      return .success(verified)
+    case .failure(let error):
+      var errorContext = context
+      errorContext.metadata.add(
+        key: "error",
+        value: LogMetadataDTO(stringValue: error.localizedDescription, privacyLevel: .public)
+      )
+      await logger.error("Hash verification failed: \(error.localizedDescription)", context: errorContext)
+      return .failure(error)
+    }
+  }
 
-        // Log success with privacy tagging
-        await secureLogger.securityEvent(
-          action: "HashVerification",
-          status: .success,
-          subject: nil,
-          resource: nil,
-          additionalMetadata: [
-            "result": PrivacyTaggedValue(value: verified ? "verified" : "mismatch",
-                                         privacyLevel: .public),
-            "durationMs": PrivacyTaggedValue(value: Int(duration * 1000), privacyLevel: .public),
-            "operation": PrivacyTaggedValue(value: "complete", privacyLevel: .public)
-          ]
-        )
+  /**
+   Generates a cryptographic key and stores it securely.
+   - Parameters:
+     - length: The length of the key to generate in bytes.
+     - options: Optional key generation configuration.
+   - Returns: Identifier for the generated key in secure storage, or an error.
+   */
+  public func generateKey(
+    length: Int,
+    options: KeyGenerationOptions?
+  ) async -> Result<String, SecurityStorageError> {
+    // Create an enhanced log context with proper privacy tags
+    let context = createEnhancedLogContext(
+      operation: "generateKey",
+      identifiers: [:]
+    )
 
-      case let .failure(error):
-        await logger.error(
-          "EnhancedLoggingCryptoService: Hash verification failed in \(duration) seconds: \(error.localizedDescription)",
-          metadata: nil,
-          source: "EnhancedLoggingCryptoService"
-        )
+    // Add key length with public privacy level
+    context.metadata.add(
+      key: "keyLength",
+      value: LogMetadataDTO(stringValue: String(length), privacyLevel: .public)
+    )
 
-        // Log failure with privacy tagging
-        await secureLogger.securityEvent(
-          action: "HashVerification",
-          status: .failed,
-          subject: nil,
-          resource: nil,
-          additionalMetadata: [
-            "error": PrivacyTaggedValue(value: error.localizedDescription, privacyLevel: .public),
-            "errorCode": PrivacyTaggedValue(value: String(describing: error),
-                                            privacyLevel: .public),
-            "durationMs": PrivacyTaggedValue(value: Int(duration * 1000), privacyLevel: .public)
-          ]
-        )
+    // Log operation start with privacy controls
+    await logger.debug("Starting key generation", context: context)
+
+    // Perform the operation
+    let result = await wrapped.generateKey(
+      length: length,
+      options: options
+    )
+
+    // Log the result with appropriate privacy controls
+    switch result {
+    case .success(let identifier):
+      var resultContext = context
+      resultContext.metadata.add(
+        key: "keyIdentifier",
+        value: LogMetadataDTO(stringValue: identifier, privacyLevel: .private)
+      )
+      await logger.info("Key generation completed successfully", context: resultContext)
+      return .success(identifier)
+    case .failure(let error):
+      var errorContext = context
+      errorContext.metadata.add(
+        key: "error",
+        value: LogMetadataDTO(stringValue: error.localizedDescription, privacyLevel: .public)
+      )
+      await logger.error("Key generation failed: \(error.localizedDescription)", context: errorContext)
+      return .failure(error)
+    }
+  }
+
+  /**
+   Imports data into secure storage for use with cryptographic operations.
+   - Parameters:
+     - data: The raw data to store securely.
+     - customIdentifier: Optional custom identifier for the data. If nil, a random identifier is
+   generated.
+   - Returns: The identifier for the data in secure storage, or an error.
+   */
+  public func importData(
+    _ data: [UInt8],
+    customIdentifier: String?
+  ) async -> Result<String, SecurityStorageError> {
+    // Create an enhanced log context with proper privacy tags
+    let context = createEnhancedLogContext(
+      operation: "importData",
+      identifiers: [:]
+    )
+
+    // Add data size with public privacy level
+    context.metadata.add(
+      key: "dataSize",
+      value: LogMetadataDTO(stringValue: String(data.count), privacyLevel: .public)
+    )
+
+    if let customIdentifier = customIdentifier {
+      context.metadata.add(
+        key: "customIdentifier",
+        value: LogMetadataDTO(stringValue: customIdentifier, privacyLevel: .private)
+      )
     }
 
-    return result
+    // Log operation start with privacy controls
+    await logger.debug("Starting data import", context: context)
+
+    // Perform the operation
+    let result = await wrapped.importData(
+      data,
+      customIdentifier: customIdentifier
+    )
+
+    // Log the result with appropriate privacy controls
+    switch result {
+    case .success(let identifier):
+      var resultContext = context
+      resultContext.metadata.add(
+        key: "resultIdentifier",
+        value: LogMetadataDTO(stringValue: identifier, privacyLevel: .private)
+      )
+      await logger.info("Data import completed successfully", context: resultContext)
+      return .success(identifier)
+    case .failure(let error):
+      var errorContext = context
+      errorContext.metadata.add(
+        key: "error",
+        value: LogMetadataDTO(stringValue: error.localizedDescription, privacyLevel: .public)
+      )
+      await logger.error("Data import failed: \(error.localizedDescription)", context: errorContext)
+      return .failure(error)
+    }
+  }
+
+  /**
+   Exports data from secure storage.
+   - Parameter identifier: The identifier of the data to export.
+   - Returns: The raw data, or an error.
+   - Warning: Use with caution as this exposes sensitive data.
+   */
+  public func exportData(
+    identifier: String
+  ) async -> Result<[UInt8], SecurityStorageError> {
+    // Create an enhanced log context with proper privacy tags
+    let context = createEnhancedLogContext(
+      operation: "exportData",
+      identifiers: [
+        "identifier": PrivacyLevel.private
+      ]
+    )
+
+    // Log operation start with privacy controls
+    await logger.debug("Starting data export", context: context)
+
+    // Log warning about data exposure
+    await logger.warning(
+      "Exporting data from secure storage exposes sensitive material",
+      context: context
+    )
+
+    // Perform the operation
+    let result = await wrapped.exportData(
+      identifier: identifier
+    )
+
+    // Log the result with appropriate privacy controls
+    switch result {
+    case .success(let data):
+      var resultContext = context
+      resultContext.metadata.add(
+        key: "dataSize",
+        value: LogMetadataDTO(stringValue: String(data.count), privacyLevel: .public)
+      )
+      await logger.info("Data export completed successfully", context: resultContext)
+      return .success(data)
+    case .failure(let error):
+      var errorContext = context
+      errorContext.metadata.add(
+        key: "error",
+        value: LogMetadataDTO(stringValue: error.localizedDescription, privacyLevel: .public)
+      )
+      await logger.error("Data export failed: \(error.localizedDescription)", context: errorContext)
+      return .failure(error)
+    }
+  }
+
+  // MARK: - Private Helper Methods
+
+  /**
+   Creates an enhanced log context with privacy controls for security operations
+
+   - Parameters:
+     - operation: The cryptographic operation being performed
+     - identifiers: Dictionary of identifiers and their privacy levels
+   - Returns: A LogContextDTO with proper privacy settings
+   */
+  private func createEnhancedLogContext(
+    operation: String,
+    identifiers: [String: PrivacyLevel]
+  ) -> EnhancedCryptoLogContext {
+    var context = EnhancedCryptoLogContext(
+      domainName: "CryptoServices",
+      source: "EnhancedCryptoService",
+      operation: operation
+    )
+
+    // Add operation with public privacy level
+    context.metadata.add(
+      key: "operation",
+      value: LogMetadataDTO(stringValue: operation, privacyLevel: .public)
+    )
+
+    // Add identifiers with their specified privacy levels
+    for (key, privacyLevel) in identifiers {
+      context.metadata.add(
+        key: key,
+        value: LogMetadataDTO(stringValue: "sensitive", privacyLevel: privacyLevel)
+      )
+    }
+
+    return context
+  }
+}
+
+/**
+ Enhanced log context for crypto operations with privacy controls
+ */
+private struct EnhancedCryptoLogContext: LogContextDTO {
+  var domainName: String
+  var source: String?
+  var correlationID: String?
+  var metadata: LogMetadataDTOCollection = LogMetadataDTOCollection()
+
+  init(domainName: String, source: String?, operation: String) {
+    self.domainName = domainName
+    self.source = source
+    self.correlationID = UUID().uuidString
+  }
+
+  func withUpdatedMetadata(_ metadata: LogMetadataDTOCollection) -> EnhancedCryptoLogContext {
+    var updated = self
+    updated.metadata = metadata
+    return updated
   }
 }
 
@@ -883,216 +1223,129 @@ public actor SecureCryptoServiceImpl: CryptoServiceProtocol {
     wrapped.secureStorage
   }
 
-  /**
-   Initialises a new secure crypto service with an optional wrapped implementation.
+  /// Secure logger for enhanced privacy tracking
+  private let logger: LoggingProtocol
 
-   - Parameter wrapped: The underlying implementation to use (defaults to a standard one)
+  /**
+   Initialise with a wrapped implementation and logger
+
+   - Parameters:
+     - wrapped: The implementation to delegate to
+     - logger: Logger for tracking operations
    */
-  public init(wrapped: CryptoServiceProtocol?=nil) async {
-    if let wrapped {
-      self.wrapped=wrapped
-    } else {
-      self.wrapped=await MockCryptoServiceImpl()
-    }
+  public init(wrapped: CryptoServiceProtocol, logger: LoggingProtocol) {
+    self.wrapped = wrapped
+    self.logger = logger
   }
 
   // MARK: - Protocol Implementation
 
+  /// Encrypts binary data using a key from secure storage.
+  /// - Parameters:
+  ///   - dataIdentifier: Identifier of the data to encrypt in secure storage.
+  ///   - keyIdentifier: Identifier of the encryption key in secure storage.
+  ///   - options: Optional encryption configuration.
+  /// - Returns: Identifier for the encrypted data in secure storage, or an error.
   public func encrypt(
     dataIdentifier: String,
     keyIdentifier: String,
     options: EncryptionOptions?
-  ) async -> Result<String, SecurityProtocolError> {
-    await wrapped.encrypt(
+  ) async -> Result<String, SecurityStorageError> {
+    return await wrapped.encrypt(
       dataIdentifier: dataIdentifier,
       keyIdentifier: keyIdentifier,
       options: options
     )
   }
 
+  /// Decrypts binary data using a key from secure storage.
+  /// - Parameters:
+  ///   - encryptedDataIdentifier: Identifier of the encrypted data in secure storage.
+  ///   - keyIdentifier: Identifier of the decryption key in secure storage.
+  ///   - options: Optional decryption configuration.
+  /// - Returns: Identifier for the decrypted data in secure storage, or an error.
   public func decrypt(
     encryptedDataIdentifier: String,
     keyIdentifier: String,
     options: DecryptionOptions?
-  ) async -> Result<String, SecurityProtocolError> {
-    await wrapped.decrypt(
+  ) async -> Result<String, SecurityStorageError> {
+    return await wrapped.decrypt(
       encryptedDataIdentifier: encryptedDataIdentifier,
       keyIdentifier: keyIdentifier,
       options: options
     )
   }
 
+  /// Computes a cryptographic hash of data in secure storage.
+  /// - Parameter dataIdentifier: Identifier of the data to hash in secure storage.
+  /// - Returns: Identifier for the hash in secure storage, or an error.
   public func hash(
     dataIdentifier: String,
     options: HashingOptions?
-  ) async -> Result<String, SecurityProtocolError> {
-    await wrapped.hash(
+  ) async -> Result<String, SecurityStorageError> {
+    return await wrapped.hash(
       dataIdentifier: dataIdentifier,
       options: options
     )
   }
 
+  /// Verifies a cryptographic hash against the expected value, both stored securely.
+  /// - Parameters:
+  ///   - dataIdentifier: Identifier of the data to verify in secure storage.
+  ///   - hashIdentifier: Identifier of the expected hash in secure storage.
+  /// - Returns: `true` if the hash matches, `false` if not, or an error.
   public func verifyHash(
     dataIdentifier: String,
     hashIdentifier: String,
     options: HashingOptions?
-  ) async -> Result<Bool, SecurityProtocolError> {
-    await wrapped.verifyHash(
+  ) async -> Result<Bool, SecurityStorageError> {
+    return await wrapped.verifyHash(
       dataIdentifier: dataIdentifier,
       hashIdentifier: hashIdentifier,
       options: options
     )
   }
 
+  /// Generates a cryptographic key and stores it securely.
+  /// - Parameters:
+  ///   - length: The length of the key to generate in bytes.
+  ///   - options: Optional key generation configuration.
+  /// - Returns: Identifier for the generated key in secure storage, or an error.
   public func generateKey(
     length: Int,
     options: KeyGenerationOptions?
-  ) async -> Result<String, SecurityProtocolError> {
-    await wrapped.generateKey(
+  ) async -> Result<String, SecurityStorageError> {
+    return await wrapped.generateKey(
       length: length,
       options: options
     )
   }
 
+  /// Imports data into secure storage for use with cryptographic operations.
+  /// - Parameters:
+  ///   - data: The raw data to store securely.
+  ///   - customIdentifier: Optional custom identifier for the data. If nil, a random identifier is
+  /// generated.
+  /// - Returns: The identifier for the data in secure storage, or an error.
   public func importData(
     _ data: [UInt8],
     customIdentifier: String?
-  ) async -> Result<String, SecurityProtocolError> {
-    await wrapped.importData(
+  ) async -> Result<String, SecurityStorageError> {
+    return await wrapped.importData(
       data,
       customIdentifier: customIdentifier
     )
   }
 
+  /// Exports data from secure storage.
+  /// - Parameter identifier: The identifier of the data to export.
+  /// - Returns: The raw data, or an error.
+  /// - Warning: Use with caution as this exposes sensitive data.
   public func exportData(
     identifier: String
-  ) async -> Result<[UInt8], SecurityProtocolError> {
-    await wrapped.exportData(
+  ) async -> Result<[UInt8], SecurityStorageError> {
+    return await wrapped.exportData(
       identifier: identifier
-    )
-  }
-
-  // MARK: - Legacy Methods
-
-  public func encrypt(
-    data: [UInt8],
-    using key: [UInt8]
-  ) async -> Result<[UInt8], SecurityProtocolError> {
-    // Convert legacy call to new protocol format
-    let dataID=UUID().uuidString
-    let keyID=UUID().uuidString
-
-    // Store data and key
-    let dataImport=await importData(data, customIdentifier: dataID)
-    guard case .success=dataImport else {
-      return .failure(.storageError("Failed to store data for encryption"))
-    }
-
-    let keyImport=await importData(key, customIdentifier: keyID)
-    guard case .success=keyImport else {
-      return .failure(.storageError("Failed to store key for encryption"))
-    }
-
-    // Perform encryption
-    let encryptResult=await encrypt(
-      dataIdentifier: dataID,
-      keyIdentifier: keyID,
-      options: nil
-    )
-
-    // Return result
-    switch encryptResult {
-      case let .success(encryptedID):
-        return await exportData(identifier: encryptedID)
-      case let .failure(error):
-        return .failure(error)
-    }
-  }
-
-  public func decrypt(
-    data: [UInt8],
-    using key: [UInt8]
-  ) async -> Result<[UInt8], SecurityProtocolError> {
-    // Convert legacy call to new protocol format
-    let dataID=UUID().uuidString
-    let keyID=UUID().uuidString
-
-    // Store data and key
-    let dataImport=await importData(data, customIdentifier: dataID)
-    guard case .success=dataImport else {
-      return .failure(.storageError("Failed to store data for decryption"))
-    }
-
-    let keyImport=await importData(key, customIdentifier: keyID)
-    guard case .success=keyImport else {
-      return .failure(.storageError("Failed to store key for decryption"))
-    }
-
-    // Perform decryption
-    let decryptResult=await decrypt(
-      encryptedDataIdentifier: dataID,
-      keyIdentifier: keyID,
-      options: nil
-    )
-
-    // Return result
-    switch decryptResult {
-      case let .success(decryptedID):
-        return await exportData(identifier: decryptedID)
-      case let .failure(error):
-        return .failure(error)
-    }
-  }
-
-  public func hash(data: [UInt8]) async -> Result<[UInt8], SecurityProtocolError> {
-    // Convert legacy call to new protocol format
-    let dataID=UUID().uuidString
-
-    // Store data
-    let dataImport=await importData(data, customIdentifier: dataID)
-    guard case .success=dataImport else {
-      return .failure(.storageError("Failed to store data for hashing"))
-    }
-
-    // Perform hashing
-    let hashResult=await hash(
-      dataIdentifier: dataID,
-      options: nil
-    )
-
-    // Return result
-    switch hashResult {
-      case let .success(hashID):
-        return await exportData(identifier: hashID)
-      case let .failure(error):
-        return .failure(error)
-    }
-  }
-
-  public func verifyHash(
-    data: [UInt8],
-    expectedHash: [UInt8]
-  ) async -> Result<Bool, SecurityProtocolError> {
-    // Convert legacy call to new protocol format
-    let dataID=UUID().uuidString
-    let hashID=UUID().uuidString
-
-    // Store data and hash
-    let dataImport=await importData(data, customIdentifier: dataID)
-    guard case .success=dataImport else {
-      return .failure(.storageError("Failed to store data for hash verification"))
-    }
-
-    let hashImport=await importData(expectedHash, customIdentifier: hashID)
-    guard case .success=hashImport else {
-      return .failure(.storageError("Failed to store hash for verification"))
-    }
-
-    // Perform verification
-    return await verifyHash(
-      dataIdentifier: dataID,
-      hashIdentifier: hashID,
-      options: nil
     )
   }
 }
@@ -1100,42 +1353,32 @@ public actor SecureCryptoServiceImpl: CryptoServiceProtocol {
 /**
  Configuration options for the CryptoService implementation.
 
- These options control the behaviour of the cryptographic operations,
  allowing customisation of security parameters and algorithm choices.
  */
-public struct CryptoServiceOptions: Sendable {
-  /// Default iteration count for PBKDF2 key derivation
-  public let defaultIterations: Int
-
-  /// Preferred key size for AES encryption in bytes
-  public let preferredKeySize: Int
-
-  /// Size of initialisation vector in bytes
-  public let ivSize: Int
-
-  /// Creates a new CryptoServiceOptions instance with the specified parameters
-  ///
-  /// - Parameters:
-  ///   - defaultIterations: Iteration count for PBKDF2 (default: 10000)
-  ///   - preferredKeySize: Preferred key size in bytes (default: 32 for AES-256)
-  ///   - ivSize: Size of initialisation vector in bytes (default: 12)
-  public init(
-    defaultIterations: Int=10000,
-    preferredKeySize: Int=32,
-    ivSize: Int=12
-  ) {
-    self.defaultIterations=defaultIterations
-    self.preferredKeySize=preferredKeySize
-    self.ivSize=ivSize
-  }
-
-  /// Default options suitable for most applications
-  public static let `default`=CryptoServiceOptions()
-
-  /// High security options with increased iteration count
-  public static let highSecurity=CryptoServiceOptions(
-    defaultIterations: 100_000,
-    preferredKeySize: 32,
-    ivSize: 16
-  )
-}
+// This struct has been moved to CryptoServiceOptions.swift
+// public struct CryptoServiceOptions: Sendable {
+//   /// Default iteration count for PBKDF2 key derivation
+//   public let defaultIterations: Int
+// 
+//   /// Preferred key size for AES encryption in bytes
+//   public let preferredKeySize: Int
+// 
+//   /// Size of initialisation vector in bytes
+//   public let ivSize: Int
+// 
+//   /// Creates a new CryptoServiceOptions instance with the specified parameters
+//   ///
+//   /// - Parameters:
+//   ///   - defaultIterations: Iteration count for PBKDF2 (default: 10000)
+//   ///   - preferredKeySize: Preferred key size in bytes (default: 32 for AES-256)
+//   ///   - ivSize: Size of initialisation vector in bytes (default: 12)
+//   public init(
+//     defaultIterations: Int=10000,
+//     preferredKeySize: Int=32,
+//     ivSize: Int=12
+//   ) {
+//     self.defaultIterations=defaultIterations
+//     self.preferredKeySize=preferredKeySize
+//     self.ivSize=ivSize
+//   }
+// }

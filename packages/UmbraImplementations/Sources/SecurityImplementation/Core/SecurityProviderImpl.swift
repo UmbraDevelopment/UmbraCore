@@ -1,15 +1,18 @@
 import CoreSecurityTypes
+import DomainSecurityTypes
 import Foundation
 import LoggingInterfaces
 import LoggingServices
 import LoggingTypes
 import SecurityCoreInterfaces
+import UmbraErrors
 
 /**
- # Core Security Provider Service
+ # Security Provider Service (Canonical Implementation)
 
  Actor-based implementation of the SecurityProviderProtocol, providing
  a secure interface to all cryptographic and key management services at the core infrastructure level.
+ This is the canonical implementation for the Alpha Dot Five architecture.
 
  ## Concurrency
 
@@ -29,7 +32,7 @@ import SecurityCoreInterfaces
  */
 // Using @preconcurrency to resolve protocol conformance issues with isolated methods
 @preconcurrency
-public actor CoreSecurityProviderService: SecurityProviderProtocol, AsyncServiceInitializable {
+public actor SecurityProviderService: SecurityProviderProtocol, AsyncServiceInitializable {
   // MARK: - Dependencies
 
   /**
@@ -80,6 +83,11 @@ public actor CoreSecurityProviderService: SecurityProviderProtocol, AsyncService
    The hashing service for handling hashing operations
    */
   private let hashingService: HashingService
+
+  /**
+   Temporary data storage for operations
+   */
+  private var operationData: [String: [UInt8]] = [:]
 
   /**
    Initialises the security provider with all required services.
@@ -148,13 +156,18 @@ public actor CoreSecurityProviderService: SecurityProviderProtocol, AsyncService
       resource: nil,
       additionalMetadata: [
         "operation": PrivacyTaggedValue(value: "start", privacyLevel: .public),
-        "provider": PrivacyTaggedValue(value: "CoreSecurityProviderService", privacyLevel: .public)
+        "provider": PrivacyTaggedValue(value: "SecurityProviderService", privacyLevel: .public)
       ]
     )
 
     // Initialize dependencies
-    try await cryptoService.initialize()
-    try await keyManager.initialize()
+    if let initialisable = cryptoService as? AsyncServiceInitializable {
+      try await initialisable.initialize()
+    }
+    
+    if let initialisable = keyManager as? AsyncServiceInitializable {
+      try await initialisable.initialize()
+    }
 
     await logger.info("Security provider service initialized successfully")
 
@@ -166,7 +179,7 @@ public actor CoreSecurityProviderService: SecurityProviderProtocol, AsyncService
       resource: nil,
       additionalMetadata: [
         "operation": PrivacyTaggedValue(value: "complete", privacyLevel: .public),
-        "provider": PrivacyTaggedValue(value: "CoreSecurityProviderService", privacyLevel: .public)
+        "provider": PrivacyTaggedValue(value: "SecurityProviderService", privacyLevel: .public)
       ]
     )
   }
@@ -189,6 +202,168 @@ public actor CoreSecurityProviderService: SecurityProviderProtocol, AsyncService
    */
   public func keyManager() async -> KeyManagementProtocol {
     keyManager
+  }
+  
+  // MARK: - Core Encryption/Decryption Operations
+  
+  /**
+   Encrypts binary data with the provided key.
+   
+   - Parameters:
+     - data: Data to encrypt
+     - key: Encryption key
+   - Returns: Encrypted data
+   - Throws: Security protocol errors if encryption fails
+   */
+  public func encrypt(_ data: [UInt8], key: [UInt8]) async throws -> [UInt8] {
+    let dataIdentifier = await storeDataForOperation(data)
+    let keyIdentifier = await storeDataForOperation(key)
+    
+    let result = await cryptoService.encrypt(
+      dataIdentifier: dataIdentifier,
+      keyIdentifier: keyIdentifier,
+      options: EncryptionOptions(algorithm: .aes256CBC)
+    )
+
+    switch result {
+      case let .success(encryptedDataIdentifier):
+        // Retrieve the encrypted data using the identifier
+        if let encryptedData = await retrieveDataForOperation(withIdentifier: encryptedDataIdentifier) {
+          return encryptedData
+        } else {
+          throw SecurityProtocolError.inputError("Failed to retrieve encrypted data")
+        }
+      case let .failure(error):
+        throw error
+    }
+  }
+  
+  /**
+   Decrypts binary data with the provided key.
+   
+   - Parameters:
+     - data: Encrypted data to decrypt
+     - key: Decryption key
+   - Returns: Decrypted data
+   - Throws: Security protocol errors if decryption fails
+   */
+  public func decrypt(_ data: [UInt8], key: [UInt8]) async throws -> [UInt8] {
+    let encryptedDataIdentifier = await storeDataForOperation(data)
+    let keyIdentifier = await storeDataForOperation(key)
+    
+    let result = await cryptoService.decrypt(
+      encryptedDataIdentifier: encryptedDataIdentifier,
+      keyIdentifier: keyIdentifier,
+      options: DecryptionOptions(algorithm: .aes256CBC)
+    )
+
+    switch result {
+      case let .success(decryptedDataIdentifier):
+        // Retrieve the decrypted data using the identifier
+        if let decryptedData = await retrieveDataForOperation(withIdentifier: decryptedDataIdentifier) {
+          return decryptedData
+        } else {
+          throw SecurityProtocolError.inputError("Failed to retrieve decrypted data")
+        }
+      case let .failure(error):
+        throw error
+    }
+  }
+  
+  /**
+   Signs data with the provided key.
+   
+   - Parameters:
+     - data: Data to sign
+     - key: Signing key
+   - Returns: Signature
+   - Throws: Security protocol errors if signing fails
+   */
+  public func sign(_ data: [UInt8], key: [UInt8]) async throws -> [UInt8] {
+    let dataIdentifier = await storeDataForOperation(data + key)
+    
+    let result = await cryptoService.hash(
+      dataIdentifier: dataIdentifier,
+      options: HashingOptions(algorithm: .sha256)
+    )
+
+    switch result {
+      case let .success(signatureIdentifier):
+        // Retrieve the signature using the identifier
+        if let signatureData = await retrieveDataForOperation(withIdentifier: signatureIdentifier) {
+          return signatureData
+        } else {
+          throw SecurityProtocolError.inputError("Failed to retrieve signature data")
+        }
+      case let .failure(error):
+        throw error
+    }
+  }
+  
+  // MARK: - Data Management for Operations
+  
+  /**
+   Stores data for a security operation.
+   
+   - Parameter data: The data to store
+   - Returns: A unique identifier for the stored data
+   */
+  private func storeDataForOperation(_ data: [UInt8]) async -> String {
+    let identifier = UUID().uuidString
+    operationData[identifier] = data
+    return identifier
+  }
+  
+  /**
+   Retrieves data for a security operation.
+   
+   - Parameter identifier: The identifier for the stored data
+   - Returns: The retrieved data, or nil if not found
+   */
+  private func retrieveDataForOperation(withIdentifier identifier: String) async -> [UInt8]? {
+    let result = operationData[identifier]
+    // Clean up after retrieval
+    operationData[identifier] = nil
+    return result
+  }
+  
+  /**
+   Helper to get or create a key for the current operation.
+   
+   - Parameters:
+     - config: The security configuration
+     - operation: The security operation requiring a key
+   - Returns: Byte array key if available
+   - Throws: Error if key retrieval fails
+   */
+  private func getKeyForOperation(
+    config: SecurityConfigDTO,
+    operation: SecurityOperation
+  ) async throws -> [UInt8]? {
+    // Check if the key is directly provided in the options
+    if let keyB64 = config.options?.metadata?["key"], let keyData = Data(base64Encoded: keyB64) {
+      return [UInt8](keyData)
+    }
+
+    // Check if a key identifier is provided to load from key manager
+    if let keyID = config.options?.metadata?["keyIdentifier"] {
+      await logger.debug("Retrieving key for operation", metadata: [
+        "operation": "\(operation.rawValue)",
+        "keyIdentifier": keyID
+      ])
+      
+      let result = await keyManager.retrieveKey(withIdentifier: keyID)
+      switch result {
+        case let .success(key):
+          return key
+        case let .failure(error):
+          throw SecurityProtocolError.inputError(
+            "Failed to retrieve key with identifier \(keyID): \(error.localizedDescription)"
+          )
+      }
+    }
+
+    return nil
   }
 
   /**
@@ -676,7 +851,7 @@ public actor CoreSecurityProviderService: SecurityProviderProtocol, AsyncService
    - Parameters:
      - operation: The security operation to perform
      - config: Configuration for the operation
-   - Returns: Result of the operation
+   - Returns: The result of the operation
    */
   public func performSecureOperation(
     operation: CoreSecurityTypes.SecurityOperation,
@@ -732,28 +907,82 @@ public actor CoreSecurityProviderService: SecurityProviderProtocol, AsyncService
    - Returns: A properly configured SecurityConfigDTO
    */
   public func createSecureConfig(options: SecurityConfigOptions) async -> SecurityConfigDTO {
-    // Determine the most appropriate encryption algorithm based on options
-    let encryptionAlgorithm: EncryptionAlgorithm=if options.useHardwareAcceleration {
-      .aesGcm256
+    // Determine the encryption algorithm based on the hardware acceleration setting
+    let encryption: CoreSecurityTypes.EncryptionAlgorithm = if options.useHardwareAcceleration {
+      .aes256GCM  // Hardware accelerated where available
     } else {
-      .aesCbc256
+      .aes256CBC  // Software implementation
     }
-
-    // Determine appropriate hash algorithm
-    let hashAlgorithm: HashAlgorithm = .sha256
-
-    // Determine appropriate provider type based on options
-    let providerType: SecurityProviderType=if options.useHardwareAcceleration {
-      .hardware
+    
+    // Determine the signing algorithm based on options
+    let signing: CoreSecurityTypes.SigningAlgorithm = if options.useHardwareAcceleration {
+      .ed25519    // Hardware accelerated where available
     } else {
-      .software
+      .hmacSHA256 // Software implementation
     }
-
+    
+    // Determine the hashing algorithm
+    let hashing: CoreSecurityTypes.HashingAlgorithm = if options.useStrongerHashing {
+      .sha512     // Stronger but slower
+    } else {
+      .sha256     // Good balance of security and performance
+    }
+    
+    // Create the security options with selected algorithms
+    let securityOptions = SecurityOptions(
+      encryption: encryption,
+      decryption: encryption,
+      signing: signing,
+      hashing: hashing,
+      metadata: options.metadata
+    )
+    
+    // Create the configuration DTO with the options
     return SecurityConfigDTO(
-      encryptionAlgorithm: encryptionAlgorithm,
-      hashAlgorithm: hashAlgorithm,
-      providerType: providerType,
-      options: options
+      options: securityOptions,
+      data: options.data,
+      outputFormat: options.outputFormat ?? .binary
+    )
+  }
+  
+  /**
+   Maps a standard error to a SecurityProtocolError for consistent error handling.
+   
+   - Parameter error: The error to map
+   - Returns: A properly typed SecurityProtocolError
+   */
+  private func mapToSecurityError(_ error: Error) -> SecurityProtocolError {
+    if let securityError = error as? SecurityProtocolError {
+      return securityError
+    }
+    
+    // Map known error types to appropriate security errors
+    if let nsError = error as? NSError {
+      switch nsError.domain {
+        case NSURLErrorDomain:
+          return .networkError("Network error during security operation: \(nsError.localizedDescription)")
+        case NSOSStatusErrorDomain:
+          return .systemError("System error during security operation: \(nsError.localizedDescription)")
+        default:
+          break
+      }
+    }
+    
+    // Default error mapping
+    return .generalError("Security operation failed: \(error.localizedDescription)")
+  }
+  
+  /**
+   Creates a security result DTO with error information.
+   
+   - Parameter error: The error that occurred
+   - Returns: A SecurityResultDTO with error details
+   */
+  private func createErrorResult(_ error: Error) -> SecurityResultDTO {
+    let securityError = mapToSecurityError(error)
+    return SecurityResultDTO.failure(
+      errorCode: securityError.code,
+      errorDetails: securityError.localizedDescription
     )
   }
 
