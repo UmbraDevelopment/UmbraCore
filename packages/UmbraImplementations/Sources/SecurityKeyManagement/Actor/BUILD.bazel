@@ -15,6 +15,6 @@ swift_library(
         "//packages/UmbraImplementations/Sources/SecurityKeyManagement/Types:SecurityKeyTypes",
         "//packages/UmbraImplementations/Sources/LoggingServices",
         "//packages/UmbraImplementations/Sources/LoggingAdapters",
-        "//packages/UmbraImplementations/Sources/SecurityKeyManagement/ActorTypes:KeyManagementActor",
+        "//packages/UmbraImplementations/Sources/SecurityKeyManagement/ActorTypes:KeyManagementActorTypes",
     ],
 )

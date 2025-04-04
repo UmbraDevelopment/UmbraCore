@@ -104,38 +104,34 @@ public actor CryptoServiceActor: CryptoServiceProtocol, Sendable {
     keyIdentifier: String,
     options: EncryptionOptions?
   ) async -> Result<String, SecurityStorageError> {
-    do {
-      // Retrieve data and key from secure storage
-      let dataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
-      let keyResult = await secureStorage.retrieveData(withIdentifier: keyIdentifier)
-      
-      guard case let .success(data) = dataResult else {
-        return .failure(.dataNotFound)
-      }
-      
-      guard case let .success(key) = keyResult else {
-        return .failure(.keyNotFound)
-      }
-      
-      // Encrypt the data
-      let encryptResult = await encrypt(data: data, using: key)
-      
-      guard case let .success(encryptedData) = encryptResult else {
-        return .failure(.encryptionFailed)
-      }
-      
-      // Store the encrypted data
-      let identifier = UUID().uuidString
-      let storeResult = await secureStorage.storeData(encryptedData, withIdentifier: identifier)
-      
-      guard case .success = storeResult else {
-        return .failure(.storageUnavailable)
-      }
-      
-      return .success(identifier)
-    } catch {
+    // Retrieve the data to encrypt and key from secure storage
+    let dataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
+    let keyResult = await secureStorage.retrieveData(withIdentifier: keyIdentifier)
+    
+    guard case let .success(data) = dataResult else {
+      return .failure(.dataNotFound)
+    }
+    
+    guard case let .success(key) = keyResult else {
+      return .failure(.keyNotFound)
+    }
+    
+    // Encrypt the data
+    let encryptResult = await encrypt(data: data, using: key)
+    
+    guard case let .success(encryptedData) = encryptResult else {
       return .failure(.encryptionFailed)
     }
+    
+    // Store the encrypted data
+    let identifier = UUID().uuidString
+    let storeResult = await secureStorage.storeData(encryptedData, withIdentifier: identifier)
+    
+    guard case .success = storeResult else {
+      return .failure(.storageUnavailable)
+    }
+    
+    return .success(identifier)
   }
   
   /// Decrypts data using a key from secure storage.
@@ -149,38 +145,34 @@ public actor CryptoServiceActor: CryptoServiceProtocol, Sendable {
     keyIdentifier: String,
     options: DecryptionOptions?
   ) async -> Result<String, SecurityStorageError> {
-    do {
-      // Retrieve encrypted data and key from secure storage
-      let dataResult = await secureStorage.retrieveData(withIdentifier: encryptedDataIdentifier)
-      let keyResult = await secureStorage.retrieveData(withIdentifier: keyIdentifier)
-      
-      guard case let .success(encryptedData) = dataResult else {
-        return .failure(.dataNotFound)
-      }
-      
-      guard case let .success(key) = keyResult else {
-        return .failure(.keyNotFound)
-      }
-      
-      // Decrypt the data
-      let decryptResult = await decrypt(data: encryptedData, using: key)
-      
-      guard case let .success(decryptedData) = decryptResult else {
-        return .failure(.decryptionFailed)
-      }
-      
-      // Store the decrypted data
-      let identifier = UUID().uuidString
-      let storeResult = await secureStorage.storeData(decryptedData, withIdentifier: identifier)
-      
-      guard case .success = storeResult else {
-        return .failure(.storageUnavailable)
-      }
-      
-      return .success(identifier)
-    } catch {
+    // Retrieve encrypted data and key from secure storage
+    let dataResult = await secureStorage.retrieveData(withIdentifier: encryptedDataIdentifier)
+    let keyResult = await secureStorage.retrieveData(withIdentifier: keyIdentifier)
+    
+    guard case let .success(encryptedData) = dataResult else {
+      return .failure(.dataNotFound)
+    }
+    
+    guard case let .success(key) = keyResult else {
+      return .failure(.keyNotFound)
+    }
+    
+    // Decrypt the data
+    let decryptResult = await decrypt(data: encryptedData, using: key)
+    
+    guard case let .success(decryptedData) = decryptResult else {
       return .failure(.decryptionFailed)
     }
+    
+    // Store the decrypted data
+    let identifier = UUID().uuidString
+    let storeResult = await secureStorage.storeData(decryptedData, withIdentifier: identifier)
+    
+    guard case .success = storeResult else {
+      return .failure(.storageUnavailable)
+    }
+    
+    return .success(identifier)
   }
   
   /// Computes a cryptographic hash of data in secure storage.
@@ -190,34 +182,32 @@ public actor CryptoServiceActor: CryptoServiceProtocol, Sendable {
     dataIdentifier: String,
     options: HashingOptions?
   ) async -> Result<String, SecurityStorageError> {
-    do {
-      // Retrieve data from secure storage
-      let dataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
-      
-      guard case let .success(data) = dataResult else {
-        return .failure(.dataNotFound)
-      }
-      
-      // Hash the data
-      let algorithm = options?.algorithm ?? defaultConfig.hashAlgorithm
-      let hashResult = await hash(data: data, algorithm: algorithm)
-      
-      guard case let .success(hashedData) = hashResult else {
-        return .failure(.hashingFailed)
-      }
-      
-      // Store the hash
-      let identifier = UUID().uuidString
-      let storeResult = await secureStorage.storeData(hashedData, withIdentifier: identifier)
-      
-      guard case .success = storeResult else {
-        return .failure(.storageUnavailable)
-      }
-      
-      return .success(identifier)
-    } catch {
+    // Retrieve the data to hash from secure storage
+    let dataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
+    
+    guard case let .success(data) = dataResult else {
+      return .failure(.dataNotFound)
+    }
+    
+    // Determine the algorithm to use
+    let algorithm = options?.algorithm ?? .sha256
+    
+    // Hash the data
+    let hashResult = await hash(data: data, algorithm: algorithm)
+    
+    guard case let .success(hashedData) = hashResult else {
       return .failure(.hashingFailed)
     }
+    
+    // Store the hash
+    let identifier = UUID().uuidString
+    let storeResult = await secureStorage.storeData(hashedData, withIdentifier: identifier)
+    
+    guard case .success = storeResult else {
+      return .failure(.storageUnavailable)
+    }
+    
+    return .success(identifier)
   }
   
   /// Verifies a cryptographic hash against the expected value, both stored securely.
@@ -230,34 +220,32 @@ public actor CryptoServiceActor: CryptoServiceProtocol, Sendable {
     hashIdentifier: String,
     options: HashingOptions?
   ) async -> Result<Bool, SecurityStorageError> {
-    do {
-      // Retrieve data and expected hash from secure storage
-      let dataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
-      let expectedHashResult = await secureStorage.retrieveData(withIdentifier: hashIdentifier)
-      
-      guard case let .success(data) = dataResult else {
-        return .failure(.dataNotFound)
-      }
-      
-      guard case let .success(expectedHash) = expectedHashResult else {
-        return .failure(.hashNotFound)
-      }
-      
-      // Compute hash of the data
-      let algorithm = options?.algorithm ?? defaultConfig.hashAlgorithm
-      let hashResult = await hash(data: data, algorithm: algorithm)
-      
-      guard case let .success(computedHash) = hashResult else {
-        return .failure(.hashingFailed)
-      }
-      
-      // Compare the computed hash with the expected hash
-      let match = computedHash == expectedHash
-      
-      return .success(match)
-    } catch {
-      return .failure(.hashVerificationFailed)
+    // Retrieve data and expected hash from secure storage
+    let dataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
+    let hashResult = await secureStorage.retrieveData(withIdentifier: hashIdentifier)
+    
+    guard case let .success(data) = dataResult else {
+      return .failure(.dataNotFound)
     }
+    
+    guard case let .success(expectedHash) = hashResult else {
+      return .failure(.hashNotFound)
+    }
+    
+    // Determine the algorithm to use
+    let algorithm = options?.algorithm ?? .sha256
+    
+    // Compute the hash of the data
+    let computedHashResult = await hash(data: data, algorithm: algorithm)
+    
+    guard case let .success(computedHash) = computedHashResult else {
+      return .failure(.hashingFailed)
+    }
+    
+    // Compare hashes
+    let match = computedHash == expectedHash
+    
+    return .success(match)
   }
   
   /// Generates a cryptographic key and stores it securely.
@@ -269,25 +257,25 @@ public actor CryptoServiceActor: CryptoServiceProtocol, Sendable {
     length: Int,
     options: KeyGenerationOptions?
   ) async -> Result<String, SecurityStorageError> {
-    do {
-      let keyGenResult = await generateKey(size: length)
-      
-      guard case let .success(key) = keyGenResult else {
-        return .failure(.keyGenerationFailed)
-      }
-      
-      // Store the key
-      let identifier = UUID().uuidString
-      let storeResult = await secureStorage.storeData(key, withIdentifier: identifier)
-      
-      guard case .success = storeResult else {
-        return .failure(.storageUnavailable)
-      }
-      
-      return .success(identifier)
-    } catch {
+    // Use default key length if not specified
+    let keyLength = length ?? 256
+    
+    // Generate a new key
+    let keyResult = await generateKey(size: keyLength)
+    
+    guard case let .success(key) = keyResult else {
       return .failure(.keyGenerationFailed)
     }
+    
+    // Store the key in secure storage
+    let identifier = UUID().uuidString
+    let storeResult = await secureStorage.storeData(key, withIdentifier: identifier)
+    
+    guard case .success = storeResult else {
+      return .failure(.storageUnavailable)
+    }
+    
+    return .success(identifier)
   }
   
   /// Imports data into secure storage for use with cryptographic operations.

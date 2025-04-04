@@ -373,7 +373,9 @@ private final class StandardSecurityProvider: EncryptionProviderProtocol {
         
         // Use secure random number generation
         #if os(macOS) || os(iOS) || os(watchOS) || os(tvOS)
-            let status = SecRandomCopyBytes(kSecRandomDefault, keyData.count, &keyData)
+            let status = keyData.withUnsafeMutableBytes { bufferPointer -> OSStatus in
+                return SecRandomCopyBytes(kSecRandomDefault, bufferPointer.count, bufferPointer.baseAddress!)
+            }
             guard status == errSecSuccess else {
                 throw SecurityServiceError.providerError("Failed to generate secure random bytes")
             }
@@ -398,7 +400,9 @@ private final class StandardSecurityProvider: EncryptionProviderProtocol {
         
         // Use secure random number generation
         #if os(macOS) || os(iOS) || os(watchOS) || os(tvOS)
-            let status = SecRandomCopyBytes(kSecRandomDefault, ivData.count, &ivData)
+            let status = ivData.withUnsafeMutableBytes { bufferPointer -> OSStatus in
+                return SecRandomCopyBytes(kSecRandomDefault, bufferPointer.count, bufferPointer.baseAddress!)
+            }
             guard status == errSecSuccess else {
                 throw SecurityServiceError.providerError("Failed to generate secure random bytes")
             }

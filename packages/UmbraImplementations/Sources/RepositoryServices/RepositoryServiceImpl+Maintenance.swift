@@ -33,17 +33,26 @@ extension RepositoryServiceImpl {
       source: "RepositoryService"
     )
 
-    guard let repository=repositories[identifier] as? RepositoryMaintenanceProtocol else {
+    guard let repository=repositories[identifier] else {
       await logger.error(
-        "Repository not found or does not support maintenance",
+        "Repository not found",
         metadata: metadata,
         source: "RepositoryService"
       )
       throw RepositoryError.notFound
     }
+    
+    guard let maintenanceRepository = repository as? RepositoryMaintenanceProtocol else {
+      await logger.error(
+        "Repository does not support maintenance operations",
+        metadata: metadata,
+        source: "RepositoryService"
+      )
+      throw RepositoryError.invalidOperation
+    }
 
     do {
-      let stats=try await repository.check(readData: readData, checkUnused: checkUnused)
+      let stats=try await maintenanceRepository.check(readData: readData, checkUnused: checkUnused)
       await logger.info(
         "Repository maintenance completed successfully",
         metadata: metadata,
@@ -73,7 +82,7 @@ extension RepositoryServiceImpl {
 
     await logger.info("Repairing repository", metadata: metadata, source: "RepositoryService")
 
-    guard let repository=repositories[identifier] as? RepositoryMaintenanceProtocol else {
+    guard let repository = repositories[identifier] else {
       await logger.error(
         "Repository not found or does not support maintenance",
         metadata: metadata,
@@ -81,9 +90,18 @@ extension RepositoryServiceImpl {
       )
       throw RepositoryError.notFound
     }
+    
+    guard let maintenanceRepository = repository as? RepositoryMaintenanceProtocol else {
+      await logger.error(
+        "Repository does not support maintenance operations",
+        metadata: metadata,
+        source: "RepositoryService"
+      )
+      throw RepositoryError.invalidOperation
+    }
 
     do {
-      let repaired=try await repository.repair()
+      let repaired=try await maintenanceRepository.repair()
       await logger.info(
         "Repository repair result: \(repaired)",
         metadata: metadata,
@@ -116,7 +134,7 @@ extension RepositoryServiceImpl {
       source: "RepositoryService"
     )
 
-    guard let repository=repositories[identifier] as? RepositoryMaintenanceProtocol else {
+    guard let repository = repositories[identifier] else {
       await logger.error(
         "Repository not found or does not support maintenance",
         metadata: metadata,
@@ -124,9 +142,18 @@ extension RepositoryServiceImpl {
       )
       throw RepositoryError.notFound
     }
+    
+    guard let maintenanceRepository = repository as? RepositoryMaintenanceProtocol else {
+      await logger.error(
+        "Repository does not support maintenance operations",
+        metadata: metadata,
+        source: "RepositoryService"
+      )
+      throw RepositoryError.invalidOperation
+    }
 
     do {
-      try await repository.prune()
+      try await maintenanceRepository.prune()
       await logger.info(
         "Repository pruned successfully",
         metadata: metadata,
@@ -158,17 +185,26 @@ extension RepositoryServiceImpl {
       source: "RepositoryService"
     )
 
-    guard let repository=repositories[identifier] as? RepositoryMaintenanceProtocol else {
+    guard let repository=repositories[identifier] else {
       await logger.error(
-        "Repository not found or does not support maintenance",
+        "Repository not found",
         metadata: metadata,
         source: "RepositoryService"
       )
       throw RepositoryError.notFound
     }
+    
+    guard let maintenanceRepository = repository as? RepositoryMaintenanceProtocol else {
+      await logger.error(
+        "Repository does not support maintenance operations",
+        metadata: metadata,
+        source: "RepositoryService"
+      )
+      throw RepositoryError.invalidOperation
+    }
 
     do {
-      try await repository.rebuildIndex()
+      try await maintenanceRepository.rebuildIndex()
       await logger.info(
         "Repository index rebuilt successfully",
         metadata: metadata,
@@ -177,6 +213,53 @@ extension RepositoryServiceImpl {
     } catch {
       await logger.error(
         "Repository index rebuild failed: \(error.localizedDescription)",
+        metadata: metadata,
+        source: "RepositoryService"
+      )
+      throw RepositoryError.internalError
+    }
+  }
+  
+  /// Checks a repository for errors.
+  ///
+  /// - Parameter identifier: The repository identifier.
+  /// - Throws: `RepositoryError.notFound` if the repository is not found,
+  ///           or other repository errors if check fails.
+  public func checkRepository(identifier: String) async throws {
+    // Create privacy-aware metadata
+    var metadata=PrivacyMetadata()
+    metadata["repository_id"]=PrivacyMetadataValue(value: identifier, privacy: .public)
+
+    await logger.info("Checking repository for errors", metadata: metadata, source: "RepositoryService")
+
+    guard let repository = repositories[identifier] else {
+      await logger.error(
+        "Repository not found",
+        metadata: metadata,
+        source: "RepositoryService"
+      )
+      throw RepositoryError.notFound
+    }
+    
+    guard let maintenanceRepository = repository as? RepositoryMaintenanceProtocol else {
+      await logger.error(
+        "Repository does not support maintenance operations",
+        metadata: metadata,
+        source: "RepositoryService"
+      )
+      throw RepositoryError.invalidOperation
+    }
+
+    do {
+      try await maintenanceRepository.check()
+      await logger.info(
+        "Repository check completed successfully",
+        metadata: metadata,
+        source: "RepositoryService"
+      )
+    } catch {
+      await logger.error(
+        "Repository check failed: \(error.localizedDescription)",
         metadata: metadata,
         source: "RepositoryService"
       )

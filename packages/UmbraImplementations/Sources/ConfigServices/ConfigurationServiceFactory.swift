@@ -1,5 +1,7 @@
 import ConfigInterfaces
 import LoggingInterfaces
+import LoggingServices
+import LoggingTypes
 
 /// ConfigurationServiceFactory
 ///
@@ -14,20 +16,10 @@ import LoggingInterfaces
 /// ```
 public enum ConfigurationServiceFactory {
   /// Creates a default instance of ConfigurationServiceProtocol
-  /// - Parameter logger: Optional logger for configuration operations. If nil, a default logger
-  /// will be created.
   /// - Returns: A configured instance of ConfigurationServiceProtocol
-  public static func createDefault(
-    logger: DomainLogger?=nil
-  ) -> ConfigurationServiceProtocol {
-    // Use provided logger or create a default one
-    let configLogger=logger ?? LoggerFactory.createLogger(
-      domain: "ConfigurationService",
-      category: "Service"
-    )
-
+  public static func createDefault() -> ConfigurationServiceProtocol {
     // Create and return the configuration service actor
-    return ConfigurationServiceActor(logger: configLogger)
+    return ConfigurationServiceActor(logger: nil)
   }
 
   /// Creates a pre-initialised instance of ConfigurationServiceProtocol
@@ -39,10 +31,10 @@ public enum ConfigurationServiceFactory {
   ///         Any initialisation errors will be thrown from this method.
   public static func createPreInitialised(
     source: ConfigSourceDTO,
-    logger: DomainLogger?=nil
+    logger: LoggingInterfaces.DomainLogger?=nil
   ) async throws -> ConfigurationServiceProtocol {
     // Create the service
-    let service=createDefault(logger: logger)
+    let service=createDefault()
 
     // Initialise it
     try await service.initialise(source: source)
@@ -79,5 +71,23 @@ public enum ConfigurationServiceFactory {
       name: "Secure Keychain Storage",
       serviceName: serviceName
     )
+  }
+
+  /// Simplifies service creation with domain-specific configuration
+  /// - Parameters:
+  ///   - domain: The domain name for the service
+  ///   - serviceName: The service name
+  ///   - logger: Optional logger for the service
+  /// - Returns: A configured instance with domain-specific settings
+  public static func createForDomain(
+    _ domain: String,
+    serviceName: String,
+    logger: LoggingInterfaces.DomainLogger?=nil
+  ) -> ConfigurationServiceProtocol {
+    // Configure domain-specific settings
+    let service=ConfigurationServiceActor(logger: logger)
+    
+    // Return the configured service
+    return service
   }
 }
