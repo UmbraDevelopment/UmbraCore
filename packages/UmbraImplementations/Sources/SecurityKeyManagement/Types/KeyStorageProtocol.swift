@@ -49,6 +49,11 @@ public protocol KeyStorage: Sendable {
   /// - Throws: An error if checking the key fails
   func containsKey(identifier: String) async throws -> Bool
   
+  /// List all available key identifiers
+  /// - Returns: Array of key identifiers
+  /// - Throws: An error if listing keys fails
+  func listKeyIdentifiers() async throws -> [String]
+  
   /// Get all key identifiers
   /// - Returns: An array of all key identifiers
   /// - Throws: An error if retrieving the identifiers fails

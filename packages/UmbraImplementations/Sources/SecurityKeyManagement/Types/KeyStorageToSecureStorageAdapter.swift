@@ -6,33 +6,40 @@ import SecurityCoreInterfaces
 /**
  # KeyStorageToSecureStorageAdapter
  
- Adapts the KeyStorage protocol to the SecureStorageProtocol interface.
- This adapter allows a KeyStorage implementation to be used where a 
- SecureStorageProtocol is required, maintaining compatibility with
- interfaces that expect SecureStorageProtocol.
+ Adapter class that bridges between KeyStorage and SecureStorageProtocol interfaces.
+ This allows components that expect a KeyStorage instance to use a SecureStorageProtocol
+ implementation, and vice versa.
  
  The adapter maps operations between the two protocols, handling differences
  in their method signatures and error types.
  */
-public actor KeyStorageToSecureStorageAdapter: SecureStorageProtocol {
+public actor KeyStorageToSecureStorageAdapter: KeyStorage, SecureStorageProtocol {
     /// The underlying key storage implementation
     private let keyStorage: KeyStorage
     
-    /**
-     Initialises a new adapter with the specified key storage.
-     
-     - Parameter keyStorage: The underlying key storage implementation
-     */
-    public init(keyStorage: KeyStorage) {
-        self.keyStorage = keyStorage
-    }
+    /// The underlying secure storage implementation
+    private let secureStorage: SecureStorageProtocol
     
     /**
-     Stores data securely with the given identifier.
+     Initialises a new adapter with the specified storage implementations.
+     
+     - Parameters:
+       - keyStorage: The key storage implementation
+       - secureStorage: The secure storage implementation
+     */
+    public init(keyStorage: KeyStorage, secureStorage: SecureStorageProtocol) {
+        self.keyStorage = keyStorage
+        self.secureStorage = secureStorage
+    }
+    
+    // MARK: - SecureStorageProtocol Implementation
+    
+    /**
+     Stores data securely with the specified identifier.
      
      - Parameters:
        - data: The data to store as a byte array
-       - identifier: A string identifier for the stored data
+       - identifier: A string identifying where to store the data
      - Returns: Success or an error
      */
     public func storeData(_ data: [UInt8], withIdentifier identifier: String) async -> Result<Void, SecurityStorageError> {
@@ -83,11 +90,98 @@ public actor KeyStorageToSecureStorageAdapter: SecureStorageProtocol {
      - Returns: An array of data identifiers or an error
      */
     public func listDataIdentifiers() async -> Result<[String], SecurityStorageError> {
-        // Since KeyStorage doesn't have a built-in method to list keys,
-        // we'll either need to maintain a separate registry or return an empty list
-        
-        // This is a placeholder - in a real implementation, we would need
-        // a way to track stored identifiers separately
-        return .success([])
+        do {
+            let identifiers = try await keyStorage.listKeyIdentifiers()
+            return .success(identifiers)
+        } catch {
+            return .failure(.operationFailed("Failed to list identifiers: \(error.localizedDescription)"))
+        }
+    }
+    
+    // MARK: - KeyStorage Implementation
+    
+    /**
+     Stores a key with the specified identifier.
+     
+     - Parameters:
+       - key: The key to store as a byte array
+       - identifier: The identifier for the key
+     - Throws: An error if storing the key fails
+     */
+    public func storeKey(_ key: [UInt8], identifier: String) async throws {
+        switch await secureStorage.storeData(key, withIdentifier: identifier) {
+        case .success:
+            return
+        case .failure(let error):
+            throw KeyMetadataError.keyStorageError(details: "Failed to store key: \(error.localizedDescription)")
+        }
+    }
+    
+    /**
+     Retrieves a key by its identifier.
+     
+     - Parameter identifier: The identifier for the key
+     - Returns: The key as a byte array or nil if not found
+     - Throws: An error if retrieving the key fails
+     */
+    public func getKey(identifier: String) async throws -> [UInt8]? {
+        switch await secureStorage.retrieveData(withIdentifier: identifier) {
+        case .success(let data):
+            return data
+        case .failure(let error):
+            if case .keyNotFound = error {
+                return nil
+            }
+            throw KeyMetadataError.keyStorageError(details: "Failed to retrieve key: \(error.localizedDescription)")
+        }
+    }
+    
+    /**
+     Deletes a key by its identifier.
+     
+     - Parameter identifier: The identifier for the key
+     - Throws: An error if deleting the key fails
+     */
+    public func deleteKey(identifier: String) async throws {
+        switch await secureStorage.deleteData(withIdentifier: identifier) {
+        case .success:
+            return
+        case .failure(let error):
+            throw KeyMetadataError.keyStorageError(details: "Failed to delete key: \(error.localizedDescription)")
+        }
+    }
+    
+    /**
+     Checks if a key exists.
+     
+     - Parameter identifier: The identifier for the key
+     - Returns: True if the key exists
+     - Throws: An error if checking the key fails
+     */
+    public func containsKey(identifier: String) async throws -> Bool {
+        switch await secureStorage.retrieveData(withIdentifier: identifier) {
+        case .success:
+            return true
+        case .failure(let error):
+            if case .keyNotFound = error {
+                return false
+            }
+            throw KeyMetadataError.keyStorageError(details: "Failed to check key existence: \(error.localizedDescription)")
+        }
+    }
+    
+    /**
+     Lists all stored key identifiers.
+     
+     - Returns: Array of key identifiers
+     - Throws: If listing keys fails
+     */
+    public func listKeyIdentifiers() async throws -> [String] {
+        switch await secureStorage.listDataIdentifiers() {
+        case .success(let identifiers):
+            return identifiers
+        case .failure(let error):
+            throw KeyMetadataError.metadataError(details: "Failed to list key identifiers: \(error.localizedDescription)")
+        }
     }
 }
