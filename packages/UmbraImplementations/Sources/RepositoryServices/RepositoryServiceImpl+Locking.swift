@@ -50,9 +50,10 @@ extension RepositoryServiceImpl {
   /// - Throws: `RepositoryError.notFound` if the repository is not found,
   ///           or other repository errors if unlocking fails.
   public func unlockRepository(identifier: String) async throws {
-    let metadata = LogMetadataDTOCollection()
-      .withPublic(key: "repository_id", value: identifier)
-      .withPublic(key: "operation", value: "unlock")
+    // Create privacy-aware metadata
+    var metadata = PrivacyMetadata()
+    metadata["repository_id"] = PrivacyMetadataValue(value: identifier, privacy: .public)
+    metadata["operation"] = PrivacyMetadataValue(value: "unlock", privacy: .public)
 
     await logger.info("Unlocking repository", metadata: metadata, source: "RepositoryService")
 
