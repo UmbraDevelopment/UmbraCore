@@ -46,13 +46,34 @@ public actor CryptoServiceImpl: CryptoServiceProtocol {
   
   /// A minimal empty logger for when none is provided
   private struct EmptyLogger: LoggingProtocol {
+    /// Core logging method required by CoreLoggingProtocol
+    func logMessage(_ level: LogLevel, _ message: String, context: LogContext) async {}
+    
+    /// Log a message with a specific level
     func log(_ level: LogLevel, _ message: String, metadata: PrivacyMetadata?, source: String) async {}
+    
+    /// Log a trace message
     func trace(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
+    
+    /// Log a debug message
     func debug(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
+    
+    /// Log an info message
     func info(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
+    
+    /// Log a warning message
     func warning(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
+    
+    /// Log an error message
     func error(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
+    
+    /// Log a critical message
     func critical(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
+    
+    /// Provides access to the underlying logging actor
+    var loggingActor: LoggingActor {
+      fatalError("EmptyLogger does not have a logging actor")
+    }
   }
 
   /// Encrypts binary data using a key from secure storage.
@@ -93,6 +114,13 @@ public actor CryptoServiceImpl: CryptoServiceProtocol {
             } catch {
               return .failure(.operationFailed("Failed to generate IV: \(error.localizedDescription)"))
             }
+          case .chacha20Poly1305:
+            // ChaCha20-Poly1305 uses a 12-byte nonce
+            do {
+              ivBytes=try generateRandomBytes(count: 12)
+            } catch {
+              return .failure(.operationFailed("Failed to generate nonce: \(error.localizedDescription)"))
+            }
         }
 
         // Perform the encryption based on the algorithm
@@ -110,6 +138,10 @@ public actor CryptoServiceImpl: CryptoServiceProtocol {
               // Include authenticated data if provided
               let aad=cryptoOptions.authenticatedData
 
+              // For a real implementation, this would be implemented with a proper AEAD algorithm
+              // This is just a placeholder for now
+              encryptedBytes=dataBytes
+            case .chacha20Poly1305:
               // For a real implementation, this would be implemented with a proper AEAD algorithm
               // This is just a placeholder for now
               encryptedBytes=dataBytes
@@ -186,6 +218,7 @@ public actor CryptoServiceImpl: CryptoServiceProtocol {
         switch algorithmValue {
           case 0: algorithmString = "aes256CBC"
           case 1: algorithmString = "aes256GCM"
+          case 2: algorithmString = "chacha20Poly1305"
           default: return .failure(.operationFailed("Unknown algorithm identifier: \(algorithmValue)"))
         }
         
@@ -214,6 +247,10 @@ public actor CryptoServiceImpl: CryptoServiceProtocol {
               // Include authenticated data if provided
               let aad=cryptoOptions.authenticatedData
 
+              // For a real implementation, this would be implemented with a proper AEAD algorithm
+              // This is just a placeholder for now
+              decryptedBytes=encryptedBytes
+            case .chacha20Poly1305:
               // For a real implementation, this would be implemented with a proper AEAD algorithm
               // This is just a placeholder for now
               decryptedBytes=encryptedBytes

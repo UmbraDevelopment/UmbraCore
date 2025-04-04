@@ -49,58 +49,44 @@ public actor SecureCryptoStorage: Sendable {
   // MARK: - Key Storage
 
   /**
-   Stores a cryptographic key securely.
-
+   Stores a cryptographic key.
+   
    - Parameters:
-      - key: The key to store
-      - identifier: Identifier for the key
-      - purpose: Purpose of the key
-      - algorithm: Algorithm associated with the key
-
-   - Throws: CryptoError if storage fails
+      - key: The key material to store
+      - identifier: A unique identifier for retrieval
+      - purpose: The purpose of the key (e.g., encryption, signing)
+      - algorithm: Optional algorithm information
    */
   public func storeKey(
     _ key: Data,
     identifier: String,
-    purpose: KeyGenerationOptions.KeyPurpose,
+    purpose: String,
     algorithm: String?=nil
   ) async throws {
     let config=SecureStorageConfig(
       accessControl: .standard,
       encrypt: true,
       context: [
-        "type": "cryptographic_key",
-        "purpose": purpose.rawValue,
-        "algorithm": algorithm ?? "default"
+        "type": "crypto_key",
+        "purpose": purpose,
+        "algorithm": algorithm ?? "unknown"
       ]
     )
-
+    
     do {
-      let result=try await secureStorage.storeSecurely(
-        data: key,
-        identifier: identifier,
-        config: config
+      let result=try await secureStorage.storeData(
+        [UInt8](key),
+        withIdentifier: identifier
       )
-
-      if !result.success {
-        throw CryptoError.keyGenerationFailed(
-          reason: "Failed to store key with identifier: \(identifier)"
-        )
+      
+      switch result {
+      case .success:
+        return
+      case .failure(let error):
+        throw error
       }
-
-      var metadata=PrivacyMetadata()
-      metadata["purpose"]=PrivacyMetadataValue(value: purpose.rawValue, privacy: .public)
-      metadata["identifier"]=PrivacyMetadataValue(value: identifier, privacy: .private)
-
-      await logger.info(
-        "Successfully stored key with identifier: \(identifier)",
-        metadata: metadata,
-        source: "SecureCryptoStorage"
-      )
     } catch {
-      throw CryptoError.keyGenerationFailed(
-        reason: "Storage error: \(error.localizedDescription)"
-      )
+      throw error
     }
   }
 
@@ -255,22 +241,12 @@ public actor SecureCryptoStorage: Sendable {
   // MARK: - HMAC Storage
 
   /**
-   Stores an HMAC result.
-
-   - Parameters:
-      - hmac: The HMAC value
-      - dataHash: Hash of the data the HMAC was generated for
-      - keyIdentifier: Identifier of the key used
-      - algorithm: Hash algorithm used
-
-   - Returns: Identifier that can be used to retrieve the HMAC
-   - Throws: CryptoError if storage fails
+   Compute and store an HMAC for a data hash using a specific key and algorithm
    */
-  public func storeHMAC(
-    _ hmac: Data,
+  public func computeAndStoreHMAC(
     forDataHash dataHash: Int,
     keyIdentifier: String,
-    algorithm: HMACOptions.HashAlgorithm
+    algorithm: CoreSecurityTypes.HashAlgorithm
   ) async throws -> String {
     let identifier="hmac_\(dataHash)_\(keyIdentifier)_\(UUID().uuidString)"
 
@@ -286,7 +262,7 @@ public actor SecureCryptoStorage: Sendable {
 
     do {
       let result=try await secureStorage.storeSecurely(
-        data: hmac,
+        data: Data(),
         identifier: identifier,
         config: config
       )

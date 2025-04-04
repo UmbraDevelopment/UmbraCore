@@ -79,6 +79,31 @@ let registry = await CryptoServiceFactory.createProviderRegistry(
 )
 ```
 
+### 3. Update Option Types References
+
+As part of the consolidation effort, the following option types have been standardised to use the canonical definitions from `SecurityCoreInterfaces`:
+
+- `EncryptionOptions`
+- `DecryptionOptions`
+- `HashingOptions`
+- `KeyGenerationOptions`
+
+If you were previously using these types from the `CryptoServices` module, you should update your code to use the canonical versions:
+
+```swift
+// Before
+import CryptoServices
+let options = EncryptionOptions(algorithm: .aes256CBC, padding: .pkcs7)
+
+// After
+import SecurityCoreInterfaces
+let options = EncryptionOptions(algorithm: .aes256CBC, padding: .pkcs7)
+```
+
+The CryptoServices module now contains typealiases to the canonical types for backward compatibility, but direct import of SecurityCoreInterfaces is recommended for new code.
+
+Note that the canonical `EncryptionOptions` and `DecryptionOptions` now include a `padding` property that was previously only available in the CryptoServices versions.
+
 ## Benefits of the Consolidated Implementation
 
 1. **No Circular Dependencies**: The consolidated implementation eliminates circular dependencies between modules

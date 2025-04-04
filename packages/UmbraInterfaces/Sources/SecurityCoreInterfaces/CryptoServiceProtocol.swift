@@ -1,4 +1,5 @@
 import CoreSecurityTypes
+import CryptoTypes
 import DomainSecurityTypes
 import Foundation
 import UmbraErrors
@@ -84,38 +85,48 @@ public protocol CryptoServiceProtocol: Sendable {
 }
 
 /// Configuration options for encryption.
-public struct EncryptionOptions: Sendable {
+public struct EncryptionOptions: Sendable, Equatable {
   /// The encryption algorithm to use.
   public let algorithm: CoreSecurityTypes.EncryptionAlgorithm
 
   /// Optional authenticated data for AEAD algorithms.
   public let authenticatedData: [UInt8]?
 
+  /// Optional padding mode to use.
+  public let padding: PaddingMode?
+
   /// Initialises encryption options with defaults.
   public init(
     algorithm: CoreSecurityTypes.EncryptionAlgorithm = .aes256CBC,
-    authenticatedData: [UInt8]?=nil
+    authenticatedData: [UInt8]? = nil,
+    padding: PaddingMode? = .pkcs7
   ) {
-    self.algorithm=algorithm
-    self.authenticatedData=authenticatedData
+    self.algorithm = algorithm
+    self.authenticatedData = authenticatedData
+    self.padding = padding
   }
 }
 
 /// Configuration options for decryption.
-public struct DecryptionOptions: Sendable {
+public struct DecryptionOptions: Sendable, Equatable {
   /// The decryption algorithm to use.
   public let algorithm: CoreSecurityTypes.EncryptionAlgorithm
 
   /// Optional authenticated data for AEAD algorithms.
   public let authenticatedData: [UInt8]?
 
+  /// Optional padding mode to use.
+  public let padding: PaddingMode?
+
   /// Initialises decryption options with defaults.
   public init(
     algorithm: CoreSecurityTypes.EncryptionAlgorithm = .aes256CBC,
-    authenticatedData: [UInt8]?=nil
+    authenticatedData: [UInt8]? = nil,
+    padding: PaddingMode? = .pkcs7
   ) {
-    self.algorithm=algorithm
-    self.authenticatedData=authenticatedData
+    self.algorithm = algorithm
+    self.authenticatedData = authenticatedData
+    self.padding = padding
   }
 }
 
@@ -126,7 +137,7 @@ public struct HashingOptions: Sendable {
 
   /// Initialises hashing options with defaults.
   public init(algorithm: CoreSecurityTypes.HashAlgorithm = .sha256) {
-    self.algorithm=algorithm
+    self.algorithm = algorithm
   }
 }
 
@@ -139,54 +150,54 @@ public struct KeyGenerationOptions: Sendable {
   public let keyType: KeyType
 
   /// Initialises key generation options with defaults.
-  public init(persistent: Bool=true, keyType: KeyType = .symmetric) {
-    self.persistent=persistent
-    self.keyType=keyType
+  public init(persistent: Bool = true, keyType: KeyType = .symmetric) {
+    self.persistent = persistent
+    self.keyType = keyType
   }
 }
 
 /// Supported key types.
 public enum KeyType: UInt8, Sendable {
-  case symmetric=0
-  case asymmetric=1
-  case hybrid=2
+  case symmetric = 0
+  case asymmetric = 1
+  case hybrid = 2
 }
 
 /// Data transfer object for cryptographic operations.
 /// Used for passing cryptographic functions between processes.
 public struct CryptoServiceDto: Sendable {
   /// Type alias for encrypt function
-  public typealias EncryptFunction=@Sendable (
+  public typealias EncryptFunction = @Sendable (
     String, String, EncryptionOptions?
   ) async -> Result<String, SecurityStorageError>
 
   /// Type alias for decrypt function
-  public typealias DecryptFunction=@Sendable (
+  public typealias DecryptFunction = @Sendable (
     String, String, DecryptionOptions?
   ) async -> Result<String, SecurityStorageError>
 
   /// Type alias for hash function
-  public typealias HashFunction=@Sendable (
+  public typealias HashFunction = @Sendable (
     String, HashingOptions?
   ) async -> Result<String, SecurityStorageError>
 
   /// Type alias for verify hash function
-  public typealias VerifyHashFunction=@Sendable (
+  public typealias VerifyHashFunction = @Sendable (
     String, String, HashingOptions?
   ) async -> Result<Bool, SecurityStorageError>
 
   /// Type alias for generate key function
-  public typealias GenerateKeyFunction=@Sendable (
+  public typealias GenerateKeyFunction = @Sendable (
     Int, KeyGenerationOptions?
   ) async -> Result<String, SecurityStorageError>
 
   /// Type alias for import data function
-  public typealias ImportDataFunction=@Sendable (
+  public typealias ImportDataFunction = @Sendable (
     [UInt8], String?
   ) async -> Result<String, SecurityStorageError>
 
   /// Type alias for export data function
-  public typealias ExportDataFunction=@Sendable (
+  public typealias ExportDataFunction = @Sendable (
     String
   ) async -> Result<[UInt8], SecurityStorageError>
 
@@ -225,14 +236,14 @@ public struct CryptoServiceDto: Sendable {
     importData: @escaping ImportDataFunction,
     exportData: @escaping ExportDataFunction
   ) {
-    self.secureStorage=secureStorage
-    self.encrypt=encrypt
-    self.decrypt=decrypt
-    self.hash=hash
-    self.verifyHash=verifyHash
-    self.generateKey=generateKey
-    self.importData=importData
-    self.exportData=exportData
+    self.secureStorage = secureStorage
+    self.encrypt = encrypt
+    self.decrypt = decrypt
+    self.hash = hash
+    self.verifyHash = verifyHash
+    self.generateKey = generateKey
+    self.importData = importData
+    self.exportData = exportData
   }
 }
 

@@ -39,37 +39,39 @@ public actor MockCryptoService: CryptoServiceProtocol {
   /// A minimal empty logger for when none is provided
   private struct EmptyLogger: LoggingProtocol {
     /// The underlying logging actor, required by CoreLoggingProtocol
-    public let loggingActor: LoggingActor = EmptyLoggingActor()
+    public var loggingActor: LoggingActor {
+      EmptyLoggingActor(destinations: [], minimumLogLevel: .info)
+    }
     
     /// Implementation of the core logging method
-    func log(_ level: LogLevel, _ message: String, metadata: PrivacyMetadata?, source: String) async {}
+    func logMessage(_ level: LogLevel, _ message: String, context: LogContext) async {
+      // This is a non-logging implementation, so we do nothing
+    }
     
-    /// Implementation of trace level logging
-    func trace(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
-    
-    /// Implementation of debug level logging
-    func debug(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
-    
-    /// Implementation of info level logging
-    func info(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
-    
-    /// Implementation of warning level logging
-    func warning(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
-    
-    /// Implementation of error level logging
-    func error(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
-    
-    /// Implementation of critical level logging
-    func critical(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
-    
-    /// Implementation required by PrivacyAwareLoggingProtocol
-    func logMessage(_ level: LogLevel, _ message: String, context: LogContext) async {}
+    /// Helper method to match logger interface
+    func log(_ level: LogLevel, _ message: String, metadata: PrivacyMetadata?, source: String) async {
+      // This is a non-logging implementation, so we do nothing
+    }
   }
   
   /// A minimal empty logging actor implementation
   private actor EmptyLoggingActor: LoggingActor {
+    /// Destinations for logs (empty in this implementation)
+    private let destinations: [LogDestination]
+    
+    /// Minimum log level (ignored in this implementation)
+    private let minimumLogLevel: LogLevel
+    
+    /// Initialize with destinations and log level
+    init(destinations: [LogDestination], minimumLogLevel: LogLevel) {
+      self.destinations = destinations
+      self.minimumLogLevel = minimumLogLevel
+    }
+    
     /// Implementation of the core logging method for the actor
-    func log(_ level: LogLevel, _ message: String, metadata: PrivacyMetadata?, source: String) async {}
+    func log(_ level: LogLevel, _ message: String, context: LogContext) async {
+      // This is a non-logging implementation, so we do nothing
+    }
   }
 
   /// Encrypts binary data using a key from secure storage (mock implementation).

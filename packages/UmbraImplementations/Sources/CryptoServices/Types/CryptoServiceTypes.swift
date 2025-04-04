@@ -17,7 +17,7 @@ import SecurityCoreInterfaces
  
  Provides configuration parameters for encryption and decryption operations.
  */
-public struct CryptoOptions: Sendable, Equatable {
+public struct CryptoOptions: Sendable {
     /// The algorithm to use for the operation
     public let algorithm: EncryptionAlgorithm
     
@@ -29,11 +29,48 @@ public struct CryptoOptions: Sendable, Equatable {
     ///   - algorithm: The encryption algorithm to use
     ///   - parameters: Additional parameters for the operation
     public init(
-        algorithm: EncryptionAlgorithm = .aes256,
+        algorithm: EncryptionAlgorithm = .aes256CBC,
         parameters: [String: Any]? = nil
     ) {
         self.algorithm = algorithm
         self.parameters = parameters
+    }
+    
+    // Manual implementation of Equatable since [String: Any] doesn't conform to Equatable
+    public static func == (lhs: CryptoOptions, rhs: CryptoOptions) -> Bool {
+        // Compare algorithm
+        guard lhs.algorithm == rhs.algorithm else {
+            return false
+        }
+        
+        // If both parameters are nil, they're equal
+        if lhs.parameters == nil && rhs.parameters == nil {
+            return true
+        }
+        
+        // If only one is nil, they're not equal
+        if lhs.parameters == nil || rhs.parameters == nil {
+            return false
+        }
+        
+        // Compare parameter counts
+        if lhs.parameters!.count != rhs.parameters!.count {
+            return false
+        }
+        
+        // For each key in lhs, check if it exists in rhs and has the same string representation
+        for (key, leftValue) in lhs.parameters! {
+            guard let rightValue = rhs.parameters![key] else {
+                return false
+            }
+            
+            // Simple string comparison - not perfect but works for most cases
+            if String(describing: leftValue) != String(describing: rightValue) {
+                return false
+            }
+        }
+        
+        return true
     }
 }
 
@@ -83,9 +120,9 @@ public struct KeyDerivationOptions: Sendable, Equatable {
  
  Configures the hash algorithm and other parameters for HMAC operations.
  */
-public struct HMACOptions: Sendable, Equatable {
+public struct HMACOptions: Sendable {
     /// The hash algorithm to use for the HMAC
-    public let algorithm: HashAlgorithm
+    public let algorithm: CoreSecurityTypes.HashAlgorithm
     
     /// Additional parameters for the HMAC operation
     public let parameters: [String: Any]?
@@ -95,11 +132,48 @@ public struct HMACOptions: Sendable, Equatable {
     ///   - algorithm: The hash algorithm to use
     ///   - parameters: Additional parameters for the HMAC
     public init(
-        algorithm: HashAlgorithm = .sha256,
+        algorithm: CoreSecurityTypes.HashAlgorithm = .sha256,
         parameters: [String: Any]? = nil
     ) {
         self.algorithm = algorithm
         self.parameters = parameters
+    }
+    
+    // Manual implementation of Equatable since [String: Any] doesn't conform to Equatable
+    public static func == (lhs: HMACOptions, rhs: HMACOptions) -> Bool {
+        // Compare algorithm
+        guard lhs.algorithm == rhs.algorithm else {
+            return false
+        }
+        
+        // If both parameters are nil, they're equal
+        if lhs.parameters == nil && rhs.parameters == nil {
+            return true
+        }
+        
+        // If only one is nil, they're not equal
+        if lhs.parameters == nil || rhs.parameters == nil {
+            return false
+        }
+        
+        // Compare parameter counts
+        if lhs.parameters!.count != rhs.parameters!.count {
+            return false
+        }
+        
+        // For each key in lhs, check if it exists in rhs and has the same string representation
+        for (key, leftValue) in lhs.parameters! {
+            guard let rightValue = rhs.parameters![key] else {
+                return false
+            }
+            
+            // Simple string comparison - not perfect but works for most cases
+            if String(describing: leftValue) != String(describing: rightValue) {
+                return false
+            }
+        }
+        
+        return true
     }
 }
 

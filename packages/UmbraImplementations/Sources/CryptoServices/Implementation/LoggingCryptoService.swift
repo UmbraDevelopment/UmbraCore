@@ -58,9 +58,10 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
   ) async -> Result<String, SecurityStorageError> {
     // Create a context for logging
     let context = CryptoLogContext(
-      domainName: "CryptoServices",
-      source: "LoggingCryptoService",
-      operation: "encrypt"
+      operation: "encrypt",
+      algorithm: nil,
+      correlationID: nil,
+      source: "LoggingCryptoService"
     )
     
     // Extract metadata and source from context
@@ -103,9 +104,10 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
   ) async -> Result<String, SecurityStorageError> {
     // Create a context for logging
     let context = CryptoLogContext(
-      domainName: "CryptoServices",
-      source: "LoggingCryptoService",
-      operation: "decrypt"
+      operation: "decrypt",
+      algorithm: nil,
+      correlationID: nil,
+      source: "LoggingCryptoService"
     )
     
     // Extract metadata and source from context
@@ -145,9 +147,10 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
   ) async -> Result<String, SecurityStorageError> {
     // Create a context for logging
     let context = CryptoLogContext(
-      domainName: "CryptoServices",
-      source: "LoggingCryptoService",
-      operation: "hash"
+      operation: "hash",
+      algorithm: nil,
+      correlationID: nil,
+      source: "LoggingCryptoService"
     )
     
     // Extract metadata and source from context
@@ -189,9 +192,10 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
   ) async -> Result<Bool, SecurityStorageError> {
     // Create a context for logging
     let context = CryptoLogContext(
-      domainName: "CryptoServices",
-      source: "LoggingCryptoService",
-      operation: "verifyHash"
+      operation: "verifyHash",
+      algorithm: nil,
+      correlationID: nil,
+      source: "LoggingCryptoService"
     )
     
     // Extract metadata and source from context
@@ -233,9 +237,10 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
   ) async -> Result<String, SecurityStorageError> {
     // Create a context for logging
     let context = CryptoLogContext(
-      domainName: "CryptoServices",
-      source: "LoggingCryptoService",
-      operation: "generateKey"
+      operation: "generateKey",
+      algorithm: nil,
+      correlationID: nil,
+      source: "LoggingCryptoService"
     )
     
     // Extract metadata and source from context
@@ -276,9 +281,10 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
   ) async -> Result<String, SecurityStorageError> {
     // Create a context for logging
     let context = CryptoLogContext(
-      domainName: "CryptoServices",
-      source: "LoggingCryptoService",
-      operation: "importData"
+      operation: "importData",
+      algorithm: nil,
+      correlationID: nil,
+      source: "LoggingCryptoService"
     )
     
     // Extract metadata and source from context
@@ -316,9 +322,10 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
   ) async -> Result<[UInt8], SecurityStorageError> {
     // Create a context for logging
     let context = CryptoLogContext(
-      domainName: "CryptoServices",
-      source: "LoggingCryptoService",
-      operation: "exportData"
+      operation: "exportData",
+      algorithm: nil,
+      correlationID: nil,
+      source: "LoggingCryptoService"
     )
     
     // Extract metadata and source from context
@@ -346,48 +353,64 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
 }
 
 /**
- Context for logging crypto operations 
+ Custom logging context for crypto operations.
  
- Provides structured context information for privacy-aware logging in cryptographic operations.
  Follows the Alpha Dot Five architecture guidelines for privacy-preserving logging.
  */
-private struct CryptoLogContext: LogContext {
+private struct CryptoLogContext {
   /// The domain name for the logging context
   var domainName: String
   
-  /// The source of the log message (component name)
-  var source: String?
-  
-  /// Correlation ID for tracing related operations
+  /// Optional correlation ID for tracing across services
   var correlationID: String?
   
-  /// Privacy-aware metadata for the log message
-  var metadata: PrivacyMetadata = PrivacyMetadata()
+  /// The source of the log message
+  var source: String?
   
-  /// Additional parameters for the log context
+  /// The file where the log was generated
+  var file: String?
+  
+  /// The function where the log was generated
+  var function: String?
+  
+  /// The line number where the log was generated
+  var line: Int = 0
+  
+  /// The column number where the log was generated
+  var column: Int = 0
+  
+  /// Metadata for structured logging
+  var metadata: [String: String]
+  
+  /// Additional parameters for the operation
   var parameters: [String: Any] = [:]
   
-  /**
-   Initialises a new crypto logging context
-   
-   - Parameters:
-     - domainName: The domain this log belongs to
-     - source: The source component generating the log
-     - operation: The cryptographic operation being performed
-   */
-  init(domainName: String, source: String? = nil, operation: String) {
-    self.domainName = domainName
+  /// Initialize a new logging context for a crypto operation
+  init(
+    operation: String,
+    algorithm: String? = nil,
+    correlationID: String? = nil,
+    source: String = "CryptoServices"
+  ) {
+    self.domainName = "CryptoServices"
+    self.correlationID = correlationID
     self.source = source
-    self.parameters["operation"] = operation
-    
-    // Create a correlation ID for tracing related operations
-    self.correlationID = UUID().uuidString
+    self.file = #file
+    self.function = #function
+    self.line = #line
+    self.column = #column
     
     // Add operation to metadata for structured logging
-    self.metadata = PrivacyMetadata([
-      "operation": .public(operation),
-      "component": .public("CryptoServices"),
-      "correlationId": .public(self.correlationID ?? "unknown")
-    ])
+    self.metadata = [
+      "operation": operation,
+      "component": "CryptoServices",
+      "correlationId": correlationID ?? "unknown"
+    ]
+    
+    // Store operation details in parameters
+    self.parameters["operation"] = operation
+    if let algorithm = algorithm {
+      self.parameters["algorithm"] = algorithm
+    }
   }
 }

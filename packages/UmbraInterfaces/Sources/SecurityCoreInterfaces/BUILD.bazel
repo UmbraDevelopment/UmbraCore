@@ -14,5 +14,6 @@ umbra_swift_library(
         "//packages/UmbraCoreTypes/Sources/UmbraErrors",
         "//packages/UmbraCoreTypes/Sources/CoreSecurityTypes",
         "//packages/UmbraCoreTypes/Sources/DomainSecurityTypes",
+        "//packages/UmbraCoreTypes/Sources/CryptoTypes",
     ],
 )

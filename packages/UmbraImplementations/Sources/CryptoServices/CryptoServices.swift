@@ -76,16 +76,16 @@ public enum CryptoServices {
   }
 
   /**
-   Creates a mock implementation of CryptoServiceProtocol for testing.
+   Creates a mock crypto service for testing purposes.
    
    - Parameters:
      - secureStorage: The secure storage implementation to use
-     - configuration: Configuration for the mock behavior
-   - Returns: A mock CryptoServiceProtocol implementation
+     - configuration: Optional configuration for the mock service
+   - Returns: A mock crypto service that implements CryptoServiceProtocol
    */
   public static func createMock(
     secureStorage: SecureStorageProtocol,
-    configuration: MockCryptoServiceImpl.Configuration = .init()
+    configuration: [String: Any] = [:]
   ) async -> CryptoServiceProtocol {
     await CryptoServiceFactory.createMock(
       secureStorage: secureStorage,

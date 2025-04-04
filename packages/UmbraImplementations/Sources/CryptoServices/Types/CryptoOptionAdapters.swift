@@ -7,7 +7,7 @@ import SecurityCoreInterfaces
 // MARK: - Adapter Extensions for EncryptionOptions
 
 /// Extension to adapt between SecurityCoreInterfaces.EncryptionOptions and CryptoTypes.CryptoOperationOptionsDTO
-extension EncryptionOptions {
+extension SecurityCoreInterfaces.EncryptionOptions {
     /// Convert to CryptoOperationOptionsDTO for use with internal APIs
     public func toCryptoOperationOptionsDTO() -> CryptoOperationOptionsDTO {
         // Map the algorithm and mode
@@ -17,6 +17,8 @@ extension EncryptionOptions {
             cryptoMode = .cbc
         case .aes256GCM:
             cryptoMode = .gcm
+        case .chacha20Poly1305:
+            cryptoMode = .gcm // Use GCM mode as the closest equivalent for ChaCha20-Poly1305
         }
         
         // Use padding from options or default to PKCS7
@@ -32,7 +34,7 @@ extension EncryptionOptions {
 }
 
 /// Extension to adapt between SecurityCoreInterfaces.DecryptionOptions and CryptoTypes.CryptoOperationOptionsDTO
-extension DecryptionOptions {
+extension SecurityCoreInterfaces.DecryptionOptions {
     /// Convert to CryptoOperationOptionsDTO for use with internal APIs
     public func toCryptoOperationOptionsDTO() -> CryptoOperationOptionsDTO {
         // Map the algorithm and mode
@@ -42,6 +44,8 @@ extension DecryptionOptions {
             cryptoMode = .cbc
         case .aes256GCM:
             cryptoMode = .gcm
+        case .chacha20Poly1305:
+            cryptoMode = .gcm // Use GCM mode as the closest equivalent for ChaCha20-Poly1305
         }
         
         // Use padding from options or default to PKCS7
@@ -59,13 +63,18 @@ extension DecryptionOptions {
 // MARK: - Adapter Extensions for KeyGenerationOptions
 
 /// Extension to adapt between SecurityCoreInterfaces.KeyGenerationOptions and CryptoTypes.KeyGenerationOptionsDTO
-extension KeyGenerationOptions {
+extension SecurityCoreInterfaces.KeyGenerationOptions {
     /// Convert to KeyGenerationOptionsDTO for use with internal APIs
     /// - Parameter keySize: The size of the key in bits
     /// - Returns: A DTO compatible with the CryptoTypes module
     public func toKeyGenerationOptionsDTO(keySize: Int) -> KeyGenerationOptionsDTO {
+        // Create a key generation options DTO with default values for the missing fields
+        let keyAlgorithm = SecurityCoreInterfaces.KeyType.symmetric
+        let exportable = false
+        let requiresAuthentication = false
+        
         return KeyGenerationOptionsDTO(
-            algorithm: algorithm,
+            algorithm: keyAlgorithm,
             keySize: keySize,
             exportable: exportable,
             requiresAuthentication: requiresAuthentication
@@ -76,7 +85,7 @@ extension KeyGenerationOptions {
 // MARK: - Adapter Extensions for HashingOptions
 
 /// Extension to adapt between SecurityCoreInterfaces.HashingOptions and CryptoTypes.HashAlgorithm
-extension HashingOptions {
+extension SecurityCoreInterfaces.HashingOptions {
     /// Get the equivalent CoreSecurityTypes.HashAlgorithm
     public var hashAlgorithm: CoreSecurityTypes.HashAlgorithm {
         return algorithm
