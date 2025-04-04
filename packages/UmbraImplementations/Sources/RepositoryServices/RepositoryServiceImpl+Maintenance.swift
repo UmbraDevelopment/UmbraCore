@@ -211,7 +211,7 @@ extension RepositoryServiceImpl {
     
     // Repository is already a RepositoryMaintenanceProtocol by definition
     do {
-      try await repository.check(readData: true, checkUnused: true)
+      _ = try await repository.check(readData: true, checkUnused: true)
       await logger.info(
         "Repository check completed successfully",
         metadata: metadata,

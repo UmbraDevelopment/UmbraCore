@@ -197,7 +197,7 @@ final class BasicCryptoService: CryptoServiceProtocol {
     let dataResult=await secureStorage.retrieveData(withIdentifier: dataIdentifier)
 
     switch dataResult {
-      case let .success(_):
+      case .success(_):
         // In a real implementation, this would perform actual hashing
         // Here we just store a placeholder "hash" value
         let hashedIdentifier="hashed-\(dataIdentifier)"
