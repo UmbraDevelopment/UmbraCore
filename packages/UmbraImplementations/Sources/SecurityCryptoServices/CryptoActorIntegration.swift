@@ -1,3 +1,4 @@
+import CryptoActorImplementations
 import Foundation
 import LoggingInterfaces
 import SecurityCoreInterfaces
@@ -5,11 +6,19 @@ import CoreSecurityTypes
 import DomainSecurityTypes
 import UmbraErrors
 
-// Create a namespace to avoid conflicts with Swift's native 'actor' keyword
-// and provide access to our actor implementations
-public enum CryptoActorImplementations {
-    // Re-export the actor types from the implementation files
-    public typealias CryptoServiceActor = SecurityCryptoServices.CryptoServiceActor
-    public typealias ProviderRegistryActor = SecurityCryptoServices.ProviderRegistryActor
-    public typealias SecureStorageActor = SecurityCryptoServices.SecureStorageActor
+/**
+ # CryptoActorIntegration
+ 
+ This file provides type aliases for actor types defined in the CryptoActorImplementations
+ module, making them available to consumers of the SecurityCryptoServices module.
+ 
+ This indirection allows us to keep the actor implementations separate from the interface,
+ while still providing a convenient way to access them.
+ */
+public enum CryptoActorIntegration {
+    // Re-export the actor types directly from the CryptoActorImplementations module
+    // The actors are defined at the top level in that module
+    public typealias CryptoServiceActor = CryptoActorImplementations.CryptoServiceActor
+    public typealias ProviderRegistryActor = CryptoActorImplementations.ProviderRegistryActor
+    public typealias SecureStorageActor = CryptoActorImplementations.SecureStorageActor
 }

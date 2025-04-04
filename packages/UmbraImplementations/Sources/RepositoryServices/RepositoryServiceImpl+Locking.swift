@@ -19,24 +19,16 @@ extension RepositoryServiceImpl {
 
     guard let repository = repositories[identifier] else {
       await logger.error(
-        "Repository not found or does not support locking",
+        "Repository not found",
         metadata: metadata,
         source: "RepositoryService"
       )
       throw RepositoryError.notFound
     }
     
-    guard let lockingRepository = repository as? RepositoryLockingProtocol else {
-      await logger.error(
-        "Repository does not support locking",
-        metadata: metadata,
-        source: "RepositoryService"
-      )
-      throw RepositoryError.invalidOperation
-    }
-
+    // Repository is already a RepositoryLockingProtocol by definition
     do {
-      try await lockingRepository.lock()
+      try await repository.lock()
       await logger.info(
         "Repository locked successfully",
         metadata: metadata,
@@ -58,32 +50,24 @@ extension RepositoryServiceImpl {
   /// - Throws: `RepositoryError.notFound` if the repository is not found,
   ///           or other repository errors if unlocking fails.
   public func unlockRepository(identifier: String) async throws {
-    let metadata = LogMetadataDTO()
-      .with(string: "repository_id", value: identifier)
-      .with(string: "operation", value: "unlock")
+    let metadata = LogMetadataDTOCollection()
+      .withPublic(key: "repository_id", value: identifier)
+      .withPublic(key: "operation", value: "unlock")
 
     await logger.info("Unlocking repository", metadata: metadata, source: "RepositoryService")
 
     guard let repository = repositories[identifier] else {
       await logger.error(
-        "Repository not found or does not support locking",
+        "Repository not found",
         metadata: metadata,
         source: "RepositoryService"
       )
       throw RepositoryError.notFound
     }
     
-    guard let lockingRepository = repository as? RepositoryLockingProtocol else {
-      await logger.error(
-        "Repository does not support locking",
-        metadata: metadata,
-        source: "RepositoryService"
-      )
-      throw RepositoryError.invalidOperation
-    }
-
+    // Repository is already a RepositoryLockingProtocol by definition
     do {
-      try await lockingRepository.unlock()
+      try await repository.unlock()
       await logger.info(
         "Repository unlocked successfully",
         metadata: metadata,

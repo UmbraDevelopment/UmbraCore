@@ -257,8 +257,8 @@ public actor CryptoServiceActor: CryptoServiceProtocol, Sendable {
     length: Int,
     options: KeyGenerationOptions?
   ) async -> Result<String, SecurityStorageError> {
-    // Use default key length if not specified
-    let keyLength = length ?? 256
+    // Use the provided key length
+    let keyLength = length
     
     // Generate a new key
     let keyResult = await generateKey(size: keyLength)

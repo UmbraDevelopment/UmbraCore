@@ -42,17 +42,9 @@ extension RepositoryServiceImpl {
       throw RepositoryError.notFound
     }
     
-    guard let maintenanceRepository = repository as? RepositoryMaintenanceProtocol else {
-      await logger.error(
-        "Repository does not support maintenance operations",
-        metadata: metadata,
-        source: "RepositoryService"
-      )
-      throw RepositoryError.invalidOperation
-    }
-
+    // Repository is already a RepositoryMaintenanceProtocol by definition
     do {
-      let stats=try await maintenanceRepository.check(readData: readData, checkUnused: checkUnused)
+      let stats=try await repository.check(readData: readData, checkUnused: checkUnused)
       await logger.info(
         "Repository maintenance completed successfully",
         metadata: metadata,
@@ -84,30 +76,22 @@ extension RepositoryServiceImpl {
 
     guard let repository = repositories[identifier] else {
       await logger.error(
-        "Repository not found or does not support maintenance",
+        "Repository not found",
         metadata: metadata,
         source: "RepositoryService"
       )
       throw RepositoryError.notFound
     }
     
-    guard let maintenanceRepository = repository as? RepositoryMaintenanceProtocol else {
-      await logger.error(
-        "Repository does not support maintenance operations",
-        metadata: metadata,
-        source: "RepositoryService"
-      )
-      throw RepositoryError.invalidOperation
-    }
-
+    // Repository is already a RepositoryMaintenanceProtocol by definition
     do {
-      let repaired=try await maintenanceRepository.repair()
+      let successful = try await repository.repair()
       await logger.info(
-        "Repository repair result: \(repaired)",
+        "Repository repair result: \(successful)",
         metadata: metadata,
         source: "RepositoryService"
       )
-      return repaired
+      return successful
     } catch {
       await logger.error(
         "Repository repair failed: \(error.localizedDescription)",
@@ -136,24 +120,16 @@ extension RepositoryServiceImpl {
 
     guard let repository = repositories[identifier] else {
       await logger.error(
-        "Repository not found or does not support maintenance",
+        "Repository not found",
         metadata: metadata,
         source: "RepositoryService"
       )
       throw RepositoryError.notFound
     }
     
-    guard let maintenanceRepository = repository as? RepositoryMaintenanceProtocol else {
-      await logger.error(
-        "Repository does not support maintenance operations",
-        metadata: metadata,
-        source: "RepositoryService"
-      )
-      throw RepositoryError.invalidOperation
-    }
-
+    // Repository is already a RepositoryMaintenanceProtocol by definition
     do {
-      try await maintenanceRepository.prune()
+      try await repository.prune()
       await logger.info(
         "Repository pruned successfully",
         metadata: metadata,
@@ -194,17 +170,9 @@ extension RepositoryServiceImpl {
       throw RepositoryError.notFound
     }
     
-    guard let maintenanceRepository = repository as? RepositoryMaintenanceProtocol else {
-      await logger.error(
-        "Repository does not support maintenance operations",
-        metadata: metadata,
-        source: "RepositoryService"
-      )
-      throw RepositoryError.invalidOperation
-    }
-
+    // Repository is already a RepositoryMaintenanceProtocol by definition
     do {
-      try await maintenanceRepository.rebuildIndex()
+      try await repository.rebuildIndex()
       await logger.info(
         "Repository index rebuilt successfully",
         metadata: metadata,
@@ -241,17 +209,9 @@ extension RepositoryServiceImpl {
       throw RepositoryError.notFound
     }
     
-    guard let maintenanceRepository = repository as? RepositoryMaintenanceProtocol else {
-      await logger.error(
-        "Repository does not support maintenance operations",
-        metadata: metadata,
-        source: "RepositoryService"
-      )
-      throw RepositoryError.invalidOperation
-    }
-
+    // Repository is already a RepositoryMaintenanceProtocol by definition
     do {
-      try await maintenanceRepository.check()
+      try await repository.check(readData: true, checkUnused: true)
       await logger.info(
         "Repository check completed successfully",
         metadata: metadata,

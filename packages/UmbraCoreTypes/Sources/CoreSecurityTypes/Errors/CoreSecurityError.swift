@@ -39,6 +39,12 @@ public enum CoreSecurityError: Error, Equatable, Sendable {
 
   /// Algorithm not supported
   case algorithmNotSupported(String)
+  
+  /// Authentication failure during cryptographic operation
+  case authenticationFailed(String)
+  
+  /// Unsupported operation for this platform
+  case unsupportedOperation(String)
 
   /// Creates a human-readable description of the error
   public var localizedDescription: String {
@@ -63,6 +69,10 @@ public enum CoreSecurityError: Error, Equatable, Sendable {
         "Hardware security error: \(message)"
       case let .algorithmNotSupported(message):
         "Algorithm not supported: \(message)"
+      case let .authenticationFailed(message):
+        "Authentication failed: \(message)"
+      case let .unsupportedOperation(message):
+        "Unsupported operation: \(message)"
     }
   }
 }

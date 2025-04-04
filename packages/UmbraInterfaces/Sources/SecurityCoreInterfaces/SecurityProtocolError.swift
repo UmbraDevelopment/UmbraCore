@@ -35,6 +35,9 @@ public enum SecurityStorageError: Error, Sendable {
     /// The protocol implementation is not available
     case implementationUnavailable
     
+    /// Generic operation failure with optional message
+    case operationFailed(String)
+    
     /// Description of the error for logging and debugging
     public var description: String {
         switch self {
@@ -60,6 +63,8 @@ public enum SecurityStorageError: Error, Sendable {
             return "The operation is not supported"
         case .implementationUnavailable:
             return "The protocol implementation is not available"
+        case .operationFailed(let message):
+            return "Operation failed: \(message)"
         }
     }
 }
