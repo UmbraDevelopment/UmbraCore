@@ -39,7 +39,7 @@ import KeyManagementActorTypes
 
  ```swift
  // Create a key management actor
- let keyManager = KeyManagementActor(keyStore: myKeyStore, logger: myLogger)
+ let keyManager = KeyManagementActor(keyStore: myKeyStore, loggingService: myLogger)
 
  // Store a key
  let storeResult = await keyManager.storeKey(myKey, withIdentifier: "master-key")
@@ -60,6 +60,9 @@ public actor KeyManagementActor: KeyManagementProtocol {
   /// Secure storage for keys
   private let keyStore: KeyStorage
 
+  /// Store for key metadata
+  private let metadataStore: KeyMetadataStore
+
   /// Logger for security operations
   private let securityLogger: SecurityLogger
 
@@ -71,21 +74,26 @@ public actor KeyManagementActor: KeyManagementProtocol {
 
    - Parameters:
    - keyStore: The secure key storage implementation
-   - logger: The logging service for recording operations
+   - loggingService: The logging service for recording operations
    - keyGenerator: Optional key generator (defaults to DefaultKeyGenerator)
    */
   public init(
     keyStore: KeyStorage,
-    logger: LoggingServiceProtocol,
+    loggingService: LoggingServiceProtocol,
     keyGenerator: KeyGenerator = DefaultKeyGenerator()
   ) {
     self.keyStore = keyStore
-    
-    // Create a security logger using the provided logging service
-    self.securityLogger = SecurityLogger(loggingService: logger)
-    
-    // Store the key generator
+    self.securityLogger = SecurityLogger(loggingService: loggingService)
     self.keyGenerator = keyGenerator
+    
+    // Create metadata store using the same secure storage if available
+    if let secureStorage = keyStore as? SecureStorageProtocol {
+      self.metadataStore = KeyMetadataStore(secureStorage: secureStorage)
+    } else {
+      // Fallback to a KeyStorage adapter if keyStore doesn't implement SecureStorageProtocol
+      let adapter = KeyStorageToSecureStorageAdapter(keyStorage: keyStore)
+      self.metadataStore = KeyMetadataStore(secureStorage: adapter)
+    }
   }
 
   // MARK: - Key Management Operations
@@ -204,6 +212,16 @@ public actor KeyManagementActor: KeyManagementProtocol {
       // Store the key in the secure storage
       try await keyStore.storeKey(key, identifier: sanitizedIdentifier)
       
+      // Create and store metadata
+      let metadata = KeyMetadata(
+        id: identifier,
+        algorithm: .aes,  // Default, should be determined based on key
+        keySize: key.count * 8,  // Size in bits
+        purpose: "encryption" // Default, should be a parameter
+      )
+      
+      try await metadataStore.storeKeyMetadata(metadata)
+      
       // Log the success
       await securityLogger.logOperationSuccess(
         keyIdentifier: identifier,
@@ -255,6 +273,9 @@ public actor KeyManagementActor: KeyManagementProtocol {
       if try await keyStore.containsKey(identifier: sanitizedIdentifier) {
         do {
           try await keyStore.deleteKey(identifier: sanitizedIdentifier)
+          
+          // Delete the metadata
+          try await metadataStore.deleteKeyMetadata(for: identifier)
           
           await securityLogger.logOperationSuccess(
             keyIdentifier: identifier,
@@ -340,6 +361,16 @@ public actor KeyManagementActor: KeyManagementProtocol {
       // Store the new key
       try await keyStore.storeKey(newKey, identifier: sanitizedIdentifier)
       
+      // Create and store metadata
+      let metadata = KeyMetadata(
+        id: identifier,
+        algorithm: .aes,  // Default, should be determined based on key
+        keySize: newKey.count * 8,  // Size in bits
+        purpose: "encryption" // Default, should be a parameter
+      )
+      
+      try await metadataStore.storeKeyMetadata(metadata)
+      
       // Log the success
       await securityLogger.logOperationSuccess(
         keyIdentifier: identifier,
@@ -364,11 +395,43 @@ public actor KeyManagementActor: KeyManagementProtocol {
    - Returns: A result containing an array of key identifiers or an error
    */
   public func getAllKeyIdentifiers() async -> Result<[String], SecurityProtocolError> {
+    // Simply delegate to the protocol method
+    return await listKeyIdentifiers()
+  }
+  
+  /**
+   Lists all available key identifiers.
+   
+   - Returns: An array of key identifiers or an error.
+   */
+  public func listKeyIdentifiers() async -> Result<[String], SecurityProtocolError> {
+    // Log the operation start
+    await securityLogger.logOperationStart(
+      keyIdentifier: "all",
+      operation: "list"
+    )
+    
     do {
-      let identifiers = try await keyStore.getKeyIdentifiers()
+      // Get all key identifiers from the metadata store
+      let identifiers = try await metadataStore.getAllKeyIdentifiers()
+      
+      // Log the successful operation
+      await securityLogger.logOperationSuccess(
+        keyIdentifier: "all",
+        operation: "list"
+      )
+      
       return .success(identifiers)
     } catch {
       let secError = KeyManagementError.keyManagementError(details: error.localizedDescription)
+      
+      // Log the failed operation
+      await securityLogger.logOperationFailure(
+        keyIdentifier: "all",
+        operation: "list",
+        error: secError
+      )
+      
       return Result<[String], SecurityProtocolError>.failure(secError.toStandardError())
     }
   }

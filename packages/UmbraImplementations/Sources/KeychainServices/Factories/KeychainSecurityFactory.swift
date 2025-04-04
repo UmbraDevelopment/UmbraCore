@@ -116,7 +116,7 @@ final class BasicCryptoService: CryptoServiceProtocol {
     let dataResult=await secureStorage.retrieveData(withIdentifier: dataIdentifier)
 
     switch dataResult {
-      case .success(data):
+      case let .success(data):
         // Attempt to retrieve the key
         let keyResult=await secureStorage.retrieveData(withIdentifier: keyIdentifier)
 
@@ -157,7 +157,7 @@ final class BasicCryptoService: CryptoServiceProtocol {
     let dataResult=await secureStorage.retrieveData(withIdentifier: encryptedDataIdentifier)
 
     switch dataResult {
-      case .success(data):
+      case let .success(data):
         // Attempt to retrieve the key
         let keyResult=await secureStorage.retrieveData(withIdentifier: keyIdentifier)
 
