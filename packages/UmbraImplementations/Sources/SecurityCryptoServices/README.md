@@ -243,22 +243,28 @@ All components fully embrace Swift 6's structured concurrency model with proper 
 let logger = YourLoggerImplementation()
 
 // Create crypto service with specific provider type
-let cryptoService = CryptoServices.createCryptoServiceActor(
-    providerType: .apple,
+let cryptoService = await CryptoServiceFactory.createWithProviderType(
+    providerType: .cryptoKit,
     logger: logger
 )
 
 // Create secure storage
-let secureStorage = CryptoServices.createSecureStorageActor(
-    providerType: .apple,
+let registry = await CryptoServiceFactory.createProviderRegistry(logger: logger)
+let provider = await registry.createProvider(type: .cryptoKit)
+
+let secureStorage = await CryptoServiceFactory.createSecureStorage(
+    provider: provider,
+    storageURL: myStorageURL,
     logger: logger
 )
 
-// Create provider registry
-let providerRegistry = CryptoServices.createProviderRegistryActor(
+// Create provider registry directly
+let providerRegistry = await CryptoServiceFactory.createProviderRegistry(
     logger: logger
 )
 ```
+
+> **Note**: The examples above use the canonical `CryptoServiceFactory` from the `CryptoServices` module. Please refer to the [Factory Migration Guide](./FACTORY_MIGRATION_GUIDE.md) for details on the consolidation of crypto service factories.
 
 #### Encryption and Decryption
 
@@ -321,7 +327,7 @@ let reencryptedItems = try await secureStorage.rotateKey(
 
 ```swift
 // Select best provider for current platform
-let registry = CryptoServices.createProviderRegistryActor(logger: logger)
+let registry = CryptoServiceFactory.createProviderRegistryActor(logger: logger)
 let provider = try await registry.selectProvider(for: .currentPlatform)
 
 // Select provider for specific environment
@@ -403,221 +409,7 @@ let batchResults = try await cryptoService.encryptBatch(
 
 ```
 
-Follow these instructions to make the following change to my code document.
-
-Instruction: Update the README.md file to reflect the migration from SecureBytes to native byte arrays, maintaining British spelling in documentation.
-
-Code Edit:
-```
-# UmbraCore Security Architecture
-
-This module implements a flexible security provider system for UmbraCore, offering three distinct security integration options:
-
-1. **Basic Security** (AES-CBC) - Fallback implementation using common cryptographic primitives
-2. **Ring FFI** - Cross-platform security using Rust's Ring cryptography library
-3. **Apple CryptoKit** - Native Apple platform integration with hardware acceleration
-
-## Architecture
-
-The security provider architecture follows the Alpha Dot Five pattern with clear separation of interfaces and implementations:
-
-```
-┌─────────────────────┐     ┌─────────────────────┐
-│ SecurityProviderType │     │ SecurityConfigDTO   │
-└─────────────────────┘     └─────────────────────┘
-           │                           │
-           └───────────┬───────────────┘
-                       │
-               ┌───────▼──────┐
-               │ Provider API │
-               └───────┬──────┘
-                       │
-    ┌─────────────────┼─────────────────┐
-    │                 │                 │
-┌───▼────┐      ┌─────▼─────┐     ┌─────▼─────┐
-│ Basic   │      │ Ring FFI  │     │ CryptoKit │
-│ AES-CBC │      │ Provider  │     │ Provider  │
-└─────────┘      └───────────┘     └───────────┘
-```
-
-## Usage
-
-### Basic Usage (Swift 6 Compatible)
-
-The security system uses an actor-based approach for better concurrency safety:
-
-```swift
-// Access the crypto system via the actor
-let provider = await UmbraCrypto.shared.provider()
-
-// Encrypt data using the provider
-let encryptedData = try provider.encrypt(
-    plaintext: myData, 
-    key: myKey, 
-    iv: myIV, 
-    config: SecurityConfigDTO.aesEncryption()
-)
-```
-
-### Working with Byte Arrays
-
-Native Swift byte arrays (`[UInt8]`) are used for handling sensitive cryptographic data with memory protection utilities:
-
-```swift
-// Create byte arrays from regular data
-let sensitiveData: [UInt8] = [UInt8](myRegularData)
-
-// Use MemoryProtection utilities for secure memory handling
-var tempBytes: [UInt8] = generateSensitiveData()
-defer {
-    MemoryProtection.secureZero(&tempBytes) // Securely zero when no longer needed
-}
-
-// Process the sensitive data
-let processedData = processSensitiveData(tempBytes)
-```
-
-### Using the SecurityProviderBridge
-
-The bridge connects the modern provider architecture to existing systems:
-
-```swift
-// Create a bridge with logging
-let bridge = await UmbraCrypto.shared.createBridge(logger: myLogger)
-
-// Use the bridge with byte arrays for operations
-let result = await bridge.encrypt(data: myData, using: myKey)
-
-// Process the result
-switch result {
-case .success(let encryptedData):
-    // Use the encrypted data
-case .failure(let error):
-    // Handle the error
-}
-```
-
-### Selecting a Specific Provider
-
-You can explicitly choose which security provider to use:
-
-```swift
-// Set up a specific configuration
-let config = SecurityConfigDTO(
-    algorithm: "AES",
-    keySize: 256,
-    blockMode: .gcm,
-    padding: .noPadding,
-    providerType: .apple
-)
-
-// Create a provider of the specified type
-let provider = try SecurityProviderFactory.createProvider(type: .apple)
-
-// Or change the global provider
-await UmbraCrypto.shared.setProvider(provider)
-```
-
-## Security Provider Types
-
-### BasicSecurityProvider
-
-A fallback implementation using CommonCrypto with AES-CBC:
-
-- Available on all platforms
-- Implements standard encryption/decryption with PKCS#7 padding
-- Uses secure random generation for keys and IVs
-- Provides SHA-256/384/512 hashing
-
-### AppleSecurityProvider
-
-Native implementation using CryptoKit for Apple platforms:
-
-- Available on macOS 10.15+, iOS 13.0+, tvOS 13.0+, watchOS 6.0+
-- Uses AES-GCM for authenticated encryption
-- Leverages hardware acceleration where available
-- Provides optimised implementations of modern cryptographic algorithms
-
-### RingSecurityProvider
-
-Cross-platform implementation using Rust's Ring library via FFI:
-
-- Works on any platform with Ring FFI bindings
-- Uses constant-time implementations to prevent timing attacks
-- Provides AES-GCM for authenticated encryption
-- Offers high-quality cryptographic primitives
-
-## Key Classes and Protocols
-
-### EncryptionProviderProtocol
-
-The core protocol that all security providers implement:
-
-```swift
-public protocol EncryptionProviderProtocol {
-    var providerType: SecurityProviderType { get }
-    
-    func encrypt(plaintext: Data, key: Data, iv: Data, config: SecurityConfigDTO) throws -> Data
-    func decrypt(ciphertext: Data, key: Data, iv: Data, config: SecurityConfigDTO) throws -> Data
-    func generateKey(size: Int, config: SecurityConfigDTO) throws -> Data
-    func generateIV(size: Int) throws -> Data
-    func hash(data: Data, algorithm: HashAlgorithm) throws -> Data
-}
-```
-
-### SecurityConfigDTO
-
-Configuration options for security operations:
-
-```swift
-public struct SecurityConfigDTO {
-    public let algorithm: String
-    public let keySize: Int
-    public let blockMode: BlockMode
-    public let padding: PaddingMode
-    public let providerType: SecurityProviderType
-    
-    // Factory methods available for common configurations
-    public static func aesEncryption(
-        providerType: SecurityProviderType = .basic
-    ) -> SecurityConfigDTO
-}
-```
-
-### MemoryProtection
-
-Utilities for secure memory handling:
-
-```swift
-public enum MemoryProtection {
-    // Securely zero memory to prevent sensitive data leaks
-    public static func secureZero(_ bytes: inout [UInt8])
-    
-    // Work with sensitive data with automatic zeroing after use
-    public static func withSecureTemporaryData<T>(
-        _ data: [UInt8],
-        _ block: ([UInt8]) throws -> T
-    ) rethrows -> T
-    
-    // Perform constant-time comparison to prevent timing attacks
-    public static func secureCompare(_ lhs: [UInt8], _ rhs: [UInt8]) -> Bool
-}
-```
-
-## Error Handling
-
-The security system uses the `SecurityProtocolError` enum for consistent error handling:
-
-```swift
-public enum SecurityProtocolError: Error {
-    case invalidInput(String)
-    case cryptographicError(String)
-    case unsupportedOperation(name: String)
-    // Additional cases for specific errors
-}
-```
-
-## Integration Guide
+### Integration Guide
 
 ### Setting Up in Your Project
 
@@ -647,10 +439,25 @@ Set up the security services in your app initialization:
 let logger = LoggingServiceFactory.createDefaultLogger()
 
 // Create a crypto service actor
-let cryptoService = CryptoServiceActor(providerType: .apple, logger: logger)
+let cryptoService = await CryptoServiceFactory.createWithProviderType(
+    providerType: .cryptoKit,
+    logger: logger
+)
 
 // Create a secure storage actor
-let secureStorage = SecureStorageActor(providerType: .apple, logger: logger)
+let registry = await CryptoServiceFactory.createProviderRegistry(logger: logger)
+let provider = await registry.createProvider(type: .cryptoKit)
+
+let secureStorage = await CryptoServiceFactory.createSecureStorage(
+    provider: provider,
+    storageURL: myStorageURL,
+    logger: logger
+)
+
+// Create provider registry directly
+let providerRegistry = await CryptoServiceFactory.createProviderRegistry(
+    logger: logger
+)
 ```
 
 ### Basic Cryptographic Operations
@@ -701,7 +508,7 @@ When implementing your own crypto services:
 
 ```swift
 // Select best provider for current platform
-let registry = CryptoServices.createProviderRegistryActor(logger: logger)
+let registry = CryptoServiceFactory.createProviderRegistryActor(logger: logger)
 let provider = try await registry.selectProvider(for: .currentPlatform)
 
 // Select provider for specific environment

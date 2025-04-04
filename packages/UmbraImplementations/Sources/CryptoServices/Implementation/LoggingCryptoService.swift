@@ -63,8 +63,12 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
       operation: "encrypt"
     )
     
+    // Extract metadata and source from context
+    let metadata = context.metadata
+    let source = context.source ?? "LoggingCryptoService"
+    
     // Log the beginning of the operation
-    await logger.debug("Starting encryption operation", context: context)
+    await logger.debug("Starting encryption operation", metadata: metadata, source: source)
     
     // Delegate to the wrapped implementation
     let result = await wrapped.encrypt(
@@ -76,10 +80,10 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
     // Log the result
     switch result {
     case .success(let identifier):
-      await logger.info("Encryption completed successfully", context: context)
+      await logger.info("Encryption completed successfully", metadata: metadata, source: source)
       return .success(identifier)
     case .failure(let error):
-      await logger.error("Encryption failed: \(error.localizedDescription)", context: context)
+      await logger.error("Encryption failed: \(error.localizedDescription)", metadata: metadata, source: source)
       return .failure(error)
     }
   }
@@ -104,8 +108,12 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
       operation: "decrypt"
     )
     
+    // Extract metadata and source from context
+    let metadata = context.metadata
+    let source = context.source ?? "LoggingCryptoService"
+    
     // Log the beginning of the operation
-    await logger.debug("Starting decryption operation", context: context)
+    await logger.debug("Starting decryption operation", metadata: metadata, source: source)
     
     // Delegate to the wrapped implementation
     let result = await wrapped.decrypt(
@@ -117,10 +125,10 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
     // Log the result
     switch result {
     case .success(let identifier):
-      await logger.info("Decryption completed successfully", context: context)
+      await logger.info("Decryption completed successfully", metadata: metadata, source: source)
       return .success(identifier)
     case .failure(let error):
-      await logger.error("Decryption failed: \(error.localizedDescription)", context: context)
+      await logger.error("Decryption failed: \(error.localizedDescription)", metadata: metadata, source: source)
       return .failure(error)
     }
   }
@@ -142,8 +150,12 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
       operation: "hash"
     )
     
+    // Extract metadata and source from context
+    let metadata = context.metadata
+    let source = context.source ?? "LoggingCryptoService"
+    
     // Log the beginning of the operation
-    await logger.debug("Starting hash operation", context: context)
+    await logger.debug("Starting hash operation", metadata: metadata, source: source)
     
     // Delegate to the wrapped implementation
     let result = await wrapped.hash(
@@ -154,10 +166,10 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
     // Log the result
     switch result {
     case .success(let identifier):
-      await logger.info("Hash operation completed successfully", context: context)
+      await logger.info("Hash operation completed successfully", metadata: metadata, source: source)
       return .success(identifier)
     case .failure(let error):
-      await logger.error("Hash operation failed: \(error.localizedDescription)", context: context)
+      await logger.error("Hash operation failed: \(error.localizedDescription)", metadata: metadata, source: source)
       return .failure(error)
     }
   }
@@ -182,8 +194,12 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
       operation: "verifyHash"
     )
     
+    // Extract metadata and source from context
+    let metadata = context.metadata
+    let source = context.source ?? "LoggingCryptoService"
+    
     // Log the beginning of the operation
-    await logger.debug("Starting hash verification", context: context)
+    await logger.debug("Starting hash verification", metadata: metadata, source: source)
     
     // Delegate to the wrapped implementation
     let result = await wrapped.verifyHash(
@@ -196,10 +212,10 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
     switch result {
     case .success(let verified):
       let status = verified ? "verified" : "failed verification"
-      await logger.info("Hash verification completed: \(status)", context: context)
+      await logger.info("Hash verification completed: \(status)", metadata: metadata, source: source)
       return .success(verified)
     case .failure(let error):
-      await logger.error("Hash verification failed: \(error.localizedDescription)", context: context)
+      await logger.error("Hash verification failed: \(error.localizedDescription)", metadata: metadata, source: source)
       return .failure(error)
     }
   }
@@ -222,8 +238,12 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
       operation: "generateKey"
     )
     
+    // Extract metadata and source from context
+    let metadata = context.metadata
+    let source = context.source ?? "LoggingCryptoService"
+    
     // Log the beginning of the operation
-    await logger.debug("Starting key generation", context: context)
+    await logger.debug("Starting key generation", metadata: metadata, source: source)
     
     // Delegate to the wrapped implementation
     let result = await wrapped.generateKey(
@@ -234,10 +254,10 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
     // Log the result
     switch result {
     case .success(let identifier):
-      await logger.info("Key generation completed successfully", context: context)
+      await logger.info("Key generation completed successfully", metadata: metadata, source: source)
       return .success(identifier)
     case .failure(let error):
-      await logger.error("Key generation failed: \(error.localizedDescription)", context: context)
+      await logger.error("Key generation failed: \(error.localizedDescription)", metadata: metadata, source: source)
       return .failure(error)
     }
   }
@@ -261,8 +281,12 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
       operation: "importData"
     )
     
+    // Extract metadata and source from context
+    let metadata = context.metadata
+    let source = context.source ?? "LoggingCryptoService"
+    
     // Log the beginning of the operation
-    await logger.debug("Starting data import", context: context)
+    await logger.debug("Starting data import", metadata: metadata, source: source)
     
     // Delegate to the wrapped implementation
     let result = await wrapped.importData(
@@ -273,10 +297,10 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
     // Log the result
     switch result {
     case .success(let identifier):
-      await logger.info("Data import completed successfully", context: context)
+      await logger.info("Data import completed successfully", metadata: metadata, source: source)
       return .success(identifier)
     case .failure(let error):
-      await logger.error("Data import failed: \(error.localizedDescription)", context: context)
+      await logger.error("Data import failed: \(error.localizedDescription)", metadata: metadata, source: source)
       return .failure(error)
     }
   }
@@ -297,8 +321,12 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
       operation: "exportData"
     )
     
+    // Extract metadata and source from context
+    let metadata = context.metadata
+    let source = context.source ?? "LoggingCryptoService"
+    
     // Log the beginning of the operation
-    await logger.debug("Starting data export", context: context)
+    await logger.debug("Starting data export", metadata: metadata, source: source)
     
     // Delegate to the wrapped implementation
     let result = await wrapped.exportData(
@@ -308,10 +336,10 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
     // Log the result
     switch result {
     case .success(let data):
-      await logger.info("Data export completed successfully", context: context)
+      await logger.info("Data export completed successfully", metadata: metadata, source: source)
       return .success(data)
     case .failure(let error):
-      await logger.error("Data export failed: \(error.localizedDescription)", context: context)
+      await logger.error("Data export failed: \(error.localizedDescription)", metadata: metadata, source: source)
       return .failure(error)
     }
   }
@@ -319,14 +347,34 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
 
 /**
  Context for logging crypto operations 
+ 
+ Provides structured context information for privacy-aware logging in cryptographic operations.
+ Follows the Alpha Dot Five architecture guidelines for privacy-preserving logging.
  */
 private struct CryptoLogContext: LogContext {
+  /// The domain name for the logging context
   var domainName: String
+  
+  /// The source of the log message (component name)
   var source: String?
+  
+  /// Correlation ID for tracing related operations
   var correlationID: String?
-  var metadata: LogMetadataDTOCollection = LogMetadataDTOCollection()
+  
+  /// Privacy-aware metadata for the log message
+  var metadata: PrivacyMetadata = PrivacyMetadata()
+  
+  /// Additional parameters for the log context
   var parameters: [String: Any] = [:]
   
+  /**
+   Initialises a new crypto logging context
+   
+   - Parameters:
+     - domainName: The domain this log belongs to
+     - source: The source component generating the log
+     - operation: The cryptographic operation being performed
+   */
   init(domainName: String, source: String? = nil, operation: String) {
     self.domainName = domainName
     self.source = source
@@ -334,5 +382,12 @@ private struct CryptoLogContext: LogContext {
     
     // Create a correlation ID for tracing related operations
     self.correlationID = UUID().uuidString
+    
+    // Add operation to metadata for structured logging
+    self.metadata = PrivacyMetadata([
+      "operation": .public(operation),
+      "component": .public("CryptoServices"),
+      "correlationId": .public(self.correlationID ?? "unknown")
+    ])
   }
 }

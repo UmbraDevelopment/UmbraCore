@@ -22,7 +22,7 @@ import SecurityCoreInterfaces
 
  ```swift
  // Create a default implementation
- let cryptoService = await CryptoServices.createDefault(secureStorage: SecureStorage())
+ let cryptoService = await CryptoServiceFactory.createDefault(logger: myLogger)
 
  // Encrypt some data
  let data: [UInt8] = [1, 2, 3, 4]

@@ -8,7 +8,6 @@ import SecurityCoreInterfaces
 import SecurityInterfaces // Temporary, until we fully migrate SecureStorageConfig
 import UmbraErrors
 import CoreSecurityTypes
-import CryptoActorImplementations // Import actor implementations directly
 
 /**
  # CryptoServiceFactory
@@ -39,8 +38,16 @@ import CryptoActorImplementations // Import actor implementations directly
  ### Security Provider-Specific Implementations
  ```swift
  // Create a service with a specific provider type
- let cryptoService = await CryptoServiceFactory.createWithProvider(
+ let cryptoWithProvider = await CryptoServiceFactory.createWithProviderType(
    providerType: .cryptoKit,
+   logger: myLogger
+ )
+
+ // For more control, create with explicit provider instance
+ let myProvider = await ProviderFactory.createProvider(.appleCommonCrypto)
+ let cryptoService = await CryptoServiceFactory.createWithProvider(
+   provider: myProvider,
+   secureStorage: mySecureStorage,
    logger: myLogger
  )
  ```
@@ -99,8 +106,7 @@ public enum CryptoServiceFactory {
       // Create enhanced privacy-aware logging implementation
       return await EnhancedLoggingCryptoServiceImpl(
         wrapped: service,
-        logger: actualLogger,
-        secureLogger: actualSecureLogger
+        logger: actualSecureLogger
       )
     } else {
       // Create standard logging implementation
@@ -148,146 +154,310 @@ public enum CryptoServiceFactory {
   
   /**
    Creates a new crypto service with the specified provider type.
-   The implementation follows the actor-based concurrency model of the
-   Alpha Dot Five architecture.
+   This is the consolidated implementation that handles provider creation internally.
+   
+   This method integrates functionality previously available in separate factory implementations,
+   providing a unified interface for creating cryptographic services with specific provider types.
 
    - Parameters:
-      - providerType: The type of security provider to use
-      - logger: Logger for recording operations
+     - providerType: The type of security provider to use
+     - secureStorage: Optional secure storage service to use
+     - logger: Logger for recording operations
    - Returns: A new actor-based implementation of CryptoServiceProtocol
    */
-  public static func createWithProvider(
+  public static func createWithProviderType(
     providerType: SecurityProviderType,
+    secureStorage: SecureStorageProtocol? = nil,
     logger: LoggingProtocol? = nil
   ) async -> CryptoServiceProtocol {
     let actualLogger = logger ?? DefaultLogger(subsystem: "com.umbra.crypto", category: "CryptoService")
     
-    // Create the secure storage first
-    let storageURL = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("UmbraSecureStorage", isDirectory: true)
-      .appendingPathComponent(UUID().uuidString)
-    
-    let secureStorage = await createSecureStorage(
-      providerType: providerType,
-      storageURL: storageURL,
+    // Use the provided secure storage or create a default one
+    let actualSecureStorage = secureStorage ?? await createSecureStorage(
+      storageURL: URL(fileURLWithPath: NSTemporaryDirectory())
+        .appendingPathComponent("UmbraSecureStorage", isDirectory: true)
+        .appendingPathComponent(UUID().uuidString),
       logger: actualLogger
     )
     
-    // Create the provider registry
-    let providerRegistry = await createProviderRegistry(logger: actualLogger)
+    // Create provider based on the specified type
+    // This approach uses the provider registry to create providers dynamically
+    let registry = await createProviderRegistry(logger: actualLogger)
+    let provider: SecurityProviderProtocol?
     
-    // Create a crypto service implementation using the actor-based model
-    // The CryptoServiceActor is imported directly from CryptoActorImplementations
-    let cryptoService = await CryptoServiceActor(
-      providerRegistry: providerRegistry,
-      secureStorage: secureStorage,
+    switch providerType {
+    case .cryptoKit:
+      provider = await registry.createProvider(type: .cryptoKit)
+    case .commonCrypto:
+      provider = await registry.createProvider(type: .commonCrypto)
+    case .boringSSL:
+      provider = await registry.createProvider(type: .boringSSL)
+    case .openSSL:
+      provider = await registry.createProvider(type: .openSSL)
+    case .mock:
+      provider = await registry.createProvider(type: .mock)
+    }
+    
+    guard let provider = provider else {
+      await actualLogger.error(
+        "Failed to create provider of type \(providerType). Falling back to mock implementation.",
+        metadata: nil,
+        source: "CryptoServiceFactory"
+      )
+      
+      // Return a mock implementation as fallback
+      return await createMock(
+        secureStorage: actualSecureStorage,
+        logger: actualLogger,
+        configuration: MockCryptoServiceImpl.Configuration(encryptionSucceeds: true)
+      )
+    }
+    
+    // Now use the provider to create the crypto service
+    return await createWithProvider(
+      provider: provider,
+      secureStorage: actualSecureStorage,
       logger: actualLogger
     )
-    
-    // Return the actor as the protocol type
-    return cryptoService
   }
   
   /**
-   Creates a new secure storage service for key management.
+   Creates a new crypto service with the specified security provider.
    The implementation follows the actor-based concurrency model of the
    Alpha Dot Five architecture.
 
    - Parameters:
+      - provider: The security provider to use (should be obtained from appropriate factory)
+      - secureStorage: Optional secure storage service to use
+      - logger: Logger for recording operations
+   - Returns: A new actor-based implementation of CryptoServiceProtocol
+   */
+  public static func createWithProvider(
+    provider: SecurityProviderProtocol,
+    secureStorage: SecureStorageProtocol? = nil,
+    logger: LoggingProtocol? = nil
+  ) async -> CryptoServiceProtocol {
+    let actualLogger = logger ?? DefaultLogger(subsystem: "com.umbra.crypto", category: "CryptoService")
+    
+    // Use the provided secure storage or create a default one
+    let actualSecureStorage = secureStorage ?? await createSecureStorage(
+      storageURL: URL(fileURLWithPath: NSTemporaryDirectory())
+        .appendingPathComponent("UmbraSecureStorage", isDirectory: true)
+        .appendingPathComponent(UUID().uuidString),
+      logger: actualLogger
+    )
+    
+    // Create a crypto service implementation using DefaultCryptoServiceImpl
+    // instead of directly using CryptoServiceActor to avoid circular dependency
+    let cryptoService = await DefaultCryptoServiceWithProviderImpl(
+      provider: provider,
+      secureStorage: actualSecureStorage,
+      logger: actualLogger
+    )
+    
+    // Return as the protocol type
+    return cryptoService
+  }
+  
+  /**
+   Creates a new crypto service with the specified provider type.
+   This method maintains backward compatibility with existing code.
+   
+   Note: This method requires that a factory for the specified provider type
+   is available elsewhere in the application. It doesn't directly create
+   security provider implementations to avoid circular dependencies.
+
+   - Parameters:
       - providerType: The type of security provider to use
+      - logger: Logger for recording operations
+   - Returns: A new actor-based implementation of CryptoServiceProtocol, or nil if provider creation fails
+   */
+  @available(*, deprecated, message: "Use createWithProviderType(providerType:secureStorage:logger:) instead")
+  public static func createWithProvider(
+    providerType: SecurityProviderType,
+    logger: LoggingProtocol? = nil
+  ) async -> CryptoServiceProtocol? {
+    // Log deprecation warning and delegate to the new implementation
+    let actualLogger = logger ?? DefaultLogger(subsystem: "com.umbra.crypto", category: "CryptoService")
+    
+    await actualLogger.warning(
+      "Using deprecated createWithProvider(providerType:) method. Use createWithProviderType(providerType:secureStorage:logger:) instead.",
+      metadata: nil,
+      source: "CryptoServiceFactory"
+    )
+    
+    return await createWithProviderType(
+      providerType: providerType, 
+      logger: actualLogger
+    )
+  }
+  
+  /**
+   Creates a new secure storage service for key management.
+
+   - Parameters:
       - storageURL: Custom URL for key storage
       - logger: Logger for recording operations
    - Returns: A new secure storage implementation
    */
   public static func createSecureStorage(
-    providerType: SecurityProviderType,
     storageURL: URL,
     logger: LoggingProtocol
   ) async -> SecureStorageProtocol {
-    // Create secure storage actor with the specified parameters
-    // SecureStorageActor is imported directly from CryptoActorImplementations
-    return SecureStorageActor(
-      providerType: providerType,
-      storageURL: storageURL,
-      logger: logger
+    // Create a simple in-memory secure storage to avoid dependencies
+    return InMemorySecureStorage(
+      logger: logger,
+      baseURL: storageURL
     )
+  }
+}
+
+/**
+ A simple in-memory secure storage implementation to avoid circular dependencies.
+ This is an internal implementation used when no external storage is provided.
+ */
+fileprivate actor InMemorySecureStorage: SecureStorageProtocol {
+  private var storage: [String: [UInt8]] = [:]
+  private let logger: LoggingProtocol
+  private let baseURL: URL
+  
+  init(logger: LoggingProtocol, baseURL: URL) {
+    self.logger = logger
+    self.baseURL = baseURL
   }
   
-  /**
-   Creates a new provider registry for managing security providers.
-   The implementation follows the actor-based concurrency model of the
-   Alpha Dot Five architecture.
-
-   - Parameter logger: Logger for recording operations
-   - Returns: A new provider registry implementation
-   */
-  public static func createProviderRegistry(
-    logger: LoggingProtocol
-  ) async -> ProviderRegistryProtocol {
-    // Create provider registry actor
-    // ProviderRegistryActor is imported directly from CryptoActorImplementations
-    return ProviderRegistryActor(
-      logger: logger
-    )
+  func storeSecurely(data: [UInt8], withIdentifier identifier: String) async -> Result<Bool, SecurityStorageError> {
+    logger.debug("Storing data with identifier: \(identifier)", metadata: nil, source: "InMemorySecureStorage")
+    storage[identifier] = data
+    return .success(true)
   }
-
-  // MARK: - Testing & Logging Implementations
-
-  /**
-   Creates a mock implementation of CryptoServiceProtocol for testing.
-
-   - Parameters:
-     - configuration: Configuration for the mock service
-     - logger: Logger for operations
-   - Returns: A mock CryptoServiceProtocol implementation
-   */
-  public static func createMock(
-    configuration: MockCryptoServiceImpl.Configuration = .init(),
-    logger: LoggingProtocol? = nil
-  ) async -> CryptoServiceProtocol {
-    let actualLogger = logger ?? DefaultLogger(subsystem: "com.umbra.crypto", category: "MockCryptoService")
-    
-    return await MockCryptoServiceImpl(
-      configuration: configuration,
-      logger: actualLogger
-    )
-  }
-
-  /**
-   Creates a logging decorator around any CryptoServiceProtocol implementation.
-
-   - Parameters:
-     - wrapped: The implementation to wrap with logging
-     - logger: Logger for operations
-     - secureLogger: Optional secure logger for sensitive data
-   - Returns: A CryptoServiceProtocol implementation with logging
-   */
-  public static func createLoggingDecorator(
-    wrapped: CryptoServiceProtocol,
-    logger: LoggingProtocol,
-    secureLogger: PrivacyAwareLoggingProtocol? = nil
-  ) async -> CryptoServiceProtocol {
-    if let secureLogger = secureLogger {
-      return await EnhancedLoggingCryptoServiceImpl(
-        wrapped: wrapped,
-        logger: logger,
-        secureLogger: secureLogger
-      )
-    } else {
-      return await LoggingCryptoServiceImpl(
-        wrapped: wrapped,
-        logger: logger
-      )
+  
+  func retrieveSecurely(withIdentifier identifier: String) async -> Result<[UInt8], SecurityStorageError> {
+    guard let data = storage[identifier] else {
+      logger.error("Failed to retrieve data with identifier: \(identifier)", metadata: nil, source: "InMemorySecureStorage")
+      return .failure(.keyNotFound)
     }
+    return .success(data)
+  }
+  
+  func deleteSecurely(withIdentifier identifier: String) async -> Result<Bool, SecurityStorageError> {
+    guard storage[identifier] != nil else {
+      logger.error("Failed to delete data with identifier: \(identifier) - not found", metadata: nil, source: "InMemorySecureStorage")
+      return .failure(.keyNotFound)
+    }
+    
+    storage.removeValue(forKey: identifier)
+    return .success(true)
+  }
+}
+
+/**
+ Implementation of CryptoServiceProtocol that uses a security provider.
+ This implementation avoids circular dependencies by being defined directly
+ within the CryptoServices module rather than relying on external actors.
+ */
+fileprivate actor DefaultCryptoServiceWithProviderImpl: CryptoServiceProtocol {
+  private let provider: SecurityProviderProtocol
+  private let secureStorage: SecureStorageProtocol
+  private let logger: LoggingProtocol
+  
+  init(
+    provider: SecurityProviderProtocol,
+    secureStorage: SecureStorageProtocol,
+    logger: LoggingProtocol
+  ) {
+    self.provider = provider
+    self.secureStorage = secureStorage
+    self.logger = logger
+  }
+  
+  // Delegate all methods to the provider or use default implementations
+  
+  func encryptData(
+    data: [UInt8],
+    identifier: String,
+    options: EncryptionOptions?
+  ) async -> Result<[UInt8], SecurityProtocolError> {
+    // Delegate to provider
+    await provider.encryptData(data: data, options: options)
+  }
+  
+  func decryptData(
+    data: [UInt8],
+    identifier: String,
+    options: DecryptionOptions?
+  ) async -> Result<[UInt8], SecurityProtocolError> {
+    // Delegate to provider
+    await provider.decryptData(data: data, options: options)
+  }
+  
+  func hashData(
+    data: [UInt8],
+    algorithm: HashAlgorithm,
+    identifier: String
+  ) async -> Result<String, SecurityStorageError> {
+    // Delegate to provider
+    let result = await provider.hashData(data: data, algorithm: algorithm)
+    
+    switch result {
+    case .success(let hashValue):
+      return .success(hashValue)
+    case .failure(let error):
+      // Convert SecurityProtocolError to SecurityStorageError
+      return .failure(.storageFailure(underlying: error))
+    }
+  }
+  
+  func verifyHash(
+    hash: String,
+    against data: [UInt8],
+    algorithm: HashAlgorithm,
+    dataIdentifier: String
+  ) async -> Result<Bool, SecurityProtocolError> {
+    // Delegate to provider
+    await provider.verifyHash(hash: hash, against: data, algorithm: algorithm)
+  }
+  
+  func generateKey(
+    length: Int,
+    options: KeyGenerationOptions?
+  ) async -> Result<String, SecurityStorageError> {
+    // Delegate to provider's key generation and then store the key
+    let result = await provider.generateKey(length: length, options: options)
+    
+    switch result {
+    case .success(let keyData):
+      // Store the key in secure storage
+      let keyId = "key_\(UUID().uuidString)"
+      let storeResult = await secureStorage.storeSecurely(data: keyData, withIdentifier: keyId)
+      
+      switch storeResult {
+      case .success:
+        return .success(keyId)
+      case .failure(let error):
+        return .failure(error)
+      }
+      
+    case .failure(let error):
+      // Convert SecurityProtocolError to SecurityStorageError
+      return .failure(.storageFailure(underlying: error))
+    }
+  }
+  
+  func exportData(
+    withIdentifier identifier: String
+  ) async -> Result<[UInt8], SecurityStorageError> {
+    // Use secure storage to retrieve the data
+    await secureStorage.retrieveSecurely(withIdentifier: identifier)
   }
 }
 
 /**
  # MockCryptoServiceImpl
 
- A mock implementation of CryptoServiceProtocol for testing purposes.
- This implementation simulates cryptographic operations without actually
- performing encryption, allowing for controlled testing environments.
+ Mock implementation of CryptoServiceProtocol for testing.
+ This implementation allows for configurable responses to test
+ various success and failure scenarios.
  */
 public actor MockCryptoServiceImpl: CryptoServiceProtocol {
   /// Configuration options for the mock

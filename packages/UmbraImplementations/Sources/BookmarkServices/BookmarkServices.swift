@@ -20,7 +20,10 @@
 
  ```swift
  // Create a bookmark service
- let secureStorage = await CryptoServices.createSecureStorage(logger: logger)
+ let secureStorage = await CryptoServiceFactory.createSecureStorage(
+     storageURL: bookmarkStoragePath,
+     logger: logger
+ )
  let bookmarkService = SecurityBookmarkActor(logger: logger, secureStorage: secureStorage)
 
  // Create a bookmark for a user-selected file

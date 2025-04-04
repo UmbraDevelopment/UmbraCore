@@ -38,13 +38,38 @@ public actor MockCryptoService: CryptoServiceProtocol {
   
   /// A minimal empty logger for when none is provided
   private struct EmptyLogger: LoggingProtocol {
+    /// The underlying logging actor, required by CoreLoggingProtocol
+    public let loggingActor: LoggingActor = EmptyLoggingActor()
+    
+    /// Implementation of the core logging method
     func log(_ level: LogLevel, _ message: String, metadata: PrivacyMetadata?, source: String) async {}
+    
+    /// Implementation of trace level logging
     func trace(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
+    
+    /// Implementation of debug level logging
     func debug(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
+    
+    /// Implementation of info level logging
     func info(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
+    
+    /// Implementation of warning level logging
     func warning(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
+    
+    /// Implementation of error level logging
     func error(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
+    
+    /// Implementation of critical level logging
     func critical(_ message: String, metadata: PrivacyMetadata?, source: String) async {}
+    
+    /// Implementation required by PrivacyAwareLoggingProtocol
+    func logMessage(_ level: LogLevel, _ message: String, context: LogContext) async {}
+  }
+  
+  /// A minimal empty logging actor implementation
+  private actor EmptyLoggingActor: LoggingActor {
+    /// Implementation of the core logging method for the actor
+    func log(_ level: LogLevel, _ message: String, metadata: PrivacyMetadata?, source: String) async {}
   }
 
   /// Encrypts binary data using a key from secure storage (mock implementation).
@@ -70,8 +95,10 @@ public actor MockCryptoService: CryptoServiceProtocol {
       return .failure(.keyNotFound)
     }
 
-    // Convert our options to CryptoOperationOptionsDTO for full compatibility testing
-    let _ = (options ?? SecurityCoreInterfaces.EncryptionOptions()).toCryptoOperationOptionsDTO()
+    // Log options if present for testing purposes
+    if let options = options {
+      await logger.debug("Using encryption options: \(options)", metadata: nil, source: "MockCryptoService")
+    }
 
     // Generate a mock encrypted identifier
     let mockEncryptedId = "encrypted-\(dataIdentifier)-with-\(keyIdentifier)"
@@ -96,8 +123,10 @@ public actor MockCryptoService: CryptoServiceProtocol {
       return .failure(.operationFailed("Empty identifier"))
     }
     
-    // Convert our options to CryptoOperationOptionsDTO for full compatibility testing
-    let _ = (options ?? SecurityCoreInterfaces.DecryptionOptions()).toCryptoOperationOptionsDTO()
+    // Log options if present for testing purposes
+    if let options = options {
+      await logger.debug("Using decryption options: \(options)", metadata: nil, source: "MockCryptoService")
+    }
     
     // Generate a mock decrypted identifier
     let mockDecryptedId = "decrypted-\(encryptedDataIdentifier)-with-\(keyIdentifier)"
@@ -118,6 +147,11 @@ public actor MockCryptoService: CryptoServiceProtocol {
     
     if dataIdentifier.isEmpty {
       return .failure(.operationFailed("Empty data identifier"))
+    }
+    
+    // Log options if present for testing purposes
+    if let options = options {
+      await logger.debug("Using hashing options: \(options)", metadata: nil, source: "MockCryptoService")
     }
     
     // Mock success with an identifier that includes a hash code
@@ -141,6 +175,11 @@ public actor MockCryptoService: CryptoServiceProtocol {
       return .failure(.operationFailed("Empty identifier"))
     }
     
+    // Log options if present for testing purposes
+    if let options = options {
+      await logger.debug("Using hashing options: \(options)", metadata: nil, source: "MockCryptoService")
+    }
+    
     // Always return success for mocking purposes
     return .success(true)
   }
@@ -159,6 +198,11 @@ public actor MockCryptoService: CryptoServiceProtocol {
     
     if length <= 0 {
       return .failure(.operationFailed("Invalid key length"))
+    }
+    
+    // Log options if present for testing purposes
+    if let options = options {
+      await logger.debug("Using key generation options: \(options)", metadata: nil, source: "MockCryptoService")
     }
     
     // Mock key generation
