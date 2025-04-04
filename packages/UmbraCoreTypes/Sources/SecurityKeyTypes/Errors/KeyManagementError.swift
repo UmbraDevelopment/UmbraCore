@@ -31,6 +31,9 @@ public enum KeyManagementError: Error, Equatable, Sendable {
 
   /// Key import failed
   case keyImportFailed(reason: String)
+  
+  /// General key management error
+  case keyManagementError(details: String)
 
   /// Creates a human-readable description of the error
   public var localizedDescription: String {
@@ -51,6 +54,8 @@ public enum KeyManagementError: Error, Equatable, Sendable {
         "Failed to export key: \(reason)"
       case let .keyImportFailed(reason):
         "Failed to import key: \(reason)"
+      case let .keyManagementError(details):
+        "Key management error: \(details)"
     }
   }
 }
@@ -103,6 +108,10 @@ extension KeyManagementError: LoggingTypes.LoggableErrorProtocol {
         metadata["reason"]=PrivacyMetadataValue(value: reason,
                                                 privacy: classification.toLogPrivacyLevel())
         metadata["error_detail"]=PrivacyMetadataValue(value: "import_failed", privacy: .public)
+      case let .keyManagementError(details):
+        metadata["details"]=PrivacyMetadataValue(value: details,
+                                                 privacy: classification.toLogPrivacyLevel())
+        metadata["error_detail"]=PrivacyMetadataValue(value: "key_management_error", privacy: .public)
     }
 
     return metadata
@@ -136,6 +145,9 @@ extension KeyManagementError: LoggingTypes.LoggableErrorProtocol {
       case .invalidInput:
         // Input details might contain sensitive information
         .private
+      case .keyManagementError:
+        // General key management errors are private
+        .private
     }
   }
 
@@ -150,6 +162,7 @@ extension KeyManagementError: LoggingTypes.LoggableErrorProtocol {
       case .keyVerificationFailed: "KM006"
       case .keyExportFailed: "KM007"
       case .keyImportFailed: "KM008"
+      case .keyManagementError: "KM009"
     }
   }
 
