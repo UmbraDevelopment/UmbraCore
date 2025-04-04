@@ -32,6 +32,19 @@ public actor KeyStorageToSecureStorageAdapter: KeyStorage, SecureStorageProtocol
         self.secureStorage = secureStorage
     }
     
+    /**
+     Initialiser that creates a self-adaptive implementation.
+     When only the keyStorage is provided, the adapter functions as both
+     the KeyStorage and the SecureStorageProtocol.
+     
+     - Parameter keyStorage: The key storage implementation
+     */
+    public init(keyStorage: KeyStorage) {
+        self.keyStorage = keyStorage
+        // Create a circular reference where the adapter works with the underlying storage
+        self.secureStorage = CircularSecureStorage(keyStorage: keyStorage)
+    }
+    
     // MARK: - SecureStorageProtocol Implementation
     
     /**
@@ -182,6 +195,57 @@ public actor KeyStorageToSecureStorageAdapter: KeyStorage, SecureStorageProtocol
             return identifiers
         case .failure(let error):
             throw KeyMetadataError.metadataError(details: "Failed to list key identifiers: \(error.localizedDescription)")
+        }
+    }
+}
+
+/**
+ Provides a simple wrapper around KeyStorage to implement SecureStorageProtocol.
+ This is used for the self-adapting convenience initializer pattern.
+ */
+private actor CircularSecureStorage: SecureStorageProtocol {
+    private let keyStorage: KeyStorage
+    
+    init(keyStorage: KeyStorage) {
+        self.keyStorage = keyStorage
+    }
+    
+    func storeData(_ data: [UInt8], withIdentifier identifier: String) async -> Result<Void, SecurityStorageError> {
+        do {
+            try await keyStorage.storeKey(data, identifier: identifier)
+            return .success(())
+        } catch {
+            return .failure(.encryptionFailed)
+        }
+    }
+    
+    func retrieveData(withIdentifier identifier: String) async -> Result<[UInt8], SecurityStorageError> {
+        do {
+            if let data = try await keyStorage.getKey(identifier: identifier) {
+                return .success(data)
+            } else {
+                return .failure(.keyNotFound)
+            }
+        } catch {
+            return .failure(.dataNotFound)
+        }
+    }
+    
+    func deleteData(withIdentifier identifier: String) async -> Result<Void, SecurityStorageError> {
+        do {
+            try await keyStorage.deleteKey(identifier: identifier)
+            return .success(())
+        } catch {
+            return .failure(.dataNotFound)
+        }
+    }
+    
+    func listDataIdentifiers() async -> Result<[String], SecurityStorageError> {
+        do {
+            let identifiers = try await keyStorage.listKeyIdentifiers()
+            return .success(identifiers)
+        } catch {
+            return .failure(.operationFailed("Failed to list identifiers: \(error.localizedDescription)"))
         }
     }
 }
