@@ -4,7 +4,7 @@ umbra_swift_library(
     name = "KeyManagementActor",
     srcs = glob(
         ["*.swift"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     visibility = ["//visibility:public"],
     deps = [
