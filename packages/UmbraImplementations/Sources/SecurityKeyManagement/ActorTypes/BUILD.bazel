@@ -13,6 +13,7 @@ umbra_swift_library(
         "//packages/UmbraCoreTypes/Sources/UmbraErrors",
         "//packages/UmbraCoreTypes/Sources/LoggingTypes",
         "//packages/UmbraCoreTypes/Sources/CoreSecurityTypes",
+        "//packages/UmbraCoreTypes/Sources/DomainSecurityTypes",
         "//packages/UmbraImplementations/Sources/SecurityKeyManagement/Types:SecurityKeyTypes",
     ],
 )
