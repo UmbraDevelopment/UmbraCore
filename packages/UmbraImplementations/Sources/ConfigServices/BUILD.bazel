@@ -17,5 +17,7 @@ umbra_swift_library(
         "//packages/UmbraCoreTypes/Sources/CoreDTOs",
         "//packages/UmbraInterfaces/Sources/CoreInterfaces",
         "//packages/UmbraCoreTypes/Sources/DateTimeTypes",
+        "//packages/UmbraImplementations/Sources/LoggingServices",
+        "//packages/UmbraCoreTypes/Sources/LoggingTypes",
     ],
 )

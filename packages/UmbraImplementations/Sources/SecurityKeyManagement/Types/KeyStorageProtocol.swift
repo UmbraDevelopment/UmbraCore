@@ -72,7 +72,7 @@ public extension KeyStorage {
   func getAllIdentifiers() async throws -> [String] {
     // This is a default implementation that can be overridden by concrete types
     // for better performance
-    var identifiers: [String] = []
+    let identifiers: [String] = []
     
     // In a real implementation, this would list all keys efficiently
     // This basic implementation is provided for compatibility only

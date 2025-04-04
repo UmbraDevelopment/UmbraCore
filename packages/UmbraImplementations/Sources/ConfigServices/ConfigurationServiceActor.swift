@@ -19,11 +19,11 @@ import UmbraErrors
 /// # Thread Safety
 /// All mutable state is properly isolated within the actor.
 /// All methods use Swift's structured concurrency for safe asynchronous operations.
-public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
+@preconcurrency public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
   // MARK: - Private Properties
 
-  /// The logger for configuration operations
-  private let logger: DomainLogger
+  /// The logger for this service - optional
+  private let logger: LoggingInterfaces.DomainLogger?
 
   /// Configuration sources ordered by priority (highest first)
   private var sources: [(source: ConfigSourceDTO, priority: Int)]=[]
@@ -36,10 +36,13 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
 
   // MARK: - Initialisation
 
-  /// Creates a new ConfigurationServiceActor instance
-  /// - Parameter logger: Logger for configuration operations
-  public init(logger: DomainLogger) {
+  /// Initialises a new instance of the ConfigurationServiceActor.
+  /// - Parameter logger: Optional domain logger
+  public init(logger: LoggingInterfaces.DomainLogger?=nil) {
     self.logger=logger
+    self.sources=[]
+    self.configurationCache=[:]
+    self.changeContinuations=[:]
   }
 
   // MARK: - ConfigurationServiceProtocol Implementation
@@ -48,62 +51,46 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
   /// - Parameter source: The primary configuration source to use
   /// - Throws: UmbraErrors.ConfigError if initialisation fails
   public func initialise(source: ConfigSourceDTO) async throws {
-    // Log the initialisation attempt with privacy-aware logging
-    logger.info(
-      "Initialising configuration service",
-      context: ["service": "ConfigurationServiceActor"],
-      metadata: [
-        "source": .public(source.name),
-        "source_type": .public(source.sourceType.rawValue),
-        "location": source.isSecure ? .sensitive(source.location) : .public(source.location)
-      ]
-    )
+    // Log the operation for debugging
+    if let logger = logger {
+      await logger.debug(
+        "Initialising configuration service",
+        metadata: PrivacyMetadata([
+          "source_name": (source.name, .public),
+          "source_type": (source.sourceType.rawValue, .public)
+        ]),
+        source: "ConfigurationServiceActor"
+      )
+    }
 
     // Check if we already have sources (already initialised)
     if !sources.isEmpty {
       let message="Configuration service is already initialised"
-      logger.warning(message, context: ["service": "ConfigurationServiceActor"])
+      if let logger = logger {
+        await logger.warning(message, metadata: nil, source: "ConfigurationServiceActor")
+      }
       throw UmbraErrors.ConfigError.initialisationError(message: message)
     }
 
-    do {
-      // Add the source with maximum priority
-      try await addSource(source: source, priority: 100)
+    try await addSource(source: source, priority: 100)
+    try await loadConfigurationFromSource(source.identifier)
 
-      // Load configuration values from the source
-      try await loadConfigurationFromSource(source.identifier)
-
-      // Publish initialisation event
-      publishChangeEvent(
-        ConfigChangeEventDTO(
-          identifier: UUID().uuidString,
-          key: "",
-          changeType: .initialised,
-          sourceIdentifier: source.identifier,
-          timestamp: TimePointDTO.now(),
-          context: ["service": "ConfigurationServiceActor"]
-        )
+    // Publish initialisation event
+    await publishChangeEvent(
+      ConfigChangeEventDTO(
+        identifier: UUID().uuidString,
+        key: "",
+        changeType: .initialised,
+        sourceIdentifier: source.identifier,
+        timestamp: TimePointDTO.now()
       )
+    )
 
-      logger.info(
+    if let logger = logger {
+      await logger.info(
         "Configuration service initialised successfully",
-        context: ["service": "ConfigurationServiceActor"]
-      )
-    } catch {
-      // Log the error with privacy-aware logging
-      logger.error(
-        "Failed to initialise configuration service",
-        context: ["service": "ConfigurationServiceActor"],
-        metadata: [
-          "source": .public(source.name),
-          "error": .public(error.localizedDescription)
-        ]
-      )
-
-      // Map to a ConfigError
-      throw UmbraErrors.ConfigError.initialisationError(
-        message: "Failed to initialise configuration service: \(error.localizedDescription)",
-        underlyingError: error
+        metadata: nil,
+        source: "ConfigurationServiceActor"
       )
     }
   }
@@ -115,59 +102,54 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
   /// - Throws: UmbraErrors.ConfigError if the source cannot be added
   public func addSource(source: ConfigSourceDTO, priority: Int) async throws {
     // Log the operation with privacy-aware logging
-    logger.info(
-      "Adding configuration source",
-      context: ["service": "ConfigurationServiceActor"],
-      metadata: [
-        "source": .public(source.name),
-        "priority": .public("\(priority)"),
-        "source_type": .public(source.sourceType.rawValue)
-      ]
-    )
-
-    // Check if the source already exists
-    if sources.contains(where: { $0.source.identifier == source.identifier }) {
-      let message="Configuration source with identifier '\(source.identifier)' already exists"
-      logger.warning(message, context: ["service": "ConfigurationServiceActor"])
-      throw UmbraErrors.ConfigError.duplicateSource(message: message)
+    if let logger = logger {
+      await logger.info(
+        "Adding configuration source",
+        metadata: PrivacyMetadata([
+          "source": (source.name, .public),
+          "priority": ("\(priority)", .public),
+          "source_type": (source.sourceType.rawValue, .public)
+        ]),
+        source: "ConfigurationServiceActor"
+      )
     }
 
-    do {
-      // Add the source to the list and sort by priority
-      sources.append((source: source, priority: priority))
-      sources.sort { $0.priority > $1.priority }
-
-      // Publish source added event
-      publishChangeEvent(
-        ConfigChangeEventDTO(
-          identifier: UUID().uuidString,
-          key: "",
-          changeType: .sourceAdded,
-          sourceIdentifier: source.identifier,
-          timestamp: TimePointDTO.now(),
-          context: ["service": "ConfigurationServiceActor"]
-        )
-      )
-
-      logger.info(
-        "Configuration source added successfully",
-        context: ["service": "ConfigurationServiceActor"]
-      )
-    } catch {
+    // Check if the source already exists
+    if sources.firstIndex(where: { $0.source.identifier == source.identifier }) != nil {
       // Log the error with privacy-aware logging
-      logger.error(
-        "Failed to add configuration source",
-        context: ["service": "ConfigurationServiceActor"],
-        metadata: [
-          "source": .public(source.name),
-          "error": .public(error.localizedDescription)
-        ]
-      )
+      if let logger = logger {
+        await logger.warning(
+          "Configuration source already exists",
+          metadata: PrivacyMetadata([
+            "source_id": (source.identifier, .public)
+          ]),
+          source: "ConfigurationServiceActor"
+        )
+      }
 
-      // Map to a ConfigError
-      throw UmbraErrors.ConfigError.sourceError(
-        message: "Failed to add configuration source: \(error.localizedDescription)",
-        underlyingError: error
+      // Return without error - idempotent operation
+      return
+    }
+
+    sources.append((source: source, priority: priority))
+    sources.sort { $0.priority > $1.priority }
+
+    // Publish source added event
+    await publishChangeEvent(
+      ConfigChangeEventDTO(
+        identifier: UUID().uuidString,
+        key: "",
+        changeType: .sourceAdded,
+        sourceIdentifier: source.identifier,
+        timestamp: TimePointDTO.now()
+      )
+    )
+
+    if let logger = logger {
+      await logger.info(
+        "Configuration source added successfully",
+        metadata: nil,
+        source: "ConfigurationServiceActor"
       )
     }
   }
@@ -177,60 +159,59 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
   /// - Throws: UmbraErrors.ConfigError if the source cannot be removed
   public func removeSource(identifier: String) async throws {
     // Log the operation with privacy-aware logging
-    logger.info(
-      "Removing configuration source",
-      context: ["service": "ConfigurationServiceActor"],
-      metadata: ["source_id": .public(identifier)]
-    )
+    if let logger = logger {
+      await logger.info(
+        "Removing configuration source",
+        metadata: PrivacyMetadata([
+          "source_id": (identifier, .public)
+        ]),
+        source: "ConfigurationServiceActor"
+      )
+    }
 
     // Find the source index
     guard let index=sources.firstIndex(where: { $0.source.identifier == identifier }) else {
-      let message="Configuration source with identifier '\(identifier)' not found"
-      logger.warning(message, context: ["service": "ConfigurationServiceActor"])
-      throw UmbraErrors.ConfigError.sourceNotFound(message: message)
+      // Log the error with privacy-aware logging
+      if let logger = logger {
+        await logger.warning(
+          "Configuration source does not exist",
+          metadata: PrivacyMetadata([
+            "source_id": (identifier, .public)
+          ]),
+          source: "ConfigurationServiceActor"
+        )
+      }
+
+      throw UmbraErrors.ConfigError.sourceNotFound(
+        message: "Configuration source with identifier '\(identifier)' not found"
+      )
     }
 
-    do {
-      // Get the source before removing it
-      let source=sources[index].source
+    // Get the source before removing it
+    let source=sources[index].source
 
-      // Remove the source
-      sources.remove(at: index)
+    // Remove the source
+    sources.remove(at: index)
 
-      // Refresh the configuration cache after removing the source
-      await refreshConfigurationCache()
+    // Refresh the configuration cache after removing the source
+    await refreshConfigurationCache()
 
-      // Publish source removed event
-      publishChangeEvent(
-        ConfigChangeEventDTO(
-          identifier: UUID().uuidString,
-          key: "",
-          changeType: .sourceRemoved,
-          sourceIdentifier: source.identifier,
-          timestamp: TimePointDTO.now(),
-          context: ["service": "ConfigurationServiceActor"]
-        )
+    // Publish source removed event
+    await publishChangeEvent(
+      ConfigChangeEventDTO(
+        identifier: UUID().uuidString,
+        key: "",
+        changeType: .sourceRemoved,
+        sourceIdentifier: source.identifier,
+        timestamp: TimePointDTO.now()
       )
+    )
 
-      logger.info(
+    if let logger = logger {
+      await logger.info(
         "Configuration source removed successfully",
-        context: ["service": "ConfigurationServiceActor"]
-      )
-    } catch {
-      // Log the error with privacy-aware logging
-      logger.error(
-        "Failed to remove configuration source",
-        context: ["service": "ConfigurationServiceActor"],
-        metadata: [
-          "source_id": .public(identifier),
-          "error": .public(error.localizedDescription)
-        ]
-      )
-
-      // Map to a ConfigError
-      throw UmbraErrors.ConfigError.sourceError(
-        message: "Failed to remove configuration source: \(error.localizedDescription)",
-        underlyingError: error
+        metadata: nil,
+        source: "ConfigurationServiceActor"
       )
     }
   }
@@ -243,27 +224,33 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
     let value=try await getConfigValue(for: key)
 
     // Log the operation with privacy-aware logging
-    if value.isSensitive {
-      logger.debug(
-        "Retrieved sensitive string configuration value",
-        context: ["service": "ConfigurationServiceActor"],
-        metadata: ["key": .public(key)]
-      )
-    } else {
-      logger.debug(
-        "Retrieved string configuration value",
-        context: ["service": "ConfigurationServiceActor"],
-        metadata: [
-          "key": .public(key),
-          "value": .public(value.stringValue)
-        ]
-      )
+    if let logger = logger {
+      if value.isSensitive {
+        await logger.debug(
+          "Retrieved sensitive string configuration value",
+          metadata: PrivacyMetadata([
+            "key": (key, .public)
+          ]),
+          source: "ConfigurationServiceActor"
+        )
+      } else {
+        await logger.debug(
+          "Retrieved string configuration value",
+          metadata: PrivacyMetadata([
+            "key": (key, .public),
+            "value": (value.stringValue, .public)
+          ]),
+          source: "ConfigurationServiceActor"
+        )
+      }
     }
 
     // Ensure the value is a string
     if value.valueType != .string {
       throw UmbraErrors.ConfigError.typeMismatch(
-        message: "Configuration value for key '\(key)' is not a string"
+        message: "Configuration value for key '\(key)' is not a string",
+        expected: "string",
+        actual: value.valueType.rawValue
       )
     }
 
@@ -278,19 +265,23 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
     let value=try await getConfigValue(for: key)
 
     // Log the operation with privacy-aware logging
-    logger.debug(
-      "Retrieved boolean configuration value",
-      context: ["service": "ConfigurationServiceActor"],
-      metadata: [
-        "key": .public(key),
-        "value": .public(value.stringValue)
-      ]
-    )
+    if let logger = logger {
+      await logger.debug(
+        "Retrieved boolean configuration value",
+        metadata: PrivacyMetadata([
+          "key": (key, .public),
+          "value": (value.stringValue, .public)
+        ]),
+        source: "ConfigurationServiceActor"
+      )
+    }
 
     // Parse as boolean
     guard let boolValue=value.boolValue() else {
       throw UmbraErrors.ConfigError.typeMismatch(
-        message: "Configuration value for key '\(key)' is not a boolean"
+        message: "Configuration value for key '\(key)' is not a boolean",
+        expected: "boolean",
+        actual: value.valueType.rawValue
       )
     }
 
@@ -305,19 +296,23 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
     let value=try await getConfigValue(for: key)
 
     // Log the operation with privacy-aware logging
-    logger.debug(
-      "Retrieved integer configuration value",
-      context: ["service": "ConfigurationServiceActor"],
-      metadata: [
-        "key": .public(key),
-        "value": .public(value.stringValue)
-      ]
-    )
+    if let logger = logger {
+      await logger.debug(
+        "Retrieved integer configuration value",
+        metadata: PrivacyMetadata([
+          "key": (key, .public),
+          "value": (value.stringValue, .public)
+        ]),
+        source: "ConfigurationServiceActor"
+      )
+    }
 
     // Parse as integer
     guard let intValue=value.intValue() else {
       throw UmbraErrors.ConfigError.typeMismatch(
-        message: "Configuration value for key '\(key)' is not an integer"
+        message: "Configuration value for key '\(key)' is not an integer",
+        expected: "integer",
+        actual: value.valueType.rawValue
       )
     }
 
@@ -332,19 +327,23 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
     let value=try await getConfigValue(for: key)
 
     // Log the operation with privacy-aware logging
-    logger.debug(
-      "Retrieved double configuration value",
-      context: ["service": "ConfigurationServiceActor"],
-      metadata: [
-        "key": .public(key),
-        "value": .public(value.stringValue)
-      ]
-    )
+    if let logger = logger {
+      await logger.debug(
+        "Retrieved double configuration value",
+        metadata: PrivacyMetadata([
+          "key": (key, .public),
+          "value": (value.stringValue, .public)
+        ]),
+        source: "ConfigurationServiceActor"
+      )
+    }
 
     // Parse as double
     guard let doubleValue=value.doubleValue() else {
       throw UmbraErrors.ConfigError.typeMismatch(
-        message: "Configuration value for key '\(key)' is not a double"
+        message: "Configuration value for key '\(key)' is not a double",
+        expected: "double",
+        actual: value.valueType.rawValue
       )
     }
 
@@ -359,25 +358,35 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
     let value=try await getConfigValue(for: key)
 
     // Log the operation with privacy-aware logging - note that we're not logging the value
-    logger.debug(
-      "Retrieved secure configuration value",
-      context: ["service": "ConfigurationServiceActor"],
-      metadata: ["key": .public(key)]
-    )
+    if let logger = logger {
+      await logger.debug(
+        "Retrieved secure configuration value",
+        metadata: PrivacyMetadata([
+          "key": (key, .public)
+        ]),
+        source: "ConfigurationServiceActor"
+      )
+    }
 
     // Ensure the value is a string and sensitive
     if value.valueType != .string {
       throw UmbraErrors.ConfigError.typeMismatch(
-        message: "Configuration value for key '\(key)' is not a string"
+        message: "Configuration value for key '\(key)' is not a string",
+        expected: "string",
+        actual: value.valueType.rawValue
       )
     }
 
     if !value.isSensitive {
-      logger.warning(
-        "Accessing non-sensitive value through secure API",
-        context: ["service": "ConfigurationServiceActor"],
-        metadata: ["key": .public(key)]
-      )
+      if let logger = logger {
+        await logger.warning(
+          "Accessing non-sensitive value through secure API",
+          metadata: PrivacyMetadata([
+            "key": (key, .public)
+          ]),
+          source: "ConfigurationServiceActor"
+        )
+      }
     }
 
     return value.stringValue
@@ -391,25 +400,27 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
   /// - Throws: UmbraErrors.ConfigError if the value cannot be set
   public func setValue(_ value: ConfigValueDTO, for key: String, in source: String?) async throws {
     // Log the operation with privacy-aware logging
-    if value.isSensitive {
-      logger.info(
-        "Setting sensitive configuration value",
-        context: ["service": "ConfigurationServiceActor"],
-        metadata: [
-          "key": .public(key),
-          "source": .public(source ?? "default")
-        ]
-      )
-    } else {
-      logger.info(
-        "Setting configuration value",
-        context: ["service": "ConfigurationServiceActor"],
-        metadata: [
-          "key": .public(key),
-          "value": .public(value.stringValue),
-          "source": .public(source ?? "default")
-        ]
-      )
+    if let logger = logger {
+      if value.isSensitive {
+        await logger.info(
+          "Setting sensitive configuration value",
+          metadata: PrivacyMetadata([
+            "key": (key, .public),
+            "source": (source ?? "default", .public)
+          ]),
+          source: "ConfigurationServiceActor"
+        )
+      } else {
+        await logger.info(
+          "Setting configuration value",
+          metadata: PrivacyMetadata([
+            "key": (key, .public),
+            "value": (value.stringValue, .public),
+            "source": (source ?? "default", .public)
+          ]),
+          source: "ConfigurationServiceActor"
+        )
+      }
     }
 
     // Determine which source to use
@@ -421,64 +432,48 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
     }
 
     // Find the source
-    guard let sourceEntry=sources.first(where: { $0.source.identifier == sourceID }) else {
+    guard sources.firstIndex(where: { $0.source.identifier == sourceID }) != nil else {
       throw UmbraErrors.ConfigError.sourceNotFound(
         message: "Configuration source with identifier '\(sourceID)' not found"
       )
     }
 
     // Check if the source is read-only
-    if sourceEntry.source.isReadOnly {
+    if sources.first(where: { $0.source.identifier == sourceID })?.source.isReadOnly ?? true {
       throw UmbraErrors.ConfigError.sourceReadOnly(
-        message: "Configuration source '\(sourceEntry.source.name)' is read-only"
+        message: "Configuration source '\(sourceID)' is read-only"
       )
     }
 
-    do {
-      // Get the old value if it exists
-      let oldValue=configurationCache[key]
+    // Get the old value if it exists
+    let oldValue=configurationCache[key]
 
-      // Update the cache
-      configurationCache[key]=value
+    // Update the cache
+    configurationCache[key]=value
 
-      // In a real implementation, this would persist the value to the source
-      // For now, we'll just update the cache
+    // In a real implementation, this would persist the value to the source
+    // For now, we'll just update the cache
 
-      // Publish value changed event
-      publishChangeEvent(
-        ConfigChangeEventDTO(
-          identifier: UUID().uuidString,
-          key: key,
-          changeType: oldValue == nil ? .added : .modified,
-          sourceIdentifier: sourceID,
-          timestamp: TimePointDTO.now(),
-          oldValue: oldValue,
-          newValue: value,
-          context: ["service": "ConfigurationServiceActor"]
-        )
+    // Publish value changed event
+    await publishChangeEvent(
+      ConfigChangeEventDTO(
+        identifier: UUID().uuidString,
+        key: key,
+        changeType: oldValue == nil ? .added : .modified,
+        sourceIdentifier: sourceID,
+        timestamp: TimePointDTO.now(),
+        oldValue: oldValue,
+        newValue: value
       )
+    )
 
-      logger.debug(
+    if let logger = logger {
+      await logger.debug(
         "Configuration value set successfully",
-        context: ["service": "ConfigurationServiceActor"],
-        metadata: ["key": .public(key)]
-      )
-    } catch {
-      // Log the error with privacy-aware logging
-      logger.error(
-        "Failed to set configuration value",
-        context: ["service": "ConfigurationServiceActor"],
-        metadata: [
-          "key": .public(key),
-          "source": .public(sourceID),
-          "error": .public(error.localizedDescription)
-        ]
-      )
-
-      // Map to a ConfigError
-      throw UmbraErrors.ConfigError.operationFailed(
-        message: "Failed to set configuration value: \(error.localizedDescription)",
-        underlyingError: error
+        metadata: PrivacyMetadata([
+          "key": (key, .public)
+        ]),
+        source: "ConfigurationServiceActor"
       )
     }
   }
@@ -490,14 +485,16 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
   /// - Throws: UmbraErrors.ConfigError if the value cannot be removed
   public func removeValue(for key: String, from source: String?) async throws {
     // Log the operation with privacy-aware logging
-    logger.info(
-      "Removing configuration value",
-      context: ["service": "ConfigurationServiceActor"],
-      metadata: [
-        "key": .public(key),
-        "source": .public(source ?? "all")
-      ]
-    )
+    if let logger = logger {
+      await logger.info(
+        "Removing configuration value",
+        metadata: PrivacyMetadata([
+          "key": (key, .public),
+          "source": (source ?? "all", .public)
+        ]),
+        source: "ConfigurationServiceActor"
+      )
+    }
 
     // Determine which source to use
     let sourceID=source ?? findWritableSource()?.identifier
@@ -508,74 +505,62 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
     }
 
     // Find the source
-    guard let sourceEntry=sources.first(where: { $0.source.identifier == sourceID }) else {
+    guard sources.firstIndex(where: { $0.source.identifier == sourceID }) != nil else {
       throw UmbraErrors.ConfigError.sourceNotFound(
         message: "Configuration source with identifier '\(sourceID)' not found"
       )
     }
 
     // Check if the source is read-only
-    if sourceEntry.source.isReadOnly {
+    if sources.first(where: { $0.source.identifier == sourceID })?.source.isReadOnly ?? true {
       throw UmbraErrors.ConfigError.sourceReadOnly(
-        message: "Configuration source '\(sourceEntry.source.name)' is read-only"
+        message: "Configuration source '\(sourceID)' is read-only"
       )
     }
 
-    do {
-      // Get the old value if it exists
-      let oldValue=configurationCache[key]
+    // Get the old value if it exists
+    let oldValue=configurationCache[key]
 
-      // If the value doesn't exist, there's nothing to remove
-      guard oldValue != nil else {
-        logger.debug(
+    // If the value doesn't exist, there's nothing to remove
+    guard oldValue != nil else {
+      if let logger = logger {
+        await logger.debug(
           "Configuration value does not exist, nothing to remove",
-          context: ["service": "ConfigurationServiceActor"],
-          metadata: ["key": .public(key)]
+          metadata: PrivacyMetadata([
+            "key": (key, .public)
+          ]),
+          source: "ConfigurationServiceActor"
         )
-        return
       }
+      return
+    }
 
-      // Remove from the cache
-      configurationCache.removeValue(forKey: key)
+    // Remove from the cache
+    configurationCache.removeValue(forKey: key)
 
-      // In a real implementation, this would remove the value from the source
-      // For now, we'll just update the cache
+    // In a real implementation, this would remove the value from the source
+    // For now, we'll just update the cache
 
-      // Publish value removed event
-      publishChangeEvent(
-        ConfigChangeEventDTO(
-          identifier: UUID().uuidString,
-          key: key,
-          changeType: .removed,
-          sourceIdentifier: sourceID,
-          timestamp: TimePointDTO.now(),
-          oldValue: oldValue,
-          newValue: nil,
-          context: ["service": "ConfigurationServiceActor"]
-        )
+    // Publish value removed event
+    await publishChangeEvent(
+      ConfigChangeEventDTO(
+        identifier: UUID().uuidString,
+        key: key,
+        changeType: .removed,
+        sourceIdentifier: sourceID,
+        timestamp: TimePointDTO.now(),
+        oldValue: oldValue,
+        newValue: nil
       )
+    )
 
-      logger.debug(
+    if let logger = logger {
+      await logger.debug(
         "Configuration value removed successfully",
-        context: ["service": "ConfigurationServiceActor"],
-        metadata: ["key": .public(key)]
-      )
-    } catch {
-      // Log the error with privacy-aware logging
-      logger.error(
-        "Failed to remove configuration value",
-        context: ["service": "ConfigurationServiceActor"],
-        metadata: [
-          "key": .public(key),
-          "source": .public(sourceID),
-          "error": .public(error.localizedDescription)
-        ]
-      )
-
-      // Map to a ConfigError
-      throw UmbraErrors.ConfigError.operationFailed(
-        message: "Failed to remove configuration value: \(error.localizedDescription)",
-        underlyingError: error
+        metadata: PrivacyMetadata([
+          "key": (key, .public)
+        ]),
+        source: "ConfigurationServiceActor"
       )
     }
   }
@@ -585,25 +570,29 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
   /// - Throws: UmbraErrors.ConfigError if the configuration cannot be saved
   public func saveChanges(to source: String?) async throws {
     // Log the operation with privacy-aware logging
-    logger.info(
-      "Saving configuration changes",
-      context: ["service": "ConfigurationServiceActor"],
-      metadata: ["source": .public(source ?? "all")]
-    )
+    if let logger = logger {
+      await logger.info(
+        "Saving configuration changes",
+        metadata: PrivacyMetadata([
+          "source": (source ?? "all", .public)
+        ]),
+        source: "ConfigurationServiceActor"
+      )
+    }
 
     // If a specific source is provided, save only that source
     if let sourceID=source {
       // Find the source
-      guard let sourceEntry=sources.first(where: { $0.source.identifier == sourceID }) else {
+      guard sources.firstIndex(where: { $0.source.identifier == sourceID }) != nil else {
         throw UmbraErrors.ConfigError.sourceNotFound(
           message: "Configuration source with identifier '\(sourceID)' not found"
         )
       }
 
       // Check if the source is read-only
-      if sourceEntry.source.isReadOnly {
+      if sources.first(where: { $0.source.identifier == sourceID })?.source.isReadOnly ?? true {
         throw UmbraErrors.ConfigError.sourceReadOnly(
-          message: "Configuration source '\(sourceEntry.source.name)' is read-only"
+          message: "Configuration source '\(sourceID)' is read-only"
         )
       }
 
@@ -615,38 +604,46 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
       }
     }
 
-    logger.info(
-      "Configuration changes saved successfully",
-      context: ["service": "ConfigurationServiceActor"]
-    )
+    if let logger = logger {
+      await logger.info(
+        "Configuration changes saved successfully",
+        metadata: nil,
+        source: "ConfigurationServiceActor"
+      )
+    }
   }
 
   /// Subscribes to configuration change events
   /// - Parameter filter: Optional filter to limit the events received
   /// - Returns: An async sequence of ConfigChangeEventDTO objects
-  public func subscribeToChanges(filter: ConfigChangeFilterDTO?)
+  nonisolated public func subscribeToChanges(filter: ConfigChangeFilterDTO?)
   -> AsyncStream<ConfigChangeEventDTO> {
     // Generate a unique identifier for this subscription
     let subscriptionID=UUID()
 
     // Log the subscription with privacy-aware logging
-    logger.debug(
-      "New configuration change subscription",
-      context: ["service": "ConfigurationServiceActor"],
-      metadata: [
-        "subscription_id": .public(subscriptionID.uuidString),
-        "filter_types": .public(filter?.changeTypes?.map(\.rawValue)
-          .joined(separator: ", ") ?? "all")
-      ]
-    )
+    if let logger = logger {
+      Task {
+        await logger.debug(
+          "New configuration change subscription",
+          metadata: PrivacyMetadata([
+            "subscription_id": (subscriptionID.uuidString, .public),
+            "filter_types": (filter?.changeTypes?.map(\.rawValue).joined(separator: ", ") ?? "all", .public)
+          ]),
+          source: "ConfigurationServiceActor"
+        )
+      }
+    }
 
     // Create an AsyncStream that will receive events
     let stream=AsyncStream<ConfigChangeEventDTO> { continuation in
       // Store the continuation for publishing events
-      changeContinuations[subscriptionID]=continuation
+      Task {
+        await self.isolatedStoreSubscription(subscriptionID: subscriptionID, continuation: continuation)
+      }
 
       // Set up cancellation handler to clean up when the stream is cancelled
-      continuation.onTermination={ [weak self] _ in
+      continuation.onTermination = { [weak self] _ in
         Task { [weak self] in
           await self?.removeChangeEventContinuation(for: subscriptionID)
         }
@@ -661,14 +658,18 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
   /// - Returns: An array of configuration keys
   public func getAllKeys(from source: String?) async -> [String] {
     // Log the operation with privacy-aware logging
-    logger.debug(
-      "Getting all configuration keys",
-      context: ["service": "ConfigurationServiceActor"],
-      metadata: ["source": .public(source ?? "all")]
-    )
+    if let logger = logger {
+      await logger.debug(
+        "Getting all configuration keys",
+        metadata: PrivacyMetadata([
+          "source": (source ?? "all", .public)
+        ]),
+        source: "ConfigurationServiceActor"
+      )
+    }
 
     // If a specific source is provided, get only keys from that source
-    if let sourceID=source {
+    if source != nil {
       // In a real implementation, this would fetch keys from the specified source
       // For now, we'll just return all keys from the cache
       return Array(configurationCache.keys)
@@ -682,37 +683,54 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
 
   /// Removes a change event continuation for a subscription that has been cancelled
   /// - Parameter subscriptionId: The ID of the subscription to remove
-  private func removeChangeEventContinuation(for subscriptionID: UUID) {
+  private func removeChangeEventContinuation(for subscriptionID: UUID) async {
     changeContinuations.removeValue(forKey: subscriptionID)
 
     // Log the removal with privacy-aware logging
-    logger.debug(
-      "Configuration change subscription removed",
-      context: ["service": "ConfigurationServiceActor"],
-      metadata: ["subscription_id": .public(subscriptionID.uuidString)]
-    )
+    if let logger = logger {
+      await logger.debug(
+        "Configuration change subscription removed",
+        metadata: PrivacyMetadata([
+          "subscription_id": (subscriptionID.uuidString, .public)
+        ]),
+        source: "ConfigurationServiceActor"
+      )
+    }
   }
 
   /// Publishes a configuration change event to all active subscribers
   /// - Parameter event: The event to publish
-  private func publishChangeEvent(_ event: ConfigChangeEventDTO) {
+  private func publishChangeEvent(_ event: ConfigChangeEventDTO) async {
     for (subscriptionID, continuation) in changeContinuations {
       // In a real implementation, we would filter the events based on the subscription's filter
       // For simplicity, we're publishing all events to all subscribers
       continuation.yield(event)
 
       // Log the event publication with privacy-aware logging
-      logger.trace(
-        "Published configuration change event to subscriber",
-        context: ["service": "ConfigurationServiceActor"],
-        metadata: [
-          "subscription_id": .public(subscriptionID.uuidString),
-          "event_id": .public(event.identifier),
-          "event_type": .public(event.changeType.rawValue),
-          "key": .public(event.key)
-        ]
-      )
+      if let logger = logger {
+        await logger.trace(
+          "Published configuration change event to subscriber",
+          metadata: PrivacyMetadata([
+            "subscription_id": (subscriptionID.uuidString, .public),
+            "event_id": (event.identifier, .public),
+            "event_type": (event.changeType.rawValue, .public),
+            "key": (event.key, .public)
+          ]),
+          source: "ConfigurationServiceActor"
+        )
+      }
     }
+  }
+
+  /// Store a subscription in the actor-isolated dictionary
+  /// - Parameters:
+  ///   - subscriptionID: The subscription ID
+  ///   - continuation: The continuation to store
+  private func isolatedStoreSubscription(
+    subscriptionID: UUID, 
+    continuation: AsyncStream<ConfigChangeEventDTO>.Continuation
+  ) {
+    changeContinuations[subscriptionID] = continuation
   }
 
   /// Gets a configuration value for the specified key
@@ -726,7 +744,7 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
     }
 
     // If not in the cache, throw an error
-    throw UmbraErrors.ConfigError.keyNotFound(
+    throw UmbraErrors.ConfigError.sourceNotFound(
       message: "Configuration key '\(key)' not found"
     )
   }
@@ -741,12 +759,38 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
   /// - Parameter sourceId: The identifier of the source to load from
   /// - Throws: UmbraErrors.ConfigError if the source cannot be loaded
   private func loadConfigurationFromSource(_ sourceID: String) async throws {
-    // In a real implementation, this would load values from the source
-    // For now, we'll just log it
-    logger.debug(
-      "Loading configuration from source",
-      context: ["service": "ConfigurationServiceActor"],
-      metadata: ["source_id": .public(sourceID)]
+    // Get the source
+    guard sources.firstIndex(where: { $0.source.identifier == sourceID }) != nil else {
+      if let logger = logger {
+        await logger.error(
+          "Cannot load configuration from unknown source",
+          metadata: PrivacyMetadata([
+            "source_id": (sourceID, .public)
+          ]),
+          source: "ConfigurationServiceActor"
+        )
+      }
+      
+      throw UmbraErrors.ConfigError.sourceNotFound(
+        message: "Configuration source with identifier '\(sourceID)' not found"
+      )
+    }
+    
+    // In a real implementation, this would load configuration from the source
+    // For now, we'll just use what's already in the cache
+    
+    // Refresh the configuration cache
+    await refreshConfigurationCache()
+    
+    // Publish initialisation event
+    await publishChangeEvent(
+      ConfigChangeEventDTO(
+        identifier: UUID().uuidString,
+        key: "",
+        changeType: .initialised,
+        sourceIdentifier: sourceID,
+        timestamp: TimePointDTO.now()
+      )
     )
   }
 
@@ -756,21 +800,28 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
   private func saveConfigurationToSource(_ sourceID: String) async throws {
     // In a real implementation, this would save values to the source
     // For now, we'll just log it
-    logger.debug(
-      "Saving configuration to source",
-      context: ["service": "ConfigurationServiceActor"],
-      metadata: ["source_id": .public(sourceID)]
-    )
+    if let logger = logger {
+      await logger.debug(
+        "Saving configuration to source",
+        metadata: PrivacyMetadata([
+          "source_id": (sourceID, .public)
+        ]),
+        source: "ConfigurationServiceActor"
+      )
+    }
   }
 
   /// Refreshes the configuration cache from all sources
   private func refreshConfigurationCache() async {
     // In a real implementation, this would rebuild the cache from all sources
     // For now, we'll just log it
-    logger.debug(
-      "Refreshing configuration cache",
-      context: ["service": "ConfigurationServiceActor"]
-    )
+    if let logger = logger {
+      await logger.debug(
+        "Refreshing configuration cache",
+        metadata: nil,
+        source: "ConfigurationServiceActor"
+      )
+    }
 
     // Mock refreshing the cache - this would actually merge values from all sources
     // respecting their priority
@@ -780,12 +831,11 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
 // MARK: - Helper Extensions
 
 extension TimePointDTO {
-  /// Creates a TimePointDTO representing the current time
+  /// Static helper to get the current time
   static func now() -> TimePointDTO {
-    // In a real implementation, this would use a proper time source
     // For simplicity, we're using a dummy implementation
     TimePointDTO(
-      epochSeconds: UInt64(Date().timeIntervalSince1970),
+      timestamp: Date().timeIntervalSince1970,
       nanoseconds: 0
     )
   }

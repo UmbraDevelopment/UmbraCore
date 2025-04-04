@@ -7,7 +7,7 @@ import LoggingTypes
 import SecurityCoreInterfaces
 import SecurityKeyTypes
 import UmbraErrors
-import KeyManagementActor
+import KeyManagementActorTypes
 
 /**
  # KeyManagementActor
@@ -120,12 +120,13 @@ public actor KeyManagementActor: KeyManagementProtocol {
 
     // Validate the input
     guard !identifier.isEmpty else {
+      let error = KeyManagementError.invalidInput(details: "Identifier cannot be empty")
       await securityLogger.logOperationFailure(
         keyIdentifier: identifier,
         operation: "retrieve",
-        error: KeyManagementError.invalidInput(details: "Identifier cannot be empty")
+        error: error
       )
-      return Result<[UInt8], SecurityProtocolError>.failure(SecurityProtocolError.invalidInput(details: "Identifier cannot be empty"))
+      return Result<[UInt8], SecurityProtocolError>.failure(error.toStandardError())
     }
 
     // Get the key from storage
@@ -144,7 +145,7 @@ public actor KeyManagementActor: KeyManagementProtocol {
           operation: "retrieve",
           error: error
         )
-        return Result<[UInt8], SecurityProtocolError>.failure(SecurityProtocolError.keyNotFound(identifier: identifier))
+        return Result<[UInt8], SecurityProtocolError>.failure(error.toStandardError())
       }
     } catch {
       let secError = KeyManagementError.keyManagementError(details: error.localizedDescription)
@@ -153,7 +154,7 @@ public actor KeyManagementActor: KeyManagementProtocol {
         operation: "retrieve",
         error: secError
       )
-      return Result<[UInt8], SecurityProtocolError>.failure(SecurityProtocolError.generalError(details: error.localizedDescription))
+      return Result<[UInt8], SecurityProtocolError>.failure(secError.toStandardError())
     }
   }
 
@@ -174,44 +175,41 @@ public actor KeyManagementActor: KeyManagementProtocol {
       operation: "store"
     )
 
-    // Validate the input
-    guard !identifier.isEmpty else {
-      await securityLogger.logOperationFailure(
-        keyIdentifier: identifier,
-        operation: "store",
-        error: KeyManagementError.invalidInput(details: "Identifier cannot be empty")
-      )
-      return Result<Void, SecurityProtocolError>.failure(SecurityProtocolError.invalidInput(details: "Identifier cannot be empty"))
-    }
-
-    guard !key.isEmpty else {
-      await securityLogger.logOperationFailure(
-        keyIdentifier: identifier,
-        operation: "store",
-        error: KeyManagementError.invalidInput(details: "Key cannot be empty")
-      )
-      return Result<Void, SecurityProtocolError>.failure(SecurityProtocolError.invalidInput(details: "Key cannot be empty"))
-    }
-
-    // Sanitise the identifier
     let sanitizedIdentifier = sanitizeIdentifier(identifier)
     
-    do {
-      // Log the transaction details for audit purposes
-      await securityLogger.logOperationProgress(
+    // Validate the input
+    guard !identifier.isEmpty else {
+      let error = KeyManagementError.invalidInput(details: "Identifier cannot be empty")
+      await securityLogger.logOperationFailure(
         keyIdentifier: identifier,
         operation: "store",
-        progress: "Storing key with identifier: \(identifier)"
+        error: error
       )
+      return Result<Void, SecurityProtocolError>.failure(error.toStandardError())
+    }
 
+    // Validate the key
+    guard !key.isEmpty else {
+      let error = KeyManagementError.invalidInput(details: "Key cannot be empty")
+      await securityLogger.logOperationFailure(
+        keyIdentifier: identifier,
+        operation: "store",
+        error: error
+      )
+      return Result<Void, SecurityProtocolError>.failure(error.toStandardError())
+    }
+
+    // Store the key securely
+    do {
+      // Store the key in the secure storage
       try await keyStore.storeKey(key, identifier: sanitizedIdentifier)
-
-      // Log the successful completion of the transaction
+      
+      // Log the success
       await securityLogger.logOperationSuccess(
         keyIdentifier: identifier,
         operation: "store"
       )
-
+      
       return .success(())
     } catch {
       let secError = KeyManagementError.keyManagementError(details: error.localizedDescription)
@@ -220,7 +218,7 @@ public actor KeyManagementActor: KeyManagementProtocol {
         operation: "store",
         error: secError
       )
-      return Result<Void, SecurityProtocolError>.failure(SecurityProtocolError.generalError(details: error.localizedDescription))
+      return Result<Void, SecurityProtocolError>.failure(secError.toStandardError())
     }
   }
 
@@ -240,24 +238,24 @@ public actor KeyManagementActor: KeyManagementProtocol {
 
     // Validate the input
     guard !identifier.isEmpty else {
+      let error = KeyManagementError.invalidInput(details: "Identifier cannot be empty")
       await securityLogger.logOperationFailure(
         keyIdentifier: identifier,
         operation: "delete",
-        error: KeyManagementError.invalidInput(details: "Identifier cannot be empty")
+        error: error
       )
-      return Result<Void, SecurityProtocolError>.failure(SecurityProtocolError.invalidInput(details: "Identifier cannot be empty"))
+      return Result<Void, SecurityProtocolError>.failure(error.toStandardError())
     }
 
     // Sanitise the identifier
     let sanitizedIdentifier = sanitizeIdentifier(identifier)
     
-    // Delete the key
     do {
+      // Check if the key exists before attempting to delete
       if try await keyStore.containsKey(identifier: sanitizedIdentifier) {
         do {
           try await keyStore.deleteKey(identifier: sanitizedIdentifier)
           
-          // Log the successful completion of the transaction
           await securityLogger.logOperationSuccess(
             keyIdentifier: identifier,
             operation: "delete"
@@ -271,7 +269,7 @@ public actor KeyManagementActor: KeyManagementProtocol {
             operation: "delete",
             error: secError
           )
-          return Result<Void, SecurityProtocolError>.failure(SecurityProtocolError.generalError(details: error.localizedDescription))
+          return Result<Void, SecurityProtocolError>.failure(secError.toStandardError())
         }
       } else {
         let error = KeyManagementError
@@ -281,7 +279,7 @@ public actor KeyManagementActor: KeyManagementProtocol {
           operation: "delete",
           error: error
         )
-        return Result<Void, SecurityProtocolError>.failure(SecurityProtocolError.keyNotFound(identifier: identifier))
+        return Result<Void, SecurityProtocolError>.failure(error.toStandardError())
       }
     } catch {
       let secError = KeyManagementError.keyManagementError(details: error.localizedDescription)
@@ -290,7 +288,7 @@ public actor KeyManagementActor: KeyManagementProtocol {
         operation: "delete",
         error: secError
       )
-      return Result<Void, SecurityProtocolError>.failure(SecurityProtocolError.generalError(details: error.localizedDescription))
+      return Result<Void, SecurityProtocolError>.failure(secError.toStandardError())
     }
   }
 
@@ -313,12 +311,13 @@ public actor KeyManagementActor: KeyManagementProtocol {
 
     // Validate the input
     guard !identifier.isEmpty else {
+      let error = KeyManagementError.invalidInput(details: "Identifier cannot be empty")
       await securityLogger.logOperationFailure(
         keyIdentifier: identifier,
         operation: "rotate",
-        error: KeyManagementError.invalidInput(details: "Identifier cannot be empty")
+        error: error
       )
-      return Result<(newKey: [UInt8], reencryptedData: [UInt8]?), SecurityProtocolError>.failure(SecurityProtocolError.invalidInput(details: "Identifier cannot be empty"))
+      return Result<(newKey: [UInt8], reencryptedData: [UInt8]?), SecurityProtocolError>.failure(error.toStandardError())
     }
 
     let sanitizedIdentifier = sanitizeIdentifier(identifier)
@@ -332,20 +331,13 @@ public actor KeyManagementActor: KeyManagementProtocol {
           operation: "rotate",
           error: error
         )
-        return Result<(newKey: [UInt8], reencryptedData: [UInt8]?), SecurityProtocolError>.failure(SecurityProtocolError.keyNotFound(identifier: identifier))
+        return Result<(newKey: [UInt8], reencryptedData: [UInt8]?), SecurityProtocolError>.failure(error.toStandardError())
       }
       
-      // Generate a new key
+      // Generate a new key - this will replace the existing one
       let newKey = try await keyGenerator.generateKey()
       
-      // Log the transaction details
-      await securityLogger.logOperationProgress(
-        keyIdentifier: identifier,
-        operation: "rotate",
-        progress: "Generated new key for rotation"
-      )
-      
-      // Store the new key with the same identifier
+      // Store the new key
       try await keyStore.storeKey(newKey, identifier: sanitizedIdentifier)
       
       // Log the success
@@ -354,7 +346,6 @@ public actor KeyManagementActor: KeyManagementProtocol {
         operation: "rotate"
       )
       
-      // Return the new key
       return .success((newKey: newKey, reencryptedData: nil))
     } catch {
       let secError = KeyManagementError.keyManagementError(details: error.localizedDescription)
@@ -363,22 +354,22 @@ public actor KeyManagementActor: KeyManagementProtocol {
         operation: "rotate",
         error: secError
       )
-      return Result<(newKey: [UInt8], reencryptedData: [UInt8]?), SecurityProtocolError>.failure(SecurityProtocolError.generalError(details: error.localizedDescription))
+      return Result<(newKey: [UInt8], reencryptedData: [UInt8]?), SecurityProtocolError>.failure(secError.toStandardError())
     }
   }
 
   /**
-   Lists all key identifiers managed by this service.
-
-   - Returns: A Result containing an array of key identifiers or an error
+   Retrieves all key identifiers.
+   
+   - Returns: A result containing an array of key identifiers or an error
    */
-  public func listKeyIdentifiers() async -> Result<[String], SecurityProtocolError> {
+  public func getAllKeyIdentifiers() async -> Result<[String], SecurityProtocolError> {
     do {
-      let identifiers = try await keyStore.getAllIdentifiers()
+      let identifiers = try await keyStore.getKeyIdentifiers()
       return .success(identifiers)
     } catch {
       let secError = KeyManagementError.keyManagementError(details: error.localizedDescription)
-      return Result<[String], SecurityProtocolError>.failure(SecurityProtocolError.generalError(details: error.localizedDescription))
+      return Result<[String], SecurityProtocolError>.failure(secError.toStandardError())
     }
   }
 }
