@@ -147,7 +147,7 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
     withIdentifier identifier: String
   ) async -> Result<Void, SecurityStorageError> {
     let secureStorage=cryptoServiceInstance.secureStorage
-    return await self.secureStorage.storeData(data, withIdentifier: identifier)
+    return await secureStorage.storeData(data, withIdentifier: identifier)
   }
 
   /**
@@ -159,7 +159,7 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
   private func retrieveData(withIdentifier identifier: String) async
   -> Result<[UInt8], SecurityStorageError> {
     let secureStorage=cryptoServiceInstance.secureStorage
-    return await self.secureStorage.retrieveData(withIdentifier: identifier)
+    return await secureStorage.retrieveData(withIdentifier: identifier)
   }
 
   /**
@@ -171,7 +171,7 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
   private func deleteData(withIdentifier identifier: String) async
   -> Result<Void, SecurityStorageError> {
     let secureStorage=cryptoServiceInstance.secureStorage
-    return await self.secureStorage.deleteData(withIdentifier: identifier)
+    return await secureStorage.deleteData(withIdentifier: identifier)
   }
 
   /**
@@ -1090,7 +1090,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
         throw SecurityProviderError.invalidInput("Identifier is required for secure storage")
       }
 
-      let storeResult=await storeData(Array(inputData), withIdentifier: identifier)
+      let secureStorage=cryptoServiceInstance.secureStorage
+      let storeResult=await secureStorage.storeData(Array(inputData), withIdentifier: identifier)
 
       guard case .success=storeResult else {
         throw SecurityProviderError.operationFailed(
@@ -1154,7 +1155,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
         throw SecurityProviderError.invalidInput("Identifier is required for secure retrieval")
       }
 
-      let dataResult=await retrieveData(withIdentifier: identifier)
+      let secureStorage=cryptoServiceInstance.secureStorage
+      let dataResult=await secureStorage.retrieveData(withIdentifier: identifier)
 
       switch dataResult {
         case let .success(data):
@@ -1221,7 +1223,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
         throw SecurityProviderError.invalidInput("Identifier is required for secure deletion")
       }
 
-      let deleteResult=await deleteData(withIdentifier: identifier)
+      let secureStorage=cryptoServiceInstance.secureStorage
+      let deleteResult=await secureStorage.deleteData(withIdentifier: identifier)
 
       switch deleteResult {
         case .success:

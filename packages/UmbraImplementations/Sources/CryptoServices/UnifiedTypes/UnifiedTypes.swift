@@ -10,31 +10,15 @@ import UmbraErrors
  */
 public enum UnifiedCryptoTypes {
   /**
-   Unified encryption algorithm type.
+   Canonical reference to CoreSecurityTypes.EncryptionAlgorithm.
+   Using type alias to ensure consistent algorithm definitions across the codebase.
    */
-  public enum EncryptionAlgorithm: String, Sendable, Equatable, CaseIterable {
-    /// AES 256-bit in CBC (Cipher Block Chaining) mode
-    case aes256CBC
-
-    /// AES 256-bit in GCM (Galois/Counter Mode) mode - provides authenticated encryption
-    case aes256GCM
-
-    /// AES 128-bit in GCM (Galois/Counter Mode) mode - provides authenticated encryption
-    case aes128GCM
-
-    /// ChaCha20-Poly1305 authenticated encryption
-    case chacha20Poly1305="chacha20poly1305"
-
-    /// Description of the algorithm
-    public var description: String {
-      rawValue
-    }
-  }
+  public typealias EncryptionAlgorithm = CoreSecurityTypes.EncryptionAlgorithm
 
   /**
    Unified key generation options.
    */
-  public struct KeyGenerationOptions: Sendable, Equatable {
+  public struct KeyGenerationOptions: Sendable {
     /// The key algorithm to use
     public let algorithm: KeyAlgorithm
 
@@ -98,8 +82,6 @@ public enum UnifiedCryptoTypes {
       if let options {
         // Map the algorithm
         switch options.algorithm {
-          case .aes128GCM:
-            algorithm = .aes128GCM
           case .aes256GCM:
             algorithm = .aes256GCM
           case .aes256CBC:
@@ -109,7 +91,10 @@ public enum UnifiedCryptoTypes {
         }
 
         authenticatedData=options.authenticatedData
-        padding=options.padding
+        // Only access padding if it exists in the type
+        if let paddingOption = options.padding {
+            padding = paddingOption
+        }
       } else {
         // Defaults
         algorithm = .aes256GCM
@@ -149,8 +134,6 @@ public enum UnifiedCryptoTypes {
       if let options {
         // Map the algorithm
         switch options.algorithm {
-          case .aes128GCM:
-            algorithm = .aes128GCM
           case .aes256GCM:
             algorithm = .aes256GCM
           case .aes256CBC:
@@ -160,7 +143,10 @@ public enum UnifiedCryptoTypes {
         }
 
         authenticatedData=options.authenticatedData
-        padding=options.padding
+        // Only access padding if it exists in the type
+        if let paddingOption = options.padding {
+            padding = paddingOption
+        }
       } else {
         // Defaults
         algorithm = .aes256GCM

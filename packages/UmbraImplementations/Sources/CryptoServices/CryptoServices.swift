@@ -13,6 +13,12 @@ import SecurityCoreInterfaces
   This module provides cryptographic services for the UmbraCore platform, following
   the Alpha Dot Five architecture principles with actor-based concurrency.
 
+  ## IMPORTANT: FAÇADE PATTERN
+  This enum serves as a simplified façade over the canonical `CryptoServiceFactory`.
+  For all extended functionality or specialised implementations, use 
+  `CryptoServiceFactory` directly. This design provides convenience methods
+  while eliminating duplication by delegating to the canonical implementation.
+
   The module supports these key operations:
   - Encryption and decryption of data
   - Secure hashing of data
@@ -22,7 +28,7 @@ import SecurityCoreInterfaces
 
  ```swift
  // Create a default implementation
- let cryptoService = await CryptoServiceFactory.createDefault(logger: myLogger)
+ let cryptoService = await CryptoServices.createDefault(logger: myLogger)
 
  // Encrypt some data
  let data: [UInt8] = [1, 2, 3, 4]
@@ -40,8 +46,8 @@ import SecurityCoreInterfaces
 
   ## Key Components
 
-  - **CryptoServices**: Primary static factory for obtaining implementations
-  - **CryptoServiceFactory**: Internal factory for different implementations
+  - **CryptoServices**: Public façade providing simplified access to implementations
+  - **CryptoServiceFactory**: Canonical factory for comprehensive implementation options
   */
 public enum CryptoServices {
   /**

@@ -3,10 +3,16 @@
 
  A fully secure implementation of CryptoServiceProtocol that follows the Alpha Dot Five
  architecture principles, integrating native actor-based SecureStorage for all
- cryptographic materials.
+ cryptographic material management.
 
- This implementation ensures all sensitive data is properly stored, retrieved, and
- managed through secure channels with appropriate privacy protections.
+ This implementation provides:
+ - Full thread safety with Swift actors
+ - Secure storage of keys and encrypted data
+ - Privacy-aware logging
+ - Proper error handling
+
+ It relies on the wrapped CryptoServiceProtocol for the actual cryptographic operations
+ while providing secure storage capabilities.
  */
 
 import CoreSecurityTypes
@@ -16,6 +22,10 @@ import Foundation
 import LoggingInterfaces
 import SecurityCoreInterfaces
 import UmbraErrors
+import UnifiedCryptoTypes
+
+// Type alias to use the canonical error type
+public typealias CryptoError = UnifiedCryptoTypes.CryptoError
 
 /**
  Secure implementation of CryptoServiceProtocol using SecureStorage
@@ -102,7 +112,7 @@ public actor SecureCryptoServiceImpl: CryptoServiceProtocol {
           source: "SecureCryptoService"
         )
 
-        return .failure(.storageError(reason: "Failed to store encrypted data"))
+        return .failure(.encryptionFailed("Failed to store encrypted data"))
       }
 
       return .success(encryptedIdentifier)
@@ -171,7 +181,7 @@ public actor SecureCryptoServiceImpl: CryptoServiceProtocol {
           source: "SecureCryptoService"
         )
 
-        return .failure(.storageError(reason: "Failed to store decrypted data"))
+        return .failure(.encryptionFailed("Failed to store decrypted data"))
       }
 
       return .success(decryptedIdentifier)
@@ -318,7 +328,7 @@ public actor SecureCryptoServiceImpl: CryptoServiceProtocol {
 
     // Check for our "magic number"
     guard data.count >= 2 && data.prefix(2) == Data([0xAA, 0x55]) else {
-      throw CryptoError.decryptionFailed(reason: "Invalid data format")
+      throw CryptoError.decryptionFailed("Invalid data format")
     }
 
     // Return the data after the magic number
@@ -360,7 +370,7 @@ public actor SecureCryptoServiceImpl: CryptoServiceProtocol {
           source: "SecureCryptoService"
         )
 
-        return .failure(.storageError(reason: "Failed to store hash"))
+        return .failure(.hashingFailed("Failed to store hash"))
       }
 
       return .success(hashIdentifier)
@@ -412,17 +422,17 @@ public actor SecureCryptoServiceImpl: CryptoServiceProtocol {
       let status=SecRandomCopyBytes(kSecRandomDefault, length, &key)
 
       if status != errSecSuccess {
-        throw CryptoError.operationFailed(reason: "Failed to generate random bytes: \(status)")
+        throw CryptoError.operationFailed("Failed to generate random bytes: \(status)")
       }
 
       // Create a unique identifier for the key
-      let keyIdentifier="key_\(options?.algorithm.rawValue ?? "symmetric")_\(UUID().uuidString)"
+      let keyIdentifier="key_\(UUID().uuidString)"
 
       // Store the key in secure storage
       let storeResult=await secureStorage.storeData(Array(key), withIdentifier: keyIdentifier)
 
       guard case .success=storeResult else {
-        return .failure(.storageError(reason: "Failed to store key"))
+        return .failure(.keyGenerationFailed("Failed to store key"))
       }
 
       var metadata=PrivacyMetadata()
@@ -460,7 +470,15 @@ public actor SecureCryptoServiceImpl: CryptoServiceProtocol {
     _ data: [UInt8],
     withIdentifier identifier: String
   ) async -> Result<Bool, SecurityStorageError> {
-    await secureStorage.storeData(data, withIdentifier: identifier)
+    let storeResult = await secureStorage.storeData(data, withIdentifier: identifier)
+    
+    // Convert Void result to Bool result
+    switch storeResult {
+      case .success:
+        return .success(true)
+      case .failure(let error):
+        return .failure(error)
+    }
   }
 
   public func retrieveData(
@@ -472,7 +490,15 @@ public actor SecureCryptoServiceImpl: CryptoServiceProtocol {
   public func deleteData(
     withIdentifier identifier: String
   ) async -> Result<Bool, SecurityStorageError> {
-    await secureStorage.deleteData(withIdentifier: identifier)
+    let deleteResult = await secureStorage.deleteData(withIdentifier: identifier)
+    
+    // Convert Void result to Bool result
+    switch deleteResult {
+      case .success:
+        return .success(true)
+      case .failure(let error):
+        return .failure(error)
+    }
   }
 
   public func importData(

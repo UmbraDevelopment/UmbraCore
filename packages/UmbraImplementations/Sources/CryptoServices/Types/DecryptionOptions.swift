@@ -1,29 +1,31 @@
 import CoreSecurityTypes
-import CryptoTypes
 import Foundation
 
 /**
- Options for configuring decryption operations.
-
+ Options for decryption operations in the crypto services.
+ 
  These options control the algorithm, mode, and additional parameters used for decryption.
  */
-public struct DecryptionOptions: Sendable, Equatable {
+public struct DecryptionOptions: Sendable {
   /// The encryption algorithm to use
-  public let algorithm: EncryptionAlgorithm
-
+  public let algorithm: CoreSecurityTypes.EncryptionAlgorithm
+  
   /// Optional authenticated data for authenticated encryption modes
   public let authenticatedData: [UInt8]?
-
-  /// Optional padding mode to use
+  
+  /// Padding mode to use for block ciphers
   public let padding: PaddingMode?
-
-  /// Default initialiser
-  /// - Parameters:
-  ///   - algorithm: The encryption algorithm to use (defaults to AES-256-CBC)
-  ///   - authenticatedData: Optional authenticated data for authenticated decryption modes
-  ///   - padding: Optional padding mode to use
+  
+  /**
+   Creates a new instance with the specified options
+   
+   - Parameters:
+     - algorithm: The encryption algorithm to use
+     - authenticatedData: Optional authenticated data for authenticated modes
+     - padding: Optional padding mode to use
+   */
   public init(
-    algorithm: EncryptionAlgorithm = .aes256CBC,
+    algorithm: CoreSecurityTypes.EncryptionAlgorithm = .aes256CBC,
     authenticatedData: [UInt8]?=nil,
     padding: PaddingMode? = .pkcs7
   ) {

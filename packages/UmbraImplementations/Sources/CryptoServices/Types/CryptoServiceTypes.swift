@@ -17,14 +17,14 @@ import SecurityCoreInterfaces
  */
 public struct CryptoOptions: Sendable, Equatable {
   /// The algorithm to use for the operation
-  public let algorithm: EncryptionAlgorithm
+  public let algorithm: CoreSecurityTypes.EncryptionAlgorithm
 
   /// Additional parameters for the operation
   public let parameters: [String: CryptoParameter]?
 
   /// Initialize with specific algorithm and parameters
   public init(
-    algorithm: EncryptionAlgorithm,
+    algorithm: CoreSecurityTypes.EncryptionAlgorithm,
     parameters: [String: CryptoParameter]?=nil
   ) {
     self.algorithm=algorithm

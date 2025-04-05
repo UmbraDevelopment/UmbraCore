@@ -59,14 +59,14 @@ extension SecurityCoreInterfaces.EncryptionOptions {
   }
 
   /// Convert internal encryption algorithm to enum representation
-  private func toAlgorithmEnum() -> EncryptionAlgorithm {
+  private func toAlgorithmEnum() -> CoreSecurityTypes.EncryptionAlgorithm {
     switch algorithm {
       case .aes256GCM:
-        .aes256GCM
+        return .aes256GCM
       case .aes256CBC:
-        .aes256CBC
-      default:
-        .aes256GCM // Default to AES-256 GCM
+        return .aes256CBC
+      case .chacha20Poly1305:
+        return .chacha20Poly1305
     }
   }
 }
@@ -126,14 +126,14 @@ extension SecurityCoreInterfaces.DecryptionOptions {
   }
 
   /// Convert internal encryption algorithm to enum representation
-  private func toAlgorithmEnum() -> EncryptionAlgorithm {
+  private func toAlgorithmEnum() -> CoreSecurityTypes.EncryptionAlgorithm {
     switch algorithm {
       case .aes256GCM:
-        .aes256GCM
+        return .aes256GCM
       case .aes256CBC:
-        .aes256CBC
-      default:
-        .aes256GCM // Default to AES-256 GCM
+        return .aes256CBC
+      case .chacha20Poly1305:
+        return .chacha20Poly1305
     }
   }
 }

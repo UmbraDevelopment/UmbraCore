@@ -18,9 +18,11 @@ import UmbraErrors
  of providing asynchronous factory methods that return actor-based
  implementations.
 
+ ## CANONICAL IMPLEMENTATION
  This is the canonical factory for all cryptographic service implementations
- in the UmbraCore project, consolidating functionality previously split between
- multiple factory implementations.
+ in the UmbraCore project. All other factory methods (such as those in CryptoServices)
+ should delegate to this implementation. This design eliminates duplication and
+ ensures consistent behavior across all cryptographic service creations.
 
  ## Usage Examples
 

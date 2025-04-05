@@ -62,7 +62,7 @@ public actor SecureCryptoStorage {
   public func storeKey(
     _ key: Data,
     identifier: String,
-    purpose: SecurityCoreInterfaces.KeyPurpose,
+    purpose: String,
     algorithm _: String?=nil
   ) async throws {
     // Configuration moved directly into the comment for reference
@@ -73,11 +73,11 @@ public actor SecureCryptoStorage {
 
       // Check if the operation was successful
       guard case .success=result else {
-        throw UCryptoError.keyGenerationFailed(reason: "Failed to store key")
+        throw UCryptoError.keyGenerationFailed("Failed to store key")
       }
 
       var metadata=PrivacyMetadata()
-      metadata["purpose"]=PrivacyMetadataValue(value: purpose.rawValue, privacy: .public)
+      metadata["purpose"]=PrivacyMetadataValue(value: purpose, privacy: .public)
       metadata["keySize"]=PrivacyMetadataValue(value: "\(key.count)", privacy: .public)
 
       await logger.debug(
@@ -87,7 +87,7 @@ public actor SecureCryptoStorage {
       )
     } catch {
       throw UCryptoError
-        .keyGenerationFailed(reason: "Failed to store key: \(error.localizedDescription)")
+        .keyGenerationFailed("Failed to store key: \(error.localizedDescription)")
     }
   }
 
@@ -118,11 +118,11 @@ public actor SecureCryptoStorage {
           return Data(keyData)
 
         case let .failure(error):
-          throw UCryptoError.keyRetrievalFailed(reason: "Failed to retrieve key: \(error)")
+          throw UCryptoError.keyRetrievalFailed("Failed to retrieve key: \(error)")
       }
     } catch {
       throw UCryptoError
-        .keyRetrievalFailed(reason: "Error retrieving key: \(error.localizedDescription)")
+        .keyRetrievalFailed("Error retrieving key: \(error.localizedDescription)")
     }
   }
 
@@ -139,7 +139,7 @@ public actor SecureCryptoStorage {
       let result=await secureStorage.deleteData(withIdentifier: identifier)
 
       guard case .success=result else {
-        throw UCryptoError.operationFailed(reason: "Failed to delete key")
+        throw UCryptoError.operationFailed("Failed to delete key")
       }
 
       await logger.debug(
@@ -149,7 +149,7 @@ public actor SecureCryptoStorage {
       )
     } catch {
       throw UCryptoError
-        .operationFailed(reason: "Error deleting key: \(error.localizedDescription)")
+        .operationFailed("Error deleting key: \(error.localizedDescription)")
     }
   }
 
@@ -174,7 +174,7 @@ public actor SecureCryptoStorage {
       let result=await secureStorage.storeData(Array(data), withIdentifier: identifier)
 
       guard case .success=result else {
-        throw UCryptoError.operationFailed(reason: "Failed to store encrypted data")
+        throw UCryptoError.operationFailed("Failed to store encrypted data")
       }
 
       var metadata=PrivacyMetadata()
@@ -187,7 +187,7 @@ public actor SecureCryptoStorage {
       )
     } catch {
       throw UCryptoError
-        .operationFailed(reason: "Error storing encrypted data: \(error.localizedDescription)")
+        .operationFailed("Error storing encrypted data: \(error.localizedDescription)")
     }
   }
 
@@ -219,11 +219,11 @@ public actor SecureCryptoStorage {
           return Data(encryptedData)
 
         case let .failure(error):
-          throw UCryptoError.operationFailed(reason: "Failed to retrieve encrypted data: \(error)")
+          throw UCryptoError.operationFailed("Failed to retrieve encrypted data: \(error)")
       }
     } catch {
       throw UCryptoError
-        .operationFailed(reason: "Error retrieving encrypted data: \(error.localizedDescription)")
+        .operationFailed("Error retrieving encrypted data: \(error.localizedDescription)")
     }
   }
 
@@ -285,7 +285,7 @@ public actor SecureCryptoStorage {
       let result=await secureStorage.storeData(Array(data), withIdentifier: identifier)
 
       guard case .success=result else {
-        throw UCryptoError.operationFailed(reason: "Failed to store data")
+        throw UCryptoError.operationFailed("Failed to store data")
       }
 
       var metadata=PrivacyMetadata()
@@ -298,7 +298,7 @@ public actor SecureCryptoStorage {
       )
     } catch {
       throw UCryptoError
-        .operationFailed(reason: "Error storing data: \(error.localizedDescription)")
+        .operationFailed("Error storing data: \(error.localizedDescription)")
     }
   }
 
@@ -329,11 +329,11 @@ public actor SecureCryptoStorage {
           return Data(data)
 
         case let .failure(error):
-          throw UCryptoError.operationFailed(reason: "Failed to retrieve data: \(error)")
+          throw UCryptoError.operationFailed("Failed to retrieve data: \(error)")
       }
     } catch {
       throw UCryptoError
-        .operationFailed(reason: "Error retrieving data: \(error.localizedDescription)")
+        .operationFailed("Error retrieving data: \(error.localizedDescription)")
     }
   }
 
@@ -356,7 +356,7 @@ public actor SecureCryptoStorage {
       let result=await secureStorage.deleteData(withIdentifier: identifier)
 
       guard case .success=result else {
-        throw UCryptoError.operationFailed(reason: "Failed to delete data")
+        throw UCryptoError.operationFailed("Failed to delete data")
       }
 
       await logger.debug(
@@ -366,7 +366,7 @@ public actor SecureCryptoStorage {
       )
     } catch {
       throw UCryptoError
-        .operationFailed(reason: "Error deleting data: \(error.localizedDescription)")
+        .operationFailed("Error deleting data: \(error.localizedDescription)")
     }
   }
 }
