@@ -70,9 +70,11 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
     metadata=metadata.withSensitive(key: "url", value: url.path)
     metadata=metadata.withPublic(key: "readOnly", value: String(readOnly))
 
-    await bookmarkLogger.logOperationStart(
-      operation: "createBookmark",
-      additionalContext: metadata
+    await logBookmarkOperation(
+      "createBookmark",
+      level: .debug,
+      source: "SecurityBookmarkActor",
+      contextDTO: BaseLogContextDTO(domainName: "Bookmark", source: "SecurityBookmarkActor", metadata: metadata)
     )
 
     do {
@@ -107,9 +109,10 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
           )
           successMetadata=successMetadata.withPrivate(key: "identifier", value: identifier)
 
-          await bookmarkLogger.logOperationSuccess(
-            operation: "createBookmark",
-            additionalContext: successMetadata
+          await logSuccess(
+            "createBookmark",
+            source: "SecurityBookmarkActor",
+            additionalMetadata: successMetadata.entries
           )
 
           return .success(identifier)
@@ -125,10 +128,11 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
           "Failed to create security-scoped bookmark: \(error.localizedDescription)"
         )
 
-      await bookmarkLogger.logOperationError(
-        operation: "createBookmark",
+      await logError(
+        "createBookmark",
+        source: "SecurityBookmarkActor",
         error: bookmarkError,
-        additionalContext: metadata
+        errorMetadata: metadata.entries
       )
 
       return .failure(bookmarkError)
@@ -153,9 +157,11 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
     var metadata=LogMetadataDTOCollection()
     metadata=metadata.withPrivate(key: "identifier", value: storageIdentifier)
 
-    await bookmarkLogger.logOperationStart(
-      operation: "resolveBookmark",
-      additionalContext: metadata
+    await logBookmarkOperation(
+      "resolveBookmark",
+      level: .debug,
+      source: "SecurityBookmarkActor",
+      contextDTO: BaseLogContextDTO(domainName: "Bookmark", source: "SecurityBookmarkActor", metadata: metadata)
     )
 
     // Retrieve the bookmark data from secure storage
@@ -182,10 +188,10 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
 
           // Handle stale bookmark
           if isStale && recreateIfStale {
-            await bookmarkLogger.logOperationWarning(
-              operation: "resolveBookmark",
-              message: "Bookmark is stale, attempting to recreate",
-              additionalContext: successMetadata
+            await logWarning(
+              "resolveBookmark",
+              source: "SecurityBookmarkActor",
+              warningMetadata: successMetadata.entries
             )
 
             // Try to recreate the bookmark
@@ -198,23 +204,25 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
             switch recreateResult {
               case .success:
                 // Bookmark recreated successfully, continue with resolved URL
-                await bookmarkLogger.logOperationSuccess(
-                  operation: "resolveBookmark",
-                  additionalContext: successMetadata
+                await logSuccess(
+                  "resolveBookmark",
+                  source: "SecurityBookmarkActor",
+                  additionalMetadata: successMetadata.entries
                 )
 
               case let .failure(error):
                 // Log warning but continue with stale bookmark
-                await bookmarkLogger.logOperationWarning(
-                  operation: "resolveBookmark",
-                  message: "Failed to recreate stale bookmark: \(error)",
-                  additionalContext: successMetadata
+                await logWarning(
+                  "resolveBookmark",
+                  source: "SecurityBookmarkActor",
+                  warningMetadata: successMetadata.entries
                 )
             }
           } else {
-            await bookmarkLogger.logOperationSuccess(
-              operation: "resolveBookmark",
-              additionalContext: successMetadata
+            await logSuccess(
+              "resolveBookmark",
+              source: "SecurityBookmarkActor",
+              additionalMetadata: successMetadata.entries
             )
           }
 
@@ -222,10 +230,10 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
           if startAccess {
             let accessResult=await startAccessing(resolvedURL)
             if case let .failure(error)=accessResult {
-              await bookmarkLogger.logOperationWarning(
-                operation: "resolveBookmark",
-                message: "Resolved bookmark but failed to start access: \(error)",
-                additionalContext: successMetadata
+              await logWarning(
+                "resolveBookmark",
+                source: "SecurityBookmarkActor",
+                warningMetadata: successMetadata.entries
               )
             }
           }
@@ -236,10 +244,11 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
             "Failed to resolve security-scoped bookmark: \(error.localizedDescription)"
           )
 
-          await bookmarkLogger.logOperationError(
-            operation: "resolveBookmark",
+          await logError(
+            "resolveBookmark",
+            source: "SecurityBookmarkActor",
             error: bookmarkError,
-            additionalContext: metadata
+            errorMetadata: metadata.entries
           )
 
           return .failure(bookmarkError)
@@ -250,10 +259,11 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
           "Failed to retrieve bookmark data: \(error)"
         )
 
-        await bookmarkLogger.logOperationError(
-          operation: "resolveBookmark",
+        await logError(
+          "resolveBookmark",
+          source: "SecurityBookmarkActor",
           error: bookmarkError,
-          additionalContext: metadata
+          errorMetadata: metadata.entries
         )
 
         return .failure(bookmarkError)
@@ -293,9 +303,11 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
     metadata=metadata.withPrivate(key: "identifier", value: storageIdentifier)
     metadata=metadata.withPublic(key: "recreateIfStale", value: String(recreateIfStale))
 
-    await bookmarkLogger.logOperationStart(
-      operation: "validateBookmark",
-      additionalContext: metadata
+    await logBookmarkOperation(
+      "validateBookmark",
+      level: .debug,
+      source: "SecurityBookmarkActor",
+      contextDTO: BaseLogContextDTO(domainName: "Bookmark", source: "SecurityBookmarkActor", metadata: metadata)
     )
 
     // Resolve the bookmark
@@ -334,25 +346,27 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
         resultMetadata=resultMetadata.withPublic(key: "isStale", value: String(isStale))
 
         if fileExists {
-          await bookmarkLogger.logOperationSuccess(
-            operation: "validateBookmark",
-            additionalContext: resultMetadata
+          await logSuccess(
+            "validateBookmark",
+            source: "SecurityBookmarkActor",
+            additionalMetadata: resultMetadata.entries
           )
         } else {
-          await bookmarkLogger.logOperationWarning(
-            operation: "validateBookmark",
-            message: "Bookmark URL no longer exists",
-            additionalContext: resultMetadata
+          await logWarning(
+            "validateBookmark",
+            source: "SecurityBookmarkActor",
+            warningMetadata: resultMetadata.entries
           )
         }
 
         return .success(validationResult)
 
       case let .failure(error):
-        await bookmarkLogger.logOperationError(
-          operation: "validateBookmark",
+        await logError(
+          "validateBookmark",
+          source: "SecurityBookmarkActor",
           error: error,
-          additionalContext: metadata
+          errorMetadata: metadata.entries
         )
 
         return .failure(error)
@@ -369,9 +383,11 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
     var metadata=LogMetadataDTOCollection()
     metadata=metadata.withSensitive(key: "url", value: url.path)
 
-    await bookmarkLogger.logOperationStart(
-      operation: "startAccessing",
-      additionalContext: metadata
+    await logBookmarkOperation(
+      "startAccessing",
+      level: .debug,
+      source: "SecurityBookmarkActor",
+      contextDTO: BaseLogContextDTO(domainName: "Bookmark", source: "SecurityBookmarkActor", metadata: metadata)
     )
 
     // Try to start accessing the resource
@@ -380,10 +396,11 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
         "Failed to start accessing security-scoped resource"
       )
 
-      await bookmarkLogger.logOperationError(
-        operation: "startAccessing",
+      await logError(
+        "startAccessing",
+        source: "SecurityBookmarkActor",
         error: error,
-        additionalContext: metadata
+        errorMetadata: metadata.entries
       )
 
       return .failure(error)
@@ -398,9 +415,10 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
     resultMetadata=resultMetadata.withSensitive(key: "url", value: url.path)
     resultMetadata=resultMetadata.withPublic(key: "accessCount", value: String(newCount))
 
-    await bookmarkLogger.logOperationSuccess(
-      operation: "startAccessing",
-      additionalContext: resultMetadata
+    await logSuccess(
+      "startAccessing",
+      source: "SecurityBookmarkActor",
+      additionalMetadata: resultMetadata.entries
     )
 
     return .success(true)
@@ -416,9 +434,11 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
     var metadata=LogMetadataDTOCollection()
     metadata=metadata.withSensitive(key: "url", value: url.path)
 
-    await bookmarkLogger.logOperationStart(
-      operation: "stopAccessing",
-      additionalContext: metadata
+    await logBookmarkOperation(
+      "stopAccessing",
+      level: .debug,
+      source: "SecurityBookmarkActor",
+      contextDTO: BaseLogContextDTO(domainName: "Bookmark", source: "SecurityBookmarkActor", metadata: metadata)
     )
 
     // Check if we're tracking this resource
@@ -427,10 +447,11 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
         "Not currently accessing security-scoped resource"
       )
 
-      await bookmarkLogger.logOperationError(
-        operation: "stopAccessing",
+      await logError(
+        "stopAccessing",
+        source: "SecurityBookmarkActor",
         error: error,
-        additionalContext: metadata
+        errorMetadata: metadata.entries
       )
 
       return .failure(error)
@@ -449,9 +470,10 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
     resultMetadata=resultMetadata.withSensitive(key: "url", value: url.path)
     resultMetadata=resultMetadata.withPublic(key: "accessCount", value: String(newCount))
 
-    await bookmarkLogger.logOperationSuccess(
-      operation: "stopAccessing",
-      additionalContext: resultMetadata
+    await logSuccess(
+      "stopAccessing",
+      source: "SecurityBookmarkActor",
+      additionalMetadata: resultMetadata.entries
     )
 
     return .success(newCount)
@@ -476,9 +498,11 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
     var metadata=LogMetadataDTOCollection()
     metadata=metadata.withPrivate(key: "activeCount", value: String(activeResources.count))
 
-    await bookmarkLogger.logOperationStart(
-      operation: "forceReleaseAllResources",
-      additionalContext: metadata
+    await logBookmarkOperation(
+      "forceReleaseAllResources",
+      level: .debug,
+      source: "SecurityBookmarkActor",
+      contextDTO: BaseLogContextDTO(domainName: "Bookmark", source: "SecurityBookmarkActor", metadata: metadata)
     )
 
     let count=activeResources.count
@@ -487,12 +511,89 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
     }
     activeResources.removeAll()
 
-    await bookmarkLogger.logOperationSuccess(
-      operation: "forceReleaseAllResources",
-      additionalContext: metadata
+    await logSuccess(
+      "forceReleaseAllResources",
+      source: "SecurityBookmarkActor",
+      additionalMetadata: metadata.entries
     )
 
     return count
+  }
+
+  /// Helper function to log bookmark operations consistently.
+  private func logBookmarkOperation(
+    _ operation: String,
+    level: LogLevel,
+    source: String,
+    contextDTO: BaseLogContextDTO
+  ) async {
+    // Construct the message using the provided operation details
+    let logMessage: PrivacyString
+    switch level {
+    case .debug: // Assuming start/finish map to debug for this helper
+      logMessage=PrivacyString(stringLiteral: "Bookmark operation: \(operation)")
+    case .warning:
+      logMessage=PrivacyString(stringLiteral: "Bookmark operation warning: \(operation)")
+    case .error:
+      logMessage=PrivacyString(stringLiteral: "Bookmark operation failed: \(operation)")
+    default:
+      logMessage=PrivacyString(stringLiteral: "Bookmark operation status [\(level)]: \(operation)")
+    }
+
+    // Use the provided context directly
+    await logger.log(level, logMessage, context: contextDTO)
+  }
+
+  /// Logs the start of an operation.
+  private func logStart(operation: String, source: String, additionalMetadata: [LogMetadataDTO] = []) async {
+    let metadataCollection = LogMetadataDTOCollection(entries: additionalMetadata)
+    let context = BaseLogContextDTO(domainName: "Bookmark", source: source, metadata: metadataCollection)
+    await logger.log(
+      .debug,
+      PrivacyString(stringLiteral: "Starting bookmark operation: \(operation)"),
+      context: context
+    )
+  }
+
+  /// Logs the successful completion of an operation
+  private func logSuccess(operation: String, source: String, additionalMetadata: [LogMetadataDTO] = []) async {
+    let metadataCollection = LogMetadataDTOCollection(entries: additionalMetadata)
+    let context = BaseLogContextDTO(domainName: "Bookmark", source: source, metadata: metadataCollection)
+    await logger.log(
+      .debug,
+      PrivacyString(stringLiteral: "Bookmark operation completed successfully: \(operation)"),
+      context: context
+    )
+  }
+
+  /// Logs a warning during an operation
+  private func logWarning(operation: String, source: String, warningMetadata: [LogMetadataDTO]) async {
+    let metadataCollection = LogMetadataDTOCollection(entries: warningMetadata)
+    let context = BaseLogContextDTO(domainName: "Bookmark", source: source, metadata: metadataCollection)
+    await logger.log(
+      .warning,
+      PrivacyString(stringLiteral: "Bookmark operation warning: \(operation)"),
+      context: context
+    )
+  }
+
+  /// Logs an error during an operation
+  private func logError(
+    operation: String, source: String, error: Error, errorMetadata: [LogMetadataDTO]
+  ) async {
+    // Combine provided metadata with error description
+    var finalMetadata = errorMetadata
+    finalMetadata.append(LogMetadataDTO(label: "error", value: error.localizedDescription, privacy: .public))
+
+    let metadataCollection = LogMetadataDTOCollection(entries: finalMetadata)
+    let context = BaseLogContextDTO(domainName: "Bookmark", source: source, metadata: metadataCollection)
+    let logMessage = PrivacyString(stringLiteral: "Bookmark operation failed: \(operation)")
+
+    await logger.log(
+      .error,
+      logMessage,
+      context: context
+    )
   }
 }
 

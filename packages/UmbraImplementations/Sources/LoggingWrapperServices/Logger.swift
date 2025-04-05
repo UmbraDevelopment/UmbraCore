@@ -367,6 +367,60 @@ public final class Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked S
     }
   }
 
+  /// Log a sensitive message
+  public static func logSensitive(
+    _ level: LoggingWrapperInterfaces.LogLevel,
+    _ message: String,
+    sensitiveValues: LoggingWrapperInterfaces.LogMetadata,
+    file: String=#file,
+    function: String=#function,
+    line: Int=#line
+  ) {
+    // Immediately evaluate the autoclosure to capture the value
+    let messageValue=message
+
+    // Convert message to string early to avoid non-Sendable issues
+    let messageString=messageValue
+
+    // Use sensitive privacy level for annotated messages
+    let privacyLevel: LoggingWrapperInterfaces.LogPrivacyLevel = .sensitive
+
+    // Capture file information before passing to task
+    let capturedFile=file
+    let capturedFunction=function
+    let capturedLine=line
+
+    // Convert metadata to string dictionary before passing to actor
+    let stringMetadata: [String: String]?
+    if let metadata=sensitiveValues {
+      var dict=[String: String]()
+      for (key, value) in metadata {
+        dict[key]=String(describing: value)
+      }
+      stringMetadata=dict
+    } else {
+      stringMetadata=nil
+    }
+
+    // Create final copies of values for the task
+    let finalMessageString=messageString
+    let finalStringMetadata=stringMetadata
+
+    // Use detached task to isolate the logging operation
+    Task.detached { @Sendable in
+      await swiftyLoggerActor.log(
+        level: convertLogLevel(level),
+        message: finalMessageString,
+        metadata: finalStringMetadata,
+        privacy: privacyLevel,
+        source: nil,
+        file: capturedFile,
+        function: capturedFunction,
+        line: capturedLine
+      )
+    }
+  }
+
   // MARK: - Required LoggerProtocol convenience methods
 
   /// Log a debug message
@@ -454,16 +508,32 @@ public final class Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked S
     /// Log a message with the specified level and context
     public func log(
       _ level: LoggingTypes.LogLevel,
-      _ message: PrivacyString, // Changed from String to PrivacyString
-      context: LoggingInterfaces.LogContextDTO
+      _ message: String,
+      context: LoggingTypes.LogContextDTO
     ) async {
       // Forward the log call to the underlying logging actor
       // LoggingActor.log now expects unnamed params and LogContextDTO
       await loggingActor.log(level, message, context: context)
     }
 
-    // Convenience methods (trace, debug, info, etc.) are provided by the LoggingProtocol extension.
-    // No need to reimplement them here.
+    /// Log a potentially sensitive message.
+    /// Note: Implementation might need refinement based on how sensitive values are handled.
+    public func logSensitive(
+      _ level: LogLevel,
+      _ message: String,
+      sensitiveValues: LogMetadata,
+      context: LogContextDTO
+    ) async {
+      // TODO: Implement forwarding to loggingActor, potentially embedding
+      // sensitiveValues into the context or handling them appropriately.
+      // For now, just log the basic message to satisfy conformance.
+      await loggingActor.log(level, "[Sensitive Log]: \(message)", context: context)
+    }
+
+    /// Provide a basic description for the logger instance
+    public nonisolated var description: String {
+      return "PrivacyAwareLogger for \(loggingActor.description)"
+    }
   }
 
   // MARK: - Static Factory Methods

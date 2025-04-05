@@ -9,14 +9,23 @@ import UmbraErrors
 /// A simple no-operation implementation of LoggingProtocol for use when no logger is provided
 private actor LoggingProtocol_NoOp: LoggingProtocol, @unchecked Sendable {
 
-  nonisolated init() {
+  init() {
     // Empty initializer for actor
   }
 
-  // Required by CoreLoggingProtocol (which LoggingProtocol inherits from)
-  public func log(_ level: LoggingTypes.LogLevel, _ message: String, context: LoggingInterfaces.LogContextDTO) async {
-    // No operation - this logger does nothing.
+  // MARK: - LoggingProtocol Conformance
+
+  /// Returns a basic LoggingActor instance.
+  /// Note: Assumes LoggingActor() creates a usable, potentially NoOp, instance.
+  nonisolated var loggingActor: LoggingInterfaces.LoggingActor {
+    // If LoggingActor requires specific initialization for NoOp, adjust this.
+    LoggingActor(destinations: []) // Provide empty destinations for NoOp
   }
+
+  // Implement required LoggingProtocol methods as no-ops
+  func log(_ level: LoggingTypes.LogLevel, _ message: String, context: LoggingTypes.LogContextDTO) async {}
+  func trace(_ message: String, context: LoggingTypes.LogContextDTO) async {}
+
 }
 
 /**
@@ -73,20 +82,20 @@ public final class BasicKeyManager: KeyManagementProtocol, @unchecked Sendable {
    - Returns: A result containing the key or an error
    */
   public func retrieveKey(withIdentifier identifier: String) async
-  -> Result<[UInt8], SecurityProtocolError> {
+  -> Result<[UInt8], SecurityStorageError> {
     if let key=keyStore[identifier] {
       let context = BaseLogContextDTO(domainName: "KeyManagement", source: "BasicKeyManager")
       await logger.debug("Retrieved key with identifier: \(identifier)", context: context)
       return .success(key)
     } else {
-      await logger.warning(
-        "Key not found with identifier: \(identifier)",
-        metadata: nil,
-        source: "BasicKeyManager"
+      // Create context for the warning log
+      let context = BaseLogContextDTO(
+        domainName: "FallbackKeychain",
+        source: "BasicKeyManager",
+        metadata: LogMetadataDTOCollection() // Empty metadata
       )
-      return .failure(
-        .invalidMessageFormat(details: "Key not found with identifier: \(identifier)")
-      )
+      await logger.warning("Key not found with identifier: \(identifier)", context: context)
+      return .failure(.keyNotFound)
     }
   }
 
@@ -101,7 +110,7 @@ public final class BasicKeyManager: KeyManagementProtocol, @unchecked Sendable {
   public func storeKey(
     _ key: [UInt8],
     withIdentifier identifier: String
-  ) async -> Result<Void, SecurityProtocolError> {
+  ) async -> Result<Void, SecurityStorageError> {
     keyStore[identifier]=key
     let context = BaseLogContextDTO(domainName: "KeyManagement", source: "BasicKeyManager")
     await logger.debug("Stored key with identifier: \(identifier)", context: context)
@@ -115,20 +124,20 @@ public final class BasicKeyManager: KeyManagementProtocol, @unchecked Sendable {
    - Returns: A result indicating success or an error
    */
   public func deleteKey(withIdentifier identifier: String) async
-  -> Result<Void, SecurityProtocolError> {
+  -> Result<Void, SecurityStorageError> {
     if keyStore.removeValue(forKey: identifier) != nil {
       let context = BaseLogContextDTO(domainName: "KeyManagement", source: "BasicKeyManager")
       await logger.debug("Deleted key with identifier: \(identifier)", context: context)
       return .success(())
     } else {
-      await logger.warning(
-        "Key not found with identifier: \(identifier)",
-        metadata: nil,
-        source: "BasicKeyManager"
+      // Key not found, log a warning
+      let context = BaseLogContextDTO(
+        domainName: "FallbackKeychain",
+        source: "BasicKeyManager",
+        metadata: LogMetadataDTOCollection() // Empty metadata
       )
-      return .failure(
-        .invalidMessageFormat(details: "Key not found with identifier: \(identifier)")
-      )
+      await logger.warning("Key not found with identifier: \(identifier)", context: context)
+      return .failure(.keyNotFound) // Return error if key wasn't found
     }
   }
 
@@ -146,11 +155,16 @@ public final class BasicKeyManager: KeyManagementProtocol, @unchecked Sendable {
   ) async -> Result<(
     newKey: [UInt8],
     reencryptedData: [UInt8]?
-  ), SecurityProtocolError> {
+  ), SecurityStorageError> {
+    // Log a warning that this fallback manager is being used for rotation
+    let context = BaseLogContextDTO(
+      domainName: "FallbackKeychain",
+      source: "BasicKeyManager",
+      metadata: LogMetadataDTOCollection() // Empty metadata
+    )
     await logger.warning(
       "Using BasicKeyManager to rotate a key - this is not secure for production use",
-      metadata: nil,
-      source: "BasicKeyManager"
+      context: context
     )
 
     // Generate a new key (using AES-256 as a default)
@@ -181,7 +195,7 @@ public final class BasicKeyManager: KeyManagementProtocol, @unchecked Sendable {
 
    - Returns: An array of key identifiers or an error.
    */
-  public func listKeyIdentifiers() async -> Result<[String], SecurityProtocolError> {
+  public func listKeyIdentifiers() async -> Result<[String], SecurityStorageError> {
     let context = BaseLogContextDTO(domainName: "KeyManagement", source: "BasicKeyManager")
     await logger.debug("Listing key identifiers", context: context)
     return .success(Array(keyStore.keys))

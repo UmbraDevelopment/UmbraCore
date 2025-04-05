@@ -425,64 +425,32 @@ public actor KeychainSecurityActor {
  A basic implementation of LoggingProtocol that logs to the console.
  Used when no custom logger is provided.
  */
-private final class SimpleConsoleLogger: LoggingProtocol {
+private actor SimpleConsoleLogger: LoggingProtocol {
   // Required by LoggingProtocol
   let loggingActor: LoggingActor
 
   init() {
-    // Create an empty array of destinations since we'll log directly
-    loggingActor=LoggingActor(destinations: [])
+    // Initialize with a default LoggingActor. Adjust if specific config needed.
+    self.loggingActor = LoggingActor()
   }
 
-  // Log message implementation
-  func logMessage(
-    _ level: LogLevel,
-    _ message: String,
-    context _: LogContext
-  ) async {
-    print("[\(level.rawValue)] \(message)")
+  // MARK: - LoggingProtocol Conformance
+
+  /// Logs the message and context to the console.
+  nonisolated func log(_ level: LogLevel, _ message: String, context: LogContextDTO) async {
+    // Construct a simple string representation for console output.
+    let source = context.source ?? "UnknownSource"
+    // Simple metadata representation, consider privacy
+    let metadataDesc = context.metadata.entries.map { meta in
+      // Basic check for sensitive data, real implementation might need more robust handling
+      let valueDesc = meta.privacy == .private || meta.privacy == .sensitive ? "<redacted>" : "\(meta.value)"
+      return "\(meta.label)=\(valueDesc)"
+    }.joined(separator: "; ")
+
+    let timestamp = Date() // Simple timestamp
+    let logLine = "\(timestamp) [\(level)] [\(source)] \(message) { \(metadataDesc) }"
+    print(logLine)
   }
 
-  // Default implementations
-  func trace(_ message: String, metadata _: LogMetadata?, source: String?) async {
-    let context=LogContext(source: source ?? "KeychainSecurityActor")
-    await logMessage(.trace, message, context: context)
-  }
-
-  func debug(_ message: String, metadata _: LogMetadata?, source: String?) async {
-    let context=LogContext(source: source ?? "KeychainSecurityActor")
-    await logMessage(.debug, message, context: context)
-  }
-
-  func info(_ message: String, metadata _: LogMetadata?, source: String?) async {
-    let context=LogContext(source: source ?? "KeychainSecurityActor")
-    await logMessage(.info, message, context: context)
-  }
-
-  // Map notice to info since LogLevel doesn't have a notice level
-  func notice(_ message: String, metadata _: LogMetadata?, source: String?) async {
-    let context=LogContext(source: source ?? "KeychainSecurityActor")
-    await logMessage(.info, message, context: context)
-  }
-
-  func warning(_ message: String, metadata _: LogMetadata?, source: String?) async {
-    let context=LogContext(source: source ?? "KeychainSecurityActor")
-    await logMessage(.warning, message, context: context)
-  }
-
-  func error(_ message: String, metadata _: LogMetadata?, source: String?) async {
-    let context=LogContext(source: source ?? "KeychainSecurityActor")
-    await logMessage(.error, message, context: context)
-  }
-
-  func critical(_ message: String, metadata _: LogMetadata?, source: String?) async {
-    let context=LogContext(source: source ?? "KeychainSecurityActor")
-    await logMessage(.critical, message, context: context)
-  }
-
-  // Fault is mapped to critical since LogLevel doesn't have a fault level
-  func fault(_ message: String, metadata _: LogMetadata?, source: String?) async {
-    let context=LogContext(source: source ?? "KeychainSecurityActor")
-    await logMessage(.critical, message, context: context)
-  }
+  // Convenience methods (debug, info, etc.) are inherited via protocol extension
 }
