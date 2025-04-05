@@ -48,15 +48,6 @@ public struct SecurityUtilsDTOAdapter {
           details: ["osStatus": "\(result)"]
         )
       }
-
-      return .success(keyData)
-    } catch {
-      return .failure(
-        errorCode: 1001, // Using the key error code from SecurityErrorDTO
-        errorMessage: "Unknown error generating key: \(error.localizedDescription)",
-        details: ["error": "\(error)"]
-      )
-    }
   }
 
   /// Hash data using the specified algorithm

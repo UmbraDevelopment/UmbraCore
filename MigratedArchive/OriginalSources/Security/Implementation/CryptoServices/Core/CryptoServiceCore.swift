@@ -317,14 +317,6 @@ public final class CryptoServiceCore: CryptoServiceProtocol, Sendable {
             .internalError("Failed to generate random bytes: \(status)")
         )
       }
-
-      return .success(SecureBytes(bytes: keyBytes))
-    } catch {
-      return .failure(
-        UmbraErrors.Security.Protocols
-          .internalError("Failed to generate key: \(error.localizedDescription)")
-      )
-    }
   }
 
   /// Verify a hash
@@ -369,13 +361,5 @@ public final class CryptoServiceCore: CryptoServiceProtocol, Sendable {
             .internalError("Failed to generate random bytes: \(status)")
         )
       }
-
-      return .success(SecureBytes(bytes: randomBytes))
-    } catch {
-      return .failure(
-        UmbraErrors.Security.Protocols
-          .randomGenerationFailed("Random data generation failed: \(error.localizedDescription)")
-      )
-    }
   }
 }

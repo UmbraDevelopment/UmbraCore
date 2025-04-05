@@ -7,7 +7,23 @@ import Foundation
 import SecurityProtocolsCore
 import UmbraCoreTypes
 
-public actor MockCryptoService: SecurityProtocolsCore.CryptoServiceProtocol {
+public actor MockCryptoService: CryptoServiceProtocol {
+  /// The secure storage used for sensitive material
+  public nonisolated let secureStorage: SecureStorageProtocol
+// Unified secureStorage property
+  private(set) SecureStorageProtocol
+  /// History of calls made to this service, for testing
+  private var callHistory: [String] = []
+  /// Logger for this service
+  private let logger = DefaultConsoleLogger()
+  
+  public init(secureStorage: SecureStorageProtocol) {
+    self.secureStorage = secureStorage
+  }
+  
+  public init() {
+    self.init(secureStorage: FileSecureStorage())
+  }
   private var encryptedData: [String: Data]=[:]
   private var decryptedData: [String: Data]=[:]
 

@@ -1,4 +1,6 @@
 import CoreInterfaces
+import LoggingServices
+
 import CoreSecurityTypes
 import DomainSecurityTypes
 import Foundation
@@ -351,7 +353,7 @@ public final class ApplicationSecurityProviderImpl: SecurityProviderProtocol {
 
   public func createSecureConfig(options: SecurityConfigOptions) async -> SecurityConfigDTO {
     SecurityConfigDTO(
-      encryptionAlgorithm: .aes256CBC,
+      encryptionAlgorithm: .aes128CBC,
       hashAlgorithm: .sha256,
       providerType: .basic,
       options: options

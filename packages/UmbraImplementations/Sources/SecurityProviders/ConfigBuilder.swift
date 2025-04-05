@@ -89,9 +89,9 @@ final class ConfigBuilder {
     let verifyOperations=options?["verifyOperations"] as? Bool ?? true
 
     // Map to encryption algorithm enum
-    var encryptionAlgorithm=CoreSecurityTypes.EncryptionAlgorithm.aes256CBC
+    var encryptionAlgorithm=CoreSecurityTypes.EncryptionAlgorithm.aes128CBC
     if algorithmString.contains("GCM") {
-      encryptionAlgorithm = .aes256GCM
+      encryptionAlgorithm = .aes128GCM
     } else if algorithmString.contains("Poly1305") || algorithmString.contains("ChaCha") {
       encryptionAlgorithm = .chacha20Poly1305
     }

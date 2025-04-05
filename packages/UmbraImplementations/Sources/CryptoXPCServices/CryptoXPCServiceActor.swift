@@ -125,7 +125,7 @@ public actor CryptoXPCServiceActor {
     
     // Create the encryption options
     let encryptionOptions = EncryptionOptions(
-      algorithm: .aes256GCM,
+      algorithm: .aes128GCM,
       authenticatedData: nil
     )
     
@@ -193,7 +193,7 @@ public actor CryptoXPCServiceActor {
     
     // Create the decryption options
     let decryptionOptions = DecryptionOptions(
-      algorithm: .aes256GCM,
+      algorithm: .aes128GCM,
       authenticatedData: nil
     )
     

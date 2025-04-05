@@ -29,7 +29,7 @@ public enum EncryptionAlgorithm: String, Sendable, Equatable, CaseIterable {
   /// Whether the algorithm is symmetric
   public var isSymmetric: Bool {
     switch self {
-      case .aes256Gcm, .aes256Cbc, .chaCha20Poly1305:
+      case .aes128Gcm, .aes128Cbc, .chaCha20Poly1305:
         true
       case .rsaOaep, .rsaPkcs1, .ecdhCurve25519:
         false
@@ -39,9 +39,9 @@ public enum EncryptionAlgorithm: String, Sendable, Equatable, CaseIterable {
   /// Whether the algorithm provides authentication
   public var isAuthenticated: Bool {
     switch self {
-      case .aes256Gcm, .chaCha20Poly1305:
+      case .aes128Gcm, .chaCha20Poly1305:
         true
-      case .aes256Cbc, .rsaOaep, .rsaPkcs1, .ecdhCurve25519:
+      case .aes128Cbc, .rsaOaep, .rsaPkcs1, .ecdhCurve25519:
         false
     }
   }
@@ -49,7 +49,7 @@ public enum EncryptionAlgorithm: String, Sendable, Equatable, CaseIterable {
   /// Default key size in bits for this algorithm
   public var defaultKeySizeBits: Int {
     switch self {
-      case .aes256Gcm, .aes256Cbc:
+      case .aes128Gcm, .aes128Cbc:
         256
       case .chaCha20Poly1305:
         256
@@ -63,7 +63,7 @@ public enum EncryptionAlgorithm: String, Sendable, Equatable, CaseIterable {
   /// Whether the algorithm requires an initialisation vector (IV)
   public var requiresIV: Bool {
     switch self {
-      case .aes256Gcm, .aes256Cbc:
+      case .aes128Gcm, .aes128Cbc:
         true
       case .chaCha20Poly1305:
         true
@@ -85,9 +85,9 @@ public enum EncryptionAlgorithm: String, Sendable, Equatable, CaseIterable {
     let normalised=string.uppercased()
     switch normalised {
       case "AES256GCM", "AES-GCM":
-        self = .aes256Gcm
+        self = .aes128Gcm
       case "AES256CBC", "AES-CBC":
-        self = .aes256Cbc
+        self = .aes128Cbc
       case "CHACHA20POLY1305", "CHACHA20":
         self = .chaCha20Poly1305
       case "RSA-OAEP-SHA256", "RSA-OAEP-SHA1":

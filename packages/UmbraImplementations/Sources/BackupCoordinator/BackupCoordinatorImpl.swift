@@ -582,17 +582,6 @@ public actor BackupCoordinatorImpl: BackupCoordinatorProtocol {
       )
 
       return result
-    } catch {
-      let metadata=LogMetadata([
-        "error": error.localizedDescription
-      ])
-      await logger.error(
-        "Maintenance failed via coordinator",
-        metadata: metadata,
-        source: "BackupCoordinator"
-      )
-
-      throw error
     }
   }
 }

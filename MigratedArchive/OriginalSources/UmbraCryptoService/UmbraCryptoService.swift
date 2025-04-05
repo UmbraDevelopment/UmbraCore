@@ -80,7 +80,7 @@
 ///
 /// let encrypted = try await service.encrypt(
 ///     data: data,
-///     using: .aes256gcm
+///     using: .aes128gcm
 /// )
 /// ```
 ///

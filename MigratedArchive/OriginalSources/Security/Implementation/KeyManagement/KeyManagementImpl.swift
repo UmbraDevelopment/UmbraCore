@@ -30,7 +30,7 @@ public actor KeyManagementImpl: KeyManagementProtocol {
   -> Result<SecureBytes, UmbraErrors.Security.Protocols> {
     // If secure storage is available, use it
     if let secureStorage {
-      let result=await secureStorage.retrieveSecurely(identifier: identifier)
+      let result=await self.secureStorage.retrieveSecurely(identifier: identifier)
       switch result {
         case let .success(data):
           return .success(data)
@@ -59,7 +59,7 @@ public actor KeyManagementImpl: KeyManagementProtocol {
   ) async -> Result<Void, UmbraErrors.Security.Protocols> {
     // If secure storage is available, use it
     if let secureStorage {
-      let result=await secureStorage.storeSecurely(data: key, identifier: identifier)
+      let result=await self.secureStorage.storeSecurely(data: key, identifier: identifier)
       switch result {
         case .success:
           return .success(())
@@ -79,7 +79,7 @@ public actor KeyManagementImpl: KeyManagementProtocol {
   -> Result<Void, UmbraErrors.Security.Protocols> {
     // If secure storage is available, use it
     if let secureStorage {
-      let result=await secureStorage.deleteSecurely(identifier: identifier)
+      let result=await self.secureStorage.deleteSecurely(identifier: identifier)
       switch result {
         case .success:
           return .success(())

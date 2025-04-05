@@ -1,38 +1,32 @@
-/**
- # SecureStorageAdapter
- 
- Adapter for bridging between different secure storage protocols in the UmbraCore system.
- 
- This adapter ensures compatibility between SecureStorageProtocol methods and the older
- secure storage interfaces, following the Alpha Dot Five architecture principles.
- */
-
 import Foundation
-import SecurityCoreInterfaces
+import CryptoInterfaces
+import CryptoTypes
 import CoreSecurityTypes
-import UmbraErrors
+import DomainSecurityTypes
 import LoggingInterfaces
 import LoggingTypes
+import SecurityCoreInterfaces
+import UmbraErrors
 
 /**
- Adapts SecureCryptoStorage to support SecureStorageProtocol.
+ An adapter that implements SecureStorageProtocol using SecureCryptoStorage.
  
- This adapter converts between the SecureStorageProtocol methods and the methods
- used by SecureCryptoStorage, allowing for a clean integration with the rest of
- the system without requiring changes to the core storage implementation.
+ This adapter class allows the SecureCryptoStorage to be used with the 
+ SecureStorageProtocol interface, providing a unified interface for secure
+ data storage operations.
  */
-public actor SecureStorageAdapter: SecureStorageProtocol {
-    /// The underlying SecureCryptoStorage instance
+public final class SecureStorageAdapter: SecureStorageProtocol {
+    /// The underlying secure storage implementation
     private let storage: SecureCryptoStorage
     
-    /// Logger for recording storage operations with proper privacy controls
+    /// Logger for operations
     private let logger: any LoggingProtocol
     
     /**
-     Initialises a new SecureStorageAdapter.
+     Initializes a new secure storage adapter.
      
      - Parameters:
-        - storage: The SecureCryptoStorage instance to adapt
+        - storage: The secure crypto storage implementation to adapt
         - logger: Logger for recording operations
      */
     public init(storage: SecureCryptoStorage, logger: any LoggingProtocol) {
@@ -41,128 +35,131 @@ public actor SecureStorageAdapter: SecureStorageProtocol {
     }
     
     /**
-     Stores data securely with the given identifier.
+     Stores data securely with the specified identifier.
      
      - Parameters:
-        - data: The data to store as a byte array
-        - identifier: A string identifier for the stored data
+        - data: The data to store
+        - identifier: The identifier to use for the data
      
-     - Returns: Success or an error
+     - Returns: Result indicating success or failure with error details
      */
     public func storeData(_ data: [UInt8], withIdentifier identifier: String) async -> Result<Void, SecurityStorageError> {
         do {
-            let dataObj = Data(data)
-            let config = SecureStorageConfig(
-                accessControl: .standard,
-                encrypt: true,
-                context: ["type": "generic_data"]
-            )
-            
-            // Create a key reference for storing as a generic data item
-            try await storage.storeKey(
-                dataObj,
-                identifier: identifier,
-                purpose: .generic,
-                algorithm: nil
-            )
+            try await storage.storeData(Data(data), identifier: identifier)
             
             var metadata = PrivacyMetadata()
-            metadata["operation"] = PrivacyMetadataValue(value: "storeData", privacy: .public)
+            metadata["dataSize"] = PrivacyMetadataValue(value: "\(data.count)", privacy: .public)
             metadata["identifier"] = PrivacyMetadataValue(value: identifier, privacy: .private)
             
             await logger.debug(
-                "Successfully stored data with adapter",
+                "Data stored successfully",
                 metadata: metadata,
                 source: "SecureStorageAdapter"
             )
             
             return .success(())
         } catch {
+            var metadata = PrivacyMetadata()
+            metadata["error"] = PrivacyMetadataValue(value: error.localizedDescription, privacy: .public)
+            metadata["identifier"] = PrivacyMetadataValue(value: identifier, privacy: .private)
+            
             await logger.error(
-                "Failed to store data with adapter: \(error.localizedDescription)",
-                metadata: nil,
+                "Failed to store data",
+                metadata: metadata,
                 source: "SecureStorageAdapter"
             )
-            return .failure(.storageError(error.localizedDescription))
+            
+            return .failure(.operationFailed(error.localizedDescription))
         }
     }
     
     /**
-     Retrieves data securely by its identifier.
+     Retrieves data with the specified identifier.
      
-     - Parameter identifier: A string identifying the data to retrieve
-     - Returns: The retrieved data as a byte array or an error
+     - Parameter identifier: The identifier of the data to retrieve
+     
+     - Returns: Result containing the retrieved data or error details
      */
     public func retrieveData(withIdentifier identifier: String) async -> Result<[UInt8], SecurityStorageError> {
         do {
-            let data = try await storage.retrieveKey(identifier: identifier)
+            let data = try await storage.retrieveData(identifier: identifier)
             
             var metadata = PrivacyMetadata()
-            metadata["operation"] = PrivacyMetadataValue(value: "retrieveData", privacy: .public)
+            metadata["dataSize"] = PrivacyMetadataValue(value: "\(data.count)", privacy: .public)
             metadata["identifier"] = PrivacyMetadataValue(value: identifier, privacy: .private)
             
             await logger.debug(
-                "Successfully retrieved data with adapter",
+                "Data retrieved successfully",
                 metadata: metadata,
                 source: "SecureStorageAdapter"
             )
             
-            return .success([UInt8](data))
+            return .success(Array(data))
         } catch {
+            var metadata = PrivacyMetadata()
+            metadata["error"] = PrivacyMetadataValue(value: error.localizedDescription, privacy: .public)
+            metadata["identifier"] = PrivacyMetadataValue(value: identifier, privacy: .private)
+            
             await logger.error(
-                "Failed to retrieve data with adapter: \(error.localizedDescription)",
-                metadata: nil,
+                "Failed to retrieve data",
+                metadata: metadata,
                 source: "SecureStorageAdapter"
             )
-            return .failure(.itemNotFound(identifier))
+            
+            return .failure(.dataNotFound)
         }
     }
     
     /**
-     Deletes data securely by its identifier.
+     Deletes data with the specified identifier.
      
-     - Parameter identifier: A string identifying the data to delete
-     - Returns: Success or an error
+     - Parameter identifier: The identifier of the data to delete
+     
+     - Returns: Result indicating success or failure with error details
      */
     public func deleteData(withIdentifier identifier: String) async -> Result<Void, SecurityStorageError> {
         do {
-            try await storage.deleteKey(identifier: identifier)
+            try await storage.deleteData(identifier: identifier)
             
             var metadata = PrivacyMetadata()
-            metadata["operation"] = PrivacyMetadataValue(value: "deleteData", privacy: .public)
             metadata["identifier"] = PrivacyMetadataValue(value: identifier, privacy: .private)
             
             await logger.debug(
-                "Successfully deleted data with adapter",
+                "Data deleted successfully",
                 metadata: metadata,
                 source: "SecureStorageAdapter"
             )
             
             return .success(())
         } catch {
+            var metadata = PrivacyMetadata()
+            metadata["error"] = PrivacyMetadataValue(value: error.localizedDescription, privacy: .public)
+            metadata["identifier"] = PrivacyMetadataValue(value: identifier, privacy: .private)
+            
             await logger.error(
-                "Failed to delete data with adapter: \(error.localizedDescription)",
-                metadata: nil,
+                "Failed to delete data",
+                metadata: metadata,
                 source: "SecureStorageAdapter"
             )
-            return .failure(.itemNotFound(identifier))
+            
+            return .failure(.dataNotFound)
         }
     }
     
     /**
-     Lists all available data identifiers.
+     Lists all data identifiers stored in the secure storage.
      
-     - Returns: An array of data identifiers or an error
-     
-     Note: This implementation provides a stub as the underlying storage
-     does not directly support listing all identifiers.
+     - Returns: Result containing array of identifiers or error details
      */
     public func listDataIdentifiers() async -> Result<[String], SecurityStorageError> {
+        let metadata = PrivacyMetadata()
+        
         await logger.warning(
-            "listDataIdentifiers not fully implemented in SecureStorageAdapter",
-            metadata: nil,
+            "List data identifiers operation not supported",
+            metadata: metadata,
             source: "SecureStorageAdapter"
         )
-        return .failure(.operationNotSupported("Listing identifiers is not supported by this storage implementation"))
+        
+        return .failure(.unsupportedOperation)
     }
 }

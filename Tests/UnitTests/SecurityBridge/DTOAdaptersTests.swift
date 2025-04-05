@@ -63,7 +63,7 @@ final class DTOAdaptersTests: XCTestCase {
     let iv=SecureBytes(bytes: Array(repeating: UInt8(2), count: 12))
 
     let nativeConfig=SecurityProtocols.EncryptionConfig(
-      algorithm: .aes256GCM,
+      algorithm: .aes128GCM,
       keySizeInBits: 256,
       key: key,
       initializationVector: iv,
@@ -85,7 +85,7 @@ final class DTOAdaptersTests: XCTestCase {
     let convertedConfig=SecurityBridge.DTOAdapters.fromDTO(config: configDTO)
 
     // Verify properties
-    XCTAssertEqual(convertedConfig.algorithm, .aes256GCM)
+    XCTAssertEqual(convertedConfig.algorithm, .aes128GCM)
     XCTAssertEqual(convertedConfig.keySizeInBits, 256)
     XCTAssertEqual(convertedConfig.ivSizeBytes, 12)
     XCTAssertEqual(convertedConfig.authenticationTagLength, 16)

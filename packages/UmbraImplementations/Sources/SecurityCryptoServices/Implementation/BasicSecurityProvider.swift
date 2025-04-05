@@ -397,9 +397,9 @@ public struct BasicSecurityProvider: EncryptionProviderProtocol {
 
   private func getAlgorithm(config: SecurityConfigDTO) -> CCAlgorithm? {
     switch config.encryptionAlgorithm {
-      case .aes256CBC:
+      case .aes128CBC:
         return CCAlgorithm(kCCAlgorithmAES)
-      case .aes256GCM:
+      case .aes128GCM:
         return CCAlgorithm(kCCAlgorithmAES)
       case .chacha20Poly1305:
         // CommonCrypto doesn't provide ChaCha20 algorithm constant in all versions

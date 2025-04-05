@@ -113,12 +113,12 @@ final class BasicCryptoService: CryptoServiceProtocol {
     options _: EncryptionOptions?
   ) async -> Result<String, SecurityStorageError> {
     // Get the data from secure storage
-    let dataResult=await secureStorage.retrieveData(withIdentifier: dataIdentifier)
+    let dataResult=await self.secureStorage.retrieveData(withIdentifier: dataIdentifier)
 
     switch dataResult {
       case let .success(data):
         // Attempt to retrieve the key
-        let keyResult=await secureStorage.retrieveData(withIdentifier: keyIdentifier)
+        let keyResult=await self.secureStorage.retrieveData(withIdentifier: keyIdentifier)
 
         switch keyResult {
           case .success(_):
@@ -126,7 +126,7 @@ final class BasicCryptoService: CryptoServiceProtocol {
             // Here we just store the original data with a new identifier
             let encryptedIdentifier="encrypted-\(dataIdentifier)"
             // Store the "encrypted" data back
-            _ = await secureStorage.storeData(data, withIdentifier: encryptedIdentifier)
+            _ = await self.secureStorage.storeData(data, withIdentifier: encryptedIdentifier)
             return .success(encryptedIdentifier)
 
           case .failure:
@@ -154,12 +154,12 @@ final class BasicCryptoService: CryptoServiceProtocol {
     options _: DecryptionOptions?
   ) async -> Result<String, SecurityStorageError> {
     // Get the data from secure storage
-    let dataResult=await secureStorage.retrieveData(withIdentifier: encryptedDataIdentifier)
+    let dataResult=await self.secureStorage.retrieveData(withIdentifier: encryptedDataIdentifier)
 
     switch dataResult {
       case let .success(data):
         // Attempt to retrieve the key
-        let keyResult=await secureStorage.retrieveData(withIdentifier: keyIdentifier)
+        let keyResult=await self.secureStorage.retrieveData(withIdentifier: keyIdentifier)
 
         switch keyResult {
           case .success(_):
@@ -167,7 +167,7 @@ final class BasicCryptoService: CryptoServiceProtocol {
             // Here we just store the original data with a new identifier
             let decryptedIdentifier="decrypted-\(encryptedDataIdentifier)"
             // Store the "decrypted" data back
-            _ = await secureStorage.storeData(data, withIdentifier: decryptedIdentifier)
+            _ = await self.secureStorage.storeData(data, withIdentifier: decryptedIdentifier)
             return .success(decryptedIdentifier)
 
           case .failure:
@@ -194,7 +194,7 @@ final class BasicCryptoService: CryptoServiceProtocol {
     options _: HashingOptions?
   ) async -> Result<String, SecurityStorageError> {
     // Get the data from secure storage
-    let dataResult=await secureStorage.retrieveData(withIdentifier: dataIdentifier)
+    let dataResult=await self.secureStorage.retrieveData(withIdentifier: dataIdentifier)
 
     switch dataResult {
       case .success(_):
@@ -202,7 +202,7 @@ final class BasicCryptoService: CryptoServiceProtocol {
         // Here we just store a placeholder "hash" value
         let hashedIdentifier="hashed-\(dataIdentifier)"
         let hashValue: [UInt8]=Array(repeating: 0, count: 32) // Mock 32-byte hash
-        _ = await secureStorage.storeData(hashValue, withIdentifier: hashedIdentifier)
+        _ = await self.secureStorage.storeData(hashValue, withIdentifier: hashedIdentifier)
         return .success(hashedIdentifier)
 
       case .failure:
@@ -221,12 +221,12 @@ final class BasicCryptoService: CryptoServiceProtocol {
     options _: HashingOptions?
   ) async -> Result<Bool, SecurityStorageError> {
     // Get the data from secure storage
-    let dataResult=await secureStorage.retrieveData(withIdentifier: dataIdentifier)
+    let dataResult=await self.secureStorage.retrieveData(withIdentifier: dataIdentifier)
 
     switch dataResult {
       case .success(_):
         // Get the hash from secure storage
-        let hashResult=await secureStorage.retrieveData(withIdentifier: hashIdentifier)
+        let hashResult=await self.secureStorage.retrieveData(withIdentifier: hashIdentifier)
 
         switch hashResult {
           case .success(_):
@@ -261,7 +261,7 @@ final class BasicCryptoService: CryptoServiceProtocol {
     // Here we just create a placeholder key
     let keyData: [UInt8]=Array(repeating: 0, count: length)
     let keyIdentifier="key-\(UUID().uuidString)"
-    let storeResult=await secureStorage.storeData(keyData, withIdentifier: keyIdentifier)
+    let storeResult=await self.secureStorage.storeData(keyData, withIdentifier: keyIdentifier)
 
     switch storeResult {
       case .success:
@@ -276,7 +276,7 @@ final class BasicCryptoService: CryptoServiceProtocol {
     customIdentifier: String?
   ) async -> Result<String, SecurityStorageError> {
     let identifier=customIdentifier ?? "imported-\(UUID().uuidString)"
-    let storeResult=await secureStorage.storeData(data, withIdentifier: identifier)
+    let storeResult=await self.secureStorage.storeData(data, withIdentifier: identifier)
 
     switch storeResult {
       case .success:
@@ -289,6 +289,6 @@ final class BasicCryptoService: CryptoServiceProtocol {
   public func exportData(
     identifier: String
   ) async -> Result<[UInt8], SecurityStorageError> {
-    await secureStorage.retrieveData(withIdentifier: identifier)
+    await self.secureStorage.retrieveData(withIdentifier: identifier)
   }
 }

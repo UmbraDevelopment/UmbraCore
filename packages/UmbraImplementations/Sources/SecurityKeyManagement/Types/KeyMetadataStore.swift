@@ -69,7 +69,7 @@ public actor KeyMetadataStore: Sendable {
         let metadataId = metadataIdentifier(for: metadata.id)
         let bytes = try metadata.serialise()
         
-        let result = await secureStorage.storeData(bytes, withIdentifier: metadataId)
+        let result = await self.secureStorage.storeData(bytes, withIdentifier: metadataId)
         
         switch result {
         case .success:
@@ -90,7 +90,7 @@ public actor KeyMetadataStore: Sendable {
      */
     public func getKeyMetadata(for keyIdentifier: String) async throws -> KeyMetadata? {
         let metadataId = metadataIdentifier(for: keyIdentifier)
-        let result = await secureStorage.retrieveData(withIdentifier: metadataId)
+        let result = await self.secureStorage.retrieveData(withIdentifier: metadataId)
         
         switch result {
         case .success(let bytes):
@@ -113,7 +113,7 @@ public actor KeyMetadataStore: Sendable {
      */
     public func deleteKeyMetadata(for keyIdentifier: String) async throws {
         let metadataId = metadataIdentifier(for: keyIdentifier)
-        let result = await secureStorage.deleteData(withIdentifier: metadataId)
+        let result = await self.secureStorage.deleteData(withIdentifier: metadataId)
         
         switch result {
         case .success:
@@ -135,7 +135,7 @@ public actor KeyMetadataStore: Sendable {
      - Throws: If retrieving the metadata fails
      */
     public func getAllKeyMetadata() async throws -> [KeyMetadata] {
-        let result = await secureStorage.listDataIdentifiers()
+        let result = await self.secureStorage.listDataIdentifiers()
         
         switch result {
         case .success(let identifiers):

@@ -192,17 +192,6 @@ public struct SecureLoggerActorExample {
           "status": PrivacyTaggedValue(value: "completed", privacyLevel: .public)
         ]
       )
-    } catch {
-      // 5. Log failure with appropriate context
-      await secureLogger.error(
-        "Transaction processing failed",
-        metadata: [
-          "transactionId": PrivacyTaggedValue(value: "txn_abc123", privacyLevel: .public),
-          "errorMessage": PrivacyTaggedValue(value: error.localizedDescription,
-                                             privacyLevel: .public),
-          "currentStage": PrivacyTaggedValue(value: "payment_processing", privacyLevel: .public)
-        ]
-      )
     }
   }
 

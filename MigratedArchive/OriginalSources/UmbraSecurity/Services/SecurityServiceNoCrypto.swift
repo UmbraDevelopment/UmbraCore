@@ -89,7 +89,7 @@ public actor SecurityServiceNoCrypto {
   /// - Throws: SecurityError if startup fails
   public func start() async -> Result<Bool, UmbraErrors.Security.Core> {
     guard _state == .initialized else {
-      return .failure(.operationFailed(reason: "Cannot start: service not initialised"))
+      return .failure(.operationFailed("Cannot start: service not initialised"))
     }
 
     _state = .running
@@ -102,7 +102,7 @@ public actor SecurityServiceNoCrypto {
   /// - Throws: SecurityError if stopping fails
   public func stop() async -> Result<Bool, UmbraErrors.Security.Core> {
     guard _state == .running else {
-      return .failure(.operationFailed(reason: "Cannot stop: service not running"))
+      return .failure(.operationFailed("Cannot stop: service not running"))
     }
 
     _state = .stopped

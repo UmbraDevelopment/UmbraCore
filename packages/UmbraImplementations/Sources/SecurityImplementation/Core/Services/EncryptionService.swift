@@ -158,7 +158,7 @@ final class EncryptionService: SecurityServiceBase {
 
       // Store the input data securely
       let inputID=UUID().uuidString
-      try await secureStorage.store(data: inputData, withIdentifier: inputID)
+      try await self.secureStorage.store(data: inputData, withIdentifier: inputID)
 
       // Choose encryption key
       let keyIdentifier: String
@@ -194,7 +194,7 @@ final class EncryptionService: SecurityServiceBase {
       )
 
       // Retrieve the resulting encrypted data
-      let encryptedData=try await secureStorage.retrieve(withIdentifier: resultID)
+      let encryptedData=try await self.secureStorage.retrieve(withIdentifier: resultID)
 
       // Calculate performance metrics
       let duration=Date().timeIntervalSince(startTime)
@@ -234,8 +234,8 @@ final class EncryptionService: SecurityServiceBase {
       )
 
       // Clean up temporary data
-      try await secureStorage.remove(withIdentifier: inputID)
-      try await secureStorage.remove(withIdentifier: resultID)
+      try await self.secureStorage.remove(withIdentifier: inputID)
+      try await self.secureStorage.remove(withIdentifier: resultID)
 
       return result
     } catch {
@@ -351,7 +351,7 @@ final class EncryptionService: SecurityServiceBase {
 
       // Store the input data securely
       let inputID=UUID().uuidString
-      try await secureStorage.store(data: inputData, withIdentifier: inputID)
+      try await self.secureStorage.store(data: inputData, withIdentifier: inputID)
 
       // Choose decryption key
       let keyIdentifier: String
@@ -387,7 +387,7 @@ final class EncryptionService: SecurityServiceBase {
       )
 
       // Retrieve the resulting decrypted data
-      let decryptedData=try await secureStorage.retrieve(withIdentifier: resultID)
+      let decryptedData=try await self.secureStorage.retrieve(withIdentifier: resultID)
 
       // Calculate performance metrics
       let duration=Date().timeIntervalSince(startTime)
@@ -427,8 +427,8 @@ final class EncryptionService: SecurityServiceBase {
       )
 
       // Clean up temporary data
-      try await secureStorage.remove(withIdentifier: inputID)
-      try await secureStorage.remove(withIdentifier: resultID)
+      try await self.secureStorage.remove(withIdentifier: inputID)
+      try await self.secureStorage.remove(withIdentifier: resultID)
 
       return result
     } catch {
@@ -486,8 +486,8 @@ final class EncryptionService: SecurityServiceBase {
     // Perform the encryption using the crypto service
     do {
       // Retrieve the data from secure storage
-      let data=try await secureStorage.retrieve(withIdentifier: dataID)
-      let key=try await secureStorage.retrieve(withIdentifier: keyID)
+      let data=try await self.secureStorage.retrieve(withIdentifier: dataID)
+      let key=try await self.secureStorage.retrieve(withIdentifier: keyID)
 
       // Convert to arrays of UInt8 if needed by the crypto service
       let dataArray=[UInt8](data)
@@ -502,7 +502,7 @@ final class EncryptionService: SecurityServiceBase {
 
         // Store the result in secure storage
         let resultID=UUID().uuidString
-        try await secureStorage.store(data: result, withIdentifier: resultID)
+        try await self.secureStorage.store(data: result, withIdentifier: resultID)
         return resultID
       }
 
@@ -515,7 +515,7 @@ final class EncryptionService: SecurityServiceBase {
           // Convert back to Data and store in secure storage
           let resultData=Data(encryptedData)
           let resultID=UUID().uuidString
-          try await secureStorage.store(data: resultData, withIdentifier: resultID)
+          try await self.secureStorage.store(data: resultData, withIdentifier: resultID)
           return resultID
         case let .failure(error):
           throw EncryptionServiceError.encryptionFailed("Encryption failed: \(error)")
@@ -533,8 +533,8 @@ final class EncryptionService: SecurityServiceBase {
     // Perform the decryption using the crypto service
     do {
       // Retrieve the data from secure storage
-      let data=try await secureStorage.retrieve(withIdentifier: dataID)
-      let key=try await secureStorage.retrieve(withIdentifier: keyID)
+      let data=try await self.secureStorage.retrieve(withIdentifier: dataID)
+      let key=try await self.secureStorage.retrieve(withIdentifier: keyID)
 
       // Convert to arrays of UInt8 if needed by the crypto service
       let dataArray=[UInt8](data)
@@ -549,7 +549,7 @@ final class EncryptionService: SecurityServiceBase {
 
         // Store the result in secure storage
         let resultID=UUID().uuidString
-        try await secureStorage.store(data: result, withIdentifier: resultID)
+        try await self.secureStorage.store(data: result, withIdentifier: resultID)
         return resultID
       }
 
@@ -562,7 +562,7 @@ final class EncryptionService: SecurityServiceBase {
           // Convert back to Data and store in secure storage
           let resultData=Data(decryptedData)
           let resultID=UUID().uuidString
-          try await secureStorage.store(data: resultData, withIdentifier: resultID)
+          try await self.secureStorage.store(data: resultData, withIdentifier: resultID)
           return resultID
         case let .failure(error):
           throw EncryptionServiceError.decryptionFailed("Decryption failed: \(error)")

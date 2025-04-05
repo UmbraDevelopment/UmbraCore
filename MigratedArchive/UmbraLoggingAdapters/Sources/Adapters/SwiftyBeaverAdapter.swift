@@ -1,4 +1,6 @@
 import Foundation
+import LoggingServices
+
 import LoggingWrapper
 import LoggingWrapperInterfaces
 import UmbraLogging

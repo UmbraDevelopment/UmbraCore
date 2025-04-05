@@ -24,8 +24,8 @@ import SecurityCoreInterfaces
  let secureStorage = SecureStorageActor(providerType: .apple, secureLogger: secureLogger)
 
  // Store and retrieve keys securely
- try await secureStorage.storeKey(key, withIdentifier: "master-key")
- let retrievedKey = try await secureStorage.retrieveKey(withIdentifier: "master-key")
+ try await self.secureStorage.storeKey(key, withIdentifier: "master-key")
+ let retrievedKey = try await self.secureStorage.retrieveKey(withIdentifier: "master-key")
  ```
 
  ## Thread Safety

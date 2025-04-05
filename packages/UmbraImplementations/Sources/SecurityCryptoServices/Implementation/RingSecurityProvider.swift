@@ -235,8 +235,8 @@ import UmbraErrors
     ) async -> Result<String, SecurityStorageError> {
       do {
         // Retrieve data and key from secure storage
-        let dataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
-        let keyResult = await secureStorage.retrieveData(withIdentifier: keyIdentifier)
+        let dataResult = await self.secureStorage.retrieveData(withIdentifier: dataIdentifier)
+        let keyResult = await self.secureStorage.retrieveData(withIdentifier: keyIdentifier)
         
         guard case let .success(data) = dataResult else {
           return .failure(.dataNotFound)
@@ -255,7 +255,7 @@ import UmbraErrors
         
         // Store the encrypted data
         let identifier = UUID().uuidString
-        let storeResult = await secureStorage.storeData(encryptedData, withIdentifier: identifier)
+        let storeResult = await self.secureStorage.storeData(encryptedData, withIdentifier: identifier)
         
         guard case .success = storeResult else {
           return .failure(.storageUnavailable)
@@ -280,8 +280,8 @@ import UmbraErrors
     ) async -> Result<String, SecurityStorageError> {
       do {
         // Retrieve encrypted data and key from secure storage
-        let dataResult = await secureStorage.retrieveData(withIdentifier: encryptedDataIdentifier)
-        let keyResult = await secureStorage.retrieveData(withIdentifier: keyIdentifier)
+        let dataResult = await self.secureStorage.retrieveData(withIdentifier: encryptedDataIdentifier)
+        let keyResult = await self.secureStorage.retrieveData(withIdentifier: keyIdentifier)
         
         guard case let .success(encryptedData) = dataResult else {
           return .failure(.dataNotFound)
@@ -300,7 +300,7 @@ import UmbraErrors
         
         // Store the decrypted data
         let identifier = UUID().uuidString
-        let storeResult = await secureStorage.storeData(decryptedData, withIdentifier: identifier)
+        let storeResult = await self.secureStorage.storeData(decryptedData, withIdentifier: identifier)
         
         guard case .success = storeResult else {
           return .failure(.storageUnavailable)
@@ -323,7 +323,7 @@ import UmbraErrors
     ) async -> Result<String, SecurityStorageError> {
       do {
         // Retrieve data from secure storage
-        let dataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
+        let dataResult = await self.secureStorage.retrieveData(withIdentifier: dataIdentifier)
         
         guard case let .success(data) = dataResult else {
           return .failure(.dataNotFound)
@@ -338,7 +338,7 @@ import UmbraErrors
         
         // Store the hash
         let identifier = UUID().uuidString
-        let storeResult = await secureStorage.storeData(hashData, withIdentifier: identifier)
+        let storeResult = await self.secureStorage.storeData(hashData, withIdentifier: identifier)
         
         guard case .success = storeResult else {
           return .failure(.storageUnavailable)
@@ -363,8 +363,8 @@ import UmbraErrors
     ) async -> Result<Bool, SecurityStorageError> {
       do {
         // Retrieve data and expected hash from secure storage
-        let dataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
-        let hashResult = await secureStorage.retrieveData(withIdentifier: hashIdentifier)
+        let dataResult = await self.secureStorage.retrieveData(withIdentifier: dataIdentifier)
+        let hashResult = await self.secureStorage.retrieveData(withIdentifier: hashIdentifier)
         
         guard case let .success(data) = dataResult else {
           return .failure(.dataNotFound)
@@ -409,7 +409,7 @@ import UmbraErrors
         
         // Store the key in secure storage
         let identifier = UUID().uuidString
-        let storeResult = await secureStorage.storeData(key, withIdentifier: identifier)
+        let storeResult = await self.secureStorage.storeData(key, withIdentifier: identifier)
         
         guard case .success = storeResult else {
           return .failure(.storageUnavailable)
@@ -432,7 +432,7 @@ import UmbraErrors
       customIdentifier: String?
     ) async -> Result<String, SecurityStorageError> {
       let identifier = customIdentifier ?? UUID().uuidString
-      let storeResult = await secureStorage.storeData(data, withIdentifier: identifier)
+      let storeResult = await self.secureStorage.storeData(data, withIdentifier: identifier)
       
       guard case .success = storeResult else {
         return .failure(.storageUnavailable)
@@ -448,7 +448,7 @@ import UmbraErrors
     public func exportData(
       identifier: String
     ) async -> Result<[UInt8], SecurityStorageError> {
-      await secureStorage.retrieveData(withIdentifier: identifier)
+      await self.secureStorage.retrieveData(withIdentifier: identifier)
     }
     
     // MARK: - Helper Functions

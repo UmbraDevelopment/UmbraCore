@@ -50,7 +50,7 @@ public actor CryptoServiceActor: CryptoServiceProtocol, Sendable {
     
     // Default configuration
     self.defaultConfig = SecurityConfigDTO(
-      encryptionAlgorithm: .aes256CBC,
+      encryptionAlgorithm: .aes128CBC,
       hashAlgorithm: .sha256,
       providerType: .basic
     )
@@ -105,8 +105,8 @@ public actor CryptoServiceActor: CryptoServiceProtocol, Sendable {
     options: EncryptionOptions?
   ) async -> Result<String, SecurityStorageError> {
     // Retrieve the data to encrypt and key from secure storage
-    let dataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
-    let keyResult = await secureStorage.retrieveData(withIdentifier: keyIdentifier)
+    let dataResult = await self.secureStorage.retrieveData(withIdentifier: dataIdentifier)
+    let keyResult = await self.secureStorage.retrieveData(withIdentifier: keyIdentifier)
     
     guard case let .success(data) = dataResult else {
       return .failure(.dataNotFound)
@@ -125,7 +125,7 @@ public actor CryptoServiceActor: CryptoServiceProtocol, Sendable {
     
     // Store the encrypted data
     let identifier = UUID().uuidString
-    let storeResult = await secureStorage.storeData(encryptedData, withIdentifier: identifier)
+    let storeResult = await self.secureStorage.storeData(encryptedData, withIdentifier: identifier)
     
     guard case .success = storeResult else {
       return .failure(.storageUnavailable)
@@ -146,8 +146,8 @@ public actor CryptoServiceActor: CryptoServiceProtocol, Sendable {
     options: DecryptionOptions?
   ) async -> Result<String, SecurityStorageError> {
     // Retrieve encrypted data and key from secure storage
-    let dataResult = await secureStorage.retrieveData(withIdentifier: encryptedDataIdentifier)
-    let keyResult = await secureStorage.retrieveData(withIdentifier: keyIdentifier)
+    let dataResult = await self.secureStorage.retrieveData(withIdentifier: encryptedDataIdentifier)
+    let keyResult = await self.secureStorage.retrieveData(withIdentifier: keyIdentifier)
     
     guard case let .success(encryptedData) = dataResult else {
       return .failure(.dataNotFound)
@@ -166,7 +166,7 @@ public actor CryptoServiceActor: CryptoServiceProtocol, Sendable {
     
     // Store the decrypted data
     let identifier = UUID().uuidString
-    let storeResult = await secureStorage.storeData(decryptedData, withIdentifier: identifier)
+    let storeResult = await self.secureStorage.storeData(decryptedData, withIdentifier: identifier)
     
     guard case .success = storeResult else {
       return .failure(.storageUnavailable)
@@ -183,7 +183,7 @@ public actor CryptoServiceActor: CryptoServiceProtocol, Sendable {
     options: HashingOptions?
   ) async -> Result<String, SecurityStorageError> {
     // Retrieve the data to hash from secure storage
-    let dataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
+    let dataResult = await self.secureStorage.retrieveData(withIdentifier: dataIdentifier)
     
     guard case let .success(data) = dataResult else {
       return .failure(.dataNotFound)
@@ -201,7 +201,7 @@ public actor CryptoServiceActor: CryptoServiceProtocol, Sendable {
     
     // Store the hash
     let identifier = UUID().uuidString
-    let storeResult = await secureStorage.storeData(hashedData, withIdentifier: identifier)
+    let storeResult = await self.secureStorage.storeData(hashedData, withIdentifier: identifier)
     
     guard case .success = storeResult else {
       return .failure(.storageUnavailable)
@@ -221,8 +221,8 @@ public actor CryptoServiceActor: CryptoServiceProtocol, Sendable {
     options: HashingOptions?
   ) async -> Result<Bool, SecurityStorageError> {
     // Retrieve data and expected hash from secure storage
-    let dataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
-    let hashResult = await secureStorage.retrieveData(withIdentifier: hashIdentifier)
+    let dataResult = await self.secureStorage.retrieveData(withIdentifier: dataIdentifier)
+    let hashResult = await self.secureStorage.retrieveData(withIdentifier: hashIdentifier)
     
     guard case let .success(data) = dataResult else {
       return .failure(.dataNotFound)
@@ -269,7 +269,7 @@ public actor CryptoServiceActor: CryptoServiceProtocol, Sendable {
     
     // Store the key in secure storage
     let identifier = UUID().uuidString
-    let storeResult = await secureStorage.storeData(key, withIdentifier: identifier)
+    let storeResult = await self.secureStorage.storeData(key, withIdentifier: identifier)
     
     guard case .success = storeResult else {
       return .failure(.storageUnavailable)
@@ -289,7 +289,7 @@ public actor CryptoServiceActor: CryptoServiceProtocol, Sendable {
     customIdentifier: String?
   ) async -> Result<String, SecurityStorageError> {
     let identifier = customIdentifier ?? UUID().uuidString
-    let storeResult = await secureStorage.storeData(data, withIdentifier: identifier)
+    let storeResult = await self.secureStorage.storeData(data, withIdentifier: identifier)
     
     guard case .success = storeResult else {
       return .failure(.storageUnavailable)
@@ -304,7 +304,7 @@ public actor CryptoServiceActor: CryptoServiceProtocol, Sendable {
   public func exportData(
     identifier: String
   ) async -> Result<[UInt8], SecurityStorageError> {
-    return await secureStorage.retrieveData(withIdentifier: identifier)
+    return await self.secureStorage.retrieveData(withIdentifier: identifier)
   }
   
   // MARK: - Private Helper Methods

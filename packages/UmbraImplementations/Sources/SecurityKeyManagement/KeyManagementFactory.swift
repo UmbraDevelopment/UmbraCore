@@ -1,4 +1,6 @@
 import CoreSecurityTypes
+import LoggingServices
+
 import Foundation
 import LoggingInterfaces
 import LoggingTypes
@@ -27,7 +29,7 @@ import DomainSecurityTypes
  let keyManager = await KeyManagementFactory.createKeyManager(logger: logger)
 
  // Generate a new key - note the await keyword for actor method calls
- let key = try await keyManager.generateKey(ofType: .aes256)
+ let key = try await keyManager.generateKey(ofType: .aes128)
  ```
  */
 public enum KeyManagementFactory {
@@ -202,7 +204,7 @@ public actor SimpleKeyManagementActor: KeyManagementProtocol {
         )
         return .success(key)
       } else {
-        let error = SecurityProtocolError.operationFailed(reason: "Key not found: \(identifier)")
+        let error = SecurityProtocolError.operationFailed("Key not found: \(identifier)")
         await securityLogger.logOperationFailure(
           keyIdentifier: identifier,
           operation: "retrieve",
@@ -295,7 +297,7 @@ public actor SimpleKeyManagementActor: KeyManagementProtocol {
         )
         return .success(())
       } else {
-        let error = SecurityProtocolError.operationFailed(reason: "Key not found: \(identifier)")
+        let error = SecurityProtocolError.operationFailed("Key not found: \(identifier)")
         await securityLogger.logOperationFailure(
           keyIdentifier: identifier,
           operation: "delete",

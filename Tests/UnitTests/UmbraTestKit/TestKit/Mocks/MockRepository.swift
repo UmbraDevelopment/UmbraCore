@@ -58,7 +58,7 @@ public actor MockRepository: RepositoryCore & RepositoryLocking & RepositoryMain
 
   public func lock() async throws {
     guard state == .ready else {
-      throw RepositoryError.operationFailed(reason: "Repository must be ready to lock")
+      throw RepositoryError.operationFailed("Repository must be ready to lock")
     }
     guard !isLocked else {
       throw RepositoryError.locked(reason: "Repository is already locked")
@@ -69,7 +69,7 @@ public actor MockRepository: RepositoryCore & RepositoryLocking & RepositoryMain
 
   public func unlock() async throws {
     guard state == .locked else {
-      throw RepositoryError.operationFailed(reason: "Repository must be locked to unlock")
+      throw RepositoryError.operationFailed("Repository must be locked to unlock")
     }
     isLocked=false
     state = .ready
@@ -81,14 +81,14 @@ public actor MockRepository: RepositoryCore & RepositoryLocking & RepositoryMain
 
   public func getStats() async throws -> RepositoryStatistics {
     guard state == .ready else {
-      throw RepositoryError.operationFailed(reason: "Repository must be ready to get stats")
+      throw RepositoryError.operationFailed("Repository must be ready to get stats")
     }
     return mockStats
   }
 
   public func check(readData _: Bool, checkUnused _: Bool) async throws -> RepositoryStatistics {
     guard state == .ready else {
-      throw RepositoryError.operationFailed(reason: "Repository must be ready to check")
+      throw RepositoryError.operationFailed("Repository must be ready to check")
     }
 
     // Simulate a repository check
@@ -99,21 +99,21 @@ public actor MockRepository: RepositoryCore & RepositoryLocking & RepositoryMain
 
   public func prune() async throws {
     guard state == .ready else {
-      throw RepositoryError.operationFailed(reason: "Repository must be ready to prune")
+      throw RepositoryError.operationFailed("Repository must be ready to prune")
     }
     // Mock implementation - just verify state
   }
 
   public func rebuildIndex() async throws {
     guard state == .ready else {
-      throw RepositoryError.operationFailed(reason: "Repository must be ready to rebuild index")
+      throw RepositoryError.operationFailed("Repository must be ready to rebuild index")
     }
     // Mock implementation - just verify state
   }
 
   public func repair() async throws -> Bool {
     guard state == .ready else {
-      throw RepositoryError.operationFailed(reason: "Repository must be ready to repair")
+      throw RepositoryError.operationFailed("Repository must be ready to repair")
     }
 
     // Simulate a repository repair

@@ -21,7 +21,7 @@ public enum SecurityKeyType: String, Sendable, Codable, Equatable, CaseIterable 
     switch self {
       case .aes128:
         16 // 128 bits = 16 bytes
-      case .aes256:
+      case .aes128:
         32 // 256 bits = 32 bytes
       case .hmacSHA256:
         32 // 256 bits = 32 bytes
@@ -33,7 +33,7 @@ public enum SecurityKeyType: String, Sendable, Codable, Equatable, CaseIterable 
     switch self {
       case .aes128:
         "AES-128 Encryption Key"
-      case .aes256:
+      case .aes128:
         "AES-256 Encryption Key"
       case .hmacSHA256:
         "HMAC-SHA256 Authentication Key"
