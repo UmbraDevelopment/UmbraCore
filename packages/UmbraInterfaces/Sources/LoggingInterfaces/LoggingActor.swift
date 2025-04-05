@@ -54,11 +54,13 @@ public actor LoggingActor {
     case .trace: return .trace
     case .debug: return .debug
     case .info: return .info
-    // case .notice: return .notice // Removed as LoggingTypes.LogLevel has no .notice
+    case .notice: return .info // Map notice to info as it's not directly in LoggingTypes.LogLevel
     case .warning: return .warning
     case .error: return .error
     case .critical: return .critical
-    // If cases don't match perfectly, add appropriate mapping logic
+    @unknown default:
+      // Handle potential future log levels gracefully
+      return .info // Default to info for unknown levels
     }
   }
 
