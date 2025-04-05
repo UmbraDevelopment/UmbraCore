@@ -96,9 +96,9 @@ public struct BaseDomainLogger: DomainLogger {
     let logMessage = message ?? "Operation completed successfully"
     let updatedContext = BaseLogContextDTO(
       domainName: context.domainName,
-      correlationID: context.correlationID,
       source: context.source,
-      metadata: updatedMetadata
+      metadata: updatedMetadata,
+      correlationID: context.correlationID
     )
     await logger.info(logMessage, context: updatedContext)
   }
@@ -147,9 +147,9 @@ public struct BaseDomainLogger: DomainLogger {
     let logMessage = message ?? "Operation failed"
     let updatedContext = BaseLogContextDTO(
       domainName: context.domainName,
-      correlationID: context.correlationID,
       source: context.source,
-      metadata: updatedMetadata
+      metadata: updatedMetadata,
+      correlationID: context.correlationID
     )
     await logger.error(logMessage, context: updatedContext)
   }
@@ -178,7 +178,8 @@ public struct BaseDomainLogger: DomainLogger {
     let context = BaseLogContextDTO(
       domainName: "Error",
       source: source,
-      metadata: metadataDTO
+      metadata: metadataDTO,
+      correlationID: nil
     )
 
     // Get the message or use the error's log message
@@ -689,7 +690,8 @@ public class EnhancedErrorLogger: LegacyErrorLoggingProtocol {
     let context = BaseLogContextDTO(
       domainName: "Error",
       source: source,
-      metadata: metadataDTO
+      metadata: metadataDTO,
+      correlationID: nil
     )
 
     await logger.log(level, logMessage, context: context)
@@ -718,7 +720,8 @@ public class EnhancedErrorLogger: LegacyErrorLoggingProtocol {
     let context = BaseLogContextDTO(
       domainName: "Error",
       source: source,
-      metadata: createMetadataCollection(from: metadata)
+      metadata: createMetadataCollection(from: metadata),
+      correlationID: nil
     )
     
     await logger.log(level, logMessage, context: context)
@@ -754,7 +757,7 @@ public class EnhancedErrorLogger: LegacyErrorLoggingProtocol {
     // If this is a loggable error, add structured details
     if let loggableError = error as? LoggableErrorDTO {
       // Get structured error information
-      let errorMessage = loggableError.getLogMessage()
+      _ = loggableError.getLogMessage()
       
       // Add error metadata
       updatedMetadata = updatedMetadata.merging(with: createMetadataCollection(
@@ -766,7 +769,8 @@ public class EnhancedErrorLogger: LegacyErrorLoggingProtocol {
     let logContext = BaseLogContextDTO(
       domainName: "Error",
       source: context.source,
-      metadata: updatedMetadata.merging(with: context.metadata)
+      metadata: updatedMetadata.merging(with: context.metadata),
+      correlationID: nil
     )
     
     // Get the message or use a default
@@ -804,7 +808,8 @@ public class EnhancedErrorLogger: LegacyErrorLoggingProtocol {
       let context = BaseLogContextDTO(
         domainName: "Error",
         source: errorSource,
-        metadata: metadataDTO
+        metadata: metadataDTO,
+        correlationID: nil
       )
 
       // Get the log message or use the error's message
@@ -830,7 +835,8 @@ public class EnhancedErrorLogger: LegacyErrorLoggingProtocol {
       let context = BaseLogContextDTO(
         domainName: "Error",
         source: source ?? "UnknownSource",
-        metadata: metadata
+        metadata: metadata,
+        correlationID: nil
       )
       
       // Use default message or a generic one

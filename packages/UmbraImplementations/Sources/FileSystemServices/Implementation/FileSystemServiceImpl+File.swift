@@ -142,15 +142,17 @@ extension FileSystemServiceImpl {
       let directory=url.deletingLastPathComponent()
       do {
         try fileManager.createDirectory(
-          at: directory,
+          atPath: directory.path,
           withIntermediateDirectories: true,
           attributes: nil
         )
       } catch {
         await logger.error(
-          "Failed to create parent directories for \(path.path): \(error.localizedDescription)",
-          metadata: nil,
-          source: "FileSystemService"
+          FileSystemLogContext(
+            operation: "createDirectories",
+            path: directory.path,
+            source: "FileSystemService"
+          ).withUpdatedMetadata(LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription))
         )
         throw FileSystemInterfaces.FileSystemError.writeError(
           path: directory.path,
@@ -164,15 +166,19 @@ extension FileSystemServiceImpl {
       try data.write(to: url)
 
       await logger.debug(
-        "Wrote \(bytes.count) bytes to \(path.path)",
-        metadata: nil,
-        source: "FileSystemService"
+        FileSystemLogContext(
+          operation: "writeFile",
+          path: path.path,
+          source: "FileSystemService"
+        ).withFileSize(Int64(data.count))
       )
     } catch {
       await logger.error(
-        "Failed to write file at \(path.path): \(error.localizedDescription)",
-        metadata: nil,
-        source: "FileSystemService"
+        FileSystemLogContext(
+          operation: "writeFile",
+          path: path.path,
+          source: "FileSystemService"
+        ).withUpdatedMetadata(LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription))
       )
       throw FileSystemInterfaces.FileSystemError.writeError(
         path: path.path,
@@ -375,12 +381,18 @@ extension FileSystemServiceImpl {
 
     do {
       try fileManager.removeItem(atPath: path.path)
-      await logger.info("Removed file at \(path.path)", metadata: nil, source: "FileSystemService")
+      await logger.info(FileSystemLogContext(
+        operation: "removeFile",
+        path: path.path,
+        source: "FileSystemService"
+      ))
     } catch {
       await logger.error(
-        "Failed to remove file at \(path.path): \(error.localizedDescription)",
-        metadata: nil,
-        source: "FileSystemService"
+        FileSystemLogContext(
+          operation: "removeFile",
+          path: path.path,
+          source: "FileSystemService"
+        ).withUpdatedMetadata(LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription))
       )
       throw FileSystemInterfaces.FileSystemError.writeError(
         path: path.path,
@@ -395,7 +407,7 @@ extension FileSystemServiceImpl {
    - Parameters:
       - sourcePath: The source file path
       - destinationPath: The destination file path
-      - overwrite: Whether to overwrite an existing file at the destination
+      - overwrite: Whether to overwrite an existing file
       - preserveAttributes: Whether to preserve file attributes during the copy
    - Throws: `FileSystemError.invalidPath` if either path is invalid
              `FileSystemError.pathNotFound` if the source file does not exist

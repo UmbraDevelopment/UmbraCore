@@ -53,13 +53,18 @@ extension FileSystemServiceImpl {
 
     do {
       try fileManager.removeItem(atPath: path.path)
-
-      await logger.debug("Removed item at \(path.path)", metadata: nil, source: "FileSystemService")
+      await logger.debug(FileSystemLogContext(
+        operation: "remove",
+        path: path.path,
+        source: "FileSystemService"
+      ))
     } catch {
       await logger.error(
-        "Failed to remove item at \(path.path): \(error.localizedDescription)",
-        metadata: nil,
-        source: "FileSystemService"
+        FileSystemLogContext(
+          operation: "remove",
+          path: path.path,
+          source: "FileSystemService"
+        ).withUpdatedMetadata(LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription))
       )
       throw FileSystemInterfaces.FileSystemError.writeError(
         path: path.path,

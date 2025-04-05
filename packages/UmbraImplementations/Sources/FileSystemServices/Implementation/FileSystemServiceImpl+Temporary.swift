@@ -160,9 +160,12 @@ extension FileSystemServiceImpl {
     }
 
     await logger.debug(
-      "Created temporary file at \(tempPath.path)",
-      metadata: nil,
-      source: "FileSystemService"
+      "Created temporary file",
+      context: FileSystemLogContext(
+        operation: "createTemporaryFile",
+        path: tempPath.path,
+        source: "FileSystemService"
+      )
     )
 
     return tempPath
@@ -188,15 +191,18 @@ extension FileSystemServiceImpl {
 
     do {
       try fileManager.createDirectory(
-        at: tempDirURL,
+        atPath: tempDirURL.path,
         withIntermediateDirectories: true,
         attributes: nil
       )
 
       await logger.debug(
-        "Created temporary directory at \(tempDirPath.path)",
-        metadata: nil,
-        source: "FileSystemService"
+        "Created temporary directory",
+        context: FileSystemLogContext(
+          operation: "createTemporaryDirectory",
+          path: tempDirPath.path,
+          source: "FileSystemService"
+        )
       )
 
       return tempDirPath

@@ -46,17 +46,27 @@ extension FileSystemServiceImpl {
       let normalisedPath=FilePath(path: resolvedURL.path)
 
       await logger.debug(
-        "Normalised path from \(path.path) to \(normalisedPath.path)",
-        metadata: nil,
-        source: "FileSystemService"
+        "Path normalised",
+        context: FileSystemLogContext(
+          operation: "normalisePath",
+          path: path.path,
+          source: "FileSystemService"
+        ).withUpdatedMetadata(
+          LogMetadataDTOCollection().withPublic(key: "normalisedPath", value: normalisedPath.path)
+        )
       )
 
       return normalisedPath
     } catch {
       await logger.error(
-        "Failed to normalise path \(path.path): \(error.localizedDescription)",
-        metadata: nil,
-        source: "FileSystemService"
+        "Failed to normalise path",
+        context: FileSystemLogContext(
+          operation: "normalisePath",
+          path: path.path,
+          source: "FileSystemService"
+        ).withUpdatedMetadata(
+          LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription)
+        )
       )
       throw FileSystemInterfaces.FileSystemError.readError(
         path: path.path,
@@ -94,9 +104,16 @@ extension FileSystemServiceImpl {
     let joinedPath=FilePath(path: joinedURL.path)
 
     await logger.debug(
-      "Joined path \(base.path) with \(component) to create \(joinedPath.path)",
-      metadata: nil,
-      source: "FileSystemService"
+      "Joined paths",
+      context: FileSystemLogContext(
+        operation: "joinPath",
+        path: base.path,
+        source: "FileSystemService"
+      ).withUpdatedMetadata(
+        LogMetadataDTOCollection()
+          .withPublic(key: "component", value: component)
+          .withPublic(key: "joinedPath", value: joinedPath.path)
+      )
     )
 
     return joinedPath
@@ -117,9 +134,14 @@ extension FileSystemServiceImpl {
     let fileName=url.lastPathComponent
 
     await logger.debug(
-      "Extracted file name \(fileName) from path \(path.path)",
-      metadata: nil,
-      source: "FileSystemService"
+      "Extracted file name",
+      context: FileSystemLogContext(
+        operation: "getFileName",
+        path: path.path,
+        source: "FileSystemService"
+      ).withUpdatedMetadata(
+        LogMetadataDTOCollection().withPublic(key: "fileName", value: fileName)
+      )
     )
 
     return fileName
@@ -141,9 +163,14 @@ extension FileSystemServiceImpl {
     let directoryPath=FilePath(path: directoryURL.path)
 
     await logger.debug(
-      "Extracted directory path \(directoryPath.path) from path \(path.path)",
-      metadata: nil,
-      source: "FileSystemService"
+      "Extracted directory path",
+      context: FileSystemLogContext(
+        operation: "getDirectoryPath",
+        path: path.path,
+        source: "FileSystemService"
+      ).withUpdatedMetadata(
+        LogMetadataDTOCollection().withPublic(key: "directoryPath", value: directoryPath.path)
+      )
     )
 
     return directoryPath
@@ -164,9 +191,14 @@ extension FileSystemServiceImpl {
     let fileExtension=url.pathExtension
 
     await logger.debug(
-      "Extracted file extension \(fileExtension) from path \(path.path)",
-      metadata: nil,
-      source: "FileSystemService"
+      "Extracted file extension",
+      context: FileSystemLogContext(
+        operation: "getFileExtension",
+        path: path.path,
+        source: "FileSystemService"
+      ).withUpdatedMetadata(
+        LogMetadataDTOCollection().withPublic(key: "fileExtension", value: fileExtension)
+      )
     )
 
     return fileExtension
@@ -183,7 +215,7 @@ extension FileSystemServiceImpl {
    */
   public func changingFileExtension(
     of path: FilePath,
-    to extension: String
+    to `extension`: String
   ) async throws -> FilePath {
     guard !path.path.isEmpty else {
       throw FileSystemInterfaces.FileSystemError.invalidPath(
@@ -207,9 +239,16 @@ extension FileSystemServiceImpl {
     let newPath=FilePath(path: newURL.path)
 
     await logger.debug(
-      "Changed extension of \(path.path) to \(newPath.path)",
-      metadata: nil,
-      source: "FileSystemService"
+      "Changed file extension",
+      context: FileSystemLogContext(
+        operation: "changeFileExtension",
+        path: path.path,
+        source: "FileSystemService"
+      ).withUpdatedMetadata(
+        LogMetadataDTOCollection()
+          .withPublic(key: "newExtension", value: `extension`)
+          .withPublic(key: "newPath", value: newPath.path)
+      )
     )
 
     return newPath

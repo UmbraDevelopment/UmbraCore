@@ -56,11 +56,14 @@ public struct OSLogPrivacyBackend: LoggingBackend {
         logMessage += " \(metadataString)"
       }
 
-      logger.log(level: osLogType, "\(logMessage) [correlation: \(context.correlationID)]")
+      // Add correlation ID
+      let correlationString = context.correlationID ?? "none"
+      
+      logger.log(level: osLogType, "\(logMessage) [correlation: \(correlationString)]")
     #else
       // Fallback for platforms without OSLog
       print(
-        "[\(level)] \(message) [source: \(context.source), correlation: \(context.correlationID)]"
+        "[\(level)] \(message) [source: \(context.source), correlation: \(context.correlationID ?? "none")]"
       )
     #endif
   }

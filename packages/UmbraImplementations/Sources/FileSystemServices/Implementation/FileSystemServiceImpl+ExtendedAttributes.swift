@@ -70,15 +70,25 @@ extension FileSystemServiceImpl {
       }
 
       await logger.debug(
-        "Set extended attribute '\(name)' on \(path.path)",
-        metadata: nil,
-        source: "FileSystemService"
+        FileSystemLogContext(
+          operation: "setExtendedAttribute",
+          path: path.path,
+          source: "FileSystemService"
+        ).withUpdatedMetadata(
+          LogMetadataDTOCollection().withPublic(key: "attributeName", value: name)
+        )
       )
     } catch {
       await logger.error(
-        "Failed to set extended attribute '\(name)' on \(path.path): \(error.localizedDescription)",
-        metadata: nil,
-        source: "FileSystemService"
+        FileSystemLogContext(
+          operation: "setExtendedAttribute",
+          path: path.path,
+          source: "FileSystemService"
+        ).withUpdatedMetadata(
+          LogMetadataDTOCollection()
+            .withPublic(key: "attributeName", value: name)
+            .withPrivate(key: "error", value: error.localizedDescription)
+        )
       )
       throw FileSystemInterfaces.FileSystemError.writeError(
         path: path.path,

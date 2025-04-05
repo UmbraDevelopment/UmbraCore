@@ -88,7 +88,16 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
 
     let exists=fileManager.fileExists(atPath: path.path)
 
-    await logger.debug("Checked if file exists at \(path.path): \(exists)", metadata: nil)
+    await logger.debug(
+      "Checked file existence",
+      context: FileSystemLogContext(
+        operation: "fileExists",
+        path: path.path,
+        source: "FileSystemService"
+      ).withUpdatedMetadata(
+        LogMetadataDTOCollection().withPublic(key: "exists", value: String(exists))
+      )
+    )
 
     return exists
   }
@@ -190,7 +199,14 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         exists: exists
       )
 
-      await logger.debug("Retrieved metadata for \(path.path)", metadata: LoggingMetadata.empty)
+      await logger.debug(
+        "Retrieved metadata",
+        context: FileSystemLogContext(
+          operation: "getMetadata",
+          path: path.path,
+          source: "FileSystemService"
+        )
+      )
 
       return metadata
     } catch {
@@ -221,8 +237,14 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       }
 
       await logger.error(
-        "Failed to get metadata for \(path.path): \(error.localizedDescription)",
-        metadata: LoggingMetadata.empty
+        "Failed to get metadata",
+        context: FileSystemLogContext(
+          operation: "getMetadata",
+          path: path.path,
+          source: "FileSystemService"
+        ).withUpdatedMetadata(
+          LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription)
+        )
       )
 
       throw FileSystemError.readError(
@@ -248,13 +270,26 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
     let exists=fileManager.fileExists(atPath: path.path, isDirectory: &isDir)
 
     if !exists {
-      await logger.warning("Path does not exist for directory check: \(path.path)", metadata: nil)
+      await logger.warning(
+        "Path does not exist for directory check",
+        context: FileSystemLogContext(
+          operation: "isDirectory",
+          path: path.path,
+          source: "FileSystemService"
+        )
+      )
       return false
     }
 
     await logger.debug(
-      "Checked if path is directory at \(path.path): \(isDir.boolValue)",
-      metadata: nil
+      "Checked if path is directory",
+      context: FileSystemLogContext(
+        operation: "isDirectory",
+        path: path.path,
+        source: "FileSystemService"
+      ).withUpdatedMetadata(
+        LogMetadataDTOCollection().withPublic(key: "isDirectory", value: String(isDir.boolValue))
+      )
     )
 
     return isDir.boolValue

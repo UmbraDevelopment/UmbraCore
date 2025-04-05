@@ -456,9 +456,11 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
    */
   public func getMetadata(at path: FilePath) async throws -> FileSystemMetadata? {
     await logger.debug(
-      "Getting metadata for \(path.path)",
-      metadata: nil,
-      source: "FileSystemService"
+      FileSystemLogContext(
+        operation: "getMetadata",
+        path: path.path,
+        source: "FileSystemService"
+      )
     )
 
     do {
@@ -490,11 +492,14 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       )
     } catch {
       await logger.error(
-        "Failed to get metadata for \(path.path): \(error.localizedDescription)",
-        metadata: nil,
-        source: "FileSystemService"
+        FileSystemLogContext(
+          operation: "getMetadata",
+          path: path.path,
+          source: "FileSystemService"
+        ).withUpdatedMetadata(
+          LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription)
+        )
       )
-
       throw FileSystemInterfaces.FileSystemError.readError(
         path: path.path,
         reason: "Could not get file attributes: \(error.localizedDescription)"
@@ -511,9 +516,11 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
    */
   public func isDirectory(at path: FilePath) async throws -> Bool {
     await logger.debug(
-      "Checking if \(path.path) is a directory",
-      metadata: nil,
-      source: "FileSystemService"
+      FileSystemLogContext(
+        operation: "isDirectory",
+        path: path.path,
+        source: "FileSystemService"
+      )
     )
 
     // Check if the path exists at all
@@ -549,9 +556,11 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
     includeHidden: Bool=false
   ) async throws -> [FilePath] {
     await logger.debug(
-      "Listing directory at \(directoryPath.path)",
-      metadata: nil,
-      source: "FileSystemService"
+      FileSystemLogContext(
+        operation: "listDirectory",
+        path: directoryPath.path,
+        source: "FileSystemService"
+      )
     )
 
     // Check if the path is a directory
@@ -560,18 +569,26 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
 
     if !exists {
       await logger.warning(
-        "Directory does not exist: \(directoryPath.path)",
-        metadata: nil,
-        source: "FileSystemService"
+        FileSystemLogContext(
+          operation: "listDirectory",
+          path: directoryPath.path,
+          source: "FileSystemService"
+        ).withUpdatedMetadata(
+          LogMetadataDTOCollection().withPublic(key: "reason", value: "Directory does not exist")
+        )
       )
       throw FileSystemInterfaces.FileSystemError.pathNotFound(path: directoryPath.path)
     }
 
     if !isDir.boolValue {
       await logger.warning(
-        "Path is not a directory: \(directoryPath.path)",
-        metadata: nil,
-        source: "FileSystemService"
+        FileSystemLogContext(
+          operation: "listDirectory",
+          path: directoryPath.path,
+          source: "FileSystemService"
+        ).withUpdatedMetadata(
+          LogMetadataDTOCollection().withPublic(key: "reason", value: "Path is not a directory")
+        )
       )
       throw FileSystemInterfaces.FileSystemError.unexpectedItemType(
         path: directoryPath.path,
@@ -597,11 +614,14 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       }
     } catch {
       await logger.error(
-        "Failed to list directory at \(directoryPath.path): \(error.localizedDescription)",
-        metadata: nil,
-        source: "FileSystemService"
+        FileSystemLogContext(
+          operation: "listDirectory",
+          path: directoryPath.path,
+          source: "FileSystemService"
+        ).withUpdatedMetadata(
+          LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription)
+        )
       )
-
       throw FileSystemInterfaces.FileSystemError.readError(
         path: directoryPath.path,
         reason: "Could not list directory contents: \(error.localizedDescription)"
@@ -661,17 +681,23 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       let data=try Data(contentsOf: URL(fileURLWithPath: path.path))
 
       await logger.debug(
-        "Read \(data.count) bytes from \(path.path)",
-        metadata: PrivacyMetadata(),
-        source: "FileSystemService"
+        FileSystemLogContext(
+          operation: "readFile",
+          path: path.path,
+          source: "FileSystemService"
+        ).withFileSize(Int64(data.count))
       )
 
       return data
     } catch {
       await logger.error(
-        "Failed to read file at \(path.path): \(error.localizedDescription)",
-        metadata: PrivacyMetadata(),
-        source: "FileSystemService"
+        FileSystemLogContext(
+          operation: "readFile",
+          path: path.path,
+          source: "FileSystemService"
+        ).withUpdatedMetadata(
+          LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription)
+        )
       )
       throw FileSystemInterfaces.FileSystemError.readError(
         path: path.path,
@@ -804,9 +830,11 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       try data.write(to: URL(fileURLWithPath: path.path))
 
       await logger.debug(
-        "Created file at \(path.path) with \(data.count) bytes",
-        metadata: PrivacyMetadata(),
-        source: "FileSystemService"
+        FileSystemLogContext(
+          operation: "createFile",
+          path: path.path,
+          source: "FileSystemService"
+        ).withFileSize(Int64(data.count))
       )
     } catch {
       throw FileSystemInterfaces.FileSystemError.writeError(
@@ -843,9 +871,11 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       try data.write(to: URL(fileURLWithPath: path.path))
 
       await logger.debug(
-        "Updated file at \(path.path) with \(data.count) bytes",
-        metadata: PrivacyMetadata(),
-        source: "FileSystemService"
+        FileSystemLogContext(
+          operation: "updateFile",
+          path: path.path,
+          source: "FileSystemService"
+        ).withFileSize(Int64(data.count))
       )
     } catch {
       throw FileSystemInterfaces.FileSystemError.writeError(
@@ -904,9 +934,11 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       try fileManager.removeItem(atPath: path.path)
 
       await logger.debug(
-        "Deleted file at \(path.path) (secure: \(secure))",
-        metadata: PrivacyMetadata(),
-        source: "FileSystemService"
+        FileSystemLogContext(
+          operation: "deleteFile",
+          path: path.path,
+          source: "FileSystemService"
+        ).withFileSize(Int64(fileSize))
       )
     } catch {
       throw FileSystemInterfaces.FileSystemError.deleteError(
@@ -969,9 +1001,11 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       try fileManager.removeItem(atPath: path.path)
 
       await logger.debug(
-        "Deleted directory at \(path.path) (secure: \(secure))",
-        metadata: PrivacyMetadata(),
-        source: "FileSystemService"
+        FileSystemLogContext(
+          operation: "deleteDirectory",
+          path: path.path,
+          source: "FileSystemService"
+        )
       )
     } catch {
       throw FileSystemInterfaces.FileSystemError.deleteError(
@@ -1023,9 +1057,11 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       )
 
       await logger.debug(
-        "Copied item from \(sourcePath.path) to \(destinationPath.path)",
-        metadata: PrivacyMetadata(),
-        source: "FileSystemService"
+        FileSystemLogContext(
+          operation: "copyItem",
+          path: destinationPath.path,
+          source: "FileSystemService"
+        )
       )
     } catch {
       throw FileSystemInterfaces.FileSystemError.copyError(
@@ -1096,9 +1132,11 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       }
 
       await logger.debug(
-        "Removed extended attribute '\(attributeName)' from \(path.path)",
-        metadata: PrivacyMetadata(),
-        source: "FileSystemService"
+        FileSystemLogContext(
+          operation: "removeExtendedAttribute",
+          path: path.path,
+          source: "FileSystemService"
+        )
       )
     } catch let fsError as FileSystemInterfaces.FileSystemError {
       throw fsError
@@ -1141,9 +1179,11 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       )
 
       await logger.debug(
-        "Created security bookmark for \(path.path) (readOnly: \(readOnly))",
-        metadata: PrivacyMetadata(),
-        source: "FileSystemService"
+        FileSystemLogContext(
+          operation: "createSecurityBookmark",
+          path: path.path,
+          source: "FileSystemService"
+        )
       )
 
       return bookmarkData
@@ -1176,9 +1216,11 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       let path=FilePath(path: url.path)
 
       await logger.debug(
-        "Resolved security bookmark to \(path.path) (stale: \(isStale))",
-        metadata: PrivacyMetadata(),
-        source: "FileSystemService"
+        FileSystemLogContext(
+          operation: "resolveSecurityBookmark",
+          path: path.path,
+          source: "FileSystemService"
+        )
       )
 
       return (path, isStale)
@@ -1210,9 +1252,11 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
     let success=url.startAccessingSecurityScopedResource()
 
     await logger.debug(
-      "Started accessing security-scoped resource at \(path.path): \(success)",
-      metadata: PrivacyMetadata(),
-      source: "FileSystemService"
+      FileSystemLogContext(
+        operation: "startAccessingSecurityScopedResource",
+        path: path.path,
+        source: "FileSystemService"
+      )
     )
 
     return success
@@ -1234,9 +1278,11 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
     url.stopAccessingSecurityScopedResource()
 
     await logger.debug(
-      "Stopped accessing security-scoped resource at \(path.path)",
-      metadata: PrivacyMetadata(),
-      source: "FileSystemService"
+      FileSystemLogContext(
+        operation: "stopAccessingSecurityScopedResource",
+        path: path.path,
+        source: "FileSystemService"
+      )
     )
   }
 
@@ -1283,9 +1329,11 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       }
 
       await logger.debug(
-        "Created temporary file at \(fileURL.path)",
-        metadata: PrivacyMetadata(),
-        source: "FileSystemService"
+        FileSystemLogContext(
+          operation: "createTemporaryFile",
+          path: fileURL.path,
+          source: "FileSystemService"
+        )
       )
 
       return FilePath(path: fileURL.path)
@@ -1331,9 +1379,11 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       )
 
       await logger.debug(
-        "Created temporary directory at \(dirURL.path)",
-        metadata: PrivacyMetadata(),
-        source: "FileSystemService"
+        FileSystemLogContext(
+          operation: "createTemporaryDirectory",
+          path: dirURL.path,
+          source: "FileSystemService"
+        )
       )
 
       return FilePath(path: dirURL.path)

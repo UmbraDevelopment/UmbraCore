@@ -77,18 +77,28 @@ extension FileSystemServiceImpl {
       }
 
       await logger.debug(
-        "Read \(bytesRead) bytes in chunks from \(path.path)",
-        metadata: nil,
-        source: "StreamingOperations"
+        "Read data in chunks",
+        context: FileSystemLogContext(
+          operation: "readDataInChunks",
+          path: path.path,
+          source: "FileSystemService"
+        ).withUpdatedMetadata(
+          LogMetadataDTOCollection().withPublic(key: "bytesRead", value: String(bytesRead))
+        )
       )
     } catch let fsError as FileSystemInterfaces.FileSystemError {
       // Rethrow FileSystemError directly
       throw fsError
     } catch {
       await logger.error(
-        "Failed to read file in chunks at \(path.path): \(error.localizedDescription)",
-        metadata: nil,
-        source: "StreamingOperations"
+        "Failed to read data in chunks",
+        context: FileSystemLogContext(
+          operation: "readDataInChunks",
+          path: path.path,
+          source: "FileSystemService"
+        ).withUpdatedMetadata(
+          LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription)
+        )
       )
       throw FileSystemInterfaces.FileSystemError.readError(
         path: path.path,
@@ -175,15 +185,20 @@ extension FileSystemServiceImpl {
     let directory=url.deletingLastPathComponent()
     do {
       try fileManager.createDirectory(
-        at: directory,
+        atPath: directory.path,
         withIntermediateDirectories: true,
         attributes: nil
       )
     } catch {
       await logger.error(
-        "Failed to create parent directories for \(path.path): \(error.localizedDescription)",
-        metadata: nil,
-        source: "StreamingOperations"
+        "Failed to create parent directories",
+        context: FileSystemLogContext(
+          operation: "createDirectories",
+          path: directory.path,
+          source: "FileSystemService"
+        ).withUpdatedMetadata(
+          LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription)
+        )
       )
       throw FileSystemInterfaces.FileSystemError.writeError(
         path: directory.path,
@@ -211,18 +226,28 @@ extension FileSystemServiceImpl {
       }
 
       await logger.debug(
-        "Wrote \(bytesWritten) bytes in chunks to \(path.path)",
-        metadata: nil,
-        source: "StreamingOperations"
+        "Wrote data in chunks",
+        context: FileSystemLogContext(
+          operation: "writeDataInChunks",
+          path: path.path,
+          source: "FileSystemService"
+        ).withUpdatedMetadata(
+          LogMetadataDTOCollection().withPublic(key: "bytesWritten", value: String(bytesWritten))
+        )
       )
     } catch let fsError as FileSystemInterfaces.FileSystemError {
       // Rethrow FileSystemError directly
       throw fsError
     } catch {
       await logger.error(
-        "Failed to write file in chunks at \(path.path): \(error.localizedDescription)",
-        metadata: nil,
-        source: "StreamingOperations"
+        "Failed to write data in chunks",
+        context: FileSystemLogContext(
+          operation: "writeDataInChunks",
+          path: path.path,
+          source: "FileSystemService"
+        ).withUpdatedMetadata(
+          LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription)
+        )
       )
       throw FileSystemInterfaces.FileSystemError.writeError(
         path: path.path,
