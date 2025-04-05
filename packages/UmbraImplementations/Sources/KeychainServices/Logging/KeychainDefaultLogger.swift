@@ -1,6 +1,7 @@
 import Foundation
 import LoggingInterfaces
 import LoggingTypes
+import OSLog
 
 /**
  A simple logger implementation for the KeychainServices module.
@@ -9,7 +10,7 @@ import LoggingTypes
  that can be used when a full logging service isn't needed or available.
  It follows the Alpha Dot Five architecture principles.
  */
-public struct KeychainDefaultLogger: LoggingProtocol {
+public actor KeychainDefaultLogger: LoggingProtocol {
 
   // MARK: - Properties
 
@@ -55,21 +56,22 @@ public struct KeychainDefaultLogger: LoggingProtocol {
   }
 
   /// Implementation of CoreLoggingProtocol
-  public func logMessage(_ level: LogLevel, _ message: String, context: LogContext) async {
+  public func log(_ level: LoggingTypes.LogLevel, _ message: String, context: LogContextDTO) async {
+    // Using context.source and context.domainName (or a default if needed)
     await printLog(level: level, message: message, source: context.source)
   }
 
-  // MARK: - Private Helpers
+  // MARK: - Private Helper Methods
 
   /// Helper to print a log message to the console
-  private func printLog(level: LogLevel, message: String, source: String) async {
-    let timestamp=ISO8601DateFormatter().string(from: Date())
-    let levelString=levelToString(level).uppercased()
-    print("[\(timestamp)] [\(levelString)] [\(source)]: \(message)")
+  private func printLog(level: LoggingTypes.LogLevel, message: String, source: String) async {
+    let timestamp = ISO8601DateFormatter().string(from: Date())
+    let levelString = levelToString(level).uppercased()
+    print("\(timestamp) [\(source)] [\(levelString)]: \(message)")
   }
 
   /// Convert LogLevel to string representation
-  private func levelToString(_ level: LogLevel) -> String {
+  private func levelToString(_ level: LoggingTypes.LogLevel) -> String {
     switch level {
       case .trace: return "TRACE"
       case .debug: return "DEBUG"

@@ -1,16 +1,5 @@
 import LoggingTypes
 
-/// Core logging protocol that defines the most basic logging functionality.
-/// All other logging protocols extend from this.
-public protocol CoreLoggingProtocol: Sendable {
-  /// Log a message with the specified level and context
-  /// - Parameters:
-  ///   - level: The severity level of the log
-  ///   - message: The message to log
-  ///   - context: The context information for the log
-  func logMessage(_ level: LogLevel, _ message: String, context: LogContext) async
-}
-
 /// A protocol that provides privacy-aware logging capabilities.
 /// This extends the standard LoggingProtocol with privacy controls.
 public protocol PrivacyAwareLoggingProtocol: LoggingProtocol {

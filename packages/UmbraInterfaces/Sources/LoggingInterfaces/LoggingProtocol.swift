@@ -1,7 +1,33 @@
 import Foundation
 import LoggingTypes
 
-/// Protocol defining the standard logging interface
+/**
+ # Core Logging Protocol
+
+ Defines the fundamental logging method required by all logging implementations.
+ This protocol ensures that conforming types can process log messages with
+ severity levels and associated context.
+
+ Conforming types are expected to be actors to ensure thread safety.
+ */
+public protocol CoreLoggingProtocol: Actor {
+  /// Logs a message with the specified severity level and context.
+  /// This is the core method that concrete logging implementations must provide.
+  ///
+  /// - Parameters:
+  ///   - level: The severity level of the log entry (e.g., debug, info, error).
+  ///   - message: The textual content of the log message.
+  ///   - context: A `LogContextDTO` containing contextual information (like source, metadata, correlation ID).
+  func log(_ level: LogLevel, _ message: String, context: LogContextDTO) async
+}
+
+/**
+ # Standard Logging Protocol
+
+ Extends `CoreLoggingProtocol` with convenience methods for standard log levels
+ (trace, debug, info, notice, warning, error, critical). These methods simplify
+ common logging tasks by providing direct functions for each level.
+ */
 public protocol LoggingProtocol: CoreLoggingProtocol {
   /// Log a trace message
   /// - Parameters:
@@ -60,7 +86,7 @@ extension LoggingProtocol {
   ///   - message: The message to log
   ///   - metadata: Optional **PrivacyMetadata** (from LoggingTypes)
   ///   - source: Source component identifier
-  public func log(
+  func log(
     _ level: LogLevel,
     _ message: String,
     metadata: LoggingTypes.PrivacyMetadata?,
@@ -76,47 +102,29 @@ extension LoggingProtocol {
     await log(level, message, context: context) // Call the context-based log
   }
 
-  /// Implementation of the core logging method using a context DTO
-  /// Conforming types MUST provide an implementation for this.
-  func log(
-    _ level: LogLevel,
-    _ message: String,
-    context: LogContextDTO
-  ) async
-
   // --- Convenience methods using Context DTO ---
 
-  /// Implementation of trace level logging using the context DTO
-  func trace(_ message: String, context: LogContextDTO) async {
-    await log(.trace, message, context: context)
-  }
-
-  /// Implementation of debug level logging using the context DTO
   func debug(_ message: String, context: LogContextDTO) async {
     await log(.debug, message, context: context)
   }
 
-  /// Implementation of info level logging using the context DTO
   func info(_ message: String, context: LogContextDTO) async {
     await log(.info, message, context: context)
   }
 
-  /// Implementation of notice level logging using the context DTO
   func notice(_ message: String, context: LogContextDTO) async {
+    // Map notice level appropriately if needed, or use info/debug
     await log(.notice, message, context: context)
   }
 
-  /// Implementation of warning level logging using the context DTO
   func warning(_ message: String, context: LogContextDTO) async {
     await log(.warning, message, context: context)
   }
 
-  /// Implementation of error level logging using the context DTO
   func error(_ message: String, context: LogContextDTO) async {
     await log(.error, message, context: context)
   }
 
-  /// Implementation of critical level logging using the context DTO
   func critical(_ message: String, context: LogContextDTO) async {
     await log(.critical, message, context: context)
   }
@@ -155,17 +163,6 @@ public enum LoggingError: Error, Sendable, Hashable {
   case privacyProcessingFailed(reason: String)
 }
 
-public enum LogLevel: Int, Sendable, Comparable {
-  case trace = -1
-  case debug = 0
-  case info = 1
-  case notice = 2
-  case warning = 3
-  case error = 4
-  case critical = 5
+// MARK: - Log Context DTO Protocol
 
-  // Manual implementation for Comparable
-  public static func < (lhs: LogLevel, rhs: LogLevel) -> Bool {
-    lhs.rawValue < rhs.rawValue
-  }
-}
+/// Protocol defining the structure for log context information.

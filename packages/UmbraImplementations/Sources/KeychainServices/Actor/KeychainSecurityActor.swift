@@ -108,10 +108,11 @@ public actor KeychainSecurityActor {
     metadata["operation"]=PrivacyMetadataValue(value: "storeEncryptedSecret", privacy: .public)
     metadata["keyID"]=PrivacyMetadataValue(value: keyID, privacy: .private)
 
+    let debugContext = BaseLogContextDTO(
+        domainName: "Keychain", source: "KeychainSecurityActor", metadata: metadata
+    )
     await logger.debug(
-      "Storing encrypted secret for account",
-      metadata: metadata,
-      source: "KeychainSecurityActor"
+      "Storing encrypted secret for account", context: debugContext
     )
 
     do {
@@ -159,10 +160,11 @@ public actor KeychainSecurityActor {
       )
 
       // Log success
+      let infoContext = BaseLogContextDTO(
+        domainName: "Keychain", source: "KeychainSecurityActor", metadata: metadata
+      )
       await logger.info(
-        "Successfully stored encrypted secret for account",
-        metadata: metadata,
-        source: "KeychainSecurityActor"
+        "Successfully stored encrypted secret for account", context: infoContext
       )
 
       return keyID
@@ -175,10 +177,11 @@ public actor KeychainSecurityActor {
       errorMetadata["error"]=PrivacyMetadataValue(value: error.localizedDescription,
                                                   privacy: .public)
 
+      let errorContext = BaseLogContextDTO(
+        domainName: "Keychain", source: "KeychainSecurityActor", metadata: errorMetadata
+      )
       await logger.error(
-        "Failed to store encrypted secret",
-        metadata: errorMetadata,
-        source: "KeychainSecurityActor"
+        "Failed to store encrypted secret", context: errorContext
       )
 
       throw error
@@ -207,10 +210,11 @@ public actor KeychainSecurityActor {
     metadata["operation"]=PrivacyMetadataValue(value: "retrieveEncryptedSecret", privacy: .public)
     metadata["keyID"]=PrivacyMetadataValue(value: keyID, privacy: .private)
 
+    let debugContext = BaseLogContextDTO(
+        domainName: "Keychain", source: "KeychainSecurityActor", metadata: metadata
+    )
     await logger.debug(
-      "Retrieving encrypted secret for account",
-      metadata: metadata,
-      source: "KeychainSecurityActor"
+      "Retrieving encrypted secret for account", context: debugContext
     )
 
     do {
@@ -254,10 +258,11 @@ public actor KeychainSecurityActor {
       }
 
       // Log success
+      let infoContext = BaseLogContextDTO(
+        domainName: "Keychain", source: "KeychainSecurityActor", metadata: metadata
+      )
       await logger.info(
-        "Successfully retrieved encrypted secret for account",
-        metadata: metadata,
-        source: "KeychainSecurityActor"
+        "Successfully retrieved encrypted secret for account", context: infoContext
       )
 
       return secretString
@@ -270,10 +275,11 @@ public actor KeychainSecurityActor {
       errorMetadata["error"]=PrivacyMetadataValue(value: error.localizedDescription,
                                                   privacy: .public)
 
+      let errorContext = BaseLogContextDTO(
+        domainName: "Keychain", source: "KeychainSecurityActor", metadata: errorMetadata
+      )
       await logger.error(
-        "Failed to retrieve encrypted secret",
-        metadata: errorMetadata,
-        source: "KeychainSecurityActor"
+        "Failed to retrieve encrypted secret", context: errorContext
       )
 
       throw error
@@ -303,10 +309,11 @@ public actor KeychainSecurityActor {
     metadata["operation"]=PrivacyMetadataValue(value: "deleteSecret", privacy: .public)
     metadata["keyID"]=PrivacyMetadataValue(value: keyID, privacy: .private)
 
+    let debugContext1 = BaseLogContextDTO(
+        domainName: "Keychain", source: "KeychainSecurityActor", metadata: metadata
+    )
     await logger.debug(
-      "Deleting secret for account",
-      metadata: metadata,
-      source: "KeychainSecurityActor"
+      "Deleting secret for account", context: debugContext1
     )
 
     do {
@@ -318,18 +325,20 @@ public actor KeychainSecurityActor {
         let keyManager=await securityProvider.keyManager()
         _=await keyManager.deleteKey(withIdentifier: keyID)
 
+        let debugContext2 = BaseLogContextDTO(
+          domainName: "Keychain", source: "KeychainSecurityActor", metadata: metadata
+        )
         await logger.debug(
-          "Deleted associated encryption key",
-          metadata: metadata,
-          source: "KeychainSecurityActor"
+          "Deleted associated encryption key", context: debugContext2
         )
       }
 
       // Log success
+      let infoContext = BaseLogContextDTO(
+        domainName: "Keychain", source: "KeychainSecurityActor", metadata: metadata
+      )
       await logger.info(
-        "Successfully deleted secret for account",
-        metadata: metadata,
-        source: "KeychainSecurityActor"
+        "Successfully deleted secret for account", context: infoContext
       )
     } catch {
       // Log error with appropriate metadata
@@ -339,10 +348,11 @@ public actor KeychainSecurityActor {
       errorMetadata["error"]=PrivacyMetadataValue(value: error.localizedDescription,
                                                   privacy: .public)
 
+      let errorContext = BaseLogContextDTO(
+        domainName: "Keychain", source: "KeychainSecurityActor", metadata: errorMetadata
+      )
       await logger.error(
-        "Failed to delete secret",
-        metadata: errorMetadata,
-        source: "KeychainSecurityActor"
+        "Failed to delete secret", context: errorContext
       )
 
       throw error
@@ -412,64 +422,11 @@ public enum KeychainError: Error, LocalizedError {
  A basic implementation of LoggingProtocol that logs to the console.
  Used when no custom logger is provided.
  */
-private final class SimpleConsoleLogger: LoggingProtocol {
-  // Required by LoggingProtocol
-  let loggingActor: LoggingActor
-
-  init() {
-    // Create an empty array of destinations since we'll log directly
-    loggingActor=LoggingActor(destinations: [])
-  }
-
-  // Log message implementation
-  func logMessage(
-    _ level: LogLevel,
-    _ message: String,
-    context _: LogContext
-  ) async {
-    print("[\(level.rawValue)] \(message)")
-  }
-
-  // Default implementations
-  func trace(_ message: String, metadata _: PrivacyMetadata?, source: String?) async {
-    let context=LogContext(source: source ?? "KeychainSecurityActor")
-    await logMessage(.trace, message, context: context)
-  }
-
-  func debug(_ message: String, metadata _: PrivacyMetadata?, source: String?) async {
-    let context=LogContext(source: source ?? "KeychainSecurityActor")
-    await logMessage(.debug, message, context: context)
-  }
-
-  func info(_ message: String, metadata _: PrivacyMetadata?, source: String?) async {
-    let context=LogContext(source: source ?? "KeychainSecurityActor")
-    await logMessage(.info, message, context: context)
-  }
-
-  // Map notice to info since LogLevel doesn't have a notice level
-  func notice(_ message: String, metadata _: PrivacyMetadata?, source: String?) async {
-    let context=LogContext(source: source ?? "KeychainSecurityActor")
-    await logMessage(.info, message, context: context)
-  }
-
-  func warning(_ message: String, metadata _: PrivacyMetadata?, source: String?) async {
-    let context=LogContext(source: source ?? "KeychainSecurityActor")
-    await logMessage(.warning, message, context: context)
-  }
-
-  func error(_ message: String, metadata _: PrivacyMetadata?, source: String?) async {
-    let context=LogContext(source: source ?? "KeychainSecurityActor")
-    await logMessage(.error, message, context: context)
-  }
-
-  func critical(_ message: String, metadata _: PrivacyMetadata?, source: String?) async {
-    let context=LogContext(source: source ?? "KeychainSecurityActor")
-    await logMessage(.critical, message, context: context)
-  }
-
-  // Fault is mapped to critical since LogLevel doesn't have a fault level
-  func fault(_ message: String, metadata _: PrivacyMetadata?, source: String?) async {
-    let context=LogContext(source: source ?? "KeychainSecurityActor")
-    await logMessage(.critical, message, context: context)
+private actor SimpleConsoleLogger: LoggingProtocol {
+  public func log(_ level: LoggingTypes.LogLevel, _ message: String, context: LogContextDTO) async {
+    let timestamp = ISO8601DateFormatter().string(from: Date())
+    let levelString = String(describing: level).uppercased() // Use LoggingTypes.LogLevel
+    let source = context.source
+    print("\(timestamp) [\(source)] [\(levelString)]: \(message)")
   }
 }
