@@ -264,7 +264,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
    */
   public func generateKey(
     length: Int,
-    options: UnifiedCryptoTypes.KeyGenerationOptions?
+    options: KeyGenerationOptions?
   ) async -> Result<String, SecurityStorageError> {
     // Check rate limiter
     if rateLimiter.isRateLimited(.generateKey) {

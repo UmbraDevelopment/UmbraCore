@@ -32,7 +32,10 @@ public actor LoggingActor {
   public func log(level: LogLevel, message: String, context: LogContext) async {
     guard isEnabled && level >= minimumLogLevel else { return }
 
-    let entry=LogEntry(level: level, message: message, context: context)
+    // Map LogLevel from LoggingInterfaces to LoggingTypes
+    let mappedLevel = mapLogLevel(level)
+
+    let entry=LogEntry(level: mappedLevel, message: message, context: context)
 
     // Write to all destinations
     for destination in destinations {
@@ -40,6 +43,22 @@ public actor LoggingActor {
       if await destination.shouldLog(level: level) {
         await destination.write(entry)
       }
+    }
+  }
+
+  /// Helper function to map LogLevel
+  private func mapLogLevel(_ interfaceLevel: LogLevel) -> LoggingTypes.LogLevel {
+    // Assuming LoggingTypes.LogLevel has corresponding cases
+    // This mapping might need adjustment based on the exact definitions
+    switch interfaceLevel {
+    case .trace: return .trace
+    case .debug: return .debug
+    case .info: return .info
+    // case .notice: return .notice // Removed as LoggingTypes.LogLevel has no .notice
+    case .warning: return .warning
+    case .error: return .error
+    case .critical: return .critical
+    // If cases don't match perfectly, add appropriate mapping logic
     }
   }
 

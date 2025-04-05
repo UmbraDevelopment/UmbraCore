@@ -81,6 +81,65 @@ public protocol CryptoServiceProtocol: Sendable {
   func exportData(
     identifier: String
   ) async -> Result<[UInt8], SecurityStorageError>
+
+  /**
+   Generates a hash of the data associated with the given identifier.
+
+   - Parameters:
+     - dataIdentifier: Identifier for the data to hash in secure storage.
+     - options: Optional hashing configuration.
+   - Returns: Identifier for the generated hash in secure storage, or an error.
+   */
+  func generateHash(
+    dataIdentifier: String,
+    options: HashingOptions?
+  ) async -> Result<String, SecurityStorageError>
+
+  /**
+   Stores raw data under a specific identifier in secure storage.
+
+   - Parameters:
+     - data: The data to store.
+     - identifier: The identifier to associate with the data.
+   - Returns: Success or an error.
+   */
+  func storeData(
+    data: Data,
+    identifier: String
+  ) async -> Result<Void, SecurityStorageError>
+
+  /**
+   Retrieves raw data associated with a specific identifier from secure storage.
+
+   - Parameter identifier: The identifier of the data to retrieve.
+   - Returns: The retrieved data or an error.
+   */
+  func retrieveData(
+    identifier: String
+  ) async -> Result<Data, SecurityStorageError>
+
+  /**
+   Deletes data associated with a specific identifier from secure storage.
+
+   - Parameter identifier: The identifier of the data to delete.
+   - Returns: Success or an error.
+   */
+  func deleteData(
+    identifier: String
+  ) async -> Result<Void, SecurityStorageError>
+
+  /**
+   Imports data into secure storage with a specific identifier.
+
+   - Parameters:
+     - data: The data to import.
+     - customIdentifier: The identifier to assign to the imported data.
+   - Returns: The identifier used for storage (which might be the custom one or a derived one), or an error.
+   */
+  func importData(
+    _ data: Data,
+    customIdentifier: String
+  ) async -> Result<String, SecurityStorageError>
 }
 
 /// Configuration options for encryption.
@@ -294,6 +353,44 @@ extension CryptoServiceDto {
         identifier: String
       ) async -> Result<[UInt8], SecurityStorageError> {
         await dto.exportData(identifier)
+      }
+
+      func generateHash(
+        dataIdentifier: String,
+        options: HashingOptions?
+      ) async -> Result<String, SecurityStorageError> {
+        // Implement generateHash
+        fatalError("Not implemented")
+      }
+
+      func storeData(
+        data: Data,
+        identifier: String
+      ) async -> Result<Void, SecurityStorageError> {
+        // Implement storeData
+        fatalError("Not implemented")
+      }
+
+      func retrieveData(
+        identifier: String
+      ) async -> Result<Data, SecurityStorageError> {
+        // Implement retrieveData
+        fatalError("Not implemented")
+      }
+
+      func deleteData(
+        identifier: String
+      ) async -> Result<Void, SecurityStorageError> {
+        // Implement deleteData
+        fatalError("Not implemented")
+      }
+
+      func importData(
+        _ data: Data,
+        customIdentifier: String
+      ) async -> Result<String, SecurityStorageError> {
+        // Implement importData with custom identifier
+        fatalError("Not implemented")
       }
     }
 
