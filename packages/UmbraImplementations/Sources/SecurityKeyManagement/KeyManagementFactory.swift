@@ -29,7 +29,7 @@ import UmbraErrors
  let keyManager = await KeyManagementFactory.createKeyManager(logger: logger)
 
  // Generate a new key - note the await keyword for actor method calls
- let key = try await keyManager.generateKey(ofType: .aes128)
+ let key = try await keyManager.generateKey(ofType: .aes256)
  ```
  */
 public enum KeyManagementFactory {

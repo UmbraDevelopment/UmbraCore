@@ -125,9 +125,9 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
    */
   private func mapToCryptoServicesAlgorithm(_ algorithm: EncryptionAlgorithm) -> String {
     switch algorithm {
-      case .aes128CBC:
+      case .aes256CBC:
         "AES-256-CBC"
-      case .aes128GCM:
+      case .aes256GCM:
         "AES-256-GCM"
       case .chacha20Poly1305:
         "ChaCha20-Poly1305"
@@ -834,7 +834,7 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
     )
 
     let config=SecurityConfigDTO(
-      encryptionAlgorithm: .aes128GCM, // Default algorithm
+      encryptionAlgorithm: .aes256GCM, // Default algorithm
       hashAlgorithm: .sha256, // Default algorithm
       providerType: .basic, // Basic provider type
       options: options
@@ -869,7 +869,7 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
 
     // Determine key size based on the encryption algorithm
     let keySize=switch algorithm {
-      case .aes128CBC, .aes128GCM:
+      case .aes256CBC, .aes256GCM:
         32 // 256 bits = 32 bytes
       case .chacha20Poly1305:
         32 // 256 bits = 32 bytes
@@ -913,7 +913,7 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
 
     // Create a security config with the provided options
     let config=SecurityConfigDTO(
-      encryptionAlgorithm: .aes128GCM,
+      encryptionAlgorithm: .aes256GCM,
       hashAlgorithm: .sha256,
       providerType: .basic,
       options: options
@@ -947,7 +947,7 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
 
     // Create a security config with the provided options
     let config=SecurityConfigDTO(
-      encryptionAlgorithm: .aes128GCM, // Default algorithm
+      encryptionAlgorithm: .aes256GCM, // Default algorithm
       hashAlgorithm: .sha256, // Default algorithm
       providerType: .basic, // Standard provider type
       options: options
@@ -974,7 +974,7 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
 
       // Determine key size based on the encryption algorithm
       let keySize=switch config.encryptionAlgorithm {
-        case .aes128CBC, .aes128GCM:
+        case .aes256CBC, .aes256GCM:
           32 // 256 bits = 32 bytes
         case .chacha20Poly1305:
           32 // 256 bits = 32 bytes

@@ -207,7 +207,7 @@ final class OperationsHandler {
             cryptoService.encrypt(
               dataIdentifier: importDataForOperation([UInt8](inputData)),
               keyIdentifier: importDataForOperation(key),
-              options: EncryptionOptions(algorithm: .aes128CBC)
+              options: EncryptionOptions(algorithm: .aes256CBC)
             )
           ),
           operation: operation
@@ -253,7 +253,7 @@ final class OperationsHandler {
             cryptoService.decrypt(
               encryptedDataIdentifier: importDataForOperation([UInt8](inputData)),
               keyIdentifier: importDataForOperation(key),
-              options: DecryptionOptions(algorithm: .aes128CBC)
+              options: DecryptionOptions(algorithm: .aes256CBC)
             )
           ),
           operation: operation
@@ -352,27 +352,27 @@ final class OperationsHandler {
   -> CoreSecurityTypes.SecurityProtocolError {
     switch storageError {
       case .storageUnavailable:
-        .operationFailed("Secure storage is not available")
+        .operationFailed(reason: "Secure storage is not available")
       case .dataNotFound:
-        .operationFailed("Data not found in secure storage")
+        .operationFailed(reason: "Data not found in secure storage")
       case .keyNotFound:
-        .operationFailed("Key not found in secure storage")
+        .operationFailed(reason: "Key not found in secure storage")
       case .hashNotFound:
-        .operationFailed("Hash not found in secure storage")
+        .operationFailed(reason: "Hash not found in secure storage")
       case .encryptionFailed:
-        .operationFailed("Encryption operation failed")
+        .operationFailed(reason: "Encryption operation failed")
       case .decryptionFailed:
-        .operationFailed("Decryption operation failed")
+        .operationFailed(reason: "Decryption operation failed")
       case .hashingFailed:
-        .operationFailed("Hashing operation failed")
+        .operationFailed(reason: "Hashing operation failed")
       case .hashVerificationFailed:
-        .operationFailed("Hash verification failed")
+        .operationFailed(reason: "Hash verification failed")
       case .keyGenerationFailed:
-        .operationFailed("Key generation failed")
+        .operationFailed(reason: "Key generation failed")
       case .unsupportedOperation:
-        .operationFailed("The operation is not supported")
+        .operationFailed(reason: "The operation is not supported")
       case .implementationUnavailable:
-        .operationFailed("The protocol implementation is not available")
+        .operationFailed(reason: "The protocol implementation is not available")
       case let .operationFailed(message):
         .operationFailed(reason: message)
     }

@@ -287,8 +287,9 @@ public actor CoreServiceActor: CoreServiceProtocol {
       )
 
       logger.info("Core framework shut down successfully")
-    } else {
-        // If forced, log the error but continue with shutdown
+    } catch {
+      // If forced, log the error but continue with shutdown
+      if force {
         logger.warning(
           "Core framework shutdown encountered errors, but continuing due to force flag",
           metadata: [
@@ -311,6 +312,10 @@ public actor CoreServiceActor: CoreServiceProtocol {
             context: "Core framework shutdown completed (forced)"
           )
         )
+      } else {
+        // If not forced, rethrow the error
+        throw UmbraErrors.CoreError
+          .shutdownError(message: "Shutdown failed: \(error.localizedDescription)")
       }
     }
   }
@@ -348,7 +353,7 @@ public actor CoreServiceActor: CoreServiceProtocol {
       )
     }
   }
-}
+} // End of CoreServiceActor
 
 // MARK: - Helper Extensions
 

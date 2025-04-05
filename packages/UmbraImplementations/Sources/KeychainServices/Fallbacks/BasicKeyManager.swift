@@ -49,7 +49,6 @@ private final class LoggingProtocol_NoOp: LoggingProtocol, @unchecked Sendable {
 
 /// Basic key types supported by the BasicKeyManager
 public enum KeyType: String, Sendable, Equatable, Codable {
-  case aes128="AES128"
   case aes256="AES256"
   case rsaPrivate="RSAPrivate"
   case rsaPublic="RSAPublic"

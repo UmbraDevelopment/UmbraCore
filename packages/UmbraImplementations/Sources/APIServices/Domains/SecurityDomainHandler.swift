@@ -257,12 +257,12 @@ public struct SecurityDomainHandler: DomainHandler {
    */
   private func getAlgorithm(from algorithmString: String?) throws -> EncryptionAlgorithm {
     guard let algorithmStr=algorithmString else {
-      return .aes128GCM // Default to AES-GCM if not specified
+      return .aes256GCM // Default to AES-GCM if not specified
     }
 
     switch algorithmStr.lowercased() {
       case "aes", "aes256", "aes-256", "aes-gcm", "aes256-gcm", "aesgcm":
-        return .aes128GCM
+        return .aes256GCM
       case "chacha20", "chacha20poly1305", "chacha":
         return .chacha20Poly1305
       default:

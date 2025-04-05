@@ -22,7 +22,7 @@ import SecurityKeyTypes
  )
 
  // Generate a key - note the await keyword for actor method calls
- let key = try await keyManager.generateKey(ofType: .aes128)
+ let key = try await keyManager.generateKey(ofType: .aes256)
  ```
  */
 public enum SecurityKeyManagement {

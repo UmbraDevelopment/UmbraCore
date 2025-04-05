@@ -102,9 +102,7 @@ private actor DefaultKeyManager: KeyManagementProtocol {
 
     // Generate an appropriate length key based on the key type
     let length=switch keyType {
-      case .aes128:
-        16
-      case .aes128:
+      case .aes256:
         32
       case .hmacSHA256:
         32

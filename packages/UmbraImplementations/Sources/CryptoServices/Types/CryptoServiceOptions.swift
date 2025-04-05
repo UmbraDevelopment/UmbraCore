@@ -21,7 +21,7 @@ public struct CryptoServiceOptions: Sendable, Equatable {
 
   /// Creates a new instance with the specified options
   public init(
-    algorithm: EncryptionAlgorithm = .aes128GCM,
+    algorithm: EncryptionAlgorithm = .aes256GCM,
     hashAlgorithm: CoreSecurityTypes.HashAlgorithm = .sha256,
     keyLength: Int=32,
     parameters: [String: CryptoParameter]?=nil

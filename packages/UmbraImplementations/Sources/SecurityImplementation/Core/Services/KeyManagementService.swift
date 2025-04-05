@@ -107,6 +107,59 @@ final class KeyManagementService: SecurityServiceBase {
       if let keyIdentifier=config.options["keyIdentifier"] {
         _=await keyManager.storeKey(keyData, withIdentifier: keyIdentifier)
       }
+
+      // Calculate duration for performance metrics
+      let duration=Date().timeIntervalSince(startTime) * 1000
+
+      // Create success metadata for logging
+      let successMetadata: LoggingInterfaces.LogMetadata=[
+        "operationId": operationID,
+        "operation": operation,
+        "durationMs": String(format: "%.2f", duration)
+      ]
+
+      await logger.info(
+        "Key generation completed successfully",
+        metadata: successMetadata
+      )
+
+      // Return successful result with the generated key metadata
+      return SecurityResultDTO(
+        status: .success,
+        data: keyData,
+        metadata: [
+          "durationMs": String(format: "%.2f", duration),
+          "keySize": "\(keySize)",
+          "algorithm": algorithm
+        ]
+      )
+    } catch {
+      // Calculate duration before failure
+      let duration=Date().timeIntervalSince(startTime) * 1000
+
+      // Create failure metadata for logging
+      let errorMetadata: LoggingInterfaces.LogMetadata=[
+        "operationId": operationID,
+        "operation": operation,
+        "durationMs": String(format: "%.2f", duration),
+        "errorType": "\(type(of: error))"
+      ]
+
+      await logger.error(
+        "Key generation failed: \(error.localizedDescription)",
+        metadata: errorMetadata
+      )
+
+      // Return failure result
+      return SecurityResultDTO(
+        status: .failure,
+        error: error,
+        metadata: [
+          "durationMs": String(format: "%.2f", duration),
+          "errorMessage": error.localizedDescription
+        ]
+      )
+    }
   }
 
   /**
