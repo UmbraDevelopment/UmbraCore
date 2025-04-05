@@ -99,8 +99,13 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       // Otherwise, propagate the error
       await logger.error(
         "Failed to get metadata for \(path.path): \(error.localizedDescription)",
-        metadata: nil,
-        source: "FileSystemService"
+        context: FileSystemLogContext(
+          operation: "stat",
+          path: path.path,
+          source: "FileSystemService"
+        ).withUpdatedMetadata(
+          LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription)
+        )
       )
       throw error
     }
@@ -223,16 +228,24 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
 
       await logger.debug(
         "Retrieved metadata for \(path.path)",
-        metadata: nil,
-        source: "FileSystemService"
+        context: FileSystemLogContext(
+          operation: "stat",
+          path: path.path,
+          source: "FileSystemService"
+        )
       )
 
       return metadata
     } catch {
       await logger.error(
         "Failed to get metadata for \(path.path): \(error.localizedDescription)",
-        metadata: nil,
-        source: "FileSystemService"
+        context: FileSystemLogContext(
+          operation: "stat",
+          path: path.path,
+          source: "FileSystemService"
+        ).withUpdatedMetadata(
+          LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription)
+        )
       )
 
       if let fsError=error as? FileSystemInterfaces.FileSystemError {
@@ -308,8 +321,13 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
     } catch {
       await logger.error(
         "Failed to get extended attribute \(attributeName) for \(path.path): \(error.localizedDescription)",
-        metadata: nil,
-        source: "FileSystemService"
+        context: FileSystemLogContext(
+          operation: "getxattr",
+          path: path.path,
+          source: "FileSystemService"
+        ).withUpdatedMetadata(
+          LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription)
+        )
       )
 
       if let fsError=error as? FileSystemInterfaces.FileSystemError {
@@ -376,14 +394,22 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
 
       await logger.debug(
         "Set extended attribute \(attributeName) for \(path.path)",
-        metadata: nil,
-        source: "FileSystemService"
+        context: FileSystemLogContext(
+          operation: "setxattr",
+          path: path.path,
+          source: "FileSystemService"
+        )
       )
     } catch {
       await logger.error(
         "Failed to set extended attribute \(attributeName) for \(path.path): \(error.localizedDescription)",
-        metadata: nil,
-        source: "FileSystemService"
+        context: FileSystemLogContext(
+          operation: "setxattr",
+          path: path.path,
+          source: "FileSystemService"
+        ).withUpdatedMetadata(
+          LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription)
+        )
       )
 
       if let fsError=error as? FileSystemInterfaces.FileSystemError {
@@ -456,8 +482,9 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
    */
   public func getMetadata(at path: FilePath) async throws -> FileSystemMetadata? {
     await logger.debug(
-      FileSystemLogContext(
-        operation: "getMetadata",
+      "Retrieving metadata for \(path.path)",
+      context: FileSystemLogContext(
+        operation: "stat",
         path: path.path,
         source: "FileSystemService"
       )
@@ -492,8 +519,9 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       )
     } catch {
       await logger.error(
-        FileSystemLogContext(
-          operation: "getMetadata",
+        "Failed to get metadata for \(path.path): \(error.localizedDescription)",
+        context: FileSystemLogContext(
+          operation: "stat",
           path: path.path,
           source: "FileSystemService"
         ).withUpdatedMetadata(
@@ -516,7 +544,8 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
    */
   public func isDirectory(at path: FilePath) async throws -> Bool {
     await logger.debug(
-      FileSystemLogContext(
+      "Checking if \(path.path) is a directory",
+      context: FileSystemLogContext(
         operation: "isDirectory",
         path: path.path,
         source: "FileSystemService"
@@ -556,7 +585,8 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
     includeHidden: Bool=false
   ) async throws -> [FilePath] {
     await logger.debug(
-      FileSystemLogContext(
+      "Listing directory \(directoryPath.path)",
+      context: FileSystemLogContext(
         operation: "listDirectory",
         path: directoryPath.path,
         source: "FileSystemService"
@@ -569,7 +599,8 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
 
     if !exists {
       await logger.warning(
-        FileSystemLogContext(
+        "Directory \(directoryPath.path) does not exist",
+        context: FileSystemLogContext(
           operation: "listDirectory",
           path: directoryPath.path,
           source: "FileSystemService"
@@ -582,7 +613,8 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
 
     if !isDir.boolValue {
       await logger.warning(
-        FileSystemLogContext(
+        "\(directoryPath.path) is not a directory",
+        context: FileSystemLogContext(
           operation: "listDirectory",
           path: directoryPath.path,
           source: "FileSystemService"
@@ -614,7 +646,8 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       }
     } catch {
       await logger.error(
-        FileSystemLogContext(
+        "Failed to list directory \(directoryPath.path): \(error.localizedDescription)",
+        context: FileSystemLogContext(
           operation: "listDirectory",
           path: directoryPath.path,
           source: "FileSystemService"
@@ -681,7 +714,8 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       let data=try Data(contentsOf: URL(fileURLWithPath: path.path))
 
       await logger.debug(
-        FileSystemLogContext(
+        "Read file \(path.path)",
+        context: FileSystemLogContext(
           operation: "readFile",
           path: path.path,
           source: "FileSystemService"
@@ -691,7 +725,8 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       return data
     } catch {
       await logger.error(
-        FileSystemLogContext(
+        "Failed to read file \(path.path): \(error.localizedDescription)",
+        context: FileSystemLogContext(
           operation: "readFile",
           path: path.path,
           source: "FileSystemService"
@@ -830,7 +865,8 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       try data.write(to: URL(fileURLWithPath: path.path))
 
       await logger.debug(
-        FileSystemLogContext(
+        "Created file \(path.path)",
+        context: FileSystemLogContext(
           operation: "createFile",
           path: path.path,
           source: "FileSystemService"
@@ -871,7 +907,8 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       try data.write(to: URL(fileURLWithPath: path.path))
 
       await logger.debug(
-        FileSystemLogContext(
+        "Updated file \(path.path)",
+        context: FileSystemLogContext(
           operation: "updateFile",
           path: path.path,
           source: "FileSystemService"
@@ -919,9 +956,10 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
     }
 
     do {
+      let fileSize = try fileManager.attributesOfItem(atPath: path.path)[.size] as? UInt64 ?? 0
+      
       if secure {
         // Secure deletion: overwrite with random data before deleting
-        let fileSize=try fileManager.attributesOfItem(atPath: path.path)[.size] as? UInt64 ?? 0
         if fileSize > 0 {
           var randomData=Data(count: Int(fileSize))
           _=randomData.withUnsafeMutableBytes { bytes in
@@ -934,7 +972,8 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       try fileManager.removeItem(atPath: path.path)
 
       await logger.debug(
-        FileSystemLogContext(
+        "Deleted file \(path.path)",
+        context: FileSystemLogContext(
           operation: "deleteFile",
           path: path.path,
           source: "FileSystemService"
@@ -1001,7 +1040,8 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       try fileManager.removeItem(atPath: path.path)
 
       await logger.debug(
-        FileSystemLogContext(
+        "Deleted directory \(path.path)",
+        context: FileSystemLogContext(
           operation: "deleteDirectory",
           path: path.path,
           source: "FileSystemService"
@@ -1057,7 +1097,8 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       )
 
       await logger.debug(
-        FileSystemLogContext(
+        "Copied item from \(sourcePath.path) to \(destinationPath.path)",
+        context: FileSystemLogContext(
           operation: "copyItem",
           path: destinationPath.path,
           source: "FileSystemService"
@@ -1132,8 +1173,9 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       }
 
       await logger.debug(
-        FileSystemLogContext(
-          operation: "removeExtendedAttribute",
+        "Removed extended attribute \(attributeName) from \(path.path)",
+        context: FileSystemLogContext(
+          operation: "removexattr",
           path: path.path,
           source: "FileSystemService"
         )
@@ -1179,7 +1221,8 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       )
 
       await logger.debug(
-        FileSystemLogContext(
+        "Created security bookmark for \(path.path)",
+        context: FileSystemLogContext(
           operation: "createSecurityBookmark",
           path: path.path,
           source: "FileSystemService"
@@ -1216,7 +1259,8 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       let path=FilePath(path: url.path)
 
       await logger.debug(
-        FileSystemLogContext(
+        "Resolved security bookmark to \(path.path)",
+        context: FileSystemLogContext(
           operation: "resolveSecurityBookmark",
           path: path.path,
           source: "FileSystemService"
@@ -1252,7 +1296,8 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
     let success=url.startAccessingSecurityScopedResource()
 
     await logger.debug(
-      FileSystemLogContext(
+      "Started accessing security-scoped resource \(path.path)",
+      context: FileSystemLogContext(
         operation: "startAccessingSecurityScopedResource",
         path: path.path,
         source: "FileSystemService"
@@ -1278,7 +1323,8 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
     url.stopAccessingSecurityScopedResource()
 
     await logger.debug(
-      FileSystemLogContext(
+      "Stopped accessing security-scoped resource \(path.path)",
+      context: FileSystemLogContext(
         operation: "stopAccessingSecurityScopedResource",
         path: path.path,
         source: "FileSystemService"
@@ -1329,7 +1375,8 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       }
 
       await logger.debug(
-        FileSystemLogContext(
+        "Created temporary file \(fileURL.path)",
+        context: FileSystemLogContext(
           operation: "createTemporaryFile",
           path: fileURL.path,
           source: "FileSystemService"
@@ -1379,7 +1426,8 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       )
 
       await logger.debug(
-        FileSystemLogContext(
+        "Created temporary directory \(dirURL.path)",
+        context: FileSystemLogContext(
           operation: "createTemporaryDirectory",
           path: dirURL.path,
           source: "FileSystemService"
@@ -1425,24 +1473,38 @@ extension FileAttributes {
 // MARK: - Support for null logger when none is provided
 
 /// A simple no-op logger implementation for when no logger is provided
-private struct NoLogLogger: LoggingInterfaces.LoggingProtocol {
+@preconcurrency
+private actor NoLogLogger: LoggingInterfaces.LoggingProtocol {
   // Add loggingActor property required by LoggingProtocol
-  var loggingActor: LoggingInterfaces.LoggingActor = .init(destinations: [])
+  nonisolated let loggingActor: LoggingInterfaces.LoggingActor = .init(destinations: [])
 
-  // Core method required by CoreLoggingProtocol
-  func logMessage(_: LoggingTypes.LogLevel, _: String, context _: LoggingTypes.LogContext) async {
-    // Empty implementation for this stub
+  // Implement the required log method from CoreLoggingProtocol
+  func log(_ level: LoggingInterfaces.LogLevel, _ message: String, context: LoggingTypes.LogContextDTO) async {
+    // Empty implementation for no-op logger
   }
-
-  // Implement all required methods with proper parameter types
-  func debug(_: String, metadata _: LoggingTypes.PrivacyMetadata?, source _: String) async {}
-  func info(_: String, metadata _: LoggingTypes.PrivacyMetadata?, source _: String) async {}
-  func notice(_: String, metadata _: LoggingTypes.PrivacyMetadata?, source _: String) async {}
-  func warning(_: String, metadata _: LoggingTypes.PrivacyMetadata?, source _: String) async {}
-  func error(_: String, metadata _: LoggingTypes.PrivacyMetadata?, source _: String) async {}
-  func critical(_: String, metadata _: LoggingTypes.PrivacyMetadata?, source _: String) async {}
-  func trace(_: String, metadata _: LoggingTypes.PrivacyMetadata?, source _: String) async {}
-
-  // Deprecated method kept for backwards compatibility
-  func setContext(_: Any) {}
+  
+  // Convenience methods with empty implementations
+  func trace(_ message: String, context: LoggingTypes.LogContextDTO) async {
+    // Empty implementation
+  }
+  
+  func debug(_ message: String, context: LoggingTypes.LogContextDTO) async {
+    // Empty implementation
+  }
+  
+  func info(_ message: String, context: LoggingTypes.LogContextDTO) async {
+    // Empty implementation
+  }
+  
+  func warning(_ message: String, context: LoggingTypes.LogContextDTO) async {
+    // Empty implementation
+  }
+  
+  func error(_ message: String, context: LoggingTypes.LogContextDTO) async {
+    // Empty implementation
+  }
+  
+  func critical(_ message: String, context: LoggingTypes.LogContextDTO) async {
+    // Empty implementation
+  }
 }

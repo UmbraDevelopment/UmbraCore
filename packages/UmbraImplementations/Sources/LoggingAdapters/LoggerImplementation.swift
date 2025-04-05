@@ -109,6 +109,28 @@ public actor LoggerImplementation: LoggingProtocol, CoreLoggingProtocol {
     return "{ \(entries.joined(separator: ", ")) }"
   }
 
+  // MARK: - CoreLoggingProtocol Implementation
+  
+  /// Logs a message with the specified level and context
+  /// - Parameters:
+  ///   - level: The severity level of the log entry
+  ///   - message: The message to log
+  ///   - context: The logging context containing metadata and source information
+  public func log(_ level: LogLevel, _ message: String, context: LogContextDTO) async {
+    // Log locally
+    await log(LoggingTypes.LogEntry(
+      level: LoggingTypes.LogLevel(rawValue: level.rawValue) ?? .info,
+      message: message,
+      metadata: context.metadata.toPrivacyMetadata(),
+      source: context.source,
+      entryID: nil,
+      timestamp: LogTimestamp.now()
+    ))
+    
+    // Also log to the actor (actor expects proper underscore-prefixed parameters)
+    await loggingActor.log(level, message, context: context)
+  }
+
   // MARK: - LoggingProtocol Implementation
 
   public func trace(
@@ -128,7 +150,7 @@ public actor LoggerImplementation: LoggingProtocol, CoreLoggingProtocol {
 
     // Also log to the actor
     let context = LogContext(source: source, metadata: metadata)
-    await loggingActor.log(level: .trace, message: message, context: context)
+    await loggingActor.log(.trace, message, context: context)
   }
 
   public func debug(
@@ -148,7 +170,7 @@ public actor LoggerImplementation: LoggingProtocol, CoreLoggingProtocol {
 
     // Also log to the actor
     let context = LogContext(source: source, metadata: metadata)
-    await loggingActor.log(level: .debug, message: message, context: context)
+    await loggingActor.log(.debug, message, context: context)
   }
 
   public func info(
@@ -168,7 +190,7 @@ public actor LoggerImplementation: LoggingProtocol, CoreLoggingProtocol {
 
     // Also log to the actor
     let context = LogContext(source: source, metadata: metadata)
-    await loggingActor.log(level: .info, message: message, context: context)
+    await loggingActor.log(.info, message, context: context)
   }
 
   public func warning(
@@ -188,7 +210,7 @@ public actor LoggerImplementation: LoggingProtocol, CoreLoggingProtocol {
 
     // Also log to the actor
     let context = LogContext(source: source, metadata: metadata)
-    await loggingActor.log(level: .warning, message: message, context: context)
+    await loggingActor.log(.warning, message, context: context)
   }
 
   public func error(
@@ -208,7 +230,7 @@ public actor LoggerImplementation: LoggingProtocol, CoreLoggingProtocol {
 
     // Also log to the actor
     let context = LogContext(source: source, metadata: metadata)
-    await loggingActor.log(level: .error, message: message, context: context)
+    await loggingActor.log(.error, message, context: context)
   }
 
   public func critical(
@@ -228,7 +250,7 @@ public actor LoggerImplementation: LoggingProtocol, CoreLoggingProtocol {
 
     // Also log to the actor
     let context = LogContext(source: source, metadata: metadata)
-    await loggingActor.log(level: .critical, message: message, context: context)
+    await loggingActor.log(.critical, message, context: context)
   }
 
   public func log(

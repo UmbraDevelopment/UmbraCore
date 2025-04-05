@@ -53,14 +53,18 @@ extension FileSystemServiceImpl {
 
     do {
       try fileManager.removeItem(atPath: path.path)
-      await logger.debug(FileSystemLogContext(
-        operation: "remove",
-        path: path.path,
-        source: "FileSystemService"
-      ))
+      await logger.debug(
+        "Successfully removed item at \(path.path)",
+        context: FileSystemLogContext(
+          operation: "remove",
+          path: path.path,
+          source: "FileSystemService"
+        )
+      )
     } catch {
       await logger.error(
-        FileSystemLogContext(
+        "Failed to remove item at \(path.path)",
+        context: FileSystemLogContext(
           operation: "remove",
           path: path.path,
           source: "FileSystemService"
@@ -155,14 +159,22 @@ extension FileSystemServiceImpl {
 
       await logger.debug(
         "Copied item from \(sourcePath.path) to \(destinationPath.path)",
-        metadata: nil,
-        source: "FileSystemService"
+        context: FileSystemLogContext(
+          operation: "copy",
+          path: sourcePath.path,
+          targetPath: destinationPath.path,
+          source: "FileSystemService"
+        )
       )
     } catch {
       await logger.error(
         "Failed to copy from \(sourcePath.path) to \(destinationPath.path): \(error.localizedDescription)",
-        metadata: nil,
-        source: "FileSystemService"
+        context: FileSystemLogContext(
+          operation: "copy",
+          path: sourcePath.path,
+          targetPath: destinationPath.path,
+          source: "FileSystemService"
+        )
       )
       throw FileSystemInterfaces.FileSystemError.writeError(
         path: destinationPath.path,
@@ -251,14 +263,22 @@ extension FileSystemServiceImpl {
 
       await logger.debug(
         "Moved item from \(sourcePath.path) to \(destinationPath.path)",
-        metadata: nil,
-        source: "FileSystemService"
+        context: FileSystemLogContext(
+          operation: "move",
+          path: sourcePath.path,
+          targetPath: destinationPath.path,
+          source: "FileSystemService"
+        )
       )
     } catch {
       await logger.error(
         "Failed to move from \(sourcePath.path) to \(destinationPath.path): \(error.localizedDescription)",
-        metadata: nil,
-        source: "FileSystemService"
+        context: FileSystemLogContext(
+          operation: "move",
+          path: sourcePath.path,
+          targetPath: destinationPath.path,
+          source: "FileSystemService"
+        )
       )
       throw FileSystemInterfaces.FileSystemError.writeError(
         path: destinationPath.path,

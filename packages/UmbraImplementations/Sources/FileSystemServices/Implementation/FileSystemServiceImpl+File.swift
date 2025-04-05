@@ -31,16 +31,24 @@ extension FileSystemServiceImpl {
 
       await logger.debug(
         "Read \(bytes.count) bytes from \(path.path)",
-        metadata: nil,
-        source: "FileSystemService"
+        context: FileSystemLogContext(
+          operation: "readFile",
+          path: path.path,
+          source: "FileSystemService"
+        )
       )
 
       return bytes
     } catch {
       await logger.error(
         "Failed to read file at \(path.path): \(error.localizedDescription)",
-        metadata: nil,
-        source: "FileSystemService"
+        context: FileSystemLogContext(
+          operation: "readFile",
+          path: path.path,
+          source: "FileSystemService"
+        ).withUpdatedMetadata(
+          LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription)
+        )
       )
       throw FileSystemInterfaces.FileSystemError.readError(
         path: path.path,
@@ -92,8 +100,11 @@ extension FileSystemServiceImpl {
 
       await logger.debug(
         "Read text file (\(data.count) bytes) from \(path.path)",
-        metadata: nil,
-        source: "FileSystemService"
+        context: FileSystemLogContext(
+          operation: "readTextFile",
+          path: path.path,
+          source: "FileSystemService"
+        )
       )
 
       return string
@@ -103,8 +114,13 @@ extension FileSystemServiceImpl {
     } catch {
       await logger.error(
         "Failed to read text file at \(path.path): \(error.localizedDescription)",
-        metadata: nil,
-        source: "FileSystemService"
+        context: FileSystemLogContext(
+          operation: "readTextFile",
+          path: path.path,
+          source: "FileSystemService"
+        ).withUpdatedMetadata(
+          LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription)
+        )
       )
       throw FileSystemInterfaces.FileSystemError.readError(
         path: path.path,
@@ -148,11 +164,14 @@ extension FileSystemServiceImpl {
         )
       } catch {
         await logger.error(
-          FileSystemLogContext(
+          "Failed to create parent directories: \(error.localizedDescription)",
+          context: FileSystemLogContext(
             operation: "createDirectories",
             path: directory.path,
             source: "FileSystemService"
-          ).withUpdatedMetadata(LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription))
+          ).withUpdatedMetadata(
+            LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription)
+          )
         )
         throw FileSystemInterfaces.FileSystemError.writeError(
           path: directory.path,
@@ -166,19 +185,23 @@ extension FileSystemServiceImpl {
       try data.write(to: url)
 
       await logger.debug(
-        FileSystemLogContext(
+        "Wrote \(data.count) bytes to \(path.path)",
+        context: FileSystemLogContext(
           operation: "writeFile",
           path: path.path,
           source: "FileSystemService"
-        ).withFileSize(Int64(data.count))
+        )
       )
     } catch {
       await logger.error(
-        FileSystemLogContext(
+        "Failed to write file: \(error.localizedDescription)",
+        context: FileSystemLogContext(
           operation: "writeFile",
           path: path.path,
           source: "FileSystemService"
-        ).withUpdatedMetadata(LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription))
+        ).withUpdatedMetadata(
+          LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription)
+        )
       )
       throw FileSystemInterfaces.FileSystemError.writeError(
         path: path.path,
@@ -290,14 +313,22 @@ extension FileSystemServiceImpl {
 
       await logger.debug(
         "Appended \(data.count) bytes to \(path.path)",
-        metadata: nil,
-        source: "FileSystemService"
+        context: FileSystemLogContext(
+          operation: "appendFile",
+          path: path.path,
+          source: "FileSystemService"
+        )
       )
     } catch {
       await logger.error(
         "Failed to append data to \(path.path): \(error.localizedDescription)",
-        metadata: nil,
-        source: "FileSystemService"
+        context: FileSystemLogContext(
+          operation: "appendFile",
+          path: path.path,
+          source: "FileSystemService"
+        ).withUpdatedMetadata(
+          LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription)
+        )
       )
       throw FileSystemInterfaces.FileSystemError.writeError(
         path: path.path,
@@ -361,8 +392,11 @@ extension FileSystemServiceImpl {
     if !exists {
       await logger.warning(
         "File does not exist for removal: \(path.path)",
-        metadata: nil,
-        source: "FileSystemService"
+        context: FileSystemLogContext(
+          operation: "removeFile",
+          path: path.path,
+          source: "FileSystemService"
+        )
       )
       throw FileSystemInterfaces.FileSystemError.pathNotFound(path: path.path)
     }
@@ -370,8 +404,11 @@ extension FileSystemServiceImpl {
     if isDir.boolValue {
       await logger.warning(
         "Path is a directory, not a file: \(path.path)",
-        metadata: nil,
-        source: "FileSystemService"
+        context: FileSystemLogContext(
+          operation: "removeFile",
+          path: path.path,
+          source: "FileSystemService"
+        )
       )
       throw FileSystemInterfaces.FileSystemError.invalidPath(
         path: path.path,
@@ -381,18 +418,24 @@ extension FileSystemServiceImpl {
 
     do {
       try fileManager.removeItem(atPath: path.path)
-      await logger.info(FileSystemLogContext(
-        operation: "removeFile",
-        path: path.path,
-        source: "FileSystemService"
-      ))
-    } catch {
-      await logger.error(
-        FileSystemLogContext(
+      await logger.info(
+        "Removed file at \(path.path)",
+        context: FileSystemLogContext(
           operation: "removeFile",
           path: path.path,
           source: "FileSystemService"
-        ).withUpdatedMetadata(LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription))
+        )
+      )
+    } catch {
+      await logger.error(
+        "Failed to remove file: \(error.localizedDescription)",
+        context: FileSystemLogContext(
+          operation: "removeFile",
+          path: path.path,
+          source: "FileSystemService"
+        ).withUpdatedMetadata(
+          LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription)
+        )
       )
       throw FileSystemInterfaces.FileSystemError.writeError(
         path: path.path,
@@ -434,8 +477,11 @@ extension FileSystemServiceImpl {
     if !sourceExists {
       await logger.warning(
         "Source file does not exist: \(sourcePath.path)",
-        metadata: nil,
-        source: "FileSystemService"
+        context: FileSystemLogContext(
+          operation: "copyFile",
+          path: sourcePath.path,
+          source: "FileSystemService"
+        )
       )
       throw FileSystemInterfaces.FileSystemError.pathNotFound(path: sourcePath.path)
     }
@@ -443,8 +489,11 @@ extension FileSystemServiceImpl {
     if isSourceDir.boolValue {
       await logger.warning(
         "Source is a directory, not a file: \(sourcePath.path)",
-        metadata: nil,
-        source: "FileSystemService"
+        context: FileSystemLogContext(
+          operation: "copyFile",
+          path: sourcePath.path,
+          source: "FileSystemService"
+        )
       )
       throw FileSystemInterfaces.FileSystemError.invalidPath(
         path: sourcePath.path,
@@ -457,8 +506,11 @@ extension FileSystemServiceImpl {
       if !overwrite {
         await logger.warning(
           "Destination already exists: \(destinationPath.path)",
-          metadata: nil,
-          source: "FileSystemService"
+          context: FileSystemLogContext(
+            operation: "copyFile",
+            path: destinationPath.path,
+            source: "FileSystemService"
+          )
         )
         throw FileSystemInterfaces.FileSystemError.pathAlreadyExists(path: destinationPath.path)
       }
@@ -489,14 +541,22 @@ extension FileSystemServiceImpl {
 
       await logger.info(
         "Copied file from \(sourcePath.path) to \(destinationPath.path)",
-        metadata: nil,
-        source: "FileSystemService"
+        context: FileSystemLogContext(
+          operation: "copyFile",
+          path: destinationPath.path,
+          source: "FileSystemService"
+        )
       )
     } catch {
       await logger.error(
         "Failed to copy file: \(error.localizedDescription)",
-        metadata: nil,
-        source: "FileSystemService"
+        context: FileSystemLogContext(
+          operation: "copyFile",
+          path: destinationPath.path,
+          source: "FileSystemService"
+        ).withUpdatedMetadata(
+          LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription)
+        )
       )
       throw FileSystemInterfaces.FileSystemError.writeError(
         path: destinationPath.path,
@@ -536,8 +596,11 @@ extension FileSystemServiceImpl {
     if !sourceExists {
       await logger.warning(
         "Source file does not exist: \(sourcePath.path)",
-        metadata: nil,
-        source: "FileSystemService"
+        context: FileSystemLogContext(
+          operation: "moveFile",
+          path: sourcePath.path,
+          source: "FileSystemService"
+        )
       )
       throw FileSystemInterfaces.FileSystemError.pathNotFound(path: sourcePath.path)
     }
@@ -545,8 +608,11 @@ extension FileSystemServiceImpl {
     if isSourceDir.boolValue {
       await logger.warning(
         "Source is a directory, not a file: \(sourcePath.path)",
-        metadata: nil,
-        source: "FileSystemService"
+        context: FileSystemLogContext(
+          operation: "moveFile",
+          path: sourcePath.path,
+          source: "FileSystemService"
+        )
       )
       throw FileSystemInterfaces.FileSystemError.invalidPath(
         path: sourcePath.path,
@@ -558,8 +624,11 @@ extension FileSystemServiceImpl {
       if !overwrite {
         await logger.warning(
           "Destination already exists: \(destinationPath.path)",
-          metadata: nil,
-          source: "FileSystemService"
+          context: FileSystemLogContext(
+            operation: "moveFile",
+            path: destinationPath.path,
+            source: "FileSystemService"
+          )
         )
         throw FileSystemInterfaces.FileSystemError.pathAlreadyExists(path: destinationPath.path)
       }
@@ -586,14 +655,22 @@ extension FileSystemServiceImpl {
 
       await logger.info(
         "Moved file from \(sourcePath.path) to \(destinationPath.path)",
-        metadata: nil,
-        source: "FileSystemService"
+        context: FileSystemLogContext(
+          operation: "moveFile",
+          path: destinationPath.path,
+          source: "FileSystemService"
+        )
       )
     } catch {
       await logger.error(
         "Failed to move file: \(error.localizedDescription)",
-        metadata: nil,
-        source: "FileSystemService"
+        context: FileSystemLogContext(
+          operation: "moveFile",
+          path: destinationPath.path,
+          source: "FileSystemService"
+        ).withUpdatedMetadata(
+          LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription)
+        )
       )
       throw FileSystemInterfaces.FileSystemError.writeError(
         path: destinationPath.path,

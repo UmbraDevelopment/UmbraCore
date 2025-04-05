@@ -117,22 +117,38 @@ public final class FileSystemServiceFactory: @unchecked Sendable {
  A null logger implementation used as a default when no logger is provided.
  This avoids the need for nil checks throughout the file system services code.
  */
-private struct NullLogger: LoggingInterfaces.LoggingProtocol {
+@preconcurrency
+private actor NullLogger: LoggingInterfaces.LoggingProtocol {
   // Add loggingActor property required by LoggingProtocol
-  var loggingActor: LoggingInterfaces.LoggingActor = .init(destinations: [])
+  nonisolated let loggingActor: LoggingInterfaces.LoggingActor = .init(destinations: [])
 
-  // Core method required by CoreLoggingProtocol
-  func logMessage(_: LoggingTypes.LogLevel, _: String, context _: LoggingTypes.LogContext) async {
-    // Empty implementation for this stub
+  // Implement the required log method from CoreLoggingProtocol
+  func log(_ level: LoggingInterfaces.LogLevel, _ message: String, context: LoggingTypes.LogContextDTO) async {
+    // Empty implementation for no-op logger
   }
-
-  // Implement all required methods with proper parameter types
-  func debug(_: String, metadata _: LoggingTypes.PrivacyMetadata?, source _: String) async {}
-  func info(_: String, metadata _: LoggingTypes.PrivacyMetadata?, source _: String) async {}
-  func notice(_: String, metadata _: LoggingTypes.PrivacyMetadata?, source _: String) async {}
-  func warning(_: String, metadata _: LoggingTypes.PrivacyMetadata?, source _: String) async {}
-  func error(_: String, metadata _: LoggingTypes.PrivacyMetadata?, source _: String) async {}
-  func critical(_: String, metadata _: LoggingTypes.PrivacyMetadata?, source _: String) async {}
-  func trace(_: String, metadata _: LoggingTypes.PrivacyMetadata?, source _: String) async {}
-  func fault(_: String, metadata _: LoggingTypes.PrivacyMetadata?, source _: String) async {}
+  
+  // Convenience methods with empty implementations
+  func trace(_ message: String, context: LoggingTypes.LogContextDTO) async {
+    // Empty implementation
+  }
+  
+  func debug(_ message: String, context: LoggingTypes.LogContextDTO) async {
+    // Empty implementation
+  }
+  
+  func info(_ message: String, context: LoggingTypes.LogContextDTO) async {
+    // Empty implementation
+  }
+  
+  func warning(_ message: String, context: LoggingTypes.LogContextDTO) async {
+    // Empty implementation
+  }
+  
+  func error(_ message: String, context: LoggingTypes.LogContextDTO) async {
+    // Empty implementation
+  }
+  
+  func critical(_ message: String, context: LoggingTypes.LogContextDTO) async {
+    // Empty implementation
+  }
 }

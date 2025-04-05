@@ -1,7 +1,5 @@
-import LoggingServices
+import LoggingInterfaces
 import LoggingTypes
-
-import LoggingWrapperInterfaces
 import LoggingWrapperServices
 
 /**
@@ -12,26 +10,48 @@ import LoggingWrapperServices
  */
 public enum LoggingLevelAdapter {
   /**
-   Convert UmbraLogLevel to LoggingWrapper.LogLevel
+   Convert UmbraLogLevel to LoggingInterfaces.LogLevel
 
    - Parameter level: The UmbraLogLevel to convert
-   - Returns: The equivalent LoggingWrapper.LogLevel
+   - Returns: The equivalent LoggingInterfaces.LogLevel
    */
-  public static func convertLevel(_ level: LoggingTypes.UmbraLogLevel) -> LoggingWrapperInterfaces
-  .LogLevel {
+  public static func convertLevel(_ level: LoggingTypes.UmbraLogLevel) -> LoggingInterfaces.LogLevel {
     switch level {
       case .verbose:
-        .trace
+        return .trace
       case .debug:
-        .debug
+        return .debug
       case .info:
-        .info
+        return .info
       case .warning:
-        .warning
+        return .warning
       case .error:
-        .error
+        return .error
       case .critical:
-        .critical
+        return .critical
+    }
+  }
+
+  /**
+   Convert LoggingInterfaces.LogLevel to UmbraLogLevel
+
+   - Parameter level: The LoggingInterfaces.LogLevel to convert
+   - Returns: The equivalent UmbraLogLevel
+   */
+  public static func convertToUmbraLevel(_ level: LoggingInterfaces.LogLevel) -> LoggingTypes.UmbraLogLevel {
+    switch level {
+      case .trace:
+        return .verbose
+      case .debug:
+        return .debug
+      case .info:
+        return .info
+      case .warning:
+        return .warning
+      case .error:
+        return .error
+      case .critical:
+        return .critical
     }
   }
 
@@ -41,32 +61,7 @@ public enum LoggingLevelAdapter {
    - Parameter level: The LogLevel to convert
    - Returns: The equivalent UmbraLogLevel
    */
-  public static func convertFromCoreLogLevel(_ level: LoggingTypes.LogLevel) -> LoggingTypes
-  .UmbraLogLevel {
-    switch level {
-      case .trace:
-        .verbose
-      case .debug:
-        .debug
-      case .info:
-        .info
-      case .warning:
-        .warning
-      case .error:
-        .error
-      case .critical:
-        .critical
-    }
-  }
-
-  /**
-   Convert LoggingWrapper.LogLevel to UmbraLogLevel
-
-   - Parameter level: The LogLevel to convert
-   - Returns: The equivalent UmbraLogLevel
-   */
-  public static func convertToUmbraLevel(_ level: LoggingWrapperInterfaces.LogLevel) -> LoggingTypes
-  .UmbraLogLevel {
+  public static func convertFromCoreLogLevel(_ level: LoggingTypes.LogLevel) -> LoggingTypes.UmbraLogLevel {
     switch level {
       case .trace:
         .verbose
