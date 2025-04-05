@@ -1434,19 +1434,20 @@ extension PrivacyMetadata {
   func toLogMetadataDTOCollection() -> LogMetadataDTOCollection {
     var collection = LogMetadataDTOCollection()
     
-    for (key, value) in self {
-      switch value.privacy {
+    // Use entriesArray() which is a public method to get the entries
+    for entry in entriesArray {
+      switch entry.privacy {
       case .public:
-        collection = collection.withPublic(key: key, value: value.value)
+        collection = collection.withPublic(key: entry.key, value: entry.value)
       case .private:
-        collection = collection.withPrivate(key: key, value: value.value)
+        collection = collection.withPrivate(key: entry.key, value: entry.value)
       case .hash:
-        collection = collection.withHashed(key: key, value: value.value)
+        collection = collection.withHashed(key: entry.key, value: entry.value)
       case .sensitive:
-        collection = collection.withSensitive(key: key, value: value.value)
+        collection = collection.withSensitive(key: entry.key, value: entry.value)
       case .auto:
         // Default to private for auto
-        collection = collection.withPrivate(key: key, value: value.value)
+        collection = collection.withPrivate(key: entry.key, value: entry.value)
       }
     }
     

@@ -196,7 +196,8 @@ public actor Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked Sendabl
     // Configure the format based on parameters
     console.format = format
     console.minLevel = convertLogLevel(minLevel)
-    console.useColors = useColors
+    // Note: useColors property is not available in current version
+    // console.useColors = useColors
 
     // Add the destination
     addDestination(console)
@@ -451,9 +452,84 @@ public actor Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked Sendabl
       await loggingActor.log(level, "[Sensitive Log]: \(message)", context: context)
     }
 
+    /// Log an error with privacy controls
+    /// - Parameters:
+    ///   - error: The error to log
+    ///   - privacyLevel: The privacy level to apply to the error details
+    ///   - context: The logging context containing metadata, source, etc.
+    public func logError(
+      _ error: Error,
+      privacyLevel: LoggingTypes.LogPrivacyLevel,
+      context: LoggingTypes.LogContextDTO
+    ) async {
+      // Create error metadata with the appropriate privacy level
+      var errorContext = context
+      
+      // If it's a loggable error with specific privacy metadata, use that,
+      // otherwise create metadata based on the provided privacy level
+      if let loggableError = error as? LoggableErrorProtocol {
+        // Use the error's built-in privacy metadata
+        let errorMetadata = loggableError.getPrivacyMetadata()
+        errorContext = errorContext.withUpdatedMetadata(Self.convertToLogMetadataDTOCollection(errorMetadata))
+      } else {
+        // Create default error metadata with the specified privacy level
+        var metadata = LogMetadataDTOCollection()
+        let errorTypeString = String(describing: type(of: error))
+        
+        metadata = metadata.withPublic(key: "errorType", value: errorTypeString)
+        
+        // Apply different privacy levels to the error message based on the setting
+        switch privacyLevel {
+        case .public:
+          metadata = metadata.withPublic(key: "errorMessage", value: error.localizedDescription)
+        case .private:
+          metadata = metadata.withPrivate(key: "errorMessage", value: error.localizedDescription)
+        case .sensitive:
+          metadata = metadata.withSensitive(key: "errorMessage", value: error.localizedDescription)
+        case .hash:
+          metadata = metadata.withHashed(key: "errorMessage", value: error.localizedDescription)
+        case .auto:
+          // Default to private for error messages with auto privacy
+          metadata = metadata.withPrivate(key: "errorMessage", value: error.localizedDescription)
+        }
+        
+        errorContext = errorContext.withUpdatedMetadata(metadata)
+      }
+      
+      // Log the error at error level
+      await log(.error, "Error: \(error.localizedDescription)", context: errorContext)
+    }
+
     /// Provide a basic description for the logger instance
     public nonisolated var description: String {
       return "PrivacyAwareLogger for \(String(describing: loggingActor))"
+    }
+
+    /// Converts PrivacyMetadata to LogMetadataDTOCollection for error handling
+    ///
+    /// This function provides a way to convert privacy metadata from errors
+    /// to a format suitable for the logging system.
+    ///
+    /// - Parameter metadata: The privacy metadata to convert
+    /// - Returns: A LogMetadataDTOCollection with equivalent entries
+    static private func convertToLogMetadataDTOCollection(_ metadata: PrivacyMetadata) -> LogMetadataDTOCollection {
+      var collection = LogMetadataDTOCollection()
+  
+      for entry in metadata.entriesArray {
+        switch entry.privacy {
+        case .public:
+          collection = collection.withPublic(key: entry.key, value: entry.value)
+        case .private:
+          collection = collection.withPrivate(key: entry.key, value: entry.value)
+        case .sensitive:
+          collection = collection.withSensitive(key: entry.key, value: entry.value)
+        case .auto:
+          // Default to private for auto
+          collection = collection.withPrivate(key: entry.key, value: entry.value)
+        }
+      }
+  
+      return collection
     }
   }
 
