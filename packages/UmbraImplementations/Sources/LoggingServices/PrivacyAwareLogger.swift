@@ -310,9 +310,9 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
     // Create a new context with the updated metadata
     let updatedContext = BaseLogContextDTO(
       domainName: context.domainName,
-      correlationID: context.correlationID,
       source: context.source,
-      metadata: updatedMetadata
+      metadata: updatedMetadata,
+      correlationID: context.correlationID
     )
     
     // Choose log level based on severity (default to error)

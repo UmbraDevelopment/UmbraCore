@@ -86,12 +86,71 @@ public struct LogMetadataDTOCollection: Sendable, Equatable {
     return result
   }
 
+  /// Adds an automatically privacy-classified metadata entry to the collection
+  ///
+  /// This will use the system's built-in heuristics to determine the appropriate
+  /// privacy level based on the value's content in runtime.
+  ///
+  /// - Parameters:
+  ///   - key: The metadata key
+  ///   - value: The metadata value
+  /// - Returns: The updated collection
+  public func withAuto(key: String, value: String) -> LogMetadataDTOCollection {
+    var result=self
+    result.entries.append(.autoClassifiedEntry(key: key, value: value))
+    return result
+  }
+
   /// Combines this collection with another collection
   ///
   /// - Parameter other: The collection to combine with
   /// - Returns: A new collection containing entries from both collections
   public func merging(with other: LogMetadataDTOCollection) -> LogMetadataDTOCollection {
     LogMetadataDTOCollection(entries: entries + other.entries)
+  }
+  
+  /// Indicates whether the collection has no entries
+  public var isEmpty: Bool {
+    entries.isEmpty
+  }
+
+  /// Converts this collection to a PrivacyMetadata instance for
+  /// compatibility with legacy logging systems.
+  ///
+  /// - Returns: A PrivacyMetadata instance with the appropriate privacy classifications
+  public func toPrivacyMetadata() -> PrivacyMetadata {
+    var result = PrivacyMetadata()
+    
+    // Convert each entry to the corresponding PrivacyMetadata format
+    for entry in entries {
+      // Create a PrivacyMetadataValue with the appropriate privacy level
+      let logPrivacyLevel: LogPrivacyLevel
+      
+      // Map the PrivacyClassification to LogPrivacyLevel
+      switch entry.privacyLevel {
+      case .public:
+        logPrivacyLevel = .public
+      case .private:
+        logPrivacyLevel = .private
+      case .sensitive:
+        logPrivacyLevel = .sensitive
+      case .hash:
+        logPrivacyLevel = .hash
+      case .auto:
+        logPrivacyLevel = .auto
+      }
+      
+      // Create the metadata value with the correct privacy level
+      let metadataValue = PrivacyMetadataValue(
+        value: entry.value,
+        privacy: logPrivacyLevel
+      )
+      
+      // Add to the PrivacyMetadata using subscript syntax
+      result[entry.key] = metadataValue
+    }
+    
+    return result
   }
 
   /// Creates a dictionary representation of the metadata collection
@@ -109,27 +168,6 @@ public struct LogMetadataDTOCollection: Sendable, Equatable {
 // MARK: - Privacy Metadata Conversion
 
 extension LogMetadataDTOCollection {
-  /// Converts this collection to a PrivacyMetadata instance for logging
-  ///
-  /// This method transforms the structured metadata collection into a format
-  /// suitable for the logging system's privacy controls.
-  ///
-  /// - Returns: A PrivacyMetadata instance with the appropriate privacy classifications
-  public func toPrivacyMetadata() -> PrivacyMetadata {
-    var metadata=PrivacyMetadata()
-
-    for entry in entries {
-      // Add each entry with the appropriate privacy level
-      let value=PrivacyMetadataValue(
-        value: entry.value,
-        privacy: convertPrivacyLevel(entry.privacyLevel)
-      )
-      metadata[entry.key]=value
-    }
-
-    return metadata
-  }
-
   /// Converts privacy classification to LogPrivacyLevel
   ///
   /// - Parameter level: The privacy classification level

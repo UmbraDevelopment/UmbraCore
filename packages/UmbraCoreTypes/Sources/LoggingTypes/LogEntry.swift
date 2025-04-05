@@ -81,22 +81,27 @@ public struct LogEntry: Sendable, Equatable, Hashable {
     )
   }
 
-  /// Creates a new log entry with context
+  /// Initialise a log entry from a context
   ///
   /// - Parameters:
-  ///   - level: Log severity level
-  ///   - message: Log message content
+  ///   - level: Log level
+  ///   - message: Log message
   ///   - context: Contextual information
   public init(
     level: LogLevel,
     message: String,
     context: LogContext
   ) {
-    timestamp=context.timestamp
-    self.level=level
-    self.message=message
-    metadata=context.metadata
-    source=context.source
-    entryID=context.correlationID
+    timestamp = context.timestamp
+    self.level = level
+    self.message = message
+    // Convert LogContextDTO metadata to PrivacyMetadata
+    metadata = context.toPrivacyMetadata()
+    // Use default source if the context source is nil
+    source = context.getSource()
+    // Create LogIdentifier from correlationID string
+    entryID = context.correlationID != nil ? 
+      LogIdentifier(value: context.correlationID!) : 
+      LogIdentifier.unique()
   }
 }

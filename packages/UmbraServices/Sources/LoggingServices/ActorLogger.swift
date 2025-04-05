@@ -39,7 +39,7 @@ public actor ActorLogger: LoggingProtocol {
     let contextDTO = BaseLogContextDTO(
       domainName: "Legacy", 
       source: context.source ?? defaultSource,
-      metadata: createMetadataCollection(from: context.metadata)
+      metadata: context.metadata // Pass the metadata directly, no conversion needed
     )
     
     await log(level, message, context: contextDTO)

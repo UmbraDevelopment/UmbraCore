@@ -43,19 +43,19 @@ public struct LoggableErrorDTO: Sendable, Equatable {
   /// - Parameters:
   ///   - error: The underlying error
   ///   - source: Source information (e.g., file, function, line)
-  ///   - metadata: Privacy metadata for logging
+  ///   - metadataCollection: Privacy metadata for logging
   ///   - message: Optional custom log message
   ///   - context: Optional domain-specific logging context
   public init(
     error: Error,
     source: String,
-    metadata: PrivacyMetadata,
+    metadataCollection: PrivacyMetadata,
     message: String?=nil,
     context: LogContextDTO?=nil
   ) {
     self.error=error
     self.source=source
-    self.metadata=metadata
+    self.metadata=metadataCollection
     self.message=message
     self.context=context
   }
@@ -111,7 +111,7 @@ extension LoggableErrorDTO {
     return LoggableErrorDTO(
       error: error,
       source: source,
-      metadata: newMetadata,
+      metadataCollection: newMetadata,
       message: message,
       context: context
     )
@@ -125,7 +125,7 @@ extension LoggableErrorDTO {
     LoggableErrorDTO(
       error: error,
       source: source,
-      metadata: metadata,
+      metadataCollection: metadata,
       message: message,
       context: context
     )
@@ -139,7 +139,7 @@ extension LoggableErrorDTO {
     LoggableErrorDTO(
       error: error,
       source: source,
-      metadata: metadata,
+      metadataCollection: metadata,
       message: message,
       context: context
     )

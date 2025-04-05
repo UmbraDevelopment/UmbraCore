@@ -28,12 +28,19 @@ public struct ConsoleLoggingBackend: LoggingBackend {
 
     // Format metadata if present
     var metadataString=""
-    if let metadata=context.metadata, !metadata.isEmpty {
-      metadataString=" " + formatPrivacyMetadata(metadata)
+    // Convert the DTO collection to PrivacyMetadata and format it
+    if !context.metadata.isEmpty {
+      // Use the extension method to convert to the format expected by the formatter
+      let privacyMetadata = context.toPrivacyMetadata()
+      metadataString=" " + formatPrivacyMetadata(privacyMetadata)
     }
 
     // Format and print the log message
-    let formattedMessage="\(colourCode)\(timestamp) \(emoji) [\(level)] [\(subsystem):\(context.source)] \(message)\(metadataString) [correlation: \(context.correlationID)]\u{001B}[0m"
+    // Use safe accessors for optional properties
+    let sourceText = context.getSource()
+    let correlationText = context.correlationID ?? "none"
+    
+    let formattedMessage="\(colourCode)\(timestamp) \(emoji) [\(level)] [\(subsystem):\(sourceText)] \(message)\(metadataString) [correlation: \(correlationText)]\u{001B}[0m"
     print(formattedMessage)
   }
 

@@ -1,134 +1,92 @@
 import Foundation
 
-/// Protocol for domain-specific log contexts with privacy controls
+/// Protocol defining the requirements for a log context DTO that
+/// can be used across domain boundaries
 ///
-/// This protocol defines a common interface for log contexts that
-/// contain domain-specific information with privacy controls.
+/// This protocol ensures that all domain-specific log contexts
+/// provide the necessary information for privacy-aware logging
 public protocol LogContextDTO: Sendable {
-  /// The name of the domain this context belongs to
+  /// The domain name for this context
   var domainName: String { get }
-
-  /// Correlation identifier for tracing related logs
-  var correlationID: String? { get }
-
-  /// Source information for the log (e.g., file, function, line)
+  
+  /// Optional source information (class, file, etc.)
   var source: String? { get }
-
-  /// Privacy-aware metadata for this log context
+  
+  /// Optional correlation ID for tracing related log events
+  var correlationID: String? { get }
+  
+  /// The metadata collection for this context
   var metadata: LogMetadataDTOCollection { get }
-
-  /// Get the privacy metadata for logging purposes
-  /// - Returns: The privacy metadata for this context
-  func toPrivacyMetadata() -> PrivacyMetadata
-
-  /// Get the source information
-  /// - Returns: Source information for logs, or a default if not available
-  func getSource() -> String
-
-  /// Get the metadata collection
-  /// - Returns: The metadata collection for this context
-  func toMetadata() -> LogMetadataDTOCollection
-
-  /// Creates a new instance of this context with updated metadata
-  ///
-  /// - Parameter metadata: The metadata to add to the context
-  /// - Returns: A new log context with the updated metadata
-  func withUpdatedMetadata(_ metadata: LogMetadataDTOCollection) -> Self
 }
 
-/// Default implementations for LogContextDTO
-extension LogContextDTO {
-  /// Get the privacy metadata for logging purposes
-  /// - Returns: The privacy metadata for this context
-  public func toPrivacyMetadata() -> PrivacyMetadata {
-    metadata.toPrivacyMetadata()
-  }
-
-  /// Get the source information
-  /// - Returns: Source information for logs, or a default if not available
-  public func getSource() -> String {
-    source ?? "\(domainName).Logger"
-  }
-
-  /// Get the metadata collection
-  /// - Returns: The metadata collection for this context
-  public func toMetadata() -> LogMetadataDTOCollection {
-    metadata
-  }
-}
-
-/// Base implementation of the LogContextDTO protocol
-///
-/// This structure provides a reusable implementation of the LogContextDTO
-/// protocol that can be extended by domain-specific contexts.
+/// Base implementation of LogContextDTO for use in services
+/// that don't require specialised context handling
 public struct BaseLogContextDTO: LogContextDTO, Equatable {
-  /// The name of the domain this context belongs to
+  /// The domain name for this context
   public let domainName: String
-
-  /// Correlation identifier for tracing related logs
-  public let correlationID: String?
-
-  /// Source information for the log (e.g., file, function, line)
+  
+  /// Optional source information (class, file, etc.)
   public let source: String?
-
-  /// Privacy-aware metadata for this log context
+  
+  /// Optional correlation ID for tracing related log events
+  public let correlationID: String?
+  
+  /// The metadata collection for this context
   public let metadata: LogMetadataDTOCollection
-
-  /// Creates a new base log context
-  ///
+  
+  /// Create a new base log context DTO
   /// - Parameters:
-  ///   - domainName: The name of the domain this context belongs to
-  ///   - correlationId: Optional correlation identifier for tracing related logs
-  ///   - source: Optional source information (e.g., file, function, line)
-  ///   - metadata: Privacy-aware metadata for this log context
+  ///   - domainName: The domain name
+  ///   - source: Optional source information
+  ///   - metadata: Privacy metadata as a PrivacyMetadata instance
+  ///   - correlationID: Optional correlation ID
   public init(
     domainName: String,
-    correlationID: String?=nil,
-    source: String?=nil,
-    metadata: LogMetadataDTOCollection=LogMetadataDTOCollection()
+    source: String? = nil,
+    metadata: PrivacyMetadata = PrivacyMetadata(),
+    correlationID: String? = nil
   ) {
-    self.domainName=domainName
-    self.correlationID=correlationID
-    self.source=source
-    self.metadata=metadata
+    self.domainName = domainName
+    self.source = source
+    self.correlationID = correlationID
+    
+    // Convert PrivacyMetadata to LogMetadataDTOCollection
+    var collection = LogMetadataDTOCollection()
+    
+    // Add all entries from the PrivacyMetadata
+    for (key, value) in metadata.storage {
+      switch value.privacy {
+      case .public:
+        collection = collection.withPublic(key: key, value: value.valueString)
+      case .private:
+        collection = collection.withPrivate(key: key, value: value.valueString)
+      case .sensitive:
+        collection = collection.withSensitive(key: key, value: value.valueString)
+      case .hash:
+        collection = collection.withHashed(key: key, value: value.valueString)
+      case .auto:
+        collection = collection.withAuto(key: key, value: value.valueString)
+      }
+    }
+    
+    self.metadata = collection
   }
-
-  /// Creates a new instance of this context with updated metadata
-  ///
-  /// - Parameter metadata: The metadata to add to the context
-  /// - Returns: A new log context with the updated metadata
-  public func withUpdatedMetadata(_ metadata: LogMetadataDTOCollection) -> BaseLogContextDTO {
-    BaseLogContextDTO(
-      domainName: domainName,
-      correlationID: correlationID,
-      source: source,
-      metadata: self.metadata.merging(with: metadata)
-    )
-  }
-
-  /// Creates a new instance of this context with a correlation ID
-  ///
-  /// - Parameter correlationId: The correlation ID to add
-  /// - Returns: A new log context with the specified correlation ID
-  public func withCorrelationID(_ correlationID: String) -> BaseLogContextDTO {
-    BaseLogContextDTO(
-      domainName: domainName,
-      correlationID: correlationID,
-      source: source,
-      metadata: metadata
-    )
-  }
-
-  /// Creates a new instance of this context with source information
-  ///
-  /// - Parameter source: The source information to add
-  /// - Returns: A new log context with the specified source
-  public func withSource(_ source: String) -> BaseLogContextDTO {
-    BaseLogContextDTO(
-      domainName: domainName,
-      correlationID: correlationID,
-      source: source,
-      metadata: metadata
-    )
+  
+  /// Create a new base log context DTO with a metadata collection
+  /// - Parameters:
+  ///   - domainName: The domain name
+  ///   - source: Optional source information
+  ///   - metadata: The metadata collection
+  ///   - correlationID: Optional correlation ID
+  public init(
+    domainName: String,
+    source: String? = nil,
+    metadata: LogMetadataDTOCollection,
+    correlationID: String? = nil
+  ) {
+    self.domainName = domainName
+    self.source = source
+    self.metadata = metadata
+    self.correlationID = correlationID
   }
 }

@@ -31,7 +31,8 @@ public struct OSLogPrivacyBackend: LoggingBackend {
   ) async {
     #if canImport(OSLog)
       let subsystemToUse=subsystem.isEmpty ? defaultSubsystem : subsystem
-      let category=context.source
+      // Handle optional source with a default value
+      let category=context.getSource()
 
       let logger=Logger(subsystem: subsystemToUse, category: category)
 
@@ -47,8 +48,11 @@ public struct OSLogPrivacyBackend: LoggingBackend {
 
       // Create metadata string if present
       var logMessage=message
-      if let metadata=context.metadata, !metadata.isEmpty {
-        let metadataString=formatMetadataWithPrivacy(metadata)
+      // Convert the DTO collection to PrivacyMetadata and format it
+      if !context.metadata.isEmpty {
+        // Use the extension method to convert to the format expected by the formatter
+        let privacyMetadata = context.toPrivacyMetadata()
+        let metadataString=formatMetadataWithPrivacy(privacyMetadata)
         logMessage += " \(metadataString)"
       }
 
