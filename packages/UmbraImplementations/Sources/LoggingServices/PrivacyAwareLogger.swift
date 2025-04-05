@@ -36,64 +36,171 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
     self.loggingActor=loggingActor ?? LoggingActor(destinations: [])
   }
 
-  /// Implements the core logging functionality
+  // MARK: - CoreLoggingProtocol Implementation
+  
+  /// Implements the core logging functionality with LogContextDTO
   /// - Parameters:
   ///   - level: The severity level of the log
   ///   - message: The message to log
-  ///   - context: Contextual information about the log
-  public func logMessage(_ level: LogLevel, _ message: String, context: LogContext) async {
+  ///   - context: Contextual information about the log as DTO
+  public func log(_ level: LogLevel, _ message: String, context: LogContextDTO) async {
     // Check if this log level should be processed
     guard backend.shouldLog(level: level, minimumLevel: minimumLevel) else {
       return
     }
 
+    // Create LogContext from LogContextDTO
+    let logContext = LogContext(
+      source: context.getSource(),
+      metadata: context.toPrivacyMetadata()
+    )
+
     // Write to the backend
     await backend.writeLog(
       level: level,
       message: message,
-      context: context,
+      context: logContext,
       subsystem: identifier
     )
 
     // Also log to the logging actor for compatibility
-    await loggingActor.log(level: level, message: message, context: context)
+    await loggingActor.log(level, message, context: context)
+  }
+
+  // MARK: - Helper Methods
+  
+  /// Helper method to convert PrivacyMetadata to LogMetadataDTOCollection
+  /// - Parameter metadata: The privacy metadata to convert
+  /// - Returns: A LogMetadataDTOCollection with the same entries
+  private func createMetadataCollection(from metadata: PrivacyMetadata?) -> LogMetadataDTOCollection {
+    var collection = LogMetadataDTOCollection()
+    
+    // If no metadata, return empty collection
+    guard let metadata = metadata else {
+      return collection
+    }
+    
+    // Convert each entry based on its privacy level
+    for entry in metadata.entriesArray {
+      switch entry.privacy {
+      case .public:
+        collection = collection.withPublic(key: entry.key, value: entry.value)
+      case .private:
+        collection = collection.withPrivate(key: entry.key, value: entry.value)
+      case .sensitive:
+        collection = collection.withSensitive(key: entry.key, value: entry.value)
+      case .hash:
+        collection = collection.withHashed(key: entry.key, value: entry.value)
+      case .auto:
+        // Default to private for auto
+        collection = collection.withPrivate(key: entry.key, value: entry.value)
+      }
+    }
+    
+    return collection
   }
 
   // MARK: - LoggingProtocol Methods
 
   /// Log a trace message
   public func trace(_ message: String, metadata: PrivacyMetadata?, source: String) async {
-    await log(.trace, message, metadata: metadata, source: source)
+    let context = BaseLogContextDTO(
+      domainName: identifier,
+      source: source,
+      metadata: createMetadataCollection(from: metadata)
+    )
+    await trace(message, context: context)
   }
 
   /// Log a debug message
   public func debug(_ message: String, metadata: PrivacyMetadata?, source: String) async {
-    await log(.debug, message, metadata: metadata, source: source)
+    let context = BaseLogContextDTO(
+      domainName: identifier,
+      source: source,
+      metadata: createMetadataCollection(from: metadata)
+    )
+    await debug(message, context: context)
   }
 
   /// Log an info message
   public func info(_ message: String, metadata: PrivacyMetadata?, source: String) async {
-    await log(.info, message, metadata: metadata, source: source)
+    let context = BaseLogContextDTO(
+      domainName: identifier,
+      source: source,
+      metadata: createMetadataCollection(from: metadata)
+    )
+    await info(message, context: context)
   }
 
   /// Log a warning message
   public func warning(_ message: String, metadata: PrivacyMetadata?, source: String) async {
-    await log(.warning, message, metadata: metadata, source: source)
+    let context = BaseLogContextDTO(
+      domainName: identifier,
+      source: source,
+      metadata: createMetadataCollection(from: metadata)
+    )
+    await warning(message, context: context)
   }
 
   /// Log an error message
   public func error(_ message: String, metadata: PrivacyMetadata?, source: String) async {
-    await log(.error, message, metadata: metadata, source: source)
+    let context = BaseLogContextDTO(
+      domainName: identifier,
+      source: source,
+      metadata: createMetadataCollection(from: metadata)
+    )
+    await error(message, context: context)
   }
 
   /// Log a critical message
   public func critical(_ message: String, metadata: PrivacyMetadata?, source: String) async {
-    await log(.critical, message, metadata: metadata, source: source)
+    let context = BaseLogContextDTO(
+      domainName: identifier,
+      source: source,
+      metadata: createMetadataCollection(from: metadata)
+    )
+    await critical(message, context: context)
   }
 
   // MARK: - PrivacyAwareLoggingProtocol Methods
 
-  /// Log a message with explicit privacy controls
+  /// Log a message with explicit privacy controls using DTO context
+  /// - Parameters:
+  ///   - level: The severity level of the log
+  ///   - message: The message with privacy annotations
+  ///   - context: The logging context DTO containing metadata, source, and privacy info
+  public func log(
+    _ level: LogLevel,
+    _ message: PrivacyString,
+    context: LogContextDTO
+  ) async {
+    // Check if this log level should be processed
+    guard backend.shouldLog(level: level, minimumLevel: minimumLevel) else {
+      return
+    }
+
+    // Process the privacy-annotated string
+    let processedMessage = message.processForLogging()
+
+    // Create LogContext from LogContextDTO
+    let logContext = LogContext(
+      source: context.getSource(),
+      metadata: context.toPrivacyMetadata()
+    )
+
+    // Write to the backend
+    await backend.writeLog(
+      level: level,
+      message: processedMessage,
+      context: logContext,
+      subsystem: identifier
+    )
+
+    // Also log to the logging actor for compatibility
+    await loggingActor.log(level, processedMessage, context: context)
+  }
+
+  /// Log a message with explicit privacy controls (legacy API)
   /// - Parameters:
   ///   - level: The severity level of the log
   ///   - message: The message with privacy annotations
@@ -105,33 +212,46 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
     metadata: PrivacyMetadata?,
     source: String
   ) async {
-    // Check if this log level should be processed
-    guard backend.shouldLog(level: level, minimumLevel: minimumLevel) else {
-      return
-    }
-
-    // Process the privacy-annotated string
-    let processedMessage=message.processForLogging()
-
-    // Create context with metadata
-    let context=LogContext(
+    let context = BaseLogContextDTO(
+      domainName: identifier,
       source: source,
-      metadata: metadata
+      metadata: createMetadataCollection(from: metadata)
     )
-
-    // Write to the backend
-    await backend.writeLog(
-      level: level,
-      message: processedMessage,
-      context: context,
-      subsystem: identifier
-    )
-
-    // Also log to the logging actor for compatibility
-    await loggingActor.log(level: level, message: processedMessage, context: context)
+    await log(level, message, context: context)
   }
 
-  /// Log sensitive information with appropriate redaction
+  /// Log sensitive information with appropriate redaction using context
+  /// - Parameters:
+  ///   - level: The severity level of the log
+  ///   - message: The basic message without sensitive content
+  ///   - sensitiveValues: Sensitive values that should be automatically handled
+  ///   - context: The logging context DTO
+  public func logSensitive(
+    _ level: LogLevel,
+    _ message: String,
+    sensitiveValues: LoggingTypes.LogMetadata,
+    context: LogContextDTO
+  ) async {
+    // Convert sensitive values to metadata with privacy annotations
+    var privacyMetadata = context.toPrivacyMetadata()
+    
+    for (key, value) in sensitiveValues.asDictionary {
+      privacyMetadata[key] = LoggingTypes.PrivacyMetadataValue(
+        value: value,
+        privacy: LoggingTypes.LogPrivacyLevel.sensitive
+      )
+    }
+    
+    // Update context with combined metadata
+    let updatedContext = context.withUpdatedMetadata(
+      createMetadataCollection(from: privacyMetadata)
+    )
+    
+    // Log with context
+    await log(level, message, context: updatedContext)
+  }
+
+  /// Log sensitive information with appropriate redaction (legacy API)
   /// - Parameters:
   ///   - level: The severity level of the log
   ///   - message: The basic message without sensitive content
@@ -143,26 +263,104 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
     sensitiveValues: LoggingTypes.LogMetadata,
     source: String
   ) async {
-    // Convert sensitive values to metadata with privacy annotations
-    var privacyMetadata=PrivacyMetadata()
-    for (key, value) in sensitiveValues.asDictionary {
-      privacyMetadata[key]=LoggingTypes.PrivacyMetadataValue(
-        value: value,
-        privacy: LoggingTypes.LogPrivacyLevel.sensitive
-      )
-    }
-
-    // Create context with metadata
-    let context=LogContext(
+    let context = BaseLogContextDTO(
+      domainName: identifier,
       source: source,
-      metadata: privacyMetadata
+      metadata: createMetadataCollection(from: nil)
     )
-
-    // Log the message with custom metadata
-    await logMessage(level, message, context: context)
+    await logSensitive(level, message, sensitiveValues: sensitiveValues, context: context)
   }
 
-  /// Log an error with privacy controls
+  /// Handle an error and log it with privacy controls
+  public func logError(
+    _ error: Error,
+    privacyLevel: LogPrivacyLevel,
+    context: LogContextDTO
+  ) async {
+    var message = "Error occurred: \(error.localizedDescription)"
+    
+    // Create updated metadata collection
+    var updatedMetadata = context.metadata
+    
+    // Add error metadata
+    updatedMetadata = updatedMetadata.withPrivate(
+      key: "errorDescription",
+      value: error.localizedDescription
+    )
+    
+    updatedMetadata = updatedMetadata.withPublic(
+      key: "errorType",
+      value: String(describing: type(of: error))
+    )
+    
+    // If it's a loggable error, extract more details
+    if let loggableError = error as? LoggableErrorDTO {
+      // Get structured error information using available methods
+      let errorDetails = loggableError.getLogMessage()
+      
+      // Include error details in message if different from default
+      if errorDetails != "Error: \(error.localizedDescription)" {
+        message = errorDetails
+      }
+      
+      // Add error metadata
+      updatedMetadata = updatedMetadata.merging(with: LogMetadataDTOCollection(
+        from: loggableError.getPrivacyMetadata())
+      )
+    }
+    
+    // Create a new context with the updated metadata
+    let updatedContext = BaseLogContextDTO(
+      domainName: context.domainName,
+      correlationID: context.correlationID,
+      source: context.source,
+      metadata: updatedMetadata
+    )
+    
+    // Choose log level based on severity (default to error)
+    let level: LogLevel = .error
+    
+    // Log the error with the appropriate privacy level
+    switch privacyLevel {
+    case .public:
+      // Create a privacy string with public visibility
+      let privacyString = PrivacyString(
+        rawValue: message,
+        privacyAnnotations: [(message.startIndex..<message.endIndex): .public]
+      )
+      await log(level, privacyString, context: updatedContext)
+    case .private:
+      // Create a privacy string with private visibility
+      let privacyString = PrivacyString(
+        rawValue: message,
+        privacyAnnotations: [(message.startIndex..<message.endIndex): .private]
+      )
+      await log(level, privacyString, context: updatedContext)
+    case .sensitive:
+      // Create a privacy string with sensitive visibility
+      let privacyString = PrivacyString(
+        rawValue: message,
+        privacyAnnotations: [(message.startIndex..<message.endIndex): .sensitive]
+      )
+      await log(level, privacyString, context: updatedContext)
+    case .hash:
+      // Create a privacy string with hash visibility
+      let privacyString = PrivacyString(
+        rawValue: message,
+        privacyAnnotations: [(message.startIndex..<message.endIndex): .hash]
+      )
+      await log(level, privacyString, context: updatedContext)
+    case .auto:
+      // Default to private for auto
+      let privacyString = PrivacyString(
+        rawValue: message,
+        privacyAnnotations: [(message.startIndex..<message.endIndex): .private]
+      )
+      await log(level, privacyString, context: updatedContext)
+    }
+  }
+
+  /// Log an error with privacy controls (legacy API)
   /// - Parameters:
   ///   - error: The error to log
   ///   - privacyLevel: The privacy level to apply to the error details
@@ -174,26 +372,12 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
     metadata: PrivacyMetadata?,
     source: String
   ) async {
-    // Create a privacy string with the error description
-    let errorMessage=PrivacyString(
-      rawValue: "Error occurred: \(error)",
-      privacyAnnotations: [
-        // Apply privacy level to the entire error description
-        // This is a simplification; in a real implementation we might
-        // want more granular control over which parts are redacted
-        errorRange(for: error): privacyLevel
-      ]
+    let context = BaseLogContextDTO(
+      domainName: identifier,
+      source: source,
+      metadata: createMetadataCollection(from: metadata)
     )
-
-    // Add error metadata
-    var combinedMetadata=metadata ?? PrivacyMetadata()
-    combinedMetadata["errorType"]=LoggingTypes.PrivacyMetadataValue(
-      value: String(describing: type(of: error)),
-      privacy: LoggingTypes.LogPrivacyLevel.public
-    )
-
-    // Log the error with privacy controls
-    await log(.error, errorMessage, metadata: combinedMetadata, source: source)
+    await logError(error, privacyLevel: privacyLevel, context: context)
   }
 
   /// Utility method to calculate the range of the error in the error message

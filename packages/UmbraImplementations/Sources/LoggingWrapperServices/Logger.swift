@@ -523,6 +523,8 @@ public actor Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked Sendabl
           collection = collection.withPrivate(key: entry.key, value: entry.value)
         case .sensitive:
           collection = collection.withSensitive(key: entry.key, value: entry.value)
+        case .hash:
+          collection = collection.withHashed(key: entry.key, value: entry.value)
         case .auto:
           // Default to private for auto
           collection = collection.withPrivate(key: entry.key, value: entry.value)
