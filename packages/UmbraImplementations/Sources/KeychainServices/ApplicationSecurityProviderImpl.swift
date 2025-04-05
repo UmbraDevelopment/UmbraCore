@@ -353,7 +353,7 @@ public final class ApplicationSecurityProviderImpl: SecurityProviderProtocol {
 
   public func createSecureConfig(options: SecurityConfigOptions) async -> SecurityConfigDTO {
     SecurityConfigDTO(
-      encryptionAlgorithm: .aes128CBC,
+      encryptionAlgorithm: .aes256CBC,
       hashAlgorithm: .sha256,
       providerType: .basic,
       options: options

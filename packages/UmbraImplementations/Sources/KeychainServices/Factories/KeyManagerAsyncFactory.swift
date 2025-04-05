@@ -104,6 +104,8 @@ private actor DefaultKeyManager: KeyManagementProtocol {
     let length=switch keyType {
       case .aes256:
         32
+      case .aes128:
+        16
       case .hmacSHA256:
         32
     }
@@ -126,7 +128,7 @@ private actor DefaultKeyManager: KeyManagementProtocol {
       metadata: nil,
       source: "DefaultKeyManager"
     )
-    return .failure(.operationFailed("Storage unavailable in fallback mode"))
+    return .failure(.operationFailed(reason: "Storage unavailable in fallback mode"))
   }
 
   public func retrieveKey(withIdentifier identifier: String) async
@@ -136,7 +138,7 @@ private actor DefaultKeyManager: KeyManagementProtocol {
       metadata: nil,
       source: "DefaultKeyManager"
     )
-    return .failure(.operationFailed("Key not found: \(identifier)"))
+    return .failure(.operationFailed(reason: "Key not found: \(identifier)"))
   }
 
   public func deleteKey(withIdentifier _: String) async -> Result<Void, SecurityProtocolError> {
@@ -145,7 +147,7 @@ private actor DefaultKeyManager: KeyManagementProtocol {
       metadata: nil,
       source: "DefaultKeyManager"
     )
-    return .failure(.operationFailed("Delete operation not supported in fallback mode"))
+    return .failure(.operationFailed(reason: "Delete operation not supported in fallback mode"))
   }
 
   public func rotateKey(
@@ -157,7 +159,7 @@ private actor DefaultKeyManager: KeyManagementProtocol {
       metadata: nil,
       source: "DefaultKeyManager"
     )
-    return .failure(.operationFailed("Key rotation not supported in fallback mode"))
+    return .failure(.operationFailed(reason: "Key rotation not supported in fallback mode"))
   }
 
   public func listKeyIdentifiers() async -> Result<[String], SecurityProtocolError> {

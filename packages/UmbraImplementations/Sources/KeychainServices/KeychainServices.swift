@@ -180,7 +180,7 @@ public struct SimpleKeyManager: KeyManagementProtocol {
       source: "SimpleKeyManager"
     )
     return .failure(
-      .operationFailed("Simple implementation does not support key retrieval")
+      .operationFailed(reason: "Simple implementation does not support key retrieval")
     )
   }
 
@@ -194,7 +194,7 @@ public struct SimpleKeyManager: KeyManagementProtocol {
       source: "SimpleKeyManager"
     )
     return .failure(
-      .operationFailed("Simple implementation does not support key storage")
+      .operationFailed(reason: "Simple implementation does not support key storage")
     )
   }
 
@@ -205,7 +205,7 @@ public struct SimpleKeyManager: KeyManagementProtocol {
       source: "SimpleKeyManager"
     )
     return .failure(
-      .operationFailed("Simple implementation does not support key deletion")
+      .operationFailed(reason: "Simple implementation does not support key deletion")
     )
   }
 
@@ -219,7 +219,7 @@ public struct SimpleKeyManager: KeyManagementProtocol {
       source: "SimpleKeyManager"
     )
     return .failure(
-      .operationFailed("Simple implementation does not support key rotation")
+      .operationFailed(reason: "Simple implementation does not support key rotation")
     )
   }
 
@@ -230,7 +230,7 @@ public struct SimpleKeyManager: KeyManagementProtocol {
       source: "SimpleKeyManager"
     )
     return .failure(
-      .operationFailed("Simple implementation does not support listing key identifiers")
+      .operationFailed(reason: "Simple implementation does not support listing key identifiers")
     )
   }
 }

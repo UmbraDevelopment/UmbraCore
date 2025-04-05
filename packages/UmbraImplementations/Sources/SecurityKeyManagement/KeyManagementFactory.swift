@@ -204,7 +204,7 @@ public actor SimpleKeyManagementActor: KeyManagementProtocol {
         )
         return .success(key)
       } else {
-        let error=SecurityProtocolError.operationFailed("Key not found: \(identifier)")
+        let error=SecurityProtocolError.operationFailed(reason: "Key not found: \(identifier)")
         await securityLogger.logOperationFailure(
           keyIdentifier: identifier,
           operation: "retrieve",
@@ -297,7 +297,7 @@ public actor SimpleKeyManagementActor: KeyManagementProtocol {
         )
         return .success(())
       } else {
-        let error=SecurityProtocolError.operationFailed("Key not found: \(identifier)")
+        let error=SecurityProtocolError.operationFailed(reason: "Key not found: \(identifier)")
         await securityLogger.logOperationFailure(
           keyIdentifier: identifier,
           operation: "delete",
