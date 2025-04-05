@@ -304,9 +304,7 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
       }
       
       // Add error metadata
-      updatedMetadata = updatedMetadata.merging(with: LogMetadataDTOCollection(
-        from: loggableError.getPrivacyMetadata())
-      )
+      updatedMetadata = updatedMetadata.merging(with: createMetadataCollection(from: loggableError.getPrivacyMetadata()))
     }
     
     // Create a new context with the updated metadata

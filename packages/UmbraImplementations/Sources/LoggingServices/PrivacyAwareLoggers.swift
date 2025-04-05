@@ -757,7 +757,7 @@ public class EnhancedErrorLogger: LegacyErrorLoggingProtocol {
       let errorMessage = loggableError.getLogMessage()
       
       // Add error metadata
-      updatedMetadata = updatedMetadata.merging(with: LogMetadataDTOCollection(
+      updatedMetadata = updatedMetadata.merging(with: createMetadataCollection(
         from: loggableError.getPrivacyMetadata())
       )
     }

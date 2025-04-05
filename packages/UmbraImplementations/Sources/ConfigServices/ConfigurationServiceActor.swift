@@ -2,6 +2,7 @@ import ConfigInterfaces
 import CoreInterfaces
 import DateTimeTypes
 import LoggingInterfaces
+import LoggingTypes
 import UmbraErrors
 
 /// ConfigurationServiceActor
@@ -56,11 +57,13 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
     if let logger {
       await logger.debug(
         "Initialising configuration service",
-        metadata: PrivacyMetadata([
-          "source_name": (source.name, .public),
-          "source_type": (source.sourceType.rawValue, .public)
-        ]),
-        source: "ConfigurationServiceActor"
+        context: createLogContext(
+          metadata: PrivacyMetadata([
+            "source_name": (source.name, .public),
+            "source_type": (source.sourceType.rawValue, .public)
+          ]),
+          source: "ConfigurationServiceActor"
+        )
       )
     }
 
@@ -68,7 +71,7 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
     if !sources.isEmpty {
       let message="Configuration service is already initialised"
       if let logger {
-        await logger.warning(message, metadata: nil, source: "ConfigurationServiceActor")
+        await logger.warning(message, context: createLogContext(source: "ConfigurationServiceActor"))
       }
       throw UmbraErrors.ConfigError.initialisationError(message: message)
     }
@@ -90,8 +93,7 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
     if let logger {
       await logger.info(
         "Configuration service initialised successfully",
-        metadata: nil,
-        source: "ConfigurationServiceActor"
+        context: createLogContext(source: "ConfigurationServiceActor")
       )
     }
   }
@@ -106,12 +108,14 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
     if let logger {
       await logger.info(
         "Adding configuration source",
-        metadata: PrivacyMetadata([
-          "source": (source.name, .public),
-          "priority": ("\(priority)", .public),
-          "source_type": (source.sourceType.rawValue, .public)
-        ]),
-        source: "ConfigurationServiceActor"
+        context: createLogContext(
+          metadata: PrivacyMetadata([
+            "source": (source.name, .public),
+            "priority": ("\(priority)", .public),
+            "source_type": (source.sourceType.rawValue, .public)
+          ]),
+          source: "ConfigurationServiceActor"
+        )
       )
     }
 
@@ -121,10 +125,12 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
       if let logger {
         await logger.warning(
           "Configuration source already exists",
-          metadata: PrivacyMetadata([
-            "source_id": (source.identifier, .public)
-          ]),
-          source: "ConfigurationServiceActor"
+          context: createLogContext(
+            metadata: PrivacyMetadata([
+              "source_id": (source.identifier, .public)
+            ]),
+            source: "ConfigurationServiceActor"
+          )
         )
       }
 
@@ -149,8 +155,7 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
     if let logger {
       await logger.info(
         "Configuration source added successfully",
-        metadata: nil,
-        source: "ConfigurationServiceActor"
+        context: createLogContext(source: "ConfigurationServiceActor")
       )
     }
   }
@@ -163,10 +168,12 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
     if let logger {
       await logger.info(
         "Removing configuration source",
-        metadata: PrivacyMetadata([
-          "source_id": (identifier, .public)
-        ]),
-        source: "ConfigurationServiceActor"
+        context: createLogContext(
+          metadata: PrivacyMetadata([
+            "source_id": (identifier, .public)
+          ]),
+          source: "ConfigurationServiceActor"
+        )
       )
     }
 
@@ -176,10 +183,12 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
       if let logger {
         await logger.warning(
           "Configuration source does not exist",
-          metadata: PrivacyMetadata([
-            "source_id": (identifier, .public)
-          ]),
-          source: "ConfigurationServiceActor"
+          context: createLogContext(
+            metadata: PrivacyMetadata([
+              "source_id": (identifier, .public)
+            ]),
+            source: "ConfigurationServiceActor"
+          )
         )
       }
 
@@ -211,8 +220,7 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
     if let logger {
       await logger.info(
         "Configuration source removed successfully",
-        metadata: nil,
-        source: "ConfigurationServiceActor"
+        context: createLogContext(source: "ConfigurationServiceActor")
       )
     }
   }
@@ -229,19 +237,23 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
       if value.isSensitive {
         await logger.debug(
           "Retrieved sensitive string configuration value",
-          metadata: PrivacyMetadata([
-            "key": (key, .public)
-          ]),
-          source: "ConfigurationServiceActor"
+          context: createLogContext(
+            metadata: PrivacyMetadata([
+              "key": (key, .public)
+            ]),
+            source: "ConfigurationServiceActor"
+          )
         )
       } else {
         await logger.debug(
           "Retrieved string configuration value",
-          metadata: PrivacyMetadata([
-            "key": (key, .public),
-            "value": (value.stringValue, .public)
-          ]),
-          source: "ConfigurationServiceActor"
+          context: createLogContext(
+            metadata: PrivacyMetadata([
+              "key": (key, .public),
+              "value": (value.stringValue, .public)
+            ]),
+            source: "ConfigurationServiceActor"
+          )
         )
       }
     }
@@ -269,11 +281,13 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
     if let logger {
       await logger.debug(
         "Retrieved boolean configuration value",
-        metadata: PrivacyMetadata([
-          "key": (key, .public),
-          "value": (value.stringValue, .public)
-        ]),
-        source: "ConfigurationServiceActor"
+        context: createLogContext(
+          metadata: PrivacyMetadata([
+            "key": (key, .public),
+            "value": (value.stringValue, .public)
+          ]),
+          source: "ConfigurationServiceActor"
+        )
       )
     }
 
@@ -300,11 +314,13 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
     if let logger {
       await logger.debug(
         "Retrieved integer configuration value",
-        metadata: PrivacyMetadata([
-          "key": (key, .public),
-          "value": (value.stringValue, .public)
-        ]),
-        source: "ConfigurationServiceActor"
+        context: createLogContext(
+          metadata: PrivacyMetadata([
+            "key": (key, .public),
+            "value": (value.stringValue, .public)
+          ]),
+          source: "ConfigurationServiceActor"
+        )
       )
     }
 
@@ -331,11 +347,13 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
     if let logger {
       await logger.debug(
         "Retrieved double configuration value",
-        metadata: PrivacyMetadata([
-          "key": (key, .public),
-          "value": (value.stringValue, .public)
-        ]),
-        source: "ConfigurationServiceActor"
+        context: createLogContext(
+          metadata: PrivacyMetadata([
+            "key": (key, .public),
+            "value": (value.stringValue, .public)
+          ]),
+          source: "ConfigurationServiceActor"
+        )
       )
     }
 
@@ -362,10 +380,12 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
     if let logger {
       await logger.debug(
         "Retrieved secure configuration value",
-        metadata: PrivacyMetadata([
-          "key": (key, .public)
-        ]),
-        source: "ConfigurationServiceActor"
+        context: createLogContext(
+          metadata: PrivacyMetadata([
+            "key": (key, .public)
+          ]),
+          source: "ConfigurationServiceActor"
+        )
       )
     }
 
@@ -382,10 +402,12 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
       if let logger {
         await logger.warning(
           "Accessing non-sensitive value through secure API",
-          metadata: PrivacyMetadata([
-            "key": (key, .public)
-          ]),
-          source: "ConfigurationServiceActor"
+          context: createLogContext(
+            metadata: PrivacyMetadata([
+              "key": (key, .public)
+            ]),
+            source: "ConfigurationServiceActor"
+          )
         )
       }
     }
@@ -405,21 +427,25 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
       if value.isSensitive {
         await logger.info(
           "Setting sensitive configuration value",
-          metadata: PrivacyMetadata([
-            "key": (key, .public),
-            "source": (source ?? "default", .public)
-          ]),
-          source: "ConfigurationServiceActor"
+          context: createLogContext(
+            metadata: PrivacyMetadata([
+              "key": (key, .public),
+              "source": (source ?? "default", .public)
+            ]),
+            source: "ConfigurationServiceActor"
+          )
         )
       } else {
         await logger.info(
           "Setting configuration value",
-          metadata: PrivacyMetadata([
-            "key": (key, .public),
-            "value": (value.stringValue, .public),
-            "source": (source ?? "default", .public)
-          ]),
-          source: "ConfigurationServiceActor"
+          context: createLogContext(
+            metadata: PrivacyMetadata([
+              "key": (key, .public),
+              "value": (value.stringValue, .public),
+              "source": (source ?? "default", .public)
+            ]),
+            source: "ConfigurationServiceActor"
+          )
         )
       }
     }
@@ -471,10 +497,12 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
     if let logger {
       await logger.debug(
         "Configuration value set successfully",
-        metadata: PrivacyMetadata([
-          "key": (key, .public)
-        ]),
-        source: "ConfigurationServiceActor"
+        context: createLogContext(
+          metadata: PrivacyMetadata([
+            "key": (key, .public)
+          ]),
+          source: "ConfigurationServiceActor"
+        )
       )
     }
   }
@@ -489,11 +517,13 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
     if let logger {
       await logger.info(
         "Removing configuration value",
-        metadata: PrivacyMetadata([
-          "key": (key, .public),
-          "source": (source ?? "all", .public)
-        ]),
-        source: "ConfigurationServiceActor"
+        context: createLogContext(
+          metadata: PrivacyMetadata([
+            "key": (key, .public),
+            "source": (source ?? "all", .public)
+          ]),
+          source: "ConfigurationServiceActor"
+        )
       )
     }
 
@@ -527,10 +557,12 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
       if let logger {
         await logger.debug(
           "Configuration value does not exist, nothing to remove",
-          metadata: PrivacyMetadata([
-            "key": (key, .public)
-          ]),
-          source: "ConfigurationServiceActor"
+          context: createLogContext(
+            metadata: PrivacyMetadata([
+              "key": (key, .public)
+            ]),
+            source: "ConfigurationServiceActor"
+          )
         )
       }
       return
@@ -558,10 +590,12 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
     if let logger {
       await logger.debug(
         "Configuration value removed successfully",
-        metadata: PrivacyMetadata([
-          "key": (key, .public)
-        ]),
-        source: "ConfigurationServiceActor"
+        context: createLogContext(
+          metadata: PrivacyMetadata([
+            "key": (key, .public)
+          ]),
+          source: "ConfigurationServiceActor"
+        )
       )
     }
   }
@@ -574,10 +608,12 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
     if let logger {
       await logger.info(
         "Saving configuration changes",
-        metadata: PrivacyMetadata([
-          "source": (source ?? "all", .public)
-        ]),
-        source: "ConfigurationServiceActor"
+        context: createLogContext(
+          metadata: PrivacyMetadata([
+            "source": (source ?? "all", .public)
+          ]),
+          source: "ConfigurationServiceActor"
+        )
       )
     }
 
@@ -608,8 +644,7 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
     if let logger {
       await logger.info(
         "Configuration changes saved successfully",
-        metadata: nil,
-        source: "ConfigurationServiceActor"
+        context: createLogContext(source: "ConfigurationServiceActor")
       )
     }
   }
@@ -627,12 +662,14 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
       Task {
         await logger.debug(
           "New configuration change subscription",
-          metadata: PrivacyMetadata([
-            "subscription_id": (subscriptionID.uuidString, .public),
-            "filter_types": (filter?.changeTypes?.map(\.rawValue).joined(separator: ", ") ?? "all",
-                             .public)
-          ]),
-          source: "ConfigurationServiceActor"
+          context: createLogContext(
+            metadata: PrivacyMetadata([
+              "subscription_id": (subscriptionID.uuidString, .public),
+              "filter_types": (filter?.changeTypes?.map(\.rawValue).joined(separator: ", ") ?? "all",
+                               .public)
+            ]),
+            source: "ConfigurationServiceActor"
+          )
         )
       }
     }
@@ -666,10 +703,12 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
     if let logger {
       await logger.debug(
         "Getting all configuration keys",
-        metadata: PrivacyMetadata([
-          "source": (source ?? "all", .public)
-        ]),
-        source: "ConfigurationServiceActor"
+        context: createLogContext(
+          metadata: PrivacyMetadata([
+            "source": (source ?? "all", .public)
+          ]),
+          source: "ConfigurationServiceActor"
+        )
       )
     }
 
@@ -695,10 +734,12 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
     if let logger {
       await logger.debug(
         "Configuration change subscription removed",
-        metadata: PrivacyMetadata([
-          "subscription_id": (subscriptionID.uuidString, .public)
-        ]),
-        source: "ConfigurationServiceActor"
+        context: createLogContext(
+          metadata: PrivacyMetadata([
+            "subscription_id": (subscriptionID.uuidString, .public)
+          ]),
+          source: "ConfigurationServiceActor"
+        )
       )
     }
   }
@@ -715,13 +756,15 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
       if let logger {
         await logger.trace(
           "Published configuration change event to subscriber",
-          metadata: PrivacyMetadata([
-            "subscription_id": (subscriptionID.uuidString, .public),
-            "event_id": (event.identifier, .public),
-            "event_type": (event.changeType.rawValue, .public),
-            "key": (event.key, .public)
-          ]),
-          source: "ConfigurationServiceActor"
+          context: createLogContext(
+            metadata: PrivacyMetadata([
+              "subscription_id": (subscriptionID.uuidString, .public),
+              "event_id": (event.identifier, .public),
+              "event_type": (event.changeType.rawValue, .public),
+              "key": (event.key, .public)
+            ]),
+            source: "ConfigurationServiceActor"
+          )
         )
       }
     }
@@ -769,10 +812,12 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
       if let logger {
         await logger.error(
           "Cannot load configuration from unknown source",
-          metadata: PrivacyMetadata([
-            "source_id": (sourceID, .public)
-          ]),
-          source: "ConfigurationServiceActor"
+          context: createLogContext(
+            metadata: PrivacyMetadata([
+              "source_id": (sourceID, .public)
+            ]),
+            source: "ConfigurationServiceActor"
+          )
         )
       }
 
@@ -808,10 +853,12 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
     if let logger {
       await logger.debug(
         "Saving configuration to source",
-        metadata: PrivacyMetadata([
-          "source_id": (sourceID, .public)
-        ]),
-        source: "ConfigurationServiceActor"
+        context: createLogContext(
+          metadata: PrivacyMetadata([
+            "source_id": (sourceID, .public)
+          ]),
+          source: "ConfigurationServiceActor"
+        )
       )
     }
   }
@@ -823,13 +870,55 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
     if let logger {
       await logger.debug(
         "Refreshing configuration cache",
-        metadata: nil,
-        source: "ConfigurationServiceActor"
+        context: createLogContext(source: "ConfigurationServiceActor")
       )
     }
 
     // Mock refreshing the cache - this would actually merge values from all sources
     // respecting their priority
+  }
+
+  /// Create a LogContextDTO from metadata and source
+  /// - Parameters:
+  ///   - metadata: The privacy metadata
+  ///   - source: Optional source identifier
+  /// - Returns: A LogContextDTO suitable for logging
+  private func createLogContext(metadata: PrivacyMetadata?, source: String) -> LogContextDTO {
+    var metadataCollection = LogMetadataDTOCollection()
+    
+    if let metadata = metadata {
+      // Convert PrivacyMetadata to LogMetadataDTOCollection using public APIs
+      // Use the appropriate builder methods for each privacy level
+      for entry in metadata.entriesArray {
+        switch entry.privacy {
+        case .public:
+          metadataCollection = metadataCollection.withPublic(key: entry.key, value: entry.value)
+        case .private:
+          metadataCollection = metadataCollection.withPrivate(key: entry.key, value: entry.value)
+        case .sensitive:
+          metadataCollection = metadataCollection.withSensitive(key: entry.key, value: entry.value)
+        case .auto:
+          // For auto, default to public
+          metadataCollection = metadataCollection.withPublic(key: entry.key, value: entry.value)
+        default:
+          // For any other cases like .hash, default to private
+          metadataCollection = metadataCollection.withPrivate(key: entry.key, value: entry.value)
+        }
+      }
+    }
+    
+    return BaseLogContextDTO(
+      domainName: "Configuration",
+      source: source,
+      metadata: metadataCollection
+    )
+  }
+  
+  /// Create a LogContextDTO with just a source identifier
+  /// - Parameter source: Source identifier
+  /// - Returns: A LogContextDTO suitable for logging
+  private func createLogContext(source: String) -> LogContextDTO {
+    return createLogContext(metadata: nil, source: source)
   }
 }
 
