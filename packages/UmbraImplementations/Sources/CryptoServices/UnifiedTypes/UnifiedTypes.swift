@@ -18,7 +18,7 @@ public enum UnifiedCryptoTypes {
   /**
    Unified key generation options.
    */
-  public struct KeyGenerationOptions: Sendable {
+  public struct KeyGenerationOptions: @unchecked Sendable {
     /// The key algorithm to use
     public let algorithm: KeyAlgorithm
 

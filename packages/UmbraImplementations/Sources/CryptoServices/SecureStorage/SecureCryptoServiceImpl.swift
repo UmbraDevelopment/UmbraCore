@@ -244,7 +244,7 @@ public actor SecureCryptoServiceImpl: CryptoServiceProtocol {
 
     do {
       // Hash the data with the specified algorithm
-      let hash=try await performHashing(Data(dataToVerify))
+      let hash=try performHashing(Data(dataToVerify))
 
       // Compare hashes using constant-time comparison to prevent timing attacks
       let hashMatches=expectedHash.count == hash.count && constantTimeCompare(
@@ -440,11 +440,7 @@ public actor SecureCryptoServiceImpl: CryptoServiceProtocol {
       }
 
       var metadata=PrivacyMetadata()
-      if let options = options {
-        metadata["keyType"]=PrivacyMetadataValue(value: "symmetric", privacy: .public)
-      } else {
-        metadata["keyType"]=PrivacyMetadataValue(value: "symmetric", privacy: .public)
-      }
+      metadata["keyType"]=PrivacyMetadataValue(value: "symmetric", privacy: .public)
       metadata["keyLength"]=PrivacyMetadataValue(value: "\(length)", privacy: .public)
 
       await logger.debug(

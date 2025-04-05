@@ -2,23 +2,21 @@ import BackupInterfaces
 import Foundation
 
 /**
- * Token representing an active backup operation.
- *
- * These tokens are used to track and manage ongoing backup operations,
+ * Token that represents an ongoing backup operation,
  * enabling functionality like cancellation.
  */
-public class BackupOperationToken: Sendable {
+public final class BackupOperationToken: Sendable {
   /// Unique identifier for this operation
   public let id: UUID
-
+  
   /// Type of operation being performed
   public let operation: BackupOperation
-
+  
   /// Whether the operation is cancellable
   public let cancellable: Bool
-
+  
   /// Whether the operation has been cancelled
-  public var cancelled: Bool
+  @MainActor public private(set) var cancelled: Bool
 
   /**
    * Creates a new operation token.
