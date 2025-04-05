@@ -262,7 +262,7 @@ public actor LoggerImplementation: LoggingProtocol, CoreLoggingProtocol {
     let stringMessage=message.processForLogging()
     let context=LogContext(source: source, metadata: metadata)
 
-    await loggingActor.log(level: level, message: stringMessage, context: context)
+    await loggingActor.log(level, stringMessage, context: context)
 
     // Log locally if needed
     switch level {

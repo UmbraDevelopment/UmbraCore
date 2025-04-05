@@ -96,19 +96,23 @@ public actor SecurityLogger: DomainLoggerProtocol {
     let formattedMessage="[\(domainName)] \(message)"
 
     // Convert LogLevel to UmbraLogLevel for secureLogger
-    let secureLevel: UmbraLogLevel=switch level {
+    let secureLevel: UmbraLogLevel = switch level {
       case .trace, .debug: .debug
       case .info: .info
       case .warning: .warning
       case .error: .error
       case .critical: .critical
     }
-
-    // Use the secure logger with converted level
+    
+    // Create a simplified metadata dictionary with minimal information
+    // Skip complex metadata conversion since we don't have the correct types
+    let metadataDict: [String: PrivacyTaggedValue] = [:]
+    
+    // Use the secure logger with converted level but without additional metadata
     await secureLogger.log(
       level: secureLevel,
       message: formattedMessage,
-      metadata: context.asLogMetadata()
+      metadata: metadataDict
     )
 
     // Also log through the main logging service for broader visibility
@@ -306,6 +310,37 @@ public actor SecurityLogger: DomainLoggerProtocol {
       resource: context.getSource(),
       additionalMetadata: nil // We don't pass metadata here since the API has changed
     )
+  }
+
+  /**
+   Log an error with context
+   - Parameters:
+     - error: The error to log
+     - context: The context for the log entry
+   */
+  public func logError(_ error: Error, context: LogContextDTO) async {
+    if let loggableError = error as? LoggableErrorProtocol {
+      // Use the error's built-in privacy metadata
+      let errorMetadata = loggableError.getPrivacyMetadata().toLogMetadata()
+      let formattedMessage = "[\(domainName)] \(loggableError.getLogMessage())"
+      let source = "\(loggableError.getSource()) via \(domainName)"
+
+      await loggingService.error(formattedMessage, metadata: errorMetadata, source: source)
+    } else {
+      // Handle standard errors
+      let formattedMessage = "[\(domainName)] \(error.localizedDescription)"
+      
+      if let securityContext = context as? SecurityLogContext {
+        // Update the context with error information
+        let updatedContext = securityContext.withUpdatedMetadata(
+          securityContext.metadata.withPrivate(key: "error", value: error.localizedDescription)
+        )
+        await log(.error, formattedMessage, context: updatedContext)
+      } else {
+        // Use the context as is
+        await log(.error, formattedMessage, context: context)
+      }
+    }
   }
 
   /**

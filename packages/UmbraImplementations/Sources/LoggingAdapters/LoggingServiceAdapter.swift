@@ -196,18 +196,14 @@ public actor LoggingServiceAdapter: LoggingServiceProtocol {
   public func log(_ level: LogLevel, _ message: PrivacyString, context: LogContextDTO) async {
     // Convert PrivacyString to a plain String
     let stringMessage=message.processForLogging()
-    let source=context.getSource()
 
     // If the underlying logger supports privacy-aware logging, use it
     if let privacyAwareLogger=logger as? PrivacyAwareLoggingProtocol {
-      // Get privacy metadata from context
-      let privacyMetadata=context.toPrivacyMetadata()
-
+      // Use the privacy-aware logger with the proper context
       await privacyAwareLogger.log(
-        level: level,
-        message: message,
-        metadata: privacyMetadata,
-        source: source
+        level,
+        message,
+        context: context
       )
     } else {
       // Fall back to regular string logging
@@ -221,8 +217,8 @@ public actor LoggingServiceAdapter: LoggingServiceProtocol {
     _ message: PrivacyString,
     context: LogContextDTO
   ) async {
-    // Convert message to string
-    let stringMessage=message.toString(privacy: .auto)
+    // For PrivacyString, we need to use the string value
+    let stringMessage = String(describing: message)
 
     // Use the underlying logger directly with the context
     await logger.log(level, stringMessage, context: context)
