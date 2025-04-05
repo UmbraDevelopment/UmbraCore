@@ -7,7 +7,7 @@ import SecurityCoreInterfaces
  An implementation of CryptoServiceProtocol that adds logging for
  all operations before delegating to the wrapped implementation.
  */
-public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
+public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
   /// The wrapped implementation
   private let wrapped: CryptoServiceProtocol
   
@@ -284,6 +284,41 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
           metadata: nil,
           source: "LoggingCryptoService"
         )
+    }
+    
+    return result
+  }
+  
+  /**
+   Export data from secure storage with logging.
+   
+   - Parameter identifier: Identifier for the data to export
+   - Returns: The raw data or an error
+   */
+  public func exportData(
+    identifier: String
+  ) async -> Result<[UInt8], SecurityStorageError> {
+    await logger.info(
+      "Exporting data with identifier: \(identifier)",
+      metadata: nil,
+      source: "LoggingCryptoService"
+    )
+    
+    let result = await wrapped.exportData(identifier: identifier)
+    
+    switch result {
+    case .success:
+      await logger.info(
+        "Successfully exported data with identifier: \(identifier)",
+        metadata: nil,
+        source: "LoggingCryptoService"
+      )
+    case .failure(let error):
+      await logger.error(
+        "Failed to export data: \(error)",
+        metadata: nil,
+        source: "LoggingCryptoService"
+      )
     }
     
     return result

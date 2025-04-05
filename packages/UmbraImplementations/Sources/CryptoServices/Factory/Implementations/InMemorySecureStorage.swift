@@ -71,4 +71,12 @@ public actor InMemorySecureStorage: SecureStorageProtocol {
     
     return .success(Array(storage.keys))
   }
+  
+  public func exportData(withIdentifier identifier: String) async -> Result<[UInt8], SecurityStorageError> {
+    guard let data = storage[identifier] else {
+      return .failure(.keyNotFound)
+    }
+    
+    return .success(data)
+  }
 }

@@ -9,7 +9,7 @@ import SecurityCoreInterfaces
  This implementation provides configurable success/failure behavior for all methods,
  making it useful for unit testing components that depend on CryptoServiceProtocol.
  */
-public actor MockCryptoServiceImpl: CryptoServiceProtocol {
+public actor MockCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
   /// Configuration options for the mock
   public struct Configuration: Sendable {
     /// Whether encryption operations should succeed
@@ -33,6 +33,9 @@ public actor MockCryptoServiceImpl: CryptoServiceProtocol {
     /// Whether a verified hash matches (if verification succeeds)
     public var hashMatches: Bool
     
+    /// Whether export data operations should succeed
+    public var exportDataSucceeds: Bool
+    
     /// Creates a new configuration with specified options
     public init(
       encryptionSucceeds: Bool = true,
@@ -41,7 +44,8 @@ public actor MockCryptoServiceImpl: CryptoServiceProtocol {
       verificationSucceeds: Bool = true,
       keyGenerationSucceeds: Bool = true,
       storageSucceeds: Bool = true,
-      hashMatches: Bool = true
+      hashMatches: Bool = true,
+      exportDataSucceeds: Bool = true
     ) {
       self.encryptionSucceeds = encryptionSucceeds
       self.decryptionSucceeds = decryptionSucceeds
@@ -50,6 +54,7 @@ public actor MockCryptoServiceImpl: CryptoServiceProtocol {
       self.keyGenerationSucceeds = keyGenerationSucceeds
       self.storageSucceeds = storageSucceeds
       self.hashMatches = hashMatches
+      self.exportDataSucceeds = exportDataSucceeds
     }
   }
   
@@ -105,7 +110,7 @@ public actor MockCryptoServiceImpl: CryptoServiceProtocol {
       
       return .success(identifier)
     } else {
-      return .failure(.operationFailed)
+      return .failure(.operationFailed("Mock encryption failure"))
     }
   }
   
@@ -138,7 +143,7 @@ public actor MockCryptoServiceImpl: CryptoServiceProtocol {
       let _ = await secureStorage.storeData(mockData, withIdentifier: decryptedID)
       return .success(decryptedID)
     } else {
-      return .failure(.operationFailed)
+      return .failure(.operationFailed("Mock decryption failure"))
     }
   }
   
@@ -168,7 +173,7 @@ public actor MockCryptoServiceImpl: CryptoServiceProtocol {
       let _ = await secureStorage.storeData([0x01, 0x02, 0x03, 0x04], withIdentifier: identifier)
       return .success(identifier)
     } else {
-      return .failure(.operationFailed)
+      return .failure(.operationFailed("Mock hashing failure"))
     }
   }
   
@@ -198,7 +203,7 @@ public actor MockCryptoServiceImpl: CryptoServiceProtocol {
     if configuration.verificationSucceeds {
       return .success(configuration.hashMatches)
     } else {
-      return .failure(.operationFailed)
+      return .failure(.operationFailed("Mock hash verification failure"))
     }
   }
   
@@ -229,7 +234,7 @@ public actor MockCryptoServiceImpl: CryptoServiceProtocol {
       let _ = await secureStorage.storeData(keyData, withIdentifier: keyID)
       return .success(keyID)
     } else {
-      return .failure(.operationFailed)
+      return .failure(.operationFailed("Mock key generation failure"))
     }
   }
   
@@ -260,7 +265,24 @@ public actor MockCryptoServiceImpl: CryptoServiceProtocol {
       let _ = await secureStorage.storeData(data, withIdentifier: identifier)
       return .success(identifier)
     } else {
-      return .failure(.operationFailed)
+      return .failure(.operationFailed("Mock data import failure"))
+    }
+  }
+  
+  /**
+   Export data with configurable success/failure behavior.
+   
+   - Parameter identifier: Identifier for the data to export
+   - Returns: Mock data or an error
+   */
+  public func exportData(
+    identifier: String
+  ) async -> Result<[UInt8], SecurityStorageError> {
+    if configuration.exportDataSucceeds {
+      let mockData: [UInt8] = [0x01, 0x02, 0x03, 0x04]
+      return .success(mockData)
+    } else {
+      return .failure(.operationFailed("Mock data export failure"))
     }
   }
 }

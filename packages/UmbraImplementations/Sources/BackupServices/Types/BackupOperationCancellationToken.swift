@@ -9,17 +9,16 @@ import Foundation
  */
 
 /**
- * Legacy wrapper to maintain backward compatibility.
- * This class redirects to the canonical actor-based implementation.
+ * Implementation of a cancellation token for backup operations.
  *
  * @deprecated Use BackupOperationCancellationToken from BackupInterfaces instead
  */
-public class BackupOperationCancellationTokenImpl: Sendable {
+public final class BackupOperationCancellationTokenImpl: Sendable {
   /// Unique identifier for this token
   public let id: String
 
   /// Whether the operation has been cancelled
-  public var cancelled: Bool
+  @MainActor public private(set) var cancelled: Bool
 
   /// The actual actor-based token
   private let actorToken: BackupOperationCancellationToken

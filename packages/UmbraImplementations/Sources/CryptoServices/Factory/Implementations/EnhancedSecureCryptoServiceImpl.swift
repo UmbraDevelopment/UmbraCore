@@ -15,7 +15,7 @@ import SecurityCoreInterfaces
  This implementation can be used as a decorator over any other crypto implementation for extra
  validation of cryptographic operations.
  */
-public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
+public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
 
   /// The wrapped implementation that does the actual cryptographic work
   private let wrapped: CryptoServiceProtocol
@@ -72,7 +72,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
         metadata: nil,
         source: "EnhancedSecureCryptoService"
       )
-      return .failure(.operationFailed)
+      return .failure(.operationFailed("Rate limited operation"))
     }
     
     // Input validation
@@ -82,7 +82,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
         metadata: nil,
         source: "EnhancedSecureCryptoService"
       )
-      return .failure(.operationFailed)
+      return .failure(.operationFailed("Invalid input: empty identifier"))
     }
     
     // Verify key exists
@@ -127,7 +127,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
         metadata: nil,
         source: "EnhancedSecureCryptoService"
       )
-      return .failure(.operationFailed)
+      return .failure(.operationFailed("Rate limited operation"))
     }
     
     // Verify encrypted data exists
@@ -179,7 +179,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
         metadata: nil,
         source: "EnhancedSecureCryptoService"
       )
-      return .failure(.operationFailed)
+      return .failure(.operationFailed("Rate limited operation"))
     }
     
     // Input validation
@@ -189,7 +189,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
         metadata: nil,
         source: "EnhancedSecureCryptoService"
       )
-      return .failure(.operationFailed)
+      return .failure(.operationFailed("Invalid input: empty data identifier"))
     }
     
     // Delegate to wrapped implementation
@@ -220,7 +220,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
         metadata: nil,
         source: "EnhancedSecureCryptoService"
       )
-      return .failure(.operationFailed)
+      return .failure(.operationFailed("Rate limited operation"))
     }
     
     // Verify data exists
@@ -272,7 +272,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
         metadata: nil,
         source: "EnhancedSecureCryptoService"
       )
-      return .failure(.operationFailed)
+      return .failure(.operationFailed("Rate limited operation"))
     }
     
     // Input validation
@@ -282,7 +282,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
         metadata: nil,
         source: "EnhancedSecureCryptoService"
       )
-      return .failure(.operationFailed)
+      return .failure(.operationFailed("Invalid key length: \(length)"))
     }
     
     // Delegate to wrapped implementation
@@ -311,7 +311,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
         metadata: nil,
         source: "EnhancedSecureCryptoService"
       )
-      return .failure(.operationFailed)
+      return .failure(.operationFailed("Rate limited operation"))
     }
     
     // Input validation
@@ -321,7 +321,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
         metadata: nil,
         source: "EnhancedSecureCryptoService"
       )
-      return .failure(.operationFailed)
+      return .failure(.operationFailed("Invalid input: empty data"))
     }
     
     if let customIdentifier = customIdentifier, customIdentifier.isEmpty {
@@ -330,7 +330,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
         metadata: nil,
         source: "EnhancedSecureCryptoService"
       )
-      return .failure(.operationFailed)
+      return .failure(.operationFailed("Invalid input: empty custom identifier"))
     }
     
     // Delegate to wrapped implementation
@@ -339,18 +339,64 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
       customIdentifier: customIdentifier
     )
   }
+  
+  /**
+   Export data from secure storage.
+   
+   This operation is rate-limited and includes additional validation.
+   
+   - Parameter identifier: Identifier for the data to export
+   - Returns: The raw data or an error
+   */
+  public func exportData(
+    identifier: String
+  ) async -> Result<[UInt8], SecurityStorageError> {
+    // Check rate limiter
+    if rateLimiter.isRateLimited(.exportData) {
+      await logger.warning(
+        "Rate limited data export operation",
+        metadata: nil,
+        source: "EnhancedSecureCryptoService"
+      )
+      return .failure(.operationFailed("Rate limited operation"))
+    }
+    
+    // Input validation
+    guard !identifier.isEmpty else {
+      await logger.error(
+        "Empty identifier provided for data export",
+        metadata: nil,
+        source: "EnhancedSecureCryptoService"
+      )
+      return .failure(.operationFailed("Invalid input: empty identifier"))
+    }
+    
+    // Verify data exists
+    let dataResult = await secureStorage.retrieveData(withIdentifier: identifier)
+    guard case .success = dataResult else {
+      await logger.error(
+        "Data not found for export: \(identifier)",
+        metadata: nil,
+        source: "EnhancedSecureCryptoService"
+      )
+      return .failure(.keyNotFound)
+    }
+    
+    // Delegate to wrapped implementation
+    return await wrapped.exportData(identifier: identifier)
+  }
 }
 
 /**
  Simple rate limiter for security operations.
  */
-public class RateLimiter: Sendable {
+public final class RateLimiter: Sendable {
   /// Operations that can be rate limited
   public enum Operation: String, Sendable {
     case encrypt
     case decrypt
     case hash
-    case verify
+    case verifyHash
     case generateKey
     case importData
     case exportData
