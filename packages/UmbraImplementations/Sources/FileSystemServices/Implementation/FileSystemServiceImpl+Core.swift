@@ -162,8 +162,9 @@ extension FileSystemServiceImpl {
         context: FileSystemLogContext(
           operation: "copy",
           path: sourcePath.path,
-          targetPath: destinationPath.path,
           source: "FileSystemService"
+        ).withUpdatedMetadata(
+          LogMetadataDTOCollection().withPublic(key: "destinationPath", value: destinationPath.path)
         )
       )
     } catch {
@@ -172,8 +173,11 @@ extension FileSystemServiceImpl {
         context: FileSystemLogContext(
           operation: "copy",
           path: sourcePath.path,
-          targetPath: destinationPath.path,
           source: "FileSystemService"
+        ).withUpdatedMetadata(
+          LogMetadataDTOCollection()
+            .withPublic(key: "destinationPath", value: destinationPath.path)
+            .withPrivate(key: "error", value: error.localizedDescription)
         )
       )
       throw FileSystemInterfaces.FileSystemError.writeError(
@@ -266,8 +270,9 @@ extension FileSystemServiceImpl {
         context: FileSystemLogContext(
           operation: "move",
           path: sourcePath.path,
-          targetPath: destinationPath.path,
           source: "FileSystemService"
+        ).withUpdatedMetadata(
+          LogMetadataDTOCollection().withPublic(key: "destinationPath", value: destinationPath.path)
         )
       )
     } catch {
@@ -276,8 +281,11 @@ extension FileSystemServiceImpl {
         context: FileSystemLogContext(
           operation: "move",
           path: sourcePath.path,
-          targetPath: destinationPath.path,
           source: "FileSystemService"
+        ).withUpdatedMetadata(
+          LogMetadataDTOCollection()
+            .withPublic(key: "destinationPath", value: destinationPath.path)
+            .withPrivate(key: "error", value: error.localizedDescription)
         )
       )
       throw FileSystemInterfaces.FileSystemError.writeError(

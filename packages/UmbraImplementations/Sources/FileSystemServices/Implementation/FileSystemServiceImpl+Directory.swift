@@ -43,19 +43,19 @@ extension FileSystemServiceImpl {
 
       if !isDir.boolValue {
         await logger.warning(
-          FileSystemLogContext(
+          "Path exists but is not a directory: \(path.path)",
+          context: FileSystemLogContext(
             operation: "createDirectory",
             path: path.path,
             source: "FileSystemService"
-          ).withUpdatedMetadata(
-            LogMetadataDTOCollection().withPrivate(key: "reason", value: "File exists at path")
           )
         )
         throw FileSystemError.pathAlreadyExists(path: path.path)
       } else if !createIntermediates {
         // Directory already exists, which is fine
         await logger.debug(
-          FileSystemLogContext(
+          "Directory already exists at \(path.path)",
+          context: FileSystemLogContext(
             operation: "createDirectory",
             path: path.path,
             source: "FileSystemService"
@@ -108,40 +108,49 @@ extension FileSystemServiceImpl {
         for (key, value) in attributes.safeExtendedAttributes {
           // Convert the SafeAttributeValue to a Foundation-compatible type
           if let data=convertSafeAttributeToData(value) {
-            try url.withUnsafeFileSystemRepresentation { fileSystemPath in
+            // Create a local var to hold any error that occurs
+            var setxattrError: Error? = nil
+            
+            // Use a synchronous closure for withUnsafeFileSystemRepresentation
+            url.withUnsafeFileSystemRepresentation { fileSystemPath in
               // Set the extended attribute using the low-level C API
               let result=setxattr(
                 fileSystemPath,
                 key,
-                [UInt8](data),
+                (data as NSData).bytes,
                 data.count,
                 0,
                 0
               )
-
+              
               if result != 0 {
                 let error=errno
-                await logger.error(
-                  FileSystemLogContext(
-                    operation: "createDirectory",
-                    path: path.path,
-                    source: "FileSystemService"
-                  ).withUpdatedMetadata(
-                    LogMetadataDTOCollection().withPrivate(key: "reason", value: "Failed to set extended attribute")
-                  )
-                )
-                throw FileSystemError.writeError(
+                setxattrError=FileSystemError.writeError(
                   path: path.path,
-                  reason: "Failed to set extended attribute: \(String(cString: strerror(error)))"
+                  reason: String(cString: strerror(error))
                 )
               }
+            }
+            
+            // Now check if there was an error and log it asynchronously
+            if let error=setxattrError {
+              await logger.error(
+                "Failed to set extended attribute \(key) on \(path.path): \(error.localizedDescription)",
+                context: FileSystemLogContext(
+                  operation: "createDirectory",
+                  path: path.path,
+                  source: "FileSystemService"
+                ).withUpdatedMetadata(LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription))
+              )
+              throw error
             }
           }
         }
       }
 
       await logger.debug(
-        FileSystemLogContext(
+        "Created directory at \(path.path)",
+        context: FileSystemLogContext(
           operation: "createDirectory",
           path: path.path,
           source: "FileSystemService"
@@ -149,13 +158,12 @@ extension FileSystemServiceImpl {
       )
     } catch {
       await logger.error(
-        FileSystemLogContext(
+        "Failed to create directory at \(path.path): \(error.localizedDescription)",
+        context: FileSystemLogContext(
           operation: "createDirectory",
           path: path.path,
           source: "FileSystemService"
-        ).withUpdatedMetadata(
-          LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription)
-        )
+        ).withUpdatedMetadata(LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription))
       )
       throw FileSystemError.writeError(
         path: path.path,
@@ -243,7 +251,8 @@ extension FileSystemServiceImpl {
       let isEmpty=contents.isEmpty
 
       await logger.debug(
-        FileSystemLogContext(
+        "Directory at \(path.path) is \(isEmpty ? "empty" : "not empty")",
+        context: FileSystemLogContext(
           operation: "isDirectoryEmpty",
           path: path.path,
           source: "FileSystemService"
@@ -253,13 +262,12 @@ extension FileSystemServiceImpl {
       return isEmpty
     } catch {
       await logger.error(
-        FileSystemLogContext(
+        "Failed to check if directory is empty at \(path.path): \(error.localizedDescription)",
+        context: FileSystemLogContext(
           operation: "isDirectoryEmpty",
           path: path.path,
           source: "FileSystemService"
-        ).withUpdatedMetadata(
-          LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription)
-        )
+        ).withUpdatedMetadata(LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription))
       )
       throw FileSystemInterfaces.FileSystemError.readError(
         path: path.path,

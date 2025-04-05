@@ -70,25 +70,21 @@ extension FileSystemServiceImpl {
       }
 
       await logger.debug(
-        FileSystemLogContext(
+        "Set extended attribute '\(name)' on \(path.path)",
+        context: FileSystemLogContext(
           operation: "setExtendedAttribute",
           path: path.path,
           source: "FileSystemService"
-        ).withUpdatedMetadata(
-          LogMetadataDTOCollection().withPublic(key: "attributeName", value: name)
         )
       )
     } catch {
       await logger.error(
-        FileSystemLogContext(
+        "Failed to set extended attribute '\(name)' on \(path.path): \(error.localizedDescription)",
+        context: FileSystemLogContext(
           operation: "setExtendedAttribute",
           path: path.path,
           source: "FileSystemService"
-        ).withUpdatedMetadata(
-          LogMetadataDTOCollection()
-            .withPublic(key: "attributeName", value: name)
-            .withPrivate(key: "error", value: error.localizedDescription)
-        )
+        ).withUpdatedMetadata(LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription))
       )
       throw FileSystemInterfaces.FileSystemError.writeError(
         path: path.path,
@@ -177,8 +173,11 @@ extension FileSystemServiceImpl {
 
       await logger.debug(
         "Read extended attribute '\(name)' from \(path.path)",
-        metadata: nil,
-        source: "FileSystemService"
+        context: FileSystemLogContext(
+          operation: "getExtendedAttribute",
+          path: path.path,
+          source: "FileSystemService"
+        )
       )
 
       return [UInt8](data)
@@ -188,8 +187,11 @@ extension FileSystemServiceImpl {
     } catch {
       await logger.error(
         "Failed to get extended attribute '\(name)' from \(path.path): \(error.localizedDescription)",
-        metadata: nil,
-        source: "FileSystemService"
+        context: FileSystemLogContext(
+          operation: "getExtendedAttribute",
+          path: path.path, 
+          source: "FileSystemService"
+        ).withUpdatedMetadata(LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription))
       )
       throw FileSystemInterfaces.FileSystemError.readError(
         path: path.path,
@@ -239,8 +241,11 @@ extension FileSystemServiceImpl {
           // Attribute doesn't exist, which is fine for removal
           await logger.debug(
             "Extended attribute '\(name)' already did not exist on \(path.path)",
-            metadata: nil,
-            source: "FileSystemService"
+            context: FileSystemLogContext(
+              operation: "removeExtendedAttribute",
+              path: path.path,
+              source: "FileSystemService"
+            )
           )
           return
         }
@@ -254,8 +259,11 @@ extension FileSystemServiceImpl {
 
       await logger.debug(
         "Removed extended attribute '\(name)' from \(path.path)",
-        metadata: nil,
-        source: "FileSystemService"
+        context: FileSystemLogContext(
+          operation: "removeExtendedAttribute",
+          path: path.path,
+          source: "FileSystemService"
+        )
       )
     } catch let fsError as FileSystemInterfaces.FileSystemError {
       // Rethrow FileSystemError directly
@@ -263,8 +271,11 @@ extension FileSystemServiceImpl {
     } catch {
       await logger.error(
         "Failed to remove extended attribute '\(name)' from \(path.path): \(error.localizedDescription)",
-        metadata: nil,
-        source: "FileSystemService"
+        context: FileSystemLogContext(
+          operation: "removeExtendedAttribute",
+          path: path.path,
+          source: "FileSystemService"
+        ).withUpdatedMetadata(LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription))
       )
       throw FileSystemInterfaces.FileSystemError.writeError(
         path: path.path,
@@ -345,8 +356,11 @@ extension FileSystemServiceImpl {
 
       await logger.debug(
         "Listed \(names.count) extended attributes on \(path.path)",
-        metadata: nil,
-        source: "FileSystemService"
+        context: FileSystemLogContext(
+          operation: "listExtendedAttributes",
+          path: path.path,
+          source: "FileSystemService"
+        )
       )
 
       return names
@@ -356,8 +370,11 @@ extension FileSystemServiceImpl {
     } catch {
       await logger.error(
         "Failed to list extended attributes on \(path.path): \(error.localizedDescription)",
-        metadata: nil,
-        source: "FileSystemService"
+        context: FileSystemLogContext(
+          operation: "listExtendedAttributes",
+          path: path.path,
+          source: "FileSystemService"
+        ).withUpdatedMetadata(LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription))
       )
       throw FileSystemInterfaces.FileSystemError.readError(
         path: path.path,
