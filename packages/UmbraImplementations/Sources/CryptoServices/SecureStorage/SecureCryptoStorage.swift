@@ -73,7 +73,7 @@ public actor SecureCryptoStorage {
 
       // Check if the operation was successful
       guard case .success=result else {
-        throw UCryptoError.keyGenerationFailed("Failed to store key")
+        throw UCryptoError.storageFailed("Failed to store key")
       }
 
       var metadata=PrivacyMetadata()
@@ -87,7 +87,7 @@ public actor SecureCryptoStorage {
       )
     } catch {
       throw UCryptoError
-        .keyGenerationFailed("Failed to store key: \(error.localizedDescription)")
+        .storageFailed("Failed to store key: \(error.localizedDescription)")
     }
   }
 
@@ -118,11 +118,11 @@ public actor SecureCryptoStorage {
           return Data(keyData)
 
         case let .failure(error):
-          throw UCryptoError.keyRetrievalFailed("Failed to retrieve key: \(error)")
+          throw UCryptoError.retrievalFailed("Failed to retrieve key: \(error)")
       }
     } catch {
       throw UCryptoError
-        .keyRetrievalFailed("Error retrieving key: \(error.localizedDescription)")
+        .retrievalFailed("Error retrieving key: \(error.localizedDescription)")
     }
   }
 
@@ -174,7 +174,7 @@ public actor SecureCryptoStorage {
       let result=await secureStorage.storeData(Array(data), withIdentifier: identifier)
 
       guard case .success=result else {
-        throw UCryptoError.operationFailed("Failed to store encrypted data")
+        throw UCryptoError.storageFailed("Failed to store encrypted data")
       }
 
       var metadata=PrivacyMetadata()
@@ -187,7 +187,7 @@ public actor SecureCryptoStorage {
       )
     } catch {
       throw UCryptoError
-        .operationFailed("Error storing encrypted data: \(error.localizedDescription)")
+        .storageFailed("Error storing encrypted data: \(error.localizedDescription)")
     }
   }
 
@@ -219,11 +219,11 @@ public actor SecureCryptoStorage {
           return Data(encryptedData)
 
         case let .failure(error):
-          throw UCryptoError.operationFailed("Failed to retrieve encrypted data: \(error)")
+          throw UCryptoError.retrievalFailed("Failed to retrieve encrypted data: \(error)")
       }
     } catch {
       throw UCryptoError
-        .operationFailed("Error retrieving encrypted data: \(error.localizedDescription)")
+        .retrievalFailed("Error retrieving encrypted data: \(error.localizedDescription)")
     }
   }
 
@@ -285,7 +285,7 @@ public actor SecureCryptoStorage {
       let result=await secureStorage.storeData(Array(data), withIdentifier: identifier)
 
       guard case .success=result else {
-        throw UCryptoError.operationFailed("Failed to store data")
+        throw UCryptoError.storageFailed("Failed to store data")
       }
 
       var metadata=PrivacyMetadata()
@@ -298,7 +298,7 @@ public actor SecureCryptoStorage {
       )
     } catch {
       throw UCryptoError
-        .operationFailed("Error storing data: \(error.localizedDescription)")
+        .storageFailed("Error storing data: \(error.localizedDescription)")
     }
   }
 
@@ -329,11 +329,11 @@ public actor SecureCryptoStorage {
           return Data(data)
 
         case let .failure(error):
-          throw UCryptoError.operationFailed("Failed to retrieve data: \(error)")
+          throw UCryptoError.retrievalFailed("Failed to retrieve data: \(error)")
       }
     } catch {
       throw UCryptoError
-        .operationFailed("Error retrieving data: \(error.localizedDescription)")
+        .retrievalFailed("Error retrieving data: \(error.localizedDescription)")
     }
   }
 

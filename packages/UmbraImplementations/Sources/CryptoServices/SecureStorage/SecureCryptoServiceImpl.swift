@@ -19,10 +19,9 @@ import CoreSecurityTypes
 import CryptoInterfaces
 import DomainSecurityTypes
 import Foundation
-import LoggingInterfaces
+import LoggingServices
 import SecurityCoreInterfaces
 import UmbraErrors
-import UnifiedCryptoTypes
 
 // Type alias to use the canonical error type
 public typealias CryptoError = UnifiedCryptoTypes.CryptoError
@@ -98,17 +97,19 @@ public actor SecureCryptoServiceImpl: CryptoServiceProtocol {
     do {
       let encryptedData=try await performEncryption(Data(data))
 
-      // Store the encrypted data
-      let encryptedIdentifier="encrypted_\(UUID().uuidString)"
-      let storeResult=await secureStorage.storeData(
-        Array(encryptedData),
-        withIdentifier: encryptedIdentifier
-      )
+      // Add magic number to identify valid data
+      var dataWithMagic=Data([0xAA, 0x55])
+      dataWithMagic.append(contentsOf: encryptedData)
 
-      if case let .failure(error)=storeResult {
+      // Generate a secure identifier
+      let encryptedIdentifier=UUID().uuidString
+
+      let storeResult=await secureStorage.storeData(Array(dataWithMagic), withIdentifier: encryptedIdentifier)
+
+      guard case .success=storeResult else {
         await logger.error(
-          "Failed to store encrypted data: \(error)",
-          metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
+          "Failed to store encrypted data",
+          metadata: nil,
           source: "SecureCryptoService"
         )
 
@@ -167,17 +168,19 @@ public actor SecureCryptoServiceImpl: CryptoServiceProtocol {
     do {
       let decryptedData=try await performDecryption(Data(encryptedData))
 
-      // Store the decrypted data
-      let decryptedIdentifier="decrypted_\(UUID().uuidString)"
-      let storeResult=await secureStorage.storeData(
-        Array(decryptedData),
-        withIdentifier: decryptedIdentifier
-      )
+      // Add magic number to identify valid data
+      var dataWithMagic=Data([0xAA, 0x55])
+      dataWithMagic.append(contentsOf: decryptedData)
 
-      if case let .failure(error)=storeResult {
+      // Generate a secure identifier
+      let decryptedIdentifier=UUID().uuidString
+
+      let storeResult=await secureStorage.storeData(Array(dataWithMagic), withIdentifier: decryptedIdentifier)
+
+      guard case .success=storeResult else {
         await logger.error(
-          "Failed to store decrypted data: \(error)",
-          metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
+          "Failed to store decrypted data",
+          metadata: nil,
           source: "SecureCryptoService"
         )
 
@@ -328,7 +331,7 @@ public actor SecureCryptoServiceImpl: CryptoServiceProtocol {
 
     // Check for our "magic number"
     guard data.count >= 2 && data.prefix(2) == Data([0xAA, 0x55]) else {
-      throw CryptoError.decryptionFailed("Invalid data format")
+      throw CryptoError.invalidData("Invalid data format")
     }
 
     // Return the data after the magic number
@@ -357,16 +360,17 @@ public actor SecureCryptoServiceImpl: CryptoServiceProtocol {
 
     do {
       // Hash the data with the specified algorithm
-      let hash=try performHashing(Data(dataToHash))
+      let hashData=try performHashing(Data(dataToHash))
 
-      // Store the hash result
       let hashIdentifier="hash_\(UUID().uuidString)"
-      let storeResult=await secureStorage.storeData(Array(hash), withIdentifier: hashIdentifier)
 
-      if case let .failure(error)=storeResult {
+      // Store the hash
+      let storeResult=await secureStorage.storeData(Array(hashData), withIdentifier: hashIdentifier)
+
+      guard case .success=storeResult else {
         await logger.error(
-          "Failed to store hash: \(error)",
-          metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
+          "Failed to store hash data",
+          metadata: nil,
           source: "SecureCryptoService"
         )
 
@@ -436,8 +440,11 @@ public actor SecureCryptoServiceImpl: CryptoServiceProtocol {
       }
 
       var metadata=PrivacyMetadata()
-      metadata["keyType"]=PrivacyMetadataValue(value: "\(options?.algorithm.rawValue ?? "symmetric")",
-                                               privacy: .public)
+      if let options = options {
+        metadata["keyType"]=PrivacyMetadataValue(value: "symmetric", privacy: .public)
+      } else {
+        metadata["keyType"]=PrivacyMetadataValue(value: "symmetric", privacy: .public)
+      }
       metadata["keyLength"]=PrivacyMetadataValue(value: "\(length)", privacy: .public)
 
       await logger.debug(

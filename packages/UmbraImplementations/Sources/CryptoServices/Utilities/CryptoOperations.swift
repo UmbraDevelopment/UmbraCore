@@ -38,11 +38,11 @@ enum CryptoOperations {
   static func encryptAES_GCM(data: [UInt8], key: [UInt8], iv: [UInt8]) throws -> [UInt8] {
     // Validate inputs
     guard key.count == kCCKeySizeAES256 else {
-      throw CryptoError.invalidKey(reason: "AES-256 requires a 32-byte key, got \(key.count)")
+      throw CryptoError.invalidKey
     }
 
     guard iv.count == gcmNonceLength else {
-      throw CryptoError.invalidInput(reason: "IV must be \(gcmNonceLength) bytes, got \(iv.count)")
+      throw CryptoError.invalidInput("IV must be \(gcmNonceLength) bytes, got \(iv.count)")
     }
 
     // For compatibility, we'll use AES-CBC for now
@@ -70,7 +70,7 @@ enum CryptoOperations {
     }
 
     guard status == kCCSuccess else {
-      throw CryptoError.encryptionFailed(reason: "Encryption failed with status: \(status)")
+      throw CryptoError.encryptionFailed("Encryption failed with status: \(status)")
     }
 
     // Return only the actual ciphertext bytes
@@ -93,11 +93,11 @@ enum CryptoOperations {
   static func decryptAES_GCM(data: [UInt8], key: [UInt8], iv: [UInt8]) throws -> [UInt8] {
     // Validate inputs
     guard key.count == kCCKeySizeAES256 else {
-      throw CryptoError.invalidKey(reason: "AES-256 requires a 32-byte key, got \(key.count)")
+      throw CryptoError.invalidKey
     }
 
     guard iv.count == gcmNonceLength else {
-      throw CryptoError.invalidInput(reason: "IV must be \(gcmNonceLength) bytes, got \(iv.count)")
+      throw CryptoError.invalidInput("IV must be \(gcmNonceLength) bytes, got \(iv.count)")
     }
 
     // For compatibility, we'll use AES-CBC for now
@@ -125,7 +125,7 @@ enum CryptoOperations {
     }
 
     guard status == kCCSuccess else {
-      throw CryptoError.decryptionFailed(reason: "Decryption failed with status: \(status)")
+      throw CryptoError.decryptionFailed("Decryption failed with status: \(status)")
     }
 
     // Return only the actual plaintext bytes

@@ -90,16 +90,14 @@ public enum UnifiedCryptoTypes {
             algorithm = .chacha20Poly1305
         }
 
-        authenticatedData=options.authenticatedData
-        // Only access padding if it exists in the type
-        if let paddingOption = options.padding {
-            padding = paddingOption
-        }
+        authenticatedData = options.authenticatedData
+        // Padding is optional and depends on implementation
+        padding = nil
       } else {
         // Defaults
         algorithm = .aes256GCM
-        authenticatedData=nil
-        padding=nil
+        authenticatedData = nil
+        padding = nil
       }
     }
   }
@@ -142,16 +140,14 @@ public enum UnifiedCryptoTypes {
             algorithm = .chacha20Poly1305
         }
 
-        authenticatedData=options.authenticatedData
-        // Only access padding if it exists in the type
-        if let paddingOption = options.padding {
-            padding = paddingOption
-        }
+        authenticatedData = options.authenticatedData
+        // Padding is optional and depends on implementation
+        padding = nil
       } else {
         // Defaults
         algorithm = .aes256GCM
-        authenticatedData=nil
-        padding=nil
+        authenticatedData = nil
+        padding = nil
       }
     }
   }
@@ -164,13 +160,37 @@ public enum UnifiedCryptoTypes {
     case operationFailed(String)
 
     /// Key not found
-    case keyNotFound(String)
+    case keyNotFound
 
+    /// Key generation failed
+    case keyGenerationFailed(String)
+    
+    /// Key retrieval failed
+    case keyRetrievalFailed(String)
+    
+    /// Encryption failed
+    case encryptionFailed(String)
+    
+    /// Decryption failed
+    case decryptionFailed(String)
+    
+    /// Hashing failed
+    case hashingFailed(String)
+    
+    /// Storage failed
+    case storageFailed(String)
+    
+    /// Retrieval failed
+    case retrievalFailed(String)
+    
     /// Invalid key format
     case invalidKey
 
     /// Invalid data format
     case invalidData
+    
+    /// Invalid input
+    case invalidInput(String)
 
     /// Storage failure
     case storageFailure(Error?)
@@ -180,12 +200,28 @@ public enum UnifiedCryptoTypes {
       switch (lhs, rhs) {
         case let (.operationFailed(lhsReason), .operationFailed(rhsReason)):
           lhsReason == rhsReason
-        case let (.keyNotFound(lhsID), .keyNotFound(rhsID)):
-          lhsID == rhsID
+        case (.keyNotFound, .keyNotFound):
+          true
+        case let (.keyGenerationFailed(lhsReason), .keyGenerationFailed(rhsReason)):
+          lhsReason == rhsReason
+        case let (.keyRetrievalFailed(lhsReason), .keyRetrievalFailed(rhsReason)):
+          lhsReason == rhsReason
+        case let (.encryptionFailed(lhsReason), .encryptionFailed(rhsReason)):
+          lhsReason == rhsReason
+        case let (.decryptionFailed(lhsReason), .decryptionFailed(rhsReason)):
+          lhsReason == rhsReason
+        case let (.hashingFailed(lhsReason), .hashingFailed(rhsReason)):
+          lhsReason == rhsReason
+        case let (.storageFailed(lhsReason), .storageFailed(rhsReason)):
+          lhsReason == rhsReason
+        case let (.retrievalFailed(lhsReason), .retrievalFailed(rhsReason)):
+          lhsReason == rhsReason
         case (.invalidKey, .invalidKey):
           true
         case (.invalidData, .invalidData):
           true
+        case let (.invalidInput(lhsReason), .invalidInput(rhsReason)):
+          lhsReason == rhsReason
         case (.storageFailure(_), .storageFailure(_)):
           // Can't compare errors directly
           true

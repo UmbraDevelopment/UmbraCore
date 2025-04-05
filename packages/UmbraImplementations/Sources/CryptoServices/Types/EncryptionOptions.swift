@@ -2,15 +2,6 @@ import CoreSecurityTypes
 import CryptoTypes
 import Foundation
 
-/// Defines the algorithms available for encryption operations
-public enum EncryptionAlgorithm: String, Sendable, Equatable, CaseIterable {
-  /// AES 256-bit in CBC (Cipher Block Chaining) mode
-  case aes256CBC
-
-  /// AES 256-bit in GCM (Galois/Counter Mode) for authenticated encryption
-  case aes256GCM
-}
-
 /**
  Options for encryption operations in the crypto services.
  
