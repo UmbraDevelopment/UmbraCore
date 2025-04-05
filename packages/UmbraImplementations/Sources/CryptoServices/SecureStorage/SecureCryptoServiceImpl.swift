@@ -113,7 +113,7 @@ public actor SecureCryptoServiceImpl: CryptoServiceProtocol {
           source: "SecureCryptoService"
         )
 
-        return .failure(.encryptionFailed("Failed to store encrypted data"))
+        return .failure(.encryptionFailed)
       }
 
       return .success(encryptedIdentifier)
@@ -184,7 +184,7 @@ public actor SecureCryptoServiceImpl: CryptoServiceProtocol {
           source: "SecureCryptoService"
         )
 
-        return .failure(.encryptionFailed("Failed to store decrypted data"))
+        return .failure(.encryptionFailed)
       }
 
       return .success(decryptedIdentifier)
@@ -331,7 +331,7 @@ public actor SecureCryptoServiceImpl: CryptoServiceProtocol {
 
     // Check for our "magic number"
     guard data.count >= 2 && data.prefix(2) == Data([0xAA, 0x55]) else {
-      throw CryptoError.invalidData("Invalid data format")
+      throw CryptoError.invalidData
     }
 
     // Return the data after the magic number
@@ -374,7 +374,7 @@ public actor SecureCryptoServiceImpl: CryptoServiceProtocol {
           source: "SecureCryptoService"
         )
 
-        return .failure(.hashingFailed("Failed to store hash"))
+        return .failure(.hashingFailed)
       }
 
       return .success(hashIdentifier)
@@ -436,7 +436,7 @@ public actor SecureCryptoServiceImpl: CryptoServiceProtocol {
       let storeResult=await secureStorage.storeData(Array(key), withIdentifier: keyIdentifier)
 
       guard case .success=storeResult else {
-        return .failure(.keyGenerationFailed("Failed to store key"))
+        return .failure(.keyGenerationFailed)
       }
 
       var metadata=PrivacyMetadata()

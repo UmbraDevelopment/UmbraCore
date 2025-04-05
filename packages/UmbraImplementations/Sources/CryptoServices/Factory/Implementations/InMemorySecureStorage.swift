@@ -15,7 +15,7 @@ public actor InMemorySecureStorage: SecureStorageProtocol {
   /// Logger for operations
   private let logger: LoggingProtocol
   
-  public init(logger: LoggingProtocol = DefaultConsoleLogger()) {
+  public init(logger: LoggingProtocol) {
     self.logger = logger
   }
   
@@ -43,7 +43,7 @@ public actor InMemorySecureStorage: SecureStorageProtocol {
     )
     
     guard let data = storage[identifier] else {
-      return .failure(.notFound("Data not found for identifier: \(identifier)"))
+      return .failure(.keyNotFound)
     }
     
     return .success(data)
@@ -70,38 +70,5 @@ public actor InMemorySecureStorage: SecureStorageProtocol {
     )
     
     return .success(Array(storage.keys))
-  }
-}
-
-/**
- Default console logger when no logger is provided.
- */
-private struct DefaultConsoleLogger: LoggingProtocol {
-  func debug(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {
-    print("[\(source)] DEBUG: \(message)")
-  }
-  
-  func info(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {
-    print("[\(source)] INFO: \(message)")
-  }
-  
-  func notice(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {
-    print("[\(source)] NOTICE: \(message)")
-  }
-  
-  func warning(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {
-    print("[\(source)] WARNING: \(message)")
-  }
-  
-  func error(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {
-    print("[\(source)] ERROR: \(message)")
-  }
-  
-  func critical(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {
-    print("[\(source)] CRITICAL: \(message)")
-  }
-  
-  func trace(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async {
-    print("[\(source)] TRACE: \(message)")
   }
 }

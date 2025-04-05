@@ -149,34 +149,35 @@ extension CryptoServiceOptions {
 /**
  Options for key generation in CryptoService.
  */
-public struct KeyGenerationOptions: Sendable {
-  /// The purpose of the key
-  public let purpose: KeyPurpose
-
-  /// Whether the key should be exportable
-  public let isExportable: Bool
-
-  /// The expiration date of the key, if any
-  public let expirationDate: Date?
-
-  /**
-   Initialises a new set of key generation options.
-
-   - Parameters:
-     - purpose: The purpose of the key
-     - isExportable: Whether the key should be exportable
-     - expirationDate: The expiration date of the key, if any
-   */
-  public init(
-    purpose: KeyPurpose = .encryption,
-    isExportable: Bool=false,
-    expirationDate: Date?=nil
-  ) {
-    self.purpose=purpose
-    self.isExportable=isExportable
-    self.expirationDate=expirationDate
-  }
-}
+// Removing this duplicate declaration as we'll use the typealias instead
+// public struct KeyGenerationOptions: Sendable {
+//   /// The purpose of the key
+//   public let purpose: KeyPurpose
+//
+//   /// Whether the key should be exportable
+//   public let isExportable: Bool
+//
+//   /// The expiration date of the key, if any
+//   public let expirationDate: Date?
+//
+//   /**
+//    Initialises a new set of key generation options.
+//
+//    - Parameters:
+//      - purpose: The purpose of the key
+//      - isExportable: Whether the key should be exportable
+//      - expirationDate: The expiration date of the key, if any
+//    */
+//   public init(
+//     purpose: KeyPurpose = .encryption,
+//     isExportable: Bool=false,
+//     expirationDate: Date?=nil
+//   ) {
+//     self.purpose=purpose
+//     self.isExportable=isExportable
+//     self.expirationDate=expirationDate
+//   }
+// }
 
 /**
  The purpose of a cryptographic key.

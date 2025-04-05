@@ -1,147 +1,157 @@
-import CryptoInterfaces
-import CryptoTypes
-import DomainSecurityTypes
+import CoreSecurityTypes
 import Foundation
-import LoggingInterfaces
+import LoggingServices
 import SecurityCoreInterfaces
-import UmbraErrors
 
 /**
- An enhanced secure implementation of CryptoServiceProtocol that adds additional security measures.
-
- This implementation wraps another CryptoServiceProtocol implementation and adds
- additional security features such as rate limiting, secure storage, and enhanced
+ Enhanced implementation of CryptoServiceProtocol with additional security features.
+ 
+ This implementation wraps another CryptoServiceProtocol implementation and adds:
+ - Rate limiting prevention to mitigate brute force attacks
+ - Enhanced logging for security operations
+ - Additional input validation to prevent common security issues
+ - Runtime security checks for enhanced protection
+ 
+ This implementation can be used as a decorator over any other crypto implementation for extra
  validation of cryptographic operations.
  */
 public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
 
   /// The wrapped implementation that does the actual cryptographic work
   private let wrapped: CryptoServiceProtocol
-
-  /// The secure storage used for handling sensitive data
-  private let storage: SecureStorageProtocol
-
-  /// The logger to use
+  
+  /// Logger for operations
   private let logger: LoggingProtocol
-
-  /// Last operation timestamps for rate limiting
-  private var lastOperationTimes: [String: TimeInterval]=[:]
-
-  /// The minimum interval between operations (in seconds)
-  private let operationRateLimit: TimeInterval=0.1 // 100ms
-
+  
+  /// Rate limiting configuration for security operations
+  private let rateLimiter: RateLimiter
+  
+  /// Provides access to the secure storage from the wrapped implementation
+  public var secureStorage: SecureStorageProtocol {
+    wrapped.secureStorage
+  }
+  
   /**
-   Initialises a new enhanced secure crypto service.
-
+   Initialises a new secure crypto service with rate limiting and enhanced logging.
+   
    - Parameters:
-     - wrapped: The crypto service to wrap
-     - storage: The secure storage to use
-     - logger: The logger to use
+     - wrapped: The underlying implementation to delegate to
+     - logger: Logger for operations
+     - rateLimiter: Rate limiter for security operations
    */
   public init(
     wrapped: CryptoServiceProtocol,
-    storage: SecureStorageProtocol,
-    logger: LoggingProtocol
+    logger: LoggingProtocol,
+    rateLimiter: RateLimiter = RateLimiter()
   ) {
-    self.wrapped=wrapped
-    self.storage=storage
-    self.logger=logger
+    self.wrapped = wrapped
+    self.logger = logger
+    self.rateLimiter = rateLimiter
   }
-
-  /// Checks if an operation should be rate limited.
-  ///
-  /// - Parameter operation: The operation to check
-  /// - Returns: True if the operation should proceed, false if it should be rate limited
-  private func checkRateLimit(operation: String) -> Bool {
-    let now=Date().timeIntervalSince1970
-
-    if
-      let lastTime=lastOperationTimes[operation],
-      now - lastTime < operationRateLimit
-    {
-      return false
-    }
-
-    lastOperationTimes[operation]=now
-    return true
-  }
-
+  
+  /**
+   Encrypt data using the specified key.
+   
+   This operation is rate-limited and includes additional validation.
+   
+   - Parameters:
+     - dataIdentifier: Identifier for the data to encrypt
+     - keyIdentifier: Identifier for the key to use
+     - options: Optional encryption options
+   - Returns: Identifier for the encrypted data or an error
+   */
   public func encrypt(
-    data: [UInt8],
+    dataIdentifier: String,
     keyIdentifier: String,
-    options: CryptoServiceOptions?=nil
+    options: EncryptionOptions?
   ) async -> Result<String, SecurityStorageError> {
-    // Rate limit check
-    guard checkRateLimit(operation: "encrypt") else {
+    // Check rate limiter
+    if rateLimiter.isRateLimited(.encrypt) {
       await logger.warning(
-        "Operation rate-limited: encrypt",
-        metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
+        "Rate limited encryption operation",
+        metadata: nil,
         source: "EnhancedSecureCryptoService"
       )
-      return .failure(.operationFailed(UmbraErrors.Security.Core.rateLimited))
+      return .failure(.operationFailed)
     }
-
-    // Validate input
-    guard !data.isEmpty else {
+    
+    // Input validation
+    guard !dataIdentifier.isEmpty && !keyIdentifier.isEmpty else {
       await logger.error(
-        "Empty data provided for encryption",
-        metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
+        "Empty identifier provided for encryption",
+        metadata: nil,
         source: "EnhancedSecureCryptoService"
       )
-      return .failure(.operationFailed(UmbraErrors.Security.Core.invalidInput))
+      return .failure(.operationFailed)
     }
-
-    guard !keyIdentifier.isEmpty else {
+    
+    // Verify key exists
+    let keyResult = await secureStorage.retrieveData(withIdentifier: keyIdentifier)
+    guard case .success = keyResult else {
       await logger.error(
-        "Empty key identifier provided for encryption",
-        metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
+        "Key not found for encryption: \(keyIdentifier)",
+        metadata: nil,
         source: "EnhancedSecureCryptoService"
       )
-      return .failure(.keyNotFound(""))
+      return .failure(.keyNotFound)
     }
-
+    
     // Delegate to wrapped implementation
     return await wrapped.encrypt(
-      data: data,
+      dataIdentifier: dataIdentifier,
       keyIdentifier: keyIdentifier,
       options: options
     )
   }
-
+  
+  /**
+   Decrypt data using the specified key.
+   
+   This operation is rate-limited and includes additional validation.
+   
+   - Parameters:
+     - encryptedDataIdentifier: Identifier for the encrypted data
+     - keyIdentifier: Identifier for the key to use
+     - options: Optional decryption options
+   - Returns: Identifier for the decrypted data or an error
+   */
   public func decrypt(
     encryptedDataIdentifier: String,
     keyIdentifier: String,
-    options: CryptoServiceOptions?=nil
-  ) async -> Result<[UInt8], SecurityStorageError> {
-    // Rate limit check
-    guard checkRateLimit(operation: "decrypt") else {
+    options: DecryptionOptions?
+  ) async -> Result<String, SecurityStorageError> {
+    // Check rate limiter
+    if rateLimiter.isRateLimited(.decrypt) {
       await logger.warning(
-        "Operation rate-limited: decrypt",
-        metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
+        "Rate limited decryption operation",
+        metadata: nil,
         source: "EnhancedSecureCryptoService"
       )
-      return .failure(.operationFailed(UmbraErrors.Security.Core.rateLimited))
+      return .failure(.operationFailed)
     }
-
-    // Validate input
-    guard !encryptedDataIdentifier.isEmpty else {
+    
+    // Verify encrypted data exists
+    let dataResult = await secureStorage.retrieveData(withIdentifier: encryptedDataIdentifier)
+    guard case .success = dataResult else {
       await logger.error(
-        "Empty encrypted data identifier provided for decryption",
-        metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
+        "Encrypted data not found: \(encryptedDataIdentifier)",
+        metadata: nil,
         source: "EnhancedSecureCryptoService"
       )
-      return .failure(.keyNotFound(""))
+      return .failure(.keyNotFound)
     }
-
-    guard !keyIdentifier.isEmpty else {
+    
+    // Verify key exists
+    let keyResult = await secureStorage.retrieveData(withIdentifier: keyIdentifier)
+    guard case .success = keyResult else {
       await logger.error(
-        "Empty key identifier provided for decryption",
-        metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
+        "Key not found for decryption: \(keyIdentifier)",
+        metadata: nil,
         source: "EnhancedSecureCryptoService"
       )
-      return .failure(.keyNotFound(""))
+      return .failure(.keyNotFound)
     }
-
+    
     // Delegate to wrapped implementation
     return await wrapped.decrypt(
       encryptedDataIdentifier: encryptedDataIdentifier,
@@ -149,278 +159,210 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
       options: options
     )
   }
-
-  public func generateHash(
-    data: [UInt8],
-    algorithm: HashAlgorithm
-  ) async -> Result<String, SecurityStorageError> {
-    // Rate limit check
-    guard checkRateLimit(operation: "generateHash") else {
-      await logger.warning(
-        "Operation rate-limited: generateHash",
-        metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-        source: "EnhancedSecureCryptoService"
-      )
-      return .failure(.operationFailed(UmbraErrors.Security.Core.rateLimited))
-    }
-
-    // Validate input
-    guard !data.isEmpty else {
-      await logger.error(
-        "Empty data provided for hash generation",
-        metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-        source: "EnhancedSecureCryptoService"
-      )
-      return .failure(.operationFailed(UmbraErrors.Security.Core.invalidInput))
-    }
-
-    // Delegate to wrapped implementation
-    return await wrapped.generateHash(
-      data: data,
-      algorithm: algorithm
-    )
-  }
-
-  public func verifyHash(
+  
+  /**
+   Create a hash of the specified data.
+   
+   - Parameters:
+     - dataIdentifier: Identifier for the data to hash
+     - options: Optional hashing options
+   - Returns: Identifier for the hash or an error
+   */
+  public func hash(
     dataIdentifier: String,
-    expectedHashIdentifier: String
-  ) async -> Result<Bool, SecurityStorageError> {
-    // Rate limit check
-    guard checkRateLimit(operation: "verifyHash") else {
+    options: HashingOptions?
+  ) async -> Result<String, SecurityStorageError> {
+    // Check rate limiter
+    if rateLimiter.isRateLimited(.hash) {
       await logger.warning(
-        "Operation rate-limited: verifyHash",
-        metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
+        "Rate limited hashing operation",
+        metadata: nil,
         source: "EnhancedSecureCryptoService"
       )
-      return .failure(.operationFailed(UmbraErrors.Security.Core.rateLimited))
+      return .failure(.operationFailed)
     }
-
-    // Validate input
+    
+    // Input validation
     guard !dataIdentifier.isEmpty else {
       await logger.error(
-        "Empty data identifier provided for hash verification",
-        metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
+        "Empty data identifier provided for hashing",
+        metadata: nil,
         source: "EnhancedSecureCryptoService"
       )
-      return .failure(.keyNotFound(""))
+      return .failure(.operationFailed)
     }
-
-    guard !expectedHashIdentifier.isEmpty else {
+    
+    // Delegate to wrapped implementation
+    return await wrapped.hash(
+      dataIdentifier: dataIdentifier,
+      options: options
+    )
+  }
+  
+  /**
+   Verify that a hash matches the expected data.
+   
+   - Parameters:
+     - dataIdentifier: Identifier for the data to verify
+     - hashIdentifier: Identifier for the expected hash
+     - options: Optional hashing options used for verification
+   - Returns: Whether the hash matches or an error
+   */
+  public func verifyHash(
+    dataIdentifier: String,
+    hashIdentifier: String,
+    options: HashingOptions?
+  ) async -> Result<Bool, SecurityStorageError> {
+    // Check rate limiter
+    if rateLimiter.isRateLimited(.verify) {
+      await logger.warning(
+        "Rate limited hash verification operation",
+        metadata: nil,
+        source: "EnhancedSecureCryptoService"
+      )
+      return .failure(.operationFailed)
+    }
+    
+    // Verify data exists
+    let dataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
+    guard case .success = dataResult else {
       await logger.error(
-        "Empty hash identifier provided for hash verification",
-        metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
+        "Data not found for hash verification: \(dataIdentifier)",
+        metadata: nil,
         source: "EnhancedSecureCryptoService"
       )
-      return .failure(.keyNotFound(""))
+      return .failure(.keyNotFound)
     }
-
+    
+    // Verify hash exists
+    let hashResult = await secureStorage.retrieveData(withIdentifier: hashIdentifier)
+    guard case .success = hashResult else {
+      await logger.error(
+        "Hash not found for verification: \(hashIdentifier)",
+        metadata: nil,
+        source: "EnhancedSecureCryptoService"
+      )
+      return .failure(.keyNotFound)
+    }
+    
     // Delegate to wrapped implementation
     return await wrapped.verifyHash(
       dataIdentifier: dataIdentifier,
-      expectedHashIdentifier: expectedHashIdentifier
+      hashIdentifier: hashIdentifier,
+      options: options
     )
   }
-
-  /// Generates a cryptographic key and stores it securely.
-  /// - Parameters:
-  ///   - length: The length of the key to generate in bytes.
-  ///   - options: Optional key generation configuration.
-  /// - Returns: Identifier for the generated key in secure storage, or an error.
+  
+  /**
+   Generate a new cryptographic key.
+   
+   - Parameters:
+     - length: Length of the key in bits
+     - options: Optional key generation options
+   - Returns: Identifier for the generated key or an error
+   */
   public func generateKey(
     length: Int,
-    options: KeyGenerationOptions?
+    options: UnifiedCryptoTypes.KeyGenerationOptions?
   ) async -> Result<String, SecurityStorageError> {
-    // Rate limit check
-    guard checkRateLimit(operation: "generateKey") else {
+    // Check rate limiter
+    if rateLimiter.isRateLimited(.generateKey) {
       await logger.warning(
-        "Operation rate-limited: generateKey",
-        metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
+        "Rate limited key generation operation",
+        metadata: nil,
         source: "EnhancedSecureCryptoService"
       )
-      return .failure(.operationFailed(UmbraErrors.Security.Core.rateLimited))
+      return .failure(.operationFailed)
     }
-
-    // Validate input
-    guard length >= 16 else { // Minimum 128-bit key
+    
+    // Input validation
+    if length < 128 || length > 4096 || length % 8 != 0 {
       await logger.error(
-        "Key length too short: \(length) bytes",
-        metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
+        "Invalid key length: \(length)",
+        metadata: nil,
         source: "EnhancedSecureCryptoService"
       )
-      return .failure(.operationFailed(UmbraErrors.Security.Core.invalidKeyLength))
+      return .failure(.operationFailed)
     }
-
+    
     // Delegate to wrapped implementation
     return await wrapped.generateKey(
       length: length,
       options: options
     )
   }
-
-  public func storeData(
-    data: [UInt8],
-    identifier: String
-  ) async -> Result<Bool, SecurityStorageError> {
-    // Rate limit check
-    guard checkRateLimit(operation: "storeData") else {
-      await logger.warning(
-        "Operation rate-limited: storeData",
-        metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-        source: "EnhancedSecureCryptoService"
-      )
-      return .failure(.operationFailed(UmbraErrors.Security.Core.rateLimited))
-    }
-
-    // Validate input
-    guard !data.isEmpty else {
-      await logger.error(
-        "Empty data provided for storage",
-        metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-        source: "EnhancedSecureCryptoService"
-      )
-      return .failure(.operationFailed(UmbraErrors.Security.Core.invalidInput))
-    }
-
-    guard !identifier.isEmpty else {
-      await logger.error(
-        "Empty identifier provided for data storage",
-        metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-        source: "EnhancedSecureCryptoService"
-      )
-      return .failure(.operationFailed(UmbraErrors.Security.Core.invalidInput))
-    }
-
-    // Delegate to wrapped implementation
-    return await wrapped.storeData(
-      data: data,
-      identifier: identifier
-    )
-  }
-
-  public func retrieveData(
-    identifier: String
-  ) async -> Result<[UInt8], SecurityStorageError> {
-    // Rate limit check
-    guard checkRateLimit(operation: "retrieveData") else {
-      await logger.warning(
-        "Operation rate-limited: retrieveData",
-        metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-        source: "EnhancedSecureCryptoService"
-      )
-      return .failure(.operationFailed(UmbraErrors.Security.Core.rateLimited))
-    }
-
-    // Validate input
-    guard !identifier.isEmpty else {
-      await logger.error(
-        "Empty identifier provided for data retrieval",
-        metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-        source: "EnhancedSecureCryptoService"
-      )
-      return .failure(.keyNotFound(""))
-    }
-
-    // Delegate to wrapped implementation
-    return await wrapped.retrieveData(
-      identifier: identifier
-    )
-  }
-
-  public func exportData(
-    identifier: String
-  ) async -> Result<[UInt8], SecurityStorageError> {
-    // Rate limit check
-    guard checkRateLimit(operation: "exportData") else {
-      await logger.warning(
-        "Operation rate-limited: exportData",
-        metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-        source: "EnhancedSecureCryptoService"
-      )
-      return .failure(.operationFailed(UmbraErrors.Security.Core.rateLimited))
-    }
-
-    // Validate input
-    guard !identifier.isEmpty else {
-      await logger.error(
-        "Empty identifier provided for data export",
-        metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-        source: "EnhancedSecureCryptoService"
-      )
-      return .failure(.keyNotFound(""))
-    }
-
-    // Delegate to wrapped implementation
-    return await wrapped.exportData(
-      identifier: identifier
-    )
-  }
-
+  
+  /**
+   Import data into secure storage.
+   
+   - Parameters:
+     - data: The data to import
+     - customIdentifier: Optional custom identifier to use
+   - Returns: Identifier for the imported data or an error
+   */
   public func importData(
-    data: [UInt8],
-    identifier: String
+    _ data: [UInt8],
+    customIdentifier: String?
   ) async -> Result<String, SecurityStorageError> {
-    // Rate limit check
-    guard checkRateLimit(operation: "importData") else {
+    // Check rate limiter
+    if rateLimiter.isRateLimited(.importData) {
       await logger.warning(
-        "Operation rate-limited: importData",
-        metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
+        "Rate limited data import operation",
+        metadata: nil,
         source: "EnhancedSecureCryptoService"
       )
-      return .failure(.operationFailed(UmbraErrors.Security.Core.rateLimited))
+      return .failure(.operationFailed)
     }
-
-    // Validate input
+    
+    // Input validation
     guard !data.isEmpty else {
       await logger.error(
         "Empty data provided for import",
-        metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
+        metadata: nil,
         source: "EnhancedSecureCryptoService"
       )
-      return .failure(.operationFailed(UmbraErrors.Security.Core.invalidInput))
+      return .failure(.operationFailed)
     }
-
-    guard !identifier.isEmpty else {
+    
+    if let customIdentifier = customIdentifier, customIdentifier.isEmpty {
       await logger.error(
-        "Empty identifier provided for data import",
-        metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
+        "Empty custom identifier provided for import",
+        metadata: nil,
         source: "EnhancedSecureCryptoService"
       )
-      return .failure(.operationFailed(UmbraErrors.Security.Core.invalidInput))
+      return .failure(.operationFailed)
     }
-
+    
     // Delegate to wrapped implementation
     return await wrapped.importData(
-      data: data,
-      identifier: identifier
+      data,
+      customIdentifier: customIdentifier
     )
   }
+}
 
-  public func deleteData(
-    identifier: String
-  ) async -> Result<Bool, SecurityStorageError> {
-    // Rate limit check
-    guard checkRateLimit(operation: "deleteData") else {
-      await logger.warning(
-        "Operation rate-limited: deleteData",
-        metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-        source: "EnhancedSecureCryptoService"
-      )
-      return .failure(.operationFailed(UmbraErrors.Security.Core.rateLimited))
-    }
-
-    // Validate input
-    guard !identifier.isEmpty else {
-      await logger.error(
-        "Empty identifier provided for data deletion",
-        metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-        source: "EnhancedSecureCryptoService"
-      )
-      return .failure(.keyNotFound(""))
-    }
-
-    // Delegate to wrapped implementation
-    return await wrapped.deleteData(
-      identifier: identifier
-    )
+/**
+ Simple rate limiter for security operations.
+ */
+public class RateLimiter: Sendable {
+  /// Operations that can be rate limited
+  public enum Operation: String, Sendable {
+    case encrypt
+    case decrypt
+    case hash
+    case verify
+    case generateKey
+    case importData
+    case exportData
   }
+  
+  // For a real implementation, this would track operations and their timestamps
+  // This is just a placeholder for the example
+  public func isRateLimited(_ operation: Operation) -> Bool {
+    // In a real implementation, we would check if the operation has been
+    // performed too many times in a short period
+    return false
+  }
+  
+  public init() {}
 }

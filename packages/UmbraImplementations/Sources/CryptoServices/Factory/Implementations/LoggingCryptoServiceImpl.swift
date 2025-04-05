@@ -1,365 +1,291 @@
-import CryptoInterfaces
-import CryptoTypes
-import DomainSecurityTypes
+import CoreSecurityTypes
 import Foundation
-import LoggingInterfaces
+import LoggingServices
 import SecurityCoreInterfaces
-import UmbraErrors
 
 /**
- # LoggingCryptoServiceImpl
-
- A decorator implementation of CryptoServiceProtocol that adds logging capabilities.
- This implementation wraps another CryptoServiceProtocol implementation and logs
+ An implementation of CryptoServiceProtocol that adds logging for
  all operations before delegating to the wrapped implementation.
  */
 public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
   /// The wrapped implementation
   private let wrapped: CryptoServiceProtocol
-
-  /// The logger to use
+  
+  /// Logger for operations
   private let logger: LoggingProtocol
-
+  
+  /// Provides access to the secure storage from the wrapped implementation
+  public var secureStorage: SecureStorageProtocol {
+    wrapped.secureStorage
+  }
+  
   /**
    Initialises a new logging crypto service.
-
+   
    - Parameters:
-     - wrapped: The crypto service to wrap
-     - logger: The logger to use
+     - wrapped: The underlying implementation to delegate to
+     - logger: Logger for operations
    */
   public init(
     wrapped: CryptoServiceProtocol,
     logger: LoggingProtocol
   ) {
-    self.wrapped=wrapped
-    self.logger=logger
+    self.wrapped = wrapped
+    self.logger = logger
   }
-
+  
+  /**
+   Encrypt data using the specified key with logging.
+   
+   - Parameters:
+     - dataIdentifier: Identifier for the data to encrypt
+     - keyIdentifier: Identifier for the key to use
+     - options: Optional encryption options
+   - Returns: Identifier for the encrypted data or an error
+   */
   public func encrypt(
-    data: [UInt8],
+    dataIdentifier: String,
     keyIdentifier: String,
-    options: CryptoServiceOptions?=nil
+    options: EncryptionOptions?
   ) async -> Result<String, SecurityStorageError> {
     await logger.debug(
-      "LoggingCryptoService: Encrypting data with key: \(keyIdentifier)",
-      metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
+      "Encrypting data: \(dataIdentifier) with key: \(keyIdentifier)",
+      metadata: nil,
       source: "LoggingCryptoService"
     )
-
-    let result=await wrapped.encrypt(
-      data: data,
+    
+    let result = await wrapped.encrypt(
+      dataIdentifier: dataIdentifier,
       keyIdentifier: keyIdentifier,
       options: options
     )
-
+    
     switch result {
-      case let .success(identifier):
+      case .success(let identifier):
         await logger.debug(
-          "LoggingCryptoService: Encryption successful, data stored with identifier: \(identifier)",
-          metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
+          "Successfully encrypted data, new identifier: \(identifier)",
+          metadata: nil,
           source: "LoggingCryptoService"
         )
-      case let .failure(error):
+      case .failure(let error):
         await logger.error(
-          "LoggingCryptoService: Encryption failed: \(error)",
-          metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
+          "Failed to encrypt data: \(error)",
+          metadata: nil,
           source: "LoggingCryptoService"
         )
     }
-
+    
     return result
   }
-
+  
+  /**
+   Decrypt data using the specified key with logging.
+   
+   - Parameters:
+     - encryptedDataIdentifier: Identifier for the encrypted data
+     - keyIdentifier: Identifier for the key to use
+     - options: Optional decryption options
+   - Returns: Identifier for the decrypted data or an error
+   */
   public func decrypt(
     encryptedDataIdentifier: String,
     keyIdentifier: String,
-    options: CryptoServiceOptions?=nil
-  ) async -> Result<[UInt8], SecurityStorageError> {
+    options: DecryptionOptions?
+  ) async -> Result<String, SecurityStorageError> {
     await logger.debug(
-      "LoggingCryptoService: Decrypting data with identifier: \(encryptedDataIdentifier) using key: \(keyIdentifier)",
-      metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
+      "Decrypting data: \(encryptedDataIdentifier) with key: \(keyIdentifier)",
+      metadata: nil,
       source: "LoggingCryptoService"
     )
-
-    let result=await wrapped.decrypt(
+    
+    let result = await wrapped.decrypt(
       encryptedDataIdentifier: encryptedDataIdentifier,
       keyIdentifier: keyIdentifier,
       options: options
     )
-
+    
     switch result {
-      case .success:
+      case .success(let identifier):
         await logger.debug(
-          "LoggingCryptoService: Decryption successful",
-          metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
+          "Successfully decrypted data, new identifier: \(identifier)",
+          metadata: nil,
           source: "LoggingCryptoService"
         )
-      case let .failure(error):
+      case .failure(let error):
         await logger.error(
-          "LoggingCryptoService: Decryption failed: \(error)",
-          metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
+          "Failed to decrypt data: \(error)",
+          metadata: nil,
           source: "LoggingCryptoService"
         )
     }
-
+    
     return result
   }
-
-  public func generateHash(
-    data: [UInt8],
-    algorithm: HashAlgorithm
+  
+  /**
+   Create a hash of the specified data with logging.
+   
+   - Parameters:
+     - dataIdentifier: Identifier for the data to hash
+     - options: Optional hashing options
+   - Returns: Identifier for the hash or an error
+   */
+  public func hash(
+    dataIdentifier: String,
+    options: HashingOptions?
   ) async -> Result<String, SecurityStorageError> {
     await logger.debug(
-      "LoggingCryptoService: Generating hash with algorithm: \(algorithm)",
-      metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
+      "Hashing data: \(dataIdentifier)",
+      metadata: nil,
       source: "LoggingCryptoService"
     )
-
-    let result=await wrapped.generateHash(
-      data: data,
-      algorithm: algorithm
+    
+    let result = await wrapped.hash(
+      dataIdentifier: dataIdentifier,
+      options: options
     )
-
+    
     switch result {
-      case let .success(identifier):
+      case .success(let identifier):
         await logger.debug(
-          "LoggingCryptoService: Hash generation successful, hash stored with identifier: \(identifier)",
-          metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
+          "Successfully hashed data, hash identifier: \(identifier)",
+          metadata: nil,
           source: "LoggingCryptoService"
         )
-      case let .failure(error):
+      case .failure(let error):
         await logger.error(
-          "LoggingCryptoService: Hash generation failed: \(error)",
-          metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
+          "Failed to hash data: \(error)",
+          metadata: nil,
           source: "LoggingCryptoService"
         )
     }
-
+    
     return result
   }
-
+  
+  /**
+   Verify that a hash matches the expected data with logging.
+   
+   - Parameters:
+     - dataIdentifier: Identifier for the data to verify
+     - hashIdentifier: Identifier for the expected hash
+     - options: Optional hashing options used for verification
+   - Returns: Whether the hash matches or an error
+   */
   public func verifyHash(
     dataIdentifier: String,
-    expectedHashIdentifier: String
+    hashIdentifier: String,
+    options: HashingOptions?
   ) async -> Result<Bool, SecurityStorageError> {
     await logger.debug(
-      "LoggingCryptoService: Verifying hash for data identifier: \(dataIdentifier)",
-      metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
+      "Verifying hash for data: \(dataIdentifier) against hash: \(hashIdentifier)",
+      metadata: nil,
       source: "LoggingCryptoService"
     )
-
-    let result=await wrapped.verifyHash(
+    
+    let result = await wrapped.verifyHash(
       dataIdentifier: dataIdentifier,
-      expectedHashIdentifier: expectedHashIdentifier
+      hashIdentifier: hashIdentifier,
+      options: options
     )
-
+    
     switch result {
-      case let .success(matches):
+      case .success(let matches):
         await logger.debug(
-          "LoggingCryptoService: Hash verification result: \(matches)",
-          metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
+          "Hash verification result: \(matches ? "matched" : "did not match")",
+          metadata: nil,
           source: "LoggingCryptoService"
         )
-      case let .failure(error):
+      case .failure(let error):
         await logger.error(
-          "LoggingCryptoService: Hash verification failed: \(error)",
-          metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
+          "Failed to verify hash: \(error)",
+          metadata: nil,
           source: "LoggingCryptoService"
         )
     }
-
+    
     return result
   }
-
+  
+  /**
+   Generate a new cryptographic key with logging.
+   
+   - Parameters:
+     - length: Length of the key in bits
+     - options: Optional key generation options
+   - Returns: Identifier for the generated key or an error
+   */
   public func generateKey(
     length: Int,
-    options: KeyGenerationOptions?
+    options: UnifiedCryptoTypes.KeyGenerationOptions?
   ) async -> Result<String, SecurityStorageError> {
     await logger.debug(
-      "LoggingCryptoService: Generating key with length: \(length)",
-      metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
+      "Generating key with length: \(length)",
+      metadata: nil,
       source: "LoggingCryptoService"
     )
-
-    let result=await wrapped.generateKey(
+    
+    let result = await wrapped.generateKey(
       length: length,
       options: options
     )
-
+    
     switch result {
-      case let .success(identifier):
+      case .success(let identifier):
         await logger.debug(
-          "LoggingCryptoService: Key generation successful, key stored with identifier: \(identifier)",
-          metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
+          "Successfully generated key, identifier: \(identifier)",
+          metadata: nil,
           source: "LoggingCryptoService"
         )
-      case let .failure(error):
+      case .failure(let error):
         await logger.error(
-          "LoggingCryptoService: Key generation failed: \(error)",
-          metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
+          "Failed to generate key: \(error)",
+          metadata: nil,
           source: "LoggingCryptoService"
         )
     }
-
+    
     return result
   }
-
-  public func storeData(
-    data: [UInt8],
-    identifier: String
-  ) async -> Result<Bool, SecurityStorageError> {
-    await logger.debug(
-      "LoggingCryptoService: Storing data with identifier: \(identifier)",
-      metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-      source: "LoggingCryptoService"
-    )
-
-    let result=await wrapped.storeData(
-      data: data,
-      identifier: identifier
-    )
-
-    switch result {
-      case .success:
-        await logger.debug(
-          "LoggingCryptoService: Data storage successful",
-          metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-          source: "LoggingCryptoService"
-        )
-      case let .failure(error):
-        await logger.error(
-          "LoggingCryptoService: Data storage failed: \(error)",
-          metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-          source: "LoggingCryptoService"
-        )
-    }
-
-    return result
-  }
-
-  public func retrieveData(
-    identifier: String
-  ) async -> Result<[UInt8], SecurityStorageError> {
-    await logger.debug(
-      "LoggingCryptoService: Retrieving data with identifier: \(identifier)",
-      metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-      source: "LoggingCryptoService"
-    )
-
-    let result=await wrapped.retrieveData(
-      identifier: identifier
-    )
-
-    switch result {
-      case .success:
-        await logger.debug(
-          "LoggingCryptoService: Data retrieval successful",
-          metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-          source: "LoggingCryptoService"
-        )
-      case let .failure(error):
-        await logger.error(
-          "LoggingCryptoService: Data retrieval failed: \(error)",
-          metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-          source: "LoggingCryptoService"
-        )
-    }
-
-    return result
-  }
-
-  public func exportData(
-    identifier: String
-  ) async -> Result<[UInt8], SecurityStorageError> {
-    await logger.debug(
-      "LoggingCryptoService: Exporting data with identifier: \(identifier)",
-      metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-      source: "LoggingCryptoService"
-    )
-
-    let result=await wrapped.exportData(
-      identifier: identifier
-    )
-
-    switch result {
-      case .success:
-        await logger.debug(
-          "LoggingCryptoService: Data export successful",
-          metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-          source: "LoggingCryptoService"
-        )
-      case let .failure(error):
-        await logger.error(
-          "LoggingCryptoService: Data export failed: \(error)",
-          metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-          source: "LoggingCryptoService"
-        )
-    }
-
-    return result
-  }
-
+  
+  /**
+   Import data into secure storage with logging.
+   
+   - Parameters:
+     - data: The data to import
+     - customIdentifier: Optional custom identifier to use
+   - Returns: Identifier for the imported data or an error
+   */
   public func importData(
-    data: [UInt8],
-    identifier: String
+    _ data: [UInt8],
+    customIdentifier: String?
   ) async -> Result<String, SecurityStorageError> {
     await logger.debug(
-      "LoggingCryptoService: Importing data with identifier: \(identifier)",
-      metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
+      "Importing data" + (customIdentifier != nil ? " with custom identifier: \(customIdentifier!)" : ""),
+      metadata: nil,
       source: "LoggingCryptoService"
     )
-
-    let result=await wrapped.importData(
-      data: data,
-      identifier: identifier
+    
+    let result = await wrapped.importData(
+      data,
+      customIdentifier: customIdentifier
     )
-
+    
     switch result {
-      case let .success(identifier):
+      case .success(let identifier):
         await logger.debug(
-          "LoggingCryptoService: Data import successful, stored with identifier: \(identifier)",
-          metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
+          "Successfully imported data, identifier: \(identifier)",
+          metadata: nil,
           source: "LoggingCryptoService"
         )
-      case let .failure(error):
+      case .failure(let error):
         await logger.error(
-          "LoggingCryptoService: Data import failed: \(error)",
-          metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
+          "Failed to import data: \(error)",
+          metadata: nil,
           source: "LoggingCryptoService"
         )
     }
-
-    return result
-  }
-
-  public func deleteData(
-    identifier: String
-  ) async -> Result<Bool, SecurityStorageError> {
-    await logger.debug(
-      "LoggingCryptoService: Deleting data with identifier: \(identifier)",
-      metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-      source: "LoggingCryptoService"
-    )
-
-    let result=await wrapped.deleteData(
-      identifier: identifier
-    )
-
-    switch result {
-      case .success:
-        await logger.debug(
-          "LoggingCryptoService: Data deletion successful",
-          metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-          source: "LoggingCryptoService"
-        )
-      case let .failure(error):
-        await logger.error(
-          "LoggingCryptoService: Data deletion failed: \(error)",
-          metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-          source: "LoggingCryptoService"
-        )
-    }
-
+    
     return result
   }
 }

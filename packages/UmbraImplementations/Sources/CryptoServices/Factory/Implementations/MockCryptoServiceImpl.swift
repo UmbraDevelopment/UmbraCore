@@ -1,404 +1,266 @@
 import CoreSecurityTypes
-import CryptoInterfaces
-import CryptoTypes
-import DomainSecurityTypes
 import Foundation
-import LoggingInterfaces
+import LoggingServices
 import SecurityCoreInterfaces
-import UmbraErrors
 
 /**
- Mock implementation of CryptoServiceProtocol for testing.
-
- This implementation provides configurable success/failure responses for operations,
+ A mock implementation of CryptoServiceProtocol for testing purposes.
+ 
+ This implementation provides configurable success/failure behavior for all methods,
  making it useful for unit testing components that depend on CryptoServiceProtocol.
  */
 public actor MockCryptoServiceImpl: CryptoServiceProtocol {
   /// Configuration options for the mock
   public struct Configuration: Sendable {
     /// Whether encryption operations should succeed
-    public let encryptionSucceeds: Bool
-
+    public var encryptionSucceeds: Bool
+    
     /// Whether decryption operations should succeed
-    public let decryptionSucceeds: Bool
-
+    public var decryptionSucceeds: Bool
+    
     /// Whether hashing operations should succeed
-    public let hashingSucceeds: Bool
-
+    public var hashingSucceeds: Bool
+    
     /// Whether hash verification operations should succeed
-    public let verificationSucceeds: Bool
-
-    /// Result to return for hash verification
-    public let hashVerificationResult: Bool
-
+    public var verificationSucceeds: Bool
+    
     /// Whether key generation operations should succeed
-    public let keyGenerationSucceeds: Bool
-
+    public var keyGenerationSucceeds: Bool
+    
     /// Whether storage operations should succeed
-    public let storageSucceeds: Bool
-
-    /// Whether retrieval operations should succeed
-    public let retrievalSucceeds: Bool
-
-    /// Whether deletion operations should succeed
-    public let deletionSucceeds: Bool
-
-    /// Creates a new configuration with the specified options
+    public var storageSucceeds: Bool
+    
+    /// Whether a verified hash matches (if verification succeeds)
+    public var hashMatches: Bool
+    
+    /// Creates a new configuration with specified options
     public init(
-      encryptionSucceeds: Bool=true,
-      decryptionSucceeds: Bool=true,
-      hashingSucceeds: Bool=true,
-      verificationSucceeds: Bool=true,
-      hashVerificationResult: Bool=true,
-      keyGenerationSucceeds: Bool=true,
-      storageSucceeds: Bool=true,
-      retrievalSucceeds: Bool=true,
-      deletionSucceeds: Bool=true
+      encryptionSucceeds: Bool = true,
+      decryptionSucceeds: Bool = true,
+      hashingSucceeds: Bool = true,
+      verificationSucceeds: Bool = true,
+      keyGenerationSucceeds: Bool = true,
+      storageSucceeds: Bool = true,
+      hashMatches: Bool = true
     ) {
-      self.encryptionSucceeds=encryptionSucceeds
-      self.decryptionSucceeds=decryptionSucceeds
-      self.hashingSucceeds=hashingSucceeds
-      self.verificationSucceeds=verificationSucceeds
-      self.hashVerificationResult=hashVerificationResult
-      self.keyGenerationSucceeds=keyGenerationSucceeds
-      self.storageSucceeds=storageSucceeds
-      self.retrievalSucceeds=retrievalSucceeds
-      self.deletionSucceeds=deletionSucceeds
+      self.encryptionSucceeds = encryptionSucceeds
+      self.decryptionSucceeds = decryptionSucceeds
+      self.hashingSucceeds = hashingSucceeds
+      self.verificationSucceeds = verificationSucceeds
+      self.keyGenerationSucceeds = keyGenerationSucceeds
+      self.storageSucceeds = storageSucceeds
+      self.hashMatches = hashMatches
     }
   }
-
-  /// The mock configuration
+  
+  /// Current configuration
   private let configuration: Configuration
-
-  /// The logger to use
+  
+  /// Logger for operations
   private let logger: LoggingProtocol
-
-  /// In-memory storage for mock operations
-  private var storage: [String: [UInt8]]=[:]
-
-  /// Required by the CryptoServiceProtocol
-  public nonisolated let secureStorage: SecureStorageProtocol
-
-  /**
-   Initialises a new mock crypto service.
-
-   - Parameters:
-     - configuration: The configuration to use
-     - logger: The logger to use
-   */
+  
+  /// Secure storage for mock data
+  public let secureStorage: SecureStorageProtocol
+  
+  /// Creates a new mock crypto service with specified configuration
   public init(
-    configuration: Configuration=Configuration(),
+    configuration: Configuration = Configuration(),
     logger: LoggingProtocol,
-    secureStorage: SecureStorageProtocol=InMemorySecureStorage()
+    secureStorage: SecureStorageProtocol
   ) {
-    self.configuration=configuration
-    self.logger=logger
-    self.secureStorage=secureStorage
+    self.configuration = configuration
+    self.logger = logger
+    self.secureStorage = secureStorage
   }
-
-  // MARK: - CryptoServiceProtocol Methods
-
+  
+  /**
+   Encrypt data using the specified key.
+   
+   If configuration.encryptionSucceeds is true, returns a mock success result.
+   Otherwise, returns a mock error.
+   
+   - Parameters:
+     - dataIdentifier: Identifier for the data to encrypt
+     - keyIdentifier: Identifier for the key to use
+     - options: Optional encryption options
+   - Returns: Identifier for the encrypted data or an error
+   */
   public func encrypt(
     dataIdentifier: String,
     keyIdentifier: String,
-    options _: SecurityCoreInterfaces.EncryptionOptions?
+    options: EncryptionOptions?
   ) async -> Result<String, SecurityStorageError> {
     await logger.debug(
-      "Mock encrypt operation with dataIdentifier: \(dataIdentifier), keyIdentifier: \(keyIdentifier)",
-      metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
+      "Mock encrypting data: \(dataIdentifier) with key: \(keyIdentifier)",
+      metadata: nil,
       source: "MockCryptoService"
     )
-
-    // Retrieve data
-    let dataResult=await secureStorage.retrieveData(withIdentifier: dataIdentifier)
-
-    guard case let .success(data)=dataResult else {
-      return .failure(.keyNotFound)
-    }
-
+    
     if configuration.encryptionSucceeds {
-      let identifier="encrypted_\(UUID().uuidString)"
-      await secureStorage.storeData(data, withIdentifier: identifier)
+      let identifier = "encrypted_\(UUID().uuidString)"
+      
+      // Store some mock encrypted data
+      let mockEncryptedData: [UInt8] = [0xAA, 0x55, 0x01, 0x02, 0x03, 0x04]
+      let _ = await secureStorage.storeData(mockEncryptedData, withIdentifier: identifier)
+      
       return .success(identifier)
     } else {
-      return .failure(.operationFailed("Mock encryption failure"))
+      return .failure(.operationFailed)
     }
   }
-
-  // Special version for the data-based API
-  public func encrypt(
-    data: [UInt8],
-    keyIdentifier: String,
-    options _: UEncryptionOptions?
-  ) async -> Result<String, SecurityStorageError> {
-    await logger.debug(
-      "Mock encrypt operation with data, keyIdentifier: \(keyIdentifier)",
-      metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-      source: "MockCryptoService"
-    )
-
-    if configuration.encryptionSucceeds {
-      let identifier="encrypted_\(UUID().uuidString)"
-      storage[identifier]=data
-      return .success(identifier)
-    } else {
-      return .failure(.operationFailed("Mock encryption failure"))
-    }
-  }
-
+  
+  /**
+   Decrypt data using the specified key.
+   
+   If configuration.decryptionSucceeds is true, returns a mock success result.
+   Otherwise, returns a mock error.
+   
+   - Parameters:
+     - encryptedDataIdentifier: Identifier for the encrypted data
+     - keyIdentifier: Identifier for the key to use
+     - options: Optional decryption options
+   - Returns: Identifier for the decrypted data or an error
+   */
   public func decrypt(
     encryptedDataIdentifier: String,
     keyIdentifier: String,
-    options _: SecurityCoreInterfaces.DecryptionOptions?
+    options: DecryptionOptions?
   ) async -> Result<String, SecurityStorageError> {
     await logger.debug(
-      "Mock decrypt operation with encryptedDataIdentifier: \(encryptedDataIdentifier), keyIdentifier: \(keyIdentifier)",
-      metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
+      "Mock decrypting data: \(encryptedDataIdentifier) with key: \(keyIdentifier)",
+      metadata: nil,
       source: "MockCryptoService"
     )
-
+    
     if configuration.decryptionSucceeds {
-      let decryptedID="decrypted_\(UUID().uuidString)"
-      let mockData: [UInt8]=[0x01, 0x02, 0x03, 0x04]
-      await secureStorage.storeData(mockData, withIdentifier: decryptedID)
+      let decryptedID = "decrypted_\(UUID().uuidString)"
+      let mockData: [UInt8] = [0x01, 0x02, 0x03, 0x04]
+      let _ = await secureStorage.storeData(mockData, withIdentifier: decryptedID)
       return .success(decryptedID)
     } else {
-      return .failure(.operationFailed("Mock decryption failure"))
+      return .failure(.operationFailed)
     }
   }
-
-  // Special version for the data-based API
-  public func decrypt(
-    encryptedDataIdentifier: String,
-    keyIdentifier: String,
-    options _: UDecryptionOptions?
-  ) async -> Result<[UInt8], SecurityStorageError> {
-    await logger.debug(
-      "Mock decrypt operation with encryptedDataIdentifier: \(encryptedDataIdentifier), keyIdentifier: \(keyIdentifier)",
-      metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-      source: "MockCryptoService"
-    )
-
-    if configuration.decryptionSucceeds {
-      if let data=storage[encryptedDataIdentifier] {
-        return .success(data)
-      } else {
-        return .failure(.keyNotFound)
-      }
-    } else {
-      return .failure(.operationFailed("Mock decryption failure"))
-    }
-  }
-
+  
+  /**
+   Create a hash of the specified data.
+   
+   If configuration.hashingSucceeds is true, returns a mock success result.
+   Otherwise, returns a mock error.
+   
+   - Parameters:
+     - dataIdentifier: Identifier for the data to hash
+     - options: Optional hashing options
+   - Returns: Identifier for the hash or an error
+   */
   public func hash(
     dataIdentifier: String,
-    options _: SecurityCoreInterfaces.HashingOptions?
+    options: HashingOptions?
   ) async -> Result<String, SecurityStorageError> {
     await logger.debug(
-      "Mock hash operation with dataIdentifier: \(dataIdentifier)",
-      metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
+      "Mock hashing data: \(dataIdentifier)",
+      metadata: nil,
       source: "MockCryptoService"
     )
-
+    
     if configuration.hashingSucceeds {
-      let identifier="hash_\(UUID().uuidString)"
-      await secureStorage.storeData([0x01, 0x02, 0x03, 0x04], withIdentifier: identifier)
+      let identifier = "hash_\(UUID().uuidString)"
+      let _ = await secureStorage.storeData([0x01, 0x02, 0x03, 0x04], withIdentifier: identifier)
       return .success(identifier)
     } else {
-      return .failure(.operationFailed("Mock hash generation failure"))
+      return .failure(.operationFailed)
     }
   }
-
-  // Special version for the data-based API
-  public func hash(
-    data: [UInt8],
-    options _: CoreSecurityTypes.HashAlgorithm = .sha256
-  ) async -> Result<String, SecurityStorageError> {
-    await logger.debug(
-      "Mock hash operation with data",
-      metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-      source: "MockCryptoService"
-    )
-
-    if configuration.hashingSucceeds {
-      let identifier="hash_\(UUID().uuidString)"
-      storage[identifier]=data
-      return .success(identifier)
-    } else {
-      return .failure(.operationFailed("Mock hash generation failure"))
-    }
-  }
-
+  
+  /**
+   Verify that a hash matches the expected data.
+   
+   If configuration.verificationSucceeds is true, returns configuration.hashMatches.
+   Otherwise, returns a mock error.
+   
+   - Parameters:
+     - dataIdentifier: Identifier for the data to verify
+     - hashIdentifier: Identifier for the expected hash
+     - options: Optional hashing options used for verification
+   - Returns: Whether the hash matches or an error
+   */
   public func verifyHash(
     dataIdentifier: String,
     hashIdentifier: String,
-    options _: SecurityCoreInterfaces.HashingOptions?
+    options: HashingOptions?
   ) async -> Result<Bool, SecurityStorageError> {
     await logger.debug(
-      "Mock verifyHash operation with dataIdentifier: \(dataIdentifier), hashIdentifier: \(hashIdentifier)",
-      metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
+      "Mock verifying hash for data: \(dataIdentifier) against hash: \(hashIdentifier)",
+      metadata: nil,
       source: "MockCryptoService"
     )
-
+    
     if configuration.verificationSucceeds {
-      return .success(configuration.hashVerificationResult)
+      return .success(configuration.hashMatches)
     } else {
-      return .failure(.operationFailed("Mock hash verification failure"))
+      return .failure(.operationFailed)
     }
   }
-
-  // Special version for the data-based API
-  public func verifyHash(
-    data _: [UInt8],
-    againstHash _: [UInt8],
-    options _: CoreSecurityTypes.HashAlgorithm = .sha256
-  ) async -> Result<Bool, SecurityStorageError> {
-    await logger.debug(
-      "Mock verifyHash operation with data and hash",
-      metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-      source: "MockCryptoService"
-    )
-
-    if configuration.verificationSucceeds {
-      return .success(configuration.hashVerificationResult)
-    } else {
-      return .failure(.operationFailed("Mock hash verification failure"))
-    }
-  }
-
+  
+  /**
+   Generate a new cryptographic key.
+   
+   If configuration.keyGenerationSucceeds is true, returns a mock success result.
+   Otherwise, returns a mock error.
+   
+   - Parameters:
+     - length: Length of the key in bits
+     - options: Optional key generation options
+   - Returns: Identifier for the generated key or an error
+   */
   public func generateKey(
     length: Int,
-    options _: SecurityCoreInterfaces.KeyGenerationOptions?
+    options: UnifiedCryptoTypes.KeyGenerationOptions?
   ) async -> Result<String, SecurityStorageError> {
     await logger.debug(
-      "Mock generateKey operation with length: \(length)",
-      metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
+      "Mock generating key with length: \(length)",
+      metadata: nil,
       source: "MockCryptoService"
     )
-
+    
     if configuration.keyGenerationSucceeds {
-      let keyData: [UInt8]=Array(repeating: 0x42, count: length)
-      let keyID="key_\(UUID().uuidString)"
-      await secureStorage.storeData(keyData, withIdentifier: keyID)
+      let keyData: [UInt8] = Array(repeating: 0x42, count: length / 8)
+      let keyID = "key_\(UUID().uuidString)"
+      let _ = await secureStorage.storeData(keyData, withIdentifier: keyID)
       return .success(keyID)
     } else {
-      return .failure(.operationFailed("Mock key generation failure"))
+      return .failure(.operationFailed)
     }
   }
-
+  
+  /**
+   Import data into secure storage.
+   
+   If configuration.storageSucceeds is true, returns a mock success result.
+   Otherwise, returns a mock error.
+   
+   - Parameters:
+     - data: The data to import
+     - customIdentifier: Optional custom identifier to use
+   - Returns: Identifier for the imported data or an error
+   */
   public func importData(
     _ data: [UInt8],
-    identifier: String
+    customIdentifier: String?
   ) async -> Result<String, SecurityStorageError> {
+    let identifier = customIdentifier ?? "import_\(UUID().uuidString)"
+    
     await logger.debug(
-      "Mock importData operation with identifier: \(identifier)",
-      metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
+      "Mock importing data with identifier: \(identifier)",
+      metadata: nil,
       source: "MockCryptoService"
     )
-
+    
     if configuration.storageSucceeds {
-      await secureStorage.storeData(data, withIdentifier: identifier)
+      let _ = await secureStorage.storeData(data, withIdentifier: identifier)
       return .success(identifier)
     } else {
-      return .failure(.operationFailed("Mock import failure"))
+      return .failure(.operationFailed)
     }
-  }
-
-  public func storeData(
-    _ data: [UInt8],
-    withIdentifier identifier: String
-  ) async -> Result<Bool, SecurityStorageError> {
-    await logger.debug(
-      "Mock storeData operation with identifier: \(identifier)",
-      metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-      source: "MockCryptoService"
-    )
-
-    if configuration.storageSucceeds {
-      await secureStorage.storeData(data, withIdentifier: identifier)
-      return .success(true)
-    } else {
-      return .failure(.operationFailed("Mock storage failure"))
-    }
-  }
-
-  public func retrieveData(
-    withIdentifier identifier: String
-  ) async -> Result<[UInt8], SecurityStorageError> {
-    await logger.debug(
-      "Mock retrieveData operation with identifier: \(identifier)",
-      metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-      source: "MockCryptoService"
-    )
-
-    if configuration.retrievalSucceeds {
-      if let data=storage[identifier] {
-        return .success(data)
-      } else {
-        return await secureStorage.retrieveData(withIdentifier: identifier)
-      }
-    } else {
-      return .failure(.operationFailed("Mock retrieval failure"))
-    }
-  }
-
-  public func exportData(
-    identifier: String
-  ) async -> Result<[UInt8], SecurityStorageError> {
-    await retrieveData(withIdentifier: identifier)
-  }
-
-  public func deleteData(
-    withIdentifier identifier: String
-  ) async -> Result<Bool, SecurityStorageError> {
-    await logger.debug(
-      "Mock deleteData operation with identifier: \(identifier)",
-      metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-      source: "MockCryptoService"
-    )
-
-    if configuration.deletionSucceeds {
-      storage.removeValue(forKey: identifier)
-
-      if storage[identifier] == nil {
-        return .success(true)
-      } else {
-        return .failure(.operationFailed("Failed to delete data"))
-      }
-    } else {
-      return .failure(.operationFailed("Mock deletion failure"))
-    }
-  }
-}
-
-/**
- A simple in-memory implementation of SecureStorageProtocol for testing.
- */
-private actor InMemorySecureStorage: SecureStorageProtocol {
-  private var storage: [String: [UInt8]]=[:]
-
-  public init() {}
-
-  public func storeData(
-    _ data: [UInt8],
-    withIdentifier identifier: String
-  ) async -> Result<Bool, SecurityStorageError> {
-    storage[identifier]=data
-    return .success(true)
-  }
-
-  public func retrieveData(withIdentifier identifier: String) async
-  -> Result<[UInt8], SecurityStorageError> {
-    if let data=storage[identifier] {
-      .success(data)
-    } else {
-      .failure(.keyNotFound)
-    }
-  }
-
-  public func deleteData(withIdentifier identifier: String) async
-  -> Result<Bool, SecurityStorageError> {
-    storage.removeValue(forKey: identifier)
-    return .success(true)
   }
 }
