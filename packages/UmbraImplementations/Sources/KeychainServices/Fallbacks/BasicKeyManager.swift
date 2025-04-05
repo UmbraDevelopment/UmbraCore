@@ -41,10 +41,10 @@ private actor LoggingProtocol_NoOp: LoggingProtocol, @unchecked Sendable {
 
 /// Basic key types supported by the BasicKeyManager
 public enum KeyType: String, Sendable, Equatable, Codable {
-  case aes256="AES256"
-  case rsaPrivate="RSAPrivate"
-  case rsaPublic="RSAPublic"
-  case hmac="HMAC"
+  case aes256 = "AES256"
+  case rsaPrivate = "RSAPrivate"
+  case rsaPublic = "RSAPublic"
+  case hmac = "HMAC"
 }
 
 /// Error types specific to key management operations
@@ -61,7 +61,7 @@ public enum KeyManagementError: Error, Equatable {
 
 public final class BasicKeyManager: KeyManagementProtocol, @unchecked Sendable {
   /// In-memory storage for keys
-  private var keyStore: [String: [UInt8]]=[:]
+  private var keyStore: [String: [UInt8]] = [:]
 
   /// Logger for operations
   private let logger: LoggingProtocol
@@ -71,8 +71,8 @@ public final class BasicKeyManager: KeyManagementProtocol, @unchecked Sendable {
 
    - Parameter logger: Logger for recording operations
    */
-  public init(logger: LoggingProtocol?=nil) {
-    self.logger=logger ?? LoggingProtocol_NoOp()
+  public init(logger: LoggingProtocol? = nil) {
+    self.logger = logger ?? LoggingProtocol_NoOp()
   }
 
   /**
@@ -82,8 +82,8 @@ public final class BasicKeyManager: KeyManagementProtocol, @unchecked Sendable {
    - Returns: A result containing the key or an error
    */
   public func retrieveKey(withIdentifier identifier: String) async
-  -> Result<[UInt8], SecurityStorageError> {
-    if let key=keyStore[identifier] {
+  -> Result<[UInt8], SecurityProtocolError> {
+    if let key = keyStore[identifier] {
       let context = BaseLogContextDTO(domainName: "KeyManagement", source: "BasicKeyManager")
       await logger.debug("Retrieved key with identifier: \(identifier)", context: context)
       return .success(key)
@@ -95,7 +95,7 @@ public final class BasicKeyManager: KeyManagementProtocol, @unchecked Sendable {
         metadata: LogMetadataDTOCollection() // Empty metadata
       )
       await logger.warning("Key not found with identifier: \(identifier)", context: context)
-      return .failure(.keyNotFound)
+      return .failure(.operationFailed(reason: "Key not found: \(identifier)"))
     }
   }
 
@@ -103,15 +103,26 @@ public final class BasicKeyManager: KeyManagementProtocol, @unchecked Sendable {
    Store a cryptographic key with the specified identifier.
 
    - Parameters:
-      - key: The key to store
-      - identifier: The identifier to associate with the key
+     - key: The key bytes to store
+     - identifier: The identifier to associate with the key
    - Returns: A result indicating success or an error
    */
   public func storeKey(
     _ key: [UInt8],
     withIdentifier identifier: String
-  ) async -> Result<Void, SecurityStorageError> {
-    keyStore[identifier]=key
+  ) async -> Result<Void, SecurityProtocolError> {
+    // Validate input
+    guard !key.isEmpty else {
+      return .failure(.inputError("Cannot store empty key"))
+    }
+
+    guard !identifier.isEmpty else {
+      return .failure(.inputError("Cannot use empty identifier"))
+    }
+
+    // Store the key in memory
+    keyStore[identifier] = key
+
     let context = BaseLogContextDTO(domainName: "KeyManagement", source: "BasicKeyManager")
     await logger.debug("Stored key with identifier: \(identifier)", context: context)
     return .success(())
@@ -124,99 +135,85 @@ public final class BasicKeyManager: KeyManagementProtocol, @unchecked Sendable {
    - Returns: A result indicating success or an error
    */
   public func deleteKey(withIdentifier identifier: String) async
-  -> Result<Void, SecurityStorageError> {
+  -> Result<Void, SecurityProtocolError> {
     if keyStore.removeValue(forKey: identifier) != nil {
       let context = BaseLogContextDTO(domainName: "KeyManagement", source: "BasicKeyManager")
       await logger.debug("Deleted key with identifier: \(identifier)", context: context)
       return .success(())
     } else {
-      // Key not found, log a warning
-      let context = BaseLogContextDTO(
-        domainName: "FallbackKeychain",
-        source: "BasicKeyManager",
-        metadata: LogMetadataDTOCollection() // Empty metadata
-      )
-      await logger.warning("Key not found with identifier: \(identifier)", context: context)
-      return .failure(.keyNotFound) // Return error if key wasn't found
+      let context = BaseLogContextDTO(domainName: "KeyManagement", source: "BasicKeyManager")
+      await logger.warning("Attempted to delete non-existent key: \(identifier)", context: context)
+      return .failure(.operationFailed(reason: "Key not found for deletion: \(identifier)"))
     }
   }
 
   /**
-   Rotates a security key, creating a new key and optionally re-encrypting data.
+   Rotate a key, replacing it with a new one and optionally re-encrypting data.
 
    - Parameters:
-     - identifier: A string identifying the key to rotate.
-     - dataToReencrypt: Optional data to re-encrypt with the new key.
+     - identifier: The identifier of the key to rotate
+     - dataToReencrypt: Optional data that should be re-encrypted with the new key
    - Returns: The new key and re-encrypted data (if provided) or an error.
    */
   public func rotateKey(
     withIdentifier identifier: String,
     dataToReencrypt: [UInt8]?
-  ) async -> Result<(
-    newKey: [UInt8],
-    reencryptedData: [UInt8]?
-  ), SecurityStorageError> {
-    // Log a warning that this fallback manager is being used for rotation
-    let context = BaseLogContextDTO(
-      domainName: "FallbackKeychain",
-      source: "BasicKeyManager",
-      metadata: LogMetadataDTOCollection() // Empty metadata
-    )
-    await logger.warning(
-      "Using BasicKeyManager to rotate a key - this is not secure for production use",
-      context: context
-    )
+  ) async -> Result<(newKey: [UInt8], reencryptedData: [UInt8]?), SecurityProtocolError> {
+    // Check if the original key exists
+    guard keyStore[identifier] != nil else {
+      return .failure(.operationFailed(reason: "Cannot rotate non-existent key: \(identifier)"))
+    }
 
-    // Generate a new key (using AES-256 as a default)
-    let newKeyBytes=try? await generateRandomBytes(count: 32)
+    // Generate a new key
+    let newKeyBytes = try? await generateRandomBytes(count: 32)
     guard let newKeyBytes else {
       return .failure(.invalidMessageFormat(details: "Failed to generate new key"))
     }
 
-    // Store the new key with the same identifier
-    let storeResult=await storeKey(newKeyBytes, withIdentifier: identifier)
-    if case let .failure(error)=storeResult {
-      return .failure(error)
+    // Store the new key, replacing the old one
+    keyStore[identifier] = newKeyBytes
+
+    // Handle re-encryption if data was provided
+    var reencryptedData: [UInt8]? = nil
+    if let dataToReencrypt = dataToReencrypt {
+      // In a real implementation, we would re-encrypt the data
+      // For this simple implementation, we'll just return the original data
+      reencryptedData = dataToReencrypt
     }
 
-    // If there's data to re-encrypt, mock the re-encryption
-    var reencryptedData: [UInt8]?
-    if let dataToReencrypt {
-      // In a real implementation, this would use the new key to re-encrypt the data
-      // For this fallback, we'll just mock the re-encryption
-      reencryptedData=dataToReencrypt
-    }
-
+    let context = BaseLogContextDTO(domainName: "KeyManagement", source: "BasicKeyManager")
+    await logger.info("Rotated key with identifier: \(identifier)", context: context)
     return .success((newKey: newKeyBytes, reencryptedData: reencryptedData))
   }
 
   /**
-   Lists all available key identifiers.
+   List all available key identifiers.
 
    - Returns: An array of key identifiers or an error.
    */
-  public func listKeyIdentifiers() async -> Result<[String], SecurityStorageError> {
+  public func listKeyIdentifiers() async -> Result<[String], SecurityProtocolError> {
     let context = BaseLogContextDTO(domainName: "KeyManagement", source: "BasicKeyManager")
     await logger.debug("Listing key identifiers", context: context)
     return .success(Array(keyStore.keys))
   }
 
   /**
-   Generate random bytes securely.
+   Generate cryptographically secure random bytes.
 
    - Parameter count: Number of bytes to generate
    - Returns: Array of random bytes
-   - Throws: Error if random byte generation fails
+   - Throws: KeyManagementError if generation fails
    */
   private func generateRandomBytes(count: Int) async throws -> [UInt8] {
-    var bytes=[UInt8](repeating: 0, count: count)
-    let status=SecRandomCopyBytes(kSecRandomDefault, count, &bytes)
-
-    if status == errSecSuccess {
-      return bytes
-    } else {
-      throw KeyManagementError
-        .keyGenerationFailed(reason: "SecRandomCopyBytes failed with status \(status)")
+    var bytes = [UInt8](repeating: 0, count: count)
+    let result = SecRandomCopyBytes(kSecRandomDefault, count, &bytes)
+    
+    guard result == errSecSuccess else {
+      let context = BaseLogContextDTO(domainName: "KeyManagement", source: "BasicKeyManager")
+      await logger.error("Failed to generate random bytes, error: \(result)", context: context)
+      throw KeyManagementError.keyGenerationFailed(reason: "SecRandomCopyBytes failed with code \(result)")
     }
+    
+    return bytes
   }
 }

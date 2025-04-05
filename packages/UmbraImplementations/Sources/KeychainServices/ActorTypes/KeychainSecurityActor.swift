@@ -431,7 +431,7 @@ private actor SimpleConsoleLogger: LoggingProtocol {
 
   init() {
     // Initialize with a default LoggingActor. Adjust if specific config needed.
-    self.loggingActor = LoggingActor()
+    self.loggingActor = LoggingActor(destinations: [])
   }
 
   // MARK: - LoggingProtocol Conformance
@@ -443,8 +443,8 @@ private actor SimpleConsoleLogger: LoggingProtocol {
     // Simple metadata representation, consider privacy
     let metadataDesc = context.metadata.entries.map { meta in
       // Basic check for sensitive data, real implementation might need more robust handling
-      let valueDesc = meta.privacy == .private || meta.privacy == .sensitive ? "<redacted>" : "\(meta.value)"
-      return "\(meta.label)=\(valueDesc)"
+      let valueDesc = meta.privacyLevel == .private || meta.privacyLevel == .sensitive ? "<redacted>" : "\(meta.value)"
+      return "\(meta.key)=\(valueDesc)"
     }.joined(separator: "; ")
 
     let timestamp = Date() // Simple timestamp

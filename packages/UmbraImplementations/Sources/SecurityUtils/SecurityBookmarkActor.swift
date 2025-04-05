@@ -545,10 +545,14 @@ private struct BookmarkLogger {
       metadata=metadata.merging(with: additionalContext)
     }
 
+    let context = BaseLogContextDTO(
+      domainName: "SecurityUtils",
+      source: "SecurityBookmark",
+      metadata: metadata
+    )
     await logger.debug(
       "Starting bookmark operation: \(operation)",
-      metadata: metadata.toPrivacyMetadata(),
-      source: "SecurityBookmark"
+      context: context
     )
   }
 
@@ -563,10 +567,14 @@ private struct BookmarkLogger {
       metadata=metadata.merging(with: additionalContext)
     }
 
+    let context = BaseLogContextDTO(
+      domainName: "SecurityUtils",
+      source: "SecurityBookmark",
+      metadata: metadata
+    )
     await logger.debug(
       "Successfully completed bookmark operation: \(operation)",
-      metadata: metadata.toPrivacyMetadata(),
-      source: "SecurityBookmark"
+      context: context
     )
   }
 
@@ -577,30 +585,21 @@ private struct BookmarkLogger {
   ) async {
     var metadata=LogMetadataDTOCollection()
     metadata=metadata.withPublic(key: "operation", value: operation)
-    metadata=metadata.withPublic(key: "status", value: "error")
-
-    // Add error information
-    if let loggableError=error as? LoggableErrorProtocol {
-      let errorMetadata=loggableError.getPrivacyMetadata()
-
-      // Extract privacy-aware metadata
-      for key in errorMetadata.keys {
-        if let value=errorMetadata[key] {
-          metadata=metadata.withPrivate(key: key, value: value.valueString)
-        }
-      }
-    } else {
-      metadata=metadata.withPrivate(key: "errorMessage", value: error.localizedDescription)
-    }
-
+    metadata=metadata.withPublic(key: "status", value: "failed")
+    metadata=metadata.withPrivate(key: "error", value: error.localizedDescription)
     if let additionalContext {
       metadata=metadata.merging(with: additionalContext)
     }
 
+    let errorContext = ErrorLogContext(
+      error: error,
+      domain: "SecurityUtils", 
+      source: "SecurityBookmark",
+      additionalContext: metadata
+    )
     await logger.error(
       "Failed bookmark operation: \(operation)",
-      metadata: metadata.toPrivacyMetadata(),
-      source: "SecurityBookmark"
+      context: errorContext
     )
   }
 
@@ -611,16 +610,20 @@ private struct BookmarkLogger {
   ) async {
     var metadata=LogMetadataDTOCollection()
     metadata=metadata.withPublic(key: "operation", value: operation)
-    metadata=metadata.withPublic(key: "warning", value: message)
-
+    metadata=metadata.withPublic(key: "status", value: "warning")
+    metadata=metadata.withPublic(key: "message", value: message)
     if let additionalContext {
       metadata=metadata.merging(with: additionalContext)
     }
 
+    let context = BaseLogContextDTO(
+      domainName: "SecurityUtils",
+      source: "SecurityBookmark",
+      metadata: metadata
+    )
     await logger.warning(
       "Warning during bookmark operation: \(operation) - \(message)",
-      metadata: metadata.toPrivacyMetadata(),
-      source: "SecurityBookmark"
+      context: context
     )
   }
 }

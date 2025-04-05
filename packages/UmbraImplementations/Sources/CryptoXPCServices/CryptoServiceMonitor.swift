@@ -92,10 +92,14 @@ public actor CryptoServiceMonitor {
    - Parameter event: The event to record
    */
   public func recordEvent(_ event: CryptoEventDTO) async {
+    let context = BaseLogContextDTO(
+      domainName: "CryptoXPC",
+      source: "CryptoServiceMonitor.recordEvent",
+      metadata: LogMetadataDTOCollection()
+    )
     await logger.trace(
       "Recording crypto event: \(event.operation)",
-      metadata: PrivacyMetadata(),
-      source: "CryptoServiceMonitor.recordEvent"
+      context: context
     )
 
     // Add to event history with capacity management
@@ -115,10 +119,14 @@ public actor CryptoServiceMonitor {
    - Parameter events: Array of events to record
    */
   public func recordEvents(_ events: [CryptoEventDTO]) async {
+    let context = BaseLogContextDTO(
+      domainName: "CryptoXPC",
+      source: "CryptoServiceMonitor.recordEvents",
+      metadata: LogMetadataDTOCollection()
+    )
     await logger.trace(
       "Recording \(events.count) crypto events",
-      metadata: PrivacyMetadata(),
-      source: "CryptoServiceMonitor.recordEvents"
+      context: context
     )
 
     // Add all events

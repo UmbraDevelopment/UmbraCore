@@ -74,6 +74,8 @@
  This pattern allows for the internal logging implementation to change without
  breaking compatibility of modules using logging functionality.
  */
+import LoggingTypes
+
 public protocol LoggerProtocol {
   /**
    Log a message at the critical level
@@ -87,7 +89,7 @@ public protocol LoggerProtocol {
    */
   static func critical(
     _ message: @autoclosure () -> Any,
-    metadata: LogMetadata?,
+    metadata: LoggingTypes.LogMetadata?,
     file: String,
     function: String,
     line: Int
@@ -105,7 +107,7 @@ public protocol LoggerProtocol {
    */
   static func error(
     _ message: @autoclosure () -> Any,
-    metadata: LogMetadata?,
+    metadata: LoggingTypes.LogMetadata?,
     file: String,
     function: String,
     line: Int
@@ -123,7 +125,7 @@ public protocol LoggerProtocol {
    */
   static func warning(
     _ message: @autoclosure () -> Any,
-    metadata: LogMetadata?,
+    metadata: LoggingTypes.LogMetadata?,
     file: String,
     function: String,
     line: Int
@@ -141,7 +143,7 @@ public protocol LoggerProtocol {
    */
   static func info(
     _ message: @autoclosure () -> Any,
-    metadata: LogMetadata?,
+    metadata: LoggingTypes.LogMetadata?,
     file: String,
     function: String,
     line: Int
@@ -159,7 +161,7 @@ public protocol LoggerProtocol {
    */
   static func debug(
     _ message: @autoclosure () -> Any,
-    metadata: LogMetadata?,
+    metadata: LoggingTypes.LogMetadata?,
     file: String,
     function: String,
     line: Int
@@ -177,7 +179,7 @@ public protocol LoggerProtocol {
    */
   static func trace(
     _ message: @autoclosure () -> Any,
-    metadata: LogMetadata?,
+    metadata: LoggingTypes.LogMetadata?,
     file: String,
     function: String,
     line: Int
@@ -197,7 +199,7 @@ public protocol LoggerProtocol {
   static func log(
     _ level: LogLevel,
     _ message: @autoclosure () -> Any,
-    metadata: LogMetadata?,
+    metadata: LoggingTypes.LogMetadata?,
     file: String,
     function: String,
     line: Int
@@ -217,7 +219,7 @@ public protocol LoggerProtocol {
   static func logPrivacy(
     _ level: LogLevel,
     _ message: @autoclosure () -> Any,
-    metadata: LogMetadata?,
+    metadata: LoggingTypes.LogMetadata?,
     file: String,
     function: String,
     line: Int
@@ -317,7 +319,8 @@ extension LoggerProtocol {
 /**
  Dictionary type for structured log metadata
  */
-public typealias LogMetadata=[String: Any]
+// Note: Use LoggingTypes.LogMetadata directly instead of this typealias
+// as per Alpha Dot Five architecture principles which discourage typealiases.
 
 /**
  Configuration options for loggers

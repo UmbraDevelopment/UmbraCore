@@ -137,7 +137,11 @@ public actor CryptoXPCServiceActor {
         return .success(encryptedDataID)
 
       case let .failure(error):
-        let errorContext = BaseLogContextDTO(domainName: "CryptoXPC", source: "CryptoXPCServiceActor.encrypt", error: error)
+        let errorContext = ErrorLogContext(
+          error: error,
+          domain: "CryptoXPC",
+          source: "CryptoXPCServiceActor.encrypt"
+        )
         await logger.error("Encryption failed", context: errorContext)
         let cryptoError=UmbraErrorsDTOs.ErrorDTO(
           identifier: "crypto.encryption.failed",
@@ -197,7 +201,11 @@ public actor CryptoXPCServiceActor {
         return .success(decryptedDataID)
 
       case let .failure(error):
-        let errorContext = BaseLogContextDTO(domainName: "CryptoXPC", source: "CryptoXPCServiceActor.decrypt", error: error)
+        let errorContext = ErrorLogContext(
+          error: error,
+          domain: "CryptoXPC",
+          source: "CryptoXPCServiceActor.decrypt"
+        )
         await logger.error("Decryption failed", context: errorContext)
         let cryptoError=UmbraErrorsDTOs.ErrorDTO(
           identifier: "crypto.decryption.failed",
@@ -264,7 +272,11 @@ public actor CryptoXPCServiceActor {
           return .success(dataID)
 
         case let .failure(error):
-          let errorContext = BaseLogContextDTO(domainName: "CryptoXPC", source: "CryptoXPCServiceActor.generateRandomBytes", error: error)
+          let errorContext = ErrorLogContext(
+            error: error,
+            domain: "CryptoXPC",
+            source: "CryptoXPCServiceActor.generateRandomBytes"
+          )
           await logger.error("Failed to store random data", context: errorContext)
           let cryptoError=UmbraErrorsDTOs.ErrorDTO(
             identifier: "crypto.random.storage_failed",
@@ -332,7 +344,11 @@ public actor CryptoXPCServiceActor {
         return .success(resultID)
 
       case let .failure(error):
-        let errorContext = BaseLogContextDTO(domainName: "CryptoXPC", source: "CryptoXPCServiceActor.hash", error: error)
+        let errorContext = ErrorLogContext(
+          error: error,
+          domain: "CryptoXPC",
+          source: "CryptoXPCServiceActor.hash"
+        )
         await logger.error("Hash operation failed", context: errorContext)
         let cryptoError=UmbraErrorsDTOs.ErrorDTO(
           identifier: "crypto.hash.failed",

@@ -17,243 +17,206 @@ import LoggingWrapperInterfaces
  - `.private`: Information that should be redacted in release builds
  - `.sensitive`: Information that should be fully redacted or hashed
  */
-public final class Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked Sendable {
+public actor Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked Sendable {
   /// The underlying SwiftyBeaver logger instance
-  private static let logger=SwiftyBeaver.self
+  private let logger = SwiftyBeaver.self
 
-  /// Default logger configuration
-  @MainActor
-  private static var configuration: LoggingWrapperInterfaces
-    .LoggerConfiguration = .production
+  /// Singleton actor instance for static method delegation
+  private static let shared = Logger()
 
-  /// Actor for thread-safe logging operations
-  private static let swiftyLoggerActor=SwiftyLoggerActor()
+  /// Current logger configuration
+  private var configuration: LoggingWrapperInterfaces.LoggerConfiguration = .production
+
+  /// Collection of active logging destinations
+  private var destinations: [BaseDestination] = []
+
+  /// Private initialiser to enforce singleton pattern for static access
+  private init() {}
 
   /// Add a destination for log output
   public static func addDestination(_ destination: BaseDestination) {
     // Create a local copy to reference in the detached task
-    let destinationRef=destination
+    let destinationRef = destination
 
-    // Use detached task to isolate the non-Sendable destination
-    Task.detached { @Sendable in
-      await swiftyLoggerActor.addDestination(destinationRef)
+    // Delegate to actor instance
+    Task {
+      await shared.addDestination(destinationRef)
     }
+  }
+
+  /// Internal actor method to add a destination
+  public func addDestination(_ destination: BaseDestination) {
+    destinations.append(destination)
+    SwiftyBeaver.addDestination(destination)
   }
 
   /// Remove a destination from log output
   public static func removeDestination(_ destination: BaseDestination) {
     // Create a local copy to reference in the detached task
-    let destinationRef=destination
+    let destinationRef = destination
 
-    // Use detached task to isolate the non-Sendable destination
-    Task.detached { @Sendable in
-      await swiftyLoggerActor.removeDestination(destinationRef)
+    // Delegate to actor instance
+    Task {
+      await shared.removeDestination(destinationRef)
     }
   }
 
+  /// Internal actor method to remove a destination
+  public func removeDestination(_ destination: BaseDestination) {
+    if let index = destinations.firstIndex(where: { $0 === destination }) {
+      destinations.remove(at: index)
+    }
+    SwiftyBeaver.removeDestination(destination)
+  }
+
   /// Check if a log level is enabled
-  public static func isEnabled(_ level: LoggingWrapperInterfaces.LogLevel) -> Bool {
+  public static func isEnabled(_ level: LoggingTypes.LogLevel) -> Bool {
     // For simplicity, we'll default to checking against the minimum log level
-    // This avoids the async complexity with MainActor properties
-    level.rawValue >= LoggingWrapperInterfaces.LogLevel.trace.rawValue
+    // This is a nonisolated operation
+    level.rawValue >= LoggingTypes.LogLevel.trace.rawValue
   }
 
   /// Configure the logger with the provided options
   public static func configure(_ options: LoggingWrapperInterfaces.LoggerConfiguration) {
-    // Configuration is Sendable, so we can capture it safely
-    Task { @MainActor in
-      configuration=options
+    // Delegate to actor instance
+    Task {
+      await shared.configure(options)
     }
+  }
 
-    // Extract the minimum level value for safe passing to task
-    let minimumLevelRawValue=options.minimumLevel.rawValue
+  /// Internal actor method to configure the logger
+  public func configure(_ options: LoggingWrapperInterfaces.LoggerConfiguration) {
+    // Update actor configuration
+    configuration = options
 
-    // Create a detached task to update configuration on actor
-    Task.detached { @Sendable in
-      // Convert back to enum inside the task for safety
-      let level=LoggingWrapperInterfaces.LogLevel(rawValue: minimumLevelRawValue) ?? .trace
-      await swiftyLoggerActor.configure(minimumLevel: convertLogLevel(level))
+    // Update minimum level on all destinations
+    let level = convertLogLevel(options.minimumLevel)
+    for destination in destinations {
+      destination.minLevel = level
     }
   }
 
   /// Set the minimum log level to record
-  public static func setLogLevel(_ level: LoggingWrapperInterfaces.LogLevel) {
+  public static func setLogLevel(_ level: LoggingTypes.LogLevel) {
+    Task {
+      await shared.setLogLevel(level)
+    }
+  }
+
+  /// Internal actor method to set log level
+  public func setLogLevel(_ level: LoggingTypes.LogLevel) {
     // Create a new configuration with the updated log level
-    let newConfig=LoggingWrapperInterfaces.LoggerConfiguration(
+    let newConfig = LoggingWrapperInterfaces.LoggerConfiguration(
       minimumLevel: level,
-      includeSourceLocation: true,
-      privacyRedactionEnabled: true,
-      synchronousLogging: false,
-      includeThreadInfo: true,
-      maxLogFileSizeMB: 10,
-      maxLogFileCount: 5
+      includeSourceLocation: configuration.includeSourceLocation,
+      privacyRedactionEnabled: configuration.privacyRedactionEnabled,
+      synchronousLogging: configuration.synchronousLogging,
+      includeThreadInfo: configuration.includeThreadInfo,
+      maxLogFileSizeMB: configuration.maxLogFileSizeMB,
+      maxLogFileCount: configuration.maxLogFileCount
     )
 
-    // Update configuration on the MainActor
-    Task { @MainActor in
-      configuration=newConfig
-    }
+    // Update configuration
+    configuration = newConfig
 
-    // Extract the raw value for safe passing to task
-    let levelRawValue=level.rawValue
-
-    // Create a detached task to update configuration on actor
-    Task.detached { @Sendable in
-      // Convert back to enum inside the task for safety
-      let safeLevel=LoggingWrapperInterfaces.LogLevel(rawValue: levelRawValue) ?? .trace
-      await swiftyLoggerActor.configure(minimumLevel: convertLogLevel(safeLevel))
+    // Update level on all destinations
+    let swiftyLevel = convertLogLevel(level)
+    for destination in destinations {
+      destination.minLevel = swiftyLevel
     }
   }
 
   /// Flush any pending log entries
   public static func flush() {
-    // SwiftyBeaver doesn't have an explicit flush mechanism,
-    // but we can ensure any async logging tasks are completed
-    Task.detached { @Sendable in
-      await swiftyLoggerActor.flush()
+    Task {
+      await shared.flush()
     }
   }
 
-  /// Actor to ensure thread-safe logging operations with SwiftyBeaver
-  private actor SwiftyLoggerActor {
-    private var destinations: [BaseDestination]=[]
+  /// Actor instance method to flush logs
+  public func flush() {
+    // SwiftyBeaver doesn't have an explicit flush mechanism,
+    // but we can ensure any pending logging operations are completed
+  }
 
-    func addDestination(_ destination: BaseDestination) {
-      destinations.append(destination)
-      SwiftyBeaver.addDestination(destination)
-    }
-
-    func removeDestination(_ destination: BaseDestination) {
-      if let index=destinations.firstIndex(where: { $0 === destination }) {
-        destinations.remove(at: index)
-      }
-      SwiftyBeaver.removeDestination(destination)
-    }
-
-    func configure(minimumLevel: SwiftyBeaver.Level) {
-      for destination in destinations {
-        destination.minLevel=minimumLevel
-      }
-    }
-
-    func getMinimumLogLevel() -> SwiftyBeaver.Level {
-      guard let firstDestination=destinations.first else {
-        return .info
-      }
-      return firstDestination.minLevel
-    }
-
-    func flush() {
-      // SwiftyBeaver doesn't have an explicit flush mechanism
-      // This function exists to fulfill protocol requirements
-    }
-
-    /// Perform actual logging with privacy considerations
-    func log(
-      level: SwiftyBeaver.Level,
-      message: String,
-      metadata: [String: String]?,
-      privacy: LoggingWrapperInterfaces.LogPrivacyLevel,
-      source: String?,
-      file: String,
-      function: String,
-      line: Int
-    ) {
-      // Process message with privacy level
-      let processedMessage=processMessage(message, privacy: privacy)
-
-      // Add source as context if provided
-      var context: [String: Any]=[:]
-      if let source {
-        context["source"]=source
-      }
-
-      // Add metadata if provided
-      if let metadata {
-        for (key, value) in metadata {
-          context[key]=value
-        }
-      }
-
-      // Log with SwiftyBeaver
-      SwiftyBeaver.custom(
-        level: level,
-        message: processedMessage,
-        file: file,
-        function: function,
-        line: line,
-        context: context
-      )
-    }
-
-    /// Process message based on privacy level
-    private func processMessage(
-      _ message: String,
-      privacy: LoggingWrapperInterfaces.LogPrivacyLevel
-    ) -> String {
-      // Apply privacy redaction in release builds if needed
-      #if DEBUG
-        return message
-      #else
-        switch privacy {
-          case .public:
+  /// Process message based on privacy level
+  private func processMessage(
+    _ message: String,
+    privacy: LoggingWrapperInterfaces.LogPrivacyLevel
+  ) -> String {
+    // Apply privacy redaction in release builds if needed
+    #if DEBUG
+      return message
+    #else
+      switch privacy {
+        case .public:
           return message
-          case .private:
+        case .private:
           // Simple redaction in release builds
           if message.count > 10 {
             return String(message.prefix(5)) + "..." + String(message.suffix(2))
           }
           return "[REDACTED]"
-          case .sensitive:
+        case .sensitive:
           // Full redaction for sensitive data
           return "[SENSITIVE DATA REDACTED]"
-          case .hash:
+        case .hash:
           // Hash the data for tracking without revealing content
           return "HASH:" + String(message.hash)
-          case .auto:
+        case .auto:
           // Default to private handling
           if message.count > 10 {
             return String(message.prefix(3)) + "..." + String(message.suffix(2))
           }
           return "[AUTO-REDACTED]"
-        }
-      #endif
-    }
+      }
+    #endif
   }
 
   /// Set up the logger with console output
   public static func setupConsoleLogging(
-    minLevel: LoggingWrapperInterfaces.LogLevel = .debug,
-    format: String="$Dyyyy-MM-dd HH:mm:ss.SSS$d $L $N.$F:$l - $M",
-    useColors _: Bool=true
+    minLevel: LoggingTypes.LogLevel = .debug,
+    format: String = "$Dyyyy-MM-dd HH:mm:ss.SSS$d $L $N.$F:$l - $M",
+    useColors: Bool = true
+  ) {
+    Task {
+      await shared.setupConsoleLogging(minLevel: minLevel, format: format, useColors: useColors)
+    }
+  }
+
+  /// Actor instance method to set up console logging
+  public func setupConsoleLogging(
+    minLevel: LoggingTypes.LogLevel = .debug,
+    format: String = "$Dyyyy-MM-dd HH:mm:ss.SSS$d $L $N.$F:$l - $M",
+    useColors: Bool = true
   ) {
     // Create the console destination
-    let console=ConsoleDestination()
+    let console = ConsoleDestination()
 
     // Configure the format based on parameters
-    console.format=format
-    console.minLevel=convertLogLevel(minLevel)
+    console.format = format
+    console.minLevel = convertLogLevel(minLevel)
+    console.useColors = useColors
 
     // Add the destination
     addDestination(console)
   }
 
   /// Convert LogLevel to SwiftyBeaver.Level
-  private static func convertLogLevel(_ level: LoggingWrapperInterfaces.LogLevel) -> SwiftyBeaver
-  .Level {
+  private func convertLogLevel(_ level: LoggingTypes.LogLevel) -> SwiftyBeaver.Level {
     switch level {
       case .debug:
-        .debug
+        return .debug
       case .info:
-        .info
+        return .info
       case .warning:
-        .warning
+        return .warning
       case .error:
-        .error
+        return .error
       case .trace:
-        .verbose
+        return .verbose
       case .critical:
-        .error // SwiftyBeaver doesn't have critical, so map to error
+        return .error // SwiftyBeaver doesn't have critical, so map to error
     }
   }
 
@@ -261,162 +224,113 @@ public final class Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked S
 
   /// Log a message at the specified level
   public static func log(
-    _ level: LoggingWrapperInterfaces.LogLevel,
+    _ level: LoggingTypes.LogLevel,
     _ message: @autoclosure () -> Any,
-    metadata: LoggingWrapperInterfaces.LogMetadata?,
-    file: String=#file,
-    function: String=#function,
-    line: Int=#line
+    metadata: LoggingTypes.LogMetadata?,
+    file: String = #file,
+    function: String = #function,
+    line: Int = #line
   ) {
     // Immediately evaluate the autoclosure to capture the value
-    let messageValue=message()
+    let messageValue = message()
 
-    // Convert message to string early to avoid non-Sendable issues
-    let messageString=String(describing: messageValue)
+    // Convert message to string early
+    let messageString = String(describing: messageValue)
 
-    // Default to public privacy level
-    let privacyLevel: LoggingWrapperInterfaces.LogPrivacyLevel = .public
-
-    // Capture file information before passing to task
-    let capturedFile=file
-    let capturedFunction=function
-    let capturedLine=line
-
-    // Convert metadata to string dictionary before passing to actor
-    let stringMetadata: [String: String]?
-    if let metadata {
-      var dict=[String: String]()
-      for (key, value) in metadata {
-        dict[key]=String(describing: value)
-      }
-      stringMetadata=dict
-    } else {
-      stringMetadata=nil
-    }
-
-    // Create final copies of values for the task
-    let finalMessageString=messageString
-    let finalStringMetadata=stringMetadata
-
-    // Use detached task to isolate the logging operation
-    Task.detached { @Sendable in
-      await swiftyLoggerActor.log(
-        level: convertLogLevel(level),
-        message: finalMessageString,
-        metadata: finalStringMetadata,
-        privacy: privacyLevel,
-        source: nil,
-        file: capturedFile,
-        function: capturedFunction,
-        line: capturedLine
+    // Delegate to actor instance
+    Task {
+      await shared.log(
+        level: level,
+        message: messageString,
+        metadata: metadata,
+        privacy: .public,
+        file: file,
+        function: function,
+        line: line
       )
     }
   }
 
-  /// Log a message with privacy annotations
-  public static func logPrivacy(
-    _ level: LoggingWrapperInterfaces.LogLevel,
-    _ message: @autoclosure () -> Any,
-    metadata: LoggingWrapperInterfaces.LogMetadata?,
-    file: String=#file,
-    function: String=#function,
-    line: Int=#line
+  /// Actor instance method to log a message
+  public func log(
+    level: LoggingTypes.LogLevel,
+    message: String,
+    metadata: LoggingTypes.LogMetadata?,
+    privacy: LoggingWrapperInterfaces.LogPrivacyLevel,
+    file: String,
+    function: String,
+    line: Int
   ) {
-    // Immediately evaluate the autoclosure to capture the value
-    let messageValue=message()
+    // Process message with privacy level
+    let processedMessage = processMessage(message, privacy: privacy)
 
-    // Convert message to string early to avoid non-Sendable issues
-    let messageString=String(describing: messageValue)
-
-    // Use private privacy level for annotated messages
-    let privacyLevel: LoggingWrapperInterfaces.LogPrivacyLevel = .private
-
-    // Capture file information before passing to task
-    let capturedFile=file
-    let capturedFunction=function
-    let capturedLine=line
-
-    // Convert metadata to string dictionary before passing to actor
-    let stringMetadata: [String: String]?
+    // Convert metadata to string dictionary
+    var context: [String: Any] = [:]
     if let metadata {
-      var dict=[String: String]()
-      for (key, value) in metadata {
-        dict[key]=String(describing: value)
+      for (key, value) in metadata.asDictionary {
+        context[key] = value
       }
-      stringMetadata=dict
-    } else {
-      stringMetadata=nil
     }
 
-    // Create final copies of values for the task
-    let finalMessageString=messageString
-    let finalStringMetadata=stringMetadata
+    // Log with SwiftyBeaver
+    SwiftyBeaver.custom(
+      level: convertLogLevel(level),
+      message: processedMessage,
+      file: file,
+      function: function,
+      line: line,
+      context: context
+    )
+  }
 
-    // Use detached task to isolate the logging operation
-    Task.detached { @Sendable in
-      await swiftyLoggerActor.log(
-        level: convertLogLevel(level),
-        message: finalMessageString,
-        metadata: finalStringMetadata,
-        privacy: privacyLevel,
-        source: nil,
-        file: capturedFile,
-        function: capturedFunction,
-        line: capturedLine
+  /// Log a message with privacy annotations
+  public static func logPrivacy(
+    _ level: LoggingTypes.LogLevel,
+    _ message: @autoclosure () -> Any,
+    metadata: LoggingTypes.LogMetadata?,
+    file: String = #file,
+    function: String = #function,
+    line: Int = #line
+  ) {
+    // Immediately evaluate the autoclosure to capture the value
+    let messageValue = message()
+
+    // Convert message to string early
+    let messageString = String(describing: messageValue)
+
+    // Delegate to actor instance with private privacy level
+    Task {
+      await shared.log(
+        level: level,
+        message: messageString,
+        metadata: metadata,
+        privacy: .private,
+        file: file,
+        function: function,
+        line: line
       )
     }
   }
 
   /// Log a sensitive message
   public static func logSensitive(
-    _ level: LoggingWrapperInterfaces.LogLevel,
+    _ level: LoggingTypes.LogLevel,
     _ message: String,
-    sensitiveValues: LoggingWrapperInterfaces.LogMetadata,
-    file: String=#file,
-    function: String=#function,
-    line: Int=#line
+    sensitiveValues: LoggingTypes.LogMetadata,
+    file: String = #file,
+    function: String = #function,
+    line: Int = #line
   ) {
-    // Immediately evaluate the autoclosure to capture the value
-    let messageValue=message
-
-    // Convert message to string early to avoid non-Sendable issues
-    let messageString=messageValue
-
-    // Use sensitive privacy level for annotated messages
-    let privacyLevel: LoggingWrapperInterfaces.LogPrivacyLevel = .sensitive
-
-    // Capture file information before passing to task
-    let capturedFile=file
-    let capturedFunction=function
-    let capturedLine=line
-
-    // Convert metadata to string dictionary before passing to actor
-    let stringMetadata: [String: String]?
-    if let metadata=sensitiveValues {
-      var dict=[String: String]()
-      for (key, value) in metadata {
-        dict[key]=String(describing: value)
-      }
-      stringMetadata=dict
-    } else {
-      stringMetadata=nil
-    }
-
-    // Create final copies of values for the task
-    let finalMessageString=messageString
-    let finalStringMetadata=stringMetadata
-
-    // Use detached task to isolate the logging operation
-    Task.detached { @Sendable in
-      await swiftyLoggerActor.log(
-        level: convertLogLevel(level),
-        message: finalMessageString,
-        metadata: finalStringMetadata,
-        privacy: privacyLevel,
-        source: nil,
-        file: capturedFile,
-        function: capturedFunction,
-        line: capturedLine
+    // Delegate to actor instance with sensitive privacy level
+    Task {
+      await shared.log(
+        level: level,
+        message: message,
+        metadata: sensitiveValues,
+        privacy: .sensitive,
+        file: file,
+        function: function,
+        line: line
       )
     }
   }
@@ -426,10 +340,10 @@ public final class Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked S
   /// Log a debug message
   public static func debug(
     _ message: @autoclosure () -> Any,
-    metadata: LoggingWrapperInterfaces.LogMetadata?=nil,
-    file: String=#file,
-    function: String=#function,
-    line: Int=#line
+    metadata: LoggingTypes.LogMetadata? = nil,
+    file: String = #file,
+    function: String = #function,
+    line: Int = #line
   ) {
     log(.debug, message(), metadata: metadata, file: file, function: function, line: line)
   }
@@ -437,10 +351,10 @@ public final class Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked S
   /// Log an info message
   public static func info(
     _ message: @autoclosure () -> Any,
-    metadata: LoggingWrapperInterfaces.LogMetadata?=nil,
-    file: String=#file,
-    function: String=#function,
-    line: Int=#line
+    metadata: LoggingTypes.LogMetadata? = nil,
+    file: String = #file,
+    function: String = #function,
+    line: Int = #line
   ) {
     log(.info, message(), metadata: metadata, file: file, function: function, line: line)
   }
@@ -448,10 +362,10 @@ public final class Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked S
   /// Log a warning message
   public static func warning(
     _ message: @autoclosure () -> Any,
-    metadata: LoggingWrapperInterfaces.LogMetadata?=nil,
-    file: String=#file,
-    function: String=#function,
-    line: Int=#line
+    metadata: LoggingTypes.LogMetadata? = nil,
+    file: String = #file,
+    function: String = #function,
+    line: Int = #line
   ) {
     log(.warning, message(), metadata: metadata, file: file, function: function, line: line)
   }
@@ -459,10 +373,10 @@ public final class Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked S
   /// Log an error message
   public static func error(
     _ message: @autoclosure () -> Any,
-    metadata: LoggingWrapperInterfaces.LogMetadata?=nil,
-    file: String=#file,
-    function: String=#function,
-    line: Int=#line
+    metadata: LoggingTypes.LogMetadata? = nil,
+    file: String = #file,
+    function: String = #function,
+    line: Int = #line
   ) {
     log(.error, message(), metadata: metadata, file: file, function: function, line: line)
   }
@@ -470,10 +384,10 @@ public final class Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked S
   /// Log a trace message
   public static func trace(
     _ message: @autoclosure () -> Any,
-    metadata: LoggingWrapperInterfaces.LogMetadata?=nil,
-    file: String=#file,
-    function: String=#function,
-    line: Int=#line
+    metadata: LoggingTypes.LogMetadata? = nil,
+    file: String = #file,
+    function: String = #function,
+    line: Int = #line
   ) {
     log(.trace, message(), metadata: metadata, file: file, function: function, line: line)
   }
@@ -481,26 +395,25 @@ public final class Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked S
   /// Log a critical message
   public static func critical(
     _ message: @autoclosure () -> Any,
-    metadata: LoggingWrapperInterfaces.LogMetadata?=nil,
-    file: String=#file,
-    function: String=#function,
-    line: Int=#line
+    metadata: LoggingTypes.LogMetadata? = nil,
+    file: String = #file,
+    function: String = #function,
+    line: Int = #line
   ) {
     log(.critical, message(), metadata: metadata, file: file, function: function, line: line)
   }
 
   // MARK: - PrivacyAwareLoggerImplementation
 
-  /// Instance implementation of LoggingProtocol and PrivacyAwareLoggingProtocol
-  public actor PrivacyAwareLoggerImplementation: LoggingInterfaces
-  .PrivacyAwareLoggingProtocol {
+  /// Instance implementation of the PrivacyAwareLoggingProtocol
+  public actor PrivacyAwareLoggerImplementation: LoggingInterfaces.PrivacyAwareLoggingProtocol {
     /// The underlying logging actor
     public let loggingActor: LoggingInterfaces.LoggingActor
 
-    /// Initializes a new privacy-aware logger implementation
+    /// Initialises a new privacy-aware logger implementation
     /// - Parameter actor: The logging actor to use
     public init(actor: LoggingInterfaces.LoggingActor) {
-      loggingActor=actor
+      loggingActor = actor
     }
 
     // MARK: - CoreLoggingProtocol
@@ -512,27 +425,35 @@ public final class Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked S
       context: LoggingTypes.LogContextDTO
     ) async {
       // Forward the log call to the underlying logging actor
-      // LoggingActor.log now expects unnamed params and LogContextDTO
       await loggingActor.log(level, message, context: context)
+    }
+    
+    /// Log a message with privacy annotations
+    public func log(
+      _ level: LoggingTypes.LogLevel,
+      _ message: LoggingTypes.PrivacyString,
+      context: LoggingTypes.LogContextDTO
+    ) async {
+      // Process the privacy string and forward to the logging actor
+      let processedMessage = message.processForLogging()
+      await loggingActor.log(level, processedMessage, context: context)
     }
 
     /// Log a potentially sensitive message.
-    /// Note: Implementation might need refinement based on how sensitive values are handled.
     public func logSensitive(
-      _ level: LogLevel,
+      _ level: LoggingTypes.LogLevel,
       _ message: String,
-      sensitiveValues: LogMetadata,
-      context: LogContextDTO
+      sensitiveValues: LoggingTypes.LogMetadata,
+      context: LoggingTypes.LogContextDTO
     ) async {
-      // TODO: Implement forwarding to loggingActor, potentially embedding
-      // sensitiveValues into the context or handling them appropriately.
-      // For now, just log the basic message to satisfy conformance.
+      // Create a modified context with sensitive values properly handled
+      // TODO: Implement proper sensitive value handling according to privacy guidelines
       await loggingActor.log(level, "[Sensitive Log]: \(message)", context: context)
     }
 
     /// Provide a basic description for the logger instance
     public nonisolated var description: String {
-      return "PrivacyAwareLogger for \(loggingActor.description)"
+      return "PrivacyAwareLogger for \(String(describing: loggingActor))"
     }
   }
 
@@ -541,27 +462,7 @@ public final class Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked S
   /// Create a new privacy-aware logger
   /// - Returns: A new logger instance
   public static func createPrivacyAwareLogger() -> LoggingInterfaces.PrivacyAwareLoggingProtocol {
-    let logActor=LoggingInterfaces.LoggingActor(destinations: [])
+    let logActor = LoggingInterfaces.LoggingActor(destinations: [])
     return PrivacyAwareLoggerImplementation(actor: logActor)
-  }
-
-  // MARK: - Helper Methods
-
-  /// Convert LoggingTypes.LogLevel to SwiftyBeaver.Level
-  private static func convertToSwiftyLevel(_ level: LoggingTypes.LogLevel) -> SwiftyBeaver.Level {
-    switch level {
-      case .debug:
-        .debug
-      case .info:
-        .info
-      case .warning:
-        .warning
-      case .error:
-        .error
-      case .trace:
-        .verbose
-      case .critical:
-        .error
-    }
   }
 }
