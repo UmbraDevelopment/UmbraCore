@@ -578,8 +578,8 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
   private func generateEncryptionKey() async throws -> [UInt8] {
     // In a real implementation, this would use a secure key generation method
     // For simplicity, generating a random key
-    var keyBytes = [UInt8](repeating: 0, count: 32) // 256-bit key
-    let result = SecRandomCopyBytes(kSecRandomDefault, keyBytes.count, &keyBytes)
+    var keyBytes=[UInt8](repeating: 0, count: 32) // 256-bit key
+    let result=SecRandomCopyBytes(kSecRandomDefault, keyBytes.count, &keyBytes)
 
     if result != errSecSuccess {
       throw SecurityServiceError.operationFailed("Failed to generate secure random bytes")

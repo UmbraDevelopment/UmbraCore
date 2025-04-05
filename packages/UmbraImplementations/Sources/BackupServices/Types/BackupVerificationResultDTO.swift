@@ -1,5 +1,5 @@
-import Foundation
 import BackupInterfaces
+import Foundation
 
 /**
  * Result of a backup verification operation.
@@ -10,28 +10,28 @@ import BackupInterfaces
 public struct BackupVerificationResultDTO: Sendable, Equatable {
   /// Whether the verification completed successfully
   public let verified: Bool
-  
+
   /// The total number of objects verified
   public let objectsVerified: Int
-  
+
   /// The total size of verified data in bytes
   public let bytesVerified: UInt64
-  
+
   /// Number of errors encountered during verification
   public let errorCount: Int
-  
+
   /// List of verification issues discovered
   public let issues: [VerificationIssue]
-  
+
   /// Summary of automatic repairs performed (if enabled)
   public let repairSummary: RepairSummary?
-  
+
   /// Snapshot ID that was verified
   public let snapshotID: String
-  
+
   /// Time taken to complete verification
   public let verificationTime: TimeInterval
-  
+
   /**
    * Creates a new verification result.
    *
@@ -55,14 +55,14 @@ public struct BackupVerificationResultDTO: Sendable, Equatable {
     snapshotID: String,
     verificationTime: TimeInterval
   ) {
-    self.verified = verified
-    self.objectsVerified = objectsVerified
-    self.bytesVerified = bytesVerified
-    self.errorCount = errorCount
-    self.issues = issues
-    self.repairSummary = repairSummary
-    self.snapshotID = snapshotID
-    self.verificationTime = verificationTime
+    self.verified=verified
+    self.objectsVerified=objectsVerified
+    self.bytesVerified=bytesVerified
+    self.errorCount=errorCount
+    self.issues=issues
+    self.repairSummary=repairSummary
+    self.snapshotID=snapshotID
+    self.verificationTime=verificationTime
   }
 }
 
@@ -74,32 +74,32 @@ public struct VerificationIssue: Sendable, Equatable {
   public enum IssueType: String, Sendable, Equatable {
     /// Data corruption detected
     case corruption
-    
+
     /// Missing data that should be present
     case missingData
-    
+
     /// Invalid cryptographic signature
     case invalidSignature
-    
+
     /// Inconsistent metadata
     case metadataInconsistency
-    
+
     /// Other unspecified issue
     case other
   }
-  
+
   /// The type of issue
   public let type: IssueType
-  
+
   /// Path or identifier of the affected object
   public let objectPath: String
-  
+
   /// Detailed description of the issue
   public let description: String
-  
+
   /// Whether the issue was automatically repaired
   public let repaired: Bool
-  
+
   /**
    * Creates a new verification issue.
    *
@@ -113,12 +113,12 @@ public struct VerificationIssue: Sendable, Equatable {
     type: IssueType,
     objectPath: String,
     description: String,
-    repaired: Bool = false
+    repaired: Bool=false
   ) {
-    self.type = type
-    self.objectPath = objectPath
-    self.description = description
-    self.repaired = repaired
+    self.type=type
+    self.objectPath=objectPath
+    self.description=description
+    self.repaired=repaired
   }
 }
 
@@ -128,13 +128,13 @@ public struct VerificationIssue: Sendable, Equatable {
 public struct RepairSummary: Sendable, Equatable {
   /// Number of issues that were successfully repaired
   public let issuesRepaired: Int
-  
+
   /// Number of issues that failed to be repaired
   public let repairFailures: Int
-  
+
   /// List of repairs performed
   public let repairs: [RepairAction]
-  
+
   /**
    * Creates a new repair summary.
    *
@@ -148,9 +148,9 @@ public struct RepairSummary: Sendable, Equatable {
     repairFailures: Int,
     repairs: [RepairAction]
   ) {
-    self.issuesRepaired = issuesRepaired
-    self.repairFailures = repairFailures
-    self.repairs = repairs
+    self.issuesRepaired=issuesRepaired
+    self.repairFailures=repairFailures
+    self.repairs=repairs
   }
 }
 
@@ -162,32 +162,32 @@ public struct RepairAction: Sendable, Equatable {
   public enum RepairType: String, Sendable, Equatable {
     /// Reconstructed missing data
     case reconstruction
-    
+
     /// Restored from redundant copies
     case redundantCopy
-    
+
     /// Replaced corrupted data with a known good version
     case replacement
-    
+
     /// Fixed metadata inconsistency
     case metadataFix
-    
+
     /// Other repair type
     case other
   }
-  
+
   /// The type of repair performed
   public let type: RepairType
-  
+
   /// Path or identifier of the repaired object
   public let objectPath: String
-  
+
   /// Description of the repair action
   public let description: String
-  
+
   /// Whether the repair was successful
   public let successful: Bool
-  
+
   /**
    * Creates a new repair action.
    *
@@ -203,9 +203,9 @@ public struct RepairAction: Sendable, Equatable {
     description: String,
     successful: Bool
   ) {
-    self.type = type
-    self.objectPath = objectPath
-    self.description = description
-    self.successful = successful
+    self.type=type
+    self.objectPath=objectPath
+    self.description=description
+    self.successful=successful
   }
 }

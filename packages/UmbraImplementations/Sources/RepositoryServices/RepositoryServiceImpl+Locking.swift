@@ -17,7 +17,7 @@ extension RepositoryServiceImpl {
 
     await logger.info("Locking repository", metadata: metadata, source: "RepositoryService")
 
-    guard let repository = repositories[identifier] else {
+    guard let repository=repositories[identifier] else {
       await logger.error(
         "Repository not found",
         metadata: metadata,
@@ -25,7 +25,7 @@ extension RepositoryServiceImpl {
       )
       throw RepositoryError.notFound
     }
-    
+
     // Repository is already a RepositoryLockingProtocol by definition
     do {
       try await repository.lock()
@@ -51,13 +51,13 @@ extension RepositoryServiceImpl {
   ///           or other repository errors if unlocking fails.
   public func unlockRepository(identifier: String) async throws {
     // Create privacy-aware metadata
-    var metadata = PrivacyMetadata()
-    metadata["repository_id"] = PrivacyMetadataValue(value: identifier, privacy: .public)
-    metadata["operation"] = PrivacyMetadataValue(value: "unlock", privacy: .public)
+    var metadata=PrivacyMetadata()
+    metadata["repository_id"]=PrivacyMetadataValue(value: identifier, privacy: .public)
+    metadata["operation"]=PrivacyMetadataValue(value: "unlock", privacy: .public)
 
     await logger.info("Unlocking repository", metadata: metadata, source: "RepositoryService")
 
-    guard let repository = repositories[identifier] else {
+    guard let repository=repositories[identifier] else {
       await logger.error(
         "Repository not found",
         metadata: metadata,
@@ -65,7 +65,7 @@ extension RepositoryServiceImpl {
       )
       throw RepositoryError.notFound
     }
-    
+
     // Repository is already a RepositoryLockingProtocol by definition
     do {
       try await repository.unlock()

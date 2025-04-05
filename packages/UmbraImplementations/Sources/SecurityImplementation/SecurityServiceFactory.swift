@@ -58,16 +58,16 @@ public enum SecurityServiceFactory {
   ) -> SecurityProviderProtocol {
     // Create dependencies
     var cryptoService: CryptoServiceProtocol!
-    
+
     // Initialise the crypto service asynchronously
     // Note: We're using Task.sync here because this is a synchronous factory method
     // This would ideally be redesigned as an async factory method in the future
     Task.sync {
-      cryptoService = await CryptoServiceFactory.createDefault(logger: logger)
+      cryptoService=await CryptoServiceFactory.createDefault(logger: logger)
     }
 
     // Create the actor with secure logging
-    let securityActor = SecurityServiceActor(
+    let securityActor=SecurityServiceActor(
       cryptoService: cryptoService,
       logger: logger,
       secureLogger: secureLogger
@@ -119,12 +119,12 @@ public enum SecurityServiceFactory {
 
     // Create dependencies with high-security settings
     var cryptoService: CryptoServiceProtocol!
-    
+
     // Initialise the crypto service asynchronously
     // Note: We're using Task.sync here because this is a synchronous factory method
     // This would ideally be redesigned as an async factory method in the future
     Task.sync {
-      cryptoService = await CryptoServiceFactory.createDefault(logger: logger)
+      cryptoService=await CryptoServiceFactory.createDefault(logger: logger)
     }
 
     // Create the actor with secure logging
@@ -162,12 +162,12 @@ public enum SecurityServiceFactory {
 
     // Create crypto service for development
     var cryptoService: CryptoServiceProtocol!
-    
+
     // Initialise the crypto service asynchronously
     // Note: We're using Task.sync here because this is a synchronous factory method
     // This would ideally be redesigned as an async factory method in the future
     Task.sync {
-      cryptoService = await CryptoServiceFactory.createDefault(logger: logger)
+      cryptoService=await CryptoServiceFactory.createDefault(logger: logger)
     }
 
     // Create the actor with secure logging

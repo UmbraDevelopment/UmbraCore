@@ -7,7 +7,8 @@ import Foundation
  * in the Alpha Dot Five architecture, ensuring consistent and reliable
  * cancellation support across backup services.
  */
-@preconcurrency public protocol BackupCancellationToken: Sendable {
+@preconcurrency
+public protocol BackupCancellationToken: Sendable {
   /**
    * Checks if the operation has been cancelled.
    *
@@ -29,7 +30,7 @@ import Foundation
  */
 public actor BackupOperationCancellationToken: BackupCancellationToken {
   /// Flag to indicate if the operation has been cancelled
-  private var cancelled: Bool = false
+  private var cancelled: Bool=false
 
   /**
    * Creates a new backup operation cancellation token.
@@ -56,6 +57,6 @@ public actor BackupOperationCancellationToken: BackupCancellationToken {
    * This method safely updates the actor-protected state.
    */
   public func cancel() async {
-    cancelled = true
+    cancelled=true
   }
 }

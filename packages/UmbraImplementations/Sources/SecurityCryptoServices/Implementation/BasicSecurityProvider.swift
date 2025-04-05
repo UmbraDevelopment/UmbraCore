@@ -1,8 +1,8 @@
 import CommonCrypto
-import Foundation
-import SecurityCoreInterfaces
 import CoreSecurityTypes
 import DomainSecurityTypes
+import Foundation
+import SecurityCoreInterfaces
 import UmbraErrors
 
 /**
@@ -53,13 +53,14 @@ public struct BasicSecurityProvider: EncryptionProviderProtocol {
     iv: Data,
     config: SecurityConfigDTO
   ) throws -> Data {
-    guard let algorithm = getAlgorithm(config: config) else {
+    guard let algorithm=getAlgorithm(config: config) else {
       throw CoreSecurityError.invalidInput("Invalid or unsupported algorithm")
     }
 
     // Validate key size
     guard validateKeySize(key.count, algorithm: config.encryptionAlgorithm.rawValue) != nil else {
-      throw CoreSecurityError.invalidInput("Invalid key size for algorithm \(config.encryptionAlgorithm)")
+      throw CoreSecurityError
+        .invalidInput("Invalid key size for algorithm \(config.encryptionAlgorithm)")
     }
 
     // Validate IV size (must be 16 bytes for AES-CBC)
@@ -68,14 +69,14 @@ public struct BasicSecurityProvider: EncryptionProviderProtocol {
     }
 
     // Calculate buffer sizes for encryption
-    let dataLength = plaintext.count
-    let bufferSize = dataLength + kCCBlockSizeAES128
-    var encryptedBytes = [UInt8](repeating: 0, count: bufferSize)
-    var encryptedLength = 0
+    let dataLength=plaintext.count
+    let bufferSize=dataLength + kCCBlockSizeAES128
+    var encryptedBytes=[UInt8](repeating: 0, count: bufferSize)
+    var encryptedLength=0
 
     // Setup encryption context
-    var cryptorRef: CCCryptorRef? = nil
-    var status = CCCryptorCreate(
+    var cryptorRef: CCCryptorRef?
+    var status=CCCryptorCreate(
       CCOperation(kCCEncrypt),
       algorithm,
       CCOptions(kCCOptionPKCS7Padding),
@@ -87,7 +88,8 @@ public struct BasicSecurityProvider: EncryptionProviderProtocol {
 
     // Check context creation
     guard status == kCCSuccess, cryptorRef != nil else {
-      throw CoreSecurityError.cryptoError("Failed to create encryption context with status \(status)")
+      throw CoreSecurityError
+        .cryptoError("Failed to create encryption context with status \(status)")
     }
 
     defer {
@@ -96,24 +98,26 @@ public struct BasicSecurityProvider: EncryptionProviderProtocol {
     }
 
     // Process the data in chunks
-    let chunkSize = 64 * 1024 // 64KB chunks
-    var offset = 0
+    let chunkSize=64 * 1024 // 64KB chunks
+    var offset=0
 
     while offset < dataLength {
-      let chunkLength = min(chunkSize, dataLength - offset)
-      var bytesEncrypted = 0
+      let chunkLength=min(chunkSize, dataLength - offset)
+      var bytesEncrypted=0
 
       // Create a pointer to the current position in the output buffer
-      let outputPos = offset + Int(encryptedLength)
-      
+      let outputPos=offset + Int(encryptedLength)
+
       // Use withUnsafeMutableBytes for safe memory access
-      status = encryptedBytes.withUnsafeMutableBytes { encryptedBufferPtr in
-        return plaintext.withUnsafeBytes { plainBufferPtr in
-          guard let outputBuffer = encryptedBufferPtr.baseAddress.map({ $0 + outputPos }),
-                let plainBuffer = plainBufferPtr.baseAddress.map({ $0 + offset }) else {
+      status=encryptedBytes.withUnsafeMutableBytes { encryptedBufferPtr in
+        plaintext.withUnsafeBytes { plainBufferPtr in
+          guard
+            let outputBuffer=encryptedBufferPtr.baseAddress.map({ $0 + outputPos }),
+            let plainBuffer=plainBufferPtr.baseAddress.map({ $0 + offset })
+          else {
             return CCCryptorStatus(kCCMemoryFailure)
           }
-          
+
           return CCCryptorUpdate(
             cryptorRef,
             plainBuffer,
@@ -134,15 +138,15 @@ public struct BasicSecurityProvider: EncryptionProviderProtocol {
     }
 
     // Finalize encryption
-    var finalSize = 0
-    let finalizePos = Int(encryptedLength)
-    
+    var finalSize=0
+    let finalizePos=Int(encryptedLength)
+
     // Use withUnsafeMutableBytes for safe memory access
-    status = encryptedBytes.withUnsafeMutableBytes { finalizeBufferPtr in
-      guard let finalizeBuffer = finalizeBufferPtr.baseAddress.map({ $0 + finalizePos }) else {
+    status=encryptedBytes.withUnsafeMutableBytes { finalizeBufferPtr in
+      guard let finalizeBuffer=finalizeBufferPtr.baseAddress.map({ $0 + finalizePos }) else {
         return CCCryptorStatus(kCCMemoryFailure)
       }
-      
+
       return CCCryptorFinal(
         cryptorRef,
         finalizeBuffer,
@@ -177,13 +181,14 @@ public struct BasicSecurityProvider: EncryptionProviderProtocol {
     iv: Data,
     config: SecurityConfigDTO
   ) throws -> Data {
-    guard let algorithm = getAlgorithm(config: config) else {
+    guard let algorithm=getAlgorithm(config: config) else {
       throw CoreSecurityError.invalidInput("Invalid or unsupported algorithm")
     }
 
     // Validate key size
     guard validateKeySize(key.count, algorithm: config.encryptionAlgorithm.rawValue) != nil else {
-      throw CoreSecurityError.invalidInput("Invalid key size for algorithm \(config.encryptionAlgorithm)")
+      throw CoreSecurityError
+        .invalidInput("Invalid key size for algorithm \(config.encryptionAlgorithm)")
     }
 
     // Validate IV size (must be 16 bytes for AES-CBC)
@@ -192,14 +197,14 @@ public struct BasicSecurityProvider: EncryptionProviderProtocol {
     }
 
     // Calculate buffer sizes for decryption
-    let dataLength = ciphertext.count
-    let bufferSize = dataLength + kCCBlockSizeAES128
-    var decryptedBytes = [UInt8](repeating: 0, count: bufferSize)
-    var decryptedLength = 0
+    let dataLength=ciphertext.count
+    let bufferSize=dataLength + kCCBlockSizeAES128
+    var decryptedBytes=[UInt8](repeating: 0, count: bufferSize)
+    var decryptedLength=0
 
     // Setup decryption context
-    var cryptorRef: CCCryptorRef? = nil
-    var status = CCCryptorCreate(
+    var cryptorRef: CCCryptorRef?
+    var status=CCCryptorCreate(
       CCOperation(kCCDecrypt),
       algorithm,
       CCOptions(kCCOptionPKCS7Padding),
@@ -211,7 +216,8 @@ public struct BasicSecurityProvider: EncryptionProviderProtocol {
 
     // Check context creation
     guard status == kCCSuccess, cryptorRef != nil else {
-      throw CoreSecurityError.cryptoError("Failed to create decryption context with status \(status)")
+      throw CoreSecurityError
+        .cryptoError("Failed to create decryption context with status \(status)")
     }
 
     defer {
@@ -220,24 +226,26 @@ public struct BasicSecurityProvider: EncryptionProviderProtocol {
     }
 
     // Process the data in chunks
-    let chunkSize = 64 * 1024 // 64KB chunks
-    var offset = 0
+    let chunkSize=64 * 1024 // 64KB chunks
+    var offset=0
 
     while offset < dataLength {
-      let chunkLength = min(chunkSize, dataLength - offset)
-      var bytesDecrypted = 0
+      let chunkLength=min(chunkSize, dataLength - offset)
+      var bytesDecrypted=0
 
       // Create a pointer to the current position in the output buffer
-      let outputPos = offset + Int(decryptedLength)
-      
+      let outputPos=offset + Int(decryptedLength)
+
       // Use withUnsafeMutableBytes for safe memory access
-      status = decryptedBytes.withUnsafeMutableBytes { decryptedBufferPtr in
-        return ciphertext.withUnsafeBytes { cipherBufferPtr in
-          guard let outputBuffer = decryptedBufferPtr.baseAddress.map({ $0 + outputPos }),
-                let cipherBuffer = cipherBufferPtr.baseAddress.map({ $0 + offset }) else {
+      status=decryptedBytes.withUnsafeMutableBytes { decryptedBufferPtr in
+        ciphertext.withUnsafeBytes { cipherBufferPtr in
+          guard
+            let outputBuffer=decryptedBufferPtr.baseAddress.map({ $0 + outputPos }),
+            let cipherBuffer=cipherBufferPtr.baseAddress.map({ $0 + offset })
+          else {
             return CCCryptorStatus(kCCMemoryFailure)
           }
-          
+
           return CCCryptorUpdate(
             cryptorRef,
             cipherBuffer,
@@ -258,15 +266,15 @@ public struct BasicSecurityProvider: EncryptionProviderProtocol {
     }
 
     // Finalize decryption
-    var finalSize = 0
-    let finalizePos = Int(decryptedLength)
-    
+    var finalSize=0
+    let finalizePos=Int(decryptedLength)
+
     // Use withUnsafeMutableBytes for safe memory access
-    status = decryptedBytes.withUnsafeMutableBytes { finalizeBufferPtr in
-      guard let finalizeBuffer = finalizeBufferPtr.baseAddress.map({ $0 + finalizePos }) else {
+    status=decryptedBytes.withUnsafeMutableBytes { finalizeBufferPtr in
+      guard let finalizeBuffer=finalizeBufferPtr.baseAddress.map({ $0 + finalizePos }) else {
         return CCCryptorStatus(kCCMemoryFailure)
       }
-      
+
       return CCCryptorFinal(
         cryptorRef,
         finalizeBuffer,
@@ -299,11 +307,11 @@ public struct BasicSecurityProvider: EncryptionProviderProtocol {
       throw CoreSecurityError.invalidInput("Invalid key size, must be 128, 192, or 256 bits")
     }
 
-    let keyBytes = size / 8
-    var keyData = Data(count: keyBytes)
+    let keyBytes=size / 8
+    var keyData=Data(count: keyBytes)
 
-    let result = keyData.withUnsafeMutableBytes { bytes in
-      guard let baseAddress = bytes.baseAddress else { return Int32(errSecAllocate) }
+    let result=keyData.withUnsafeMutableBytes { bytes in
+      guard let baseAddress=bytes.baseAddress else { return Int32(errSecAllocate) }
       return SecRandomCopyBytes(kSecRandomDefault, keyBytes, baseAddress)
     }
 
@@ -327,10 +335,10 @@ public struct BasicSecurityProvider: EncryptionProviderProtocol {
       throw CoreSecurityError.invalidInput("IV size must be greater than 0")
     }
 
-    var ivData = Data(count: size)
+    var ivData=Data(count: size)
 
-    let result = ivData.withUnsafeMutableBytes { bytes in
-      guard let baseAddress = bytes.baseAddress else { return Int32(errSecAllocate) }
+    let result=ivData.withUnsafeMutableBytes { bytes in
+      guard let baseAddress=bytes.baseAddress else { return Int32(errSecAllocate) }
       return SecRandomCopyBytes(kSecRandomDefault, size, baseAddress)
     }
 
@@ -353,23 +361,23 @@ public struct BasicSecurityProvider: EncryptionProviderProtocol {
   public func hash(data: Data, algorithm: String) throws -> Data {
     switch algorithm.uppercased() {
       case "SHA256":
-        var hashBytes = [UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
+        var hashBytes=[UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
         data.withUnsafeBytes { dataBytes in
-          _ = CC_SHA256(dataBytes.baseAddress, CC_LONG(data.count), &hashBytes)
+          _=CC_SHA256(dataBytes.baseAddress, CC_LONG(data.count), &hashBytes)
         }
         return Data(hashBytes)
 
       case "SHA384":
-        var hashBytes = [UInt8](repeating: 0, count: Int(CC_SHA384_DIGEST_LENGTH))
+        var hashBytes=[UInt8](repeating: 0, count: Int(CC_SHA384_DIGEST_LENGTH))
         data.withUnsafeBytes { dataBytes in
-          _ = CC_SHA384(dataBytes.baseAddress, CC_LONG(data.count), &hashBytes)
+          _=CC_SHA384(dataBytes.baseAddress, CC_LONG(data.count), &hashBytes)
         }
         return Data(hashBytes)
 
       case "SHA512":
-        var hashBytes = [UInt8](repeating: 0, count: Int(CC_SHA512_DIGEST_LENGTH))
+        var hashBytes=[UInt8](repeating: 0, count: Int(CC_SHA512_DIGEST_LENGTH))
         data.withUnsafeBytes { dataBytes in
-          _ = CC_SHA512(dataBytes.baseAddress, CC_LONG(data.count), &hashBytes)
+          _=CC_SHA512(dataBytes.baseAddress, CC_LONG(data.count), &hashBytes)
         }
         return Data(hashBytes)
 
@@ -381,7 +389,7 @@ public struct BasicSecurityProvider: EncryptionProviderProtocol {
   // MARK: - Private Helpers
 
   private func validateKeySize(_ keySize: Int, algorithm: String) -> Int? {
-    let keySizeBits = keySize * 8
+    let keySizeBits=keySize * 8
 
     switch algorithm.uppercased() {
       case "AES":

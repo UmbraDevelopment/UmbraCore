@@ -315,7 +315,7 @@ extension FileSystemServiceImpl {
   public func moveItem(
     from sourcePath: FilePath,
     to destinationPath: FilePath,
-    overwrite: Bool = false
+    overwrite: Bool=false
   ) async throws {
     try await move(from: sourcePath, to: destinationPath, overwrite: overwrite)
   }

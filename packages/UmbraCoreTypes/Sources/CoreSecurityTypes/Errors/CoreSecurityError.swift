@@ -39,10 +39,10 @@ public enum CoreSecurityError: Error, Equatable, Sendable {
 
   /// Algorithm not supported
   case algorithmNotSupported(String)
-  
+
   /// Authentication failure during cryptographic operation
   case authenticationFailed(String)
-  
+
   /// Unsupported operation for this platform
   case unsupportedOperation(String)
 

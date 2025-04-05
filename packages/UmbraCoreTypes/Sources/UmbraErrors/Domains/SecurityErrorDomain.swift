@@ -169,31 +169,31 @@ extension UmbraErrors.Security {
   public enum Core: Error, Sendable {
     /// Authentication failed due to invalid credentials
     case authenticationFailed(String)
-    
+
     /// Authorization failed due to insufficient permissions
     case authorizationFailed(String)
-    
+
     /// Encryption operation failed
     case encryptionFailed(String)
-    
+
     /// Decryption operation failed
     case decryptionFailed(String)
-    
+
     /// Cryptographic error during operation
     case cryptographicError(String)
-    
+
     /// Invalid input parameters for security operation
     case invalidInput(String)
-    
+
     /// Security provider is unavailable
     case unavailableProvider(String)
-    
+
     /// Provider-specific error
     case providerError(String)
-    
+
     /// Hashing operation failed
     case hashingFailed(String)
-    
+
     /// Internal error in the security system
     case internalError(String)
   }

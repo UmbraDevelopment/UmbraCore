@@ -66,7 +66,7 @@ final class ConfigBuilder {
   func createConfig(options: [String: Any]?) -> SecurityConfigDTO {
     // Extract options from the dictionary or use defaults
     let algorithmString=options?["algorithm"] as? String ?? "AES-GCM"
-    let _=options?["keySize"] as? Int ?? 256 // Key size is handled by the enum types now
+    _=options?["keySize"] as? Int ?? 256 // Key size is handled by the enum types now
     let hashAlgString=options?["hashAlgorithm"] as? String ?? "SHA-256"
     let providerString=options?["providerType"] as? String ?? "Basic"
 

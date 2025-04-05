@@ -41,7 +41,7 @@ extension RepositoryServiceImpl {
       )
       throw RepositoryError.notFound
     }
-    
+
     // Repository is already a RepositoryMaintenanceProtocol by definition
     do {
       let stats=try await repository.check(readData: readData, checkUnused: checkUnused)
@@ -74,7 +74,7 @@ extension RepositoryServiceImpl {
 
     await logger.info("Repairing repository", metadata: metadata, source: "RepositoryService")
 
-    guard let repository = repositories[identifier] else {
+    guard let repository=repositories[identifier] else {
       await logger.error(
         "Repository not found",
         metadata: metadata,
@@ -82,10 +82,10 @@ extension RepositoryServiceImpl {
       )
       throw RepositoryError.notFound
     }
-    
+
     // Repository is already a RepositoryMaintenanceProtocol by definition
     do {
-      let successful = try await repository.repair()
+      let successful=try await repository.repair()
       await logger.info(
         "Repository repair result: \(successful)",
         metadata: metadata,
@@ -118,7 +118,7 @@ extension RepositoryServiceImpl {
       source: "RepositoryService"
     )
 
-    guard let repository = repositories[identifier] else {
+    guard let repository=repositories[identifier] else {
       await logger.error(
         "Repository not found",
         metadata: metadata,
@@ -126,7 +126,7 @@ extension RepositoryServiceImpl {
       )
       throw RepositoryError.notFound
     }
-    
+
     // Repository is already a RepositoryMaintenanceProtocol by definition
     do {
       try await repository.prune()
@@ -169,7 +169,7 @@ extension RepositoryServiceImpl {
       )
       throw RepositoryError.notFound
     }
-    
+
     // Repository is already a RepositoryMaintenanceProtocol by definition
     do {
       try await repository.rebuildIndex()
@@ -187,7 +187,7 @@ extension RepositoryServiceImpl {
       throw RepositoryError.internalError
     }
   }
-  
+
   /// Checks a repository for errors.
   ///
   /// - Parameter identifier: The repository identifier.
@@ -198,9 +198,13 @@ extension RepositoryServiceImpl {
     var metadata=PrivacyMetadata()
     metadata["repository_id"]=PrivacyMetadataValue(value: identifier, privacy: .public)
 
-    await logger.info("Checking repository for errors", metadata: metadata, source: "RepositoryService")
+    await logger.info(
+      "Checking repository for errors",
+      metadata: metadata,
+      source: "RepositoryService"
+    )
 
-    guard let repository = repositories[identifier] else {
+    guard let repository=repositories[identifier] else {
       await logger.error(
         "Repository not found",
         metadata: metadata,
@@ -208,10 +212,10 @@ extension RepositoryServiceImpl {
       )
       throw RepositoryError.notFound
     }
-    
+
     // Repository is already a RepositoryMaintenanceProtocol by definition
     do {
-      _ = try await repository.check(readData: true, checkUnused: true)
+      _=try await repository.check(readData: true, checkUnused: true)
       await logger.info(
         "Repository check completed successfully",
         metadata: metadata,

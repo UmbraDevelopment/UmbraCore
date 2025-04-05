@@ -221,7 +221,7 @@ public actor CancellationHandler: CancellationHandlerProtocol {
           // Cancel the task if the token is cancelled
           Task { [weak self] in
             guard let self else { return }
-            let _=await cancelOperation(id: operationID)
+            _=await cancelOperation(id: operationID)
           }
         }
       } else {
@@ -232,7 +232,7 @@ public actor CancellationHandler: CancellationHandlerProtocol {
           while !task.isCancelled {
             if await isOperationActive(id: operationID) {
               if await token.isCancelled() {
-                let _=await cancelOperation(id: operationID)
+                _=await cancelOperation(id: operationID)
                 break
               }
               try? await Task.sleep(nanoseconds: 100_000_000) // 100ms

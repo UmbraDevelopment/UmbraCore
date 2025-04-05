@@ -1,13 +1,13 @@
 import CoreSecurityTypes
 import DomainSecurityTypes
 import Foundation
+import KeyManagementActorTypes
 import LoggingAdapters
 import LoggingInterfaces
 import LoggingTypes
 import SecurityCoreInterfaces
 import SecurityKeyTypes
 import UmbraErrors
-import KeyManagementActorTypes
 
 /**
  # KeyManagementActor
@@ -68,7 +68,7 @@ public actor KeyManagementActor: KeyManagementProtocol {
 
   /// Key generator for creating new keys
   private let keyGenerator: KeyGenerator
-  
+
   /**
    Initialises a new KeyManagementActor with the specified key store and logger.
 
@@ -80,19 +80,19 @@ public actor KeyManagementActor: KeyManagementProtocol {
   public init(
     keyStore: KeyStorage,
     loggingService: LoggingServiceProtocol,
-    keyGenerator: KeyGenerator = DefaultKeyGenerator()
+    keyGenerator: KeyGenerator=DefaultKeyGenerator()
   ) {
-    self.keyStore = keyStore
-    self.securityLogger = SecurityLogger(loggingService: loggingService)
-    self.keyGenerator = keyGenerator
-    
+    self.keyStore=keyStore
+    securityLogger=SecurityLogger(loggingService: loggingService)
+    self.keyGenerator=keyGenerator
+
     // Create metadata store using the same secure storage if available
-    if let secureStorage = keyStore as? SecureStorageProtocol {
-      self.metadataStore = KeyMetadataStore(secureStorage: secureStorage)
+    if let secureStorage=keyStore as? SecureStorageProtocol {
+      metadataStore=KeyMetadataStore(secureStorage: secureStorage)
     } else {
       // Fallback to a KeyStorage adapter if keyStore doesn't implement SecureStorageProtocol
-      let adapter = KeyStorageToSecureStorageAdapter(keyStorage: keyStore)
-      self.metadataStore = KeyMetadataStore(secureStorage: adapter)
+      let adapter=KeyStorageToSecureStorageAdapter(keyStorage: keyStore)
+      metadataStore=KeyMetadataStore(secureStorage: adapter)
     }
   }
 
@@ -128,7 +128,7 @@ public actor KeyManagementActor: KeyManagementProtocol {
 
     // Validate the input
     guard !identifier.isEmpty else {
-      let error = KeyManagementError.invalidInput(details: "Identifier cannot be empty")
+      let error=KeyManagementError.invalidInput(details: "Identifier cannot be empty")
       await securityLogger.logOperationFailure(
         keyIdentifier: identifier,
         operation: "retrieve",
@@ -139,14 +139,14 @@ public actor KeyManagementActor: KeyManagementProtocol {
 
     // Get the key from storage
     do {
-      if let key = try await keyStore.getKey(identifier: sanitizeIdentifier(identifier)) {
+      if let key=try await keyStore.getKey(identifier: sanitizeIdentifier(identifier)) {
         await securityLogger.logOperationSuccess(
           keyIdentifier: identifier,
           operation: "retrieve"
         )
         return .success(key)
       } else {
-        let error = KeyManagementError
+        let error=KeyManagementError
           .keyNotFound(identifier: identifier)
         await securityLogger.logOperationFailure(
           keyIdentifier: identifier,
@@ -156,7 +156,7 @@ public actor KeyManagementActor: KeyManagementProtocol {
         return Result<[UInt8], SecurityProtocolError>.failure(error.toStandardError())
       }
     } catch {
-      let secError = KeyManagementError.keyManagementError(details: error.localizedDescription)
+      let secError=KeyManagementError.keyManagementError(details: error.localizedDescription)
       await securityLogger.logOperationFailure(
         keyIdentifier: identifier,
         operation: "retrieve",
@@ -183,11 +183,11 @@ public actor KeyManagementActor: KeyManagementProtocol {
       operation: "store"
     )
 
-    let sanitizedIdentifier = sanitizeIdentifier(identifier)
-    
+    let sanitizedIdentifier=sanitizeIdentifier(identifier)
+
     // Validate the input
     guard !identifier.isEmpty else {
-      let error = KeyManagementError.invalidInput(details: "Identifier cannot be empty")
+      let error=KeyManagementError.invalidInput(details: "Identifier cannot be empty")
       await securityLogger.logOperationFailure(
         keyIdentifier: identifier,
         operation: "store",
@@ -198,7 +198,7 @@ public actor KeyManagementActor: KeyManagementProtocol {
 
     // Validate the key
     guard !key.isEmpty else {
-      let error = KeyManagementError.invalidInput(details: "Key cannot be empty")
+      let error=KeyManagementError.invalidInput(details: "Key cannot be empty")
       await securityLogger.logOperationFailure(
         keyIdentifier: identifier,
         operation: "store",
@@ -211,26 +211,26 @@ public actor KeyManagementActor: KeyManagementProtocol {
     do {
       // Store the key in the secure storage
       try await keyStore.storeKey(key, identifier: sanitizedIdentifier)
-      
+
       // Create and store metadata
-      let metadata = KeyMetadata(
+      let metadata=KeyMetadata(
         id: identifier,
-        algorithm: .aes,  // Default, should be determined based on key
-        keySize: key.count * 8,  // Size in bits
+        algorithm: .aes, // Default, should be determined based on key
+        keySize: key.count * 8, // Size in bits
         purpose: "encryption" // Default, should be a parameter
       )
-      
+
       try await metadataStore.storeKeyMetadata(metadata)
-      
+
       // Log the success
       await securityLogger.logOperationSuccess(
         keyIdentifier: identifier,
         operation: "store"
       )
-      
+
       return .success(())
     } catch {
-      let secError = KeyManagementError.keyManagementError(details: error.localizedDescription)
+      let secError=KeyManagementError.keyManagementError(details: error.localizedDescription)
       await securityLogger.logOperationFailure(
         keyIdentifier: identifier,
         operation: "store",
@@ -256,7 +256,7 @@ public actor KeyManagementActor: KeyManagementProtocol {
 
     // Validate the input
     guard !identifier.isEmpty else {
-      let error = KeyManagementError.invalidInput(details: "Identifier cannot be empty")
+      let error=KeyManagementError.invalidInput(details: "Identifier cannot be empty")
       await securityLogger.logOperationFailure(
         keyIdentifier: identifier,
         operation: "delete",
@@ -266,25 +266,25 @@ public actor KeyManagementActor: KeyManagementProtocol {
     }
 
     // Sanitise the identifier
-    let sanitizedIdentifier = sanitizeIdentifier(identifier)
-    
+    let sanitizedIdentifier=sanitizeIdentifier(identifier)
+
     do {
       // Check if the key exists before attempting to delete
       if try await keyStore.containsKey(identifier: sanitizedIdentifier) {
         do {
           try await keyStore.deleteKey(identifier: sanitizedIdentifier)
-          
+
           // Delete the metadata
           try await metadataStore.deleteKeyMetadata(for: identifier)
-          
+
           await securityLogger.logOperationSuccess(
             keyIdentifier: identifier,
             operation: "delete"
           )
-          
+
           return .success(())
         } catch {
-          let secError = KeyManagementError.keyManagementError(details: error.localizedDescription)
+          let secError=KeyManagementError.keyManagementError(details: error.localizedDescription)
           await securityLogger.logOperationFailure(
             keyIdentifier: identifier,
             operation: "delete",
@@ -293,7 +293,7 @@ public actor KeyManagementActor: KeyManagementProtocol {
           return Result<Void, SecurityProtocolError>.failure(secError.toStandardError())
         }
       } else {
-        let error = KeyManagementError
+        let error=KeyManagementError
           .keyNotFound(identifier: identifier)
         await securityLogger.logOperationFailure(
           keyIdentifier: identifier,
@@ -303,7 +303,7 @@ public actor KeyManagementActor: KeyManagementProtocol {
         return Result<Void, SecurityProtocolError>.failure(error.toStandardError())
       }
     } catch {
-      let secError = KeyManagementError.keyManagementError(details: error.localizedDescription)
+      let secError=KeyManagementError.keyManagementError(details: error.localizedDescription)
       await securityLogger.logOperationFailure(
         keyIdentifier: identifier,
         operation: "delete",
@@ -323,7 +323,7 @@ public actor KeyManagementActor: KeyManagementProtocol {
    */
   public func rotateKey(
     withIdentifier identifier: String,
-    dataToReencrypt: [UInt8]? = nil
+    dataToReencrypt _: [UInt8]?=nil
   ) async -> Result<(newKey: [UInt8], reencryptedData: [UInt8]?), SecurityProtocolError> {
     await securityLogger.logOperationStart(
       keyIdentifier: identifier,
@@ -332,76 +332,79 @@ public actor KeyManagementActor: KeyManagementProtocol {
 
     // Validate the input
     guard !identifier.isEmpty else {
-      let error = KeyManagementError.invalidInput(details: "Identifier cannot be empty")
+      let error=KeyManagementError.invalidInput(details: "Identifier cannot be empty")
       await securityLogger.logOperationFailure(
         keyIdentifier: identifier,
         operation: "rotate",
         error: error
       )
-      return Result<(newKey: [UInt8], reencryptedData: [UInt8]?), SecurityProtocolError>.failure(error.toStandardError())
+      return Result<(newKey: [UInt8], reencryptedData: [UInt8]?), SecurityProtocolError>
+        .failure(error.toStandardError())
     }
 
-    let sanitizedIdentifier = sanitizeIdentifier(identifier)
-    
+    let sanitizedIdentifier=sanitizeIdentifier(identifier)
+
     do {
       guard try await keyStore.containsKey(identifier: sanitizedIdentifier) else {
-        let error = KeyManagementError
+        let error=KeyManagementError
           .keyNotFound(identifier: identifier)
         await securityLogger.logOperationFailure(
           keyIdentifier: identifier,
           operation: "rotate",
           error: error
         )
-        return Result<(newKey: [UInt8], reencryptedData: [UInt8]?), SecurityProtocolError>.failure(error.toStandardError())
+        return Result<(newKey: [UInt8], reencryptedData: [UInt8]?), SecurityProtocolError>
+          .failure(error.toStandardError())
       }
-      
+
       // Generate a new key - this will replace the existing one
-      let newKey = try await keyGenerator.generateKey()
-      
+      let newKey=try await keyGenerator.generateKey()
+
       // Store the new key
       try await keyStore.storeKey(newKey, identifier: sanitizedIdentifier)
-      
+
       // Create and store metadata
-      let metadata = KeyMetadata(
+      let metadata=KeyMetadata(
         id: identifier,
-        algorithm: .aes,  // Default, should be determined based on key
-        keySize: newKey.count * 8,  // Size in bits
+        algorithm: .aes, // Default, should be determined based on key
+        keySize: newKey.count * 8, // Size in bits
         purpose: "encryption" // Default, should be a parameter
       )
-      
+
       try await metadataStore.storeKeyMetadata(metadata)
-      
+
       // Log the success
       await securityLogger.logOperationSuccess(
         keyIdentifier: identifier,
         operation: "rotate"
       )
-      
+
       return .success((newKey: newKey, reencryptedData: nil))
     } catch {
-      let secError = KeyManagementError.keyManagementError(details: error.localizedDescription)
+      let secError=KeyManagementError.keyManagementError(details: error.localizedDescription)
       await securityLogger.logOperationFailure(
         keyIdentifier: identifier,
         operation: "rotate",
         error: secError
       )
-      return Result<(newKey: [UInt8], reencryptedData: [UInt8]?), SecurityProtocolError>.failure(secError.toStandardError())
+      return Result<(newKey: [UInt8], reencryptedData: [UInt8]?), SecurityProtocolError>
+        .failure(secError.toStandardError())
     }
   }
 
   /**
    Retrieves all key identifiers.
-   
+
    - Returns: A result containing an array of key identifiers or an error
    */
   public func getAllKeyIdentifiers() async -> Result<[String], SecurityProtocolError> {
     // Simply delegate to the protocol method
-    return await listKeyIdentifiers()
+    await listKeyIdentifiers()
   }
-  
+
   /**
    Lists all available key identifiers.
-   
+
    - Returns: An array of key identifiers or an error.
    */
   public func listKeyIdentifiers() async -> Result<[String], SecurityProtocolError> {
@@ -410,28 +413,28 @@ public actor KeyManagementActor: KeyManagementProtocol {
       keyIdentifier: "all",
       operation: "list"
     )
-    
+
     do {
       // Get all key identifiers from the metadata store
-      let identifiers = try await metadataStore.getAllKeyIdentifiers()
-      
+      let identifiers=try await metadataStore.getAllKeyIdentifiers()
+
       // Log the successful operation
       await securityLogger.logOperationSuccess(
         keyIdentifier: "all",
         operation: "list"
       )
-      
+
       return .success(identifiers)
     } catch {
-      let secError = KeyManagementError.keyManagementError(details: error.localizedDescription)
-      
+      let secError=KeyManagementError.keyManagementError(details: error.localizedDescription)
+
       // Log the failed operation
       await securityLogger.logOperationFailure(
         keyIdentifier: "all",
         operation: "list",
         error: secError
       )
-      
+
       return Result<[String], SecurityProtocolError>.failure(secError.toStandardError())
     }
   }
@@ -443,7 +446,7 @@ public actor KeyManagementActor: KeyManagementProtocol {
 public protocol KeyGenerator: Sendable {
   /**
    Generates a new cryptographic key.
-   
+
    - Returns: A new cryptographic key as a byte array
    - Throws: If key generation fails
    */
@@ -458,24 +461,24 @@ public struct DefaultKeyGenerator: KeyGenerator {
    Initialises a new DefaultKeyGenerator.
    */
   public init() {}
-  
+
   /**
    Generates a new cryptographic key using SecRandomCopyBytes.
-   
+
    - Returns: A new cryptographic key as a byte array
    - Throws: If key generation fails
    */
   public func generateKey() async throws -> [UInt8] {
     // Generate a 32-byte (256-bit) key
-    var keyData = [UInt8](repeating: 0, count: 32)
-    
+    var keyData=[UInt8](repeating: 0, count: 32)
+
     // Use SecRandomCopyBytes for secure random generation
-    let status = SecRandomCopyBytes(kSecRandomDefault, keyData.count, &keyData)
-    
+    let status=SecRandomCopyBytes(kSecRandomDefault, keyData.count, &keyData)
+
     guard status == errSecSuccess else {
       throw KeyManagementError.keyManagementError(details: "Failed to generate secure random bytes")
     }
-    
+
     return keyData
   }
 }
@@ -487,24 +490,28 @@ public struct DefaultKeyGenerator: KeyGenerator {
  */
 private actor SecurityLogger {
   private let loggingService: LoggingServiceProtocol
-  
+
   init(loggingService: LoggingServiceProtocol) {
-    self.loggingService = loggingService
+    self.loggingService=loggingService
   }
-  
-  func logOperationStart(keyIdentifier: String, operation: String) async {
+
+  func logOperationStart(keyIdentifier _: String, operation _: String) async {
     // Implement logging for operation start
   }
-  
-  func logOperationProgress(keyIdentifier: String, operation: String, progress: String) async {
+
+  func logOperationProgress(
+    keyIdentifier _: String,
+    operation _: String,
+    progress _: String
+  ) async {
     // Implement logging for operation progress
   }
-  
-  func logOperationSuccess(keyIdentifier: String, operation: String) async {
+
+  func logOperationSuccess(keyIdentifier _: String, operation _: String) async {
     // Implement logging for operation success
   }
-  
-  func logOperationFailure(keyIdentifier: String, operation: String, error: Error) async {
+
+  func logOperationFailure(keyIdentifier _: String, operation _: String, error _: Error) async {
     // Implement logging for operation failure
   }
 }

@@ -173,14 +173,14 @@ public actor LoggingServiceAdapter: LoggingServiceProtocol {
     if context.metadata != nil {
       // Create new privacy metadata from context metadata directly
       // without trying to cast it to [String: Any]
-      let pm = PrivacyMetadata()
-      privacyMetadata = pm
+      let pm=PrivacyMetadata()
+      privacyMetadata=pm
     } else {
-      privacyMetadata = nil
+      privacyMetadata=nil
     }
-    
+
     let source=context.source
-    
+
     // Use the appropriate level-specific method
     switch level {
       case .trace:
@@ -203,7 +203,7 @@ public actor LoggingServiceAdapter: LoggingServiceProtocol {
     // Convert PrivacyString to a plain String
     let stringMessage=message.processForLogging()
     let source=context.source
-    
+
     // If the underlying logger supports privacy-aware logging, use it
     if let privacyAwareLogger=logger as? PrivacyAwareLoggingProtocol {
       // Create privacy metadata from context metadata
@@ -211,12 +211,12 @@ public actor LoggingServiceAdapter: LoggingServiceProtocol {
       if context.metadata != nil {
         // Create new privacy metadata from context metadata directly
         // without trying to cast it to [String: Any]
-        let pm = PrivacyMetadata()
-        privacyMetadata = pm
+        let pm=PrivacyMetadata()
+        privacyMetadata=pm
       } else {
-        privacyMetadata = nil
+        privacyMetadata=nil
       }
-      
+
       switch level {
         case .trace:
           await privacyAwareLogger.trace(stringMessage, metadata: privacyMetadata, source: source)
@@ -229,7 +229,11 @@ public actor LoggingServiceAdapter: LoggingServiceProtocol {
         case .error:
           await privacyAwareLogger.error(stringMessage, metadata: privacyMetadata, source: source)
         case .critical:
-          await privacyAwareLogger.critical(stringMessage, metadata: privacyMetadata, source: source)
+          await privacyAwareLogger.critical(
+            stringMessage,
+            metadata: privacyMetadata,
+            source: source
+          )
       }
     } else {
       // Otherwise fall back to standard logging

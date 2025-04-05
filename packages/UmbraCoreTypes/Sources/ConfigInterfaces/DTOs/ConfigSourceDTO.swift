@@ -110,7 +110,7 @@ public struct ConfigSourceDTO: Sendable, Equatable {
     name: String,
     prefix: String?=nil
   ) -> ConfigSourceDTO {
-    var options: [String: String]?=nil
+    var options: [String: String]?
     if let prefix {
       options=["prefix": prefix]
     }

@@ -1,9 +1,9 @@
+import Darwin.C
 import FileSystemInterfaces
 import FileSystemTypes
 import Foundation
 import LoggingInterfaces
 import LoggingTypes
-import Darwin.C
 
 /**
  # Directory Operations Extension
@@ -24,8 +24,8 @@ extension FileSystemServiceImpl {
    */
   public func createDirectory(
     at path: FilePath,
-    createIntermediates: Bool = true,
-    attributes: FileAttributes? = nil
+    createIntermediates: Bool=true,
+    attributes: FileAttributes?=nil
   ) async throws {
     guard !path.path.isEmpty else {
       throw FileSystemError.invalidPath(
@@ -34,11 +34,11 @@ extension FileSystemServiceImpl {
       )
     }
 
-    let url = URL(fileURLWithPath: path.path)
+    let url=URL(fileURLWithPath: path.path)
 
     // Check if a file (not directory) already exists at this path
     if fileManager.fileExists(atPath: path.path) {
-      var isDir: ObjCBool = false
+      var isDir: ObjCBool=false
       fileManager.fileExists(atPath: path.path, isDirectory: &isDir)
 
       if !isDir.boolValue {
@@ -61,36 +61,36 @@ extension FileSystemServiceImpl {
 
     do {
       // Convert our FileAttributes to the format expected by FileManager
-      var fileManagerAttributes: [FileAttributeKey: Any]? = nil
-      
-      if let attributes = attributes {
-        fileManagerAttributes = [:]
-        
+      var fileManagerAttributes: [FileAttributeKey: Any]?
+
+      if let attributes {
+        fileManagerAttributes=[:]
+
         // Map the attributes to FileManager's expected format
         if attributes.creationDate != Date(timeIntervalSince1970: 0) {
-          fileManagerAttributes?[.creationDate] = attributes.creationDate
+          fileManagerAttributes?[.creationDate]=attributes.creationDate
         }
-        
+
         if attributes.modificationDate != Date(timeIntervalSince1970: 0) {
-          fileManagerAttributes?[.modificationDate] = attributes.modificationDate
+          fileManagerAttributes?[.modificationDate]=attributes.modificationDate
         }
-        
+
         if attributes.permissions != 0 {
-          fileManagerAttributes?[.posixPermissions] = Int16(attributes.permissions)
+          fileManagerAttributes?[.posixPermissions]=Int16(attributes.permissions)
         }
-        
+
         if attributes.ownerID != 0 {
-          fileManagerAttributes?[.ownerAccountID] = NSNumber(value: attributes.ownerID)
+          fileManagerAttributes?[.ownerAccountID]=NSNumber(value: attributes.ownerID)
         }
-        
+
         if attributes.groupID != 0 {
-          fileManagerAttributes?[.groupOwnerAccountID] = NSNumber(value: attributes.groupID)
+          fileManagerAttributes?[.groupOwnerAccountID]=NSNumber(value: attributes.groupID)
         }
-        
+
         // Note: Extended attributes would need a separate call to set them,
         // as they're not supported directly by the createDirectory API
       }
-      
+
       try fileManager.createDirectory(
         at: url,
         withIntermediateDirectories: createIntermediates,
@@ -98,13 +98,13 @@ extension FileSystemServiceImpl {
       )
 
       // If we have any extended attributes, set them after creation
-      if let attributes = attributes, !attributes.safeExtendedAttributes.isEmpty {
+      if let attributes, !attributes.safeExtendedAttributes.isEmpty {
         for (key, value) in attributes.safeExtendedAttributes {
           // Convert the SafeAttributeValue to a Foundation-compatible type
-          if let data = convertSafeAttributeToData(value) {
+          if let data=convertSafeAttributeToData(value) {
             try url.withUnsafeFileSystemRepresentation { fileSystemPath in
               // Set the extended attribute using the low-level C API
-              let result = setxattr(
+              let result=setxattr(
                 fileSystemPath,
                 key,
                 [UInt8](data),
@@ -112,9 +112,9 @@ extension FileSystemServiceImpl {
                 0,
                 0
               )
-              
+
               if result != 0 {
-                let error = errno
+                let error=errno
                 throw FileSystemError.writeError(
                   path: path.path,
                   reason: "Failed to set extended attribute: \(String(cString: strerror(error)))"
@@ -142,44 +142,44 @@ extension FileSystemServiceImpl {
       )
     }
   }
-  
+
   /**
    Converts a SafeAttributeValue to Data for use with extended attributes.
-   
+
    - Parameter value: The SafeAttributeValue to convert
    - Returns: Data representation if possible, nil otherwise
    */
   private func convertSafeAttributeToData(_ value: SafeAttributeValue) -> Data? {
     switch value {
-    case .string(let strValue):
-      return strValue.data(using: .utf8)
-    case .int(let intValue):
-      return withUnsafeBytes(of: intValue) { Data($0) }
-    case .uint(let uintValue):
-      return withUnsafeBytes(of: uintValue) { Data($0) }
-    case .int64(let int64Value):
-      return withUnsafeBytes(of: int64Value) { Data($0) }
-    case .uint64(let uint64Value):
-      return withUnsafeBytes(of: uint64Value) { Data($0) }
-    case .bool(let boolValue):
-      return withUnsafeBytes(of: boolValue) { Data($0) }
-    case .date(let dateValue):
-      return withUnsafeBytes(of: dateValue.timeIntervalSince1970) { Data($0) }
-    case .double(let doubleValue):
-      return withUnsafeBytes(of: doubleValue) { Data($0) }
-    case .data(let dataValue):
-      return dataValue
-    case .url(let urlValue):
-      return urlValue.absoluteString.data(using: .utf8)
-    case .array, .dictionary:
-      // These would need more complex serialization (e.g., JSON)
-      do {
-        let encoder = JSONEncoder()
-        let data = try encoder.encode(String(describing: value))
-        return data
-      } catch {
-        return nil
-      }
+      case let .string(strValue):
+        return strValue.data(using: .utf8)
+      case let .int(intValue):
+        return withUnsafeBytes(of: intValue) { Data($0) }
+      case let .uint(uintValue):
+        return withUnsafeBytes(of: uintValue) { Data($0) }
+      case let .int64(int64Value):
+        return withUnsafeBytes(of: int64Value) { Data($0) }
+      case let .uint64(uint64Value):
+        return withUnsafeBytes(of: uint64Value) { Data($0) }
+      case let .bool(boolValue):
+        return withUnsafeBytes(of: boolValue) { Data($0) }
+      case let .date(dateValue):
+        return withUnsafeBytes(of: dateValue.timeIntervalSince1970) { Data($0) }
+      case let .double(doubleValue):
+        return withUnsafeBytes(of: doubleValue) { Data($0) }
+      case let .data(dataValue):
+        return dataValue
+      case let .url(urlValue):
+        return urlValue.absoluteString.data(using: .utf8)
+      case .array, .dictionary:
+        // These would need more complex serialization (e.g., JSON)
+        do {
+          let encoder=JSONEncoder()
+          let data=try encoder.encode(String(describing: value))
+          return data
+        } catch {
+          return nil
+        }
     }
   }
 

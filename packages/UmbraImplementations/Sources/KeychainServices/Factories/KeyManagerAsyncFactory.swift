@@ -31,7 +31,7 @@ import UmbraErrors
  this implementation uses proper actor isolation to ensure thread safety.
  */
 @MainActor
-public final class KeyManagerAsyncFactory: Sendable {
+public final class KeyManagerAsyncFactory {
   /// Shared instance for singleton access
   @MainActor
   public static let shared=KeyManagerAsyncFactory()

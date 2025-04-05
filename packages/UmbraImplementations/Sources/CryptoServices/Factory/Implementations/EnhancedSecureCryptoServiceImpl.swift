@@ -1,14 +1,14 @@
 import CryptoInterfaces
-import SecurityCoreInterfaces
 import CryptoTypes
 import DomainSecurityTypes
 import Foundation
 import LoggingInterfaces
+import SecurityCoreInterfaces
 import UmbraErrors
 
 /**
  An enhanced secure implementation of CryptoServiceProtocol that adds additional security measures.
- 
+
  This implementation wraps another CryptoServiceProtocol implementation and adds
  additional security features such as rate limiting, secure storage, and enhanced
  validation of cryptographic operations.
@@ -23,16 +23,16 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
 
   /// The logger to use
   private let logger: LoggingProtocol
-  
+
   /// Last operation timestamps for rate limiting
-  private var lastOperationTimes: [String: TimeInterval] = [:]
-  
+  private var lastOperationTimes: [String: TimeInterval]=[:]
+
   /// The minimum interval between operations (in seconds)
-  private let operationRateLimit: TimeInterval = 0.1 // 100ms
-  
+  private let operationRateLimit: TimeInterval=0.1 // 100ms
+
   /**
    Initialises a new enhanced secure crypto service.
-   
+
    - Parameters:
      - wrapped: The crypto service to wrap
      - storage: The secure storage to use
@@ -43,31 +43,33 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
     storage: SecureStorageProtocol,
     logger: LoggingProtocol
   ) {
-    self.wrapped = wrapped
-    self.storage = storage
-    self.logger = logger
+    self.wrapped=wrapped
+    self.storage=storage
+    self.logger=logger
   }
-  
+
   /// Checks if an operation should be rate limited.
   ///
   /// - Parameter operation: The operation to check
   /// - Returns: True if the operation should proceed, false if it should be rate limited
   private func checkRateLimit(operation: String) -> Bool {
-    let now = Date().timeIntervalSince1970
-    
-    if let lastTime = lastOperationTimes[operation],
-       now - lastTime < operationRateLimit {
+    let now=Date().timeIntervalSince1970
+
+    if
+      let lastTime=lastOperationTimes[operation],
+      now - lastTime < operationRateLimit
+    {
       return false
     }
-    
-    lastOperationTimes[operation] = now
+
+    lastOperationTimes[operation]=now
     return true
   }
-  
+
   public func encrypt(
     data: [UInt8],
     keyIdentifier: String,
-    options: CryptoServiceOptions? = nil
+    options: CryptoServiceOptions?=nil
   ) async -> Result<String, SecurityStorageError> {
     // Rate limit check
     guard checkRateLimit(operation: "encrypt") else {
@@ -78,7 +80,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
       )
       return .failure(.operationFailed(UmbraErrors.Security.Core.rateLimited))
     }
-    
+
     // Validate input
     guard !data.isEmpty else {
       await logger.error(
@@ -88,7 +90,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
       )
       return .failure(.operationFailed(UmbraErrors.Security.Core.invalidInput))
     }
-    
+
     guard !keyIdentifier.isEmpty else {
       await logger.error(
         "Empty key identifier provided for encryption",
@@ -97,7 +99,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
       )
       return .failure(.keyNotFound(""))
     }
-    
+
     // Delegate to wrapped implementation
     return await wrapped.encrypt(
       data: data,
@@ -105,11 +107,11 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
       options: options
     )
   }
-  
+
   public func decrypt(
     encryptedDataIdentifier: String,
     keyIdentifier: String,
-    options: CryptoServiceOptions? = nil
+    options: CryptoServiceOptions?=nil
   ) async -> Result<[UInt8], SecurityStorageError> {
     // Rate limit check
     guard checkRateLimit(operation: "decrypt") else {
@@ -120,7 +122,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
       )
       return .failure(.operationFailed(UmbraErrors.Security.Core.rateLimited))
     }
-    
+
     // Validate input
     guard !encryptedDataIdentifier.isEmpty else {
       await logger.error(
@@ -130,7 +132,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
       )
       return .failure(.keyNotFound(""))
     }
-    
+
     guard !keyIdentifier.isEmpty else {
       await logger.error(
         "Empty key identifier provided for decryption",
@@ -139,7 +141,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
       )
       return .failure(.keyNotFound(""))
     }
-    
+
     // Delegate to wrapped implementation
     return await wrapped.decrypt(
       encryptedDataIdentifier: encryptedDataIdentifier,
@@ -147,7 +149,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
       options: options
     )
   }
-  
+
   public func generateHash(
     data: [UInt8],
     algorithm: HashAlgorithm
@@ -161,7 +163,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
       )
       return .failure(.operationFailed(UmbraErrors.Security.Core.rateLimited))
     }
-    
+
     // Validate input
     guard !data.isEmpty else {
       await logger.error(
@@ -171,14 +173,14 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
       )
       return .failure(.operationFailed(UmbraErrors.Security.Core.invalidInput))
     }
-    
+
     // Delegate to wrapped implementation
     return await wrapped.generateHash(
       data: data,
       algorithm: algorithm
     )
   }
-  
+
   public func verifyHash(
     dataIdentifier: String,
     expectedHashIdentifier: String
@@ -192,7 +194,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
       )
       return .failure(.operationFailed(UmbraErrors.Security.Core.rateLimited))
     }
-    
+
     // Validate input
     guard !dataIdentifier.isEmpty else {
       await logger.error(
@@ -202,7 +204,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
       )
       return .failure(.keyNotFound(""))
     }
-    
+
     guard !expectedHashIdentifier.isEmpty else {
       await logger.error(
         "Empty hash identifier provided for hash verification",
@@ -211,14 +213,14 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
       )
       return .failure(.keyNotFound(""))
     }
-    
+
     // Delegate to wrapped implementation
     return await wrapped.verifyHash(
       dataIdentifier: dataIdentifier,
       expectedHashIdentifier: expectedHashIdentifier
     )
   }
-  
+
   /// Generates a cryptographic key and stores it securely.
   /// - Parameters:
   ///   - length: The length of the key to generate in bytes.
@@ -237,7 +239,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
       )
       return .failure(.operationFailed(UmbraErrors.Security.Core.rateLimited))
     }
-    
+
     // Validate input
     guard length >= 16 else { // Minimum 128-bit key
       await logger.error(
@@ -247,14 +249,14 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
       )
       return .failure(.operationFailed(UmbraErrors.Security.Core.invalidKeyLength))
     }
-    
+
     // Delegate to wrapped implementation
     return await wrapped.generateKey(
       length: length,
       options: options
     )
   }
-  
+
   public func storeData(
     data: [UInt8],
     identifier: String
@@ -268,7 +270,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
       )
       return .failure(.operationFailed(UmbraErrors.Security.Core.rateLimited))
     }
-    
+
     // Validate input
     guard !data.isEmpty else {
       await logger.error(
@@ -278,7 +280,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
       )
       return .failure(.operationFailed(UmbraErrors.Security.Core.invalidInput))
     }
-    
+
     guard !identifier.isEmpty else {
       await logger.error(
         "Empty identifier provided for data storage",
@@ -287,14 +289,14 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
       )
       return .failure(.operationFailed(UmbraErrors.Security.Core.invalidInput))
     }
-    
+
     // Delegate to wrapped implementation
     return await wrapped.storeData(
       data: data,
       identifier: identifier
     )
   }
-  
+
   public func retrieveData(
     identifier: String
   ) async -> Result<[UInt8], SecurityStorageError> {
@@ -307,7 +309,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
       )
       return .failure(.operationFailed(UmbraErrors.Security.Core.rateLimited))
     }
-    
+
     // Validate input
     guard !identifier.isEmpty else {
       await logger.error(
@@ -317,13 +319,13 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
       )
       return .failure(.keyNotFound(""))
     }
-    
+
     // Delegate to wrapped implementation
     return await wrapped.retrieveData(
       identifier: identifier
     )
   }
-  
+
   public func exportData(
     identifier: String
   ) async -> Result<[UInt8], SecurityStorageError> {
@@ -336,7 +338,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
       )
       return .failure(.operationFailed(UmbraErrors.Security.Core.rateLimited))
     }
-    
+
     // Validate input
     guard !identifier.isEmpty else {
       await logger.error(
@@ -346,13 +348,13 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
       )
       return .failure(.keyNotFound(""))
     }
-    
+
     // Delegate to wrapped implementation
     return await wrapped.exportData(
       identifier: identifier
     )
   }
-  
+
   public func importData(
     data: [UInt8],
     identifier: String
@@ -366,7 +368,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
       )
       return .failure(.operationFailed(UmbraErrors.Security.Core.rateLimited))
     }
-    
+
     // Validate input
     guard !data.isEmpty else {
       await logger.error(
@@ -376,7 +378,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
       )
       return .failure(.operationFailed(UmbraErrors.Security.Core.invalidInput))
     }
-    
+
     guard !identifier.isEmpty else {
       await logger.error(
         "Empty identifier provided for data import",
@@ -385,14 +387,14 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
       )
       return .failure(.operationFailed(UmbraErrors.Security.Core.invalidInput))
     }
-    
+
     // Delegate to wrapped implementation
     return await wrapped.importData(
       data: data,
       identifier: identifier
     )
   }
-  
+
   public func deleteData(
     identifier: String
   ) async -> Result<Bool, SecurityStorageError> {
@@ -405,7 +407,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
       )
       return .failure(.operationFailed(UmbraErrors.Security.Core.rateLimited))
     }
-    
+
     // Validate input
     guard !identifier.isEmpty else {
       await logger.error(
@@ -415,7 +417,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
       )
       return .failure(.keyNotFound(""))
     }
-    
+
     // Delegate to wrapped implementation
     return await wrapped.deleteData(
       identifier: identifier

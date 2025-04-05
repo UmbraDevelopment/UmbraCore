@@ -8,30 +8,30 @@ import ResticInterfaces
 public actor KeychainResticCredentialManager: ResticCredentialManager {
   private let keychain: any KeychainServiceProtocol
   private let logger: ResticLogger
-  
+
   /// Initialise the credential manager
   ///
   /// - Parameters:
   ///   - keychain: The keychain implementation to use
   ///   - logger: Logger for credential operations
   public init(keychain: any KeychainServiceProtocol, logger: ResticLogger) {
-    self.keychain = keychain
-    self.logger = logger
+    self.keychain=keychain
+    self.logger=logger
   }
-  
+
   /// Checks if credentials exist for a specific repository
   ///
   /// - Parameter repository: The repository identifier to check
   /// - Returns: True if credentials exist, false otherwise
   public func hasCredentials(for repository: String) async -> Bool {
     do {
-      _ = try await getCredentials(for: repository)
+      _=try await getCredentials(for: repository)
       return true
     } catch {
       return false
     }
   }
-  
+
   /// Gets the credentials for a repository
   ///
   /// - Parameter repository: Repository path or identifier
@@ -46,20 +46,20 @@ public actor KeychainResticCredentialManager: ResticCredentialManager {
       ]),
       source: "KeychainResticCredentialManager"
     )
-    
+
     do {
       // Try to get password from the keychain
-      let password = try await keychain.retrievePassword(
+      let password=try await keychain.retrievePassword(
         for: keychainKey(for: repository),
         keychainOptions: KeychainOptions.standard
       )
-      
+
       // Create and return credentials
-      let credentials = ResticCredentials(
+      let credentials=ResticCredentials(
         repositoryIdentifier: repository,
         password: password
       )
-      
+
       await logger.debug(
         "Successfully retrieved credentials",
         metadata: PrivacyMetadata([
@@ -68,7 +68,7 @@ public actor KeychainResticCredentialManager: ResticCredentialManager {
         ]),
         source: "KeychainResticCredentialManager"
       )
-      
+
       return credentials
     } catch {
       // Map keychain errors to more specific security errors
@@ -80,11 +80,12 @@ public actor KeychainResticCredentialManager: ResticCredentialManager {
         ]),
         source: "KeychainResticCredentialManager"
       )
-      
-      throw ResticError.credentialError("Failed to retrieve credentials: \(error.localizedDescription)")
+
+      throw ResticError
+        .credentialError("Failed to retrieve credentials: \(error.localizedDescription)")
     }
   }
-  
+
   /// Stores credentials for a repository
   ///
   /// - Parameters:
@@ -98,7 +99,7 @@ public actor KeychainResticCredentialManager: ResticCredentialManager {
     guard !credentials.password.isEmpty else {
       throw ResticError.invalidParameter("Cannot store empty password")
     }
-    
+
     await logger.debug(
       "Storing credentials for repository",
       metadata: PrivacyMetadata([
@@ -106,7 +107,7 @@ public actor KeychainResticCredentialManager: ResticCredentialManager {
       ]),
       source: "KeychainResticCredentialManager"
     )
-    
+
     do {
       // Store the password in the keychain
       try await keychain.storePassword(
@@ -114,7 +115,7 @@ public actor KeychainResticCredentialManager: ResticCredentialManager {
         for: keychainKey(for: repository),
         keychainOptions: KeychainOptions.standard
       )
-      
+
       await logger.debug(
         "Successfully stored credentials",
         metadata: PrivacyMetadata([
@@ -131,11 +132,12 @@ public actor KeychainResticCredentialManager: ResticCredentialManager {
         ]),
         source: "KeychainResticCredentialManager"
       )
-      
-      throw ResticError.credentialError("Failed to store credentials: \(error.localizedDescription)")
+
+      throw ResticError
+        .credentialError("Failed to store credentials: \(error.localizedDescription)")
     }
   }
-  
+
   /// Removes credentials for a repository
   ///
   /// - Parameter repository: Repository path or identifier
@@ -149,13 +151,13 @@ public actor KeychainResticCredentialManager: ResticCredentialManager {
       ]),
       source: "KeychainResticCredentialManager"
     )
-    
+
     do {
       try await keychain.deletePassword(
         for: keychainKey(for: repository),
         keychainOptions: KeychainOptions.standard
       )
-      
+
       await logger.debug(
         "Successfully removed credentials",
         metadata: PrivacyMetadata([
@@ -165,10 +167,13 @@ public actor KeychainResticCredentialManager: ResticCredentialManager {
       )
     } catch {
       // Don't throw if the item doesn't exist - treat as success
-      if let nsError = error as NSError?, nsError.domain == "com.apple.security" && nsError.code == -25300 {
+      if
+        let nsError=error as NSError?,
+        nsError.domain == "com.apple.security" && nsError.code == -25300
+      {
         return
       }
-      
+
       await logger.error(
         "Failed to remove credentials: \(error.localizedDescription)",
         metadata: PrivacyMetadata([
@@ -177,16 +182,17 @@ public actor KeychainResticCredentialManager: ResticCredentialManager {
         ]),
         source: "KeychainResticCredentialManager"
       )
-      
-      throw ResticError.credentialError("Failed to remove credentials: \(error.localizedDescription)")
+
+      throw ResticError
+        .credentialError("Failed to remove credentials: \(error.localizedDescription)")
     }
   }
-  
+
   /// Creates a keychain key from a repository path
   ///
   /// - Parameter repository: Repository path or identifier
   /// - Returns: Keychain key string
   private func keychainKey(for repository: String) -> String {
-    return "restic_repo_\(repository.replacingOccurrences(of: "/", with: "_"))"
+    "restic_repo_\(repository.replacingOccurrences(of: "/", with: "_"))"
   }
 }

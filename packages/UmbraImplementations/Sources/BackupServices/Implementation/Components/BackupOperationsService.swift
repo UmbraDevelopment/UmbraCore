@@ -339,21 +339,21 @@ public actor BackupOperationsService {
   ) async throws -> (BackupVerificationResultDTO, AsyncStream<BackupProgressInfo>) {
     // Create a progress stream for reporting verification progress
     var progressContinuation: AsyncStream<BackupProgressInfo>.Continuation!
-    let progressStream = AsyncStream<BackupProgressInfo> { continuation in
-      progressContinuation = continuation
+    let progressStream=AsyncStream<BackupProgressInfo> { continuation in
+      progressContinuation=continuation
     }
-    
+
     // Define a local function to report progress
-    let reportProgress = { (progress: BackupProgressInfo) async in
+    let reportProgress={ (progress: BackupProgressInfo) async in
       // Send progress to the continuation
       progressContinuation.yield(progress)
-      
+
       // Forward to the progress reporter if provided
-      if let reporter = progressReporter {
+      if let reporter=progressReporter {
         await reporter.reportProgress(progress, for: .verifyBackup)
       }
     }
-    
+
     // Start verification
     await reportProgress(BackupProgressInfo(
       phase: .initialising,
@@ -363,33 +363,38 @@ public actor BackupOperationsService {
       bytesProcessed: 0,
       totalBytes: 0
     ))
-    
+
     do {
       // Prepare verification parameters
-      let snapshotID = parameters.snapshotID
-      let verifyOptions = parameters.verifyOptions
-      
+      let snapshotID=parameters.snapshotID
+      let verifyOptions=parameters.verifyOptions
+
       // Get snapshot to verify (latest if not specified)
-      let startTime = Date()
-      let snapshot = try await (snapshotID != nil ?
-        try await snapshotService.getSnapshot(id: snapshotID!) :
-        try await snapshotService.getLatestSnapshot())
-      
+      let startTime=Date()
+      let snapshot=try await (
+        snapshotID != nil ?
+          snapshotService.getSnapshot(id: snapshotID!) :
+          snapshotService.getLatestSnapshot()
+      )
+
       // Early exit if no snapshot found
-      guard let snapshot = snapshot else {
+      guard let snapshot else {
         throw BackupOperationError.snapshotNotFound(
           "No snapshot found to verify" + (snapshotID != nil ? " with ID \(snapshotID!)" : "")
         )
       }
-      
+
       // Log verification start
       logger.info(
         context: backupLogContext.withOperation("verifyBackup")
           .withPublic(key: "snapshotID", value: snapshot.id)
-          .withPublic(key: "verify_mode", value: verifyOptions?.fullVerification == true ? "full" : "standard"),
+          .withPublic(
+            key: "verify_mode",
+            value: verifyOptions?.fullVerification == true ? "full" : "standard"
+          ),
         message: "Starting backup verification for snapshot \(snapshot.id)"
       )
-      
+
       // Scanning phase
       await reportProgress(BackupProgressInfo(
         phase: .scanning,
@@ -402,24 +407,24 @@ public actor BackupOperationsService {
         transferRate: nil,
         details: "Analysing snapshot structure"
       ))
-      
+
       // Use snapshot service to perform actual verification
-      let verificationResult = try await snapshotService.verifySnapshot(
+      let verificationResult=try await snapshotService.verifySnapshot(
         id: snapshot.id,
         fullVerification: verifyOptions?.fullVerification ?? false,
         verifySignatures: verifyOptions?.verifySignatures ?? true,
         maxErrors: verifyOptions?.maxErrors,
         autoRepair: verifyOptions?.autoRepair ?? false
       )
-      
+
       // Report verification progress
-      var percentComplete = 0.2
-      var itemsProcessed = 0
-      let totalItems = snapshot.stats.totalFiles + snapshot.stats.totalDirectories
-      
+      var percentComplete=0.2
+      var itemsProcessed=0
+      let totalItems=snapshot.stats.totalFiles + snapshot.stats.totalDirectories
+
       // Simulate verification progress phases if using a real implementation
       // Here we're just showing the phases for demonstration
-      
+
       // Verification in progress (25% complete)
       await reportProgress(BackupProgressInfo(
         phase: .verifying,
@@ -429,13 +434,13 @@ public actor BackupOperationsService {
         bytesProcessed: UInt64(Double(snapshot.stats.totalSize) * 0.25),
         totalBytes: UInt64(snapshot.stats.totalSize)
       ))
-      
+
       // Check for cancellation
-      if let token = cancellationToken, token.isCancelled {
+      if let token=cancellationToken, token.isCancelled {
         await reportProgress(BackupProgressInfo.cancelled())
         throw BackupOperationError.operationCancelled("Verification cancelled by user")
       }
-      
+
       // Verification 50% complete
       await reportProgress(BackupProgressInfo(
         phase: .verifying,
@@ -445,13 +450,13 @@ public actor BackupOperationsService {
         bytesProcessed: UInt64(Double(snapshot.stats.totalSize) * 0.5),
         totalBytes: UInt64(snapshot.stats.totalSize)
       ))
-      
+
       // Check for cancellation
-      if let token = cancellationToken, token.isCancelled {
+      if let token=cancellationToken, token.isCancelled {
         await reportProgress(BackupProgressInfo.cancelled())
         throw BackupOperationError.operationCancelled("Verification cancelled by user")
       }
-      
+
       // Verification 75% complete
       await reportProgress(BackupProgressInfo(
         phase: .verifying,
@@ -461,7 +466,7 @@ public actor BackupOperationsService {
         bytesProcessed: UInt64(Double(snapshot.stats.totalSize) * 0.75),
         totalBytes: UInt64(snapshot.stats.totalSize)
       ))
-      
+
       // Finalising phase
       await reportProgress(BackupProgressInfo(
         phase: .finalising,
@@ -471,13 +476,13 @@ public actor BackupOperationsService {
         bytesProcessed: UInt64(snapshot.stats.totalSize),
         totalBytes: UInt64(snapshot.stats.totalSize)
       ))
-      
+
       // Create the verification result
-      let endTime = Date()
-      let verificationTime = endTime.timeIntervalSince(startTime)
-      
+      let endTime=Date()
+      let verificationTime=endTime.timeIntervalSince(startTime)
+
       // Create the final result object
-      let result = BackupVerificationResultDTO(
+      let result=BackupVerificationResultDTO(
         verified: verificationResult.verified,
         objectsVerified: verificationResult.objectsVerified,
         bytesVerified: verificationResult.bytesVerified,
@@ -507,21 +512,21 @@ public actor BackupOperationsService {
         snapshotID: snapshot.id,
         verificationTime: verificationTime
       )
-      
+
       // Report completion
       await reportProgress(BackupProgressInfo.completed())
-      
+
       // Return the result and progress stream
       return (result, progressStream)
     } catch {
       // Report failure
       await reportProgress(BackupProgressInfo.failed(error))
-      
+
       // Rethrow the error
       throw error
     }
   }
-  
+
   /**
    * Maps verification error types from the snapshot service to VerificationIssue.IssueType.
    *
@@ -530,19 +535,19 @@ public actor BackupOperationsService {
    */
   private func mapVerificationErrorType(_ type: String) -> VerificationIssue.IssueType {
     switch type {
-    case "corruption":
-      return .corruption
-    case "missing_data":
-      return .missingData
-    case "invalid_signature":
-      return .invalidSignature
-    case "metadata_inconsistency":
-      return .metadataInconsistency
-    default:
-      return .other
+      case "corruption":
+        .corruption
+      case "missing_data":
+        .missingData
+      case "invalid_signature":
+        .invalidSignature
+      case "metadata_inconsistency":
+        .metadataInconsistency
+      default:
+        .other
     }
   }
-  
+
   /**
    * Maps repair action types from the snapshot service to RepairAction.RepairType.
    *
@@ -551,16 +556,16 @@ public actor BackupOperationsService {
    */
   private func mapRepairActionType(_ type: String) -> RepairAction.RepairType {
     switch type {
-    case "reconstruction":
-      return .reconstruction
-    case "redundant_copy":
-      return .redundantCopy
-    case "replacement":
-      return .replacement
-    case "metadata_fix":
-      return .metadataFix
-    default:
-      return .other
+      case "reconstruction":
+        .reconstruction
+      case "redundant_copy":
+        .redundantCopy
+      case "replacement":
+        .replacement
+      case "metadata_fix":
+        .metadataFix
+      default:
+        .other
     }
   }
 

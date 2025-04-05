@@ -264,7 +264,7 @@ public struct ExtendedSecurityConfig {
       let verify=options["verifyOperations"].flatMap { $0 == "true" } ?? true
 
       // Put any remaining options into metadata
-      var metadata: [String: String]?=nil
+      var metadata: [String: String]?
       let knownKeys=[
         "enableDetailedLogging",
         "keyDerivationIterations",

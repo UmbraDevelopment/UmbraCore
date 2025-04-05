@@ -86,7 +86,8 @@ public final class SecurityProviderAdapter {
   /// Hashes the provided data
   /// - Parameter data: Data to hash
   /// - Returns: Result containing either hashed data or an error
-  public func hash(_ data: SendableCryptoMaterial) async -> Result<SendableCryptoMaterial, SecurityErrorDTO> {
+  public func hash(_ data: SendableCryptoMaterial) async
+  -> Result<SendableCryptoMaterial, SecurityErrorDTO> {
     do {
       let hashedData=try await provider.hash(data)
       return .success(hashedData)
@@ -104,8 +105,10 @@ public final class SecurityProviderAdapter {
 
 /// Local protocol definition to avoid circular dependencies
 public protocol SecurityProviderProtocolAdapter: Sendable {
-  func encrypt(_ data: SendableCryptoMaterial, key: SendableCryptoMaterial) async throws -> SendableCryptoMaterial
-  func decrypt(_ data: SendableCryptoMaterial, key: SendableCryptoMaterial) async throws -> SendableCryptoMaterial
+  func encrypt(_ data: SendableCryptoMaterial, key: SendableCryptoMaterial) async throws
+    -> SendableCryptoMaterial
+  func decrypt(_ data: SendableCryptoMaterial, key: SendableCryptoMaterial) async throws
+    -> SendableCryptoMaterial
   func generateKey(length: Int) async throws -> SendableCryptoMaterial
   func hash(_ data: SendableCryptoMaterial) async throws -> SendableCryptoMaterial
 }

@@ -1,14 +1,14 @@
 import CoreSecurityTypes
 import LoggingServices
 
+import DomainSecurityTypes
 import Foundation
+import LoggingAdapters // For SecurityLogger
 import LoggingInterfaces
 import LoggingTypes
 import SecurityCoreInterfaces
 import SecurityKeyTypes
 import UmbraErrors
-import LoggingAdapters // For SecurityLogger
-import DomainSecurityTypes
 
 /**
  # KeyManagementFactory
@@ -43,10 +43,10 @@ public enum KeyManagementFactory {
     logger: LoggingServiceProtocol?=nil
   ) -> any KeyManagementProtocol {
     // Get a key storage implementation
-    let keyStore = createKeyStorage(logger: logger)
-    
+    let keyStore=createKeyStorage(logger: logger)
+
     // Use default logging service if none provided
-    let loggingService = logger ?? createDefaultLoggingService()
+    let loggingService=logger ?? createDefaultLoggingService()
 
     // Create and return our actor implementation
     return SimpleKeyManagementActor(
@@ -69,16 +69,16 @@ public enum KeyManagementFactory {
   ) -> any KeyStorage {
     // Use in-memory implementation for now, but could be extended to use
     // other storage backends based on environment
-    return SimpleInMemoryKeyStore()
+    SimpleInMemoryKeyStore()
   }
-  
+
   /**
    Creates a default logging service when none is provided.
-   
+
    - Returns: A basic implementation of LoggingServiceProtocol
    */
   private static func createDefaultLoggingService() -> LoggingServiceProtocol {
-    return DefaultLoggingService()
+    DefaultLoggingService()
   }
 }
 
@@ -86,18 +86,18 @@ public enum KeyManagementFactory {
  Default implementation of logging service for use when none is provided.
  */
 private struct DefaultLoggingService: LoggingServiceProtocol {
-  func verbose(_ message: String, metadata: LogMetadata?, source: String?) async {}
-  func debug(_ message: String, metadata: LogMetadata?, source: String?) async {}
-  func info(_ message: String, metadata: LogMetadata?, source: String?) async {}
-  func warning(_ message: String, metadata: LogMetadata?, source: String?) async {}
-  func error(_ message: String, metadata: LogMetadata?, source: String?) async {}
-  func critical(_ message: String, metadata: LogMetadata?, source: String?) async {}
-  
+  func verbose(_: String, metadata _: LogMetadata?, source _: String?) async {}
+  func debug(_: String, metadata _: LogMetadata?, source _: String?) async {}
+  func info(_: String, metadata _: LogMetadata?, source _: String?) async {}
+  func warning(_: String, metadata _: LogMetadata?, source _: String?) async {}
+  func error(_: String, metadata _: LogMetadata?, source _: String?) async {}
+  func critical(_: String, metadata _: LogMetadata?, source _: String?) async {}
+
   // Implementation of required LoggingServiceProtocol methods
-  func addDestination(_ destination: any LoggingTypes.LogDestination) async throws {}
-  func removeDestination(withIdentifier identifier: String) async -> Bool { return false }
-  func setMinimumLogLevel(_ level: LoggingTypes.UmbraLogLevel) async {}
-  func getMinimumLogLevel() async -> LoggingTypes.UmbraLogLevel { return .info }
+  func addDestination(_: any LoggingTypes.LogDestination) async throws {}
+  func removeDestination(withIdentifier _: String) async -> Bool { false }
+  func setMinimumLogLevel(_: LoggingTypes.UmbraLogLevel) async {}
+  func getMinimumLogLevel() async -> LoggingTypes.UmbraLogLevel { .info }
   func flushAllDestinations() async throws {}
 }
 
@@ -107,54 +107,54 @@ private struct DefaultLoggingService: LoggingServiceProtocol {
  */
 public final class SimpleInMemoryKeyStore: KeyStorage {
   // Thread-safe storage for keys
-  private let storage = StorageActor()
-  
+  private let storage=StorageActor()
+
   // Actor to provide thread-safe access to the keys
   private actor StorageActor {
     // Dictionary to store keys by their identifier
-    var keys: [String: [UInt8]] = [:]
-    
+    var keys: [String: [UInt8]]=[:]
+
     func storeKey(_ key: [UInt8], identifier: String) {
-      keys[identifier] = key
+      keys[identifier]=key
     }
-    
+
     func getKey(identifier: String) -> [UInt8]? {
-      return keys[identifier]
+      keys[identifier]
     }
-    
+
     func deleteKey(identifier: String) {
       keys.removeValue(forKey: identifier)
     }
-    
+
     func containsKey(identifier: String) -> Bool {
-      return keys.keys.contains(identifier)
+      keys.keys.contains(identifier)
     }
-    
+
     func getAllKeys() -> [String] {
-      return Array(keys.keys)
+      Array(keys.keys)
     }
   }
-  
+
   public init() {}
-  
+
   public func storeKey(_ key: [UInt8], identifier: String) async throws {
     await storage.storeKey(key, identifier: identifier)
   }
-  
+
   public func getKey(identifier: String) async throws -> [UInt8]? {
-    return await storage.getKey(identifier: identifier)
+    await storage.getKey(identifier: identifier)
   }
-  
+
   public func containsKey(identifier: String) async throws -> Bool {
-    return await storage.containsKey(identifier: identifier)
+    await storage.containsKey(identifier: identifier)
   }
-  
+
   public func deleteKey(identifier: String) async throws {
     await storage.deleteKey(identifier: identifier)
   }
-  
+
   public func listKeyIdentifiers() async throws -> [String] {
-    return await storage.getAllKeys()
+    await storage.getAllKeys()
   }
 }
 
@@ -163,31 +163,31 @@ public final class SimpleInMemoryKeyStore: KeyStorage {
  */
 public actor SimpleKeyManagementActor: KeyManagementProtocol {
   // MARK: - Properties
-  
+
   /// Secure storage for keys
   private let keyStore: KeyStorage
-  
+
   /// Security logger
   private let securityLogger: SecurityLogger
-  
+
   // MARK: - Initialisation
-  
+
   public init(keyStore: KeyStorage, logger: LoggingServiceProtocol) {
-    self.keyStore = keyStore
-    self.securityLogger = SecurityLogger(loggingService: logger)
+    self.keyStore=keyStore
+    securityLogger=SecurityLogger(loggingService: logger)
   }
-  
+
   // MARK: - Key Management Methods
-  
+
   public func retrieveKey(withIdentifier identifier: String) async
-    -> Result<[UInt8], SecurityProtocolError> {
+  -> Result<[UInt8], SecurityProtocolError> {
     await securityLogger.logOperationStart(
       keyIdentifier: identifier,
       operation: "retrieve"
     )
-    
+
     guard !identifier.isEmpty else {
-      let error = SecurityProtocolError.inputError("Identifier cannot be empty")
+      let error=SecurityProtocolError.inputError("Identifier cannot be empty")
       await securityLogger.logOperationFailure(
         keyIdentifier: identifier,
         operation: "retrieve",
@@ -195,16 +195,16 @@ public actor SimpleKeyManagementActor: KeyManagementProtocol {
       )
       return .failure(error)
     }
-    
+
     do {
-      if let key = try await keyStore.getKey(identifier: sanitizeIdentifier(identifier)) {
+      if let key=try await keyStore.getKey(identifier: sanitizeIdentifier(identifier)) {
         await securityLogger.logOperationSuccess(
           keyIdentifier: identifier,
           operation: "retrieve"
         )
         return .success(key)
       } else {
-        let error = SecurityProtocolError.operationFailed("Key not found: \(identifier)")
+        let error=SecurityProtocolError.operationFailed("Key not found: \(identifier)")
         await securityLogger.logOperationFailure(
           keyIdentifier: identifier,
           operation: "retrieve",
@@ -213,7 +213,7 @@ public actor SimpleKeyManagementActor: KeyManagementProtocol {
         return .failure(error)
       }
     } catch {
-      let secError = SecurityProtocolError.operationFailed(reason: error.localizedDescription)
+      let secError=SecurityProtocolError.operationFailed(reason: error.localizedDescription)
       await securityLogger.logOperationFailure(
         keyIdentifier: identifier,
         operation: "retrieve",
@@ -222,16 +222,16 @@ public actor SimpleKeyManagementActor: KeyManagementProtocol {
       return .failure(secError)
     }
   }
-  
+
   public func storeKey(_ key: [UInt8], withIdentifier identifier: String) async
-    -> Result<Void, SecurityProtocolError> {
+  -> Result<Void, SecurityProtocolError> {
     await securityLogger.logOperationStart(
       keyIdentifier: identifier,
       operation: "store"
     )
-    
+
     guard !identifier.isEmpty else {
-      let error = SecurityProtocolError.inputError("Identifier cannot be empty")
+      let error=SecurityProtocolError.inputError("Identifier cannot be empty")
       await securityLogger.logOperationFailure(
         keyIdentifier: identifier,
         operation: "store",
@@ -239,9 +239,9 @@ public actor SimpleKeyManagementActor: KeyManagementProtocol {
       )
       return .failure(error)
     }
-    
+
     guard !key.isEmpty else {
-      let error = SecurityProtocolError.inputError("Key cannot be empty")
+      let error=SecurityProtocolError.inputError("Key cannot be empty")
       await securityLogger.logOperationFailure(
         keyIdentifier: identifier,
         operation: "store",
@@ -249,17 +249,17 @@ public actor SimpleKeyManagementActor: KeyManagementProtocol {
       )
       return .failure(error)
     }
-    
+
     do {
       try await keyStore.storeKey(key, identifier: sanitizeIdentifier(identifier))
-      
+
       await securityLogger.logOperationSuccess(
         keyIdentifier: identifier,
         operation: "store"
       )
       return .success(())
     } catch {
-      let secError = SecurityProtocolError.operationFailed(reason: error.localizedDescription)
+      let secError=SecurityProtocolError.operationFailed(reason: error.localizedDescription)
       await securityLogger.logOperationFailure(
         keyIdentifier: identifier,
         operation: "store",
@@ -268,16 +268,16 @@ public actor SimpleKeyManagementActor: KeyManagementProtocol {
       return .failure(secError)
     }
   }
-  
+
   public func deleteKey(withIdentifier identifier: String) async
-    -> Result<Void, SecurityProtocolError> {
+  -> Result<Void, SecurityProtocolError> {
     await securityLogger.logOperationStart(
       keyIdentifier: identifier,
       operation: "delete"
     )
-    
+
     guard !identifier.isEmpty else {
-      let error = SecurityProtocolError.inputError("Identifier cannot be empty")
+      let error=SecurityProtocolError.inputError("Identifier cannot be empty")
       await securityLogger.logOperationFailure(
         keyIdentifier: identifier,
         operation: "delete",
@@ -285,9 +285,9 @@ public actor SimpleKeyManagementActor: KeyManagementProtocol {
       )
       return .failure(error)
     }
-    
-    let sanitizedIdentifier = sanitizeIdentifier(identifier)
-    
+
+    let sanitizedIdentifier=sanitizeIdentifier(identifier)
+
     do {
       if try await keyStore.containsKey(identifier: sanitizedIdentifier) {
         try await keyStore.deleteKey(identifier: sanitizedIdentifier)
@@ -297,7 +297,7 @@ public actor SimpleKeyManagementActor: KeyManagementProtocol {
         )
         return .success(())
       } else {
-        let error = SecurityProtocolError.operationFailed("Key not found: \(identifier)")
+        let error=SecurityProtocolError.operationFailed("Key not found: \(identifier)")
         await securityLogger.logOperationFailure(
           keyIdentifier: identifier,
           operation: "delete",
@@ -306,7 +306,7 @@ public actor SimpleKeyManagementActor: KeyManagementProtocol {
         return .failure(error)
       }
     } catch {
-      let secError = SecurityProtocolError.operationFailed(reason: error.localizedDescription)
+      let secError=SecurityProtocolError.operationFailed(reason: error.localizedDescription)
       await securityLogger.logOperationFailure(
         keyIdentifier: identifier,
         operation: "delete",
@@ -315,7 +315,7 @@ public actor SimpleKeyManagementActor: KeyManagementProtocol {
       return .failure(secError)
     }
   }
-  
+
   public func rotateKey(
     withIdentifier identifier: String,
     dataToReencrypt: [UInt8]?
@@ -324,9 +324,9 @@ public actor SimpleKeyManagementActor: KeyManagementProtocol {
       keyIdentifier: identifier,
       operation: "rotate"
     )
-    
+
     guard !identifier.isEmpty else {
-      let error = SecurityProtocolError.inputError("Identifier cannot be empty")
+      let error=SecurityProtocolError.inputError("Identifier cannot be empty")
       await securityLogger.logOperationFailure(
         keyIdentifier: identifier,
         operation: "rotate",
@@ -334,31 +334,31 @@ public actor SimpleKeyManagementActor: KeyManagementProtocol {
       )
       return .failure(error)
     }
-    
+
     // Simple implementation - generate new random key
     // In a real implementation, this would use proper key derivation
-    let newKey = generateRandomKey(length: 32) // 256 bits
-    
+    let newKey=generateRandomKey(length: 32) // 256 bits
+
     do {
       // Store the new key
       try await keyStore.storeKey(newKey, identifier: sanitizeIdentifier(identifier))
-      
+
       // Re-encrypt data if provided
-      var reencryptedData: [UInt8]? = nil
-      if let dataToReencrypt = dataToReencrypt {
+      var reencryptedData: [UInt8]?
+      if let dataToReencrypt {
         // Simple implementation - in a real system, this would use proper encryption
         // with the new key
-        reencryptedData = dataToReencrypt
+        reencryptedData=dataToReencrypt
       }
-      
+
       await securityLogger.logOperationSuccess(
         keyIdentifier: identifier,
         operation: "rotate"
       )
-      
+
       return .success((newKey: newKey, reencryptedData: reencryptedData))
     } catch {
-      let secError = SecurityProtocolError.operationFailed(reason: error.localizedDescription)
+      let secError=SecurityProtocolError.operationFailed(reason: error.localizedDescription)
       await securityLogger.logOperationFailure(
         keyIdentifier: identifier,
         operation: "rotate",
@@ -367,31 +367,31 @@ public actor SimpleKeyManagementActor: KeyManagementProtocol {
       return .failure(secError)
     }
   }
-  
+
   public func listKeyIdentifiers() async -> Result<[String], SecurityProtocolError> {
     do {
-      let identifiers = try await keyStore.listKeyIdentifiers()
+      let identifiers=try await keyStore.listKeyIdentifiers()
       return .success(identifiers)
     } catch {
-      let secError = SecurityProtocolError.operationFailed(reason: error.localizedDescription)
+      let secError=SecurityProtocolError.operationFailed(reason: error.localizedDescription)
       return .failure(secError)
     }
   }
-  
+
   // MARK: - Helper Methods
-  
+
   private func sanitizeIdentifier(_ identifier: String) -> String {
     // Basic sanitisation - in a real implementation, this would be more robust
-    return identifier.replacingOccurrences(of: "/", with: "_")
+    identifier.replacingOccurrences(of: "/", with: "_")
       .replacingOccurrences(of: "\\", with: "_")
       .replacingOccurrences(of: ":", with: "_")
   }
-  
+
   private func generateRandomKey(length: Int) -> [UInt8] {
-    var randomBytes = [UInt8](repeating: 0, count: length)
+    var randomBytes=[UInt8](repeating: 0, count: length)
     // In a real implementation, this would use a secure random number generator
     for i in 0..<length {
-      randomBytes[i] = UInt8.random(in: 0...255)
+      randomBytes[i]=UInt8.random(in: 0...255)
     }
     return randomBytes
   }

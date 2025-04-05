@@ -114,7 +114,7 @@ public struct BackupOperationMetadata: Sendable, Equatable {
   public func withAdditional(
     key: String,
     value: String,
-    privacy: LogPrivacy = .private
+    privacy _: LogPrivacy = .private
   ) -> BackupOperationMetadata {
     var newAdditionalInfo=additionalInfo
     newAdditionalInfo[key]=value
@@ -137,7 +137,7 @@ public struct BackupOperationMetadata: Sendable, Equatable {
 
     // Add type-safe metadata with appropriate privacy levels
     for (key, value) in metadata {
-      let privacyLevel = privacyLevelForKey(key)
+      let privacyLevel=privacyLevelForKey(key)
       result[key.rawValue]=value.withPrivacyLevel(privacyLevel)
     }
 

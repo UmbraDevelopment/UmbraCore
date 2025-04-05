@@ -1,9 +1,9 @@
+import Darwin.C
 import FileSystemInterfaces
 import FileSystemTypes
 import Foundation
 import LoggingInterfaces
 import LoggingTypes
-import Darwin.C
 
 /**
  # File System Service Implementation
@@ -43,13 +43,13 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       - logger: The logger to use for recording operations and errors
    */
   public init(
-    fileManager: FileManager = FileManager.default,
+    fileManager: FileManager=FileManager.default,
     operationQueueQoS: QualityOfService = .default,
-    logger: (any LoggingProtocol)? = nil
+    logger: (any LoggingProtocol)?=nil
   ) {
-    self.fileManager = fileManager
-    self.operationQueueQoS = operationQueueQoS
-    self.logger = logger ?? NoLogLogger()
+    self.fileManager=fileManager
+    self.operationQueueQoS=operationQueueQoS
+    self.logger=logger ?? NoLogLogger()
   }
 
   // MARK: - Helper Methods
@@ -63,7 +63,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
    - Parameter path: The path to check
    - Returns: Metadata for the file/directory, or nil if it doesn't exist
    */
-  internal func getBasicFileMetadata(at path: FilePath) async throws -> FileSystemMetadata? {
+  func getBasicFileMetadata(at path: FilePath) async throws -> FileSystemMetadata? {
     guard !path.path.isEmpty else {
       return nil
     }
@@ -77,7 +77,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
 
       // Determine file type - use the FileSystemItemType from FileSystemTypes to avoid ambiguity
       let isDirectory=fileType == FileAttributeType.typeDirectory.rawValue
-      let itemType: FileSystemTypes.FileSystemItemType = isDirectory ? .directory : .file
+      let itemType: FileSystemTypes.FileSystemItemType=isDirectory ? .directory : .file
 
       // Create and return the metadata
       return FileSystemMetadata(
@@ -89,8 +89,10 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       )
     } catch {
       // If the file doesn't exist, return nil instead of throwing an error
-      if (error as NSError).domain == NSCocoaErrorDomain &&
-         (error as NSError).code == NSFileReadNoSuchFileError {
+      if
+        (error as NSError).domain == NSCocoaErrorDomain &&
+        (error as NSError).code == NSFileReadNoSuchFileError
+      {
         return nil
       }
 
@@ -103,29 +105,32 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       throw error
     }
   }
-  
+
   /**
    Implements the getFileMetadata method required by the FileSystemServiceProtocol.
-   
+
    - Parameters:
      - path: The path to the file or directory
      - options: Optional metadata options to control which metadata is retrieved
    - Returns: A FileMetadata object containing the requested metadata
    - Throws: FileSystemError if the metadata cannot be retrieved
    */
-  public func getFileMetadata(at path: FilePath, options: FileMetadataOptions?) async throws -> FileMetadata {
+  public func getFileMetadata(
+    at path: FilePath,
+    options: FileMetadataOptions?
+  ) async throws -> FileMetadata {
     guard !path.path.isEmpty else {
       throw FileSystemInterfaces.FileSystemError.invalidPath(
         path: "",
         reason: "Empty path provided"
       )
     }
-    
+
     do {
-      let url = URL(fileURLWithPath: path.path)
-      
+      let url=URL(fileURLWithPath: path.path)
+
       // Build a set of resource keys to fetch
-      var resourceKeys: Set<URLResourceKey> = [
+      var resourceKeys: Set<URLResourceKey>=[
         .contentModificationDateKey,
         .creationDateKey,
         .fileResourceTypeKey,
@@ -135,23 +140,23 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         .isReadableKey,
         .isWritableKey
       ]
-      
+
       // Add any additional keys requested by the caller
-      if let options = options {
+      if let options {
         for key in options.resourceKeys {
-          if let urlKey = key.toURLResourceKey() {
+          if let urlKey=key.toURLResourceKey() {
             resourceKeys.insert(urlKey)
           }
         }
       }
-      
+
       // Check if the file exists
-      var exists = true
+      var exists=true
       if !fileManager.fileExists(atPath: path.path) {
-        exists = false
-        
+        exists=false
+
         // Create a minimal metadata for non-existent files
-        let emptyAttributes = FileAttributes(
+        let emptyAttributes=FileAttributes(
           size: 0,
           creationDate: Date(),
           modificationDate: Date(),
@@ -164,7 +169,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
           flags: 0,
           safeExtendedAttributes: [:]
         )
-        
+
         return FileMetadata(
           path: path,
           attributes: emptyAttributes,
@@ -172,15 +177,15 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
           exists: false
         )
       }
-      
+
       // Fetch file attributes
-      let attributes = try fileManager.attributesOfItem(atPath: path.path)
-      
+      let attributes=try fileManager.attributesOfItem(atPath: path.path)
+
       // Fetch URL resource values
-      let urlResourceValues = try url.resourceValues(forKeys: resourceKeys)
-      
+      let urlResourceValues=try url.resourceValues(forKeys: resourceKeys)
+
       // Convert attributes to our FileAttributes type
-      let fileAttributes = FileAttributes(
+      let fileAttributes=FileAttributes(
         size: attributes[.size] as? UInt64 ?? 0,
         creationDate: attributes[.creationDate] as? Date ?? Date(),
         modificationDate: attributes[.modificationDate] as? Date ?? Date(),
@@ -190,36 +195,38 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         permissions: attributes[.posixPermissions] as? UInt16 ?? 0,
         fileType: attributes[.type] as? String,
         creator: nil, // Not commonly used
-        flags: 0,     // Not commonly used
+        flags: 0, // Not commonly used
         safeExtendedAttributes: [:] // Will populate below if needed
       )
-      
+
       // Convert URL resource values to our safe dictionary type
-      var safeResourceValues = [FileResourceKey: SafeAttributeValue]()
-      
+      var safeResourceValues=[FileResourceKey: SafeAttributeValue]()
+
       // Convert each resource value
       for key in resourceKeys {
-        if let value = urlResourceValues.allValues[key], 
-           let safeValue = SafeAttributeValue(from: value),
-           let fileKey = FileResourceKey(fromURLResourceKey: key) {
-          safeResourceValues[fileKey] = safeValue
+        if
+          let value=urlResourceValues.allValues[key],
+          let safeValue=SafeAttributeValue(from: value),
+          let fileKey=FileResourceKey(fromURLResourceKey: key)
+        {
+          safeResourceValues[fileKey]=safeValue
         }
       }
-      
+
       // Create and return the file metadata
-      let metadata = FileMetadata(
+      let metadata=FileMetadata(
         path: path,
         attributes: fileAttributes,
         safeResourceValues: safeResourceValues,
         exists: exists
       )
-      
+
       await logger.debug(
         "Retrieved metadata for \(path.path)",
         metadata: nil,
         source: "FileSystemService"
       )
-      
+
       return metadata
     } catch {
       await logger.error(
@@ -227,8 +234,8 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         metadata: nil,
         source: "FileSystemService"
       )
-      
-      if let fsError = error as? FileSystemInterfaces.FileSystemError {
+
+      if let fsError=error as? FileSystemInterfaces.FileSystemError {
         throw fsError
       } else {
         throw FileSystemInterfaces.FileSystemError.readError(
@@ -238,10 +245,10 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       }
     }
   }
-  
+
   /**
    Gets an extended attribute from a file.
-   
+
    - Parameters:
      - path: The file to query
      - attributeName: The name of the extended attribute
@@ -254,48 +261,48 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
   ) async throws -> SafeAttributeValue {
     guard !path.path.isEmpty else {
       throw FileSystemInterfaces.FileSystemError.invalidPath(
-        path: "", 
+        path: "",
         reason: "Empty path provided"
       )
     }
-    
-    let url = URL(fileURLWithPath: path.path)
-    
+
+    let url=URL(fileURLWithPath: path.path)
+
     do {
       // Get the attribute data using the C API
-      var dataSize: Int = 0
-      let result = try url.withUnsafeFileSystemRepresentation { fileSystemPath -> Data in
+      var dataSize=0
+      let result=try url.withUnsafeFileSystemRepresentation { fileSystemPath -> Data in
         // First get the size of the attribute
-        dataSize = getxattr(fileSystemPath, attributeName, nil, 0, 0, 0)
+        dataSize=getxattr(fileSystemPath, attributeName, nil, 0, 0, 0)
         if dataSize == -1 {
           throw FileSystemInterfaces.FileSystemError.readError(
             path: path.path,
             reason: "Failed to get extended attribute size: \(String(cString: strerror(errno)))"
           )
         }
-        
+
         // Now allocate a buffer and read the attribute data
-        var data = Data(count: dataSize)
-        let readResult = data.withUnsafeMutableBytes { buffer in
+        var data=Data(count: dataSize)
+        let readResult=data.withUnsafeMutableBytes { buffer in
           getxattr(fileSystemPath, attributeName, buffer.baseAddress, dataSize, 0, 0)
         }
-        
+
         if readResult == -1 {
           throw FileSystemInterfaces.FileSystemError.readError(
             path: path.path,
             reason: "Failed to read extended attribute: \(String(cString: strerror(errno)))"
           )
         }
-        
+
         return data
       }
-      
+
       // Try to interpret the data as various types
       // First try UTF-8 string
-      if let string = String(data: result, encoding: .utf8) {
+      if let string=String(data: result, encoding: .utf8) {
         return .string(string)
       }
-      
+
       // If not a string, return as raw data
       return .data(result)
     } catch {
@@ -304,8 +311,8 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         metadata: nil,
         source: "FileSystemService"
       )
-      
-      if let fsError = error as? FileSystemInterfaces.FileSystemError {
+
+      if let fsError=error as? FileSystemInterfaces.FileSystemError {
         throw fsError
       } else {
         throw FileSystemInterfaces.FileSystemError.readError(
@@ -315,10 +322,10 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       }
     }
   }
-  
+
   /**
    Sets an extended attribute on a file.
-   
+
    - Parameters:
      - path: The file to modify
      - attributeName: The name of the extended attribute
@@ -332,25 +339,25 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
   ) async throws {
     guard !path.path.isEmpty else {
       throw FileSystemInterfaces.FileSystemError.invalidPath(
-        path: "", 
+        path: "",
         reason: "Empty path provided"
       )
     }
-    
-    let url = URL(fileURLWithPath: path.path)
-    
+
+    let url=URL(fileURLWithPath: path.path)
+
     // Convert the SafeAttributeValue to Data
-    guard let data = self.convertSafeAttributeToData(attributeValue) else {
+    guard let data=convertSafeAttributeToData(attributeValue) else {
       throw FileSystemInterfaces.FileSystemError.writeError(
         path: path.path,
         reason: "Cannot convert attribute value to data"
       )
     }
-    
+
     do {
       // Set the attribute using the C API
       try url.withUnsafeFileSystemRepresentation { fileSystemPath in
-        let result = setxattr(
+        let result=setxattr(
           fileSystemPath,
           attributeName,
           [UInt8](data),
@@ -358,7 +365,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
           0,
           0
         )
-        
+
         if result != 0 {
           throw FileSystemInterfaces.FileSystemError.writeError(
             path: path.path,
@@ -366,7 +373,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
           )
         }
       }
-      
+
       await logger.debug(
         "Set extended attribute \(attributeName) for \(path.path)",
         metadata: nil,
@@ -378,8 +385,8 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         metadata: nil,
         source: "FileSystemService"
       )
-      
-      if let fsError = error as? FileSystemInterfaces.FileSystemError {
+
+      if let fsError=error as? FileSystemInterfaces.FileSystemError {
         throw fsError
       } else {
         throw FileSystemInterfaces.FileSystemError.writeError(
@@ -389,47 +396,47 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       }
     }
   }
-  
+
   /**
    Converts a SafeAttributeValue to Data for use with extended attributes.
-   
+
    - Parameter value: The SafeAttributeValue to convert
    - Returns: Data representation if possible, nil otherwise
    */
   private func convertSafeAttributeToData(_ value: SafeAttributeValue) -> Data? {
     switch value {
-    case .string(let strValue):
-      return strValue.data(using: .utf8)
-    case .int(let intValue):
-      return withUnsafeBytes(of: intValue) { Data($0) }
-    case .uint(let uintValue):
-      return withUnsafeBytes(of: uintValue) { Data($0) }
-    case .int64(let int64Value):
-      return withUnsafeBytes(of: int64Value) { Data($0) }
-    case .uint64(let uint64Value):
-      return withUnsafeBytes(of: uint64Value) { Data($0) }
-    case .bool(let boolValue):
-      return withUnsafeBytes(of: boolValue) { Data($0) }
-    case .date(let dateValue):
-      return withUnsafeBytes(of: dateValue.timeIntervalSince1970) { Data($0) }
-    case .double(let doubleValue):
-      return withUnsafeBytes(of: doubleValue) { Data($0) }
-    case .data(let dataValue):
-      return dataValue
-    case .url(let urlValue):
-      return urlValue.absoluteString.data(using: .utf8)
-    case .array, .dictionary:
-      // These would need more complex serialization (e.g., JSON)
-      do {
-        let encoder = JSONEncoder()
-        let data = try encoder.encode(String(describing: value))
-        return data
-      } catch {
-        return nil
-      }
+      case let .string(strValue):
+        return strValue.data(using: .utf8)
+      case let .int(intValue):
+        return withUnsafeBytes(of: intValue) { Data($0) }
+      case let .uint(uintValue):
+        return withUnsafeBytes(of: uintValue) { Data($0) }
+      case let .int64(int64Value):
+        return withUnsafeBytes(of: int64Value) { Data($0) }
+      case let .uint64(uint64Value):
+        return withUnsafeBytes(of: uint64Value) { Data($0) }
+      case let .bool(boolValue):
+        return withUnsafeBytes(of: boolValue) { Data($0) }
+      case let .date(dateValue):
+        return withUnsafeBytes(of: dateValue.timeIntervalSince1970) { Data($0) }
+      case let .double(doubleValue):
+        return withUnsafeBytes(of: doubleValue) { Data($0) }
+      case let .data(dataValue):
+        return dataValue
+      case let .url(urlValue):
+        return urlValue.absoluteString.data(using: .utf8)
+      case .array, .dictionary:
+        // These would need more complex serialization (e.g., JSON)
+        do {
+          let encoder=JSONEncoder()
+          let data=try encoder.encode(String(describing: value))
+          return data
+        } catch {
+          return nil
+        }
     }
   }
-  
+
   /**
    Checks if a file exists at the specified path.
 
@@ -637,7 +644,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
 
   /**
    Reads a file and returns its contents as Data.
-   
+
    - Parameter path: The path to the file to read
    - Returns: The file contents as Data
    - Throws: FileSystemError if the file cannot be read
@@ -651,14 +658,14 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
     }
 
     do {
-      let data = try Data(contentsOf: URL(fileURLWithPath: path.path))
-      
+      let data=try Data(contentsOf: URL(fileURLWithPath: path.path))
+
       await logger.debug(
         "Read \(data.count) bytes from \(path.path)",
         metadata: PrivacyMetadata(),
         source: "FileSystemService"
       )
-      
+
       return data
     } catch {
       await logger.error(
@@ -675,7 +682,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
 
   /**
    Implements directoryExists method required by the protocol.
-   
+
    - Parameter path: The path to check
    - Returns: True if the path exists and is a directory
    - Throws: FileSystemError if the check fails
@@ -687,10 +694,10 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         reason: "Empty path provided"
       )
     }
-    
-    var isDirectory: ObjCBool = false
-    let exists = fileManager.fileExists(atPath: path.path, isDirectory: &isDirectory)
-    
+
+    var isDirectory: ObjCBool=false
+    let exists=fileManager.fileExists(atPath: path.path, isDirectory: &isDirectory)
+
     if !exists {
       throw FileSystemInterfaces.FileSystemError.pathNotFound(path: path.path)
     }
@@ -708,7 +715,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
 
   /**
    Lists directory contents recursively.
-   
+
    - Parameters:
      - path: The directory path to list
      - includeHidden: Whether to include hidden files
@@ -725,37 +732,40 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         reason: "Empty path provided"
       )
     }
-    
+
     do {
-      let url = URL(fileURLWithPath: path.path)
-      let contents = try fileManager.contentsOfDirectory(
+      let url=URL(fileURLWithPath: path.path)
+      let contents=try fileManager.contentsOfDirectory(
         at: url,
         includingPropertiesForKeys: [.isDirectoryKey],
         options: includeHidden ? [] : [.skipsHiddenFiles]
       )
-      
-      var results: [FilePath] = []
-      
+
+      var results: [FilePath]=[]
+
       for fileURL in contents {
-        let relativePath = fileURL.path.replacingOccurrences(of: url.path, with: "")
-        let filePath = FilePath(path: relativePath.hasPrefix("/") ? String(relativePath.dropFirst()) : relativePath)
+        let relativePath=fileURL.path.replacingOccurrences(of: url.path, with: "")
+        let filePath=FilePath(
+          path: relativePath
+            .hasPrefix("/") ? String(relativePath.dropFirst()) : relativePath
+        )
         results.append(filePath)
-        
+
         // If it's a directory, recursively list its contents
-        let resourceValues = try fileURL.resourceValues(forKeys: [.isDirectoryKey])
-        if let isDirectory = resourceValues.isDirectory, isDirectory {
-          let subpaths = try await listDirectoryRecursive(
+        let resourceValues=try fileURL.resourceValues(forKeys: [.isDirectoryKey])
+        if let isDirectory=resourceValues.isDirectory, isDirectory {
+          let subpaths=try await listDirectoryRecursive(
             at: FilePath(path: fileURL.path),
             includeHidden: includeHidden
           )
-          
+
           for subpath in subpaths {
-            let combinedPath = FilePath(path: "\(relativePath)/\(subpath.path)")
+            let combinedPath=FilePath(path: "\(relativePath)/\(subpath.path)")
             results.append(combinedPath)
           }
         }
       }
-      
+
       return results
     } catch {
       throw FileSystemInterfaces.FileSystemError.readError(
@@ -767,7 +777,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
 
   /**
    Creates a file with the given data.
-   
+
    - Parameters:
      - path: The path to create the file at
      - data: The data to write to the file
@@ -785,14 +795,14 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         reason: "Empty path provided"
       )
     }
-    
+
     if !overwrite && fileManager.fileExists(atPath: path.path) {
       throw FileSystemInterfaces.FileSystemError.pathAlreadyExists(path: path.path)
     }
-    
+
     do {
       try data.write(to: URL(fileURLWithPath: path.path))
-      
+
       await logger.debug(
         "Created file at \(path.path) with \(data.count) bytes",
         metadata: PrivacyMetadata(),
@@ -808,7 +818,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
 
   /**
    Updates an existing file with new data.
-   
+
    - Parameters:
      - path: The path of the file to update
      - data: The new data to write
@@ -824,14 +834,14 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         reason: "Empty path provided"
       )
     }
-    
+
     if !fileManager.fileExists(atPath: path.path) {
       throw FileSystemInterfaces.FileSystemError.pathNotFound(path: path.path)
     }
-    
+
     do {
       try data.write(to: URL(fileURLWithPath: path.path))
-      
+
       await logger.debug(
         "Updated file at \(path.path) with \(data.count) bytes",
         metadata: PrivacyMetadata(),
@@ -847,7 +857,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
 
   /**
    Deletes a file.
-   
+
    - Parameters:
      - path: The path of the file to delete
      - secure: Whether to use secure deletion
@@ -863,13 +873,13 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         reason: "Empty path provided"
       )
     }
-    
+
     // Check if it's a file
-    var isDirectory: ObjCBool = false
+    var isDirectory: ObjCBool=false
     if !fileManager.fileExists(atPath: path.path, isDirectory: &isDirectory) {
       throw FileSystemInterfaces.FileSystemError.pathNotFound(path: path.path)
     }
-    
+
     if isDirectory.boolValue {
       throw FileSystemInterfaces.FileSystemError.unexpectedItemType(
         path: path.path,
@@ -877,22 +887,22 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         actual: "directory"
       )
     }
-    
+
     do {
       if secure {
         // Secure deletion: overwrite with random data before deleting
-        let fileSize = try fileManager.attributesOfItem(atPath: path.path)[.size] as? UInt64 ?? 0
+        let fileSize=try fileManager.attributesOfItem(atPath: path.path)[.size] as? UInt64 ?? 0
         if fileSize > 0 {
-          var randomData = Data(count: Int(fileSize))
-          _ = randomData.withUnsafeMutableBytes { bytes in
+          var randomData=Data(count: Int(fileSize))
+          _=randomData.withUnsafeMutableBytes { bytes in
             SecRandomCopyBytes(kSecRandomDefault, bytes.count, bytes.baseAddress!)
           }
           try randomData.write(to: URL(fileURLWithPath: path.path))
         }
       }
-      
+
       try fileManager.removeItem(atPath: path.path)
-      
+
       await logger.debug(
         "Deleted file at \(path.path) (secure: \(secure))",
         metadata: PrivacyMetadata(),
@@ -908,7 +918,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
 
   /**
    Deletes a directory.
-   
+
    - Parameters:
      - path: The path of the directory to delete
      - secure: Whether to use secure deletion for files in the directory
@@ -924,13 +934,13 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         reason: "Empty path provided"
       )
     }
-    
+
     // Check if it's a directory
-    var isDirectory: ObjCBool = false
+    var isDirectory: ObjCBool=false
     if !fileManager.fileExists(atPath: path.path, isDirectory: &isDirectory) {
       throw FileSystemInterfaces.FileSystemError.pathNotFound(path: path.path)
     }
-    
+
     if !isDirectory.boolValue {
       throw FileSystemInterfaces.FileSystemError.unexpectedItemType(
         path: path.path,
@@ -938,14 +948,14 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         actual: "file"
       )
     }
-    
+
     do {
       if secure {
         // For secure deletion, first delete each file securely
-        let contents = try fileManager.contentsOfDirectory(atPath: path.path)
+        let contents=try fileManager.contentsOfDirectory(atPath: path.path)
         for item in contents {
-          let itemPath = FilePath(path: "\(path.path)/\(item)")
-          var isItemDirectory: ObjCBool = false
+          let itemPath=FilePath(path: "\(path.path)/\(item)")
+          var isItemDirectory: ObjCBool=false
           if fileManager.fileExists(atPath: itemPath.path, isDirectory: &isItemDirectory) {
             if isItemDirectory.boolValue {
               try await deleteDirectory(at: itemPath, secure: true)
@@ -955,9 +965,9 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
           }
         }
       }
-      
+
       try fileManager.removeItem(atPath: path.path)
-      
+
       await logger.debug(
         "Deleted directory at \(path.path) (secure: \(secure))",
         metadata: PrivacyMetadata(),
@@ -973,7 +983,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
 
   /**
    Copies an item (file or directory).
-   
+
    - Parameters:
      - sourcePath: The source path
      - destinationPath: The destination path
@@ -991,27 +1001,27 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         reason: "Empty path provided"
       )
     }
-    
+
     if !fileManager.fileExists(atPath: sourcePath.path) {
       throw FileSystemInterfaces.FileSystemError.pathNotFound(path: sourcePath.path)
     }
-    
+
     if fileManager.fileExists(atPath: destinationPath.path) && !overwrite {
       throw FileSystemInterfaces.FileSystemError.pathAlreadyExists(
         path: destinationPath.path
       )
     }
-    
+
     do {
       if fileManager.fileExists(atPath: destinationPath.path) {
         try fileManager.removeItem(atPath: destinationPath.path)
       }
-      
+
       try fileManager.copyItem(
         atPath: sourcePath.path,
         toPath: destinationPath.path
       )
-      
+
       await logger.debug(
         "Copied item from \(sourcePath.path) to \(destinationPath.path)",
         metadata: PrivacyMetadata(),
@@ -1028,7 +1038,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
 
   /**
    Converts a FilePath to a URL.
-   
+
    - Parameter path: The path to convert
    - Returns: The equivalent URL
    - Throws: FileSystemError if the conversion fails
@@ -1040,13 +1050,13 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         reason: "Empty path provided"
       )
     }
-    
+
     return URL(fileURLWithPath: path.path)
   }
 
   /**
    Removes an extended attribute from a file.
-   
+
    - Parameters:
      - path: The file path
      - attributeName: The name of the attribute to remove
@@ -1062,20 +1072,20 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         reason: "Empty path provided"
       )
     }
-    
+
     if !fileManager.fileExists(atPath: path.path) {
       throw FileSystemInterfaces.FileSystemError.pathNotFound(path: path.path)
     }
-    
+
     do {
-      guard let fileSystemPath = (path.path as NSString).utf8String else {
+      guard let fileSystemPath=(path.path as NSString).utf8String else {
         throw FileSystemInterfaces.FileSystemError.invalidPath(
           path: path.path,
           reason: "Could not convert path to C string"
         )
       }
-      
-      let result = removexattr(fileSystemPath, attributeName, 0)
+
+      let result=removexattr(fileSystemPath, attributeName, 0)
       if result != 0 {
         throw FileSystemInterfaces.FileSystemError.extendedAttributeError(
           path: path.path,
@@ -1084,7 +1094,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
           reason: "Failed to remove attribute: \(String(cString: strerror(errno)))"
         )
       }
-      
+
       await logger.debug(
         "Removed extended attribute '\(attributeName)' from \(path.path)",
         metadata: PrivacyMetadata(),
@@ -1104,7 +1114,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
 
   /**
    Creates a security-scoped bookmark for the given file path.
-   
+
    - Parameters:
      - path: The path to create a bookmark for
      - readOnly: Whether the bookmark should be read-only
@@ -1121,21 +1131,21 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         reason: "Empty path provided"
       )
     }
-    
+
     do {
-      let url = URL(fileURLWithPath: path.path)
-      let bookmarkData = try url.bookmarkData(
+      let url=URL(fileURLWithPath: path.path)
+      let bookmarkData=try url.bookmarkData(
         options: [.withSecurityScope, readOnly ? .securityScopeAllowOnlyReadAccess : []],
         includingResourceValuesForKeys: nil,
         relativeTo: nil
       )
-      
+
       await logger.debug(
         "Created security bookmark for \(path.path) (readOnly: \(readOnly))",
         metadata: PrivacyMetadata(),
         source: "FileSystemService"
       )
-      
+
       return bookmarkData
     } catch {
       throw FileSystemInterfaces.FileSystemError.unknown(
@@ -1143,10 +1153,10 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       )
     }
   }
-  
+
   /**
    Resolves a security-scoped bookmark to a file path.
-   
+
    - Parameter bookmark: The bookmark data to resolve
    - Returns: The file path and whether it is stale
    - Throws: FileSystemError if the bookmark cannot be resolved
@@ -1155,22 +1165,22 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
     _ bookmark: Data
   ) async throws -> (FilePath, Bool) {
     do {
-      var isStale = false
-      let url = try URL(
+      var isStale=false
+      let url=try URL(
         resolvingBookmarkData: bookmark,
         options: .withSecurityScope,
         relativeTo: nil,
         bookmarkDataIsStale: &isStale
       )
-      
-      let path = FilePath(path: url.path)
-      
+
+      let path=FilePath(path: url.path)
+
       await logger.debug(
         "Resolved security bookmark to \(path.path) (stale: \(isStale))",
         metadata: PrivacyMetadata(),
         source: "FileSystemService"
       )
-      
+
       return (path, isStale)
     } catch {
       throw FileSystemInterfaces.FileSystemError.unknown(
@@ -1178,10 +1188,10 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       )
     }
   }
-  
+
   /**
    Starts accessing a security-scoped resource.
-   
+
    - Parameter path: The path to start accessing
    - Returns: Whether access was successfully started
    - Throws: FileSystemError if access cannot be started
@@ -1195,22 +1205,22 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         reason: "Empty path provided"
       )
     }
-    
-    let url = URL(fileURLWithPath: path.path)
-    let success = url.startAccessingSecurityScopedResource()
-    
+
+    let url=URL(fileURLWithPath: path.path)
+    let success=url.startAccessingSecurityScopedResource()
+
     await logger.debug(
       "Started accessing security-scoped resource at \(path.path): \(success)",
       metadata: PrivacyMetadata(),
       source: "FileSystemService"
     )
-    
+
     return success
   }
-  
+
   /**
    Stops accessing a security-scoped resource.
-   
+
    - Parameter path: The path to stop accessing
    */
   public func stopAccessingSecurityScopedResource(
@@ -1219,20 +1229,20 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
     guard !path.path.isEmpty else {
       return
     }
-    
-    let url = URL(fileURLWithPath: path.path)
+
+    let url=URL(fileURLWithPath: path.path)
     url.stopAccessingSecurityScopedResource()
-    
+
     await logger.debug(
       "Stopped accessing security-scoped resource at \(path.path)",
       metadata: PrivacyMetadata(),
       source: "FileSystemService"
     )
   }
-  
+
   /**
    Creates a temporary file.
-   
+
    - Parameters:
      - prefix: Optional prefix for the filename
      - suffix: Optional suffix for the filename
@@ -1246,38 +1256,38 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
     options: TemporaryFileOptions?
   ) async throws -> FilePath {
     do {
-      let tempDir = try fileManager.url(
+      let tempDir=try fileManager.url(
         for: .itemReplacementDirectory,
         in: .userDomainMask,
         appropriateFor: URL(fileURLWithPath: NSHomeDirectory()),
         create: true
       )
-      
-      let fileName = [
+
+      let fileName=[
         prefix ?? "temp",
         UUID().uuidString,
         suffix ?? ""
       ].compactMap { $0.isEmpty ? nil : $0 }.joined()
-      
-      let fileURL = tempDir.appendingPathComponent(fileName)
-      
+
+      let fileURL=tempDir.appendingPathComponent(fileName)
+
       // Create an empty file
       fileManager.createFile(atPath: fileURL.path, contents: nil)
-      
+
       // Set attributes if specified
-      if let options = options, let attributes = options.attributes {
+      if let options, let attributes=options.attributes {
         try fileManager.setAttributes(
           attributes.toDictionary(),
           ofItemAtPath: fileURL.path
         )
       }
-      
+
       await logger.debug(
         "Created temporary file at \(fileURL.path)",
         metadata: PrivacyMetadata(),
         source: "FileSystemService"
       )
-      
+
       return FilePath(path: fileURL.path)
     } catch {
       throw FileSystemInterfaces.FileSystemError.unknown(
@@ -1285,10 +1295,10 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       )
     }
   }
-  
+
   /**
    Creates a temporary directory.
-   
+
    - Parameters:
      - prefix: Optional prefix for the directory name
      - options: Optional temporary file options
@@ -1300,32 +1310,32 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
     options: TemporaryFileOptions?
   ) async throws -> FilePath {
     do {
-      let tempDir = try fileManager.url(
+      let tempDir=try fileManager.url(
         for: .itemReplacementDirectory,
         in: .userDomainMask,
         appropriateFor: URL(fileURLWithPath: NSHomeDirectory()),
         create: true
       )
-      
-      let dirName = [
+
+      let dirName=[
         prefix ?? "temp",
         UUID().uuidString
       ].compactMap { $0.isEmpty ? nil : $0 }.joined(separator: "-")
-      
-      let dirURL = tempDir.appendingPathComponent(dirName)
-      
+
+      let dirURL=tempDir.appendingPathComponent(dirName)
+
       try fileManager.createDirectory(
         at: dirURL,
         withIntermediateDirectories: true,
         attributes: options?.attributes?.toDictionary()
       )
-      
+
       await logger.debug(
         "Created temporary directory at \(dirURL.path)",
         metadata: PrivacyMetadata(),
         source: "FileSystemService"
       )
-      
+
       return FilePath(path: dirURL.path)
     } catch {
       throw FileSystemInterfaces.FileSystemError.unknown(
@@ -1340,24 +1350,24 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
 extension FileAttributes {
   /// Convert FileAttributes to a Dictionary suitable for FileManager APIs
   func toDictionary() -> [FileAttributeKey: Any] {
-    var result: [FileAttributeKey: Any] = [:]
-    
-    result[.size] = size
-    result[.creationDate] = creationDate
-    result[.modificationDate] = modificationDate
-    
-    if let accessDate = accessDate {
-      result[.modificationDate] = accessDate
+    var result: [FileAttributeKey: Any]=[:]
+
+    result[.size]=size
+    result[.creationDate]=creationDate
+    result[.modificationDate]=modificationDate
+
+    if let accessDate {
+      result[.modificationDate]=accessDate
     }
-    
-    result[.posixPermissions] = permissions
-    result[.ownerAccountID] = ownerID
-    result[.groupOwnerAccountID] = groupID
-    
-    if let fileType = fileType {
-      result[.type] = fileType
+
+    result[.posixPermissions]=permissions
+    result[.ownerAccountID]=ownerID
+    result[.groupOwnerAccountID]=groupID
+
+    if let fileType {
+      result[.type]=fileType
     }
-    
+
     return result
   }
 }

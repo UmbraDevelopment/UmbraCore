@@ -2,7 +2,7 @@ import LoggingTypes
 
 /// A thread-safe actor that manages logging operations
 /// This is the primary entry point for the actor-based logging system
-public actor LoggingActor: Sendable {
+public actor LoggingActor {
   /// Collection of log destinations
   private var destinations: [any ActorLogDestination]
 

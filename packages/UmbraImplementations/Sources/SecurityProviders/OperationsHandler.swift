@@ -204,9 +204,9 @@ final class OperationsHandler {
         // Perform encryption with the key and data
         return await resultToDTO(
           convertStorageResult(
-            await cryptoService.encrypt(
-              dataIdentifier: await importDataForOperation([UInt8](inputData)),
-              keyIdentifier: await importDataForOperation(key),
+            cryptoService.encrypt(
+              dataIdentifier: importDataForOperation([UInt8](inputData)),
+              keyIdentifier: importDataForOperation(key),
               options: EncryptionOptions(algorithm: .aes128CBC)
             )
           ),
@@ -250,9 +250,9 @@ final class OperationsHandler {
         // Perform decryption with the key and data
         return await resultToDTO(
           convertStorageResult(
-            await cryptoService.decrypt(
-              encryptedDataIdentifier: await importDataForOperation([UInt8](inputData)),
-              keyIdentifier: await importDataForOperation(key),
+            cryptoService.decrypt(
+              encryptedDataIdentifier: importDataForOperation([UInt8](inputData)),
+              keyIdentifier: importDataForOperation(key),
               options: DecryptionOptions(algorithm: .aes128CBC)
             )
           ),
@@ -291,8 +291,8 @@ final class OperationsHandler {
     // Perform hashing
     return await resultToDTO(
       convertStorageResult(
-        await cryptoService.hash(
-          dataIdentifier: await importDataForOperation([UInt8](inputData)),
+        cryptoService.hash(
+          dataIdentifier: importDataForOperation([UInt8](inputData)),
           options: HashingOptions(algorithm: .sha256)
         )
       ),
@@ -310,7 +310,10 @@ final class OperationsHandler {
       return .success(Array(key))
     } else if config.options?.metadata?["key"] != nil {
       // Key is present but not valid base64
-      return .failure(CoreSecurityTypes.SecurityProtocolError.invalidMessageFormat(details: "Invalid key format"))
+      return .failure(
+        CoreSecurityTypes.SecurityProtocolError
+          .invalidMessageFormat(details: "Invalid key format")
+      )
     }
 
     // Check if a key identifier is provided
@@ -325,63 +328,69 @@ final class OperationsHandler {
           // Key not found or other error
           // Fall through to the error case
           return .failure(
-            CoreSecurityTypes.SecurityProtocolError.invalidMessageFormat(details: "Key not found: \(keyID)")
+            CoreSecurityTypes.SecurityProtocolError
+              .invalidMessageFormat(details: "Key not found: \(keyID)")
           )
       }
     }
 
     // No key provided or found
-    return .failure(CoreSecurityTypes.SecurityProtocolError.invalidMessageFormat(details: "No key provided for operation"))
+    return .failure(
+      CoreSecurityTypes.SecurityProtocolError
+        .invalidMessageFormat(details: "No key provided for operation")
+    )
   }
 
   /**
    Converts a SecurityStorageError to a SecurityProtocolError.
    This is needed because the CryptoServiceProtocol now uses SecurityStorageError.
-   
+
    - Parameter storageError: The storage error to convert
    - Returns: An equivalent protocol error
    */
-  private func convertStorageErrorToProtocolError(_ storageError: SecurityStorageError) -> CoreSecurityTypes.SecurityProtocolError {
+  private func convertStorageErrorToProtocolError(_ storageError: SecurityStorageError)
+  -> CoreSecurityTypes.SecurityProtocolError {
     switch storageError {
-    case .storageUnavailable:
-      return .operationFailed("Secure storage is not available")
-    case .dataNotFound:
-      return .operationFailed("Data not found in secure storage")
-    case .keyNotFound:
-      return .operationFailed("Key not found in secure storage")
-    case .hashNotFound:
-      return .operationFailed("Hash not found in secure storage")
-    case .encryptionFailed:
-      return .operationFailed("Encryption operation failed")
-    case .decryptionFailed:
-      return .operationFailed("Decryption operation failed")
-    case .hashingFailed:
-      return .operationFailed("Hashing operation failed")
-    case .hashVerificationFailed:
-      return .operationFailed("Hash verification failed")
-    case .keyGenerationFailed:
-      return .operationFailed("Key generation failed")
-    case .unsupportedOperation:
-      return .operationFailed("The operation is not supported")
-    case .implementationUnavailable:
-      return .operationFailed("The protocol implementation is not available")
-    case .operationFailed(let message):
-      return .operationFailed(reason: message)
+      case .storageUnavailable:
+        .operationFailed("Secure storage is not available")
+      case .dataNotFound:
+        .operationFailed("Data not found in secure storage")
+      case .keyNotFound:
+        .operationFailed("Key not found in secure storage")
+      case .hashNotFound:
+        .operationFailed("Hash not found in secure storage")
+      case .encryptionFailed:
+        .operationFailed("Encryption operation failed")
+      case .decryptionFailed:
+        .operationFailed("Decryption operation failed")
+      case .hashingFailed:
+        .operationFailed("Hashing operation failed")
+      case .hashVerificationFailed:
+        .operationFailed("Hash verification failed")
+      case .keyGenerationFailed:
+        .operationFailed("Key generation failed")
+      case .unsupportedOperation:
+        .operationFailed("The operation is not supported")
+      case .implementationUnavailable:
+        .operationFailed("The protocol implementation is not available")
+      case let .operationFailed(message):
+        .operationFailed(reason: message)
     }
   }
-  
+
   /**
    Converts a Result with SecurityStorageError to a Result with SecurityProtocolError.
-   
+
    - Parameter result: The storage result to convert
    - Returns: An equivalent result with protocol error
    */
-  private func convertStorageResult<T>(_ result: Result<T, SecurityStorageError>) -> Result<T, CoreSecurityTypes.SecurityProtocolError> {
+  private func convertStorageResult<T>(_ result: Result<T, SecurityStorageError>)
+  -> Result<T, CoreSecurityTypes.SecurityProtocolError> {
     switch result {
-    case .success(let value):
-      return .success(value)
-    case .failure(let error):
-      return .failure(convertStorageErrorToProtocolError(error))
+      case let .success(value):
+        .success(value)
+      case let .failure(error):
+        .failure(convertStorageErrorToProtocolError(error))
     }
   }
 }

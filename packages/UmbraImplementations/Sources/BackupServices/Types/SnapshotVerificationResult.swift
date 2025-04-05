@@ -1,5 +1,5 @@
-import Foundation
 import BackupInterfaces
+import Foundation
 
 /**
  * Result of a snapshot verification operation.
@@ -10,19 +10,19 @@ import BackupInterfaces
 public struct SnapshotVerificationResult: Sendable, Equatable {
   /// Whether the verification completed successfully
   public let verified: Bool
-  
+
   /// The total number of objects verified
   public let objectsVerified: Int
-  
+
   /// The total size of verified data in bytes
   public let bytesVerified: UInt64
-  
+
   /// List of errors encountered during verification
   public let errors: [VerificationError]
-  
+
   /// Summary of automatic repairs (if enabled)
   public let repairSummary: RepairSummaryResult?
-  
+
   /**
    * Creates a new verification result.
    *
@@ -40,11 +40,11 @@ public struct SnapshotVerificationResult: Sendable, Equatable {
     errors: [VerificationError],
     repairSummary: RepairSummaryResult?
   ) {
-    self.verified = verified
-    self.objectsVerified = objectsVerified
-    self.bytesVerified = bytesVerified
-    self.errors = errors
-    self.repairSummary = repairSummary
+    self.verified=verified
+    self.objectsVerified=objectsVerified
+    self.bytesVerified=bytesVerified
+    self.errors=errors
+    self.repairSummary=repairSummary
   }
 }
 
@@ -54,16 +54,16 @@ public struct SnapshotVerificationResult: Sendable, Equatable {
 public struct VerificationError: Sendable, Equatable {
   /// Type of the error
   public let type: String
-  
+
   /// Path to the affected object
   public let path: String
-  
+
   /// Error message
   public let message: String
-  
+
   /// Whether the error was repaired
   public let repaired: Bool
-  
+
   /**
    * Creates a new verification error.
    *
@@ -77,12 +77,12 @@ public struct VerificationError: Sendable, Equatable {
     type: String,
     path: String,
     message: String,
-    repaired: Bool = false
+    repaired: Bool=false
   ) {
-    self.type = type
-    self.path = path
-    self.message = message
-    self.repaired = repaired
+    self.type=type
+    self.path=path
+    self.message=message
+    self.repaired=repaired
   }
 }
 
@@ -92,13 +92,13 @@ public struct VerificationError: Sendable, Equatable {
 public struct RepairSummaryResult: Sendable, Equatable {
   /// Number of successful repairs
   public let repairsSuccessful: Int
-  
+
   /// Number of failed repairs
   public let repairsFailed: Int
-  
+
   /// List of repair actions
   public let repairs: [RepairResult]
-  
+
   /**
    * Creates a new repair summary.
    *
@@ -112,9 +112,9 @@ public struct RepairSummaryResult: Sendable, Equatable {
     repairsFailed: Int,
     repairs: [RepairResult]
   ) {
-    self.repairsSuccessful = repairsSuccessful
-    self.repairsFailed = repairsFailed
-    self.repairs = repairs
+    self.repairsSuccessful=repairsSuccessful
+    self.repairsFailed=repairsFailed
+    self.repairs=repairs
   }
 }
 
@@ -124,16 +124,16 @@ public struct RepairSummaryResult: Sendable, Equatable {
 public struct RepairResult: Sendable, Equatable {
   /// Type of repair performed
   public let type: String
-  
+
   /// Path to the repaired object
   public let path: String
-  
+
   /// Description of the repair
   public let description: String
-  
+
   /// Whether the repair was successful
   public let successful: Bool
-  
+
   /**
    * Creates a new repair result.
    *
@@ -149,9 +149,9 @@ public struct RepairResult: Sendable, Equatable {
     description: String,
     successful: Bool
   ) {
-    self.type = type
-    self.path = path
-    self.description = description
-    self.successful = successful
+    self.type=type
+    self.path=path
+    self.description=description
+    self.successful=successful
   }
 }

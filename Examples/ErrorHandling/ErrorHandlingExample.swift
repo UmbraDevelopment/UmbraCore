@@ -44,8 +44,7 @@ public class ErrorHandlingExample {
   private final class SampleRecoveryProvider: ErrorHandlingInterfaces.RecoveryOptionsProvider {
     /// Provides recovery options for security errors
     public func recoveryOptions(for error: some Error)
-      -> [any ErrorHandlingInterfaces.RecoveryOption]
-    {
+    -> [any ErrorHandlingInterfaces.RecoveryOption] {
       // Map to security error if possible
       if let securityError=error as? SecurityCoreErrorWrapper {
         // Provide different recovery options based on error type

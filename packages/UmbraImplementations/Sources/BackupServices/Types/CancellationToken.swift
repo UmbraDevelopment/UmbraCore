@@ -13,18 +13,18 @@ public actor BackupOperationCancellationToken: BackupCancellationToken {
   public let id: String
 
   /// Whether the operation has been cancelled
-  private var cancelled: Bool = false
+  private var cancelled: Bool=false
 
   /// Callbacks to be executed when the operation is cancelled
-  private var cancellationCallbacks: [() -> Void] = []
+  private var cancellationCallbacks: [() -> Void]=[]
 
   /**
    * Initialises a new cancellation token.
    *
    * - Parameter id: Optional unique identifier for this token
    */
-  public init(id: String = UUID().uuidString) {
-    self.id = id
+  public init(id: String=UUID().uuidString) {
+    self.id=id
   }
 
   /**
@@ -37,7 +37,7 @@ public actor BackupOperationCancellationToken: BackupCancellationToken {
    */
   public var isCancelled: Bool {
     get async {
-      return cancelled
+      cancelled
     }
   }
 
@@ -48,7 +48,7 @@ public actor BackupOperationCancellationToken: BackupCancellationToken {
    */
   public func cancel() async {
     if !cancelled {
-      cancelled = true
+      cancelled=true
 
       // Execute all cancellation callbacks
       for callback in cancellationCallbacks {
@@ -56,7 +56,7 @@ public actor BackupOperationCancellationToken: BackupCancellationToken {
       }
 
       // Clear callbacks after execution
-      cancellationCallbacks = []
+      cancellationCallbacks=[]
     }
   }
 

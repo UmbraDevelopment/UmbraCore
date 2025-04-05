@@ -19,7 +19,8 @@ import UmbraErrors
 /// # Thread Safety
 /// All mutable state is properly isolated within the actor.
 /// All methods use Swift's structured concurrency for safe asynchronous operations.
-@preconcurrency public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
+@preconcurrency
+public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
   // MARK: - Private Properties
 
   /// The logger for this service - optional
@@ -40,9 +41,9 @@ import UmbraErrors
   /// - Parameter logger: Optional domain logger
   public init(logger: LoggingInterfaces.DomainLogger?=nil) {
     self.logger=logger
-    self.sources=[]
-    self.configurationCache=[:]
-    self.changeContinuations=[:]
+    sources=[]
+    configurationCache=[:]
+    changeContinuations=[:]
   }
 
   // MARK: - ConfigurationServiceProtocol Implementation
@@ -52,7 +53,7 @@ import UmbraErrors
   /// - Throws: UmbraErrors.ConfigError if initialisation fails
   public func initialise(source: ConfigSourceDTO) async throws {
     // Log the operation for debugging
-    if let logger = logger {
+    if let logger {
       await logger.debug(
         "Initialising configuration service",
         metadata: PrivacyMetadata([
@@ -66,7 +67,7 @@ import UmbraErrors
     // Check if we already have sources (already initialised)
     if !sources.isEmpty {
       let message="Configuration service is already initialised"
-      if let logger = logger {
+      if let logger {
         await logger.warning(message, metadata: nil, source: "ConfigurationServiceActor")
       }
       throw UmbraErrors.ConfigError.initialisationError(message: message)
@@ -86,7 +87,7 @@ import UmbraErrors
       )
     )
 
-    if let logger = logger {
+    if let logger {
       await logger.info(
         "Configuration service initialised successfully",
         metadata: nil,
@@ -102,7 +103,7 @@ import UmbraErrors
   /// - Throws: UmbraErrors.ConfigError if the source cannot be added
   public func addSource(source: ConfigSourceDTO, priority: Int) async throws {
     // Log the operation with privacy-aware logging
-    if let logger = logger {
+    if let logger {
       await logger.info(
         "Adding configuration source",
         metadata: PrivacyMetadata([
@@ -117,7 +118,7 @@ import UmbraErrors
     // Check if the source already exists
     if sources.firstIndex(where: { $0.source.identifier == source.identifier }) != nil {
       // Log the error with privacy-aware logging
-      if let logger = logger {
+      if let logger {
         await logger.warning(
           "Configuration source already exists",
           metadata: PrivacyMetadata([
@@ -145,7 +146,7 @@ import UmbraErrors
       )
     )
 
-    if let logger = logger {
+    if let logger {
       await logger.info(
         "Configuration source added successfully",
         metadata: nil,
@@ -159,7 +160,7 @@ import UmbraErrors
   /// - Throws: UmbraErrors.ConfigError if the source cannot be removed
   public func removeSource(identifier: String) async throws {
     // Log the operation with privacy-aware logging
-    if let logger = logger {
+    if let logger {
       await logger.info(
         "Removing configuration source",
         metadata: PrivacyMetadata([
@@ -172,7 +173,7 @@ import UmbraErrors
     // Find the source index
     guard let index=sources.firstIndex(where: { $0.source.identifier == identifier }) else {
       // Log the error with privacy-aware logging
-      if let logger = logger {
+      if let logger {
         await logger.warning(
           "Configuration source does not exist",
           metadata: PrivacyMetadata([
@@ -207,7 +208,7 @@ import UmbraErrors
       )
     )
 
-    if let logger = logger {
+    if let logger {
       await logger.info(
         "Configuration source removed successfully",
         metadata: nil,
@@ -224,7 +225,7 @@ import UmbraErrors
     let value=try await getConfigValue(for: key)
 
     // Log the operation with privacy-aware logging
-    if let logger = logger {
+    if let logger {
       if value.isSensitive {
         await logger.debug(
           "Retrieved sensitive string configuration value",
@@ -265,7 +266,7 @@ import UmbraErrors
     let value=try await getConfigValue(for: key)
 
     // Log the operation with privacy-aware logging
-    if let logger = logger {
+    if let logger {
       await logger.debug(
         "Retrieved boolean configuration value",
         metadata: PrivacyMetadata([
@@ -296,7 +297,7 @@ import UmbraErrors
     let value=try await getConfigValue(for: key)
 
     // Log the operation with privacy-aware logging
-    if let logger = logger {
+    if let logger {
       await logger.debug(
         "Retrieved integer configuration value",
         metadata: PrivacyMetadata([
@@ -327,7 +328,7 @@ import UmbraErrors
     let value=try await getConfigValue(for: key)
 
     // Log the operation with privacy-aware logging
-    if let logger = logger {
+    if let logger {
       await logger.debug(
         "Retrieved double configuration value",
         metadata: PrivacyMetadata([
@@ -358,7 +359,7 @@ import UmbraErrors
     let value=try await getConfigValue(for: key)
 
     // Log the operation with privacy-aware logging - note that we're not logging the value
-    if let logger = logger {
+    if let logger {
       await logger.debug(
         "Retrieved secure configuration value",
         metadata: PrivacyMetadata([
@@ -378,7 +379,7 @@ import UmbraErrors
     }
 
     if !value.isSensitive {
-      if let logger = logger {
+      if let logger {
         await logger.warning(
           "Accessing non-sensitive value through secure API",
           metadata: PrivacyMetadata([
@@ -400,7 +401,7 @@ import UmbraErrors
   /// - Throws: UmbraErrors.ConfigError if the value cannot be set
   public func setValue(_ value: ConfigValueDTO, for key: String, in source: String?) async throws {
     // Log the operation with privacy-aware logging
-    if let logger = logger {
+    if let logger {
       if value.isSensitive {
         await logger.info(
           "Setting sensitive configuration value",
@@ -467,7 +468,7 @@ import UmbraErrors
       )
     )
 
-    if let logger = logger {
+    if let logger {
       await logger.debug(
         "Configuration value set successfully",
         metadata: PrivacyMetadata([
@@ -485,7 +486,7 @@ import UmbraErrors
   /// - Throws: UmbraErrors.ConfigError if the value cannot be removed
   public func removeValue(for key: String, from source: String?) async throws {
     // Log the operation with privacy-aware logging
-    if let logger = logger {
+    if let logger {
       await logger.info(
         "Removing configuration value",
         metadata: PrivacyMetadata([
@@ -523,7 +524,7 @@ import UmbraErrors
 
     // If the value doesn't exist, there's nothing to remove
     guard oldValue != nil else {
-      if let logger = logger {
+      if let logger {
         await logger.debug(
           "Configuration value does not exist, nothing to remove",
           metadata: PrivacyMetadata([
@@ -554,7 +555,7 @@ import UmbraErrors
       )
     )
 
-    if let logger = logger {
+    if let logger {
       await logger.debug(
         "Configuration value removed successfully",
         metadata: PrivacyMetadata([
@@ -570,7 +571,7 @@ import UmbraErrors
   /// - Throws: UmbraErrors.ConfigError if the configuration cannot be saved
   public func saveChanges(to source: String?) async throws {
     // Log the operation with privacy-aware logging
-    if let logger = logger {
+    if let logger {
       await logger.info(
         "Saving configuration changes",
         metadata: PrivacyMetadata([
@@ -604,7 +605,7 @@ import UmbraErrors
       }
     }
 
-    if let logger = logger {
+    if let logger {
       await logger.info(
         "Configuration changes saved successfully",
         metadata: nil,
@@ -616,19 +617,20 @@ import UmbraErrors
   /// Subscribes to configuration change events
   /// - Parameter filter: Optional filter to limit the events received
   /// - Returns: An async sequence of ConfigChangeEventDTO objects
-  nonisolated public func subscribeToChanges(filter: ConfigChangeFilterDTO?)
+  public nonisolated func subscribeToChanges(filter: ConfigChangeFilterDTO?)
   -> AsyncStream<ConfigChangeEventDTO> {
     // Generate a unique identifier for this subscription
     let subscriptionID=UUID()
 
     // Log the subscription with privacy-aware logging
-    if let logger = logger {
+    if let logger {
       Task {
         await logger.debug(
           "New configuration change subscription",
           metadata: PrivacyMetadata([
             "subscription_id": (subscriptionID.uuidString, .public),
-            "filter_types": (filter?.changeTypes?.map(\.rawValue).joined(separator: ", ") ?? "all", .public)
+            "filter_types": (filter?.changeTypes?.map(\.rawValue).joined(separator: ", ") ?? "all",
+                             .public)
           ]),
           source: "ConfigurationServiceActor"
         )
@@ -639,11 +641,14 @@ import UmbraErrors
     let stream=AsyncStream<ConfigChangeEventDTO> { continuation in
       // Store the continuation for publishing events
       Task {
-        await self.isolatedStoreSubscription(subscriptionID: subscriptionID, continuation: continuation)
+        await self.isolatedStoreSubscription(
+          subscriptionID: subscriptionID,
+          continuation: continuation
+        )
       }
 
       // Set up cancellation handler to clean up when the stream is cancelled
-      continuation.onTermination = { [weak self] _ in
+      continuation.onTermination={ [weak self] _ in
         Task { [weak self] in
           await self?.removeChangeEventContinuation(for: subscriptionID)
         }
@@ -658,7 +663,7 @@ import UmbraErrors
   /// - Returns: An array of configuration keys
   public func getAllKeys(from source: String?) async -> [String] {
     // Log the operation with privacy-aware logging
-    if let logger = logger {
+    if let logger {
       await logger.debug(
         "Getting all configuration keys",
         metadata: PrivacyMetadata([
@@ -687,7 +692,7 @@ import UmbraErrors
     changeContinuations.removeValue(forKey: subscriptionID)
 
     // Log the removal with privacy-aware logging
-    if let logger = logger {
+    if let logger {
       await logger.debug(
         "Configuration change subscription removed",
         metadata: PrivacyMetadata([
@@ -707,7 +712,7 @@ import UmbraErrors
       continuation.yield(event)
 
       // Log the event publication with privacy-aware logging
-      if let logger = logger {
+      if let logger {
         await logger.trace(
           "Published configuration change event to subscriber",
           metadata: PrivacyMetadata([
@@ -727,10 +732,10 @@ import UmbraErrors
   ///   - subscriptionID: The subscription ID
   ///   - continuation: The continuation to store
   private func isolatedStoreSubscription(
-    subscriptionID: UUID, 
+    subscriptionID: UUID,
     continuation: AsyncStream<ConfigChangeEventDTO>.Continuation
   ) {
-    changeContinuations[subscriptionID] = continuation
+    changeContinuations[subscriptionID]=continuation
   }
 
   /// Gets a configuration value for the specified key
@@ -761,7 +766,7 @@ import UmbraErrors
   private func loadConfigurationFromSource(_ sourceID: String) async throws {
     // Get the source
     guard sources.firstIndex(where: { $0.source.identifier == sourceID }) != nil else {
-      if let logger = logger {
+      if let logger {
         await logger.error(
           "Cannot load configuration from unknown source",
           metadata: PrivacyMetadata([
@@ -770,18 +775,18 @@ import UmbraErrors
           source: "ConfigurationServiceActor"
         )
       }
-      
+
       throw UmbraErrors.ConfigError.sourceNotFound(
         message: "Configuration source with identifier '\(sourceID)' not found"
       )
     }
-    
+
     // In a real implementation, this would load configuration from the source
     // For now, we'll just use what's already in the cache
-    
+
     // Refresh the configuration cache
     await refreshConfigurationCache()
-    
+
     // Publish initialisation event
     await publishChangeEvent(
       ConfigChangeEventDTO(
@@ -800,7 +805,7 @@ import UmbraErrors
   private func saveConfigurationToSource(_ sourceID: String) async throws {
     // In a real implementation, this would save values to the source
     // For now, we'll just log it
-    if let logger = logger {
+    if let logger {
       await logger.debug(
         "Saving configuration to source",
         metadata: PrivacyMetadata([
@@ -815,7 +820,7 @@ import UmbraErrors
   private func refreshConfigurationCache() async {
     // In a real implementation, this would rebuild the cache from all sources
     // For now, we'll just log it
-    if let logger = logger {
+    if let logger {
       await logger.debug(
         "Refreshing configuration cache",
         metadata: nil,

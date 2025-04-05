@@ -20,7 +20,7 @@ public enum SecurityServiceError: Error, LocalizedError {
 
   /// Error in key management
   case keyManagementError(String)
-  
+
   /// Cryptographic operation failed
   case cryptographicError(String)
 

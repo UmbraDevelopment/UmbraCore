@@ -9,8 +9,8 @@
  data is properly protected when at rest.
  */
 
-import CryptoInterfaces
 import CoreSecurityTypes
+import CryptoInterfaces
 import Foundation
 import LoggingInterfaces
 import LoggingTypes
@@ -24,7 +24,7 @@ import UmbraErrors
  enhanced contextual information and dedicated methods for different types
  of cryptographic assets.
  */
-public actor SecureCryptoStorage: Sendable {
+public actor SecureCryptoStorage {
   /// The underlying secure storage provider
   private let secureStorage: any SecureStorageProtocol
 
@@ -42,8 +42,8 @@ public actor SecureCryptoStorage: Sendable {
     secureStorage: any SecureStorageProtocol,
     logger: any LoggingProtocol
   ) {
-    self.secureStorage = secureStorage
-    self.logger = logger
+    self.secureStorage=secureStorage
+    self.logger=logger
   }
 
   // MARK: - Key Storage
@@ -63,30 +63,31 @@ public actor SecureCryptoStorage: Sendable {
     _ key: Data,
     identifier: String,
     purpose: SecurityCoreInterfaces.KeyPurpose,
-    algorithm: String? = nil
+    algorithm _: String?=nil
   ) async throws {
     // Configuration moved directly into the comment for reference
     // Configuration: standard access control, encryption enabled, with context
-    
+
     do {
-      let result = await self.secureStorage.storeData(Array(key), withIdentifier: identifier)
-      
+      let result=await secureStorage.storeData(Array(key), withIdentifier: identifier)
+
       // Check if the operation was successful
-      guard case .success = result else {
+      guard case .success=result else {
         throw UCryptoError.keyGenerationFailed(reason: "Failed to store key")
       }
 
-      var metadata = PrivacyMetadata()
-      metadata["purpose"] = PrivacyMetadataValue(value: purpose.rawValue, privacy: .public)
-      metadata["keySize"] = PrivacyMetadataValue(value: "\(key.count)", privacy: .public)
-      
+      var metadata=PrivacyMetadata()
+      metadata["purpose"]=PrivacyMetadataValue(value: purpose.rawValue, privacy: .public)
+      metadata["keySize"]=PrivacyMetadataValue(value: "\(key.count)", privacy: .public)
+
       await logger.debug(
         "Stored cryptographic key securely",
         metadata: metadata,
         source: "SecureCryptoStorage"
       )
     } catch {
-      throw UCryptoError.keyGenerationFailed(reason: "Failed to store key: \(error.localizedDescription)")
+      throw UCryptoError
+        .keyGenerationFailed(reason: "Failed to store key: \(error.localizedDescription)")
     }
   }
 
@@ -101,26 +102,27 @@ public actor SecureCryptoStorage: Sendable {
     identifier: String
   ) async throws -> Data {
     do {
-      let result = await self.secureStorage.retrieveData(withIdentifier: identifier)
-      
+      let result=await secureStorage.retrieveData(withIdentifier: identifier)
+
       switch result {
-      case .success(let keyData):
-        var metadata = PrivacyMetadata()
-        metadata["keySize"] = PrivacyMetadataValue(value: "\(keyData.count)", privacy: .public)
-        
-        await logger.debug(
-          "Retrieved cryptographic key",
-          metadata: metadata,
-          source: "SecureCryptoStorage"
-        )
-        
-        return Data(keyData)
-        
-      case .failure(let error):
-        throw UCryptoError.keyRetrievalFailed(reason: "Failed to retrieve key: \(error)")
+        case let .success(keyData):
+          var metadata=PrivacyMetadata()
+          metadata["keySize"]=PrivacyMetadataValue(value: "\(keyData.count)", privacy: .public)
+
+          await logger.debug(
+            "Retrieved cryptographic key",
+            metadata: metadata,
+            source: "SecureCryptoStorage"
+          )
+
+          return Data(keyData)
+
+        case let .failure(error):
+          throw UCryptoError.keyRetrievalFailed(reason: "Failed to retrieve key: \(error)")
       }
     } catch {
-      throw UCryptoError.keyRetrievalFailed(reason: "Error retrieving key: \(error.localizedDescription)")
+      throw UCryptoError
+        .keyRetrievalFailed(reason: "Error retrieving key: \(error.localizedDescription)")
     }
   }
 
@@ -134,19 +136,20 @@ public actor SecureCryptoStorage: Sendable {
     identifier: String
   ) async throws {
     do {
-      let result = await self.secureStorage.deleteData(withIdentifier: identifier)
-      
-      guard case .success = result else {
+      let result=await secureStorage.deleteData(withIdentifier: identifier)
+
+      guard case .success=result else {
         throw UCryptoError.operationFailed(reason: "Failed to delete key")
       }
-      
+
       await logger.debug(
         "Deleted cryptographic key",
         metadata: nil,
         source: "SecureCryptoStorage"
       )
     } catch {
-      throw UCryptoError.operationFailed(reason: "Error deleting key: \(error.localizedDescription)")
+      throw UCryptoError
+        .operationFailed(reason: "Error deleting key: \(error.localizedDescription)")
     }
   }
 
@@ -165,25 +168,26 @@ public actor SecureCryptoStorage: Sendable {
   public func storeEncryptedData(
     _ data: Data,
     identifier: String,
-    algorithm: String? = nil
+    algorithm _: String?=nil
   ) async throws {
     do {
-      let result = await self.secureStorage.storeData(Array(data), withIdentifier: identifier)
-      
-      guard case .success = result else {
+      let result=await secureStorage.storeData(Array(data), withIdentifier: identifier)
+
+      guard case .success=result else {
         throw UCryptoError.operationFailed(reason: "Failed to store encrypted data")
       }
-      
-      var metadata = PrivacyMetadata()
-      metadata["dataSize"] = PrivacyMetadataValue(value: "\(data.count)", privacy: .public)
-      
+
+      var metadata=PrivacyMetadata()
+      metadata["dataSize"]=PrivacyMetadataValue(value: "\(data.count)", privacy: .public)
+
       await logger.debug(
         "Stored encrypted data securely",
         metadata: metadata,
         source: "SecureCryptoStorage"
       )
     } catch {
-      throw UCryptoError.operationFailed(reason: "Error storing encrypted data: \(error.localizedDescription)")
+      throw UCryptoError
+        .operationFailed(reason: "Error storing encrypted data: \(error.localizedDescription)")
     }
   }
 
@@ -198,26 +202,28 @@ public actor SecureCryptoStorage: Sendable {
     identifier: String
   ) async throws -> Data {
     do {
-      let result = await self.secureStorage.retrieveData(withIdentifier: identifier)
-      
+      let result=await secureStorage.retrieveData(withIdentifier: identifier)
+
       switch result {
-      case .success(let encryptedData):
-        var metadata = PrivacyMetadata()
-        metadata["dataSize"] = PrivacyMetadataValue(value: "\(encryptedData.count)", privacy: .public)
-        
-        await logger.debug(
-          "Retrieved encrypted data",
-          metadata: metadata,
-          source: "SecureCryptoStorage"
-        )
-        
-        return Data(encryptedData)
-        
-      case .failure(let error):
-        throw UCryptoError.operationFailed(reason: "Failed to retrieve encrypted data: \(error)")
+        case let .success(encryptedData):
+          var metadata=PrivacyMetadata()
+          metadata["dataSize"]=PrivacyMetadataValue(value: "\(encryptedData.count)",
+                                                    privacy: .public)
+
+          await logger.debug(
+            "Retrieved encrypted data",
+            metadata: metadata,
+            source: "SecureCryptoStorage"
+          )
+
+          return Data(encryptedData)
+
+        case let .failure(error):
+          throw UCryptoError.operationFailed(reason: "Failed to retrieve encrypted data: \(error)")
       }
     } catch {
-      throw UCryptoError.operationFailed(reason: "Error retrieving encrypted data: \(error.localizedDescription)")
+      throw UCryptoError
+        .operationFailed(reason: "Error retrieving encrypted data: \(error.localizedDescription)")
     }
   }
 
@@ -236,27 +242,27 @@ public actor SecureCryptoStorage: Sendable {
   public func deriveKeyFromPassword(
     passwordRef: String,
     salt: Data,
-    iterations: Int = 10000,
-    keyLength: Int = 32
+    iterations: Int=10000,
+    keyLength: Int=32
   ) async throws -> String {
     // Create a unique identifier based on derivation parameters
-    let identifier = "derived_key_\(passwordRef.hashValue)_\(salt.hashValue)_\(iterations)"
+    let identifier="derived_key_\(passwordRef.hashValue)_\(salt.hashValue)_\(iterations)"
 
     // Configuration moved directly into the comment for reference
     // We're not actually doing the derivation here since that's platform-specific
     // This is just a mock implementation that would be replaced in a real system
-    
-    var metadata = PrivacyMetadata()
-    metadata["iterations"] = PrivacyMetadataValue(value: "\(iterations)", privacy: .public)
-    metadata["keyLength"] = PrivacyMetadataValue(value: "\(keyLength)", privacy: .public)
-    metadata["saltLength"] = PrivacyMetadataValue(value: "\(salt.count)", privacy: .public)
-    
+
+    var metadata=PrivacyMetadata()
+    metadata["iterations"]=PrivacyMetadataValue(value: "\(iterations)", privacy: .public)
+    metadata["keyLength"]=PrivacyMetadataValue(value: "\(keyLength)", privacy: .public)
+    metadata["saltLength"]=PrivacyMetadataValue(value: "\(salt.count)", privacy: .public)
+
     await logger.debug(
       "Derived key from password",
       metadata: metadata,
       source: "SecureCryptoStorage"
     )
-    
+
     return identifier
   }
 
@@ -276,22 +282,23 @@ public actor SecureCryptoStorage: Sendable {
     identifier: String
   ) async throws {
     do {
-      let result = await self.secureStorage.storeData(Array(data), withIdentifier: identifier)
-      
-      guard case .success = result else {
+      let result=await secureStorage.storeData(Array(data), withIdentifier: identifier)
+
+      guard case .success=result else {
         throw UCryptoError.operationFailed(reason: "Failed to store data")
       }
-      
-      var metadata = PrivacyMetadata()
-      metadata["dataSize"] = PrivacyMetadataValue(value: "\(data.count)", privacy: .public)
-      
+
+      var metadata=PrivacyMetadata()
+      metadata["dataSize"]=PrivacyMetadataValue(value: "\(data.count)", privacy: .public)
+
       await logger.debug(
         "Stored data securely",
         metadata: metadata,
         source: "SecureCryptoStorage"
       )
     } catch {
-      throw UCryptoError.operationFailed(reason: "Error storing data: \(error.localizedDescription)")
+      throw UCryptoError
+        .operationFailed(reason: "Error storing data: \(error.localizedDescription)")
     }
   }
 
@@ -306,26 +313,27 @@ public actor SecureCryptoStorage: Sendable {
     identifier: String
   ) async throws -> Data {
     do {
-      let result = await self.secureStorage.retrieveData(withIdentifier: identifier)
-      
+      let result=await secureStorage.retrieveData(withIdentifier: identifier)
+
       switch result {
-      case .success(let data):
-        var metadata = PrivacyMetadata()
-        metadata["dataSize"] = PrivacyMetadataValue(value: "\(data.count)", privacy: .public)
-        
-        await logger.debug(
-          "Retrieved data",
-          metadata: metadata,
-          source: "SecureCryptoStorage"
-        )
-        
-        return Data(data)
-        
-      case .failure(let error):
-        throw UCryptoError.operationFailed(reason: "Failed to retrieve data: \(error)")
+        case let .success(data):
+          var metadata=PrivacyMetadata()
+          metadata["dataSize"]=PrivacyMetadataValue(value: "\(data.count)", privacy: .public)
+
+          await logger.debug(
+            "Retrieved data",
+            metadata: metadata,
+            source: "SecureCryptoStorage"
+          )
+
+          return Data(data)
+
+        case let .failure(error):
+          throw UCryptoError.operationFailed(reason: "Failed to retrieve data: \(error)")
       }
     } catch {
-      throw UCryptoError.operationFailed(reason: "Error retrieving data: \(error.localizedDescription)")
+      throw UCryptoError
+        .operationFailed(reason: "Error retrieving data: \(error.localizedDescription)")
     }
   }
 
@@ -343,21 +351,22 @@ public actor SecureCryptoStorage: Sendable {
       metadata: nil,
       source: "SecureCryptoStorage"
     )
-    
+
     do {
-      let result = await self.secureStorage.deleteData(withIdentifier: identifier)
-      
-      guard case .success = result else {
+      let result=await secureStorage.deleteData(withIdentifier: identifier)
+
+      guard case .success=result else {
         throw UCryptoError.operationFailed(reason: "Failed to delete data")
       }
-      
+
       await logger.debug(
         "Deleted data successfully",
         metadata: nil,
         source: "SecureCryptoStorage"
       )
     } catch {
-      throw UCryptoError.operationFailed(reason: "Error deleting data: \(error.localizedDescription)")
+      throw UCryptoError
+        .operationFailed(reason: "Error deleting data: \(error.localizedDescription)")
     }
   }
 }

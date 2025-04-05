@@ -10,7 +10,7 @@ import Foundation
 public struct FileMetadata: Sendable, Equatable {
   /// The path to the file
   public let path: FilePath
-  
+
   /// File attributes
   public let attributes: FileAttributes
 
@@ -24,26 +24,26 @@ public struct FileMetadata: Sendable, Equatable {
   public init(
     path: FilePath,
     attributes: FileAttributes,
-    safeResourceValues: [FileResourceKey: SafeAttributeValue] = [:],
-    exists: Bool = true
+    safeResourceValues: [FileResourceKey: SafeAttributeValue]=[:],
+    exists: Bool=true
   ) {
-    self.path = path
-    self.attributes = attributes
-    self.safeResourceValues = safeResourceValues
-    self.exists = exists
+    self.path=path
+    self.attributes=attributes
+    self.safeResourceValues=safeResourceValues
+    self.exists=exists
   }
-  
+
   /// Convenience initializer that converts legacy resource values to safe values
   public init(
     path: FilePath,
     attributes: FileAttributes,
-    resourceValues: [FileResourceKey: Any] = [:],
-    exists: Bool = true
+    resourceValues: [FileResourceKey: Any]=[:],
+    exists: Bool=true
   ) {
-    let safeValues = resourceValues.compactMapValues { value in 
+    let safeValues=resourceValues.compactMapValues { value in
       SafeAttributeValue(from: value)
     }
-    
+
     self.init(
       path: path,
       attributes: attributes,

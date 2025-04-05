@@ -19,7 +19,7 @@ public enum ConfigurationServiceFactory {
   /// - Returns: A configured instance of ConfigurationServiceProtocol
   public static func createDefault() -> ConfigurationServiceProtocol {
     // Create and return the configuration service actor
-    return ConfigurationServiceActor(logger: nil)
+    ConfigurationServiceActor(logger: nil)
   }
 
   /// Creates a pre-initialised instance of ConfigurationServiceProtocol
@@ -31,7 +31,7 @@ public enum ConfigurationServiceFactory {
   ///         Any initialisation errors will be thrown from this method.
   public static func createPreInitialised(
     source: ConfigSourceDTO,
-    logger: LoggingInterfaces.DomainLogger?=nil
+    logger _: LoggingInterfaces.DomainLogger?=nil
   ) async throws -> ConfigurationServiceProtocol {
     // Create the service
     let service=createDefault()
@@ -80,13 +80,13 @@ public enum ConfigurationServiceFactory {
   ///   - logger: Optional logger for the service
   /// - Returns: A configured instance with domain-specific settings
   public static func createForDomain(
-    _ domain: String,
-    serviceName: String,
+    _: String,
+    serviceName _: String,
     logger: LoggingInterfaces.DomainLogger?=nil
   ) -> ConfigurationServiceProtocol {
     // Configure domain-specific settings
     let service=ConfigurationServiceActor(logger: logger)
-    
+
     // Return the configured service
     return service
   }

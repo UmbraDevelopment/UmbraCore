@@ -193,7 +193,7 @@ public final class BasicKeyManager: KeyManagementProtocol, @unchecked Sendable {
     }
 
     // If there's data to re-encrypt, mock the re-encryption
-    var reencryptedData: [UInt8]?=nil
+    var reencryptedData: [UInt8]?
     if let dataToReencrypt {
       // In a real implementation, this would use the new key to re-encrypt the data
       // For this fallback, we'll just mock the re-encryption

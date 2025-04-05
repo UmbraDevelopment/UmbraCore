@@ -13,42 +13,42 @@ import LoggingTypes
  */
 public struct BackupLogContext: LogContextDTO {
   /// The domain name for this context
-  public let domainName: String = "BackupServices"
-  
+  public let domainName: String="BackupServices"
+
   /// Correlation identifier for tracing related logs
   public let correlationID: String?
-  
+
   /// Source information for logging
   public let source: String?
-  
+
   /// Privacy-aware metadata for this log context
   public var metadata: LogMetadataDTOCollection
-  
+
   /// Dictionary of metadata entries with privacy annotations
-  private var entries: [String: PrivacyMetadataValue] = [:]
+  private var entries: [String: PrivacyMetadataValue]=[:]
 
   /// Current operation being performed
   public var operation: String? {
-    if let value = entries["operation"]?.valueString {
+    if let value=entries["operation"]?.valueString {
       return value
     }
     return nil
   }
 
   /// Initialises an empty backup log context
-  public init(correlationID: String? = nil, source: String? = nil) {
-    self.correlationID = correlationID
-    self.source = source
-    self.metadata = LogMetadataDTOCollection()
+  public init(correlationID: String?=nil, source: String?=nil) {
+    self.correlationID=correlationID
+    self.source=source
+    metadata=LogMetadataDTOCollection()
   }
 
   /// Gets the source of this log context
   /// - Returns: The source identifier for logging
   public func getSource() -> String {
-    if let source = source {
+    if let source {
       return source
     }
-    if let op = operation {
+    if let op=operation {
       return "BackupService.\(op)"
     }
     return "BackupService"
@@ -57,10 +57,10 @@ public struct BackupLogContext: LogContextDTO {
   /// Converts the context to privacy metadata for logging
   /// - Returns: Privacy metadata with appropriate annotations
   public func toPrivacyMetadata() -> PrivacyMetadata {
-    var metadata = PrivacyMetadata()
+    var metadata=PrivacyMetadata()
 
     for (key, value) in entries {
-      metadata[key] = value
+      metadata[key]=value
     }
 
     return metadata
@@ -69,15 +69,15 @@ public struct BackupLogContext: LogContextDTO {
   /// Gets the metadata for this log context
   /// - Returns: Log metadata with appropriate privacy annotations
   public func toMetadata() -> LogMetadataDTOCollection {
-    return metadata
+    metadata
   }
-  
+
   /// Creates a new context with updated metadata
   /// - Parameter metadata: The new metadata collection
   /// - Returns: A new log context with updated metadata
   public func withUpdatedMetadata(_ metadata: LogMetadataDTOCollection) -> BackupLogContext {
-    var newContext = self
-    newContext.metadata = metadata
+    var newContext=self
+    newContext.metadata=metadata
     return newContext
   }
 
@@ -87,10 +87,10 @@ public struct BackupLogContext: LogContextDTO {
   ///   - value: The metadata value
   /// - Returns: A new context with the added metadata
   public func withPublic(key: String, value: String) -> BackupLogContext {
-    var newContext = self
-    let metadataValue = PrivacyMetadataValue(value: value, privacy: .public)
-    newContext.entries[key] = metadataValue
-    newContext.metadata = newContext.metadata.withPublic(key: key, value: value)
+    var newContext=self
+    let metadataValue=PrivacyMetadataValue(value: value, privacy: .public)
+    newContext.entries[key]=metadataValue
+    newContext.metadata=newContext.metadata.withPublic(key: key, value: value)
     return newContext
   }
 
@@ -100,10 +100,10 @@ public struct BackupLogContext: LogContextDTO {
   ///   - value: The metadata value
   /// - Returns: A new context with the added metadata
   public func withPrivate(key: String, value: String) -> BackupLogContext {
-    var newContext = self
-    let metadataValue = PrivacyMetadataValue(value: value, privacy: .private)
-    newContext.entries[key] = metadataValue
-    newContext.metadata = newContext.metadata.withPrivate(key: key, value: value)
+    var newContext=self
+    let metadataValue=PrivacyMetadataValue(value: value, privacy: .private)
+    newContext.entries[key]=metadataValue
+    newContext.metadata=newContext.metadata.withPrivate(key: key, value: value)
     return newContext
   }
 
@@ -113,10 +113,10 @@ public struct BackupLogContext: LogContextDTO {
   ///   - value: The metadata value
   /// - Returns: A new context with the added metadata
   public func withSensitive(key: String, value: String) -> BackupLogContext {
-    var newContext = self
-    let metadataValue = PrivacyMetadataValue(value: value, privacy: .sensitive)
-    newContext.entries[key] = metadataValue
-    newContext.metadata = newContext.metadata.withSensitive(key: key, value: value)
+    var newContext=self
+    let metadataValue=PrivacyMetadataValue(value: value, privacy: .sensitive)
+    newContext.entries[key]=metadataValue
+    newContext.metadata=newContext.metadata.withSensitive(key: key, value: value)
     return newContext
   }
 

@@ -51,19 +51,19 @@ public struct BackupLogger {
    */
   public func logOperationSuccess<T>(
     context: BackupLogContext,
-    result: T
+    result _: T
   ) async {
-    let enhancedContext = context.withPublic(
+    let enhancedContext=context.withPublic(
       key: "result_type",
       value: String(describing: T.self)
     )
-    
+
     await logger.info(
       context: enhancedContext,
       message: "Operation completed successfully"
     )
   }
-  
+
   /**
    * Logs successful operation completion with a message.
    *
@@ -80,7 +80,7 @@ public struct BackupLogger {
       message: message
     )
   }
-  
+
   /**
    * Logs operation failure.
    *
@@ -92,11 +92,11 @@ public struct BackupLogger {
     context: BackupLogContext,
     error: Error
   ) async {
-    let enhancedContext = context.withPublic(
+    let enhancedContext=context.withPublic(
       key: "error_type",
       value: String(describing: type(of: error))
     )
-    
+
     await logger.error(
       context: enhancedContext,
       message: "Operation failed: \(error.localizedDescription)",

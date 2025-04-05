@@ -5,9 +5,9 @@ import LoggingTypes
 // Simple struct for privacy-annotated strings
 public struct PrivacyString {
   let value: String
-  
+
   public init(value: String) {
-    self.value = value
+    self.value=value
   }
 }
 
@@ -15,12 +15,12 @@ public struct PrivacyString {
 public actor ResticLogger {
   // Underlying logger instance
   private let underlyingLogger: any LoggingProtocol
-  
+
   /// Create a new Restic logger
   public init(logger: any LoggingProtocol) {
-    self.underlyingLogger = logger
+    underlyingLogger=logger
   }
-  
+
   /// Log a message with debug level
   ///
   /// - Parameters:
@@ -30,7 +30,7 @@ public actor ResticLogger {
   public func debug(_ message: String, metadata: PrivacyMetadata?, source: String) async {
     await log(.debug, message, metadata: metadata, source: source)
   }
-  
+
   /// Log a message with info level
   ///
   /// - Parameters:
@@ -40,7 +40,7 @@ public actor ResticLogger {
   public func info(_ message: String, metadata: PrivacyMetadata?, source: String) async {
     await log(.info, message, metadata: metadata, source: source)
   }
-  
+
   /// Log a message with warning level
   ///
   /// - Parameters:
@@ -50,7 +50,7 @@ public actor ResticLogger {
   public func warning(_ message: String, metadata: PrivacyMetadata?, source: String) async {
     await log(.warning, message, metadata: metadata, source: source)
   }
-  
+
   /// Log a message with error level
   ///
   /// - Parameters:
@@ -60,7 +60,7 @@ public actor ResticLogger {
   public func error(_ message: String, metadata: PrivacyMetadata?, source: String) async {
     await log(.error, message, metadata: metadata, source: source)
   }
-  
+
   /// Log a message with critical level
   ///
   /// - Parameters:
@@ -70,17 +70,17 @@ public actor ResticLogger {
   public func critical(_ message: String, metadata: PrivacyMetadata?, source: String) async {
     await log(.critical, message, metadata: metadata, source: source)
   }
-  
+
   /// Log a message with a context
   ///
   /// - Parameters:
   ///  - level: Log level
   ///  - message: The message to log
   ///  - context: The logging context
-  public func log<T: LogContextDTO>(
+  public func log(
     _ level: LogLevel,
     _ message: String,
-    context: T
+    context: some LogContextDTO
   ) async {
     await underlyingLogger.log(
       level,
@@ -89,7 +89,7 @@ public actor ResticLogger {
       source: context.getSource()
     )
   }
-  
+
   /// Log a message
   ///
   /// - Parameters:
@@ -110,7 +110,7 @@ public actor ResticLogger {
       source: source
     )
   }
-  
+
   /// Log an error
   ///
   /// - Parameters:
@@ -120,12 +120,12 @@ public actor ResticLogger {
   ///   - source: Source of the log
   public func logError(
     _ error: Error,
-    message: String? = nil,
-    metadata: PrivacyMetadata? = nil,
+    message: String?=nil,
+    metadata: PrivacyMetadata?=nil,
     source: String
   ) async {
-    let logMessage = message ?? "Error: \(error.localizedDescription)"
-    
+    let logMessage=message ?? "Error: \(error.localizedDescription)"
+
     await log(
       .error,
       logMessage,

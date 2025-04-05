@@ -11,14 +11,14 @@ import LoggingTypes
  */
 public struct BackupLogContextAdapter: LogContextDTO {
   /// The domain name for this context
-  public let domainName: String = "BackupServices"
-  
+  public let domainName: String="BackupServices"
+
   /// Correlation identifier for tracing related logs
   public let correlationID: String?
-  
+
   /// Source information for the log
   public let source: String?
-  
+
   /// Privacy-aware metadata for this log context
   public var metadata: LogMetadataDTOCollection
 
@@ -29,7 +29,7 @@ public struct BackupLogContextAdapter: LogContextDTO {
   private let operation: String
 
   /// Additional context values with privacy annotations
-  private var additionalContext: [(key: String, value: String, privacy: LogPrivacyLevel)] = []
+  private var additionalContext: [(key: String, value: String, privacy: LogPrivacyLevel)]=[]
 
   /**
    * Creates a new backup log context.
@@ -40,51 +40,51 @@ public struct BackupLogContextAdapter: LogContextDTO {
    *   - correlationID: Optional correlation ID for tracing
    */
   public init(
-    snapshotID: String? = nil, 
+    snapshotID: String?=nil,
     operation: String,
-    correlationID: String? = nil
+    correlationID: String?=nil
   ) {
-    self.snapshotID = snapshotID
-    self.operation = operation
-    self.correlationID = correlationID
-    self.source = "BackupServices.\(operation)"
-    
+    self.snapshotID=snapshotID
+    self.operation=operation
+    self.correlationID=correlationID
+    source="BackupServices.\(operation)"
+
     // Initialize the metadata collection
-    var metadataCollection = LogMetadataDTOCollection()
-    
+    var metadataCollection=LogMetadataDTOCollection()
+
     // Add basic context
-    metadataCollection = metadataCollection.withPublic(key: "operation", value: operation)
-    
+    metadataCollection=metadataCollection.withPublic(key: "operation", value: operation)
+
     // Add snapshot ID if available
-    if let id = snapshotID {
-      metadataCollection = metadataCollection.withPublic(key: "snapshotID", value: id)
+    if let id=snapshotID {
+      metadataCollection=metadataCollection.withPublic(key: "snapshotID", value: id)
     }
-    
-    self.metadata = metadataCollection
+
+    metadata=metadataCollection
   }
 
   /// Get the source of the log context
   public func getSource() -> String {
-    return source ?? "BackupServices.\(operation)"
+    source ?? "BackupServices.\(operation)"
   }
 
   /// Convert the context to privacy-aware metadata
   public func toPrivacyMetadata() -> PrivacyMetadata {
-    return metadata.toPrivacyMetadata()
+    metadata.toPrivacyMetadata()
   }
-  
+
   /// Get the metadata for this context
   /// - Returns: The metadata collection for this context
   public func toMetadata() -> LogMetadataDTOCollection {
-    return metadata
+    metadata
   }
-  
+
   /// Creates a new instance with updated metadata
   /// - Parameter metadata: The new metadata collection
   /// - Returns: A new context with updated metadata
   public func withUpdatedMetadata(_ metadata: LogMetadataDTOCollection) -> BackupLogContextAdapter {
-    var newContext = self
-    newContext.metadata = metadata
+    var newContext=self
+    newContext.metadata=metadata
     return newContext
   }
 
@@ -94,23 +94,27 @@ public struct BackupLogContextAdapter: LogContextDTO {
   ///   - value: The metadata value
   ///   - privacy: The privacy level
   /// - Returns: A new context with the added information
-  public func with(key: String, value: String, privacy: LogPrivacyLevel) -> BackupLogContextAdapter {
-    var newContext = self
+  public func with(
+    key: String,
+    value: String,
+    privacy: LogPrivacyLevel
+  ) -> BackupLogContextAdapter {
+    var newContext=self
     newContext.additionalContext.append((key: key, value: value, privacy: privacy))
-    
+
     // Also update the metadata collection
     switch privacy {
       case .public:
-        newContext.metadata = newContext.metadata.withPublic(key: key, value: value)
+        newContext.metadata=newContext.metadata.withPublic(key: key, value: value)
       case .private:
-        newContext.metadata = newContext.metadata.withPrivate(key: key, value: value)
+        newContext.metadata=newContext.metadata.withPrivate(key: key, value: value)
       case .sensitive:
-        newContext.metadata = newContext.metadata.withSensitive(key: key, value: value)
+        newContext.metadata=newContext.metadata.withSensitive(key: key, value: value)
       default:
         // Default to private for other levels
-        newContext.metadata = newContext.metadata.withPrivate(key: key, value: value)
+        newContext.metadata=newContext.metadata.withPrivate(key: key, value: value)
     }
-    
+
     return newContext
   }
 }

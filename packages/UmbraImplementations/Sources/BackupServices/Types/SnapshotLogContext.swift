@@ -9,17 +9,17 @@ import LoggingTypes
  */
 public struct SnapshotLogContext: LogContextDTO {
   /// The domain name for this context
-  public let domainName: String = "BackupServices.Snapshot"
-  
+  public let domainName: String="BackupServices.Snapshot"
+
   /// Correlation identifier for tracing related logs
   public let correlationID: String?
-  
+
   /// Source information for logging
   public let source: String?
-  
+
   /// Privacy-aware metadata collection
   public var metadata: LogMetadataDTOCollection
-  
+
   /// The operation being performed
   public let operation: String
 
@@ -44,33 +44,33 @@ public struct SnapshotLogContext: LogContextDTO {
   public init(
     operation: String,
     snapshotID: String,
-    errorMessage: String? = nil,
-    correlationID: String? = nil
+    errorMessage: String?=nil,
+    correlationID: String?=nil
   ) {
-    self.operation = operation
-    self.snapshotID = snapshotID
-    self.errorMessage = errorMessage
-    self.correlationID = correlationID
-    self.source = "BackupServices.Snapshot.\(operation)"
+    self.operation=operation
+    self.snapshotID=snapshotID
+    self.errorMessage=errorMessage
+    self.correlationID=correlationID
+    source="BackupServices.Snapshot.\(operation)"
 
     // Initialize metadata collection
-    var metadataCollection = LogMetadataDTOCollection()
-    metadataCollection = metadataCollection.withPublic(key: "operation", value: operation)
-    metadataCollection = metadataCollection.withPublic(key: "snapshotId", value: snapshotID)
+    var metadataCollection=LogMetadataDTOCollection()
+    metadataCollection=metadataCollection.withPublic(key: "operation", value: operation)
+    metadataCollection=metadataCollection.withPublic(key: "snapshotId", value: snapshotID)
 
     if let errorMessage {
-      metadataCollection = metadataCollection.withPrivate(key: "error", value: errorMessage)
+      metadataCollection=metadataCollection.withPrivate(key: "error", value: errorMessage)
     }
-    
-    self.metadata = metadataCollection
+
+    metadata=metadataCollection
 
     // Initialize legacy metadata for backwards compatibility
-    privacyMetadata = PrivacyMetadata()
-    privacyMetadata["operation"] = PrivacyMetadataValue(value: operation, privacy: .public)
-    privacyMetadata["snapshotId"] = PrivacyMetadataValue(value: snapshotID, privacy: .public)
+    privacyMetadata=PrivacyMetadata()
+    privacyMetadata["operation"]=PrivacyMetadataValue(value: operation, privacy: .public)
+    privacyMetadata["snapshotId"]=PrivacyMetadataValue(value: snapshotID, privacy: .public)
 
     if let errorMessage {
-      privacyMetadata["error"] = PrivacyMetadataValue(value: errorMessage, privacy: .private)
+      privacyMetadata["error"]=PrivacyMetadataValue(value: errorMessage, privacy: .private)
     }
   }
 
@@ -80,7 +80,7 @@ public struct SnapshotLogContext: LogContextDTO {
    * - Returns: A formatted source string
    */
   public func getSource() -> String {
-    return source ?? "BackupServices.Snapshot.\(operation)"
+    source ?? "BackupServices.Snapshot.\(operation)"
   }
 
   /**
@@ -89,18 +89,18 @@ public struct SnapshotLogContext: LogContextDTO {
    * - Returns: Privacy metadata with appropriate annotations
    */
   public func toPrivacyMetadata() -> PrivacyMetadata {
-    return metadata.toPrivacyMetadata()
+    metadata.toPrivacyMetadata()
   }
-  
+
   /**
    * Get the metadata collection for this context.
    *
    * - Returns: The metadata collection
    */
   public func toMetadata() -> LogMetadataDTOCollection {
-    return metadata
+    metadata
   }
-  
+
   /**
    * Creates a new instance of this context with updated metadata.
    *
@@ -108,8 +108,8 @@ public struct SnapshotLogContext: LogContextDTO {
    * - Returns: A new context instance with updated metadata
    */
   public func withUpdatedMetadata(_ metadata: LogMetadataDTOCollection) -> SnapshotLogContext {
-    var newContext = self
-    newContext.metadata = metadata
+    var newContext=self
+    newContext.metadata=metadata
     return newContext
   }
 }

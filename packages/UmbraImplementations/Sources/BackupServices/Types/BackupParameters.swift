@@ -1,5 +1,5 @@
-import Foundation
 import BackupInterfaces
+import Foundation
 
 /**
  * Parameters for a backup verification operation.
@@ -10,10 +10,10 @@ import BackupInterfaces
 public struct BackupVerifyParameters: Sendable, Equatable {
   /// ID of the snapshot to verify, or nil to verify the latest
   public let snapshotID: String?
-  
+
   /// Options for the verification process
   public let verifyOptions: VerifyOptions?
-  
+
   /**
    * Creates a new set of verification parameters.
    *
@@ -25,7 +25,7 @@ public struct BackupVerifyParameters: Sendable, Equatable {
     snapshotID: String?,
     verifyOptions: VerifyOptions?
   ) {
-    self.snapshotID = snapshotID
-    self.verifyOptions = verifyOptions
+    self.snapshotID=snapshotID
+    self.verifyOptions=verifyOptions
   }
 }

@@ -1,9 +1,9 @@
-import CryptoInterfaces
-import SecurityCoreInterfaces
-import CryptoTypes
-import Foundation
 import CoreSecurityTypes
+import CryptoInterfaces
+import CryptoTypes
 import DomainSecurityTypes
+import Foundation
+import SecurityCoreInterfaces
 
 /**
  Extended configuration options for the CryptoService implementation.
@@ -15,19 +15,19 @@ import DomainSecurityTypes
 public struct FactoryCryptoOptions: Sendable {
   /// The number of iterations to use for PBKDF2 key derivation
   public let defaultIterations: Int
-  
+
   /// Whether to enforce strong key requirements
   public let enforceStrongKeys: Bool
-  
+
   /// Whether to use secure random for all operations
   public let useSecureRandom: Bool
-  
+
   /// Whether to zero memory after use
   public let zeroMemoryAfterUse: Bool
-  
+
   /**
    Initialises a new set of factory crypto options.
-   
+
    - Parameters:
      - defaultIterations: The number of iterations to use for PBKDF2 key derivation
      - enforceStrongKeys: Whether to enforce strong key requirements
@@ -35,47 +35,47 @@ public struct FactoryCryptoOptions: Sendable {
      - zeroMemoryAfterUse: Whether to zero memory after use
    */
   public init(
-    defaultIterations: Int = 10000,
-    enforceStrongKeys: Bool = true,
-    useSecureRandom: Bool = true,
-    zeroMemoryAfterUse: Bool = true
+    defaultIterations: Int=10000,
+    enforceStrongKeys: Bool=true,
+    useSecureRandom: Bool=true,
+    zeroMemoryAfterUse: Bool=true
   ) {
-    self.defaultIterations = defaultIterations
-    self.enforceStrongKeys = enforceStrongKeys
-    self.useSecureRandom = useSecureRandom
-    self.zeroMemoryAfterUse = zeroMemoryAfterUse
+    self.defaultIterations=defaultIterations
+    self.enforceStrongKeys=enforceStrongKeys
+    self.useSecureRandom=useSecureRandom
+    self.zeroMemoryAfterUse=zeroMemoryAfterUse
   }
-  
+
   /**
    Converts these factory options to standard CryptoServiceOptions.
-   
+
    - Parameters:
      - algorithm: The encryption algorithm to use (defaults to AES-256-GCM)
      - hashAlgorithm: The hash algorithm to use (defaults to SHA-256)
      - keyLength: The key length in bytes (defaults to 32 bytes / 256 bits)
-   
+
    - Returns: A CryptoServiceOptions instance with the appropriate settings
    */
   public func toCryptoServiceOptions(
     algorithm: EncryptionAlgorithm = .aes256GCM,
     hashAlgorithm: CoreSecurityTypes.HashAlgorithm = .sha256,
-    keyLength: Int = 32
+    keyLength: Int=32
   ) -> CryptoServiceOptions {
     // Create parameters dictionary with our additional options
-    var parameters: [String: CryptoParameter] = [:]
-    
+    var parameters: [String: CryptoParameter]=[:]
+
     // Add PBKDF2 iterations if using key derivation
     parameters["iterations"] = .integer(defaultIterations)
-    
+
     // Add strong key enforcement flag
     parameters["enforceStrongKeys"] = .boolean(enforceStrongKeys)
-    
+
     // Add secure random flag
     parameters["useSecureRandom"] = .boolean(useSecureRandom)
-    
+
     // Add memory zeroing flag
     parameters["zeroMemoryAfterUse"] = .boolean(zeroMemoryAfterUse)
-    
+
     return CryptoServiceOptions(
       algorithm: algorithm,
       hashAlgorithm: hashAlgorithm,
@@ -88,54 +88,58 @@ public struct FactoryCryptoOptions: Sendable {
 /**
  Extension to CryptoServiceOptions to add factory-specific functionality.
  */
-public extension CryptoServiceOptions {
+extension CryptoServiceOptions {
   /**
    Creates a new instance with factory-specific options.
-   
+
    - Parameters:
      - factoryOptions: The factory options to apply
      - algorithm: The encryption algorithm to use
      - hashAlgorithm: The hash algorithm to use
      - keyLength: The key length to use
-   
+
    - Returns: A new CryptoServiceOptions instance
    */
-  static func withFactoryOptions(
+  public static func withFactoryOptions(
     _ factoryOptions: FactoryCryptoOptions,
     algorithm: EncryptionAlgorithm = .aes256GCM,
     hashAlgorithm: CoreSecurityTypes.HashAlgorithm = .sha256,
-    keyLength: Int = 32
+    keyLength: Int=32
   ) -> CryptoServiceOptions {
-    return factoryOptions.toCryptoServiceOptions(
+    factoryOptions.toCryptoServiceOptions(
       algorithm: algorithm,
       hashAlgorithm: hashAlgorithm,
       keyLength: keyLength
     )
   }
-  
+
   /**
    Extracts an iterations count from the parameters.
-   
+
    - Returns: The iterations count or a default value of 10000
    */
-  var iterations: Int {
-    if let parameters = self.parameters,
-       let iterationsParam = parameters["iterations"],
-       case let .integer(iterations) = iterationsParam {
+  public var iterations: Int {
+    if
+      let parameters,
+      let iterationsParam=parameters["iterations"],
+      case let .integer(iterations)=iterationsParam
+    {
       return iterations
     }
     return 10000 // Default value
   }
-  
+
   /**
    Checks if strong keys are enforced.
-   
+
    - Returns: Whether strong keys are enforced
    */
-  var enforceStrongKeys: Bool {
-    if let parameters = self.parameters,
-       let enforceParam = parameters["enforceStrongKeys"],
-       case let .boolean(enforce) = enforceParam {
+  public var enforceStrongKeys: Bool {
+    if
+      let parameters,
+      let enforceParam=parameters["enforceStrongKeys"],
+      case let .boolean(enforce)=enforceParam
+    {
       return enforce
     }
     return true // Default to safe option
@@ -148,16 +152,16 @@ public extension CryptoServiceOptions {
 public struct KeyGenerationOptions: Sendable {
   /// The purpose of the key
   public let purpose: KeyPurpose
-  
+
   /// Whether the key should be exportable
   public let isExportable: Bool
-  
+
   /// The expiration date of the key, if any
   public let expirationDate: Date?
-  
+
   /**
    Initialises a new set of key generation options.
-   
+
    - Parameters:
      - purpose: The purpose of the key
      - isExportable: Whether the key should be exportable
@@ -165,12 +169,12 @@ public struct KeyGenerationOptions: Sendable {
    */
   public init(
     purpose: KeyPurpose = .encryption,
-    isExportable: Bool = false,
-    expirationDate: Date? = nil
+    isExportable: Bool=false,
+    expirationDate: Date?=nil
   ) {
-    self.purpose = purpose
-    self.isExportable = isExportable
-    self.expirationDate = expirationDate
+    self.purpose=purpose
+    self.isExportable=isExportable
+    self.expirationDate=expirationDate
   }
 }
 
@@ -180,16 +184,16 @@ public struct KeyGenerationOptions: Sendable {
 public enum KeyPurpose: String, Sendable {
   /// Key used for encryption
   case encryption
-  
+
   /// Key used for signing
   case signing
-  
+
   /// Key used for key wrapping
   case keyWrapping
-  
+
   /// Key used for key derivation
   case keyDerivation
-  
+
   /// Key used for multiple purposes
   case general
 }
@@ -200,10 +204,10 @@ public enum KeyPurpose: String, Sendable {
 public enum EncryptionAlgorithm: String, Sendable {
   /// AES-256 with GCM mode (authenticated encryption)
   case aes256GCM
-  
+
   /// AES-256 with CBC mode
   case aes256CBC
-  
+
   /// ChaCha20-Poly1305 (authenticated encryption)
   case chacha20Poly1305
 }
@@ -214,7 +218,7 @@ public enum EncryptionAlgorithm: String, Sendable {
 public enum HashAlgorithm: String, Sendable {
   /// SHA-256 algorithm
   case sha256
-  
+
   /// SHA-512 algorithm
   case sha512
 }

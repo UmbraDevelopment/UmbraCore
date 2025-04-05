@@ -1,5 +1,5 @@
-import Foundation
 import BackupInterfaces
+import Foundation
 
 /**
  * Token representing an active backup operation.
@@ -10,16 +10,16 @@ import BackupInterfaces
 public class BackupOperationToken: Sendable {
   /// Unique identifier for this operation
   public let id: UUID
-  
+
   /// Type of operation being performed
   public let operation: BackupOperation
-  
+
   /// Whether the operation is cancellable
   public let cancellable: Bool
-  
+
   /// Whether the operation has been cancelled
   public var cancelled: Bool
-  
+
   /**
    * Creates a new operation token.
    *
@@ -31,12 +31,12 @@ public class BackupOperationToken: Sendable {
   public init(
     id: UUID,
     operation: BackupOperation,
-    cancellable: Bool = true
+    cancellable: Bool=true
   ) {
-    self.id = id
-    self.operation = operation
-    self.cancellable = cancellable
-    self.cancelled = false
+    self.id=id
+    self.operation=operation
+    self.cancellable=cancellable
+    cancelled=false
   }
 }
 
@@ -49,7 +49,7 @@ extension BackupOperationToken: Hashable {
   public func hash(into hasher: inout Hasher) {
     hasher.combine(id)
   }
-  
+
   public static func == (lhs: BackupOperationToken, rhs: BackupOperationToken) -> Bool {
     lhs.id == rhs.id
   }

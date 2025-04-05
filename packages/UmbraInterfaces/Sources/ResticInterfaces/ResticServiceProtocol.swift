@@ -27,7 +27,8 @@ public protocol ResticCommand: Sendable {
 /// - Progress reporting during long-running operations
 ///
 /// All operations are thread-safe and support Swift concurrency with async/await patterns.
-@preconcurrency public protocol ResticServiceProtocol: Sendable {
+@preconcurrency
+public protocol ResticServiceProtocol: Sendable {
   /// The path to the Restic executable
   var executablePath: String { get }
 

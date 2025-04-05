@@ -1,5 +1,3 @@
-
-
 /// Type alias for backward compatibility
 import SecurityTypes
 

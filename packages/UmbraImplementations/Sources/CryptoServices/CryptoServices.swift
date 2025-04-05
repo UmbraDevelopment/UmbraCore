@@ -46,7 +46,7 @@ import SecurityCoreInterfaces
 public enum CryptoServices {
   /**
    Creates a default implementation of CryptoServiceProtocol.
-   
+
    - Parameter secureStorage: The secure storage implementation to use
    - Returns: A CryptoServiceProtocol implementation
    */
@@ -58,7 +58,7 @@ public enum CryptoServices {
 
   /**
    Creates a crypto service with logging capabilities.
-   
+
    - Parameters:
      - secureStorage: The secure storage implementation to use
      - logger: Optional logger to use, default logger will be used if nil
@@ -68,7 +68,7 @@ public enum CryptoServices {
     secureStorage: SecureStorageProtocol,
     logger: LoggingProtocol
   ) async -> CryptoServiceProtocol {
-    let defaultService = await CryptoServiceFactory.createDefault(secureStorage: secureStorage)
+    let defaultService=await CryptoServiceFactory.createDefault(secureStorage: secureStorage)
     return await CryptoServiceFactory.createLoggingDecorator(
       wrapped: defaultService,
       logger: logger
@@ -77,7 +77,7 @@ public enum CryptoServices {
 
   /**
    Creates a mock implementation of CryptoServiceProtocol for testing.
-   
+
    - Parameters:
      - secureStorage: The secure storage implementation to use
      - configuration: Configuration for the mock behavior

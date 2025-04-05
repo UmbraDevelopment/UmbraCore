@@ -1,7 +1,7 @@
 import Foundation
+import SecurityInterfacesDTOs
 import UmbraErrors
 import UmbraErrorsDomains
-import SecurityInterfacesDTOs
 
 /// Protocol defining the interface for high-level security services in the UmbraCore framework.
 ///

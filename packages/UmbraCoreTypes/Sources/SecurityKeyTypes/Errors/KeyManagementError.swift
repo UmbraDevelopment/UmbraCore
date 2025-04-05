@@ -31,7 +31,7 @@ public enum KeyManagementError: Error, Equatable, Sendable {
 
   /// Key import failed
   case keyImportFailed(reason: String)
-  
+
   /// General key management error
   case keyManagementError(details: String)
 
@@ -111,7 +111,8 @@ extension KeyManagementError: LoggingTypes.LoggableErrorProtocol {
       case let .keyManagementError(details):
         metadata["details"]=PrivacyMetadataValue(value: details,
                                                  privacy: classification.toLogPrivacyLevel())
-        metadata["error_detail"]=PrivacyMetadataValue(value: "key_management_error", privacy: .public)
+        metadata["error_detail"]=PrivacyMetadataValue(value: "key_management_error",
+                                                      privacy: .public)
     }
 
     return metadata

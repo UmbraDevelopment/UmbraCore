@@ -25,7 +25,7 @@ import FileSystemTypes
 
  ## Security Considerations
 
- The implementation is designed to follow best practices for security and 
+ The implementation is designed to follow best practices for security and
  sandbox compliance as per your requirements memory. It:
 
  - Properly handles security-scoped bookmarks
@@ -346,11 +346,11 @@ public struct FileMetadataOptions: Sendable, Equatable {
 
   /// Creates new file metadata options
   public init(
-    resolveSymlinks: Bool = true,
-    resourceKeys: [FileResourceKey] = []
+    resolveSymlinks: Bool=true,
+    resourceKeys: [FileResourceKey]=[]
   ) {
-    self.resolveSymlinks = resolveSymlinks
-    self.resourceKeys = resourceKeys
+    self.resolveSymlinks=resolveSymlinks
+    self.resourceKeys=resourceKeys
   }
 }
 
@@ -373,9 +373,9 @@ public struct FileContent: Sendable, Equatable {
     path: FilePath,
     attributes: FileAttributes?=nil
   ) {
-    self.data = data
-    self.path = path
-    self.attributes = attributes
+    self.data=data
+    self.path=path
+    self.attributes=attributes
   }
 }
 
@@ -391,11 +391,11 @@ public struct BatchFileReadResult: Sendable {
 
   /// Creates a new batch read result
   public init(
-    successfulReads: [FileContent] = [],
-    failedReads: [FilePath: Error] = [:]
+    successfulReads: [FileContent]=[],
+    failedReads: [FilePath: Error]=[:]
   ) {
-    self.successfulReads = successfulReads
-    self.failedReads = failedReads
+    self.successfulReads=successfulReads
+    self.failedReads=failedReads
   }
 }
 
@@ -405,20 +405,20 @@ extension BatchFileReadResult: Equatable {
     guard lhs.successfulReads == rhs.successfulReads else {
       return false
     }
-    
+
     // For error dictionaries, we compare the keys but not the Error values
     // (since Error doesn't conform to Equatable)
     guard lhs.failedReads.keys.count == rhs.failedReads.keys.count else {
       return false
     }
-    
+
     // Check that all keys in lhs are present in rhs
     for key in lhs.failedReads.keys {
       guard rhs.failedReads[key] != nil else {
         return false
       }
     }
-    
+
     return true
   }
 }
@@ -471,9 +471,9 @@ public struct FileSystemItem: Sendable, Equatable {
     type: FileSystemItemType,
     attributes: FileAttributes?=nil
   ) {
-    self.path = path
-    self.type = type
-    self.attributes = attributes
+    self.path=path
+    self.type=type
+    self.attributes=attributes
   }
 }
 
@@ -489,10 +489,10 @@ public struct TemporaryFileOptions: Sendable, Equatable {
 
   /// Initialize temporary file options
   public init(
-    deleteOnExit: Bool = true,
-    attributes: FileAttributes? = nil
+    deleteOnExit: Bool=true,
+    attributes: FileAttributes?=nil
   ) {
-    self.deleteOnExit = deleteOnExit
-    self.attributes = attributes
+    self.deleteOnExit=deleteOnExit
+    self.attributes=attributes
   }
 }

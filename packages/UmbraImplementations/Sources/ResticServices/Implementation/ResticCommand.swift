@@ -36,10 +36,10 @@ public struct ResticCommand: ResticInterfaces.ResticCommand, Sendable {
 
   /// Whether to track progress for this command
   public let trackProgress: Bool
-  
+
   /// Environment variables for the command
   public var environment: [String: String] {
-    return [:]  // Default implementation returns empty dictionary
+    [:] // Default implementation returns empty dictionary
   }
 
   /// Constructs the full command string including all arguments and options
@@ -101,7 +101,7 @@ public struct ResticCommand: ResticInterfaces.ResticCommand, Sendable {
     if repository.isEmpty, action != .`init` {
       throw ResticError.missingParameter("Repository is required for all commands except init")
     }
-    
+
     // Action-specific validation
     switch action {
       case .backup:
