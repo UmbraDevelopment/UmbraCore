@@ -438,7 +438,7 @@ public final class Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked S
   // MARK: - PrivacyAwareLoggerImplementation
 
   /// Instance implementation of LoggingProtocol and PrivacyAwareLoggingProtocol
-  public final class PrivacyAwareLoggerImplementation: LoggingInterfaces
+  public actor PrivacyAwareLoggerImplementation: LoggingInterfaces
   .PrivacyAwareLoggingProtocol {
     /// The underlying logging actor
     public let loggingActor: LoggingInterfaces.LoggingActor
@@ -452,238 +452,22 @@ public final class Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked S
     // MARK: - CoreLoggingProtocol
 
     /// Log a message with the specified level and context
-    public func logMessage(
-      _ level: LoggingTypes.LogLevel,
-      _ message: String,
-      context: LoggingTypes.LogContext
-    ) async {
-      // Convert context to metadata
-      var metadata: [String: String]=[:]
-      metadata["context_type"]=String(describing: type(of: context))
-      metadata["source"]=context.source
-
-      // Use Logger's swiftyLoggerActor to log
-      await Logger.swiftyLoggerActor.log(
-        level: Logger.convertToSwiftyLevel(level),
-        message: message,
-        metadata: metadata,
-        privacy: .public,
-        source: context.source,
-        file: #file,
-        function: #function,
-        line: #line
-      )
-    }
-
-    // MARK: - LoggingProtocol
-
-    /// Log a trace message
-    public func trace(
-      _ message: String,
-      metadata: LoggingTypes.PrivacyMetadata?,
-      source: String
-    ) async {
-      // Generate a proper LogContext for the message
-      let timestamp=LoggingTypes.LogTimestamp(secondsSinceEpoch: Date().timeIntervalSince1970)
-      let context=LoggingTypes.LogContext(
-        source: source,
-        metadata: metadata,
-        correlationID: LoggingTypes.LogIdentifier.unique(),
-        timestamp: timestamp
-      )
-      await logMessage(.trace, message, context: context)
-    }
-
-    /// Log a debug message
-    public func debug(
-      _ message: String,
-      metadata: LoggingTypes.PrivacyMetadata?,
-      source: String
-    ) async {
-      // Generate a proper LogContext for the message
-      let timestamp=LoggingTypes.LogTimestamp(secondsSinceEpoch: Date().timeIntervalSince1970)
-      let context=LoggingTypes.LogContext(
-        source: source,
-        metadata: metadata,
-        correlationID: LoggingTypes.LogIdentifier.unique(),
-        timestamp: timestamp
-      )
-      await logMessage(.debug, message, context: context)
-    }
-
-    /// Log an info message
-    public func info(
-      _ message: String,
-      metadata: LoggingTypes.PrivacyMetadata?,
-      source: String
-    ) async {
-      // Generate a proper LogContext for the message
-      let timestamp=LoggingTypes.LogTimestamp(secondsSinceEpoch: Date().timeIntervalSince1970)
-      let context=LoggingTypes.LogContext(
-        source: source,
-        metadata: metadata,
-        correlationID: LoggingTypes.LogIdentifier.unique(),
-        timestamp: timestamp
-      )
-      await logMessage(.info, message, context: context)
-    }
-
-    /// Log a warning message
-    public func warning(
-      _ message: String,
-      metadata: LoggingTypes.PrivacyMetadata?,
-      source: String
-    ) async {
-      // Generate a proper LogContext for the message
-      let timestamp=LoggingTypes.LogTimestamp(secondsSinceEpoch: Date().timeIntervalSince1970)
-      let context=LoggingTypes.LogContext(
-        source: source,
-        metadata: metadata,
-        correlationID: LoggingTypes.LogIdentifier.unique(),
-        timestamp: timestamp
-      )
-      await logMessage(.warning, message, context: context)
-    }
-
-    /// Log an error message
-    public func error(
-      _ message: String,
-      metadata: LoggingTypes.PrivacyMetadata?,
-      source: String
-    ) async {
-      // Generate a proper LogContext for the message
-      let timestamp=LoggingTypes.LogTimestamp(secondsSinceEpoch: Date().timeIntervalSince1970)
-      let context=LoggingTypes.LogContext(
-        source: source,
-        metadata: metadata,
-        correlationID: LoggingTypes.LogIdentifier.unique(),
-        timestamp: timestamp
-      )
-      await logMessage(.error, message, context: context)
-    }
-
-    /// Log a critical message
-    public func critical(
-      _ message: String,
-      metadata: LoggingTypes.PrivacyMetadata?,
-      source: String
-    ) async {
-      // Generate a proper LogContext for the message
-      let timestamp=LoggingTypes.LogTimestamp(secondsSinceEpoch: Date().timeIntervalSince1970)
-      let context=LoggingTypes.LogContext(
-        source: source,
-        metadata: metadata,
-        correlationID: LoggingTypes.LogIdentifier.unique(),
-        timestamp: timestamp
-      )
-      await logMessage(.critical, message, context: context)
-    }
-
-    // MARK: - PrivacyAwareLoggingProtocol
-
-    /// Log a message with explicit privacy controls
     public func log(
       _ level: LoggingTypes.LogLevel,
-      _ message: LoggingTypes.PrivacyString,
-      metadata: LoggingTypes.PrivacyMetadata?,
-      source: String
-    ) async {
-      // Generate a proper LogContext for the message
-      let timestamp=LoggingTypes.LogTimestamp(secondsSinceEpoch: Date().timeIntervalSince1970)
-      let context=LoggingTypes.LogContext(
-        source: source,
-        metadata: metadata,
-        correlationID: LoggingTypes.LogIdentifier.unique(),
-        timestamp: timestamp
-      )
-      await logMessage(level, message.processForLogging(), context: context)
-    }
-
-    /// Log sensitive information with appropriate redaction
-    public func logSensitive(
-      _ level: LoggingTypes.LogLevel,
       _ message: String,
-      sensitiveValues: LoggingTypes.LogMetadata,
-      source: String
+      context: LoggingInterfaces.LogContextDTO // Use LogContextDTO
     ) async {
-      // Generate a proper LogContext for the message - avoid manipulating PrivacyMetadata directly
-      let timestamp=LoggingTypes.LogTimestamp(secondsSinceEpoch: Date().timeIntervalSince1970)
-      let context=LoggingTypes.LogContext(
-        source: source,
-        metadata: nil, // Avoid manipulating PrivacyMetadata directly
-        correlationID: LoggingTypes.LogIdentifier.unique(),
-        timestamp: timestamp
-      )
-
-      // Add sensitive values to the message - as SwiftyBeaver doesn't support multi-level privacy
-      var finalMessage=message
-      for (key, _) in sensitiveValues.asDictionary {
-        finalMessage += " [SENSITIVE \(key): <redacted>]"
-      }
-
-      // Use the logMessage function to log the message
-      await logMessage(level, finalMessage, context: context)
+      // Forward the log call to the underlying logging actor
+      // TODO: This call likely needs updating once LoggingActor uses LogContextDTO
+      // Assuming loggingActor.log still uses the old LogContext for now.
+      // We need to adapt the DTO or update LoggingActor.
+      // For now, creating a basic old context to satisfy the compiler, but this needs fixing.
+      let oldContext = LoggingInterfaces.LogContext(source: context.source, metadata: context.metadataCollection)
+      await loggingActor.log(level: level, message: message, context: oldContext)
     }
 
-    /// Log an error with privacy controls
-    public func logError(
-      _ error: Error,
-      privacyLevel: LoggingTypes.LogPrivacyLevel,
-      metadata: LoggingTypes.PrivacyMetadata?,
-      source: String
-    ) async {
-      // Generate a proper LogContext for the message - avoid manipulating PrivacyMetadata directly
-      let timestamp=LoggingTypes.LogTimestamp(secondsSinceEpoch: Date().timeIntervalSince1970)
-      let context=LoggingTypes.LogContext(
-        source: source,
-        metadata: metadata,
-        correlationID: LoggingTypes.LogIdentifier.unique(),
-        timestamp: timestamp
-      )
-
-      // Format error message with appropriate privacy level
-      var finalMessage="Error: \(error)"
-      if privacyLevel == .private || privacyLevel == .sensitive {
-        finalMessage="Error occurred: [Details redacted due to privacy level: \(privacyLevel)]"
-      }
-
-      // Use the logMessage function with appropriate level
-      await logMessage(.error, finalMessage, context: context)
-    }
-
-    /// Log structured data with appropriate privacy controls
-    public func logStructured(
-      _ level: LoggingTypes.LogLevel,
-      _ eventName: String,
-      data: [String: Any],
-      privacyLevel: LoggingTypes.LogPrivacyLevel,
-      source: String
-    ) async {
-      // Generate a proper LogContext for the message - avoid manipulating PrivacyMetadata directly
-      let timestamp=LoggingTypes.LogTimestamp(secondsSinceEpoch: Date().timeIntervalSince1970)
-      let context=LoggingTypes.LogContext(
-        source: source,
-        metadata: nil, // Avoid manipulating PrivacyMetadata directly
-        correlationID: LoggingTypes.LogIdentifier.unique(),
-        timestamp: timestamp
-      )
-
-      // Format structured data message with appropriate privacy level
-      var finalMessage="Event: \(eventName)"
-      for (key, value) in data {
-        switch privacyLevel {
-          case .public:
-            finalMessage += " [\(key): \(value)]"
-          case .private, .auto:
-            finalMessage += " [\(key): <redacted>]"
-          case .sensitive, .hash:
-            finalMessage += " [<sensitive field redacted>]"
-        }
-      }
-
-      // Use the logMessage function to log the message
-      await logMessage(level, finalMessage, context: context)
-    }
+    // Convenience methods (trace, debug, info, etc.) are provided by the LoggingProtocol extension.
+    // No need to reimplement them here.
   }
 
   // MARK: - Static Factory Methods

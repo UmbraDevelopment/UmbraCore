@@ -79,7 +79,7 @@ public protocol LoggingProtocol: CoreLoggingProtocol {
 }
 
 /// Default implementations for LoggingProtocol to ensure compatibility with CoreLoggingProtocol
-extension LoggingProtocol {
+public extension LoggingProtocol {
   /// Maps the individual log level methods to the core logMessage method
   /// - Parameters:
   ///   - level: The LogLevel
@@ -114,7 +114,7 @@ extension LoggingProtocol {
 
   func notice(_ message: String, context: LogContextDTO) async {
     // Map notice level appropriately if needed, or use info/debug
-    await log(.notice, message, context: context)
+    await log(.info, message, context: context) // Use .info as notice is not defined
   }
 
   func warning(_ message: String, context: LogContextDTO) async {

@@ -77,11 +77,8 @@ public actor CryptoXPCServiceActor {
 
     // Create a new service if we can
     guard let provider=cryptoProvider else {
-      await logger.error(
-        "Failed to get crypto service: No provider available",
-        metadata: PrivacyMetadata(),
-        source: "CryptoXPCServiceActor.getCryptoService"
-      )
+      let context = BaseLogContextDTO(domainName: "CryptoXPC", source: "getCryptoService")
+      await logger.error("Failed to get crypto service: No provider available", context: context)
       return nil
     }
 
@@ -104,11 +101,8 @@ public actor CryptoXPCServiceActor {
     keyID: String,
     options _: CryptoOperationOptionsDTO?
   ) async -> Result<String, UmbraErrorsDTOs.ErrorDTO> {
-    await logger.trace(
-      "Starting encrypt operation",
-      metadata: PrivacyMetadata(),
-      source: "CryptoXPCServiceActor.encrypt"
-    )
+    let context = BaseLogContextDTO(domainName: "CryptoXPC", source: "encrypt")
+    await logger.trace("Starting encrypt operation", context: context)
 
     guard let cryptoService=await getCryptoService() else {
       let error=UmbraErrorsDTOs.ErrorDTO(
@@ -118,11 +112,7 @@ public actor CryptoXPCServiceActor {
         code: CryptoError.ErrorCode.serviceUnavailable.rawValue,
         contextData: ["operation": "encrypt"]
       )
-      await logger.error(
-        "Crypto service unavailable",
-        metadata: PrivacyMetadata(),
-        source: "CryptoXPCServiceActor.encrypt"
-      )
+      await logger.error("Crypto service unavailable", context: context)
       return .failure(error)
     }
 
@@ -142,25 +132,19 @@ public actor CryptoXPCServiceActor {
     // Handle the result
     switch encryptResult {
       case let .success(encryptedDataID):
-        await logger.debug(
-          "Encryption successful",
-          metadata: PrivacyMetadata(),
-          source: "CryptoXPCServiceActor.encrypt"
-        )
+        let debugContext = BaseLogContextDTO(domainName: "CryptoXPC", source: "CryptoXPCServiceActor.encrypt")
+        await logger.debug("Encryption successful", context: debugContext)
         return .success(encryptedDataID)
 
       case let .failure(error):
+        let errorContext = BaseLogContextDTO(domainName: "CryptoXPC", source: "CryptoXPCServiceActor.encrypt", error: error)
+        await logger.error("Encryption failed", context: errorContext)
         let cryptoError=UmbraErrorsDTOs.ErrorDTO(
           identifier: "crypto.encryption.failed",
           domain: CryptoError.domain,
           description: "Failed to encrypt the data",
           code: CryptoError.ErrorCode.encryptionFailed.rawValue,
           contextData: ["underlyingError": String(describing: error)]
-        )
-        await logger.error(
-          "Encryption failed",
-          metadata: PrivacyMetadata(),
-          source: "CryptoXPCServiceActor.encrypt"
         )
         return .failure(cryptoError)
     }
@@ -177,11 +161,8 @@ public actor CryptoXPCServiceActor {
     keyID: String,
     options _: CryptoOperationOptionsDTO?
   ) async -> Result<String, UmbraErrorsDTOs.ErrorDTO> {
-    await logger.trace(
-      "Starting decrypt operation",
-      metadata: PrivacyMetadata(),
-      source: "CryptoXPCServiceActor.decrypt"
-    )
+    let context = BaseLogContextDTO(domainName: "CryptoXPC", source: "decrypt")
+    await logger.trace("Starting decrypt operation", context: context)
 
     guard let cryptoService=await getCryptoService() else {
       let error=UmbraErrorsDTOs.ErrorDTO(
@@ -191,11 +172,7 @@ public actor CryptoXPCServiceActor {
         code: CryptoError.ErrorCode.serviceUnavailable.rawValue,
         contextData: ["operation": "decrypt"]
       )
-      await logger.error(
-        "Crypto service unavailable",
-        metadata: PrivacyMetadata(),
-        source: "CryptoXPCServiceActor.decrypt"
-      )
+      await logger.error("Crypto service unavailable", context: context)
       return .failure(error)
     }
 
@@ -215,25 +192,19 @@ public actor CryptoXPCServiceActor {
     // Handle the result
     switch decryptResult {
       case let .success(decryptedDataID):
-        await logger.debug(
-          "Decryption successful",
-          metadata: PrivacyMetadata(),
-          source: "CryptoXPCServiceActor.decrypt"
-        )
+        let debugContext = BaseLogContextDTO(domainName: "CryptoXPC", source: "CryptoXPCServiceActor.decrypt")
+        await logger.debug("Decryption successful", context: debugContext)
         return .success(decryptedDataID)
 
       case let .failure(error):
+        let errorContext = BaseLogContextDTO(domainName: "CryptoXPC", source: "CryptoXPCServiceActor.decrypt", error: error)
+        await logger.error("Decryption failed", context: errorContext)
         let cryptoError=UmbraErrorsDTOs.ErrorDTO(
           identifier: "crypto.decryption.failed",
           domain: CryptoError.domain,
           description: "Failed to decrypt the data",
           code: CryptoError.ErrorCode.decryptionFailed.rawValue,
           contextData: ["underlyingError": String(describing: error)]
-        )
-        await logger.error(
-          "Decryption failed",
-          metadata: PrivacyMetadata(),
-          source: "CryptoXPCServiceActor.decrypt"
         )
         return .failure(cryptoError)
     }
@@ -248,11 +219,8 @@ public actor CryptoXPCServiceActor {
     length: Int,
     options _: CoreSecurityTypes.RandomizationOptionsDTO?
   ) async -> Result<String, UmbraErrorsDTOs.ErrorDTO> {
-    await logger.trace(
-      "Starting generateRandomBytes operation",
-      metadata: PrivacyMetadata(),
-      source: "CryptoXPCServiceActor.generateRandomBytes"
-    )
+    let context = BaseLogContextDTO(domainName: "CryptoXPC", source: "generateRandomBytes")
+    await logger.trace("Starting generateRandomBytes operation", context: context)
 
     // Validate input
     if length <= 0 {
@@ -263,11 +231,7 @@ public actor CryptoXPCServiceActor {
         code: CryptoError.ErrorCode.invalidParameters.rawValue,
         contextData: ["length": String(length)]
       )
-      await logger.error(
-        "Invalid length for random bytes",
-        metadata: PrivacyMetadata(),
-        source: "CryptoXPCServiceActor.generateRandomBytes"
-      )
+      await logger.error("Invalid length for random bytes", context: context)
       return .failure(error)
     }
 
@@ -285,11 +249,7 @@ public actor CryptoXPCServiceActor {
           code: CryptoError.ErrorCode.serviceUnavailable.rawValue,
           contextData: ["operation": "generateRandomBytes"]
         )
-        await logger.error(
-          "Crypto service unavailable for storing random data",
-          metadata: PrivacyMetadata(),
-          source: "CryptoXPCServiceActor.generateRandomBytes"
-        )
+        await logger.error("Crypto service unavailable for storing random data", context: context)
         return .failure(error)
       }
 
@@ -299,14 +259,13 @@ public actor CryptoXPCServiceActor {
       // Process the result
       switch importResult {
         case let .success(dataID):
-          await logger.debug(
-            "Random data generation successful",
-            metadata: PrivacyMetadata(),
-            source: "CryptoXPCServiceActor.generateRandomBytes"
-          )
+          let debugContext = BaseLogContextDTO(domainName: "CryptoXPC", source: "CryptoXPCServiceActor.generateRandomBytes")
+          await logger.debug("Random data generation successful", context: debugContext)
           return .success(dataID)
 
         case let .failure(error):
+          let errorContext = BaseLogContextDTO(domainName: "CryptoXPC", source: "CryptoXPCServiceActor.generateRandomBytes", error: error)
+          await logger.error("Failed to store random data", context: errorContext)
           let cryptoError=UmbraErrorsDTOs.ErrorDTO(
             identifier: "crypto.random.storage_failed",
             domain: CryptoError.domain,
@@ -314,25 +273,17 @@ public actor CryptoXPCServiceActor {
             code: CryptoError.ErrorCode.storageFailed.rawValue,
             contextData: ["underlyingError": String(describing: error)]
           )
-          await logger.error(
-            "Failed to store random data",
-            metadata: PrivacyMetadata(),
-            source: "CryptoXPCServiceActor.generateRandomBytes"
-          )
           return .failure(cryptoError)
       }
     } else {
+      let errorContext = BaseLogContextDTO(domainName: "CryptoXPC", source: "CryptoXPCServiceActor.generateRandomBytes")
+      await logger.error("Random data generation failed", context: errorContext)
       let cryptoError=UmbraErrorsDTOs.ErrorDTO(
         identifier: "crypto.random.generation_failed",
         domain: CryptoError.domain,
         description: "The system crypto service failed to generate random bytes",
         code: CryptoError.ErrorCode.randomGenerationFailed.rawValue,
         contextData: ["status": String(status)]
-      )
-      await logger.error(
-        "Random data generation failed",
-        metadata: PrivacyMetadata(),
-        source: "CryptoXPCServiceActor.generateRandomBytes"
       )
       return .failure(cryptoError)
     }
@@ -349,11 +300,8 @@ public actor CryptoXPCServiceActor {
     algorithm: CoreSecurityTypes.HashAlgorithm,
     options _: CryptoOperationOptionsDTO?
   ) async -> Result<String, UmbraErrorsDTOs.ErrorDTO> {
-    await logger.trace(
-      "Starting hash operation",
-      metadata: PrivacyMetadata(),
-      source: "CryptoXPCServiceActor.hash"
-    )
+    let context = BaseLogContextDTO(domainName: "CryptoXPC", source: "hash")
+    await logger.trace("Starting hash operation", context: context)
 
     guard let cryptoService=await getCryptoService() else {
       let error=UmbraErrorsDTOs.ErrorDTO(
@@ -363,11 +311,7 @@ public actor CryptoXPCServiceActor {
         code: CryptoError.ErrorCode.serviceUnavailable.rawValue,
         contextData: ["operation": "hash"]
       )
-      await logger.error(
-        "Crypto service unavailable",
-        metadata: PrivacyMetadata(),
-        source: "CryptoXPCServiceActor.hash"
-      )
+      await logger.error("Crypto service unavailable", context: context)
       return .failure(error)
     }
 
@@ -383,25 +327,19 @@ public actor CryptoXPCServiceActor {
     // Handle the result
     switch hashResult {
       case let .success(resultID):
-        await logger.debug(
-          "Hash operation successful",
-          metadata: PrivacyMetadata(),
-          source: "CryptoXPCServiceActor.hash"
-        )
+        let debugContext = BaseLogContextDTO(domainName: "CryptoXPC", source: "CryptoXPCServiceActor.hash")
+        await logger.debug("Hash operation successful", context: debugContext)
         return .success(resultID)
 
       case let .failure(error):
+        let errorContext = BaseLogContextDTO(domainName: "CryptoXPC", source: "CryptoXPCServiceActor.hash", error: error)
+        await logger.error("Hash operation failed", context: errorContext)
         let cryptoError=UmbraErrorsDTOs.ErrorDTO(
           identifier: "crypto.hash.failed",
           domain: CryptoError.domain,
           description: "Failed to hash the data",
           code: CryptoError.ErrorCode.hashingFailed.rawValue,
           contextData: ["underlyingError": String(describing: error)]
-        )
-        await logger.error(
-          "Hash operation failed",
-          metadata: PrivacyMetadata(),
-          source: "CryptoXPCServiceActor.hash"
         )
         return .failure(cryptoError)
     }

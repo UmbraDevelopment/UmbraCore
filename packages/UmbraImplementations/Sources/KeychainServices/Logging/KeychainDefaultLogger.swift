@@ -58,7 +58,7 @@ public actor KeychainDefaultLogger: LoggingProtocol {
   /// Implementation of CoreLoggingProtocol
   public func log(_ level: LoggingTypes.LogLevel, _ message: String, context: LogContextDTO) async {
     // Using context.source and context.domainName (or a default if needed)
-    await printLog(level: level, message: message, source: context.source)
+    await printLog(level: level, message: message, source: context.source ?? "UnknownSource")
   }
 
   // MARK: - Private Helper Methods

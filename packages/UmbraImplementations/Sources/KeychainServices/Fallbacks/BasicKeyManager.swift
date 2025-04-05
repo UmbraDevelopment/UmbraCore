@@ -7,33 +7,16 @@ import SecurityCoreInterfaces
 import UmbraErrors
 
 /// A simple no-operation implementation of LoggingProtocol for use when no logger is provided
-private final class LoggingProtocol_NoOp: LoggingProtocol, @unchecked Sendable {
+private actor LoggingProtocol_NoOp: LoggingProtocol, @unchecked Sendable {
 
-  private let _loggingActor: LoggingActor
-
-  public var loggingActor: LoggingActor {
-    _loggingActor
+  nonisolated init() {
+    // Empty initializer for actor
   }
 
-  init() {
-    _loggingActor=LoggingActor(destinations: [])
+  // Required by CoreLoggingProtocol (which LoggingProtocol inherits from)
+  public func log(_ level: LoggingTypes.LogLevel, _ message: String, context: LoggingInterfaces.LogContextDTO) async {
+    // No operation - this logger does nothing.
   }
-
-  func trace(_: String, metadata _: PrivacyMetadata?, source _: String) async {}
-  func debug(_: String, metadata _: PrivacyMetadata?, source _: String) async {}
-  func info(_: String, metadata _: PrivacyMetadata?, source _: String) async {}
-  func warning(_: String, metadata _: PrivacyMetadata?, source _: String) async {}
-  func error(_: String, metadata _: PrivacyMetadata?, source _: String) async {}
-  func critical(_: String, metadata _: PrivacyMetadata?, source _: String) async {}
-
-  func logMessage(_: LogLevel, _: String, context _: LogContext) async {}
-
-  func logSensitive(
-    _: LogLevel,
-    _: String,
-    sensitiveValues _: [String: Any],
-    source _: String
-  ) async {}
 }
 
 /**
@@ -92,11 +75,8 @@ public final class BasicKeyManager: KeyManagementProtocol, @unchecked Sendable {
   public func retrieveKey(withIdentifier identifier: String) async
   -> Result<[UInt8], SecurityProtocolError> {
     if let key=keyStore[identifier] {
-      await logger.debug(
-        "Retrieved key with identifier: \(identifier)",
-        metadata: nil,
-        source: "BasicKeyManager"
-      )
+      let context = BaseLogContextDTO(domainName: "KeyManagement", source: "BasicKeyManager")
+      await logger.debug("Retrieved key with identifier: \(identifier)", context: context)
       return .success(key)
     } else {
       await logger.warning(
@@ -123,11 +103,8 @@ public final class BasicKeyManager: KeyManagementProtocol, @unchecked Sendable {
     withIdentifier identifier: String
   ) async -> Result<Void, SecurityProtocolError> {
     keyStore[identifier]=key
-    await logger.debug(
-      "Stored key with identifier: \(identifier)",
-      metadata: nil,
-      source: "BasicKeyManager"
-    )
+    let context = BaseLogContextDTO(domainName: "KeyManagement", source: "BasicKeyManager")
+    await logger.debug("Stored key with identifier: \(identifier)", context: context)
     return .success(())
   }
 
@@ -140,11 +117,8 @@ public final class BasicKeyManager: KeyManagementProtocol, @unchecked Sendable {
   public func deleteKey(withIdentifier identifier: String) async
   -> Result<Void, SecurityProtocolError> {
     if keyStore.removeValue(forKey: identifier) != nil {
-      await logger.debug(
-        "Deleted key with identifier: \(identifier)",
-        metadata: nil,
-        source: "BasicKeyManager"
-      )
+      let context = BaseLogContextDTO(domainName: "KeyManagement", source: "BasicKeyManager")
+      await logger.debug("Deleted key with identifier: \(identifier)", context: context)
       return .success(())
     } else {
       await logger.warning(
@@ -208,11 +182,8 @@ public final class BasicKeyManager: KeyManagementProtocol, @unchecked Sendable {
    - Returns: An array of key identifiers or an error.
    */
   public func listKeyIdentifiers() async -> Result<[String], SecurityProtocolError> {
-    await logger.debug(
-      "Listing key identifiers",
-      metadata: nil,
-      source: "BasicKeyManager"
-    )
+    let context = BaseLogContextDTO(domainName: "KeyManagement", source: "BasicKeyManager")
+    await logger.debug("Listing key identifiers", context: context)
     return .success(Array(keyStore.keys))
   }
 
