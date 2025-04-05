@@ -22,7 +22,7 @@ import UmbraErrors
  This is the canonical factory for all cryptographic service implementations
  in the UmbraCore project. All other factory methods (such as those in CryptoServices)
  should delegate to this implementation. This design eliminates duplication and
- ensures consistent behavior across all cryptographic service creations.
+ ensures consistent behaviour across all cryptographic service creations.
 
  ## Usage Examples
 

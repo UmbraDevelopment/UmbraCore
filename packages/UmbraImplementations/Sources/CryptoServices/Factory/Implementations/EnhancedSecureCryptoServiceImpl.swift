@@ -1,5 +1,6 @@
 import CoreSecurityTypes
 import Foundation
+import LoggingInterfaces
 import LoggingServices
 import SecurityCoreInterfaces
 
@@ -21,7 +22,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
   private let wrapped: CryptoServiceProtocol
   
   /// Logger for operations
-  private let logger: LoggingProtocol
+  private let logger: LoggingInterfaces.LoggingProtocol
   
   /// Rate limiting configuration for security operations
   private let rateLimiter: RateLimiter
@@ -41,7 +42,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
    */
   public init(
     wrapped: CryptoServiceProtocol,
-    logger: LoggingProtocol,
+    logger: LoggingInterfaces.LoggingProtocol,
     rateLimiter: RateLimiter = RateLimiter()
   ) {
     self.wrapped = wrapped

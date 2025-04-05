@@ -1,3 +1,4 @@
+import LoggingInterfaces
 import LoggingTypes
 import SecurityCoreInterfaces
 
@@ -10,7 +11,7 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
   private let wrapped: CryptoServiceProtocol
   
   /// The logger for this implementation
-  private let logger: LoggingProtocol
+  private let logger: LoggingInterfaces.LoggingProtocol
   
   /// The secure storage used by this service
   public let secureStorage: SecureStorageProtocol
@@ -24,7 +25,7 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
    */
   public init(
     wrapped: CryptoServiceProtocol,
-    logger: LoggingProtocol
+    logger: LoggingInterfaces.LoggingProtocol
   ) {
     self.wrapped = wrapped
     self.logger = logger
@@ -47,7 +48,7 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
   ) async -> Result<String, SecurityStorageError> {
     await logger.info(
       "Encrypting data with identifier \(dataIdentifier) using key \(keyIdentifier)",
-      metadata: nil,
+      metadata: PrivacyMetadata(),
       source: "LoggingCryptoService"
     )
     
@@ -58,16 +59,16 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
     )
     
     switch result {
-    case .success(let identifier):
+      case let .success(identifier):
       await logger.info(
         "Successfully encrypted data to identifier: \(identifier)",
-        metadata: nil,
+        metadata: PrivacyMetadata(),
         source: "LoggingCryptoService"
       )
-    case .failure(let error):
+      case let .failure(error):
       await logger.error(
         "Failed to encrypt data: \(error)",
-        metadata: nil,
+        metadata: PrivacyMetadata(),
         source: "LoggingCryptoService"
       )
     }
@@ -91,7 +92,7 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
   ) async -> Result<String, SecurityStorageError> {
     await logger.info(
       "Decrypting data with identifier \(encryptedDataIdentifier) using key \(keyIdentifier)",
-      metadata: nil,
+      metadata: PrivacyMetadata(),
       source: "LoggingCryptoService"
     )
     
@@ -102,16 +103,16 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
     )
     
     switch result {
-    case .success(let identifier):
+      case let .success(identifier):
       await logger.info(
         "Successfully decrypted data to identifier: \(identifier)",
-        metadata: nil,
+        metadata: PrivacyMetadata(),
         source: "LoggingCryptoService"
       )
-    case .failure(let error):
+      case let .failure(error):
       await logger.error(
         "Failed to decrypt data: \(error)",
-        metadata: nil,
+        metadata: PrivacyMetadata(),
         source: "LoggingCryptoService"
       )
     }
@@ -120,7 +121,7 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
   }
   
   /**
-   Hashes data with logging.
+   Computes a hash with logging.
    
    - Parameters:
    - dataIdentifier: Identifier for the data to hash
@@ -133,7 +134,7 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
   ) async -> Result<String, SecurityStorageError> {
     await logger.info(
       "Hashing data with identifier \(dataIdentifier)",
-      metadata: nil,
+      metadata: PrivacyMetadata(),
       source: "LoggingCryptoService"
     )
     
@@ -143,16 +144,16 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
     )
     
     switch result {
-    case .success(let identifier):
+      case let .success(identifier):
       await logger.info(
         "Successfully hashed data to identifier: \(identifier)",
-        metadata: nil,
+        metadata: PrivacyMetadata(),
         source: "LoggingCryptoService"
       )
-    case .failure(let error):
+      case let .failure(error):
       await logger.error(
         "Failed to hash data: \(error)",
-        metadata: nil,
+        metadata: PrivacyMetadata(),
         source: "LoggingCryptoService"
       )
     }
@@ -167,7 +168,7 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
    - dataIdentifier: Identifier for the data to verify
    - hashIdentifier: Identifier for the expected hash
    - options: Optional hashing options
-   - Returns: Whether the hash matches or an error
+   - Returns: Whether the hash is valid or an error
    */
   public func verifyHash(
     dataIdentifier: String,
@@ -176,7 +177,7 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
   ) async -> Result<Bool, SecurityStorageError> {
     await logger.info(
       "Verifying hash for data with identifier \(dataIdentifier) against hash \(hashIdentifier)",
-      metadata: nil,
+      metadata: PrivacyMetadata(),
       source: "LoggingCryptoService"
     )
     
@@ -187,16 +188,16 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
     )
     
     switch result {
-    case .success(let matches):
+      case let .success(matches):
       await logger.info(
         "Hash verification result: \(matches ? "Match" : "No match")",
-        metadata: nil,
+        metadata: PrivacyMetadata(),
         source: "LoggingCryptoService"
       )
-    case .failure(let error):
+      case let .failure(error):
       await logger.error(
         "Failed to verify hash: \(error)",
-        metadata: nil,
+        metadata: PrivacyMetadata(),
         source: "LoggingCryptoService"
       )
     }
@@ -205,10 +206,10 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
   }
   
   /**
-   Generates a cryptographic key with logging.
+   Generates a key with logging.
    
    - Parameters:
-   - length: Length of the key in bytes
+   - length: Length of the key to generate in bytes
    - options: Optional key generation options
    - Returns: Identifier for the generated key or an error
    */
@@ -218,7 +219,7 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
   ) async -> Result<String, SecurityStorageError> {
     await logger.info(
       "Generating key with length \(length) bytes",
-      metadata: nil,
+      metadata: PrivacyMetadata(),
       source: "LoggingCryptoService"
     )
     
@@ -228,16 +229,16 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
     )
     
     switch result {
-    case .success(let identifier):
+      case let .success(identifier):
       await logger.info(
         "Successfully generated key with identifier: \(identifier)",
-        metadata: nil,
+        metadata: PrivacyMetadata(),
         source: "LoggingCryptoService"
       )
-    case .failure(let error):
+      case let .failure(error):
       await logger.error(
         "Failed to generate key: \(error)",
-        metadata: nil,
+        metadata: PrivacyMetadata(),
         source: "LoggingCryptoService"
       )
     }
@@ -249,8 +250,8 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
    Imports data with logging.
    
    - Parameters:
-   - data: The data to import
-   - customIdentifier: Optional custom identifier
+   - data: Raw data to import
+   - customIdentifier: Optional custom identifier for the data
    - Returns: Identifier for the imported data or an error
    */
   public func importData(
@@ -259,7 +260,7 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
   ) async -> Result<String, SecurityStorageError> {
     await logger.info(
       "Importing data\(customIdentifier != nil ? " with custom identifier \(customIdentifier!)" : "")",
-      metadata: nil,
+      metadata: PrivacyMetadata(),
       source: "LoggingCryptoService"
     )
     
@@ -269,16 +270,16 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
     )
     
     switch result {
-    case .success(let identifier):
+      case let .success(identifier):
       await logger.info(
         "Successfully imported data with identifier: \(identifier)",
-        metadata: nil,
+        metadata: PrivacyMetadata(),
         source: "LoggingCryptoService"
       )
-    case .failure(let error):
+      case let .failure(error):
       await logger.error(
         "Failed to import data: \(error)",
-        metadata: nil,
+        metadata: PrivacyMetadata(),
         source: "LoggingCryptoService"
       )
     }
@@ -287,33 +288,31 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
   }
   
   /**
-   Export data from secure storage with logging.
+   Exports data with logging.
    
    - Parameter identifier: Identifier for the data to export
-   - Returns: The raw data or an error
+   - Returns: Raw bytes or an error
    */
-  public func exportData(
-    identifier: String
-  ) async -> Result<[UInt8], SecurityStorageError> {
+  public func exportData(identifier: String) async -> Result<[UInt8], SecurityStorageError> {
     await logger.info(
       "Exporting data with identifier: \(identifier)",
-      metadata: nil,
+      metadata: PrivacyMetadata(),
       source: "LoggingCryptoService"
     )
     
     let result = await wrapped.exportData(identifier: identifier)
     
     switch result {
-    case .success:
+      case .success:
       await logger.info(
         "Successfully exported data with identifier: \(identifier)",
-        metadata: nil,
+        metadata: PrivacyMetadata(),
         source: "LoggingCryptoService"
       )
-    case .failure(let error):
+      case let .failure(error):
       await logger.error(
         "Failed to export data: \(error)",
-        metadata: nil,
+        metadata: PrivacyMetadata(),
         source: "LoggingCryptoService"
       )
     }

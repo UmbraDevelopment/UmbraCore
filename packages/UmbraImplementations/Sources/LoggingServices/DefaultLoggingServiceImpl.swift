@@ -80,14 +80,14 @@ public final class DefaultLoggingServiceImpl: LoggingProtocol {
   // MARK: - Privacy Logging Methods
 
   public func logPrivateData(_ message: PrivacyString) async {
-    await loggingActor.logMessage(.debug, message)
+    await log(.debug, message.rawValue, metadata: nil, source: "PrivacyLogging")
   }
 
   public func logRestrictedData(_ message: PrivacyString) async {
-    await loggingActor.logMessage(.info, message)
+    await log(.info, message.rawValue, metadata: nil, source: "PrivacyLogging")
   }
 
   public func logPublicData(_ message: PrivacyString) async {
-    await loggingActor.logMessage(.notice, message)
+    await log(.info, message.rawValue, metadata: nil, source: "PrivacyLogging")
   }
 }
