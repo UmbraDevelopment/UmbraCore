@@ -280,9 +280,6 @@ public final class ExampleSecurityProvider: @unchecked Sendable, SecurityProvide
         case let .failure(error):
           return .failure(.randomGenerationFailed)
       }
-    } catch {
-      return .failure(.randomGenerationFailed)
-    }
   }
 
   public func getKeyInfo(keyID: String) async
@@ -309,9 +306,6 @@ public final class ExampleSecurityProvider: @unchecked Sendable, SecurityProvide
         case let .failure(error):
           return .failure(.randomGenerationFailed)
       }
-    } catch {
-      return .failure(.randomGenerationFailed)
-    }
   }
 
   public func encryptData(_ data: SecureBytes, withKey key: SecureBytes) async

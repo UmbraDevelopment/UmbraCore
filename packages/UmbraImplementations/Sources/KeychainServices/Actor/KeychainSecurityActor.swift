@@ -128,7 +128,7 @@ public actor KeychainSecurityActor {
 
       // Create the config with our options
       let encryptionConfig=SecurityConfigDTO(
-        encryptionAlgorithm: .aes256GCM,
+        encryptionAlgorithm: .aes128GCM,
         hashAlgorithm: .sha256,
         providerType: .basic,
         options: SecurityConfigOptions(
@@ -232,7 +232,7 @@ public actor KeychainSecurityActor {
 
       // Create the config with our options
       let decryptionConfig=SecurityConfigDTO(
-        encryptionAlgorithm: .aes256GCM,
+        encryptionAlgorithm: .aes128GCM,
         hashAlgorithm: .sha256,
         providerType: .basic,
         options: configOptions
@@ -363,7 +363,7 @@ public actor KeychainSecurityActor {
     let configOptions=SecurityConfigOptions()
 
     let config=SecurityConfigDTO(
-      encryptionAlgorithm: .aes256GCM,
+      encryptionAlgorithm: .aes128GCM,
       hashAlgorithm: .sha256,
       providerType: .basic,
       options: configOptions

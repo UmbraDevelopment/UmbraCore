@@ -222,7 +222,7 @@ public actor SecurityProviderService: SecurityProviderProtocol, AsyncServiceInit
     let result = await cryptoService.encrypt(
       dataIdentifier: dataIdentifier,
       keyIdentifier: keyIdentifier,
-      options: EncryptionOptions(algorithm: .aes256CBC)
+      options: EncryptionOptions(algorithm: .aes128CBC)
     )
 
     switch result {
@@ -254,7 +254,7 @@ public actor SecurityProviderService: SecurityProviderProtocol, AsyncServiceInit
     let result = await cryptoService.decrypt(
       encryptedDataIdentifier: encryptedDataIdentifier,
       keyIdentifier: keyIdentifier,
-      options: DecryptionOptions(algorithm: .aes256CBC)
+      options: DecryptionOptions(algorithm: .aes128CBC)
     )
 
     switch result {
@@ -909,9 +909,9 @@ public actor SecurityProviderService: SecurityProviderProtocol, AsyncServiceInit
   public func createSecureConfig(options: SecurityConfigOptions) async -> SecurityConfigDTO {
     // Determine the encryption algorithm based on the hardware acceleration setting
     let encryption: CoreSecurityTypes.EncryptionAlgorithm = if options.useHardwareAcceleration {
-      .aes256GCM  // Hardware accelerated where available
+      .aes128GCM  // Hardware accelerated where available
     } else {
-      .aes256CBC  // Software implementation
+      .aes128CBC  // Software implementation
     }
     
     // Determine the signing algorithm based on options

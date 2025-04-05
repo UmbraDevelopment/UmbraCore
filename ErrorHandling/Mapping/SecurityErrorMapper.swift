@@ -66,7 +66,7 @@ public struct SecurityErrorMapper: ErrorMapper {
       case -25293: // errSecItemNotFound
         UmbraErrors.Security.Core.accessDenied(reason: "Item not found in keychain")
       case -25299: // errSecUnimplemented
-        UmbraErrors.Security.Core.operationFailed(reason: "Security operation not implemented")
+        UmbraErrors.Security.Core.operationFailed("Security operation not implemented")
       case -25300: // errSecParam
         UmbraErrors.Security.Core.invalidParameter(name: "unknown", reason: "Invalid parameter")
       default:
@@ -82,10 +82,10 @@ public struct SecurityErrorMapper: ErrorMapper {
         UmbraErrors.Security.Core.invalidCertificate(reason: error.localizedDescription)
       case -1200: // SSL protocol error
         UmbraErrors.Security.Core
-          .operationFailed(reason: "SSL protocol error: \(error.localizedDescription)")
+          .operationFailed("SSL protocol error: \(error.localizedDescription)")
       default:
         UmbraErrors.Security.Core
-          .operationFailed(reason: "Network security error: \(error.localizedDescription)")
+          .operationFailed("Network security error: \(error.localizedDescription)")
     }
   }
 
@@ -103,7 +103,7 @@ public struct SecurityErrorMapper: ErrorMapper {
         case .invalidData:
           UmbraErrors.Security.Core.invalidParameter(name: "data", reason: "Invalid keychain data")
         case .duplicateItem:
-          UmbraErrors.Security.Core.operationFailed(reason: "Duplicate keychain item")
+          UmbraErrors.Security.Core.operationFailed("Duplicate keychain item")
         case .unknown:
           UmbraErrors.Security.Core.internalError(description: "Unknown keychain error")
       }

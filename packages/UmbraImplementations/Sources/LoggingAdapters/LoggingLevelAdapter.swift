@@ -1,4 +1,6 @@
 import LoggingTypes
+import LoggingServices
+
 import LoggingWrapperInterfaces
 import LoggingWrapperServices
 

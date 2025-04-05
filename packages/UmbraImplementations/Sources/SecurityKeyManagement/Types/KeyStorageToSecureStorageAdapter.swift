@@ -122,7 +122,7 @@ public actor KeyStorageToSecureStorageAdapter: KeyStorage, SecureStorageProtocol
      - Throws: An error if storing the key fails
      */
     public func storeKey(_ key: [UInt8], identifier: String) async throws {
-        switch await secureStorage.storeData(key, withIdentifier: identifier) {
+        switch await self.secureStorage.storeData(key, withIdentifier: identifier) {
         case .success:
             return
         case .failure(let error):
@@ -138,7 +138,7 @@ public actor KeyStorageToSecureStorageAdapter: KeyStorage, SecureStorageProtocol
      - Throws: An error if retrieving the key fails
      */
     public func getKey(identifier: String) async throws -> [UInt8]? {
-        switch await secureStorage.retrieveData(withIdentifier: identifier) {
+        switch await self.secureStorage.retrieveData(withIdentifier: identifier) {
         case .success(let data):
             return data
         case .failure(let error):
@@ -156,7 +156,7 @@ public actor KeyStorageToSecureStorageAdapter: KeyStorage, SecureStorageProtocol
      - Throws: An error if deleting the key fails
      */
     public func deleteKey(identifier: String) async throws {
-        switch await secureStorage.deleteData(withIdentifier: identifier) {
+        switch await self.secureStorage.deleteData(withIdentifier: identifier) {
         case .success:
             return
         case .failure(let error):
@@ -172,7 +172,7 @@ public actor KeyStorageToSecureStorageAdapter: KeyStorage, SecureStorageProtocol
      - Throws: An error if checking the key fails
      */
     public func containsKey(identifier: String) async throws -> Bool {
-        switch await secureStorage.retrieveData(withIdentifier: identifier) {
+        switch await self.secureStorage.retrieveData(withIdentifier: identifier) {
         case .success:
             return true
         case .failure(let error):
@@ -190,7 +190,7 @@ public actor KeyStorageToSecureStorageAdapter: KeyStorage, SecureStorageProtocol
      - Throws: If listing keys fails
      */
     public func listKeyIdentifiers() async throws -> [String] {
-        switch await secureStorage.listDataIdentifiers() {
+        switch await self.secureStorage.listDataIdentifiers() {
         case .success(let identifiers):
             return identifiers
         case .failure(let error):

@@ -13,27 +13,32 @@ import SecurityCoreInterfaces
  */
 
 /**
- Options for cryptographic operations.
- 
- Provides configuration parameters for encryption and decryption operations.
+ Options used for cryptographic operations in the CryptoServices module.
  */
 public struct CryptoOptions: Sendable, Equatable {
     /// The algorithm to use for the operation
     public let algorithm: EncryptionAlgorithm
     
     /// Additional parameters for the operation
-    public let parameters: [String: Any]?
+    public let parameters: [String: CryptoParameter]?
     
-    /// Initialises a new CryptoOptions instance
-    /// - Parameters:
-    ///   - algorithm: The encryption algorithm to use
-    ///   - parameters: Additional parameters for the operation
+    /// Initialize with specific algorithm and parameters
     public init(
-        algorithm: EncryptionAlgorithm = .aes256,
-        parameters: [String: Any]? = nil
+        algorithm: EncryptionAlgorithm,
+        parameters: [String: CryptoParameter]? = nil
     ) {
         self.algorithm = algorithm
         self.parameters = parameters
+    }
+    
+    /// Equatable implementation for CryptoOptions
+    public static func == (lhs: CryptoOptions, rhs: CryptoOptions) -> Bool {
+        if lhs.algorithm != rhs.algorithm {
+            return false
+        }
+        
+        // Parameters can be directly compared since CryptoParameter is Equatable
+        return lhs.parameters == rhs.parameters
     }
 }
 
@@ -79,27 +84,32 @@ public struct KeyDerivationOptions: Sendable, Equatable {
 }
 
 /**
- Options for HMAC operations.
- 
- Configures the hash algorithm and other parameters for HMAC operations.
+ Options used for HMAC operations.
  */
 public struct HMACOptions: Sendable, Equatable {
-    /// The hash algorithm to use for the HMAC
-    public let algorithm: HashAlgorithm
+    /// The algorithm to use for the HMAC
+    public let algorithm: CoreSecurityTypes.HashAlgorithm
     
-    /// Additional parameters for the HMAC operation
-    public let parameters: [String: Any]?
+    /// Additional parameters for the HMAC
+    public let parameters: [String: CryptoParameter]?
     
-    /// Initialises a new HMACOptions instance
-    /// - Parameters:
-    ///   - algorithm: The hash algorithm to use
-    ///   - parameters: Additional parameters for the HMAC
+    /// Initialize with specific algorithm and parameters
     public init(
-        algorithm: HashAlgorithm = .sha256,
-        parameters: [String: Any]? = nil
+        algorithm: CoreSecurityTypes.HashAlgorithm,
+        parameters: [String: CryptoParameter]? = nil
     ) {
         self.algorithm = algorithm
         self.parameters = parameters
+    }
+    
+    /// Equatable implementation for HMACOptions
+    public static func == (lhs: HMACOptions, rhs: HMACOptions) -> Bool {
+        if lhs.algorithm != rhs.algorithm {
+            return false
+        }
+        
+        // Parameters can be directly compared since CryptoParameter is Equatable
+        return lhs.parameters == rhs.parameters
     }
 }
 

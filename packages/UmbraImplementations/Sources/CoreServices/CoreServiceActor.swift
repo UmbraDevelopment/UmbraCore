@@ -118,35 +118,6 @@ public actor CoreServiceActor: CoreServiceProtocol {
       )
 
       logger.info("Core framework initialised successfully")
-    } catch {
-      // Update status
-      operationalStatus = .error
-
-      // Log the error with privacy-aware logging
-      logger.error(
-        "Core framework initialisation failed",
-        metadata: [
-          "error": .public(error.localizedDescription)
-        ]
-      )
-
-      // Publish an error event
-      publishEvent(
-        CoreEventDTO(
-          identifier: UUID().uuidString,
-          eventType: .error,
-          timestamp: TimePointDTO.now(),
-          status: .failed,
-          component: "CoreService",
-          context: "Core framework initialisation failed: \(error.localizedDescription)"
-        )
-      )
-
-      // Map the error to a CoreError
-      throw UmbraErrors.CoreError.initialisationError(
-        message: "Failed to initialise core framework: \(error.localizedDescription)",
-        underlyingError: error
-      )
     }
   }
 
@@ -316,37 +287,7 @@ public actor CoreServiceActor: CoreServiceProtocol {
       )
 
       logger.info("Core framework shut down successfully")
-    } catch {
-      // Update status to error if not forced
-      if !force {
-        operationalStatus = .error
-
-        // Log the error with privacy-aware logging
-        logger.error(
-          "Core framework shutdown failed",
-          metadata: [
-            "error": .public(error.localizedDescription)
-          ]
-        )
-
-        // Publish an error event
-        publishEvent(
-          CoreEventDTO(
-            identifier: UUID().uuidString,
-            eventType: .error,
-            timestamp: TimePointDTO.now(),
-            status: .failed,
-            component: "CoreService",
-            context: "Core framework shutdown failed: \(error.localizedDescription)"
-          )
-        )
-
-        // Map the error to a CoreError
-        throw UmbraErrors.CoreError.operationFailed(
-          message: "Failed to shut down core framework: \(error.localizedDescription)",
-          underlyingError: error
-        )
-      } else {
+    } else {
         // If forced, log the error but continue with shutdown
         logger.warning(
           "Core framework shutdown encountered errors, but continuing due to force flag",

@@ -153,6 +153,6 @@ public actor CryptoServiceAdapter: CoreInterfaces.CoreCryptoServiceProtocol {
     // We don't have a direct hash method in the CryptoServiceProtocol shown here,
     // so we would need to use the appropriate method from the underlying implementation
     // or extend the protocol. For this example, we'll throw an unimplemented error.
-    throw CryptoError.operationFailed(reason: "Hash operation not implemented")
+    throw CryptoError.operationFailed("Hash operation not implemented")
   }
 }

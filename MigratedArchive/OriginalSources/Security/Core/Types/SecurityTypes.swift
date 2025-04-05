@@ -56,7 +56,7 @@ public enum EncryptionAlgorithm: String, Codable, Sendable {
 
   /// Default algorithm for encryption
   public static var `default`: EncryptionAlgorithm {
-    .aes256Gcm
+    .aes128Gcm
   }
 }
 

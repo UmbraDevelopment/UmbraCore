@@ -1,4 +1,6 @@
 import Foundation
+import LoggingServices
+
 import KeychainInterfaces
 import LoggingInterfaces
 import LoggingTypes

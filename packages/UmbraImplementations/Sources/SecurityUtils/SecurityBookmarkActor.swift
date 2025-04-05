@@ -93,7 +93,7 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
       let identifier = storageIdentifier ?? "bookmark_\(UUID().uuidString)"
       
       // Store the bookmark data securely
-      let storeResult=await secureStorage.storeData(
+      let storeResult=await self.secureStorage.storeData(
         bookmarkBytes,
         withIdentifier: identifier
       )
@@ -173,7 +173,7 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
     )
     
     // Retrieve the bookmark data from secure storage
-    let retrieveResult=await secureStorage.retrieveData(
+    let retrieveResult=await self.secureStorage.retrieveData(
       withIdentifier: storageIdentifier
     )
     
@@ -421,7 +421,7 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
         var updatedBookmarkBytes: [UInt8]? = nil
         if recreateIfStale && isStale {
           // Retrieve the updated bookmark data from secure storage
-          let retrieveResult = await secureStorage.retrieveData(withIdentifier: storageIdentifier)
+          let retrieveResult = await self.secureStorage.retrieveData(withIdentifier: storageIdentifier)
           if case let .success(bookmarkData) = retrieveResult {
             updatedBookmarkBytes = bookmarkData
           }

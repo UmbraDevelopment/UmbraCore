@@ -72,19 +72,19 @@ extension KeyManagementError {
     public func toStandardError() -> SecurityProtocolError {
         switch self {
         case .keyNotFound(let identifier):
-            return .operationFailed(reason: "Key not found: \(identifier)")
+            return .operationFailed("Key not found: \(identifier)")
         case .invalidInput(let details):
             return .inputError("Invalid input: \(details)")
         case .keyManagementError(let details):
-            return .operationFailed(reason: "Key management error: \(details)")
+            return .operationFailed("Key management error: \(details)")
         case .keyFormatError(let details):
             return .invalidMessageFormat(details: "Invalid key format: \(details)")
         case .storageError(let details):
-            return .operationFailed(reason: "Storage error: \(details)")
+            return .operationFailed("Storage error: \(details)")
         case .accessError(let details):
             return .authenticationFailed(reason: "Access error: \(details)")
         case .keyInaccessible(let details):
-            return .operationFailed(reason: "Key inaccessible: \(details)")
+            return .operationFailed("Key inaccessible: \(details)")
         }
     }
     

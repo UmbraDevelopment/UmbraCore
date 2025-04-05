@@ -45,7 +45,7 @@ import UmbraErrors
     public init(secureStorage: SecureStorageProtocol) {
         self.secureStorage = secureStorage
         self.defaultConfig = SecurityConfigDTO(
-            encryptionAlgorithm: .aes256GCM,
+            encryptionAlgorithm: .aes128GCM,
             hashAlgorithm: .sha256,
             providerType: .cryptoKit,
             options: nil
@@ -71,7 +71,7 @@ import UmbraErrors
       options: EncryptionOptions?
     ) async -> Result<String, SecurityStorageError> {
       // Retrieve the data to encrypt
-      let dataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
+      let dataResult = await self.secureStorage.retrieveData(withIdentifier: dataIdentifier)
       guard case let .success(data) = dataResult else {
         if case let .failure(error) = dataResult {
           return .failure(error)
@@ -80,7 +80,7 @@ import UmbraErrors
       }
       
       // Retrieve the encryption key
-      let keyResult = await secureStorage.retrieveData(withIdentifier: keyIdentifier)
+      let keyResult = await self.secureStorage.retrieveData(withIdentifier: keyIdentifier)
       guard case let .success(key) = keyResult else {
         if case let .failure(error) = keyResult {
           return .failure(error)
@@ -96,7 +96,7 @@ import UmbraErrors
           let encryptedIdentifier = "encrypted_\(UUID().uuidString)"
           
           // Store the encrypted data
-          let storeResult = await secureStorage.storeData(encryptedData, withIdentifier: encryptedIdentifier)
+          let storeResult = await self.secureStorage.storeData(encryptedData, withIdentifier: encryptedIdentifier)
           switch storeResult {
             case .success:
               return .success(encryptedIdentifier)
@@ -120,7 +120,7 @@ import UmbraErrors
       options: DecryptionOptions?
     ) async -> Result<String, SecurityStorageError> {
       // Retrieve the encrypted data
-      let encryptedDataResult = await secureStorage.retrieveData(withIdentifier: encryptedDataIdentifier)
+      let encryptedDataResult = await self.secureStorage.retrieveData(withIdentifier: encryptedDataIdentifier)
       guard case let .success(encryptedData) = encryptedDataResult else {
         if case let .failure(error) = encryptedDataResult {
           return .failure(error)
@@ -129,7 +129,7 @@ import UmbraErrors
       }
       
       // Retrieve the decryption key
-      let keyResult = await secureStorage.retrieveData(withIdentifier: keyIdentifier)
+      let keyResult = await self.secureStorage.retrieveData(withIdentifier: keyIdentifier)
       guard case let .success(key) = keyResult else {
         if case let .failure(error) = keyResult {
           return .failure(error)
@@ -145,7 +145,7 @@ import UmbraErrors
           let decryptedIdentifier = "decrypted_\(UUID().uuidString)"
           
           // Store the decrypted data
-          let storeResult = await secureStorage.storeData(decryptedData, withIdentifier: decryptedIdentifier)
+          let storeResult = await self.secureStorage.storeData(decryptedData, withIdentifier: decryptedIdentifier)
           switch storeResult {
             case .success:
               return .success(decryptedIdentifier)
@@ -165,7 +165,7 @@ import UmbraErrors
       options: HashingOptions?
     ) async -> Result<String, SecurityStorageError> {
       // Retrieve the data to hash
-      let dataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
+      let dataResult = await self.secureStorage.retrieveData(withIdentifier: dataIdentifier)
       guard case let .success(data) = dataResult else {
         if case let .failure(error) = dataResult {
           return .failure(error)
@@ -181,7 +181,7 @@ import UmbraErrors
           let hashIdentifier = "hash_\(UUID().uuidString)"
           
           // Store the hash
-          let storeResult = await secureStorage.storeData(hashValue, withIdentifier: hashIdentifier)
+          let storeResult = await self.secureStorage.storeData(hashValue, withIdentifier: hashIdentifier)
           switch storeResult {
             case .success:
               return .success(hashIdentifier)
@@ -204,7 +204,7 @@ import UmbraErrors
       options: HashingOptions?
     ) async -> Result<Bool, SecurityStorageError> {
       // Retrieve the data to verify
-      let dataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
+      let dataResult = await self.secureStorage.retrieveData(withIdentifier: dataIdentifier)
       guard case let .success(data) = dataResult else {
         if case let .failure(error) = dataResult {
           return .failure(error)
@@ -213,7 +213,7 @@ import UmbraErrors
       }
       
       // Retrieve the expected hash
-      let expectedHashResult = await secureStorage.retrieveData(withIdentifier: hashIdentifier)
+      let expectedHashResult = await self.secureStorage.retrieveData(withIdentifier: hashIdentifier)
       guard case let .success(expectedHash) = expectedHashResult else {
         if case let .failure(error) = expectedHashResult {
           return .failure(error)
@@ -250,7 +250,7 @@ import UmbraErrors
           let keyIdentifier = "key_\(UUID().uuidString)"
           
           // Store the key
-          let storeResult = await secureStorage.storeData(keyData, withIdentifier: keyIdentifier)
+          let storeResult = await self.secureStorage.storeData(keyData, withIdentifier: keyIdentifier)
           switch storeResult {
             case .success:
               return .success(keyIdentifier)
@@ -275,7 +275,7 @@ import UmbraErrors
       let identifier = customIdentifier ?? "imported_\(UUID().uuidString)"
       
       // Store the data
-      let storeResult = await secureStorage.storeData(data, withIdentifier: identifier)
+      let storeResult = await self.secureStorage.storeData(data, withIdentifier: identifier)
       switch storeResult {
         case .success:
           return .success(identifier)
@@ -292,7 +292,7 @@ import UmbraErrors
       identifier: String
     ) async -> Result<[UInt8], SecurityStorageError> {
       // Retrieve the data
-      return await secureStorage.retrieveData(withIdentifier: identifier)
+      return await self.secureStorage.retrieveData(withIdentifier: identifier)
     }
 
     /**

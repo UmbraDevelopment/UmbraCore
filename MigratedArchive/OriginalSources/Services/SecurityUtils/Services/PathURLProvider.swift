@@ -142,14 +142,6 @@ public struct PathURLProvider: URLProvider {
       if !url.startAccessingSecurityScopedResource() {
         return .failure(.storageOperationFailed("Failed to access security-scoped resource"))
       }
-      // Add to tracked paths
-      await PathAccessTracker.shared.addPath(path)
-      return .success(true)
-    } catch {
-      return .failure(
-        .storageOperationFailed("Error accessing resource: \(error.localizedDescription)")
-      )
-    }
   }
 
   /// Stop accessing a path

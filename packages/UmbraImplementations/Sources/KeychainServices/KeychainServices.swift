@@ -44,6 +44,8 @@
 /// isolation of state.
 
 import CoreSecurityTypes
+import LoggingServices
+
 import Foundation
 import KeychainInterfaces
 import LoggingInterfaces
@@ -178,7 +180,7 @@ public struct SimpleKeyManager: KeyManagementProtocol {
       source: "SimpleKeyManager"
     )
     return .failure(
-      .operationFailed(reason: "Simple implementation does not support key retrieval")
+      .operationFailed("Simple implementation does not support key retrieval")
     )
   }
 
@@ -192,7 +194,7 @@ public struct SimpleKeyManager: KeyManagementProtocol {
       source: "SimpleKeyManager"
     )
     return .failure(
-      .operationFailed(reason: "Simple implementation does not support key storage")
+      .operationFailed("Simple implementation does not support key storage")
     )
   }
 
@@ -203,7 +205,7 @@ public struct SimpleKeyManager: KeyManagementProtocol {
       source: "SimpleKeyManager"
     )
     return .failure(
-      .operationFailed(reason: "Simple implementation does not support key deletion")
+      .operationFailed("Simple implementation does not support key deletion")
     )
   }
 
@@ -217,7 +219,7 @@ public struct SimpleKeyManager: KeyManagementProtocol {
       source: "SimpleKeyManager"
     )
     return .failure(
-      .operationFailed(reason: "Simple implementation does not support key rotation")
+      .operationFailed("Simple implementation does not support key rotation")
     )
   }
 
@@ -228,7 +230,7 @@ public struct SimpleKeyManager: KeyManagementProtocol {
       source: "SimpleKeyManager"
     )
     return .failure(
-      .operationFailed(reason: "Simple implementation does not support listing key identifiers")
+      .operationFailed("Simple implementation does not support listing key identifiers")
     )
   }
 }

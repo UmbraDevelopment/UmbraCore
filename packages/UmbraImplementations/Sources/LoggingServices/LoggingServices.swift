@@ -13,7 +13,7 @@
 ///
 /// ```swift
 /// // Create a standard console logger
-/// let logger = LoggingServiceFactory.createStandardLogger()
+/// let logger = LoggingServiceFactory.createDefaultConsoleLogger()
 ///
 /// // Log messages at different levels
 /// await logger.info("Application started", metadata: nil, source: "AppDelegate")
@@ -53,6 +53,8 @@
 /// All implementations are Swift 6 compliant with proper concurrency annotations.
 
 @_exported import LoggingInterfaces
+import LoggingServices
+
 @_exported import LoggingTypes
 
 /**
