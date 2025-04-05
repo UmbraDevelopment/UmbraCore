@@ -38,11 +38,11 @@ public enum KeyMetadataError: Error, Sendable, Equatable {
     public func toStandardError() -> SecurityProtocolError {
         switch self {
         case .keyNotFound(let identifier):
-            return .operationFailed("Key not found: \(identifier)")
+            return .operationFailed(reason: "Key not found: \(identifier)")
         case .keyAlreadyExists(let identifier):
-            return .operationFailed("Key already exists: \(identifier)")
+            return .operationFailed(reason: "Key already exists: \(identifier)")
         case .invalidKeyData(let details):
-            return .operationFailed("Invalid key data: \(details)")
+            return .operationFailed(reason: "Invalid key data: \(details)")
         case .keyStorageError(let details), .metadataError(let details), .keyManagementError(let details):
             return .operationFailed(reason: details)
         }

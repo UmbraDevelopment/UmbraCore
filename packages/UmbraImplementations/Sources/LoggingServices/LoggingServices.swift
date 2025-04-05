@@ -53,8 +53,6 @@
 /// All implementations are Swift 6 compliant with proper concurrency annotations.
 
 @_exported import LoggingInterfaces
-import LoggingServices
-
 @_exported import LoggingTypes
 
 /**
