@@ -103,13 +103,13 @@ public actor KeychainSecurityActor {
     let keyID=keyIdentifier ?? deriveKeyIdentifier(forAccount: account)
 
     // Log the operation (without sensitive details)
-    var metadata=PrivacyMetadata()
-    metadata["account"]=PrivacyMetadataValue(value: account, privacy: .private)
-    metadata["operation"]=PrivacyMetadataValue(value: "storeEncryptedSecret", privacy: .public)
-    metadata["keyID"]=PrivacyMetadataValue(value: keyID, privacy: .private)
+    var metadataCollection = LogMetadataDTOCollection()
+    metadataCollection.addEntry(label: "account", value: account, privacy: .private)
+    metadataCollection.addEntry(label: "operation", value: "storeEncryptedSecret", privacy: .public)
+    metadataCollection.addEntry(label: "keyID", value: keyID, privacy: .private)
 
     let debugContext = BaseLogContextDTO(
-        domainName: "Keychain", source: "KeychainSecurityActor", metadata: metadata
+        domainName: "Keychain", source: "KeychainSecurityActor", metadata: metadataCollection
     )
     await logger.debug(
       "Storing encrypted secret for account", context: debugContext
@@ -161,7 +161,7 @@ public actor KeychainSecurityActor {
 
       // Log success
       let infoContext = BaseLogContextDTO(
-        domainName: "Keychain", source: "KeychainSecurityActor", metadata: metadata
+        domainName: "Keychain", source: "KeychainSecurityActor", metadata: metadataCollection
       )
       await logger.info(
         "Successfully stored encrypted secret for account", context: infoContext
@@ -170,15 +170,13 @@ public actor KeychainSecurityActor {
       return keyID
     } catch {
       // Log error with appropriate metadata
-      var errorMetadata=PrivacyMetadata()
-      errorMetadata["account"]=PrivacyMetadataValue(value: account, privacy: .private)
-      errorMetadata["operation"]=PrivacyMetadataValue(value: "storeEncryptedSecret",
-                                                      privacy: .public)
-      errorMetadata["error"]=PrivacyMetadataValue(value: error.localizedDescription,
-                                                  privacy: .public)
+      var errorMetadataCollection = LogMetadataDTOCollection()
+      errorMetadataCollection.addEntry(label: "account", value: account, privacy: .private)
+      errorMetadataCollection.addEntry(label: "operation", value: "storeEncryptedSecret", privacy: .public)
+      errorMetadataCollection.addEntry(label: "error", value: error.localizedDescription, privacy: .public)
 
       let errorContext = BaseLogContextDTO(
-        domainName: "Keychain", source: "KeychainSecurityActor", metadata: errorMetadata
+        domainName: "Keychain", source: "KeychainSecurityActor", metadata: errorMetadataCollection
       )
       await logger.error(
         "Failed to store encrypted secret", context: errorContext
@@ -205,13 +203,13 @@ public actor KeychainSecurityActor {
     let keyID=keyIdentifier ?? deriveKeyIdentifier(forAccount: account)
 
     // Log the operation (without sensitive details)
-    var metadata=PrivacyMetadata()
-    metadata["account"]=PrivacyMetadataValue(value: account, privacy: .private)
-    metadata["operation"]=PrivacyMetadataValue(value: "retrieveEncryptedSecret", privacy: .public)
-    metadata["keyID"]=PrivacyMetadataValue(value: keyID, privacy: .private)
+    var metadataCollection = LogMetadataDTOCollection()
+    metadataCollection.addEntry(label: "account", value: account, privacy: .private)
+    metadataCollection.addEntry(label: "operation", value: "retrieveEncryptedSecret", privacy: .public)
+    metadataCollection.addEntry(label: "keyID", value: keyID, privacy: .private)
 
     let debugContext = BaseLogContextDTO(
-        domainName: "Keychain", source: "KeychainSecurityActor", metadata: metadata
+        domainName: "Keychain", source: "KeychainSecurityActor", metadata: metadataCollection
     )
     await logger.debug(
       "Retrieving encrypted secret for account", context: debugContext
@@ -259,24 +257,22 @@ public actor KeychainSecurityActor {
 
       // Log success
       let infoContext = BaseLogContextDTO(
-        domainName: "Keychain", source: "KeychainSecurityActor", metadata: metadata
+        domainName: "Keychain", source: "KeychainSecurityActor", metadata: metadataCollection
       )
       await logger.info(
-        "Successfully retrieved encrypted secret for account", context: infoContext
+        "Successfully retrieved encrypted secret", context: infoContext
       )
 
       return secretString
     } catch {
-      // Log error with appropriate metadata
-      var errorMetadata=PrivacyMetadata()
-      errorMetadata["account"]=PrivacyMetadataValue(value: account, privacy: .private)
-      errorMetadata["operation"]=PrivacyMetadataValue(value: "retrieveEncryptedSecret",
-                                                      privacy: .public)
-      errorMetadata["error"]=PrivacyMetadataValue(value: error.localizedDescription,
-                                                  privacy: .public)
+      // Log error
+      var errorMetadataCollection = LogMetadataDTOCollection()
+      errorMetadataCollection.addEntry(label: "account", value: account, privacy: .private)
+      errorMetadataCollection.addEntry(label: "operation", value: "retrieveEncryptedSecret", privacy: .public)
+      errorMetadataCollection.addEntry(label: "error", value: error.localizedDescription, privacy: .public)
 
       let errorContext = BaseLogContextDTO(
-        domainName: "Keychain", source: "KeychainSecurityActor", metadata: errorMetadata
+        domainName: "Keychain", source: "KeychainSecurityActor", metadata: errorMetadataCollection
       )
       await logger.error(
         "Failed to retrieve encrypted secret", context: errorContext
@@ -304,16 +300,16 @@ public actor KeychainSecurityActor {
     let keyID=keyIdentifier ?? deriveKeyIdentifier(forAccount: account)
 
     // Log the operation
-    var metadata=PrivacyMetadata()
-    metadata["account"]=PrivacyMetadataValue(value: account, privacy: .private)
-    metadata["operation"]=PrivacyMetadataValue(value: "deleteSecret", privacy: .public)
-    metadata["keyID"]=PrivacyMetadataValue(value: keyID, privacy: .private)
+    var metadataCollection1 = LogMetadataDTOCollection()
+    metadataCollection1.addEntry(label: "account", value: account, privacy: .private)
+    metadataCollection1.addEntry(label: "operation", value: "deleteSecret", privacy: .public)
+    metadataCollection1.addEntry(label: "keyID", value: keyID, privacy: .private)
 
     let debugContext1 = BaseLogContextDTO(
-        domainName: "Keychain", source: "KeychainSecurityActor", metadata: metadata
+        domainName: "Keychain", source: "KeychainSecurityActor", metadata: metadataCollection1
     )
     await logger.debug(
-      "Deleting secret for account", context: debugContext1
+      "Attempting to delete secret for account", context: debugContext1
     )
 
     do {
@@ -326,30 +322,29 @@ public actor KeychainSecurityActor {
         _=await keyManager.deleteKey(withIdentifier: keyID)
 
         let debugContext2 = BaseLogContextDTO(
-          domainName: "Keychain", source: "KeychainSecurityActor", metadata: metadata
+          domainName: "Keychain", source: "KeychainSecurityActor", metadata: metadataCollection1 // Re-use metadata from above
         )
         await logger.debug(
-          "Deleted associated encryption key", context: debugContext2
+          "Also deleting associated derived key", context: debugContext2
         )
       }
 
       // Log success
       let infoContext = BaseLogContextDTO(
-        domainName: "Keychain", source: "KeychainSecurityActor", metadata: metadata
+        domainName: "Keychain", source: "KeychainSecurityActor", metadata: metadataCollection1 // Re-use metadata from above
       )
       await logger.info(
         "Successfully deleted secret for account", context: infoContext
       )
     } catch {
-      // Log error with appropriate metadata
-      var errorMetadata=PrivacyMetadata()
-      errorMetadata["account"]=PrivacyMetadataValue(value: account, privacy: .private)
-      errorMetadata["operation"]=PrivacyMetadataValue(value: "deleteSecret", privacy: .public)
-      errorMetadata["error"]=PrivacyMetadataValue(value: error.localizedDescription,
-                                                  privacy: .public)
+      // Log error
+      var errorMetadataCollection = LogMetadataDTOCollection()
+      errorMetadataCollection.addEntry(label: "account", value: account, privacy: .private)
+      errorMetadataCollection.addEntry(label: "operation", value: "deleteSecret", privacy: .public)
+      errorMetadataCollection.addEntry(label: "error", value: error.localizedDescription, privacy: .public)
 
       let errorContext = BaseLogContextDTO(
-        domainName: "Keychain", source: "KeychainSecurityActor", metadata: errorMetadata
+        domainName: "Keychain", source: "KeychainSecurityActor", metadata: errorMetadataCollection
       )
       await logger.error(
         "Failed to delete secret", context: errorContext
@@ -423,6 +418,10 @@ public enum KeychainError: Error, LocalizedError {
  Used when no custom logger is provided.
  */
 private actor SimpleConsoleLogger: LoggingProtocol {
+  // Provide a basic LoggingActor instance to satisfy the protocol.
+  // Note: This default actor might not be fully configured for all scenarios.
+  public let loggingActor = LoggingActor(destinations: [])
+
   public func log(_ level: LoggingTypes.LogLevel, _ message: String, context: LogContextDTO) async {
     let timestamp = ISO8601DateFormatter().string(from: Date())
     let levelString = String(describing: level).uppercased() // Use LoggingTypes.LogLevel

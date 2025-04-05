@@ -28,14 +28,17 @@ public actor LoggingActor {
   /// - Parameters:
   ///   - level: The severity level of the log
   ///   - message: The message to log
-  ///   - context: The context information for the log
-  public func log(level: LogLevel, message: String, context: LogContext) async {
+  ///   - context: The context DTO for the log
+  public func log(_ level: LogLevel, _ message: String, context: LogContextDTO) async {
     guard isEnabled && level >= minimumLogLevel else { return }
 
     // Map LogLevel from LoggingInterfaces to LoggingTypes
     let mappedLevel = mapLogLevel(level)
 
-    let entry=LogEntry(level: mappedLevel, message: message, context: context)
+    // Create a temporary old-style context for LogEntry compatibility
+    // TODO: Update LogEntry or its usage to accept LogContextDTO directly
+    let oldStyleContext = LogContext(source: context.getSource(), metadata: context.toPrivacyMetadata())
+    let entry=LogEntry(level: mappedLevel, message: message, context: oldStyleContext)
 
     // Write to all destinations
     for destination in destinations {

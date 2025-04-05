@@ -454,16 +454,12 @@ public final class Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked S
     /// Log a message with the specified level and context
     public func log(
       _ level: LoggingTypes.LogLevel,
-      _ message: String,
-      context: LoggingInterfaces.LogContextDTO // Use LogContextDTO
+      _ message: PrivacyString, // Changed from String to PrivacyString
+      context: LoggingInterfaces.LogContextDTO
     ) async {
       // Forward the log call to the underlying logging actor
-      // TODO: This call likely needs updating once LoggingActor uses LogContextDTO
-      // Assuming loggingActor.log still uses the old LogContext for now.
-      // We need to adapt the DTO or update LoggingActor.
-      // For now, creating a basic old context to satisfy the compiler, but this needs fixing.
-      let oldContext = LoggingInterfaces.LogContext(source: context.source, metadata: context.metadataCollection)
-      await loggingActor.log(level: level, message: message, context: oldContext)
+      // LoggingActor.log now expects unnamed params and LogContextDTO
+      await loggingActor.log(level, message, context: context)
     }
 
     // Convenience methods (trace, debug, info, etc.) are provided by the LoggingProtocol extension.

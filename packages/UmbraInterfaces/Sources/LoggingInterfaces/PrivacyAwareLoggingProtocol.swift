@@ -1,45 +1,41 @@
 import LoggingTypes
 
 /// A protocol that provides privacy-aware logging capabilities.
-/// This extends the standard LoggingProtocol with privacy controls.
+/// This extends the standard LoggingProtocol with privacy controls, using LogContextDTO.
 public protocol PrivacyAwareLoggingProtocol: LoggingProtocol {
-  /// Log a message with explicit privacy controls
+  /// Log a message with explicit privacy controls using context
   /// - Parameters:
   ///   - level: The severity level of the log
-  ///   - message: The message with privacy annotations
-  ///   - metadata: Additional structured data with privacy annotations
-  ///   - source: The component that generated the log
+  ///   - message: The message with privacy annotations (consider embedding in context)
+  ///   - context: The logging context DTO containing metadata, source, and privacy info
   func log(
     _ level: LogLevel,
     _ message: PrivacyString,
-    metadata: PrivacyMetadata?,
-    source: String
+    context: LogContextDTO
   ) async
 
-  /// Log sensitive information with appropriate redaction
+  /// Log sensitive information with appropriate redaction using context
   /// - Parameters:
   ///   - level: The severity level of the log
   ///   - message: The basic message without sensitive content
-  ///   - sensitiveValues: Sensitive values that should be handled with privacy controls
-  ///   - source: The component that generated the log
+  ///   - sensitiveValues: Sensitive values (consider embedding in context)
+  ///   - context: The logging context DTO containing metadata, source, etc.
   func logSensitive(
     _ level: LogLevel,
     _ message: String,
     sensitiveValues: LoggingTypes.LogMetadata,
-    source: String
+    context: LogContextDTO
   ) async
 
-  /// Log an error with privacy controls
+  /// Log an error with privacy controls using context
   /// - Parameters:
   ///   - error: The error to log
   ///   - privacyLevel: The privacy level to apply to the error details
-  ///   - metadata: Additional structured data with privacy annotations
-  ///   - source: The component that generated the log
+  ///   - context: The logging context DTO containing metadata, source, etc.
   func logError(
     _ error: Error,
     privacyLevel: LogPrivacyLevel,
-    metadata: PrivacyMetadata?,
-    source: String
+    context: LogContextDTO
   ) async
 }
 
@@ -49,23 +45,23 @@ extension PrivacyAwareLoggingProtocol {
   /// - Parameters:
   ///   - message: The basic message without sensitive content
   ///   - sensitiveValues: Sensitive values that should be handled with privacy controls
-  ///   - source: The component that generated the log
+  ///   - context: The logging context DTO containing metadata, source, etc.
   public func logSensitive(
     _ message: String,
     sensitiveValues: LoggingTypes.LogMetadata,
-    source: String
+    context: LogContextDTO
   ) async {
-    await logSensitive(.info, message, sensitiveValues: sensitiveValues, source: source)
+    await logSensitive(.info, message, sensitiveValues: sensitiveValues, context: context)
   }
 
   /// Log an error with default error level and privacy controls
   /// - Parameters:
   ///   - error: The error to log
-  ///   - source: The component that generated the log
+  ///   - context: The logging context DTO containing metadata, source, etc.
   public func logError(
     _ error: Error,
-    source: String
+    context: LogContextDTO
   ) async {
-    await logError(error, privacyLevel: .private, metadata: nil, source: source)
+    await logError(error, privacyLevel: .private, context: context)
   }
 }

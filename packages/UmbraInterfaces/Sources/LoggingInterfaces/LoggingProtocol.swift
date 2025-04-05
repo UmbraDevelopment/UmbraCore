@@ -29,19 +29,6 @@ public protocol CoreLoggingProtocol: Actor {
  common logging tasks by providing direct functions for each level.
  */
 public protocol LoggingProtocol: CoreLoggingProtocol {
-  /// Log a trace message
-  /// - Parameters:
-  ///   - message: The message to log
-  ///   - metadata: Optional metadata
-  ///   - source: Source component identifier
-  func trace(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async
-
-  /// Log a debug message
-  /// - Parameters:
-  ///   - message: The message to log
-  ///   - context: The logging context DTO containing metadata and source
-  func debug(_ message: String, context: LogContextDTO) async
-
   /// Log an info message
   /// - Parameters:
   ///   - message: The message to log
@@ -53,13 +40,6 @@ public protocol LoggingProtocol: CoreLoggingProtocol {
   ///   - message: The message to log
   ///   - context: The logging context DTO containing metadata and source
   func notice(_ message: String, context: LogContextDTO) async
-
-  /// Log a warning message
-  /// - Parameters:
-  ///   - message: The message to log
-  ///   - metadata: Optional metadata
-  ///   - source: Source component identifier
-  func warning(_ message: String, metadata: LoggingTypes.PrivacyMetadata?, source: String) async
 
   /// Log an error message
   /// - Parameters:
@@ -80,32 +60,14 @@ public protocol LoggingProtocol: CoreLoggingProtocol {
 
 /// Default implementations for LoggingProtocol to ensure compatibility with CoreLoggingProtocol
 public extension LoggingProtocol {
-  /// Maps the individual log level methods to the core logMessage method
-  /// - Parameters:
-  ///   - level: The LogLevel
-  ///   - message: The message to log
-  ///   - metadata: Optional **PrivacyMetadata** (from LoggingTypes)
-  ///   - source: Source component identifier
-  func log(
-    _ level: LogLevel,
-    _ message: String,
-    metadata: LoggingTypes.PrivacyMetadata?,
-    source: String
-  ) async {
-    // Default implementation uses the newer context-based log method.
-    // We need to construct a context. As this is a fallback, a BaseLogContextDTO is suitable.
-    let collection = LogMetadataDTOCollection(entries: []) // Start empty
-    // Note: Converting PrivacyMetadata back to LogMetadataDTOCollection is complex
-    // and potentially lossy. This default implementation might be limited.
-    // A proper implementation should handle context creation more robustly.
-    let context = BaseLogContextDTO(domainName: "DefaultDomain", source: source, metadata: collection)
-    await log(level, message, context: context) // Call the context-based log
-  }
-
   // --- Convenience methods using Context DTO ---
 
   func debug(_ message: String, context: LogContextDTO) async {
     await log(.debug, message, context: context)
+  }
+
+  func trace(_ message: String, context: LogContextDTO) async {
+    await log(.trace, message, context: context)
   }
 
   func info(_ message: String, context: LogContextDTO) async {
