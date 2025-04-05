@@ -92,16 +92,16 @@ public struct LogEntry: Sendable, Equatable, Hashable {
     message: String,
     context: LogContext
   ) {
-    timestamp = context.timestamp
-    self.level = level
-    self.message = message
+    timestamp=context.timestamp
+    self.level=level
+    self.message=message
     // Convert LogContextDTO metadata to PrivacyMetadata
-    metadata = context.toPrivacyMetadata()
+    metadata=context.toPrivacyMetadata()
     // Use default source if the context source is nil
-    source = context.getSource()
+    source=context.getSource()
     // Create LogIdentifier from correlationID string
-    entryID = context.correlationID != nil ? 
-      LogIdentifier(value: context.correlationID!) : 
+    entryID=context.correlationID != nil ?
+      LogIdentifier(value: context.correlationID!) :
       LogIdentifier.unique()
   }
 }

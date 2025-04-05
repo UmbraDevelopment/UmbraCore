@@ -42,8 +42,8 @@ final class HashingService: SecurityServiceBase {
     cryptoService: SecurityCoreInterfaces.CryptoServiceProtocol,
     logger: LoggingInterfaces.LoggingProtocol
   ) {
-    self.cryptoService = cryptoService
-    self.logger = logger
+    self.cryptoService=cryptoService
+    self.logger=logger
   }
 
   /**
@@ -67,13 +67,13 @@ final class HashingService: SecurityServiceBase {
    - Returns: Result containing hashed data or error information
    */
   func hash(config: SecurityConfigDTO) async -> SecurityResultDTO {
-    let operationID = UUID().uuidString
-    let startTime = Date()
+    let operationID=UUID().uuidString
+    let startTime=Date()
     // Use generateRandom as a placeholder operation since there's no specific hash case
-    let operation = SecurityOperation.generateRandom(length: 0)
+    let operation=SecurityOperation.generateRandom(length: 0)
 
     // Create metadata for logging
-    let logMetadata = createOperationMetadata(
+    let logMetadata=createOperationMetadata(
       operationID: operationID,
       operation: operation,
       config: config
@@ -84,21 +84,21 @@ final class HashingService: SecurityServiceBase {
     do {
       // Extract required parameters from configuration
       guard
-        let dataString = config.options["data"],
-        let inputData = SendableCryptoMaterial.fromBase64(dataString)
+        let dataString=config.options["data"],
+        let inputData=SendableCryptoMaterial.fromBase64(dataString)
       else {
         throw SecurityError.invalidInput("Missing or invalid input data for hashing")
       }
 
       // Determine hash algorithm to use
-      let hashAlgorithm = HashAlgorithm(rawValue: config.algorithm) ?? HashAlgorithm.sha256
+      let hashAlgorithm=HashAlgorithm(rawValue: config.algorithm) ?? HashAlgorithm.sha256
 
       // Perform the hashing operation
-      let hashResult = try await cryptoService.hash(inputData, algorithm: hashAlgorithm.rawValue)
+      let hashResult=try await cryptoService.hash(inputData, algorithm: hashAlgorithm.rawValue)
 
       // Calculate duration for performance metrics
-      let duration = Date().timeIntervalSince(startTime)
-      
+      let duration=Date().timeIntervalSince(startTime)
+
       // Log successful operation
       await logger.info(
         "Completed hashing operation successfully",
@@ -118,8 +118,8 @@ final class HashingService: SecurityServiceBase {
 
     } catch {
       // Calculate duration even for failed operations
-      let duration = Date().timeIntervalSince(startTime)
-      
+      let duration=Date().timeIntervalSince(startTime)
+
       // Log the error
       await logger.error(
         "Hashing operation failed: \(error.localizedDescription)",
@@ -150,33 +150,36 @@ final class HashingService: SecurityServiceBase {
      - algorithm: The hashing algorithm to use
    - Returns: Result containing hashed data or error information
    */
-  func hashData(_ data: SendableCryptoMaterial, algorithm: HashAlgorithm = .sha256) async -> Result<SendableCryptoMaterial, Error> {
-    let operationID = UUID().uuidString
-    let startTime = Date()
-    
+  func hashData(
+    _ data: SendableCryptoMaterial,
+    algorithm: HashAlgorithm = .sha256
+  ) async -> Result<SendableCryptoMaterial, Error> {
+    let operationID=UUID().uuidString
+    let startTime=Date()
+
     // Create basic logging metadata
-    let logMetadata: [String: String] = [
+    let logMetadata: [String: String]=[
       "operationID": operationID,
       "algorithm": algorithm.rawValue
     ]
-    
+
     await logger.info("Starting direct hash operation", metadata: logMetadata)
-    
+
     do {
       // Perform the hashing operation
-      let hashedData = try await cryptoService.hash(data, algorithm: algorithm.rawValue)
-      
+      let hashedData=try await cryptoService.hash(data, algorithm: algorithm.rawValue)
+
       // Log successful operation
-      let duration = Date().timeIntervalSince(startTime)
+      let duration=Date().timeIntervalSince(startTime)
       await logger.info(
         "Completed direct hash operation",
         metadata: logMetadata.merging(["duration": "\(duration)"])
       )
-      
+
       return .success(hashedData)
     } catch {
       // Log error
-      let duration = Date().timeIntervalSince(startTime)
+      let duration=Date().timeIntervalSince(startTime)
       await logger.error(
         "Direct hash operation failed: \(error.localizedDescription)",
         metadata: logMetadata.merging([
@@ -184,7 +187,7 @@ final class HashingService: SecurityServiceBase {
           "error": error.localizedDescription
         ])
       )
-      
+
       return .failure(error)
     }
   }
@@ -194,9 +197,9 @@ final class HashingService: SecurityServiceBase {
  Supported hash algorithms
  */
 enum HashAlgorithm: String {
-  case md5 = "MD5"
-  case sha1 = "SHA1"
-  case sha256 = "SHA256"
-  case sha384 = "SHA384"
-  case sha512 = "SHA512"
+  case md5="MD5"
+  case sha1="SHA1"
+  case sha256="SHA256"
+  case sha384="SHA384"
+  case sha512="SHA512"
 }

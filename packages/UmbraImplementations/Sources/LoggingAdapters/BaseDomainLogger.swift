@@ -7,31 +7,52 @@ public protocol DomainLoggerProtocol: Sendable {
   /// The domain name this logger is responsible for
   var domainName: String { get }
 
-  /// Log a message with the specified level
+  /// Log a message with the specified level and context
+  func log(_ level: LogLevel, _ message: String, context: LogContextDTO) async
+
+  /// Log a message with the specified level (legacy method)
   func log(_ level: LogLevel, _ message: String) async
 
-  /// Log a message with trace level
+  /// Log a message with trace level and context
+  func trace(_ message: String, context: LogContextDTO) async
+
+  /// Log a message with debug level and context
+  func debug(_ message: String, context: LogContextDTO) async
+
+  /// Log a message with info level and context
+  func info(_ message: String, context: LogContextDTO) async
+
+  /// Log a message with warning level and context
+  func warning(_ message: String, context: LogContextDTO) async
+
+  /// Log a message with error level and context
+  func error(_ message: String, context: LogContextDTO) async
+
+  /// Log a message with critical level and context
+  func critical(_ message: String, context: LogContextDTO) async
+
+  /// Log a message with trace level (legacy method)
   func trace(_ message: String) async
 
-  /// Log a message with debug level
+  /// Log a message with debug level (legacy method)
   func debug(_ message: String) async
 
-  /// Log a message with info level
+  /// Log a message with info level (legacy method)
   func info(_ message: String) async
 
-  /// Log a message with warning level
+  /// Log a message with warning level (legacy method)
   func warning(_ message: String) async
 
-  /// Log a message with error level
+  /// Log a message with error level (legacy method)
   func error(_ message: String) async
 
-  /// Log a message with critical level
+  /// Log a message with critical level (legacy method)
   func critical(_ message: String) async
 
   /// Log an error with context
-  func logError(_ error: Error, context: LogContextDTO, privacyLevel: PrivacyClassification) async
+  func logError(_ error: Error, context: LogContextDTO) async
 
-  /// Log a message with the specified context
+  /// Log with specific domain context
   func logWithContext(_ level: LogLevel, _ message: String, context: LogContextDTO) async
 }
 
@@ -57,81 +78,8 @@ public actor BaseDomainLogger: DomainLoggerProtocol {
     self.loggingService=loggingService
   }
 
-  /// Log a message with the specified level
-  public func log(_ level: LogLevel, _ message: String) async {
-    let formattedMessage="[\(domainName)] \(message)"
-
-    // Use the appropriate level-specific method
-    switch level {
-      case .trace:
-        await loggingService.verbose(formattedMessage, metadata: nil, source: domainName)
-      case .debug:
-        await loggingService.debug(formattedMessage, metadata: nil, source: domainName)
-      case .info:
-        await loggingService.info(formattedMessage, metadata: nil, source: domainName)
-      case .warning:
-        await loggingService.warning(formattedMessage, metadata: nil, source: domainName)
-      case .error:
-        await loggingService.error(formattedMessage, metadata: nil, source: domainName)
-      case .critical:
-        await loggingService.critical(formattedMessage, metadata: nil, source: domainName)
-    }
-  }
-
-  /// Log a message with trace level
-  public func trace(_ message: String) async {
-    await log(.trace, message)
-  }
-
-  /// Log a message with debug level
-  public func debug(_ message: String) async {
-    await log(.debug, message)
-  }
-
-  /// Log a message with info level
-  public func info(_ message: String) async {
-    await log(.info, message)
-  }
-
-  /// Log a message with warning level
-  public func warning(_ message: String) async {
-    await log(.warning, message)
-  }
-
-  /// Log a message with error level
-  public func error(_ message: String) async {
-    await log(.error, message)
-  }
-
-  /// Log a message with critical level
-  public func critical(_ message: String) async {
-    await log(.critical, message)
-  }
-
-  /// Log an error with context
-  public func logError(
-    _ error: Error,
-    context: LogContextDTO,
-    privacyLevel _: PrivacyClassification
-  ) async {
-    if let loggableError=error as? LoggableErrorProtocol {
-      // Use the error's built-in privacy metadata
-      let errorMetadata=loggableError.getPrivacyMetadata().toLogMetadata()
-      let formattedMessage="[\(domainName)] \(loggableError.getLogMessage())"
-      let source="\(loggableError.getSource()) via \(domainName)"
-
-      await loggingService.error(formattedMessage, metadata: errorMetadata, source: source)
-    } else {
-      // Handle standard errors with the provided privacy level
-      let formattedMessage="[\(domainName)] \(error.localizedDescription)"
-      let metadata=context.asLogMetadata()
-
-      await loggingService.error(formattedMessage, metadata: metadata, source: domainName)
-    }
-  }
-
-  /// Log a message with the specified context
-  public func logWithContext(_ level: LogLevel, _ message: String, context: LogContextDTO) async {
+  /// Log a message with the specified level and context
+  public func log(_ level: LogLevel, _ message: String, context: LogContextDTO) async {
     let formattedMessage="[\(domainName)] \(message)"
     let metadata=context.asLogMetadata()
 
@@ -150,5 +98,130 @@ public actor BaseDomainLogger: DomainLoggerProtocol {
       case .critical:
         await loggingService.critical(formattedMessage, metadata: metadata, source: domainName)
     }
+  }
+
+  /// Log a message with the specified level (legacy method)
+  public func log(_ level: LogLevel, _ message: String) async {
+    // Create a basic context for backward compatibility
+    let emptyContext=BasicLogContext(source: domainName)
+    await log(level, message, context: emptyContext)
+  }
+
+  /// Log a message with trace level and context
+  public func trace(_ message: String, context: LogContextDTO) async {
+    await log(.trace, message, context: context)
+  }
+
+  /// Log a message with debug level and context
+  public func debug(_ message: String, context: LogContextDTO) async {
+    await log(.debug, message, context: context)
+  }
+
+  /// Log a message with info level and context
+  public func info(_ message: String, context: LogContextDTO) async {
+    await log(.info, message, context: context)
+  }
+
+  /// Log a message with warning level and context
+  public func warning(_ message: String, context: LogContextDTO) async {
+    await log(.warning, message, context: context)
+  }
+
+  /// Log a message with error level and context
+  public func error(_ message: String, context: LogContextDTO) async {
+    await log(.error, message, context: context)
+  }
+
+  /// Log a message with critical level and context
+  public func critical(_ message: String, context: LogContextDTO) async {
+    await log(.critical, message, context: context)
+  }
+
+  /// Log a message with trace level (legacy method)
+  public func trace(_ message: String) async {
+    await log(.trace, message)
+  }
+
+  /// Log a message with debug level (legacy method)
+  public func debug(_ message: String) async {
+    await log(.debug, message)
+  }
+
+  /// Log a message with info level (legacy method)
+  public func info(_ message: String) async {
+    await log(.info, message)
+  }
+
+  /// Log a message with warning level (legacy method)
+  public func warning(_ message: String) async {
+    await log(.warning, message)
+  }
+
+  /// Log a message with error level (legacy method)
+  public func error(_ message: String) async {
+    await log(.error, message)
+  }
+
+  /// Log a message with critical level (legacy method)
+  public func critical(_ message: String) async {
+    await log(.critical, message)
+  }
+
+  /// Log an error with context
+  public func logError(_ error: Error, context: LogContextDTO) async {
+    if let loggableError=error as? LoggableErrorProtocol {
+      // Use the error's built-in privacy metadata
+      let errorMetadata=loggableError.getPrivacyMetadata().toLogMetadata()
+      let formattedMessage="[\(domainName)] \(loggableError.getLogMessage())"
+      let source="\(loggableError.getSource()) via \(domainName)"
+
+      await loggingService.error(formattedMessage, metadata: errorMetadata, source: source)
+    } else {
+      // Handle standard errors with the provided privacy level
+      let formattedMessage="[\(domainName)] \(error.localizedDescription)"
+      let metadata=context.asLogMetadata()
+
+      await loggingService.error(formattedMessage, metadata: metadata, source: domainName)
+    }
+  }
+
+  /// Log with specific domain context
+  public func logWithContext(_ level: LogLevel, _ message: String, context: LogContextDTO) async {
+    await log(level, message, context: context)
+  }
+}
+
+/**
+ A basic implementation of LogContextDTO for legacy logging methods
+ */
+struct BasicLogContext: LogContextDTO {
+  let domainName: String="Default"
+  let correlationID: String?=UUID().uuidString
+  let source: String?
+  let metadata: LogMetadataDTOCollection = .init()
+
+  init(source: String?=nil) {
+    self.source=source
+  }
+
+  func asLogMetadata() -> LogMetadata? {
+    LogMetadata.from(["correlationId": correlationID ?? ""])
+  }
+
+  func withUpdatedMetadata(_: LogMetadataDTOCollection) -> Self {
+    // Return a new instance with the same source
+    BasicLogContext(source: source)
+  }
+
+  func toPrivacyMetadata() -> PrivacyMetadata {
+    PrivacyMetadata()
+  }
+
+  func getSource() -> String {
+    source ?? "Default"
+  }
+
+  func toMetadata() -> LogMetadataDTOCollection {
+    metadata
   }
 }

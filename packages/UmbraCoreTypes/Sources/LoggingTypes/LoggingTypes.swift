@@ -68,15 +68,15 @@ public struct PrivacyMetadataValue: Sendable, Equatable, Hashable {
 
   /// The privacy level for this value
   public let privacy: LogPrivacyLevel
-  
+
   /// String value accessor for privacy-aware code
   public var stringValue: String {
-    return valueString
+    valueString
   }
-  
+
   /// Privacy classification accessor
   public var privacyClassification: LogPrivacyLevel {
-    return privacy
+    privacy
   }
 
   /// Create a new privacy metadata value
@@ -166,12 +166,12 @@ public struct PrivacyMetadata: Sendable, Equatable, Hashable {
       }
     }
   }
-  
+
   /// Get value for key
   /// - Parameter key: The key to look up
   /// - Returns: The metadata value if found
   public func value(forKey key: String) -> PrivacyMetadataValue? {
-    return storage[key]
+    storage[key]
   }
 
   /// Get all entries in the metadata
@@ -354,44 +354,44 @@ public struct LogIdentifier: Sendable, Equatable, Hashable, CustomStringConverti
 public struct LogContext: Sendable, Equatable, Hashable, LogContextDTO {
   /// Source information (e.g., file, class, function)
   public let source: String?
-  
+
   /// Privacy metadata for the log entry
   private let privacyMetadata: PrivacyMetadata?
-  
+
   /// Domain name identifying the log scope
   public let domainName: String
-  
+
   /// Correlation ID for tracing related logs
   public let correlationID: String?
-  
+
   /// Timestamp when this context was created
   public let timestamp: LogTimestamp
-  
+
   /// Access to the metadata for this context as a DTO collection
   public var metadata: LogMetadataDTOCollection {
-    if let privacyMetadata = privacyMetadata {
+    if let privacyMetadata {
       // Convert the legacy PrivacyMetadata to the new format
-      var collection = LogMetadataDTOCollection()
-      
+      var collection=LogMetadataDTOCollection()
+
       // Add all entries from the PrivacyMetadata
       for (key, value) in privacyMetadata.storage {
         switch value.privacy {
-        case .public:
-          collection = collection.withPublic(key: key, value: value.valueString)
-        case .private:
-          collection = collection.withPrivate(key: key, value: value.valueString)
-        case .sensitive:
-          collection = collection.withSensitive(key: key, value: value.valueString)
-        case .hash:
-          collection = collection.withHashed(key: key, value: value.valueString)
-        case .auto:
-          collection = collection.withAuto(key: key, value: value.valueString)
+          case .public:
+            collection=collection.withPublic(key: key, value: value.valueString)
+          case .private:
+            collection=collection.withPrivate(key: key, value: value.valueString)
+          case .sensitive:
+            collection=collection.withSensitive(key: key, value: value.valueString)
+          case .hash:
+            collection=collection.withHashed(key: key, value: value.valueString)
+          case .auto:
+            collection=collection.withAuto(key: key, value: value.valueString)
         }
       }
-      
+
       return collection
     }
-    
+
     return LogMetadataDTOCollection()
   }
 
@@ -410,15 +410,15 @@ public struct LogContext: Sendable, Equatable, Hashable, LogContextDTO {
     metadata: PrivacyMetadata?=nil,
     correlationID: LogIdentifier=LogIdentifier.unique(),
     timestamp: LogTimestamp=LogTimestamp(secondsSinceEpoch: 1_609_459_200.0),
-    domainName: String = "DefaultDomain"
+    domainName: String="DefaultDomain"
   ) {
-    self.source = source
-    self.privacyMetadata = metadata
-    self.correlationID = correlationID.description
-    self.timestamp = timestamp
-    self.domainName = domainName
+    self.source=source
+    privacyMetadata=metadata
+    self.correlationID=correlationID.description
+    self.timestamp=timestamp
+    self.domainName=domainName
   }
-  
+
   /// Async initialiser that generates a current timestamp
   ///
   /// - Parameters:
@@ -429,9 +429,9 @@ public struct LogContext: Sendable, Equatable, Hashable, LogContextDTO {
     source: String,
     metadata: PrivacyMetadata?=nil,
     correlationID: LogIdentifier=LogIdentifier.unique(),
-    domainName: String = "DefaultDomain"
+    domainName: String="DefaultDomain"
   ) async -> LogContext {
-    let timestamp = await LogTimestamp.now()
+    let timestamp=await LogTimestamp.now()
     return LogContext(
       source: source,
       metadata: metadata,
@@ -440,47 +440,47 @@ public struct LogContext: Sendable, Equatable, Hashable, LogContextDTO {
       domainName: domainName
     )
   }
-  
+
   /// Get the privacy metadata for logging purposes
   /// - Returns: The privacy metadata for this context
   public func toPrivacyMetadata() -> PrivacyMetadata {
-    return privacyMetadata ?? PrivacyMetadata()
+    privacyMetadata ?? PrivacyMetadata()
   }
-  
+
   /// Get the source information
   /// - Returns: Source information for logs, or a default if not available
   public func getSource() -> String {
-    return source ?? "UnknownSource"
+    source ?? "UnknownSource"
   }
-  
+
   /// Get the metadata collection
   /// - Returns: The metadata collection for this context
   public func toMetadata() -> LogMetadataDTOCollection {
-    guard let metadata = privacyMetadata else {
+    guard let metadata=privacyMetadata else {
       return LogMetadataDTOCollection()
     }
-    
+
     // Convert PrivacyMetadata to LogMetadataDTOCollection
-    var result = LogMetadataDTOCollection()
-    
+    var result=LogMetadataDTOCollection()
+
     // Access the metadata through public API
     for key in metadata.keys {
-      if let value = metadata.value(forKey: key) {
+      if let value=metadata.value(forKey: key) {
         switch value.privacyClassification {
-        case .public:
-          result = result.withPublic(key: key, value: value.stringValue)
-        case .private:
-          result = result.withPrivate(key: key, value: value.stringValue)
-        case .sensitive:
-          result = result.withSensitive(key: key, value: value.stringValue)
-        case .hash:
-          result = result.withHashed(key: key, value: value.stringValue)
-        default:
-          result = result.withAuto(key: key, value: value.stringValue)
+          case .public:
+            result=result.withPublic(key: key, value: value.stringValue)
+          case .private:
+            result=result.withPrivate(key: key, value: value.stringValue)
+          case .sensitive:
+            result=result.withSensitive(key: key, value: value.stringValue)
+          case .hash:
+            result=result.withHashed(key: key, value: value.stringValue)
+          default:
+            result=result.withAuto(key: key, value: value.stringValue)
         }
       }
     }
-    
+
     return result
   }
 
@@ -488,9 +488,9 @@ public struct LogContext: Sendable, Equatable, Hashable, LogContextDTO {
   /// - Parameter newMetadata: The metadata to add to the existing metadata
   /// - Returns: A new context with combined metadata
   public func withUpdatedMetadata(_ newMetadata: PrivacyMetadata) -> LogContext {
-    var combinedMetadata = privacyMetadata ?? PrivacyMetadata()
+    var combinedMetadata=privacyMetadata ?? PrivacyMetadata()
     combinedMetadata.merge(newMetadata)
- 
+
     return LogContext(
       source: getSource(),
       metadata: combinedMetadata,
@@ -499,20 +499,20 @@ public struct LogContext: Sendable, Equatable, Hashable, LogContextDTO {
       domainName: domainName
     )
   }
-  
+
   /// Create a new context with updated metadata from a DTO collection
   /// - Parameter metadata: The metadata collection to add to the context
   /// - Returns: A new log context with the updated metadata
   public func withUpdatedMetadata(_ metadata: LogMetadataDTOCollection) -> BaseLogContextDTO {
     // Create a new BaseLogContextDTO with merged metadata
-    return BaseLogContextDTO(
+    BaseLogContextDTO(
       domainName: domainName,
       source: source,
       metadata: self.metadata.merging(with: metadata),
       correlationID: correlationID
     )
   }
- 
+
   /// Create a new context with a different source
   /// - Parameter newSource: The new source component identifier
   /// - Returns: A new context with the updated source

@@ -6,13 +6,13 @@ import SecurityCoreInterfaces
 
 /**
  Enhanced implementation of CryptoServiceProtocol with additional security features.
- 
+
  This implementation wraps another CryptoServiceProtocol implementation and adds:
  - Rate limiting prevention to mitigate brute force attacks
  - Enhanced logging for security operations
  - Additional input validation to prevent common security issues
  - Runtime security checks for enhanced protection
- 
+
  This implementation can be used as a decorator over any other crypto implementation for extra
  validation of cryptographic operations.
  */
@@ -20,21 +20,21 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
 
   /// The wrapped implementation that does the actual cryptographic work
   private let wrapped: CryptoServiceProtocol
-  
+
   /// Logger for operations
   private let logger: LoggingInterfaces.LoggingProtocol
-  
+
   /// Rate limiting configuration for security operations
   private let rateLimiter: RateLimiter
-  
+
   /// Provides access to the secure storage from the wrapped implementation
   public var secureStorage: SecureStorageProtocol {
     wrapped.secureStorage
   }
-  
+
   /**
    Initialises a new secure crypto service with rate limiting and enhanced logging.
-   
+
    - Parameters:
      - wrapped: The underlying implementation to delegate to
      - logger: Logger for operations
@@ -43,18 +43,18 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
   public init(
     wrapped: CryptoServiceProtocol,
     logger: LoggingInterfaces.LoggingProtocol,
-    rateLimiter: RateLimiter = RateLimiter()
+    rateLimiter: RateLimiter=RateLimiter()
   ) {
-    self.wrapped = wrapped
-    self.logger = logger
-    self.rateLimiter = rateLimiter
+    self.wrapped=wrapped
+    self.logger=logger
+    self.rateLimiter=rateLimiter
   }
-  
+
   /**
    Encrypt data using the specified key.
-   
+
    This operation is rate-limited and includes additional validation.
-   
+
    - Parameters:
      - dataIdentifier: Identifier for the data to encrypt
      - keyIdentifier: Identifier for the key to use
@@ -75,7 +75,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
       )
       return .failure(.operationFailed("Rate limited operation"))
     }
-    
+
     // Input validation
     guard !dataIdentifier.isEmpty && !keyIdentifier.isEmpty else {
       await logger.error(
@@ -85,10 +85,10 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
       )
       return .failure(.operationFailed("Invalid input: empty identifier"))
     }
-    
+
     // Verify key exists
-    let keyResult = await secureStorage.retrieveData(withIdentifier: keyIdentifier)
-    guard case .success = keyResult else {
+    let keyResult=await secureStorage.retrieveData(withIdentifier: keyIdentifier)
+    guard case .success=keyResult else {
       await logger.error(
         "Key not found for encryption: \(keyIdentifier)",
         metadata: nil,
@@ -96,7 +96,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
       )
       return .failure(.keyNotFound)
     }
-    
+
     // Delegate to wrapped implementation
     return await wrapped.encrypt(
       dataIdentifier: dataIdentifier,
@@ -104,12 +104,12 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
       options: options
     )
   }
-  
+
   /**
    Decrypt data using the specified key.
-   
+
    This operation is rate-limited and includes additional validation.
-   
+
    - Parameters:
      - encryptedDataIdentifier: Identifier for the encrypted data
      - keyIdentifier: Identifier for the key to use
@@ -130,10 +130,10 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
       )
       return .failure(.operationFailed("Rate limited operation"))
     }
-    
+
     // Verify encrypted data exists
-    let dataResult = await secureStorage.retrieveData(withIdentifier: encryptedDataIdentifier)
-    guard case .success = dataResult else {
+    let dataResult=await secureStorage.retrieveData(withIdentifier: encryptedDataIdentifier)
+    guard case .success=dataResult else {
       await logger.error(
         "Encrypted data not found: \(encryptedDataIdentifier)",
         metadata: nil,
@@ -141,10 +141,10 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
       )
       return .failure(.keyNotFound)
     }
-    
+
     // Verify key exists
-    let keyResult = await secureStorage.retrieveData(withIdentifier: keyIdentifier)
-    guard case .success = keyResult else {
+    let keyResult=await secureStorage.retrieveData(withIdentifier: keyIdentifier)
+    guard case .success=keyResult else {
       await logger.error(
         "Key not found for decryption: \(keyIdentifier)",
         metadata: nil,
@@ -152,7 +152,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
       )
       return .failure(.keyNotFound)
     }
-    
+
     // Delegate to wrapped implementation
     return await wrapped.decrypt(
       encryptedDataIdentifier: encryptedDataIdentifier,
@@ -160,10 +160,10 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
       options: options
     )
   }
-  
+
   /**
    Create a hash of the specified data.
-   
+
    - Parameters:
      - dataIdentifier: Identifier for the data to hash
      - options: Optional hashing options
@@ -182,7 +182,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
       )
       return .failure(.operationFailed("Rate limited operation"))
     }
-    
+
     // Input validation
     guard !dataIdentifier.isEmpty else {
       await logger.error(
@@ -192,17 +192,17 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
       )
       return .failure(.operationFailed("Invalid input: empty data identifier"))
     }
-    
+
     // Delegate to wrapped implementation
     return await wrapped.hash(
       dataIdentifier: dataIdentifier,
       options: options
     )
   }
-  
+
   /**
    Verify that a hash matches the expected data.
-   
+
    - Parameters:
      - dataIdentifier: Identifier for the data to verify
      - hashIdentifier: Identifier for the expected hash
@@ -223,10 +223,10 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
       )
       return .failure(.operationFailed("Rate limited operation"))
     }
-    
+
     // Verify data exists
-    let dataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
-    guard case .success = dataResult else {
+    let dataResult=await secureStorage.retrieveData(withIdentifier: dataIdentifier)
+    guard case .success=dataResult else {
       await logger.error(
         "Data not found for hash verification: \(dataIdentifier)",
         metadata: nil,
@@ -234,10 +234,10 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
       )
       return .failure(.keyNotFound)
     }
-    
+
     // Verify hash exists
-    let hashResult = await secureStorage.retrieveData(withIdentifier: hashIdentifier)
-    guard case .success = hashResult else {
+    let hashResult=await secureStorage.retrieveData(withIdentifier: hashIdentifier)
+    guard case .success=hashResult else {
       await logger.error(
         "Hash not found for verification: \(hashIdentifier)",
         metadata: nil,
@@ -245,7 +245,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
       )
       return .failure(.keyNotFound)
     }
-    
+
     // Delegate to wrapped implementation
     return await wrapped.verifyHash(
       dataIdentifier: dataIdentifier,
@@ -253,10 +253,10 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
       options: options
     )
   }
-  
+
   /**
    Generate a new cryptographic key.
-   
+
    - Parameters:
      - length: Length of the key in bits
      - options: Optional key generation options
@@ -275,7 +275,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
       )
       return .failure(.operationFailed("Rate limited operation"))
     }
-    
+
     // Input validation
     if length < 128 || length > 4096 || length % 8 != 0 {
       await logger.error(
@@ -285,17 +285,17 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
       )
       return .failure(.operationFailed("Invalid key length: \(length)"))
     }
-    
+
     // Delegate to wrapped implementation
     return await wrapped.generateKey(
       length: length,
       options: options
     )
   }
-  
+
   /**
    Import data into secure storage.
-   
+
    - Parameters:
      - data: The data to import
      - customIdentifier: Optional custom identifier to use
@@ -314,7 +314,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
       )
       return .failure(.operationFailed("Rate limited operation"))
     }
-    
+
     // Input validation
     guard !data.isEmpty else {
       await logger.error(
@@ -324,8 +324,8 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
       )
       return .failure(.operationFailed("Invalid input: empty data"))
     }
-    
-    if let customIdentifier = customIdentifier, customIdentifier.isEmpty {
+
+    if let customIdentifier, customIdentifier.isEmpty {
       await logger.error(
         "Empty custom identifier provided for import",
         metadata: nil,
@@ -333,19 +333,19 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
       )
       return .failure(.operationFailed("Invalid input: empty custom identifier"))
     }
-    
+
     // Delegate to wrapped implementation
     return await wrapped.importData(
       data,
       customIdentifier: customIdentifier
     )
   }
-  
+
   /**
    Export data from secure storage.
-   
+
    This operation is rate-limited and includes additional validation.
-   
+
    - Parameter identifier: Identifier for the data to export
    - Returns: The raw data or an error
    */
@@ -361,7 +361,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
       )
       return .failure(.operationFailed("Rate limited operation"))
     }
-    
+
     // Input validation
     guard !identifier.isEmpty else {
       await logger.error(
@@ -371,10 +371,10 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
       )
       return .failure(.operationFailed("Invalid input: empty identifier"))
     }
-    
+
     // Verify data exists
-    let dataResult = await secureStorage.retrieveData(withIdentifier: identifier)
-    guard case .success = dataResult else {
+    let dataResult=await secureStorage.retrieveData(withIdentifier: identifier)
+    guard case .success=dataResult else {
       await logger.error(
         "Data not found for export: \(identifier)",
         metadata: nil,
@@ -382,7 +382,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
       )
       return .failure(.keyNotFound)
     }
-    
+
     // Delegate to wrapped implementation
     return await wrapped.exportData(identifier: identifier)
   }
@@ -402,14 +402,14 @@ public final class RateLimiter: Sendable {
     case importData
     case exportData
   }
-  
+
   // For a real implementation, this would track operations and their timestamps
   // This is just a placeholder for the example
-  public func isRateLimited(_ operation: Operation) -> Bool {
+  public func isRateLimited(_: Operation) -> Bool {
     // In a real implementation, we would check if the operation has been
     // performed too many times in a short period
-    return false
+    false
   }
-  
+
   public init() {}
 }

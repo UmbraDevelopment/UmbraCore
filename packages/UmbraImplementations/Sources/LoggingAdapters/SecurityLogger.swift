@@ -74,25 +74,28 @@ public actor SecurityLogger: DomainLoggerProtocol {
      - message: The message to log
    */
   public func log(_ level: LogLevel, _ message: String) async {
+    // For backward compatibility, create a basic security context
+    let context=SecurityLogContext(
+      operation: "generic",
+      resource: "unknown",
+      status: "info"
+    )
+
+    await log(level, message, context: context)
+  }
+
+  /**
+   Log a message with the specified level and context
+
+   - Parameters:
+     - level: The log level
+     - message: The message to log
+     - context: The security context for the log entry
+   */
+  public func log(_ level: LogLevel, _ message: String, context: LogContextDTO) async {
     let formattedMessage="[\(domainName)] \(message)"
 
-    // Use the appropriate level-specific method
-    switch level {
-      case .trace:
-        await loggingService.verbose(formattedMessage, metadata: nil, source: domainName)
-      case .debug:
-        await loggingService.debug(formattedMessage, metadata: nil, source: domainName)
-      case .info:
-        await loggingService.info(formattedMessage, metadata: nil, source: domainName)
-      case .warning:
-        await loggingService.warning(formattedMessage, metadata: nil, source: domainName)
-      case .error:
-        await loggingService.error(formattedMessage, metadata: nil, source: domainName)
-      case .critical:
-        await loggingService.critical(formattedMessage, metadata: nil, source: domainName)
-    }
-
-    // Also log through secure logger for enhanced privacy controls
+    // Convert LogLevel to UmbraLogLevel for secureLogger
     let secureLevel: UmbraLogLevel=switch level {
       case .trace, .debug: .debug
       case .info: .info
@@ -101,7 +104,36 @@ public actor SecurityLogger: DomainLoggerProtocol {
       case .critical: .critical
     }
 
-    await secureLogger.log(level: secureLevel, message: message, metadata: nil)
+    // Use the secure logger with converted level
+    await secureLogger.log(
+      level: secureLevel,
+      message: formattedMessage,
+      metadata: context.asLogMetadata()
+    )
+
+    // Also log through the main logging service for broader visibility
+    if let loggingService=loggingService as? LoggingProtocol {
+      await loggingService.log(level, formattedMessage, context: context)
+    } else {
+      // Legacy fallback for older LoggingServiceProtocol
+      let metadata=context.asLogMetadata()
+
+      // Use the appropriate level-specific method
+      switch level {
+        case .trace:
+          await loggingService.verbose(formattedMessage, metadata: metadata, source: domainName)
+        case .debug:
+          await loggingService.debug(formattedMessage, metadata: metadata, source: domainName)
+        case .info:
+          await loggingService.info(formattedMessage, metadata: metadata, source: domainName)
+        case .warning:
+          await loggingService.warning(formattedMessage, metadata: metadata, source: domainName)
+        case .error:
+          await loggingService.error(formattedMessage, metadata: metadata, source: domainName)
+        case .critical:
+          await loggingService.critical(formattedMessage, metadata: metadata, source: domainName)
+      }
+    }
   }
 
   /// Log a message with trace level
@@ -132,6 +164,38 @@ public actor SecurityLogger: DomainLoggerProtocol {
   /// Log a message with critical level
   public func critical(_ message: String) async {
     await log(.critical, message)
+  }
+
+  // MARK: - Context-based logging methods
+
+  /// Log a message with trace level and context
+  public func trace(_ message: String, context: LogContextDTO) async {
+    await log(.trace, message, context: context)
+  }
+
+  /// Log a message with debug level and context
+  public func debug(_ message: String, context: LogContextDTO) async {
+    await log(.debug, message, context: context)
+  }
+
+  /// Log a message with info level and context
+  public func info(_ message: String, context: LogContextDTO) async {
+    await log(.info, message, context: context)
+  }
+
+  /// Log a message with warning level and context
+  public func warning(_ message: String, context: LogContextDTO) async {
+    await log(.warning, message, context: context)
+  }
+
+  /// Log a message with error level and context
+  public func error(_ message: String, context: LogContextDTO) async {
+    await log(.error, message, context: context)
+  }
+
+  /// Log a message with critical level and context
+  public func critical(_ message: String, context: LogContextDTO) async {
+    await log(.critical, message, context: context)
   }
 
   /**
@@ -212,7 +276,7 @@ public actor SecurityLogger: DomainLoggerProtocol {
    - Parameters:
      - error: The error to log
      - context: Domain-specific context for the log
-     - privacyLevel: The privacy level for the error details
+     - privacyLevel _: The privacy level for the error details
    */
   public func logError(
     _ error: Error,
@@ -257,63 +321,7 @@ public actor SecurityLogger: DomainLoggerProtocol {
     _ message: String,
     context: any LogContextDTO
   ) async {
-    let formattedMessage="[\(domainName)] \(message)"
-
-    // Use the appropriate method based on the log level
-    switch level {
-      case .trace:
-        await loggingService.verbose(
-          formattedMessage,
-          metadata: context.asLogMetadata(),
-          source: context.getSource()
-        )
-      case .debug:
-        await loggingService.debug(
-          formattedMessage,
-          metadata: context.asLogMetadata(),
-          source: context.getSource()
-        )
-      case .info:
-        await loggingService.info(
-          formattedMessage,
-          metadata: context.asLogMetadata(),
-          source: context.getSource()
-        )
-      case .warning:
-        await loggingService.warning(
-          formattedMessage,
-          metadata: context.asLogMetadata(),
-          source: context.getSource()
-        )
-      case .error:
-        await loggingService.error(
-          formattedMessage,
-          metadata: context.asLogMetadata(),
-          source: context.getSource()
-        )
-      case .critical:
-        await loggingService.critical(
-          formattedMessage,
-          metadata: context.asLogMetadata(),
-          source: context.getSource()
-        )
-    }
-
-    // Also log through secure logger with privacy controls
-    let secureLevel: UmbraLogLevel=switch level {
-      case .trace, .debug: .debug
-      case .info: .info
-      case .warning: .warning
-      case .error: .error
-      case .critical: .critical
-    }
-
-    // Pass to secure logger
-    await secureLogger.log(
-      level: secureLevel,
-      message: message,
-      metadata: nil
-    )
+    await log(level, message, context: context)
   }
 
   /**

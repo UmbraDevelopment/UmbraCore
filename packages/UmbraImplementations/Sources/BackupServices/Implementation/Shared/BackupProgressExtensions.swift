@@ -9,7 +9,7 @@ extension BackupProgress {
   /// - Returns: A BackupProgressInfo instance
   public func toBackupProgressInfo(for operation: BackupOperation) -> BackupProgressInfo {
     // Use the DTO as an intermediate adapter layer
-    let dto = BackupProgressDTO.from(resticProgress: self)
+    let dto=BackupProgressDTO.from(resticProgress: self)
     return dto.toBackupProgressInfo(for: operation)
   }
 }

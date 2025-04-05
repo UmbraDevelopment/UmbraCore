@@ -706,16 +706,16 @@ public actor BackupServicesActor: BackupServiceProtocol {
    */
   public func verifyBackup(
     snapshotID: String?,
-    verifyData: Bool = true,
-    repairMode: BackupInterfaces.RepairMode? = nil,
-    options: BackupInterfaces.VerifyOptions? = nil
+    verifyData: Bool=true,
+    repairMode: BackupInterfaces.RepairMode?=nil,
+    options: BackupInterfaces.VerifyOptions?=nil
   ) async -> Result<BackupOperationResponse<VerificationResult>, BackupOperationError> {
     // Create a log context
-    let logContext = BackupLogContext()
+    let logContext=BackupLogContext()
       .withOperation("verifyBackup")
 
     // Add snapshot ID if provided
-    let enhancedContext = snapshotID != nil ?
+    let enhancedContext=snapshotID != nil ?
       logContext.withPublic(key: "snapshotID", value: snapshotID!) :
       logContext
 
@@ -723,33 +723,33 @@ public actor BackupServicesActor: BackupServiceProtocol {
     await backupLogger.logOperationStart(context: enhancedContext)
 
     // Record the start time
-    let startTime = Date()
+    let startTime=Date()
 
     // Create a progress reporter for this operation
-    let progressReporter = AsyncProgressReporter<BackupProgressInfo>()
+    let progressReporter=AsyncProgressReporter<BackupProgressInfo>()
 
     // Create an operation token and register it
-    let token = BackupOperationToken(
+    let token=BackupOperationToken(
       id: UUID(),
       operation: .verifyBackup,
       cancellable: true
     )
 
     // Register the token
-    activeOperations[token.id] = token
+    activeOperations[token.id]=token
 
     // Create a cancellation token for the operation
-    let cancellationToken = BackupOperationCancellationToken(id: token.id.uuidString)
-    activeOperationsCancellationTokens[token.id] = cancellationToken
-    
+    let cancellationToken=BackupOperationCancellationToken(id: token.id.uuidString)
+    activeOperationsCancellationTokens[token.id]=cancellationToken
+
     // Create DTO parameters for the operation using adapter pattern
-    let localRepairMode = repairMode.map { 
-        BackupVerifyParameters.RepairMode(rawValue: $0.rawValue) ?? .reportOnly
+    let localRepairMode=repairMode.map {
+      BackupVerifyParameters.RepairMode(rawValue: $0.rawValue) ?? .reportOnly
     }
-    
-    let localOptions = options.map { VerifyOptions.from(options: $0) }
-    
-    let parameters = BackupVerifyParameters(
+
+    let localOptions=options.map { VerifyOptions.from(options: $0) }
+
+    let parameters=BackupVerifyParameters(
       snapshotID: snapshotID,
       verifyData: verifyData,
       repairMode: localRepairMode,
@@ -758,7 +758,7 @@ public actor BackupServicesActor: BackupServiceProtocol {
 
     do {
       // Execute the operation
-      let verificationResultDTO = try await operationExecutor.executeVerifyOperation(
+      let verificationResultDTO=try await operationExecutor.executeVerifyOperation(
         parameters: parameters,
         progressReporter: progressReporter,
         cancellationToken: cancellationToken,
@@ -766,7 +766,7 @@ public actor BackupServicesActor: BackupServiceProtocol {
       )
 
       // Calculate operation duration
-      let duration = Date().timeIntervalSince(startTime)
+      let duration=Date().timeIntervalSince(startTime)
 
       // Log operation success
       await backupLogger.logOperationSuccess(
@@ -775,10 +775,10 @@ public actor BackupServicesActor: BackupServiceProtocol {
       )
 
       // Remove token
-      activeOperationsCancellationTokens[token.id] = nil
-      
+      activeOperationsCancellationTokens[token.id]=nil
+
       // Convert DTO to interface type using adapter
-      let result = verificationResultDTO.toVerificationResult()
+      let result=verificationResultDTO.toVerificationResult()
 
       // Return successful result with operation response
       return .success(
@@ -789,7 +789,7 @@ public actor BackupServicesActor: BackupServiceProtocol {
       )
     } catch {
       // Map error
-      let backupError = error.asBackupOperationError
+      let backupError=error.asBackupOperationError
 
       // Log error
       await backupLogger.logOperationError(
@@ -798,7 +798,7 @@ public actor BackupServicesActor: BackupServiceProtocol {
       )
 
       // Remove token and return error
-      activeOperationsCancellationTokens[token.id] = nil
+      activeOperationsCancellationTokens[token.id]=nil
       return .failure(backupError)
     }
   }

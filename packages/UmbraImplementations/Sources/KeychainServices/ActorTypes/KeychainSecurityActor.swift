@@ -431,7 +431,7 @@ private actor SimpleConsoleLogger: LoggingProtocol {
 
   init() {
     // Initialize with a default LoggingActor. Adjust if specific config needed.
-    self.loggingActor = LoggingActor(destinations: [])
+    loggingActor=LoggingActor(destinations: [])
   }
 
   // MARK: - LoggingProtocol Conformance
@@ -439,16 +439,17 @@ private actor SimpleConsoleLogger: LoggingProtocol {
   /// Logs the message and context to the console.
   nonisolated func log(_ level: LogLevel, _ message: String, context: LogContextDTO) async {
     // Construct a simple string representation for console output.
-    let source = context.source ?? "UnknownSource"
+    let source=context.source ?? "UnknownSource"
     // Simple metadata representation, consider privacy
-    let metadataDesc = context.metadata.entries.map { meta in
+    let metadataDesc=context.metadata.entries.map { meta in
       // Basic check for sensitive data, real implementation might need more robust handling
-      let valueDesc = meta.privacyLevel == .private || meta.privacyLevel == .sensitive ? "<redacted>" : "\(meta.value)"
+      let valueDesc=meta.privacyLevel == .private || meta
+        .privacyLevel == .sensitive ? "<redacted>" : "\(meta.value)"
       return "\(meta.key)=\(valueDesc)"
     }.joined(separator: "; ")
 
-    let timestamp = Date() // Simple timestamp
-    let logLine = "\(timestamp) [\(level)] [\(source)] \(message) { \(metadataDesc) }"
+    let timestamp=Date() // Simple timestamp
+    let logLine="\(timestamp) [\(level)] [\(source)] \(message) { \(metadataDesc) }"
     print(logLine)
   }
 

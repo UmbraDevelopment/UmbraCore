@@ -51,14 +51,14 @@ public struct OSLogPrivacyBackend: LoggingBackend {
       // Convert the DTO collection to PrivacyMetadata and format it
       if !context.metadata.isEmpty {
         // Use the extension method to convert to the format expected by the formatter
-        let privacyMetadata = context.toPrivacyMetadata()
+        let privacyMetadata=context.toPrivacyMetadata()
         let metadataString=formatMetadataWithPrivacy(privacyMetadata)
         logMessage += " \(metadataString)"
       }
 
       // Add correlation ID
-      let correlationString = context.correlationID ?? "none"
-      
+      let correlationString=context.correlationID ?? "none"
+
       logger.log(level: osLogType, "\(logMessage) [correlation: \(correlationString)]")
     #else
       // Fallback for platforms without OSLog

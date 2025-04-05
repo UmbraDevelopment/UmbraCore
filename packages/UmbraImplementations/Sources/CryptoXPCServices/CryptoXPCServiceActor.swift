@@ -77,7 +77,7 @@ public actor CryptoXPCServiceActor {
 
     // Create a new service if we can
     guard let provider=cryptoProvider else {
-      let context = BaseLogContextDTO(domainName: "CryptoXPC", source: "getCryptoService")
+      let context=BaseLogContextDTO(domainName: "CryptoXPC", source: "getCryptoService")
       await logger.error("Failed to get crypto service: No provider available", context: context)
       return nil
     }
@@ -101,7 +101,7 @@ public actor CryptoXPCServiceActor {
     keyID: String,
     options _: CryptoOperationOptionsDTO?
   ) async -> Result<String, UmbraErrorsDTOs.ErrorDTO> {
-    let context = BaseLogContextDTO(domainName: "CryptoXPC", source: "encrypt")
+    let context=BaseLogContextDTO(domainName: "CryptoXPC", source: "encrypt")
     await logger.trace("Starting encrypt operation", context: context)
 
     guard let cryptoService=await getCryptoService() else {
@@ -132,12 +132,15 @@ public actor CryptoXPCServiceActor {
     // Handle the result
     switch encryptResult {
       case let .success(encryptedDataID):
-        let debugContext = BaseLogContextDTO(domainName: "CryptoXPC", source: "CryptoXPCServiceActor.encrypt")
+        let debugContext=BaseLogContextDTO(
+          domainName: "CryptoXPC",
+          source: "CryptoXPCServiceActor.encrypt"
+        )
         await logger.debug("Encryption successful", context: debugContext)
         return .success(encryptedDataID)
 
       case let .failure(error):
-        let errorContext = ErrorLogContext(
+        let errorContext=ErrorLogContext(
           error: error,
           domain: "CryptoXPC",
           source: "CryptoXPCServiceActor.encrypt"
@@ -165,7 +168,7 @@ public actor CryptoXPCServiceActor {
     keyID: String,
     options _: CryptoOperationOptionsDTO?
   ) async -> Result<String, UmbraErrorsDTOs.ErrorDTO> {
-    let context = BaseLogContextDTO(domainName: "CryptoXPC", source: "decrypt")
+    let context=BaseLogContextDTO(domainName: "CryptoXPC", source: "decrypt")
     await logger.trace("Starting decrypt operation", context: context)
 
     guard let cryptoService=await getCryptoService() else {
@@ -196,12 +199,15 @@ public actor CryptoXPCServiceActor {
     // Handle the result
     switch decryptResult {
       case let .success(decryptedDataID):
-        let debugContext = BaseLogContextDTO(domainName: "CryptoXPC", source: "CryptoXPCServiceActor.decrypt")
+        let debugContext=BaseLogContextDTO(
+          domainName: "CryptoXPC",
+          source: "CryptoXPCServiceActor.decrypt"
+        )
         await logger.debug("Decryption successful", context: debugContext)
         return .success(decryptedDataID)
 
       case let .failure(error):
-        let errorContext = ErrorLogContext(
+        let errorContext=ErrorLogContext(
           error: error,
           domain: "CryptoXPC",
           source: "CryptoXPCServiceActor.decrypt"
@@ -227,7 +233,7 @@ public actor CryptoXPCServiceActor {
     length: Int,
     options _: CoreSecurityTypes.RandomizationOptionsDTO?
   ) async -> Result<String, UmbraErrorsDTOs.ErrorDTO> {
-    let context = BaseLogContextDTO(domainName: "CryptoXPC", source: "generateRandomBytes")
+    let context=BaseLogContextDTO(domainName: "CryptoXPC", source: "generateRandomBytes")
     await logger.trace("Starting generateRandomBytes operation", context: context)
 
     // Validate input
@@ -267,12 +273,15 @@ public actor CryptoXPCServiceActor {
       // Process the result
       switch importResult {
         case let .success(dataID):
-          let debugContext = BaseLogContextDTO(domainName: "CryptoXPC", source: "CryptoXPCServiceActor.generateRandomBytes")
+          let debugContext=BaseLogContextDTO(
+            domainName: "CryptoXPC",
+            source: "CryptoXPCServiceActor.generateRandomBytes"
+          )
           await logger.debug("Random data generation successful", context: debugContext)
           return .success(dataID)
 
         case let .failure(error):
-          let errorContext = ErrorLogContext(
+          let errorContext=ErrorLogContext(
             error: error,
             domain: "CryptoXPC",
             source: "CryptoXPCServiceActor.generateRandomBytes"
@@ -288,7 +297,10 @@ public actor CryptoXPCServiceActor {
           return .failure(cryptoError)
       }
     } else {
-      let errorContext = BaseLogContextDTO(domainName: "CryptoXPC", source: "CryptoXPCServiceActor.generateRandomBytes")
+      let errorContext=BaseLogContextDTO(
+        domainName: "CryptoXPC",
+        source: "CryptoXPCServiceActor.generateRandomBytes"
+      )
       await logger.error("Random data generation failed", context: errorContext)
       let cryptoError=UmbraErrorsDTOs.ErrorDTO(
         identifier: "crypto.random.generation_failed",
@@ -312,7 +324,7 @@ public actor CryptoXPCServiceActor {
     algorithm: CoreSecurityTypes.HashAlgorithm,
     options _: CryptoOperationOptionsDTO?
   ) async -> Result<String, UmbraErrorsDTOs.ErrorDTO> {
-    let context = BaseLogContextDTO(domainName: "CryptoXPC", source: "hash")
+    let context=BaseLogContextDTO(domainName: "CryptoXPC", source: "hash")
     await logger.trace("Starting hash operation", context: context)
 
     guard let cryptoService=await getCryptoService() else {
@@ -339,12 +351,15 @@ public actor CryptoXPCServiceActor {
     // Handle the result
     switch hashResult {
       case let .success(resultID):
-        let debugContext = BaseLogContextDTO(domainName: "CryptoXPC", source: "CryptoXPCServiceActor.hash")
+        let debugContext=BaseLogContextDTO(
+          domainName: "CryptoXPC",
+          source: "CryptoXPCServiceActor.hash"
+        )
         await logger.debug("Hash operation successful", context: debugContext)
         return .success(resultID)
 
       case let .failure(error):
-        let errorContext = ErrorLogContext(
+        let errorContext=ErrorLogContext(
           error: error,
           domain: "CryptoXPC",
           source: "CryptoXPCServiceActor.hash"

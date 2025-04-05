@@ -328,121 +328,127 @@ public struct BackupMaintenanceParameters: BackupOperationParameters {
 
 /// Extension to provide conversion methods between DTOs and BackupInterfaces types
 extension BackupCreateParameters {
-    /// Convert to BackupInterfaces.BackupCreationParameters
-    public func toBackupCreationParameters() -> BackupCreationParameters {
-        BackupCreationParameters(
-            sources: sources,
-            excludePaths: excludePaths,
-            tags: tags,
-            options: options?.toBackupOptions()
-        )
-    }
-    
-    /// Create from BackupInterfaces.BackupCreationParameters
-    public static func from(parameters: BackupCreationParameters) -> BackupCreateParameters {
-        BackupCreateParameters(
-            sources: parameters.sources,
-            excludePaths: parameters.excludePaths,
-            tags: parameters.tags,
-            options: parameters.options.map { BackupOptions.from(options: $0) }
-        )
-    }
+  /// Convert to BackupInterfaces.BackupCreationParameters
+  public func toBackupCreationParameters() -> BackupCreationParameters {
+    BackupCreationParameters(
+      sources: sources,
+      excludePaths: excludePaths,
+      tags: tags,
+      options: options?.toBackupOptions()
+    )
+  }
+
+  /// Create from BackupInterfaces.BackupCreationParameters
+  public static func from(parameters: BackupCreationParameters) -> BackupCreateParameters {
+    BackupCreateParameters(
+      sources: parameters.sources,
+      excludePaths: parameters.excludePaths,
+      tags: parameters.tags,
+      options: parameters.options.map { BackupOptions.from(options: $0) }
+    )
+  }
 }
 
 extension BackupRestoreParameters {
-    /// Convert to BackupInterfaces.BackupRestoreParameters
-    public func toBackupRestoreParameters() -> BackupInterfaces.BackupRestoreParameters {
-        BackupInterfaces.BackupRestoreParameters(
-            snapshotID: snapshotID,
-            targetPath: targetPath,
-            includeItems: includePaths,
-            excludeItems: excludePaths,
-            overwritePolicy: BackupInterfaces.OverwritePolicy(rawValue: 0) ?? .askUser,
-            options: options?.toRestoreOptions()
-        )
-    }
-    
-    /// Create from BackupInterfaces.BackupRestoreParameters
-    public static func from(parameters: BackupInterfaces.BackupRestoreParameters) -> BackupRestoreParameters {
-        BackupRestoreParameters(
-            snapshotID: parameters.snapshotID,
-            targetPath: parameters.targetPath,
-            includePaths: parameters.includeItems,
-            excludePaths: parameters.excludeItems,
-            options: parameters.options.map { RestoreOptions.from(options: $0) }
-        )
-    }
+  /// Convert to BackupInterfaces.BackupRestoreParameters
+  public func toBackupRestoreParameters() -> BackupInterfaces.BackupRestoreParameters {
+    BackupInterfaces.BackupRestoreParameters(
+      snapshotID: snapshotID,
+      targetPath: targetPath,
+      includeItems: includePaths,
+      excludeItems: excludePaths,
+      overwritePolicy: BackupInterfaces.OverwritePolicy(rawValue: 0) ?? .askUser,
+      options: options?.toRestoreOptions()
+    )
+  }
+
+  /// Create from BackupInterfaces.BackupRestoreParameters
+  public static func from(
+    parameters: BackupInterfaces
+      .BackupRestoreParameters
+  ) -> BackupRestoreParameters {
+    BackupRestoreParameters(
+      snapshotID: parameters.snapshotID,
+      targetPath: parameters.targetPath,
+      includePaths: parameters.includeItems,
+      excludePaths: parameters.excludeItems,
+      options: parameters.options.map { RestoreOptions.from(options: $0) }
+    )
+  }
 }
 
 extension BackupListParameters {
-    /// Convert to BackupInterfaces.BackupListParameters
-    public func toBackupListParameters() -> BackupInterfaces.BackupListParameters {
-        BackupInterfaces.BackupListParameters(
-            tags: tags,
-            beforeDate: before,
-            afterDate: after,
-            path: path,
-            sourceHost: host,
-            options: nil
-        )
-    }
-    
-    /// Create from BackupInterfaces.BackupListParameters
-    public static func from(parameters: BackupInterfaces.BackupListParameters) -> BackupListParameters {
-        BackupListParameters(
-            tags: parameters.tags,
-            before: parameters.beforeDate,
-            after: parameters.afterDate,
-            host: parameters.sourceHost,
-            path: parameters.path
-        )
-    }
+  /// Convert to BackupInterfaces.BackupListParameters
+  public func toBackupListParameters() -> BackupInterfaces.BackupListParameters {
+    BackupInterfaces.BackupListParameters(
+      tags: tags,
+      beforeDate: before,
+      afterDate: after,
+      path: path,
+      sourceHost: host,
+      options: nil
+    )
+  }
+
+  /// Create from BackupInterfaces.BackupListParameters
+  public static func from(
+    parameters: BackupInterfaces
+      .BackupListParameters
+  ) -> BackupListParameters {
+    BackupListParameters(
+      tags: parameters.tags,
+      before: parameters.beforeDate,
+      after: parameters.afterDate,
+      host: parameters.sourceHost,
+      path: parameters.path
+    )
+  }
 }
 
 // MARK: - Options Adapters
 
 extension BackupOptions {
-    /// Convert to BackupInterfaces.BackupOptions
-    public func toBackupOptions() -> BackupInterfaces.BackupOptions {
-        BackupInterfaces.BackupOptions(
-            compressionLevel: 0,
-            deduplicate: false,
-            encryptionAlgorithm: "",
-            metadata: [:]
-        )
-    }
-    
-    /// Create from BackupInterfaces.BackupOptions
-    public static func from(options: BackupInterfaces.BackupOptions) -> BackupOptions {
-        BackupOptions(
-            compressionLevel: options.compressionLevel,
-            deduplicate: options.deduplicate,
-            encryptionAlgorithm: options.encryptionAlgorithm,
-            metadata: options.metadata
-        )
-    }
+  /// Convert to BackupInterfaces.BackupOptions
+  public func toBackupOptions() -> BackupInterfaces.BackupOptions {
+    BackupInterfaces.BackupOptions(
+      compressionLevel: 0,
+      deduplicate: false,
+      encryptionAlgorithm: "",
+      metadata: [:]
+    )
+  }
+
+  /// Create from BackupInterfaces.BackupOptions
+  public static func from(options: BackupInterfaces.BackupOptions) -> BackupOptions {
+    BackupOptions(
+      compressionLevel: options.compressionLevel,
+      deduplicate: options.deduplicate,
+      encryptionAlgorithm: options.encryptionAlgorithm,
+      metadata: options.metadata
+    )
+  }
 }
 
 extension RestoreOptions {
-    /// Convert to BackupInterfaces.RestoreOptions
-    public func toRestoreOptions() -> BackupInterfaces.RestoreOptions {
-        BackupInterfaces.RestoreOptions(
-            preservePermissions: false,
-            preserveOwnership: false,
-            preserveTimes: false,
-            skipExisting: false,
-            metadata: [:]
-        )
-    }
-    
-    /// Create from BackupInterfaces.RestoreOptions
-    public static func from(options: BackupInterfaces.RestoreOptions) -> RestoreOptions {
-        RestoreOptions(
-            preservePermissions: options.preservePermissions,
-            preserveOwnership: options.preserveOwnership,
-            preserveTimes: options.preserveTimes,
-            skipExisting: options.skipExisting,
-            metadata: options.metadata
-        )
-    }
+  /// Convert to BackupInterfaces.RestoreOptions
+  public func toRestoreOptions() -> BackupInterfaces.RestoreOptions {
+    BackupInterfaces.RestoreOptions(
+      preservePermissions: false,
+      preserveOwnership: false,
+      preserveTimes: false,
+      skipExisting: false,
+      metadata: [:]
+    )
+  }
+
+  /// Create from BackupInterfaces.RestoreOptions
+  public static func from(options: BackupInterfaces.RestoreOptions) -> RestoreOptions {
+    RestoreOptions(
+      preservePermissions: options.preservePermissions,
+      preserveOwnership: options.preserveOwnership,
+      preserveTimes: options.preserveTimes,
+      skipExisting: options.skipExisting,
+      metadata: options.metadata
+    )
+  }
 }

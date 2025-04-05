@@ -12,7 +12,7 @@ extension SecurityCoreInterfaces.EncryptionOptions {
   /// Convert to CryptoOperationOptionsDTO for use with internal APIs
   public func toCryptoOperationOptionsDTO() -> CryptoOperationOptionsDTO {
     // Map the algorithm and mode
-    let cryptoMode: CryptoMode = switch algorithm {
+    let cryptoMode: CryptoMode=switch algorithm {
       case .aes256CBC:
         .cbc
       case .aes256GCM:
@@ -30,16 +30,17 @@ extension SecurityCoreInterfaces.EncryptionOptions {
   }
 
   /// Convert to SecurityConfigDTO for use with SecurityProvider
-  public func toSecurityConfigDTO(withMetadata metadata: [String: String]? = nil) -> SecurityConfigDTO {
-    var configOptions = SecurityConfigOptions()
+  public func toSecurityConfigDTO(withMetadata metadata: [String: String]?=nil)
+  -> SecurityConfigDTO {
+    var configOptions=SecurityConfigOptions()
 
-    var metadataDict = metadata ?? [:]
+    var metadataDict=metadata ?? [:]
     if let authenticatedData {
-      metadataDict["authenticatedData"] = Data(authenticatedData).base64EncodedString()
+      metadataDict["authenticatedData"]=Data(authenticatedData).base64EncodedString()
     }
 
     if !metadataDict.isEmpty {
-      configOptions.metadata = metadataDict
+      configOptions.metadata=metadataDict
     }
 
     return SecurityConfigDTO(
@@ -60,12 +61,12 @@ extension SecurityCoreInterfaces.EncryptionOptions {
   /// Convert internal encryption algorithm to enum representation
   private func toAlgorithmEnum() -> CoreSecurityTypes.EncryptionAlgorithm {
     switch algorithm {
-    case .aes256GCM:
-      return .aes256GCM
-    case .aes256CBC:
-      return .aes256CBC
-    case .chacha20Poly1305:
-      return .chacha20Poly1305
+      case .aes256GCM:
+        .aes256GCM
+      case .aes256CBC:
+        .aes256CBC
+      case .chacha20Poly1305:
+        .chacha20Poly1305
     }
   }
 }
@@ -78,7 +79,7 @@ extension SecurityCoreInterfaces.DecryptionOptions {
   /// Convert to CryptoOperationOptionsDTO for use with internal APIs
   public func toCryptoOperationOptionsDTO() -> CryptoOperationOptionsDTO {
     // Map the algorithm and mode
-    let cryptoMode: CryptoMode = switch algorithm {
+    let cryptoMode: CryptoMode=switch algorithm {
       case .aes256CBC:
         .cbc
       case .aes256GCM:
@@ -96,16 +97,17 @@ extension SecurityCoreInterfaces.DecryptionOptions {
   }
 
   /// Convert to SecurityConfigDTO for use with SecurityProvider
-  public func toSecurityConfigDTO(withMetadata metadata: [String: String]? = nil) -> SecurityConfigDTO {
-    var configOptions = SecurityConfigOptions()
+  public func toSecurityConfigDTO(withMetadata metadata: [String: String]?=nil)
+  -> SecurityConfigDTO {
+    var configOptions=SecurityConfigOptions()
 
-    var metadataDict = metadata ?? [:]
+    var metadataDict=metadata ?? [:]
     if let authenticatedData {
-      metadataDict["authenticatedData"] = Data(authenticatedData).base64EncodedString()
+      metadataDict["authenticatedData"]=Data(authenticatedData).base64EncodedString()
     }
 
     if !metadataDict.isEmpty {
-      configOptions.metadata = metadataDict
+      configOptions.metadata=metadataDict
     }
 
     return SecurityConfigDTO(
@@ -126,12 +128,12 @@ extension SecurityCoreInterfaces.DecryptionOptions {
   /// Convert internal encryption algorithm to enum representation
   private func toAlgorithmEnum() -> CoreSecurityTypes.EncryptionAlgorithm {
     switch algorithm {
-    case .aes256GCM:
-      return .aes256GCM
-    case .aes256CBC:
-      return .aes256CBC
-    case .chacha20Poly1305:
-      return .chacha20Poly1305
+      case .aes256GCM:
+        .aes256GCM
+      case .aes256CBC:
+        .aes256CBC
+      case .chacha20Poly1305:
+        .chacha20Poly1305
     }
   }
 }
@@ -151,13 +153,16 @@ extension SecurityCoreInterfaces.KeyGenerationOptions {
   }
 
   /// Convert to SecurityConfigDTO for use with SecurityProvider
-  public func toSecurityConfigDTO(keySize: Int, withMetadata _: [String: String]? = nil) -> SecurityConfigDTO {
-    var configOptions = SecurityConfigOptions()
+  public func toSecurityConfigDTO(
+    keySize: Int,
+    withMetadata _: [String: String]?=nil
+  ) -> SecurityConfigDTO {
+    var configOptions=SecurityConfigOptions()
 
-    let metadataDict = addMetadata(keySize: keySize, keyType: keyType)
+    let metadataDict=addMetadata(keySize: keySize, keyType: keyType)
 
     if !metadataDict.isEmpty {
-      configOptions.metadata = metadataDict
+      configOptions.metadata=metadataDict
     }
 
     return SecurityConfigDTO(
@@ -179,9 +184,9 @@ extension SecurityCoreInterfaces.KeyGenerationOptions {
   }
 
   private func addMetadata(keySize: Int, keyType: KeyType) -> [String: String] {
-    var metadataDict = [String: String]()
-    metadataDict["keySize"] = "\(keySize)"
-    metadataDict["keyType"] = "\(keyType.rawValue)" // Convert UInt8 to String
+    var metadataDict=[String: String]()
+    metadataDict["keySize"]="\(keySize)"
+    metadataDict["keyType"]="\(keyType.rawValue)" // Convert UInt8 to String
     return metadataDict
   }
 }
@@ -191,11 +196,12 @@ extension SecurityCoreInterfaces.KeyGenerationOptions {
 /// Extension to adapt between SecurityCoreInterfaces.HashingOptions and various format options
 extension SecurityCoreInterfaces.HashingOptions {
   /// Convert to SecurityConfigDTO for use with SecurityProvider
-  public func toSecurityConfigDTO(withMetadata metadata: [String: String]? = nil) -> SecurityConfigDTO {
-    var configOptions = SecurityConfigOptions()
+  public func toSecurityConfigDTO(withMetadata metadata: [String: String]?=nil)
+  -> SecurityConfigDTO {
+    var configOptions=SecurityConfigOptions()
 
     if let metadata, !metadata.isEmpty {
-      configOptions.metadata = metadata
+      configOptions.metadata=metadata
     }
 
     return SecurityConfigDTO(
@@ -217,10 +223,10 @@ extension SecurityCoreInterfaces.HashingOptions {
   /// Convert internal hash algorithm to interface type
   private func toHashAlgorithm() -> CoreSecurityTypes.HashAlgorithm {
     switch algorithm {
-    case .sha256, .sha512:
-      algorithm
-    default:
-      .sha256
+      case .sha256, .sha512:
+        algorithm
+      default:
+        .sha256
     }
   }
 }
@@ -229,21 +235,22 @@ extension SecurityCoreInterfaces.HashingOptions {
 
 extension CryptoOptions {
   /// Convert CryptoOptions to SecurityConfigDTO
-  public func toSecurityConfigDTO(withMetadata metadata: [String: String]? = nil) -> SecurityConfigDTO {
-    var configOptions = SecurityConfigOptions()
+  public func toSecurityConfigDTO(withMetadata metadata: [String: String]?=nil)
+  -> SecurityConfigDTO {
+    var configOptions=SecurityConfigOptions()
 
-    var metadataDict = metadata ?? [:]
+    var metadataDict=metadata ?? [:]
     // Add any additional metadata from parameters
-    if let params = parameters {
+    if let params=parameters {
       for (key, param) in params {
-        if case let .string(value) = param {
-          metadataDict[key] = value
+        if case let .string(value)=param {
+          metadataDict[key]=value
         }
       }
     }
 
     if !metadataDict.isEmpty {
-      configOptions.metadata = metadataDict
+      configOptions.metadata=metadataDict
     }
 
     return SecurityConfigDTO(
@@ -257,21 +264,22 @@ extension CryptoOptions {
 
 extension HMACOptions {
   /// Convert HMACOptions to SecurityConfigDTO
-  public func toSecurityConfigDTO(withMetadata metadata: [String: String]? = nil) -> SecurityConfigDTO {
-    var configOptions = SecurityConfigOptions()
+  public func toSecurityConfigDTO(withMetadata metadata: [String: String]?=nil)
+  -> SecurityConfigDTO {
+    var configOptions=SecurityConfigOptions()
 
-    var metadataDict = metadata ?? [:]
+    var metadataDict=metadata ?? [:]
     // Add any additional metadata from parameters
-    if let params = parameters {
+    if let params=parameters {
       for (key, param) in params {
-        if case let .string(value) = param {
-          metadataDict[key] = value
+        if case let .string(value)=param {
+          metadataDict[key]=value
         }
       }
     }
 
     if !metadataDict.isEmpty {
-      configOptions.metadata = metadataDict
+      configOptions.metadata=metadataDict
     }
 
     return SecurityConfigDTO(
@@ -293,7 +301,7 @@ extension [String: CryptoParameter] {
 
     // Compare keys and values for semantic equivalence
     for (key, value) in self {
-      guard let otherValue = other[key] else { return false }
+      guard let otherValue=other[key] else { return false }
       if value != otherValue {
         return false
       }
@@ -329,7 +337,7 @@ extension SecurityConfigDTO {
 
   /// Extract a typed value from metadata
   public func extractMetadataValue<T>(forKey key: String) -> T? {
-    guard let metadataValue = options?.metadata?[key] else {
+    guard let metadataValue=options?.metadata?[key] else {
       return nil
     }
 
@@ -339,9 +347,9 @@ extension SecurityConfigDTO {
     }
 
     // Handle string conversion to other types
-    if T.self == Int.self, let intValue = Int(metadataValue) {
+    if T.self == Int.self, let intValue=Int(metadataValue) {
       return intValue as? T
-    } else if T.self == Bool.self, let boolValue = Bool(metadataValue) {
+    } else if T.self == Bool.self, let boolValue=Bool(metadataValue) {
       return boolValue as? T
     }
 
@@ -356,12 +364,12 @@ extension CoreSecurityTypes.HashAlgorithm {
   /// Convert to interface HashAlgorithm
   public func toInterfaceHashAlgorithm() -> CoreSecurityTypes.HashAlgorithm {
     switch self {
-    case .sha256:
-      CoreSecurityTypes.HashAlgorithm.sha256
-    case .sha512:
-      CoreSecurityTypes.HashAlgorithm.sha512
-    default:
-      CoreSecurityTypes.HashAlgorithm.sha256
+      case .sha256:
+        CoreSecurityTypes.HashAlgorithm.sha256
+      case .sha512:
+        CoreSecurityTypes.HashAlgorithm.sha512
+      default:
+        CoreSecurityTypes.HashAlgorithm.sha256
     }
   }
 }

@@ -545,7 +545,7 @@ private struct BookmarkLogger {
       metadata=metadata.merging(with: additionalContext)
     }
 
-    let context = BaseLogContextDTO(
+    let context=BaseLogContextDTO(
       domainName: "SecurityUtils",
       source: "SecurityBookmark",
       metadata: metadata
@@ -567,7 +567,7 @@ private struct BookmarkLogger {
       metadata=metadata.merging(with: additionalContext)
     }
 
-    let context = BaseLogContextDTO(
+    let context=BaseLogContextDTO(
       domainName: "SecurityUtils",
       source: "SecurityBookmark",
       metadata: metadata
@@ -591,9 +591,9 @@ private struct BookmarkLogger {
       metadata=metadata.merging(with: additionalContext)
     }
 
-    let errorContext = ErrorLogContext(
+    let errorContext=ErrorLogContext(
       error: error,
-      domain: "SecurityUtils", 
+      domain: "SecurityUtils",
       source: "SecurityBookmark",
       additionalContext: metadata
     )
@@ -616,7 +616,7 @@ private struct BookmarkLogger {
       metadata=metadata.merging(with: additionalContext)
     }
 
-    let context = BaseLogContextDTO(
+    let context=BaseLogContextDTO(
       domainName: "SecurityUtils",
       source: "SecurityBookmark",
       metadata: metadata

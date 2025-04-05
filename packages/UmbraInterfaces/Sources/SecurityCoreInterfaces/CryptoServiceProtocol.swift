@@ -356,38 +356,38 @@ extension CryptoServiceDto {
       }
 
       func generateHash(
-        dataIdentifier: String,
-        options: HashingOptions?
+        dataIdentifier _: String,
+        options _: HashingOptions?
       ) async -> Result<String, SecurityStorageError> {
         // Implement generateHash
         fatalError("Not implemented")
       }
 
       func storeData(
-        data: Data,
-        identifier: String
+        data _: Data,
+        identifier _: String
       ) async -> Result<Void, SecurityStorageError> {
         // Implement storeData
         fatalError("Not implemented")
       }
 
       func retrieveData(
-        identifier: String
+        identifier _: String
       ) async -> Result<Data, SecurityStorageError> {
         // Implement retrieveData
         fatalError("Not implemented")
       }
 
       func deleteData(
-        identifier: String
+        identifier _: String
       ) async -> Result<Void, SecurityStorageError> {
         // Implement deleteData
         fatalError("Not implemented")
       }
 
       func importData(
-        _ data: Data,
-        customIdentifier: String
+        _: Data,
+        customIdentifier _: String
       ) async -> Result<String, SecurityStorageError> {
         // Implement importData with custom identifier
         fatalError("Not implemented")

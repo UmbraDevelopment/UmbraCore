@@ -87,12 +87,36 @@ public struct SnapshotListParameters: SnapshotOperationParameters {
     )
 
     return context
-      .with(key: "repositoryID", value: repositoryID, privacy: LoggingTypes.PrivacyClassification.public)
-      .with(key: "tags", value: tags.joined(separator: ", "), privacy: LoggingTypes.PrivacyClassification.public)
-      .with(key: "beforeDate", value: before?.ISO8601Format() ?? "none", privacy: LoggingTypes.PrivacyClassification.public)
-      .with(key: "afterDate", value: after?.ISO8601Format() ?? "none", privacy: LoggingTypes.PrivacyClassification.public)
-      .with(key: "sources", value: path?.path != nil ? [path!.path].joined(separator: ", ") : "none", privacy: LoggingTypes.PrivacyClassification.sensitive)
-      .with(key: "limit", value: limit != nil ? "\(limit!)" : "none", privacy: LoggingTypes.PrivacyClassification.public)
+      .with(
+        key: "repositoryID",
+        value: repositoryID,
+        privacy: LoggingTypes.PrivacyClassification.public
+      )
+      .with(
+        key: "tags",
+        value: tags.joined(separator: ", "),
+        privacy: LoggingTypes.PrivacyClassification.public
+      )
+      .with(
+        key: "beforeDate",
+        value: before?.ISO8601Format() ?? "none",
+        privacy: LoggingTypes.PrivacyClassification.public
+      )
+      .with(
+        key: "afterDate",
+        value: after?.ISO8601Format() ?? "none",
+        privacy: LoggingTypes.PrivacyClassification.public
+      )
+      .with(
+        key: "sources",
+        value: path?.path != nil ? [path!.path].joined(separator: ", ") : "none",
+        privacy: LoggingTypes.PrivacyClassification.sensitive
+      )
+      .with(
+        key: "limit",
+        value: limit != nil ? "\(limit!)" : "none",
+        privacy: LoggingTypes.PrivacyClassification.public
+      )
   }
 }
 
@@ -170,9 +194,21 @@ public struct SnapshotCompareParameters: SnapshotOperationParameters {
     )
 
     return context
-      .with(key: "snapshotID1", value: snapshotID1, privacy: LoggingTypes.PrivacyClassification.public)
-      .with(key: "snapshotID2", value: snapshotID2, privacy: LoggingTypes.PrivacyClassification.public)
-      .with(key: "sources", value: path?.path != nil ? [path!.path].joined(separator: ", ") : "none", privacy: LoggingTypes.PrivacyClassification.sensitive)
+      .with(
+        key: "snapshotID1",
+        value: snapshotID1,
+        privacy: LoggingTypes.PrivacyClassification.public
+      )
+      .with(
+        key: "snapshotID2",
+        value: snapshotID2,
+        privacy: LoggingTypes.PrivacyClassification.public
+      )
+      .with(
+        key: "sources",
+        value: path?.path != nil ? [path!.path].joined(separator: ", ") : "none",
+        privacy: LoggingTypes.PrivacyClassification.sensitive
+      )
   }
 }
 
@@ -213,8 +249,16 @@ public struct SnapshotUpdateTagsParameters: SnapshotOperationParameters {
     )
 
     return context
-      .with(key: "addTags", value: addTags.isEmpty ? "none" : addTags.joined(separator: ", "), privacy: LoggingTypes.PrivacyClassification.public)
-      .with(key: "removeTags", value: removeTags.joined(separator: ", "), privacy: LoggingTypes.PrivacyClassification.public)
+      .with(
+        key: "addTags",
+        value: addTags.isEmpty ? "none" : addTags.joined(separator: ", "),
+        privacy: LoggingTypes.PrivacyClassification.public
+      )
+      .with(
+        key: "removeTags",
+        value: removeTags.joined(separator: ", "),
+        privacy: LoggingTypes.PrivacyClassification.public
+      )
   }
 }
 
@@ -441,9 +485,10 @@ public struct SnapshotRestoreParameters: SnapshotOperationParameters, HasSnapsho
     )
 
     var enrichedContext=context.with(
-      key: "sources", 
-      value: targetPath.path, 
-      privacy: LoggingTypes.PrivacyClassification.sensitive // Target path may contain user-specific information
+      key: "sources",
+      value: targetPath.path,
+      privacy: LoggingTypes.PrivacyClassification
+        .sensitive // Target path may contain user-specific information
     )
 
     if let includePattern {

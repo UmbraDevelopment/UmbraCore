@@ -33,14 +33,14 @@ public actor LoggingServiceAdapter: LoggingServiceProtocol {
   ///   - source: Optional source component identifier
   public func verbose(_ message: String, metadata: LogMetadata?, source: String?) async {
     // Convert LogMetadata to PrivacyMetadata
-    let privacyMetadata = convertToPrivacyMetadata(metadata)
+    let privacyMetadata=convertToPrivacyMetadata(metadata)
 
     // Use non-optional source
-    let actualSource = source ?? defaultSource
-    
+    let actualSource=source ?? defaultSource
+
     // Create a LogContext object for context-based logging
-    let context = LogContext(source: actualSource, metadata: privacyMetadata)
-    
+    let context=LogContext(source: actualSource, metadata: privacyMetadata)
+
     await logger.trace(message, context: context)
   }
 
@@ -50,12 +50,12 @@ public actor LoggingServiceAdapter: LoggingServiceProtocol {
   ///   - metadata: Optional metadata
   ///   - source: Optional source component identifier
   public func debug(_ message: String, metadata: LogMetadata?, source: String?) async {
-    let privacyMetadata = convertToPrivacyMetadata(metadata)
-    let actualSource = source ?? defaultSource
-    
+    let privacyMetadata=convertToPrivacyMetadata(metadata)
+    let actualSource=source ?? defaultSource
+
     // Create a LogContext object for context-based logging
-    let context = LogContext(source: actualSource, metadata: privacyMetadata)
-    
+    let context=LogContext(source: actualSource, metadata: privacyMetadata)
+
     await logger.debug(message, context: context)
   }
 
@@ -65,12 +65,12 @@ public actor LoggingServiceAdapter: LoggingServiceProtocol {
   ///   - metadata: Optional metadata
   ///   - source: Optional source component identifier
   public func info(_ message: String, metadata: LogMetadata?, source: String?) async {
-    let privacyMetadata = convertToPrivacyMetadata(metadata)
-    let actualSource = source ?? defaultSource
-    
+    let privacyMetadata=convertToPrivacyMetadata(metadata)
+    let actualSource=source ?? defaultSource
+
     // Create a LogContext object for context-based logging
-    let context = LogContext(source: actualSource, metadata: privacyMetadata)
-    
+    let context=LogContext(source: actualSource, metadata: privacyMetadata)
+
     await logger.info(message, context: context)
   }
 
@@ -80,12 +80,12 @@ public actor LoggingServiceAdapter: LoggingServiceProtocol {
   ///   - metadata: Optional metadata
   ///   - source: Optional source component identifier
   public func warning(_ message: String, metadata: LogMetadata?, source: String?) async {
-    let privacyMetadata = convertToPrivacyMetadata(metadata)
-    let actualSource = source ?? defaultSource
-    
+    let privacyMetadata=convertToPrivacyMetadata(metadata)
+    let actualSource=source ?? defaultSource
+
     // Create a LogContext object for context-based logging
-    let context = LogContext(source: actualSource, metadata: privacyMetadata)
-    
+    let context=LogContext(source: actualSource, metadata: privacyMetadata)
+
     await logger.warning(message, context: context)
   }
 
@@ -95,12 +95,12 @@ public actor LoggingServiceAdapter: LoggingServiceProtocol {
   ///   - metadata: Optional metadata
   ///   - source: Optional source component identifier
   public func error(_ message: String, metadata: LogMetadata?, source: String?) async {
-    let privacyMetadata = convertToPrivacyMetadata(metadata)
-    let actualSource = source ?? defaultSource
-    
+    let privacyMetadata=convertToPrivacyMetadata(metadata)
+    let actualSource=source ?? defaultSource
+
     // Create a LogContext object for context-based logging
-    let context = LogContext(source: actualSource, metadata: privacyMetadata)
-    
+    let context=LogContext(source: actualSource, metadata: privacyMetadata)
+
     await logger.error(message, context: context)
   }
 
@@ -110,12 +110,12 @@ public actor LoggingServiceAdapter: LoggingServiceProtocol {
   ///   - metadata: Optional metadata
   ///   - source: Optional source component identifier
   public func critical(_ message: String, metadata: LogMetadata?, source: String?) async {
-    let privacyMetadata = convertToPrivacyMetadata(metadata)
-    let actualSource = source ?? defaultSource
-    
+    let privacyMetadata=convertToPrivacyMetadata(metadata)
+    let actualSource=source ?? defaultSource
+
     // Create a LogContext object for context-based logging
-    let context = LogContext(source: actualSource, metadata: privacyMetadata)
-    
+    let context=LogContext(source: actualSource, metadata: privacyMetadata)
+
     await logger.critical(message, context: context)
   }
 
@@ -181,8 +181,8 @@ public actor LoggingServiceAdapter: LoggingServiceProtocol {
     }
 
     // Log the action
-    let privacyMetadata = convertToPrivacyMetadata(nil)
-    let context = LogContext(source: "LoggingServiceAdapter", metadata: privacyMetadata)
+    let privacyMetadata=convertToPrivacyMetadata(nil)
+    let context=LogContext(source: "LoggingServiceAdapter", metadata: privacyMetadata)
     await logger.debug("Flushed all log destinations", context: context)
   }
 
@@ -195,15 +195,20 @@ public actor LoggingServiceAdapter: LoggingServiceProtocol {
   /// Log a message with explicit privacy controls
   public func log(_ level: LogLevel, _ message: PrivacyString, context: LogContextDTO) async {
     // Convert PrivacyString to a plain String
-    let stringMessage = message.processForLogging()
-    let source = context.getSource()
-    
+    let stringMessage=message.processForLogging()
+    let source=context.getSource()
+
     // If the underlying logger supports privacy-aware logging, use it
-    if let privacyAwareLogger = logger as? PrivacyAwareLoggingProtocol {
+    if let privacyAwareLogger=logger as? PrivacyAwareLoggingProtocol {
       // Get privacy metadata from context
-      let privacyMetadata = context.toPrivacyMetadata()
-      
-      await privacyAwareLogger.log(level: level, message: message, metadata: privacyMetadata, source: source)
+      let privacyMetadata=context.toPrivacyMetadata()
+
+      await privacyAwareLogger.log(
+        level: level,
+        message: message,
+        metadata: privacyMetadata,
+        source: source
+      )
     } else {
       // Fall back to regular string logging
       await logMessage(level, stringMessage, context: context)
@@ -217,8 +222,8 @@ public actor LoggingServiceAdapter: LoggingServiceProtocol {
     context: LogContextDTO
   ) async {
     // Convert message to string
-    let stringMessage = message.toString(privacy: .auto)
-    
+    let stringMessage=message.toString(privacy: .auto)
+
     // Use the underlying logger directly with the context
     await logger.log(level, stringMessage, context: context)
   }

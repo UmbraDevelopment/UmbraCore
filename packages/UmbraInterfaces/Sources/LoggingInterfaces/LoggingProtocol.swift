@@ -17,7 +17,8 @@ public protocol CoreLoggingProtocol: Actor {
   /// - Parameters:
   ///   - level: The severity level of the log entry (e.g., debug, info, error).
   ///   - message: The textual content of the log message.
-  ///   - context: A `LogContextDTO` containing contextual information (like source, metadata, correlation ID).
+  ///   - context: A `LogContextDTO` containing contextual information (like source, metadata,
+  /// correlation ID).
   func log(_ level: LogLevel, _ message: String, context: LogContextDTO) async
 }
 
@@ -59,35 +60,35 @@ public protocol LoggingProtocol: CoreLoggingProtocol {
 }
 
 /// Default implementations for LoggingProtocol to ensure compatibility with CoreLoggingProtocol
-public extension LoggingProtocol {
+extension LoggingProtocol {
   // --- Convenience methods using Context DTO ---
 
-  func debug(_ message: String, context: LogContextDTO) async {
+  public func debug(_ message: String, context: LogContextDTO) async {
     await log(.debug, message, context: context)
   }
 
-  func trace(_ message: String, context: LogContextDTO) async {
+  public func trace(_ message: String, context: LogContextDTO) async {
     await log(.trace, message, context: context)
   }
 
-  func info(_ message: String, context: LogContextDTO) async {
+  public func info(_ message: String, context: LogContextDTO) async {
     await log(.info, message, context: context)
   }
 
-  func notice(_ message: String, context: LogContextDTO) async {
+  public func notice(_ message: String, context: LogContextDTO) async {
     // Map notice level appropriately if needed, or use info/debug
     await log(.info, message, context: context) // Use .info as notice is not defined
   }
 
-  func warning(_ message: String, context: LogContextDTO) async {
+  public func warning(_ message: String, context: LogContextDTO) async {
     await log(.warning, message, context: context)
   }
 
-  func error(_ message: String, context: LogContextDTO) async {
+  public func error(_ message: String, context: LogContextDTO) async {
     await log(.error, message, context: context)
   }
 
-  func critical(_ message: String, context: LogContextDTO) async {
+  public func critical(_ message: String, context: LogContextDTO) async {
     await log(.critical, message, context: context)
   }
 }

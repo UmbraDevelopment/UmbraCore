@@ -65,8 +65,8 @@ public actor KeychainDefaultLogger: LoggingProtocol {
 
   /// Helper to print a log message to the console
   private func printLog(level: LoggingTypes.LogLevel, message: String, source: String) async {
-    let timestamp = ISO8601DateFormatter().string(from: Date())
-    let levelString = levelToString(level).uppercased()
+    let timestamp=ISO8601DateFormatter().string(from: Date())
+    let levelString=levelToString(level).uppercased()
     print("\(timestamp) [\(source)] [\(levelString)]: \(message)")
   }
 

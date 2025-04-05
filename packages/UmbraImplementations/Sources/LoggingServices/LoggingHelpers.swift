@@ -6,10 +6,10 @@ import LoggingTypes
 /// to the new context-based logging API
 extension LoggingProtocol {
   /// Log a message with separate metadata and source parameters
-  /// 
+  ///
   /// This is a compatibility method for migrating from the older API
   /// to the new context-based API
-  /// 
+  ///
   /// - Parameters:
   ///   - level: The log level
   ///   - message: The log message
@@ -23,17 +23,17 @@ extension LoggingProtocol {
     source: String
   ) async {
     // Create a context from the parameters
-    let context = BaseLogContextDTO(
+    let context=BaseLogContextDTO(
       domainName: "Legacy",
       source: source,
       metadata: metadata ?? PrivacyMetadata(),
       correlationID: nil
     )
-    
+
     // Forward to the new method
     await log(level, message, context: context)
   }
-  
+
   /// Log a debug message with separate metadata and source parameters
   ///
   /// - Parameters:
@@ -48,7 +48,7 @@ extension LoggingProtocol {
   ) async {
     await log(.debug, message, metadata: metadata, source: source)
   }
-  
+
   /// Log an info message with separate metadata and source parameters
   ///
   /// - Parameters:
@@ -63,7 +63,7 @@ extension LoggingProtocol {
   ) async {
     await log(.info, message, metadata: metadata, source: source)
   }
-  
+
   /// Log a warning message with separate metadata and source parameters
   ///
   /// - Parameters:
@@ -78,7 +78,7 @@ extension LoggingProtocol {
   ) async {
     await log(.warning, message, metadata: metadata, source: source)
   }
-  
+
   /// Log an error message with separate metadata and source parameters
   ///
   /// - Parameters:
@@ -93,7 +93,7 @@ extension LoggingProtocol {
   ) async {
     await log(.error, message, metadata: metadata, source: source)
   }
-  
+
   /// Log a critical message with separate metadata and source parameters
   ///
   /// - Parameters:

@@ -8,13 +8,13 @@ import Foundation
 public protocol LogContextDTO: Sendable {
   /// The domain name for this context
   var domainName: String { get }
-  
+
   /// Optional source information (class, file, etc.)
   var source: String? { get }
-  
+
   /// Optional correlation ID for tracing related log events
   var correlationID: String? { get }
-  
+
   /// The metadata collection for this context
   var metadata: LogMetadataDTOCollection { get }
 }
@@ -24,16 +24,16 @@ public protocol LogContextDTO: Sendable {
 public struct BaseLogContextDTO: LogContextDTO, Equatable {
   /// The domain name for this context
   public let domainName: String
-  
+
   /// Optional source information (class, file, etc.)
   public let source: String?
-  
+
   /// Optional correlation ID for tracing related log events
   public let correlationID: String?
-  
+
   /// The metadata collection for this context
   public let metadata: LogMetadataDTOCollection
-  
+
   /// Create a new base log context DTO
   /// - Parameters:
   ///   - domainName: The domain name
@@ -42,36 +42,36 @@ public struct BaseLogContextDTO: LogContextDTO, Equatable {
   ///   - correlationID: Optional correlation ID
   public init(
     domainName: String,
-    source: String? = nil,
-    metadata: PrivacyMetadata = PrivacyMetadata(),
-    correlationID: String? = nil
+    source: String?=nil,
+    metadata: PrivacyMetadata=PrivacyMetadata(),
+    correlationID: String?=nil
   ) {
-    self.domainName = domainName
-    self.source = source
-    self.correlationID = correlationID
-    
+    self.domainName=domainName
+    self.source=source
+    self.correlationID=correlationID
+
     // Convert PrivacyMetadata to LogMetadataDTOCollection
-    var collection = LogMetadataDTOCollection()
-    
+    var collection=LogMetadataDTOCollection()
+
     // Add all entries from the PrivacyMetadata
     for (key, value) in metadata.storage {
       switch value.privacy {
-      case .public:
-        collection = collection.withPublic(key: key, value: value.valueString)
-      case .private:
-        collection = collection.withPrivate(key: key, value: value.valueString)
-      case .sensitive:
-        collection = collection.withSensitive(key: key, value: value.valueString)
-      case .hash:
-        collection = collection.withHashed(key: key, value: value.valueString)
-      case .auto:
-        collection = collection.withAuto(key: key, value: value.valueString)
+        case .public:
+          collection=collection.withPublic(key: key, value: value.valueString)
+        case .private:
+          collection=collection.withPrivate(key: key, value: value.valueString)
+        case .sensitive:
+          collection=collection.withSensitive(key: key, value: value.valueString)
+        case .hash:
+          collection=collection.withHashed(key: key, value: value.valueString)
+        case .auto:
+          collection=collection.withAuto(key: key, value: value.valueString)
       }
     }
-    
-    self.metadata = collection
+
+    self.metadata=collection
   }
-  
+
   /// Create a new base log context DTO with a metadata collection
   /// - Parameters:
   ///   - domainName: The domain name
@@ -80,13 +80,13 @@ public struct BaseLogContextDTO: LogContextDTO, Equatable {
   ///   - correlationID: Optional correlation ID
   public init(
     domainName: String,
-    source: String? = nil,
+    source: String?=nil,
     metadata: LogMetadataDTOCollection,
-    correlationID: String? = nil
+    correlationID: String?=nil
   ) {
-    self.domainName = domainName
-    self.source = source
-    self.metadata = metadata
-    self.correlationID = correlationID
+    self.domainName=domainName
+    self.source=source
+    self.metadata=metadata
+    self.correlationID=correlationID
   }
 }

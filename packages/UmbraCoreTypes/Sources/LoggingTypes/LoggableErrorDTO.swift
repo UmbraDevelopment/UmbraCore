@@ -55,7 +55,7 @@ public struct LoggableErrorDTO: Sendable, Equatable {
   ) {
     self.error=error
     self.source=source
-    self.metadata=metadataCollection
+    metadata=metadataCollection
     self.message=message
     self.context=context
   }

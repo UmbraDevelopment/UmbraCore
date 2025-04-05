@@ -68,7 +68,10 @@ extension FileSystemServiceImpl {
           operation: "remove",
           path: path.path,
           source: "FileSystemService"
-        ).withUpdatedMetadata(LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription))
+        ).withUpdatedMetadata(LogMetadataDTOCollection().withPrivate(
+          key: "error",
+          value: error.localizedDescription
+        ))
       )
       throw FileSystemInterfaces.FileSystemError.writeError(
         path: path.path,

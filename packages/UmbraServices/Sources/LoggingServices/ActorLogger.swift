@@ -36,43 +36,44 @@ public actor ActorLogger: LoggingProtocol {
   ///   - context: The context information for the log using the legacy format
   public func logMessage(_ level: LogLevel, _ message: String, context: LogContext) async {
     // Create a context DTO from the legacy context
-    let contextDTO = BaseLogContextDTO(
-      domainName: "Legacy", 
+    let contextDTO=BaseLogContextDTO(
+      domainName: "Legacy",
       source: context.source ?? defaultSource,
       metadata: context.metadata // Pass the metadata directly, no conversion needed
     )
-    
+
     await log(level, message, context: contextDTO)
   }
 
   /// Helper method to convert PrivacyMetadata to LogMetadataDTOCollection
   /// - Parameter metadata: The privacy metadata to convert
   /// - Returns: A LogMetadataDTOCollection with the same entries
-  private func createMetadataCollection(from metadata: PrivacyMetadata?) -> LogMetadataDTOCollection {
-    var collection = LogMetadataDTOCollection()
-    
+  private func createMetadataCollection(from metadata: PrivacyMetadata?)
+  -> LogMetadataDTOCollection {
+    var collection=LogMetadataDTOCollection()
+
     // If no metadata, return empty collection
-    guard let metadata = metadata else {
+    guard let metadata else {
       return collection
     }
-    
+
     // Convert each entry based on its privacy level
     for entry in metadata.entriesArray {
       switch entry.privacy {
-      case .public:
-        collection = collection.withPublic(key: entry.key, value: entry.value)
-      case .private:
-        collection = collection.withPrivate(key: entry.key, value: entry.value)
-      case .sensitive:
-        collection = collection.withSensitive(key: entry.key, value: entry.value)
-      case .hash:
-        collection = collection.withHashed(key: entry.key, value: entry.value)
-      case .auto:
-        // Default to private for auto
-        collection = collection.withPrivate(key: entry.key, value: entry.value)
+        case .public:
+          collection=collection.withPublic(key: entry.key, value: entry.value)
+        case .private:
+          collection=collection.withPrivate(key: entry.key, value: entry.value)
+        case .sensitive:
+          collection=collection.withSensitive(key: entry.key, value: entry.value)
+        case .hash:
+          collection=collection.withHashed(key: entry.key, value: entry.value)
+        case .auto:
+          // Default to private for auto
+          collection=collection.withPrivate(key: entry.key, value: entry.value)
       }
     }
-    
+
     return collection
   }
 

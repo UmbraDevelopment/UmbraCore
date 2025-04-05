@@ -108,7 +108,7 @@ public struct LogMetadataDTOCollection: Sendable, Equatable {
   public func merging(with other: LogMetadataDTOCollection) -> LogMetadataDTOCollection {
     LogMetadataDTOCollection(entries: entries + other.entries)
   }
-  
+
   /// Indicates whether the collection has no entries
   public var isEmpty: Bool {
     entries.isEmpty
@@ -119,37 +119,38 @@ public struct LogMetadataDTOCollection: Sendable, Equatable {
   ///
   /// - Returns: A PrivacyMetadata instance with the appropriate privacy classifications
   public func toPrivacyMetadata() -> PrivacyMetadata {
-    var result = PrivacyMetadata()
-    
+    var result=PrivacyMetadata()
+
     // Convert each entry to the corresponding PrivacyMetadata format
     for entry in entries {
       // Create a PrivacyMetadataValue with the appropriate privacy level
       let logPrivacyLevel: LogPrivacyLevel
-      
-      // Map the PrivacyClassification to LogPrivacyLevel
-      switch entry.privacyLevel {
-      case .public:
-        logPrivacyLevel = .public
-      case .private:
-        logPrivacyLevel = .private
-      case .sensitive:
-        logPrivacyLevel = .sensitive
-      case .hash:
-        logPrivacyLevel = .hash
-      case .auto:
-        logPrivacyLevel = .auto
+
+        // Map the PrivacyClassification to LogPrivacyLevel
+        = switch entry.privacyLevel
+      {
+        case .public:
+          .public
+        case .private:
+          .private
+        case .sensitive:
+          .sensitive
+        case .hash:
+          .hash
+        case .auto:
+          .auto
       }
-      
+
       // Create the metadata value with the correct privacy level
-      let metadataValue = PrivacyMetadataValue(
+      let metadataValue=PrivacyMetadataValue(
         value: entry.value,
         privacy: logPrivacyLevel
       )
-      
+
       // Add to the PrivacyMetadata using subscript syntax
-      result[entry.key] = metadataValue
+      result[entry.key]=metadataValue
     }
-    
+
     return result
   }
 

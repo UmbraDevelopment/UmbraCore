@@ -110,7 +110,7 @@ public actor LoggerImplementation: LoggingProtocol, CoreLoggingProtocol {
   }
 
   // MARK: - CoreLoggingProtocol Implementation
-  
+
   /// Logs a message with the specified level and context
   /// - Parameters:
   ///   - level: The severity level of the log entry
@@ -122,11 +122,11 @@ public actor LoggerImplementation: LoggingProtocol, CoreLoggingProtocol {
       level: LoggingTypes.LogLevel(rawValue: level.rawValue) ?? .info,
       message: message,
       metadata: context.metadata.toPrivacyMetadata(),
-      source: context.source,
+      source: context.source ?? "Unknown",
       entryID: nil,
       timestamp: LogTimestamp.now()
     ))
-    
+
     // Also log to the actor (actor expects proper underscore-prefixed parameters)
     await loggingActor.log(level, message, context: context)
   }
@@ -149,7 +149,7 @@ public actor LoggerImplementation: LoggingProtocol, CoreLoggingProtocol {
     ))
 
     // Also log to the actor
-    let context = LogContext(source: source, metadata: metadata)
+    let context=LogContext(source: source, metadata: metadata)
     await loggingActor.log(.trace, message, context: context)
   }
 
@@ -169,7 +169,7 @@ public actor LoggerImplementation: LoggingProtocol, CoreLoggingProtocol {
     ))
 
     // Also log to the actor
-    let context = LogContext(source: source, metadata: metadata)
+    let context=LogContext(source: source, metadata: metadata)
     await loggingActor.log(.debug, message, context: context)
   }
 
@@ -189,7 +189,7 @@ public actor LoggerImplementation: LoggingProtocol, CoreLoggingProtocol {
     ))
 
     // Also log to the actor
-    let context = LogContext(source: source, metadata: metadata)
+    let context=LogContext(source: source, metadata: metadata)
     await loggingActor.log(.info, message, context: context)
   }
 
@@ -209,7 +209,7 @@ public actor LoggerImplementation: LoggingProtocol, CoreLoggingProtocol {
     ))
 
     // Also log to the actor
-    let context = LogContext(source: source, metadata: metadata)
+    let context=LogContext(source: source, metadata: metadata)
     await loggingActor.log(.warning, message, context: context)
   }
 
@@ -229,7 +229,7 @@ public actor LoggerImplementation: LoggingProtocol, CoreLoggingProtocol {
     ))
 
     // Also log to the actor
-    let context = LogContext(source: source, metadata: metadata)
+    let context=LogContext(source: source, metadata: metadata)
     await loggingActor.log(.error, message, context: context)
   }
 
@@ -249,7 +249,7 @@ public actor LoggerImplementation: LoggingProtocol, CoreLoggingProtocol {
     ))
 
     // Also log to the actor
-    let context = LogContext(source: source, metadata: metadata)
+    let context=LogContext(source: source, metadata: metadata)
     await loggingActor.log(.critical, message, context: context)
   }
 
@@ -259,25 +259,25 @@ public actor LoggerImplementation: LoggingProtocol, CoreLoggingProtocol {
     metadata: PrivacyMetadata?,
     source: String
   ) async {
-    let stringMessage = message.processForLogging()
-    let context = LogContext(source: source, metadata: metadata)
-    
+    let stringMessage=message.processForLogging()
+    let context=LogContext(source: source, metadata: metadata)
+
     await loggingActor.log(level: level, message: stringMessage, context: context)
-    
+
     // Log locally if needed
     switch level {
-    case .trace:
-      await trace(stringMessage, metadata: metadata, source: source)
-    case .debug:
-      await debug(stringMessage, metadata: metadata, source: source)
-    case .info:
-      await info(stringMessage, metadata: metadata, source: source)
-    case .warning:
-      await warning(stringMessage, metadata: metadata, source: source)
-    case .error:
-      await error(stringMessage, metadata: metadata, source: source)
-    case .critical:
-      await critical(stringMessage, metadata: metadata, source: source)
+      case .trace:
+        await trace(stringMessage, metadata: metadata, source: source)
+      case .debug:
+        await debug(stringMessage, metadata: metadata, source: source)
+      case .info:
+        await info(stringMessage, metadata: metadata, source: source)
+      case .warning:
+        await warning(stringMessage, metadata: metadata, source: source)
+      case .error:
+        await error(stringMessage, metadata: metadata, source: source)
+      case .critical:
+        await critical(stringMessage, metadata: metadata, source: source)
     }
   }
 }

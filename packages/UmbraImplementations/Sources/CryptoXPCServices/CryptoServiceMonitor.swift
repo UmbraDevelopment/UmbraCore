@@ -60,7 +60,7 @@ public actor CryptoServiceMonitor {
    - Returns: Boolean indicating if monitoring started successfully
    */
   public func startMonitoring() async -> Bool {
-    let context = BaseLogContextDTO(domainName: "CryptoService", source: "CryptoServiceMonitor")
+    let context=BaseLogContextDTO(domainName: "CryptoService", source: "CryptoServiceMonitor")
     await logger.info("Starting crypto service monitoring", context: context)
 
     // Reset event storage
@@ -77,7 +77,7 @@ public actor CryptoServiceMonitor {
    - Returns: Boolean indicating if monitoring stopped successfully
    */
   public func stopMonitoring() async -> Bool {
-    let context = BaseLogContextDTO(domainName: "CryptoService", source: "CryptoServiceMonitor")
+    let context=BaseLogContextDTO(domainName: "CryptoService", source: "CryptoServiceMonitor")
     await logger.info("Stopping crypto service monitoring", context: context)
 
     // No cleanup needed for in-memory monitoring
@@ -92,7 +92,7 @@ public actor CryptoServiceMonitor {
    - Parameter event: The event to record
    */
   public func recordEvent(_ event: CryptoEventDTO) async {
-    let context = BaseLogContextDTO(
+    let context=BaseLogContextDTO(
       domainName: "CryptoXPC",
       source: "CryptoServiceMonitor.recordEvent",
       metadata: LogMetadataDTOCollection()
@@ -119,7 +119,7 @@ public actor CryptoServiceMonitor {
    - Parameter events: Array of events to record
    */
   public func recordEvents(_ events: [CryptoEventDTO]) async {
-    let context = BaseLogContextDTO(
+    let context=BaseLogContextDTO(
       domainName: "CryptoXPC",
       source: "CryptoServiceMonitor.recordEvents",
       metadata: LogMetadataDTOCollection()
@@ -166,7 +166,7 @@ public actor CryptoServiceMonitor {
    - Returns: Boolean indicating successful clearing
    */
   public func clearEvents() async -> Bool {
-    let context = BaseLogContextDTO(domainName: "CryptoService", source: "CryptoServiceMonitor")
+    let context=BaseLogContextDTO(domainName: "CryptoService", source: "CryptoServiceMonitor")
     await logger.info("Clearing all crypto events", context: context)
 
     events=[]

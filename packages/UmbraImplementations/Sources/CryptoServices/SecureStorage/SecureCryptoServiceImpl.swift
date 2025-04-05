@@ -24,7 +24,7 @@ import SecurityCoreInterfaces
 import UmbraErrors
 
 // Type alias to use the canonical error type
-public typealias CryptoError = UnifiedCryptoTypes.CryptoError
+public typealias CryptoError=UnifiedCryptoTypes.CryptoError
 
 /**
  Secure implementation of CryptoServiceProtocol using SecureStorage
@@ -104,7 +104,10 @@ public actor SecureCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
       // Generate a secure identifier
       let encryptedIdentifier=UUID().uuidString
 
-      let storeResult=await secureStorage.storeData(Array(dataWithMagic), withIdentifier: encryptedIdentifier)
+      let storeResult=await secureStorage.storeData(
+        Array(dataWithMagic),
+        withIdentifier: encryptedIdentifier
+      )
 
       guard case .success=storeResult else {
         await logger.error(
@@ -175,7 +178,10 @@ public actor SecureCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
       // Generate a secure identifier
       let decryptedIdentifier=UUID().uuidString
 
-      let storeResult=await secureStorage.storeData(Array(dataWithMagic), withIdentifier: decryptedIdentifier)
+      let storeResult=await secureStorage.storeData(
+        Array(dataWithMagic),
+        withIdentifier: decryptedIdentifier
+      )
 
       guard case .success=storeResult else {
         await logger.error(
@@ -418,7 +424,7 @@ public actor SecureCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
    */
   public func generateKey(
     length: Int,
-    options: SecurityCoreInterfaces.KeyGenerationOptions?
+    options _: SecurityCoreInterfaces.KeyGenerationOptions?
   ) async -> Result<String, SecurityStorageError> {
     do {
       // Generate a random key
@@ -473,13 +479,13 @@ public actor SecureCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
     _ data: [UInt8],
     withIdentifier identifier: String
   ) async -> Result<Bool, SecurityStorageError> {
-    let storeResult = await secureStorage.storeData(data, withIdentifier: identifier)
-    
+    let storeResult=await secureStorage.storeData(data, withIdentifier: identifier)
+
     // Convert Void result to Bool result
     switch storeResult {
       case .success:
         return .success(true)
-      case .failure(let error):
+      case let .failure(error):
         return .failure(error)
     }
   }
@@ -493,13 +499,13 @@ public actor SecureCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
   public func deleteData(
     withIdentifier identifier: String
   ) async -> Result<Bool, SecurityStorageError> {
-    let deleteResult = await secureStorage.deleteData(withIdentifier: identifier)
-    
+    let deleteResult=await secureStorage.deleteData(withIdentifier: identifier)
+
     // Convert Void result to Bool result
     switch deleteResult {
       case .success:
         return .success(true)
-      case .failure(let error):
+      case let .failure(error):
         return .failure(error)
     }
   }

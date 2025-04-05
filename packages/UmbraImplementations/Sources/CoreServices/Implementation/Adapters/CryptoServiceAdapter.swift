@@ -41,7 +41,7 @@ public actor CryptoServiceAdapter: CoreInterfaces.CoreCryptoServiceProtocol {
    - Parameter cryptoService: The crypto service implementation to adapt
    */
   public init(cryptoService: CryptoInterfaces.CryptoServiceProtocol) {
-    self.cryptoService = cryptoService
+    self.cryptoService=cryptoService
   }
 
   // MARK: - CoreCryptoServiceProtocol Implementation
@@ -72,17 +72,21 @@ public actor CryptoServiceAdapter: CoreInterfaces.CoreCryptoServiceProtocol {
    */
   public func encrypt(data: Data, with key: Data) async throws -> Data {
     // Convert to SendableCryptoMaterial
-    let secureMaterial = SendableCryptoMaterial(bytes: [UInt8](data))
-    let keyMaterial = SendableCryptoMaterial(bytes: [UInt8](key))
+    let secureMaterial=SendableCryptoMaterial(bytes: [UInt8](data))
+    let keyMaterial=SendableCryptoMaterial(bytes: [UInt8](key))
 
     // Generate a secure random IV
-    let ivMaterial = try await cryptoService.generateSecureRandomBytes(length: 16)
+    let ivMaterial=try await cryptoService.generateSecureRandomBytes(length: 16)
 
     // Perform encryption
-    let encryptedResult = try await cryptoService.encrypt(secureMaterial, using: keyMaterial, iv: ivMaterial)
+    let encryptedResult=try await cryptoService.encrypt(
+      secureMaterial,
+      using: keyMaterial,
+      iv: ivMaterial
+    )
 
     // Create a combined output that includes the IV and encrypted data
-    var result = Data()
+    var result=Data()
     result.append(Data(ivMaterial.toByteArray())) // IV first
     result.append(Data(encryptedResult.toByteArray())) // Then encrypted data
 
@@ -106,16 +110,20 @@ public actor CryptoServiceAdapter: CoreInterfaces.CoreCryptoServiceProtocol {
       throw CryptoError.invalidInput("Data too short for IV+ciphertext format")
     }
 
-    let iv = data.prefix(16)
-    let encryptedData = data.suffix(from: 16)
+    let iv=data.prefix(16)
+    let encryptedData=data.suffix(from: 16)
 
     // Convert to SendableCryptoMaterial
-    let ivMaterial = SendableCryptoMaterial(bytes: [UInt8](iv))
-    let encryptedMaterial = SendableCryptoMaterial(bytes: [UInt8](encryptedData))
-    let keyMaterial = SendableCryptoMaterial(bytes: [UInt8](key))
+    let ivMaterial=SendableCryptoMaterial(bytes: [UInt8](iv))
+    let encryptedMaterial=SendableCryptoMaterial(bytes: [UInt8](encryptedData))
+    let keyMaterial=SendableCryptoMaterial(bytes: [UInt8](key))
 
     // Perform decryption
-    let decryptedResult = try await cryptoService.decrypt(encryptedMaterial, using: keyMaterial, iv: ivMaterial)
+    let decryptedResult=try await cryptoService.decrypt(
+      encryptedMaterial,
+      using: keyMaterial,
+      iv: ivMaterial
+    )
 
     // Return the decrypted data
     return Data(decryptedResult.toByteArray())
@@ -132,7 +140,7 @@ public actor CryptoServiceAdapter: CoreInterfaces.CoreCryptoServiceProtocol {
    */
   public func generateKey(length: Int) async throws -> Data {
     // Generate secure random bytes using the crypto service
-    let keyMaterial = try await cryptoService.generateSecureRandomBytes(length: length)
+    let keyMaterial=try await cryptoService.generateSecureRandomBytes(length: length)
 
     // Return the key as Data
     return Data(keyMaterial.toByteArray())
@@ -151,10 +159,10 @@ public actor CryptoServiceAdapter: CoreInterfaces.CoreCryptoServiceProtocol {
    */
   public func hash(data: Data, algorithm: String) async throws -> Data {
     // Convert to SendableCryptoMaterial
-    let secureMaterial = SendableCryptoMaterial(bytes: [UInt8](data))
+    let secureMaterial=SendableCryptoMaterial(bytes: [UInt8](data))
 
     // Compute the hash
-    let hashResult = try await cryptoService.hash(secureMaterial, algorithm: algorithm)
+    let hashResult=try await cryptoService.hash(secureMaterial, algorithm: algorithm)
 
     // Return the hash as Data
     return Data(hashResult.toByteArray())
@@ -180,18 +188,17 @@ public actor CryptoServiceAdapter: CoreInterfaces.CoreCryptoServiceProtocol {
     length: Int
   ) async throws -> Data {
     // Convert source material to SendableCryptoMaterial
-    let sourceSecureMaterial = SendableCryptoMaterial(bytes: [UInt8](sourceMaterial))
-    
+    let sourceSecureMaterial=SendableCryptoMaterial(bytes: [UInt8](sourceMaterial))
+
     // Convert salt to SendableCryptoMaterial if provided
-    let saltMaterial: SendableCryptoMaterial?
-    if let salt = salt {
-      saltMaterial = SendableCryptoMaterial(bytes: [UInt8](salt))
+    let saltMaterial: SendableCryptoMaterial?=if let salt {
+      SendableCryptoMaterial(bytes: [UInt8](salt))
     } else {
-      saltMaterial = nil
+      nil
     }
 
     // Derive the key
-    let derivedKeyMaterial = try await cryptoService.deriveKey(
+    let derivedKeyMaterial=try await cryptoService.deriveKey(
       from: sourceSecureMaterial,
       salt: saltMaterial,
       iterations: iterations,

@@ -109,8 +109,8 @@ extension FileSystemServiceImpl {
           // Convert the SafeAttributeValue to a Foundation-compatible type
           if let data=convertSafeAttributeToData(value) {
             // Create a local var to hold any error that occurs
-            var setxattrError: Error? = nil
-            
+            var setxattrError: Error?
+
             // Use a synchronous closure for withUnsafeFileSystemRepresentation
             url.withUnsafeFileSystemRepresentation { fileSystemPath in
               // Set the extended attribute using the low-level C API
@@ -122,7 +122,7 @@ extension FileSystemServiceImpl {
                 0,
                 0
               )
-              
+
               if result != 0 {
                 let error=errno
                 setxattrError=FileSystemError.writeError(
@@ -131,7 +131,7 @@ extension FileSystemServiceImpl {
                 )
               }
             }
-            
+
             // Now check if there was an error and log it asynchronously
             if let error=setxattrError {
               await logger.error(
@@ -140,7 +140,10 @@ extension FileSystemServiceImpl {
                   operation: "createDirectory",
                   path: path.path,
                   source: "FileSystemService"
-                ).withUpdatedMetadata(LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription))
+                ).withUpdatedMetadata(LogMetadataDTOCollection().withPrivate(
+                  key: "error",
+                  value: error.localizedDescription
+                ))
               )
               throw error
             }
@@ -163,7 +166,10 @@ extension FileSystemServiceImpl {
           operation: "createDirectory",
           path: path.path,
           source: "FileSystemService"
-        ).withUpdatedMetadata(LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription))
+        ).withUpdatedMetadata(LogMetadataDTOCollection().withPrivate(
+          key: "error",
+          value: error.localizedDescription
+        ))
       )
       throw FileSystemError.writeError(
         path: path.path,
@@ -267,7 +273,10 @@ extension FileSystemServiceImpl {
           operation: "isDirectoryEmpty",
           path: path.path,
           source: "FileSystemService"
-        ).withUpdatedMetadata(LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription))
+        ).withUpdatedMetadata(LogMetadataDTOCollection().withPrivate(
+          key: "error",
+          value: error.localizedDescription
+        ))
       )
       throw FileSystemInterfaces.FileSystemError.readError(
         path: path.path,

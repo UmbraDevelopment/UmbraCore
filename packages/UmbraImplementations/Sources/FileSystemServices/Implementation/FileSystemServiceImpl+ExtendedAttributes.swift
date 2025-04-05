@@ -84,7 +84,10 @@ extension FileSystemServiceImpl {
           operation: "setExtendedAttribute",
           path: path.path,
           source: "FileSystemService"
-        ).withUpdatedMetadata(LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription))
+        ).withUpdatedMetadata(LogMetadataDTOCollection().withPrivate(
+          key: "error",
+          value: error.localizedDescription
+        ))
       )
       throw FileSystemInterfaces.FileSystemError.writeError(
         path: path.path,
@@ -189,9 +192,12 @@ extension FileSystemServiceImpl {
         "Failed to get extended attribute '\(name)' from \(path.path): \(error.localizedDescription)",
         context: FileSystemLogContext(
           operation: "getExtendedAttribute",
-          path: path.path, 
+          path: path.path,
           source: "FileSystemService"
-        ).withUpdatedMetadata(LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription))
+        ).withUpdatedMetadata(LogMetadataDTOCollection().withPrivate(
+          key: "error",
+          value: error.localizedDescription
+        ))
       )
       throw FileSystemInterfaces.FileSystemError.readError(
         path: path.path,
@@ -275,7 +281,10 @@ extension FileSystemServiceImpl {
           operation: "removeExtendedAttribute",
           path: path.path,
           source: "FileSystemService"
-        ).withUpdatedMetadata(LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription))
+        ).withUpdatedMetadata(LogMetadataDTOCollection().withPrivate(
+          key: "error",
+          value: error.localizedDescription
+        ))
       )
       throw FileSystemInterfaces.FileSystemError.writeError(
         path: path.path,
@@ -374,7 +383,10 @@ extension FileSystemServiceImpl {
           operation: "listExtendedAttributes",
           path: path.path,
           source: "FileSystemService"
-        ).withUpdatedMetadata(LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription))
+        ).withUpdatedMetadata(LogMetadataDTOCollection().withPrivate(
+          key: "error",
+          value: error.localizedDescription
+        ))
       )
       throw FileSystemInterfaces.FileSystemError.readError(
         path: path.path,

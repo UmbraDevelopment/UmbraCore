@@ -99,17 +99,19 @@ final class KeyManagementService: SecurityServiceBase {
 
       // Use SendableCryptoMaterial instead of SecureBytes
       // In a production implementation, this would use a secure random generator
-      let keyMaterial: SendableCryptoMaterial
-      if keySize > 0 {
-        keyMaterial = try secureRandomMaterial(byteCount: keySize / 8)
+      let keyMaterial: SendableCryptoMaterial=if keySize > 0 {
+        try secureRandomMaterial(byteCount: keySize / 8)
       } else {
-        keyMaterial = SendableCryptoMaterial.zeros(count: 32) // Default to 256 bits (32 bytes)
+        SendableCryptoMaterial.zeros(count: 32) // Default to 256 bits (32 bytes)
       }
 
       // Store the key if an identifier is provided
       if let keyIdentifier=config.options["keyIdentifier"] {
-        let storageResult = await keyManager.secureStorage.storeMaterial(keyMaterial, withIdentifier: keyIdentifier)
-        if case .failure(let error) = storageResult {
+        let storageResult=await keyManager.secureStorage.storeMaterial(
+          keyMaterial,
+          withIdentifier: keyIdentifier
+        )
+        if case let .failure(error)=storageResult {
           throw SecurityError.keyStorage(error.description)
         }
       }
@@ -198,7 +200,7 @@ final class KeyManagementService: SecurityServiceBase {
 
       // Use SendableCryptoMaterial instead of SecureBytes
       // In a production implementation, this would use a secure random generator
-      let randomMaterial = try secureRandomMaterial(byteCount: length)
+      let randomMaterial=try secureRandomMaterial(byteCount: length)
 
       // Calculate duration for performance metrics
       let duration=Date().timeIntervalSince(startTime) * 1000

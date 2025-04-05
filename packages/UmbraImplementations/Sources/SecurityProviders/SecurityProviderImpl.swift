@@ -63,7 +63,7 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
     var metadata=PrivacyMetadata()
     metadata["operation"]=PrivacyMetadataValue(value: "initialize", privacy: .public)
 
-    let debugContext = BaseLogContextDTO(
+    let debugContext=BaseLogContextDTO(
       domainName: "SecurityProvider",
       source: "SecurityProviderImpl",
       metadata: metadata.toLogMetadataDTOCollection()
@@ -86,7 +86,7 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
 
       isInitialized=true
 
-      let infoContext = BaseLogContextDTO(
+      let infoContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
         source: "SecurityProviderImpl",
         metadata: LogMetadataDTOCollection().merging(with: metadata.toLogMetadataDTOCollection())
@@ -96,7 +96,7 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
         context: infoContext
       )
     } catch {
-      let errorContext = ErrorLogContext(
+      let errorContext=ErrorLogContext(
         error: error,
         domain: "SecurityProvider",
         source: "SecurityProviderImpl",
@@ -119,8 +119,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
     if !isInitialized {
       var metadata=PrivacyMetadata()
       metadata["error"]=PrivacyMetadataValue(value: "Provider not initialized", privacy: .public)
-      
-      let errorContext = BaseLogContextDTO(
+
+      let errorContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
@@ -218,7 +218,7 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
         metadata["purpose"]=PrivacyMetadataValue(value: purpose.rawValue, privacy: .public)
         metadata["identifier"]=PrivacyMetadataValue(value: identifier, privacy: .private)
 
-        let debugContext = BaseLogContextDTO(
+        let debugContext=BaseLogContextDTO(
           domainName: "SecurityProvider",
           source: "SecurityProviderImpl",
           metadata: metadata.toLogMetadataDTOCollection()
@@ -314,7 +314,7 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
                                                                        executionTime),
                                                          privacy: .public)
 
-      let debugContext = BaseLogContextDTO(
+      let debugContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
@@ -340,7 +340,7 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
       metadata["operation"]=PrivacyMetadataValue(value: "encrypt", privacy: .public)
       metadata["error"]=PrivacyMetadataValue(value: error.localizedDescription, privacy: .private)
 
-      let errorContext = BaseLogContextDTO(
+      let errorContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
@@ -362,7 +362,7 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
       metadata["operation"]=PrivacyMetadataValue(value: "encrypt", privacy: .public)
       metadata["error"]=PrivacyMetadataValue(value: "Unexpected error", privacy: .private)
 
-      let errorContext = BaseLogContextDTO(
+      let errorContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
@@ -440,7 +440,7 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
                                                                        executionTime),
                                                          privacy: .public)
 
-      let debugContext = BaseLogContextDTO(
+      let debugContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
@@ -466,7 +466,7 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
       metadata["operation"]=PrivacyMetadataValue(value: "decrypt", privacy: .public)
       metadata["error"]=PrivacyMetadataValue(value: error.localizedDescription, privacy: .private)
 
-      let errorContext = BaseLogContextDTO(
+      let errorContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
@@ -488,7 +488,7 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
       metadata["operation"]=PrivacyMetadataValue(value: "decrypt", privacy: .public)
       metadata["error"]=PrivacyMetadataValue(value: "Unexpected error", privacy: .private)
 
-      let errorContext = BaseLogContextDTO(
+      let errorContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
@@ -561,7 +561,7 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
                                                                        executionTime),
                                                          privacy: .public)
 
-      let debugContext = BaseLogContextDTO(
+      let debugContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
@@ -587,7 +587,7 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
       metadata["operation"]=PrivacyMetadataValue(value: "sign", privacy: .public)
       metadata["error"]=PrivacyMetadataValue(value: error.localizedDescription, privacy: .private)
 
-      let errorContext = BaseLogContextDTO(
+      let errorContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
@@ -609,7 +609,7 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
       metadata["operation"]=PrivacyMetadataValue(value: "sign", privacy: .public)
       metadata["error"]=PrivacyMetadataValue(value: "Unexpected error", privacy: .private)
 
-      let errorContext = BaseLogContextDTO(
+      let errorContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
@@ -697,7 +697,7 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
                                                                        executionTime),
                                                          privacy: .public)
 
-      let debugContext = BaseLogContextDTO(
+      let debugContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
@@ -724,7 +724,7 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
       metadata["operation"]=PrivacyMetadataValue(value: "verify", privacy: .public)
       metadata["error"]=PrivacyMetadataValue(value: error.localizedDescription, privacy: .private)
 
-      let errorContext = BaseLogContextDTO(
+      let errorContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
@@ -746,7 +746,7 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
       metadata["operation"]=PrivacyMetadataValue(value: "verify", privacy: .public)
       metadata["error"]=PrivacyMetadataValue(value: "Unexpected error", privacy: .private)
 
-      let errorContext = BaseLogContextDTO(
+      let errorContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
@@ -816,7 +816,7 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
     metadata["operation"]=PrivacyMetadataValue(value: operation.rawValue, privacy: .public)
     metadata["provider"]=PrivacyMetadataValue(value: "basic", privacy: .public)
 
-    let debugContext = BaseLogContextDTO(
+    let debugContext=BaseLogContextDTO(
       domainName: "SecurityProvider",
       source: "SecurityProviderImpl",
       metadata: metadata.toLogMetadataDTOCollection()
@@ -899,7 +899,7 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
     metadata["operation"]=PrivacyMetadataValue(value: operation.rawValue, privacy: .public)
     metadata["provider_type"]=PrivacyMetadataValue(value: "basic", privacy: .public)
 
-    let debugContext = BaseLogContextDTO(
+    let debugContext=BaseLogContextDTO(
       domainName: "SecurityProvider",
       source: "SecurityProviderImpl",
       metadata: metadata.toLogMetadataDTOCollection()
@@ -937,7 +937,7 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
     metadata["operation"]=PrivacyMetadataValue(value: "generateKey", privacy: .public)
     metadata["algorithm"]=PrivacyMetadataValue(value: algorithm.rawValue, privacy: .public)
 
-    let debugContext = BaseLogContextDTO(
+    let debugContext=BaseLogContextDTO(
       domainName: "SecurityProvider",
       source: "SecurityProviderImpl",
       metadata: metadata.toLogMetadataDTOCollection()
@@ -966,7 +966,7 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
       var metadata=PrivacyMetadata()
       metadata["error"]=PrivacyMetadataValue(value: "Failed to generate key", privacy: .public)
 
-      let errorContext = BaseLogContextDTO(
+      let errorContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
@@ -992,7 +992,7 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
     var metadata=PrivacyMetadata()
     metadata["operation"]=PrivacyMetadataValue(value: "createSecureConfig", privacy: .public)
 
-    let debugContext = BaseLogContextDTO(
+    let debugContext=BaseLogContextDTO(
       domainName: "SecurityProvider",
       source: "SecurityProviderImpl",
       metadata: metadata.toLogMetadataDTOCollection()
@@ -1030,7 +1030,7 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
     metadata["operation"]=PrivacyMetadataValue(value: operation.rawValue, privacy: .public)
     metadata["provider_type"]=PrivacyMetadataValue(value: "basic", privacy: .public)
 
-    let debugContext = BaseLogContextDTO(
+    let debugContext=BaseLogContextDTO(
       domainName: "SecurityProvider",
       source: "SecurityProviderImpl",
       metadata: metadata.toLogMetadataDTOCollection()
@@ -1104,7 +1104,7 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
                                                  privacy: .public)
       metadata["key_identifier"]=PrivacyMetadataValue(value: keyIdentifier, privacy: .private)
 
-      let debugContext = BaseLogContextDTO(
+      let debugContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
@@ -1132,7 +1132,7 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
       metadata["operation"]=PrivacyMetadataValue(value: "generateKey", privacy: .public)
       metadata["error"]=PrivacyMetadataValue(value: error.localizedDescription, privacy: .private)
 
-      let errorContext = BaseLogContextDTO(
+      let errorContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
@@ -1154,7 +1154,7 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
       metadata["operation"]=PrivacyMetadataValue(value: "generateKey", privacy: .public)
       metadata["error"]=PrivacyMetadataValue(value: "Unexpected error", privacy: .private)
 
-      let errorContext = BaseLogContextDTO(
+      let errorContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
@@ -1210,7 +1210,7 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
       let endTime=Date().timeIntervalSince1970
       let executionTime=(endTime - startTime) * 1000
 
-      let debugContext = BaseLogContextDTO(
+      let debugContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
@@ -1231,7 +1231,7 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
       let endTime=Date().timeIntervalSince1970
       let executionTime=(endTime - startTime) * 1000
 
-      let errorContext = BaseLogContextDTO(
+      let errorContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
@@ -1278,7 +1278,7 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
           let endTime=Date().timeIntervalSince1970
           let executionTime=(endTime - startTime) * 1000
 
-          let debugContext = BaseLogContextDTO(
+          let debugContext=BaseLogContextDTO(
             domainName: "SecurityProvider",
             source: "SecurityProviderImpl",
             metadata: metadata.toLogMetadataDTOCollection()
@@ -1307,7 +1307,7 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
       let endTime=Date().timeIntervalSince1970
       let executionTime=(endTime - startTime) * 1000
 
-      let errorContext = BaseLogContextDTO(
+      let errorContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
@@ -1354,7 +1354,7 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
           let endTime=Date().timeIntervalSince1970
           let executionTime=(endTime - startTime) * 1000
 
-          let debugContext = BaseLogContextDTO(
+          let debugContext=BaseLogContextDTO(
             domainName: "SecurityProvider",
             source: "SecurityProviderImpl",
             metadata: metadata.toLogMetadataDTOCollection()
@@ -1382,7 +1382,7 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
       let endTime=Date().timeIntervalSince1970
       let executionTime=(endTime - startTime) * 1000
 
-      let errorContext = BaseLogContextDTO(
+      let errorContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
@@ -1432,25 +1432,25 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
 
 extension PrivacyMetadata {
   func toLogMetadataDTOCollection() -> LogMetadataDTOCollection {
-    var collection = LogMetadataDTOCollection()
-    
+    var collection=LogMetadataDTOCollection()
+
     // Use entriesArray() which is a public method to get the entries
     for entry in entriesArray {
       switch entry.privacy {
-      case .public:
-        collection = collection.withPublic(key: entry.key, value: entry.value)
-      case .private:
-        collection = collection.withPrivate(key: entry.key, value: entry.value)
-      case .hash:
-        collection = collection.withHashed(key: entry.key, value: entry.value)
-      case .sensitive:
-        collection = collection.withSensitive(key: entry.key, value: entry.value)
-      case .auto:
-        // Default to private for auto
-        collection = collection.withPrivate(key: entry.key, value: entry.value)
+        case .public:
+          collection=collection.withPublic(key: entry.key, value: entry.value)
+        case .private:
+          collection=collection.withPrivate(key: entry.key, value: entry.value)
+        case .hash:
+          collection=collection.withHashed(key: entry.key, value: entry.value)
+        case .sensitive:
+          collection=collection.withSensitive(key: entry.key, value: entry.value)
+        case .auto:
+          // Default to private for auto
+          collection=collection.withPrivate(key: entry.key, value: entry.value)
       }
     }
-    
+
     return collection
   }
 }

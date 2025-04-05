@@ -15,7 +15,7 @@ import SecurityCoreInterfaces
 
   ## IMPORTANT: FAÇADE PATTERN
   This enum serves as a simplified façade over the canonical `CryptoServiceFactory`.
-  For all extended functionality or specialised implementations, use 
+  For all extended functionality or specialised implementations, use
   `CryptoServiceFactory` directly. This design provides convenience methods
   while eliminating duplication by delegating to the canonical implementation.
 

@@ -501,19 +501,19 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
     additionalContext: LogMetadataDTOCollection?=nil,
     source: String="SecurityBookmarkActor"
   ) async {
-    var metadata = LogMetadataDTOCollection()
-    metadata = metadata.withPublic(key: "operation", value: operation)
-    
+    var metadata=LogMetadataDTOCollection()
+    metadata=metadata.withPublic(key: "operation", value: operation)
+
     if let additionalContext {
-      metadata = metadata.merging(with: additionalContext)
+      metadata=metadata.merging(with: additionalContext)
     }
-    
-    let context = BaseLogContextDTO(
-      domainName: "Bookmark", 
+
+    let context=BaseLogContextDTO(
+      domainName: "Bookmark",
       source: source,
       metadata: metadata
     )
-    
+
     await logger.log(
       .debug,
       "Starting bookmark operation: \(operation)",
@@ -527,20 +527,20 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
     additionalContext: LogMetadataDTOCollection?=nil,
     source: String="SecurityBookmarkActor"
   ) async {
-    var metadata = LogMetadataDTOCollection()
-    metadata = metadata.withPublic(key: "operation", value: operation)
-    metadata = metadata.withPublic(key: "status", value: "success")
-    
+    var metadata=LogMetadataDTOCollection()
+    metadata=metadata.withPublic(key: "operation", value: operation)
+    metadata=metadata.withPublic(key: "status", value: "success")
+
     if let additionalContext {
-      metadata = metadata.merging(with: additionalContext)
+      metadata=metadata.merging(with: additionalContext)
     }
-    
-    let context = BaseLogContextDTO(
-      domainName: "Bookmark", 
+
+    let context=BaseLogContextDTO(
+      domainName: "Bookmark",
       source: source,
       metadata: metadata
     )
-    
+
     await logger.log(
       .debug,
       "Bookmark operation completed successfully: \(operation)",
@@ -555,21 +555,21 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
     additionalContext: LogMetadataDTOCollection?=nil,
     source: String="SecurityBookmarkActor"
   ) async {
-    var metadata = LogMetadataDTOCollection()
-    metadata = metadata.withPublic(key: "operation", value: operation)
-    metadata = metadata.withPublic(key: "status", value: "warning")
-    metadata = metadata.withPublic(key: "message", value: message)
-    
+    var metadata=LogMetadataDTOCollection()
+    metadata=metadata.withPublic(key: "operation", value: operation)
+    metadata=metadata.withPublic(key: "status", value: "warning")
+    metadata=metadata.withPublic(key: "message", value: message)
+
     if let additionalContext {
-      metadata = metadata.merging(with: additionalContext)
+      metadata=metadata.merging(with: additionalContext)
     }
-    
-    let context = BaseLogContextDTO(
-      domainName: "Bookmark", 
+
+    let context=BaseLogContextDTO(
+      domainName: "Bookmark",
       source: source,
       metadata: metadata
     )
-    
+
     await logger.log(
       .warning,
       "Warning during bookmark operation: \(operation) - \(message)",
@@ -584,22 +584,22 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
     additionalContext: LogMetadataDTOCollection?=nil,
     source: String="SecurityBookmarkActor"
   ) async {
-    var metadata = LogMetadataDTOCollection()
-    metadata = metadata.withPublic(key: "operation", value: operation)
-    metadata = metadata.withPublic(key: "status", value: "error")
-    metadata = metadata.withPrivate(key: "error", value: error.localizedDescription)
-    
+    var metadata=LogMetadataDTOCollection()
+    metadata=metadata.withPublic(key: "operation", value: operation)
+    metadata=metadata.withPublic(key: "status", value: "error")
+    metadata=metadata.withPrivate(key: "error", value: error.localizedDescription)
+
     if let additionalContext {
-      metadata = metadata.merging(with: additionalContext)
+      metadata=metadata.merging(with: additionalContext)
     }
-    
-    let errorContext = ErrorLogContext(
+
+    let errorContext=ErrorLogContext(
       error: error,
       domain: "Bookmark",
       source: source,
       additionalContext: metadata
     )
-    
+
     await logger.log(
       .error,
       "Bookmark operation failed: \(operation)",
@@ -631,7 +631,7 @@ class BookmarkLogger {
       .debug,
       message,
       context: BaseLogContextDTO(
-        domainName: "Bookmark", 
+        domainName: "Bookmark",
         source: source,
         metadata: additionalContext ?? LogMetadataDTOCollection()
       )
@@ -650,7 +650,7 @@ class BookmarkLogger {
       .debug,
       message,
       context: BaseLogContextDTO(
-        domainName: "Bookmark", 
+        domainName: "Bookmark",
         source: source,
         metadata: additionalContext ?? LogMetadataDTOCollection()
       )
@@ -671,7 +671,7 @@ class BookmarkLogger {
       .warning,
       logMessage,
       context: BaseLogContextDTO(
-        domainName: "Bookmark", 
+        domainName: "Bookmark",
         source: source,
         metadata: context
       )

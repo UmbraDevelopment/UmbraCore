@@ -50,8 +50,8 @@ public struct KeychainLogger: Sendable {
       metadata=metadata.with(key: key, value: String(describing: value), privacyLevel: .auto)
     }
 
-    let context = BaseLogContextDTO(
-        domainName: "Keychain", source: "KeychainSecurity", metadata: metadata
+    let context=BaseLogContextDTO(
+      domainName: "Keychain", source: "KeychainSecurity", metadata: metadata
     )
     await logger.info(
       "Starting keychain operation: \(operation)", context: context
@@ -89,8 +89,8 @@ public struct KeychainLogger: Sendable {
       metadata=metadata.merging(with: additionalContext)
     }
 
-    let context = BaseLogContextDTO(
-        domainName: "Keychain", source: "KeychainSecurity", metadata: metadata
+    let context=BaseLogContextDTO(
+      domainName: "Keychain", source: "KeychainSecurity", metadata: metadata
     )
     await logger.info(
       "Starting keychain operation: \(operation)", context: context
@@ -123,8 +123,8 @@ public struct KeychainLogger: Sendable {
       metadata=metadata.with(key: key, value: String(describing: value), privacyLevel: .auto)
     }
 
-    let context = BaseLogContextDTO(
-        domainName: "Keychain", source: "KeychainSecurity", metadata: metadata
+    let context=BaseLogContextDTO(
+      domainName: "Keychain", source: "KeychainSecurity", metadata: metadata
     )
     await logger.info(
       "Completed keychain operation: \(operation)", context: context
@@ -163,8 +163,8 @@ public struct KeychainLogger: Sendable {
       metadata=metadata.merging(with: additionalContext)
     }
 
-    let context = BaseLogContextDTO(
-        domainName: "Keychain", source: "KeychainSecurity", metadata: metadata
+    let context=BaseLogContextDTO(
+      domainName: "Keychain", source: "KeychainSecurity", metadata: metadata
     )
     await logger.info(
       "Completed keychain operation: \(operation)", context: context
@@ -201,8 +201,8 @@ public struct KeychainLogger: Sendable {
       metadata=metadata.with(key: key, value: String(describing: value), privacyLevel: .auto)
     }
 
-    let context = BaseLogContextDTO(
-        domainName: "Keychain", source: "KeychainSecurity", metadata: metadata
+    let context=BaseLogContextDTO(
+      domainName: "Keychain", source: "KeychainSecurity", metadata: metadata
     )
     await logger.error(
       "Error during keychain operation: \(operation)", context: context
@@ -249,8 +249,8 @@ public struct KeychainLogger: Sendable {
 
     let defaultMessage="Error during keychain operation: \(operation)"
 
-    let context = BaseLogContextDTO(
-        domainName: "Keychain", source: "KeychainSecurity", metadata: metadata
+    let context=BaseLogContextDTO(
+      domainName: "Keychain", source: "KeychainSecurity", metadata: metadata
     )
     await logger.error(
       message ?? defaultMessage, context: context

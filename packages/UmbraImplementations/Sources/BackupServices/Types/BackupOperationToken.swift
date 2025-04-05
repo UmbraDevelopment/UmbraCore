@@ -8,15 +8,16 @@ import Foundation
 public final class BackupOperationToken: Sendable {
   /// Unique identifier for this operation
   public let id: UUID
-  
+
   /// Type of operation being performed
   public let operation: BackupOperation
-  
+
   /// Whether the operation is cancellable
   public let cancellable: Bool
-  
+
   /// Whether the operation has been cancelled
-  @MainActor public private(set) var cancelled: Bool
+  @MainActor
+  public private(set) var cancelled: Bool
 
   /**
    * Creates a new operation token.

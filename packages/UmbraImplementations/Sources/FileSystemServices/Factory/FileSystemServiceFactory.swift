@@ -123,32 +123,32 @@ private actor NullLogger: LoggingInterfaces.LoggingProtocol {
   nonisolated let loggingActor: LoggingInterfaces.LoggingActor = .init(destinations: [])
 
   // Implement the required log method from CoreLoggingProtocol
-  func log(_ level: LoggingInterfaces.LogLevel, _ message: String, context: LoggingTypes.LogContextDTO) async {
+  func log(_: LoggingInterfaces.LogLevel, _: String, context _: LoggingTypes.LogContextDTO) async {
     // Empty implementation for no-op logger
   }
-  
+
   // Convenience methods with empty implementations
-  func trace(_ message: String, context: LoggingTypes.LogContextDTO) async {
+  func trace(_: String, context _: LoggingTypes.LogContextDTO) async {
     // Empty implementation
   }
-  
-  func debug(_ message: String, context: LoggingTypes.LogContextDTO) async {
+
+  func debug(_: String, context _: LoggingTypes.LogContextDTO) async {
     // Empty implementation
   }
-  
-  func info(_ message: String, context: LoggingTypes.LogContextDTO) async {
+
+  func info(_: String, context _: LoggingTypes.LogContextDTO) async {
     // Empty implementation
   }
-  
-  func warning(_ message: String, context: LoggingTypes.LogContextDTO) async {
+
+  func warning(_: String, context _: LoggingTypes.LogContextDTO) async {
     // Empty implementation
   }
-  
-  func error(_ message: String, context: LoggingTypes.LogContextDTO) async {
+
+  func error(_: String, context _: LoggingTypes.LogContextDTO) async {
     // Empty implementation
   }
-  
-  func critical(_ message: String, context: LoggingTypes.LogContextDTO) async {
+
+  func critical(_: String, context _: LoggingTypes.LogContextDTO) async {
     // Empty implementation
   }
 }

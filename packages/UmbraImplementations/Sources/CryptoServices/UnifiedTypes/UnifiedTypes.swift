@@ -13,7 +13,7 @@ public enum UnifiedCryptoTypes {
    Canonical reference to CoreSecurityTypes.EncryptionAlgorithm.
    Using type alias to ensure consistent algorithm definitions across the codebase.
    */
-  public typealias EncryptionAlgorithm = CoreSecurityTypes.EncryptionAlgorithm
+  public typealias EncryptionAlgorithm=CoreSecurityTypes.EncryptionAlgorithm
 
   /**
    Unified key generation options.
@@ -90,14 +90,14 @@ public enum UnifiedCryptoTypes {
             algorithm = .chacha20Poly1305
         }
 
-        authenticatedData = options.authenticatedData
+        authenticatedData=options.authenticatedData
         // Padding is optional and depends on implementation
-        padding = nil
+        padding=nil
       } else {
         // Defaults
         algorithm = .aes256GCM
-        authenticatedData = nil
-        padding = nil
+        authenticatedData=nil
+        padding=nil
       }
     }
   }
@@ -140,14 +140,14 @@ public enum UnifiedCryptoTypes {
             algorithm = .chacha20Poly1305
         }
 
-        authenticatedData = options.authenticatedData
+        authenticatedData=options.authenticatedData
         // Padding is optional and depends on implementation
-        padding = nil
+        padding=nil
       } else {
         // Defaults
         algorithm = .aes256GCM
-        authenticatedData = nil
-        padding = nil
+        authenticatedData=nil
+        padding=nil
       }
     }
   }
@@ -164,31 +164,31 @@ public enum UnifiedCryptoTypes {
 
     /// Key generation failed
     case keyGenerationFailed(String)
-    
+
     /// Key retrieval failed
     case keyRetrievalFailed(String)
-    
+
     /// Encryption failed
     case encryptionFailed(String)
-    
+
     /// Decryption failed
     case decryptionFailed(String)
-    
+
     /// Hashing failed
     case hashingFailed(String)
-    
+
     /// Storage failed
     case storageFailed(String)
-    
+
     /// Retrieval failed
     case retrievalFailed(String)
-    
+
     /// Invalid key format
     case invalidKey
 
     /// Invalid data format
     case invalidData
-    
+
     /// Invalid input
     case invalidInput(String)
 

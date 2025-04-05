@@ -34,12 +34,12 @@ public actor DefaultLoggingServiceImpl: LoggingProtocol {
   ///   - context: The context information for the log
   public func logMessage(_ level: LogLevel, _ message: String, context: LogContext) async {
     // Create a context DTO from the legacy context
-    let contextDTO = BaseLogContextDTO(
+    let contextDTO=BaseLogContextDTO(
       domainName: "Legacy",
       source: context.source ?? "Unknown",
       metadata: context.toPrivacyMetadata()
     )
-    
+
     // Forward to the core logging method
     await log(level, message, context: contextDTO)
   }
@@ -47,31 +47,32 @@ public actor DefaultLoggingServiceImpl: LoggingProtocol {
   /// Helper method to convert PrivacyMetadata to LogMetadataDTOCollection
   /// - Parameter metadata: The privacy metadata to convert
   /// - Returns: A LogMetadataDTOCollection with the same entries
-  private func createMetadataCollection(from metadata: PrivacyMetadata?) -> LogMetadataDTOCollection {
-    var collection = LogMetadataDTOCollection()
-    
+  private func createMetadataCollection(from metadata: PrivacyMetadata?)
+  -> LogMetadataDTOCollection {
+    var collection=LogMetadataDTOCollection()
+
     // If no metadata, return empty collection
-    guard let metadata = metadata else {
+    guard let metadata else {
       return collection
     }
-    
+
     // Convert each entry based on its privacy level
     for entry in metadata.entriesArray {
       switch entry.privacy {
-      case .public:
-        collection = collection.withPublic(key: entry.key, value: entry.value)
-      case .private:
-        collection = collection.withPrivate(key: entry.key, value: entry.value)
-      case .sensitive:
-        collection = collection.withSensitive(key: entry.key, value: entry.value)
-      case .hash:
-        collection = collection.withHashed(key: entry.key, value: entry.value)
-      case .auto:
-        // Default to private for auto
-        collection = collection.withPrivate(key: entry.key, value: entry.value)
+        case .public:
+          collection=collection.withPublic(key: entry.key, value: entry.value)
+        case .private:
+          collection=collection.withPrivate(key: entry.key, value: entry.value)
+        case .sensitive:
+          collection=collection.withSensitive(key: entry.key, value: entry.value)
+        case .hash:
+          collection=collection.withHashed(key: entry.key, value: entry.value)
+        case .auto:
+          // Default to private for auto
+          collection=collection.withPrivate(key: entry.key, value: entry.value)
       }
     }
-    
+
     return collection
   }
 
@@ -83,7 +84,7 @@ public actor DefaultLoggingServiceImpl: LoggingProtocol {
   ///   - metadata: Additional metadata
   ///   - source: Source component identifier
   public func trace(_ message: String, metadata: PrivacyMetadata?, source: String) async {
-    let context = BaseLogContextDTO(
+    let context=BaseLogContextDTO(
       domainName: "Trace",
       source: source,
       metadata: createMetadataCollection(from: metadata)
@@ -97,7 +98,7 @@ public actor DefaultLoggingServiceImpl: LoggingProtocol {
   ///   - metadata: Additional metadata
   ///   - source: Source component identifier
   public func debug(_ message: String, metadata: PrivacyMetadata?, source: String) async {
-    let context = BaseLogContextDTO(
+    let context=BaseLogContextDTO(
       domainName: "Debug",
       source: source,
       metadata: createMetadataCollection(from: metadata)
@@ -111,7 +112,7 @@ public actor DefaultLoggingServiceImpl: LoggingProtocol {
   ///   - metadata: Additional metadata
   ///   - source: Source component identifier
   public func info(_ message: String, metadata: PrivacyMetadata?, source: String) async {
-    let context = BaseLogContextDTO(
+    let context=BaseLogContextDTO(
       domainName: "Info",
       source: source,
       metadata: createMetadataCollection(from: metadata)
@@ -125,7 +126,7 @@ public actor DefaultLoggingServiceImpl: LoggingProtocol {
   ///   - metadata: Additional metadata
   ///   - source: Source component identifier
   public func warning(_ message: String, metadata: PrivacyMetadata?, source: String) async {
-    let context = BaseLogContextDTO(
+    let context=BaseLogContextDTO(
       domainName: "Warning",
       source: source,
       metadata: createMetadataCollection(from: metadata)
@@ -139,7 +140,7 @@ public actor DefaultLoggingServiceImpl: LoggingProtocol {
   ///   - metadata: Additional metadata
   ///   - source: Source component identifier
   public func error(_ message: String, metadata: PrivacyMetadata?, source: String) async {
-    let context = BaseLogContextDTO(
+    let context=BaseLogContextDTO(
       domainName: "Error",
       source: source,
       metadata: createMetadataCollection(from: metadata)
@@ -153,7 +154,7 @@ public actor DefaultLoggingServiceImpl: LoggingProtocol {
   ///   - metadata: Additional metadata
   ///   - source: Source component identifier
   public func critical(_ message: String, metadata: PrivacyMetadata?, source: String) async {
-    let context = BaseLogContextDTO(
+    let context=BaseLogContextDTO(
       domainName: "Critical",
       source: source,
       metadata: createMetadataCollection(from: metadata)
@@ -164,7 +165,7 @@ public actor DefaultLoggingServiceImpl: LoggingProtocol {
   // MARK: - Privacy Logging Methods
 
   public func logPrivateData(_ message: PrivacyString) async {
-    let context = BaseLogContextDTO(
+    let context=BaseLogContextDTO(
       domainName: "PrivacyLogging",
       source: "PrivacyLogger",
       metadata: LogMetadataDTOCollection()
@@ -173,7 +174,7 @@ public actor DefaultLoggingServiceImpl: LoggingProtocol {
   }
 
   public func logRestrictedData(_ message: PrivacyString) async {
-    let context = BaseLogContextDTO(
+    let context=BaseLogContextDTO(
       domainName: "PrivacyLogging",
       source: "PrivacyLogger",
       metadata: LogMetadataDTOCollection()
@@ -182,7 +183,7 @@ public actor DefaultLoggingServiceImpl: LoggingProtocol {
   }
 
   public func logPublicData(_ message: PrivacyString) async {
-    let context = BaseLogContextDTO(
+    let context=BaseLogContextDTO(
       domainName: "PrivacyLogging",
       source: "PrivacyLogger",
       metadata: LogMetadataDTOCollection()

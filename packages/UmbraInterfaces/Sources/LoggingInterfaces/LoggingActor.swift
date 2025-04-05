@@ -33,11 +33,14 @@ public actor LoggingActor {
     guard isEnabled && level >= minimumLogLevel else { return }
 
     // Map LogLevel from LoggingInterfaces to LoggingTypes
-    let mappedLevel = mapLogLevel(level)
+    let mappedLevel=mapLogLevel(level)
 
     // Create a temporary old-style context for LogEntry compatibility
     // TODO: Update LogEntry or its usage to accept LogContextDTO directly
-    let oldStyleContext = LogContext(source: context.getSource(), metadata: context.toPrivacyMetadata())
+    let oldStyleContext=LogContext(
+      source: context.getSource(),
+      metadata: context.toPrivacyMetadata()
+    )
     let entry=LogEntry(level: mappedLevel, message: message, context: oldStyleContext)
 
     // Write to all destinations
@@ -54,15 +57,15 @@ public actor LoggingActor {
     // Assuming LoggingTypes.LogLevel has corresponding cases
     // This mapping might need adjustment based on the exact definitions
     switch interfaceLevel {
-    case .trace: return .trace
-    case .debug: return .debug
-    case .info: return .info
-    case .warning: return .warning
-    case .error: return .error
-    case .critical: return .critical
-    @unknown default:
-      // Handle potential future log levels gracefully
-      return .info // Default to info for unknown levels
+      case .trace: return .trace
+      case .debug: return .debug
+      case .info: return .info
+      case .warning: return .warning
+      case .error: return .error
+      case .critical: return .critical
+      @unknown default:
+        // Handle potential future log levels gracefully
+        return .info // Default to info for unknown levels
     }
   }
 

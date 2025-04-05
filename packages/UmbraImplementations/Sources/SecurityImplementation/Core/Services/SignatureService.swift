@@ -51,9 +51,9 @@ final class SignatureService: SecurityServiceBase {
     keyManagementService: KeyStorageManager,
     logger: PrivacyAwareLoggingProtocol
   ) {
-    self.cryptoService = cryptoService
-    self.keyManagementService = keyManagementService
-    self.logger = logger
+    self.cryptoService=cryptoService
+    self.keyManagementService=keyManagementService
+    self.logger=logger
   }
 
   /**
@@ -79,12 +79,12 @@ final class SignatureService: SecurityServiceBase {
    - Returns: Result containing the signature or error information
    */
   func sign(config: SecurityConfigDTO) async -> SecurityResultDTO {
-    let operationID = UUID().uuidString
-    let startTime = Date()
-    let operation = SecurityOperation.sign
+    let operationID=UUID().uuidString
+    let startTime=Date()
+    let operation=SecurityOperation.sign
 
     // Create metadata for logging
-    var logMetadata = PrivacyMetadata()
+    var logMetadata=PrivacyMetadata()
     logMetadata.setPublic(key: "operationID", value: operationID)
     logMetadata.setPublic(key: "operation", value: String(describing: operation))
     logMetadata.setPublic(key: "algorithm", value: config.algorithm)
@@ -93,7 +93,7 @@ final class SignatureService: SecurityServiceBase {
 
     do {
       // Extract required parameters from configuration
-      guard let inputData = SendableCryptoMaterial.fromBase64(config.options["data"] ?? "") else {
+      guard let inputData=SendableCryptoMaterial.fromBase64(config.options["data"] ?? "") else {
         throw SignatureError.invalidInput("Missing input data for signing")
       }
 
@@ -102,27 +102,29 @@ final class SignatureService: SecurityServiceBase {
         let signature: SendableCryptoMaterial
 
         // If keyID is provided, retrieve the key from key management
-        if let keyID = config.options["keyId"] {
+        if let keyID=config.options["keyId"] {
           // Retrieve the key from the key management service
-          let keyResult = await keyManagementService.secureStorage.retrieveMaterial(withIdentifier: keyID)
+          let keyResult=await keyManagementService.secureStorage
+            .retrieveMaterial(withIdentifier: keyID)
 
           switch keyResult {
-          case .success(let keyMaterial):
-            // Use the retrieved key to sign the data
-            signature = try await performSignature(
-              data: inputData,
-              key: keyMaterial,
-              algorithm: config.algorithm
-            )
+            case let .success(keyMaterial):
+              // Use the retrieved key to sign the data
+              signature=try await performSignature(
+                data: inputData,
+                key: keyMaterial,
+                algorithm: config.algorithm
+              )
 
-          case .failure(let error):
-            throw SignatureError.keyManagementError("Failed to retrieve key with ID: \(keyID), error: \(error)")
+            case let .failure(error):
+              throw SignatureError
+                .keyManagementError("Failed to retrieve key with ID: \(keyID), error: \(error)")
           }
         }
         // If direct key is provided, use it
-        else if let key = SendableCryptoMaterial.fromBase64(config.options["key"] ?? "") {
+        else if let key=SendableCryptoMaterial.fromBase64(config.options["key"] ?? "") {
           // Use encrypt as a substitute for signature generation
-          signature = try await performSignature(
+          signature=try await performSignature(
             data: inputData,
             key: key,
             algorithm: config.algorithm
@@ -134,10 +136,10 @@ final class SignatureService: SecurityServiceBase {
         }
 
         // Calculate duration for performance metrics
-        let duration = Date().timeIntervalSince(startTime)
+        let duration=Date().timeIntervalSince(startTime)
 
         // Create success metadata for logging
-        var successMetadata = logMetadata
+        var successMetadata=logMetadata
         successMetadata.setPublic(key: "duration", value: String(format: "%.3f s", duration))
         successMetadata.setPublic(key: "signatureSize", value: String(signature.count))
 
@@ -157,10 +159,10 @@ final class SignatureService: SecurityServiceBase {
         )
       } catch {
         // Calculate duration before failure
-        let duration = Date().timeIntervalSince(startTime)
+        let duration=Date().timeIntervalSince(startTime)
 
         // Create failure metadata for logging
-        var errorMetadata = logMetadata
+        var errorMetadata=logMetadata
         errorMetadata.setPrivate(key: "error", value: error.localizedDescription)
         errorMetadata.setPublic(key: "duration", value: String(format: "%.3f s", duration))
 
@@ -181,10 +183,10 @@ final class SignatureService: SecurityServiceBase {
       }
     } catch {
       // Calculate duration before failure
-      let duration = Date().timeIntervalSince(startTime)
+      let duration=Date().timeIntervalSince(startTime)
 
       // Create failure metadata for logging
-      var errorMetadata = logMetadata
+      var errorMetadata=logMetadata
       errorMetadata.setPrivate(key: "error", value: error.localizedDescription)
       errorMetadata.setPublic(key: "duration", value: String(format: "%.3f s", duration))
 
@@ -212,12 +214,12 @@ final class SignatureService: SecurityServiceBase {
    - Returns: Result containing verification status or error information
    */
   func verify(config: SecurityConfigDTO) async -> SecurityResultDTO {
-    let operationID = UUID().uuidString
-    let startTime = Date()
-    let operation = SecurityOperation.verify
+    let operationID=UUID().uuidString
+    let startTime=Date()
+    let operation=SecurityOperation.verify
 
     // Create metadata for logging
-    var logMetadata = PrivacyMetadata()
+    var logMetadata=PrivacyMetadata()
     logMetadata.setPublic(key: "operationID", value: operationID)
     logMetadata.setPublic(key: "operation", value: String(describing: operation))
     logMetadata.setPublic(key: "algorithm", value: config.algorithm)
@@ -226,18 +228,19 @@ final class SignatureService: SecurityServiceBase {
 
     do {
       // Extract required parameters from configuration
-      guard let inputData = SendableCryptoMaterial.fromBase64(config.options["data"] ?? "") else {
+      guard let inputData=SendableCryptoMaterial.fromBase64(config.options["data"] ?? "") else {
         throw SignatureError.invalidInput("Missing input data for verification")
       }
 
-      guard let signature = SendableCryptoMaterial.fromBase64(config.options["signature"] ?? "") else {
+      guard let signature=SendableCryptoMaterial.fromBase64(config.options["signature"] ?? "")
+      else {
         throw SignatureError.invalidInput("Missing signature to verify")
       }
 
       // Check if key is provided directly in the options
-      if let key = SendableCryptoMaterial.fromBase64(config.options["key"] ?? "") {
+      if let key=SendableCryptoMaterial.fromBase64(config.options["key"] ?? "") {
         // Try to verify the signature using the provided key
-        let isValid = try await performVerification(
+        let isValid=try await performVerification(
           data: inputData,
           signature: signature,
           key: key,
@@ -245,10 +248,10 @@ final class SignatureService: SecurityServiceBase {
         )
 
         // Calculate duration for performance metrics
-        let duration = Date().timeIntervalSince(startTime)
+        let duration=Date().timeIntervalSince(startTime)
 
         // Create result metadata
-        var verificationMetadata = logMetadata
+        var verificationMetadata=logMetadata
         verificationMetadata.setPublic(key: "duration", value: String(format: "%.3f s", duration))
         verificationMetadata.setPublic(key: "isValid", value: String(isValid))
 
@@ -276,62 +279,66 @@ final class SignatureService: SecurityServiceBase {
         // If key not provided directly, try to retrieve from key manager
 
         // Attempt to get key ID from config
-        guard let keyID = config.options["keyId"] else {
+        guard let keyID=config.options["keyId"] else {
           throw SignatureError.invalidInput("Neither key nor keyId provided for verification")
         }
 
         // Request key from key manager
-        let keyResult = await keyManagementService.secureStorage.retrieveMaterial(withIdentifier: keyID)
+        let keyResult=await keyManagementService.secureStorage
+          .retrieveMaterial(withIdentifier: keyID)
 
         switch keyResult {
-        case .success(let keyMaterial):
-          // Try to verify the signature using the retrieved key
-          let isValid = try await performVerification(
-            data: inputData,
-            signature: signature,
-            key: keyMaterial,
-            algorithm: config.algorithm
-          )
-
-          // Calculate duration for performance metrics
-          let duration = Date().timeIntervalSince(startTime)
-
-          // Create result metadata
-          var verificationMetadata = logMetadata
-          verificationMetadata.setPublic(key: "duration", value: String(format: "%.3f s", duration))
-          verificationMetadata.setPublic(key: "isValid", value: String(isValid))
-
-          if isValid {
-            await logger.info(
-              "Signature verification completed: Valid signature",
-              metadata: verificationMetadata
+          case let .success(keyMaterial):
+            // Try to verify the signature using the retrieved key
+            let isValid=try await performVerification(
+              data: inputData,
+              signature: signature,
+              key: keyMaterial,
+              algorithm: config.algorithm
             )
-          } else {
-            await logger.warning(
-              "Signature verification completed: Invalid signature",
-              metadata: verificationMetadata
+
+            // Calculate duration for performance metrics
+            let duration=Date().timeIntervalSince(startTime)
+
+            // Create result metadata
+            var verificationMetadata=logMetadata
+            verificationMetadata.setPublic(
+              key: "duration",
+              value: String(format: "%.3f s", duration)
             )
-          }
+            verificationMetadata.setPublic(key: "isValid", value: String(isValid))
 
-          // Return verification result
-          return SecurityResultDTO(
-            status: .success,
-            metadata: [
-              "verified": "\(isValid)",
-              "algorithm": config.algorithm
-            ]
-          )
+            if isValid {
+              await logger.info(
+                "Signature verification completed: Valid signature",
+                metadata: verificationMetadata
+              )
+            } else {
+              await logger.warning(
+                "Signature verification completed: Invalid signature",
+                metadata: verificationMetadata
+              )
+            }
 
-        case .failure(let error):
-          throw SignatureError.keyManagementError("Failed to retrieve key, error: \(error)")
+            // Return verification result
+            return SecurityResultDTO(
+              status: .success,
+              metadata: [
+                "verified": "\(isValid)",
+                "algorithm": config.algorithm
+              ]
+            )
+
+          case let .failure(error):
+            throw SignatureError.keyManagementError("Failed to retrieve key, error: \(error)")
         }
       }
     } catch {
       // Calculate duration before failure
-      let duration = Date().timeIntervalSince(startTime)
+      let duration=Date().timeIntervalSince(startTime)
 
       // Create failure metadata for logging
-      var errorMetadata = logMetadata
+      var errorMetadata=logMetadata
       errorMetadata.setPrivate(key: "error", value: error.localizedDescription)
       errorMetadata.setPublic(key: "duration", value: String(format: "%.3f s", duration))
 
@@ -364,13 +371,13 @@ final class SignatureService: SecurityServiceBase {
    - Returns: The generated signature
    */
   private func performSignature(
-    data: SendableCryptoMaterial,
-    key: SendableCryptoMaterial,
-    algorithm: String
+    data _: SendableCryptoMaterial,
+    key _: SendableCryptoMaterial,
+    algorithm _: String
   ) async throws -> SendableCryptoMaterial {
     // Implement actual signature generation using cryptoService
     // For now, this is a placeholder that would be replaced with actual implementation
-    return try secureRandomMaterial(byteCount: 64) // Example 512-bit signature
+    try secureRandomMaterial(byteCount: 64) // Example 512-bit signature
   }
 
   /**
@@ -384,22 +391,22 @@ final class SignatureService: SecurityServiceBase {
    - Returns: Whether the signature is valid
    */
   private func performVerification(
-    data: SendableCryptoMaterial,
-    signature: SendableCryptoMaterial,
-    key: SendableCryptoMaterial,
-    algorithm: String
+    data _: SendableCryptoMaterial,
+    signature _: SendableCryptoMaterial,
+    key _: SendableCryptoMaterial,
+    algorithm _: String
   ) async throws -> Bool {
     // Implement actual signature verification using cryptoService
     // For now, this is a placeholder that would be replaced with actual implementation
-    return true // Example successful verification
+    true // Example successful verification
   }
 
   // MARK: - Migration Helpers
 
-  private func secureRandomMaterial(byteCount: Int) throws -> SendableCryptoMaterial {
+  private func secureRandomMaterial(byteCount _: Int) throws -> SendableCryptoMaterial {
     // Implement secure random material generation
     // For now, this is a placeholder that would be replaced with actual implementation
-    return SendableCryptoMaterial(base64Encoded: "random-material")
+    SendableCryptoMaterial(base64Encoded: "random-material")
   }
 }
 

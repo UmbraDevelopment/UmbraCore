@@ -71,7 +71,10 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
     if !sources.isEmpty {
       let message="Configuration service is already initialised"
       if let logger {
-        await logger.warning(message, context: createLogContext(source: "ConfigurationServiceActor"))
+        await logger.warning(
+          message,
+          context: createLogContext(source: "ConfigurationServiceActor")
+        )
       }
       throw UmbraErrors.ConfigError.initialisationError(message: message)
     }
@@ -665,8 +668,9 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
           context: createLogContext(
             metadata: PrivacyMetadata([
               "subscription_id": (subscriptionID.uuidString, .public),
-              "filter_types": (filter?.changeTypes?.map(\.rawValue).joined(separator: ", ") ?? "all",
-                               .public)
+              "filter_types": (filter?.changeTypes?.map(\.rawValue)
+                .joined(separator: ", ") ?? "all",
+                .public)
             ]),
             source: "ConfigurationServiceActor"
           )
@@ -884,41 +888,41 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
   ///   - source: Optional source identifier
   /// - Returns: A LogContextDTO suitable for logging
   private func createLogContext(metadata: PrivacyMetadata?, source: String) -> LogContextDTO {
-    var metadataCollection = LogMetadataDTOCollection()
-    
-    if let metadata = metadata {
+    var metadataCollection=LogMetadataDTOCollection()
+
+    if let metadata {
       // Convert PrivacyMetadata to LogMetadataDTOCollection using public APIs
       // Use the appropriate builder methods for each privacy level
       for entry in metadata.entriesArray {
         switch entry.privacy {
-        case .public:
-          metadataCollection = metadataCollection.withPublic(key: entry.key, value: entry.value)
-        case .private:
-          metadataCollection = metadataCollection.withPrivate(key: entry.key, value: entry.value)
-        case .sensitive:
-          metadataCollection = metadataCollection.withSensitive(key: entry.key, value: entry.value)
-        case .auto:
-          // For auto, default to public
-          metadataCollection = metadataCollection.withPublic(key: entry.key, value: entry.value)
-        default:
-          // For any other cases like .hash, default to private
-          metadataCollection = metadataCollection.withPrivate(key: entry.key, value: entry.value)
+          case .public:
+            metadataCollection=metadataCollection.withPublic(key: entry.key, value: entry.value)
+          case .private:
+            metadataCollection=metadataCollection.withPrivate(key: entry.key, value: entry.value)
+          case .sensitive:
+            metadataCollection=metadataCollection.withSensitive(key: entry.key, value: entry.value)
+          case .auto:
+            // For auto, default to public
+            metadataCollection=metadataCollection.withPublic(key: entry.key, value: entry.value)
+          default:
+            // For any other cases like .hash, default to private
+            metadataCollection=metadataCollection.withPrivate(key: entry.key, value: entry.value)
         }
       }
     }
-    
+
     return BaseLogContextDTO(
       domainName: "Configuration",
       source: source,
       metadata: metadataCollection
     )
   }
-  
+
   /// Create a LogContextDTO with just a source identifier
   /// - Parameter source: Source identifier
   /// - Returns: A LogContextDTO suitable for logging
   private func createLogContext(source: String) -> LogContextDTO {
-    return createLogContext(metadata: nil, source: source)
+    createLogContext(metadata: nil, source: source)
   }
 }
 

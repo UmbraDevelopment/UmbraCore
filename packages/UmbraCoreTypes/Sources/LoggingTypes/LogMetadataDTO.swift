@@ -65,10 +65,10 @@ public struct LogMetadataDTO: Sendable, Equatable, Hashable {
   public static func hashedEntry(key: String, value: String) -> LogMetadataDTO {
     LogMetadataDTO(key: key, value: value, privacyLevel: .hash)
   }
-  
+
   /// Creates an automatically-classified metadata entry
   ///
-  /// This classification will use the system's built-in heuristics to 
+  /// This classification will use the system's built-in heuristics to
   /// determine the appropriate privacy level based on the value's content.
   ///
   /// - Parameters:
