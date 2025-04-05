@@ -1,5 +1,6 @@
 import CoreInterfaces
 import CryptoInterfaces
+import DomainSecurityTypes
 import Foundation
 import UmbraErrors
 
@@ -40,7 +41,7 @@ public actor CryptoServiceAdapter: CoreInterfaces.CoreCryptoServiceProtocol {
    - Parameter cryptoService: The crypto service implementation to adapt
    */
   public init(cryptoService: CryptoInterfaces.CryptoServiceProtocol) {
-    self.cryptoService=cryptoService
+    self.cryptoService = cryptoService
   }
 
   // MARK: - CoreCryptoServiceProtocol Implementation
@@ -70,20 +71,20 @@ public actor CryptoServiceAdapter: CoreInterfaces.CoreCryptoServiceProtocol {
    - Throws: CryptoError if encryption fails
    */
   public func encrypt(data: Data, with key: Data) async throws -> Data {
-    // Convert to SecureBytes
-    let secureData=SecureBytes(data: data)
-    let secureKey=SecureBytes(data: key)
+    // Convert to SendableCryptoMaterial
+    let secureMaterial = SendableCryptoMaterial(bytes: [UInt8](data))
+    let keyMaterial = SendableCryptoMaterial(bytes: [UInt8](key))
 
     // Generate a secure random IV
-    let secureIV=try await cryptoService.generateSecureRandomBytes(length: 16)
+    let ivMaterial = try await cryptoService.generateSecureRandomBytes(length: 16)
 
     // Perform encryption
-    let encryptedResult=try await cryptoService.encrypt(secureData, using: secureKey, iv: secureIV)
+    let encryptedResult = try await cryptoService.encrypt(secureMaterial, using: keyMaterial, iv: ivMaterial)
 
     // Create a combined output that includes the IV and encrypted data
-    var result=Data()
-    result.append(secureIV.extractUnderlyingData()) // IV first
-    result.append(encryptedResult.extractUnderlyingData()) // Then encrypted data
+    var result = Data()
+    result.append(Data(ivMaterial.toByteArray())) // IV first
+    result.append(Data(encryptedResult.toByteArray())) // Then encrypted data
 
     return result
   }
@@ -100,27 +101,24 @@ public actor CryptoServiceAdapter: CoreInterfaces.CoreCryptoServiceProtocol {
    - Throws: CryptoError if decryption fails
    */
   public func decrypt(data: Data, with key: Data) async throws -> Data {
+    // Extract IV (first 16 bytes) and encrypted data (remaining bytes)
     guard data.count > 16 else {
-      throw CryptoError.invalidInput(reason: "Data too short, missing IV")
+      throw CryptoError.invalidInput("Data too short for IV+ciphertext format")
     }
 
-    // Extract IV and encrypted data
-    let iv=data.prefix(16)
-    let encryptedData=data.suffix(from: 16)
+    let iv = data.prefix(16)
+    let encryptedData = data.suffix(from: 16)
 
-    // Convert to SecureBytes
-    let secureIV=SecureBytes(data: iv)
-    let secureEncryptedData=SecureBytes(data: encryptedData)
-    let secureKey=SecureBytes(data: key)
+    // Convert to SendableCryptoMaterial
+    let ivMaterial = SendableCryptoMaterial(bytes: [UInt8](iv))
+    let encryptedMaterial = SendableCryptoMaterial(bytes: [UInt8](encryptedData))
+    let keyMaterial = SendableCryptoMaterial(bytes: [UInt8](key))
 
     // Perform decryption
-    let decryptedResult=try await cryptoService.decrypt(
-      secureEncryptedData,
-      using: secureKey,
-      iv: secureIV
-    )
+    let decryptedResult = try await cryptoService.decrypt(encryptedMaterial, using: keyMaterial, iv: ivMaterial)
 
-    return decryptedResult.extractUnderlyingData()
+    // Return the decrypted data
+    return Data(decryptedResult.toByteArray())
   }
 
   /**
@@ -129,30 +127,78 @@ public actor CryptoServiceAdapter: CoreInterfaces.CoreCryptoServiceProtocol {
    Delegates to the underlying crypto service implementation.
 
    - Parameter length: The length of the key in bytes
-   - Returns: A secure random key
+   - Returns: The generated key
    - Throws: CryptoError if key generation fails
    */
   public func generateKey(length: Int) async throws -> Data {
-    let key=try await cryptoService.generateSecureRandomKey(length: length)
-    return key.extractUnderlyingData()
+    // Generate secure random bytes using the crypto service
+    let keyMaterial = try await cryptoService.generateSecureRandomBytes(length: length)
+
+    // Return the key as Data
+    return Data(keyMaterial.toByteArray())
   }
 
   /**
-   Computes a hash of the provided data
+   Computes a hash of the provided data using the specified algorithm
 
-   Delegates to the underlying crypto service for hashing functionality.
+   Delegates to the underlying crypto service implementation.
 
-   - Parameter data: The data to hash
-   - Returns: The computed hash
+   - Parameters:
+     - data: The data to hash
+     - algorithm: The hashing algorithm to use
+   - Returns: The hash as data
    - Throws: CryptoError if hashing fails
    */
-  public func hash(data: Data) async throws -> Data {
-    // Convert to SecureBytes
-    let secureData=SecureBytes(data: data)
+  public func hash(data: Data, algorithm: String) async throws -> Data {
+    // Convert to SendableCryptoMaterial
+    let secureMaterial = SendableCryptoMaterial(bytes: [UInt8](data))
 
-    // We don't have a direct hash method in the CryptoServiceProtocol shown here,
-    // so we would need to use the appropriate method from the underlying implementation
-    // or extend the protocol. For this example, we'll throw an unimplemented error.
-    throw CryptoError.operationFailed("Hash operation not implemented")
+    // Compute the hash
+    let hashResult = try await cryptoService.hash(secureMaterial, algorithm: algorithm)
+
+    // Return the hash as Data
+    return Data(hashResult.toByteArray())
+  }
+
+  /**
+   Derives a key from the provided source material
+
+   Delegates to the underlying crypto service implementation.
+
+   - Parameters:
+     - sourceMaterial: The source material for key derivation
+     - salt: Optional salt for key derivation
+     - iterations: Number of iterations for key derivation
+     - length: The length of the derived key in bytes
+   - Returns: The derived key
+   - Throws: CryptoError if key derivation fails
+   */
+  public func deriveKey(
+    from sourceMaterial: Data,
+    salt: Data?,
+    iterations: Int,
+    length: Int
+  ) async throws -> Data {
+    // Convert source material to SendableCryptoMaterial
+    let sourceSecureMaterial = SendableCryptoMaterial(bytes: [UInt8](sourceMaterial))
+    
+    // Convert salt to SendableCryptoMaterial if provided
+    let saltMaterial: SendableCryptoMaterial?
+    if let salt = salt {
+      saltMaterial = SendableCryptoMaterial(bytes: [UInt8](salt))
+    } else {
+      saltMaterial = nil
+    }
+
+    // Derive the key
+    let derivedKeyMaterial = try await cryptoService.deriveKey(
+      from: sourceSecureMaterial,
+      salt: saltMaterial,
+      iterations: iterations,
+      keyLength: length
+    )
+
+    // Return the derived key as Data
+    return Data(derivedKeyMaterial.toByteArray())
   }
 }

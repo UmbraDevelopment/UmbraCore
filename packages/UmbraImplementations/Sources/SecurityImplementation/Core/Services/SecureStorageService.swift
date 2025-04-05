@@ -216,7 +216,7 @@ final class SecureStorageService: SecurityServiceBase {
       guard
         let ivString=retrievalResult.metadata["iv"],
         let ivData=Data(base64Encoded: ivString),
-        let _=try? SecureBytes(data: ivData)
+        let _ = try? SendableCryptoMaterial(bytes: [UInt8](ivData))
       else {
         throw SecureStorageError.invalidData("Invalid IV in stored metadata")
       }

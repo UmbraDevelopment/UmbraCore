@@ -699,19 +699,23 @@ public actor BackupServicesActor: BackupServiceProtocol {
    *
    * - Parameters:
    *   - snapshotID: ID of the snapshot to verify, or nil to verify the latest
-   *   - verifyOptions: Optional verification configuration options
+   *   - verifyData: Whether to verify all data blocks (true) or only metadata (false)
+   *   - repairMode: Optional mode for repairing any issues found
+   *   - options: Optional verification configuration options
    * - Returns: A Result containing either the operation response or an error
    */
   public func verifyBackup(
     snapshotID: String?,
-    verifyOptions: VerifyOptions?
-  ) async -> Result<BackupOperationResponse<BackupVerificationResultDTO>, BackupOperationError> {
+    verifyData: Bool = true,
+    repairMode: BackupInterfaces.RepairMode? = nil,
+    options: BackupInterfaces.VerifyOptions? = nil
+  ) async -> Result<BackupOperationResponse<VerificationResult>, BackupOperationError> {
     // Create a log context
-    let logContext=BackupLogContext()
+    let logContext = BackupLogContext()
       .withOperation("verifyBackup")
 
     // Add snapshot ID if provided
-    let enhancedContext=snapshotID != nil ?
+    let enhancedContext = snapshotID != nil ?
       logContext.withPublic(key: "snapshotID", value: snapshotID!) :
       logContext
 
@@ -719,87 +723,83 @@ public actor BackupServicesActor: BackupServiceProtocol {
     await backupLogger.logOperationStart(context: enhancedContext)
 
     // Record the start time
-    let startTime=Date()
+    let startTime = Date()
 
     // Create a progress reporter for this operation
-    let progressReporter=AsyncProgressReporter<BackupProgressInfo>()
+    let progressReporter = AsyncProgressReporter<BackupProgressInfo>()
 
     // Create an operation token and register it
-    let token=BackupOperationToken(
+    let token = BackupOperationToken(
       id: UUID(),
       operation: .verifyBackup,
       cancellable: true
     )
 
     // Register the token
-    activeOperations[token.id]=token
+    activeOperations[token.id] = token
 
-    // Create parameters for the operation
-    let parameters=BackupVerifyParameters(
+    // Create a cancellation token for the operation
+    let cancellationToken = BackupOperationCancellationToken(id: token.id.uuidString)
+    activeOperationsCancellationTokens[token.id] = cancellationToken
+    
+    // Create DTO parameters for the operation using adapter pattern
+    let localRepairMode = repairMode.map { 
+        BackupVerifyParameters.RepairMode(rawValue: $0.rawValue) ?? .reportOnly
+    }
+    
+    let localOptions = options.map { VerifyOptions.from(options: $0) }
+    
+    let parameters = BackupVerifyParameters(
       snapshotID: snapshotID,
-      verifyOptions: verifyOptions
+      verifyData: verifyData,
+      repairMode: localRepairMode,
+      options: localOptions
     )
 
     do {
       // Execute the operation
-      let (result, progressStream)=try await operationsService.verifyBackup(
+      let verificationResultDTO = try await operationExecutor.executeVerifyOperation(
         parameters: parameters,
         progressReporter: progressReporter,
-        cancellationToken: nil
+        cancellationToken: cancellationToken,
+        logContext: enhancedContext
       )
 
-      // Record the end time and calculate duration
-      let endTime=Date()
-      let duration=endTime.timeIntervalSince(startTime)
+      // Calculate operation duration
+      let duration = Date().timeIntervalSince(startTime)
 
-      // Create operation metadata
-      let metadata=BackupOperationResultMetadata(
-        operationID: token.id,
-        startTime: startTime,
-        endTime: endTime,
+      // Log operation success
+      await backupLogger.logOperationSuccess(
+        context: enhancedContext,
         duration: duration
       )
 
-      // Create the operation response
-      let operationResult=BackupOperationResponse(
-        value: result,
-        progressStream: progressReporter.stream,
-        metadata: metadata
+      // Remove token
+      activeOperationsCancellationTokens[token.id] = nil
+      
+      // Convert DTO to interface type using adapter
+      let result = verificationResultDTO.toVerificationResult()
+
+      // Return successful result with operation response
+      return .success(
+        BackupOperationResponse(
+          value: result,
+          progressStream: progressReporter.stream
+        )
       )
-
-      // Create enhanced log context with result information
-      let resultContext=enhancedContext.withPublic(
-        key: "duration",
-        value: "\(duration)"
-      ).withPublic(
-        key: "verified",
-        value: "\(result.verified)"
-      ).withPublic(
-        key: "errors",
-        value: "\(result.errorCount)"
-      )
-
-      // Log success
-      await backupLogger.logOperationSuccess(
-        context: resultContext,
-        result: result
-      )
-
-      // Remove the token as operation is complete
-      activeOperations[token.id]=nil
-
-      return .success(operationResult)
     } catch {
+      // Map error
+      let backupError = error.asBackupOperationError
+
       // Log error
-      await backupLogger.logOperationFailure(
+      await backupLogger.logOperationError(
         context: enhancedContext,
-        error: error
+        error: backupError
       )
 
-      // Remove the token as operation failed
-      activeOperations[token.id]=nil
-
-      return .failure(mapToOperationError(error))
+      // Remove token and return error
+      activeOperationsCancellationTokens[token.id] = nil
+      return .failure(backupError)
     }
   }
 

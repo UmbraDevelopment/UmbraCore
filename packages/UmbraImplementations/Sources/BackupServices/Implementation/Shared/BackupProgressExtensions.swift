@@ -1,5 +1,36 @@
 import BackupInterfaces
 import Foundation
+import ResticInterfaces
+
+extension BackupProgress {
+  /// Converts a ResticInterfaces.BackupProgress to a BackupInterfaces.BackupProgressInfo
+  ///
+  /// - Parameter operation: The operation this progress relates to
+  /// - Returns: A BackupProgressInfo instance
+  public func toBackupProgressInfo(for operation: BackupOperation) -> BackupProgressInfo {
+    // Use the DTO as an intermediate adapter layer
+    let dto = BackupProgressDTO.from(resticProgress: self)
+    return dto.toBackupProgressInfo(for: operation)
+  }
+}
+
+// MARK: - BackupProgress Extensions for Phase Conversion
+
+extension BackupProgressInfo.Phase {
+  /// Initialises a Phase from a BackupProgress.Status
+  ///
+  /// - Parameter status: The status to convert from
+  init(from status: BackupProgress.Status) {
+    switch status {
+      case .scanning:
+        self = .scanning
+      case .processing:
+        self = .processing
+      case .saving:
+        self = .finalising
+    }
+  }
+}
 
 extension BackupProgressInfo {
   /// Creates a progress instance for initialisation with a description

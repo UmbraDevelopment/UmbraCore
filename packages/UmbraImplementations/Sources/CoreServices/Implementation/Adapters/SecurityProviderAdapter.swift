@@ -40,7 +40,7 @@ public actor SecurityProviderAdapter: CoreSecurityProviderProtocol {
    - Parameter securityProvider: The security provider implementation to adapt
    */
   public init(securityProvider: SecurityCoreInterfaces.SecurityProviderProtocol) {
-    self.securityProvider=securityProvider
+    self.securityProvider = securityProvider
   }
 
   // MARK: - CoreSecurityProviderProtocol Implementation
@@ -71,11 +71,11 @@ public actor SecurityProviderAdapter: CoreSecurityProviderProtocol {
    */
   public func encrypt(data: Data, key: Data) async throws -> Data {
     // Create the secure bytes from data
-    let secureData=SecureBytes(data: data)
-    let secureKey=SecureBytes(data: key)
+    let secureData = SendableCryptoMaterial(bytes: [UInt8](data))
+    let secureKey = SendableCryptoMaterial(bytes: [UInt8](key))
 
     // Create the configuration for encryption
-    let config=SecurityConfigDTO(
+    let config = SecurityConfigDTO(
       operation: .encrypt,
       key: secureKey,
       data: secureData,
@@ -84,7 +84,7 @@ public actor SecurityProviderAdapter: CoreSecurityProviderProtocol {
     )
 
     // Perform encryption
-    let result=try await securityProvider.encrypt(config: config)
+    let result = try await securityProvider.encrypt(config: config)
 
     // Return the encrypted data
     return result.processedData.extractUnderlyingData()
@@ -103,11 +103,11 @@ public actor SecurityProviderAdapter: CoreSecurityProviderProtocol {
    */
   public func decrypt(data: Data, key: Data) async throws -> Data {
     // Create the secure bytes from data
-    let secureData=SecureBytes(data: data)
-    let secureKey=SecureBytes(data: key)
+    let secureData = SendableCryptoMaterial(bytes: [UInt8](data))
+    let secureKey = SendableCryptoMaterial(bytes: [UInt8](key))
 
     // Create the configuration for decryption
-    let config=SecurityConfigDTO(
+    let config = SecurityConfigDTO(
       operation: .decrypt,
       key: secureKey,
       data: secureData,
@@ -116,7 +116,7 @@ public actor SecurityProviderAdapter: CoreSecurityProviderProtocol {
     )
 
     // Perform decryption
-    let result=try await securityProvider.decrypt(config: config)
+    let result = try await securityProvider.decrypt(config: config)
 
     // Return the decrypted data
     return result.processedData.extractUnderlyingData()
@@ -132,7 +132,7 @@ public actor SecurityProviderAdapter: CoreSecurityProviderProtocol {
    - Throws: SecurityError if key generation fails
    */
   public func generateKey(length: Int) async throws -> Data {
-    let result=try await securityProvider.generateEncryptionKey(keySize: length * 8)
+    let result = try await securityProvider.generateEncryptionKey(keySize: length * 8)
     return result.processedData.extractUnderlyingData()
   }
 
@@ -147,10 +147,10 @@ public actor SecurityProviderAdapter: CoreSecurityProviderProtocol {
    - Throws: SecurityError if key storage fails
    */
   public func storeKey(_ key: Data, identifier: String) async throws {
-    let secureKey=SecureBytes(data: key)
-    let result=await securityProvider.storeKey(secureKey, withIdentifier: identifier)
+    let secureKey = SendableCryptoMaterial(bytes: [UInt8](key))
+    let result = await securityProvider.storeKey(secureKey, withIdentifier: identifier)
 
-    if case let .failure(error)=result {
+    if case let .failure(error) = result {
       throw SecurityError.keyStorageFailed(message: error.localizedDescription)
     }
   }
@@ -165,13 +165,13 @@ public actor SecurityProviderAdapter: CoreSecurityProviderProtocol {
    - Throws: SecurityError if key retrieval fails
    */
   public func retrieveKey(identifier: String) async throws -> Data {
-    let result=await securityProvider.retrieveKey(withIdentifier: identifier)
+    let result = await securityProvider.retrieveKey(withIdentifier: identifier)
 
     switch result {
-      case let .success(key):
-        return key.extractUnderlyingData()
-      case let .failure(error):
-        throw SecurityError.keyRetrievalFailed(message: error.localizedDescription)
+    case let .success(key):
+      return key.extractUnderlyingData()
+    case let .failure(error):
+      throw SecurityError.keyRetrievalFailed(message: error.localizedDescription)
     }
   }
 

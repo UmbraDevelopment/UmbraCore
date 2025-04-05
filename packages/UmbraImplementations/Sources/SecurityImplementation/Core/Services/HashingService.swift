@@ -1,4 +1,5 @@
 import CoreSecurityTypes
+import DomainSecurityTypes
 import LoggingInterfaces
 import SecurityCoreInterfaces
 
@@ -41,8 +42,8 @@ final class HashingService: SecurityServiceBase {
     cryptoService: SecurityCoreInterfaces.CryptoServiceProtocol,
     logger: LoggingInterfaces.LoggingProtocol
   ) {
-    self.cryptoService=cryptoService
-    self.logger=logger
+    self.cryptoService = cryptoService
+    self.logger = logger
   }
 
   /**
@@ -66,13 +67,13 @@ final class HashingService: SecurityServiceBase {
    - Returns: Result containing hashed data or error information
    */
   func hash(config: SecurityConfigDTO) async -> SecurityResultDTO {
-    let operationID=UUID().uuidString
-    let startTime=Date()
+    let operationID = UUID().uuidString
+    let startTime = Date()
     // Use generateRandom as a placeholder operation since there's no specific hash case
-    let operation=SecurityOperation.generateRandom(length: 0)
+    let operation = SecurityOperation.generateRandom(length: 0)
 
     // Create metadata for logging
-    let logMetadata=createOperationMetadata(
+    let logMetadata = createOperationMetadata(
       operationID: operationID,
       operation: operation,
       config: config
@@ -83,101 +84,108 @@ final class HashingService: SecurityServiceBase {
     do {
       // Extract required parameters from configuration
       guard
-        let dataString=config.options["data"],
-        let inputData=SecureBytes(base64Encoded: dataString)
+        let dataString = config.options["data"],
+        let inputData = SendableCryptoMaterial.fromBase64(dataString)
       else {
         throw SecurityError.invalidInput("Missing or invalid input data for hashing")
       }
 
       // Determine hash algorithm to use
-      let hashAlgorithm=HashAlgorithm(rawValue: config.algorithm) ?? HashAlgorithm.sha256
+      let hashAlgorithm = HashAlgorithm(rawValue: config.algorithm) ?? HashAlgorithm.sha256
 
       // Perform the hashing operation
-      let hashResult=try await cryptoService.hash(data: inputData)
+      let hashResult = try await cryptoService.hash(inputData, algorithm: hashAlgorithm.rawValue)
 
-      // Process the result
-      switch hashResult {
-        case let .success(hashedData):
-          // Calculate duration for performance metrics
-          let duration=Date().timeIntervalSince(startTime) * 1000
+      // Calculate duration for performance metrics
+      let duration = Date().timeIntervalSince(startTime)
+      
+      // Log successful operation
+      await logger.info(
+        "Completed hashing operation successfully",
+        metadata: logMetadata.merging([
+          "duration": "\(duration)",
+          "hashAlgorithm": hashAlgorithm.rawValue
+        ])
+      )
 
-          // Create success metadata for logging
-          let successMetadata: LoggingInterfaces.LogMetadata=[
-            "operationId": operationID,
-            "operation": "hash", // Use a specific string for the hash operation in the logs
-            "hashAlgorithm": hashAlgorithm.rawValue,
-            "durationMs": String(format: "%.2f", duration)
-          ]
+      // Return successful result
+      return SecurityResultDTO(
+        success: true,
+        processedData: hashResult,
+        operationID: operationID,
+        duration: duration
+      )
 
-          await logger.info(
-            "Hashing operation completed successfully",
-            metadata: successMetadata
-          )
-
-          // Return successful result with hashed data
-          return SecurityResultDTO(
-            status: .success,
-            data: hashedData,
-            metadata: [
-              "durationMs": String(format: "%.2f", duration),
-              "hashAlgorithm": hashAlgorithm.rawValue
-            ]
-          )
-        case let .failure(error):
-          // Calculate duration before failure
-          let duration=Date().timeIntervalSince(startTime) * 1000
-
-          // Create failure metadata for logging
-          let errorMetadata: LoggingInterfaces.LogMetadata=[
-            "operationId": operationID,
-            "operation": "hash", // Use a specific string for the hash operation in the logs
-            "durationMs": String(format: "%.2f", duration),
-            "errorType": "\(type(of: error))",
-            "errorMessage": error.localizedDescription
-          ]
-
-          await logger.error(
-            "Hashing operation failed: \(error.localizedDescription)",
-            metadata: errorMetadata
-          )
-
-          // Return failure result
-          return SecurityResultDTO(
-            status: .failure,
-            error: error,
-            metadata: [
-              "durationMs": String(format: "%.2f", duration),
-              "errorMessage": error.localizedDescription
-            ]
-          )
-      }
     } catch {
-      // Calculate duration before failure
-      let duration=Date().timeIntervalSince(startTime) * 1000
-
-      // Create failure metadata for logging
-      let errorMetadata: LoggingInterfaces.LogMetadata=[
-        "operationId": operationID,
-        "operation": "hash", // Use a specific string for the hash operation in the logs
-        "durationMs": String(format: "%.2f", duration),
-        "errorType": "\(type(of: error))",
-        "errorMessage": error.localizedDescription
-      ]
-
+      // Calculate duration even for failed operations
+      let duration = Date().timeIntervalSince(startTime)
+      
+      // Log the error
       await logger.error(
         "Hashing operation failed: \(error.localizedDescription)",
-        metadata: errorMetadata
+        metadata: logMetadata.merging([
+          "duration": "\(duration)",
+          "error": error.localizedDescription
+        ])
       )
 
-      // Return failure result
+      // Return failed result
       return SecurityResultDTO(
-        status: .failure,
-        error: error,
-        metadata: [
-          "durationMs": String(format: "%.2f", duration),
-          "errorMessage": error.localizedDescription
-        ]
+        success: false,
+        error: error.localizedDescription,
+        operationID: operationID,
+        duration: duration
       )
+    }
+  }
+
+  /**
+   Creates a hash of the provided data
+
+   This is a dedicated method for hashing plain data without the need for a
+   full configuration object.
+
+   - Parameters:
+     - data: The data to hash
+     - algorithm: The hashing algorithm to use
+   - Returns: Result containing hashed data or error information
+   */
+  func hashData(_ data: SendableCryptoMaterial, algorithm: HashAlgorithm = .sha256) async -> Result<SendableCryptoMaterial, Error> {
+    let operationID = UUID().uuidString
+    let startTime = Date()
+    
+    // Create basic logging metadata
+    let logMetadata: [String: String] = [
+      "operationID": operationID,
+      "algorithm": algorithm.rawValue
+    ]
+    
+    await logger.info("Starting direct hash operation", metadata: logMetadata)
+    
+    do {
+      // Perform the hashing operation
+      let hashedData = try await cryptoService.hash(data, algorithm: algorithm.rawValue)
+      
+      // Log successful operation
+      let duration = Date().timeIntervalSince(startTime)
+      await logger.info(
+        "Completed direct hash operation",
+        metadata: logMetadata.merging(["duration": "\(duration)"])
+      )
+      
+      return .success(hashedData)
+    } catch {
+      // Log error
+      let duration = Date().timeIntervalSince(startTime)
+      await logger.error(
+        "Direct hash operation failed: \(error.localizedDescription)",
+        metadata: logMetadata.merging([
+          "duration": "\(duration)",
+          "error": error.localizedDescription
+        ])
+      )
+      
+      return .failure(error)
     }
   }
 }
@@ -186,7 +194,9 @@ final class HashingService: SecurityServiceBase {
  Supported hash algorithms
  */
 enum HashAlgorithm: String {
-  case md5="MD5"
-  case sha256="SHA256"
-  case sha512="SHA512"
+  case md5 = "MD5"
+  case sha1 = "SHA1"
+  case sha256 = "SHA256"
+  case sha384 = "SHA384"
+  case sha512 = "SHA512"
 }

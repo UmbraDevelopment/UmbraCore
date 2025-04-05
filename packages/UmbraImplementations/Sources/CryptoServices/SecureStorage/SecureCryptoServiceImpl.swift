@@ -36,7 +36,7 @@ public typealias CryptoError = UnifiedCryptoTypes.CryptoError
  This implementation ensures that all cryptographic operations are performed with secure storage
  for all cryptographic operations.
  */
-public actor SecureCryptoServiceImpl: CryptoServiceProtocol {
+public actor SecureCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
   /// The wrapped crypto service implementation
   private let wrapped: CryptoServiceProtocol
 

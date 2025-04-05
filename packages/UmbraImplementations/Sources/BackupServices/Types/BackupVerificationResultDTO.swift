@@ -209,3 +209,102 @@ public struct RepairAction: Sendable, Equatable {
     self.successful=successful
   }
 }
+
+// MARK: - Conversion Methods
+
+extension BackupVerificationResultDTO {
+    /// Convert this DTO to a BackupInterfaces.VerificationResult
+    public func toVerificationResult() -> VerificationResult {
+        VerificationResult(
+            verified: verified,
+            objectsVerified: objectsVerified,
+            bytesVerified: bytesVerified,
+            errorCount: errorCount,
+            issues: issues.map { $0.toVerificationIssue() },
+            repairSummary: repairSummary?.toRepairSummary(),
+            snapshotID: snapshotID,
+            verificationTime: verificationTime
+        )
+    }
+    
+    /// Create a BackupVerificationResultDTO from a BackupInterfaces.VerificationResult
+    public static func from(verificationResult: VerificationResult) -> BackupVerificationResultDTO {
+        BackupVerificationResultDTO(
+            verified: verificationResult.verified,
+            objectsVerified: verificationResult.objectsVerified,
+            bytesVerified: verificationResult.bytesVerified,
+            errorCount: verificationResult.errorCount,
+            issues: verificationResult.issues.map { VerificationIssue.from(issue: $0) },
+            repairSummary: verificationResult.repairSummary.map { RepairSummary.from(summary: $0) },
+            snapshotID: verificationResult.snapshotID,
+            verificationTime: verificationResult.verificationTime
+        )
+    }
+}
+
+extension BackupVerificationResultDTO.VerificationIssue {
+    /// Convert this DTO to a BackupInterfaces.VerificationIssue
+    public func toVerificationIssue() -> VerificationResult.VerificationIssue {
+        VerificationResult.VerificationIssue(
+            type: VerificationResult.VerificationIssue.IssueType(rawValue: type.rawValue) ?? .unknown,
+            objectID: objectPath,
+            details: description,
+            severity: VerificationResult.VerificationIssue.Severity(rawValue: "warning") ?? .warning,
+            repairable: repaired
+        )
+    }
+    
+    /// Create a VerificationIssue from a BackupInterfaces.VerificationIssue
+    public static func from(issue: VerificationResult.VerificationIssue) -> BackupVerificationResultDTO.VerificationIssue {
+        BackupVerificationResultDTO.VerificationIssue(
+            type: IssueType(rawValue: issue.type.rawValue) ?? .unknown,
+            objectPath: issue.objectID,
+            description: issue.details,
+            repaired: issue.repairable
+        )
+    }
+}
+
+extension BackupVerificationResultDTO.RepairSummary {
+    /// Convert this DTO to a BackupInterfaces.RepairSummary
+    public func toRepairSummary() -> VerificationResult.RepairSummary {
+        VerificationResult.RepairSummary(
+            actionsPerformed: repairs.map { $0.toRepairAction() },
+            repairSuccess: issuesRepaired > 0,
+            objectsRepaired: issuesRepaired,
+            bytesRecovered: 0,
+            repairTime: 0
+        )
+    }
+    
+    /// Create a RepairSummary from a BackupInterfaces.RepairSummary
+    public static func from(summary: VerificationResult.RepairSummary) -> BackupVerificationResultDTO.RepairSummary {
+        BackupVerificationResultDTO.RepairSummary(
+            issuesRepaired: summary.objectsRepaired,
+            repairFailures: 0,
+            repairs: summary.actionsPerformed.map { RepairAction.from(action: $0) }
+        )
+    }
+}
+
+extension BackupVerificationResultDTO.RepairAction {
+    /// Convert this DTO to a BackupInterfaces.RepairAction
+    public func toRepairAction() -> VerificationResult.RepairAction {
+        VerificationResult.RepairAction(
+            type: VerificationResult.RepairAction.RepairType(rawValue: type.rawValue) ?? .reconstruction,
+            objectID: objectPath,
+            details: description,
+            successful: successful
+        )
+    }
+    
+    /// Create a RepairAction from a BackupInterfaces.RepairAction
+    public static func from(action: VerificationResult.RepairAction) -> BackupVerificationResultDTO.RepairAction {
+        BackupVerificationResultDTO.RepairAction(
+            type: RepairType(rawValue: action.type.rawValue) ?? .reconstruction,
+            objectPath: action.objectID,
+            description: action.details,
+            successful: action.successful
+        )
+    }
+}

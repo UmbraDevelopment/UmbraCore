@@ -77,60 +77,17 @@ public final class DefaultLoggingServiceImpl: LoggingProtocol {
     await log(.critical, message, metadata: metadata, source: source)
   }
 
-  // MARK: - Deprecated Methods (for backward compatibility)
+  // MARK: - Privacy Logging Methods
 
-  /// Legacy debug method - will be removed in future versions
-  /// @deprecated Use debug(_:metadata:source:) instead
-  @available(*, deprecated, message: "Use debug(_:metadata:source:) instead")
-  public func debug(_ message: String, metadata: LoggingTypes.LogMetadata?, source: String?) async {
-    let privacyMetadata=convertToPrivacyMetadata(metadata)
-    await debug(message, metadata: privacyMetadata, source: source ?? "unknown")
+  public func logPrivateData(_ message: PrivacyString) async {
+    await loggingActor.logMessage(.debug, message)
   }
 
-  /// Legacy info method - will be removed in future versions
-  /// @deprecated Use info(_:metadata:source:) instead
-  @available(*, deprecated, message: "Use info(_:metadata:source:) instead")
-  public func info(_ message: String, metadata: LoggingTypes.LogMetadata?, source: String?) async {
-    let privacyMetadata=convertToPrivacyMetadata(metadata)
-    await info(message, metadata: privacyMetadata, source: source ?? "unknown")
+  public func logRestrictedData(_ message: PrivacyString) async {
+    await loggingActor.logMessage(.info, message)
   }
 
-  /// Legacy warning method - will be removed in future versions
-  /// @deprecated Use warning(_:metadata:source:) instead
-  @available(*, deprecated, message: "Use warning(_:metadata:source:) instead")
-  public func warning(
-    _ message: String,
-    metadata: LoggingTypes.LogMetadata?,
-    source: String?
-  ) async {
-    let privacyMetadata=convertToPrivacyMetadata(metadata)
-    await warning(message, metadata: privacyMetadata, source: source ?? "unknown")
-  }
-
-  /// Legacy error method - will be removed in future versions
-  /// @deprecated Use error(_:metadata:source:) instead
-  @available(*, deprecated, message: "Use error(_:metadata:source:) instead")
-  public func error(_ message: String, metadata: LoggingTypes.LogMetadata?, source: String?) async {
-    let privacyMetadata=convertToPrivacyMetadata(metadata)
-    await error(message, metadata: privacyMetadata, source: source ?? "unknown")
-  }
-
-  // MARK: - Private Methods
-
-  /// Convert from old LogMetadata format to new PrivacyMetadata format
-  /// - Parameter metadata: Old metadata format
-  /// - Returns: New privacy-aware metadata format
-  private func convertToPrivacyMetadata(_ metadata: LoggingTypes.LogMetadata?) -> PrivacyMetadata? {
-    guard let metadata else { return nil }
-
-    var result=PrivacyMetadata()
-    for (key, value) in metadata.asDictionary {
-      // Default to private privacy level for all converted metadata
-      result[key]=LoggingTypes.PrivacyMetadataValue(
-        value: value,
-        privacy: LoggingTypes.LogPrivacyLevel.private
-      )
-    }
-    return result
+  public func logPublicData(_ message: PrivacyString) async {
+    await loggingActor.logMessage(.notice, message)
   }
 }

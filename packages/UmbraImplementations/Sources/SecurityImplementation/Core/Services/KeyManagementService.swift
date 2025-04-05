@@ -1,4 +1,5 @@
 import CoreSecurityTypes
+import DomainSecurityTypes
 import Foundation
 import LoggingInterfaces
 import SecurityCoreInterfaces
@@ -96,16 +97,21 @@ final class KeyManagementService: SecurityServiceBase {
       let keySize=config.keySize > 0 ? config.keySize : 256 // Default to 256 bits if not specified
       let algorithm=config.algorithm.isEmpty ? "AES" : config.algorithm // Default to AES
 
-      // Instead of using generateRandomBytes, create a fixed-size SecureBytes
+      // Use SendableCryptoMaterial instead of SecureBytes
       // In a production implementation, this would use a secure random generator
-      let keyData=SecureBytes(
-        base64Encoded: String(repeating: "A", count: (keySize * 4 / 3) + 4)
-      ) ??
-        SecureBytes()
+      let keyMaterial: SendableCryptoMaterial
+      if keySize > 0 {
+        keyMaterial = try secureRandomMaterial(byteCount: keySize / 8)
+      } else {
+        keyMaterial = SendableCryptoMaterial.zeros(count: 32) // Default to 256 bits (32 bytes)
+      }
 
       // Store the key if an identifier is provided
       if let keyIdentifier=config.options["keyIdentifier"] {
-        _=await keyManager.storeKey(keyData, withIdentifier: keyIdentifier)
+        let storageResult = await keyManager.secureStorage.storeMaterial(keyMaterial, withIdentifier: keyIdentifier)
+        if case .failure(let error) = storageResult {
+          throw SecurityError.keyStorage(error.description)
+        }
       }
 
       // Calculate duration for performance metrics
@@ -126,7 +132,7 @@ final class KeyManagementService: SecurityServiceBase {
       // Return successful result with the generated key metadata
       return SecurityResultDTO(
         status: .success,
-        data: keyData,
+        data: keyMaterial,
         metadata: [
           "durationMs": String(format: "%.2f", duration),
           "keySize": "\(keySize)",
@@ -190,12 +196,9 @@ final class KeyManagementService: SecurityServiceBase {
         throw SecurityError.invalidInput("Invalid length for random data generation: \(length)")
       }
 
-      // Instead of using generateRandomBytes, create a fixed-size SecureBytes
+      // Use SendableCryptoMaterial instead of SecureBytes
       // In a production implementation, this would use a secure random generator
-      let randomData=SecureBytes(base64Encoded: String(
-        repeating: "A",
-        count: (length * 4 / 3) + 4
-      )) ?? SecureBytes()
+      let randomMaterial = try secureRandomMaterial(byteCount: length)
 
       // Calculate duration for performance metrics
       let duration=Date().timeIntervalSince(startTime) * 1000
@@ -216,7 +219,7 @@ final class KeyManagementService: SecurityServiceBase {
       // Return successful result with the generated random data
       return SecurityResultDTO(
         status: .success,
-        data: randomData,
+        data: randomMaterial,
         metadata: [
           "durationMs": String(format: "%.2f", duration),
           "length": "\(length)"
