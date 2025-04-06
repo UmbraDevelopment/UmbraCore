@@ -18,5 +18,7 @@ swift_library(
         "//packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols:SecurityInterfacesProtocols",
         "//packages/UmbraCoreTypes/Sources/UmbraErrors",
         "//packages/UmbraCoreTypes/Sources/UmbraErrors/Domains:UmbraErrorsDomains",
+        "//packages/UmbraImplementations/Sources/LoggingAdapters",
+        "//packages/UmbraImplementations/Sources/BookmarkServices/Logging:BookmarkLogger",
     ],
 )

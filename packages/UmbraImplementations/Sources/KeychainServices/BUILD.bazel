@@ -29,5 +29,6 @@ umbra_swift_library(
         "//packages/UmbraInterfaces/Sources/XPCProtocolsCore",
         "//packages/UmbraImplementations/Sources/SecurityProviders",
         "//packages/UmbraImplementations/Sources/LoggingServices",
+        "//packages/UmbraImplementations/Sources/LoggingAdapters",
     ],
 )

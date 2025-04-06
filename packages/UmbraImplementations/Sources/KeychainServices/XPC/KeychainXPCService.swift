@@ -486,7 +486,9 @@ public actor KeychainXPCService: KeychainServiceProtocol {
    */
   private func log(_ level: LogLevel, _ message: String) async {
     if let logger {
-      await logger.logMessage(level, message, context: .init(source: "KeychainXPCService"))
+      // Create a basic context for XPC service logging
+      let context = BaseLogContextDTO(source: "KeychainXPCService")
+      await logger.log(level, message, context: context)
     }
   }
 }

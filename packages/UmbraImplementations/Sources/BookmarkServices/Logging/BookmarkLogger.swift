@@ -4,24 +4,24 @@ import LoggingTypes
 import LoggingAdapters
 
 /**
- # Keychain Logger
+ # Bookmark Logger
 
- A domain-specific privacy-aware logger for keychain operations that follows
+ A domain-specific privacy-aware logger for security bookmark operations that follows
  the Alpha Dot Five architecture principles for structured logging.
 
- This logger ensures that sensitive information related to keychain operations
+ This logger ensures that sensitive information related to bookmark operations
  is properly classified with appropriate privacy levels, with British spelling
  in documentation and comments.
  */
-public actor KeychainLogger: DomainLoggerProtocol {
+public actor BookmarkLogger: DomainLoggerProtocol {
   /// The domain name for this logger
-  public let domainName: String = "Keychain"
+  public let domainName: String = "BookmarkServices"
   
   /// The underlying logging service
   private let loggingService: LoggingProtocol
 
   /**
-   Initialises a new keychain logger.
+   Initialises a new bookmark logger.
 
    - Parameter logger: The core logger to wrap
    */
@@ -50,10 +50,9 @@ public actor KeychainLogger: DomainLoggerProtocol {
      - message: The message to log
    */
   public func log(_ level: LogLevel, _ message: String) async {
-    // For backward compatibility, create a basic keychain context
-    let context = KeychainLogContext(
+    // For backward compatibility, create a basic bookmark context
+    let context = BookmarkLogContext(
       operation: "generic",
-      account: "unknown",
       status: "info"
     )
     
@@ -66,7 +65,7 @@ public actor KeychainLogger: DomainLoggerProtocol {
    - Parameters:
      - level: The log level
      - message: The message to log
-     - context: The keychain context for the log entry
+     - context: The bookmark context for the log entry
    */
   public func log(_ level: LogLevel, _ message: String, context: LogContextDTO) async {
     await logWithContext(level, message, context: context)
@@ -100,10 +99,10 @@ public actor KeychainLogger: DomainLoggerProtocol {
       // Handle standard errors
       let formattedMessage = "[\(domainName)] \(error.localizedDescription)"
       
-      if let keychainContext = context as? KeychainLogContext {
+      if let bookmarkContext = context as? BookmarkLogContext {
         // Update the context with error information
-        let updatedContext = keychainContext.withUpdatedMetadata(
-          keychainContext.metadata.withPrivate(key: "error", value: error.localizedDescription)
+        let updatedContext = bookmarkContext.withUpdatedMetadata(
+          bookmarkContext.metadata.withPrivate(key: "error", value: error.localizedDescription)
         )
         await log(.error, formattedMessage, context: updatedContext)
       } else {
@@ -180,69 +179,96 @@ public actor KeychainLogger: DomainLoggerProtocol {
   // MARK: - Domain-specific logging methods
   
   /**
-   Logs the start of a keychain operation.
+   Logs the start of a bookmark operation.
 
    - Parameters:
      - operation: The operation being performed
-     - account: The account identifier (private metadata)
+     - identifier: The bookmark identifier (optional)
      - message: Optional custom message
    */
   public func logOperationStart(
     operation: String,
-    account: String,
+    identifier: String? = nil,
     message: String? = nil
   ) async {
-    let context = KeychainLogContext(
+    let context = BookmarkLogContext(
       operation: operation,
-      account: account,
+      identifier: identifier,
       status: "started"
     )
     
-    let defaultMessage = "Starting keychain operation: \(operation)"
+    let defaultMessage = "Starting bookmark operation: \(operation)"
     await info(message ?? defaultMessage, context: context)
   }
   
   /**
-   Logs the successful completion of a keychain operation.
+   Logs the successful completion of a bookmark operation.
 
    - Parameters:
      - operation: The operation that succeeded
-     - account: The account identifier (private metadata)
+     - identifier: The bookmark identifier (optional)
      - message: Optional custom message
    */
   public func logOperationSuccess(
     operation: String,
-    account: String,
+    identifier: String? = nil,
     message: String? = nil
   ) async {
-    let context = KeychainLogContext(
+    let context = BookmarkLogContext(
       operation: operation,
-      account: account,
+      identifier: identifier,
       status: "success"
     )
     
-    let defaultMessage = "Successfully completed keychain operation: \(operation)"
+    let defaultMessage = "Successfully completed bookmark operation: \(operation)"
     await info(message ?? defaultMessage, context: context)
   }
   
   /**
-   Logs the failure of a keychain operation.
+   Logs a warning during a bookmark operation.
+
+   - Parameters:
+     - operation: The operation
+     - warningMessage: The warning message
+     - identifier: The bookmark identifier (optional)
+   */
+  public func logOperationWarning(
+    operation: String,
+    warningMessage: String,
+    identifier: String? = nil
+  ) async {
+    var metadata = LogMetadataDTOCollection()
+    metadata = metadata.withPrivate(key: "warning", value: warningMessage)
+    
+    let context = BookmarkLogContext(
+      operation: operation,
+      identifier: identifier,
+      status: "warning",
+      metadata: metadata
+    )
+    
+    let defaultMessage = "Warning during bookmark operation: \(operation)"
+    await warning(defaultMessage, context: context)
+  }
+  
+  /**
+   Logs the failure of a bookmark operation.
 
    - Parameters:
      - operation: The operation that failed
-     - account: The account identifier (private metadata)
      - error: The error that occurred
+     - identifier: The bookmark identifier (optional)
      - message: Optional custom message
    */
   public func logOperationError(
     operation: String,
-    account: String,
     error: Error,
+    identifier: String? = nil,
     message: String? = nil
   ) async {
-    let context = KeychainLogContext(
+    let context = BookmarkLogContext(
       operation: operation,
-      account: account,
+      identifier: identifier,
       status: "error"
     )
     

@@ -1,7 +1,7 @@
 load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
-    name = "KeychainLogger",
+    name = "BookmarkLogger",
     srcs = glob(
         ["*.swift"],
         allow_empty = False,
