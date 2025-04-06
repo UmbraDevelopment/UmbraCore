@@ -71,8 +71,10 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
   ) async throws {
     await logger.debug(
       "Storing encrypted secret for account: \(account)",
-      metadata: nil,
-      source: "KeychainSecurityService"
+      context: KeychainLogContext(
+        account: account,
+        operation: "storeEncryptedSecret"
+      )
     )
 
     // Get or generate a key for this account
@@ -86,8 +88,10 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
         key=existingKey
         await logger.debug(
           "Using existing encryption key for account: \(account)",
-          metadata: nil,
-          source: "KeychainSecurityService"
+          context: KeychainLogContext(
+            account: account,
+            operation: "storeEncryptedSecret"
+          )
         )
       case .failure:
         // Generate a new key
@@ -97,16 +101,20 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
         if case let .failure(error)=storeResult {
           await logger.error(
             "Failed to store encryption key: \(error)",
-            metadata: nil,
-            source: "KeychainSecurityService"
+            context: KeychainLogContext(
+              account: account,
+              operation: "storeEncryptedSecret"
+            )
           )
           throw SecurityServiceError.keyManagementError("Failed to store encryption key: \(error)")
         }
 
         await logger.debug(
           "Generated new encryption key for account: \(account)",
-          metadata: nil,
-          source: "KeychainSecurityService"
+          context: KeychainLogContext(
+            account: account,
+            operation: "storeEncryptedSecret"
+          )
         )
     }
 
@@ -123,8 +131,10 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
 
     await logger.info(
       "Successfully stored encrypted secret for account: \(account)",
-      metadata: nil,
-      source: "KeychainSecurityService"
+      context: KeychainLogContext(
+        account: account,
+        operation: "storeEncryptedSecret"
+      )
     )
   }
 
@@ -150,8 +160,10 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
 
     await logger.debug(
       "Storing encrypted secret for account: \(account) with key ID: \(keyID)",
-      metadata: nil,
-      source: "KeychainSecurityService"
+      context: KeychainLogContext(
+        account: account,
+        operation: "storeEncryptedSecret"
+      )
     )
 
     // Get or generate the encryption key
@@ -163,8 +175,10 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
         key=existingKey
         await logger.debug(
           "Using existing encryption key for account: \(account)",
-          metadata: nil,
-          source: "KeychainSecurityService"
+          context: KeychainLogContext(
+            account: account,
+            operation: "storeEncryptedSecret"
+          )
         )
       case .failure:
         // Generate a new key
@@ -174,16 +188,20 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
         if case let .failure(error)=storeResult {
           await logger.error(
             "Failed to store encryption key: \(error)",
-            metadata: nil,
-            source: "KeychainSecurityService"
+            context: KeychainLogContext(
+              account: account,
+              operation: "storeEncryptedSecret"
+            )
           )
           throw SecurityServiceError.keyManagementError("Failed to store encryption key: \(error)")
         }
 
         await logger.debug(
           "Generated new encryption key for account: \(account)",
-          metadata: nil,
-          source: "KeychainSecurityService"
+          context: KeychainLogContext(
+            account: account,
+            operation: "storeEncryptedSecret"
+          )
         )
     }
 
@@ -199,9 +217,11 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
     )
 
     await logger.info(
-      "Stored encrypted secret for account: \(account)",
-      metadata: nil,
-      source: "KeychainSecurityService"
+      "Successfully stored encrypted secret for account: \(account)",
+      context: KeychainLogContext(
+        account: account,
+        operation: "storeEncryptedSecret"
+      )
     )
   }
 
@@ -214,8 +234,10 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
   public func retrieveEncryptedSecret(forAccount account: String) async throws -> String {
     await logger.debug(
       "Retrieving encrypted secret for account: \(account)",
-      metadata: nil,
-      source: "KeychainSecurityService"
+      context: KeychainLogContext(
+        account: account,
+        operation: "retrieveEncryptedSecret"
+      )
     )
 
     // Get the key for this account
@@ -242,8 +264,10 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
 
     await logger.info(
       "Successfully retrieved encrypted secret for account: \(account)",
-      metadata: nil,
-      source: "KeychainSecurityService"
+      context: KeychainLogContext(
+        account: account,
+        operation: "retrieveEncryptedSecret"
+      )
     )
     return decryptedString
   }
@@ -265,8 +289,10 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
 
     await logger.debug(
       "Retrieving encrypted secret for account: \(account) with key ID: \(keyID)",
-      metadata: nil,
-      source: "KeychainSecurityService"
+      context: KeychainLogContext(
+        account: account,
+        operation: "retrieveEncryptedSecret"
+      )
     )
 
     // Get the encryption key
@@ -279,8 +305,10 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
       case let .failure(error):
         await logger.error(
           "Failed to retrieve encryption key: \(error)",
-          metadata: nil,
-          source: "KeychainSecurityService"
+          context: KeychainLogContext(
+            account: account,
+            operation: "retrieveEncryptedSecret"
+          )
         )
         throw SecurityServiceError.keyManagementError("Failed to retrieve encryption key: \(error)")
     }
@@ -295,8 +323,10 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
     } catch {
       await logger.error(
         "Failed to retrieve encrypted data from keychain: \(error)",
-        metadata: nil,
-        source: "KeychainSecurityService"
+        context: KeychainLogContext(
+          account: account,
+          operation: "retrieveEncryptedSecret"
+        )
       )
       throw SecurityServiceError.operationFailed("Failed to retrieve encrypted data: \(error)")
     }
@@ -308,16 +338,20 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
     guard let secret=String(data: decryptedData, encoding: .utf8) else {
       await logger.error(
         "Failed to decode decrypted data to string",
-        metadata: nil,
-        source: "KeychainSecurityService"
+        context: KeychainLogContext(
+          account: account,
+          operation: "retrieveEncryptedSecret"
+        )
       )
       throw SecurityServiceError.invalidInputData("Failed to decode decrypted data to string")
     }
 
     await logger.info(
       "Successfully retrieved and decrypted secret for account: \(account)",
-      metadata: nil,
-      source: "KeychainSecurityService"
+      context: KeychainLogContext(
+        account: account,
+        operation: "retrieveEncryptedSecret"
+      )
     )
 
     return secret
@@ -341,8 +375,10 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
   ) async throws {
     await logger.debug(
       "Updating encrypted secret for account: \(account)",
-      metadata: nil,
-      source: "KeychainSecurityService"
+      context: KeychainLogContext(
+        account: account,
+        operation: "updateEncryptedSecret"
+      )
     )
 
     // First check if we can get the existing key
@@ -355,8 +391,10 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
         key=existingKey
         await logger.debug(
           "Using existing encryption key for account: \(account)",
-          metadata: nil,
-          source: "KeychainSecurityService"
+          context: KeychainLogContext(
+            account: account,
+            operation: "updateEncryptedSecret"
+          )
         )
       case .failure:
         // Generate a new key if it doesn't exist
@@ -366,16 +404,20 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
         if case let .failure(error)=storeResult {
           await logger.error(
             "Failed to store encryption key: \(error)",
-            metadata: nil,
-            source: "KeychainSecurityService"
+            context: KeychainLogContext(
+              account: account,
+              operation: "updateEncryptedSecret"
+            )
           )
           throw SecurityServiceError.keyManagementError("Failed to store encryption key: \(error)")
         }
 
         await logger.debug(
           "Generated new encryption key for account: \(account)",
-          metadata: nil,
-          source: "KeychainSecurityService"
+          context: KeychainLogContext(
+            account: account,
+            operation: "updateEncryptedSecret"
+          )
         )
     }
 
@@ -392,8 +434,10 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
 
     await logger.info(
       "Updated encrypted secret for account: \(account)",
-      metadata: nil,
-      source: "KeychainSecurityService"
+      context: KeychainLogContext(
+        account: account,
+        operation: "updateEncryptedSecret"
+      )
     )
   }
 
@@ -419,8 +463,10 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
 
     await logger.debug(
       "Updating encrypted secret for account: \(account) with key ID: \(keyID)",
-      metadata: nil,
-      source: "KeychainSecurityService"
+      context: KeychainLogContext(
+        account: account,
+        operation: "updateEncryptedSecret"
+      )
     )
 
     // First check if we can get the existing key
@@ -432,8 +478,10 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
         key=existingKey
         await logger.debug(
           "Using existing encryption key for account: \(account)",
-          metadata: nil,
-          source: "KeychainSecurityService"
+          context: KeychainLogContext(
+            account: account,
+            operation: "updateEncryptedSecret"
+          )
         )
       case .failure:
         // Generate a new key if it doesn't exist
@@ -443,16 +491,20 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
         if case let .failure(error)=storeResult {
           await logger.error(
             "Failed to store encryption key: \(error)",
-            metadata: nil,
-            source: "KeychainSecurityService"
+            context: KeychainLogContext(
+              account: account,
+              operation: "updateEncryptedSecret"
+            )
           )
           throw SecurityServiceError.keyManagementError("Failed to store encryption key: \(error)")
         }
 
         await logger.debug(
           "Generated new encryption key for account: \(account)",
-          metadata: nil,
-          source: "KeychainSecurityService"
+          context: KeychainLogContext(
+            account: account,
+            operation: "updateEncryptedSecret"
+          )
         )
     }
 
@@ -469,8 +521,10 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
 
     await logger.info(
       "Updated encrypted secret for account: \(account)",
-      metadata: nil,
-      source: "KeychainSecurityService"
+      context: KeychainLogContext(
+        account: account,
+        operation: "updateEncryptedSecret"
+      )
     )
   }
 
@@ -489,8 +543,10 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
   ) async throws {
     await logger.debug(
       "Deleting encrypted secret for account: \(account)",
-      metadata: nil,
-      source: "KeychainSecurityService"
+      context: KeychainLogContext(
+        account: account,
+        operation: "deleteEncryptedSecret"
+      )
     )
 
     // Delete from keychain
@@ -507,22 +563,28 @@ public actor KeychainSecurityImpl: KeychainSecurityProtocol {
       if case let .failure(error)=result {
         await logger.warning(
           "Failed to delete encryption key: \(error)",
-          metadata: nil,
-          source: "KeychainSecurityService"
+          context: KeychainLogContext(
+            account: account,
+            operation: "deleteEncryptedSecret"
+          )
         )
       } else {
         await logger.debug(
           "Deleted encryption key for account: \(account)",
-          metadata: nil,
-          source: "KeychainSecurityService"
+          context: KeychainLogContext(
+            account: account,
+            operation: "deleteEncryptedSecret"
+          )
         )
       }
     }
 
     await logger.info(
       "Successfully deleted encrypted secret for account: \(account)",
-      metadata: nil,
-      source: "KeychainSecurityService"
+      context: KeychainLogContext(
+        account: account,
+        operation: "deleteEncryptedSecret"
+      )
     )
   }
 

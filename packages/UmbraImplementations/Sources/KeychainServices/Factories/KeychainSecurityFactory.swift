@@ -132,8 +132,10 @@ final class BasicCryptoService: CryptoServiceProtocol {
           case .failure:
             await logger.warning(
               "Key not found for encryption: \(keyIdentifier)",
-              metadata: nil as PrivacyMetadata?,
-              source: "BasicCryptoService"
+              context: KeychainLogContext(
+                account: dataIdentifier,
+                operation: "encrypt"
+              )
             )
             return .failure(.keyNotFound)
         }
@@ -141,8 +143,10 @@ final class BasicCryptoService: CryptoServiceProtocol {
       case .failure:
         await logger.warning(
           "Data not found for encryption: \(dataIdentifier)",
-          metadata: nil as PrivacyMetadata?,
-          source: "BasicCryptoService"
+          context: KeychainLogContext(
+            account: dataIdentifier,
+            operation: "encrypt"
+          )
         )
         return .failure(.dataNotFound)
     }
@@ -173,8 +177,10 @@ final class BasicCryptoService: CryptoServiceProtocol {
           case .failure:
             await logger.warning(
               "Key not found for decryption: \(keyIdentifier)",
-              metadata: nil as PrivacyMetadata?,
-              source: "BasicCryptoService"
+              context: KeychainLogContext(
+                account: encryptedDataIdentifier,
+                operation: "decrypt"
+              )
             )
             return .failure(.keyNotFound)
         }
@@ -182,8 +188,10 @@ final class BasicCryptoService: CryptoServiceProtocol {
       case .failure:
         await logger.warning(
           "Data not found for decryption: \(encryptedDataIdentifier)",
-          metadata: nil as PrivacyMetadata?,
-          source: "BasicCryptoService"
+          context: KeychainLogContext(
+            account: encryptedDataIdentifier,
+            operation: "decrypt"
+          )
         )
         return .failure(.dataNotFound)
     }
@@ -208,8 +216,10 @@ final class BasicCryptoService: CryptoServiceProtocol {
       case .failure:
         await logger.warning(
           "Data not found for hashing: \(dataIdentifier)",
-          metadata: nil as PrivacyMetadata?,
-          source: "BasicCryptoService"
+          context: KeychainLogContext(
+            account: dataIdentifier,
+            operation: "hash"
+          )
         )
         return .failure(.dataNotFound)
     }
@@ -237,8 +247,10 @@ final class BasicCryptoService: CryptoServiceProtocol {
           case .failure:
             await logger.warning(
               "Hash not found for verification: \(hashIdentifier)",
-              metadata: nil as PrivacyMetadata?,
-              source: "BasicCryptoService"
+              context: KeychainLogContext(
+                account: dataIdentifier,
+                operation: "verifyHash"
+              )
             )
             return .failure(.hashNotFound)
         }
@@ -246,8 +258,10 @@ final class BasicCryptoService: CryptoServiceProtocol {
       case .failure:
         await logger.warning(
           "Data not found for hash verification: \(dataIdentifier)",
-          metadata: nil as PrivacyMetadata?,
-          source: "BasicCryptoService"
+          context: KeychainLogContext(
+            account: dataIdentifier,
+            operation: "verifyHash"
+          )
         )
         return .failure(.dataNotFound)
     }
@@ -267,6 +281,13 @@ final class BasicCryptoService: CryptoServiceProtocol {
       case .success:
         return .success(keyIdentifier)
       case let .failure(error):
+        await logger.warning(
+          "Failed to generate key: \(error)",
+          context: KeychainLogContext(
+            account: keyIdentifier,
+            operation: "generateKey"
+          )
+        )
         return .failure(error)
     }
   }
@@ -282,6 +303,13 @@ final class BasicCryptoService: CryptoServiceProtocol {
       case .success:
         return .success(identifier)
       case let .failure(error):
+        await logger.warning(
+          "Failed to import data: \(error)",
+          context: KeychainLogContext(
+            account: identifier,
+            operation: "importData"
+          )
+        )
         return .failure(error)
     }
   }
@@ -290,5 +318,83 @@ final class BasicCryptoService: CryptoServiceProtocol {
     identifier: String
   ) async -> Result<[UInt8], SecurityStorageError> {
     await secureStorage.retrieveData(withIdentifier: identifier)
+  }
+
+  // MARK: - CryptoServiceProtocol Implementation (Data-based methods)
+
+  /// Required by CryptoServiceProtocol - Generate hash from data identifier
+  public func generateHash(
+    dataIdentifier: String,
+    options: HashingOptions?
+  ) async -> Result<String, SecurityStorageError> {
+    // This is a simplified implementation that just prefixes the identifier
+    let hashIdentifier = "hash-\(dataIdentifier)"
+    
+    await logger.debug(
+      "Generated hash identifier: \(hashIdentifier)",
+      context: KeychainLogContext(
+        account: dataIdentifier,
+        operation: "generateHash"
+      )
+    )
+    
+    return .success(hashIdentifier)
+  }
+
+  /// Required by CryptoServiceProtocol - Store Data
+  public func storeData(
+    data: Data,
+    identifier: String
+  ) async -> Result<Void, SecurityStorageError> {
+    // Convert Data to [UInt8] for internal storage
+    let bytes = [UInt8](data)
+    return await secureStorage.storeData(bytes, withIdentifier: identifier)
+  }
+
+  /// Required by CryptoServiceProtocol - Retrieve Data
+  public func retrieveData(
+    identifier: String
+  ) async -> Result<Data, SecurityStorageError> {
+    // Retrieve as [UInt8] and convert to Data
+    let result = await secureStorage.retrieveData(withIdentifier: identifier)
+    
+    switch result {
+      case let .success(bytes):
+        return .success(Data(bytes))
+      case let .failure(error):
+        return .failure(error)
+    }
+  }
+
+  /// Required by CryptoServiceProtocol - Delete Data
+  public func deleteData(
+    identifier: String
+  ) async -> Result<Void, SecurityStorageError> {
+    return await secureStorage.deleteData(withIdentifier: identifier)
+  }
+
+  /// Required by CryptoServiceProtocol - Import Data
+  public func importData(
+    _ data: Data,
+    customIdentifier: String
+  ) async -> Result<String, SecurityStorageError> {
+    // Convert Data to [UInt8] for internal storage
+    let bytes = [UInt8](data)
+    let identifier = customIdentifier
+    let storeResult = await secureStorage.storeData(bytes, withIdentifier: identifier)
+    
+    switch storeResult {
+      case .success:
+        return .success(identifier)
+      case let .failure(error):
+        await logger.warning(
+          "Failed to import data: \(error)",
+          context: KeychainLogContext(
+            account: identifier,
+            operation: "importData_data"
+          )
+        )
+        return .failure(error)
+    }
   }
 }

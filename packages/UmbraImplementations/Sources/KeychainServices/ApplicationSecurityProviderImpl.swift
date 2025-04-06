@@ -109,8 +109,20 @@ private final class MockCryptoService: CryptoServiceProtocol {
     _: [UInt8],
     customIdentifier: String?
   ) async -> Result<String, SecurityStorageError> {
-    let identifier=customIdentifier ?? "imported-\(UUID().uuidString)"
-    return .success(identifier)
+    if let identifier = customIdentifier {
+      return .success(identifier)
+    } else {
+      return .success("imported-data-\(UUID().uuidString)")
+    }
+  }
+
+  /// Imports data into secure storage
+  public func importData(
+    _ data: Data,
+    customIdentifier: String
+  ) async -> Result<String, SecurityStorageError> {
+    // Mock implementation
+    return .success(customIdentifier)
   }
 
   /// Exports data from secure storage
@@ -118,6 +130,40 @@ private final class MockCryptoService: CryptoServiceProtocol {
     identifier _: String
   ) async -> Result<[UInt8], SecurityStorageError> {
     .success([0xAA, 0xBB, 0xCC])
+  }
+
+  /// Required by CryptoServiceProtocol - Generate hash from data identifier
+  public func generateHash(
+    dataIdentifier: String,
+    options: HashingOptions?
+  ) async -> Result<String, SecurityStorageError> {
+    // Mock implementation
+    return .success("hashed-\(dataIdentifier)")
+  }
+
+  /// Required by CryptoServiceProtocol - Store Data
+  public func storeData(
+    data: Data,
+    identifier: String
+  ) async -> Result<Void, SecurityStorageError> {
+    // Mock implementation
+    return .success(())
+  }
+
+  /// Required by CryptoServiceProtocol - Retrieve Data
+  public func retrieveData(
+    identifier: String
+  ) async -> Result<Data, SecurityStorageError> {
+    // Mock implementation returning empty data
+    return .success(Data())
+  }
+
+  /// Required by CryptoServiceProtocol - Delete Data
+  public func deleteData(
+    identifier: String
+  ) async -> Result<Void, SecurityStorageError> {
+    // Mock implementation
+    return .success(())
   }
 }
 
@@ -344,8 +390,10 @@ public final class ApplicationSecurityProviderImpl: SecurityProviderProtocol {
         // Log the unhandled operation type
         await logger.warning(
           "Unhandled operation type \(operation) - falling back to encrypt operation",
-          metadata: nil,
-          source: "ApplicationSecurityProviderImpl"
+          context: KeychainLogContext(
+            account: "security_operation",
+            operation: "processSecurityOperation"
+          )
         )
         return try await encrypt(config: config)
     }

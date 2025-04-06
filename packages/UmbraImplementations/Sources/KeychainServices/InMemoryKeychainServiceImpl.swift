@@ -58,8 +58,10 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
   ) async throws {
     await logger.debug(
       "Storing password for account: \(account) in memory",
-      metadata: nil,
-      source: "InMemoryKeychainService"
+      context: KeychainLogContext(
+        account: account,
+        operation: "storePassword"
+      )
     )
 
     guard !password.isEmpty else {
@@ -74,8 +76,10 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
     if passwordStorage[account] != nil {
       await logger.warning(
         "Password already exists for account: \(account)",
-        metadata: nil,
-        source: "InMemoryKeychainService"
+        context: KeychainLogContext(
+          account: account,
+          operation: "storePassword"
+        )
       )
       throw KeychainError.itemAlreadyExists
     }
@@ -84,8 +88,10 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
     passwordStorage[account]=password
     await logger.info(
       "Successfully stored password for account: \(account) in memory",
-      metadata: nil,
-      source: "InMemoryKeychainService"
+      context: KeychainLogContext(
+        account: account,
+        operation: "storePassword"
+      )
     )
   }
 
@@ -105,8 +111,10 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
   ) async throws -> String {
     await logger.debug(
       "Retrieving password for account: \(account) from memory",
-      metadata: nil,
-      source: "InMemoryKeychainService"
+      context: KeychainLogContext(
+        account: account,
+        operation: "retrievePassword"
+      )
     )
 
     guard !account.isEmpty else {
@@ -117,16 +125,20 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
     guard let password=passwordStorage[account] else {
       await logger.warning(
         "No password found for account: \(account) in memory",
-        metadata: nil,
-        source: "InMemoryKeychainService"
+        context: KeychainLogContext(
+          account: account,
+          operation: "retrievePassword"
+        )
       )
       throw KeychainError.itemNotFound
     }
 
     await logger.info(
       "Successfully retrieved password for account: \(account) from memory",
-      metadata: nil,
-      source: "InMemoryKeychainService"
+      context: KeychainLogContext(
+        account: account,
+        operation: "retrievePassword"
+      )
     )
     return password
   }
@@ -146,8 +158,10 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
   ) async throws {
     await logger.debug(
       "Deleting password for account: \(account) from memory",
-      metadata: nil,
-      source: "InMemoryKeychainService"
+      context: KeychainLogContext(
+        account: account,
+        operation: "deletePassword"
+      )
     )
 
     guard !account.isEmpty else {
@@ -159,14 +173,18 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
       passwordStorage.removeValue(forKey: account)
       await logger.info(
         "Successfully deleted password for account: \(account) from memory",
-        metadata: nil,
-        source: "InMemoryKeychainService"
+        context: KeychainLogContext(
+          account: account,
+          operation: "deletePassword"
+        )
       )
     } else {
       await logger.warning(
         "No password found to delete for account: \(account) in memory",
-        metadata: nil,
-        source: "InMemoryKeychainService"
+        context: KeychainLogContext(
+          account: account,
+          operation: "deletePassword"
+        )
       )
       throw KeychainError.itemNotFound
     }
@@ -189,8 +207,10 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
   ) async throws {
     await logger.debug(
       "Storing data for account: \(account) in memory",
-      metadata: nil,
-      source: "InMemoryKeychainService"
+      context: KeychainLogContext(
+        account: account,
+        operation: "storeData"
+      )
     )
 
     guard !data.isEmpty else {
@@ -205,8 +225,10 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
     if dataStorage[account] != nil {
       await logger.warning(
         "Data already exists for account: \(account)",
-        metadata: nil,
-        source: "InMemoryKeychainService"
+        context: KeychainLogContext(
+          account: account,
+          operation: "storeData"
+        )
       )
       throw KeychainError.itemAlreadyExists
     }
@@ -215,8 +237,10 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
     dataStorage[account]=data
     await logger.info(
       "Successfully stored data for account: \(account) in memory",
-      metadata: nil,
-      source: "InMemoryKeychainService"
+      context: KeychainLogContext(
+        account: account,
+        operation: "storeData"
+      )
     )
   }
 
@@ -236,8 +260,10 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
   ) async throws -> Data {
     await logger.debug(
       "Retrieving data for account: \(account) from memory",
-      metadata: nil,
-      source: "InMemoryKeychainService"
+      context: KeychainLogContext(
+        account: account,
+        operation: "retrieveData"
+      )
     )
 
     guard !account.isEmpty else {
@@ -248,16 +274,20 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
     guard let data=dataStorage[account] else {
       await logger.warning(
         "No data found for account: \(account) in memory",
-        metadata: nil,
-        source: "InMemoryKeychainService"
+        context: KeychainLogContext(
+          account: account,
+          operation: "retrieveData"
+        )
       )
       throw KeychainError.itemNotFound
     }
 
     await logger.info(
       "Successfully retrieved data for account: \(account) from memory",
-      metadata: nil,
-      source: "InMemoryKeychainService"
+      context: KeychainLogContext(
+        account: account,
+        operation: "retrieveData"
+      )
     )
     return data
   }
@@ -277,8 +307,10 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
   ) async throws {
     await logger.debug(
       "Deleting data for account: \(account) from memory",
-      metadata: nil,
-      source: "InMemoryKeychainService"
+      context: KeychainLogContext(
+        account: account,
+        operation: "deleteData"
+      )
     )
 
     guard !account.isEmpty else {
@@ -290,14 +322,18 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
       dataStorage.removeValue(forKey: account)
       await logger.info(
         "Successfully deleted data for account: \(account) from memory",
-        metadata: nil,
-        source: "InMemoryKeychainService"
+        context: KeychainLogContext(
+          account: account,
+          operation: "deleteData"
+        )
       )
     } else {
       await logger.warning(
         "No data found to delete for account: \(account) in memory",
-        metadata: nil,
-        source: "InMemoryKeychainService"
+        context: KeychainLogContext(
+          account: account,
+          operation: "deleteData"
+        )
       )
       throw KeychainError.itemNotFound
     }
@@ -320,8 +356,10 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
   ) async throws {
     await logger.debug(
       "Updating password for account: \(account) in memory",
-      metadata: nil,
-      source: "InMemoryKeychainService"
+      context: KeychainLogContext(
+        account: account,
+        operation: "updatePassword"
+      )
     )
 
     guard !newPassword.isEmpty else {
@@ -336,8 +374,10 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
     guard passwordStorage[account] != nil else {
       await logger.warning(
         "No password found to update for account: \(account)",
-        metadata: nil,
-        source: "InMemoryKeychainService"
+        context: KeychainLogContext(
+          account: account,
+          operation: "updatePassword"
+        )
       )
       throw KeychainError.itemNotFound
     }
@@ -346,8 +386,10 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
     passwordStorage[account]=newPassword
     await logger.info(
       "Successfully updated password for account: \(account)",
-      metadata: nil,
-      source: "InMemoryKeychainService"
+      context: KeychainLogContext(
+        account: account,
+        operation: "updatePassword"
+      )
     )
   }
 
@@ -366,8 +408,10 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
   ) async throws -> Bool {
     await logger.debug(
       "Checking if password exists for account: \(account) in memory",
-      metadata: nil,
-      source: "InMemoryKeychainService"
+      context: KeychainLogContext(
+        account: account,
+        operation: "passwordExists"
+      )
     )
 
     guard !account.isEmpty else {
@@ -384,10 +428,19 @@ public actor InMemoryKeychainServiceImpl: KeychainServiceProtocol {
   public func clearAllData() async {
     await logger.info(
       "Clearing all stored data from memory",
-      metadata: nil,
-      source: "InMemoryKeychainService"
+      context: KeychainLogContext(
+        account: "all_accounts",
+        operation: "clearAllData"
+      )
     )
     passwordStorage.removeAll()
     dataStorage.removeAll()
+    await logger.info(
+      "Successfully cleared all stored data from memory",
+      context: KeychainLogContext(
+        account: "all_accounts",
+        operation: "clearAllData"
+      )
+    )
   }
 }

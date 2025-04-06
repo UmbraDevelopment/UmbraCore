@@ -45,7 +45,7 @@ public actor LoggingAdapter: LoggingProtocol, CoreLoggingProtocol {
     } else {
       // Legacy fallback for older LoggingServiceProtocol
       let metadata = context.asLogMetadata()
-      let source = context.getSource() ?? domainName
+      let source = context.getSource()
       
       // Use the appropriate level-specific method
       switch level {
@@ -155,6 +155,7 @@ public actor LoggingAdapter: LoggingProtocol, CoreLoggingProtocol {
     source: String = "KeychainServices"
   ) async {
     let context = BaseLogContextDTO(
+      domainName: domainName,
       source: source,
       metadata: convertToLogMetadataDTO(metadata)
     )
@@ -178,6 +179,7 @@ public actor LoggingAdapter: LoggingProtocol, CoreLoggingProtocol {
     source: String = "KeychainServices"
   ) async {
     let context = BaseLogContextDTO(
+      domainName: domainName,
       source: source,
       metadata: convertToLogMetadataDTO(metadata)
     )
@@ -201,6 +203,7 @@ public actor LoggingAdapter: LoggingProtocol, CoreLoggingProtocol {
     source: String = "KeychainServices"
   ) async {
     let context = BaseLogContextDTO(
+      domainName: domainName,
       source: source,
       metadata: convertToLogMetadataDTO(metadata)
     )
@@ -224,6 +227,7 @@ public actor LoggingAdapter: LoggingProtocol, CoreLoggingProtocol {
     source: String = "KeychainServices"
   ) async {
     let context = BaseLogContextDTO(
+      domainName: domainName,
       source: source,
       metadata: convertToLogMetadataDTO(metadata)
     )
@@ -247,6 +251,7 @@ public actor LoggingAdapter: LoggingProtocol, CoreLoggingProtocol {
     source: String = "KeychainServices"
   ) async {
     let context = BaseLogContextDTO(
+      domainName: domainName,
       source: source,
       metadata: convertToLogMetadataDTO(metadata)
     )
@@ -262,15 +267,8 @@ public actor LoggingAdapter: LoggingProtocol, CoreLoggingProtocol {
    - Returns: A metadata DTO collection
    */
   private func convertToLogMetadataDTO(_ metadata: PrivacyMetadata?) -> LogMetadataDTOCollection {
-    guard let metadata = metadata else {
-      return LogMetadataDTOCollection()
-    }
-    
-    let collection = LogMetadataDTOCollection()
-    
-    // Convert metadata to the new format
-    // This is a simplified conversion
-    
-    return collection
+    // Since PrivacyMetadata is deprecated, just return an empty collection
+    // The actual metadata will be provided through LogContextDTO
+    return LogMetadataDTOCollection()
   }
 }

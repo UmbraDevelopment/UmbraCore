@@ -96,8 +96,10 @@ private actor DefaultKeyManager: KeyManagementProtocol {
   public func generateKey(ofType keyType: SecurityKeyType) async throws -> [UInt8] {
     await logger.warning(
       "Using fallback key generation",
-      metadata: nil,
-      source: "DefaultKeyManager"
+      context: KeychainLogContext(
+        account: "key_generation",
+        operation: "generateKey_\(keyType.rawValue)"
+      )
     )
 
     // Generate an appropriate length key based on the key type
@@ -121,12 +123,14 @@ private actor DefaultKeyManager: KeyManagementProtocol {
 
   public func storeKey(
     _: [UInt8],
-    withIdentifier _: String
+    withIdentifier identifier: String
   ) async -> Result<Void, SecurityProtocolError> {
     await logger.warning(
       "Fallback key manager cannot store keys",
-      metadata: nil,
-      source: "DefaultKeyManager"
+      context: KeychainLogContext(
+        account: identifier,
+        operation: "storeKey"
+      )
     )
     return .failure(.operationFailed(reason: "Storage unavailable in fallback mode"))
   }
@@ -135,29 +139,35 @@ private actor DefaultKeyManager: KeyManagementProtocol {
   -> Result<[UInt8], SecurityProtocolError> {
     await logger.warning(
       "Fallback key manager cannot retrieve keys",
-      metadata: nil,
-      source: "DefaultKeyManager"
+      context: KeychainLogContext(
+        account: identifier,
+        operation: "retrieveKey"
+      )
     )
     return .failure(.operationFailed(reason: "Key not found: \(identifier)"))
   }
 
-  public func deleteKey(withIdentifier _: String) async -> Result<Void, SecurityProtocolError> {
+  public func deleteKey(withIdentifier identifier: String) async -> Result<Void, SecurityProtocolError> {
     await logger.warning(
       "Fallback key manager cannot delete keys",
-      metadata: nil,
-      source: "DefaultKeyManager"
+      context: KeychainLogContext(
+        account: identifier,
+        operation: "deleteKey"
+      )
     )
     return .failure(.operationFailed(reason: "Delete operation not supported in fallback mode"))
   }
 
   public func rotateKey(
-    withIdentifier _: String,
+    withIdentifier identifier: String,
     dataToReencrypt _: [UInt8]?
   ) async -> Result<(newKey: [UInt8], reencryptedData: [UInt8]?), SecurityProtocolError> {
     await logger.warning(
       "Fallback key manager cannot rotate keys",
-      metadata: nil,
-      source: "DefaultKeyManager"
+      context: KeychainLogContext(
+        account: identifier,
+        operation: "rotateKey"
+      )
     )
     return .failure(.operationFailed(reason: "Key rotation not supported in fallback mode"))
   }
@@ -165,8 +175,10 @@ private actor DefaultKeyManager: KeyManagementProtocol {
   public func listKeyIdentifiers() async -> Result<[String], SecurityProtocolError> {
     await logger.warning(
       "Fallback key manager cannot list keys",
-      metadata: nil,
-      source: "DefaultKeyManager"
+      context: KeychainLogContext(
+        account: "all_keys",
+        operation: "listKeyIdentifiers"
+      )
     )
     return .success([]) // Return empty list since no keys are stored
   }

@@ -162,8 +162,13 @@ public struct SimpleKeyManager: KeyManagementProtocol {
   ) async throws -> String {
     await logger.warning(
       "Using simple key manager implementation for key generation - this is not secure for production",
-      metadata: createPrivacyMetadata(from: ["keyType": "\(type.rawValue)", "size": "\(size)"]),
-      source: "SimpleKeyManager"
+      context: KeychainLogContext(
+        account: "key_generation",
+        operation: "generateKey",
+        additionalContext: LogMetadataDTOCollection()
+          .withPrivate(key: "keyType", value: "\(type.rawValue)")
+          .withPrivate(key: "size", value: "\(size)")
+      )
     )
 
     // Generate a simple UUID-based key identifier
@@ -172,12 +177,14 @@ public struct SimpleKeyManager: KeyManagementProtocol {
     return keyIdentifier
   }
 
-  public func retrieveKey(withIdentifier _: String) async
+  public func retrieveKey(withIdentifier identifier: String) async
   -> Result<[UInt8], SecurityProtocolError> {
     await logger.warning(
       "Attempted to retrieve key with a simple key manager implementation",
-      metadata: nil,
-      source: "SimpleKeyManager"
+      context: KeychainLogContext(
+        account: identifier,
+        operation: "retrieveKey"
+      )
     )
     return .failure(
       .operationFailed(reason: "Simple implementation does not support key retrieval")
@@ -186,23 +193,27 @@ public struct SimpleKeyManager: KeyManagementProtocol {
 
   public func storeKey(
     _: [UInt8],
-    withIdentifier _: String
+    withIdentifier identifier: String
   ) async -> Result<Void, SecurityProtocolError> {
     await logger.warning(
       "Attempted to store key with a simple key manager implementation",
-      metadata: nil,
-      source: "SimpleKeyManager"
+      context: KeychainLogContext(
+        account: identifier,
+        operation: "storeKey"
+      )
     )
     return .failure(
       .operationFailed(reason: "Simple implementation does not support key storage")
     )
   }
 
-  public func deleteKey(withIdentifier _: String) async -> Result<Void, SecurityProtocolError> {
+  public func deleteKey(withIdentifier identifier: String) async -> Result<Void, SecurityProtocolError> {
     await logger.warning(
       "Attempted to delete key with a simple key manager implementation",
-      metadata: nil,
-      source: "SimpleKeyManager"
+      context: KeychainLogContext(
+        account: identifier,
+        operation: "deleteKey"
+      )
     )
     return .failure(
       .operationFailed(reason: "Simple implementation does not support key deletion")
@@ -210,13 +221,15 @@ public struct SimpleKeyManager: KeyManagementProtocol {
   }
 
   public func rotateKey(
-    withIdentifier _: String,
+    withIdentifier identifier: String,
     dataToReencrypt _: [UInt8]?
   ) async -> Result<(newKey: [UInt8], reencryptedData: [UInt8]?), SecurityProtocolError> {
     await logger.warning(
       "Attempted to rotate key with a simple key manager implementation",
-      metadata: nil,
-      source: "SimpleKeyManager"
+      context: KeychainLogContext(
+        account: identifier,
+        operation: "rotateKey"
+      )
     )
     return .failure(
       .operationFailed(reason: "Simple implementation does not support key rotation")
@@ -226,11 +239,13 @@ public struct SimpleKeyManager: KeyManagementProtocol {
   public func listKeyIdentifiers() async -> Result<[String], SecurityProtocolError> {
     await logger.warning(
       "Attempted to list keys with a simple key manager implementation",
-      metadata: nil,
-      source: "SimpleKeyManager"
+      context: KeychainLogContext(
+        account: "all_keys",
+        operation: "listKeyIdentifiers"
+      )
     )
     return .failure(
-      .operationFailed(reason: "Simple implementation does not support listing key identifiers")
+      .operationFailed(reason: "Simple implementation does not support listing keys")
     )
   }
 }

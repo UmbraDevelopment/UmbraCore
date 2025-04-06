@@ -57,8 +57,10 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
   ) async throws {
     await logger.debug(
       "Storing password for account: \(account)",
-      metadata: nil,
-      source: "KeychainService"
+      context: KeychainLogContext(
+        account: account,
+        operation: "storePassword"
+      )
     )
 
     guard !password.isEmpty else {
@@ -121,22 +123,28 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
     if status == errSecSuccess {
       await logger.info(
         "Successfully stored password for account: \(account)",
-        metadata: nil,
-        source: "KeychainService"
+        context: KeychainLogContext(
+          account: account,
+          operation: "storePassword"
+        )
       )
     } else if status == errSecDuplicateItem {
       await logger.warning(
         "Password already exists for account: \(account). Use updatePassword instead.",
-        metadata: nil,
-        source: "KeychainService"
+        context: KeychainLogContext(
+          account: account,
+          operation: "storePassword"
+        )
       )
       throw KeychainError.itemAlreadyExists
     } else {
       let error=KeychainError.fromOSStatus(status)
       await logger.error(
         "Failed to store password: \(error)",
-        metadata: nil,
-        source: "KeychainService"
+        context: KeychainLogContext(
+          account: account,
+          operation: "storePassword"
+        )
       )
       throw error
     }
@@ -158,8 +166,10 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
   ) async throws -> String {
     await logger.debug(
       "Retrieving password for account: \(account)",
-      metadata: nil,
-      source: "KeychainService"
+      context: KeychainLogContext(
+        account: account,
+        operation: "retrievePassword"
+      )
     )
 
     guard !account.isEmpty else {
@@ -199,32 +209,40 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
       guard let password=String(data: passwordData, encoding: .utf8) else {
         await logger.error(
           "Retrieved data couldn't be converted to a string",
-          metadata: nil,
-          source: "KeychainService"
+          context: KeychainLogContext(
+            account: account,
+            operation: "retrievePassword"
+          )
         )
-        throw KeychainError.invalidDataFormat("Retrieved data is not a valid UTF-8 string")
+        throw KeychainError.invalidDataFormat("Unable to convert retrieved data to string")
       }
 
       await logger.info(
         "Successfully retrieved password for account: \(account)",
-        metadata: nil,
-        source: "KeychainService"
+        context: KeychainLogContext(
+          account: account,
+          operation: "retrievePassword"
+        )
       )
       return password
     } else {
       if status == errSecItemNotFound {
         await logger.warning(
           "No password found for account: \(account)",
-          metadata: nil,
-          source: "KeychainService"
+          context: KeychainLogContext(
+            account: account,
+            operation: "retrievePassword"
+          )
         )
         throw KeychainError.itemNotFound
       } else {
         let error=KeychainError.fromOSStatus(status)
         await logger.error(
           "Failed to retrieve password: \(error)",
-          metadata: nil,
-          source: "KeychainService"
+          context: KeychainLogContext(
+            account: account,
+            operation: "retrievePassword"
+          )
         )
         throw error
       }
@@ -248,8 +266,10 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
   ) async throws {
     await logger.debug(
       "Updating password for account: \(account)",
-      metadata: nil,
-      source: "KeychainService"
+      context: KeychainLogContext(
+        account: account,
+        operation: "updatePassword"
+      )
     )
 
     guard !newPassword.isEmpty else {
@@ -288,15 +308,19 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
     if status == errSecSuccess {
       await logger.info(
         "Successfully updated password for account: \(account)",
-        metadata: nil,
-        source: "KeychainService"
+        context: KeychainLogContext(
+          account: account,
+          operation: "updatePassword"
+        )
       )
     } else {
       let error=KeychainError.fromOSStatus(status)
       await logger.error(
         "Failed to update password: \(error)",
-        metadata: nil,
-        source: "KeychainService"
+        context: KeychainLogContext(
+          account: account,
+          operation: "updatePassword"
+        )
       )
       throw error
     }
@@ -318,8 +342,10 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
   ) async throws -> Bool {
     await logger.debug(
       "Checking if password exists for account: \(account)",
-      metadata: nil,
-      source: "KeychainService"
+      context: KeychainLogContext(
+        account: account,
+        operation: "passwordExists"
+      )
     )
 
     guard !account.isEmpty else {
@@ -341,23 +367,29 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
     if status == errSecSuccess {
       await logger.debug(
         "Password exists for account: \(account)",
-        metadata: nil,
-        source: "KeychainService"
+        context: KeychainLogContext(
+          account: account,
+          operation: "passwordExists"
+        )
       )
       return true
     } else if status == errSecItemNotFound {
       await logger.debug(
         "Password does not exist for account: \(account)",
-        metadata: nil,
-        source: "KeychainService"
+        context: KeychainLogContext(
+          account: account,
+          operation: "passwordExists"
+        )
       )
       return false
     } else {
       let error=KeychainError.fromOSStatus(status)
       await logger.error(
         "Failed to check if password exists: \(error)",
-        metadata: nil,
-        source: "KeychainService"
+        context: KeychainLogContext(
+          account: account,
+          operation: "passwordExists"
+        )
       )
       throw error
     }
@@ -378,8 +410,10 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
   ) async throws {
     await logger.debug(
       "Deleting password for account: \(account)",
-      metadata: nil,
-      source: "KeychainService"
+      context: KeychainLogContext(
+        account: account,
+        operation: "deletePassword"
+      )
     )
 
     guard !account.isEmpty else {
@@ -399,22 +433,28 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
     if status == errSecSuccess {
       await logger.info(
         "Successfully deleted password for account: \(account)",
-        metadata: nil,
-        source: "KeychainService"
+        context: KeychainLogContext(
+          account: account,
+          operation: "deletePassword"
+        )
       )
     } else if status == errSecItemNotFound {
       await logger.warning(
         "No password found to delete for account: \(account)",
-        metadata: nil,
-        source: "KeychainService"
+        context: KeychainLogContext(
+          account: account,
+          operation: "deletePassword"
+        )
       )
       throw KeychainError.itemNotFound
     } else {
       let error=KeychainError.fromOSStatus(status)
       await logger.error(
         "Failed to delete password: \(error)",
-        metadata: nil,
-        source: "KeychainService"
+        context: KeychainLogContext(
+          account: account,
+          operation: "deletePassword"
+        )
       )
       throw error
     }
@@ -437,8 +477,10 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
   ) async throws {
     await logger.debug(
       "Storing data for account: \(account)",
-      metadata: nil,
-      source: "KeychainService"
+      context: KeychainLogContext(
+        account: account,
+        operation: "storeData"
+      )
     )
 
     guard !data.isEmpty else {
@@ -481,22 +523,28 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
     if status == errSecSuccess {
       await logger.info(
         "Successfully stored data for account: \(account)",
-        metadata: nil,
-        source: "KeychainService"
+        context: KeychainLogContext(
+          account: account,
+          operation: "storeData"
+        )
       )
     } else if status == errSecDuplicateItem {
       await logger.warning(
         "Data already exists for account: \(account)",
-        metadata: nil,
-        source: "KeychainService"
+        context: KeychainLogContext(
+          account: account,
+          operation: "storeData"
+        )
       )
       throw KeychainError.itemAlreadyExists
     } else {
       let error=KeychainError.fromOSStatus(status)
       await logger.error(
         "Failed to store data: \(error)",
-        metadata: nil,
-        source: "KeychainService"
+        context: KeychainLogContext(
+          account: account,
+          operation: "storeData"
+        )
       )
       throw error
     }
@@ -518,8 +566,10 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
   ) async throws -> Data {
     await logger.debug(
       "Retrieving data for account: \(account)",
-      metadata: nil,
-      source: "KeychainService"
+      context: KeychainLogContext(
+        account: account,
+        operation: "retrieveData"
+      )
     )
 
     guard !account.isEmpty else {
@@ -557,24 +607,30 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
     if status == errSecSuccess, let data=result as? Data {
       await logger.info(
         "Successfully retrieved data for account: \(account)",
-        metadata: nil,
-        source: "KeychainService"
+        context: KeychainLogContext(
+          account: account,
+          operation: "retrieveData"
+        )
       )
       return data
     } else {
       if status == errSecItemNotFound {
         await logger.warning(
           "No data found for account: \(account)",
-          metadata: nil,
-          source: "KeychainService"
+          context: KeychainLogContext(
+            account: account,
+            operation: "retrieveData"
+          )
         )
         throw KeychainError.itemNotFound
       } else {
         let error=KeychainError.fromOSStatus(status)
         await logger.error(
           "Failed to retrieve data: \(error)",
-          metadata: nil,
-          source: "KeychainService"
+          context: KeychainLogContext(
+            account: account,
+            operation: "retrieveData"
+          )
         )
         throw error
       }
@@ -596,8 +652,10 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
   ) async throws {
     await logger.debug(
       "Deleting data for account: \(account)",
-      metadata: nil,
-      source: "KeychainService"
+      context: KeychainLogContext(
+        account: account,
+        operation: "deleteData"
+      )
     )
 
     guard !account.isEmpty else {
@@ -617,22 +675,28 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
     if status == errSecSuccess {
       await logger.info(
         "Successfully deleted data for account: \(account)",
-        metadata: nil,
-        source: "KeychainService"
+        context: KeychainLogContext(
+          account: account,
+          operation: "deleteData"
+        )
       )
     } else if status == errSecItemNotFound {
       await logger.warning(
         "No data found to delete for account: \(account)",
-        metadata: nil,
-        source: "KeychainService"
+        context: KeychainLogContext(
+          account: account,
+          operation: "deleteData"
+        )
       )
       throw KeychainError.itemNotFound
     } else {
       let error=KeychainError.fromOSStatus(status)
       await logger.error(
         "Failed to delete data: \(error)",
-        metadata: nil,
-        source: "KeychainService"
+        context: KeychainLogContext(
+          account: account,
+          operation: "deleteData"
+        )
       )
       throw error
     }
@@ -648,8 +712,10 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
   public func passwordExists(for account: String) async -> Bool {
     await logger.debug(
       "Checking if password exists for account: \(account)",
-      metadata: nil,
-      source: "KeychainService"
+      context: KeychainLogContext(
+        account: account,
+        operation: "passwordExists"
+      )
     )
 
     guard !account.isEmpty else {
@@ -682,8 +748,10 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
   public func updatePassword(_ newPassword: String, for account: String) async throws {
     await logger.debug(
       "Updating password for account: \(account)",
-      metadata: nil,
-      source: "KeychainService"
+      context: KeychainLogContext(
+        account: account,
+        operation: "updatePassword"
+      )
     )
 
     guard !newPassword.isEmpty else {
@@ -698,8 +766,10 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
     guard await passwordExists(for: account) else {
       await logger.warning(
         "Cannot update - no password exists for account: \(account)",
-        metadata: nil,
-        source: "KeychainService"
+        context: KeychainLogContext(
+          account: account,
+          operation: "updatePassword"
+        )
       )
       throw KeychainError.itemNotFound
     }
@@ -727,15 +797,19 @@ public actor KeychainServiceImpl: KeychainServiceProtocol {
     if status == errSecSuccess {
       await logger.info(
         "Successfully updated password for account: \(account)",
-        metadata: nil,
-        source: "KeychainService"
+        context: KeychainLogContext(
+          account: account,
+          operation: "updatePassword"
+        )
       )
     } else {
       let error=KeychainError.fromOSStatus(status)
       await logger.error(
         "Failed to update password: \(error)",
-        metadata: nil,
-        source: "KeychainService"
+        context: KeychainLogContext(
+          account: account,
+          operation: "updatePassword"
+        )
       )
       throw error
     }
