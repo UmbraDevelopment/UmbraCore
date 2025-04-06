@@ -3,6 +3,7 @@ import Foundation
 import LoggingInterfaces
 import LoggingTypes
 import LoggingAdapters
+import UmbraErrors
 
 /**
  * A domain-specific logger for backup operations.
@@ -56,21 +57,32 @@ public actor BackupLogger: DomainLoggerProtocol {
   }
   
   /**
+   * Logs with a specific domain context.
+   *
+   * - Parameters:
+   *   - level: The severity level of the log
+   *   - message: The message to log
+   *   - context: The log context
+   */
+  public func logWithContext(_ level: LogLevel, _ message: String, context: LogContextDTO) async {
+    await log(level, message, context: context)
+  }
+  
+  /**
    * Logs an error with additional context.
    *
    * - Parameters:
    *   - error: The error to log
    *   - context: The log context
-   *   - message: Optional custom message
    */
-  public func logError(_ error: Error, context: LogContextDTO, message: String? = nil) async {
-    if let loggableError = error as? LoggableError {
+  public func logError(_ error: Error, context: LogContextDTO) async {
+    if let loggableError = error as? LoggableErrorProtocol {
       // Handle loggable errors with enriched metadata
       let errorMetadata = loggableError.getLogMetadata()
-      let formattedMessage = message ?? "[\(domainName)] \(loggableError.getLogMessage())"
+      let formattedMessage = "[\(domainName)] \(loggableError.getLogMessage())"
       let source = "\(loggableError.getSource()) via \(domainName)"
       
-      // Create a new context with error metadata
+      // Create a new context with error information
       if let backupContext = context as? BackupLogContext {
         // Update the context with error information
         let updatedContext = backupContext.withUpdatedMetadata(
@@ -84,6 +96,49 @@ public actor BackupLogger: DomainLoggerProtocol {
     } else {
       // Handle standard errors
       let formattedMessage = "[\(domainName)] \(error.localizedDescription)"
+      
+      if let backupContext = context as? BackupLogContext {
+        // Update the context with error information
+        let updatedContext = backupContext.withUpdatedMetadata(
+          backupContext.metadata.withPrivate(key: "error", value: error.localizedDescription)
+        )
+        await log(.error, formattedMessage, context: updatedContext)
+      } else {
+        // Use the context as is
+        await log(.error, formattedMessage, context: context)
+      }
+    }
+  }
+  
+  /**
+   * Logs an error with additional context and optional message.
+   *
+   * - Parameters:
+   *   - error: The error to log
+   *   - context: The log context
+   *   - message: Optional custom message
+   */
+  public func logError(_ error: Error, context: LogContextDTO, message: String? = nil) async {
+    if let loggableError = error as? LoggableErrorProtocol {
+      // Handle loggable errors with enriched metadata
+      let errorMetadata = loggableError.getLogMetadata()
+      let formattedMessage = message ?? "[\(domainName)] \(loggableError.getLogMessage())"
+      let source = "\(loggableError.getSource()) via \(domainName)"
+      
+      // Create a new context with error information
+      if let backupContext = context as? BackupLogContext {
+        // Update the context with error information
+        let updatedContext = backupContext.withUpdatedMetadata(
+          backupContext.metadata.withPrivate(key: "error", value: error.localizedDescription)
+        )
+        await log(.error, formattedMessage, context: updatedContext)
+      } else {
+        // Use the context as is
+        await log(.error, formattedMessage, context: context)
+      }
+    } else {
+      // Handle standard errors
+      let formattedMessage = message ?? "[\(domainName)] \(error.localizedDescription)"
       
       if let backupContext = context as? BackupLogContext {
         // Update the context with error information
@@ -232,7 +287,8 @@ public actor BackupLogger: DomainLoggerProtocol {
     await logError(error, context: context)
     
     if let message = message {
-      await error(message, context: context)
+      // Use the error method, not try to call error as a function
+      await self.error(message, context: context)
     }
   }
   

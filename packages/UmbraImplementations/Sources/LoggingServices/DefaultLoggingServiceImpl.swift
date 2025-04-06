@@ -44,36 +44,11 @@ public actor DefaultLoggingServiceImpl: LoggingProtocol {
     await log(level, message, context: contextDTO)
   }
 
-  /// Helper method to convert PrivacyMetadata to LogMetadataDTOCollection
-  /// - Parameter metadata: The privacy metadata to convert
-  /// - Returns: A LogMetadataDTOCollection with the same entries
-  private func createMetadataCollection(from metadata: PrivacyMetadata?)
-  -> LogMetadataDTOCollection {
-    var collection=LogMetadataDTOCollection()
-
-    // If no metadata, return empty collection
-    guard let metadata else {
-      return collection
-    }
-
-    // Convert each entry based on its privacy level
-    for entry in metadata.entriesArray {
-      switch entry.privacy {
-        case .public:
-          collection=collection.withPublic(key: entry.key, value: entry.value)
-        case .private:
-          collection=collection.withPrivate(key: entry.key, value: entry.value)
-        case .sensitive:
-          collection=collection.withSensitive(key: entry.key, value: entry.value)
-        case .hash:
-          collection=collection.withHashed(key: entry.key, value: entry.value)
-        case .auto:
-          // Default to private for auto
-          collection=collection.withPrivate(key: entry.key, value: entry.value)
-      }
-    }
-
-    return collection
+  /// Helper method to convert metadata to LogMetadataDTOCollection
+  /// - Parameter metadata: The metadata to convert
+  /// - Returns: A LogMetadataDTOCollection
+  private func createMetadataCollection(from metadata: LogMetadataDTOCollection?) -> LogMetadataDTOCollection {
+    return metadata ?? LogMetadataDTOCollection()
   }
 
   // MARK: - Convenience Logging Methods
@@ -83,10 +58,10 @@ public actor DefaultLoggingServiceImpl: LoggingProtocol {
   ///   - message: The message to log
   ///   - metadata: Additional metadata
   ///   - source: Source component identifier
-  public func trace(_ message: String, metadata: PrivacyMetadata?, source: String) async {
+  public func trace(_ message: String, metadata: LogMetadataDTOCollection?=nil, source: String?=nil) async {
     let context=BaseLogContextDTO(
       domainName: "Trace",
-      source: source,
+      source: source ?? "Unknown",
       metadata: createMetadataCollection(from: metadata)
     )
     await log(.trace, message, context: context)
@@ -97,10 +72,10 @@ public actor DefaultLoggingServiceImpl: LoggingProtocol {
   ///   - message: The message to log
   ///   - metadata: Additional metadata
   ///   - source: Source component identifier
-  public func debug(_ message: String, metadata: PrivacyMetadata?, source: String) async {
+  public func debug(_ message: String, metadata: LogMetadataDTOCollection?=nil, source: String?=nil) async {
     let context=BaseLogContextDTO(
       domainName: "Debug",
-      source: source,
+      source: source ?? "Unknown",
       metadata: createMetadataCollection(from: metadata)
     )
     await log(.debug, message, context: context)
@@ -111,10 +86,10 @@ public actor DefaultLoggingServiceImpl: LoggingProtocol {
   ///   - message: The message to log
   ///   - metadata: Additional metadata
   ///   - source: Source component identifier
-  public func info(_ message: String, metadata: PrivacyMetadata?, source: String) async {
+  public func info(_ message: String, metadata: LogMetadataDTOCollection?=nil, source: String?=nil) async {
     let context=BaseLogContextDTO(
       domainName: "Info",
-      source: source,
+      source: source ?? "Unknown",
       metadata: createMetadataCollection(from: metadata)
     )
     await log(.info, message, context: context)
@@ -125,10 +100,10 @@ public actor DefaultLoggingServiceImpl: LoggingProtocol {
   ///   - message: The message to log
   ///   - metadata: Additional metadata
   ///   - source: Source component identifier
-  public func warning(_ message: String, metadata: PrivacyMetadata?, source: String) async {
+  public func warning(_ message: String, metadata: LogMetadataDTOCollection?=nil, source: String?=nil) async {
     let context=BaseLogContextDTO(
       domainName: "Warning",
-      source: source,
+      source: source ?? "Unknown",
       metadata: createMetadataCollection(from: metadata)
     )
     await log(.warning, message, context: context)
@@ -139,10 +114,10 @@ public actor DefaultLoggingServiceImpl: LoggingProtocol {
   ///   - message: The message to log
   ///   - metadata: Additional metadata
   ///   - source: Source component identifier
-  public func error(_ message: String, metadata: PrivacyMetadata?, source: String) async {
+  public func error(_ message: String, metadata: LogMetadataDTOCollection?=nil, source: String?=nil) async {
     let context=BaseLogContextDTO(
       domainName: "Error",
-      source: source,
+      source: source ?? "Unknown",
       metadata: createMetadataCollection(from: metadata)
     )
     await log(.error, message, context: context)
@@ -153,10 +128,10 @@ public actor DefaultLoggingServiceImpl: LoggingProtocol {
   ///   - message: The message to log
   ///   - metadata: Additional metadata
   ///   - source: Source component identifier
-  public func critical(_ message: String, metadata: PrivacyMetadata?, source: String) async {
+  public func critical(_ message: String, metadata: LogMetadataDTOCollection?=nil, source: String?=nil) async {
     let context=BaseLogContextDTO(
       domainName: "Critical",
-      source: source,
+      source: source ?? "Unknown",
       metadata: createMetadataCollection(from: metadata)
     )
     await log(.critical, message, context: context)
