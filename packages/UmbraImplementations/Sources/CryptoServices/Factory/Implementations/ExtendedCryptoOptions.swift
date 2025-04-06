@@ -4,6 +4,7 @@ import CryptoTypes
 import DomainSecurityTypes
 import Foundation
 import SecurityCoreInterfaces
+import UnifiedCryptoTypes
 
 /**
  Extended configuration options for the CryptoService implementation.
@@ -201,25 +202,14 @@ public enum KeyPurpose: String, Sendable {
 
 /**
  The algorithm to use for encryption.
+ 
+ This uses the canonical EncryptionAlgorithm from UnifiedCryptoTypes.
  */
-public enum EncryptionAlgorithm: String, Sendable {
-  /// AES-256 with GCM mode (authenticated encryption)
-  case aes256GCM
-
-  /// AES-256 with CBC mode
-  case aes256CBC
-
-  /// ChaCha20-Poly1305 (authenticated encryption)
-  case chacha20Poly1305
-}
+public typealias EncryptionAlgorithm = UnifiedCryptoTypes.EncryptionAlgorithm
 
 /**
  The algorithm to use for hashing.
+ 
+ This uses the canonical HashAlgorithm from CoreSecurityTypes.
  */
-public enum HashAlgorithm: String, Sendable {
-  /// SHA-256 algorithm
-  case sha256
-
-  /// SHA-512 algorithm
-  case sha512
-}
+public typealias HashAlgorithm = CoreSecurityTypes.HashAlgorithm

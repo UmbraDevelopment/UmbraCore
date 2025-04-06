@@ -30,6 +30,7 @@ swift_library(
         "//packages/UmbraInterfaces/Sources/SecurityInterfaces",  # Temporary, until we fully migrate SecureStorageConfig
         "//packages/UmbraImplementations/Sources/LoggingServices",
         "//packages/UmbraImplementations/Sources/LoggingAdapters", # Added for privacy-enhanced logging integration
+        "//packages/UmbraImplementations/Sources/CryptoServices/Logging:CryptoLogger", # Added our domain-specific logger
         # Removed dependencies that were causing circular dependencies:
         # - SecurityImplementation
         # - SecurityCryptoServices/ActorTypes:CryptoActorImplementations

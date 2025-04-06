@@ -1,17 +1,22 @@
 import Foundation
+import CoreSecurityTypes
+import UnifiedCryptoTypes
 
 /**
  Local module option types for encryption, decryption, hashing, and key generation.
  These types mirror the ones in SecurityCoreInterfaces to provide type-safe conversions.
+ 
+ NOTE: These types are being deprecated in favor of the unified types defined in UnifiedCryptoTypes.
+ New code should use the types from UnifiedCryptoTypes instead.
  */
 
 /**
  Encryption algorithm options available in this module.
+ 
+ DEPRECATED: Use UnifiedCryptoTypes.EncryptionAlgorithm instead.
  */
-public enum EncryptionAlgorithm: String, Sendable {
-  case aes="AES"
-  case chacha20="ChaCha20"
-}
+@available(*, deprecated, message: "Use UnifiedCryptoTypes.EncryptionAlgorithm instead")
+public typealias LocalEncryptionAlgorithm = UnifiedCryptoTypes.EncryptionAlgorithm
 
 /**
  Encryption mode options available in this module.
@@ -31,10 +36,13 @@ public enum EncryptionPadding: String, Sendable {
 
 /**
  Options for configuring encryption operations.
+ 
+ DEPRECATED: Use UnifiedCryptoTypes.EncryptionOptions instead.
  */
-public struct EncryptionOptions: Sendable {
+@available(*, deprecated, message: "Use UnifiedCryptoTypes.EncryptionOptions instead")
+public struct LocalEncryptionOptions: Sendable {
   /// The encryption algorithm to use
-  public let algorithm: EncryptionAlgorithm
+  public let algorithm: UnifiedCryptoTypes.EncryptionAlgorithm
 
   /// The encryption mode to use
   public let mode: EncryptionMode
@@ -55,39 +63,44 @@ public struct EncryptionOptions: Sendable {
       - additionalAuthenticatedData: Additional data to authenticate (for GCM)
    */
   public init(
-    algorithm: EncryptionAlgorithm = .aes,
+    algorithm: UnifiedCryptoTypes.EncryptionAlgorithm = .aes256GCM,
     mode: EncryptionMode = .gcm,
     padding: EncryptionPadding = .pkcs7,
     additionalAuthenticatedData: [UInt8]?=nil
   ) {
-    self.algorithm=algorithm
-    self.mode=mode
-    self.padding=padding
-    self.additionalAuthenticatedData=additionalAuthenticatedData
+    self.algorithm = algorithm
+    self.mode = mode
+    self.padding = padding
+    self.additionalAuthenticatedData = additionalAuthenticatedData
   }
 }
 
 /**
  Options for configuring decryption operations.
  Uses the same type parameters as encryption for consistency.
+ 
+ DEPRECATED: Use UnifiedCryptoTypes.EncryptionOptions for decryption as well.
  */
-public typealias DecryptionOptions=EncryptionOptions
+@available(*, deprecated, message: "Use UnifiedCryptoTypes.EncryptionOptions instead")
+public typealias LocalDecryptionOptions = LocalEncryptionOptions
 
 /**
  Hashing algorithm options available in this module.
+ 
+ DEPRECATED: Use CoreSecurityTypes.HashAlgorithm instead.
  */
-public enum HashingAlgorithm: String, Sendable {
-  case sha256="SHA256"
-  case sha512="SHA512"
-  case blake2b="BLAKE2b"
-}
+@available(*, deprecated, message: "Use CoreSecurityTypes.HashAlgorithm instead")
+public typealias LocalHashingAlgorithm = CoreSecurityTypes.HashAlgorithm
 
 /**
  Options for configuring hashing operations.
+ 
+ DEPRECATED: Use UnifiedCryptoTypes.HashingOptions instead.
  */
-public struct HashingOptions: Sendable {
+@available(*, deprecated, message: "Use UnifiedCryptoTypes.HashingOptions instead")
+public struct LocalHashingOptions: Sendable {
   /// The hashing algorithm to use
-  public let algorithm: HashingAlgorithm
+  public let algorithm: CoreSecurityTypes.HashAlgorithm
 
   /// Optional salt to use in hashing
   public let salt: [UInt8]?
@@ -100,13 +113,20 @@ public struct HashingOptions: Sendable {
       - salt: Optional salt for the hash
    */
   public init(
-    algorithm: HashingAlgorithm = .sha256,
+    algorithm: CoreSecurityTypes.HashAlgorithm = .sha256,
     salt: [UInt8]?=nil
   ) {
-    self.algorithm=algorithm
-    self.salt=salt
+    self.algorithm = algorithm
+    self.salt = salt
   }
 }
+
+// Provide clean migration path with type aliases to the canonical types
+public typealias EncryptionAlgorithm = UnifiedCryptoTypes.EncryptionAlgorithm
+public typealias EncryptionOptions = UnifiedCryptoTypes.EncryptionOptions
+public typealias DecryptionOptions = UnifiedCryptoTypes.EncryptionOptions  // Same options used for both
+public typealias HashingAlgorithm = CoreSecurityTypes.HashAlgorithm
+public typealias HashingOptions = UnifiedCryptoTypes.HashingOptions
 
 /**
  Key type options available in this module.
