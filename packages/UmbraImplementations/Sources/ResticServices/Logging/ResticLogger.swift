@@ -124,7 +124,7 @@ public actor ResticLogger {
     // Check if the error provides logging information
     if let loggableError = error as? LoggableErrorProtocol {
       // Create a context with combined metadata
-      let errorMetadata = loggableError.getPrivacyMetadata()
+      let metadataCollection = loggableError.createMetadataCollection()
       let errorMessage = loggableError.getLogMessage()
       
       // Create metadata with error type information
@@ -135,7 +135,7 @@ public actor ResticLogger {
       // Create combined metadata by merging all sources
       let combinedMetadata = (metadata ?? PrivacyMetadata())
         .merging(metadataWithErrorInfo)
-        .merging(errorMetadata)
+        .merging(metadataCollection.toPrivacyMetadata())
       
       let context = BaseLogContextDTO(
         domainName: "ResticServices",

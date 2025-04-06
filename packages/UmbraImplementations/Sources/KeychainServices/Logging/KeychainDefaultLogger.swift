@@ -26,32 +26,32 @@ public actor KeychainDefaultLogger: LoggingProtocol {
   // MARK: - LoggingProtocol Methods
 
   /// Log a trace message
-  public func trace(_ message: String, metadata _: PrivacyMetadata?=nil, source: String) async {
+  public func trace(_ message: String, metadata _: LogMetadata?=nil, source: String) async {
     await printLog(level: .trace, message: message, source: source)
   }
 
   /// Log a debug message
-  public func debug(_ message: String, metadata _: PrivacyMetadata?=nil, source: String) async {
+  public func debug(_ message: String, metadata _: LogMetadata?=nil, source: String) async {
     await printLog(level: .debug, message: message, source: source)
   }
 
   /// Log an info message
-  public func info(_ message: String, metadata _: PrivacyMetadata?=nil, source: String) async {
+  public func info(_ message: String, metadata _: LogMetadata?=nil, source: String) async {
     await printLog(level: .info, message: message, source: source)
   }
 
   /// Log a warning message
-  public func warning(_ message: String, metadata _: PrivacyMetadata?=nil, source: String) async {
+  public func warning(_ message: String, metadata _: LogMetadata?=nil, source: String) async {
     await printLog(level: .warning, message: message, source: source)
   }
 
   /// Log an error message
-  public func error(_ message: String, metadata _: PrivacyMetadata?=nil, source: String) async {
+  public func error(_ message: String, metadata _: LogMetadata?=nil, source: String) async {
     await printLog(level: .error, message: message, source: source)
   }
 
   /// Log a critical message
-  public func critical(_ message: String, metadata _: PrivacyMetadata?=nil, source: String) async {
+  public func critical(_ message: String, metadata _: LogMetadata?=nil, source: String) async {
     await printLog(level: .critical, message: message, source: source)
   }
 

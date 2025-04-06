@@ -29,9 +29,6 @@ public struct SnapshotLogContext: LogContextDTO {
   /// Optional error message if operation failed
   public let errorMessage: String?
 
-  /// Private metadata collection for backwards compatibility
-  private var privacyMetadata: PrivacyMetadata
-
   /**
    * Creates a new snapshot log context.
    *
@@ -63,15 +60,6 @@ public struct SnapshotLogContext: LogContextDTO {
     }
 
     metadata=metadataCollection
-
-    // Initialize legacy metadata for backwards compatibility
-    privacyMetadata=PrivacyMetadata()
-    privacyMetadata["operation"]=PrivacyMetadataValue(value: operation, privacy: .public)
-    privacyMetadata["snapshotId"]=PrivacyMetadataValue(value: snapshotID, privacy: .public)
-
-    if let errorMessage {
-      privacyMetadata["error"]=PrivacyMetadataValue(value: errorMessage, privacy: .private)
-    }
   }
 
   /**

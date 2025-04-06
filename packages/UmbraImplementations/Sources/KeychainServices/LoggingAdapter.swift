@@ -151,7 +151,7 @@ public actor LoggingAdapter: LoggingProtocol, CoreLoggingProtocol {
   @available(*, deprecated, message: "Use debug(_:context:) instead")
   public func debug(
     _ message: String,
-    metadata: PrivacyMetadata? = nil,
+    metadata: LogMetadata? = nil,
     source: String = "KeychainServices"
   ) async {
     let context = BaseLogContextDTO(
@@ -175,7 +175,7 @@ public actor LoggingAdapter: LoggingProtocol, CoreLoggingProtocol {
   @available(*, deprecated, message: "Use info(_:context:) instead")
   public func info(
     _ message: String,
-    metadata: PrivacyMetadata? = nil,
+    metadata: LogMetadata? = nil,
     source: String = "KeychainServices"
   ) async {
     let context = BaseLogContextDTO(
@@ -199,7 +199,7 @@ public actor LoggingAdapter: LoggingProtocol, CoreLoggingProtocol {
   @available(*, deprecated, message: "Use warning(_:context:) instead")
   public func warning(
     _ message: String,
-    metadata: PrivacyMetadata? = nil,
+    metadata: LogMetadata? = nil,
     source: String = "KeychainServices"
   ) async {
     let context = BaseLogContextDTO(
@@ -223,7 +223,7 @@ public actor LoggingAdapter: LoggingProtocol, CoreLoggingProtocol {
   @available(*, deprecated, message: "Use error(_:context:) instead")
   public func error(
     _ message: String,
-    metadata: PrivacyMetadata? = nil,
+    metadata: LogMetadata? = nil,
     source: String = "KeychainServices"
   ) async {
     let context = BaseLogContextDTO(
@@ -247,7 +247,7 @@ public actor LoggingAdapter: LoggingProtocol, CoreLoggingProtocol {
   @available(*, deprecated, message: "Use critical(_:context:) instead")
   public func critical(
     _ message: String,
-    metadata: PrivacyMetadata? = nil,
+    metadata: LogMetadata? = nil,
     source: String = "KeychainServices"
   ) async {
     let context = BaseLogContextDTO(
@@ -261,14 +261,23 @@ public actor LoggingAdapter: LoggingProtocol, CoreLoggingProtocol {
   // MARK: - Private Helpers
 
   /**
-   Convert PrivacyMetadata to LogMetadataDTOCollection for use with the new context-based logging
+   Convert LogMetadata to LogMetadataDTOCollection for use with the new context-based logging
    
-   - Parameter metadata: The privacy metadata to convert
+   - Parameter metadata: The log metadata to convert
    - Returns: A metadata DTO collection
    */
-  private func convertToLogMetadataDTO(_ metadata: PrivacyMetadata?) -> LogMetadataDTOCollection {
-    // Since PrivacyMetadata is deprecated, just return an empty collection
-    // The actual metadata will be provided through LogContextDTO
-    return LogMetadataDTOCollection()
+  private func convertToLogMetadataDTO(_ metadata: LogMetadata?) -> LogMetadataDTOCollection {
+    guard let metadata = metadata else {
+      return LogMetadataDTOCollection()
+    }
+    
+    var collection = LogMetadataDTOCollection()
+    
+    // Convert each key-value pair to a metadata entry
+    for (key, value) in metadata.asDictionary {
+      collection = collection.withPublic(key: key, value: value)
+    }
+    
+    return collection
   }
 }

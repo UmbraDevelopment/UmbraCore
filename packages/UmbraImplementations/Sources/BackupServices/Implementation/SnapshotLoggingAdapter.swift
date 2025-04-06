@@ -38,7 +38,7 @@ public struct SnapshotLoggingAdapter {
 
     await logger.info(
       message ?? defaultMessage,
-      metadata: logContext.toPrivacyMetadata(),
+      metadata: logContext.metadata.toPrivacyMetadata(),
       source: "SnapshotService"
     )
   }
@@ -58,7 +58,7 @@ public struct SnapshotLoggingAdapter {
 
     await logger.info(
       message ?? defaultMessage,
-      metadata: logContext.toPrivacyMetadata(),
+      metadata: logContext.metadata.toPrivacyMetadata(),
       source: "SnapshotService"
     )
   }
@@ -80,7 +80,7 @@ public struct SnapshotLoggingAdapter {
 
     await logger.error(
       message ?? defaultMessage,
-      metadata: logContext.toPrivacyMetadata(),
+      metadata: logContext.metadata.toPrivacyMetadata(),
       source: "SnapshotService"
     )
   }
@@ -98,16 +98,15 @@ public struct SnapshotLoggingAdapter {
   ) async {
     let errorDescription=error.localizedDescription
     let message="Operation failed: \(errorDescription)"
-    var metadata=logContext.toPrivacyMetadata()
-
-    // Add error information to metadata
-    metadata["error"]=PrivacyMetadataValue(value: errorDescription, privacy: .private)
-    metadata["errorType"]=PrivacyMetadataValue(value: String(describing: type(of: error)),
-                                               privacy: .public)
+    
+    // Create a new metadata collection with error information
+    var metadataCollection=logContext.metadata
+    metadataCollection=metadataCollection.withPrivate(key: "error", value: errorDescription)
+    metadataCollection=metadataCollection.withPublic(key: "errorType", value: String(describing: type(of: error)))
 
     await logger.error(
       message,
-      metadata: metadata,
+      metadata: metadataCollection.toPrivacyMetadata(),
       source: logContext.getSource()
     )
   }
@@ -127,7 +126,7 @@ public struct SnapshotLoggingAdapter {
 
     await logger.info(
       message ?? defaultMessage,
-      metadata: logContext.toPrivacyMetadata(),
+      metadata: logContext.metadata.toPrivacyMetadata(),
       source: logContext.getSource()
     )
   }
@@ -147,26 +146,27 @@ public struct SnapshotLoggingAdapter {
     operation: String,
     additionalMetadata: [String: Any]=[:]
   ) async {
-    var metadata=PrivacyMetadata()
+    var metadataCollection=LogMetadataDTOCollection()
 
     if let snapshotID {
-      metadata["snapshotID"]=PrivacyMetadataValue(value: snapshotID, privacy: .public)
+      metadataCollection=metadataCollection.withPublic(key: "snapshotID", value: snapshotID)
     }
 
     if let repositoryID {
-      metadata["repositoryID"]=PrivacyMetadataValue(value: repositoryID, privacy: .public)
+      metadataCollection=metadataCollection.withPublic(key: "repositoryID", value: repositoryID)
     }
 
-    metadata["operation"]=PrivacyMetadataValue(value: operation, privacy: .public)
+    metadataCollection=metadataCollection.withPublic(key: "operation", value: operation)
 
     // Add any additional metadata
     for (key, value) in additionalMetadata {
-      metadata[key]=PrivacyMetadataValue(anyValue: value, privacy: .auto)
+      let stringValue=String(describing: value)
+      metadataCollection=metadataCollection.withAuto(key: key, value: stringValue)
     }
 
     await logger.info(
       "Starting snapshot operation: \(operation)",
-      metadata: metadata,
+      metadata: metadataCollection.toPrivacyMetadata(),
       source: "SnapshotService"
     )
   }
@@ -188,76 +188,78 @@ public struct SnapshotLoggingAdapter {
     result: [String: Any]=[:],
     additionalMetadata: [String: Any]=[:]
   ) async {
-    var metadata=PrivacyMetadata()
+    var metadataCollection=LogMetadataDTOCollection()
 
     if let snapshotID {
-      metadata["snapshotID"]=PrivacyMetadataValue(value: snapshotID, privacy: .public)
+      metadataCollection=metadataCollection.withPublic(key: "snapshotID", value: snapshotID)
     }
 
     if let repositoryID {
-      metadata["repositoryID"]=PrivacyMetadataValue(value: repositoryID, privacy: .public)
+      metadataCollection=metadataCollection.withPublic(key: "repositoryID", value: repositoryID)
     }
 
-    metadata["operation"]=PrivacyMetadataValue(value: operation, privacy: .public)
-    metadata["status"]=PrivacyMetadataValue(value: "success", privacy: .public)
-
-    // Add result information
-    for (key, value) in result {
-      metadata[key]=PrivacyMetadataValue(anyValue: value, privacy: .auto)
-    }
+    metadataCollection=metadataCollection.withPublic(key: "operation", value: operation)
+    metadataCollection=metadataCollection.withPublic(key: "status", value: "success")
 
     // Add any additional metadata
     for (key, value) in additionalMetadata {
-      metadata[key]=PrivacyMetadataValue(anyValue: value, privacy: .auto)
+      let stringValue=String(describing: value)
+      metadataCollection=metadataCollection.withAuto(key: key, value: stringValue)
+    }
+
+    // Add result information
+    for (key, value) in result {
+      let stringValue=String(describing: value)
+      metadataCollection=metadataCollection.withAuto(key: key, value: stringValue)
     }
 
     await logger.info(
-      "Completed snapshot operation: \(operation)",
-      metadata: metadata,
+      "Snapshot operation completed: \(operation)",
+      metadata: metadataCollection.toPrivacyMetadata(),
       source: "SnapshotService"
     )
   }
 
   /**
-   Logs an error that occurred during a snapshot operation.
+   Logs an error during a snapshot operation.
 
    - Parameters:
+      - error: The error that occurred
       - snapshotID: Optional ID of the snapshot
       - repositoryID: Optional ID of the repository
-      - operation: The operation where the error occurred
-      - error: The error that occurred
+      - operation: The operation that was performed
       - additionalMetadata: Any additional metadata to include
    */
   public func logOperationError(
+    error: Error,
     snapshotID: String?=nil,
     repositoryID: String?=nil,
     operation: String,
-    error: Error,
     additionalMetadata: [String: Any]=[:]
   ) async {
-    var metadata=PrivacyMetadata()
+    var metadataCollection=LogMetadataDTOCollection()
 
     if let snapshotID {
-      metadata["snapshotID"]=PrivacyMetadataValue(value: snapshotID, privacy: .public)
+      metadataCollection=metadataCollection.withPublic(key: "snapshotID", value: snapshotID)
     }
 
     if let repositoryID {
-      metadata["repositoryID"]=PrivacyMetadataValue(value: repositoryID, privacy: .public)
+      metadataCollection=metadataCollection.withPublic(key: "repositoryID", value: repositoryID)
     }
 
-    metadata["operation"]=PrivacyMetadataValue(value: operation, privacy: .public)
-    metadata["error"]=PrivacyMetadataValue(value: error.localizedDescription, privacy: .private)
-    metadata["errorType"]=PrivacyMetadataValue(value: String(describing: type(of: error)),
-                                               privacy: .public)
+    metadataCollection=metadataCollection.withPublic(key: "operation", value: operation)
+    metadataCollection=metadataCollection.withPrivate(key: "error", value: error.localizedDescription)
+    metadataCollection=metadataCollection.withPublic(key: "errorType", value: String(describing: type(of: error)))
 
     // Add any additional metadata
     for (key, value) in additionalMetadata {
-      metadata[key]=PrivacyMetadataValue(anyValue: value, privacy: .auto)
+      let stringValue=String(describing: value)
+      metadataCollection=metadataCollection.withAuto(key: key, value: stringValue)
     }
 
     await logger.error(
       "Error during snapshot operation: \(operation)",
-      metadata: metadata,
+      metadata: metadataCollection.toPrivacyMetadata(),
       source: "SnapshotService"
     )
   }
