@@ -9,11 +9,20 @@ import SecurityCoreInterfaces
 import UmbraErrors
 
 /**
+ Error type for secure storage operations
+ */
+public enum StorageError: Error {
+  /// The requested data was not found
+  case dataNotFound
+  /// The operation failed with a specific underlying error
+  case operationFailed(Error)
+}
+
+/**
  An adapter that implements SecureStorageProtocol using SecureCryptoStorage.
 
  This adapter class allows the SecureCryptoStorage to be used with the
- SecureStorageProtocol interface, providing a unified interface for secure
- data storage operations.
+ SecureStorageProtocol interface, providing a clean abstraction for secure storage operations.
  */
 public final class SecureStorageAdapter: SecureStorageProtocol {
   /// The underlying secure storage implementation
@@ -30,8 +39,8 @@ public final class SecureStorageAdapter: SecureStorageProtocol {
       - logger: Logger for recording operations
    */
   public init(storage: SecureCryptoStorage, logger: any LoggingProtocol) {
-    self.storage=storage
-    self.logger=logger
+    self.storage = storage
+    self.logger = logger
   }
 
   /**
@@ -46,33 +55,50 @@ public final class SecureStorageAdapter: SecureStorageProtocol {
   public func storeData(
     _ data: [UInt8],
     withIdentifier identifier: String
-  ) async -> Result<Void, SecurityStorageError> {
+  ) async -> Result<Void, StorageCoreError> {
+    await logger.debug(
+      "Storing data to secure storage",
+      context: CryptoLogContext(
+        operation: "storeData",
+        additionalContext: LogMetadataDTOCollection().withPrivate(
+          key: "identifier", 
+          value: identifier
+        ).withPublic(
+          key: "dataSize", 
+          value: "\(data.count)"
+        )
+      )
+    )
+    
     do {
       try await storage.storeData(Data(data), identifier: identifier)
 
-      var metadata=PrivacyMetadata()
-      metadata["dataSize"]=PrivacyMetadataValue(value: "\(data.count)", privacy: .public)
-      metadata["identifier"]=PrivacyMetadataValue(value: identifier, privacy: .private)
-
       await logger.debug(
         "Data stored successfully",
-        metadata: metadata,
-        source: "SecureStorageAdapter"
+        context: CryptoLogContext(
+          operation: "storeData",
+          additionalContext: LogMetadataDTOCollection().withPrivate(
+            key: "identifier", 
+            value: identifier
+          )
+        )
       )
-
       return .success(())
     } catch {
-      var metadata=PrivacyMetadata()
-      metadata["error"]=PrivacyMetadataValue(value: error.localizedDescription, privacy: .public)
-      metadata["identifier"]=PrivacyMetadataValue(value: identifier, privacy: .private)
-
       await logger.error(
         "Failed to store data",
-        metadata: metadata,
-        source: "SecureStorageAdapter"
+        context: CryptoLogContext(
+          operation: "storeData",
+          additionalContext: LogMetadataDTOCollection().withPrivate(
+            key: "identifier", 
+            value: identifier
+          ).withPrivate(
+            key: "error",
+            value: "\(error)"
+          )
+        )
       )
-
-      return .failure(.operationFailed(error.localizedDescription))
+      return .failure(.operationFailed("Failed to store data: \(error.localizedDescription)"))
     }
   }
 
@@ -83,34 +109,57 @@ public final class SecureStorageAdapter: SecureStorageProtocol {
 
    - Returns: Result containing the retrieved data or error details
    */
-  public func retrieveData(withIdentifier identifier: String) async
-  -> Result<[UInt8], SecurityStorageError> {
+  public func retrieveData(
+    withIdentifier identifier: String
+  ) async -> Result<[UInt8], StorageCoreError> {
+    await logger.debug(
+      "Retrieving data from secure storage",
+      context: CryptoLogContext(
+        operation: "retrieveData",
+        additionalContext: LogMetadataDTOCollection().withPrivate(
+          key: "identifier", 
+          value: identifier
+        )
+      )
+    )
+    
     do {
-      let data=try await storage.retrieveData(identifier: identifier)
-
-      var metadata=PrivacyMetadata()
-      metadata["dataSize"]=PrivacyMetadataValue(value: "\(data.count)", privacy: .public)
-      metadata["identifier"]=PrivacyMetadataValue(value: identifier, privacy: .private)
+      let data = try await storage.retrieveData(identifier: identifier)
 
       await logger.debug(
         "Data retrieved successfully",
-        metadata: metadata,
-        source: "SecureStorageAdapter"
+        context: CryptoLogContext(
+          operation: "retrieveData",
+          additionalContext: LogMetadataDTOCollection().withPrivate(
+            key: "identifier", 
+            value: identifier
+          ).withPublic(
+            key: "dataSize", 
+            value: "\(data.count)"
+          )
+        )
       )
-
       return .success(Array(data))
     } catch {
-      var metadata=PrivacyMetadata()
-      metadata["error"]=PrivacyMetadataValue(value: error.localizedDescription, privacy: .public)
-      metadata["identifier"]=PrivacyMetadataValue(value: identifier, privacy: .private)
-
       await logger.error(
         "Failed to retrieve data",
-        metadata: metadata,
-        source: "SecureStorageAdapter"
+        context: CryptoLogContext(
+          operation: "retrieveData",
+          additionalContext: LogMetadataDTOCollection().withPrivate(
+            key: "identifier", 
+            value: identifier
+          ).withPrivate(
+            key: "error",
+            value: "\(error)"
+          )
+        )
       )
-
-      return .failure(.dataNotFound)
+      
+      if let storageError = error as? StorageCoreError, case .notFound = storageError {
+        return .failure(.dataNotFound)
+      }
+      
+      return .failure(.operationFailed("Failed to retrieve data: \(error.localizedDescription)"))
     }
   }
 
@@ -121,33 +170,91 @@ public final class SecureStorageAdapter: SecureStorageProtocol {
 
    - Returns: Result indicating success or failure with error details
    */
-  public func deleteData(withIdentifier identifier: String) async
-  -> Result<Void, SecurityStorageError> {
+  public func deleteData(
+    withIdentifier identifier: String
+  ) async -> Result<Void, StorageCoreError> {
+    await logger.debug(
+      "Deleting data from secure storage",
+      context: CryptoLogContext(
+        operation: "deleteData",
+        additionalContext: LogMetadataDTOCollection().withPrivate(
+          key: "identifier", 
+          value: identifier
+        )
+      )
+    )
+    
     do {
       try await storage.deleteData(identifier: identifier)
 
-      var metadata=PrivacyMetadata()
-      metadata["identifier"]=PrivacyMetadataValue(value: identifier, privacy: .private)
-
       await logger.debug(
         "Data deleted successfully",
-        metadata: metadata,
-        source: "SecureStorageAdapter"
+        context: CryptoLogContext(
+          operation: "deleteData",
+          additionalContext: LogMetadataDTOCollection().withPrivate(
+            key: "identifier", 
+            value: identifier
+          )
+        )
       )
-
       return .success(())
     } catch {
-      var metadata=PrivacyMetadata()
-      metadata["error"]=PrivacyMetadataValue(value: error.localizedDescription, privacy: .public)
-      metadata["identifier"]=PrivacyMetadataValue(value: identifier, privacy: .private)
-
       await logger.error(
         "Failed to delete data",
-        metadata: metadata,
-        source: "SecureStorageAdapter"
+        context: CryptoLogContext(
+          operation: "deleteData",
+          additionalContext: LogMetadataDTOCollection().withPrivate(
+            key: "identifier", 
+            value: identifier
+          ).withPrivate(
+            key: "error",
+            value: "\(error)"
+          )
+        )
       )
+      return .failure(.operationFailed("Failed to delete data: \(error.localizedDescription)"))
+    }
+  }
 
-      return .failure(.dataNotFound)
+  /**
+   Checks if data exists with the specified identifier.
+
+   - Parameter identifier: The identifier of the data to check
+
+   - Returns: Result containing a boolean indicating existence or error details
+   */
+  public func containsData(
+    withIdentifier identifier: String
+  ) async -> Result<Bool, StorageCoreError> {
+    await logger.debug(
+      "Querying data existence in secure storage",
+      context: CryptoLogContext(
+        operation: "containsData",
+        additionalContext: LogMetadataDTOCollection().withPrivate(
+          key: "identifier", 
+          value: identifier
+        )
+      )
+    )
+    
+    do {
+      let exists = try await storage.containsData(identifier: identifier)
+      return .success(exists)
+    } catch {
+      await logger.error(
+        "Failed to query data existence",
+        context: CryptoLogContext(
+          operation: "containsData",
+          additionalContext: LogMetadataDTOCollection().withPrivate(
+            key: "identifier", 
+            value: identifier
+          ).withPrivate(
+            key: "error",
+            value: "\(error)"
+          )
+        )
+      )
+      return .failure(.operationFailed("Failed to query data existence: \(error.localizedDescription)"))
     }
   }
 
@@ -156,15 +263,15 @@ public final class SecureStorageAdapter: SecureStorageProtocol {
 
    - Returns: Result containing array of identifiers or error details
    */
-  public func listDataIdentifiers() async -> Result<[String], SecurityStorageError> {
-    let metadata=PrivacyMetadata()
-
+  public func listDataIdentifiers() async -> Result<[String], StorageCoreError> {
     await logger.warning(
       "List data identifiers operation not supported",
-      metadata: metadata,
-      source: "SecureStorageAdapter"
+      context: CryptoLogContext(
+        operation: "listIdentifiers",
+        additionalContext: LogMetadataDTOCollection()
+      )
     )
-
-    return .failure(.unsupportedOperation)
+    
+    return .failure(.operationFailed("Operation not supported in this implementation"))
   }
 }

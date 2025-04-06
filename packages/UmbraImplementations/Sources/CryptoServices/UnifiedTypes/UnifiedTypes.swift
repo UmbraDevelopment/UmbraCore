@@ -100,6 +100,13 @@ public enum UnifiedCryptoTypes {
         padding=nil
       }
     }
+    
+    // Implement Equatable manually
+    public static func == (lhs: EncryptionOptions, rhs: EncryptionOptions) -> Bool {
+      lhs.algorithm == rhs.algorithm &&
+      lhs.authenticatedData == rhs.authenticatedData &&
+      lhs.padding == rhs.padding
+    }
   }
 
   /**
@@ -109,7 +116,7 @@ public enum UnifiedCryptoTypes {
     /// The encryption algorithm that was used (needed for decryption)
     public let algorithm: EncryptionAlgorithm
 
-    /// Optional authenticated data for authenticated encryption modes
+    /// Optional authenticated data that was used for encryption
     public let authenticatedData: [UInt8]?
 
     /// Optional padding mode for algorithms that require padding
@@ -130,16 +137,8 @@ public enum UnifiedCryptoTypes {
     public init(from options: SecurityCoreInterfaces.DecryptionOptions?) {
       // Default values if options is nil
       if let options {
-        // Map the algorithm
-        switch options.algorithm {
-          case .aes256GCM:
-            algorithm = .aes256GCM
-          case .aes256CBC:
-            algorithm = .aes256CBC
-          case .chacha20Poly1305:
-            algorithm = .chacha20Poly1305
-        }
-
+        // Map the algorithm - both use the same type
+        algorithm=options.algorithm
         authenticatedData=options.authenticatedData
         // Padding is optional and depends on implementation
         padding=nil
@@ -149,6 +148,13 @@ public enum UnifiedCryptoTypes {
         authenticatedData=nil
         padding=nil
       }
+    }
+    
+    // Implement Equatable manually
+    public static func == (lhs: DecryptionOptions, rhs: DecryptionOptions) -> Bool {
+      lhs.algorithm == rhs.algorithm &&
+      lhs.authenticatedData == rhs.authenticatedData &&
+      lhs.padding == rhs.padding
     }
   }
 
@@ -229,6 +235,17 @@ public enum UnifiedCryptoTypes {
           false
       }
     }
+  }
+
+  /**
+   Padding mode for encryption algorithms.
+   */
+  public enum PaddingMode: String, Sendable, Equatable, CaseIterable {
+    /// No padding
+    case none
+
+    /// PKCS#7 padding
+    case pkcs7
   }
 }
 

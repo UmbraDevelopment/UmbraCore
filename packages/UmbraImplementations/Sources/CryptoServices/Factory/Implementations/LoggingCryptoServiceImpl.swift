@@ -48,8 +48,16 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
   ) async -> Result<String, SecurityStorageError> {
     await logger.info(
       "Encrypting data with identifier \(dataIdentifier) using key \(keyIdentifier)",
-      metadata: PrivacyMetadata(),
-      source: "LoggingCryptoService"
+      context: CryptoLogContext(
+        operation: "encrypt",
+        additionalContext: LogMetadataDTOCollection().withPublic(
+          key: "dataIdentifier", 
+          value: dataIdentifier
+        ).withPublic(
+          key: "keyIdentifier", 
+          value: keyIdentifier
+        )
+      )
     )
 
     let result=await wrapped.encrypt(
@@ -62,14 +70,24 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
       case let .success(identifier):
         await logger.info(
           "Successfully encrypted data to identifier: \(identifier)",
-          metadata: PrivacyMetadata(),
-          source: "LoggingCryptoService"
+          context: CryptoLogContext(
+            operation: "encrypt",
+            additionalContext: LogMetadataDTOCollection().withPrivate(
+              key: "identifier", 
+              value: identifier
+            )
+          )
         )
       case let .failure(error):
         await logger.error(
           "Failed to encrypt data: \(error)",
-          metadata: PrivacyMetadata(),
-          source: "LoggingCryptoService"
+          context: CryptoLogContext(
+            operation: "encrypt",
+            additionalContext: LogMetadataDTOCollection().withPrivate(
+              key: "error", 
+              value: "\(error)"
+            )
+          )
         )
     }
 
@@ -92,8 +110,16 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
   ) async -> Result<String, SecurityStorageError> {
     await logger.info(
       "Decrypting data with identifier \(encryptedDataIdentifier) using key \(keyIdentifier)",
-      metadata: PrivacyMetadata(),
-      source: "LoggingCryptoService"
+      context: CryptoLogContext(
+        operation: "decrypt",
+        additionalContext: LogMetadataDTOCollection().withPublic(
+          key: "encryptedDataIdentifier", 
+          value: encryptedDataIdentifier
+        ).withPublic(
+          key: "keyIdentifier", 
+          value: keyIdentifier
+        )
+      )
     )
 
     let result=await wrapped.decrypt(
@@ -106,14 +132,24 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
       case let .success(identifier):
         await logger.info(
           "Successfully decrypted data to identifier: \(identifier)",
-          metadata: PrivacyMetadata(),
-          source: "LoggingCryptoService"
+          context: CryptoLogContext(
+            operation: "decrypt",
+            additionalContext: LogMetadataDTOCollection().withPrivate(
+              key: "identifier", 
+              value: identifier
+            )
+          )
         )
       case let .failure(error):
         await logger.error(
           "Failed to decrypt data: \(error)",
-          metadata: PrivacyMetadata(),
-          source: "LoggingCryptoService"
+          context: CryptoLogContext(
+            operation: "decrypt",
+            additionalContext: LogMetadataDTOCollection().withPrivate(
+              key: "error", 
+              value: "\(error)"
+            )
+          )
         )
     }
 
@@ -134,8 +170,13 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
   ) async -> Result<String, SecurityStorageError> {
     await logger.info(
       "Hashing data with identifier \(dataIdentifier)",
-      metadata: PrivacyMetadata(),
-      source: "LoggingCryptoService"
+      context: CryptoLogContext(
+        operation: "hash",
+        additionalContext: LogMetadataDTOCollection().withPublic(
+          key: "dataIdentifier", 
+          value: dataIdentifier
+        )
+      )
     )
 
     let result=await wrapped.hash(
@@ -147,14 +188,24 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
       case let .success(identifier):
         await logger.info(
           "Successfully hashed data to identifier: \(identifier)",
-          metadata: PrivacyMetadata(),
-          source: "LoggingCryptoService"
+          context: CryptoLogContext(
+            operation: "hash",
+            additionalContext: LogMetadataDTOCollection().withPrivate(
+              key: "identifier", 
+              value: identifier
+            )
+          )
         )
       case let .failure(error):
         await logger.error(
           "Failed to hash data: \(error)",
-          metadata: PrivacyMetadata(),
-          source: "LoggingCryptoService"
+          context: CryptoLogContext(
+            operation: "hash",
+            additionalContext: LogMetadataDTOCollection().withPrivate(
+              key: "error", 
+              value: "\(error)"
+            )
+          )
         )
     }
 
@@ -177,8 +228,16 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
   ) async -> Result<Bool, SecurityStorageError> {
     await logger.info(
       "Verifying hash for data with identifier \(dataIdentifier) against hash \(hashIdentifier)",
-      metadata: PrivacyMetadata(),
-      source: "LoggingCryptoService"
+      context: CryptoLogContext(
+        operation: "verifyHash",
+        additionalContext: LogMetadataDTOCollection().withPublic(
+          key: "dataIdentifier", 
+          value: dataIdentifier
+        ).withPublic(
+          key: "hashIdentifier", 
+          value: hashIdentifier
+        )
+      )
     )
 
     let result=await wrapped.verifyHash(
@@ -191,14 +250,24 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
       case let .success(matches):
         await logger.info(
           "Hash verification result: \(matches ? "Match" : "No match")",
-          metadata: PrivacyMetadata(),
-          source: "LoggingCryptoService"
+          context: CryptoLogContext(
+            operation: "verifyHash",
+            additionalContext: LogMetadataDTOCollection().withPublic(
+              key: "result", 
+              value: matches ? "match" : "no match"
+            )
+          )
         )
       case let .failure(error):
         await logger.error(
           "Failed to verify hash: \(error)",
-          metadata: PrivacyMetadata(),
-          source: "LoggingCryptoService"
+          context: CryptoLogContext(
+            operation: "verifyHash",
+            additionalContext: LogMetadataDTOCollection().withPrivate(
+              key: "error", 
+              value: "\(error)"
+            )
+          )
         )
     }
 
@@ -219,8 +288,13 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
   ) async -> Result<String, SecurityStorageError> {
     await logger.info(
       "Generating key with length \(length) bytes",
-      metadata: PrivacyMetadata(),
-      source: "LoggingCryptoService"
+      context: CryptoLogContext(
+        operation: "generateKey",
+        additionalContext: LogMetadataDTOCollection().withPublic(
+          key: "keyLength", 
+          value: "\(length)"
+        )
+      )
     )
 
     let result=await wrapped.generateKey(
@@ -232,14 +306,24 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
       case let .success(identifier):
         await logger.info(
           "Successfully generated key with identifier: \(identifier)",
-          metadata: PrivacyMetadata(),
-          source: "LoggingCryptoService"
+          context: CryptoLogContext(
+            operation: "generateKey",
+            additionalContext: LogMetadataDTOCollection().withPrivate(
+              key: "identifier", 
+              value: identifier
+            )
+          )
         )
       case let .failure(error):
         await logger.error(
           "Failed to generate key: \(error)",
-          metadata: PrivacyMetadata(),
-          source: "LoggingCryptoService"
+          context: CryptoLogContext(
+            operation: "generateKey",
+            additionalContext: LogMetadataDTOCollection().withPrivate(
+              key: "error", 
+              value: "\(error)"
+            )
+          )
         )
     }
 
@@ -260,8 +344,13 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
   ) async -> Result<String, SecurityStorageError> {
     await logger.info(
       "Importing data\(customIdentifier != nil ? " with custom identifier \(customIdentifier!)" : "")",
-      metadata: PrivacyMetadata(),
-      source: "LoggingCryptoService"
+      context: CryptoLogContext(
+        operation: "importData",
+        additionalContext: LogMetadataDTOCollection().withPublic(
+          key: "customIdentifier", 
+          value: customIdentifier ?? ""
+        )
+      )
     )
 
     let result=await wrapped.importData(
@@ -273,14 +362,24 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
       case let .success(identifier):
         await logger.info(
           "Successfully imported data with identifier: \(identifier)",
-          metadata: PrivacyMetadata(),
-          source: "LoggingCryptoService"
+          context: CryptoLogContext(
+            operation: "importData",
+            additionalContext: LogMetadataDTOCollection().withPrivate(
+              key: "identifier", 
+              value: identifier
+            )
+          )
         )
       case let .failure(error):
         await logger.error(
           "Failed to import data: \(error)",
-          metadata: PrivacyMetadata(),
-          source: "LoggingCryptoService"
+          context: CryptoLogContext(
+            operation: "importData",
+            additionalContext: LogMetadataDTOCollection().withPrivate(
+              key: "error", 
+              value: "\(error)"
+            )
+          )
         )
     }
 
@@ -296,8 +395,13 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
   public func exportData(identifier: String) async -> Result<[UInt8], SecurityStorageError> {
     await logger.info(
       "Exporting data with identifier: \(identifier)",
-      metadata: PrivacyMetadata(),
-      source: "LoggingCryptoService"
+      context: CryptoLogContext(
+        operation: "exportData",
+        additionalContext: LogMetadataDTOCollection().withPublic(
+          key: "identifier", 
+          value: identifier
+        )
+      )
     )
 
     let result=await wrapped.exportData(identifier: identifier)
@@ -306,14 +410,24 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
       case .success:
         await logger.info(
           "Successfully exported data with identifier: \(identifier)",
-          metadata: PrivacyMetadata(),
-          source: "LoggingCryptoService"
+          context: CryptoLogContext(
+            operation: "exportData",
+            additionalContext: LogMetadataDTOCollection().withPublic(
+              key: "identifier", 
+              value: identifier
+            )
+          )
         )
       case let .failure(error):
         await logger.error(
           "Failed to export data: \(error)",
-          metadata: PrivacyMetadata(),
-          source: "LoggingCryptoService"
+          context: CryptoLogContext(
+            operation: "exportData",
+            additionalContext: LogMetadataDTOCollection().withPrivate(
+              key: "error", 
+              value: "\(error)"
+            )
+          )
         )
     }
 

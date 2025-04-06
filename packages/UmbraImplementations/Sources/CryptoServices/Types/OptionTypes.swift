@@ -1,22 +1,12 @@
 import Foundation
 import CoreSecurityTypes
-import UnifiedCryptoTypes
 
 /**
  Local module option types for encryption, decryption, hashing, and key generation.
  These types mirror the ones in SecurityCoreInterfaces to provide type-safe conversions.
  
- NOTE: These types are being deprecated in favor of the unified types defined in UnifiedCryptoTypes.
- New code should use the types from UnifiedCryptoTypes instead.
+ NOTE: These types are being deprecated in favor of using the native types from CoreSecurityTypes directly.
  */
-
-/**
- Encryption algorithm options available in this module.
- 
- DEPRECATED: Use UnifiedCryptoTypes.EncryptionAlgorithm instead.
- */
-@available(*, deprecated, message: "Use UnifiedCryptoTypes.EncryptionAlgorithm instead")
-public typealias LocalEncryptionAlgorithm = UnifiedCryptoTypes.EncryptionAlgorithm
 
 /**
  Encryption mode options available in this module.
@@ -27,113 +17,105 @@ public enum EncryptionMode: String, Sendable {
 }
 
 /**
- Encryption padding options available in this module.
+ Key type options available in this module.
  */
-public enum EncryptionPadding: String, Sendable {
-  case none="None"
-  case pkcs7="PKCS7"
+public enum KeyType: String, Sendable {
+  case aes="AES"
+  case rsa="RSA"
+  case ec="EC"
 }
 
 /**
  Options for configuring encryption operations.
- 
- DEPRECATED: Use UnifiedCryptoTypes.EncryptionOptions instead.
  */
-@available(*, deprecated, message: "Use UnifiedCryptoTypes.EncryptionOptions instead")
 public struct LocalEncryptionOptions: Sendable {
   /// The encryption algorithm to use
-  public let algorithm: UnifiedCryptoTypes.EncryptionAlgorithm
+  public let algorithm: CoreSecurityTypes.EncryptionAlgorithm
 
-  /// The encryption mode to use
+  /// The encryption mode to use (if applicable for the algorithm)
   public let mode: EncryptionMode
 
-  /// The padding scheme to use
-  public let padding: EncryptionPadding
+  /// The encryption padding to use
+  public let padding: PaddingMode
 
   /// Additional authenticated data for authenticated encryption modes
   public let additionalAuthenticatedData: [UInt8]?
 
   /**
-   Creates a new set of encryption options.
-
+   Creates a new instance with the specified options
+   
    - Parameters:
-      - algorithm: The encryption algorithm to use
-      - mode: The encryption mode to use
-      - padding: The padding scheme to use
-      - additionalAuthenticatedData: Additional data to authenticate (for GCM)
+     - algorithm: The encryption algorithm to use
+     - mode: The encryption mode to use
+     - padding: The encryption padding to use
+     - additionalAuthenticatedData: Additional authenticated data for AEAD modes
    */
   public init(
-    algorithm: UnifiedCryptoTypes.EncryptionAlgorithm = .aes256GCM,
+    algorithm: CoreSecurityTypes.EncryptionAlgorithm = .aes256GCM,
     mode: EncryptionMode = .gcm,
-    padding: EncryptionPadding = .pkcs7,
+    padding: PaddingMode = .pkcs7,
     additionalAuthenticatedData: [UInt8]?=nil
   ) {
-    self.algorithm = algorithm
-    self.mode = mode
-    self.padding = padding
-    self.additionalAuthenticatedData = additionalAuthenticatedData
+    self.algorithm=algorithm
+    self.mode=mode
+    self.padding=padding
+    self.additionalAuthenticatedData=additionalAuthenticatedData
   }
 }
 
 /**
  Options for configuring decryption operations.
  Uses the same type parameters as encryption for consistency.
- 
- DEPRECATED: Use UnifiedCryptoTypes.EncryptionOptions for decryption as well.
  */
-@available(*, deprecated, message: "Use UnifiedCryptoTypes.EncryptionOptions instead")
 public typealias LocalDecryptionOptions = LocalEncryptionOptions
 
 /**
- Hashing algorithm options available in this module.
- 
- DEPRECATED: Use CoreSecurityTypes.HashAlgorithm instead.
- */
-@available(*, deprecated, message: "Use CoreSecurityTypes.HashAlgorithm instead")
-public typealias LocalHashingAlgorithm = CoreSecurityTypes.HashAlgorithm
-
-/**
  Options for configuring hashing operations.
- 
- DEPRECATED: Use UnifiedCryptoTypes.HashingOptions instead.
  */
-@available(*, deprecated, message: "Use UnifiedCryptoTypes.HashingOptions instead")
 public struct LocalHashingOptions: Sendable {
   /// The hashing algorithm to use
   public let algorithm: CoreSecurityTypes.HashAlgorithm
 
-  /// Optional salt to use in hashing
-  public let salt: [UInt8]?
+  /// Whether to include extra salt for the hash
+  public let useSalt: Bool
+
+  /// Whether to base64 encode the output
+  public let base64Encode: Bool
 
   /**
-   Creates a new set of hashing options.
+   Initialize a new hashing options struct with the given parameters.
 
    - Parameters:
       - algorithm: The hashing algorithm to use
-      - salt: Optional salt for the hash
+      - useSalt: Whether to include salt for the hash
+      - base64Encode: Whether to base64 encode the output
    */
   public init(
     algorithm: CoreSecurityTypes.HashAlgorithm = .sha256,
-    salt: [UInt8]?=nil
+    useSalt: Bool = true,
+    base64Encode: Bool = true
   ) {
-    self.algorithm = algorithm
-    self.salt = salt
+    self.algorithm=algorithm
+    self.useSalt=useSalt
+    self.base64Encode=base64Encode
   }
 }
 
-// Provide clean migration path with type aliases to the canonical types
-public typealias EncryptionAlgorithm = UnifiedCryptoTypes.EncryptionAlgorithm
-public typealias EncryptionOptions = UnifiedCryptoTypes.EncryptionOptions
-public typealias DecryptionOptions = UnifiedCryptoTypes.EncryptionOptions  // Same options used for both
-public typealias HashingAlgorithm = CoreSecurityTypes.HashAlgorithm
-public typealias HashingOptions = UnifiedCryptoTypes.HashingOptions
-
 /**
- Key type options available in this module.
+ A sendable wrapper for a dictionary of options
  */
-public enum KeyType: String, Sendable {
-  case symmetric="Symmetric"
-  case asymmetric="Asymmetric"
+public struct SendableOptionsDictionary: Sendable {
+  /// The underlying dictionary
+  public let dictionary: [String: Any]
+  
+  /**
+   Initialize with the specified dictionary
+   
+   - Parameter dictionary: The dictionary to wrap
+   */
+  public init(dictionary: [String: Any]) {
+    self.dictionary = dictionary
+  }
 }
 
 /**
@@ -146,24 +128,33 @@ public struct KeyGenerationOptions: Sendable {
   /// Whether to use secure enclave for storage (Apple platforms only)
   public let useSecureEnclave: Bool
 
-  /// Optional custom identifier for the key
-  public let customIdentifier: String?
+  /// Whether the key is extractable
+  public let isExtractable: Bool
+
+  /// Additional options for key generation
+  public let options: SendableOptionsDictionary?
 
   /**
-   Creates a new set of key generation options.
+   Initialize a new key generation options struct with the given parameters.
 
    - Parameters:
       - keyType: The type of key to generate
       - useSecureEnclave: Whether to use secure enclave
-      - customIdentifier: Optional custom identifier
+      - isExtractable: Whether the key can be extracted
+      - options: Additional options for key generation
    */
   public init(
-    keyType: KeyType = .symmetric,
-    useSecureEnclave: Bool=false,
-    customIdentifier: String?=nil
+    keyType: KeyType = .aes,
+    useSecureEnclave: Bool = false,
+    isExtractable: Bool = true,
+    options: [String: Any]? = nil
   ) {
     self.keyType=keyType
     self.useSecureEnclave=useSecureEnclave
-    self.customIdentifier=customIdentifier
+    self.isExtractable=isExtractable
+    self.options=options.map { SendableOptionsDictionary(dictionary: $0) }
   }
 }
+
+// Type aliases for cleaner migration paths
+// public typealias EncryptionAlgorithm = CoreSecurityTypes.EncryptionAlgorithm

@@ -12,5 +12,6 @@ swift_library(
         "//packages/UmbraCoreTypes/Sources/LoggingTypes",
         "//packages/UmbraImplementations/Sources/ResticServices",
         "//packages/UmbraCoreTypes/Sources/UmbraErrors",
+        "//packages/UmbraImplementations/Sources/LoggingAdapters",
     ],
 )

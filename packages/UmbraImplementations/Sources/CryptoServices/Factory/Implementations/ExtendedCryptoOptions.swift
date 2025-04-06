@@ -4,7 +4,6 @@ import CryptoTypes
 import DomainSecurityTypes
 import Foundation
 import SecurityCoreInterfaces
-import UnifiedCryptoTypes
 
 /**
  Extended configuration options for the CryptoService implementation.
@@ -58,7 +57,7 @@ public struct FactoryCryptoOptions: Sendable {
    - Returns: A CryptoServiceOptions instance with the appropriate settings
    */
   public func toCryptoServiceOptions(
-    algorithm: EncryptionAlgorithm = .aes256GCM,
+    algorithm: CoreSecurityTypes.EncryptionAlgorithm = .aes256GCM,
     hashAlgorithm: CoreSecurityTypes.HashAlgorithm = .sha256,
     keyLength: Int=32
   ) -> CryptoServiceOptions {
@@ -103,7 +102,7 @@ extension CryptoServiceOptions {
    */
   public static func withFactoryOptions(
     _ factoryOptions: FactoryCryptoOptions,
-    algorithm: EncryptionAlgorithm = .aes256GCM,
+    algorithm: CoreSecurityTypes.EncryptionAlgorithm = .aes256GCM,
     hashAlgorithm: CoreSecurityTypes.HashAlgorithm = .sha256,
     keyLength: Int=32
   ) -> CryptoServiceOptions {
@@ -203,9 +202,9 @@ public enum KeyPurpose: String, Sendable {
 /**
  The algorithm to use for encryption.
  
- This uses the canonical EncryptionAlgorithm from UnifiedCryptoTypes.
+ This uses the canonical EncryptionAlgorithm from CoreSecurityTypes.
  */
-public typealias EncryptionAlgorithm = UnifiedCryptoTypes.EncryptionAlgorithm
+public typealias EncryptionAlgorithm = CoreSecurityTypes.EncryptionAlgorithm
 
 /**
  The algorithm to use for hashing.

@@ -2,104 +2,13 @@ import BackupInterfaces
 import Foundation
 import LoggingInterfaces
 import LoggingTypes
-
-/**
- * A backup-specific log context for structured logging of backup operations.
- *
- * This provides metadata tailored for backup operations including operation type,
- * backup location, and status information with appropriate privacy controls.
- */
-public struct BackupLogContext: LogContextDTO {
-  /// The source of the log entry
-  public let source: String?
-  
-  /// The metadata collection for this log entry
-  public let metadata: LogMetadataDTOCollection
-  
-  /// The type of backup operation being performed
-  public let operation: String
-  
-  /// The backup location or identifier (with privacy protection)
-  public let location: String
-  
-  /// The status of the operation
-  public let status: String
-  
-  /**
-   * Creates a new backup log context.
-   *
-   * - Parameters:
-   *   - operation: The type of backup operation
-   *   - location: The backup location or identifier
-   *   - status: The status of the operation
-   *   - source: The source of the log (optional)
-   *   - metadata: Additional metadata for the log entry
-   */
-  public init(
-    operation: String,
-    location: String,
-    status: String,
-    source: String? = "BackupLogger",
-    metadata: LogMetadataDTOCollection = LogMetadataDTOCollection()
-  ) {
-    self.operation = operation
-    self.location = location
-    self.status = status
-    self.source = source
-    
-    // Create a new metadata collection with backup-specific fields
-    var enhancedMetadata = metadata
-    enhancedMetadata.addPrivate(key: "operation", value: operation)
-    enhancedMetadata.addPrivate(key: "location", value: location)
-    enhancedMetadata.addPublic(key: "status", value: status)
-    
-    self.metadata = enhancedMetadata
-  }
-  
-  /**
-   * Creates an updated copy of this context with new metadata.
-   *
-   * - Parameter metadata: The new metadata collection
-   * - Returns: A new context with updated metadata
-   */
-  public func withUpdatedMetadata(_ metadata: LogMetadataDTOCollection) -> BackupLogContext {
-    BackupLogContext(
-      operation: operation,
-      location: location,
-      status: status,
-      source: source,
-      metadata: metadata
-    )
-  }
-  
-  /**
-   * Returns the source of the log entry.
-   *
-   * - Returns: The source string or nil if not available
-   */
-  public func getSource() -> String? {
-    return source
-  }
-  
-  /**
-   * Converts the context to standard log metadata.
-   *
-   * - Returns: The log metadata representation of this context
-   */
-  public func asLogMetadata() -> LogMetadata {
-    let logMetadata = LogMetadata()
-    // Convert necessary fields from the metadata collection
-    // This is a simplified conversion
-    return logMetadata
-  }
-}
+import LoggingAdapters
 
 /**
  * A domain-specific logger for backup operations.
  *
- * This logger provides structured, privacy-aware logging specifically for
- * backup operations, following the Alpha Dot Five architecture principles.
- * It ensures proper privacy classifications for sensitive information like
+ * This actor provides structured logging capabilities tailored for backup operations,
+ * with privacy controls for sensitive information such as backup locations and
  * file paths and backup metadata.
  */
 public actor BackupLogger: DomainLoggerProtocol {
@@ -110,7 +19,7 @@ public actor BackupLogger: DomainLoggerProtocol {
   private let loggingService: LoggingProtocol
   
   /**
-   * Create a new backup logger
+   * Initialises a new backup logger.
    *
    * - Parameter logger: The underlying logging service to use
    */
@@ -118,75 +27,60 @@ public actor BackupLogger: DomainLoggerProtocol {
     self.loggingService = logger
   }
   
+  // MARK: - Core logging methods
+  
   /**
-   * Log a message with the specified level
+   * Logs a message with the specified level and context.
    *
    * - Parameters:
-   *   - level: The log level
+   *   - level: The severity level of the log
+   *   - message: The message to log
+   *   - context: The context containing metadata
+   */
+  public func log(_ level: LogLevel, _ message: String, context: LogContextDTO) async {
+    let formattedMessage = "[\(domainName)] \(message)"
+    await loggingService.log(level, formattedMessage, context: context)
+  }
+  
+  /**
+   * Logs a message with the specified level.
+   *
+   * - Parameters:
+   *   - level: The severity level of the log
    *   - message: The message to log
    */
   public func log(_ level: LogLevel, _ message: String) async {
     // For backward compatibility, create a basic backup context
-    let context = BackupLogContext(
-      operation: "generic",
-      location: "unknown",
-      status: "info"
-    )
-    
+    let context = BackupLogContext(correlationID: UUID().uuidString, source: domainName)
     await log(level, message, context: context)
   }
   
   /**
-   * Log a message with the specified level and context
-   *
-   * - Parameters:
-   *   - level: The log level
-   *   - message: The message to log
-   *   - context: The backup context for the log entry
-   */
-  public func log(_ level: LogLevel, _ message: String, context: LogContextDTO) async {
-    let formattedMessage = "[\(domainName)] \(message)"
-    
-    // Use the appropriate loggers
-    if let loggingService = self.loggingService as? LoggingProtocol {
-      await loggingService.log(level, formattedMessage, context: context)
-    } else {
-      // Legacy fallback for older LoggingServiceProtocol
-      let metadata = context.asLogMetadata()
-      
-      // Use the appropriate level-specific method
-      switch level {
-        case .trace:
-          await loggingService.verbose(formattedMessage, metadata: metadata, source: domainName)
-        case .debug:
-          await loggingService.debug(formattedMessage, metadata: metadata, source: domainName)
-        case .info:
-          await loggingService.info(formattedMessage, metadata: metadata, source: domainName)
-        case .warning:
-          await loggingService.warning(formattedMessage, metadata: metadata, source: domainName)
-        case .error:
-          await loggingService.error(formattedMessage, metadata: metadata, source: domainName)
-        case .critical:
-          await loggingService.critical(formattedMessage, metadata: metadata, source: domainName)
-      }
-    }
-  }
-  
-  /**
-   * Log an error with context
+   * Logs an error with additional context.
    *
    * - Parameters:
    *   - error: The error to log
-   *   - context: The context for the log entry
+   *   - context: The log context
+   *   - message: Optional custom message
    */
-  public func logError(_ error: Error, context: LogContextDTO) async {
-    if let loggableError = error as? LoggableErrorProtocol {
-      // Use the error's built-in privacy metadata
-      let errorMetadata = loggableError.getPrivacyMetadata().toLogMetadata()
-      let formattedMessage = "[\(domainName)] \(loggableError.getLogMessage())"
+  public func logError(_ error: Error, context: LogContextDTO, message: String? = nil) async {
+    if let loggableError = error as? LoggableError {
+      // Handle loggable errors with enriched metadata
+      let errorMetadata = loggableError.getLogMetadata()
+      let formattedMessage = message ?? "[\(domainName)] \(loggableError.getLogMessage())"
       let source = "\(loggableError.getSource()) via \(domainName)"
-
-      await loggingService.error(formattedMessage, metadata: errorMetadata, source: source)
+      
+      // Create a new context with error metadata
+      if let backupContext = context as? BackupLogContext {
+        // Update the context with error information
+        let updatedContext = backupContext.withUpdatedMetadata(
+          backupContext.metadata.withPrivate(key: "error", value: error.localizedDescription)
+        )
+        await log(.error, formattedMessage, context: updatedContext)
+      } else {
+        // Use the context as is
+        await log(.error, formattedMessage, context: context)
+      }
     } else {
       // Handle standard errors
       let formattedMessage = "[\(domainName)] \(error.localizedDescription)"
@@ -335,7 +229,6 @@ public actor BackupLogger: DomainLoggerProtocol {
     error: Error,
     message: String? = nil
   ) async {
-    let defaultMessage = "Error during backup operation: \(error.localizedDescription)"
     await logError(error, context: context)
     
     if let message = message {

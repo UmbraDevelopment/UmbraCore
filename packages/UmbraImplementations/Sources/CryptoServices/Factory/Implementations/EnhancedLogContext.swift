@@ -5,71 +5,74 @@ import LoggingInterfaces
 /**
  Enhanced log context for crypto operations with privacy controls
  */
-public struct EnhancedLogContext: LogContext {
+public struct EnhancedLogContext: LogContextDTO {
   /// Domain name for the log context
   public let domainName: String
-
-  /// Source of the log message
-  public let source: String
-
-  /// Correlation ID for tracing related logs
-  public let correlationID: String?
-
-  /// Metadata with privacy tags
-  private var metadata: [String: PrivacyLevel]
-
+  
+  /// Operation name 
+  public let operationName: String
+  
+  /// Additional context metadata as key-value pairs
+  public let metadata: [String: String]
+  
+  /// Privacy level for each metadata field
+  public let privacyLevels: [String: PrivacyClassification]
+  
   /**
-   Initialises a new enhanced log context.
-
+   Initialize a new enhanced log context
+   
    - Parameters:
-     - domainName: Domain name for the log context
-     - source: Source of the log message
-     - correlationID: Correlation ID for tracing related logs
-     - metadata: Metadata with privacy tags
+     - domainName: The domain name for this context
+     - operationName: The operation name
+     - metadata: Additional metadata as key-value pairs
+     - privacyLevels: Privacy levels for each metadata field
    */
   public init(
     domainName: String,
-    source: String,
-    correlationID: String?=nil,
-    metadata: [String: PrivacyLevel]=[:]
+    operationName: String,
+    metadata: [String: String] = [:],
+    privacyLevels: [String: PrivacyClassification] = [:]
   ) {
-    self.domainName=domainName
-    self.source=source
-    self.correlationID=correlationID
-    self.metadata=metadata
+    self.domainName = domainName
+    self.operationName = operationName
+    self.metadata = metadata
+    self.privacyLevels = privacyLevels
   }
-
+  
   /**
-   Updates metadata in the log context.
-
-   - Parameter newMetadata: New metadata to add or update
+   Get the privacy level for a specific metadata key
+   
+   - Parameter key: The metadata key
+   - Returns: The privacy level, or .auto if not specified
    */
-  public mutating func updateMetadata(_ newMetadata: [String: PrivacyLevel]) {
-    for (key, value) in newMetadata {
-      metadata[key]=value
-    }
+  public func privacyLevel(for key: String) -> PrivacyClassification {
+    return privacyLevels[key] ?? .auto
   }
-
+  
   /**
-   Creates a privacy metadata object from the current metadata.
-
-   - Returns: A privacy metadata object
+   Get metadata collection to use with loggers
+   
+   - Returns: A metadata collection with privacy annotations
    */
-  public func toPrivacyMetadata() -> LogMetadataDTO {
-    var result=LogMetadataDTO()
-
+  public func getMetadataCollection() -> LogMetadataDTOCollection {
+    let collection = LogMetadataDTOCollection()
+    
     for (key, value) in metadata {
-      switch value {
-        case let .public(string):
-          result.addPublic(key: key, value: string)
-        case let .private(string):
-          result.addPrivate(key: key, value: string)
-        case let .hash(string):
-          result.addHash(key: key, value: string)
+      let privacy = privacyLevel(for: key)
+      
+      switch privacy {
+      case .private:
+        _ = collection.withPrivate(key: key, value: value)
+      case .public:
+        _ = collection.withPublic(key: key, value: value)
+      case .sensitive:
+        _ = collection.withSensitive(key: key, value: value)
+      case .auto:
+        _ = collection.withPublic(key: key, value: value)
       }
     }
-
-    return result
+    
+    return collection
   }
 }
 

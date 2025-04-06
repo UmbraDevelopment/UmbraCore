@@ -21,11 +21,12 @@ public actor CryptoLogger: PrivacyAwareLoggingProtocol {
     /// The wrapped logger implementation
     private let baseLogger: PrivacyAwareLoggingProtocol
     
-    /// The logging actor used by this logger
+    /// The underlying logging actor, populated at init time
+    private let _loggingActor: LoggingActor
+    
+    /// The logging actor used by this logger (non-async property to satisfy protocol)
     public nonisolated var loggingActor: LoggingActor {
-        get async {
-            await baseLogger.loggingActor
-        }
+        return _loggingActor
     }
     
     // MARK: - Initialization
@@ -35,8 +36,9 @@ public actor CryptoLogger: PrivacyAwareLoggingProtocol {
      
      - Parameter baseLogger: The underlying logger to use
      */
-    public init(baseLogger: PrivacyAwareLoggingProtocol) {
+    public init(baseLogger: PrivacyAwareLoggingProtocol) async {
         self.baseLogger = baseLogger
+        self._loggingActor = await baseLogger.loggingActor
     }
     
     // MARK: - PrivacyAwareLoggingProtocol Implementation
@@ -65,6 +67,15 @@ public actor CryptoLogger: PrivacyAwareLoggingProtocol {
     /// Log an error with context
     public func logError(_ error: Error, context: LogContextDTO) async {
         await baseLogger.logError(error, context: context)
+    }
+    
+    /// Log an error with specific privacy level and context
+    public func logError(
+        _ error: Error,
+        privacyLevel: LogPrivacyLevel,
+        context: LogContextDTO
+    ) async {
+        await baseLogger.logError(error, privacyLevel: privacyLevel, context: context)
     }
     
     /// Log a debug message with context

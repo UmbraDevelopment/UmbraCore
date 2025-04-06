@@ -76,14 +76,14 @@ public actor SecureCryptoStorage {
         throw UCryptoError.storageFailed("Failed to store key")
       }
 
-      var metadata=PrivacyMetadata()
-      metadata["purpose"]=PrivacyMetadataValue(value: purpose, privacy: .public)
-      metadata["keySize"]=PrivacyMetadataValue(value: "\(key.count)", privacy: .public)
-
       await logger.debug(
         "Stored cryptographic key securely",
-        metadata: metadata,
-        source: "SecureCryptoStorage"
+        context: CryptoLogContext(
+          operation: "storeKey",
+          additionalContext: LogMetadataDTOCollection()
+            .withPublic(key: "keyType", value: "symmetric")
+            .withPublic(key: "keySize", value: "256")
+        )
       )
     } catch {
       throw UCryptoError
@@ -106,13 +106,14 @@ public actor SecureCryptoStorage {
 
       switch result {
         case let .success(keyData):
-          var metadata=PrivacyMetadata()
-          metadata["keySize"]=PrivacyMetadataValue(value: "\(keyData.count)", privacy: .public)
-
           await logger.debug(
             "Retrieved cryptographic key",
-            metadata: metadata,
-            source: "SecureCryptoStorage"
+            context: CryptoLogContext(
+              operation: "retrieveKey",
+              additionalContext: LogMetadataDTOCollection()
+                .withPublic(key: "keyType", value: "symmetric")
+                .withPublic(key: "keySize", value: "256")
+            )
           )
 
           return Data(keyData)
@@ -135,6 +136,13 @@ public actor SecureCryptoStorage {
   public func deleteKey(
     identifier: String
   ) async throws {
+    await logger.debug(
+      "Deleted cryptographic key",
+      context: CryptoLogContext(
+        operation: "deleteKey"
+      )
+    )
+
     do {
       let result=await secureStorage.deleteData(withIdentifier: identifier)
 
@@ -144,8 +152,9 @@ public actor SecureCryptoStorage {
 
       await logger.debug(
         "Deleted cryptographic key",
-        metadata: nil,
-        source: "SecureCryptoStorage"
+        context: CryptoLogContext(
+          operation: "deleteKey"
+        )
       )
     } catch {
       throw UCryptoError
@@ -177,13 +186,14 @@ public actor SecureCryptoStorage {
         throw UCryptoError.storageFailed("Failed to store encrypted data")
       }
 
-      var metadata=PrivacyMetadata()
-      metadata["dataSize"]=PrivacyMetadataValue(value: "\(data.count)", privacy: .public)
-
       await logger.debug(
         "Stored encrypted data securely",
-        metadata: metadata,
-        source: "SecureCryptoStorage"
+        context: CryptoLogContext(
+          operation: "storeEncryptedData",
+          additionalContext: LogMetadataDTOCollection()
+            .withPublic(key: "dataType", value: "encrypted")
+            .withPublic(key: "dataSize", value: "\(data.count)")
+        )
       )
     } catch {
       throw UCryptoError
@@ -206,14 +216,14 @@ public actor SecureCryptoStorage {
 
       switch result {
         case let .success(encryptedData):
-          var metadata=PrivacyMetadata()
-          metadata["dataSize"]=PrivacyMetadataValue(value: "\(encryptedData.count)",
-                                                    privacy: .public)
-
           await logger.debug(
             "Retrieved encrypted data",
-            metadata: metadata,
-            source: "SecureCryptoStorage"
+            context: CryptoLogContext(
+              operation: "retrieveEncryptedData",
+              additionalContext: LogMetadataDTOCollection()
+                .withPublic(key: "dataType", value: "encrypted")
+                .withPublic(key: "dataSize", value: "\(encryptedData.count)")
+            )
           )
 
           return Data(encryptedData)
@@ -252,15 +262,14 @@ public actor SecureCryptoStorage {
     // We're not actually doing the derivation here since that's platform-specific
     // This is just a mock implementation that would be replaced in a real system
 
-    var metadata=PrivacyMetadata()
-    metadata["iterations"]=PrivacyMetadataValue(value: "\(iterations)", privacy: .public)
-    metadata["keyLength"]=PrivacyMetadataValue(value: "\(keyLength)", privacy: .public)
-    metadata["saltLength"]=PrivacyMetadataValue(value: "\(salt.count)", privacy: .public)
-
     await logger.debug(
       "Derived key from password",
-      metadata: metadata,
-      source: "SecureCryptoStorage"
+      context: CryptoLogContext(
+        operation: "deriveKey",
+        additionalContext: LogMetadataDTOCollection()
+          .withPublic(key: "saltLength", value: "\(salt.count)")
+          .withPublic(key: "keySize", value: "\(keyLength)")
+      )
     )
 
     return identifier
@@ -288,13 +297,14 @@ public actor SecureCryptoStorage {
         throw UCryptoError.storageFailed("Failed to store data")
       }
 
-      var metadata=PrivacyMetadata()
-      metadata["dataSize"]=PrivacyMetadataValue(value: "\(data.count)", privacy: .public)
-
       await logger.debug(
         "Stored data securely",
-        metadata: metadata,
-        source: "SecureCryptoStorage"
+        context: CryptoLogContext(
+          operation: "storeData",
+          additionalContext: LogMetadataDTOCollection()
+            .withPublic(key: "dataType", value: "plain")
+            .withPublic(key: "dataSize", value: "\(data.count)")
+        )
       )
     } catch {
       throw UCryptoError
@@ -317,13 +327,14 @@ public actor SecureCryptoStorage {
 
       switch result {
         case let .success(data):
-          var metadata=PrivacyMetadata()
-          metadata["dataSize"]=PrivacyMetadataValue(value: "\(data.count)", privacy: .public)
-
           await logger.debug(
             "Retrieved data",
-            metadata: metadata,
-            source: "SecureCryptoStorage"
+            context: CryptoLogContext(
+              operation: "retrieveData",
+              additionalContext: LogMetadataDTOCollection()
+                .withPublic(key: "dataType", value: "plain")
+                .withPublic(key: "dataSize", value: "\(data.count)")
+            )
           )
 
           return Data(data)
@@ -348,8 +359,14 @@ public actor SecureCryptoStorage {
   ) async throws {
     await logger.debug(
       "Deleting data with identifier: \(identifier)",
-      metadata: nil,
-      source: "SecureCryptoStorage"
+      context: CryptoLogContext(
+        operation: "deleteData",
+        additionalContext: LogMetadataDTOCollection().with(
+          key: "identifier", 
+          value: identifier, 
+          privacyLevel: .private
+        )
+      )
     )
 
     do {
@@ -361,12 +378,43 @@ public actor SecureCryptoStorage {
 
       await logger.debug(
         "Deleted data successfully",
-        metadata: nil,
-        source: "SecureCryptoStorage"
+        context: CryptoLogContext(
+          operation: "deleteData",
+          additionalContext: LogMetadataDTOCollection().with(
+            key: "identifier", 
+            value: identifier, 
+            privacyLevel: .private
+          )
+        )
       )
     } catch {
       throw UCryptoError
         .operationFailed("Error deleting data: \(error.localizedDescription)")
     }
+  }
+
+  /**
+   Checks if data with the specified identifier exists.
+   
+   - Parameter identifier: The identifier to check
+   - Returns: True if data exists, false otherwise
+   - Throws: Error if the operation fails
+   */
+  public func containsData(identifier: String) async throws -> Bool {
+    let context = CryptoLogContext(
+      operation: "containsData",
+      additionalContext: LogMetadataDTOCollection()
+        .withPrivate(key: "identifier", value: identifier)
+    )
+    
+    await logger.debug(
+      "Checking if data exists with identifier: \(identifier)",
+      context: context
+    )
+    
+    // Currently we just attempt to retrieve the data and check if it exists
+    // This could be optimized in a real implementation to avoid loading the data
+    let secureStore = try await getSecureStorage()
+    return secureStore.hasKey(identifier)
   }
 }

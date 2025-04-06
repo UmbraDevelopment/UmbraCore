@@ -4,7 +4,9 @@ import Foundation
 /**
  Options for key generation in the crypto services.
 
- This struct is a wrapper around the canonical KeyGenerationOptions
- type defined in UnifiedCryptoTypes namespace within this module.
+ This struct provides options for configuring key generation operations.
  */
-public typealias KeyGenerationOptions=UnifiedCryptoTypes.KeyGenerationOptions
+// The typealias to UnifiedCryptoTypes is removed as that module doesn't exist
+
+// We'll just use the struct from OptionTypes.swift directly
+// No additional definition needed in this file
