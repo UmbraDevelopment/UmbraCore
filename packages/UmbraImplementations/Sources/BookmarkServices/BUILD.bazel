@@ -20,5 +20,6 @@ swift_library(
         "//packages/UmbraCoreTypes/Sources/UmbraErrors/Domains:UmbraErrorsDomains",
         "//packages/UmbraImplementations/Sources/LoggingAdapters",
         "//packages/UmbraImplementations/Sources/BookmarkServices/Logging:BookmarkLogger",
+        "//packages/UmbraImplementations/Sources/BookmarkServices/Model:BookmarkModel",
     ],
 )
