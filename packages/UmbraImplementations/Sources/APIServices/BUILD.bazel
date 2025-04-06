@@ -2,7 +2,20 @@ load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
     name = "APIServices",
-    srcs = glob(["**/*.swift"]),
+    srcs = [
+        "APIServiceActor.swift",
+        "AlphaAPIService.swift",
+        "AlphaAPIServiceFactory.swift",
+        "AlphaDomainTypes.swift",
+        "Domains/BackupDomainHandler.swift",
+        "Domains/RepositoryDomainHandler.swift",
+        "Domains/SecurityDomainHandler.swift",
+        "Models/APIConfigurationDTO.swift",
+        "Types/APIError.swift",
+        "Types/BackupAPIOperations.swift",
+        "Types/RepositoryAPIOperations.swift",
+        "Types/SecurityAPIOperations.swift",
+    ],
     visibility = ["//visibility:public"],
     deps = [
         "//packages/UmbraCoreTypes/Sources/CoreDTOs",
@@ -24,5 +37,6 @@ umbra_swift_library(
         "//packages/UmbraInterfaces/Sources/RepositoryInterfaces",
         "//packages/UmbraInterfaces/Sources/BackupInterfaces",
         "//packages/UmbraImplementations/Sources/SecurityUtils",
+        "//packages/UmbraImplementations/Sources/LoggingServices",
     ],
 )

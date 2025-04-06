@@ -31,6 +31,32 @@ public struct ErrorMapper {
           reason: "Invalid repository password"
         )
 
+      case let .executableNotFound(path):
+        BackupError.configurationError(
+          details: "Restic executable not found at path: \(path)"
+        )
+
+      case let .commandFailed(exitCode: exitCode, output: output):
+        BackupError.operationFailed(
+          details: "Command failed with exit code \(exitCode): \(output)"
+        )
+
+      case let .credentialError(reason):
+        BackupError.authenticationFailure(
+          reason: reason
+        )
+
+      case let .repositoryExists(path):
+        BackupError.repositoryError(
+          path: path,
+          reason: "Repository already exists"
+        )
+
+      case let .other(message):
+        BackupError.unknownError(
+          details: message
+        )
+
       case let .missingParameter(param):
         BackupError.invalidConfiguration(
           details: "Missing parameter: \(param)"

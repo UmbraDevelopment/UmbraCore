@@ -70,9 +70,16 @@ public actor SnapshotRestoreService {
         // Update progress
         if let progressReporter=reporter {
           await progressReporter.reportProgress(
-            BackupProgress(
+            BackupProgressInfo(
               phase: .processing,
-              percentComplete: 0.3
+              percentComplete: 0.3,
+              message: "Restoring backup",
+              itemsProcessed: 0,
+              totalItems: 0,
+              bytesProcessed: 0,
+              totalBytes: 0,
+              elapsedTime: 0,
+              estimatedTimeRemaining: nil
             ),
             for: .restoreBackup
           )
@@ -102,7 +109,7 @@ public actor SnapshotRestoreService {
    * - Throws: BackupError if the operation fails
    */
   private func executeWithProgressUpdates(
-    command: ResticCommand,
+    command: ResticInterfaces.ResticCommand,
     progressReporter: BackupProgressReporter?,
     cancellationToken: BackupCancellationToken?
   ) async throws {
@@ -122,9 +129,16 @@ public actor SnapshotRestoreService {
 
         if let reporter=progressReporter {
           await reporter.reportProgress(
-            BackupProgress(
+            BackupProgressInfo(
               phase: .processing,
-              percentComplete: progress
+              percentComplete: progress,
+              message: "Restoring backup",
+              itemsProcessed: 0,
+              totalItems: 0,
+              bytesProcessed: 0,
+              totalBytes: 0,
+              elapsedTime: 0,
+              estimatedTimeRemaining: nil
             ),
             for: .restoreBackup
           )
@@ -262,7 +276,17 @@ public actor SnapshotRestoreService {
         // Update progress
         if let reporter {
           await reporter.reportProgress(
-            BackupProgress(phase: .processing, percentComplete: 0.3),
+            BackupProgressInfo(
+              phase: .processing,
+              percentComplete: 0.3,
+              message: "Restoring backup",
+              itemsProcessed: 0,
+              totalItems: 0,
+              bytesProcessed: 0,
+              totalBytes: 0,
+              elapsedTime: 0,
+              estimatedTimeRemaining: nil
+            ),
             for: .getSnapshotDetails
           )
         }
@@ -276,7 +300,17 @@ public actor SnapshotRestoreService {
         // Update progress
         if let reporter {
           await reporter.reportProgress(
-            BackupProgress(phase: .completed, percentComplete: 1.0),
+            BackupProgressInfo(
+              phase: .completed,
+              percentComplete: 1.0,
+              message: "Restoring backup",
+              itemsProcessed: 0,
+              totalItems: 0,
+              bytesProcessed: 0,
+              totalBytes: 0,
+              elapsedTime: 0,
+              estimatedTimeRemaining: nil
+            ),
             for: .getSnapshotDetails
           )
         }

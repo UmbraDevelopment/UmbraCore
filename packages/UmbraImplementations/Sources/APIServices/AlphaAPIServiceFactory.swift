@@ -1,17 +1,17 @@
 import APIInterfaces
 import LoggingServices
-
 import BackupInterfaces
 import LoggingInterfaces
 import LoggingTypes
 import RepositoryInterfaces
 import SecurityCoreInterfaces
 import SecurityInterfaces
+import Foundation
 
 /**
  # Alpha API Service Factory
 
- Factory for creating instances of APIService that conform to the
+ Factory for creating instances of APIServiceProtocol that conform to the
  Alpha Dot Five architecture principles. This factory simplifies
  the creation and configuration of API service instances with their
  required dependencies.
@@ -39,12 +39,12 @@ public enum AlphaAPIServiceFactory {
       - logger: Optional custom logger. If nil, a default logger will be created
       - securityService: Optional custom security service. If nil, a default service will be created
 
-   - Returns: A configured APIService instance ready for use
+   - Returns: A configured APIServiceProtocol instance ready for use
    */
   public static func createDefault(
     logger: LoggingProtocol?=nil,
-    securityService: SecurityServiceProtocol?=nil
-  ) -> APIService {
+    securityService: SecurityProviderProtocol?=nil
+  ) -> APIServiceProtocol {
     // Create the default configuration
     let configuration=APIConfigurationDTO.createDevelopment()
 
@@ -75,13 +75,13 @@ public enum AlphaAPIServiceFactory {
       - domainHandlers: Domain handlers for different API domains
       - logger: Logger for API operations
 
-   - Returns: A configured APIService instance
+   - Returns: A configured APIServiceProtocol instance
    */
   public static func createCustom(
     configuration: APIConfigurationDTO,
     domainHandlers: [APIDomain: any DomainHandler],
     logger: LoggingProtocol
-  ) -> APIService {
+  ) -> APIServiceProtocol {
     AlphaAPIService(
       configuration: configuration,
       domainHandlers: domainHandlers,
@@ -98,14 +98,14 @@ public enum AlphaAPIServiceFactory {
       - securityService: Service for security operations
       - logger: Optional custom logger
 
-   - Returns: A production-configured APIService instance
+   - Returns: A production-configured APIServiceProtocol instance
    */
   public static func createProduction(
     repositoryService: RepositoryServiceProtocol,
     backupService: BackupServiceProtocol,
-    securityService: SecurityServiceProtocol,
+    securityService: SecurityProviderProtocol,
     logger: LoggingProtocol?=nil
-  ) -> APIService {
+  ) -> APIServiceProtocol {
     // Create production configuration
     let configuration=APIConfigurationDTO.createProduction()
 
@@ -134,12 +134,12 @@ public enum AlphaAPIServiceFactory {
       - mocks: Whether to use mock implementations for dependencies
       - logger: Optional custom logger
 
-   - Returns: A test-configured APIService instance
+   - Returns: A test-configured APIServiceProtocol instance
    */
   public static func createForTesting(
     mocks: Bool=true,
     logger: LoggingProtocol?=nil
-  ) -> APIService {
+  ) -> APIServiceProtocol {
     // Create testing configuration
     let configuration=APIConfigurationDTO.createTesting()
 
@@ -162,37 +162,37 @@ public enum AlphaAPIServiceFactory {
   // MARK: - Private Helper Methods
 
   /**
-   Creates a default logger for general use.
+   Creates a default logger for API services.
 
-   - Returns: A configured logging protocol instance
+   - Returns: A configured logger
    */
   private static func createDefaultLogger() -> LoggingProtocol {
     // In a real implementation, this would use proper logging configuration
-    DomainLogger(
+    return LoggingServices.createLogger(
       domain: "APIService",
       category: "Service"
     )
   }
 
   /**
-   Creates a logger configured for production use.
+   Creates a production logger for API services.
 
-   - Returns: A production-configured logging protocol instance
+   - Returns: A configured logger
    */
   private static func createProductionLogger() -> LoggingProtocol {
-    DomainLogger(
+    return LoggingServices.createLogger(
       domain: "APIService",
       category: "Service"
     )
   }
 
   /**
-   Creates a logger configured for testing use.
+   Creates a testing logger for API services.
 
-   - Returns: A testing-configured logging protocol instance
+   - Returns: A configured logger
    */
   private static func createTestingLogger() -> LoggingProtocol {
-    DomainLogger(
+    return LoggingServices.createLogger(
       domain: "APIServiceTest",
       category: "Test"
     )
@@ -203,7 +203,7 @@ public enum AlphaAPIServiceFactory {
 
    - Returns: A configured security service
    */
-  private static func createDefaultSecurityService() -> SecurityServiceProtocol {
+  private static func createDefaultSecurityService() -> SecurityProviderProtocol {
     // This would create a default security service in a real implementation
     // For now, we'll have to implement a minimal version until a proper implementation exists
     SecurityServiceImpl()
@@ -249,8 +249,8 @@ public enum AlphaAPIServiceFactory {
    */
   private static func createMockDomainHandlers(logger: LoggingProtocol)
   -> [APIDomain: any DomainHandler] {
-    // In a real implementation, this would create proper mock handlers
-    [
+    // Create mock implementations for testing
+    return [
       .security: SecurityDomainHandlerMock(logger: logger),
       .repository: RepositoryDomainHandlerMock(logger: logger),
       .backup: BackupDomainHandlerMock(logger: logger),
@@ -276,8 +276,80 @@ public enum AlphaAPIServiceFactory {
 // MARK: - Placeholder Implementations
 
 /// Placeholder security service implementation for bootstrapping
-private class SecurityServiceImpl: SecurityServiceProtocol {
-  // Implement the protocol methods as needed for basic functionality
+@unchecked Sendable
+private final class SecurityServiceImpl: SecurityProviderProtocol {
+  // Required by AsyncServiceInitializable protocol
+  func initialize() async throws {
+    // Minimal implementation for initialization
+  }
+  
+  // Required by SecurityProviderProtocol
+  func cryptoService() async -> any CryptoServiceProtocol {
+    fatalError("Not implemented in placeholder")
+  }
+  
+  func keyManager() async -> any KeyManagementProtocol {
+    fatalError("Not implemented in placeholder")
+  }
+  
+  func encrypt(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+    fatalError("Not implemented in placeholder")
+  }
+  
+  func decrypt(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+    fatalError("Not implemented in placeholder")
+  }
+  
+  func generateKey(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+    fatalError("Not implemented in placeholder")
+  }
+  
+  func secureStore(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+    fatalError("Not implemented in placeholder")
+  }
+  
+  func secureRetrieve(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+    fatalError("Not implemented in placeholder")
+  }
+  
+  func secureDelete(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+    fatalError("Not implemented in placeholder")
+  }
+  
+  func sign(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+    fatalError("Not implemented in placeholder")
+  }
+  
+  func verify(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+    fatalError("Not implemented in placeholder")
+  }
+  
+  func performSecureOperation(operation: SecurityOperation, config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+    fatalError("Not implemented in placeholder")
+  }
+  
+  func createSecureConfig(options: SecurityConfigOptions) async -> SecurityConfigDTO {
+    fatalError("Not implemented in placeholder")
+  }
+  
+  // Methods required by SecurityServiceProtocol extension
+  func hashData(data: Data, algorithm: String) async throws -> Data {
+    // Simple placeholder implementation
+    return data
+  }
+  
+  func saveSecret(keyIdentifier: String, data: Data) async throws {
+    // Simple placeholder implementation
+  }
+  
+  func getSecret(keyIdentifier: String) async throws -> Data? {
+    // Simple placeholder implementation
+    return nil
+  }
+  
+  func removeSecret(keyIdentifier: String) async throws {
+    // Simple placeholder implementation
+  }
 }
 
 /// Placeholder for repository domain handler
@@ -286,7 +358,7 @@ private struct RepositoryDomainHandlerImpl: DomainHandler {
   let logger: LoggingProtocol
 
   func execute(_: some APIOperation) async throws -> Any {
-    throw APIError.operationNotImplemented(
+    throw APIError.operationNotSupported(
       message: "Repository operations not yet implemented",
       code: "NOT_IMPLEMENTED"
     )
@@ -303,7 +375,7 @@ private struct BackupDomainHandlerImpl: DomainHandler {
   let logger: LoggingProtocol
 
   func execute(_: some APIOperation) async throws -> Any {
-    throw APIError.operationNotImplemented(
+    throw APIError.operationNotSupported(
       message: "Backup operations not yet implemented",
       code: "NOT_IMPLEMENTED"
     )
@@ -358,16 +430,28 @@ private struct BackupDomainHandlerMock: DomainHandler {
   }
 }
 
-/// Mock system domain handler for testing
-private struct SystemDomainHandlerMock: DomainHandler {
-  let logger: LoggingProtocol
-
-  func execute(_: some APIOperation) async throws -> Any {
-    // Return mock data depending on operation type
-    "mock_system_result"
+/// Mock implementation of a system domain handler for testing
+private class SystemDomainHandlerMock: DomainHandler {
+  /// Logger instance
+  private let logger: LoggingProtocol
+  
+  /// Initializer
+  /// - Parameter logger: Logger to use for this handler
+  init(logger: LoggingProtocol?) {
+    self.logger = logger ?? LoggingServices.createLogger(domain: "SystemDomainMock", category: "Test")
   }
-
-  func supports(_: some APIOperation) -> Bool {
-    true // Supports all operations
+  
+  /// Execute a system API operation
+  /// - Parameter operation: Operation to execute
+  /// - Returns: Result of the operation
+  func execute<T: APIOperation>(_ operation: T) async throws -> Any {
+    return "Mock system operation executed"
+  }
+  
+  /// Check if this handler supports a given operation
+  /// - Parameter operation: Operation to check
+  /// - Returns: true if the operation is supported
+  func supports<T: APIOperation>(_ operation: T) -> Bool {
+    return true
   }
 }

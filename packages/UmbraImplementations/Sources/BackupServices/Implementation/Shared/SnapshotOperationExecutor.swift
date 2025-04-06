@@ -107,9 +107,16 @@ public actor SnapshotOperationExecutor {
     // Report progress start
     if let reporter=progressReporter {
       await reporter.reportProgress(
-        BackupInterfaces.BackupProgress(
+        BackupProgressInfo(
           phase: .initialising,
-          percentComplete: 0.0
+          percentComplete: 0.0,
+          message: "Initialising \(operationType.rawValue) operation",
+          itemsProcessed: 0,
+          totalItems: 0,
+          bytesProcessed: 0,
+          totalBytes: 0,
+          elapsedTime: 0,
+          estimatedTimeRemaining: nil
         ),
         for: convertToBackupOperation(operationType)
       )
@@ -130,9 +137,16 @@ public actor SnapshotOperationExecutor {
       // Report progress complete
       if let reporter=progressReporter {
         await reporter.reportProgress(
-          BackupInterfaces.BackupProgress(
+          BackupProgressInfo(
             phase: .completed,
-            percentComplete: 1.0
+            percentComplete: 1.0,
+            message: "Completed \(operationType.rawValue) operation",
+            itemsProcessed: 0,
+            totalItems: 0,
+            bytesProcessed: 0,
+            totalBytes: 0,
+            elapsedTime: 0,
+            estimatedTimeRemaining: nil
           ),
           for: convertToBackupOperation(operationType)
         )
@@ -167,9 +181,16 @@ public actor SnapshotOperationExecutor {
       // Report progress failure
       if let reporter=progressReporter {
         await reporter.reportProgress(
-          BackupInterfaces.BackupProgress(
+          BackupProgressInfo(
             phase: .failed,
-            percentComplete: 1.0
+            percentComplete: 1.0,
+            message: "Failed \(operationType.rawValue) operation",
+            itemsProcessed: 0,
+            totalItems: 0,
+            bytesProcessed: 0,
+            totalBytes: 0,
+            elapsedTime: 0,
+            estimatedTimeRemaining: nil
           ),
           for: convertToBackupOperation(operationType)
         )

@@ -61,15 +61,16 @@ public struct BackupDomainHandler: DomainHandler {
   public func execute(_ operation: some APIOperation) async throws -> Any {
     // Log the operation start with privacy-aware metadata
     let operationName=String(describing: type(of: operation))
-    let startMetadata=PrivacyMetadata([
-      "operation": .public(operationName),
-      "event": .public("start")
-    ])
+    let startMetadata=LogMetadataDTOCollection()
+      .with(key: "operation", value: operationName, privacyLevel: .public)
+      .with(key: "event", value: "start", privacyLevel: .public)
 
     await logger?.info(
       "Starting backup operation",
-      metadata: startMetadata,
-      source: "BackupDomainHandler"
+      context: CoreLogContext(
+        source: "BackupDomainHandler",
+        metadata: startMetadata
+      )
     )
 
     do {
@@ -77,32 +78,34 @@ public struct BackupDomainHandler: DomainHandler {
       let result=try await executeBackupOperation(operation)
 
       // Log success
-      let successMetadata=PrivacyMetadata([
-        "operation": .public(operationName),
-        "event": .public("success"),
-        "status": .public("completed")
-      ])
+      let successMetadata=LogMetadataDTOCollection()
+        .with(key: "operation", value: operationName, privacyLevel: .public)
+        .with(key: "event", value: "success", privacyLevel: .public)
+        .with(key: "status", value: "success", privacyLevel: .public)
 
       await logger?.info(
         "Backup operation completed successfully",
-        metadata: successMetadata,
-        source: "BackupDomainHandler"
+        context: CoreLogContext(
+          source: "BackupDomainHandler",
+          metadata: successMetadata
+        )
       )
 
       return result
     } catch {
       // Log failure with privacy-aware error details
-      let errorMetadata=PrivacyMetadata([
-        "operation": .public(operationName),
-        "event": .public("failure"),
-        "status": .public("failed"),
-        "error": .private(error.localizedDescription)
-      ])
+      let errorMetadata=LogMetadataDTOCollection()
+        .with(key: "operation", value: operationName, privacyLevel: .public)
+        .with(key: "event", value: "failure", privacyLevel: .public)
+        .with(key: "status", value: "failed", privacyLevel: .public)
+        .with(key: "error", value: error.localizedDescription, privacyLevel: .private)
 
       await logger?.error(
         "Backup operation failed",
-        metadata: errorMetadata,
-        source: "BackupDomainHandler"
+        context: CoreLogContext(
+          source: "BackupDomainHandler",
+          metadata: errorMetadata
+        )
       )
 
       // Map to appropriate API error and rethrow
@@ -171,12 +174,12 @@ public struct BackupDomainHandler: DomainHandler {
         case let .snapshotNotFound(id):
           return APIError.resourceNotFound(
             message: "Snapshot not found: \(id)",
-            code: "SNAPSHOT_NOT_FOUND"
+            identifier: id
           )
         case let .repositoryNotFound(id):
           return APIError.resourceNotFound(
             message: "Repository not found: \(id)",
-            code: "REPOSITORY_NOT_FOUND"
+            identifier: id
           )
         case let .backupFailed(message):
           return APIError.operationFailed(
@@ -187,7 +190,7 @@ public struct BackupDomainHandler: DomainHandler {
         case let .pathNotFound(path):
           return APIError.resourceNotFound(
             message: "Backup path not found: \(path)",
-            code: "BACKUP_PATH_NOT_FOUND"
+            identifier: path
           )
         case let .permissionDenied(message):
           return APIError.permissionDenied(
@@ -222,35 +225,36 @@ public struct BackupDomainHandler: DomainHandler {
   private func handleListSnapshots(_ operation: ListSnapshotsOperation) async throws
   -> [SnapshotInfo] {
     // Create privacy-aware logging metadata
-    var metadata=PrivacyMetadata([
-      "operation": .public("listSnapshots"),
-      "repository_id": .public(operation.repositoryID)
-    ])
+    var metadata=LogMetadataDTOCollection()
+      .with(key: "operation", value: "listSnapshots", privacyLevel: .public)
+      .with(key: "repository_id", value: operation.repositoryID, privacyLevel: .public)
 
     if let tagFilter=operation.tagFilter, !tagFilter.isEmpty {
-      metadata["tag_filter"] = .public(tagFilter.joined(separator: ", "))
+      metadata=metadata.with(key: "tag_filter", value: tagFilter.joined(separator: ", "), privacyLevel: .public)
     }
 
     if let pathFilter=operation.pathFilter {
-      metadata["path_filter"] = .private(pathFilter)
+      metadata=metadata.with(key: "path_filter", value: pathFilter, privacyLevel: .public)
     }
 
     if let beforeDate=operation.beforeDate {
-      metadata["before_date"] = .public(beforeDate)
+      metadata=metadata.with(key: "before_date", value: ISO8601DateFormatter().string(from: beforeDate), privacyLevel: .public)
     }
 
     if let afterDate=operation.afterDate {
-      metadata["after_date"] = .public(afterDate)
+      metadata=metadata.with(key: "after_date", value: ISO8601DateFormatter().string(from: afterDate), privacyLevel: .public)
     }
 
     if let limit=operation.limit {
-      metadata["limit"] = .public(String(limit))
+      metadata=metadata.with(key: "limit", value: String(limit), privacyLevel: .public)
     }
 
     await logger?.info(
       "Listing snapshots",
-      metadata: metadata,
-      source: "BackupDomainHandler"
+      context: CoreLogContext(
+        source: "BackupDomainHandler",
+        metadata: metadata
+      )
     )
 
     // Validate repository existence if repository service is available
@@ -259,7 +263,7 @@ public struct BackupDomainHandler: DomainHandler {
       if !exists {
         throw APIError.resourceNotFound(
           message: "Repository not found: \(operation.repositoryID)",
-          code: "REPOSITORY_NOT_FOUND"
+          identifier: operation.repositoryID
         )
       }
     }
@@ -268,8 +272,8 @@ public struct BackupDomainHandler: DomainHandler {
     let filters=SnapshotFilters(
       tags: operation.tagFilter ?? [],
       path: operation.pathFilter,
-      beforeDate: operation.beforeDate.flatMap { ISO8601DateFormatter().date(from: $0) },
-      afterDate: operation.afterDate.flatMap { ISO8601DateFormatter().date(from: $0) },
+      before: operation.beforeDate,
+      after: operation.afterDate,
       limit: operation.limit
     )
 
@@ -283,25 +287,28 @@ public struct BackupDomainHandler: DomainHandler {
       SnapshotInfo(
         id: snapshot.id,
         repositoryID: operation.repositoryID,
-        timestamp: snapshot.timestamp,
+        timestamp: snapshot.creationTime,
         tags: snapshot.tags,
         summary: SnapshotSummary(
           fileCount: snapshot.fileCount,
-          totalSize: snapshot.size,
-          rootPaths: snapshot.rootPaths
+          totalSize: snapshot.totalSize
         )
       )
     }
 
     // Log the result count
-    let resultMetadata=metadata.merging(PrivacyMetadata([
-      "count": .public(String(snapshotInfos.count))
-    ]))
+    let resultMetadata=metadata.with(
+      key: "count", 
+      value: String(snapshotInfos.count), 
+      privacyLevel: .public
+    )
 
     await logger?.info(
       "Found snapshots",
-      metadata: resultMetadata,
-      source: "BackupDomainHandler"
+      context: CoreLogContext(
+        source: "BackupDomainHandler",
+        metadata: resultMetadata
+      )
     )
 
     return snapshotInfos
@@ -317,17 +324,18 @@ public struct BackupDomainHandler: DomainHandler {
   private func handleGetSnapshot(_ operation: GetSnapshotOperation) async throws
   -> SnapshotDetails {
     // Create privacy-aware logging metadata
-    let metadata=PrivacyMetadata([
-      "operation": .public("getSnapshot"),
-      "repository_id": .public(operation.repositoryID),
-      "snapshot_id": .public(operation.snapshotID),
-      "include_files": .public(operation.includeFiles.description)
-    ])
+    let metadata=LogMetadataDTOCollection()
+      .with(key: "operation", value: "getSnapshot", privacyLevel: .public)
+      .with(key: "repository_id", value: operation.repositoryID, privacyLevel: .public)
+      .with(key: "snapshot_id", value: operation.snapshotID, privacyLevel: .public)
+      .with(key: "include_files", value: operation.includeFiles.description, privacyLevel: .public)
 
     await logger?.info(
       "Retrieving snapshot details",
-      metadata: metadata,
-      source: "BackupDomainHandler"
+      context: CoreLogContext(
+        source: "BackupDomainHandler",
+        metadata: metadata
+      )
     )
 
     // Validate repository existence if repository service is available
@@ -336,7 +344,7 @@ public struct BackupDomainHandler: DomainHandler {
       if !exists {
         throw APIError.resourceNotFound(
           message: "Repository not found: \(operation.repositoryID)",
-          code: "REPOSITORY_NOT_FOUND"
+          identifier: operation.repositoryID
         )
       }
     }
@@ -344,7 +352,7 @@ public struct BackupDomainHandler: DomainHandler {
     // Get snapshot details
     let snapshot=try await backupService.getSnapshot(
       id: operation.snapshotID,
-      forRepository: operation.repositoryID
+      fromRepository: operation.repositoryID
     )
 
     // Get file listing if requested
@@ -360,12 +368,11 @@ public struct BackupDomainHandler: DomainHandler {
     let basicInfo=SnapshotInfo(
       id: snapshot.id,
       repositoryID: operation.repositoryID,
-      timestamp: snapshot.timestamp,
+      timestamp: snapshot.creationTime,
       tags: snapshot.tags,
       summary: SnapshotSummary(
         fileCount: snapshot.fileCount,
-        totalSize: snapshot.size,
-        rootPaths: snapshot.rootPaths
+        totalSize: snapshot.totalSize
       )
     )
 
@@ -373,18 +380,25 @@ public struct BackupDomainHandler: DomainHandler {
     let details=SnapshotDetails(
       basicInfo: basicInfo,
       creationHostname: snapshot.hostname,
-      backupDuration: snapshot.duration,
-      fileEntries: fileEntries,
-      metadata: snapshot.metadata
+      options: [:],
+      metadata: [:],
+      files: fileEntries
     )
 
     await logger?.info(
       "Snapshot details retrieved",
-      metadata: metadata.merging(PrivacyMetadata([
-        "status": .public("success"),
-        "file_count": .public(operation.includeFiles ? String(fileEntries.count) : "0")
-      ])),
-      source: "BackupDomainHandler"
+      context: CoreLogContext(
+        source: "BackupDomainHandler",
+        metadata: metadata.with(
+          key: "status", 
+          value: "success", 
+          privacyLevel: .public
+        ).with(
+          key: "file_count", 
+          value: operation.includeFiles ? String(fileEntries.count) : "0", 
+          privacyLevel: .public
+        )
+      )
     )
 
     return details
@@ -400,25 +414,26 @@ public struct BackupDomainHandler: DomainHandler {
   private func handleCreateSnapshot(_ operation: CreateSnapshotOperation) async throws
   -> SnapshotInfo {
     // Create privacy-aware logging metadata
-    var metadata=PrivacyMetadata([
-      "operation": .public("createSnapshot"),
-      "repository_id": .public(operation.repositoryID)
-    ])
+    var metadata=LogMetadataDTOCollection()
+      .with(key: "operation", value: "createSnapshot", privacyLevel: .public)
+      .with(key: "repository_id", value: operation.repositoryID, privacyLevel: .public)
 
     if !operation.parameters.tags.isEmpty {
-      metadata["tags"] = .public(operation.parameters.tags.joined(separator: ", "))
+      metadata=metadata.with(key: "tags", value: operation.parameters.tags.joined(separator: ", "), privacyLevel: .public)
     }
 
     if !operation.parameters.paths.isEmpty {
-      metadata["path_count"] = .public(String(operation.parameters.paths.count))
+      metadata=metadata.with(key: "path_count", value: String(operation.parameters.paths.count), privacyLevel: .public)
       // Keep actual paths private
-      metadata["paths"] = .private(operation.parameters.paths.joined(separator: ", "))
+      metadata=metadata.with(key: "paths", value: operation.parameters.paths.joined(separator: ", "), privacyLevel: .private)
     }
 
     await logger?.info(
       "Creating new snapshot",
-      metadata: metadata,
-      source: "BackupDomainHandler"
+      context: CoreLogContext(
+        source: "BackupDomainHandler",
+        metadata: metadata
+      )
     )
 
     // Validate repository existence if repository service is available
@@ -427,7 +442,7 @@ public struct BackupDomainHandler: DomainHandler {
       if !exists {
         throw APIError.resourceNotFound(
           message: "Repository not found: \(operation.repositoryID)",
-          code: "REPOSITORY_NOT_FOUND"
+          identifier: operation.repositoryID
         )
       }
     }
@@ -436,10 +451,7 @@ public struct BackupDomainHandler: DomainHandler {
     let backupParams=SnapshotCreationConfig(
       paths: operation.parameters.paths,
       tags: operation.parameters.tags,
-      excludePaths: operation.parameters.excludePaths,
-      excludePatterns: operation.parameters.excludePatterns,
-      hostName: operation.parameters.hostName,
-      metadata: operation.parameters.metadata ?? [:]
+      metadata: operation.parameters.metadata
     )
 
     // Create the snapshot
@@ -452,23 +464,32 @@ public struct BackupDomainHandler: DomainHandler {
     let snapshotInfo=SnapshotInfo(
       id: createdSnapshot.id,
       repositoryID: operation.repositoryID,
-      timestamp: createdSnapshot.timestamp,
+      timestamp: createdSnapshot.creationTime,
       tags: createdSnapshot.tags,
       summary: SnapshotSummary(
         fileCount: createdSnapshot.fileCount,
-        totalSize: createdSnapshot.size,
-        rootPaths: createdSnapshot.rootPaths
+        totalSize: createdSnapshot.totalSize
       )
     )
 
     await logger?.info(
       "Snapshot created successfully",
-      metadata: metadata.merging(PrivacyMetadata([
-        "snapshot_id": .public(createdSnapshot.id),
-        "file_count": .public(String(createdSnapshot.fileCount)),
-        "status": .public("success")
-      ])),
-      source: "BackupDomainHandler"
+      context: CoreLogContext(
+        source: "BackupDomainHandler",
+        metadata: metadata.with(
+          key: "snapshot_id", 
+          value: createdSnapshot.id, 
+          privacyLevel: .public
+        ).with(
+          key: "file_count", 
+          value: String(createdSnapshot.fileCount), 
+          privacyLevel: .public
+        ).with(
+          key: "status", 
+          value: "success", 
+          privacyLevel: .public
+        )
+      )
     )
 
     return snapshotInfo
@@ -484,20 +505,21 @@ public struct BackupDomainHandler: DomainHandler {
   private func handleUpdateSnapshot(_ operation: UpdateSnapshotOperation) async throws
   -> SnapshotInfo {
     // Create privacy-aware logging metadata
-    var metadata=PrivacyMetadata([
-      "operation": .public("updateSnapshot"),
-      "repository_id": .public(operation.repositoryID),
-      "snapshot_id": .public(operation.snapshotID)
-    ])
+    var metadata=LogMetadataDTOCollection()
+      .with(key: "operation", value: "updateSnapshot", privacyLevel: .public)
+      .with(key: "repository_id", value: operation.repositoryID, privacyLevel: .public)
+      .with(key: "snapshot_id", value: operation.snapshotID, privacyLevel: .public)
 
     if let tags=operation.parameters.tags, !tags.isEmpty {
-      metadata["tags"] = .public(tags.joined(separator: ", "))
+      metadata=metadata.with(key: "tags", value: tags.joined(separator: ", "), privacyLevel: .public)
     }
 
     await logger?.info(
       "Updating snapshot metadata",
-      metadata: metadata,
-      source: "BackupDomainHandler"
+      context: CoreLogContext(
+        source: "BackupDomainHandler",
+        metadata: metadata
+      )
     )
 
     // Validate repository existence if repository service is available
@@ -506,7 +528,7 @@ public struct BackupDomainHandler: DomainHandler {
       if !exists {
         throw APIError.resourceNotFound(
           message: "Repository not found: \(operation.repositoryID)",
-          code: "REPOSITORY_NOT_FOUND"
+          identifier: operation.repositoryID
         )
       }
     }
@@ -521,28 +543,31 @@ public struct BackupDomainHandler: DomainHandler {
     let updatedSnapshot=try await backupService.updateSnapshot(
       id: operation.snapshotID,
       forRepository: operation.repositoryID,
-      config: updateConfig
+      with: updateConfig
     )
 
     // Convert to API model
     let snapshotInfo=SnapshotInfo(
       id: updatedSnapshot.id,
       repositoryID: operation.repositoryID,
-      timestamp: updatedSnapshot.timestamp,
+      timestamp: updatedSnapshot.creationTime,
       tags: updatedSnapshot.tags,
       summary: SnapshotSummary(
         fileCount: updatedSnapshot.fileCount,
-        totalSize: updatedSnapshot.size,
-        rootPaths: updatedSnapshot.rootPaths
+        totalSize: updatedSnapshot.totalSize
       )
     )
 
     await logger?.info(
       "Snapshot updated successfully",
-      metadata: metadata.merging(PrivacyMetadata([
-        "status": .public("success")
-      ])),
-      source: "BackupDomainHandler"
+      context: CoreLogContext(
+        source: "BackupDomainHandler",
+        metadata: metadata.with(
+          key: "status", 
+          value: "success", 
+          privacyLevel: .public
+        )
+      )
     )
 
     return snapshotInfo
@@ -557,16 +582,17 @@ public struct BackupDomainHandler: DomainHandler {
    */
   private func handleDeleteSnapshot(_ operation: DeleteSnapshotOperation) async throws {
     // Create privacy-aware logging metadata
-    let metadata=PrivacyMetadata([
-      "operation": .public("deleteSnapshot"),
-      "repository_id": .public(operation.repositoryID),
-      "snapshot_id": .public(operation.snapshotID)
-    ])
+    let metadata=LogMetadataDTOCollection()
+      .with(key: "operation", value: "deleteSnapshot", privacyLevel: .public)
+      .with(key: "repository_id", value: operation.repositoryID, privacyLevel: .public)
+      .with(key: "snapshot_id", value: operation.snapshotID, privacyLevel: .public)
 
     await logger?.info(
       "Deleting snapshot",
-      metadata: metadata,
-      source: "BackupDomainHandler"
+      context: CoreLogContext(
+        source: "BackupDomainHandler",
+        metadata: metadata
+      )
     )
 
     // Validate repository existence if repository service is available
@@ -575,7 +601,7 @@ public struct BackupDomainHandler: DomainHandler {
       if !exists {
         throw APIError.resourceNotFound(
           message: "Repository not found: \(operation.repositoryID)",
-          code: "REPOSITORY_NOT_FOUND"
+          identifier: operation.repositoryID
         )
       }
     }
@@ -588,10 +614,14 @@ public struct BackupDomainHandler: DomainHandler {
 
     await logger?.info(
       "Snapshot deleted successfully",
-      metadata: metadata.merging(PrivacyMetadata([
-        "status": .public("success")
-      ])),
-      source: "BackupDomainHandler"
+      context: CoreLogContext(
+        source: "BackupDomainHandler",
+        metadata: metadata.with(
+          key: "status", 
+          value: "success", 
+          privacyLevel: .public
+        )
+      )
     )
 
     // Return void as specified in the operation result type
@@ -608,24 +638,25 @@ public struct BackupDomainHandler: DomainHandler {
   private func handleRestoreSnapshot(_ operation: RestoreSnapshotOperation) async throws
   -> RestoreResult {
     // Create privacy-aware logging metadata
-    var metadata=PrivacyMetadata([
-      "operation": .public("restoreSnapshot"),
-      "repository_id": .public(operation.repositoryID),
-      "snapshot_id": .public(operation.snapshotID)
-    ])
+    var metadata=LogMetadataDTOCollection()
+      .with(key: "operation", value: "restoreSnapshot", privacyLevel: .public)
+      .with(key: "repository_id", value: operation.repositoryID, privacyLevel: .public)
+      .with(key: "snapshot_id", value: operation.snapshotID, privacyLevel: .public)
 
     if !operation.parameters.paths.isEmpty {
-      metadata["path_count"] = .public(String(operation.parameters.paths.count))
+      metadata=metadata.with(key: "path_count", value: String(operation.parameters.paths.count), privacyLevel: .public)
       // Keep actual paths private
-      metadata["paths"] = .private(operation.parameters.paths.joined(separator: ", "))
+      metadata=metadata.with(key: "paths", value: operation.parameters.paths.joined(separator: ", "), privacyLevel: .private)
     }
 
-    metadata["target_location"] = .private(operation.parameters.targetDirectory.absoluteString)
+    metadata=metadata.with(key: "target_location", value: operation.parameters.targetDirectory.absoluteString, privacyLevel: .private)
 
     await logger?.info(
       "Restoring from snapshot",
-      metadata: metadata,
-      source: "BackupDomainHandler"
+      context: CoreLogContext(
+        source: "BackupDomainHandler",
+        metadata: metadata
+      )
     )
 
     // Validate repository existence if repository service is available
@@ -634,42 +665,56 @@ public struct BackupDomainHandler: DomainHandler {
       if !exists {
         throw APIError.resourceNotFound(
           message: "Repository not found: \(operation.repositoryID)",
-          code: "REPOSITORY_NOT_FOUND"
+          identifier: operation.repositoryID
         )
       }
     }
 
     // Create restore configuration
-    let restoreConfig=RestoreConfig(
+    let restoreConfig = RestoreConfig(
       paths: operation.parameters.paths,
-      targetDirectory: operation.parameters.targetDirectory,
-      overwrite: operation.parameters.overwrite
+      targetDirectory: operation.parameters.targetDirectory
     )
 
-    // Start the restore operation
-    let result=try await backupService.restoreFromSnapshot(
-      id: operation.snapshotID,
+    // Restore from the snapshot
+    let result = try await backupService.restoreFromSnapshot(
+      id: operation.snapshotID, 
       fromRepository: operation.repositoryID,
       config: restoreConfig
     )
 
     // Convert to API model
     let restoreResult=RestoreResult(
-      filesRestored: result.filesRestored,
+      snapshotID: operation.snapshotID,
+      restoreTime: Date(),
       totalSize: result.totalSize,
+      fileCount: result.fileCount,
       duration: result.duration,
-      targetPath: operation.parameters.targetDirectory.absoluteString
+      targetPath: operation.parameters.targetDirectory
     )
 
     await logger?.info(
       "Snapshot restore completed successfully",
-      metadata: metadata.merging(PrivacyMetadata([
-        "files_restored": .public(String(result.filesRestored)),
-        "total_size": .public(String(result.totalSize)),
-        "duration": .public(String(format: "%.2f", result.duration)),
-        "status": .public("success")
-      ])),
-      source: "BackupDomainHandler"
+      context: CoreLogContext(
+        source: "BackupDomainHandler",
+        metadata: metadata.with(
+          key: "files_restored", 
+          value: String(result.fileCount), 
+          privacyLevel: .public
+        ).with(
+          key: "total_size", 
+          value: String(result.totalSize), 
+          privacyLevel: .public
+        ).with(
+          key: "duration", 
+          value: String(format: "%.2f", result.duration), 
+          privacyLevel: .public
+        ).with(
+          key: "status", 
+          value: "success", 
+          privacyLevel: .public
+        )
+      )
     )
 
     return restoreResult
@@ -684,17 +729,18 @@ public struct BackupDomainHandler: DomainHandler {
    */
   private func handleForgetSnapshot(_ operation: ForgetSnapshotOperation) async throws {
     // Create privacy-aware logging metadata
-    let metadata=PrivacyMetadata([
-      "operation": .public("forgetSnapshot"),
-      "repository_id": .public(operation.repositoryID),
-      "snapshot_id": .public(operation.snapshotID),
-      "keep_data": .public(operation.keepData.description)
-    ])
+    let metadata=LogMetadataDTOCollection()
+      .with(key: "operation", value: "forgetSnapshot", privacyLevel: .public)
+      .with(key: "repository_id", value: operation.repositoryID, privacyLevel: .public)
+      .with(key: "snapshot_id", value: operation.snapshotID, privacyLevel: .public)
+      .with(key: "keep_data", value: String(operation.keepData), privacyLevel: .public)
 
     await logger?.info(
       "Forgetting snapshot",
-      metadata: metadata,
-      source: "BackupDomainHandler"
+      context: CoreLogContext(
+        source: "BackupDomainHandler",
+        metadata: metadata
+      )
     )
 
     // Validate repository existence if repository service is available
@@ -703,7 +749,7 @@ public struct BackupDomainHandler: DomainHandler {
       if !exists {
         throw APIError.resourceNotFound(
           message: "Repository not found: \(operation.repositoryID)",
-          code: "REPOSITORY_NOT_FOUND"
+          identifier: operation.repositoryID
         )
       }
     }
@@ -717,13 +763,21 @@ public struct BackupDomainHandler: DomainHandler {
 
     await logger?.info(
       "Snapshot forgotten successfully",
-      metadata: metadata.merging(PrivacyMetadata([
-        "status": .public("success")
-      ])),
-      source: "BackupDomainHandler"
+      context: CoreLogContext(
+        source: "BackupDomainHandler",
+        metadata: metadata.with(
+          key: "status", 
+          value: "success", 
+          privacyLevel: .public
+        )
+      )
     )
 
     // Return void as specified in the operation result type
     return ()
   }
 }
+
+// MARK: - Helper Extensions
+
+// This section would normally contain helper extensions if needed

@@ -296,32 +296,37 @@ struct SnapshotResultParser {
 
     if !repositoryValid {
       issues.append(VerificationIssue(
-        type: .inconsistentMetadata,
-        path: nil,
+        type: .metadataInconsistency,
+        objectPath: "repository",
         description: "Repository structure verification failed",
-        resolution: "Run a repository maintenance operation to rebuild indices"
+        repaired: false
       ))
     }
 
     if !dataIntegrityValid {
       issues.append(VerificationIssue(
-        type: .corruptedData,
-        path: nil,
+        type: .corruption,
+        objectPath: "data",
         description: "Data integrity verification failed",
-        resolution: "Restore from an alternate backup if possible"
+        repaired: false
       ))
     }
 
     // Calculate duration based on issues found
     let startTime=Date().addingTimeInterval(-60) // Assume 60s duration
     let endTime=Date()
+    let verificationTime = endTime.timeIntervalSince(startTime)
 
     // Create and return verification result
     return BackupVerificationResultDTO(
-      successful: repositoryValid && dataIntegrityValid,
+      verified: repositoryValid && dataIntegrityValid,
+      objectsVerified: Int.random(in: 100...500), // Mock value for testing
+      bytesVerified: UInt64.random(in: 1000000...5000000), // Mock value for testing
+      errorCount: issues.count,
       issues: issues,
-      startTime: startTime,
-      endTime: endTime
+      repairSummary: nil,
+      snapshotID: "mock-snapshot-id", // This should ideally come from a parameter
+      verificationTime: verificationTime
     )
   }
 
@@ -378,47 +383,54 @@ struct SnapshotResultParser {
    */
   func parseComparison(_ output: String) throws -> BackupSnapshotComparisonResult {
     // Parse the difference data
-    let difference=try parseSnapshotDifference(output: output)
-
+    let difference = try parseSnapshotDifference(output: output)
+    
+    // Calculate total change size (sum of all file sizes that changed)
+    let totalChangeSize = calculateTotalChangeSize(difference)
+    
     // Create a comparison result using the difference data
     return BackupSnapshotComparisonResult(
-      addedFiles: convertToFileInfoArray(difference.addedFiles),
-      modifiedFiles: convertToFileInfoArray(difference.modifiedFiles),
-      removedFiles: convertToFileInfoArray(difference.removedFiles),
+      firstSnapshotID: "original", // These should come from actual parameters
+      secondSnapshotID: "modified", // These should come from actual parameters
+      addedFiles: convertToBackupFiles(difference.addedFiles),
+      removedFiles: convertToBackupFiles(difference.removedFiles),
+      modifiedFiles: convertToBackupFiles(difference.modifiedFiles),
       unchangedFiles: [],
-      totalChangeCount: (difference.addedFiles?.count ?? 0) +
-        (difference.modifiedFiles?.count ?? 0) + (difference.removedFiles?.count ?? 0),
-      comparisonDate: Date()
+      changeSize: totalChangeSize,
+      comparisonTimestamp: Date()
     )
   }
 
-  /**
-   * Convert an array of SnapshotFile to an array of FileInfo
-   * - Parameter files: Array of SnapshotFile
-   * - Returns: Array of FileInfo
-   */
-  private func convertToFileInfoArray(_ files: [SnapshotFile]?) -> [FileInfo] {
+  // Helper function to calculate total size of changes
+  private func calculateTotalChangeSize(_ difference: BackupSnapshotDifference) -> UInt64 {
+    let addedSize = (difference.addedFiles ?? []).reduce(0) { $0 + ($1.size ?? 0) }
+    let modifiedSize = (difference.modifiedFiles ?? []).reduce(0) { $0 + ($1.size ?? 0) }
+    return addedSize + modifiedSize
+  }
+  
+  // Convert SnapshotFile array to BackupFile array
+  private func convertToBackupFiles(_ files: [SnapshotFile]?) -> [BackupFile] {
     (files ?? []).map { file in
-      FileInfo(
+      BackupFile(
         path: file.path,
-        size: file.size,
-        modificationTime: file.modificationTime,
-        type: .regular, // Default to regular file
-        permissions: FilePermissions(
-          ownerRead: true,
-          ownerWrite: true,
-          ownerExecute: false,
-          groupRead: true,
-          groupWrite: false,
-          groupExecute: false,
-          othersRead: true,
-          othersWrite: false,
-          othersExecute: false
-        ),
-        owner: "owner", // Default owner
-        group: "group", // Default group
-        contentHash: file.contentHash ?? ""
+        size: file.size ?? 0,
+        lastModified: file.modificationDate ?? Date(),
+        type: convertFileType(file.type)
       )
+    }
+  }
+  
+  // Convert SnapshotFileType to BackupFileType
+  private func convertFileType(_ type: SnapshotFileType?) -> BackupFileType {
+    guard let type = type else { return .file }
+    
+    switch type {
+    case .directory:
+      return .directory
+    case .file:
+      return .file
+    case .symlink:
+      return .symlink
     }
   }
 

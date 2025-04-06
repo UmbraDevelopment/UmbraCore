@@ -78,7 +78,7 @@ public actor BackupLogger: DomainLoggerProtocol {
   public func logError(_ error: Error, context: LogContextDTO) async {
     if let loggableError = error as? LoggableErrorProtocol {
       // Handle loggable errors with enriched metadata
-      let errorMetadata = loggableError.getLogMetadata()
+      let errorMetadata = loggableError.createMetadataCollection()
       let formattedMessage = "[\(domainName)] \(loggableError.getLogMessage())"
       let source = "\(loggableError.getSource()) via \(domainName)"
       
@@ -121,7 +121,7 @@ public actor BackupLogger: DomainLoggerProtocol {
   public func logError(_ error: Error, context: LogContextDTO, message: String? = nil) async {
     if let loggableError = error as? LoggableErrorProtocol {
       // Handle loggable errors with enriched metadata
-      let errorMetadata = loggableError.getLogMetadata()
+      let errorMetadata = loggableError.createMetadataCollection()
       let formattedMessage = message ?? "[\(domainName)] \(loggableError.getLogMessage())"
       let source = "\(loggableError.getSource()) via \(domainName)"
       

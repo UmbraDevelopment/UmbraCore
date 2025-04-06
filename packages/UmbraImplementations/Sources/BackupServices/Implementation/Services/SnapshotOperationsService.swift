@@ -77,9 +77,16 @@ public actor SnapshotOperationsService {
         // Update progress
         if let progressReporter=reporter {
           await progressReporter.reportProgress(
-            BackupProgress(
+            BackupProgressInfo(
               phase: .processing,
-              percentComplete: 0.3
+              percentComplete: 0.3,
+              message: "Retrieving snapshot list",
+              itemsProcessed: 0,
+              totalItems: 0,
+              bytesProcessed: 0,
+              totalBytes: 0,
+              elapsedTime: 0,
+              estimatedTimeRemaining: nil
             ),
             for: .listSnapshots
           )
@@ -124,9 +131,16 @@ public actor SnapshotOperationsService {
         // Update progress
         if let progressReporter=reporter {
           await progressReporter.reportProgress(
-            BackupProgress(
+            BackupProgressInfo(
               phase: .processing,
-              percentComplete: 0.3
+              percentComplete: 0.3,
+              message: "Retrieving snapshot details",
+              itemsProcessed: 0,
+              totalItems: 0,
+              bytesProcessed: 0,
+              totalBytes: 0,
+              elapsedTime: 0,
+              estimatedTimeRemaining: nil
             ),
             for: .getSnapshotDetails
           )
@@ -201,17 +215,16 @@ public actor SnapshotOperationsService {
         // Update progress
         if let progressReporter=reporter {
           await progressReporter.reportProgress(
-            BackupProgress(
+            BackupProgressInfo(
               phase: .processing,
               percentComplete: 0.3,
-              currentItem: "Retrieving snapshot details",
-              processedItems: 0,
+              message: "Retrieving snapshot details",
+              itemsProcessed: 0,
               totalItems: 0,
-              processedBytes: 0,
+              bytesProcessed: 0,
               totalBytes: 0,
-              estimatedTimeRemaining: nil,
-              bytesPerSecond: nil,
-              error: nil
+              elapsedTime: 0,
+              estimatedTimeRemaining: nil
             ),
             for: .getSnapshotDetails
           )
@@ -266,9 +279,16 @@ public actor SnapshotOperationsService {
         // Update progress
         if let progressReporter=reporter {
           await progressReporter.reportProgress(
-            BackupProgress(
+            BackupProgressInfo(
               phase: .processing,
-              percentComplete: 0.3
+              percentComplete: 0.3,
+              message: "Comparing snapshots",
+              itemsProcessed: 0,
+              totalItems: 0,
+              bytesProcessed: 0,
+              totalBytes: 0,
+              elapsedTime: 0,
+              estimatedTimeRemaining: nil
             ),
             for: .compareSnapshots
           )
@@ -323,11 +343,11 @@ public actor SnapshotOperationsService {
         )
 
         return context
-          .with(key: "pattern", value: pattern, privacy: LoggingInterfaces.LogPrivacyLevel.public)
+          .with(key: "pattern", value: pattern, privacy: LoggingTypes.PrivacyClassification.public)
           .with(
             key: "caseSensitive",
             value: String(caseSensitive),
-            privacy: LoggingInterfaces.LogPrivacyLevel.public
+            privacy: LoggingTypes.PrivacyClassification.public
           )
       }
     }
@@ -353,17 +373,16 @@ public actor SnapshotOperationsService {
         // Update progress
         if let reporter {
           await reporter.reportProgress(
-            BackupProgress(
+            BackupProgressInfo(
               phase: .processing,
               percentComplete: 0.3,
-              currentItem: "Searching for files",
-              processedItems: 0,
+              message: "Searching for files",
+              itemsProcessed: 0,
               totalItems: 0,
-              processedBytes: 0,
+              bytesProcessed: 0,
               totalBytes: 0,
-              estimatedTimeRemaining: nil,
-              bytesPerSecond: nil,
-              error: nil
+              elapsedTime: 0,
+              estimatedTimeRemaining: nil
             ),
             for: .findFiles
           )
@@ -472,9 +491,16 @@ public actor SnapshotOperationsService {
         // Update progress
         if let progressReporter=reporter {
           await progressReporter.reportProgress(
-            BackupProgress(
+            BackupProgressInfo(
               phase: .processing,
-              percentComplete: 0.3
+              percentComplete: 0.3,
+              message: "Verifying snapshot integrity",
+              itemsProcessed: 0,
+              totalItems: 0,
+              bytesProcessed: 0,
+              totalBytes: 0,
+              elapsedTime: 0,
+              estimatedTimeRemaining: nil
             ),
             for: .verifySnapshot
           )
@@ -495,9 +521,16 @@ public actor SnapshotOperationsService {
         // Update progress
         if let progressReporter=reporter {
           await progressReporter.reportProgress(
-            BackupProgress(
+            BackupProgressInfo(
               phase: .processing,
-              percentComplete: 0.6
+              percentComplete: 0.6,
+              message: "Verifying data integrity",
+              itemsProcessed: 0,
+              totalItems: 0,
+              bytesProcessed: 0,
+              totalBytes: 0,
+              elapsedTime: 0,
+              estimatedTimeRemaining: nil
             ),
             for: .verifySnapshot
           )
@@ -509,9 +542,16 @@ public actor SnapshotOperationsService {
         // Update progress
         if let progressReporter=reporter {
           await progressReporter.reportProgress(
-            BackupProgress(
+            BackupProgressInfo(
               phase: .completed,
-              percentComplete: 1.0
+              percentComplete: 1.0,
+              message: "Verification complete",
+              itemsProcessed: 0,
+              totalItems: 0,
+              bytesProcessed: 0,
+              totalBytes: 0,
+              elapsedTime: 0,
+              estimatedTimeRemaining: nil
             ),
             for: .verifySnapshot
           )

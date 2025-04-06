@@ -92,13 +92,13 @@ public actor CancellationHandler: CancellationHandlerProtocol {
   /**
    * Checks if an operation has been cancelled.
    *
-   * - Parameter id: Identifier of the operation to check
+   * - Parameter id: ID of the operation to check
    * - Returns: Whether the operation has been cancelled
    */
   public func isOperationCancelled(id: String) async -> Bool {
     // Check if we have a token for this ID
     if let token=cancellationTokens[id] {
-      return await token.isCancelled()
+      return await token.isCancelled
     }
 
     // If there's no token, the operation might be cancelled if it's not active
@@ -231,7 +231,7 @@ public actor CancellationHandler: CancellationHandlerProtocol {
 
           while !task.isCancelled {
             if await isOperationActive(id: operationID) {
-              if await token.isCancelled() {
+              if await token.isCancelled {
                 _=await cancelOperation(id: operationID)
                 break
               }

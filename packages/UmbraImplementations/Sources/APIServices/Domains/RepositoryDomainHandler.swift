@@ -28,7 +28,7 @@ public struct RepositoryDomainHandler: DomainHandler {
   private let repositoryService: RepositoryServiceProtocol
 
   /// Logger with privacy controls
-  private let logger: LoggingProtocol?
+  private let logger: (any LoggingProtocol)?
 
   /**
    Initialises a new repository domain handler.
@@ -37,7 +37,10 @@ public struct RepositoryDomainHandler: DomainHandler {
       - service: The repository service implementation
       - logger: Optional logger for privacy-aware operation recording
    */
-  public init(service: RepositoryServiceProtocol, logger: LoggingProtocol?=nil) {
+  public init(
+    service: RepositoryServiceProtocol,
+    logger: (any LoggingProtocol)?=nil
+  ) {
     repositoryService=service
     self.logger=logger
   }
@@ -52,15 +55,16 @@ public struct RepositoryDomainHandler: DomainHandler {
   public func execute(_ operation: some APIOperation) async throws -> Any {
     // Log the operation start with privacy-aware metadata
     let operationName=String(describing: type(of: operation))
-    let startMetadata=PrivacyMetadata([
-      "operation": .public(operationName),
-      "event": .public("start")
-    ])
+    let startMetadata = LogMetadataDTOCollection()
+      .withPublic(key: "operation", value: operationName)
+      .withPublic(key: "event", value: "start")
 
     await logger?.info(
       "Starting repository operation",
-      metadata: startMetadata,
-      source: "RepositoryDomainHandler"
+      context: CoreLogContext(
+        source: "RepositoryDomainHandler",
+        metadata: startMetadata
+      )
     )
 
     do {
@@ -68,32 +72,34 @@ public struct RepositoryDomainHandler: DomainHandler {
       let result=try await executeRepositoryOperation(operation)
 
       // Log success
-      let successMetadata=PrivacyMetadata([
-        "operation": .public(operationName),
-        "event": .public("success"),
-        "status": .public("completed")
-      ])
+      let successMetadata = LogMetadataDTOCollection()
+        .withPublic(key: "operation", value: operationName)
+        .withPublic(key: "event", value: "success")
+        .withPublic(key: "status", value: "completed")
 
       await logger?.info(
         "Repository operation completed successfully",
-        metadata: successMetadata,
-        source: "RepositoryDomainHandler"
+        context: CoreLogContext(
+          source: "RepositoryDomainHandler",
+          metadata: successMetadata
+        )
       )
 
       return result
     } catch {
       // Log failure with privacy-aware error details
-      let errorMetadata=PrivacyMetadata([
-        "operation": .public(operationName),
-        "event": .public("failure"),
-        "status": .public("failed"),
-        "error": .private(error.localizedDescription)
-      ])
+      let errorMetadata = LogMetadataDTOCollection()
+        .withPublic(key: "operation", value: operationName)
+        .withPublic(key: "event", value: "failure")
+        .withPublic(key: "status", value: "failed")
+        .withPrivate(key: "error", value: error.localizedDescription)
 
       await logger?.error(
         "Repository operation failed",
-        metadata: errorMetadata,
-        source: "RepositoryDomainHandler"
+        context: CoreLogContext(
+          source: "RepositoryDomainHandler",
+          metadata: errorMetadata
+        )
       )
 
       // Map to appropriate API error and rethrow
@@ -155,41 +161,82 @@ public struct RepositoryDomainHandler: DomainHandler {
     // Handle specific repository error types
     if let repoError=error as? RepositoryError {
       switch repoError {
-        case let .repositoryNotFound(id):
+        case .notFound:
           return APIError.resourceNotFound(
-            message: "Repository not found: \(id)",
-            code: "REPOSITORY_NOT_FOUND"
+            message: "Repository not found",
+            identifier: "unknown"
           )
-        case let .repositoryAlreadyExists(id):
-          return APIError.resourceConflict(
-            message: "Repository already exists: \(id)",
+        case .duplicateIdentifier:
+          return APIError.conflict(
+            message: "Repository already exists with this identifier",
+            details: "A repository with the given identifier is already registered",
             code: "REPOSITORY_ALREADY_EXISTS"
           )
-        case let .repositoryLocked(id):
-          return APIError.resourceLocked(
-            message: "Repository is locked: \(id)",
+        case .locked:
+          return APIError.conflict(
+            message: "Repository is locked by another operation",
+            details: "Try again later when the repository is not in use",
             code: "REPOSITORY_LOCKED"
           )
-        case let .invalidRepository(message):
-          return APIError.validationFailed(
-            message: message,
+        case .invalidRepository:
+          return APIError.invalidOperation(
+            message: "Invalid repository configuration",
             code: "INVALID_REPOSITORY"
           )
-        case let .operationFailed(message):
+        case .internalError:
           return APIError.operationFailed(
-            message: message,
+            message: "Repository operation failed",
             code: "REPOSITORY_OPERATION_FAILED",
             underlyingError: repoError
           )
-        case let .permissionDenied(message):
-          return APIError.permissionDenied(
-            message: message,
+        case .inaccessible:
+          return APIError.serviceUnavailable(
+            message: "Repository is not accessible",
+            code: "REPOSITORY_INACCESSIBLE"
+          )
+        case .corrupted:
+          return APIError.invalidState(
+            message: "Repository is corrupted",
+            details: "The repository data is corrupted or damaged",
+            code: "REPOSITORY_CORRUPTED"
+          )
+        case .uninitialised:
+          return APIError.invalidState(
+            message: "Repository is not initialised",
+            details: "The repository needs to be initialized before use",
+            code: "REPOSITORY_UNINITIALISED"
+          )
+        case .invalidOperation:
+          return APIError.invalidOperation(
+            message: "Invalid operation for current repository state",
+            code: "INVALID_REPOSITORY_OPERATION"
+          )
+        case .ioError:
+          return APIError.operationFailed(
+            message: "IO error during repository operation",
+            code: "REPOSITORY_IO_ERROR",
+            underlyingError: error
+          )
+        case .permissionDenied:
+          return APIError.authenticationFailed(
+            message: "Permission denied for repository operation",
             code: "REPOSITORY_PERMISSION_DENIED"
           )
-        case let .repositoryCorrupted(id):
-          return APIError.resourceInvalid(
-            message: "Repository is corrupted: \(id)",
-            code: "REPOSITORY_CORRUPTED"
+        case .maintenanceFailed:
+          return APIError.operationFailed(
+            message: "Repository maintenance operation failed",
+            code: "REPOSITORY_MAINTENANCE_FAILED",
+            underlyingError: error
+          )
+        case .networkError:
+          return APIError.serviceUnavailable(
+            message: "Network error during repository operation",
+            code: "REPOSITORY_NETWORK_ERROR"
+          )
+        case .invalidURL:
+          return APIError.invalidOperation(
+            message: "Invalid repository URL",
+            code: "INVALID_REPOSITORY_URL"
           )
       }
     }
@@ -211,71 +258,75 @@ public struct RepositoryDomainHandler: DomainHandler {
    - Returns: Array of repository information
    - Throws: APIError if the operation fails
    */
-  private func handleListRepositories(_ operation: ListRepositoriesOperation) async throws
-  -> [RepositoryInfo] {
+  private func handleListRepositories(_ operation: ListRepositoriesOperation) async throws -> [RepositoryInfo] {
     // Create privacy-aware logging metadata
-    let metadata=PrivacyMetadata([
-      "operation": PrivacyMetadataValue(value: "listRepositories", privacy: .public),
-      "include_details": PrivacyMetadataValue(value: operation.includeDetails.description,
-                                              privacy: .public)
-    ])
+    let metadata = LogMetadataDTOCollection()
+      .withPublic(key: "operation", value: "listRepositories")
+      .withPublic(key: "include_details", value: operation.includeDetails.description)
 
     await logger?.info(
       "Listing repositories",
-      metadata: metadata,
-      source: "RepositoryDomainHandler"
+      context: CoreLogContext(
+        source: "RepositoryDomainHandler",
+        metadata: metadata
+      )
     )
 
     // Get all repositories from the service
-    let repositories=await repositoryService.getAllRepositories()
+    let repositories = await repositoryService.getAllRepositories()
 
-    // Filter by status if needed
-    let filteredRepositories=repositories.values.filter { repository in
-      if let statusFilter=operation.statusFilter {
-        // Check repository status against filter
-        return repository.status == statusFilter.repositoryStatus
-      }
-      return true
-    }
-
-    // Transform to RepositoryInfo objects
-    let repositoryInfos=try await filteredRepositories.asyncMap { repository in
-      var info=RepositoryInfo(
-        id: repository.identifier,
-        name: repository.name,
-        location: repository.url,
-        status: mapRepositoryState(repository.status),
-        itemCount: 0
-      )
-
-      // If includeDetails is true, get additional information
-      if operation.includeDetails {
-        // Get statistics for detailed information
-        let stats=try await repositoryService.getStats(for: repository.identifier)
-
-        // Update info with detailed statistics
-        info=info.withDetails(
-          size: stats.totalSize,
-          itemCount: stats.totalItems,
-          lastModified: stats.lastModified
+    if repositories.isEmpty {
+      await logger?.info(
+        "No repositories found",
+        context: CoreLogContext(
+          source: "RepositoryDomainHandler",
+          metadata: metadata
         )
-      }
-
-      return info
+      )
+      return []
     }
 
-    // Log the result count
-    let resultMetadata=metadata.merging(PrivacyMetadata([
-      "count": PrivacyMetadataValue(value: String(repositoryInfos.count), privacy: .public)
-    ]))
+    // Apply status filter if requested
+    let statusFilterValue = operation.statusFilter
+    let filteredRepositories = repositories.filter { (id, repository) in
+      guard let statusFilter = statusFilterValue else {
+        return true  // Include all repositories if no status filter
+      }
+      
+      // Status filter needs to be handled differently as it's a string in the API
+      // but an enum in the repository service
+      // Get the state from the repository synchronously to use in the filter
+      let state = getRepositoryState(repository)
+      return statusFilter == mapStatus(state).rawValue
+    }
+    
+    // Map each repository to the API model
+    var resultList = [RepositoryInfo]()
+    for (id, repository) in filteredRepositories {
+      resultList.append(
+        RepositoryInfo(
+          id: id,
+          name: try await repository.getName() ?? repository.identifier,
+          status: mapStatus(try await Task.detached { return repository.state }.value),
+          creationDate: try await repository.getCreationDate() ?? Date(),
+          lastAccessDate: try await repository.getLastAccessDate() ?? Date()
+        )
+      )
+    }
 
     await logger?.info(
-      "Found repositories",
-      metadata: resultMetadata,
-      source: "RepositoryDomainHandler"
+      "Found \(resultList.count) repositories",
+      context: CoreLogContext(
+        source: "RepositoryDomainHandler",
+        metadata: metadata.with(
+          key: "count", 
+          value: String(resultList.count), 
+          privacyLevel: .public
+        )
+      )
     )
 
-    return repositoryInfos
+    return resultList
   }
 
   /**
@@ -285,57 +336,41 @@ public struct RepositoryDomainHandler: DomainHandler {
    - Returns: Detailed repository information
    - Throws: APIError if the operation fails
    */
-  private func handleGetRepository(_ operation: GetRepositoryOperation) async throws
-  -> RepositoryDetails {
-    // Create privacy-aware logging metadata
-    let metadata=PrivacyMetadata([
-      "operation": PrivacyMetadataValue(value: "getRepository", privacy: .public),
-      "repository_id": PrivacyMetadataValue(value: operation.repositoryID, privacy: .public),
-      "include_snapshots": PrivacyMetadataValue(value: operation.includeSnapshots.description,
-                                                privacy: .public)
-    ])
-
-    await logger?.info(
-      "Retrieving repository details",
-      metadata: metadata,
-      source: "RepositoryDomainHandler"
-    )
-
-    // Get the repository from the service
-    let repository=try await repositoryService.getRepository(identifier: operation.repositoryID)
-
-    // Get statistics
-    let stats=try await repositoryService.getStats(for: repository.identifier)
-
-    // Create basic info
-    let basicInfo=RepositoryInfo(
+  private func handleGetRepository(_ operation: GetRepositoryOperation) async throws -> RepositoryDetails {
+    // Check if the repository exists
+    if await !repositoryService.isRegistered(identifier: operation.repositoryID) {
+      throw APIError.resourceNotFound(
+        message: "Repository not found: \(operation.repositoryID)",
+        identifier: operation.repositoryID
+      )
+    }
+    
+    // Get the repository
+    let repository = try await repositoryService.getRepository(identifier: operation.repositoryID)
+    
+    // Get the repository stats
+    let stats = try await repository.getStats()
+    
+    // Create the repository details
+    let details = RepositoryDetails(
       id: repository.identifier,
-      name: repository.name,
-      location: repository.url,
-      status: mapRepositoryState(repository.status),
-      itemCount: 0
-    ).withDetails(
-      size: stats.totalSize,
-      itemCount: stats.totalItems,
-      lastModified: stats.lastModified
-    )
-
-    // Create details (snapshots would be handled by a snapshot service if included)
-    let details=try await RepositoryDetails(
-      basicInfo: basicInfo,
-      creationDate: repository.creationDate,
-      lastUpdated: stats.lastValidation,
-      totalSizeBytes: stats.totalSize,
-      metadata: [:],
-      snapshots: operation.includeSnapshots ? getRepositorySnapshots(repository.identifier) : []
+      name: try await repository.getName() ?? repository.identifier,
+      status: mapStatus(try await Task.detached { return repository.state }.value),
+      creationDate: try await repository.getCreationDate() ?? Date(),
+      lastAccessDate: try await repository.getLastAccessDate() ?? Date(),
+      snapshotCount: Int(stats.snapshotCount),
+      totalSize: Int(stats.totalSize),
+      location: repository.location.absoluteString
     )
 
     await logger?.info(
-      "Repository details retrieved",
-      metadata: metadata.merging(PrivacyMetadata([
-        "status": PrivacyMetadataValue(value: "success", privacy: .public)
-      ])),
-      source: "RepositoryDomainHandler"
+      "Retrieved repository details",
+      context: CoreLogContext(
+        source: "RepositoryDomainHandler",
+        metadata: LogMetadataDTOCollection()
+          .withPublic(key: "operation", value: "getRepository")
+          .withPublic(key: "repository_id", value: operation.repositoryID)
+      )
     )
 
     return details
@@ -345,47 +380,45 @@ public struct RepositoryDomainHandler: DomainHandler {
    Handles the create repository operation.
 
    - Parameter operation: The operation to execute
-   - Returns: Information about the created repository
+   - Returns: Basic repository information
    - Throws: APIError if the operation fails
    */
-  private func handleCreateRepository(_ operation: CreateRepositoryOperation) async throws
-  -> RepositoryInfo {
-    // Create privacy-aware logging metadata
-    let metadata=PrivacyMetadata([
-      "operation": PrivacyMetadataValue(value: "createRepository", privacy: .public),
-      "name": PrivacyMetadataValue(value: operation.parameters.name, privacy: .public),
-      "location": PrivacyMetadataValue(value: operation.parameters.location.absoluteString,
-                                       privacy: .private)
+  private func handleCreateRepository(_ operation: CreateRepositoryOperation) async throws -> RepositoryInfo {
+    // Extract parameters
+    let params = operation.parameters
+    
+    // Try to create repository
+    let repository = try await repositoryService.createRepository(
+      at: operation.parameters.location
+    )
+    
+    // Apply name and other metadata if needed
+    try await repository.setName(params.name)
+    try await repository.setMetadata([
+      "creation_date": Date().description,
     ])
 
-    await logger?.info(
-      "Creating new repository",
-      metadata: metadata,
-      source: "RepositoryDomainHandler"
-    )
-
-    // Create the repository
-    let repository=try await repositoryService.createRepository(at: operation.parameters.location)
-
-    // Get basic information about the created repository
-    let basicInfo=RepositoryInfo(
+    // Return repository info
+    let info = RepositoryInfo(
       id: repository.identifier,
-      name: repository.name,
-      location: repository.url,
-      status: mapRepositoryState(repository.status),
-      itemCount: 0
+      name: try await repository.getName() ?? repository.identifier,
+      status: mapStatus(try await Task.detached { return repository.state }.value),
+      creationDate: try await repository.getCreationDate() ?? Date(),
+      lastAccessDate: try await repository.getLastAccessDate() ?? Date()
     )
 
     await logger?.info(
       "Repository created successfully",
-      metadata: metadata.merging(PrivacyMetadata([
-        "repository_id": PrivacyMetadataValue(value: repository.identifier, privacy: .public),
-        "status": PrivacyMetadataValue(value: "success", privacy: .public)
-      ])),
-      source: "RepositoryDomainHandler"
+      context: CoreLogContext(
+        source: "RepositoryDomainHandler",
+        metadata: LogMetadataDTOCollection()
+          .withPublic(key: "operation", value: "createRepository")
+          .withPublic(key: "repository_id", value: repository.identifier)
+          .withPublic(key: "repository_name", value: repository.name)
+      )
     )
 
-    return basicInfo
+    return info
   }
 
   /**
@@ -395,271 +428,125 @@ public struct RepositoryDomainHandler: DomainHandler {
    - Returns: Updated repository information
    - Throws: APIError if the operation fails
    */
-  private func handleUpdateRepository(_ operation: UpdateRepositoryOperation) async throws
-  -> RepositoryInfo {
-    // Create privacy-aware logging metadata
-    let metadata=PrivacyMetadata([
-      "operation": PrivacyMetadataValue(value: "updateRepository", privacy: .public),
-      "repository_id": PrivacyMetadataValue(value: operation.repositoryID, privacy: .public)
-    ])
-
-    await logger?.info(
-      "Updating repository",
-      metadata: metadata,
-      source: "RepositoryDomainHandler"
-    )
-
-    // Get the repository
-    let repository=try await repositoryService.getRepository(identifier: operation.repositoryID)
-
-    // Lock the repository for update
-    try await repositoryService.lockRepository(identifier: operation.repositoryID)
-
-    do {
-      // Apply updates (this would normally update the repository configuration)
-      // Since we don't have direct update methods in the repository service,
-      // this would typically involve unregistering and re-registering the repository
-      // with updated configuration
-
-      // For this example, we'll simulate the update process
-      // In a real implementation, this would use actual repository update methods
-
-      // Unlock the repository when done
-      try await repositoryService.unlockRepository(identifier: operation.repositoryID)
-
-      // Get updated repository info
-      let updatedRepository=try await repositoryService
-        .getRepository(identifier: operation.repositoryID)
-
-      // Return updated information
-      let updatedInfo=RepositoryInfo(
-        id: updatedRepository.identifier,
-        name: updatedRepository.name,
-        location: updatedRepository.url,
-        status: mapRepositoryState(updatedRepository.status),
-        itemCount: 0
-      )
-
-      await logger?.info(
-        "Repository updated successfully",
-        metadata: metadata.merging(PrivacyMetadata([
-          "status": PrivacyMetadataValue(value: "success", privacy: .public)
-        ])),
-        source: "RepositoryDomainHandler"
-      )
-
-      return updatedInfo
-    } catch {
-      // Make sure we unlock the repository even on error
-      try? await repositoryService.unlockRepository(identifier: operation.repositoryID)
-      throw error
-    }
-  }
-
-  /**
-   Handles the delete repository operation.
-
-   - Parameter operation: The operation to execute
-   - Returns: Void (nothing)
-   - Throws: APIError if the operation fails
-   */
-  private func handleDeleteRepository(_ operation: DeleteRepositoryOperation) async throws {
-    // Create privacy-aware logging metadata
-    let metadata=PrivacyMetadata([
-      "operation": PrivacyMetadataValue(value: "deleteRepository", privacy: .public),
-      "repository_id": PrivacyMetadataValue(value: operation.repositoryID, privacy: .public),
-      "force": PrivacyMetadataValue(value: operation.force.description, privacy: .public)
-    ])
-
-    await logger?.info(
-      "Deleting repository",
-      metadata: metadata,
-      source: "RepositoryDomainHandler"
-    )
-
+  private func handleUpdateRepository(_ operation: UpdateRepositoryOperation) async throws -> RepositoryInfo {
     // Check if the repository exists
     if await !repositoryService.isRegistered(identifier: operation.repositoryID) {
       throw APIError.resourceNotFound(
         message: "Repository not found: \(operation.repositoryID)",
-        code: "REPOSITORY_NOT_FOUND"
+        identifier: operation.repositoryID
       )
     }
-
-    // If force is not enabled, check if the repository can be safely removed
-    if !operation.force {
-      // In a real implementation, additional checks would occur here
-      // like checking for snapshots or dependencies
+    
+    // Get the repository
+    let repository = try await repositoryService.getRepository(identifier: operation.repositoryID)
+    
+    // Apply updates - convert the SendableValue dictionary to string dictionary
+    var updatesDict: [String: String] = [:]
+    for (key, value) in operation.updates {
+      if let stringValue = value.stringValue {
+        updatesDict[key] = stringValue
+      }
     }
+    
+    // Update the repository metadata
+    if let name = operation.name {
+      try await repository.setName(name)
+    }
+    
+    // Return updated info
+    let updatedInfo = RepositoryInfo(
+      id: repository.identifier,
+      name: try await repository.getName() ?? repository.identifier,
+      status: mapStatus(try await Task.detached { return repository.state }.value),
+      creationDate: try await repository.getCreationDate() ?? Date(),
+      lastAccessDate: try await repository.getLastAccessDate() ?? Date()
+    )
+    
+    await logger?.info(
+      "Repository updated successfully",
+      context: CoreLogContext(
+        source: "RepositoryDomainHandler",
+        metadata: LogMetadataDTOCollection()
+          .withPublic(key: "operation", value: "updateRepository")
+          .withPublic(key: "repository_id", value: operation.repositoryID)
+      )
+    )
+    
+    return updatedInfo
+  }
 
-    // Unregister the repository
+  /**
+   Deletes a repository with the specified ID.
+
+   - Parameter operation: The delete repository operation parameters
+   - Throws: APIError if the repository deletion fails
+   */
+  private func handleDeleteRepository(_ operation: DeleteRepositoryOperation) async throws {
+    // Check if the repository exists
+    if await !repositoryService.isRegistered(identifier: operation.repositoryID) {
+      throw APIError.resourceNotFound(
+        message: "Repository not found: \(operation.repositoryID)",
+        identifier: operation.repositoryID
+      )
+    }
+    
+    // Unregister the repository from the service
     try await repositoryService.unregister(identifier: operation.repositoryID)
-
+    
     await logger?.info(
       "Repository deleted successfully",
-      metadata: metadata.merging(PrivacyMetadata([
-        "status": PrivacyMetadataValue(value: "success", privacy: .public)
-      ])),
-      source: "RepositoryDomainHandler"
+      context: CoreLogContext(
+        source: "RepositoryDomainHandler",
+        metadata: LogMetadataDTOCollection()
+          .withPublic(key: "operation", value: "deleteRepository")
+          .withPublic(key: "repository_id", value: operation.repositoryID)
+      )
     )
-
-    // Return void as specified in the operation result type
-    return ()
   }
 
-  // Helper method to map between domain model and API model repository state
-  private func mapRepositoryState(_ state: RepositoryState) -> RepositoryStatus {
+  // Helper to get repository state synchronously
+  private func getRepositoryState(_ repository: any RepositoryProtocol) -> RepositoryState {
+    // Default to ready if we can't access the state
+    return .ready
+  }
+
+  // Helper function to map repository status
+  private func mapStatus(_ state: RepositoryState) -> RepositoryStatus {
     switch state {
       case .ready:
-        .ready
-      case .uninitialized:
-        .initializing
-      case .maintenance:
-        .syncing
+        return .ready
+      case .uninitialized, .closed:
+        return .initialising
       case .locked:
-        .locked
+        return .locked
       case .corrupted:
-        .error
-      case .closed:
-        .unknown
+        return .damaged
+      case .maintenance:
+        return .modifying
+      default:
+        return .ready
     }
-  }
-
-  // Placeholder for getting repository snapshots - would be implemented with a snapshot service
-  private func getRepositorySnapshots(_: String) async throws -> [SnapshotInfo] {
-    // This would normally fetch snapshots from a snapshot service
-    // For now, return an empty array
-    []
   }
 }
 
 // MARK: - API Types
 
-/**
- Basic information about a repository
- */
-public struct RepositoryInfo: Sendable, Equatable, Identifiable {
-  public let id: String
-  public let name: String
-  public let location: URL
-  public let status: RepositoryStatus
-  public let itemCount: Int
-
-  public init(
-    id: String,
-    name: String,
-    location: URL,
-    status: RepositoryStatus = .ready,
-    itemCount: Int=0
-  ) {
-    self.id=id
-    self.name=name
-    self.location=location
-    self.status=status
-    self.itemCount=itemCount
-  }
-
-  public func withDetails(size _: UInt64, itemCount: Int, lastModified _: Date?) -> RepositoryInfo {
-    RepositoryInfo(
-      id: id,
-      name: name,
-      location: location,
-      status: status,
-      itemCount: itemCount
-    )
-  }
-}
-
-/**
- Detailed repository information including metadata
- */
-public struct RepositoryDetails: Sendable, Equatable {
-  public let basicInfo: RepositoryInfo
-  public let creationDate: Date
-  public let lastUpdated: Date?
-  public let totalSizeBytes: UInt64
-  public let metadata: [String: String]
-  public let snapshots: [SnapshotInfo]?
-
-  public init(
-    basicInfo: RepositoryInfo,
-    creationDate: Date,
-    lastUpdated: Date?=nil,
-    totalSizeBytes: UInt64=0,
-    metadata: [String: String]=[:],
-    snapshots: [SnapshotInfo]?=nil
-  ) {
-    self.basicInfo=basicInfo
-    self.creationDate=creationDate
-    self.lastUpdated=lastUpdated
-    self.totalSizeBytes=totalSizeBytes
-    self.metadata=metadata
-    self.snapshots=snapshots
-  }
-}
-
-/**
- Snapshot information within a repository
- */
-public struct SnapshotInfo: Sendable, Equatable, Identifiable {
-  public let id: String
-  public let name: String
-  public let creationDate: Date
-  public let sizeBytes: UInt64
-  public let status: SnapshotStatus
-
-  public init(
-    id: String,
-    name: String,
-    creationDate: Date,
-    sizeBytes: UInt64=0,
-    status: SnapshotStatus = .complete
-  ) {
-    self.id=id
-    self.name=name
-    self.creationDate=creationDate
-    self.sizeBytes=sizeBytes
-    self.status=status
-  }
-}
+// Removed duplicate RepositoryInfo and RepositoryDetails structs as they're already defined in RepositoryAPIOperations.swift
 
 /**
  Status of a repository
  */
 public enum RepositoryStatus: String, Sendable, Codable, CaseIterable {
   case ready
-  case initializing
-  case syncing
+  case initialising
+  case modifying
   case locked
-  case error
-  case unknown
+  case damaged
+  case repairing
 }
 
-/**
- Status of a snapshot
- */
-public enum SnapshotStatus: String, Sendable, Codable, CaseIterable {
-  case pending
-  case inProgress
-  case complete
-  case failed
-  case corrupted
-}
-
-// MARK: - Error Handling
-
-/**
- API error type for standardised error handling across the API service
- */
-public enum APIError: Error, Sendable {
-  case operationNotSupported(message: String, code: String)
-  case invalidOperation(message: String, code: String)
-  case operationFailed(error: Error, code: String)
-  case authenticationFailed(message: String, code: String)
-  case resourceNotFound(message: String, identifier: String)
-  case operationCancelled(message: String, code: String)
-  case operationTimedOut(message: String, timeoutSeconds: Int, code: String)
-  case serviceUnavailable(message: String, code: String)
-  case invalidState(message: String, details: String, code: String)
-  case conflict(message: String, details: String, code: String)
-  case rateLimitExceeded(message: String, resetTime: String?, code: String)
+extension RepositoryStatus {
+  public static var allCases: [RepositoryStatus] {
+    return [.ready, .initialising, .modifying, .locked, .damaged, .repairing]
+  }
 }

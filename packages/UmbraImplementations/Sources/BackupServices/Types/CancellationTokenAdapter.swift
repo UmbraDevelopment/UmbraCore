@@ -24,23 +24,46 @@ public enum CancellationTokenAdapter {
 /// Adapter that allows a BackupOperationCancellationToken to be used as a ProgressCancellationToken
 private final class ProgressCancellationTokenAdapter: ProgressCancellationToken {
   private let token: BackupOperationCancellationToken
-
+  private var _isCancelled: Bool = false
+  
   init(token: BackupOperationCancellationToken) {
-    self.token=token
-  }
-
-  var isCancelled: Bool {
-    get async {
-      await token.isCancelled
+    self.token = token
+    // Set up task to monitor the cancellation state
+    Task {
+      self._isCancelled = await token.isCancelled
     }
   }
 
-  func cancel() async {
-    await token.cancel()
+  var isCancelled: Bool {
+    // This needs to be synchronous for protocol conformance
+    return _isCancelled
   }
 
-  func onCancel(_ callback: @escaping () -> Void) async {
-    await token.onCancel(callback)
+  func cancel() {
+    // This needs to be synchronous for protocol conformance
+    Task {
+      await token.cancel()
+      self._isCancelled = true
+    }
+  }
+  
+  // This was likely used for callback registration but isn't in the protocol
+  // We'll keep it as an extension method
+}
+
+// Extension to provide async capabilities as needed
+extension ProgressCancellationTokenAdapter {
+  func onCancel(_ callback: @escaping () -> Void) {
+    Task {
+      while !_isCancelled {
+        try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
+        self._isCancelled = await token.isCancelled
+        if self._isCancelled {
+          callback()
+          break
+        }
+      }
+    }
   }
 }
 

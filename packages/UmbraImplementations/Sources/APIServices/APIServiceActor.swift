@@ -34,7 +34,7 @@ public actor APIServiceActor: APIServiceProtocol {
   private let securityBookmarkService: SecurityBookmarkProtocol
 
   /// Continuation for API events
-  private var eventContinuations: [UUID: AsyncStream<APIEventDTO>.Continuation]=[:]
+  private var eventContinuations: [UUID: AsyncStream<APIEventDTO>.Continuation] = [:]
 
   // MARK: - Initialisation
 
@@ -48,28 +48,32 @@ public actor APIServiceActor: APIServiceProtocol {
     logger: DomainLogger,
     securityBookmarkService: SecurityBookmarkProtocol
   ) {
-    self.configuration=configuration
-    self.logger=logger
-    self.securityBookmarkService=securityBookmarkService
+    self.configuration = configuration
+    self.logger = logger
+    self.securityBookmarkService = securityBookmarkService
   }
 
   // MARK: - APIServiceProtocol Implementation
 
   /// Initialises the service with the provided configuration
   /// - Parameter configuration: The configuration to use for initialisation
-  /// - Throws: UmbraErrors.APIError if initialisation fails
+  /// - Throws: APIError if initialisation fails
   public func initialise(configuration: APIConfigurationDTO) async throws {
     // Log the initialisation attempt with privacy-aware logging
-    logger.info(
+    await logger.info(
       "Initialising API service",
-      metadata: ["environment": .public(configuration.environment.rawValue)]
+      context: CoreLogContext(
+        source: "APIServiceActor",
+        metadata: LogMetadataDTOCollection()
+          .withPublic(key: "environment", value: configuration.environment.rawValue)
+      )
     )
 
     // Update the configuration
-    self.configuration=configuration
+    self.configuration = configuration
 
     // Publish an initialisation event
-    publishEvent(
+    await publishEvent(
       APIEventDTO(
         identifier: UUID().uuidString,
         eventType: .initialisation,
@@ -81,88 +85,53 @@ public actor APIServiceActor: APIServiceProtocol {
     )
   }
 
-  /// Creates an encrypted security-scoped bookmark for the specified URL
+  /// Creates an encrypted security-scoped bookmark for a URL
   /// - Parameters:
-  ///   - url: URL representation as a string
+  ///   - url: URL to create a bookmark for
   ///   - identifier: Unique identifier for the bookmark
-  /// - Throws: UmbraErrors.APIError if bookmark creation fails
-  public func createEncryptedBookmark(url: String, identifier: String) async throws {
-    // Log the operation with privacy-aware logging
-    logger.info(
-      "Creating encrypted bookmark",
-      metadata: [
-        "identifier": .public(identifier),
-        "url": .private(url) // URL might contain sensitive path information
-      ]
+  /// - Throws: APIError if bookmark creation fails
+  public nonisolated func createEncryptedBookmark(url: String, identifier: String) async throws {
+    await logger.debug(
+      "Creating encrypted bookmark", 
+      metadata: LogMetadataDTOCollection()
+        .withPublic(key: "identifier", value: identifier)
+        .withPrivate(key: "url", value: url)
     )
-
-    do {
-      // Delegate to the security bookmark service
-      try await securityBookmarkService.createBookmark(
-        for: url,
-        identifier: identifier
+    
+    // Using the SecurityBookmarkProtocol method directly
+    try await securityBookmarkService.createBookmark(
+      for: url,
+      withIdentifier: identifier
+    )
+    
+    await publishEvent(
+      APIEventDTO(
+        identifier: UUID().uuidString,
+        eventType: .operation,
+        timestamp: TimePointDTO.now(),
+        status: .completed,
+        operation: "createEncryptedBookmark",
+        context: "Bookmark created for identifier: \(identifier)"
       )
-
-      // Publish a success event
-      publishEvent(
-        APIEventDTO(
-          identifier: UUID().uuidString,
-          eventType: .operation,
-          timestamp: TimePointDTO.now(),
-          status: .completed,
-          operation: "createEncryptedBookmark",
-          context: "Bookmark created for identifier: \(identifier)"
-        )
-      )
-    } catch {
-      // Log the error with privacy-aware logging
-      logger.error(
-        "Failed to create encrypted bookmark",
-        metadata: [
-          "identifier": .public(identifier),
-          "error": .public(error.localizedDescription)
-        ]
-      )
-
-      // Publish an error event
-      publishEvent(
-        APIEventDTO(
-          identifier: UUID().uuidString,
-          eventType: .error,
-          timestamp: TimePointDTO.now(),
-          status: .failed,
-          operation: "createEncryptedBookmark",
-          context: "Error creating bookmark: \(error.localizedDescription)"
-        )
-      )
-
-      // Map the error to an APIError
-      throw UmbraErrors.APIError.operationFailed(
-        message: "Failed to create encrypted bookmark",
-        underlyingError: error
-      )
-    }
+    )
   }
 
   /// Resolves an encrypted security-scoped bookmark to a URL
   /// - Parameter identifier: Unique identifier for the bookmark
   /// - Returns: URL representation as a string
-  /// - Throws: UmbraErrors.APIError if bookmark resolution fails
-  public func resolveEncryptedBookmark(identifier: String) async throws -> String {
-    // Log the operation with privacy-aware logging
-    logger.info(
-      "Resolving encrypted bookmark",
-      metadata: ["identifier": .public(identifier)]
+  /// - Throws: APIError if bookmark resolution fails
+  public nonisolated func resolveEncryptedBookmark(identifier: String) async throws -> String {
+    await logger.debug(
+      "Resolving encrypted bookmark", 
+      metadata: LogMetadataDTOCollection()
+        .withPublic(key: "identifier", value: identifier)
     )
-
+    
+    // Using the SecurityBookmarkProtocol method directly
     do {
-      // Delegate to the security bookmark service
-      let url=try await securityBookmarkService.resolveBookmark(
-        withIdentifier: identifier
-      )
-
-      // Publish a success event
-      publishEvent(
+      let url = try await securityBookmarkService.resolveBookmark(withIdentifier: identifier)
+      
+      await publishEvent(
         APIEventDTO(
           identifier: UUID().uuidString,
           eventType: .operation,
@@ -172,57 +141,44 @@ public actor APIServiceActor: APIServiceProtocol {
           context: "Bookmark resolved for identifier: \(identifier)"
         )
       )
-
-      // Return the resolved URL
+      
       return url
     } catch {
-      // Log the error with privacy-aware logging
-      logger.error(
-        "Failed to resolve encrypted bookmark",
-        metadata: [
-          "identifier": .public(identifier),
-          "error": .public(error.localizedDescription)
-        ]
+      await logger.error(
+        "Failed to resolve bookmark", 
+        metadata: LogMetadataDTOCollection()
+          .withPublic(key: "identifier", value: identifier)
+          .withPublic(key: "error", value: "\(error)")
       )
-
-      // Publish an error event
-      publishEvent(
-        APIEventDTO(
-          identifier: UUID().uuidString,
-          eventType: .error,
-          timestamp: TimePointDTO.now(),
-          status: .failed,
-          operation: "resolveEncryptedBookmark",
-          context: "Error resolving bookmark: \(error.localizedDescription)"
-        )
-      )
-
-      // Map the error to an APIError
-      throw UmbraErrors.APIError.operationFailed(
-        message: "Failed to resolve encrypted bookmark",
-        underlyingError: error
+      
+      throw APIError.resourceNotFound(
+        message: "The bookmark could not be found or resolved",
+        identifier: identifier
       )
     }
   }
 
   /// Deletes an encrypted security-scoped bookmark
   /// - Parameter identifier: Unique identifier for the bookmark to delete
-  /// - Throws: UmbraErrors.APIError if bookmark deletion fails
-  public func deleteEncryptedBookmark(identifier: String) async throws {
-    // Log the operation with privacy-aware logging
-    logger.info(
-      "Deleting encrypted bookmark",
-      metadata: ["identifier": .public(identifier)]
+  /// - Throws: APIError if bookmark deletion fails
+  public nonisolated func deleteEncryptedBookmark(identifier: String) async throws {
+    await logger.debug(
+      "Deleting encrypted bookmark", 
+      metadata: LogMetadataDTOCollection()
+        .withPublic(key: "identifier", value: identifier)
     )
-
+    
+    // Try to delete the bookmark, catching any errors
     do {
-      // Delegate to the security bookmark service
-      try await securityBookmarkService.deleteBookmark(
-        withIdentifier: identifier
+      try await securityBookmarkService.deleteBookmark(withIdentifier: identifier)
+      
+      await logger.info(
+        "Encrypted bookmark deleted", 
+        metadata: LogMetadataDTOCollection()
+          .withPublic(key: "identifier", value: identifier)
       )
-
-      // Publish a success event
-      publishEvent(
+      
+      await publishEvent(
         APIEventDTO(
           identifier: UUID().uuidString,
           eventType: .operation,
@@ -233,113 +189,147 @@ public actor APIServiceActor: APIServiceProtocol {
         )
       )
     } catch {
-      // Log the error with privacy-aware logging
-      logger.error(
-        "Failed to delete encrypted bookmark",
-        metadata: [
-          "identifier": .public(identifier),
-          "error": .public(error.localizedDescription)
-        ]
+      await logger.error(
+        "Failed to delete bookmark", 
+        metadata: LogMetadataDTOCollection()
+          .withPublic(key: "identifier", value: identifier)
+          .withPublic(key: "error", value: "\(error)")
       )
-
-      // Publish an error event
-      publishEvent(
-        APIEventDTO(
-          identifier: UUID().uuidString,
-          eventType: .error,
-          timestamp: TimePointDTO.now(),
-          status: .failed,
-          operation: "deleteEncryptedBookmark",
-          context: "Error deleting bookmark: \(error.localizedDescription)"
-        )
-      )
-
-      // Map the error to an APIError
-      throw UmbraErrors.APIError.operationFailed(
-        message: "Failed to delete encrypted bookmark",
-        underlyingError: error
+      
+      throw APIError.resourceNotFound(
+        message: "The bookmark could not be found or deleted",
+        identifier: identifier
       )
     }
   }
 
   /// Retrieves the current version information of the API
   /// - Returns: Version information as APIVersionDTO
-  public func getVersion() async -> APIVersionDTO {
-    // Log the operation with privacy-aware logging
-    logger.debug(
-      "Getting API version",
-      metadata: ["environment": .public(configuration.environment.rawValue)]
+  public nonisolated func getVersion() async -> APIVersionDTO {
+    let version = APIVersionDTO(
+      major: 1,
+      minor: 0,
+      patch: 0,
+      buildIdentifier: "alpha-build"
     )
-
-    // Return the current version (in a real implementation, this would be fetched from a
-    // configuration)
-    return APIVersionDTO(major: 1, minor: 0, patch: 0)
+    
+    await logger.debug(
+      "Returning API version information", 
+      metadata: LogMetadataDTOCollection()
+        .withPublic(key: "version", value: "\(version.major).\(version.minor).\(version.patch)")
+        .withPublic(key: "buildIdentifier", value: version.buildIdentifier ?? "")
+    )
+    
+    return version
   }
 
   /// Subscribes to API service events
   /// - Parameter filter: Optional filter to limit the events received
   /// - Returns: An async sequence of APIEventDTO objects
-  public func subscribeToEvents(filter: APIEventFilterDTO?) -> AsyncStream<APIEventDTO> {
-    // Generate a unique identifier for this subscription
-    let subscriptionID=UUID()
-
-    // Log the subscription with privacy-aware logging
-    logger.debug(
-      "New event subscription",
-      metadata: [
-        "subscription_id": .public(subscriptionID.uuidString),
-        "filter_types": .public(filter?.eventTypes?.map(\.rawValue)
-          .joined(separator: ", ") ?? "all")
-      ]
-    )
-
-    // Create an AsyncStream that will receive events
-    let stream=AsyncStream<APIEventDTO> { continuation in
-      // Store the continuation for publishing events
-      eventContinuations[subscriptionID]=continuation
-
-      // Set up cancellation handler to clean up when the stream is cancelled
-      continuation.onTermination={ [weak self] _ in
-        Task { [weak self] in
-          await self?.removeEventContinuation(for: subscriptionID)
+  public nonisolated func subscribeToEvents(filter: APIEventFilterDTO?) -> AsyncStream<APIEventDTO> {
+    return AsyncStream { continuation in
+      // Create a task to handle the event subscription
+      let task = Task {
+        do {
+          await logger.debug(
+            "Subscribing to API events", 
+            metadata: LogMetadataDTOCollection()
+              .withPublic(key: "hasFilter", value: filter != nil ? "true" : "false")
+          )
+          
+          // Register the continuation with the event bus
+          await registerEventSubscriber(continuation: continuation, filter: filter)
+          
+          // Keep the task alive until cancelled
+          try await Task.sleep(for: .seconds(365 * 24 * 60 * 60)) // Effectively forever
+        } catch {
+          await logger.error(
+            "Event subscription ended unexpectedly", 
+            metadata: LogMetadataDTOCollection()
+              .withPublic(key: "error", value: "\(error)")
+          )
+          continuation.finish()
+        }
+      }
+      
+      // Set up cancellation handler
+      continuation.onTermination = { _ in
+        task.cancel()
+        Task {
+          await unregisterEventSubscriber(continuation: continuation)
+          await logger.debug("Event subscription terminated", metadata: LogMetadataDTOCollection())
         }
       }
     }
-
-    return stream
   }
 
   // MARK: - Private Methods
 
   /// Removes an event continuation for a subscription that has been cancelled
   /// - Parameter subscriptionId: The ID of the subscription to remove
-  private func removeEventContinuation(for subscriptionID: UUID) {
+  private func removeEventContinuation(for subscriptionID: UUID) async {
     eventContinuations.removeValue(forKey: subscriptionID)
 
     // Log the removal with privacy-aware logging
-    logger.debug(
+    await logger.debug(
       "Event subscription removed",
-      metadata: ["subscription_id": .public(subscriptionID.uuidString)]
+      context: CoreLogContext(
+        source: "APIServiceActor",
+        metadata: LogMetadataDTOCollection()
+          .withPublic(key: "subscription_id", value: subscriptionID.uuidString)
+      )
     )
   }
 
   /// Publishes an event to all active subscribers, respecting their filters
   /// - Parameter event: The event to publish
-  private func publishEvent(_ event: APIEventDTO) {
+  private func publishEvent(_ event: APIEventDTO) async {
     for (subscriptionID, continuation) in eventContinuations {
       // In a real implementation, we would filter the events based on the subscription's filter
       // For simplicity, we're publishing all events to all subscribers
       continuation.yield(event)
 
       // Log the event publication with privacy-aware logging
-      logger.trace(
+      await logger.trace(
         "Published event to subscriber",
-        metadata: [
-          "subscription_id": .public(subscriptionID.uuidString),
-          "event_id": .public(event.identifier),
-          "event_type": .public(event.eventType.rawValue)
-        ]
+        context: CoreLogContext(
+          source: "APIServiceActor",
+          metadata: LogMetadataDTOCollection()
+            .withPublic(key: "subscription_id", value: subscriptionID.uuidString)
+            .withPublic(key: "event_id", value: event.identifier)
+            .withPublic(key: "event_type", value: event.eventType.rawValue)
+        )
       )
+    }
+  }
+
+  // Helper methods for event subscription management
+  private func registerEventSubscriber(
+      continuation: AsyncStream<APIEventDTO>.Continuation,
+      filter: APIEventFilterDTO?
+  ) async {
+    // In a real implementation, we would register this continuation with an event bus
+    // For now, we'll just log that it was called
+    await logger.info(
+      "Registered event subscriber", 
+      metadata: LogMetadataDTOCollection()
+        .withPublic(key: "hasFilter", value: filter != nil ? "true" : "false")
+    )
+    
+    // Store the continuation in a collection to manage active subscribers
+    self.eventContinuations[UUID()] = continuation
+  }
+  
+  private func unregisterEventSubscriber(
+      continuation: AsyncStream<APIEventDTO>.Continuation
+  ) async {
+    // In a real implementation, we would unregister this continuation from an event bus
+    // For now, we'll just log that it was called
+    await logger.info("Unregistered event subscriber", metadata: LogMetadataDTOCollection())
+    
+    // Remove the continuation from our collection
+    for (id, value) in self.eventContinuations where value === continuation {
+      self.eventContinuations.removeValue(forKey: id)
     }
   }
 }
@@ -349,10 +339,9 @@ public actor APIServiceActor: APIServiceProtocol {
 extension TimePointDTO {
   /// Creates a TimePointDTO representing the current time
   static func now() -> TimePointDTO {
-    // In a real implementation, this would use a proper time source
     // For simplicity, we're using a dummy implementation
     TimePointDTO(
-      epochSeconds: UInt64(Date().timeIntervalSince1970),
+      timestamp: Date().timeIntervalSince1970,
       nanoseconds: 0
     )
   }

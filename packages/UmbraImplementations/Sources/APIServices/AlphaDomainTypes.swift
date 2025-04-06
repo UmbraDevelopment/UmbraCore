@@ -21,13 +21,16 @@ import Foundation
 /// Defines domains for API operations
 public enum APIDomain: String, Codable, Sendable, Hashable, CaseIterable {
   /// Security-related operations (encryption, key management)
-  case security
+  case security = "security"
 
   /// Repository management operations
-  case repository
+  case repository = "repository"
 
   /// Backup and snapshot operations
-  case backup
+  case backup = "backup"
+
+  /// System-related operations
+  case system = "system"
 
   /// Notification-related operations
   case notification
@@ -62,12 +65,6 @@ public protocol DomainHandler {
   func supports(_ operation: some APIOperation) -> Bool
 }
 
-/// Protocol marker for security-related API operations
-public protocol SecurityAPIOperation: APIOperation {}
-
-/// Protocol marker for repository-related API operations
-public protocol RepositoryAPIOperation: APIOperation {}
-
 /// Protocol marker for backup-related API operations
 public protocol BackupAPIOperation: APIOperation {}
 
@@ -98,10 +95,10 @@ public enum SecurityOperationType: String, Sendable, Codable, CaseIterable {
 
   /// Secret storage
   case storeSecret
-
+  
   /// Secret retrieval
   case retrieveSecret
-
+  
   /// Secret deletion
   case deleteSecret
 }
