@@ -468,10 +468,10 @@ public actor Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked Sendabl
       // If it's a loggable error with specific privacy metadata, use that,
       // otherwise create metadata based on the provided privacy level
       if let loggableError=error as? LoggableErrorProtocol {
-        // Use the error's built-in privacy metadata
-        let errorMetadata=loggableError.getPrivacyMetadata()
+        // Use the error's built-in metadata collection
+        let errorMetadataCollection = loggableError.createMetadataCollection()
         errorContext=errorContext
-          .withUpdatedMetadata(Self.convertToLogMetadataDTOCollection(errorMetadata))
+          .withUpdatedMetadata(errorMetadataCollection)
       } else {
         // Create default error metadata with the specified privacy level
         var metadata=LogMetadataDTOCollection()
