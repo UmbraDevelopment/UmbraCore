@@ -182,7 +182,7 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
           using: strategy.description,
           context: actualContext
         )
-        return .success(outcome)
+        return .recovered(outcome)
       }
     }
     
@@ -193,7 +193,7 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
       options: effectiveOptions
     )
     
-    return .failure
+    return .failed(error)
   }
 
   /**
@@ -235,53 +235,45 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
       return loggableError
     }
     
-    // For NSError, create a structured LoggableErrorDTO
-    if let nsError = error as NSError {
-      // Extract user info for details while filtering sensitive keys
-      let sensitiveKeys = ["NSUnderlyingError", "NSSensitiveKeys", "NSCredential"]
-      let filteredUserInfo = nsError.userInfo.filter { !sensitiveKeys.contains($0.key) }
-      let details = filteredUserInfo.description
-      
-      return LoggableErrorDTO(
-        error: error,
-        domain: nsError.domain,
-        code: nsError.code,
-        message: nsError.localizedDescription,
-        details: details,
-        source: "\(context.source.file):\(context.source.line)",
-        correlationID: context.correlationID
-      )
-    }
-    
     // For LoggableErrorProtocol, adapt to the new DTO format
     if let loggableErrorProtocol = error as? LoggableErrorProtocol {
       let message = loggableErrorProtocol.getLogMessage()
-      let metadata = loggableErrorProtocol.getPrivacyMetadata()
-      var details = ""
+      let metadata = loggableErrorProtocol.createMetadataCollection()
+      var detailsString = ""
       
       // Extract details from metadata, prioritising sensitive data
-      for key in metadata.entries() {
-        if let value = metadata[key], value.privacy == .sensitive {
-          details += "\(key): \(value.valueString)\n"
-        }
+      for entry in metadata.entries {
+        detailsString += "\(entry.key): \(entry.value)\n"
       }
       
       return LoggableErrorDTO(
         error: error,
+        domain: "App.\(String(describing: type(of: error)))",
+        code: 0,
         message: message,
-        details: details,
+        details: detailsString,
         source: loggableErrorProtocol.getSource(),
-        correlationID: context.correlationID
+        correlationID: context.metadata["correlationID"] ?? UUID().uuidString
       )
     }
     
-    // For other errors, create a standard LoggableErrorDTO
+    // For NSError, create a structured LoggableErrorDTO
+    // In Swift, all Error types can be cast to NSError, so we use direct cast
+    let nsError = error as NSError
+    
+    // Extract user info for details while filtering sensitive keys
+    let sensitiveKeys = ["NSUnderlyingError", "NSSensitiveKeys", "NSCredential"]
+    let filteredUserInfo = nsError.userInfo.filter { !sensitiveKeys.contains($0.key) }
+    let details = filteredUserInfo.description
+    
     return LoggableErrorDTO(
       error: error,
-      message: error.localizedDescription,
-      details: String(describing: error),
-      source: "\(context.source.file):\(context.source.function):\(context.source.line)",
-      correlationID: context.correlationID
+      domain: nsError.domain,
+      code: nsError.code,
+      message: nsError.localizedDescription,
+      details: details,
+      source: "\(context.source.file):\(context.source.line)",
+      correlationID: context.metadata["correlationID"] ?? UUID().uuidString
     )
   }
 
@@ -299,23 +291,22 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
     options: ErrorHandlingOptions
   ) async {
     // Determine the appropriate log level based on error and options
-    let logLevel = determineLogLevel(for: error, options: options)
+    _ = determineLogLevel(for: error, options: options)
     
     // Determine privacy level from options
-    let privacyLevel = mapPrivacyLevelToClassification(options.privacyLevel ?? .standard)
+    _ = mapPrivacyLevelToClassification(options.privacyLevel)
     
     // Create log context
     let logContext = CoreLogContext(
       source: "\(context.source.file):\(context.source.line)",
-      correlationID: context.correlationID,
+      correlationID: error.correlationID ?? UUID().uuidString,
       metadata: error.createMetadataCollection()
     )
     
     // Log the error using the domain logger's error method
     await errorLogger.error(
-      error,
-      context: logContext,
-      privacyLevel: privacyLevel
+      error.message,
+      context: logContext
     )
   }
   
@@ -328,11 +319,6 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
    - Returns: The appropriate error log level
    */
   private func determineLogLevel(for error: LoggableErrorDTO, options: ErrorHandlingOptions) -> ErrorLogLevel {
-    // If options specify a log level, use it
-    if let logLevel = options.logLevel {
-      return logLevel
-    }
-    
     // Determine based on error domain and code
     switch error.domain {
     case "Network", "NSURLErrorDomain":
@@ -347,10 +333,8 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
         return .critical
       } else if error.code >= 400 {
         return .error
-      } else if error.code >= 300 {
-        return .warning
       } else {
-        return .info
+        return .warning
       }
     }
   }
@@ -383,15 +367,14 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
    */
   private func notifyUser(about error: LoggableErrorDTO) async {
     // Create a user-friendly notification context
-    let notificationContext = ErrorContext(
+    _ = ErrorContext(
       source: ErrorSource(
         file: #file,
         function: #function,
         line: #line
       ),
       metadata: ["notificationType": "userFacing"],
-      timestamp: Date(),
-      correlationID: error.correlationID
+      timestamp: Date()
     )
     
     // Create a notification metadata collection
@@ -405,7 +388,7 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
     // Log at info level with public classification
     let logContext = CoreLogContext(
       source: "UserNotification",
-      correlationID: error.correlationID,
+      correlationID: nil,
       metadata: metadata
     )
     
@@ -462,7 +445,7 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
     
     let logContext = CoreLogContext(
       source: "DefaultErrorHandler.attemptRecovery",
-      correlationID: context.correlationID,
+      correlationID: nil,
       metadata: metadata
     )
     
@@ -501,7 +484,7 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
     
     let logContext = CoreLogContext(
       source: "ErrorRecovery",
-      correlationID: context.correlationID,
+      correlationID: error.correlationID ?? UUID().uuidString,
       metadata: metadata
     )
     
@@ -526,11 +509,12 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
     
     let logContext = CoreLogContext(
       source: "ErrorRecovery",
-      correlationID: context.correlationID,
+      correlationID: error.correlationID ?? UUID().uuidString,
       metadata: metadata
     )
     
-    let privacyLevel = mapPrivacyLevelToClassification(options.privacyLevel ?? .standard)
+    _ = mapPrivacyLevelToClassification(options.privacyLevel)
+    // No need to pass the privacy level if not used
     await errorLogger.warning("Failed to recover from error", context: logContext)
   }
 }

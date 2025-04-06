@@ -1,6 +1,7 @@
 import CryptoInterfaces
 import Foundation
 import LoggingInterfaces
+import LoggingTypes
 
 /**
  Enhanced log context for crypto operations with privacy controls
@@ -13,10 +14,10 @@ public struct EnhancedLogContext: LogContextDTO {
   public let operationName: String
   
   /// Additional context metadata as key-value pairs
-  public let metadata: [String: String]
+  public private(set) var metadata: [String: String]
   
   /// Privacy level for each metadata field
-  public let privacyLevels: [String: PrivacyClassification]
+  public private(set) var privacyLevels: [String: PrivacyClassification]
   
   /**
    Initialize a new enhanced log context
@@ -50,29 +51,59 @@ public struct EnhancedLogContext: LogContextDTO {
   }
   
   /**
+   Updates metadata values with new values
+   
+   - Parameter metadataUpdates: Dictionary of metadata updates with privacy annotations
+   */
+  public mutating func updateMetadata(_ metadataUpdates: [String: PrivacyLevel]) {
+    for (key, privacyValue) in metadataUpdates {
+      switch privacyValue {
+      case let .public(value):
+        metadata[key] = value
+        privacyLevels[key] = .public
+      case let .private(value):
+        metadata[key] = value
+        privacyLevels[key] = .private
+      case let .hash(value):
+        metadata[key] = value
+        privacyLevels[key] = .hash
+      }
+    }
+  }
+  
+  /**
    Get metadata collection to use with loggers
    
    - Returns: A metadata collection with privacy annotations
    */
-  public func getMetadataCollection() -> LogMetadataDTOCollection {
-    let collection = LogMetadataDTOCollection()
+  public func createMetadataCollection() -> LogMetadataDTOCollection {
+    var collection = LogMetadataDTOCollection()
     
     for (key, value) in metadata {
       let privacy = privacyLevel(for: key)
       
       switch privacy {
       case .private:
-        _ = collection.withPrivate(key: key, value: value)
+        collection = collection.withPrivate(key: key, value: value)
       case .public:
-        _ = collection.withPublic(key: key, value: value)
+        collection = collection.withPublic(key: key, value: value)
       case .sensitive:
-        _ = collection.withSensitive(key: key, value: value)
+        collection = collection.withSensitive(key: key, value: value)
+      case .hash:
+        collection = collection.withHashed(key: key, value: value)
       case .auto:
-        _ = collection.withPublic(key: key, value: value)
+        collection = collection.withAuto(key: key, value: value)
       }
     }
     
     return collection
+  }
+  
+  /**
+   @deprecated Use createMetadataCollection() instead.
+   */
+  public func getMetadataCollection() -> LogMetadataDTOCollection {
+    return createMetadataCollection()
   }
 }
 

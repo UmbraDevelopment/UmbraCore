@@ -1,5 +1,6 @@
 import Foundation
 import SecurityCoreInterfaces
+import CoreSecurityTypes
 
 /**
  This file contains adapter types that bridge between different module implementations
@@ -20,10 +21,10 @@ public enum EncryptionOptionsAdapter {
   public static func convert(
     _ options: SecurityCoreInterfaces
       .EncryptionOptions?
-  ) -> EncryptionOptions? {
+  ) -> LocalEncryptionOptions? {
     guard let options else { return nil }
 
-    return EncryptionOptions(
+    return LocalEncryptionOptions(
       algorithm: convert(options.algorithm),
       mode: convert(options.mode),
       padding: convert(options.padding),
@@ -37,7 +38,7 @@ public enum EncryptionOptionsAdapter {
    - Parameter options: The options to convert
    - Returns: The converted options or nil if input was nil
    */
-  public static func convertToInterface(_ options: EncryptionOptions?) -> SecurityCoreInterfaces
+  public static func convertToInterface(_ options: LocalEncryptionOptions?) -> SecurityCoreInterfaces
   .EncryptionOptions? {
     guard let options else { return nil }
 
@@ -53,24 +54,24 @@ public enum EncryptionOptionsAdapter {
   private static func convert(
     _ algorithm: SecurityCoreInterfaces
       .EncryptionAlgorithm
-  ) -> EncryptionAlgorithm {
+  ) -> CoreSecurityTypes.EncryptionAlgorithm {
     switch algorithm {
       case .aes:
-        return .aes
+        return .aes256CBC
       case .chacha20:
-        return .chacha20
+        return .chacha20Poly1305
       @unknown default:
         // Default to a safe algorithm if an unknown one is provided
-        return .aes
+        return .aes256GCM
     }
   }
 
-  private static func convertToInterface(_ algorithm: EncryptionAlgorithm) -> SecurityCoreInterfaces
+  private static func convertToInterface(_ algorithm: CoreSecurityTypes.EncryptionAlgorithm) -> SecurityCoreInterfaces
   .EncryptionAlgorithm {
     switch algorithm {
-      case .aes:
+      case .aes256CBC, .aes256GCM:
         return .aes
-      case .chacha20:
+      case .chacha20Poly1305:
         return .chacha20
       @unknown default:
         return .aes
@@ -106,7 +107,7 @@ public enum EncryptionOptionsAdapter {
   private static func convert(
     _ padding: SecurityCoreInterfaces
       .EncryptionPadding
-  ) -> EncryptionPadding {
+  ) -> PaddingMode {
     switch padding {
       case .none:
         return .none
@@ -118,7 +119,7 @@ public enum EncryptionOptionsAdapter {
     }
   }
 
-  private static func convertToInterface(_ padding: EncryptionPadding) -> SecurityCoreInterfaces
+  private static func convertToInterface(_ padding: PaddingMode) -> SecurityCoreInterfaces
   .EncryptionPadding {
     switch padding {
       case .none:
@@ -144,10 +145,10 @@ public enum DecryptionOptionsAdapter {
   public static func convert(
     _ options: SecurityCoreInterfaces
       .DecryptionOptions?
-  ) -> DecryptionOptions? {
+  ) -> LocalDecryptionOptions? {
     guard let options else { return nil }
 
-    return DecryptionOptions(
+    return LocalDecryptionOptions(
       algorithm: EncryptionOptionsAdapter.convert(options.algorithm),
       mode: EncryptionOptionsAdapter.convert(options.mode),
       padding: EncryptionOptionsAdapter.convert(options.padding),
@@ -161,7 +162,7 @@ public enum DecryptionOptionsAdapter {
    - Parameter options: The options to convert
    - Returns: The converted options or nil if input was nil
    */
-  public static func convertToInterface(_ options: DecryptionOptions?) -> SecurityCoreInterfaces
+  public static func convertToInterface(_ options: LocalDecryptionOptions?) -> SecurityCoreInterfaces
   .DecryptionOptions? {
     guard let options else { return nil }
 
@@ -184,12 +185,12 @@ public enum HashingOptionsAdapter {
    - Parameter options: The options to convert
    - Returns: The converted options or nil if input was nil
    */
-  public static func convert(_ options: SecurityCoreInterfaces.HashingOptions?) -> HashingOptions? {
+  public static func convert(_ options: SecurityCoreInterfaces.HashingOptions?) -> LocalHashingOptions? {
     guard let options else { return nil }
 
-    return HashingOptions(
+    return LocalHashingOptions(
       algorithm: convert(options.algorithm),
-      salt: options.salt
+      useSalt: options.salt != nil
     )
   }
 
@@ -199,43 +200,46 @@ public enum HashingOptionsAdapter {
    - Parameter options: The options to convert
    - Returns: The converted options or nil if input was nil
    */
-  public static func convertToInterface(_ options: HashingOptions?) -> SecurityCoreInterfaces
-  .HashingOptions? {
+  public static func convertToInterface(_ options: LocalHashingOptions?) -> SecurityCoreInterfaces.HashingOptions? {
     guard let options else { return nil }
 
     return SecurityCoreInterfaces.HashingOptions(
       algorithm: convertToInterface(options.algorithm),
-      salt: options.salt
+      salt: options.useSalt ? [0x01, 0x02, 0x03, 0x04] : nil  // Default salt if needed
     )
   }
 
   // Helper methods for algorithm conversion
   private static func convert(
-    _ algorithm: SecurityCoreInterfaces
-      .HashingAlgorithm
-  ) -> HashingAlgorithm {
+    _ algorithm: SecurityCoreInterfaces.HashAlgorithm
+  ) -> CoreSecurityTypes.HashAlgorithm {
     switch algorithm {
+      case .sha1:
+        return .sha1
       case .sha256:
         return .sha256
       case .sha512:
         return .sha512
-      case .blake2b:
-        return .blake2b
+      case .md5:
+        return .md5
       @unknown default:
         // Default to a secure algorithm if an unknown one is provided
         return .sha256
     }
   }
 
-  private static func convertToInterface(_ algorithm: HashingAlgorithm) -> SecurityCoreInterfaces
-  .HashingAlgorithm {
+  private static func convertToInterface(
+    _ algorithm: CoreSecurityTypes.HashAlgorithm
+  ) -> SecurityCoreInterfaces.HashAlgorithm {
     switch algorithm {
+      case .sha1:
+        return .sha1
       case .sha256:
         return .sha256
       case .sha512:
         return .sha512
-      case .blake2b:
-        return .blake2b
+      case .md5:
+        return .md5
       @unknown default:
         return .sha256
     }
@@ -253,15 +257,15 @@ public enum KeyGenerationOptionsAdapter {
    - Returns: The converted options or nil if input was nil
    */
   public static func convert(
-    _ options: SecurityCoreInterfaces
-      .KeyGenerationOptions?
+    _ options: SecurityCoreInterfaces.KeyGenerationOptions?
   ) -> KeyGenerationOptions? {
     guard let options else { return nil }
 
     return KeyGenerationOptions(
       keyType: convert(options.keyType),
       useSecureEnclave: options.useSecureEnclave,
-      customIdentifier: options.customIdentifier
+      isExtractable: options.isExtractable,
+      options: options.options
     )
   }
 
@@ -271,38 +275,48 @@ public enum KeyGenerationOptionsAdapter {
    - Parameter options: The options to convert
    - Returns: The converted options or nil if input was nil
    */
-  public static func convertToInterface(_ options: KeyGenerationOptions?) -> SecurityCoreInterfaces
-  .KeyGenerationOptions? {
+  public static func convertToInterface(
+    _ options: KeyGenerationOptions?
+  ) -> SecurityCoreInterfaces.KeyGenerationOptions? {
     guard let options else { return nil }
 
     return SecurityCoreInterfaces.KeyGenerationOptions(
       keyType: convertToInterface(options.keyType),
       useSecureEnclave: options.useSecureEnclave,
-      customIdentifier: options.customIdentifier
+      isExtractable: options.isExtractable,
+      options: options.options?.dictionary
     )
   }
 
   // Helper methods for key type conversion
-  private static func convert(_ keyType: SecurityCoreInterfaces.KeyType) -> KeyType {
+  private static func convert(
+    _ keyType: SecurityCoreInterfaces.KeyType
+  ) -> KeyType {
     switch keyType {
-      case .symmetric:
-        return .symmetric
-      case .asymmetric:
-        return .asymmetric
+      case .aes:
+        return .aes
+      case .rsa:
+        return .rsa
+      case .ec:
+        return .ec
       @unknown default:
-        // Default to symmetric if unknown
-        return .symmetric
+        // Default to AES if an unknown type is provided
+        return .aes
     }
   }
 
-  private static func convertToInterface(_ keyType: KeyType) -> SecurityCoreInterfaces.KeyType {
+  private static func convertToInterface(
+    _ keyType: KeyType
+  ) -> SecurityCoreInterfaces.KeyType {
     switch keyType {
-      case .symmetric:
-        return .symmetric
-      case .asymmetric:
-        return .asymmetric
+      case .aes:
+        return .aes
+      case .rsa:
+        return .rsa
+      case .ec:
+        return .ec
       @unknown default:
-        return .symmetric
+        return .aes
     }
   }
 }

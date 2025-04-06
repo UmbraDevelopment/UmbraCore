@@ -86,9 +86,8 @@ public actor ErrorLogger: ErrorLoggingProtocol {
     if let loggableError = convertToLoggableError(error, context: context) {
       // If we have a LoggableErrorDTO, use the domain logger's error method
       await logger.error(
-        loggableError,
-        context: logContext,
-        privacyLevel: determinePrivacyLevel(for: error, options: options)
+        loggableError.message,
+        context: logContext
       )
     } else {
       // For regular errors, use the standard logging with context
@@ -102,7 +101,13 @@ public actor ErrorLogger: ErrorLoggingProtocol {
           await logger.info(message, context: logContext)
         case .warning:
           await logger.warning(message, context: logContext)
-        case .error, .critical:
+        case .error:
+          await logger.error(message, context: logContext)
+        case .critical:
+          await logger.critical(message, context: logContext)
+        case .trace:
+          await logger.debug(message, context: logContext)
+        @unknown default:
           await logger.error(message, context: logContext)
       }
     }
@@ -252,8 +257,7 @@ public actor ErrorLogger: ErrorLoggingProtocol {
     let source = "\(context.source.file):\(context.source.line)"
     let metadataDict = createMetadata(for: error, context: context)
     
-    let errorDomain = extractErrorDomain(from: error)
-    let correlationID = context.correlationID
+    let correlationID = context.metadata["correlationID"] ?? UUID().uuidString
     
     // Create a CoreLogContext to ensure consistent logging format
     return CoreLogContext(
@@ -278,22 +282,13 @@ public actor ErrorLogger: ErrorLoggingProtocol {
     }
     
     // For NSError, create a LoggableErrorDTO
-    if let nsError = error as NSError {
-      return LoggableErrorDTO(
-        error: error,
-        domain: nsError.domain,
-        code: nsError.code,
-        message: nsError.localizedDescription,
-        details: nsError.userInfo.description,
-        source: context.source.function
-      )
-    }
-    
-    // For other errors, create a generic LoggableErrorDTO
+    let nsError = error as NSError
     return LoggableErrorDTO(
       error: error,
-      message: error.localizedDescription,
-      details: String(describing: error),
+      domain: nsError.domain,
+      code: nsError.code,
+      message: nsError.localizedDescription,
+      details: nsError.userInfo.description,
       source: context.source.function
     )
   }
@@ -308,28 +303,19 @@ public actor ErrorLogger: ErrorLoggingProtocol {
    */
   private func determinePrivacyLevel(for error: Error, options: ErrorLoggingOptions?) -> PrivacyClassification {
     // If options specify a privacy level, use it
-    if let options = options, let privacyLevel = options.privacyLevel {
-      return privacyLevel
+    if let options = options {
+      switch options.privacyLevel {
+      case .minimal:
+        return .public
+      case .standard:
+        return .private
+      case .enhanced, .maximum:
+        return .sensitive
+      }
     }
     
     // Default privacy levels based on error type
-    if error is NSError {
-      // NSError might contain sensitive user info
-      return .private
-    }
-    
-    // If the error conforms to CustomStringConvertible and has a description
-    // containing sensitive terms, classify as sensitive
-    let description = String(describing: error).lowercased()
-    let sensitiveTerms = [
-      "password", "credential", "token", "key", "secret", "private", "auth", "cipher"
-    ]
-    
-    if sensitiveTerms.contains(where: { description.contains($0) }) {
-      return .sensitive
-    }
-    
-    // Default to private for most errors
+    // All Swift errors can be bridged to NSError
     return .private
   }
 
@@ -360,7 +346,7 @@ public actor ErrorLogger: ErrorLoggingProtocol {
     metadata["timestamp"] = formatter.string(from: context.timestamp)
     
     // Add correlation ID if available
-    if let correlationID = context.correlationID {
+    if let correlationID = context.metadata["correlationID"] {
       metadata["correlationID"] = correlationID
     }
     
@@ -370,15 +356,14 @@ public actor ErrorLogger: ErrorLoggingProtocol {
     }
     
     // Add NSError specific information
-    if let nsError = error as NSError {
-      metadata["errorCode"] = String(nsError.code)
-      metadata["errorDomain"] = nsError.domain
-      
-      // Add user info, but filter out sensitive keys
-      let sensitiveKeys = ["NSUnderlyingError", "NSSensitiveKeys"]
-      for (key, value) in nsError.userInfo where !sensitiveKeys.contains(key) {
-        metadata["userInfo.\(key)"] = String(describing: value)
-      }
+    let nsError = error as NSError
+    metadata["errorCode"] = String(nsError.code)
+    metadata["errorDomain"] = nsError.domain
+    
+    // Add user info, but filter out sensitive keys
+    let sensitiveKeys = ["NSUnderlyingError", "NSSensitiveKeys"]
+    for (key, value) in nsError.userInfo where !sensitiveKeys.contains(key) {
+      metadata["userInfo.\(key)"] = String(describing: value)
     }
     
     return metadata
@@ -427,8 +412,6 @@ public actor ErrorLogger: ErrorLoggingProtocol {
    */
   private func mapErrorLogLevel(_ errorLevel: ErrorLogLevel) -> LogLevel {
     switch errorLevel {
-      case .trace:
-        return .debug
       case .debug:
         return .debug
       case .info:
@@ -438,6 +421,8 @@ public actor ErrorLogger: ErrorLoggingProtocol {
       case .error:
         return .error
       case .critical:
+        return .critical
+      @unknown default:
         return .error
     }
   }
@@ -451,10 +436,10 @@ public actor ErrorLogger: ErrorLoggingProtocol {
   private func formatErrorMessage(_ error: Error) -> String {
     if let loggableError = error as? LoggableErrorDTO {
       return "[\(loggableError.domain)] \(loggableError.message)"
-    } else if let nsError = error as NSError {
-      return "[\(nsError.domain):\(nsError.code)] \(nsError.localizedDescription)"
     } else {
-      return "[\(type(of: error))] \(error.localizedDescription)"
+      // All Swift errors can be bridged to NSError
+      let nsError = error as NSError
+      return "[\(nsError.domain):\(nsError.code)] \(nsError.localizedDescription)"
     }
   }
   
@@ -466,11 +451,13 @@ public actor ErrorLogger: ErrorLoggingProtocol {
    */
   private func extractErrorDomain(from error: Error) -> String {
     if let domainError = error as? ErrorDomainProtocol {
-      return domainError.domain
-    } else if let nsError = error as NSError {
-      return nsError.domain
+      // Access the domain type through the protocol's expected method/property
+      // as we can't directly access a static member on an instance
+      return String(describing: type(of: domainError))
     } else {
-      return "Generic"
+      // All Swift errors can be bridged to NSError
+      let nsError = error as NSError
+      return nsError.domain
     }
   }
 }

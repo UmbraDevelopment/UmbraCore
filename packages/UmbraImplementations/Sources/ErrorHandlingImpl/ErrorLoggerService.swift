@@ -36,6 +36,111 @@ public actor ErrorLoggerService: ErrorLoggingProtocol {
   }
 
   // MARK: - ErrorLoggingProtocol Conformance
+  
+  /**
+   Logs an error with debug level.
+   
+   - Parameters:
+      - error: The error to log
+      - context: Contextual information about the error
+      - options: Configuration options for error logging
+   */
+  public func debug<E: Error>(
+    _ error: E,
+    context: ErrorContext?,
+    options: ErrorLoggingOptions?
+  ) async {
+    await logError(
+      error,
+      level: .debug,
+      context: context ?? createDefaultContext(),
+      options: options
+    )
+  }
+  
+  /**
+   Logs an error with info level.
+   
+   - Parameters:
+      - error: The error to log
+      - context: Contextual information about the error
+      - options: Configuration options for error logging
+   */
+  public func info<E: Error>(
+    _ error: E,
+    context: ErrorContext?,
+    options: ErrorLoggingOptions?
+  ) async {
+    await logError(
+      error,
+      level: .info,
+      context: context ?? createDefaultContext(),
+      options: options
+    )
+  }
+  
+  /**
+   Logs an error with warning level.
+   
+   - Parameters:
+      - error: The error to log
+      - context: Contextual information about the error
+      - options: Configuration options for error logging
+   */
+  public func warning<E: Error>(
+    _ error: E,
+    context: ErrorContext?,
+    options: ErrorLoggingOptions?
+  ) async {
+    await logError(
+      error,
+      level: .warning,
+      context: context ?? createDefaultContext(),
+      options: options
+    )
+  }
+  
+  /**
+   Logs an error with error level.
+   
+   - Parameters:
+      - error: The error to log
+      - context: Contextual information about the error
+      - options: Configuration options for error logging
+   */
+  public func error<E: Error>(
+    _ error: E,
+    context: ErrorContext?,
+    options: ErrorLoggingOptions?
+  ) async {
+    await logError(
+      error,
+      level: .error,
+      context: context ?? createDefaultContext(),
+      options: options
+    )
+  }
+  
+  /**
+   Logs an error with critical level.
+   
+   - Parameters:
+      - error: The error to log
+      - context: Contextual information about the error
+      - options: Configuration options for error logging
+   */
+  public func critical<E: Error>(
+    _ error: E,
+    context: ErrorContext?,
+    options: ErrorLoggingOptions?
+  ) async {
+    await logError(
+      error,
+      level: .critical,
+      context: context ?? createDefaultContext(),
+      options: options
+    )
+  }
 
   /**
    Logs an error with the specified level and optional context.
@@ -45,22 +150,13 @@ public actor ErrorLoggerService: ErrorLoggingProtocol {
      - level: The severity level for this error
      - options: Configuration options for error logging
    */
-  public func logError(
-    _ error: some Error,
+  public func logError<E: Error>(
+    _ error: E,
     level: ErrorLogLevel,
     options: ErrorLoggingOptions? = nil
   ) async {
     // Create default context with basic information
-    let context = ErrorContext(
-      source: ErrorSource(
-        file: #file,
-        function: #function,
-        line: #line
-      ),
-      metadata: [:],
-      timestamp: Date()
-    )
-
+    let context = createDefaultContext()
     await logError(error, level: level, context: context, options: options)
   }
 
@@ -73,8 +169,8 @@ public actor ErrorLoggerService: ErrorLoggingProtocol {
      - context: Contextual information for the error
      - options: Configuration options for error logging
    */
-  public func logError(
-    _ error: some Error,
+  public func logError<E: Error>(
+    _ error: E,
     level: ErrorLogLevel,
     context: ErrorContext,
     options: ErrorLoggingOptions? = nil
@@ -83,27 +179,27 @@ public actor ErrorLoggerService: ErrorLoggingProtocol {
     let loggableError = convertToLoggableErrorDTO(error, context: context)
     
     // Determine privacy level from options
-    let privacyLevel = mapErrorPrivacyLevel(options?.privacyLevel ?? .standard)
+    _ = mapErrorPrivacyLevel(options?.privacyLevel ?? .standard)
     
     // Create log context with metadata
     let logContext = CoreLogContext(
       source: "\(context.source.file):\(context.source.line)",
-      correlationID: context.correlationID,
+      correlationID: loggableError.correlationID ?? context.metadata["correlationID"] ?? UUID().uuidString,
       metadata: loggableError.createMetadataCollection()
     )
     
     // Log using the appropriate level method
     switch level {
       case .debug:
-        await logger.debug(loggableError.message, context: logContext, privacyLevel: privacyLevel)
+        await logger.debug(loggableError.message, context: logContext)
       case .info:
-        await logger.info(loggableError.message, context: logContext, privacyLevel: privacyLevel)
+        await logger.info(loggableError.message, context: logContext)
       case .warning:
-        await logger.warning(loggableError.message, context: logContext, privacyLevel: privacyLevel)
+        await logger.warning(loggableError.message, context: logContext)
       case .error:
-        await logger.error(loggableError, context: logContext, privacyLevel: privacyLevel)
+        await logger.error(loggableError.message, context: logContext)
       case .critical:
-        await logger.critical(loggableError, context: logContext, privacyLevel: privacyLevel)
+        await logger.critical(loggableError.message, context: logContext)
     }
   }
   
@@ -125,6 +221,23 @@ public actor ErrorLoggerService: ErrorLoggingProtocol {
   }
   
   /**
+   Creates a default error context with file, function, and line information.
+   
+   - Returns: A new ErrorContext instance
+   */
+  private func createDefaultContext() -> ErrorContext {
+    ErrorContext(
+      source: ErrorSource(
+        file: #file,
+        function: #function,
+        line: #line
+      ),
+      metadata: [:],
+      timestamp: Date()
+    )
+  }
+  
+  /**
    Converts an Error to a LoggableErrorDTO.
    
    This method ensures all errors are properly formatted for
@@ -135,7 +248,7 @@ public actor ErrorLoggerService: ErrorLoggingProtocol {
      - context: The error context
    - Returns: A LoggableErrorDTO instance
    */
-  private func convertToLoggableErrorDTO(_ error: some Error, context: ErrorContext) -> LoggableErrorDTO {
+  private func convertToLoggableErrorDTO<E: Error>(_ error: E, context: ErrorContext) -> LoggableErrorDTO {
     // If already a LoggableErrorDTO, return it
     if let loggableError = error as? LoggableErrorDTO {
       return loggableError
@@ -146,13 +259,14 @@ public actor ErrorLoggerService: ErrorLoggingProtocol {
       return createDTOFromLoggableProtocol(loggableError, context: context)
     }
     
-    // For NSError, create a structured LoggableErrorDTO
-    if let nsError = error as NSError {
-      return createDTOFromNSError(nsError, originalError: error, context: context)
-    }
+    // Check if this is a standard Swift error that needs specialized handling
+    // If you have specialized error types that aren't NSError or LoggableErrorProtocol,
+    // you might need custom handling here
     
-    // For standard errors, create a basic LoggableErrorDTO
-    return createStandardDTO(error, context: context)
+    // For all other errors, we can safely bridge to NSError
+    // In Swift, all Error types can be bridged to NSError without conditional casting
+    let nsError = error as NSError
+    return createDTOFromNSError(nsError, originalError: error, context: context)
   }
   
   /**
@@ -168,7 +282,7 @@ public actor ErrorLoggerService: ErrorLoggingProtocol {
     context: ErrorContext
   ) -> LoggableErrorDTO {
     let message = loggableError.getLogMessage()
-    let metadata = loggableError.getPrivacyMetadata()
+    let metadata = loggableError.createMetadataCollection()
     let source = loggableError.getSource()
     
     // Extract domain and code if available
@@ -176,18 +290,18 @@ public actor ErrorLoggerService: ErrorLoggingProtocol {
     var code = 0
     var details = ""
     
-    // Build details string from sensitive metadata
-    for key in metadata.entries() {
-      if let value = metadata[key], value.privacy == .sensitive {
-        details += "\(key): \(value.valueString)\n"
+    // Build details string from metadata entries
+    for entry in metadata.entries {
+      if entry.privacyLevel == .sensitive {
+        details += "\(entry.key): \(entry.value)\n"
       }
       
       // Look for domain and code in metadata
-      if key == "domain", let value = metadata[key] {
-        domain = value.valueString
+      if entry.key == "domain" {
+        domain = entry.value
       }
       
-      if key == "code", let value = metadata[key], let codeValue = Int(value.valueString) {
+      if entry.key == "code", let codeValue = Int(entry.value) {
         code = codeValue
       }
     }
@@ -199,7 +313,7 @@ public actor ErrorLoggerService: ErrorLoggingProtocol {
       message: message,
       details: details,
       source: source,
-      correlationID: context.correlationID
+      correlationID: extractTraceID(from: context)
     )
   }
   
@@ -207,20 +321,23 @@ public actor ErrorLoggerService: ErrorLoggingProtocol {
    Creates a LoggableErrorDTO from an NSError.
    
    - Parameters:
-     - nsError: The NSError
-     - originalError: The original error object
+     - nsError: The NSError to convert
+     - originalError: The original Error instance
      - context: The error context
    - Returns: A LoggableErrorDTO instance
    */
-  private func createDTOFromNSError(
+  private func createDTOFromNSError<E: Error>(
     _ nsError: NSError,
-    originalError: Error,
+    originalError: E,
     context: ErrorContext
   ) -> LoggableErrorDTO {
-    // Filter sensitive keys from userInfo
+    // Extract user info for details while filtering sensitive keys
     let sensitiveKeys = ["NSUnderlyingError", "NSSensitiveKeys", "NSCredential"]
-    let filteredUserInfo = nsError.userInfo.filter { !sensitiveKeys.contains($0.key) }
-    let details = filteredUserInfo.description
+    var details = ""
+    
+    for (key, value) in nsError.userInfo where !sensitiveKeys.contains(key) {
+      details += "\(key): \(value)\n"
+    }
     
     return LoggableErrorDTO(
       error: originalError,
@@ -229,32 +346,40 @@ public actor ErrorLoggerService: ErrorLoggingProtocol {
       message: nsError.localizedDescription,
       details: details,
       source: "\(context.source.file):\(context.source.line)",
-      correlationID: context.correlationID
+      correlationID: extractTraceID(from: context)
     )
   }
   
   /**
-   Creates a standard LoggableErrorDTO.
+   Creates a standard LoggableErrorDTO from a generic Error.
    
    - Parameters:
-     - error: The error
+     - error: The Error to convert
      - context: The error context
    - Returns: A LoggableErrorDTO instance
    */
-  private func createStandardDTO(
-    _ error: Error,
+  private func createStandardDTO<E: Error>(
+    _ error: E,
     context: ErrorContext
   ) -> LoggableErrorDTO {
-    let errorTypeString = String(describing: type(of: error))
-    
     return LoggableErrorDTO(
       error: error,
-      domain: "Application",
+      domain: "App.\(String(describing: type(of: error)))",
       code: 0,
-      message: error.localizedDescription,
+      message: String(describing: error),
       details: String(describing: error),
       source: "\(context.source.file):\(context.source.function):\(context.source.line)",
-      correlationID: context.correlationID
+      correlationID: extractTraceID(from: context)
     )
+  }
+  
+  /**
+   Extracts a trace ID from the error context.
+   
+   - Parameter context: The error context
+   - Returns: A trace ID string or nil if not available
+   */
+  private func extractTraceID(from context: ErrorContext) -> String? {
+    return context.metadata["correlationID"] ?? context.metadata["traceID"] ?? UUID().uuidString
   }
 }
