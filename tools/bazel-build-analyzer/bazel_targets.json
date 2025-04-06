@@ -1,0 +1,372 @@
+{
+  "targets": [
+    {
+      "name": "rule //packages/UmbraCoreTypes/Sources/APIInterfaces:APIInterfaces",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraCoreTypes/Sources/ConfigInterfaces:ConfigInterfaces",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraCoreTypes/Sources/CoreDTOs:CoreDTOs",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraCoreTypes/Sources/CoreDTOs:CoreDTOsTests",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraCoreTypes/Sources/CoreInterfaces:CoreInterfaces",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraCoreTypes/Sources/CoreSecurityTypes:CoreSecurityTypes",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraCoreTypes/Sources/CryptoInterfaces:CryptoInterfaces",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraCoreTypes/Sources/CryptoTypes:CryptoTypes",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraCoreTypes/Sources/DateTimeTypes:DateTimeTypes",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraCoreTypes/Sources/DomainSecurityTypes:DomainSecurityTypes",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraCoreTypes/Sources/ErrorCoreTypes:ErrorCoreTypes",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraCoreTypes/Sources/FileSystemTypes:FileSystemTypes",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraCoreTypes/Sources/KeyManagementTypes:KeyManagementTypes",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraCoreTypes/Sources/KeyManagementTypes:KeyManagementTypesTests",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraCoreTypes/Sources/KeychainTypes:KeychainTypes",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraCoreTypes/Sources/LoggingTypes:LoggingTypes",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraCoreTypes/Sources/Notification:Notification",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraCoreTypes/Sources/Scheduling:Scheduling",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraCoreTypes/Sources/SecurityInterfaces:SecurityInterfaces",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraCoreTypes/Sources/SecurityInterfaces/Adapters:SecurityInterfacesAdapters",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraCoreTypes/Sources/SecurityInterfaces/DTOs:SecurityInterfacesDTOs",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraCoreTypes/Sources/SecurityInterfaces/Models:SecurityInterfacesModels",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraCoreTypes/Sources/SecurityInterfaces/Protocols:SecurityInterfacesProtocols",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraCoreTypes/Sources/SecurityInterfaces/Types:SecurityInterfacesTypes",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraCoreTypes/Sources/SecurityInterfaces/XPC:SecurityInterfacesXPC",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraCoreTypes/Sources/SecurityKeyTypes:SecurityKeyTypes",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraCoreTypes/Sources/UmbraErrors:UmbraErrors",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraCoreTypes/Sources/UmbraErrors/Core:UmbraErrorsCore",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraCoreTypes/Sources/UmbraErrors/DTOs:UmbraErrorsDTOs",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraCoreTypes/Sources/UmbraErrors/Domains:UmbraErrorsDomains",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraCoreTypes/Sources/UmbraErrors/Mapping:UmbraErrorsMapping",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraCoreTypes/Sources/UserDefaults:UserDefaults",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraCoreTypes/Sources/UserDefaults/Adapters:UserDefaultsAdapters",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraCoreTypes/Sources/UserDefaults/DTOs:UserDefaultsDTOs",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/APIServices:APIServices",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/BackupCoordinator:BackupCoordinator",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/BackupServices:BackupServices",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/BookmarkServices:BookmarkServices",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/BookmarkServices/Logging:BookmarkLogger",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/BookmarkServices/Model:BookmarkModel",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/ConfigServices:ConfigServices",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/CoreServices:CoreServices",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/CryptoServices:CryptoServices",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/CryptoServices/Logging:CryptoLogger",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/CryptoXPCServices:CryptoXPCServices",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/DateTimeServices:DateTimeServices",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/ErrorDomainsImpl:ErrorDomainsImpl",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/ErrorHandlingImpl:ErrorHandlingImpl",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/ErrorLoggingServices:ErrorLoggingServices",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/FileSystemServices:FileSystemServices",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/KeychainServices:KeychainServices",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/KeychainServices/Actor:KeychainSecurityActor",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/KeychainServices/ActorTypes:KeychainSecurityActor",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/KeychainServices/Fallbacks:Fallbacks",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/KeychainServices/Logging:KeychainLogger",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/LoggingAdapters:LoggingAdapters",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/LoggingServices:LoggingServices",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/LoggingWrapperServices:LoggingWrapperServices",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/NetworkServices:NetworkServices",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/RepositoryServices:RepositoryServices",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/ResticServices:ResticServices",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/SecurityCore:SecurityCore",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/SecurityCryptoServices:SecurityCryptoServices",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/SecurityCryptoServices/ActorTypes:CryptoActorImplementations",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/SecurityCryptoServices/ProviderFactories:ProviderFactories",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/SecurityImplementation:SecurityImplementation",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/SecurityKeyManagement:SecurityKeyManagement",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/SecurityKeyManagement/Actor:KeyManagementActor",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/SecurityKeyManagement/ActorTypes:KeyManagementActorTypes",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/SecurityKeyManagement/Storage:KeyStorage",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/SecurityKeyManagement/Types:SecurityKeyTypes",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/SecurityProviders:SecurityProviders",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/SecurityUtils:SecurityUtils",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/XPCServices:XPCServices",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraInterfaces/Sources/APIInterfaces:APIInterfaces",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraInterfaces/Sources/BackupInterfaces:BackupInterfaces",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraInterfaces/Sources/CoreInterfaces:CoreInterfaces",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraInterfaces/Sources/CryptoInterfaces:CryptoInterfaces",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraInterfaces/Sources/DateTimeInterfaces:DateTimeInterfaces",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraInterfaces/Sources/ErrorHandlingInterfaces:ErrorHandlingInterfaces",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraInterfaces/Sources/ErrorLoggingInterfaces:ErrorLoggingInterfaces",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraInterfaces/Sources/FileSystemInterfaces:FileSystemInterfaces",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraInterfaces/Sources/KeychainInterfaces:KeychainInterfaces",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraInterfaces/Sources/LoggingInterfaces:LoggingInterfaces",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraInterfaces/Sources/LoggingWrapperInterfaces:LoggingWrapperInterfaces",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraInterfaces/Sources/NetworkInterfaces:NetworkInterfaces",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraInterfaces/Sources/RepositoryInterfaces:RepositoryInterfaces",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraInterfaces/Sources/ResticInterfaces:ResticInterfaces",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraInterfaces/Sources/SecurityCoreInterfaces:SecurityCoreInterfaces",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraInterfaces/Sources/SecurityInterfaces:SecurityInterfaces",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraInterfaces/Sources/XPCProtocolsCore:XPCProtocolsCore",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraServices/Sources/LoggingServices:LoggingServices",
+      "rule": "swift_library"
+    }
+  ]
+}
