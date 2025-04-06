@@ -9,7 +9,7 @@ import OSLog
  Basic logger implementation for when no logger is provided.
  This is used as a fallback to ensure logging is always available.
  */
-public final class DefaultLogger: LoggingProtocol {
+public actor DefaultLogger: LoggingProtocol {
   /// The system logger for output
   private let logger: Logger
 
@@ -23,13 +23,41 @@ public final class DefaultLogger: LoggingProtocol {
 
   /// Initialise a new default logger
   public init() {
-    logger=Logger(subsystem: "com.umbra.securitykeymanagement", category: "KeyManagement")
+    logger = Logger(subsystem: "com.umbra.securitykeymanagement", category: "KeyManagement")
 
     // Initialize with a console log destination
-    _loggingActor=LoggingActor(
+    _loggingActor = LoggingActor(
       destinations: [ConsoleLogDestination()],
       minimumLogLevel: .debug
     )
+  }
+  
+  /// Required method from CoreLoggingProtocol
+  public func log(_ level: LogLevel, _ message: String, context: LogContextDTO) async {
+    let source = context.getSource() ?? "SecurityKeyManagement"
+    let formattedMessage = "[\(source)] \(message)"
+
+    // Log to OSLog
+    switch level {
+      case .trace:
+        logger.debug("TRACE: \(formattedMessage)")
+      case .debug:
+        logger.debug("\(formattedMessage)")
+      case .info:
+        logger.info("\(formattedMessage)")
+      case .warning:
+        logger.warning("\(formattedMessage)")
+      case .error:
+        logger.error("\(formattedMessage)")
+      case .critical:
+        logger.critical("\(formattedMessage)")
+    }
+
+    // Create a LogContext from the LogContextDTO
+    let logContext = LogContext(source: source)
+    
+    // Log using the actor
+    await loggingActor.log(level, message, context: logContext)
   }
 
   /// Log a message at the specified level
@@ -39,7 +67,7 @@ public final class DefaultLogger: LoggingProtocol {
     metadata: PrivacyMetadata?,
     source: String
   ) async {
-    let formattedMessage="[\(source)] \(message)"
+    let formattedMessage = "[\(source)] \(message)"
 
     // Log to OSLog
     switch level {
@@ -58,21 +86,17 @@ public final class DefaultLogger: LoggingProtocol {
     }
 
     // Also log to LoggingActor with a context
-    let context=LogContext(
+    let context = LogContext(
       source: source,
       metadata: metadata ?? PrivacyMetadata()
     )
 
-    await loggingActor.log(
-      level: level,
-      message: message,
-      context: context
-    )
+    await loggingActor.log(level, message, context: context)
   }
 
   /// Support for the legacy CoreLoggingProtocol method
   public func logMessage(_ level: LogLevel, _ message: String, context: LogContext) async {
-    let source=context.source
+    let source = context.source ?? "SecurityKeyManagement"
     // Use the metadata directly without downcasting
     await log(level, message, metadata: nil, source: source)
   }
@@ -113,10 +137,10 @@ public final class DefaultLogger: LoggingProtocol {
  */
 actor ConsoleLogDestination: ActorLogDestination {
   /// The identifier for this log destination
-  public let identifier: String="console"
+  public let identifier: String = "console"
 
   /// The minimum log level to process (nil means use the parent's level)
-  public let minimumLogLevel: LogLevel?=nil
+  public let minimumLogLevel: LogLevel? = nil
 
   /// Initializer
   public init() {}
@@ -129,7 +153,8 @@ actor ConsoleLogDestination: ActorLogDestination {
   /// Write a log entry to this destination
   public func write(_ entry: LogEntry) async {
     // Format and print the log message
-    let formattedMessage="[\(entry.context.source)] [\(entry.level.rawValue)] \(entry.message)"
+    let sourceString = entry.context.source ?? "unknown"
+    let formattedMessage = "[\(sourceString)] [\(entry.level.rawValue)] \(entry.message)"
     print(formattedMessage)
   }
 }

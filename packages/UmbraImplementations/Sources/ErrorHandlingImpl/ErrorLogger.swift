@@ -19,7 +19,7 @@ public actor ErrorLogger: ErrorLoggingProtocol {
   private let logger: PrivacyAwareLoggingProtocol
 
   /// The subsystem for error logging
-  private let subsystem="ErrorHandling"
+  private let subsystem = "ErrorHandling"
 
   /**
    Initialises a new error logger with the provided logging implementation.
@@ -27,7 +27,7 @@ public actor ErrorLogger: ErrorLoggingProtocol {
    - Parameter logger: The underlying logger to use for output
    */
   public init(logger: PrivacyAwareLoggingProtocol) {
-    self.logger=logger
+    self.logger = logger
   }
 
   // MARK: - ErrorLoggingProtocol Conformance
@@ -46,7 +46,7 @@ public actor ErrorLogger: ErrorLoggingProtocol {
     options: ErrorLoggingOptions?
   ) async {
     // Create default context with source information
-    let context=ErrorContext(
+    let context = ErrorContext(
       source: ErrorSource(
         file: #file,
         function: #function,
@@ -75,28 +75,52 @@ public actor ErrorLogger: ErrorLoggingProtocol {
     options _: ErrorLoggingOptions?
   ) async {
     // We don't use the privacyLevel here, just the error metadata
-    let metadataDict=createMetadata(for: error, context: context)
-    let message=formatErrorMessage(error)
-    let source="\(context.source.file):\(context.source.line)"
+    let metadataDict = createMetadata(for: error, context: context)
+    let message = formatErrorMessage(error)
+    let source = "\(context.source.file):\(context.source.line)"
+    
+    // Create a log context with the error metadata
+    let logContext = BaseLogContextDTO(
+      domainName: subsystem,
+      source: source,
+      metadata: createMetadataCollection(from: metadataDict),
+      correlationID: nil
+    )
 
     // Map ErrorLogLevel to LogLevel
-    let logLevel=mapErrorLogLevel(level)
+    let logLevel = mapErrorLogLevel(level)
 
-    // Log with the appropriate level
+    // Log with the appropriate level using context-based methods
     switch logLevel {
       case .trace:
-        await logger.trace(message, metadata: metadataDict, source: source)
+        await logger.trace(message, context: logContext)
       case .debug:
-        await logger.debug(message, metadata: metadataDict, source: source)
+        await logger.debug(message, context: logContext)
       case .info:
-        await logger.info(message, metadata: metadataDict, source: source)
+        await logger.info(message, context: logContext)
       case .warning:
-        await logger.warning(message, metadata: metadataDict, source: source)
+        await logger.warning(message, context: logContext)
       case .error:
-        await logger.error(message, metadata: metadataDict, source: source)
+        await logger.error(message, context: logContext)
       case .critical:
-        await logger.critical(message, metadata: metadataDict, source: source)
+        await logger.critical(message, context: logContext)
     }
+  }
+  
+  /**
+   Creates a LogMetadataDTOCollection from a dictionary.
+   
+   - Parameter dict: The dictionary of metadata
+   - Returns: A LogMetadataDTOCollection containing the metadata
+   */
+  private func createMetadataCollection(from dict: [String: String]) -> LogMetadataDTOCollection {
+    var collection = LogMetadataDTOCollection()
+    
+    for (key, value) in dict {
+      collection = collection.withPrivate(key: key, value: value)
+    }
+    
+    return collection
   }
 
   /**
@@ -232,89 +256,74 @@ public actor ErrorLogger: ErrorLoggingProtocol {
   // MARK: - Helper Methods
 
   /**
-   Formats an error message with standardised structure.
+   Formats an error into a standard message format.
 
    - Parameter error: The error to format
    - Returns: A formatted error message string
    */
   private func formatErrorMessage(_ error: some Error) -> String {
-    // Extract domain name from error type (since we can't access domain directly)
-    let domain=(error as? ErrorDomainProtocol).map { String(describing: type(of: $0)) } ?? "General"
-
-    // Format with error type and description
-    return "[\(domain)] \(String(describing: type(of: error))): \(error.localizedDescription)"
+    if let loggableError = error as? LoggableErrorProtocol {
+      return "[\(type(of: loggableError))] \(loggableError.getLogMessage())"
+    } else {
+      return "[\(type(of: error))] \(error.localizedDescription)"
+    }
   }
 
   /**
-   Creates structured metadata for an error log.
+   Creates metadata for the error including type and contextual information.
 
    - Parameters:
-     - error: The error to create metadata for
-     - context: Contextual information about the error
-   - Returns: A privacy-aware metadata dictionary
+      - error: The error to create metadata for
+      - context: The error context
+   - Returns: A dictionary of metadata for logging
    */
-  private func createMetadata(
-    for error: some Error,
-    context: ErrorContext
-  ) -> PrivacyMetadata {
-    var metadata=PrivacyMetadata()
+  private func createMetadata(for error: some Error, context: ErrorContext) -> [String: String] {
+    var metadata = [String: String]()
 
-    // Add error type information
-    metadata["errorType"]=PrivacyMetadataValue(value: String(describing: type(of: error)),
-                                               privacy: .public)
-
-    // Add error domain if available - using type name since domain is a static property
-    if let domainType=error as? ErrorDomainProtocol {
-      let domainName=String(describing: type(of: domainType))
-      metadata["errorDomain"]=PrivacyMetadataValue(value: domainName, privacy: .public)
-    }
-
-    // Add contextual information from source
-    let source=context.source
-    metadata["sourceFile"]=PrivacyMetadataValue(value: source.file, privacy: .public)
-    metadata["sourceFunction"]=PrivacyMetadataValue(value: source.function, privacy: .public)
-    metadata["sourceLine"]=PrivacyMetadataValue(value: String(source.line), privacy: .public)
-
-    // Add subsystem from context metadata if available
-    if let subsystem=context.metadata["subsystem"] {
-      metadata["sourceSubsystem"]=PrivacyMetadataValue(value: subsystem, privacy: .public)
-    } else {
-      metadata["sourceSubsystem"]=PrivacyMetadataValue(value: subsystem, privacy: .public)
-    }
-
+    // Add standard error information
+    metadata["errorType"] = String(describing: type(of: error))
+    
+    // Add source information
+    metadata["file"] = context.source.file
+    metadata["function"] = context.source.function
+    metadata["line"] = String(context.source.line)
+    
     // Add timestamp
-    let dateFormatter=ISO8601DateFormatter()
-    metadata["timestamp"]=PrivacyMetadataValue(
-      value: dateFormatter.string(from: context.timestamp),
-      privacy: .public
-    )
-
-    // Add any other metadata from context
-    for (key, value) in context.metadata where key != "subsystem" {
-      metadata[key]=PrivacyMetadataValue(value: value, privacy: .auto)
+    let dateFormatter = ISO8601DateFormatter()
+    metadata["timestamp"] = dateFormatter.string(from: context.timestamp)
+    
+    // Add any custom metadata from the context
+    for (key, value) in context.metadata {
+      metadata[key] = String(describing: value)
     }
-
+    
+    // Add specific error information for loggable errors
+    if let loggableError = error as? LoggableErrorProtocol {
+      // Add the log message directly
+      metadata["errorMessage"] = loggableError.getLogMessage()
+    }
+    
     return metadata
   }
 
   /**
-   Maps the ErrorLogLevel to a LogLevel.
+   Maps an ErrorLogLevel to a standard LogLevel.
 
-   - Parameter level: The error log level
-   - Returns: The corresponding LogLevel
+   - Parameter errorLevel: The error log level
+   - Returns: The equivalent standard LogLevel
    */
-  private func mapErrorLogLevel(_ level: ErrorLogLevel) -> LogLevel {
-    switch level {
+  private func mapErrorLogLevel(_ errorLevel: ErrorLogLevel) -> LogLevel {
+    switch errorLevel {
       case .debug:
-        .debug
+        return .debug
       case .info:
-        .info
+        return .info
       case .warning:
-        .warning
+        return .warning
       case .error:
-        .error
+        return .error
       case .critical:
-        .critical
+        return .critical
     }
   }
 }
