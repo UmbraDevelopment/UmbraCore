@@ -12,31 +12,25 @@ extension RepositoryServiceImpl {
   /// - Throws: `RepositoryError.notFound` if the repository is not found,
   ///           or other repository errors if validation fails.
   public func validateRepository(identifier: String) async throws -> Bool {
-    // Create privacy-aware metadata
-    var metadata=PrivacyMetadata()
-    metadata["repository_id"]=PrivacyMetadataValue(value: identifier, privacy: .public)
+    // Create repository log context
+    let context = RepositoryLogContext(
+      repositoryID: identifier,
+      operation: "validate"
+    )
 
-    await logger.info("Validating repository", metadata: metadata, source: "RepositoryService")
+    await logger.info("Validating repository", context: context)
 
     guard let repository=repositories[identifier] else {
-      await logger.error("Repository not found", metadata: metadata, source: "RepositoryService")
+      await logger.error("Repository not found", context: context)
       throw RepositoryError.notFound
     }
 
     do {
       let isValid=try await repository.validate()
-      await logger.info(
-        "Repository validation result: \(isValid)",
-        metadata: metadata,
-        source: "RepositoryService"
-      )
+      await logger.info("Repository validation result: \(isValid)", context: context)
       return isValid
     } catch {
-      await logger.error(
-        "Repository validation error: \(error.localizedDescription)",
-        metadata: metadata,
-        source: "RepositoryService"
-      )
+      await logger.error("Repository validation error: \(error.localizedDescription)", context: context)
       throw RepositoryError.invalidOperation
     }
   }

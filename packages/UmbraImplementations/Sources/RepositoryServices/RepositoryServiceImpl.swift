@@ -32,11 +32,10 @@ public actor RepositoryServiceImpl: RepositoryServiceProtocol {
     repositories=[:]
     self.logger=logger
     Task {
-      await self.logger.info(
-        "Repository service initialised",
-        metadata: nil,
-        source: "RepositoryService"
+      let context = RepositoryLogContext(
+        operation: "initialisation"
       )
+      await self.logger.info("Repository service initialised", context: context)
     }
   }
 
@@ -53,70 +52,48 @@ public actor RepositoryServiceImpl: RepositoryServiceProtocol {
     let location=await repository.location
     let state=await repository.state
 
-    // Create privacy-aware metadata
-    var metadata=PrivacyMetadata()
-    metadata["repository_id"]=PrivacyMetadataValue(value: identifier, privacy: .public)
-    metadata["location"]=PrivacyMetadataValue(value: location.path, privacy: .public)
-    metadata["state"]=PrivacyMetadataValue(value: "\(state)", privacy: .public)
+    // Create repository log context
+    let context = RepositoryLogContext(
+      repositoryID: identifier,
+      locationPath: location.path,
+      state: "\(state)",
+      operation: "register"
+    )
 
-    await logger.info("Registering repository", metadata: metadata, source: "RepositoryService")
+    await logger.info("Registering repository", context: context)
 
     // Ensure repository is accessible
     guard await repository.isAccessible() else {
-      await logger.error(
-        "Repository not accessible",
-        metadata: metadata,
-        source: "RepositoryService"
-      )
+      await logger.error("Repository not accessible", context: context)
       throw RepositoryError.permissionDenied
     }
 
     // Check for duplicate
     guard repositories[identifier] == nil else {
-      await logger.error(
-        "Duplicate repository identifier",
-        metadata: metadata,
-        source: "RepositoryService"
-      )
+      await logger.error("Duplicate repository identifier", context: context)
       throw RepositoryError.duplicateIdentifier
     }
 
     // Initialise repository if needed
     if case RepositoryState.uninitialized=state {
-      await logger.info(
-        "Initialising uninitialised repository",
-        metadata: metadata,
-        source: "RepositoryService"
-      )
+      await logger.info("Initialising uninitialised repository", context: context)
       try await repository.initialise()
     }
 
     // Validate repository
     do {
       guard try await repository.validate() else {
-        await logger.error(
-          "Repository validation failed",
-          metadata: metadata,
-          source: "RepositoryService"
-        )
+        await logger.error("Repository validation failed", context: context)
         throw RepositoryError.invalidRepository
       }
     } catch {
-      await logger.error(
-        "Repository validation error: \(error.localizedDescription)",
-        metadata: metadata,
-        source: "RepositoryService"
-      )
+      await logger.error("Repository validation error: \(error.localizedDescription)", context: context)
       throw RepositoryError.internalError
     }
 
     // Add to registry
     repositories[identifier]=repository
-    await logger.info(
-      "Repository registered successfully",
-      metadata: metadata,
-      source: "RepositoryService"
-    )
+    await logger.info("Repository registered successfully", context: context)
   }
 
   /// Unregisters a repository from the service.
@@ -124,23 +101,21 @@ public actor RepositoryServiceImpl: RepositoryServiceProtocol {
   /// - Parameter identifier: The identifier of the repository to unregister.
   /// - Throws: `RepositoryError.notFound` if the repository doesn't exist.
   public func unregister(identifier: String) async throws {
-    // Create privacy-aware metadata
-    var metadata=PrivacyMetadata()
-    metadata["repository_id"]=PrivacyMetadataValue(value: identifier, privacy: .public)
+    // Create repository log context
+    let context = RepositoryLogContext(
+      repositoryID: identifier,
+      operation: "unregister"
+    )
 
-    await logger.info("Unregistering repository", metadata: metadata, source: "RepositoryService")
+    await logger.info("Unregistering repository", context: context)
 
     guard repositories[identifier] != nil else {
-      await logger.error("Repository not found", metadata: metadata, source: "RepositoryService")
+      await logger.error("Repository not found", context: context)
       throw RepositoryError.notFound
     }
 
     repositories.removeValue(forKey: identifier)
-    await logger.info(
-      "Repository unregistered successfully",
-      metadata: metadata,
-      source: "RepositoryService"
-    )
+    await logger.info("Repository unregistered successfully", context: context)
   }
 
   /// Gets a registered repository by its identifier.
@@ -149,14 +124,16 @@ public actor RepositoryServiceImpl: RepositoryServiceProtocol {
   /// - Returns: The repository if found.
   /// - Throws: `RepositoryError.notFound` if the repository is not found.
   public func getRepository(identifier: String) async throws -> any RepositoryProtocol {
-    // Create privacy-aware metadata
-    var metadata=PrivacyMetadata()
-    metadata["repository_id"]=PrivacyMetadataValue(value: identifier, privacy: .public)
+    // Create repository log context
+    let context = RepositoryLogContext(
+      repositoryID: identifier,
+      operation: "getRepository"
+    )
 
-    await logger.debug("Getting repository", metadata: metadata, source: "RepositoryService")
+    await logger.debug("Getting repository", context: context)
 
     guard let repository=repositories[identifier] else {
-      await logger.error("Repository not found", metadata: metadata, source: "RepositoryService")
+      await logger.error("Repository not found", context: context)
       throw RepositoryError.notFound
     }
 
@@ -167,11 +144,11 @@ public actor RepositoryServiceImpl: RepositoryServiceProtocol {
   ///
   /// - Returns: Dictionary of repositories keyed by their identifiers.
   public func getAllRepositories() async -> [String: any RepositoryProtocol] {
-    await logger.debug(
-      "Listing all repositories",
-      metadata: nil,
-      source: "RepositoryService"
+    let context = RepositoryLogContext(
+      operation: "getAllRepositories"
     )
+    
+    await logger.debug("Listing all repositories", context: context)
 
     return repositories
   }
@@ -181,15 +158,13 @@ public actor RepositoryServiceImpl: RepositoryServiceProtocol {
   /// - Parameter identifier: The repository identifier to check.
   /// - Returns: `true` if the repository is registered, `false` otherwise.
   public func isRegistered(identifier: String) async -> Bool {
-    // Create privacy-aware metadata
-    var metadata=PrivacyMetadata()
-    metadata["repository_id"]=PrivacyMetadataValue(value: identifier, privacy: .public)
-
-    await logger.debug(
-      "Checking repository registration",
-      metadata: metadata,
-      source: "RepositoryService"
+    // Create repository log context
+    let context = RepositoryLogContext(
+      repositoryID: identifier,
+      operation: "isRegistered"
     )
+
+    await logger.debug("Checking repository registration", context: context)
 
     return repositories[identifier] != nil
   }

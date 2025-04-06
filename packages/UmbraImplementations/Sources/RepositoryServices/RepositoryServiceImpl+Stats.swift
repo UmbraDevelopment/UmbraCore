@@ -10,37 +10,28 @@ extension RepositoryServiceImpl {
   /// - Parameter identifier: The repository identifier.
   /// - Returns: Repository statistics.
   /// - Throws: `RepositoryError.notFound` if the repository is not found,
-  ///           or other repository errors if statistics cannot be retrieved.
+  ///           or other repository errors if stats collection fails.
   public func getStats(for identifier: String) async throws -> RepositoryStatistics {
-    // Create privacy-aware metadata
-    var metadata=PrivacyMetadata()
-    metadata["repository_id"]=PrivacyMetadataValue(value: identifier, privacy: .public)
-
-    await logger.info(
-      "Getting stats for repository",
-      metadata: metadata,
-      source: "RepositoryService"
+    // Create repository log context
+    let context = RepositoryLogContext(
+      repositoryID: identifier,
+      operation: "getStats"
     )
 
+    await logger.info("Getting stats for repository", context: context)
+
     guard let repository=repositories[identifier] else {
-      await logger.error("Repository not found", metadata: metadata, source: "RepositoryService")
+      await logger.error("Repository not found", context: context)
       throw RepositoryError.notFound
     }
 
+    // Get statistics
     do {
       let stats=try await repository.getStats()
-      await logger.info(
-        "Retrieved repository stats",
-        metadata: metadata,
-        source: "RepositoryService"
-      )
+      await logger.info("Retrieved repository stats", context: context)
       return stats
     } catch {
-      await logger.error(
-        "Failed to get repository stats: \(error.localizedDescription)",
-        metadata: metadata,
-        source: "RepositoryService"
-      )
+      await logger.error("Failed to get repository stats: \(error.localizedDescription)", context: context)
       throw RepositoryError.internalError
     }
   }

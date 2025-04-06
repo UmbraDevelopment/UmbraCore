@@ -19,44 +19,30 @@ extension RepositoryServiceImpl {
     readData: Bool,
     checkUnused: Bool
   ) async throws -> RepositoryStatistics {
-    // Create privacy-aware metadata
-    var metadata=PrivacyMetadata()
-    metadata["repository_id"]=PrivacyMetadataValue(value: identifier, privacy: .public)
-    metadata["read_data"]=PrivacyMetadataValue(value: String(describing: readData),
-                                               privacy: .public)
-    metadata["check_unused"]=PrivacyMetadataValue(value: String(describing: checkUnused),
-                                                  privacy: .public)
-
-    await logger.info(
-      "Performing maintenance on repository",
-      metadata: metadata,
-      source: "RepositoryService"
+    // Create repository log context with maintenance-specific data
+    let context = RepositoryLogContext(
+      repositoryID: identifier,
+      operation: "maintenance",
+      additionalMetadata: [
+        "read_data": (String(describing: readData), .public),
+        "check_unused": (String(describing: checkUnused), .public)
+      ]
     )
 
+    await logger.info("Performing maintenance on repository", context: context)
+
     guard let repository=repositories[identifier] else {
-      await logger.error(
-        "Repository not found",
-        metadata: metadata,
-        source: "RepositoryService"
-      )
+      await logger.error("Repository not found", context: context)
       throw RepositoryError.notFound
     }
 
     // Repository is already a RepositoryMaintenanceProtocol by definition
     do {
       let stats=try await repository.check(readData: readData, checkUnused: checkUnused)
-      await logger.info(
-        "Repository maintenance completed successfully",
-        metadata: metadata,
-        source: "RepositoryService"
-      )
+      await logger.info("Repository maintenance completed successfully", context: context)
       return stats
     } catch {
-      await logger.error(
-        "Repository maintenance failed: \(error.localizedDescription)",
-        metadata: metadata,
-        source: "RepositoryService"
-      )
+      await logger.error("Repository maintenance failed: \(error.localizedDescription)", context: context)
       throw RepositoryError.internalError
     }
   }
@@ -68,36 +54,26 @@ extension RepositoryServiceImpl {
   /// - Throws: `RepositoryError.notFound` if the repository is not found,
   ///           or other repository errors if repair fails.
   public func repairRepository(identifier: String) async throws -> Bool {
-    // Create privacy-aware metadata
-    var metadata=PrivacyMetadata()
-    metadata["repository_id"]=PrivacyMetadataValue(value: identifier, privacy: .public)
+    // Create repository log context
+    let context = RepositoryLogContext(
+      repositoryID: identifier,
+      operation: "repair"
+    )
 
-    await logger.info("Repairing repository", metadata: metadata, source: "RepositoryService")
+    await logger.info("Repairing repository", context: context)
 
     guard let repository=repositories[identifier] else {
-      await logger.error(
-        "Repository not found",
-        metadata: metadata,
-        source: "RepositoryService"
-      )
+      await logger.error("Repository not found", context: context)
       throw RepositoryError.notFound
     }
 
     // Repository is already a RepositoryMaintenanceProtocol by definition
     do {
       let successful=try await repository.repair()
-      await logger.info(
-        "Repository repair result: \(successful)",
-        metadata: metadata,
-        source: "RepositoryService"
-      )
+      await logger.info("Repository repair result: \(successful)", context: context)
       return successful
     } catch {
-      await logger.error(
-        "Repository repair failed: \(error.localizedDescription)",
-        metadata: metadata,
-        source: "RepositoryService"
-      )
+      await logger.error("Repository repair failed: \(error.localizedDescription)", context: context)
       throw RepositoryError.internalError
     }
   }
@@ -108,39 +84,25 @@ extension RepositoryServiceImpl {
   /// - Throws: `RepositoryError.notFound` if the repository is not found,
   ///           or other repository errors if pruning fails.
   public func pruneRepository(identifier: String) async throws {
-    // Create privacy-aware metadata
-    var metadata=PrivacyMetadata()
-    metadata["repository_id"]=PrivacyMetadataValue(value: identifier, privacy: .public)
-
-    await logger.info(
-      "Pruning repository",
-      metadata: metadata,
-      source: "RepositoryService"
+    // Create repository log context
+    let context = RepositoryLogContext(
+      repositoryID: identifier,
+      operation: "prune"
     )
 
+    await logger.info("Pruning repository", context: context)
+
     guard let repository=repositories[identifier] else {
-      await logger.error(
-        "Repository not found",
-        metadata: metadata,
-        source: "RepositoryService"
-      )
+      await logger.error("Repository not found", context: context)
       throw RepositoryError.notFound
     }
 
     // Repository is already a RepositoryMaintenanceProtocol by definition
     do {
       try await repository.prune()
-      await logger.info(
-        "Repository pruned successfully",
-        metadata: metadata,
-        source: "RepositoryService"
-      )
+      await logger.info("Repository pruned successfully", context: context)
     } catch {
-      await logger.error(
-        "Repository pruning failed: \(error.localizedDescription)",
-        metadata: metadata,
-        source: "RepositoryService"
-      )
+      await logger.error("Repository pruning failed: \(error.localizedDescription)", context: context)
       throw RepositoryError.internalError
     }
   }
@@ -151,39 +113,25 @@ extension RepositoryServiceImpl {
   /// - Throws: `RepositoryError.notFound` if the repository is not found,
   ///           or other repository errors if rebuild fails.
   public func rebuildRepositoryIndex(identifier: String) async throws {
-    // Create privacy-aware metadata
-    var metadata=PrivacyMetadata()
-    metadata["repository_id"]=PrivacyMetadataValue(value: identifier, privacy: .public)
-
-    await logger.info(
-      "Rebuilding repository index",
-      metadata: metadata,
-      source: "RepositoryService"
+    // Create repository log context
+    let context = RepositoryLogContext(
+      repositoryID: identifier,
+      operation: "rebuildIndex"
     )
 
+    await logger.info("Rebuilding repository index", context: context)
+
     guard let repository=repositories[identifier] else {
-      await logger.error(
-        "Repository not found",
-        metadata: metadata,
-        source: "RepositoryService"
-      )
+      await logger.error("Repository not found", context: context)
       throw RepositoryError.notFound
     }
 
     // Repository is already a RepositoryMaintenanceProtocol by definition
     do {
       try await repository.rebuildIndex()
-      await logger.info(
-        "Repository index rebuilt successfully",
-        metadata: metadata,
-        source: "RepositoryService"
-      )
+      await logger.info("Repository index rebuilt successfully", context: context)
     } catch {
-      await logger.error(
-        "Repository index rebuild failed: \(error.localizedDescription)",
-        metadata: metadata,
-        source: "RepositoryService"
-      )
+      await logger.error("Repository index rebuild failed: \(error.localizedDescription)", context: context)
       throw RepositoryError.internalError
     }
   }
@@ -194,39 +142,25 @@ extension RepositoryServiceImpl {
   /// - Throws: `RepositoryError.notFound` if the repository is not found,
   ///           or other repository errors if check fails.
   public func checkRepository(identifier: String) async throws {
-    // Create privacy-aware metadata
-    var metadata=PrivacyMetadata()
-    metadata["repository_id"]=PrivacyMetadataValue(value: identifier, privacy: .public)
-
-    await logger.info(
-      "Checking repository for errors",
-      metadata: metadata,
-      source: "RepositoryService"
+    // Create repository log context
+    let context = RepositoryLogContext(
+      repositoryID: identifier,
+      operation: "check"
     )
 
+    await logger.info("Checking repository for errors", context: context)
+
     guard let repository=repositories[identifier] else {
-      await logger.error(
-        "Repository not found",
-        metadata: metadata,
-        source: "RepositoryService"
-      )
+      await logger.error("Repository not found", context: context)
       throw RepositoryError.notFound
     }
 
     // Repository is already a RepositoryMaintenanceProtocol by definition
     do {
       _=try await repository.check(readData: true, checkUnused: true)
-      await logger.info(
-        "Repository check completed successfully",
-        metadata: metadata,
-        source: "RepositoryService"
-      )
+      await logger.info("Repository check completed successfully", context: context)
     } catch {
-      await logger.error(
-        "Repository check failed: \(error.localizedDescription)",
-        metadata: metadata,
-        source: "RepositoryService"
-      )
+      await logger.error("Repository check failed: \(error.localizedDescription)", context: context)
       throw RepositoryError.internalError
     }
   }

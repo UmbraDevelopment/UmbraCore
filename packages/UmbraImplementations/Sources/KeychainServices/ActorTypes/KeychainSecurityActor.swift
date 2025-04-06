@@ -130,8 +130,8 @@ public actor KeychainSecurityActor {
 
     // Create proper structured logging
     await keychainLogger.logOperationStart(
-      account: account,
       operation: "storeEncryptedSecret",
+      account: account,
       keyIdentifier: keyID,
       additionalContext: additionalContext
     )
@@ -186,8 +186,8 @@ public actor KeychainSecurityActor {
 
       // Log successful operation
       await keychainLogger.logOperationSuccess(
-        account: account,
         operation: "storeEncryptedSecret",
+        account: account,
         keyIdentifier: keyID,
         additionalContext: additionalContext
       )
@@ -196,8 +196,8 @@ public actor KeychainSecurityActor {
     } catch {
       // Log the error with proper metadata
       await keychainLogger.logOperationError(
-        account: account,
         operation: "storeEncryptedSecret",
+        account: account,
         error: error,
         keyIdentifier: keyID,
         additionalContext: additionalContext
@@ -232,8 +232,8 @@ public actor KeychainSecurityActor {
 
     // Log the operation start
     await keychainLogger.logOperationStart(
-      account: account,
       operation: "retrieveEncryptedSecret",
+      account: account,
       keyIdentifier: keyID,
       additionalContext: additionalContext
     )
@@ -284,8 +284,8 @@ public actor KeychainSecurityActor {
 
       // Log success
       await keychainLogger.logOperationSuccess(
-        account: account,
         operation: "retrieveEncryptedSecret",
+        account: account,
         keyIdentifier: keyID,
         additionalContext: additionalContext
       )
@@ -294,8 +294,8 @@ public actor KeychainSecurityActor {
     } catch {
       // Log error appropriately
       await keychainLogger.logOperationError(
-        account: account,
         operation: "retrieveEncryptedSecret",
+        account: account,
         error: error,
         keyIdentifier: keyID,
         additionalContext: additionalContext
@@ -330,8 +330,8 @@ public actor KeychainSecurityActor {
 
     // Log the operation start
     await keychainLogger.logOperationStart(
-      account: account,
       operation: "deleteSecret",
+      account: account,
       keyIdentifier: keyID,
       additionalContext: additionalContext
     )
@@ -344,8 +344,8 @@ public actor KeychainSecurityActor {
       _=await keyManager.deleteKey(withIdentifier: keyID)
 
       await keychainLogger.logOperationSuccess(
-        account: account,
         operation: "deleteKey",
+        account: account,
         keyIdentifier: keyID,
         additionalContext: additionalContext
       )
@@ -356,15 +356,15 @@ public actor KeychainSecurityActor {
       try await keychainService.deleteData(for: account, keychainOptions: KeychainOptions.standard)
 
       await keychainLogger.logOperationSuccess(
-        account: account,
         operation: "deleteSecret",
+        account: account,
         keyIdentifier: keyID,
         additionalContext: additionalContext
       )
     } catch {
       await keychainLogger.logOperationError(
-        account: account,
         operation: "deleteSecret",
+        account: account,
         error: error,
         keyIdentifier: keyID,
         additionalContext: additionalContext
