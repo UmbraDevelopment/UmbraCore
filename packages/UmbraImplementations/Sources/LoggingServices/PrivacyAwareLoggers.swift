@@ -119,29 +119,19 @@ public struct BaseDomainLogger: DomainLogger {
     var updatedMetadata=context.metadata
 
     if let loggableError=error as? LoggableErrorProtocol {
-      // For structured logging errors, get their privacy metadata
-      let errorMetadata=loggableError.getPrivacyMetadata()
-      for entry in errorMetadata.entriesArray {
-        // Add each entry with its privacy level
-        switch entry.privacy {
-          case .public:
-            updatedMetadata=updatedMetadata.withPublic(key: entry.key, value: entry.value)
-          case .private:
-            updatedMetadata=updatedMetadata.withPrivate(key: entry.key, value: entry.value)
-          case .sensitive:
-            updatedMetadata=updatedMetadata.withSensitive(key: entry.key, value: entry.value)
-          case .hash:
-            updatedMetadata=updatedMetadata.withHashed(key: entry.key, value: entry.value)
-          case .auto:
-            updatedMetadata=updatedMetadata.withPrivate(key: entry.key, value: entry.value)
-        }
-
-        // Add error type with public visibility
-        updatedMetadata=updatedMetadata.withPublic(
-          key: "errorType",
-          value: String(describing: type(of: error))
-        )
+      // For structured logging errors, get their metadata using the new protocol method
+      let errorMetadata=loggableError.createMetadataCollection()
+      // Process each entry in the metadata collection
+      for entry in errorMetadata.entries {
+        // Add the entry to our updated metadata
+        updatedMetadata = updatedMetadata.with(key: entry.key, value: entry.value, privacyLevel: entry.privacyLevel)
       }
+
+      // Add error type with public visibility
+      updatedMetadata=updatedMetadata.withPublic(
+        key: "errorType",
+        value: String(describing: type(of: error))
+      )
     }
 
     let logMessage=message ?? "Operation failed"
@@ -167,18 +157,17 @@ public struct BaseDomainLogger: DomainLogger {
     severity: LogLevel,
     message: String?
   ) async {
-    // Use the error's built-in privacy metadata
-    let metadata=error.getPrivacyMetadata()
+    // Use the error's built-in metadata collection - no conversion needed
+    let metadata = error.createMetadataCollection()
 
     // Get source information if available
     let source=error.getSource()
 
-    // Create a context from the error information with proper metadata conversion
-    let metadataDTO=createMetadataCollection(from: metadata)
+    // Create a context directly using the metadata collection
     let context=BaseLogContextDTO(
       domainName: "Error",
       source: source,
-      metadata: metadataDTO,
+      metadata: metadata,
       correlationID: nil
     )
 
@@ -191,36 +180,12 @@ public struct BaseDomainLogger: DomainLogger {
 
   // MARK: - Helper Functions
 
-  /// Helper method to convert PrivacyMetadata to LogMetadataDTOCollection
-  /// - Parameter metadata: The privacy metadata to convert
-  /// - Returns: A LogMetadataDTOCollection with the same entries
-  private func createMetadataCollection(from metadata: PrivacyMetadata?)
-  -> LogMetadataDTOCollection {
-    var collection=LogMetadataDTOCollection()
-
-    // If no metadata, return empty collection
-    guard let metadata else {
-      return collection
-    }
-
-    // Convert each entry based on its privacy level
-    for entry in metadata.entriesArray {
-      switch entry.privacy {
-        case .public:
-          collection=collection.withPublic(key: entry.key, value: entry.value)
-        case .private:
-          collection=collection.withPrivate(key: entry.key, value: entry.value)
-        case .sensitive:
-          collection=collection.withSensitive(key: entry.key, value: entry.value)
-        case .hash:
-          collection=collection.withHashed(key: entry.key, value: entry.value)
-        case .auto:
-          // Default to private for auto
-          collection=collection.withPrivate(key: entry.key, value: entry.value)
-      }
-    }
-
-    return collection
+  /// Helper method to convert LogMetadataDTOCollection directly without conversion
+  /// - Parameter metadata: The metadata to use directly
+  /// - Returns: The same metadata collection
+  private func createMetadataCollection(from metadata: LogMetadataDTOCollection?) -> LogMetadataDTOCollection {
+    // If already a LogMetadataDTOCollection, just return it (or empty if nil)
+    return metadata ?? LogMetadataDTOCollection()
   }
 }
 
@@ -682,7 +647,7 @@ public class EnhancedErrorLogger: LegacyErrorLoggingProtocol {
     level: LogLevel,
     message: String?
   ) async {
-    let metadata=error.getPrivacyMetadata()
+    let metadata=error.createMetadataCollection()
     let source=error.getSource()
     let logMessage=message ?? error.getLogMessage()
 
@@ -711,7 +676,7 @@ public class EnhancedErrorLogger: LegacyErrorLoggingProtocol {
   public func logError(
     _ error: Error,
     level: LogLevel,
-    metadata: PrivacyMetadata?,
+    metadata: LogMetadataDTOCollection?,
     source: String,
     message: String?
   ) async {
@@ -763,7 +728,7 @@ public class EnhancedErrorLogger: LegacyErrorLoggingProtocol {
       // Add error metadata
       updatedMetadata=updatedMetadata.merging(
         with: createMetadataCollection(
-          from: loggableError.getPrivacyMetadata()
+          from: loggableError.createMetadataCollection()
         )
       )
     }
@@ -800,8 +765,8 @@ public class EnhancedErrorLogger: LegacyErrorLoggingProtocol {
     source: String?=nil
   ) async {
     if let loggableError=error as? LoggableErrorDTO {
-      // Use the error's built-in privacy metadata
-      let metadata=loggableError.getPrivacyMetadata()
+      // Use the error's built-in metadata collection
+      let metadata=loggableError.createMetadataCollection()
 
       // Get source information if available
       let errorSource=source ?? loggableError.getSource()
@@ -852,36 +817,12 @@ public class EnhancedErrorLogger: LegacyErrorLoggingProtocol {
 
   // MARK: - Helper Functions
 
-  /// Helper method to convert PrivacyMetadata to LogMetadataDTOCollection
-  /// - Parameter metadata: The privacy metadata to convert
-  /// - Returns: A LogMetadataDTOCollection with the same entries
-  private func createMetadataCollection(from metadata: PrivacyMetadata?)
-  -> LogMetadataDTOCollection {
-    var collection=LogMetadataDTOCollection()
-
-    // If no metadata, return empty collection
-    guard let metadata else {
-      return collection
-    }
-
-    // Convert each entry based on its privacy level
-    for entry in metadata.entriesArray {
-      switch entry.privacy {
-        case .public:
-          collection=collection.withPublic(key: entry.key, value: entry.value)
-        case .private:
-          collection=collection.withPrivate(key: entry.key, value: entry.value)
-        case .sensitive:
-          collection=collection.withSensitive(key: entry.key, value: entry.value)
-        case .hash:
-          collection=collection.withHashed(key: entry.key, value: entry.value)
-        case .auto:
-          // Default to private for auto
-          collection=collection.withPrivate(key: entry.key, value: entry.value)
-      }
-    }
-
-    return collection
+  /// Helper method to convert LogMetadataDTOCollection directly without conversion
+  /// - Parameter metadata: The metadata to use directly
+  /// - Returns: The same metadata collection
+  private func createMetadataCollection(from metadata: LogMetadataDTOCollection?) -> LogMetadataDTOCollection {
+    // If already a LogMetadataDTOCollection, just return it (or empty if nil)
+    return metadata ?? LogMetadataDTOCollection()
   }
 }
 
@@ -918,7 +859,7 @@ public protocol LegacyErrorLoggingProtocol {
   func logError(
     _ error: Error,
     level: LogLevel,
-    metadata: PrivacyMetadata?,
+    metadata: LogMetadataDTOCollection?,
     source: String,
     message: String?
   ) async

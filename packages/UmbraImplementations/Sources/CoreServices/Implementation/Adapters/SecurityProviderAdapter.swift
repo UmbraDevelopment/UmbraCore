@@ -2,6 +2,9 @@ import CoreInterfaces
 import CoreSecurityTypes
 import Foundation
 import SecurityCoreInterfaces
+import LoggingInterfaces
+import LoggingTypes
+import UmbraErrors
 
 /**
  # Security Provider Adapter
@@ -28,19 +31,43 @@ public actor SecurityProviderAdapter: CoreSecurityProviderProtocol {
   /**
    The underlying security provider implementation
 
-   This is the actual implementation that performs the security operations.
+   This is the adaptee in the adapter pattern.
    */
-  private let securityProvider: SecurityCoreInterfaces.SecurityProviderProtocol
+  private let securityProvider: SecurityProviderProtocol
+  
+  /**
+   Domain-specific logger for security operations
+   
+   Used for privacy-aware logging of security operations.
+   */
+  private let logger: DomainLogger
 
   // MARK: - Initialisation
 
   /**
-   Initialises a new adapter with the provided security provider
+   Creates a new security provider adapter with the provided implementation
 
    - Parameter securityProvider: The security provider implementation to adapt
    */
-  public init(securityProvider: SecurityCoreInterfaces.SecurityProviderProtocol) {
-    self.securityProvider=securityProvider
+  public init(securityProvider: SecurityProviderProtocol) {
+    self.securityProvider = securityProvider
+    // Create a domain logger for security operations
+    self.logger = LoggerFactory.createSecurityLogger(source: "SecurityProviderAdapter")
+    
+    Task {
+      await logInitialisation()
+    }
+  }
+  
+  /**
+   Log the initialisation of the adapter
+   */
+  private func logInitialisation() async {
+    let context = CoreLogContext.initialisation(
+      source: "SecurityProviderAdapter.init"
+    )
+    
+    await logger.info("Security provider adapter initialised", context: context)
   }
 
   // MARK: - CoreSecurityProviderProtocol Implementation
@@ -55,7 +82,30 @@ public actor SecurityProviderAdapter: CoreSecurityProviderProtocol {
    - Throws: SecurityError if initialisation fails
    */
   public func initialise() async throws {
-    try await securityProvider.initialize()
+    let context = CoreLogContext.initialisation(
+      source: "SecurityProviderAdapter.initialise"
+    )
+    
+    await logger.debug("Initialising security provider", context: context)
+    
+    do {
+      try await securityProvider.initialize()
+      await logger.debug("Security provider initialised successfully", context: context)
+    } catch {
+      let loggableError = LoggableErrorDTO(
+        error: error,
+        message: "Failed to initialise security provider",
+        details: "Initialisation failed in the underlying provider"
+      )
+      
+      await logger.error(
+        loggableError,
+        context: context,
+        privacyLevel: .private
+      )
+      
+      throw adaptError(error)
+    }
   }
 
   /**
@@ -70,24 +120,55 @@ public actor SecurityProviderAdapter: CoreSecurityProviderProtocol {
    - Throws: SecurityError if encryption fails
    */
   public func encrypt(data: Data, key: Data) async throws -> Data {
-    // Create the secure bytes from data
-    let secureData=SendableCryptoMaterial(bytes: [UInt8](data))
-    let secureKey=SendableCryptoMaterial(bytes: [UInt8](key))
-
-    // Create the configuration for encryption
-    let config=SecurityConfigDTO(
-      operation: .encrypt,
-      key: secureKey,
-      data: secureData,
-      algorithm: "AES",
-      mode: "GCM"
+    let context = CoreLogContext(
+      source: "SecurityProviderAdapter.encrypt",
+      metadata: {
+        var metadata = LogMetadataDTOCollection()
+        metadata = metadata.withPrivate(key: "dataSize", value: String(data.count))
+        metadata = metadata.withPrivate(key: "keySize", value: String(key.count))
+        return metadata
+      }()
     )
+    
+    await logger.debug("Encrypting data", context: context)
+    
+    do {
+      // Create the secure bytes from data
+      let secureData = SendableCryptoMaterial(bytes: [UInt8](data))
+      let secureKey = SendableCryptoMaterial(bytes: [UInt8](key))
 
-    // Perform encryption
-    let result=try await securityProvider.encrypt(config: config)
+      // Create the configuration for encryption
+      let config = SecurityConfigDTO(
+        operation: .encrypt,
+        key: secureKey,
+        data: secureData,
+        algorithm: "AES",
+        mode: "GCM"
+      )
 
-    // Return the encrypted data
-    return result.processedData.extractUnderlyingData()
+      // Perform encryption
+      let result = try await securityProvider.encrypt(config: config)
+      
+      // Return the encrypted data
+      let encryptedData = result.processedData.extractUnderlyingData()
+      
+      await logger.debug("Data encrypted successfully", context: context)
+      return encryptedData
+    } catch {
+      let loggableError = LoggableErrorDTO(
+        error: error,
+        message: "Failed to encrypt data",
+        details: "Encryption operation failed in adapter"
+      )
+      
+      await logger.error(
+        loggableError,
+        context: context,
+        privacyLevel: .private
+      )
+      
+      throw adaptError(error)
+    }
   }
 
   /**
@@ -102,24 +183,55 @@ public actor SecurityProviderAdapter: CoreSecurityProviderProtocol {
    - Throws: SecurityError if decryption fails
    */
   public func decrypt(data: Data, key: Data) async throws -> Data {
-    // Create the secure bytes from data
-    let secureData=SendableCryptoMaterial(bytes: [UInt8](data))
-    let secureKey=SendableCryptoMaterial(bytes: [UInt8](key))
-
-    // Create the configuration for decryption
-    let config=SecurityConfigDTO(
-      operation: .decrypt,
-      key: secureKey,
-      data: secureData,
-      algorithm: "AES",
-      mode: "GCM"
+    let context = CoreLogContext(
+      source: "SecurityProviderAdapter.decrypt",
+      metadata: {
+        var metadata = LogMetadataDTOCollection()
+        metadata = metadata.withPrivate(key: "dataSize", value: String(data.count))
+        metadata = metadata.withPrivate(key: "keySize", value: String(key.count))
+        return metadata
+      }()
     )
+    
+    await logger.debug("Decrypting data", context: context)
+    
+    do {
+      // Create the secure bytes from data
+      let secureData = SendableCryptoMaterial(bytes: [UInt8](data))
+      let secureKey = SendableCryptoMaterial(bytes: [UInt8](key))
 
-    // Perform decryption
-    let result=try await securityProvider.decrypt(config: config)
+      // Create the configuration for decryption
+      let config = SecurityConfigDTO(
+        operation: .decrypt,
+        key: secureKey,
+        data: secureData,
+        algorithm: "AES",
+        mode: "GCM"
+      )
 
-    // Return the decrypted data
-    return result.processedData.extractUnderlyingData()
+      // Perform decryption
+      let result = try await securityProvider.decrypt(config: config)
+      
+      // Return the decrypted data
+      let decryptedData = result.processedData.extractUnderlyingData()
+      
+      await logger.debug("Data decrypted successfully", context: context)
+      return decryptedData
+    } catch {
+      let loggableError = LoggableErrorDTO(
+        error: error,
+        message: "Failed to decrypt data",
+        details: "Decryption operation failed in adapter"
+      )
+      
+      await logger.error(
+        loggableError,
+        context: context,
+        privacyLevel: .private
+      )
+      
+      throw adaptError(error)
+    }
   }
 
   /**
@@ -132,8 +244,38 @@ public actor SecurityProviderAdapter: CoreSecurityProviderProtocol {
    - Throws: SecurityError if key generation fails
    */
   public func generateKey(length: Int) async throws -> Data {
-    let result=try await securityProvider.generateEncryptionKey(keySize: length * 8)
-    return result.processedData.extractUnderlyingData()
+    let context = CoreLogContext(
+      source: "SecurityProviderAdapter.generateKey",
+      metadata: {
+        var metadata = LogMetadataDTOCollection()
+        metadata = metadata.withPublic(key: "keyLength", value: String(length))
+        return metadata
+      }()
+    )
+    
+    await logger.debug("Generating secure random key", context: context)
+    
+    do {
+      let result = try await securityProvider.generateEncryptionKey(keySize: length * 8)
+      let keyData = result.processedData.extractUnderlyingData()
+      
+      await logger.debug("Secure random key generated successfully", context: context)
+      return keyData
+    } catch {
+      let loggableError = LoggableErrorDTO(
+        error: error,
+        message: "Failed to generate key",
+        details: "Key generation failed in adapter"
+      )
+      
+      await logger.error(
+        loggableError,
+        context: context,
+        privacyLevel: .private
+      )
+      
+      throw adaptError(error)
+    }
   }
 
   /**
@@ -147,11 +289,53 @@ public actor SecurityProviderAdapter: CoreSecurityProviderProtocol {
    - Throws: SecurityError if key storage fails
    */
   public func storeKey(_ key: Data, identifier: String) async throws {
-    let secureKey=SendableCryptoMaterial(bytes: [UInt8](key))
-    let result=await securityProvider.storeKey(secureKey, withIdentifier: identifier)
+    let context = CoreLogContext(
+      source: "SecurityProviderAdapter.storeKey",
+      metadata: {
+        var metadata = LogMetadataDTOCollection()
+        metadata = metadata.withPrivate(key: "keySize", value: String(key.count))
+        metadata = metadata.withPublic(key: "identifier", value: identifier)
+        return metadata
+      }()
+    )
+    
+    await logger.debug("Storing key securely", context: context)
+    
+    do {
+      let secureKey = SendableCryptoMaterial(bytes: [UInt8](key))
+      let result = await securityProvider.storeKey(secureKey, withIdentifier: identifier)
 
-    if case let .failure(error)=result {
-      throw SecurityError.keyStorageFailed(message: error.localizedDescription)
+      if case let .failure(error) = result {
+        let loggableError = LoggableErrorDTO(
+          error: error,
+          message: "Failed to store key",
+          details: "Key storage operation failed in adapter"
+        )
+        
+        await logger.error(
+          loggableError,
+          context: context,
+          privacyLevel: .private
+        )
+        
+        throw SecurityError.keyStorageFailed(message: error.localizedDescription)
+      }
+      
+      await logger.debug("Key stored successfully", context: context)
+    } catch {
+      let loggableError = LoggableErrorDTO(
+        error: error,
+        message: "Failed to store key",
+        details: "Key storage failed in adapter"
+      )
+      
+      await logger.error(
+        loggableError,
+        context: context,
+        privacyLevel: .private
+      )
+      
+      throw adaptError(error)
     }
   }
 
@@ -165,13 +349,54 @@ public actor SecurityProviderAdapter: CoreSecurityProviderProtocol {
    - Throws: SecurityError if key retrieval fails
    */
   public func retrieveKey(identifier: String) async throws -> Data {
-    let result=await securityProvider.retrieveKey(withIdentifier: identifier)
+    let context = CoreLogContext(
+      source: "SecurityProviderAdapter.retrieveKey",
+      metadata: {
+        var metadata = LogMetadataDTOCollection()
+        metadata = metadata.withPublic(key: "identifier", value: identifier)
+        return metadata
+      }()
+    )
+    
+    await logger.debug("Retrieving stored key", context: context)
+    
+    do {
+      let result = await securityProvider.retrieveKey(withIdentifier: identifier)
 
-    switch result {
-      case let .success(key):
-        return key.extractUnderlyingData()
-      case let .failure(error):
-        throw SecurityError.keyRetrievalFailed(message: error.localizedDescription)
+      switch result {
+        case let .success(key):
+          let keyData = key.extractUnderlyingData()
+          await logger.debug("Key retrieved successfully", context: context)
+          return keyData
+        case let .failure(error):
+          let loggableError = LoggableErrorDTO(
+            error: error,
+            message: "Failed to retrieve key",
+            details: "Key retrieval operation failed in adapter"
+          )
+          
+          await logger.error(
+            loggableError,
+            context: context,
+            privacyLevel: .private
+          )
+          
+          throw SecurityError.keyRetrievalFailed(message: error.localizedDescription)
+      }
+    } catch {
+      let loggableError = LoggableErrorDTO(
+        error: error,
+        message: "Failed to retrieve key",
+        details: "Key retrieval failed in adapter"
+      )
+      
+      await logger.error(
+        loggableError,
+        context: context,
+        privacyLevel: .private
+      )
+      
+      throw adaptError(error)
     }
   }
 
@@ -187,7 +412,38 @@ public actor SecurityProviderAdapter: CoreSecurityProviderProtocol {
    - Throws: SecurityError if authentication fails
    */
   public func authenticate(identifier: String, credentials: Data) async throws -> Bool {
-    try await securityProvider.authenticate(identifier: identifier, credentials: credentials)
+    let context = CoreLogContext(
+      source: "SecurityProviderAdapter.authenticate",
+      metadata: {
+        var metadata = LogMetadataDTOCollection()
+        metadata = metadata.withPublic(key: "identifier", value: identifier)
+        // Never log credentials, even privately
+        return metadata
+      }()
+    )
+    
+    await logger.debug("Authenticating user", context: context)
+    
+    do {
+      let result = try await securityProvider.authenticate(identifier: identifier, credentials: credentials)
+      
+      await logger.debug("Authentication completed", context: context)
+      return result
+    } catch {
+      let loggableError = LoggableErrorDTO(
+        error: error,
+        message: "Authentication failed",
+        details: "User authentication operation failed in adapter"
+      )
+      
+      await logger.error(
+        loggableError,
+        context: context,
+        privacyLevel: .private
+      )
+      
+      throw adaptError(error)
+    }
   }
 
   /**
@@ -199,39 +455,93 @@ public actor SecurityProviderAdapter: CoreSecurityProviderProtocol {
        - resource: The resource identifier
        - accessLevel: The requested access level
    - Returns: True if authorisation is granted, false otherwise
-   - Throws: SecurityError if authorisation check fails
+   - Throws: SecurityError if authorisation fails
    */
   public func authorise(resource: String, accessLevel: String) async throws -> Bool {
-    try await securityProvider.authorise(resource: resource, accessLevel: accessLevel)
+    let context = CoreLogContext(
+      source: "SecurityProviderAdapter.authorise",
+      metadata: {
+        var metadata = LogMetadataDTOCollection()
+        metadata = metadata.withPublic(key: "resource", value: resource)
+        metadata = metadata.withPublic(key: "accessLevel", value: accessLevel)
+        return metadata
+      }()
+    )
+    
+    await logger.debug("Authorising access to resource", context: context)
+    
+    do {
+      let result = try await securityProvider.authorise(resource: resource, level: accessLevel)
+      
+      await logger.debug("Authorisation completed", context: context)
+      return result
+    } catch {
+      let loggableError = LoggableErrorDTO(
+        error: error,
+        message: "Authorisation failed",
+        details: "Resource authorisation operation failed in adapter"
+      )
+      
+      await logger.error(
+        loggableError,
+        context: context,
+        privacyLevel: .private
+      )
+      
+      throw adaptError(error)
+    }
   }
-
+  
+  // MARK: - Private Methods
+  
   /**
-   Verifies the integrity of data using the provided signature
-
-   Delegates to the underlying security provider implementation.
-
-   - Parameters:
-       - data: Data to verify
-       - signature: Digital signature
-   - Returns: True if verification is successful, false otherwise
-   - Throws: SecurityError if verification process fails
+   Adapts domain-specific errors to the core error domain
+   
+   - Parameter error: The original error to adapt
+   - Returns: A CoreError representing the adapted error
    */
-  public func verifySignature(data: Data, signature: Data) async throws -> Bool {
-    try await securityProvider.verify(data: data, signature: signature)
+  private func adaptError(_ error: Error) -> Error {
+    // If it's already a CoreError, return it directly
+    if let coreError = error as? CoreError {
+      return coreError
+    }
+    
+    // Map domain-specific errors to core errors
+    if let securityError = error as? SecurityError {
+      switch securityError {
+      case .initialisation(let message):
+        return CoreError.initialisation(message: "Security initialisation failed: \(message)")
+      case .keyStorageFailed(let message):
+        return CoreError.initialisation(message: "Key storage failed: \(message)")
+      case .keyRetrievalFailed(let message):
+        return CoreError.initialisation(message: "Key retrieval failed: \(message)")
+      case .authenticationFailed(let message):
+        return CoreError.authorisation(message: "Authentication failed: \(message)")
+      case .authorisationFailed(let message):
+        return CoreError.authorisation(message: "Authorisation failed: \(message)")
+      case .invalidKey(let message):
+        return CoreError.invalidState(message: "Invalid key: \(message)",
+                                     currentState: .error)
+      }
+    }
+    
+    // For any other error, wrap it in a generic message
+    return CoreError.initialisation(
+      message: "Security operation failed: \(error.localizedDescription)"
+    )
   }
 }
 
 /**
  # Security Error
 
- Error type for security operations through the adapter.
+ Domain-specific errors for security operations.
  */
-public enum SecurityError: Error, Sendable {
-  case encryptionFailed(message: String)
-  case decryptionFailed(message: String)
-  case keyGenerationFailed(message: String)
+public enum SecurityError: Error {
+  case initialisation(message: String)
   case keyStorageFailed(message: String)
   case keyRetrievalFailed(message: String)
-  case initialisation(message: String)
-  case invalidInput(message: String)
+  case authenticationFailed(message: String)
+  case authorisationFailed(message: String)
+  case invalidKey(message: String)
 }

@@ -11,24 +11,27 @@ import LoggingTypes
  
  This service handles the contextual logging of errors across the codebase
  with appropriate privacy controls and structured formatting.
+ 
+ This implementation adheres to the Alpha Dot Five architecture principles,
+ particularly around privacy-by-design and actor-based concurrency.
  */
 public actor ErrorLoggerService: ErrorLoggingProtocol {
   // MARK: - Properties
 
-  /// The underlying logger implementation
-  private let logger: PrivacyAwareLoggingProtocol
+  /// The domain logger for error handling
+  private let logger: DomainLogger
 
-  /// Domain/subsystem identifier for logs
-  private let subsystem = "ErrorHandlingService"
+  /// Default privacy level for error logs
+  private let defaultPrivacyLevel: PrivacyClassification = .private
 
   // MARK: - Initialisation
 
   /**
    Initialises a new error logger service.
 
-   - Parameter logger: The underlying logger to use for output
+   - Parameter logger: The domain logger to use for error reporting
    */
-  public init(logger: PrivacyAwareLoggingProtocol) {
+  public init(logger: DomainLogger) {
     self.logger = logger
   }
 
@@ -76,387 +79,182 @@ public actor ErrorLoggerService: ErrorLoggingProtocol {
     context: ErrorContext,
     options: ErrorLoggingOptions? = nil
   ) async {
-    // Extract privacy level from options
-    let privacyLevel = options?.privacyLevel ?? ErrorPrivacyLevel.standard
-
-    // Create metadata for the error
-    let errorMetadata = createErrorMetadata(
-      error,
-      privacyLevel: privacyLevel,
-      file: context.source.file,
-      function: context.source.function,
-      line: context.source.line
+    // Convert to LoggableErrorDTO if not already
+    let loggableError = convertToLoggableErrorDTO(error, context: context)
+    
+    // Determine privacy level from options
+    let privacyLevel = mapErrorPrivacyLevel(options?.privacyLevel ?? .standard)
+    
+    // Create log context with metadata
+    let logContext = CoreLogContext(
+      source: "\(context.source.file):\(context.source.line)",
+      correlationID: context.correlationID,
+      metadata: loggableError.createMetadataCollection()
     )
     
-    // Convert to LogMetadataDTOCollection
-    let logMetadataCollection = convertToMetadataCollection(errorMetadata)
-
-    let logMessage = formatErrorMessage(error, privacyLevel: privacyLevel)
-    
-    // Create log context
-    let logContext = BaseLogContextDTO(
-      domainName: subsystem,
-      source: context.source.file,
-      metadata: logMetadataCollection,
-      correlationID: nil
-    )
-
-    // Use the appropriate log level method with context
+    // Log using the appropriate level method
     switch level {
       case .debug:
-        await logger.debug(logMessage, context: logContext)
+        await logger.debug(loggableError.message, context: logContext, privacyLevel: privacyLevel)
       case .info:
-        await logger.info(logMessage, context: logContext)
+        await logger.info(loggableError.message, context: logContext, privacyLevel: privacyLevel)
       case .warning:
-        await logger.warning(logMessage, context: logContext)
+        await logger.warning(loggableError.message, context: logContext, privacyLevel: privacyLevel)
       case .error:
-        await logger.error(logMessage, context: logContext)
+        await logger.error(loggableError, context: logContext, privacyLevel: privacyLevel)
       case .critical:
-        await logger.critical(logMessage, context: logContext)
+        await logger.critical(loggableError, context: logContext, privacyLevel: privacyLevel)
     }
   }
   
   /**
-   Converts PrivacyMetadata to LogMetadataDTOCollection.
-   
-   - Parameter metadata: The privacy metadata to convert
-   - Returns: A corresponding LogMetadataDTOCollection
+   Maps ErrorPrivacyLevel to PrivacyClassification.
+
+   - Parameter level: The error privacy level to map
+   - Returns: The corresponding privacy classification
    */
-  private func convertToMetadataCollection(_ metadata: PrivacyMetadata) -> LogMetadataDTOCollection {
-    var collection = LogMetadataDTOCollection()
-    
-    // Use subscript to access PrivacyMetadata elements
-    for key in metadata.keys {
-      guard let value = metadata[key] else { continue }
-      
-      switch value.privacy {
-        case .public:
-          collection = collection.withPublic(key: key, value: value.stringValue)
-        case .private:
-          collection = collection.withPrivate(key: key, value: value.stringValue)
-        case .sensitive:
-          collection = collection.withPrivate(key: key, value: value.stringValue)
-        case .auto:
-          collection = collection.withPrivate(key: key, value: value.stringValue)
-        case .hash:
-          collection = collection.withPrivate(key: key, value: value.stringValue)
-      }
-    }
-    
-    return collection
-  }
-
-  /**
-   Formats an error into a loggable message.
-
-   - Parameters:
-      - error: The error to format
-      - privacyLevel: The privacy level to apply to sensitive parts
-   - Returns: A formatted error message string
-   */
-  private func formatErrorMessage(_ error: some Error, privacyLevel: ErrorPrivacyLevel) -> String {
-    let errorType = String(describing: type(of: error))
-    let description: String
-
-    switch privacyLevel {
-      case .minimal:
-        // Just log the error type for minimal privacy exposure
-        description = "Error occurred"
-      case .standard:
-        // Default behaviour - use localizedDescription
-        description = error.localizedDescription
-      case .enhanced, .maximum:
-        // More detailed - include debug description where possible
-        let debugError = error as CustomDebugStringConvertible
-        description = debugError.debugDescription
-    }
-
-    return "[\(errorType)] \(description)"
-  }
-
-  // MARK: - Helper Methods for Error Contexts
-
-  /**
-   Creates metadata for an error from a LoggableError.
-
-   - Parameters:
-     - error: The loggable error
-     - privacyLevel: The privacy level to apply to sensitive fields
-   - Returns: Metadata for the error
-   */
-  private func createMetadataFromLoggable(
-    _ error: LoggableErrorProtocol,
-    privacyLevel: ErrorPrivacyLevel
-  ) -> PrivacyMetadata {
-    var metadata = PrivacyMetadata()
-
-    // Add basic error properties
-    metadata["errorType"] = PrivacyMetadataValue(
-      value: String(describing: type(of: error)),
-      privacy: .public
-    )
-
-    metadata["errorMessage"] = PrivacyMetadataValue(
-      value: error.getLogMessage(),
-      privacy: .auto
-    )
-
-    return metadata
-  }
-
-  /**
-   Maps an ErrorPrivacyLevel to a LogPrivacyLevel value.
-
-   - Parameter level: The privacy level
-   - Returns: The corresponding LogPrivacyLevel
-   */
-  private func mapPrivacyLevel(_ level: ErrorPrivacyLevel) -> LogPrivacyLevel {
+  private func mapErrorPrivacyLevel(_ level: ErrorPrivacyLevel) -> PrivacyClassification {
     switch level {
       case .minimal:
-        return .private
-      case .standard:
-        return .auto
-      case .enhanced, .maximum:
         return .public
+      case .standard:
+        return .private
+      case .enhanced, .maximum:
+        return .sensitive
     }
   }
-
+  
   /**
-   Creates metadata for any error type.
-
+   Converts an Error to a LoggableErrorDTO.
+   
+   This method ensures all errors are properly formatted for
+   privacy-aware structured logging.
+   
    - Parameters:
-     - error: The error
-     - privacyLevel: The privacy level to apply
-     - file: Source file of the error
-     - function: Source function of the error
-     - line: Source line of the error
-   - Returns: Metadata for the error
+     - error: The error to convert
+     - context: The error context
+   - Returns: A LoggableErrorDTO instance
    */
-  private func createErrorMetadata(
-    _ error: some Error,
-    privacyLevel: ErrorPrivacyLevel,
-    file: String,
-    function: String,
-    line: Int
-  ) -> PrivacyMetadata {
-    // If it's a LoggableError, use its specialized metadata
+  private func convertToLoggableErrorDTO(_ error: some Error, context: ErrorContext) -> LoggableErrorDTO {
+    // If already a LoggableErrorDTO, return it
+    if let loggableError = error as? LoggableErrorDTO {
+      return loggableError
+    }
+    
+    // For LoggableErrorProtocol, adapt to the new DTO format
     if let loggableError = error as? LoggableErrorProtocol {
-      var metadata = createMetadataFromLoggable(loggableError, privacyLevel: privacyLevel)
-      
-      // Add source context
-      let sourceMetadata = createSourceMetadata(file: file, function: function, line: line)
-      for key in sourceMetadata.keys {
-        if let value = sourceMetadata[key] {
-          metadata[key] = value
-        }
-      }
-      
-      return metadata
+      return createDTOFromLoggableProtocol(loggableError, context: context)
     }
     
-    // Otherwise create generic metadata
-    var metadata = createBasicErrorMetadata(error, privacyLevel: privacyLevel)
-    
-    // Add source context
-    let sourceMetadata = createSourceMetadata(file: file, function: function, line: line)
-    for key in sourceMetadata.keys {
-      if let value = sourceMetadata[key] {
-        metadata[key] = value
-      }
+    // For NSError, create a structured LoggableErrorDTO
+    if let nsError = error as NSError {
+      return createDTOFromNSError(nsError, originalError: error, context: context)
     }
     
-    return metadata
+    // For standard errors, create a basic LoggableErrorDTO
+    return createStandardDTO(error, context: context)
   }
   
   /**
-   Creates metadata about the error source location.
+   Creates a LoggableErrorDTO from a LoggableErrorProtocol.
    
    - Parameters:
-     - file: Source file
-     - function: Source function
-     - line: Source line
-   - Returns: Source metadata
+     - loggableError: The loggable error protocol
+     - context: The error context
+   - Returns: A LoggableErrorDTO instance
    */
-  private func createSourceMetadata(
-    file: String,
-    function: String,
-    line: Int
-  ) -> PrivacyMetadata {
-    var metadata = PrivacyMetadata()
-
-    // Add source information with appropriate privacy levels
-    metadata["file"] = PrivacyMetadataValue(value: URL(fileURLWithPath: file).lastPathComponent, privacy: .public)
-    metadata["function"] = PrivacyMetadataValue(value: function, privacy: .public)
-    metadata["line"] = PrivacyMetadataValue(value: String(line), privacy: .public)
+  private func createDTOFromLoggableProtocol(
+    _ loggableError: LoggableErrorProtocol,
+    context: ErrorContext
+  ) -> LoggableErrorDTO {
+    let message = loggableError.getLogMessage()
+    let metadata = loggableError.getPrivacyMetadata()
+    let source = loggableError.getSource()
     
-    return metadata
+    // Extract domain and code if available
+    var domain = "Application"
+    var code = 0
+    var details = ""
+    
+    // Build details string from sensitive metadata
+    for key in metadata.entries() {
+      if let value = metadata[key], value.privacy == .sensitive {
+        details += "\(key): \(value.valueString)\n"
+      }
+      
+      // Look for domain and code in metadata
+      if key == "domain", let value = metadata[key] {
+        domain = value.valueString
+      }
+      
+      if key == "code", let value = metadata[key], let codeValue = Int(value.valueString) {
+        code = codeValue
+      }
+    }
+    
+    return LoggableErrorDTO(
+      error: loggableError,
+      domain: domain,
+      code: code,
+      message: message,
+      details: details,
+      source: source,
+      correlationID: context.correlationID
+    )
   }
   
   /**
-   Creates basic metadata for a standard error.
+   Creates a LoggableErrorDTO from an NSError.
+   
+   - Parameters:
+     - nsError: The NSError
+     - originalError: The original error object
+     - context: The error context
+   - Returns: A LoggableErrorDTO instance
+   */
+  private func createDTOFromNSError(
+    _ nsError: NSError,
+    originalError: Error,
+    context: ErrorContext
+  ) -> LoggableErrorDTO {
+    // Filter sensitive keys from userInfo
+    let sensitiveKeys = ["NSUnderlyingError", "NSSensitiveKeys", "NSCredential"]
+    let filteredUserInfo = nsError.userInfo.filter { !sensitiveKeys.contains($0.key) }
+    let details = filteredUserInfo.description
+    
+    return LoggableErrorDTO(
+      error: originalError,
+      domain: nsError.domain,
+      code: nsError.code,
+      message: nsError.localizedDescription,
+      details: details,
+      source: "\(context.source.file):\(context.source.line)",
+      correlationID: context.correlationID
+    )
+  }
+  
+  /**
+   Creates a standard LoggableErrorDTO.
    
    - Parameters:
      - error: The error
-     - privacyLevel: Privacy level to apply
-   - Returns: Basic error metadata
+     - context: The error context
+   - Returns: A LoggableErrorDTO instance
    */
-  private func createBasicErrorMetadata(
-    _ error: some Error,
-    privacyLevel: ErrorPrivacyLevel
-  ) -> PrivacyMetadata {
-    var metadata = PrivacyMetadata()
+  private func createStandardDTO(
+    _ error: Error,
+    context: ErrorContext
+  ) -> LoggableErrorDTO {
+    let errorTypeString = String(describing: type(of: error))
     
-    // Add basic error information
-    metadata["errorType"] = PrivacyMetadataValue(
-      value: String(describing: type(of: error)),
-      privacy: .public
+    return LoggableErrorDTO(
+      error: error,
+      domain: "Application",
+      code: 0,
+      message: error.localizedDescription,
+      details: String(describing: error),
+      source: "\(context.source.file):\(context.source.function):\(context.source.line)",
+      correlationID: context.correlationID
     )
-    
-    metadata["errorDescription"] = PrivacyMetadataValue(
-      value: error.localizedDescription,
-      privacy: .auto
-    )
-    
-    // Add domain if available
-    if let domainError = error as? ErrorDomainProtocol {
-      metadata["errorDomain"] = PrivacyMetadataValue(
-        value: String(describing: type(of: domainError)),
-        privacy: .public
-      )
-    }
-    
-    // Add additional info for NSError
-    let nsError = error as NSError
-    metadata["errorCode"] = PrivacyMetadataValue(
-      value: String(nsError.code),
-      privacy: .public
-    )
-    
-    metadata["errorDomain"] = PrivacyMetadataValue(
-      value: nsError.domain,
-      privacy: .public
-    )
-    
-    return metadata
-  }
-  
-  /**
-   Logs a diagnostic message with context.
-   
-   - Parameters:
-     - message: The message to log
-     - level: The log level
-     - context: Optional context information
-   */
-  public func logDiagnostic(
-    _ message: String,
-    level: ErrorLogLevel,
-    context: ErrorContext? = nil
-  ) async {
-    let actualContext = context ?? ErrorContext(
-      source: ErrorSource(
-        file: #file,
-        function: #function,
-        line: #line
-      ),
-      metadata: [:],
-      timestamp: Date()
-    )
-    
-    // Create a metadata collection
-    let contextMetadata = LogMetadataDTOCollection()
-      .withPublic(key: "subsystem", value: subsystem)
-      .withPublic(key: "file", value: actualContext.source.file)
-      .withPublic(key: "function", value: actualContext.source.function)
-      .withPublic(key: "line", value: String(actualContext.source.line))
-    
-    // Create the log context
-    let logContext = BaseLogContextDTO(
-      domainName: subsystem,
-      source: actualContext.source.file,
-      metadata: contextMetadata,
-      correlationID: nil
-    )
-
-    // Log with the appropriate level
-    switch level {
-      case .debug:
-        await logger.debug(message, context: logContext)
-      case .info:
-        await logger.info(message, context: logContext)
-      case .warning:
-        await logger.warning(message, context: logContext)
-      case .error:
-        await logger.error(message, context: logContext)
-      case .critical:
-        await logger.critical(message, context: logContext)
-    }
-  }
-  
-  // MARK: - Required protocol methods
-  
-  /// Logs an error with the debug level
-  public func debug<E: Error>(
-    _ error: E,
-    context: ErrorContext? = nil,
-    options: ErrorLoggingOptions? = nil
-  ) async {
-    await logError(error, level: .debug, context: context ?? ErrorContext(
-      source: ErrorSource(file: #file, function: #function, line: #line),
-      metadata: [:],
-      timestamp: Date()
-    ), options: options)
-  }
-  
-  /// Logs an error with the info level
-  public func info<E: Error>(
-    _ error: E,
-    context: ErrorContext? = nil,
-    options: ErrorLoggingOptions? = nil
-  ) async {
-    await logError(error, level: .info, context: context ?? ErrorContext(
-      source: ErrorSource(file: #file, function: #function, line: #line),
-      metadata: [:],
-      timestamp: Date()
-    ), options: options)
-  }
-  
-  /// Logs an error with the warning level
-  public func warning<E: Error>(
-    _ error: E,
-    context: ErrorContext? = nil,
-    options: ErrorLoggingOptions? = nil
-  ) async {
-    await logError(error, level: .warning, context: context ?? ErrorContext(
-      source: ErrorSource(file: #file, function: #function, line: #line),
-      metadata: [:],
-      timestamp: Date()
-    ), options: options)
-  }
-  
-  /// Logs an error with the error level
-  public func error<E: Error>(
-    _ error: E,
-    context: ErrorContext? = nil,
-    options: ErrorLoggingOptions? = nil
-  ) async {
-    await logError(error, level: .error, context: context ?? ErrorContext(
-      source: ErrorSource(file: #file, function: #function, line: #line),
-      metadata: [:],
-      timestamp: Date()
-    ), options: options)
-  }
-  
-  /// Logs an error with the critical level
-  public func critical<E: Error>(
-    _ error: E,
-    context: ErrorContext? = nil,
-    options: ErrorLoggingOptions? = nil
-  ) async {
-    await logError(error, level: .critical, context: context ?? ErrorContext(
-      source: ErrorSource(file: #file, function: #function, line: #line),
-      metadata: [:],
-      timestamp: Date()
-    ), options: options)
   }
 }

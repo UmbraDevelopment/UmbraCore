@@ -204,127 +204,150 @@ extension ResticError: LocalizedError {
 // MARK: - LoggableErrorProtocol Conformance
 
 extension ResticError {
-  /// Get the privacy metadata for this error
-  /// - Returns: Privacy metadata for logging this error
-  public func getPrivacyMetadata() -> LoggingTypes.PrivacyMetadata {
-    var metadata=PrivacyMetadata()
-
+  /// Create a metadata collection for this error with appropriate privacy levels
+  /// - Returns: A metadata collection with privacy classifications
+  public func createMetadataCollection() -> LogMetadataDTOCollection {
+    var metadata = LogMetadataDTOCollection()
+    
+    // Add standard error metadata with appropriate privacy level
+    metadata = metadata.withPublic(key: "error_type", value: "restic_error")
+    
+    // Add case-specific details with appropriate privacy controls
     switch self {
       case let .missingParameter(message):
-        metadata["error_type"]=PrivacyMetadataValue(value: "missing_parameter", privacy: .public)
-        metadata["detail"]=PrivacyMetadataValue(value: message, privacy: .private)
+        metadata = metadata.withPublic(key: "error_category", value: "parameter_error")
+        metadata = metadata.withPrivate(key: "message", value: message)
+        
       case let .invalidParameter(message):
-        metadata["error_type"]=PrivacyMetadataValue(value: "invalid_parameter", privacy: .public)
-        metadata["detail"]=PrivacyMetadataValue(value: message, privacy: .private)
+        metadata = metadata.withPublic(key: "error_category", value: "parameter_error")
+        metadata = metadata.withPrivate(key: "message", value: message)
+        
       case let .executionFailed(message):
-        metadata["error_type"]=PrivacyMetadataValue(value: "execution_failed", privacy: .public)
-        metadata["detail"]=PrivacyMetadataValue(value: message, privacy: .private)
-      case let .executionFailure(code, error):
-        metadata["error_type"]=PrivacyMetadataValue(value: "execution_failure", privacy: .public)
-        metadata["exit_code"]=PrivacyMetadataValue(value: String(code), privacy: .public)
-        metadata["error_output"]=PrivacyMetadataValue(value: error, privacy: .private)
+        metadata = metadata.withPublic(key: "error_category", value: "execution_error")
+        metadata = metadata.withPrivate(key: "message", value: message)
+        
+      case let .executionFailure(exitCode, output):
+        metadata = metadata.withPublic(key: "error_category", value: "execution_error")
+        metadata = metadata.withPublic(key: "exit_code", value: String(exitCode))
+        metadata = metadata.withPrivate(key: "output", value: output)
+        
       case let .invalidCommand(message):
-        metadata["error_type"]=PrivacyMetadataValue(value: "invalid_command", privacy: .public)
-        metadata["detail"]=PrivacyMetadataValue(value: message, privacy: .private)
+        metadata = metadata.withPublic(key: "error_category", value: "command_error")
+        metadata = metadata.withPrivate(key: "message", value: message)
+        
       case .executionTimeout:
-        metadata["error_type"]=PrivacyMetadataValue(value: "execution_timeout", privacy: .public)
-      case .repositoryNotFound:
-        metadata["error_type"]=PrivacyMetadataValue(value: "repository_not_found", privacy: .public)
+        metadata = metadata.withPublic(key: "error_category", value: "timeout_error")
+        
+      case let .repositoryNotFound(path):
+        metadata = metadata.withPublic(key: "error_category", value: "repository_error")
+        metadata = metadata.withPrivate(key: "path", value: path)
+        
       case .invalidPassword:
-        metadata["error_type"]=PrivacyMetadataValue(value: "invalid_password", privacy: .public)
+        metadata = metadata.withPublic(key: "error_category", value: "authentication_error")
+        
       case let .permissionDenied(path):
-        metadata["error_type"]=PrivacyMetadataValue(value: "permission_denied", privacy: .public)
-        metadata["path"]=PrivacyMetadataValue(value: path, privacy: .private)
+        metadata = metadata.withPublic(key: "error_category", value: "permission_error")
+        metadata = metadata.withPrivate(key: "path", value: path)
+        
       case let .executableNotFound(path):
-        metadata["error_type"]=PrivacyMetadataValue(value: "executable_not_found", privacy: .public)
-        metadata["path"]=PrivacyMetadataValue(value: path, privacy: .private)
+        metadata = metadata.withPublic(key: "error_category", value: "executable_error")
+        metadata = metadata.withPrivate(key: "path", value: path)
+        
       case let .commandFailed(exitCode, output):
-        metadata["error_type"]=PrivacyMetadataValue(value: "command_failed", privacy: .public)
-        metadata["exit_code"]=PrivacyMetadataValue(value: String(exitCode), privacy: .public)
-        metadata["output"]=PrivacyMetadataValue(value: output, privacy: .private)
+        metadata = metadata.withPublic(key: "error_category", value: "command_error")
+        metadata = metadata.withPublic(key: "exit_code", value: String(exitCode))
+        metadata = metadata.withPrivate(key: "output", value: output)
+        
       case let .credentialError(message):
-        metadata["error_type"]=PrivacyMetadataValue(value: "credential_error", privacy: .public)
-        metadata["detail"]=PrivacyMetadataValue(value: message, privacy: .sensitive)
+        metadata = metadata.withPublic(key: "error_category", value: "credential_error")
+        metadata = metadata.withPrivate(key: "message", value: message)
+        
       case let .repositoryExists(path):
-        metadata["error_type"]=PrivacyMetadataValue(value: "repository_exists", privacy: .public)
-        metadata["path"]=PrivacyMetadataValue(value: path, privacy: .private)
+        metadata = metadata.withPublic(key: "error_category", value: "repository_error")
+        metadata = metadata.withPrivate(key: "path", value: path)
+        
       case let .invalidConfiguration(message):
-        metadata["error_type"]=PrivacyMetadataValue(value: "invalid_configuration",
-                                                    privacy: .public)
-        metadata["detail"]=PrivacyMetadataValue(value: message, privacy: .private)
+        metadata = metadata.withPublic(key: "error_category", value: "configuration_error")
+        metadata = metadata.withPrivate(key: "message", value: message)
+        
       case let .invalidData(message):
-        metadata["error_type"]=PrivacyMetadataValue(value: "invalid_data", privacy: .public)
-        metadata["detail"]=PrivacyMetadataValue(value: message, privacy: .private)
+        metadata = metadata.withPublic(key: "error_category", value: "data_error")
+        metadata = metadata.withPrivate(key: "message", value: message)
+        
       case let .backupFailed(message):
-        metadata["error_type"]=PrivacyMetadataValue(value: "backup_error", privacy: .public)
-        metadata["detail"]=PrivacyMetadataValue(value: message, privacy: .private)
+        metadata = metadata.withPublic(key: "error_category", value: "backup_error")
+        metadata = metadata.withPrivate(key: "message", value: message)
+        
       case let .restoreFailed(message):
-        metadata["error_type"]=PrivacyMetadataValue(value: "restore_error", privacy: .public)
-        metadata["detail"]=PrivacyMetadataValue(value: message, privacy: .private)
+        metadata = metadata.withPublic(key: "error_category", value: "restore_error")
+        metadata = metadata.withPrivate(key: "message", value: message)
+        
       case let .checkFailed(message):
-        metadata["error_type"]=PrivacyMetadataValue(value: "check_error", privacy: .public)
-        metadata["detail"]=PrivacyMetadataValue(value: message, privacy: .private)
+        metadata = metadata.withPublic(key: "error_category", value: "check_error")
+        metadata = metadata.withPrivate(key: "message", value: message)
+        
       case let .maintenanceFailed(message):
-        metadata["error_type"]=PrivacyMetadataValue(value: "maintenance_error", privacy: .public)
-        metadata["detail"]=PrivacyMetadataValue(value: message, privacy: .private)
+        metadata = metadata.withPublic(key: "error_category", value: "maintenance_error")
+        metadata = metadata.withPrivate(key: "message", value: message)
+        
       case let .generalError(message):
-        metadata["error_type"]=PrivacyMetadataValue(value: "general_error", privacy: .public)
-        metadata["detail"]=PrivacyMetadataValue(value: message, privacy: .private)
+        metadata = metadata.withPublic(key: "error_category", value: "general_error")
+        metadata = metadata.withPrivate(key: "message", value: message)
     }
-
+    
     return metadata
   }
-
+  
   /// Get the source information for this error
-  /// - Returns: Source information (e.g., file, function, line)
+  /// - Returns: Source information
   public func getSource() -> String {
-    "ResticService"
+    return "ResticService"
   }
-
+  
   /// Get the log message for this error
   /// - Returns: A descriptive message appropriate for logging
   public func getLogMessage() -> String {
     switch self {
       case let .missingParameter(message):
-        "Missing parameter: \(message)"
+        return "Missing parameter: \(message)"
       case let .invalidParameter(message):
-        "Invalid parameter: \(message)"
+        return "Invalid parameter: \(message)"
       case let .executionFailed(message):
-        "Execution failed: \(message)"
-      case let .executionFailure(code, _):
-        "Execution failed with exit code \(code)"
+        return "Execution failed: \(message)"
+      case let .executionFailure(exitCode, output):
+        return "Execution failure with exit code \(exitCode): \(output)"
       case let .invalidCommand(message):
-        "Invalid command: \(message)"
+        return "Invalid command: \(message)"
       case .executionTimeout:
-        "Command execution timed out"
-      case .repositoryNotFound:
-        "Repository not found at path"
+        return "Command execution timed out"
+      case let .repositoryNotFound(path):
+        return "Repository not found at path: \(path)"
       case .invalidPassword:
-        "Invalid repository password"
-      case .permissionDenied:
-        "Permission denied for path"
+        return "Invalid password provided"
+      case let .permissionDenied(path):
+        return "Permission denied for path: \(path)"
       case let .executableNotFound(path):
-        "Executable not found: \(path)"
-      case let .commandFailed(code, _):
-        "Command failed with exit code \(code)"
-      case .credentialError:
-        "Credential error occurred"
-      case .repositoryExists:
-        "Repository already exists"
+        return "Executable not found at: \(path)"
+      case let .commandFailed(exitCode, output):
+        return "Command failed with exit code \(exitCode): \(output)"
+      case let .credentialError(message):
+        return "Credential error: \(message)"
+      case let .repositoryExists(path):
+        return "Repository already exists at: \(path)"
       case let .invalidConfiguration(message):
-        "Invalid configuration: \(message)"
+        return "Invalid configuration: \(message)"
       case let .invalidData(message):
-        "Invalid data: \(message)"
+        return "Invalid data: \(message)"
       case let .backupFailed(message):
-        "Backup error: \(message)"
+        return "Backup failed: \(message)"
       case let .restoreFailed(message):
-        "Restore error: \(message)"
+        return "Restore failed: \(message)"
       case let .checkFailed(message):
-        "Repository check failed: \(message)"
+        return "Repository check failed: \(message)"
       case let .maintenanceFailed(message):
-        "Repository maintenance failed: \(message)"
+        return "Repository maintenance failed: \(message)"
       case let .generalError(message):
-        "Error: \(message)"
+        return "General error: \(message)"
     }
   }
 }
