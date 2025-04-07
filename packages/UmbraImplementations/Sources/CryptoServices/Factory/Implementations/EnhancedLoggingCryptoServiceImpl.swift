@@ -65,11 +65,10 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     // Log the result
     switch result {
     case let .success(encryptedIdentifier):
-      let finalContext = context.withMetadata(context.metadata.withPublic(key: "encryptedIdentifier", value: encryptedIdentifier))
-      await logger.log(.info, "Encrypt operation successful", context: finalContext)
+      let finalMetadata = context.metadata.withPublic(key: "encryptedIdentifier", value: encryptedIdentifier)
+      await logger.log(.info, "Encrypt operation successful", context: context, metadata: finalMetadata)
     case let .failure(error):
-      let finalContext = context.withMetadata(context.metadata.withError(error))
-      await logger.log(.error, "Encrypt operation failed", context: finalContext)
+      await logger.log(.error, "Encrypt operation failed", context: context, error: error)
     }
 
     return result
@@ -100,11 +99,10 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     // Log the result
     switch result {
     case let .success(decryptedIdentifier):
-      let finalContext = context.withMetadata(context.metadata.withPublic(key: "decryptedIdentifier", value: decryptedIdentifier))
-      await logger.log(.info, "Decrypt operation successful", context: finalContext)
+      let finalMetadata = context.metadata.withPublic(key: "decryptedIdentifier", value: decryptedIdentifier)
+      await logger.log(.info, "Decrypt operation successful", context: context, metadata: finalMetadata)
     case let .failure(error):
-      let finalContext = context.withMetadata(context.metadata.withError(error))
-      await logger.log(.error, "Decrypt operation failed", context: finalContext)
+      await logger.log(.error, "Decrypt operation failed", context: context, error: error)
     }
 
     return result
@@ -134,11 +132,10 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     // Log the result
     switch result {
     case let .success(hashIdentifier):
-      let finalContext = context.withMetadata(context.metadata.withPublic(key: "hashIdentifier", value: hashIdentifier))
-      await logger.log(.info, "Hash operation successful", context: finalContext)
+      let finalMetadata = context.metadata.withPublic(key: "hashIdentifier", value: hashIdentifier)
+      await logger.log(.info, "Hash operation successful", context: context, metadata: finalMetadata)
     case let .failure(error):
-      let finalContext = context.withMetadata(context.metadata.withError(error))
-      await logger.log(.error, "Hash operation failed", context: finalContext)
+      await logger.log(.error, "Hash operation failed", context: context, error: error)
     }
 
     return result
@@ -171,11 +168,10 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     // Log the result
     switch result {
     case let .success(isValid):
-      let finalContext = context.withMetadata(context.metadata.withPublic(key: "isValid", value: "\(isValid)"))
-      await logger.log(.info, "Verify hash operation successful", context: finalContext)
+      let finalMetadata = context.metadata.withPublic(key: "isValid", value: "\(isValid)")
+      await logger.log(.info, "Verify hash operation successful", context: context, metadata: finalMetadata)
     case let .failure(error):
-      let finalContext = context.withMetadata(context.metadata.withError(error))
-      await logger.log(.error, "Verify hash operation failed", context: finalContext)
+      await logger.log(.error, "Verify hash operation failed", context: context, error: error)
     }
 
     return result
@@ -190,7 +186,7 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
       operationName: "generateKey",
       source: "EnhancedLoggingCryptoServiceImpl.generateKey",
       metadata: LogMetadataDTOCollection()
-        .withPublic(key: "keyLength", value: length)
+        .withPublic(key: "keyLength", value: "\(length)")
         // options could be added here if needed
     )
     await logger.log(.debug, "Generate key operation started", context: context)
@@ -204,11 +200,10 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     // Log the result
     switch result {
     case let .success(keyIdentifier):
-      let finalContext = context.withMetadata(context.metadata.withPublic(key: "keyIdentifier", value: keyIdentifier))
-      await logger.log(.info, "Generate key operation successful", context: finalContext)
+      let finalMetadata = context.metadata.withPublic(key: "keyIdentifier", value: keyIdentifier)
+      await logger.log(.info, "Generate key operation successful", context: context, metadata: finalMetadata)
     case let .failure(error):
-      let finalContext = context.withMetadata(context.metadata.withError(error))
-      await logger.log(.error, "Generate key operation failed", context: finalContext)
+      await logger.log(.error, "Generate key operation failed", context: context, error: error)
     }
 
     return result
@@ -224,7 +219,7 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
       source: "EnhancedLoggingCryptoServiceImpl.storeData",
       metadata: LogMetadataDTOCollection()
         .withPrivate(key: "identifier", value: identifier) // Identifier might be sensitive
-        .withPrivate(key: "dataSize", value: data.count), // Data size might be sensitive
+        .withPrivate(key: "dataSize", value: "\(data.count)"), // Data size might be sensitive
     )
     await logger.log(.debug, "Store data operation started", context: context)
 
@@ -233,8 +228,7 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
 
     // Log the result
     if case let .failure(error) = result {
-      let finalContext = context.withMetadata(context.metadata.withError(error))
-      await logger.log(.error, "Store data operation failed", context: finalContext)
+      await logger.log(.error, "Store data operation failed", context: context, error: error)
     } else {
       await logger.log(.info, "Store data operation successful", context: context)
     }
@@ -260,11 +254,10 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     // Log the result
     switch result {
     case let .success(retrievedData):
-      let finalContext = context.withMetadata(context.metadata.withPrivate(key: "retrievedDataSize", value: retrievedData.count))
-      await logger.log(.info, "Retrieve data operation successful", context: finalContext)
+      let finalMetadata = context.metadata.withPrivate(key: "retrievedDataSize", value: "\(retrievedData.count)")
+      await logger.log(.info, "Retrieve data operation successful", context: context, metadata: finalMetadata)
     case let .failure(error):
-      let finalContext = context.withMetadata(context.metadata.withError(error))
-      await logger.log(.error, "Retrieve data operation failed", context: finalContext)
+      await logger.log(.error, "Retrieve data operation failed", context: context, error: error)
     }
 
     return result
@@ -288,11 +281,10 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     // Log the result
     switch result {
     case let .success(exportedData):
-      let finalContext = context.withMetadata(context.metadata.withPrivate(key: "exportedDataSize", value: exportedData.count))
-      await logger.log(.info, "Export data operation successful", context: finalContext)
+      let finalMetadata = context.metadata.withPrivate(key: "exportedDataSize", value: "\(exportedData.count)")
+      await logger.log(.info, "Export data operation successful", context: context, metadata: finalMetadata)
     case let .failure(error):
-      let finalContext = context.withMetadata(context.metadata.withError(error))
-      await logger.log(.error, "Export data operation failed", context: finalContext)
+      await logger.log(.error, "Export data operation failed", context: context, error: error)
     }
 
     return result
@@ -309,7 +301,7 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
       source: "EnhancedLoggingCryptoServiceImpl.importData",
       metadata: LogMetadataDTOCollection()
         .withPrivate(key: "customIdentifier", value: customIdentifier ?? "nil") // Identifier might be sensitive
-        .withPrivate(key: "dataSize", value: data.count) // Data size might be sensitive
+        .withPrivate(key: "dataSize", value: "\(data.count)") // Data size might be sensitive
     )
     await logger.log(.debug, "Import data operation started", context: context)
 
@@ -321,11 +313,10 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     // Log the result
     switch result {
     case let .success(storedIdentifier):
-      let finalContext = context.withMetadata(context.metadata.withPrivate(key: "storedIdentifier", value: storedIdentifier))
-      await logger.log(.info, "Import data operation successful", context: finalContext)
+      let finalMetadata = context.metadata.withPrivate(key: "storedIdentifier", value: storedIdentifier)
+      await logger.log(.info, "Import data operation successful", context: context, metadata: finalMetadata)
     case let .failure(error):
-      let finalContext = context.withMetadata(context.metadata.withError(error))
-      await logger.log(.error, "Import data operation failed", context: finalContext)
+      await logger.log(.error, "Import data operation failed", context: context, error: error)
     }
 
     return result
@@ -348,8 +339,7 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
 
     // Log the result
     if case let .failure(error) = result {
-      let finalContext = context.withMetadata(context.metadata.withError(error))
-      await logger.log(.error, "Delete data operation failed", context: finalContext)
+      await logger.log(.error, "Delete data operation failed", context: context, error: error)
     } else {
       await logger.log(.info, "Delete data operation successful", context: context)
     }

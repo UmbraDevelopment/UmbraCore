@@ -72,7 +72,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
     guard case let .success(originalData) = originalDataResult else {
         let retrieveError = originalDataResult.mapError { $0 } // Extract error
         await logger.log(.error, "Failed to retrieve original data for encryption: \(retrieveError)", context: context)
-        return .failure(retrieveError.failureValue ?? .dataNotFound) // Map error
+        return .failure(mapStorageErrorToCryptoError(retrieveError)) // Map error
     }
 
     // Create mock encrypted data
@@ -97,7 +97,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
         return .success(encryptedDataStoreIdentifier)
       case let .failure(error):
         await logger.log(.error, "Failed to store encrypted data: \(error)", context: context)
-        return .failure(.operationFailed(error.description)) // Corrected error case
+        return .failure(mapStorageErrorToCryptoError(error)) // Corrected error case
     }
   }
 
@@ -135,7 +135,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
           let dataStartIndex = 16
           guard let keyIDLengthByte = encryptedDataBytes.last else {
               await logger.log(.error, "Invalid encrypted data format: missing key ID length", context: context)
-              return .failure(.decryptionFailed) // Changed error case
+              return .failure(mapStorageErrorToCryptoError(.decryptionFailed)) // Changed error case
           }
           let keyIDLength = Int(keyIDLengthByte)
           let keyIDStartIndex = encryptedDataBytes.count - 1 - keyIDLength
@@ -143,7 +143,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
           // Basic validation
           guard keyIDStartIndex > dataStartIndex, keyIDStartIndex < encryptedDataBytes.count - 1 else {
               await logger.log(.error, "Invalid encrypted data format: key ID length mismatch", context: context)
-              return .failure(.decryptionFailed) // Changed error case
+              return .failure(mapStorageErrorToCryptoError(.decryptionFailed)) // Changed error case
           }
 
           let decryptedDataBytes = Array(encryptedDataBytes[dataStartIndex..<keyIDStartIndex])
@@ -160,7 +160,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
               return .success(decryptedDataIdentifier)
           case let .failure(storageError):
               await logger.log(.error, "Failed to store decrypted data: \(storageError)", context: context)
-              return .failure(.operationFailed(storageError.description)) // Use appropriate error
+              return .failure(mapStorageErrorToCryptoError(storageError)) // Use appropriate error
           }
 
         } else {
@@ -170,7 +170,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
             context: context
           )
           // Use a more specific error from SecurityStorageError if available, or .decryptionFailed
-          return .failure(.decryptionFailed) // Changed error case
+          return .failure(mapStorageErrorToCryptoError(.decryptionFailed)) // Changed error case
         }
 
       case let .failure(error):
@@ -180,7 +180,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
           context: context
         )
         // Map retrieval error to decryption failure or data not found
-        return .failure(error == .dataNotFound ? .dataNotFound : .decryptionFailed) // Changed error mapping
+        return .failure(mapStorageErrorToCryptoError(error)) // Changed error mapping
     }
   }
 
@@ -212,7 +212,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
     guard case let .success(originalData) = originalDataResult else {
         let retrieveError = originalDataResult.mapError { $0 } // Extract error
         await logger.log(.error, "Failed to retrieve original data for hashing: \(retrieveError)", context: context)
-        return .failure(retrieveError.failureValue ?? .dataNotFound) // Map error
+        return .failure(mapStorageErrorToCryptoError(retrieveError)) // Map error
     }
 
     // Generate mock hash based on retrieved data (length used as simple example)
@@ -237,7 +237,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
         return .success(hashIdentifier)
       case let .failure(error):
         await logger.log(.error, "Failed to store hash: \(error)", context: context)
-        return .failure(.operationFailed(error.description)) // Corrected error case
+        return .failure(mapStorageErrorToCryptoError(error)) // Corrected error case
     }
   }
 
@@ -290,7 +290,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
         return .success(Data(bytes)) // Convert [UInt8] to Data
     case .failure(let error):
        await logger.log(.error, "Failed to retrieve data: \(error)", context: context)
-        return .failure(error)
+        return .failure(mapStorageErrorToCryptoError(error))
     }
   }
 
@@ -364,7 +364,40 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
 
   // MARK: - Helper Methods
 
-  // No changes needed below this line for current fixes
+  // Helper function to map SecurityStorageError to CryptoError
+  private func mapStorageErrorToCryptoError(_ storageError: SecurityStorageError) -> CryptoError {
+      switch storageError {
+      case .storageUnavailable:
+          // Assuming CryptoError has a general internal error case or similar
+          return .internalError(description: "Secure storage unavailable")
+      case .dataNotFound:
+          return .dataNotFound
+      case .keyNotFound:
+          return .keyNotFound
+      case .hashNotFound:
+          // Assuming CryptoError handles hash errors generically or via internal error
+          return .internalError(description: "Hash not found in storage")
+      case .encryptionFailed:
+          return .encryptionFailed
+      case .decryptionFailed:
+          return .decryptionFailed
+      case .hashingFailed:
+          return .hashingFailed
+      case .hashVerificationFailed:
+          return .hashVerificationFailed
+      case .keyGenerationFailed:
+           // Assuming CryptoError.keyGenerationFailed takes a reason string
+           return .keyGenerationFailed(reason: "Storage error during key generation")
+      case .unsupportedOperation:
+          return .operationNotSupported
+      case .implementationUnavailable:
+          // Map to internal error or perhaps operationNotSupported
+          return .internalError(description: "Storage implementation unavailable")
+      case .operationFailed(let message):
+          // Assuming CryptoError.operationFailed takes a reason string
+          return .operationFailed(reason: message)
+      }
+  }
 
   private func generateRandomBytes(count: Int) async -> [UInt8] {
     var bytes = [UInt8](repeating: 0, count: count)

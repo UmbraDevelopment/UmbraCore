@@ -34,7 +34,7 @@ public actor DefaultLogger: LoggingProtocol {
 
   /// Required method from CoreLoggingProtocol
   public func log(_ level: LogLevel, _ message: String, context: LogContextDTO) async {
-    let source=context.getSource() ?? "SecurityKeyManagement"
+    let source=context.getSource()
     let formattedMessage="[\(source)] \(message)"
 
     // Log to OSLog

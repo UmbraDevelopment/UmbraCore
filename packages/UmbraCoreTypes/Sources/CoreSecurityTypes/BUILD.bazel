@@ -2,13 +2,13 @@ load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
     name = "CoreSecurityTypes",
-    srcs = glob(
-        [
-            "*.swift",
-            "**/*.swift",
-        ],
-        allow_empty = False,
-    ),
+    srcs = [
+        "CoreSecurityTypes.swift",  # Include the main file
+    ] + glob([
+        "DTOs/**/*.swift",          # Include all Swift files in DTOs
+        "Errors/**/*.swift",        # Include all Swift files in Errors
+        "Types/**/*.swift",         # Include all Swift files in Types
+    ]),
     visibility = ["//visibility:public"],
     deps = [],
 )

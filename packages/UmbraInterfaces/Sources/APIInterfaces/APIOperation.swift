@@ -50,41 +50,31 @@ public protocol APIOperation: Sendable {
   associatedtype ResultType: Sendable
 
   /// Unique identifier for this operation instance
-  var operationID: String { get }
+  var operationID: String { get async }
 
   /// Privacy metadata for this operation
   var privacyMetadata: APIOperationPrivacyMetadata { get }
 }
 
 /// Operation ID generation
-private enum OperationIDGenerator {
+private actor OperationIDGenerator {
   /// Thread-safe atomic counter
-  private static var counter=0
+  private var counter = 0
 
-  /// Internal lock for thread safety
-  private static let counterLock=Lock()
+  /// Shared instance for generating IDs
+  static let shared = OperationIDGenerator()
+
+  private init() {} // Ensure singleton pattern
 
   /// Generate a unique operation ID using a counter and timestamp
-  static func generateID() -> String {
-    let count=counterLock.withLock {
-      counter += 1
-      return counter
-    }
+  func generateID() -> String {
+    // Actor isolation ensures safe access to counter
+    counter += 1
+    let currentCount = counter
 
     // Use uptime in milliseconds as a timestamp component
-    let timestamp=UptimeProvider.millisecondsSinceStart
-    return "\(timestamp)-\(count)"
-  }
-}
-
-/// Simple lock for thread safety
-private final class Lock {
-  private var _lock=os_unfair_lock()
-
-  func withLock<T>(_ work: () -> T) -> T {
-    os_unfair_lock_lock(&_lock)
-    defer { os_unfair_lock_unlock(&_lock) }
-    return work()
+    let timestamp = UptimeProvider.millisecondsSinceStart
+    return "\(timestamp)-\(currentCount)"
   }
 }
 
@@ -103,7 +93,9 @@ private enum UptimeProvider {
 /// Default implementation for operationID
 extension APIOperation {
   public var operationID: String {
-    OperationIDGenerator.generateID()
+    get async {
+      await OperationIDGenerator.shared.generateID()
+    }
   }
 
   public var privacyMetadata: APIOperationPrivacyMetadata {

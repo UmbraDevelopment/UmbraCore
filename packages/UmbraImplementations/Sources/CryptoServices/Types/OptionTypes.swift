@@ -9,23 +9,6 @@ import Foundation
  */
 
 /**
- Encryption mode options available in this module.
- */
-public enum EncryptionMode: String, Sendable {
-  case cbc="CBC"
-  case gcm="GCM"
-}
-
-/**
- Key type options available in this module.
- */
-public enum KeyType: String, Sendable {
-  case aes="AES"
-  case rsa="RSA"
-  case ec="EC"
-}
-
-/**
  Options for configuring encryption operations.
  */
 public struct LocalEncryptionOptions: Sendable {
@@ -33,10 +16,10 @@ public struct LocalEncryptionOptions: Sendable {
   public let algorithm: CoreSecurityTypes.EncryptionAlgorithm
 
   /// The encryption mode to use (if applicable for the algorithm)
-  public let mode: EncryptionMode
+  public let mode: CoreSecurityTypes.EncryptionMode
 
   /// The encryption padding to use
-  public let padding: PaddingMode
+  public let padding: CoreSecurityTypes.EncryptionPadding
 
   /// Additional authenticated data for authenticated encryption modes
   public let additionalAuthenticatedData: [UInt8]?
@@ -52,8 +35,8 @@ public struct LocalEncryptionOptions: Sendable {
    */
   public init(
     algorithm: CoreSecurityTypes.EncryptionAlgorithm = .aes256GCM,
-    mode: EncryptionMode = .gcm,
-    padding: PaddingMode = .pkcs7,
+    mode: CoreSecurityTypes.EncryptionMode = .gcm,
+    padding: CoreSecurityTypes.EncryptionPadding = .pkcs7,
     additionalAuthenticatedData: [UInt8]?=nil
   ) {
     self.algorithm=algorithm
@@ -123,7 +106,7 @@ public struct SendableOptionsDictionary: Sendable {
  */
 public struct KeyGenerationOptions: Sendable {
   /// The type of key to generate
-  public let keyType: KeyType
+  public let keyType: CoreSecurityTypes.KeyType
 
   /// Whether to use secure enclave for storage (Apple platforms only)
   public let useSecureEnclave: Bool
@@ -144,7 +127,7 @@ public struct KeyGenerationOptions: Sendable {
       - options: Additional options for key generation
    */
   public init(
-    keyType: KeyType = .aes,
+    keyType: CoreSecurityTypes.KeyType = .aes,
     useSecureEnclave: Bool=false,
     isExtractable: Bool=true,
     options: [String: Any]?=nil

@@ -2,24 +2,29 @@ import Foundation
 
 /**
  Defines the supported security provider types in the security subsystem.
-
+ 
+ This enumeration allows components to specify which underlying security
+ implementation should be used for cryptographic operations. The choice of provider
+ is typically determined during service initialisation (e.g., via dependency injection)
+ based on platform requirements, performance needs, or desired compatibility.
+ 
  This enumeration follows the architecture pattern for type-safe
  representation of domain concepts.
  */
 public enum SecurityProviderType: String, Sendable, Codable, Equatable, CaseIterable {
-  /// Apple CryptoKit provider for Apple platforms
+  /// Apple CryptoKit provider for native performance and integration on Apple platforms (macOS, iOS, etc.).
   case cryptoKit="CryptoKit"
 
-  /// Ring Crypto provider for cross-platform compatibility
+  /// Ring Crypto provider using Rust FFI for cross-platform cryptographic compatibility.
   case ring="Ring"
 
-  /// Basic AES implementation for fallback
+  /// Basic AES implementation, potentially for fallback or environments where other providers are unavailable.
   case basic="Basic"
 
-  /// System-provided security services
+  /// System-provided security services (e.g., Keychain access where applicable). Specific functionality depends on the OS.
   case system="System"
 
-  /// Hardware Security Module provider
+  /// Hardware Security Module (HSM) provider, intended for interaction with dedicated hardware security devices.
   case hsm="HSM"
 
   /// Returns a human-readable description of the provider

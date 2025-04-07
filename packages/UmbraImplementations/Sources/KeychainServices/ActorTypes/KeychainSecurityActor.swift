@@ -126,7 +126,7 @@ public actor KeychainSecurityActor {
     keyIdentifier: String?=nil,
     additionalContext _: LogMetadataDTOCollection?=nil
   ) async throws -> String {
-    let keyID=keyIdentifier ?? deriveKeyIdentifier(forAccount: account)
+    let _ = keyIdentifier ?? deriveKeyIdentifier(forAccount: account)
 
     // Create proper structured logging
     await keychainLogger.logOperationStart(
@@ -188,7 +188,7 @@ public actor KeychainSecurityActor {
         account: account
       )
 
-      return keyID
+      return deriveKeyIdentifier(forAccount: account)
     } catch {
       // Log the error with proper metadata
       await keychainLogger.logOperationError(
@@ -222,7 +222,7 @@ public actor KeychainSecurityActor {
     keyIdentifier: String?=nil,
     additionalContext _: LogMetadataDTOCollection?=nil
   ) async throws -> String {
-    let keyID=keyIdentifier ?? deriveKeyIdentifier(forAccount: account)
+    let _ = keyIdentifier ?? deriveKeyIdentifier(forAccount: account)
 
     // Log the operation start
     await keychainLogger.logOperationStart(
@@ -314,7 +314,7 @@ public actor KeychainSecurityActor {
     deleteKey: Bool=true,
     additionalContext _: LogMetadataDTOCollection?=nil
   ) async throws {
-    let keyID=keyIdentifier ?? deriveKeyIdentifier(forAccount: account)
+    let _ = keyIdentifier ?? deriveKeyIdentifier(forAccount: account)
 
     // Log the operation start
     await keychainLogger.logOperationStart(
@@ -327,7 +327,7 @@ public actor KeychainSecurityActor {
       let keyManager=await securityProvider.keyManager()
 
       // Try to delete the key but treat it as non-critical
-      _=await keyManager.deleteKey(withIdentifier: keyID)
+      _=await keyManager.deleteKey(withIdentifier: deriveKeyIdentifier(forAccount: account))
 
       await keychainLogger.logOperationSuccess(
         operation: "deleteKey",

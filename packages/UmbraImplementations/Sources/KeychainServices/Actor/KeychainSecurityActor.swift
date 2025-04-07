@@ -479,7 +479,7 @@ private actor SimpleConsoleLogger: LoggingProtocol {
   public func log(_ level: LoggingTypes.LogLevel, _ message: String, context: LogContextDTO) async {
     let timestamp=ISO8601DateFormatter().string(from: Date())
     let levelString=String(describing: level).uppercased() // Use LoggingTypes.LogLevel
-    let source=context.source
+    let source=context.source ?? "UnknownSource"
     print("\(timestamp) [\(source)] [\(levelString)]: \(message)")
   }
 }
