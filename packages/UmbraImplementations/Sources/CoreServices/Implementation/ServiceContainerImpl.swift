@@ -29,103 +29,103 @@ import UmbraErrors
 public final class ServiceContainerImpl: ServiceContainerProtocol {
   /// Actor for thread-safe access to the factory and singleton maps
   private actor Container {
-    var factories: [String: Any] = [:]
-    var singletons: [String: Any] = [:]
-    
+    var factories: [String: Any]=[:]
+    var singletons: [String: Any]=[:]
+
     let logger: DomainLogger
-    
+
     init(logger: DomainLogger) {
-      self.logger = logger
+      self.logger=logger
     }
 
     func registerFactory<T>(_ type: T.Type, factory: @escaping () async throws -> T) async {
-      let key = String(describing: type)
-      
-      let context = CoreLogContext.service(
+      let key=String(describing: type)
+
+      let context=CoreLogContext.service(
         serviceName: "ServiceContainer",
         operation: "registerFactory",
         metadata: {
-          var metadata = LogMetadataDTOCollection()
-          metadata = metadata.withPublic(key: "serviceType", value: key)
+          var metadata=LogMetadataDTOCollection()
+          metadata=metadata.withPublic(key: "serviceType", value: key)
           return metadata
         }()
       )
-      
-      factories[key] = factory
-      
+
+      factories[key]=factory
+
       await logger.debug("Registered factory for service type", context: context)
     }
 
     func registerSingleton<T>(_ type: T.Type, instance: T) async {
-      let key = String(describing: type)
-      
-      let context = CoreLogContext.service(
+      let key=String(describing: type)
+
+      let context=CoreLogContext.service(
         serviceName: "ServiceContainer",
         operation: "registerSingleton",
         metadata: {
-          var metadata = LogMetadataDTOCollection()
-          metadata = metadata.withPublic(key: "serviceType", value: key)
+          var metadata=LogMetadataDTOCollection()
+          metadata=metadata.withPublic(key: "serviceType", value: key)
           return metadata
         }()
       )
-      
-      singletons[key] = instance
-      
+
+      singletons[key]=instance
+
       await logger.debug("Registered singleton for service type", context: context)
     }
 
     func getFactory<T>(_ type: T.Type) async throws -> (() async throws -> T)? {
-      let key = String(describing: type)
-      
-      let context = CoreLogContext.service(
+      let key=String(describing: type)
+
+      let context=CoreLogContext.service(
         serviceName: "ServiceContainer",
         operation: "getFactory",
         metadata: {
-          var metadata = LogMetadataDTOCollection()
-          metadata = metadata.withPublic(key: "serviceType", value: key)
+          var metadata=LogMetadataDTOCollection()
+          metadata=metadata.withPublic(key: "serviceType", value: key)
           return metadata
         }()
       )
-      
-      let factory = factories[key] as? () async throws -> T
-      
+
+      let factory=factories[key] as? () async throws -> T
+
       if factory == nil {
         await logger.debug("Factory not found for service type", context: context)
       } else {
         await logger.trace("Retrieved factory for service type", context: context)
       }
-      
+
       return factory
     }
 
     func getSingleton<T>(_ type: T.Type) async throws -> T? {
-      let key = String(describing: type)
-      
-      let context = CoreLogContext.service(
+      let key=String(describing: type)
+
+      let context=CoreLogContext.service(
         serviceName: "ServiceContainer",
         operation: "getSingleton",
         metadata: {
-          var metadata = LogMetadataDTOCollection()
-          metadata = metadata.withPublic(key: "serviceType", value: key)
+          var metadata=LogMetadataDTOCollection()
+          metadata=metadata.withPublic(key: "serviceType", value: key)
           return metadata
         }()
       )
-      
-      let singleton = singletons[key] as? T
-      
+
+      let singleton=singletons[key] as? T
+
       if singleton == nil {
         await logger.debug("Singleton not found for service type", context: context)
       } else {
         await logger.trace("Retrieved singleton for service type", context: context)
       }
-      
+
       return singleton
     }
   }
 
   /// Container actor instance
   private let container: Container
-  
+
   /// Logger for service container operations
   private let logger: DomainLogger
 
@@ -134,23 +134,23 @@ public final class ServiceContainerImpl: ServiceContainerProtocol {
    */
   public init() {
     // Create a domain logger for service container
-    logger = LoggerFactory.createCoreLogger(source: "ServiceContainer")
-    container = Container(logger: logger)
-    
+    logger=LoggerFactory.createCoreLogger(source: "ServiceContainer")
+    container=Container(logger: logger)
+
     Task {
       await logInitialisation()
       await registerDefaultServices()
     }
   }
-  
+
   /**
    Log initialisation of the service container
    */
   private func logInitialisation() async {
-    let context = CoreLogContext.initialisation(
+    let context=CoreLogContext.initialisation(
       source: "ServiceContainerImpl.init"
     )
-    
+
     await logger.info("Service container initialised", context: context)
   }
 
@@ -163,41 +163,41 @@ public final class ServiceContainerImpl: ServiceContainerProtocol {
    - Security provider implementations
    */
   private func registerDefaultServices() async {
-    let context = CoreLogContext.initialisation(
+    let context=CoreLogContext.initialisation(
       source: "ServiceContainerImpl.registerDefaultServices"
     )
-    
+
     await logger.info("Registering default services", context: context)
-    
+
     // Register the core service implementation
     await registerSingleton(CoreServiceProtocol.self, instance: CoreServiceImpl.shared)
 
     // Register crypto service implementation
     await registerFactory(CoreCryptoServiceProtocol.self) {
-      let context = CoreLogContext.service(
+      let context=CoreLogContext.service(
         serviceName: "ServiceContainer",
         operation: "createCryptoService"
       )
-      
+
       await self.logger.debug("Creating crypto service adapter", context: context)
-      
-      let cryptoService = await CryptoServiceFactory.createDefault()
+
+      let cryptoService=await CryptoServiceFactory.createDefault()
       return CryptoServiceAdapter(cryptoService: cryptoService)
     }
 
     // Register security provider implementation
     await registerFactory(CoreSecurityProviderProtocol.self) {
-      let context = CoreLogContext.service(
+      let context=CoreLogContext.service(
         serviceName: "ServiceContainer",
         operation: "createSecurityProvider"
       )
-      
+
       await self.logger.debug("Creating security provider adapter", context: context)
-      
-      let securityProvider = await SecurityProviderFactory.createSecurityProvider()
+
+      let securityProvider=await SecurityProviderFactory.createSecurityProvider()
       return SecurityProviderAdapter(securityProvider: securityProvider)
     }
-    
+
     await logger.info("Default services registered successfully", context: context)
   }
 
@@ -239,52 +239,52 @@ public final class ServiceContainerImpl: ServiceContainerProtocol {
    - Throws: CoreError.serviceNotAvailable if the service is not registered
    */
   public func resolve<T>(_ type: T.Type) async throws -> T {
-    let context = CoreLogContext.service(
+    let context=CoreLogContext.service(
       serviceName: "ServiceContainer",
       operation: "resolve",
       metadata: {
-        var metadata = LogMetadataDTOCollection()
-        metadata = metadata.withPublic(key: "serviceType", value: String(describing: type))
+        var metadata=LogMetadataDTOCollection()
+        metadata=metadata.withPublic(key: "serviceType", value: String(describing: type))
         return metadata
       }()
     )
-    
+
     await logger.debug("Resolving service", context: context)
-    
+
     // Check for singleton first
-    if let singleton = try await container.getSingleton(type) {
+    if let singleton=try await container.getSingleton(type) {
       await logger.trace("Resolved service as singleton", context: context)
       return singleton
     }
-    
+
     // Try factory next
-    if let factory = try await container.getFactory(type) {
+    if let factory=try await container.getFactory(type) {
       do {
-        let instance = try await factory()
+        let instance=try await factory()
         await logger.trace("Resolved service using factory", context: context)
         return instance
       } catch {
-        let loggableError = LoggableErrorDTO(
+        let loggableError=LoggableErrorDTO(
           error: error,
           message: "Failed to create service using factory",
           details: "Factory creation failed for \(String(describing: type))"
         )
-        
+
         await logger.error(
           loggableError,
           context: context,
           privacyLevel: .private
         )
-        
+
         throw CoreError.serviceNotAvailable(serviceName: String(describing: type))
       }
     }
-    
+
     // Service not available
-    let errorMessage = "Service of type \(String(describing: type)) is not registered"
-    
+    let errorMessage="Service of type \(String(describing: type)) is not registered"
+
     await logger.warning(errorMessage, context: context)
-    
+
     throw CoreError.serviceNotAvailable(serviceName: String(describing: type))
   }
 }

@@ -15,11 +15,11 @@ public actor DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
 
   /// Creates a new DefaultLogger
   public init() {
-    logger = Logger(subsystem: "com.umbra.keychainservices", category: "KeychainServices")
+    logger=Logger(subsystem: "com.umbra.keychainservices", category: "KeychainServices")
   }
 
   /// The actor used for all logging operations
-  private let _loggingActor = LoggingActor(destinations: [], minimumLogLevel: .info)
+  private let _loggingActor=LoggingActor(destinations: [], minimumLogLevel: .info)
 
   /// Get the underlying logging actor
   public var loggingActor: LoggingActor {
@@ -79,10 +79,10 @@ public actor DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
   /// Log a debug message
   public func debug(
     _ message: String,
-    metadata: LoggingTypes.PrivacyMetadata?,
+    metadata _: LoggingTypes.PrivacyMetadata?,
     source: String?
   ) async {
-    let context = BaseLogContextDTO(
+    let context=BaseLogContextDTO(
       domainName: "KeychainServices",
       source: source ?? "DefaultLogger"
     )
@@ -92,10 +92,10 @@ public actor DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
   /// Log an info message
   public func info(
     _ message: String,
-    metadata: LoggingTypes.PrivacyMetadata?,
+    metadata _: LoggingTypes.PrivacyMetadata?,
     source: String?
   ) async {
-    let context = BaseLogContextDTO(
+    let context=BaseLogContextDTO(
       domainName: "KeychainServices",
       source: source ?? "DefaultLogger"
     )
@@ -105,10 +105,10 @@ public actor DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
   /// Log a warning message
   public func warning(
     _ message: String,
-    metadata: LoggingTypes.PrivacyMetadata?,
+    metadata _: LoggingTypes.PrivacyMetadata?,
     source: String?
   ) async {
-    let context = BaseLogContextDTO(
+    let context=BaseLogContextDTO(
       domainName: "KeychainServices",
       source: source ?? "DefaultLogger"
     )
@@ -118,10 +118,10 @@ public actor DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
   /// Log an error message
   public func error(
     _ message: String,
-    metadata: LoggingTypes.PrivacyMetadata?,
+    metadata _: LoggingTypes.PrivacyMetadata?,
     source: String?
   ) async {
-    let context = BaseLogContextDTO(
+    let context=BaseLogContextDTO(
       domainName: "KeychainServices",
       source: source ?? "DefaultLogger"
     )
@@ -131,10 +131,10 @@ public actor DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
   /// Log a critical error message
   public func critical(
     _ message: String,
-    metadata: LoggingTypes.PrivacyMetadata?,
+    metadata _: LoggingTypes.PrivacyMetadata?,
     source: String?
   ) async {
-    let context = BaseLogContextDTO(
+    let context=BaseLogContextDTO(
       domainName: "KeychainServices",
       source: source ?? "DefaultLogger"
     )

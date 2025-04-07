@@ -22,10 +22,10 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
   private let errorLogger: DomainLogger
 
   /// Registry for type-erased recovery strategies
-  private var recoveryRegistry: [String: [AnyErrorRecoveryStrategy]] = [:]
+  private var recoveryRegistry: [String: [AnyErrorRecoveryStrategy]]=[:]
 
   /// Default options for error handling
-  private let defaultOptions = ErrorHandlingOptions.standard
+  private let defaultOptions=ErrorHandlingOptions.standard
 
   // MARK: - Type Erasure for Recovery Strategies
 
@@ -54,7 +54,7 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
 
     func attemptAction(error: Any, context: ErrorContext) async -> Any? {
       // Attempt to cast the provided error to the type this strategy expects
-      guard let typedError = error as? E else {
+      guard let typedError=error as? E else {
         return nil // Error type doesn't match, can't handle it
       }
 
@@ -69,7 +69,7 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
    - Parameter logger: The domain logger to use for error reporting
    */
   public init(logger: DomainLogger) {
-    self.errorLogger = logger
+    errorLogger=logger
   }
 
   // MARK: - ErrorHandlerProtocol Implementation
@@ -84,12 +84,12 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
       - error: The error to handle
       - options: Configuration options for error handling
    */
-  public func handle<E: Error>(
-    _ error: E,
+  public func handle(
+    _ error: some Error,
     options: ErrorHandlingOptions?
   ) async {
     // Create default context from current execution point
-    let context = ErrorContext(
+    let context=ErrorContext(
       source: ErrorSource(
         file: #file,
         function: #function,
@@ -113,27 +113,27 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
       - context: Contextual information about the error
       - options: Configuration options for error handling
    */
-  public func handle<E: Error>(
-    _ error: E,
+  public func handle(
+    _ error: some Error,
     context: ErrorContext,
     options: ErrorHandlingOptions?
   ) async {
-    let effectiveOptions = options ?? defaultOptions
-    
+    let effectiveOptions=options ?? defaultOptions
+
     // Convert to LoggableErrorDTO if not already
-    let loggableError = convertToLoggableErrorDTO(error, context: context)
-    
+    let loggableError=convertToLoggableErrorDTO(error, context: context)
+
     // Log the error with appropriate privacy controls
     await logError(loggableError, context: context, options: effectiveOptions)
-    
+
     // Check if user notification is enabled in options
     if effectiveOptions.notifyUser {
       await notifyUser(about: loggableError)
     }
-    
+
     // Attempt recovery if strategies are registered and recovery is enabled
     if effectiveOptions.attemptRecovery {
-      _ = await attemptRecovery(for: error, context: context)
+      _=await attemptRecovery(for: error, context: context)
     }
   }
 
@@ -156,7 +156,7 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
     recoveryStrategies: [ErrorRecoveryStrategy<E, Outcome>],
     options: ErrorHandlingOptions?
   ) async -> ErrorRecoveryResult<Outcome> {
-    let actualContext = context ?? ErrorContext(
+    let actualContext=context ?? ErrorContext(
       source: ErrorSource(
         file: #file,
         function: #function,
@@ -165,17 +165,17 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
       metadata: [:],
       timestamp: Date()
     )
-    
-    let effectiveOptions = options ?? defaultOptions
-    
+
+    let effectiveOptions=options ?? defaultOptions
+
     // Log the error with appropriate privacy controls
-    let loggableError = convertToLoggableErrorDTO(error, context: actualContext)
+    let loggableError=convertToLoggableErrorDTO(error, context: actualContext)
     await logError(loggableError, context: actualContext, options: effectiveOptions)
-    
+
     // Try each recovery strategy in order
     for strategy in recoveryStrategies {
-      let result = await strategy.action(error, actualContext)
-      if let outcome = result {
+      let result=await strategy.action(error, actualContext)
+      if let outcome=result {
         // Log successful recovery
         await logRecoverySuccess(
           for: loggableError,
@@ -185,14 +185,14 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
         return .recovered(outcome)
       }
     }
-    
+
     // Log failed recovery
     await logRecoveryFailure(
       for: loggableError,
       context: actualContext,
       options: effectiveOptions
     )
-    
+
     return .failed(error)
   }
 
@@ -203,49 +203,52 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
       - strategy: The recovery strategy to register
       - forErrorType: The error type this strategy can handle
    */
-  public func registerRecoveryStrategy<E: Error, Outcome>(
-    _ strategy: ErrorRecoveryStrategy<E, Outcome>,
+  public func registerRecoveryStrategy<E: Error>(
+    _ strategy: ErrorRecoveryStrategy<E, some Any>,
     forErrorType: E.Type
   ) async {
-    let typeName = String(describing: forErrorType)
-    let wrapper = RecoveryStrategyWrapper(concreteStrategy: strategy)
-    
+    let typeName=String(describing: forErrorType)
+    let wrapper=RecoveryStrategyWrapper(concreteStrategy: strategy)
+
     // Create entry if it doesn't exist
     if recoveryRegistry[typeName] == nil {
-      recoveryRegistry[typeName] = []
+      recoveryRegistry[typeName]=[]
     }
-    
+
     // Add the strategy
     recoveryRegistry[typeName]?.append(wrapper)
   }
 
   // MARK: - Private Helper Methods
-  
+
   /**
    Converts an Error to a LoggableErrorDTO for structured logging.
-   
+
    - Parameters:
      - error: The error to convert
      - context: The context for the error
    - Returns: A LoggableErrorDTO suitable for privacy-aware logging
    */
-  private func convertToLoggableErrorDTO<E: Error>(_ error: E, context: ErrorContext) -> LoggableErrorDTO {
+  private func convertToLoggableErrorDTO(
+    _ error: some Error,
+    context: ErrorContext
+  ) -> LoggableErrorDTO {
     // If it's already a LoggableErrorDTO, return it
-    if let loggableError = error as? LoggableErrorDTO {
+    if let loggableError=error as? LoggableErrorDTO {
       return loggableError
     }
-    
+
     // For LoggableErrorProtocol, adapt to the new DTO format
-    if let loggableErrorProtocol = error as? LoggableErrorProtocol {
-      let message = loggableErrorProtocol.getLogMessage()
-      let metadata = loggableErrorProtocol.createMetadataCollection()
-      var detailsString = ""
-      
+    if let loggableErrorProtocol=error as? LoggableErrorProtocol {
+      let message=loggableErrorProtocol.getLogMessage()
+      let metadata=loggableErrorProtocol.createMetadataCollection()
+      var detailsString=""
+
       // Extract details from metadata, prioritising sensitive data
       for entry in metadata.entries {
         detailsString += "\(entry.key): \(entry.value)\n"
       }
-      
+
       return LoggableErrorDTO(
         error: error,
         domain: "App.\(String(describing: type(of: error)))",
@@ -256,16 +259,16 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
         correlationID: context.metadata["correlationID"] ?? UUID().uuidString
       )
     }
-    
+
     // For NSError, create a structured LoggableErrorDTO
     // In Swift, all Error types can be cast to NSError, so we use direct cast
-    let nsError = error as NSError
-    
+    let nsError=error as NSError
+
     // Extract user info for details while filtering sensitive keys
-    let sensitiveKeys = ["NSUnderlyingError", "NSSensitiveKeys", "NSCredential"]
-    let filteredUserInfo = nsError.userInfo.filter { !sensitiveKeys.contains($0.key) }
-    let details = filteredUserInfo.description
-    
+    let sensitiveKeys=["NSUnderlyingError", "NSSensitiveKeys", "NSCredential"]
+    let filteredUserInfo=nsError.userInfo.filter { !sensitiveKeys.contains($0.key) }
+    let details=filteredUserInfo.description
+
     return LoggableErrorDTO(
       error: error,
       domain: nsError.domain,
@@ -279,7 +282,7 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
 
   /**
    Logs an error with appropriate privacy controls.
-   
+
    - Parameters:
      - error: The error to log
      - context: The error context
@@ -291,51 +294,54 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
     options: ErrorHandlingOptions
   ) async {
     // Determine the appropriate log level based on error and options
-    _ = determineLogLevel(for: error, options: options)
-    
+    _=determineLogLevel(for: error, options: options)
+
     // Determine privacy level from options
-    _ = mapPrivacyLevelToClassification(options.privacyLevel)
-    
+    _=mapPrivacyLevelToClassification(options.privacyLevel)
+
     // Create log context
-    let logContext = CoreLogContext(
+    let logContext=CoreLogContext(
       source: "\(context.source.file):\(context.source.line)",
       correlationID: error.correlationID ?? UUID().uuidString,
       metadata: error.createMetadataCollection()
     )
-    
+
     // Log the error using the domain logger's error method
     await errorLogger.error(
       error.message,
       context: logContext
     )
   }
-  
+
   /**
    Determines the appropriate log level for an error.
-   
+
    - Parameters:
      - error: The error to log
      - options: Configuration options
    - Returns: The appropriate error log level
    */
-  private func determineLogLevel(for error: LoggableErrorDTO, options: ErrorHandlingOptions) -> ErrorLogLevel {
+  private func determineLogLevel(
+    for error: LoggableErrorDTO,
+    options _: ErrorHandlingOptions
+  ) -> ErrorLogLevel {
     // Determine based on error domain and code
     switch error.domain {
-    case "Network", "NSURLErrorDomain":
-      return .warning
-    case "Security":
-      return .critical
-    case "Validation":
-      return .info
-    default:
-      // Based on code ranges
-      if error.code >= 500 {
-        return .critical
-      } else if error.code >= 400 {
-        return .error
-      } else {
-        return .warning
-      }
+      case "Network", "NSURLErrorDomain":
+        .warning
+      case "Security":
+        .critical
+      case "Validation":
+        .info
+      default:
+        // Based on code ranges
+        if error.code >= 500 {
+          .critical
+        } else if error.code >= 400 {
+          .error
+        } else {
+          .warning
+        }
     }
   }
 
@@ -349,11 +355,11 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
   -> PrivacyClassification {
     switch level {
       case .minimal:
-        return .public
+        .public
       case .standard:
-        return .private
+        .private
       case .enhanced, .maximum:
-        return .sensitive
+        .sensitive
     }
   }
 
@@ -367,7 +373,7 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
    */
   private func notifyUser(about error: LoggableErrorDTO) async {
     // Create a user-friendly notification context
-    _ = ErrorContext(
+    _=ErrorContext(
       source: ErrorSource(
         file: #file,
         function: #function,
@@ -376,22 +382,22 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
       metadata: ["notificationType": "userFacing"],
       timestamp: Date()
     )
-    
+
     // Create a notification metadata collection
-    var metadata = LogMetadataDTOCollection()
-    metadata = metadata.withPublic(key: "errorDomain", value: error.domain)
-    metadata = metadata.withPublic(key: "errorCode", value: String(error.code))
-    
+    var metadata=LogMetadataDTOCollection()
+    metadata=metadata.withPublic(key: "errorDomain", value: error.domain)
+    metadata=metadata.withPublic(key: "errorCode", value: String(error.code))
+
     // Extract user-friendly message
-    let userMessage = formatErrorForUser(error)
-    
+    let userMessage=formatErrorForUser(error)
+
     // Log at info level with public classification
-    let logContext = CoreLogContext(
+    let logContext=CoreLogContext(
       source: "UserNotification",
       correlationID: nil,
       metadata: metadata
     )
-    
+
     await errorLogger.info("User notification: \(userMessage)", context: logContext)
   }
 
@@ -406,15 +412,15 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
   private func formatErrorForUser(_ error: LoggableErrorDTO) -> String {
     // Create user-friendly messages based on domain
     switch error.domain {
-    case "Network", "NSURLErrorDomain":
-      return "A network error occurred. Please check your connection and try again."
-    case "Security":
-      return "A security error occurred. Please try again or contact support."
-    case "Validation":
-      return "Please check your input and try again."
-    default:
-      // Generic message, no sensitive details
-      return "An error occurred: \(error.message)"
+      case "Network", "NSURLErrorDomain":
+        "A network error occurred. Please check your connection and try again."
+      case "Security":
+        "A security error occurred. Please try again or contact support."
+      case "Validation":
+        "Please check your input and try again."
+      default:
+        // Generic message, no sensitive details
+        "An error occurred: \(error.message)"
     }
   }
 
@@ -426,48 +432,48 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
      - context: The context for recovery
    - Returns: Recovery result if successful, nil otherwise
    */
-  private func attemptRecovery<E: Error>(
-    for error: E,
+  private func attemptRecovery(
+    for error: some Error,
     context: ErrorContext
   ) async -> Any? {
     // Get the type name for this error
-    let typeName = String(describing: type(of: error))
-    
+    let typeName=String(describing: type(of: error))
+
     // Check if we have strategies registered for this type
-    guard let strategies = recoveryRegistry[typeName] else {
+    guard let strategies=recoveryRegistry[typeName] else {
       return nil
     }
-    
+
     // Log recovery attempt
-    let metadata = LogMetadataDTOCollection()
+    let metadata=LogMetadataDTOCollection()
       .withPublic(key: "errorType", value: typeName)
       .withPublic(key: "strategyCount", value: String(strategies.count))
-    
-    let logContext = CoreLogContext(
+
+    let logContext=CoreLogContext(
       source: "DefaultErrorHandler.attemptRecovery",
       correlationID: nil,
       metadata: metadata
     )
-    
+
     await errorLogger.debug("Attempting error recovery", context: logContext)
-    
+
     // Try each strategy in order
     for strategy in strategies {
-      if let result = await strategy.attemptAction(error: error, context: context) {
+      if let result=await strategy.attemptAction(error: error, context: context) {
         // Log successful recovery
         await errorLogger.info("Error recovery successful", context: logContext)
         return result
       }
     }
-    
+
     // Log failed recovery
     await errorLogger.warning("Error recovery failed - no strategy succeeded", context: logContext)
     return nil
   }
-  
+
   /**
    Logs a successful recovery attempt.
-   
+
    - Parameters:
      - error: The error that was recovered from
      - strategyName: The name of the successful strategy
@@ -476,24 +482,24 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
   private func logRecoverySuccess(
     for error: LoggableErrorDTO,
     using strategyName: String,
-    context: ErrorContext
+    context _: ErrorContext
   ) async {
-    var metadata = error.createMetadataCollection()
-    metadata = metadata.withPublic(key: "recoveryStrategy", value: strategyName)
-    metadata = metadata.withPublic(key: "recoveryStatus", value: "success")
-    
-    let logContext = CoreLogContext(
+    var metadata=error.createMetadataCollection()
+    metadata=metadata.withPublic(key: "recoveryStrategy", value: strategyName)
+    metadata=metadata.withPublic(key: "recoveryStatus", value: "success")
+
+    let logContext=CoreLogContext(
       source: "ErrorRecovery",
       correlationID: error.correlationID ?? UUID().uuidString,
       metadata: metadata
     )
-    
+
     await errorLogger.info("Successfully recovered from error", context: logContext)
   }
-  
+
   /**
    Logs a failed recovery attempt.
-   
+
    - Parameters:
      - error: The error that failed recovery
      - context: The error context
@@ -501,19 +507,19 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
    */
   private func logRecoveryFailure(
     for error: LoggableErrorDTO,
-    context: ErrorContext,
+    context _: ErrorContext,
     options: ErrorHandlingOptions
   ) async {
-    var metadata = error.createMetadataCollection()
-    metadata = metadata.withPublic(key: "recoveryStatus", value: "failure")
-    
-    let logContext = CoreLogContext(
+    var metadata=error.createMetadataCollection()
+    metadata=metadata.withPublic(key: "recoveryStatus", value: "failure")
+
+    let logContext=CoreLogContext(
       source: "ErrorRecovery",
       correlationID: error.correlationID ?? UUID().uuidString,
       metadata: metadata
     )
-    
-    _ = mapPrivacyLevelToClassification(options.privacyLevel)
+
+    _=mapPrivacyLevelToClassification(options.privacyLevel)
     // No need to pass the privacy level if not used
     await errorLogger.warning("Failed to recover from error", context: logContext)
   }

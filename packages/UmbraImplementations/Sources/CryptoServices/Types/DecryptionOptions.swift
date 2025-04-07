@@ -5,7 +5,7 @@ import Foundation
  Options for decryption operations in the crypto services.
 
  These options control the algorithm, mode, and additional parameters used for decryption.
- 
+
  NOTE: This implementation is being deprecated in favour of using CoreSecurityTypes EncryptionConfig,
  which can be used for both encryption and decryption operations.
  */

@@ -83,9 +83,9 @@ public enum LoggingLevelAdapter {
 
   /**
    Configure the default logger with standard settings.
-   
+
    This sets up the logging wrapper with standard settings.
-   
+
    - Returns: True if configuration was successful
    */
   public static func configureDefaultLogger() -> Bool {

@@ -39,8 +39,8 @@ public final class SecureStorageAdapter: SecureStorageProtocol {
       - logger: Logger for recording operations
    */
   public init(storage: SecureCryptoStorage, logger: any LoggingProtocol) {
-    self.storage = storage
-    self.logger = logger
+    self.storage=storage
+    self.logger=logger
   }
 
   /**
@@ -61,15 +61,15 @@ public final class SecureStorageAdapter: SecureStorageProtocol {
       context: CryptoLogContext(
         operation: "storeData",
         additionalContext: LogMetadataDTOCollection().withPrivate(
-          key: "identifier", 
+          key: "identifier",
           value: identifier
         ).withPublic(
-          key: "dataSize", 
+          key: "dataSize",
           value: "\(data.count)"
         )
       )
     )
-    
+
     do {
       try await storage.storeData(Data(data), identifier: identifier)
 
@@ -78,7 +78,7 @@ public final class SecureStorageAdapter: SecureStorageProtocol {
         context: CryptoLogContext(
           operation: "storeData",
           additionalContext: LogMetadataDTOCollection().withPrivate(
-            key: "identifier", 
+            key: "identifier",
             value: identifier
           )
         )
@@ -90,7 +90,7 @@ public final class SecureStorageAdapter: SecureStorageProtocol {
         context: CryptoLogContext(
           operation: "storeData",
           additionalContext: LogMetadataDTOCollection().withPrivate(
-            key: "identifier", 
+            key: "identifier",
             value: identifier
           ).withPrivate(
             key: "error",
@@ -117,24 +117,24 @@ public final class SecureStorageAdapter: SecureStorageProtocol {
       context: CryptoLogContext(
         operation: "retrieveData",
         additionalContext: LogMetadataDTOCollection().withPrivate(
-          key: "identifier", 
+          key: "identifier",
           value: identifier
         )
       )
     )
-    
+
     do {
-      let data = try await storage.retrieveData(identifier: identifier)
+      let data=try await storage.retrieveData(identifier: identifier)
 
       await logger.debug(
         "Data retrieved successfully",
         context: CryptoLogContext(
           operation: "retrieveData",
           additionalContext: LogMetadataDTOCollection().withPrivate(
-            key: "identifier", 
+            key: "identifier",
             value: identifier
           ).withPublic(
-            key: "dataSize", 
+            key: "dataSize",
             value: "\(data.count)"
           )
         )
@@ -146,7 +146,7 @@ public final class SecureStorageAdapter: SecureStorageProtocol {
         context: CryptoLogContext(
           operation: "retrieveData",
           additionalContext: LogMetadataDTOCollection().withPrivate(
-            key: "identifier", 
+            key: "identifier",
             value: identifier
           ).withPrivate(
             key: "error",
@@ -154,11 +154,11 @@ public final class SecureStorageAdapter: SecureStorageProtocol {
           )
         )
       )
-      
-      if let storageError = error as? StorageCoreError, case .notFound = storageError {
+
+      if let storageError=error as? StorageCoreError, case .notFound=storageError {
         return .failure(.dataNotFound)
       }
-      
+
       return .failure(.operationFailed("Failed to retrieve data: \(error.localizedDescription)"))
     }
   }
@@ -178,12 +178,12 @@ public final class SecureStorageAdapter: SecureStorageProtocol {
       context: CryptoLogContext(
         operation: "deleteData",
         additionalContext: LogMetadataDTOCollection().withPrivate(
-          key: "identifier", 
+          key: "identifier",
           value: identifier
         )
       )
     )
-    
+
     do {
       try await storage.deleteData(identifier: identifier)
 
@@ -192,7 +192,7 @@ public final class SecureStorageAdapter: SecureStorageProtocol {
         context: CryptoLogContext(
           operation: "deleteData",
           additionalContext: LogMetadataDTOCollection().withPrivate(
-            key: "identifier", 
+            key: "identifier",
             value: identifier
           )
         )
@@ -204,7 +204,7 @@ public final class SecureStorageAdapter: SecureStorageProtocol {
         context: CryptoLogContext(
           operation: "deleteData",
           additionalContext: LogMetadataDTOCollection().withPrivate(
-            key: "identifier", 
+            key: "identifier",
             value: identifier
           ).withPrivate(
             key: "error",
@@ -231,14 +231,14 @@ public final class SecureStorageAdapter: SecureStorageProtocol {
       context: CryptoLogContext(
         operation: "containsData",
         additionalContext: LogMetadataDTOCollection().withPrivate(
-          key: "identifier", 
+          key: "identifier",
           value: identifier
         )
       )
     )
-    
+
     do {
-      let exists = try await storage.containsData(identifier: identifier)
+      let exists=try await storage.containsData(identifier: identifier)
       return .success(exists)
     } catch {
       await logger.error(
@@ -246,7 +246,7 @@ public final class SecureStorageAdapter: SecureStorageProtocol {
         context: CryptoLogContext(
           operation: "containsData",
           additionalContext: LogMetadataDTOCollection().withPrivate(
-            key: "identifier", 
+            key: "identifier",
             value: identifier
           ).withPrivate(
             key: "error",
@@ -254,7 +254,9 @@ public final class SecureStorageAdapter: SecureStorageProtocol {
           )
         )
       )
-      return .failure(.operationFailed("Failed to query data existence: \(error.localizedDescription)"))
+      return .failure(
+        .operationFailed("Failed to query data existence: \(error.localizedDescription)")
+      )
     }
   }
 
@@ -271,7 +273,7 @@ public final class SecureStorageAdapter: SecureStorageProtocol {
         additionalContext: LogMetadataDTOCollection()
       )
     )
-    
+
     return .failure(.operationFailed("Operation not supported in this implementation"))
   }
 }

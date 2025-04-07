@@ -34,10 +34,10 @@ public actor CryptoServiceAdapter: CoreInterfaces.CoreCryptoServiceProtocol {
    This is the adaptee in the adapter pattern.
    */
   private let cryptoService: CryptoServiceProtocol
-  
+
   /**
    Domain-specific logger for crypto operations
-   
+
    Used for privacy-aware logging of cryptographic operations.
    */
   private let logger: DomainLogger
@@ -50,23 +50,23 @@ public actor CryptoServiceAdapter: CoreInterfaces.CoreCryptoServiceProtocol {
    - Parameter cryptoService: The underlying crypto service to adapt
    */
   public init(cryptoService: CryptoServiceProtocol) {
-    self.cryptoService = cryptoService
+    self.cryptoService=cryptoService
     // Create a domain logger for crypto operations
-    self.logger = LoggerFactory.createCryptoLogger(source: "CryptoServiceAdapter")
-    
+    logger=LoggerFactory.createCryptoLogger(source: "CryptoServiceAdapter")
+
     Task {
       await logInitialisation()
     }
   }
-  
+
   /**
    Log the initialisation of the adapter
    */
   private func logInitialisation() async {
-    let context = CoreLogContext.initialisation(
+    let context=CoreLogContext.initialisation(
       source: "CryptoServiceAdapter.init"
     )
-    
+
     await logger.info("Crypto service adapter initialised", context: context)
   }
 
@@ -84,44 +84,44 @@ public actor CryptoServiceAdapter: CoreInterfaces.CoreCryptoServiceProtocol {
    - Throws: CryptoError if encryption fails
    */
   public func encrypt(data: Data, using key: Data) async throws -> Data {
-    let context = {
-      var metadata = LogMetadataDTOCollection()
-      metadata = metadata.withPrivate(key: "dataSize", value: String(data.count))
-      metadata = metadata.withPrivate(key: "keySize", value: String(key.count))
+    let context={
+      var metadata=LogMetadataDTOCollection()
+      metadata=metadata.withPrivate(key: "dataSize", value: String(data.count))
+      metadata=metadata.withPrivate(key: "keySize", value: String(key.count))
       return CoreLogContext(
         source: "CryptoServiceAdapter.encrypt",
         metadata: metadata
       )
     }()
-    
+
     await logger.debug("Encrypting data", context: context)
-    
+
     do {
-      let encryptionOptions = EncryptionOptions(
+      let encryptionOptions=EncryptionOptions(
         algorithm: .aes256GCM,
         key: key
       )
-      
-      let result = try await cryptoService.encrypt(
+
+      let result=try await cryptoService.encrypt(
         data: data,
         options: encryptionOptions
       )
-      
+
       await logger.debug("Data encrypted successfully", context: context)
       return result
     } catch {
-      let loggableError = LoggableErrorDTO(
+      let loggableError=LoggableErrorDTO(
         error: error,
         message: "Failed to encrypt data",
         details: "Encryption operation failed in adapter"
       )
-      
+
       await logger.error(
         loggableError,
         context: context,
         privacyLevel: .private
       )
-      
+
       throw adaptError(error)
     }
   }
@@ -138,44 +138,44 @@ public actor CryptoServiceAdapter: CoreInterfaces.CoreCryptoServiceProtocol {
    - Throws: CryptoError if decryption fails
    */
   public func decrypt(data: Data, using key: Data) async throws -> Data {
-    let context = {
-      var metadata = LogMetadataDTOCollection()
-      metadata = metadata.withPrivate(key: "dataSize", value: String(data.count))
-      metadata = metadata.withPrivate(key: "keySize", value: String(key.count))
+    let context={
+      var metadata=LogMetadataDTOCollection()
+      metadata=metadata.withPrivate(key: "dataSize", value: String(data.count))
+      metadata=metadata.withPrivate(key: "keySize", value: String(key.count))
       return CoreLogContext(
         source: "CryptoServiceAdapter.decrypt",
         metadata: metadata
       )
     }()
-    
+
     await logger.debug("Decrypting data", context: context)
-    
+
     do {
-      let decryptionOptions = EncryptionOptions(
+      let decryptionOptions=EncryptionOptions(
         algorithm: .aes256GCM,
         key: key
       )
-      
-      let result = try await cryptoService.decrypt(
+
+      let result=try await cryptoService.decrypt(
         data: data,
         options: decryptionOptions
       )
-      
+
       await logger.debug("Data decrypted successfully", context: context)
       return result
     } catch {
-      let loggableError = LoggableErrorDTO(
+      let loggableError=LoggableErrorDTO(
         error: error,
         message: "Failed to decrypt data",
         details: "Decryption operation failed in adapter"
       )
-      
+
       await logger.error(
         loggableError,
         context: context,
         privacyLevel: .private
       )
-      
+
       throw adaptError(error)
     }
   }
@@ -190,35 +190,35 @@ public actor CryptoServiceAdapter: CoreInterfaces.CoreCryptoServiceProtocol {
    - Throws: CryptoError if key generation fails
    */
   public func generateKey(size: Int) async throws -> Data {
-    let context = {
-      var metadata = LogMetadataDTOCollection()
-      metadata = metadata.withPublic(key: "keySize", value: String(size))
+    let context={
+      var metadata=LogMetadataDTOCollection()
+      metadata=metadata.withPublic(key: "keySize", value: String(size))
       return CoreLogContext(
         source: "CryptoServiceAdapter.generateKey",
         metadata: metadata
       )
     }()
-    
+
     await logger.debug("Generating random encryption key", context: context)
-    
+
     do {
-      let result = try await cryptoService.generateRandomBytes(count: size)
-      
+      let result=try await cryptoService.generateRandomBytes(count: size)
+
       await logger.debug("Random encryption key generated successfully", context: context)
       return result
     } catch {
-      let loggableError = LoggableErrorDTO(
+      let loggableError=LoggableErrorDTO(
         error: error,
         message: "Failed to generate random key",
         details: "Key generation failed in adapter"
       )
-      
+
       await logger.error(
         loggableError,
         context: context,
         privacyLevel: .private
       )
-      
+
       throw adaptError(error)
     }
   }
@@ -242,85 +242,87 @@ public actor CryptoServiceAdapter: CoreInterfaces.CoreCryptoServiceProtocol {
     iterations: Int,
     keySize: Int
   ) async throws -> Data {
-    let context = {
-      var metadata = LogMetadataDTOCollection()
+    let context={
+      var metadata=LogMetadataDTOCollection()
       // Not logging password, even in private logging
-      metadata = metadata.withPublic(key: "saltSize", value: String(salt.count))
-      metadata = metadata.withPublic(key: "iterations", value: String(iterations))
-      metadata = metadata.withPublic(key: "keySize", value: String(keySize))
+      metadata=metadata.withPublic(key: "saltSize", value: String(salt.count))
+      metadata=metadata.withPublic(key: "iterations", value: String(iterations))
+      metadata=metadata.withPublic(key: "keySize", value: String(keySize))
       return CoreLogContext(
         source: "CryptoServiceAdapter.deriveKey",
         metadata: metadata
       )
     }()
-    
+
     await logger.debug("Deriving key from password", context: context)
-    
+
     do {
-      let derivationOptions = KeyDerivationOptions(
+      let derivationOptions=KeyDerivationOptions(
         algorithm: .pbkdf2,
         iterations: iterations,
         salt: salt,
         keySize: keySize
       )
-      
-      let result = try await cryptoService.deriveKey(
+
+      let result=try await cryptoService.deriveKey(
         from: password.data(using: .utf8) ?? Data(),
         options: derivationOptions
       )
-      
+
       await logger.debug("Key derived successfully", context: context)
       return result
     } catch {
-      let loggableError = LoggableErrorDTO(
+      let loggableError=LoggableErrorDTO(
         error: error,
         message: "Failed to derive key",
         details: "Key derivation failed in adapter"
       )
-      
+
       await logger.error(
         loggableError,
         context: context,
         privacyLevel: .private
       )
-      
+
       throw adaptError(error)
     }
   }
-  
+
   // MARK: - Private Methods
-  
+
   /**
    Adapts domain-specific errors to the core error domain
-   
+
    - Parameter error: The original error to adapt
    - Returns: A CoreError representing the adapted error
    */
   private func adaptError(_ error: Error) -> Error {
     // If it's already a CoreError, return it directly
-    if let coreError = error as? CoreError {
+    if let coreError=error as? CoreError {
       return coreError
     }
-    
+
     // Map domain-specific errors to core errors
-    if let cryptoError = error as? CryptoError {
+    if let cryptoError=error as? CryptoError {
       switch cryptoError {
-      case .encryptionFailed(let message):
-        return CoreError.initialisation(message: "Encryption failed: \(message)")
-      case .decryptionFailed(let message):
-        return CoreError.initialisation(message: "Decryption failed: \(message)")
-      case .keyGenerationFailed(let message):
-        return CoreError.initialisation(message: "Key generation failed: \(message)")
-      case .keyDerivationFailed(let message):
-        return CoreError.initialisation(message: "Key derivation failed: \(message)")
-      case .randomGenerationFailed(let message):
-        return CoreError.initialisation(message: "Random generation failed: \(message)")
-      case .invalidParameters(let message):
-        return CoreError.invalidState(message: "Invalid crypto parameters: \(message)",
-                                     currentState: .error)
+        case let .encryptionFailed(message):
+          return CoreError.initialisation(message: "Encryption failed: \(message)")
+        case let .decryptionFailed(message):
+          return CoreError.initialisation(message: "Decryption failed: \(message)")
+        case let .keyGenerationFailed(message):
+          return CoreError.initialisation(message: "Key generation failed: \(message)")
+        case let .keyDerivationFailed(message):
+          return CoreError.initialisation(message: "Key derivation failed: \(message)")
+        case let .randomGenerationFailed(message):
+          return CoreError.initialisation(message: "Random generation failed: \(message)")
+        case let .invalidParameters(message):
+          return CoreError.invalidState(
+            message: "Invalid crypto parameters: \(message)",
+            currentState: .error
+          )
       }
     }
-    
+
     // For any other error, wrap it in a generic message
     return CoreError.initialisation(
       message: "Crypto operation failed: \(error.localizedDescription)"

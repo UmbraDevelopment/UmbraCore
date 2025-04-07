@@ -11,25 +11,25 @@ import LoggingTypes
 public struct BookmarkLogContext: LogContextDTO {
   /// The domain name for the log
   public let domainName: String
-  
+
   /// The source of the log entry
   public let source: String?
-  
+
   /// Correlation ID for tracking related log entries
   public let correlationID: String?
-  
+
   /// The metadata collection for this log entry
   public let metadata: LogMetadataDTOCollection
-  
+
   /// The type of bookmark operation being performed
   public let operation: String
-  
+
   /// The bookmark identifier (with privacy protection)
   public let identifier: String?
-  
+
   /// The status of the operation
   public let status: String
-  
+
   /**
    * Creates a new bookmark log context.
    *
@@ -44,32 +44,32 @@ public struct BookmarkLogContext: LogContextDTO {
    */
   public init(
     operation: String,
-    identifier: String? = nil,
+    identifier: String?=nil,
     status: String,
-    source: String? = "BookmarkServices",
-    domainName: String = "BookmarkServices",
-    correlationID: String? = nil,
-    metadata: LogMetadataDTOCollection = LogMetadataDTOCollection()
+    source: String?="BookmarkServices",
+    domainName: String="BookmarkServices",
+    correlationID: String?=nil,
+    metadata: LogMetadataDTOCollection=LogMetadataDTOCollection()
   ) {
-    self.operation = operation
-    self.identifier = identifier
-    self.status = status
-    self.source = source
-    self.domainName = domainName
-    self.correlationID = correlationID
-    
+    self.operation=operation
+    self.identifier=identifier
+    self.status=status
+    self.source=source
+    self.domainName=domainName
+    self.correlationID=correlationID
+
     // Create a new metadata collection with bookmark-specific fields
-    var enhancedMetadata = metadata
-    enhancedMetadata = enhancedMetadata.withPublic(key: "operation", value: operation)
-    enhancedMetadata = enhancedMetadata.withPublic(key: "status", value: status)
-    
-    if let identifier = identifier {
-      enhancedMetadata = enhancedMetadata.withPrivate(key: "identifier", value: identifier)
+    var enhancedMetadata=metadata
+    enhancedMetadata=enhancedMetadata.withPublic(key: "operation", value: operation)
+    enhancedMetadata=enhancedMetadata.withPublic(key: "status", value: status)
+
+    if let identifier {
+      enhancedMetadata=enhancedMetadata.withPrivate(key: "identifier", value: identifier)
     }
-    
-    self.metadata = enhancedMetadata
+
+    self.metadata=enhancedMetadata
   }
-  
+
   /**
    * Creates an updated copy of this context with new metadata.
    *
@@ -87,16 +87,16 @@ public struct BookmarkLogContext: LogContextDTO {
       metadata: metadata
     )
   }
-  
+
   /**
    * Returns the source of the log entry.
    *
    * - Returns: The source string or nil if not available
    */
   public func getSource() -> String? {
-    return source
+    source
   }
-  
+
   /**
    * Converts the context to standard log metadata.
    *
@@ -104,25 +104,25 @@ public struct BookmarkLogContext: LogContextDTO {
    */
   public func asLogMetadata() -> LogMetadata {
     // Create a standard LogMetadata dictionary
-    var logMetadata = LogMetadata()
-    
+    var logMetadata=LogMetadata()
+
     // Add standard context fields
-    logMetadata["domain"] = domainName
-    if let source = source {
-      logMetadata["source"] = source
+    logMetadata["domain"]=domainName
+    if let source {
+      logMetadata["source"]=source
     }
-    if let correlationID = correlationID {
-      logMetadata["correlationID"] = correlationID
+    if let correlationID {
+      logMetadata["correlationID"]=correlationID
     }
-    
+
     // Add operation-specific fields
-    logMetadata["operation"] = operation
-    logMetadata["status"] = status
-    
-    if let identifier = identifier {
-      logMetadata["identifier"] = identifier
+    logMetadata["operation"]=operation
+    logMetadata["status"]=status
+
+    if let identifier {
+      logMetadata["identifier"]=identifier
     }
-    
+
     return logMetadata
   }
 }

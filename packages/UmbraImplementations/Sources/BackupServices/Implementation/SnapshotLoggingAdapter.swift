@@ -98,11 +98,14 @@ public struct SnapshotLoggingAdapter {
   ) async {
     let errorDescription=error.localizedDescription
     let message="Operation failed: \(errorDescription)"
-    
+
     // Create a new metadata collection with error information
     var metadataCollection=logContext.metadata
     metadataCollection=metadataCollection.withPrivate(key: "error", value: errorDescription)
-    metadataCollection=metadataCollection.withPublic(key: "errorType", value: String(describing: type(of: error)))
+    metadataCollection=metadataCollection.withPublic(
+      key: "errorType",
+      value: String(describing: type(of: error))
+    )
 
     await logger.error(
       message,
@@ -248,8 +251,14 @@ public struct SnapshotLoggingAdapter {
     }
 
     metadataCollection=metadataCollection.withPublic(key: "operation", value: operation)
-    metadataCollection=metadataCollection.withPrivate(key: "error", value: error.localizedDescription)
-    metadataCollection=metadataCollection.withPublic(key: "errorType", value: String(describing: type(of: error)))
+    metadataCollection=metadataCollection.withPrivate(
+      key: "error",
+      value: error.localizedDescription
+    )
+    metadataCollection=metadataCollection.withPublic(
+      key: "errorType",
+      value: String(describing: type(of: error))
+    )
 
     // Add any additional metadata
     for (key, value) in additionalMetadata {

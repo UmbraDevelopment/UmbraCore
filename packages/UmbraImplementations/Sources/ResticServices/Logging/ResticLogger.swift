@@ -99,12 +99,12 @@ public actor ResticLogger {
     source: String
   ) async {
     // Create a LogContextDTO from the metadata and source
-    let context = BaseLogContextDTO(
+    let context=BaseLogContextDTO(
       domainName: "ResticServices",
       source: source,
       metadata: metadata ?? PrivacyMetadata()
     )
-    
+
     await underlyingLogger.log(level, message, context: context)
   }
 
@@ -122,45 +122,49 @@ public actor ResticLogger {
     source: String
   ) async {
     // Check if the error provides logging information
-    if let loggableError = error as? LoggableErrorProtocol {
+    if let loggableError=error as? LoggableErrorProtocol {
       // Create a context with combined metadata
-      let metadataCollection = loggableError.createMetadataCollection()
-      let errorMessage = loggableError.getLogMessage()
-      
+      let metadataCollection=loggableError.createMetadataCollection()
+      let errorMessage=loggableError.getLogMessage()
+
       // Create metadata with error type information
-      let metadataWithErrorInfo = PrivacyMetadata([
+      let metadataWithErrorInfo=PrivacyMetadata([
         "error.type": (value: String(describing: type(of: error)), privacy: LogPrivacyLevel.public)
       ])
-      
+
       // Create combined metadata by merging all sources
-      let combinedMetadata = (metadata ?? PrivacyMetadata())
+      let combinedMetadata=(metadata ?? PrivacyMetadata())
         .merging(metadataWithErrorInfo)
         .merging(metadataCollection.toPrivacyMetadata())
-      
-      let context = BaseLogContextDTO(
+
+      let context=BaseLogContextDTO(
         domainName: "ResticServices",
         source: source,
         metadata: combinedMetadata
       )
-      
+
       await underlyingLogger.log(.error, "\(message): \(errorMessage)", context: context)
     } else {
       // Basic error logging for non-loggable errors
       // Create metadata with error type information
-      let errorTypeMetadata = PrivacyMetadata([
+      let errorTypeMetadata=PrivacyMetadata([
         "error.type": (value: String(describing: type(of: error)), privacy: LogPrivacyLevel.public)
       ])
-      
+
       // Combine with any existing metadata
-      let combinedMetadata = (metadata ?? PrivacyMetadata()).merging(errorTypeMetadata)
-      
-      let context = BaseLogContextDTO(
+      let combinedMetadata=(metadata ?? PrivacyMetadata()).merging(errorTypeMetadata)
+
+      let context=BaseLogContextDTO(
         domainName: "ResticServices",
         source: source,
         metadata: combinedMetadata
       )
-      
-      await underlyingLogger.log(.error, "\(message): \(error.localizedDescription)", context: context)
+
+      await underlyingLogger.log(
+        .error,
+        "\(message): \(error.localizedDescription)",
+        context: context
+      )
     }
   }
 }

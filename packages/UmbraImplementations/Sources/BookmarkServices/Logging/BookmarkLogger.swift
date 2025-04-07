@@ -1,7 +1,7 @@
 import Foundation
+import LoggingAdapters
 import LoggingInterfaces
 import LoggingTypes
-import LoggingAdapters
 
 /**
  # Bookmark Logger
@@ -15,8 +15,8 @@ import LoggingAdapters
  */
 public actor BookmarkLogger: DomainLoggerProtocol {
   /// The domain name for this logger
-  public let domainName: String = "BookmarkServices"
-  
+  public let domainName: String="BookmarkServices"
+
   /// The underlying logging service
   private let loggingService: LoggingProtocol
 
@@ -26,9 +26,9 @@ public actor BookmarkLogger: DomainLoggerProtocol {
    - Parameter logger: The core logger to wrap
    */
   public init(logger: LoggingProtocol) {
-    self.loggingService = logger
+    loggingService=logger
   }
-  
+
   /**
    Required by DomainLoggerProtocol - logs with context
 
@@ -38,10 +38,10 @@ public actor BookmarkLogger: DomainLoggerProtocol {
      - context: The context for the log entry
    */
   public func logWithContext(_ level: LogLevel, _ message: String, context: LogContextDTO) async {
-    let formattedMessage = "[\(domainName)] \(message)"
+    let formattedMessage="[\(domainName)] \(message)"
     await loggingService.log(level, formattedMessage, context: context)
   }
-  
+
   /**
    Log a message with the specified level
 
@@ -51,14 +51,14 @@ public actor BookmarkLogger: DomainLoggerProtocol {
    */
   public func log(_ level: LogLevel, _ message: String) async {
     // For backward compatibility, create a basic bookmark context
-    let context = BookmarkLogContext(
+    let context=BookmarkLogContext(
       operation: "generic",
       status: "info"
     )
-    
+
     await logWithContext(level, message, context: context)
   }
-  
+
   /**
    Log a message with the specified level and context
 
@@ -70,7 +70,7 @@ public actor BookmarkLogger: DomainLoggerProtocol {
   public func log(_ level: LogLevel, _ message: String, context: LogContextDTO) async {
     await logWithContext(level, message, context: context)
   }
-  
+
   /**
    Log an error with context
 
@@ -79,29 +79,29 @@ public actor BookmarkLogger: DomainLoggerProtocol {
      - context: The context for the log entry
    */
   public func logError(_ error: Error, context: LogContextDTO) async {
-    if let loggableError = error as? LoggableErrorProtocol {
+    if let loggableError=error as? LoggableErrorProtocol {
       // Create a new context for the error
-      var errorContext = BaseLogContextDTO(
+      var errorContext=BaseLogContextDTO(
         domainName: domainName,
         source: context.getSource()
       )
-      
+
       // Add error-specific metadata
-      errorContext = errorContext.withUpdatedMetadata(
+      errorContext=errorContext.withUpdatedMetadata(
         LogMetadataDTOCollection()
           .withPrivate(key: "errorType", value: String(describing: type(of: loggableError)))
           .withPrivate(key: "errorMessage", value: loggableError.getLogMessage())
       )
-      
-      let formattedMessage = "[\(domainName)] \(loggableError.getLogMessage())"
+
+      let formattedMessage="[\(domainName)] \(loggableError.getLogMessage())"
       await loggingService.error(formattedMessage, context: errorContext)
     } else {
       // Handle standard errors
-      let formattedMessage = "[\(domainName)] \(error.localizedDescription)"
-      
-      if let bookmarkContext = context as? BookmarkLogContext {
+      let formattedMessage="[\(domainName)] \(error.localizedDescription)"
+
+      if let bookmarkContext=context as? BookmarkLogContext {
         // Update the context with error information
-        let updatedContext = bookmarkContext.withUpdatedMetadata(
+        let updatedContext=bookmarkContext.withUpdatedMetadata(
           bookmarkContext.metadata.withPrivate(key: "error", value: error.localizedDescription)
         )
         await log(.error, formattedMessage, context: updatedContext)
@@ -111,73 +111,73 @@ public actor BookmarkLogger: DomainLoggerProtocol {
       }
     }
   }
-  
+
   // MARK: - Standard logging levels with context
-  
+
   /// Log a message with trace level and context
   public func trace(_ message: String, context: LogContextDTO) async {
     await log(.trace, message, context: context)
   }
-  
+
   /// Log a message with debug level and context
   public func debug(_ message: String, context: LogContextDTO) async {
     await log(.debug, message, context: context)
   }
-  
+
   /// Log a message with info level and context
   public func info(_ message: String, context: LogContextDTO) async {
     await log(.info, message, context: context)
   }
-  
+
   /// Log a message with warning level and context
   public func warning(_ message: String, context: LogContextDTO) async {
     await log(.warning, message, context: context)
   }
-  
+
   /// Log a message with error level and context
   public func error(_ message: String, context: LogContextDTO) async {
     await log(.error, message, context: context)
   }
-  
+
   /// Log a message with critical level and context
   public func critical(_ message: String, context: LogContextDTO) async {
     await log(.critical, message, context: context)
   }
-  
+
   // MARK: - Legacy logging methods
-  
+
   /// Log a message with trace level
   public func trace(_ message: String) async {
     await log(.trace, message)
   }
-  
+
   /// Log a message with debug level
   public func debug(_ message: String) async {
     await log(.debug, message)
   }
-  
+
   /// Log a message with info level
   public func info(_ message: String) async {
     await log(.info, message)
   }
-  
+
   /// Log a message with warning level
   public func warning(_ message: String) async {
     await log(.warning, message)
   }
-  
+
   /// Log a message with error level
   public func error(_ message: String) async {
     await log(.error, message)
   }
-  
+
   /// Log a message with critical level
   public func critical(_ message: String) async {
     await log(.critical, message)
   }
-  
+
   // MARK: - Domain-specific logging methods
-  
+
   /**
    Logs the start of a bookmark operation.
 
@@ -188,19 +188,19 @@ public actor BookmarkLogger: DomainLoggerProtocol {
    */
   public func logOperationStart(
     operation: String,
-    identifier: String? = nil,
-    message: String? = nil
+    identifier: String?=nil,
+    message: String?=nil
   ) async {
-    let context = BookmarkLogContext(
+    let context=BookmarkLogContext(
       operation: operation,
       identifier: identifier,
       status: "started"
     )
-    
-    let defaultMessage = "Starting bookmark operation: \(operation)"
+
+    let defaultMessage="Starting bookmark operation: \(operation)"
     await info(message ?? defaultMessage, context: context)
   }
-  
+
   /**
    Logs the successful completion of a bookmark operation.
 
@@ -211,19 +211,19 @@ public actor BookmarkLogger: DomainLoggerProtocol {
    */
   public func logOperationSuccess(
     operation: String,
-    identifier: String? = nil,
-    message: String? = nil
+    identifier: String?=nil,
+    message: String?=nil
   ) async {
-    let context = BookmarkLogContext(
+    let context=BookmarkLogContext(
       operation: operation,
       identifier: identifier,
       status: "success"
     )
-    
-    let defaultMessage = "Successfully completed bookmark operation: \(operation)"
+
+    let defaultMessage="Successfully completed bookmark operation: \(operation)"
     await info(message ?? defaultMessage, context: context)
   }
-  
+
   /**
    Logs a warning during a bookmark operation.
 
@@ -235,22 +235,22 @@ public actor BookmarkLogger: DomainLoggerProtocol {
   public func logOperationWarning(
     operation: String,
     warningMessage: String,
-    identifier: String? = nil
+    identifier: String?=nil
   ) async {
-    var metadata = LogMetadataDTOCollection()
-    metadata = metadata.withPrivate(key: "warning", value: warningMessage)
-    
-    let context = BookmarkLogContext(
+    var metadata=LogMetadataDTOCollection()
+    metadata=metadata.withPrivate(key: "warning", value: warningMessage)
+
+    let context=BookmarkLogContext(
       operation: operation,
       identifier: identifier,
       status: "warning",
       metadata: metadata
     )
-    
-    let defaultMessage = "Warning during bookmark operation: \(operation)"
+
+    let defaultMessage="Warning during bookmark operation: \(operation)"
     await warning(defaultMessage, context: context)
   }
-  
+
   /**
    Logs the failure of a bookmark operation.
 
@@ -263,20 +263,20 @@ public actor BookmarkLogger: DomainLoggerProtocol {
   public func logOperationError(
     operation: String,
     error: Error,
-    identifier: String? = nil,
-    message: String? = nil
+    identifier: String?=nil,
+    message: String?=nil
   ) async {
-    let context = BookmarkLogContext(
+    let context=BookmarkLogContext(
       operation: operation,
       identifier: identifier,
       status: "error"
     )
-    
+
     // Log the error first
     await logError(error, context: context)
-    
+
     // If a custom message was provided, log it as well
-    if let message = message {
+    if let message {
       await self.error(message, context: context)
     }
   }

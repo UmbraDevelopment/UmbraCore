@@ -56,7 +56,7 @@ public struct BackupLogContext: LogContextDTO {
   /// - Returns: Privacy metadata with appropriate annotations
   public func toPrivacyMetadata() -> PrivacyMetadata {
     // Use the built-in conversion from LogMetadataDTOCollection
-    return metadata.toPrivacyMetadata()
+    metadata.toPrivacyMetadata()
   }
 
   /// Gets the metadata for this log context

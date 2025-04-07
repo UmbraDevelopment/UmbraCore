@@ -47,8 +47,9 @@ public actor DefaultLoggingServiceImpl: LoggingProtocol {
   /// Helper method to convert metadata to LogMetadataDTOCollection
   /// - Parameter metadata: The metadata to convert
   /// - Returns: A LogMetadataDTOCollection
-  private func createMetadataCollection(from metadata: LogMetadataDTOCollection?) -> LogMetadataDTOCollection {
-    return metadata ?? LogMetadataDTOCollection()
+  private func createMetadataCollection(from metadata: LogMetadataDTOCollection?)
+  -> LogMetadataDTOCollection {
+    metadata ?? LogMetadataDTOCollection()
   }
 
   // MARK: - Convenience Logging Methods
@@ -58,7 +59,11 @@ public actor DefaultLoggingServiceImpl: LoggingProtocol {
   ///   - message: The message to log
   ///   - metadata: Additional metadata
   ///   - source: Source component identifier
-  public func trace(_ message: String, metadata: LogMetadataDTOCollection?=nil, source: String?=nil) async {
+  public func trace(
+    _ message: String,
+    metadata: LogMetadataDTOCollection?=nil,
+    source: String?=nil
+  ) async {
     let context=BaseLogContextDTO(
       domainName: "Trace",
       source: source ?? "Unknown",
@@ -72,7 +77,11 @@ public actor DefaultLoggingServiceImpl: LoggingProtocol {
   ///   - message: The message to log
   ///   - metadata: Additional metadata
   ///   - source: Source component identifier
-  public func debug(_ message: String, metadata: LogMetadataDTOCollection?=nil, source: String?=nil) async {
+  public func debug(
+    _ message: String,
+    metadata: LogMetadataDTOCollection?=nil,
+    source: String?=nil
+  ) async {
     let context=BaseLogContextDTO(
       domainName: "Debug",
       source: source ?? "Unknown",
@@ -86,7 +95,11 @@ public actor DefaultLoggingServiceImpl: LoggingProtocol {
   ///   - message: The message to log
   ///   - metadata: Additional metadata
   ///   - source: Source component identifier
-  public func info(_ message: String, metadata: LogMetadataDTOCollection?=nil, source: String?=nil) async {
+  public func info(
+    _ message: String,
+    metadata: LogMetadataDTOCollection?=nil,
+    source: String?=nil
+  ) async {
     let context=BaseLogContextDTO(
       domainName: "Info",
       source: source ?? "Unknown",
@@ -100,7 +113,11 @@ public actor DefaultLoggingServiceImpl: LoggingProtocol {
   ///   - message: The message to log
   ///   - metadata: Additional metadata
   ///   - source: Source component identifier
-  public func warning(_ message: String, metadata: LogMetadataDTOCollection?=nil, source: String?=nil) async {
+  public func warning(
+    _ message: String,
+    metadata: LogMetadataDTOCollection?=nil,
+    source: String?=nil
+  ) async {
     let context=BaseLogContextDTO(
       domainName: "Warning",
       source: source ?? "Unknown",
@@ -114,7 +131,11 @@ public actor DefaultLoggingServiceImpl: LoggingProtocol {
   ///   - message: The message to log
   ///   - metadata: Additional metadata
   ///   - source: Source component identifier
-  public func error(_ message: String, metadata: LogMetadataDTOCollection?=nil, source: String?=nil) async {
+  public func error(
+    _ message: String,
+    metadata: LogMetadataDTOCollection?=nil,
+    source: String?=nil
+  ) async {
     let context=BaseLogContextDTO(
       domainName: "Error",
       source: source ?? "Unknown",
@@ -128,7 +149,11 @@ public actor DefaultLoggingServiceImpl: LoggingProtocol {
   ///   - message: The message to log
   ///   - metadata: Additional metadata
   ///   - source: Source component identifier
-  public func critical(_ message: String, metadata: LogMetadataDTOCollection?=nil, source: String?=nil) async {
+  public func critical(
+    _ message: String,
+    metadata: LogMetadataDTOCollection?=nil,
+    source: String?=nil
+  ) async {
     let context=BaseLogContextDTO(
       domainName: "Critical",
       source: source ?? "Unknown",

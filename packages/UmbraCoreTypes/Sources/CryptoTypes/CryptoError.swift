@@ -190,82 +190,82 @@ LoggableErrorProtocol {
   /// Get the metadata collection for logging this error
   /// - Returns: A structured metadata collection with privacy annotations
   public func createMetadataCollection() -> LogMetadataDTOCollection {
-    var metadata = LogMetadataDTOCollection()
-    
+    var metadata=LogMetadataDTOCollection()
+
     // Add domain and error type info
-    metadata = metadata.withPublic(key: "errorDomain", value: "Crypto")
-    metadata = metadata.withPublic(key: "errorType", value: String(describing: type(of: self)))
-    
+    metadata=metadata.withPublic(key: "errorDomain", value: "Crypto")
+    metadata=metadata.withPublic(key: "errorType", value: String(describing: type(of: self)))
+
     // Add common context for all error types
     switch self {
       case let .keyGenerationFailed(reason):
-        metadata = metadata.withPrivate(key: "errorReason", value: reason)
-        metadata = metadata.withPublic(key: "operation", value: "keyGeneration")
-        
+        metadata=metadata.withPrivate(key: "errorReason", value: reason)
+        metadata=metadata.withPublic(key: "operation", value: "keyGeneration")
+
       case let .invalidKey(reason):
-        metadata = metadata.withPrivate(key: "errorReason", value: reason)
-        metadata = metadata.withPublic(key: "operation", value: "keyValidation")
-        
+        metadata=metadata.withPrivate(key: "errorReason", value: reason)
+        metadata=metadata.withPublic(key: "operation", value: "keyValidation")
+
       case let .keyNotFound(identifier):
         // Key IDs are sensitive, so mark as private
-        metadata = metadata.withPrivate(key: "keyIdentifier", value: identifier)
-        metadata = metadata.withPublic(key: "operation", value: "keyAccess")
-        
+        metadata=metadata.withPrivate(key: "keyIdentifier", value: identifier)
+        metadata=metadata.withPublic(key: "operation", value: "keyAccess")
+
       case let .keyDerivationFailed(reason):
-        metadata = metadata.withPrivate(key: "errorReason", value: reason)
-        metadata = metadata.withPublic(key: "operation", value: "keyDerivation")
-        
+        metadata=metadata.withPrivate(key: "errorReason", value: reason)
+        metadata=metadata.withPublic(key: "operation", value: "keyDerivation")
+
       case let .insufficientEntropy(required, available):
-        metadata = metadata.withPublic(key: "requiredEntropy", value: "\(required)")
-        metadata = metadata.withPublic(key: "availableEntropy", value: "\(available)")
-        metadata = metadata.withPublic(key: "operation", value: "entropyGeneration")
-        
+        metadata=metadata.withPublic(key: "requiredEntropy", value: "\(required)")
+        metadata=metadata.withPublic(key: "availableEntropy", value: "\(available)")
+        metadata=metadata.withPublic(key: "operation", value: "entropyGeneration")
+
       case let .encryptionFailed(reason):
-        metadata = metadata.withPrivate(key: "errorReason", value: reason)
-        metadata = metadata.withPublic(key: "operation", value: "encryption")
-        
+        metadata=metadata.withPrivate(key: "errorReason", value: reason)
+        metadata=metadata.withPublic(key: "operation", value: "encryption")
+
       case let .decryptionFailed(reason):
-        metadata = metadata.withPrivate(key: "errorReason", value: reason)
-        metadata = metadata.withPublic(key: "operation", value: "decryption")
-        
+        metadata=metadata.withPrivate(key: "errorReason", value: reason)
+        metadata=metadata.withPublic(key: "operation", value: "decryption")
+
       case let .integrityCheckFailed(reason):
-        metadata = metadata.withPrivate(key: "errorReason", value: reason)
-        metadata = metadata.withPublic(key: "operation", value: "integrityVerification")
-        
+        metadata=metadata.withPrivate(key: "errorReason", value: reason)
+        metadata=metadata.withPublic(key: "operation", value: "integrityVerification")
+
       case let .invalidPadding(reason):
-        metadata = metadata.withPrivate(key: "errorReason", value: reason)
-        metadata = metadata.withPublic(key: "operation", value: "paddingValidation")
-        
+        metadata=metadata.withPrivate(key: "errorReason", value: reason)
+        metadata=metadata.withPublic(key: "operation", value: "paddingValidation")
+
       case let .invalidInput(reason):
-        metadata = metadata.withPrivate(key: "errorReason", value: reason)
-        metadata = metadata.withPublic(key: "operation", value: "dataValidation")
-        
+        metadata=metadata.withPrivate(key: "errorReason", value: reason)
+        metadata=metadata.withPublic(key: "operation", value: "dataValidation")
+
       case let .invalidAlgorithm(reason):
-        metadata = metadata.withPrivate(key: "errorReason", value: reason)
-        metadata = metadata.withPublic(key: "operation", value: "algorithmSupport")
-        
+        metadata=metadata.withPrivate(key: "errorReason", value: reason)
+        metadata=metadata.withPublic(key: "operation", value: "algorithmSupport")
+
       case let .algorithmVersionMismatch(expected, received):
-        metadata = metadata.withPublic(key: "expectedVersion", value: expected)
-        metadata = metadata.withPublic(key: "receivedVersion", value: received)
-        metadata = metadata.withPublic(key: "operation", value: "versionCheck")
-        
+        metadata=metadata.withPublic(key: "expectedVersion", value: expected)
+        metadata=metadata.withPublic(key: "receivedVersion", value: received)
+        metadata=metadata.withPublic(key: "operation", value: "versionCheck")
+
       case let .unsupportedOperation(reason):
-        metadata = metadata.withPrivate(key: "errorReason", value: reason)
-        metadata = metadata.withPublic(key: "operation", value: "featureSupport")
-        
+        metadata=metadata.withPrivate(key: "errorReason", value: reason)
+        metadata=metadata.withPublic(key: "operation", value: "featureSupport")
+
       case let .resourceUnavailable(resource):
-        metadata = metadata.withPublic(key: "resource", value: resource)
-        metadata = metadata.withPublic(key: "operation", value: "resourceAccess")
-        
+        metadata=metadata.withPublic(key: "resource", value: resource)
+        metadata=metadata.withPublic(key: "operation", value: "resourceAccess")
+
       case let .memoryError(reason):
-        metadata = metadata.withPrivate(key: "errorReason", value: reason)
-        metadata = metadata.withPublic(key: "operation", value: "memoryOperation")
-        
+        metadata=metadata.withPrivate(key: "errorReason", value: reason)
+        metadata=metadata.withPublic(key: "operation", value: "memoryOperation")
+
       case let .operationFailed(reason):
-        metadata = metadata.withPrivate(key: "errorReason", value: reason)
-        metadata = metadata.withPublic(key: "operation", value: "cryptoOperation")
+        metadata=metadata.withPrivate(key: "errorReason", value: reason)
+        metadata=metadata.withPublic(key: "operation", value: "cryptoOperation")
     }
-    
+
     return metadata
   }
 
@@ -355,34 +355,34 @@ LoggableErrorProtocol {
   /// Get the source information for this error
   /// - Returns: A formatted source string for logging
   public func getSource() -> String {
-    return "CryptoServices.\(self.operationName)"
+    "CryptoServices.\(operationName)"
   }
-  
+
   /// Gets a log message for this error
   /// - Returns: A formatted message for logging
   public func getLogMessage() -> String {
-    return "Crypto operation failed: \(self.localizedDescription)"
+    "Crypto operation failed: \(localizedDescription)"
   }
-  
+
   /// The operation name for this error type
   private var operationName: String {
     switch self {
-      case .keyGenerationFailed: return "KeyGeneration"
-      case .invalidKey: return "KeyValidation"
-      case .keyNotFound: return "KeyAccess"
-      case .keyDerivationFailed: return "KeyDerivation"
-      case .insufficientEntropy: return "EntropyGeneration"
-      case .encryptionFailed: return "Encryption"
-      case .decryptionFailed: return "Decryption"
-      case .integrityCheckFailed: return "IntegrityVerification"
-      case .invalidPadding: return "PaddingValidation"
-      case .invalidInput: return "DataValidation"
-      case .invalidAlgorithm: return "AlgorithmSupport"
-      case .algorithmVersionMismatch: return "VersionCheck"
-      case .unsupportedOperation: return "FeatureSupport"
-      case .resourceUnavailable: return "ResourceAccess"
-      case .memoryError: return "MemoryOperation"
-      case .operationFailed: return "CryptoOperation"
+      case .keyGenerationFailed: "KeyGeneration"
+      case .invalidKey: "KeyValidation"
+      case .keyNotFound: "KeyAccess"
+      case .keyDerivationFailed: "KeyDerivation"
+      case .insufficientEntropy: "EntropyGeneration"
+      case .encryptionFailed: "Encryption"
+      case .decryptionFailed: "Decryption"
+      case .integrityCheckFailed: "IntegrityVerification"
+      case .invalidPadding: "PaddingValidation"
+      case .invalidInput: "DataValidation"
+      case .invalidAlgorithm: "AlgorithmSupport"
+      case .algorithmVersionMismatch: "VersionCheck"
+      case .unsupportedOperation: "FeatureSupport"
+      case .resourceUnavailable: "ResourceAccess"
+      case .memoryError: "MemoryOperation"
+      case .operationFailed: "CryptoOperation"
     }
   }
 

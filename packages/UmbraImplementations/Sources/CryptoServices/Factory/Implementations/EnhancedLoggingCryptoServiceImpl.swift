@@ -65,14 +65,14 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     // Log result with enhanced privacy context
     switch result {
       case let .success(identifier):
-        var updatedContext = context
+        var updatedContext=context
         updatedContext.updateMetadata(["dataIdentifier": .private(identifier)])
         await logger.debug(
           "Encryption successful",
           context: updatedContext
         )
       case let .failure(error):
-        var updatedContext = context
+        var updatedContext=context
         updatedContext.updateMetadata(["error": .hash(String(describing: error))])
         await logger.error(
           "Encryption failed",
@@ -118,7 +118,7 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
           context: context
         )
       case let .failure(error):
-        var updatedContext = context
+        var updatedContext=context
         updatedContext.updateMetadata(["error": .hash(String(describing: error))])
         await logger.error(
           "Decryption failed",
@@ -156,14 +156,14 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     // Log result with enhanced privacy context
     switch result {
       case let .success(identifier):
-        var updatedContext = context
+        var updatedContext=context
         updatedContext.updateMetadata(["hashIdentifier": .private(identifier)])
         await logger.debug(
           "Hash generation successful",
           context: updatedContext
         )
       case let .failure(error):
-        var updatedContext = context
+        var updatedContext=context
         updatedContext.updateMetadata(["error": .hash(String(describing: error))])
         await logger.error(
           "Hash generation failed",
@@ -204,14 +204,14 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     // Log result with enhanced privacy context
     switch result {
       case let .success(matches):
-        var updatedContext = context
+        var updatedContext=context
         updatedContext.updateMetadata(["matches": .public(String(describing: matches))])
         await logger.debug(
           "Hash verification completed",
           context: updatedContext
         )
       case let .failure(error):
-        var updatedContext = context
+        var updatedContext=context
         updatedContext.updateMetadata(["error": .hash(String(describing: error))])
         await logger.error(
           "Hash verification failed",
@@ -249,14 +249,14 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     // Log result with enhanced privacy context
     switch result {
       case let .success(identifier):
-        var updatedContext = context
+        var updatedContext=context
         updatedContext.updateMetadata(["keyIdentifier": .private(identifier)])
         await logger.debug(
           "Key generation successful",
           context: updatedContext
         )
       case let .failure(error):
-        var updatedContext = context
+        var updatedContext=context
         updatedContext.updateMetadata(["error": .hash(String(describing: error))])
         await logger.error(
           "Key generation failed",
@@ -299,7 +299,7 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
           context: context
         )
       case let .failure(error):
-        var updatedContext = context
+        var updatedContext=context
         updatedContext.updateMetadata(["error": .hash(String(describing: error))])
         await logger.error(
           "Data storage failed",
@@ -340,7 +340,7 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
           context: context
         )
       case let .failure(error):
-        var updatedContext = context
+        var updatedContext=context
         updatedContext.updateMetadata(["error": .hash(String(describing: error))])
         await logger.error(
           "Data retrieval failed",
@@ -381,7 +381,7 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
           context: context
         )
       case let .failure(error):
-        var updatedContext = context
+        var updatedContext=context
         updatedContext.updateMetadata(["error": .hash(String(describing: error))])
         await logger.error(
           "Data export failed",
@@ -417,14 +417,14 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     // Log result with enhanced privacy context
     switch result {
       case let .success(resultIdentifier):
-        var updatedContext = context
+        var updatedContext=context
         updatedContext.updateMetadata(["resultIdentifier": .private(resultIdentifier)])
         await logger.debug(
           "Data import successful",
           context: updatedContext
         )
       case let .failure(error):
-        var updatedContext = context
+        var updatedContext=context
         updatedContext.updateMetadata(["error": .hash(String(describing: error))])
         await logger.error(
           "Data import failed",
@@ -465,7 +465,7 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
           context: context
         )
       case let .failure(error):
-        var updatedContext = context
+        var updatedContext=context
         updatedContext.updateMetadata(["error": .hash(String(describing: error))])
         await logger.error(
           "Data deletion failed",
@@ -491,28 +491,28 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     identifiers: [String: PrivacyLevel]
   ) -> EnhancedLogContext {
     // Create initial context with domain and operation
-    var metadata: [String: String] = [:]
-    var privacyLevels: [String: PrivacyClassification] = [:]
-    
+    var metadata: [String: String]=[:]
+    var privacyLevels: [String: PrivacyClassification]=[:]
+
     // Add operation metadata
-    metadata["operation"] = operation
+    metadata["operation"]=operation
     privacyLevels["operation"] = .public
-    
+
     // Add all identifiers with appropriate privacy levels
     for (key, privacyValue) in identifiers {
       switch privacyValue {
-      case let .public(value):
-        metadata[key] = value
-        privacyLevels[key] = .public
-      case let .private(value):
-        metadata[key] = value
-        privacyLevels[key] = .private
-      case let .hash(value):
-        metadata[key] = value
-        privacyLevels[key] = .hash
+        case let .public(value):
+          metadata[key]=value
+          privacyLevels[key] = .public
+        case let .private(value):
+          metadata[key]=value
+          privacyLevels[key] = .private
+        case let .hash(value):
+          metadata[key]=value
+          privacyLevels[key] = .hash
       }
     }
-    
+
     return EnhancedLogContext(
       domainName: "CryptoServices",
       operationName: operation,

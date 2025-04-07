@@ -230,7 +230,11 @@ public struct BackupDomainHandler: DomainHandler {
       .with(key: "repository_id", value: operation.repositoryID, privacyLevel: .public)
 
     if let tagFilter=operation.tagFilter, !tagFilter.isEmpty {
-      metadata=metadata.with(key: "tag_filter", value: tagFilter.joined(separator: ", "), privacyLevel: .public)
+      metadata=metadata.with(
+        key: "tag_filter",
+        value: tagFilter.joined(separator: ", "),
+        privacyLevel: .public
+      )
     }
 
     if let pathFilter=operation.pathFilter {
@@ -238,11 +242,19 @@ public struct BackupDomainHandler: DomainHandler {
     }
 
     if let beforeDate=operation.beforeDate {
-      metadata=metadata.with(key: "before_date", value: ISO8601DateFormatter().string(from: beforeDate), privacyLevel: .public)
+      metadata=metadata.with(
+        key: "before_date",
+        value: ISO8601DateFormatter().string(from: beforeDate),
+        privacyLevel: .public
+      )
     }
 
     if let afterDate=operation.afterDate {
-      metadata=metadata.with(key: "after_date", value: ISO8601DateFormatter().string(from: afterDate), privacyLevel: .public)
+      metadata=metadata.with(
+        key: "after_date",
+        value: ISO8601DateFormatter().string(from: afterDate),
+        privacyLevel: .public
+      )
     }
 
     if let limit=operation.limit {
@@ -298,8 +310,8 @@ public struct BackupDomainHandler: DomainHandler {
 
     // Log the result count
     let resultMetadata=metadata.with(
-      key: "count", 
-      value: String(snapshotInfos.count), 
+      key: "count",
+      value: String(snapshotInfos.count),
       privacyLevel: .public
     )
 
@@ -390,12 +402,12 @@ public struct BackupDomainHandler: DomainHandler {
       context: CoreLogContext(
         source: "BackupDomainHandler",
         metadata: metadata.with(
-          key: "status", 
-          value: "success", 
+          key: "status",
+          value: "success",
           privacyLevel: .public
         ).with(
-          key: "file_count", 
-          value: operation.includeFiles ? String(fileEntries.count) : "0", 
+          key: "file_count",
+          value: operation.includeFiles ? String(fileEntries.count) : "0",
           privacyLevel: .public
         )
       )
@@ -419,13 +431,25 @@ public struct BackupDomainHandler: DomainHandler {
       .with(key: "repository_id", value: operation.repositoryID, privacyLevel: .public)
 
     if !operation.parameters.tags.isEmpty {
-      metadata=metadata.with(key: "tags", value: operation.parameters.tags.joined(separator: ", "), privacyLevel: .public)
+      metadata=metadata.with(
+        key: "tags",
+        value: operation.parameters.tags.joined(separator: ", "),
+        privacyLevel: .public
+      )
     }
 
     if !operation.parameters.paths.isEmpty {
-      metadata=metadata.with(key: "path_count", value: String(operation.parameters.paths.count), privacyLevel: .public)
+      metadata=metadata.with(
+        key: "path_count",
+        value: String(operation.parameters.paths.count),
+        privacyLevel: .public
+      )
       // Keep actual paths private
-      metadata=metadata.with(key: "paths", value: operation.parameters.paths.joined(separator: ", "), privacyLevel: .private)
+      metadata=metadata.with(
+        key: "paths",
+        value: operation.parameters.paths.joined(separator: ", "),
+        privacyLevel: .private
+      )
     }
 
     await logger?.info(
@@ -477,16 +501,16 @@ public struct BackupDomainHandler: DomainHandler {
       context: CoreLogContext(
         source: "BackupDomainHandler",
         metadata: metadata.with(
-          key: "snapshot_id", 
-          value: createdSnapshot.id, 
+          key: "snapshot_id",
+          value: createdSnapshot.id,
           privacyLevel: .public
         ).with(
-          key: "file_count", 
-          value: String(createdSnapshot.fileCount), 
+          key: "file_count",
+          value: String(createdSnapshot.fileCount),
           privacyLevel: .public
         ).with(
-          key: "status", 
-          value: "success", 
+          key: "status",
+          value: "success",
           privacyLevel: .public
         )
       )
@@ -511,7 +535,11 @@ public struct BackupDomainHandler: DomainHandler {
       .with(key: "snapshot_id", value: operation.snapshotID, privacyLevel: .public)
 
     if let tags=operation.parameters.tags, !tags.isEmpty {
-      metadata=metadata.with(key: "tags", value: tags.joined(separator: ", "), privacyLevel: .public)
+      metadata=metadata.with(
+        key: "tags",
+        value: tags.joined(separator: ", "),
+        privacyLevel: .public
+      )
     }
 
     await logger?.info(
@@ -563,8 +591,8 @@ public struct BackupDomainHandler: DomainHandler {
       context: CoreLogContext(
         source: "BackupDomainHandler",
         metadata: metadata.with(
-          key: "status", 
-          value: "success", 
+          key: "status",
+          value: "success",
           privacyLevel: .public
         )
       )
@@ -617,8 +645,8 @@ public struct BackupDomainHandler: DomainHandler {
       context: CoreLogContext(
         source: "BackupDomainHandler",
         metadata: metadata.with(
-          key: "status", 
-          value: "success", 
+          key: "status",
+          value: "success",
           privacyLevel: .public
         )
       )
@@ -644,12 +672,24 @@ public struct BackupDomainHandler: DomainHandler {
       .with(key: "snapshot_id", value: operation.snapshotID, privacyLevel: .public)
 
     if !operation.parameters.paths.isEmpty {
-      metadata=metadata.with(key: "path_count", value: String(operation.parameters.paths.count), privacyLevel: .public)
+      metadata=metadata.with(
+        key: "path_count",
+        value: String(operation.parameters.paths.count),
+        privacyLevel: .public
+      )
       // Keep actual paths private
-      metadata=metadata.with(key: "paths", value: operation.parameters.paths.joined(separator: ", "), privacyLevel: .private)
+      metadata=metadata.with(
+        key: "paths",
+        value: operation.parameters.paths.joined(separator: ", "),
+        privacyLevel: .private
+      )
     }
 
-    metadata=metadata.with(key: "target_location", value: operation.parameters.targetDirectory.absoluteString, privacyLevel: .private)
+    metadata=metadata.with(
+      key: "target_location",
+      value: operation.parameters.targetDirectory.absoluteString,
+      privacyLevel: .private
+    )
 
     await logger?.info(
       "Restoring from snapshot",
@@ -671,14 +711,14 @@ public struct BackupDomainHandler: DomainHandler {
     }
 
     // Create restore configuration
-    let restoreConfig = RestoreConfig(
+    let restoreConfig=RestoreConfig(
       paths: operation.parameters.paths,
       targetDirectory: operation.parameters.targetDirectory
     )
 
     // Restore from the snapshot
-    let result = try await backupService.restoreFromSnapshot(
-      id: operation.snapshotID, 
+    let result=try await backupService.restoreFromSnapshot(
+      id: operation.snapshotID,
       fromRepository: operation.repositoryID,
       config: restoreConfig
     )
@@ -698,20 +738,20 @@ public struct BackupDomainHandler: DomainHandler {
       context: CoreLogContext(
         source: "BackupDomainHandler",
         metadata: metadata.with(
-          key: "files_restored", 
-          value: String(result.fileCount), 
+          key: "files_restored",
+          value: String(result.fileCount),
           privacyLevel: .public
         ).with(
-          key: "total_size", 
-          value: String(result.totalSize), 
+          key: "total_size",
+          value: String(result.totalSize),
           privacyLevel: .public
         ).with(
-          key: "duration", 
-          value: String(format: "%.2f", result.duration), 
+          key: "duration",
+          value: String(format: "%.2f", result.duration),
           privacyLevel: .public
         ).with(
-          key: "status", 
-          value: "success", 
+          key: "status",
+          value: "success",
           privacyLevel: .public
         )
       )
@@ -766,8 +806,8 @@ public struct BackupDomainHandler: DomainHandler {
       context: CoreLogContext(
         source: "BackupDomainHandler",
         metadata: metadata.with(
-          key: "status", 
-          value: "success", 
+          key: "status",
+          value: "success",
           privacyLevel: .public
         )
       )

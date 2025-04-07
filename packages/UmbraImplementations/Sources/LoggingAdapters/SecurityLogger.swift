@@ -96,18 +96,18 @@ public actor SecurityLogger: DomainLoggerProtocol {
     let formattedMessage="[\(domainName)] \(message)"
 
     // Convert LogLevel to UmbraLogLevel for secureLogger
-    let secureLevel: UmbraLogLevel = switch level {
+    let secureLevel: UmbraLogLevel=switch level {
       case .trace, .debug: .debug
       case .info: .info
       case .warning: .warning
       case .error: .error
       case .critical: .critical
     }
-    
+
     // Create a simplified metadata dictionary with minimal information
     // Skip complex metadata conversion since we don't have the correct types
-    let metadataDict: [String: PrivacyTaggedValue] = [:]
-    
+    let metadataDict: [String: PrivacyTaggedValue]=[:]
+
     // Use the secure logger with converted level but without additional metadata
     await secureLogger.log(
       level: secureLevel,
@@ -319,28 +319,28 @@ public actor SecurityLogger: DomainLoggerProtocol {
      - context: The context for the log entry
    */
   public func logError(_ error: Error, context: LogContextDTO) async {
-    if let loggableError = error as? LoggableErrorProtocol {
+    if let loggableError=error as? LoggableErrorProtocol {
       // Use the error's built-in metadata collection
-      let metadataCollection = loggableError.createMetadataCollection()
-      let formattedMessage = "[\(domainName)] \(loggableError.getLogMessage())"
-      let source = "\(loggableError.getSource()) via \(domainName)"
+      let metadataCollection=loggableError.createMetadataCollection()
+      let formattedMessage="[\(domainName)] \(loggableError.getLogMessage())"
+      let source="\(loggableError.getSource()) via \(domainName)"
 
       // Convert DTO collection to LogMetadata using the subscript operator
-      var logMetadata = LogMetadata()
+      var logMetadata=LogMetadata()
       for entry in metadataCollection.entries {
         // Use the subscript operator to set values directly
-        logMetadata[entry.key] = entry.value
+        logMetadata[entry.key]=entry.value
       }
 
       // The logging service expects LogMetadata
       await loggingService.error(formattedMessage, metadata: logMetadata, source: source)
     } else {
       // Handle standard errors
-      let formattedMessage = "[\(domainName)] \(error.localizedDescription)"
-      
-      if let securityContext = context as? SecurityLogContext {
+      let formattedMessage="[\(domainName)] \(error.localizedDescription)"
+
+      if let securityContext=context as? SecurityLogContext {
         // Update the context with error information
-        let updatedContext = securityContext.withUpdatedMetadata(
+        let updatedContext=securityContext.withUpdatedMetadata(
           securityContext.metadata.withPrivate(key: "error", value: error.localizedDescription)
         )
         await log(.error, formattedMessage, context: updatedContext)

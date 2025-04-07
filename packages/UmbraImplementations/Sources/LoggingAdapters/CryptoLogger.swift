@@ -135,15 +135,15 @@ public actor CryptoLogger: DomainLoggerProtocol {
   public func logError(_ error: Error, context: LogContextDTO) async {
     if let loggableError=error as? LoggableErrorProtocol {
       // Use the error's built-in metadata collection
-      let metadataCollection = loggableError.createMetadataCollection()
+      let metadataCollection=loggableError.createMetadataCollection()
       let formattedMessage="[\(domainName)] \(loggableError.getLogMessage())"
       let source="\(loggableError.getSource()) via \(domainName)"
 
       // Convert DTO collection to LogMetadata using the subscript operator
-      var logMetadata = LogMetadata()
+      var logMetadata=LogMetadata()
       for entry in metadataCollection.entries {
         // Use the subscript operator to set values directly
-        logMetadata[entry.key] = entry.value
+        logMetadata[entry.key]=entry.value
       }
 
       // The logging service expects LogMetadata

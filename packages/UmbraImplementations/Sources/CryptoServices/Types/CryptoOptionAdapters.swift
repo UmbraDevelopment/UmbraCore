@@ -185,39 +185,38 @@ extension SecurityCoreInterfaces.KeyGenerationOptions {
 
   /**
    Convert from KeyType to local key type representation for metadata
-   
+
    - Parameter keyType: The key type to convert
    - Returns: Key type information for logging
    */
   private func typeToMetadata(keyType: KeyType) -> [String: String] {
     // Convert from KeyType to local key type representation for metadata
-    let localKeyType: KeyType
-    switch keyType {
+    let localKeyType: KeyType=switch keyType {
       case .symmetric:
-        localKeyType = .symmetric
+        .symmetric
       case .asymmetric:
-        localKeyType = .asymmetric
+        .asymmetric
       default:
-        localKeyType = .symmetric // Default to symmetric as fallback
+        .symmetric // Default to symmetric as fallback
     }
-    
-    var metadataDict = [String: String]()
-    metadataDict["keyType"] = "\(localKeyType)"
+
+    var metadataDict=[String: String]()
+    metadataDict["keyType"]="\(localKeyType)"
     return metadataDict
   }
-  
+
   /**
    Add standard metadata about keys
-   
+
    - Parameters:
      - keySize: The size of the key in bits
      - keyType: The type of key
    - Returns: Metadata for logging
    */
   private func addMetadata(keySize: Int, keyType: KeyType) -> [String: String] {
-    var metadataDict = [String: String]()
-    metadataDict["keySize"] = "\(keySize)"
-    metadataDict["keyType"] = "\(keyType)"
+    var metadataDict=[String: String]()
+    metadataDict["keySize"]="\(keySize)"
+    metadataDict["keyType"]="\(keyType)"
     return metadataDict
   }
 }

@@ -124,7 +124,11 @@ public struct BaseDomainLogger: DomainLogger {
       // Process each entry in the metadata collection
       for entry in errorMetadata.entries {
         // Add the entry to our updated metadata
-        updatedMetadata = updatedMetadata.with(key: entry.key, value: entry.value, privacyLevel: entry.privacyLevel)
+        updatedMetadata=updatedMetadata.with(
+          key: entry.key,
+          value: entry.value,
+          privacyLevel: entry.privacyLevel
+        )
       }
 
       // Add error type with public visibility
@@ -158,7 +162,7 @@ public struct BaseDomainLogger: DomainLogger {
     message: String?
   ) async {
     // Use the error's built-in metadata collection - no conversion needed
-    let metadata = error.createMetadataCollection()
+    let metadata=error.createMetadataCollection()
 
     // Get source information if available
     let source=error.getSource()
@@ -183,9 +187,10 @@ public struct BaseDomainLogger: DomainLogger {
   /// Helper method to convert LogMetadataDTOCollection directly without conversion
   /// - Parameter metadata: The metadata to use directly
   /// - Returns: The same metadata collection
-  private func createMetadataCollection(from metadata: LogMetadataDTOCollection?) -> LogMetadataDTOCollection {
+  private func createMetadataCollection(from metadata: LogMetadataDTOCollection?)
+  -> LogMetadataDTOCollection {
     // If already a LogMetadataDTOCollection, just return it (or empty if nil)
-    return metadata ?? LogMetadataDTOCollection()
+    metadata ?? LogMetadataDTOCollection()
   }
 }
 
@@ -820,9 +825,10 @@ public class EnhancedErrorLogger: LegacyErrorLoggingProtocol {
   /// Helper method to convert LogMetadataDTOCollection directly without conversion
   /// - Parameter metadata: The metadata to use directly
   /// - Returns: The same metadata collection
-  private func createMetadataCollection(from metadata: LogMetadataDTOCollection?) -> LogMetadataDTOCollection {
+  private func createMetadataCollection(from metadata: LogMetadataDTOCollection?)
+  -> LogMetadataDTOCollection {
     // If already a LogMetadataDTOCollection, just return it (or empty if nil)
-    return metadata ?? LogMetadataDTOCollection()
+    metadata ?? LogMetadataDTOCollection()
   }
 }
 

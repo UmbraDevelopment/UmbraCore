@@ -72,14 +72,16 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
   /// Helper method to convert from metadata to LogMetadataDTOCollection
   /// - Parameter metadata: The metadata to use directly
   /// - Returns: A metadata collection
-  private func createMetadataCollection(from metadata: LogMetadataDTOCollection?) -> LogMetadataDTOCollection {
-    return metadata ?? LogMetadataDTOCollection()
+  private func createMetadataCollection(from metadata: LogMetadataDTOCollection?)
+  -> LogMetadataDTOCollection {
+    metadata ?? LogMetadataDTOCollection()
   }
 
-  /// Helper function to convert LogMetadataDTOCollection to PrivacyMetadata until we can fully remove PrivacyMetadata
+  /// Helper function to convert LogMetadataDTOCollection to PrivacyMetadata until we can fully
+  /// remove PrivacyMetadata
   private func convertToPrivacyMetadata(_ metadata: LogMetadataDTOCollection) -> PrivacyMetadata {
     // Use the built-in conversion method from LogMetadataDTOCollection
-    return metadata.toPrivacyMetadata()
+    metadata.toPrivacyMetadata()
   }
 
   // MARK: - LoggingProtocol Methods
@@ -115,7 +117,11 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
   }
 
   /// Log a warning message
-  public func warning(_ message: String, metadata: LogMetadataDTOCollection?, source: String) async {
+  public func warning(
+    _ message: String,
+    metadata: LogMetadataDTOCollection?,
+    source: String
+  ) async {
     let context=BaseLogContextDTO(
       domainName: identifier,
       source: source,
@@ -135,7 +141,11 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
   }
 
   /// Log a critical message
-  public func critical(_ message: String, metadata: LogMetadataDTOCollection?, source: String) async {
+  public func critical(
+    _ message: String,
+    metadata: LogMetadataDTOCollection?,
+    source: String
+  ) async {
     let context=BaseLogContextDTO(
       domainName: identifier,
       source: source,
@@ -260,9 +270,15 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
     var updatedMetadata=context.metadata
 
     // Add error metadata
-    updatedMetadata=updatedMetadata.withPrivate(key: "errorDescription", value: error.localizedDescription)
+    updatedMetadata=updatedMetadata.withPrivate(
+      key: "errorDescription",
+      value: error.localizedDescription
+    )
 
-    updatedMetadata=updatedMetadata.withPublic(key: "errorType", value: String(describing: type(of: error)))
+    updatedMetadata=updatedMetadata.withPublic(
+      key: "errorType",
+      value: String(describing: type(of: error))
+    )
 
     // If it's a loggable error, extract more details
     if let loggableError=error as? LoggableErrorDTO {

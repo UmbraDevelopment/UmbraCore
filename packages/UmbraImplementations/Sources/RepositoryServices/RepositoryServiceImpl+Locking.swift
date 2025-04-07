@@ -12,7 +12,7 @@ extension RepositoryServiceImpl {
   ///           or other repository errors if locking fails.
   public func lockRepository(identifier: String) async throws {
     // Create repository log context
-    let context = RepositoryLogContext(
+    let context=RepositoryLogContext(
       repositoryID: identifier,
       operation: "lock"
     )
@@ -29,7 +29,10 @@ extension RepositoryServiceImpl {
       try await repository.lock()
       await logger.info("Repository locked successfully", context: context)
     } catch {
-      await logger.error("Failed to lock repository: \(error.localizedDescription)", context: context)
+      await logger.error(
+        "Failed to lock repository: \(error.localizedDescription)",
+        context: context
+      )
       throw RepositoryError.invalidOperation
     }
   }
@@ -41,7 +44,7 @@ extension RepositoryServiceImpl {
   ///           or other repository errors if unlocking fails.
   public func unlockRepository(identifier: String) async throws {
     // Create repository log context
-    let context = RepositoryLogContext(
+    let context=RepositoryLogContext(
       repositoryID: identifier,
       operation: "unlock"
     )
@@ -58,7 +61,10 @@ extension RepositoryServiceImpl {
       try await repository.unlock()
       await logger.info("Repository unlocked successfully", context: context)
     } catch {
-      await logger.error("Failed to unlock repository: \(error.localizedDescription)", context: context)
+      await logger.error(
+        "Failed to unlock repository: \(error.localizedDescription)",
+        context: context
+      )
       throw error
     }
   }

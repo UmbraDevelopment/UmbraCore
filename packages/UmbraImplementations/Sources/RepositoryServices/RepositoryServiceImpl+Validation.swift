@@ -13,7 +13,7 @@ extension RepositoryServiceImpl {
   ///           or other repository errors if validation fails.
   public func validateRepository(identifier: String) async throws -> Bool {
     // Create repository log context
-    let context = RepositoryLogContext(
+    let context=RepositoryLogContext(
       repositoryID: identifier,
       operation: "validate"
     )
@@ -30,7 +30,10 @@ extension RepositoryServiceImpl {
       await logger.info("Repository validation result: \(isValid)", context: context)
       return isValid
     } catch {
-      await logger.error("Repository validation error: \(error.localizedDescription)", context: context)
+      await logger.error(
+        "Repository validation error: \(error.localizedDescription)",
+        context: context
+      )
       throw RepositoryError.invalidOperation
     }
   }

@@ -325,11 +325,11 @@ final class BasicCryptoService: CryptoServiceProtocol {
   /// Required by CryptoServiceProtocol - Generate hash from data identifier
   public func generateHash(
     dataIdentifier: String,
-    options: HashingOptions?
+    options _: HashingOptions?
   ) async -> Result<String, SecurityStorageError> {
     // This is a simplified implementation that just prefixes the identifier
-    let hashIdentifier = "hash-\(dataIdentifier)"
-    
+    let hashIdentifier="hash-\(dataIdentifier)"
+
     await logger.debug(
       "Generated hash identifier: \(hashIdentifier)",
       context: KeychainLogContext(
@@ -337,7 +337,7 @@ final class BasicCryptoService: CryptoServiceProtocol {
         operation: "generateHash"
       )
     )
-    
+
     return .success(hashIdentifier)
   }
 
@@ -347,7 +347,7 @@ final class BasicCryptoService: CryptoServiceProtocol {
     identifier: String
   ) async -> Result<Void, SecurityStorageError> {
     // Convert Data to [UInt8] for internal storage
-    let bytes = [UInt8](data)
+    let bytes=[UInt8](data)
     return await secureStorage.storeData(bytes, withIdentifier: identifier)
   }
 
@@ -356,8 +356,8 @@ final class BasicCryptoService: CryptoServiceProtocol {
     identifier: String
   ) async -> Result<Data, SecurityStorageError> {
     // Retrieve as [UInt8] and convert to Data
-    let result = await secureStorage.retrieveData(withIdentifier: identifier)
-    
+    let result=await secureStorage.retrieveData(withIdentifier: identifier)
+
     switch result {
       case let .success(bytes):
         return .success(Data(bytes))
@@ -370,7 +370,7 @@ final class BasicCryptoService: CryptoServiceProtocol {
   public func deleteData(
     identifier: String
   ) async -> Result<Void, SecurityStorageError> {
-    return await secureStorage.deleteData(withIdentifier: identifier)
+    await secureStorage.deleteData(withIdentifier: identifier)
   }
 
   /// Required by CryptoServiceProtocol - Import Data
@@ -379,10 +379,10 @@ final class BasicCryptoService: CryptoServiceProtocol {
     customIdentifier: String
   ) async -> Result<String, SecurityStorageError> {
     // Convert Data to [UInt8] for internal storage
-    let bytes = [UInt8](data)
-    let identifier = customIdentifier
-    let storeResult = await secureStorage.storeData(bytes, withIdentifier: identifier)
-    
+    let bytes=[UInt8](data)
+    let identifier=customIdentifier
+    let storeResult=await secureStorage.storeData(bytes, withIdentifier: identifier)
+
     switch storeResult {
       case .success:
         return .success(identifier)

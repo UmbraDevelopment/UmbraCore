@@ -124,7 +124,7 @@ public actor KeychainSecurityActor {
     secret: String,
     forAccount account: String,
     keyIdentifier: String?=nil,
-    additionalContext: LogMetadataDTOCollection?=nil
+    additionalContext _: LogMetadataDTOCollection?=nil
   ) async throws -> String {
     let keyID=keyIdentifier ?? deriveKeyIdentifier(forAccount: account)
 
@@ -220,7 +220,7 @@ public actor KeychainSecurityActor {
   public func retrieveEncryptedSecret(
     forAccount account: String,
     keyIdentifier: String?=nil,
-    additionalContext: LogMetadataDTOCollection?=nil
+    additionalContext _: LogMetadataDTOCollection?=nil
   ) async throws -> String {
     let keyID=keyIdentifier ?? deriveKeyIdentifier(forAccount: account)
 
@@ -312,7 +312,7 @@ public actor KeychainSecurityActor {
     forAccount account: String,
     keyIdentifier: String?=nil,
     deleteKey: Bool=true,
-    additionalContext: LogMetadataDTOCollection?=nil
+    additionalContext _: LogMetadataDTOCollection?=nil
   ) async throws {
     let keyID=keyIdentifier ?? deriveKeyIdentifier(forAccount: account)
 

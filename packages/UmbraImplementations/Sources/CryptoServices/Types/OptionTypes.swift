@@ -1,10 +1,10 @@
-import Foundation
 import CoreSecurityTypes
+import Foundation
 
 /**
  Local module option types for encryption, decryption, hashing, and key generation.
  These types mirror the ones in SecurityCoreInterfaces to provide type-safe conversions.
- 
+
  NOTE: These types are being deprecated in favor of using the native types from CoreSecurityTypes directly.
  */
 
@@ -43,7 +43,7 @@ public struct LocalEncryptionOptions: Sendable {
 
   /**
    Creates a new instance with the specified options
-   
+
    - Parameters:
      - algorithm: The encryption algorithm to use
      - mode: The encryption mode to use
@@ -67,7 +67,7 @@ public struct LocalEncryptionOptions: Sendable {
  Options for configuring decryption operations.
  Uses the same type parameters as encryption for consistency.
  */
-public typealias LocalDecryptionOptions = LocalEncryptionOptions
+public typealias LocalDecryptionOptions=LocalEncryptionOptions
 
 /**
  Options for configuring hashing operations.
@@ -92,8 +92,8 @@ public struct LocalHashingOptions: Sendable {
    */
   public init(
     algorithm: CoreSecurityTypes.HashAlgorithm = .sha256,
-    useSalt: Bool = true,
-    base64Encode: Bool = true
+    useSalt: Bool=true,
+    base64Encode: Bool=true
   ) {
     self.algorithm=algorithm
     self.useSalt=useSalt
@@ -107,14 +107,14 @@ public struct LocalHashingOptions: Sendable {
 public struct SendableOptionsDictionary: Sendable {
   /// The underlying dictionary
   public let dictionary: [String: Any]
-  
+
   /**
    Initialize with the specified dictionary
-   
+
    - Parameter dictionary: The dictionary to wrap
    */
   public init(dictionary: [String: Any]) {
-    self.dictionary = dictionary
+    self.dictionary=dictionary
   }
 }
 
@@ -145,9 +145,9 @@ public struct KeyGenerationOptions: Sendable {
    */
   public init(
     keyType: KeyType = .aes,
-    useSecureEnclave: Bool = false,
-    isExtractable: Bool = true,
-    options: [String: Any]? = nil
+    useSecureEnclave: Bool=false,
+    isExtractable: Bool=true,
+    options: [String: Any]?=nil
   ) {
     self.keyType=keyType
     self.useSecureEnclave=useSecureEnclave

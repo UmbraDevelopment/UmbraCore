@@ -80,7 +80,7 @@ public struct SecurityDomainHandler: DomainHandler {
   public func execute(_ operation: some APIOperation) async throws -> Any {
     // Log the operation start with privacy-aware metadata
     let operationName=String(describing: type(of: operation))
-    let startMetadata = LogMetadataDTOCollection()
+    let startMetadata=LogMetadataDTOCollection()
       .with(key: "operation", value: operationName, privacyLevel: .public)
       .with(key: "event", value: "start", privacyLevel: .public)
 
@@ -97,7 +97,7 @@ public struct SecurityDomainHandler: DomainHandler {
       let result=try await executeSecurityOperation(operation)
 
       // Log success
-      let successMetadata = LogMetadataDTOCollection()
+      let successMetadata=LogMetadataDTOCollection()
         .with(key: "operation", value: operationName, privacyLevel: .public)
         .with(key: "event", value: "success", privacyLevel: .public)
         .with(key: "status", value: "completed", privacyLevel: .public)
@@ -113,7 +113,7 @@ public struct SecurityDomainHandler: DomainHandler {
       return result
     } catch {
       // Log failure with privacy-aware error details
-      let errorMetadata = LogMetadataDTOCollection()
+      let errorMetadata=LogMetadataDTOCollection()
         .with(key: "operation", value: operationName, privacyLevel: .public)
         .with(key: "event", value: "failure", privacyLevel: .public)
         .with(key: "status", value: "failed", privacyLevel: .public)
@@ -200,59 +200,59 @@ public struct SecurityDomainHandler: DomainHandler {
     // Handle specific security error types
     if let secError=error as? SecurityError {
       switch secError {
-        case .invalidInput(let message):
+        case let .invalidInput(message):
           return APIError.invalidOperation(
             message: "Invalid security input: \(message)",
             code: "INVALID_SECURITY_INPUT"
           )
-        case .operationFailed(let message):
+        case let .operationFailed(message):
           return APIError.operationFailed(
             message: "Security operation failed: \(message)",
             code: "SECURITY_OPERATION_FAILED",
             underlyingError: secError
           )
-        case .encryptionFailed(let message):
+        case let .encryptionFailed(message):
           return APIError.operationFailed(
             message: "Encryption failed: \(message)",
             code: "ENCRYPTION_FAILED",
             underlyingError: secError
           )
-        case .decryptionFailed(let message):
+        case let .decryptionFailed(message):
           return APIError.operationFailed(
             message: "Decryption failed: \(message)",
             code: "DECRYPTION_FAILED",
             underlyingError: secError
           )
-        case .keyGenerationFailed(let message):
+        case let .keyGenerationFailed(message):
           return APIError.operationFailed(
             message: "Key generation failed: \(message)",
             code: "KEY_GENERATION_FAILED",
             underlyingError: secError
           )
-        case .keyRetrievalFailed(let message):
+        case let .keyRetrievalFailed(message):
           return APIError.operationFailed(
             message: "Key retrieval failed: \(message)",
             code: "KEY_RETRIEVAL_FAILED",
             underlyingError: secError
           )
-        case .keyStorageFailed(let message):
+        case let .keyStorageFailed(message):
           return APIError.operationFailed(
             message: "Key storage failed: \(message)",
             code: "KEY_STORAGE_FAILED",
             underlyingError: secError
           )
-        case .keyDeletionFailed(let message):
+        case let .keyDeletionFailed(message):
           return APIError.operationFailed(
             message: "Key deletion failed: \(message)",
             code: "KEY_DELETION_FAILED",
             underlyingError: secError
           )
-        case .permissionDenied(let message):
+        case let .permissionDenied(message):
           return APIError.authenticationFailed(
             message: "Permission denied: \(message)",
             code: "SECURITY_PERMISSION_DENIED"
           )
-        case .unknownError(let message):
+        case let .unknownError(message):
           return APIError.operationFailed(
             message: "Unknown security error: \(message)",
             code: "SECURITY_UNKNOWN_ERROR",
@@ -276,7 +276,8 @@ public struct SecurityDomainHandler: DomainHandler {
    - Returns: The appropriate EncryptionAlgorithm type
    - Throws: SecurityError.invalidInput if an invalid algorithm is specified
    */
-  private func getAlgorithm(from algorithmString: String?) throws -> CoreSecurityTypes.EncryptionAlgorithm {
+  private func getAlgorithm(from algorithmString: String?) throws -> CoreSecurityTypes
+  .EncryptionAlgorithm {
     guard let algorithmStr=algorithmString else {
       return .aes256GCM // Default to AES-GCM if not specified
     }
@@ -298,7 +299,8 @@ public struct SecurityDomainHandler: DomainHandler {
    - Returns: A HashAlgorithm value
    - Throws: SecurityError if the algorithm is not supported
    */
-  private func getHashAlgorithm(from algorithmString: String?) async throws -> CoreSecurityTypes.HashAlgorithm {
+  private func getHashAlgorithm(from algorithmString: String?) async throws -> CoreSecurityTypes
+  .HashAlgorithm {
     guard let algorithmStr=algorithmString else {
       // Default to SHA-256 if no algorithm specified
       return .sha256
@@ -347,23 +349,23 @@ public struct SecurityDomainHandler: DomainHandler {
           )
           return .sha256
         }
-        
+
         throw SecurityError.invalidInput("Unsupported hash algorithm: \(algorithmStr)")
     }
   }
 
   /**
    Handles data encryption operations.
-   
+
    - Parameter operation: The encryption operation parameters
    - Returns: Encrypted data result
    - Throws: APIError if the encryption fails
    */
   private func handleEncryptData(_ operation: EncryptData) async throws -> EncryptionResult {
-    let encryptionMetadata = LogMetadataDTOCollection()
+    let encryptionMetadata=LogMetadataDTOCollection()
       .with(key: "operation", value: "encryptData", privacyLevel: .public)
       .with(key: "dataSize", value: String(operation.data.count), privacyLevel: .public)
-    
+
     await logger?.debug(
       "Processing encryption request",
       context: CoreLogContext(
@@ -371,18 +373,18 @@ public struct SecurityDomainHandler: DomainHandler {
         metadata: encryptionMetadata
       )
     )
-    
+
     // Determine the encryption algorithm to use
-    let algorithm = try getAlgorithm(from: operation.algorithm)
-    
+    let algorithm=try getAlgorithm(from: operation.algorithm)
+
     // Create the security configuration
-    let config = SecurityConfigDTO(
+    let config=try await SecurityConfigDTO(
       encryptionAlgorithm: algorithm,
-      hashAlgorithm: try await getHashAlgorithm(from: nil), // Default to SHA-256
-      providerType: .system,   // Use system provider
+      hashAlgorithm: getHashAlgorithm(from: nil), // Default to SHA-256
+      providerType: .system, // Use system provider
       options: SecurityConfigOptions(
         enableDetailedLogging: false,
-        keyDerivationIterations: 100000,
+        keyDerivationIterations: 100_000,
         memoryLimitBytes: 65536,
         useHardwareAcceleration: true,
         operationTimeoutSeconds: 30.0,
@@ -394,37 +396,41 @@ public struct SecurityDomainHandler: DomainHandler {
         ]
       )
     )
-    
+
     // Encrypt the data with the provided configuration
-    let result = try await securityService.encrypt(config: config)
-    
+    let result=try await securityService.encrypt(config: config)
+
     // Check for successful result
-    guard result.successful, let encryptedData = result.resultData else {
+    guard result.successful, let encryptedData=result.resultData else {
       throw SecurityError.encryptionFailed(
         "Encryption failed with no details: \(result.errorDetails ?? "unknown error")"
       )
     }
-    
+
     return EncryptionResult(
-      encryptedData: encryptedData, 
+      encryptedData: encryptedData,
       key: operation.key,
       keyIdentifier: nil,
       algorithm: algorithm.rawValue
     )
   }
-  
+
   /**
    Handles data decryption operations.
-   
+
    - Parameter operation: The decryption operation parameters
    - Returns: Decrypted data
    - Throws: APIError if the decryption fails
    */
   private func handleDecryptData(_ operation: DecryptData) async throws -> Data {
-    let decryptionMetadata = LogMetadataDTOCollection()
+    let decryptionMetadata=LogMetadataDTOCollection()
       .with(key: "operation", value: "decryptData", privacyLevel: .public)
-      .with(key: "encryptedDataSize", value: String(operation.encryptedData.count), privacyLevel: .public)
-    
+      .with(
+        key: "encryptedDataSize",
+        value: String(operation.encryptedData.count),
+        privacyLevel: .public
+      )
+
     await logger?.debug(
       "Processing decryption request",
       context: CoreLogContext(
@@ -432,18 +438,18 @@ public struct SecurityDomainHandler: DomainHandler {
         metadata: decryptionMetadata
       )
     )
-    
+
     // Determine the encryption algorithm to use
-    let algorithm = try getAlgorithm(from: operation.algorithm)
-    
+    let algorithm=try getAlgorithm(from: operation.algorithm)
+
     // Create the security configuration
-    let config = SecurityConfigDTO(
+    let config=try await SecurityConfigDTO(
       encryptionAlgorithm: algorithm,
-      hashAlgorithm: try await getHashAlgorithm(from: nil), // Default to SHA-256
-      providerType: .system,   // Use system provider
+      hashAlgorithm: getHashAlgorithm(from: nil), // Default to SHA-256
+      providerType: .system, // Use system provider
       options: SecurityConfigOptions(
         enableDetailedLogging: false,
-        keyDerivationIterations: 100000,
+        keyDerivationIterations: 100_000,
         memoryLimitBytes: 65536,
         useHardwareAcceleration: true,
         operationTimeoutSeconds: 30.0,
@@ -455,33 +461,33 @@ public struct SecurityDomainHandler: DomainHandler {
         ]
       )
     )
-    
+
     // Attempt decryption
-    let result = try await securityService.decrypt(config: config)
-    
+    let result=try await securityService.decrypt(config: config)
+
     // Check for successful result
-    guard result.successful, let decryptedData = result.resultData else {
+    guard result.successful, let decryptedData=result.resultData else {
       throw SecurityError.decryptionFailed(
         "Decryption failed with no details: \(result.errorDetails ?? "unknown error")"
       )
     }
-    
+
     return decryptedData
   }
-  
+
   /**
    Handles key generation operations.
-   
+
    - Parameter operation: The key generation operation parameters
    - Returns: Generated crypto key
    - Throws: APIError if the key generation fails
    */
   private func handleGenerateKey(_ operation: GenerateKey) async throws -> SendableCryptoMaterial {
-    let keyGenMetadata = LogMetadataDTOCollection()
+    let keyGenMetadata=LogMetadataDTOCollection()
       .with(key: "operation", value: "generateKey", privacyLevel: .public)
       .with(key: "keyType", value: operation.keyType, privacyLevel: .public)
       .with(key: "keySize", value: String(operation.keySize ?? 0), privacyLevel: .public)
-    
+
     await logger?.debug(
       "Generating cryptographic key",
       context: CoreLogContext(
@@ -489,15 +495,15 @@ public struct SecurityDomainHandler: DomainHandler {
         metadata: keyGenMetadata
       )
     )
-    
+
     // Create security configuration for key generation
-    let config = SecurityConfigDTO(
-      encryptionAlgorithm: try getAlgorithm(from: operation.algorithm),
-      hashAlgorithm: try await getHashAlgorithm(from: nil), // Default to SHA-256
+    let config=try await SecurityConfigDTO(
+      encryptionAlgorithm: getAlgorithm(from: operation.algorithm),
+      hashAlgorithm: getHashAlgorithm(from: nil), // Default to SHA-256
       providerType: .system,
       options: SecurityConfigOptions(
         enableDetailedLogging: false,
-        keyDerivationIterations: 100000,
+        keyDerivationIterations: 100_000,
         memoryLimitBytes: 65536,
         useHardwareAcceleration: true,
         operationTimeoutSeconds: 30.0,
@@ -508,34 +514,34 @@ public struct SecurityDomainHandler: DomainHandler {
         ]
       )
     )
-    
+
     // Generate key based on type
-    let result = try await securityService.generateKey(config: config)
-    
+    let result=try await securityService.generateKey(config: config)
+
     // Check for successful result
-    guard result.successful, let keyData = result.resultData else {
+    guard result.successful, let keyData=result.resultData else {
       throw SecurityError.keyGenerationFailed(
         "Key generation failed with no details: \(result.errorDetails ?? "unknown error")"
       )
     }
-    
+
     // Return the generated key
     return SendableCryptoMaterial(keyData)
   }
-  
+
   /**
    Handles data hashing operations.
-   
+
    - Parameter operation: The hashing operation parameters
    - Returns: Hash result
    - Throws: APIError if the hashing fails
    */
   private func handleHashData(_ operation: HashData) async throws -> String {
-    let hashMetadata = LogMetadataDTOCollection()
+    let hashMetadata=LogMetadataDTOCollection()
       .with(key: "operation", value: "hashData", privacyLevel: .public)
       .with(key: "dataSize", value: String(operation.data.count), privacyLevel: .public)
       .with(key: "algorithm", value: operation.algorithm ?? "sha256", privacyLevel: .public)
-    
+
     await logger?.debug(
       "Computing hash for data",
       context: CoreLogContext(
@@ -543,10 +549,10 @@ public struct SecurityDomainHandler: DomainHandler {
         metadata: hashMetadata
       )
     )
-    
+
     // Determine the hash algorithm to use
-    let algorithm = try await getHashAlgorithm(from: operation.algorithm)
-    
+    let algorithm=try await getHashAlgorithm(from: operation.algorithm)
+
     // Compute the hash
     return try await securityService.hashData(
       data: operation.data,
@@ -556,17 +562,17 @@ public struct SecurityDomainHandler: DomainHandler {
 
   /**
    Handles storing a cryptographic key.
-   
+
    - Parameter operation: The key storage operation parameters
    - Returns: The key identifier that can be used to retrieve the key
    - Throws: APIError if the operation fails
    */
   private func handleStoreKey(_ operation: StoreKey) async throws -> String {
-    let storeMetadata = LogMetadataDTOCollection()
+    let storeMetadata=LogMetadataDTOCollection()
       .with(key: "operation", value: "storeKey", privacyLevel: .public)
       .with(key: "keyIdentifier", value: operation.identifier ?? "", privacyLevel: .public)
       .with(key: "keyType", value: "symmetric", privacyLevel: .public)
-    
+
     await logger?.debug(
       "Storing cryptographic key",
       context: CoreLogContext(
@@ -574,15 +580,15 @@ public struct SecurityDomainHandler: DomainHandler {
         metadata: storeMetadata
       )
     )
-    
+
     // Create security configuration for key storage
-    let config = SecurityConfigDTO(
+    let config=SecurityConfigDTO(
       encryptionAlgorithm: .aes256GCM, // Default algorithm
       hashAlgorithm: .sha256,
       providerType: .system,
       options: SecurityConfigOptions(
         enableDetailedLogging: false,
-        keyDerivationIterations: 100000,
+        keyDerivationIterations: 100_000,
         memoryLimitBytes: 65536,
         useHardwareAcceleration: true,
         operationTimeoutSeconds: 30.0,
@@ -594,46 +600,46 @@ public struct SecurityDomainHandler: DomainHandler {
         ]
       )
     )
-    
+
     // Store the key with the provided identifier or generate a new one
-    let result = try await securityService.encrypt(config: config)
-    
+    let result=try await securityService.encrypt(config: config)
+
     // Check for successful result
-    guard result.successful, let keyIdData = result.resultData else {
+    guard result.successful, let keyIDData=result.resultData else {
       throw SecurityError.keyStorageFailed(
         "Key storage failed with no details: \(result.errorDetails ?? "unknown error")"
       )
     }
-    
+
     // Convert the result to a key identifier
-    let keyId = String(data: keyIdData, encoding: .utf8) ?? UUID().uuidString
-    
+    let keyID=String(data: keyIDData, encoding: .utf8) ?? UUID().uuidString
+
     await logger?.info(
       "Key stored successfully",
       context: CoreLogContext(
         source: "SecurityDomainHandler",
         metadata: LogMetadataDTOCollection()
           .with(key: "operation", value: "storeKey", privacyLevel: .public)
-          .with(key: "key_id", value: keyId, privacyLevel: .public)
+          .with(key: "key_id", value: keyID, privacyLevel: .public)
           .with(key: "status", value: "success", privacyLevel: .public)
       )
     )
-    
-    return keyId
+
+    return keyID
   }
-  
+
   /**
    Handles retrieval of a stored cryptographic key.
-   
+
    - Parameter operation: The key retrieval operation parameters
    - Returns: The retrieved key
    - Throws: APIError if the operation fails
    */
   private func handleRetrieveKey(_ operation: RetrieveKey) async throws -> SendableCryptoMaterial {
-    let retrieveMetadata = LogMetadataDTOCollection()
+    let retrieveMetadata=LogMetadataDTOCollection()
       .with(key: "operation", value: "retrieveKey", privacyLevel: .public)
       .with(key: "keyId", value: operation.identifier, privacyLevel: .private)
-    
+
     await logger?.debug(
       "Retrieving cryptographic key",
       context: CoreLogContext(
@@ -641,15 +647,15 @@ public struct SecurityDomainHandler: DomainHandler {
         metadata: retrieveMetadata
       )
     )
-    
+
     // Create config for key retrieval
-    let config = SecurityConfigDTO(
+    let config=SecurityConfigDTO(
       encryptionAlgorithm: .aes256GCM, // Default algorithm
       hashAlgorithm: .sha256,
       providerType: .system,
       options: SecurityConfigOptions(
         enableDetailedLogging: false,
-        keyDerivationIterations: 100000,
+        keyDerivationIterations: 100_000,
         memoryLimitBytes: 65536,
         useHardwareAcceleration: true,
         operationTimeoutSeconds: 30.0,
@@ -661,11 +667,11 @@ public struct SecurityDomainHandler: DomainHandler {
         ]
       )
     )
-    
+
     // Retrieve key
     do {
-      let result = try await securityService.decrypt(config: config)
-      
+      let result=try await securityService.decrypt(config: config)
+
       await logger?.info(
         "Key retrieved successfully",
         context: CoreLogContext(
@@ -676,14 +682,14 @@ public struct SecurityDomainHandler: DomainHandler {
             .with(key: "status", value: "success", privacyLevel: .public)
         )
       )
-      
+
       // Check for successful result
-      guard result.successful, let keyData = result.resultData else {
+      guard result.successful, let keyData=result.resultData else {
         throw SecurityError.keyRetrievalFailed(
           "Key retrieval failed with no details: \(result.errorDetails ?? "unknown error")"
         )
       }
-      
+
       return SendableCryptoMaterial(keyData)
     } catch {
       await logger?.error(
@@ -697,22 +703,22 @@ public struct SecurityDomainHandler: DomainHandler {
           error: error
         )
       )
-      
+
       throw mapToAPIError(error)
     }
   }
-  
+
   /**
    Handles deletion of a stored cryptographic key.
-   
+
    - Parameter operation: The key deletion operation parameters
    - Throws: APIError if the operation fails
    */
   private func handleDeleteKey(_ operation: DeleteKey) async throws {
-    let deleteMetadata = LogMetadataDTOCollection()
+    let deleteMetadata=LogMetadataDTOCollection()
       .with(key: "operation", value: "deleteKey", privacyLevel: .public)
       .with(key: "keyId", value: operation.identifier, privacyLevel: .private)
-    
+
     await logger?.debug(
       "Deleting cryptographic key",
       context: CoreLogContext(
@@ -720,15 +726,15 @@ public struct SecurityDomainHandler: DomainHandler {
         metadata: deleteMetadata
       )
     )
-    
+
     // Create config for key deletion
-    let config = SecurityConfigDTO(
+    let config=SecurityConfigDTO(
       encryptionAlgorithm: .aes256GCM, // Default algorithm
       hashAlgorithm: .sha256,
       providerType: .system,
       options: SecurityConfigOptions(
         enableDetailedLogging: false,
-        keyDerivationIterations: 100000,
+        keyDerivationIterations: 100_000,
         memoryLimitBytes: 65536,
         useHardwareAcceleration: true,
         operationTimeoutSeconds: 30.0,
@@ -740,10 +746,10 @@ public struct SecurityDomainHandler: DomainHandler {
         ]
       )
     )
-    
+
     // Delete the key
-    let result = try await securityService.decrypt(config: config)
-    
+    let result=try await securityService.decrypt(config: config)
+
     await logger?.info(
       "Key deleted successfully",
       context: CoreLogContext(
@@ -754,7 +760,7 @@ public struct SecurityDomainHandler: DomainHandler {
           .with(key: "status", value: "success", privacyLevel: .public)
       )
     )
-    
+
     // Check for successful result
     if !result.successful {
       throw SecurityError.keyDeletionFailed(
@@ -762,20 +768,24 @@ public struct SecurityDomainHandler: DomainHandler {
       )
     }
   }
-  
+
   /**
    Handles secret storage operations.
-   
+
    - Parameter operation: The secret storage operation parameters
    - Returns: Secret identifier
    - Throws: APIError if the storage fails
    */
   private func handleStoreSecret(_ operation: StoreSecret) async throws -> String {
-    let storeMetadata = LogMetadataDTOCollection()
+    let storeMetadata=LogMetadataDTOCollection()
       .with(key: "operation", value: "storeSecret", privacyLevel: .public)
-      .with(key: "secretType", value: String(describing: type(of: operation.secret)), privacyLevel: .public)
+      .with(
+        key: "secretType",
+        value: String(describing: type(of: operation.secret)),
+        privacyLevel: .public
+      )
       .with(key: "providedId", value: operation.identifier ?? "none", privacyLevel: .private)
-    
+
     await logger?.debug(
       "Storing secret data",
       context: CoreLogContext(
@@ -783,39 +793,40 @@ public struct SecurityDomainHandler: DomainHandler {
         metadata: storeMetadata
       )
     )
-    
+
     // Store the secret with the provided identifier or generate a new one
-    let secretId = try await securityService.saveSecret(
+    let secretID=try await securityService.saveSecret(
       secret: operation.secret,
       identifier: operation.identifier
     )
-    
+
     await logger?.info(
       "Successfully stored secret",
       context: CoreLogContext(
         source: "SecurityDomainHandler",
         metadata: LogMetadataDTOCollection()
           .with(key: "operation", value: "storeSecret", privacyLevel: .public)
-          .with(key: "secret_id", value: secretId, privacyLevel: .public)
+          .with(key: "secret_id", value: secretID, privacyLevel: .public)
           .with(key: "status", value: "success", privacyLevel: .public)
       )
     )
-    
-    return secretId
+
+    return secretID
   }
-  
+
   /**
    Handles secret retrieval operations.
-   
+
    - Parameter operation: The secret retrieval operation parameters
    - Returns: Retrieved secret
    - Throws: APIError if the secret is not found
    */
-  private func handleRetrieveSecret(_ operation: RetrieveSecret) async throws -> SendableCryptoMaterial {
-    let retrieveMetadata = LogMetadataDTOCollection()
+  private func handleRetrieveSecret(_ operation: RetrieveSecret) async throws
+  -> SendableCryptoMaterial {
+    let retrieveMetadata=LogMetadataDTOCollection()
       .with(key: "operation", value: "retrieveSecret", privacyLevel: .public)
       .with(key: "secretId", value: operation.identifier, privacyLevel: .private)
-    
+
     await logger?.debug(
       "Retrieving secret data",
       context: CoreLogContext(
@@ -823,18 +834,18 @@ public struct SecurityDomainHandler: DomainHandler {
         metadata: retrieveMetadata
       )
     )
-    
+
     // Create config for secret retrieval
-    let secretConfig = SecuritySecretConfig(
+    let secretConfig=SecuritySecretConfig(
       identifier: operation.identifier
     )
-    
+
     // Retrieve secret
     do {
-      let result = try await securityService.getSecret(
+      let result=try await securityService.getSecret(
         identifier: operation.identifier
       )
-      
+
       await logger?.info(
         "Successfully retrieved secret",
         context: CoreLogContext(
@@ -845,7 +856,7 @@ public struct SecurityDomainHandler: DomainHandler {
             .with(key: "status", value: "success", privacyLevel: .public)
         )
       )
-      
+
       return SendableCryptoMaterial(result.data)
     } catch {
       await logger?.error(
@@ -859,23 +870,23 @@ public struct SecurityDomainHandler: DomainHandler {
           error: error
         )
       )
-      
+
       // Rethrow the error after logging
       throw mapToAPIError(error)
     }
   }
-  
+
   /**
    Handles secret deletion operations.
-   
+
    - Parameter operation: The secret deletion operation parameters
    - Throws: APIError if the deletion fails
    */
   private func handleDeleteSecret(_ operation: DeleteSecret) async throws {
-    let deleteMetadata = LogMetadataDTOCollection()
+    let deleteMetadata=LogMetadataDTOCollection()
       .with(key: "operation", value: "deleteSecret", privacyLevel: .public)
       .with(key: "secretId", value: operation.identifier, privacyLevel: .private)
-    
+
     await logger?.debug(
       "Deleting secret data",
       context: CoreLogContext(
@@ -883,17 +894,17 @@ public struct SecurityDomainHandler: DomainHandler {
         metadata: deleteMetadata
       )
     )
-    
+
     // Create config for secret deletion
-    let secretConfig = SecuritySecretConfig(
+    let secretConfig=SecuritySecretConfig(
       identifier: operation.identifier
     )
-    
+
     // Delete the secret
-    _ = try await securityService.removeSecret(
+    _=try await securityService.removeSecret(
       identifier: operation.identifier
     )
-    
+
     await logger?.info(
       "Successfully deleted secret",
       context: CoreLogContext(

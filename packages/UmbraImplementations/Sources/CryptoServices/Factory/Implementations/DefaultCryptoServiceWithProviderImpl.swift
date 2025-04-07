@@ -24,15 +24,15 @@ public actor DefaultCryptoServiceWithProviderImpl: CryptoServiceProtocol {
     secureStorage: SecureStorageProtocol,
     logger: LoggingProtocol
   ) {
-    self.provider = provider
-    self.secureStorage = secureStorage
-    self.logger = logger
+    self.provider=provider
+    self.secureStorage=secureStorage
+    self.logger=logger
   }
 
   public func encrypt(
     data: [UInt8],
     keyIdentifier: String,
-    options _: CryptoServiceOptions? = nil
+    options _: CryptoServiceOptions?=nil
   ) async -> Result<String, SecurityStorageError> {
     // Log encrypt operation
     await logger.debug(
@@ -46,14 +46,14 @@ public actor DefaultCryptoServiceWithProviderImpl: CryptoServiceProtocol {
     )
 
     // Prepare operation options
-    let encryptionOptions = SecurityProviderOptions(
+    let encryptionOptions=SecurityProviderOptions(
       algorithm: .aes256GCM,
       mode: .encrypt,
       keySize: 256
     )
 
     // Delegate to security provider
-    let result = await provider.performOperation(
+    let result=await provider.performOperation(
       .encryption,
       data: data,
       keyIdentifier: keyIdentifier,
@@ -64,9 +64,9 @@ public actor DefaultCryptoServiceWithProviderImpl: CryptoServiceProtocol {
     switch result {
       case let .success(encryptedData):
         // Store the encrypted data securely
-        let identifier = "encrypted_\(UUID().uuidString)"
+        let identifier="encrypted_\(UUID().uuidString)"
 
-        let storeResult = await secureStorage.storeData(
+        let storeResult=await secureStorage.storeData(
           encryptedData,
           withIdentifier: identifier
         )
@@ -104,12 +104,12 @@ public actor DefaultCryptoServiceWithProviderImpl: CryptoServiceProtocol {
   public func decrypt(
     encryptedDataIdentifier: String,
     keyIdentifier: String,
-    options _: CryptoServiceOptions? = nil
+    options _: CryptoServiceOptions?=nil
   ) async -> Result<[UInt8], SecurityStorageError> {
     // Retrieve the encrypted data from secure storage
-    let dataResult = await exportData(identifier: encryptedDataIdentifier)
-    guard case let .success(data) = dataResult else {
-      if case let .failure(error) = dataResult {
+    let dataResult=await exportData(identifier: encryptedDataIdentifier)
+    guard case let .success(data)=dataResult else {
+      if case let .failure(error)=dataResult {
         await logger.error(
           "Failed to retrieve encrypted data for decryption: \(error)",
           context: CryptoLogContext(
@@ -135,14 +135,14 @@ public actor DefaultCryptoServiceWithProviderImpl: CryptoServiceProtocol {
     )
 
     // Prepare operation options
-    let decryptionOptions = SecurityProviderOptions(
+    let decryptionOptions=SecurityProviderOptions(
       algorithm: .aes256GCM,
       mode: .decrypt,
       keySize: 256
     )
 
     // Delegate to security provider
-    let result = await provider.performOperation(
+    let result=await provider.performOperation(
       .decryption,
       data: data,
       keyIdentifier: keyIdentifier,
@@ -183,7 +183,7 @@ public actor DefaultCryptoServiceWithProviderImpl: CryptoServiceProtocol {
     )
 
     // Map hash algorithm to security provider algorithm
-    let providerAlgorithm: HashingAlgorithm = switch algorithm {
+    let providerAlgorithm: HashingAlgorithm=switch algorithm {
       case .sha256:
         .sha256
       case .sha512:
@@ -191,12 +191,12 @@ public actor DefaultCryptoServiceWithProviderImpl: CryptoServiceProtocol {
     }
 
     // Prepare operation options
-    let hashOptions = SecurityProviderOptions(
+    let hashOptions=SecurityProviderOptions(
       hashAlgorithm: providerAlgorithm
     )
 
     // Delegate to security provider
-    let result = await provider.performOperation(
+    let result=await provider.performOperation(
       .hashing,
       data: data,
       options: hashOptions
@@ -206,9 +206,9 @@ public actor DefaultCryptoServiceWithProviderImpl: CryptoServiceProtocol {
     switch result {
       case let .success(hashedData):
         // Store the hash securely
-        let identifier = "hash_\(UUID().uuidString)"
+        let identifier="hash_\(UUID().uuidString)"
 
-        let storeResult = await secureStorage.storeData(
+        let storeResult=await secureStorage.storeData(
           hashedData,
           withIdentifier: identifier
         )
@@ -248,9 +248,9 @@ public actor DefaultCryptoServiceWithProviderImpl: CryptoServiceProtocol {
     expectedHashIdentifier: String
   ) async -> Result<Bool, SecurityStorageError> {
     // Get the data to verify
-    let dataResult = await exportData(identifier: dataIdentifier)
-    guard case let .success(data) = dataResult else {
-      if case let .failure(error) = dataResult {
+    let dataResult=await exportData(identifier: dataIdentifier)
+    guard case let .success(data)=dataResult else {
+      if case let .failure(error)=dataResult {
         await logger.error(
           "Failed to retrieve data for hash verification: \(error)",
           context: CryptoLogContext(
@@ -265,9 +265,9 @@ public actor DefaultCryptoServiceWithProviderImpl: CryptoServiceProtocol {
     }
 
     // Get the expected hash
-    let hashResult = await exportData(identifier: expectedHashIdentifier)
-    guard case let .success(expectedHash) = hashResult else {
-      if case let .failure(error) = hashResult {
+    let hashResult=await exportData(identifier: expectedHashIdentifier)
+    guard case let .success(expectedHash)=hashResult else {
+      if case let .failure(error)=hashResult {
         await logger.error(
           "Failed to retrieve expected hash: \(error)",
           context: CryptoLogContext(
@@ -293,7 +293,7 @@ public actor DefaultCryptoServiceWithProviderImpl: CryptoServiceProtocol {
     )
 
     // Delegate to security provider
-    let result = await provider.verifyHash(
+    let result=await provider.verifyHash(
       data: data,
       expectedHash: expectedHash
     )
@@ -305,7 +305,7 @@ public actor DefaultCryptoServiceWithProviderImpl: CryptoServiceProtocol {
 
   /**
    Generates a cryptographic key with the specified length.
-   
+
    - Parameters:
      - length: The length of the key in bytes
      - options: Optional key generation options
@@ -313,7 +313,7 @@ public actor DefaultCryptoServiceWithProviderImpl: CryptoServiceProtocol {
    */
   public func generateKey(
     length: Int,
-    options: SecurityCoreInterfaces.KeyGenerationOptions? = nil
+    options _: SecurityCoreInterfaces.KeyGenerationOptions?=nil
   ) async -> Result<String, SecurityStorageError> {
     // Log key generation operation
     await logger.debug(
@@ -324,27 +324,27 @@ public actor DefaultCryptoServiceWithProviderImpl: CryptoServiceProtocol {
           .withPublic(key: "keyLength", value: "\(length)")
       )
     )
-    
+
     // Prepare key generation options
-    let keyOptions = SecurityKeyOptions(
+    let keyOptions=SecurityKeyOptions(
       keySize: length * 8,
       algorithm: .aes256GCM
     )
-    
+
     // Delegate to security provider
-    let result = await provider.generateKey(
+    let result=await provider.generateKey(
       config: keyOptions
     )
-    
+
     // Map result to expected format
     return result.mapError { error in
       SecurityStorageError.operationFailed("Key generation failed: \(error)")
     }
   }
-  
+
   /**
    Stores data securely.
-   
+
    - Parameters:
      - data: The data to store
      - identifier: The identifier to use for the stored data
@@ -364,21 +364,21 @@ public actor DefaultCryptoServiceWithProviderImpl: CryptoServiceProtocol {
           .withPublic(key: "dataSize", value: "\(data.count)")
       )
     )
-    
+
     // Delegate to secure storage
-    let result = await secureStorage.storeData(
+    let result=await secureStorage.storeData(
       [UInt8](data),
       withIdentifier: identifier
     )
-    
+
     return result.map { _ in () }.mapError { error in
       SecurityStorageError.operationFailed("\(error)")
     }
   }
-  
+
   /**
    Retrieves data from secure storage.
-   
+
    - Parameter identifier: The identifier of the data to retrieve
    - Returns: Success with the retrieved data or an error
    */
@@ -394,21 +394,21 @@ public actor DefaultCryptoServiceWithProviderImpl: CryptoServiceProtocol {
           .withPrivate(key: "identifier", value: identifier)
       )
     )
-    
+
     // Delegate to secure storage
-    let result = await secureStorage.retrieveData(withIdentifier: identifier)
-    
+    let result=await secureStorage.retrieveData(withIdentifier: identifier)
+
     return result.map { Data($0) }.mapError { error in
-      if case .dataNotFound = error {
+      if case .dataNotFound=error {
         return SecurityStorageError.dataNotFound
       }
       return SecurityStorageError.operationFailed("\(error)")
     }
   }
-  
+
   /**
    Exports data from secure storage.
-   
+
    - Parameter identifier: The identifier of the data to export
    - Returns: Success with the exported data or an error
    */
@@ -424,21 +424,21 @@ public actor DefaultCryptoServiceWithProviderImpl: CryptoServiceProtocol {
           .withPrivate(key: "identifier", value: identifier)
       )
     )
-    
+
     // Delegate to secure storage
-    let result = await secureStorage.retrieveData(withIdentifier: identifier)
-    
+    let result=await secureStorage.retrieveData(withIdentifier: identifier)
+
     return result.mapError { error in
-      if case .dataNotFound = error {
+      if case .dataNotFound=error {
         return SecurityStorageError.dataNotFound
       }
       return SecurityStorageError.operationFailed("\(error)")
     }
   }
-  
+
   /**
    Imports data into secure storage.
-   
+
    - Parameters:
      - data: The data to import
      - identifier: The identifier to use for the imported data
@@ -449,8 +449,8 @@ public actor DefaultCryptoServiceWithProviderImpl: CryptoServiceProtocol {
     customIdentifier identifier: String?
   ) async -> Result<String, SecurityStorageError> {
     // Use provided identifier or generate a new one
-    let actualIdentifier = identifier ?? UUID().uuidString
-    
+    let actualIdentifier=identifier ?? UUID().uuidString
+
     // Log data import operation
     await logger.debug(
       "Importing data with identifier: \(actualIdentifier)",
@@ -461,21 +461,21 @@ public actor DefaultCryptoServiceWithProviderImpl: CryptoServiceProtocol {
           .withPublic(key: "dataSize", value: "\(data.count)")
       )
     )
-    
+
     // Delegate to secure storage
-    let result = await secureStorage.storeData(
+    let result=await secureStorage.storeData(
       data,
       withIdentifier: actualIdentifier
     )
-    
+
     return result.map { _ in actualIdentifier }.mapError { error in
       SecurityStorageError.operationFailed("\(error)")
     }
   }
-  
+
   /**
    Imports data using Data format
-   
+
    - Parameters:
      - data: The data to import
      - customIdentifier: The identifier to use
@@ -485,12 +485,12 @@ public actor DefaultCryptoServiceWithProviderImpl: CryptoServiceProtocol {
     _ data: Data,
     customIdentifier: String
   ) async -> Result<String, SecurityStorageError> {
-    return await importData([UInt8](data), customIdentifier: customIdentifier)
+    await importData([UInt8](data), customIdentifier: customIdentifier)
   }
-  
+
   /**
    Deletes data from secure storage.
-   
+
    - Parameter identifier: The identifier of the data to delete
    - Returns: Success or an error
    */
@@ -506,12 +506,12 @@ public actor DefaultCryptoServiceWithProviderImpl: CryptoServiceProtocol {
           .withPrivate(key: "identifier", value: identifier)
       )
     )
-    
+
     // Delegate to secure storage
-    let result = await secureStorage.deleteData(withIdentifier: identifier)
-    
+    let result=await secureStorage.deleteData(withIdentifier: identifier)
+
     return result.mapError { error in
-      if case .dataNotFound = error {
+      if case .dataNotFound=error {
         return SecurityStorageError.dataNotFound
       }
       return SecurityStorageError.operationFailed("\(error)")

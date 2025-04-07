@@ -1,6 +1,6 @@
-import Foundation
 import APIInterfaces
 import CryptoTypes
+import Foundation
 
 /**
  Protocol defining a security-related API operation
@@ -14,11 +14,11 @@ public struct EncryptData: SecurityAPIOperation, Sendable {
   public let data: Data
   public let key: SendableCryptoMaterial?
   public let algorithm: String?
-  
-  public init(data: Data, key: SendableCryptoMaterial? = nil, algorithm: String? = nil) {
-    self.data = data
-    self.key = key
-    self.algorithm = algorithm
+
+  public init(data: Data, key: SendableCryptoMaterial?=nil, algorithm: String?=nil) {
+    self.data=data
+    self.key=key
+    self.algorithm=algorithm
   }
 }
 
@@ -29,11 +29,11 @@ public struct DecryptData: SecurityAPIOperation, Sendable {
   public let encryptedData: Data
   public let key: SendableCryptoMaterial?
   public let algorithm: String?
-  
-  public init(encryptedData: Data, key: SendableCryptoMaterial? = nil, algorithm: String? = nil) {
-    self.encryptedData = encryptedData
-    self.key = key
-    self.algorithm = algorithm
+
+  public init(encryptedData: Data, key: SendableCryptoMaterial?=nil, algorithm: String?=nil) {
+    self.encryptedData=encryptedData
+    self.key=key
+    self.algorithm=algorithm
   }
 }
 
@@ -46,19 +46,19 @@ public struct GenerateKey: SecurityAPIOperation, Sendable {
   public let algorithm: String?
   public let persistent: Bool
   public let identifier: String?
-  
+
   public init(
     keyType: String,
-    keySize: Int? = nil,
-    algorithm: String? = nil,
-    persistent: Bool = false,
-    identifier: String? = nil
+    keySize: Int?=nil,
+    algorithm: String?=nil,
+    persistent: Bool=false,
+    identifier: String?=nil
   ) {
-    self.keyType = keyType
-    self.keySize = keySize
-    self.algorithm = algorithm
-    self.persistent = persistent
-    self.identifier = identifier
+    self.keyType=keyType
+    self.keySize=keySize
+    self.algorithm=algorithm
+    self.persistent=persistent
+    self.identifier=identifier
   }
 }
 
@@ -67,9 +67,9 @@ public struct GenerateKey: SecurityAPIOperation, Sendable {
  */
 public struct RetrieveKey: SecurityAPIOperation, Sendable {
   public let identifier: String
-  
+
   public init(identifier: String) {
-    self.identifier = identifier
+    self.identifier=identifier
   }
 }
 
@@ -79,10 +79,10 @@ public struct RetrieveKey: SecurityAPIOperation, Sendable {
 public struct StoreKey: SecurityAPIOperation, Sendable {
   public let key: SendableCryptoMaterial
   public let identifier: String?
-  
-  public init(key: SendableCryptoMaterial, identifier: String? = nil) {
-    self.key = key
-    self.identifier = identifier
+
+  public init(key: SendableCryptoMaterial, identifier: String?=nil) {
+    self.key=key
+    self.identifier=identifier
   }
 }
 
@@ -91,9 +91,9 @@ public struct StoreKey: SecurityAPIOperation, Sendable {
  */
 public struct DeleteKey: SecurityAPIOperation, Sendable {
   public let identifier: String
-  
+
   public init(identifier: String) {
-    self.identifier = identifier
+    self.identifier=identifier
   }
 }
 
@@ -103,10 +103,10 @@ public struct DeleteKey: SecurityAPIOperation, Sendable {
 public struct HashData: SecurityAPIOperation, Sendable {
   public let data: Data
   public let algorithm: String?
-  
-  public init(data: Data, algorithm: String? = nil) {
-    self.data = data
-    self.algorithm = algorithm
+
+  public init(data: Data, algorithm: String?=nil) {
+    self.data=data
+    self.algorithm=algorithm
   }
 }
 
@@ -116,10 +116,10 @@ public struct HashData: SecurityAPIOperation, Sendable {
 public struct StoreSecret: SecurityAPIOperation, Sendable {
   public let secret: SendableCryptoMaterial
   public let identifier: String?
-  
-  public init(secret: SendableCryptoMaterial, identifier: String? = nil) {
-    self.secret = secret
-    self.identifier = identifier
+
+  public init(secret: SendableCryptoMaterial, identifier: String?=nil) {
+    self.secret=secret
+    self.identifier=identifier
   }
 }
 
@@ -128,9 +128,9 @@ public struct StoreSecret: SecurityAPIOperation, Sendable {
  */
 public struct RetrieveSecret: SecurityAPIOperation, Sendable {
   public let identifier: String
-  
+
   public init(identifier: String) {
-    self.identifier = identifier
+    self.identifier=identifier
   }
 }
 
@@ -139,8 +139,8 @@ public struct RetrieveSecret: SecurityAPIOperation, Sendable {
  */
 public struct DeleteSecret: SecurityAPIOperation, Sendable {
   public let identifier: String
-  
+
   public init(identifier: String) {
-    self.identifier = identifier
+    self.identifier=identifier
   }
 }

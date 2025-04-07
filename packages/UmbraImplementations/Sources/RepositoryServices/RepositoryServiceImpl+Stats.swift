@@ -13,7 +13,7 @@ extension RepositoryServiceImpl {
   ///           or other repository errors if stats collection fails.
   public func getStats(for identifier: String) async throws -> RepositoryStatistics {
     // Create repository log context
-    let context = RepositoryLogContext(
+    let context=RepositoryLogContext(
       repositoryID: identifier,
       operation: "getStats"
     )
@@ -31,7 +31,10 @@ extension RepositoryServiceImpl {
       await logger.info("Retrieved repository stats", context: context)
       return stats
     } catch {
-      await logger.error("Failed to get repository stats: \(error.localizedDescription)", context: context)
+      await logger.error(
+        "Failed to get repository stats: \(error.localizedDescription)",
+        context: context
+      )
       throw RepositoryError.internalError
     }
   }

@@ -1,9 +1,9 @@
 import CoreSecurityTypes
+import CryptoLogger
 import Foundation
 import LoggingInterfaces
 import LoggingTypes
 import SecurityCoreInterfaces
-import CryptoLogger
 
 /**
  Enhanced implementation of CryptoServiceProtocol with additional security features.
@@ -46,9 +46,9 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
     logger: PrivacyAwareLoggingProtocol,
     rateLimiter: RateLimiter=RateLimiter()
   ) {
-    self.wrapped = wrapped
-    self.logger = logger
-    self.rateLimiter = rateLimiter
+    self.wrapped=wrapped
+    self.logger=logger
+    self.rateLimiter=rateLimiter
   }
 
   /**
@@ -68,35 +68,35 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
   ) async -> Result<String, SecurityStorageError> {
     // Check rate limiter
     if rateLimiter.isRateLimited(.encrypt) {
-      let context = CryptoLogContext(
+      let context=CryptoLogContext(
         operation: "encrypt",
         identifier: dataIdentifier,
         status: "rateLimited"
       )
-      
+
       await logger.warning("Rate limited encryption operation", context: context)
       return .failure(.operationFailed("Rate limited"))
     }
 
     // Input validation
     if dataIdentifier.isEmpty {
-      let context = CryptoLogContext(
+      let context=CryptoLogContext(
         operation: "encrypt",
         status: "error",
         metadata: LogMetadataDTOCollection().withPublic(key: "error", value: "emptyDataIdentifier")
       )
-      
+
       await logger.error("Empty data identifier provided for encryption", context: context)
       return .failure(.operationFailed("dataIdentifier cannot be empty"))
     }
 
     if keyIdentifier.isEmpty {
-      let context = CryptoLogContext(
+      let context=CryptoLogContext(
         operation: "encrypt",
         status: "error",
         metadata: LogMetadataDTOCollection().withPublic(key: "error", value: "emptyKeyIdentifier")
       )
-      
+
       await logger.error("Empty key identifier provided for encryption", context: context)
       return .failure(.operationFailed("keyIdentifier cannot be empty"))
     }
@@ -104,13 +104,13 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
     // Verify key exists
     let keyResult=await secureStorage.retrieveData(withIdentifier: keyIdentifier)
     guard case .success=keyResult else {
-      let context = CryptoLogContext(
+      let context=CryptoLogContext(
         operation: "encrypt",
         identifier: keyIdentifier,
         status: "error",
         metadata: LogMetadataDTOCollection().withPublic(key: "error", value: "keyNotFound")
       )
-      
+
       await logger.error(
         "Key not found for encryption: \(keyIdentifier)",
         context: context
@@ -143,35 +143,35 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
   ) async -> Result<String, SecurityStorageError> {
     // Check rate limiter
     if rateLimiter.isRateLimited(.decrypt) {
-      let context = CryptoLogContext(
+      let context=CryptoLogContext(
         operation: "decrypt",
         identifier: encryptedDataIdentifier,
         status: "rateLimited"
       )
-      
+
       await logger.warning("Rate limited decryption operation", context: context)
       return .failure(.operationFailed("Rate limited"))
     }
 
     // Input validation
     if encryptedDataIdentifier.isEmpty {
-      let context = CryptoLogContext(
+      let context=CryptoLogContext(
         operation: "decrypt",
         status: "error",
         metadata: LogMetadataDTOCollection().withPublic(key: "error", value: "emptyDataIdentifier")
       )
-      
+
       await logger.error("Empty data identifier provided for decryption", context: context)
       return .failure(.operationFailed("encryptedDataIdentifier cannot be empty"))
     }
 
     if keyIdentifier.isEmpty {
-      let context = CryptoLogContext(
+      let context=CryptoLogContext(
         operation: "decrypt",
         status: "error",
         metadata: LogMetadataDTOCollection().withPublic(key: "error", value: "emptyKeyIdentifier")
       )
-      
+
       await logger.error("Empty key identifier provided for decryption", context: context)
       return .failure(.operationFailed("keyIdentifier cannot be empty"))
     }
@@ -179,13 +179,13 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
     // Verify encrypted data exists
     let dataResult=await secureStorage.retrieveData(withIdentifier: encryptedDataIdentifier)
     guard case .success=dataResult else {
-      let context = CryptoLogContext(
+      let context=CryptoLogContext(
         operation: "decrypt",
         identifier: encryptedDataIdentifier,
         status: "error",
         metadata: LogMetadataDTOCollection().withPublic(key: "error", value: "dataNotFound")
       )
-      
+
       await logger.error(
         "Encrypted data not found: \(encryptedDataIdentifier)",
         context: context
@@ -196,13 +196,13 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
     // Verify key exists
     let keyResult=await secureStorage.retrieveData(withIdentifier: keyIdentifier)
     guard case .success=keyResult else {
-      let context = CryptoLogContext(
+      let context=CryptoLogContext(
         operation: "decrypt",
         identifier: keyIdentifier,
         status: "error",
         metadata: LogMetadataDTOCollection().withPublic(key: "error", value: "keyNotFound")
       )
-      
+
       await logger.error(
         "Key not found for decryption: \(keyIdentifier)",
         context: context
@@ -233,24 +233,24 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
   ) async -> Result<String, SecurityStorageError> {
     // Check rate limiter
     if rateLimiter.isRateLimited(.hash) {
-      let context = CryptoLogContext(
+      let context=CryptoLogContext(
         operation: "hash",
         identifier: dataIdentifier,
         status: "rateLimited"
       )
-      
+
       await logger.warning("Rate limited hashing operation", context: context)
       return .failure(.operationFailed("Rate limited"))
     }
 
     // Input validation
     if dataIdentifier.isEmpty {
-      let context = CryptoLogContext(
+      let context=CryptoLogContext(
         operation: "hash",
         status: "error",
         metadata: LogMetadataDTOCollection().withPublic(key: "error", value: "emptyDataIdentifier")
       )
-      
+
       await logger.error("Empty data identifier provided for hashing", context: context)
       return .failure(.operationFailed("dataIdentifier cannot be empty"))
     }
@@ -258,13 +258,13 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
     // Verify data exists
     let dataResult=await secureStorage.retrieveData(withIdentifier: dataIdentifier)
     guard case .success=dataResult else {
-      let context = CryptoLogContext(
+      let context=CryptoLogContext(
         operation: "hash",
         identifier: dataIdentifier,
         status: "error",
         metadata: LogMetadataDTOCollection().withPublic(key: "error", value: "dataNotFound")
       )
-      
+
       await logger.error(
         "Data not found for hashing: \(dataIdentifier)",
         context: context
@@ -296,35 +296,35 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
   ) async -> Result<Bool, SecurityStorageError> {
     // Check rate limiter
     if rateLimiter.isRateLimited(.verify) {
-      let context = CryptoLogContext(
+      let context=CryptoLogContext(
         operation: "verifyHash",
         identifier: dataIdentifier,
         status: "rateLimited"
       )
-      
+
       await logger.warning("Rate limited hash verification operation", context: context)
       return .failure(.operationFailed("Rate limited"))
     }
 
     // Input validation
     if dataIdentifier.isEmpty {
-      let context = CryptoLogContext(
+      let context=CryptoLogContext(
         operation: "verifyHash",
         status: "error",
         metadata: LogMetadataDTOCollection().withPublic(key: "error", value: "emptyDataIdentifier")
       )
-      
+
       await logger.error("Empty data identifier provided for hash verification", context: context)
       return .failure(.operationFailed("dataIdentifier cannot be empty"))
     }
 
     if hashIdentifier.isEmpty {
-      let context = CryptoLogContext(
+      let context=CryptoLogContext(
         operation: "verifyHash",
         status: "error",
         metadata: LogMetadataDTOCollection().withPublic(key: "error", value: "emptyHashIdentifier")
       )
-      
+
       await logger.error("Empty hash identifier provided for verification", context: context)
       return .failure(.operationFailed("hashIdentifier cannot be empty"))
     }
@@ -332,13 +332,13 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
     // Verify data exists
     let dataResult=await secureStorage.retrieveData(withIdentifier: dataIdentifier)
     guard case .success=dataResult else {
-      let context = CryptoLogContext(
+      let context=CryptoLogContext(
         operation: "verifyHash",
         identifier: dataIdentifier,
         status: "error",
         metadata: LogMetadataDTOCollection().withPublic(key: "error", value: "dataNotFound")
       )
-      
+
       await logger.error(
         "Data not found for hash verification: \(dataIdentifier)",
         context: context
@@ -349,13 +349,13 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
     // Verify hash exists
     let hashResult=await secureStorage.retrieveData(withIdentifier: hashIdentifier)
     guard case .success=hashResult else {
-      let context = CryptoLogContext(
+      let context=CryptoLogContext(
         operation: "verifyHash",
         identifier: hashIdentifier,
         status: "error",
         metadata: LogMetadataDTOCollection().withPublic(key: "error", value: "hashNotFound")
       )
-      
+
       await logger.error(
         "Hash not found for verification: \(hashIdentifier)",
         context: context
@@ -386,24 +386,24 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
   ) async -> Result<[UInt8], SecurityStorageError> {
     // Check rate limiter
     if rateLimiter.isRateLimited(.export) {
-      let context = CryptoLogContext(
+      let context=CryptoLogContext(
         operation: "exportData",
         identifier: identifier,
         status: "rateLimited"
       )
-      
+
       await logger.warning("Rate limited data export operation", context: context)
       return .failure(.operationFailed("Rate limited"))
     }
 
     // Input validation
     if identifier.isEmpty {
-      let context = CryptoLogContext(
+      let context=CryptoLogContext(
         operation: "exportData",
         status: "error",
         metadata: LogMetadataDTOCollection().withPublic(key: "error", value: "emptyIdentifier")
       )
-      
+
       await logger.error("Empty identifier provided for data export", context: context)
       return .failure(.operationFailed("identifier cannot be empty"))
     }
@@ -425,11 +425,11 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
   ) async -> Result<String, SecurityStorageError> {
     // Check rate limiter
     if rateLimiter.isRateLimited(.generateKey) {
-      let context = CryptoLogContext(
+      let context=CryptoLogContext(
         operation: "generateKey",
         status: "rateLimited"
       )
-      
+
       await logger.warning("Rate limited key generation operation", context: context)
       return .failure(.operationFailed("Rate limited"))
     }
@@ -444,11 +444,16 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
  */
 public class RateLimiter {
   public enum Operation: String {
-    case encrypt, decrypt, hash, verify, export, generateKey
+    case encrypt
+    case decrypt
+    case hash
+    case verify
+    case export
+    case generateKey
   }
 
-  private var lastOperationTime: [Operation: Date] = [:]
-  private let minimumInterval: TimeInterval = 0.1  // 100ms minimum between operations
+  private var lastOperationTime: [Operation: Date]=[:]
+  private let minimumInterval: TimeInterval=0.1 // 100ms minimum between operations
 
   /**
    Check if an operation is currently rate limited.
@@ -458,14 +463,16 @@ public class RateLimiter {
    - Returns: true if the operation is rate limited, false otherwise
    */
   public func isRateLimited(_ operation: Operation) -> Bool {
-    let now = Date()
-    
-    if let lastTime = lastOperationTime[operation],
-       now.timeIntervalSince(lastTime) < minimumInterval {
+    let now=Date()
+
+    if
+      let lastTime=lastOperationTime[operation],
+      now.timeIntervalSince(lastTime) < minimumInterval
+    {
       return true
     }
-    
-    lastOperationTime[operation] = now
+
+    lastOperationTime[operation]=now
     return false
   }
 }

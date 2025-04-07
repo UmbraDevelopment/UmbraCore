@@ -1,6 +1,6 @@
+import CoreSecurityTypes
 import Foundation
 import SecurityCoreInterfaces
-import CoreSecurityTypes
 
 /**
  This file contains adapter types that bridge between different module implementations
@@ -38,8 +38,10 @@ public enum EncryptionOptionsAdapter {
    - Parameter options: The options to convert
    - Returns: The converted options or nil if input was nil
    */
-  public static func convertToInterface(_ options: LocalEncryptionOptions?) -> SecurityCoreInterfaces
-  .EncryptionOptions? {
+  public static func convertToInterface(_ options: LocalEncryptionOptions?)
+    -> SecurityCoreInterfaces
+    .EncryptionOptions?
+  {
     guard let options else { return nil }
 
     return SecurityCoreInterfaces.EncryptionOptions(
@@ -66,7 +68,10 @@ public enum EncryptionOptionsAdapter {
     }
   }
 
-  private static func convertToInterface(_ algorithm: CoreSecurityTypes.EncryptionAlgorithm) -> SecurityCoreInterfaces
+  private static func convertToInterface(
+    _ algorithm: CoreSecurityTypes
+      .EncryptionAlgorithm
+  ) -> SecurityCoreInterfaces
   .EncryptionAlgorithm {
     switch algorithm {
       case .aes256CBC, .aes256GCM:
@@ -162,8 +167,10 @@ public enum DecryptionOptionsAdapter {
    - Parameter options: The options to convert
    - Returns: The converted options or nil if input was nil
    */
-  public static func convertToInterface(_ options: LocalDecryptionOptions?) -> SecurityCoreInterfaces
-  .DecryptionOptions? {
+  public static func convertToInterface(_ options: LocalDecryptionOptions?)
+    -> SecurityCoreInterfaces
+    .DecryptionOptions?
+  {
     guard let options else { return nil }
 
     return SecurityCoreInterfaces.DecryptionOptions(
@@ -185,7 +192,10 @@ public enum HashingOptionsAdapter {
    - Parameter options: The options to convert
    - Returns: The converted options or nil if input was nil
    */
-  public static func convert(_ options: SecurityCoreInterfaces.HashingOptions?) -> LocalHashingOptions? {
+  public static func convert(
+    _ options: SecurityCoreInterfaces
+      .HashingOptions?
+  ) -> LocalHashingOptions? {
     guard let options else { return nil }
 
     return LocalHashingOptions(
@@ -200,12 +210,13 @@ public enum HashingOptionsAdapter {
    - Parameter options: The options to convert
    - Returns: The converted options or nil if input was nil
    */
-  public static func convertToInterface(_ options: LocalHashingOptions?) -> SecurityCoreInterfaces.HashingOptions? {
+  public static func convertToInterface(_ options: LocalHashingOptions?) -> SecurityCoreInterfaces
+  .HashingOptions? {
     guard let options else { return nil }
 
     return SecurityCoreInterfaces.HashingOptions(
       algorithm: convertToInterface(options.algorithm),
-      salt: options.useSalt ? [0x01, 0x02, 0x03, 0x04] : nil  // Default salt if needed
+      salt: options.useSalt ? [0x01, 0x02, 0x03, 0x04] : nil // Default salt if needed
     )
   }
 

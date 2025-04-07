@@ -62,7 +62,7 @@ public actor SecureCryptoStorage {
   public func storeKey(
     _ key: Data,
     identifier: String,
-    purpose: String,
+    purpose _: String,
     algorithm _: String?=nil
   ) async throws {
     // Configuration moved directly into the comment for reference
@@ -362,8 +362,8 @@ public actor SecureCryptoStorage {
       context: CryptoLogContext(
         operation: "deleteData",
         additionalContext: LogMetadataDTOCollection().with(
-          key: "identifier", 
-          value: identifier, 
+          key: "identifier",
+          value: identifier,
           privacyLevel: .private
         )
       )
@@ -381,8 +381,8 @@ public actor SecureCryptoStorage {
         context: CryptoLogContext(
           operation: "deleteData",
           additionalContext: LogMetadataDTOCollection().with(
-            key: "identifier", 
-            value: identifier, 
+            key: "identifier",
+            value: identifier,
             privacyLevel: .private
           )
         )
@@ -395,26 +395,26 @@ public actor SecureCryptoStorage {
 
   /**
    Checks if data with the specified identifier exists.
-   
+
    - Parameter identifier: The identifier to check
    - Returns: True if data exists, false otherwise
    - Throws: Error if the operation fails
    */
   public func containsData(identifier: String) async throws -> Bool {
-    let context = CryptoLogContext(
+    let context=CryptoLogContext(
       operation: "containsData",
       additionalContext: LogMetadataDTOCollection()
         .withPrivate(key: "identifier", value: identifier)
     )
-    
+
     await logger.debug(
       "Checking if data exists with identifier: \(identifier)",
       context: context
     )
-    
+
     // Currently we just attempt to retrieve the data and check if it exists
     // This could be optimized in a real implementation to avoid loading the data
-    let secureStore = try await getSecureStorage()
+    let secureStore=try await getSecureStorage()
     return secureStore.hasKey(identifier)
   }
 }

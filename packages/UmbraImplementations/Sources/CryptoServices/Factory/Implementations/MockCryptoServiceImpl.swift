@@ -68,19 +68,19 @@ public actor MockCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
 
   /**
    Creates a new mock crypto service with the specified configuration
-   
+
    - Parameter configuration: The configuration for this mock implementation
    - Parameter logger: The logger for diagnostic information
    - Parameter secureStorage: The secure storage to use
    */
   public init(
-    configuration: Configuration = Configuration(),
+    configuration: Configuration=Configuration(),
     logger: LoggingProtocol,
     secureStorage: SecureStorageProtocol
   ) {
-    self.configuration = configuration
-    self.logger = logger
-    self.secureStorage = secureStorage
+    self.configuration=configuration
+    self.logger=logger
+    self.secureStorage=secureStorage
   }
 
   /**
@@ -97,11 +97,12 @@ public actor MockCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
     keyIdentifier _: String,
     options _: SecurityCoreInterfaces.EncryptionOptions?
   ) async -> Result<String, SecurityStorageError> {
-    await logger.debug("Encrypting data \(dataIdentifier)",
+    await logger.debug(
+      "Encrypting data \(dataIdentifier)",
       context: CryptoLogContext(
         operation: "encrypt",
         additionalContext: LogMetadataDTOCollection().withPrivate(
-          key: "dataIdentifier", 
+          key: "dataIdentifier",
           value: dataIdentifier
         )
       )
@@ -116,11 +117,12 @@ public actor MockCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
       // Store encrypted data
       _=await secureStorage.storeData(mockData, withIdentifier: encryptedID)
 
-      await logger.debug("Encryption succeeded: \(encryptedID)",
+      await logger.debug(
+        "Encryption succeeded: \(encryptedID)",
         context: CryptoLogContext(
           operation: "encrypt",
           additionalContext: LogMetadataDTOCollection().withPrivate(
-            key: "encryptedID", 
+            key: "encryptedID",
             value: encryptedID
           )
         )
@@ -128,11 +130,12 @@ public actor MockCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
 
       return .success(encryptedID)
     } else {
-      await logger.debug("Encryption failed",
+      await logger.debug(
+        "Encryption failed",
         context: CryptoLogContext(
           operation: "encrypt",
           additionalContext: LogMetadataDTOCollection().withPublic(
-            key: "result", 
+            key: "result",
             value: "failure"
           )
         )
@@ -155,11 +158,12 @@ public actor MockCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
     keyIdentifier _: String,
     options _: SecurityCoreInterfaces.DecryptionOptions?
   ) async -> Result<String, SecurityStorageError> {
-    await logger.debug("Decrypting data \(encryptedDataIdentifier)",
+    await logger.debug(
+      "Decrypting data \(encryptedDataIdentifier)",
       context: CryptoLogContext(
         operation: "decrypt",
         additionalContext: LogMetadataDTOCollection().withPrivate(
-          key: "encryptedDataIdentifier", 
+          key: "encryptedDataIdentifier",
           value: encryptedDataIdentifier
         )
       )
@@ -173,11 +177,12 @@ public actor MockCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
 
       _=await secureStorage.storeData(mockData, withIdentifier: decryptedID)
 
-      await logger.debug("Decryption succeeded: \(decryptedID)",
+      await logger.debug(
+        "Decryption succeeded: \(decryptedID)",
         context: CryptoLogContext(
           operation: "decrypt",
           additionalContext: LogMetadataDTOCollection().withPrivate(
-            key: "decryptedID", 
+            key: "decryptedID",
             value: decryptedID
           )
         )
@@ -185,11 +190,12 @@ public actor MockCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
 
       return .success(decryptedID)
     } else {
-      await logger.debug("Decryption failed",
+      await logger.debug(
+        "Decryption failed",
         context: CryptoLogContext(
           operation: "decrypt",
           additionalContext: LogMetadataDTOCollection().withPublic(
-            key: "result", 
+            key: "result",
             value: "failure"
           )
         )
@@ -210,11 +216,12 @@ public actor MockCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
     dataIdentifier: String,
     options _: SecurityCoreInterfaces.HashingOptions?
   ) async -> Result<String, SecurityStorageError> {
-    await logger.debug("Hashing data \(dataIdentifier)",
+    await logger.debug(
+      "Hashing data \(dataIdentifier)",
       context: CryptoLogContext(
         operation: "hash",
         additionalContext: LogMetadataDTOCollection().withPrivate(
-          key: "dataIdentifier", 
+          key: "dataIdentifier",
           value: dataIdentifier
         )
       )
@@ -226,11 +233,12 @@ public actor MockCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
       // Store a mock hash value
       _=await secureStorage.storeData([0x01, 0x02, 0x03, 0x04], withIdentifier: identifier)
 
-      await logger.debug("Hashing succeeded: \(identifier)",
+      await logger.debug(
+        "Hashing succeeded: \(identifier)",
         context: CryptoLogContext(
           operation: "hash",
           additionalContext: LogMetadataDTOCollection().withPrivate(
-            key: "identifier", 
+            key: "identifier",
             value: identifier
           )
         )
@@ -238,11 +246,12 @@ public actor MockCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
 
       return .success(identifier)
     } else {
-      await logger.debug("Hashing failed",
+      await logger.debug(
+        "Hashing failed",
         context: CryptoLogContext(
           operation: "hash",
           additionalContext: LogMetadataDTOCollection().withPublic(
-            key: "result", 
+            key: "result",
             value: "failure"
           )
         )
@@ -265,33 +274,36 @@ public actor MockCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
     hashIdentifier _: String,
     options _: SecurityCoreInterfaces.HashingOptions?
   ) async -> Result<Bool, SecurityStorageError> {
-    await logger.debug("Verifying hash",
+    await logger.debug(
+      "Verifying hash",
       context: CryptoLogContext(
         operation: "verifyHash",
         additionalContext: LogMetadataDTOCollection().withPublic(
-          key: "operation", 
+          key: "operation",
           value: "verifyHash"
         )
       )
     )
 
     if configuration.verificationSucceeds {
-      await logger.debug("Verification succeeded",
+      await logger.debug(
+        "Verification succeeded",
         context: CryptoLogContext(
           operation: "verifyHash",
           additionalContext: LogMetadataDTOCollection().withPublic(
-            key: "result", 
+            key: "result",
             value: "success"
           )
         )
       )
       return .success(configuration.hashMatches)
     } else {
-      await logger.debug("Verification failed",
+      await logger.debug(
+        "Verification failed",
         context: CryptoLogContext(
           operation: "verifyHash",
           additionalContext: LogMetadataDTOCollection().withPublic(
-            key: "result", 
+            key: "result",
             value: "failure"
           )
         )
@@ -312,11 +324,12 @@ public actor MockCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
     length: Int,
     options _: SecurityCoreInterfaces.KeyGenerationOptions?
   ) async -> Result<String, SecurityStorageError> {
-    await logger.debug("Generating key with length \(length)",
+    await logger.debug(
+      "Generating key with length \(length)",
       context: CryptoLogContext(
         operation: "generateKey",
         additionalContext: LogMetadataDTOCollection().withPrivate(
-          key: "length", 
+          key: "length",
           value: String(length)
         )
       )
@@ -330,11 +343,12 @@ public actor MockCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
 
       _=await secureStorage.storeData(keyData, withIdentifier: keyID)
 
-      await logger.debug("Key generation succeeded: \(keyID)",
+      await logger.debug(
+        "Key generation succeeded: \(keyID)",
         context: CryptoLogContext(
           operation: "generateKey",
           additionalContext: LogMetadataDTOCollection().withPrivate(
-            key: "keyID", 
+            key: "keyID",
             value: keyID
           )
         )
@@ -342,11 +356,12 @@ public actor MockCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
 
       return .success(keyID)
     } else {
-      await logger.debug("Key generation failed",
+      await logger.debug(
+        "Key generation failed",
         context: CryptoLogContext(
           operation: "generateKey",
           additionalContext: LogMetadataDTOCollection().withPublic(
-            key: "result", 
+            key: "result",
             value: "failure"
           )
         )
@@ -367,11 +382,12 @@ public actor MockCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
     _ data: [UInt8],
     customIdentifier: String?
   ) async -> Result<String, SecurityStorageError> {
-    await logger.debug("Importing data with custom identifier \(customIdentifier ?? "nil")",
+    await logger.debug(
+      "Importing data with custom identifier \(customIdentifier ?? "nil")",
       context: CryptoLogContext(
         operation: "importData",
         additionalContext: LogMetadataDTOCollection().withPrivate(
-          key: "customIdentifier", 
+          key: "customIdentifier",
           value: customIdentifier ?? "nil"
         )
       )
@@ -382,11 +398,12 @@ public actor MockCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
 
       _=await secureStorage.storeData(data, withIdentifier: identifier)
 
-      await logger.debug("Import succeeded: \(identifier)",
+      await logger.debug(
+        "Import succeeded: \(identifier)",
         context: CryptoLogContext(
           operation: "importData",
           additionalContext: LogMetadataDTOCollection().withPrivate(
-            key: "identifier", 
+            key: "identifier",
             value: identifier
           )
         )
@@ -394,11 +411,12 @@ public actor MockCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
 
       return .success(identifier)
     } else {
-      await logger.debug("Import failed",
+      await logger.debug(
+        "Import failed",
         context: CryptoLogContext(
           operation: "importData",
           additionalContext: LogMetadataDTOCollection().withPublic(
-            key: "result", 
+            key: "result",
             value: "failure"
           )
         )
@@ -416,33 +434,36 @@ public actor MockCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
   public func exportData(
     identifier: String
   ) async -> Result<[UInt8], SecurityStorageError> {
-    await logger.debug("Exporting data \(identifier)",
+    await logger.debug(
+      "Exporting data \(identifier)",
       context: CryptoLogContext(
         operation: "exportData",
         additionalContext: LogMetadataDTOCollection().withPrivate(
-          key: "identifier", 
+          key: "identifier",
           value: identifier
         )
       )
     )
 
     if configuration.exportDataSucceeds {
-      await logger.debug("Export succeeded",
+      await logger.debug(
+        "Export succeeded",
         context: CryptoLogContext(
           operation: "exportData",
           additionalContext: LogMetadataDTOCollection().withPublic(
-            key: "result", 
+            key: "result",
             value: "success"
           )
         )
       )
       return .success([UInt8](repeating: 42, count: 32))
     } else {
-      await logger.debug("Export failed",
+      await logger.debug(
+        "Export failed",
         context: CryptoLogContext(
           operation: "exportData",
           additionalContext: LogMetadataDTOCollection().withPublic(
-            key: "result", 
+            key: "result",
             value: "failure"
           )
         )
@@ -461,36 +482,39 @@ public actor MockCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
    */
   public func generateHash(
     dataIdentifier: String,
-    options: HashingOptions?
+    options _: HashingOptions?
   ) async -> Result<String, SecurityStorageError> {
-    await logger.debug("Generating hash for data \(dataIdentifier)",
+    await logger.debug(
+      "Generating hash for data \(dataIdentifier)",
       context: CryptoLogContext(
         operation: "generateHash",
         additionalContext: LogMetadataDTOCollection().withPrivate(
-          key: "dataIdentifier", 
+          key: "dataIdentifier",
           value: dataIdentifier
         )
       )
     )
-    
+
     if configuration.hashingSucceeds {
-      let hashIdentifier = "mock_hash_\(dataIdentifier)"
-      await logger.debug("Hash generation succeeded: \(hashIdentifier)",
+      let hashIdentifier="mock_hash_\(dataIdentifier)"
+      await logger.debug(
+        "Hash generation succeeded: \(hashIdentifier)",
         context: CryptoLogContext(
           operation: "generateHash",
           additionalContext: LogMetadataDTOCollection().withPrivate(
-            key: "hashIdentifier", 
+            key: "hashIdentifier",
             value: hashIdentifier
           )
         )
       )
       return .success(hashIdentifier)
     } else {
-      await logger.debug("Hash generation failed",
+      await logger.debug(
+        "Hash generation failed",
         context: CryptoLogContext(
           operation: "generateHash",
           additionalContext: LogMetadataDTOCollection().withPublic(
-            key: "result", 
+            key: "result",
             value: "failure"
           )
         )
@@ -508,36 +532,39 @@ public actor MockCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
    - Returns: Success or an error.
    */
   public func storeData(
-    data: Data,
+    data _: Data,
     identifier: String
   ) async -> Result<Void, SecurityStorageError> {
-    await logger.debug("Storing data with identifier \(identifier)",
+    await logger.debug(
+      "Storing data with identifier \(identifier)",
       context: CryptoLogContext(
         operation: "storeData",
         additionalContext: LogMetadataDTOCollection().withPrivate(
-          key: "identifier", 
+          key: "identifier",
           value: identifier
         )
       )
     )
-    
+
     if configuration.storageSucceeds {
-      await logger.debug("Storage succeeded",
+      await logger.debug(
+        "Storage succeeded",
         context: CryptoLogContext(
           operation: "storeData",
           additionalContext: LogMetadataDTOCollection().withPublic(
-            key: "result", 
+            key: "result",
             value: "success"
           )
         )
       )
       return .success(())
     } else {
-      await logger.debug("Storage failed",
+      await logger.debug(
+        "Storage failed",
         context: CryptoLogContext(
           operation: "storeData",
           additionalContext: LogMetadataDTOCollection().withPublic(
-            key: "result", 
+            key: "result",
             value: "failure"
           )
         )
@@ -555,22 +582,24 @@ public actor MockCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
   public func retrieveData(
     identifier: String
   ) async -> Result<Data, SecurityStorageError> {
-    await logger.debug("Retrieving data with identifier \(identifier)",
+    await logger.debug(
+      "Retrieving data with identifier \(identifier)",
       context: CryptoLogContext(
         operation: "retrieveData",
         additionalContext: LogMetadataDTOCollection().withPrivate(
-          key: "identifier", 
+          key: "identifier",
           value: identifier
         )
       )
     )
-    
+
     if configuration.storageSucceeds {
-      await logger.debug("Retrieval succeeded",
+      await logger.debug(
+        "Retrieval succeeded",
         context: CryptoLogContext(
           operation: "retrieveData",
           additionalContext: LogMetadataDTOCollection().withPublic(
-            key: "result", 
+            key: "result",
             value: "success"
           )
         )
@@ -578,11 +607,12 @@ public actor MockCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
       // Return some mock data
       return .success(Data(repeating: 42, count: 32))
     } else {
-      await logger.debug("Retrieval failed",
+      await logger.debug(
+        "Retrieval failed",
         context: CryptoLogContext(
           operation: "retrieveData",
           additionalContext: LogMetadataDTOCollection().withPublic(
-            key: "result", 
+            key: "result",
             value: "failure"
           )
         )
@@ -600,33 +630,36 @@ public actor MockCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
   public func deleteData(
     identifier: String
   ) async -> Result<Void, SecurityStorageError> {
-    await logger.debug("Deleting data with identifier \(identifier)",
+    await logger.debug(
+      "Deleting data with identifier \(identifier)",
       context: CryptoLogContext(
         operation: "deleteData",
         additionalContext: LogMetadataDTOCollection().withPrivate(
-          key: "identifier", 
+          key: "identifier",
           value: identifier
         )
       )
     )
-    
+
     if configuration.storageSucceeds {
-      await logger.debug("Deletion succeeded",
+      await logger.debug(
+        "Deletion succeeded",
         context: CryptoLogContext(
           operation: "deleteData",
           additionalContext: LogMetadataDTOCollection().withPublic(
-            key: "result", 
+            key: "result",
             value: "success"
           )
         )
       )
       return .success(())
     } else {
-      await logger.debug("Deletion failed",
+      await logger.debug(
+        "Deletion failed",
         context: CryptoLogContext(
           operation: "deleteData",
           additionalContext: LogMetadataDTOCollection().withPublic(
-            key: "result", 
+            key: "result",
             value: "failure"
           )
         )
@@ -644,36 +677,39 @@ public actor MockCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
    - Returns: The identifier used for storage (which might be the custom one or a derived one), or an error.
    */
   public func importData(
-    _ data: Data,
+    _: Data,
     customIdentifier: String
   ) async -> Result<String, SecurityStorageError> {
-    await logger.debug("Importing data with custom identifier \(customIdentifier)",
+    await logger.debug(
+      "Importing data with custom identifier \(customIdentifier)",
       context: CryptoLogContext(
         operation: "importData",
         additionalContext: LogMetadataDTOCollection().withPrivate(
-          key: "customIdentifier", 
+          key: "customIdentifier",
           value: customIdentifier
         )
       )
     )
-    
+
     if configuration.storageSucceeds {
-      await logger.debug("Import succeeded",
+      await logger.debug(
+        "Import succeeded",
         context: CryptoLogContext(
           operation: "importData",
           additionalContext: LogMetadataDTOCollection().withPublic(
-            key: "result", 
+            key: "result",
             value: "success"
           )
         )
       )
       return .success(customIdentifier)
     } else {
-      await logger.debug("Import failed",
+      await logger.debug(
+        "Import failed",
         context: CryptoLogContext(
           operation: "importData",
           additionalContext: LogMetadataDTOCollection().withPublic(
-            key: "result", 
+            key: "result",
             value: "failure"
           )
         )

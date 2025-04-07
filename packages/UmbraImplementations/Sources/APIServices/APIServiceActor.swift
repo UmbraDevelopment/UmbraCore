@@ -34,7 +34,7 @@ public actor APIServiceActor: APIServiceProtocol {
   private let securityBookmarkService: SecurityBookmarkProtocol
 
   /// Continuation for API events
-  private var eventContinuations: [UUID: AsyncStream<APIEventDTO>.Continuation] = [:]
+  private var eventContinuations: [UUID: AsyncStream<APIEventDTO>.Continuation]=[:]
 
   // MARK: - Initialisation
 
@@ -48,9 +48,9 @@ public actor APIServiceActor: APIServiceProtocol {
     logger: DomainLogger,
     securityBookmarkService: SecurityBookmarkProtocol
   ) {
-    self.configuration = configuration
-    self.logger = logger
-    self.securityBookmarkService = securityBookmarkService
+    self.configuration=configuration
+    self.logger=logger
+    self.securityBookmarkService=securityBookmarkService
   }
 
   // MARK: - APIServiceProtocol Implementation
@@ -70,7 +70,7 @@ public actor APIServiceActor: APIServiceProtocol {
     )
 
     // Update the configuration
-    self.configuration = configuration
+    self.configuration=configuration
 
     // Publish an initialisation event
     await publishEvent(
@@ -92,18 +92,18 @@ public actor APIServiceActor: APIServiceProtocol {
   /// - Throws: APIError if bookmark creation fails
   public nonisolated func createEncryptedBookmark(url: String, identifier: String) async throws {
     await logger.debug(
-      "Creating encrypted bookmark", 
+      "Creating encrypted bookmark",
       metadata: LogMetadataDTOCollection()
         .withPublic(key: "identifier", value: identifier)
         .withPrivate(key: "url", value: url)
     )
-    
+
     // Using the SecurityBookmarkProtocol method directly
     try await securityBookmarkService.createBookmark(
       for: url,
       withIdentifier: identifier
     )
-    
+
     await publishEvent(
       APIEventDTO(
         identifier: UUID().uuidString,
@@ -122,15 +122,15 @@ public actor APIServiceActor: APIServiceProtocol {
   /// - Throws: APIError if bookmark resolution fails
   public nonisolated func resolveEncryptedBookmark(identifier: String) async throws -> String {
     await logger.debug(
-      "Resolving encrypted bookmark", 
+      "Resolving encrypted bookmark",
       metadata: LogMetadataDTOCollection()
         .withPublic(key: "identifier", value: identifier)
     )
-    
+
     // Using the SecurityBookmarkProtocol method directly
     do {
-      let url = try await securityBookmarkService.resolveBookmark(withIdentifier: identifier)
-      
+      let url=try await securityBookmarkService.resolveBookmark(withIdentifier: identifier)
+
       await publishEvent(
         APIEventDTO(
           identifier: UUID().uuidString,
@@ -141,16 +141,16 @@ public actor APIServiceActor: APIServiceProtocol {
           context: "Bookmark resolved for identifier: \(identifier)"
         )
       )
-      
+
       return url
     } catch {
       await logger.error(
-        "Failed to resolve bookmark", 
+        "Failed to resolve bookmark",
         metadata: LogMetadataDTOCollection()
           .withPublic(key: "identifier", value: identifier)
           .withPublic(key: "error", value: "\(error)")
       )
-      
+
       throw APIError.resourceNotFound(
         message: "The bookmark could not be found or resolved",
         identifier: identifier
@@ -163,21 +163,21 @@ public actor APIServiceActor: APIServiceProtocol {
   /// - Throws: APIError if bookmark deletion fails
   public nonisolated func deleteEncryptedBookmark(identifier: String) async throws {
     await logger.debug(
-      "Deleting encrypted bookmark", 
+      "Deleting encrypted bookmark",
       metadata: LogMetadataDTOCollection()
         .withPublic(key: "identifier", value: identifier)
     )
-    
+
     // Try to delete the bookmark, catching any errors
     do {
       try await securityBookmarkService.deleteBookmark(withIdentifier: identifier)
-      
+
       await logger.info(
-        "Encrypted bookmark deleted", 
+        "Encrypted bookmark deleted",
         metadata: LogMetadataDTOCollection()
           .withPublic(key: "identifier", value: identifier)
       )
-      
+
       await publishEvent(
         APIEventDTO(
           identifier: UUID().uuidString,
@@ -190,12 +190,12 @@ public actor APIServiceActor: APIServiceProtocol {
       )
     } catch {
       await logger.error(
-        "Failed to delete bookmark", 
+        "Failed to delete bookmark",
         metadata: LogMetadataDTOCollection()
           .withPublic(key: "identifier", value: identifier)
           .withPublic(key: "error", value: "\(error)")
       )
-      
+
       throw APIError.resourceNotFound(
         message: "The bookmark could not be found or deleted",
         identifier: identifier
@@ -206,54 +206,55 @@ public actor APIServiceActor: APIServiceProtocol {
   /// Retrieves the current version information of the API
   /// - Returns: Version information as APIVersionDTO
   public nonisolated func getVersion() async -> APIVersionDTO {
-    let version = APIVersionDTO(
+    let version=APIVersionDTO(
       major: 1,
       minor: 0,
       patch: 0,
       buildIdentifier: "alpha-build"
     )
-    
+
     await logger.debug(
-      "Returning API version information", 
+      "Returning API version information",
       metadata: LogMetadataDTOCollection()
         .withPublic(key: "version", value: "\(version.major).\(version.minor).\(version.patch)")
         .withPublic(key: "buildIdentifier", value: version.buildIdentifier ?? "")
     )
-    
+
     return version
   }
 
   /// Subscribes to API service events
   /// - Parameter filter: Optional filter to limit the events received
   /// - Returns: An async sequence of APIEventDTO objects
-  public nonisolated func subscribeToEvents(filter: APIEventFilterDTO?) -> AsyncStream<APIEventDTO> {
-    return AsyncStream { continuation in
+  public nonisolated func subscribeToEvents(filter: APIEventFilterDTO?)
+  -> AsyncStream<APIEventDTO> {
+    AsyncStream { continuation in
       // Create a task to handle the event subscription
-      let task = Task {
+      let task=Task {
         do {
           await logger.debug(
-            "Subscribing to API events", 
+            "Subscribing to API events",
             metadata: LogMetadataDTOCollection()
               .withPublic(key: "hasFilter", value: filter != nil ? "true" : "false")
           )
-          
+
           // Register the continuation with the event bus
           await registerEventSubscriber(continuation: continuation, filter: filter)
-          
+
           // Keep the task alive until cancelled
           try await Task.sleep(for: .seconds(365 * 24 * 60 * 60)) // Effectively forever
         } catch {
           await logger.error(
-            "Event subscription ended unexpectedly", 
+            "Event subscription ended unexpectedly",
             metadata: LogMetadataDTOCollection()
               .withPublic(key: "error", value: "\(error)")
           )
           continuation.finish()
         }
       }
-      
+
       // Set up cancellation handler
-      continuation.onTermination = { _ in
+      continuation.onTermination={ _ in
         task.cancel()
         Task {
           await unregisterEventSubscriber(continuation: continuation)
@@ -305,30 +306,30 @@ public actor APIServiceActor: APIServiceProtocol {
 
   // Helper methods for event subscription management
   private func registerEventSubscriber(
-      continuation: AsyncStream<APIEventDTO>.Continuation,
-      filter: APIEventFilterDTO?
+    continuation: AsyncStream<APIEventDTO>.Continuation,
+    filter: APIEventFilterDTO?
   ) async {
     // In a real implementation, we would register this continuation with an event bus
     // For now, we'll just log that it was called
     await logger.info(
-      "Registered event subscriber", 
+      "Registered event subscriber",
       metadata: LogMetadataDTOCollection()
         .withPublic(key: "hasFilter", value: filter != nil ? "true" : "false")
     )
-    
+
     // Store the continuation in a collection to manage active subscribers
-    self.eventContinuations[UUID()] = continuation
+    eventContinuations[UUID()]=continuation
   }
-  
+
   private func unregisterEventSubscriber(
-      continuation: AsyncStream<APIEventDTO>.Continuation
+    continuation: AsyncStream<APIEventDTO>.Continuation
   ) async {
     // In a real implementation, we would unregister this continuation from an event bus
     // For now, we'll just log that it was called
     await logger.info("Unregistered event subscriber", metadata: LogMetadataDTOCollection())
-    
+
     // Remove the continuation from our collection
-    for (id, value) in self.eventContinuations where value === continuation {
+    for (id, value) in eventContinuations where value === continuation {
       self.eventContinuations.removeValue(forKey: id)
     }
   }

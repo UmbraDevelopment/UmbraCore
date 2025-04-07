@@ -201,14 +201,14 @@ public enum KeyPurpose: String, Sendable {
 
 /**
  The algorithm to use for encryption.
- 
+
  This uses the canonical EncryptionAlgorithm from CoreSecurityTypes.
  */
-public typealias EncryptionAlgorithm = CoreSecurityTypes.EncryptionAlgorithm
+public typealias EncryptionAlgorithm=CoreSecurityTypes.EncryptionAlgorithm
 
 /**
  The algorithm to use for hashing.
- 
+
  This uses the canonical HashAlgorithm from CoreSecurityTypes.
  */
-public typealias HashAlgorithm = CoreSecurityTypes.HashAlgorithm
+public typealias HashAlgorithm=CoreSecurityTypes.HashAlgorithm

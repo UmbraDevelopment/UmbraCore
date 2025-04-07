@@ -147,7 +147,8 @@ private actor DefaultKeyManager: KeyManagementProtocol {
     return .failure(.operationFailed(reason: "Key not found: \(identifier)"))
   }
 
-  public func deleteKey(withIdentifier identifier: String) async -> Result<Void, SecurityProtocolError> {
+  public func deleteKey(withIdentifier identifier: String) async
+  -> Result<Void, SecurityProtocolError> {
     await logger.warning(
       "Fallback key manager cannot delete keys",
       context: KeychainLogContext(

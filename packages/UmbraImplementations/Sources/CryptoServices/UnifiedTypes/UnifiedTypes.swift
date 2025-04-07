@@ -100,12 +100,12 @@ public enum UnifiedCryptoTypes {
         padding=nil
       }
     }
-    
+
     // Implement Equatable manually
     public static func == (lhs: EncryptionOptions, rhs: EncryptionOptions) -> Bool {
       lhs.algorithm == rhs.algorithm &&
-      lhs.authenticatedData == rhs.authenticatedData &&
-      lhs.padding == rhs.padding
+        lhs.authenticatedData == rhs.authenticatedData &&
+        lhs.padding == rhs.padding
     }
   }
 
@@ -149,12 +149,12 @@ public enum UnifiedCryptoTypes {
         padding=nil
       }
     }
-    
+
     // Implement Equatable manually
     public static func == (lhs: DecryptionOptions, rhs: DecryptionOptions) -> Bool {
       lhs.algorithm == rhs.algorithm &&
-      lhs.authenticatedData == rhs.authenticatedData &&
-      lhs.padding == rhs.padding
+        lhs.authenticatedData == rhs.authenticatedData &&
+        lhs.padding == rhs.padding
     }
   }
 

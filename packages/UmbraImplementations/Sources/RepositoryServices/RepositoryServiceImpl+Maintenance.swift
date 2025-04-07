@@ -20,7 +20,7 @@ extension RepositoryServiceImpl {
     checkUnused: Bool
   ) async throws -> RepositoryStatistics {
     // Create repository log context with maintenance-specific data
-    let context = RepositoryLogContext(
+    let context=RepositoryLogContext(
       repositoryID: identifier,
       operation: "maintenance",
       additionalMetadata: [
@@ -42,7 +42,10 @@ extension RepositoryServiceImpl {
       await logger.info("Repository maintenance completed successfully", context: context)
       return stats
     } catch {
-      await logger.error("Repository maintenance failed: \(error.localizedDescription)", context: context)
+      await logger.error(
+        "Repository maintenance failed: \(error.localizedDescription)",
+        context: context
+      )
       throw RepositoryError.internalError
     }
   }
@@ -55,7 +58,7 @@ extension RepositoryServiceImpl {
   ///           or other repository errors if repair fails.
   public func repairRepository(identifier: String) async throws -> Bool {
     // Create repository log context
-    let context = RepositoryLogContext(
+    let context=RepositoryLogContext(
       repositoryID: identifier,
       operation: "repair"
     )
@@ -73,7 +76,10 @@ extension RepositoryServiceImpl {
       await logger.info("Repository repair result: \(successful)", context: context)
       return successful
     } catch {
-      await logger.error("Repository repair failed: \(error.localizedDescription)", context: context)
+      await logger.error(
+        "Repository repair failed: \(error.localizedDescription)",
+        context: context
+      )
       throw RepositoryError.internalError
     }
   }
@@ -85,7 +91,7 @@ extension RepositoryServiceImpl {
   ///           or other repository errors if pruning fails.
   public func pruneRepository(identifier: String) async throws {
     // Create repository log context
-    let context = RepositoryLogContext(
+    let context=RepositoryLogContext(
       repositoryID: identifier,
       operation: "prune"
     )
@@ -102,7 +108,10 @@ extension RepositoryServiceImpl {
       try await repository.prune()
       await logger.info("Repository pruned successfully", context: context)
     } catch {
-      await logger.error("Repository pruning failed: \(error.localizedDescription)", context: context)
+      await logger.error(
+        "Repository pruning failed: \(error.localizedDescription)",
+        context: context
+      )
       throw RepositoryError.internalError
     }
   }
@@ -114,7 +123,7 @@ extension RepositoryServiceImpl {
   ///           or other repository errors if rebuild fails.
   public func rebuildRepositoryIndex(identifier: String) async throws {
     // Create repository log context
-    let context = RepositoryLogContext(
+    let context=RepositoryLogContext(
       repositoryID: identifier,
       operation: "rebuildIndex"
     )
@@ -131,7 +140,10 @@ extension RepositoryServiceImpl {
       try await repository.rebuildIndex()
       await logger.info("Repository index rebuilt successfully", context: context)
     } catch {
-      await logger.error("Repository index rebuild failed: \(error.localizedDescription)", context: context)
+      await logger.error(
+        "Repository index rebuild failed: \(error.localizedDescription)",
+        context: context
+      )
       throw RepositoryError.internalError
     }
   }
@@ -143,7 +155,7 @@ extension RepositoryServiceImpl {
   ///           or other repository errors if check fails.
   public func checkRepository(identifier: String) async throws {
     // Create repository log context
-    let context = RepositoryLogContext(
+    let context=RepositoryLogContext(
       repositoryID: identifier,
       operation: "check"
     )

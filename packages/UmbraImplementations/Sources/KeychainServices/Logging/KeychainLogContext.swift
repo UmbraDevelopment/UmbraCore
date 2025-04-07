@@ -11,25 +11,25 @@ import LoggingTypes
 public struct KeychainLogContext: LogContextDTO {
   /// The domain name for the log
   public let domainName: String
-  
+
   /// The source of the log entry
   public let source: String?
-  
+
   /// Correlation ID for tracking related log entries
   public let correlationID: String?
-  
+
   /// The metadata collection for this log entry
   public let metadata: LogMetadataDTOCollection
-  
+
   /// The type of keychain operation being performed
   public let operation: String
-  
+
   /// The account identifier (with privacy protection)
   public let account: String
-  
+
   /// The status of the operation
   public let status: String
-  
+
   /**
    * Creates a new keychain log context.
    *
@@ -46,27 +46,27 @@ public struct KeychainLogContext: LogContextDTO {
     operation: String,
     account: String,
     status: String,
-    source: String? = "KeychainServices",
-    domainName: String = "Keychain",
-    correlationID: String? = nil,
-    metadata: LogMetadataDTOCollection = LogMetadataDTOCollection()
+    source: String?="KeychainServices",
+    domainName: String="Keychain",
+    correlationID: String?=nil,
+    metadata: LogMetadataDTOCollection=LogMetadataDTOCollection()
   ) {
-    self.operation = operation
-    self.account = account
-    self.status = status
-    self.source = source
-    self.domainName = domainName
-    self.correlationID = correlationID
-    
+    self.operation=operation
+    self.account=account
+    self.status=status
+    self.source=source
+    self.domainName=domainName
+    self.correlationID=correlationID
+
     // Create a new metadata collection with keychain-specific fields
-    var enhancedMetadata = metadata
-    enhancedMetadata = enhancedMetadata.withPrivate(key: "operation", value: operation)
-    enhancedMetadata = enhancedMetadata.withPrivate(key: "account", value: account)
-    enhancedMetadata = enhancedMetadata.withPublic(key: "status", value: status)
-    
-    self.metadata = enhancedMetadata
+    var enhancedMetadata=metadata
+    enhancedMetadata=enhancedMetadata.withPrivate(key: "operation", value: operation)
+    enhancedMetadata=enhancedMetadata.withPrivate(key: "account", value: account)
+    enhancedMetadata=enhancedMetadata.withPublic(key: "status", value: status)
+
+    self.metadata=enhancedMetadata
   }
-  
+
   /**
    * Creates an updated copy of this context with new metadata.
    *
@@ -84,16 +84,16 @@ public struct KeychainLogContext: LogContextDTO {
       metadata: metadata
     )
   }
-  
+
   /**
    * Returns the source of the log entry.
    *
    * - Returns: The source string or nil if not available
    */
   public func getSource() -> String? {
-    return source
+    source
   }
-  
+
   /**
    * Converts the context to standard log metadata.
    *
@@ -101,22 +101,22 @@ public struct KeychainLogContext: LogContextDTO {
    */
   public func asLogMetadata() -> LogMetadata {
     // Create a standard LogMetadata dictionary
-    var logMetadata = LogMetadata()
-    
+    var logMetadata=LogMetadata()
+
     // Add standard context fields
-    logMetadata["domain"] = domainName
-    if let source = source {
-      logMetadata["source"] = source
+    logMetadata["domain"]=domainName
+    if let source {
+      logMetadata["source"]=source
     }
-    if let correlationID = correlationID {
-      logMetadata["correlationID"] = correlationID
+    if let correlationID {
+      logMetadata["correlationID"]=correlationID
     }
-    
+
     // Add operation-specific fields
-    logMetadata["operation"] = operation
-    logMetadata["account"] = account
-    logMetadata["status"] = status
-    
+    logMetadata["operation"]=operation
+    logMetadata["account"]=account
+    logMetadata["status"]=status
+
     return logMetadata
   }
 }

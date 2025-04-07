@@ -315,13 +315,13 @@ struct SnapshotResultParser {
     // Calculate duration based on issues found
     let startTime=Date().addingTimeInterval(-60) // Assume 60s duration
     let endTime=Date()
-    let verificationTime = endTime.timeIntervalSince(startTime)
+    let verificationTime=endTime.timeIntervalSince(startTime)
 
     // Create and return verification result
     return BackupVerificationResultDTO(
       verified: repositoryValid && dataIntegrityValid,
       objectsVerified: Int.random(in: 100...500), // Mock value for testing
-      bytesVerified: UInt64.random(in: 1000000...5000000), // Mock value for testing
+      bytesVerified: UInt64.random(in: 1_000_000...5_000_000), // Mock value for testing
       errorCount: issues.count,
       issues: issues,
       repairSummary: nil,
@@ -383,11 +383,11 @@ struct SnapshotResultParser {
    */
   func parseComparison(_ output: String) throws -> BackupSnapshotComparisonResult {
     // Parse the difference data
-    let difference = try parseSnapshotDifference(output: output)
-    
+    let difference=try parseSnapshotDifference(output: output)
+
     // Calculate total change size (sum of all file sizes that changed)
-    let totalChangeSize = calculateTotalChangeSize(difference)
-    
+    let totalChangeSize=calculateTotalChangeSize(difference)
+
     // Create a comparison result using the difference data
     return BackupSnapshotComparisonResult(
       firstSnapshotID: "original", // These should come from actual parameters
@@ -403,11 +403,11 @@ struct SnapshotResultParser {
 
   // Helper function to calculate total size of changes
   private func calculateTotalChangeSize(_ difference: BackupSnapshotDifference) -> UInt64 {
-    let addedSize = (difference.addedFiles ?? []).reduce(0) { $0 + ($1.size ?? 0) }
-    let modifiedSize = (difference.modifiedFiles ?? []).reduce(0) { $0 + ($1.size ?? 0) }
+    let addedSize=(difference.addedFiles ?? []).reduce(0) { $0 + ($1.size ?? 0) }
+    let modifiedSize=(difference.modifiedFiles ?? []).reduce(0) { $0 + ($1.size ?? 0) }
     return addedSize + modifiedSize
   }
-  
+
   // Convert SnapshotFile array to BackupFile array
   private func convertToBackupFiles(_ files: [SnapshotFile]?) -> [BackupFile] {
     (files ?? []).map { file in
@@ -419,18 +419,18 @@ struct SnapshotResultParser {
       )
     }
   }
-  
+
   // Convert SnapshotFileType to BackupFileType
   private func convertFileType(_ type: SnapshotFileType?) -> BackupFileType {
-    guard let type = type else { return .file }
-    
+    guard let type else { return .file }
+
     switch type {
-    case .directory:
-      return .directory
-    case .file:
-      return .file
-    case .symlink:
-      return .symlink
+      case .directory:
+        return .directory
+      case .file:
+        return .file
+      case .symlink:
+        return .symlink
     }
   }
 

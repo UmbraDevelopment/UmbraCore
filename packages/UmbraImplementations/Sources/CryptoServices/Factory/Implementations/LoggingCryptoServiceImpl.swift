@@ -51,10 +51,10 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
       context: CryptoLogContext(
         operation: "encrypt",
         additionalContext: LogMetadataDTOCollection().withPublic(
-          key: "dataIdentifier", 
+          key: "dataIdentifier",
           value: dataIdentifier
         ).withPublic(
-          key: "keyIdentifier", 
+          key: "keyIdentifier",
           value: keyIdentifier
         )
       )
@@ -73,7 +73,7 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
           context: CryptoLogContext(
             operation: "encrypt",
             additionalContext: LogMetadataDTOCollection().withPrivate(
-              key: "identifier", 
+              key: "identifier",
               value: identifier
             )
           )
@@ -84,7 +84,7 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
           context: CryptoLogContext(
             operation: "encrypt",
             additionalContext: LogMetadataDTOCollection().withPrivate(
-              key: "error", 
+              key: "error",
               value: "\(error)"
             )
           )
@@ -113,10 +113,10 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
       context: CryptoLogContext(
         operation: "decrypt",
         additionalContext: LogMetadataDTOCollection().withPublic(
-          key: "encryptedDataIdentifier", 
+          key: "encryptedDataIdentifier",
           value: encryptedDataIdentifier
         ).withPublic(
-          key: "keyIdentifier", 
+          key: "keyIdentifier",
           value: keyIdentifier
         )
       )
@@ -135,7 +135,7 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
           context: CryptoLogContext(
             operation: "decrypt",
             additionalContext: LogMetadataDTOCollection().withPrivate(
-              key: "identifier", 
+              key: "identifier",
               value: identifier
             )
           )
@@ -146,7 +146,7 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
           context: CryptoLogContext(
             operation: "decrypt",
             additionalContext: LogMetadataDTOCollection().withPrivate(
-              key: "error", 
+              key: "error",
               value: "\(error)"
             )
           )
@@ -173,7 +173,7 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
       context: CryptoLogContext(
         operation: "hash",
         additionalContext: LogMetadataDTOCollection().withPublic(
-          key: "dataIdentifier", 
+          key: "dataIdentifier",
           value: dataIdentifier
         )
       )
@@ -191,7 +191,7 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
           context: CryptoLogContext(
             operation: "hash",
             additionalContext: LogMetadataDTOCollection().withPrivate(
-              key: "identifier", 
+              key: "identifier",
               value: identifier
             )
           )
@@ -202,7 +202,7 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
           context: CryptoLogContext(
             operation: "hash",
             additionalContext: LogMetadataDTOCollection().withPrivate(
-              key: "error", 
+              key: "error",
               value: "\(error)"
             )
           )
@@ -231,10 +231,10 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
       context: CryptoLogContext(
         operation: "verifyHash",
         additionalContext: LogMetadataDTOCollection().withPublic(
-          key: "dataIdentifier", 
+          key: "dataIdentifier",
           value: dataIdentifier
         ).withPublic(
-          key: "hashIdentifier", 
+          key: "hashIdentifier",
           value: hashIdentifier
         )
       )
@@ -253,7 +253,7 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
           context: CryptoLogContext(
             operation: "verifyHash",
             additionalContext: LogMetadataDTOCollection().withPublic(
-              key: "result", 
+              key: "result",
               value: matches ? "match" : "no match"
             )
           )
@@ -264,7 +264,7 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
           context: CryptoLogContext(
             operation: "verifyHash",
             additionalContext: LogMetadataDTOCollection().withPrivate(
-              key: "error", 
+              key: "error",
               value: "\(error)"
             )
           )
@@ -291,7 +291,7 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
       context: CryptoLogContext(
         operation: "generateKey",
         additionalContext: LogMetadataDTOCollection().withPublic(
-          key: "keyLength", 
+          key: "keyLength",
           value: "\(length)"
         )
       )
@@ -309,7 +309,7 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
           context: CryptoLogContext(
             operation: "generateKey",
             additionalContext: LogMetadataDTOCollection().withPrivate(
-              key: "identifier", 
+              key: "identifier",
               value: identifier
             )
           )
@@ -320,7 +320,7 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
           context: CryptoLogContext(
             operation: "generateKey",
             additionalContext: LogMetadataDTOCollection().withPrivate(
-              key: "error", 
+              key: "error",
               value: "\(error)"
             )
           )
@@ -347,7 +347,7 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
       context: CryptoLogContext(
         operation: "importData",
         additionalContext: LogMetadataDTOCollection().withPublic(
-          key: "customIdentifier", 
+          key: "customIdentifier",
           value: customIdentifier ?? ""
         )
       )
@@ -365,7 +365,7 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
           context: CryptoLogContext(
             operation: "importData",
             additionalContext: LogMetadataDTOCollection().withPrivate(
-              key: "identifier", 
+              key: "identifier",
               value: identifier
             )
           )
@@ -376,7 +376,7 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
           context: CryptoLogContext(
             operation: "importData",
             additionalContext: LogMetadataDTOCollection().withPrivate(
-              key: "error", 
+              key: "error",
               value: "\(error)"
             )
           )
@@ -398,7 +398,7 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
       context: CryptoLogContext(
         operation: "exportData",
         additionalContext: LogMetadataDTOCollection().withPublic(
-          key: "identifier", 
+          key: "identifier",
           value: identifier
         )
       )
@@ -413,7 +413,7 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
           context: CryptoLogContext(
             operation: "exportData",
             additionalContext: LogMetadataDTOCollection().withPublic(
-              key: "identifier", 
+              key: "identifier",
               value: identifier
             )
           )
@@ -424,7 +424,7 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
           context: CryptoLogContext(
             operation: "exportData",
             additionalContext: LogMetadataDTOCollection().withPrivate(
-              key: "error", 
+              key: "error",
               value: "\(error)"
             )
           )

@@ -1,7 +1,7 @@
-import Foundation
 import BackupInterfaces
-import LoggingTypes
 import CoreDTOs
+import Foundation
+import LoggingTypes
 import UmbraErrors
 
 /**
@@ -10,13 +10,13 @@ import UmbraErrors
 public struct SnapshotUpdateConfig: Sendable {
   public let tags: [String]?
   public let metadata: [String: SendableValue]?
-  
+
   public init(
     tags: [String]?,
     metadata: [String: SendableValue]?
   ) {
-    self.tags = tags
-    self.metadata = metadata
+    self.tags=tags
+    self.metadata=metadata
   }
 }
 
@@ -28,17 +28,17 @@ public struct RestoreConfig: Sendable {
   public let targetDirectory: URL
   public let overwriteExisting: Bool
   public let preserveAttributes: Bool
-  
+
   public init(
     paths: [String],
     targetDirectory: URL,
-    overwriteExisting: Bool = false,
-    preserveAttributes: Bool = true
+    overwriteExisting: Bool=false,
+    preserveAttributes: Bool=true
   ) {
-    self.paths = paths
-    self.targetDirectory = targetDirectory
-    self.overwriteExisting = overwriteExisting
-    self.preserveAttributes = preserveAttributes
+    self.paths=paths
+    self.targetDirectory=targetDirectory
+    self.overwriteExisting=overwriteExisting
+    self.preserveAttributes=preserveAttributes
   }
 }
 
@@ -49,15 +49,15 @@ public struct SnapshotSummary: Sendable {
   public let fileCount: Int
   public let totalSize: UInt64
   public let compressionRatio: Double?
-  
+
   public init(
     fileCount: Int,
     totalSize: UInt64,
-    compressionRatio: Double? = nil
+    compressionRatio: Double?=nil
   ) {
-    self.fileCount = fileCount
-    self.totalSize = totalSize
-    self.compressionRatio = compressionRatio
+    self.fileCount=fileCount
+    self.totalSize=totalSize
+    self.compressionRatio=compressionRatio
   }
 }
 
@@ -71,21 +71,21 @@ public struct SnapshotInfo: Sendable {
   public let timestamp: Date
   public let tags: [String]
   public let summary: SnapshotSummary
-  
+
   public init(
     id: String,
     repositoryID: String,
-    name: String? = nil,
+    name: String?=nil,
     timestamp: Date,
     tags: [String],
     summary: SnapshotSummary
   ) {
-    self.id = id
-    self.repositoryID = repositoryID
-    self.name = name
-    self.timestamp = timestamp
-    self.tags = tags
-    self.summary = summary
+    self.id=id
+    self.repositoryID=repositoryID
+    self.name=name
+    self.timestamp=timestamp
+    self.tags=tags
+    self.summary=summary
   }
 }
 
@@ -93,28 +93,28 @@ public struct SnapshotInfo: Sendable {
  Operation to list snapshots in a repository
  */
 public struct ListSnapshotsOperation: APIOperation {
-  public let operationType = "listSnapshots"
+  public let operationType="listSnapshots"
   public let repositoryID: String
   public let tagFilter: [String]?
   public let pathFilter: String?
   public let beforeDate: Date?
   public let afterDate: Date?
   public let limit: Int?
-  
+
   public init(
     repositoryID: String,
-    tagFilter: [String]? = nil,
-    pathFilter: String? = nil,
-    beforeDate: Date? = nil,
-    afterDate: Date? = nil,
-    limit: Int? = nil
+    tagFilter: [String]?=nil,
+    pathFilter: String?=nil,
+    beforeDate: Date?=nil,
+    afterDate: Date?=nil,
+    limit: Int?=nil
   ) {
-    self.repositoryID = repositoryID
-    self.tagFilter = tagFilter
-    self.pathFilter = pathFilter
-    self.beforeDate = beforeDate
-    self.afterDate = afterDate
-    self.limit = limit
+    self.repositoryID=repositoryID
+    self.tagFilter=tagFilter
+    self.pathFilter=pathFilter
+    self.beforeDate=beforeDate
+    self.afterDate=afterDate
+    self.limit=limit
   }
 }
 
@@ -122,19 +122,19 @@ public struct ListSnapshotsOperation: APIOperation {
  Operation to get a specific snapshot's details
  */
 public struct GetSnapshotOperation: APIOperation {
-  public let operationType = "getSnapshot"
+  public let operationType="getSnapshot"
   public let repositoryID: String
   public let snapshotID: String
   public let includeFiles: Bool
-  
+
   public init(
     repositoryID: String,
     snapshotID: String,
-    includeFiles: Bool = false
+    includeFiles: Bool=false
   ) {
-    self.repositoryID = repositoryID
-    self.snapshotID = snapshotID
-    self.includeFiles = includeFiles
+    self.repositoryID=repositoryID
+    self.snapshotID=snapshotID
+    self.includeFiles=includeFiles
   }
 }
 
@@ -145,15 +145,15 @@ public struct CreateSnapshotParameters: Sendable {
   public let paths: [String]
   public let tags: [String]
   public let metadata: [String: SendableValue]?
-  
+
   public init(
     paths: [String],
-    tags: [String] = [],
-    metadata: [String: SendableValue]? = nil
+    tags: [String]=[],
+    metadata: [String: SendableValue]?=nil
   ) {
-    self.paths = paths
-    self.tags = tags
-    self.metadata = metadata
+    self.paths=paths
+    self.tags=tags
+    self.metadata=metadata
   }
 }
 
@@ -161,16 +161,16 @@ public struct CreateSnapshotParameters: Sendable {
  Operation to create a new snapshot
  */
 public struct CreateSnapshotOperation: APIOperation {
-  public let operationType = "createSnapshot"
+  public let operationType="createSnapshot"
   public let repositoryID: String
   public let parameters: CreateSnapshotParameters
-  
+
   public init(
     repositoryID: String,
     parameters: CreateSnapshotParameters
   ) {
-    self.repositoryID = repositoryID
-    self.parameters = parameters
+    self.repositoryID=repositoryID
+    self.parameters=parameters
   }
 }
 
@@ -180,13 +180,13 @@ public struct CreateSnapshotOperation: APIOperation {
 public struct UpdateSnapshotParameters: Sendable {
   public let tags: [String]?
   public let metadata: [String: SendableValue]?
-  
+
   public init(
-    tags: [String]? = nil,
-    metadata: [String: SendableValue]? = nil
+    tags: [String]?=nil,
+    metadata: [String: SendableValue]?=nil
   ) {
-    self.tags = tags
-    self.metadata = metadata
+    self.tags=tags
+    self.metadata=metadata
   }
 }
 
@@ -194,19 +194,19 @@ public struct UpdateSnapshotParameters: Sendable {
  Operation to update an existing snapshot
  */
 public struct UpdateSnapshotOperation: APIOperation {
-  public let operationType = "updateSnapshot"
+  public let operationType="updateSnapshot"
   public let repositoryID: String
   public let snapshotID: String
   public let parameters: UpdateSnapshotParameters
-  
+
   public init(
     repositoryID: String,
     snapshotID: String,
     parameters: UpdateSnapshotParameters
   ) {
-    self.repositoryID = repositoryID
-    self.snapshotID = snapshotID
-    self.parameters = parameters
+    self.repositoryID=repositoryID
+    self.snapshotID=snapshotID
+    self.parameters=parameters
   }
 }
 
@@ -214,16 +214,16 @@ public struct UpdateSnapshotOperation: APIOperation {
  Operation to delete a snapshot
  */
 public struct DeleteSnapshotOperation: APIOperation {
-  public let operationType = "deleteSnapshot"
+  public let operationType="deleteSnapshot"
   public let repositoryID: String
   public let snapshotID: String
-  
+
   public init(
     repositoryID: String,
     snapshotID: String
   ) {
-    self.repositoryID = repositoryID
-    self.snapshotID = snapshotID
+    self.repositoryID=repositoryID
+    self.snapshotID=snapshotID
   }
 }
 
@@ -235,17 +235,17 @@ public struct RestoreSnapshotParameters: Sendable {
   public let targetDirectory: URL
   public let overwrite: Bool
   public let preservePermissions: Bool
-  
+
   public init(
-    paths: [String] = [],
+    paths: [String]=[],
     targetDirectory: URL,
-    overwrite: Bool = false,
-    preservePermissions: Bool = true
+    overwrite: Bool=false,
+    preservePermissions: Bool=true
   ) {
-    self.paths = paths
-    self.targetDirectory = targetDirectory
-    self.overwrite = overwrite
-    self.preservePermissions = preservePermissions
+    self.paths=paths
+    self.targetDirectory=targetDirectory
+    self.overwrite=overwrite
+    self.preservePermissions=preservePermissions
   }
 }
 
@@ -253,19 +253,19 @@ public struct RestoreSnapshotParameters: Sendable {
  Operation to restore from a snapshot
  */
 public struct RestoreSnapshotOperation: APIOperation {
-  public let operationType = "restoreSnapshot"
+  public let operationType="restoreSnapshot"
   public let repositoryID: String
   public let snapshotID: String
   public let parameters: RestoreSnapshotParameters
-  
+
   public init(
     repositoryID: String,
     snapshotID: String,
     parameters: RestoreSnapshotParameters
   ) {
-    self.repositoryID = repositoryID
-    self.snapshotID = snapshotID
-    self.parameters = parameters
+    self.repositoryID=repositoryID
+    self.snapshotID=snapshotID
+    self.parameters=parameters
   }
 }
 
@@ -273,19 +273,19 @@ public struct RestoreSnapshotOperation: APIOperation {
  Operation to forget a snapshot (potentially without deleting data)
  */
 public struct ForgetSnapshotOperation: APIOperation {
-  public let operationType = "forgetSnapshot"
+  public let operationType="forgetSnapshot"
   public let repositoryID: String
   public let snapshotID: String
   public let keepData: Bool
-  
+
   public init(
     repositoryID: String,
     snapshotID: String,
-    keepData: Bool = false
+    keepData: Bool=false
   ) {
-    self.repositoryID = repositoryID
-    self.snapshotID = snapshotID
-    self.keepData = keepData
+    self.repositoryID=repositoryID
+    self.snapshotID=snapshotID
+    self.keepData=keepData
   }
 }
 
@@ -298,19 +298,19 @@ public struct SnapshotFilters: Sendable {
   public let before: Date?
   public let after: Date?
   public let limit: Int?
-  
+
   public init(
-    tags: [String] = [],
-    path: String? = nil,
-    before: Date? = nil,
-    after: Date? = nil,
-    limit: Int? = nil
+    tags: [String]=[],
+    path: String?=nil,
+    before: Date?=nil,
+    after: Date?=nil,
+    limit: Int?=nil
   ) {
-    self.tags = tags
-    self.path = path
-    self.before = before
-    self.after = after
-    self.limit = limit
+    self.tags=tags
+    self.path=path
+    self.before=before
+    self.after=after
+    self.limit=limit
   }
 }
 
@@ -324,21 +324,21 @@ public struct FileEntry: Sendable, Identifiable {
   public let modificationDate: Date
   public let isDirectory: Bool
   public let hash: String?
-  
+
   public init(
     id: String,
     path: String,
     size: UInt64,
     modificationDate: Date,
-    isDirectory: Bool = false,
-    hash: String? = nil
+    isDirectory: Bool=false,
+    hash: String?=nil
   ) {
-    self.id = id
-    self.path = path
-    self.size = size
-    self.modificationDate = modificationDate
-    self.isDirectory = isDirectory
-    self.hash = hash
+    self.id=id
+    self.path=path
+    self.size=size
+    self.modificationDate=modificationDate
+    self.isDirectory=isDirectory
+    self.hash=hash
   }
 }
 
@@ -351,19 +351,19 @@ public struct SnapshotDetails: Sendable {
   public let options: [String: String]
   public let metadata: [String: String]
   public let files: [FileEntry]
-  
+
   public init(
     basicInfo: SnapshotInfo,
     creationHostname: String,
-    options: [String: String] = [:],
-    metadata: [String: String] = [:],
-    files: [FileEntry] = []
+    options: [String: String]=[:],
+    metadata: [String: String]=[:],
+    files: [FileEntry]=[]
   ) {
-    self.basicInfo = basicInfo
-    self.creationHostname = creationHostname
-    self.options = options
-    self.metadata = metadata
-    self.files = files
+    self.basicInfo=basicInfo
+    self.creationHostname=creationHostname
+    self.options=options
+    self.metadata=metadata
+    self.files=files
   }
 }
 
@@ -378,7 +378,7 @@ public struct RestoreResult: Sendable {
   public let duration: TimeInterval
   public let targetPath: URL
   public let filesRestored: Int
-  
+
   public init(
     snapshotID: String,
     restoreTime: Date,
@@ -388,13 +388,13 @@ public struct RestoreResult: Sendable {
     targetPath: URL,
     filesRestored: Int
   ) {
-    self.snapshotID = snapshotID
-    self.restoreTime = restoreTime
-    self.totalSize = totalSize
-    self.fileCount = fileCount
-    self.duration = duration
-    self.targetPath = targetPath
-    self.filesRestored = filesRestored
+    self.snapshotID=snapshotID
+    self.restoreTime=restoreTime
+    self.totalSize=totalSize
+    self.fileCount=fileCount
+    self.duration=duration
+    self.targetPath=targetPath
+    self.filesRestored=filesRestored
   }
 }
 
@@ -405,15 +405,15 @@ public struct RestoreResult: Sendable {
 // For BackupInterfaces.BackupSnapshot to SnapshotInfo conversion
 extension BackupSnapshot {
   func toSnapshotInfo(repositoryID: String) -> SnapshotInfo {
-    return SnapshotInfo(
+    SnapshotInfo(
       id: id,
       repositoryID: repositoryID,
-      name: "Snapshot \(id)",  // Default name when metadata not available
-      timestamp: Date(),      // Default to current time when timestamp not available
+      name: "Snapshot \(id)", // Default name when metadata not available
+      timestamp: Date(), // Default to current time when timestamp not available
       tags: tags,
       summary: SnapshotSummary(
         fileCount: fileCount,
-        totalSize: UInt64(0)  // Default to zero when size not available
+        totalSize: UInt64(0) // Default to zero when size not available
       )
     )
   }
@@ -426,60 +426,66 @@ extension BackupServiceProtocol {
   /**
    Gets a specific snapshot by ID from a repository
    */
-  func getSnapshot(id: String, fromRepository repositoryID: String) async throws -> BackupSnapshot {
-    let result = await listSnapshots(tags: nil, before: nil, after: nil, listOptions: nil)
-    
+  func getSnapshot(id: String, fromRepository _: String) async throws -> BackupSnapshot {
+    let result=await listSnapshots(tags: nil, before: nil, after: nil, listOptions: nil)
+
     switch result {
-      case .success(let snapshots):
-        if let snapshot = try? snapshots.first(where: { $0.id == id }) {
+      case let .success(snapshots):
+        if let snapshot=try? snapshots.first(where: { $0.id == id }) {
           return snapshot
         }
         throw BackupOperationError.snapshotNotFound(id: id)
-      case .failure(let error):
+      case let .failure(error):
         throw error
     }
   }
-  
+
   /**
    Lists snapshots with filtering
    */
-  func listSnapshots(forRepository repositoryID: String, filters: SnapshotFilters) async throws -> [BackupSnapshot] {
-    let result = await listSnapshots(
+  func listSnapshots(
+    forRepository _: String,
+    filters: SnapshotFilters
+  ) async throws -> [BackupSnapshot] {
+    let result=await listSnapshots(
       tags: filters.tags.isEmpty ? nil : filters.tags,
       before: filters.before,
       after: filters.after,
       listOptions: filters.limit != nil ? ListOptions(limit: filters.limit!) : nil
     )
-    
+
     switch result {
-      case .success(let snapshots):
+      case let .success(snapshots):
         return snapshots
-      case .failure(let error):
+      case let .failure(error):
         throw error
     }
   }
-  
+
   /**
    Creates a snapshot with the given configuration
    */
-  func createSnapshot(forRepository repositoryID: String, config: SnapshotCreationConfig) async throws -> BackupSnapshot {
-    // Create the snapshot using config 
-    let paths = config.paths.map { URL(fileURLWithPath: $0) }
-    
+  func createSnapshot(
+    forRepository repositoryID: String,
+    config: SnapshotCreationConfig
+  ) async throws -> BackupSnapshot {
+    // Create the snapshot using config
+    let paths=config.paths.map { URL(fileURLWithPath: $0) }
+
     // Set up creation parameters
-    let creationParams = CreateSnapshotParameters(
-      paths: paths.map { $0.path },
+    let creationParams=CreateSnapshotParameters(
+      paths: paths.map(\.path),
       tags: config.tags,
       metadata: config.metadata as? [String: Data] ?? [:]
     )
-    
+
     // Call the core backup service
     return try await createSnapshot(
       forRepository: repositoryID,
       config: creationParams
     )
   }
-  
+
   /**
    Updates a snapshot with the given configuration
    */
@@ -489,45 +495,45 @@ extension BackupServiceProtocol {
     with config: SnapshotUpdateConfig
   ) async throws -> BackupSnapshot {
     // Get the snapshot
-    let snapshot = try await getSnapshot(id: id, fromRepository: repositoryID)
-    
+    let snapshot=try await getSnapshot(id: id, fromRepository: repositoryID)
+
     // Update tags if provided
-    if let newTags = config.tags {
-      let tagResult = await updateTags(for: snapshot.id, tags: newTags)
-      if case .failure(let error) = tagResult {
+    if let newTags=config.tags {
+      let tagResult=await updateTags(for: snapshot.id, tags: newTags)
+      if case let .failure(error)=tagResult {
         throw error
       }
     }
-    
+
     // Update metadata if provided
-    if let newMeta = config.metadata {
-      var stringMeta: [String: String] = [:]
+    if let newMeta=config.metadata {
+      var stringMeta: [String: String]=[:]
       for (key, value) in newMeta {
-        if let str = value.stringValue {
-          stringMeta[key] = str
+        if let str=value.stringValue {
+          stringMeta[key]=str
         }
       }
-      
+
       if !stringMeta.isEmpty {
-        let metaResult = await updateMetadata(for: snapshot.id, metadata: stringMeta)
-        if case .failure(let error) = metaResult {
+        let metaResult=await updateMetadata(for: snapshot.id, metadata: stringMeta)
+        if case let .failure(error)=metaResult {
           throw error
         }
       }
     }
-    
+
     // Return the updated snapshot
     return try await getSnapshot(id: id, fromRepository: repositoryID)
   }
-  
+
   /**
    Gets the files in a snapshot
    */
-  func getSnapshotFiles(snapshotID: String, repositoryID: String) async throws -> [FileEntry] {
-    let result = await getFiles(for: snapshotID)
-    
+  func getSnapshotFiles(snapshotID: String, repositoryID _: String) async throws -> [FileEntry] {
+    let result=await getFiles(for: snapshotID)
+
     switch result {
-      case .success(let files):
+      case let .success(files):
         return files.map { file in
           FileEntry(
             id: file.id, // Using our extension property
@@ -538,11 +544,11 @@ extension BackupServiceProtocol {
             hash: file.hash // Using our extension property
           )
         }
-      case .failure(let error):
+      case let .failure(error):
         throw error
     }
   }
-  
+
   /**
    Deletes a snapshot from a repository
    */
@@ -551,15 +557,15 @@ extension BackupServiceProtocol {
     fromRepository repositoryID: String
   ) async throws {
     // Get the snapshot
-    let snapshot = try await getSnapshot(id: id, fromRepository: repositoryID)
-    
+    let snapshot=try await getSnapshot(id: id, fromRepository: repositoryID)
+
     // Delete it
     return try await deleteSnapshot(
       id: snapshot.id,
       fromRepository: repositoryID
     )
   }
-  
+
   /**
    Restores files from a snapshot
    */
@@ -569,11 +575,11 @@ extension BackupServiceProtocol {
     config: RestoreConfig
   ) async throws -> RestoreResultDTO {
     // Get the snapshot
-    let snapshot = try await getSnapshot(id: id, fromRepository: repositoryID)
-    
+    let snapshot=try await getSnapshot(id: id, fromRepository: repositoryID)
+
     // Start restore
     // This method would be implemented to handle restore operations
-    let restoreResult = RestoreResult(
+    let restoreResult=RestoreResult(
       snapshotID: id,
       restoreTime: Date(),
       totalSize: 0,
@@ -582,10 +588,10 @@ extension BackupServiceProtocol {
       targetPath: config.targetDirectory,
       filesRestored: config.paths.count
     )
-    
+
     return restoreResult
   }
-  
+
   /**
    Forgets a snapshot without necessarily deleting its data
    */
@@ -595,8 +601,8 @@ extension BackupServiceProtocol {
     keepData: Bool
   ) async throws {
     // Get the snapshot
-    let snapshot = try await getSnapshot(id: id, fromRepository: repositoryID)
-    
+    let snapshot=try await getSnapshot(id: id, fromRepository: repositoryID)
+
     // Forget it
     return try await forgetSnapshot(
       id: snapshot.id,
@@ -604,20 +610,23 @@ extension BackupServiceProtocol {
       keepData: keepData
     )
   }
-  
-  private func updateTags(for snapshotID: String, tags: [String]) async -> Result<Bool, Error> {
+
+  private func updateTags(for _: String, tags _: [String]) async -> Result<Bool, Error> {
     // This would be implemented in the real service
-    return .success(true)
+    .success(true)
   }
-  
-  private func updateMetadata(for snapshotID: String, metadata: [String: String]) async -> Result<Bool, Error> {
+
+  private func updateMetadata(
+    for _: String,
+    metadata _: [String: String]
+  ) async -> Result<Bool, Error> {
     // This would be implemented in the real service
-    return .success(true)
+    .success(true)
   }
-  
-  private func getFiles(for snapshotID: String) async -> Result<[SnapshotFile], Error> {
+
+  private func getFiles(for _: String) async -> Result<[SnapshotFile], Error> {
     // This would be implemented in the real service
-    return .success([])
+    .success([])
   }
 }
 
@@ -628,24 +637,24 @@ public struct SnapshotCreationConfig: Sendable {
   public let paths: [String]
   public let tags: [String]
   public let metadata: [String: SendableValue]?
-  
+
   public init(
     paths: [String],
-    tags: [String] = [],
-    metadata: [String: SendableValue]? = nil
+    tags: [String]=[],
+    metadata: [String: SendableValue]?=nil
   ) {
-    self.paths = paths
-    self.tags = tags
-    self.metadata = metadata
+    self.paths=paths
+    self.tags=tags
+    self.metadata=metadata
   }
 }
 
 /**
  DTO for snapshot data transfer
  */
-public typealias SnapshotDTO = BackupSnapshot
+public typealias SnapshotDTO=BackupSnapshot
 
 /**
  DTO for restore result data transfer
  */
-public typealias RestoreResultDTO = RestoreResult
+public typealias RestoreResultDTO=RestoreResult

@@ -21,16 +21,16 @@ import Foundation
 /// Defines domains for API operations
 public enum APIDomain: String, Codable, Sendable, Hashable, CaseIterable {
   /// Security-related operations (encryption, key management)
-  case security = "security"
+  case security
 
   /// Repository management operations
-  case repository = "repository"
+  case repository
 
   /// Backup and snapshot operations
-  case backup = "backup"
+  case backup
 
   /// System-related operations
-  case system = "system"
+  case system
 
   /// Notification-related operations
   case notification
@@ -95,10 +95,10 @@ public enum SecurityOperationType: String, Sendable, Codable, CaseIterable {
 
   /// Secret storage
   case storeSecret
-  
+
   /// Secret retrieval
   case retrieveSecret
-  
+
   /// Secret deletion
   case deleteSecret
 }

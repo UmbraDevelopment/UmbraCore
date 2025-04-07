@@ -109,20 +109,20 @@ private final class MockCryptoService: CryptoServiceProtocol {
     _: [UInt8],
     customIdentifier: String?
   ) async -> Result<String, SecurityStorageError> {
-    if let identifier = customIdentifier {
-      return .success(identifier)
+    if let identifier=customIdentifier {
+      .success(identifier)
     } else {
-      return .success("imported-data-\(UUID().uuidString)")
+      .success("imported-data-\(UUID().uuidString)")
     }
   }
 
   /// Imports data into secure storage
   public func importData(
-    _ data: Data,
+    _: Data,
     customIdentifier: String
   ) async -> Result<String, SecurityStorageError> {
     // Mock implementation
-    return .success(customIdentifier)
+    .success(customIdentifier)
   }
 
   /// Exports data from secure storage
@@ -135,35 +135,35 @@ private final class MockCryptoService: CryptoServiceProtocol {
   /// Required by CryptoServiceProtocol - Generate hash from data identifier
   public func generateHash(
     dataIdentifier: String,
-    options: HashingOptions?
+    options _: HashingOptions?
   ) async -> Result<String, SecurityStorageError> {
     // Mock implementation
-    return .success("hashed-\(dataIdentifier)")
+    .success("hashed-\(dataIdentifier)")
   }
 
   /// Required by CryptoServiceProtocol - Store Data
   public func storeData(
-    data: Data,
-    identifier: String
+    data _: Data,
+    identifier _: String
   ) async -> Result<Void, SecurityStorageError> {
     // Mock implementation
-    return .success(())
+    .success(())
   }
 
   /// Required by CryptoServiceProtocol - Retrieve Data
   public func retrieveData(
-    identifier: String
+    identifier _: String
   ) async -> Result<Data, SecurityStorageError> {
     // Mock implementation returning empty data
-    return .success(Data())
+    .success(Data())
   }
 
   /// Required by CryptoServiceProtocol - Delete Data
   public func deleteData(
-    identifier: String
+    identifier _: String
   ) async -> Result<Void, SecurityStorageError> {
     // Mock implementation
-    return .success(())
+    .success(())
   }
 }
 

@@ -32,7 +32,7 @@ public actor RepositoryServiceImpl: RepositoryServiceProtocol {
     repositories=[:]
     self.logger=logger
     Task {
-      let context = RepositoryLogContext(
+      let context=RepositoryLogContext(
         operation: "initialisation"
       )
       await self.logger.info("Repository service initialised", context: context)
@@ -53,7 +53,7 @@ public actor RepositoryServiceImpl: RepositoryServiceProtocol {
     let state=await repository.state
 
     // Create repository log context
-    let context = RepositoryLogContext(
+    let context=RepositoryLogContext(
       repositoryID: identifier,
       locationPath: location.path,
       state: "\(state)",
@@ -87,7 +87,10 @@ public actor RepositoryServiceImpl: RepositoryServiceProtocol {
         throw RepositoryError.invalidRepository
       }
     } catch {
-      await logger.error("Repository validation error: \(error.localizedDescription)", context: context)
+      await logger.error(
+        "Repository validation error: \(error.localizedDescription)",
+        context: context
+      )
       throw RepositoryError.internalError
     }
 
@@ -102,7 +105,7 @@ public actor RepositoryServiceImpl: RepositoryServiceProtocol {
   /// - Throws: `RepositoryError.notFound` if the repository doesn't exist.
   public func unregister(identifier: String) async throws {
     // Create repository log context
-    let context = RepositoryLogContext(
+    let context=RepositoryLogContext(
       repositoryID: identifier,
       operation: "unregister"
     )
@@ -125,7 +128,7 @@ public actor RepositoryServiceImpl: RepositoryServiceProtocol {
   /// - Throws: `RepositoryError.notFound` if the repository is not found.
   public func getRepository(identifier: String) async throws -> any RepositoryProtocol {
     // Create repository log context
-    let context = RepositoryLogContext(
+    let context=RepositoryLogContext(
       repositoryID: identifier,
       operation: "getRepository"
     )
@@ -144,10 +147,10 @@ public actor RepositoryServiceImpl: RepositoryServiceProtocol {
   ///
   /// - Returns: Dictionary of repositories keyed by their identifiers.
   public func getAllRepositories() async -> [String: any RepositoryProtocol] {
-    let context = RepositoryLogContext(
+    let context=RepositoryLogContext(
       operation: "getAllRepositories"
     )
-    
+
     await logger.debug("Listing all repositories", context: context)
 
     return repositories
@@ -159,7 +162,7 @@ public actor RepositoryServiceImpl: RepositoryServiceProtocol {
   /// - Returns: `true` if the repository is registered, `false` otherwise.
   public func isRegistered(identifier: String) async -> Bool {
     // Create repository log context
-    let context = RepositoryLogContext(
+    let context=RepositoryLogContext(
       repositoryID: identifier,
       operation: "isRegistered"
     )

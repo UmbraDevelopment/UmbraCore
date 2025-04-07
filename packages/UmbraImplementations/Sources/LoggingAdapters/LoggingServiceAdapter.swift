@@ -218,7 +218,7 @@ public actor LoggingServiceAdapter: LoggingServiceProtocol {
     context: LogContextDTO
   ) async {
     // For PrivacyString, we need to use the string value
-    let stringMessage = String(describing: message)
+    let stringMessage=String(describing: message)
 
     // Use the underlying logger directly with the context
     await logger.log(level, stringMessage, context: context)

@@ -1,12 +1,12 @@
 import APIInterfaces
-import LoggingServices
 import BackupInterfaces
+import Foundation
 import LoggingInterfaces
+import LoggingServices
 import LoggingTypes
 import RepositoryInterfaces
 import SecurityCoreInterfaces
 import SecurityInterfaces
-import Foundation
 
 /**
  # Alpha API Service Factory
@@ -168,7 +168,7 @@ public enum AlphaAPIServiceFactory {
    */
   private static func createDefaultLogger() -> LoggingProtocol {
     // In a real implementation, this would use proper logging configuration
-    return LoggingServices.createLogger(
+    LoggingServices.createLogger(
       domain: "APIService",
       category: "Service"
     )
@@ -180,7 +180,7 @@ public enum AlphaAPIServiceFactory {
    - Returns: A configured logger
    */
   private static func createProductionLogger() -> LoggingProtocol {
-    return LoggingServices.createLogger(
+    LoggingServices.createLogger(
       domain: "APIService",
       category: "Service"
     )
@@ -192,7 +192,7 @@ public enum AlphaAPIServiceFactory {
    - Returns: A configured logger
    */
   private static func createTestingLogger() -> LoggingProtocol {
-    return LoggingServices.createLogger(
+    LoggingServices.createLogger(
       domain: "APIServiceTest",
       category: "Test"
     )
@@ -250,7 +250,7 @@ public enum AlphaAPIServiceFactory {
   private static func createMockDomainHandlers(logger: LoggingProtocol)
   -> [APIDomain: any DomainHandler] {
     // Create mock implementations for testing
-    return [
+    [
       .security: SecurityDomainHandlerMock(logger: logger),
       .repository: RepositoryDomainHandlerMock(logger: logger),
       .backup: BackupDomainHandlerMock(logger: logger),
@@ -282,72 +282,75 @@ private final class SecurityServiceImpl: SecurityProviderProtocol {
   func initialize() async throws {
     // Minimal implementation for initialization
   }
-  
+
   // Required by SecurityProviderProtocol
   func cryptoService() async -> any CryptoServiceProtocol {
     fatalError("Not implemented in placeholder")
   }
-  
+
   func keyManager() async -> any KeyManagementProtocol {
     fatalError("Not implemented in placeholder")
   }
-  
-  func encrypt(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+
+  func encrypt(config _: SecurityConfigDTO) async throws -> SecurityResultDTO {
     fatalError("Not implemented in placeholder")
   }
-  
-  func decrypt(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+
+  func decrypt(config _: SecurityConfigDTO) async throws -> SecurityResultDTO {
     fatalError("Not implemented in placeholder")
   }
-  
-  func generateKey(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+
+  func generateKey(config _: SecurityConfigDTO) async throws -> SecurityResultDTO {
     fatalError("Not implemented in placeholder")
   }
-  
-  func secureStore(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+
+  func secureStore(config _: SecurityConfigDTO) async throws -> SecurityResultDTO {
     fatalError("Not implemented in placeholder")
   }
-  
-  func secureRetrieve(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+
+  func secureRetrieve(config _: SecurityConfigDTO) async throws -> SecurityResultDTO {
     fatalError("Not implemented in placeholder")
   }
-  
-  func secureDelete(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+
+  func secureDelete(config _: SecurityConfigDTO) async throws -> SecurityResultDTO {
     fatalError("Not implemented in placeholder")
   }
-  
-  func sign(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+
+  func sign(config _: SecurityConfigDTO) async throws -> SecurityResultDTO {
     fatalError("Not implemented in placeholder")
   }
-  
-  func verify(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+
+  func verify(config _: SecurityConfigDTO) async throws -> SecurityResultDTO {
     fatalError("Not implemented in placeholder")
   }
-  
-  func performSecureOperation(operation: SecurityOperation, config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+
+  func performSecureOperation(
+    operation _: SecurityOperation,
+    config _: SecurityConfigDTO
+  ) async throws -> SecurityResultDTO {
     fatalError("Not implemented in placeholder")
   }
-  
-  func createSecureConfig(options: SecurityConfigOptions) async -> SecurityConfigDTO {
+
+  func createSecureConfig(options _: SecurityConfigOptions) async -> SecurityConfigDTO {
     fatalError("Not implemented in placeholder")
   }
-  
+
   // Methods required by SecurityServiceProtocol extension
-  func hashData(data: Data, algorithm: String) async throws -> Data {
+  func hashData(data: Data, algorithm _: String) async throws -> Data {
     // Simple placeholder implementation
-    return data
+    data
   }
-  
-  func saveSecret(keyIdentifier: String, data: Data) async throws {
+
+  func saveSecret(keyIdentifier _: String, data _: Data) async throws {
     // Simple placeholder implementation
   }
-  
-  func getSecret(keyIdentifier: String) async throws -> Data? {
+
+  func getSecret(keyIdentifier _: String) async throws -> Data? {
     // Simple placeholder implementation
-    return nil
+    nil
   }
-  
-  func removeSecret(keyIdentifier: String) async throws {
+
+  func removeSecret(keyIdentifier _: String) async throws {
     // Simple placeholder implementation
   }
 }
@@ -434,24 +437,24 @@ private struct BackupDomainHandlerMock: DomainHandler {
 private class SystemDomainHandlerMock: DomainHandler {
   /// Logger instance
   private let logger: LoggingProtocol
-  
+
   /// Initializer
   /// - Parameter logger: Logger to use for this handler
   init(logger: LoggingProtocol?) {
-    self.logger = logger ?? LoggingServices.createLogger(domain: "SystemDomainMock", category: "Test")
+    self.logger=logger ?? LoggingServices.createLogger(domain: "SystemDomainMock", category: "Test")
   }
-  
+
   /// Execute a system API operation
   /// - Parameter operation: Operation to execute
   /// - Returns: Result of the operation
-  func execute<T: APIOperation>(_ operation: T) async throws -> Any {
-    return "Mock system operation executed"
+  func execute(_: some APIOperation) async throws -> Any {
+    "Mock system operation executed"
   }
-  
+
   /// Check if this handler supports a given operation
   /// - Parameter operation: Operation to check
   /// - Returns: true if the operation is supported
-  func supports<T: APIOperation>(_ operation: T) -> Bool {
-    return true
+  func supports(_: some APIOperation) -> Bool {
+    true
   }
 }

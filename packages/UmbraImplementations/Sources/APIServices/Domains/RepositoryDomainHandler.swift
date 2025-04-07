@@ -55,7 +55,7 @@ public struct RepositoryDomainHandler: DomainHandler {
   public func execute(_ operation: some APIOperation) async throws -> Any {
     // Log the operation start with privacy-aware metadata
     let operationName=String(describing: type(of: operation))
-    let startMetadata = LogMetadataDTOCollection()
+    let startMetadata=LogMetadataDTOCollection()
       .withPublic(key: "operation", value: operationName)
       .withPublic(key: "event", value: "start")
 
@@ -72,7 +72,7 @@ public struct RepositoryDomainHandler: DomainHandler {
       let result=try await executeRepositoryOperation(operation)
 
       // Log success
-      let successMetadata = LogMetadataDTOCollection()
+      let successMetadata=LogMetadataDTOCollection()
         .withPublic(key: "operation", value: operationName)
         .withPublic(key: "event", value: "success")
         .withPublic(key: "status", value: "completed")
@@ -88,7 +88,7 @@ public struct RepositoryDomainHandler: DomainHandler {
       return result
     } catch {
       // Log failure with privacy-aware error details
-      let errorMetadata = LogMetadataDTOCollection()
+      let errorMetadata=LogMetadataDTOCollection()
         .withPublic(key: "operation", value: operationName)
         .withPublic(key: "event", value: "failure")
         .withPublic(key: "status", value: "failed")
@@ -258,9 +258,10 @@ public struct RepositoryDomainHandler: DomainHandler {
    - Returns: Array of repository information
    - Throws: APIError if the operation fails
    */
-  private func handleListRepositories(_ operation: ListRepositoriesOperation) async throws -> [RepositoryInfo] {
+  private func handleListRepositories(_ operation: ListRepositoriesOperation) async throws
+  -> [RepositoryInfo] {
     // Create privacy-aware logging metadata
-    let metadata = LogMetadataDTOCollection()
+    let metadata=LogMetadataDTOCollection()
       .withPublic(key: "operation", value: "listRepositories")
       .withPublic(key: "include_details", value: operation.includeDetails.description)
 
@@ -273,7 +274,7 @@ public struct RepositoryDomainHandler: DomainHandler {
     )
 
     // Get all repositories from the service
-    let repositories = await repositoryService.getAllRepositories()
+    let repositories=await repositoryService.getAllRepositories()
 
     if repositories.isEmpty {
       await logger?.info(
@@ -287,29 +288,29 @@ public struct RepositoryDomainHandler: DomainHandler {
     }
 
     // Apply status filter if requested
-    let statusFilterValue = operation.statusFilter
-    let filteredRepositories = repositories.filter { (id, repository) in
-      guard let statusFilter = statusFilterValue else {
-        return true  // Include all repositories if no status filter
+    let statusFilterValue=operation.statusFilter
+    let filteredRepositories=repositories.filter { (_, repository) in
+      guard let statusFilter=statusFilterValue else {
+        return true // Include all repositories if no status filter
       }
-      
+
       // Status filter needs to be handled differently as it's a string in the API
       // but an enum in the repository service
       // Get the state from the repository synchronously to use in the filter
-      let state = getRepositoryState(repository)
+      let state=getRepositoryState(repository)
       return statusFilter == mapStatus(state).rawValue
     }
-    
+
     // Map each repository to the API model
-    var resultList = [RepositoryInfo]()
+    var resultList=[RepositoryInfo]()
     for (id, repository) in filteredRepositories {
-      resultList.append(
+      try await resultList.append(
         RepositoryInfo(
           id: id,
-          name: try await repository.getName() ?? repository.identifier,
-          status: mapStatus(try await Task.detached { return repository.state }.value),
-          creationDate: try await repository.getCreationDate() ?? Date(),
-          lastAccessDate: try await repository.getLastAccessDate() ?? Date()
+          name: repository.getName() ?? repository.identifier,
+          status: mapStatus(Task.detached { repository.state }.value),
+          creationDate: repository.getCreationDate() ?? Date(),
+          lastAccessDate: repository.getLastAccessDate() ?? Date()
         )
       )
     }
@@ -319,8 +320,8 @@ public struct RepositoryDomainHandler: DomainHandler {
       context: CoreLogContext(
         source: "RepositoryDomainHandler",
         metadata: metadata.with(
-          key: "count", 
-          value: String(resultList.count), 
+          key: "count",
+          value: String(resultList.count),
           privacyLevel: .public
         )
       )
@@ -336,7 +337,8 @@ public struct RepositoryDomainHandler: DomainHandler {
    - Returns: Detailed repository information
    - Throws: APIError if the operation fails
    */
-  private func handleGetRepository(_ operation: GetRepositoryOperation) async throws -> RepositoryDetails {
+  private func handleGetRepository(_ operation: GetRepositoryOperation) async throws
+  -> RepositoryDetails {
     // Check if the repository exists
     if await !repositoryService.isRegistered(identifier: operation.repositoryID) {
       throw APIError.resourceNotFound(
@@ -344,20 +346,20 @@ public struct RepositoryDomainHandler: DomainHandler {
         identifier: operation.repositoryID
       )
     }
-    
+
     // Get the repository
-    let repository = try await repositoryService.getRepository(identifier: operation.repositoryID)
-    
+    let repository=try await repositoryService.getRepository(identifier: operation.repositoryID)
+
     // Get the repository stats
-    let stats = try await repository.getStats()
-    
+    let stats=try await repository.getStats()
+
     // Create the repository details
-    let details = RepositoryDetails(
+    let details=try await RepositoryDetails(
       id: repository.identifier,
-      name: try await repository.getName() ?? repository.identifier,
-      status: mapStatus(try await Task.detached { return repository.state }.value),
-      creationDate: try await repository.getCreationDate() ?? Date(),
-      lastAccessDate: try await repository.getLastAccessDate() ?? Date(),
+      name: repository.getName() ?? repository.identifier,
+      status: mapStatus(Task.detached { repository.state }.value),
+      creationDate: repository.getCreationDate() ?? Date(),
+      lastAccessDate: repository.getLastAccessDate() ?? Date(),
       snapshotCount: Int(stats.snapshotCount),
       totalSize: Int(stats.totalSize),
       location: repository.location.absoluteString
@@ -383,28 +385,29 @@ public struct RepositoryDomainHandler: DomainHandler {
    - Returns: Basic repository information
    - Throws: APIError if the operation fails
    */
-  private func handleCreateRepository(_ operation: CreateRepositoryOperation) async throws -> RepositoryInfo {
+  private func handleCreateRepository(_ operation: CreateRepositoryOperation) async throws
+  -> RepositoryInfo {
     // Extract parameters
-    let params = operation.parameters
-    
+    let params=operation.parameters
+
     // Try to create repository
-    let repository = try await repositoryService.createRepository(
+    let repository=try await repositoryService.createRepository(
       at: operation.parameters.location
     )
-    
+
     // Apply name and other metadata if needed
     try await repository.setName(params.name)
     try await repository.setMetadata([
-      "creation_date": Date().description,
+      "creation_date": Date().description
     ])
 
     // Return repository info
-    let info = RepositoryInfo(
+    let info=try await RepositoryInfo(
       id: repository.identifier,
-      name: try await repository.getName() ?? repository.identifier,
-      status: mapStatus(try await Task.detached { return repository.state }.value),
-      creationDate: try await repository.getCreationDate() ?? Date(),
-      lastAccessDate: try await repository.getLastAccessDate() ?? Date()
+      name: repository.getName() ?? repository.identifier,
+      status: mapStatus(Task.detached { repository.state }.value),
+      creationDate: repository.getCreationDate() ?? Date(),
+      lastAccessDate: repository.getLastAccessDate() ?? Date()
     )
 
     await logger?.info(
@@ -428,7 +431,8 @@ public struct RepositoryDomainHandler: DomainHandler {
    - Returns: Updated repository information
    - Throws: APIError if the operation fails
    */
-  private func handleUpdateRepository(_ operation: UpdateRepositoryOperation) async throws -> RepositoryInfo {
+  private func handleUpdateRepository(_ operation: UpdateRepositoryOperation) async throws
+  -> RepositoryInfo {
     // Check if the repository exists
     if await !repositoryService.isRegistered(identifier: operation.repositoryID) {
       throw APIError.resourceNotFound(
@@ -436,32 +440,32 @@ public struct RepositoryDomainHandler: DomainHandler {
         identifier: operation.repositoryID
       )
     }
-    
+
     // Get the repository
-    let repository = try await repositoryService.getRepository(identifier: operation.repositoryID)
-    
+    let repository=try await repositoryService.getRepository(identifier: operation.repositoryID)
+
     // Apply updates - convert the SendableValue dictionary to string dictionary
-    var updatesDict: [String: String] = [:]
+    var updatesDict: [String: String]=[:]
     for (key, value) in operation.updates {
-      if let stringValue = value.stringValue {
-        updatesDict[key] = stringValue
+      if let stringValue=value.stringValue {
+        updatesDict[key]=stringValue
       }
     }
-    
+
     // Update the repository metadata
-    if let name = operation.name {
+    if let name=operation.name {
       try await repository.setName(name)
     }
-    
+
     // Return updated info
-    let updatedInfo = RepositoryInfo(
+    let updatedInfo=try await RepositoryInfo(
       id: repository.identifier,
-      name: try await repository.getName() ?? repository.identifier,
-      status: mapStatus(try await Task.detached { return repository.state }.value),
-      creationDate: try await repository.getCreationDate() ?? Date(),
-      lastAccessDate: try await repository.getLastAccessDate() ?? Date()
+      name: repository.getName() ?? repository.identifier,
+      status: mapStatus(Task.detached { repository.state }.value),
+      creationDate: repository.getCreationDate() ?? Date(),
+      lastAccessDate: repository.getLastAccessDate() ?? Date()
     )
-    
+
     await logger?.info(
       "Repository updated successfully",
       context: CoreLogContext(
@@ -471,7 +475,7 @@ public struct RepositoryDomainHandler: DomainHandler {
           .withPublic(key: "repository_id", value: operation.repositoryID)
       )
     )
-    
+
     return updatedInfo
   }
 
@@ -489,10 +493,10 @@ public struct RepositoryDomainHandler: DomainHandler {
         identifier: operation.repositoryID
       )
     }
-    
+
     // Unregister the repository from the service
     try await repositoryService.unregister(identifier: operation.repositoryID)
-    
+
     await logger?.info(
       "Repository deleted successfully",
       context: CoreLogContext(
@@ -505,33 +509,34 @@ public struct RepositoryDomainHandler: DomainHandler {
   }
 
   // Helper to get repository state synchronously
-  private func getRepositoryState(_ repository: any RepositoryProtocol) -> RepositoryState {
+  private func getRepositoryState(_: any RepositoryProtocol) -> RepositoryState {
     // Default to ready if we can't access the state
-    return .ready
+    .ready
   }
 
   // Helper function to map repository status
   private func mapStatus(_ state: RepositoryState) -> RepositoryStatus {
     switch state {
       case .ready:
-        return .ready
+        .ready
       case .uninitialized, .closed:
-        return .initialising
+        .initialising
       case .locked:
-        return .locked
+        .locked
       case .corrupted:
-        return .damaged
+        .damaged
       case .maintenance:
-        return .modifying
+        .modifying
       default:
-        return .ready
+        .ready
     }
   }
 }
 
 // MARK: - API Types
 
-// Removed duplicate RepositoryInfo and RepositoryDetails structs as they're already defined in RepositoryAPIOperations.swift
+// Removed duplicate RepositoryInfo and RepositoryDetails structs as they're already defined in
+// RepositoryAPIOperations.swift
 
 /**
  Status of a repository
@@ -547,6 +552,6 @@ public enum RepositoryStatus: String, Sendable, Codable, CaseIterable {
 
 extension RepositoryStatus {
   public static var allCases: [RepositoryStatus] {
-    return [.ready, .initialising, .modifying, .locked, .damaged, .repairing]
+    [.ready, .initialising, .modifying, .locked, .damaged, .repairing]
   }
 }

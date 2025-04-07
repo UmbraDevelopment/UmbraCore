@@ -207,7 +207,8 @@ public struct SimpleKeyManager: KeyManagementProtocol {
     )
   }
 
-  public func deleteKey(withIdentifier identifier: String) async -> Result<Void, SecurityProtocolError> {
+  public func deleteKey(withIdentifier identifier: String) async
+  -> Result<Void, SecurityProtocolError> {
     await logger.warning(
       "Attempted to delete key with a simple key manager implementation",
       context: KeychainLogContext(

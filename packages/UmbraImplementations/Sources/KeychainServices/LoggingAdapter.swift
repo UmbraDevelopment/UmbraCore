@@ -14,9 +14,9 @@ import LoggingTypes
 public actor LoggingAdapter: LoggingProtocol, CoreLoggingProtocol {
   private let loggingService: LoggingServiceProtocol
   private let _loggingActor: LoggingActor
-  
+
   /// The domain name for this logger
-  public let domainName: String = "KeychainServices"
+  public let domainName: String="KeychainServices"
 
   /// Get the underlying logging actor
   public var loggingActor: LoggingActor {
@@ -29,24 +29,24 @@ public actor LoggingAdapter: LoggingProtocol, CoreLoggingProtocol {
    - Parameter loggingService: The logging service to wrap
    */
   public init(wrapping loggingService: LoggingServiceProtocol) {
-    self.loggingService = loggingService
-    self._loggingActor = LoggingActor(destinations: [], minimumLogLevel: .info)
+    self.loggingService=loggingService
+    _loggingActor=LoggingActor(destinations: [], minimumLogLevel: .info)
   }
-  
+
   // MARK: - CoreLoggingProtocol Implementation
-  
+
   /// Required CoreLoggingProtocol implementation
   public func log(_ level: LogLevel, _ message: String, context: LogContextDTO) async {
-    let formattedMessage = "[\(domainName)] \(message)"
-    
+    let formattedMessage="[\(domainName)] \(message)"
+
     // Use the appropriate loggers
-    if let loggingService = self.loggingService as? LoggingProtocol {
+    if let loggingService=loggingService as? LoggingProtocol {
       await loggingService.log(level, formattedMessage, context: context)
     } else {
       // Legacy fallback for older LoggingServiceProtocol
-      let metadata = context.asLogMetadata()
-      let source = context.getSource()
-      
+      let metadata=context.asLogMetadata()
+      let source=context.getSource()
+
       // Use the appropriate level-specific method
       switch level {
         case .trace:
@@ -63,13 +63,13 @@ public actor LoggingAdapter: LoggingProtocol, CoreLoggingProtocol {
           await loggingService.critical(formattedMessage, metadata: metadata, source: source)
       }
     }
-    
+
     // Also log to the actor
     await loggingActor.log(level, formattedMessage, context: context)
   }
-  
+
   // MARK: - LoggingProtocol Implementation
-  
+
   /**
    Log a message with trace level and context
 
@@ -80,7 +80,7 @@ public actor LoggingAdapter: LoggingProtocol, CoreLoggingProtocol {
   public func trace(_ message: String, context: LogContextDTO) async {
     await log(.trace, message, context: context)
   }
-  
+
   /**
    Log a message with debug level and context
 
@@ -91,7 +91,7 @@ public actor LoggingAdapter: LoggingProtocol, CoreLoggingProtocol {
   public func debug(_ message: String, context: LogContextDTO) async {
     await log(.debug, message, context: context)
   }
-  
+
   /**
    Log a message with info level and context
 
@@ -102,7 +102,7 @@ public actor LoggingAdapter: LoggingProtocol, CoreLoggingProtocol {
   public func info(_ message: String, context: LogContextDTO) async {
     await log(.info, message, context: context)
   }
-  
+
   /**
    Log a message with warning level and context
 
@@ -113,7 +113,7 @@ public actor LoggingAdapter: LoggingProtocol, CoreLoggingProtocol {
   public func warning(_ message: String, context: LogContextDTO) async {
     await log(.warning, message, context: context)
   }
-  
+
   /**
    Log a message with error level and context
 
@@ -124,7 +124,7 @@ public actor LoggingAdapter: LoggingProtocol, CoreLoggingProtocol {
   public func error(_ message: String, context: LogContextDTO) async {
     await log(.error, message, context: context)
   }
-  
+
   /**
    Log a message with critical level and context
 
@@ -151,10 +151,10 @@ public actor LoggingAdapter: LoggingProtocol, CoreLoggingProtocol {
   @available(*, deprecated, message: "Use debug(_:context:) instead")
   public func debug(
     _ message: String,
-    metadata: LogMetadata? = nil,
-    source: String = "KeychainServices"
+    metadata: LogMetadata?=nil,
+    source: String="KeychainServices"
   ) async {
-    let context = BaseLogContextDTO(
+    let context=BaseLogContextDTO(
       domainName: domainName,
       source: source,
       metadata: convertToLogMetadataDTO(metadata)
@@ -169,16 +169,16 @@ public actor LoggingAdapter: LoggingProtocol, CoreLoggingProtocol {
      - message: The message to log
      - metadata: Any metadata to include
      - source: The source of the log message
-     
+
    - Warning: This method is deprecated. Use info(_:context:) instead.
    */
   @available(*, deprecated, message: "Use info(_:context:) instead")
   public func info(
     _ message: String,
-    metadata: LogMetadata? = nil,
-    source: String = "KeychainServices"
+    metadata: LogMetadata?=nil,
+    source: String="KeychainServices"
   ) async {
-    let context = BaseLogContextDTO(
+    let context=BaseLogContextDTO(
       domainName: domainName,
       source: source,
       metadata: convertToLogMetadataDTO(metadata)
@@ -193,16 +193,16 @@ public actor LoggingAdapter: LoggingProtocol, CoreLoggingProtocol {
      - message: The message to log
      - metadata: Any metadata to include
      - source: The source of the log message
-     
+
    - Warning: This method is deprecated. Use warning(_:context:) instead.
    */
   @available(*, deprecated, message: "Use warning(_:context:) instead")
   public func warning(
     _ message: String,
-    metadata: LogMetadata? = nil,
-    source: String = "KeychainServices"
+    metadata: LogMetadata?=nil,
+    source: String="KeychainServices"
   ) async {
-    let context = BaseLogContextDTO(
+    let context=BaseLogContextDTO(
       domainName: domainName,
       source: source,
       metadata: convertToLogMetadataDTO(metadata)
@@ -217,16 +217,16 @@ public actor LoggingAdapter: LoggingProtocol, CoreLoggingProtocol {
      - message: The message to log
      - metadata: Any metadata to include
      - source: The source of the log message
-     
+
    - Warning: This method is deprecated. Use error(_:context:) instead.
    */
   @available(*, deprecated, message: "Use error(_:context:) instead")
   public func error(
     _ message: String,
-    metadata: LogMetadata? = nil,
-    source: String = "KeychainServices"
+    metadata: LogMetadata?=nil,
+    source: String="KeychainServices"
   ) async {
-    let context = BaseLogContextDTO(
+    let context=BaseLogContextDTO(
       domainName: domainName,
       source: source,
       metadata: convertToLogMetadataDTO(metadata)
@@ -241,16 +241,16 @@ public actor LoggingAdapter: LoggingProtocol, CoreLoggingProtocol {
      - message: The message to log
      - metadata: Any metadata to include
      - source: The source of the log message
-     
+
    - Warning: This method is deprecated. Use critical(_:context:) instead.
    */
   @available(*, deprecated, message: "Use critical(_:context:) instead")
   public func critical(
     _ message: String,
-    metadata: LogMetadata? = nil,
-    source: String = "KeychainServices"
+    metadata: LogMetadata?=nil,
+    source: String="KeychainServices"
   ) async {
-    let context = BaseLogContextDTO(
+    let context=BaseLogContextDTO(
       domainName: domainName,
       source: source,
       metadata: convertToLogMetadataDTO(metadata)
@@ -262,22 +262,22 @@ public actor LoggingAdapter: LoggingProtocol, CoreLoggingProtocol {
 
   /**
    Convert LogMetadata to LogMetadataDTOCollection for use with the new context-based logging
-   
+
    - Parameter metadata: The log metadata to convert
    - Returns: A metadata DTO collection
    */
   private func convertToLogMetadataDTO(_ metadata: LogMetadata?) -> LogMetadataDTOCollection {
-    guard let metadata = metadata else {
+    guard let metadata else {
       return LogMetadataDTOCollection()
     }
-    
-    var collection = LogMetadataDTOCollection()
-    
+
+    var collection=LogMetadataDTOCollection()
+
     // Convert each key-value pair to a metadata entry
     for (key, value) in metadata.asDictionary {
-      collection = collection.withPublic(key: key, value: value)
+      collection=collection.withPublic(key: key, value: value)
     }
-    
+
     return collection
   }
 }
