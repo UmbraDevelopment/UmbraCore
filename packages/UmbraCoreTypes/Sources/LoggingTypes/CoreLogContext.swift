@@ -1,5 +1,9 @@
 import Foundation
+<<<<<<< Updated upstream
 
+=======
+import SecurityInterfacesTypes
+>>>>>>> Stashed changes
 /// CoreLogContext provides privacy-enhanced logging context for core framework operations
 ///
 /// This specialised context collects metadata related to core framework operations

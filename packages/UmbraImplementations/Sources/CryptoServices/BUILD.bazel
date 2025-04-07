@@ -1,6 +1,6 @@
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
-swift_library(
+umbra_swift_library(
     name = "CryptoServices",
     srcs = glob(
         include = [
@@ -16,7 +16,6 @@ swift_library(
             "DefaultCryptoService.swift",
         ],
     ),
-    module_name = "CryptoServices",
     visibility = ["//visibility:public"],
     deps = [
         "//packages/UmbraCoreTypes/Sources/CoreSecurityTypes",

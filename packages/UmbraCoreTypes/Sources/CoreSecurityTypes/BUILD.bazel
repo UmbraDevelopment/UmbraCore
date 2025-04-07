@@ -12,6 +12,9 @@ umbra_swift_library(
     visibility = ["//visibility:public"],
     deps = [
         "//packages/UmbraCoreTypes/Sources/UmbraErrors",
+<<<<<<< Updated upstream
         "//packages/UmbraCoreTypes/Sources/LoggingTypes",
+=======
+>>>>>>> Stashed changes
     ],
 )

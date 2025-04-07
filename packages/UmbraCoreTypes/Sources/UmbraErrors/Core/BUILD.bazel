@@ -10,4 +10,7 @@ umbra_swift_library(
         allow_empty = False,
     ),
     visibility = ["//visibility:public"],
+    deps = [
+        "//packages/UmbraCoreTypes/Sources/SecurityInterfaces/Types:SecurityInterfacesTypes",
+    ],
 )

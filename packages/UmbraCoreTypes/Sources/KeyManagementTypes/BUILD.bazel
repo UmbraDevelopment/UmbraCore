@@ -6,6 +6,10 @@ umbra_swift_library(
         "*.swift",
     ]),
     visibility = ["//visibility:public"],
+    deps = [
+        "//packages/UmbraCoreTypes/Sources/SecurityInterfaces/Types:SecurityInterfacesTypes",
+        "//packages/UmbraServices/Sources/LoggingServices:LoggingServices",
+    ],
 )
 
 # For testing only

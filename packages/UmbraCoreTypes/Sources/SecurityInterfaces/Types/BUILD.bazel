@@ -13,6 +13,9 @@ umbra_swift_library(
     deps = [
         "//packages/UmbraCoreTypes/Sources/UmbraErrors",
         "//packages/UmbraCoreTypes/Sources/DomainSecurityTypes",
+<<<<<<< Updated upstream
         "//packages/UmbraCoreTypes/Sources/CoreDTOs",
+=======
+>>>>>>> Stashed changes
     ],
 )
