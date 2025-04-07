@@ -166,7 +166,7 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
    */
   public func hash(
     dataIdentifier: String,
-    options: SecurityCoreInterfaces.HashingOptions?
+    options: HashingOptions?
   ) async -> Result<String, SecurityStorageError> {
     await logger.info(
       "Hashing data with identifier \(dataIdentifier)",
@@ -224,7 +224,7 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
   public func verifyHash(
     dataIdentifier: String,
     hashIdentifier: String,
-    options: SecurityCoreInterfaces.HashingOptions?
+    options: HashingOptions?
   ) async -> Result<Bool, SecurityStorageError> {
     await logger.info(
       "Verifying hash for data with identifier \(dataIdentifier) against hash \(hashIdentifier)",

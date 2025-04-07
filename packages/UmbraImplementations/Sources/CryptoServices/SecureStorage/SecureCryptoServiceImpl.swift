@@ -366,7 +366,7 @@ public actor SecureCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
   public func verifyHash(
     dataIdentifier: String,
     hashIdentifier: String,
-    options _: SecurityCoreInterfaces.HashingOptions?
+    options _: HashingOptions?
   ) async -> Result<Bool, SecurityStorageError> {
     let context=CryptoLogContext(
       operation: "verifyHash",
@@ -513,7 +513,7 @@ public actor SecureCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
    */
   public func hash(
     dataIdentifier: String,
-    options _: SecurityCoreInterfaces.HashingOptions?
+    options _: HashingOptions?
   ) async -> Result<String, SecurityStorageError> {
     let context=CryptoLogContext(
       operation: "hash",

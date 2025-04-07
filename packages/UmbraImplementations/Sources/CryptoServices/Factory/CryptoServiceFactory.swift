@@ -95,7 +95,7 @@ public enum CryptoServiceFactory {
     secureStorage: SecureStorageProtocol?=nil,
     logger: LoggingProtocol?=nil
   ) async -> CryptoServiceProtocol {
-    let actualLogger=logger ?? DefaultConsoleLogger()
+    let actualLogger=logger ?? LoggingServiceFactory.createStandardLogger()
 
     return await DefaultCryptoServiceImpl(
       secureStorage: secureStorage ?? createLocalSecureStorage(logger: actualLogger),
@@ -116,7 +116,7 @@ public enum CryptoServiceFactory {
     secureStorage: SecureStorageProtocol?=nil,
     logger: LoggingProtocol?=nil
   ) async -> CryptoServiceProtocol {
-    let actualLogger=logger ?? DefaultConsoleLogger()
+    let actualLogger=logger ?? LoggingServiceFactory.createStandardLogger()
 
     return await LoggingCryptoServiceImpl(
       wrapped: DefaultCryptoServiceImpl(
@@ -140,7 +140,7 @@ public enum CryptoServiceFactory {
     secureStorage: SecureStorageProtocol?=nil,
     logger: LoggingProtocol?=nil
   ) async -> CryptoServiceProtocol {
-    let actualLogger=logger ?? DefaultConsoleLogger()
+    let actualLogger=logger ?? LoggingServiceFactory.createStandardLogger()
 
     return await EnhancedLoggingCryptoServiceImpl(
       wrapped: DefaultCryptoServiceImpl(
@@ -164,7 +164,7 @@ public enum CryptoServiceFactory {
     secureStorage: SecureStorageProtocol?=nil,
     logger: LoggingProtocol?=nil
   ) async -> CryptoServiceProtocol {
-    let actualLogger=logger ?? DefaultConsoleLogger()
+    let actualLogger=logger ?? LoggingServiceFactory.createStandardLogger()
 
     // Create secure service with enhanced parameters
     let service=await EnhancedSecureCryptoServiceImpl(
@@ -198,7 +198,7 @@ public enum CryptoServiceFactory {
     shouldSucceed: Bool=true,
     logger: LoggingProtocol?=nil
   ) async -> CryptoServiceProtocol {
-    let actualLogger=logger ?? DefaultConsoleLogger()
+    let actualLogger=logger ?? LoggingServiceFactory.createStandardLogger()
 
     return await MockCryptoServiceImpl(
       configuration: MockCryptoConfiguration(
@@ -227,7 +227,7 @@ public enum CryptoServiceFactory {
     logger: LoggingProtocol?=nil,
     environment: DeploymentEnvironment = .production
   ) async -> CryptoServiceProtocol {
-    let actualLogger=logger ?? DefaultConsoleLogger()
+    let actualLogger=logger ?? LoggingServiceFactory.createStandardLogger()
 
     switch environment {
       case .development:
@@ -296,7 +296,7 @@ public enum CryptoServiceFactory {
     secureStorage: SecureStorageProtocol?=nil,
     logger: LoggingProtocol?=nil
   ) async -> CryptoServiceProtocol {
-    let actualLogger=logger ?? DefaultConsoleLogger()
+    let actualLogger=logger ?? LoggingServiceFactory.createStandardLogger()
 
     // Use the provided secure storage or create a default one
     let actualSecureStorage=secureStorage ?? await createLocalSecureStorage(logger: actualLogger)
@@ -355,7 +355,7 @@ public enum CryptoServiceFactory {
     secureStorage: SecureStorageProtocol?=nil,
     logger: LoggingProtocol?=nil
   ) async -> CryptoServiceProtocol {
-    let actualLogger=logger ?? DefaultConsoleLogger()
+    let actualLogger=logger ?? LoggingServiceFactory.createStandardLogger()
 
     // Use the provided secure storage or create a default one
     let actualSecureStorage=secureStorage ?? await createLocalSecureStorage(logger: actualLogger)
@@ -383,7 +383,7 @@ public enum CryptoServiceFactory {
     storageURL: URL?=nil,
     logger: LoggingProtocol?=nil
   ) async -> SecureStorageProtocol {
-    let actualLogger=logger ?? DefaultConsoleLogger()
+    let actualLogger=logger ?? LoggingServiceFactory.createStandardLogger()
     let url=storageURL ?? URL(fileURLWithPath: NSTemporaryDirectory())
       .appendingPathComponent("CryptoSecureStorage")
 
@@ -418,7 +418,7 @@ public enum CryptoServiceFactory {
     configuration: MockCryptoServiceImpl.Configuration = .init(),
     logger: LoggingProtocol?=nil
   ) async -> CryptoServiceProtocol {
-    let actualLogger=logger ?? DefaultConsoleLogger()
+    let actualLogger=logger ?? LoggingServiceFactory.createStandardLogger()
     return await MockCryptoServiceImpl(configuration: configuration, logger: actualLogger)
   }
 

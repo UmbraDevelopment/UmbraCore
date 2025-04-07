@@ -1,8 +1,25 @@
+import Foundation
+import SecurityCoreInterfaces
+import LoggingInterfaces
+
 // MARK: - Error Handling
 
-func mapErrorToSecurityStorageError(_ error: Error, operation: String? = nil, metadata: [String: String]? = nil) -> SecurityStorageError {
+/// Maps a generic Error or a SecurityProviderError to a SecurityStorageError,
+/// logging the process.
+/// - Parameters:
+///   - error: The error to map.
+///   - logger: The logger instance to use for logging.
+///   - operation: Optional name of the operation during which the error occurred.
+///   - metadata: Optional additional metadata for logging.
+/// - Returns: The corresponding SecurityStorageError.
+func mapErrorToSecurityStorageError(
+    _ error: Error,
+    logger: LoggingProtocol,
+    operation: String? = nil,
+    metadata: [String: String]? = nil
+) -> SecurityStorageError {
     let errorMetadata = metadata ?? [:]
-    // Log the mapping attempt
+    // Log the mapping attempt using the passed logger
     logger.debug("Mapping provider error to SecurityStorageError", metadata: errorMetadata)
 
     // Check for specific SecurityProviderError types first
@@ -21,7 +38,7 @@ func mapErrorToSecurityStorageError(_ error: Error, operation: String? = nil, me
                 return .invalidParameters(details: "Invalid parameters for \(operation ?? "unknown"): \(reason)")
             case let .operationFailed(_, reason):
                 // More specific mapping might be needed based on operation
-                return mapOperationFailureToStorageError(operation: operation ?? "unknown", reason: reason)
+                return mapOperationFailureToStorageError(operation: operation ?? "unknown", reason: reason, logger: logger)
             case let .storageError(reason):
                 return .storageError(details: "Provider storage error: \(reason)")
             case let .configurationError(reason):
@@ -49,7 +66,16 @@ func mapErrorToSecurityStorageError(_ error: Error, operation: String? = nil, me
 }
 
 /// Helper to map generic operation failures based on the operation type.
-private func mapOperationFailureToStorageError(operation: String, reason: String) -> SecurityStorageError {
+/// - Parameters:
+///   - operation: The name of the operation that failed.
+///   - reason: The reason for the failure.
+///   - logger: The logger instance to use for logging.
+/// - Returns: A specific SecurityStorageError based on the operation.
+private func mapOperationFailureToStorageError(
+    operation: String,
+    reason: String,
+    logger: LoggingProtocol
+) -> SecurityStorageError {
     switch operation {
         case "encrypt":
             return .encryptionFailed(details: reason)
@@ -68,6 +94,7 @@ private func mapOperationFailureToStorageError(operation: String, reason: String
         case "verifySignature":
             return .verificationFailed(details: reason)
         default:
+            // Log using the passed logger
             logger.warning("Mapping generic operation failure for unknown operation '\(operation)'")
             return .operationFailed(details: "Operation '\(operation)' failed: \(reason)")
     }

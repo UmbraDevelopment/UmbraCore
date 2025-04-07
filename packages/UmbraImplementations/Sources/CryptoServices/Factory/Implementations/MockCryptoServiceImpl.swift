@@ -214,7 +214,7 @@ public actor MockCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
    */
   public func hash(
     dataIdentifier: String,
-    options _: SecurityCoreInterfaces.HashingOptions?
+    options _: HashingOptions?
   ) async -> Result<String, SecurityStorageError> {
     await logger.debug(
       "Hashing data \(dataIdentifier)",
@@ -272,7 +272,7 @@ public actor MockCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
   public func verifyHash(
     dataIdentifier _: String,
     hashIdentifier _: String,
-    options _: SecurityCoreInterfaces.HashingOptions?
+    options _: HashingOptions?
   ) async -> Result<Bool, SecurityStorageError> {
     await logger.debug(
       "Verifying hash",

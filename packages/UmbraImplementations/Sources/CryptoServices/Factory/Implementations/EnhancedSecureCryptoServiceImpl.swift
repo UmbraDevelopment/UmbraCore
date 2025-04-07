@@ -229,7 +229,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
    */
   public func hash(
     dataIdentifier: String,
-    options: SecurityCoreInterfaces.HashingOptions?
+    options: HashingOptions?
   ) async -> Result<String, SecurityStorageError> {
     // Check rate limiter
     if rateLimiter.isRateLimited(.hash) {
@@ -292,7 +292,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
   public func verifyHash(
     dataIdentifier: String,
     hashIdentifier: String,
-    options: SecurityCoreInterfaces.HashingOptions?
+    options: HashingOptions?
   ) async -> Result<Bool, SecurityStorageError> {
     // Check rate limiter
     if rateLimiter.isRateLimited(.verify) {

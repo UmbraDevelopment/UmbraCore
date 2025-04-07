@@ -178,17 +178,6 @@ public struct DecryptionOptions: Sendable {
   }
 }
 
-/// Configuration options for hashing.
-public struct HashingOptions: Sendable {
-  /// The hash algorithm to use.
-  public let algorithm: CoreSecurityTypes.HashAlgorithm
-
-  /// Initialises hashing options with defaults.
-  public init(algorithm: CoreSecurityTypes.HashAlgorithm = .sha256) {
-    self.algorithm=algorithm
-  }
-}
-
 /// Configuration options for key generation.
 public struct KeyGenerationOptions: Sendable {
   /// Whether to store the key in long-term persistent storage.
