@@ -70,6 +70,7 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
       // Create a new context with the updated metadata
       let successContext = EnhancedLogContext(
         domainName: context.domainName,
+        operationName: "encrypt",
         source: context.source,
         correlationID: context.correlationID,
         metadata: updatedMetadata
@@ -87,7 +88,7 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
   public func decrypt(
     encryptedDataIdentifier: String,
     keyIdentifier: String,
-    options: CoreSecurityTypes.EncryptionConfig? = nil
+    options: CoreSecurityTypes.EncryptionOptions? = nil
   ) async -> Result<String, SecurityStorageError> {
     let context = EnhancedLogContext(
       domainName: "CryptoService",
@@ -112,6 +113,7 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
       let updatedMetadata = context.metadata.withPublic(key: "decryptedIdentifier", value: decryptedIdentifier)
       let successContext = EnhancedLogContext(
         domainName: context.domainName,
+        operationName: "decrypt",
         source: context.source,
         correlationID: context.correlationID,
         metadata: updatedMetadata
@@ -151,6 +153,7 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
       let updatedMetadata = context.metadata.withPublic(key: "hashIdentifier", value: hashIdentifier)
       let successContext = EnhancedLogContext(
         domainName: context.domainName,
+        operationName: "hash",
         source: context.source,
         correlationID: context.correlationID,
         metadata: updatedMetadata
@@ -193,6 +196,7 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
       let updatedMetadata = context.metadata.withPublic(key: "isValid", value: "\(isValid)")
       let successContext = EnhancedLogContext(
         domainName: context.domainName,
+        operationName: "verifyHash",
         source: context.source,
         correlationID: context.correlationID,
         metadata: updatedMetadata
@@ -207,7 +211,7 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
 
   public func generateKey(
     length: Int,
-    options: SecurityCoreInterfaces.KeyGenerationOptions? = nil
+    options: CoreSecurityTypes.KeyGenerationOptions? = nil
   ) async -> Result<String, SecurityStorageError> {
     let context = EnhancedLogContext(
       domainName: "CryptoService",
@@ -231,6 +235,7 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
       let updatedMetadata = context.metadata.withPublic(key: "keyIdentifier", value: keyIdentifier)
       let successContext = EnhancedLogContext(
         domainName: context.domainName,
+        operationName: "generateKey",
         source: context.source,
         correlationID: context.correlationID,
         metadata: updatedMetadata
@@ -291,6 +296,7 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
       let updatedMetadata = context.metadata.withPrivate(key: "retrievedDataSize", value: "\(retrievedData.count)")
       let successContext = EnhancedLogContext(
         domainName: context.domainName,
+        operationName: "retrieveData",
         source: context.source,
         correlationID: context.correlationID,
         metadata: updatedMetadata
@@ -324,6 +330,7 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
       let updatedMetadata = context.metadata.withPrivate(key: "exportedDataSize", value: "\(exportedData.count)")
       let successContext = EnhancedLogContext(
         domainName: context.domainName,
+        operationName: "exportData",
         source: context.source,
         correlationID: context.correlationID,
         metadata: updatedMetadata
@@ -360,6 +367,7 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
       let updatedMetadata = context.metadata.withPrivate(key: "storedIdentifier", value: storedIdentifier)
       let successContext = EnhancedLogContext(
         domainName: context.domainName,
+        operationName: "importData",
         source: context.source,
         correlationID: context.correlationID,
         metadata: updatedMetadata
@@ -395,6 +403,7 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
       let updatedMetadata = context.metadata.withPrivate(key: "storedIdentifier", value: storedIdentifier)
       let successContext = EnhancedLogContext(
         domainName: context.domainName,
+        operationName: "importData",
         source: context.source,
         correlationID: context.correlationID,
         metadata: updatedMetadata
@@ -426,7 +435,14 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     if case let .failure(error) = result {
       await logger.logError(error, context: context)
     } else {
-      await logger.log(.info, "Delete data operation successful", context: context)
+      let successContext = EnhancedLogContext(
+        domainName: context.domainName,
+        operationName: "deleteData",
+        source: context.source,
+        correlationID: context.correlationID,
+        metadata: context.metadata
+      )
+      await logger.log(.info, "Delete data operation successful", context: successContext)
     }
 
     return result
@@ -446,7 +462,7 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     )
     // TODO: Add logging & delegate to wrapped.signData
     await logger.log(.warning, "signData not implemented in EnhancedLoggingCryptoServiceImpl", context: context)
-    return .failure(.operationNotSupported(details: "signData not implemented"))
+    return .failure(.unsupportedOperation)
   }
 
   public func verifySignature(dataIdentifier: String, signatureIdentifier: String, keyIdentifier: String) async -> Result<Bool, SecurityStorageError> {
@@ -462,7 +478,7 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     )
     // TODO: Add logging & delegate to wrapped.verifySignature
     await logger.log(.warning, "verifySignature not implemented in EnhancedLoggingCryptoServiceImpl", context: context)
-    return .failure(.operationNotSupported(details: "verifySignature not implemented"))
+    return .failure(.unsupportedOperation)
   }
 
   public func generateHash(
@@ -486,6 +502,7 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
       let updatedMetadata = context.metadata.withPublic(key: "hashIdentifier", value: hashIdentifier)
       let successContext = EnhancedLogContext(
         domainName: context.domainName,
+        operationName: "generateHash",
         source: context.source,
         correlationID: context.correlationID,
         metadata: updatedMetadata

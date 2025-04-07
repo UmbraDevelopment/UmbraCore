@@ -47,6 +47,25 @@ public enum KeyType: String, Sendable, Equatable, CaseIterable {
 }
 
 /**
+ Defines the algorithms used for signing and verification.
+ */
+public enum SignAlgorithm: String, Sendable, Equatable, CaseIterable {
+  case ecdsaP256SHA256 = "ECDSA P-256 with SHA-256"
+  case rsaPKCS1v15SHA256 = "RSA PKCS#1 v1.5 with SHA-256"
+  // Add other signing algorithms as needed
+}
+
+/**
+ Defines the formats for importing/exporting cryptographic keys.
+ */
+public enum KeyFormat: String, Sendable, Equatable, CaseIterable {
+  case raw = "Raw bytes"
+  case pkcs8 = "PKCS#8 format (usually for private keys)"
+  case spki = "Subject Public Key Info format (usually for public keys)"
+  // Add other key formats as needed
+}
+
+/**
  Defines padding modes for block cipher operations. Needed when data isn't a multiple of the block size.
  */
 public enum EncryptionPadding: String, Sendable, Equatable, CaseIterable {
@@ -135,6 +154,45 @@ public struct KeyGenerationOptions: Sendable, Equatable {
     self.keySizeInBits = keySizeInBits
     self.isExtractable = isExtractable
     self.useSecureEnclave = useSecureEnclave
+  }
+}
+
+/**
+ Options for configuring data signing operations.
+ */
+public struct SigningOptions: Sendable, Equatable {
+  public let algorithm: SignAlgorithm // e.g., RSA, ECDSA
+  // Add other common signing options if needed, e.g., digest type
+
+  public init(algorithm: SignAlgorithm) {
+    self.algorithm = algorithm
+  }
+}
+
+/**
+ Options for configuring signature verification operations.
+ */
+public struct VerificationOptions: Sendable, Equatable {
+  public let algorithm: SignAlgorithm
+  // Usually mirrors SigningOptions
+
+  public init(algorithm: SignAlgorithm) {
+    self.algorithm = algorithm
+  }
+}
+
+/**
+ Options for configuring key import operations.
+ */
+public struct KeyImportOptions: Sendable, Equatable {
+  public let keyType: KeyType
+  public let keyFormat: KeyFormat // e.g., raw, pkcs8, spki
+  public let isExtractable: Bool
+
+  public init(keyType: KeyType, keyFormat: KeyFormat, isExtractable: Bool = false) {
+    self.keyType = keyType
+    self.keyFormat = keyFormat
+    self.isExtractable = isExtractable
   }
 }
 

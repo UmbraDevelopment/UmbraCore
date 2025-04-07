@@ -23,10 +23,12 @@ umbra_swift_library(
         "//packages/UmbraCoreTypes/Sources/DomainSecurityTypes",
         "//packages/UmbraCoreTypes/Sources/LoggingTypes",
         "//packages/UmbraCoreTypes/Sources/UmbraErrors",
+        "//packages/UmbraInterfaces/Sources/CoreInterfaces", # Added dependency
         "//packages/UmbraInterfaces/Sources/CryptoInterfaces",
         "//packages/UmbraInterfaces/Sources/LoggingInterfaces",
         "//packages/UmbraInterfaces/Sources/SecurityCoreInterfaces",
         "//packages/UmbraInterfaces/Sources/SecurityInterfaces",  # Temporary, until we fully migrate SecureStorageConfig
+        # "//packages/UmbraInterfaces/Sources/KeyManagementInterfaces", # Removed incorrect dependency
         "//packages/UmbraImplementations/Sources/LoggingServices",
         "//packages/UmbraImplementations/Sources/LoggingAdapters", # Added for privacy-enhanced logging integration
         "//packages/UmbraImplementations/Sources/CryptoServices/Logging:CryptoLogger", # Added our domain-specific logger

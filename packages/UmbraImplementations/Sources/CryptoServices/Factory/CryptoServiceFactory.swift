@@ -439,6 +439,7 @@ public enum CryptoServiceFactory {
     if let secureLogger {
       await EnhancedLoggingCryptoServiceImpl(
         wrapped: wrapped,
+        secureStorage: wrapped.secureStorage, // Pass secureStorage from wrapped service
         logger: secureLogger
       )
     } else {

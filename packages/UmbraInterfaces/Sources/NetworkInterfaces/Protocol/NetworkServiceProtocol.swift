@@ -24,7 +24,7 @@ public protocol NetworkServiceProtocol: Sendable {
   /// - Returns: A NetworkResponseDTO containing the result
   func uploadData(
     _ request: NetworkRequestProtocol,
-    progressHandler: ((Double) -> Void)?
+    progressHandler: (@Sendable (Double) -> Void)?
   ) async throws -> NetworkResponseDTO
 
   /// Downloads data from a server
@@ -34,7 +34,7 @@ public protocol NetworkServiceProtocol: Sendable {
   /// - Returns: A NetworkResponseDTO containing the result
   func downloadData(
     _ request: NetworkRequestProtocol,
-    progressHandler: ((Double) -> Void)?
+    progressHandler: (@Sendable (Double) -> Void)?
   ) async throws -> NetworkResponseDTO
 
   /// Checks if the network is currently available

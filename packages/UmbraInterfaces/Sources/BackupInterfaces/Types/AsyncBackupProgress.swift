@@ -69,8 +69,8 @@ extension Task where Success == Never, Failure == Never {
   /// - Returns: A cancellable task
   public static func withProgressReporting(
     operation _: BackupOperation,
-    progressHandler: @escaping (BackupProgressInfo) -> Void,
-    action: @escaping (AsyncStream<BackupProgressInfo>.Continuation) async throws -> Void
+    progressHandler: @escaping BackupProgressHandler,
+    action: @escaping @Sendable (AsyncStream<BackupProgressInfo>.Continuation) async throws -> Void
   ) -> Task {
     Task {
       let (_, continuation)=BackupProgressInfo.createStream()
@@ -93,6 +93,8 @@ extension Task where Success == Never, Failure == Never {
     }
   }
 }
+
+public typealias BackupProgressHandler = @Sendable (BackupProgressInfo) -> Void
 
 /// Protocol for progress reporting using Swift's modern async sequences
 @preconcurrency

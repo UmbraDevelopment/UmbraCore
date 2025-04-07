@@ -208,7 +208,8 @@ public actor XPCServiceActor: XPCServiceProtocol {
   ) async throws {
     await log(.info, "Registering handler for endpoint: \(endpoint.name)")
 
-    let wrappedHandler=AnyXPCHandler { data in
+    // The wrapped handler must also be Sendable
+    let wrappedHandler=AnyXPCHandler(handler: { @Sendable data in
       // Decode the message
       do {
         // Handle two cases: types that conform to NSSecureCoding and types that support JSON
@@ -252,7 +253,7 @@ public actor XPCServiceActor: XPCServiceProtocol {
         throw XPCServiceError
           .messageEncodingFailed("Failed to decode message: \(error.localizedDescription)")
       }
-    }
+    })
 
     handlers[endpoint]=wrappedHandler
   }
@@ -386,6 +387,9 @@ public actor XPCServiceActor: XPCServiceProtocol {
  */
 @objc
 private protocol XPCMessageHandler {
+  /// Type alias for the completion handler to ensure Sendable conformance
+  typealias XPCMessageHandlerCompletion = @Sendable (Data?, Error?) -> Void
+
   /**
    Handles a message and returns a response.
 
@@ -397,7 +401,7 @@ private protocol XPCMessageHandler {
   func handleMessage(
     _ message: Data,
     forEndpoint endpoint: String,
-    withCompletion completion: @escaping (Data?, Error?) -> Void
+    withCompletion completion: @escaping XPCMessageHandlerCompletion
   )
 }
 
@@ -429,7 +433,7 @@ private class LocalXPCMessageHandler: NSObject, XPCMessageHandler {
   func handleMessage(
     _ message: Data,
     forEndpoint endpoint: String,
-    withCompletion completion: @escaping (Data?, Error?) -> Void
+    withCompletion completion: @escaping XPCMessageHandlerCompletion
   ) {
     guard let actor else {
       completion(nil, XPCServiceError.serviceNotRunning("XPC service actor has been deallocated"))
@@ -451,16 +455,16 @@ private class LocalXPCMessageHandler: NSObject, XPCMessageHandler {
  Type-erased handler for XPC messages.
  This allows storing handlers of different types in a dictionary.
  */
-private struct AnyXPCHandler {
-  /// The handling function
-  private let handler: (Data) async throws -> Data
+private struct AnyXPCHandler: Sendable {
+  /// The handling function - must be Sendable
+  private let handler: @Sendable (Data) async throws -> Data
 
   /**
    Initialises a new type-erased XPC handler.
 
-   - Parameter handler: The handling function
+   - Parameter handler: The Sendable handling function
    */
-  init(handler: @escaping (Data) async throws -> Data) {
+  init(handler: @Sendable @escaping (Data) async throws -> Data) {
     self.handler=handler
   }
 

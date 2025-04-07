@@ -30,7 +30,7 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
   // MARK: - Type Erasure for Recovery Strategies
 
   /// Protocol to erase the generic types of ErrorRecoveryStrategy
-  public protocol AnyErrorRecoveryStrategy {
+  public protocol AnyErrorRecoveryStrategy: Sendable {
     /// Attempts to execute the recovery action with type-erased input/output.
     /// The implementation should attempt to cast the error and context to the expected types.
     ///
@@ -38,21 +38,21 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
     ///   - error: The error to recover from
     ///   - context: The context for the recovery attempt
     /// - Returns: The type-erased recovery result if successful, nil otherwise
-    func attemptAction(error: Any, context: ErrorContext) async -> Any?
+    func attemptAction(error: Any, context: ErrorContext) async -> (any Sendable)?
 
     /// A descriptive name for this strategy
     var description: String { get }
   }
 
   /// Wrapper to hold a concrete strategy and conform to AnyErrorRecoveryStrategy
-  private struct RecoveryStrategyWrapper<E: Error, Outcome>: AnyErrorRecoveryStrategy {
-    let concreteStrategy: ErrorRecoveryStrategy<E, Outcome>
+  private struct RecoveryStrategyWrapper<E: Error, Outcome: Sendable>: AnyErrorRecoveryStrategy {
+    let concreteStrategy: any ErrorRecoveryStrategy<E, Outcome>
 
     var description: String {
       concreteStrategy.description
     }
 
-    func attemptAction(error: Any, context: ErrorContext) async -> Any? {
+    func attemptAction(error: Any, context: ErrorContext) async -> (any Sendable)? {
       // Attempt to cast the provided error to the type this strategy expects
       guard let typedError=error as? E else {
         return nil // Error type doesn't match, can't handle it
@@ -150,10 +150,10 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
 
    - Returns: Result indicating whether recovery was successful and the recovery outcome
    */
-  public func handleWithRecovery<E: Error, Outcome>(
+  public func handleWithRecovery<E: Error, Outcome: Sendable>(
     _ error: E,
     context: ErrorContext?,
-    recoveryStrategies: [ErrorRecoveryStrategy<E, Outcome>],
+    recoveryStrategies: [any ErrorRecoveryStrategy<E, Outcome>],
     options: ErrorHandlingOptions?
   ) async -> ErrorRecoveryResult<Outcome> {
     let actualContext=context ?? ErrorContext(
@@ -201,14 +201,14 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
 
    - Parameters:
       - strategy: The recovery strategy to register
-      - forErrorType: The error type this strategy can handle
+      - forErrorType: The concrete error type this strategy handles
    */
-  public func registerRecoveryStrategy<E: Error>(
-    _ strategy: ErrorRecoveryStrategy<E, some Any>,
+  public func registerRecoveryStrategy<E: Error, O: Sendable>(
+    _ strategy: any ErrorRecoveryStrategy<E, O>,
     forErrorType: E.Type
   ) async {
     let typeName=String(describing: forErrorType)
-    let wrapper=RecoveryStrategyWrapper(concreteStrategy: strategy)
+    let wrapper=RecoveryStrategyWrapper<E, O>(concreteStrategy: strategy)
 
     // Create entry if it doesn't exist
     if recoveryRegistry[typeName] == nil {
@@ -523,4 +523,26 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
     // No need to pass the privacy level if not used
     await errorLogger.warning("Failed to recover from error", context: logContext)
   }
+}
+
+/**
+ Protocol defining an error recovery strategy with typed error and outcome.
+ */
+public protocol ErrorRecoveryStrategy<ErrorType, Outcome>: Sendable, CustomStringConvertible where Outcome: Sendable {
+  /// The specific type of error this strategy handles.
+  associatedtype ErrorType: Error
+
+  /// The type of the successful outcome if recovery succeeds.
+  associatedtype Outcome: Sendable
+
+  /// A descriptive name for the strategy (e.g., "Retry Network Request").
+  var description: String { get }
+
+  /// Attempts to recover from the error.
+  ///
+  /// - Parameters:
+  ///   - error: The error to recover from
+  ///   - context: The context for the recovery attempt
+  /// - Returns: The recovery outcome if successful, nil otherwise
+  func action(_ error: ErrorType, _ context: ErrorContext) async -> Outcome?
 }

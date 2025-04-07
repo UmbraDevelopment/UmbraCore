@@ -345,52 +345,49 @@ public protocol ProgressCancellationToken: Sendable {
 }
 
 /// Simple implementation of a cancellation token
-public final class SimpleCancellationToken: BackupCancellationToken {
-  /// Actor to safely manage the mutable state
-  private let stateManager=CancellationStateManager()
-
-  /// The action to perform when cancellation is requested
-  private let onCancel: @Sendable () -> Void
+public final class SimpleCancellationToken: ProgressCancellationToken, @unchecked Sendable {
+  /// Lock for synchronising access to _isCancelled
+  private let lock = NSLock()
 
   /// Tracks the last known cancellation state for sync access
-  private var _isCancelled: Bool=false
+  private var _isCancelled: Bool = false
 
   /// Creates a new cancellation token
-  /// - Parameter onCancel: Action to perform when cancellation is requested
-  public init(onCancel: @escaping @Sendable () -> Void={}) {
-    self.onCancel=onCancel
-  }
+  public init() {}
 
-  /// Checks if the operation has been cancelled (synchronous access to last known state)
+  /// Checks if the operation has been cancelled
   public var isCancelled: Bool {
-    _isCancelled
-  }
-
-  /// Checks asynchronously if the operation has been cancelled (safe actor access)
-  public var isCancelledAsync: Bool {
-    get async {
-      await stateManager.isCancelled
-    }
+    lock.withLock { _isCancelled }
   }
 
   /// Attempts to cancel the operation
   public func cancel() {
-    Task {
-      await stateManager.setCancelled()
-      _isCancelled=true
-      onCancel()
+    lock.withLock {
+      guard !_isCancelled else { return } // Avoid redundant work/notifications
+      _isCancelled = true
     }
+    // Notify observers outside the lock to prevent potential deadlocks
+    // if observer callbacks try to acquire the same lock.
+    // Implementation for observers notification might be needed here if using Combine or similar.
+  }
+
+  /// Reset the token to the active state.
+  public func reset() {
+    lock.withLock {
+      _isCancelled = false
+    }
+    // Notify observers about reset if applicable.
   }
 }
 
 /// Actor for managing cancellation state in a thread-safe manner
 private actor CancellationStateManager {
   /// Whether the token has been cancelled
-  var isCancelled: Bool=false
+  var isCancelled: Bool = false
 
   /// Marks the operation as cancelled
   func setCancelled() {
-    isCancelled=true
+    isCancelled = true
   }
 }
 
@@ -400,10 +397,10 @@ private actor CancellationStateManager {
 /// that tracks progress and can be observed by clients.
 public actor BackupProgressMonitor: BackupProgressReporter {
   /// The current progress of the operation
-  private var _currentProgress: [BackupOperation: BackupProgressInfo]=[:]
+  private var _currentProgress: [BackupOperation: BackupProgressInfo] = [:]
 
   /// Operation start times for calculating rates
-  private var operationStartTimes: [BackupOperation: Date]=[:]
+  private var operationStartTimes: [BackupOperation: Date] = [:]
 
   /// List of operations currently in progress
   public var activeOperations: [BackupOperation] {
@@ -436,7 +433,7 @@ public actor BackupProgressMonitor: BackupProgressReporter {
   /// - Parameter operation: The operation to get elapsed time for
   /// - Returns: The elapsed time in seconds, or nil if the operation hasn't started
   public func elapsedTime(for operation: BackupOperation) -> TimeInterval? {
-    guard let startTime=operationStartTimes[operation] else {
+    guard let startTime = operationStartTimes[operation] else {
       return nil
     }
 
@@ -453,11 +450,11 @@ public actor BackupProgressMonitor: BackupProgressReporter {
   ) async {
     // Record start time if this is the first progress report
     if operationStartTimes[operation] == nil {
-      operationStartTimes[operation]=Date()
+      operationStartTimes[operation] = Date()
     }
 
     // Update current progress
-    _currentProgress[operation]=progressInfo
+    _currentProgress[operation] = progressInfo
 
     // Notify observers
     if let onProgressUpdated {
@@ -469,8 +466,8 @@ public actor BackupProgressMonitor: BackupProgressReporter {
   /// - Parameter operation: The operation that was cancelled
   public func reportCancellation(for operation: BackupOperation) async {
     // Clean up tracking
-    _currentProgress[operation]=nil
-    operationStartTimes[operation]=nil
+    _currentProgress[operation] = nil
+    operationStartTimes[operation] = nil
 
     // Notify observers
     if let onOperationCancelled {
@@ -484,8 +481,8 @@ public actor BackupProgressMonitor: BackupProgressReporter {
   ///   - operation: The operation that failed
   public func reportFailure(_ error: Error, for operation: BackupOperation) async {
     // Clean up tracking
-    _currentProgress[operation]=nil
-    operationStartTimes[operation]=nil
+    _currentProgress[operation] = nil
+    operationStartTimes[operation] = nil
 
     // Notify observers
     if let onOperationFailed {
@@ -497,8 +494,8 @@ public actor BackupProgressMonitor: BackupProgressReporter {
   /// - Parameter operation: The operation that completed
   public func reportCompletion(for operation: BackupOperation) async {
     // Clean up tracking
-    _currentProgress[operation]=nil
-    operationStartTimes[operation]=nil
+    _currentProgress[operation] = nil
+    operationStartTimes[operation] = nil
 
     // Notify observers
     if let onOperationCompleted {

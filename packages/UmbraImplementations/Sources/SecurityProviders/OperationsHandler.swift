@@ -207,7 +207,7 @@ final class OperationsHandler {
             cryptoService.encrypt(
               dataIdentifier: importDataForOperation([UInt8](inputData)),
               keyIdentifier: importDataForOperation(key),
-              options: EncryptionOptions(algorithm: .aes256CBC)
+              options: EncryptionOptions(algorithm: .aes256CBC, mode: .cbc, padding: .pkcs7)
             )
           ),
           operation: operation
@@ -253,7 +253,7 @@ final class OperationsHandler {
             cryptoService.decrypt(
               encryptedDataIdentifier: importDataForOperation([UInt8](inputData)),
               keyIdentifier: importDataForOperation(key),
-              options: DecryptionOptions(algorithm: .aes256CBC)
+              options: DecryptionOptions(algorithm: .aes256CBC, mode: .cbc, padding: .pkcs7)
             )
           ),
           operation: operation

@@ -17,7 +17,7 @@ import UmbraErrors
  */
 public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
   /// The secure storage to use
-  private let secureStorage: SecureStorageProtocol
+  public let secureStorage: SecureStorageProtocol
 
   /// The logger to use (Assuming it conforms to PrivacyAwareLoggingProtocol)
   private let logger: PrivacyAwareLoggingProtocol
@@ -70,9 +70,13 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
     // Retrieve original data first
     let originalDataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
     guard case let .success(originalData) = originalDataResult else {
-        let retrieveError = originalDataResult.mapError { $0 } // Extract error
-        await logger.log(.error, "Failed to retrieve original data for encryption: \(retrieveError)", context: context)
-        return .failure(mapStorageErrorToCryptoError(retrieveError)) // Map error
+      if case let .failure(error) = originalDataResult {
+        await logger.log(.error, "Failed to retrieve original data for encryption: \(error)", context: context)
+        return .failure(mapStorageErrorToCryptoError(error)) // Map extracted error
+      } else {
+        await logger.log(.error, "Failed to retrieve original data for encryption due to unknown error state", context: context)
+        return .failure(.storageUnavailable) // Or another suitable error
+      }
     }
 
     // Create mock encrypted data
@@ -105,7 +109,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
   public func decrypt(
     encryptedDataIdentifier: String,
     keyIdentifier: String,
-    options: DecryptionOptions?
+    options: CoreSecurityTypes.DecryptionOptions?
   ) async -> Result<String, SecurityStorageError> {
     let context = BaseLogContextDTO(
       domainName: "CryptoService",
@@ -207,12 +211,16 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
     )
 
     // --- Mock Implementation ---
-    // Retrieve original data first
+    // Retrieve original data first (needed for hashing)
     let originalDataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
-    guard case let .success(originalData) = originalDataResult else {
-        let retrieveError = originalDataResult.mapError { $0 } // Extract error
-        await logger.log(.error, "Failed to retrieve original data for hashing: \(retrieveError)", context: context)
-        return .failure(mapStorageErrorToCryptoError(retrieveError)) // Map error
+    guard case .success = originalDataResult else {
+      if case let .failure(error) = originalDataResult {
+        await logger.log(.error, "Failed to retrieve original data for hashing: \(error)", context: context)
+        return .failure(mapStorageErrorToCryptoError(error)) // Map extracted error
+      } else {
+        await logger.log(.error, "Failed to retrieve original data for hashing due to unknown error state", context: context)
+        return .failure(.storageUnavailable)
+      }
     }
 
     // Generate mock hash based on retrieved data (length used as simple example)
@@ -220,8 +228,14 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
     switch algorithm {
       case .sha256:
         hashData = await generateRandomBytes(count: 32) // Mock hash
+      case .blake2b:
+        await logger.log(.debug, "Using mock BLAKE2b hash generation", context: context)
+        hashData = await generateRandomBytes(count: 64) // Mock hash for BLAKE2b
       case .sha512:
-        hashData = await generateRandomBytes(count: 64) // Mock hash
+        await logger.log(.debug, "Using mock SHA512 hash generation", context: context)
+        hashData = await generateRandomBytes(count: 64) // Mock hash for SHA512
+      // TODO: Add other supported hash algorithms
+      // default: return .failure(.unsupportedOperation) // Or handle unsupported algorithms
     }
 
     // Store the hash
@@ -251,7 +265,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
       source: "DefaultCryptoServiceImpl.storeData",
       metadata: LogMetadataDTOCollection()
         .withPublic(key: "identifier", value: identifier)
-        .withPrivate(key: "data_size", value: data.count) // Log size privately
+        .withPrivate(key: "data_size", value: String(data.count)) // Convert Int to String
     )
 
     await logger.log(.debug, "Storing data with identifier: \(identifier)", context: context)
@@ -282,15 +296,15 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
 
     await logger.log(.debug, "Retrieving data with identifier: \(identifier)", context: context)
     // Use the correct storage method and map result
-    let result = await secureStorage.retrieveData(withIdentifier: identifier)
+    let result: Result<[UInt8], SecurityStorageError> = await secureStorage.retrieveData(withIdentifier: identifier)
 
+    // Handle result and map error synchronously after await
     switch result {
-    case .success(let bytes):
-        await logger.log(.info, "Successfully retrieved data for identifier: \(identifier)", context: context)
-        return .success(Data(bytes)) // Convert [UInt8] to Data
-    case .failure(let error):
-       await logger.log(.error, "Failed to retrieve data: \(error)", context: context)
-        return .failure(mapStorageErrorToCryptoError(error))
+      case let .success(bytes):
+        return .success(Data(bytes))
+      case let .failure(storageError):
+        await logger.log(.error, "Failed to retrieve data: \(storageError)", context: context)
+        return .failure(mapStorageErrorToCryptoError(storageError))
     }
   }
 
@@ -326,47 +340,6 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
   }
 
   // Added for protocol conformance
-  public func storeData(
-    data: Data,
-    identifier: String
-  ) async -> Result<Void, SecurityStorageError> {
-    let context = BaseLogContextDTO(domainName: "CryptoService", source: "DefaultCryptoServiceImpl.storeData")
-    await logger.log(.debug, "Storing data with identifier: \(identifier)", context: context)
-    // Delegate to secure storage, map error if needed
-    let result = await secureStorage.storeData(data, withIdentifier: identifier)
-    if case .failure(let error) = result {
-        await logger.log(.error, "Failed to store data: \(error)", context: context)
-        // No error mapping needed here as return type matches
-    }
-    return result
-  }
-
-  // Added for protocol conformance
-  public func retrieveData(
-    identifier: String
-  ) async -> Result<Data, SecurityStorageError> {
-    let context = BaseLogContextDTO(domainName: "CryptoService", source: "DefaultCryptoServiceImpl.retrieveData")
-    await logger.log(.debug, "Retrieving data with identifier: \(identifier)", context: context)
-    // Delegate to secure storage, map error if needed
-    let result = await secureStorage.retrieveData(withIdentifier: identifier)
-    if case .failure(let error) = result {
-        await logger.log(.error, "Failed to retrieve data: \(error)", context: context)
-        // No error mapping needed here as return type matches
-    }
-    return result
-  }
-
-  // Added for protocol conformance - [UInt8] version
-  public func importData(
-    _ data: [UInt8],
-    customIdentifier: String?
-  ) async -> Result<String, SecurityStorageError> {
-    let context = BaseLogContextDTO(domainName: "CryptoService", source: "DefaultCryptoServiceImpl.importData_UInt8")
-    await logger.log(.warning, "importData ([UInt8]) is not implemented by default", context: context)
-    return .failure(.unsupportedOperation)
-  }
-
-  // Added for protocol conformance - Data version
   public func importData(
     _ data: Data,
     customIdentifier: String
@@ -439,9 +412,31 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
       return .failure(.unsupportedOperation)
   }
 
-  // MARK: - Helper Methods
+  // MARK: - Protocol Stubs (To be implemented)
 
-  // Helper function to map SecurityStorageError to CryptoError
+  public func verifyHash(
+    dataIdentifier: String,
+    hashIdentifier: String,
+    options: CoreSecurityTypes.HashingOptions?
+  ) async -> Result<Bool, SecurityStorageError> {
+    let context = BaseLogContextDTO(domainName: "CryptoService", source: "DefaultCryptoServiceImpl.verifyHash")
+    await logger.log(.warning, "verifyHash not implemented", context: context)
+    return .failure(.unsupportedOperation)
+  }
+
+  public func exportData(
+    identifier: String
+  ) async -> Result<[UInt8], SecurityStorageError> {
+    let context = BaseLogContextDTO(domainName: "CryptoService", source: "DefaultCryptoServiceImpl.exportData")
+    await logger.log(.warning, "exportData not implemented", context: context)
+    return .failure(.unsupportedOperation)
+  }
+
+  // MARK: - Utility Methods
+
+  /**
+   Helper function to map SecurityStorageError to CryptoError
+   */
   private func mapStorageErrorToCryptoError(_ storageError: SecurityStorageError) -> SecurityStorageError {
       switch storageError {
          case .storageUnavailable:
@@ -477,9 +472,9 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
          case .implementationUnavailable:
           // Return original, CryptoError has no direct 'implementationUnavailable'
           return storageError
-         case .operationFailed(let message):
-          // Return original, CryptoError.operationFailed needs a reason
-          return storageError
+         case .operationFailed(_):
+           // Return original, CryptoError.operationFailed needs a reason
+           return storageError
       }
   }
 
