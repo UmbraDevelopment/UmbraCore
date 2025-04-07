@@ -75,12 +75,14 @@ public enum CryptoServiceFactory {
    Creates a default crypto service implementation.
 
    - Parameter secureStorage: Optional secure storage service to use
+   - Parameter logger: Optional logger for operations
    - Returns: A CryptoServiceProtocol implementation
    */
   public static func createDefault(
-    secureStorage: SecureStorageProtocol?=nil
+    secureStorage: SecureStorageProtocol? = nil,
+    logger: LoggingProtocol? = nil
   ) async -> CryptoServiceProtocol {
-    await createDefaultService(secureStorage: secureStorage)
+    await createDefaultService(secureStorage: secureStorage, logger: logger)
   }
 
   /**
@@ -88,12 +90,12 @@ public enum CryptoServiceFactory {
 
    - Parameters:
      - secureStorage: Optional secure storage service to use
-     - logger: Logger for operations
+     - logger: Optional logger for operations
    - Returns: A standard CryptoServiceProtocol implementation
    */
   public static func createDefaultService(
-    secureStorage: SecureStorageProtocol?=nil,
-    logger: LoggingProtocol?=nil
+    secureStorage: SecureStorageProtocol? = nil,
+    logger: LoggingProtocol? = nil
   ) async -> CryptoServiceProtocol {
     let actualLogger: LoggingProtocol = logger ?? LoggingServiceFactory.createStandardLogger()
 
@@ -190,28 +192,23 @@ public enum CryptoServiceFactory {
    Creates a mock crypto service implementation for testing.
 
    - Parameters:
-     - shouldSucceed: Whether operations should succeed
+     - configuration: Configuration options for the mock
      - logger: Logger for operations
+     - secureStorage: Secure storage for the mock implementation
    - Returns: A mock CryptoServiceProtocol implementation
    */
-  public static func createMockService(
-    shouldSucceed: Bool = true,
-    logger: LoggingProtocol?=nil
+  public static func createMock(
+    configuration: MockCryptoServiceImpl.Configuration = .init(),
+    logger: LoggingProtocol? = nil,
+    secureStorage: SecureStorageProtocol? = nil
   ) async -> CryptoServiceProtocol {
     let actualLogger: LoggingProtocol = logger ?? LoggingServiceFactory.createStandardLogger()
-
+    let actualSecureStorage = secureStorage ?? await createLocalSecureStorage(logger: actualLogger)
+    
     return await MockCryptoServiceImpl(
-      configuration: MockCryptoConfiguration(
-        encryptionSucceeds: shouldSucceed,
-        decryptionSucceeds: shouldSucceed,
-        hashingSucceeds: shouldSucceed,
-        verificationSucceeds: shouldSucceed,
-        keyGenerationSucceeds: shouldSucceed,
-        storageSucceeds: shouldSucceed,
-        retrievalSucceeds: shouldSucceed
-      ),
+      configuration: configuration,
       logger: actualLogger,
-      secureStorage: await createLocalSecureStorage(logger: actualLogger)
+      secureStorage: actualSecureStorage
     )
   }
 
@@ -221,6 +218,7 @@ public enum CryptoServiceFactory {
    - Parameters:
      - secureStorage: Optional secure storage service to use
      - logger: Logger for operations
+     - environment: Deployment environment
    - Returns: A CryptoServiceProtocol implementation appropriate for the environment
    */
   public static func createEnvironmentAppropriateService(
@@ -281,114 +279,106 @@ public enum CryptoServiceFactory {
   // MARK: - Provider-Specific Implementations
 
   /**
-   Creates a new crypto service with the specified provider type.
-   This is the consolidated implementation that handles provider creation internally.
-
-   This method integrates functionality previously available in separate factory implementations,
-   providing a unified interface for creating cryptographic services with specific provider types.
+   Creates a crypto service with a specific provider type.
 
    - Parameters:
-     - providerType: The type of security provider to use
+     - providerType: Type of security provider to use
      - secureStorage: Optional secure storage service to use
-     - logger: Logger for recording operations
-   - Returns: A new actor-based implementation of CryptoServiceProtocol
+     - logger: Optional logger for operations
+   - Returns: A CryptoServiceProtocol implementation with the specified provider
    */
   public static func createWithProviderType(
     providerType: SecurityProviderType,
-    secureStorage: SecureStorageProtocol?=nil,
-    logger: LoggingProtocol?=nil
+    secureStorage: SecureStorageProtocol? = nil,
+    logger: LoggingProtocol? = nil
+  ) async -> CryptoServiceProtocol {
+    let actualLogger: LoggingProtocol = logger ?? LoggingServiceFactory.createStandardLogger()
+    
+    // Create the provider
+    let registry = await createProviderRegistry(logger: actualLogger)
+    let provider = await registry.createProvider(type: providerType)
+    
+    return await createWithProvider(
+      provider: provider,
+      secureStorage: secureStorage,
+      logger: actualLogger
+    )
+  }
+
+  /**
+   Creates a crypto service with a specific provider.
+
+   - Parameters:
+     - provider: Security provider to use
+     - secureStorage: Optional secure storage service to use
+     - logger: Optional logger for operations
+   - Returns: A CryptoServiceProtocol implementation with the specified provider
+   */
+  public static func createWithProvider(
+    provider: SecurityProviderProtocol,
+    secureStorage: SecureStorageProtocol? = nil,
+    logger: LoggingProtocol? = nil
   ) async -> CryptoServiceProtocol {
     let actualLogger: LoggingProtocol = logger ?? LoggingServiceFactory.createStandardLogger()
 
     // Use the provided secure storage or create a default one
-    let actualSecureStorage: SecureStorageProtocol
-    if let ss = secureStorage {
-      actualSecureStorage = ss
-    } else {
-      actualSecureStorage = await createLocalSecureStorage(logger: actualLogger)
-    }
-
-    // Create provider based on the specified type
-    // This approach uses the provider registry to create providers dynamically
-    let provider: SecurityProviderProtocol? = await createBasicSecurityProvider(providerType)
-
-    guard let provider else {
-      await actualLogger.error(
-        "Failed to create provider of type \(providerType). Falling back to basic implementation.",
-        metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-        source: "CryptoServiceFactory"
-      )
-
-      // Return a basic implementation as fallback
-      return await createWithProviderType(
-        providerType: .basic,
-        secureStorage: actualSecureStorage,
-        logger: actualLogger
-      )
-    }
-
-    // Now use the provider to create the crypto service
-    return await createWithProvider(
+    let actualSecureStorage = secureStorage ?? await createLocalSecureStorage(logger: actualLogger)
+    
+    return await DefaultCryptoServiceWithProviderImpl(
       provider: provider,
       secureStorage: actualSecureStorage,
       logger: actualLogger
     )
   }
 
+  // MARK: - Provider Registry Support
+
   /**
-   Creates a new crypto service with the specified security provider.
-   The implementation follows the actor-based concurrency model of the
-   Alpha Dot Five architecture.
-
-   - Parameters:
-      - provider: The security provider to use (should be obtained from appropriate factory)
-      - secureStorage: Optional secure storage service to use
-      - logger: Logger for recording operations
-   - Returns: A new actor-based implementation of CryptoServiceProtocol
+   Creates a provider registry for managing security providers.
+   
+   - Parameter logger: Optional logger for operations
+   - Returns: A provider registry implementation
    */
-  public static func createWithProvider(
-    provider: SecurityProviderProtocol,
-    secureStorage: SecureStorageProtocol?=nil,
-    logger: LoggingProtocol?=nil
-  ) async -> CryptoServiceProtocol {
-    let actualLogger: LoggingProtocol = logger ?? LoggingServiceFactory.createStandardLogger()
-
-    // Use the provided secure storage or create a default one
-    let actualSecureStorage: SecureStorageProtocol
-    if let ss = secureStorage {
-      actualSecureStorage = ss
-    } else {
-      actualSecureStorage = await createLocalSecureStorage(logger: actualLogger)
-    }
-
-    // Create a crypto service implementation using DefaultCryptoServiceImpl
-    let cryptoService = await DefaultCryptoServiceImpl(
-      secureStorage: actualSecureStorage,
+  public static func createProviderRegistry(
+    logger: LoggingProtocol? = nil
+  ) async -> SecurityProviderRegistryProtocol {
+    let actualLogger = logger ?? LoggingServiceFactory.createStandardLogger()
+    
+    return await DefaultSecurityProviderRegistry(
       logger: actualLogger
     )
-
-    // Return as the protocol type
-    return cryptoService
   }
 
-  /**
-   Creates a new secure storage service for key management.
+  // MARK: - Storage-Related Methods
 
+  /**
+   Creates a secure storage implementation.
+   
    - Parameters:
-      - storageURL: Custom URL for key storage
-      - logger: Logger for recording operations
-   - Returns: A new secure storage implementation
+     - provider: Optional security provider to use
+     - storageURL: Optional URL for storage location
+     - logger: Optional logger for operations
+   - Returns: A secure storage implementation
    */
   public static func createSecureStorage(
-    storageURL: URL?=nil,
-    logger: LoggingProtocol?=nil
+    provider: SecurityProviderProtocol? = nil,
+    storageURL: URL? = nil,
+    logger: LoggingProtocol? = nil
   ) async -> SecureStorageProtocol {
-    let actualLogger: LoggingProtocol = logger ?? LoggingServiceFactory.createStandardLogger()
-    let url = storageURL ?? URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("CryptoSecureStorage")
-
-    // Create a simple in-memory secure storage
-    return InMemorySecureStorage(
+    let actualLogger = logger ?? LoggingServiceFactory.createStandardLogger()
+    
+    // Create default provider if none provided
+    let actualProvider: SecurityProviderProtocol
+    if let provider = provider {
+      actualProvider = provider
+    } else {
+      let registry = await createProviderRegistry(logger: actualLogger)
+      actualProvider = await registry.createProvider(type: .default)
+    }
+    
+    return await DefaultSecureStorageImpl(
+      provider: actualProvider,
+      storageURL: storageURL,
       logger: actualLogger
     )
   }
@@ -411,14 +401,17 @@ public enum CryptoServiceFactory {
    - Parameters:
      - configuration: Configuration options for the mock
      - logger: Logger for operations
+     - secureStorage: Secure storage for the mock implementation
    - Returns: A mock CryptoServiceProtocol implementation
    */
   public static func createMock(
     configuration: MockCryptoServiceImpl.Configuration = .init(),
-    logger: LoggingProtocol?=nil
+    logger: LoggingProtocol? = nil,
+    secureStorage: SecureStorageProtocol? = nil
   ) async -> CryptoServiceProtocol {
     let actualLogger: LoggingProtocol = logger ?? LoggingServiceFactory.createStandardLogger()
-    let actualSecureStorage = await createLocalSecureStorage(logger: actualLogger)
+    let actualSecureStorage = secureStorage ?? await createLocalSecureStorage(logger: actualLogger)
+    
     return await MockCryptoServiceImpl(
       configuration: configuration,
       logger: actualLogger,

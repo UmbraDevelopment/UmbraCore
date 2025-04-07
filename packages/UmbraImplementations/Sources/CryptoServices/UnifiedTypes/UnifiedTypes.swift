@@ -76,28 +76,20 @@ public enum UnifiedCryptoTypes {
       self.padding=padding
     }
 
-    /// Convert from SecurityCoreInterfaces.EncryptionOptions if available
-    public init(from options: SecurityCoreInterfaces.EncryptionOptions?) {
+    /// Convert from CoreSecurityTypes.EncryptionOptions if available
+    public init(from options: CoreSecurityTypes.EncryptionOptions?) {
       // Default values if options is nil
       if let options {
         // Map the algorithm
-        switch options.algorithm {
-          case .aes256GCM:
-            algorithm = .aes256GCM
-          case .aes256CBC:
-            algorithm = .aes256CBC
-          case .chacha20Poly1305:
-            algorithm = .chacha20Poly1305
-        }
-
-        authenticatedData=options.authenticatedData
+        self.algorithm = options.algorithm  // Direct assignment since it's the same type
+        self.authenticatedData = options.additionalAuthenticatedData
         // Padding is optional and depends on implementation
-        padding=nil
+        padding = nil
       } else {
         // Defaults
         algorithm = .aes256GCM
-        authenticatedData=nil
-        padding=nil
+        authenticatedData = nil
+        padding = nil
       }
     }
 
