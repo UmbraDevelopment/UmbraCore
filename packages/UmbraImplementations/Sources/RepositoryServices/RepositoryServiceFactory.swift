@@ -147,7 +147,6 @@ private actor DefaultRepositoryService: RepositoryServiceProtocol {
   func createRepository(at url: URL) async throws -> any RepositoryProtocol {
     // TODO: Implement repository creation logic at a specific URL
     print("DefaultRepositoryService: createRepository(at:) called for \(url.path)")
-    let identifier = url.lastPathComponent // Example identifier
     // This would normally involve creating the actual repository structure
     // For now, throw an error as it's not implemented
     throw RepositoryError.internalError

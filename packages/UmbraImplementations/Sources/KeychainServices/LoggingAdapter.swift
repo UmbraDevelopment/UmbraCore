@@ -12,7 +12,7 @@ import LoggingTypes
  type safety and privacy controls.
  */
 public actor LoggingAdapter: LoggingProtocol, CoreLoggingProtocol {
-  private let loggingService: LoggingServiceProtocol
+  private let loggingService: LoggingProtocol
   private let _loggingActor: LoggingActor
 
   /// The domain name for this logger
@@ -28,7 +28,7 @@ public actor LoggingAdapter: LoggingProtocol, CoreLoggingProtocol {
 
    - Parameter loggingService: The logging service to wrap
    */
-  public init(wrapping loggingService: LoggingServiceProtocol) {
+  public init(wrapping loggingService: LoggingProtocol) {
     self.loggingService=loggingService
     _loggingActor=LoggingActor(destinations: [], minimumLogLevel: .info)
   }
@@ -39,30 +39,8 @@ public actor LoggingAdapter: LoggingProtocol, CoreLoggingProtocol {
   public func log(_ level: LogLevel, _ message: String, context: LogContextDTO) async {
     let formattedMessage="[\(domainName)] \(message)"
 
-    // Use the appropriate loggers
-    if let loggingService=loggingService as? LoggingProtocol {
-      await loggingService.log(level, formattedMessage, context: context)
-    } else {
-      // Legacy fallback for older LoggingServiceProtocol
-      let metadata=context.asLogMetadata()
-      let source=context.getSource()
-
-      // Use the appropriate level-specific method
-      switch level {
-        case .trace:
-          await loggingService.verbose(formattedMessage, metadata: metadata, source: source)
-        case .debug:
-          await loggingService.debug(formattedMessage, metadata: metadata, source: source)
-        case .info:
-          await loggingService.info(formattedMessage, metadata: metadata, source: source)
-        case .warning:
-          await loggingService.warning(formattedMessage, metadata: metadata, source: source)
-        case .error:
-          await loggingService.error(formattedMessage, metadata: metadata, source: source)
-        case .critical:
-          await loggingService.critical(formattedMessage, metadata: metadata, source: source)
-      }
-    }
+    // Directly call the wrapped logging service's log method
+    await loggingService.log(level, formattedMessage, context: context)
 
     // Also log to the actor
     await loggingActor.log(level, formattedMessage, context: context)

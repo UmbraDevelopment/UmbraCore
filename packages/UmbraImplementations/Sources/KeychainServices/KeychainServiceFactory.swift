@@ -38,10 +38,10 @@ public enum KeychainServiceFactory {
    */
   public static func createService(
     serviceIdentifier: String=defaultServiceIdentifier,
-    logger: LoggingServiceProtocol?=nil
+    logger: LoggingProtocol?=nil
   ) async -> KeychainServiceProtocol {
     // Use provided logger or create a default one with appropriate identifier
-    let actualLogger: LoggingServiceProtocol = logger ?? DefaultLogger()
+    let actualLogger: LoggingProtocol = logger ?? DefaultLogger()
     // TODO: Configure minimum level if needed via DefaultLogger setup or alternative
     // For now, DefaultLogger likely has its own default level. Explicit setting here removed.
     // Create a LoggingProtocol adapter for the service
@@ -65,10 +65,10 @@ public enum KeychainServiceFactory {
    */
   public static func createInMemoryService(
     serviceIdentifier: String=defaultServiceIdentifier,
-    logger: LoggingServiceProtocol?=nil
+    logger: LoggingProtocol?=nil
   ) async -> KeychainServiceProtocol {
     // Use provided logger or create a default one with appropriate identifier
-    let actualLogger: LoggingServiceProtocol = logger ?? DefaultLogger()
+    let actualLogger: LoggingProtocol = logger ?? DefaultLogger()
     // TODO: Configure minimum level if needed via DefaultLogger setup or alternative
     // For now, DefaultLogger likely has its own default level. Explicit setting here removed.
     // Create a LoggingProtocol adapter for the service

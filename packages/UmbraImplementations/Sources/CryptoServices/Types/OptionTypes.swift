@@ -89,14 +89,14 @@ public struct LocalHashingOptions: Sendable {
  */
 public struct SendableOptionsDictionary: Sendable {
   /// The underlying dictionary
-  public let dictionary: [String: Any]
+  public let dictionary: [String: Sendable]
 
   /**
    Initialize with the specified dictionary
 
    - Parameter dictionary: The dictionary to wrap
    */
-  public init(dictionary: [String: Any]) {
+  public init(dictionary: [String: Sendable]) {
     self.dictionary=dictionary
   }
 }
@@ -130,7 +130,7 @@ public struct KeyGenerationOptions: Sendable {
     keyType: CoreSecurityTypes.KeyType = .aes,
     useSecureEnclave: Bool=false,
     isExtractable: Bool=true,
-    options: [String: Any]?=nil
+    options: [String: Sendable]?=nil
   ) {
     self.keyType=keyType
     self.useSecureEnclave=useSecureEnclave

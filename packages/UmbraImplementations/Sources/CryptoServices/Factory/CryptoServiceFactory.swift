@@ -95,10 +95,10 @@ public enum CryptoServiceFactory {
     secureStorage: SecureStorageProtocol?=nil,
     logger: LoggingProtocol?=nil
   ) async -> CryptoServiceProtocol {
-    let actualLogger=logger ?? LoggingServiceFactory.createStandardLogger()
+    let actualLogger: LoggingProtocol = logger ?? LoggingServiceFactory.createStandardLogger()
 
     return await DefaultCryptoServiceImpl(
-      secureStorage: secureStorage ?? createLocalSecureStorage(logger: actualLogger),
+      secureStorage: secureStorage ?? await createLocalSecureStorage(logger: actualLogger),
       logger: actualLogger,
       options: FactoryCryptoOptions()
     )
@@ -116,11 +116,11 @@ public enum CryptoServiceFactory {
     secureStorage: SecureStorageProtocol?=nil,
     logger: LoggingProtocol?=nil
   ) async -> CryptoServiceProtocol {
-    let actualLogger=logger ?? LoggingServiceFactory.createStandardLogger()
+    let actualLogger: LoggingProtocol = logger ?? LoggingServiceFactory.createStandardLogger()
 
     return await LoggingCryptoServiceImpl(
       wrapped: DefaultCryptoServiceImpl(
-        secureStorage: secureStorage ?? createLocalSecureStorage(logger: actualLogger),
+        secureStorage: secureStorage ?? await createLocalSecureStorage(logger: actualLogger),
         logger: actualLogger,
         options: FactoryCryptoOptions()
       ),
@@ -140,11 +140,11 @@ public enum CryptoServiceFactory {
     secureStorage: SecureStorageProtocol?=nil,
     logger: LoggingProtocol?=nil
   ) async -> CryptoServiceProtocol {
-    let actualLogger=logger ?? LoggingServiceFactory.createStandardLogger()
+    let actualLogger: LoggingProtocol = logger ?? LoggingServiceFactory.createStandardLogger()
 
     return await EnhancedLoggingCryptoServiceImpl(
       wrapped: DefaultCryptoServiceImpl(
-        secureStorage: secureStorage ?? createLocalSecureStorage(logger: actualLogger),
+        secureStorage: secureStorage ?? await createLocalSecureStorage(logger: actualLogger),
         logger: actualLogger,
         options: FactoryCryptoOptions()
       ),
@@ -164,19 +164,19 @@ public enum CryptoServiceFactory {
     secureStorage: SecureStorageProtocol?=nil,
     logger: LoggingProtocol?=nil
   ) async -> CryptoServiceProtocol {
-    let actualLogger=logger ?? LoggingServiceFactory.createStandardLogger()
+    let actualLogger: LoggingProtocol = logger ?? LoggingServiceFactory.createStandardLogger()
 
     // Create secure service with enhanced parameters
-    let service=await EnhancedSecureCryptoServiceImpl(
+    let service = await EnhancedSecureCryptoServiceImpl(
       wrapped: DefaultCryptoServiceImpl(
-        secureStorage: secureStorage ?? createLocalSecureStorage(logger: actualLogger),
+        secureStorage: secureStorage ?? await createLocalSecureStorage(logger: actualLogger),
         logger: actualLogger,
         options: FactoryCryptoOptions(
           defaultIterations: 10000, // Higher iteration count for PBKDF2
           enforceStrongKeys: true
         )
       ),
-      storage: createSecureStorage(),
+      storage: await createSecureStorage(),
       logger: actualLogger
     )
 
@@ -195,10 +195,10 @@ public enum CryptoServiceFactory {
    - Returns: A mock CryptoServiceProtocol implementation
    */
   public static func createMockService(
-    shouldSucceed: Bool=true,
+    shouldSucceed: Bool = true,
     logger: LoggingProtocol?=nil
   ) async -> CryptoServiceProtocol {
-    let actualLogger=logger ?? LoggingServiceFactory.createStandardLogger()
+    let actualLogger: LoggingProtocol = logger ?? LoggingServiceFactory.createStandardLogger()
 
     return await MockCryptoServiceImpl(
       configuration: MockCryptoConfiguration(
@@ -210,7 +210,8 @@ public enum CryptoServiceFactory {
         storageSucceeds: shouldSucceed,
         retrievalSucceeds: shouldSucceed
       ),
-      logger: actualLogger
+      logger: actualLogger,
+      secureStorage: await createLocalSecureStorage(logger: actualLogger)
     )
   }
 
@@ -227,12 +228,12 @@ public enum CryptoServiceFactory {
     logger: LoggingProtocol?=nil,
     environment: DeploymentEnvironment = .production
   ) async -> CryptoServiceProtocol {
-    let actualLogger=logger ?? LoggingServiceFactory.createStandardLogger()
+    let actualLogger: LoggingProtocol = logger ?? LoggingServiceFactory.createStandardLogger()
 
     switch environment {
       case .development:
         return await DefaultCryptoServiceImpl(
-          secureStorage: secureStorage ?? createLocalSecureStorage(logger: actualLogger),
+          secureStorage: secureStorage ?? await createLocalSecureStorage(logger: actualLogger),
           logger: actualLogger,
           options: FactoryCryptoOptions(
             defaultIterations: 1000, // Lower for development speed
@@ -251,13 +252,14 @@ public enum CryptoServiceFactory {
             storageSucceeds: true,
             retrievalSucceeds: true
           ),
-          logger: actualLogger
+          logger: actualLogger,
+          secureStorage: await createLocalSecureStorage(logger: actualLogger)
         )
 
       case .staging:
         return await EnhancedLoggingCryptoServiceImpl(
           wrapped: DefaultCryptoServiceImpl(
-            secureStorage: secureStorage ?? createLocalSecureStorage(logger: actualLogger),
+            secureStorage: secureStorage ?? await createLocalSecureStorage(logger: actualLogger),
             logger: actualLogger,
             options: FactoryCryptoOptions(
               defaultIterations: 5000, // Medium strength for staging
@@ -296,25 +298,19 @@ public enum CryptoServiceFactory {
     secureStorage: SecureStorageProtocol?=nil,
     logger: LoggingProtocol?=nil
   ) async -> CryptoServiceProtocol {
-    let actualLogger=logger ?? LoggingServiceFactory.createStandardLogger()
+    let actualLogger: LoggingProtocol = logger ?? LoggingServiceFactory.createStandardLogger()
 
     // Use the provided secure storage or create a default one
-    let actualSecureStorage=secureStorage ?? await createLocalSecureStorage(logger: actualLogger)
+    let actualSecureStorage: SecureStorageProtocol
+    if let ss = secureStorage {
+      actualSecureStorage = ss
+    } else {
+      actualSecureStorage = await createLocalSecureStorage(logger: actualLogger)
+    }
 
     // Create provider based on the specified type
     // This approach uses the provider registry to create providers dynamically
-    let provider: SecurityProviderProtocol?=switch providerType {
-      case .cryptoKit:
-        await createBasicSecurityProvider(.cryptoKit)
-      case .ring:
-        await createBasicSecurityProvider(.ring)
-      case .basic:
-        await createBasicSecurityProvider(.basic)
-      case .system:
-        await createBasicSecurityProvider(.system)
-      case .hsm:
-        await createBasicSecurityProvider(.basic) // Fallback for HSM
-    }
+    let provider: SecurityProviderProtocol? = await createBasicSecurityProvider(providerType)
 
     guard let provider else {
       await actualLogger.error(
@@ -325,7 +321,7 @@ public enum CryptoServiceFactory {
 
       // Return a basic implementation as fallback
       return await createWithProviderType(
-        .basic,
+        providerType: .basic,
         secureStorage: actualSecureStorage,
         logger: actualLogger
       )
@@ -355,14 +351,18 @@ public enum CryptoServiceFactory {
     secureStorage: SecureStorageProtocol?=nil,
     logger: LoggingProtocol?=nil
   ) async -> CryptoServiceProtocol {
-    let actualLogger=logger ?? LoggingServiceFactory.createStandardLogger()
+    let actualLogger: LoggingProtocol = logger ?? LoggingServiceFactory.createStandardLogger()
 
     // Use the provided secure storage or create a default one
-    let actualSecureStorage=secureStorage ?? await createLocalSecureStorage(logger: actualLogger)
+    let actualSecureStorage: SecureStorageProtocol
+    if let ss = secureStorage {
+      actualSecureStorage = ss
+    } else {
+      actualSecureStorage = await createLocalSecureStorage(logger: actualLogger)
+    }
 
-    // Create a crypto service implementation using DefaultCryptoServiceWithProviderImpl
-    let cryptoService=await DefaultCryptoServiceWithProviderImpl(
-      provider: provider,
+    // Create a crypto service implementation using DefaultCryptoServiceImpl
+    let cryptoService = await DefaultCryptoServiceImpl(
       secureStorage: actualSecureStorage,
       logger: actualLogger
     )
@@ -383,14 +383,13 @@ public enum CryptoServiceFactory {
     storageURL: URL?=nil,
     logger: LoggingProtocol?=nil
   ) async -> SecureStorageProtocol {
-    let actualLogger=logger ?? LoggingServiceFactory.createStandardLogger()
-    let url=storageURL ?? URL(fileURLWithPath: NSTemporaryDirectory())
+    let actualLogger: LoggingProtocol = logger ?? LoggingServiceFactory.createStandardLogger()
+    let url = storageURL ?? URL(fileURLWithPath: NSTemporaryDirectory())
       .appendingPathComponent("CryptoSecureStorage")
 
     // Create a simple in-memory secure storage
     return InMemorySecureStorage(
-      logger: actualLogger,
-      baseURL: url
+      logger: actualLogger
     )
   }
 
@@ -418,8 +417,13 @@ public enum CryptoServiceFactory {
     configuration: MockCryptoServiceImpl.Configuration = .init(),
     logger: LoggingProtocol?=nil
   ) async -> CryptoServiceProtocol {
-    let actualLogger=logger ?? LoggingServiceFactory.createStandardLogger()
-    return await MockCryptoServiceImpl(configuration: configuration, logger: actualLogger)
+    let actualLogger: LoggingProtocol = logger ?? LoggingServiceFactory.createStandardLogger()
+    let actualSecureStorage = await createLocalSecureStorage(logger: actualLogger)
+    return await MockCryptoServiceImpl(
+      configuration: configuration,
+      logger: actualLogger,
+      secureStorage: actualSecureStorage
+    )
   }
 
   /**
@@ -437,13 +441,13 @@ public enum CryptoServiceFactory {
     secureLogger: PrivacyAwareLoggingProtocol?=nil
   ) async -> CryptoServiceProtocol {
     if let secureLogger {
-      await EnhancedLoggingCryptoServiceImpl(
+      EnhancedLoggingCryptoServiceImpl(
         wrapped: wrapped,
         secureStorage: wrapped.secureStorage, // Pass secureStorage from wrapped service
         logger: secureLogger
       )
     } else {
-      await LoggingCryptoServiceImpl(
+      LoggingCryptoServiceImpl(
         wrapped: wrapped,
         logger: logger
       )
@@ -455,6 +459,6 @@ public enum CryptoServiceFactory {
   private static func createBasicSecurityProvider(
     _ type: SecurityProviderType
   ) async -> SecurityProviderProtocol? {
-    BasicSecurityProvider(type: type)
+    BasicSecurityProvider()
   }
 }

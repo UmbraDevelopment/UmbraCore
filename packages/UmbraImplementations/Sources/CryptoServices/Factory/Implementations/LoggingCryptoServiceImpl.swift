@@ -1,6 +1,7 @@
 import LoggingInterfaces
 import LoggingTypes
 import SecurityCoreInterfaces
+import CoreSecurityTypes
 
 /**
  An implementation of CryptoServiceProtocol that adds logging for
@@ -44,7 +45,7 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
   public func encrypt(
     dataIdentifier: String,
     keyIdentifier: String,
-    options: SecurityCoreInterfaces.EncryptionOptions?
+    options: CoreSecurityTypes.EncryptionOptions?
   ) async -> Result<String, SecurityStorageError> {
     await logger.info(
       "Encrypting data with identifier \(dataIdentifier) using key \(keyIdentifier)",
@@ -106,7 +107,7 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
   public func decrypt(
     encryptedDataIdentifier: String,
     keyIdentifier: String,
-    options: SecurityCoreInterfaces.DecryptionOptions?
+    options: CoreSecurityTypes.DecryptionOptions?
   ) async -> Result<String, SecurityStorageError> {
     await logger.info(
       "Decrypting data with identifier \(encryptedDataIdentifier) using key \(keyIdentifier)",
@@ -166,7 +167,7 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
    */
   public func hash(
     dataIdentifier: String,
-    options: HashingOptions?
+    options: CoreSecurityTypes.HashingOptions?
   ) async -> Result<String, SecurityStorageError> {
     await logger.info(
       "Hashing data with identifier \(dataIdentifier)",
@@ -224,7 +225,7 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
   public func verifyHash(
     dataIdentifier: String,
     hashIdentifier: String,
-    options: HashingOptions?
+    options: CoreSecurityTypes.HashingOptions?
   ) async -> Result<Bool, SecurityStorageError> {
     await logger.info(
       "Verifying hash for data with identifier \(dataIdentifier) against hash \(hashIdentifier)",
@@ -284,7 +285,7 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
    */
   public func generateKey(
     length: Int,
-    options: SecurityCoreInterfaces.KeyGenerationOptions?
+    options: CoreSecurityTypes.KeyGenerationOptions?
   ) async -> Result<String, SecurityStorageError> {
     await logger.info(
       "Generating key with length \(length) bytes",
@@ -423,6 +424,278 @@ public actor LoggingCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
           "Failed to export data: \(error)",
           context: CryptoLogContext(
             operation: "exportData",
+            additionalContext: LogMetadataDTOCollection().withPrivate(
+              key: "error",
+              value: "\(error)"
+            )
+          )
+        )
+    }
+
+    return result
+  }
+
+  /**
+   Generates a hash with logging.
+
+   - Parameters:
+   - dataIdentifier: Identifier for the data to hash
+   - options: Optional hashing options
+   - Returns: Identifier for the hash or an error
+   */
+  public func generateHash(
+    dataIdentifier: String,
+    options: CoreSecurityTypes.HashingOptions?
+  ) async -> Result<String, SecurityStorageError> {
+    await logger.info(
+      "Generating hash for data with identifier \(dataIdentifier)",
+      context: CryptoLogContext(
+        operation: "generateHash",
+        additionalContext: LogMetadataDTOCollection().withPublic(
+          key: "dataIdentifier",
+          value: dataIdentifier
+        )
+      )
+    )
+
+    let result=await wrapped.generateHash(
+      dataIdentifier: dataIdentifier,
+      options: options
+    )
+
+    switch result {
+      case let .success(identifier):
+        await logger.info(
+          "Successfully generated hash with identifier: \(identifier)",
+          context: CryptoLogContext(
+            operation: "generateHash",
+            additionalContext: LogMetadataDTOCollection().withPrivate(
+              key: "identifier",
+              value: identifier
+            )
+          )
+        )
+      case let .failure(error):
+        await logger.error(
+          "Failed to generate hash: \(error)",
+          context: CryptoLogContext(
+            operation: "generateHash",
+            additionalContext: LogMetadataDTOCollection().withPrivate(
+              key: "error",
+              value: "\(error)"
+            )
+          )
+        )
+    }
+
+    return result
+  }
+
+  /**
+   Stores data with logging.
+
+   - Parameters:
+   - data: Data to store
+   - identifier: Identifier for the data
+   - Returns: Void or an error
+   */
+  public func storeData(
+    data: Data,
+    identifier: String
+  ) async -> Result<Void, SecurityStorageError> {
+    await logger.info(
+      "Storing data with identifier \(identifier)",
+      context: CryptoLogContext(
+        operation: "storeData",
+        additionalContext: LogMetadataDTOCollection().withPublic(
+          key: "identifier",
+          value: identifier
+        )
+      )
+    )
+
+    let result=await wrapped.storeData(
+      data: data,
+      identifier: identifier
+    )
+
+    switch result {
+      case .success:
+        await logger.info(
+          "Successfully stored data with identifier: \(identifier)",
+          context: CryptoLogContext(
+            operation: "storeData",
+            additionalContext: LogMetadataDTOCollection().withPublic(
+              key: "identifier",
+              value: identifier
+            )
+          )
+        )
+      case let .failure(error):
+        await logger.error(
+          "Failed to store data: \(error)",
+          context: CryptoLogContext(
+            operation: "storeData",
+            additionalContext: LogMetadataDTOCollection().withPrivate(
+              key: "error",
+              value: "\(error)"
+            )
+          )
+        )
+    }
+
+    return result
+  }
+
+  /**
+   Retrieves data with logging.
+
+   - Parameter identifier: Identifier for the data to retrieve
+   - Returns: Data or an error
+   */
+  public func retrieveData(
+    identifier: String
+  ) async -> Result<Data, SecurityStorageError> {
+    await logger.info(
+      "Retrieving data with identifier \(identifier)",
+      context: CryptoLogContext(
+        operation: "retrieveData",
+        additionalContext: LogMetadataDTOCollection().withPublic(
+          key: "identifier",
+          value: identifier
+        )
+      )
+    )
+
+    let result=await wrapped.retrieveData(
+      identifier: identifier
+    )
+
+    switch result {
+      case .success:
+        await logger.info(
+          "Successfully retrieved data with identifier: \(identifier)",
+          context: CryptoLogContext(
+            operation: "retrieveData",
+            additionalContext: LogMetadataDTOCollection().withPublic(
+              key: "identifier",
+              value: identifier
+            )
+          )
+        )
+      case let .failure(error):
+        await logger.error(
+          "Failed to retrieve data: \(error)",
+          context: CryptoLogContext(
+            operation: "retrieveData",
+            additionalContext: LogMetadataDTOCollection().withPrivate(
+              key: "error",
+              value: "\(error)"
+            )
+          )
+        )
+    }
+
+    return result
+  }
+
+  /**
+   Deletes data with logging.
+
+   - Parameter identifier: Identifier for the data to delete
+   - Returns: Void or an error
+   */
+  public func deleteData(
+    identifier: String
+  ) async -> Result<Void, SecurityStorageError> {
+    await logger.info(
+      "Deleting data with identifier \(identifier)",
+      context: CryptoLogContext(
+        operation: "deleteData",
+        additionalContext: LogMetadataDTOCollection().withPublic(
+          key: "identifier",
+          value: identifier
+        )
+      )
+    )
+
+    let result=await wrapped.deleteData(
+      identifier: identifier
+    )
+
+    switch result {
+      case .success:
+        await logger.info(
+          "Successfully deleted data with identifier: \(identifier)",
+          context: CryptoLogContext(
+            operation: "deleteData",
+            additionalContext: LogMetadataDTOCollection().withPublic(
+              key: "identifier",
+              value: identifier
+            )
+          )
+        )
+      case let .failure(error):
+        await logger.error(
+          "Failed to delete data: \(error)",
+          context: CryptoLogContext(
+            operation: "deleteData",
+            additionalContext: LogMetadataDTOCollection().withPrivate(
+              key: "error",
+              value: "\(error)"
+            )
+          )
+        )
+    }
+
+    return result
+  }
+
+  /**
+   Imports data with logging.
+
+   - Parameters:
+   - data: Data to import
+   - customIdentifier: Custom identifier for the data
+   - Returns: Identifier for the imported data or an error
+   */
+  public func importData(
+    _ data: Data,
+    customIdentifier: String
+  ) async -> Result<String, SecurityStorageError> {
+    await logger.info(
+      "Importing data with custom identifier \(customIdentifier)",
+      context: CryptoLogContext(
+        operation: "importData",
+        additionalContext: LogMetadataDTOCollection().withPublic(
+          key: "customIdentifier",
+          value: customIdentifier
+        )
+      )
+    )
+
+    let result=await wrapped.importData(
+      data,
+      customIdentifier: customIdentifier
+    )
+
+    switch result {
+      case let .success(identifier):
+        await logger.info(
+          "Successfully imported data with identifier: \(identifier)",
+          context: CryptoLogContext(
+            operation: "importData",
+            additionalContext: LogMetadataDTOCollection().withPrivate(
+              key: "identifier",
+              value: identifier
+            )
+          )
+        )
+      case let .failure(error):
+        await logger.error(
+          "Failed to import data: \(error)",
+          context: CryptoLogContext(
+            operation: "importData",
             additionalContext: LogMetadataDTOCollection().withPrivate(
               key: "error",
               value: "\(error)"
