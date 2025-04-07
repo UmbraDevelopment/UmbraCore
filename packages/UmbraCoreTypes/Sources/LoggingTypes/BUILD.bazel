@@ -10,9 +10,6 @@ umbra_swift_library(
     deps = [
         "//packages/UmbraCoreTypes/Sources/SecurityInterfaces/Types:SecurityInterfacesTypes",
         # Removing CoreDTOs dependency to break circular dependency
-<<<<<<< Updated upstream
-=======
         # Removing UmbraErrors dependency to break circular dependency
->>>>>>> Stashed changes
     ],
 )

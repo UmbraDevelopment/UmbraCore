@@ -18,7 +18,6 @@
 // Export Foundation types needed by this module
 @_exported import Foundation
 
-@_exported import LoggingTypes
-
 // Export dependencies
-@_exported import UmbraErrors
+
+// MARK: - Core Security Protocols

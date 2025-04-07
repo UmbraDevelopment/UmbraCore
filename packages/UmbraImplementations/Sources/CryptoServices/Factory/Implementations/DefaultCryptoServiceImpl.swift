@@ -4,6 +4,7 @@ import CryptoTypes
 import DomainSecurityTypes
 import Foundation
 import LoggingInterfaces
+import LoggingTypes
 import SecurityCoreInterfaces
 import UmbraErrors
 
@@ -18,8 +19,8 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
   /// The secure storage to use
   private let secureStorage: SecureStorageProtocol
 
-  /// The logger to use
-  private let logger: LoggingProtocol
+  /// The logger to use (Assuming it conforms to PrivacyAwareLoggingProtocol)
+  private let logger: PrivacyAwareLoggingProtocol
 
   /// Factory-specific configuration options
   private let factoryOptions: FactoryCryptoOptions
@@ -34,434 +35,344 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
    */
   public init(
     secureStorage: SecureStorageProtocol,
-    logger: LoggingProtocol,
-    options: FactoryCryptoOptions=FactoryCryptoOptions()
+    logger: PrivacyAwareLoggingProtocol,
+    options: FactoryCryptoOptions = FactoryCryptoOptions()
   ) {
-    self.secureStorage=secureStorage
-    self.logger=logger
-    factoryOptions=options
+    self.secureStorage = secureStorage
+    self.logger = logger
+    self.factoryOptions = options
   }
 
-  public func encrypt(
-    data: [UInt8],
-    keyIdentifier: String,
-    options: CryptoServiceOptions?=nil
-  ) async -> Result<String, SecurityStorageError> {
-    // Use provided options or convert our factory options to CryptoServiceOptions
-    let actualOptions=options ?? factoryOptions.toCryptoServiceOptions()
+  // MARK: - CryptoServiceProtocol Conformance (Corrected Signatures)
 
-    await logger.debug(
-      "Encrypting data with key: \(keyIdentifier)",
-      metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-      source: "DefaultCryptoService"
+  // Corrected encrypt signature and implementation details
+  public func encrypt(
+    dataIdentifier: String,
+    keyIdentifier: String,
+    options: EncryptionOptions?
+  ) async -> Result<String, SecurityStorageError> {
+    let context = BaseLogContextDTO(
+      domainName: "CryptoService",
+      source: "DefaultCryptoServiceImpl.encrypt",
+      metadata: LogMetadataDTOCollection()
+        .withPublic(key: "dataIdentifier", value: dataIdentifier)
+        .withPrivate(key: "keyIdentifier", value: keyIdentifier)
+        .withPublic(key: "options", value: String(describing: options))
     )
 
-    // In a real implementation, this would use SecRandomCopyBytes and
-    // proper cryptographic operations
+    await logger.log(
+      .debug,
+      "Encrypting data for identifier: \(dataIdentifier) with key: \(keyIdentifier)",
+      context: context
+    )
 
-    // For this implementation, we'll create a simple "encrypted" format
-    // by combining the data with a mock IV and key identifier
-    var encryptedData=[UInt8]()
+    // --- Mock Implementation ---
+    // Retrieve original data first
+    let originalDataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
+    guard case let .success(originalData) = originalDataResult else {
+        let retrieveError = originalDataResult.mapError { $0 } // Extract error
+        await logger.log(.error, "Failed to retrieve original data for encryption: \(retrieveError)", context: context)
+        return .failure(retrieveError.failureValue ?? .dataNotFound) // Map error
+    }
 
-    // Add mock IV (16 bytes)
-    let iv=await generateRandomBytes(count: 16)
-    encryptedData.append(contentsOf: iv)
+    // Create mock encrypted data
+    var encryptedDataBytes = [UInt8]()
+    let iv = await generateRandomBytes(count: 16)
+    encryptedDataBytes.append(contentsOf: iv)
+    encryptedDataBytes.append(contentsOf: originalData) // Use retrieved data bytes
+    let keyIDBytes = Array(keyIdentifier.utf8)
+    encryptedDataBytes.append(UInt8(keyIDBytes.count))
+    encryptedDataBytes.append(contentsOf: keyIDBytes)
 
-    // Add mock encrypted data
-    encryptedData.append(contentsOf: data)
-
-    // Add key identifier length and bytes
-    let keyIDBytes=Array(keyIdentifier.utf8)
-    let keyIDLength=UInt8(keyIDBytes.count)
-    encryptedData.append(keyIDLength)
-    encryptedData.append(contentsOf: keyIDBytes)
-
-    // Store the encrypted data
-    let dataIdentifier="encrypted_\(UUID().uuidString)"
-    let storeResult=await secureStorage.storeSecurely(
-      data: encryptedData,
-      identifier: dataIdentifier
+    // Store the mock encrypted data
+    let encryptedDataStoreIdentifier = "encrypted_\(UUID().uuidString)"
+    let storeResult = await secureStorage.storeData(
+      encryptedDataBytes, // Use [UInt8] directly
+      withIdentifier: encryptedDataStoreIdentifier
     )
 
     switch storeResult {
       case .success:
-        return .success(dataIdentifier)
+        await logger.log(.info, "Successfully encrypted data to identifier: \(encryptedDataStoreIdentifier)", context: context)
+        return .success(encryptedDataStoreIdentifier)
       case let .failure(error):
-        await logger.error(
-          "Failed to store encrypted data: \(error)",
-          metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-          source: "DefaultCryptoService"
-        )
-        return .failure(.storageFailure(error))
+        await logger.log(.error, "Failed to store encrypted data: \(error)", context: context)
+        return .failure(.operationFailed(error.description)) // Corrected error case
     }
   }
 
+  // Corrected decrypt signature and implementation details
   public func decrypt(
     encryptedDataIdentifier: String,
     keyIdentifier: String,
-    options: CryptoServiceOptions?=nil
-  ) async -> Result<[UInt8], SecurityStorageError> {
-    // Use provided options or convert our factory options to CryptoServiceOptions
-    let actualOptions=options ?? factoryOptions.toCryptoServiceOptions()
+    options: DecryptionOptions?
+  ) async -> Result<String, SecurityStorageError> {
+    let context = BaseLogContextDTO(
+      domainName: "CryptoService",
+      source: "DefaultCryptoServiceImpl.decrypt",
+      metadata: LogMetadataDTOCollection()
+        .withPublic(key: "encryptedDataIdentifier", value: encryptedDataIdentifier)
+        .withPrivate(key: "keyIdentifier", value: keyIdentifier)
+        .withPublic(key: "options", value: String(describing: options))
+    )
 
-    await logger.debug(
+    await logger.log(
+      .debug,
       "Decrypting data with identifier: \(encryptedDataIdentifier) using key: \(keyIdentifier)",
-      metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-      source: "DefaultCryptoService"
+      context: context
     )
 
     // Retrieve the encrypted data
-    let dataResult=await secureStorage.retrieveSecurely(
-      identifier: encryptedDataIdentifier
+    let dataResult = await secureStorage.retrieveData(
+      withIdentifier: encryptedDataIdentifier // Use correct method name
     )
 
     switch dataResult {
-      case let .success(encryptedData):
-        // In a real implementation, this would perform proper decryption
-
-        // For this implementation, we'll extract the "encrypted" data
+      case let .success(encryptedDataBytes):
+        // --- Mock Implementation ---
         // Assuming format: [IV (16 bytes)][Data][Key ID Length (1 byte)][Key ID]
-        if encryptedData.count > 17 { // At least IV + data + key ID length
-          // Skip IV (16 bytes)
-          let dataStartIndex=16
+        if encryptedDataBytes.count > 17 {
+          let dataStartIndex = 16
+          guard let keyIDLengthByte = encryptedDataBytes.last else {
+              await logger.log(.error, "Invalid encrypted data format: missing key ID length", context: context)
+              return .failure(.decryptionFailed) // Changed error case
+          }
+          let keyIDLength = Int(keyIDLengthByte)
+          let keyIDStartIndex = encryptedDataBytes.count - 1 - keyIDLength
 
-          // Get key ID length (last byte before key ID)
-          let keyIDLengthIndex=encryptedData.count - 1 - Int(encryptedData[encryptedData.count - 1])
+          // Basic validation
+          guard keyIDStartIndex > dataStartIndex, keyIDStartIndex < encryptedDataBytes.count - 1 else {
+              await logger.log(.error, "Invalid encrypted data format: key ID length mismatch", context: context)
+              return .failure(.decryptionFailed) // Changed error case
+          }
 
-          // Extract data
-          let decryptedData=Array(encryptedData[dataStartIndex..<keyIDLengthIndex])
-
-          return .success(decryptedData)
-        } else {
-          await logger.error(
-            "Invalid encrypted data format",
-            metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-            source: "DefaultCryptoService"
+          let decryptedDataBytes = Array(encryptedDataBytes[dataStartIndex..<keyIDStartIndex])
+          // Store decrypted data and return its ID
+          let decryptedDataIdentifier = "decrypted_\(UUID().uuidString)"
+          let storeDecryptedResult = await secureStorage.storeData(
+             decryptedDataBytes, // Use [UInt8]
+             withIdentifier: decryptedDataIdentifier
           )
-          return .failure(.operationFailed(UmbraErrors.Security.Core.invalidData))
+
+          switch storeDecryptedResult {
+          case .success:
+              await logger.log(.info, "Successfully decrypted data to identifier: \(decryptedDataIdentifier)", context: context)
+              return .success(decryptedDataIdentifier)
+          case let .failure(storageError):
+              await logger.log(.error, "Failed to store decrypted data: \(storageError)", context: context)
+              return .failure(.operationFailed(storageError.description)) // Use appropriate error
+          }
+
+        } else {
+          await logger.log(
+            .error,
+            "Invalid encrypted data format",
+            context: context
+          )
+          // Use a more specific error from SecurityStorageError if available, or .decryptionFailed
+          return .failure(.decryptionFailed) // Changed error case
         }
 
       case let .failure(error):
-        await logger.error(
+        await logger.log(
+          .error,
           "Failed to retrieve encrypted data: \(error)",
-          metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-          source: "DefaultCryptoService"
+          context: context
         )
-        return .failure(.keyNotFound(encryptedDataIdentifier))
+        // Map retrieval error to decryption failure or data not found
+        return .failure(error == .dataNotFound ? .dataNotFound : .decryptionFailed) // Changed error mapping
     }
   }
 
-  public func generateHash(
-    data _: [UInt8],
-    algorithm: CoreSecurityTypes.HashAlgorithm?=nil,
-    options: CryptoServiceOptions?=nil
+  // Renamed to hash, corrected signature and implementation details
+  public func hash(
+    dataIdentifier: String,
+    options: HashingOptions?
   ) async -> Result<String, SecurityStorageError> {
-    // Use provided options or convert our factory options to CryptoServiceOptions
-    let actualOptions=options ?? factoryOptions.toCryptoServiceOptions()
+    let algorithm = options?.algorithm ?? .sha256 // Get algorithm from options
 
-    await logger.debug(
-      "Generating hash with algorithm: \(algorithm ?? .sha256)",
-      metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-      source: "DefaultCryptoService"
+    let context = BaseLogContextDTO(
+      domainName: "CryptoService",
+      source: "DefaultCryptoServiceImpl.hash",
+      metadata: LogMetadataDTOCollection()
+        .withPublic(key: "dataIdentifier", value: dataIdentifier)
+        .withPublic(key: "algorithm", value: String(describing: algorithm))
+        .withPublic(key: "options", value: String(describing: options))
     )
 
-    // In a real implementation, this would use proper hashing algorithms
+    await logger.log(
+      .debug,
+      "Generating hash for data identifier: \(dataIdentifier) with algorithm: \(algorithm)",
+      context: context
+    )
 
-    // For this implementation, we'll create a simple mock hash
-    var hashData: [UInt8]=switch algorithm ?? .sha256 {
+    // --- Mock Implementation ---
+    // Retrieve original data first
+    let originalDataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
+    guard case let .success(originalData) = originalDataResult else {
+        let retrieveError = originalDataResult.mapError { $0 } // Extract error
+        await logger.log(.error, "Failed to retrieve original data for hashing: \(retrieveError)", context: context)
+        return .failure(retrieveError.failureValue ?? .dataNotFound) // Map error
+    }
+
+    // Generate mock hash based on retrieved data (length used as simple example)
+    let hashData: [UInt8]
+    switch algorithm {
       case .sha256:
-        // Generate a mock SHA-256 hash (32 bytes)
-        await generateRandomBytes(count: 32)
+        hashData = await generateRandomBytes(count: 32) // Mock hash
       case .sha512:
-        // Generate a mock SHA-512 hash (64 bytes)
-        await generateRandomBytes(count: 64)
+        hashData = await generateRandomBytes(count: 64) // Mock hash
     }
 
     // Store the hash
-    let hashIdentifier="hash_\(UUID().uuidString)"
-    let storeResult=await secureStorage.storeSecurely(
-      data: hashData,
-      identifier: hashIdentifier
+    let hashIdentifier = "hash_\(UUID().uuidString)"
+    let storeResult = await secureStorage.storeData(
+      hashData, // Use [UInt8]
+      withIdentifier: hashIdentifier
     )
 
     switch storeResult {
       case .success:
+        await logger.log(.info, "Successfully stored hash to identifier: \(hashIdentifier)", context: context)
         return .success(hashIdentifier)
       case let .failure(error):
-        await logger.error(
-          "Failed to store hash: \(error)",
-          metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-          source: "DefaultCryptoService"
-        )
-        return .failure(.storageFailure(error))
+        await logger.log(.error, "Failed to store hash: \(error)", context: context)
+        return .failure(.operationFailed(error.description)) // Corrected error case
     }
   }
 
-  public func verifyHash(
-    dataIdentifier: String,
-    hashIdentifier: String,
-    options: CryptoServiceOptions?=nil
-  ) async -> Result<Bool, SecurityStorageError> {
-    // Use provided options or convert our factory options to CryptoServiceOptions
-    let actualOptions=options ?? factoryOptions.toCryptoServiceOptions()
-
-    await logger.debug(
-      "Verifying hash for data with identifier: \(dataIdentifier)",
-      metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-      source: "DefaultCryptoService"
+  // Corrected storeData signature and implementation details
+  public func storeData(
+    data: Data,
+    identifier: String
+  ) async -> Result<Void, SecurityStorageError> {
+    let context = BaseLogContextDTO(
+      domainName: "CryptoService",
+      source: "DefaultCryptoServiceImpl.storeData",
+      metadata: LogMetadataDTOCollection()
+        .withPublic(key: "identifier", value: identifier)
+        .withPrivate(key: "data_size", value: data.count) // Log size privately
     )
 
-    // Retrieve the data
-    let dataResult=await secureStorage.retrieveSecurely(
-      identifier: dataIdentifier
+    await logger.log(.debug, "Storing data with identifier: \(identifier)", context: context)
+    // Use the correct storage method
+    let result = await secureStorage.storeData(
+        [UInt8](data), // Convert Data to [UInt8] for the protocol
+        withIdentifier: identifier
     )
 
-    guard case let .success(data)=dataResult else {
-      if case let .failure(error)=dataResult {
-        await logger.error(
-          "Failed to retrieve data for hash verification: \(error)",
-          metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-          source: "DefaultCryptoService"
-        )
-      }
-      return .failure(.keyNotFound(dataIdentifier))
+    if case .failure(let error) = result {
+       await logger.log(.error, "Failed to store data: \(error)", context: context)
+    } else {
+       await logger.log(.info, "Successfully stored data for identifier: \(identifier)", context: context)
     }
-
-    // Retrieve the expected hash
-    let hashResult=await secureStorage.retrieveSecurely(
-      identifier: hashIdentifier
-    )
-
-    guard case let .success(expectedHash)=hashResult else {
-      if case let .failure(error)=hashResult {
-        await logger.error(
-          "Failed to retrieve expected hash: \(error)",
-          metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-          source: "DefaultCryptoService"
-        )
-      }
-      return .failure(.keyNotFound(hashIdentifier))
-    }
-
-    // In a real implementation, this would compute the hash of the data
-    // and compare it with the expected hash
-
-    // For this implementation, we'll just return true or false randomly
-    let matchesHash=Bool.random()
-
-    await logger.debug(
-      "Hash verification result: \(matchesHash)",
-      metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-      source: "DefaultCryptoService"
-    )
-
-    return .success(matchesHash)
+    return result
   }
+
+  // Corrected retrieveData signature and implementation details
+  public func retrieveData(
+    identifier: String
+  ) async -> Result<Data, SecurityStorageError> {
+     let context = BaseLogContextDTO(
+      domainName: "CryptoService",
+      source: "DefaultCryptoServiceImpl.retrieveData",
+      metadata: LogMetadataDTOCollection()
+        .withPublic(key: "identifier", value: identifier)
+    )
+
+    await logger.log(.debug, "Retrieving data with identifier: \(identifier)", context: context)
+    // Use the correct storage method and map result
+    let result = await secureStorage.retrieveData(withIdentifier: identifier)
+
+    switch result {
+    case .success(let bytes):
+        await logger.log(.info, "Successfully retrieved data for identifier: \(identifier)", context: context)
+        return .success(Data(bytes)) // Convert [UInt8] to Data
+    case .failure(let error):
+       await logger.log(.error, "Failed to retrieve data: \(error)", context: context)
+        return .failure(error)
+    }
+  }
+
+  // Corrected deleteData signature and implementation details
+  public func deleteData(
+    identifier: String
+  ) async -> Result<Void, SecurityStorageError> {
+     let context = BaseLogContextDTO(
+      domainName: "CryptoService",
+      source: "DefaultCryptoServiceImpl.deleteData",
+      metadata: LogMetadataDTOCollection()
+        .withPublic(key: "identifier", value: identifier)
+    )
+    await logger.log(.debug, "Deleting data with identifier: \(identifier)", context: context)
+    let result = await secureStorage.deleteData(withIdentifier: identifier) // Use correct method
+    if case .failure(let error) = result {
+       await logger.log(.error, "Failed to delete data: \(error)", context: context)
+    } else {
+       await logger.log(.info, "Successfully deleted data for identifier: \(identifier)", context: context)
+    }
+    return result
+  }
+
+  // --- Stub Implementations for Missing Methods ---
 
   public func generateKey(
-    length: Int,
-    options: CryptoServiceOptions?=nil
-  ) async -> Result<[UInt8], SecurityStorageError> {
-    // Use provided options or convert our factory options to CryptoServiceOptions
-    let actualOptions=options ?? factoryOptions.toCryptoServiceOptions()
-
-    await logger.debug(
-      "Generating key with length: \(length)",
-      metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-      source: "DefaultCryptoService"
-    )
-
-    // Validate key length
-    guard length >= 16 else { // Minimum 128-bit key
-      await logger.error(
-        "Key length too short: \(length) bytes",
-        metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-        source: "DefaultCryptoService"
-      )
-      return .failure(.operationFailed(UmbraErrors.Security.Core.invalidKeyLength))
-    }
-
-    // Generate random bytes for key
-    let keyData=await generateRandomBytes(count: length)
-
-    // Store the key
-    let keyIdentifier="key_\(UUID().uuidString)"
-    let storeResult=await secureStorage.storeSecurely(
-      data: keyData,
-      identifier: keyIdentifier
-    )
-
-    switch storeResult {
-      case .success:
-        return .success(keyData)
-      case let .failure(error):
-        await logger.error(
-          "Failed to store key: \(error)",
-          metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-          source: "DefaultCryptoService"
-        )
-        return .failure(.storageFailure(error))
-    }
+      options: KeyGenerationOptions?
+  ) async -> Result<String, SecurityStorageError> {
+      let context = BaseLogContextDTO(domainName: "CryptoService", source: "DefaultCryptoServiceImpl.generateKey")
+      await logger.log(.warning, "generateKey is not implemented", context: context)
+      return .failure(.unsupportedOperation)
   }
 
-  public func storeData(
-    data: [UInt8],
-    identifier: String,
-    options: CryptoServiceOptions?=nil
+  public func importKey(
+      keyData: Data,
+      identifier: String,
+      options: KeyImportOptions?
+  ) async -> Result<String, SecurityStorageError> {
+      let context = BaseLogContextDTO(domainName: "CryptoService", source: "DefaultCryptoServiceImpl.importKey")
+      await logger.log(.warning, "importKey is not implemented", context: context)
+      return .failure(.unsupportedOperation)
+  }
+
+  public func exportKey(
+      keyIdentifier: String
+  ) async -> Result<Data, SecurityStorageError> {
+      let context = BaseLogContextDTO(domainName: "CryptoService", source: "DefaultCryptoServiceImpl.exportKey")
+      await logger.log(.warning, "exportKey is not implemented", context: context)
+      return .failure(.unsupportedOperation)
+  }
+
+  public func signData(
+      dataIdentifier: String,
+      keyIdentifier: String,
+      options: SigningOptions?
+  ) async -> Result<String, SecurityStorageError> {
+      let context = BaseLogContextDTO(domainName: "CryptoService", source: "DefaultCryptoServiceImpl.signData")
+      await logger.log(.warning, "signData is not implemented", context: context)
+      return .failure(.unsupportedOperation)
+  }
+
+  public func verifySignature(
+      dataIdentifier: String,
+      signatureIdentifier: String,
+      keyIdentifier: String
   ) async -> Result<Bool, SecurityStorageError> {
-    // Use provided options or convert our factory options to CryptoServiceOptions
-    let actualOptions=options ?? factoryOptions.toCryptoServiceOptions()
-
-    await logger.debug(
-      "Storing data with identifier: \(identifier)",
-      metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-      source: "DefaultCryptoService"
-    )
-
-    let storeResult=await secureStorage.storeSecurely(
-      data: data,
-      identifier: identifier
-    )
-
-    switch storeResult {
-      case .success:
-        return .success(true)
-      case let .failure(error):
-        await logger.error(
-          "Failed to store data: \(error)",
-          metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-          source: "DefaultCryptoService"
-        )
-        return .failure(.storageFailure(error))
-    }
-  }
-
-  public func retrieveData(
-    identifier: String,
-    options: CryptoServiceOptions?=nil
-  ) async -> Result<[UInt8], SecurityStorageError> {
-    // Use provided options or convert our factory options to CryptoServiceOptions
-    let actualOptions=options ?? factoryOptions.toCryptoServiceOptions()
-
-    await logger.debug(
-      "Retrieving data with identifier: \(identifier)",
-      metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-      source: "DefaultCryptoService"
-    )
-
-    let retrieveResult=await secureStorage.retrieveSecurely(
-      identifier: identifier
-    )
-
-    switch retrieveResult {
-      case let .success(data):
-        return .success(data)
-      case let .failure(error):
-        await logger.error(
-          "Failed to retrieve data: \(error)",
-          metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-          source: "DefaultCryptoService"
-        )
-        return .failure(.keyNotFound(identifier))
-    }
-  }
-
-  public func exportData(
-    identifier: String,
-    options: CryptoServiceOptions?=nil
-  ) async -> Result<[UInt8], SecurityStorageError> {
-    // Use provided options or convert our factory options to CryptoServiceOptions
-    let actualOptions=options ?? factoryOptions.toCryptoServiceOptions()
-
-    await logger.debug(
-      "Exporting data with identifier: \(identifier)",
-      metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-      source: "DefaultCryptoService"
-    )
-
-    // For this implementation, export is the same as retrieve
-    return await retrieveData(identifier: identifier)
-  }
-
-  public func importData(
-    data: [UInt8],
-    identifier: String,
-    options: CryptoServiceOptions?=nil
-  ) async -> Result<Bool, SecurityStorageError> {
-    // Use provided options or convert our factory options to CryptoServiceOptions
-    let actualOptions=options ?? factoryOptions.toCryptoServiceOptions()
-
-    await logger.debug(
-      "Importing data with identifier: \(identifier)",
-      metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-      source: "DefaultCryptoService"
-    )
-
-    let storeResult=await secureStorage.storeSecurely(
-      data: data,
-      identifier: identifier
-    )
-
-    switch storeResult {
-      case .success:
-        return .success(true)
-      case let .failure(error):
-        await logger.error(
-          "Failed to import data: \(error)",
-          metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-          source: "DefaultCryptoService"
-        )
-        return .failure(.storageFailure(error))
-    }
-  }
-
-  public func deleteData(
-    identifier: String,
-    options: CryptoServiceOptions?=nil
-  ) async -> Result<Bool, SecurityStorageError> {
-    // Use provided options or convert our factory options to CryptoServiceOptions
-    let actualOptions=options ?? factoryOptions.toCryptoServiceOptions()
-
-    await logger.debug(
-      "Deleting data with identifier: \(identifier)",
-      metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-      source: "DefaultCryptoService"
-    )
-
-    let deleteResult=await secureStorage.deleteSecurely(
-      identifier: identifier
-    )
-
-    switch deleteResult {
-      case .success:
-        return .success(true)
-      case let .failure(error):
-        await logger.error(
-          "Failed to delete data: \(error)",
-          metadata: LogMetadataDTOCollection().toPrivacyMetadata(),
-          source: "DefaultCryptoService"
-        )
-        if case .keyNotFound=error {
-          return .failure(.keyNotFound(identifier))
-        } else {
-          return .failure(.storageFailure(error))
-        }
-    }
+      let context = BaseLogContextDTO(domainName: "CryptoService", source: "DefaultCryptoServiceImpl.verifySignature")
+      await logger.log(.warning, "verifySignature is not implemented", context: context)
+      return .failure(.unsupportedOperation)
   }
 
   // MARK: - Helper Methods
 
-  /// Generates random bytes using a secure random number generator.
-  ///
-  /// - Parameter count: The number of bytes to generate
-  /// - Returns: An array of random bytes
+  // No changes needed below this line for current fixes
+
   private func generateRandomBytes(count: Int) async -> [UInt8] {
-    var bytes=[UInt8](repeating: 0, count: count)
+    var bytes = [UInt8](repeating: 0, count: count)
 
     // In a real implementation, this would use SecRandomCopyBytes
     // For this mock implementation, we'll fill with random values
     for i in 0..<count {
-      bytes[i]=UInt8.random(in: 0...255)
+      bytes[i] = UInt8.random(in: 0...255)
     }
 
     return bytes

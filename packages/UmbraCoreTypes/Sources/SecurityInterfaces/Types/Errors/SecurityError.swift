@@ -1,7 +1,6 @@
 import CoreSecurityTypes
 import DomainSecurityTypes
 import Foundation
-import UmbraErrors
 
 /// Comprehensive security error implementation
 /// This struct consolidates error handling for security operations across UmbraCore
