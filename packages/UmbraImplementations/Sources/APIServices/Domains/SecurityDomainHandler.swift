@@ -84,16 +84,18 @@ public struct SecurityDomainHandler: DomainHandler {
       .with(key: "operation", value: operationName, privacyLevel: .public)
       .with(key: "event", value: "start", privacyLevel: .public)
 
-    await logger?.info(
-      "Starting security operation",
-      context: CoreLogContext(
+    await logger?.debug(
+      "Handling security operation: \(operationName)",
+      context: LogContextDTO(
+        domainName: "security",
         source: "SecurityDomainHandler",
         metadata: startMetadata
       )
     )
 
+    // Handle different operation types
     do {
-      // Execute the appropriate operation based on type
+      // Handle the operation based on its type
       let result=try await executeSecurityOperation(operation)
 
       // Log success
@@ -104,32 +106,46 @@ public struct SecurityDomainHandler: DomainHandler {
 
       await logger?.info(
         "Security operation completed successfully",
-        context: CoreLogContext(
+        context: LogContextDTO(
+          domainName: "security",
           source: "SecurityDomainHandler",
           metadata: successMetadata
         )
       )
 
       return result
-    } catch {
-      // Log failure with privacy-aware error details
+    } catch let error as APIError {
+      // Already an APIError, just log and rethrow
       let errorMetadata=LogMetadataDTOCollection()
-        .with(key: "operation", value: operationName, privacyLevel: .public)
-        .with(key: "event", value: "failure", privacyLevel: .public)
-        .with(key: "status", value: "failed", privacyLevel: .public)
-        .with(key: "error", value: error.localizedDescription, privacyLevel: .private)
+        .with(key: "error_code", value: error.code, privacyLevel: .public)
+        .with(key: "error_domain", value: "security", privacyLevel: .public)
 
       await logger?.error(
-        "Security operation failed",
-        context: CoreLogContext(
+        "Security operation failed: \(error.localizedDescription)",
+        context: LogContextDTO(
+          domainName: "security",
           source: "SecurityDomainHandler",
-          metadata: errorMetadata,
-          error: error
+          metadata: errorMetadata
         )
       )
 
-      // Map to appropriate API error and rethrow
-      throw mapToAPIError(error)
+      throw error
+    } catch {
+      // Map to appropriate APIError
+      let apiError=mapToAPIError(error)
+
+      await logger?.error(
+        "Security operation failed: \(apiError.localizedDescription)",
+        context: LogContextDTO(
+          domainName: "security",
+          source: "SecurityDomainHandler",
+          metadata: LogMetadataDTOCollection()
+            .with(key: "error_code", value: apiError.code, privacyLevel: .public)
+            .with(key: "error_domain", value: "security", privacyLevel: .public)
+        )
+      )
+
+      throw apiError
     }
   }
 
@@ -315,7 +331,8 @@ public struct SecurityDomainHandler: DomainHandler {
         // SHA-1 is deprecated, use SHA-256 as a secure alternative
         await logger?.warning(
           "SHA-1 is deprecated and was requested, using SHA-256 instead",
-          context: CoreLogContext(
+          context: LogContextDTO(
+            domainName: "security",
             source: "SecurityDomainHandler",
             metadata: LogMetadataDTOCollection()
               .with(key: "requested_algorithm", value: "sha1", privacyLevel: .public)
@@ -327,7 +344,8 @@ public struct SecurityDomainHandler: DomainHandler {
         // SHA-384 is not directly supported, use SHA-512 instead
         await logger?.warning(
           "SHA-384 is not directly supported, using SHA-512 instead",
-          context: CoreLogContext(
+          context: LogContextDTO(
+            domainName: "security",
             source: "SecurityDomainHandler",
             metadata: LogMetadataDTOCollection()
               .with(key: "requested_algorithm", value: "sha384", privacyLevel: .public)
@@ -340,7 +358,8 @@ public struct SecurityDomainHandler: DomainHandler {
           // Default to SHA-256 for empty string
           await logger?.warning(
             "Empty hash algorithm specified, using SHA-256 as default",
-            context: CoreLogContext(
+            context: LogContextDTO(
+              domainName: "security",
               source: "SecurityDomainHandler",
               metadata: LogMetadataDTOCollection()
                 .with(key: "requested_algorithm", value: "empty", privacyLevel: .public)
@@ -368,7 +387,8 @@ public struct SecurityDomainHandler: DomainHandler {
 
     await logger?.debug(
       "Processing encryption request",
-      context: CoreLogContext(
+      context: LogContextDTO(
+        domainName: "security",
         source: "SecurityDomainHandler",
         metadata: encryptionMetadata
       )
@@ -433,7 +453,8 @@ public struct SecurityDomainHandler: DomainHandler {
 
     await logger?.debug(
       "Processing decryption request",
-      context: CoreLogContext(
+      context: LogContextDTO(
+        domainName: "security",
         source: "SecurityDomainHandler",
         metadata: decryptionMetadata
       )
@@ -490,7 +511,8 @@ public struct SecurityDomainHandler: DomainHandler {
 
     await logger?.debug(
       "Generating cryptographic key",
-      context: CoreLogContext(
+      context: LogContextDTO(
+        domainName: "security",
         source: "SecurityDomainHandler",
         metadata: keyGenMetadata
       )
@@ -544,7 +566,8 @@ public struct SecurityDomainHandler: DomainHandler {
 
     await logger?.debug(
       "Computing hash for data",
-      context: CoreLogContext(
+      context: LogContextDTO(
+        domainName: "security",
         source: "SecurityDomainHandler",
         metadata: hashMetadata
       )
@@ -575,7 +598,8 @@ public struct SecurityDomainHandler: DomainHandler {
 
     await logger?.debug(
       "Storing cryptographic key",
-      context: CoreLogContext(
+      context: LogContextDTO(
+        domainName: "security",
         source: "SecurityDomainHandler",
         metadata: storeMetadata
       )
@@ -616,7 +640,8 @@ public struct SecurityDomainHandler: DomainHandler {
 
     await logger?.info(
       "Key stored successfully",
-      context: CoreLogContext(
+      context: LogContextDTO(
+        domainName: "security",
         source: "SecurityDomainHandler",
         metadata: LogMetadataDTOCollection()
           .with(key: "operation", value: "storeKey", privacyLevel: .public)
@@ -642,7 +667,8 @@ public struct SecurityDomainHandler: DomainHandler {
 
     await logger?.debug(
       "Retrieving cryptographic key",
-      context: CoreLogContext(
+      context: LogContextDTO(
+        domainName: "security",
         source: "SecurityDomainHandler",
         metadata: retrieveMetadata
       )
@@ -674,7 +700,8 @@ public struct SecurityDomainHandler: DomainHandler {
 
       await logger?.info(
         "Key retrieved successfully",
-        context: CoreLogContext(
+        context: LogContextDTO(
+          domainName: "security",
           source: "SecurityDomainHandler",
           metadata: LogMetadataDTOCollection()
             .with(key: "operation", value: "retrieveKey", privacyLevel: .public)
@@ -694,7 +721,8 @@ public struct SecurityDomainHandler: DomainHandler {
     } catch {
       await logger?.error(
         "Failed to retrieve key",
-        context: CoreLogContext(
+        context: LogContextDTO(
+          domainName: "security",
           source: "SecurityDomainHandler",
           metadata: LogMetadataDTOCollection()
             .with(key: "operation", value: "retrieveKey", privacyLevel: .public)
@@ -721,7 +749,8 @@ public struct SecurityDomainHandler: DomainHandler {
 
     await logger?.debug(
       "Deleting cryptographic key",
-      context: CoreLogContext(
+      context: LogContextDTO(
+        domainName: "security",
         source: "SecurityDomainHandler",
         metadata: deleteMetadata
       )
@@ -752,7 +781,8 @@ public struct SecurityDomainHandler: DomainHandler {
 
     await logger?.info(
       "Key deleted successfully",
-      context: CoreLogContext(
+      context: LogContextDTO(
+        domainName: "security",
         source: "SecurityDomainHandler",
         metadata: LogMetadataDTOCollection()
           .with(key: "operation", value: "deleteKey", privacyLevel: .public)
@@ -788,7 +818,8 @@ public struct SecurityDomainHandler: DomainHandler {
 
     await logger?.debug(
       "Storing secret data",
-      context: CoreLogContext(
+      context: LogContextDTO(
+        domainName: "security",
         source: "SecurityDomainHandler",
         metadata: storeMetadata
       )
@@ -802,7 +833,8 @@ public struct SecurityDomainHandler: DomainHandler {
 
     await logger?.info(
       "Successfully stored secret",
-      context: CoreLogContext(
+      context: LogContextDTO(
+        domainName: "security",
         source: "SecurityDomainHandler",
         metadata: LogMetadataDTOCollection()
           .with(key: "operation", value: "storeSecret", privacyLevel: .public)
@@ -829,7 +861,8 @@ public struct SecurityDomainHandler: DomainHandler {
 
     await logger?.debug(
       "Retrieving secret data",
-      context: CoreLogContext(
+      context: LogContextDTO(
+        domainName: "security",
         source: "SecurityDomainHandler",
         metadata: retrieveMetadata
       )
@@ -848,7 +881,8 @@ public struct SecurityDomainHandler: DomainHandler {
 
       await logger?.info(
         "Successfully retrieved secret",
-        context: CoreLogContext(
+        context: LogContextDTO(
+          domainName: "security",
           source: "SecurityDomainHandler",
           metadata: LogMetadataDTOCollection()
             .with(key: "operation", value: "retrieveSecret", privacyLevel: .public)
@@ -861,7 +895,8 @@ public struct SecurityDomainHandler: DomainHandler {
     } catch {
       await logger?.error(
         "Failed to retrieve secret",
-        context: CoreLogContext(
+        context: LogContextDTO(
+          domainName: "security",
           source: "SecurityDomainHandler",
           metadata: LogMetadataDTOCollection()
             .with(key: "operation", value: "retrieveSecret", privacyLevel: .public)
@@ -889,7 +924,8 @@ public struct SecurityDomainHandler: DomainHandler {
 
     await logger?.debug(
       "Deleting secret data",
-      context: CoreLogContext(
+      context: LogContextDTO(
+        domainName: "security",
         source: "SecurityDomainHandler",
         metadata: deleteMetadata
       )
@@ -907,7 +943,8 @@ public struct SecurityDomainHandler: DomainHandler {
 
     await logger?.info(
       "Successfully deleted secret",
-      context: CoreLogContext(
+      context: LogContextDTO(
+        domainName: "security",
         source: "SecurityDomainHandler",
         metadata: LogMetadataDTOCollection()
           .with(key: "operation", value: "deleteSecret", privacyLevel: .public)

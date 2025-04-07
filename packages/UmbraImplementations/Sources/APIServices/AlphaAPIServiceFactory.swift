@@ -276,8 +276,7 @@ public enum AlphaAPIServiceFactory {
 // MARK: - Placeholder Implementations
 
 /// Placeholder security service implementation for bootstrapping
-@unchecked Sendable
-private final class SecurityServiceImpl: SecurityProviderProtocol {
+private final class SecurityServiceImpl: SecurityProviderProtocol, @unchecked Sendable {
   // Required by AsyncServiceInitializable protocol
   func initialize() async throws {
     // Minimal implementation for initialization

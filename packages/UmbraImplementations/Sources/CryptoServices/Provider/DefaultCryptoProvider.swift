@@ -145,19 +145,19 @@ public actor DefaultCryptoProvider: CryptoProviderProtocol {
     }
     
     /**
-     Generates a cryptographic key for the specified purpose.
+     Generates a cryptographic key for the specified type.
      
      - Parameters:
         - keySize: The size of the key in bits
-        - purpose: The intended purpose of the key
+        - keyType: The type of key to generate
      - Returns: The generated key data or an error
      */
     public func generateKey(
         keySize: Int,
-        purpose: CoreSecurityTypes.KeyPurpose
+        keyType: CoreSecurityTypes.KeyType
     ) async -> Result<Data, Error> {
         await logger.debug(
-            "Generating key of size: \(keySize) bits for purpose: \(purpose.rawValue)",
+            "Generating \(keyType.rawValue) key of size: \(keySize) bits",
             metadata: nil
         )
         

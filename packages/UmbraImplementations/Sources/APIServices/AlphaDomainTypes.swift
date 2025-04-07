@@ -48,21 +48,18 @@ public enum APIDomain: String, Codable, Sendable, Hashable, CaseIterable {
 /// Protocol that all domain-specific operation handlers must implement
 public protocol DomainHandler {
   /**
-   Executes the specified operation within this domain.
-
-   - Parameter operation: The operation to execute
-   - Returns: The result of the operation, which will be cast to the appropriate type by the caller
+   The domain identifier this handler supports
+   */
+  var domain: String { get }
+  
+  /**
+   Handles a domain-specific operation
+   
+   - Parameter operation: The operation to handle
+   - Returns: The result of the operation
    - Throws: APIError if the operation fails
    */
-  func execute<T: APIOperation>(_ operation: T) async throws -> Any
-
-  /**
-   Checks if this handler supports the specified operation.
-
-   - Parameter operation: The operation to check
-   - Returns: True if the operation is supported, false otherwise
-   */
-  func supports(_ operation: some APIOperation) -> Bool
+  func handleOperation<T: APIOperation>(operation: T) async throws -> Any
 }
 
 /// Protocol marker for backup-related API operations

@@ -67,15 +67,15 @@ public protocol CryptoProviderProtocol: Sendable {
     ) async -> Result<Data, Error>
     
     /**
-     Generates a cryptographic key for the specified purpose
+     Generates a cryptographic key for the specified type
      
      - Parameters:
         - keySize: The size of the key in bits
-        - purpose: The intended purpose of the key
+        - keyType: The type of key to generate
      - Returns: The generated key data or an error
      */
     func generateKey(
         keySize: Int,
-        purpose: CoreSecurityTypes.KeyPurpose
+        keyType: CoreSecurityTypes.KeyType
     ) async -> Result<Data, Error>
 }

@@ -37,6 +37,27 @@ public enum LoggingServices {
   }
 
   /**
+   * Creates a logger with the specified configuration.
+   *
+   * - Parameters:
+   *   - subsystem: The subsystem for the logger
+   *   - category: The category for the logger
+   *   - privacyLevel: The default privacy level for the logger
+   * - Returns: A configured logger
+   */
+  public static func createLogger(
+    subsystem: String,
+    category: String,
+    privacyLevel: LogPrivacyLevel = .private
+  ) -> LoggingProtocol {
+    LoggerFactory.createLogger(
+      subsystem: subsystem,
+      category: category,
+      privacyLevel: privacyLevel
+    )
+  }
+
+  /**
    * Creates a logger with the specified privacy configuration.
    *
    * - Parameters:
