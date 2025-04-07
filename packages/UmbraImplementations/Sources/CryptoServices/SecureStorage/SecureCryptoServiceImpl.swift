@@ -78,7 +78,7 @@ public actor SecureCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
   public func encrypt(
     dataIdentifier: String,
     keyIdentifier: String,
-    options _: SecurityCoreInterfaces.EncryptionOptions?
+    options _: CoreSecurityTypes.EncryptionOptions?
   ) async -> Result<String, SecurityStorageError> {
     let context=CryptoLogContext(
       operation: "encrypt",

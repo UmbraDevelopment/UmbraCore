@@ -91,15 +91,15 @@ public actor BackupOperationsService {
     }
 
     // Add exclude paths
-    if !parameters.excludePaths.isEmpty {
+    if let excludePaths = parameters.excludePaths, !excludePaths.isEmpty {
       command.arguments.append("--exclude")
-      command.arguments.append(contentsOf: parameters.excludePaths)
+      command.arguments.append(contentsOf: excludePaths)
     }
 
     // Add tags
-    if !parameters.tags.isEmpty {
+    if let tags = parameters.tags, !tags.isEmpty {
       command.arguments.append("--tag")
-      command.arguments.append(contentsOf: parameters.tags)
+      command.arguments.append(contentsOf: tags)
     }
 
     // Run the command
@@ -158,15 +158,15 @@ public actor BackupOperationsService {
     ])
 
     // Add include paths
-    if !parameters.includePaths.isEmpty {
+    if let includePaths = parameters.includePaths, !includePaths.isEmpty {
       command.arguments.append("--include")
-      command.arguments.append(contentsOf: parameters.includePaths)
+      command.arguments.append(contentsOf: includePaths)
     }
 
     // Add exclude paths
-    if !parameters.excludePaths.isEmpty {
+    if let excludePaths = parameters.excludePaths, !excludePaths.isEmpty {
       command.arguments.append("--exclude")
-      command.arguments.append(contentsOf: parameters.excludePaths)
+      command.arguments.append(contentsOf: excludePaths)
     }
 
     // Run the command
@@ -199,9 +199,9 @@ public actor BackupOperationsService {
     ])
 
     // Add tags
-    if !parameters.tags.isEmpty {
+    if let tags = parameters.tags, !tags.isEmpty {
       command.arguments.append("--tag")
-      command.arguments.append(contentsOf: parameters.tags)
+      command.arguments.append(contentsOf: tags)
     }
 
     // Add before

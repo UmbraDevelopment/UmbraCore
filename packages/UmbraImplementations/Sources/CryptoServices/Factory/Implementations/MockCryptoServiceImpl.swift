@@ -1,6 +1,7 @@
 import Foundation
 import LoggingInterfaces
 import SecurityCoreInterfaces
+import CoreSecurityTypes
 
 /**
  * A mock implementation of CryptoServiceProtocol for testing purposes.
@@ -95,7 +96,7 @@ public actor MockCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
   public func encrypt(
     dataIdentifier: String,
     keyIdentifier _: String,
-    options _: SecurityCoreInterfaces.EncryptionOptions?
+    options _: CoreSecurityTypes.EncryptionOptions?
   ) async -> Result<String, SecurityStorageError> {
     await logger.debug(
       "Encrypting data \(dataIdentifier)",

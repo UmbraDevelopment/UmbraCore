@@ -6,9 +6,9 @@ import SecurityCoreInterfaces
 
 // MARK: - Adapter Extensions for EncryptionOptions
 
-/// Extension to adapt between SecurityCoreInterfaces.EncryptionOptions and
+/// Extension to adapt between CoreSecurityTypes.EncryptionOptions and
 /// CryptoTypes.CryptoOperationOptionsDTO
-extension SecurityCoreInterfaces.EncryptionOptions {
+extension CoreSecurityTypes.EncryptionOptions {
   /// Convert to CryptoOperationOptionsDTO for use with internal APIs
   public func toCryptoOperationOptionsDTO() -> CryptoOperationOptionsDTO {
     // Map the algorithm and mode
@@ -25,7 +25,7 @@ extension SecurityCoreInterfaces.EncryptionOptions {
       mode: cryptoMode,
       padding: .pkcs7, // Default to PKCS7
       initializationVector: nil, // Will be generated during operation
-      authenticatedData: authenticatedData
+      authenticatedData: additionalAuthenticatedData
     )
   }
 
@@ -35,8 +35,8 @@ extension SecurityCoreInterfaces.EncryptionOptions {
     var configOptions=SecurityConfigOptions()
 
     var metadataDict=metadata ?? [:]
-    if let authenticatedData {
-      metadataDict["authenticatedData"]=Data(authenticatedData).base64EncodedString()
+    if let additionalAuthenticatedData {
+      metadataDict["authenticatedData"]=Data(additionalAuthenticatedData).base64EncodedString()
     }
 
     if !metadataDict.isEmpty {
@@ -44,7 +44,7 @@ extension SecurityCoreInterfaces.EncryptionOptions {
     }
 
     return SecurityConfigDTO(
-      encryptionAlgorithm: toAlgorithmEnum(),
+      encryptionAlgorithm: algorithm, // Use directly since it's the same type
       hashAlgorithm: CoreSecurityTypes.HashAlgorithm.sha256, // Default
       providerType: .basic, // Use basic provider type instead of non-existent .default
       options: configOptions
@@ -52,30 +52,17 @@ extension SecurityCoreInterfaces.EncryptionOptions {
   }
 
   /// Convert to interface EncryptionOptions (used when adapting options)
-  public func toInterfaceOptions() -> SecurityCoreInterfaces.EncryptionOptions {
-    SecurityCoreInterfaces.EncryptionOptions(
-      algorithm: toAlgorithmEnum()
-    )
-  }
-
-  /// Convert internal encryption algorithm to enum representation
-  private func toAlgorithmEnum() -> CoreSecurityTypes.EncryptionAlgorithm {
-    switch algorithm {
-      case .aes256GCM:
-        .aes256GCM
-      case .aes256CBC:
-        .aes256CBC
-      case .chacha20Poly1305:
-        .chacha20Poly1305
-    }
+  public func toInterfaceOptions() -> CoreSecurityTypes.EncryptionOptions {
+    // This is a no-op since we're already using the correct type
+    self
   }
 }
 
 // MARK: - Adapter Extensions for DecryptionOptions
 
-/// Extension to adapt between SecurityCoreInterfaces.DecryptionOptions and
+/// Extension to adapt between CoreSecurityTypes.DecryptionOptions and
 /// CryptoTypes.CryptoOperationOptionsDTO
-extension SecurityCoreInterfaces.DecryptionOptions {
+extension CoreSecurityTypes.DecryptionOptions {
   /// Convert to CryptoOperationOptionsDTO for use with internal APIs
   public func toCryptoOperationOptionsDTO() -> CryptoOperationOptionsDTO {
     // Map the algorithm and mode
@@ -92,7 +79,7 @@ extension SecurityCoreInterfaces.DecryptionOptions {
       mode: cryptoMode,
       padding: .pkcs7, // Default to PKCS7
       initializationVector: nil, // Will be provided during operation
-      authenticatedData: authenticatedData
+      authenticatedData: additionalAuthenticatedData
     )
   }
 
@@ -102,8 +89,8 @@ extension SecurityCoreInterfaces.DecryptionOptions {
     var configOptions=SecurityConfigOptions()
 
     var metadataDict=metadata ?? [:]
-    if let authenticatedData {
-      metadataDict["authenticatedData"]=Data(authenticatedData).base64EncodedString()
+    if let additionalAuthenticatedData {
+      metadataDict["authenticatedData"]=Data(additionalAuthenticatedData).base64EncodedString()
     }
 
     if !metadataDict.isEmpty {
@@ -111,7 +98,7 @@ extension SecurityCoreInterfaces.DecryptionOptions {
     }
 
     return SecurityConfigDTO(
-      encryptionAlgorithm: toAlgorithmEnum(),
+      encryptionAlgorithm: algorithm, // Use directly since it's the same type
       hashAlgorithm: CoreSecurityTypes.HashAlgorithm.sha256, // Default
       providerType: .basic, // Use basic provider type instead of non-existent .default
       options: configOptions
@@ -119,22 +106,9 @@ extension SecurityCoreInterfaces.DecryptionOptions {
   }
 
   /// Convert to interface DecryptionOptions (used when adapting options)
-  public func toInterfaceOptions() -> SecurityCoreInterfaces.DecryptionOptions {
-    SecurityCoreInterfaces.DecryptionOptions(
-      algorithm: toAlgorithmEnum()
-    )
-  }
-
-  /// Convert internal encryption algorithm to enum representation
-  private func toAlgorithmEnum() -> CoreSecurityTypes.EncryptionAlgorithm {
-    switch algorithm {
-      case .aes256GCM:
-        .aes256GCM
-      case .aes256CBC:
-        .aes256CBC
-      case .chacha20Poly1305:
-        .chacha20Poly1305
-    }
+  public func toInterfaceOptions() -> CoreSecurityTypes.DecryptionOptions {
+    // This is a no-op since we're already using the correct type
+    self
   }
 }
 
@@ -346,12 +320,12 @@ extension [String: CryptoParameter] {
 /// Extension to extract options from SecurityConfigDTO
 extension SecurityConfigDTO {
   /// Extract encryption options from the configuration
-  public var extractedEncryptionOptions: SecurityCoreInterfaces.EncryptionOptions? {
+  public var extractedEncryptionOptions: CoreSecurityTypes.EncryptionOptions? {
     nil // Simplified until we have the proper members
   }
 
   /// Extract decryption options from the configuration
-  public var extractedDecryptionOptions: SecurityCoreInterfaces.DecryptionOptions? {
+  public var extractedDecryptionOptions: CoreSecurityTypes.DecryptionOptions? {
     nil // Simplified until we have the proper members
   }
 
