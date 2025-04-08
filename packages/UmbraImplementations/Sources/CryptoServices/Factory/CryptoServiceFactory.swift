@@ -11,7 +11,7 @@ import SecurityInterfaces
 import SecurityProviderRegistryInterfaces
 import SecurityProviders
 import SecureStorageImplementations
-import Throttling
+import APIServices
 import UmbraErrors
 
 /**
@@ -86,7 +86,7 @@ public enum CryptoServiceFactory {
     secureStorage: SecureStorageProtocol? = nil,
     logger: LoggingProtocol? = nil
   ) async -> CryptoServiceProtocol {
-    let actualLogger: LoggingProtocol = logger ?? LoggingServiceFactory.createStandardLogger()
+    let actualLogger: LoggingProtocol = logger ?? await LoggingServiceFactory.createPrivacyAwareLogger()
     let actualSecureStorage = secureStorage ?? await createLocalSecureStorage(logger: actualLogger)
 
     return await DefaultCryptoServiceImpl(
@@ -107,7 +107,7 @@ public enum CryptoServiceFactory {
     secureStorage: SecureStorageProtocol? = nil,
     logger: LoggingProtocol? = nil
   ) async -> CryptoServiceProtocol {
-    let actualLogger: LoggingProtocol = logger ?? LoggingServiceFactory.createStandardLogger()
+    let actualLogger: LoggingProtocol = logger ?? await LoggingServiceFactory.createPrivacyAwareLogger()
     let actualSecureStorage = secureStorage ?? await createLocalSecureStorage(logger: actualLogger)
 
     return await DefaultCryptoServiceImpl(
@@ -128,7 +128,7 @@ public enum CryptoServiceFactory {
     secureStorage: SecureStorageProtocol? = nil,
     logger: LoggingProtocol? = nil
   ) async -> CryptoServiceProtocol {
-    let actualLogger: LoggingProtocol = logger ?? LoggingServiceFactory.createStandardLogger()
+    let actualLogger: LoggingProtocol = logger ?? await LoggingServiceFactory.createPrivacyAwareLogger()
     let defaultSecureStorage = secureStorage ?? await createLocalSecureStorage(logger: actualLogger)
 
     return await LoggingCryptoServiceImpl(
@@ -152,7 +152,10 @@ public enum CryptoServiceFactory {
     secureStorage: SecureStorageProtocol? = nil,
     logger: LoggingProtocol? = nil
   ) async -> CryptoServiceProtocol {
-    let actualLogger: PrivacyAwareLoggingProtocol = (logger as? PrivacyAwareLoggingProtocol) ?? LoggingServiceFactory.createPrivacyAwareLogger()
+    // Use privacy-aware logger for enhanced security
+    let actualLogger: LoggingProtocol = logger ?? await LoggingServiceFactory.createPrivacyAwareLogger(
+      environment: .production
+    )
     let defaultSecureStorage = secureStorage ?? await createLocalSecureStorage(logger: actualLogger)
 
     return await EnhancedLoggingCryptoServiceImpl(
@@ -177,9 +180,24 @@ public enum CryptoServiceFactory {
     secureStorage: SecureStorageProtocol? = nil,
     logger: LoggingProtocol? = nil
   ) async -> CryptoServiceProtocol {
-    let actualLogger: PrivacyAwareLoggingProtocol = (logger as? PrivacyAwareLoggingProtocol) ?? LoggingServiceFactory.createPrivacyAwareLogger()
+    // Use privacy-aware logger with production environment for high security
+    let actualLogger: LoggingProtocol = logger ?? await LoggingServiceFactory.createComprehensivePrivacyAwareLogger(
+      subsystem: "com.umbra.cryptoservices",
+      category: "highsecurity",
+      logDirectoryPath: NSTemporaryDirectory(),
+      environment: .production
+    )
     let defaultSecureStorage = secureStorage ?? await createLocalSecureStorage(logger: actualLogger)
-    let rateLimiter = DefaultRateLimiter()
+    
+    // Create a rate limiter with high security configuration
+    let rateLimiterFactory = RateLimiterFactory.shared
+    let actorRateLimiter = await rateLimiterFactory.getHighSecurityRateLimiter(
+      domain: "crypto",
+      operation: "highSecurity"
+    )
+    
+    // Create an adapter to bridge between the actor-based RateLimiter and the expected interface
+    let rateLimiter = RateLimiterAdapter(rateLimiter: actorRateLimiter, domain: "crypto")
 
     let service = await EnhancedSecureCryptoServiceImpl(
       wrapped: DefaultCryptoServiceImpl(
@@ -189,11 +207,8 @@ public enum CryptoServiceFactory {
       logger: actualLogger,
       rateLimiter: rateLimiter
     )
-
-    return await LoggingCryptoServiceImpl(
-      wrapped: service,
-      logger: logger ?? LoggingServiceFactory.createStandardLogger()
-    )
+    
+    return service
   }
 
   /**
@@ -210,7 +225,7 @@ public enum CryptoServiceFactory {
     logger: LoggingProtocol? = nil,
     secureStorage: SecureStorageProtocol? = nil
   ) async -> CryptoServiceProtocol {
-    let actualLogger: LoggingProtocol = logger ?? LoggingServiceFactory.createStandardLogger()
+    let actualLogger: LoggingProtocol = logger ?? await LoggingServiceFactory.createPrivacyAwareLogger()
     let actualSecureStorage = secureStorage ?? await createLocalSecureStorage(logger: actualLogger)
 
     return await MockCryptoServiceImpl(
@@ -234,7 +249,7 @@ public enum CryptoServiceFactory {
     logger: LoggingProtocol? = nil,
     environment: DeploymentEnvironment = .production
   ) async -> CryptoServiceProtocol {
-    let actualLogger: LoggingProtocol = logger ?? LoggingServiceFactory.createStandardLogger()
+    let actualLogger: LoggingProtocol = logger ?? await LoggingServiceFactory.createPrivacyAwareLogger()
     let defaultSecureStorage = secureStorage ?? await createLocalSecureStorage(logger: actualLogger)
 
     switch environment {
@@ -257,7 +272,10 @@ public enum CryptoServiceFactory {
         )
 
       case .staging, .production:
-        let privacyLogger: PrivacyAwareLoggingProtocol = (logger as? PrivacyAwareLoggingProtocol) ?? LoggingServiceFactory.createPrivacyAwareLogger()
+        // Use privacy-aware logger for enhanced security
+        let privacyLogger: LoggingProtocol = logger ?? await LoggingServiceFactory.createPrivacyAwareLogger(
+          environment: .production
+        )
 
         return await EnhancedLoggingCryptoServiceImpl(
           wrapped: DefaultCryptoServiceImpl(
@@ -286,7 +304,7 @@ public enum CryptoServiceFactory {
     secureStorage: SecureStorageProtocol? = nil,
     logger: LoggingProtocol? = nil
   ) async -> CryptoServiceProtocol {
-    let actualLogger: LoggingProtocol = logger ?? LoggingServiceFactory.createStandardLogger()
+    let actualLogger: LoggingProtocol = logger ?? await LoggingServiceFactory.createPrivacyAwareLogger()
     let registry = await createProviderRegistry(logger: actualLogger)
     let actualProvider = await registry.createProvider(type: providerType)
     let actualSecureStorage = secureStorage ?? await createLocalSecureStorage(logger: actualLogger)
@@ -312,7 +330,7 @@ public enum CryptoServiceFactory {
     secureStorage: SecureStorageProtocol? = nil,
     logger: LoggingProtocol? = nil
   ) async -> CryptoServiceProtocol {
-    let actualLogger: LoggingProtocol = logger ?? LoggingServiceFactory.createStandardLogger()
+    let actualLogger: LoggingProtocol = logger ?? await LoggingServiceFactory.createPrivacyAwareLogger()
     let actualSecureStorage = secureStorage ?? await createLocalSecureStorage(logger: actualLogger)
 
     return await DefaultCryptoServiceWithProviderImpl(
@@ -333,7 +351,7 @@ public enum CryptoServiceFactory {
   public static func createProviderRegistry(
     logger: LoggingProtocol? = nil
   ) async -> SecurityProviderRegistryProtocol {
-    let actualLogger: LoggingProtocol = logger ?? LoggingServiceFactory.createStandardLogger()
+    let actualLogger: LoggingProtocol = logger ?? await LoggingServiceFactory.createPrivacyAwareLogger()
 
     return await DefaultSecurityProviderRegistry(logger: actualLogger)
   }
@@ -354,7 +372,7 @@ public enum CryptoServiceFactory {
     storageURL: URL? = nil,
     logger: LoggingProtocol? = nil
   ) async -> SecureStorageProtocol {
-    let actualLogger: LoggingProtocol = logger ?? LoggingServiceFactory.createStandardLogger()
+    let actualLogger: LoggingProtocol = logger ?? await LoggingServiceFactory.createPrivacyAwareLogger()
     let actualProvider: SecurityProviderProtocol
 
     if let provider = provider {
@@ -397,7 +415,7 @@ public enum CryptoServiceFactory {
     logger: LoggingProtocol? = nil,
     secureStorage: SecureStorageProtocol? = nil
   ) async -> CryptoServiceProtocol {
-    let actualLogger: LoggingProtocol = logger ?? LoggingServiceFactory.createStandardLogger()
+    let actualLogger: LoggingProtocol = logger ?? await LoggingServiceFactory.createPrivacyAwareLogger()
     let actualSecureStorage = secureStorage ?? await createLocalSecureStorage(logger: actualLogger)
 
     return await MockCryptoServiceImpl(

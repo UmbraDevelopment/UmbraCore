@@ -223,4 +223,122 @@ public enum LoggingServiceFactory {
       formatter: formatter
     )
   }
+
+  /// Create a privacy-aware logging service that handles sensitive data appropriately
+  /// - Parameters:
+  ///   - minimumLevel: Minimum log level to display (defaults to info)
+  ///   - environment: The deployment environment (development, staging, production)
+  ///   - formatter: Optional custom formatter to use
+  /// - Returns: A configured privacy-aware logging actor
+  public static func createPrivacyAwareLogger(
+    minimumLevel: LoggingTypes.UmbraLogLevel = .info,
+    environment: DeploymentEnvironment = .development,
+    formatter: LoggingInterfaces.LogFormatterProtocol? = nil
+  ) -> PrivacyAwareLoggingActor {
+    // Create a privacy-aware formatter if one wasn't provided
+    let logFormatter = formatter ?? PrivacyAwareLogFormatter(environment: environment)
+    
+    // Create the underlying logging service
+    let loggingService = createStandardLogger(
+      minimumLevel: minimumLevel,
+      formatter: logFormatter
+    )
+    
+    // Create and return the privacy-aware logging actor
+    return PrivacyAwareLoggingActor(
+      loggingService: loggingService,
+      environment: environment
+    )
+  }
+  
+  /// Create a comprehensive privacy-aware logging service with multiple destinations
+  /// - Parameters:
+  ///   - subsystem: The subsystem identifier for OSLog
+  ///   - category: The category for OSLog
+  ///   - logDirectoryPath: Directory to store log files
+  ///   - environment: The deployment environment
+  ///   - minimumLevel: Minimum log level to display (defaults to info)
+  ///   - fileMinimumLevel: Minimum level for file logging (defaults to warning)
+  ///   - osLogMinimumLevel: Minimum level for OSLog (defaults to info)
+  ///   - consoleMinimumLevel: Minimum level for console (defaults to info)
+  /// - Returns: A privacy-aware logging actor with multiple destinations
+  public static func createComprehensivePrivacyAwareLogger(
+    subsystem: String,
+    category: String,
+    logDirectoryPath: String,
+    environment: DeploymentEnvironment = .development,
+    minimumLevel: LoggingTypes.UmbraLogLevel = .info,
+    fileMinimumLevel: LoggingTypes.UmbraLogLevel = .warning,
+    osLogMinimumLevel: LoggingTypes.UmbraLogLevel = .info,
+    consoleMinimumLevel: LoggingTypes.UmbraLogLevel = .info
+  ) -> PrivacyAwareLoggingActor {
+    // Create a privacy-aware formatter
+    let formatter = PrivacyAwareLogFormatter(environment: environment)
+    
+    // Create destinations with the privacy-aware formatter
+    let osLogDestination = OSLogDestination(
+      subsystem: subsystem,
+      category: category,
+      minimumLevel: osLogMinimumLevel,
+      formatter: formatter
+    )
+    
+    let consoleDestination = ConsoleLogDestination(
+      identifier: "console-privacy",
+      minimumLevel: consoleMinimumLevel,
+      formatter: formatter
+    )
+    
+    let filePath = (logDirectoryPath as NSString).appendingPathComponent("umbra-privacy.log")
+    let fileDestination = FileLogDestination(
+      identifier: "file-privacy",
+      filePath: filePath,
+      minimumLevel: fileMinimumLevel,
+      formatter: formatter
+    )
+    
+    // Create the underlying logging service
+    let loggingService = LoggingServiceActor(
+      destinations: [osLogDestination, consoleDestination, fileDestination],
+      minimumLogLevel: minimumLevel,
+      formatter: formatter
+    )
+    
+    // Create and return the privacy-aware logging actor
+    return PrivacyAwareLoggingActor(
+      loggingService: loggingService,
+      environment: environment
+    )
+  }
+  
+  /// Create a production privacy-aware logging service with file and console output
+  /// - Parameters:
+  ///   - logDirectoryPath: Directory to store log files
+  ///   - logFileName: Name of the log file (without path)
+  ///   - environment: The deployment environment (defaults to production)
+  ///   - minimumLevel: Minimum log level to display (defaults to info)
+  /// - Returns: A configured privacy-aware logging actor for production
+  public static func createProductionPrivacyAwareLogger(
+    logDirectoryPath: String,
+    logFileName: String = "umbra-privacy.log",
+    environment: DeploymentEnvironment = .production,
+    minimumLevel: LoggingTypes.UmbraLogLevel = .info
+  ) -> PrivacyAwareLoggingActor {
+    // Create a privacy-aware formatter for production
+    let formatter = PrivacyAwareLogFormatter(environment: environment)
+    
+    // Create the underlying logging service
+    let loggingService = createProductionLogger(
+      logDirectoryPath: logDirectoryPath,
+      logFileName: logFileName,
+      minimumLevel: minimumLevel,
+      formatter: formatter
+    )
+    
+    // Create and return the privacy-aware logging actor
+    return PrivacyAwareLoggingActor(
+      loggingService: loggingService,
+      environment: environment
+    )
+  }
 }

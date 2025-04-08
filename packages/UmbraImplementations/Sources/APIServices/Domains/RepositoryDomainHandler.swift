@@ -20,15 +20,22 @@ import UmbraErrors
 
  ## Thread Safety
 
- Operations use proper isolation and async/await patterns to ensure
- thread safety throughout the handler.
+ This handler is implemented as an actor to ensure thread safety and memory isolation
+ throughout all operations. The actor-based design provides automatic synchronisation
+ and eliminates potential race conditions when handling concurrent requests.
  */
-public struct RepositoryDomainHandler: DomainHandler {
+public actor RepositoryDomainHandler: DomainHandler {
   /// Repository service for storage operations
   private let repositoryService: RepositoryServiceProtocol
-
-  /// Logger with privacy controls
-  private let logger: (any LoggingProtocol)?
+  
+  /// Base domain handler for common functionality
+  private let baseDomainHandler: BaseDomainHandler
+  
+  /// Cache for repository information to improve performance of repeated requests
+  private var repositoryCache: [String: (RepositoryInfo, Date)] = [:]
+  
+  /// Cache time-to-live in seconds
+  private let cacheTTL: TimeInterval = 60 // 1 minute
 
   /**
    Initialises a new repository domain handler.
@@ -41,8 +48,16 @@ public struct RepositoryDomainHandler: DomainHandler {
     service: RepositoryServiceProtocol,
     logger: (any LoggingProtocol)?=nil
   ) {
-    repositoryService=service
-    self.logger=logger
+    repositoryService = service
+    baseDomainHandler = BaseDomainHandler(domain: APIDomain.repository.rawValue, logger: logger)
+  }
+
+  // MARK: - DomainHandler Conformance
+  public nonisolated var domain: String { APIDomain.repository.rawValue }
+
+  public func handleOperation<T: APIOperation>(operation: T) async throws -> Any {
+    // Call the existing execute method
+    return try await execute(operation)
   }
 
   /**
@@ -53,55 +68,28 @@ public struct RepositoryDomainHandler: DomainHandler {
    - Throws: APIError if the operation fails
    */
   public func execute(_ operation: some APIOperation) async throws -> Any {
-    // Log the operation start with privacy-aware metadata
-    let operationName=String(describing: type(of: operation))
-    let startMetadata=LogMetadataDTOCollection()
-      .withPublic(key: "operation", value: operationName)
-      .withPublic(key: "event", value: "start")
-
-    await logger?.info(
-      "Starting repository operation",
-      context: CoreLogContext(
-        source: "RepositoryDomainHandler",
-        metadata: startMetadata
-      )
-    )
+    // Get operation name once for reuse
+    let operationName = String(describing: type(of: operation))
+    
+    // Log operation start with optimised metadata creation
+    await baseDomainHandler.logOperationStart(operationName: operationName, source: "RepositoryDomainHandler")
 
     do {
       // Execute the appropriate operation based on type
-      let result=try await executeRepositoryOperation(operation)
-
-      // Log success
-      let successMetadata=LogMetadataDTOCollection()
-        .withPublic(key: "operation", value: operationName)
-        .withPublic(key: "event", value: "success")
-        .withPublic(key: "status", value: "completed")
-
-      await logger?.info(
-        "Repository operation completed successfully",
-        context: CoreLogContext(
-          source: "RepositoryDomainHandler",
-          metadata: successMetadata
-        )
-      )
+      let result = try await executeRepositoryOperation(operation)
+      
+      // Log success with optimised metadata creation
+      await baseDomainHandler.logOperationSuccess(operationName: operationName, source: "RepositoryDomainHandler")
 
       return result
     } catch {
-      // Log failure with privacy-aware error details
-      let errorMetadata=LogMetadataDTOCollection()
-        .withPublic(key: "operation", value: operationName)
-        .withPublic(key: "event", value: "failure")
-        .withPublic(key: "status", value: "failed")
-        .withPrivate(key: "error", value: error.localizedDescription)
-
-      await logger?.error(
-        "Repository operation failed",
-        context: CoreLogContext(
-          source: "RepositoryDomainHandler",
-          metadata: errorMetadata
-        )
+      // Log failure with optimised metadata creation
+      await baseDomainHandler.logOperationFailure(
+        operationName: operationName,
+        error: error,
+        source: "RepositoryDomainHandler"
       )
-
+      
       // Map to appropriate API error and rethrow
       throw mapToAPIError(error)
     }
@@ -113,11 +101,43 @@ public struct RepositoryDomainHandler: DomainHandler {
    - Parameter operation: The operation to check support for
    - Returns: true if the operation is supported, false otherwise
    */
-  public func supports(_ operation: some APIOperation) -> Bool {
+  public nonisolated func supports(_ operation: some APIOperation) -> Bool {
     operation is any RepositoryAPIOperation
   }
 
   // MARK: - Private Helper Methods
+  
+  /**
+   Retrieves a repository from the cache if available and not expired.
+   
+   - Parameter id: The repository ID
+   - Returns: The cached repository if available, nil otherwise
+   */
+  private func getCachedRepository(id: String) -> RepositoryInfo? {
+    if let (info, timestamp) = repositoryCache[id],
+       Date().timeIntervalSince(timestamp) < cacheTTL {
+      return info
+    }
+    return nil
+  }
+  
+  /**
+   Caches a repository for future use.
+   
+   - Parameters:
+     - id: The repository ID
+     - info: The repository information to cache
+   */
+  private func cacheRepository(id: String, info: RepositoryInfo) {
+    repositoryCache[id] = (info, Date())
+  }
+  
+  /**
+   Clears all cached repositories.
+   */
+  public func clearCache() {
+    repositoryCache.removeAll()
+  }
 
   /**
    Routes the operation to the appropriate handler method based on its type.
@@ -131,12 +151,37 @@ public struct RepositoryDomainHandler: DomainHandler {
       case let op as ListRepositoriesOperation:
         return try await handleListRepositories(op)
       case let op as GetRepositoryOperation:
+        // Check cache first for better performance
+        if let cachedRepository = getCachedRepository(id: op.repositoryID) {
+          // Log cache hit if needed
+          await baseDomainHandler.logDebug(
+            message: "Retrieved repository from cache",
+            operationName: "getRepository",
+            source: "RepositoryDomainHandler",
+            additionalMetadata: LogMetadataDTOCollection()
+              .withPublic(key: "repository_id", value: op.repositoryID)
+              .withPublic(key: "cache_hit", value: "true")
+          )
+          return cachedRepository
+        }
         return try await handleGetRepository(op)
       case let op as CreateRepositoryOperation:
-        return try await handleCreateRepository(op)
+        let result = try await handleCreateRepository(op)
+        // Cache the result for future use
+        if let repositoryInfo = result as? RepositoryInfo {
+          cacheRepository(id: repositoryInfo.id, info: repositoryInfo)
+        }
+        return result
       case let op as UpdateRepositoryOperation:
-        return try await handleUpdateRepository(op)
+        let result = try await handleUpdateRepository(op)
+        // Update cache with new information
+        if let repositoryInfo = result as? RepositoryInfo {
+          cacheRepository(id: repositoryInfo.id, info: repositoryInfo)
+        }
+        return result
       case let op as DeleteRepositoryOperation:
+        // Invalidate cache entry for this repository
+        repositoryCache.removeValue(forKey: op.repositoryID)
         return try await handleDeleteRepository(op)
       default:
         throw APIError.operationNotSupported(
@@ -154,102 +199,184 @@ public struct RepositoryDomainHandler: DomainHandler {
    */
   private func mapToAPIError(_ error: Error) -> APIError {
     // If it's already an APIError, return it
-    if let apiError=error as? APIError {
+    if let apiError = error as? APIError {
       return apiError
     }
 
     // Handle specific repository error types
-    if let repoError=error as? RepositoryError {
-      switch repoError {
-        case .notFound:
-          return APIError.resourceNotFound(
-            message: "Repository not found",
-            identifier: "unknown"
-          )
-        case .duplicateIdentifier:
-          return APIError.conflict(
-            message: "Repository already exists with this identifier",
-            details: "A repository with the given identifier is already registered",
-            code: "REPOSITORY_ALREADY_EXISTS"
-          )
-        case .locked:
-          return APIError.conflict(
-            message: "Repository is locked by another operation",
-            details: "Try again later when the repository is not in use",
-            code: "REPOSITORY_LOCKED"
-          )
-        case .invalidRepository:
-          return APIError.invalidOperation(
-            message: "Invalid repository configuration",
-            code: "INVALID_REPOSITORY"
-          )
-        case .internalError:
-          return APIError.operationFailed(
-            message: "Repository operation failed",
-            code: "REPOSITORY_OPERATION_FAILED",
-            underlyingError: repoError
-          )
-        case .inaccessible:
-          return APIError.serviceUnavailable(
-            message: "Repository is not accessible",
-            code: "REPOSITORY_INACCESSIBLE"
-          )
-        case .corrupted:
-          return APIError.invalidState(
-            message: "Repository is corrupted",
-            details: "The repository data is corrupted or damaged",
-            code: "REPOSITORY_CORRUPTED"
-          )
-        case .uninitialised:
-          return APIError.invalidState(
-            message: "Repository is not initialised",
-            details: "The repository needs to be initialized before use",
-            code: "REPOSITORY_UNINITIALISED"
-          )
-        case .invalidOperation:
-          return APIError.invalidOperation(
-            message: "Invalid operation for current repository state",
-            code: "INVALID_REPOSITORY_OPERATION"
-          )
-        case .ioError:
-          return APIError.operationFailed(
-            message: "IO error during repository operation",
-            code: "REPOSITORY_IO_ERROR",
-            underlyingError: error
-          )
-        case .permissionDenied:
-          return APIError.authenticationFailed(
-            message: "Permission denied for repository operation",
-            code: "REPOSITORY_PERMISSION_DENIED"
-          )
-        case .maintenanceFailed:
-          return APIError.operationFailed(
-            message: "Repository maintenance operation failed",
-            code: "REPOSITORY_MAINTENANCE_FAILED",
-            underlyingError: error
-          )
-        case .networkError:
-          return APIError.serviceUnavailable(
-            message: "Network error during repository operation",
-            code: "REPOSITORY_NETWORK_ERROR"
-          )
-        case .invalidURL:
-          return APIError.invalidOperation(
-            message: "Invalid repository URL",
-            code: "INVALID_REPOSITORY_URL"
-          )
-      }
+    if let repoError = error as? RepositoryError {
+      return mapRepositoryError(repoError)
     }
 
-    // Default to a generic operation failed error
-    return APIError.operationFailed(
-      message: "Repository operation failed: \(error.localizedDescription)",
-      code: "REPOSITORY_OPERATION_FAILED",
+    // Default to a generic error for unhandled error types
+    return APIError.internalError(
+      message: "An unexpected error occurred: \(error.localizedDescription)",
       underlyingError: error
     )
   }
+  
+  /**
+   Maps RepositoryError to standardised APIError.
+   
+   - Parameter error: The repository error to map
+   - Returns: An APIError instance
+   */
+  private func mapRepositoryError(_ error: RepositoryError) -> APIError {
+    switch error {
+      case .notFound:
+        return APIError.resourceNotFound(
+          message: "Repository not found",
+          identifier: "unknown"
+        )
+      case .duplicateIdentifier:
+        return APIError.conflict(
+          message: "Repository already exists with this identifier",
+          details: "A repository with the given identifier is already registered",
+          code: "REPOSITORY_ALREADY_EXISTS"
+        )
+      case .locked:
+        return APIError.conflict(
+          message: "Repository is locked by another operation",
+          details: "Try again later when the repository is not in use",
+          code: "REPOSITORY_LOCKED"
+        )
+      case .invalidRepository:
+        return APIError.validationError(
+          message: "Invalid repository configuration",
+          details: "The repository configuration is invalid or incomplete",
+          code: "INVALID_REPOSITORY"
+        )
+      case .accessDenied:
+        return APIError.accessDenied(
+          message: "Access denied to repository",
+          details: "The application does not have permission to access this repository",
+          code: "REPOSITORY_ACCESS_DENIED"
+        )
+      case .networkError:
+        return APIError.networkError(
+          message: "Network error accessing repository",
+          details: "A network error occurred while trying to access the repository",
+          code: "REPOSITORY_NETWORK_ERROR"
+        )
+      case .other:
+        return APIError.internalError(
+          message: "An unexpected repository error occurred",
+          underlyingError: error
+        )
+    }
+  }
 
-  // MARK: - Operation Handlers
+  // MARK: - Batch Operation Support
+  
+  /**
+   Executes a batch of repository operations more efficiently than individual execution.
+   
+   - Parameter operations: Array of operations to execute
+   - Returns: Dictionary mapping operation IDs to results
+   - Throws: APIError if any operation fails
+   */
+  public func executeBatch(_ operations: [any APIOperation]) async throws -> [String: Any] {
+    var results: [String: Any] = [:]
+    
+    // Group operations by type for more efficient processing
+    let groupedOperations = Dictionary(grouping: operations) { type(of: $0) }
+    
+    // Log batch operation start
+    await baseDomainHandler.logDebug(
+      message: "Starting batch repository operation",
+      operationName: "batchExecution",
+      source: "RepositoryDomainHandler",
+      additionalMetadata: LogMetadataDTOCollection()
+        .withPublic(key: "operationCount", value: String(operations.count))
+        .withPublic(key: "operationTypes", value: String(describing: groupedOperations.keys))
+    )
+    
+    do {
+      // Process each group of operations
+      for (_, operationsOfType) in groupedOperations {
+        if let firstOp = operationsOfType.first {
+          // Process based on operation type
+          if firstOp is ListRepositoriesOperation {
+            // Example: Batch process all list operations together
+            let batchResult = try await batchListRepositories(
+              operationsOfType.compactMap { $0 as? ListRepositoriesOperation }
+            )
+            for (id, result) in batchResult {
+              results[id] = result
+            }
+          } else {
+            // Fall back to individual processing for other types
+            for operation in operationsOfType {
+              let result = try await executeRepositoryOperation(operation)
+              results[operation.operationId] = result
+            }
+          }
+        }
+      }
+      
+      // Log batch operation success
+      await baseDomainHandler.logDebug(
+        message: "Batch repository operation completed successfully",
+        operationName: "batchExecution",
+        source: "RepositoryDomainHandler",
+        additionalMetadata: LogMetadataDTOCollection()
+          .withPublic(key: "operationCount", value: String(operations.count))
+          .withPublic(key: "resultsCount", value: String(results.count))
+      )
+      
+      return results
+    } catch {
+      // Log batch operation failure
+      await baseDomainHandler.logOperationFailure(
+        operationName: "batchExecution",
+        error: error,
+        source: "RepositoryDomainHandler"
+      )
+      
+      throw mapToAPIError(error)
+    }
+  }
+  
+  /**
+   Processes multiple list repositories operations in a batch for better performance.
+   
+   - Parameter operations: Array of ListRepositoriesOperation to process
+   - Returns: Dictionary mapping operation IDs to results
+   - Throws: APIError if any operation fails
+   */
+  private func batchListRepositories(_ operations: [ListRepositoriesOperation]) async throws -> [String: [RepositoryInfo]] {
+    var results: [String: [RepositoryInfo]] = [:]
+    
+    // Get all repositories in one call
+    let allRepositories = try await repositoryService.listRepositories(includeDetails: true)
+    
+    // Apply filters for each operation
+    for operation in operations {
+      let filteredRepositories: [RepositoryInfo]
+      
+      // Apply any operation-specific filtering
+      if operation.includeDetails {
+        filteredRepositories = allRepositories
+      } else {
+        // If details aren't needed, create simplified versions
+        filteredRepositories = allRepositories.map { repo in
+          RepositoryInfo(
+            id: repo.id,
+            name: repo.name,
+            type: repo.type,
+            status: repo.status,
+            creationDate: repo.creationDate,
+            lastModified: repo.lastModified
+          )
+        }
+      }
+      
+      // Store the result for this operation
+      results[operation.operationId] = filteredRepositories
+    }
+    
+    return results
+  }
 
   /**
    Handles the list repositories operation.
@@ -265,24 +392,22 @@ public struct RepositoryDomainHandler: DomainHandler {
       .withPublic(key: "operation", value: "listRepositories")
       .withPublic(key: "include_details", value: operation.includeDetails.description)
 
-    await logger?.info(
-      "Listing repositories",
-      context: CoreLogContext(
-        source: "RepositoryDomainHandler",
-        metadata: metadata
-      )
+    await baseDomainHandler.logDebug(
+      message: "Listing repositories",
+      operationName: "listRepositories",
+      source: "RepositoryDomainHandler",
+      additionalMetadata: metadata
     )
 
     // Get all repositories from the service
     let repositories=await repositoryService.getAllRepositories()
 
     if repositories.isEmpty {
-      await logger?.info(
-        "No repositories found",
-        context: CoreLogContext(
-          source: "RepositoryDomainHandler",
-          metadata: metadata
-        )
+      await baseDomainHandler.logDebug(
+        message: "No repositories found",
+        operationName: "listRepositories",
+        source: "RepositoryDomainHandler",
+        additionalMetadata: metadata
       )
       return []
     }
@@ -315,15 +440,14 @@ public struct RepositoryDomainHandler: DomainHandler {
       )
     }
 
-    await logger?.info(
-      "Found \(resultList.count) repositories",
-      context: CoreLogContext(
-        source: "RepositoryDomainHandler",
-        metadata: metadata.with(
-          key: "count",
-          value: String(resultList.count),
-          privacyLevel: .public
-        )
+    await baseDomainHandler.logDebug(
+      message: "Found \(resultList.count) repositories",
+      operationName: "listRepositories",
+      source: "RepositoryDomainHandler",
+      additionalMetadata: metadata.with(
+        key: "count",
+        value: String(resultList.count),
+        privacyLevel: .public
       )
     )
 
@@ -365,14 +489,12 @@ public struct RepositoryDomainHandler: DomainHandler {
       location: repository.location.absoluteString
     )
 
-    await logger?.info(
-      "Retrieved repository details",
-      context: CoreLogContext(
-        source: "RepositoryDomainHandler",
-        metadata: LogMetadataDTOCollection()
-          .withPublic(key: "operation", value: "getRepository")
-          .withPublic(key: "repository_id", value: operation.repositoryID)
-      )
+    await baseDomainHandler.logDebug(
+      message: "Retrieved repository details",
+      operationName: "getRepository",
+      source: "RepositoryDomainHandler",
+      additionalMetadata: LogMetadataDTOCollection()
+        .withPublic(key: "repository_id", value: operation.repositoryID)
     )
 
     return details
@@ -410,15 +532,13 @@ public struct RepositoryDomainHandler: DomainHandler {
       lastAccessDate: repository.getLastAccessDate() ?? Date()
     )
 
-    await logger?.info(
-      "Repository created successfully",
-      context: CoreLogContext(
-        source: "RepositoryDomainHandler",
-        metadata: LogMetadataDTOCollection()
-          .withPublic(key: "operation", value: "createRepository")
-          .withPublic(key: "repository_id", value: repository.identifier)
-          .withPublic(key: "repository_name", value: repository.name)
-      )
+    await baseDomainHandler.logDebug(
+      message: "Repository created successfully",
+      operationName: "createRepository",
+      source: "RepositoryDomainHandler",
+      additionalMetadata: LogMetadataDTOCollection()
+        .withPublic(key: "repository_id", value: repository.identifier)
+        .withPublic(key: "repository_name", value: repository.name)
     )
 
     return info
@@ -466,14 +586,12 @@ public struct RepositoryDomainHandler: DomainHandler {
       lastAccessDate: repository.getLastAccessDate() ?? Date()
     )
 
-    await logger?.info(
-      "Repository updated successfully",
-      context: CoreLogContext(
-        source: "RepositoryDomainHandler",
-        metadata: LogMetadataDTOCollection()
-          .withPublic(key: "operation", value: "updateRepository")
-          .withPublic(key: "repository_id", value: operation.repositoryID)
-      )
+    await baseDomainHandler.logDebug(
+      message: "Repository updated successfully",
+      operationName: "updateRepository",
+      source: "RepositoryDomainHandler",
+      additionalMetadata: LogMetadataDTOCollection()
+        .withPublic(key: "repository_id", value: operation.repositoryID)
     )
 
     return updatedInfo
@@ -497,14 +615,12 @@ public struct RepositoryDomainHandler: DomainHandler {
     // Unregister the repository from the service
     try await repositoryService.unregister(identifier: operation.repositoryID)
 
-    await logger?.info(
-      "Repository deleted successfully",
-      context: CoreLogContext(
-        source: "RepositoryDomainHandler",
-        metadata: LogMetadataDTOCollection()
-          .withPublic(key: "operation", value: "deleteRepository")
-          .withPublic(key: "repository_id", value: operation.repositoryID)
-      )
+    await baseDomainHandler.logDebug(
+      message: "Repository deleted successfully",
+      operationName: "deleteRepository",
+      source: "RepositoryDomainHandler",
+      additionalMetadata: LogMetadataDTOCollection()
+        .withPublic(key: "repository_id", value: operation.repositoryID)
     )
   }
 

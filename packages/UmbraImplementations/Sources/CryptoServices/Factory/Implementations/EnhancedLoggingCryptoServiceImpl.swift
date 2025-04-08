@@ -8,17 +8,17 @@ import Foundation
 /**
  # EnhancedLoggingCryptoServiceImpl
 
- A decorator implementation of CryptoServiceProtocol that adds privacy-aware logging capabilities.
- This implementation wraps another CryptoServiceProtocol implementation and provides enhanced
- logging with proper privacy tags for sensitive data.
+ A decorator implementation of CryptoServiceProtocol that adds enhanced logging capabilities.
+ This implementation wraps another CryptoServiceProtocol implementation and provides detailed
+ logging for cryptographic operations.
  */
 public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
   /// The wrapped implementation
   private let wrapped: CryptoServiceProtocol
   /// The secure storage, required by the protocol
   public let secureStorage: SecureStorageProtocol
-  /// Enhanced privacy-aware logger
-  private let logger: PrivacyAwareLoggingProtocol
+  /// Enhanced logger
+  private let logger: LoggingProtocol
 
   /**
    Initialises a new enhanced logging crypto service.
@@ -26,12 +26,12 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
    - Parameters:
      - wrapped: The crypto service to wrap.
      - secureStorage: The secure storage to use (required by protocol).
-     - logger: The privacy-aware logger to use for logging.
+     - logger: The logger to use for logging.
    */
   public init(
     wrapped: CryptoServiceProtocol,
     secureStorage: SecureStorageProtocol,
-    logger: PrivacyAwareLoggingProtocol
+    logger: LoggingProtocol
   ) {
     self.wrapped = wrapped
     self.secureStorage = secureStorage
