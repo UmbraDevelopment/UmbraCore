@@ -94,7 +94,7 @@ extension Task where Success == Never, Failure == Never {
   }
 }
 
-public typealias BackupProgressHandler = @Sendable (BackupProgressInfo) -> Void
+public typealias BackupProgressHandler=@Sendable (BackupProgressInfo) -> Void
 
 /// Protocol for progress reporting using Swift's modern async sequences
 @preconcurrency

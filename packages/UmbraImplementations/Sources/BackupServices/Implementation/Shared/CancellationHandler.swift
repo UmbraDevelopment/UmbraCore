@@ -15,7 +15,7 @@ import Foundation
  */
 public actor CancellationHandler: CancellationHandlerProtocol {
   /// Storage for active operations that can be cancelled
-  @unchecked Sendable private var activeOperations: [String: Task<Any, Error>]=[:]
+  private var activeOperations: [String: Task<any Sendable, Error>]=[:]
 
   /// Storage for active cancellation tokens
   private var cancellationTokens: [String: BackupCancellationToken]=[:]
@@ -32,9 +32,9 @@ public actor CancellationHandler: CancellationHandlerProtocol {
    *   - id: Unique identifier for the operation
    *   - operation: The task representing the operation
    */
-  public func registerOperation(id: String, operation: Task<some Any, Error>) {
-    // Store the task as Task<Any, Error> for type erasure
-    activeOperations[id]=operation as? Task<Any, Error>
+  public func registerOperation(id: String, operation: Task<some Sendable, Error>) {
+    // Store the task with type erasure
+    activeOperations[id]=operation as? Task<any Sendable, Error>
   }
 
   /**
@@ -49,27 +49,43 @@ public actor CancellationHandler: CancellationHandlerProtocol {
       return token
     }
 
-    // Otherwise, create a new token
-    let token=BackupOperationCancellationToken(id: id)
-
-    // Register an onCancelled callback to remove the token when cancelled
-    await token.onCancelled { [weak self] in
-      Task { [weak self] in
-        await self?.operationCompleted(id: id)
-      }
-    }
-
+    // Create a new token
+    let token=BackupCancellationTokenImpl(id: id, handler: self)
     cancellationTokens[id]=token
     return token
   }
 
   /**
-   * Cancels a specific operation by its ID.
+   * Unregisters an operation from cancellation tracking.
    *
-   * - Parameter id: The ID of the operation to cancel
-   * - Returns: True if an operation was found and cancelled, false otherwise
+   * - Parameter id: Identifier of the operation to unregister
    */
-  public func cancelOperation(id: String) async -> Bool {
+  public func unregisterOperation(id: String) async {
+    activeOperations[id]=nil
+    cancellationTokens[id]=nil
+  }
+
+  /**
+   * Checks if an operation has been cancelled.
+   *
+   * - Parameter id: Identifier of the operation to check
+   * - Returns: Whether the operation has been cancelled
+   */
+  public func isOperationCancelled(id: String) async -> Bool {
+    // Check if the token exists and is cancelled
+    if let token=cancellationTokens[id] {
+      return await token.isCancelled
+    }
+    return false
+  }
+
+  /**
+   * Cancels a specific operation.
+   *
+   * - Parameter id: Identifier of the operation to cancel
+   * - Returns: Whether the operation was successfully cancelled
+   */
+  public func cancelOperation(id: String) -> Bool {
     var cancelled=false
 
     // Try to cancel a task-based operation
@@ -80,9 +96,8 @@ public actor CancellationHandler: CancellationHandlerProtocol {
     }
 
     // Try to cancel a token-based operation
-    if let token=cancellationTokens[id] {
-      await token.cancel()
-      cancellationTokens[id]=nil
+    if let token=cancellationTokens[id] as? BackupCancellationTokenImpl {
+      token.setCancelled()
       cancelled=true
     }
 
@@ -90,39 +105,54 @@ public actor CancellationHandler: CancellationHandlerProtocol {
   }
 
   /**
-   * Checks if an operation has been cancelled.
+   * Executes an operation with cancellation support.
    *
-   * - Parameter id: ID of the operation to check
-   * - Returns: Whether the operation has been cancelled
+   * - Parameters:
+   *   - operation: The operation to execute
+   *   - token: The cancellation token for the operation
+   * - Returns: The result of the operation
+   * - Throws: CancellationError if the operation is cancelled
    */
-  public func isOperationCancelled(id: String) async -> Bool {
-    // Check if we have a token for this ID
-    if let token=cancellationTokens[id] {
-      return await token.isCancelled
+  public func withCancellationSupport<T: Sendable>(
+    _ operation: @Sendable () async throws -> T,
+    cancellationToken token: BackupCancellationToken?
+  ) async throws -> T {
+    // If no token, just execute the operation
+    guard let token else {
+      return try await operation()
     }
 
-    // If there's no token, the operation might be cancelled if it's not active
-    return await !(isOperationActive(id: id))
+    // Check if already cancelled
+    if await token.isCancelled {
+      throw CancellationError()
+    }
+
+    // Create a task that can be cancelled
+    let task=Task<T, Error> {
+      try await operation()
+    }
+
+    // Register the task for cancellation
+    if let tokenImpl=token as? BackupCancellationTokenImpl {
+      registerOperation(id: tokenImpl.id, operation: task)
+    }
+
+    do {
+      // Execute the operation
+      return try await task.value
+    } catch is CancellationError {
+      // Propagate cancellation
+      throw CancellationError()
+    } catch {
+      // Propagate other errors
+      throw error
+    }
   }
 
   /**
-   * Unregisters an operation from cancellation tracking.
-   *
-   * - Parameter id: Identifier of the operation to unregister
+   * Cancels all active operations.
    */
-  public func unregisterOperation(id: String) async {
-    operationCompleted(id: id)
-  }
-
-  /**
-   * Cancels all currently active operations.
-   *
-   * - Returns: The number of operations that were cancelled
-   */
-  public func cancelAllOperations() async -> Int {
-    let taskCount=activeOperations.count
-    let tokenCount=cancellationTokens.count
-
+  public func cancelAllOperations() {
     // Cancel all task-based operations
     for (_, task) in activeOperations {
       task.cancel()
@@ -131,129 +161,58 @@ public actor CancellationHandler: CancellationHandlerProtocol {
 
     // Cancel all token-based operations
     for (_, token) in cancellationTokens {
-      await token.cancel()
-    }
-    cancellationTokens.removeAll()
-
-    return taskCount + tokenCount
-  }
-
-  /**
-   * Removes a completed operation from the registry.
-   *
-   * - Parameter id: The ID of the operation to remove
-   */
-  public func operationCompleted(id: String) {
-    activeOperations[id]=nil
-    cancellationTokens[id]=nil
-  }
-
-  /**
-   * Checks if an operation with the specified ID is still active.
-   *
-   * - Parameter id: The operation ID to check
-   * - Returns: True if the operation is active, false otherwise
-   */
-  public func isOperationActive(id: String) async -> Bool {
-    activeOperations[id] != nil || cancellationTokens[id] != nil
-  }
-
-  /**
-   * Gets the count of currently active operations.
-   *
-   * - Returns: The number of active operations
-   */
-  public func activeOperationCount() -> Int {
-    activeOperations.count + cancellationTokens.count
-  }
-
-  /**
-   * Creates a new operation ID.
-   *
-   * - Returns: A unique operation ID
-   */
-  public func createOperationID() -> String {
-    UUID().uuidString
-  }
-
-  /**
-   * Executes an operation with cancellation support.
-   *
-   * - Parameters:
-   *   - operation: The function to execute
-   *   - cancellationToken: Optional token for cancelling the operation
-   * - Returns: The result of the operation
-   * - Throws: CancellationError if the operation is cancelled
-   */
-  public func withCancellationSupport<T: Sendable>(
-    _ operation: @Sendable @escaping () async throws -> T,
-    cancellationToken: BackupCancellationToken?
-  ) async throws -> T {
-    // Pre-check for cancellation
-    if let token=cancellationToken as? BackupOperationCancellationToken {
-      try await token.checkCancelled()
-    }
-
-    // Create a unique ID for this operation
-    let operationID=createOperationID()
-
-    // Transform the operation into a Task
-    let task=Task<T, Error> {
-      do {
-        let result=try await operation()
-        operationCompleted(id: operationID)
-        return result
-      } catch {
-        operationCompleted(id: operationID)
-        throw error
+      if let cancellable=token as? BackupCancellationTokenImpl {
+        cancellable.setCancelled()
       }
-    }
-
-    // Register the task for cancellation with proper generic type
-    registerOperation(id: operationID, operation: task)
-
-    // If we have a cancellation token, set up a callback
-    if let token=cancellationToken {
-      if let concreteToken=token as? BackupOperationCancellationToken {
-        await concreteToken.onCancelled { [weak self] in
-          guard let self else { return }
-
-          // Cancel the task if the token is cancelled
-          Task { [weak self] in
-            guard let self else { return }
-            _=await cancelOperation(id: operationID)
-          }
-        }
-      } else {
-        // For other token types, we need to periodically check
-        Task { [weak self] in
-          guard let self else { return }
-
-          while !task.isCancelled {
-            if await isOperationActive(id: operationID) {
-              if await token.isCancelled {
-                _=await cancelOperation(id: operationID)
-                break
-              }
-              try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
-            } else {
-              break
-            }
-          }
-        }
-      }
-    }
-
-    do {
-      return try await task.value
-    } catch {
-      // Re-throw the caught error (could be CancellationError or something else)
-      throw error
     }
   }
 }
 
 /**
- * Extension to provide backward compatibility with ModernCancellationHandler.
+ * Implementation of BackupCancellationToken.
  */
-public typealias ModernCancellationHandler=CancellationHandler
+private final class BackupCancellationTokenImpl: BackupCancellationToken, @unchecked Sendable {
+  /// The unique identifier for this token
+  public let id: String
+
+  /// Whether the operation has been cancelled
+  public private(set) var isCancelled: Bool=false
+
+  /// The handler that created this token
+  private weak var handler: CancellationHandler?
+
+  /// Lock for thread-safe access to isCancelled
+  private let lock=NSLock()
+
+  /**
+   * Creates a new cancellation token.
+   *
+   * - Parameters:
+   *   - id: Unique identifier for the token
+   *   - handler: The handler that created this token
+   */
+  init(id: String, handler: CancellationHandler) {
+    self.id=id
+    self.handler=handler
+  }
+
+  /**
+   * Sets the token as cancelled.
+   */
+  func setCancelled() {
+    lock.lock()
+    defer { lock.unlock() }
+    isCancelled=true
+  }
+
+  /**
+   * Cancels the operation associated with this token.
+   */
+  public func cancel() async {
+    // Set as cancelled
+    setCancelled()
+
+    // Notify the handler
+    await handler?.cancelOperation(id: id)
+  }
+}

@@ -1,7 +1,7 @@
+import CoreSecurityTypes
 import Foundation
 import LoggingInterfaces
 import SecurityCoreInterfaces
-import CoreSecurityTypes
 
 /**
  * A mock implementation of CryptoServiceProtocol for testing purposes.

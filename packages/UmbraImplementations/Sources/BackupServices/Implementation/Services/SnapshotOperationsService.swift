@@ -84,8 +84,6 @@ public actor SnapshotOperationsService {
               totalItems: 0,
               bytesProcessed: 0,
               totalBytes: 0,
-              estimatedTimeRemaining: nil,
-              error: nil,
               details: "Retrieving snapshot list",
               isCancellable: cancellationToken != nil
             ),
@@ -139,8 +137,6 @@ public actor SnapshotOperationsService {
               totalItems: 0,
               bytesProcessed: 0,
               totalBytes: 0,
-              estimatedTimeRemaining: nil,
-              error: nil,
               details: "Retrieving snapshot details",
               isCancellable: cancellationToken != nil
             ),
@@ -220,13 +216,12 @@ public actor SnapshotOperationsService {
             BackupProgressInfo(
               phase: .processing,
               percentComplete: 0.3,
-              message: "Retrieving snapshot details",
               itemsProcessed: 0,
               totalItems: 0,
               bytesProcessed: 0,
               totalBytes: 0,
-              elapsedTime: 0,
-              estimatedTimeRemaining: nil
+              details: "Retrieving snapshot details",
+              isCancellable: cancellationToken != nil
             ),
             for: .getSnapshotDetails
           )
@@ -284,13 +279,12 @@ public actor SnapshotOperationsService {
             BackupProgressInfo(
               phase: .processing,
               percentComplete: 0.3,
-              message: "Comparing snapshots",
               itemsProcessed: 0,
               totalItems: 0,
               bytesProcessed: 0,
               totalBytes: 0,
-              elapsedTime: 0,
-              estimatedTimeRemaining: nil
+              details: "Comparing snapshots",
+              isCancellable: cancellationToken != nil
             ),
             for: .compareSnapshots
           )
@@ -378,13 +372,12 @@ public actor SnapshotOperationsService {
             BackupProgressInfo(
               phase: .processing,
               percentComplete: 0.3,
-              message: "Searching for files",
               itemsProcessed: 0,
               totalItems: 0,
               bytesProcessed: 0,
               totalBytes: 0,
-              elapsedTime: 0,
-              estimatedTimeRemaining: nil
+              details: "Searching for files in snapshot",
+              isCancellable: cancellationToken != nil
             ),
             for: .findFiles
           )
@@ -496,13 +489,12 @@ public actor SnapshotOperationsService {
             BackupProgressInfo(
               phase: .processing,
               percentComplete: 0.3,
-              message: "Verifying snapshot integrity",
               itemsProcessed: 0,
               totalItems: 0,
               bytesProcessed: 0,
               totalBytes: 0,
-              elapsedTime: 0,
-              estimatedTimeRemaining: nil
+              details: "Verifying snapshot integrity",
+              isCancellable: cancellationToken != nil
             ),
             for: .verifySnapshot
           )
@@ -526,13 +518,12 @@ public actor SnapshotOperationsService {
             BackupProgressInfo(
               phase: .processing,
               percentComplete: 0.6,
-              message: "Verifying data integrity",
               itemsProcessed: 0,
               totalItems: 0,
               bytesProcessed: 0,
               totalBytes: 0,
-              elapsedTime: 0,
-              estimatedTimeRemaining: nil
+              details: "Verifying data integrity",
+              isCancellable: cancellationToken != nil
             ),
             for: .verifySnapshot
           )
@@ -547,13 +538,12 @@ public actor SnapshotOperationsService {
             BackupProgressInfo(
               phase: .completed,
               percentComplete: 1.0,
-              message: "Verification complete",
               itemsProcessed: 0,
               totalItems: 0,
               bytesProcessed: 0,
               totalBytes: 0,
-              elapsedTime: 0,
-              estimatedTimeRemaining: nil
+              details: "Verification complete",
+              isCancellable: cancellationToken != nil
             ),
             for: .verifySnapshot
           )

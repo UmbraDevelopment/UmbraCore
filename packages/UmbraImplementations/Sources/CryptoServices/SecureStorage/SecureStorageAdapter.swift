@@ -55,7 +55,7 @@ public final class SecureStorageAdapter: SecureStorageProtocol {
   public func storeData(
     _ data: [UInt8],
     withIdentifier identifier: String
-  ) async -> Result<Void, StorageCoreError> {
+  ) async -> Result<Void, SecurityStorageError> {
     await logger.debug(
       "Storing data to secure storage",
       context: CryptoLogContext(
@@ -111,7 +111,7 @@ public final class SecureStorageAdapter: SecureStorageProtocol {
    */
   public func retrieveData(
     withIdentifier identifier: String
-  ) async -> Result<[UInt8], StorageCoreError> {
+  ) async -> Result<[UInt8], SecurityStorageError> {
     await logger.debug(
       "Retrieving data from secure storage",
       context: CryptoLogContext(
@@ -172,7 +172,7 @@ public final class SecureStorageAdapter: SecureStorageProtocol {
    */
   public func deleteData(
     withIdentifier identifier: String
-  ) async -> Result<Void, StorageCoreError> {
+  ) async -> Result<Void, SecurityStorageError> {
     await logger.debug(
       "Deleting data from secure storage",
       context: CryptoLogContext(
@@ -225,7 +225,7 @@ public final class SecureStorageAdapter: SecureStorageProtocol {
    */
   public func containsData(
     withIdentifier identifier: String
-  ) async -> Result<Bool, StorageCoreError> {
+  ) async -> Result<Bool, SecurityStorageError> {
     await logger.debug(
       "Querying data existence in secure storage",
       context: CryptoLogContext(
@@ -265,7 +265,7 @@ public final class SecureStorageAdapter: SecureStorageProtocol {
 
    - Returns: Result containing array of identifiers or error details
    */
-  public func listDataIdentifiers() async -> Result<[String], StorageCoreError> {
+  public func listDataIdentifiers() async -> Result<[String], SecurityStorageError> {
     await logger.warning(
       "List data identifiers operation not supported",
       context: CryptoLogContext(

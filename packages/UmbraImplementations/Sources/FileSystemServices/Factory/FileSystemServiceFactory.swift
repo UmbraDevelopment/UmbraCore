@@ -82,11 +82,11 @@ public actor FileSystemServiceFactory {
     logger: (any LoggingInterfaces.LoggingProtocol)?=nil
   ) async -> any FileSystemServiceProtocol {
     // Create the file path service with appropriate security level
-    let filePathService = await FilePathServiceFactory.shared.createSecure(
+    let filePathService=await FilePathServiceFactory.shared.createSecure(
       securityLevel: securityLevel,
       logger: logger
     )
-    
+
     // Create the secure file system service
     return FileSystemServiceSecure(
       filePathService: filePathService,
@@ -96,11 +96,11 @@ public actor FileSystemServiceFactory {
 
   /**
    Creates a sandboxed file system service instance.
-   
+
    This service restricts all operations to a specific root directory,
    preventing access to files outside that directory. Use this for
    applications that need to provide file system access to untrusted code.
-   
+
    - Parameters:
       - rootDirectory: The directory to restrict operations to
       - logger: Optional logger for operation tracking
@@ -111,11 +111,11 @@ public actor FileSystemServiceFactory {
     logger: (any LoggingInterfaces.LoggingProtocol)?=nil
   ) async -> any FileSystemServiceProtocol {
     // Create the file path service with sandbox restrictions
-    let filePathService = await FilePathServiceFactory.shared.createSandboxed(
+    let filePathService=await FilePathServiceFactory.shared.createSandboxed(
       rootDirectory: rootDirectory,
       logger: logger
     )
-    
+
     // Create the secure file system service with the sandboxed path service
     return FileSystemServiceSecure(
       filePathService: filePathService,

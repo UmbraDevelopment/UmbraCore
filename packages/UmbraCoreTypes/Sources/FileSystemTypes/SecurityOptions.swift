@@ -2,22 +2,22 @@ import Foundation
 
 /**
  Security level for file system operations.
- 
+
  Defines the security level to apply to file system operations,
  from standard to highly restricted access.
  */
 public enum SecurityLevel: String, Sendable, Equatable, Hashable, CaseIterable {
-    /// Standard security level for normal operations
-    case standard
-    
-    /// Elevated security for sensitive operations
-    case elevated
-    
-    /// High security for critical operations
-    case high
-    
-    /// Restricted security for highly sensitive operations
-    case restricted
+  /// Standard security level for normal operations
+  case standard
+
+  /// Elevated security for sensitive operations
+  case elevated
+
+  /// High security for critical operations
+  case high
+
+  /// Restricted security for highly sensitive operations
+  case restricted
 }
 
 /**
@@ -29,7 +29,7 @@ public enum SecurityLevel: String, Sendable, Equatable, Hashable, CaseIterable {
 public struct SecurityOptions: Equatable, Sendable, Hashable {
   /// The security level for operations
   public let level: SecurityLevel
-  
+
   /// Whether to preserve permissions during copy/move operations
   public let preservePermissions: Bool
 
@@ -50,13 +50,13 @@ public struct SecurityOptions: Equatable, Sendable, Hashable {
    */
   public init(
     level: SecurityLevel = .standard,
-    preservePermissions: Bool = true,
-    enforceSandboxing: Bool = true,
-    allowSymlinks: Bool = false
+    preservePermissions: Bool=true,
+    enforceSandboxing: Bool=true,
+    allowSymlinks: Bool=false
   ) {
-    self.level = level
-    self.preservePermissions = preservePermissions
-    self.enforceSandboxing = enforceSandboxing
-    self.allowSymlinks = allowSymlinks
+    self.level=level
+    self.preservePermissions=preservePermissions
+    self.enforceSandboxing=enforceSandboxing
+    self.allowSymlinks=allowSymlinks
   }
 }

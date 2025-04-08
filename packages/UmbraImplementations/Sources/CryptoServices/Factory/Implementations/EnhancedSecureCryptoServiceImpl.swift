@@ -26,7 +26,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
   private let logger: LoggingProtocol
 
   /// Rate limiting configuration for security operations
-  private let rateLimiter: RateLimiter
+  private let rateLimiter: RateLimiterAdapter
 
   /// Provides access to the secure storage from the wrapped implementation
   public var secureStorage: SecureStorageProtocol {
@@ -44,164 +44,181 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
   public init(
     wrapped: CryptoServiceProtocol,
     logger: LoggingProtocol,
-    rateLimiter: RateLimiter
+    rateLimiter: RateLimiterAdapter
   ) {
-    self.wrapped = wrapped
-    self.logger = logger
-    self.rateLimiter = rateLimiter
+    self.wrapped=wrapped
+    self.logger=logger
+    self.rateLimiter=rateLimiter
   }
 
   /**
-   Encrypts data using the specified key.
+   Creates a log context for crypto operations.
 
    - Parameters:
-     - dataIdentifier: Identifier for the data to encrypt
-     - keyIdentifier: Identifier for the encryption key
-     - options: Optional encryption parameters
+     - operation: The operation being performed
+     - identifier: Optional identifier for the data or key
+     - details: Optional additional details
+   - Returns: A LogContextDTO for logging
+   */
+  private func createLogContext(
+    operation: String,
+    identifier: String?=nil,
+    details: String?=nil
+  ) -> LogContextDTO {
+    var context=CryptoLogContext(
+      operation: operation,
+      identifier: identifier
+    )
 
-   - Returns: Identifier for the encrypted data or error
+    if let details {
+      context=context.with(
+        key: "details",
+        value: details,
+        privacy: .private
+      )
+    }
+
+    return context
+  }
+
+  // MARK: - Encryption Operations
+
+  /**
+   Encrypts a string using the specified key.
+
+   - Parameters:
+     - data: The string to encrypt
+     - keyIdentifier: Identifier for the encryption key
+     - options: Optional encryption options
+   - Returns: Identifier for the encrypted data or an error
    */
   public func encrypt(
-    dataIdentifier: String,
+    data: String,
     keyIdentifier: String,
-    options: CoreSecurityTypes.EncryptionOptions?
+    options: EncryptionOptions?=nil
   ) async -> Result<String, SecurityStorageError> {
     // Check rate limiter
-    if rateLimiter.isRateLimited(.encrypt) {
-      let context = CryptoLogContext(
+    if rateLimiter.isRateLimited("encrypt") {
+      let context=createLogContext(
         operation: "encrypt",
-        identifier: dataIdentifier,
-        status: "rateLimited"
+        details: "Rate limited"
       )
 
-      await logger.warning("Rate limited encryption operation")
+      await logger.warning("Rate limited encryption operation", context: context)
       return .failure(.operationFailed("Rate limited"))
     }
 
-    // Input validation
-    if dataIdentifier.isEmpty {
-      let context = CryptoLogContext(
+    // Validate inputs
+    if data.isEmpty {
+      let context=createLogContext(
         operation: "encrypt",
-        status: "error",
-        metadata: LogMetadataDTOCollection().withPublic(key: "error", value: "emptyDataIdentifier")
+        details: "Empty data"
       )
 
-      await logger.error("Empty data identifier provided for encryption")
-      return .failure(.operationFailed("dataIdentifier cannot be empty"))
+      await logger.error("Empty data provided for encryption", context: context)
+      return .failure(.operationFailed("data cannot be empty"))
     }
 
     if keyIdentifier.isEmpty {
-      let context = CryptoLogContext(
+      let context=createLogContext(
         operation: "encrypt",
-        status: "error",
-        metadata: LogMetadataDTOCollection().withPublic(key: "error", value: "emptyKeyIdentifier")
+        details: "Empty key identifier"
       )
 
-      await logger.error("Empty key identifier provided for encryption")
+      await logger.error("Empty key identifier provided for encryption", context: context)
       return .failure(.operationFailed("keyIdentifier cannot be empty"))
     }
 
-    // Verify key exists
-    let keyResult = await secureStorage.retrieveData(withIdentifier: keyIdentifier)
-    guard case .success = keyResult else {
-      let context = CryptoLogContext(
+    // Get the key
+    let keyResult=await wrapped.retrieveData(identifier: keyIdentifier)
+    guard case let .success(key)=keyResult else {
+      let context=createLogContext(
         operation: "encrypt",
         identifier: keyIdentifier,
-        status: "error",
-        metadata: LogMetadataDTOCollection().withPublic(key: "error", value: "keyNotFound")
+        details: "Key not found"
       )
 
-      await logger.error("Key not found for encryption: \(keyIdentifier)")
+      await logger.error("Key not found for encryption: \(keyIdentifier)", context: context)
       return .failure(.keyNotFound)
     }
 
-    // Use the wrapped implementation to perform the encryption
-    return await wrapped.encrypt(
-      dataIdentifier: dataIdentifier,
-      keyIdentifier: keyIdentifier,
-      options: options
-    )
+    // Delegate to wrapped implementation
+    return await wrapped.encrypt(data: data, keyIdentifier: keyIdentifier, options: options)
   }
 
   /**
-   Decrypts data using the specified key.
+   Decrypts a string using the specified key.
 
    - Parameters:
      - encryptedDataIdentifier: Identifier for the encrypted data
      - keyIdentifier: Identifier for the decryption key
-     - options: Optional decryption parameters
-
-   - Returns: Identifier for the decrypted data or error
+     - options: Optional decryption options
+   - Returns: The decrypted string or an error
    */
   public func decrypt(
     encryptedDataIdentifier: String,
     keyIdentifier: String,
-    options: CoreSecurityTypes.DecryptionOptions?
+    options: DecryptionOptions?=nil
   ) async -> Result<String, SecurityStorageError> {
     // Check rate limiter
-    if rateLimiter.isRateLimited(.decrypt) {
-      let context = CryptoLogContext(
+    if rateLimiter.isRateLimited("decrypt") {
+      let context=createLogContext(
         operation: "decrypt",
-        identifier: encryptedDataIdentifier,
-        status: "rateLimited"
+        details: "Rate limited"
       )
 
-      await logger.warning("Rate limited decryption operation")
+      await logger.warning("Rate limited decryption operation", context: context)
       return .failure(.operationFailed("Rate limited"))
     }
 
-    // Input validation
+    // Validate inputs
     if encryptedDataIdentifier.isEmpty {
-      let context = CryptoLogContext(
+      let context=createLogContext(
         operation: "decrypt",
-        status: "error",
-        metadata: LogMetadataDTOCollection().withPublic(key: "error", value: "emptyDataIdentifier")
+        details: "Empty data identifier"
       )
 
-      await logger.error("Empty data identifier provided for decryption")
+      await logger.error("Empty data identifier provided for decryption", context: context)
       return .failure(.operationFailed("encryptedDataIdentifier cannot be empty"))
     }
 
     if keyIdentifier.isEmpty {
-      let context = CryptoLogContext(
+      let context=createLogContext(
         operation: "decrypt",
-        status: "error",
-        metadata: LogMetadataDTOCollection().withPublic(key: "error", value: "emptyKeyIdentifier")
+        details: "Empty key identifier"
       )
 
-      await logger.error("Empty key identifier provided for decryption")
+      await logger.error("Empty key identifier provided for decryption", context: context)
       return .failure(.operationFailed("keyIdentifier cannot be empty"))
     }
 
-    // Verify encrypted data exists
-    let dataResult = await secureStorage.retrieveData(withIdentifier: encryptedDataIdentifier)
-    guard case .success = dataResult else {
-      let context = CryptoLogContext(
+    // Get the encrypted data
+    let dataResult=await wrapped.retrieveData(identifier: encryptedDataIdentifier)
+    guard case .success=dataResult else {
+      let context=createLogContext(
         operation: "decrypt",
         identifier: encryptedDataIdentifier,
-        status: "error",
-        metadata: LogMetadataDTOCollection().withPublic(key: "error", value: "dataNotFound")
+        details: "Data not found"
       )
 
-      await logger.error("Encrypted data not found: \(encryptedDataIdentifier)")
+      await logger.error("Encrypted data not found: \(encryptedDataIdentifier)", context: context)
       return .failure(.dataNotFound)
     }
 
-    // Verify key exists
-    let keyResult = await secureStorage.retrieveData(withIdentifier: keyIdentifier)
-    guard case .success = keyResult else {
-      let context = CryptoLogContext(
+    // Get the key
+    let keyResult=await wrapped.retrieveData(identifier: keyIdentifier)
+    guard case .success=keyResult else {
+      let context=createLogContext(
         operation: "decrypt",
         identifier: keyIdentifier,
-        status: "error",
-        metadata: LogMetadataDTOCollection().withPublic(key: "error", value: "keyNotFound")
+        details: "Key not found"
       )
 
-      await logger.error("Key not found for decryption: \(keyIdentifier)")
+      await logger.error("Key not found for decryption: \(keyIdentifier)", context: context)
       return .failure(.keyNotFound)
     }
 
-    // Use the wrapped implementation to perform the decryption
+    // Delegate to wrapped implementation
     return await wrapped.decrypt(
       encryptedDataIdentifier: encryptedDataIdentifier,
       keyIdentifier: keyIdentifier,
@@ -209,143 +226,135 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
     )
   }
 
+  // MARK: - Hashing Operations
+
   /**
-   Hashes data using the specified algorithm.
+   Generates a hash for the specified data.
 
    - Parameters:
      - dataIdentifier: Identifier for the data to hash
-     - options: Optional hashing parameters
-
-   - Returns: Identifier for the hashed data or error
+     - options: Optional hashing options
+   - Returns: Identifier for the generated hash or an error
    */
-  public func hash(
+  public func generateHash(
     dataIdentifier: String,
-    options: CoreSecurityTypes.HashingOptions?
+    options: HashingOptions?=nil
   ) async -> Result<String, SecurityStorageError> {
     // Check rate limiter
-    if rateLimiter.isRateLimited(.hash) {
-      let context = CryptoLogContext(
+    if rateLimiter.isRateLimited("hash") {
+      let context=createLogContext(
         operation: "hash",
-        identifier: dataIdentifier,
-        status: "rateLimited"
+        details: "Rate limited"
       )
 
-      await logger.warning("Rate limited hashing operation")
+      await logger.warning("Rate limited hashing operation", context: context)
       return .failure(.operationFailed("Rate limited"))
     }
 
-    // Input validation
+    // Validate inputs
     if dataIdentifier.isEmpty {
-      let context = CryptoLogContext(
+      let context=createLogContext(
         operation: "hash",
-        status: "error",
-        metadata: LogMetadataDTOCollection().withPublic(key: "error", value: "emptyDataIdentifier")
+        details: "Empty data identifier"
       )
 
-      await logger.error("Empty data identifier provided for hashing")
+      await logger.error("Empty data identifier provided for hashing", context: context)
       return .failure(.operationFailed("dataIdentifier cannot be empty"))
     }
 
-    // Verify data exists
-    let dataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
-    guard case .success = dataResult else {
-      let context = CryptoLogContext(
+    // Get the data
+    let dataResult=await wrapped.retrieveData(identifier: dataIdentifier)
+    guard case .success=dataResult else {
+      let context=createLogContext(
         operation: "hash",
         identifier: dataIdentifier,
-        status: "error",
-        metadata: LogMetadataDTOCollection().withPublic(key: "error", value: "dataNotFound")
+        details: "Data not found"
       )
 
-      await logger.error("Data not found for hashing: \(dataIdentifier)")
+      await logger.error("Data not found for hashing: \(dataIdentifier)", context: context)
       return .failure(.dataNotFound)
     }
 
-    // Use the wrapped implementation to perform the hashing
-    return await wrapped.hash(
-      dataIdentifier: dataIdentifier,
-      options: options
-    )
+    // Delegate to wrapped implementation
+    return await wrapped.generateHash(dataIdentifier: dataIdentifier, options: options)
   }
 
   /**
-   Verifies a hash against the original data.
+   Verifies a hash against the specified data.
 
    - Parameters:
      - dataIdentifier: Identifier for the data to verify
      - hashIdentifier: Identifier for the hash to verify against
-     - options: Optional verification parameters
-
-   - Returns: true if the hash matches, false otherwise or error
+     - options: Optional verification options
+   - Returns: Whether the hash is valid or an error
    */
   public func verifyHash(
     dataIdentifier: String,
     hashIdentifier: String,
-    options: CoreSecurityTypes.HashingOptions?
+    options: HashingOptions?=nil
   ) async -> Result<Bool, SecurityStorageError> {
     // Check rate limiter
-    if rateLimiter.isRateLimited(.verify) {
-      let context = CryptoLogContext(
+    if rateLimiter.isRateLimited("verify") {
+      let context=createLogContext(
         operation: "verifyHash",
-        identifier: dataIdentifier,
-        status: "rateLimited"
+        details: "Rate limited"
       )
 
-      await logger.warning("Rate limited hash verification operation")
+      await logger.warning("Rate limited hash verification operation", context: context)
       return .failure(.operationFailed("Rate limited"))
     }
 
-    // Input validation
+    // Validate inputs
     if dataIdentifier.isEmpty {
-      let context = CryptoLogContext(
+      let context=createLogContext(
         operation: "verifyHash",
-        status: "error",
-        metadata: LogMetadataDTOCollection().withPublic(key: "error", value: "emptyDataIdentifier")
+        details: "Empty data identifier"
       )
 
-      await logger.error("Empty data identifier provided for hash verification")
+      await logger.error("Empty data identifier provided for hash verification", context: context)
       return .failure(.operationFailed("dataIdentifier cannot be empty"))
     }
 
     if hashIdentifier.isEmpty {
-      let context = CryptoLogContext(
+      let context=createLogContext(
         operation: "verifyHash",
-        status: "error",
-        metadata: LogMetadataDTOCollection().withPublic(key: "error", value: "emptyHashIdentifier")
+        details: "Empty hash identifier"
       )
 
-      await logger.error("Empty hash identifier provided for verification")
+      await logger.error("Empty hash identifier provided for verification", context: context)
       return .failure(.operationFailed("hashIdentifier cannot be empty"))
     }
 
-    // Verify data exists
-    let dataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
-    guard case .success = dataResult else {
-      let context = CryptoLogContext(
+    // Get the data
+    let dataResult=await wrapped.retrieveData(identifier: dataIdentifier)
+    guard case .success=dataResult else {
+      let context=createLogContext(
         operation: "verifyHash",
         identifier: dataIdentifier,
-        status: "error",
-        metadata: LogMetadataDTOCollection().withPublic(key: "error", value: "dataNotFound")
+        details: "Data not found"
       )
 
-      await logger.error("Data not found for hash verification: \(dataIdentifier)")
+      await logger.error(
+        "Data not found for hash verification: \(dataIdentifier)",
+        context: context
+      )
       return .failure(.dataNotFound)
     }
 
-    // Verify hash exists
-    let hashResult = await secureStorage.retrieveData(withIdentifier: hashIdentifier)
-    guard case .success = hashResult else {
-      let context = CryptoLogContext(
+    // Get the hash
+    let hashResult=await wrapped.retrieveData(identifier: hashIdentifier)
+    guard case .success=hashResult else {
+      let context=createLogContext(
         operation: "verifyHash",
         identifier: hashIdentifier,
-        status: "error",
-        metadata: LogMetadataDTOCollection().withPublic(key: "error", value: "hashNotFound")
+        details: "Hash not found"
       )
 
-      await logger.error("Hash not found for verification: \(hashIdentifier)")
+      await logger.error("Hash not found for verification: \(hashIdentifier)", context: context)
       return .failure(.hashNotFound)
     }
 
-    // Use the wrapped implementation to perform the verification
+    // Delegate to wrapped implementation
     return await wrapped.verifyHash(
       dataIdentifier: dataIdentifier,
       hashIdentifier: hashIdentifier,
@@ -353,197 +362,198 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
     )
   }
 
+  // MARK: - Data Export Operations
+
   /**
-   Export data from secure storage.
+   Exports data as a byte array.
 
-   This operation is rate-limited and includes additional validation.
-
-   - Parameter identifier: The identifier of the data to export
-
-   - Returns: The exported data or error
+   - Parameter identifier: Identifier for the data to export
+   - Returns: The exported data or an error
    */
   public func exportData(
     identifier: String
   ) async -> Result<[UInt8], SecurityStorageError> {
     // Check rate limiter
-    if rateLimiter.isRateLimited(.export) {
-      let context = CryptoLogContext(
+    if rateLimiter.isRateLimited("export") {
+      let context=createLogContext(
         operation: "exportData",
-        identifier: identifier,
-        status: "rateLimited"
+        details: "Rate limited"
       )
 
-      await logger.warning("Rate limited data export operation")
+      await logger.warning("Rate limited data export operation", context: context)
       return .failure(.operationFailed("Rate limited"))
     }
 
-    // Input validation
+    // Validate inputs
     if identifier.isEmpty {
-      let context = CryptoLogContext(
+      let context=createLogContext(
         operation: "exportData",
-        status: "error",
-        metadata: LogMetadataDTOCollection().withPublic(key: "error", value: "emptyIdentifier")
+        details: "Empty identifier"
       )
 
-      await logger.error("Empty identifier provided for data export")
+      await logger.error("Empty identifier provided for data export", context: context)
       return .failure(.operationFailed("identifier cannot be empty"))
     }
 
-    // Use the wrapped implementation to perform the export
+    // Delegate to wrapped implementation
     return await wrapped.exportData(identifier: identifier)
   }
 
+  // MARK: - Key Generation Operations
+
   /**
-   Generate a new cryptographic key.
+   Generates a new cryptographic key.
 
    - Parameters:
-     - length: Length of the key to generate
-     - options: Key generation parameters
-
-   - Returns: Identifier for the generated key or error
+     - length: Length of the key in bits
+     - options: Optional key generation options
+   - Returns: Identifier for the generated key or an error
    */
   public func generateKey(
     length: Int,
-    options: CoreSecurityTypes.KeyGenerationOptions? = nil
+    options: KeyGenerationOptions?=nil
   ) async -> Result<String, SecurityStorageError> {
     // Check rate limiter
-    if rateLimiter.isRateLimited(.generateKey) {
-      let context = CryptoLogContext(
+    if rateLimiter.isRateLimited("generateKey") {
+      let context=createLogContext(
         operation: "generateKey",
-        status: "rateLimited"
+        details: "Rate limited"
       )
 
-      await logger.warning("Rate limited key generation operation")
+      await logger.warning("Rate limited key generation operation", context: context)
       return .failure(.operationFailed("Rate limited"))
     }
 
-    // Use the wrapped implementation to generate the key
+    // Delegate to wrapped implementation
     return await wrapped.generateKey(length: length, options: options)
   }
 
+  // MARK: - Data Import Operations
+
   /**
-   Import data into secure storage.
+   Imports data from a byte array.
 
    - Parameters:
      - data: The data to import
-     - customIdentifier: Custom identifier for the imported data
-
-   - Returns: Identifier for the imported data or error
+     - customIdentifier: Optional custom identifier for the data
+   - Returns: Identifier for the imported data or an error
    */
   public func importData(
     _ data: [UInt8],
-    customIdentifier: String?
+    customIdentifier: String?=nil
   ) async -> Result<String, SecurityStorageError> {
-    let context = CryptoLogContext(
+    let context=createLogContext(
       operation: "importDataUInt8",
       identifier: customIdentifier
     )
-    await logger.info("Importing data with identifier: \(customIdentifier ?? "unknown")")
+    await logger.info(
+      "Importing data with identifier: \(customIdentifier ?? "unknown")",
+      context: context
+    )
     return await wrapped.importData(data, customIdentifier: customIdentifier)
   }
 
   /**
-   Import data into secure storage.
+   Imports data from a string.
 
    - Parameters:
-     - data: The data to import
-     - customIdentifier: Custom identifier for the imported data
-
-   - Returns: Identifier for the imported data or error
+     - data: The string data to import
+     - customIdentifier: Optional custom identifier for the data
+   - Returns: Identifier for the imported data or an error
    */
   public func importData(
-    _ data: Data,
+    _ data: String,
     customIdentifier: String
   ) async -> Result<String, SecurityStorageError> {
-    let context = CryptoLogContext(
-      operation: "importData",
+    let context=createLogContext(
+      operation: "importDataString",
       identifier: customIdentifier
     )
-    await logger.info("Importing data with identifier: \(customIdentifier)")
+    await logger.info("Importing data with identifier: \(customIdentifier)", context: context)
     return await wrapped.importData(data, customIdentifier: customIdentifier)
   }
 
+  // MARK: - Delegated Operations
+
   /**
-   Generate a hash for the given data.
+   Generates a hash for the specified data.
 
    - Parameters:
      - dataIdentifier: Identifier for the data to hash
-     - options: Optional hashing parameters
-
-   - Returns: Identifier for the generated hash or error
+     - options: Optional hashing options
+   - Returns: Identifier for the generated hash or an error
    */
   public func generateHash(
     dataIdentifier: String,
-    options: CoreSecurityTypes.HashingOptions? = nil
+    options: HashingOptions?=nil
   ) async -> Result<String, SecurityStorageError> {
-    let context = CryptoLogContext(
+    let context=createLogContext(
       operation: "generateHash",
       identifier: dataIdentifier
     )
-    await logger.info("Generating hash for data with identifier: \(dataIdentifier)")
+    await logger.info(
+      "Generating hash for data with identifier: \(dataIdentifier)",
+      context: context
+    )
     return await wrapped.generateHash(dataIdentifier: dataIdentifier, options: options)
   }
 
   /**
-   Store data in secure storage.
+   Stores data in secure storage.
 
    - Parameters:
      - data: The data to store
-     - withIdentifier: The identifier to store the data under
-     - options: Optional storage parameters
-   - Returns: Success or error
+     - identifier: Identifier for the data
+   - Returns: Success or an error
    */
   public func storeData(
-    data: Data,
-    withIdentifier identifier: String,
-    options: CoreSecurityTypes.StorageOptions?
+    data: [UInt8],
+    identifier: String
   ) async -> Result<Void, SecurityStorageError> {
-    let context = CryptoLogContext(
+    let context=createLogContext(
       operation: "storeData",
       identifier: identifier
     )
-    
-    await logger.info("Storing data with identifier: \(identifier)")
+
+    await logger.info("Storing data with identifier: \(identifier)", context: context)
     return await wrapped.storeData(
       data: data,
-      withIdentifier: identifier,
-      options: options
+      identifier: identifier
     )
   }
 
   /**
-   Retrieve data from secure storage.
+   Retrieves data from secure storage.
 
-   - Parameter withIdentifier: The identifier of the data to retrieve
-   - Returns: The retrieved data or error
+   - Parameter identifier: Identifier for the data to retrieve
+   - Returns: The retrieved data or an error
    */
   public func retrieveData(
-    withIdentifier identifier: String
-  ) async -> Result<Data, SecurityStorageError> {
-    let context = CryptoLogContext(
+    identifier: String
+  ) async -> Result<[UInt8], SecurityStorageError> {
+    let context=createLogContext(
       operation: "retrieveData",
       identifier: identifier
     )
-    
-    await logger.info("Retrieving data with identifier: \(identifier)")
-    return await wrapped.retrieveData(withIdentifier: identifier)
+
+    await logger.info("Retrieving data with identifier: \(identifier)", context: context)
+    return await wrapped.retrieveData(identifier: identifier)
   }
 
   /**
-   Delete data from secure storage.
+   Deletes data from secure storage.
 
    - Parameter identifier: Identifier for the data to delete
-
-   - Returns: Void or error
+   - Returns: Success or an error
    */
   public func deleteData(
     identifier: String
   ) async -> Result<Void, SecurityStorageError> {
-    let context = CryptoLogContext(
+    let context=createLogContext(
       operation: "deleteData",
       identifier: identifier
     )
-    await logger.info("Deleting data with identifier: \(identifier)")
+    await logger.info("Deleting data with identifier: \(identifier)", context: context)
     return await wrapped.deleteData(identifier: identifier)
   }
 }
@@ -553,18 +563,9 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
  This class provides a common interface for rate limiting that can be
  implemented by different rate limiting strategies.
  */
-public class RateLimiter {
-  public enum Operation: String {
-    case encrypt
-    case decrypt
-    case hash
-    case verify
-    case export
-    case generateKey
-  }
-
-  private var lastOperationTime: [Operation: Date] = [:]
-  private let minimumInterval: TimeInterval = 0.1 // 100ms minimum between operations
+public class RateLimiterAdapter {
+  private var lastOperationTime: [String: Date]=[:]
+  private let minimumInterval: TimeInterval=0.1 // 100ms minimum between operations
 
   /**
    Initialises a new rate limiter.
@@ -578,17 +579,17 @@ public class RateLimiter {
 
    - Returns: true if the operation is rate limited, false otherwise
    */
-  open func isRateLimited(_ operation: Operation) -> Bool {
-    let now = Date()
+  open func isRateLimited(_ operation: String) -> Bool {
+    let now=Date()
 
     if
-      let lastTime = lastOperationTime[operation],
+      let lastTime=lastOperationTime[operation],
       now.timeIntervalSince(lastTime) < minimumInterval
     {
       return true
     }
 
-    lastOperationTime[operation] = now
+    lastOperationTime[operation]=now
     return false
   }
 }

@@ -1,9 +1,9 @@
 import APIInterfaces
+import CoreTypes
 import Foundation
 import LoggingInterfaces
 import LoggingTypes
 import UmbraErrors
-import CoreTypes
 
 /**
  # Alpha API Service
@@ -25,10 +25,10 @@ public actor AlphaAPIService: APIServiceProtocol {
   private let logger: LoggingProtocol
 
   /// Event continuations for streaming events
-  private var eventContinuations: [UUID: AsyncStream<APIEventDTO>.Continuation] = [:]
+  private var eventContinuations: [UUID: AsyncStream<APIEventDTO>.Continuation]=[:]
 
   /// Active operations tracking
-  private var activeOperations: [String: Task<Any, Error>] = [:]
+  private var activeOperations: [String: Task<Any, Error>]=[:]
 
   // MARK: - Initialisation
 
@@ -45,22 +45,22 @@ public actor AlphaAPIService: APIServiceProtocol {
     domainHandlers: [APIDomain: any DomainHandler],
     logger: LoggingProtocol
   ) {
-    self.configuration = configuration
-    self.domainHandlers = domainHandlers
-    self.logger = logger
+    self.configuration=configuration
+    self.domainHandlers=domainHandlers
+    self.logger=logger
   }
 
   // MARK: - APIServiceProtocol Implementation
 
   /**
    Initialises the service with the provided configuration
-   
+
    - Parameter configuration: The configuration to use for initialisation
    - Throws: UmbraErrors.APIError if initialisation fails
    */
   public func initialise(configuration: APIInterfaces.APIConfigurationDTO) async throws {
-    self.configuration = configuration
-    
+    self.configuration=configuration
+
     // Log initialization
     await logger.info(
       "API service initialized",
@@ -83,7 +83,7 @@ public actor AlphaAPIService: APIServiceProtocol {
    */
   public nonisolated func createEncryptedBookmark(url: String, identifier: String) async throws {
     // Delegate to the security domain
-    let operation = CreateBookmarkOperation(url: url, identifier: identifier)
+    let operation=CreateBookmarkOperation(url: url, identifier: identifier)
     try await execute(operation)
   }
 
@@ -96,7 +96,7 @@ public actor AlphaAPIService: APIServiceProtocol {
    */
   public nonisolated func resolveEncryptedBookmark(identifier: String) async throws -> String {
     // Delegate to the security domain
-    let operation = ResolveBookmarkOperation(identifier: identifier)
+    let operation=ResolveBookmarkOperation(identifier: identifier)
     return try await execute(operation)
   }
 
@@ -108,7 +108,7 @@ public actor AlphaAPIService: APIServiceProtocol {
    */
   public nonisolated func deleteEncryptedBookmark(identifier: String) async throws {
     // Delegate to the security domain
-    let operation = DeleteBookmarkOperation(identifier: identifier)
+    let operation=DeleteBookmarkOperation(identifier: identifier)
     try await execute(operation)
   }
 
@@ -119,7 +119,7 @@ public actor AlphaAPIService: APIServiceProtocol {
   public func getVersion() async -> APIVersionDTO {
     // TODO: Retrieve actual version info. APIConfigurationDTO doesn't store it.
     // Returning placeholder for now.
-    return APIVersionDTO(major: 0, minor: 0, patch: 1, buildIdentifier: "unknown")
+    APIVersionDTO(major: 0, minor: 0, patch: 1, buildIdentifier: "unknown")
   }
 
   /**
@@ -159,8 +159,8 @@ public actor AlphaAPIService: APIServiceProtocol {
   public func execute<T: APIInterfaces.APIOperation>(
     _ operation: T
   ) async throws -> T.APIOperationResult {
-    let operationID = UUID().uuidString
-    let operationMetadata = LogMetadataDTOCollection()
+    let operationID=UUID().uuidString
+    let operationMetadata=LogMetadataDTOCollection()
       .withPublic(key: "operation_id", value: operationID)
       .withPublic(key: "operation_type", value: String(describing: type(of: operation)))
 
@@ -175,13 +175,13 @@ public actor AlphaAPIService: APIServiceProtocol {
     )
 
     // Create a task for the operation execution
-    let task = Task {
+    let task=Task {
       do {
         // Get the domain for this operation
-        let domain = self.getDomain(for: operation)
+        let domain=self.getDomain(for: operation)
 
         // Get the handler for this domain
-        guard let handler = self.domainHandlers[domain] else {
+        guard let handler=self.domainHandlers[domain] else {
           throw APIError.operationNotSupported(
             message: "No handler found for domain: \(domain)",
             code: "DOMAIN_NOT_SUPPORTED"
@@ -189,8 +189,8 @@ public actor AlphaAPIService: APIServiceProtocol {
         }
 
         // Check if the handler can handle this type of operation
-        let handlerAnyResult = try await handler.handleOperation(operation: operation)
-        guard let handlerTypedResult = handlerAnyResult as? T.APIOperationResult else {
+        let handlerAnyResult=try await handler.handleOperation(operation: operation)
+        guard let handlerTypedResult=handlerAnyResult as? T.APIOperationResult else {
           throw APIError.operationFailed(
             message: "Handler for domain \(domain) returned unexpected type \(type(of: handlerAnyResult)) for operation \(type(of: operation)). Expected \(T.APIOperationResult.self).",
             code: "HANDLER_TYPE_MISMATCH"
@@ -198,7 +198,7 @@ public actor AlphaAPIService: APIServiceProtocol {
         }
 
         // Log the operation completion
-        let operationMetadata = LogMetadataDTOCollection()
+        let operationMetadata=LogMetadataDTOCollection()
           .withPublic(key: "operation_id", value: operationID)
           .withPublic(key: "domain", value: domain)
 
@@ -215,7 +215,7 @@ public actor AlphaAPIService: APIServiceProtocol {
         return handlerTypedResult
       } catch {
         // Log the error
-        let errorMetadata = LogMetadataDTOCollection()
+        let errorMetadata=LogMetadataDTOCollection()
           .withPublic(key: "error_type", value: String(describing: type(of: error)))
           .withPrivate(key: "error_detail", value: error.localizedDescription)
 
@@ -229,18 +229,18 @@ public actor AlphaAPIService: APIServiceProtocol {
         )
 
         // Map the error to an APIError if needed
-        let mappedError = self.mapError(error)
+        let mappedError=self.mapError(error)
         throw mappedError
       }
     }
 
     // Store the task for potential cancellation
-    activeOperations[operationID] = task
+    activeOperations[operationID]=task
 
     do {
       // Await the task result
-      let untypedResult = try await task.value
-      guard let typedResult = untypedResult as? T.APIOperationResult else {
+      let untypedResult=try await task.value
+      guard let typedResult=untypedResult as? T.APIOperationResult else {
         // This should ideally not happen if the handler returns the correct type
         throw APIError.operationFailed(
           message: "Internal error: Task returned unexpected type \(type(of: untypedResult)). Expected \(T.APIOperationResult.self).",
@@ -273,10 +273,10 @@ public actor AlphaAPIService: APIServiceProtocol {
     _ operation: T
   ) async -> APIResult<T.APIOperationResult> {
     do {
-      let result = try await execute(operation)
+      let result=try await execute(operation)
       return .success(result)
     } catch {
-      let mappedError = mapError(error)
+      let mappedError=mapError(error)
       return .failure(mappedError)
     }
   }
@@ -290,7 +290,7 @@ public actor AlphaAPIService: APIServiceProtocol {
   public func cancelOperation(
     operationID: String
   ) async -> Bool {
-    guard let task = activeOperations[operationID] else {
+    guard let task=activeOperations[operationID] else {
       // Log the operation not found
       await logger.warning(
         "Operation not found for cancellation",
@@ -333,11 +333,11 @@ public actor AlphaAPIService: APIServiceProtocol {
    - Returns: The domain for the operation
    */
   private func getDomain(for operation: some APIOperation) -> APIDomain {
-    if let domainOperation = operation as? DomainAPIOperation {
-      return type(of: domainOperation).domain
+    if let domainOperation=operation as? DomainAPIOperation {
+      type(of: domainOperation).domain
     } else {
       // Default to system domain for generic operations
-      return .system
+      .system
     }
   }
 
@@ -349,12 +349,12 @@ public actor AlphaAPIService: APIServiceProtocol {
    */
   private func mapError(_ error: Error) -> APIError {
     // If it's already an APIError, return it directly
-    if let apiError = error as? APIError {
+    if let apiError=error as? APIError {
       return apiError
     }
 
     // Handle NSError
-    if let nsError = error as? NSError {
+    if let nsError=error as? NSError {
       switch nsError.domain {
         case NSURLErrorDomain:
           return APIError.networkError(
@@ -394,19 +394,19 @@ public actor AlphaAPIService: APIServiceProtocol {
           .withPublic(key: "filter", value: String(describing: filter))
       )
     )
-    
+
     // Store the continuation with a unique ID
-    let subscriptionID = UUID()
-    eventContinuations[subscriptionID] = continuation
+    let subscriptionID=UUID()
+    eventContinuations[subscriptionID]=continuation
   }
-  
+
   /**
    Unregisters an event subscriber.
 
    - Parameter continuation: The continuation to unregister
    */
   private func unregisterEventSubscriber(
-    continuation: AsyncStream<APIEventDTO>.Continuation
+    continuation _: AsyncStream<APIEventDTO>.Continuation
   ) async {
     // Log unregistration
     await logger.info(
@@ -417,13 +417,13 @@ public actor AlphaAPIService: APIServiceProtocol {
         metadata: LogMetadataDTOCollection()
       )
     )
-    
+
     // Remove the continuation from our collection
     // Since we can't compare continuations directly (they're value types),
     // we'll remove all of them in this test implementation
     eventContinuations.removeAll()
   }
-  
+
   /**
    Publishes an event to all subscribers.
 
@@ -449,7 +449,7 @@ public protocol DomainAPIOperation: APIOperation {
 // MARK: - Placeholder Operations for Bookmarks
 
 struct CreateBookmarkOperation: DomainAPIOperation {
-  typealias ResultType = Void
+  typealias ResultType=Void
 
   let url: String
   let identifier: String
@@ -458,7 +458,7 @@ struct CreateBookmarkOperation: DomainAPIOperation {
 }
 
 struct ResolveBookmarkOperation: DomainAPIOperation {
-  typealias ResultType = String
+  typealias ResultType=String
 
   let identifier: String
 
@@ -466,7 +466,7 @@ struct ResolveBookmarkOperation: DomainAPIOperation {
 }
 
 struct DeleteBookmarkOperation: DomainAPIOperation {
-  typealias ResultType = Void
+  typealias ResultType=Void
 
   let identifier: String
 

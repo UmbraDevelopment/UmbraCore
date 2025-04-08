@@ -332,4 +332,80 @@ public struct BackupCommandFactory {
 
     return ResticCommandImpl(arguments: arguments)
   }
+
+  /// Creates a command to compare two snapshots
+  /// - Parameters:
+  ///   - firstSnapshotID: ID of the first snapshot to compare
+  ///   - secondSnapshotID: ID of the second snapshot to compare
+  ///   - path: Optional path to limit the comparison to
+  ///   - host: Optional host to filter by
+  /// - Returns: A command ready for execution
+  public func createDiffCommand(
+    firstSnapshotID: String,
+    secondSnapshotID: String,
+    path: String?=nil,
+    host: String?=nil
+  ) -> ResticCommand {
+    // Start with basic diff command
+    var arguments=["diff", firstSnapshotID, secondSnapshotID, "--json"]
+
+    // Add path if provided
+    if let path {
+      arguments.append(path)
+    }
+
+    // Add host filter if provided
+    if let host {
+      arguments.append(contentsOf: ["--host", host])
+    }
+
+    // Create and return the command
+    return ResticCommandImpl(arguments: arguments)
+  }
+
+  /**
+   * Creates a command to compare two snapshots.
+   *
+   * - Parameters:
+   *   - firstSnapshotID: ID of the first snapshot
+   *   - secondSnapshotID: ID of the second snapshot
+   *   - options: Additional options for the diff command
+   * - Returns: A command to compare snapshots
+   */
+  public func createDiffCommand(
+    firstSnapshotID: String,
+    secondSnapshotID: String,
+    options: [String]?
+  ) -> ResticCommand {
+    var args = ["diff", firstSnapshotID, secondSnapshotID, "--json"]
+    
+    // Add any additional options
+    if let options = options {
+      args.append(contentsOf: options)
+    }
+    
+    return ResticCommandImpl(arguments: args)
+  }
+
+  /**
+   * Creates a command to retrieve detailed information about a specific snapshot.
+   *
+   * - Parameters:
+   *   - snapshotID: ID of the snapshot to retrieve information for
+   *   - includeStats: Whether to include file statistics in the output
+   * - Returns: A command to retrieve snapshot information
+   */
+  public func createSnapshotInfoCommand(
+    snapshotID: String,
+    includeStats: Bool = false
+  ) -> ResticCommand {
+    var args = ["snapshot", snapshotID, "--json"]
+    
+    // Add statistics flag if requested
+    if includeStats {
+      args.append("--detailed")
+    }
+    
+    return ResticCommandImpl(arguments: args)
+  }
 }

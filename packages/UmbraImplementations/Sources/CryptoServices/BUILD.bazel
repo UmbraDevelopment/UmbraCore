@@ -31,6 +31,8 @@ umbra_swift_library(
         "//packages/UmbraImplementations/Sources/LoggingServices",
         "//packages/UmbraImplementations/Sources/LoggingAdapters",
         "//packages/UmbraImplementations/Sources/SecurityProviders",
+        # Removed dependency on APIServices to break the dependency cycle
+        # "//packages/UmbraImplementations/Sources/APIServices",
         "//packages/UmbraImplementations/Sources/CryptoServices/Logging:CryptoLogger",
         "//packages/UmbraImplementations/Sources/KeychainServices:KeychainServices", # Added potential SecureStorage provider
     ],

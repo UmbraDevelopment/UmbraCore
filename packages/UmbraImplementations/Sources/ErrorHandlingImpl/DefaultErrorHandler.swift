@@ -528,7 +528,8 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
 /**
  Protocol defining an error recovery strategy with typed error and outcome.
  */
-public protocol ErrorRecoveryStrategy<ErrorType, Outcome>: Sendable, CustomStringConvertible where Outcome: Sendable {
+public protocol ErrorRecoveryStrategy<ErrorType, Outcome>: Sendable,
+CustomStringConvertible where Outcome: Sendable {
   /// The specific type of error this strategy handles.
   associatedtype ErrorType: Error
 

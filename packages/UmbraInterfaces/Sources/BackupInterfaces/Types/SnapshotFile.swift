@@ -4,6 +4,12 @@ import Foundation
 ///
 /// This type provides information about a specific file in a snapshot,
 /// including its path, size, and modification time.
+public enum SnapshotFileType: Sendable {
+  case regular
+  case directory
+  case other
+}
+
 public struct SnapshotFile: Sendable, Equatable {
   /// The path of the file relative to the snapshot root
   public let path: String
@@ -23,6 +29,9 @@ public struct SnapshotFile: Sendable, Equatable {
   /// The group ID of the file
   public let gid: UInt32
 
+  /// The type of the file
+  public let fileType: SnapshotFileType
+
   /// Optional hash of the file contents
   public let contentHash: String?
 
@@ -34,6 +43,7 @@ public struct SnapshotFile: Sendable, Equatable {
   ///   - mode: The mode/permissions of the file
   ///   - uid: The user ID of the file owner
   ///   - gid: The group ID of the file
+  ///   - fileType: The type of the file
   ///   - contentHash: Optional hash of the file contents
   public init(
     path: String,
@@ -42,6 +52,7 @@ public struct SnapshotFile: Sendable, Equatable {
     mode: UInt16,
     uid: UInt32,
     gid: UInt32,
+    fileType: SnapshotFileType = .regular,
     contentHash: String?=nil
   ) {
     self.path=path
@@ -50,19 +61,18 @@ public struct SnapshotFile: Sendable, Equatable {
     self.mode=mode
     self.uid=uid
     self.gid=gid
+    self.fileType=fileType
     self.contentHash=contentHash
   }
 
   /// Indicates whether the file is a directory based on the mode
   public var isDirectory: Bool {
-    // Check if the directory bit is set (Unix S_IFDIR)
-    (mode & 0x4000) != 0
+    fileType == .directory
   }
 
   /// Indicates whether the file is a regular file based on the mode
   public var isRegularFile: Bool {
-    // Check if the regular file bit is set (Unix S_IFREG)
-    (mode & 0x8000) != 0
+    fileType == .regular
   }
 
   /// Provides a human-readable size string

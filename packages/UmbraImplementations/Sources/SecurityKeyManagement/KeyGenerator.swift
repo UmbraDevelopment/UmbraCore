@@ -3,7 +3,7 @@ import DomainSecurityTypes
 import Foundation
 
 /// Protocol for generating cryptographic keys
-public protocol KeyGenerator {
+public protocol KeyGenerator: Sendable {
   /// Generate a cryptographic key of the specified bit length
   /// - Parameter bitLength: Length of the key in bits
   /// - Returns: The generated key as a byte array
@@ -11,7 +11,7 @@ public protocol KeyGenerator {
 }
 
 /// Default implementation of KeyGenerator
-public class DefaultKeyGenerator: KeyGenerator {
+public final class DefaultKeyGenerator: KeyGenerator {
   /// Initialise a new key generator
   public init() {}
 

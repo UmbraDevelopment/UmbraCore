@@ -37,6 +37,32 @@ public final class BackupOperationToken: Sendable {
     self.cancellable=cancellable
     cancelled=false
   }
+
+  /**
+   * Sets the cancellation state of this token.
+   *
+   * - Parameter value: The new cancellation state
+   */
+  @MainActor
+  public func setCancelled(_ value: Bool) async {
+    cancelled=value
+  }
+
+  /**
+   * Registers a cancellation token with this operation.
+   *
+   * - Parameter token: The cancellation token to register
+   */
+  public func registerCancellationToken(_ token: BackupCancellationToken) {
+    Task {
+      await token.registerCancellationCallback { [weak self] in
+        Task { @MainActor [weak self] in
+          guard let self else { return }
+          await setCancelled(true)
+        }
+      }
+    }
+  }
 }
 
 /**

@@ -7,76 +7,128 @@ import LoggingTypes
 /// This factory simplifies the creation of properly configured logging services
 /// following the Alpha Dot Five architecture guidelines. It provides standard
 /// configurations for common logging scenarios while allowing for customisation.
-public enum LoggingServiceFactory {
+///
+/// As an actor, this factory provides thread safety for logger creation
+/// and maintains a cache of created loggers for improved performance.
+public actor LoggingServiceFactory {
+  /// Shared singleton instance
+  public static let shared=LoggingServiceFactory()
+
+  /// Cache of created loggers by configuration key
+  private var loggerCache: [String: Any]=[:]
+
+  /// Initialiser
+  public init() {}
+
   /// Create a standard logging service with console output
   /// - Parameters:
   ///   - minimumLevel: Minimum log level to display (defaults to info)
   ///   - formatter: Optional custom formatter to use
+  ///   - useCache: Whether to cache and reuse the created logger
   /// - Returns: A configured logging service actor
-  public static func createStandardLogger(
+  public func createStandardLogger(
     minimumLevel: LoggingTypes.UmbraLogLevel = .info,
-    formatter: LoggingInterfaces.LogFormatterProtocol?=nil
-  ) -> LoggingServiceActor {
+    formatter: LoggingInterfaces.LogFormatterProtocol?=nil,
+    useCache: Bool=true
+  ) async -> LoggingServiceActor {
+    let cacheKey="standard-\(minimumLevel.rawValue)-\(formatter != nil ? "custom" : "default")"
+
+    if useCache, let cachedLogger=loggerCache[cacheKey] as? LoggingServiceActor {
+      return cachedLogger
+    }
+
     let consoleDestination=ConsoleLogDestination(
       minimumLevel: minimumLevel,
       formatter: formatter
     )
 
-    return LoggingServiceActor(
+    let logger=LoggingServiceActor(
       destinations: [consoleDestination],
       minimumLogLevel: minimumLevel,
       formatter: formatter
     )
+
+    if useCache {
+      loggerCache[cacheKey]=logger
+    }
+
+    return logger
   }
 
   /// Create a development logging service with more detailed output
   /// - Parameters:
   ///   - minimumLevel: Minimum log level to display (defaults to debug)
   ///   - formatter: Optional custom formatter to use
+  ///   - useCache: Whether to cache and reuse the created logger
   /// - Returns: A configured logging service actor for development
-  public static func createDevelopmentLogger(
+  public func createDevelopmentLogger(
     minimumLevel: LoggingTypes.UmbraLogLevel = .debug,
-    formatter: LoggingInterfaces.LogFormatterProtocol?=nil
-  ) -> LoggingServiceActor {
+    formatter: LoggingInterfaces.LogFormatterProtocol?=nil,
+    useCache: Bool=true
+  ) async -> LoggingServiceActor {
+    let cacheKey="development-\(minimumLevel.rawValue)-\(formatter != nil ? "custom" : "default")"
+
+    if useCache, let cachedLogger=loggerCache[cacheKey] as? LoggingServiceActor {
+      return cachedLogger
+    }
+
     let consoleDestination=ConsoleLogDestination(
       minimumLevel: minimumLevel,
       formatter: formatter
     )
 
-    return LoggingServiceActor(
+    let logger=LoggingServiceActor(
       destinations: [consoleDestination],
       minimumLogLevel: minimumLevel,
       formatter: formatter
     )
+
+    if useCache {
+      loggerCache[cacheKey]=logger
+    }
+
+    return logger
   }
 
   /// Create a default logging service with standard configuration
+  /// - Parameter useCache: Whether to cache and reuse the created logger
   /// - Returns: A configured logging service actor with default settings
-  public static func createDefaultService() async -> LoggingServiceActor {
+  public func createDefaultService(useCache: Bool=true) async -> LoggingServiceActor {
     // Create a standard logger with info level and default formatter
-    let actor=createStandardLogger(
+    await createStandardLogger(
       minimumLevel: .info,
-      formatter: StandardLogFormatter()
+      formatter: StandardLogFormatter(),
+      useCache: useCache
     )
-
-    // Return the configured actor
-    return actor
   }
 
   /// Create a logging service with custom destinations
-  /// - Parameter destinations: The log destinations to use
+  /// - Parameters:
+  ///   - destinations: The log destinations to use
+  ///   - useCache: Whether to cache and reuse the created logger
   /// - Returns: A configured logging service actor with the specified destinations
-  public static func createService(destinations: [LoggingTypes.LogDestination]) async
-  -> LoggingServiceActor {
+  public func createService(
+    destinations: [LoggingTypes.LogDestination],
+    useCache: Bool=true
+  ) async -> LoggingServiceActor {
+    let cacheKey="custom-\(destinations.map(\.identifier).joined(separator: "-"))"
+
+    if useCache, let cachedLogger=loggerCache[cacheKey] as? LoggingServiceActor {
+      return cachedLogger
+    }
+
     // Create a logger with the specified destinations
-    let actor=LoggingServiceActor(
+    let logger=LoggingServiceActor(
       destinations: destinations,
       minimumLogLevel: .info,
       formatter: StandardLogFormatter()
     )
 
-    // Return the configured actor
-    return actor
+    if useCache {
+      loggerCache[cacheKey]=logger
+    }
+
+    return logger
   }
 
   /// Create a production logging service with file and console output
@@ -87,15 +139,23 @@ public enum LoggingServiceFactory {
   ///   - maxFileSizeMB: Maximum log file size in megabytes before rotation
   ///   - maxBackupCount: Number of backup log files to keep
   ///   - formatter: Optional custom formatter to use
+  ///   - useCache: Whether to cache and reuse the created logger
   /// - Returns: A configured logging service actor for production
-  public static func createProductionLogger(
+  public func createProductionLogger(
     logDirectoryPath: String,
     logFileName: String="umbra.log",
     minimumLevel: LoggingTypes.UmbraLogLevel = .info,
     maxFileSizeMB: UInt64=10,
     maxBackupCount: Int=5,
-    formatter: LoggingInterfaces.LogFormatterProtocol?=nil
-  ) -> LoggingServiceActor {
+    formatter: LoggingInterfaces.LogFormatterProtocol?=nil,
+    useCache: Bool=true
+  ) async -> LoggingServiceActor {
+    let cacheKey="production-\(logDirectoryPath)-\(logFileName)-\(minimumLevel.rawValue)"
+
+    if useCache, let cachedLogger=loggerCache[cacheKey] as? LoggingServiceActor {
+      return cachedLogger
+    }
+
     let filePath=(logDirectoryPath as NSString).appendingPathComponent(logFileName)
 
     let consoleDestination=ConsoleLogDestination(
@@ -113,11 +173,17 @@ public enum LoggingServiceFactory {
       formatter: formatter
     )
 
-    return LoggingServiceActor(
+    let logger=LoggingServiceActor(
       destinations: [consoleDestination, fileDestination],
       minimumLogLevel: minimumLevel,
       formatter: formatter
     )
+
+    if useCache {
+      loggerCache[cacheKey]=logger
+    }
+
+    return logger
   }
 
   /// Create a custom logging service with specified destinations
@@ -125,17 +191,31 @@ public enum LoggingServiceFactory {
   ///   - destinations: Array of log destinations
   ///   - minimumLevel: Global minimum log level
   ///   - formatter: Optional formatter to use
+  ///   - useCache: Whether to cache and reuse the created logger
   /// - Returns: A configured logging service actor
-  public static func createCustomLogger(
+  public func createCustomLogger(
     destinations: [LoggingTypes.LogDestination],
     minimumLevel: LoggingTypes.UmbraLogLevel = .info,
-    formatter: LoggingInterfaces.LogFormatterProtocol?=nil
-  ) -> LoggingServiceActor {
-    LoggingServiceActor(
+    formatter: LoggingInterfaces.LogFormatterProtocol?=nil,
+    useCache: Bool=true
+  ) async -> LoggingServiceActor {
+    let cacheKey="custom-\(destinations.map(\.identifier).joined(separator: "-"))-\(minimumLevel.rawValue)"
+
+    if useCache, let cachedLogger=loggerCache[cacheKey] as? LoggingServiceActor {
+      return cachedLogger
+    }
+
+    let logger=LoggingServiceActor(
       destinations: destinations,
       minimumLogLevel: minimumLevel,
       formatter: formatter
     )
+
+    if useCache {
+      loggerCache[cacheKey]=logger
+    }
+
+    return logger
   }
 
   /// Create an OSLog-based logging service
@@ -144,13 +224,21 @@ public enum LoggingServiceFactory {
   ///   - category: The logging category (module or component name)
   ///   - minimumLevel: Minimum log level to display (defaults to info)
   ///   - formatter: Optional custom formatter to use
+  ///   - useCache: Whether to cache and reuse the created logger
   /// - Returns: A configured logging service actor that uses OSLog
-  public static func createOSLogger(
+  public func createOSLogger(
     subsystem: String,
     category: String,
     minimumLevel: LoggingTypes.UmbraLogLevel = .info,
-    formatter: LoggingInterfaces.LogFormatterProtocol?=nil
-  ) -> LoggingServiceActor {
+    formatter: LoggingInterfaces.LogFormatterProtocol?=nil,
+    useCache: Bool=true
+  ) async -> LoggingServiceActor {
+    let cacheKey="oslog-\(subsystem)-\(category)-\(minimumLevel.rawValue)"
+
+    if useCache, let cachedLogger=loggerCache[cacheKey] as? LoggingServiceActor {
+      return cachedLogger
+    }
+
     let osLogDestination=OSLogDestination(
       subsystem: subsystem,
       category: category,
@@ -158,11 +246,17 @@ public enum LoggingServiceFactory {
       formatter: formatter
     )
 
-    return LoggingServiceActor(
+    let logger=LoggingServiceActor(
       destinations: [osLogDestination],
       minimumLogLevel: minimumLevel,
       formatter: formatter
     )
+
+    if useCache {
+      loggerCache[cacheKey]=logger
+    }
+
+    return logger
   }
 
   /// Create a comprehensive logging service with OSLog, file and console output
@@ -178,8 +272,9 @@ public enum LoggingServiceFactory {
   ///   - maxFileSizeMB: Maximum log file size in megabytes before rotation
   ///   - maxBackupCount: Number of backup log files to keep
   ///   - formatter: Optional custom formatter to use
+  ///   - useCache: Whether to cache and reuse the created logger
   /// - Returns: A logging service actor with multiple destinations
-  public static func createComprehensiveLogger(
+  public func createComprehensiveLogger(
     subsystem: String,
     category: String,
     logDirectoryPath: String,
@@ -190,8 +285,15 @@ public enum LoggingServiceFactory {
     consoleMinimumLevel: LoggingTypes.UmbraLogLevel = .info,
     maxFileSizeMB: UInt64=10,
     maxBackupCount: Int=5,
-    formatter: LoggingInterfaces.LogFormatterProtocol?=nil
-  ) -> LoggingServiceActor {
+    formatter: LoggingInterfaces.LogFormatterProtocol?=nil,
+    useCache: Bool=true
+  ) async -> LoggingServiceActor {
+    let cacheKey="comprehensive-\(subsystem)-\(category)-\(logDirectoryPath)-\(logFileName)"
+
+    if useCache, let cachedLogger=loggerCache[cacheKey] as? LoggingServiceActor {
+      return cachedLogger
+    }
+
     let filePath=(logDirectoryPath as NSString).appendingPathComponent(logFileName)
 
     let consoleDestination=ConsoleLogDestination(
@@ -217,128 +319,185 @@ public enum LoggingServiceFactory {
       formatter: formatter
     )
 
-    return LoggingServiceActor(
+    let logger=LoggingServiceActor(
       destinations: [consoleDestination, fileDestination, osLogDestination],
       minimumLogLevel: minimumLevel,
       formatter: formatter
     )
+
+    if useCache {
+      loggerCache[cacheKey]=logger
+    }
+
+    return logger
   }
 
-  /// Create a privacy-aware logging service that handles sensitive data appropriately
-  /// - Parameters:
-  ///   - minimumLevel: Minimum log level to display (defaults to info)
-  ///   - environment: The deployment environment (development, staging, production)
-  ///   - formatter: Optional custom formatter to use
-  /// - Returns: A configured privacy-aware logging actor
-  public static func createPrivacyAwareLogger(
-    minimumLevel: LoggingTypes.UmbraLogLevel = .info,
-    environment: DeploymentEnvironment = .development,
-    formatter: LoggingInterfaces.LogFormatterProtocol? = nil
-  ) -> PrivacyAwareLoggingActor {
-    // Create a privacy-aware formatter if one wasn't provided
-    let logFormatter = formatter ?? PrivacyAwareLogFormatter(environment: environment)
-    
-    // Create the underlying logging service
-    let loggingService = createStandardLogger(
-      minimumLevel: minimumLevel,
-      formatter: logFormatter
-    )
-    
-    // Create and return the privacy-aware logging actor
-    return PrivacyAwareLoggingActor(
-      loggingService: loggingService,
-      environment: environment
-    )
-  }
-  
-  /// Create a comprehensive privacy-aware logging service with multiple destinations
+  /// Create a privacy-aware logger with enhanced privacy controls
   /// - Parameters:
   ///   - subsystem: The subsystem identifier for OSLog
-  ///   - category: The category for OSLog
-  ///   - logDirectoryPath: Directory to store log files
-  ///   - environment: The deployment environment
-  ///   - minimumLevel: Minimum log level to display (defaults to info)
-  ///   - fileMinimumLevel: Minimum level for file logging (defaults to warning)
-  ///   - osLogMinimumLevel: Minimum level for OSLog (defaults to info)
-  ///   - consoleMinimumLevel: Minimum level for console (defaults to info)
-  /// - Returns: A privacy-aware logging actor with multiple destinations
-  public static func createComprehensivePrivacyAwareLogger(
-    subsystem: String,
-    category: String,
-    logDirectoryPath: String,
+  ///   - category: The logging category
+  ///   - environment: The deployment environment (affects privacy redaction)
+  ///   - useCache: Whether to cache and reuse the created logger
+  /// - Returns: A privacy-aware logging actor
+  public func createPrivacyAwareLogger(
+    subsystem: String="com.umbra.core",
+    category: String="default",
     environment: DeploymentEnvironment = .development,
-    minimumLevel: LoggingTypes.UmbraLogLevel = .info,
-    fileMinimumLevel: LoggingTypes.UmbraLogLevel = .warning,
-    osLogMinimumLevel: LoggingTypes.UmbraLogLevel = .info,
-    consoleMinimumLevel: LoggingTypes.UmbraLogLevel = .info
-  ) -> PrivacyAwareLoggingActor {
-    // Create a privacy-aware formatter
-    let formatter = PrivacyAwareLogFormatter(environment: environment)
-    
-    // Create destinations with the privacy-aware formatter
-    let osLogDestination = OSLogDestination(
+    useCache: Bool=true
+  ) async -> PrivacyAwareLoggingActor {
+    let cacheKey="privacy-aware-\(subsystem)-\(category)-\(environment.rawValue)"
+
+    if useCache, let cachedLogger=loggerCache[cacheKey] as? PrivacyAwareLoggingActor {
+      return cachedLogger
+    }
+
+    // Create a privacy-aware formatter based on environment
+    let formatter=PrivacyAwareLogFormatter(environment: environment)
+
+    // Create OSLog destination for system integration
+    let osLogDestination=OSLogDestination(
+      identifier: "privacy-oslog",
       subsystem: subsystem,
       category: category,
-      minimumLevel: osLogMinimumLevel,
+      minimumLevel: .info,
       formatter: formatter
     )
-    
-    let consoleDestination = ConsoleLogDestination(
-      identifier: "console-privacy",
-      minimumLevel: consoleMinimumLevel,
+
+    // Create console destination for development visibility
+    let consoleDestination=ConsoleLogDestination(
+      identifier: "privacy-console",
+      minimumLevel: .info,
       formatter: formatter
     )
-    
-    let filePath = (logDirectoryPath as NSString).appendingPathComponent("umbra-privacy.log")
-    let fileDestination = FileLogDestination(
-      identifier: "file-privacy",
-      filePath: filePath,
-      minimumLevel: fileMinimumLevel,
+
+    // Create the base logging service
+    let loggingService=LoggingServiceActor(
+      destinations: [osLogDestination, consoleDestination],
+      minimumLogLevel: .info,
       formatter: formatter
     )
-    
-    // Create the underlying logging service
-    let loggingService = LoggingServiceActor(
-      destinations: [osLogDestination, consoleDestination, fileDestination],
-      minimumLogLevel: minimumLevel,
-      formatter: formatter
-    )
-    
-    // Create and return the privacy-aware logging actor
-    return PrivacyAwareLoggingActor(
+
+    // Create the privacy-aware logging actor
+    let logger=PrivacyAwareLoggingActor(
       loggingService: loggingService,
       environment: environment
+    )
+
+    if useCache {
+      loggerCache[cacheKey]=logger
+    }
+
+    return logger
+  }
+
+  /// Create a comprehensive privacy-aware logger with multiple destinations
+  /// - Parameters:
+  ///   - subsystem: The subsystem identifier for OSLog
+  ///   - category: The logging category
+  ///   - logDirectoryPath: Directory to store log files
+  ///   - environment: The deployment environment (affects privacy redaction)
+  ///   - useCache: Whether to cache and reuse the created logger
+  /// - Returns: A comprehensive privacy-aware logging actor
+  public func createComprehensivePrivacyAwareLogger(
+    subsystem: String,
+    category: String,
+    logDirectoryPath: String=NSTemporaryDirectory(),
+    environment: DeploymentEnvironment = .development,
+    useCache: Bool=true
+  ) async -> PrivacyAwareLoggingActor {
+    let cacheKey="comprehensive-privacy-\(subsystem)-\(category)-\(environment.rawValue)"
+
+    if useCache, let cachedLogger=loggerCache[cacheKey] as? PrivacyAwareLoggingActor {
+      return cachedLogger
+    }
+
+    // Create a privacy-aware formatter based on environment
+    let formatter=PrivacyAwareLogFormatter(environment: environment)
+
+    // Create OSLog destination for system integration
+    let osLogDestination=OSLogDestination(
+      identifier: "privacy-comp-oslog",
+      subsystem: subsystem,
+      category: category,
+      minimumLevel: .info,
+      formatter: formatter
+    )
+
+    // Create console destination for development visibility
+    let consoleDestination=ConsoleLogDestination(
+      identifier: "privacy-comp-console",
+      minimumLevel: environment == .development ? .debug : .info,
+      formatter: formatter
+    )
+
+    // Create file destination for persistent logs
+    let filePath=(logDirectoryPath as NSString)
+      .appendingPathComponent("\(subsystem)-\(category).log")
+    let fileDestination=FileLogDestination(
+      identifier: "privacy-comp-file",
+      filePath: filePath,
+      minimumLevel: .warning,
+      maxFileSize: 10 * 1024 * 1024, // 10 MB
+      maxBackupCount: 5,
+      formatter: formatter
+    )
+
+    // Create the base logging service
+    let loggingService=LoggingServiceActor(
+      destinations: [osLogDestination, consoleDestination, fileDestination],
+      minimumLogLevel: .info,
+      formatter: formatter
+    )
+
+    // Create the privacy-aware logging actor
+    let logger=PrivacyAwareLoggingActor(
+      loggingService: loggingService,
+      environment: environment
+    )
+
+    if useCache {
+      loggerCache[cacheKey]=logger
+    }
+
+    return logger
+  }
+
+  /// Create a production-optimised privacy-aware logger
+  /// - Parameters:
+  ///   - subsystem: The subsystem identifier for OSLog
+  ///   - category: The logging category
+  ///   - useCache: Whether to cache and reuse the created logger
+  /// - Returns: A production-optimised privacy-aware logging actor
+  public func createProductionPrivacyAwareLogger(
+    subsystem: String="com.umbra.core",
+    category: String="production",
+    useCache: Bool=true
+  ) async -> PrivacyAwareLoggingActor {
+    await createPrivacyAwareLogger(
+      subsystem: subsystem,
+      category: category,
+      environment: .production,
+      useCache: useCache
     )
   }
-  
-  /// Create a production privacy-aware logging service with file and console output
-  /// - Parameters:
-  ///   - logDirectoryPath: Directory to store log files
-  ///   - logFileName: Name of the log file (without path)
-  ///   - environment: The deployment environment (defaults to production)
-  ///   - minimumLevel: Minimum log level to display (defaults to info)
-  /// - Returns: A configured privacy-aware logging actor for production
-  public static func createProductionPrivacyAwareLogger(
-    logDirectoryPath: String,
-    logFileName: String = "umbra-privacy.log",
-    environment: DeploymentEnvironment = .production,
-    minimumLevel: LoggingTypes.UmbraLogLevel = .info
-  ) -> PrivacyAwareLoggingActor {
-    // Create a privacy-aware formatter for production
-    let formatter = PrivacyAwareLogFormatter(environment: environment)
-    
-    // Create the underlying logging service
-    let loggingService = createProductionLogger(
-      logDirectoryPath: logDirectoryPath,
-      logFileName: logFileName,
-      minimumLevel: minimumLevel,
-      formatter: formatter
-    )
-    
-    // Create and return the privacy-aware logging actor
-    return PrivacyAwareLoggingActor(
-      loggingService: loggingService,
-      environment: environment
-    )
+
+  /// Clears the logger cache
+  ///
+  /// This can be useful when testing or when loggers need to be recreated
+  /// with fresh configurations.
+  public func clearCache() {
+    loggerCache.removeAll()
+  }
+
+  /// Removes a specific logger from the cache
+  ///
+  /// - Parameter cacheKey: The cache key for the logger to remove
+  /// - Returns: True if a logger was removed, false if no logger was found
+  public func removeFromCache(cacheKey: String) -> Bool {
+    if loggerCache[cacheKey] != nil {
+      loggerCache[cacheKey]=nil
+      return true
+    }
+    return false
   }
 }

@@ -59,10 +59,10 @@ public protocol APIOperation: Sendable {
 /// Operation ID generation
 private actor OperationIDGenerator {
   /// Thread-safe atomic counter
-  private var counter = 0
+  private var counter=0
 
   /// Shared instance for generating IDs
-  static let shared = OperationIDGenerator()
+  static let shared=OperationIDGenerator()
 
   private init() {} // Ensure singleton pattern
 
@@ -70,10 +70,10 @@ private actor OperationIDGenerator {
   func generateID() -> String {
     // Actor isolation ensures safe access to counter
     counter += 1
-    let currentCount = counter
+    let currentCount=counter
 
     // Use uptime in milliseconds as a timestamp component
-    let timestamp = UptimeProvider.millisecondsSinceStart
+    let timestamp=UptimeProvider.millisecondsSinceStart
     return "\(timestamp)-\(currentCount)"
   }
 }

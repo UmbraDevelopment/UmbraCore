@@ -80,17 +80,14 @@ public actor SnapshotManagementService {
 
           // Update progress
           if let reporter {
-            let progress=BackupProgress(
+            let progress=BackupProgressInfo(
               phase: .processing,
               percentComplete: 0.3,
-              currentItem: "Updating snapshot tags",
-              processedItems: 0,
+              itemsProcessed: 0,
               totalItems: 0,
-              processedBytes: 0,
+              bytesProcessed: 0,
               totalBytes: 0,
-              estimatedTimeRemaining: nil,
-              bytesPerSecond: nil,
-              error: nil
+              details: "Updating snapshot tags"
             )
             await reporter.reportProgress(progress, for: .updateTags)
           }
@@ -115,7 +112,8 @@ public actor SnapshotManagementService {
         return .failure(backupError)
       } else {
         return .failure(
-          .unexpected("Failed to update snapshot tags: \(error.localizedDescription)")
+          BackupOperationError
+            .unexpected("Failed to update snapshot tags: \(error.localizedDescription)")
         )
       }
     }
@@ -149,17 +147,14 @@ public actor SnapshotManagementService {
 
           // Update progress
           if let reporter {
-            let progress=BackupProgress(
+            let progress=BackupProgressInfo(
               phase: .processing,
               percentComplete: 0.3,
-              currentItem: "Updating snapshot description",
-              processedItems: 0,
+              itemsProcessed: 0,
               totalItems: 0,
-              processedBytes: 0,
+              bytesProcessed: 0,
               totalBytes: 0,
-              estimatedTimeRemaining: nil,
-              bytesPerSecond: nil,
-              error: nil
+              details: "Updating snapshot description"
             )
             await reporter.reportProgress(progress, for: .updateTags)
           }
@@ -184,7 +179,8 @@ public actor SnapshotManagementService {
         return .failure(backupError)
       } else {
         return .failure(
-          .unexpected("Failed to update snapshot description: \(error.localizedDescription)")
+          BackupOperationError
+            .unexpected("Failed to update snapshot description: \(error.localizedDescription)")
         )
       }
     }

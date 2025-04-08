@@ -29,9 +29,9 @@
  */
 public enum EncryptionMode: String, Sendable, Equatable, CaseIterable {
   /// Cipher Block Chaining mode. Requires an IV.
-  case cbc = "CBC"
+  case cbc="CBC"
   /// Galois/Counter Mode. Provides authenticated encryption (AEAD). Requires an IV/nonce.
-  case gcm = "GCM"
+  case gcm="GCM"
 }
 
 /**
@@ -39,19 +39,19 @@ public enum EncryptionMode: String, Sendable, Equatable, CaseIterable {
  */
 public enum KeyType: String, Sendable, Equatable, CaseIterable {
   /// Advanced Encryption Standard (Symmetric).
-  case aes = "AES"
+  case aes="AES"
   /// Rivest–Shamir–Adleman (Asymmetric).
-  case rsa = "RSA"
+  case rsa="RSA"
   /// Elliptic Curve cryptography (Asymmetric).
-  case ec = "EC"
+  case ec="EC"
 }
 
 /**
  Defines the algorithms used for signing and verification.
  */
 public enum SignAlgorithm: String, Sendable, Equatable, CaseIterable {
-  case ecdsaP256SHA256 = "ECDSA P-256 with SHA-256"
-  case rsaPKCS1v15SHA256 = "RSA PKCS#1 v1.5 with SHA-256"
+  case ecdsaP256SHA256="ECDSA P-256 with SHA-256"
+  case rsaPKCS1v15SHA256="RSA PKCS#1 v1.5 with SHA-256"
   // Add other signing algorithms as needed
 }
 
@@ -59,9 +59,9 @@ public enum SignAlgorithm: String, Sendable, Equatable, CaseIterable {
  Defines the formats for importing/exporting cryptographic keys.
  */
 public enum KeyFormat: String, Sendable, Equatable, CaseIterable {
-  case raw = "Raw bytes"
-  case pkcs8 = "PKCS#8 format (usually for private keys)"
-  case spki = "Subject Public Key Info format (usually for public keys)"
+  case raw="Raw bytes"
+  case pkcs8="PKCS#8 format (usually for private keys)"
+  case spki="Subject Public Key Info format (usually for public keys)"
   // Add other key formats as needed
 }
 
@@ -81,9 +81,9 @@ public enum EncryptionPadding: String, Sendable, Equatable, CaseIterable {
   /// Description of the padding mode.
   public var description: String {
     switch self {
-    case .pkcs7: "PKCS#7 Padding"
-    case .none: "No Padding"
-    case .zero: "Zero Padding"
+      case .pkcs7: "PKCS#7 Padding"
+      case .none: "No Padding"
+      case .zero: "Zero Padding"
     }
   }
 }
@@ -106,14 +106,14 @@ public struct EncryptionOptions: Sendable, Equatable {
     algorithm: EncryptionAlgorithm,
     mode: EncryptionMode,
     padding: EncryptionPadding,
-    iv: [UInt8]? = nil,
-    additionalAuthenticatedData: [UInt8]? = nil
+    iv: [UInt8]?=nil,
+    additionalAuthenticatedData: [UInt8]?=nil
   ) {
-    self.algorithm = algorithm
-    self.mode = mode
-    self.padding = padding
-    self.iv = iv
-    self.additionalAuthenticatedData = additionalAuthenticatedData
+    self.algorithm=algorithm
+    self.mode=mode
+    self.padding=padding
+    self.iv=iv
+    self.additionalAuthenticatedData=additionalAuthenticatedData
   }
 }
 
@@ -121,7 +121,7 @@ public struct EncryptionOptions: Sendable, Equatable {
  Options for configuring decryption operations.
  Often mirrors EncryptionOptions.
  */
-public typealias DecryptionOptions = EncryptionOptions
+public typealias DecryptionOptions=EncryptionOptions
 
 /**
  Options for configuring hashing operations.
@@ -131,7 +131,7 @@ public struct HashingOptions: Sendable, Equatable {
   // Add other common hashing options if needed, e.g., salt, iterations.
 
   public init(algorithm: HashAlgorithm) {
-    self.algorithm = algorithm
+    self.algorithm=algorithm
   }
 }
 
@@ -147,13 +147,13 @@ public struct KeyGenerationOptions: Sendable, Equatable {
   public init(
     keyType: KeyType,
     keySizeInBits: Int,
-    isExtractable: Bool = false, // Default to non-extractable for security
-    useSecureEnclave: Bool = false
+    isExtractable: Bool=false, // Default to non-extractable for security
+    useSecureEnclave: Bool=false
   ) {
-    self.keyType = keyType
-    self.keySizeInBits = keySizeInBits
-    self.isExtractable = isExtractable
-    self.useSecureEnclave = useSecureEnclave
+    self.keyType=keyType
+    self.keySizeInBits=keySizeInBits
+    self.isExtractable=isExtractable
+    self.useSecureEnclave=useSecureEnclave
   }
 }
 
@@ -165,7 +165,7 @@ public struct SigningOptions: Sendable, Equatable {
   // Add other common signing options if needed, e.g., digest type
 
   public init(algorithm: SignAlgorithm) {
-    self.algorithm = algorithm
+    self.algorithm=algorithm
   }
 }
 
@@ -177,7 +177,7 @@ public struct VerificationOptions: Sendable, Equatable {
   // Usually mirrors SigningOptions
 
   public init(algorithm: SignAlgorithm) {
-    self.algorithm = algorithm
+    self.algorithm=algorithm
   }
 }
 
@@ -189,10 +189,10 @@ public struct KeyImportOptions: Sendable, Equatable {
   public let keyFormat: KeyFormat // e.g., raw, pkcs8, spki
   public let isExtractable: Bool
 
-  public init(keyType: KeyType, keyFormat: KeyFormat, isExtractable: Bool = false) {
-    self.keyType = keyType
-    self.keyFormat = keyFormat
-    self.isExtractable = isExtractable
+  public init(keyType: KeyType, keyFormat: KeyFormat, isExtractable: Bool=false) {
+    self.keyType=keyType
+    self.keyFormat=keyFormat
+    self.isExtractable=isExtractable
   }
 }
 
@@ -237,23 +237,24 @@ public enum SecurityError: Error, Sendable, Equatable {
   // Implement Equatable conformance manually for the .underlyingError case
   public static func == (lhs: SecurityError, rhs: SecurityError) -> Bool {
     switch (lhs, rhs) {
-    case (.encryptionFailed(let l), .encryptionFailed(let r)): return l == r
-    case (.decryptionFailed(let l), .decryptionFailed(let r)): return l == r
-    case (.hashingFailed(let l), .hashingFailed(let r)): return l == r
-    case (.keyGenerationFailed(let l), .keyGenerationFailed(let r)): return l == r
-    case (.keyStorageFailed(let l), .keyStorageFailed(let r)): return l == r
-    case (.keyRetrievalFailed(let l), .keyRetrievalFailed(let r)): return l == r
-    case (.keyDeletionFailed(let l), .keyDeletionFailed(let r)): return l == r
-    case (.signingFailed(let l), .signingFailed(let r)): return l == r
-    case (.verificationFailed(let l), .verificationFailed(let r)): return l == r
-    case (.invalidInputData, .invalidInputData): return true
-    case (.invalidConfiguration, .invalidConfiguration): return true
-    case (.algorithmNotSupported, .algorithmNotSupported): return true
-    case (.secureEnclaveUnavailable, .secureEnclaveUnavailable): return true
-    case (.operationCancelled, .operationCancelled): return true
-    case (.underlyingError(let l), .underlyingError(let r)): return String(reflecting: l) == String(reflecting: r) // Compare descriptions for non-Equatable errors
-    case (.unknownError(let l), .unknownError(let r)): return l == r
-    default: return false
+      case let (.encryptionFailed(l), .encryptionFailed(r)): l == r
+      case let (.decryptionFailed(l), .decryptionFailed(r)): l == r
+      case let (.hashingFailed(l), .hashingFailed(r)): l == r
+      case let (.keyGenerationFailed(l), .keyGenerationFailed(r)): l == r
+      case let (.keyStorageFailed(l), .keyStorageFailed(r)): l == r
+      case let (.keyRetrievalFailed(l), .keyRetrievalFailed(r)): l == r
+      case let (.keyDeletionFailed(l), .keyDeletionFailed(r)): l == r
+      case let (.signingFailed(l), .signingFailed(r)): l == r
+      case let (.verificationFailed(l), .verificationFailed(r)): l == r
+      case (.invalidInputData, .invalidInputData): true
+      case (.invalidConfiguration, .invalidConfiguration): true
+      case (.algorithmNotSupported, .algorithmNotSupported): true
+      case (.secureEnclaveUnavailable, .secureEnclaveUnavailable): true
+      case (.operationCancelled, .operationCancelled): true
+      case let (.underlyingError(l), .underlyingError(r)): String(reflecting: l) ==
+      String(reflecting: r) // Compare descriptions for non-Equatable errors
+      case let (.unknownError(l), .unknownError(r)): l == r
+      default: false
     }
   }
 }

@@ -50,10 +50,10 @@ public actor SecurityDomainHandler: DomainHandler {
   private let logger: (any LoggingProtocol)?
 
   /// Cache for key metadata to improve performance of repeated operations
-  private var keyMetadataCache: [String: (KeyMetadata, DateTimeDTO)] = [:]
+  private var keyMetadataCache: [String: (KeyMetadata, DateTimeDTO)]=[:]
 
   /// Cache time-to-live in seconds
-  private let cacheTTL: TimeIntervalDTO = TimeIntervalDTO.seconds(60) // 1 minute
+  private let cacheTTL: TimeIntervalDTO = .seconds(60) // 1 minute
 
   /**
    Initialises a new security domain handler.
@@ -84,6 +84,7 @@ public actor SecurityDomainHandler: DomainHandler {
   }
 
   // MARK: - DomainHandler Conformance
+
   public nonisolated var domain: String { APIDomain.security.rawValue }
 
   /**
@@ -102,34 +103,34 @@ public actor SecurityDomainHandler: DomainHandler {
         code: "UNSUPPORTED_OPERATION"
       )
     }
-    
+
     // Get operation name once for reuse
-    let operationName = String(describing: type(of: operation))
-    
+    let operationName=String(describing: type(of: operation))
+
     // Log operation start with optimised metadata creation
     await logOperationStart(operationName: operationName)
-    
+
     do {
       // Execute the specific security operation
-      let resultAny = try await executeSecurityOperation(operation as T)
-      
+      let resultAny=try await executeSecurityOperation(operation as T)
+
       // Log success with optimised metadata creation
       await logOperationSuccess(operationName: operationName)
-      
+
       // Cast the result to the expected type
-      guard let result = resultAny as? T.APIOperationResult else {
+      guard let result=resultAny as? T.APIOperationResult else {
         throw SecurityError.internalError("Unexpected result type from security operation")
       }
-      
+
       return result
     } catch {
       // Log failure with optimised metadata creation
       await logOperationFailure(operationName: operationName, error: error)
-      
+
       // Map to appropriate API error and rethrow
-      if let apiError = error as? APIError {
+      if let apiError=error as? APIError {
         throw apiError
-      } else if let securityError = error as? SecurityError {
+      } else if let securityError=error as? SecurityError {
         throw mapSecurityError(securityError)
       } else {
         throw APIError.internalError(
@@ -150,7 +151,7 @@ public actor SecurityDomainHandler: DomainHandler {
    Each handler method uses proper Sendable types and actor-based secure storage
    to maintain memory safety and thread isolation.
    */
-  private func executeSecurityOperation<T: APIOperation>(_ operation: T) async throws -> Any {
+  private func executeSecurityOperation(_ operation: some APIOperation) async throws -> Any {
     switch operation {
       case let op as EncryptData:
         return try await handleEncryptData(op)
@@ -160,12 +161,12 @@ public actor SecurityDomainHandler: DomainHandler {
         return try await handleGenerateKey(op)
       case let op as RetrieveKey:
         // Check cache first for better performance
-        if let keyId = op.identifier, let cachedMetadata = getCachedKeyMetadata(keyId: keyId) {
+        if let keyID=op.identifier, let cachedMetadata=getCachedKeyMetadata(keyID: keyID) {
           // Log cache hit if logging is enabled
           if await logger?.isEnabled(for: .debug) == true {
-            let metadata = createBaseMetadata(operation: "retrieveKey", event: "cacheHit")
-              .withPrivate(key: "keyId", value: keyId)
-            
+            let metadata=createBaseMetadata(operation: "retrieveKey", event: "cacheHit")
+              .withPrivate(key: "keyId", value: keyID)
+
             await logger?.debug(
               "Retrieved key metadata from cache",
               context: CoreLogContext(
@@ -179,16 +180,16 @@ public actor SecurityDomainHandler: DomainHandler {
         }
         return try await handleRetrieveKey(op)
       case let op as StoreKey:
-        let result = try await handleStoreKey(op)
+        let result=try await handleStoreKey(op)
         // Cache key metadata if available
-        if let keyId = op.identifier, let keyType = op.keyType {
-          let metadata = KeyMetadata(
-            keyId: keyId,
+        if let keyID=op.identifier, let keyType=op.keyType {
+          let metadata=KeyMetadata(
+            keyID: keyID,
             keyType: keyType,
             algorithm: op.algorithm ?? "AES",
             creationDate: DateTimeDTO.now()
           )
-          cacheKeyMetadata(keyId: keyId, metadata: metadata)
+          cacheKeyMetadata(keyID: keyID, metadata: metadata)
         }
         return result
       case let op as DeleteKey:
@@ -223,7 +224,7 @@ public actor SecurityDomainHandler: DomainHandler {
    */
   private func mapToAPIError(_ error: Error) -> APIError {
     // If it's already an APIError, return it
-    if let apiError = error as? APIError {
+    if let apiError=error as? APIError {
       return apiError
     }
 
@@ -240,102 +241,102 @@ public actor SecurityDomainHandler: DomainHandler {
         )
     }
   }
-  
+
   /**
    Maps SecurityError to standardised APIError.
-   
+
    - Parameter error: The security error to map
    - Returns: An APIError instance
    */
   private func mapSecurityError(_ error: SecurityError) -> APIError {
     switch error {
       case .keyNotFound:
-        return APIError.resourceNotFound(
+        APIError.resourceNotFound(
           message: "Security key not found",
           identifier: "unknown"
         )
       case .invalidKey:
-        return APIError.validationError(
+        APIError.validationError(
           message: "Invalid security key",
           details: "The provided key is invalid or corrupted",
           code: "INVALID_SECURITY_KEY"
         )
       case .encryptionFailed:
-        return APIError.operationFailed(
+        APIError.operationFailed(
           message: "Encryption operation failed",
           code: "ENCRYPTION_FAILED",
           underlyingError: error
         )
       case .decryptionFailed:
-        return APIError.operationFailed(
+        APIError.operationFailed(
           message: "Decryption operation failed",
           code: "DECRYPTION_FAILED",
           underlyingError: error
         )
       case .algorithmNotSupported:
-        return APIError.validationError(
+        APIError.validationError(
           message: "Unsupported encryption algorithm",
           details: "The requested encryption algorithm is not supported",
           code: "UNSUPPORTED_ALGORITHM"
         )
       case .invalidData:
-        return APIError.validationError(
+        APIError.validationError(
           message: "Invalid data for security operation",
           details: "The provided data is invalid or corrupted",
           code: "INVALID_SECURITY_DATA"
         )
       case .operationCancelled:
-        return APIError.operationCancelled(
+        APIError.operationCancelled(
           message: "Security operation was cancelled",
           code: "SECURITY_OPERATION_CANCELLED"
         )
       case .accessDenied:
-        return APIError.accessDenied(
+        APIError.accessDenied(
           message: "Access denied for security operation",
           details: "The application does not have permission for this security operation",
           code: "SECURITY_ACCESS_DENIED"
         )
       case .internalError:
-        return APIError.internalError(
+        APIError.internalError(
           message: "Internal security error",
           underlyingError: error
         )
     }
   }
-  
+
   /**
    Maps KeychainError to standardised APIError.
-   
+
    - Parameter error: The keychain error to map
    - Returns: An APIError instance
    */
   private func mapKeychainError(_ error: KeychainError) -> APIError {
     switch error {
       case .itemNotFound:
-        return APIError.resourceNotFound(
+        APIError.resourceNotFound(
           message: "Keychain item not found",
           identifier: "unknown"
         )
       case .duplicateItem:
-        return APIError.conflict(
+        APIError.conflict(
           message: "Duplicate keychain item",
           details: "An item with this identifier already exists in the keychain",
           code: "DUPLICATE_KEYCHAIN_ITEM"
         )
       case .accessDenied:
-        return APIError.accessDenied(
+        APIError.accessDenied(
           message: "Access denied to keychain",
           details: "The application does not have permission to access the keychain",
           code: "KEYCHAIN_ACCESS_DENIED"
         )
       case .invalidData:
-        return APIError.validationError(
+        APIError.validationError(
           message: "Invalid keychain data",
           details: "The provided data is invalid for keychain storage",
           code: "INVALID_KEYCHAIN_DATA"
         )
       case .unexpectedError:
-        return APIError.internalError(
+        APIError.internalError(
           message: "Unexpected keychain error",
           underlyingError: error
         )
@@ -956,7 +957,7 @@ public actor SecurityDomainHandler: DomainHandler {
 
   /**
    Creates base metadata for logging with common fields.
-   
+
    - Parameters:
      - operation: The operation name
      - event: The event type (start, success, failure)
@@ -968,17 +969,17 @@ public actor SecurityDomainHandler: DomainHandler {
       .withPublic(key: "event", value: event)
       .withPublic(key: "domain", value: domain)
   }
-  
+
   /**
    Logs the start of an operation with optimised metadata creation.
-   
+
    - Parameter operationName: The name of the operation being executed
    */
   private func logOperationStart(operationName: String) async {
     // Only create metadata if logging is enabled
     if await logger?.isEnabled(for: .debug) == true {
-      let metadata = createBaseMetadata(operation: operationName, event: "start")
-      
+      let metadata=createBaseMetadata(operation: operationName, event: "start")
+
       await logger?.debug(
         "Handling security operation: \(operationName)",
         context: CoreLogContext(
@@ -988,18 +989,18 @@ public actor SecurityDomainHandler: DomainHandler {
       )
     }
   }
-  
+
   /**
    Logs the successful completion of an operation with optimised metadata creation.
-   
+
    - Parameter operationName: The name of the operation that completed
    */
   private func logOperationSuccess(operationName: String) async {
     // Only create metadata if logging is enabled
     if await logger?.isEnabled(for: .info) == true {
-      let metadata = createBaseMetadata(operation: operationName, event: "success")
+      let metadata=createBaseMetadata(operation: operationName, event: "success")
         .withPublic(key: "status", value: "completed")
-      
+
       await logger?.info(
         "Security operation completed successfully",
         context: CoreLogContext(
@@ -1009,10 +1010,10 @@ public actor SecurityDomainHandler: DomainHandler {
       )
     }
   }
-  
+
   /**
    Logs the failure of an operation with optimised metadata creation.
-   
+
    - Parameters:
      - operationName: The name of the operation that failed
      - error: The error that caused the failure
@@ -1020,9 +1021,9 @@ public actor SecurityDomainHandler: DomainHandler {
   private func logOperationFailure(operationName: String, error: Error) async {
     // Only create metadata if logging is enabled
     if await logger?.isEnabled(for: .error) == true {
-      let metadata = createBaseMetadata(operation: operationName, event: "failure")
+      let metadata=createBaseMetadata(operation: operationName, event: "failure")
         .withPublic(key: "error_domain", value: domain)
-      
+
       await logger?.error(
         "Security operation failed: \(error.localizedDescription)",
         context: CoreLogContext(
@@ -1032,10 +1033,10 @@ public actor SecurityDomainHandler: DomainHandler {
       )
     }
   }
-  
+
   /**
    Logs a critical error with optimised metadata creation.
-   
+
    - Parameters:
      - message: The error message
      - operationName: The name of the operation that encountered the critical error
@@ -1043,9 +1044,9 @@ public actor SecurityDomainHandler: DomainHandler {
   private func logCriticalError(message: String, operationName: String) async {
     // Only create metadata if logging is enabled
     if await logger?.isEnabled(for: .critical) == true {
-      let metadata = createBaseMetadata(operation: operationName, event: "critical_error")
+      let metadata=createBaseMetadata(operation: operationName, event: "critical_error")
         .withPublic(key: "error_domain", value: domain)
-      
+
       await logger?.critical(
         message,
         context: CoreLogContext(
@@ -1055,32 +1056,34 @@ public actor SecurityDomainHandler: DomainHandler {
       )
     }
   }
-  
+
   /**
    Retrieves key metadata from the cache if available and not expired.
-   
+
    - Parameter keyId: The key identifier
    - Returns: The cached key metadata if available, nil otherwise
    */
-  private func getCachedKeyMetadata(keyId: String) -> KeyMetadata? {
-    if let (metadata, timestamp) = keyMetadataCache[keyId],
-       DateTimeDTO.now().timeIntervalSince(timestamp).seconds < cacheTTL.seconds {
+  private func getCachedKeyMetadata(keyID: String) -> KeyMetadata? {
+    if
+      let (metadata, timestamp)=keyMetadataCache[keyID],
+      DateTimeDTO.now().timeIntervalSince(timestamp).seconds < cacheTTL.seconds
+    {
       return metadata
     }
     return nil
   }
-  
+
   /**
    Adds or updates key metadata in the cache.
-   
+
    - Parameters:
      - keyId: The key ID to cache
      - metadata: The metadata to cache
    */
-  private func cacheKeyMetadata(keyId: String, metadata: KeyMetadata) {
-    keyMetadataCache[keyId] = (metadata, DateTimeDTO.now())
+  private func cacheKeyMetadata(keyID: String, metadata: KeyMetadata) {
+    keyMetadataCache[keyID]=(metadata, DateTimeDTO.now())
   }
-  
+
   /**
    Clears all cached key metadata.
    */
@@ -1090,25 +1093,25 @@ public actor SecurityDomainHandler: DomainHandler {
 
   /**
    Executes a batch of security operations more efficiently than individual execution.
-   
+
    - Parameter operations: Array of operations to execute
    - Returns: Dictionary mapping operation IDs to results
    - Throws: APIError if any operation fails
    */
   public func executeBatch(_ operations: [any APIOperation]) async throws -> [String: Any] {
-    var results: [String: Any] = [:]
-    
+    var results: [String: Any]=[:]
+
     // Group operations by type for more efficient processing
-    let groupedOperations = Dictionary(grouping: operations) { type(of: $0) }
-    
+    let groupedOperations=Dictionary(grouping: operations) { type(of: $0) }
+
     // Log batch operation start
     if await logger?.isEnabled(for: .info) == true {
-      let metadata = LogMetadataDTOCollection()
+      let metadata=LogMetadataDTOCollection()
         .withPublic(key: "operation", value: "batchExecution")
         .withPublic(key: "event", value: "start")
         .withPublic(key: "operationCount", value: String(operations.count))
         .withPublic(key: "operationTypes", value: String(describing: groupedOperations.keys))
-      
+
       await logger?.info(
         "Starting batch security operation",
         context: CoreLogContext(
@@ -1117,46 +1120,46 @@ public actor SecurityDomainHandler: DomainHandler {
         )
       )
     }
-    
+
     do {
       // Process each group of operations
       for (_, operationsOfType) in groupedOperations {
-        if let firstOp = operationsOfType.first {
+        if let firstOp=operationsOfType.first {
           // Process based on operation type
           if firstOp is HashData {
             // Example: Batch process all hash operations together
-            let batchResult = try await batchHashData(
+            let batchResult=try await batchHashData(
               operationsOfType.compactMap { $0 as? HashData }
             )
             for (id, result) in batchResult {
-              results[id] = result
+              results[id]=result
             }
           } else if firstOp is EncryptData {
             // Example: Batch process all encryption operations together
-            let batchResult = try await batchEncryptData(
+            let batchResult=try await batchEncryptData(
               operationsOfType.compactMap { $0 as? EncryptData }
             )
             for (id, result) in batchResult {
-              results[id] = result
+              results[id]=result
             }
           } else {
             // Fall back to individual processing for other types
             for operation in operationsOfType {
-              let result = try await executeSecurityOperation(operation)
-              results[operation.operationId] = result
+              let result=try await executeSecurityOperation(operation)
+              results[operation.operationID]=result
             }
           }
         }
       }
-      
+
       // Log batch operation success
       if await logger?.isEnabled(for: .info) == true {
-        let metadata = LogMetadataDTOCollection()
+        let metadata=LogMetadataDTOCollection()
           .withPublic(key: "operation", value: "batchExecution")
           .withPublic(key: "event", value: "success")
           .withPublic(key: "operationCount", value: String(operations.count))
           .withPublic(key: "resultsCount", value: String(results.count))
-        
+
         await logger?.info(
           "Batch security operation completed successfully",
           context: CoreLogContext(
@@ -1165,17 +1168,17 @@ public actor SecurityDomainHandler: DomainHandler {
           )
         )
       }
-      
+
       return results
     } catch {
       // Log batch operation failure
       if await logger?.isEnabled(for: .error) == true {
-        let metadata = LogMetadataDTOCollection()
+        let metadata=LogMetadataDTOCollection()
           .withPublic(key: "operation", value: "batchExecution")
           .withPublic(key: "event", value: "failure")
           .withPublic(key: "operationCount", value: String(operations.count))
           .withPrivate(key: "error", value: error.localizedDescription)
-        
+
         await logger?.error(
           "Batch security operation failed",
           context: CoreLogContext(
@@ -1184,127 +1187,127 @@ public actor SecurityDomainHandler: DomainHandler {
           )
         )
       }
-      
+
       throw mapToAPIError(error)
     }
   }
-  
+
   /**
    Processes multiple hash data operations in a batch for better performance.
-   
+
    - Parameter operations: Array of HashData operations to process
    - Returns: Dictionary mapping operation IDs to results
    - Throws: APIError if any operation fails
    */
   private func batchHashData(_ operations: [HashData]) async throws -> [String: HashResult] {
-    var results: [String: HashResult] = [:]
-    
+    var results: [String: HashResult]=[:]
+
     // Group operations by algorithm to minimize configuration changes
-    let groupedByAlgorithm = Dictionary(grouping: operations) { $0.algorithm ?? "SHA-256" }
-    
+    let groupedByAlgorithm=Dictionary(grouping: operations) { $0.algorithm ?? "SHA-256" }
+
     // Process each algorithm group
     for (algorithm, algorithmOperations) in groupedByAlgorithm {
       // Configure the security service once per algorithm
-      let securityConfig = SecurityConfigDTO(
+      let securityConfig=SecurityConfigDTO(
         operation: .hash,
         algorithm: algorithm,
         options: SecurityConfigOptions()
       )
-      
+
       // Process each operation with the same algorithm
       for operation in algorithmOperations {
         // Create operation-specific options
-        var options = securityConfig.options
-        options.metadata["inputData"] = operation.data
-        
-        let updatedConfig = SecurityConfigDTO(
+        var options=securityConfig.options
+        options.metadata["inputData"]=operation.data
+
+        let updatedConfig=SecurityConfigDTO(
           operation: securityConfig.operation,
           algorithm: securityConfig.algorithm,
           options: options
         )
-        
+
         // Execute the hash operation
-        let result = try await securityService.performSecureOperation(config: updatedConfig)
-        
+        let result=try await securityService.performSecureOperation(config: updatedConfig)
+
         // Create and store the result
-        let hashResult = HashResult(
+        let hashResult=HashResult(
           hash: result.resultData,
           algorithm: algorithm
         )
-        
-        results[operation.operationId] = hashResult
+
+        results[operation.operationID]=hashResult
       }
     }
-    
+
     return results
   }
-  
+
   /**
    Processes multiple encrypt data operations in a batch for better performance.
-   
+
    - Parameter operations: Array of EncryptData operations to process
    - Returns: Dictionary mapping operation IDs to results
    - Throws: APIError if any operation fails
    */
-  private func batchEncryptData(_ operations: [EncryptData]) async throws -> [String: EncryptionResult] {
-    var results: [String: EncryptionResult] = [:]
-    
+  private func batchEncryptData(_ operations: [EncryptData]) async throws
+  -> [String: EncryptionResult] {
+    var results: [String: EncryptionResult]=[:]
+
     // Group operations by key ID to minimize key retrievals
-    let groupedByKey = Dictionary(grouping: operations) { $0.keyIdentifier ?? "default" }
-    
+    let groupedByKey=Dictionary(grouping: operations) { $0.keyIdentifier ?? "default" }
+
     // Process each key group
-    for (keyId, keyOperations) in groupedByKey {
+    for (keyID, keyOperations) in groupedByKey {
       // Retrieve the key once per group (if needed)
-      let keyMaterial: SendableCryptoMaterial?
-      if keyId != "default" {
-        keyMaterial = try await securityService.retrieveKey(identifier: keyId)
+      let keyMaterial: SendableCryptoMaterial?=if keyID != "default" {
+        try await securityService.retrieveKey(identifier: keyID)
       } else {
-        keyMaterial = nil
+        nil
       }
-      
+
       // Group by algorithm for further optimization
-      let groupedByAlgorithm = Dictionary(grouping: keyOperations) { $0.algorithm ?? "AES-256-GCM" }
-      
+      let groupedByAlgorithm=Dictionary(grouping: keyOperations) { $0.algorithm ?? "AES-256-GCM" }
+
       // Process each algorithm group
       for (algorithm, algorithmOperations) in groupedByAlgorithm {
         // Configure the security service once per algorithm
-        let securityConfig = SecurityConfigDTO(
+        let securityConfig=SecurityConfigDTO(
           operation: .encrypt,
           algorithm: algorithm,
           options: SecurityConfigOptions()
         )
-        
+
         // Process each operation with the same key and algorithm
         for operation in algorithmOperations {
           // Create operation-specific options
-          var options = securityConfig.options
-          options.metadata["inputData"] = operation.data
-          
-          if let keyMaterial = keyMaterial {
-            options.metadata["keyMaterial"] = keyMaterial
+          var options=securityConfig.options
+          options.metadata["inputData"]=operation.data
+
+          if let keyMaterial {
+            options.metadata["keyMaterial"]=keyMaterial
           }
-          
-          let updatedConfig = SecurityConfigDTO(
+
+          let updatedConfig=SecurityConfigDTO(
             operation: securityConfig.operation,
             algorithm: securityConfig.algorithm,
             options: options
           )
-          
+
           // Execute the encryption operation
-          let result = try await securityService.performSecureOperation(config: updatedConfig)
-          
+          let result=try await securityService.performSecureOperation(config: updatedConfig)
+
           // Create and store the result
-          let encryptionResult = EncryptionResult(
+          let encryptionResult=EncryptionResult(
             ciphertext: result.resultData,
             algorithm: algorithm,
-            keyId: keyId != "default" ? keyId : nil
+            keyID: keyID != "default" ? keyID : nil
           )
-          
-          results[operation.operationId] = encryptionResult
+
+          results[operation.operationID]=encryptionResult
         }
       }
     }
-    
+
     return results
   }
 
@@ -1313,17 +1316,17 @@ public actor SecurityDomainHandler: DomainHandler {
    */
   public struct SendableCryptoMaterial: Sendable, Equatable {
     public let rawData: SecureData
-    
+
     public init(_ data: SecureData) {
-      self.rawData = data
+      rawData=data
     }
-    
+
     public init(_ data: Data) {
-      self.rawData = SecureData(data)
+      rawData=SecureData(data)
     }
-    
+
     public init(_ string: String) {
-      self.rawData = SecureData(string.utf8)
+      rawData=SecureData(string.utf8)
     }
   }
 

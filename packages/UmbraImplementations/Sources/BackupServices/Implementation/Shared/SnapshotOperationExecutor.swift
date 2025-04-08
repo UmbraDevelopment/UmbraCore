@@ -81,17 +81,17 @@ public actor SnapshotOperationExecutor {
     operation: @escaping (P, BackupProgressReporter?, BackupCancellationToken?) async throws -> R
   ) async throws -> R {
     // Extract operation type and snapshot ID for use throughout the method
-    let _operationType = parameters.operationType
-    let snapshotID = getSnapshotID(from: parameters)
+    let _operationType=parameters.operationType
+    let snapshotID=getSnapshotID(from: parameters)
 
     // Create log context for privacy-aware logging
-    let logContext = SnapshotLogContext(
+    let logContext=SnapshotLogContext(
       operation: parameters.operationType.rawValue,
       snapshotID: snapshotID
     )
 
     // Start time for metrics
-    let startTime = Date()
+    let startTime=Date()
 
     // Log operation start
     await logger.info(
@@ -100,7 +100,7 @@ public actor SnapshotOperationExecutor {
     )
 
     // Report initial progress
-    if let reporter = progressReporter {
+    if let reporter=progressReporter {
       await reporter.reportProgress(
         BackupProgressInfo(
           phase: .initialising,
@@ -123,15 +123,15 @@ public actor SnapshotOperationExecutor {
       try parameters.validate()
 
       // Execute the operation with cancellation support
-      let result = try await cancellationHandler.withCancellationSupport({
+      let result=try await cancellationHandler.withCancellationSupport({
         try await operation(parameters, progressReporter, cancellationToken)
       }, cancellationToken: cancellationToken)
 
       // Calculate operation duration
-      let duration = Date().timeIntervalSince(startTime)
+      let duration=Date().timeIntervalSince(startTime)
 
       // Report completion progress
-      if let reporter = progressReporter {
+      if let reporter=progressReporter {
         await reporter.reportProgress(
           BackupProgressInfo(
             phase: .completed,
@@ -165,13 +165,13 @@ public actor SnapshotOperationExecutor {
       return result
     } catch {
       // Calculate operation duration
-      let duration = Date().timeIntervalSince(startTime)
+      let duration=Date().timeIntervalSince(startTime)
 
       // Map error to domain-specific error with context
-      let backupError = errorMapper.mapError(error, context: logContext)
+      let backupError=errorMapper.mapError(error, context: logContext)
 
       // Report failure progress
-      if let reporter = progressReporter {
+      if let reporter=progressReporter {
         await reporter.reportProgress(
           BackupProgressInfo(
             phase: .failed,
@@ -190,7 +190,7 @@ public actor SnapshotOperationExecutor {
       }
 
       // Create error context with privacy controls
-      let errorContext = SnapshotLogContext(
+      let errorContext=SnapshotLogContext(
         operation: parameters.operationType.rawValue,
         snapshotID: snapshotID,
         errorMessage: backupError.localizedDescription
@@ -252,7 +252,7 @@ public actor SnapshotOperationExecutor {
   /// - Parameter parameters: Operation parameters
   /// - Returns: Snapshot ID or "unknown" if not available
   private func getSnapshotID(from parameters: some SnapshotOperationParameters) -> String {
-    if let params = parameters as? HasSnapshotID {
+    if let params=parameters as? HasSnapshotID {
       return params.snapshotID
     }
     return "unknown"

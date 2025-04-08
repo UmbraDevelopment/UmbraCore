@@ -2,26 +2,23 @@ import BackupInterfaces
 import Foundation
 
 /**
- * A token for cancelling backup operations.
- *
- * This implementation of BackupOperationCancellationToken provides a way to
- * cancel operations and track their state with a unique identifier,
+ * Implementation of the BackupCancellationToken protocol,
  * following the Alpha Dot Five architecture principles.
  */
-public actor BackupOperationCancellationToken: BackupCancellationToken {
+public actor BackupCancellationTokenImplementation: BackupCancellationToken {
   /// Unique identifier for this token
   public let id: String
 
   /// Whether the operation has been cancelled
-  private var cancelled: Bool=false
+  private var _isCancelled: Bool=false
 
-  /// Callbacks to be executed when the operation is cancelled
-  private var cancellationCallbacks: [() -> Void]=[]
+  /// Registered callbacks to be invoked on cancellation
+  private var callbacks: [() -> Void]=[]
 
   /**
    * Initialises a new cancellation token.
    *
-   * - Parameter id: Optional unique identifier for this token
+   * - Parameter id: Unique identifier for this token
    */
   public init(id: String=UUID().uuidString) {
     self.id=id
@@ -29,49 +26,40 @@ public actor BackupOperationCancellationToken: BackupCancellationToken {
 
   /**
    * Checks if the operation has been cancelled.
-   *
-   * This provides actor-safe access to the cancellation state through Swift's
-   * structured concurrency model.
-   *
-   * - Returns: `true` if the operation has been cancelled, `false` otherwise
    */
   public var isCancelled: Bool {
-    get async {
-      cancelled
-    }
+    _isCancelled
   }
 
   /**
-   * Cancels the operation associated with this token.
-   *
-   * This will also execute any registered cancellation callbacks.
+   * Cancels the operation.
    */
   public func cancel() async {
-    if !cancelled {
-      cancelled=true
+    guard !_isCancelled else { return }
 
-      // Execute all cancellation callbacks
-      for callback in cancellationCallbacks {
-        callback()
-      }
+    _isCancelled=true
 
-      // Clear callbacks after execution
-      cancellationCallbacks=[]
+    // Invoke all registered callbacks
+    for callback in callbacks {
+      callback()
     }
+
+    // Clear callbacks
+    callbacks.removeAll()
   }
 
   /**
-   * Registers a callback to be executed when the operation is cancelled.
+   * Registers a callback to be invoked when the operation is cancelled.
    *
-   * - Parameter callback: The callback to execute on cancellation
+   * - Parameter callback: The callback to invoke
    */
-  public func onCancelled(_ callback: @escaping () -> Void) async {
-    if cancelled {
-      // If already cancelled, execute immediately
+  public func registerCancellationCallback(_ callback: @escaping @Sendable () -> Void) async {
+    if _isCancelled {
+      // If already cancelled, invoke the callback immediately
       callback()
     } else {
-      // Otherwise, store for later
-      cancellationCallbacks.append(callback)
+      // Otherwise, store it for later
+      callbacks.append(callback)
     }
   }
 
@@ -81,7 +69,7 @@ public actor BackupOperationCancellationToken: BackupCancellationToken {
    * - Throws: CancellationError if the operation has been cancelled
    */
   public func checkCancelled() async throws {
-    if cancelled {
+    if _isCancelled {
       throw CancellationError()
     }
   }

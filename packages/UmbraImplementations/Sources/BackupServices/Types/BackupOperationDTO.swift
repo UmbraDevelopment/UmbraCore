@@ -324,25 +324,121 @@ public struct BackupMaintenanceParameters: BackupOperationParameters {
   }
 }
 
+/**
+ * Parameters for comparing two snapshots.
+ */
+public struct BackupSnapshotComparisonParameters: BackupOperationParameters {
+  /// ID of the operation
+  public let operationID: String
+
+  /// ID of the first snapshot to compare
+  public let firstSnapshotID: String
+
+  /// ID of the second snapshot to compare
+  public let secondSnapshotID: String
+
+  /// Optional date to filter before
+  public let before: Date?
+
+  /// Optional date to filter after
+  public let after: Date?
+
+  /// Optional host to filter by
+  public let host: String?
+
+  /// Optional path that must be included in the backup
+  public let path: URL?
+
+  /// The operation type
+  public var operationType: String { "compareSnapshots" }
+
+  /**
+   * Initialises a new set of snapshot comparison parameters.
+   *
+   * - Parameters:
+   *   - operationID: ID of the operation
+   *   - firstSnapshotID: ID of the first snapshot to compare
+   *   - secondSnapshotID: ID of the second snapshot to compare
+   *   - before: Optional date to filter before
+   *   - after: Optional date to filter after
+   *   - host: Optional host to filter by
+   *   - path: Optional path that must be included
+   */
+  public init(
+    operationID: String,
+    firstSnapshotID: String,
+    secondSnapshotID: String,
+    before: Date?=nil,
+    after: Date?=nil,
+    host: String?=nil,
+    path: URL?=nil
+  ) {
+    self.operationID=operationID
+    self.firstSnapshotID=firstSnapshotID
+    self.secondSnapshotID=secondSnapshotID
+    self.before=before
+    self.after=after
+    self.host=host
+    self.path=path
+  }
+
+  /**
+   * Validates that the parameters are complete and consistent.
+   *
+   * - Throws: BackupError if validation fails
+   */
+  public func validate() throws {
+    // Ensure operation ID is not empty
+    guard !operationID.isEmpty else {
+      throw BackupError.invalidConfiguration(
+        details: "Operation ID cannot be empty"
+      )
+    }
+
+    // Ensure first snapshot ID is not empty
+    guard !firstSnapshotID.isEmpty else {
+      throw BackupError.invalidConfiguration(
+        details: "First snapshot ID cannot be empty"
+      )
+    }
+
+    // Ensure second snapshot ID is not empty
+    guard !secondSnapshotID.isEmpty else {
+      throw BackupError.invalidConfiguration(
+        details: "Second snapshot ID cannot be empty"
+      )
+    }
+
+    // Ensure path is a file URL if provided
+    if let path {
+      guard path.isFileURL else {
+        throw BackupError.invalidConfiguration(
+          details: "Path is not a file URL: \(path.path)"
+        )
+      }
+    }
+  }
+}
+
 // MARK: - Adapter Extensions
 
 /// Extension to provide conversion methods between DTOs and BackupInterfaces types
 extension BackupCreateParameters {
-  /// Convert to BackupInterfaces.BackupCreationParameters
-  public func toBackupCreationParameters() -> BackupCreationParameters {
-    BackupCreationParameters(
-      sources: sources,
-      excludePaths: excludePaths,
+  /// Convert to BackupInterfaces parameters
+  public func toBackupParameters() -> BackupParameters {
+    BackupParameters(
+      sources: sources.map(\.path),
+      excludePaths: excludePaths?.map(\.path),
       tags: tags,
       options: options?.toBackupOptions()
     )
   }
 
-  /// Create from BackupInterfaces.BackupCreationParameters
-  public static func from(parameters: BackupCreationParameters) -> BackupCreateParameters {
+  /// Create from BackupInterfaces parameters
+  public static func from(parameters: BackupParameters) -> BackupCreateParameters {
     BackupCreateParameters(
-      sources: parameters.sources,
-      excludePaths: parameters.excludePaths,
+      sources: parameters.sources.map { URL(fileURLWithPath: $0) },
+      excludePaths: parameters.excludePaths?.map { URL(fileURLWithPath: $0) },
       tags: parameters.tags,
       options: parameters.options.map { BackupOptions.from(options: $0) }
     )
@@ -350,71 +446,95 @@ extension BackupCreateParameters {
 }
 
 extension BackupRestoreParameters {
-  /// Convert to BackupInterfaces.BackupRestoreParameters
-  public func toBackupRestoreParameters() -> BackupInterfaces.BackupRestoreParameters {
-    BackupInterfaces.BackupRestoreParameters(
+  /// Convert to BackupInterfaces parameters
+  public func toBackupParameters() -> RestoreParameters {
+    RestoreParameters(
       snapshotID: snapshotID,
-      targetPath: targetPath,
-      includeItems: includePaths,
-      excludeItems: excludePaths,
-      overwritePolicy: BackupInterfaces.OverwritePolicy(rawValue: 0) ?? .askUser,
+      targetPath: targetPath.path,
+      includePaths: includePaths?.map(\.path),
+      excludePaths: excludePaths?.map(\.path),
       options: options?.toRestoreOptions()
     )
   }
 
-  /// Create from BackupInterfaces.BackupRestoreParameters
+  /// Create from BackupInterfaces parameters
   public static func from(
-    parameters: BackupInterfaces
-      .BackupRestoreParameters
+    parameters: RestoreParameters
   ) -> BackupRestoreParameters {
     BackupRestoreParameters(
       snapshotID: parameters.snapshotID,
-      targetPath: parameters.targetPath,
-      includePaths: parameters.includeItems,
-      excludePaths: parameters.excludeItems,
+      targetPath: URL(fileURLWithPath: parameters.targetPath),
+      includePaths: parameters.includePaths?.map { URL(fileURLWithPath: $0) },
+      excludePaths: parameters.excludePaths?.map { URL(fileURLWithPath: $0) },
       options: parameters.options.map { RestoreOptions.from(options: $0) }
     )
   }
 }
 
 extension BackupListParameters {
-  /// Convert to BackupInterfaces.BackupListParameters
-  public func toBackupListParameters() -> BackupInterfaces.BackupListParameters {
-    BackupInterfaces.BackupListParameters(
+  /// Convert to BackupInterfaces parameters
+  public func toBackupParameters() -> ListParameters {
+    ListParameters(
       tags: tags,
-      beforeDate: before,
-      afterDate: after,
-      path: path,
-      sourceHost: host,
+      host: host,
+      path: path?.path,
       options: nil
     )
   }
 
-  /// Create from BackupInterfaces.BackupListParameters
+  /// Create from BackupInterfaces parameters
   public static func from(
-    parameters: BackupInterfaces
-      .BackupListParameters
+    parameters: ListParameters
   ) -> BackupListParameters {
     BackupListParameters(
       tags: parameters.tags,
-      before: parameters.beforeDate,
-      after: parameters.afterDate,
-      host: parameters.sourceHost,
-      path: parameters.path
+      host: parameters.host,
+      path: parameters.path.map { URL(fileURLWithPath: $0) },
+      before: nil,
+      after: nil
     )
   }
 }
 
-// MARK: - Options Adapters
+extension BackupSnapshotComparisonParameters {
+  /// Convert to BackupInterfaces parameters
+  public func toBackupParameters() -> BackupInterfaces.SnapshotComparisonParameters {
+    BackupInterfaces.SnapshotComparisonParameters(
+      operationID: operationID,
+      firstSnapshotID: firstSnapshotID,
+      secondSnapshotID: secondSnapshotID,
+      before: before,
+      after: after,
+      host: host,
+      path: path?.path
+    )
+  }
+
+  /// Create from BackupInterfaces parameters
+  public static func from(
+    parameters: BackupInterfaces.SnapshotComparisonParameters
+  ) -> BackupSnapshotComparisonParameters {
+    BackupSnapshotComparisonParameters(
+      operationID: parameters.operationID,
+      firstSnapshotID: parameters.firstSnapshotID,
+      secondSnapshotID: parameters.secondSnapshotID,
+      before: parameters.before,
+      after: parameters.after,
+      host: parameters.host,
+      path: parameters.path.map { URL(fileURLWithPath: $0) }
+    )
+  }
+}
 
 extension BackupOptions {
   /// Convert to BackupInterfaces.BackupOptions
   public func toBackupOptions() -> BackupInterfaces.BackupOptions {
     BackupInterfaces.BackupOptions(
-      compressionLevel: 0,
-      deduplicate: false,
-      encryptionAlgorithm: "",
-      metadata: [:]
+      compressionLevel: compressionLevel,
+      maxSize: maxSize,
+      verifyAfterBackup: verifyAfterBackup,
+      useParallelisation: useParallelisation,
+      priority: priority.toBackupPriority()
     )
   }
 
@@ -422,9 +542,10 @@ extension BackupOptions {
   public static func from(options: BackupInterfaces.BackupOptions) -> BackupOptions {
     BackupOptions(
       compressionLevel: options.compressionLevel,
-      deduplicate: options.deduplicate,
-      encryptionAlgorithm: options.encryptionAlgorithm,
-      metadata: options.metadata
+      maxSize: options.maxSize,
+      verifyAfterBackup: options.verifyAfterBackup,
+      useParallelisation: options.useParallelisation,
+      priority: BackupPriority.from(priority: options.priority)
     )
   }
 }
@@ -433,22 +554,52 @@ extension RestoreOptions {
   /// Convert to BackupInterfaces.RestoreOptions
   public func toRestoreOptions() -> BackupInterfaces.RestoreOptions {
     BackupInterfaces.RestoreOptions(
-      preservePermissions: false,
-      preserveOwnership: false,
-      preserveTimes: false,
-      skipExisting: false,
-      metadata: [:]
+      overwriteExisting: overwriteExisting,
+      restorePermissions: restorePermissions,
+      verifyAfterRestore: verifyAfterRestore,
+      useParallelisation: useParallelisation,
+      priority: priority.toBackupPriority()
     )
   }
 
   /// Create from BackupInterfaces.RestoreOptions
   public static func from(options: BackupInterfaces.RestoreOptions) -> RestoreOptions {
     RestoreOptions(
-      preservePermissions: options.preservePermissions,
-      preserveOwnership: options.preserveOwnership,
-      preserveTimes: options.preserveTimes,
-      skipExisting: options.skipExisting,
-      metadata: options.metadata
+      overwriteExisting: options.overwriteExisting,
+      restorePermissions: options.restorePermissions,
+      verifyAfterRestore: options.verifyAfterRestore,
+      useParallelisation: options.useParallelisation,
+      priority: BackupPriority.from(priority: options.priority)
     )
+  }
+}
+
+extension BackupPriority {
+  /// Convert to BackupInterfaces.BackupPriority
+  public func toBackupPriority() -> BackupInterfaces.BackupPriority {
+    switch self {
+      case .low:
+        .low
+      case .normal:
+        .normal
+      case .high:
+        .high
+      case .critical:
+        .critical
+    }
+  }
+
+  /// Create from BackupInterfaces.BackupPriority
+  public static func from(priority: BackupInterfaces.BackupPriority) -> BackupPriority {
+    switch priority {
+      case .low:
+        .low
+      case .normal:
+        .normal
+      case .high:
+        .high
+      case .critical:
+        .critical
+    }
   }
 }

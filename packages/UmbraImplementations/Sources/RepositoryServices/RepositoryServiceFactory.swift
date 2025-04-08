@@ -16,7 +16,7 @@ public actor RepositoryServiceFactory {
   public static var shared: any RepositoryServiceProtocol {
     get async {
       if _sharedInstance == nil {
-        _sharedInstance = createDefaultRepositoryService()
+        _sharedInstance=createDefaultRepositoryService()
       }
       // Since RepositoryServiceProtocol requires Actor conformance,
       // accessing methods on it implicitly involves awaiting.
@@ -36,7 +36,7 @@ public actor RepositoryServiceFactory {
   private static func createDefaultRepositoryService() -> any RepositoryServiceProtocol {
     // TODO: Replace with your actual default RepositoryService implementation
     // Ensure the returned service conforms to RepositoryServiceProtocol (which includes Actor)
-    return DefaultRepositoryService()
+    DefaultRepositoryService()
   }
 
   /**
@@ -48,7 +48,7 @@ public actor RepositoryServiceFactory {
    - Parameter service: The RepositoryServiceProtocol instance to set as shared.
    */
   public static func setShared(_ service: any RepositoryServiceProtocol) {
-    _sharedInstance = service
+    _sharedInstance=service
   }
 
   // Private initialiser to prevent external instantiation
@@ -67,7 +67,7 @@ private actor DefaultRepositoryService: RepositoryServiceProtocol {
   // Placeholder implementations for RepositoryServiceProtocol methods
   func register(_ repository: some RepositoryProtocol) async throws {
     // TODO: Implement repository registration logic
-    print("DefaultRepositoryService: register called for \(await repository.identifier)")
+    await print("DefaultRepositoryService: register called for \(repository.identifier)")
   }
 
   func unregister(identifier: String) async throws {
@@ -98,7 +98,12 @@ private actor DefaultRepositoryService: RepositoryServiceProtocol {
     // TODO: Implement logic to retrieve repository statistics
     print("DefaultRepositoryService: getStats called for \(identifier)")
     // Return dummy stats
-    return RepositoryStatistics(totalSize: 0, snapshotCount: 0, lastCheck: Date(), totalFileCount: 0)
+    return RepositoryStatistics(
+      totalSize: 0,
+      snapshotCount: 0,
+      lastCheck: Date(),
+      totalFileCount: 0
+    )
   }
 
   func lockRepository(identifier: String) async throws {
@@ -119,8 +124,8 @@ private actor DefaultRepositoryService: RepositoryServiceProtocol {
 
   func performMaintenance(
     on identifier: String,
-    readData: Bool,
-    checkUnused: Bool
+    readData _: Bool,
+    checkUnused _: Bool
   ) async throws -> RepositoryStatistics {
     // TODO: Implement repository maintenance logic
     print("DefaultRepositoryService: performMaintenance called for \(identifier)")
@@ -151,16 +156,16 @@ private actor DefaultRepositoryService: RepositoryServiceProtocol {
     // For now, throw an error as it's not implemented
     throw RepositoryError.internalError
   }
-  
+
   // This method seems to be from an older version or a specific implementation
   // It's not part of the current RepositoryServiceProtocol definition
   // If needed, ensure it's added back to the protocol.
   /*
-  func createRepository(config _: RepositoryConfigDTO) async throws -> RepositoryDTO {
-    // TODO: Implement repository creation logic using config DTO
-    print("DefaultRepositoryService: createRepository(config:) called")
-    // Return a dummy DTO or throw an error
-    throw RepositoryError.creationFailed("Placeholder implementation for config-based creation")
-  }
-  */
+   func createRepository(config _: RepositoryConfigDTO) async throws -> RepositoryDTO {
+     // TODO: Implement repository creation logic using config DTO
+     print("DefaultRepositoryService: createRepository(config:) called")
+     // Return a dummy DTO or throw an error
+     throw RepositoryError.creationFailed("Placeholder implementation for config-based creation")
+   }
+   */
 }

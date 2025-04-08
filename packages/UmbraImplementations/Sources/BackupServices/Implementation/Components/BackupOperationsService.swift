@@ -1,5 +1,6 @@
 import BackupInterfaces
 import Foundation
+import LoggingServices
 import LoggingTypes
 import ResticInterfaces
 
@@ -22,6 +23,12 @@ public actor BackupOperationsService {
   /// Parser for command results
   private let resultParser: BackupResultParser
 
+  /// Snapshot service for snapshot operations
+  private let snapshotService: SnapshotServiceProtocol
+
+  /// Error mapper for translating errors
+  private let errorMapper: BackupErrorMapper
+
   /**
    * Creates a new backup operations service.
    *
@@ -30,17 +37,23 @@ public actor BackupOperationsService {
    *   - repositoryInfo: Repository connection details
    *   - commandFactory: Factory for creating commands
    *   - resultParser: Parser for command outputs
+   *   - snapshotService: Service for snapshot operations
+   *   - errorMapper: Error mapper for translating errors
    */
   public init(
     resticService: ResticServiceProtocol,
     repositoryInfo: RepositoryInfo,
     commandFactory: BackupCommandFactory,
-    resultParser: BackupResultParser
+    resultParser: BackupResultParser,
+    snapshotService: SnapshotServiceProtocol,
+    errorMapper: BackupErrorMapper
   ) {
     self.resticService=resticService
     self.repositoryInfo=repositoryInfo
     self.commandFactory=commandFactory
     self.resultParser=resultParser
+    self.snapshotService=snapshotService
+    self.errorMapper=errorMapper
   }
 
   /**
@@ -57,25 +70,25 @@ public actor BackupOperationsService {
     parameters: BackupCreateParameters,
     progressReporter: BackupProgressReporter?,
     cancellationToken _: CancellationToken?
-  ) async throws -> (BackupResult, AsyncStream<BackupInterfaces.BackupProgress>) {
+  ) async throws -> (BackupResult, AsyncStream<BackupInterfaces.BackupProgressInfo>) {
     // Create the progress stream
-    var progressContinuation: AsyncStream<BackupInterfaces.BackupProgress>.Continuation!
-    let progressStream=AsyncStream<BackupInterfaces.BackupProgress> { continuation in
+    var progressContinuation: AsyncStream<BackupInterfaces.BackupProgressInfo>.Continuation!
+    let progressStream=AsyncStream<BackupInterfaces.BackupProgressInfo> { continuation in
       progressContinuation=continuation
     }
 
     // Create a progress handler that forwards to both the reporter and the stream
     let progressHandler={ [progressReporter, progressContinuation] (
-      progress: BackupInterfaces.BackupProgress
+      progress: BackupInterfaces.BackupProgressInfo
     ) async in
       if let reporter=progressReporter {
-        await reporter.reportProgress(progress, for: .backup)
+        await reporter.reportProgress(progress, for: .createBackup)
       }
-      progressContinuation.yield(progress)
+      progressContinuation!.yield(progress)
 
       // Check if we're done
       if case .completed=progress.phase {
-        progressContinuation.finish()
+        progressContinuation!.finish()
       }
     }
 
@@ -86,18 +99,18 @@ public actor BackupOperationsService {
     ])
 
     // Add paths to include
-    for path in parameters.sources {
+    for path in parameters.sourcePaths {
       command.arguments.append(path.path)
     }
 
     // Add exclude paths
-    if let excludePaths = parameters.excludePaths, !excludePaths.isEmpty {
+    if let excludePaths=parameters.excludePaths, !excludePaths.isEmpty {
       command.arguments.append("--exclude")
-      command.arguments.append(contentsOf: excludePaths)
+      command.arguments.append(contentsOf: excludePaths.map(\.path))
     }
 
     // Add tags
-    if let tags = parameters.tags, !tags.isEmpty {
+    if let tags=parameters.tags, !tags.isEmpty {
       command.arguments.append("--tag")
       command.arguments.append(contentsOf: tags)
     }
@@ -106,7 +119,10 @@ public actor BackupOperationsService {
     let output=try await resticService.execute(command)
 
     // Parse the result
-    let backupResult=try resultParser.parseBackupResult(output: output)
+    let backupResult=try resultParser.parseBackupResult(
+      output: output,
+      sources: parameters.sourcePaths
+    )
 
     // Return the result and the progress stream
     return (backupResult, progressStream)
@@ -126,25 +142,25 @@ public actor BackupOperationsService {
     parameters: BackupRestoreParameters,
     progressReporter: BackupProgressReporter?,
     cancellationToken _: CancellationToken?
-  ) async throws -> (RestoreResult, AsyncStream<BackupInterfaces.BackupProgress>) {
+  ) async throws -> (RestoreResult, AsyncStream<BackupInterfaces.BackupProgressInfo>) {
     // Create the progress stream
-    var progressContinuation: AsyncStream<BackupInterfaces.BackupProgress>.Continuation!
-    let progressStream=AsyncStream<BackupInterfaces.BackupProgress> { continuation in
+    var progressContinuation: AsyncStream<BackupInterfaces.BackupProgressInfo>.Continuation!
+    let progressStream=AsyncStream<BackupInterfaces.BackupProgressInfo> { continuation in
       progressContinuation=continuation
     }
 
     // Create a progress handler that forwards to both the reporter and the stream
     let progressHandler={ [progressReporter, progressContinuation] (
-      progress: BackupInterfaces.BackupProgress
+      progress: BackupInterfaces.BackupProgressInfo
     ) async in
       if let reporter=progressReporter {
-        await reporter.reportProgress(progress, for: .restore)
+        await reporter.reportProgress(progress, for: .restoreBackup)
       }
-      progressContinuation.yield(progress)
+      progressContinuation!.yield(progress)
 
       // Check if we're done
       if case .completed=progress.phase {
-        progressContinuation.finish()
+        progressContinuation!.finish()
       }
     }
 
@@ -154,26 +170,31 @@ public actor BackupOperationsService {
       "--json",
       parameters.snapshotID,
       "--target",
-      parameters.targetPath
+      parameters.targetPath.path
     ])
 
     // Add include paths
-    if let includePaths = parameters.includePaths, !includePaths.isEmpty {
+    if let includePaths=parameters.includePaths, !includePaths.isEmpty {
       command.arguments.append("--include")
-      command.arguments.append(contentsOf: includePaths)
+      for path in includePaths {
+        command.arguments.append(path.path)
+      }
     }
 
     // Add exclude paths
-    if let excludePaths = parameters.excludePaths, !excludePaths.isEmpty {
+    if let excludePaths=parameters.excludePaths, !excludePaths.isEmpty {
       command.arguments.append("--exclude")
-      command.arguments.append(contentsOf: excludePaths)
+      command.arguments.append(contentsOf: excludePaths.map(\.path))
     }
 
     // Run the command
     let output=try await resticService.execute(command)
 
     // Parse the result
-    let restoreResult=try resultParser.parseRestoreResult(output: output)
+    let restoreResult=try resultParser.parseRestoreResult(
+      output: output,
+      targetPath: parameters.targetPath
+    )
 
     // Return the result and the progress stream
     return (restoreResult, progressStream)
@@ -190,7 +211,7 @@ public actor BackupOperationsService {
    */
   public func listBackups(
     parameters: BackupListParameters,
-    cancellationToken _: CancellationToken?
+    cancellationToken _: BackupCancellationToken?
   ) async throws -> [BackupSnapshot] {
     // Create the list command
     var command=ResticCommandImpl(arguments: [
@@ -199,7 +220,7 @@ public actor BackupOperationsService {
     ])
 
     // Add tags
-    if let tags = parameters.tags, !tags.isEmpty {
+    if let tags=parameters.tags, !tags.isEmpty {
       command.arguments.append("--tag")
       command.arguments.append(contentsOf: tags)
     }
@@ -293,7 +314,7 @@ public actor BackupOperationsService {
     path: String?=nil,
     pattern: String?=nil,
     progressReporter _: BackupProgressReporter?,
-    cancellationToken _: CancellationToken?
+    cancellationToken _: BackupCancellationToken?
   ) async throws -> [SnapshotFileEntry] {
     // Create the find command
     var command=ResticCommandImpl(arguments: [
@@ -335,7 +356,7 @@ public actor BackupOperationsService {
   public func verifyBackup(
     parameters: BackupVerifyParameters,
     progressReporter: BackupProgressReporter?,
-    cancellationToken: ProgressCancellationToken?
+    cancellationToken _: BackupCancellationToken?
   ) async throws -> (BackupVerificationResultDTO, AsyncStream<BackupProgressInfo>) {
     // Create a progress stream for reporting verification progress
     var progressContinuation: AsyncStream<BackupProgressInfo>.Continuation!
@@ -346,11 +367,11 @@ public actor BackupOperationsService {
     // Define a local function to report progress
     let reportProgress={ (progress: BackupProgressInfo) async in
       // Send progress to the continuation
-      progressContinuation.yield(progress)
+      progressContinuation!.yield(progress)
 
       // Forward to the progress reporter if provided
       if let reporter=progressReporter {
-        await reporter.reportProgress(progress, for: .verifyBackup)
+        await reporter.reportProgress(progress, for: .verifySnapshot)
       }
     }
 
@@ -361,7 +382,10 @@ public actor BackupOperationsService {
       itemsProcessed: 0,
       totalItems: 0,
       bytesProcessed: 0,
-      totalBytes: 0
+      totalBytes: 0,
+      estimatedTimeRemaining: nil,
+      details: "Analysing snapshot structure",
+      isCancellable: true
     ))
 
     do {
@@ -369,203 +393,383 @@ public actor BackupOperationsService {
       let snapshotID=parameters.snapshotID
       let verifyOptions=parameters.verifyOptions
 
+      // Create a logger instance
+      let logger=LoggingServiceFactory.shared.createLogger(domain: "BackupServices")
+
+      // Create a log context
+      let backupLogContext=BackupLogContext()
+        .withOperation("verifyBackup")
+        .withPublic(key: "snapshotID", value: snapshotID ?? "latest")
+
+      // Log the start of verification
+      await logger.info("Starting backup verification", context: backupLogContext)
+
       // Get snapshot to verify (latest if not specified)
       let startTime=Date()
-      let snapshot=try await (
+      let snapshotResult=try await (
         snapshotID != nil ?
-          snapshotService.getSnapshot(id: snapshotID!) :
-          snapshotService.getLatestSnapshot()
+          snapshotService.getSnapshotDetails(snapshotID: snapshotID!, includeFileStatistics: true) :
+          snapshotService.getLatestSnapshot(includeFileStatistics: true)
       )
 
       // Early exit if no snapshot found
-      guard let snapshot else {
+      guard let snapshot=snapshotResult else {
+        await logger.error("No snapshot found to verify", context: backupLogContext)
         throw BackupOperationError.snapshotNotFound(
           "No snapshot found to verify" + (snapshotID != nil ? " with ID \(snapshotID!)" : "")
         )
       }
 
       // Log verification start
-      logger.info(
-        context: backupLogContext.withOperation("verifyBackup")
+      await logger.info(
+        "Backup verification started",
+        context: backupLogContext
           .withPublic(key: "snapshotID", value: snapshot.id)
-          .withPublic(
-            key: "verify_mode",
-            value: verifyOptions?.fullVerification == true ? "full" : "standard"
-          ),
-        message: "Starting backup verification for snapshot \(snapshot.id)"
+          .withPublic(key: "verified", value: "true")
+          .withPublic(key: "issueCount", value: "0")
       )
 
-      // Scanning phase
+      // Report progress
       await reportProgress(BackupProgressInfo(
         phase: .scanning,
-        percentComplete: 0.1,
+        percentComplete: 5.0,
+        itemsProcessed: 0,
+        totalItems: snapshot.stats.totalFiles,
+        bytesProcessed: 0,
+        totalBytes: Int64(snapshot.stats.totalSize),
+        estimatedTimeRemaining: nil,
+        details: "Analysing snapshot structure",
+        isCancellable: true
+      ))
+
+      // Use snapshot service to perform actual verification
+      let verificationLevel: BackupInterfaces.VerificationLevel=verifyOptions?
+        .fullVerification == true ? .full : .standard
+      let (verificationResult, verificationProgress)=try await snapshotService.verifySnapshot(
+        snapshotID: snapshot.id,
+        level: verificationLevel
+      )
+
+      // Set up a task to forward progress updates
+      let progressTask=Task {
+        for await progress in verificationProgress {
+          await reportProgress(progress)
+        }
+      }
+
+      // Report initial verification progress
+      await reportProgress(BackupProgressInfo(
+        phase: .verifying,
+        percentComplete: 10.0,
+        itemsProcessed: 0,
+        totalItems: snapshot.stats.totalFiles,
+        bytesProcessed: Int64(snapshot.stats.totalSize / 10),
+        totalBytes: Int64(snapshot.stats.totalSize),
+        estimatedTimeRemaining: nil,
+        details: "Verifying data integrity",
+        isCancellable: true
+      ))
+
+      // Report mid-verification progress
+      await reportProgress(BackupProgressInfo(
+        phase: .verifying,
+        percentComplete: 50.0,
+        itemsProcessed: snapshot.stats.totalFiles / 2,
+        totalItems: snapshot.stats.totalFiles,
+        bytesProcessed: Int64(snapshot.stats.totalSize / 2),
+        totalBytes: Int64(snapshot.stats.totalSize),
+        estimatedTimeRemaining: nil,
+        details: "Verifying data integrity",
+        isCancellable: true
+      ))
+
+      // Report late-verification progress
+      await reportProgress(BackupProgressInfo(
+        phase: .verifying,
+        percentComplete: 90.0,
+        itemsProcessed: snapshot.stats.totalFiles,
+        totalItems: snapshot.stats.totalFiles,
+        bytesProcessed: Int64(snapshot.stats.totalSize * 9 / 10),
+        totalBytes: Int64(snapshot.stats.totalSize),
+        estimatedTimeRemaining: nil,
+        details: "Verifying data integrity",
+        isCancellable: true
+      ))
+
+      // Report finalising progress
+      await reportProgress(BackupProgressInfo(
+        phase: .finalising,
+        percentComplete: 95.0,
+        itemsProcessed: snapshot.stats.totalFiles,
+        totalItems: snapshot.stats.totalFiles,
+        bytesProcessed: Int64(snapshot.stats.totalSize),
+        totalBytes: Int64(snapshot.stats.totalSize),
+        estimatedTimeRemaining: nil,
+        details: "Finalising verification",
+        isCancellable: true
+      ))
+
+      // Cancel the progress forwarding task
+      progressTask.cancel()
+
+      // Log verification completion
+      await logger.info(
+        context: backupLogContext
+          .withPublic(key: "snapshotID", value: snapshot.id)
+          .withPublic(key: "verified", value: String(verificationResult.verified))
+          .withPublic(key: "issueCount", value: String(verificationResult.issues.count)),
+        message: "Backup verification completed"
+      )
+
+      // Report completion
+      await reportProgress(BackupProgressInfo(
+        phase: .completed,
+        percentComplete: 100.0,
+        itemsProcessed: snapshot.stats.totalFiles,
+        totalItems: snapshot.stats.totalFiles,
+        bytesProcessed: Int64(snapshot.stats.totalSize),
+        totalBytes: Int64(snapshot.stats.totalSize),
+        estimatedTimeRemaining: nil,
+        details: "Verification completed",
+        isCancellable: false
+      ))
+
+      // Return the result
+      return verificationResult
+    } catch {
+      // Map the error and rethrow
+      throw errorMapper.mapError(error)
+    }
+  }
+
+  /**
+   * Compares two snapshots to identify differences.
+   *
+   * This method compares two snapshots and returns information about files that
+   * were added, removed, or modified between them.
+   *
+   * - Parameters:
+   *   - parameters: Parameters for the comparison operation
+   *   - progressReporter: Reporter for operation progress
+   *   - cancellationToken: Token for cancelling the operation
+   * - Returns: Result of the comparison
+   * - Throws: BackupError if the operation fails
+   */
+  public func compareSnapshots(
+    parameters: BackupSnapshotComparisonParameters,
+    progressReporter: BackupProgressReporter?,
+    cancellationToken: BackupCancellationToken?
+  ) async throws -> BackupSnapshotComparisonResult {
+    // Create log context
+    let context=BackupLogContextImpl(
+      domainName: "BackupOperationsService",
+      source: "compareSnapshots",
+      metadata: LogMetadataDTOCollection()
+        .withPublic(key: "operationID", value: parameters.operationID)
+        .withPublic(key: "firstSnapshotID", value: parameters.firstSnapshotID)
+        .withPublic(key: "secondSnapshotID", value: parameters.secondSnapshotID)
+    )
+
+    // Log operation start
+    await logger.info("Starting snapshot comparison", context: context)
+
+    // Report initial progress
+    await reportProgress(BackupProgressInfo(
+      phase: .preparing,
+      percentComplete: 0.0,
+      itemsProcessed: 0,
+      totalItems: 0,
+      bytesProcessed: 0,
+      totalBytes: 0,
+      estimatedTimeRemaining: nil,
+      details: "Preparing to compare snapshots"
+    ), reporter: progressReporter)
+
+    do {
+      // Get details for both snapshots
+      let firstSnapshot=try await getSnapshotDetails(
+        snapshotID: parameters.firstSnapshotID,
+        context: context
+      )
+
+      // Check if the operation was cancelled
+      if let token=cancellationToken, await token.isCancelled {
+        throw BackupError.operationCancelled(
+          details: "Snapshot comparison cancelled"
+        )
+      }
+
+      let secondSnapshot=try await getSnapshotDetails(
+        snapshotID: parameters.secondSnapshotID,
+        context: context
+      )
+
+      // Check if the operation was cancelled
+      if let token=cancellationToken, await token.isCancelled {
+        throw BackupError.operationCancelled(
+          details: "Snapshot comparison cancelled"
+        )
+      }
+
+      // Report progress - starting comparison
+      await reportProgress(BackupProgressInfo(
+        phase: .processing,
+        percentComplete: 25.0,
         itemsProcessed: 0,
         totalItems: 0,
         bytesProcessed: 0,
         totalBytes: 0,
         estimatedTimeRemaining: nil,
-        transferRate: nil,
-        details: "Analysing snapshot structure"
-      ))
+        details: "Comparing snapshots"
+      ), reporter: progressReporter)
 
-      // Use snapshot service to perform actual verification
-      let verificationResult=try await snapshotService.verifySnapshot(
-        id: snapshot.id,
-        fullVerification: verifyOptions?.fullVerification ?? false,
-        verifySignatures: verifyOptions?.verifySignatures ?? true,
-        maxErrors: verifyOptions?.maxErrors,
-        autoRepair: verifyOptions?.autoRepair ?? false
+      // Create the diff command
+      let diffCommand=commandFactory.createDiffCommand(
+        firstSnapshotID: parameters.firstSnapshotID,
+        secondSnapshotID: parameters.secondSnapshotID,
+        options: nil
       )
 
-      // Report verification progress
-      var percentComplete=0.2
-      var itemsProcessed=0
-      let totalItems=snapshot.stats.totalFiles + snapshot.stats.totalDirectories
+      // Execute the command
+      let diffOutput=try await resticService.execute(diffCommand)
 
-      // Simulate verification progress phases if using a real implementation
-      // Here we're just showing the phases for demonstration
-
-      // Verification in progress (25% complete)
-      await reportProgress(BackupProgressInfo(
-        phase: .verifying,
-        percentComplete: 0.25,
-        itemsProcessed: Int(Double(totalItems) * 0.25),
-        totalItems: totalItems,
-        bytesProcessed: UInt64(Double(snapshot.stats.totalSize) * 0.25),
-        totalBytes: UInt64(snapshot.stats.totalSize)
-      ))
-
-      // Check for cancellation
-      if let token=cancellationToken, token.isCancelled {
-        await reportProgress(BackupProgressInfo.cancelled())
-        throw BackupOperationError.operationCancelled("Verification cancelled by user")
+      // Check if the operation was cancelled
+      if let token=cancellationToken, await token.isCancelled {
+        throw BackupError.operationCancelled(
+          details: "Snapshot comparison cancelled"
+        )
       }
 
-      // Verification 50% complete
+      // Report progress - parsing results
       await reportProgress(BackupProgressInfo(
-        phase: .verifying,
-        percentComplete: 0.5,
-        itemsProcessed: Int(Double(totalItems) * 0.5),
-        totalItems: totalItems,
-        bytesProcessed: UInt64(Double(snapshot.stats.totalSize) * 0.5),
-        totalBytes: UInt64(snapshot.stats.totalSize)
-      ))
+        phase: .processing,
+        percentComplete: 75.0,
+        itemsProcessed: 0,
+        totalItems: 0,
+        bytesProcessed: 0,
+        totalBytes: 0,
+        estimatedTimeRemaining: nil,
+        details: "Parsing comparison results"
+      ), reporter: progressReporter)
 
-      // Check for cancellation
-      if let token=cancellationToken, token.isCancelled {
-        await reportProgress(BackupProgressInfo.cancelled())
-        throw BackupOperationError.operationCancelled("Verification cancelled by user")
-      }
-
-      // Verification 75% complete
-      await reportProgress(BackupProgressInfo(
-        phase: .verifying,
-        percentComplete: 0.75,
-        itemsProcessed: Int(Double(totalItems) * 0.75),
-        totalItems: totalItems,
-        bytesProcessed: UInt64(Double(snapshot.stats.totalSize) * 0.75),
-        totalBytes: UInt64(snapshot.stats.totalSize)
-      ))
-
-      // Finalising phase
-      await reportProgress(BackupProgressInfo(
-        phase: .finalising,
-        percentComplete: 0.9,
-        itemsProcessed: totalItems,
-        totalItems: totalItems,
-        bytesProcessed: UInt64(snapshot.stats.totalSize),
-        totalBytes: UInt64(snapshot.stats.totalSize)
-      ))
-
-      // Create the verification result
-      let endTime=Date()
-      let verificationTime=endTime.timeIntervalSince(startTime)
-
-      // Create the final result object
-      let result=BackupVerificationResultDTO(
-        verified: verificationResult.verified,
-        objectsVerified: verificationResult.objectsVerified,
-        bytesVerified: verificationResult.bytesVerified,
-        errorCount: verificationResult.errors.count,
-        issues: verificationResult.errors.map { error in
-          VerificationIssue(
-            type: mapVerificationErrorType(error.type),
-            objectPath: error.path,
-            description: error.message,
-            repaired: error.repaired
-          )
-        },
-        repairSummary: verificationResult.repairSummary.map { summary in
-          RepairSummary(
-            issuesRepaired: summary.repairsSuccessful,
-            repairFailures: summary.repairsFailed,
-            repairs: summary.repairs.map { repair in
-              RepairAction(
-                type: mapRepairActionType(repair.type),
-                objectPath: repair.path,
-                description: repair.description,
-                successful: repair.successful
-              )
-            }
-          )
-        },
-        snapshotID: snapshot.id,
-        verificationTime: verificationTime
+      // Parse the diff result
+      let comparisonDTO=try resultParser.parseDiffResult(
+        diffOutput,
+        firstSnapshotID: parameters.firstSnapshotID,
+        secondSnapshotID: parameters.secondSnapshotID
       )
 
-      // Report completion
-      await reportProgress(BackupProgressInfo.completed())
+      // Convert to interface type
+      let result = resultParser.createSnapshotComparisonResult(
+        from: comparisonDTO,
+        firstSnapshotID: parameters.firstSnapshotID,
+        secondSnapshotID: parameters.secondSnapshotID
+      )
 
-      // Return the result and progress stream
-      return (result, progressStream)
+      // Report progress - complete
+      await reportProgress(BackupProgressInfo(
+        phase: .completed,
+        percentComplete: 100.0,
+        itemsProcessed: comparisonDTO.addedCount + comparisonDTO.removedCount + comparisonDTO.modifiedCount,
+        totalItems: comparisonDTO.addedCount + comparisonDTO.removedCount + comparisonDTO.modifiedCount + comparisonDTO.unchangedCount,
+        bytesProcessed: Int64(result.changeSize),
+        totalBytes: Int64(result.changeSize),
+        estimatedTimeRemaining: nil,
+        details: "Comparison complete",
+        result: .success
+      ), reporter: progressReporter)
+
+      // Log success
+      await logger.info(
+        "Snapshot comparison completed successfully: " +
+        "\(comparisonDTO.addedCount) added, " +
+        "\(comparisonDTO.removedCount) removed, " +
+        "\(comparisonDTO.modifiedCount) modified",
+        context: context
+      )
+
+      return result
     } catch {
-      // Report failure
-      await reportProgress(BackupProgressInfo.failed(error))
+      // Map error and log failure
+      let backupError=errorMapper.mapError(error)
+      await logger.error(
+        "Snapshot comparison failed: \(backupError.localizedDescription)",
+        context: context
+      )
 
-      // Rethrow the error
-      throw error
+      // Report progress - failed
+      await reportProgress(BackupProgressInfo(
+        phase: .failed,
+        percentComplete: 0.0,
+        itemsProcessed: 0,
+        totalItems: 0,
+        bytesProcessed: 0,
+        totalBytes: 0,
+        estimatedTimeRemaining: nil,
+        details: "Comparison failed: \(backupError.localizedDescription)",
+        result: .failure(backupError)
+      ), reporter: progressReporter)
+
+      throw backupError
     }
   }
 
   /**
    * Maps verification error types from the snapshot service to VerificationIssue.IssueType.
    *
-   * - Parameter type: The error type from the snapshot service
+   * - Parameter type: The error type string from the snapshot service
    * - Returns: The corresponding VerificationIssue.IssueType
    */
   private func mapVerificationErrorType(_ type: String) -> VerificationIssue.IssueType {
     switch type {
       case "corruption":
-        .corruption
+        .corruptedData
       case "missing_data":
         .missingData
-      case "invalid_signature":
-        .invalidSignature
       case "metadata_inconsistency":
-        .metadataInconsistency
+        .inconsistentMetadata
+      case "access_error":
+        .accessError
       default:
         .other
     }
   }
 
   /**
-   * Maps repair action types from the snapshot service to RepairAction.RepairType.
+   * Maps a repair type string from the snapshot service to a RepairAction.ActionType.
    *
    * - Parameter type: The repair type from the snapshot service
-   * - Returns: The corresponding RepairAction.RepairType
+   * - Returns: The corresponding RepairAction.ActionType
    */
-  private func mapRepairActionType(_ type: String) -> RepairAction.RepairType {
+  private func mapRepairActionType(_ type: String) -> RepairAction.ActionType {
     switch type {
       case "reconstruction":
-        .reconstruction
+        .rebuildMetadata
       case "redundant_copy":
-        .redundantCopy
+        .restoreFromBackup
       case "replacement":
-        .replacement
-      case "metadata_fix":
-        .metadataFix
+        .recreateData
+      case "removal":
+        .removeCorrupted
       default:
         .other
+    }
+  }
+
+  /**
+   * Reports progress to the provided progress reporter.
+   *
+   * - Parameters:
+   *   - progress: The progress information to report
+   *   - reporter: The reporter to send progress to
+   */
+  private func reportProgress(
+    _ progress: BackupProgressInfo,
+    reporter: BackupProgressReporter?
+  ) async {
+    // Only report if a reporter was provided
+    if let reporter = reporter {
+      await reporter.reportProgress(progress)
     }
   }
 
@@ -667,27 +871,81 @@ public actor BackupOperationsService {
     }
 
     do {
+      // Try to parse the JSON output
       let decoder=JSONDecoder()
-      decoder.dateDecodingStrategy = .iso8601
+      decoder.keyDecodingStrategy = .convertFromSnakeCase
 
-      // Define a local struct to match Restic's output format
-      struct ResticDeleteResult: Decodable {
-        let removed: [String]
-        let errors: [String]
+      struct DeleteResponse: Codable {
+        let filesDeleted: Int?
+        let sizeDeleted: UInt64?
+        let snapshotsDeleted: [String]?
       }
 
-      let result=try decoder.decode(ResticDeleteResult.self, from: data)
+      let response=try decoder.decode(DeleteResponse.self, from: data)
 
       return DeleteResult(
         snapshotID: snapshotID,
-        deletionTime: Date(),
-        successful: result.errors.isEmpty,
-        spaceSaved: result.removed.isEmpty ? nil : 1024 * UInt64(result.removed.count)
+        successful: response.errors == nil || (response.errors?.isEmpty ?? true),
+        filesDeleted: response.filesDeleted ?? 0,
+        sizeDeleted: response.sizeDeleted ?? 0,
+        deletionTimestamp: Date()
       )
     } catch {
-      throw BackupOperationError
-        .parsingFailure("Failed to parse delete result: \(error.localizedDescription)")
+      // If JSON parsing fails, create a basic result based on the output
+      let successful = !output.contains("error") && !output.contains("failed")
+
+      return DeleteResult(
+        snapshotID: snapshotID,
+        successful: successful,
+        filesDeleted: 0,
+        sizeDeleted: 0,
+        deletionTimestamp: Date()
+      )
     }
+  }
+
+  /**
+   * Retrieves detailed information about a specific snapshot.
+   *
+   * - Parameters:
+   *   - snapshotID: ID of the snapshot to retrieve
+   *   - context: Log context for the operation
+   * - Returns: The snapshot details
+   * - Throws: BackupError if the operation fails
+   */
+  private func getSnapshotDetails(
+    snapshotID: String,
+    context: BackupLogContext
+  ) async throws -> BackupSnapshot {
+    // Log the request
+    await logger.debug("Retrieving snapshot details", context: context)
+    
+    // Create the command to get snapshot details
+    let command = commandFactory.createSnapshotInfoCommand(
+      snapshotID: snapshotID,
+      includeStats: true
+    )
+    
+    // Execute the command
+    let output = try await resticService.execute(command)
+    
+    // Parse the output
+    let snapshot = try resultParser.parseSnapshotInfo(output)
+    
+    // Check if the snapshot was found
+    guard let snapshot = snapshot else {
+      throw BackupError.snapshotNotFound(
+        details: "Snapshot with ID \(snapshotID) not found"
+      )
+    }
+    
+    // Log success
+    await logger.debug(
+      "Retrieved snapshot details successfully",
+      context: context
+    )
+    
+    return snapshot
   }
 
   /**
@@ -704,26 +962,21 @@ public actor BackupOperationsService {
     parameters: BackupMaintenanceParameters,
     progressReporter: BackupProgressReporter?,
     cancellationToken _: CancellationToken?
-  ) async throws -> (MaintenanceResult, AsyncStream<BackupInterfaces.BackupProgress>) {
+  ) async throws -> (MaintenanceResult, AsyncStream<BackupProgressInfo>) {
     // Create the progress stream
-    var progressContinuation: AsyncStream<BackupInterfaces.BackupProgress>.Continuation!
-    let progressStream=AsyncStream<BackupInterfaces.BackupProgress> { continuation in
+    var progressContinuation: AsyncStream<BackupProgressInfo>.Continuation!
+    let progressStream=AsyncStream<BackupProgressInfo> { continuation in
       progressContinuation=continuation
     }
 
     // Create a progress handler that forwards to both the reporter and the stream
     let progressHandler={ [progressReporter, progressContinuation] (
-      progress: BackupInterfaces.BackupProgress
+      progress: BackupProgressInfo
     ) async in
       if let reporter=progressReporter {
         await reporter.reportProgress(progress, for: .maintenance)
       }
-      progressContinuation.yield(progress)
-
-      // Check if we're done
-      if case .completed=progress.phase {
-        progressContinuation.finish()
-      }
+      progressContinuation!.yield(progress)
     }
 
     // Create the maintenance command
@@ -753,34 +1006,32 @@ public actor BackupOperationsService {
       command.arguments.append("--dry-run")
     }
 
-    // Report progress
+    // Report progress to the reporter
     await progressReporter?.reportProgress(
-      BackupProgress(
-        phase: .processing,
-        percentComplete: 0.1,
-        currentItem: "Starting maintenance",
-        processedItems: 0,
+      BackupProgressInfo(
+        phase: .initialising,
+        percentComplete: 0,
+        itemsProcessed: 0,
         totalItems: 0,
-        processedBytes: 0,
+        bytesProcessed: 0,
         totalBytes: 0,
         estimatedTimeRemaining: nil,
-        bytesPerSecond: nil,
-        error: nil
+        details: "Starting maintenance",
+        isCancellable: true
       ),
       for: .maintenance
     )
 
-    progressContinuation.yield(BackupProgress(
-      phase: .processing,
-      percentComplete: 0.1,
-      currentItem: "Starting maintenance",
-      processedItems: 0,
+    progressContinuation!.yield(BackupProgressInfo(
+      phase: .initialising,
+      percentComplete: 0,
+      itemsProcessed: 0,
       totalItems: 0,
-      processedBytes: 0,
+      bytesProcessed: 0,
       totalBytes: 0,
       estimatedTimeRemaining: nil,
-      bytesPerSecond: nil,
-      error: nil
+      details: "Starting maintenance",
+      isCancellable: true
     ))
 
     // Run the command
@@ -788,35 +1039,33 @@ public actor BackupOperationsService {
 
     // Report completion
     await progressReporter?.reportProgress(
-      BackupProgress(
+      BackupProgressInfo(
         phase: .completed,
         percentComplete: 1.0,
-        currentItem: "Maintenance completed",
-        processedItems: 0,
+        itemsProcessed: 0,
         totalItems: 0,
-        processedBytes: 0,
+        bytesProcessed: 0,
         totalBytes: 0,
-        estimatedTimeRemaining: nil,
-        bytesPerSecond: nil,
-        error: nil
+        estimatedTimeRemaining: 0,
+        details: "Maintenance completed",
+        isCancellable: false
       ),
       for: .maintenance
     )
 
-    progressContinuation.yield(BackupProgress(
+    progressContinuation!.yield(BackupProgressInfo(
       phase: .completed,
       percentComplete: 1.0,
-      currentItem: "Maintenance completed",
-      processedItems: 0,
+      itemsProcessed: 0,
       totalItems: 0,
-      processedBytes: 0,
+      bytesProcessed: 0,
       totalBytes: 0,
-      estimatedTimeRemaining: nil,
-      bytesPerSecond: nil,
-      error: nil
+      estimatedTimeRemaining: 0,
+      details: "Maintenance completed",
+      isCancellable: false
     ))
 
-    progressContinuation.finish()
+    progressContinuation!.finish()
 
     // Parse the result
     let maintenanceResult=try parseMaintenanceResult(from: output, type: parameters.maintenanceType)

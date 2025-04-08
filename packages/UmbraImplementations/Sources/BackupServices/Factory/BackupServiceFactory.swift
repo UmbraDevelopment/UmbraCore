@@ -10,8 +10,17 @@ import ResticServices
  * This factory provides methods for creating properly configured
  * backup and snapshot services with appropriate dependencies,
  * following the Alpha Dot Five architecture principles.
+ *
+ * As an actor, this factory provides thread safety for service creation
+ * and maintains a cache of created services for improved performance.
  */
-public struct BackupServiceFactory {
+public actor BackupServiceFactory {
+  /// Shared singleton instance
+  public static let shared=BackupServiceFactory()
+
+  /// Cache of created services by repository path
+  private var serviceCache: [String: BackupServiceProtocol]=[:]
+
   /// Creates a new backup service factory
   public init() {}
 
@@ -23,13 +32,20 @@ public struct BackupServiceFactory {
    *   - resticService: The Restic service to use for backend operations
    *   - logger: Logger for operation tracking
    *   - repositoryInfo: Repository information
+   *   - useCache: Whether to cache and reuse the created service
    * - Returns: A configured backup service
    */
   public func createBackupService(
     resticService: ResticServiceProtocol,
     logger: any LoggingProtocol,
-    repositoryInfo: RepositoryInfo
-  ) -> BackupServiceProtocol {
+    repositoryInfo: RepositoryInfo,
+    useCache: Bool=true
+  ) async -> BackupServiceProtocol {
+    // Check cache first if enabled
+    if useCache, let cachedService=serviceCache[repositoryInfo.location] {
+      return cachedService
+    }
+
     // Create dependencies
     let errorMapper=BackupErrorMapper()
     let cancellationHandler=CancellationHandler()
@@ -52,12 +68,19 @@ public struct BackupServiceFactory {
       errorMapper: errorMapper
     )
 
-    // Return the actor-based implementation
-    return BackupServicesActor(
+    // Create the actor-based implementation
+    let service=BackupServicesActor(
       resticService: resticService,
       logger: logger,
       repositoryInfo: repositoryInfo
     )
+
+    // Cache the service if enabled
+    if useCache {
+      serviceCache[repositoryInfo.location]=service
+    }
+
+    return service
   }
 
   /**
@@ -68,6 +91,7 @@ public struct BackupServiceFactory {
    *   - logger: Logger for operation tracking
    *   - repositoryPath: Path to the repository
    *   - repositoryPassword: Optional repository password
+   *   - useCache: Whether to cache and reuse the created service
    * - Returns: A configured backup service
    * - Throws: Error if Restic service creation fails
    */
@@ -75,8 +99,14 @@ public struct BackupServiceFactory {
     resticServiceFactory: ResticServiceFactory,
     logger: any LoggingProtocol,
     repositoryPath: String,
-    repositoryPassword: String?=nil
-  ) throws -> BackupServiceProtocol {
+    repositoryPassword: String?=nil,
+    useCache: Bool=true
+  ) async throws -> BackupServiceProtocol {
+    // Check cache first if enabled
+    if useCache, let cachedService=serviceCache[repositoryPath] {
+      return cachedService
+    }
+
     // Create Restic service
     let resticService=try resticServiceFactory.createResticService(
       executablePath: "/usr/local/bin/restic",
@@ -93,10 +123,35 @@ public struct BackupServiceFactory {
     )
 
     // Create backup service using Alpha Dot Five architecture
-    return createBackupService(
+    return await createBackupService(
       resticService: resticService,
       logger: logger,
-      repositoryInfo: repositoryInfo
+      repositoryInfo: repositoryInfo,
+      useCache: useCache
     )
+  }
+
+  /**
+   * Clears the service cache
+   *
+   * This can be useful when testing or when services need to be recreated
+   * with fresh configurations.
+   */
+  public func clearCache() {
+    serviceCache.removeAll()
+  }
+
+  /**
+   * Removes a specific service from the cache
+   *
+   * - Parameter repositoryPath: The repository path associated with the service to remove
+   * - Returns: True if a service was removed, false if no service was found
+   */
+  public func removeFromCache(repositoryPath: String) -> Bool {
+    if serviceCache[repositoryPath] != nil {
+      serviceCache[repositoryPath]=nil
+      return true
+    }
+    return false
   }
 }
