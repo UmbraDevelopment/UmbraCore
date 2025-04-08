@@ -7,6 +7,8 @@ umbra_swift_library(
         "//packages/UmbraCoreTypes/Sources/CoreDTOs",
         "//packages/UmbraCoreTypes/Sources/DomainSecurityTypes",
         "//packages/UmbraCoreTypes/Sources/ErrorCoreTypes",
+        "//packages/UmbraInterfaces/Sources/FileSystemInterfaces",
+        "//packages/UmbraCoreTypes/Sources/FileSystemTypes",
         "//packages/UmbraInterfaces/Sources/LoggingInterfaces",
         "//packages/UmbraCoreTypes/Sources/LoggingTypes",
         "//packages/UmbraInterfaces/Sources/SecurityCoreInterfaces",

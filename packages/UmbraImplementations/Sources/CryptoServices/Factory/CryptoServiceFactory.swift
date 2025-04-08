@@ -8,7 +8,6 @@ import Foundation
 import LoggingInterfaces
 import LoggingServices
 import SecurityInterfaces
-import SecurityProviderRegistryInterfaces
 import SecurityProviders
 import SecureStorageImplementations
 import APIServices

@@ -8,5 +8,7 @@ umbra_swift_library(
         "//packages/UmbraInterfaces/Sources/LoggingInterfaces",
         "//packages/UmbraImplementations/Sources/LoggingAdapters",
         "//packages/UmbraCoreTypes/Sources/LoggingTypes",
+        "//packages/UmbraInterfaces/Sources/FileSystemInterfaces",
+        "//packages/UmbraCoreTypes/Sources/FileSystemTypes",
     ],
 )

@@ -1,4 +1,3 @@
-import Foundation
 import LoggingInterfaces
 import LoggingTypes
 import RepositoryInterfaces
@@ -56,7 +55,6 @@ extension RepositoryServiceImpl {
       throw RepositoryError.notFound
     }
 
-    // Repository is already a RepositoryLockingProtocol by definition
     do {
       try await repository.unlock()
       await logger.info("Repository unlocked successfully", context: context)
@@ -65,7 +63,7 @@ extension RepositoryServiceImpl {
         "Failed to unlock repository: \(error.localizedDescription)",
         context: context
       )
-      throw error
+      throw RepositoryError.invalidOperation
     }
   }
 }

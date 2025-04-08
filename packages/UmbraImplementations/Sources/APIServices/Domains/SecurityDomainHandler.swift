@@ -1,9 +1,10 @@
 import APIInterfaces
 import CoreSecurityTypes
 import CryptoTypes
+import DateTimeTypes
 import DomainSecurityTypes
 import ErrorCoreTypes
-import Foundation
+import FileSystemTypes
 import KeychainInterfaces
 import LoggingInterfaces
 import LoggingTypes
@@ -49,10 +50,10 @@ public actor SecurityDomainHandler: DomainHandler {
   private let logger: (any LoggingProtocol)?
 
   /// Cache for key metadata to improve performance of repeated operations
-  private var keyMetadataCache: [String: (KeyMetadata, Date)] = [:]
+  private var keyMetadataCache: [String: (KeyMetadata, DateTimeDTO)] = [:]
 
   /// Cache time-to-live in seconds
-  private let cacheTTL: TimeInterval = 60 // 1 minute
+  private let cacheTTL: TimeIntervalDTO = TimeIntervalDTO.seconds(60) // 1 minute
 
   /**
    Initialises a new security domain handler.
@@ -185,7 +186,7 @@ public actor SecurityDomainHandler: DomainHandler {
             keyId: keyId,
             keyType: keyType,
             algorithm: op.algorithm ?? "AES",
-            creationDate: Date()
+            creationDate: DateTimeDTO.now()
           )
           cacheKeyMetadata(keyId: keyId, metadata: metadata)
         }
@@ -1063,21 +1064,21 @@ public actor SecurityDomainHandler: DomainHandler {
    */
   private func getCachedKeyMetadata(keyId: String) -> KeyMetadata? {
     if let (metadata, timestamp) = keyMetadataCache[keyId],
-       Date().timeIntervalSince(timestamp) < cacheTTL {
+       DateTimeDTO.now().timeIntervalSince(timestamp).seconds < cacheTTL.seconds {
       return metadata
     }
     return nil
   }
   
   /**
-   Caches key metadata for future use.
+   Adds or updates key metadata in the cache.
    
    - Parameters:
-     - keyId: The key identifier
-     - metadata: The key metadata to cache
+     - keyId: The key ID to cache
+     - metadata: The metadata to cache
    */
   private func cacheKeyMetadata(keyId: String, metadata: KeyMetadata) {
-    keyMetadataCache[keyId] = (metadata, Date())
+    keyMetadataCache[keyId] = (metadata, DateTimeDTO.now())
   }
   
   /**
@@ -1311,18 +1312,18 @@ public actor SecurityDomainHandler: DomainHandler {
    A type-safe wrapper for cryptographic material that can be safely passed across actor boundaries.
    */
   public struct SendableCryptoMaterial: Sendable, Equatable {
-    public let rawData: Data
-
+    public let rawData: SecureData
+    
+    public init(_ data: SecureData) {
+      self.rawData = data
+    }
+    
     public init(_ data: Data) {
-      rawData=data
+      self.rawData = SecureData(data)
     }
-
-    public init(_ bytes: [UInt8]) {
-      rawData=Data(bytes)
-    }
-
+    
     public init(_ string: String) {
-      rawData=Data(string.utf8)
+      self.rawData = SecureData(string.utf8)
     }
   }
 

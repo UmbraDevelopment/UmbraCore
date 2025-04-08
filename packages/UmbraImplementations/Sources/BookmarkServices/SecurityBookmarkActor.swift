@@ -3,7 +3,8 @@ import BookmarkModel
 import CoreDTOs
 import DomainSecurityTypes
 import ErrorCoreTypes
-import Foundation
+import FileSystemInterfaces
+import FileSystemTypes
 import LoggingInterfaces
 import LoggingTypes
 import SecurityCore
@@ -36,9 +37,12 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
 
   /// Secure storage service for handling bookmark data
   private let secureStorage: any SecureStorageProtocol
+  
+  /// File system service for handling file operations
+  private let fileSystemService: any FileSystemServiceProtocol
 
   /// Currently active security-scoped resources
-  private var activeResources: [URL: Int]=[:]
+  private var activeResources: [FilePath: Int] = [:]
 
   /**
    Creates a new security bookmark actor with dependencies injected.
@@ -46,14 +50,17 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
    - Parameters:
      - logger: The logger to use for operations
      - secureStorage: The secure storage service to use for bookmark data
+     - fileSystemService: The file system service to use for file operations
    */
   public init(
     logger: PrivacyAwareLoggingProtocol,
-    secureStorage: SecureStorageProtocol
+    secureStorage: SecureStorageProtocol,
+    fileSystemService: FileSystemServiceProtocol
   ) {
-    self.logger=logger
-    self.secureStorage=secureStorage
-    bookmarkLogger=BookmarkLogger(logger: logger)
+    self.logger = logger
+    self.secureStorage = secureStorage
+    self.fileSystemService = fileSystemService
+    bookmarkLogger = BookmarkLogger(logger: logger)
   }
 
   /**
@@ -74,38 +81,68 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
   public func createBookmark(
     for url: URL,
     withIdentifier storageIdentifier: String,
-    options: BookmarkCreationOptions?=nil
+    options: BookmarkCreationOptions? = nil
   ) async -> Result<Bool, UmbraErrors.Security.Bookmark> {
-    let context=BookmarkLogContext(
+    // Convert URL to FilePath
+    let filePath = FilePath(path: url.path)
+    
+    return await createBookmark(
+      for: filePath,
+      withIdentifier: storageIdentifier,
+      options: options
+    )
+  }
+  
+  /**
+   Creates a new security-scoped bookmark for the given file path.
+
+   This bookmark allows access to user-selected files and directories
+   even after the app is restarted, functioning similar to a capability
+   in capability-based security systems.
+
+   - Parameters:
+     - path: The file path to create a bookmark for
+     - storageIdentifier: The identifier to store the bookmark under
+     - options: Optional bookmark creation options
+
+   - Returns: A Result containing either success (Bool indicating if it was a new bookmark)
+     or a domain-specific error
+   */
+  public func createBookmark(
+    for path: FilePath,
+    withIdentifier storageIdentifier: String,
+    options: BookmarkCreationOptions? = nil
+  ) async -> Result<Bool, UmbraErrors.Security.Bookmark> {
+    let context = BookmarkLogContext(
       operation: "createBookmark",
       identifier: storageIdentifier,
       status: "started",
-      metadata: LogMetadataDTOCollection().withSensitive(key: "url", value: url.path)
+      metadata: LogMetadataDTOCollection().withSensitive(key: "path", value: path.path)
     )
 
     await bookmarkLogger.info("Creating security bookmark", context: context)
 
     // Create the bookmark data
-    let createResult=createBookmarkData(for: url, options: options)
+    let createResult = await createBookmarkData(for: path, options: options)
 
     switch createResult {
       case let .success(bookmarkData):
         // Convert Data to [UInt8]
-        let bookmarkBytes=[UInt8](bookmarkData)
+        let bookmarkBytes = [UInt8](bookmarkData)
 
         // Store the bookmark data securely
-        let storeResult=await secureStorage.storeData(
+        let storeResult = await secureStorage.storeData(
           bookmarkBytes,
           withIdentifier: storageIdentifier
         )
 
         switch storeResult {
           case .success:
-            let successContext=BookmarkLogContext(
+            let successContext = BookmarkLogContext(
               operation: "createBookmark",
               identifier: storageIdentifier,
               status: "success",
-              metadata: LogMetadataDTOCollection().withSensitive(key: "url", value: url.path)
+              metadata: LogMetadataDTOCollection().withSensitive(key: "path", value: path.path)
             )
 
             await bookmarkLogger.info(
@@ -115,11 +152,11 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
             return .success(true)
 
           case let .failure(error):
-            let errorContext=BookmarkLogContext(
+            let errorContext = BookmarkLogContext(
               operation: "createBookmark",
               identifier: storageIdentifier,
               status: "error",
-              metadata: LogMetadataDTOCollection().withSensitive(key: "url", value: url.path)
+              metadata: LogMetadataDTOCollection().withSensitive(key: "path", value: path.path)
             )
 
             await bookmarkLogger.logError(error, context: errorContext)
@@ -129,11 +166,11 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
         }
 
       case let .failure(error):
-        let errorContext=BookmarkLogContext(
+        let errorContext = BookmarkLogContext(
           operation: "createBookmark",
           identifier: storageIdentifier,
           status: "error",
-          metadata: LogMetadataDTOCollection().withSensitive(key: "url", value: url.path)
+          metadata: LogMetadataDTOCollection().withSensitive(key: "path", value: path.path)
         )
 
         await bookmarkLogger.logError(error, context: errorContext)
@@ -158,41 +195,66 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
     readOnly: Bool,
     storageIdentifier: String?
   ) async -> Result<String, UmbraErrors.Security.Bookmark> {
-    let identifier=storageIdentifier ?? UUID().uuidString
+    // Convert URL to FilePath
+    let filePath = FilePath(path: url.path)
+    
+    return await createBookmark(
+      for: filePath,
+      readOnly: readOnly,
+      storageIdentifier: storageIdentifier
+    )
+  }
+  
+  /**
+   Creates a security-scoped bookmark for the file path.
 
-    let context=BookmarkLogContext(
+   - Parameters:
+     - path: The file path to create a bookmark for
+     - readOnly: Whether the bookmark should be read-only
+     - storageIdentifier: Optional identifier for storing the bookmark data
+
+   - Returns: Result with storage identifier for the bookmark data or error
+   */
+  public func createBookmark(
+    for path: FilePath,
+    readOnly: Bool,
+    storageIdentifier: String?
+  ) async -> Result<String, UmbraErrors.Security.Bookmark> {
+    let identifier = storageIdentifier ?? UUID().uuidString
+
+    let context = BookmarkLogContext(
       operation: "createBookmark",
       identifier: identifier,
       status: "started",
-      metadata: LogMetadataDTOCollection().withSensitive(key: "url", value: url.path)
+      metadata: LogMetadataDTOCollection().withSensitive(key: "path", value: path.path)
     )
 
     await bookmarkLogger.info("Creating security bookmark", context: context)
 
     // Create options with the requested read-only setting
-    let options=BookmarkCreationOptions(readOnly: readOnly)
+    let options = BookmarkCreationOptions(readOnly: readOnly)
 
     // Create the bookmark data
-    let createResult=createBookmarkData(for: url, options: options)
+    let createResult = await createBookmarkData(for: path, options: options)
 
     switch createResult {
       case let .success(bookmarkData):
         // Convert Data to [UInt8]
-        let bookmarkBytes=[UInt8](bookmarkData)
+        let bookmarkBytes = [UInt8](bookmarkData)
 
         // Store the bookmark data securely
-        let storeResult=await secureStorage.storeData(
+        let storeResult = await secureStorage.storeData(
           bookmarkBytes,
           withIdentifier: identifier
         )
 
         switch storeResult {
           case .success:
-            let successContext=BookmarkLogContext(
+            let successContext = BookmarkLogContext(
               operation: "createBookmark",
               identifier: identifier,
               status: "success",
-              metadata: LogMetadataDTOCollection().withSensitive(key: "url", value: url.path)
+              metadata: LogMetadataDTOCollection().withSensitive(key: "path", value: path.path)
             )
 
             await bookmarkLogger.info(
@@ -202,11 +264,11 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
             return .success(identifier)
 
           case let .failure(error):
-            let errorContext=BookmarkLogContext(
+            let errorContext = BookmarkLogContext(
               operation: "createBookmark",
               identifier: identifier,
               status: "error",
-              metadata: LogMetadataDTOCollection().withSensitive(key: "url", value: url.path)
+              metadata: LogMetadataDTOCollection().withSensitive(key: "path", value: path.path)
             )
 
             await bookmarkLogger.logError(error, context: errorContext)
@@ -216,11 +278,11 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
         }
 
       case let .failure(error):
-        let errorContext=BookmarkLogContext(
+        let errorContext = BookmarkLogContext(
           operation: "createBookmark",
           identifier: identifier,
           status: "error",
-          metadata: LogMetadataDTOCollection().withSensitive(key: "url", value: url.path)
+          metadata: LogMetadataDTOCollection().withSensitive(key: "path", value: path.path)
         )
 
         await bookmarkLogger.logError(error, context: errorContext)
@@ -231,44 +293,29 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
   }
 
   /**
-   Creates bookmark data for a URL.
+   Creates bookmark data for a file path.
 
    - Parameters:
-     - url: The URL to create a bookmark for
+     - path: The file path to create a bookmark for
      - options: Options for creating the bookmark
 
    - Returns: A Result containing either the bookmark data or an error
    */
   private func createBookmarkData(
-    for url: URL,
+    for path: FilePath,
     options: BookmarkCreationOptions?
-  ) -> Result<Data, UmbraErrors.Security.Bookmark> {
+  ) async -> Result<Data, UmbraErrors.Security.Bookmark> {
     do {
       // Use the provided options or default to read-write
-      let bookmarkOptions=options ?? BookmarkCreationOptions.default
-
-      // Apply standard options plus any custom options
-      var creationOptions: URL.BookmarkCreationOptions=[]
-
-      if bookmarkOptions.readOnly {
-        creationOptions.insert(.securityScopeAllowOnlyReadAccess)
-      }
-
-      if let customOptions=bookmarkOptions.options {
-        creationOptions.formUnion(customOptions)
-      }
-
-      // Always include security scope
-      creationOptions.insert(.withSecurityScope)
-
-      // Create the bookmark data
-      let data=try url.bookmarkData(
-        options: creationOptions,
-        includingResourceValuesForKeys: nil,
-        relativeTo: nil
+      let bookmarkOptions = options ?? BookmarkCreationOptions.default
+      
+      // Create the bookmark data using our abstracted file system service
+      let bookmarkData = try await fileSystemService.createSecurityBookmark(
+        for: path,
+        readOnly: bookmarkOptions.readOnly
       )
-
-      return .success(data)
+      
+      return .success(bookmarkData)
     } catch {
       return .failure(
         .cannotCreateBookmark("Error creating bookmark data: \(error.localizedDescription)")
@@ -277,17 +324,17 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
   }
 
   /**
-   Resolves a security-scoped bookmark to its URL.
+   Resolves a security-scoped bookmark to its file path.
 
    - Parameters:
      - storageIdentifier: The identifier for the stored bookmark data
 
-   - Returns: Result with URL and staleness indicator or error
+   - Returns: Result with file path and staleness indicator or error
    */
   public func resolveBookmark(
     withIdentifier storageIdentifier: String
   ) async -> Result<(URL, Bool), UmbraErrors.Security.Bookmark> {
-    let context=BookmarkLogContext(
+    let context = BookmarkLogContext(
       operation: "resolveBookmark",
       identifier: storageIdentifier,
       status: "started"
@@ -296,30 +343,26 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
     await bookmarkLogger.info("Resolving security bookmark", context: context)
 
     // Retrieve the bookmark data
-    let retrieveResult=await secureStorage.retrieveData(withIdentifier: storageIdentifier)
+    let retrieveResult = await secureStorage.retrieveData(withIdentifier: storageIdentifier)
 
     switch retrieveResult {
       case let .success(bookmarkBytes):
         // Convert [UInt8] to Data
-        let bookmarkData=Data(bookmarkBytes)
+        let bookmarkData = Data(bookmarkBytes)
 
         do {
-          var isStale=false
-
-          // Resolve the bookmark data to a URL
-          let url=try URL(
-            resolvingBookmarkData: bookmarkData,
-            options: [.withSecurityScope],
-            relativeTo: nil,
-            bookmarkDataIsStale: &isStale
-          )
+          // Resolve the bookmark data to a file path using our file system service
+          let (filePath, isStale) = try await fileSystemService.resolveSecurityBookmark(bookmarkData)
+          
+          // Convert FilePath to URL for backward compatibility
+          let url = try await fileSystemService.pathToURL(filePath)
 
           if isStale {
-            let warningContext=BookmarkLogContext(
+            let warningContext = BookmarkLogContext(
               operation: "resolveBookmark",
               identifier: storageIdentifier,
               status: "warning",
-              metadata: LogMetadataDTOCollection().withSensitive(key: "url", value: url.path)
+              metadata: LogMetadataDTOCollection().withSensitive(key: "path", value: filePath.path)
             )
 
             await bookmarkLogger.warning(
@@ -328,12 +371,12 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
             )
           }
 
-          let successContext=BookmarkLogContext(
+          let successContext = BookmarkLogContext(
             operation: "resolveBookmark",
             identifier: storageIdentifier,
             status: "success",
             metadata: LogMetadataDTOCollection()
-              .withSensitive(key: "url", value: url.path)
+              .withSensitive(key: "path", value: filePath.path)
               .withPublic(key: "isStale", value: String(isStale))
           )
 
@@ -344,7 +387,7 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
           return .success((url, isStale))
 
         } catch {
-          let errorContext=BookmarkLogContext(
+          let errorContext = BookmarkLogContext(
             operation: "resolveBookmark",
             identifier: storageIdentifier,
             status: "error"
@@ -352,12 +395,12 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
 
           await bookmarkLogger.logError(error, context: errorContext)
           return .failure(
-            .invalidBookmark("Failed to resolve bookmark: \(error.localizedDescription)")
+            .invalidBookmark("Failed to resolve bookmark data: \(error.localizedDescription)")
           )
         }
 
       case let .failure(error):
-        let errorContext=BookmarkLogContext(
+        let errorContext = BookmarkLogContext(
           operation: "resolveBookmark",
           identifier: storageIdentifier,
           status: "error"
@@ -365,200 +408,217 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
 
         await bookmarkLogger.logError(error, context: errorContext)
         return .failure(
-          .operationFailed("Bookmark not found in storage: \(error.localizedDescription)")
+          .invalidBookmark("Failed to retrieve bookmark data: \(error.localizedDescription)")
         )
     }
   }
-
+  
   /**
-   Resolves a previously created security-scoped bookmark.
-
-   This allows the app to access the resource that the bookmark was created for,
-   even if the app has been restarted since creation.
+   Resolves a security-scoped bookmark to its file path.
 
    - Parameters:
-     - storageIdentifier: The identifier the bookmark was stored under
-     - startAccessingImmediately: Whether to immediately start accessing the resource
+     - storageIdentifier: The identifier for the stored bookmark data
 
-   - Returns: A Result containing either the URL and a Boolean indicating if the bookmark was stale,
-     or a domain-specific error
+   - Returns: Result with file path and staleness indicator or error
    */
-  public func resolveBookmark(
-    withIdentifier storageIdentifier: String,
-    startAccessingImmediately: Bool=false
-  ) async -> Result<(URL, Bool), UmbraErrors.Security.Bookmark> {
-    let context=BookmarkLogContext(
-      operation: "resolveBookmark",
+  public func resolveBookmarkToFilePath(
+    withIdentifier storageIdentifier: String
+  ) async -> Result<(FilePath, Bool), UmbraErrors.Security.Bookmark> {
+    let context = BookmarkLogContext(
+      operation: "resolveBookmarkToFilePath",
       identifier: storageIdentifier,
       status: "started"
     )
 
-    await bookmarkLogger.info("Resolving security bookmark", context: context)
+    await bookmarkLogger.info("Resolving security bookmark to file path", context: context)
 
-    // First, resolve the bookmark
-    let resolveResult=await resolveBookmark(withIdentifier: storageIdentifier)
+    // Retrieve the bookmark data
+    let retrieveResult = await secureStorage.retrieveData(withIdentifier: storageIdentifier)
 
-    switch resolveResult {
-      case let .success(resolveInfo):
-        let (url, isStale)=resolveInfo
+    switch retrieveResult {
+      case let .success(bookmarkBytes):
+        // Convert [UInt8] to Data
+        let bookmarkData = Data(bookmarkBytes)
 
-        // If we should start accessing immediately
-        if startAccessingImmediately {
-          let startAccessingResult=await startAccessing(url)
-          switch startAccessingResult {
-            case .success:
-              return .success((url, isStale))
-            case let .failure(error):
-              let errorContext=BookmarkLogContext(
-                operation: "resolveBookmark",
-                identifier: storageIdentifier,
-                status: "error",
-                metadata: LogMetadataDTOCollection().withSensitive(key: "url", value: url.path)
-              )
+        do {
+          // Resolve the bookmark data to a file path using our file system service
+          let (filePath, isStale) = try await fileSystemService.resolveSecurityBookmark(bookmarkData)
 
-              await bookmarkLogger.logError(error, context: errorContext)
-              return .failure(
-                .accessDenied(
-                  "Failed to start accessing security-scoped resource: \(error.localizedDescription)"
-                )
-              )
+          if isStale {
+            let warningContext = BookmarkLogContext(
+              operation: "resolveBookmarkToFilePath",
+              identifier: storageIdentifier,
+              status: "warning",
+              metadata: LogMetadataDTOCollection().withSensitive(key: "path", value: filePath.path)
+            )
+
+            await bookmarkLogger.warning(
+              "Resolved bookmark is stale and should be recreated",
+              context: warningContext
+            )
           }
-        } else {
-          return .success((url, isStale))
+
+          let successContext = BookmarkLogContext(
+            operation: "resolveBookmarkToFilePath",
+            identifier: storageIdentifier,
+            status: "success",
+            metadata: LogMetadataDTOCollection()
+              .withSensitive(key: "path", value: filePath.path)
+              .withPublic(key: "isStale", value: String(isStale))
+          )
+
+          await bookmarkLogger.info(
+            "Security bookmark resolved successfully",
+            context: successContext
+          )
+          return .success((filePath, isStale))
+
+        } catch {
+          let errorContext = BookmarkLogContext(
+            operation: "resolveBookmarkToFilePath",
+            identifier: storageIdentifier,
+            status: "error"
+          )
+
+          await bookmarkLogger.logError(error, context: errorContext)
+          return .failure(
+            .invalidBookmark("Failed to resolve bookmark data: \(error.localizedDescription)")
+          )
         }
 
       case let .failure(error):
-        let errorContext=BookmarkLogContext(
-          operation: "resolveBookmark",
+        let errorContext = BookmarkLogContext(
+          operation: "resolveBookmarkToFilePath",
           identifier: storageIdentifier,
           status: "error"
         )
 
         await bookmarkLogger.logError(error, context: errorContext)
         return .failure(
-          .invalidBookmark("Bookmark resolution failed: \(error.localizedDescription)")
+          .invalidBookmark("Failed to retrieve bookmark data: \(error.localizedDescription)")
         )
     }
   }
 
   /**
-   Validates that a security bookmark is still valid and can be resolved.
+   Validates a security bookmark.
+
+   This method checks if a bookmark is still valid and can be used to access
+   the file or directory it points to. If the bookmark is stale and the
+   recreateIfStale flag is true, it will attempt to recreate the bookmark.
 
    - Parameters:
      - storageIdentifier: The identifier the bookmark was stored under
-     - recreateIfStale: Whether to automatically recreate the bookmark if it's stale
-
-   - Returns: A Result containing either a validation result or a domain-specific error
+     - recreateIfStale: Whether to recreate the bookmark if it's stale
+   - Returns: Result with validation result or error
    */
   public func validateBookmark(
     withIdentifier storageIdentifier: String,
-    recreateIfStale: Bool=false
+    recreateIfStale: Bool
   ) async -> Result<BookmarkValidationResultDTO, UmbraErrors.Security.Bookmark> {
-    let context=BookmarkLogContext(
+    let context = BookmarkLogContext(
       operation: "validateBookmark",
       identifier: storageIdentifier,
       status: "started"
     )
-
+    
     await bookmarkLogger.info("Validating security bookmark", context: context)
-
-    // First, resolve the bookmark
-    let resolveResult=await resolveBookmark(
-      withIdentifier: storageIdentifier,
-      startAccessingImmediately: false
-    )
-
+    
+    // First, try to resolve the bookmark to get the URL
+    let resolveResult = await resolveBookmark(withIdentifier: storageIdentifier)
+    
     switch resolveResult {
-      case let .success(resolveInfo):
-        let (url, isStale)=resolveInfo
-
-        // If the bookmark is stale and we should recreate it
-        if isStale && recreateIfStale {
-          let warningContext=BookmarkLogContext(
-            operation: "validateBookmark",
-            identifier: storageIdentifier,
-            status: "warning",
-            metadata: LogMetadataDTOCollection()
-              .withSensitive(key: "url", value: url.path)
-              .withPublic(key: "isStale", value: "true")
-          )
-
-          await bookmarkLogger.warning("Bookmark is stale, recreating", context: warningContext)
-
-          // Recreate the bookmark
-          let recreateResult=await createBookmark(
-            for: url,
+    case .success(let resolvedData):
+      let (url, isStale) = resolvedData
+      
+      // Check if the file or directory exists
+      let fileManager = FileManager.default
+      let exists = fileManager.fileExists(atPath: url.path)
+      
+      // If the bookmark is stale and we're asked to recreate it, do so
+      var updatedBookmarkData: [UInt8]? = nil
+      
+      if isStale && recreateIfStale {
+        // Try to recreate the bookmark
+        // Convert URL to FilePath
+        let filePath = FilePath(path: url.path)
+        let recreateResult = await createBookmarkData(for: filePath, options: nil)
+        
+        switch recreateResult {
+        case .success(let newBookmarkData):
+          // Convert Data to [UInt8]
+          let bookmarkBytes = [UInt8](newBookmarkData)
+          
+          // Store the new bookmark data
+          let storeResult = await secureStorage.storeData(
+            bookmarkBytes,
             withIdentifier: storageIdentifier
           )
-
-          switch recreateResult {
-            case .success:
-              let successContext=BookmarkLogContext(
-                operation: "validateBookmark",
-                identifier: storageIdentifier,
-                status: "success",
-                metadata: LogMetadataDTOCollection()
-                  .withSensitive(key: "url", value: url.path)
-                  .withPublic(key: "recreated", value: "true")
-              )
-
-              await bookmarkLogger.info(
-                "Stale bookmark recreated successfully",
-                context: successContext
-              )
-              return .success(
-                BookmarkValidationResultDTO(
-                  isValid: true,
-                  isStale: true,
-                  updatedBookmark: nil,
-                  url: url
-                )
-              )
-
-            case let .failure(error):
-              let errorContext=BookmarkLogContext(
-                operation: "validateBookmark",
-                identifier: storageIdentifier,
-                status: "error",
-                metadata: LogMetadataDTOCollection().withSensitive(key: "url", value: url.path)
-              )
-
-              await bookmarkLogger.logError(error, context: errorContext)
-              return .failure(
-                .staleBookmark("Unable to recreate stale bookmark: \(error.localizedDescription)")
-              )
+          
+          if case .success = storeResult {
+            // Store the converted bytes for the result
+            updatedBookmarkData = bookmarkBytes
+            
+            let successContext = BookmarkLogContext(
+              operation: "validateBookmark",
+              identifier: storageIdentifier,
+              status: "recreated"
+            )
+            await bookmarkLogger.info("Successfully recreated stale bookmark", context: successContext)
+          } else {
+            let failureContext = BookmarkLogContext(
+              operation: "validateBookmark",
+              identifier: storageIdentifier,
+              status: "recreate_failed"
+            )
+            await bookmarkLogger.warning("Failed to store recreated bookmark", context: failureContext)
           }
-        } else {
-          // Bookmark is valid (possibly stale but we're not recreating)
-          let successContext=BookmarkLogContext(
+          
+        case .failure(let error):
+          let failureContext = BookmarkLogContext(
             operation: "validateBookmark",
             identifier: storageIdentifier,
-            status: "success",
-            metadata: LogMetadataDTOCollection().withSensitive(key: "url", value: url.path)
+            status: "recreate_failed"
           )
-
-          await bookmarkLogger.info("Bookmark validation successful", context: successContext)
-          return .success(
-            BookmarkValidationResultDTO(
-              isValid: true,
-              isStale: isStale,
-              updatedBookmark: nil,
-              url: url
-            )
+          await bookmarkLogger.warning(
+            "Failed to recreate stale bookmark: \(error.localizedDescription)",
+            context: failureContext
           )
         }
-
-      case let .failure(error):
-        let errorContext=BookmarkLogContext(
-          operation: "validateBookmark",
-          identifier: storageIdentifier,
-          status: "error"
-        )
-
-        await bookmarkLogger.logError(error, context: errorContext)
-        return .failure(
-          .invalidBookmark("Bookmark validation failed: \(error.localizedDescription)")
-        )
+      }
+      
+      // Create the validation result
+      let validationResult = BookmarkValidationResultDTO(
+        isValid: exists,
+        isStale: isStale,
+        updatedBookmark: updatedBookmarkData,
+        url: url
+      )
+      
+      let completedContext = BookmarkLogContext(
+        operation: "validateBookmark",
+        identifier: storageIdentifier,
+        status: "completed",
+        metadata: LogMetadataDTOCollection()
+          .withPublic(key: "isValid", value: String(exists))
+          .withPublic(key: "isStale", value: String(isStale))
+          .withPublic(key: "wasRecreated", value: String(updatedBookmarkData != nil))
+      )
+      
+      await bookmarkLogger.info("Bookmark validation completed", context: completedContext)
+      
+      return .success(validationResult)
+      
+    case .failure(let error):
+      let failureContext = BookmarkLogContext(
+        operation: "validateBookmark",
+        identifier: storageIdentifier,
+        status: "failed"
+      )
+      
+      await bookmarkLogger.logError(error, context: failureContext)
+      
+      return .failure(error)
     }
   }
 
@@ -572,44 +632,76 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
    - Returns: A Result containing either the access count or a domain-specific error
    */
   public func startAccessing(_ url: URL) async -> Result<Bool, UmbraErrors.Security.Bookmark> {
-    let context=BookmarkLogContext(
+    // Convert URL to FilePath
+    let filePath = FilePath(path: url.path)
+    
+    return await startAccessing(filePath)
+  }
+  
+  /**
+   Start accessing a security-scoped resource.
+
+   This must be called before attempting to access the resource, and should
+   be balanced with a call to stopAccessing when done.
+
+   - Parameter path: The file path to start accessing
+   - Returns: A Result containing either the access count or a domain-specific error
+   */
+  public func startAccessing(_ path: FilePath) async -> Result<Bool, UmbraErrors.Security.Bookmark> {
+    let context = BookmarkLogContext(
       operation: "startAccessing",
       status: "started",
-      metadata: LogMetadataDTOCollection().withSensitive(key: "url", value: url.path)
+      metadata: LogMetadataDTOCollection().withSensitive(key: "path", value: path.path)
     )
 
     await bookmarkLogger.info("Starting access to security-scoped resource", context: context)
 
     // Try to start accessing the security-scoped resource
-    if !url.startAccessingSecurityScopedResource() {
-      let errorContext=BookmarkLogContext(
+    do {
+      let accessGranted = try await fileSystemService.startAccessingSecurityScopedResource(at: path)
+      
+      if !accessGranted {
+        let errorContext = BookmarkLogContext(
+          operation: "startAccessing",
+          status: "error",
+          metadata: LogMetadataDTOCollection().withSensitive(key: "path", value: path.path)
+        )
+
+        let error = UmbraErrors.Security.Bookmark
+          .accessDenied("Failed to start accessing security-scoped resource")
+
+        await bookmarkLogger.logError(error, context: errorContext)
+        return .failure(error)
+      }
+      
+      // Update the access count
+      let currentCount = activeResources[path] ?? 0
+      let newCount = currentCount + 1
+      activeResources[path] = newCount
+
+      let successContext = BookmarkLogContext(
         operation: "startAccessing",
-        status: "error",
-        metadata: LogMetadataDTOCollection().withSensitive(key: "url", value: url.path)
+        status: "success",
+        metadata: LogMetadataDTOCollection()
+          .withSensitive(key: "path", value: path.path)
+          .withPublic(key: "accessCount", value: String(newCount))
       )
 
-      let error=UmbraErrors.Security.Bookmark
-        .accessDenied("Failed to start accessing security-scoped resource")
+      await bookmarkLogger.info("Started accessing security-scoped resource", context: successContext)
+      return .success(true)
+    } catch {
+      let errorContext = BookmarkLogContext(
+        operation: "startAccessing",
+        status: "error",
+        metadata: LogMetadataDTOCollection().withSensitive(key: "path", value: path.path)
+      )
 
-      await bookmarkLogger.logError(error, context: errorContext)
-      return .failure(error)
+      let bookmarkError = UmbraErrors.Security.Bookmark
+        .accessDenied("Failed to start accessing security-scoped resource: \(error.localizedDescription)")
+
+      await bookmarkLogger.logError(bookmarkError, context: errorContext)
+      return .failure(bookmarkError)
     }
-
-    // Update the access count
-    let currentCount=activeResources[url] ?? 0
-    let newCount=currentCount + 1
-    activeResources[url]=newCount
-
-    let successContext=BookmarkLogContext(
-      operation: "startAccessing",
-      status: "success",
-      metadata: LogMetadataDTOCollection()
-        .withSensitive(key: "url", value: url.path)
-        .withPublic(key: "accessCount", value: String(newCount))
-    )
-
-    await bookmarkLogger.info("Started accessing security-scoped resource", context: successContext)
-    return .success(true)
   }
 
   /**
@@ -622,41 +714,59 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
    - Returns: A Result containing either the remaining access count or a domain-specific error
    */
   public func stopAccessing(_ url: URL) async -> Result<Int, UmbraErrors.Security.Bookmark> {
-    let context=BookmarkLogContext(
+    // Convert URL to FilePath
+    let filePath = FilePath(path: url.path)
+    
+    return await stopAccessing(filePath)
+  }
+  
+  /**
+   Stop accessing a security-scoped resource.
+
+   This should be called when done with the resource, to balance a previous
+   call to startAccessing.
+
+   - Parameter path: The file path to stop accessing
+   - Returns: A Result containing either the remaining access count or a domain-specific error
+   */
+  public func stopAccessing(_ path: FilePath) async -> Result<Int, UmbraErrors.Security.Bookmark> {
+    let context = BookmarkLogContext(
       operation: "stopAccessing",
       status: "started",
-      metadata: LogMetadataDTOCollection().withSensitive(key: "url", value: url.path)
+      metadata: LogMetadataDTOCollection().withSensitive(key: "path", value: path.path)
     )
 
     await bookmarkLogger.info("Stopping access to security-scoped resource", context: context)
 
-    // Get the current access count for this URL
-    guard let currentCount=activeResources[url], currentCount > 0 else {
-      let warningContext=BookmarkLogContext(
+    // Get the current access count for this path
+    guard let currentCount = activeResources[path], currentCount > 0 else {
+      let warningContext = BookmarkLogContext(
         operation: "stopAccessing",
         status: "warning",
-        metadata: LogMetadataDTOCollection().withSensitive(key: "url", value: url.path)
+        metadata: LogMetadataDTOCollection().withSensitive(key: "path", value: path.path)
       )
 
-      await bookmarkLogger.warning("No active accesses found for URL", context: warningContext)
+      await bookmarkLogger.warning("No active accesses found for path", context: warningContext)
       return .success(0)
     }
 
     // Update the access count
-    let newCount=currentCount - 1
+    let newCount = currentCount - 1
     if newCount > 0 {
-      activeResources[url]=newCount
+      activeResources[path] = newCount
     } else {
       // If access count is now zero, remove from tracking and stop accessing
-      activeResources.removeValue(forKey: url)
-      url.stopAccessingSecurityScopedResource()
+      activeResources.removeValue(forKey: path)
+      
+      // Use our file system service to stop accessing
+      await fileSystemService.stopAccessingSecurityScopedResource(at: path)
     }
 
-    let successContext=BookmarkLogContext(
+    let successContext = BookmarkLogContext(
       operation: "stopAccessing",
       status: "success",
       metadata: LogMetadataDTOCollection()
-        .withSensitive(key: "url", value: url.path)
+        .withSensitive(key: "path", value: path.path)
         .withPublic(key: "accessCount", value: String(newCount))
     )
 
@@ -673,7 +783,7 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
   public func removeBookmark(
     withIdentifier storageIdentifier: String
   ) async -> Result<Void, UmbraErrors.Security.Bookmark> {
-    let context=BookmarkLogContext(
+    let context = BookmarkLogContext(
       operation: "removeBookmark",
       identifier: storageIdentifier,
       status: "started"
@@ -681,13 +791,13 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
 
     await bookmarkLogger.info("Removing security bookmark", context: context)
 
-    let removeResult=await secureStorage.deleteData(
+    let removeResult = await secureStorage.deleteData(
       withIdentifier: storageIdentifier
     )
 
     switch removeResult {
       case .success:
-        let successContext=BookmarkLogContext(
+        let successContext = BookmarkLogContext(
           operation: "removeBookmark",
           identifier: storageIdentifier,
           status: "success"
@@ -697,7 +807,7 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
         return .success(())
 
       case let .failure(error):
-        let errorContext=BookmarkLogContext(
+        let errorContext = BookmarkLogContext(
           operation: "removeBookmark",
           identifier: storageIdentifier,
           status: "error"
@@ -719,7 +829,7 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
    - Returns: True if all resources have been released, false otherwise
    */
   public func verifyAllResourcesReleased() async -> Bool {
-    let context=BookmarkLogContext(
+    let context = BookmarkLogContext(
       operation: "verifyAllResourcesReleased",
       status: "started"
     )
@@ -729,9 +839,9 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
       context: context
     )
 
-    let resourceCount=activeResources.count
+    let resourceCount = activeResources.count
 
-    let successContext=BookmarkLogContext(
+    let successContext = BookmarkLogContext(
       operation: "verifyAllResourcesReleased",
       status: "success",
       metadata: LogMetadataDTOCollection().withPublic(
@@ -750,67 +860,40 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
    This method should only be used during application termination
    or error recovery to ensure all resources are properly released.
 
-   - Returns: The number of resources that were released
+   - Returns: The number of resources that were forcibly released
    */
   public func forceReleaseAllResources() async -> Int {
-    let context=BookmarkLogContext(
+    let context = BookmarkLogContext(
       operation: "forceReleaseAllResources",
-      status: "started"
+      status: "started",
+      metadata: LogMetadataDTOCollection().withPublic(
+        key: "activeCount",
+        value: String(activeResources.count)
+      )
     )
 
-    await bookmarkLogger.info("Forcing release of all security-scoped resources", context: context)
+    await bookmarkLogger.info("Forcibly releasing all security-scoped resources", context: context)
 
-    let resourceCount=activeResources.count
+    let resourceCount = activeResources.count
 
-    if resourceCount > 0 {
-      let warningContext=BookmarkLogContext(
-        operation: "forceReleaseAllResources",
-        status: "warning",
-        metadata: LogMetadataDTOCollection().withPublic(
-          key: "activeCount",
-          value: String(resourceCount)
-        )
-      )
-
-      await bookmarkLogger.warning(
-        "Found active security-scoped resources that need to be released",
-        context: warningContext
-      )
-
-      // Release all resources
-      for (url, _) in activeResources {
-        url.stopAccessingSecurityScopedResource()
-      }
-
-      // Get the number of resources we released
-      let releasedCount=activeResources.count
-
-      // Clear all tracked resources
-      activeResources.removeAll()
-
-      let successContext=BookmarkLogContext(
-        operation: "forceReleaseAllResources",
-        status: "success",
-        metadata: LogMetadataDTOCollection().withPublic(
-          key: "releasedCount",
-          value: String(releasedCount)
-        )
-      )
-
-      await bookmarkLogger.info("Released all security-scoped resources", context: successContext)
-      return releasedCount
-    } else {
-      let successContext=BookmarkLogContext(
-        operation: "forceReleaseAllResources",
-        status: "success",
-        metadata: LogMetadataDTOCollection().withPublic(key: "releasedCount", value: "0")
-      )
-
-      await bookmarkLogger.info(
-        "No active security-scoped resources to release",
-        context: successContext
-      )
-      return 0
+    // Stop accessing all resources
+    for path in activeResources.keys {
+      await fileSystemService.stopAccessingSecurityScopedResource(at: path)
     }
+
+    // Clear the tracking dictionary
+    activeResources.removeAll()
+
+    let successContext = BookmarkLogContext(
+      operation: "forceReleaseAllResources",
+      status: "success",
+      metadata: LogMetadataDTOCollection().withPublic(
+        key: "releasedCount",
+        value: String(resourceCount)
+      )
+    )
+
+    await bookmarkLogger.info("Forcibly released all resources", context: successContext)
+    return resourceCount
   }
 }
