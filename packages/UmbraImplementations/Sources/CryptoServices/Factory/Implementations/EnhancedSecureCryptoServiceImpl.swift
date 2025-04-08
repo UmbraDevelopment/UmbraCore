@@ -23,7 +23,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
   private let wrapped: CryptoServiceProtocol
 
   /// Logger for operations
-  private let logger: PrivacyAwareLoggingProtocol
+  private let logger: LoggingProtocol
 
   /// Rate limiting configuration for security operations
   private let rateLimiter: RateLimiter
@@ -43,7 +43,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
    */
   public init(
     wrapped: CryptoServiceProtocol,
-    logger: PrivacyAwareLoggingProtocol,
+    logger: LoggingProtocol,
     rateLimiter: RateLimiter
   ) {
     self.wrapped = wrapped
@@ -74,7 +74,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
         status: "rateLimited"
       )
 
-      await logger.warning("Rate limited encryption operation", context: context)
+      await logger.warning("Rate limited encryption operation")
       return .failure(.operationFailed("Rate limited"))
     }
 
@@ -86,7 +86,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
         metadata: LogMetadataDTOCollection().withPublic(key: "error", value: "emptyDataIdentifier")
       )
 
-      await logger.error("Empty data identifier provided for encryption", context: context)
+      await logger.error("Empty data identifier provided for encryption")
       return .failure(.operationFailed("dataIdentifier cannot be empty"))
     }
 
@@ -97,7 +97,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
         metadata: LogMetadataDTOCollection().withPublic(key: "error", value: "emptyKeyIdentifier")
       )
 
-      await logger.error("Empty key identifier provided for encryption", context: context)
+      await logger.error("Empty key identifier provided for encryption")
       return .failure(.operationFailed("keyIdentifier cannot be empty"))
     }
 
@@ -111,10 +111,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
         metadata: LogMetadataDTOCollection().withPublic(key: "error", value: "keyNotFound")
       )
 
-      await logger.error(
-        "Key not found for encryption: \(keyIdentifier)",
-        context: context
-      )
+      await logger.error("Key not found for encryption: \(keyIdentifier)")
       return .failure(.keyNotFound)
     }
 
@@ -149,7 +146,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
         status: "rateLimited"
       )
 
-      await logger.warning("Rate limited decryption operation", context: context)
+      await logger.warning("Rate limited decryption operation")
       return .failure(.operationFailed("Rate limited"))
     }
 
@@ -161,7 +158,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
         metadata: LogMetadataDTOCollection().withPublic(key: "error", value: "emptyDataIdentifier")
       )
 
-      await logger.error("Empty data identifier provided for decryption", context: context)
+      await logger.error("Empty data identifier provided for decryption")
       return .failure(.operationFailed("encryptedDataIdentifier cannot be empty"))
     }
 
@@ -172,7 +169,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
         metadata: LogMetadataDTOCollection().withPublic(key: "error", value: "emptyKeyIdentifier")
       )
 
-      await logger.error("Empty key identifier provided for decryption", context: context)
+      await logger.error("Empty key identifier provided for decryption")
       return .failure(.operationFailed("keyIdentifier cannot be empty"))
     }
 
@@ -186,10 +183,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
         metadata: LogMetadataDTOCollection().withPublic(key: "error", value: "dataNotFound")
       )
 
-      await logger.error(
-        "Encrypted data not found: \(encryptedDataIdentifier)",
-        context: context
-      )
+      await logger.error("Encrypted data not found: \(encryptedDataIdentifier)")
       return .failure(.dataNotFound)
     }
 
@@ -203,10 +197,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
         metadata: LogMetadataDTOCollection().withPublic(key: "error", value: "keyNotFound")
       )
 
-      await logger.error(
-        "Key not found for decryption: \(keyIdentifier)",
-        context: context
-      )
+      await logger.error("Key not found for decryption: \(keyIdentifier)")
       return .failure(.keyNotFound)
     }
 
@@ -239,7 +230,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
         status: "rateLimited"
       )
 
-      await logger.warning("Rate limited hashing operation", context: context)
+      await logger.warning("Rate limited hashing operation")
       return .failure(.operationFailed("Rate limited"))
     }
 
@@ -251,7 +242,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
         metadata: LogMetadataDTOCollection().withPublic(key: "error", value: "emptyDataIdentifier")
       )
 
-      await logger.error("Empty data identifier provided for hashing", context: context)
+      await logger.error("Empty data identifier provided for hashing")
       return .failure(.operationFailed("dataIdentifier cannot be empty"))
     }
 
@@ -265,10 +256,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
         metadata: LogMetadataDTOCollection().withPublic(key: "error", value: "dataNotFound")
       )
 
-      await logger.error(
-        "Data not found for hashing: \(dataIdentifier)",
-        context: context
-      )
+      await logger.error("Data not found for hashing: \(dataIdentifier)")
       return .failure(.dataNotFound)
     }
 
@@ -302,7 +290,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
         status: "rateLimited"
       )
 
-      await logger.warning("Rate limited hash verification operation", context: context)
+      await logger.warning("Rate limited hash verification operation")
       return .failure(.operationFailed("Rate limited"))
     }
 
@@ -314,7 +302,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
         metadata: LogMetadataDTOCollection().withPublic(key: "error", value: "emptyDataIdentifier")
       )
 
-      await logger.error("Empty data identifier provided for hash verification", context: context)
+      await logger.error("Empty data identifier provided for hash verification")
       return .failure(.operationFailed("dataIdentifier cannot be empty"))
     }
 
@@ -325,7 +313,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
         metadata: LogMetadataDTOCollection().withPublic(key: "error", value: "emptyHashIdentifier")
       )
 
-      await logger.error("Empty hash identifier provided for verification", context: context)
+      await logger.error("Empty hash identifier provided for verification")
       return .failure(.operationFailed("hashIdentifier cannot be empty"))
     }
 
@@ -339,10 +327,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
         metadata: LogMetadataDTOCollection().withPublic(key: "error", value: "dataNotFound")
       )
 
-      await logger.error(
-        "Data not found for hash verification: \(dataIdentifier)",
-        context: context
-      )
+      await logger.error("Data not found for hash verification: \(dataIdentifier)")
       return .failure(.dataNotFound)
     }
 
@@ -356,10 +341,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
         metadata: LogMetadataDTOCollection().withPublic(key: "error", value: "hashNotFound")
       )
 
-      await logger.error(
-        "Hash not found for verification: \(hashIdentifier)",
-        context: context
-      )
+      await logger.error("Hash not found for verification: \(hashIdentifier)")
       return .failure(.hashNotFound)
     }
 
@@ -391,7 +373,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
         status: "rateLimited"
       )
 
-      await logger.warning("Rate limited data export operation", context: context)
+      await logger.warning("Rate limited data export operation")
       return .failure(.operationFailed("Rate limited"))
     }
 
@@ -403,7 +385,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
         metadata: LogMetadataDTOCollection().withPublic(key: "error", value: "emptyIdentifier")
       )
 
-      await logger.error("Empty identifier provided for data export", context: context)
+      await logger.error("Empty identifier provided for data export")
       return .failure(.operationFailed("identifier cannot be empty"))
     }
 
@@ -431,7 +413,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
         status: "rateLimited"
       )
 
-      await logger.warning("Rate limited key generation operation", context: context)
+      await logger.warning("Rate limited key generation operation")
       return .failure(.operationFailed("Rate limited"))
     }
 
@@ -456,7 +438,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
       operation: "importDataUInt8",
       identifier: customIdentifier
     )
-    await logger.logSensitiveOperationStart(context: context)
+    await logger.info("Importing data with identifier: \(customIdentifier ?? "unknown")")
     return await wrapped.importData(data, customIdentifier: customIdentifier)
   }
 
@@ -477,7 +459,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
       operation: "importData",
       identifier: customIdentifier
     )
-    await logger.logSensitiveOperationStart(context: context)
+    await logger.info("Importing data with identifier: \(customIdentifier)")
     return await wrapped.importData(data, customIdentifier: customIdentifier)
   }
 
@@ -498,7 +480,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
       operation: "generateHash",
       identifier: dataIdentifier
     )
-    await logger.logSensitiveOperationStart(context: context)
+    await logger.info("Generating hash for data with identifier: \(dataIdentifier)")
     return await wrapped.generateHash(dataIdentifier: dataIdentifier, options: options)
   }
 
@@ -507,38 +489,44 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
 
    - Parameters:
      - data: The data to store
-     - identifier: Identifier for the stored data
-
-   - Returns: Void or error
+     - withIdentifier: The identifier to store the data under
+     - options: Optional storage parameters
+   - Returns: Success or error
    */
   public func storeData(
     data: Data,
-    identifier: String
+    withIdentifier identifier: String,
+    options: CoreSecurityTypes.StorageOptions?
   ) async -> Result<Void, SecurityStorageError> {
     let context = CryptoLogContext(
       operation: "storeData",
       identifier: identifier
     )
-    await logger.logSensitiveOperationStart(context: context)
-    return await wrapped.storeData(data: data, identifier: identifier)
+    
+    await logger.info("Storing data with identifier: \(identifier)")
+    return await wrapped.storeData(
+      data: data,
+      withIdentifier: identifier,
+      options: options
+    )
   }
 
   /**
    Retrieve data from secure storage.
 
-   - Parameter identifier: Identifier for the data to retrieve
-
+   - Parameter withIdentifier: The identifier of the data to retrieve
    - Returns: The retrieved data or error
    */
   public func retrieveData(
-    identifier: String
+    withIdentifier identifier: String
   ) async -> Result<Data, SecurityStorageError> {
     let context = CryptoLogContext(
       operation: "retrieveData",
       identifier: identifier
     )
-    await logger.logSensitiveOperationStart(context: context)
-    return await wrapped.retrieveData(identifier: identifier)
+    
+    await logger.info("Retrieving data with identifier: \(identifier)")
+    return await wrapped.retrieveData(withIdentifier: identifier)
   }
 
   /**
@@ -555,13 +543,15 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
       operation: "deleteData",
       identifier: identifier
     )
-    await logger.logSensitiveOperationStart(context: context)
+    await logger.info("Deleting data with identifier: \(identifier)")
     return await wrapped.deleteData(identifier: identifier)
   }
 }
 
 /**
- Simple rate limiter for security operations.
+ Base rate limiter for security operations.
+ This class provides a common interface for rate limiting that can be
+ implemented by different rate limiting strategies.
  */
 public class RateLimiter {
   public enum Operation: String {
@@ -577,13 +567,18 @@ public class RateLimiter {
   private let minimumInterval: TimeInterval = 0.1 // 100ms minimum between operations
 
   /**
+   Initialises a new rate limiter.
+   */
+  public init() {}
+
+  /**
    Check if an operation is currently rate limited.
 
    - Parameter operation: The operation to check
 
    - Returns: true if the operation is rate limited, false otherwise
    */
-  public func isRateLimited(_ operation: Operation) -> Bool {
+  open func isRateLimited(_ operation: Operation) -> Bool {
     let now = Date()
 
     if
