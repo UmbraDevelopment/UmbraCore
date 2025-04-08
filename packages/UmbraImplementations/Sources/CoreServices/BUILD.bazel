@@ -20,5 +20,6 @@ umbra_swift_library(
         "//packages/UmbraInterfaces/Sources/CryptoInterfaces",
         "//packages/UmbraCoreTypes/Sources/CoreSecurityTypes",
         "//packages/UmbraImplementations/Sources/CryptoServices",
+        "//packages/UmbraImplementations/Sources/SecurityImplementation",
     ],
 )

@@ -1,6 +1,16 @@
 import CoreSecurityTypes
 import DomainSecurityTypes
 import Foundation
+
+/// Helper function to create LogMetadataDTOCollection from dictionary
+private func createMetadataCollection(_ dict: [String: String]) -> LogMetadataDTOCollection {
+  var collection = LogMetadataDTOCollection()
+  for (key, value) in dict {
+    collection = collection.withPublic(key: key, value: value)
+  }
+  return collection
+}
+
 import LoggingInterfaces
 import LoggingServices
 import LoggingTypes
@@ -155,8 +165,8 @@ public actor SecurityProviderService: SecurityProviderProtocol, AsyncServiceInit
       subject: nil,
       resource: nil,
       additionalMetadata: [
-        "operation": PrivacyTaggedValue(value: "start", privacyLevel: .public),
-        "provider": PrivacyTaggedValue(value: "SecurityProviderService", privacyLevel: .public)
+        "operation": PrivacyTaggedValue(value: PrivacyMetadataValue.string("start"), privacyLevel: .public),
+        "provider": PrivacyTaggedValue(value: PrivacyMetadataValue.string("SecurityProviderService"), privacyLevel: .public)
       ]
     )
 
@@ -178,8 +188,8 @@ public actor SecurityProviderService: SecurityProviderProtocol, AsyncServiceInit
       subject: nil,
       resource: nil,
       additionalMetadata: [
-        "operation": PrivacyTaggedValue(value: "complete", privacyLevel: .public),
-        "provider": PrivacyTaggedValue(value: "SecurityProviderService", privacyLevel: .public)
+        "operation": PrivacyTaggedValue(value: PrivacyMetadataValue.string("complete"), privacyLevel: .public),
+        "provider": PrivacyTaggedValue(value: PrivacyMetadataValue.string("SecurityProviderService"), privacyLevel: .public)
       ]
     )
   }
@@ -355,10 +365,9 @@ public actor SecurityProviderService: SecurityProviderProtocol, AsyncServiceInit
 
     // Check if a key identifier is provided to load from key manager
     if let keyID=config.options?.metadata?["keyIdentifier"] {
-      await logger.debug("Retrieving key for operation", metadata: [
-        "operation": "\(operation.rawValue)",
+      await logger.debug("Retrieving key for operation", metadata: createPrivacyMetadata(["operation": "\(operation.rawValue, source: "SecurityImplementation", source: "SecurityImplementation")",
         "keyIdentifier": keyID
-      ])
+      ]))
 
       let result=await keyManager.retrieveKey(withIdentifier: keyID)
       switch result {
@@ -394,12 +403,11 @@ public actor SecurityProviderService: SecurityProviderProtocol, AsyncServiceInit
       subject: nil,
       resource: nil,
       additionalMetadata: [
-        "operationId": PrivacyTaggedValue(value: operationID, privacyLevel: .public),
-        "operation": PrivacyTaggedValue(value: "start", privacyLevel: .public),
-        "operationType": PrivacyTaggedValue(value: config.operationType.rawValue,
-                                            privacyLevel: .public),
-        "dataSize": PrivacyTaggedValue(value: config.inputData?.count ?? 0, privacyLevel: .public),
-        "hasKey": PrivacyTaggedValue(value: config.keyIdentifier != nil, privacyLevel: .public)
+        "operationId": PrivacyTaggedValue(value: PrivacyMetadataValue.string(operationID), privacyLevel: .public),
+        "operation": PrivacyTaggedValue(value: PrivacyMetadataValue.string("start"), privacyLevel: .public),
+        "operationType": PrivacyTaggedValue(value: PrivacyMetadataValue.string(config.operationType.rawValue), privacyLevel: .public),
+        "dataSize": PrivacyTaggedValue(value: PrivacyMetadataValue.string(config.inputData?.count ?? 0), privacyLevel: .public),
+        "hasKey": PrivacyTaggedValue(value: PrivacyMetadataValue.string(config.keyIdentifier != nil), privacyLevel: .public)
       ]
     )
 
@@ -417,10 +425,10 @@ public actor SecurityProviderService: SecurityProviderProtocol, AsyncServiceInit
         subject: nil,
         resource: nil,
         additionalMetadata: [
-          "operationId": PrivacyTaggedValue(value: operationID, privacyLevel: .public),
-          "operation": PrivacyTaggedValue(value: "complete", privacyLevel: .public),
-          "durationMs": PrivacyTaggedValue(value: Int(duration * 1000), privacyLevel: .public),
-          "resultSize": PrivacyTaggedValue(value: result.data?.count ?? 0, privacyLevel: .public)
+          "operationId": PrivacyTaggedValue(value: PrivacyMetadataValue.string(operationID), privacyLevel: .public),
+          "operation": PrivacyTaggedValue(value: PrivacyMetadataValue.string("complete"), privacyLevel: .public),
+          "durationMs": PrivacyTaggedValue(value: PrivacyMetadataValue.int(Int(duration * 1000)), privacyLevel: .public),
+          "resultSize": PrivacyTaggedValue(value: PrivacyMetadataValue.string(result.data?.count ?? 0), privacyLevel: .public)
         ]
       )
 
@@ -436,13 +444,11 @@ public actor SecurityProviderService: SecurityProviderProtocol, AsyncServiceInit
         subject: nil,
         resource: nil,
         additionalMetadata: [
-          "operationId": PrivacyTaggedValue(value: operationID, privacyLevel: .public),
-          "operation": PrivacyTaggedValue(value: "error", privacyLevel: .public),
-          "durationMs": PrivacyTaggedValue(value: Int(duration * 1000), privacyLevel: .public),
-          "errorType": PrivacyTaggedValue(value: String(describing: type(of: error)),
-                                          privacyLevel: .public),
-          "errorDescription": PrivacyTaggedValue(value: error.localizedDescription,
-                                                 privacyLevel: .public)
+          "operationId": PrivacyTaggedValue(value: PrivacyMetadataValue.string(operationID), privacyLevel: .public),
+          "operation": PrivacyTaggedValue(value: PrivacyMetadataValue.string("error"), privacyLevel: .public),
+          "durationMs": PrivacyTaggedValue(value: PrivacyMetadataValue.int(Int(duration * 1000)), privacyLevel: .public),
+          "errorType": PrivacyTaggedValue(value: PrivacyMetadataValue.string(String(describing: type(of: error))), privacyLevel: .public),
+          "errorDescription": PrivacyTaggedValue(value: PrivacyMetadataValue.string(error.localizedDescription), privacyLevel: .public)
         ]
       )
 
@@ -470,12 +476,11 @@ public actor SecurityProviderService: SecurityProviderProtocol, AsyncServiceInit
       subject: nil,
       resource: nil,
       additionalMetadata: [
-        "operationId": PrivacyTaggedValue(value: operationID, privacyLevel: .public),
-        "operation": PrivacyTaggedValue(value: "start", privacyLevel: .public),
-        "operationType": PrivacyTaggedValue(value: config.operationType.rawValue,
-                                            privacyLevel: .public),
-        "dataSize": PrivacyTaggedValue(value: config.inputData?.count ?? 0, privacyLevel: .public),
-        "hasKey": PrivacyTaggedValue(value: config.keyIdentifier != nil, privacyLevel: .public)
+        "operationId": PrivacyTaggedValue(value: PrivacyMetadataValue.string(operationID), privacyLevel: .public),
+        "operation": PrivacyTaggedValue(value: PrivacyMetadataValue.string("start"), privacyLevel: .public),
+        "operationType": PrivacyTaggedValue(value: PrivacyMetadataValue.string(config.operationType.rawValue), privacyLevel: .public),
+        "dataSize": PrivacyTaggedValue(value: PrivacyMetadataValue.string(config.inputData?.count ?? 0), privacyLevel: .public),
+        "hasKey": PrivacyTaggedValue(value: PrivacyMetadataValue.string(config.keyIdentifier != nil), privacyLevel: .public)
       ]
     )
 
@@ -493,10 +498,10 @@ public actor SecurityProviderService: SecurityProviderProtocol, AsyncServiceInit
         subject: nil,
         resource: nil,
         additionalMetadata: [
-          "operationId": PrivacyTaggedValue(value: operationID, privacyLevel: .public),
-          "operation": PrivacyTaggedValue(value: "complete", privacyLevel: .public),
-          "durationMs": PrivacyTaggedValue(value: Int(duration * 1000), privacyLevel: .public),
-          "resultSize": PrivacyTaggedValue(value: result.data?.count ?? 0, privacyLevel: .public)
+          "operationId": PrivacyTaggedValue(value: PrivacyMetadataValue.string(operationID), privacyLevel: .public),
+          "operation": PrivacyTaggedValue(value: PrivacyMetadataValue.string("complete"), privacyLevel: .public),
+          "durationMs": PrivacyTaggedValue(value: PrivacyMetadataValue.int(Int(duration * 1000)), privacyLevel: .public),
+          "resultSize": PrivacyTaggedValue(value: PrivacyMetadataValue.string(result.data?.count ?? 0), privacyLevel: .public)
         ]
       )
 
@@ -512,13 +517,11 @@ public actor SecurityProviderService: SecurityProviderProtocol, AsyncServiceInit
         subject: nil,
         resource: nil,
         additionalMetadata: [
-          "operationId": PrivacyTaggedValue(value: operationID, privacyLevel: .public),
-          "operation": PrivacyTaggedValue(value: "error", privacyLevel: .public),
-          "durationMs": PrivacyTaggedValue(value: Int(duration * 1000), privacyLevel: .public),
-          "errorType": PrivacyTaggedValue(value: String(describing: type(of: error)),
-                                          privacyLevel: .public),
-          "errorDescription": PrivacyTaggedValue(value: error.localizedDescription,
-                                                 privacyLevel: .public)
+          "operationId": PrivacyTaggedValue(value: PrivacyMetadataValue.string(operationID), privacyLevel: .public),
+          "operation": PrivacyTaggedValue(value: PrivacyMetadataValue.string("error"), privacyLevel: .public),
+          "durationMs": PrivacyTaggedValue(value: PrivacyMetadataValue.int(Int(duration * 1000)), privacyLevel: .public),
+          "errorType": PrivacyTaggedValue(value: PrivacyMetadataValue.string(String(describing: type(of: error))), privacyLevel: .public),
+          "errorDescription": PrivacyTaggedValue(value: PrivacyMetadataValue.string(error.localizedDescription), privacyLevel: .public)
         ]
       )
 
@@ -541,10 +544,9 @@ public actor SecurityProviderService: SecurityProviderProtocol, AsyncServiceInit
 
     // Log operation with standard logger
     await logger.info(
-      "Generating cryptographic key",
-      metadata: ["keyType": config.keyType.rawValue],
+      "Generating cryptographic key", metadata: createPrivacyMetadata(["keyType": config.keyType.rawValue], source: "SecurityImplementation"),
       source: "CoreSecurityProvider"
-    )
+    , source: "SecurityImplementation")
 
     // Log with secure logger for enhanced privacy awareness
     await secureLogger.securityEvent(
@@ -553,10 +555,10 @@ public actor SecurityProviderService: SecurityProviderProtocol, AsyncServiceInit
       subject: nil,
       resource: nil,
       additionalMetadata: [
-        "operationId": PrivacyTaggedValue(value: operationID, privacyLevel: .public),
-        "operation": PrivacyTaggedValue(value: "start", privacyLevel: .public),
-        "keyType": PrivacyTaggedValue(value: config.keyType.rawValue, privacyLevel: .public),
-        "keySize": PrivacyTaggedValue(value: config.keySize, privacyLevel: .public)
+        "operationId": PrivacyTaggedValue(value: PrivacyMetadataValue.string(operationID), privacyLevel: .public),
+        "operation": PrivacyTaggedValue(value: PrivacyMetadataValue.string("start"), privacyLevel: .public),
+        "keyType": PrivacyTaggedValue(value: PrivacyMetadataValue.string(config.keyType.rawValue), privacyLevel: .public),
+        "keySize": PrivacyTaggedValue(value: PrivacyMetadataValue.string(config.keySize), privacyLevel: .public)
       ]
     )
 
@@ -575,7 +577,7 @@ public actor SecurityProviderService: SecurityProviderProtocol, AsyncServiceInit
       let resultDTO=SecurityResultDTO(
         status: .success,
         data: Data(result.identifier.utf8),
-        metadata: ["keyType": config.keyType.rawValue, "keySize": String(config.keySize)]
+        metadata: createPrivacyMetadata(["keyType": config.keyType.rawValue, "keySize": String(config.keySize)])
       )
 
       // Log success with secure logger
@@ -585,19 +587,18 @@ public actor SecurityProviderService: SecurityProviderProtocol, AsyncServiceInit
         subject: nil,
         resource: result.identifier,
         additionalMetadata: [
-          "operationId": PrivacyTaggedValue(value: operationID, privacyLevel: .public),
-          "operation": PrivacyTaggedValue(value: "complete", privacyLevel: .public),
-          "durationMs": PrivacyTaggedValue(value: Int(duration * 1000), privacyLevel: .public),
-          "keyType": PrivacyTaggedValue(value: config.keyType.rawValue, privacyLevel: .public)
+          "operationId": PrivacyTaggedValue(value: PrivacyMetadataValue.string(operationID), privacyLevel: .public),
+          "operation": PrivacyTaggedValue(value: PrivacyMetadataValue.string("complete"), privacyLevel: .public),
+          "durationMs": PrivacyTaggedValue(value: PrivacyMetadataValue.int(Int(duration * 1000)), privacyLevel: .public),
+          "keyType": PrivacyTaggedValue(value: PrivacyMetadataValue.string(config.keyType.rawValue), privacyLevel: .public)
         ]
       )
 
       // Log completion
       await logger.info(
-        "Key generation completed successfully",
-        metadata: ["keyType": config.keyType.rawValue, "keyId": result.identifier],
+        "Key generation completed successfully", metadata: createPrivacyMetadata(["keyType": config.keyType.rawValue, "keyId": result.identifier], source: "SecurityImplementation"),
         source: "CoreSecurityProvider"
-      )
+      , source: "SecurityImplementation")
 
       return resultDTO
     } catch {
@@ -611,21 +612,19 @@ public actor SecurityProviderService: SecurityProviderProtocol, AsyncServiceInit
         subject: nil,
         resource: nil,
         additionalMetadata: [
-          "operationId": PrivacyTaggedValue(value: operationID, privacyLevel: .public),
-          "operation": PrivacyTaggedValue(value: "error", privacyLevel: .public),
-          "durationMs": PrivacyTaggedValue(value: Int(duration * 1000), privacyLevel: .public),
-          "errorType": PrivacyTaggedValue(value: String(describing: type(of: error)),
-                                          privacyLevel: .public),
-          "errorDescription": PrivacyTaggedValue(value: error.localizedDescription,
-                                                 privacyLevel: .public),
-          "keyType": PrivacyTaggedValue(value: config.keyType.rawValue, privacyLevel: .public)
+          "operationId": PrivacyTaggedValue(value: PrivacyMetadataValue.string(operationID), privacyLevel: .public),
+          "operation": PrivacyTaggedValue(value: PrivacyMetadataValue.string("error"), privacyLevel: .public),
+          "durationMs": PrivacyTaggedValue(value: PrivacyMetadataValue.int(Int(duration * 1000)), privacyLevel: .public),
+          "errorType": PrivacyTaggedValue(value: PrivacyMetadataValue.string(String(describing: type(of: error))), privacyLevel: .public),
+          "errorDescription": PrivacyTaggedValue(value: PrivacyMetadataValue.string(error.localizedDescription), privacyLevel: .public),
+          "keyType": PrivacyTaggedValue(value: PrivacyMetadataValue.string(config.keyType.rawValue), privacyLevel: .public)
         ]
       )
 
       // Log error
       await logger.error(
         "Key generation failed: \(error.localizedDescription)",
-        metadata: ["keyType": config.keyType.rawValue, "error": error.localizedDescription],
+        metadata: createPrivacyMetadata(["keyType": config.keyType.rawValue, "error": error.localizedDescription]),
         source: "CoreSecurityProvider"
       )
 
@@ -691,10 +690,9 @@ public actor SecurityProviderService: SecurityProviderProtocol, AsyncServiceInit
     let startTime=Date()
     let operationID=UUID().uuidString
 
-    await logger.debug("Starting secure store operation", metadata: [
-      "operation_id": operationID,
+    await logger.debug("Starting secure store operation", metadata: createPrivacyMetadata(["operation_id": operationID,
       "algorithm": config.encryptionAlgorithm.rawValue
-    ])
+    ], source: "SecurityImplementation"), source: "SecurityImplementation")
 
     // Extract required parameters from configuration
     guard
@@ -744,10 +742,9 @@ public actor SecurityProviderService: SecurityProviderProtocol, AsyncServiceInit
     let startTime=Date()
     let operationID=UUID().uuidString
 
-    await logger.debug("Starting secure retrieve operation", metadata: [
-      "operation_id": operationID,
+    await logger.debug("Starting secure retrieve operation", metadata: createPrivacyMetadata(["operation_id": operationID,
       "algorithm": config.encryptionAlgorithm.rawValue
-    ])
+    ], source: "SecurityImplementation"), source: "SecurityImplementation")
 
     // Extract required parameters from configuration
     guard let keyIdentifier=config.options?.metadata?["key_identifier"] else {
@@ -827,9 +824,8 @@ public actor SecurityProviderService: SecurityProviderProtocol, AsyncServiceInit
     let startTime=Date()
     let operationID=UUID().uuidString
 
-    await logger.debug("Starting secure delete operation", metadata: [
-      "operation_id": operationID
-    ])
+    await logger.debug("Starting secure delete operation", metadata: createPrivacyMetadata(["operation_id": operationID
+    ], source: "SecurityImplementation"), source: "SecurityImplementation")
 
     // Extract required parameters from configuration
     guard let keyIdentifier=config.options?.metadata?["key_identifier"] else {
@@ -868,10 +864,9 @@ public actor SecurityProviderService: SecurityProviderProtocol, AsyncServiceInit
     let startTime=Date()
     let operationID=UUID().uuidString
 
-    await logger.debug("Starting secure operation: \(operation.rawValue)", metadata: [
-      "operation_id": operationID,
+    await logger.debug("Starting secure operation: \(operation.rawValue)", metadata: createPrivacyMetadata(["operation_id": operationID,
       "algorithm": config.encryptionAlgorithm.rawValue
-    ])
+    ]))
 
     let result: CoreSecurityTypes.SecurityResultDTO=switch operation {
       case .encryption:
@@ -1011,7 +1006,7 @@ public actor SecurityProviderService: SecurityProviderProtocol, AsyncServiceInit
    */
   public func processSecurityOperation(
     operation: SecurityOperation,
-    metadata: [String: String]
+    metadata: createPrivacyMetadata([String: String])
   ) async -> CoreSecurityTypes.SecurityResultDTO {
     // Process the operation using actor-isolated state
     let operationID=UUID().uuidString
@@ -1142,3 +1137,22 @@ public actor SecurityProviderService: SecurityProviderProtocol, AsyncServiceInit
     }
   }
 }
+
+
+
+  
+  static func invalidVerificationMethod(reason: String) -> CoreSecurityError {
+    return .general(code: "INVALID_VERIFICATION_METHOD", message: reason)
+  }
+  
+  static func verificationFailed(reason: String) -> CoreSecurityError {
+    return .general(code: "VERIFICATION_FAILED", message: reason)
+  }
+  
+  static func notImplemented(reason: String) -> CoreSecurityError {
+    return .general(code: "NOT_IMPLEMENTED", message: reason)
+  }
+}
+
+
+

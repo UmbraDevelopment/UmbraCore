@@ -79,7 +79,7 @@ final class HashingService: SecurityServiceBase {
       config: config
     )
 
-    await logger.info("Starting hashing operation", metadata: logMetadata)
+    await logger.info("Starting hashing operation", metadata: logMetadata, source: "SecurityImplementation", source: "SecurityImplementation")
 
     do {
       // Extract required parameters from configuration
@@ -101,9 +101,8 @@ final class HashingService: SecurityServiceBase {
 
       // Log successful operation
       await logger.info(
-        "Completed hashing operation successfully",
-        metadata: logMetadata.merging([
-          "duration": "\(duration)",
+        "Completed hashing operation successfully", metadata: logMetadata.merging([
+          "duration": "\(duration, source: "SecurityImplementation", source: "SecurityImplementation")",
           "hashAlgorithm": hashAlgorithm.rawValue
         ])
       )
@@ -121,10 +120,8 @@ final class HashingService: SecurityServiceBase {
       let duration=Date().timeIntervalSince(startTime)
 
       // Log the error
-      await logger.error(
-        "Hashing operation failed: \(error.localizedDescription)",
-        metadata: logMetadata.merging([
-          "duration": "\(duration)",
+      await logger.error("Hashing operation failed: \(error.localizedDescription)", metadata: logMetadata.merging([
+          "duration": "\(duration, source: \"SecurityImplementation\")",
           "error": error.localizedDescription
         ])
       )
@@ -163,7 +160,7 @@ final class HashingService: SecurityServiceBase {
       "algorithm": algorithm.rawValue
     ]
 
-    await logger.info("Starting direct hash operation", metadata: logMetadata)
+    await logger.info("Starting direct hash operation", metadata: logMetadata, source: "SecurityImplementation", source: "SecurityImplementation")
 
     do {
       // Perform the hashing operation
@@ -172,18 +169,15 @@ final class HashingService: SecurityServiceBase {
       // Log successful operation
       let duration=Date().timeIntervalSince(startTime)
       await logger.info(
-        "Completed direct hash operation",
-        metadata: logMetadata.merging(["duration": "\(duration)"])
+        "Completed direct hash operation", metadata: logMetadata.merging(["duration": "\(duration, source: "SecurityImplementation", source: "SecurityImplementation")"])
       )
 
       return .success(hashedData)
     } catch {
       // Log error
       let duration=Date().timeIntervalSince(startTime)
-      await logger.error(
-        "Direct hash operation failed: \(error.localizedDescription)",
-        metadata: logMetadata.merging([
-          "duration": "\(duration)",
+      await logger.error("Direct hash operation failed: \(error.localizedDescription)", metadata: logMetadata.merging([
+          "duration": "\(duration, source: \"SecurityImplementation\")",
           "error": error.localizedDescription
         ])
       )
@@ -203,3 +197,22 @@ enum HashAlgorithm: String {
   case sha384="SHA384"
   case sha512="SHA512"
 }
+
+
+
+  
+  static func invalidVerificationMethod(reason: String) -> CoreSecurityError {
+    return .general(code: "INVALID_VERIFICATION_METHOD", message: reason)
+  }
+  
+  static func verificationFailed(reason: String) -> CoreSecurityError {
+    return .general(code: "VERIFICATION_FAILED", message: reason)
+  }
+  
+  static func notImplemented(reason: String) -> CoreSecurityError {
+    return .general(code: "NOT_IMPLEMENTED", message: reason)
+  }
+}
+
+
+

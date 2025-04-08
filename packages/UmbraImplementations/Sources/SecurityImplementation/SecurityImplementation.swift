@@ -1,5 +1,16 @@
 import CoreSecurityTypes
 import Foundation
+import LoggingTypes
+
+/// Helper function to create PrivacyMetadata from dictionary
+private func createPrivacyMetadata(_ dict: [String: String]) -> PrivacyMetadata {
+  var metadata = PrivacyMetadata()
+  for (key, value) in dict {
+    metadata = metadata.withPublic(key: key, value: value)
+  }
+  return metadata
+}
+
 import LoggingInterfaces
 import SecurityCoreInterfaces
 
@@ -54,7 +65,11 @@ public enum SecurityImplementation {
   public static func createSecurityProvider(
     logger: (any LoggingProtocol)?=nil
   ) async -> SecurityProviderProtocol {
-    await SecurityProviderFactory.createSecurityProvider(logger: logger)
+    if let logger = logger {
+      return await SecurityServiceFactory.createWithLogger(logger)
+    } else {
+      return await SecurityServiceFactory.createDefault()
+    }
   }
 
   /**
@@ -72,11 +87,16 @@ public enum SecurityImplementation {
     cryptoService: CryptoServiceProtocol,
     keyManager: KeyManagementProtocol,
     logger: any LoggingProtocol
-  ) -> SecurityProviderProtocol {
-    SecurityProviderFactory.createSecurityProvider(
+  ) async -> SecurityProviderProtocol {
+    // Create the security service actor directly
+    return SecurityServiceActor(
       cryptoService: cryptoService,
-      keyManager: keyManager,
-      logger: logger
+      logger: logger,
+      secureLogger: await LoggingServices.createSecureLogger(
+        subsystem: "com.umbra.security",
+        category: "SecurityService",
+        includeTimestamps: true
+      )
     )
   }
 
@@ -84,4 +104,18 @@ public enum SecurityImplementation {
    The current version of the SecurityImplementation module.
    */
   public static let version="1.0.0"
+}
+
+extension CoreSecurityError {
+  static func invalidVerificationMethod(reason: String) -> CoreSecurityError {
+    return .invalidVerificationMethod(reason: reason)
+  }
+  
+  static func verificationFailed(reason: String) -> CoreSecurityError {
+    return .verificationFailed(reason: reason)
+  }
+  
+  static func notImplemented(reason: String) -> CoreSecurityError {
+    return .notImplemented(reason: reason)
+  }
 }

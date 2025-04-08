@@ -1,5 +1,15 @@
 import CoreSecurityTypes
 import Foundation
+
+/// Helper function to create PrivacyMetadata from dictionary
+private func createPrivacyMetadata(_ dict: [String: String]) -> PrivacyMetadata {
+  var metadata = PrivacyMetadata()
+  for (key, value) in dict {
+    metadata = metadata.withPublic(key: key, value: value)
+  }
+  return metadata
+}
+
 import LoggingInterfaces
 import LoggingServices
 import LoggingTypes
@@ -92,60 +102,52 @@ final class SecurityMetricsCollector {
     storePerformanceMetric(operation: operation, duration: duration)
 
     // Create base metadata for logging
-    var metricMetadata: LoggingInterfaces.LogMetadata=[
+    var metricMetadata = createPrivacyMetadata([
       "operationId": operationID,
       "operation": operation.rawValue,
       "durationMs": String(format: "%.2f", duration),
-      "success": "\(success)",
-      "timestamp": "\(Date())"
-    ]
+      "success": success ? "true" : "false"
+    ])
 
     // Add any additional metadata
     for (key, value) in additionalMetadata {
-      metricMetadata[key]=value
+      metricMetadata = metricMetadata.withPublic(key: key, value: value)
     }
 
     // Add historical performance if available
     if let avgDuration=averagePerformance(for: operation) {
-      metricMetadata["avgDurationMs"]=String(format: "%.2f", avgDuration)
+      metricMetadata = metricMetadata.withPublic(key: "avgDurationMs", value: String(format: "%.2f", avgDuration))
     }
 
     // Log the metrics with appropriate level based on success
     if success {
-      await logger.info(
-        "Security operation metrics: \(operation.description)",
-        metadata: metricMetadata
-      )
+      await logger.info("Security operation metrics: \(operation.description)", metadata: metricMetadata, source: "SecurityImplementation")
     } else {
-      await logger.warning(
-        "Failed security operation metrics: \(operation.description)",
-        metadata: metricMetadata
-      )
+      await logger.warning("Failed security operation metrics: \(operation.description)", metadata: metricMetadata, source: "SecurityImplementation")
     }
 
     // Prepare privacy-tagged metadata for secure logger
     var secureMetadata: [String: PrivacyTaggedValue]=[
-      "operationId": PrivacyTaggedValue(value: operationID, privacyLevel: .public),
-      "operation": PrivacyTaggedValue(value: operation.rawValue, privacyLevel: .public),
-      "durationMs": PrivacyTaggedValue(value: Int(duration), privacyLevel: .public),
-      "success": PrivacyTaggedValue(value: success, privacyLevel: .public)
+      "operationId": PrivacyTaggedValue(stringValue: operationID, privacyLevel: .public),
+      "operation": PrivacyTaggedValue(stringValue: operation.rawValue, privacyLevel: .public),
+      "durationMs": PrivacyTaggedValue(stringValue: String(Int(duration)), privacyLevel: .public),
+      "success": PrivacyTaggedValue(stringValue: success ? "true" : "false", privacyLevel: .public)
     ]
 
     // Add additional metadata with privacy tagging
     for (key, value) in additionalMetadata {
       // Determine privacy level based on key name
       let privacyLevel=determinePrivacyLevel(for: key)
-      secureMetadata[key]=PrivacyTaggedValue(value: value, privacyLevel: privacyLevel)
+      secureMetadata[key]=PrivacyTaggedValue(stringValue: value, privacyLevel: privacyLevel)
     }
 
     // Add historical performance with privacy tagging
     if let avgDuration=averagePerformance(for: operation) {
-      secureMetadata["avgDurationMs"]=PrivacyTaggedValue(value: Int(avgDuration),
-                                                         privacyLevel: .public)
+      secureMetadata["avgDurationMs"]=PrivacyTaggedValue(stringValue: String(Int(avgDuration)), privacyLevel: .public)
     }
 
     // Log with secure logger for enhanced privacy awareness
-    let status: SecurityEventStatus=success ? .success : .warning
+    let status: SecurityEventStatus=success ? .success : .failed
     await secureLogger.securityEvent(
       action: "MetricsCollection",
       status: status,
@@ -171,45 +173,40 @@ final class SecurityMetricsCollector {
     context: [String: String]=[:]
   ) async {
     // Create anomaly metadata
-    var anomalyMetadata: LoggingInterfaces.LogMetadata=[
+    var anomalyMetadata: PrivacyMetadata = createPrivacyMetadata([
       "operation": operation.rawValue,
       "durationMs": String(format: "%.2f", duration),
       "thresholdMs": String(format: "%.2f", threshold),
       "exceededBy": String(format: "%.1f%%", (duration - threshold) / threshold * 100)
-    ]
+    ])
 
     // Add context information
     for (key, value) in context {
-      anomalyMetadata[key]=value
+      anomalyMetadata = anomalyMetadata.withPublic(key: key, value: value)
     }
 
     // Log the anomaly
-    await logger.warning(
-      "Performance anomaly detected in \(operation.description)",
-      metadata: anomalyMetadata
-    )
+    await logger.warning("Performance anomaly detected in \(operation.description)", metadata: anomalyMetadata, source: "SecurityImplementation")
 
     // Prepare privacy-tagged metadata for secure logger
     var secureMetadata: [String: PrivacyTaggedValue]=[
-      "operation": PrivacyTaggedValue(value: operation.rawValue, privacyLevel: .public),
-      "durationMs": PrivacyTaggedValue(value: Int(duration), privacyLevel: .public),
-      "thresholdMs": PrivacyTaggedValue(value: Int(threshold), privacyLevel: .public),
-      "exceededBy": PrivacyTaggedValue(value: String(format: "%.1f%%",
-                                                     (duration - threshold) / threshold * 100),
-                                       privacyLevel: .public)
+      "operation": PrivacyTaggedValue(stringValue: operation.rawValue, privacyLevel: .public),
+      "durationMs": PrivacyTaggedValue(stringValue: String(Int(duration)), privacyLevel: .public),
+      "thresholdMs": PrivacyTaggedValue(stringValue: String(Int(threshold)), privacyLevel: .public),
+      "exceededBy": PrivacyTaggedValue(stringValue: String(format: "%.1f%%", (duration - threshold) / threshold * 100), privacyLevel: .public)
     ]
 
     // Add context with privacy tagging
     for (key, value) in context {
       // Determine privacy level based on key name
       let privacyLevel=determinePrivacyLevel(for: key)
-      secureMetadata[key]=PrivacyTaggedValue(value: value, privacyLevel: privacyLevel)
+      secureMetadata[key]=PrivacyTaggedValue(stringValue: value, privacyLevel: privacyLevel)
     }
 
     // Log with secure logger for enhanced privacy awareness
     await secureLogger.securityEvent(
       action: "PerformanceAnomaly",
-      status: .warning,
+      status: .failed,
       subject: nil,
       resource: nil,
       additionalMetadata: secureMetadata
@@ -263,7 +260,7 @@ final class SecurityMetricsCollector {
    - Parameter key: The metadata key to evaluate
    - Returns: The appropriate privacy level for the key
    */
-  private func determinePrivacyLevel(for key: String) -> PrivacyLevel {
+  private func determinePrivacyLevel(for key: String) -> LogPrivacyLevel {
     // Keys that may contain sensitive information
     let sensitiveKeyPatterns=[
       "token", "key", "password", "secret", "credential", "auth",
@@ -292,5 +289,19 @@ final class SecurityMetricsCollector {
 
     // Default to public for metrics
     return .public
+  }
+}
+
+extension CoreSecurityError {
+  static func invalidVerificationMethod(reason: String) -> CoreSecurityError {
+    return .invalidVerificationMethod(reason: reason)
+  }
+  
+  static func verificationFailed(reason: String) -> CoreSecurityError {
+    return .verificationFailed(reason: reason)
+  }
+  
+  static func notImplemented(reason: String) -> CoreSecurityError {
+    return .notImplemented(reason: reason)
   }
 }

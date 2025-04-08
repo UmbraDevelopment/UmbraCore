@@ -1,4 +1,15 @@
 import Foundation
+import CoreSecurityTypes
+
+/// Helper function to create LogMetadataDTOCollection from dictionary
+private func createMetadataCollection(_ dict: [String: String]) -> LogMetadataDTOCollection {
+  var collection = LogMetadataDTOCollection()
+  for (key, value) in dict {
+    collection = collection.withPublic(key: key, value: value)
+  }
+  return collection
+}
+
 import LoggingInterfaces
 import LoggingTypes
 import Security
@@ -45,7 +56,7 @@ public actor RandomDataServiceActor: RandomDataServiceProtocol {
     // Log initialisation
     await logger.debug(
       "Initialising random data service with \(entropySource.rawValue) entropy source",
-      metadata: PrivacyMetadata([
+      metadata: LogMetadataDTOCollection([
         "entropy_source": (value: entropySource.rawValue, privacy: .public),
         "service_id": (value: serviceIdentifier.uuidString, privacy: .public)
       ]),
@@ -85,9 +96,8 @@ public actor RandomDataServiceActor: RandomDataServiceProtocol {
 
     // Log success
     await logger.debug(
-      "Random data service initialised successfully",
-      metadata: PrivacyMetadata([
-        "entropy_source": (value: entropySource.rawValue, privacy: .public)
+      "Random data service initialised successfully", metadata: LogMetadataDTOCollection([
+        "entropy_source": (value: entropySource.rawValue, privacy: .public, source: "SecurityImplementation", source: "SecurityImplementation")
       ]),
       source: "RandomDataServiceActor.initialise"
     )
@@ -118,7 +128,7 @@ public actor RandomDataServiceActor: RandomDataServiceProtocol {
     // Log operation with privacy controls
     await logger.debug(
       "Generating \(length) random bytes",
-      metadata: PrivacyMetadata([
+      metadata: LogMetadataDTOCollection([
         "length": (value: String(length), privacy: .public)
       ]),
       source: "RandomDataServiceActor.generateRandomBytes"
@@ -134,9 +144,8 @@ public actor RandomDataServiceActor: RandomDataServiceProtocol {
 
     // Log success
     await logger.debug(
-      "Successfully generated random bytes",
-      metadata: PrivacyMetadata([
-        "length": (value: String(bytes.count), privacy: .public)
+      "Successfully generated random bytes", metadata: LogMetadataDTOCollection([
+        "length": (value: String(bytes.count, source: "SecurityImplementation", source: "SecurityImplementation"), privacy: .public)
       ]),
       source: "RandomDataServiceActor.generateRandomBytes"
     )
@@ -154,7 +163,7 @@ public actor RandomDataServiceActor: RandomDataServiceProtocol {
     // Log operation with privacy controls
     await logger.debug(
       "Generating random integer in range \(range.lowerBound)..<\(range.upperBound)",
-      metadata: PrivacyMetadata([
+      metadata: LogMetadataDTOCollection([
         "lower_bound": (value: String(range.lowerBound), privacy: .public),
         "upper_bound": (value: String(range.upperBound), privacy: .public),
         "type": (value: String(describing: T.self), privacy: .public)
@@ -185,9 +194,8 @@ public actor RandomDataServiceActor: RandomDataServiceProtocol {
 
     // Log success
     await logger.debug(
-      "Successfully generated random integer",
-      metadata: PrivacyMetadata([
-        "value": (value: String(scaled), privacy: .public)
+      "Successfully generated random integer", metadata: LogMetadataDTOCollection([
+        "value": (value: String(scaled, source: "SecurityImplementation", source: "SecurityImplementation"), privacy: .public)
       ]),
       source: "RandomDataServiceActor.generateRandomInteger"
     )
@@ -213,8 +221,7 @@ public actor RandomDataServiceActor: RandomDataServiceProtocol {
 
     // Log operation with privacy controls
     await logger.debug(
-      "Generating random double between 0.0 and 1.0",
-      metadata: PrivacyMetadata([:]),
+      "Generating random double between 0.0 and 1.0", metadata: LogMetadataDTOCollection([:], source: "SecurityImplementation", source: "SecurityImplementation"),
       source: "RandomDataServiceActor.generateRandomDouble"
     )
 
@@ -232,9 +239,8 @@ public actor RandomDataServiceActor: RandomDataServiceProtocol {
 
     // Log success
     await logger.debug(
-      "Successfully generated random double",
-      metadata: PrivacyMetadata([
-        "value": (value: String(format: "%.6f", scaled), privacy: .public)
+      "Successfully generated random double", metadata: LogMetadataDTOCollection([
+        "value": (value: String(format: "%.6f", scaled, source: "SecurityImplementation", source: "SecurityImplementation"), privacy: .public)
       ]),
       source: "RandomDataServiceActor.generateRandomDouble"
     )
@@ -252,3 +258,22 @@ public actor RandomDataServiceActor: RandomDataServiceProtocol {
     }
   }
 }
+
+
+
+  
+  static func invalidVerificationMethod(reason: String) -> CoreSecurityError {
+    return .general(code: "INVALID_VERIFICATION_METHOD", message: reason)
+  }
+  
+  static func verificationFailed(reason: String) -> CoreSecurityError {
+    return .general(code: "VERIFICATION_FAILED", message: reason)
+  }
+  
+  static func notImplemented(reason: String) -> CoreSecurityError {
+    return .general(code: "NOT_IMPLEMENTED", message: reason)
+  }
+}
+
+
+

@@ -1,6 +1,16 @@
 import CoreSecurityTypes
 import DomainSecurityTypes
 import Foundation
+
+/// Helper function to create LogMetadataDTOCollection from dictionary
+private func createMetadataCollection(_ dict: [String: String]) -> LogMetadataDTOCollection {
+  var collection = LogMetadataDTOCollection()
+  for (key, value) in dict {
+    collection = collection.withPublic(key: key, value: value)
+  }
+  return collection
+}
+
 import LoggingInterfaces
 import LoggingTypes
 import SecurityCoreInterfaces
@@ -57,8 +67,7 @@ extension CoreSecurityProviderService {
         useHardwareAcceleration: config.options?.useHardwareAcceleration ?? true,
         operationTimeoutSeconds: config.options?.operationTimeoutSeconds ?? 30.0,
         verifyOperations: config.options?.verifyOperations ?? true,
-        metadata: [
-          "location": config.options?.metadata?["storeLocation"] ?? "default",
+        metadata: createPrivacyMetadata(["location": config.options?.metadata?["storeLocation"]) ?? "default",
           "identifier": config.options?.metadata?["storeIdentifier"] ?? UUID().uuidString,
           "data": encryptResult.resultData?.base64EncodedString() ?? ""
         ]
@@ -100,8 +109,7 @@ extension CoreSecurityProviderService {
         useHardwareAcceleration: config.options?.useHardwareAcceleration ?? true,
         operationTimeoutSeconds: config.options?.operationTimeoutSeconds ?? 30.0,
         verifyOperations: config.options?.verifyOperations ?? true,
-        metadata: [
-          "location": config.options?.metadata?["storeLocation"] ?? "default",
+        metadata: createPrivacyMetadata(["location": config.options?.metadata?["storeLocation"]) ?? "default",
           "identifier": identifier
         ]
       )
@@ -122,9 +130,8 @@ extension CoreSecurityProviderService {
     guard let encryptedDataBase64=retrieveResult.resultData else {
       // Log and return error
       await logger.error(
-        "Retrieved data was nil",
-        metadata: PrivacyMetadata([
-          "identifier": (value: identifier, privacy: .public)
+        "Retrieved data was nil", metadata: LogMetadataDTOCollection([
+          "identifier": (value: identifier, privacy: .public, source: "SecurityImplementation", source: "SecurityImplementation")
         ]),
         source: "SecurityProvider+Operations.retrieveAndDecrypt"
       )
@@ -132,9 +139,8 @@ extension CoreSecurityProviderService {
       return SecurityResultDTO.failure(
         errorDetails: "Retrieved data was nil",
         executionTimeMs: 0,
-        metadata: [
-          "identifier": identifier
-        ]
+        metadata: createPrivacyMetadata(["identifier": identifier
+        ])
       )
     }
 
@@ -185,10 +191,9 @@ extension CoreSecurityProviderService {
     ])
 
     await logger.info(
-      "Starting batch encryption operation",
-      metadata: privacyMetadata,
+      "Starting batch encryption operation", metadata: privacyMetadata,
       source: "SecurityProvider+Operations.batchEncrypt"
-    )
+    , source: "SecurityImplementation", source: "SecurityImplementation")
 
     var results=[SecurityResultDTO]()
     for (index, data) in dataItems.enumerated() {
@@ -230,17 +235,16 @@ extension CoreSecurityProviderService {
           SecurityResultDTO.failure(
             errorDetails: "Encryption operation failed: \(error.localizedDescription)",
             executionTimeMs: 0,
-            metadata: ["itemIndex": String(index)]
+            metadata: createPrivacyMetadata(["itemIndex": String(index)])
           )
         )
       }
     }
 
     await logger.info(
-      "Completed batch encryption operation",
-      metadata: privacyMetadata,
+      "Completed batch encryption operation", metadata: privacyMetadata,
       source: "SecurityProvider+Operations.batchEncrypt"
-    )
+    , source: "SecurityImplementation", source: "SecurityImplementation")
 
     return results
   }
@@ -267,10 +271,9 @@ extension CoreSecurityProviderService {
     ])
 
     await logger.info(
-      "Starting batch decryption operation",
-      metadata: privacyMetadata,
+      "Starting batch decryption operation", metadata: privacyMetadata,
       source: "SecurityProvider+Operations.batchDecrypt"
-    )
+    , source: "SecurityImplementation", source: "SecurityImplementation")
 
     var results=[SecurityResultDTO]()
     for (index, data) in dataItems.enumerated() {
@@ -312,17 +315,16 @@ extension CoreSecurityProviderService {
           SecurityResultDTO.failure(
             errorDetails: "Decryption operation failed: \(error.localizedDescription)",
             executionTimeMs: 0,
-            metadata: ["itemIndex": String(index)]
+            metadata: createPrivacyMetadata(["itemIndex": String(index)])
           )
         )
       }
     }
 
     await logger.info(
-      "Completed batch decryption operation",
-      metadata: privacyMetadata,
+      "Completed batch decryption operation", metadata: privacyMetadata,
       source: "SecurityProvider+Operations.batchDecrypt"
-    )
+    , source: "SecurityImplementation", source: "SecurityImplementation")
 
     return results
   }
@@ -356,10 +358,9 @@ extension CoreSecurityProviderService {
       let length=Int(lengthString)
     else {
       await logger.error(
-        "Missing or invalid length parameter for random data generation",
-        metadata: privacyMetadata,
+        "Missing or invalid length parameter for random data generation", metadata: privacyMetadata,
         source: "SecurityProvider+Operations.generateSecureRandom"
-      )
+      , source: "SecurityImplementation", source: "SecurityImplementation")
 
       return SecurityResultDTO.failure(
         errorDetails: "Missing or invalid length parameter for random data generation",
@@ -407,10 +408,9 @@ extension CoreSecurityProviderService {
     resultMetadata["durationMs"]=String(format: "%.2f", duration)
 
     await logger.info(
-      "Random data generation completed successfully",
-      metadata: privacyMetadata,
+      "Random data generation completed successfully", metadata: privacyMetadata,
       source: "SecurityProvider+Operations.generateSecureRandom"
-    )
+    , source: "SecurityImplementation", source: "SecurityImplementation")
 
     // Return success result
     return SecurityResultDTO.success(
@@ -420,3 +420,22 @@ extension CoreSecurityProviderService {
     )
   }
 }
+
+
+
+  
+  static func invalidVerificationMethod(reason: String) -> CoreSecurityError {
+    return .general(code: "INVALID_VERIFICATION_METHOD", message: reason)
+  }
+  
+  static func verificationFailed(reason: String) -> CoreSecurityError {
+    return .general(code: "VERIFICATION_FAILED", message: reason)
+  }
+  
+  static func notImplemented(reason: String) -> CoreSecurityError {
+    return .general(code: "NOT_IMPLEMENTED", message: reason)
+  }
+}
+
+
+

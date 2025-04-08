@@ -1,6 +1,16 @@
 import CoreSecurityTypes
 import CryptoServices
 import Foundation
+
+/// Helper function to create LogMetadataDTOCollection from dictionary
+private func createMetadataCollection(_ dict: [String: String]) -> LogMetadataDTOCollection {
+  var collection = LogMetadataDTOCollection()
+  for (key, value) in dict {
+    collection = collection.withPublic(key: key, value: value)
+  }
+  return collection
+}
+
 import LoggingInterfaces
 import LoggingServices
 import LoggingTypes
@@ -48,8 +58,7 @@ public enum SecurityProviderFactory {
       actualLogger=logger
     } else {
       let developmentLogger=LoggingServiceFactory.createDevelopmentLogger(
-        minimumLevel: .info,
-        formatter: nil
+        environment: .development)
       )
       actualLogger=developmentLogger
     }
@@ -93,8 +102,7 @@ public enum SecurityProviderFactory {
       actualLogger=logger
     } else {
       let developmentLogger=LoggingServiceFactory.createDevelopmentLogger(
-        minimumLevel: .debug,
-        formatter: nil
+        environment: .development)
       )
       actualLogger=developmentLogger
     }
@@ -139,8 +147,7 @@ public enum SecurityProviderFactory {
       actualLogger=logger
     } else {
       let developmentLogger=LoggingServiceFactory.createDevelopmentLogger(
-        minimumLevel: .debug,
-        formatter: nil
+        environment: .development)
       )
       actualLogger=developmentLogger
     }
@@ -157,3 +164,22 @@ public enum SecurityProviderFactory {
     return securityService
   }
 }
+
+
+
+  
+  static func invalidVerificationMethod(reason: String) -> CoreSecurityError {
+    return .general(code: "INVALID_VERIFICATION_METHOD", message: reason)
+  }
+  
+  static func verificationFailed(reason: String) -> CoreSecurityError {
+    return .general(code: "VERIFICATION_FAILED", message: reason)
+  }
+  
+  static func notImplemented(reason: String) -> CoreSecurityError {
+    return .general(code: "NOT_IMPLEMENTED", message: reason)
+  }
+}
+
+
+

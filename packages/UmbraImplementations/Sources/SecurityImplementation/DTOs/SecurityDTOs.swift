@@ -1,5 +1,6 @@
 import CoreSecurityTypes
 import Foundation
+import LoggingTypes
 import SecurityCoreInterfaces
 
 /// Data transfer object for security configuration.
@@ -151,7 +152,9 @@ public struct SecurityEventDTO: Sendable, Equatable {
   }
 }
 
-/// Security context data transfer object
+/// Data transfer object for security context.
+/// This provides context for security operations, including the operation type,
+/// security level, key identifier, and cryptographic options.
 public struct SecurityContextDTO: Sendable, Equatable {
   /// The operation type
   public let operationType: SecurityOperationTypeDTO
@@ -162,31 +165,31 @@ public struct SecurityContextDTO: Sendable, Equatable {
   /// The key identifier
   public let keyIdentifier: String
 
-  /// The crypto options
+  /// Cryptographic options
   public let cryptoOptions: [String: String]
 
   /// Additional metadata
-  public let metadata: [String: String]
+  public let metadata: LogMetadataDTOCollection
 
   /// Creates a new security context
   /// - Parameters:
   ///   - operationType: The operation type
   ///   - securityLevel: The security level
   ///   - keyIdentifier: The key identifier
-  ///   - cryptoOptions: The crypto options
+  ///   - cryptoOptions: Cryptographic options
   ///   - metadata: Additional metadata
   public init(
     operationType: SecurityOperationTypeDTO,
     securityLevel: CoreSecurityTypes.SecurityLevelDTO = .standard,
     keyIdentifier: String,
-    cryptoOptions: [String: String]=[:],
-    metadata: [String: String]=[:]
+    cryptoOptions: [String: String] = [:],
+    metadata: LogMetadataDTOCollection = LogMetadataDTOCollection()
   ) {
-    self.operationType=operationType
-    self.securityLevel=securityLevel
-    self.keyIdentifier=keyIdentifier
-    self.cryptoOptions=cryptoOptions
-    self.metadata=metadata
+    self.operationType = operationType
+    self.securityLevel = securityLevel
+    self.keyIdentifier = keyIdentifier
+    self.cryptoOptions = cryptoOptions
+    self.metadata = metadata
   }
 }
 

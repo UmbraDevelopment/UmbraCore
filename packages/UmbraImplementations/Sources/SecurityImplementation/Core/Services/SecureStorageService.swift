@@ -1,6 +1,17 @@
 import CoreSecurityTypes
 import DomainSecurityTypes
 import Foundation
+import LoggingTypes
+
+/// Helper function to create LogMetadataDTOCollection from dictionary
+private func createMetadataCollection(_ dict: [String: String]) -> LogMetadataDTOCollection {
+  var collection = LogMetadataDTOCollection()
+  for (key, value) in dict {
+    collection = collection.withPublic(key: key, value: value)
+  }
+  return collection
+}
+
 import LoggingInterfaces
 import SecurityCoreInterfaces
 
@@ -82,10 +93,9 @@ final class SecureStorageService: SecurityServiceBase {
     )
 
     await logger.info(
-      "Starting secure storage operation",
-      metadata: logMetadata,
+      "Starting secure storage operation", metadata: logMetadata,
       source: "SecureStorageService"
-    )
+    , source: "SecurityImplementation", source: "SecurityImplementation")
 
     do {
       // Extract required parameters from configuration
@@ -123,19 +133,17 @@ final class SecureStorageService: SecurityServiceBase {
           successMetadata["durationMs"] = .string(String(format: "%.2f", duration))
 
           await logger.info(
-            "Secure storage operation completed successfully",
-            metadata: successMetadata,
+            "Secure storage operation completed successfully", metadata: successMetadata,
             source: "SecureStorageService"
-          )
+          , source: "SecurityImplementation", source: "SecurityImplementation")
 
           // Return successful result with identifier
           return SecurityResultDTO(
             status: .success,
-            metadata: [
-              "durationMs": String(format: "%.2f", duration),
+            metadata: createPrivacyMetadata(["durationMs": String(format: "%.2f", duration),
               "storageIdentifier": identifier,
               "storedBytes": "\(storedBytes)"
-            ]
+            ])
           )
 
         case let .failure(error):
@@ -162,10 +170,9 @@ final class SecureStorageService: SecurityServiceBase {
       return SecurityResultDTO(
         status: .failure,
         error: error,
-        metadata: [
-          "durationMs": String(format: "%.2f", duration),
+        metadata: createPrivacyMetadata(["durationMs": String(format: "%.2f", duration),
           "errorMessage": error.localizedDescription
-        ]
+        ])
       )
     }
   }
@@ -189,10 +196,9 @@ final class SecureStorageService: SecurityServiceBase {
     )
 
     await logger.info(
-      "Starting secure retrieval operation",
-      metadata: logMetadata,
+      "Starting secure retrieval operation", metadata: logMetadata,
       source: "SecureStorageService"
-    )
+    , source: "SecurityImplementation", source: "SecurityImplementation")
 
     do {
       // Extract required parameters from configuration
@@ -241,19 +247,17 @@ final class SecureStorageService: SecurityServiceBase {
           successMetadata["durationMs"] = .string(String(format: "%.2f", duration))
 
           await logger.info(
-            "Secure retrieval operation completed successfully",
-            metadata: successMetadata,
+            "Secure retrieval operation completed successfully", metadata: successMetadata,
             source: "SecureStorageService"
-          )
+          , source: "SecurityImplementation", source: "SecurityImplementation")
 
           // Return successful result with retrieved data
           return SecurityResultDTO(
             status: .success,
             data: decryptedData,
-            metadata: [
-              "durationMs": String(format: "%.2f", duration),
+            metadata: createPrivacyMetadata(["durationMs": String(format: "%.2f", duration),
               "storageIdentifier": identifier,
-              "algorithm": retrievalResult.metadata["algorithm"] ?? "unknown"
+              "algorithm": retrievalResult.metadata["algorithm"]) ?? "unknown"
             ]
           )
 
@@ -282,10 +286,9 @@ final class SecureStorageService: SecurityServiceBase {
       return SecurityResultDTO(
         status: .failure,
         error: error,
-        metadata: [
-          "durationMs": String(format: "%.2f", duration),
+        metadata: createPrivacyMetadata(["durationMs": String(format: "%.2f", duration),
           "errorMessage": error.localizedDescription
-        ]
+        ])
       )
     }
   }
@@ -309,10 +312,9 @@ final class SecureStorageService: SecurityServiceBase {
     )
 
     await logger.info(
-      "Starting secure deletion operation",
-      metadata: logMetadata,
+      "Starting secure deletion operation", metadata: logMetadata,
       source: "SecureStorageService"
-    )
+    , source: "SecurityImplementation", source: "SecurityImplementation")
 
     do {
       // Extract required parameters from configuration
@@ -340,18 +342,16 @@ final class SecureStorageService: SecurityServiceBase {
       successMetadata["durationMs"] = .string(String(format: "%.2f", duration))
 
       await logger.info(
-        "Secure deletion operation completed successfully",
-        metadata: successMetadata,
+        "Secure deletion operation completed successfully", metadata: successMetadata,
         source: "SecureStorageService"
-      )
+      , source: "SecurityImplementation", source: "SecurityImplementation")
 
       // Return successful result
       return SecurityResultDTO(
         status: .success,
-        metadata: [
-          "durationMs": String(format: "%.2f", duration),
+        metadata: createPrivacyMetadata(["durationMs": String(format: "%.2f", duration),
           "storageIdentifier": identifier
-        ]
+        ])
       )
     } catch {
       // Calculate duration before failure
@@ -375,10 +375,9 @@ final class SecureStorageService: SecurityServiceBase {
       return SecurityResultDTO(
         status: .failure,
         error: error,
-        metadata: [
-          "durationMs": String(format: "%.2f", duration),
+        metadata: createPrivacyMetadata(["durationMs": String(format: "%.2f", duration),
           "errorMessage": error.localizedDescription
-        ]
+        ])
       )
     }
   }
@@ -415,7 +414,7 @@ final class SecureStorageService: SecurityServiceBase {
    - Returns: Retrieved data and metadata, or nil if not found
    */
   private func simulateSecureRetrieval(identifier _: String)
-  -> (data: Data, metadata: [String: String])? {
+  -> (data: Data, metadata: createPrivacyMetadata([String: String]))? {
     // In a real implementation, this would retrieve data from secure storage
     // For simulation purposes, we'll create dummy data
 
@@ -460,3 +459,22 @@ enum SecureStorageError: Error {
   case decryptionError(String)
   case encryptionError(String)
 }
+
+
+
+  
+  static func invalidVerificationMethod(reason: String) -> CoreSecurityError {
+    return .general(code: "INVALID_VERIFICATION_METHOD", message: reason)
+  }
+  
+  static func verificationFailed(reason: String) -> CoreSecurityError {
+    return .general(code: "VERIFICATION_FAILED", message: reason)
+  }
+  
+  static func notImplemented(reason: String) -> CoreSecurityError {
+    return .general(code: "NOT_IMPLEMENTED", message: reason)
+  }
+}
+
+
+

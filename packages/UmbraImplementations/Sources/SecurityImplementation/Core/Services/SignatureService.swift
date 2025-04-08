@@ -1,6 +1,17 @@
 import CoreSecurityTypes
 import DomainSecurityTypes
 import Foundation
+import LoggingTypes
+
+/// Helper function to create LogMetadataDTOCollection from dictionary
+private func createMetadataCollection(_ dict: [String: String]) -> LogMetadataDTOCollection {
+  var collection = LogMetadataDTOCollection()
+  for (key, value) in dict {
+    collection = collection.withPublic(key: key, value: value)
+  }
+  return collection
+}
+
 import LoggingInterfaces
 import SecurityCoreInterfaces
 
@@ -89,7 +100,7 @@ final class SignatureService: SecurityServiceBase {
     logMetadata.setPublic(key: "operation", value: String(describing: operation))
     logMetadata.setPublic(key: "algorithm", value: config.algorithm)
 
-    await logger.info("Starting signing operation", metadata: logMetadata)
+    await logger.info("Starting signing operation", metadata: logMetadata, source: "SecurityImplementation", source: "SecurityImplementation")
 
     do {
       // Extract required parameters from configuration
@@ -144,18 +155,16 @@ final class SignatureService: SecurityServiceBase {
         successMetadata.setPublic(key: "signatureSize", value: String(signature.count))
 
         await logger.info(
-          "Signing operation completed successfully",
-          metadata: successMetadata
-        )
+          "Signing operation completed successfully", metadata: successMetadata
+        , source: "SecurityImplementation", source: "SecurityImplementation")
 
         // Return successful result with signature
         return SecurityResultDTO(
           status: .success,
           data: signature.toBase64(),
-          metadata: [
-            "durationMs": String(format: "%.2f", duration * 1000),
+          metadata: createPrivacyMetadata(["durationMs": String(format: "%.2f", duration * 1000),
             "algorithm": config.algorithm
-          ]
+          ])
         )
       } catch {
         // Calculate duration before failure
@@ -166,19 +175,16 @@ final class SignatureService: SecurityServiceBase {
         errorMetadata.setPrivate(key: "error", value: error.localizedDescription)
         errorMetadata.setPublic(key: "duration", value: String(format: "%.3f s", duration))
 
-        await logger.error(
-          "Signing operation failed: \(error.localizedDescription)",
-          metadata: errorMetadata
-        )
+        await logger.error("Signing operation failed: \(error.localizedDescription)", metadata: errorMetadata
+        , source: \"SecurityImplementation\")
 
         // Return failure result
         return SecurityResultDTO(
           status: .failure,
           error: error,
-          metadata: [
-            "durationMs": String(format: "%.2f", duration * 1000),
+          metadata: createPrivacyMetadata(["durationMs": String(format: "%.2f", duration * 1000),
             "errorMessage": error.localizedDescription
-          ]
+          ])
         )
       }
     } catch {
@@ -190,19 +196,16 @@ final class SignatureService: SecurityServiceBase {
       errorMetadata.setPrivate(key: "error", value: error.localizedDescription)
       errorMetadata.setPublic(key: "duration", value: String(format: "%.3f s", duration))
 
-      await logger.error(
-        "Signing operation failed: \(error.localizedDescription)",
-        metadata: errorMetadata
-      )
+      await logger.error("Signing operation failed: \(error.localizedDescription)", metadata: errorMetadata
+      , source: \"SecurityImplementation\")
 
       // Return failure result
       return SecurityResultDTO(
         status: .failure,
         error: error,
-        metadata: [
-          "durationMs": String(format: "%.2f", duration * 1000),
+        metadata: createPrivacyMetadata(["durationMs": String(format: "%.2f", duration * 1000),
           "errorMessage": error.localizedDescription
-        ]
+        ])
       )
     }
   }
@@ -224,7 +227,7 @@ final class SignatureService: SecurityServiceBase {
     logMetadata.setPublic(key: "operation", value: String(describing: operation))
     logMetadata.setPublic(key: "algorithm", value: config.algorithm)
 
-    await logger.info("Starting signature verification operation", metadata: logMetadata)
+    await logger.info("Starting signature verification operation", metadata: logMetadata, source: "SecurityImplementation", source: "SecurityImplementation")
 
     do {
       // Extract required parameters from configuration
@@ -257,23 +260,20 @@ final class SignatureService: SecurityServiceBase {
 
         if isValid {
           await logger.info(
-            "Signature verification completed: Valid signature",
-            metadata: verificationMetadata
-          )
+            "Signature verification completed: Valid signature", metadata: verificationMetadata
+          , source: "SecurityImplementation", source: "SecurityImplementation")
         } else {
           await logger.warning(
-            "Signature verification completed: Invalid signature",
-            metadata: verificationMetadata
-          )
+            "Signature verification completed: Invalid signature", metadata: verificationMetadata
+          , source: "SecurityImplementation", source: "SecurityImplementation")
         }
 
         // Return verification result
         return SecurityResultDTO(
           status: .success,
-          metadata: [
-            "verified": "\(isValid)",
+          metadata: createPrivacyMetadata(["verified": "\(isValid)",
             "algorithm": config.algorithm
-          ]
+          ])
         )
       } else {
         // If key not provided directly, try to retrieve from key manager
@@ -310,23 +310,20 @@ final class SignatureService: SecurityServiceBase {
 
             if isValid {
               await logger.info(
-                "Signature verification completed: Valid signature",
-                metadata: verificationMetadata
-              )
+                "Signature verification completed: Valid signature", metadata: verificationMetadata
+              , source: "SecurityImplementation", source: "SecurityImplementation")
             } else {
               await logger.warning(
-                "Signature verification completed: Invalid signature",
-                metadata: verificationMetadata
-              )
+                "Signature verification completed: Invalid signature", metadata: verificationMetadata
+              , source: "SecurityImplementation", source: "SecurityImplementation")
             }
 
             // Return verification result
             return SecurityResultDTO(
               status: .success,
-              metadata: [
-                "verified": "\(isValid)",
+              metadata: createPrivacyMetadata(["verified": "\(isValid)",
                 "algorithm": config.algorithm
-              ]
+              ])
             )
 
           case let .failure(error):
@@ -342,19 +339,16 @@ final class SignatureService: SecurityServiceBase {
       errorMetadata.setPrivate(key: "error", value: error.localizedDescription)
       errorMetadata.setPublic(key: "duration", value: String(format: "%.3f s", duration))
 
-      await logger.error(
-        "Signature verification operation failed: \(error.localizedDescription)",
-        metadata: errorMetadata
-      )
+      await logger.error("Signature verification operation failed: \(error.localizedDescription)", metadata: errorMetadata
+      , source: \"SecurityImplementation\")
 
       // Return failure result
       return SecurityResultDTO(
         status: .failure,
         error: error,
-        metadata: [
-          "durationMs": String(format: "%.2f", duration * 1000),
+        metadata: createPrivacyMetadata(["durationMs": String(format: "%.2f", duration * 1000),
           "errorMessage": error.localizedDescription
-        ]
+        ])
       )
     }
   }
@@ -416,3 +410,22 @@ enum SignatureError: Error {
   case keyManagementError(String)
   case cryptoError(String)
 }
+
+
+
+  
+  static func invalidVerificationMethod(reason: String) -> CoreSecurityError {
+    return .general(code: "INVALID_VERIFICATION_METHOD", message: reason)
+  }
+  
+  static func verificationFailed(reason: String) -> CoreSecurityError {
+    return .general(code: "VERIFICATION_FAILED", message: reason)
+  }
+  
+  static func notImplemented(reason: String) -> CoreSecurityError {
+    return .general(code: "NOT_IMPLEMENTED", message: reason)
+  }
+}
+
+
+
