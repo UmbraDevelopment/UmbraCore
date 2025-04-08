@@ -150,13 +150,11 @@ public struct BackupLogContext: LogContextDTO, Sendable, Equatable {
         
         // Initialise metadata collection
         self.metadata = LogMetadataDTOCollection()
-        
-        // Add standard fields
-        self.metadata.add(key: "operation", value: operation, privacy: .public)
+            .with(key: "operation", value: operation, privacyLevel: .public)
         
         // Add any additional context if provided
         additionalContext?.forEach { key, value in
-            self.metadata.add(key: key, value: value, privacy: .public)
+            self.metadata = self.metadata.with(key: key, value: value, privacyLevel: .public)
         }
     }
     
@@ -327,8 +325,8 @@ Create a comprehensive module documentation file:
  
  // Handle the result
  switch result {
- case .success(let snapshotInfo):
-     print("Created snapshot: \(snapshotInfo.id)")
+ case .success(let snapshot):
+     print("Created snapshot: \(snapshot.id)")
  case .failure(let error):
      print("Failed to create snapshot: \(error)")
  }

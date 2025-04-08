@@ -458,13 +458,11 @@ public struct BackupLogContext: LogContextDTO, Sendable, Equatable {
         
         // Initialise metadata collection
         self.metadata = LogMetadataDTOCollection()
-        
-        // Add standard fields
-        self.metadata.add(key: "operation", value: operation, privacy: .public)
+            .with(key: "operation", value: operation, privacyLevel: .public)
         
         // Add any additional context if provided
         additionalContext?.forEach { key, value in
-            self.metadata.add(key: key, value: value, privacy: .public)
+            self.metadata = self.metadata.with(key: key, value: value, privacyLevel: .public)
         }
     }
     
@@ -492,16 +490,17 @@ public struct BackupLogContext: LogContextDTO, Sendable, Equatable {
      * - Parameters:
      *   - key: The key for the value
      *   - value: The value to add
-     *   - privacy: The privacy level
+     *   - privacyLevel: The privacy level
      * - Returns: A new context with the additional value
      */
     public func with(
         key: String,
         value: String,
-        privacy: LogPrivacyLevel
+        privacyLevel: LogPrivacyLevel
     ) -> BackupLogContext {
+        let newMetadata = self.metadata.with(key: key, value: value, privacyLevel: privacyLevel)
         var newContext = self
-        newContext.metadata.add(key: key, value: value, privacy: privacy)
+        newContext.metadata = newMetadata
         return newContext
     }
 }

@@ -217,10 +217,10 @@ public struct DomainLogContext: LogContextDTO, Sendable {
         self.operation = operation
         
         self.metadata = LogMetadataDTOCollection()
-        self.metadata.add(key: "operation", value: operation, privacy: .public)
+            .with(key: "operation", value: operation, privacyLevel: .public)
         
         additionalContext?.forEach { key, value in
-            self.metadata.add(key: key, value: value, privacy: .public)
+            self.metadata = self.metadata.with(key: key, value: value, privacyLevel: .public)
         }
     }
     
@@ -287,10 +287,10 @@ public struct DomainLogger {
 Always use explicit privacy levels when logging data:
 
 ```swift
-var metadata = LogMetadataDTOCollection()
-metadata.add(key: "userId", value: userId, privacy: .hash)
-metadata.add(key: "operation", value: "login", privacy: .public)
-metadata.add(key: "ipAddress", value: ipAddress, privacy: .private)
+let metadata = LogMetadataDTOCollection()
+    .with(key: "userId", value: userId, privacyLevel: .hash)
+    .with(key: "operation", value: "login", privacyLevel: .public)
+    .with(key: "ipAddress", value: ipAddress, privacyLevel: .private)
 ```
 
 ## Module Organisation
@@ -448,7 +448,7 @@ public actor BackupServicesActor: BackupServiceProtocol {
             let updatedContext = logContext.with(
                 key: "snapshotId", 
                 value: snapshotInfo.id,
-                privacy: .public
+                privacyLevel: .public
             )
             
             await backupLogger.logOperationSuccess(
