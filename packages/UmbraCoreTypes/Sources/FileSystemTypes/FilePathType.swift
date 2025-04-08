@@ -4,11 +4,30 @@ import Foundation
 public struct FilePath: Sendable, Equatable, Hashable {
   /// The string representation of the path
   public let path: String
+  
+  /// Whether this path represents a directory
+  public let isDirectory: Bool
+  
+  /// Security options for this path
+  public let securityOptions: SecurityOptions?
 
   /// Creates a new file path
   /// - Parameter path: The string representation of the path
   public init(path: String) {
-    self.path=path
+    self.path = path
+    self.isDirectory = false
+    self.securityOptions = nil
+  }
+  
+  /// Creates a new file path with directory flag and security options
+  /// - Parameters:
+  ///   - path: The string representation of the path
+  ///   - isDirectory: Whether this path represents a directory
+  ///   - securityOptions: Optional security options for this path
+  public init(path: String, isDirectory: Bool, securityOptions: SecurityOptions? = nil) {
+    self.path = path
+    self.isDirectory = isDirectory
+    self.securityOptions = securityOptions
   }
 }
 

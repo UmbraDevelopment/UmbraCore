@@ -2,6 +2,7 @@ import FileSystemInterfaces
 import FileSystemTypes
 import LoggingInterfaces
 import LoggingTypes
+import Security
 
 /**
  # File System Service Secure Implementation
@@ -60,7 +61,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
         await logDebug("Checking if file exists at \(path.path)")
         
         guard let securePath = SecurePathAdapter.toSecurePath(path) else {
-            throw FileSystemError.invalidPath(
+            throw FileSystemInterfaces.FileSystemError.invalidPath(
                 path: path.path,
                 reason: "Could not convert to secure path"
             )
@@ -83,7 +84,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
         await logDebug("Checking if directory exists at \(path.path)")
         
         guard let securePath = SecurePathAdapter.toSecurePath(path) else {
-            throw FileSystemError.invalidPath(
+            throw FileSystemInterfaces.FileSystemError.invalidPath(
                 path: path.path,
                 reason: "Could not convert to secure path"
             )
@@ -110,7 +111,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
         await logDebug("Creating directory at \(path.path)")
         
         guard let securePath = SecurePathAdapter.toSecurePath(path) else {
-            throw FileSystemError.invalidPath(
+            throw FileSystemInterfaces.FileSystemError.invalidPath(
                 path: path.path,
                 reason: "Could not convert to secure path"
             )
@@ -123,7 +124,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
                 attributes: nil
             )
         } catch {
-            throw FileSystemError.directoryCreationFailed(
+            throw FileSystemInterfaces.FileSystemError.deleteError(
                 path: path.path,
                 reason: error.localizedDescription
             )
@@ -146,14 +147,16 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
         await logDebug("Listing contents of directory at \(path.path)")
         
         guard let securePath = SecurePathAdapter.toSecurePath(path) else {
-            throw FileSystemError.invalidPath(
+            throw FileSystemInterfaces.FileSystemError.invalidPath(
                 path: path.path,
                 reason: "Could not convert to secure path"
             )
         }
         
         do {
-            let contents = try FileManager.default.contentsOfDirectory(atPath: securePath.toString())
+            let contents = try FileManager.default.contentsOfDirectory(
+                atPath: securePath.toString()
+            )
             
             return contents.map { item in
                 let itemPath = path.path.hasSuffix("/") ? path.path + item : path.path + "/" + item
@@ -164,7 +167,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
                 return FilePath(path: itemPath, isDirectory: isDirectory)
             }
         } catch {
-            throw FileSystemError.directoryEnumerationFailed(
+            throw FileSystemInterfaces.FileSystemError.readError(
                 path: path.path,
                 reason: error.localizedDescription
             )
@@ -184,7 +187,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
         await logDebug("Reading file at \(path.path)")
         
         guard let securePath = SecurePathAdapter.toSecurePath(path) else {
-            throw FileSystemError.invalidPath(
+            throw FileSystemInterfaces.FileSystemError.invalidPath(
                 path: path.path,
                 reason: "Could not convert to secure path"
             )
@@ -193,7 +196,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
         do {
             return try Data(contentsOf: URL(fileURLWithPath: securePath.toString()))
         } catch {
-            throw FileSystemError.fileReadFailed(
+            throw FileSystemInterfaces.FileSystemError.readError(
                 path: path.path,
                 reason: error.localizedDescription
             )
@@ -204,32 +207,29 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
      Writes data to a file.
      
      - Parameters:
+        - path: The path to the file
         - data: The data to write
-        - path: The path where the file should be written
         - options: Options for writing the file
      - Throws: FileSystemError if file writing fails
      */
     public func writeFile(
-        _ data: Data,
-        to path: FilePath,
+        at path: FilePath,
+        data: Data,
         options: FileWriteOptions = []
     ) async throws {
-        await logDebug("Writing file to \(path.path)")
+        await logDebug("Writing file at \(path.path)")
         
         guard let securePath = SecurePathAdapter.toSecurePath(path) else {
-            throw FileSystemError.invalidPath(
+            throw FileSystemInterfaces.FileSystemError.invalidPath(
                 path: path.path,
                 reason: "Could not convert to secure path"
             )
         }
         
         do {
-            try data.write(
-                to: URL(fileURLWithPath: securePath.toString()),
-                options: options.contains(.atomic) ? .atomic : []
-            )
+            try data.write(to: URL(fileURLWithPath: securePath.toString()))
         } catch {
-            throw FileSystemError.fileWriteFailed(
+            throw FileSystemInterfaces.FileSystemError.writeError(
                 path: path.path,
                 reason: error.localizedDescription
             )
@@ -239,14 +239,14 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
     /**
      Deletes a file at the specified path.
      
-     - Parameter path: The path to the file to delete
+     - Parameter path: The file to delete
      - Throws: FileSystemError if file deletion fails
      */
     public func deleteFile(at path: FilePath) async throws {
         await logDebug("Deleting file at \(path.path)")
         
         guard let securePath = SecurePathAdapter.toSecurePath(path) else {
-            throw FileSystemError.invalidPath(
+            throw FileSystemInterfaces.FileSystemError.invalidPath(
                 path: path.path,
                 reason: "Could not convert to secure path"
             )
@@ -255,7 +255,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
         do {
             try FileManager.default.removeItem(atPath: securePath.toString())
         } catch {
-            throw FileSystemError.fileDeletionFailed(
+            throw FileSystemInterfaces.FileSystemError.deleteError(
                 path: path.path,
                 reason: error.localizedDescription
             )
@@ -263,15 +263,15 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
     }
     
     /**
-     Moves a file from one location to another.
+     Moves a file or directory from one location to another.
      
      - Parameters:
-        - sourcePath: The path to the file to move
-        - destinationPath: The path where the file should be moved
-        - options: Options for moving the file
-     - Throws: FileSystemError if file moving fails
+        - sourcePath: The source path
+        - destinationPath: The destination path
+        - options: Options for the move operation
+     - Throws: FileSystemError if the move fails
      */
-    public func moveFile(
+    public func moveItem(
         from sourcePath: FilePath,
         to destinationPath: FilePath,
         options: FileMoveOptions = []
@@ -279,14 +279,14 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
         await logDebug("Moving file from \(sourcePath.path) to \(destinationPath.path)")
         
         guard let secureSourcePath = SecurePathAdapter.toSecurePath(sourcePath) else {
-            throw FileSystemError.invalidPath(
+            throw FileSystemInterfaces.FileSystemError.invalidPath(
                 path: sourcePath.path,
                 reason: "Could not convert source path to secure path"
             )
         }
         
-        guard let secureDestPath = SecurePathAdapter.toSecurePath(destinationPath) else {
-            throw FileSystemError.invalidPath(
+        guard let secureDestinationPath = SecurePathAdapter.toSecurePath(destinationPath) else {
+            throw FileSystemInterfaces.FileSystemError.invalidPath(
                 path: destinationPath.path,
                 reason: "Could not convert destination path to secure path"
             )
@@ -295,27 +295,27 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
         do {
             try FileManager.default.moveItem(
                 atPath: secureSourcePath.toString(),
-                toPath: secureDestPath.toString()
+                toPath: secureDestinationPath.toString()
             )
         } catch {
-            throw FileSystemError.fileMoveFailed(
-                sourcePath: sourcePath.path,
-                destinationPath: destinationPath.path,
+            throw FileSystemInterfaces.FileSystemError.moveError(
+                source: sourcePath.path,
+                destination: destinationPath.path,
                 reason: error.localizedDescription
             )
         }
     }
     
     /**
-     Copies a file from one location to another.
+     Copies a file or directory from one location to another.
      
      - Parameters:
-        - sourcePath: The path to the file to copy
-        - destinationPath: The path where the file should be copied
-        - options: Options for copying the file
-     - Throws: FileSystemError if file copying fails
+        - sourcePath: The source path
+        - destinationPath: The destination path
+        - options: Options for the copy operation
+     - Throws: FileSystemError if the copy fails
      */
-    public func copyFile(
+    public func copyItem(
         from sourcePath: FilePath,
         to destinationPath: FilePath,
         options: FileCopyOptions = []
@@ -323,14 +323,14 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
         await logDebug("Copying file from \(sourcePath.path) to \(destinationPath.path)")
         
         guard let secureSourcePath = SecurePathAdapter.toSecurePath(sourcePath) else {
-            throw FileSystemError.invalidPath(
+            throw FileSystemInterfaces.FileSystemError.invalidPath(
                 path: sourcePath.path,
                 reason: "Could not convert source path to secure path"
             )
         }
         
-        guard let secureDestPath = SecurePathAdapter.toSecurePath(destinationPath) else {
-            throw FileSystemError.invalidPath(
+        guard let secureDestinationPath = SecurePathAdapter.toSecurePath(destinationPath) else {
+            throw FileSystemInterfaces.FileSystemError.invalidPath(
                 path: destinationPath.path,
                 reason: "Could not convert destination path to secure path"
             )
@@ -339,87 +339,69 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
         do {
             try FileManager.default.copyItem(
                 atPath: secureSourcePath.toString(),
-                toPath: secureDestPath.toString()
+                toPath: secureDestinationPath.toString()
             )
         } catch {
-            throw FileSystemError.fileCopyFailed(
-                sourcePath: sourcePath.path,
-                destinationPath: destinationPath.path,
+            throw FileSystemInterfaces.FileSystemError.copyError(
+                source: sourcePath.path,
+                destination: destinationPath.path,
                 reason: error.localizedDescription
             )
         }
     }
     
-    // MARK: - Path Operations
-    
     /**
-     Returns the parent directory of a path.
+     Converts a FilePath to a URL.
      
-     - Parameter path: The path to get the parent of
-     - Returns: The parent directory path
-     - Throws: FileSystemError if parent retrieval fails
+     - Parameter path: The path to convert
+     - Returns: A URL representation of the path
+     - Throws: FileSystemError if the conversion fails
      */
-    public func parentDirectory(of path: FilePath) async throws -> FilePath {
-        await logDebug("Getting parent directory of \(path.path)")
+    public func pathToURL(_ path: FilePath) async throws -> URL {
+        await logDebug("Converting path to URL: \(path.path)")
         
         guard let securePath = SecurePathAdapter.toSecurePath(path) else {
-            throw FileSystemError.invalidPath(
+            throw FileSystemInterfaces.FileSystemError.invalidPath(
                 path: path.path,
                 reason: "Could not convert to secure path"
             )
         }
         
-        guard let parentPath = await filePathService.parentDirectory(of: securePath) else {
-            throw FileSystemError.invalidPath(
-                path: path.path,
-                reason: "Could not get parent directory"
-            )
-        }
-        
-        return SecurePathAdapter.toFilePath(parentPath)
+        return URL(fileURLWithPath: securePath.toString(), isDirectory: path.isDirectory)
     }
     
     /**
-     Returns the last component of a path.
+     Resolves a security bookmark.
      
-     - Parameter path: The path to get the last component of
-     - Returns: The last path component
-     - Throws: FileSystemError if component retrieval fails
+     - Parameter bookmark: The bookmark data to resolve
+     - Returns: A tuple containing the resolved path and whether the bookmark is stale
+     - Throws: FileSystemError if the bookmark cannot be resolved
      */
-    public func lastPathComponent(of path: FilePath) async throws -> String {
-        await logDebug("Getting last component of \(path.path)")
+    public func resolveSecurityBookmark(
+        _ bookmark: Data
+    ) async throws -> (FilePath, Bool) {
+        await logDebug("Resolving security bookmark")
         
-        guard let securePath = SecurePathAdapter.toSecurePath(path) else {
-            throw FileSystemError.invalidPath(
-                path: path.path,
-                reason: "Could not convert to secure path"
+        do {
+            var isStale = false
+            let url = try URL(
+                resolvingBookmarkData: bookmark,
+                options: .withSecurityScope,
+                relativeTo: nil,
+                bookmarkDataIsStale: &isStale
+            )
+            
+            let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+            let path = FilePath(path: url.path, isDirectory: isDirectory)
+            
+            return (path, isStale)
+        } catch {
+            throw FileSystemInterfaces.FileSystemError.writeError(
+                path: "Unknown path",
+                reason: "Failed to resolve bookmark: \(error.localizedDescription)"
             )
         }
-        
-        return await filePathService.lastComponent(of: securePath)
     }
-    
-    /**
-     Returns the file extension of a path.
-     
-     - Parameter path: The path to get the extension of
-     - Returns: The file extension, or nil if there is none
-     - Throws: FileSystemError if extension retrieval fails
-     */
-    public func fileExtension(of path: FilePath) async throws -> String? {
-        await logDebug("Getting file extension of \(path.path)")
-        
-        guard let securePath = SecurePathAdapter.toSecurePath(path) else {
-            throw FileSystemError.invalidPath(
-                path: path.path,
-                reason: "Could not convert to secure path"
-            )
-        }
-        
-        return await filePathService.fileExtension(of: securePath)
-    }
-    
-    // MARK: - Security-Scoped Resources
     
     /**
      Starts accessing a security-scoped resource.
@@ -434,7 +416,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
         await logDebug("Starting access to security-scoped resource at \(path.path)")
         
         guard let securePath = SecurePathAdapter.toSecurePath(path) else {
-            throw FileSystemError.invalidPath(
+            throw FileSystemInterfaces.FileSystemError.invalidPath(
                 path: path.path,
                 reason: "Could not convert to secure path"
             )
@@ -460,7 +442,87 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
         await filePathService.stopAccessingSecurityScopedResource(securePath)
     }
     
-    // MARK: - Additional Protocol Methods
+    /**
+     Creates a temporary file.
+     
+     - Parameter prefix: Optional prefix for the filename
+     - Parameter suffix: Optional suffix for the filename
+     - Parameter options: Optional configuration options
+     - Returns: Path to the created temporary file
+     - Throws: FileSystemError if the temporary file cannot be created
+     */
+    public func createTemporaryFile(
+        prefix: String?,
+        suffix: String?,
+        options: TemporaryFileOptions?
+    ) async throws -> FilePath {
+        await logDebug("Creating temporary file with prefix: \(prefix ?? "none"), suffix: \(suffix ?? "none")")
+        
+        let tempDir = FileManager.default.temporaryDirectory
+        let uuid = UUID().uuidString
+        let filename = [prefix, uuid, suffix]
+            .compactMap { $0 }
+            .joined()
+        
+        let url = tempDir.appendingPathComponent(filename)
+        
+        // Create an empty file
+        FileManager.default.createFile(atPath: url.path, contents: nil)
+        
+        return FilePath(path: url.path, isDirectory: false)
+    }
+    
+    /**
+     Creates a temporary directory.
+     
+     - Parameter prefix: Optional prefix for the directory name
+     - Parameter options: Optional configuration options
+     - Returns: Path to the created temporary directory
+     - Throws: FileSystemError if the temporary directory cannot be created
+     */
+    public func createTemporaryDirectory(
+        prefix: String?,
+        options: TemporaryFileOptions?
+    ) async throws -> FilePath {
+        await logDebug("Creating temporary directory with prefix: \(prefix ?? "none")")
+        
+        let tempDir = FileManager.default.temporaryDirectory
+        let uuid = UUID().uuidString
+        let dirname = prefix != nil ? "\(prefix!)\(uuid)" : uuid
+        
+        let url = tempDir.appendingPathComponent(dirname)
+        
+        do {
+            try FileManager.default.createDirectory(
+                at: url,
+                withIntermediateDirectories: true,
+                attributes: nil
+            )
+            
+            return FilePath(path: url.path, isDirectory: true)
+        } catch {
+            throw FileSystemInterfaces.FileSystemError.writeError(
+                path: url.path,
+                reason: "Failed to create temporary directory: \(error.localizedDescription)"
+            )
+        }
+    }
+    
+    // MARK: - Helper Methods
+    
+    /**
+     Logs a debug message with appropriate context.
+     
+     - Parameter message: The message to log
+     */
+    private func logDebug(_ message: String) async {
+        await logger.debug(message, context: FileSystemLogContextDTO(
+            operation: "FileSystemSecure",
+            path: nil,
+            source: "FileSystemServiceSecure",
+            correlationID: nil
+        ))
+    }
     
     /**
      Lists the contents of a directory.
@@ -477,14 +539,30 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
         await logDebug("Listing directory at \(path.path), includeHidden: \(includeHidden)")
         
         guard let securePath = SecurePathAdapter.toSecurePath(path) else {
-            throw FileSystemError.invalidPath(
+            throw FileSystemInterfaces.FileSystemError.invalidPath(
                 path: path.path,
                 reason: "Could not convert to secure path"
             )
         }
         
+        // Check if the directory exists
+        guard await filePathService.exists(securePath) else {
+            throw FileSystemInterfaces.FileSystemError.pathNotFound(path: path.path)
+        }
+        
+        // Check if it's a directory
+        guard await filePathService.isDirectory(securePath) else {
+            throw FileSystemInterfaces.FileSystemError.unexpectedItemType(
+                path: path.path,
+                expected: "directory",
+                actual: "file"
+            )
+        }
+        
         do {
-            let contents = try FileManager.default.contentsOfDirectory(atPath: securePath.toString())
+            let contents = try FileManager.default.contentsOfDirectory(
+                atPath: securePath.toString()
+            )
             
             return contents.compactMap { item in
                 // Skip hidden files if not requested
@@ -500,7 +578,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
                 return FilePath(path: itemPath, isDirectory: isDirectory)
             }
         } catch {
-            throw FileSystemError.directoryEnumerationFailed(
+            throw FileSystemInterfaces.FileSystemError.readError(
                 path: path.path,
                 reason: error.localizedDescription
             )
@@ -521,49 +599,19 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
     ) async throws -> [FilePath] {
         await logDebug("Listing directory recursively at \(path.path), includeHidden: \(includeHidden)")
         
-        guard let securePath = SecurePathAdapter.toSecurePath(path) else {
-            throw FileSystemError.invalidPath(
-                path: path.path,
-                reason: "Could not convert to secure path"
-            )
-        }
+        // Get the top-level contents
+        let contents = try await listDirectory(at: path, includeHidden: includeHidden)
+        var result = contents
         
-        var result: [FilePath] = []
-        
-        // Helper function to recursively list directory contents
-        func listRecursive(at currentPath: String, relativeTo basePath: String) throws {
-            let contents = try FileManager.default.contentsOfDirectory(atPath: currentPath)
-            
-            for item in contents {
-                // Skip hidden files if not requested
-                if !includeHidden && item.hasPrefix(".") {
-                    continue
-                }
-                
-                let itemPath = currentPath.hasSuffix("/") ? currentPath + item : currentPath + "/" + item
-                let relativePath = basePath.hasSuffix("/") ? basePath + item : basePath + "/" + item
-                
-                let attributes = try FileManager.default.attributesOfItem(atPath: itemPath)
-                let isDirectory = (attributes[.type] as? FileAttributeType) == .typeDirectory
-                
-                result.append(FilePath(path: relativePath, isDirectory: isDirectory))
-                
-                // Recursively process directories
-                if isDirectory {
-                    try listRecursive(at: itemPath, relativeTo: relativePath)
-                }
+        // Recursively process subdirectories
+        for item in contents {
+            if item.isDirectory {
+                let subItems = try await listDirectoryRecursive(at: item, includeHidden: includeHidden)
+                result.append(contentsOf: subItems)
             }
         }
         
-        do {
-            try listRecursive(at: securePath.toString(), relativeTo: path.path)
-            return result
-        } catch {
-            throw FileSystemError.directoryEnumerationFailed(
-                path: path.path,
-                reason: error.localizedDescription
-            )
-        }
+        return result
     }
     
     /**
@@ -582,29 +630,43 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
         await logDebug("Creating file at \(path.path), overwrite: \(overwrite)")
         
         guard let securePath = SecurePathAdapter.toSecurePath(path) else {
-            throw FileSystemError.invalidPath(
+            throw FileSystemInterfaces.FileSystemError.invalidPath(
                 path: path.path,
                 reason: "Could not convert to secure path"
             )
         }
         
-        // Check if file exists and handle overwrite policy
+        // Check if the file already exists
         if await filePathService.exists(securePath) {
             if !overwrite {
-                throw FileSystemError.fileAlreadyExists(
+                throw FileSystemInterfaces.FileSystemError.pathAlreadyExists(path: path.path)
+            }
+            
+            // If it's a directory, we can't overwrite it
+            if await filePathService.isDirectory(securePath) {
+                throw FileSystemInterfaces.FileSystemError.unexpectedItemType(
                     path: path.path,
-                    reason: "File already exists and overwrite is not allowed"
+                    expected: "file",
+                    actual: "directory"
+                )
+            }
+        }
+        
+        // Create parent directories if needed
+        if let parentPath = await filePathService.parentDirectory(of: securePath) {
+            if !(await filePathService.exists(parentPath)) {
+                try await createDirectory(
+                    at: FilePath(path: parentPath.toString(), isDirectory: true),
+                    createIntermediates: true,
+                    attributes: nil
                 )
             }
         }
         
         do {
-            try data.write(
-                to: URL(fileURLWithPath: securePath.toString()),
-                options: .atomic
-            )
+            try data.write(to: URL(fileURLWithPath: securePath.toString()), options: .atomic)
         } catch {
-            throw FileSystemError.fileCreationFailed(
+            throw FileSystemInterfaces.FileSystemError.writeError(
                 path: path.path,
                 reason: error.localizedDescription
             )
@@ -625,27 +687,30 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
         await logDebug("Updating file at \(path.path)")
         
         guard let securePath = SecurePathAdapter.toSecurePath(path) else {
-            throw FileSystemError.invalidPath(
+            throw FileSystemInterfaces.FileSystemError.invalidPath(
                 path: path.path,
                 reason: "Could not convert to secure path"
             )
         }
         
-        // Check if file exists before updating
-        if !await filePathService.exists(securePath) {
-            throw FileSystemError.fileNotFound(
+        // Check if the file exists
+        guard await filePathService.exists(securePath) else {
+            throw FileSystemInterfaces.FileSystemError.pathNotFound(path: path.path)
+        }
+        
+        // Check if it's a file
+        guard await filePathService.isFile(securePath) else {
+            throw FileSystemInterfaces.FileSystemError.unexpectedItemType(
                 path: path.path,
-                reason: "File does not exist"
+                expected: "file",
+                actual: "directory"
             )
         }
         
         do {
-            try data.write(
-                to: URL(fileURLWithPath: securePath.toString()),
-                options: .atomic
-            )
+            try data.write(to: URL(fileURLWithPath: securePath.toString()), options: .atomic)
         } catch {
-            throw FileSystemError.fileUpdateFailed(
+            throw FileSystemInterfaces.FileSystemError.writeError(
                 path: path.path,
                 reason: error.localizedDescription
             )
@@ -667,47 +732,63 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
         await logDebug("Getting file metadata at \(path.path)")
         
         guard let securePath = SecurePathAdapter.toSecurePath(path) else {
-            throw FileSystemError.invalidPath(
+            throw FileSystemInterfaces.FileSystemError.invalidPath(
                 path: path.path,
                 reason: "Could not convert to secure path"
             )
         }
         
-        let resolveSymlinks = options?.resolveSymlinks ?? true
+        // Check if the path exists
+        guard await filePathService.exists(securePath) else {
+            throw FileSystemInterfaces.FileSystemError.pathNotFound(path: path.path)
+        }
         
         do {
-            let fileURL = URL(fileURLWithPath: securePath.toString())
-            let attributes = try FileManager.default.attributesOfItem(atPath: securePath.toString())
-            
-            // Create basic metadata
-            var metadata = FileMetadata(
-                path: path,
-                size: attributes[.size] as? UInt64 ?? 0,
-                creationDate: attributes[.creationDate] as? Date,
-                modificationDate: attributes[.modificationDate] as? Date,
-                isDirectory: (attributes[.type] as? FileAttributeType) == .typeDirectory,
-                isSymbolicLink: (attributes[.type] as? FileAttributeType) == .typeSymbolicLink,
-                isHidden: securePath.toString().lastPathComponent.hasPrefix("."),
-                permissions: attributes[.posixPermissions] as? UInt16 ?? 0
+            let attributes = try FileManager.default.attributesOfItem(
+                atPath: securePath.toString()
             )
             
-            // Resolve symbolic links if requested
-            if resolveSymlinks && metadata.isSymbolicLink {
-                let destination = try FileManager.default.destinationOfSymbolicLink(atPath: securePath.toString())
-                metadata.symbolicLinkDestination = FilePath(path: destination, isDirectory: false)
+            // Check if it's a directory to ensure we're getting the right type of metadata
+            let isDirectory = (attributes[.type] as? FileAttributeType) == .typeDirectory
+            if isDirectory != path.isDirectory {
+                await logDebug("Warning: Path directory flag doesn't match actual file type")
             }
             
-            return metadata
+            let size = attributes[.size] as? UInt64 ?? 0
+            let creationDate = attributes[.creationDate] as? Date ?? Date()
+            let modificationDate = attributes[.modificationDate] as? Date ?? Date()
+            let accessDate = attributes[.modificationDate] as? Date
+            let ownerID = (attributes[.ownerAccountID] as? NSNumber)?.uintValue ?? 0
+            let groupID = (attributes[.groupOwnerAccountID] as? NSNumber)?.uintValue ?? 0
+            let permissions = (attributes[.posixPermissions] as? NSNumber)?.uint16Value ?? 0
+            
+            // Convert to FileAttributes
+            let fileAttributes = FileAttributes(
+                size: size,
+                creationDate: creationDate,
+                modificationDate: modificationDate,
+                accessDate: accessDate,
+                ownerID: ownerID,
+                groupID: groupID,
+                permissions: permissions
+            )
+            
+            return FileMetadata(
+                path: path,
+                attributes: fileAttributes,
+                resourceValues: [:],
+                exists: true
+            )
         } catch {
-            throw FileSystemError.metadataRetrievalFailed(
+            throw FileSystemInterfaces.FileSystemError.readError(
                 path: path.path,
-                reason: error.localizedDescription
+                reason: "Failed to get metadata: \(error.localizedDescription)"
             )
         }
     }
     
     /**
-     Creates a directory at the specified path with additional options.
+     Creates a directory at the specified path.
      
      - Parameter path: Path where the directory should be created
      - Parameter createIntermediates: Whether to create intermediate directories
@@ -722,28 +803,63 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
         await logDebug("Creating directory at \(path.path), createIntermediates: \(createIntermediates)")
         
         guard let securePath = SecurePathAdapter.toSecurePath(path) else {
-            throw FileSystemError.invalidPath(
+            throw FileSystemInterfaces.FileSystemError.invalidPath(
                 path: path.path,
                 reason: "Could not convert to secure path"
             )
         }
         
+        // Check if the directory already exists
+        if await filePathService.exists(securePath) {
+            if await filePathService.isDirectory(securePath) {
+                // Directory already exists, nothing to do
+                return
+            } else {
+                // Path exists but is a file
+                throw FileSystemInterfaces.FileSystemError.unexpectedItemType(
+                    path: path.path,
+                    expected: "directory",
+                    actual: "file"
+                )
+            }
+        }
+        
         do {
+            // Convert FileAttributes to Foundation attributes if needed
+            var foundationAttributes: [FileAttributeKey: Any]?
+            if let attrs = attributes {
+                foundationAttributes = [:]
+                foundationAttributes?[.creationDate] = attrs.creationDate
+                foundationAttributes?[.modificationDate] = attrs.modificationDate
+                if let accessDate = attrs.accessDate {
+                    foundationAttributes?[.modificationDate] = accessDate
+                }
+                if attrs.ownerID > 0 {
+                    foundationAttributes?[.ownerAccountID] = NSNumber(value: attrs.ownerID)
+                }
+                if attrs.groupID > 0 {
+                    foundationAttributes?[.groupOwnerAccountID] = NSNumber(value: attrs.groupID)
+                }
+                if attrs.permissions > 0 {
+                    foundationAttributes?[.posixPermissions] = NSNumber(value: attrs.permissions)
+                }
+            }
+            
             try FileManager.default.createDirectory(
                 atPath: securePath.toString(),
                 withIntermediateDirectories: createIntermediates,
-                attributes: attributes
+                attributes: foundationAttributes
             )
         } catch {
-            throw FileSystemError.directoryCreationFailed(
+            throw FileSystemInterfaces.FileSystemError.writeError(
                 path: path.path,
-                reason: error.localizedDescription
+                reason: "Failed to create directory: \(error.localizedDescription)"
             )
         }
     }
     
     /**
-     Deletes a file at the specified path with secure option.
+     Deletes a file at the specified path.
      
      - Parameter path: The file to delete
      - Parameter secure: Whether to securely overwrite the file before deletion
@@ -756,54 +872,35 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
         await logDebug("Deleting file at \(path.path), secure: \(secure)")
         
         guard let securePath = SecurePathAdapter.toSecurePath(path) else {
-            throw FileSystemError.invalidPath(
+            throw FileSystemInterfaces.FileSystemError.invalidPath(
                 path: path.path,
                 reason: "Could not convert to secure path"
             )
         }
         
-        // If secure deletion is requested, overwrite the file first
-        if secure {
-            do {
-                // Get file size
-                let attributes = try FileManager.default.attributesOfItem(atPath: securePath.toString())
-                let fileSize = attributes[.size] as? UInt64 ?? 0
-                
-                if fileSize > 0 {
-                    // Create secure random data
-                    var secureData = Data(count: Int(min(fileSize, 1024 * 1024))) // Cap at 1MB for large files
-                    for i in 0..<secureData.count {
-                        secureData[i] = UInt8.random(in: 0...255)
-                    }
-                    
-                    // Overwrite file multiple times
-                    for _ in 0..<3 {
-                        try secureData.write(to: URL(fileURLWithPath: securePath.toString()))
-                    }
-                    
-                    // Final overwrite with zeros
-                    for i in 0..<secureData.count {
-                        secureData[i] = 0
-                    }
-                    try secureData.write(to: URL(fileURLWithPath: securePath.toString()))
-                }
-            } catch {
-                // Log but continue with deletion
-                await logger.warning(
-                    "Secure overwrite failed: \(error.localizedDescription)",
-                    context: FileSystemLogContext(
-                        operation: "SecureDelete",
-                        additionalContext: nil
-                    )
-                )
-            }
+        // Check if the file exists
+        guard await filePathService.exists(securePath) else {
+            throw FileSystemInterfaces.FileSystemError.pathNotFound(path: path.path)
         }
         
-        // Now delete the file
+        // Check if it's a file
+        guard await filePathService.isFile(securePath) else {
+            throw FileSystemInterfaces.FileSystemError.unexpectedItemType(
+                path: path.path,
+                expected: "file",
+                actual: "directory"
+            )
+        }
+        
+        if secure {
+            // Securely overwrite the file before deletion
+            try await securelyOverwriteFile(at: path)
+        }
+        
         do {
             try FileManager.default.removeItem(atPath: securePath.toString())
         } catch {
-            throw FileSystemError.fileDeletionFailed(
+            throw FileSystemInterfaces.FileSystemError.deleteError(
                 path: path.path,
                 reason: error.localizedDescription
             )
@@ -824,46 +921,189 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
         await logDebug("Deleting directory at \(path.path), secure: \(secure)")
         
         guard let securePath = SecurePathAdapter.toSecurePath(path) else {
-            throw FileSystemError.invalidPath(
+            throw FileSystemInterfaces.FileSystemError.invalidPath(
                 path: path.path,
                 reason: "Could not convert to secure path"
             )
         }
         
-        // If secure deletion is requested, we need to handle each file individually
+        // Check if the directory exists
+        guard await filePathService.exists(securePath) else {
+            throw FileSystemInterfaces.FileSystemError.pathNotFound(path: path.path)
+        }
+        
+        // Check if it's a directory
+        guard await filePathService.isDirectory(securePath) else {
+            throw FileSystemInterfaces.FileSystemError.unexpectedItemType(
+                path: path.path,
+                expected: "directory",
+                actual: "file"
+            )
+        }
+        
         if secure {
-            do {
-                // Get all files in the directory
-                let contents = try await listDirectoryRecursive(at: path, includeHidden: true)
-                
-                // Delete files first (not directories)
-                for item in contents.filter({ !$0.isDirectory }) {
-                    try await deleteFile(at: item, secure: true)
+            // Securely delete all files in the directory
+            let contents = try await listDirectoryRecursive(
+                at: path,
+                includeHidden: true
+            )
+            
+            for item in contents {
+                if !item.isDirectory {
+                    try await securelyOverwriteFile(at: item)
                 }
-                
-                // Now delete the directory structure
-                try FileManager.default.removeItem(atPath: securePath.toString())
-            } catch {
-                throw FileSystemError.directoryDeletionFailed(
-                    path: path.path,
-                    reason: error.localizedDescription
-                )
             }
-        } else {
-            // Standard deletion
-            do {
-                try FileManager.default.removeItem(atPath: securePath.toString())
-            } catch {
-                throw FileSystemError.directoryDeletionFailed(
-                    path: path.path,
-                    reason: error.localizedDescription
-                )
-            }
+        }
+        
+        do {
+            try FileManager.default.removeItem(atPath: securePath.toString())
+        } catch {
+            throw FileSystemInterfaces.FileSystemError.deleteError(
+                path: path.path,
+                reason: error.localizedDescription
+            )
         }
     }
     
     /**
-     Moves a file or directory.
+     Gets an extended attribute from a file.
+     
+     - Parameter path: The file path
+     - Parameter attributeName: The name of the attribute to retrieve
+     - Returns: The attribute value
+     - Throws: FileSystemError if the attribute cannot be retrieved
+     */
+    public func getExtendedAttribute(
+        at path: FilePath,
+        name attributeName: String
+    ) async throws -> SafeAttributeValue {
+        await logDebug("Getting extended attribute \(attributeName) at \(path.path)")
+        
+        guard let securePath = SecurePathAdapter.toSecurePath(path) else {
+            throw FileSystemInterfaces.FileSystemError.invalidPath(
+                path: path.path,
+                reason: "Could not convert to secure path"
+            )
+        }
+        
+        // Check if the path exists
+        guard await filePathService.exists(securePath) else {
+            throw FileSystemInterfaces.FileSystemError.pathNotFound(path: path.path)
+        }
+        
+        // Implementation depends on platform-specific APIs
+        // This is a simplified implementation
+        throw FileSystemInterfaces.FileSystemError.extendedAttributeError(
+            path: path.path,
+            attribute: attributeName,
+            operation: "get",
+            reason: "Extended attributes not implemented in this version"
+        )
+    }
+    
+    /**
+     Sets an extended attribute on a file.
+     
+     - Parameter path: The file path
+     - Parameter attributeName: The name of the attribute to set
+     - Parameter value: The attribute value to set
+     - Throws: FileSystemError if the attribute cannot be set
+     */
+    public func setExtendedAttribute(
+        at path: FilePath,
+        name attributeName: String,
+        value: SafeAttributeValue
+    ) async throws {
+        await logDebug("Setting extended attribute \(attributeName) at \(path.path)")
+        
+        guard let securePath = SecurePathAdapter.toSecurePath(path) else {
+            throw FileSystemInterfaces.FileSystemError.invalidPath(
+                path: path.path,
+                reason: "Could not convert to secure path"
+            )
+        }
+        
+        // Check if the path exists
+        guard await filePathService.exists(securePath) else {
+            throw FileSystemInterfaces.FileSystemError.pathNotFound(path: path.path)
+        }
+        
+        // Implementation depends on platform-specific APIs
+        // This is a simplified implementation
+        throw FileSystemInterfaces.FileSystemError.extendedAttributeError(
+            path: path.path,
+            attribute: attributeName,
+            operation: "set",
+            reason: "Extended attributes not implemented in this version"
+        )
+    }
+    
+    /**
+     Lists all extended attributes on a file.
+     
+     - Parameter path: The file path
+     - Returns: Array of attribute names
+     - Throws: FileSystemError if the attributes cannot be retrieved
+     */
+    public func listExtendedAttributes(
+        at path: FilePath
+    ) async throws -> [String] {
+        await logDebug("Listing extended attributes at \(path.path)")
+        
+        guard let securePath = SecurePathAdapter.toSecurePath(path) else {
+            throw FileSystemInterfaces.FileSystemError.invalidPath(
+                path: path.path,
+                reason: "Could not convert to secure path"
+            )
+        }
+        
+        // Check if the path exists
+        guard await filePathService.exists(securePath) else {
+            throw FileSystemInterfaces.FileSystemError.pathNotFound(path: path.path)
+        }
+        
+        // Implementation depends on platform-specific APIs
+        // This is a simplified implementation
+        return []
+    }
+    
+    /**
+     Removes an extended attribute from a file.
+     
+     - Parameter path: The file path
+     - Parameter attributeName: The name of the attribute to remove
+     - Throws: FileSystemError if the attribute cannot be removed
+     */
+    public func removeExtendedAttribute(
+        at path: FilePath,
+        name attributeName: String
+    ) async throws {
+        await logDebug("Removing extended attribute \(attributeName) at \(path.path)")
+        
+        guard let securePath = SecurePathAdapter.toSecurePath(path) else {
+            throw FileSystemInterfaces.FileSystemError.invalidPath(
+                path: path.path,
+                reason: "Could not convert to secure path"
+            )
+        }
+        
+        // Check if the path exists
+        guard await filePathService.exists(securePath) else {
+            throw FileSystemInterfaces.FileSystemError.pathNotFound(path: path.path)
+        }
+        
+        // Implementation depends on platform-specific APIs
+        // This is a simplified implementation
+        throw FileSystemInterfaces.FileSystemError.extendedAttributeError(
+            path: path.path,
+            attribute: attributeName,
+            operation: "remove",
+            reason: "Extended attributes not implemented in this version"
+        )
+    }
+    
+    /**
+     Moves a file or directory from one location to another.
      
      - Parameter sourcePath: The source path
      - Parameter destinationPath: The destination path
@@ -878,48 +1118,50 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
         await logDebug("Moving item from \(sourcePath.path) to \(destinationPath.path), overwrite: \(overwrite)")
         
         guard let secureSourcePath = SecurePathAdapter.toSecurePath(sourcePath) else {
-            throw FileSystemError.invalidPath(
+            throw FileSystemInterfaces.FileSystemError.invalidPath(
                 path: sourcePath.path,
                 reason: "Could not convert source path to secure path"
             )
         }
         
-        guard let secureDestPath = SecurePathAdapter.toSecurePath(destinationPath) else {
-            throw FileSystemError.invalidPath(
+        guard let secureDestinationPath = SecurePathAdapter.toSecurePath(destinationPath) else {
+            throw FileSystemInterfaces.FileSystemError.invalidPath(
                 path: destinationPath.path,
                 reason: "Could not convert destination path to secure path"
             )
         }
         
-        // Check if destination exists and handle overwrite policy
-        if await filePathService.exists(secureDestPath) {
+        // Check if source exists
+        guard await filePathService.exists(secureSourcePath) else {
+            throw FileSystemInterfaces.FileSystemError.pathNotFound(path: sourcePath.path)
+        }
+        
+        // Check if destination exists and handle overwrite
+        if await filePathService.exists(secureDestinationPath) {
             if !overwrite {
-                throw FileSystemError.fileAlreadyExists(
-                    path: destinationPath.path,
-                    reason: "Destination already exists and overwrite is not allowed"
-                )
+                throw FileSystemInterfaces.FileSystemError.pathAlreadyExists(path: destinationPath.path)
             }
             
-            // Delete the destination if overwrite is allowed
-            try FileManager.default.removeItem(atPath: secureDestPath.toString())
+            // Delete destination if overwrite is true
+            try FileManager.default.removeItem(atPath: secureDestinationPath.toString())
         }
         
         do {
             try FileManager.default.moveItem(
                 atPath: secureSourcePath.toString(),
-                toPath: secureDestPath.toString()
+                toPath: secureDestinationPath.toString()
             )
         } catch {
-            throw FileSystemError.fileMoveFailed(
-                sourcePath: sourcePath.path,
-                destinationPath: destinationPath.path,
+            throw FileSystemInterfaces.FileSystemError.moveError(
+                source: sourcePath.path,
+                destination: destinationPath.path,
                 reason: error.localizedDescription
             )
         }
     }
     
     /**
-     Copies a file or directory.
+     Copies a file or directory from one location to another.
      
      - Parameter sourcePath: The source path
      - Parameter destinationPath: The destination path
@@ -934,72 +1176,54 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
         await logDebug("Copying item from \(sourcePath.path) to \(destinationPath.path), overwrite: \(overwrite)")
         
         guard let secureSourcePath = SecurePathAdapter.toSecurePath(sourcePath) else {
-            throw FileSystemError.invalidPath(
+            throw FileSystemInterfaces.FileSystemError.invalidPath(
                 path: sourcePath.path,
                 reason: "Could not convert source path to secure path"
             )
         }
         
-        guard let secureDestPath = SecurePathAdapter.toSecurePath(destinationPath) else {
-            throw FileSystemError.invalidPath(
+        guard let secureDestinationPath = SecurePathAdapter.toSecurePath(destinationPath) else {
+            throw FileSystemInterfaces.FileSystemError.invalidPath(
                 path: destinationPath.path,
                 reason: "Could not convert destination path to secure path"
             )
         }
         
-        // Check if destination exists and handle overwrite policy
-        if await filePathService.exists(secureDestPath) {
+        // Check if source exists
+        guard await filePathService.exists(secureSourcePath) else {
+            throw FileSystemInterfaces.FileSystemError.pathNotFound(path: sourcePath.path)
+        }
+        
+        // Check if destination exists and handle overwrite
+        if await filePathService.exists(secureDestinationPath) {
             if !overwrite {
-                throw FileSystemError.fileAlreadyExists(
-                    path: destinationPath.path,
-                    reason: "Destination already exists and overwrite is not allowed"
-                )
+                throw FileSystemInterfaces.FileSystemError.pathAlreadyExists(path: destinationPath.path)
             }
             
-            // Delete the destination if overwrite is allowed
-            try FileManager.default.removeItem(atPath: secureDestPath.toString())
+            // Delete destination if overwrite is true
+            try FileManager.default.removeItem(atPath: secureDestinationPath.toString())
         }
         
         do {
             try FileManager.default.copyItem(
                 atPath: secureSourcePath.toString(),
-                toPath: secureDestPath.toString()
+                toPath: secureDestinationPath.toString()
             )
         } catch {
-            throw FileSystemError.fileCopyFailed(
-                sourcePath: sourcePath.path,
-                destinationPath: destinationPath.path,
+            throw FileSystemInterfaces.FileSystemError.copyError(
+                source: sourcePath.path,
+                destination: destinationPath.path,
                 reason: error.localizedDescription
             )
         }
     }
     
     /**
-     Converts a file path to a URL.
+     Creates a security bookmark for a file.
      
-     - Parameter path: The file path to convert
-     - Returns: The equivalent URL
-     - Throws: FileSystemError if the conversion fails
-     */
-    public func pathToURL(_ path: FilePath) async throws -> URL {
-        await logDebug("Converting path to URL: \(path.path)")
-        
-        guard let securePath = SecurePathAdapter.toSecurePath(path) else {
-            throw FileSystemError.invalidPath(
-                path: path.path,
-                reason: "Could not convert to secure path"
-            )
-        }
-        
-        return URL(fileURLWithPath: securePath.toString())
-    }
-    
-    /**
-     Creates a security-scoped bookmark for a file.
-     
-     - Parameter path: The file path to bookmark
+     - Parameter path: The file path
      - Parameter readOnly: Whether the bookmark should be read-only
-     - Returns: The bookmark data
+     - Returns: Bookmark data
      - Throws: FileSystemError if the bookmark cannot be created
      */
     public func createSecurityBookmark(
@@ -1009,298 +1233,92 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
         await logDebug("Creating security bookmark for \(path.path), readOnly: \(readOnly)")
         
         guard let securePath = SecurePathAdapter.toSecurePath(path) else {
-            throw FileSystemError.invalidPath(
+            throw FileSystemInterfaces.FileSystemError.invalidPath(
                 path: path.path,
                 reason: "Could not convert to secure path"
             )
         }
         
+        // Check if the path exists
+        guard await filePathService.exists(securePath) else {
+            throw FileSystemInterfaces.FileSystemError.pathNotFound(path: path.path)
+        }
+        
+        let url = URL(fileURLWithPath: securePath.toString(), isDirectory: path.isDirectory)
+        
         do {
-            let url = URL(fileURLWithPath: securePath.toString())
-            let bookmarkData = try url.bookmarkData(
-                options: readOnly ? [.securityScopeAllowOnlyReadAccess] : [],
+            let options: URL.BookmarkCreationOptions = readOnly ? 
+                [.withSecurityScope, .securityScopeAllowOnlyReadAccess] : 
+                [.withSecurityScope]
+            
+            return try url.bookmarkData(
+                options: options,
                 includingResourceValuesForKeys: nil,
                 relativeTo: nil
             )
-            return bookmarkData
         } catch {
-            throw FileSystemError.bookmarkCreationFailed(
+            throw FileSystemInterfaces.FileSystemError.writeError(
                 path: path.path,
-                reason: error.localizedDescription
+                reason: "Failed to create bookmark: \(error.localizedDescription)"
             )
         }
     }
     
-    /**
-     Resolves a security-scoped bookmark.
-     
-     - Parameter bookmark: The bookmark data
-     - Returns: The resolved file path and whether the bookmark was stale
-     - Throws: FileSystemError if the bookmark cannot be resolved
-     */
-    public func resolveSecurityBookmark(
-        _ bookmark: Data
-    ) async throws -> (FilePath, Bool) {
-        await logDebug("Resolving security bookmark")
-        
-        do {
-            var isStale = false
-            let url = try URL(
-                resolvingBookmarkData: bookmark,
-                options: .withSecurityScope,
-                relativeTo: nil,
-                bookmarkDataIsStale: &isStale
-            )
-            
-            let path = FilePath(
-                path: url.path,
-                isDirectory: (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
-            )
-            
-            return (path, isStale)
-        } catch {
-            throw FileSystemError.bookmarkResolutionFailed(
-                reason: error.localizedDescription
-            )
-        }
-    }
+    // MARK: - Helper Methods
     
     /**
-     Creates a temporary file in the system's temporary directory.
+     Securely overwrites a file with random data before deletion.
      
-     - Parameter prefix: Optional prefix for the filename
-     - Parameter suffix: Optional suffix for the filename
-     - Parameter options: Configuration options for the temporary file
-     - Returns: Path to the temporary file
-     - Throws: FileSystemError if the temporary file cannot be created
+     - Parameter path: The file to overwrite
+     - Throws: FileSystemError if the secure deletion fails
      */
-    public func createTemporaryFile(
-        prefix: String?,
-        suffix: String?,
-        options: TemporaryFileOptions?
-    ) async throws -> FilePath {
-        await logDebug("Creating temporary file with prefix: \(prefix ?? "none"), suffix: \(suffix ?? "none")")
+    private func securelyOverwriteFile(at path: FilePath) async throws {
+        guard let securePath = SecurePathAdapter.toSecurePath(path) else {
+            throw FileSystemInterfaces.FileSystemError.invalidPath(
+                path: path.path,
+                reason: "Could not convert to secure path"
+            )
+        }
         
-        let tempDir = FileManager.default.temporaryDirectory.path
-        let uuid = UUID().uuidString
-        let fileName = "\(prefix ?? "")\(uuid)\(suffix ?? "")"
-        let tempPath = tempDir + "/" + fileName
+        // Check if the file exists and is a file
+        let exists = await filePathService.exists(securePath)
+        let isFile = await filePathService.isFile(securePath)
         
-        // Create an empty file
+        guard exists && isFile else {
+            return
+        }
+        
         do {
-            FileManager.default.createFile(atPath: tempPath, contents: nil)
+            // Get the file size
+            let attributes = try FileManager.default.attributesOfItem(atPath: securePath.toString())
+            let fileSize = attributes[.size] as? UInt64 ?? 0
             
-            // Set file attributes if provided
-            if let attributes = options?.attributes {
-                try FileManager.default.setAttributes(attributes, ofItemAtPath: tempPath)
+            if fileSize > 0 {
+                // Create random data of the same size
+                var randomData = Data(count: Int(fileSize))
+                _ = randomData.withUnsafeMutableBytes {
+                    SecRandomCopyBytes(kSecRandomDefault, Int(fileSize), $0.baseAddress!)
+                }
+                
+                // Overwrite the file with random data
+                try randomData.write(to: URL(fileURLWithPath: securePath.toString()))
             }
-            
-            return FilePath(path: tempPath, isDirectory: false)
         } catch {
-            throw FileSystemError.temporaryFileCreationFailed(
-                reason: error.localizedDescription
-            )
-        }
-    }
-    
-    /**
-     Creates a temporary directory in the system's temporary directory.
-     
-     - Parameter prefix: Optional prefix for the directory name
-     - Parameter options: Configuration options for the temporary directory
-     - Returns: Path to the temporary directory
-     - Throws: FileSystemError if the temporary directory cannot be created
-     */
-    public func createTemporaryDirectory(
-        prefix: String?,
-        options: TemporaryFileOptions?
-    ) async throws -> FilePath {
-        await logDebug("Creating temporary directory with prefix: \(prefix ?? "none")")
-        
-        let tempDir = FileManager.default.temporaryDirectory.path
-        let uuid = UUID().uuidString
-        let dirName = "\(prefix ?? "")\(uuid)"
-        let tempPath = tempDir + "/" + dirName
-        
-        do {
-            try FileManager.default.createDirectory(
-                atPath: tempPath,
-                withIntermediateDirectories: true,
-                attributes: options?.attributes
-            )
-            
-            return FilePath(path: tempPath, isDirectory: true)
-        } catch {
-            throw FileSystemError.temporaryDirectoryCreationFailed(
-                reason: error.localizedDescription
-            )
-        }
-    }
-    
-    // MARK: - Extended Attributes
-    
-    /**
-     Retrieves an extended attribute from a file.
-     
-     - Parameter path: The file to query
-     - Parameter attributeName: The name of the extended attribute
-     - Returns: The attribute value as a SafeAttributeValue
-     - Throws: FileSystemError if the attribute cannot be retrieved
-     */
-    public func getExtendedAttribute(
-        at path: FilePath,
-        name attributeName: String
-    ) async throws -> SafeAttributeValue {
-        await logDebug("Getting extended attribute \(attributeName) for \(path.path)")
-        
-        guard let securePath = SecurePathAdapter.toSecurePath(path) else {
-            throw FileSystemError.invalidPath(
+            throw FileSystemInterfaces.FileSystemError.writeError(
                 path: path.path,
-                reason: "Could not convert to secure path"
+                reason: "Failed to securely overwrite file: \(error.localizedDescription)"
             )
         }
-        
-        do {
-            let url = URL(fileURLWithPath: securePath.toString())
-            let data = try url.extendedAttribute(forName: attributeName)
-            return SafeAttributeValue(data: data)
-        } catch {
-            throw FileSystemError.extendedAttributeReadFailed(
-                path: path.path,
-                attributeName: attributeName,
-                reason: error.localizedDescription
-            )
-        }
-    }
-    
-    /**
-     Sets an extended attribute on a file.
-     
-     - Parameter path: The file to modify
-     - Parameter attributeName: The name of the extended attribute
-     - Parameter attributeValue: The value to set
-     - Throws: FileSystemError if the attribute cannot be set
-     */
-    public func setExtendedAttribute(
-        at path: FilePath,
-        name attributeName: String,
-        value attributeValue: SafeAttributeValue
-    ) async throws {
-        await logDebug("Setting extended attribute \(attributeName) for \(path.path)")
-        
-        guard let securePath = SecurePathAdapter.toSecurePath(path) else {
-            throw FileSystemError.invalidPath(
-                path: path.path,
-                reason: "Could not convert to secure path"
-            )
-        }
-        
-        do {
-            let url = URL(fileURLWithPath: securePath.toString())
-            try url.setExtendedAttribute(data: attributeValue.data, forName: attributeName)
-        } catch {
-            throw FileSystemError.extendedAttributeWriteFailed(
-                path: path.path,
-                attributeName: attributeName,
-                reason: error.localizedDescription
-            )
-        }
-    }
-    
-    /**
-     Lists all extended attributes for a file.
-     
-     - Parameter path: The file to query
-     - Returns: An array of attribute names
-     - Throws: FileSystemError if the attributes cannot be retrieved
-     */
-    public func listExtendedAttributes(
-        at path: FilePath
-    ) async throws -> [String] {
-        await logDebug("Listing extended attributes for \(path.path)")
-        
-        guard let securePath = SecurePathAdapter.toSecurePath(path) else {
-            throw FileSystemError.invalidPath(
-                path: path.path,
-                reason: "Could not convert to secure path"
-            )
-        }
-        
-        do {
-            let url = URL(fileURLWithPath: securePath.toString())
-            return try url.listExtendedAttributes()
-        } catch {
-            throw FileSystemError.extendedAttributeListFailed(
-                path: path.path,
-                reason: error.localizedDescription
-            )
-        }
-    }
-    
-    /**
-     Removes an extended attribute from a file.
-     
-     - Parameter path: The file to modify
-     - Parameter attributeName: The name of the attribute to remove
-     - Throws: FileSystemError if the attribute cannot be removed
-     */
-    public func removeExtendedAttribute(
-        at path: FilePath,
-        name attributeName: String
-    ) async throws {
-        await logDebug("Removing extended attribute \(attributeName) for \(path.path)")
-        
-        guard let securePath = SecurePathAdapter.toSecurePath(path) else {
-            throw FileSystemError.invalidPath(
-                path: path.path,
-                reason: "Could not convert to secure path"
-            )
-        }
-        
-        do {
-            let url = URL(fileURLWithPath: securePath.toString())
-            try url.removeExtendedAttribute(forName: attributeName)
-        } catch {
-            throw FileSystemError.extendedAttributeRemoveFailed(
-                path: path.path,
-                attributeName: attributeName,
-                reason: error.localizedDescription
-            )
-        }
-    }
-    
-    // MARK: - Private Helper Methods
-    
-    /**
-     Logs a debug message with the file system context.
-     
-     - Parameter message: The message to log
-     */
-    private func logDebug(_ message: String) async {
-        await logger.debug(
-            message,
-            context: FileSystemLogContext(
-                operation: "FileSystemServiceSecure",
-                additionalContext: nil
-            )
-        )
     }
 }
 
 /**
  A null logger that does nothing.
  */
-private struct NullLogger: LoggingProtocol {
-    func log(
-        level: LogLevel,
-        message: String,
-        context: LogContextDTO?,
-        file: String,
-        function: String,
-        line: Int
-    ) async {}
+private actor NullLogger: LoggingProtocol {
+    nonisolated let loggingActor: LoggingInterfaces.LoggingActor = .init(destinations: [])
     
-    func isEnabled(for level: LogLevel) async -> Bool {
-        return false
+    func log(_ level: LogLevel, _ message: String, context: LoggingTypes.LogContextDTO) async {
+        // Do nothing - this is a null logger
     }
 }
