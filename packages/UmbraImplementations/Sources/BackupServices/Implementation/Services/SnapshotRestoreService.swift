@@ -73,15 +73,13 @@ public actor SnapshotRestoreService {
             BackupProgressInfo(
               phase: .processing,
               percentComplete: 0.3,
-              message: "Restoring backup",
               itemsProcessed: 0,
               totalItems: 0,
               bytesProcessed: 0,
               totalBytes: 0,
-              elapsedTime: 0,
-              estimatedTimeRemaining: nil
+              details: "Restoring backup"
             ),
-            for: .restoreBackup
+            for: .restoreSnapshot
           )
         }
 
@@ -132,15 +130,13 @@ public actor SnapshotRestoreService {
             BackupProgressInfo(
               phase: .processing,
               percentComplete: progress,
-              message: "Restoring backup",
               itemsProcessed: 0,
               totalItems: 0,
               bytesProcessed: 0,
               totalBytes: 0,
-              elapsedTime: 0,
-              estimatedTimeRemaining: nil
+              details: "Restoring files"
             ),
-            for: .restoreBackup
+            for: .restoreSnapshot
           )
         }
 
@@ -154,11 +150,11 @@ public actor SnapshotRestoreService {
       Task {
         // Check for cancellation in a loop
         while !Task.isCancelled {
-          if await token.isCancelled() {
+          if await token.isCancelled {
             executionTask.cancel()
             progressTask.cancel()
             if let reporter=progressReporter {
-              await reporter.reportCancellation(for: .restoreBackup)
+              await reporter.reportCancellation(for: .restoreSnapshot)
             }
             break
           }
@@ -279,15 +275,13 @@ public actor SnapshotRestoreService {
             BackupProgressInfo(
               phase: .processing,
               percentComplete: 0.3,
-              message: "Restoring backup",
               itemsProcessed: 0,
               totalItems: 0,
               bytesProcessed: 0,
               totalBytes: 0,
-              elapsedTime: 0,
-              estimatedTimeRemaining: nil
+              details: "Checking restore status"
             ),
-            for: .getSnapshotDetails
+            for: .restoreStatus
           )
         }
 
@@ -303,15 +297,13 @@ public actor SnapshotRestoreService {
             BackupProgressInfo(
               phase: .completed,
               percentComplete: 1.0,
-              message: "Restoring backup",
               itemsProcessed: 0,
               totalItems: 0,
               bytesProcessed: 0,
               totalBytes: 0,
-              elapsedTime: 0,
-              estimatedTimeRemaining: nil
+              details: "Restore status checked"
             ),
-            for: .getSnapshotDetails
+            for: .restoreStatus
           )
         }
 

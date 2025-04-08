@@ -33,12 +33,12 @@ public actor BackupDomainHandler: DomainHandler {
 
   /// Logger with privacy controls
   private let logger: LoggingProtocol?
-  
+
   /// Cache for snapshot information to improve performance of repeated requests
-  private var snapshotCache: [String: (SnapshotInfo, DateTimeDTO)] = [:]
-  
+  private var snapshotCache: [String: (SnapshotInfo, DateTimeDTO)]=[:]
+
   /// Cache time-to-live in seconds
-  private let cacheTTL: TimeIntervalDTO = TimeIntervalDTO.seconds(60) // 1 minute
+  private let cacheTTL: TimeIntervalDTO = .seconds(60) // 1 minute
 
   /**
    Initialises a new backup domain handler.
@@ -59,11 +59,12 @@ public actor BackupDomainHandler: DomainHandler {
   }
 
   // MARK: - DomainHandler Conformance
+
   public nonisolated var domain: String { APIDomain.backup.rawValue }
 
-  public func handleOperation<T: APIOperation>(operation: T) async throws -> Any {
+  public func handleOperation(operation: some APIOperation) async throws -> Any {
     // Call the existing execute method
-    return try await execute(operation)
+    try await execute(operation)
   }
 
   /**
@@ -75,23 +76,27 @@ public actor BackupDomainHandler: DomainHandler {
    */
   public func execute(_ operation: some APIOperation) async throws -> Any {
     // Get operation name once for reuse
-    let operationName = String(describing: type(of: operation))
-    
+    let operationName=String(describing: type(of: operation))
+
     // Log operation start with optimised metadata creation
     await logOperationStart(operationName: operationName, source: "BackupDomainHandler")
-    
+
     do {
       // Execute the appropriate operation based on type
-      let result = try await executeBackupOperation(operation)
-      
+      let result=try await executeBackupOperation(operation)
+
       // Log success with optimised metadata creation
       await logOperationSuccess(operationName: operationName, source: "BackupDomainHandler")
-      
+
       return result
     } catch {
       // Log failure with optimised metadata creation
-      await logOperationFailure(operationName: operationName, error: error, source: "BackupDomainHandler")
-      
+      await logOperationFailure(
+        operationName: operationName,
+        error: error,
+        source: "BackupDomainHandler"
+      )
+
       // Map to appropriate API error and rethrow
       throw mapToAPIError(error)
     }
@@ -108,10 +113,10 @@ public actor BackupDomainHandler: DomainHandler {
   }
 
   // MARK: - Private Helper Methods
-  
+
   /**
    Creates base metadata for logging with common fields.
-   
+
    - Parameters:
      - operation: The operation name
      - event: The event type (start, success, failure)
@@ -123,18 +128,18 @@ public actor BackupDomainHandler: DomainHandler {
       .withPublic(key: "event", value: event)
       .withPublic(key: "domain", value: domain)
   }
-  
+
   /**
    Logs the start of an operation with optimised metadata creation.
-   
+
    - Parameter operationName: The name of the operation being executed
    - Parameter source: The source of the log message
    */
   private func logOperationStart(operationName: String, source: String) async {
     // Only create metadata if logging is enabled
     if await logger?.isEnabled(for: .info) == true {
-      let metadata = createBaseMetadata(operation: operationName, event: "start")
-      
+      let metadata=createBaseMetadata(operation: operationName, event: "start")
+
       await logger?.info(
         "Starting backup operation",
         context: CoreLogContext(
@@ -144,19 +149,19 @@ public actor BackupDomainHandler: DomainHandler {
       )
     }
   }
-  
+
   /**
    Logs the successful completion of an operation with optimised metadata creation.
-   
+
    - Parameter operationName: The name of the operation that completed
    - Parameter source: The source of the log message
    */
   private func logOperationSuccess(operationName: String, source: String) async {
     // Only create metadata if logging is enabled
     if await logger?.isEnabled(for: .info) == true {
-      let metadata = createBaseMetadata(operation: operationName, event: "success")
+      let metadata=createBaseMetadata(operation: operationName, event: "success")
         .withPublic(key: "status", value: "completed")
-      
+
       await logger?.info(
         "Backup operation completed successfully",
         context: CoreLogContext(
@@ -166,10 +171,10 @@ public actor BackupDomainHandler: DomainHandler {
       )
     }
   }
-  
+
   /**
    Logs the failure of an operation with optimised metadata creation.
-   
+
    - Parameters:
      - operationName: The name of the operation that failed
      - error: The error that caused the failure
@@ -178,10 +183,10 @@ public actor BackupDomainHandler: DomainHandler {
   private func logOperationFailure(operationName: String, error: Error, source: String) async {
     // Only create metadata if logging is enabled
     if await logger?.isEnabled(for: .error) == true {
-      let metadata = createBaseMetadata(operation: operationName, event: "failure")
+      let metadata=createBaseMetadata(operation: operationName, event: "failure")
         .withPublic(key: "status", value: "failed")
         .withPrivate(key: "error", value: error.localizedDescription)
-      
+
       await logger?.error(
         "Backup operation failed",
         context: CoreLogContext(
@@ -191,37 +196,39 @@ public actor BackupDomainHandler: DomainHandler {
       )
     }
   }
-  
+
   /**
    Retrieves a snapshot from the cache if available and not expired.
-   
+
    - Parameters:
      - id: The snapshot ID
      - repositoryID: The repository ID
    - Returns: The cached snapshot if available, nil otherwise
    */
   private func getCachedSnapshot(id: String, repositoryID: String) -> SnapshotInfo? {
-    let cacheKey = "\(repositoryID):\(id)"
-    if let (info, timestamp) = snapshotCache[cacheKey],
-       DateTimeDTO.now().timeIntervalSince(timestamp).seconds < cacheTTL.seconds {
+    let cacheKey="\(repositoryID):\(id)"
+    if
+      let (info, timestamp)=snapshotCache[cacheKey],
+      DateTimeDTO.now().timeIntervalSince(timestamp).seconds < cacheTTL.seconds
+    {
       return info
     }
     return nil
   }
-  
+
   /**
    Caches a snapshot for future use.
-   
+
    - Parameters:
      - id: The snapshot ID
      - repositoryID: The repository ID
      - info: The snapshot information to cache
    */
   private func cacheSnapshot(id: String, repositoryID: String, info: SnapshotInfo) {
-    let cacheKey = "\(repositoryID):\(id)"
-    snapshotCache[cacheKey] = (info, DateTimeDTO.now())
+    let cacheKey="\(repositoryID):\(id)"
+    snapshotCache[cacheKey]=(info, DateTimeDTO.now())
   }
-  
+
   /**
    Clears all cached snapshots.
    */
@@ -242,13 +249,13 @@ public actor BackupDomainHandler: DomainHandler {
         return try await handleListSnapshots(op)
       case let op as GetSnapshotOperation:
         // Check cache first for better performance
-        if let cachedSnapshot = getCachedSnapshot(id: op.snapshotID, repositoryID: op.repositoryID) {
+        if let cachedSnapshot=getCachedSnapshot(id: op.snapshotID, repositoryID: op.repositoryID) {
           // Log cache hit if logging is enabled
           if await logger?.isEnabled(for: .debug) == true {
-            let metadata = createBaseMetadata(operation: "getSnapshot", event: "cacheHit")
+            let metadata=createBaseMetadata(operation: "getSnapshot", event: "cacheHit")
               .withPublic(key: "repository_id", value: op.repositoryID)
               .withPublic(key: "snapshot_id", value: op.snapshotID)
-            
+
             await logger?.debug(
               "Retrieved snapshot from cache",
               context: CoreLogContext(
@@ -261,29 +268,29 @@ public actor BackupDomainHandler: DomainHandler {
         }
         return try await handleGetSnapshot(op)
       case let op as CreateSnapshotOperation:
-        let result = try await handleCreateSnapshot(op)
+        let result=try await handleCreateSnapshot(op)
         // Cache the result for future use
-        if let snapshotInfo = result as? SnapshotInfo {
+        if let snapshotInfo=result as? SnapshotInfo {
           cacheSnapshot(id: snapshotInfo.id, repositoryID: op.repositoryID, info: snapshotInfo)
         }
         return result
       case let op as UpdateSnapshotOperation:
-        let result = try await handleUpdateSnapshot(op)
+        let result=try await handleUpdateSnapshot(op)
         // Update cache with new information
-        if let snapshotInfo = result as? SnapshotInfo {
+        if let snapshotInfo=result as? SnapshotInfo {
           cacheSnapshot(id: snapshotInfo.id, repositoryID: op.repositoryID, info: snapshotInfo)
         }
         return result
       case let op as DeleteSnapshotOperation:
         // Invalidate cache entry for this snapshot
-        let cacheKey = "\(op.repositoryID):\(op.snapshotID)"
+        let cacheKey="\(op.repositoryID):\(op.snapshotID)"
         snapshotCache.removeValue(forKey: cacheKey)
         return try await handleDeleteSnapshot(op)
       case let op as RestoreSnapshotOperation:
         return try await handleRestoreSnapshot(op)
       case let op as ForgetSnapshotOperation:
         // Invalidate cache entry for this snapshot
-        let cacheKey = "\(op.repositoryID):\(op.snapshotID)"
+        let cacheKey="\(op.repositoryID):\(op.snapshotID)"
         snapshotCache.removeValue(forKey: cacheKey)
         return try await handleForgetSnapshot(op)
       default:
@@ -302,7 +309,7 @@ public actor BackupDomainHandler: DomainHandler {
    */
   private func mapToAPIError(_ error: Error) -> APIError {
     // If it's already an APIError, return it
-    if let apiError = error as? APIError {
+    if let apiError=error as? APIError {
       return apiError
     }
 
@@ -319,113 +326,113 @@ public actor BackupDomainHandler: DomainHandler {
         )
     }
   }
-  
+
   /**
    Maps BackupError to standardised APIError.
-   
+
    - Parameter error: The backup error to map
    - Returns: An APIError instance
    */
   private func mapBackupError(_ error: BackupError) -> APIError {
     switch error {
       case let .snapshotNotFound(id):
-        return APIError.resourceNotFound(
+        APIError.resourceNotFound(
           message: "Snapshot not found: \(id)",
           identifier: id
         )
       case let .repositoryNotFound(id):
-        return APIError.resourceNotFound(
+        APIError.resourceNotFound(
           message: "Repository not found: \(id)",
           identifier: id
         )
       case let .backupFailed(message):
-        return APIError.operationFailed(
+        APIError.operationFailed(
           message: message,
           code: "BACKUP_FAILED",
           underlyingError: error
         )
       case let .pathNotFound(path):
-        return APIError.resourceNotFound(
+        APIError.resourceNotFound(
           message: "Path not found: \(path)",
           identifier: path
         )
       case .invalidConfiguration:
-        return APIError.validationError(
+        APIError.validationError(
           message: "Invalid backup configuration",
           details: "The provided backup configuration is invalid or incomplete",
           code: "INVALID_BACKUP_CONFIG"
         )
       case let .operationCancelled(reason):
-        return APIError.operationCancelled(
+        APIError.operationCancelled(
           message: "Backup operation cancelled: \(reason)",
           code: "BACKUP_CANCELLED"
         )
       case let .accessDenied(path):
-        return APIError.accessDenied(
+        APIError.accessDenied(
           message: "Access denied to path: \(path)",
           details: "The application does not have permission to access this path",
           code: "BACKUP_ACCESS_DENIED"
         )
       case .concurrentOperationLimitExceeded:
-        return APIError.resourceExhausted(
+        APIError.resourceExhausted(
           message: "Too many concurrent backup operations",
           details: "The maximum number of concurrent backup operations has been exceeded",
           code: "BACKUP_CONCURRENCY_LIMIT"
         )
       case let .other(message):
-        return APIError.operationFailed(
+        APIError.operationFailed(
           message: message,
           code: "BACKUP_ERROR",
           underlyingError: error
         )
     }
   }
-  
+
   /**
    Maps RepositoryError to standardised APIError.
-   
+
    - Parameter error: The repository error to map
    - Returns: An APIError instance
    */
   private func mapRepositoryError(_ error: RepositoryError) -> APIError {
     switch error {
       case .notFound:
-        return APIError.resourceNotFound(
+        APIError.resourceNotFound(
           message: "Repository not found",
           identifier: "unknown"
         )
       case .duplicateIdentifier:
-        return APIError.conflict(
+        APIError.conflict(
           message: "Repository already exists with this identifier",
           details: "A repository with the given identifier is already registered",
           code: "REPOSITORY_ALREADY_EXISTS"
         )
       case .locked:
-        return APIError.conflict(
+        APIError.conflict(
           message: "Repository is locked by another operation",
           details: "Try again later when the repository is not in use",
           code: "REPOSITORY_LOCKED"
         )
       case .invalidRepository:
-        return APIError.validationError(
+        APIError.validationError(
           message: "Invalid repository configuration",
           details: "The repository configuration is invalid or incomplete",
           code: "INVALID_REPOSITORY"
         )
       case .accessDenied:
-        return APIError.accessDenied(
+        APIError.accessDenied(
           message: "Access denied to repository",
           details: "The application does not have permission to access this repository",
           code: "REPOSITORY_ACCESS_DENIED"
         )
       case .networkError:
-        return APIError.networkError(
+        APIError.networkError(
           message: "Network error accessing repository",
           details: "A network error occurred while trying to access the repository",
           code: "REPOSITORY_NETWORK_ERROR"
         )
       case .other:
-        return APIError.internalError(
+        APIError.internalError(
           message: "An unexpected repository error occurred",
           underlyingError: error
         )
@@ -1051,28 +1058,28 @@ public actor BackupDomainHandler: DomainHandler {
   }
 
   // MARK: - Batch Operation Support
-  
+
   /**
    Executes a batch of backup operations more efficiently than individual execution.
-   
+
    - Parameter operations: Array of operations to execute
    - Returns: Dictionary mapping operation IDs to results
    - Throws: APIError if any operation fails
    */
   public func executeBatch(_ operations: [any APIOperation]) async throws -> [String: Any] {
-    var results: [String: Any] = [:]
-    
+    var results: [String: Any]=[:]
+
     // Group operations by type for more efficient processing
-    let groupedOperations = Dictionary(grouping: operations) { type(of: $0) }
-    
+    let groupedOperations=Dictionary(grouping: operations) { type(of: $0) }
+
     // Log batch operation start
     if await logger?.isEnabled(for: .info) == true {
-      let metadata = LogMetadataDTOCollection()
+      let metadata=LogMetadataDTOCollection()
         .withPublic(key: "operation", value: "batchExecution")
         .withPublic(key: "event", value: "start")
         .withPublic(key: "operationCount", value: String(operations.count))
         .withPublic(key: "operationTypes", value: String(describing: groupedOperations.keys))
-      
+
       await logger?.info(
         "Starting batch backup operation",
         context: CoreLogContext(
@@ -1081,38 +1088,38 @@ public actor BackupDomainHandler: DomainHandler {
         )
       )
     }
-    
+
     do {
       // Process each group of operations
       for (_, operationsOfType) in groupedOperations {
-        if let firstOp = operationsOfType.first {
+        if let firstOp=operationsOfType.first {
           // Process based on operation type
           if firstOp is ListSnapshotsOperation {
             // Example: Batch process all list operations together
-            let batchResult = try await batchListSnapshots(
+            let batchResult=try await batchListSnapshots(
               operationsOfType.compactMap { $0 as? ListSnapshotsOperation }
             )
             for (id, result) in batchResult {
-              results[id] = result
+              results[id]=result
             }
           } else {
             // Fall back to individual processing for other types
             for operation in operationsOfType {
-              let result = try await executeBackupOperation(operation)
-              results[operation.operationId] = result
+              let result=try await executeBackupOperation(operation)
+              results[operation.operationID]=result
             }
           }
         }
       }
-      
+
       // Log batch operation success
       if await logger?.isEnabled(for: .info) == true {
-        let metadata = LogMetadataDTOCollection()
+        let metadata=LogMetadataDTOCollection()
           .withPublic(key: "operation", value: "batchExecution")
           .withPublic(key: "event", value: "success")
           .withPublic(key: "operationCount", value: String(operations.count))
           .withPublic(key: "resultsCount", value: String(results.count))
-        
+
         await logger?.info(
           "Batch backup operation completed successfully",
           context: CoreLogContext(
@@ -1121,17 +1128,17 @@ public actor BackupDomainHandler: DomainHandler {
           )
         )
       }
-      
+
       return results
     } catch {
       // Log batch operation failure
       if await logger?.isEnabled(for: .error) == true {
-        let metadata = LogMetadataDTOCollection()
+        let metadata=LogMetadataDTOCollection()
           .withPublic(key: "operation", value: "batchExecution")
           .withPublic(key: "event", value: "failure")
           .withPublic(key: "operationCount", value: String(operations.count))
           .withPrivate(key: "error", value: error.localizedDescription)
-        
+
         await logger?.error(
           "Batch backup operation failed",
           context: CoreLogContext(
@@ -1140,80 +1147,81 @@ public actor BackupDomainHandler: DomainHandler {
           )
         )
       }
-      
+
       throw mapToAPIError(error)
     }
   }
-  
+
   /**
    Processes multiple list snapshots operations in a batch for better performance.
-   
+
    - Parameter operations: Array of ListSnapshotsOperation to process
    - Returns: Dictionary mapping operation IDs to results
    - Throws: APIError if any operation fails
    */
-  private func batchListSnapshots(_ operations: [ListSnapshotsOperation]) async throws -> [String: [SnapshotInfo]] {
-    var results: [String: [SnapshotInfo]] = [:]
-    
+  private func batchListSnapshots(_ operations: [ListSnapshotsOperation]) async throws
+  -> [String: [SnapshotInfo]] {
+    var results: [String: [SnapshotInfo]]=[:]
+
     // Group operations by repository ID to minimize service calls
-    let groupedByRepository = Dictionary(grouping: operations) { $0.repositoryID }
-    
+    let groupedByRepository=Dictionary(grouping: operations) { $0.repositoryID }
+
     // Process each repository's operations
     for (repositoryID, repoOperations) in groupedByRepository {
       // Validate repository once per group
-      if let repositoryService = self.repositoryService,
-         await !repositoryService.isRegistered(identifier: repositoryID) {
+      if
+        let repositoryService,
+        await !repositoryService.isRegistered(identifier: repositoryID)
+      {
         throw BackupError.repositoryNotFound(repositoryID)
       }
-      
+
       // Get all snapshots for this repository in one call
-      let allSnapshots = try await backupService.listSnapshots(
+      let allSnapshots=try await backupService.listSnapshots(
         repositoryID: repositoryID,
         filter: nil,
         includeDetails: true
       )
-      
+
       // Apply filters for each operation
       for operation in repoOperations {
-        let filteredSnapshots: [SnapshotInfo]
-        
-        if let filter = operation.filter {
+        let filteredSnapshots: [SnapshotInfo]=if let filter=operation.filter {
           // Apply the filter to the retrieved snapshots
-          filteredSnapshots = allSnapshots.filter { snapshot in
+          allSnapshots.filter { snapshot in
             // Apply tag filtering
-            if let tags = filter.tags, !tags.isEmpty {
-              let snapshotTags = Set(snapshot.tags ?? [])
-              let filterTags = Set(tags)
+            if let tags=filter.tags, !tags.isEmpty {
+              let snapshotTags=Set(snapshot.tags ?? [])
+              let filterTags=Set(tags)
               if !filterTags.isSubset(of: snapshotTags) {
                 return false
               }
             }
-            
+
             // Apply date range filtering
-            if let startDate = filter.startDate, snapshot.creationDate < startDate {
+            if let startDate=filter.startDate, snapshot.creationDate < startDate {
               return false
             }
-            
-            if let endDate = filter.endDate, snapshot.creationDate > endDate {
+
+            if let endDate=filter.endDate, snapshot.creationDate > endDate {
               return false
             }
-            
+
             // Apply status filtering
-            if let status = filter.status, snapshot.status != status {
+            if let status=filter.status, snapshot.status != status {
               return false
             }
-            
+
             return true
           }
         } else {
-          filteredSnapshots = allSnapshots
+          allSnapshots
         }
-        
+
         // Store the result for this operation
-        results[operation.operationId] = filteredSnapshots
+        results[operation.operationID]=filteredSnapshots
       }
     }
-    
+
     return results
   }
 

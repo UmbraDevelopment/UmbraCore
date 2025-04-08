@@ -1,7 +1,7 @@
+import CoreSecurityTypes
 import LoggingInterfaces
 import LoggingTypes
 import SecurityCoreInterfaces
-import CoreSecurityTypes
 
 /**
  An implementation of CryptoServiceProtocol that adds logging for

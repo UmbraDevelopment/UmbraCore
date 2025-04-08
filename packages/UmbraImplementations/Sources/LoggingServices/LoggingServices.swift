@@ -13,7 +13,7 @@
 ///
 /// ```swift
 /// // Create a standard console logger
-/// let logger = LoggingServiceFactory.createDefaultConsoleLogger()
+/// let logger = await LoggingServices.createLogger()
 ///
 /// // Log messages at different levels
 /// await logger.info("Application started", metadata: nil, source: "AppDelegate")
@@ -22,7 +22,7 @@
 /// "/tmp/file.txt"]), source: "FileManager")
 ///
 /// // Create a production logger with file output
-/// let prodLogger = LoggingServiceFactory.createProductionLogger(
+/// let prodLogger = await LoggingServices.createProductionLogger(
 ///     logDirectoryPath: "/var/log/myapp"
 /// )
 ///
@@ -66,7 +66,7 @@ public enum LoggingServices {
    - Returns: A new logging service actor
    */
   public static func createLogger() async -> LoggingServiceActor {
-    await LoggingServiceFactory.createDefaultService()
+    await LoggingServiceFactory.shared.createDefaultService()
   }
 
   /**
@@ -78,7 +78,7 @@ public enum LoggingServices {
   public static func createLogger(
     destinations: [LoggingTypes.LogDestination]
   ) async -> LoggingServiceActor {
-    await LoggingServiceFactory.createService(destinations: destinations)
+    await LoggingServiceFactory.shared.createService(destinations: destinations)
   }
 
   /**

@@ -35,15 +35,15 @@ public struct EnhancedLogContext: LogContextDTO {
   public init(
     domainName: String,
     operationName: String,
-    source: String? = nil,
-    correlationID: String? = nil,
-    metadata: LogMetadataDTOCollection = LogMetadataDTOCollection()
+    source: String?=nil,
+    correlationID: String?=nil,
+    metadata: LogMetadataDTOCollection=LogMetadataDTOCollection()
   ) {
-    self.domainName = domainName
-    self.operationName = operationName
-    self.source = source
-    self.correlationID = correlationID
-    self.metadata = metadata
+    self.domainName=domainName
+    self.operationName=operationName
+    self.source=source
+    self.correlationID=correlationID
+    self.metadata=metadata
   }
 
   /**
@@ -52,10 +52,10 @@ public struct EnhancedLogContext: LogContextDTO {
    - Parameter key: The metadata key
    - Returns: The privacy level, or .auto if not specified
    */
-  public func privacyLevel(for key: String) -> PrivacyClassification {
+  public func privacyLevel(for _: String) -> PrivacyClassification {
     // This function needs to be updated to work with the new metadata collection
     // For now, it will always return .auto
-    return .auto
+    .auto
   }
 
   /**
@@ -67,11 +67,11 @@ public struct EnhancedLogContext: LogContextDTO {
     for (key, privacyValue) in metadataUpdates {
       switch privacyValue {
         case let .public(value):
-          metadata = metadata.withPublic(key: key, value: value)
+          metadata=metadata.withPublic(key: key, value: value)
         case let .private(value):
-          metadata = metadata.withPrivate(key: key, value: value)
+          metadata=metadata.withPrivate(key: key, value: value)
         case let .hash(value):
-          metadata = metadata.withHashed(key: key, value: value)
+          metadata=metadata.withHashed(key: key, value: value)
       }
     }
   }

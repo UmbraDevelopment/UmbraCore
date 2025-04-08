@@ -12,16 +12,34 @@ public struct ResticCommandImpl: ResticCommand {
   /// Environment variables for the command
   public let environment: [String: String]
 
+  /// Whether the command requires a password
+  public var requiresPassword: Bool
+
+  /// Whether the command supports progress reporting
+  public var supportsProgress: Bool
+
+  /// The timeout for this command in seconds
+  public var timeout: TimeInterval
+
   /// Creates a new Restic command with the specified arguments and environment
   /// - Parameters:
   ///   - arguments: Command line arguments
   ///   - environment: Environment variables (defaults to current process environment)
+  ///   - requiresPassword: Whether the command requires a password
+  ///   - supportsProgress: Whether the command supports progress reporting
+  ///   - timeout: The timeout for this command in seconds
   public init(
     arguments: [String],
-    environment: [String: String]=ProcessInfo.processInfo.environment
+    environment: [String: String]=ProcessInfo.processInfo.environment,
+    requiresPassword: Bool=true,
+    supportsProgress: Bool=false,
+    timeout: TimeInterval=300 // 5 minutes default timeout
   ) {
     self.arguments=arguments
     self.environment=environment
+    self.requiresPassword=requiresPassword
+    self.supportsProgress=supportsProgress
+    self.timeout=timeout
   }
 
   /// Validates the command before execution

@@ -27,15 +27,15 @@ import UmbraErrors
 public actor RepositoryDomainHandler: DomainHandler {
   /// Repository service for storage operations
   private let repositoryService: RepositoryServiceProtocol
-  
+
   /// Base domain handler for common functionality
   private let baseDomainHandler: BaseDomainHandler
-  
+
   /// Cache for repository information to improve performance of repeated requests
-  private var repositoryCache: [String: (RepositoryInfo, DateTimeDTO)] = [:]
-  
+  private var repositoryCache: [String: (RepositoryInfo, DateTimeDTO)]=[:]
+
   /// Cache time-to-live in seconds
-  private let cacheTTL: TimeIntervalDTO = TimeIntervalDTO.seconds(60) // 1 minute
+  private let cacheTTL: TimeIntervalDTO = .seconds(60) // 1 minute
 
   /**
    Initialises a new repository domain handler.
@@ -48,16 +48,17 @@ public actor RepositoryDomainHandler: DomainHandler {
     service: RepositoryServiceProtocol,
     logger: (any LoggingProtocol)?=nil
   ) {
-    repositoryService = service
-    baseDomainHandler = BaseDomainHandler(domain: APIDomain.repository.rawValue, logger: logger)
+    repositoryService=service
+    baseDomainHandler=BaseDomainHandler(domain: APIDomain.repository.rawValue, logger: logger)
   }
 
   // MARK: - DomainHandler Conformance
+
   public nonisolated var domain: String { APIDomain.repository.rawValue }
 
-  public func handleOperation<T: APIOperation>(operation: T) async throws -> Any {
+  public func handleOperation(operation: some APIOperation) async throws -> Any {
     // Call the existing execute method
-    return try await execute(operation)
+    try await execute(operation)
   }
 
   /**
@@ -69,18 +70,24 @@ public actor RepositoryDomainHandler: DomainHandler {
    */
   public func execute(_ operation: some APIOperation) async throws -> Any {
     // Get operation name once for reuse
-    let operationName = String(describing: type(of: operation))
-    
+    let operationName=String(describing: type(of: operation))
+
     // Log operation start with optimised metadata creation
-    await baseDomainHandler.logOperationStart(operationName: operationName, source: "RepositoryDomainHandler")
-    
+    await baseDomainHandler.logOperationStart(
+      operationName: operationName,
+      source: "RepositoryDomainHandler"
+    )
+
     do {
       // Execute the appropriate operation based on type
-      let result = try await executeRepositoryOperation(operation)
-      
+      let result=try await executeRepositoryOperation(operation)
+
       // Log success with optimised metadata creation
-      await baseDomainHandler.logOperationSuccess(operationName: operationName, source: "RepositoryDomainHandler")
-      
+      await baseDomainHandler.logOperationSuccess(
+        operationName: operationName,
+        source: "RepositoryDomainHandler"
+      )
+
       return result
     } catch {
       // Log failure with optimised metadata creation
@@ -89,7 +96,7 @@ public actor RepositoryDomainHandler: DomainHandler {
         error: error,
         source: "RepositoryDomainHandler"
       )
-      
+
       // Map to appropriate API error and rethrow
       throw mapToAPIError(error)
     }
@@ -106,32 +113,34 @@ public actor RepositoryDomainHandler: DomainHandler {
   }
 
   // MARK: - Private Helper Methods
-  
+
   /**
    Checks if a repository is in the cache and still valid.
-   
+
    - Parameter repositoryId: The repository ID to check
    - Returns: The cached repository info if available and not expired, nil otherwise
    */
-  private func getCachedRepository(repositoryId: String) -> RepositoryInfo? {
-    if let (info, timestamp) = repositoryCache[repositoryId],
-       DateTimeDTO.now().timeIntervalSince(timestamp).seconds < cacheTTL.seconds {
+  private func getCachedRepository(repositoryID: String) -> RepositoryInfo? {
+    if
+      let (info, timestamp)=repositoryCache[repositoryID],
+      DateTimeDTO.now().timeIntervalSince(timestamp).seconds < cacheTTL.seconds
+    {
       return info
     }
     return nil
   }
-  
+
   /**
    Adds or updates repository info in the cache.
-   
+
    - Parameters:
      - repositoryId: The repository ID to cache
      - info: The repository info to cache
    */
-  private func cacheRepositoryInfo(repositoryId: String, info: RepositoryInfo) {
-    repositoryCache[repositoryId] = (info, DateTimeDTO.now())
+  private func cacheRepositoryInfo(repositoryID: String, info: RepositoryInfo) {
+    repositoryCache[repositoryID]=(info, DateTimeDTO.now())
   }
-  
+
   /**
    Clears all cached repositories.
    */
@@ -152,7 +161,7 @@ public actor RepositoryDomainHandler: DomainHandler {
         return try await handleListRepositories(op)
       case let op as GetRepositoryOperation:
         // Check cache first for better performance
-        if let cachedRepository = getCachedRepository(repositoryId: op.repositoryID) {
+        if let cachedRepository=getCachedRepository(repositoryID: op.repositoryID) {
           // Log cache hit if needed
           await baseDomainHandler.logDebug(
             message: "Retrieved repository from cache",
@@ -166,17 +175,17 @@ public actor RepositoryDomainHandler: DomainHandler {
         }
         return try await handleGetRepository(op)
       case let op as CreateRepositoryOperation:
-        let result = try await handleCreateRepository(op)
+        let result=try await handleCreateRepository(op)
         // Cache the result for future use
-        if let repositoryInfo = result as? RepositoryInfo {
-          cacheRepositoryInfo(repositoryId: repositoryInfo.id, info: repositoryInfo)
+        if let repositoryInfo=result as? RepositoryInfo {
+          cacheRepositoryInfo(repositoryID: repositoryInfo.id, info: repositoryInfo)
         }
         return result
       case let op as UpdateRepositoryOperation:
-        let result = try await handleUpdateRepository(op)
+        let result=try await handleUpdateRepository(op)
         // Update cache with new information
-        if let repositoryInfo = result as? RepositoryInfo {
-          cacheRepositoryInfo(repositoryId: repositoryInfo.id, info: repositoryInfo)
+        if let repositoryInfo=result as? RepositoryInfo {
+          cacheRepositoryInfo(repositoryID: repositoryInfo.id, info: repositoryInfo)
         }
         return result
       case let op as DeleteRepositoryOperation:
@@ -199,12 +208,12 @@ public actor RepositoryDomainHandler: DomainHandler {
    */
   private func mapToAPIError(_ error: Error) -> APIError {
     // If it's already an APIError, return it
-    if let apiError = error as? APIError {
+    if let apiError=error as? APIError {
       return apiError
     }
 
     // Handle specific repository error types
-    if let repoError = error as? RepositoryError {
+    if let repoError=error as? RepositoryError {
       return mapRepositoryError(repoError)
     }
 
@@ -214,52 +223,52 @@ public actor RepositoryDomainHandler: DomainHandler {
       underlyingError: error
     )
   }
-  
+
   /**
    Maps RepositoryError to standardised APIError.
-   
+
    - Parameter error: The repository error to map
    - Returns: An APIError instance
    */
   private func mapRepositoryError(_ error: RepositoryError) -> APIError {
     switch error {
       case .notFound:
-        return APIError.resourceNotFound(
+        APIError.resourceNotFound(
           message: "Repository not found",
           identifier: "unknown"
         )
       case .duplicateIdentifier:
-        return APIError.conflict(
+        APIError.conflict(
           message: "Repository already exists with this identifier",
           details: "A repository with the given identifier is already registered",
           code: "REPOSITORY_ALREADY_EXISTS"
         )
       case .locked:
-        return APIError.conflict(
+        APIError.conflict(
           message: "Repository is locked by another operation",
           details: "Try again later when the repository is not in use",
           code: "REPOSITORY_LOCKED"
         )
       case .invalidRepository:
-        return APIError.validationError(
+        APIError.validationError(
           message: "Invalid repository configuration",
           details: "The repository configuration is invalid or incomplete",
           code: "INVALID_REPOSITORY"
         )
       case .accessDenied:
-        return APIError.accessDenied(
+        APIError.accessDenied(
           message: "Access denied to repository",
           details: "The application does not have permission to access this repository",
           code: "REPOSITORY_ACCESS_DENIED"
         )
       case .networkError:
-        return APIError.networkError(
+        APIError.networkError(
           message: "Network error accessing repository",
           details: "A network error occurred while trying to access the repository",
           code: "REPOSITORY_NETWORK_ERROR"
         )
       case .other:
-        return APIError.internalError(
+        APIError.internalError(
           message: "An unexpected repository error occurred",
           underlyingError: error
         )
@@ -267,20 +276,20 @@ public actor RepositoryDomainHandler: DomainHandler {
   }
 
   // MARK: - Batch Operation Support
-  
+
   /**
    Executes a batch of repository operations more efficiently than individual execution.
-   
+
    - Parameter operations: Array of operations to execute
    - Returns: Dictionary mapping operation IDs to results
    - Throws: APIError if any operation fails
    */
   public func executeBatch(_ operations: [any APIOperation]) async throws -> [String: Any] {
-    var results: [String: Any] = [:]
-    
+    var results: [String: Any]=[:]
+
     // Group operations by type for more efficient processing
-    let groupedOperations = Dictionary(grouping: operations) { type(of: $0) }
-    
+    let groupedOperations=Dictionary(grouping: operations) { type(of: $0) }
+
     // Log batch operation start
     await baseDomainHandler.logDebug(
       message: "Starting batch repository operation",
@@ -290,30 +299,30 @@ public actor RepositoryDomainHandler: DomainHandler {
         .withPublic(key: "operationCount", value: String(operations.count))
         .withPublic(key: "operationTypes", value: String(describing: groupedOperations.keys))
     )
-    
+
     do {
       // Process each group of operations
       for (_, operationsOfType) in groupedOperations {
-        if let firstOp = operationsOfType.first {
+        if let firstOp=operationsOfType.first {
           // Process based on operation type
           if firstOp is ListRepositoriesOperation {
             // Example: Batch process all list operations together
-            let batchResult = try await batchListRepositories(
+            let batchResult=try await batchListRepositories(
               operationsOfType.compactMap { $0 as? ListRepositoriesOperation }
             )
             for (id, result) in batchResult {
-              results[id] = result
+              results[id]=result
             }
           } else {
             // Fall back to individual processing for other types
             for operation in operationsOfType {
-              let result = try await executeRepositoryOperation(operation)
-              results[operation.operationId] = result
+              let result=try await executeRepositoryOperation(operation)
+              results[operation.operationID]=result
             }
           }
         }
       }
-      
+
       // Log batch operation success
       await baseDomainHandler.logDebug(
         message: "Batch repository operation completed successfully",
@@ -323,7 +332,7 @@ public actor RepositoryDomainHandler: DomainHandler {
           .withPublic(key: "operationCount", value: String(operations.count))
           .withPublic(key: "resultsCount", value: String(results.count))
       )
-      
+
       return results
     } catch {
       // Log batch operation failure
@@ -332,34 +341,36 @@ public actor RepositoryDomainHandler: DomainHandler {
         error: error,
         source: "RepositoryDomainHandler"
       )
-      
+
       throw mapToAPIError(error)
     }
   }
-  
+
   /**
    Processes multiple list repositories operations in a batch for better performance.
-   
+
    - Parameter operations: Array of ListRepositoriesOperation to process
    - Returns: Dictionary mapping operation IDs to results
    - Throws: APIError if any operation fails
    */
-  private func batchListRepositories(_ operations: [ListRepositoriesOperation]) async throws -> [String: [RepositoryInfo]] {
-    var results: [String: [RepositoryInfo]] = [:]
-    
+  private func batchListRepositories(_ operations: [ListRepositoriesOperation]) async throws
+  -> [String: [RepositoryInfo]] {
+    var results: [String: [RepositoryInfo]]=[:]
+
     // Get all repositories in one call
-    let allRepositories = try await repositoryService.listRepositories(includeDetails: true)
-    
+    let allRepositories=try await repositoryService.listRepositories(includeDetails: true)
+
     // Apply filters for each operation
     for operation in operations {
       let filteredRepositories: [RepositoryInfo]
-      
-      // Apply any operation-specific filtering
-      if operation.includeDetails {
-        filteredRepositories = allRepositories
+
+        // Apply any operation-specific filtering
+        = if operation.includeDetails
+      {
+        allRepositories
       } else {
         // If details aren't needed, create simplified versions
-        filteredRepositories = allRepositories.map { repo in
+        allRepositories.map { repo in
           RepositoryInfo(
             id: repo.id,
             name: repo.name,
@@ -370,11 +381,11 @@ public actor RepositoryDomainHandler: DomainHandler {
           )
         }
       }
-      
+
       // Store the result for this operation
-      results[operation.operationId] = filteredRepositories
+      results[operation.operationID]=filteredRepositories
     }
-    
+
     return results
   }
 
@@ -487,11 +498,11 @@ public actor RepositoryDomainHandler: DomainHandler {
       path: repository.path,
       type: repository.type.rawValue,
       state: getRepositoryState(repository),
-      creationDate: repository.creationDate != nil ? 
-        DateTimeDTO.from(date: repository.creationDate!) : 
+      creationDate: repository.creationDate != nil ?
+        DateTimeDTO.from(date: repository.creationDate!) :
         DateTimeDTO.now(),
-      lastModified: repository.lastModified != nil ? 
-        DateTimeDTO.from(date: repository.lastModified!) : 
+      lastModified: repository.lastModified != nil ?
+        DateTimeDTO.from(date: repository.lastModified!) :
         DateTimeDTO.now(),
       metadata: repository.metadata
     )
@@ -604,11 +615,11 @@ public actor RepositoryDomainHandler: DomainHandler {
       path: repository.path,
       type: repository.type.rawValue,
       state: getRepositoryState(repository),
-      creationDate: repository.creationDate != nil ? 
-        DateTimeDTO.from(date: repository.creationDate!) : 
+      creationDate: repository.creationDate != nil ?
+        DateTimeDTO.from(date: repository.creationDate!) :
         DateTimeDTO.now(),
-      lastModified: repository.lastModified != nil ? 
-        DateTimeDTO.from(date: repository.lastModified!) : 
+      lastModified: repository.lastModified != nil ?
+        DateTimeDTO.from(date: repository.lastModified!) :
         DateTimeDTO.now(),
       metadata: repository.metadata
     )

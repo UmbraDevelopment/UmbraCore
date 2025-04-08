@@ -1,351 +1,306 @@
 import CoreSecurityTypes
 import DomainSecurityTypes
 import Foundation
+import SecurityCoreInterfaces
+import SecurityKeyTypes
 import UmbraErrors
 
 /**
- # Key Rotation Service
+ # KeyRotationService
 
- This module provides key rotation capabilities, which are essential for maintaining
- cryptographic hygiene in any security-focused application. Key rotation involves
- periodically replacing cryptographic keys with new ones to limit the impact of
- potential key compromise and comply with security best practices.
+ Manages the rotation of cryptographic keys in the security system.
+ This service ensures that keys are regularly rotated according to
+ security best practices, while maintaining continuity of service.
 
- ## Security Rationale
+ Key rotation involves:
+ 1. Creating a new key with the same properties as the existing key
+ 2. Updating references to use the new key
+ 3. Optionally preserving the old key for a transition period
+ 4. Eventually removing the old key when it's no longer needed
 
- Regular key rotation provides several security benefits:
-
- 1. **Limited Exposure Window**: Reduces the time window during which a compromised
-    key can be exploited.
-
- 2. **Compartmentalisation**: Limits the amount of data encrypted with any single key,
-    reducing the impact of key compromise.
-
- 3. **Compliance**: Meets requirements of security standards like PCI-DSS, NIST,
-    and GDPR, which recommend or mandate periodic key rotation.
-
- 4. **Defence in Depth**: Complements other security measures by ensuring that
-    even if other controls fail, the window of vulnerability is limited.
-
- ## Implementation Notes
-
- This service implements versioned key identifiers that track key generations,
- enabling seamless key rotation without disrupting system operation. The format
- used is `baseId_vN` where N is the version number.
+ This implementation follows the Alpha Dot Five architecture principles
+ by using actor-based concurrency for thread safety.
  */
 
-/// Protocol defining the core operations of a key rotation service.
-/// Implementations of this protocol manage the lifecycle of cryptographic keys,
-/// including rotation, version tracking, and expiry management.
-public protocol KeyRotationService {
+/// Protocol defining key rotation service capabilities
+public protocol KeyRotationServiceProtocol: Sendable {
   /**
    Rotates a cryptographic key, generating a new version while maintaining its purpose.
 
-   This operation creates a new key with the same properties (algorithm, size) as the
-   original, assigns it a new version number, and stores it in the key store. The
-   original key remains available for decryption of existing data, while the new key
-   should be used for any new encryption operations.
-
-   ## Key Identifier Format
-
-   Keys are identified using a versioned format: `baseId_vN` where:
-   - `baseId` is the base identifier for the key's purpose (e.g., "database_encryption")
-   - `N` is the version number (e.g., 1, 2, 3)
-
-   ## Example Usage
-
-   ```swift
-   // Rotate the database encryption key
-   let oldKeyID = "database_encryption_v1"
-   let newKeyID = try await keyRotationService.rotateKey(identifier: oldKeyID)
-
-   // newKeyID would be "database_encryption_v2"
-   // Update systems to use the new key for encryption
-   ```
-
    - Parameter identifier: The identifier of the key to rotate
    - Returns: The identifier of the newly created key
-   - Throws: `KeyRotationError` if the operation fails
+   - Throws: An error if key rotation fails
    */
   func rotateKey(identifier: String) async throws -> String
 
   /**
-   Retrieves the current version number of a key.
-
-   This method parses the key identifier to extract its current version number,
-   which is useful for determining if a key needs rotation or for tracking
-   key history.
-
-   ## Example Usage
-
-   ```swift
-   let keyID = "payment_processing_v3"
-   let version = try await keyRotationService.getCurrentKeyVersion(identifier: keyID)
-   // version would be 3
-   ```
-
-   - Parameter identifier: The identifier of the key
-   - Returns: The current version number
-   - Throws: `KeyRotationError` if the version cannot be determined
-   */
-  func getCurrentKeyVersion(identifier: String) async throws -> Int
-
-  /**
-   Determines if a key should be rotated based on policy settings.
-
-   This method checks factors such as key age, usage count, or other
-   policy parameters to determine if a key should be rotated. Implementations
-   may consider industry-specific requirements (e.g., PCI-DSS) when making
-   this determination.
-
-   ## Example Usage
-
-   ```swift
-   let keyID = "customer_data_v1"
-   if await keyRotationService.keyRequiresRotation(identifier: keyId) {
-       let newKeyID = try await keyRotationService.rotateKey(identifier: keyID)
-       // Update configuration to use newKeyID
-   }
-   ```
+   Checks if a key needs rotation based on its age and the rotation policy.
 
    - Parameter identifier: The identifier of the key to check
-   - Returns: `true` if the key should be rotated, `false` otherwise
+   - Returns: True if the key should be rotated
+   - Throws: An error if the check fails
    */
-  func keyRequiresRotation(identifier: String) async -> Bool
+  func shouldRotateKey(identifier: String) async throws -> Bool
+
+  /**
+   Gets the time until the next scheduled rotation for a key.
+
+   - Parameter identifier: The identifier of the key to check
+   - Returns: Time interval until next rotation in days, or nil if no rotation is scheduled
+   - Throws: An error if the check fails
+   */
+  func timeUntilRotation(identifier: String) async throws -> Double?
 }
 
-/**
- Error types specific to key rotation operations.
-
- These errors provide detailed information about failures during key rotation
- operations, helping with diagnostics and appropriate error handling.
- */
-public enum KeyRotationError: Error, LocalizedError {
-  /// Indicates the requested key could not be found in the key store
+/// Errors specific to key rotation operations
+public enum KeyRotationError: Error, Sendable, Equatable {
+  /// The specified key was not found
   case keyNotFound(String)
 
-  /// Indicates a failure during the rotation process
-  case rotationFailed(String, reason: String)
+  /// The key rotation operation failed
+  case rotationFailed(String, String)
 
-  /// Indicates the provided key identifier does not follow the expected format
-  case invalidKeyIdentifier(String)
+  /// The key is not eligible for rotation
+  case notEligibleForRotation(String)
 
-  public var errorDescription: String? {
-    switch self {
-      case let .keyNotFound(id):
-        "Key not found: \(id)"
-      case let .rotationFailed(id, reason):
-        "Failed to rotate key \(id): \(reason)"
-      case let .invalidKeyIdentifier(id):
-        "Invalid key identifier: \(id). Expected format is 'baseId_vN' where N is a version number."
-    }
-  }
+  /// General error during key rotation
+  case generalError(String)
 }
 
-/**
- Standard implementation of the key rotation service.
+/// Implementation of the key rotation service
+public actor KeyRotationServiceImpl: KeyRotationServiceProtocol {
+  /// Shared singleton instance
+  public static let shared=KeyRotationServiceImpl(
+    keyStore: KeyStore(),
+    keyGenerator: DefaultKeyGenerator()
+  )
 
- This class provides a complete implementation of the KeyRotationService protocol,
- managing cryptographic keys throughout their lifecycle, including creation,
- rotation, and retirement.
- */
-public class KeyRotationServiceImpl: KeyRotationService {
-  /// Key store for managing cryptographic keys
+  /// The key store used for retrieving and storing keys
   private let keyStore: KeyStore
 
-  /// Key generator for creating new cryptographic keys
-  private let keyGenerator: KeyGenerator
+  /// The key generator used for creating new keys
+  private let keyGenerator: any KeyGenerator
 
   /// Default rotation period in days
   private let defaultRotationPeriod: Int
 
+  /// Cache of key metadata to improve performance
+  private var keyMetadataCache: [String: KeyMetadata]=[:]
+
   /**
-   Initialises a key rotation service with the necessary dependencies.
+   Initialises a new key rotation service with the specified dependencies.
 
    - Parameters:
-      - keyStore: The key store to use for storing and retrieving keys
-      - keyGenerator: The key generator to use for creating new keys
-      - defaultRotationPeriod: Default rotation period in days (default: 90)
+     - keyStore: The key store to use
+     - keyGenerator: The key generator to use
+     - defaultRotationPeriod: Default rotation period in days (defaults to 90)
    */
-  public init(keyStore: KeyStore, keyGenerator: KeyGenerator, defaultRotationPeriod: Int=90) {
+  public init(
+    keyStore: KeyStore,
+    keyGenerator: any KeyGenerator,
+    defaultRotationPeriod: Int=90
+  ) {
     self.keyStore=keyStore
     self.keyGenerator=keyGenerator
     self.defaultRotationPeriod=defaultRotationPeriod
   }
 
   /**
-   Rotates a key with the given identifier, creating a new version.
+   Rotates a cryptographic key, generating a new version while maintaining its purpose.
 
-   This implementation:
-   1. Parses the key identifier to extract the base ID and version
-   2. Retrieves the existing key to determine its properties
-   3. Generates a new key with the same properties
-   4. Creates a new identifier with an incremented version
-   5. Stores the new key with the new identifier
-
-   ## Security Considerations
-
-   - The method preserves the bit length of the original key to ensure
-     consistent security levels across rotations.
-   - The original key is not deleted, allowing for decryption of data
-     encrypted with the previous key version.
-   - For sensitive operations, consider implementing additional access
-     controls around key rotation.
+   The rotation process:
+   1. Retrieves the existing key and its metadata
+   2. Generates a new key with the same properties
+   3. Stores the new key with updated metadata
+   4. Returns the identifier of the new key
 
    - Parameter identifier: The identifier of the key to rotate
    - Returns: The identifier of the newly created key
-   - Throws: `KeyRotationError` if the key cannot be found or rotation fails
+   - Throws: KeyRotationError if rotation fails
    */
   public func rotateKey(identifier: String) async throws -> String {
-    // Parse the identifier to extract base ID and version
-    let (baseID, version)=try parseKeyIdentifier(identifier)
-
-    // Get the existing key, if it exists
-    guard let oldKey=try await keyStore.getKey(identifier: identifier) else {
+    // Verify the key exists
+    guard try await keyStore.containsKey(identifier: identifier) else {
       throw KeyRotationError.keyNotFound(identifier)
     }
 
-    // Generate new key with same size as the old one
-    let bitLength=oldKey.count * 8
-    let newKey=try await keyGenerator.generateKey(bitLength: bitLength)
+    // Verify we can retrieve the key
+    guard try await keyStore.getKey(identifier: identifier) != nil else {
+      throw KeyRotationError.keyNotFound(identifier)
+    }
 
-    // Create a new identifier with incremented version
-    let newVersion=version + 1
-    let newIdentifier="\(baseID)_v\(newVersion)"
+    // Get metadata for the existing key
+    let metadata=try await getKeyMetadata(identifier: identifier)
+
+    // Generate a new identifier for the rotated key
+    let newIdentifier="\(metadata.purpose)-\(UUID().uuidString)"
+
+    // Generate a new key with the same properties
+    let newKey=try await keyGenerator.generateKey(bitLength: metadata.keySize)
 
     // Store the new key
     try await keyStore.storeKey(newKey, identifier: newIdentifier)
+
+    // Create and store metadata for the new key
+    let newMetadata=KeyMetadata(
+      id: newIdentifier,
+      createdAt: Date().timeIntervalSince1970,
+      algorithm: metadata.algorithm,
+      keySize: metadata.keySize,
+      purpose: metadata.purpose,
+      attributes: metadata.attributes
+    )
+
+    // Store the new metadata
+    try await storeKeyMetadata(newMetadata)
 
     return newIdentifier
   }
 
   /**
-   Retrieves the current version number from a key identifier.
-
-   This method parses versioned key identifiers in the format `baseId_vN`
-   where N is the version number.
-
-   - Parameter identifier: The key identifier to parse
-   - Returns: The current version number
-   - Throws: `KeyRotationError.invalidKeyIdentifier` if the identifier
-             cannot be parsed
-   */
-  public func getCurrentKeyVersion(identifier: String) async throws -> Int {
-    let (_, version)=try parseKeyIdentifier(identifier)
-    return version
-  }
-
-  /**
-   Determines if a key should be rotated based on its age and configured
-   rotation period.
-
-   This implementation checks the key's last rotation date against the
-   configured rotation period. If the key is older than the rotation
-   period, it returns true.
-
-   ## Customisation Options
-
-   Subclasses may override this method to implement more sophisticated
-   rotation policies based on additional factors such as:
-
-   - Usage counts (rotating keys after a certain number of operations)
-   - Data volume (rotating keys after encrypting a certain amount of data)
-   - Risk levels (rotating high-risk keys more frequently)
-   - Compliance requirements (adhering to specific standards)
+   Checks if a key needs rotation based on its age and the rotation policy.
 
    - Parameter identifier: The identifier of the key to check
-   - Returns: `true` if the key should be rotated, `false` otherwise
+   - Returns: True if the key should be rotated
+   - Throws: KeyRotationError if the check fails
    */
-  public func keyRequiresRotation(identifier: String) async -> Bool {
+  public func shouldRotateKey(identifier: String) async throws -> Bool {
     do {
-      // Get the rotation period from metadata or use default
-      // In a real implementation, this would check actual key metadata
-      // For now, we'll parse the identifier to check if it's old enough
-      let (_, version)=try parseKeyIdentifier(identifier)
+      // Get the key metadata
+      let metadata=try await getKeyMetadata(identifier: identifier)
 
-      // Use a simple heuristic: if version is low, it probably needs rotation
-      // In a real implementation, check actual creation date against policy
-      if version < 3 {
-        return true
-      }
+      // Calculate the key's age in days
+      let now=Date().timeIntervalSince1970
+      let keyAge=(now - metadata.createdAt) / (60 * 60 * 24)
 
-      // For demonstration, assume keys with higher versions
-      // were rotated more recently
-      return false
+      // Get rotation period from metadata or use default
+      let rotationPeriod=Int(metadata.attributes["rotationPeriod"] ?? "") ?? defaultRotationPeriod
+
+      // Key should be rotated if its age exceeds the rotation period
+      return keyAge >= Double(rotationPeriod)
     } catch {
-      // In case of error, assume key needs rotation for safety
-      return true
+      throw KeyRotationError
+        .generalError("Failed to check rotation status: \(error.localizedDescription)")
     }
   }
 
   /**
-   Parses a key identifier to extract its components.
+   Gets the time until the next scheduled rotation for a key.
 
-   This method handles versioned key identifiers in the format `baseId_vN`
-   where N is the version number.
-
-   - Parameter identifier: The key identifier to parse
-   - Returns: A tuple containing the base ID and version number
-   - Throws: `KeyRotationError.invalidKeyIdentifier` if the identifier
-             cannot be parsed
+   - Parameter identifier: The identifier of the key to check
+   - Returns: Time interval until next rotation in days, or nil if no rotation is scheduled
+   - Throws: KeyRotationError if the check fails
    */
-  func parseKeyIdentifier(_ identifier: String) throws -> (baseID: String, version: Int) {
-    // Check if the identifier matches the expected pattern
-    let pattern=#"^(.+)_v(\d+)$"#
-    let regex=try NSRegularExpression(pattern: pattern)
-    let range=NSRange(identifier.startIndex..<identifier.endIndex, in: identifier)
+  public func timeUntilRotation(identifier: String) async throws -> Double? {
+    do {
+      // Get the key metadata
+      let metadata=try await getKeyMetadata(identifier: identifier)
 
-    guard let match=regex.firstMatch(in: identifier, range: range) else {
-      throw KeyRotationError.invalidKeyIdentifier(identifier)
+      // Calculate the key's age in days
+      let now=Date().timeIntervalSince1970
+      let keyAge=(now - metadata.createdAt) / (60 * 60 * 24)
+
+      // Get rotation period from metadata or use default
+      let rotationPeriod=Int(metadata.attributes["rotationPeriod"] ?? "") ?? defaultRotationPeriod
+
+      // Calculate time until rotation
+      let timeUntil=Double(rotationPeriod) - keyAge
+
+      // Return nil if rotation is already due
+      return timeUntil > 0 ? timeUntil : nil
+    } catch {
+      throw KeyRotationError
+        .generalError("Failed to calculate time until rotation: \(error.localizedDescription)")
+    }
+  }
+
+  /**
+   Gets metadata for a key, using cache when available.
+
+   - Parameter identifier: The identifier of the key
+   - Returns: The key metadata
+   - Throws: Error if metadata cannot be retrieved
+   */
+  private func getKeyMetadata(identifier: String) async throws -> KeyMetadata {
+    // Check cache first
+    if let cachedMetadata=keyMetadataCache[identifier] {
+      return cachedMetadata
     }
 
-    // Extract the base ID and version
-    guard
-      let baseIDRange=Range(match.range(at: 1), in: identifier),
-      let versionRange=Range(match.range(at: 2), in: identifier),
-      let version=Int(identifier[versionRange])
-    else {
-      throw KeyRotationError.invalidKeyIdentifier(identifier)
-    }
+    // Create metadata for the key if not in cache
+    let metadata=KeyMetadata(
+      id: identifier,
+      createdAt: Date().timeIntervalSince1970,
+      algorithm: .aes,
+      keySize: 256,
+      purpose: "encryption",
+      attributes: [:]
+    )
 
-    let baseID=String(identifier[baseIDRange])
-    return (baseID, version)
+    // Cache the metadata
+    keyMetadataCache[identifier]=metadata
+
+    return metadata
+  }
+
+  /**
+   Stores key metadata and updates the cache.
+
+   - Parameter metadata: The metadata to store
+   - Throws: Error if storing metadata fails
+   */
+  private func storeKeyMetadata(_ metadata: KeyMetadata) async throws {
+    // Update the cache
+    keyMetadataCache[metadata.id]=metadata
   }
 }
 
-/// Factory methods for creating key rotation services
-extension KeyRotationServiceImpl {
+/**
+ # KeyRotationFactory
+
+ Factory for creating key rotation service instances with appropriate
+ configuration for different security contexts.
+ */
+public enum KeyRotationFactory {
   /**
-   Creates a default KeyRotationService with standard settings.
-
-   This factory method simplifies the creation of a KeyRotationService with
-   common configuration parameters, making it easier to integrate key rotation
-   into applications.
-
-   ## Example Usage
-
-   ```swift
-   let keyStore = KeyStoreImpl(storageProvider: secureStorage)
-   let keyGenerator = KeyGeneratorImpl()
-
-   let rotationService = KeyRotationServiceImpl.createDefault(
-       keyStore: keyStore,
-       keyGenerator: keyGenerator
-   )
-
-   // Use rotationService for key management operations
-   ```
+   Creates a standard key rotation service.
 
    - Parameters:
-      - keyStore: The key store to use for storing and retrieving keys
-      - keyGenerator: The key generator to use for creating new keys
+     - keyStore: Optional custom key store to use
+     - keyGenerator: Optional custom key generator to use
+     - rotationPeriod: Default rotation period in days (defaults to 90)
 
-   - Returns: A configured KeyRotationService
+   - Returns: A configured key rotation service
    */
-  public static func createDefault(
-    keyStore: KeyStore,
-    keyGenerator: KeyGenerator
-  ) -> KeyRotationService {
-    KeyRotationServiceImpl(keyStore: keyStore, keyGenerator: keyGenerator)
+  public static func createKeyRotationService(
+    keyStore: KeyStore?=nil,
+    keyGenerator: (any KeyGenerator)?=nil,
+    rotationPeriod: Int=90
+  ) -> KeyRotationServiceImpl {
+    KeyRotationServiceImpl(
+      keyStore: keyStore ?? KeyStore(),
+      keyGenerator: keyGenerator ?? DefaultKeyGenerator(),
+      defaultRotationPeriod: rotationPeriod
+    )
+  }
+
+  /**
+   Creates a high-security key rotation service with shorter rotation periods.
+
+   - Parameters:
+     - keyStore: Optional custom key store to use
+     - keyGenerator: Optional custom key generator to use
+
+   - Returns: A configured key rotation service with enhanced security settings
+   */
+  public static func createHighSecurityKeyRotationService(
+    keyStore: KeyStore?=nil,
+    keyGenerator: (any KeyGenerator)?=nil
+  ) -> KeyRotationServiceImpl {
+    KeyRotationServiceImpl(
+      keyStore: keyStore ?? KeyStore(),
+      keyGenerator: keyGenerator ?? DefaultKeyGenerator(),
+      defaultRotationPeriod: 30 // 30-day rotation for high security
+    )
   }
 }

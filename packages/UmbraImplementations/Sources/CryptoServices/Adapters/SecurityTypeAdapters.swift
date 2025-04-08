@@ -127,7 +127,10 @@ public enum HashingOptionsAdapter {
   .HashingOptions? {
     guard let options else { return nil }
 
-    return CoreSecurityTypes.HashingOptions(algorithm: options.algorithm, salt: options.useSalt ? [0x01, 0x02, 0x03, 0x04] : nil)
+    return CoreSecurityTypes.HashingOptions(
+      algorithm: options.algorithm,
+      salt: options.useSalt ? [0x01, 0x02, 0x03, 0x04] : nil
+    )
   }
 }
 

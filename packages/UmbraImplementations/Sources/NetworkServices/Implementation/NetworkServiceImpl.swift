@@ -184,7 +184,7 @@ public actor NetworkServiceImpl: NetworkServiceProtocol {
 
   public func uploadData(
     _ request: NetworkRequestProtocol,
-    progressHandler: (@Sendable (Double) -> Void)? // Ensure @Sendable is inside the parenthesis
+    progressHandler _: (@Sendable (Double) -> Void)? // Ensure @Sendable is inside the parenthesis
   ) async throws -> NetworkResponseDTO {
     // For simplicity, use the same implementation for now
     // In a real implementation, this would use URLSession's upload methods
@@ -194,7 +194,7 @@ public actor NetworkServiceImpl: NetworkServiceProtocol {
 
   public func downloadData(
     _ request: NetworkRequestProtocol,
-    progressHandler: (@Sendable (Double) -> Void)? // Ensure @Sendable is inside the parenthesis
+    progressHandler _: (@Sendable (Double) -> Void)? // Ensure @Sendable is inside the parenthesis
   ) async throws -> NetworkResponseDTO {
     // For simplicity, use the same implementation for now
     // In a real implementation, this would use URLSession's download methods

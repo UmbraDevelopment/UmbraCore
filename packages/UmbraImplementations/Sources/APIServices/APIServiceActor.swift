@@ -36,7 +36,7 @@ public actor APIServiceActor: APIServiceProtocol {
   private let securityBookmarkService: SecurityInterfaces.SecurityBookmarkProtocol
 
   /// Event continuations for streaming events
-  private var eventContinuations: [UUID: AsyncStream<APIEventDTO>.Continuation] = [:]
+  private var eventContinuations: [UUID: AsyncStream<APIEventDTO>.Continuation]=[:]
 
   // MARK: - Initialisation
 
@@ -50,9 +50,9 @@ public actor APIServiceActor: APIServiceProtocol {
     logger: LoggingProtocol,
     securityBookmarkService: SecurityInterfaces.SecurityBookmarkProtocol
   ) {
-    self.configuration = configuration
-    self.logger = logger
-    self.securityBookmarkService = securityBookmarkService
+    self.configuration=configuration
+    self.logger=logger
+    self.securityBookmarkService=securityBookmarkService
   }
 
   // MARK: - APIServiceProtocol Implementation
@@ -71,12 +71,15 @@ public actor APIServiceActor: APIServiceProtocol {
     )
 
     // Store the configuration
-    self.configuration = configuration
+    self.configuration=configuration
 
     // Initialize any necessary services
     do {
       // Perform initialization steps as needed
-      await logger.info("API service initialised successfully", context: BaseLogContextDTO(domainName: "APIService", source: "initialise"))
+      await logger.info(
+        "API service initialised successfully",
+        context: BaseLogContextDTO(domainName: "APIService", source: "initialise")
+      )
     } catch {
       // Log the error and throw an appropriate domain-specific error
       await logger.error(
@@ -143,7 +146,7 @@ public actor APIServiceActor: APIServiceProtocol {
 
     // Using the SecurityBookmarkProtocol method directly
     do {
-      let url = try await securityBookmarkService.resolveBookmark(withIdentifier: identifier)
+      let url=try await securityBookmarkService.resolveBookmark(withIdentifier: identifier)
 
       await publishEvent(
         APIEventDTO(
@@ -226,7 +229,7 @@ public actor APIServiceActor: APIServiceProtocol {
   /// Retrieves the current version information of the API
   /// - Returns: Version information as APIVersionDTO
   public nonisolated func getVersion() async -> APIVersionDTO {
-    let version = APIVersionDTO(
+    let version=APIVersionDTO(
       major: 1,
       minor: 0,
       patch: 0,
@@ -251,7 +254,7 @@ public actor APIServiceActor: APIServiceProtocol {
   -> AsyncStream<APIEventDTO> {
     AsyncStream { continuation in
       // Create a task to handle the event subscription
-      let task = Task {
+      let task=Task {
         do {
           await logger.debug(
             "Subscribing to API events",
@@ -279,11 +282,14 @@ public actor APIServiceActor: APIServiceProtocol {
       }
 
       // Set up cancellation handler
-      continuation.onTermination = { _ in
+      continuation.onTermination={ _ in
         task.cancel()
         Task {
           await self.unregisterEventSubscriber(continuation: continuation)
-          await self.logger.debug("Event subscription terminated", context: BaseLogContextDTO(domainName: "APIService", source: "subscribeToEvents"))
+          await self.logger.debug(
+            "Event subscription terminated",
+            context: BaseLogContextDTO(domainName: "APIService", source: "subscribeToEvents")
+          )
         }
       }
     }
@@ -328,7 +334,7 @@ public actor APIServiceActor: APIServiceProtocol {
   // Helper methods for event subscription management
   private func registerEventSubscriber(
     continuation: AsyncStream<APIEventDTO>.Continuation,
-    filter: APIEventFilterDTO?
+    filter _: APIEventFilterDTO?
   ) async {
     // For now, we'll just log that it was called
     await logger.info(
@@ -340,16 +346,19 @@ public actor APIServiceActor: APIServiceProtocol {
     )
 
     // Store the continuation in a collection to manage active subscribers
-    let subscriptionID = UUID()
-    eventContinuations[subscriptionID] = continuation
+    let subscriptionID=UUID()
+    eventContinuations[subscriptionID]=continuation
   }
 
   private func unregisterEventSubscriber(
-    continuation: AsyncStream<APIEventDTO>.Continuation
+    continuation _: AsyncStream<APIEventDTO>.Continuation
   ) async {
     // In a real implementation, we would unregister this continuation from an event bus
     // For now, we'll just log that it was called
-    await logger.info("Unregistered event subscriber", context: BaseLogContextDTO(domainName: "APIService", source: "unregisterEventSubscriber"))
+    await logger.info(
+      "Unregistered event subscriber",
+      context: BaseLogContextDTO(domainName: "APIService", source: "unregisterEventSubscriber")
+    )
 
     // Remove the continuation from our collection by comparing continuation IDs
     // Since we can't compare continuations directly (they're value types)
@@ -357,7 +366,7 @@ public actor APIServiceActor: APIServiceProtocol {
       // We use a simple heuristic - remove all continuations when unregistering
       // In a real implementation, we would need a more sophisticated way to identify
       // the specific continuation to remove
-      self.eventContinuations.removeValue(forKey: id)
+      eventContinuations.removeValue(forKey: id)
     }
   }
 }

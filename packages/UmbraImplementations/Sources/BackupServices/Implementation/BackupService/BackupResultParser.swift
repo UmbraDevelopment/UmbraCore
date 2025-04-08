@@ -278,4 +278,143 @@ public struct BackupResultParser {
         .parsingError(details: "Failed to parse snapshots: \(error.localizedDescription)")
     }
   }
+
+  /// Parses the result of a diff operation between two snapshots
+  /// - Parameters:
+  ///   - output: The command output to parse
+  ///   - firstSnapshotID: ID of the first snapshot compared
+  ///   - secondSnapshotID: ID of the second snapshot compared
+  /// - Returns: A snapshot comparison DTO with details about the differences
+  /// - Throws: BackupError if parsing fails
+  public func parseDiffResult(
+    output: String,
+    firstSnapshotID: String,
+    secondSnapshotID: String
+  ) throws -> SnapshotComparisonDTO {
+    guard !output.isEmpty else {
+      throw BackupError.parsingError(details: "Empty output from diff command")
+    }
+
+    let decoder=JSONDecoder()
+    decoder.keyDecodingStrategy = .convertFromSnakeCase
+    decoder.dateDecodingStrategy = .iso8601
+
+    // Split output by newlines to handle multiple JSON objects
+    let lines=output.components(separatedBy: .newlines)
+      .filter { !$0.isEmpty }
+
+    // Parse the summary line for counts
+    guard let summaryLine=lines.first(where: { $0.contains("\"summary\"") }) else {
+      throw BackupError.parsingError(details: "No summary data in diff output")
+    }
+
+    do {
+      // Parse the summary data
+      let summaryData=try decoder.decode(ResticDiffSummary.self, from: Data(summaryLine.utf8))
+
+      // Extract file lists if available
+      var addedFiles: [SnapshotFileDTO]?
+      var removedFiles: [SnapshotFileDTO]?
+      var modifiedFiles: [SnapshotFileDTO]?
+
+      // Parse added files
+      let addedLines=lines.filter { $0.contains("\"added\":true") }
+      if !addedLines.isEmpty {
+        addedFiles=try parseFileEntries(lines: addedLines, decoder: decoder)
+      }
+
+      // Parse removed files
+      let removedLines=lines.filter { $0.contains("\"removed\":true") }
+      if !removedLines.isEmpty {
+        removedFiles=try parseFileEntries(lines: removedLines, decoder: decoder)
+      }
+
+      // Parse modified files
+      let modifiedLines=lines.filter { $0.contains("\"modified\":true") }
+      if !modifiedLines.isEmpty {
+        modifiedFiles=try parseFileEntries(lines: modifiedLines, decoder: decoder)
+      }
+
+      // Create the comparison result
+      return SnapshotComparisonDTO(
+        snapshotID1: firstSnapshotID,
+        snapshotID2: secondSnapshotID,
+        addedCount: summaryData.summary.added,
+        removedCount: summaryData.summary.removed,
+        modifiedCount: summaryData.summary.modified,
+        unchangedCount: summaryData.summary.unchanged,
+        addedFiles: addedFiles,
+        removedFiles: removedFiles,
+        modifiedFiles: modifiedFiles
+      )
+    } catch {
+      throw BackupError
+        .parsingError(details: "Failed to parse diff output: \(error.localizedDescription)")
+    }
+  }
+
+  /// Parses file entries from diff output lines
+  /// - Parameters:
+  ///   - lines: The lines containing file entries
+  ///   - decoder: The JSON decoder to use
+  /// - Returns: An array of snapshot file DTOs
+  /// - Throws: Error if parsing fails
+  private func parseFileEntries(
+    lines: [String],
+    decoder: JSONDecoder
+  ) throws -> [SnapshotFileDTO] {
+    var files: [SnapshotFileDTO]=[]
+
+    for line in lines {
+      do {
+        let fileEntry=try decoder.decode(ResticDiffFileEntry.self, from: Data(line.utf8))
+
+        // Create a snapshot file DTO from the entry
+        let fileDTO=SnapshotFileDTO(
+          path: fileEntry.path,
+          size: UInt64(fileEntry.size),
+          modificationTime: fileEntry.mtime,
+          type: fileEntry.type ?? "file",
+          permissions: fileEntry.permissions,
+          owner: fileEntry.user,
+          group: fileEntry.group,
+          contentHash: fileEntry.hash
+        )
+
+        files.append(fileDTO)
+      } catch {
+        // Skip entries that can't be parsed
+        continue
+      }
+    }
+
+    return files
+  }
+
+  /// Represents the summary of a diff operation from Restic
+  private struct ResticDiffSummary: Codable {
+    struct Summary: Codable {
+      let added: Int
+      let removed: Int
+      let modified: Int
+      let unchanged: Int
+    }
+
+    let summary: Summary
+  }
+
+  /// Represents a file entry in a diff operation from Restic
+  private struct ResticDiffFileEntry: Codable {
+    let path: String
+    let size: Int64
+    let mtime: Date
+    let type: String?
+    let permissions: String?
+    let user: String?
+    let group: String?
+    let hash: String?
+    let added: Bool?
+    let removed: Bool?
+    let modified: Bool?
+  }
 }

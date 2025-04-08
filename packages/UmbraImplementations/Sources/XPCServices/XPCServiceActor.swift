@@ -388,7 +388,7 @@ public actor XPCServiceActor: XPCServiceProtocol {
 @objc
 private protocol XPCMessageHandler {
   /// Type alias for the completion handler to ensure Sendable conformance
-  typealias XPCMessageHandlerCompletion = @Sendable (Data?, Error?) -> Void
+  typealias XPCMessageHandlerCompletion=@Sendable (Data?, Error?) -> Void
 
   /**
    Handles a message and returns a response.

@@ -37,8 +37,10 @@ public struct ErrorMapper {
         )
 
       case let .commandFailed(exitCode: exitCode, output: output):
-        BackupError.operationFailed(
-          details: "Command failed with exit code \(exitCode): \(output)"
+        BackupError.commandExecutionFailure(
+          command: "restic",
+          exitCode: exitCode,
+          errorOutput: output
         )
 
       case let .credentialError(reason):
@@ -47,9 +49,10 @@ public struct ErrorMapper {
         )
 
       case let .repositoryExists(path):
-        BackupError.repositoryError(
+        BackupError.operationFailed(
           path: path,
-          reason: "Repository already exists"
+          reason: "Repository already exists",
+          code: "REPOSITORY_EXISTS"
         )
 
       case let .other(message):

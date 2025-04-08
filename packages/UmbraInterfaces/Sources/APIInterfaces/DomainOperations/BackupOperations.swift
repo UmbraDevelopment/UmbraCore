@@ -272,13 +272,13 @@ public struct SnapshotInfo: Sendable {
     tags: [String],
     summary: String
   ) {
-    self.id = id
-    self.repositoryID = repositoryID
-    self.timestamp = timestamp
-    self.tags = tags
-    self.summary = summary
+    self.id=id
+    self.repositoryID=repositoryID
+    self.timestamp=timestamp
+    self.tags=tags
+    self.summary=summary
   }
-  
+
   /**
    Initialises a new snapshot information structure with a string date.
    This is provided for backward compatibility.
@@ -297,18 +297,18 @@ public struct SnapshotInfo: Sendable {
     tags: [String],
     summary: String
   ) {
-    self.id = id
-    self.repositoryID = repositoryID
-    
+    self.id=id
+    self.repositoryID=repositoryID
+
     // Parse date or use current time if parsing fails
-    if let timestamp = DateTimeDTO.fromISO8601String(createdAt) {
-      self.timestamp = timestamp
+    if let timestamp=DateTimeDTO.fromISO8601String(createdAt) {
+      self.timestamp=timestamp
     } else {
-      self.timestamp = DateTimeDTO.now()
+      timestamp=DateTimeDTO.now()
     }
-    
-    self.tags = tags
-    self.summary = summary
+
+    self.tags=tags
+    self.summary=summary
   }
 }
 

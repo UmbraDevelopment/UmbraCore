@@ -1,72 +1,170 @@
+import BackupInterfaces
 import Foundation
 import LoggingInterfaces
 import LoggingTypes
 import RepositoryInterfaces
 import SecurityInterfaces
-import BackupInterfaces
 
 /**
  # Security Service Factory
- 
+
  Creates and configures security services for the Alpha Dot Five architecture.
  This factory provides properly configured security services with appropriate
  dependencies and logging.
+
+ As an actor, this factory provides thread safety for service creation
+ and maintains a cache of created services for improved performance.
  */
-public enum SecurityServiceFactory {
+public actor SecurityServiceFactory {
+  /// Shared singleton instance
+  public static let shared=SecurityServiceFactory()
+
+  /// Cache of created services by configuration key
+  private var serviceCache: [String: SecurityServiceProtocol]=[:]
+
+  /// Initialiser
+  public init() {}
+
   /**
    Creates a security service with the appropriate configuration.
-   
+
    - Parameters:
      - providerType: The type of security provider to use
      - logger: Optional logger for privacy-aware operation recording
+     - useCache: Whether to cache and reuse the created service
    - Returns: A configured security service
    - Throws: Error if the service cannot be created
    */
-  public static func createSecurityService(
+  public func createSecurityService(
     providerType: SecurityProviderType = .platform,
-    logger: (any LoggingProtocol)? = nil
-  ) throws -> SecurityServiceProtocol {
+    logger: (any LoggingProtocol)?=nil,
+    useCache: Bool=true
+  ) async throws -> SecurityServiceProtocol {
+    let cacheKey="security-\(providerType.rawValue)"
+
+    if useCache, let cachedService=serviceCache[cacheKey] {
+      return cachedService
+    }
+
     // Create a privacy-aware logger if one wasn't provided
-    let securityLogger = logger ?? LoggingServiceFactory.createPrivacyAwareLogger(
-      minimumLevel: .info,
+    let securityLogger=logger ?? await LoggingServiceFactory.shared.createPrivacyAwareLogger(
+      subsystem: "com.umbra.security",
+      category: "securityService",
       environment: .development
     )
-    
+
     // Create the appropriate security provider based on type
-    let securityProvider: SecurityProviderProtocol
-    
-    switch providerType {
-    case .platform:
-      // Use the native platform security provider (Apple CryptoKit)
-      securityProvider = try AppleSecurityProvider(logger: securityLogger)
-      
-    case .custom:
-      // Use the Ring FFI security provider for cross-platform support
-      securityProvider = try RingSecurityProvider(logger: securityLogger)
-      
-    case .default:
-      // Use the default implementation as a fallback
-      securityProvider = try DefaultSecurityProvider(logger: securityLogger)
+    let securityProvider: SecurityProviderProtocol=switch providerType {
+      case .platform:
+        // Use the native platform security provider (Apple CryptoKit)
+        try AppleSecurityProvider(logger: securityLogger)
+
+      case .custom:
+        // Use the Ring FFI security provider for cross-platform support
+        try RingSecurityProvider(logger: securityLogger)
+
+      case .default:
+        // Use the default implementation as a fallback
+        try DefaultSecurityProvider(logger: securityLogger)
     }
-    
+
     // Create the rate limiter for high-security operations
-    let rateLimiter = await RateLimiterFactory.shared.getHighSecurityRateLimiter(
+    let rateLimiter=await RateLimiterFactory.shared.getHighSecurityRateLimiter(
       domain: "security",
       operation: "highSecurity"
     )
-    
-    // Create and return the security service
-    return DefaultCryptoServiceWithProviderImpl(
+
+    // Create the security service
+    let service=DefaultCryptoServiceWithProviderImpl(
       provider: securityProvider,
       logger: securityLogger,
       rateLimiter: rateLimiter
     )
+
+    // Cache the service if enabled
+    if useCache {
+      serviceCache[cacheKey]=service
+    }
+
+    return service
+  }
+
+  /**
+   Creates a high-security service with stricter rate limiting and enhanced logging.
+
+   - Parameters:
+     - logger: Optional logger for privacy-aware operation recording
+     - useCache: Whether to cache and reuse the created service
+   - Returns: A configured high-security service
+   - Throws: Error if the service cannot be created
+   */
+  public func createHighSecurityService(
+    logger: (any LoggingProtocol)?=nil,
+    useCache: Bool=true
+  ) async throws -> SecurityServiceProtocol {
+    let cacheKey="high-security"
+
+    if useCache, let cachedService=serviceCache[cacheKey] {
+      return cachedService
+    }
+
+    // Create a privacy-aware logger with enhanced security settings
+    let securityLogger=logger ?? await LoggingServiceFactory.shared.createPrivacyAwareLogger(
+      subsystem: "com.umbra.security",
+      category: "highSecurityService",
+      environment: .production
+    )
+
+    // Use the platform provider for maximum security
+    let securityProvider=try AppleSecurityProvider(logger: securityLogger)
+
+    // Create a more restrictive rate limiter for high-security operations
+    let rateLimiter=await RateLimiterFactory.shared.getHighSecurityRateLimiter(
+      domain: "security",
+      operation: "criticalSecurity",
+      maxTokens: 3,
+      tokensPerSecond: 0.1 // One operation per 10 seconds
+    )
+
+    // Create the security service
+    let service=DefaultCryptoServiceWithProviderImpl(
+      provider: securityProvider,
+      logger: securityLogger,
+      rateLimiter: rateLimiter
+    )
+
+    // Cache the service if enabled
+    if useCache {
+      serviceCache[cacheKey]=service
+    }
+
+    return service
+  }
+
+  /// Clears the service cache
+  ///
+  /// This can be useful when testing or when services need to be recreated
+  /// with fresh configurations.
+  public func clearCache() {
+    serviceCache.removeAll()
+  }
+
+  /// Removes a specific service from the cache
+  ///
+  /// - Parameter cacheKey: The cache key for the service to remove
+  /// - Returns: True if a service was removed, false if no service was found
+  public func removeFromCache(cacheKey: String) -> Bool {
+    if serviceCache[cacheKey] != nil {
+      serviceCache[cacheKey]=nil
+      return true
+    }
+    return false
   }
 }
 
 /**
  # Backup Service Factory
- 
+
  Creates and configures backup services for the Alpha Dot Five architecture.
  This factory provides properly configured backup services with appropriate
  dependencies and logging.
@@ -74,7 +172,7 @@ public enum SecurityServiceFactory {
 public enum BackupServiceFactory {
   /**
    Creates a backup service with the appropriate configuration.
-   
+
    - Parameters:
      - storageProvider: The type of storage provider to use
      - logger: Optional logger for privacy-aware operation recording
@@ -83,40 +181,37 @@ public enum BackupServiceFactory {
    */
   public static func createBackupService(
     storageProvider: BackupStorageProviderType = .local,
-    logger: (any LoggingProtocol)? = nil
+    logger: (any LoggingProtocol)?=nil
   ) throws -> BackupServiceProtocol {
     // Create a privacy-aware logger if one wasn't provided
-    let backupLogger = logger ?? LoggingServiceFactory.createPrivacyAwareLogger(
+    let backupLogger=logger ?? LoggingServiceFactory.createPrivacyAwareLogger(
       minimumLevel: .info,
       environment: .development
     )
-    
-    // Create the appropriate storage provider based on type
-    let provider: BackupStorageProviderProtocol
-    
-    switch storageProvider {
-    case .local:
-      // Use local file system storage
-      provider = try LocalBackupStorageProvider(logger: backupLogger)
-      
-    case .cloud:
-      // Use cloud storage provider
-      provider = try CloudBackupStorageProvider(logger: backupLogger)
-      
-    case .hybrid:
-      // Use hybrid storage provider (local + cloud)
-      provider = try HybridBackupStorageProvider(logger: backupLogger)
+
+    // Create the appropriate backup provider based on type
+    let backupProvider: BackupStorageProviderProtocol=switch storageProvider {
+      case .local:
+        // Use the local storage provider
+        try LocalBackupProvider(logger: backupLogger)
+
+      case .remote:
+        // Use the remote storage provider
+        try RemoteBackupProvider(logger: backupLogger)
+
+      case .hybrid:
+        // Use the hybrid storage provider
+        try HybridBackupProvider(logger: backupLogger)
     }
-    
-    // Create the security service for backup encryption
-    let securityService = try SecurityServiceFactory.createSecurityService(
-      providerType: .platform,
+
+    // Create the security service for encryption/decryption
+    let securityService=try SecurityServiceFactory.shared.createSecurityService(
       logger: backupLogger
     )
-    
+
     // Create and return the backup service
     return DefaultBackupServiceImpl(
-      storageProvider: provider,
+      provider: backupProvider,
       securityService: securityService,
       logger: backupLogger
     )
@@ -125,7 +220,7 @@ public enum BackupServiceFactory {
 
 /**
  # Repository Service Factory
- 
+
  Creates and configures repository services for the Alpha Dot Five architecture.
  This factory provides properly configured repository services with appropriate
  dependencies and logging.
@@ -133,7 +228,7 @@ public enum BackupServiceFactory {
 public enum RepositoryServiceFactory {
   /**
    Creates a repository service with the appropriate configuration.
-   
+
    - Parameters:
      - repositoryType: The type of repository to use
      - logger: Optional logger for privacy-aware operation recording
@@ -141,35 +236,33 @@ public enum RepositoryServiceFactory {
    - Throws: Error if the service cannot be created
    */
   public static func createRepositoryService(
-    repositoryType: RepositoryProviderType = .standard,
-    logger: (any LoggingProtocol)? = nil
+    repositoryType: RepositoryType = .standard,
+    logger: (any LoggingProtocol)?=nil
   ) throws -> RepositoryServiceProtocol {
     // Create a privacy-aware logger if one wasn't provided
-    let repositoryLogger = logger ?? LoggingServiceFactory.createPrivacyAwareLogger(
+    let repositoryLogger=logger ?? LoggingServiceFactory.createPrivacyAwareLogger(
       minimumLevel: .info,
       environment: .development
     )
-    
+
     // Create the appropriate repository provider based on type
-    let provider: RepositoryProviderProtocol
-    
-    switch repositoryType {
-    case .standard:
-      // Use standard repository provider
-      provider = try StandardRepositoryProvider(logger: repositoryLogger)
-      
-    case .distributed:
-      // Use distributed repository provider
-      provider = try DistributedRepositoryProvider(logger: repositoryLogger)
-      
-    case .legacy:
-      // Use legacy repository provider for backward compatibility
-      provider = try LegacyRepositoryProvider(logger: repositoryLogger)
+    let repositoryProvider: RepositoryProviderProtocol=switch repositoryType {
+      case .standard:
+        // Use the standard repository provider
+        try StandardRepositoryProvider(logger: repositoryLogger)
+
+      case .distributed:
+        // Use the distributed repository provider
+        try DistributedRepositoryProvider(logger: repositoryLogger)
+
+      case .legacy:
+        // Use the legacy repository provider
+        try LegacyRepositoryProvider(logger: repositoryLogger)
     }
-    
+
     // Create and return the repository service
     return DefaultRepositoryServiceImpl(
-      provider: provider,
+      provider: repositoryProvider,
       logger: repositoryLogger
     )
   }
@@ -181,10 +274,10 @@ public enum RepositoryServiceFactory {
 public enum SecurityProviderType {
   /// Native platform security provider (Apple CryptoKit)
   case platform
-  
+
   /// Custom security provider (Ring FFI)
   case custom
-  
+
   /// Default fallback security provider
   case `default`
 }
@@ -195,10 +288,10 @@ public enum SecurityProviderType {
 public enum BackupStorageProviderType {
   /// Local file system storage
   case local
-  
+
   /// Cloud storage
   case cloud
-  
+
   /// Hybrid storage (local + cloud)
   case hybrid
 }
@@ -209,10 +302,10 @@ public enum BackupStorageProviderType {
 public enum RepositoryProviderType {
   /// Standard repository provider
   case standard
-  
+
   /// Distributed repository provider
   case distributed
-  
+
   /// Legacy repository provider for backward compatibility
   case legacy
 }
@@ -226,63 +319,63 @@ public enum RepositoryProviderType {
 
 // Security Providers
 public class AppleSecurityProvider: SecurityProviderProtocol {
-  public init(logger: (any LoggingProtocol)?) throws {}
+  public init(logger _: (any LoggingProtocol)?) throws {}
 }
 
 public class RingSecurityProvider: SecurityProviderProtocol {
-  public init(logger: (any LoggingProtocol)?) throws {}
+  public init(logger _: (any LoggingProtocol)?) throws {}
 }
 
 public class DefaultSecurityProvider: SecurityProviderProtocol {
-  public init(logger: (any LoggingProtocol)?) throws {}
+  public init(logger _: (any LoggingProtocol)?) throws {}
 }
 
 public class DefaultCryptoServiceWithProviderImpl: SecurityServiceProtocol {
   public init(
-    provider: SecurityProviderProtocol,
-    logger: (any LoggingProtocol)?,
-    rateLimiter: RateLimiter
+    provider _: SecurityProviderProtocol,
+    logger _: (any LoggingProtocol)?,
+    rateLimiter _: RateLimiter
   ) {}
 }
 
 // Backup Providers
 public class LocalBackupStorageProvider: BackupStorageProviderProtocol {
-  public init(logger: (any LoggingProtocol)?) throws {}
+  public init(logger _: (any LoggingProtocol)?) throws {}
 }
 
 public class CloudBackupStorageProvider: BackupStorageProviderProtocol {
-  public init(logger: (any LoggingProtocol)?) throws {}
+  public init(logger _: (any LoggingProtocol)?) throws {}
 }
 
 public class HybridBackupStorageProvider: BackupStorageProviderProtocol {
-  public init(logger: (any LoggingProtocol)?) throws {}
+  public init(logger _: (any LoggingProtocol)?) throws {}
 }
 
 public class DefaultBackupServiceImpl: BackupServiceProtocol {
   public init(
-    storageProvider: BackupStorageProviderProtocol,
-    securityService: SecurityServiceProtocol,
-    logger: (any LoggingProtocol)?
+    storageProvider _: BackupStorageProviderProtocol,
+    securityService _: SecurityServiceProtocol,
+    logger _: (any LoggingProtocol)?
   ) {}
 }
 
 // Repository Providers
 public class StandardRepositoryProvider: RepositoryProviderProtocol {
-  public init(logger: (any LoggingProtocol)?) throws {}
+  public init(logger _: (any LoggingProtocol)?) throws {}
 }
 
 public class DistributedRepositoryProvider: RepositoryProviderProtocol {
-  public init(logger: (any LoggingProtocol)?) throws {}
+  public init(logger _: (any LoggingProtocol)?) throws {}
 }
 
 public class LegacyRepositoryProvider: RepositoryProviderProtocol {
-  public init(logger: (any LoggingProtocol)?) throws {}
+  public init(logger _: (any LoggingProtocol)?) throws {}
 }
 
 public class DefaultRepositoryServiceImpl: RepositoryServiceProtocol {
   public init(
-    provider: RepositoryProviderProtocol,
-    logger: (any LoggingProtocol)?
+    provider _: RepositoryProviderProtocol,
+    logger _: (any LoggingProtocol)?
   ) {}
 }
 

@@ -55,7 +55,7 @@ public actor BackupServicesActor: BackupServiceProtocol {
   private var activeOperations: [UUID: BackupOperationToken]=[:]
 
   /// Active operation cancellation tokens
-  private var activeOperationsCancellationTokens: [String: BackupOperationCancellationToken]=[:]
+  private var activeOperationsCancellationTokens: [String: BackupOperationCancellationTokenImpl]=[:]
 
   // MARK: - Initialisation
 
@@ -81,17 +81,19 @@ public actor BackupServicesActor: BackupServiceProtocol {
       resticService: resticService,
       repositoryInfo: repositoryInfo,
       commandFactory: commandFactory,
-      resultParser: resultParser
+      resultParser: resultParser,
+      snapshotService: SnapshotServiceImpl(resticService: resticService),
+      errorMapper: BackupErrorMapper()
     )
 
     // Create the backup logger
-    backupLogger=BackupLogger(logger: logger)
+    backupLogger=BackupLogger(loggingService: logger, domainName: "BackupServices")
 
     // Create needed components
+    let cancellationHandler=BackupCancellationHandler()
+    let metricsCollector=BackupMetricsCollector()
     let errorLogContextMapper=ErrorLogContextMapper()
     let errorMapper=BackupErrorMapper()
-    let metricsCollector=BackupMetricsCollector()
-    let cancellationHandler=ModernCancellationHandler()
 
     // Initialize operation executor
     operationExecutor=BackupOperationExecutor(
@@ -122,8 +124,11 @@ public actor BackupServicesActor: BackupServiceProtocol {
     backupOptions: BackupOptions?
   ) async -> Result<BackupOperationResponse<BackupResult>, BackupOperationError> {
     // Create a log context
-    var logContext=BackupLogContext()
-    logContext=logContext.withOperation("createBackup")
+    let logContext=BackupLogContextImpl(
+      domainName: "BackupServices",
+      source: "BackupServicesActor"
+    )
+    .withOperation("createBackup")
 
     // Add source information with privacy classification
     logContext=logContext.withPrivate(
@@ -167,7 +172,7 @@ public actor BackupServicesActor: BackupServiceProtocol {
     )
 
     // Create a cancellation token for this operation
-    let token=BackupOperationCancellationToken(id: UUID().uuidString)
+    let token=BackupOperationCancellationTokenImpl(id: UUID().uuidString)
     let operationID=token.id
     activeOperationsCancellationTokens[operationID]=token
 
@@ -233,10 +238,10 @@ public actor BackupServicesActor: BackupServiceProtocol {
       return .success(operationResult)
     } catch {
       // Map error to BackupOperationError
-      let backupError=mapToBackupOperationError(error)
+      let backupError=mapError(error)
 
       // Log error
-      await backupLogger.logOperationError(
+      await backupLogger.logOperationFailure(
         context: logContext,
         error: backupError
       )
@@ -266,10 +271,13 @@ public actor BackupServicesActor: BackupServiceProtocol {
     restoreOptions: RestoreOptions?
   ) async -> Result<BackupOperationResponse<RestoreResult>, BackupOperationError> {
     // Create a log context
-    var logContext=BackupLogContext()
-    logContext=logContext.withOperation("restoreBackup")
-    logContext=logContext.withPublic(key: "snapshotID", value: snapshotID)
-    logContext=logContext.withPrivate(key: "targetPath", value: targetPath.path)
+    let logContext=BackupLogContextImpl(
+      domainName: "BackupServices",
+      source: "BackupServicesActor"
+    )
+    .withOperation("restoreBackup")
+    .withPublic(key: "snapshotID", value: snapshotID)
+    .withPrivate(key: "targetPath", value: targetPath.path)
 
     if let includePaths, !includePaths.isEmpty {
       logContext=logContext.withPrivate(
@@ -308,7 +316,7 @@ public actor BackupServicesActor: BackupServiceProtocol {
     )
 
     // Create a cancellation token for this operation
-    let token=BackupOperationCancellationToken(id: UUID().uuidString)
+    let token=BackupOperationCancellationTokenImpl(id: UUID().uuidString)
     let operationID=token.id
     activeOperationsCancellationTokens[operationID]=token
 
@@ -371,10 +379,10 @@ public actor BackupServicesActor: BackupServiceProtocol {
       return .success(operationResult)
     } catch {
       // Map error to BackupOperationError
-      let backupError=mapToBackupOperationError(error)
+      let backupError=mapError(error)
 
       // Log error
-      await backupLogger.logOperationError(
+      await backupLogger.logOperationFailure(
         context: logContext,
         error: backupError
       )
@@ -402,8 +410,11 @@ public actor BackupServicesActor: BackupServiceProtocol {
     listOptions: ListOptions?
   ) async -> Result<[BackupSnapshot], BackupOperationError> {
     // Create a log context
-    var logContext=BackupLogContext()
-    logContext=logContext.withOperation("listSnapshots")
+    let logContext=BackupLogContextImpl(
+      domainName: "BackupServices",
+      source: "BackupServicesActor"
+    )
+    .withOperation("listSnapshots")
 
     if let tags, !tags.isEmpty {
       logContext=logContext.withPublic(
@@ -465,10 +476,10 @@ public actor BackupServicesActor: BackupServiceProtocol {
       return .success(snapshots)
     } catch {
       // Map error to BackupOperationError
-      let backupError=mapToBackupOperationError(error)
+      let backupError=mapError(error)
 
       // Log error
-      await backupLogger.logOperationError(
+      await backupLogger.logOperationFailure(
         context: logContext,
         error: backupError
       )
@@ -490,9 +501,12 @@ public actor BackupServicesActor: BackupServiceProtocol {
     deleteOptions: DeleteOptions?
   ) async -> Result<BackupOperationResponse<BackupDeleteResult>, BackupOperationError> {
     // Create a log context
-    let logContext=BackupLogContext()
-      .withOperation("deleteBackup")
-      .withPublic(key: "snapshotID", value: snapshotID)
+    let logContext=BackupLogContextImpl(
+      domainName: "BackupServices",
+      source: "BackupServicesActor"
+    )
+    .withOperation("deleteBackup")
+    .withPublic(key: "snapshotID", value: snapshotID)
 
     // Log operation start
     await backupLogger.logOperationStart(context: logContext)
@@ -514,7 +528,7 @@ public actor BackupServicesActor: BackupServiceProtocol {
     )
 
     // Create a cancellation token for this operation
-    let token=BackupOperationCancellationToken(id: UUID().uuidString)
+    let token=BackupOperationCancellationTokenImpl(id: UUID().uuidString)
     let operationID=token.id
     activeOperationsCancellationTokens[operationID]=token
 
@@ -574,10 +588,10 @@ public actor BackupServicesActor: BackupServiceProtocol {
       return .success(operationResult)
     } catch {
       // Map error to BackupOperationError
-      let backupError=mapToBackupOperationError(error)
+      let backupError=mapError(error)
 
       // Log error
-      await backupLogger.logOperationError(
+      await backupLogger.logOperationFailure(
         context: logContext,
         error: backupError
       )
@@ -601,9 +615,12 @@ public actor BackupServicesActor: BackupServiceProtocol {
     maintenanceOptions: MaintenanceOptions?
   ) async -> Result<BackupOperationResponse<MaintenanceResult>, BackupOperationError> {
     // Create a log context
-    let logContext=BackupLogContext()
-      .withOperation("performMaintenance")
-      .withPublic(key: "maintenanceType", value: String(describing: type))
+    let logContext=BackupLogContextImpl(
+      domainName: "BackupServices",
+      source: "BackupServicesActor"
+    )
+    .withOperation("performMaintenance")
+    .withPublic(key: "maintenanceType", value: String(describing: type))
 
     // Log operation start
     await backupLogger.logOperationStart(context: logContext)
@@ -618,7 +635,7 @@ public actor BackupServicesActor: BackupServiceProtocol {
     )
 
     // Create a cancellation token for this operation
-    let token=BackupOperationCancellationToken(id: UUID().uuidString)
+    let token=BackupOperationCancellationTokenImpl(id: UUID().uuidString)
     let operationID=token.id
     activeOperationsCancellationTokens[operationID]=token
 
@@ -677,10 +694,10 @@ public actor BackupServicesActor: BackupServiceProtocol {
       return .success(operationResult)
     } catch {
       // Map error to BackupOperationError
-      let backupError=mapToBackupOperationError(error)
+      let backupError=mapError(error)
 
       // Log error
-      await backupLogger.logOperationError(
+      await backupLogger.logOperationFailure(
         context: logContext,
         error: backupError
       )
@@ -711,8 +728,11 @@ public actor BackupServicesActor: BackupServiceProtocol {
     options: BackupInterfaces.VerifyOptions?=nil
   ) async -> Result<BackupOperationResponse<VerificationResult>, BackupOperationError> {
     // Create a log context
-    let logContext=BackupLogContext()
-      .withOperation("verifyBackup")
+    let logContext=BackupLogContextImpl(
+      domainName: "BackupServices",
+      source: "BackupServicesActor"
+    )
+    .withOperation("verifyBackup")
 
     // Add snapshot ID if provided
     let enhancedContext=snapshotID != nil ?
@@ -739,7 +759,7 @@ public actor BackupServicesActor: BackupServiceProtocol {
     activeOperations[token.id]=token
 
     // Create a cancellation token for the operation
-    let cancellationToken=BackupOperationCancellationToken(id: token.id.uuidString)
+    let cancellationToken=BackupOperationCancellationTokenImpl(id: token.id.uuidString)
     activeOperationsCancellationTokens[token.id]=cancellationToken
 
     // Create DTO parameters for the operation using adapter pattern
@@ -789,10 +809,10 @@ public actor BackupServicesActor: BackupServiceProtocol {
       )
     } catch {
       // Map error
-      let backupError=error.asBackupOperationError
+      let backupError=mapError(error)
 
       // Log error
-      await backupLogger.logOperationError(
+      await backupLogger.logOperationFailure(
         context: enhancedContext,
         error: backupError
       )
@@ -800,6 +820,52 @@ public actor BackupServicesActor: BackupServiceProtocol {
       // Remove token and return error
       activeOperationsCancellationTokens[token.id]=nil
       return .failure(backupError)
+    }
+  }
+
+  /**
+   * Compares two snapshots to identify differences.
+   *
+   * This method compares two snapshots and returns information about files that
+   * were added, removed, or modified between them.
+   *
+   * - Parameters:
+   *   - parameters: Parameters for the comparison operation
+   *   - progressHandler: Handler for tracking operation progress
+   * - Returns: Result of the comparison
+   * - Throws: BackupError if the operation fails
+   */
+  public func compareSnapshots(
+    parameters: BackupSnapshotComparisonParameters,
+    progressHandler: BackupProgressHandler?
+  ) async throws -> BackupSnapshotComparisonResult {
+    // Create a progress reporter if a handler was provided
+    let progressReporter: BackupProgressReporter? = progressHandler.map { handler in
+      BackupProgressReporterImpl(handler: handler)
+    }
+
+    // Create a cancellation token
+    let cancellationToken = BackupCancellationTokenImplementation(id: parameters.operationID)
+
+    // Register the token with the cancellation handler
+    await cancellationHandler.registerToken(cancellationToken, for: parameters.operationID)
+
+    do {
+      // Perform the comparison
+      let result = try await operationsService.compareSnapshots(
+        parameters: parameters,
+        progressReporter: progressReporter,
+        cancellationToken: cancellationToken
+      )
+
+      // Return the result
+      return result
+    } catch {
+      // Map the error and rethrow
+      throw errorMapper.mapError(error)
+    } finally {
+      // Unregister the token
+      await cancellationHandler.unregisterToken(for: parameters.operationID)
     }
   }
 
@@ -816,9 +882,12 @@ public actor BackupServicesActor: BackupServiceProtocol {
    */
   public func cancelOperation(operationID: UUID) async -> Bool {
     // Create a log context
-    let logContext=BackupLogContext()
-      .withOperation("cancelOperation")
-      .withPublic(key: "operationID", value: operationID.uuidString)
+    let logContext=BackupLogContextImpl(
+      domainName: "BackupServices",
+      source: "BackupServicesActor"
+    )
+    .withOperation("cancelOperation")
+    .withPublic(key: "operationID", value: operationID.uuidString)
 
     // Log cancellation attempt
     await backupLogger.logOperationStart(context: logContext)
@@ -828,7 +897,7 @@ public actor BackupServicesActor: BackupServiceProtocol {
       // Log that operation wasn't found
       await backupLogger.logOperationFailure(
         context: logContext,
-        error: BackupOperationError.operationNotFound("Operation with ID \(operationID) not found")
+        message: "Operation with ID \(operationID) not found"
       )
       return false
     }
@@ -838,8 +907,7 @@ public actor BackupServicesActor: BackupServiceProtocol {
       // Log that operation can't be cancelled
       await backupLogger.logOperationFailure(
         context: logContext,
-        error: BackupOperationError
-          .operationNotCancellable("Operation \(token.operation) cannot be cancelled")
+        message: "Operation \(token.operation) cannot be cancelled"
       )
       return false
     }
@@ -851,6 +919,7 @@ public actor BackupServicesActor: BackupServiceProtocol {
       // Log success
       await backupLogger.logOperationSuccess(
         context: logContext,
+        result: true,
         message: "Operation cancelled successfully"
       )
 
@@ -874,72 +943,25 @@ public actor BackupServicesActor: BackupServiceProtocol {
    */
   private func cancelOperationImpl(token: BackupOperationToken) async throws {
     // Signal cancellation to the operation
-    token.cancelled=true
+    await token.setCancelled(true)
 
     // Remove from active operations
     activeOperations[token.id]=nil
 
     // Log the cancellation
-    let logContext=BackupLogContext()
-      .withOperation("cancelOperationImpl")
-      .withPublic(key: "operationID", value: token.id.uuidString)
-      .withPublic(key: "operationType", value: String(describing: token.operation))
+    let logContext=BackupLogContextImpl(
+      domainName: "BackupServices",
+      source: "BackupServicesActor"
+    )
+    .withOperation("cancelOperationImpl")
+    .withPublic(key: "operationID", value: token.id.uuidString)
+    .withPublic(key: "operationType", value: String(describing: token.operation))
 
-    await backupLogger.logInfo(
+    await backupLogger.log(
+      level: .info,
       context: logContext,
       message: "Operation cancellation complete"
     )
-  }
-
-  // MARK: - Helper Methods
-
-  /**
-   * Maps any error to a BackupOperationError.
-   *
-   * - Parameter error: The error to map
-   * - Returns: A BackupOperationError
-   */
-  private func mapToBackupOperationError(_ error: Error) -> BackupOperationError {
-    if let backupError=error as? BackupOperationError {
-      backupError
-    } else if error is CancellationError {
-      .operationCancelled("Operation was cancelled")
-    } else if let repositoryError=error as? RepositoryError {
-      .repositoryError(repositoryError)
-    } else if let timeout=error as? TimeoutError {
-      .timeout("Operation timed out after \(timeout.duration) seconds")
-    } else {
-      .unexpected("Unexpected error: \(error.localizedDescription)")
-    }
-  }
-
-  /**
-   * Maps standard errors to BackupOperationError types.
-   *
-   * This helper method ensures consistent error mapping throughout the service.
-   *
-   * - Parameter error: The original error to map
-   * - Returns: A BackupOperationError representing the original error
-   */
-  private func mapToOperationError(_ error: Error) -> BackupOperationError {
-    if let backupError=error as? BackupOperationError {
-      return backupError
-    }
-
-    // Map known error types
-    if let nsError=error as? NSError {
-      switch nsError.domain {
-        case NSURLErrorDomain:
-          return .networkError("Network error: \(nsError.localizedDescription)")
-        case NSCocoaErrorDomain:
-          return .fileSystemError("File system error: \(nsError.localizedDescription)")
-        default:
-          break
-      }
-    }
-
-    // Default to unknown error with the original description
-    return .unknownError("Operation failed: \(error.localizedDescription)")
   }
 
   /**
@@ -969,19 +991,44 @@ public actor BackupServicesActor: BackupServiceProtocol {
     }
 
     // Create a log context
-    let logContext=BackupLogContext()
-      .withOperation("cancelOperation")
-      .withPublic(key: "operationID", value: id.uuidString)
+    let logContext=BackupLogContextImpl(
+      domainName: "BackupServices",
+      source: "BackupServicesActor"
+    )
+    .withOperation("cancelOperation")
+    .withPublic(key: "operationID", value: id.uuidString)
 
     // Log cancellation
     await backupLogger.logOperationCancelled(context: logContext)
 
     // Cancel the operation
-    await operationExecutor.cancelOperation(id: token.id)
+    await token.setCancelled(true)
 
     // Remove the token
     activeOperationsCancellationTokens[id]=nil
 
     return true
+  }
+
+  // MARK: - Helper Methods
+
+  /**
+   * Maps any error to a BackupOperationError.
+   *
+   * - Parameter error: The error to map
+   * - Returns: A BackupOperationError
+   */
+  private func mapError(_ error: Error) -> BackupOperationError {
+    if let backupError=error as? BackupOperationError {
+      backupError
+    } else if error is CancellationError {
+      .operationCancelled("Operation was cancelled")
+    } else if let repositoryError=error as? BackupOperationError {
+      repositoryError
+    } else if let timeout=error as? TimeoutError {
+      .timeout("Operation timed out after \(timeout.duration) seconds")
+    } else {
+      .unexpected("Unexpected error: \(error.localizedDescription)")
+    }
   }
 }

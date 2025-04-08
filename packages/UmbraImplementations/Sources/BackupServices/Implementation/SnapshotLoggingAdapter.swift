@@ -105,10 +105,10 @@ public struct SnapshotLoggingAdapter {
     )
 
     // Create a base context for this log message
-    let context = BaseLogContextDTO(
-        domainName: "SnapshotLoggingAdapter", // Or infer from logContext if available
-        source: #function, // Or infer from logContext if available
-        metadata: metadataCollection.toPrivacyMetadata() // Use the collected metadata
+    let context=BaseLogContextDTO(
+      domainName: "SnapshotLoggingAdapter", // Or infer from logContext if available
+      source: #function, // Or infer from logContext if available
+      metadata: metadataCollection.toPrivacyMetadata() // Use the collected metadata
     )
     await logger.error(
       message,
@@ -169,10 +169,10 @@ public struct SnapshotLoggingAdapter {
     }
 
     // Create a base context for this log message
-    let context = BaseLogContextDTO(
-        domainName: "SnapshotLoggingAdapter", // Or infer from logContext if available
-        source: #function, // Or infer from logContext if available
-        metadata: metadataCollection.toPrivacyMetadata() // Use the collected metadata
+    let context=BaseLogContextDTO(
+      domainName: "SnapshotLoggingAdapter", // Or infer from logContext if available
+      source: #function, // Or infer from logContext if available
+      metadata: metadataCollection.toPrivacyMetadata() // Use the collected metadata
     )
     await logger.info(
       "Starting snapshot operation: \(operation)",
@@ -223,10 +223,10 @@ public struct SnapshotLoggingAdapter {
     }
 
     // Create a base context for this log message
-    let context = BaseLogContextDTO(
-        domainName: "SnapshotLoggingAdapter", // Or infer from logContext if available
-        source: #function, // Or infer from logContext if available
-        metadata: metadataCollection.toPrivacyMetadata() // Use the collected metadata
+    let context=BaseLogContextDTO(
+      domainName: "SnapshotLoggingAdapter", // Or infer from logContext if available
+      source: #function, // Or infer from logContext if available
+      metadata: metadataCollection.toPrivacyMetadata() // Use the collected metadata
     )
     await logger.info(
       "Snapshot operation completed: \(operation)",
@@ -278,10 +278,10 @@ public struct SnapshotLoggingAdapter {
     }
 
     // Create a base context for this log message
-    let context = BaseLogContextDTO(
-        domainName: "SnapshotLoggingAdapter", // Or infer from logContext if available
-        source: #function, // Or infer from logContext if available
-        metadata: metadataCollection.toPrivacyMetadata() // Use the collected metadata
+    let context=BaseLogContextDTO(
+      domainName: "SnapshotLoggingAdapter", // Or infer from logContext if available
+      source: #function, // Or infer from logContext if available
+      metadata: metadataCollection.toPrivacyMetadata() // Use the collected metadata
     )
     await logger.error(
       "Error during snapshot operation: \(operation)",

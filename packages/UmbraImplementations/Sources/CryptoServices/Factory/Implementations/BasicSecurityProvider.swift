@@ -1,7 +1,7 @@
-import Foundation
 import CoreSecurityTypes
-import SecurityCoreInterfaces
+import Foundation
 import LoggingInterfaces
+import SecurityCoreInterfaces
 import UmbraErrors
 
 /**
@@ -50,104 +50,134 @@ public final class BasicSecurityProvider: SecurityProviderProtocol, AsyncService
     // Placeholder: Return a default or mock KeyManagementProtocol implementation
   }
 
-  public func encrypt(config: CoreSecurityTypes.SecurityConfigDTO) async throws -> CoreSecurityTypes.SecurityResultDTO {
+  public func encrypt(config: CoreSecurityTypes.SecurityConfigDTO) async throws -> CoreSecurityTypes
+  .SecurityResultDTO {
     print("BasicSecurityProvider encrypt called (stub) with config: \(config)")
     // Correct error path
     throw SecurityStorageError.unsupportedOperation
   }
 
-  public func decrypt(config: CoreSecurityTypes.SecurityConfigDTO) async throws -> CoreSecurityTypes.SecurityResultDTO {
+  public func decrypt(config: CoreSecurityTypes.SecurityConfigDTO) async throws -> CoreSecurityTypes
+  .SecurityResultDTO {
     print("BasicSecurityProvider decrypt called (stub) with config: \(config)")
     // Correct error path
     throw SecurityStorageError.unsupportedOperation
   }
 
-  public func generateKey(config: CoreSecurityTypes.SecurityConfigDTO) async throws -> CoreSecurityTypes.SecurityResultDTO {
+  public func generateKey(
+    config: CoreSecurityTypes
+      .SecurityConfigDTO
+  ) async throws -> CoreSecurityTypes.SecurityResultDTO {
     print("BasicSecurityProvider generateKey called (stub) with config: \(config)")
     // Return a mock key identifier for basic functionality if needed
-    let mockKeyId = "basic_key_\(UUID().uuidString)"
+    let mockKeyID="basic_key_\(UUID().uuidString)"
     // Use static factory method and qualify enums
     return SecurityResultDTO.success(
-        resultData: mockKeyId.data(using: .utf8),
-        executionTimeMs: 0.0
+      resultData: mockKeyID.data(using: .utf8),
+      executionTimeMs: 0.0
     )
   }
 
-  public func secureStore(config: CoreSecurityTypes.SecurityConfigDTO) async throws -> CoreSecurityTypes.SecurityResultDTO {
+  public func secureStore(
+    config: CoreSecurityTypes
+      .SecurityConfigDTO
+  ) async throws -> CoreSecurityTypes.SecurityResultDTO {
     print("BasicSecurityProvider secureStore called (stub) with config: \(config)")
     // Placeholder for actual storage logic
     // Currently no error is thrown for the stub implementation
     throw SecurityStorageError.unsupportedOperation
   }
 
-  public func secureRetrieve(config: CoreSecurityTypes.SecurityConfigDTO) async throws -> CoreSecurityTypes.SecurityResultDTO {
+  public func secureRetrieve(
+    config: CoreSecurityTypes
+      .SecurityConfigDTO
+  ) async throws -> CoreSecurityTypes.SecurityResultDTO {
     print("BasicSecurityProvider secureRetrieve called (stub) with config: \(config)")
     // Correct error path
     throw SecurityStorageError.unsupportedOperation
   }
 
-  public func secureDelete(config: CoreSecurityTypes.SecurityConfigDTO) async throws -> CoreSecurityTypes.SecurityResultDTO {
+  public func secureDelete(
+    config: CoreSecurityTypes
+      .SecurityConfigDTO
+  ) async throws -> CoreSecurityTypes.SecurityResultDTO {
     print("BasicSecurityProvider secureDelete called (stub) with config: \(config)")
     // Correct error path
     throw SecurityStorageError.unsupportedOperation
   }
 
-  public func sign(config: CoreSecurityTypes.SecurityConfigDTO) async throws -> CoreSecurityTypes.SecurityResultDTO {
+  public func sign(config: CoreSecurityTypes.SecurityConfigDTO) async throws -> CoreSecurityTypes
+  .SecurityResultDTO {
     print("BasicSecurityProvider sign called (stub) with config: \(config)")
     // Correct error path
     throw SecurityStorageError.unsupportedOperation
   }
 
-  public func verify(config: CoreSecurityTypes.SecurityConfigDTO) async throws -> CoreSecurityTypes.SecurityResultDTO {
+  public func verify(config: CoreSecurityTypes.SecurityConfigDTO) async throws -> CoreSecurityTypes
+  .SecurityResultDTO {
     print("BasicSecurityProvider verify called (stub) with config: \(config)")
     // Return a mock success for basic functionality if needed
     // Use static factory method
     return SecurityResultDTO.success(
-        resultData: "true".data(using: .utf8),
-        executionTimeMs: 0.0 // Placeholder
+      resultData: "true".data(using: .utf8),
+      executionTimeMs: 0.0 // Placeholder
     )
   }
 
-  public func hash(config: CoreSecurityTypes.SecurityConfigDTO) async throws -> CoreSecurityTypes.SecurityResultDTO {
+  public func hash(config: CoreSecurityTypes.SecurityConfigDTO) async throws -> CoreSecurityTypes
+  .SecurityResultDTO {
     print("BasicSecurityProvider hash called directly (stub) with config: \(config)")
     // Mock implementation - should use config.hashAlgorithm
-    let mockHash = Array<UInt8>(repeating: 0, count: 32) // Using SHA-256 size as example
+    let mockHash=[UInt8](repeating: 0, count: 32) // Using SHA-256 size as example
     // Use static factory method
     return SecurityResultDTO.success(
-        resultData: Data(mockHash),
-        executionTimeMs: 0.0 // Placeholder
+      resultData: Data(mockHash),
+      executionTimeMs: 0.0 // Placeholder
     )
   }
 
   public func generateRandom(bytes: Int) async throws -> CoreSecurityTypes.SecurityResultDTO {
     print("BasicSecurityProvider generateRandom called (stub) for \(bytes) bytes")
     // In a real implementation, use a secure random source like SecRandomCopyBytes
-    let randomData = Data((0..<bytes).map { _ in UInt8.random(in: 0...255) })
+    let randomData=Data((0..<bytes).map { _ in UInt8.random(in: 0...255) })
     // Use static factory method
     return SecurityResultDTO.success(
-        resultData: randomData,
-        executionTimeMs: 0.0)
+      resultData: randomData,
+      executionTimeMs: 0.0
+    )
   }
 
-  public func deriveKey(config: CoreSecurityTypes.SecurityConfigDTO) async throws -> CoreSecurityTypes.SecurityResultDTO {
+  public func deriveKey(
+    config: CoreSecurityTypes
+      .SecurityConfigDTO
+  ) async throws -> CoreSecurityTypes.SecurityResultDTO {
     print("BasicSecurityProvider deriveKey called (stub) with config: \(config)")
     // Correct error type
     throw SecurityStorageError.unsupportedOperation
   }
 
-  public func storeKey(config: CoreSecurityTypes.SecurityConfigDTO) async throws -> CoreSecurityTypes.SecurityResultDTO {
+  public func storeKey(
+    config: CoreSecurityTypes
+      .SecurityConfigDTO
+  ) async throws -> CoreSecurityTypes.SecurityResultDTO {
     print("BasicSecurityProvider storeKey called (stub) with config: \(config)")
     // Correct error type
     throw SecurityStorageError.unsupportedOperation
   }
 
-  public func retrieveKey(config: CoreSecurityTypes.SecurityConfigDTO) async throws -> CoreSecurityTypes.SecurityResultDTO {
+  public func retrieveKey(
+    config: CoreSecurityTypes
+      .SecurityConfigDTO
+  ) async throws -> CoreSecurityTypes.SecurityResultDTO {
     print("BasicSecurityProvider retrieveKey called (stub) with config: \(config)")
     // Correct error type
     throw SecurityStorageError.unsupportedOperation
   }
 
-  public func deleteKey(config: CoreSecurityTypes.SecurityConfigDTO) async throws -> CoreSecurityTypes.SecurityResultDTO {
+  public func deleteKey(
+    config: CoreSecurityTypes
+      .SecurityConfigDTO
+  ) async throws -> CoreSecurityTypes.SecurityResultDTO {
     print("BasicSecurityProvider deleteKey called (stub) with config: \(config)")
     // Correct error type
     throw SecurityStorageError.unsupportedOperation
@@ -157,7 +187,9 @@ public final class BasicSecurityProvider: SecurityProviderProtocol, AsyncService
     operation: SecurityCoreInterfaces.SecurityOperation,
     config: CoreSecurityTypes.SecurityConfigDTO
   ) async throws -> CoreSecurityTypes.SecurityResultDTO {
-    print("BasicSecurityProvider performSecureOperation called (stub) for \(operation) with config: \(config)")
+    print(
+      "BasicSecurityProvider performSecureOperation called (stub) for \(operation) with config: \(config)"
+    )
     // Delegate to specific methods or handle directly
     switch operation {
       case .encrypt: return try await encrypt(config: config)
@@ -177,14 +209,17 @@ public final class BasicSecurityProvider: SecurityProviderProtocol, AsyncService
   }
 
   /// Creates a standard security configuration DTO for this basic provider.
-  public func createSecureConfig(options: CoreSecurityTypes.SecurityConfigOptions? = nil) -> CoreSecurityTypes.SecurityConfigDTO {
+  public func createSecureConfig(
+    options: CoreSecurityTypes
+      .SecurityConfigOptions?=nil
+  ) -> CoreSecurityTypes.SecurityConfigDTO {
     print("BasicSecurityProvider createSecureConfig called (stub)")
     return CoreSecurityTypes.SecurityConfigDTO(
-        // Use a valid algorithm name, e.g., .aes256GCM
-        encryptionAlgorithm: .aes256GCM, // Corrected Algorithm
-        hashAlgorithm: .sha256,
-        providerType: .basic,
-        options: options
+      // Use a valid algorithm name, e.g., .aes256GCM
+      encryptionAlgorithm: .aes256GCM, // Corrected Algorithm
+      hashAlgorithm: .sha256,
+      providerType: .basic,
+      options: options
     )
   }
 

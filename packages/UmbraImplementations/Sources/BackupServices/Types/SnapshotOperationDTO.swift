@@ -89,12 +89,12 @@ public struct SnapshotListParameters: SnapshotOperationParameters {
     return context
       .with(
         key: "repositoryID",
-        value: repositoryID,
+        value: repositoryID ?? "default",
         privacy: LoggingTypes.PrivacyClassification.public
       )
       .with(
         key: "tags",
-        value: tags.joined(separator: ", "),
+        value: tags?.joined(separator: ", ") ?? "",
         privacy: LoggingTypes.PrivacyClassification.public
       )
       .with(

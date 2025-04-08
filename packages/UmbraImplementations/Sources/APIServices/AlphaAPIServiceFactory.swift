@@ -1,5 +1,4 @@
 import APIInterfaces
-import APIInterfaces // Import the module where APIOperation is defined
 import BackupInterfaces
 import CoreDTOs
 import CoreSecurityTypes // Import the module where SecurityConfigOptions is defined
@@ -11,27 +10,7 @@ import LoggingTypes
 import RepositoryInterfaces
 import SecurityCoreInterfaces
 import SecurityInterfaces
-import LoggingServices // Added
-import APIInterfaces // Added
 
-/**
- # Alpha API Service Factory
-
- Factory for creating instances of APIServiceProtocol that conform to the
- Alpha Dot Five architecture principles. This factory simplifies
- the creation and configuration of API service instances with their
- required dependencies.
-
- ## Usage
-
- ```swift
- // Create a default development API service
- let apiService = AlphaAPIServiceFactory.createDefault()
-
- // Execute operations
- let result = try await apiService.execute(SomeAPIOperation())
- ```
- */
 public enum AlphaAPIServiceFactory {
   // MARK: - Public Factory Methods
 
@@ -446,7 +425,10 @@ private class SystemDomainHandlerMock: DomainHandler {
   /// Initializer
   /// - Parameter logger: Logger to use for this handler
   init(logger: LoggingProtocol?) {
-    self.logger=logger ?? LoggingServiceFactory.createDevelopmentLogger(domain: "SystemDomainMock", category: "Test")
+    self.logger=logger ?? LoggingServiceFactory.createDevelopmentLogger(
+      domain: "SystemDomainMock",
+      category: "Test"
+    )
   }
 
   /// Handle system operations (mock implementation)

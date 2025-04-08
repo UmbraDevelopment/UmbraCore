@@ -2,56 +2,56 @@ import BackupInterfaces
 import Foundation
 
 /**
- * Result of a backup verification operation.
+ * Data Transfer Object for backup verification results.
  *
- * This struct contains information about the verification process,
+ * This DTO encapsulates the results of a backup verification operation,
  * including any issues found during verification.
  */
 public struct BackupVerificationResultDTO: Sendable, Equatable {
   /// Whether the verification completed successfully
   public let verified: Bool
 
-  /// The total number of objects verified
+  /// Number of objects verified
   public let objectsVerified: Int
 
-  /// The total size of verified data in bytes
-  public let bytesVerified: UInt64
+  /// Number of bytes verified
+  public let bytesVerified: Int64
 
-  /// Number of errors encountered during verification
+  /// Number of errors encountered
   public let errorCount: Int
 
-  /// List of verification issues discovered
+  /// List of verification issues
   public let issues: [VerificationIssue]
 
-  /// Summary of automatic repairs performed (if enabled)
+  /// Summary of repair actions if applicable
   public let repairSummary: RepairSummary?
 
-  /// Snapshot ID that was verified
+  /// ID of the snapshot that was verified
   public let snapshotID: String
 
-  /// Time taken to complete verification
+  /// Time taken for verification in seconds
   public let verificationTime: TimeInterval
 
   /**
-   * Creates a new verification result.
+   * Creates a new verification result DTO.
    *
    * - Parameters:
-   *   - verified: Whether verification completed successfully
+   *   - verified: Whether the verification completed successfully
    *   - objectsVerified: Number of objects verified
-   *   - bytesVerified: Total size of verified data in bytes
+   *   - bytesVerified: Number of bytes verified
    *   - errorCount: Number of errors encountered
-   *   - issues: List of verification issues discovered
-   *   - repairSummary: Summary of automatic repairs (if performed)
-   *   - snapshotID: ID of the verified snapshot
-   *   - verificationTime: Time taken for verification
+   *   - issues: List of verification issues
+   *   - repairSummary: Summary of repair actions if applicable
+   *   - snapshotID: ID of the snapshot that was verified
+   *   - verificationTime: Time taken for verification in seconds
    */
   public init(
     verified: Bool,
     objectsVerified: Int,
-    bytesVerified: UInt64,
+    bytesVerified: Int64,
     errorCount: Int,
     issues: [VerificationIssue],
-    repairSummary: RepairSummary?,
+    repairSummary: RepairSummary?=nil,
     snapshotID: String,
     verificationTime: TimeInterval
   ) {
@@ -64,252 +64,238 @@ public struct BackupVerificationResultDTO: Sendable, Equatable {
     self.snapshotID=snapshotID
     self.verificationTime=verificationTime
   }
+
+  /**
+   * Convert to BackupInterfaces.BackupVerificationResultDTO
+   */
+  public func toBackupVerificationResultDTO() -> BackupInterfaces.BackupVerificationResultDTO {
+    // Map our issues to the interface's issue type
+    let mappedIssues=issues.map { issue -> BackupInterfaces.BackupVerificationIssueDTO in
+      let issueType: BackupInterfaces.BackupVerificationIssueDTO.IssueType=switch issue.type {
+        case .missingData:
+          .missingData
+        case .corruptedData:
+          .corruptedData
+        case .inconsistentMetadata:
+          .inconsistentMetadata
+        case .accessError:
+          .accessError
+        case .other:
+          .other
+      }
+
+      return BackupInterfaces.BackupVerificationIssueDTO(
+        type: issueType,
+        path: issue.path,
+        description: issue.description,
+        resolution: issue.resolution
+      )
+    }
+
+    // Create result with start/end time based on verification time
+    let now=Date()
+    let startTime=now.addingTimeInterval(-verificationTime)
+
+    return BackupInterfaces.BackupVerificationResultDTO(
+      successful: verified,
+      issues: mappedIssues,
+      startTime: startTime,
+      endTime: now
+    )
+  }
+
+  /**
+   * Create from BackupInterfaces.BackupVerificationResultDTO
+   */
+  public static func from(
+    dto: BackupInterfaces.BackupVerificationResultDTO
+  ) -> BackupVerificationResultDTO {
+    // Map the interface's issues to our issue type
+    let mappedIssues=dto.issues.map { issue -> VerificationIssue in
+      let issueType: VerificationIssue.IssueType=switch issue.type {
+        case .missingData:
+          .missingData
+        case .corruptedData:
+          .corruptedData
+        case .inconsistentMetadata:
+          .inconsistentMetadata
+        case .accessError:
+          .accessError
+        case .other:
+          .other
+      }
+
+      return VerificationIssue(
+        type: issueType,
+        path: issue.path,
+        description: issue.description,
+        resolution: issue.resolution
+      )
+    }
+
+    return BackupVerificationResultDTO(
+      verified: dto.successful,
+      objectsVerified: 0, // Not available in the interface
+      bytesVerified: 0, // Not available in the interface
+      errorCount: dto.issues.count,
+      issues: mappedIssues,
+      repairSummary: nil, // Not available in the interface
+      snapshotID: "", // Not available in the interface
+      verificationTime: dto.duration
+    )
+  }
 }
 
 /**
- * Describes an issue found during backup verification.
+ * Represents an issue found during verification.
  */
 public struct VerificationIssue: Sendable, Equatable {
-  /// Type of verification issue
+  /**
+   * Type of verification issue.
+   */
   public enum IssueType: String, Sendable, Equatable {
-    /// Data corruption detected
-    case corruption
-
-    /// Missing data that should be present
+    /// Missing data in the repository
     case missingData
 
-    /// Invalid cryptographic signature
-    case invalidSignature
+    /// Corrupted data in the repository
+    case corruptedData
 
-    /// Inconsistent metadata
-    case metadataInconsistency
+    /// Inconsistent metadata in the repository
+    case inconsistentMetadata
+
+    /// Access error when attempting to verify
+    case accessError
 
     /// Other unspecified issue
     case other
   }
 
-  /// The type of issue
+  /// Type of the issue
   public let type: IssueType
 
-  /// Path or identifier of the affected object
-  public let objectPath: String
+  /// Path to the affected file or component
+  public let path: String?
 
-  /// Detailed description of the issue
+  /// Description of the issue
   public let description: String
 
-  /// Whether the issue was automatically repaired
-  public let repaired: Bool
+  /// Potential resolution for the issue
+  public let resolution: String?
 
   /**
    * Creates a new verification issue.
    *
    * - Parameters:
-   *   - type: Type of verification issue
-   *   - objectPath: Path or ID of the affected object
-   *   - description: Detailed description of the issue
-   *   - repaired: Whether the issue was repaired
+   *   - type: Type of the issue
+   *   - path: Path to the affected file or component
+   *   - description: Description of the issue
+   *   - resolution: Potential resolution for the issue
    */
   public init(
     type: IssueType,
-    objectPath: String,
+    path: String?=nil,
     description: String,
-    repaired: Bool=false
+    resolution: String?=nil
   ) {
     self.type=type
-    self.objectPath=objectPath
+    self.path=path
     self.description=description
-    self.repaired=repaired
+    self.resolution=resolution
   }
 }
 
 /**
- * Summary of automatic repairs performed during verification.
+ * Summary of repair actions taken during verification.
  */
 public struct RepairSummary: Sendable, Equatable {
-  /// Number of issues that were successfully repaired
-  public let issuesRepaired: Int
+  /// Whether repairs were successful
+  public let successful: Bool
 
-  /// Number of issues that failed to be repaired
-  public let repairFailures: Int
+  /// Number of issues repaired
+  public let repairedCount: Int
 
-  /// List of repairs performed
-  public let repairs: [RepairAction]
+  /// Number of issues that could not be repaired
+  public let unrepairedCount: Int
+
+  /// List of repair actions taken
+  public let actions: [RepairAction]
 
   /**
    * Creates a new repair summary.
    *
    * - Parameters:
-   *   - issuesRepaired: Number of successful repairs
-   *   - repairFailures: Number of failed repairs
-   *   - repairs: List of repair actions performed
+   *   - successful: Whether repairs were successful
+   *   - repairedCount: Number of issues repaired
+   *   - unrepairedCount: Number of issues that could not be repaired
+   *   - actions: List of repair actions taken
    */
   public init(
-    issuesRepaired: Int,
-    repairFailures: Int,
-    repairs: [RepairAction]
+    successful: Bool,
+    repairedCount: Int,
+    unrepairedCount: Int,
+    actions: [RepairAction]
   ) {
-    self.issuesRepaired=issuesRepaired
-    self.repairFailures=repairFailures
-    self.repairs=repairs
+    self.successful=successful
+    self.repairedCount=repairedCount
+    self.unrepairedCount=unrepairedCount
+    self.actions=actions
   }
 }
 
 /**
- * Describes a repair action performed during verification.
+ * Represents a repair action taken during verification.
  */
 public struct RepairAction: Sendable, Equatable {
-  /// Type of repair performed
-  public enum RepairType: String, Sendable, Equatable {
-    /// Reconstructed missing data
-    case reconstruction
+  /**
+   * Type of repair action.
+   */
+  public enum ActionType: String, Sendable, Equatable {
+    /// Recreated missing data
+    case recreateData
 
-    /// Restored from redundant copies
-    case redundantCopy
+    /// Restored from backup copy
+    case restoreFromBackup
 
-    /// Replaced corrupted data with a known good version
-    case replacement
+    /// Rebuilt metadata
+    case rebuildMetadata
 
-    /// Fixed metadata inconsistency
-    case metadataFix
+    /// Removed corrupted data
+    case removeCorrupted
 
-    /// Other repair type
+    /// Other repair action
     case other
   }
 
-  /// The type of repair performed
-  public let type: RepairType
+  /// Type of the action
+  public let type: ActionType
 
-  /// Path or identifier of the repaired object
-  public let objectPath: String
+  /// Path to the affected file or component
+  public let path: String?
 
-  /// Description of the repair action
+  /// Description of the action
   public let description: String
 
-  /// Whether the repair was successful
+  /// Whether the action was successful
   public let successful: Bool
 
   /**
    * Creates a new repair action.
    *
    * - Parameters:
-   *   - type: Type of repair performed
-   *   - objectPath: Path or ID of the repaired object
-   *   - description: Description of the repair action
-   *   - successful: Whether the repair was successful
+   *   - type: Type of the action
+   *   - path: Path to the affected file or component
+   *   - description: Description of the action
+   *   - successful: Whether the action was successful
    */
   public init(
-    type: RepairType,
-    objectPath: String,
+    type: ActionType,
+    path: String?=nil,
     description: String,
     successful: Bool
   ) {
     self.type=type
-    self.objectPath=objectPath
+    self.path=path
     self.description=description
     self.successful=successful
-  }
-}
-
-// MARK: - Conversion Methods
-
-extension BackupVerificationResultDTO {
-  /// Convert this DTO to a BackupInterfaces.VerificationResult
-  public func toVerificationResult() -> VerificationResult {
-    VerificationResult(
-      verified: verified,
-      objectsVerified: objectsVerified,
-      bytesVerified: bytesVerified,
-      errorCount: errorCount,
-      issues: issues.map { $0.toVerificationIssue() },
-      repairSummary: repairSummary?.toRepairSummary(),
-      snapshotID: snapshotID,
-      verificationTime: verificationTime
-    )
-  }
-
-  /// Create a BackupVerificationResultDTO from a BackupInterfaces.VerificationResult
-  public static func from(verificationResult: VerificationResult) -> BackupVerificationResultDTO {
-    BackupVerificationResultDTO(
-      verified: verificationResult.verified,
-      objectsVerified: verificationResult.objectsVerified,
-      bytesVerified: verificationResult.bytesVerified,
-      errorCount: verificationResult.errorCount,
-      issues: verificationResult.issues.map { VerificationIssue.from(issue: $0) },
-      repairSummary: verificationResult.repairSummary.map { RepairSummary.from(summary: $0) },
-      snapshotID: verificationResult.snapshotID,
-      verificationTime: verificationResult.verificationTime
-    )
-  }
-}
-
-extension BackupVerificationResultDTO.VerificationIssue {
-  /// Convert this DTO to a BackupInterfaces.VerificationIssue
-  public func toVerificationIssue() -> VerificationResult.VerificationIssue {
-    VerificationResult.VerificationIssue(
-      type: VerificationResult.VerificationIssue.IssueType(rawValue: type.rawValue) ?? .unknown,
-      objectID: objectPath,
-      details: description,
-      severity: VerificationResult.VerificationIssue.Severity(rawValue: "warning") ?? .warning,
-      repairable: repaired
-    )
-  }
-
-  /// Create a VerificationIssue from a BackupInterfaces.VerificationIssue
-  public static func from(
-    issue: VerificationResult
-      .VerificationIssue
-  ) -> BackupVerificationResultDTO.VerificationIssue {
-    BackupVerificationResultDTO.VerificationIssue(
-      type: IssueType(rawValue: issue.type.rawValue) ?? .unknown,
-      objectPath: issue.objectID,
-      description: issue.details,
-      repaired: issue.repairable
-    )
-  }
-}
-
-extension BackupVerificationResultDTO.RepairSummary {
-  /// Convert this DTO to a BackupInterfaces.RepairSummary
-  public func toRepairSummary() -> VerificationResult.RepairSummary {
-    VerificationResult.RepairSummary(
-      actionsPerformed: repairs.map { $0.toRepairAction() },
-      repairSuccess: issuesRepaired > 0,
-      objectsRepaired: issuesRepaired,
-      bytesRecovered: 0,
-      repairTime: 0
-    )
-  }
-
-  /// Create a RepairSummary from a BackupInterfaces.RepairSummary
-  public static func from(summary: VerificationResult.RepairSummary) -> BackupVerificationResultDTO
-  .RepairSummary {
-    BackupVerificationResultDTO.RepairSummary(
-      issuesRepaired: summary.objectsRepaired,
-      repairFailures: 0,
-      repairs: summary.actionsPerformed.map { RepairAction.from(action: $0) }
-    )
-  }
-}
-
-extension BackupVerificationResultDTO.RepairAction {
-  /// Convert this DTO to a BackupInterfaces.RepairAction
-  public func toRepairAction() -> VerificationResult.RepairAction {
-    VerificationResult.RepairAction(
-      type: VerificationResult.RepairAction.RepairType(rawValue: type.rawValue) ?? .reconstruction,
-      objectID: objectPath,
-      details: description,
-      successful: successful
-    )
-  }
-
-  /// Create a RepairAction from a BackupInterfaces.RepairAction
-  public static func from(action: VerificationResult.RepairAction) -> BackupVerificationResultDTO
-  .RepairAction {
-    BackupVerificationResultDTO.RepairAction(
-      type: RepairType(rawValue: action.type.rawValue) ?? .reconstruction,
-      objectPath: action.objectID,
-      description: action.details,
-      successful: action.successful
-    )
   }
 }

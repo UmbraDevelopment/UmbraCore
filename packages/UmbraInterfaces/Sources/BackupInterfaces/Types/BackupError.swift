@@ -25,6 +25,9 @@ public enum BackupError: Error, CustomNSError, LocalizedError {
   /// Error when paths are invalid or inaccessible
   case invalidPaths(paths: [String])
 
+  /// Error when operation failed with specific details
+  case operationFailed(path: String, reason: String, code: String)
+
   /// Error with insufficient permissions for operation
   case insufficientPermissions(path: String)
 
@@ -86,6 +89,7 @@ public enum BackupError: Error, CustomNSError, LocalizedError {
       case .authenticationFailure: 1015
       case .commandExecutionFailure: 1016
       case .timeoutError: 1017
+      case .operationFailed: 1018
       case .genericError: 1099
     }
   }
@@ -135,6 +139,8 @@ public enum BackupError: Error, CustomNSError, LocalizedError {
         return "Command execution failed: '\(command.asCommandOutput())' exited with code \(String(exitCode).asErrorCode())"
       case let .timeoutError(operation, _):
         return "Operation timed out: \(operation.asPublicInfo())"
+      case let .operationFailed(path, reason, _):
+        return "Operation failed at \(path.asBackupPath()): \(reason.asErrorDetail())"
       case let .genericError(reason):
         return "Backup error: \(reason.asErrorDetail().content)"
     }
@@ -177,6 +183,8 @@ public enum BackupError: Error, CustomNSError, LocalizedError {
         "Command failed with error: \(errorOutput.asErrorDetail())"
       case let .timeoutError(_, details):
         "The operation timed out: \(details.asErrorDetail())"
+      case let .operationFailed(_, reason, _):
+        "The operation failed due to: \(reason.asErrorDetail())"
       case let .genericError(reason):
         reason.asErrorDetail().content
     }
@@ -219,6 +227,8 @@ public enum BackupError: Error, CustomNSError, LocalizedError {
         "Check system resources and permissions. Verify the command parameters are correct and try again."
       case .timeoutError:
         "Consider increasing the timeout duration or check for system resource constraints that might be slowing down the operation."
+      case .operationFailed:
+        "Retry the operation. If the problem persists, check logs for more details or contact support."
       case .genericError:
         "Retry the operation. If the problem persists, check logs for more details or contact support."
     }

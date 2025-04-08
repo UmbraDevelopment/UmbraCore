@@ -51,10 +51,10 @@ public protocol DomainHandler {
    The domain identifier this handler supports
    */
   var domain: String { get }
-  
+
   /**
    Handles a domain-specific operation
-   
+
    - Parameter operation: The operation to handle
    - Returns: The result of the operation
    - Throws: APIError if the operation fails

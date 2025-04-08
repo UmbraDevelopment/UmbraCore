@@ -50,7 +50,7 @@ public actor BackupOperationExecutor {
   }
 
   /**
-   * Executes an operation with consistent error handling, logging, and metrics.
+   * Executes a backup operation with progress reporting and cancellation support.
    *
    * - Parameters:
    *   - parameters: The operation parameters
@@ -58,96 +58,59 @@ public actor BackupOperationExecutor {
    *   - progressReporter: Optional progress reporter
    *   - cancellationToken: Optional cancellation token
    * - Returns: The operation result
-   * - Throws: BackupError if the operation fails
+   * - Throws: BackupOperationError if the operation fails
    */
   public func execute<P: BackupOperationParameters, R>(
     parameters: P,
-    operation: (P, BackupProgressReporter?, CancellationToken?) async throws -> R,
+    operation: (P, BackupProgressReporter?, BackupCancellationToken?) async throws -> R,
     progressReporter: BackupProgressReporter?,
-    cancellationToken: CancellationToken?
+    cancellationToken: BackupCancellationToken?
   ) async throws -> R {
     // Create a log context for this operation
-    let logContext=BackupLogContextAdapter(
-      snapshotID: getSnapshotID(from: parameters),
-      operation: String(describing: parameters.operationType)
+    let logContext=BackupLogContextImpl(
+      domainName: "BackupServices",
+      source: "BackupOperationExecutor"
     )
+    .withOperation(parameters.operationType)
+    .withPublic(key: "operationID", value: parameters.operationID.uuidString)
 
-    // Log the start of the operation
+    // Log operation start
     await logger.info(
       "Starting backup operation: \(parameters.operationType)",
-      metadata: nil,
-      source: logContext.getSource()
+      context: logContext
     )
 
-    // Record operation start for metrics
-    await metricsCollector.recordOperationStarted(operation: parameters.operationType)
-
-    // Start timing
-    let startTime=Date()
-
     do {
-      // Check for cancellation
-      if let token=cancellationToken, await cancellationHandler.isOperationCancelled(id: token.id) {
-        throw CancellationError()
-      }
-
-      // Validate parameters
-      try parameters.validate()
-
       // Execute the operation
       let result=try await operation(parameters, progressReporter, cancellationToken)
 
-      // Record operation completion for metrics
-      await metricsCollector.recordOperationCompleted(
-        operation: parameters.operationType,
-        duration: Date().timeIntervalSince(startTime),
-        success: true
-      )
-
-      // Log the completion of the operation
+      // Log operation completion
       await logger.info(
         "Completed backup operation: \(parameters.operationType)",
-        metadata: nil,
-        source: logContext.getSource()
+        context: logContext
       )
 
       return result
-    } catch is CancellationError {
-      // Record operation completion for metrics
-      await metricsCollector.recordOperationCompleted(
-        operation: parameters.operationType,
-        duration: Date().timeIntervalSince(startTime),
-        success: false
-      )
-
-      // Log the cancellation of the operation
-      await logger.info(
-        "Cancelled backup operation: \(parameters.operationType)",
-        metadata: nil,
-        source: logContext.getSource()
-      )
-
-      throw BackupError.invalidConfiguration(
-        details: "Operation '\(parameters.operationType)' was cancelled"
-      )
     } catch {
-      // Record operation completion for metrics
-      await metricsCollector.recordOperationCompleted(
-        operation: parameters.operationType,
-        duration: Date().timeIntervalSince(startTime),
-        success: false
-      )
+      // Check if operation was cancelled
+      if let cancellationToken, await cancellationToken.isCancelled {
+        // Log cancellation
+        await logger.info(
+          "Cancelled backup operation: \(parameters.operationType)",
+          context: logContext
+        )
 
-      // Map the error to a BackupError
-      let backupError=errorMapper.mapError(error, context: logContext)
+        throw BackupOperationError.operationCancelled("Operation was cancelled by user")
+      }
 
-      // Log the failure of the operation
+      // Log error
       await logger.error(
         "Failed backup operation: \(parameters.operationType) - \(error.localizedDescription)",
         context: logContext
       )
 
-      throw backupError
+      // Rethrow error
+      throw error
     }
   }
 

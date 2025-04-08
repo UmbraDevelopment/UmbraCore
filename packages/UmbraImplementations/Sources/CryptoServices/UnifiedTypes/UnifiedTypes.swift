@@ -81,15 +81,15 @@ public enum UnifiedCryptoTypes {
       // Default values if options is nil
       if let options {
         // Map the algorithm
-        self.algorithm = options.algorithm  // Direct assignment since it's the same type
-        self.authenticatedData = options.additionalAuthenticatedData
+        algorithm=options.algorithm // Direct assignment since it's the same type
+        authenticatedData=options.additionalAuthenticatedData
         // Padding is optional and depends on implementation
-        padding = nil
+        padding=nil
       } else {
         // Defaults
         algorithm = .aes256GCM
-        authenticatedData = nil
-        padding = nil
+        authenticatedData=nil
+        padding=nil
       }
     }
 

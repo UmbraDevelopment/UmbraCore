@@ -1,9 +1,9 @@
+import FileSystemInterfaces
+import FileSystemTypes
 import LoggingAdapters
 import LoggingInterfaces
 import LoggingTypes
 import RepositoryInterfaces
-import FileSystemTypes
-import FileSystemInterfaces
 
 /// A service that manages repository registration, locking, and statistics.
 ///
@@ -24,7 +24,7 @@ public actor RepositoryServiceImpl: RepositoryServiceProtocol {
 
   /// Logger instance - internal access allows extensions to use it
   let logger: LoggingProtocol
-  
+
   /// File system service for file operations
   let fileSystemService: FileSystemServiceProtocol
 
@@ -34,15 +34,15 @@ public actor RepositoryServiceImpl: RepositoryServiceProtocol {
   /// logger.
   /// - Parameter fileSystemService: The file system service to use for file operations.
   public init(
-    logger: LoggingProtocol = UmbraLoggingAdapters.createLogger(),
+    logger: LoggingProtocol=UmbraLoggingAdapters.createLogger(),
     fileSystemService: FileSystemServiceProtocol
   ) {
-    repositories = [:]
-    self.logger = logger
-    self.fileSystemService = fileSystemService
-    
+    repositories=[:]
+    self.logger=logger
+    self.fileSystemService=fileSystemService
+
     Task {
-      let context = RepositoryLogContext(
+      let context=RepositoryLogContext(
         operation: "initialisation"
       )
       await self.logger.info("Repository service initialised", context: context)
@@ -58,12 +58,12 @@ public actor RepositoryServiceImpl: RepositoryServiceProtocol {
   ///           `RepositoryError.duplicateIdentifier` if a repository with the same identifier
   /// exists.
   public func register(_ repository: some RepositoryProtocol) async throws {
-    let identifier = await repository.identifier
-    let location = await repository.location
-    let state = await repository.state
+    let identifier=await repository.identifier
+    let location=await repository.location
+    let state=await repository.state
 
     // Create repository log context
-    let context = RepositoryLogContext(
+    let context=RepositoryLogContext(
       repositoryID: identifier,
       locationPath: location.path,
       state: "\(state)",
@@ -85,7 +85,7 @@ public actor RepositoryServiceImpl: RepositoryServiceProtocol {
     }
 
     // Initialise repository if needed
-    if case RepositoryState.uninitialized = state {
+    if case RepositoryState.uninitialized=state {
       await logger.info("Initialising uninitialised repository", context: context)
       try await repository.initialise()
     }
@@ -105,7 +105,7 @@ public actor RepositoryServiceImpl: RepositoryServiceProtocol {
     }
 
     // Add to registry
-    repositories[identifier] = repository
+    repositories[identifier]=repository
     await logger.info("Repository registered successfully", context: context)
   }
 
@@ -115,7 +115,7 @@ public actor RepositoryServiceImpl: RepositoryServiceProtocol {
   /// - Throws: `RepositoryError.notFound` if the repository doesn't exist.
   public func unregister(identifier: String) async throws {
     // Create repository log context
-    let context = RepositoryLogContext(
+    let context=RepositoryLogContext(
       repositoryID: identifier,
       operation: "unregister"
     )
@@ -138,14 +138,14 @@ public actor RepositoryServiceImpl: RepositoryServiceProtocol {
   /// - Throws: `RepositoryError.notFound` if the repository is not found.
   public func getRepository(identifier: String) async throws -> any RepositoryProtocol {
     // Create repository log context
-    let context = RepositoryLogContext(
+    let context=RepositoryLogContext(
       repositoryID: identifier,
       operation: "getRepository"
     )
 
     await logger.debug("Getting repository", context: context)
 
-    guard let repository = repositories[identifier] else {
+    guard let repository=repositories[identifier] else {
       await logger.error("Repository not found", context: context)
       throw RepositoryError.notFound
     }
@@ -157,7 +157,7 @@ public actor RepositoryServiceImpl: RepositoryServiceProtocol {
   ///
   /// - Returns: Dictionary of repositories keyed by their identifiers.
   public func getAllRepositories() async -> [String: any RepositoryProtocol] {
-    let context = RepositoryLogContext(
+    let context=RepositoryLogContext(
       operation: "getAllRepositories"
     )
 
@@ -172,7 +172,7 @@ public actor RepositoryServiceImpl: RepositoryServiceProtocol {
   /// - Returns: `true` if the repository is registered, `false` otherwise.
   public func isRegistered(identifier: String) async -> Bool {
     // Create repository log context
-    let context = RepositoryLogContext(
+    let context=RepositoryLogContext(
       repositoryID: identifier,
       operation: "isRegistered"
     )
@@ -189,13 +189,13 @@ public actor RepositoryServiceImpl: RepositoryServiceProtocol {
   /// - Throws: Repository-specific errors if creation fails.
   public func createRepository(at path: FilePath) async throws -> any RepositoryProtocol {
     // Create repository log context
-    let context = RepositoryLogContext(
+    let context=RepositoryLogContext(
       locationPath: path.path,
       operation: "createRepository"
     )
-    
+
     await logger.info("Creating new repository", context: context)
-    
+
     // This is a placeholder implementation. The actual implementation would depend
     // on the specific repository type being created.
     throw RepositoryError.internalError
@@ -212,8 +212,8 @@ public actor RepositoryServiceImpl: RepositoryServiceProtocol {
   /// - Throws: Errors if creation fails.
   public func createRepository(at url: URL) async throws -> any RepositoryProtocol {
     // Convert URL to FilePath
-    let filePath = FilePath(path: url.path)
-    
+    let filePath=FilePath(path: url.path)
+
     // Delegate to the FilePath-based implementation
     return try await createRepository(at: filePath)
   }
