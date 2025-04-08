@@ -8,6 +8,7 @@ import LoggingTypes
 import SecurityCoreInterfaces
 import Security
 import UmbraErrors
+import CommonCrypto
 
 /**
  Default implementation of CryptoServiceProtocol using SecureStorageProtocol.
@@ -217,24 +218,15 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
     }
 
     // Generate mock hash based on retrieved data (length used as simple example)
-    let hashData: Data
-    switch algorithm {
-      case .sha256:
-        hashData = self.generateRandomBytes(count: 32) // Mock hash
-      case .blake2b:
-        await logger?.log(.debug, "Using mock BLAKE2b hash generation", context: context)
-        hashData = self.generateRandomBytes(count: 64) // Mock hash for BLAKE2b
-      case .sha512:
-        await logger?.log(.debug, "Using mock SHA512 hash generation", context: context)
-        hashData = self.generateRandomBytes(count: 64) // Mock hash for SHA512
-      // TODO: Add other supported hash algorithms
-      default: return .failure(.unsupportedOperation) // Or handle unsupported algorithms
+    var generatedHash = [UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
+    _ = originalDataResult.success?.withUnsafeBytes { // Use withUnsafeBytes for [UInt8]
+        CC_SHA256($0.baseAddress, CC_LONG(originalDataResult.success?.count ?? 0), &generatedHash)
     }
 
     // Store the hash
     let hashIdentifier: String = "hash_\(UUID().uuidString)"
     let storeResult: Result<Void, SecurityStorageError> = await secureStorage.storeData(
-      [UInt8](hashData), // Convert Data to [UInt8]
+      generatedHash, // Use [UInt8]
       withIdentifier: hashIdentifier
     )
 
@@ -401,17 +393,23 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
    - Parameter count: The number of bytes to generate.
    - Returns: A Data object containing the random bytes.
    */
-  private func generateRandomBytes(count: Int) -> Data {
+  private func generateRandomBytes(count: Int) -> [UInt8] {
     var bytes = [UInt8](repeating: 0, count: count)
     let status = SecRandomCopyBytes(kSecRandomDefault, count, &bytes)
     if status == errSecSuccess {
-      return Data(bytes)
+      return bytes
     } else {
       // Fallback or handle error appropriately
-      let context = LogContextDTO(subsystem: "CryptoService", category: "Randomness")
-      await logger?.error("Failed to generate secure random bytes, status: \(status)", context: context)
+      let context = BaseLogContextDTO(
+        domainName: "CryptoService",
+        source: "DefaultCryptoServiceImpl.generateRandomBytes",
+        metadata: LogMetadataDTOCollection()
+          .withPublic(key: "requestedByteCount", value: count)
+          .withPublic(key: "errorCode", value: status)
+      )
+      await logger?.log(.error, "Failed to generate secure random bytes, status: \(status)", context: context)
       // Returning non-secure bytes as a fallback - consider throwing an error instead
-      return Data((0..<count).map { _ in UInt8.random(in: 0...255) })
+      return [UInt8](repeating: 0, count: count)
     }
   }
 
@@ -422,31 +420,49 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
     hashIdentifier: String,
     options _: CoreSecurityTypes.HashingOptions? = nil
   ) async -> Result<Bool, SecurityStorageError> {
-    let context: LogContextDTO = LogContextDTO(subsystem: "CryptoService", category: "Hashing")
-    await logger?.debug(
+    let context: BaseLogContextDTO = BaseLogContextDTO(
+      domainName: "CryptoService",
+      source: "DefaultCryptoServiceImpl.verifyHash",
+      metadata: LogMetadataDTOCollection()
+        .withPublic(key: "dataIdentifier", value: dataIdentifier)
+        .withPublic(key: "hashIdentifier", value: hashIdentifier)
+    )
+    await logger?.log(
+      .debug,
       "Verifying hash for data \(dataIdentifier) against hash \(hashIdentifier)", context: context
     )
     // 1. Retrieve original data
     let dataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
     guard case .success(let originalData) = dataResult else {
-      await logger?.error("Failed to retrieve original data for hash verification", context: context)
-      return .failure(dataResult.error ?? .dataNotFound(identifier: dataIdentifier))
+      await logger?.log(.error, "Failed to retrieve original data for hash verification", context: context)
+      // Correct Result error handling
+      if case let .failure(error) = dataResult {
+         return .failure(error)
+      }
+      return .failure(.dataNotFound) // Use correct error case without associated value
     }
 
     // 2. Retrieve stored hash
     let hashResult = await secureStorage.retrieveData(withIdentifier: hashIdentifier)
     guard case .success(let storedHash) = hashResult else {
-      await logger?.error("Failed to retrieve stored hash for verification", context: context)
-      return .failure(hashResult.error ?? .dataNotFound(identifier: hashIdentifier))
+      await logger?.log(.error, "Failed to retrieve stored hash for verification", context: context)
+      // Correct Result error handling
+      if case let .failure(error) = hashResult {
+         return .failure(error)
+      }
+      return .failure(.dataNotFound) // Use correct error case without associated value
     }
 
-    // 3. Generate hash of original data (using a basic SHA256 for this stub)
-    let generatedHash = sha256(data: originalData)
+    // 3. Generate hash of original data using CommonCrypto
+    var generatedHash = [UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
+    _ = originalData.withUnsafeBytes { // Use withUnsafeBytes for [UInt8]
+        CC_SHA256($0.baseAddress, CC_LONG(originalData.count), &generatedHash)
+    }
 
     // 4. Compare hashes
-    let match = generatedHash == storedHash
-    await logger?.info("Hash verification result: \(match)", context: context)
-    return .success(match)
+    let hashesMatch = generatedHash == storedHash
+    await logger?.log(.info, "Hash verification result: \(hashesMatch)", context: context)
+    return .success(hashesMatch)
   }
 
   // Note: generateKey needs the optional options parameter
@@ -454,122 +470,24 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
     length: Int,
     options _: CoreSecurityTypes.KeyGenerationOptions? = nil
   ) async -> Result<String, SecurityStorageError> {
-    let context: LogContextDTO = LogContextDTO(subsystem: "CryptoService", category: "KeyManagement")
-    await logger?.debug("Generating key of length \(length)...", context: context)
+    let context: BaseLogContextDTO = BaseLogContextDTO(
+      domainName: "CryptoService",
+      source: "DefaultCryptoServiceImpl.generateKey",
+      metadata: LogMetadataDTOCollection()
+        .withPublic(key: "length", value: length)
+    )
+    await logger?.log(.debug, "Generating key of length \(length)...", context: context)
     let keyData = generateRandomBytes(count: length)
     let keyIdentifier = "key_\(UUID().uuidString)"
-    let storeResult = await secureStorage.storeData([UInt8](keyData), withIdentifier: keyIdentifier)
+    let storeResult = await secureStorage.storeData(keyData, withIdentifier: keyIdentifier)
 
     switch storeResult {
       case .success:
-        await logger?.info("Successfully generated and stored key with id: \(keyIdentifier)", context: context)
+        await logger?.log(.info, "Successfully generated and stored key with id: \(keyIdentifier)", context: context)
         return .success(keyIdentifier)
       case .failure(let error):
-        await logger?.error("Failed to store generated key: \(error.description)", context: context)
+        await logger?.log(.error, "Failed to store generated key: \(error.description)", context: context)
         return .failure(error)
     }
-  }
-
-  // MARK: - Protocol Methods Requiring Data Type
-
-  // These methods are part of CryptoServiceProtocol but were likely
-  // missed or had incorrect signatures in previous implementations.
-  // They expect `Data` instead of `[UInt8]` for storage operations.
-
-  public func storeData(
-    data: Data, // Protocol expects Data
-    identifier: String
-  ) async -> Result<Void, SecurityStorageError> {
-    let context: BaseLogContextDTO = BaseLogContextDTO(
-      domainName: "CryptoService",
-      source: "DefaultCryptoServiceImpl.storeData",
-      metadata: LogMetadataDTOCollection()
-        .withPublic(key: "identifier", value: identifier)
-        .withPrivate(key: "data_size", value: String(data.count)) // Convert Int to String
-    )
-
-    await logger?.log(.debug, "Storing data with identifier: \(identifier)", context: context)
-    // Use the correct storage method
-    let result: Result<Void, SecurityStorageError> = await secureStorage.storeData(
-        [UInt8](data), // Convert Data to [UInt8] for the protocol
-        withIdentifier: identifier
-    )
-
-    if case .failure(let error) = result {
-       await logger?.log(.error, "Failed to store data: \(error)", context: context)
-    } else {
-       await logger?.log(.info, "Successfully stored data for identifier: \(identifier)", context: context)
-    }
-    return result
-  }
-
-  public func retrieveData(
-    identifier: String
-  ) async -> Result<Data, SecurityStorageError> { // Protocol expects Data
-    let context: BaseLogContextDTO = BaseLogContextDTO(
-      domainName: "CryptoService",
-      source: "DefaultCryptoServiceImpl.retrieveData",
-      metadata: LogMetadataDTOCollection()
-        .withPublic(key: "identifier", value: identifier)
-    )
-
-    await logger?.log(.debug, "Retrieving data with identifier: \(identifier)", context: context)
-    // Use the correct storage method and map result
-    let result: Result<[UInt8], SecurityStorageError> = await secureStorage.retrieveData(withIdentifier: identifier)
-
-    // Handle result and map error synchronously after await
-    switch result {
-      case let .success(bytes):
-        return .success(Data(bytes))
-      case .failure(let error):
-        await logger?.log(.error, "Failed to retrieve data: \(error)", context: context)
-        return .failure(error) // Pass storage error directly
-    }
-  }
-
-  public func deleteData(
-    identifier: String
-  ) async -> Result<Void, SecurityStorageError> {
-     let context: BaseLogContextDTO = BaseLogContextDTO(
-      domainName: "CryptoService",
-      source: "DefaultCryptoServiceImpl.deleteData",
-      metadata: LogMetadataDTOCollection()
-        .withPublic(key: "identifier", value: identifier)
-    )
-    await logger?.log(.debug, "Deleting data with identifier: \(identifier)", context: context)
-    let result: Result<Void, SecurityStorageError> = await secureStorage.deleteData(withIdentifier: identifier) // Use correct method
-    if case .failure(let error) = result {
-       await logger?.log(.error, "Failed to delete data: \(error)", context: context)
-    } else {
-       await logger?.log(.info, "Successfully deleted data for identifier: \(identifier)", context: context)
-    }
-    return result
-  }
-
-  // Ensure generateHash signature matches protocol
-  public func generateHash(
-    dataIdentifier: String,
-    options _: CoreSecurityTypes.HashingOptions? = nil // Add options parameter
-  ) async -> Result<String, SecurityStorageError> {
-      return await hash(dataIdentifier: dataIdentifier, options: options)
-  }
-
-  // Keep the existing importData signature expecting [UInt8]
-  // but also add the one expecting Data to satisfy the protocol.
-  public func importData(
-    _ data: Data, // Protocol expects Data
-    customIdentifier: String
-  ) async -> Result<String, SecurityStorageError> {
-      let context: LogContextDTO = LogContextDTO(subsystem: "CryptoService", category: "Import")
-      await logger?.debug("Importing Data with custom identifier: \(customIdentifier)", context: context)
-      // Store the raw data using the secure storage protocol, converting Data to [UInt8]
-      let result: Result<Void, SecurityStorageError> = await secureStorage.storeData([UInt8](data), withIdentifier: customIdentifier)
-      switch result {
-        case .success:
-          return .success(customIdentifier)
-        case .failure(let error):
-          await logger?.error("Failed to import raw Data: \(error.description)", context: context)
-          return .failure(error) // Pass the storage error through
-      }
   }
 }

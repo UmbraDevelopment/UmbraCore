@@ -157,7 +157,7 @@ public actor MockCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
   public func decrypt(
     encryptedDataIdentifier: String,
     keyIdentifier _: String,
-    options _: SecurityCoreInterfaces.DecryptionOptions?
+    options _: CoreSecurityTypes.DecryptionOptions?
   ) async -> Result<String, SecurityStorageError> {
     await logger.debug(
       "Decrypting data \(encryptedDataIdentifier)",
@@ -215,7 +215,7 @@ public actor MockCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
    */
   public func hash(
     dataIdentifier: String,
-    options _: HashingOptions?
+    options _: CoreSecurityTypes.HashingOptions?
   ) async -> Result<String, SecurityStorageError> {
     await logger.debug(
       "Hashing data \(dataIdentifier)",
@@ -273,7 +273,7 @@ public actor MockCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
   public func verifyHash(
     dataIdentifier _: String,
     hashIdentifier _: String,
-    options _: HashingOptions?
+    options _: CoreSecurityTypes.HashingOptions?
   ) async -> Result<Bool, SecurityStorageError> {
     await logger.debug(
       "Verifying hash",
@@ -323,7 +323,7 @@ public actor MockCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
    */
   public func generateKey(
     length: Int,
-    options _: SecurityCoreInterfaces.KeyGenerationOptions?
+    options _: CoreSecurityTypes.KeyGenerationOptions?
   ) async -> Result<String, SecurityStorageError> {
     await logger.debug(
       "Generating key with length \(length)",
