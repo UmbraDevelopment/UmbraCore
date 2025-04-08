@@ -1,12 +1,18 @@
 import APIInterfaces
+import APIInterfaces // Import the module where APIOperation is defined
 import BackupInterfaces
+import CoreDTOs
+import CoreSecurityTypes // Import the module where SecurityConfigOptions is defined
+import CryptoInterfaces
 import Foundation
 import LoggingInterfaces
-import LoggingServices
+import LoggingServices // Import for LoggingServiceFactory
 import LoggingTypes
 import RepositoryInterfaces
 import SecurityCoreInterfaces
 import SecurityInterfaces
+import LoggingServices // Added
+import APIInterfaces // Added
 
 /**
  # Alpha API Service Factory
@@ -168,7 +174,7 @@ public enum AlphaAPIServiceFactory {
    */
   private static func createDefaultLogger() -> LoggingProtocol {
     // In a real implementation, this would use proper logging configuration
-    LoggingServices.createLogger(
+    LoggingServiceFactory.createDevelopmentLogger(
       domain: "APIService",
       category: "Service"
     )
@@ -180,7 +186,7 @@ public enum AlphaAPIServiceFactory {
    - Returns: A configured logger
    */
   private static func createProductionLogger() -> LoggingProtocol {
-    LoggingServices.createLogger(
+    LoggingServiceFactory.createStandardLogger(
       domain: "APIService",
       category: "Service"
     )
@@ -192,9 +198,10 @@ public enum AlphaAPIServiceFactory {
    - Returns: A configured logger
    */
   private static func createTestingLogger() -> LoggingProtocol {
-    LoggingServices.createLogger(
+    LoggingServiceFactory.createDevelopmentLogger(
       domain: "APIServiceTest",
-      category: "Test"
+      category: "Test",
+      minimumLevel: LoggingTypes.UmbraLogLevel.debug // Ensure debug logs are captured for tests
     )
   }
 
@@ -359,15 +366,13 @@ private struct RepositoryDomainHandlerImpl: DomainHandler {
   let service: RepositoryServiceProtocol
   let logger: LoggingProtocol
 
-  func execute(_: some APIOperation) async throws -> Any {
-    throw APIError.operationNotSupported(
-      message: "Repository operations not yet implemented",
-      code: "NOT_IMPLEMENTED"
-    )
-  }
+  var domain: APIDomain { .repository }
 
-  func supports(_ operation: some APIOperation) -> Bool {
-    operation is any RepositoryAPIOperation
+  func handleOperation<T: APIOperation>(operation _: T) async throws -> T.APIOperationResult {
+    throw APIError.operationNotSupported(
+      message: "Operation not implemented in placeholder RepositoryDomainHandlerImpl",
+      code: "REPO_HANDLER_STUB"
+    )
   }
 }
 
@@ -376,15 +381,13 @@ private struct BackupDomainHandlerImpl: DomainHandler {
   let service: BackupServiceProtocol
   let logger: LoggingProtocol
 
-  func execute(_: some APIOperation) async throws -> Any {
-    throw APIError.operationNotSupported(
-      message: "Backup operations not yet implemented",
-      code: "NOT_IMPLEMENTED"
-    )
-  }
+  var domain: APIDomain { .backup }
 
-  func supports(_ operation: some APIOperation) -> Bool {
-    operation is any BackupAPIOperation
+  func handleOperation<T: APIOperation>(operation _: T) async throws -> T.APIOperationResult {
+    throw APIError.operationNotSupported(
+      message: "Operation not implemented in placeholder BackupDomainHandlerImpl",
+      code: "BACKUP_HANDLER_STUB"
+    )
   }
 }
 
@@ -394,13 +397,14 @@ private struct BackupDomainHandlerImpl: DomainHandler {
 private struct SecurityDomainHandlerMock: DomainHandler {
   let logger: LoggingProtocol
 
-  func execute(_: some APIOperation) async throws -> Any {
-    // Return mock data depending on operation type
-    "mock_security_result"
-  }
+  var domain: APIDomain { .security }
 
-  func supports(_ operation: some APIOperation) -> Bool {
-    operation is any SecurityAPIOperation
+  func handleOperation<T: APIOperation>(operation _: T) async throws -> T.APIOperationResult {
+    // Return a mock response or throw an error for testing
+    throw APIError.operationNotSupported(
+      message: "Operation not implemented in mock SecurityDomainHandlerMock",
+      code: "SEC_HANDLER_MOCK_STUB"
+    )
   }
 }
 
@@ -408,13 +412,13 @@ private struct SecurityDomainHandlerMock: DomainHandler {
 private struct RepositoryDomainHandlerMock: DomainHandler {
   let logger: LoggingProtocol
 
-  func execute(_: some APIOperation) async throws -> Any {
-    // Return mock data depending on operation type
-    "mock_repository_result"
-  }
+  var domain: APIDomain { .repository }
 
-  func supports(_ operation: some APIOperation) -> Bool {
-    operation is any RepositoryAPIOperation
+  func handleOperation<T: APIOperation>(operation _: T) async throws -> T.APIOperationResult {
+    throw APIError.operationNotSupported(
+      message: "Operation not implemented in mock RepositoryDomainHandlerMock",
+      code: "REPO_HANDLER_MOCK_STUB"
+    )
   }
 }
 
@@ -422,13 +426,13 @@ private struct RepositoryDomainHandlerMock: DomainHandler {
 private struct BackupDomainHandlerMock: DomainHandler {
   let logger: LoggingProtocol
 
-  func execute(_: some APIOperation) async throws -> Any {
-    // Return mock data depending on operation type
-    "mock_backup_result"
-  }
+  var domain: APIDomain { .backup }
 
-  func supports(_ operation: some APIOperation) -> Bool {
-    operation is any BackupAPIOperation
+  func handleOperation<T: APIOperation>(operation _: T) async throws -> T.APIOperationResult {
+    throw APIError.operationNotSupported(
+      message: "Operation not implemented in mock BackupDomainHandlerMock",
+      code: "BACKUP_HANDLER_MOCK_STUB"
+    )
   }
 }
 
@@ -437,23 +441,24 @@ private class SystemDomainHandlerMock: DomainHandler {
   /// Logger instance
   private let logger: LoggingProtocol
 
+  var domain: APIDomain { .system }
+
   /// Initializer
   /// - Parameter logger: Logger to use for this handler
   init(logger: LoggingProtocol?) {
-    self.logger=logger ?? LoggingServices.createLogger(domain: "SystemDomainMock", category: "Test")
+    self.logger=logger ?? LoggingServiceFactory.createDevelopmentLogger(domain: "SystemDomainMock", category: "Test")
   }
 
-  /// Execute a system API operation
-  /// - Parameter operation: Operation to execute
-  /// - Returns: Result of the operation
-  func execute(_: some APIOperation) async throws -> Any {
-    "Mock system operation executed"
-  }
-
-  /// Check if this handler supports a given operation
-  /// - Parameter operation: Operation to check
-  /// - Returns: true if the operation is supported
-  func supports(_: some APIOperation) -> Bool {
-    true
+  /// Handle system operations (mock implementation)
+  func handleOperation<T: APIOperation>(operation _: T) async throws -> T.APIOperationResult {
+    await logger.info(
+      "Handling system operation in mock handler",
+      context: BaseLogContextDTO(domainName: "SystemDomainMock", source: "handleOperation")
+    )
+    // Return mock data or throw specific errors for testing scenarios
+    throw APIError.operationNotSupported(
+      message: "Operation not implemented in mock SystemDomainHandlerMock",
+      code: "SYS_HANDLER_MOCK_STUB"
+    )
   }
 }

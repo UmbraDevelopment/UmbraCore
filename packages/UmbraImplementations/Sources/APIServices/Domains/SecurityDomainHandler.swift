@@ -1,4 +1,5 @@
 import APIInterfaces
+import APIInterfaces
 import CoreSecurityTypes
 import CryptoTypes
 import DomainSecurityTypes
@@ -68,88 +69,6 @@ public struct SecurityDomainHandler: DomainHandler {
   }
 
   /**
-   Executes a security operation and returns its result.
-
-   - Parameter operation: The operation to execute
-   - Returns: The result of the operation
-   - Throws: APIError if the operation fails
-
-   All operations are executed through the actor-based security service,
-   ensuring proper isolation and memory protection.
-   */
-  public func execute(_ operation: some APIOperation) async throws -> Any {
-    // Log the operation start with privacy-aware metadata
-    let operationName=String(describing: type(of: operation))
-    let startMetadata=LogMetadataDTOCollection()
-      .with(key: "operation", value: operationName, privacyLevel: .public)
-      .with(key: "event", value: "start", privacyLevel: .public)
-
-    await logger?.debug(
-      "Handling security operation: \(operationName)",
-      context: LogContextDTO(
-        domainName: "security",
-        source: "SecurityDomainHandler",
-        metadata: startMetadata
-      )
-    )
-
-    // Handle different operation types
-    do {
-      // Handle the operation based on its type
-      let result=try await executeSecurityOperation(operation)
-
-      // Log success
-      let successMetadata=LogMetadataDTOCollection()
-        .with(key: "operation", value: operationName, privacyLevel: .public)
-        .with(key: "event", value: "success", privacyLevel: .public)
-        .with(key: "status", value: "completed", privacyLevel: .public)
-
-      await logger?.info(
-        "Security operation completed successfully",
-        context: LogContextDTO(
-          domainName: "security",
-          source: "SecurityDomainHandler",
-          metadata: successMetadata
-        )
-      )
-
-      return result
-    } catch let error as APIError {
-      // Already an APIError, just log and rethrow
-      let errorMetadata=LogMetadataDTOCollection()
-        .with(key: "error_code", value: error.code, privacyLevel: .public)
-        .with(key: "error_domain", value: "security", privacyLevel: .public)
-
-      await logger?.error(
-        "Security operation failed: \(error.localizedDescription)",
-        context: LogContextDTO(
-          domainName: "security",
-          source: "SecurityDomainHandler",
-          metadata: errorMetadata
-        )
-      )
-
-      throw error
-    } catch {
-      // Map to appropriate APIError
-      let apiError=mapToAPIError(error)
-
-      await logger?.error(
-        "Security operation failed: \(apiError.localizedDescription)",
-        context: LogContextDTO(
-          domainName: "security",
-          source: "SecurityDomainHandler",
-          metadata: LogMetadataDTOCollection()
-            .with(key: "error_code", value: apiError.code, privacyLevel: .public)
-            .with(key: "error_domain", value: "security", privacyLevel: .public)
-        )
-      )
-
-      throw apiError
-    }
-  }
-
-  /**
    Determines if this handler supports the given operation.
 
    - Parameter operation: The operation to check support for
@@ -157,6 +76,104 @@ public struct SecurityDomainHandler: DomainHandler {
    */
   public func supports(_ operation: some APIOperation) -> Bool {
     operation is any SecurityAPIOperation
+  }
+
+  // MARK: - DomainHandler Conformance
+  public var domain: String { APIDomain.security.rawValue }
+
+  /**
+   Handles an incoming API operation for the Security domain.
+
+   - Parameter operation: The API operation to handle, conforming to `APIOperation`.
+   - Returns: The result of the operation, specific to the operation type (`T.APIOperationResult`).
+   - Throws: `APIError` if the operation fails or is not supported.
+   */
+  public func handleOperation<T: APIOperation>(operation: T) async throws -> T.APIOperationResult {
+    // Ensure the operation is a security operation
+    guard operation is SecurityAPIOperation else {
+      // This should technically not happen if routing is correct, but good practice
+      throw APIError.operationNotSupported(
+        message: "Operation type \(String(describing: type(of: operation))) not supported by SecurityDomainHandler",
+        code: "UNSUPPORTED_OPERATION"
+      )
+    }
+
+    // Log the operation start with privacy-aware metadata
+    let operationName = String(describing: type(of: operation))
+    let startMetadata = LogMetadataDTOCollection()
+      .with(key: "operation", value: operationName, privacyLevel: .public)
+      .with(key: "event", value: "start", privacyLevel: .public)
+
+    await logger?.debug(
+      "Handling security operation: \(operationName)",
+      context: BaseLogContextDTO(
+        domainName: domain,
+        source: "SecurityDomainHandler.handleOperation",
+        metadata: startMetadata
+      )
+    )
+
+    do {
+      // Execute the specific security operation
+      let resultAny = try await executeSecurityOperation(operation as T)
+
+      // Attempt to cast the result to the expected type
+      guard let result = resultAny as? T.APIOperationResult else {
+        // This indicates an internal inconsistency - the handler returned an unexpected type
+        await logger?.critical(
+          "Internal error: executeSecurityOperation returned unexpected type \(String(describing: type(of: resultAny))) for operation \(operationName). Expected \(String(describing: T.APIOperationResult.self))",
+          context: BaseLogContextDTO(domainName: domain, source: "SecurityDomainHandler.handleOperation")
+        )
+        throw APIError.operationFailed(message: "Internal inconsistency: Invalid result type from security operation handler.", code: "INTERNAL_TYPE_ERROR")
+      }
+
+      // Log success
+      let successMetadata = LogMetadataDTOCollection()
+        .with(key: "operation", value: operationName, privacyLevel: .public)
+        .with(key: "event", value: "success", privacyLevel: .public)
+        .with(key: "status", value: "completed", privacyLevel: .public)
+
+      await logger?.info(
+        "Security operation completed successfully",
+        context: BaseLogContextDTO(
+          domainName: domain,
+          source: "SecurityDomainHandler.handleOperation",
+          metadata: successMetadata
+        )
+      )
+      return result
+    } catch let error as APIError {
+      // Log and rethrow known API errors
+      let errorMetadata = LogMetadataDTOCollection()
+        .with(key: "error_domain", value: domain, privacyLevel: .public)
+        .with(key: "operation", value: operationName, privacyLevel: .public)
+
+      await logger?.error(
+        "Security operation failed: \(error.localizedDescription)",
+        context: BaseLogContextDTO(
+          domainName: domain,
+          source: "SecurityDomainHandler.handleOperation",
+          metadata: errorMetadata
+        )
+      )
+      throw error
+    } catch {
+      // Map other errors to APIError, log, and throw
+      let apiError = mapToAPIError(error)
+      let errorMetadata = LogMetadataDTOCollection()
+        .with(key: "error_domain", value: domain, privacyLevel: .public)
+        .with(key: "operation", value: operationName, privacyLevel: .public)
+
+      await logger?.error(
+        "Security operation failed: \(apiError.localizedDescription)",
+        context: BaseLogContextDTO(
+          domainName: domain,
+          source: "SecurityDomainHandler.handleOperation",
+          metadata: errorMetadata
+        )
+      )
+      throw apiError
+    }
   }
 
   // MARK: - Private Helper Methods
@@ -171,7 +188,7 @@ public struct SecurityDomainHandler: DomainHandler {
    Each handler method uses proper Sendable types and actor-based secure storage
    to maintain memory safety and thread isolation.
    */
-  private func executeSecurityOperation(_ operation: some APIOperation) async throws -> Any {
+  private func executeSecurityOperation<T: APIOperation>(_ operation: T) async throws -> Any {
     switch operation {
       case let op as EncryptData:
         return try await handleEncryptData(op)
@@ -331,7 +348,7 @@ public struct SecurityDomainHandler: DomainHandler {
         // SHA-1 is deprecated, use SHA-256 as a secure alternative
         await logger?.warning(
           "SHA-1 is deprecated and was requested, using SHA-256 instead",
-          context: LogContextDTO(
+          context: BaseLogContextDTO(
             domainName: "security",
             source: "SecurityDomainHandler",
             metadata: LogMetadataDTOCollection()
@@ -344,7 +361,7 @@ public struct SecurityDomainHandler: DomainHandler {
         // SHA-384 is not directly supported, use SHA-512 instead
         await logger?.warning(
           "SHA-384 is not directly supported, using SHA-512 instead",
-          context: LogContextDTO(
+          context: BaseLogContextDTO(
             domainName: "security",
             source: "SecurityDomainHandler",
             metadata: LogMetadataDTOCollection()
@@ -358,7 +375,7 @@ public struct SecurityDomainHandler: DomainHandler {
           // Default to SHA-256 for empty string
           await logger?.warning(
             "Empty hash algorithm specified, using SHA-256 as default",
-            context: LogContextDTO(
+            context: BaseLogContextDTO(
               domainName: "security",
               source: "SecurityDomainHandler",
               metadata: LogMetadataDTOCollection()
@@ -387,7 +404,7 @@ public struct SecurityDomainHandler: DomainHandler {
 
     await logger?.debug(
       "Processing encryption request",
-      context: LogContextDTO(
+      context: BaseLogContextDTO(
         domainName: "security",
         source: "SecurityDomainHandler",
         metadata: encryptionMetadata
@@ -453,7 +470,7 @@ public struct SecurityDomainHandler: DomainHandler {
 
     await logger?.debug(
       "Processing decryption request",
-      context: LogContextDTO(
+      context: BaseLogContextDTO(
         domainName: "security",
         source: "SecurityDomainHandler",
         metadata: decryptionMetadata
@@ -511,7 +528,7 @@ public struct SecurityDomainHandler: DomainHandler {
 
     await logger?.debug(
       "Generating cryptographic key",
-      context: LogContextDTO(
+      context: BaseLogContextDTO(
         domainName: "security",
         source: "SecurityDomainHandler",
         metadata: keyGenMetadata
@@ -566,7 +583,7 @@ public struct SecurityDomainHandler: DomainHandler {
 
     await logger?.debug(
       "Computing hash for data",
-      context: LogContextDTO(
+      context: BaseLogContextDTO(
         domainName: "security",
         source: "SecurityDomainHandler",
         metadata: hashMetadata
@@ -598,7 +615,7 @@ public struct SecurityDomainHandler: DomainHandler {
 
     await logger?.debug(
       "Storing cryptographic key",
-      context: LogContextDTO(
+      context: BaseLogContextDTO(
         domainName: "security",
         source: "SecurityDomainHandler",
         metadata: storeMetadata
@@ -640,7 +657,7 @@ public struct SecurityDomainHandler: DomainHandler {
 
     await logger?.info(
       "Key stored successfully",
-      context: LogContextDTO(
+      context: BaseLogContextDTO(
         domainName: "security",
         source: "SecurityDomainHandler",
         metadata: LogMetadataDTOCollection()
@@ -667,7 +684,7 @@ public struct SecurityDomainHandler: DomainHandler {
 
     await logger?.debug(
       "Retrieving cryptographic key",
-      context: LogContextDTO(
+      context: BaseLogContextDTO(
         domainName: "security",
         source: "SecurityDomainHandler",
         metadata: retrieveMetadata
@@ -700,7 +717,7 @@ public struct SecurityDomainHandler: DomainHandler {
 
       await logger?.info(
         "Key retrieved successfully",
-        context: LogContextDTO(
+        context: BaseLogContextDTO(
           domainName: "security",
           source: "SecurityDomainHandler",
           metadata: LogMetadataDTOCollection()
@@ -721,17 +738,17 @@ public struct SecurityDomainHandler: DomainHandler {
     } catch {
       await logger?.error(
         "Failed to retrieve key",
-        context: LogContextDTO(
+        context: BaseLogContextDTO(
           domainName: "security",
           source: "SecurityDomainHandler",
           metadata: LogMetadataDTOCollection()
             .with(key: "operation", value: "retrieveKey", privacyLevel: .public)
             .with(key: "key_id", value: operation.identifier, privacyLevel: .private)
-            .with(key: "error", value: error.localizedDescription, privacyLevel: .private),
-          error: error
+            .with(key: "error", value: error.localizedDescription, privacyLevel: .private)
         )
       )
 
+      // Rethrow the error after logging
       throw mapToAPIError(error)
     }
   }
@@ -749,7 +766,7 @@ public struct SecurityDomainHandler: DomainHandler {
 
     await logger?.debug(
       "Deleting cryptographic key",
-      context: LogContextDTO(
+      context: BaseLogContextDTO(
         domainName: "security",
         source: "SecurityDomainHandler",
         metadata: deleteMetadata
@@ -781,7 +798,7 @@ public struct SecurityDomainHandler: DomainHandler {
 
     await logger?.info(
       "Key deleted successfully",
-      context: LogContextDTO(
+      context: BaseLogContextDTO(
         domainName: "security",
         source: "SecurityDomainHandler",
         metadata: LogMetadataDTOCollection()
@@ -818,7 +835,7 @@ public struct SecurityDomainHandler: DomainHandler {
 
     await logger?.debug(
       "Storing secret data",
-      context: LogContextDTO(
+      context: BaseLogContextDTO(
         domainName: "security",
         source: "SecurityDomainHandler",
         metadata: storeMetadata
@@ -833,7 +850,7 @@ public struct SecurityDomainHandler: DomainHandler {
 
     await logger?.info(
       "Successfully stored secret",
-      context: LogContextDTO(
+      context: BaseLogContextDTO(
         domainName: "security",
         source: "SecurityDomainHandler",
         metadata: LogMetadataDTOCollection()
@@ -861,7 +878,7 @@ public struct SecurityDomainHandler: DomainHandler {
 
     await logger?.debug(
       "Retrieving secret data",
-      context: LogContextDTO(
+      context: BaseLogContextDTO(
         domainName: "security",
         source: "SecurityDomainHandler",
         metadata: retrieveMetadata
@@ -881,7 +898,7 @@ public struct SecurityDomainHandler: DomainHandler {
 
       await logger?.info(
         "Successfully retrieved secret",
-        context: LogContextDTO(
+        context: BaseLogContextDTO(
           domainName: "security",
           source: "SecurityDomainHandler",
           metadata: LogMetadataDTOCollection()
@@ -895,14 +912,13 @@ public struct SecurityDomainHandler: DomainHandler {
     } catch {
       await logger?.error(
         "Failed to retrieve secret",
-        context: LogContextDTO(
+        context: BaseLogContextDTO(
           domainName: "security",
           source: "SecurityDomainHandler",
           metadata: LogMetadataDTOCollection()
             .with(key: "operation", value: "retrieveSecret", privacyLevel: .public)
             .with(key: "secret_id", value: operation.identifier, privacyLevel: .private)
-            .with(key: "error", value: error.localizedDescription, privacyLevel: .private),
-          error: error
+            .with(key: "error", value: error.localizedDescription, privacyLevel: .private)
         )
       )
 
@@ -924,7 +940,7 @@ public struct SecurityDomainHandler: DomainHandler {
 
     await logger?.debug(
       "Deleting secret data",
-      context: LogContextDTO(
+      context: BaseLogContextDTO(
         domainName: "security",
         source: "SecurityDomainHandler",
         metadata: deleteMetadata
@@ -943,7 +959,7 @@ public struct SecurityDomainHandler: DomainHandler {
 
     await logger?.info(
       "Successfully deleted secret",
-      context: LogContextDTO(
+      context: BaseLogContextDTO(
         domainName: "security",
         source: "SecurityDomainHandler",
         metadata: LogMetadataDTOCollection()
@@ -989,32 +1005,9 @@ public struct SecurityDomainHandler: DomainHandler {
 
 // MARK: - Core API Types
 
-/**
- Base protocol for all API operations
- */
-public protocol APIOperation: Sendable {}
-
-/**
- Result of encryption operations
- */
-public struct EncryptionResult {
-  public let encryptedData: Data
-  public let key: SendableCryptoMaterial?
-  public let keyIdentifier: String?
-  public let algorithm: String
-
-  public init(
-    encryptedData: Data,
-    key: SendableCryptoMaterial?=nil,
-    keyIdentifier: String?=nil,
-    algorithm: String
-  ) {
-    self.encryptedData=encryptedData
-    self.key=key
-    self.keyIdentifier=keyIdentifier
-    self.algorithm=algorithm
-  }
-}
+// MARK: - Deprecated Local Types (Moved or Replaced)
+// Local APIOperation removed (use APIInterfaces.APIOperation)
+// Local EncryptionResult likely replaced by a DTO or type in CryptoInterfaces/Types
 
 /**
  A type-safe wrapper for cryptographic material that can be safely passed across actor boundaries.

@@ -30,6 +30,8 @@ umbra_swift_library(
         "//packages/UmbraInterfaces/Sources/SecurityInterfaces",
         "//packages/UmbraImplementations/Sources/LoggingServices",
         "//packages/UmbraImplementations/Sources/LoggingAdapters",
+        "//packages/UmbraImplementations/Sources/SecurityProviders",
         "//packages/UmbraImplementations/Sources/CryptoServices/Logging:CryptoLogger",
+        "//packages/UmbraImplementations/Sources/KeychainServices:KeychainServices", # Added potential SecureStorage provider
     ],
 )

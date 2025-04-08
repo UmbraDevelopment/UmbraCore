@@ -51,6 +51,14 @@ public struct BackupDomainHandler: DomainHandler {
     self.logger=logger
   }
 
+  // MARK: - DomainHandler Conformance
+  public var domain: String { APIDomain.backup.rawValue }
+
+  public func handleOperation<T: APIOperation>(operation: T) async throws -> Any {
+    // Call the existing execute method
+    return try await execute(operation)
+  }
+
   /**
    Executes a backup operation and returns its result.
 
@@ -67,7 +75,8 @@ public struct BackupDomainHandler: DomainHandler {
 
     await logger?.info(
       "Starting backup operation",
-      context: CoreLogContext(
+      context: BaseLogContextDTO(
+        domainName: "backup",
         source: "BackupDomainHandler",
         metadata: startMetadata
       )
@@ -85,7 +94,8 @@ public struct BackupDomainHandler: DomainHandler {
 
       await logger?.info(
         "Backup operation completed successfully",
-        context: CoreLogContext(
+        context: BaseLogContextDTO(
+          domainName: "backup",
           source: "BackupDomainHandler",
           metadata: successMetadata
         )
@@ -102,7 +112,8 @@ public struct BackupDomainHandler: DomainHandler {
 
       await logger?.error(
         "Backup operation failed",
-        context: CoreLogContext(
+        context: BaseLogContextDTO(
+          domainName: "backup",
           source: "BackupDomainHandler",
           metadata: errorMetadata
         )
@@ -263,7 +274,8 @@ public struct BackupDomainHandler: DomainHandler {
 
     await logger?.info(
       "Listing snapshots",
-      context: CoreLogContext(
+      context: BaseLogContextDTO(
+        domainName: "backup",
         source: "BackupDomainHandler",
         metadata: metadata
       )
@@ -317,7 +329,8 @@ public struct BackupDomainHandler: DomainHandler {
 
     await logger?.info(
       "Found snapshots",
-      context: CoreLogContext(
+      context: BaseLogContextDTO(
+        domainName: "backup",
         source: "BackupDomainHandler",
         metadata: resultMetadata
       )
@@ -344,7 +357,8 @@ public struct BackupDomainHandler: DomainHandler {
 
     await logger?.info(
       "Retrieving snapshot details",
-      context: CoreLogContext(
+      context: BaseLogContextDTO(
+        domainName: "backup",
         source: "BackupDomainHandler",
         metadata: metadata
       )
@@ -399,7 +413,8 @@ public struct BackupDomainHandler: DomainHandler {
 
     await logger?.info(
       "Snapshot details retrieved",
-      context: CoreLogContext(
+      context: BaseLogContextDTO(
+        domainName: "backup",
         source: "BackupDomainHandler",
         metadata: metadata.with(
           key: "status",
@@ -454,7 +469,8 @@ public struct BackupDomainHandler: DomainHandler {
 
     await logger?.info(
       "Creating new snapshot",
-      context: CoreLogContext(
+      context: BaseLogContextDTO(
+        domainName: "backup",
         source: "BackupDomainHandler",
         metadata: metadata
       )
@@ -498,7 +514,8 @@ public struct BackupDomainHandler: DomainHandler {
 
     await logger?.info(
       "Snapshot created successfully",
-      context: CoreLogContext(
+      context: BaseLogContextDTO(
+        domainName: "backup",
         source: "BackupDomainHandler",
         metadata: metadata.with(
           key: "snapshot_id",
@@ -544,7 +561,8 @@ public struct BackupDomainHandler: DomainHandler {
 
     await logger?.info(
       "Updating snapshot metadata",
-      context: CoreLogContext(
+      context: BaseLogContextDTO(
+        domainName: "backup",
         source: "BackupDomainHandler",
         metadata: metadata
       )
@@ -588,7 +606,8 @@ public struct BackupDomainHandler: DomainHandler {
 
     await logger?.info(
       "Snapshot updated successfully",
-      context: CoreLogContext(
+      context: BaseLogContextDTO(
+        domainName: "backup",
         source: "BackupDomainHandler",
         metadata: metadata.with(
           key: "status",
@@ -617,7 +636,8 @@ public struct BackupDomainHandler: DomainHandler {
 
     await logger?.info(
       "Deleting snapshot",
-      context: CoreLogContext(
+      context: BaseLogContextDTO(
+        domainName: "backup",
         source: "BackupDomainHandler",
         metadata: metadata
       )
@@ -642,7 +662,8 @@ public struct BackupDomainHandler: DomainHandler {
 
     await logger?.info(
       "Snapshot deleted successfully",
-      context: CoreLogContext(
+      context: BaseLogContextDTO(
+        domainName: "backup",
         source: "BackupDomainHandler",
         metadata: metadata.with(
           key: "status",
@@ -693,7 +714,8 @@ public struct BackupDomainHandler: DomainHandler {
 
     await logger?.info(
       "Restoring from snapshot",
-      context: CoreLogContext(
+      context: BaseLogContextDTO(
+        domainName: "backup",
         source: "BackupDomainHandler",
         metadata: metadata
       )
@@ -735,7 +757,8 @@ public struct BackupDomainHandler: DomainHandler {
 
     await logger?.info(
       "Snapshot restore completed successfully",
-      context: CoreLogContext(
+      context: BaseLogContextDTO(
+        domainName: "backup",
         source: "BackupDomainHandler",
         metadata: metadata.with(
           key: "files_restored",
@@ -777,7 +800,8 @@ public struct BackupDomainHandler: DomainHandler {
 
     await logger?.info(
       "Forgetting snapshot",
-      context: CoreLogContext(
+      context: BaseLogContextDTO(
+        domainName: "backup",
         source: "BackupDomainHandler",
         metadata: metadata
       )
@@ -803,7 +827,8 @@ public struct BackupDomainHandler: DomainHandler {
 
     await logger?.info(
       "Snapshot forgotten successfully",
-      context: CoreLogContext(
+      context: BaseLogContextDTO(
+        domainName: "backup",
         source: "BackupDomainHandler",
         metadata: metadata.with(
           key: "status",

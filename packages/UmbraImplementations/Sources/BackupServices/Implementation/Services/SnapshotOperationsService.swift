@@ -80,13 +80,14 @@ public actor SnapshotOperationsService {
             BackupProgressInfo(
               phase: .processing,
               percentComplete: 0.3,
-              message: "Retrieving snapshot list",
               itemsProcessed: 0,
               totalItems: 0,
               bytesProcessed: 0,
               totalBytes: 0,
-              elapsedTime: 0,
-              estimatedTimeRemaining: nil
+              estimatedTimeRemaining: nil,
+              error: nil,
+              details: "Retrieving snapshot list",
+              isCancellable: cancellationToken != nil
             ),
             for: .listSnapshots
           )
@@ -134,13 +135,14 @@ public actor SnapshotOperationsService {
             BackupProgressInfo(
               phase: .processing,
               percentComplete: 0.3,
-              message: "Retrieving snapshot details",
               itemsProcessed: 0,
               totalItems: 0,
               bytesProcessed: 0,
               totalBytes: 0,
-              elapsedTime: 0,
-              estimatedTimeRemaining: nil
+              estimatedTimeRemaining: nil,
+              error: nil,
+              details: "Retrieving snapshot details",
+              isCancellable: cancellationToken != nil
             ),
             for: .getSnapshotDetails
           )

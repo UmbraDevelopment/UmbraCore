@@ -1,4 +1,5 @@
 import APIInterfaces
+import CoreSecurityTypes
 import CryptoTypes
 import Foundation
 
