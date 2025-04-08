@@ -215,6 +215,8 @@ public struct RepositoryInfo: Sendable {
   }
 }
 
+import DateTimeTypes
+
 /**
  Detailed repository information structure.
  */
@@ -223,10 +225,10 @@ public struct RepositoryDetails: Sendable {
   public let info: RepositoryInfo
 
   /// When the repository was created
-  public let createdAt: String
+  public let createdAt: DateTimeDTO
 
   /// When the repository was last modified
-  public let lastModifiedAt: String
+  public let lastModifiedAt: DateTimeDTO
 
   /// Total size of the repository in bytes
   public let totalSizeBytes: UInt64
@@ -250,18 +252,58 @@ public struct RepositoryDetails: Sendable {
    */
   public init(
     info: RepositoryInfo,
+    createdAt: DateTimeDTO,
+    lastModifiedAt: DateTimeDTO,
+    totalSizeBytes: UInt64,
+    snapshotCount: Int,
+    isEncrypted: Bool
+  ) {
+    self.info = info
+    self.createdAt = createdAt
+    self.lastModifiedAt = lastModifiedAt
+    self.totalSizeBytes = totalSizeBytes
+    self.snapshotCount = snapshotCount
+    self.isEncrypted = isEncrypted
+  }
+  
+  /**
+   Initialises a new repository details structure with string dates.
+   This is provided for backward compatibility.
+
+   - Parameters:
+      - info: Basic repository information
+      - createdAt: Creation timestamp as ISO8601 string
+      - lastModifiedAt: Last modification timestamp as ISO8601 string
+      - totalSizeBytes: Total size in bytes
+      - snapshotCount: Number of snapshots
+      - isEncrypted: Whether the repository is encrypted
+   */
+  public init(
+    info: RepositoryInfo,
     createdAt: String,
     lastModifiedAt: String,
     totalSizeBytes: UInt64,
     snapshotCount: Int,
     isEncrypted: Bool
   ) {
-    self.info=info
-    self.createdAt=createdAt
-    self.lastModifiedAt=lastModifiedAt
-    self.totalSizeBytes=totalSizeBytes
-    self.snapshotCount=snapshotCount
-    self.isEncrypted=isEncrypted
+    self.info = info
+    
+    // Parse dates or use current time if parsing fails
+    if let createdDate = DateTimeDTO.fromISO8601String(createdAt) {
+      self.createdAt = createdDate
+    } else {
+      self.createdAt = DateTimeDTO.now()
+    }
+    
+    if let modifiedDate = DateTimeDTO.fromISO8601String(lastModifiedAt) {
+      self.lastModifiedAt = modifiedDate
+    } else {
+      self.lastModifiedAt = DateTimeDTO.now()
+    }
+    
+    self.totalSizeBytes = totalSizeBytes
+    self.snapshotCount = snapshotCount
+    self.isEncrypted = isEncrypted
   }
 }
 

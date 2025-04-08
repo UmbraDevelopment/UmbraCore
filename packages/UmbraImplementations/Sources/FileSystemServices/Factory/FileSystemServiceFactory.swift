@@ -77,13 +77,14 @@ public final class FileSystemServiceFactory: @unchecked Sendable {
    */
   public func createSecureService(
     logger: (any LoggingInterfaces.LoggingProtocol)?=nil
-  ) -> any FileSystemServiceProtocol {
-    let fileManager=FileManager.default
-
-    return FileSystemServiceImpl(
-      fileManager: fileManager,
-      operationQueueQoS: .utility,
-      logger: logger ?? NullLogger()
+  ) async -> any FileSystemServiceProtocol {
+    // Create the file path service
+    let filePathService = await FilePathServiceFactory.createDefault()
+    
+    // Create the secure file system service
+    return FileSystemServiceSecure(
+      filePathService: filePathService,
+      logger: logger
     )
   }
 

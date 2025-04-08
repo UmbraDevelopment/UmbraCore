@@ -234,6 +234,8 @@ public struct RestoreSnapshotOperation: BackupAPIOperation {
   }
 }
 
+import DateTimeTypes
+
 /**
  Basic snapshot information structure.
  */
@@ -245,7 +247,7 @@ public struct SnapshotInfo: Sendable {
   public let repositoryID: String
 
   /// When the snapshot was created
-  public let createdAt: String
+  public let timestamp: DateTimeDTO
 
   /// Tags associated with the snapshot
   public let tags: [String]
@@ -259,7 +261,32 @@ public struct SnapshotInfo: Sendable {
    - Parameters:
       - id: The snapshot identifier
       - repositoryID: The repository identifier
-      - createdAt: Creation timestamp
+      - timestamp: Creation timestamp
+      - tags: Associated tags
+      - summary: Human-readable summary
+   */
+  public init(
+    id: String,
+    repositoryID: String,
+    timestamp: DateTimeDTO,
+    tags: [String],
+    summary: String
+  ) {
+    self.id = id
+    self.repositoryID = repositoryID
+    self.timestamp = timestamp
+    self.tags = tags
+    self.summary = summary
+  }
+  
+  /**
+   Initialises a new snapshot information structure with a string date.
+   This is provided for backward compatibility.
+
+   - Parameters:
+      - id: The snapshot identifier
+      - repositoryID: The repository identifier
+      - createdAt: Creation timestamp as ISO8601 string
       - tags: Associated tags
       - summary: Human-readable summary
    */
@@ -270,11 +297,18 @@ public struct SnapshotInfo: Sendable {
     tags: [String],
     summary: String
   ) {
-    self.id=id
-    self.repositoryID=repositoryID
-    self.createdAt=createdAt
-    self.tags=tags
-    self.summary=summary
+    self.id = id
+    self.repositoryID = repositoryID
+    
+    // Parse date or use current time if parsing fails
+    if let timestamp = DateTimeDTO.fromISO8601String(createdAt) {
+      self.timestamp = timestamp
+    } else {
+      self.timestamp = DateTimeDTO.now()
+    }
+    
+    self.tags = tags
+    self.summary = summary
   }
 }
 

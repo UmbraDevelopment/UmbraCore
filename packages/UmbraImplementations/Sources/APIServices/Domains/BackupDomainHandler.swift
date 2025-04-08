@@ -1,6 +1,6 @@
 import APIInterfaces
 import BackupInterfaces
-import Foundation
+import DateTimeTypes
 import LoggingInterfaces
 import LoggingTypes
 import RepositoryInterfaces
@@ -35,10 +35,10 @@ public actor BackupDomainHandler: DomainHandler {
   private let logger: LoggingProtocol?
   
   /// Cache for snapshot information to improve performance of repeated requests
-  private var snapshotCache: [String: (SnapshotInfo, Date)] = [:]
+  private var snapshotCache: [String: (SnapshotInfo, DateTimeDTO)] = [:]
   
   /// Cache time-to-live in seconds
-  private let cacheTTL: TimeInterval = 60 // 1 minute
+  private let cacheTTL: TimeIntervalDTO = TimeIntervalDTO.seconds(60) // 1 minute
 
   /**
    Initialises a new backup domain handler.
@@ -203,7 +203,7 @@ public actor BackupDomainHandler: DomainHandler {
   private func getCachedSnapshot(id: String, repositoryID: String) -> SnapshotInfo? {
     let cacheKey = "\(repositoryID):\(id)"
     if let (info, timestamp) = snapshotCache[cacheKey],
-       Date().timeIntervalSince(timestamp) < cacheTTL {
+       DateTimeDTO.now().timeIntervalSince(timestamp).seconds < cacheTTL.seconds {
       return info
     }
     return nil
@@ -219,7 +219,7 @@ public actor BackupDomainHandler: DomainHandler {
    */
   private func cacheSnapshot(id: String, repositoryID: String, info: SnapshotInfo) {
     let cacheKey = "\(repositoryID):\(id)"
-    snapshotCache[cacheKey] = (info, Date())
+    snapshotCache[cacheKey] = (info, DateTimeDTO.now())
   }
   
   /**
@@ -463,7 +463,7 @@ public actor BackupDomainHandler: DomainHandler {
     if let beforeDate=operation.beforeDate {
       metadata=metadata.with(
         key: "before_date",
-        value: ISO8601DateFormatter().string(from: beforeDate),
+        value: DateTimeDTO(date: beforeDate).iso8601String,
         privacyLevel: .public
       )
     }
@@ -471,7 +471,7 @@ public actor BackupDomainHandler: DomainHandler {
     if let afterDate=operation.afterDate {
       metadata=metadata.with(
         key: "after_date",
-        value: ISO8601DateFormatter().string(from: afterDate),
+        value: DateTimeDTO(date: afterDate).iso8601String,
         privacyLevel: .public
       )
     }
@@ -519,7 +519,7 @@ public actor BackupDomainHandler: DomainHandler {
       SnapshotInfo(
         id: snapshot.id,
         repositoryID: operation.repositoryID,
-        timestamp: snapshot.creationTime,
+        timestamp: DateTimeDTO(date: snapshot.creationTime),
         tags: snapshot.tags,
         summary: SnapshotSummary(
           fileCount: snapshot.fileCount,
@@ -602,7 +602,7 @@ public actor BackupDomainHandler: DomainHandler {
     let basicInfo=SnapshotInfo(
       id: snapshot.id,
       repositoryID: operation.repositoryID,
-      timestamp: snapshot.creationTime,
+      timestamp: DateTimeDTO(date: snapshot.creationTime),
       tags: snapshot.tags,
       summary: SnapshotSummary(
         fileCount: snapshot.fileCount,
@@ -712,7 +712,7 @@ public actor BackupDomainHandler: DomainHandler {
     let snapshotInfo=SnapshotInfo(
       id: createdSnapshot.id,
       repositoryID: operation.repositoryID,
-      timestamp: createdSnapshot.creationTime,
+      timestamp: DateTimeDTO(date: createdSnapshot.creationTime),
       tags: createdSnapshot.tags,
       summary: SnapshotSummary(
         fileCount: createdSnapshot.fileCount,
@@ -804,7 +804,7 @@ public actor BackupDomainHandler: DomainHandler {
     let snapshotInfo=SnapshotInfo(
       id: updatedSnapshot.id,
       repositoryID: operation.repositoryID,
-      timestamp: updatedSnapshot.creationTime,
+      timestamp: DateTimeDTO(date: updatedSnapshot.creationTime),
       tags: updatedSnapshot.tags,
       summary: SnapshotSummary(
         fileCount: updatedSnapshot.fileCount,
@@ -956,7 +956,7 @@ public actor BackupDomainHandler: DomainHandler {
     // Convert to API model
     let restoreResult=RestoreResult(
       snapshotID: operation.snapshotID,
-      restoreTime: Date(),
+      restoreTime: DateTimeDTO.now(),
       totalSize: result.totalSize,
       fileCount: result.fileCount,
       duration: result.duration,

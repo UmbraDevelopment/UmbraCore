@@ -1,6 +1,6 @@
 import APIInterfaces
+import DateTimeTypes
 import ErrorCoreTypes
-import Foundation
 import LoggingInterfaces
 import LoggingTypes
 import RepositoryInterfaces
@@ -32,10 +32,10 @@ public actor RepositoryDomainHandler: DomainHandler {
   private let baseDomainHandler: BaseDomainHandler
   
   /// Cache for repository information to improve performance of repeated requests
-  private var repositoryCache: [String: (RepositoryInfo, Date)] = [:]
+  private var repositoryCache: [String: (RepositoryInfo, DateTimeDTO)] = [:]
   
   /// Cache time-to-live in seconds
-  private let cacheTTL: TimeInterval = 60 // 1 minute
+  private let cacheTTL: TimeIntervalDTO = TimeIntervalDTO.seconds(60) // 1 minute
 
   /**
    Initialises a new repository domain handler.
@@ -108,28 +108,28 @@ public actor RepositoryDomainHandler: DomainHandler {
   // MARK: - Private Helper Methods
   
   /**
-   Retrieves a repository from the cache if available and not expired.
+   Checks if a repository is in the cache and still valid.
    
-   - Parameter id: The repository ID
-   - Returns: The cached repository if available, nil otherwise
+   - Parameter repositoryId: The repository ID to check
+   - Returns: The cached repository info if available and not expired, nil otherwise
    */
-  private func getCachedRepository(id: String) -> RepositoryInfo? {
-    if let (info, timestamp) = repositoryCache[id],
-       Date().timeIntervalSince(timestamp) < cacheTTL {
+  private func getCachedRepository(repositoryId: String) -> RepositoryInfo? {
+    if let (info, timestamp) = repositoryCache[repositoryId],
+       DateTimeDTO.now().timeIntervalSince(timestamp).seconds < cacheTTL.seconds {
       return info
     }
     return nil
   }
   
   /**
-   Caches a repository for future use.
+   Adds or updates repository info in the cache.
    
    - Parameters:
-     - id: The repository ID
-     - info: The repository information to cache
+     - repositoryId: The repository ID to cache
+     - info: The repository info to cache
    */
-  private func cacheRepository(id: String, info: RepositoryInfo) {
-    repositoryCache[id] = (info, Date())
+  private func cacheRepositoryInfo(repositoryId: String, info: RepositoryInfo) {
+    repositoryCache[repositoryId] = (info, DateTimeDTO.now())
   }
   
   /**
@@ -152,7 +152,7 @@ public actor RepositoryDomainHandler: DomainHandler {
         return try await handleListRepositories(op)
       case let op as GetRepositoryOperation:
         // Check cache first for better performance
-        if let cachedRepository = getCachedRepository(id: op.repositoryID) {
+        if let cachedRepository = getCachedRepository(repositoryId: op.repositoryID) {
           // Log cache hit if needed
           await baseDomainHandler.logDebug(
             message: "Retrieved repository from cache",
@@ -169,14 +169,14 @@ public actor RepositoryDomainHandler: DomainHandler {
         let result = try await handleCreateRepository(op)
         // Cache the result for future use
         if let repositoryInfo = result as? RepositoryInfo {
-          cacheRepository(id: repositoryInfo.id, info: repositoryInfo)
+          cacheRepositoryInfo(repositoryId: repositoryInfo.id, info: repositoryInfo)
         }
         return result
       case let op as UpdateRepositoryOperation:
         let result = try await handleUpdateRepository(op)
         // Update cache with new information
         if let repositoryInfo = result as? RepositoryInfo {
-          cacheRepository(id: repositoryInfo.id, info: repositoryInfo)
+          cacheRepositoryInfo(repositoryId: repositoryInfo.id, info: repositoryInfo)
         }
         return result
       case let op as DeleteRepositoryOperation:
@@ -435,10 +435,10 @@ public actor RepositoryDomainHandler: DomainHandler {
           name: repository.identifier, // Placeholder: Use identifier as name
           // name: repository.getName() ?? repository.identifier,
           status: mapStatus(Task.detached { repository.state }.value),
-          creationDate: Date(), // Placeholder: Use current date
-          // creationDate: repository.getCreationDate() ?? Date(),
-          lastAccessDate: Date() // Placeholder: Use current date
-          // lastAccessDate: repository.getLastAccessDate() ?? Date()
+          creationDate: DateTimeDTO.now(), // Placeholder: Use current date
+          // creationDate: repository.getCreationDate() ?? DateTimeDTO.now(),
+          lastAccessDate: DateTimeDTO.now() // Placeholder: Use current date
+          // lastAccessDate: repository.getLastAccessDate() ?? DateTimeDTO.now()
         )
       )
     }
@@ -482,17 +482,18 @@ public actor RepositoryDomainHandler: DomainHandler {
 
     // Create the repository details
     let details=try await RepositoryDetails(
-      id: repository.identifier,
-      name: repository.identifier, // Placeholder: Use identifier as name
-      // name: repository.getName() ?? repository.identifier,
-      status: mapStatus(Task.detached { repository.state }.value),
-      creationDate: Date(), // Placeholder: Use current date
-      // creationDate: repository.getCreationDate() ?? Date(),
-      lastAccessDate: Date(), // Placeholder: Use current date
-      // lastAccessDate: repository.getLastAccessDate() ?? Date(),
-      snapshotCount: Int(stats.snapshotCount),
-      totalSize: Int(stats.totalSize),
-      location: repository.location.absoluteString
+      id: repository.id,
+      name: repository.name,
+      path: repository.path,
+      type: repository.type.rawValue,
+      state: getRepositoryState(repository),
+      creationDate: repository.creationDate != nil ? 
+        DateTimeDTO.from(date: repository.creationDate!) : 
+        DateTimeDTO.now(),
+      lastModified: repository.lastModified != nil ? 
+        DateTimeDTO.from(date: repository.lastModified!) : 
+        DateTimeDTO.now(),
+      metadata: repository.metadata
     )
 
     await baseDomainHandler.logDebug(
@@ -532,14 +533,15 @@ public actor RepositoryDomainHandler: DomainHandler {
 
     // Return repository info
     let info=try await RepositoryInfo(
-      id: repository.identifier,
-      name: repository.identifier, // Placeholder: Use identifier as name
-      // name: repository.getName() ?? repository.identifier,
-      status: mapStatus(Task.detached { repository.state }.value),
-      creationDate: Date(), // Placeholder: Use current date
-      // creationDate: repository.getCreationDate() ?? Date(),
-      lastAccessDate: Date() // Placeholder: Use current date
-      // lastAccessDate: repository.getLastAccessDate() ?? Date()
+      id: repository.id,
+      name: repository.name,
+      path: repository.path,
+      type: repository.type.rawValue,
+      state: getRepositoryState(repository),
+      creationDate: DateTimeDTO.now(), // Placeholder: Use current date
+      // creationDate: repository.getCreationDate() ?? DateTimeDTO.now(),
+      lastAccessDate: DateTimeDTO.now() // Placeholder: Use current date
+      // lastAccessDate: repository.getLastAccessDate() ?? DateTimeDTO.now()
     )
 
     await baseDomainHandler.logDebug(
@@ -547,7 +549,7 @@ public actor RepositoryDomainHandler: DomainHandler {
       operationName: "createRepository",
       source: "RepositoryDomainHandler",
       additionalMetadata: LogMetadataDTOCollection()
-        .withPublic(key: "repository_id", value: repository.identifier)
+        .withPublic(key: "repository_id", value: repository.id)
         .withPublic(key: "repository_name", value: repository.name)
     )
 
@@ -597,14 +599,18 @@ public actor RepositoryDomainHandler: DomainHandler {
 
     // Return updated info
     let updatedInfo=try await RepositoryInfo(
-      id: repository.identifier,
-      name: repository.identifier, // Placeholder: Use identifier as name
-      // name: repository.getName() ?? repository.identifier,
-      status: mapStatus(Task.detached { repository.state }.value),
-      creationDate: Date(), // Placeholder: Use current date
-      // creationDate: repository.getCreationDate() ?? Date(),
-      lastAccessDate: Date() // Placeholder: Use current date
-      // lastAccessDate: repository.getLastAccessDate() ?? Date()
+      id: repository.id,
+      name: repository.name,
+      path: repository.path,
+      type: repository.type.rawValue,
+      state: getRepositoryState(repository),
+      creationDate: repository.creationDate != nil ? 
+        DateTimeDTO.from(date: repository.creationDate!) : 
+        DateTimeDTO.now(),
+      lastModified: repository.lastModified != nil ? 
+        DateTimeDTO.from(date: repository.lastModified!) : 
+        DateTimeDTO.now(),
+      metadata: repository.metadata
     )
 
     await baseDomainHandler.logDebug(
