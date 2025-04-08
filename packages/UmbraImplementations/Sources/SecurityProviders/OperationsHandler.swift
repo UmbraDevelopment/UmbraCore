@@ -375,6 +375,12 @@ final class OperationsHandler {
         .operationFailed(reason: "The protocol implementation is not available")
       case let .operationFailed(message):
         .operationFailed(reason: message)
+      case let .invalidInput(message):
+        .inputError(message)
+      case .operationRateLimited:
+        .operationFailed(reason: "Operation was rate limited for security purposes")
+      case .storageError:
+        .operationFailed(reason: "Generic storage error occurred")
     }
   }
 

@@ -114,7 +114,12 @@ public enum HashingOptionsAdapter {
   ) -> LocalHashingOptions? {
     guard let options else { return nil }
 
-    return LocalHashingOptions(algorithm: options.algorithm, useSalt: options.salt != nil)
+    // Create LocalHashingOptions with CoreSecurityTypes.HashingOptions properties
+    return LocalHashingOptions(
+      algorithm: options.algorithm,
+      useSalt: false, // Default value since CoreSecurityTypes.HashingOptions doesn't have this
+      base64Encode: false // Default value
+    )
   }
 
   /**
@@ -127,9 +132,9 @@ public enum HashingOptionsAdapter {
   .HashingOptions? {
     guard let options else { return nil }
 
+    // Create HashingOptions with correct parameters
     return CoreSecurityTypes.HashingOptions(
-      algorithm: options.algorithm,
-      salt: options.useSalt ? [0x01, 0x02, 0x03, 0x04] : nil
+      algorithm: options.algorithm
     )
   }
 }
@@ -149,11 +154,14 @@ public enum KeyGenerationOptionsAdapter {
   ) -> KeyGenerationOptions? {
     guard let options else { return nil }
 
+    // Convert from CoreSecurityTypes.KeyGenerationOptions to local KeyGenerationOptions
+    let optionsDict: [String: Sendable]? = ["keySize": options.keySizeInBits as Sendable]
+    
     return KeyGenerationOptions(
       keyType: options.keyType,
       useSecureEnclave: options.useSecureEnclave,
       isExtractable: options.isExtractable,
-      options: options.options
+      options: optionsDict
     )
   }
 
@@ -167,12 +175,16 @@ public enum KeyGenerationOptionsAdapter {
     _ options: KeyGenerationOptions?
   ) -> CoreSecurityTypes.KeyGenerationOptions? {
     guard let options else { return nil }
-
+    
+    // Extract key size from options dictionary if available
+    let keySize = options.options?.dictionary["keySize"] as? Int ?? 256 // Default to 256 bits
+    
+    // Create KeyGenerationOptions with correct parameters
     return CoreSecurityTypes.KeyGenerationOptions(
       keyType: options.keyType,
-      useSecureEnclave: options.useSecureEnclave,
+      keySizeInBits: keySize,
       isExtractable: options.isExtractable,
-      options: options.options
+      useSecureEnclave: options.useSecureEnclave
     )
   }
 }

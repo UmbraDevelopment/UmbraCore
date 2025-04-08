@@ -15,12 +15,13 @@ public final class BasicSecurityProvider: SecurityProviderProtocol, AsyncService
   // MARK: - Properties (Placeholder - Dependencies likely needed)
 
   // Dependencies like logger, actual crypto service, key manager needed here
-  // For now, we'll leave it empty to satisfy compiler for stubs.
+  private let logger: LoggingProtocol?
 
   // MARK: - Initialization
 
-  public init() {
-    // Initialization logic for dependencies would go here
+  /// Default initializer
+  public init(logger: LoggingProtocol? = nil) {
+    self.logger = logger
   }
 
   // MARK: - AsyncServiceInitializable
@@ -202,17 +203,14 @@ public final class BasicSecurityProvider: SecurityProviderProtocol, AsyncService
       case .storeKey: return try await storeKey(config: config)
       case .retrieveKey: return try await retrieveKey(config: config)
       case .deleteKey: return try await deleteKey(config: config)
-      // Add cases for other operations as needed
-      default: // Added default to handle potential future cases
-        throw SecurityStorageError.unsupportedOperation
+      // If new operations are added to the enum in the future, they'll need to be handled here
     }
   }
 
   /// Creates a standard security configuration DTO for this basic provider.
   public func createSecureConfig(
-    options: CoreSecurityTypes
-      .SecurityConfigOptions?=nil
-  ) -> CoreSecurityTypes.SecurityConfigDTO {
+    options: CoreSecurityTypes.SecurityConfigOptions
+  ) async -> CoreSecurityTypes.SecurityConfigDTO {
     print("BasicSecurityProvider createSecureConfig called (stub)")
     return CoreSecurityTypes.SecurityConfigDTO(
       // Use a valid algorithm name, e.g., .aes256GCM

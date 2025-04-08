@@ -199,7 +199,7 @@ final class BasicCryptoService: CryptoServiceProtocol {
 
   public func hash(
     dataIdentifier: String,
-    options _: HashingOptions?
+    options _: CoreSecurityTypes.HashingOptions?
   ) async -> Result<String, SecurityStorageError> {
     // Get the data from secure storage
     let dataResult=await secureStorage.retrieveData(withIdentifier: dataIdentifier)
@@ -228,7 +228,7 @@ final class BasicCryptoService: CryptoServiceProtocol {
   public func verifyHash(
     dataIdentifier: String,
     hashIdentifier: String,
-    options _: HashingOptions?
+    options _: CoreSecurityTypes.HashingOptions?
   ) async -> Result<Bool, SecurityStorageError> {
     // Get the data from secure storage
     let dataResult=await secureStorage.retrieveData(withIdentifier: dataIdentifier)
@@ -269,7 +269,7 @@ final class BasicCryptoService: CryptoServiceProtocol {
 
   public func generateKey(
     length: Int,
-    options _: KeyGenerationOptions?
+    options _: CoreSecurityTypes.KeyGenerationOptions?
   ) async -> Result<String, SecurityStorageError> {
     // In a real implementation, this would generate a secure random key
     // Here we just create a placeholder key
@@ -325,7 +325,7 @@ final class BasicCryptoService: CryptoServiceProtocol {
   /// Required by CryptoServiceProtocol - Generate hash from data identifier
   public func generateHash(
     dataIdentifier: String,
-    options _: HashingOptions?
+    options _: CoreSecurityTypes.HashingOptions?
   ) async -> Result<String, SecurityStorageError> {
     // This is a simplified implementation that just prefixes the identifier
     let hashIdentifier="hash-\(dataIdentifier)"

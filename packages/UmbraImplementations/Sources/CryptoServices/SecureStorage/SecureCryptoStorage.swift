@@ -394,27 +394,19 @@ public actor SecureCryptoStorage {
   }
 
   /**
-   Checks if data with the specified identifier exists.
-
-   - Parameter identifier: The identifier to check
-   - Returns: True if data exists, false otherwise
-   - Throws: Error if the operation fails
+   Checks if data exists in secure storage.
+   - Parameter identifier: The identifier to check.
+   - Returns: True if data exists, false otherwise.
    */
-  public func containsData(identifier: String) async throws -> Bool {
-    let context=CryptoLogContext(
-      operation: "containsData",
-      additionalContext: LogMetadataDTOCollection()
-        .withPrivate(key: "identifier", value: identifier)
-    )
-
-    await logger.debug(
-      "Checking if data exists with identifier: \(identifier)",
-      context: context
-    )
-
+  public func hasData(withIdentifier identifier: String) async -> Bool {
     // Currently we just attempt to retrieve the data and check if it exists
     // This could be optimized in a real implementation to avoid loading the data
-    let secureStore=try await getSecureStorage()
-    return secureStore.hasKey(identifier)
+    let result = await secureStorage.retrieveData(withIdentifier: identifier)
+    switch result {
+    case .success:
+      return true
+    case .failure:
+      return false
+    }
   }
 }

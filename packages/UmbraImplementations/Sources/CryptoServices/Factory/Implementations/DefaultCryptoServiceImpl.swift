@@ -65,7 +65,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
     // Retrieve original data first
     let originalDataResult: Result<[UInt8], SecurityStorageError>=await secureStorage
       .retrieveData(withIdentifier: dataIdentifier)
-    guard case let .success(originalData)=originalDataResult else {
+    guard case .success(_)=originalDataResult else {
       if case let .failure(error)=originalDataResult {
         await logger?.log(
           .error,
@@ -87,7 +87,15 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
     var encryptedDataBytes=[UInt8]()
     let iv=generateRandomBytes(count: 16)
     encryptedDataBytes.append(contentsOf: iv)
-    encryptedDataBytes.append(contentsOf: originalData) // Use retrieved data bytes
+    
+    // Safely extract the data from the Result
+    if case let .success(originalData) = originalDataResult {
+      encryptedDataBytes.append(contentsOf: originalData)
+    } else {
+      // This shouldn't happen since we already checked the result above
+      return .failure(.dataNotFound)
+    }
+    
     let keyIDBytes=Array(keyIdentifier.utf8)
     encryptedDataBytes.append(UInt8(keyIDBytes.count))
     encryptedDataBytes.append(contentsOf: keyIDBytes)
@@ -95,7 +103,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
     // Store the mock encrypted data
     let encryptedDataStoreIdentifier="encrypted_\(UUID().uuidString)"
     let storeResult=await secureStorage.storeData(
-      encryptedDataBytes, // Use [UInt8] directly
+      encryptedDataBytes,
       withIdentifier: encryptedDataStoreIdentifier
     )
 
@@ -241,7 +249,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
     // Retrieve original data first (needed for hashing)
     let originalDataResult: Result<[UInt8], SecurityStorageError>=await secureStorage
       .retrieveData(withIdentifier: dataIdentifier)
-    guard case .success=originalDataResult else {
+    guard case .success(_)=originalDataResult else {
       if case let .failure(error)=originalDataResult {
         await logger?.log(
           .error,
@@ -261,8 +269,11 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
 
     // Generate mock hash based on retrieved data (length used as simple example)
     var generatedHash=[UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
-    _=originalDataResult.success?.withUnsafeBytes { // Use withUnsafeBytes for [UInt8]
-      CC_SHA256($0.baseAddress, CC_LONG(originalDataResult.success?.count ?? 0), &generatedHash)
+    
+    if case let .success(originalData) = originalDataResult {
+      _ = originalData.withUnsafeBytes { buffer in
+        CC_SHA256(buffer.baseAddress, CC_LONG(originalData.count), &generatedHash)
+      }
     }
 
     // Store the hash
@@ -302,7 +313,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
     await logger?.log(.debug, "Storing data with identifier: \(identifier)", context: context)
     // Use the correct storage method
     let result: Result<Void, SecurityStorageError>=await secureStorage.storeData(
-      [UInt8](data), // Convert Data to [UInt8] for the protocol
+      data.bytes, // Use extension method to convert Data to [UInt8]
       withIdentifier: identifier
     )
 
@@ -337,7 +348,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
     // Handle result and map error synchronously after await
     switch result {
       case let .success(bytes):
-        return .success(Data(bytes))
+        return .success(Data(bytes: bytes)) // Use extension method for conversion
       case let .failure(error):
         await logger?.log(.error, "Failed to retrieve data: \(error)", context: context)
         return .failure(error) // Pass storage error directly
@@ -388,17 +399,23 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
     _ data: Data,
     customIdentifier: String
   ) async -> Result<String, SecurityStorageError> {
-    let context=LogContextDTO(subsystem: "CryptoService", category: "Import")
+    let context=CryptoLogContext(
+      operation: "importRawData",
+      additionalContext: LogMetadataDTOCollection().withPublic(
+        key: "identifier", 
+        value: customIdentifier
+      )
+    )
     await logger?.debug(
       "Importing raw data with custom identifier: \(customIdentifier)",
       context: context
     )
     // Store the raw data using the secure storage protocol
-    let result: Result<Void, SecurityStorageError>=await secureStorage.storeData(
-      [UInt8](data),
+    let importResult=await secureStorage.storeData(
+      data.bytes, // Use extension method to convert Data to [UInt8]
       withIdentifier: customIdentifier
     )
-    switch result {
+    switch importResult {
       case .success:
         return .success(customIdentifier)
       case let .failure(error):
@@ -413,7 +430,10 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
     _ data: [UInt8],
     customIdentifier: String?
   ) async -> Result<String, SecurityStorageError> {
-    let context=LogContextDTO(subsystem: "CryptoService", category: "Import")
+    let context=CryptoLogContext(
+      operation: "importData",
+      additionalContext: LogMetadataDTOCollection()
+    )
     await logger?.debug("Importing [UInt8] data...", context: context)
     // Convert [UInt8] to Data for storage
     let dataToStore=Data(data)
@@ -422,7 +442,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
 
     // Use the secure storage protocol to store the data
     let result: Result<Void, SecurityStorageError>=await secureStorage.storeData(
-      [UInt8](dataToStore),
+      dataToStore.bytes, // Use extension method to convert Data to [UInt8]
       withIdentifier: effectiveIdentifier
     )
 
@@ -445,12 +465,18 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
   public func exportData(
     identifier: String
   ) async -> Result<[UInt8], SecurityStorageError> {
-    let context=LogContextDTO(subsystem: "CryptoService", category: "Export")
+    let context=CryptoLogContext(
+      operation: "exportData",
+      additionalContext: LogMetadataDTOCollection().withPublic(
+        key: "identifier", 
+        value: identifier
+      )
+    )
     await logger?.debug("Exporting data with identifier: \(identifier)", context: context)
     let result=await secureStorage.retrieveData(withIdentifier: identifier)
     switch result {
       case let .success(data):
-        return .success(Array(data)) // Convert Data to [UInt8]
+        return .success(data) // Return [UInt8] directly
       case let .failure(error):
         await logger?.error("Failed to export data: \(error.description)", context: context)
         // Map StorageCoreError to SecurityStorageError or pass through
@@ -466,27 +492,20 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
    - Returns: A Data object containing the random bytes.
    */
   private func generateRandomBytes(count: Int) -> [UInt8] {
-    var bytes=[UInt8](repeating: 0, count: count)
-    let status=SecRandomCopyBytes(kSecRandomDefault, count, &bytes)
-    if status == errSecSuccess {
-      return bytes
-    } else {
-      // Fallback or handle error appropriately
-      let context=BaseLogContextDTO(
-        domainName: "CryptoService",
-        source: "DefaultCryptoServiceImpl.generateRandomBytes",
-        metadata: LogMetadataDTOCollection()
-          .withPublic(key: "requestedByteCount", value: count)
-          .withPublic(key: "errorCode", value: status)
-      )
-      await logger?.log(
-        .error,
-        "Failed to generate secure random bytes, status: \(status)",
-        context: context
-      )
-      // Returning non-secure bytes as a fallback - consider throwing an error instead
+    var bytes = [UInt8](repeating: 0, count: count)
+    let status = SecRandomCopyBytes(kSecRandomDefault, count, &bytes)
+    
+    if status != errSecSuccess {
+      // We can't use async logger here, so we'll just print to console in debug builds
+      #if DEBUG
+      print("ERROR: Failed to generate secure random bytes, status: \(status)")
+      #endif
+      
+      // Return zeros as a fallback (this is not secure and should be handled better in production)
       return [UInt8](repeating: 0, count: count)
     }
+    
+    return bytes
   }
 
   // MARK: - Missing CryptoServiceProtocol Methods
@@ -509,7 +528,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
     )
     // 1. Retrieve original data
     let dataResult=await secureStorage.retrieveData(withIdentifier: dataIdentifier)
-    guard case let .success(originalData)=dataResult else {
+    guard case .success(_)=dataResult else {
       await logger?.log(
         .error,
         "Failed to retrieve original data for hash verification",
@@ -524,7 +543,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
 
     // 2. Retrieve stored hash
     let hashResult=await secureStorage.retrieveData(withIdentifier: hashIdentifier)
-    guard case let .success(storedHash)=hashResult else {
+    guard case .success(_)=hashResult else {
       await logger?.log(.error, "Failed to retrieve stored hash for verification", context: context)
       // Correct Result error handling
       if case let .failure(error)=hashResult {
@@ -535,12 +554,18 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
 
     // 3. Generate hash of original data using CommonCrypto
     var generatedHash=[UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
-    _=originalData.withUnsafeBytes { // Use withUnsafeBytes for [UInt8]
-      CC_SHA256($0.baseAddress, CC_LONG(originalData.count), &generatedHash)
+    if case let .success(originalData) = dataResult {
+      _ = originalData.withUnsafeBytes { buffer in
+        CC_SHA256(buffer.baseAddress, CC_LONG(originalData.count), &generatedHash)
+      }
     }
 
     // 4. Compare hashes
-    let hashesMatch=generatedHash == storedHash
+    var hashesMatch = false
+    if case let .success(storedHash) = hashResult {
+      hashesMatch = generatedHash == storedHash
+    }
+    
     await logger?.log(.info, "Hash verification result: \(hashesMatch)", context: context)
     return .success(hashesMatch)
   }
@@ -554,7 +579,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
       domainName: "CryptoService",
       source: "DefaultCryptoServiceImpl.generateKey",
       metadata: LogMetadataDTOCollection()
-        .withPublic(key: "length", value: length)
+        .withPublic(key: "length", value: String(length))
     )
     await logger?.log(.debug, "Generating key of length \(length)...", context: context)
     let keyData=generateRandomBytes(count: length)
@@ -579,3 +604,5 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
     }
   }
 }
+
+// Extensions are now defined in DataConversionExtensions.swift

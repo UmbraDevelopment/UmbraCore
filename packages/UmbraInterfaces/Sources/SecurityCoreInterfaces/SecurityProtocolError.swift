@@ -38,6 +38,15 @@ public enum SecurityStorageError: Error, Sendable {
   /// Generic operation failure with optional message
   case operationFailed(String)
 
+  /// Invalid input provided to the operation
+  case invalidInput(String)
+  
+  /// Operation was rate limited for security purposes
+  case operationRateLimited
+  
+  /// Generic storage error
+  case storageError
+
   /// Description of the error for logging and debugging
   public var description: String {
     switch self {
@@ -65,6 +74,12 @@ public enum SecurityStorageError: Error, Sendable {
         "The protocol implementation is not available"
       case let .operationFailed(message):
         "Operation failed: \(message)"
+      case let .invalidInput(message):
+        "Invalid input: \(message)"
+      case .operationRateLimited:
+        "Operation was rate limited for security purposes"
+      case .storageError:
+        "Generic storage error"
     }
   }
 }

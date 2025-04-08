@@ -81,8 +81,8 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
         // Log with the new context
         await logger.log(.info, "Encrypt operation successful", context: successContext)
       case let .failure(error):
-        // Use the correct logError method
-        await logger.logError(error, context: context)
+        let errorMessage = "Encrypt operation failed: \(error.localizedDescription)"
+        await logger.error(errorMessage, context: context)
     }
 
     return result
@@ -126,7 +126,8 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
         )
         await logger.log(.info, "Decrypt operation successful", context: successContext)
       case let .failure(error):
-        await logger.logError(error, context: context)
+        let errorMessage = "Decrypt operation failed: \(error.localizedDescription)"
+        await logger.error(errorMessage, context: context)
     }
 
     return result
@@ -134,7 +135,7 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
 
   public func hash(
     dataIdentifier: String,
-    options: HashingOptions?=nil
+    options: CoreSecurityTypes.HashingOptions?=nil
   ) async -> Result<String, SecurityStorageError> {
     let algorithm=options?.algorithm ?? .sha256
     let context=EnhancedLogContext(
@@ -169,7 +170,8 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
         )
         await logger.log(.info, "Hash operation successful", context: successContext)
       case let .failure(error):
-        await logger.logError(error, context: context)
+        let errorMessage = "Hash operation failed: \(error.localizedDescription)"
+        await logger.error(errorMessage, context: context)
     }
 
     return result
@@ -178,7 +180,7 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
   public func verifyHash(
     dataIdentifier: String,
     hashIdentifier: String,
-    options: HashingOptions?=nil
+    options: CoreSecurityTypes.HashingOptions?=nil
   ) async -> Result<Bool, SecurityStorageError> {
     let algorithm=options?.algorithm ?? .sha256
     let context=EnhancedLogContext(
@@ -212,7 +214,8 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
         )
         await logger.log(.info, "Verify hash operation successful", context: successContext)
       case let .failure(error):
-        await logger.logError(error, context: context)
+        let errorMessage = "Verify hash operation failed: \(error.localizedDescription)"
+        await logger.error(errorMessage, context: context)
     }
 
     return result
@@ -251,7 +254,8 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
         )
         await logger.log(.info, "Generate key operation successful", context: successContext)
       case let .failure(error):
-        await logger.logError(error, context: context)
+        let errorMessage = "Generate key operation failed: \(error.localizedDescription)"
+        await logger.error(errorMessage, context: context)
     }
 
     return result
@@ -276,7 +280,8 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
 
     // Log the result
     if case let .failure(error)=result {
-      await logger.logError(error, context: context)
+      let errorMessage = "Store data operation failed: \(error.localizedDescription)"
+      await logger.error(errorMessage, context: context)
     } else {
       await logger.log(.info, "Store data operation successful", context: context)
     }
@@ -315,7 +320,8 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
         )
         await logger.log(.info, "Retrieve data operation successful", context: successContext)
       case let .failure(error):
-        await logger.logError(error, context: context)
+        let errorMessage = "Retrieve data operation failed: \(error.localizedDescription)"
+        await logger.error(errorMessage, context: context)
     }
 
     return result
@@ -356,7 +362,8 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
         )
         await logger.log(.info, "Export data operation successful", context: successContext)
       case let .failure(error):
-        await logger.logError(error, context: context)
+        let errorMessage = "Export data operation failed: \(error.localizedDescription)"
+        await logger.error(errorMessage, context: context)
     }
 
     return result
@@ -400,7 +407,8 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
           context: successContext
         )
       case let .failure(error):
-        await logger.logError(error, context: context)
+        let errorMessage = "Import data operation failed: \(error.localizedDescription)"
+        await logger.error(errorMessage, context: context)
     }
 
     return result
@@ -439,7 +447,8 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
         )
         await logger.log(.info, "Import data (Data) operation successful", context: successContext)
       case let .failure(error):
-        await logger.logError(error, context: context)
+        let errorMessage = "Import data operation failed: \(error.localizedDescription)"
+        await logger.error(errorMessage, context: context)
     }
 
     return result
@@ -462,7 +471,8 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
 
     // Log the result
     if case let .failure(error)=result {
-      await logger.logError(error, context: context)
+      let errorMessage = "Delete data operation failed: \(error.localizedDescription)"
+      await logger.error(errorMessage, context: context)
     } else {
       let successContext=EnhancedLogContext(
         domainName: context.domainName,
@@ -528,7 +538,7 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
 
   public func generateHash(
     dataIdentifier: String,
-    options: HashingOptions?=nil
+    options: CoreSecurityTypes.HashingOptions?=nil
   ) async -> Result<String, SecurityStorageError> {
     let context=EnhancedLogContext(
       domainName: "CryptoService",
@@ -557,7 +567,8 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
         )
         await logger.log(.info, "Generate hash operation successful", context: successContext)
       case let .failure(error):
-        await logger.logError(error, context: context)
+        let errorMessage = "Generate hash operation failed: \(error.localizedDescription)"
+        await logger.error(errorMessage, context: context)
     }
 
     return result

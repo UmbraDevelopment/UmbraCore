@@ -483,7 +483,7 @@ public actor MockCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
    */
   public func generateHash(
     dataIdentifier: String,
-    options _: HashingOptions?
+    options _: CoreSecurityTypes.HashingOptions?
   ) async -> Result<String, SecurityStorageError> {
     await logger.debug(
       "Generating hash for data \(dataIdentifier)",

@@ -58,60 +58,6 @@ extension CoreSecurityTypes.EncryptionOptions {
   }
 }
 
-// MARK: - Adapter Extensions for DecryptionOptions
-
-/// Extension to adapt between CoreSecurityTypes.DecryptionOptions and
-/// CryptoTypes.CryptoOperationOptionsDTO
-extension CoreSecurityTypes.DecryptionOptions {
-  /// Convert to CryptoOperationOptionsDTO for use with internal APIs
-  public func toCryptoOperationOptionsDTO() -> CryptoOperationOptionsDTO {
-    // Map the algorithm and mode
-    let cryptoMode: CryptoMode=switch algorithm {
-      case .aes256CBC:
-        .cbc
-      case .aes256GCM:
-        .gcm
-      default:
-        .gcm // Use GCM mode as fallback
-    }
-
-    return CryptoOperationOptionsDTO(
-      mode: cryptoMode,
-      padding: .pkcs7, // Default to PKCS7
-      initializationVector: nil, // Will be provided during operation
-      authenticatedData: additionalAuthenticatedData
-    )
-  }
-
-  /// Convert to SecurityConfigDTO for use with SecurityProvider
-  public func toSecurityConfigDTO(withMetadata metadata: [String: String]?=nil)
-  -> SecurityConfigDTO {
-    var configOptions=SecurityConfigOptions()
-
-    var metadataDict=metadata ?? [:]
-    if let additionalAuthenticatedData {
-      metadataDict["authenticatedData"]=Data(additionalAuthenticatedData).base64EncodedString()
-    }
-
-    if !metadataDict.isEmpty {
-      configOptions.metadata=metadataDict
-    }
-
-    return SecurityConfigDTO(
-      encryptionAlgorithm: algorithm, // Use directly since it's the same type
-      hashAlgorithm: CoreSecurityTypes.HashAlgorithm.sha256, // Default
-      providerType: .basic, // Use basic provider type instead of non-existent .default
-      options: configOptions
-    )
-  }
-
-  /// Convert to interface DecryptionOptions (used when adapting options)
-  public func toInterfaceOptions() -> CoreSecurityTypes.DecryptionOptions {
-    // This is a no-op since we're already using the correct type
-    self
-  }
-}
-
 // MARK: - Adapter Extensions for KeyGenerationOptions
 
 /// Extension to adapt between various key generation options types
@@ -146,37 +92,6 @@ extension SecurityCoreInterfaces.KeyGenerationOptions {
       providerType: .basic, // Use basic provider type instead of non-existent .default
       options: configOptions
     )
-  }
-
-  /// Convert to interface KeyGenerationOptions (used when adapting options)
-  public func toInterfaceOptions() -> SecurityCoreInterfaces.KeyGenerationOptions {
-    // Create equivalent interface options
-    SecurityCoreInterfaces.KeyGenerationOptions(
-      persistent: persistent,
-      keyType: keyType
-    )
-  }
-
-  /**
-   Convert from KeyType to local key type representation for metadata
-
-   - Parameter keyType: The key type to convert
-   - Returns: Key type information for logging
-   */
-  private func typeToMetadata(keyType: KeyType) -> [String: String] {
-    // Convert from KeyType to local key type representation for metadata
-    let localKeyType: KeyType=switch keyType {
-      case .symmetric:
-        .symmetric
-      case .asymmetric:
-        .asymmetric
-      default:
-        .symmetric // Default to symmetric as fallback
-    }
-
-    var metadataDict=[String: String]()
-    metadataDict["keyType"]="\(localKeyType)"
-    return metadataDict
   }
 
   /**

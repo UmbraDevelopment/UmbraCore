@@ -103,7 +103,7 @@ public enum SecureDataFactory {
     let status=SecRandomCopyBytes(kSecRandomDefault, length, &bytes)
 
     // Verify the operation succeeded
-    guard status == errSecSuccess else {
+    if status != errSecSuccess {
       // Fallback to less secure but still usable random generation
       for i in 0..<length {
         bytes[i]=UInt8.random(in: 0...255)

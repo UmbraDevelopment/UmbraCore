@@ -7,9 +7,9 @@ import Foundation
  This adapter bridges the gap between the old class-based RateLimiter interface
  and the new actor-based TokenBucketRateLimiter implementation.
  */
-public class RateLimiterAdapter {
+public actor RateLimiterAdapter: Sendable {
   /// The wrapped actor-based rate limiter
-  private let actorRateLimiter: TokenBucketRateLimiter
+  public let actorRateLimiter: TokenBucketRateLimiter
 
   /// The domain for rate limiting operations
   private let domain: String
@@ -32,13 +32,8 @@ public class RateLimiterAdapter {
    - Parameter operation: The operation to check
    - Returns: true if the operation is rate limited, false otherwise
    */
-  public func isRateLimited(_: String) -> Bool {
-    // Create a task to call the actor method and wait for the result
-    let task=Task {
-      await !actorRateLimiter.tryConsume(count: 1)
-    }
-
-    // Get the result, defaulting to rate limited (true) if there's an error
-    return (try? task.result.get()) ?? true
+  public func isRateLimited(_ operation: String) async -> Bool {
+    // Call the actor method directly now that we're in an async context
+    return await !actorRateLimiter.tryConsume(count: 1)
   }
 }

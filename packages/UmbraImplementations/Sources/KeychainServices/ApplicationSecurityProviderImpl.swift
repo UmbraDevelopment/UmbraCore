@@ -82,7 +82,7 @@ private final class MockCryptoService: CryptoServiceProtocol {
   /// Computes a hash of data in secure storage
   public func hash(
     dataIdentifier: String,
-    options _: HashingOptions?
+    options _: CoreSecurityTypes.HashingOptions?
   ) async -> Result<String, SecurityStorageError> {
     .success("hashed-\(dataIdentifier)")
   }
@@ -91,7 +91,7 @@ private final class MockCryptoService: CryptoServiceProtocol {
   public func verifyHash(
     dataIdentifier _: String,
     hashIdentifier _: String,
-    options _: HashingOptions?
+    options _: CoreSecurityTypes.HashingOptions?
   ) async -> Result<Bool, SecurityStorageError> {
     .success(true)
   }
@@ -99,7 +99,7 @@ private final class MockCryptoService: CryptoServiceProtocol {
   /// Generates a cryptographic key
   public func generateKey(
     length _: Int,
-    options _: KeyGenerationOptions?
+    options _: CoreSecurityTypes.KeyGenerationOptions?
   ) async -> Result<String, SecurityStorageError> {
     .success("generated-key-\(UUID().uuidString)")
   }
@@ -135,7 +135,7 @@ private final class MockCryptoService: CryptoServiceProtocol {
   /// Required by CryptoServiceProtocol - Generate hash from data identifier
   public func generateHash(
     dataIdentifier: String,
-    options _: HashingOptions?
+    options _: CoreSecurityTypes.HashingOptions?
   ) async -> Result<String, SecurityStorageError> {
     // Mock implementation
     .success("hashed-\(dataIdentifier)")

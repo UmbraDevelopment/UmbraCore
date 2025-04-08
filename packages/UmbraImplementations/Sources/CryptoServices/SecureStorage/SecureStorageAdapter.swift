@@ -155,7 +155,9 @@ public final class SecureStorageAdapter: SecureStorageProtocol {
         )
       )
 
-      if let storageError=error as? StorageCoreError, case .notFound=storageError {
+      // Handle specific error cases
+      let nsError = error as NSError
+      if nsError.domain == NSOSStatusErrorDomain && nsError.code == errSecItemNotFound {
         return .failure(.dataNotFound)
       }
 
@@ -237,27 +239,8 @@ public final class SecureStorageAdapter: SecureStorageProtocol {
       )
     )
 
-    do {
-      let exists=try await storage.containsData(identifier: identifier)
-      return .success(exists)
-    } catch {
-      await logger.error(
-        "Failed to query data existence",
-        context: CryptoLogContext(
-          operation: "containsData",
-          additionalContext: LogMetadataDTOCollection().withPrivate(
-            key: "identifier",
-            value: identifier
-          ).withPrivate(
-            key: "error",
-            value: "\(error)"
-          )
-        )
-      )
-      return .failure(
-        .operationFailed("Failed to query data existence: \(error.localizedDescription)")
-      )
-    }
+    let exists = await storage.hasData(withIdentifier: identifier)
+    return .success(exists)
   }
 
   /**

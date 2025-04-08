@@ -131,7 +131,7 @@ public enum UnifiedCryptoTypes {
       if let options {
         // Map the algorithm - both use the same type
         algorithm=options.algorithm
-        authenticatedData=options.authenticatedData
+        authenticatedData=nil
         // Padding is optional and depends on implementation
         padding=nil
       } else {

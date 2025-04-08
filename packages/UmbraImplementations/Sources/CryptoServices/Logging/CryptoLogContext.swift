@@ -89,4 +89,33 @@ public struct CryptoLogContext: LogContextDTO, Sendable {
   public func toContext() -> LogContextDTO {
     self
   }
+  
+  /**
+   Creates a new context with additional metadata.
+   
+   - Parameters:
+     - key: The metadata key
+     - value: The metadata value
+     - privacy: Whether the metadata is private (true) or public (false)
+   - Returns: A new context with the added metadata
+   */
+  public func withMetadata(
+    key: String,
+    value: String,
+    privacy: Bool = false
+  ) -> CryptoLogContext {
+    // Use the appropriate method based on privacy
+    let newMetadata = privacy 
+      ? metadata.withPrivate(key: key, value: value)
+      : metadata.withPublic(key: key, value: value)
+    
+    return CryptoLogContext(
+      operation: operation,
+      identifier: identifier,
+      status: status,
+      source: source,
+      correlationID: correlationID,
+      metadata: newMetadata
+    )
+  }
 }
