@@ -59,7 +59,8 @@ public protocol DomainHandler {
    - Returns: The result of the operation
    - Throws: APIError if the operation fails
    */
-  func handleOperation<T: APIOperation>(operation: T) async throws -> Any
+  associatedtype OperationType: APIOperation
+  func handleOperation<T: OperationType>(operation: T) async throws -> T.APIOperationResult
 }
 
 /// Protocol marker for backup-related API operations

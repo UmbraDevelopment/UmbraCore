@@ -144,8 +144,7 @@ public actor BackupOperationExecutor {
       // Log the failure of the operation
       await logger.error(
         "Failed backup operation: \(parameters.operationType) - \(error.localizedDescription)",
-        metadata: nil,
-        source: logContext.getSource()
+        context: logContext
       )
 
       throw backupError

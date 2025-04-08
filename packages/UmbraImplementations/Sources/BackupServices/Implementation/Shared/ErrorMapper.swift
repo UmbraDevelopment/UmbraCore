@@ -32,7 +32,7 @@ public struct ErrorMapper {
         )
 
       case let .executableNotFound(path):
-        BackupError.configurationError(
+        BackupError.invalidConfiguration(
           details: "Restic executable not found at path: \(path)"
         )
 

@@ -49,8 +49,8 @@ public protocol CancellationHandlerProtocol: Sendable {
    * - Returns: The result of the operation
    * - Throws: Error if the operation fails or is cancelled
    */
-  func withCancellationSupport<T>(
-    _ operation: @escaping () async throws -> T,
+  func withCancellationSupport<T: Sendable>(
+    _ operation: @Sendable @escaping () async throws -> T,
     cancellationToken: BackupCancellationToken?
   ) async throws -> T
 }

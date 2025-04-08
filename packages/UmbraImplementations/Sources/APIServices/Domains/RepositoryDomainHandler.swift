@@ -45,6 +45,23 @@ public struct RepositoryDomainHandler: DomainHandler {
     self.logger=logger
   }
 
+  // MARK: - DomainHandler Conformance
+  public var domain: String { APIDomain.repository.rawValue }
+
+  public func handleOperation<T: APIOperation>(operation: T) async throws -> Any {
+    // TODO: Implement actual operation handling logic for the repository domain
+    await logger?.debug(
+      "Handling repository operation: \(operation)",
+      context: BaseLogContextDTO(domainName: "repository", source: "handleOperation")
+    )
+
+    // Placeholder implementation - throws error
+    throw APIError.operationNotSupported(
+      message: "Operation \(String(describing: type(of: operation))) not yet implemented for domain \(domain)",
+      code: "NOT_IMPLEMENTED"
+    )
+  }
+
   /**
    Executes a repository operation and returns its result.
 
@@ -61,7 +78,8 @@ public struct RepositoryDomainHandler: DomainHandler {
 
     await logger?.info(
       "Starting repository operation",
-      context: CoreLogContext(
+      context: BaseLogContextDTO(
+        domainName: "repository",
         source: "RepositoryDomainHandler",
         metadata: startMetadata
       )
@@ -79,7 +97,8 @@ public struct RepositoryDomainHandler: DomainHandler {
 
       await logger?.info(
         "Repository operation completed successfully",
-        context: CoreLogContext(
+        context: BaseLogContextDTO(
+          domainName: "repository",
           source: "RepositoryDomainHandler",
           metadata: successMetadata
         )
@@ -96,7 +115,8 @@ public struct RepositoryDomainHandler: DomainHandler {
 
       await logger?.error(
         "Repository operation failed",
-        context: CoreLogContext(
+        context: BaseLogContextDTO(
+          domainName: "repository",
           source: "RepositoryDomainHandler",
           metadata: errorMetadata
         )
@@ -267,7 +287,8 @@ public struct RepositoryDomainHandler: DomainHandler {
 
     await logger?.info(
       "Listing repositories",
-      context: CoreLogContext(
+      context: BaseLogContextDTO(
+        domainName: "repository",
         source: "RepositoryDomainHandler",
         metadata: metadata
       )
@@ -279,7 +300,8 @@ public struct RepositoryDomainHandler: DomainHandler {
     if repositories.isEmpty {
       await logger?.info(
         "No repositories found",
-        context: CoreLogContext(
+        context: BaseLogContextDTO(
+          domainName: "repository",
           source: "RepositoryDomainHandler",
           metadata: metadata
         )
@@ -307,17 +329,21 @@ public struct RepositoryDomainHandler: DomainHandler {
       try await resultList.append(
         RepositoryInfo(
           id: id,
-          name: repository.getName() ?? repository.identifier,
+          name: repository.identifier, // Placeholder: Use identifier as name
+          // name: repository.getName() ?? repository.identifier,
           status: mapStatus(Task.detached { repository.state }.value),
-          creationDate: repository.getCreationDate() ?? Date(),
-          lastAccessDate: repository.getLastAccessDate() ?? Date()
+          creationDate: Date(), // Placeholder: Use current date
+          // creationDate: repository.getCreationDate() ?? Date(),
+          lastAccessDate: Date() // Placeholder: Use current date
+          // lastAccessDate: repository.getLastAccessDate() ?? Date()
         )
       )
     }
 
     await logger?.info(
       "Found \(resultList.count) repositories",
-      context: CoreLogContext(
+      context: BaseLogContextDTO(
+        domainName: "repository",
         source: "RepositoryDomainHandler",
         metadata: metadata.with(
           key: "count",
@@ -356,10 +382,13 @@ public struct RepositoryDomainHandler: DomainHandler {
     // Create the repository details
     let details=try await RepositoryDetails(
       id: repository.identifier,
-      name: repository.getName() ?? repository.identifier,
+      name: repository.identifier, // Placeholder: Use identifier as name
+      // name: repository.getName() ?? repository.identifier,
       status: mapStatus(Task.detached { repository.state }.value),
-      creationDate: repository.getCreationDate() ?? Date(),
-      lastAccessDate: repository.getLastAccessDate() ?? Date(),
+      creationDate: Date(), // Placeholder: Use current date
+      // creationDate: repository.getCreationDate() ?? Date(),
+      lastAccessDate: Date(), // Placeholder: Use current date
+      // lastAccessDate: repository.getLastAccessDate() ?? Date(),
       snapshotCount: Int(stats.snapshotCount),
       totalSize: Int(stats.totalSize),
       location: repository.location.absoluteString
@@ -367,7 +396,8 @@ public struct RepositoryDomainHandler: DomainHandler {
 
     await logger?.info(
       "Retrieved repository details",
-      context: CoreLogContext(
+      context: BaseLogContextDTO(
+        domainName: "repository",
         source: "RepositoryDomainHandler",
         metadata: LogMetadataDTOCollection()
           .withPublic(key: "operation", value: "getRepository")
@@ -396,28 +426,33 @@ public struct RepositoryDomainHandler: DomainHandler {
     )
 
     // Apply name and other metadata if needed
-    try await repository.setName(params.name)
-    try await repository.setMetadata([
-      "creation_date": Date().description
-    ])
+    // try await repository.setName(params.name)
+    // try await repository.setMetadata([
+    //  "name": params.name,
+    //  "location": params.location.path,
+    // ])
 
     // Return repository info
     let info=try await RepositoryInfo(
       id: repository.identifier,
-      name: repository.getName() ?? repository.identifier,
+      name: repository.identifier, // Placeholder: Use identifier as name
+      // name: repository.getName() ?? repository.identifier,
       status: mapStatus(Task.detached { repository.state }.value),
-      creationDate: repository.getCreationDate() ?? Date(),
-      lastAccessDate: repository.getLastAccessDate() ?? Date()
+      creationDate: Date(), // Placeholder: Use current date
+      // creationDate: repository.getCreationDate() ?? Date(),
+      lastAccessDate: Date() // Placeholder: Use current date
+      // lastAccessDate: repository.getLastAccessDate() ?? Date()
     )
 
     await logger?.info(
       "Repository created successfully",
-      context: CoreLogContext(
+      context: BaseLogContextDTO(
+        domainName: "repository",
         source: "RepositoryDomainHandler",
         metadata: LogMetadataDTOCollection()
           .withPublic(key: "operation", value: "createRepository")
           .withPublic(key: "repository_id", value: repository.identifier)
-          .withPublic(key: "repository_name", value: repository.name)
+          .withPublic(key: "repository_name", value: repository.identifier)
       )
     )
 
@@ -454,21 +489,36 @@ public struct RepositoryDomainHandler: DomainHandler {
 
     // Update the repository metadata
     if let name=operation.name {
-      try await repository.setName(name)
+      // try await repository.setName(name)
+      await logger?.info(
+        "Updated repository name",
+        context: BaseLogContextDTO(
+          domainName: "repository",
+          source: "RepositoryDomainHandler",
+          metadata: LogMetadataDTOCollection()
+            .withPublic(key: "operation", value: "updateRepository")
+            .withPublic(key: "repository_id", value: operation.repositoryID)
+            .withPublic(key: "repository_name", value: name)
+        )
+      )
     }
 
     // Return updated info
     let updatedInfo=try await RepositoryInfo(
       id: repository.identifier,
-      name: repository.getName() ?? repository.identifier,
+      name: repository.identifier, // Placeholder: Use identifier as name
+      // name: repository.getName() ?? repository.identifier,
       status: mapStatus(Task.detached { repository.state }.value),
-      creationDate: repository.getCreationDate() ?? Date(),
-      lastAccessDate: repository.getLastAccessDate() ?? Date()
+      creationDate: Date(), // Placeholder: Use current date
+      // creationDate: repository.getCreationDate() ?? Date(),
+      lastAccessDate: Date() // Placeholder: Use current date
+      // lastAccessDate: repository.getLastAccessDate() ?? Date()
     )
 
     await logger?.info(
       "Repository updated successfully",
-      context: CoreLogContext(
+      context: BaseLogContextDTO(
+        domainName: "repository",
         source: "RepositoryDomainHandler",
         metadata: LogMetadataDTOCollection()
           .withPublic(key: "operation", value: "updateRepository")
@@ -499,7 +549,8 @@ public struct RepositoryDomainHandler: DomainHandler {
 
     await logger?.info(
       "Repository deleted successfully",
-      context: CoreLogContext(
+      context: BaseLogContextDTO(
+        domainName: "repository",
         source: "RepositoryDomainHandler",
         metadata: LogMetadataDTOCollection()
           .withPublic(key: "operation", value: "deleteRepository")

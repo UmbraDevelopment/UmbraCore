@@ -537,6 +537,34 @@ struct SnapshotResultParser {
     }
   }
 
+  // Convert SnapshotFileEntry to BackupFile
+  private func convertFile(_ entry: SnapshotFileEntry) -> BackupFile {
+    let convertedType = convertFileType(entry.type)
+    return BackupFile(
+      path: entry.path,
+      size: entry.size,
+      modifiedTime: entry.modTime, // Use modTime
+      type: convertedType, // Use the converted BackupFileType
+      permissions: nil, // TODO: Convert entry.mode if needed
+      ownerName: nil, // TODO: Convert entry.uid if needed
+      groupName: nil // TODO: Convert entry.gid if needed
+    )
+  }
+
+  // Convert file type string to BackupFileType enum
+  private func convertFileType(_ typeString: String?) -> BackupFileType {
+    guard let typeString = typeString?.lowercased() else {
+      return .other // Default if nil
+    }
+    switch typeString {
+      case "file": return .file
+      case "dir": return .directory
+      case "symlink": return .symlink
+      // Add other cases if Restic uses different strings
+      default: return .other
+    }
+  }
+
   /// Helper struct for decoding Restic diff output
   private struct ResticDiffResult: Codable {
     let added: [ResticFileEntry]?

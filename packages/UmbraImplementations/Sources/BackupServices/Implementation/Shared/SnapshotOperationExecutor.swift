@@ -81,44 +81,40 @@ public actor SnapshotOperationExecutor {
     operation: @escaping (P, BackupProgressReporter?, BackupCancellationToken?) async throws -> R
   ) async throws -> R {
     // Extract operation type and snapshot ID for use throughout the method
-    let operationType=parameters.operationType
-    let snapshotID=getSnapshotID(from: parameters)
+    let _operationType = parameters.operationType
+    let snapshotID = getSnapshotID(from: parameters)
 
     // Create log context for privacy-aware logging
-    let logContext=SnapshotLogContext(
-      operation: operationType.rawValue,
+    let logContext = SnapshotLogContext(
+      operation: parameters.operationType.rawValue,
       snapshotID: snapshotID
     )
 
-    // Get source and metadata for logging
-    let source="SnapshotService.\(operationType.rawValue)"
-    let metadata=logContext.toPrivacyMetadata()
-
     // Start time for metrics
-    let startTime=Date()
+    let startTime = Date()
 
     // Log operation start
     await logger.info(
-      "Starting snapshot operation: \(operationType.rawValue)",
-      metadata: metadata,
-      source: source
+      "Starting snapshot operation: \(parameters.operationType.rawValue)",
+      context: logContext
     )
 
-    // Report progress start
-    if let reporter=progressReporter {
+    // Report initial progress
+    if let reporter = progressReporter {
       await reporter.reportProgress(
         BackupProgressInfo(
           phase: .initialising,
           percentComplete: 0.0,
-          message: "Initialising \(operationType.rawValue) operation",
           itemsProcessed: 0,
           totalItems: 0,
           bytesProcessed: 0,
           totalBytes: 0,
-          elapsedTime: 0,
-          estimatedTimeRemaining: nil
+          estimatedTimeRemaining: nil,
+          error: nil,
+          details: "Initialising backup operation",
+          isCancellable: cancellationToken != nil
         ),
-        for: convertToBackupOperation(operationType)
+        for: convertToBackupOperation(parameters.operationType)
       )
     }
 
@@ -127,45 +123,41 @@ public actor SnapshotOperationExecutor {
       try parameters.validate()
 
       // Execute the operation with cancellation support
-      let result=try await cancellationHandler.withCancellationSupport({
+      let result = try await cancellationHandler.withCancellationSupport({
         try await operation(parameters, progressReporter, cancellationToken)
       }, cancellationToken: cancellationToken)
 
       // Calculate operation duration
-      let duration=Date().timeIntervalSince(startTime)
+      let duration = Date().timeIntervalSince(startTime)
 
-      // Report progress complete
-      if let reporter=progressReporter {
+      // Report completion progress
+      if let reporter = progressReporter {
         await reporter.reportProgress(
           BackupProgressInfo(
             phase: .completed,
-            percentComplete: 1.0,
-            message: "Completed \(operationType.rawValue) operation",
+            percentComplete: 100.0,
             itemsProcessed: 0,
             totalItems: 0,
             bytesProcessed: 0,
             totalBytes: 0,
-            elapsedTime: 0,
-            estimatedTimeRemaining: nil
+            estimatedTimeRemaining: 0,
+            error: nil,
+            details: "Operation completed successfully",
+            isCancellable: false
           ),
-          for: convertToBackupOperation(operationType)
+          for: convertToBackupOperation(parameters.operationType)
         )
       }
 
       // Log successful completion
-      var completionMetadata=metadata
-      completionMetadata["duration"]=PrivacyMetadataValue(value: String(format: "%.2f", duration),
-                                                          privacy: .public)
-
       await logger.info(
-        "Completed snapshot operation: \(operationType.rawValue)",
-        metadata: completionMetadata,
-        source: source
+        "Completed snapshot operation: \(parameters.operationType.rawValue)",
+        context: logContext
       )
 
       // Record metrics
       await metricsCollector.recordOperationCompleted(
-        operation: operationType.rawValue,
+        operation: parameters.operationType.rawValue,
         duration: duration,
         success: true
       )
@@ -173,46 +165,46 @@ public actor SnapshotOperationExecutor {
       return result
     } catch {
       // Calculate operation duration
-      let duration=Date().timeIntervalSince(startTime)
+      let duration = Date().timeIntervalSince(startTime)
 
       // Map error to domain-specific error with context
-      let backupError=errorMapper.mapError(error, context: logContext)
+      let backupError = errorMapper.mapError(error, context: logContext)
 
-      // Report progress failure
-      if let reporter=progressReporter {
+      // Report failure progress
+      if let reporter = progressReporter {
         await reporter.reportProgress(
           BackupProgressInfo(
             phase: .failed,
-            percentComplete: 1.0,
-            message: "Failed \(operationType.rawValue) operation",
+            percentComplete: 100.0,
             itemsProcessed: 0,
             totalItems: 0,
             bytesProcessed: 0,
             totalBytes: 0,
-            elapsedTime: 0,
-            estimatedTimeRemaining: nil
+            estimatedTimeRemaining: nil,
+            error: backupError,
+            details: "Operation failed: \(backupError.localizedDescription)",
+            isCancellable: false
           ),
-          for: convertToBackupOperation(operationType)
+          for: convertToBackupOperation(parameters.operationType)
         )
       }
 
       // Create error context with privacy controls
-      let errorContext=SnapshotLogContext(
-        operation: operationType.rawValue,
+      let errorContext = SnapshotLogContext(
+        operation: parameters.operationType.rawValue,
         snapshotID: snapshotID,
         errorMessage: backupError.localizedDescription
       )
 
       // Log error with privacy-aware context
       await logger.error(
-        "Failed snapshot operation: \(operationType.rawValue)",
-        metadata: errorContext.toPrivacyMetadata(),
-        source: source
+        "Failed snapshot operation: \(parameters.operationType.rawValue) - \(backupError.localizedDescription)",
+        context: errorContext
       )
 
       // Record error metrics
       await metricsCollector.recordOperationCompleted(
-        operation: operationType.rawValue,
+        operation: parameters.operationType.rawValue,
         duration: duration,
         success: false
       )
@@ -260,7 +252,7 @@ public actor SnapshotOperationExecutor {
   /// - Parameter parameters: Operation parameters
   /// - Returns: Snapshot ID or "unknown" if not available
   private func getSnapshotID(from parameters: some SnapshotOperationParameters) -> String {
-    if let params=parameters as? HasSnapshotID {
+    if let params = parameters as? HasSnapshotID {
       return params.snapshotID
     }
     return "unknown"

@@ -1,5 +1,8 @@
 import APIInterfaces
+import CoreDTOs
+import CoreInterfaces
 import DateTimeTypes
+import Foundation
 import LoggingInterfaces
 import LoggingTypes
 import SecurityInterfaces
@@ -23,8 +26,8 @@ import UmbraErrors
 public actor APIServiceActor: APIServiceProtocol {
   // MARK: - Private Properties
 
-  /// The current configuration of the API service
-  private var configuration: APIConfigurationDTO
+  /// The API configuration
+  private var configuration: APIInterfaces.APIConfigurationDTO
 
   /// The logger for API operations
   private let logger: LoggingProtocol
@@ -43,7 +46,7 @@ public actor APIServiceActor: APIServiceProtocol {
   ///   - logger: The logger to use for logging operations
   ///   - securityBookmarkService: Service for managing security-scoped bookmarks
   public init(
-    configuration: APIConfigurationDTO,
+    configuration: APIInterfaces.APIConfigurationDTO,
     logger: LoggingProtocol,
     securityBookmarkService: SecurityInterfaces.SecurityBookmarkProtocol
   ) {
@@ -57,15 +60,13 @@ public actor APIServiceActor: APIServiceProtocol {
   /// Initialises the service with the provided configuration
   /// - Parameter configuration: The configuration to use for initialisation
   /// - Throws: UmbraErrors.APIError if initialisation fails
-  public func initialise(configuration: APIConfigurationDTO) async throws {
+  public func initialise(configuration: APIInterfaces.APIConfigurationDTO) async throws {
     // Log the initialisation attempt with privacy-aware logging
     await logger.info(
       "Initialising API service",
-      context: LogContextDTO(
+      context: BaseLogContextDTO(
         domainName: "APIService",
-        source: "initialise",
-        metadata: LogMetadataDTOCollection()
-          .withPublic(key: "environment", value: configuration.environment.rawValue)
+        source: "initialise"
       )
     )
 
@@ -75,22 +76,21 @@ public actor APIServiceActor: APIServiceProtocol {
     // Initialize any necessary services
     do {
       // Perform initialization steps as needed
-      await logger.info("API service initialised successfully", context: LogContextDTO(domainName: "APIService", source: "initialise", metadata: LogMetadataDTOCollection()))
+      await logger.info("API service initialised successfully", context: BaseLogContextDTO(domainName: "APIService", source: "initialise"))
     } catch {
       // Log the error and throw an appropriate domain-specific error
       await logger.error(
         "Failed to initialise API service: \(error.localizedDescription)",
-        context: LogContextDTO(
+        context: BaseLogContextDTO(
           domainName: "APIService",
-          source: "initialise",
-          metadata: LogMetadataDTOCollection()
-            .withPublic(key: "error", value: error.localizedDescription)
+          source: "initialise"
         )
       )
 
       // Rethrow as a domain-specific error
-      throw APIError.initialisation(
+      throw APIError.operationFailed(
         message: "Failed to initialise API service: \(error.localizedDescription)",
+        code: "INIT_FAILURE",
         underlyingError: error
       )
     }
@@ -104,12 +104,9 @@ public actor APIServiceActor: APIServiceProtocol {
   public nonisolated func createEncryptedBookmark(url: String, identifier: String) async throws {
     await logger.debug(
       "Creating encrypted bookmark",
-      context: LogContextDTO(
+      context: BaseLogContextDTO(
         domainName: "APIService",
-        source: "createEncryptedBookmark",
-        metadata: LogMetadataDTOCollection()
-          .withPublic(key: "identifier", value: identifier)
-          .withPrivate(key: "url", value: url)
+        source: "createEncryptedBookmark"
       )
     )
 
@@ -138,11 +135,9 @@ public actor APIServiceActor: APIServiceProtocol {
   public nonisolated func resolveEncryptedBookmark(identifier: String) async throws -> String {
     await logger.debug(
       "Resolving encrypted bookmark",
-      context: LogContextDTO(
+      context: BaseLogContextDTO(
         domainName: "APIService",
-        source: "resolveEncryptedBookmark",
-        metadata: LogMetadataDTOCollection()
-          .withPublic(key: "identifier", value: identifier)
+        source: "resolveEncryptedBookmark"
       )
     )
 
@@ -165,12 +160,9 @@ public actor APIServiceActor: APIServiceProtocol {
     } catch {
       await logger.error(
         "Failed to resolve bookmark",
-        context: LogContextDTO(
+        context: BaseLogContextDTO(
           domainName: "APIService",
-          source: "resolveEncryptedBookmark",
-          metadata: LogMetadataDTOCollection()
-            .withPublic(key: "identifier", value: identifier)
-            .withPublic(key: "error", value: "\(error)")
+          source: "resolveEncryptedBookmark"
         )
       )
 
@@ -187,11 +179,9 @@ public actor APIServiceActor: APIServiceProtocol {
   public nonisolated func deleteEncryptedBookmark(identifier: String) async throws {
     await logger.debug(
       "Deleting encrypted bookmark",
-      context: LogContextDTO(
+      context: BaseLogContextDTO(
         domainName: "APIService",
-        source: "deleteEncryptedBookmark",
-        metadata: LogMetadataDTOCollection()
-          .withPublic(key: "identifier", value: identifier)
+        source: "deleteEncryptedBookmark"
       )
     )
 
@@ -201,11 +191,9 @@ public actor APIServiceActor: APIServiceProtocol {
 
       await logger.info(
         "Encrypted bookmark deleted",
-        context: LogContextDTO(
+        context: BaseLogContextDTO(
           domainName: "APIService",
-          source: "deleteEncryptedBookmark",
-          metadata: LogMetadataDTOCollection()
-            .withPublic(key: "identifier", value: identifier)
+          source: "deleteEncryptedBookmark"
         )
       )
 
@@ -222,12 +210,9 @@ public actor APIServiceActor: APIServiceProtocol {
     } catch {
       await logger.error(
         "Failed to delete bookmark",
-        context: LogContextDTO(
+        context: BaseLogContextDTO(
           domainName: "APIService",
-          source: "deleteEncryptedBookmark",
-          metadata: LogMetadataDTOCollection()
-            .withPublic(key: "identifier", value: identifier)
-            .withPublic(key: "error", value: "\(error)")
+          source: "deleteEncryptedBookmark"
         )
       )
 
@@ -250,12 +235,9 @@ public actor APIServiceActor: APIServiceProtocol {
 
     await logger.debug(
       "Returning API version information",
-      context: LogContextDTO(
+      context: BaseLogContextDTO(
         domainName: "APIService",
-        source: "getVersion",
-        metadata: LogMetadataDTOCollection()
-          .withPublic(key: "version", value: "\(version.major).\(version.minor).\(version.patch)")
-          .withPublic(key: "buildIdentifier", value: version.buildIdentifier ?? "")
+        source: "getVersion"
       )
     )
 
@@ -273,11 +255,9 @@ public actor APIServiceActor: APIServiceProtocol {
         do {
           await logger.debug(
             "Subscribing to API events",
-            context: LogContextDTO(
+            context: BaseLogContextDTO(
               domainName: "APIService",
-              source: "subscribeToEvents",
-              metadata: LogMetadataDTOCollection()
-                .withPublic(key: "hasFilter", value: filter != nil ? "true" : "false")
+              source: "subscribeToEvents"
             )
           )
 
@@ -289,11 +269,9 @@ public actor APIServiceActor: APIServiceProtocol {
         } catch {
           await logger.error(
             "Event subscription ended unexpectedly",
-            context: LogContextDTO(
+            context: BaseLogContextDTO(
               domainName: "APIService",
-              source: "subscribeToEvents",
-              metadata: LogMetadataDTOCollection()
-                .withPublic(key: "error", value: "\(error)")
+              source: "subscribeToEvents"
             )
           )
           continuation.finish()
@@ -304,8 +282,8 @@ public actor APIServiceActor: APIServiceProtocol {
       continuation.onTermination = { _ in
         task.cancel()
         Task {
-          await unregisterEventSubscriber(continuation: continuation)
-          await logger.debug("Event subscription terminated", context: LogContextDTO(domainName: "APIService", source: "subscribeToEvents", metadata: LogMetadataDTOCollection()))
+          await self.unregisterEventSubscriber(continuation: continuation)
+          await self.logger.debug("Event subscription terminated", context: BaseLogContextDTO(domainName: "APIService", source: "subscribeToEvents"))
         }
       }
     }
@@ -321,11 +299,9 @@ public actor APIServiceActor: APIServiceProtocol {
     // Log the removal with privacy-aware logging
     await logger.debug(
       "Event subscription removed",
-      context: LogContextDTO(
+      context: BaseLogContextDTO(
         domainName: "APIService",
-        source: "removeEventContinuation",
-        metadata: LogMetadataDTOCollection()
-          .withPublic(key: "subscription_id", value: subscriptionID.uuidString)
+        source: "removeEventContinuation"
       )
     )
   }
@@ -333,7 +309,7 @@ public actor APIServiceActor: APIServiceProtocol {
   /// Publishes an event to all active subscribers, respecting their filters
   /// - Parameter event: The event to publish
   private func publishEvent(_ event: APIEventDTO) async {
-    for (subscriptionID, continuation) in eventContinuations {
+    for (_, continuation) in eventContinuations {
       // In a real implementation, we would filter the events based on the subscription's filter
       // For simplicity, we're publishing all events to all subscribers
       continuation.yield(event)
@@ -341,13 +317,9 @@ public actor APIServiceActor: APIServiceProtocol {
       // Log the event publication with privacy-aware logging
       await logger.trace(
         "Published event to subscriber",
-        context: LogContextDTO(
+        context: BaseLogContextDTO(
           domainName: "APIService",
-          source: "publishEvent",
-          metadata: LogMetadataDTOCollection()
-            .withPublic(key: "subscription_id", value: subscriptionID.uuidString)
-            .withPublic(key: "event_id", value: event.identifier)
-            .withPublic(key: "event_type", value: event.eventType.rawValue)
+          source: "publishEvent"
         )
       )
     }
@@ -361,11 +333,9 @@ public actor APIServiceActor: APIServiceProtocol {
     // For now, we'll just log that it was called
     await logger.info(
       "Registered event subscriber",
-      context: LogContextDTO(
+      context: BaseLogContextDTO(
         domainName: "APIService",
-        source: "registerEventSubscriber",
-        metadata: LogMetadataDTOCollection()
-          .withPublic(key: "hasFilter", value: filter != nil ? "true" : "false")
+        source: "registerEventSubscriber"
       )
     )
 
@@ -379,11 +349,11 @@ public actor APIServiceActor: APIServiceProtocol {
   ) async {
     // In a real implementation, we would unregister this continuation from an event bus
     // For now, we'll just log that it was called
-    await logger.info("Unregistered event subscriber", context: LogContextDTO(domainName: "APIService", source: "unregisterEventSubscriber", metadata: LogMetadataDTOCollection()))
+    await logger.info("Unregistered event subscriber", context: BaseLogContextDTO(domainName: "APIService", source: "unregisterEventSubscriber"))
 
     // Remove the continuation from our collection by comparing continuation IDs
     // Since we can't compare continuations directly (they're value types)
-    for (id, wrapper) in eventContinuations {
+    for (id, _) in eventContinuations {
       // We use a simple heuristic - remove all continuations when unregistering
       // In a real implementation, we would need a more sophisticated way to identify
       // the specific continuation to remove

@@ -1,3 +1,4 @@
+/*
 import Foundation
 import APIInterfaces
 
@@ -8,6 +9,7 @@ import APIInterfaces
  * These extensions provide convenience methods that weren't available
  * in the original protocol definition.
  */
+/* Commenting out until RepositoryProtocol location is confirmed
 public extension RepositoryProtocol {
     /**
      * Gets the display name for the repository
@@ -58,3 +60,5 @@ public extension RepositoryProtocol {
         // This would store the metadata in the repository
     }
 }
+*/
+*/

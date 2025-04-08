@@ -15,7 +15,7 @@ import Foundation
  */
 public actor CancellationHandler: CancellationHandlerProtocol {
   /// Storage for active operations that can be cancelled
-  private var activeOperations: [String: Task<Any, Error>]=[:]
+  @unchecked Sendable private var activeOperations: [String: Task<Any, Error>]=[:]
 
   /// Storage for active cancellation tokens
   private var cancellationTokens: [String: BackupCancellationToken]=[:]
@@ -185,8 +185,8 @@ public actor CancellationHandler: CancellationHandlerProtocol {
    * - Returns: The result of the operation
    * - Throws: CancellationError if the operation is cancelled
    */
-  public func withCancellationSupport<T>(
-    _ operation: @escaping () async throws -> T,
+  public func withCancellationSupport<T: Sendable>(
+    _ operation: @Sendable @escaping () async throws -> T,
     cancellationToken: BackupCancellationToken?
   ) async throws -> T {
     // Pre-check for cancellation
@@ -246,9 +246,8 @@ public actor CancellationHandler: CancellationHandlerProtocol {
 
     do {
       return try await task.value
-    } catch is CancellationError {
-      throw CancellationError()
     } catch {
+      // Re-throw the caught error (could be CancellationError or something else)
       throw error
     }
   }
