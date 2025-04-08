@@ -4,6 +4,7 @@ umbra_swift_library(
     name = "FileSystemServices",
     srcs = [
         "Factory/FileSystemServiceFactory.swift",
+        "Factory/FilePathServiceFactory.swift",
         "Implementation/FileSystemServiceImpl+Core.swift",
         "Implementation/FileSystemServiceImpl+Directory.swift",
         "Implementation/FileSystemServiceImpl+ExtendedAttributes.swift",
@@ -12,6 +13,8 @@ umbra_swift_library(
         "Implementation/FileSystemServiceImpl+Path.swift",
         "Implementation/FileSystemServiceImpl+Streaming.swift",
         "Implementation/FileSystemServiceImpl+Temporary.swift",
+        "Implementation/FileSystemServiceSecure.swift",
+        "Adapters/SecurePathAdapter.swift",
     ],
     visibility = ["//visibility:public"],
     deps = [

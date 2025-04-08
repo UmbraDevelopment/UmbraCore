@@ -297,6 +297,19 @@ public struct SecurePath: Sendable, Equatable, Codable {
         }
     }
     
+    /**
+     Returns the security bookmark data associated with this path.
+     
+     This method should only be used by file system services that need
+     to access security-scoped resources. For normal operations, use
+     the SecurePath methods instead.
+     
+     - Returns: The bookmark data, or nil if none exists
+     */
+    public func getBookmarkData() -> Data? {
+        return bookmarkData
+    }
+    
     // MARK: - Static Helper Methods
     
     /**
@@ -308,7 +321,7 @@ public struct SecurePath: Sendable, Equatable, Codable {
     private static func sanitisePath(_ path: String) -> String? {
         // Normalize the path to remove redundant separators and resolve . and ..
         let url = URL(fileURLWithPath: path)
-        var standardisedPath = url.standardized.path
+        let standardisedPath = url.standardized.path
         
         // Ensure the path doesn't contain dangerous sequences
         if standardisedPath.contains("../") || standardisedPath.contains("/..") ||
