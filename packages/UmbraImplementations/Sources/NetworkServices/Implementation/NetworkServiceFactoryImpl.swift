@@ -1,5 +1,9 @@
 import Foundation
 import NetworkInterfaces
+import UmbraLogging
+import LoggingTypes
+import LoggingInterfaces
+import LoggingServices
 
 /// Implementation of NetworkServiceFactory that provides methods for creating network service
 /// instances
@@ -13,7 +17,8 @@ public struct NetworkServiceFactoryImpl: NetworkServiceFactoryProtocol {
     NetworkServiceImpl(
       timeoutInterval: 60.0,
       cachePolicy: .useProtocolCachePolicy,
-      enableMetrics: true
+      enableMetrics: true,
+      logger: LoggingServices.PrivacyAwareLoggingFactory.createLogger()
     )
   }
 
@@ -26,7 +31,8 @@ public struct NetworkServiceFactoryImpl: NetworkServiceFactoryProtocol {
     NetworkServiceImpl(
       timeoutInterval: timeoutInterval,
       cachePolicy: cachePolicy,
-      enableMetrics: enableMetrics
+      enableMetrics: enableMetrics,
+      logger: LoggingServices.PrivacyAwareLoggingFactory.createLogger()
     )
   }
 
@@ -83,7 +89,8 @@ public struct NetworkServiceFactoryImpl: NetworkServiceFactoryProtocol {
     return NetworkServiceImpl(
       session: session,
       defaultTimeoutInterval: timeoutInterval,
-      defaultCachePolicy: .useProtocolCachePolicy
+      defaultCachePolicy: .useProtocolCachePolicy,
+      logger: LoggingServices.PrivacyAwareLoggingFactory.createLogger()
     )
   }
 }

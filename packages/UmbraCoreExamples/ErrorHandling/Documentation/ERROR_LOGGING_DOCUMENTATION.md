@@ -1,6 +1,6 @@
 # Error Logging System Documentation
 
-The UmbraCore Error Logging System provides a standardised, privacy-aware approach to error logging throughout the application. This documentation outlines the key components, usage patterns, and best practises for effective error logging.
+The UmbraCore Error Logging System provides a standardised, privacy-aware approach to error logging throughout the application. This documentation outlines the key components, usage patterns, and best practices for effective error logging.
 
 ## Core Components
 
@@ -36,7 +36,7 @@ A factory providing standardised methods for creating error loggers:
 
 ```swift
 // Create a default error logger
-let errorLogger = await ErrorLoggerFactory.createDefaultErrorLogger()
+let errorLogger = await ErrorLoggerFactory.createDefault()
 
 // Create an OSLog-based error logger
 let osLogger = await ErrorLoggerFactory.createOSLogErrorLogger(
@@ -152,7 +152,7 @@ let osLogErrorLogger = await ErrorLoggerFactory.createOSLogErrorLogger(
 )
 ```
 
-## Best Practises
+## Best Practices
 
 1. **Be Contextual**: Always include relevant context information with errors
 2. **Respect Privacy**: Mark sensitive information with appropriate privacy levels

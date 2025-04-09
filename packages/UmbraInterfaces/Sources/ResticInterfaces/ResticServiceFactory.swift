@@ -14,7 +14,7 @@ public protocol ResticServiceFactory: Sendable {
   ///   - progressDelegate: Optional delegate for progress reporting
   /// - Returns: A new ResticService instance
   /// - Throws: ResticError if the service cannot be created
-  func createResticService(
+  func createService(
     executablePath: String,
     defaultRepository: String?,
     defaultPassword: String?,
@@ -30,7 +30,7 @@ public protocol ResticServiceFactory: Sendable {
   /// - Returns: A new ResticService instance
   /// - Throws: ResticError if the service cannot be created or the Restic executable cannot be
   /// found
-  func createDefaultResticService(
+  func createDefault(
     defaultRepository: String?,
     defaultPassword: String?,
     progressDelegate: ResticProgressReporting?

@@ -19,7 +19,7 @@ enum ErrorLoggingExample {
     // MARK: - Basic Error Logging
 
     // Create a default error logger
-    let errorLogger=await ErrorLoggerFactory.createDefaultErrorLogger()
+    let errorLogger=await ErrorLoggerFactory.createDefault()
 
     // Create some test errors
     let authError=NSError(

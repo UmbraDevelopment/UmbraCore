@@ -34,7 +34,7 @@ public final class ResticServiceFactoryImpl: ResticServiceFactory {
   ///   - progressDelegate: Optional delegate for progress reporting
   /// - Returns: A new ResticService instance
   /// - Throws: ResticError if the service cannot be created
-  public func createResticService(
+  public func createService(
     executablePath: String,
     defaultRepository: String?,
     defaultPassword: String?,
@@ -66,7 +66,7 @@ public final class ResticServiceFactoryImpl: ResticServiceFactory {
   /// - Returns: A new ResticService instance
   /// - Throws: ResticError if the service cannot be created or the Restic executable cannot be
   /// found
-  public func createDefaultResticService(
+  public func createDefault(
     defaultRepository: String?,
     defaultPassword: String?,
     progressDelegate: ResticProgressReporting?
@@ -79,7 +79,7 @@ public final class ResticServiceFactoryImpl: ResticServiceFactory {
 
     for path in possiblePaths {
       if FileManager.default.fileExists(atPath: path) {
-        return try createResticService(
+        return try createService(
           executablePath: path,
           defaultRepository: defaultRepository,
           defaultPassword: defaultPassword,
@@ -107,7 +107,7 @@ public final class ResticServiceFactoryImpl: ResticServiceFactory {
             .trimmingCharacters(in: .whitespacesAndNewlines),
             !path.isEmpty
         {
-          return try createResticService(
+          return try createService(
             executablePath: path,
             defaultRepository: defaultRepository,
             defaultPassword: defaultPassword,

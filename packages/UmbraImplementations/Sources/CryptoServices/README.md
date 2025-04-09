@@ -22,13 +22,13 @@ This module contains:
 ## Factory Usage
 
 ```swift
-// Create a default implementation
-let cryptoService = await CryptoServiceFactory.createDefault()
+// Create a crypto service with default configuration
+let cryptoService = await CryptoServiceFactory.shared.createDefault()
 
-// With custom configuration
-let customService = await CryptoServiceFactory.createDefaultService(
-  secureStorage: mySecureStorage,
-  logger: myLogger
+// Create a crypto service with custom configuration
+let customService = await CryptoServiceFactory.shared.createDefault(
+    logger: customLogger,
+    secureStorage: mySecureStorage
 )
 ```
 

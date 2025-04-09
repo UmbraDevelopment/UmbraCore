@@ -25,6 +25,45 @@ public actor BackupServiceFactory {
   public init() {}
 
   /**
+   * Creates a default backup service with standard configuration.
+   *
+   * - Parameters:
+   *   - logger: Logger for operation tracking
+   *   - repositoryPath: Path to the repository
+   *   - repositoryPassword: Optional repository password
+   *   - useCache: Whether to cache and reuse the created service
+   * - Returns: A configured backup service
+   * - Throws: Error if Restic service creation fails
+   */
+  public func createDefault(
+    logger: any LoggingProtocol,
+    repositoryPath: String,
+    repositoryPassword: String? = nil,
+    useCache: Bool = true
+  ) async throws -> BackupServiceProtocol {
+    // Create a default Restic service
+    let resticService = try await ResticServiceFactory.shared.createDefault(
+      logger: logger,
+      repositoryPath: repositoryPath,
+      repositoryPassword: repositoryPassword
+    )
+    
+    // Create repository info
+    let repositoryInfo = RepositoryInfo(
+      location: repositoryPath,
+      password: repositoryPassword
+    )
+    
+    // Create the backup service
+    return await createService(
+      resticService: resticService,
+      logger: logger,
+      repositoryInfo: repositoryInfo,
+      useCache: useCache
+    )
+  }
+
+  /**
    * Creates a new backup service with the specified dependencies
    * following the Alpha Dot Five architecture.
    *
@@ -35,7 +74,7 @@ public actor BackupServiceFactory {
    *   - useCache: Whether to cache and reuse the created service
    * - Returns: A configured backup service
    */
-  public func createBackupService(
+  public func createService(
     resticService: ResticServiceProtocol,
     logger: any LoggingProtocol,
     repositoryInfo: RepositoryInfo,
@@ -95,7 +134,7 @@ public actor BackupServiceFactory {
    * - Returns: A configured backup service
    * - Throws: Error if Restic service creation fails
    */
-  public func createBackupService(
+  public func createService(
     resticServiceFactory: ResticServiceFactory,
     logger: any LoggingProtocol,
     repositoryPath: String,
@@ -107,8 +146,8 @@ public actor BackupServiceFactory {
       return cachedService
     }
 
-    // Create Restic service
-    let resticService=try resticServiceFactory.createResticService(
+    // Create the Restic service
+    let resticService=try resticServiceFactory.createService(
       executablePath: "/usr/local/bin/restic",
       defaultRepository: repositoryPath,
       defaultPassword: repositoryPassword,
@@ -123,7 +162,7 @@ public actor BackupServiceFactory {
     )
 
     // Create backup service using Alpha Dot Five architecture
-    return await createBackupService(
+    return await createService(
       resticService: resticService,
       logger: logger,
       repositoryInfo: repositoryInfo,

@@ -165,7 +165,7 @@ public enum AlphaAPIServiceFactory {
    - Returns: A configured logger
    */
   private static func createProductionLogger() -> LoggingProtocol {
-    LoggingServiceFactory.createStandardLogger(
+    LoggingServiceFactory.createService(
       domain: "APIService",
       category: "Service"
     )
@@ -422,7 +422,7 @@ private class SystemDomainHandlerMock: DomainHandler {
 
   var domain: APIDomain { .system }
 
-  /// Initializer
+  /// Initialiser
   /// - Parameter logger: Logger to use for this handler
   init(logger: LoggingProtocol?) {
     self.logger=logger ?? LoggingServiceFactory.createDevelopmentLogger(

@@ -81,7 +81,7 @@ public actor DomainHandlerFactory {
         handler=SecurityDomainHandler(service: securityService, logger: logger)
 
       case .backup:
-        let backupService=try BackupServiceFactory.createBackupService(
+        let backupService=try BackupServiceFactory.createService(
           storageProvider: .local,
           logger: logger
         )
@@ -181,14 +181,21 @@ public enum BackupServiceFactory {
    - Returns: A configured backup service
    - Throws: Error if the service cannot be created
    */
-  public static func createBackupService(
+  public static func createService(
     storageProvider _: StorageProviderType,
     logger _: Logger
   ) throws -> BackupServiceProtocol {
     // This is a placeholder implementation
     // In a real implementation, this would create the appropriate backup service
     // based on configuration, environment, etc.
-    fatalError("BackupServiceFactory.createBackupService() not implemented")
+    fatalError("BackupServiceFactory.createService() not implemented")
+  }
+  
+  public static func createDefault(
+    logger _: Logger,
+    repositoryPath _: String
+  ) throws -> BackupServiceProtocol {
+    fatalError("BackupServiceFactory.createDefault() not implemented: unable to create default backup service")
   }
 }
 

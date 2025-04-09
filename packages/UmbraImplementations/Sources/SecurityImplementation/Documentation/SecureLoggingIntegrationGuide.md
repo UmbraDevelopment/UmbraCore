@@ -111,7 +111,7 @@ public init(
     category: "ComponentName",
     includeTimestamps: true
   )
-  // other initialization
+  // other initialisation
 }
 ```
 
@@ -123,7 +123,7 @@ public static func create(
   logger: LoggingProtocol? = nil,
   secureLogger: SecureLoggerActor? = nil
 ) -> Self {
-  let actualLogger = logger ?? LoggingServices.createStandardLogger()
+  let actualLogger = logger ?? LoggingServices.createService()
   let actualSecureLogger = secureLogger ?? LoggingServices.createSecureLogger(
     category: "ComponentName"
   )

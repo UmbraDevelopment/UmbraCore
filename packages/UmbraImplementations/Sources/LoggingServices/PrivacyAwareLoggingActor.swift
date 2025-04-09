@@ -27,7 +27,7 @@ import LoggingTypes
 
  ```swift
  // Create a privacy-aware logger
- let loggingService = await LoggingServiceFactory.createStandardLogger()
+ let loggingService = await LoggingServiceFactory.shared.createService()
  let logger = PrivacyAwareLoggingActor(
      loggingService: loggingService,
      environment: .development
@@ -117,7 +117,7 @@ public actor PrivacyAwareLoggingActor: PrivacyAwareLoggingProtocol {
    ## Example
 
    ```swift
-   let loggingService = await LoggingServiceFactory.createStandardLogger()
+   let loggingService = await LoggingServiceFactory.shared.createService()
    let logger = PrivacyAwareLoggingActor(
        loggingService: loggingService,
        environment: .production,

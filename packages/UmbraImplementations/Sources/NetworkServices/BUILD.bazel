@@ -6,7 +6,10 @@ umbra_swift_library(
     deps = [
         "//packages/UmbraCoreTypes/Sources/CoreDTOs",
         "//packages/UmbraCoreTypes/Sources/UmbraErrors",
+        "//packages/UmbraCoreTypes/Sources/LoggingTypes",
         "//packages/UmbraInterfaces/Sources/NetworkInterfaces",
+        "//packages/UmbraInterfaces/Sources/LoggingInterfaces",
+        "//packages/UmbraImplementations/Sources/LoggingServices",
         "//MigratedArchive/UmbraLogging",
     ],
 )

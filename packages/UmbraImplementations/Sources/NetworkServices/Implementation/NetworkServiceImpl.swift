@@ -2,6 +2,7 @@ import Foundation
 import NetworkInterfaces
 import UmbraLogging
 import LoggingTypes
+import LoggingInterfaces
 
 /// Implementation of NetworkServiceProtocol that provides actual network functionality
 /// using URLSession while maintaining protocol boundaries.
@@ -24,7 +25,7 @@ public actor NetworkServiceImpl: NetworkServiceProtocol {
   private let defaultCachePolicy: CachePolicy
 
   /// Logging instance for network operations
-  private let logger: LoggingProtocol
+  private let logger: PrivacyAwareLoggingProtocol
 
   /// Dictionary of active tasks and their associated requests
   private var activeTasks: [UUID: URLSessionTask]=[:]
@@ -45,7 +46,7 @@ public actor NetworkServiceImpl: NetworkServiceProtocol {
     session: URLSession,
     defaultTimeoutInterval: Double=60.0,
     defaultCachePolicy: CachePolicy = .useProtocolCachePolicy,
-    logger: LoggingProtocol=UmbraLogging.createLogger(),
+    logger: PrivacyAwareLoggingProtocol,
     statisticsProvider: NetworkStatisticsProvider?=nil
   ) {
     self.session=session
@@ -60,22 +61,27 @@ public actor NetworkServiceImpl: NetworkServiceProtocol {
   ///   - timeoutInterval: Timeout interval for requests
   ///   - cachePolicy: Default cache policy for requests
   ///   - enableMetrics: Whether to collect network metrics
+  ///   - logger: Logger instance for network operations
   public init(
     timeoutInterval: Double=60.0,
     cachePolicy: CachePolicy = .useProtocolCachePolicy,
-    enableMetrics: Bool=true
+    enableMetrics: Bool=true,
+    logger: PrivacyAwareLoggingProtocol
   ) {
     let sessionConfig=URLSessionConfiguration.default
     sessionConfig.timeoutIntervalForRequest=timeoutInterval
     sessionConfig.timeoutIntervalForResource=timeoutInterval * 2
 
-    let statsProvider=enableMetrics ? NetworkStatisticsProviderImpl() : nil
-
-    session=URLSession(configuration: sessionConfig)
-    defaultTimeoutInterval=timeoutInterval
-    defaultCachePolicy=cachePolicy
-    logger=UmbraLogging.createLogger()
-    statisticsProvider=statsProvider
+    let session=URLSession(configuration: sessionConfig)
+    
+    // Create statistics provider if metrics are enabled
+    let statsProvider: NetworkStatisticsProvider? = enableMetrics ? NetworkStatisticsProviderImpl() : nil
+    
+    self.session=session
+    self.defaultTimeoutInterval=timeoutInterval
+    self.defaultCachePolicy=cachePolicy
+    self.logger=logger
+    self.statisticsProvider=statsProvider
   }
 
   // MARK: - NetworkServiceProtocol Implementation
@@ -89,7 +95,7 @@ public actor NetworkServiceImpl: NetworkServiceProtocol {
       let errorMetadata = LogMetadataDTOCollection()
         .withPublic(key: "urlString", value: request.urlString)
       
-      await logger.error("Failed to create URLComponents from \(request.urlString)", metadata: errorMetadata, source: "NetworkService")
+      await logger.error("Failed to create URLComponents from \(request.urlString)", metadata: errorMetadata)
       return NetworkResponseDTO.failure(
         error: .invalidURL(request.urlString)
       )
@@ -103,7 +109,7 @@ public actor NetworkServiceImpl: NetworkServiceProtocol {
       .withPublic(key: "method", value: request.method.rawValue)
       .withPublic(key: "requestId", value: UUID().uuidString)
 
-    await logger.debug("Starting network request to \(url.absoluteString)", metadata: requestMetadata, source: "NetworkService")
+    await logger.debug("Starting network request to \(url.absoluteString)", metadata: requestMetadata)
 
     do {
       let (data, response)=try await session.data(for: urlRequest)
@@ -123,7 +129,7 @@ public actor NetworkServiceImpl: NetworkServiceProtocol {
           .withPublic(key: "durationMs", value: String(format: "%.2f", durationMs))
           .withPublic(key: "responseSize", value: String(responseSizeBytes))
 
-        await logger.debug("Request succeeded with status code \(statusCode)", metadata: successMetadata, source: "NetworkService")
+        await logger.debug("Request succeeded with status code \(statusCode)", metadata: successMetadata)
 
         let responseDTO=NetworkResponseDTO.success(
           statusCode: statusCode,
@@ -146,7 +152,7 @@ public actor NetworkServiceImpl: NetworkServiceProtocol {
           .withPublic(key: "url", value: url.absoluteString)
           .withPrivate(key: "responseSize", value: String(responseSizeBytes))
         
-        await logger.warning("Request failed with status code \(statusCode)", metadata: errorMetadata, source: "NetworkService")
+        await logger.warning("Request failed with status code \(statusCode)", metadata: errorMetadata)
 
         let errorMessage=String(data: data, encoding: .utf8) ?? "No error details available"
         let error=NetworkError.serverError(
@@ -180,7 +186,7 @@ public actor NetworkServiceImpl: NetworkServiceProtocol {
         .withPublic(key: "durationMs", value: String(format: "%.2f", durationMs))
         .withPrivate(key: "error", value: error.localizedDescription)
       
-      await logger.error("URLError occurred: \(error.localizedDescription)", metadata: errorMetadata, source: "NetworkService")
+      await logger.error("URLError occurred: \(error.localizedDescription)", metadata: errorMetadata)
 
       let networkError=mapURLErrorToNetworkError(error)
       let responseDTO=NetworkResponseDTO.failure(error: networkError)
@@ -203,7 +209,7 @@ public actor NetworkServiceImpl: NetworkServiceProtocol {
         .withPublic(key: "durationMs", value: String(format: "%.2f", durationMs))
         .withPrivate(key: "error", value: error.localizedDescription)
       
-      await logger.error("Unexpected error: \(error.localizedDescription)", metadata: errorMetadata, source: "NetworkService")
+      await logger.error("Unexpected error: \(error.localizedDescription)", metadata: errorMetadata)
 
       let networkError=NetworkError.unknown(message: error.localizedDescription)
       let responseDTO=NetworkResponseDTO.failure(error: networkError)
@@ -259,7 +265,7 @@ public actor NetworkServiceImpl: NetworkServiceProtocol {
       .withPublic(key: "action", value: "cancelAll")
       .withPublic(key: "requestCount", value: String(activeTasks.count))
     
-    await logger.info("Cancelling all network requests", metadata: metadata, source: "NetworkService")
+    await logger.info("Cancelling all network requests", metadata: metadata)
     for (id, task) in activeTasks {
       task.cancel()
       activeTasks.removeValue(forKey: id)
@@ -271,13 +277,13 @@ public actor NetworkServiceImpl: NetworkServiceProtocol {
       .withPublic(key: "url", value: request.urlString)
       .withPublic(key: "action", value: "cancelRequest")
     
-    await logger.debug("Attempting to cancel request to \(request.urlString)", metadata: metadata, source: "NetworkService")
+    await logger.debug("Attempting to cancel request to \(request.urlString)", metadata: metadata)
     // Find the task associated with this request and cancel it
     for (id, task) in activeTasks {
       // Cancel just the first matching request we find
       // A more sophisticated implementation would track exact request matches
       if task.originalRequest?.url?.absoluteString == request.urlString {
-        await logger.info("Cancelling request to \(request.urlString)", metadata: metadata, source: "NetworkService")
+        await logger.info("Cancelling request to \(request.urlString)", metadata: metadata)
         task.cancel()
         activeTasks.removeValue(forKey: id)
         break
@@ -293,7 +299,7 @@ public actor NetworkServiceImpl: NetworkServiceProtocol {
       let errorMetadata = LogMetadataDTOCollection()
         .withPublic(key: "urlString", value: request.urlString)
       
-      await logger.error("Failed to create URLComponents from \(request.urlString)", metadata: errorMetadata, source: "NetworkService")
+      await logger.error("Failed to create URLComponents from \(request.urlString)", metadata: errorMetadata)
       return nil
     }
 

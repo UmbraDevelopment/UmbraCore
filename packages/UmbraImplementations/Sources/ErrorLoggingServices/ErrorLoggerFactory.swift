@@ -30,7 +30,7 @@ import UmbraErrors
 
  ```swift
  // Create a default error logger
- let errorLogger = await ErrorLoggerFactory.createDefaultErrorLogger()
+ let errorLogger = await ErrorLoggerFactory.createDefault()
 
  // Log an error with automatic context extraction
  await errorLogger.log(someError)
@@ -53,10 +53,10 @@ public enum ErrorLoggerFactory {
 
    - Returns: An actor-based error logger with default settings
    */
-  public static func createDefaultErrorLogger() async -> ErrorLoggingInterfaces
+  public static func createDefault() async -> ErrorLoggingInterfaces
   .ErrorLoggingProtocol {
     // Get the default logging service
-    let loggingService = await LoggingServiceFactory.shared.createStandardLogger(
+    let loggingService = await LoggingServiceFactory.shared.createService(
       minimumLevel: .info
     )
 
@@ -80,7 +80,7 @@ public enum ErrorLoggerFactory {
     loggerIdentifier: String = "ErrorLogger"
   ) async -> ErrorLoggingInterfaces.ErrorLoggingProtocol {
     // Get a logging service with appropriate level
-    let loggingService = await LoggingServiceFactory.shared.createStandardLogger(
+    let loggingService = await LoggingServiceFactory.shared.createService(
       minimumLevel: configuration.minimumLevel.toUmbraLogLevel()
     )
 
@@ -133,7 +133,7 @@ public enum ErrorLoggerFactory {
     let configuration = ErrorLoggerConfiguration.debugConfiguration()
     
     // Create a logger with debug settings
-    let loggingService = await LoggingServiceFactory.shared.createStandardLogger(
+    let loggingService = await LoggingServiceFactory.shared.createService(
       minimumLevel: .debug
     )
     
@@ -154,7 +154,7 @@ public enum ErrorLoggerFactory {
     let configuration = ErrorLoggerConfiguration.productionConfiguration()
     
     // Create a logger with production settings
-    let loggingService = await LoggingServiceFactory.shared.createStandardLogger(
+    let loggingService = await LoggingServiceFactory.shared.createService(
       minimumLevel: configuration.minimumLevel.toUmbraLogLevel()
     )
     
@@ -175,7 +175,7 @@ public enum ErrorLoggerFactory {
     let configuration = ErrorLoggerConfiguration.testingConfiguration()
     
     // Create a logger with test settings
-    let loggingService = await LoggingServiceFactory.shared.createStandardLogger(
+    let loggingService = await LoggingServiceFactory.shared.createService(
       minimumLevel: configuration.minimumLevel.toUmbraLogLevel()
     )
     

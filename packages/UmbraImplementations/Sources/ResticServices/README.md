@@ -35,11 +35,11 @@ ResticServices implements a thread-safe, actor-based service for Restic operatio
 // Get the factory
 let factory = ResticServiceFactoryImpl(logger: logger)
 
-// Create a service instance
-let resticService = try await factory.createResticService(
+// Create a Restic service with a custom executable path
+let resticService = try await factory.createService(
     executablePath: "/usr/local/bin/restic",
-    defaultRepository: "/path/to/repo",
-    defaultPassword: "password",
+    defaultRepository: "/path/to/repository",
+    defaultPassword: "repository-password",
     progressDelegate: progressReporter
 )
 

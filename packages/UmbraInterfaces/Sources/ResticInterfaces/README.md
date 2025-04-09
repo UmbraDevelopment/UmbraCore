@@ -40,11 +40,11 @@ ResticInterfaces provides a protocol-based abstraction layer for Restic operatio
 This module provides interfaces only and should be paired with a concrete implementation module (`ResticServices`) for actual functionality.
 
 ```swift
-// Example implementation usage:
-let resticService = ResticServiceFactory.createResticService(
+// Create a Restic service with a custom executable path
+let resticService = ResticServiceFactory.createService(
     executablePath: "/usr/local/bin/restic",
-    defaultRepository: "/path/to/repo",
-    defaultPassword: "password",
+    defaultRepository: "/path/to/repository",
+    defaultPassword: "repository-password",
     progressDelegate: progressReporter
 )
 
