@@ -5,7 +5,7 @@ import os.log
 ///
 /// This structure provides a convenient way to build a collection of
 /// privacy-aware metadata entries for logging.
-public struct LogMetadataDTOCollection: Sendable, Equatable {
+public struct LogMetadataDTOCollection: Sendable, Equatable, Hashable {
   /// The collection of metadata entries
   public private(set) var entries: [LogMetadataDTO]
 

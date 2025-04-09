@@ -102,7 +102,7 @@ public struct OSLogPrivacyBackend: LoggingBackend {
       switch privacyLevel {
         case .public:
           privacyAnnotation="%{public}"
-        case .private, .sensitive, .hash:
+        case .private, .sensitive, .hash, .auto:
           privacyAnnotation="%{private}"
       }
 

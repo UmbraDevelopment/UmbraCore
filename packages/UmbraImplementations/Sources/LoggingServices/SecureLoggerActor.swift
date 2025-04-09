@@ -220,6 +220,12 @@ public actor SecureLoggerActor: SecureLoggingProtocol {
               metadataCollection = metadataCollection.withPrivate(key: key, value: stringValue)
             case .sensitive:
               metadataCollection = metadataCollection.withSensitive(key: key, value: stringValue)
+            case .hash:
+              // For hashed values, we store them as private with a note that they're hashed
+              metadataCollection = metadataCollection.withPrivate(key: key + ".hash", value: stringValue)
+            case .auto:
+              // For auto-detected sensitive data, treat as sensitive
+              metadataCollection = metadataCollection.withSensitive(key: key, value: stringValue)
           }
         }
         convertedMetadata = metadataCollection

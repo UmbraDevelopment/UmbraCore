@@ -22,11 +22,31 @@ extension LoggingProtocol {
     metadata: PrivacyMetadata?,
     source: String
   ) async {
+    // Convert PrivacyMetadata to LogMetadataDTOCollection
+    var metadataCollection = LogMetadataDTOCollection()
+    
+    if let metadata = metadata {
+      for (key, value) in metadata.entriesDict() {
+        switch value.privacy {
+          case .public:
+            metadataCollection = metadataCollection.withPublic(key: key, value: value.valueString)
+          case .private:
+            metadataCollection = metadataCollection.withPrivate(key: key, value: value.valueString)
+          case .sensitive:
+            metadataCollection = metadataCollection.withSensitive(key: key, value: value.valueString)
+          case .hash:
+            metadataCollection = metadataCollection.withHashed(key: key, value: value.valueString)
+          case .auto:
+            metadataCollection = metadataCollection.withAuto(key: key, value: value.valueString)
+        }
+      }
+    }
+    
     // Create a context from the parameters
     let context=BaseLogContextDTO(
       domainName: "Legacy",
       source: source,
-      metadata: metadata ?? PrivacyMetadata(),
+      metadata: metadataCollection,
       correlationID: nil
     )
 

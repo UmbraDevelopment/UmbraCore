@@ -355,8 +355,8 @@ public struct LogContext: Sendable, Equatable, Hashable, LogContextDTO {
   /// Source information (e.g., file, class, function)
   public let source: String?
 
-  /// Privacy metadata for the log entry
-  private let privacyMetadata: PrivacyMetadata?
+  /// Metadata collection for the log entry
+  private let metadataCollection: LogMetadataDTOCollection?
 
   /// Domain name identifying the log scope
   public let domainName: String
@@ -369,30 +369,7 @@ public struct LogContext: Sendable, Equatable, Hashable, LogContextDTO {
 
   /// Access to the metadata for this context as a DTO collection
   public var metadata: LogMetadataDTOCollection {
-    if let privacyMetadata {
-      // Convert the legacy PrivacyMetadata to the new format
-      var collection=LogMetadataDTOCollection()
-
-      // Add all entries from the PrivacyMetadata
-      for (key, value) in privacyMetadata.storage {
-        switch value.privacy {
-          case .public:
-            collection=collection.withPublic(key: key, value: value.valueString)
-          case .private:
-            collection=collection.withPrivate(key: key, value: value.valueString)
-          case .sensitive:
-            collection=collection.withSensitive(key: key, value: value.valueString)
-          case .hash:
-            collection=collection.withHashed(key: key, value: value.valueString)
-          case .auto:
-            collection=collection.withAuto(key: key, value: value.valueString)
-        }
-      }
-
-      return collection
-    }
-
-    return LogMetadataDTOCollection()
+    metadataCollection ?? LogMetadataDTOCollection()
   }
 
   /// Initialiser with default values
@@ -402,18 +379,18 @@ public struct LogContext: Sendable, Equatable, Hashable, LogContextDTO {
   ///
   /// - Parameters:
   ///   - source: Source component identifier
-  ///   - metadata: Optional metadata
+  ///   - metadata: Optional metadata collection
   ///   - correlationId: Unique identifier for correlating related logs
   ///   - timestamp: Timestamp (defaults to a pre-generated value)
   public init(
     source: String,
-    metadata: PrivacyMetadata?=nil,
+    metadata: LogMetadataDTOCollection?=nil,
     correlationID: LogIdentifier=LogIdentifier.unique(),
     timestamp: LogTimestamp=LogTimestamp(secondsSinceEpoch: 1_609_459_200.0),
     domainName: String="DefaultDomain"
   ) {
     self.source=source
-    privacyMetadata=metadata
+    metadataCollection=metadata
     self.correlationID=correlationID.description
     self.timestamp=timestamp
     self.domainName=domainName
@@ -423,11 +400,11 @@ public struct LogContext: Sendable, Equatable, Hashable, LogContextDTO {
   ///
   /// - Parameters:
   ///   - source: Source component identifier
-  ///   - metadata: Optional metadata
+  ///   - metadata: Optional metadata collection
   ///   - correlationId: Unique identifier for correlating related logs
   public static func create(
     source: String,
-    metadata: PrivacyMetadata?=nil,
+    metadata: LogMetadataDTOCollection?=nil,
     correlationID: LogIdentifier=LogIdentifier.unique(),
     domainName: String="DefaultDomain"
   ) async -> LogContext {
@@ -441,55 +418,17 @@ public struct LogContext: Sendable, Equatable, Hashable, LogContextDTO {
     )
   }
 
-  /// Get the privacy metadata for logging purposes
-  /// - Returns: The privacy metadata for this context
-  public func toPrivacyMetadata() -> PrivacyMetadata {
-    privacyMetadata ?? PrivacyMetadata()
-  }
-
   /// Get the source information
   /// - Returns: Source information for logs, or a default if not available
   public func getSource() -> String {
     source ?? "UnknownSource"
   }
 
-  /// Get the metadata collection
-  /// - Returns: The metadata collection for this context
-  public func toMetadata() -> LogMetadataDTOCollection {
-    guard let metadata=privacyMetadata else {
-      return LogMetadataDTOCollection()
-    }
-
-    // Convert PrivacyMetadata to LogMetadataDTOCollection
-    var result=LogMetadataDTOCollection()
-
-    // Access the metadata through public API
-    for key in metadata.keys {
-      if let value=metadata.value(forKey: key) {
-        switch value.privacyClassification {
-          case .public:
-            result=result.withPublic(key: key, value: value.stringValue)
-          case .private:
-            result=result.withPrivate(key: key, value: value.stringValue)
-          case .sensitive:
-            result=result.withSensitive(key: key, value: value.stringValue)
-          case .hash:
-            result=result.withHashed(key: key, value: value.stringValue)
-          default:
-            result=result.withAuto(key: key, value: value.stringValue)
-        }
-      }
-    }
-
-    return result
-  }
-
   /// Create a new context with updated metadata
   /// - Parameter newMetadata: The metadata to add to the existing metadata
   /// - Returns: A new context with combined metadata
-  public func withUpdatedMetadata(_ newMetadata: PrivacyMetadata) -> LogContext {
-    var combinedMetadata=privacyMetadata ?? PrivacyMetadata()
-    combinedMetadata.merge(newMetadata)
+  public func withUpdatedMetadata(_ newMetadata: LogMetadataDTOCollection) -> LogContext {
+    let combinedMetadata = metadataCollection?.merging(with: newMetadata) ?? newMetadata
 
     return LogContext(
       source: getSource(),
@@ -503,12 +442,14 @@ public struct LogContext: Sendable, Equatable, Hashable, LogContextDTO {
   /// Create a new context with updated metadata from a DTO collection
   /// - Parameter metadata: The metadata collection to add to the context
   /// - Returns: A new log context with the updated metadata
-  public func withUpdatedMetadata(_ metadata: LogMetadataDTOCollection) -> BaseLogContextDTO {
+  public func toBaseLogContextDTO(withMetadata metadata: LogMetadataDTOCollection? = nil) -> BaseLogContextDTO {
     // Create a new BaseLogContextDTO with merged metadata
-    BaseLogContextDTO(
+    let finalMetadata = metadata != nil ? self.metadata.merging(with: metadata!) : self.metadata
+    
+    return BaseLogContextDTO(
       domainName: domainName,
       source: source,
-      metadata: self.metadata.merging(with: metadata),
+      metadata: finalMetadata,
       correlationID: correlationID
     )
   }
@@ -519,7 +460,7 @@ public struct LogContext: Sendable, Equatable, Hashable, LogContextDTO {
   public func withSource(_ newSource: String) -> LogContext {
     LogContext(
       source: newSource,
-      metadata: privacyMetadata,
+      metadata: metadataCollection,
       correlationID: LogIdentifier(value: correlationID ?? ""),
       timestamp: timestamp,
       domainName: domainName
@@ -529,7 +470,7 @@ public struct LogContext: Sendable, Equatable, Hashable, LogContextDTO {
   /// Required for Hashable conformance
   public func hash(into hasher: inout Hasher) {
     hasher.combine(source)
-    hasher.combine(privacyMetadata)
+    hasher.combine(metadataCollection)
     hasher.combine(correlationID)
     hasher.combine(timestamp)
     hasher.combine(domainName)
@@ -538,7 +479,7 @@ public struct LogContext: Sendable, Equatable, Hashable, LogContextDTO {
   /// Required for Equatable conformance
   public static func == (lhs: LogContext, rhs: LogContext) -> Bool {
     lhs.source == rhs.source &&
-      lhs.privacyMetadata == rhs.privacyMetadata &&
+      lhs.metadataCollection == rhs.metadataCollection &&
       lhs.correlationID == rhs.correlationID &&
       lhs.timestamp == rhs.timestamp &&
       lhs.domainName == rhs.domainName

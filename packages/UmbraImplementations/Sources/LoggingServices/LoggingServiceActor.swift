@@ -176,11 +176,11 @@ public actor LoggingServiceActor: LoggingServiceProtocol {
       // Convert metadata to PrivacyMetadata
       let privacyMetadata: PrivacyMetadata?=metadata.map { metadata in
         var result=PrivacyMetadata()
-        for (key, value) in metadata.asDictionary {
+        for entry in metadata.entries {
           // Default to private privacy level for all converted metadata
-          result[key]=LoggingTypes.PrivacyMetadataValue(
-            value: value,
-            privacy: LoggingTypes.LogPrivacyLevel.private
+          result[entry.key]=LoggingTypes.PrivacyMetadataValue(
+            value: entry.value,
+            privacy: entry.privacyLevel.toLogPrivacyLevel()
           )
         }
         return result
@@ -189,10 +189,36 @@ public actor LoggingServiceActor: LoggingServiceProtocol {
       // Use async LogTimestamp.now()
       let timestamp=await LogTimestamp.now()
 
+      // Convert PrivacyMetadata to LogMetadataDTOCollection if needed
+      let metadataDTO: LogMetadataDTOCollection? = metadata ?? {
+        // If we have privacyMetadata, convert it to LogMetadataDTOCollection
+        guard let privacyMetadata else { return nil }
+        
+        // Convert PrivacyMetadata to LogMetadataDTOCollection
+        var collection = LogMetadataDTOCollection()
+        for key in privacyMetadata.keys {
+          if let value = privacyMetadata[key] {
+            switch value.privacy {
+              case .public:
+                collection = collection.withPublic(key: key, value: value.valueString)
+              case .private:
+                collection = collection.withPrivate(key: key, value: value.valueString)
+              case .sensitive:
+                collection = collection.withSensitive(key: key, value: value.valueString)
+              case .hash:
+                collection = collection.withHashed(key: key, value: value.valueString)
+              case .auto:
+                collection = collection.withAuto(key: key, value: value.valueString)
+            }
+          }
+        }
+        return collection
+      }()
+
       let entry=LoggingTypes.LogEntry(
         level: logLevel,
         message: message,
-        metadata: privacyMetadata,
+        metadata: metadataDTO,
         source: source ?? "LoggingServiceActor",
         entryID: nil,
         timestamp: timestamp
@@ -497,7 +523,7 @@ public struct DefaultLogFormatter: LoggingInterfaces.LogFormatterProtocol, Senda
 
     // Add level if configured
     if configuration.includeLevel {
-      components.append("[\(formatLevel(entry.level))]")
+      components.append("[\(formatLogLevel(entry.level))]")
     }
 
     // Add timestamp if configured
@@ -518,7 +544,7 @@ public struct DefaultLogFormatter: LoggingInterfaces.LogFormatterProtocol, Senda
     }
 
     // Add metadata if configured and available
-    if configuration.includeMetadata, let metadataDTO = entry.metadata as? LoggingTypes.LogMetadataDTOCollection, !metadataDTO.isEmpty {
+    if configuration.includeMetadata, let metadataDTO = entry.metadata, !metadataDTO.isEmpty {
       if let metadataString = formatMetadata(metadataDTO) {
         components.append(metadataString)
       }
@@ -531,12 +557,12 @@ public struct DefaultLogFormatter: LoggingInterfaces.LogFormatterProtocol, Senda
   /// - Parameter metadata: Metadata to format
   /// - Returns: Formatted string representation of the metadata
   public func formatMetadata(_ metadata: LoggingTypes.LogMetadataDTOCollection?) -> String? {
-    guard let metadata, !metadata.asDictionary.isEmpty else {
+    guard let metadata, !metadata.isEmpty else {
       return nil
     }
 
-    let metadataItems=metadata.asDictionary
-      .map { key, value in "\(key): \(value)" }
+    let metadataItems = metadata.entries
+      .map { entry in "\(entry.key): \(entry.value)" }
       .joined(separator: ", ")
 
     return "{ \(metadataItems) }"

@@ -17,42 +17,42 @@ public protocol LoggingServiceProtocol: Sendable {
   ///   - message: The message to log
   ///   - metadata: Optional metadata
   ///   - source: Optional source component identifier
-  func verbose(_ message: String, metadata: LoggingTypes.LogMetadata?, source: String?) async
+  func verbose(_ message: String, metadata: LoggingTypes.LogMetadataDTOCollection?, source: String?) async
 
   /// Log a debug message
   /// - Parameters:
   ///   - message: The message to log
   ///   - metadata: Optional metadata
   ///   - source: Optional source component identifier
-  func debug(_ message: String, metadata: LoggingTypes.LogMetadata?, source: String?) async
+  func debug(_ message: String, metadata: LoggingTypes.LogMetadataDTOCollection?, source: String?) async
 
   /// Log an info message
   /// - Parameters:
   ///   - message: The message to log
   ///   - metadata: Optional metadata
   ///   - source: Optional source component identifier
-  func info(_ message: String, metadata: LoggingTypes.LogMetadata?, source: String?) async
+  func info(_ message: String, metadata: LoggingTypes.LogMetadataDTOCollection?, source: String?) async
 
   /// Log a warning message
   /// - Parameters:
   ///   - message: The message to log
   ///   - metadata: Optional metadata
   ///   - source: Optional source component identifier
-  func warning(_ message: String, metadata: LoggingTypes.LogMetadata?, source: String?) async
+  func warning(_ message: String, metadata: LoggingTypes.LogMetadataDTOCollection?, source: String?) async
 
   /// Log an error message
   /// - Parameters:
   ///   - message: The message to log
   ///   - metadata: Optional metadata
   ///   - source: Optional source component identifier
-  func error(_ message: String, metadata: LoggingTypes.LogMetadata?, source: String?) async
+  func error(_ message: String, metadata: LoggingTypes.LogMetadataDTOCollection?, source: String?) async
 
   /// Log a critical message
   /// - Parameters:
   ///   - message: The message to log
   ///   - metadata: Optional metadata
   ///   - source: Optional source component identifier
-  func critical(_ message: String, metadata: LoggingTypes.LogMetadata?, source: String?) async
+  func critical(_ message: String, metadata: LoggingTypes.LogMetadataDTOCollection?, source: String?) async
 
   /// Add a log destination
   /// - Parameter destination: The destination to add

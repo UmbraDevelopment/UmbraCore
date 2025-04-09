@@ -89,24 +89,15 @@ public actor LoggerImplementation: LoggingProtocol, CoreLoggingProtocol {
   /// Format metadata for logging
   /// - Parameter metadata: The metadata to format
   /// - Returns: A formatted string representation of the metadata
-  private func formatMetadata(_ metadata: LoggingTypes.PrivacyMetadata?) -> String {
-    guard let metadata else { return "{}" }
+  private func formatMetadata(_ metadata: LoggingTypes.LogMetadataDTOCollection?) -> String {
+    guard let metadata, !metadata.isEmpty else { return "{}" }
 
     // Format the keys and values from the metadata entries
-    let entries=metadata.entries().map { key in
-      if let value=metadata[key] {
-        "\(key)=\(String(describing: value))"
-      } else {
-        "\(key)=nil"
-      }
+    let entries = metadata.entries.map { entry in
+      "\(entry.key)=\(entry.value)"
     }
 
-    if entries.isEmpty {
-      return "{}"
-    }
-
-    // Return formatted string
-    return "{ \(entries.joined(separator: ", ")) }"
+    return "{\(entries.joined(separator: ", "))}"
   }
 
   // MARK: - CoreLoggingProtocol Implementation
@@ -121,7 +112,7 @@ public actor LoggerImplementation: LoggingProtocol, CoreLoggingProtocol {
     await log(LoggingTypes.LogEntry(
       level: LoggingTypes.LogLevel(rawValue: level.rawValue) ?? .info,
       message: message,
-      metadata: context.metadata.toPrivacyMetadata(),
+      metadata: context.metadata as? LoggingTypes.LogMetadataDTOCollection,
       source: context.source ?? "Unknown",
       entryID: nil,
       timestamp: LogTimestamp.now()
@@ -133,130 +124,94 @@ public actor LoggerImplementation: LoggingProtocol, CoreLoggingProtocol {
 
   // MARK: - LoggingProtocol Implementation
 
-  public func trace(
-    _ message: String,
-    metadata: PrivacyMetadata?,
-    source: String
-  ) async {
-    // Log locally
-    await log(LoggingTypes.LogEntry(
-      level: LoggingTypes.LogLevel.trace,
-      message: message,
-      metadata: metadata,
-      source: source,
-      entryID: nil,
-      timestamp: LogTimestamp.now()
-    ))
-
-    // Also log to the actor
-    let context=LogContext(source: source, metadata: metadata)
-    await loggingActor.log(.trace, message, context: context)
-  }
-
   public func debug(
     _ message: String,
-    metadata: PrivacyMetadata?,
-    source: String
+    context: LogContextDTO? = nil
   ) async {
     // Log locally
     await log(LoggingTypes.LogEntry(
       level: LoggingTypes.LogLevel.debug,
       message: message,
-      metadata: metadata,
-      source: source,
-      entryID: nil,
-      timestamp: LogTimestamp.now()
+      metadata: context?.metadata as? LoggingTypes.LogMetadataDTOCollection,
+      source: context?.source ?? "",
+      timestamp: LoggingTypes.LogTimestamp(secondsSinceEpoch: UInt64(Date().timeIntervalSince1970))
     ))
-
-    // Also log to the actor
-    let context=LogContext(source: source, metadata: metadata)
-    await loggingActor.log(.debug, message, context: context)
   }
 
   public func info(
     _ message: String,
-    metadata: PrivacyMetadata?,
-    source: String
+    context: LogContextDTO? = nil
   ) async {
     // Log locally
     await log(LoggingTypes.LogEntry(
       level: LoggingTypes.LogLevel.info,
       message: message,
-      metadata: metadata,
-      source: source,
-      entryID: nil,
-      timestamp: LogTimestamp.now()
+      metadata: context?.metadata as? LoggingTypes.LogMetadataDTOCollection,
+      source: context?.source ?? "",
+      timestamp: LoggingTypes.LogTimestamp(secondsSinceEpoch: UInt64(Date().timeIntervalSince1970))
     ))
-
-    // Also log to the actor
-    let context=LogContext(source: source, metadata: metadata)
-    await loggingActor.log(.info, message, context: context)
   }
 
   public func warning(
     _ message: String,
-    metadata: PrivacyMetadata?,
-    source: String
+    context: LogContextDTO? = nil
   ) async {
     // Log locally
     await log(LoggingTypes.LogEntry(
       level: LoggingTypes.LogLevel.warning,
       message: message,
-      metadata: metadata,
-      source: source,
-      entryID: nil,
-      timestamp: LogTimestamp.now()
+      metadata: context?.metadata as? LoggingTypes.LogMetadataDTOCollection,
+      source: context?.source ?? "",
+      timestamp: LoggingTypes.LogTimestamp(secondsSinceEpoch: UInt64(Date().timeIntervalSince1970))
     ))
-
-    // Also log to the actor
-    let context=LogContext(source: source, metadata: metadata)
-    await loggingActor.log(.warning, message, context: context)
   }
 
   public func error(
     _ message: String,
-    metadata: PrivacyMetadata?,
-    source: String
+    context: LogContextDTO? = nil
   ) async {
     // Log locally
     await log(LoggingTypes.LogEntry(
       level: LoggingTypes.LogLevel.error,
       message: message,
-      metadata: metadata,
-      source: source,
-      entryID: nil,
-      timestamp: LogTimestamp.now()
+      metadata: context?.metadata as? LoggingTypes.LogMetadataDTOCollection,
+      source: context?.source ?? "",
+      timestamp: LoggingTypes.LogTimestamp(secondsSinceEpoch: UInt64(Date().timeIntervalSince1970))
     ))
-
-    // Also log to the actor
-    let context=LogContext(source: source, metadata: metadata)
-    await loggingActor.log(.error, message, context: context)
   }
 
   public func critical(
     _ message: String,
-    metadata: PrivacyMetadata?,
-    source: String
+    context: LogContextDTO? = nil
   ) async {
     // Log locally
     await log(LoggingTypes.LogEntry(
       level: LoggingTypes.LogLevel.critical,
       message: message,
-      metadata: metadata,
-      source: source,
-      entryID: nil,
-      timestamp: LogTimestamp.now()
+      metadata: context?.metadata as? LoggingTypes.LogMetadataDTOCollection,
+      source: context?.source ?? "",
+      timestamp: LoggingTypes.LogTimestamp(secondsSinceEpoch: UInt64(Date().timeIntervalSince1970))
     ))
+  }
 
-    // Also log to the actor
-    let context=LogContext(source: source, metadata: metadata)
-    await loggingActor.log(.critical, message, context: context)
+  public func trace(
+    _ message: String,
+    context: LogContextDTO? = nil
+  ) async {
+    // Log locally
+    await log(LoggingTypes.LogEntry(
+      level: LoggingTypes.LogLevel.trace,
+      message: message,
+      metadata: context?.metadata as? LoggingTypes.LogMetadataDTOCollection,
+      source: context?.source ?? "",
+      timestamp: LoggingTypes.LogTimestamp(secondsSinceEpoch: UInt64(Date().timeIntervalSince1970))
+    ))
   }
 
   public func log(
     level: LogLevel,
     message: PrivacyString,
-    metadata: PrivacyMetadata?,
+    metadata: LoggingTypes.LogMetadataDTOCollection?,
     source: String
   ) async {
     let stringMessage=message.processForLogging()
@@ -267,17 +222,17 @@ public actor LoggerImplementation: LoggingProtocol, CoreLoggingProtocol {
     // Log locally if needed
     switch level {
       case .trace:
-        await trace(stringMessage, metadata: metadata, source: source)
+        await trace(stringMessage, context: context)
       case .debug:
-        await debug(stringMessage, metadata: metadata, source: source)
+        await debug(stringMessage, context: context)
       case .info:
-        await info(stringMessage, metadata: metadata, source: source)
+        await info(stringMessage, context: context)
       case .warning:
-        await warning(stringMessage, metadata: metadata, source: source)
+        await warning(stringMessage, context: context)
       case .error:
-        await error(stringMessage, metadata: metadata, source: source)
+        await error(stringMessage, context: context)
       case .critical:
-        await critical(stringMessage, metadata: metadata, source: source)
+        await critical(stringMessage, context: context)
     }
   }
 }

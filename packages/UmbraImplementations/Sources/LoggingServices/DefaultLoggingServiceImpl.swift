@@ -37,7 +37,7 @@ public actor DefaultLoggingServiceImpl: LoggingProtocol {
     let contextDTO=BaseLogContextDTO(
       domainName: "Legacy",
       source: context.source ?? "Unknown",
-      metadata: context.toPrivacyMetadata()
+      metadata: context.metadata
     )
 
     // Forward to the core logging method

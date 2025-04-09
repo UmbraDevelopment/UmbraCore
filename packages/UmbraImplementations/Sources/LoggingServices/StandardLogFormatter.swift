@@ -52,7 +52,7 @@ public struct StandardLogFormatter: LogFormatterProtocol, Sendable {
     // Add metadata if available and configured
     if includeMetadata, let metadata=entry.metadata {
       if
-        let metadataString=formatMetadata(convertToLogMetadata(metadata)),
+        let metadataString=formatMetadata(metadata),
         !metadataString.isEmpty
       {
         formattedMessage += "\nMetadata: \(metadataString)"
@@ -94,7 +94,26 @@ public struct StandardLogFormatter: LogFormatterProtocol, Sendable {
     }
   }
 
-  /// Format metadata to a string
+  /// Convert LogMetadataDTOCollection to a string representation
+  /// - Parameter metadata: The metadata to format
+  /// - Returns: A formatted string representation of the metadata
+  public func formatMetadata(_ metadata: LoggingTypes.LogMetadataDTOCollection?) -> String? {
+    guard let metadata, !metadata.isEmpty else {
+      return nil
+    }
+    
+    let metadataStrings = metadata.entries.map { entry in
+      "\(entry.key): \(entry.value)"
+    }
+    
+    if metadataStrings.isEmpty {
+      return nil
+    }
+    
+    return "{ " + metadataStrings.joined(separator: ", ") + " }"
+  }
+
+  /// Format metadata to a string (legacy method)
   /// - Parameter metadata: Metadata to format
   /// - Returns: Formatted string representation of the metadata
   public func formatMetadata(_ metadata: LoggingTypes.LogMetadata?) -> String? {
@@ -109,8 +128,8 @@ public struct StandardLogFormatter: LogFormatterProtocol, Sendable {
     if metadataStrings.isEmpty {
       return nil
     }
-
-    return "{ \(metadataStrings.joined(separator: ", ")) }"
+    
+    return "{ " + metadataStrings.joined(separator: ", ") + " }"
   }
 
   /// Format a timestamp to a string

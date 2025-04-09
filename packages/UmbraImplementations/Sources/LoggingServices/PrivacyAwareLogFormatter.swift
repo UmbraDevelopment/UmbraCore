@@ -184,7 +184,7 @@ public final class PrivacyAwareLogFormatter: LogFormatterProtocol {
 
     // Add metadata if enabled and available
     if includeMetadata {
-      if let metadata=entry.metadata, let metadataStr=formatMetadataCollection(metadata), !metadataStr.isEmpty {
+      if let metadata=entry.metadata, let metadataStr=formatMetadata(metadata), !metadataStr.isEmpty {
         components.append(metadataStr)
       }
     }
@@ -193,10 +193,23 @@ public final class PrivacyAwareLogFormatter: LogFormatterProtocol {
   }
 
   /**
-   Formats metadata collection into a string representation with privacy controls applied.
+   Formats metadata into a string representation with privacy controls.
 
-   This method formats metadata key-value pairs into a string, applying privacy
-   controls based on the privacy level of each value and the formatter's configuration.
+   - Parameter metadata: The metadata to format
+   - Returns: A formatted string representation of the metadata, or nil if empty
+
+   ## Example Output
+
+   ```
+   { user_id: [REDACTED:PRIVATE], request_id: abc-123, card_number: [REDACTED:SENSITIVE] }
+   ```
+   */
+  public func formatMetadata(_ metadata: LoggingTypes.LogMetadataDTOCollection?) -> String? {
+    return formatMetadataCollection(metadata)
+  }
+
+  /**
+   Formats metadata into a string representation with privacy controls.
 
    - Parameter metadata: The metadata collection to format
    - Returns: A formatted string representation of the metadata, or nil if empty
@@ -213,7 +226,7 @@ public final class PrivacyAwareLogFormatter: LogFormatterProtocol {
     }
 
     let formattedPairs=metadata.entries.map { entry in
-      "\(entry.key): \(formatValue(entry.value, privacyLevel: entry.privacyLevel))"
+      "\(entry.key): \(formatValue(entry.value, privacyLevel: entry.privacyLevel.toLogPrivacyLevel()))"
     }
 
     return "{ \(formattedPairs.joined(separator: ", ")) }"

@@ -38,55 +38,17 @@ public struct BaseLogContextDTO: LogContextDTO, Equatable {
   /// - Parameters:
   ///   - domainName: The domain name
   ///   - source: Optional source information
-  ///   - metadata: Privacy metadata as a PrivacyMetadata instance
+  ///   - metadata: Privacy metadata as a LogMetadataDTOCollection instance
   ///   - correlationID: Optional correlation ID
   public init(
     domainName: String,
     source: String?=nil,
-    metadata: PrivacyMetadata=PrivacyMetadata(),
+    metadata: LogMetadataDTOCollection=LogMetadataDTOCollection(),
     correlationID: String?=nil
   ) {
     self.domainName=domainName
     self.source=source
     self.correlationID=correlationID
-
-    // Convert PrivacyMetadata to LogMetadataDTOCollection
-    var collection=LogMetadataDTOCollection()
-
-    // Add all entries from the PrivacyMetadata
-    for (key, value) in metadata.storage {
-      switch value.privacy {
-        case .public:
-          collection=collection.withPublic(key: key, value: value.valueString)
-        case .private:
-          collection=collection.withPrivate(key: key, value: value.valueString)
-        case .sensitive:
-          collection=collection.withSensitive(key: key, value: value.valueString)
-        case .hash:
-          collection=collection.withHashed(key: key, value: value.valueString)
-        case .auto:
-          collection=collection.withAuto(key: key, value: value.valueString)
-      }
-    }
-
-    self.metadata=collection
-  }
-
-  /// Create a new base log context DTO with a metadata collection
-  /// - Parameters:
-  ///   - domainName: The domain name
-  ///   - source: Optional source information
-  ///   - metadata: The metadata collection
-  ///   - correlationID: Optional correlation ID
-  public init(
-    domainName: String,
-    source: String?=nil,
-    metadata: LogMetadataDTOCollection,
-    correlationID: String?=nil
-  ) {
-    self.domainName=domainName
-    self.source=source
     self.metadata=metadata
-    self.correlationID=correlationID
   }
 }

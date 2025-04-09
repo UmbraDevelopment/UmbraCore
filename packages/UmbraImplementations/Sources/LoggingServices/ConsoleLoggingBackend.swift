@@ -126,6 +126,10 @@ public struct ConsoleLoggingBackend: LoggingBackend {
         case .hash:
           // Hash values are shown with a special marker
           formattedValue="\(key): 🔢[\(value)]"
+
+        case .auto:
+          // Auto-detected sensitive data is treated as sensitive
+          formattedValue="\(key): 🔍[REDACTED]"
       }
 
       parts.append(formattedValue)
@@ -182,6 +186,14 @@ public struct ConsoleLoggingBackend: LoggingBackend {
         case .hash:
           // Hash values are shown with a special marker
           formattedValue="\(key): 🔢[\(value.valueString)]"
+          
+        case .auto:
+          // Auto-classified values are shown with a special marker
+          #if DEBUG
+            formattedValue="\(key): 🔄[\(value.valueString)]"
+          #else
+            formattedValue="\(key): 🔄[AUTO-CLASSIFIED]"
+          #endif
       }
 
       parts.append(formattedValue)

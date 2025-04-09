@@ -39,7 +39,7 @@ public actor LoggingActor {
     // TODO: Update LogEntry or its usage to accept LogContextDTO directly
     let oldStyleContext=LogContext(
       source: context.getSource(),
-      metadata: context.toPrivacyMetadata()
+      metadata: context.metadata
     )
     let entry=LogEntry(level: mappedLevel, message: message, context: oldStyleContext)
 

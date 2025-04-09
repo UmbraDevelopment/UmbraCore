@@ -14,7 +14,7 @@ extension LogEntry {
   public static func privacyAware(
     level: LogLevel,
     message: PrivacyString,
-    metadata: PrivacyMetadata?=nil,
+    metadata: LogMetadataDTOCollection?=nil,
     source: String?=nil,
     entryID: LogIdentifier?=nil
   )
@@ -50,7 +50,7 @@ extension LogEntry {
   public static func privacyAwareAsync(
     level: LogLevel,
     message: PrivacyString,
-    metadata: PrivacyMetadata?=nil,
+    metadata: LogMetadataDTOCollection?=nil,
     source: String?=nil,
     entryID: LogIdentifier?=nil
   ) async

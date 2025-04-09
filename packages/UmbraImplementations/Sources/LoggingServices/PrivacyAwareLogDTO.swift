@@ -264,7 +264,7 @@ public struct PrivacyAwareLogDTO: LogContextDTO, Sendable {
   public func toLogContext() -> LogContext {
     LogContext(
       source: source ?? "UmbraCore",
-      metadata: metadata.toPrivacyMetadata()
+      metadata: metadata
     )
   }
 

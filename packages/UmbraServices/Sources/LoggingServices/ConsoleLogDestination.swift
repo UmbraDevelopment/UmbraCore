@@ -91,8 +91,8 @@ public actor ConsoleLogDestination: ActorLogDestination {
   /// Format metadata for console output
   /// - Parameter metadata: The metadata to format
   /// - Returns: A formatted metadata string
-  private func formatMetadata(_ metadata: PrivacyMetadata) -> String {
-    let pairs=metadata.entriesDict().map { key, value in
+  private func formatMetadata(_ metadata: LogMetadataDTOCollection) -> String {
+    let pairs = metadata.asDictionary.map { key, value in
       "\(key): \(value)"
     }
     return "{" + pairs.joined(separator: ", ") + "}"

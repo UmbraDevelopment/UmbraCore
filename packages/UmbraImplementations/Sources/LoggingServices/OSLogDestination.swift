@@ -88,7 +88,7 @@ public struct OSLogDestination: LoggingTypes.LogDestination {
   /// Extract privacy settings from metadata if available
   /// - Parameter metadata: The log metadata to check
   /// - Returns: Tuple with message and metadata privacy levels
-  private func extractPrivacySettings(from metadata: PrivacyMetadata?)
+  private func extractPrivacySettings(from metadata: LogMetadataDTOCollection?)
   -> (messagePrivacy: OSLogPrivacy, metadataPrivacy: OSLogPrivacy) {
     guard metadata != nil else {
       return (.private, .private)
@@ -99,21 +99,20 @@ public struct OSLogDestination: LoggingTypes.LogDestination {
     return (.private, .private)
   }
 
-  /// Filter out privacy control metadata
+  /// Filter out privacy metadata
   /// - Parameter metadata: The original metadata
   /// - Returns: Filtered metadata without privacy control tags
-  private func filterPrivacyMetadata(_ metadata: PrivacyMetadata?) -> [String: String] {
+  private func filterPrivacyMetadata(_ metadata: LogMetadataDTOCollection?) -> [String: String] {
     guard let metadata else {
       return [:]
     }
 
-    // Convert PrivacyMetadata to dictionary of strings
-    var result=[String: String]()
-    for key in metadata.entries() {
-      if let value=metadata[key] {
-        // Use the appropriate access pattern for the value - it might be different than .value
-        // Based on the error, we need to find the right property or method
-        result[key]=String(describing: value)
+    // Convert LogMetadataDTOCollection to dictionary of strings
+    var result = [String: String]()
+    for entry in metadata.entries {
+      // Skip privacy control keys
+      if !entry.key.starts(with: "__privacy_") {
+        result[entry.key] = entry.value
       }
     }
 

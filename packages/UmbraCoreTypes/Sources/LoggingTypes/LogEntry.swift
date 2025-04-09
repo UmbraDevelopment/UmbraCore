@@ -10,7 +10,7 @@ public struct LogEntry: Sendable, Equatable, Hashable {
   public let message: String
 
   /// Log entry metadata with privacy annotations
-  public let metadata: PrivacyMetadata?
+  public let metadata: LogMetadataDTOCollection?
 
   /// Component that generated this log
   public let source: String
@@ -42,7 +42,7 @@ public struct LogEntry: Sendable, Equatable, Hashable {
   public init(
     level: LogLevel,
     message: String,
-    metadata: PrivacyMetadata?=nil,
+    metadata: LogMetadataDTOCollection?=nil,
     source: String="",
     entryID: LogIdentifier?=nil,
     timestamp: LogTimestamp
@@ -66,7 +66,7 @@ public struct LogEntry: Sendable, Equatable, Hashable {
   public static func create(
     level: LogLevel,
     message: String,
-    metadata: PrivacyMetadata?=nil,
+    metadata: LogMetadataDTOCollection?=nil,
     source: String="",
     entryID: LogIdentifier?=nil
   ) async -> LogEntry {
@@ -95,8 +95,8 @@ public struct LogEntry: Sendable, Equatable, Hashable {
     timestamp=context.timestamp
     self.level=level
     self.message=message
-    // Convert LogContextDTO metadata to PrivacyMetadata
-    metadata=context.toPrivacyMetadata()
+    // Convert LogContextDTO metadata to LogMetadataDTOCollection
+    metadata=context.metadata
     // Use default source if the context source is nil
     source=context.getSource()
     // Create LogIdentifier from correlationID string

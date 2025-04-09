@@ -37,7 +37,7 @@ public actor PrivacyFilteredConsoleDestination: ActorLogDestination {
     includeTimestamp: Bool=true,
     includeSource: Bool=true,
     includeMetadata: Bool=true,
-    privacyMode: PrivacyFilterMode = .debugModeDefault
+    privacyMode: PrivacyFilterMode = .debug
   ) {
     self.identifier=identifier
     self.minimumLogLevel=minimumLogLevel
@@ -107,10 +107,10 @@ public actor PrivacyFilteredConsoleDestination: ActorLogDestination {
   /// Format metadata for console output with privacy filtering
   /// - Parameter metadata: The metadata to format
   /// - Returns: A formatted metadata string with privacy filtering applied
-  private func formatPrivacyFilteredMetadata(_ metadata: PrivacyMetadata) -> String {
-    let pairs=metadata.entriesDict().map { key, value in
-      let filteredValue=applyPrivacyFiltering(to: value.valueString, withLevel: value.privacy)
-      return "\(key): \(filteredValue)"
+  private func formatPrivacyFilteredMetadata(_ metadata: LogMetadataDTOCollection) -> String {
+    let pairs = metadata.entries.map { entry in
+      let filteredValue = applyPrivacyFiltering(to: entry.value, withLevel: entry.privacyLevel.toLogPrivacyLevel())
+      return "\(entry.key): \(filteredValue)"
     }
     return "{" + pairs.joined(separator: ", ") + "}"
   }
@@ -126,12 +126,16 @@ public actor PrivacyFilteredConsoleDestination: ActorLogDestination {
         // Public values are never filtered
         return value
 
-      case (.private, .debugModeDefault), (.sensitive, .debugModeDefault):
+      case (.private, .debug), (.sensitive, .debug):
         // In debug mode, private and sensitive values are shown by default
         return value
 
-      case (.private, .releaseMode), (.sensitive, .releaseMode):
-        // In release mode, private and sensitive values are redacted
+      case (.private, .production), (.sensitive, .production):
+        // In production mode, private values are shown, sensitive values are redacted
+        return level == .private ? value : "<sensitive>"
+
+      case (.private, .strict), (.sensitive, .strict):
+        // In strict mode, private and sensitive values are redacted
         return level == .private ? "<private>" : "<sensitive>"
 
       case (.hash, _):
@@ -155,12 +159,32 @@ public actor PrivacyFilteredConsoleDestination: ActorLogDestination {
 
 /// Defines how privacy filtering should be applied
 public enum PrivacyFilterMode {
-  /// Debug mode default - show most private data for debugging
-  case debugModeDefault
+  /// Debug mode - show most private data for debugging
+  case debug
 
-  /// Release mode - redact all private data
-  case releaseMode
+  /// Production mode - redact sensitive data
+  case production
 
-  /// Custom filtering rules
-  case custom(redactPrivate: Bool, redactSensitive: Bool, hashSensitive: Bool)
+  /// Strict mode - redact all private and sensitive data
+  case strict
+}
+
+/// Extension to convert from PrivacyClassification to LogPrivacyLevel
+extension PrivacyClassification {
+  /// Convert to LogPrivacyLevel
+  /// - Returns: The equivalent LogPrivacyLevel
+  func toLogPrivacyLevel() -> LogPrivacyLevel {
+    switch self {
+      case .public:
+        return .public
+      case .private:
+        return .private
+      case .sensitive:
+        return .sensitive
+      case .hash:
+        return .hash
+      case .auto:
+        return .auto
+    }
+  }
 }

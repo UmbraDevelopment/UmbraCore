@@ -13,7 +13,7 @@ public protocol LogFormatterProtocol: Sendable {
   /// Format metadata to a string
   /// - Parameter metadata: Metadata to format
   /// - Returns: Formatted string representation of the metadata
-  func formatMetadata(_ metadata: LoggingTypes.LogMetadata?) -> String?
+  func formatMetadata(_ metadata: LoggingTypes.LogMetadataDTOCollection?) -> String?
 
   /// Format a timestamp to a string
   /// - Parameter timestamp: The timestamp to format

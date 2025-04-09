@@ -50,11 +50,27 @@ public enum PrivacyClassification: String, Codable, Sendable, Equatable, CaseIte
       case .private:
         "Visible in debug, redacted in release"
       case .sensitive:
-        "Always redacted, retained for diagnostics"
+        "Always redacted, requires special access"
       case .hash:
-        "Stored as secure hash"
+        "Stored as a secure hash"
       case .auto:
-        "Automatically classified based on content"
+        "Classification determined by context"
+    }
+  }
+  
+  /// Convert to LogPrivacyLevel
+  public func toLogPrivacyLevel() -> LogPrivacyLevel {
+    switch self {
+      case .public:
+        return .public
+      case .private:
+        return .private
+      case .sensitive:
+        return .sensitive
+      case .hash:
+        return .hash
+      case .auto:
+        return .auto
     }
   }
 }
