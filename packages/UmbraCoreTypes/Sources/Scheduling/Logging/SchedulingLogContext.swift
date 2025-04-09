@@ -17,11 +17,17 @@ import LoggingTypes
  - User-specific scheduling information is treated as private
  */
 public struct SchedulingLogContext: LogContextDTO {
+    /// The domain name for this context
+    public let domainName: String
+    
     /// The operation being performed
     public let operation: String
     
-    /// The source of the log entry
-    public let source: String
+    /// The source of the log entry (optional as per protocol)
+    public let source: String?
+    
+    /// Optional correlation ID for tracing related log events
+    public let correlationID: String?
     
     /// The metadata collection with privacy annotations
     public let metadata: LogMetadataDTOCollection
@@ -33,14 +39,18 @@ public struct SchedulingLogContext: LogContextDTO {
         - operation: The scheduling operation being performed
         - source: The source component (defaults to "SchedulingService")
         - metadata: Privacy-aware metadata collection
+        - correlationID: Optional correlation ID for tracing related log events
      */
     public init(
         operation: String,
-        source: String = "SchedulingService",
-        metadata: LogMetadataDTOCollection = LogMetadataDTOCollection()
+        source: String? = "SchedulingService",
+        metadata: LogMetadataDTOCollection = LogMetadataDTOCollection(),
+        correlationID: String? = nil
     ) {
+        self.domainName = "Scheduling"
         self.operation = operation
         self.source = source
+        self.correlationID = correlationID
         self.metadata = metadata
     }
     
@@ -54,7 +64,8 @@ public struct SchedulingLogContext: LogContextDTO {
         return SchedulingLogContext(
             operation: operation,
             source: source,
-            metadata: metadata.withPublic(key: "scheduleID", value: scheduleID)
+            metadata: metadata.withPublic(key: "scheduleID", value: scheduleID),
+            correlationID: correlationID
         )
     }
     
@@ -68,7 +79,8 @@ public struct SchedulingLogContext: LogContextDTO {
         return SchedulingLogContext(
             operation: operation,
             source: source,
-            metadata: metadata.withPublic(key: "taskID", value: taskID)
+            metadata: metadata.withPublic(key: "taskID", value: taskID),
+            correlationID: correlationID
         )
     }
     
@@ -85,8 +97,9 @@ public struct SchedulingLogContext: LogContextDTO {
             metadata: metadata
                 .withPublic(key: "taskID", value: task.id)
                 .withPublic(key: "taskStatus", value: task.status.rawValue)
-                .withPrivate(key: "taskTitle", value: task.title)
-                .withPublic(key: "scheduleID", value: task.scheduleID)
+                .withPrivate(key: "taskName", value: task.name)
+                .withPublic(key: "scheduleID", value: task.scheduleID),
+            correlationID: correlationID
         )
     }
     
@@ -102,9 +115,10 @@ public struct SchedulingLogContext: LogContextDTO {
             source: source,
             metadata: metadata
                 .withPublic(key: "scheduleID", value: schedule.id)
-                .withPublic(key: "scheduleType", value: schedule.type.rawValue)
+                .withPublic(key: "scheduleFrequency", value: schedule.frequency.rawValue)
                 .withPublic(key: "scheduleEnabled", value: "\(schedule.isEnabled)")
-                .withPrivate(key: "scheduleTitle", value: schedule.title)
+                .withPrivate(key: "scheduleName", value: schedule.name),
+            correlationID: correlationID
         )
     }
     
@@ -120,7 +134,8 @@ public struct SchedulingLogContext: LogContextDTO {
             source: source,
             metadata: metadata
                 .withPublic(key: "errorType", value: "\(type(of: error))")
-                .withPrivate(key: "errorMessage", value: error.localizedDescription)
+                .withPrivate(key: "errorMessage", value: error.localizedDescription),
+            correlationID: correlationID
         )
     }
     
@@ -135,7 +150,8 @@ public struct SchedulingLogContext: LogContextDTO {
         return SchedulingLogContext(
             operation: operation,
             source: source,
-            metadata: metadata.withPublic(key: key, value: "\(date)")
+            metadata: metadata.withPublic(key: key, value: "\(date)"),
+            correlationID: correlationID
         )
     }
     
@@ -149,7 +165,8 @@ public struct SchedulingLogContext: LogContextDTO {
         return SchedulingLogContext(
             operation: operation,
             source: source,
-            metadata: metadata.withPublic(key: "success", value: "\(success)")
+            metadata: metadata.withPublic(key: "success", value: "\(success)"),
+            correlationID: correlationID
         )
     }
 }

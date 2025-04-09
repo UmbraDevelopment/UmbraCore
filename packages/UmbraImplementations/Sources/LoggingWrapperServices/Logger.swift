@@ -399,9 +399,9 @@ public actor Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked Sendabl
   public static func error(
     _ message: @autoclosure () -> Any,
     metadata: LoggingTypes.LogMetadataDTOCollection?=nil,
-    file: String=#file,
-    function: String=#function,
-    line: Int=#line
+    file: String = #file,
+    function: String = #function,
+    line: Int = #line
   ) {
     log(.error, message(), metadata: metadata, file: file, function: function, line: line)
   }
@@ -410,9 +410,9 @@ public actor Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked Sendabl
   public static func trace(
     _ message: @autoclosure () -> Any,
     metadata: LoggingTypes.LogMetadataDTOCollection?=nil,
-    file: String=#file,
-    function: String=#function,
-    line: Int=#line
+    file: String = #file,
+    function: String = #function,
+    line: Int = #line
   ) {
     log(.trace, message(), metadata: metadata, file: file, function: function, line: line)
   }
@@ -425,151 +425,7 @@ public actor Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked Sendabl
     function: String = #function,
     line: Int = #line
   ) {
-    // Delegate to actor instance
-    Task {
-      await shared.log(
-        level: .critical,
-        message: String(describing: message()),
-        metadata: metadata,
-        privacy: .public,
-        file: file,
-        function: function,
-        line: line
-      )
-    }
-  }
-
-  /// Implementation of the error log level
-  public static func error(
-    _ message: @autoclosure () -> Any,
-    metadata: LoggingTypes.LogMetadataDTOCollection?,
-    file: String = #file,
-    function: String = #function,
-    line: Int = #line
-  ) {
-    // Delegate to actor instance
-    Task {
-      await shared.log(
-        level: .error,
-        message: String(describing: message()),
-        metadata: metadata,
-        privacy: .public,
-        file: file,
-        function: function,
-        line: line
-      )
-    }
-  }
-
-  /// Implementation of the warning log level
-  public static func warning(
-    _ message: @autoclosure () -> Any,
-    metadata: LoggingTypes.LogMetadataDTOCollection?,
-    file: String = #file,
-    function: String = #function,
-    line: Int = #line
-  ) {
-    // Delegate to actor instance
-    Task {
-      await shared.log(
-        level: .warning,
-        message: String(describing: message()),
-        metadata: metadata,
-        privacy: .public,
-        file: file,
-        function: function,
-        line: line
-      )
-    }
-  }
-
-  /// Implementation of the info log level
-  public static func info(
-    _ message: @autoclosure () -> Any,
-    metadata: LoggingTypes.LogMetadataDTOCollection?,
-    file: String = #file,
-    function: String = #function,
-    line: Int = #line
-  ) {
-    // Delegate to actor instance
-    Task {
-      await shared.log(
-        level: .info,
-        message: String(describing: message()),
-        metadata: metadata,
-        privacy: .public,
-        file: file,
-        function: function,
-        line: line
-      )
-    }
-  }
-
-  /// Implementation of the debug log level
-  public static func debug(
-    _ message: @autoclosure () -> Any,
-    metadata: LoggingTypes.LogMetadataDTOCollection?,
-    file: String = #file,
-    function: String = #function,
-    line: Int = #line
-  ) {
-    // Delegate to actor instance
-    Task {
-      await shared.log(
-        level: .debug,
-        message: String(describing: message()),
-        metadata: metadata,
-        privacy: .public,
-        file: file,
-        function: function,
-        line: line
-      )
-    }
-  }
-
-  /// Implementation of the trace log level
-  public static func trace(
-    _ message: @autoclosure () -> Any,
-    metadata: LoggingTypes.LogMetadataDTOCollection?,
-    file: String = #file,
-    function: String = #function,
-    line: Int = #line
-  ) {
-    // Delegate to actor instance
-    Task {
-      await shared.log(
-        level: .trace,
-        message: String(describing: message()),
-        metadata: metadata,
-        privacy: .public,
-        file: file,
-        function: function,
-        line: line
-      )
-    }
-  }
-
-  /// Implementation of the generic log method
-  public static func log(
-    _ level: LoggingTypes.LogLevel,
-    _ message: @autoclosure () -> Any,
-    metadata: LoggingTypes.LogMetadataDTOCollection?,
-    file: String = #file,
-    function: String = #function,
-    line: Int = #line
-  ) {
-    // Delegate to actor instance
-    Task {
-      await shared.log(
-        level: level,
-        message: String(describing: message()),
-        metadata: metadata,
-        privacy: .public,
-        file: file,
-        function: function,
-        line: line
-      )
-    }
+    log(.critical, message(), metadata: metadata, file: file, function: function, line: line)
   }
 
   // MARK: - PrivacyAwareLoggerImplementation
@@ -612,7 +468,7 @@ public actor Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked Sendabl
     public func logSensitive(
       _ level: LoggingTypes.LogLevel,
       _ message: String,
-      sensitiveValues _: LoggingTypes.LogMetadataDTOCollection,
+      sensitiveValues: LoggingTypes.LogMetadata,
       context: LoggingTypes.LogContextDTO
     ) async {
       // Create a modified context with sensitive values properly handled

@@ -43,7 +43,7 @@ public actor LoggingServiceActor: LoggingServiceProtocol {
   ///   - source: Optional source component identifier
   public func verbose(
     _ message: String,
-    metadata: LoggingTypes.LogMetadata?=nil,
+    metadata: LoggingTypes.LogMetadataDTOCollection?=nil,
     source: String?=nil
   ) async {
     await log(
@@ -61,7 +61,7 @@ public actor LoggingServiceActor: LoggingServiceProtocol {
   ///   - source: Optional source component identifier
   public func debug(
     _ message: String,
-    metadata: LoggingTypes.LogMetadata?=nil,
+    metadata: LoggingTypes.LogMetadataDTOCollection?=nil,
     source: String?=nil
   ) async {
     await log(
@@ -79,7 +79,7 @@ public actor LoggingServiceActor: LoggingServiceProtocol {
   ///   - source: Optional source component identifier
   public func info(
     _ message: String,
-    metadata: LoggingTypes.LogMetadata?=nil,
+    metadata: LoggingTypes.LogMetadataDTOCollection?=nil,
     source: String?=nil
   ) async {
     await log(
@@ -97,7 +97,7 @@ public actor LoggingServiceActor: LoggingServiceProtocol {
   ///   - source: Optional source component identifier
   public func warning(
     _ message: String,
-    metadata: LoggingTypes.LogMetadata?=nil,
+    metadata: LoggingTypes.LogMetadataDTOCollection?=nil,
     source: String?=nil
   ) async {
     await log(
@@ -115,7 +115,7 @@ public actor LoggingServiceActor: LoggingServiceProtocol {
   ///   - source: Optional source component identifier
   public func error(
     _ message: String,
-    metadata: LoggingTypes.LogMetadata?=nil,
+    metadata: LoggingTypes.LogMetadataDTOCollection?=nil,
     source: String?=nil
   ) async {
     await log(
@@ -133,7 +133,7 @@ public actor LoggingServiceActor: LoggingServiceProtocol {
   ///   - source: Optional source component identifier
   public func critical(
     _ message: String,
-    metadata: LoggingTypes.LogMetadata?=nil,
+    metadata: LoggingTypes.LogMetadataDTOCollection?=nil,
     source: String?=nil
   ) async {
     await log(
@@ -153,7 +153,7 @@ public actor LoggingServiceActor: LoggingServiceProtocol {
   public func log(
     level: LoggingTypes.UmbraLogLevel,
     message: String,
-    metadata: LoggingTypes.LogMetadata?=nil,
+    metadata: LoggingTypes.LogMetadataDTOCollection?=nil,
     source: String?=nil
   ) async {
     // Check if we should log at this level
@@ -495,8 +495,10 @@ public struct DefaultLogFormatter: LoggingInterfaces.LogFormatterProtocol, Senda
   public func format(_ entry: LoggingTypes.LogEntry) -> String {
     var components: [String]=[]
 
-    // Add log level
-    components.append("[\(entry.level)]")
+    // Add level if configured
+    if configuration.includeLevel {
+      components.append("[\(formatLevel(entry.level))]")
+    }
 
     // Add timestamp if configured
     if configuration.includeTimestamp {
@@ -516,20 +518,10 @@ public struct DefaultLogFormatter: LoggingInterfaces.LogFormatterProtocol, Senda
     }
 
     // Add metadata if configured and available
-    if configuration.includeMetadata, let metadata=entry.metadata, !metadata.isEmpty {
-      let metadataString=metadata.keys
-        .sorted()
-        .map { key -> String in
-          if let value=metadata[key] {
-            // Access the value string from PrivacyMetadataValue
-            return "\(key): \(value.valueString)"
-          } else {
-            return "\(key): nil"
-          }
-        }
-        .joined(separator: ", ")
-
-      components.append("{\(metadataString)}")
+    if configuration.includeMetadata, let metadataDTO = entry.metadata as? LoggingTypes.LogMetadataDTOCollection, !metadataDTO.isEmpty {
+      if let metadataString = formatMetadata(metadataDTO) {
+        components.append(metadataString)
+      }
     }
 
     return components.joined(separator: " ")
@@ -538,7 +530,7 @@ public struct DefaultLogFormatter: LoggingInterfaces.LogFormatterProtocol, Senda
   /// Format metadata to a string
   /// - Parameter metadata: Metadata to format
   /// - Returns: Formatted string representation of the metadata
-  public func formatMetadata(_ metadata: LoggingTypes.LogMetadata?) -> String? {
+  public func formatMetadata(_ metadata: LoggingTypes.LogMetadataDTOCollection?) -> String? {
     guard let metadata, !metadata.asDictionary.isEmpty else {
       return nil
     }

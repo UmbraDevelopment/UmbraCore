@@ -179,10 +179,10 @@ public actor SecureLoggerActor: SecureLoggingProtocol {
       let dateFormatter=DateFormatter()
       dateFormatter.dateFormat="yyyy-MM-dd HH:mm:ss.SSS"
       let timestamp=dateFormatter.string(from: Date())
-      logMessage="[\(timestamp)] \(logMessage)"
+      logMessage="[\(timestamp)] \(message)"
     }
 
-    // Log to system logger with appropriate privacy handling
+    // Log to system logger with appropriate privacy tags
     switch level {
       case .verbose, .debug:
         logger.debug("\(logMessage, privacy: .public)")
@@ -196,12 +196,12 @@ public actor SecureLoggerActor: SecureLoggingProtocol {
         logger.critical("\(logMessage, privacy: .public)")
     }
 
-    // If we have a logging service actor, also log through that system
+    // If we have a logging service actor, forward the log there as well
     if let loggingServiceActor {
       // Convert metadata to the format expected by the logging service
-      var convertedMetadata: LoggingTypes.LogMetadata?
+      var convertedMetadata: LoggingTypes.LogMetadataDTOCollection?
       if let metadata {
-        var metadataDict=LoggingTypes.LogMetadata()
+        var metadataCollection = LoggingTypes.LogMetadataDTOCollection()
         for (key, value) in metadata {
           // Extract the actual value from our strongly-typed enum
           let stringValue: String=switch value.value {
@@ -215,28 +215,33 @@ public actor SecureLoggerActor: SecureLoggingProtocol {
 
           switch value.privacyLevel {
             case .public:
-              metadataDict[key]=stringValue
+              metadataCollection = metadataCollection.withPublic(key: key, value: stringValue)
             case .private:
-              metadataDict[key + ".private"]=stringValue
+              metadataCollection = metadataCollection.withPrivate(key: key, value: stringValue)
             case .sensitive:
-              metadataDict[key + ".sensitive"]="[REDACTED]"
-            case .hash, .auto:
-              // Handle these cases according to your privacy requirements
-              metadataDict[key + ".private"]=stringValue
+              metadataCollection = metadataCollection.withSensitive(key: key, value: stringValue)
           }
         }
-        convertedMetadata=metadataDict
-      } else {
-        convertedMetadata=nil
+        convertedMetadata = metadataCollection
       }
 
-      // Log through the logging service actor
-      await loggingServiceActor.log(
-        level: level,
-        message: message,
-        metadata: convertedMetadata,
-        source: category
-      )
+      // Forward to the logging service actor with the appropriate level
+      Task {
+        switch level {
+          case .verbose:
+            await loggingServiceActor.verbose(logMessage, metadata: convertedMetadata, source: category)
+          case .debug:
+            await loggingServiceActor.debug(logMessage, metadata: convertedMetadata, source: category)
+          case .info:
+            await loggingServiceActor.info(logMessage, metadata: convertedMetadata, source: category)
+          case .warning:
+            await loggingServiceActor.warning(logMessage, metadata: convertedMetadata, source: category)
+          case .error:
+            await loggingServiceActor.error(logMessage, metadata: convertedMetadata, source: category)
+          case .critical:
+            await loggingServiceActor.critical(logMessage, metadata: convertedMetadata, source: category)
+        }
+      }
     }
   }
 
