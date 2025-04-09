@@ -5,7 +5,7 @@ import Foundation
  
  Options for creating temporary files and directories.
  */
-public struct TemporaryFileOptions {
+public struct TemporaryFileOptions: Sendable {
     /// The parent directory where the temporary file or directory should be created
     public let directory: FilePath?
     

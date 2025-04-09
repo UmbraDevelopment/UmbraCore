@@ -184,20 +184,27 @@ public actor BookmarkLogger: DomainLoggerProtocol {
    - Parameters:
      - operation: The operation being performed
      - identifier: The bookmark identifier (optional)
+     - additionalContext: Optional additional context to merge with the primary context
      - message: Optional custom message
    */
   public func logOperationStart(
     operation: String,
-    identifier: String?=nil,
-    message: String?=nil
+    identifier: String? = nil,
+    additionalContext: LogMetadataDTOCollection? = nil,
+    message: String? = nil
   ) async {
-    let context=BookmarkLogContext(
+    var context = BookmarkLogContext(
       operation: operation,
       identifier: identifier,
       status: "started"
     )
+    
+    // Merge additional context if provided
+    if let additionalContext {
+      context = context.withAdditionalMetadata(additionalContext)
+    }
 
-    let defaultMessage="Starting bookmark operation: \(operation)"
+    let defaultMessage = "Starting bookmark operation: \(operation)"
     await info(message ?? defaultMessage, context: context)
   }
 
@@ -207,20 +214,27 @@ public actor BookmarkLogger: DomainLoggerProtocol {
    - Parameters:
      - operation: The operation that succeeded
      - identifier: The bookmark identifier (optional)
+     - additionalContext: Optional additional context to merge with the primary context
      - message: Optional custom message
    */
   public func logOperationSuccess(
     operation: String,
-    identifier: String?=nil,
-    message: String?=nil
+    identifier: String? = nil,
+    additionalContext: LogMetadataDTOCollection? = nil,
+    message: String? = nil
   ) async {
-    let context=BookmarkLogContext(
+    var context = BookmarkLogContext(
       operation: operation,
       identifier: identifier,
       status: "success"
     )
+    
+    // Merge additional context if provided
+    if let additionalContext {
+      context = context.withAdditionalMetadata(additionalContext)
+    }
 
-    let defaultMessage="Successfully completed bookmark operation: \(operation)"
+    let defaultMessage = "Bookmark operation completed successfully: \(operation)"
     await info(message ?? defaultMessage, context: context)
   }
 
@@ -231,23 +245,30 @@ public actor BookmarkLogger: DomainLoggerProtocol {
      - operation: The operation
      - warningMessage: The warning message
      - identifier: The bookmark identifier (optional)
+     - additionalContext: Optional additional context to merge with the primary context
    */
   public func logOperationWarning(
     operation: String,
     warningMessage: String,
-    identifier: String?=nil
+    identifier: String? = nil,
+    additionalContext: LogMetadataDTOCollection? = nil
   ) async {
-    var metadata=LogMetadataDTOCollection()
-    metadata=metadata.withPrivate(key: "warning", value: warningMessage)
+    var metadata = LogMetadataDTOCollection()
+    metadata = metadata.withPrivate(key: "warning", value: warningMessage)
 
-    let context=BookmarkLogContext(
+    var context = BookmarkLogContext(
       operation: operation,
       identifier: identifier,
       status: "warning",
       metadata: metadata
     )
+    
+    // Merge additional context if provided
+    if let additionalContext {
+      context = context.withAdditionalMetadata(additionalContext)
+    }
 
-    let defaultMessage="Warning during bookmark operation: \(operation)"
+    let defaultMessage = "Warning during bookmark operation: \(operation)"
     await warning(defaultMessage, context: context)
   }
 
@@ -258,26 +279,45 @@ public actor BookmarkLogger: DomainLoggerProtocol {
      - operation: The operation that failed
      - error: The error that occurred
      - identifier: The bookmark identifier (optional)
+     - additionalContext: Optional additional context to merge with the primary context
      - message: Optional custom message
    */
   public func logOperationError(
     operation: String,
     error: Error,
-    identifier: String?=nil,
-    message: String?=nil
+    identifier: String? = nil,
+    additionalContext: LogMetadataDTOCollection? = nil,
+    message: String? = nil
   ) async {
-    let context=BookmarkLogContext(
+    var context = BookmarkLogContext(
       operation: operation,
       identifier: identifier,
       status: "error"
     )
+    
+    // Merge additional context if provided
+    if let additionalContext {
+      context = context.withAdditionalMetadata(additionalContext)
+    }
 
-    // Log the error first
-    await logError(error, context: context)
-
-    // If a custom message was provided, log it as well
-    if let message {
-      await self.error(message, context: context)
+    if let loggableError = error as? LoggableErrorProtocol {
+      // Get metadata from the loggable error
+      let errorMetadata = loggableError.createMetadataCollection()
+      
+      // Merge with the context
+      context = context.withAdditionalMetadata(errorMetadata)
+      
+      // Use the error's log message if no custom message is provided
+      let errorMessage = message ?? "Bookmark operation failed: \(operation) - \(loggableError.getLogMessage())"
+      await self.error(errorMessage, context: context)
+    } else {
+      // For standard errors, add the error description to the context
+      let errorMetadata = LogMetadataDTOCollection().withPrivate(key: "error", value: error.localizedDescription)
+      context = context.withAdditionalMetadata(errorMetadata)
+      
+      // Use a generic error message if no custom message is provided
+      let errorMessage = message ?? "Bookmark operation failed: \(operation) - \(error.localizedDescription)"
+      await self.error(errorMessage, context: context)
     }
   }
 }

@@ -103,4 +103,44 @@ public struct ErrorLogContext: LogContextDTO, Sendable {
       additionalContext: metadata
     )
   }
+
+  /// Creates a metadata collection from this context
+  ///
+  /// - Returns: A LogMetadataDTOCollection with appropriate privacy annotations
+  public func createMetadataCollection() -> LogMetadataDTOCollection {
+    var collection = metadata
+    
+    // Add standard fields with appropriate privacy levels
+    collection = collection.withPublic(key: "domain", value: domainName)
+    
+    if let correlationID {
+      collection = collection.withPublic(key: "correlationId", value: correlationID)
+    }
+    
+    if let source {
+      collection = collection.withPublic(key: "source", value: source)
+    }
+    
+    // Add error information
+    collection = collection.withPublic(key: "errorType", value: String(describing: type(of: error)))
+    collection = collection.withPrivate(key: "errorMessage", value: error.localizedDescription)
+    
+    // Add error code if available
+    if let nsError = error as? NSError {
+      collection = collection.withPublic(key: "errorCode", value: String(nsError.code))
+      collection = collection.withPublic(key: "errorDomain", value: nsError.domain)
+    }
+    
+    return collection
+  }
+
+  /// Gets the source of this log context
+  ///
+  /// - Returns: The source identifier for logging
+  public func getSource() -> String {
+    if let source {
+      return source
+    }
+    return "\(domainName).error"
+  }
 }

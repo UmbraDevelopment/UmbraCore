@@ -103,7 +103,7 @@ public actor DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
   ) async {
     let context = BaseLogContextDTO(
       domainName: "KeychainServices",
-      source: source ?? "DefaultLogger",
+      source: source,
       metadataCollection: metadata
     )
     await debug(message, context: context)
@@ -124,7 +124,7 @@ public actor DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
   ) async {
     let context = BaseLogContextDTO(
       domainName: "KeychainServices",
-      source: source ?? "DefaultLogger",
+      source: source,
       metadataCollection: metadata
     )
     await info(message, context: context)
@@ -145,7 +145,7 @@ public actor DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
   ) async {
     let context = BaseLogContextDTO(
       domainName: "KeychainServices",
-      source: source ?? "DefaultLogger",
+      source: source,
       metadataCollection: metadata
     )
     await warning(message, context: context)
@@ -166,7 +166,7 @@ public actor DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
   ) async {
     let context = BaseLogContextDTO(
       domainName: "KeychainServices",
-      source: source ?? "DefaultLogger",
+      source: source,
       metadataCollection: metadata
     )
     await error(message, context: context)
@@ -187,7 +187,7 @@ public actor DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
   ) async {
     let context = BaseLogContextDTO(
       domainName: "KeychainServices",
-      source: source ?? "DefaultLogger",
+      source: source,
       metadataCollection: metadata
     )
     await critical(message, context: context)
@@ -210,7 +210,7 @@ public actor DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
   ) async {
     let context=BaseLogContextDTO(
       domainName: "KeychainServices",
-      source: source ?? "DefaultLogger"
+      source: source
     )
     await debug(message, context: context)
   }
@@ -231,7 +231,7 @@ public actor DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
   ) async {
     let context=BaseLogContextDTO(
       domainName: "KeychainServices",
-      source: source ?? "DefaultLogger"
+      source: source
     )
     await info(message, context: context)
   }
@@ -252,7 +252,7 @@ public actor DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
   ) async {
     let context=BaseLogContextDTO(
       domainName: "KeychainServices",
-      source: source ?? "DefaultLogger"
+      source: source
     )
     await warning(message, context: context)
   }
@@ -273,7 +273,7 @@ public actor DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
   ) async {
     let context=BaseLogContextDTO(
       domainName: "KeychainServices",
-      source: source ?? "DefaultLogger"
+      source: source
     )
     await error(message, context: context)
   }
@@ -294,7 +294,7 @@ public actor DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
   ) async {
     let context=BaseLogContextDTO(
       domainName: "KeychainServices",
-      source: source ?? "DefaultLogger"
+      source: source
     )
     await critical(message, context: context)
   }
@@ -305,17 +305,19 @@ public actor DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
  */
 private struct BaseLogContextDTO: LogContextDTO {
   let domainName: String
-  let source: String
+  let source: String?
+  let correlationID: String?
   let metadataCollection: LogMetadataDTOCollection?
   
-  init(domainName: String, source: String, metadataCollection: LogMetadataDTOCollection? = nil) {
+  init(domainName: String, source: String? = nil, correlationID: String? = nil, metadataCollection: LogMetadataDTOCollection? = nil) {
     self.domainName = domainName
     self.source = source
+    self.correlationID = correlationID
     self.metadataCollection = metadataCollection
   }
   
   func getSource() -> String {
-    source
+    source ?? "DefaultLogger"
   }
   
   func getDomain() -> String {

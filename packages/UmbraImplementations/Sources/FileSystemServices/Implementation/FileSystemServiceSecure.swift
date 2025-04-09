@@ -118,7 +118,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
     }
 
     do {
-      try FileManager.default.createDirectory(
+      try Foundation.FileManager.default.createDirectory(
         atPath: securePath.toString(),
         withIntermediateDirectories: withIntermediateDirectories,
         attributes: nil
@@ -154,13 +154,13 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
     }
 
     do {
-      let contents=try FileManager.default.contentsOfDirectory(
+      let contents=try Foundation.FileManager.default.contentsOfDirectory(
         atPath: securePath.toString()
       )
 
       return contents.map { item in
         let itemPath=path.path.hasSuffix("/") ? path.path + item : path.path + "/" + item
-        let isDirectory=(try? FileManager.default.attributesOfItem(
+        let isDirectory=(try? Foundation.FileManager.default.attributesOfItem(
           atPath: itemPath
         )[.type] as? FileAttributeType) == .typeDirectory
 
@@ -253,7 +253,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
     }
 
     do {
-      try FileManager.default.removeItem(atPath: securePath.toString())
+      try Foundation.FileManager.default.removeItem(atPath: securePath.toString())
     } catch {
       throw FileSystemInterfaces.FileSystemError.deleteError(
         path: path.path,
@@ -293,7 +293,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
     }
 
     do {
-      try FileManager.default.moveItem(
+      try Foundation.FileManager.default.moveItem(
         atPath: secureSourcePath.toString(),
         toPath: secureDestinationPath.toString()
       )
@@ -337,7 +337,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
     }
 
     do {
-      try FileManager.default.copyItem(
+      try Foundation.FileManager.default.copyItem(
         atPath: secureSourcePath.toString(),
         toPath: secureDestinationPath.toString()
       )
@@ -460,7 +460,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
       "Creating temporary file with prefix: \(prefix ?? "none"), suffix: \(suffix ?? "none")"
     )
 
-    let tempDir=FileManager.default.temporaryDirectory
+    let tempDir=Foundation.FileManager.default.temporaryDirectory
     let uuid=UUID().uuidString
     let filename=[prefix, uuid, suffix]
       .compactMap { $0 }
@@ -469,7 +469,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
     let url=tempDir.appendingPathComponent(filename)
 
     // Create an empty file
-    FileManager.default.createFile(atPath: url.path, contents: nil, attributes: options?.attributes)
+    _ = Foundation.FileManager.default.createFile(atPath: url.path, contents: nil, attributes: options?.attributes) as Bool
 
     return FilePath(path: url.path, isDirectory: false)
   }
@@ -488,26 +488,26 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
   ) async throws -> FilePath {
     await logDebug("Creating temporary directory with prefix: \(prefix ?? "none")")
 
-    let tempDir=FileManager.default.temporaryDirectory
+    let tempDir=Foundation.FileManager.default.temporaryDirectory
     let uuid=UUID().uuidString
     let dirname=prefix != nil ? "\(prefix!)\(uuid)" : uuid
 
     let url=tempDir.appendingPathComponent(dirname)
 
     do {
-      try FileManager.default.createDirectory(
+      try (Foundation.FileManager.default.createDirectory(
         at: url,
         withIntermediateDirectories: true,
         attributes: options?.attributes
-      )
-
-      return FilePath(path: url.path, isDirectory: true)
+      ) as Void)
     } catch {
       throw FileSystemInterfaces.FileSystemError.writeError(
         path: url.path,
         reason: "Failed to create temporary directory: \(error.localizedDescription)"
       )
     }
+
+    return FilePath(path: url.path, isDirectory: true)
   }
 
   // MARK: - Helper Methods
@@ -562,7 +562,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
     }
 
     do {
-      let contents=try FileManager.default.contentsOfDirectory(
+      let contents=try Foundation.FileManager.default.contentsOfDirectory(
         atPath: securePath.toString()
       )
 
@@ -573,7 +573,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
         }
 
         let itemPath=path.path.hasSuffix("/") ? path.path + item : path.path + "/" + item
-        let isDirectory=(try? FileManager.default.attributesOfItem(
+        let isDirectory=(try? Foundation.FileManager.default.attributesOfItem(
           atPath: itemPath
         )[.type] as? FileAttributeType) == .typeDirectory
 
@@ -746,7 +746,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
     }
 
     do {
-      let attributes=try FileManager.default.attributesOfItem(
+      let attributes=try Foundation.FileManager.default.attributesOfItem(
         atPath: securePath.toString()
       )
 
@@ -849,7 +849,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
         }
       }
 
-      try FileManager.default.createDirectory(
+      try Foundation.FileManager.default.createDirectory(
         atPath: securePath.toString(),
         withIntermediateDirectories: createIntermediates,
         attributes: foundationAttributes
@@ -902,7 +902,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
     }
 
     do {
-      try FileManager.default.removeItem(atPath: securePath.toString())
+      try Foundation.FileManager.default.removeItem(atPath: securePath.toString())
     } catch {
       throw FileSystemInterfaces.FileSystemError.deleteError(
         path: path.path,
@@ -960,7 +960,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
     }
 
     do {
-      try FileManager.default.removeItem(atPath: securePath.toString())
+      try Foundation.FileManager.default.removeItem(atPath: securePath.toString())
     } catch {
       throw FileSystemInterfaces.FileSystemError.deleteError(
         path: path.path,
@@ -1149,11 +1149,11 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
       }
 
       // Delete destination if overwrite is true
-      try FileManager.default.removeItem(atPath: secureDestinationPath.toString())
+      try Foundation.FileManager.default.removeItem(atPath: secureDestinationPath.toString())
     }
 
     do {
-      try FileManager.default.moveItem(
+      try Foundation.FileManager.default.moveItem(
         atPath: secureSourcePath.toString(),
         toPath: secureDestinationPath.toString()
       )
@@ -1209,11 +1209,11 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
       }
 
       // Delete destination if overwrite is true
-      try FileManager.default.removeItem(atPath: secureDestinationPath.toString())
+      try Foundation.FileManager.default.removeItem(atPath: secureDestinationPath.toString())
     }
 
     do {
-      try FileManager.default.copyItem(
+      try Foundation.FileManager.default.copyItem(
         atPath: secureSourcePath.toString(),
         toPath: secureDestinationPath.toString()
       )
@@ -1298,7 +1298,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
 
     do {
       // Get the file size
-      let attributes=try FileManager.default.attributesOfItem(atPath: securePath.toString())
+      let attributes=try Foundation.FileManager.default.attributesOfItem(atPath: securePath.toString())
       let fileSize=attributes[.size] as? UInt64 ?? 0
 
       if fileSize > 0 {

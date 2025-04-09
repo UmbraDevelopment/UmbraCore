@@ -89,44 +89,59 @@ public struct BookmarkLogContext: LogContextDTO {
   }
 
   /**
-   * Returns the source of the log entry.
+   * Gets the source of this log context.
    *
-   * - Returns: The source string or nil if not available
+   * - Returns: The source identifier for logging
    */
-  public func getSource() -> String? {
-    source
+  public func getSource() -> String {
+    if let source {
+      return source
+    }
+    return "\(domainName).\(operation)"
+  }
+  
+  /**
+   * Creates a metadata collection from this context.
+   *
+   * - Returns: A LogMetadataDTOCollection with appropriate privacy annotations
+   */
+  public func createMetadataCollection() -> LogMetadataDTOCollection {
+    var collection = metadata
+    
+    // Add standard fields with appropriate privacy levels
+    collection = collection.withPublic(key: "operation", value: operation)
+    collection = collection.withPublic(key: "status", value: status)
+    collection = collection.withPublic(key: "domain", value: domainName)
+    
+    if let identifier {
+      collection = collection.withPrivate(key: "identifier", value: identifier)
+    }
+    
+    if let correlationID {
+      collection = collection.withPublic(key: "correlationId", value: correlationID)
+    }
+    
+    return collection
   }
 
   /**
-   * Creates a new context with additional metadata entries.
+   * Adds additional metadata to this context.
    *
-   * - Parameter additionalMetadata: The additional metadata to add
-   * - Returns: A new context with combined metadata
+   * - Parameter additionalMetadata: The metadata to add
+   * - Returns: A new context with the additional metadata
    */
   public func withAdditionalMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> BookmarkLogContext {
-    // Start with the current metadata
-    var combinedMetadata = metadata
+    let combinedMetadata = metadata.merging(with: additionalMetadata)
     
-    // Add all entries from the additional metadata using the functional approach
-    for entry in additionalMetadata.entries {
-      // Use the appropriate method based on the privacy level
-      switch entry.privacyLevel {
-      case .public:
-        combinedMetadata = combinedMetadata.withPublic(key: entry.key, value: entry.value)
-      case .private:
-        combinedMetadata = combinedMetadata.withPrivate(key: entry.key, value: entry.value)
-      case .sensitive:
-        combinedMetadata = combinedMetadata.withSensitive(key: entry.key, value: entry.value)
-      case .hash:
-        // For hashed values, we use the sensitive method as a fallback
-        combinedMetadata = combinedMetadata.withSensitive(key: entry.key, value: entry.value)
-      case .auto:
-        // For auto privacy, we default to private
-        combinedMetadata = combinedMetadata.withPrivate(key: entry.key, value: entry.value)
-      }
-    }
-    
-    return withUpdatedMetadata(combinedMetadata)
+    return BookmarkLogContext(
+      operation: operation,
+      identifier: identifier,
+      status: status,
+      source: source,
+      domainName: domainName,
+      correlationID: correlationID,
+      metadata: combinedMetadata
+    )
   }
   
   /**

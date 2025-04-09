@@ -221,14 +221,15 @@ public actor KeychainSecurityActor {
   public func retrieveEncryptedSecret(
     forAccount account: String,
     keyIdentifier: String?=nil,
-    additionalContext _: LogMetadataDTOCollection?=nil
+    additionalContext: LogMetadataDTOCollection?=nil
   ) async throws -> String {
-    _=keyIdentifier ?? deriveKeyIdentifier(forAccount: account)
+    let derivedKeyIdentifier = keyIdentifier ?? deriveKeyIdentifier(forAccount: account)
 
     // Log the operation start
     await keychainLogger.logOperationStart(
       operation: "retrieveEncryptedSecret",
-      account: account
+      account: account,
+      additionalContext: additionalContext
     )
 
     do {
@@ -313,14 +314,15 @@ public actor KeychainSecurityActor {
     forAccount account: String,
     keyIdentifier: String?=nil,
     deleteKey: Bool=true,
-    additionalContext _: LogMetadataDTOCollection?=nil
+    additionalContext: LogMetadataDTOCollection?=nil
   ) async throws {
-    _=keyIdentifier ?? deriveKeyIdentifier(forAccount: account)
+    let derivedKeyIdentifier = keyIdentifier ?? deriveKeyIdentifier(forAccount: account)
 
     // Log the operation start
     await keychainLogger.logOperationStart(
       operation: "deleteSecret",
-      account: account
+      account: account,
+      additionalContext: additionalContext
     )
 
     // First, delete the encryption key if requested
@@ -328,7 +330,7 @@ public actor KeychainSecurityActor {
       let keyManager=await securityProvider.keyManager()
 
       // Try to delete the key but treat it as non-critical
-      _=await keyManager.deleteKey(withIdentifier: deriveKeyIdentifier(forAccount: account))
+      _=await keyManager.deleteKey(withIdentifier: derivedKeyIdentifier)
 
       await keychainLogger.logOperationSuccess(
         operation: "deleteKey",

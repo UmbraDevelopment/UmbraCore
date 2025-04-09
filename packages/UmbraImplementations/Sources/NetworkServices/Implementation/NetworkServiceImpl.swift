@@ -1,6 +1,5 @@
 import Foundation
 import NetworkInterfaces
-import UmbraLogging
 import LoggingTypes
 import LoggingInterfaces
 

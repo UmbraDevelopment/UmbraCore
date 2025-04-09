@@ -205,4 +205,35 @@ public struct NetworkLogContext: LogContextDTO {
         
         return context
     }
+    
+    /**
+     Gets the source of this log context.
+     
+     - Returns: The source identifier for logging
+     */
+    public func getSource() -> String {
+        if let source {
+            return source
+        }
+        return "\(domainName).\(operation)"
+    }
+    
+    /**
+     Creates a metadata collection from this context.
+     
+     - Returns: A LogMetadataDTOCollection with appropriate privacy annotations
+     */
+    public func createMetadataCollection() -> LogMetadataDTOCollection {
+        var collection = metadata
+        
+        // Add standard fields with appropriate privacy levels
+        collection = collection.withPublic(key: "operation", value: operation)
+        collection = collection.withPublic(key: "domain", value: domainName)
+        
+        if let correlationID {
+            collection = collection.withPublic(key: "correlationId", value: correlationID)
+        }
+        
+        return collection
+    }
 }

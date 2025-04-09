@@ -27,7 +27,7 @@ import LoggingAdapters
 public actor FileSystemServiceImpl: FileSystemServiceProtocol {
 
   /// The underlying file manager isolated within this actor
-  let fileManager: FileManager
+  let fileManager: Foundation.FileManager
 
   /// Quality of service for background operations
   let operationQueueQoS: QualityOfService
@@ -44,7 +44,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       - logger: The logger to use for recording operations and errors
    */
   public init(
-    fileManager: FileManager=FileManager.default,
+    fileManager: Foundation.FileManager=Foundation.FileManager.default,
     operationQueueQoS: QualityOfService = .default,
     logger: (any PrivacyAwareLoggingProtocol)?=nil
   ) {
@@ -103,11 +103,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         "Failed to get metadata for \(path.path): \(error.localizedDescription)",
         context: FileSystemLogContext(
           operation: "stat",
-          source: "FileSystemService",
-          metadata: LogMetadataDTOCollection()
-            .withPrivate(key: "path", value: path.path)
-            .withPublic(key: "errorType", value: "\(type(of: error))")
-            .withPrivate(key: "errorMessage", value: error.localizedDescription)
+          source: "FileSystemService"
         )
       )
       throw error
@@ -233,9 +229,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         "Retrieved metadata for \(path.path)",
         context: FileSystemLogContext(
           operation: "stat",
-          source: "FileSystemService",
-          metadata: LogMetadataDTOCollection()
-            .withPrivate(key: "path", value: path.path)
+          source: "FileSystemService"
         )
       )
 
@@ -245,11 +239,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         "Failed to get metadata for \(path.path): \(error.localizedDescription)",
         context: FileSystemLogContext(
           operation: "stat",
-          source: "FileSystemService",
-          metadata: LogMetadataDTOCollection()
-            .withPrivate(key: "path", value: path.path)
-            .withPublic(key: "errorType", value: "\(type(of: error))")
-            .withPrivate(key: "errorMessage", value: error.localizedDescription)
+          source: "FileSystemService"
         )
       )
       throw FileSystemInterfaces.FileSystemError.readError(
@@ -323,11 +313,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         "Failed to get extended attribute \(attributeName) for \(path.path): \(error.localizedDescription)",
         context: FileSystemLogContext(
           operation: "getxattr",
-          source: "FileSystemService",
-          metadata: LogMetadataDTOCollection()
-            .withPrivate(key: "path", value: path.path)
-            .withPublic(key: "errorType", value: "\(type(of: error))")
-            .withPrivate(key: "errorMessage", value: error.localizedDescription)
+          source: "FileSystemService"
         )
       )
       throw FileSystemInterfaces.FileSystemError.readError(
@@ -392,9 +378,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         "Set extended attribute \(attributeName) for \(path.path)",
         context: FileSystemLogContext(
           operation: "setxattr",
-          source: "FileSystemService",
-          metadata: LogMetadataDTOCollection()
-            .withPrivate(key: "path", value: path.path)
+          source: "FileSystemService"
         )
       )
     } catch {
@@ -402,11 +386,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         "Failed to set extended attribute \(attributeName) for \(path.path): \(error.localizedDescription)",
         context: FileSystemLogContext(
           operation: "setxattr",
-          source: "FileSystemService",
-          metadata: LogMetadataDTOCollection()
-            .withPrivate(key: "path", value: path.path)
-            .withPublic(key: "errorType", value: "\(type(of: error))")
-            .withPrivate(key: "errorMessage", value: error.localizedDescription)
+          source: "FileSystemService"
         )
       )
       throw FileSystemInterfaces.FileSystemError.writeError(
@@ -432,10 +412,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       "Removing extended attribute \(attributeName) from \(path.path)",
       context: FileSystemLogContext(
         operation: "removexattr",
-        source: "FileSystemService",
-        metadata: LogMetadataDTOCollection()
-          .withPrivate(key: "path", value: path.path)
-          .withPublic(key: "attributeName", value: attributeName)
+        source: "FileSystemService"
       )
     )
     
@@ -460,7 +437,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
     
     do {
       // Remove the extended attribute
-      try fileManager.removeExtendedAttribute(
+      try Foundation.FileManager.default.removeExtendedAttribute(
         withName: attributeName,
         fromItemAtPath: path.path
       )
@@ -469,10 +446,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         "Removed extended attribute \(attributeName) from \(path.path)",
         context: FileSystemLogContext(
           operation: "removexattr",
-          source: "FileSystemService",
-          metadata: LogMetadataDTOCollection()
-            .withPrivate(key: "path", value: path.path)
-            .withPublic(key: "attributeName", value: attributeName)
+          source: "FileSystemService"
         )
       )
     } catch {
@@ -480,12 +454,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         "Failed to remove extended attribute \(attributeName) from \(path.path): \(error.localizedDescription)",
         context: FileSystemLogContext(
           operation: "removexattr",
-          source: "FileSystemService",
-          metadata: LogMetadataDTOCollection()
-            .withPrivate(key: "path", value: path.path)
-            .withPublic(key: "attributeName", value: attributeName)
-            .withPublic(key: "errorType", value: "\(type(of: error))")
-            .withPrivate(key: "errorMessage", value: error.localizedDescription)
+          source: "FileSystemService"
         )
       )
       
@@ -494,6 +463,64 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         attribute: attributeName,
         operation: "remove",
         reason: "Failed to remove extended attribute: \(error.localizedDescription)"
+      )
+    }
+  }
+
+  /**
+   Lists all extended attributes on a file or directory.
+
+   - Parameter path: The file to query
+   - Returns: An array of attribute names
+   - Throws: FileSystemError if the attributes cannot be retrieved
+   */
+  public func listExtendedAttributes(
+    at path: FilePath
+  ) async throws -> [String] {
+    guard !path.path.isEmpty else {
+      throw FileSystemInterfaces.FileSystemError.invalidPath(
+        path: "",
+        reason: "Empty path provided"
+      )
+    }
+
+    // Check if file exists
+    if !fileManager.fileExists(atPath: path.path) {
+      throw FileSystemInterfaces.FileSystemError.pathNotFound(path: path.path)
+    }
+
+    await logger.debug(
+      "Listing extended attributes",
+      context: FileSystemLogContext(
+        operation: "listExtendedAttributes",
+        source: "FileSystemService"
+      )
+    )
+
+    do {
+      let attributes = try Foundation.FileManager.default.listExtendedAttributes(atPath: path.path)
+      
+      await logger.debug(
+        "Listed extended attributes",
+        context: FileSystemLogContext(
+          operation: "listExtendedAttributes",
+          source: "FileSystemService"
+        )
+      )
+
+      return attributes
+    } catch {
+      await logger.error(
+        "Failed to list extended attributes",
+        context: FileSystemLogContext(
+          operation: "listExtendedAttributes",
+          source: "FileSystemService"
+        )
+      )
+      
+      throw FileSystemInterfaces.FileSystemError.readError(
+        path: path.path,
+        reason: "Failed to list extended attributes: \(error.localizedDescription)"
       )
     }
   }
@@ -516,10 +543,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       "Creating file at \(path.path)",
       context: FileSystemLogContext(
         operation: "createFile",
-        source: "FileSystemService",
-        metadata: LogMetadataDTOCollection()
-          .withPrivate(key: "path", value: path.path)
-          .withPublic(key: "fileSize", value: "\(data.count)")
+        source: "FileSystemService"
       )
     )
     
@@ -549,7 +573,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
     let directory = (path.path as NSString).deletingLastPathComponent
     if !directory.isEmpty && !fileManager.fileExists(atPath: directory) {
       do {
-        try fileManager.createDirectory(
+        try Foundation.FileManager.default.createDirectory(
           atPath: directory,
           withIntermediateDirectories: true,
           attributes: nil
@@ -559,11 +583,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
           "Failed to create parent directory for \(path.path): \(error.localizedDescription)",
           context: FileSystemLogContext(
             operation: "createFile",
-            source: "FileSystemService",
-            metadata: LogMetadataDTOCollection()
-              .withPrivate(key: "path", value: directory)
-              .withPublic(key: "errorType", value: "\(type(of: error))")
-              .withPrivate(key: "errorMessage", value: error.localizedDescription)
+            source: "FileSystemService"
           )
         )
         
@@ -582,10 +602,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         "Created file at \(path.path) with \(data.count) bytes",
         context: FileSystemLogContext(
           operation: "createFile",
-          source: "FileSystemService",
-          metadata: LogMetadataDTOCollection()
-            .withPrivate(key: "path", value: path.path)
-            .withPublic(key: "fileSize", value: "\(data.count)")
+          source: "FileSystemService"
         )
       )
     } catch {
@@ -593,11 +610,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         "Failed to create file at \(path.path): \(error.localizedDescription)",
         context: FileSystemLogContext(
           operation: "createFile",
-          source: "FileSystemService",
-          metadata: LogMetadataDTOCollection()
-            .withPrivate(key: "path", value: path.path)
-            .withPublic(key: "errorType", value: "\(type(of: error))")
-            .withPrivate(key: "errorMessage", value: error.localizedDescription)
+          source: "FileSystemService"
         )
       )
       
@@ -624,10 +637,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       "Updating file at \(path.path)",
       context: FileSystemLogContext(
         operation: "updateFile",
-        source: "FileSystemService",
-        metadata: LogMetadataDTOCollection()
-          .withPrivate(key: "path", value: path.path)
-          .withPublic(key: "fileSize", value: "\(data.count)")
+        source: "FileSystemService"
       )
     )
     
@@ -659,10 +669,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         "Updated file at \(path.path) with \(data.count) bytes",
         context: FileSystemLogContext(
           operation: "updateFile",
-          source: "FileSystemService",
-          metadata: LogMetadataDTOCollection()
-            .withPrivate(key: "path", value: path.path)
-            .withPublic(key: "fileSize", value: "\(data.count)")
+          source: "FileSystemService"
         )
       )
     } catch {
@@ -670,11 +677,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         "Failed to update file at \(path.path): \(error.localizedDescription)",
         context: FileSystemLogContext(
           operation: "updateFile",
-          source: "FileSystemService",
-          metadata: LogMetadataDTOCollection()
-            .withPrivate(key: "path", value: path.path)
-            .withPublic(key: "errorType", value: "\(type(of: error))")
-            .withPrivate(key: "errorMessage", value: error.localizedDescription)
+          source: "FileSystemService"
         )
       )
       
@@ -697,9 +700,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       "Checking if file exists",
       context: FileSystemLogContext(
         operation: "fileExists",
-        source: "FileSystemService",
-        metadata: LogMetadataDTOCollection()
-          .withPrivate(key: "path", value: path.path)
+        source: "FileSystemService"
       )
     )
     
@@ -716,10 +717,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       "File exists check completed",
       context: FileSystemLogContext(
         operation: "fileExists",
-        source: "FileSystemService",
-        metadata: LogMetadataDTOCollection()
-          .withPrivate(key: "path", value: path.path)
-          .withPublic(key: "exists", value: "\(exists)")
+        source: "FileSystemService"
       )
     )
     
@@ -738,9 +736,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       "Checking if directory exists",
       context: FileSystemLogContext(
         operation: "directoryExists",
-        source: "FileSystemService",
-        metadata: LogMetadataDTOCollection()
-          .withPrivate(key: "path", value: path.path)
+        source: "FileSystemService"
       )
     )
     
@@ -781,9 +777,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       "Retrieving metadata for \(path.path)",
       context: FileSystemLogContext(
         operation: "stat",
-        source: "FileSystemService",
-        metadata: LogMetadataDTOCollection()
-          .withPrivate(key: "path", value: path.path)
+        source: "FileSystemService"
       )
     )
 
@@ -819,11 +813,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         "Failed to get metadata for \(path.path): \(error.localizedDescription)",
         context: FileSystemLogContext(
           operation: "stat",
-          source: "FileSystemService",
-          metadata: LogMetadataDTOCollection()
-            .withPrivate(key: "path", value: path.path)
-            .withPublic(key: "errorType", value: "\(type(of: error))")
-            .withPrivate(key: "errorMessage", value: error.localizedDescription)
+          source: "FileSystemService"
         )
       )
       throw FileSystemInterfaces.FileSystemError.readError(
@@ -845,9 +835,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       "Checking if \(path.path) is a directory",
       context: FileSystemLogContext(
         operation: "isDirectory",
-        source: "FileSystemService",
-        metadata: LogMetadataDTOCollection()
-          .withPrivate(key: "path", value: path.path)
+        source: "FileSystemService"
       )
     )
 
@@ -883,16 +871,11 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
     at path: FilePath,
     includeHidden: Bool = false
   ) async throws -> [FilePath] {
-    let metadata = LogMetadataDTOCollection()
-      .withPrivate(key: "path", value: path.path)
-      .withPublic(key: "includeHidden", value: "\(includeHidden)")
-      
     await logger.debug(
       "Listing directory",
       context: FileSystemLogContext(
         operation: "listDirectory",
-        source: "FileSystemService",
-        metadata: metadata
+        source: "FileSystemService"
       )
     )
     
@@ -920,7 +903,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
     }
     
     do {
-      let contents = try fileManager.contentsOfDirectory(atPath: path.path)
+      let contents = try Foundation.FileManager.default.contentsOfDirectory(atPath: path.path)
       
       // Filter out hidden files if requested
       let filteredContents = includeHidden
@@ -935,32 +918,21 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         return FilePath(path: fullPath, isDirectory: isDir.boolValue)
       }
       
-      let resultMetadata = LogMetadataDTOCollection()
-        .withPrivate(key: "path", value: path.path)
-        .withPublic(key: "count", value: "\(filePaths.count)")
-        
       await logger.debug(
         "Listed directory contents",
         context: FileSystemLogContext(
           operation: "listDirectory",
-          source: "FileSystemService",
-          metadata: resultMetadata
+          source: "FileSystemService"
         )
       )
       
       return filePaths
     } catch {
-      let errorMetadata = LogMetadataDTOCollection()
-        .withPrivate(key: "path", value: path.path)
-        .withPublic(key: "errorType", value: "\(type(of: error))")
-        .withPrivate(key: "errorMessage", value: error.localizedDescription)
-        
       await logger.error(
         "Failed to list directory",
         context: FileSystemLogContext(
           operation: "listDirectory",
-          source: "FileSystemService",
-          metadata: errorMetadata
+          source: "FileSystemService"
         )
       )
       
@@ -988,9 +960,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       "Listing directory recursively at \(path.path)",
       context: FileSystemLogContext(
         operation: "listDirectoryRecursive",
-        source: "FileSystemService",
-        metadata: LogMetadataDTOCollection()
-          .withPrivate(key: "path", value: path.path)
+        source: "FileSystemService"
       )
     )
     
@@ -1021,7 +991,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       var result: [FilePath] = []
       
       // Get the contents of the directory
-      let contents = try fileManager.contentsOfDirectory(atPath: path.path)
+      let contents = try Foundation.FileManager.default.contentsOfDirectory(atPath: path.path)
       
       // Filter out hidden files if requested
       let filteredContents = includeHidden
@@ -1048,10 +1018,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         "Listed \(result.count) items recursively in directory at \(path.path)",
         context: FileSystemLogContext(
           operation: "listDirectoryRecursive",
-          source: "FileSystemService",
-          metadata: LogMetadataDTOCollection()
-            .withPrivate(key: "path", value: path.path)
-            .withPublic(key: "count", value: "\(result.count)")
+          source: "FileSystemService"
         )
       )
       
@@ -1061,11 +1028,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         "Failed to list directory recursively at \(path.path): \(error.localizedDescription)",
         context: FileSystemLogContext(
           operation: "listDirectoryRecursive",
-          source: "FileSystemService",
-          metadata: LogMetadataDTOCollection()
-            .withPrivate(key: "path", value: path.path)
-            .withPublic(key: "errorType", value: "\(type(of: error))")
-            .withPrivate(key: "errorMessage", value: error.localizedDescription)
+          source: "FileSystemService"
         )
       )
       
@@ -1088,9 +1051,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       "Reading file",
       context: FileSystemLogContext(
         operation: "readFile",
-        source: "FileSystemService",
-        metadata: LogMetadataDTOCollection()
-          .withPrivate(key: "path", value: path.path)
+        source: "FileSystemService"
       )
     )
     
@@ -1101,10 +1062,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         "Read file",
         context: FileSystemLogContext(
           operation: "readFile",
-          source: "FileSystemService",
-          metadata: LogMetadataDTOCollection()
-            .withPrivate(key: "path", value: path.path)
-            .withPublic(key: "fileSize", value: "\(data.count)")
+          source: "FileSystemService"
         )
       )
       
@@ -1114,11 +1072,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         "Failed to read file",
         context: FileSystemLogContext(
           operation: "readFile",
-          source: "FileSystemService",
-          metadata: LogMetadataDTOCollection()
-            .withPrivate(key: "path", value: path.path)
-            .withPublic(key: "errorType", value: "\(type(of: error))")
-            .withPrivate(key: "errorMessage", value: error.localizedDescription)
+          source: "FileSystemService"
         )
       )
       
@@ -1145,10 +1099,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       "Deleting file at \(path.path)",
       context: FileSystemLogContext(
         operation: "deleteFile",
-        source: "FileSystemService",
-        metadata: LogMetadataDTOCollection()
-          .withPrivate(key: "path", value: path.path)
-          .withPublic(key: "secure", value: "\(secure)")
+        source: "FileSystemService"
       )
     )
     
@@ -1186,15 +1137,13 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       }
       
       // Delete the file
-      try fileManager.removeItem(atPath: path.path)
+      try Foundation.FileManager.default.removeItem(atPath: path.path)
       
       await logger.debug(
         "Deleted file at \(path.path)",
         context: FileSystemLogContext(
           operation: "deleteFile",
-          source: "FileSystemService",
-          metadata: LogMetadataDTOCollection()
-            .withPrivate(key: "path", value: path.path)
+          source: "FileSystemService"
         )
       )
     } catch {
@@ -1202,11 +1151,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         "Failed to delete file at \(path.path): \(error.localizedDescription)",
         context: FileSystemLogContext(
           operation: "deleteFile",
-          source: "FileSystemService",
-          metadata: LogMetadataDTOCollection()
-            .withPrivate(key: "path", value: path.path)
-            .withPublic(key: "errorType", value: "\(type(of: error))")
-            .withPrivate(key: "errorMessage", value: error.localizedDescription)
+          source: "FileSystemService"
         )
       )
       
@@ -1233,10 +1178,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       "Deleting directory at \(path.path)",
       context: FileSystemLogContext(
         operation: "deleteDirectory",
-        source: "FileSystemService",
-        metadata: LogMetadataDTOCollection()
-          .withPrivate(key: "path", value: path.path)
-          .withPublic(key: "secure", value: "\(secure)")
+        source: "FileSystemService"
       )
     )
     
@@ -1266,7 +1208,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
     do {
       if secure {
         // If secure delete is requested, we need to securely delete all files in the directory first
-        let contents = try fileManager.contentsOfDirectory(atPath: path.path)
+        let contents = try Foundation.FileManager.default.contentsOfDirectory(atPath: path.path)
         for item in contents {
           let itemPath = path.path + "/" + item
           var isItemDirectory: ObjCBool = false
@@ -1283,15 +1225,13 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       }
       
       // Delete the directory
-      try fileManager.removeItem(atPath: path.path)
+      try Foundation.FileManager.default.removeItem(atPath: path.path)
       
       await logger.debug(
         "Deleted directory at \(path.path)",
         context: FileSystemLogContext(
           operation: "deleteDirectory",
-          source: "FileSystemService",
-          metadata: LogMetadataDTOCollection()
-            .withPrivate(key: "path", value: path.path)
+          source: "FileSystemService"
         )
       )
     } catch {
@@ -1299,11 +1239,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         "Failed to delete directory at \(path.path): \(error.localizedDescription)",
         context: FileSystemLogContext(
           operation: "deleteDirectory",
-          source: "FileSystemService",
-          metadata: LogMetadataDTOCollection()
-            .withPrivate(key: "path", value: path.path)
-            .withPublic(key: "errorType", value: "\(type(of: error))")
-            .withPrivate(key: "errorMessage", value: error.localizedDescription)
+          source: "FileSystemService"
         )
       )
       
@@ -1332,11 +1268,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       "Copying item from \(sourcePath.path) to \(destinationPath.path)",
       context: FileSystemLogContext(
         operation: "copyItem",
-        source: "FileSystemService",
-        metadata: LogMetadataDTOCollection()
-          .withPrivate(key: "path", value: sourcePath.path)
-          .withPrivate(key: "destinationPath", value: destinationPath.path)
-          .withPublic(key: "overwrite", value: "\(overwrite)")
+        source: "FileSystemService"
       )
     )
     
@@ -1367,18 +1299,13 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       
       // If overwrite is true, remove the existing item
       do {
-        try fileManager.removeItem(atPath: destinationPath.path)
+        try Foundation.FileManager.default.removeItem(atPath: destinationPath.path)
       } catch {
         await logger.error(
           "Failed to remove existing item at \(destinationPath.path): \(error.localizedDescription)",
           context: FileSystemLogContext(
             operation: "copyItem",
-            source: "FileSystemService",
-            metadata: LogMetadataDTOCollection()
-              .withPrivate(key: "path", value: sourcePath.path)
-              .withPrivate(key: "destinationPath", value: destinationPath.path)
-              .withPublic(key: "errorType", value: "\(type(of: error))")
-              .withPrivate(key: "errorMessage", value: error.localizedDescription)
+            source: "FileSystemService"
           )
         )
         
@@ -1393,7 +1320,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
     let destinationDirectory = (destinationPath.path as NSString).deletingLastPathComponent
     if !destinationDirectory.isEmpty && !fileManager.fileExists(atPath: destinationDirectory) {
       do {
-        try fileManager.createDirectory(
+        try Foundation.FileManager.default.createDirectory(
           atPath: destinationDirectory,
           withIntermediateDirectories: true,
           attributes: nil
@@ -1403,12 +1330,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
           "Failed to create parent directory for \(destinationPath.path): \(error.localizedDescription)",
           context: FileSystemLogContext(
             operation: "copyItem",
-            source: "FileSystemService",
-            metadata: LogMetadataDTOCollection()
-              .withPrivate(key: "path", value: sourcePath.path)
-              .withPrivate(key: "destinationPath", value: destinationPath.path)
-              .withPublic(key: "errorType", value: "\(type(of: error))")
-              .withPrivate(key: "errorMessage", value: error.localizedDescription)
+            source: "FileSystemService"
           )
         )
         
@@ -1421,16 +1343,13 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
     
     do {
       // Perform the copy
-      try fileManager.copyItem(atPath: sourcePath.path, toPath: destinationPath.path)
+      try Foundation.FileManager.default.copyItem(atPath: sourcePath.path, toPath: destinationPath.path)
       
       await logger.debug(
         "Copied item from \(sourcePath.path) to \(destinationPath.path)",
         context: FileSystemLogContext(
           operation: "copyItem",
-          source: "FileSystemService",
-          metadata: LogMetadataDTOCollection()
-            .withPrivate(key: "path", value: sourcePath.path)
-            .withPrivate(key: "destinationPath", value: destinationPath.path)
+          source: "FileSystemService"
         )
       )
     } catch {
@@ -1438,12 +1357,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         "Failed to copy item from \(sourcePath.path) to \(destinationPath.path): \(error.localizedDescription)",
         context: FileSystemLogContext(
           operation: "copyItem",
-          source: "FileSystemService",
-          metadata: LogMetadataDTOCollection()
-            .withPrivate(key: "path", value: sourcePath.path)
-            .withPrivate(key: "destinationPath", value: destinationPath.path)
-            .withPublic(key: "errorType", value: "\(type(of: error))")
-            .withPrivate(key: "errorMessage", value: error.localizedDescription)
+          source: "FileSystemService"
         )
       )
       
@@ -1467,9 +1381,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       "Converting path to URL: \(path.path)",
       context: FileSystemLogContext(
         operation: "pathToURL",
-        source: "FileSystemService",
-        metadata: LogMetadataDTOCollection()
-          .withPrivate(key: "path", value: path.path)
+        source: "FileSystemService"
       )
     )
     
@@ -1503,10 +1415,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       "Creating security bookmark for \(path.path)",
       context: FileSystemLogContext(
         operation: "createBookmark",
-        source: "FileSystemService",
-        metadata: LogMetadataDTOCollection()
-          .withPrivate(key: "path", value: path.path)
-          .withPublic(key: "readOnly", value: "\(readOnly)")
+        source: "FileSystemService"
       )
     )
     
@@ -1537,10 +1446,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         "Created security bookmark for \(path.path)",
         context: FileSystemLogContext(
           operation: "createBookmark",
-          source: "FileSystemService",
-          metadata: LogMetadataDTOCollection()
-            .withPrivate(key: "path", value: path.path)
-            .withPublic(key: "bookmarkSize", value: "\(bookmarkData.count)")
+          source: "FileSystemService"
         )
       )
       
@@ -1550,11 +1456,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         "Failed to create security bookmark for \(path.path): \(error.localizedDescription)",
         context: FileSystemLogContext(
           operation: "createBookmark",
-          source: "FileSystemService",
-          metadata: LogMetadataDTOCollection()
-            .withPrivate(key: "path", value: path.path)
-            .withPublic(key: "errorType", value: "\(type(of: error))")
-            .withPrivate(key: "errorMessage", value: error.localizedDescription)
+          source: "FileSystemService"
         )
       )
       
@@ -1579,9 +1481,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       "Resolving security bookmark",
       context: FileSystemLogContext(
         operation: "resolveBookmark",
-        source: "FileSystemService",
-        metadata: LogMetadataDTOCollection()
-          .withPublic(key: "bookmarkSize", value: "\(bookmark.count)")
+        source: "FileSystemService"
       )
     )
     
@@ -1601,10 +1501,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         "Resolved security bookmark to \(path.path)",
         context: FileSystemLogContext(
           operation: "resolveBookmark",
-          source: "FileSystemService",
-          metadata: LogMetadataDTOCollection()
-            .withPrivate(key: "path", value: path.path)
-            .withPublic(key: "isStale", value: "\(isStale)")
+          source: "FileSystemService"
         )
       )
       
@@ -1614,10 +1511,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         "Failed to resolve security bookmark: \(error.localizedDescription)",
         context: FileSystemLogContext(
           operation: "resolveBookmark",
-          source: "FileSystemService",
-          metadata: LogMetadataDTOCollection()
-            .withPublic(key: "errorType", value: "\(type(of: error))")
-            .withPrivate(key: "errorMessage", value: error.localizedDescription)
+          source: "FileSystemService"
         )
       )
       
@@ -1642,9 +1536,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       "Starting access to security-scoped resource at \(path.path)",
       context: FileSystemLogContext(
         operation: "startAccess",
-        source: "FileSystemService",
-        metadata: LogMetadataDTOCollection()
-          .withPrivate(key: "path", value: path.path)
+        source: "FileSystemService"
       )
     )
     
@@ -1670,10 +1562,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       "Started access to security-scoped resource at \(path.path): \(result)",
       context: FileSystemLogContext(
         operation: "startAccess",
-        source: "FileSystemService",
-        metadata: LogMetadataDTOCollection()
-          .withPrivate(key: "path", value: path.path)
-          .withPublic(key: "result", value: "\(result)")
+        source: "FileSystemService"
       )
     )
     
@@ -1692,9 +1581,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       "Stopping access to security-scoped resource at \(path.path)",
       context: FileSystemLogContext(
         operation: "stopAccess",
-        source: "FileSystemService",
-        metadata: LogMetadataDTOCollection()
-          .withPrivate(key: "path", value: path.path)
+        source: "FileSystemService"
       )
     )
     
@@ -1712,9 +1599,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       "Stopped access to security-scoped resource at \(path.path)",
       context: FileSystemLogContext(
         operation: "stopAccess",
-        source: "FileSystemService",
-        metadata: LogMetadataDTOCollection()
-          .withPrivate(key: "path", value: path.path)
+        source: "FileSystemService"
       )
     )
   }
@@ -1734,16 +1619,11 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
     suffix: String? = nil,
     options: FileSystemInterfaces.TemporaryFileOptions? = nil
   ) async throws -> FilePath {
-    let metadata = LogMetadataDTOCollection()
-      .withPublic(key: "prefix", value: prefix ?? "")
-      .withPublic(key: "suffix", value: suffix ?? "")
-      
     await logger.debug(
       "Creating temporary file",
       context: FileSystemLogContext(
         operation: "createTempFile",
-        source: "FileSystemService",
-        metadata: metadata
+        source: "FileSystemService"
       )
     )
     
@@ -1757,7 +1637,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
     
     do {
       // Create an empty file
-      if !fileManager.createFile(atPath: tempPath, contents: Data(), attributes: options?.attributes) {
+      if !(Foundation.FileManager.default.createFile(atPath: tempPath, contents: Data(), attributes: options?.attributes) as Bool) {
         throw FileSystemInterfaces.FileSystemError.writeError(
           path: tempPath,
           reason: "Failed to create temporary file"
@@ -1766,31 +1646,21 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       
       let filePath = FilePath(path: tempPath)
       
-      let resultMetadata = LogMetadataDTOCollection()
-        .withPrivate(key: "path", value: tempPath)
-        
       await logger.debug(
         "Created temporary file",
         context: FileSystemLogContext(
           operation: "createTempFile",
-          source: "FileSystemService",
-          metadata: resultMetadata
+          source: "FileSystemService"
         )
       )
       
       return filePath
     } catch {
-      let errorMetadata = LogMetadataDTOCollection()
-        .withPrivate(key: "path", value: tempPath)
-        .withPublic(key: "errorType", value: "\(type(of: error))")
-        .withPrivate(key: "errorMessage", value: error.localizedDescription)
-        
       await logger.error(
         "Failed to create temporary file",
         context: FileSystemLogContext(
           operation: "createTempFile",
-          source: "FileSystemService",
-          metadata: errorMetadata
+          source: "FileSystemService"
         )
       )
       
@@ -1814,15 +1684,11 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
     prefix: String? = nil,
     options: FileSystemInterfaces.TemporaryFileOptions? = nil
   ) async throws -> FilePath {
-    let metadata = LogMetadataDTOCollection()
-      .withPublic(key: "prefix", value: prefix ?? "")
-      
     await logger.debug(
       "Creating temporary directory",
       context: FileSystemLogContext(
         operation: "createTempDir",
-        source: "FileSystemService",
-        metadata: metadata
+        source: "FileSystemService"
       )
     )
     
@@ -1836,39 +1702,29 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
     
     do {
       // Create the directory
-      try fileManager.createDirectory(
+      try (Foundation.FileManager.default.createDirectory(
         atPath: tempPath,
         withIntermediateDirectories: true,
         attributes: options?.attributes
-      )
+      ) as Void)
       
       let dirPath = FilePath(path: tempPath)
       
-      let resultMetadata = LogMetadataDTOCollection()
-        .withPrivate(key: "path", value: tempPath)
-        
       await logger.debug(
         "Created temporary directory",
         context: FileSystemLogContext(
           operation: "createTempDir",
-          source: "FileSystemService",
-          metadata: resultMetadata
+          source: "FileSystemService"
         )
       )
       
       return dirPath
     } catch {
-      let errorMetadata = LogMetadataDTOCollection()
-        .withPrivate(key: "path", value: tempPath)
-        .withPublic(key: "errorType", value: "\(type(of: error))")
-        .withPrivate(key: "errorMessage", value: error.localizedDescription)
-        
       await logger.error(
         "Failed to create temporary directory",
         context: FileSystemLogContext(
           operation: "createTempDir",
-          source: "FileSystemService",
-          metadata: errorMetadata
+          source: "FileSystemService"
         )
       )
       

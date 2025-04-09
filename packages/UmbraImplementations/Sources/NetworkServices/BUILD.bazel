@@ -2,7 +2,8 @@ load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
     name = "NetworkServices",
-    srcs = glob(["**/*.swift"]),    visibility = ["//visibility:public"],
+    srcs = glob(["**/*.swift"]),
+    visibility = ["//visibility:public"],
     deps = [
         "//packages/UmbraCoreTypes/Sources/CoreDTOs",
         "//packages/UmbraCoreTypes/Sources/UmbraErrors",
@@ -11,6 +12,6 @@ umbra_swift_library(
         "//packages/UmbraInterfaces/Sources/LoggingInterfaces",
         "//packages/UmbraImplementations/Sources/LoggingServices",
         "//packages/UmbraImplementations/Sources/LoggingWrapperServices",
-        "//MigratedArchive/UmbraLogging",
+        "//packages/UmbraImplementations/Sources/LoggingAdapters",
     ],
 )

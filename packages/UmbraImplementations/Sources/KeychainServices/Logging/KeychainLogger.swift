@@ -255,13 +255,15 @@ public actor KeychainLogger: DomainLoggerProtocol {
    Logs the start of a keychain operation.
 
    - Parameters:
-     - account: The account identifier (sensitive information)
      - operation: The operation being performed
+     - account: The account identifier (sensitive information)
+     - additionalContext: Optional additional context metadata
      - message: Optional custom message
    */
   public func logOperationStart(
-    account: String,
     operation: String,
+    account: String,
+    additionalContext: LogMetadataDTOCollection? = nil,
     message: String? = nil
   ) async {
     let context = KeychainLogContext(
@@ -269,22 +271,31 @@ public actor KeychainLogger: DomainLoggerProtocol {
       operation: operation,
       status: "started"
     )
+    
+    // Add additional context if provided
+    let finalContext = if let additionalContext {
+      context.withAdditionalMetadata(additionalContext)
+    } else {
+      context
+    }
 
     let defaultMessage = "Starting keychain operation: \(operation)"
-    await info(message ?? defaultMessage, context: context)
+    await info(message ?? defaultMessage, context: finalContext)
   }
 
   /**
    Logs the successful completion of a keychain operation.
 
    - Parameters:
-     - account: The account identifier (sensitive information)
      - operation: The operation that succeeded
+     - account: The account identifier (sensitive information)
+     - additionalContext: Optional additional context metadata
      - message: Optional custom message
    */
   public func logOperationSuccess(
-    account: String,
     operation: String,
+    account: String,
+    additionalContext: LogMetadataDTOCollection? = nil,
     message: String? = nil
   ) async {
     let context = KeychainLogContext(
@@ -292,24 +303,33 @@ public actor KeychainLogger: DomainLoggerProtocol {
       operation: operation,
       status: "success"
     )
+    
+    // Add additional context if provided
+    let finalContext = if let additionalContext {
+      context.withAdditionalMetadata(additionalContext)
+    } else {
+      context
+    }
 
     let defaultMessage = "Successfully completed keychain operation: \(operation)"
-    await info(message ?? defaultMessage, context: context)
+    await info(message ?? defaultMessage, context: finalContext)
   }
 
   /**
    Logs the failure of a keychain operation.
 
    - Parameters:
-     - account: The account identifier (sensitive information)
      - operation: The operation that failed
+     - account: The account identifier (sensitive information)
      - error: The error that occurred
+     - additionalContext: Optional additional context metadata
      - message: Optional custom message
    */
   public func logOperationError(
-    account: String,
     operation: String,
+    account: String,
     error: Error,
+    additionalContext: LogMetadataDTOCollection? = nil,
     message: String? = nil
   ) async {
     let context = KeychainLogContext(
@@ -317,13 +337,20 @@ public actor KeychainLogger: DomainLoggerProtocol {
       operation: operation,
       status: "error"
     )
+    
+    // Add additional context if provided
+    let contextWithAdditional = if let additionalContext {
+      context.withAdditionalMetadata(additionalContext)
+    } else {
+      context
+    }
 
     // Log the error first
-    await logError(error, context: context)
+    await logError(error, context: contextWithAdditional)
 
     // If a custom message was provided, log it as well
     if let message {
-      await self.error(message, context: context)
+      await self.error(message, context: contextWithAdditional)
     }
   }
 }
@@ -334,11 +361,13 @@ public actor KeychainLogger: DomainLoggerProtocol {
 private struct BaseLogContextDTO: LogContextDTO {
   let domainName: String
   let source: String?
+  let correlationID: String?
   private let metadataCollection: LogMetadataDTOCollection
   
-  init(domainName: String, source: String?, metadataCollection: LogMetadataDTOCollection = LogMetadataDTOCollection()) {
+  init(domainName: String, source: String?, correlationID: String? = nil, metadataCollection: LogMetadataDTOCollection = LogMetadataDTOCollection()) {
     self.domainName = domainName
     self.source = source
+    self.correlationID = correlationID
     self.metadataCollection = metadataCollection
   }
   
@@ -361,6 +390,6 @@ private struct BaseLogContextDTO: LogContextDTO {
   }
   
   func withUpdatedMetadata(_ updatedMetadata: LogMetadataDTOCollection) -> BaseLogContextDTO {
-    BaseLogContextDTO(domainName: domainName, source: source, metadataCollection: updatedMetadata)
+    BaseLogContextDTO(domainName: domainName, source: source, correlationID: correlationID, metadataCollection: updatedMetadata)
   }
 }

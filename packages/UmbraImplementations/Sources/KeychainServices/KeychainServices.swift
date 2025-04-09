@@ -68,7 +68,7 @@ public enum KeychainServices {
   public static func createService(
     logger: LoggingProtocol?=nil
   ) async -> any KeychainServiceProtocol {
-    await KeychainServicesFactory.createKeychainService(logger: logger)
+    await KeychainServiceFactory.createKeychainService(logger: logger)
   }
 
   /**
@@ -115,7 +115,7 @@ public enum KeychainServices {
       }
     }
 
-    return await KeychainServicesFactory.createSecurityService(
+    return await KeychainServiceFactory.createSecurityService(
       keychainService: keychainService,
       keyManager: actualKeyManager,
       logger: logger

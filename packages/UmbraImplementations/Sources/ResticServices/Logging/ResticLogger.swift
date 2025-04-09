@@ -18,7 +18,7 @@ public actor ResticLogger {
 
   /// Create a new Restic logger
   public init(logger: any LoggingProtocol) {
-    underlyingLogger=logger
+    underlyingLogger = logger
   }
 
   /// Log a message with debug level
@@ -26,9 +26,15 @@ public actor ResticLogger {
   /// - Parameters:
   ///   - message: The message to log
   ///   - metadata: Additional metadata to include
+  ///   - additionalContext: Optional additional context to merge with the primary metadata
   ///   - source: The source of the message
-  public func debug(_ message: String, metadata: PrivacyMetadata?, source: String) async {
-    await log(.debug, message, metadata: metadata, source: source)
+  public func debug(
+    _ message: String, 
+    metadata: LogMetadataDTOCollection?, 
+    additionalContext: LogMetadataDTOCollection? = nil,
+    source: String
+  ) async {
+    await log(.debug, message, metadata: metadata, additionalContext: additionalContext, source: source)
   }
 
   /// Log a message with info level
@@ -36,9 +42,15 @@ public actor ResticLogger {
   /// - Parameters:
   ///   - message: The message to log
   ///   - metadata: Additional metadata to include
+  ///   - additionalContext: Optional additional context to merge with the primary metadata
   ///   - source: The source of the message
-  public func info(_ message: String, metadata: PrivacyMetadata?, source: String) async {
-    await log(.info, message, metadata: metadata, source: source)
+  public func info(
+    _ message: String, 
+    metadata: LogMetadataDTOCollection?, 
+    additionalContext: LogMetadataDTOCollection? = nil,
+    source: String
+  ) async {
+    await log(.info, message, metadata: metadata, additionalContext: additionalContext, source: source)
   }
 
   /// Log a message with warning level
@@ -46,9 +58,15 @@ public actor ResticLogger {
   /// - Parameters:
   ///   - message: The message to log
   ///   - metadata: Additional metadata to include
+  ///   - additionalContext: Optional additional context to merge with the primary metadata
   ///   - source: The source of the message
-  public func warning(_ message: String, metadata: PrivacyMetadata?, source: String) async {
-    await log(.warning, message, metadata: metadata, source: source)
+  public func warning(
+    _ message: String, 
+    metadata: LogMetadataDTOCollection?, 
+    additionalContext: LogMetadataDTOCollection? = nil,
+    source: String
+  ) async {
+    await log(.warning, message, metadata: metadata, additionalContext: additionalContext, source: source)
   }
 
   /// Log a message with error level
@@ -56,9 +74,15 @@ public actor ResticLogger {
   /// - Parameters:
   ///   - message: The message to log
   ///   - metadata: Additional metadata to include
+  ///   - additionalContext: Optional additional context to merge with the primary metadata
   ///   - source: The source of the message
-  public func error(_ message: String, metadata: PrivacyMetadata?, source: String) async {
-    await log(.error, message, metadata: metadata, source: source)
+  public func error(
+    _ message: String, 
+    metadata: LogMetadataDTOCollection?, 
+    additionalContext: LogMetadataDTOCollection? = nil,
+    source: String
+  ) async {
+    await log(.error, message, metadata: metadata, additionalContext: additionalContext, source: source)
   }
 
   /// Log a message with critical level
@@ -66,105 +90,109 @@ public actor ResticLogger {
   /// - Parameters:
   ///   - message: The message to log
   ///   - metadata: Additional metadata to include
+  ///   - additionalContext: Optional additional context to merge with the primary metadata
   ///   - source: The source of the message
-  public func critical(_ message: String, metadata: PrivacyMetadata?, source: String) async {
-    await log(.critical, message, metadata: metadata, source: source)
-  }
-
-  /// Log a message with a context
-  ///
-  /// - Parameters:
-  ///  - level: Log level
-  ///  - message: The message to log
-  ///  - context: The logging context
-  public func log(
-    _ level: LogLevel,
-    _ message: String,
-    context: LogContextDTO
-  ) async {
-    await underlyingLogger.log(level, message, context: context)
-  }
-
-  /// Log a message
-  ///
-  /// - Parameters:
-  ///  - level: The log level
-  ///  - message: The message to log
-  ///  - metadata: Additional metadata
-  ///  - source: Source of the log
-  public func log(
-    _ level: LogLevel,
-    _ message: String,
-    metadata: PrivacyMetadata?,
+  public func critical(
+    _ message: String, 
+    metadata: LogMetadataDTOCollection?, 
+    additionalContext: LogMetadataDTOCollection? = nil,
     source: String
   ) async {
-    // Create a LogContextDTO from the metadata and source
-    let context=BaseLogContextDTO(
-      domainName: "ResticServices",
-      source: source,
-      metadata: metadata ?? PrivacyMetadata()
-    )
+    await log(.critical, message, metadata: metadata, additionalContext: additionalContext, source: source)
+  }
 
+  /// Log a message with the specified level
+  ///
+  /// - Parameters:
+  ///   - level: The log level
+  ///   - message: The message to log
+  ///   - metadata: Additional metadata to include
+  ///   - additionalContext: Optional additional context to merge with the primary metadata
+  ///   - source: The source of the message
+  public func log(
+    _ level: LogLevel, 
+    _ message: String, 
+    metadata: LogMetadataDTOCollection?, 
+    additionalContext: LogMetadataDTOCollection? = nil,
+    source: String
+  ) async {
+    // Create the final metadata by merging the additional context if provided
+    let finalMetadata: LogMetadataDTOCollection
+    if let metadata {
+      if let additionalContext {
+        finalMetadata = metadata.merging(with: additionalContext)
+      } else {
+        finalMetadata = metadata
+      }
+    } else if let additionalContext {
+      finalMetadata = additionalContext
+    } else {
+      finalMetadata = LogMetadataDTOCollection()
+    }
+    
+    // Create a context with the metadata
+    let context = ResticLogContext(
+      metadata: finalMetadata,
+      source: source
+    )
+    
     await underlyingLogger.log(level, message, context: context)
   }
 
-  /// Log an error
+  /// Log an error with context
   ///
   /// - Parameters:
   ///   - error: The error to log
-  ///   - message: Additional message
-  ///   - metadata: Additional metadata
-  ///   - source: Source of the log
+  ///   - metadata: Additional metadata to include
+  ///   - additionalContext: Optional additional context to merge with the primary metadata
+  ///   - source: The source of the message
+  ///   - message: Optional custom message
   public func logError(
-    _ error: Error,
-    message: String,
-    metadata: PrivacyMetadata?,
-    source: String
+    _ error: Error, 
+    metadata: LogMetadataDTOCollection?, 
+    additionalContext: LogMetadataDTOCollection? = nil,
+    source: String, 
+    message: String? = nil
   ) async {
-    // Check if the error provides logging information
-    if let loggableError=error as? LoggableErrorProtocol {
-      // Create a context with combined metadata
-      let metadataCollection=loggableError.createMetadataCollection()
-      let errorMessage=loggableError.getLogMessage()
-
-      // Create metadata with error type information
-      let metadataWithErrorInfo=PrivacyMetadata([
-        "error.type": (value: String(describing: type(of: error)), privacy: LogPrivacyLevel.public)
-      ])
-
-      // Create combined metadata by merging all sources
-      let combinedMetadata=(metadata ?? PrivacyMetadata())
-        .merging(metadataWithErrorInfo)
-        .merging(metadataCollection.toPrivacyMetadata())
-
-      let context=BaseLogContextDTO(
-        domainName: "ResticServices",
-        source: source,
-        metadata: combinedMetadata
-      )
-
-      await underlyingLogger.log(.error, "\(message): \(errorMessage)", context: context)
+    // Create the final metadata by merging the additional context if provided
+    let finalMetadata: LogMetadataDTOCollection
+    if let metadata {
+      if let additionalContext {
+        finalMetadata = metadata.merging(with: additionalContext)
+      } else {
+        finalMetadata = metadata
+      }
+    } else if let additionalContext {
+      finalMetadata = additionalContext
     } else {
-      // Basic error logging for non-loggable errors
-      // Create metadata with error type information
-      let errorTypeMetadata=PrivacyMetadata([
-        "error.type": (value: String(describing: type(of: error)), privacy: LogPrivacyLevel.public)
-      ])
-
-      // Combine with any existing metadata
-      let combinedMetadata=(metadata ?? PrivacyMetadata()).merging(errorTypeMetadata)
-
-      let context=BaseLogContextDTO(
-        domainName: "ResticServices",
-        source: source,
-        metadata: combinedMetadata
+      finalMetadata = LogMetadataDTOCollection()
+    }
+    
+    // Check if the error provides logging information
+    if let loggableError = error as? LoggableErrorProtocol {
+      // Create a context with combined metadata
+      let metadataCollection = loggableError.createMetadataCollection()
+      let combinedMetadata = finalMetadata.merging(with: metadataCollection)
+      
+      // Create a context with the metadata
+      let context = ResticLogContext(
+        metadata: combinedMetadata,
+        source: source
       )
-
-      await underlyingLogger.log(
-        .error,
-        "\(message): \(error.localizedDescription)",
-        context: context
+      
+      // Use the error message or custom message
+      let logMessage = message ?? loggableError.getLogMessage()
+      await underlyingLogger.log(.error, logMessage, context: context)
+    } else {
+      // Create a context with the metadata
+      let context = ResticLogContext(
+        metadata: finalMetadata.withPrivate(key: "error", value: error.localizedDescription),
+        source: source
       )
+      
+      // Use the error description or custom message
+      let logMessage = message ?? error.localizedDescription
+      await underlyingLogger.log(.error, logMessage, context: context)
     }
   }
 }

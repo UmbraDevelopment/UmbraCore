@@ -163,13 +163,13 @@ public struct KeychainLogContext: LogContextDTO {
     let combinedMetadata = createMetadataCollection().merging(with: additionalMetadata)
     
     return KeychainLogContext(
-      operation: operation,
       account: account,
+      operation: operation,
       status: status,
       source: source,
       domainName: domainName,
       correlationID: correlationID,
-      metadata: combinedMetadata
+      additionalContext: combinedMetadata
     )
   }
   
@@ -185,13 +185,13 @@ public struct KeychainLogContext: LogContextDTO {
     let updatedMetadata = createMetadataCollection().withPublic(key: key, value: value)
     
     return KeychainLogContext(
-      operation: operation,
       account: account,
+      operation: operation,
       status: status,
       source: source,
       domainName: domainName,
       correlationID: correlationID,
-      metadata: updatedMetadata
+      additionalContext: updatedMetadata
     )
   }
   
@@ -207,13 +207,13 @@ public struct KeychainLogContext: LogContextDTO {
     let updatedMetadata = createMetadataCollection().withPrivate(key: key, value: value)
     
     return KeychainLogContext(
-      operation: operation,
       account: account,
+      operation: operation,
       status: status,
       source: source,
       domainName: domainName,
       correlationID: correlationID,
-      metadata: updatedMetadata
+      additionalContext: updatedMetadata
     )
   }
   
@@ -229,13 +229,13 @@ public struct KeychainLogContext: LogContextDTO {
     let updatedMetadata = createMetadataCollection().withSensitive(key: key, value: value)
     
     return KeychainLogContext(
-      operation: operation,
       account: account,
+      operation: operation,
       status: status,
       source: source,
       domainName: domainName,
       correlationID: correlationID,
-      metadata: updatedMetadata
+      additionalContext: updatedMetadata
     )
   }
 }

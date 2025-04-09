@@ -154,9 +154,9 @@ public enum KeychainServiceFactory {
     // Create the security actor with the configured dependencies
     return KeychainSecurityActor(
       keychainService: actualKeychainService,
-      keyManager: actualKeyManager,
+      securityProvider: actualKeyManager as! SecurityProviderProtocol,
       logger: actualLogger
-    )
+    ) as! any KeychainSecurityProtocol
   }
   
   /**

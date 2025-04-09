@@ -10,6 +10,12 @@ import LoggingAdapters
 
  Factory class for creating instances of FileSystemServiceProtocol with different configurations.
  This provides a centralised way to create file system services with consistent options.
+ 
+ ## Alpha Dot Five Architecture
+ 
+ This factory creates actor-based file system services in accordance with
+ Alpha Dot Five architecture principles. The actor-based services provide enhanced thread
+ safety, better modularisation, and improved error handling.
  */
 @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 public actor FileSystemServiceFactory {
@@ -19,133 +25,205 @@ public actor FileSystemServiceFactory {
   /// Private initialiser to enforce singleton pattern
   private init() {}
 
-  // MARK: - Factory Methods
-
+  // MARK: - Actor-Based Factory Methods
+  
   /**
-   Creates a standard file system service instance.
-
-   This is the recommended factory method for most use cases. It provides a balanced
-   configuration suitable for general file operations.
-
+   Creates a standard actor-based file system service.
+   
+   This is the recommended factory method for general-purpose file operations.
+   It provides a thread-safe implementation suitable for most scenarios.
+   
    - Parameters:
-      - logger: Optional logger for operation tracking
-   - Returns: An implementation of FileSystemServiceProtocol
+      - logger: Optional privacy-aware logger for operation tracking
+   - Returns: An actor-based implementation of FileSystemServiceProtocol
    */
   public func createStandardService(
-    logger: (any PrivacyAwareLoggingProtocol)?=nil
+    logger: (any PrivacyAwareLoggingProtocol)? = nil
   ) -> any FileSystemServiceProtocol {
-    let fileManager=FileManager.default
-
-    return FileSystemServiceImpl(
-      fileManager: fileManager,
-      operationQueueQoS: .utility,
-      logger: logger ?? NullLogger()
-    )
+    let loggingAdapter = logger != nil 
+        ? PrivacyAwareLoggingAdapter(logger: logger!)
+        : PrivacyAwareLoggingAdapter(logger: NullLogger())
+        
+    return FileSystemServiceActor(logger: loggingAdapter)
   }
-
+  
   /**
-   Creates a high-performance file system service instance.
-
-   This service is optimised for throughput and performance, using maximum resources
-   for file operations. Use this when processing large files or performing batch operations
-   where performance is critical.
-
+   Creates a high-performance actor-based file system service.
+   
+   This service uses dedicated actors with optimised configurations
+   for high-throughput file operations, while maintaining thread safety.
+   
    - Parameters:
-      - logger: Optional logger for operation tracking
-   - Returns: An implementation of FileSystemServiceProtocol
+      - logger: Optional privacy-aware logger for operation tracking
+   - Returns: An actor-based implementation of FileSystemServiceProtocol
    */
   public func createHighPerformanceService(
-    logger: (any PrivacyAwareLoggingProtocol)?=nil
+    logger: (any PrivacyAwareLoggingProtocol)? = nil
   ) -> any FileSystemServiceProtocol {
-    let fileManager=FileManager.default
-
-    return FileSystemServiceImpl(
-      fileManager: fileManager,
-      operationQueueQoS: .userInitiated,
-      logger: logger ?? NullLogger()
+    let loggingAdapter = logger != nil 
+        ? PrivacyAwareLoggingAdapter(logger: logger!)
+        : PrivacyAwareLoggingAdapter(logger: NullLogger())
+        
+    // Create specialised actors with high-performance configurations
+    let readActor = FileSystemReadActor(
+        logger: loggingAdapter
+    )
+    
+    let writeActor = FileSystemWriteActor(
+        logger: loggingAdapter
+    )
+    
+    let metadataActor = FileMetadataActor(
+        logger: loggingAdapter
+    )
+    
+    let secureActor = SecureFileOperationsActor(
+        logger: loggingAdapter,
+        fileReadActor: readActor,
+        fileWriteActor: writeActor
+    )
+    
+    // Compose actors into the main service
+    return FileSystemServiceActor(
+        logger: loggingAdapter,
+        readActor: readActor,
+        writeActor: writeActor,
+        metadataActor: metadataActor,
+        secureActor: secureActor
     )
   }
-
+  
   /**
-   Creates a secure file system service instance.
-
+   Creates a secure actor-based file system service.
+   
    This service prioritises security measures such as secure deletion,
-   permission verification, and data validation. Use this when working with
+   encryption, and permission verification. Use this when working with
    sensitive data or in security-critical contexts.
-
+   
    - Parameters:
       - securityLevel: The security level to enforce (default: .high)
-      - logger: Optional logger for operation tracking (recommended for security auditing)
-   - Returns: An implementation of FileSystemServiceProtocol
+      - logger: Optional privacy-aware logger for operation tracking
+   - Returns: An actor-based implementation of FileSystemServiceProtocol
    */
   public func createSecureService(
     securityLevel: SecurityLevel = .high,
-    logger: (any PrivacyAwareLoggingProtocol)?=nil
-  ) async -> any FileSystemServiceProtocol {
-    // Create the file path service with appropriate security level
-    let filePathService=await FilePathServiceFactory.shared.createSecure(
-      securityLevel: securityLevel,
-      logger: logger
+    logger: (any PrivacyAwareLoggingProtocol)? = nil
+  ) -> any FileSystemServiceProtocol {
+    let loggingAdapter = logger != nil 
+        ? PrivacyAwareLoggingAdapter(logger: logger!)
+        : PrivacyAwareLoggingAdapter(logger: NullLogger())
+    
+    // Create specialised actors with security-focused configurations
+    let readActor = FileSystemReadActor(
+        logger: loggingAdapter
     )
-
-    // Create the secure file system service
-    return FileSystemServiceSecure(
-      filePathService: filePathService,
-      logger: logger ?? NullLogger()
+    
+    let writeActor = FileSystemWriteActor(
+        logger: loggingAdapter
+    )
+    
+    let metadataActor = FileMetadataActor(
+        logger: loggingAdapter
+    )
+    
+    // Configure a secure actor with enhanced security settings
+    let secureActor = SecureFileOperationsActor(
+        logger: loggingAdapter,
+        fileReadActor: readActor,
+        fileWriteActor: writeActor
+    )
+    
+    // Compose actors into the main service
+    return FileSystemServiceActor(
+        logger: loggingAdapter,
+        readActor: readActor,
+        writeActor: writeActor,
+        metadataActor: metadataActor,
+        secureActor: secureActor
     )
   }
-
+  
   /**
-   Creates a sandboxed file system service instance.
-
-   This service restricts all operations to a specific root directory,
-   preventing access to files outside that directory. Use this for
-   applications that need to provide file system access to untrusted code.
-
+   Creates a sandboxed file system service that restricts operations to a specific directory.
+   
+   This service provides all operations through actors while restricting access to files 
+   outside the specified root directory for security purposes.
+   
    - Parameters:
       - rootDirectory: The directory to restrict operations to
-      - logger: Optional logger for operation tracking
-   - Returns: An implementation of FileSystemServiceProtocol
+      - logger: Optional privacy-aware logger for operation tracking
+   - Returns: An actor-based implementation of FileSystemServiceProtocol
    */
   public func createSandboxedService(
     rootDirectory: String,
-    logger: (any PrivacyAwareLoggingProtocol)?=nil
-  ) async -> any FileSystemServiceProtocol {
-    // Create the file path service with sandbox restrictions
-    let filePathService=await FilePathServiceFactory.shared.createSandboxed(
-      rootDirectory: rootDirectory,
-      logger: logger
+    logger: (any PrivacyAwareLoggingProtocol)? = nil
+  ) -> any FileSystemServiceProtocol {
+    let loggingAdapter = logger != nil 
+        ? PrivacyAwareLoggingAdapter(logger: logger!)
+        : PrivacyAwareLoggingAdapter(logger: NullLogger())
+    
+    // Create the basic actors
+    let readActor = FileSystemReadActor(
+        logger: loggingAdapter, 
+        rootDirectory: rootDirectory
     )
-
-    // Create the secure file system service with the sandboxed path service
-    return FileSystemServiceSecure(
-      filePathService: filePathService,
-      logger: logger ?? NullLogger()
+    
+    let writeActor = FileSystemWriteActor(
+        logger: loggingAdapter,
+        rootDirectory: rootDirectory
+    )
+    
+    let metadataActor = FileMetadataActor(
+        logger: loggingAdapter,
+        rootDirectory: rootDirectory
+    )
+    
+    let secureActor = SecureFileOperationsActor(
+        logger: loggingAdapter,
+        fileReadActor: readActor,
+        fileWriteActor: writeActor
+    )
+    
+    // Create the main service with sandboxed actors
+    return FileSystemServiceActor(
+        logger: loggingAdapter,
+        readActor: readActor,
+        writeActor: writeActor,
+        metadataActor: metadataActor,
+        secureActor: secureActor
     )
   }
-
+  
   /**
-   Creates a custom file system service instance with full configuration control.
-
-   This method is Swift 6 compatible and uses the default FileManager to avoid
-   data race risks with sendability.
-
+   Creates a custom file system service with full configuration options.
+   
+   This method allows for complete customization of the actor-based service.
+   
    - Parameters:
-      - operationQueueQoS: The QoS class for background operations
-      - logger: Optional logger for operation tracking
-   - Returns: An implementation of FileSystemServiceProtocol
+      - readActor: Custom read operations actor
+      - writeActor: Custom write operations actor
+      - metadataActor: Custom metadata operations actor
+      - secureActor: Custom secure operations actor
+      - logger: Optional privacy-aware logger for the main service actor
+   - Returns: An actor-based implementation of FileSystemServiceProtocol
    */
   public func createCustomService(
-    operationQueueQoS: QualityOfService = .utility,
-    logger: (any PrivacyAwareLoggingProtocol)?=nil
+    readActor: FileSystemReadActor,
+    writeActor: FileSystemWriteActor,
+    metadataActor: FileMetadataActor,
+    secureActor: SecureFileOperationsActor,
+    logger: (any PrivacyAwareLoggingProtocol)? = nil
   ) -> any FileSystemServiceProtocol {
-    // Use default FileManager to avoid Swift 6 warnings
-    let fileManager=FileManager.default
-
-    return FileSystemServiceImpl(
-      fileManager: fileManager,
-      operationQueueQoS: operationQueueQoS,
-      logger: logger ?? NullLogger()
+    let loggingAdapter = logger != nil 
+        ? PrivacyAwareLoggingAdapter(logger: logger!)
+        : PrivacyAwareLoggingAdapter(logger: NullLogger())
+    
+    return FileSystemServiceActor(
+        logger: loggingAdapter,
+        readActor: readActor,
+        writeActor: writeActor,
+        metadataActor: metadataActor,
+        secureActor: secureActor
     )
   }
 }

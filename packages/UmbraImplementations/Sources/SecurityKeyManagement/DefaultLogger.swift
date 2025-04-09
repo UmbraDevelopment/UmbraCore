@@ -64,7 +64,7 @@ public actor DefaultLogger: LoggingProtocol {
   public func log(
     _ level: LogLevel,
     _ message: String,
-    metadata: PrivacyMetadata?,
+    metadata: LogMetadataDTOCollection?,
     source: String
   ) async {
     let formattedMessage="[\(source)] \(message)"
@@ -88,7 +88,7 @@ public actor DefaultLogger: LoggingProtocol {
     // Also log to LoggingActor with a context
     let context=LogContext(
       source: source,
-      metadata: metadata ?? PrivacyMetadata()
+      metadata: metadata ?? LogMetadataDTOCollection()
     )
 
     await loggingActor.log(level, message, context: context)
@@ -102,32 +102,32 @@ public actor DefaultLogger: LoggingProtocol {
   }
 
   /// Log trace message
-  public func trace(_ message: String, metadata: PrivacyMetadata?, source: String) async {
+  public func trace(_ message: String, metadata: LogMetadataDTOCollection?, source: String) async {
     await log(.trace, message, metadata: metadata, source: source)
   }
 
   /// Log debug message
-  public func debug(_ message: String, metadata: PrivacyMetadata?, source: String) async {
+  public func debug(_ message: String, metadata: LogMetadataDTOCollection?, source: String) async {
     await log(.debug, message, metadata: metadata, source: source)
   }
 
   /// Log info message
-  public func info(_ message: String, metadata: PrivacyMetadata?, source: String) async {
+  public func info(_ message: String, metadata: LogMetadataDTOCollection?, source: String) async {
     await log(.info, message, metadata: metadata, source: source)
   }
 
   /// Log warning message
-  public func warning(_ message: String, metadata: PrivacyMetadata?, source: String) async {
+  public func warning(_ message: String, metadata: LogMetadataDTOCollection?, source: String) async {
     await log(.warning, message, metadata: metadata, source: source)
   }
 
   /// Log error message
-  public func error(_ message: String, metadata: PrivacyMetadata?, source: String) async {
+  public func error(_ message: String, metadata: LogMetadataDTOCollection?, source: String) async {
     await log(.error, message, metadata: metadata, source: source)
   }
 
   /// Log critical message
-  public func critical(_ message: String, metadata: PrivacyMetadata?, source: String) async {
+  public func critical(_ message: String, metadata: LogMetadataDTOCollection?, source: String) async {
     await log(.critical, message, metadata: metadata, source: source)
   }
 }
