@@ -1,5 +1,3 @@
-import Foundation
-
 /// A specialised log context for keychain operations
 ///
 /// This structure provides contextual information specific to keychain

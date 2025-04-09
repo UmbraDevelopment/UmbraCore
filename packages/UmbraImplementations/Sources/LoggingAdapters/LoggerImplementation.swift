@@ -109,10 +109,10 @@ public actor LoggerImplementation: LoggingProtocol, CoreLoggingProtocol {
   ///   - context: The logging context containing metadata and source information
   public func log(_ level: LogLevel, _ message: String, context: LogContextDTO) async {
     // Log locally
-    await log(LoggingTypes.LogEntry(
+    log(LoggingTypes.LogEntry(
       level: LoggingTypes.LogLevel(rawValue: level.rawValue) ?? .info,
       message: message,
-      metadata: context.metadata as? LoggingTypes.LogMetadataDTOCollection,
+      metadata: context.metadata,
       source: context.source ?? "Unknown",
       entryID: nil,
       timestamp: await LogTimestamp.now()
@@ -129,10 +129,10 @@ public actor LoggerImplementation: LoggingProtocol, CoreLoggingProtocol {
     context: LogContextDTO? = nil
   ) async {
     // Log locally
-    await log(LoggingTypes.LogEntry(
-      level: LoggingTypes.LogLevel.debug,
+    log(LoggingTypes.LogEntry(
+      level: .debug,
       message: message,
-      metadata: context?.metadata as? LoggingTypes.LogMetadataDTOCollection,
+      metadata: context?.metadata,
       source: context?.source ?? "",
       timestamp: await LogTimestamp.now()
     ))
@@ -143,10 +143,10 @@ public actor LoggerImplementation: LoggingProtocol, CoreLoggingProtocol {
     context: LogContextDTO? = nil
   ) async {
     // Log locally
-    await log(LoggingTypes.LogEntry(
-      level: LoggingTypes.LogLevel.info,
+    log(LoggingTypes.LogEntry(
+      level: .info,
       message: message,
-      metadata: context?.metadata as? LoggingTypes.LogMetadataDTOCollection,
+      metadata: context?.metadata,
       source: context?.source ?? "",
       timestamp: await LogTimestamp.now()
     ))
@@ -157,10 +157,10 @@ public actor LoggerImplementation: LoggingProtocol, CoreLoggingProtocol {
     context: LogContextDTO? = nil
   ) async {
     // Log locally
-    await log(LoggingTypes.LogEntry(
-      level: LoggingTypes.LogLevel.warning,
+    log(LoggingTypes.LogEntry(
+      level: .warning,
       message: message,
-      metadata: context?.metadata as? LoggingTypes.LogMetadataDTOCollection,
+      metadata: context?.metadata,
       source: context?.source ?? "",
       timestamp: await LogTimestamp.now()
     ))
@@ -171,10 +171,10 @@ public actor LoggerImplementation: LoggingProtocol, CoreLoggingProtocol {
     context: LogContextDTO? = nil
   ) async {
     // Log locally
-    await log(LoggingTypes.LogEntry(
-      level: LoggingTypes.LogLevel.error,
+    log(LoggingTypes.LogEntry(
+      level: .error,
       message: message,
-      metadata: context?.metadata as? LoggingTypes.LogMetadataDTOCollection,
+      metadata: context?.metadata,
       source: context?.source ?? "",
       timestamp: await LogTimestamp.now()
     ))
@@ -185,10 +185,10 @@ public actor LoggerImplementation: LoggingProtocol, CoreLoggingProtocol {
     context: LogContextDTO? = nil
   ) async {
     // Log locally
-    await log(LoggingTypes.LogEntry(
-      level: LoggingTypes.LogLevel.critical,
+    log(LoggingTypes.LogEntry(
+      level: .critical,
       message: message,
-      metadata: context?.metadata as? LoggingTypes.LogMetadataDTOCollection,
+      metadata: context?.metadata,
       source: context?.source ?? "",
       timestamp: await LogTimestamp.now()
     ))
@@ -199,10 +199,10 @@ public actor LoggerImplementation: LoggingProtocol, CoreLoggingProtocol {
     context: LogContextDTO? = nil
   ) async {
     // Log locally
-    await log(LoggingTypes.LogEntry(
-      level: LoggingTypes.LogLevel.trace,
+    log(LoggingTypes.LogEntry(
+      level: .trace,
       message: message,
-      metadata: context?.metadata as? LoggingTypes.LogMetadataDTOCollection,
+      metadata: context?.metadata,
       source: context?.source ?? "",
       timestamp: await LogTimestamp.now()
     ))

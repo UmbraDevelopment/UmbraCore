@@ -1,5 +1,3 @@
-import Foundation
-
 /// Extensions to the LogContextDTO protocol to provide common functionality
 extension LogContextDTO {
   /// Get the source information, providing a default if not available

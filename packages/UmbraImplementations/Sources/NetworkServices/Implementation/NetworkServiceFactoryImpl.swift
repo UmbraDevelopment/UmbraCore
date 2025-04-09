@@ -4,21 +4,28 @@ import UmbraLogging
 import LoggingTypes
 import LoggingInterfaces
 import LoggingServices
+import LoggingWrapperServices
 
 /// Implementation of NetworkServiceFactory that provides methods for creating network service
 /// instances
 public struct NetworkServiceFactoryImpl: NetworkServiceFactoryProtocol {
-
+  /// The logging service factory for creating loggers
+  private let loggingFactory = LoggingServiceFactory.shared
+  
   /// Initialise a new NetworkServiceFactoryImpl
   public init() {}
 
   /// Creates a default network service
   public func createDefault() -> any NetworkServiceProtocol {
-    NetworkServiceImpl(
+    // Create a network service with default settings
+    // We need to use a non-async initializer since this method isn't async
+    let networkLogger = LoggingWrapperServices.Logger.createPrivacyAwareLogger()
+    
+    return NetworkServiceImpl(
       timeoutInterval: 60.0,
       cachePolicy: .useProtocolCachePolicy,
       enableMetrics: true,
-      logger: LoggingServices.LoggerFactory.createNetworkLogger(source: "NetworkService")
+      logger: networkLogger
     )
   }
 
@@ -28,11 +35,15 @@ public struct NetworkServiceFactoryImpl: NetworkServiceFactoryProtocol {
     cachePolicy: CachePolicy,
     enableMetrics: Bool
   ) -> any NetworkServiceProtocol {
-    NetworkServiceImpl(
+    // Create a network service with custom settings
+    // We need to use a non-async initializer since this method isn't async
+    let networkLogger = LoggingWrapperServices.Logger.createPrivacyAwareLogger()
+    
+    return NetworkServiceImpl(
       timeoutInterval: timeoutInterval,
       cachePolicy: cachePolicy,
       enableMetrics: enableMetrics,
-      logger: LoggingServices.LoggerFactory.createNetworkLogger(source: "NetworkService")
+      logger: networkLogger
     )
   }
 
@@ -86,11 +97,30 @@ public struct NetworkServiceFactoryImpl: NetworkServiceFactoryProtocol {
     let session=URLSession(configuration: sessionConfig)
 
     // Create and return the network service
+    let networkLogger = LoggingWrapperServices.Logger.createPrivacyAwareLogger()
+    
     return NetworkServiceImpl(
       session: session,
       defaultTimeoutInterval: timeoutInterval,
       defaultCachePolicy: .useProtocolCachePolicy,
-      logger: LoggingServices.LoggerFactory.createNetworkLogger(source: "NetworkService")
+      logger: networkLogger
+    )
+  }
+
+  /// Creates a network service with a custom URLSession
+  public func createServiceWithSession(
+    session: URLSession,
+    timeoutInterval: Double
+  ) -> any NetworkServiceProtocol {
+    // Create a network service with a custom session
+    // We need to use a non-async initializer since this method isn't async
+    let networkLogger = LoggingWrapperServices.Logger.createPrivacyAwareLogger()
+    
+    return NetworkServiceImpl(
+      session: session,
+      defaultTimeoutInterval: timeoutInterval,
+      defaultCachePolicy: .useProtocolCachePolicy,
+      logger: networkLogger
     )
   }
 }

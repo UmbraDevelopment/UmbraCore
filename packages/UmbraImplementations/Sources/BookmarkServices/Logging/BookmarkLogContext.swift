@@ -104,11 +104,26 @@ public struct BookmarkLogContext: LogContextDTO {
    * - Returns: A new context with combined metadata
    */
   public func withAdditionalMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> BookmarkLogContext {
+    // Start with the current metadata
     var combinedMetadata = metadata
     
-    // Add all entries from the additional metadata
+    // Add all entries from the additional metadata using the functional approach
     for entry in additionalMetadata.entries {
-      combinedMetadata.entries.append(entry)
+      // Use the appropriate method based on the privacy level
+      switch entry.privacyLevel {
+      case .public:
+        combinedMetadata = combinedMetadata.withPublic(key: entry.key, value: entry.value)
+      case .private:
+        combinedMetadata = combinedMetadata.withPrivate(key: entry.key, value: entry.value)
+      case .sensitive:
+        combinedMetadata = combinedMetadata.withSensitive(key: entry.key, value: entry.value)
+      case .hash:
+        // For hashed values, we use the sensitive method as a fallback
+        combinedMetadata = combinedMetadata.withSensitive(key: entry.key, value: entry.value)
+      case .auto:
+        // For auto privacy, we default to private
+        combinedMetadata = combinedMetadata.withPrivate(key: entry.key, value: entry.value)
+      }
     }
     
     return withUpdatedMetadata(combinedMetadata)

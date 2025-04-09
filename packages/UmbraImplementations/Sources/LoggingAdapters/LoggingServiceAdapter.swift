@@ -136,7 +136,7 @@ public actor LoggingServiceAdapter: LoggingServiceProtocol {
   /// Add a log destination
   /// - Parameter destination: The destination to add
   public func addDestination(_ destination: LoggingTypes.LogDestination) async throws {
-    let id = UUID().uuidString
+    let id = LogIdentifier(value: UUID().uuidString).description
     destinations[id] = destination
     
     await info(

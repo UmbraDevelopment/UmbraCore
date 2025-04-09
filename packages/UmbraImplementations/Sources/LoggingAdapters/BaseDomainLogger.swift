@@ -1,6 +1,6 @@
-import Foundation
 import LoggingInterfaces
 import LoggingTypes
+import Foundation
 
 /// Protocol defining domain-specific logging capabilities
 public protocol DomainLoggerProtocol: Sendable {
@@ -197,7 +197,7 @@ public actor BaseDomainLogger: DomainLoggerProtocol {
  */
 struct BasicLogContext: LogContextDTO {
   let domainName: String="Default"
-  let correlationID: String?=UUID().uuidString
+  let correlationID: String?=LogIdentifier(value: UUID().uuidString).description
   let source: String?
   let metadata: LogMetadataDTOCollection = .init()
 

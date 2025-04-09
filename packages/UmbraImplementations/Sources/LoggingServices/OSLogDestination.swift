@@ -1,4 +1,3 @@
-import Foundation
 import LoggingInterfaces
 import LoggingTypes
 import OSLog

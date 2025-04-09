@@ -4,6 +4,7 @@ import FileSystemTypes
 import Foundation
 import LoggingInterfaces
 import LoggingTypes
+import LoggingAdapters
 
 /**
  # File System Service Implementation
@@ -32,7 +33,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
   let operationQueueQoS: QualityOfService
 
   /// Logger for recording operations and errors
-  let logger: any LoggingProtocol
+  let logger: any PrivacyAwareLoggingProtocol
 
   /**
    Initialises a new FileSystemServiceImpl instance.
@@ -45,11 +46,11 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
   public init(
     fileManager: FileManager=FileManager.default,
     operationQueueQoS: QualityOfService = .default,
-    logger: (any LoggingProtocol)?=nil
+    logger: (any PrivacyAwareLoggingProtocol)?=nil
   ) {
     self.fileManager=fileManager
     self.operationQueueQoS=operationQueueQoS
-    self.logger=logger ?? NoLogLogger()
+    self.logger=logger ?? NullLogger()
   }
 
   // MARK: - Helper Methods
@@ -70,6 +71,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
 
     do {
       let attributes=try fileManager.attributesOfItem(atPath: path.path)
+
       let size=attributes[.size] as? UInt64 ?? 0
       let creationDate=attributes[.creationDate] as? Date
       let modificationDate=attributes[.modificationDate] as? Date
@@ -104,8 +106,8 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
           source: "FileSystemService",
           metadata: LogMetadataDTOCollection()
             .withPrivate(key: "path", value: path.path)
-            .withPrivate(key: "errorMessage", value: error.localizedDescription)
             .withPublic(key: "errorType", value: "\(type(of: error))")
+            .withPrivate(key: "errorMessage", value: error.localizedDescription)
         )
       )
       throw error
@@ -246,19 +248,14 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
           source: "FileSystemService",
           metadata: LogMetadataDTOCollection()
             .withPrivate(key: "path", value: path.path)
-            .withPrivate(key: "errorMessage", value: error.localizedDescription)
             .withPublic(key: "errorType", value: "\(type(of: error))")
+            .withPrivate(key: "errorMessage", value: error.localizedDescription)
         )
       )
-
-      if let fsError=error as? FileSystemInterfaces.FileSystemError {
-        throw fsError
-      } else {
-        throw FileSystemInterfaces.FileSystemError.readError(
-          path: path.path,
-          reason: "Failed to get metadata: \(error.localizedDescription)"
-        )
-      }
+      throw FileSystemInterfaces.FileSystemError.readError(
+        path: path.path,
+        reason: "Failed to get metadata: \(error.localizedDescription)"
+      )
     }
   }
 
@@ -329,20 +326,14 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
           source: "FileSystemService",
           metadata: LogMetadataDTOCollection()
             .withPrivate(key: "path", value: path.path)
-            .withPrivate(key: "attributeName", value: attributeName)
-            .withPrivate(key: "errorMessage", value: error.localizedDescription)
             .withPublic(key: "errorType", value: "\(type(of: error))")
+            .withPrivate(key: "errorMessage", value: error.localizedDescription)
         )
       )
-
-      if let fsError=error as? FileSystemInterfaces.FileSystemError {
-        throw fsError
-      } else {
-        throw FileSystemInterfaces.FileSystemError.readError(
-          path: path.path,
-          reason: "Failed to get extended attribute: \(error.localizedDescription)"
-        )
-      }
+      throw FileSystemInterfaces.FileSystemError.readError(
+        path: path.path,
+        reason: "Failed to get extended attribute: \(error.localizedDescription)"
+      )
     }
   }
 
@@ -404,7 +395,6 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
           source: "FileSystemService",
           metadata: LogMetadataDTOCollection()
             .withPrivate(key: "path", value: path.path)
-            .withPrivate(key: "attributeName", value: attributeName)
         )
       )
     } catch {
@@ -415,60 +405,283 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
           source: "FileSystemService",
           metadata: LogMetadataDTOCollection()
             .withPrivate(key: "path", value: path.path)
-            .withPrivate(key: "attributeName", value: attributeName)
-            .withPrivate(key: "errorMessage", value: error.localizedDescription)
             .withPublic(key: "errorType", value: "\(type(of: error))")
+            .withPrivate(key: "errorMessage", value: error.localizedDescription)
         )
       )
-
-      if let fsError=error as? FileSystemInterfaces.FileSystemError {
-        throw fsError
-      } else {
-        throw FileSystemInterfaces.FileSystemError.writeError(
-          path: path.path,
-          reason: "Failed to set extended attribute: \(error.localizedDescription)"
-        )
-      }
+      throw FileSystemInterfaces.FileSystemError.writeError(
+        path: path.path,
+        reason: "Failed to set extended attribute: \(error.localizedDescription)"
+      )
     }
   }
 
   /**
-   Converts a SafeAttributeValue to Data for use with extended attributes.
-
-   - Parameter value: The SafeAttributeValue to convert
-   - Returns: Data representation if possible, nil otherwise
+   Removes an extended attribute from a file or directory.
+   
+   - Parameters:
+     - path: The path to the file or directory
+     - attributeName: The name of the extended attribute to remove
+   - Throws: FileSystemError if the attribute cannot be removed
    */
-  private func convertSafeAttributeToData(_ value: SafeAttributeValue) -> Data? {
-    switch value {
-      case let .string(strValue):
-        return strValue.data(using: .utf8)
-      case let .int(intValue):
-        return withUnsafeBytes(of: intValue) { Data($0) }
-      case let .uint(uintValue):
-        return withUnsafeBytes(of: uintValue) { Data($0) }
-      case let .int64(int64Value):
-        return withUnsafeBytes(of: int64Value) { Data($0) }
-      case let .uint64(uint64Value):
-        return withUnsafeBytes(of: uint64Value) { Data($0) }
-      case let .bool(boolValue):
-        return withUnsafeBytes(of: boolValue) { Data($0) }
-      case let .date(dateValue):
-        return withUnsafeBytes(of: dateValue.timeIntervalSince1970) { Data($0) }
-      case let .double(doubleValue):
-        return withUnsafeBytes(of: doubleValue) { Data($0) }
-      case let .data(dataValue):
-        return dataValue
-      case let .url(urlValue):
-        return urlValue.absoluteString.data(using: .utf8)
-      case .array, .dictionary:
-        // These would need more complex serialization (e.g., JSON)
-        do {
-          let encoder=JSONEncoder()
-          let data=try encoder.encode(String(describing: value))
-          return data
-        } catch {
-          return nil
-        }
+  public func removeExtendedAttribute(
+    at path: FilePath,
+    name attributeName: String
+  ) async throws {
+    await logger.debug(
+      "Removing extended attribute \(attributeName) from \(path.path)",
+      context: FileSystemLogContext(
+        operation: "removexattr",
+        source: "FileSystemService",
+        metadata: LogMetadataDTOCollection()
+          .withPrivate(key: "path", value: path.path)
+          .withPublic(key: "attributeName", value: attributeName)
+      )
+    )
+    
+    guard !path.path.isEmpty else {
+      throw FileSystemInterfaces.FileSystemError.invalidPath(
+        path: "",
+        reason: "Empty path provided"
+      )
+    }
+    
+    guard !attributeName.isEmpty else {
+      throw FileSystemInterfaces.FileSystemError.invalidPath(
+        path: path.path,
+        reason: "Empty attribute name provided"
+      )
+    }
+    
+    // Check if the file exists
+    guard fileManager.fileExists(atPath: path.path) else {
+      throw FileSystemInterfaces.FileSystemError.pathNotFound(path: path.path)
+    }
+    
+    do {
+      // Remove the extended attribute
+      try fileManager.removeExtendedAttribute(
+        withName: attributeName,
+        fromItemAtPath: path.path
+      )
+      
+      await logger.debug(
+        "Removed extended attribute \(attributeName) from \(path.path)",
+        context: FileSystemLogContext(
+          operation: "removexattr",
+          source: "FileSystemService",
+          metadata: LogMetadataDTOCollection()
+            .withPrivate(key: "path", value: path.path)
+            .withPublic(key: "attributeName", value: attributeName)
+        )
+      )
+    } catch {
+      await logger.error(
+        "Failed to remove extended attribute \(attributeName) from \(path.path): \(error.localizedDescription)",
+        context: FileSystemLogContext(
+          operation: "removexattr",
+          source: "FileSystemService",
+          metadata: LogMetadataDTOCollection()
+            .withPrivate(key: "path", value: path.path)
+            .withPublic(key: "attributeName", value: attributeName)
+            .withPublic(key: "errorType", value: "\(type(of: error))")
+            .withPrivate(key: "errorMessage", value: error.localizedDescription)
+        )
+      )
+      
+      throw FileSystemInterfaces.FileSystemError.extendedAttributeError(
+        path: path.path,
+        attribute: attributeName,
+        operation: "remove",
+        reason: "Failed to remove extended attribute: \(error.localizedDescription)"
+      )
+    }
+  }
+
+  /**
+   Creates a file with the specified data.
+   
+   - Parameters:
+     - path: The path where the file should be created
+     - data: The data to write to the file
+     - overwrite: Whether to overwrite an existing file
+   - Throws: FileSystemError if the file cannot be created
+   */
+  public func createFile(
+    at path: FilePath,
+    data: Data,
+    overwrite: Bool = false
+  ) async throws {
+    await logger.debug(
+      "Creating file at \(path.path)",
+      context: FileSystemLogContext(
+        operation: "createFile",
+        source: "FileSystemService",
+        metadata: LogMetadataDTOCollection()
+          .withPrivate(key: "path", value: path.path)
+          .withPublic(key: "fileSize", value: "\(data.count)")
+      )
+    )
+    
+    guard !path.path.isEmpty else {
+      throw FileSystemInterfaces.FileSystemError.invalidPath(
+        path: "",
+        reason: "Empty path provided"
+      )
+    }
+    
+    // Check if the file already exists
+    if fileManager.fileExists(atPath: path.path) {
+      if !overwrite {
+        throw FileSystemInterfaces.FileSystemError.pathAlreadyExists(path: path.path)
+      }
+      
+      // If we're overwriting, make sure we can write to the file
+      if !fileManager.isWritableFile(atPath: path.path) {
+        throw FileSystemInterfaces.FileSystemError.permissionDenied(
+          path: path.path,
+          message: "File is not writable"
+        )
+      }
+    }
+    
+    // Ensure the directory exists
+    let directory = (path.path as NSString).deletingLastPathComponent
+    if !directory.isEmpty && !fileManager.fileExists(atPath: directory) {
+      do {
+        try fileManager.createDirectory(
+          atPath: directory,
+          withIntermediateDirectories: true,
+          attributes: nil
+        )
+      } catch {
+        await logger.error(
+          "Failed to create parent directory for \(path.path): \(error.localizedDescription)",
+          context: FileSystemLogContext(
+            operation: "createFile",
+            source: "FileSystemService",
+            metadata: LogMetadataDTOCollection()
+              .withPrivate(key: "path", value: directory)
+              .withPublic(key: "errorType", value: "\(type(of: error))")
+              .withPrivate(key: "errorMessage", value: error.localizedDescription)
+          )
+        )
+        
+        throw FileSystemInterfaces.FileSystemError.writeError(
+          path: directory,
+          reason: "Failed to create parent directory: \(error.localizedDescription)"
+        )
+      }
+    }
+    
+    do {
+      // Write the data to the file
+      try data.write(to: URL(fileURLWithPath: path.path), options: .atomic)
+      
+      await logger.debug(
+        "Created file at \(path.path) with \(data.count) bytes",
+        context: FileSystemLogContext(
+          operation: "createFile",
+          source: "FileSystemService",
+          metadata: LogMetadataDTOCollection()
+            .withPrivate(key: "path", value: path.path)
+            .withPublic(key: "fileSize", value: "\(data.count)")
+        )
+      )
+    } catch {
+      await logger.error(
+        "Failed to create file at \(path.path): \(error.localizedDescription)",
+        context: FileSystemLogContext(
+          operation: "createFile",
+          source: "FileSystemService",
+          metadata: LogMetadataDTOCollection()
+            .withPrivate(key: "path", value: path.path)
+            .withPublic(key: "errorType", value: "\(type(of: error))")
+            .withPrivate(key: "errorMessage", value: error.localizedDescription)
+        )
+      )
+      
+      throw FileSystemInterfaces.FileSystemError.writeError(
+        path: path.path,
+        reason: "Failed to write file: \(error.localizedDescription)"
+      )
+    }
+  }
+
+  /**
+   Updates an existing file with new data.
+   
+   - Parameters:
+     - path: The path to the file to update
+     - data: The new data to write to the file
+   - Throws: FileSystemError if the file cannot be updated
+   */
+  public func updateFile(
+    at path: FilePath,
+    data: Data
+  ) async throws {
+    await logger.debug(
+      "Updating file at \(path.path)",
+      context: FileSystemLogContext(
+        operation: "updateFile",
+        source: "FileSystemService",
+        metadata: LogMetadataDTOCollection()
+          .withPrivate(key: "path", value: path.path)
+          .withPublic(key: "fileSize", value: "\(data.count)")
+      )
+    )
+    
+    guard !path.path.isEmpty else {
+      throw FileSystemInterfaces.FileSystemError.invalidPath(
+        path: "",
+        reason: "Empty path provided"
+      )
+    }
+    
+    // Check if the file exists
+    guard fileManager.fileExists(atPath: path.path) else {
+      throw FileSystemInterfaces.FileSystemError.pathNotFound(path: path.path)
+    }
+    
+    // Make sure we can write to the file
+    if !fileManager.isWritableFile(atPath: path.path) {
+      throw FileSystemInterfaces.FileSystemError.permissionDenied(
+        path: path.path,
+        message: "File is not writable"
+      )
+    }
+    
+    do {
+      // Write the data to the file
+      try data.write(to: URL(fileURLWithPath: path.path), options: .atomic)
+      
+      await logger.debug(
+        "Updated file at \(path.path) with \(data.count) bytes",
+        context: FileSystemLogContext(
+          operation: "updateFile",
+          source: "FileSystemService",
+          metadata: LogMetadataDTOCollection()
+            .withPrivate(key: "path", value: path.path)
+            .withPublic(key: "fileSize", value: "\(data.count)")
+        )
+      )
+    } catch {
+      await logger.error(
+        "Failed to update file at \(path.path): \(error.localizedDescription)",
+        context: FileSystemLogContext(
+          operation: "updateFile",
+          source: "FileSystemService",
+          metadata: LogMetadataDTOCollection()
+            .withPrivate(key: "path", value: path.path)
+            .withPublic(key: "errorType", value: "\(type(of: error))")
+            .withPrivate(key: "errorMessage", value: error.localizedDescription)
+        )
+      )
+      
+      throw FileSystemInterfaces.FileSystemError.writeError(
+        path: path.path,
+        reason: "Failed to update file: \(error.localizedDescription)"
+      )
     }
   }
 
@@ -476,10 +689,84 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
    Checks if a file exists at the specified path.
 
    - Parameter path: The path to check
-   - Returns: Boolean indicating whether the file exists
+   - Returns: True if the file exists, false otherwise
+   - Throws: FileSystemError if the existence check fails
    */
-  public func fileExists(at path: FilePath) async -> Bool {
-    fileManager.fileExists(atPath: path.path)
+  public func fileExists(at path: FilePath) async throws -> Bool {
+    await logger.debug(
+      "Checking if file exists",
+      context: FileSystemLogContext(
+        operation: "fileExists",
+        source: "FileSystemService",
+        metadata: LogMetadataDTOCollection()
+          .withPrivate(key: "path", value: path.path)
+      )
+    )
+    
+    guard !path.path.isEmpty else {
+      throw FileSystemInterfaces.FileSystemError.invalidPath(
+        path: "",
+        reason: "Empty path provided"
+      )
+    }
+    
+    let exists = fileManager.fileExists(atPath: path.path)
+    
+    await logger.debug(
+      "File exists check completed",
+      context: FileSystemLogContext(
+        operation: "fileExists",
+        source: "FileSystemService",
+        metadata: LogMetadataDTOCollection()
+          .withPrivate(key: "path", value: path.path)
+          .withPublic(key: "exists", value: "\(exists)")
+      )
+    )
+    
+    return exists
+  }
+
+  /**
+   Checks if a directory exists at the specified path.
+
+   - Parameter path: The path to check
+   - Returns: True if the directory exists, false otherwise
+   - Throws: FileSystemError if the check fails
+   */
+  public func directoryExists(at path: FilePath) async throws -> Bool {
+    await logger.debug(
+      "Checking if directory exists",
+      context: FileSystemLogContext(
+        operation: "directoryExists",
+        source: "FileSystemService",
+        metadata: LogMetadataDTOCollection()
+          .withPrivate(key: "path", value: path.path)
+      )
+    )
+    
+    guard !path.path.isEmpty else {
+      throw FileSystemInterfaces.FileSystemError.invalidPath(
+        path: "",
+        reason: "Empty path provided"
+      )
+    }
+    
+    var isDirectory: ObjCBool=false
+    let exists=fileManager.fileExists(atPath: path.path, isDirectory: &isDirectory)
+
+    if !exists {
+      throw FileSystemInterfaces.FileSystemError.pathNotFound(path: path.path)
+    }
+
+    if !isDirectory.boolValue {
+      throw FileSystemInterfaces.FileSystemError.unexpectedItemType(
+        path: path.path,
+        expected: "directory",
+        actual: "file"
+      )
+    }
+
+    return isDirectory.boolValue
   }
 
   /**
@@ -535,8 +822,8 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
           source: "FileSystemService",
           metadata: LogMetadataDTOCollection()
             .withPrivate(key: "path", value: path.path)
-            .withPrivate(key: "errorMessage", value: error.localizedDescription)
             .withPublic(key: "errorType", value: "\(type(of: error))")
+            .withPrivate(key: "errorMessage", value: error.localizedDescription)
         )
       )
       throw FileSystemInterfaces.FileSystemError.readError(
@@ -584,202 +871,46 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
   }
 
   /**
-   Lists contents of a directory.
-
+   Lists the contents of a directory.
+   
    - Parameters:
-      - directoryPath: Path to the directory to list
-      - includeHidden: Whether to include hidden files in the listing
-   - Returns: Array of file paths within the directory
-   - Throws: FileSystemError if the directory cannot be read or does not exist
+     - path: The directory path to list
+     - includeHidden: Whether to include hidden files in the listing
+   - Returns: Array of file paths in the directory
+   - Throws: FileSystemError if the directory cannot be listed
    */
   public func listDirectory(
-    at directoryPath: FilePath,
-    includeHidden: Bool=false
+    at path: FilePath,
+    includeHidden: Bool = false
   ) async throws -> [FilePath] {
+    let metadata = LogMetadataDTOCollection()
+      .withPrivate(key: "path", value: path.path)
+      .withPublic(key: "includeHidden", value: "\(includeHidden)")
+      
     await logger.debug(
-      "Listing directory \(directoryPath.path)",
+      "Listing directory",
       context: FileSystemLogContext(
         operation: "listDirectory",
         source: "FileSystemService",
-        metadata: LogMetadataDTOCollection()
-          .withPrivate(key: "path", value: directoryPath.path)
+        metadata: metadata
       )
     )
-
-    // Check if the path is a directory
-    var isDir: ObjCBool=false
-    let exists=fileManager.fileExists(atPath: directoryPath.path, isDirectory: &isDir)
-
-    if !exists {
-      await logger.warning(
-        "Directory \(directoryPath.path) does not exist",
-        context: FileSystemLogContext(
-          operation: "listDirectory",
-          source: "FileSystemService",
-          metadata: LogMetadataDTOCollection()
-            .withPrivate(key: "path", value: directoryPath.path)
-            .withPublic(key: "reason", value: "Directory does not exist")
-        )
-      )
-      throw FileSystemInterfaces.FileSystemError.pathNotFound(path: directoryPath.path)
-    }
-
-    if !isDir.boolValue {
-      await logger.warning(
-        "\(directoryPath.path) is not a directory",
-        context: FileSystemLogContext(
-          operation: "listDirectory",
-          source: "FileSystemService",
-          metadata: LogMetadataDTOCollection()
-            .withPrivate(key: "path", value: directoryPath.path)
-            .withPublic(key: "reason", value: "Path is not a directory")
-        )
-      )
-      throw FileSystemInterfaces.FileSystemError.unexpectedItemType(
-        path: directoryPath.path,
-        expected: "directory",
-        actual: "file"
-      )
-    }
-
-    do {
-      let contents=try fileManager.contentsOfDirectory(atPath: directoryPath.path)
-
-      let filteredContents=contents.filter { name in
-        if !includeHidden && name.hasPrefix(".") {
-          return false
-        }
-        return true
-      }
-
-      // Convert to FilePath objects
-      return filteredContents.map { name in
-        let fullPath=directoryPath.path + "/" + name
-        return FilePath(path: fullPath)
-      }
-    } catch {
-      await logger.error(
-        "Failed to list directory \(directoryPath.path): \(error.localizedDescription)",
-        context: FileSystemLogContext(
-          operation: "listDirectory",
-          source: "FileSystemService",
-          metadata: LogMetadataDTOCollection()
-            .withPrivate(key: "path", value: directoryPath.path)
-            .withPrivate(key: "errorMessage", value: error.localizedDescription)
-            .withPublic(key: "errorType", value: "\(type(of: error))")
-        )
-      )
-      throw FileSystemInterfaces.FileSystemError.readError(
-        path: directoryPath.path,
-        reason: "Could not list directory contents: \(error.localizedDescription)"
-      )
-    }
-  }
-
-  /**
-   Lists files recursively within a directory.
-
-   - Parameters:
-      - directoryPath: Path to the directory to list
-      - includeHidden: Whether to include hidden files in the listing
-   - Returns: Array of file paths within the directory and its subdirectories
-   - Throws: FileSystemError if the directory cannot be read
-   */
-  public func listFilesRecursively(
-    at directoryPath: FilePath,
-    includeHidden: Bool=false
-  ) async throws -> [FilePath] {
-    // Get all items in the directory
-    let items=try await listDirectory(at: directoryPath, includeHidden: includeHidden)
-
-    var allFiles=[FilePath]()
-
-    // Process each item
-    for item in items {
-      if try await isDirectory(at: item) {
-        // If it's a directory, recursively list its contents
-        let subItems=try await listFilesRecursively(at: item, includeHidden: includeHidden)
-        allFiles.append(contentsOf: subItems)
-      } else {
-        // If it's a file, add it to the results
-        allFiles.append(item)
-      }
-    }
-
-    return allFiles
-  }
-
-  /**
-   Reads a file and returns its contents as Data.
-
-   - Parameter path: The path to the file to read
-   - Returns: The file contents as Data
-   - Throws: FileSystemError if the file cannot be read
-   */
-  public func readFile(at path: FilePath) async throws -> Data {
+    
     guard !path.path.isEmpty else {
       throw FileSystemInterfaces.FileSystemError.invalidPath(
         path: "",
         reason: "Empty path provided"
       )
     }
-
-    do {
-      let data=try Data(contentsOf: URL(fileURLWithPath: path.path))
-
-      await logger.debug(
-        "Read file \(path.path)",
-        context: FileSystemLogContext(
-          operation: "readFile",
-          source: "FileSystemService",
-          metadata: LogMetadataDTOCollection()
-            .withPrivate(key: "path", value: path.path)
-            .withPrivate(key: "fileSize", value: data.count)
-        )
-      )
-
-      return data
-    } catch {
-      await logger.error(
-        "Failed to read file \(path.path): \(error.localizedDescription)",
-        context: FileSystemLogContext(
-          operation: "readFile",
-          source: "FileSystemService",
-          metadata: LogMetadataDTOCollection()
-            .withPrivate(key: "path", value: path.path)
-            .withPrivate(key: "errorMessage", value: error.localizedDescription)
-            .withPublic(key: "errorType", value: "\(type(of: error))")
-        )
-      )
-      throw FileSystemInterfaces.FileSystemError.readError(
-        path: path.path,
-        reason: error.localizedDescription
-      )
-    }
-  }
-
-  /**
-   Implements directoryExists method required by the protocol.
-
-   - Parameter path: The path to check
-   - Returns: True if the path exists and is a directory
-   - Throws: FileSystemError if the check fails
-   */
-  public func directoryExists(at path: FilePath) async throws -> Bool {
-    guard !path.path.isEmpty else {
-      throw FileSystemInterfaces.FileSystemError.invalidPath(
-        path: "",
-        reason: "Empty path provided"
-      )
-    }
-
-    var isDirectory: ObjCBool=false
-    let exists=fileManager.fileExists(atPath: path.path, isDirectory: &isDirectory)
-
+    
+    // Check if directory exists
+    var isDirectory: ObjCBool = false
+    let exists = fileManager.fileExists(atPath: path.path, isDirectory: &isDirectory)
+    
     if !exists {
       throw FileSystemInterfaces.FileSystemError.pathNotFound(path: path.path)
     }
-
+    
     if !isDirectory.boolValue {
       throw FileSystemInterfaces.FileSystemError.unexpectedItemType(
         path: path.path,
@@ -787,187 +918,255 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         actual: "file"
       )
     }
-
-    return isDirectory.boolValue
-  }
-
-  /**
-   Lists directory contents recursively.
-
-   - Parameters:
-     - path: The directory path to list
-     - includeHidden: Whether to include hidden files
-   - Returns: Array of file paths
-   - Throws: FileSystemError if the directory cannot be read
-   */
-  public func listDirectoryRecursive(
-    at path: FilePath,
-    includeHidden: Bool
-  ) async throws -> [FilePath] {
-    guard !path.path.isEmpty else {
-      throw FileSystemInterfaces.FileSystemError.invalidPath(
-        path: "",
-        reason: "Empty path provided"
-      )
-    }
-
+    
     do {
-      let url=URL(fileURLWithPath: path.path)
-      let contents=try fileManager.contentsOfDirectory(
-        at: url,
-        includingPropertiesForKeys: [.isDirectoryKey],
-        options: includeHidden ? [] : [.skipsHiddenFiles]
-      )
-
-      var results: [FilePath]=[]
-
-      for fileURL in contents {
-        let relativePath=fileURL.path.replacingOccurrences(of: url.path, with: "")
-        let filePath=FilePath(
-          path: relativePath
-            .hasPrefix("/") ? String(relativePath.dropFirst()) : relativePath
-        )
-        results.append(filePath)
-
-        // If it's a directory, recursively list its contents
-        let resourceValues=try fileURL.resourceValues(forKeys: [.isDirectoryKey])
-        if let isDirectory=resourceValues.isDirectory, isDirectory {
-          let subpaths=try await listDirectoryRecursive(
-            at: FilePath(path: fileURL.path),
-            includeHidden: includeHidden
-          )
-
-          for subpath in subpaths {
-            let combinedPath=FilePath(path: "\(relativePath)/\(subpath.path)")
-            results.append(combinedPath)
-          }
-        }
+      let contents = try fileManager.contentsOfDirectory(atPath: path.path)
+      
+      // Filter out hidden files if requested
+      let filteredContents = includeHidden
+        ? contents
+        : contents.filter { !$0.hasPrefix(".") }
+      
+      // Convert to FilePath objects
+      let filePaths = filteredContents.map { item -> FilePath in
+        let fullPath = (path.path as NSString).appendingPathComponent(item)
+        var isDir: ObjCBool = false
+        fileManager.fileExists(atPath: fullPath, isDirectory: &isDir)
+        return FilePath(path: fullPath, isDirectory: isDir.boolValue)
       }
-
-      return results
+      
+      let resultMetadata = LogMetadataDTOCollection()
+        .withPrivate(key: "path", value: path.path)
+        .withPublic(key: "count", value: "\(filePaths.count)")
+        
+      await logger.debug(
+        "Listed directory contents",
+        context: FileSystemLogContext(
+          operation: "listDirectory",
+          source: "FileSystemService",
+          metadata: resultMetadata
+        )
+      )
+      
+      return filePaths
     } catch {
+      let errorMetadata = LogMetadataDTOCollection()
+        .withPrivate(key: "path", value: path.path)
+        .withPublic(key: "errorType", value: "\(type(of: error))")
+        .withPrivate(key: "errorMessage", value: error.localizedDescription)
+        
+      await logger.error(
+        "Failed to list directory",
+        context: FileSystemLogContext(
+          operation: "listDirectory",
+          source: "FileSystemService",
+          metadata: errorMetadata
+        )
+      )
+      
       throw FileSystemInterfaces.FileSystemError.readError(
         path: path.path,
         reason: "Failed to list directory: \(error.localizedDescription)"
       )
     }
   }
-
+  
   /**
-   Creates a file with the given data.
-
+   Lists the contents of a directory recursively.
+   
    - Parameters:
-     - path: The path to create the file at
-     - data: The data to write to the file
-     - overwrite: Whether to overwrite an existing file
-   - Throws: FileSystemError if the file cannot be created
+     - path: The directory to list
+     - includeHidden: Whether to include hidden files
+   - Returns: An array of file paths
+   - Throws: FileSystemError if the directory cannot be listed
    */
-  public func createFile(
+  public func listDirectoryRecursive(
     at path: FilePath,
-    data: Data,
-    overwrite: Bool
-  ) async throws {
+    includeHidden: Bool = false
+  ) async throws -> [FilePath] {
+    await logger.debug(
+      "Listing directory recursively at \(path.path)",
+      context: FileSystemLogContext(
+        operation: "listDirectoryRecursive",
+        source: "FileSystemService",
+        metadata: LogMetadataDTOCollection()
+          .withPrivate(key: "path", value: path.path)
+      )
+    )
+    
     guard !path.path.isEmpty else {
       throw FileSystemInterfaces.FileSystemError.invalidPath(
         path: "",
         reason: "Empty path provided"
       )
     }
-
-    if !overwrite && fileManager.fileExists(atPath: path.path) {
-      throw FileSystemInterfaces.FileSystemError.pathAlreadyExists(path: path.path)
-    }
-
-    do {
-      try data.write(to: URL(fileURLWithPath: path.path))
-
-      await logger.debug(
-        "Created file \(path.path)",
-        context: FileSystemLogContext(
-          operation: "createFile",
-          source: "FileSystemService",
-          metadata: LogMetadataDTOCollection()
-            .withPrivate(key: "path", value: path.path)
-            .withPrivate(key: "fileSize", value: data.count)
-        )
-      )
-    } catch {
-      throw FileSystemInterfaces.FileSystemError.writeError(
-        path: path.path,
-        reason: "Failed to create file: \(error.localizedDescription)"
-      )
-    }
-  }
-
-  /**
-   Updates an existing file with new data.
-
-   - Parameters:
-     - path: The path of the file to update
-     - data: The new data to write
-   - Throws: FileSystemError if the file cannot be updated
-   */
-  public func updateFile(
-    at path: FilePath,
-    data: Data
-  ) async throws {
-    guard !path.path.isEmpty else {
-      throw FileSystemInterfaces.FileSystemError.invalidPath(
-        path: "",
-        reason: "Empty path provided"
-      )
-    }
-
-    if !fileManager.fileExists(atPath: path.path) {
+    
+    // Check if the path exists and is a directory
+    var isDirectory: ObjCBool = false
+    let exists = fileManager.fileExists(atPath: path.path, isDirectory: &isDirectory)
+    
+    if !exists {
       throw FileSystemInterfaces.FileSystemError.pathNotFound(path: path.path)
     }
-
+    
+    if !isDirectory.boolValue {
+      throw FileSystemInterfaces.FileSystemError.unexpectedItemType(
+        path: path.path,
+        expected: "directory",
+        actual: "file"
+      )
+    }
+    
     do {
-      try data.write(to: URL(fileURLWithPath: path.path))
-
+      var result: [FilePath] = []
+      
+      // Get the contents of the directory
+      let contents = try fileManager.contentsOfDirectory(atPath: path.path)
+      
+      // Filter out hidden files if requested
+      let filteredContents = includeHidden
+        ? contents
+        : contents.filter { !$0.hasPrefix(".") }
+      
+      // Process each item
+      for item in filteredContents {
+        let itemPath = path.path + "/" + item
+        let itemFilePath = FilePath(path: itemPath)
+        
+        // Add the current item to the result
+        result.append(itemFilePath)
+        
+        // If it's a directory, recursively list its contents
+        var isItemDirectory: ObjCBool = false
+        if fileManager.fileExists(atPath: itemPath, isDirectory: &isItemDirectory) && isItemDirectory.boolValue {
+          let subItems = try await listDirectoryRecursive(at: itemFilePath, includeHidden: includeHidden)
+          result.append(contentsOf: subItems)
+        }
+      }
+      
       await logger.debug(
-        "Updated file \(path.path)",
+        "Listed \(result.count) items recursively in directory at \(path.path)",
         context: FileSystemLogContext(
-          operation: "updateFile",
+          operation: "listDirectoryRecursive",
           source: "FileSystemService",
           metadata: LogMetadataDTOCollection()
             .withPrivate(key: "path", value: path.path)
-            .withPrivate(key: "fileSize", value: data.count)
+            .withPublic(key: "count", value: "\(result.count)")
         )
       )
+      
+      return result
     } catch {
-      throw FileSystemInterfaces.FileSystemError.writeError(
+      await logger.error(
+        "Failed to list directory recursively at \(path.path): \(error.localizedDescription)",
+        context: FileSystemLogContext(
+          operation: "listDirectoryRecursive",
+          source: "FileSystemService",
+          metadata: LogMetadataDTOCollection()
+            .withPrivate(key: "path", value: path.path)
+            .withPublic(key: "errorType", value: "\(type(of: error))")
+            .withPrivate(key: "errorMessage", value: error.localizedDescription)
+        )
+      )
+      
+      throw FileSystemInterfaces.FileSystemError.readError(
         path: path.path,
-        reason: "Failed to update file: \(error.localizedDescription)"
+        reason: "Failed to list directory recursively: \(error.localizedDescription)"
       )
     }
   }
 
   /**
-   Deletes a file.
+   Reads the contents of a file.
+   
+   - Parameter path: The path to the file to read
+   - Returns: The file contents as Data
+   - Throws: FileSystemError if the file cannot be read
+   */
+  public func readFile(at path: FilePath) async throws -> Data {
+    await logger.debug(
+      "Reading file",
+      context: FileSystemLogContext(
+        operation: "readFile",
+        source: "FileSystemService",
+        metadata: LogMetadataDTOCollection()
+          .withPrivate(key: "path", value: path.path)
+      )
+    )
+    
+    do {
+      let data = try Data(contentsOf: URL(fileURLWithPath: path.path))
+      
+      await logger.debug(
+        "Read file",
+        context: FileSystemLogContext(
+          operation: "readFile",
+          source: "FileSystemService",
+          metadata: LogMetadataDTOCollection()
+            .withPrivate(key: "path", value: path.path)
+            .withPublic(key: "fileSize", value: "\(data.count)")
+        )
+      )
+      
+      return data
+    } catch {
+      await logger.error(
+        "Failed to read file",
+        context: FileSystemLogContext(
+          operation: "readFile",
+          source: "FileSystemService",
+          metadata: LogMetadataDTOCollection()
+            .withPrivate(key: "path", value: path.path)
+            .withPublic(key: "errorType", value: "\(type(of: error))")
+            .withPrivate(key: "errorMessage", value: error.localizedDescription)
+        )
+      )
+      
+      throw FileSystemInterfaces.FileSystemError.readError(
+        path: path.path,
+        reason: "Failed to read file: \(error.localizedDescription)"
+      )
+    }
+  }
 
+  /**
+   Deletes a file at the specified path.
+   
    - Parameters:
-     - path: The path of the file to delete
-     - secure: Whether to use secure deletion
+     - path: The path to the file to delete
+     - secure: Whether to perform a secure delete (overwrite with zeros before deletion)
    - Throws: FileSystemError if the file cannot be deleted
    */
   public func deleteFile(
     at path: FilePath,
-    secure: Bool
+    secure: Bool = false
   ) async throws {
+    await logger.debug(
+      "Deleting file at \(path.path)",
+      context: FileSystemLogContext(
+        operation: "deleteFile",
+        source: "FileSystemService",
+        metadata: LogMetadataDTOCollection()
+          .withPrivate(key: "path", value: path.path)
+          .withPublic(key: "secure", value: "\(secure)")
+      )
+    )
+    
     guard !path.path.isEmpty else {
       throw FileSystemInterfaces.FileSystemError.invalidPath(
         path: "",
         reason: "Empty path provided"
       )
     }
-
-    // Check if it's a file
-    var isDirectory: ObjCBool=false
-    if !fileManager.fileExists(atPath: path.path, isDirectory: &isDirectory) {
+    
+    // Check if the file exists
+    var isDirectory: ObjCBool = false
+    let exists = fileManager.fileExists(atPath: path.path, isDirectory: &isDirectory)
+    
+    if !exists {
       throw FileSystemInterfaces.FileSystemError.pathNotFound(path: path.path)
     }
-
+    
     if isDirectory.boolValue {
       throw FileSystemInterfaces.FileSystemError.unexpectedItemType(
         path: path.path,
@@ -975,66 +1174,87 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         actual: "directory"
       )
     }
-
+    
     do {
-      let fileSize=try fileManager.attributesOfItem(atPath: path.path)[.size] as? UInt64 ?? 0
-
       if secure {
-        // Secure deletion: overwrite with random data before deleting
+        // Perform secure delete by overwriting with zeros
+        let fileSize = try fileManager.attributesOfItem(atPath: path.path)[.size] as? UInt64 ?? 0
         if fileSize > 0 {
-          var randomData=Data(count: Int(fileSize))
-          _=randomData.withUnsafeMutableBytes { bytes in
-            SecRandomCopyBytes(kSecRandomDefault, bytes.count, bytes.baseAddress!)
-          }
-          try randomData.write(to: URL(fileURLWithPath: path.path))
+          let zeros = Data(count: Int(fileSize))
+          try zeros.write(to: URL(fileURLWithPath: path.path), options: .atomic)
         }
       }
-
+      
+      // Delete the file
       try fileManager.removeItem(atPath: path.path)
-
+      
       await logger.debug(
-        "Deleted file \(path.path)",
+        "Deleted file at \(path.path)",
         context: FileSystemLogContext(
           operation: "deleteFile",
           source: "FileSystemService",
           metadata: LogMetadataDTOCollection()
             .withPrivate(key: "path", value: path.path)
-            .withPrivate(key: "fileSize", value: fileSize)
         )
       )
     } catch {
+      await logger.error(
+        "Failed to delete file at \(path.path): \(error.localizedDescription)",
+        context: FileSystemLogContext(
+          operation: "deleteFile",
+          source: "FileSystemService",
+          metadata: LogMetadataDTOCollection()
+            .withPrivate(key: "path", value: path.path)
+            .withPublic(key: "errorType", value: "\(type(of: error))")
+            .withPrivate(key: "errorMessage", value: error.localizedDescription)
+        )
+      )
+      
       throw FileSystemInterfaces.FileSystemError.deleteError(
         path: path.path,
         reason: "Failed to delete file: \(error.localizedDescription)"
       )
     }
   }
-
+  
   /**
-   Deletes a directory.
-
+   Deletes a directory at the specified path.
+   
    - Parameters:
-     - path: The path of the directory to delete
-     - secure: Whether to use secure deletion for files in the directory
+     - path: The path to the directory to delete
+     - secure: Whether to perform a secure delete (overwrite files with zeros before deletion)
    - Throws: FileSystemError if the directory cannot be deleted
    */
   public func deleteDirectory(
     at path: FilePath,
-    secure: Bool
+    secure: Bool = false
   ) async throws {
+    await logger.debug(
+      "Deleting directory at \(path.path)",
+      context: FileSystemLogContext(
+        operation: "deleteDirectory",
+        source: "FileSystemService",
+        metadata: LogMetadataDTOCollection()
+          .withPrivate(key: "path", value: path.path)
+          .withPublic(key: "secure", value: "\(secure)")
+      )
+    )
+    
     guard !path.path.isEmpty else {
       throw FileSystemInterfaces.FileSystemError.invalidPath(
         path: "",
         reason: "Empty path provided"
       )
     }
-
-    // Check if it's a directory
-    var isDirectory: ObjCBool=false
-    if !fileManager.fileExists(atPath: path.path, isDirectory: &isDirectory) {
+    
+    // Check if the directory exists
+    var isDirectory: ObjCBool = false
+    let exists = fileManager.fileExists(atPath: path.path, isDirectory: &isDirectory)
+    
+    if !exists {
       throw FileSystemInterfaces.FileSystemError.pathNotFound(path: path.path)
     }
-
+    
     if !isDirectory.boolValue {
       throw FileSystemInterfaces.FileSystemError.unexpectedItemType(
         path: path.path,
@@ -1042,28 +1262,31 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         actual: "file"
       )
     }
-
+    
     do {
       if secure {
-        // For secure deletion, first delete each file securely
-        let contents=try fileManager.contentsOfDirectory(atPath: path.path)
+        // If secure delete is requested, we need to securely delete all files in the directory first
+        let contents = try fileManager.contentsOfDirectory(atPath: path.path)
         for item in contents {
-          let itemPath=FilePath(path: "\(path.path)/\(item)")
-          var isItemDirectory: ObjCBool=false
-          if fileManager.fileExists(atPath: itemPath.path, isDirectory: &isItemDirectory) {
+          let itemPath = path.path + "/" + item
+          var isItemDirectory: ObjCBool = false
+          if fileManager.fileExists(atPath: itemPath, isDirectory: &isItemDirectory) {
             if isItemDirectory.boolValue {
-              try await deleteDirectory(at: itemPath, secure: true)
+              // Recursively delete subdirectories
+              try await deleteDirectory(at: FilePath(path: itemPath), secure: true)
             } else {
-              try await deleteFile(at: itemPath, secure: true)
+              // Securely delete files
+              try await deleteFile(at: FilePath(path: itemPath), secure: true)
             }
           }
         }
       }
-
+      
+      // Delete the directory
       try fileManager.removeItem(atPath: path.path)
-
+      
       await logger.debug(
-        "Deleted directory \(path.path)",
+        "Deleted directory at \(path.path)",
         context: FileSystemLogContext(
           operation: "deleteDirectory",
           source: "FileSystemService",
@@ -1072,6 +1295,18 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
         )
       )
     } catch {
+      await logger.error(
+        "Failed to delete directory at \(path.path): \(error.localizedDescription)",
+        context: FileSystemLogContext(
+          operation: "deleteDirectory",
+          source: "FileSystemService",
+          metadata: LogMetadataDTOCollection()
+            .withPrivate(key: "path", value: path.path)
+            .withPublic(key: "errorType", value: "\(type(of: error))")
+            .withPrivate(key: "errorMessage", value: error.localizedDescription)
+        )
+      )
+      
       throw FileSystemInterfaces.FileSystemError.deleteError(
         path: path.path,
         reason: "Failed to delete directory: \(error.localizedDescription)"
@@ -1080,57 +1315,138 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
   }
 
   /**
-   Copies an item (file or directory).
-
+   Copies an item from one path to another.
+   
    - Parameters:
-     - sourcePath: The source path
-     - destinationPath: The destination path
-     - overwrite: Whether to overwrite existing files
+     - sourcePath: The path to the item to copy
+     - destinationPath: The path where the item should be copied to
+     - overwrite: Whether to overwrite an existing item at the destination
    - Throws: FileSystemError if the copy operation fails
    */
   public func copyItem(
     from sourcePath: FilePath,
     to destinationPath: FilePath,
-    overwrite: Bool
+    overwrite: Bool = false
   ) async throws {
-    guard !sourcePath.path.isEmpty && !destinationPath.path.isEmpty else {
+    await logger.debug(
+      "Copying item from \(sourcePath.path) to \(destinationPath.path)",
+      context: FileSystemLogContext(
+        operation: "copyItem",
+        source: "FileSystemService",
+        metadata: LogMetadataDTOCollection()
+          .withPrivate(key: "path", value: sourcePath.path)
+          .withPrivate(key: "destinationPath", value: destinationPath.path)
+          .withPublic(key: "overwrite", value: "\(overwrite)")
+      )
+    )
+    
+    guard !sourcePath.path.isEmpty else {
       throw FileSystemInterfaces.FileSystemError.invalidPath(
-        path: sourcePath.path.isEmpty ? "source" : "destination",
-        reason: "Empty path provided"
+        path: "",
+        reason: "Empty source path provided"
       )
     }
-
-    if !fileManager.fileExists(atPath: sourcePath.path) {
+    
+    guard !destinationPath.path.isEmpty else {
+      throw FileSystemInterfaces.FileSystemError.invalidPath(
+        path: "",
+        reason: "Empty destination path provided"
+      )
+    }
+    
+    // Check if the source exists
+    guard fileManager.fileExists(atPath: sourcePath.path) else {
       throw FileSystemInterfaces.FileSystemError.pathNotFound(path: sourcePath.path)
     }
-
-    if fileManager.fileExists(atPath: destinationPath.path) && !overwrite {
-      throw FileSystemInterfaces.FileSystemError.pathAlreadyExists(
-        path: destinationPath.path
-      )
-    }
-
-    do {
-      if fileManager.fileExists(atPath: destinationPath.path) {
-        try fileManager.removeItem(atPath: destinationPath.path)
+    
+    // Check if the destination already exists
+    if fileManager.fileExists(atPath: destinationPath.path) {
+      if !overwrite {
+        throw FileSystemInterfaces.FileSystemError.pathAlreadyExists(path: destinationPath.path)
       }
-
-      try fileManager.copyItem(
-        atPath: sourcePath.path,
-        toPath: destinationPath.path
-      )
-
+      
+      // If overwrite is true, remove the existing item
+      do {
+        try fileManager.removeItem(atPath: destinationPath.path)
+      } catch {
+        await logger.error(
+          "Failed to remove existing item at \(destinationPath.path): \(error.localizedDescription)",
+          context: FileSystemLogContext(
+            operation: "copyItem",
+            source: "FileSystemService",
+            metadata: LogMetadataDTOCollection()
+              .withPrivate(key: "path", value: sourcePath.path)
+              .withPrivate(key: "destinationPath", value: destinationPath.path)
+              .withPublic(key: "errorType", value: "\(type(of: error))")
+              .withPrivate(key: "errorMessage", value: error.localizedDescription)
+          )
+        )
+        
+        throw FileSystemInterfaces.FileSystemError.deleteError(
+          path: destinationPath.path,
+          reason: "Failed to remove existing item before copy: \(error.localizedDescription)"
+        )
+      }
+    }
+    
+    // Ensure the destination directory exists
+    let destinationDirectory = (destinationPath.path as NSString).deletingLastPathComponent
+    if !destinationDirectory.isEmpty && !fileManager.fileExists(atPath: destinationDirectory) {
+      do {
+        try fileManager.createDirectory(
+          atPath: destinationDirectory,
+          withIntermediateDirectories: true,
+          attributes: nil
+        )
+      } catch {
+        await logger.error(
+          "Failed to create parent directory for \(destinationPath.path): \(error.localizedDescription)",
+          context: FileSystemLogContext(
+            operation: "copyItem",
+            source: "FileSystemService",
+            metadata: LogMetadataDTOCollection()
+              .withPrivate(key: "path", value: sourcePath.path)
+              .withPrivate(key: "destinationPath", value: destinationPath.path)
+              .withPublic(key: "errorType", value: "\(type(of: error))")
+              .withPrivate(key: "errorMessage", value: error.localizedDescription)
+          )
+        )
+        
+        throw FileSystemInterfaces.FileSystemError.writeError(
+          path: destinationDirectory,
+          reason: "Failed to create parent directory: \(error.localizedDescription)"
+        )
+      }
+    }
+    
+    do {
+      // Perform the copy
+      try fileManager.copyItem(atPath: sourcePath.path, toPath: destinationPath.path)
+      
       await logger.debug(
         "Copied item from \(sourcePath.path) to \(destinationPath.path)",
         context: FileSystemLogContext(
           operation: "copyItem",
           source: "FileSystemService",
           metadata: LogMetadataDTOCollection()
-            .withPrivate(key: "sourcePath", value: sourcePath.path)
+            .withPrivate(key: "path", value: sourcePath.path)
             .withPrivate(key: "destinationPath", value: destinationPath.path)
         )
       )
     } catch {
+      await logger.error(
+        "Failed to copy item from \(sourcePath.path) to \(destinationPath.path): \(error.localizedDescription)",
+        context: FileSystemLogContext(
+          operation: "copyItem",
+          source: "FileSystemService",
+          metadata: LogMetadataDTOCollection()
+            .withPrivate(key: "path", value: sourcePath.path)
+            .withPrivate(key: "destinationPath", value: destinationPath.path)
+            .withPublic(key: "errorType", value: "\(type(of: error))")
+            .withPrivate(key: "errorMessage", value: error.localizedDescription)
+        )
+      )
+      
       throw FileSystemInterfaces.FileSystemError.copyError(
         source: sourcePath.path,
         destination: destinationPath.path,
@@ -1141,88 +1457,38 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
 
   /**
    Converts a FilePath to a URL.
-
+   
    - Parameter path: The path to convert
-   - Returns: The equivalent URL
+   - Returns: A URL representing the path
    - Throws: FileSystemError if the conversion fails
    */
   public func pathToURL(_ path: FilePath) async throws -> URL {
+    await logger.debug(
+      "Converting path to URL: \(path.path)",
+      context: FileSystemLogContext(
+        operation: "pathToURL",
+        source: "FileSystemService",
+        metadata: LogMetadataDTOCollection()
+          .withPrivate(key: "path", value: path.path)
+      )
+    )
+    
     guard !path.path.isEmpty else {
       throw FileSystemInterfaces.FileSystemError.invalidPath(
         path: "",
         reason: "Empty path provided"
       )
     }
-
-    return URL(fileURLWithPath: path.path)
+    
+    // Create a URL from the path
+    let url = URL(fileURLWithPath: path.path)
+    
+    return url
   }
 
   /**
-   Removes an extended attribute from a file.
-
-   - Parameters:
-     - path: The file path
-     - attributeName: The name of the attribute to remove
-   - Throws: FileSystemError if the attribute cannot be removed
-   */
-  public func removeExtendedAttribute(
-    at path: FilePath,
-    name attributeName: String
-  ) async throws {
-    guard !path.path.isEmpty else {
-      throw FileSystemInterfaces.FileSystemError.invalidPath(
-        path: "",
-        reason: "Empty path provided"
-      )
-    }
-
-    if !fileManager.fileExists(atPath: path.path) {
-      throw FileSystemInterfaces.FileSystemError.pathNotFound(path: path.path)
-    }
-
-    do {
-      guard let fileSystemPath=(path.path as NSString).utf8String else {
-        throw FileSystemInterfaces.FileSystemError.invalidPath(
-          path: path.path,
-          reason: "Could not convert path to C string"
-        )
-      }
-
-      let result=removexattr(fileSystemPath, attributeName, 0)
-      if result != 0 {
-        throw FileSystemInterfaces.FileSystemError.extendedAttributeError(
-          path: path.path,
-          attribute: attributeName,
-          operation: "remove",
-          reason: "Failed to remove attribute: \(String(cString: strerror(errno)))"
-        )
-      }
-
-      await logger.debug(
-        "Removed extended attribute \(attributeName) from \(path.path)",
-        context: FileSystemLogContext(
-          operation: "removexattr",
-          source: "FileSystemService",
-          metadata: LogMetadataDTOCollection()
-            .withPrivate(key: "path", value: path.path)
-            .withPrivate(key: "attributeName", value: attributeName)
-        )
-      )
-    } catch let fsError as FileSystemInterfaces.FileSystemError {
-      throw fsError
-    } catch {
-      throw FileSystemInterfaces.FileSystemError.extendedAttributeError(
-        path: path.path,
-        attribute: attributeName,
-        operation: "remove",
-        reason: "Failed to remove attribute: \(error.localizedDescription)"
-      )
-    }
-  }
-
-  /**
-   Creates a security-scoped bookmark for the given file path.
-
+   Creates a security bookmark for a file or directory.
+   
    - Parameters:
      - path: The path to create a bookmark for
      - readOnly: Whether the bookmark should be read-only
@@ -1231,132 +1497,221 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
    */
   public func createSecurityBookmark(
     for path: FilePath,
-    readOnly: Bool
+    readOnly: Bool = false
   ) async throws -> Data {
+    await logger.debug(
+      "Creating security bookmark for \(path.path)",
+      context: FileSystemLogContext(
+        operation: "createBookmark",
+        source: "FileSystemService",
+        metadata: LogMetadataDTOCollection()
+          .withPrivate(key: "path", value: path.path)
+          .withPublic(key: "readOnly", value: "\(readOnly)")
+      )
+    )
+    
     guard !path.path.isEmpty else {
       throw FileSystemInterfaces.FileSystemError.invalidPath(
         path: "",
         reason: "Empty path provided"
       )
     }
-
+    
+    // Check if the file exists
+    guard fileManager.fileExists(atPath: path.path) else {
+      throw FileSystemInterfaces.FileSystemError.pathNotFound(path: path.path)
+    }
+    
     do {
-      let url=URL(fileURLWithPath: path.path)
-      let bookmarkData=try url.bookmarkData(
-        options: [.withSecurityScope, readOnly ? .securityScopeAllowOnlyReadAccess : []],
+      // Create a URL from the path
+      let url = URL(fileURLWithPath: path.path)
+      
+      // Create the bookmark
+      let bookmarkData = try url.bookmarkData(
+        options: readOnly ? [.securityScopeAllowOnlyReadAccess] : [],
         includingResourceValuesForKeys: nil,
         relativeTo: nil
       )
-
+      
       await logger.debug(
         "Created security bookmark for \(path.path)",
         context: FileSystemLogContext(
-          operation: "createSecurityBookmark",
+          operation: "createBookmark",
           source: "FileSystemService",
           metadata: LogMetadataDTOCollection()
             .withPrivate(key: "path", value: path.path)
+            .withPublic(key: "bookmarkSize", value: "\(bookmarkData.count)")
         )
       )
-
+      
       return bookmarkData
     } catch {
-      throw FileSystemInterfaces.FileSystemError.unknown(
-        message: "Failed to create bookmark: \(error.localizedDescription)"
+      await logger.error(
+        "Failed to create security bookmark for \(path.path): \(error.localizedDescription)",
+        context: FileSystemLogContext(
+          operation: "createBookmark",
+          source: "FileSystemService",
+          metadata: LogMetadataDTOCollection()
+            .withPrivate(key: "path", value: path.path)
+            .withPublic(key: "errorType", value: "\(type(of: error))")
+            .withPrivate(key: "errorMessage", value: error.localizedDescription)
+        )
+      )
+      
+      throw FileSystemInterfaces.FileSystemError.securityViolation(
+        path: path.path,
+        constraint: "Failed to create security bookmark: \(error.localizedDescription)"
       )
     }
   }
-
+  
   /**
-   Resolves a security-scoped bookmark to a file path.
-
+   Resolves a security bookmark to a file path.
+   
    - Parameter bookmark: The bookmark data to resolve
-   - Returns: The file path and whether it is stale
+   - Returns: A tuple containing the resolved path and whether the bookmark is stale
    - Throws: FileSystemError if the bookmark cannot be resolved
    */
   public func resolveSecurityBookmark(
     _ bookmark: Data
   ) async throws -> (FilePath, Bool) {
+    await logger.debug(
+      "Resolving security bookmark",
+      context: FileSystemLogContext(
+        operation: "resolveBookmark",
+        source: "FileSystemService",
+        metadata: LogMetadataDTOCollection()
+          .withPublic(key: "bookmarkSize", value: "\(bookmark.count)")
+      )
+    )
+    
     do {
-      var isStale=false
-      let url=try URL(
+      // Resolve the bookmark
+      var isStale = false
+      let url = try URL(
         resolvingBookmarkData: bookmark,
         options: .withSecurityScope,
         relativeTo: nil,
         bookmarkDataIsStale: &isStale
       )
-
-      let path=FilePath(path: url.path)
-
+      
+      let path = FilePath(path: url.path)
+      
       await logger.debug(
         "Resolved security bookmark to \(path.path)",
         context: FileSystemLogContext(
-          operation: "resolveSecurityBookmark",
+          operation: "resolveBookmark",
           source: "FileSystemService",
           metadata: LogMetadataDTOCollection()
             .withPrivate(key: "path", value: path.path)
+            .withPublic(key: "isStale", value: "\(isStale)")
         )
       )
-
+      
       return (path, isStale)
     } catch {
-      throw FileSystemInterfaces.FileSystemError.unknown(
-        message: "Failed to resolve bookmark: \(error.localizedDescription)"
+      await logger.error(
+        "Failed to resolve security bookmark: \(error.localizedDescription)",
+        context: FileSystemLogContext(
+          operation: "resolveBookmark",
+          source: "FileSystemService",
+          metadata: LogMetadataDTOCollection()
+            .withPublic(key: "errorType", value: "\(type(of: error))")
+            .withPrivate(key: "errorMessage", value: error.localizedDescription)
+        )
+      )
+      
+      throw FileSystemInterfaces.FileSystemError.securityViolation(
+        path: "",
+        constraint: "Failed to resolve security bookmark: \(error.localizedDescription)"
       )
     }
   }
-
+  
   /**
    Starts accessing a security-scoped resource.
-
-   - Parameter path: The path to start accessing
-   - Returns: Whether access was successfully started
+   
+   - Parameter path: The path to the resource to access
+   - Returns: Whether access was started successfully
    - Throws: FileSystemError if access cannot be started
    */
   public func startAccessingSecurityScopedResource(
     at path: FilePath
   ) async throws -> Bool {
+    await logger.debug(
+      "Starting access to security-scoped resource at \(path.path)",
+      context: FileSystemLogContext(
+        operation: "startAccess",
+        source: "FileSystemService",
+        metadata: LogMetadataDTOCollection()
+          .withPrivate(key: "path", value: path.path)
+      )
+    )
+    
     guard !path.path.isEmpty else {
       throw FileSystemInterfaces.FileSystemError.invalidPath(
         path: "",
         reason: "Empty path provided"
       )
     }
-
-    let url=URL(fileURLWithPath: path.path)
-    let success=url.startAccessingSecurityScopedResource()
-
+    
+    // Check if the file exists
+    guard fileManager.fileExists(atPath: path.path) else {
+      throw FileSystemInterfaces.FileSystemError.pathNotFound(path: path.path)
+    }
+    
+    // Create a URL from the path
+    let url = URL(fileURLWithPath: path.path)
+    
+    // Start accessing the resource
+    let result = url.startAccessingSecurityScopedResource()
+    
     await logger.debug(
-      "Started accessing security-scoped resource \(path.path)",
+      "Started access to security-scoped resource at \(path.path): \(result)",
       context: FileSystemLogContext(
-        operation: "startAccessingSecurityScopedResource",
+        operation: "startAccess",
         source: "FileSystemService",
         metadata: LogMetadataDTOCollection()
           .withPrivate(key: "path", value: path.path)
+          .withPublic(key: "result", value: "\(result)")
       )
     )
-
-    return success
+    
+    return result
   }
-
+  
   /**
    Stops accessing a security-scoped resource.
-
+   
    - Parameter path: The path to stop accessing
    */
   public func stopAccessingSecurityScopedResource(
     at path: FilePath
   ) async {
-    guard !path.path.isEmpty else {
+    await logger.debug(
+      "Stopping access to security-scoped resource at \(path.path)",
+      context: FileSystemLogContext(
+        operation: "stopAccess",
+        source: "FileSystemService",
+        metadata: LogMetadataDTOCollection()
+          .withPrivate(key: "path", value: path.path)
+      )
+    )
+    
+    if path.path.isEmpty {
       return
     }
-
-    let url=URL(fileURLWithPath: path.path)
+    
+    // Create a URL from the path
+    let url = URL(fileURLWithPath: path.path)
+    
+    // Stop accessing the resource
     url.stopAccessingSecurityScopedResource()
-
+    
     await logger.debug(
-      "Stopped accessing security-scoped resource \(path.path)",
+      "Stopped access to security-scoped resource at \(path.path)",
       context: FileSystemLogContext(
-        operation: "stopAccessingSecurityScopedResource",
+        operation: "stopAccess",
         source: "FileSystemService",
         metadata: LogMetadataDTOCollection()
           .withPrivate(key: "path", value: path.path)
@@ -1365,216 +1720,203 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
   }
 
   /**
-   Creates a temporary file.
-
+   Creates a temporary file with the specified prefix and suffix.
+   
    - Parameters:
-     - prefix: Optional prefix for the filename
-     - suffix: Optional suffix for the filename
-     - options: Optional temporary file options
+     - prefix: Optional prefix for the temporary file name
+     - suffix: Optional suffix for the temporary file name
+     - options: Optional options for the temporary file
    - Returns: The path to the created temporary file
    - Throws: FileSystemError if the temporary file cannot be created
    */
   public func createTemporaryFile(
-    prefix: String?,
-    suffix: String?,
-    options: TemporaryFileOptions?
+    prefix: String? = nil,
+    suffix: String? = nil,
+    options: FileSystemInterfaces.TemporaryFileOptions? = nil
   ) async throws -> FilePath {
-    do {
-      let tempDir=try fileManager.url(
-        for: .itemReplacementDirectory,
-        in: .userDomainMask,
-        appropriateFor: URL(fileURLWithPath: NSHomeDirectory()),
-        create: true
+    let metadata = LogMetadataDTOCollection()
+      .withPublic(key: "prefix", value: prefix ?? "")
+      .withPublic(key: "suffix", value: suffix ?? "")
+      
+    await logger.debug(
+      "Creating temporary file",
+      context: FileSystemLogContext(
+        operation: "createTempFile",
+        source: "FileSystemService",
+        metadata: metadata
       )
-
-      let fileName=[
-        prefix ?? "temp",
-        UUID().uuidString,
-        suffix ?? ""
-      ].compactMap { $0.isEmpty ? nil : $0 }.joined()
-
-      let fileURL=tempDir.appendingPathComponent(fileName)
-
+    )
+    
+    // Determine the temporary directory
+    let tempDir = NSTemporaryDirectory()
+    
+    // Create a unique filename
+    let uuid = UUID().uuidString
+    let filename = [prefix, uuid, suffix].compactMap { $0 }.joined()
+    let tempPath = (tempDir as NSString).appendingPathComponent(filename)
+    
+    do {
       // Create an empty file
-      fileManager.createFile(atPath: fileURL.path, contents: nil)
-
-      // Set attributes if specified
-      if let options, let attributes=options.attributes {
-        try fileManager.setAttributes(
-          attributes.toDictionary(),
-          ofItemAtPath: fileURL.path
+      if !fileManager.createFile(atPath: tempPath, contents: Data(), attributes: options?.attributes) {
+        throw FileSystemInterfaces.FileSystemError.writeError(
+          path: tempPath,
+          reason: "Failed to create temporary file"
         )
       }
-
+      
+      let filePath = FilePath(path: tempPath)
+      
+      let resultMetadata = LogMetadataDTOCollection()
+        .withPrivate(key: "path", value: tempPath)
+        
       await logger.debug(
-        "Created temporary file \(fileURL.path)",
+        "Created temporary file",
         context: FileSystemLogContext(
-          operation: "createTemporaryFile",
+          operation: "createTempFile",
           source: "FileSystemService",
-          metadata: LogMetadataDTOCollection()
-            .withPrivate(key: "path", value: fileURL.path)
+          metadata: resultMetadata
         )
       )
-
-      return FilePath(path: fileURL.path)
+      
+      return filePath
     } catch {
-      throw FileSystemInterfaces.FileSystemError.unknown(
-        message: "Failed to create temporary file: \(error.localizedDescription)"
+      let errorMetadata = LogMetadataDTOCollection()
+        .withPrivate(key: "path", value: tempPath)
+        .withPublic(key: "errorType", value: "\(type(of: error))")
+        .withPrivate(key: "errorMessage", value: error.localizedDescription)
+        
+      await logger.error(
+        "Failed to create temporary file",
+        context: FileSystemLogContext(
+          operation: "createTempFile",
+          source: "FileSystemService",
+          metadata: errorMetadata
+        )
+      )
+      
+      throw FileSystemInterfaces.FileSystemError.writeError(
+        path: tempPath,
+        reason: "Failed to create temporary file: \(error.localizedDescription)"
+      )
+    }
+  }
+  
+  /**
+   Creates a temporary directory with the specified prefix.
+   
+   - Parameters:
+     - prefix: Optional prefix for the temporary directory name
+     - options: Optional options for the temporary directory
+   - Returns: The path to the created temporary directory
+   - Throws: FileSystemError if the temporary directory cannot be created
+   */
+  public func createTemporaryDirectory(
+    prefix: String? = nil,
+    options: FileSystemInterfaces.TemporaryFileOptions? = nil
+  ) async throws -> FilePath {
+    let metadata = LogMetadataDTOCollection()
+      .withPublic(key: "prefix", value: prefix ?? "")
+      
+    await logger.debug(
+      "Creating temporary directory",
+      context: FileSystemLogContext(
+        operation: "createTempDir",
+        source: "FileSystemService",
+        metadata: metadata
+      )
+    )
+    
+    // Determine the temporary directory
+    let tempDir = NSTemporaryDirectory()
+    
+    // Create a unique directory name
+    let uuid = UUID().uuidString
+    let dirName = [prefix, uuid].compactMap { $0 }.joined()
+    let tempPath = (tempDir as NSString).appendingPathComponent(dirName)
+    
+    do {
+      // Create the directory
+      try fileManager.createDirectory(
+        atPath: tempPath,
+        withIntermediateDirectories: true,
+        attributes: options?.attributes
+      )
+      
+      let dirPath = FilePath(path: tempPath)
+      
+      let resultMetadata = LogMetadataDTOCollection()
+        .withPrivate(key: "path", value: tempPath)
+        
+      await logger.debug(
+        "Created temporary directory",
+        context: FileSystemLogContext(
+          operation: "createTempDir",
+          source: "FileSystemService",
+          metadata: resultMetadata
+        )
+      )
+      
+      return dirPath
+    } catch {
+      let errorMetadata = LogMetadataDTOCollection()
+        .withPrivate(key: "path", value: tempPath)
+        .withPublic(key: "errorType", value: "\(type(of: error))")
+        .withPrivate(key: "errorMessage", value: error.localizedDescription)
+        
+      await logger.error(
+        "Failed to create temporary directory",
+        context: FileSystemLogContext(
+          operation: "createTempDir",
+          source: "FileSystemService",
+          metadata: errorMetadata
+        )
+      )
+      
+      throw FileSystemInterfaces.FileSystemError.writeError(
+        path: tempPath,
+        reason: "Failed to create temporary directory: \(error.localizedDescription)"
       )
     }
   }
 
   /**
-   Creates a temporary directory.
+   Converts a SafeAttributeValue to Data for use with extended attributes.
 
-   - Parameters:
-     - prefix: Optional prefix for the directory name
-     - options: Optional temporary file options
-   - Returns: The path to the created temporary directory
-   - Throws: FileSystemError if the temporary directory cannot be created
+   - Parameter value: The SafeAttributeValue to convert
+   - Returns: Data representation if possible, nil otherwise
    */
-  public func createTemporaryDirectory(
-    prefix: String?,
-    options: TemporaryFileOptions?
-  ) async throws -> FilePath {
-    do {
-      let tempDir=try fileManager.url(
-        for: .itemReplacementDirectory,
-        in: .userDomainMask,
-        appropriateFor: URL(fileURLWithPath: NSHomeDirectory()),
-        create: true
-      )
-
-      let dirName=[
-        prefix ?? "temp",
-        UUID().uuidString
-      ].compactMap { $0.isEmpty ? nil : $0 }.joined(separator: "-")
-
-      let dirURL=tempDir.appendingPathComponent(dirName)
-
-      try fileManager.createDirectory(
-        at: dirURL,
-        withIntermediateDirectories: true,
-        attributes: options?.attributes?.toDictionary()
-      )
-
-      await logger.debug(
-        "Created temporary directory \(dirURL.path)",
-        context: FileSystemLogContext(
-          operation: "createTemporaryDirectory",
-          source: "FileSystemService",
-          metadata: LogMetadataDTOCollection()
-            .withPrivate(key: "path", value: dirURL.path)
-        )
-      )
-
-      return FilePath(path: dirURL.path)
-    } catch {
-      throw FileSystemInterfaces.FileSystemError.unknown(
-        message: "Failed to create temporary directory: \(error.localizedDescription)"
-      )
+  private func convertSafeAttributeToData(_ value: SafeAttributeValue) -> Data? {
+    switch value {
+      case let .string(strValue):
+        return strValue.data(using: .utf8)
+      case let .int(intValue):
+        return withUnsafeBytes(of: intValue) { Data($0) }
+      case let .uint(uintValue):
+        return withUnsafeBytes(of: uintValue) { Data($0) }
+      case let .int64(int64Value):
+        return withUnsafeBytes(of: int64Value) { Data($0) }
+      case let .uint64(uint64Value):
+        return withUnsafeBytes(of: uint64Value) { Data($0) }
+      case let .bool(boolValue):
+        return withUnsafeBytes(of: boolValue) { Data($0) }
+      case let .date(dateValue):
+        return withUnsafeBytes(of: dateValue.timeIntervalSince1970) { Data($0) }
+      case let .double(doubleValue):
+        return withUnsafeBytes(of: doubleValue) { Data($0) }
+      case let .data(dataValue):
+        return dataValue
+      case let .url(urlValue):
+        return urlValue.absoluteString.data(using: .utf8)
+      case .array, .dictionary:
+        // These would need more complex serialization (e.g., JSON)
+        do {
+          let encoder=JSONEncoder()
+          let data=try encoder.encode(String(describing: value))
+          return data
+        } catch {
+          return nil
+        }
     }
   }
-}
 
-// MARK: - Helper Extensions
-
-extension FileAttributes {
-  /// Convert FileAttributes to a Dictionary suitable for FileManager APIs
-  func toDictionary() -> [FileAttributeKey: Any] {
-    var result: [FileAttributeKey: Any]=[:]
-
-    result[.size]=size
-    result[.creationDate]=creationDate
-    result[.modificationDate]=modificationDate
-
-    if let accessDate {
-      result[.modificationDate]=accessDate
-    }
-
-    result[.posixPermissions]=permissions
-    result[.ownerAccountID]=ownerID
-    result[.groupOwnerAccountID]=groupID
-
-    if let fileType {
-      result[.type]=fileType
-    }
-
-    return result
-  }
-}
-
-// MARK: - Support for null logger when none is provided
-
-/// A simple no-op logger implementation for when no logger is provided
-/// 
-/// This implementation follows the Alpha Dot Five architecture principles by:
-/// 1. Using actor isolation for thread safety
-/// 2. Providing a complete implementation of the required protocol
-/// 3. Using proper British spelling in documentation
-/// 4. Supporting privacy-aware logging with appropriate data classification
-@preconcurrency
-private actor NoLogLogger: PrivacyAwareLoggingProtocol {
-  // Add loggingActor property required by LoggingProtocol
-  nonisolated let loggingActor: LoggingInterfaces.LoggingActor = .init(destinations: [])
-
-  // Implement the required log method from CoreLoggingProtocol
-  func log(_: LoggingInterfaces.LogLevel, _: String, context _: LoggingTypes.LogContextDTO) async {
-    // Empty implementation for no-op logger
-  }
-
-  // Convenience methods with empty implementations
-  func trace(_: String, context _: LoggingTypes.LogContextDTO) async {
-    // Empty implementation
-  }
-
-  func debug(_: String, context _: LoggingTypes.LogContextDTO) async {
-    // Empty implementation
-  }
-
-  func info(_: String, context _: LoggingTypes.LogContextDTO) async {
-    // Empty implementation
-  }
-
-  func warning(_: String, context _: LoggingTypes.LogContextDTO) async {
-    // Empty implementation
-  }
-
-  func error(_: String, context _: LoggingTypes.LogContextDTO) async {
-    // Empty implementation
-  }
-
-  func critical(_: String, context _: LoggingTypes.LogContextDTO) async {
-    // Empty implementation
-  }
-  
-  // Privacy-aware logging methods
-  func trace(_: String, metadata _: LogMetadataDTOCollection?, source _: String) async {
-    // Empty implementation
-  }
-  
-  func debug(_: String, metadata _: LogMetadataDTOCollection?, source _: String) async {
-    // Empty implementation
-  }
-  
-  func info(_: String, metadata _: LogMetadataDTOCollection?, source _: String) async {
-    // Empty implementation
-  }
-  
-  func warning(_: String, metadata _: LogMetadataDTOCollection?, source _: String) async {
-    // Empty implementation
-  }
-  
-  func error(_: String, metadata _: LogMetadataDTOCollection?, source _: String) async {
-    // Empty implementation
-  }
-  
-  func critical(_: String, metadata _: LogMetadataDTOCollection?, source _: String) async {
-    // Empty implementation
-  }
-  
-  // Error logging with privacy controls
-  func logError(_: Error, context _: LogContextDTO) async {
-    // Empty implementation
-  }
 }

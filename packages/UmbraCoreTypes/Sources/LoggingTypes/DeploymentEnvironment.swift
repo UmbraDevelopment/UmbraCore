@@ -1,5 +1,3 @@
-import Foundation
-
 /**
  Deployment environment for the application.
 

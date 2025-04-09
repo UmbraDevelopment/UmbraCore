@@ -1,4 +1,3 @@
-import Foundation
 import LoggingTypes
 
 /// Errors that can occur during logging operations

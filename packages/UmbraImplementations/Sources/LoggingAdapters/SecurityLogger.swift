@@ -220,10 +220,15 @@ public actor SecurityLogger: DomainLoggerProtocol {
     let auditSource = source ?? domainName
 
     // Create a proper context with privacy-aware metadata
+    var metadataCollection = metadata ?? LogMetadataDTOCollection()
+    metadataCollection = metadataCollection.withPublic(key: "operation", value: "audit")
+    metadataCollection = metadataCollection.withPublic(key: "source", value: auditSource)
+    
+    // Create the context with the required parameters
     let context = SecurityLogContext(
       operation: "audit",
-      source: auditSource,
-      metadata: metadata ?? LogMetadataDTOCollection()
+      resource: auditSource,
+      status: "logged"
     )
 
     // Log with high visibility as both info (for monitoring) and security event
@@ -266,23 +271,18 @@ public actor SecurityLogger: DomainLoggerProtocol {
     }
 
     // Create a base metadata collection with privacy annotations
-    var metadataCollection = LogMetadataDTOCollection()
-      .withPublic(key: "status", value: statusString)
-      .withPublic(key: "subject", value: subject)
-      .withPublic(key: "resource", value: resource)
+    var metadataCollection = metadata ?? LogMetadataDTOCollection()
+    metadataCollection = metadataCollection.withPublic(key: "operation", value: "access_control")
+    metadataCollection = metadataCollection.withPublic(key: "source", value: domainName)
+    metadataCollection = metadataCollection.withPublic(key: "subject", value: subject)
+    metadataCollection = metadataCollection.withPublic(key: "resource", value: resource)
+    metadataCollection = metadataCollection.withPublic(key: "status", value: statusString)
     
-    // Add any additional metadata if provided
-    if let metadata = metadata {
-      for entry in metadata.entries {
-        metadataCollection.entries.append(entry)
-      }
-    }
-
-    // Create a proper context with privacy-aware metadata
+    // Create the context with the required parameters
     let context = SecurityLogContext(
       operation: "access_control",
-      source: domainName,
-      metadata: metadataCollection
+      resource: resource,
+      status: statusString
     )
 
     // Constructed message with key details
@@ -298,7 +298,7 @@ public actor SecurityLogger: DomainLoggerProtocol {
     // Also record as a security event for security monitoring
     await secureLogger.securityEvent(
       action: "access_\(statusString)",
-      status: status == .granted ? .success : .failure,
+      status: status == .granted ? .success : .denied,
       subject: subject,
       resource: resource,
       additionalMetadata: nil
@@ -328,11 +328,9 @@ public actor SecurityLogger: DomainLoggerProtocol {
     // We don't currently use the privacy level in this implementation
     // but we keep the parameter for protocol conformance
 
-    // Check if we have an NSError for additional details
-    if let _=error as NSError? {
-      // No need to add additional metadata here since we're passing nil below
-    }
-
+    // All Swift errors can be bridged to NSError, so no need for a check
+    // We're not using NSError details in this context
+    
     // Log through secure logger with enhanced privacy controls
     await secureLogger.securityEvent(
       action: "error_logged",
@@ -409,7 +407,8 @@ public actor SecurityLogger: DomainLoggerProtocol {
       operation: operation,
       resource: keyIdentifier,
       status: "started",
-      details: details
+      details: details,
+      correlationID: LogIdentifier(value: UUID().uuidString).description
     )
 
     // Log with standard logging
@@ -443,7 +442,8 @@ public actor SecurityLogger: DomainLoggerProtocol {
       operation: operation,
       resource: keyIdentifier,
       status: "completed",
-      details: details
+      details: details,
+      correlationID: LogIdentifier(value: UUID().uuidString).description
     )
 
     // Log with standard logging
@@ -480,7 +480,8 @@ public actor SecurityLogger: DomainLoggerProtocol {
       resource: keyIdentifier,
       status: "failed",
       error: error,
-      details: details
+      details: details,
+      correlationID: LogIdentifier(value: UUID().uuidString).description
     )
 
     // Log with standard logging
@@ -524,7 +525,7 @@ private struct SecurityLogContext: LogContextDTO {
     status: String,
     error: Error?=nil,
     details: String?=nil,
-    correlationID: String?=UUID().uuidString
+    correlationID: String?=LogIdentifier(value: UUID().uuidString).description
   ) {
     self.operation=operation
     self.resource=resource
@@ -540,7 +541,7 @@ private struct SecurityLogContext: LogContextDTO {
     metadataBuilder=metadataBuilder.withPublic(key: "status", value: status)
     metadataBuilder=metadataBuilder.withPublic(
       key: "correlationId",
-      value: correlationID ?? UUID().uuidString
+      value: correlationID ?? ""
     )
 
     if let details {
@@ -553,11 +554,10 @@ private struct SecurityLogContext: LogContextDTO {
         value: error.localizedDescription
       )
 
-      // Add additional error information if available
-      if let nsError=error as NSError? {
-        metadataBuilder=metadataBuilder.withPublic(key: "errorCode", value: String(nsError.code))
-        metadataBuilder=metadataBuilder.withPublic(key: "errorDomain", value: nsError.domain)
-      }
+      // All Swift errors can be bridged to NSError
+      let nsError = error as NSError
+      metadataBuilder=metadataBuilder.withPublic(key: "errorCode", value: String(nsError.code))
+      metadataBuilder=metadataBuilder.withPublic(key: "errorDomain", value: nsError.domain)
     }
 
     metadata=metadataBuilder
@@ -568,7 +568,7 @@ private struct SecurityLogContext: LogContextDTO {
       "operation": operation,
       "resource": resource,
       "status": status,
-      "correlationId": correlationID ?? UUID().uuidString
+      "correlationId": correlationID ?? ""
     ]
 
     if let details {

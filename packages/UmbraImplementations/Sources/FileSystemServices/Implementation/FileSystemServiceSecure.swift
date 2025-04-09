@@ -445,8 +445,8 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
   /**
    Creates a temporary file.
 
-   - Parameter prefix: Optional prefix for the filename
-   - Parameter suffix: Optional suffix for the filename
+   - Parameter prefix: Optional prefix for the file name
+   - Parameter suffix: Optional suffix for the file name
    - Parameter options: Optional configuration options
    - Returns: Path to the created temporary file
    - Throws: FileSystemError if the temporary file cannot be created
@@ -454,7 +454,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
   public func createTemporaryFile(
     prefix: String?,
     suffix: String?,
-    options _: TemporaryFileOptions?
+    options: FileSystemInterfaces.TemporaryFileOptions?
   ) async throws -> FilePath {
     await logDebug(
       "Creating temporary file with prefix: \(prefix ?? "none"), suffix: \(suffix ?? "none")"
@@ -469,7 +469,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
     let url=tempDir.appendingPathComponent(filename)
 
     // Create an empty file
-    FileManager.default.createFile(atPath: url.path, contents: nil)
+    FileManager.default.createFile(atPath: url.path, contents: nil, attributes: options?.attributes)
 
     return FilePath(path: url.path, isDirectory: false)
   }
@@ -484,7 +484,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    */
   public func createTemporaryDirectory(
     prefix: String?,
-    options _: TemporaryFileOptions?
+    options: FileSystemInterfaces.TemporaryFileOptions?
   ) async throws -> FilePath {
     await logDebug("Creating temporary directory with prefix: \(prefix ?? "none")")
 
@@ -498,7 +498,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
       try FileManager.default.createDirectory(
         at: url,
         withIntermediateDirectories: true,
-        attributes: nil
+        attributes: options?.attributes
       )
 
       return FilePath(path: url.path, isDirectory: true)
@@ -1339,7 +1339,22 @@ private actor NullLogger: PrivacyAwareLoggingProtocol {
   func log(_: LoggingInterfaces.LogLevel, _: String, context _: LoggingTypes.LogContextDTO) async {
     // Empty implementation for no-op logger
   }
-
+  
+  // Implement the required privacy-aware log method
+  func log(_: LoggingInterfaces.LogLevel, _: PrivacyString, context _: LoggingTypes.LogContextDTO) async {
+    // Empty implementation for no-op logger
+  }
+  
+  // Implement the required log sensitive method
+  func logSensitive(
+    _: LoggingInterfaces.LogLevel,
+    _: String,
+    sensitiveValues _: LoggingTypes.LogMetadata,
+    context _: LoggingTypes.LogContextDTO
+  ) async {
+    // Empty implementation for no-op logger
+  }
+  
   // Convenience methods with empty implementations
   func trace(_: String, context _: LoggingTypes.LogContextDTO) async {
     // Empty implementation
@@ -1391,7 +1406,11 @@ private actor NullLogger: PrivacyAwareLoggingProtocol {
   }
   
   // Error logging with privacy controls
-  func logError(_: Error, context _: LogContextDTO) async {
-    // Empty implementation
+  func logError(
+    _ error: Error,
+    privacyLevel _: LoggingInterfaces.LogPrivacyLevel,
+    context _: LoggingTypes.LogContextDTO
+  ) async {
+    // Empty implementation for no-op logger
   }
 }

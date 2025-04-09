@@ -1,5 +1,3 @@
-import Foundation
-
 /// Extensions for converting between privacy-aware metadata types
 extension PrivacyMetadata {
   /// Convert PrivacyMetadata to LogMetadata for logging

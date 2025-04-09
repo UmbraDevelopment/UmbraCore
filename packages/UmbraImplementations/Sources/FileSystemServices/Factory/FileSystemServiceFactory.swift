@@ -3,6 +3,7 @@ import FileSystemTypes
 import Foundation
 import LoggingInterfaces
 import LoggingTypes
+import LoggingAdapters
 
 /**
  # File System Service Factory
@@ -31,7 +32,7 @@ public actor FileSystemServiceFactory {
    - Returns: An implementation of FileSystemServiceProtocol
    */
   public func createStandardService(
-    logger: (any LoggingInterfaces.LoggingProtocol)?=nil
+    logger: (any PrivacyAwareLoggingProtocol)?=nil
   ) -> any FileSystemServiceProtocol {
     let fileManager=FileManager.default
 
@@ -54,7 +55,7 @@ public actor FileSystemServiceFactory {
    - Returns: An implementation of FileSystemServiceProtocol
    */
   public func createHighPerformanceService(
-    logger: (any LoggingInterfaces.LoggingProtocol)?=nil
+    logger: (any PrivacyAwareLoggingProtocol)?=nil
   ) -> any FileSystemServiceProtocol {
     let fileManager=FileManager.default
 
@@ -79,7 +80,7 @@ public actor FileSystemServiceFactory {
    */
   public func createSecureService(
     securityLevel: SecurityLevel = .high,
-    logger: (any LoggingInterfaces.LoggingProtocol)?=nil
+    logger: (any PrivacyAwareLoggingProtocol)?=nil
   ) async -> any FileSystemServiceProtocol {
     // Create the file path service with appropriate security level
     let filePathService=await FilePathServiceFactory.shared.createSecure(
@@ -108,7 +109,7 @@ public actor FileSystemServiceFactory {
    */
   public func createSandboxedService(
     rootDirectory: String,
-    logger: (any LoggingInterfaces.LoggingProtocol)?=nil
+    logger: (any PrivacyAwareLoggingProtocol)?=nil
   ) async -> any FileSystemServiceProtocol {
     // Create the file path service with sandbox restrictions
     let filePathService=await FilePathServiceFactory.shared.createSandboxed(
@@ -136,7 +137,7 @@ public actor FileSystemServiceFactory {
    */
   public func createCustomService(
     operationQueueQoS: QualityOfService = .utility,
-    logger: (any LoggingInterfaces.LoggingProtocol)?=nil
+    logger: (any PrivacyAwareLoggingProtocol)?=nil
   ) -> any FileSystemServiceProtocol {
     // Use default FileManager to avoid Swift 6 warnings
     let fileManager=FileManager.default
@@ -146,81 +147,5 @@ public actor FileSystemServiceFactory {
       operationQueueQoS: operationQueueQoS,
       logger: logger ?? NullLogger()
     )
-  }
-}
-
-/**
- A null logger implementation used as a default when no logger is provided.
- This avoids the need for nil checks throughout the file system services code.
- 
- This implementation follows the Alpha Dot Five architecture principles by:
- 1. Using actor isolation for thread safety
- 2. Providing a complete implementation of the required protocol
- 3. Using proper British spelling in documentation
- 4. Supporting privacy-aware logging with appropriate data classification
- */
-@preconcurrency
-private actor NullLogger: PrivacyAwareLoggingProtocol {
-  // Add loggingActor property required by LoggingProtocol
-  nonisolated let loggingActor: LoggingInterfaces.LoggingActor = .init(destinations: [])
-
-  // Implement the required log method from CoreLoggingProtocol
-  func log(_: LoggingInterfaces.LogLevel, _: String, context _: LoggingTypes.LogContextDTO) async {
-    // Empty implementation for no-op logger
-  }
-
-  // Convenience methods with empty implementations
-  func trace(_: String, context _: LoggingTypes.LogContextDTO) async {
-    // Empty implementation
-  }
-
-  func debug(_: String, context _: LoggingTypes.LogContextDTO) async {
-    // Empty implementation
-  }
-
-  func info(_: String, context _: LoggingTypes.LogContextDTO) async {
-    // Empty implementation
-  }
-
-  func warning(_: String, context _: LoggingTypes.LogContextDTO) async {
-    // Empty implementation
-  }
-
-  func error(_: String, context _: LoggingTypes.LogContextDTO) async {
-    // Empty implementation
-  }
-
-  func critical(_: String, context _: LoggingTypes.LogContextDTO) async {
-    // Empty implementation
-  }
-  
-  // Privacy-aware logging methods
-  func trace(_: String, metadata _: LogMetadataDTOCollection?, source _: String) async {
-    // Empty implementation
-  }
-  
-  func debug(_: String, metadata _: LogMetadataDTOCollection?, source _: String) async {
-    // Empty implementation
-  }
-  
-  func info(_: String, metadata _: LogMetadataDTOCollection?, source _: String) async {
-    // Empty implementation
-  }
-  
-  func warning(_: String, metadata _: LogMetadataDTOCollection?, source _: String) async {
-    // Empty implementation
-  }
-  
-  func error(_: String, metadata _: LogMetadataDTOCollection?, source _: String) async {
-    // Empty implementation
-  }
-  
-  func critical(_: String, metadata _: LogMetadataDTOCollection?, source _: String) async {
-    // Empty implementation
-  }
-  
-  // Error logging with privacy controls
-  func logError(_: Error, context _: LogContextDTO) async {
-    // Empty implementation
   }
 }

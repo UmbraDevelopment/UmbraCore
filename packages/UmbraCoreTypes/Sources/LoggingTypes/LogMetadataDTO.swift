@@ -1,5 +1,3 @@
-import Foundation
-
 /// Represents a single metadata entry with privacy classification
 ///
 /// This structure enables privacy-aware logging by attaching privacy

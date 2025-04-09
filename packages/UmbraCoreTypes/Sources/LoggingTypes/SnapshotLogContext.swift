@@ -1,5 +1,3 @@
-import Foundation
-
 /// A specialised log context for snapshot operations
 ///
 /// This structure provides contextual information specific to snapshot

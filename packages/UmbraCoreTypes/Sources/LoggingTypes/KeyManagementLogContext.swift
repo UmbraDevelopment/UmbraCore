@@ -1,5 +1,3 @@
-import Foundation
-
 /// A specialised log context for key management operations
 ///
 /// This structure provides contextual information specific to key management

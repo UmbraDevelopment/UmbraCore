@@ -1,4 +1,3 @@
-import Foundation
 import os.log
 
 /// A builder for a collection of metadata entries with privacy annotations

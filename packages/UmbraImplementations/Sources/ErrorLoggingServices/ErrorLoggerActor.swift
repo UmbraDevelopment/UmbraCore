@@ -1,5 +1,4 @@
 import ErrorLoggingInterfaces
-import Foundation
 import LoggingInterfaces
 import LoggingServices
 import LoggingTypes

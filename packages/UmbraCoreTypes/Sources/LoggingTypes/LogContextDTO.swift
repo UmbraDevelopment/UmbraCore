@@ -1,5 +1,3 @@
-import Foundation
-
 /// Protocol defining the requirements for a log context DTO that
 /// can be used across domain boundaries
 ///

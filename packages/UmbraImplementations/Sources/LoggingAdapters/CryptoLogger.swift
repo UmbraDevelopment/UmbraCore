@@ -269,7 +269,7 @@ public struct CryptoLogContext: LogContextDTO {
     keyID: String?=nil,
     details: String?=nil,
     error: Error?=nil,
-    correlationID: String?=UUID().uuidString
+    correlationID: String?=LogIdentifier(value: UUID().uuidString).description
   ) {
     self.operation=operation
     self.algorithm=algorithm
@@ -286,7 +286,7 @@ public struct CryptoLogContext: LogContextDTO {
     metadataBuilder=metadataBuilder.withPublic(key: "status", value: status)
     metadataBuilder=metadataBuilder.withPublic(
       key: "correlationId",
-      value: correlationID ?? UUID().uuidString
+      value: correlationID ?? LogIdentifier(value: UUID().uuidString).description
     )
 
     // Key IDs are private information
@@ -335,7 +335,7 @@ public struct CryptoLogContext: LogContextDTO {
       "operation": operation,
       "algorithm": algorithm,
       "status": status,
-      "correlationId": correlationID ?? UUID().uuidString
+      "correlationId": correlationID ?? LogIdentifier(value: UUID().uuidString).description
     ]
 
     if let keyID {

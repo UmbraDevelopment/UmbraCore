@@ -1,4 +1,3 @@
-import Foundation
 import SecurityInterfacesTypes
 
 /// CoreLogContext provides privacy-enhanced logging context for core framework operations

@@ -1,4 +1,3 @@
-import Foundation
 import LoggingInterfaces
 import LoggingTypes
 
@@ -594,8 +593,11 @@ public struct DefaultLogFormatter: LoggingInterfaces.LogFormatterProtocol, Senda
     components.append(entry.message)
 
     // Add source if configured
-    if configuration.includeSource, let source=entry.source, !source.isEmpty {
-      components.append("[\(source)]")
+    if configuration.includeSource {
+      let source = entry.source
+      if !source.isEmpty {
+        components.append("[\(source)]")
+      }
     }
 
     // Add metadata if configured
@@ -604,6 +606,13 @@ public struct DefaultLogFormatter: LoggingInterfaces.LogFormatterProtocol, Senda
     }
 
     return components.joined(separator: " ")
+  }
+  
+  /// Format a log entry to a string (required by LogFormatterProtocol)
+  /// - Parameter entry: The log entry to format
+  /// - Returns: A string representation of the log entry
+  public func format(_ entry: LoggingTypes.LogEntry) -> String {
+    return formatEntry(entry)
   }
 
   /// Customise the format based on configuration
