@@ -1,0 +1,12 @@
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+
+swift_library(
+    name = "CoreFileOperations",
+    srcs = glob(["**/*.swift"]),
+    module_name = "CoreFileOperations",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//packages/UmbraInterfaces/Sources/FileSystemInterfaces",
+        "//packages/UmbraInterfaces/Sources/LoggingInterfaces",
+    ],
+)

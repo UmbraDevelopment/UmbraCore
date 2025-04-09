@@ -1,8 +1,7 @@
+import Foundation
 import FileSystemInterfaces
 import FileSystemTypes
 import LoggingInterfaces
-import LoggingTypes
-import Security
 
 /**
  # File System Service Secure Implementation
@@ -28,24 +27,30 @@ import Security
  */
 public actor FileSystemServiceSecure: FileSystemServiceProtocol {
   /// The file path service for path operations
-  private let filePathService: FilePathServiceProtocol
+  private let filePathService: any FilePathServiceProtocol
 
-  /// Logger for recording operations and errors
+  /// Logger for this service
   private let logger: any LoggingProtocol
+  
+  /// Secure file operations implementation
+  public let secureOperations: SecureFileOperationsProtocol
 
   /**
    Initialises a new secure file system service.
-
+   
    - Parameters:
-      - filePathService: The file path service to use
-      - logger: Optional logger for recording operations
+      - filePathService: The path service to use.
+      - logger: Optional logger.
+      - secureOperations: Optional secure operations service.
    */
   public init(
-    filePathService: FilePathServiceProtocol,
-    logger: (any LoggingProtocol)?=nil
+    filePathService: any FilePathServiceProtocol,
+    logger: (any LoggingProtocol)? = nil,
+    secureOperations: SecureFileOperationsProtocol? = nil
   ) {
-    self.filePathService=filePathService
-    self.logger=logger ?? NullLogger()
+    self.filePathService = filePathService
+    self.logger = logger ?? NullLogger()
+    self.secureOperations = secureOperations ?? SecureFileOperationsImpl()
   }
 
   // MARK: - Core File & Directory Operations
@@ -119,7 +124,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
 
     do {
       try Foundation.FileManager.default.createDirectory(
-        atPath: securePath.toString(),
+        atPath: securePath.path,
         withIntermediateDirectories: withIntermediateDirectories,
         attributes: nil
       )
@@ -155,7 +160,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
 
     do {
       let contents=try Foundation.FileManager.default.contentsOfDirectory(
-        atPath: securePath.toString()
+        atPath: securePath.path
       )
 
       return contents.map { item in
@@ -194,7 +199,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
     }
 
     do {
-      return try Data(contentsOf: URL(fileURLWithPath: securePath.toString()))
+      return try Data(contentsOf: URL(fileURLWithPath: securePath.path))
     } catch {
       throw FileSystemInterfaces.FileSystemError.readError(
         path: path.path,
@@ -227,7 +232,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
     }
 
     do {
-      try data.write(to: URL(fileURLWithPath: securePath.toString()))
+      try data.write(to: URL(fileURLWithPath: securePath.path))
     } catch {
       throw FileSystemInterfaces.FileSystemError.writeError(
         path: path.path,
@@ -267,7 +272,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
     }
 
     do {
-      try Foundation.FileManager.default.removeItem(atPath: securePath.toString())
+      try Foundation.FileManager.default.removeItem(atPath: securePath.path)
     } catch {
       throw FileSystemInterfaces.FileSystemError.deleteError(
         path: path.path,
@@ -308,8 +313,8 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
 
     do {
       try Foundation.FileManager.default.moveItem(
-        atPath: secureSourcePath.toString(),
-        toPath: secureDestinationPath.toString()
+        atPath: secureSourcePath.path,
+        toPath: secureDestinationPath.path
       )
     } catch {
       throw FileSystemInterfaces.FileSystemError.moveError(
@@ -352,8 +357,8 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
 
     do {
       try Foundation.FileManager.default.copyItem(
-        atPath: secureSourcePath.toString(),
-        toPath: secureDestinationPath.toString()
+        atPath: secureSourcePath.path,
+        toPath: secureDestinationPath.path
       )
     } catch {
       throw FileSystemInterfaces.FileSystemError.copyError(
@@ -381,7 +386,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
       )
     }
 
-    return URL(fileURLWithPath: securePath.toString(), isDirectory: path.isDirectory)
+    return URL(fileURLWithPath: securePath.path, isDirectory: path.isDirectory)
   }
 
   /**
@@ -436,7 +441,10 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
       )
     }
 
-    return await filePathService.startAccessingSecurityScopedResource(securePath)
+    let url = URL(fileURLWithPath: securePath.path)
+    
+    // Start accessing the security-scoped resource
+    return url.startAccessingSecurityScopedResource()
   }
 
   /**
@@ -453,74 +461,72 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
       return
     }
 
-    await filePathService.stopAccessingSecurityScopedResource(securePath)
+    let url = URL(fileURLWithPath: securePath.path)
+    
+    // Stop accessing the security-scoped resource
+    url.stopAccessingSecurityScopedResource()
   }
 
   /**
    Creates a temporary file.
 
-   - Parameter prefix: Optional prefix for the file name
-   - Parameter suffix: Optional suffix for the file name
-   - Parameter options: Optional configuration options
-   - Returns: Path to the created temporary file
-   - Throws: FileSystemError if the temporary file cannot be created
+   - Parameter options: Optional options for creating the temporary file
+   - Returns: The path to the created temporary file
+   - Throws: FileSystemError if the file cannot be created
    */
-  public func createTemporaryFile(
-    prefix: String?,
-    suffix: String?,
-    options: FileSystemInterfaces.TemporaryFileOptions?
-  ) async throws -> FilePath {
-    await logDebug(
-      "Creating temporary file with prefix: \(prefix ?? "none"), suffix: \(suffix ?? "none")"
-    )
-
-    let tempDir=Foundation.FileManager.default.temporaryDirectory
+  public func createTemporaryFile(options: TemporaryFileOptions?) async throws -> FilePath {
+    await logDebug("Creating temporary file")
+    
+    // Get the temporary directory
+    let tempDir=FileManager.default.temporaryDirectory
+    
+    // Generate a unique filename
     let uuid=UUID().uuidString
-    let filename=[prefix, uuid, suffix]
-      .compactMap { $0 }
-      .joined()
-
+    let prefix=options?.prefix ?? ""
+    let fileExtension=options?.fileExtension ?? ""
+    
+    let filename="\(prefix)\(uuid)\(fileExtension.isEmpty ? "" : ".\(fileExtension)")"
     let url=tempDir.appendingPathComponent(filename)
-
+    
     // Create an empty file
-    _ = Foundation.FileManager.default.createFile(atPath: url.path, contents: nil, attributes: options?.attributes) as Bool
-
+    _ = Foundation.FileManager.default.createFile(atPath: url.path, contents: nil, attributes: nil) as Bool
+    
     return FilePath(path: url.path, isDirectory: false)
   }
 
   /**
    Creates a temporary directory.
 
-   - Parameter prefix: Optional prefix for the directory name
-   - Parameter options: Optional configuration options
-   - Returns: Path to the created temporary directory
-   - Throws: FileSystemError if the temporary directory cannot be created
+   - Parameter options: Optional options for creating the temporary directory
+   - Returns: The path to the created temporary directory
+   - Throws: FileSystemError if the directory cannot be created
    */
-  public func createTemporaryDirectory(
-    prefix: String?,
-    options: FileSystemInterfaces.TemporaryFileOptions?
-  ) async throws -> FilePath {
-    await logDebug("Creating temporary directory with prefix: \(prefix ?? "none")")
-
-    let tempDir=Foundation.FileManager.default.temporaryDirectory
+  public func createTemporaryDirectory(options: TemporaryFileOptions?) async throws -> FilePath {
+    await logDebug("Creating temporary directory")
+    
+    // Get the temporary directory
+    let tempDir=FileManager.default.temporaryDirectory
+    
+    // Generate a unique directory name
     let uuid=UUID().uuidString
-    let dirname=prefix != nil ? "\(prefix!)\(uuid)" : uuid
-
-    let url=tempDir.appendingPathComponent(dirname)
-
+    let prefix=options?.prefix ?? ""
+    
+    let dirName="\(prefix)\(uuid)"
+    let url=tempDir.appendingPathComponent(dirName)
+    
     do {
-      try (Foundation.FileManager.default.createDirectory(
+      try Foundation.FileManager.default.createDirectory(
         at: url,
         withIntermediateDirectories: true,
-        attributes: options?.attributes
-      ) as Void)
+        attributes: nil
+      ) as Void
     } catch {
-      throw FileSystemInterfaces.FileSystemError.writeError(
+      throw FileSystemInterfaces.FileSystemError.directoryCreationError(
         path: url.path,
-        reason: "Failed to create temporary directory: \(error.localizedDescription)"
+        reason: error.localizedDescription
       )
     }
-
+    
     return FilePath(path: url.path, isDirectory: true)
   }
 
@@ -577,7 +583,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
 
     do {
       let contents=try Foundation.FileManager.default.contentsOfDirectory(
-        atPath: securePath.toString()
+        atPath: securePath.path
       )
 
       return contents.compactMap { item in
@@ -669,18 +675,14 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
     }
 
     // Create parent directories if needed
-    if let parentPath=await filePathService.parentDirectory(of: securePath) {
-      if await !(fileExists(parentPath)) {
-        try await createDirectory(
-          at: FilePath(path: parentPath.toString(), isDirectory: true),
-          createIntermediates: true,
-          attributes: nil
-        )
-      }
-    }
+    try await ensureParentDirectoryExists(for: securePath)
 
+    // Create an empty file
+    _ = Foundation.FileManager.default.createFile(atPath: securePath.path, contents: nil, attributes: nil) as Bool
+
+    // Write the data to the file
     do {
-      try data.write(to: URL(fileURLWithPath: securePath.toString()), options: .atomic)
+      try data.write(to: URL(fileURLWithPath: securePath.path), options: .atomic)
     } catch {
       throw FileSystemInterfaces.FileSystemError.writeError(
         path: path.path,
@@ -724,7 +726,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
     }
 
     do {
-      try data.write(to: URL(fileURLWithPath: securePath.toString()), options: .atomic)
+      try data.write(to: URL(fileURLWithPath: securePath.path), options: .atomic)
     } catch {
       throw FileSystemInterfaces.FileSystemError.writeError(
         path: path.path,
@@ -761,7 +763,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
 
     do {
       let attributes=try Foundation.FileManager.default.attributesOfItem(
-        atPath: securePath.toString()
+        atPath: securePath.path
       )
 
       // Check if it's a directory to ensure we're getting the right type of metadata
@@ -864,7 +866,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
       }
 
       try Foundation.FileManager.default.createDirectory(
-        atPath: securePath.toString(),
+        atPath: securePath.path,
         withIntermediateDirectories: createIntermediates,
         attributes: foundationAttributes
       )
@@ -916,7 +918,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
     }
 
     do {
-      try Foundation.FileManager.default.removeItem(atPath: securePath.toString())
+      try Foundation.FileManager.default.removeItem(atPath: securePath.path)
     } catch {
       throw FileSystemInterfaces.FileSystemError.deleteError(
         path: path.path,
@@ -974,7 +976,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
     }
 
     do {
-      try Foundation.FileManager.default.removeItem(atPath: securePath.toString())
+      try Foundation.FileManager.default.removeItem(atPath: securePath.path)
     } catch {
       throw FileSystemInterfaces.FileSystemError.deleteError(
         path: path.path,
@@ -1160,13 +1162,13 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
       }
 
       // Delete destination if overwrite is true
-      try Foundation.FileManager.default.removeItem(atPath: secureDestinationPath.toString())
+      try Foundation.FileManager.default.removeItem(atPath: secureDestinationPath.path)
     }
 
     do {
       try Foundation.FileManager.default.moveItem(
-        atPath: secureSourcePath.toString(),
-        toPath: secureDestinationPath.toString()
+        atPath: secureSourcePath.path,
+        toPath: secureDestinationPath.path
       )
     } catch {
       throw FileSystemInterfaces.FileSystemError.moveError(
@@ -1220,13 +1222,13 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
       }
 
       // Delete destination if overwrite is true
-      try Foundation.FileManager.default.removeItem(atPath: secureDestinationPath.toString())
+      try Foundation.FileManager.default.removeItem(atPath: secureDestinationPath.path)
     }
 
     do {
       try Foundation.FileManager.default.copyItem(
-        atPath: secureSourcePath.toString(),
-        toPath: secureDestinationPath.toString()
+        atPath: secureSourcePath.path,
+        toPath: secureDestinationPath.path
       )
     } catch {
       throw FileSystemInterfaces.FileSystemError.copyError(
@@ -1251,38 +1253,641 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
   ) async throws -> Data {
     await logDebug("Creating security bookmark for \(path.path), readOnly: \(readOnly)")
 
-    guard let securePath=SecurePathAdapter.toSecurePath(path) else {
-      throw FileSystemInterfaces.FileSystemError.invalidPath(
-        path: path.path,
-        reason: "Could not convert to secure path"
-      )
-    }
-
-    // Check if the path exists
-    guard await fileExists(securePath) else {
+    guard let securePath = await filePathService.securePath(from: path) else {
       throw FileSystemInterfaces.FileSystemError.pathNotFound(path: path.path)
     }
-
-    let url=URL(fileURLWithPath: securePath.toString(), isDirectory: path.isDirectory)
-
+    
+    let url = URL(fileURLWithPath: securePath.path, isDirectory: path.isDirectory)
+    
     do {
-      let options: URL.BookmarkCreationOptions=readOnly ?
-        [.withSecurityScope, .securityScopeAllowOnlyReadAccess] :
-        [.withSecurityScope]
-
+      let options: URL.BookmarkCreationOptions = readOnly ?
+        [.securityScopeAllowOnlyReadAccess] : []
+      
       return try url.bookmarkData(
         options: options,
-        includingResourceValuesForKeys: nil,
-        relativeTo: nil
+        includingResourceValuesForKeys: nil as [URLResourceKey]?,
+        relativeTo: nil as URL?
       )
     } catch {
-      throw FileSystemInterfaces.FileSystemError.writeError(
+      throw FileSystemInterfaces.FileSystemError.bookmarkCreationError(
         path: path.path,
-        reason: "Failed to create bookmark: \(error.localizedDescription)"
+        reason: error.localizedDescription
       )
     }
   }
 
+  // MARK: - FileSystemServiceProtocol Conformance
+  
+  /**
+   Gets the temporary directory path appropriate for this file system service.
+   
+   - Returns: The path to the temporary directory.
+   */
+  public func temporaryDirectoryPath() async -> String {
+    FileManager.default.temporaryDirectory.path
+  }
+  
+  /**
+   Creates a unique file name in the specified directory.
+   
+   - Parameters:
+      - directory: The directory in which to create the unique name.
+      - prefix: Optional prefix for the file name.
+      - extension: Optional file extension.
+   - Returns: A unique file path.
+   */
+  public func createUniqueFilename(in directory: String, prefix: String?, extension: String?) async -> String {
+    let prefixToUse = prefix ?? ""
+    let extensionToUse = `extension` != nil ? ".\(`extension`!)" : ""
+    let uuid = UUID().uuidString
+    return "\(directory)/\(prefixToUse)\(uuid)\(extensionToUse)"
+  }
+  
+  /**
+   Normalises a file path according to system rules.
+   
+   - Parameter path: The path to normalise.
+   - Returns: The normalised path.
+   */
+  public func normalisePath(_ path: String) async -> String {
+    (path as NSString).standardizingPath
+  }
+  
+  /**
+   Creates a sandboxed file system service instance that restricts
+   all operations to within the specified root directory.
+   
+   - Parameter rootDirectory: The directory to restrict operations to.
+   - Returns: A sandboxed file system service.
+   */
+  public static func createSandboxed(rootDirectory: String) -> Self {
+    return Self(
+      filePathService: FilePathServiceFactory.shared.createSandboxed(rootDirectory: rootDirectory),
+      secureOperations: SandboxedSecureFileOperations(rootDirectory: rootDirectory)
+    )
+  }
+  
+  // MARK: - FileReadOperationsProtocol Conformance
+
+  /**
+   Reads the contents of a file at the specified path.
+   
+   - Parameter path: The path to the file to read.
+   - Returns: The file contents as Data.
+   - Throws: FileSystemError if the read operation fails.
+   */
+  public func readFile(at path: String) async throws -> Data {
+    // Convert the path to a FilePath
+    let filePath = FilePath(path: path)
+    
+    // Call the FilePath version of this method
+    return try await readFile(at: filePath)
+  }
+  
+  /**
+   Reads the contents of a file at the specified path as a string.
+   
+   - Parameters:
+      - path: The path to the file to read.
+      - encoding: The string encoding to use for reading the file.
+   - Returns: The file contents as a String.
+   - Throws: FileSystemError if the read operation fails.
+   */
+  public func readFileAsString(at path: String, encoding: String.Encoding) async throws -> String {
+    // Convert the path to a FilePath
+    let filePath = FilePath(path: path)
+    
+    // Read the file data
+    let data = try await readFile(at: path)
+    
+    // Convert the data to a string
+    guard let string = String(data: data, encoding: encoding) else {
+      throw FileSystemInterfaces.FileSystemError.readError(
+        path: path,
+        reason: "Could not convert data to string with encoding \(encoding)"
+      )
+    }
+    
+    return string
+  }
+  
+  /**
+   Checks if a file exists at the specified path.
+   
+   - Parameter path: The path to check.
+   - Returns: True if the file exists, false otherwise.
+   */
+  public func fileExists(at path: String) async -> Bool {
+    // Convert the path to a FilePath
+    let filePath = FilePath(path: path)
+    
+    // Call the FilePath version of this method
+    do {
+      return try await fileExists(at: filePath)
+    } catch {
+      return false
+    }
+  }
+  
+  /**
+   Lists the contents of a directory at the specified path.
+   
+   - Parameter path: The path to the directory to list.
+   - Returns: An array of file paths contained in the directory.
+   - Throws: FileSystemError if the directory cannot be read.
+   */
+  public func listDirectory(at path: String) async throws -> [String] {
+    // Convert the path to a FilePath
+    let filePath = FilePath(path: path)
+    
+    // Call the core implementation that works with URLs
+    let url = URL(fileURLWithPath: path, isDirectory: true)
+    
+    do {
+      let contents = try FileManager.default.contentsOfDirectory(atPath: path)
+      return contents.map { item in
+        let itemPath = path.hasSuffix("/") ? "\(path)\(item)" : "\(path)/\(item)"
+        return itemPath
+      }
+    } catch {
+      throw FileSystemInterfaces.FileSystemError.readError(
+        path: path,
+        reason: "Failed to list directory: \(error.localizedDescription)"
+      )
+    }
+  }
+  
+  /**
+   Lists the contents of a directory recursively.
+   
+   - Parameter path: The path to the directory to list.
+   - Returns: An array of file paths contained in the directory and its subdirectories.
+   - Throws: FileSystemError if the directory cannot be read.
+   */
+  public func listDirectoryRecursively(at path: String) async throws -> [String] {
+    // Convert the path to a FilePath
+    let filePath = FilePath(path: path)
+    
+    // Implement recursive directory listing
+    var allPaths: [String] = []
+    
+    // Get the direct contents first
+    let directContents = try await listDirectory(at: path)
+    allPaths.append(contentsOf: directContents)
+    
+    // Recursively process subdirectories
+    for itemPath in directContents {
+      var isDir: ObjCBool = false
+      if FileManager.default.fileExists(atPath: itemPath, isDirectory: &isDir) && isDir.boolValue {
+        let subPaths = try await listDirectoryRecursively(at: itemPath)
+        allPaths.append(contentsOf: subPaths)
+      }
+    }
+    
+    return allPaths
+  }
+  
+  // MARK: - FileWriteOperationsProtocol Conformance
+  
+  /**
+   Creates a new file at the specified path.
+   
+   - Parameters:
+      - path: The path where the file should be created.
+      - options: Optional creation options.
+   - Returns: The path to the created file.
+   - Throws: FileSystemError if file creation fails.
+   */
+  public func createFile(at path: String, options: FileCreationOptions?) async throws -> String {
+    // Convert the path to a FilePath
+    let filePath = FilePath(path: path)
+    
+    // Check if file exists and overwrite is not allowed
+    if FileManager.default.fileExists(atPath: path) && options?.shouldOverwrite != true {
+      throw FileSystemInterfaces.FileSystemError.pathAlreadyExists(path: path)
+    }
+    
+    // Create parent directories if needed
+    let directoryPath = (path as NSString).deletingLastPathComponent
+    if !directoryPath.isEmpty && !FileManager.default.fileExists(atPath: directoryPath) {
+      try FileManager.default.createDirectory(
+        atPath: directoryPath,
+        withIntermediateDirectories: true,
+        attributes: nil
+      )
+    }
+    
+    // Create the file
+    if !FileManager.default.createFile(atPath: path, contents: nil, attributes: options?.attributes) {
+      throw FileSystemInterfaces.FileSystemError.writeError(
+        path: path,
+        reason: "Failed to create file"
+      )
+    }
+    
+    return path
+  }
+  
+  /**
+   Writes a string to a file at the specified path.
+   
+   - Parameters:
+      - string: The string content to write.
+      - path: The path where the file should be written.
+      - encoding: The string encoding to use.
+      - options: Optional write options.
+   - Throws: FileSystemError if the write operation fails.
+   */
+  public func writeString(_ string: String, to path: String, encoding: String.Encoding, options: FileWriteOptions?) async throws {
+    // Convert the path to a FilePath
+    let filePath = FilePath(path: path)
+    
+    // Call the FilePath version of this method
+    try await writeString(string, to: filePath, encoding: encoding, options: options)
+  }
+  
+  /**
+   Creates a directory at the specified path.
+   
+   - Parameters:
+      - path: The path where the directory should be created.
+      - options: Optional creation options.
+   - Returns: The path to the created directory.
+   - Throws: FileSystemError if directory creation fails.
+   */
+  public func createDirectory(at path: String, options: DirectoryCreationOptions?) async throws -> String {
+    // Convert the path to a FilePath
+    let filePath = FilePath(path: path)
+    
+    // Implement directory creation
+    do {
+      try FileManager.default.createDirectory(
+        atPath: path,
+        withIntermediateDirectories: true, // Always create intermediate directories
+        attributes: options?.attributes
+      )
+      return path
+    } catch {
+      throw FileSystemInterfaces.FileSystemError.writeError(
+        path: path,
+        reason: "Failed to create directory: \(error.localizedDescription)"
+      )
+    }
+  }
+  
+  /**
+   Deletes the item at the specified path.
+   
+   - Parameter path: The path to the item to delete.
+   - Throws: FileSystemError if the delete operation fails.
+   */
+  public func delete(at path: String) async throws {
+    // Delete the item directly using FileManager
+    do {
+      try FileManager.default.removeItem(atPath: path)
+    } catch {
+      throw FileSystemInterfaces.FileSystemError.deleteError(
+        path: path, 
+        reason: "Failed to delete item: \(error.localizedDescription)"
+      )
+    }
+  }
+  
+  /**
+   Moves an item from one path to another.
+   
+   - Parameters:
+      - sourcePath: The path to the item to move.
+      - destinationPath: The destination path.
+      - options: Optional move options.
+   - Throws: FileSystemError if the move operation fails.
+   */
+  public func move(from sourcePath: String, to destinationPath: String, options: FileMoveOptions?) async throws {
+    // Convert the paths to FilePaths
+    let sourceFilePath = FilePath(path: sourcePath)
+    let destFilePath = FilePath(path: destinationPath)
+    
+    // Call the FilePath version of this method
+    try await move(from: sourceFilePath, to: destFilePath, options: options)
+  }
+  
+  /**
+   Copies an item from one path to another.
+   
+   - Parameters:
+      - sourcePath: The path to the item to copy.
+      - destinationPath: The destination path.
+      - options: Optional copy options.
+   - Throws: FileSystemError if the copy operation fails.
+   */
+  public func copy(from sourcePath: String, to destinationPath: String, options: FileCopyOptions?) async throws {
+    // Convert the paths to FilePaths
+    let sourceFilePath = FilePath(path: sourcePath)
+    let destFilePath = FilePath(path: destinationPath)
+    
+    // Call the FilePath version of this method
+    try await copy(from: sourceFilePath, to: destFilePath, options: options)
+  }
+  
+  /**
+   Gets the attributes of a file or directory.
+   
+   - Parameter path: The path to the file or directory.
+   - Returns: The file attributes.
+   - Throws: FileSystemError if the attributes cannot be retrieved.
+   */
+  public func getAttributes(at path: String) async throws -> FileAttributes {
+    // Get attributes directly from FileManager
+    do {
+      let attributes = try FileManager.default.attributesOfItem(atPath: path)
+      return FileAttributes(attributes)
+    } catch {
+      throw FileSystemInterfaces.FileSystemError.readError(
+        path: path,
+        reason: "Failed to get attributes: \(error.localizedDescription)"
+      )
+    }
+  }
+  
+  /**
+   Sets attributes on a file or directory.
+   
+   - Parameters:
+      - attributes: The attributes to set.
+      - path: The path to the file or directory.
+   - Throws: FileSystemError if the attributes cannot be set.
+   */
+  public func setAttributes(_ attributes: FileAttributes, at path: String) async throws {
+    // Try to convert to Foundation attributes
+    guard let foundationAttributes = attributes.foundationAttributes else {
+      throw FileSystemInterfaces.FileSystemError.invalidArgument(
+        name: "attributes",
+        value: "Could not convert to Foundation attributes"
+      )
+    }
+    
+    // Set attributes directly with FileManager
+    do {
+      try FileManager.default.setAttributes(foundationAttributes, ofItemAtPath: path)
+    } catch {
+      throw FileSystemInterfaces.FileSystemError.writeError(
+        path: path,
+        reason: "Failed to set attributes: \(error.localizedDescription)"
+      )
+    }
+  }
+  
+  /**
+   Gets the size of a file.
+   
+   - Parameter path: The path to the file.
+   - Returns: The file size in bytes.
+   - Throws: FileSystemError if the file size cannot be retrieved.
+   */
+  public func getFileSize(at path: String) async throws -> UInt64 {
+    do {
+      let attributes = try FileManager.default.attributesOfItem(atPath: path)
+      if let size = attributes[.size] as? UInt64 {
+        return size
+      } else {
+        throw FileSystemInterfaces.FileSystemError.readError(
+          path: path,
+          reason: "Could not determine file size"
+        )
+      }
+    } catch {
+      throw FileSystemInterfaces.FileSystemError.readError(
+        path: path,
+        reason: "Failed to get file size: \(error.localizedDescription)"
+      )
+    }
+  }
+  
+  /**
+   Gets the creation date of a file or directory.
+   
+   - Parameter path: The path to the file or directory.
+   - Returns: The creation date.
+   - Throws: FileSystemError if the creation date cannot be retrieved.
+   */
+  public func getCreationDate(at path: String) async throws -> Date {
+    do {
+      let attributes = try FileManager.default.attributesOfItem(atPath: path)
+      if let date = attributes[.creationDate] as? Date {
+        return date
+      } else {
+        throw FileSystemInterfaces.FileSystemError.readError(
+          path: path,
+          reason: "Could not determine creation date"
+        )
+      }
+    } catch {
+      throw FileSystemInterfaces.FileSystemError.readError(
+        path: path,
+        reason: "Failed to get creation date: \(error.localizedDescription)"
+      )
+    }
+  }
+  
+  /**
+   Gets the modification date of a file or directory.
+   
+   - Parameter path: The path to the file or directory.
+   - Returns: The modification date.
+   - Throws: FileSystemError if the modification date cannot be retrieved.
+   */
+  public func getModificationDate(at path: String) async throws -> Date {
+    do {
+      let attributes = try FileManager.default.attributesOfItem(atPath: path)
+      if let date = attributes[.modificationDate] as? Date {
+        return date
+      } else {
+        throw FileSystemInterfaces.FileSystemError.readError(
+          path: path,
+          reason: "Could not determine modification date"
+        )
+      }
+    } catch {
+      throw FileSystemInterfaces.FileSystemError.readError(
+        path: path,
+        reason: "Failed to get modification date: \(error.localizedDescription)"
+      )
+    }
+  }
+  
+  /**
+   Gets an extended attribute from a file or directory.
+   
+   - Parameters:
+      - name: The name of the extended attribute.
+      - path: The path to the file or directory.
+   - Returns: The extended attribute data.
+   - Throws: FileSystemError if the extended attribute cannot be retrieved.
+   */
+  public func getExtendedAttribute(withName name: String, fromItemAtPath path: String) async throws -> Data {
+    // On macOS, use the dedicated xattr functions
+    do {
+      // Get the attribute size first
+      let size = try path.withCString { pathPtr in
+        name.withCString { namePtr in
+          Darwin.getxattr(pathPtr, namePtr, nil, 0, 0, 0)
+        }
+      }
+      
+      if size < 0 {
+        throw FileSystemInterfaces.FileSystemError.readError(
+          path: path,
+          reason: "Failed to get extended attribute size"
+        )
+      }
+      
+      // Now get the actual data
+      var data = Data(count: size)
+      let result = try data.withUnsafeMutableBytes { buffer in
+        path.withCString { pathPtr in
+          name.withCString { namePtr in
+            Darwin.getxattr(pathPtr, namePtr, buffer.baseAddress, size, 0, 0)
+          }
+        }
+      }
+      
+      if result < 0 {
+        throw FileSystemInterfaces.FileSystemError.readError(
+          path: path,
+          reason: "Failed to get extended attribute data"
+        )
+      }
+      
+      return data
+    } catch {
+      throw FileSystemInterfaces.FileSystemError.readError(
+        path: path,
+        reason: "Failed to get extended attribute: \(error.localizedDescription)"
+      )
+    }
+  }
+  
+  /**
+   Sets an extended attribute on a file or directory.
+   
+   - Parameters:
+      - data: The data to set.
+      - name: The name of the extended attribute.
+      - path: The path to the file or directory.
+   - Throws: FileSystemError if the extended attribute cannot be set.
+   */
+  public func setExtendedAttribute(_ data: Data, withName name: String, onItemAtPath path: String) async throws {
+    // On macOS, use the dedicated xattr functions
+    do {
+      let result = try data.withUnsafeBytes { buffer in
+        path.withCString { pathPtr in
+          name.withCString { namePtr in
+            Darwin.setxattr(pathPtr, namePtr, buffer.baseAddress, buffer.count, 0, 0)
+          }
+        }
+      }
+      
+      if result < 0 {
+        throw FileSystemInterfaces.FileSystemError.writeError(
+          path: path,
+          reason: "Failed to set extended attribute"
+        )
+      }
+    } catch {
+      throw FileSystemInterfaces.FileSystemError.writeError(
+        path: path,
+        reason: "Failed to set extended attribute: \(error.localizedDescription)"
+      )
+    }
+  }
+  
+  /**
+   Lists all extended attributes on a file or directory.
+   
+   - Parameter path: The path to the file or directory.
+   - Returns: An array of extended attribute names.
+   - Throws: FileSystemError if the extended attributes cannot be listed.
+   */
+  public func listExtendedAttributes(atPath path: String) async throws -> [String] {
+    // On macOS, use the dedicated xattr functions
+    do {
+      // Get the buffer size first
+      let size = try path.withCString { pathPtr in
+        Darwin.listxattr(pathPtr, nil, 0, 0)
+      }
+      
+      if size < 0 {
+        throw FileSystemInterfaces.FileSystemError.readError(
+          path: path,
+          reason: "Failed to get extended attributes list size"
+        )
+      }
+      
+      // Now get the actual list
+      var buffer = [CChar](repeating: 0, count: size)
+      let result = try path.withCString { pathPtr in
+        Darwin.listxattr(pathPtr, &buffer, size, 0)
+      }
+      
+      if result < 0 {
+        throw FileSystemInterfaces.FileSystemError.readError(
+          path: path,
+          reason: "Failed to get extended attributes list"
+        )
+      }
+      
+      // Parse the null-terminated strings
+      var attributeNames: [String] = []
+      var start = 0
+      for i in 0..<size {
+        if buffer[i] == 0 {
+          if let name = String(cString: buffer + start, encoding: .utf8) {
+            attributeNames.append(name)
+          }
+          start = i + 1
+        }
+      }
+      
+      return attributeNames
+    } catch {
+      throw FileSystemInterfaces.FileSystemError.readError(
+        path: path,
+        reason: "Failed to list extended attributes: \(error.localizedDescription)"
+      )
+    }
+  }
+  
+  /**
+   Removes an extended attribute from a file or directory.
+   
+   - Parameters:
+      - name: The name of the extended attribute.
+      - path: The path to the file or directory.
+   - Throws: FileSystemError if the extended attribute cannot be removed.
+   */
+  public func removeExtendedAttribute(withName name: String, fromItemAtPath path: String) async throws {
+    // On macOS, use the dedicated xattr functions
+    do {
+      let result = try path.withCString { pathPtr in
+        name.withCString { namePtr in
+          Darwin.removexattr(pathPtr, namePtr, 0)
+        }
+      }
+      
+      if result < 0 {
+        throw FileSystemInterfaces.FileSystemError.writeError(
+          path: path,
+          reason: "Failed to remove extended attribute"
+        )
+      }
+    } catch {
+      throw FileSystemInterfaces.FileSystemError.writeError(
+        path: path,
+        reason: "Failed to remove extended attribute: \(error.localizedDescription)"
+      )
+    }
+  }
+  
   // MARK: - Private Utility Methods
 
   /**
@@ -1293,7 +1898,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    */
   private func fileExists(_ path: SecurePath) async -> Bool {
     // Use FileManager directly since the protocol method might not be available
-    return FileManager.default.fileExists(atPath: path.toString())
+    return FileManager.default.fileExists(atPath: path.path)
   }
   
   /**
@@ -1303,7 +1908,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    - Returns: true if the path is a directory, false otherwise
    */
   private func isPathDirectory(_ path: SecurePath) async -> Bool {
-    let filePath = path.toString()
+    let filePath = path.path
     var isDir: ObjCBool = false
     let exists = FileManager.default.fileExists(atPath: filePath, isDirectory: &isDir)
     return exists && isDir.boolValue
@@ -1316,7 +1921,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    - Returns: true if the path is a file, false otherwise
    */
   private func isPathFile(_ path: SecurePath) async -> Bool {
-    let filePath = path.toString()
+    let filePath = path.path
     var isDir: ObjCBool = false
     let exists = FileManager.default.fileExists(atPath: filePath, isDirectory: &isDir)
     return exists && !isDir.boolValue
@@ -1346,7 +1951,10 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
 
     do {
       // Get the file size
-      let attributes=try Foundation.FileManager.default.attributesOfItem(atPath: securePath.toString())
+      let attributes=try Foundation.FileManager.default.attributesOfItem(
+        atPath: securePath.path
+      )
+
       let fileSize=attributes[.size] as? UInt64 ?? 0
 
       if fileSize > 0 {
@@ -1357,12 +1965,44 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
         }
 
         // Overwrite the file with random data
-        try randomData.write(to: URL(fileURLWithPath: securePath.toString()))
+        try randomData.write(to: URL(fileURLWithPath: securePath.path))
       }
     } catch {
       throw FileSystemInterfaces.FileSystemError.writeError(
         path: path.path,
         reason: "Failed to securely overwrite file: \(error.localizedDescription)"
+      )
+    }
+  }
+
+  /**
+   Ensures the parent directory exists for a given path.
+
+   - Parameter securePath: The secure path to check
+   - Throws: FileSystemError if the parent directory cannot be created
+   */
+  private func ensureParentDirectoryExists(for securePath: FilePath) async throws {
+    // Get the parent directory path
+    let pathComponents = securePath.path.split(separator: "/")
+    guard pathComponents.count > 1 else {
+      // No parent directory (likely at root level)
+      return
+    }
+    
+    let parentPath = pathComponents.dropLast().joined(separator: "/")
+    if parentPath.isEmpty {
+      return
+    }
+    
+    let parentFilePath = FilePath(path: "/\(parentPath)", isDirectory: true)
+    
+    // Create parent directories if needed
+    let exists = await fileExists(at: parentFilePath)
+    if !exists {
+      try await createDirectory(
+        at: parentFilePath,
+        createIntermediates: true,
+        attributes: nil
       )
     }
   }

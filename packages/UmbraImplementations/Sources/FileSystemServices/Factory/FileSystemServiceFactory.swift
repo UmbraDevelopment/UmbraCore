@@ -1,15 +1,17 @@
-import FileSystemInterfaces
-import FileSystemTypes
 import Foundation
+import FileSystemInterfaces
 import LoggingInterfaces
-import LoggingTypes
-import LoggingAdapters
+import CoreFileOperations
+import FileMetadataOperations
+import SecureFileOperations
+import FileSandboxing
 
 /**
  # File System Service Factory
 
- Factory class for creating instances of FileSystemServiceProtocol with different configurations.
- This provides a centralised way to create file system services with consistent options.
+ Factory class for creating instances of CompositeFileSystemServiceProtocol with different configurations.
+ This provides a centralised way to create file system services with consistent options
+ using a domain-driven design approach.
  
  ## Alpha Dot Five Architecture
  
@@ -17,213 +19,182 @@ import LoggingAdapters
  Alpha Dot Five architecture principles. The actor-based services provide enhanced thread
  safety, better modularisation, and improved error handling.
  */
-@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
-public actor FileSystemServiceFactory {
-  /// Shared singleton instance
-  public static let shared: FileSystemServiceFactory = .init()
-
-  /// Private initialiser to enforce singleton pattern
-  private init() {}
-
-  // MARK: - Actor-Based Factory Methods
+public enum FileSystemServiceFactory {
+  
+  // MARK: - Factory Methods
   
   /**
-   Creates a standard actor-based file system service.
+   Creates a standard composite file system service.
    
    This is the recommended factory method for general-purpose file operations.
    It provides a thread-safe implementation suitable for most scenarios.
    
    - Parameters:
-      - logger: Optional privacy-aware logger for operation tracking
-   - Returns: An actor-based implementation of FileSystemServiceProtocol
+      - logger: Optional logger for operation tracking
+   - Returns: An implementation of CompositeFileSystemServiceProtocol
    */
-  public func createStandardService(
-    logger: (any PrivacyAwareLoggingProtocol)? = nil
-  ) -> any FileSystemServiceProtocol {
-    let loggingAdapter = logger != nil 
-        ? PrivacyAwareLoggingAdapter(logger: logger!)
-        : PrivacyAwareLoggingAdapter(logger: NullLogger())
-        
-    return FileSystemServiceActor(logger: loggingAdapter)
-  }
-  
-  /**
-   Creates a high-performance actor-based file system service.
-   
-   This service uses dedicated actors with optimised configurations
-   for high-throughput file operations, while maintaining thread safety.
-   
-   - Parameters:
-      - logger: Optional privacy-aware logger for operation tracking
-   - Returns: An actor-based implementation of FileSystemServiceProtocol
-   */
-  public func createHighPerformanceService(
-    logger: (any PrivacyAwareLoggingProtocol)? = nil
-  ) -> any FileSystemServiceProtocol {
-    let loggingAdapter = logger != nil 
-        ? PrivacyAwareLoggingAdapter(logger: logger!)
-        : PrivacyAwareLoggingAdapter(logger: NullLogger())
-        
-    // Create specialised actors with high-performance configurations
-    let readActor = FileSystemReadActor(
-        logger: loggingAdapter
-    )
+  public static func createStandardService(
+    logger: (any LoggingProtocol)? = nil
+  ) async -> any CompositeFileSystemServiceProtocol {
+    // Create subdomain implementations
+    let coreOperations = CoreFileOperationsFactory.createStandardOperations(logger: logger)
+    let metadataOperations = FileMetadataOperationsFactory.createStandardOperations(logger: logger)
+    let secureOperations = SecureFileOperationsFactory.createStandardOperations(logger: logger)
     
-    let writeActor = FileSystemWriteActor(
-        logger: loggingAdapter
-    )
+    // Create a temporary sandbox in the user's home directory
+    let homeDirectory = FileManager.default.homeDirectoryForCurrentUser.path
+    let sandboxDirectory = "\(homeDirectory)/.umbra_sandbox"
     
-    let metadataActor = FileMetadataActor(
-        logger: loggingAdapter
-    )
+    // Create the sandbox directory if it doesn't exist
+    if !FileManager.default.fileExists(atPath: sandboxDirectory) {
+        try? FileManager.default.createDirectory(
+            atPath: sandboxDirectory,
+            withIntermediateDirectories: true,
+            attributes: nil
+        )
+    }
     
-    let secureActor = SecureFileOperationsActor(
-        logger: loggingAdapter,
-        fileReadActor: readActor,
-        fileWriteActor: writeActor
-    )
+    let sandboxing = FileSandboxingFactory.createStandardSandbox(rootDirectory: sandboxDirectory, logger: logger)
     
-    // Compose actors into the main service
-    return FileSystemServiceActor(
-        logger: loggingAdapter,
-        readActor: readActor,
-        writeActor: writeActor,
-        metadataActor: metadataActor,
-        secureActor: secureActor
+    // Create the composite service
+    return CompositeFileSystemServiceImpl(
+        coreOperations: coreOperations,
+        metadataOperations: metadataOperations,
+        secureOperations: secureOperations,
+        sandboxing: sandboxing,
+        logger: logger
     )
   }
   
   /**
-   Creates a secure actor-based file system service.
+   Creates a secure composite file system service.
    
    This service prioritises security measures such as secure deletion,
    encryption, and permission verification. Use this when working with
    sensitive data or in security-critical contexts.
    
    - Parameters:
-      - securityLevel: The security level to enforce (default: .high)
-      - logger: Optional privacy-aware logger for operation tracking
-   - Returns: An actor-based implementation of FileSystemServiceProtocol
+      - logger: Optional logger for operation tracking
+   - Returns: An implementation of CompositeFileSystemServiceProtocol
    */
-  public func createSecureService(
-    securityLevel: SecurityLevel = .high,
-    logger: (any PrivacyAwareLoggingProtocol)? = nil
-  ) -> any FileSystemServiceProtocol {
-    let loggingAdapter = logger != nil 
-        ? PrivacyAwareLoggingAdapter(logger: logger!)
-        : PrivacyAwareLoggingAdapter(logger: NullLogger())
+  public static func createSecureService(
+    logger: (any LoggingProtocol)? = nil
+  ) async -> any CompositeFileSystemServiceProtocol {
+    // Create subdomain implementations
+    let coreOperations = CoreFileOperationsFactory.createStandardOperations(logger: logger)
+    let metadataOperations = FileMetadataOperationsFactory.createStandardOperations(logger: logger)
+    let secureOperations = SecureFileOperationsFactory.createStandardOperations(logger: logger)
     
-    // Create specialised actors with security-focused configurations
-    let readActor = FileSystemReadActor(
-        logger: loggingAdapter
-    )
+    // Create a secure sandbox in the user's application support directory
+    let appSupportDirectory = try? FileManager.default.url(
+        for: .applicationSupportDirectory,
+        in: .userDomainMask,
+        appropriateFor: nil,
+        create: true
+    ).path
     
-    let writeActor = FileSystemWriteActor(
-        logger: loggingAdapter
-    )
+    let sandboxDirectory = "\(appSupportDirectory ?? FileManager.default.temporaryDirectory.path)/umbra_secure_sandbox"
     
-    let metadataActor = FileMetadataActor(
-        logger: loggingAdapter
-    )
+    // Create the sandbox directory with secure permissions if it doesn't exist
+    if !FileManager.default.fileExists(atPath: sandboxDirectory) {
+        try? FileManager.default.createDirectory(
+            atPath: sandboxDirectory,
+            withIntermediateDirectories: true,
+            attributes: [FileAttributeKey.posixPermissions: 0o700] // Owner read/write/execute only
+        )
+    }
     
-    // Configure a secure actor with enhanced security settings
-    let secureActor = SecureFileOperationsActor(
-        logger: loggingAdapter,
-        fileReadActor: readActor,
-        fileWriteActor: writeActor
-    )
+    let sandboxing = FileSandboxingFactory.createStandardSandbox(rootDirectory: sandboxDirectory, logger: logger)
     
-    // Compose actors into the main service
-    return FileSystemServiceActor(
-        logger: loggingAdapter,
-        readActor: readActor,
-        writeActor: writeActor,
-        metadataActor: metadataActor,
-        secureActor: secureActor
+    // Create the composite service
+    return CompositeFileSystemServiceImpl(
+        coreOperations: coreOperations,
+        metadataOperations: metadataOperations,
+        secureOperations: secureOperations,
+        sandboxing: sandboxing,
+        logger: logger
     )
   }
   
   /**
-   Creates a sandboxed file system service that restricts operations to a specific directory.
+   Creates a sandboxed composite file system service.
    
-   This service provides all operations through actors while restricting access to files 
-   outside the specified root directory for security purposes.
+   This service restricts all file operations to the specified directory,
+   providing an additional layer of security and isolation.
    
    - Parameters:
       - rootDirectory: The directory to restrict operations to
-      - logger: Optional privacy-aware logger for operation tracking
-   - Returns: An actor-based implementation of FileSystemServiceProtocol
+      - logger: Optional logger for operation tracking
+   - Returns: An implementation of CompositeFileSystemServiceProtocol
    */
-  public func createSandboxedService(
+  public static func createSandboxedService(
     rootDirectory: String,
-    logger: (any PrivacyAwareLoggingProtocol)? = nil
-  ) -> any FileSystemServiceProtocol {
-    let loggingAdapter = logger != nil 
-        ? PrivacyAwareLoggingAdapter(logger: logger!)
-        : PrivacyAwareLoggingAdapter(logger: NullLogger())
+    logger: (any LoggingProtocol)? = nil
+  ) async -> any CompositeFileSystemServiceProtocol {
+    // Create subdomain implementations
+    let coreOperations = CoreFileOperationsFactory.createStandardOperations(logger: logger)
+    let metadataOperations = FileMetadataOperationsFactory.createStandardOperations(logger: logger)
+    let secureOperations = SecureFileOperationsFactory.createStandardOperations(logger: logger)
     
-    // Create the basic actors
-    let readActor = FileSystemReadActor(
-        logger: loggingAdapter, 
-        rootDirectory: rootDirectory
-    )
+    // Create the sandbox
+    let sandboxing = FileSandboxingFactory.createStandardSandbox(rootDirectory: rootDirectory, logger: logger)
     
-    let writeActor = FileSystemWriteActor(
-        logger: loggingAdapter,
-        rootDirectory: rootDirectory
-    )
-    
-    let metadataActor = FileMetadataActor(
-        logger: loggingAdapter,
-        rootDirectory: rootDirectory
-    )
-    
-    let secureActor = SecureFileOperationsActor(
-        logger: loggingAdapter,
-        fileReadActor: readActor,
-        fileWriteActor: writeActor
-    )
-    
-    // Create the main service with sandboxed actors
-    return FileSystemServiceActor(
-        logger: loggingAdapter,
-        readActor: readActor,
-        writeActor: writeActor,
-        metadataActor: metadataActor,
-        secureActor: secureActor
+    // Create the composite service
+    return CompositeFileSystemServiceImpl(
+        coreOperations: coreOperations,
+        metadataOperations: metadataOperations,
+        secureOperations: secureOperations,
+        sandboxing: sandboxing,
+        logger: logger
     )
   }
   
   /**
-   Creates a custom file system service with full configuration options.
+   Creates a test implementation of the composite file system service.
    
-   This method allows for complete customization of the actor-based service.
+   This service is specifically designed for unit testing, with mocked
+   dependencies and predefined behaviors for test scenarios.
    
    - Parameters:
-      - readActor: Custom read operations actor
-      - writeActor: Custom write operations actor
-      - metadataActor: Custom metadata operations actor
-      - secureActor: Custom secure operations actor
-      - logger: Optional privacy-aware logger for the main service actor
-   - Returns: An actor-based implementation of FileSystemServiceProtocol
+      - testRootDirectory: The test directory to use
+      - logger: The test logger to use
+   - Returns: An implementation of CompositeFileSystemServiceProtocol for testing
    */
-  public func createCustomService(
-    readActor: FileSystemReadActor,
-    writeActor: FileSystemWriteActor,
-    metadataActor: FileMetadataActor,
-    secureActor: SecureFileOperationsActor,
-    logger: (any PrivacyAwareLoggingProtocol)? = nil
-  ) -> any FileSystemServiceProtocol {
-    let loggingAdapter = logger != nil 
-        ? PrivacyAwareLoggingAdapter(logger: logger!)
-        : PrivacyAwareLoggingAdapter(logger: NullLogger())
+  public static func createTestService(
+    testRootDirectory: String,
+    logger: any LoggingProtocol
+  ) async -> any CompositeFileSystemServiceProtocol {
+    // Create mocked test file manager
+    let fileManager = FileManager()
     
-    return FileSystemServiceActor(
-        logger: loggingAdapter,
-        readActor: readActor,
-        writeActor: writeActor,
-        metadataActor: metadataActor,
-        secureActor: secureActor
+    // Create test subdomain implementations
+    let coreOperations = CoreFileOperationsFactory.createTestOperations(
+        fileManager: fileManager,
+        logger: logger
+    )
+    
+    let metadataOperations = FileMetadataOperationsFactory.createTestOperations(
+        fileManager: fileManager,
+        logger: logger
+    )
+    
+    let secureOperations = SecureFileOperationsFactory.createTestOperations(
+        fileManager: fileManager,
+        logger: logger
+    )
+    
+    let sandboxing = FileSandboxingFactory.createTestSandbox(
+        testRootDirectory: testRootDirectory,
+        logger: logger
+    )
+    
+    // Create the test composite service
+    return CompositeFileSystemServiceImpl(
+        coreOperations: coreOperations,
+        metadataOperations: metadataOperations,
+        secureOperations: secureOperations,
+        sandboxing: sandboxing,
+        logger: logger
     )
   }
 }

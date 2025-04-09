@@ -7,25 +7,8 @@ umbra_swift_library(
         "Factory/FileSystemServiceFactory.swift",
         "Factory/FilePathServiceFactory.swift",
         
-        # Legacy Implementation (remove once migrated)
-        "Implementation/FileSystemServiceImpl+Core.swift",
-        "Implementation/FileSystemServiceImpl+Directory.swift",
-        "Implementation/FileSystemServiceImpl+ExtendedAttributes.swift",
-        "Implementation/FileSystemServiceImpl+File.swift",
-        "Implementation/FileSystemServiceImpl.swift",
-        "Implementation/FileSystemServiceImpl+Path.swift",
-        "Implementation/FileSystemServiceImpl+Streaming.swift",
-        "Implementation/FileSystemServiceImpl+Temporary.swift",
-        "Implementation/FileSystemServiceSecure.swift",
-        "Adapters/SecurePathAdapter.swift",
-        
-        # New Actor-Based Implementation
-        "Actors/FileSystemReadActor.swift",
-        "Actors/FileSystemWriteActor.swift",
-        "Actors/FileMetadataActor.swift",
-        "Actors/SecureFileOperationsActor.swift",
-        "Actors/FileSystemServiceActor.swift",
-        "Actors/SecureFileSystemServiceActor.swift",
+        # DDD Composite Implementation
+        "Implementation/CompositeFileSystemServiceImpl.swift",
         
         # Services
         "Services/FilePathService.swift",
@@ -38,12 +21,18 @@ umbra_swift_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "//packages/UmbraCoreTypes/Sources/CoreDTOs",
-        "//packages/UmbraCoreTypes/Sources/FileSystemTypes",
+        # Domain interfaces
         "//packages/UmbraInterfaces/Sources/FileSystemInterfaces",
         "//packages/UmbraInterfaces/Sources/LoggingInterfaces",
-        "//packages/UmbraImplementations/Sources/LoggingServices",
-        "//packages/UmbraImplementations/Sources/LoggingAdapters",
-        "//packages/UmbraCoreTypes/Sources/LoggingTypes",
+        
+        # Subdomain implementations
+        "//packages/UmbraImplementations/Sources/CoreFileOperations",
+        "//packages/UmbraImplementations/Sources/FileMetadataOperations",
+        "//packages/UmbraImplementations/Sources/SecureFileOperations",
+        "//packages/UmbraImplementations/Sources/FileSandboxing",
+        
+        # Additional dependencies
+        "//packages/UmbraCoreTypes/Sources/CoreDTOs",
+        "//packages/UmbraCoreTypes/Sources/FileSystemTypes",
     ],
 )

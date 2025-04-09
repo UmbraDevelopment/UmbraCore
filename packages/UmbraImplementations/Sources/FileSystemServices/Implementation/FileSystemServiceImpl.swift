@@ -24,7 +24,7 @@ import LoggingAdapters
  All operations are properly isolated through Swift's actor system to ensure thread safety.
  */
 @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
-public actor FileSystemServiceImpl: FileSystemServiceProtocol {
+public actor FileSystemServiceImpl: FileServiceProtocol {
 
   /// The underlying file manager isolated within this actor
   let fileManager: Foundation.FileManager
@@ -32,16 +32,16 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
   /// Logger for this service
   private let logger: any LoggingProtocol
   
-  /// Secure operations implementation
+  /// Secure file operations implementation
   public let secureOperations: SecureFileOperationsProtocol
-  
+    
   /**
-   Initialises a new file system service.
+   Initialises a new file system service implementation.
    
    - Parameters:
-     - fileManager: Optional custom file manager to use
-     - logger: Optional logger for recording operations
-     - secureOperations: Optional secure operations implementation
+      - fileManager: Optional custom file manager to use.
+      - logger: Optional logger.
+      - secureOperations: Optional secure operations implementation.
    */
   public init(
     fileManager: Foundation.FileManager = .default,
@@ -50,7 +50,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
   ) {
     self.fileManager = fileManager
     self.logger = logger ?? NullLogger()
-    self.secureOperations = secureOperations ?? SecureFileOperationsImpl()
+    self.secureOperations = secureOperations ?? SandboxedSecureFileOperations(rootDirectory: nil)
   }
 
   // MARK: - Helper Methods
@@ -1806,15 +1806,19 @@ extension FileSystemServiceImpl: FileReadOperationsProtocol {
 }
 
 extension FileSystemServiceImpl: FileWriteOperationsProtocol {
-  public func createFile(at path: String, options: FileCreationOptions?) async throws -> String {
-    try await createFile(at: FilePath(path), options: options).path
+  public func createFile(at path: String, options: FileSystemInterfaces.FileCreationOptions?) async throws -> String {
+    try await createFile(at: FilePath(path: path), options: options).path
+  }
+  
+  public func writeFile(data: Data, to path: String, options: FileSystemInterfaces.FileWriteOptions?) async throws {
+    try await writeFile(data: data, to: FilePath(path: path), options: options)
+  }
+  
+  public func writeString(_ string: String, to path: String, encoding: String.Encoding, options: FileSystemInterfaces.FileWriteOptions?) async throws {
+    try await writeString(string, to: FilePath(path: path), encoding: encoding, options: options)
   }
 
-  public func writeString(_ string: String, to path: String, encoding: String.Encoding, options: FileWriteOptions?) async throws {
-    try await writeString(string, to: FilePath(path), encoding: encoding, options: options)
-  }
-
-  public func createDirectory(at path: String, options: DirectoryCreationOptions?) async throws -> String {
+  public func createDirectory(at path: String, options: FileSystemInterfaces.DirectoryCreationOptions?) async throws -> String {
     try await createDirectory(at: FilePath(path), options: options).path
   }
 
@@ -1822,21 +1826,21 @@ extension FileSystemServiceImpl: FileWriteOperationsProtocol {
     try await delete(at: FilePath(path))
   }
 
-  public func move(from sourcePath: String, to destinationPath: String, options: FileMoveOptions?) async throws {
+  public func move(from sourcePath: String, to destinationPath: String, options: FileSystemInterfaces.FileMoveOptions?) async throws {
     try await move(from: FilePath(sourcePath), to: FilePath(destinationPath), options: options)
   }
 
-  public func copy(from sourcePath: String, to destinationPath: String, options: FileCopyOptions?) async throws {
+  public func copy(from sourcePath: String, to destinationPath: String, options: FileSystemInterfaces.FileCopyOptions?) async throws {
     try await copy(from: FilePath(sourcePath), to: FilePath(destinationPath), options: options)
   }
 }
 
 extension FileSystemServiceImpl: FileMetadataProtocol {
-  public func getAttributes(at path: String) async throws -> FileAttributes {
+  public func getAttributes(at path: String) async throws -> FileSystemInterfaces.FileAttributes {
     try await getAttributes(at: FilePath(path))
   }
 
-  public func setAttributes(_ attributes: FileAttributes, at path: String) async throws {
+  public func setAttributes(_ attributes: FileSystemInterfaces.FileAttributes, at path: String) async throws {
     try await setAttributes(attributes, at: FilePath(path))
   }
 
@@ -1869,26 +1873,7 @@ extension FileSystemServiceImpl: FileMetadataProtocol {
   }
 }
 
-extension FileSystemServiceImpl: FileSecurityOperationsProtocol {
-  public func createSecurityBookmark(for path: String, readOnly: Bool) async throws -> Data {
-    try await createSecurityBookmark(for: FilePath(path), readOnly: readOnly)
-  }
-
-  public func resolveSecurityBookmark(_ bookmark: Data) async throws -> (String, Bool) {
-    let (path, isStale) = try await resolveSecurityBookmark(bookmark)
-    return (path.path, isStale)
-  }
-
-  public func startAccessingSecurityScopedResource(at path: String) async throws -> Bool {
-    try await startAccessingSecurityScopedResource(at: FilePath(path))
-  }
-
-  public func stopAccessingSecurityScopedResource(at path: String) async {
-    await stopAccessingSecurityScopedResource(at: FilePath(path))
-  }
-}
-
-extension FileSystemServiceImpl: FileServiceProtocol {
+extension FileSystemServiceImpl {
   public func temporaryDirectoryPath() async -> String {
     fileManager.temporaryDirectory.path
   }
@@ -1904,7 +1889,7 @@ extension FileSystemServiceImpl: FileServiceProtocol {
     (path as NSString).standardizingPath
   }
 
-  public func createSandboxed(rootDirectory: String) -> Self {
+  public static func createSandboxed(rootDirectory: String) -> Self {
     Self(secureOperations: SandboxedSecureFileOperations(rootDirectory: rootDirectory))
   }
 }

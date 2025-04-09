@@ -49,6 +49,12 @@ public enum FileSystemError: Error, Equatable, Sendable {
     /// Error when a file cannot be deleted
     case deleteError(path: String, reason: String)
     
+    /// Error when a file or directory cannot be moved
+    case moveError(source: String, destination: String, reason: String)
+    
+    /// Error when a file or directory cannot be copied
+    case copyError(source: String, destination: String, reason: String)
+    
     // MARK: - Path Errors
     
     /// Error when a file or directory does not exist
@@ -56,6 +62,12 @@ public enum FileSystemError: Error, Equatable, Sendable {
     
     /// Error when a path is not found (alias for notFound for compatibility)
     case pathNotFound(path: String)
+    
+    /// Error when a path already exists
+    case pathAlreadyExists(path: String)
+    
+    /// Error when an item already exists at the specified path
+    case itemAlreadyExists(path: String)
     
     /// Error when a file or directory already exists
     case alreadyExists(path: String)
@@ -360,6 +372,18 @@ extension FileSystemError {
         case (.deleteError(let lhsPath, let lhsReason), .deleteError(let rhsPath, let rhsReason)):
             return lhsPath == rhsPath && lhsReason == rhsReason
             
+        case (.moveError(let lhsSource, let lhsDestination, let lhsReason), .moveError(let rhsSource, let rhsDestination, let rhsReason)):
+            return lhsSource == rhsSource && lhsDestination == rhsDestination && lhsReason == rhsReason
+            
+        case (.copyError(let lhsSource, let lhsDestination, let lhsReason), .copyError(let rhsSource, let rhsDestination, let rhsReason)):
+            return lhsSource == rhsSource && lhsDestination == rhsDestination && lhsReason == rhsReason
+            
+        case (.pathAlreadyExists(let lhsPath), .pathAlreadyExists(let rhsPath)):
+            return lhsPath == rhsPath
+            
+        case (.itemAlreadyExists(let lhsPath), .itemAlreadyExists(let rhsPath)):
+            return lhsPath == rhsPath
+            
         // If case patterns don't match, the errors are not equal
         default:
             return false
@@ -438,6 +462,14 @@ extension FileSystemError: CustomStringConvertible {
             return "Unexpected item type at '\(path)': expected \(expected)\(actualDesc)"
         case .deleteError(let path, let reason):
             return "Cannot delete '\(path)': \(reason)"
+        case .moveError(let source, let destination, let reason):
+            return "Cannot move '\(source)' to '\(destination)': \(reason)"
+        case .copyError(let source, let destination, let reason):
+            return "Cannot copy '\(source)' to '\(destination)': \(reason)"
+        case .pathAlreadyExists(let path):
+            return "Path '\(path)' already exists"
+        case .itemAlreadyExists(let path):
+            return "Item already exists at path: '\(path)'"
         }
     }
 }
@@ -508,6 +540,14 @@ extension FileSystemError: LocalizedError {
             return "Expected item type '\(expected)'\(actualDesc) but found something else."
         case .deleteError(_, let reason):
             return reason
+        case .moveError(_, _, let reason):
+            return reason
+        case .copyError(_, _, let reason):
+            return reason
+        case .pathAlreadyExists:
+            return "The specified path already exists."
+        case .itemAlreadyExists:
+            return "An item already exists at the specified path."
         }
     }
     

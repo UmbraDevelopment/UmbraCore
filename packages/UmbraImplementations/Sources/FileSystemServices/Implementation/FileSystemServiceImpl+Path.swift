@@ -76,17 +76,6 @@ extension FileSystemServiceImpl {
   }
 
   /**
-   Normalises a file path according to system rules.
-   
-   - Parameter path: The path to normalise.
-   - Returns: The normalised path.
-   */
-  public func normalisePath(_ path: String) async -> String {
-    // Simply standardize the path using Foundation
-    return (path as NSString).standardizingPath
-  }
-
-  /**
    Joins two path components together.
 
    - Parameters:
@@ -263,6 +252,36 @@ extension FileSystemServiceImpl {
     )
 
     return newPath
+  }
+
+  /**
+   Gets the filename component of a path.
+
+   - Parameter path: The path
+   - Returns: The filename component
+   */
+  public func getFilename(_ path: String) async -> String {
+    return (path as NSString).lastPathComponent
+  }
+
+  /**
+   Gets the extension of a path.
+
+   - Parameter path: The path
+   - Returns: The extension
+   */
+  public func getExtension(_ path: String) async -> String {
+    return (path as NSString).pathExtension
+  }
+
+  /**
+   Gets the directory name component of a path.
+
+   - Parameter path: The path
+   - Returns: The directory name component
+   */
+  public func getDirectoryName(_ path: String) async -> String {
+    return (path as NSString).deletingLastPathComponent
   }
 
   // MARK: - Non-Isolated Path Methods (Protocol Conformance)
