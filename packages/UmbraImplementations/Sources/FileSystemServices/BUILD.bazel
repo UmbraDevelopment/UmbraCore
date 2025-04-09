@@ -25,7 +25,7 @@ umbra_swift_library(
         "Actors/FileMetadataActor.swift",
         "Actors/SecureFileOperationsActor.swift",
         "Actors/FileSystemServiceActor.swift",
-        "Actors/FileSystemServiceSecure.swift",
+        "Actors/SecureFileSystemServiceActor.swift",
         
         # Services
         "Services/FilePathService.swift",

@@ -28,29 +28,29 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
 
   /// The underlying file manager isolated within this actor
   let fileManager: Foundation.FileManager
-
-  /// Quality of service for background operations
-  let operationQueueQoS: QualityOfService
-
-  /// Logger for recording operations and errors
-  let logger: any PrivacyAwareLoggingProtocol
-
+  
+  /// Logger for this service
+  private let logger: any LoggingProtocol
+  
+  /// Secure operations implementation
+  public let secureOperations: SecureFileOperationsProtocol
+  
   /**
-   Initialises a new FileSystemServiceImpl instance.
-
+   Initialises a new file system service.
+   
    - Parameters:
-      - fileManager: The FileManager to use for file operations (will be isolated within the actor)
-      - operationQueueQoS: The quality of service for background operations
-      - logger: The logger to use for recording operations and errors
+     - fileManager: Optional custom file manager to use
+     - logger: Optional logger for recording operations
+     - secureOperations: Optional secure operations implementation
    */
   public init(
-    fileManager: Foundation.FileManager=Foundation.FileManager.default,
-    operationQueueQoS: QualityOfService = .default,
-    logger: (any PrivacyAwareLoggingProtocol)?=nil
+    fileManager: Foundation.FileManager = .default,
+    logger: (any LoggingProtocol)? = nil,
+    secureOperations: SecureFileOperationsProtocol? = nil
   ) {
-    self.fileManager=fileManager
-    self.operationQueueQoS=operationQueueQoS
-    self.logger=logger ?? NullLogger()
+    self.fileManager = fileManager
+    self.logger = logger ?? NullLogger()
+    self.secureOperations = secureOperations ?? SecureFileOperationsImpl()
   }
 
   // MARK: - Helper Methods
@@ -1775,4 +1775,136 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
     }
   }
 
+}
+
+extension FileSystemServiceImpl: FileReadOperationsProtocol {
+  public func readFile(at path: String) async throws -> Data {
+    try await readFile(at: FilePath(path))
+  }
+
+  public func readFileAsString(at path: String, encoding: String.Encoding) async throws -> String {
+    try await readFileAsString(at: FilePath(path), encoding: encoding)
+  }
+
+  public func fileExists(at path: String) async -> Bool {
+    do {
+      return try await fileExists(at: FilePath(path))
+    } catch {
+      return false
+    }
+  }
+
+  public func listDirectory(at path: String) async throws -> [String] {
+    let filePaths = try await listDirectory(at: FilePath(path))
+    return filePaths.map { $0.path }
+  }
+
+  public func listDirectoryRecursively(at path: String) async throws -> [String] {
+    let filePaths = try await listDirectoryRecursively(at: FilePath(path))
+    return filePaths.map { $0.path }
+  }
+}
+
+extension FileSystemServiceImpl: FileWriteOperationsProtocol {
+  public func createFile(at path: String, options: FileCreationOptions?) async throws -> String {
+    try await createFile(at: FilePath(path), options: options).path
+  }
+
+  public func writeString(_ string: String, to path: String, encoding: String.Encoding, options: FileWriteOptions?) async throws {
+    try await writeString(string, to: FilePath(path), encoding: encoding, options: options)
+  }
+
+  public func createDirectory(at path: String, options: DirectoryCreationOptions?) async throws -> String {
+    try await createDirectory(at: FilePath(path), options: options).path
+  }
+
+  public func delete(at path: String) async throws {
+    try await delete(at: FilePath(path))
+  }
+
+  public func move(from sourcePath: String, to destinationPath: String, options: FileMoveOptions?) async throws {
+    try await move(from: FilePath(sourcePath), to: FilePath(destinationPath), options: options)
+  }
+
+  public func copy(from sourcePath: String, to destinationPath: String, options: FileCopyOptions?) async throws {
+    try await copy(from: FilePath(sourcePath), to: FilePath(destinationPath), options: options)
+  }
+}
+
+extension FileSystemServiceImpl: FileMetadataProtocol {
+  public func getAttributes(at path: String) async throws -> FileAttributes {
+    try await getAttributes(at: FilePath(path))
+  }
+
+  public func setAttributes(_ attributes: FileAttributes, at path: String) async throws {
+    try await setAttributes(attributes, at: FilePath(path))
+  }
+
+  public func getFileSize(at path: String) async throws -> UInt64 {
+    try await getFileSize(at: FilePath(path))
+  }
+
+  public func getCreationDate(at path: String) async throws -> Date {
+    try await getCreationDate(at: FilePath(path))
+  }
+
+  public func getModificationDate(at path: String) async throws -> Date {
+    try await getModificationDate(at: FilePath(path))
+  }
+
+  public func getExtendedAttribute(withName name: String, fromItemAtPath path: String) async throws -> Data {
+    try await getExtendedAttribute(withName: name, fromItemAtPath: FilePath(path))
+  }
+
+  public func setExtendedAttribute(_ data: Data, withName name: String, onItemAtPath path: String) async throws {
+    try await setExtendedAttribute(data, withName: name, onItemAtPath: FilePath(path))
+  }
+
+  public func listExtendedAttributes(atPath path: String) async throws -> [String] {
+    try await listExtendedAttributes(atPath: FilePath(path))
+  }
+
+  public func removeExtendedAttribute(withName name: String, fromItemAtPath path: String) async throws {
+    try await removeExtendedAttribute(withName: name, fromItemAtPath: FilePath(path))
+  }
+}
+
+extension FileSystemServiceImpl: FileSecurityOperationsProtocol {
+  public func createSecurityBookmark(for path: String, readOnly: Bool) async throws -> Data {
+    try await createSecurityBookmark(for: FilePath(path), readOnly: readOnly)
+  }
+
+  public func resolveSecurityBookmark(_ bookmark: Data) async throws -> (String, Bool) {
+    let (path, isStale) = try await resolveSecurityBookmark(bookmark)
+    return (path.path, isStale)
+  }
+
+  public func startAccessingSecurityScopedResource(at path: String) async throws -> Bool {
+    try await startAccessingSecurityScopedResource(at: FilePath(path))
+  }
+
+  public func stopAccessingSecurityScopedResource(at path: String) async {
+    await stopAccessingSecurityScopedResource(at: FilePath(path))
+  }
+}
+
+extension FileSystemServiceImpl: FileServiceProtocol {
+  public func temporaryDirectoryPath() async -> String {
+    fileManager.temporaryDirectory.path
+  }
+
+  public func createUniqueFilename(in directory: String, prefix: String?, extension: String?) async -> String {
+    let prefixToUse = prefix ?? ""
+    let extensionToUse = `extension` != nil ? ".\(`extension`!)" : ""
+    let uuid = UUID().uuidString
+    return "\(directory)/\(prefixToUse)\(uuid)\(extensionToUse)"
+  }
+
+  public func normalisePath(_ path: String) async -> String {
+    (path as NSString).standardizingPath
+  }
+
+  public func createSandboxed(rootDirectory: String) -> Self {
+    Self(secureOperations: SandboxedSecureFileOperations(rootDirectory: rootDirectory))
+  }
 }

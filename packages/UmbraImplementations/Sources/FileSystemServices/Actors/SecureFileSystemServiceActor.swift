@@ -1,9 +1,10 @@
 import Foundation
 import FileSystemInterfaces
 import LoggingInterfaces
+import LoggingServices
 
 /**
- # File System Service Secure
+ # Secure File System Service Actor
  
  A secure implementation of the FileSystemServiceProtocol that provides enhanced
  security guarantees for file operations. This actor ensures that all file operations
@@ -23,7 +24,7 @@ import LoggingInterfaces
  - Provides comprehensive error handling
  - Follows British spelling in documentation and public-facing elements.
  */
-public actor FileSystemServiceSecure: FileSystemServiceProtocol {
+public actor SecureFileSystemServiceActor: FileSystemServiceProtocol {
     /// The file path service for path operations
     private let filePathService: FilePathServiceProtocol
     
@@ -135,7 +136,12 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
      - Returns: A sandboxed file system service.
      */
     public static func createSandboxed(rootDirectory: String) -> Self {
-        return FileSystemServiceSecure(logger: LoggingService(), rootDirectory: rootDirectory)
+        // Create a privacy-aware logger for the sandboxed service
+        let logger = LoggingServiceFactory.shared.createPrivacyAwareLogger(
+            subsystem: "com.umbra.filesystemservices",
+            category: "SecureFileSystemService"
+        )
+        return SecureFileSystemServiceActor(logger: logger, rootDirectory: rootDirectory)
     }
     
     // MARK: - FileReadOperationsProtocol

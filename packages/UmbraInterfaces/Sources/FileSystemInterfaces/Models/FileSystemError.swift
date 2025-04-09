@@ -46,10 +46,16 @@ public enum FileSystemError: Error, Equatable, Sendable {
     /// Error when a file format is not supported
     case unsupportedFormat(path: String, format: String)
     
+    /// Error when a file cannot be deleted
+    case deleteError(path: String, reason: String)
+    
     // MARK: - Path Errors
     
     /// Error when a file or directory does not exist
     case notFound(path: String)
+    
+    /// Error when a path is not found (alias for notFound for compatibility)
+    case pathNotFound(path: String)
     
     /// Error when a file or directory already exists
     case alreadyExists(path: String)
@@ -59,6 +65,9 @@ public enum FileSystemError: Error, Equatable, Sendable {
     
     /// The path couldn't be accessed (e.g., network path unavailable)
     case pathUnavailable(path: String, reason: String)
+    
+    /// Error when the type of item at path is not what was expected
+    case unexpectedItemType(path: String, expected: String, actual: String? = nil)
     
     // MARK: - Access Errors
     
@@ -275,6 +284,9 @@ extension FileSystemError {
         case (.notFound(let lhsPath), .notFound(let rhsPath)):
             return lhsPath == rhsPath
             
+        case (.pathNotFound(let lhsPath), .pathNotFound(let rhsPath)):
+            return lhsPath == rhsPath
+            
         case (.alreadyExists(let lhsPath), .alreadyExists(let rhsPath)):
             return lhsPath == rhsPath
             
@@ -341,6 +353,13 @@ extension FileSystemError {
         case (.other(let lhsPath, let lhsReason), .other(let rhsPath, let rhsReason)):
             return lhsPath == rhsPath && lhsReason == rhsReason
             
+        case (.unexpectedItemType(let lhsPath, let lhsExpected, let lhsActual), 
+              .unexpectedItemType(let rhsPath, let rhsExpected, let rhsActual)):
+            return lhsPath == rhsPath && lhsExpected == rhsExpected && lhsActual == rhsActual
+            
+        case (.deleteError(let lhsPath, let lhsReason), .deleteError(let rhsPath, let rhsReason)):
+            return lhsPath == rhsPath && lhsReason == rhsReason
+            
         // If case patterns don't match, the errors are not equal
         default:
             return false
@@ -359,6 +378,8 @@ extension FileSystemError: CustomStringConvertible {
             return "Cannot write to '\(path)': \(reason)"
         case .notFound(let path):
             return "Item not found at path: '\(path)'"
+        case .pathNotFound(let path):
+            return "Path not found: '\(path)'"
         case .alreadyExists(let path):
             return "Item already exists at path: '\(path)'"
         case .invalidPath(let path, let reason):
@@ -412,6 +433,11 @@ extension FileSystemError: CustomStringConvertible {
         case .other(let path, let reason):
             let pathDesc = path.map { " for '\($0)'" } ?? ""
             return "File system error\(pathDesc): \(reason)"
+        case .unexpectedItemType(let path, let expected, let actual):
+            let actualDesc = actual.map { " (actual: \($0))" } ?? ""
+            return "Unexpected item type at '\(path)': expected \(expected)\(actualDesc)"
+        case .deleteError(let path, let reason):
+            return "Cannot delete '\(path)': \(reason)"
         }
     }
 }
@@ -431,6 +457,8 @@ extension FileSystemError: LocalizedError {
             return reason
         case .notFound:
             return "The specified item could not be found."
+        case .pathNotFound:
+            return "The specified path could not be found."
         case .alreadyExists:
             return "An item already exists at the specified path."
         case .invalidPath(_, let reason):
@@ -475,12 +503,19 @@ extension FileSystemError: LocalizedError {
             return error.localizedDescription
         case .other(_, let reason):
             return reason
+        case .unexpectedItemType(_, let expected, let actual):
+            let actualDesc = actual.map { " (actual: \($0))" } ?? ""
+            return "Expected item type '\(expected)'\(actualDesc) but found something else."
+        case .deleteError(_, let reason):
+            return reason
         }
     }
     
     public var recoverySuggestion: String? {
         switch self {
         case .notFound:
+            return "Check that the path exists and is spelled correctly."
+        case .pathNotFound:
             return "Check that the path exists and is spelled correctly."
         case .alreadyExists:
             return "Choose a different path or remove the existing item first."

@@ -76,6 +76,17 @@ extension FileSystemServiceImpl {
   }
 
   /**
+   Normalises a file path according to system rules.
+   
+   - Parameter path: The path to normalise.
+   - Returns: The normalised path.
+   */
+  public func normalisePath(_ path: String) async -> String {
+    // Simply standardize the path using Foundation
+    return (path as NSString).standardizingPath
+  }
+
+  /**
    Joins two path components together.
 
    - Parameters:

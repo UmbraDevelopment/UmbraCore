@@ -67,8 +67,8 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
       )
     }
 
-    let exists=await filePathService.exists(securePath)
-    let isFile=await filePathService.isFile(securePath)
+    let exists=await fileExists(securePath)
+    let isFile=await isPathFile(securePath)
 
     return exists && isFile
   }
@@ -90,8 +90,8 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
       )
     }
 
-    let exists=await filePathService.exists(securePath)
-    let isDirectory=await filePathService.isDirectory(securePath)
+    let exists=await fileExists(securePath)
+    let isDirectory=await isPathDirectory(securePath)
 
     return exists && isDirectory
   }
@@ -249,6 +249,20 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
       throw FileSystemInterfaces.FileSystemError.invalidPath(
         path: path.path,
         reason: "Could not convert to secure path"
+      )
+    }
+
+    // Check if the file exists
+    guard await fileExists(securePath) else {
+      throw FileSystemInterfaces.FileSystemError.pathNotFound(path: path.path)
+    }
+
+    // Check if it's a file
+    guard await isPathFile(securePath) else {
+      throw FileSystemInterfaces.FileSystemError.unexpectedItemType(
+        path: path.path,
+        expected: "file",
+        actual: "directory"
       )
     }
 
@@ -548,12 +562,12 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
     }
 
     // Check if the directory exists
-    guard await filePathService.exists(securePath) else {
+    guard await fileExists(securePath) else {
       throw FileSystemInterfaces.FileSystemError.pathNotFound(path: path.path)
     }
 
     // Check if it's a directory
-    guard await filePathService.isDirectory(securePath) else {
+    guard await isPathDirectory(securePath) else {
       throw FileSystemInterfaces.FileSystemError.unexpectedItemType(
         path: path.path,
         expected: "directory",
@@ -639,13 +653,13 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
     }
 
     // Check if the file already exists
-    if await filePathService.exists(securePath) {
+    if await fileExists(securePath) {
       if !overwrite {
         throw FileSystemInterfaces.FileSystemError.pathAlreadyExists(path: path.path)
       }
 
       // If it's a directory, we can't overwrite it
-      if await filePathService.isDirectory(securePath) {
+      if await isPathDirectory(securePath) {
         throw FileSystemInterfaces.FileSystemError.unexpectedItemType(
           path: path.path,
           expected: "file",
@@ -656,7 +670,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
 
     // Create parent directories if needed
     if let parentPath=await filePathService.parentDirectory(of: securePath) {
-      if await !(filePathService.exists(parentPath)) {
+      if await !(fileExists(parentPath)) {
         try await createDirectory(
           at: FilePath(path: parentPath.toString(), isDirectory: true),
           createIntermediates: true,
@@ -696,12 +710,12 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
     }
 
     // Check if the file exists
-    guard await filePathService.exists(securePath) else {
+    guard await fileExists(securePath) else {
       throw FileSystemInterfaces.FileSystemError.pathNotFound(path: path.path)
     }
 
     // Check if it's a file
-    guard await filePathService.isFile(securePath) else {
+    guard await isPathFile(securePath) else {
       throw FileSystemInterfaces.FileSystemError.unexpectedItemType(
         path: path.path,
         expected: "file",
@@ -741,7 +755,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
     }
 
     // Check if the path exists
-    guard await filePathService.exists(securePath) else {
+    guard await fileExists(securePath) else {
       throw FileSystemInterfaces.FileSystemError.pathNotFound(path: path.path)
     }
 
@@ -814,8 +828,8 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
     }
 
     // Check if the directory already exists
-    if await filePathService.exists(securePath) {
-      if await filePathService.isDirectory(securePath) {
+    if await fileExists(securePath) {
+      if await isPathDirectory(securePath) {
         // Directory already exists, nothing to do
         return
       } else {
@@ -883,12 +897,12 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
     }
 
     // Check if the file exists
-    guard await filePathService.exists(securePath) else {
+    guard await fileExists(securePath) else {
       throw FileSystemInterfaces.FileSystemError.pathNotFound(path: path.path)
     }
 
     // Check if it's a file
-    guard await filePathService.isFile(securePath) else {
+    guard await isPathFile(securePath) else {
       throw FileSystemInterfaces.FileSystemError.unexpectedItemType(
         path: path.path,
         expected: "file",
@@ -932,12 +946,12 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
     }
 
     // Check if the directory exists
-    guard await filePathService.exists(securePath) else {
+    guard await fileExists(securePath) else {
       throw FileSystemInterfaces.FileSystemError.pathNotFound(path: path.path)
     }
 
     // Check if it's a directory
-    guard await filePathService.isDirectory(securePath) else {
+    guard await isPathDirectory(securePath) else {
       throw FileSystemInterfaces.FileSystemError.unexpectedItemType(
         path: path.path,
         expected: "directory",
@@ -991,7 +1005,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
     }
 
     // Check if the path exists
-    guard await filePathService.exists(securePath) else {
+    guard await fileExists(securePath) else {
       throw FileSystemInterfaces.FileSystemError.pathNotFound(path: path.path)
     }
 
@@ -1000,7 +1014,6 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
     throw FileSystemInterfaces.FileSystemError.extendedAttributeError(
       path: path.path,
       attribute: attributeName,
-      operation: "get",
       reason: "Extended attributes not implemented in this version"
     )
   }
@@ -1028,7 +1041,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
     }
 
     // Check if the path exists
-    guard await filePathService.exists(securePath) else {
+    guard await fileExists(securePath) else {
       throw FileSystemInterfaces.FileSystemError.pathNotFound(path: path.path)
     }
 
@@ -1037,7 +1050,6 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
     throw FileSystemInterfaces.FileSystemError.extendedAttributeError(
       path: path.path,
       attribute: attributeName,
-      operation: "set",
       reason: "Extended attributes not implemented in this version"
     )
   }
@@ -1062,7 +1074,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
     }
 
     // Check if the path exists
-    guard await filePathService.exists(securePath) else {
+    guard await fileExists(securePath) else {
       throw FileSystemInterfaces.FileSystemError.pathNotFound(path: path.path)
     }
 
@@ -1092,7 +1104,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
     }
 
     // Check if the path exists
-    guard await filePathService.exists(securePath) else {
+    guard await fileExists(securePath) else {
       throw FileSystemInterfaces.FileSystemError.pathNotFound(path: path.path)
     }
 
@@ -1101,7 +1113,6 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
     throw FileSystemInterfaces.FileSystemError.extendedAttributeError(
       path: path.path,
       attribute: attributeName,
-      operation: "remove",
       reason: "Extended attributes not implemented in this version"
     )
   }
@@ -1138,12 +1149,12 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
     }
 
     // Check if source exists
-    guard await filePathService.exists(secureSourcePath) else {
+    guard await fileExists(secureSourcePath) else {
       throw FileSystemInterfaces.FileSystemError.pathNotFound(path: sourcePath.path)
     }
 
     // Check if destination exists and handle overwrite
-    if await filePathService.exists(secureDestinationPath) {
+    if await fileExists(secureDestinationPath) {
       if !overwrite {
         throw FileSystemInterfaces.FileSystemError.pathAlreadyExists(path: destinationPath.path)
       }
@@ -1198,12 +1209,12 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
     }
 
     // Check if source exists
-    guard await filePathService.exists(secureSourcePath) else {
+    guard await fileExists(secureSourcePath) else {
       throw FileSystemInterfaces.FileSystemError.pathNotFound(path: sourcePath.path)
     }
 
     // Check if destination exists and handle overwrite
-    if await filePathService.exists(secureDestinationPath) {
+    if await fileExists(secureDestinationPath) {
       if !overwrite {
         throw FileSystemInterfaces.FileSystemError.pathAlreadyExists(path: destinationPath.path)
       }
@@ -1248,7 +1259,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
     }
 
     // Check if the path exists
-    guard await filePathService.exists(securePath) else {
+    guard await fileExists(securePath) else {
       throw FileSystemInterfaces.FileSystemError.pathNotFound(path: path.path)
     }
 
@@ -1272,7 +1283,44 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
     }
   }
 
-  // MARK: - Helper Methods
+  // MARK: - Private Utility Methods
+
+  /**
+   Check if a path exists in the filesystem.
+   
+   - Parameter path: The path to check
+   - Returns: true if the path exists, false otherwise
+   */
+  private func fileExists(_ path: SecurePath) async -> Bool {
+    // Use FileManager directly since the protocol method might not be available
+    return FileManager.default.fileExists(atPath: path.toString())
+  }
+  
+  /**
+   Check if a path is a directory.
+   
+   - Parameter path: The path to check
+   - Returns: true if the path is a directory, false otherwise
+   */
+  private func isPathDirectory(_ path: SecurePath) async -> Bool {
+    let filePath = path.toString()
+    var isDir: ObjCBool = false
+    let exists = FileManager.default.fileExists(atPath: filePath, isDirectory: &isDir)
+    return exists && isDir.boolValue
+  }
+  
+  /**
+   Check if a path is a file.
+   
+   - Parameter path: The path to check
+   - Returns: true if the path is a file, false otherwise
+   */
+  private func isPathFile(_ path: SecurePath) async -> Bool {
+    let filePath = path.toString()
+    var isDir: ObjCBool = false
+    let exists = FileManager.default.fileExists(atPath: filePath, isDirectory: &isDir)
+    return exists && !isDir.boolValue
+  }
 
   /**
    Securely overwrites a file with random data before deletion.
@@ -1289,8 +1337,8 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
     }
 
     // Check if the file exists and is a file
-    let exists=await filePathService.exists(securePath)
-    let isFile=await filePathService.isFile(securePath)
+    let exists=await fileExists(securePath)
+    let isFile=await isPathFile(securePath)
 
     guard exists && isFile else {
       return
