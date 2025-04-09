@@ -1,18 +1,17 @@
 import CoreSecurityTypes
 import Foundation
-
-/// Helper function to create PrivacyMetadata from dictionary
-private func createPrivacyMetadata(_ dict: [String: String]) -> PrivacyMetadata {
-  var metadata = PrivacyMetadata()
-  for (key, value) in dict {
-    metadata = metadata.withPublic(key: key, value: value)
-  }
-  return metadata
-}
-
 import LoggingInterfaces
-import LoggingServices
 import LoggingTypes
+import LoggingServices
+
+/// Helper function to create LogMetadataDTOCollection from dictionary
+private func createLogMetadataCollection(_ dict: [String: String]) -> LogMetadataDTOCollection {
+  var metadataCollection = LogMetadataDTOCollection()
+  for (key, value) in dict {
+    metadataCollection = metadataCollection.withPublic(key: key, value: value)
+  }
+  return metadataCollection
+}
 
 /**
  # Security Operations Error Handler
@@ -93,12 +92,13 @@ final class SecurityOperationsErrorHandler {
     let duration=Date().timeIntervalSince(startTime) * 1000
 
     // Create error metadata for logging
-    let errorMetadata=createErrorMetadata(
-      error: error,
-      operation: operation,
-      operationID: operationID,
-      duration: duration
-    )
+    let errorMetadata=createLogMetadataCollection([
+      "operationId": operationID,
+      "operation": operation.rawValue,
+      "durationMs": String(format: "%.2f", duration),
+      "errorType": String(describing: type(of: error)),
+      "errorMessage": sanitizeErrorMessage(error.localizedDescription)
+    ])
 
     // Log the error with appropriate context
     await logger.error(
@@ -141,8 +141,8 @@ final class SecurityOperationsErrorHandler {
     operation: SecurityOperation,
     operationID: String,
     duration: Double
-  ) -> PrivacyMetadata {
-    return createPrivacyMetadata([
+  ) -> LogMetadataDTOCollection {
+    return createLogMetadataCollection([
       "operationId": operationID,
       "operation": operation.rawValue,
       "durationMs": String(format: "%.2f", duration),
@@ -189,7 +189,7 @@ final class SecurityOperationsErrorHandler {
     sensitiveData: [String: Any]=[:]
   ) async {
     // Create standard metadata
-    let standardMetadata = createPrivacyMetadata([
+    let standardMetadata = createLogMetadataCollection([
       "operationId": operationID,
       "operation": operation.rawValue,
       "durationMs": String(format: "%.2f", duration),
@@ -251,19 +251,5 @@ final class SecurityOperationsErrorHandler {
 
     // For other error messages, return as is
     return message
-  }
-}
-
-extension CoreSecurityError {
-  static func invalidVerificationMethod(reason: String) -> CoreSecurityError {
-    return .invalidVerificationMethod(reason: reason)
-  }
-  
-  static func verificationFailed(reason: String) -> CoreSecurityError {
-    return .verificationFailed(reason: reason)
-  }
-  
-  static func notImplemented(reason: String) -> CoreSecurityError {
-    return .notImplemented(reason: reason)
   }
 }

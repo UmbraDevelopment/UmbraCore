@@ -1,16 +1,6 @@
 import CoreSecurityTypes
 import CryptoServices
 import Foundation
-
-/// Helper function to create LogMetadataDTOCollection from dictionary
-private func createMetadataCollection(_ dict: [String: String]) -> LogMetadataDTOCollection {
-  var collection = LogMetadataDTOCollection()
-  for (key, value) in dict {
-    collection = collection.withPublic(key: key, value: value)
-  }
-  return collection
-}
-
 import LoggingInterfaces
 import LoggingServices
 import LoggingTypes
@@ -48,25 +38,39 @@ public enum SecurityProviderFactory {
     logger: LoggingInterfaces.LoggingProtocol?=nil
   ) async -> SecurityProviderProtocol {
     // Create standard crypto service
-    let cryptoService: any CryptoServiceProtocol=await CryptoServiceFactory
+    let cryptoService: any CryptoServiceProtocol = await CryptoServiceFactory
       .createStandardCryptoService()
-    let keyManager=await KeyManagementFactory.createKeyManager(logger: logger)
+    
+    // Create the key manager with appropriate logger
+    let keyManager = await KeyManagementFactory.createKeyManager(
+      logger: logger as? LoggingServiceProtocol
+    )
 
-    // Use the provided logger or create a default one
+    // Use the provided logger or create a default one with debug level logging
     let actualLogger: LoggingInterfaces.LoggingProtocol
     if let logger {
-      actualLogger=logger
+      actualLogger = logger
     } else {
-      let developmentLogger=LoggingServiceFactory.createDevelopmentLogger(
-        environment: .development)
+      let factory = LoggingServiceFactory()
+      let developmentLogger = await factory.createDevelopmentLogger(
+        subsystem: "com.umbra.security",
+        category: "SecurityProvider"
       )
-      actualLogger=developmentLogger
+      actualLogger = developmentLogger
     }
+    
+    // Create secure logger for privacy-aware logging
+    let secureLogger = await LoggingServices.createSecureLogger(
+      subsystem: "com.umbra.security",
+      category: "SecurityService",
+      includeTimestamps: true
+    )
 
     // Create the security service actor
-    let securityService=SecurityServiceActor(
+    let securityService = SecurityServiceActor(
       cryptoService: cryptoService,
-      logger: actualLogger
+      logger: actualLogger,
+      secureLogger: secureLogger
     )
 
     // Initialize the service
@@ -92,25 +96,37 @@ public enum SecurityProviderFactory {
     logger: LoggingInterfaces.LoggingProtocol?=nil
   ) async -> SecurityProviderProtocol {
     // Create high-security crypto service
-    let cryptoService: any CryptoServiceProtocol=await CryptoServiceFactory
+    let cryptoService: any CryptoServiceProtocol = await CryptoServiceFactory
       .createHighSecurityCryptoService()
-    let keyManager=await KeyManagementFactory.createKeyManager(logger: logger)
+    let keyManager = await KeyManagementFactory.createKeyManager(
+      logger: logger as? LoggingServiceProtocol
+    )
 
     // Use the provided logger or create a default one with debug level logging
     let actualLogger: LoggingInterfaces.LoggingProtocol
     if let logger {
-      actualLogger=logger
+      actualLogger = logger
     } else {
-      let developmentLogger=LoggingServiceFactory.createDevelopmentLogger(
-        environment: .development)
+      let factory = LoggingServiceFactory()
+      let developmentLogger = await factory.createDevelopmentLogger(
+        subsystem: "com.umbra.security",
+        category: "SecurityProvider"
       )
-      actualLogger=developmentLogger
+      actualLogger = developmentLogger
     }
+    
+    // Create secure logger for privacy-aware logging
+    let secureLogger = await LoggingServices.createSecureLogger(
+      subsystem: "com.umbra.security",
+      category: "SecurityService",
+      includeTimestamps: true
+    )
 
     // Create the security service actor
-    let securityService=SecurityServiceActor(
+    let securityService = SecurityServiceActor(
       cryptoService: cryptoService,
-      logger: actualLogger
+      logger: actualLogger,
+      secureLogger: secureLogger
     )
 
     // Initialize the service
@@ -137,25 +153,37 @@ public enum SecurityProviderFactory {
     logger: LoggingInterfaces.LoggingProtocol?=nil
   ) async -> SecurityProviderProtocol {
     // Create max-security crypto service
-    let cryptoService: any CryptoServiceProtocol=await CryptoServiceFactory
+    let cryptoService: any CryptoServiceProtocol = await CryptoServiceFactory
       .createMaxSecurityCryptoService()
-    let keyManager=await KeyManagementFactory.createKeyManager(logger: logger)
+    let keyManager = await KeyManagementFactory.createKeyManager(
+      logger: logger as? LoggingServiceProtocol
+    )
 
     // Use the provided logger or create a default one with debug level logging
     let actualLogger: LoggingInterfaces.LoggingProtocol
     if let logger {
-      actualLogger=logger
+      actualLogger = logger
     } else {
-      let developmentLogger=LoggingServiceFactory.createDevelopmentLogger(
-        environment: .development)
+      let factory = LoggingServiceFactory()
+      let developmentLogger = await factory.createDevelopmentLogger(
+        subsystem: "com.umbra.security",
+        category: "SecurityProvider"
       )
-      actualLogger=developmentLogger
+      actualLogger = developmentLogger
     }
+    
+    // Create secure logger for privacy-aware logging
+    let secureLogger = await LoggingServices.createSecureLogger(
+      subsystem: "com.umbra.security",
+      category: "SecurityService",
+      includeTimestamps: true
+    )
 
     // Create the security service actor
-    let securityService=SecurityServiceActor(
+    let securityService = SecurityServiceActor(
       cryptoService: cryptoService,
-      logger: actualLogger
+      logger: actualLogger,
+      secureLogger: secureLogger
     )
 
     // Initialize the service
@@ -165,21 +193,16 @@ public enum SecurityProviderFactory {
   }
 }
 
-
-
-  
+extension CoreSecurityError {
   static func invalidVerificationMethod(reason: String) -> CoreSecurityError {
-    return .general(code: "INVALID_VERIFICATION_METHOD", message: reason)
+    return .invalidInput(reason)
   }
   
   static func verificationFailed(reason: String) -> CoreSecurityError {
-    return .general(code: "VERIFICATION_FAILED", message: reason)
+    return .authenticationFailed(reason)
   }
   
   static func notImplemented(reason: String) -> CoreSecurityError {
-    return .general(code: "NOT_IMPLEMENTED", message: reason)
+    return .unsupportedOperation(reason)
   }
 }
-
-
-

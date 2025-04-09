@@ -1321,12 +1321,46 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
 }
 
 /**
- A null logger that does nothing.
+ A null logger implementation used as a default when no logger is provided.
+ This avoids the need for nil checks throughout the file system services code.
+ 
+ This implementation follows the Alpha Dot Five architecture principles by:
+ 1. Using actor isolation for thread safety
+ 2. Providing a complete implementation of the required protocol
+ 3. Using proper British spelling in documentation
  */
+@preconcurrency
 private actor NullLogger: LoggingProtocol {
+  // Add loggingActor property required by LoggingProtocol
   nonisolated let loggingActor: LoggingInterfaces.LoggingActor = .init(destinations: [])
 
-  func log(_: LogLevel, _: String, context _: LoggingTypes.LogContextDTO) async {
-    // Do nothing - this is a null logger
+  // Implement the required log method from CoreLoggingProtocol
+  func log(_: LoggingInterfaces.LogLevel, _: String, context _: LoggingTypes.LogContextDTO) async {
+    // Empty implementation for no-op logger
+  }
+
+  // Convenience methods with empty implementations
+  func trace(_: String, context _: LoggingTypes.LogContextDTO) async {
+    // Empty implementation
+  }
+
+  func debug(_: String, context _: LoggingTypes.LogContextDTO) async {
+    // Empty implementation
+  }
+
+  func info(_: String, context _: LoggingTypes.LogContextDTO) async {
+    // Empty implementation
+  }
+
+  func warning(_: String, context _: LoggingTypes.LogContextDTO) async {
+    // Empty implementation
+  }
+
+  func error(_: String, context _: LoggingTypes.LogContextDTO) async {
+    // Empty implementation
+  }
+
+  func critical(_: String, context _: LoggingTypes.LogContextDTO) async {
+    // Empty implementation
   }
 }

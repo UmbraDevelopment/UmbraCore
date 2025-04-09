@@ -2,16 +2,6 @@ import Foundation
 import LoggingTypes
 import CoreSecurityTypes
 
-/// Helper function to create LogMetadataDTOCollection from dictionary
-private func createMetadataCollection(_ dict: [String: String]) -> LogMetadataDTOCollection {
-  var collection = LogMetadataDTOCollection()
-  for (key, value) in dict {
-    collection = collection.withPublic(key: key, value: value)
-  }
-  return collection
-}
-
-
 /// Protocol for secure random data generation services.
 ///
 /// This protocol defines the interface for services that provide secure random data
@@ -27,13 +17,7 @@ public protocol RandomDataServiceProtocol: Sendable {
   /// - Parameter range: The range within which to generate the random integer
   /// - Returns: The generated random integer
   /// - Throws: SecurityError if random generation fails
-  func generateRandomInteger<T: FixedWidthInteger>(in range: Range<T>) async throws -> T
-
-  /// Generates a cryptographically secure random integer within the specified closed range
-  /// - Parameter range: The closed range within which to generate the random integer
-  /// - Returns: The generated random integer
-  /// - Throws: SecurityError if random generation fails
-  func generateRandomInteger<T: FixedWidthInteger>(in range: ClosedRange<T>) async throws -> T
+  func generateRandomInteger<T: FixedWidthInteger & Sendable>(in range: Range<T>) async throws -> T
 
   /// Generates a cryptographically secure random double between 0.0 and 1.0
   /// - Returns: The generated random double
@@ -50,56 +34,37 @@ public protocol RandomDataServiceProtocol: Sendable {
   func getEntropyQuality() async -> EntropyQuality
 }
 
-/// Entropy source for random data generation
-public enum EntropySource: String, Sendable, Equatable, CaseIterable {
-  /// System entropy source
+/// The source of entropy for random data generation
+public enum EntropySource: String, Sendable, CaseIterable {
+  /// System-provided entropy (e.g., /dev/urandom)
   case system
-
-  /// Hardware entropy source if available
+  
+  /// Hardware-based entropy (e.g., secure enclave, TPM)
   case hardware
-
-  /// Hybrid entropy source combining multiple sources
+  
+  /// Hybrid approach combining multiple entropy sources
   case hybrid
 }
 
-/// Entropy quality level
-public enum EntropyQuality: String, Sendable, Equatable, CaseIterable, Comparable {
-  /// Low entropy quality
+/// The quality level of entropy for random data generation
+public enum EntropyQuality: String, Sendable, CaseIterable, Comparable {
+  /// Low entropy quality (suitable for non-critical applications)
   case low
-
-  /// Medium entropy quality
+  
+  /// Medium entropy quality (suitable for most applications)
   case medium
-
-  /// High entropy quality
+  
+  /// High entropy quality (suitable for security-critical applications)
   case high
-
+  
+  /// Compares two entropy quality levels
   public static func < (lhs: EntropyQuality, rhs: EntropyQuality) -> Bool {
-    let order: [EntropyQuality]=[.low, .medium, .high]
-    guard
-      let lhsIndex=order.firstIndex(of: lhs),
-      let rhsIndex=order.firstIndex(of: rhs)
+    let qualities: [EntropyQuality] = [.low, .medium, .high]
+    guard let lhsIndex = qualities.firstIndex(of: lhs),
+          let rhsIndex = qualities.firstIndex(of: rhs)
     else {
       return false
     }
     return lhsIndex < rhsIndex
   }
 }
-
-
-
-  
-  static func invalidVerificationMethod(reason: String) -> CoreSecurityError {
-    return .general(code: "INVALID_VERIFICATION_METHOD", message: reason)
-  }
-  
-  static func verificationFailed(reason: String) -> CoreSecurityError {
-    return .general(code: "VERIFICATION_FAILED", message: reason)
-  }
-  
-  static func notImplemented(reason: String) -> CoreSecurityError {
-    return .general(code: "NOT_IMPLEMENTED", message: reason)
-  }
-}
-
-
-

@@ -1,33 +1,29 @@
 import Foundation
 import LoggingTypes
 import CoreSecurityTypes
-
-/// Helper function to create LogMetadataDTOCollection from dictionary
-private func createMetadataCollection(_ dict: [String: String]) -> LogMetadataDTOCollection {
-  var collection = LogMetadataDTOCollection()
-  for (key, value) in dict {
-    collection = collection.withPublic(key: key, value: value)
-  }
-  return collection
-}
-
 import LoggingInterfaces
 import LoggingServices
 
 /// Factory for creating instances of the RandomDataServiceProtocol.
 ///
 /// This factory provides methods for creating fully configured random data service
-/// instances with various entropy sources and security levels.
+/// instances with various entropy sources and security levels, adhering to the Alpha Dot Five architecture principles.
+///
+/// The factory utilises privacy-aware logging to ensure sensitive information is handled in accordance with data protection regulations.
 public enum RandomDataServiceFactory {
   /// Creates a default random data service instance with standard configuration
   /// - Returns: A fully configured random data service
-  public static func createDefault() -> RandomDataServiceProtocol {
-    let logger=LoggingServiceFactory.createDefault(
-      subsystem: "uk.co.umbra.security",
+  public static func createDefault() async -> RandomDataServiceProtocol {
+    let factory = LoggingServiceFactory.shared
+    let logger = await factory.createPrivacyAwareLogger(
+      subsystem: "com.umbra.security",
       category: "RandomDataService"
     )
 
-    return RandomDataServiceActor(logger: logger)
+    // Create a proper LoggingProtocol instance from the PrivacyAwareLoggingActor
+    let loggingAdapter = PrivacyAwareLoggingAdapter(logger: logger)
+    
+    return RandomDataServiceActor(logger: loggingAdapter)
   }
 
   /// Creates a custom random data service instance with the specified logger
@@ -41,56 +37,86 @@ public enum RandomDataServiceFactory {
 
   /// Creates a high-security random data service instance with enhanced security settings
   /// - Returns: A fully configured high-security random data service
-  public static func createHighSecurity() -> RandomDataServiceProtocol {
-    let logger=LoggingServiceFactory.createDefault(
-      subsystem: "uk.co.umbra.security",
-      category: "HighSecurityRandomDataService"
+  public static func createHighSecurity() async -> RandomDataServiceProtocol {
+    let factory = LoggingServiceFactory.shared
+    let logger = await factory.createComprehensivePrivacyAwareLogger(
+      subsystem: "com.umbra.security",
+      category: "RandomDataService",
+      environment: .production
     )
+    
+    // Create a proper LoggingProtocol instance from the PrivacyAwareLoggingActor
+    let loggingAdapter = PrivacyAwareLoggingAdapter(logger: logger)
 
-    let service=RandomDataServiceActor(logger: logger)
+    let service = RandomDataServiceActor(logger: loggingAdapter)
 
-    // Initialise with hardware entropy source
+    // Initialise with hardware entropy source for maximum security
     Task {
-      try? await service.initialise(entropySource: EntropySource.hardware)
+      try? await service.initialise(entropySource: .hardware)
     }
 
     return service
   }
 
-  /// Creates a minimal random data service instance for resource-constrained environments
+  /// Creates a minimal random data service instance with basic configuration
   /// - Returns: A minimally configured random data service
-  public static func createMinimal() -> RandomDataServiceProtocol {
-    let logger=LoggingServiceFactory.createDefault(
-      subsystem: "uk.co.umbra.security",
-      category: "MinimalRandomDataService"
+  public static func createMinimal() async -> RandomDataServiceProtocol {
+    let factory = LoggingServiceFactory.shared
+    let logger = await factory.createPrivacyAwareLogger(
+      subsystem: "com.umbra.security",
+      category: "RandomDataService",
+      environment: .production
     )
+    
+    // Create a proper LoggingProtocol instance from the PrivacyAwareLoggingActor
+    let loggingAdapter = PrivacyAwareLoggingAdapter(logger: logger)
 
-    let service=RandomDataServiceActor(logger: logger)
+    let service = RandomDataServiceActor(logger: loggingAdapter)
 
-    // Initialise with system entropy source (more efficient)
+    // Initialise with system entropy source for better performance
     Task {
-      try? await service.initialise(entropySource: EntropySource.system)
+      try? await service.initialise(entropySource: .system)
     }
 
     return service
   }
 }
 
-
-
+/// Adapter to convert PrivacyAwareLoggingActor to LoggingProtocol
+private class PrivacyAwareLoggingAdapter: LoggingProtocol {
+  private let logger: PrivacyAwareLoggingActor
   
-  static func invalidVerificationMethod(reason: String) -> CoreSecurityError {
-    return .general(code: "INVALID_VERIFICATION_METHOD", message: reason)
+  init(logger: PrivacyAwareLoggingActor) {
+    self.logger = logger
   }
   
-  static func verificationFailed(reason: String) -> CoreSecurityError {
-    return .general(code: "VERIFICATION_FAILED", message: reason)
+  func debug(_ message: String, metadata: LogMetadataDTOCollection?) {
+    Task {
+      await logger.debug(message, context: LogContextDTO(metadata: metadata ?? LogMetadataDTOCollection()))
+    }
   }
   
-  static func notImplemented(reason: String) -> CoreSecurityError {
-    return .general(code: "NOT_IMPLEMENTED", message: reason)
+  func info(_ message: String, metadata: LogMetadataDTOCollection?) {
+    Task {
+      await logger.info(message, context: LogContextDTO(metadata: metadata ?? LogMetadataDTOCollection()))
+    }
+  }
+  
+  func warning(_ message: String, metadata: LogMetadataDTOCollection?) {
+    Task {
+      await logger.warning(message, context: LogContextDTO(metadata: metadata ?? LogMetadataDTOCollection()))
+    }
+  }
+  
+  func error(_ message: String, metadata: LogMetadataDTOCollection?) {
+    Task {
+      await logger.error(message, context: LogContextDTO(metadata: metadata ?? LogMetadataDTOCollection()))
+    }
+  }
+  
+  func critical(_ message: String, metadata: LogMetadataDTOCollection?) {
+    Task {
+      await logger.critical(message, context: LogContextDTO(metadata: metadata ?? LogMetadataDTOCollection()))
+    }
   }
 }
-
-
-

@@ -185,13 +185,13 @@ extension CoreSecurityProviderService {
     config: SecurityConfigDTO
   ) async -> [SecurityResultDTO] {
     let operationID=UUID().uuidString
-    let privacyMetadata=PrivacyMetadata([
-      "itemCount": (value: String(dataItems.count), privacy: .public),
-      "operationId": (value: operationID, privacy: .public)
-    ])
+    let metadataCollection = LogMetadataDTOCollection()
+      .withPublic(key: "itemCount", value: String(dataItems.count))
+      .withPublic(key: "operationId", value: operationID)
 
     await logger.info(
-      "Starting batch encryption operation", metadata: privacyMetadata,
+      "Starting batch encryption operation", 
+      metadata: metadataCollection,
       source: "SecurityProvider+Operations.batchEncrypt"
     , source: "SecurityImplementation", source: "SecurityImplementation")
 
@@ -242,7 +242,7 @@ extension CoreSecurityProviderService {
     }
 
     await logger.info(
-      "Completed batch encryption operation", metadata: privacyMetadata,
+      "Completed batch encryption operation", metadata: metadataCollection,
       source: "SecurityProvider+Operations.batchEncrypt"
     , source: "SecurityImplementation", source: "SecurityImplementation")
 
@@ -436,6 +436,3 @@ extension CoreSecurityProviderService {
     return .general(code: "NOT_IMPLEMENTED", message: reason)
   }
 }
-
-
-

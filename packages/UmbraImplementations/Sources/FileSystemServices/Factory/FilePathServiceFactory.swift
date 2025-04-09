@@ -18,7 +18,7 @@ import LoggingTypes
  ## Thread Safety
 
  As an actor, this factory is fully thread-safe and can be safely accessed
- from multiple concurrent contexts without external synchronization.
+ from multiple concurrent contexts without external synchronisation.
  The returned services are also actors, ensuring thread safety for all operations.
 
  ## British Spelling
@@ -44,6 +44,47 @@ public actor FilePathServiceFactory {
    */
   public func createDefault() -> FilePathServiceProtocol {
     FilePathServiceImpl()
+  }
+
+  /**
+   Creates a file path service with the specified bundle identifier.
+
+   - Parameter bundleIdentifier: The bundle identifier to use
+   - Returns: A FilePathServiceProtocol implementation
+   */
+  public func createWithBundleIdentifier(
+    _ bundleIdentifier: String
+  ) -> FilePathServiceProtocol {
+    FilePathServiceImpl(bundleIdentifier: bundleIdentifier)
+  }
+
+  /**
+   Creates a file path service with a custom file manager.
+
+   - Parameter fileManager: The file manager to use
+   - Returns: A FilePathServiceProtocol implementation
+   */
+  public func createWithFileManager(
+    _ fileManager: FileManager
+  ) -> FilePathServiceProtocol {
+    FilePathServiceImpl(fileManager: fileManager)
+  }
+
+  /**
+   Creates a file path service for testing purposes.
+
+   This factory method creates a service with a new FileManager instance
+   that is isolated from the default shared instance, making it suitable
+   for use in unit tests.
+
+   - Returns: A FilePathServiceProtocol implementation suitable for testing
+   */
+  public func createForTesting() -> FilePathServiceProtocol {
+    let testFileManager = FileManager()
+    return FilePathServiceImpl(
+      fileManager: testFileManager,
+      bundleIdentifier: "com.umbra.testing"
+    )
   }
 
   /**
@@ -95,10 +136,26 @@ public actor FilePathServiceFactory {
  Default implementation of FilePathServiceProtocol.
  */
 private actor FilePathServiceImpl: FilePathServiceProtocol {
+  /// The file manager to use for operations
+  private let fileManager: FileManager
+
+  /// The bundle identifier to use for operations
+  private let bundleIdentifier: String
+
   /**
    Initialises a new file path service.
+
+   - Parameters:
+      - fileManager: The file manager to use
+      - bundleIdentifier: The bundle identifier to use
    */
-  init() {}
+  init(
+    fileManager: FileManager = .default,
+    bundleIdentifier: String = Bundle.main.bundleIdentifier ?? ""
+  ) {
+    self.fileManager=fileManager
+    self.bundleIdentifier=bundleIdentifier
+  }
 
   /**
    Creates a secure path from a string.
@@ -153,7 +210,7 @@ private actor FilePathServiceImpl: FilePathServiceProtocol {
    - Returns: Whether the path exists
    */
   func exists(_ path: SecurePath) async -> Bool {
-    FileManager.default.fileExists(atPath: path.toString())
+    fileManager.fileExists(atPath: path.toString())
   }
 
   /**
@@ -164,7 +221,7 @@ private actor FilePathServiceImpl: FilePathServiceProtocol {
    */
   func isFile(_ path: SecurePath) async -> Bool {
     var isDir: ObjCBool=false
-    let exists=FileManager.default.fileExists(atPath: path.toString(), isDirectory: &isDir)
+    let exists=fileManager.fileExists(atPath: path.toString(), isDirectory: &isDir)
     return exists && !isDir.boolValue
   }
 
@@ -176,7 +233,7 @@ private actor FilePathServiceImpl: FilePathServiceProtocol {
    */
   func isDirectory(_ path: SecurePath) async -> Bool {
     var isDir: ObjCBool=false
-    let exists=FileManager.default.fileExists(atPath: path.toString(), isDirectory: &isDir)
+    let exists=fileManager.fileExists(atPath: path.toString(), isDirectory: &isDir)
     return exists && isDir.boolValue
   }
 
@@ -239,7 +296,7 @@ private actor FilePathServiceImpl: FilePathServiceProtocol {
    - Returns: A path to a temporary directory
    */
   func temporaryDirectory() async -> SecurePath {
-    let tempDir=FileManager.default.temporaryDirectory.path
+    let tempDir=fileManager.temporaryDirectory.path
     guard let securePath=SecurePath(path: tempDir, isDirectory: true) else {
       // Fallback to a known valid path if the temporary directory can't be secured
       return SecurePath(path: "/tmp", isDirectory: true)!
@@ -254,7 +311,7 @@ private actor FilePathServiceImpl: FilePathServiceProtocol {
    - Returns: A path to a unique temporary file
    */
   func uniqueTemporaryFile(extension: String?) async -> SecurePath {
-    let tempDir=FileManager.default.temporaryDirectory
+    let tempDir=fileManager.temporaryDirectory
     let uuid=UUID().uuidString
     let filename=`extension` != nil ? "\(uuid).\(`extension`!)" : uuid
     let url=tempDir.appendingPathComponent(filename)
@@ -333,7 +390,7 @@ private actor FilePathServiceImpl: FilePathServiceProtocol {
    - Returns: The home directory path
    */
   func homeDirectory() async -> SecurePath {
-    let homePath=FileManager.default.homeDirectoryForCurrentUser.path
+    let homePath=fileManager.homeDirectoryForCurrentUser.path
     guard let securePath=SecurePath(path: homePath, isDirectory: true) else {
       // Fallback to a known valid path if the home directory can't be secured
       return SecurePath(path: "/Users", isDirectory: true)!
@@ -347,7 +404,7 @@ private actor FilePathServiceImpl: FilePathServiceProtocol {
    - Returns: The current working directory path
    */
   func currentDirectory() async -> SecurePath {
-    let currentPath=FileManager.default.currentDirectoryPath
+    let currentPath=fileManager.currentDirectoryPath
     guard let securePath=SecurePath(path: currentPath, isDirectory: true) else {
       // Fallback to home directory if the current directory can't be secured
       return await homeDirectory()
@@ -362,7 +419,7 @@ private actor FilePathServiceImpl: FilePathServiceProtocol {
    - Returns: The path to the system directory
    */
   func systemDirectory(_ directory: SystemDirectory) async -> SecurePath {
-    let fileManager=FileManager.default
+    let fileManager=fileManager
     let searchPathDirectory: FileManager.SearchPathDirectory
 
     switch directory {

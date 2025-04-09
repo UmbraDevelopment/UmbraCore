@@ -6,16 +6,9 @@ import LoggingInterfaces
 import LoggingServices
 import LoggingTypes
 import SecurityCoreInterfaces
+import SecurityInterfaces
+import SecurityImplementation
 import UmbraErrors
-
-/// Helper function to create PrivacyMetadata from dictionary
-private func createPrivacyMetadata(_ dict: [String: String]) -> PrivacyMetadata {
-  var metadata = PrivacyMetadata()
-  for (key, value) in dict {
-    metadata = metadata.withPublic(key: key, value: value)
-  }
-  return metadata
-}
 
 /// Factory for creating instances of the SecurityProviderProtocol.
 ///
@@ -26,122 +19,189 @@ private func createPrivacyMetadata(_ dict: [String: String]) -> PrivacyMetadata 
 /// All security services created by this factory use privacy-aware logging through
 /// SecureLoggerActor, following the Alpha Dot Five architecture principles.
 public enum SecurityServiceFactory {
-  /// Creates a default security service instance with standard configuration
-  /// - Returns: A fully configured security service with privacy-aware logging
-  public static func createDefault() async -> SecurityProviderProtocol {
-    let factory = LoggingServiceFactory()
-    let logger = await factory.createPrivacyAwareLogger(
-      subsystem: "com.umbra.security", 
-      category: "SecurityImplementation"
-    )
-
-    let secureLogger = await LoggingServices.createSecureLogger(
-      subsystem: "com.umbra.security",
+  /// Creates a standard security service with default configuration
+  /// - Parameters:
+  ///   - logger: The logger to use for general logging
+  ///   - secureLogger: The secure logger to use for privacy-aware logging (created if nil)
+  /// - Returns: A security service instance
+  public static func createStandard(
+    logger: LoggingInterfaces.LoggingProtocol,
+    secureLogger: SecureLoggerActor? = nil
+  ) async -> SecurityProviderProtocol {
+    // Create a secure logger if one wasn't provided
+    let secureLogger = secureLogger ?? await createSecureLogger(
+      logger: logger,
       category: "SecurityService",
       includeTimestamps: true
     )
 
+    // Create default configuration
+    let configuration = SecurityConfigurationDTO(
+      securityLevel: .standard,
+      loggingLevel: .info
+    )
+    
     // Create the security service with secure logging
     return await createWithLoggers(
       logger: logger,
-      secureLogger: secureLogger
+      secureLogger: secureLogger,
+      configuration: configuration
     )
   }
 
-  /// Creates a security service with the specified standard logger
-  /// - Parameter logger: The standard logger to use for security operations
-  /// - Returns: A fully configured security service with privacy-aware logging
+  /// Creates a security service with the specified logger
+  /// - Parameter logger: The logger to use
+  /// - Returns: A security service instance
   public static func createWithLogger(
     _ logger: LoggingInterfaces.LoggingProtocol
   ) async -> SecurityProviderProtocol {
-    await createWithLoggers(logger: logger, secureLogger: nil)
+    await createWithLoggers(logger: logger, secureLogger: nil, configuration: nil)
   }
 
   /// Creates a security service with the specified loggers
   /// - Parameters:
   ///   - logger: The standard logger to use for general operations
   ///   - secureLogger: The secure logger to use for privacy-aware logging (created if nil)
+  ///   - configuration: The security configuration to use (created if nil)
   /// - Returns: A fully configured security service with privacy-aware logging
   public static func createWithLoggers(
     logger: LoggingInterfaces.LoggingProtocol,
-    secureLogger: SecureLoggerActor?
+    secureLogger: SecureLoggerActor? = nil,
+    configuration: SecurityImplementation.SecurityConfigurationDTO? = nil
   ) async -> SecurityProviderProtocol {
     // Create dependencies
     let cryptoService = await CryptoServiceFactory().createDefaultService()
     
-    // Create secure logger if needed
+    // Create a secure logger if one wasn't provided
     let secureLoggerInstance: SecureLoggerActor
     if let secureLogger = secureLogger {
       secureLoggerInstance = secureLogger
     } else {
-      secureLoggerInstance = await LoggingServices.createSecureLogger(
-        subsystem: "com.umbra.security",
-        category: "SecurityService",
-        includeTimestamps: true
+      secureLoggerInstance = await LoggingServiceFactory.createSecureLogger(
+        baseLogger: logger,
+        domain: "SecurityService",
+        privacyLevel: .high
       )
     }
 
+    // Create default configuration if needed
+    let configurationInstance = configuration ?? SecurityImplementation.SecurityConfigurationDTO(
+      securityLevel: .standard,
+      loggingLevel: .info
+    )
+    
     // Create the security service with the configured dependencies
     return SecurityServiceActor(
       cryptoService: cryptoService,
       logger: logger,
-      secureLogger: secureLoggerInstance
+      secureLogger: secureLoggerInstance,
+      configuration: configurationInstance
     )
   }
 
-  /// Creates a security service for testing with mock dependencies
-  /// - Returns: A security service configured for testing
-  public static func createForTesting() async -> SecurityProviderProtocol {
-    let factory = LoggingServiceFactory()
-    let logger = await factory.createPrivacyAwareLogger(
-      subsystem: "com.umbra.security.test", 
-      category: "SecurityImplementation"
-    )
+  /// Creates a mock security service for testing
+  /// - Parameters:
+  ///   - logger: The logger to use for general logging
+  ///   - secureLogger: The secure logger to use for privacy-aware logging
+  /// - Returns: A mock security service instance
+  public static func createMock(
+    logger: LoggingInterfaces.LoggingProtocol,
+    secureLogger: SecureLoggerActor? = nil
+  ) async -> SecurityProviderProtocol {
+    // Create a secure logger if one wasn't provided
+    let secureLogger = secureLogger ?? await createSecureLogger(logger: logger)
     
-    let secureLogger = await LoggingServices.createSecureLogger(
-      subsystem: "com.umbra.security.test",
-      category: "SecurityService",
-      includeTimestamps: true
-    )
-
     // Create mock crypto service
     let cryptoService = MockCryptoService()
 
+    // Create mock configuration
+    let configuration = SecurityImplementation.SecurityConfigurationDTO(
+      securityLevel: .standard,
+      loggingLevel: .debug
+    )
+    
     // Create the security service with mock dependencies
     return SecurityServiceActor(
       cryptoService: cryptoService,
       logger: logger,
-      secureLogger: secureLogger
+      secureLogger: secureLogger,
+      configuration: configuration
     )
   }
 
   /// Creates a security service for development with verbose logging
-  /// - Returns: A security service configured for development
-  public static func createDevelopment() async -> SecurityProviderProtocol {
-    // Create verbose logger for development
-    let factory = LoggingServiceFactory()
-    let logger = await factory.createPrivacyAwareLogger(
-      subsystem: "com.umbra.security", 
-      category: "SecurityImplementation"
+  /// - Returns: A security service instance with verbose logging
+  public static func createForDevelopment() async -> SecurityProviderProtocol {
+    let loggingFactory = LoggingServiceFactory.shared
+    let logger = await loggingFactory.createPrivacyAwareLogger(
+      subsystem: "com.umbra.security",
+      category: "SecurityImplementation",
+      environment: .development
     )
 
+    // Create default configuration
+    let configuration = SecurityImplementation.SecurityConfigurationDTO(
+      securityLevel: .standard,
+      loggingLevel: .debug
+    )
+    
     // Create the security service with verbose logging
-    return await createWithLogger(logger)
+    return await createWithLoggers(
+      logger: logger,
+      secureLogger: nil,
+      configuration: configuration
+    )
   }
 
   /// Creates a security service for production with secure logging
-  /// - Returns: A security service configured for production
-  public static func createProduction() async -> SecurityProviderProtocol {
-    // Create production logger with appropriate privacy settings
-    let factory = LoggingServiceFactory()
-    let logger = await factory.createPrivacyAwareLogger(
-      subsystem: "com.umbra.security", 
+  /// - Returns: A security service instance with production logging
+  public static func createForProduction() async -> SecurityProviderProtocol {
+    let loggingFactory = LoggingServiceFactory.shared
+    let logger = await loggingFactory.createProductionPrivacyAwareLogger(
+      subsystem: "com.umbra.security",
       category: "SecurityImplementation"
     )
 
+    // Create default configuration
+    let configuration = SecurityImplementation.SecurityConfigurationDTO(
+      securityLevel: .standard,
+      loggingLevel: .warning
+    )
+    
     // Create the security service with production logging
-    return await createWithLogger(logger)
+    return await createWithLoggers(
+      logger: logger,
+      secureLogger: nil,
+      configuration: configuration
+    )
   }
+}
+
+/// Helper function to create metadata dictionary from LogMetadataDTOCollection
+private func createMetadataDictionary(_ metadata: LogMetadataDTOCollection) -> [String: String] {
+  var metadataDict = [String: String]()
+  for (key, value) in metadata.publicMetadata {
+    metadataDict[key] = value
+  }
+  return metadataDict
+}
+
+/// Helper function to create a secure logger
+/// - Parameters:
+///   - logger: The logger to use as a base
+///   - category: The category for the logger
+///   - includeTimestamps: Whether to include timestamps in log messages
+/// - Returns: A secure logger instance
+private func createSecureLogger(
+  logger: LoggingInterfaces.LoggingProtocol,
+  category: String = "SecurityService",
+  includeTimestamps: Bool = true
+) async -> SecureLoggerActor {
+  return await LoggingServiceFactory.createSecureLogger(
+    baseLogger: logger,
+    domain: category,
+    privacyLevel: .high
+  )
 }
 
 /// Mock implementation of CryptoServiceProtocol for testing

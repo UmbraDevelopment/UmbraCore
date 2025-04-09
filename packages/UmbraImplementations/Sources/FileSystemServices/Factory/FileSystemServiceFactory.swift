@@ -152,6 +152,11 @@ public actor FileSystemServiceFactory {
 /**
  A null logger implementation used as a default when no logger is provided.
  This avoids the need for nil checks throughout the file system services code.
+ 
+ This implementation follows the Alpha Dot Five architecture principles by:
+ 1. Using actor isolation for thread safety
+ 2. Providing a complete implementation of the required protocol
+ 3. Using proper British spelling in documentation
  */
 @preconcurrency
 private actor NullLogger: LoggingInterfaces.LoggingProtocol {

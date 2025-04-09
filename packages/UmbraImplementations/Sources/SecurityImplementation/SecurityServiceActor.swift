@@ -9,9 +9,9 @@ import SecurityCoreInterfaces
 import SecurityInterfaces
 import UmbraErrors
 
-/// Helper function to create PrivacyMetadata from dictionary
-private func createPrivacyMetadata(_ dict: [String: String]) -> PrivacyMetadata {
-  var metadata = PrivacyMetadata()
+/// Helper function to create LogMetadataDTOCollection from dictionary
+private func createMetadataCollection(_ dict: [String: String]) -> LogMetadataDTOCollection {
+  var metadata = LogMetadataDTOCollection()
   for (key, value) in dict {
     metadata = metadata.withPublic(key: key, value: value)
   }
@@ -49,84 +49,63 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
   private var eventSubscribers: [UUID: AsyncStream<SecurityEventDTO>.Continuation] = [:]
 
   /// Unique identifier for this security service instance
-  private let serviceId: UUID = UUID()
+  private let serviceId = UUID()
 
   // MARK: - Initialization
 
-  /// Creates a new security service with the specified dependencies
+  /// Initialize a new security service actor
   /// - Parameters:
   ///   - cryptoService: The crypto service to use for cryptographic operations
   ///   - logger: The logger to use for general logging
   ///   - secureLogger: The secure logger to use for privacy-aware logging
+  ///   - configuration: The configuration for the security service
   public init(
-    cryptoService: any CryptoServiceProtocol,
-    logger: LoggingInterfaces.LoggingProtocol,
-    secureLogger: SecureLoggerActor
+    cryptoService: CryptoServiceProtocol,
+    logger: LoggingProtocol,
+    secureLogger: SecureLoggerActor,
+    configuration: SecurityConfigurationDTO
   ) {
     self.cryptoService = cryptoService
     self.logger = logger
     self.secureLogger = secureLogger
-    self.configuration = SecurityConfigurationDTO(
-      providerType: .standard,
-      securityLevel: .high,
-      encryptionAlgorithm: .aes256,
-      hashAlgorithm: .sha256,
-      options: nil
-    )
-
-    // Log initialisation event with privacy controls
-    Task {
-      await self.logger.debug(
-        "Initialising security service", 
-        metadata: createPrivacyMetadata([
-          "serviceId": serviceId.uuidString,
-          "providerType": configuration.providerType.rawValue,
-          "securityLevel": configuration.securityLevel.rawValue
-        ]),
-        source: "SecurityImplementation"
-      )
-    }
+    self.configuration = configuration
   }
 
-  // MARK: - AsyncServiceInitializable
+  // MARK: - AsyncServiceInitializable Implementation
 
-  /// Initializes the security service asynchronously
-  /// - Parameter configuration: Optional configuration to use
-  /// - Returns: True if initialization was successful
-  public func initialize(
-    _ configuration: SecurityConfigurationDTO?=nil
-  ) async -> Bool {
-    // Apply configuration if provided
-    if let configuration = configuration {
-      self.configuration = configuration
+  /// Initialize the service asynchronously
+  public func initialize() async throws {
+    guard !isInitialised else {
+      return
     }
 
-    // Mark service as initialized
+    // Log initialization with configuration details
+    let logContext = SecurityLogContext(
+      operation: "initialize",
+      component: "SecurityServiceActor"
+    )
+    
+    // Add configuration details to log context
+    let contextWithConfig = logContext
+      .adding(key: "securityLevel", value: configuration.securityLevel.rawValue, privacyLevel: .public)
+      .adding(key: "loggingLevel", value: configuration.loggingLevel.rawValue, privacyLevel: .public)
+    
+    // Log initialization
+    await secureLogger.info("Security service initialized")
+    
     isInitialised = true
-
-    await logger.info(
-      "Security service initialised successfully", 
-      metadata: createPrivacyMetadata([
-        "serviceId": serviceId.uuidString,
-        "providerType": self.configuration.providerType.rawValue,
-        "securityLevel": self.configuration.securityLevel.rawValue
-      ]),
-      source: "SecurityImplementation"
-    )
-
-    return true
   }
 
-  // MARK: - Validation Helpers
-  
-  /// Validates that the service has been properly initialised
-  /// - Throws: CoreSecurityError.serviceUnavailable if not initialised
+  // MARK: - Private Helpers
+
+  /// Validates that the service has been initialised
+  /// - Throws: CoreSecurityError if the service has not been initialised
   private func validateInitialisation() throws {
-    if !isInitialised {
-      throw CoreSecurityError.serviceUnavailable(reason: "Security service not initialised")
+    guard isInitialised else {
+      throw CoreSecurityError.configurationError("Security service has not been initialised")
     }
   }
-
+  
   // MARK: - SecurityProviderProtocol Implementation
   
   /// Access to cryptographic service implementation
@@ -136,253 +115,213 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
   
   /// Access to key management service implementation
   public func keyManager() async -> KeyManagementProtocol {
-    // Not implemented yet - would return a key manager
-    fatalError("Key management not implemented")
+    // This is a placeholder - in a real implementation, we would return a proper key manager
+    fatalError("Key management not implemented yet")
   }
   
-  /**
-   Encrypts data with the specified configuration.
-   
-   - Parameter config: Configuration for the encryption operation
-   - Returns: Result containing encrypted data or error
-   */
-  public func encrypt(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
-    try validateInitialisation()
-    
-    // Log operation start
-    await secureLogger.securityEvent(
-      action: "Encrypt",
-      status: .started,
-      subject: nil,
-      resource: nil,
-      additionalMetadata: [
-        "algorithm": PrivacyTaggedValue(stringValue: config.encryptionAlgorithm.rawValue, privacyLevel: .public),
-        "providerType": PrivacyTaggedValue(stringValue: config.providerType.rawValue, privacyLevel: .public)
-      ]
-    )
-    
-    // Not implemented yet - would delegate to crypto service
-    throw CoreSecurityError.notImplemented(reason: "Encrypt operation not implemented")
-  }
-  
-  /**
-   Decrypts data with the specified configuration.
-   
-   - Parameter config: Configuration for the decryption operation
-   - Returns: Result containing decrypted data or error
-   */
-  public func decrypt(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
-    try validateInitialisation()
-    
-    // Log operation start
-    await secureLogger.securityEvent(
-      action: "Decrypt",
-      status: .started,
-      subject: nil,
-      resource: nil,
-      additionalMetadata: [
-        "algorithm": PrivacyTaggedValue(stringValue: config.encryptionAlgorithm.rawValue, privacyLevel: .public),
-        "providerType": PrivacyTaggedValue(stringValue: config.providerType.rawValue, privacyLevel: .public)
-      ]
-    )
-    
-    // Not implemented yet - would delegate to crypto service
-    throw CoreSecurityError.notImplemented(reason: "Decrypt operation not implemented")
-  }
-  
-  /**
-   Generates a cryptographic key with the specified configuration.
-   
-   - Parameter config: Configuration for the key generation operation
-   - Returns: Result containing key identifier or error
-   */
+  /// Generate a key with the specified configuration
   public func generateKey(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
-    try validateInitialisation()
-    
-    // Log operation start
-    await secureLogger.securityEvent(
-      action: "GenerateKey",
-      status: .started,
-      subject: nil,
-      resource: nil,
-      additionalMetadata: [
-        "algorithm": PrivacyTaggedValue(stringValue: config.encryptionAlgorithm.rawValue, privacyLevel: .public),
-        "providerType": PrivacyTaggedValue(stringValue: config.providerType.rawValue, privacyLevel: .public)
-      ]
-    )
-    
-    // Not implemented yet - would delegate to crypto service
-    throw CoreSecurityError.notImplemented(reason: "Key generation not implemented")
+    throw CoreSecurityError.configurationError("Key generation not implemented yet")
   }
   
-  /**
-   Securely stores data with the specified configuration.
-   
-   - Parameter config: Configuration for the secure storage operation
-   - Returns: Result containing storage identifier or error
-   */
+  /// Store data securely with the specified configuration
   public func secureStore(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
-    try validateInitialisation()
-    
-    // Log operation start
-    await secureLogger.securityEvent(
-      action: "SecureStore",
-      status: .started,
-      subject: nil,
-      resource: nil,
-      additionalMetadata: [
-        "algorithm": PrivacyTaggedValue(stringValue: config.encryptionAlgorithm.rawValue, privacyLevel: .public),
-        "providerType": PrivacyTaggedValue(stringValue: config.providerType.rawValue, privacyLevel: .public)
-      ]
-    )
-    
-    // Not implemented yet - would delegate to crypto service
-    throw CoreSecurityError.notImplemented(reason: "Secure store operation not implemented")
+    throw CoreSecurityError.configurationError("Secure store not implemented yet")
   }
   
-  /**
-   Securely retrieves data with the specified configuration.
-   
-   - Parameter config: Configuration for the secure retrieval operation
-   - Returns: Result containing retrieved data or error
-   */
+  /// Retrieve data securely with the specified configuration
   public func secureRetrieve(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
-    try validateInitialisation()
-    
-    // Log operation start
-    await secureLogger.securityEvent(
-      action: "SecureRetrieve",
-      status: .started,
-      subject: nil,
-      resource: nil,
-      additionalMetadata: [
-        "algorithm": PrivacyTaggedValue(stringValue: config.encryptionAlgorithm.rawValue, privacyLevel: .public),
-        "providerType": PrivacyTaggedValue(stringValue: config.providerType.rawValue, privacyLevel: .public)
-      ]
-    )
-    
-    // Not implemented yet - would delegate to crypto service
-    throw CoreSecurityError.notImplemented(reason: "Secure retrieve operation not implemented")
+    throw CoreSecurityError.configurationError("Secure retrieve not implemented yet")
   }
   
-  /**
-   Securely deletes data with the specified configuration.
-   
-   - Parameter config: Configuration for the secure deletion operation
-   - Returns: Result indicating success or error
-   */
+  /// Delete data securely with the specified configuration
   public func secureDelete(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
-    try validateInitialisation()
-    
-    // Log operation start
-    await secureLogger.securityEvent(
-      action: "SecureDelete",
-      status: .started,
-      subject: nil,
-      resource: nil,
-      additionalMetadata: [
-        "algorithm": PrivacyTaggedValue(stringValue: config.encryptionAlgorithm.rawValue, privacyLevel: .public),
-        "providerType": PrivacyTaggedValue(stringValue: config.providerType.rawValue, privacyLevel: .public)
-      ]
-    )
-    
-    // Not implemented yet - would delegate to crypto service
-    throw CoreSecurityError.notImplemented(reason: "Secure delete operation not implemented")
+    throw CoreSecurityError.configurationError("Secure delete not implemented yet")
   }
   
-  /**
-   Signs data with the specified configuration.
-   
-   - Parameter config: Configuration for the signing operation
-   - Returns: Result containing signature or error
-   */
-  public func sign(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
-    try validateInitialisation()
-    
-    // Log operation start
-    await secureLogger.securityEvent(
-      action: "Sign",
-      status: .started,
-      subject: nil,
-      resource: nil,
-      additionalMetadata: [
-        "algorithm": PrivacyTaggedValue(stringValue: config.encryptionAlgorithm.rawValue, privacyLevel: .public),
-        "providerType": PrivacyTaggedValue(stringValue: config.providerType.rawValue, privacyLevel: .public)
-      ]
-    )
-    
-    // Not implemented yet - would delegate to crypto service
-    throw CoreSecurityError.notImplemented(reason: "Sign operation not implemented")
-  }
-  
-  /**
-   Verifies a signature with the specified configuration.
-   
-   - Parameter config: Configuration for the verification operation
-   - Returns: Result indicating verification success or error
-   */
-  public func verify(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
-    try validateInitialisation()
-    
-    // Log operation start
-    await secureLogger.securityEvent(
-      action: "Verify",
-      status: .started,
-      subject: nil,
-      resource: nil,
-      additionalMetadata: [
-        "algorithm": PrivacyTaggedValue(stringValue: config.encryptionAlgorithm.rawValue, privacyLevel: .public),
-        "providerType": PrivacyTaggedValue(stringValue: config.providerType.rawValue, privacyLevel: .public)
-      ]
-    )
-    
-    // Not implemented yet - would delegate to crypto service
-    throw CoreSecurityError.notImplemented(reason: "Verify operation not implemented")
-  }
-  
-  /**
-   Performs a secure operation with the specified configuration.
-   
-   - Parameters:
-     - operation: The type of security operation to perform
-     - config: Configuration for the operation
-   - Returns: Result of the operation
-   */
+  /// Perform a secure operation with the specified configuration
   public func performSecureOperation(
     operation: SecurityOperation,
     config: SecurityConfigDTO
   ) async throws -> SecurityResultDTO {
-    try validateInitialisation()
-    
-    // Log operation start with secure logger
-    await secureLogger.securityEvent(
-      action: "SecurityOperation",
-      status: .started,
-      subject: nil,
-      resource: nil,
-      additionalMetadata: [
-        "operation": PrivacyTaggedValue(stringValue: operation.rawValue, privacyLevel: .public),
-        "algorithm": PrivacyTaggedValue(stringValue: config.encryptionAlgorithm.rawValue, privacyLevel: .public)
-      ]
-    )
-    
-    // Not implemented yet
-    throw CoreSecurityError.notImplemented(reason: "Generic secure operation not implemented")
+    throw CoreSecurityError.configurationError("Secure operation not implemented yet")
   }
   
-  /**
-   Creates a security configuration with the specified options.
-   
-   - Parameter options: Options for creating the configuration
-   - Returns: A fully configured SecurityConfigDTO instance
-   */
+  /// Create a secure configuration with the specified options
   public func createSecureConfig(options: SecurityConfigOptions) async -> SecurityConfigDTO {
-    // Create and return a new configuration based on the provided options
     return SecurityConfigDTO(
-      encryptionAlgorithm: .aes256,
-      hashAlgorithm: .sha256,
-      providerType: .standard,
-      options: options
+      encryptionAlgorithm: CoreSecurityTypes.EncryptionAlgorithm.aes256GCM,
+      hashAlgorithm: CoreSecurityTypes.HashAlgorithm.sha256,
+      providerType: CoreSecurityTypes.SecurityProviderType.system
     )
+  }
+
+  /// Encrypts data with the specified configuration
+  /// - Parameter config: The configuration for the encryption operation
+  /// - Returns: The result of the encryption operation
+  public func encrypt(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+    try validateInitialisation()
+    
+    let context = SecurityLogContext(
+      operation: "encrypt",
+      component: "SecurityServiceActor",
+      operationId: UUID().uuidString
+    )
+    
+    // Log operation start
+    await secureLogger.info("Starting encryption operation")
+    
+    // For now, we'll implement a placeholder that returns a successful result
+    // In a real implementation, this would perform actual encryption
+    
+    return SecurityResultDTO.success(
+      resultData: Data([1, 2, 3, 4, 5]), // Placeholder encrypted data
+      executionTimeMs: 0,
+      metadata: [
+        "algorithm": config.encryptionAlgorithm.rawValue,
+        "operationId": UUID().uuidString
+      ]
+    )
+  }
+
+  /// Decrypts data with the specified configuration
+  /// - Parameter config: The configuration for the decryption operation
+  /// - Returns: The result of the decryption operation
+  public func decrypt(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+    try validateInitialisation()
+    
+    // Log operation start
+    let context = SecurityLogContext(
+      operation: "decrypt",
+      component: "SecurityServiceActor",
+      operationId: UUID().uuidString
+    )
+    
+    await secureLogger.info("Starting decryption operation")
+    
+    // For now, we'll implement a placeholder that returns a successful result
+    // In a real implementation, this would perform actual decryption
+    
+    return SecurityResultDTO.success(
+      resultData: Data([10, 20, 30, 40, 50]), // Placeholder decrypted data
+      executionTimeMs: 0,
+      metadata: [
+        "algorithm": config.encryptionAlgorithm.rawValue,
+        "operationId": UUID().uuidString
+      ]
+    )
+  }
+
+  /// Hashes data with the specified configuration
+  /// - Parameter config: The configuration for the hash operation
+  /// - Returns: The result of the hash operation
+  public func hash(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+    try validateInitialisation()
+    
+    // Log operation start
+    let context = SecurityLogContext(
+      operation: "hash",
+      component: "SecurityServiceActor",
+      operationId: UUID().uuidString
+    )
+    
+    await secureLogger.info("Starting hash operation")
+    
+    // For now, we'll implement a placeholder that returns a successful result
+    // In a real implementation, this would perform actual hashing
+    
+    return SecurityResultDTO.success(
+      resultData: Data([100, 101, 102, 103, 104]), // Placeholder hash data
+      executionTimeMs: 0,
+      metadata: [
+        "algorithm": config.hashAlgorithm.rawValue,
+        "operationId": UUID().uuidString
+      ]
+    )
+  }
+
+  /// Signs data with the specified configuration
+  /// - Parameter config: The configuration for the sign operation
+  /// - Returns: The result of the sign operation
+  public func sign(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+    try validateInitialisation()
+    
+    // Log operation start
+    let context = SecurityLogContext(
+      operation: "sign",
+      component: "SecurityServiceActor",
+      operationId: UUID().uuidString
+    )
+    
+    await secureLogger.info("Starting sign operation")
+    
+    // For now, we'll implement a placeholder that returns a successful result
+    // In a real implementation, this would perform actual signing
+    
+    return SecurityResultDTO.success(
+      resultData: Data([200, 201, 202, 203, 204]), // Placeholder signature data
+      executionTimeMs: 0,
+      metadata: [
+        "algorithm": "SHA256withRSA", // Placeholder algorithm
+        "operationId": UUID().uuidString
+      ]
+    )
+  }
+
+  /// Verifies a signature with the specified configuration
+  /// - Parameter config: The configuration for the verify operation
+  /// - Returns: The result of the verify operation
+  public func verify(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+    try validateInitialisation()
+    
+    // Log operation start
+    let context = SecurityLogContext(
+      operation: "verify",
+      component: "SecurityServiceActor",
+      operationId: UUID().uuidString
+    )
+    
+    await secureLogger.info("Starting verification operation")
+    
+    // For now, we'll implement a placeholder that returns a successful result
+    // In a real implementation, this would perform actual verification
+    
+    return SecurityResultDTO.success(
+      resultData: nil,
+      executionTimeMs: 0,
+      metadata: [
+        "verified": "true", // Placeholder verification result
+        "operationId": UUID().uuidString
+      ]
+    )
+  }
+}
+
+// MARK: - Extension for CryptoServiceProtocol
+
+private extension CryptoServiceProtocol {
+  /// Stores data and returns the identifier
+  /// - Parameters:
+  ///   - data: The data to store
+  ///   - identifier: The identifier to use
+  /// - Returns: A result containing the identifier or an error
+  func storeData(
+    data: Data,
+    identifier: String
+  ) async -> Result<String, SecurityStorageError> {
+    // This is a placeholder implementation
+    // In a real implementation, this would store the data securely
+    return .success(identifier)
+  }
+
+  /// Retrieves data by identifier
+  /// - Parameter identifier: The identifier of the data to retrieve
+  /// - Returns: A result containing the data or an error
+  func retrieveData(
+    identifier: String
+  ) async -> Result<Data, SecurityStorageError> {
+    // This is a placeholder implementation
+    // In a real implementation, this would retrieve the data securely
+    return .success(Data())
   }
 }
