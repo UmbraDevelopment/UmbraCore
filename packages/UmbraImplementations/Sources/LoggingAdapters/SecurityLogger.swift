@@ -24,7 +24,7 @@ import LoggingTypes
 
  ```swift
  // Create a security logger
- let loggingService = await LoggingServiceFactory.createDefaultService()
+ let loggingService = await LoggingServiceFactory.shared.createDefault()
  let securityLogger = SecurityLogger(loggingService: loggingService)
 
  // Log security operations with proper context

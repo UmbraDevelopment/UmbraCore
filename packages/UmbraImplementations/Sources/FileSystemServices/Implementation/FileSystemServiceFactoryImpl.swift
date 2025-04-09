@@ -36,7 +36,7 @@ extension FileSystemServiceFactoryImpl {
 
    - Returns: A file system service with standard settings
    */
-  public func createDefaultService() -> any FileSystemInterfaces.FileSystemServiceProtocol {
+  public func createDefault() -> any FileSystemInterfaces.FileSystemServiceProtocol {
     FileSystemServiceImpl(
       fileManager: FileManager.default,
       operationQueueQoS: .utility,

@@ -4,12 +4,12 @@
 public enum NotificationServiceFactory {
   /// Create the default notification service implementation
   /// - Returns: An object conforming to the NotificationServiceProtocol
-  public static func createDefaultService() -> NotificationServiceProtocol {
+  public static func createDefault() -> NotificationServiceProtocol {
     DefaultNotificationService()
   }
 
-  /// Create a notification service with a custom notification center
-  /// - Parameter notificationCenter: The notification center to use
+  /// Create a notification service with a custom notification centre
+  /// - Parameter notificationCenter: The notification centre to use
   /// - Returns: An object conforming to the NotificationServiceProtocol
   public static func createService(with notificationCenter: NotificationCenter)
   -> NotificationServiceProtocol {
@@ -22,16 +22,16 @@ private final class DefaultNotificationService: NotificationServiceProtocol {
   /// The observation actor used for thread-safe operations
   private let observationActor=ObservationActor()
 
-  /// The notification center used for posting and observing notifications
+  /// The notification centre used for posting and observing notifications
   private let notificationCenter: NotificationCenter
 
-  /// Initialise with the default notification center
+  /// Initialise with the default notification centre
   init() {
     notificationCenter=NotificationCenter.default
   }
 
-  /// Initialise with a custom notification center
-  /// - Parameter notificationCenter: The notification center to use
+  /// Initialise with a custom notification centre
+  /// - Parameter notificationCenter: The notification centre to use
   init(notificationCenter: NotificationCenter) {
     self.notificationCenter=notificationCenter
   }

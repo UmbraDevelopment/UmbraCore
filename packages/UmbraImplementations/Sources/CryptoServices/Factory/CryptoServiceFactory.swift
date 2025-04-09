@@ -42,10 +42,10 @@ import UmbraErrors
  // Create a default implementation
  let cryptoService = await factory.createDefault(secureStorage: mySecureStorage)
 
- // Create a service with custom secure logger
- let customService = await factory.createDefaultService(
-   secureStorage: mySecureStorage,
-   secureLogger: mySecureLogger
+ // Create a service with a specific provider type
+ let cryptoWithProvider = await factory.createWithProviderType(
+   providerType: .cryptoKit,
+   logger: myLogger
  )
  ```
 
@@ -83,10 +83,10 @@ public actor CryptoServiceFactory {
   // MARK: - Properties
 
   /// Shared instance for singleton access pattern
-  public static let shared=CryptoServiceFactory()
+  public static let shared = CryptoServiceFactory()
 
   /// Cache of created services for reuse
-  private var serviceCache: [String: CryptoServiceProtocol]=[:]
+  private var serviceCache: [String: CryptoServiceProtocol] = [:]
 
   // MARK: - Initialisation
 
@@ -98,46 +98,14 @@ public actor CryptoServiceFactory {
   /**
    Creates a default crypto service implementation.
 
-   - Parameter secureStorage: Optional secure storage service to use
-   - Parameter logger: Optional logger for operations
-   - Returns: A CryptoServiceProtocol implementation
-   */
-  public func createDefault(
-    secureStorage: SecureStorageProtocol?=nil,
-    logger: LoggingProtocol?=nil
-  ) async -> CryptoServiceProtocol {
-    let loggingFactory = LoggingServiceFactory.shared
-    let actualLogger: LoggingProtocol
-    if let logger {
-      actualLogger = logger
-    } else {
-      actualLogger = await loggingFactory.createPrivacyAwareLogger()
-    }
-    
-    let actualSecureStorage: SecureStorageProtocol
-    if let secureStorage {
-      actualSecureStorage = secureStorage
-    } else {
-      actualSecureStorage = await createLocalSecureStorage(logger: actualLogger)
-    }
-
-    return DefaultCryptoServiceImpl(
-      secureStorage: actualSecureStorage,
-      logger: actualLogger
-    )
-  }
-
-  /**
-   Creates the default crypto service.
-
    - Parameters:
      - secureStorage: Optional secure storage service to use
      - logger: Optional logger for operations
-   - Returns: A standard CryptoServiceProtocol implementation
+   - Returns: A CryptoServiceProtocol implementation
    */
-  public func createDefaultService(
-    secureStorage: SecureStorageProtocol?=nil,
-    logger: LoggingProtocol?=nil
+  public func createDefault(
+    secureStorage: SecureStorageProtocol? = nil,
+    logger: LoggingProtocol? = nil
   ) async -> CryptoServiceProtocol {
     let loggingFactory = LoggingServiceFactory.shared
     let actualLogger: LoggingProtocol
@@ -169,8 +137,8 @@ public actor CryptoServiceFactory {
    - Returns: A CryptoServiceProtocol implementation with basic logging
    */
   public func createLoggingService(
-    secureStorage: SecureStorageProtocol?=nil,
-    logger: LoggingProtocol?=nil
+    secureStorage: SecureStorageProtocol? = nil,
+    logger: LoggingProtocol? = nil
   ) async -> CryptoServiceProtocol {
     let loggingFactory = LoggingServiceFactory.shared
     let actualLogger: LoggingProtocol
@@ -205,8 +173,8 @@ public actor CryptoServiceFactory {
    - Returns: A CryptoServiceProtocol implementation with enhanced privacy-aware logging
    */
   public func createEnhancedLoggingService(
-    secureStorage: SecureStorageProtocol?=nil,
-    logger: LoggingProtocol?=nil
+    secureStorage: SecureStorageProtocol? = nil,
+    logger: LoggingProtocol? = nil
   ) async -> CryptoServiceProtocol {
     // Use privacy-aware logger for enhanced security
     let loggingFactory = LoggingServiceFactory.shared
@@ -248,8 +216,8 @@ public actor CryptoServiceFactory {
    - Returns: A CryptoServiceProtocol implementation with enhanced security
    */
   public func createHighSecurityService(
-    secureStorage: SecureStorageProtocol?=nil,
-    logger: LoggingProtocol?=nil
+    secureStorage: SecureStorageProtocol? = nil,
+    logger: LoggingProtocol? = nil
   ) async -> CryptoServiceProtocol {
     // Use privacy-aware logger with production environment for high security
     let loggingFactory = LoggingServiceFactory.shared
@@ -298,8 +266,8 @@ public actor CryptoServiceFactory {
    */
   public func createWithProviderType(
     providerType: SecurityProviderType,
-    secureStorage: SecureStorageProtocol?=nil,
-    logger: LoggingProtocol?=nil
+    secureStorage: SecureStorageProtocol? = nil,
+    logger: LoggingProtocol? = nil
   ) async -> CryptoServiceProtocol {
     let loggingFactory = LoggingServiceFactory.shared
     let actualLogger: LoggingProtocol
@@ -346,8 +314,8 @@ public actor CryptoServiceFactory {
    */
   public func createWithProvider(
     provider: SecurityProviderProtocol,
-    secureStorage: SecureStorageProtocol?=nil,
-    logger: LoggingProtocol?=nil
+    secureStorage: SecureStorageProtocol? = nil,
+    logger: LoggingProtocol? = nil
   ) async -> CryptoServiceProtocol {
     let loggingFactory = LoggingServiceFactory.shared
     let actualLogger: LoggingProtocol
@@ -381,7 +349,7 @@ public actor CryptoServiceFactory {
    - Returns: A SecureStorageProtocol implementation
    */
   public func createLocalSecureStorage(
-    logger: LoggingProtocol?=nil
+    logger: LoggingProtocol? = nil
   ) async -> SecureStorageProtocol {
     let loggingFactory = LoggingServiceFactory.shared
     let actualLogger: LoggingProtocol
@@ -406,7 +374,7 @@ public actor CryptoServiceFactory {
    */
   public func createSecureStorage(
     providerType: SecurityProviderType,
-    logger: LoggingProtocol?=nil
+    logger: LoggingProtocol? = nil
   ) async -> SecureStorageProtocol {
     let loggingFactory = LoggingServiceFactory.shared
     let actualLogger: LoggingProtocol
@@ -432,8 +400,8 @@ public actor CryptoServiceFactory {
    - Returns: A mock CryptoServiceProtocol implementation
    */
   public func createMock(
-    shouldSucceed: Bool=true,
-    logger: LoggingProtocol?=nil
+    shouldSucceed: Bool = true,
+    logger: LoggingProtocol? = nil
   ) async -> CryptoServiceProtocol {
     let loggingFactory = LoggingServiceFactory.shared
     let actualLogger: LoggingProtocol
@@ -462,7 +430,7 @@ public actor CryptoServiceFactory {
   public func createLoggingDecorator(
     wrapped: CryptoServiceProtocol,
     logger: LoggingProtocol,
-    secureLogger: LoggingProtocol?=nil
+    secureLogger: LoggingProtocol? = nil
   ) async -> CryptoServiceProtocol {
     LoggingCryptoServiceImpl(
       wrapped: wrapped,

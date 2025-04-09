@@ -57,8 +57,8 @@ public enum CryptoServicesWithSecureLoggingExample {
 
     do {
       // Step 3: Create the crypto service using the factory with secure logging
-      let cryptoService=await CryptoServiceFactory.createDefaultService(
-        secureLogger: secureLogger
+      let cryptoService = await CryptoServiceFactory.shared.createDefault(
+        logger: secureLogger
       )
 
       // Step 4: Convert Data to [UInt8] for CryptoService API
@@ -230,8 +230,8 @@ public enum CryptoServicesWithSecureLoggingExample {
     )
 
     // Step 2: Create crypto service
-    let cryptoService=await CryptoServiceFactory.createDefaultService(
-      secureLogger: secureLogger
+    let cryptoService = await CryptoServiceFactory.shared.createDefault(
+      logger: secureLogger
     )
 
     // Step 3: Perform hashing

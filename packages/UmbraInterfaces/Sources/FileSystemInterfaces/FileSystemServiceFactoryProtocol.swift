@@ -29,7 +29,7 @@ public protocol FileSystemServiceFactoryProtocol: Sendable {
 
    - Returns: A file system service instance conforming to FileSystemServiceProtocol
    */
-  func createDefaultService() -> any FileSystemServiceProtocol
+  func createDefault() -> any FileSystemServiceProtocol
 
   /**
    Creates a file system service with custom security settings.

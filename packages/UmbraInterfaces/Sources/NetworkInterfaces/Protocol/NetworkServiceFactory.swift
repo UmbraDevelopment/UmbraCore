@@ -3,7 +3,7 @@
 public protocol NetworkServiceFactoryProtocol: Sendable {
   /// Creates a default network service
   /// - Returns: A NetworkServiceProtocol implementation
-  func createDefaultService() -> any NetworkServiceProtocol
+  func createDefault() -> any NetworkServiceProtocol
 
   /// Creates a network service with custom configuration
   /// - Parameters:

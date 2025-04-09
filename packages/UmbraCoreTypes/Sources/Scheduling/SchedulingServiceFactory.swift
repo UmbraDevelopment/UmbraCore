@@ -5,7 +5,7 @@ import UmbraErrors
 public enum SchedulingServiceFactory {
   /// Create the default scheduling service implementation
   /// - Returns: An object conforming to the SchedulingServiceProtocol
-  public static func createDefaultService() -> SchedulingServiceProtocol {
+  public static func createDefault() -> SchedulingServiceProtocol {
     DefaultSchedulingService()
   }
 

@@ -9,7 +9,7 @@ public struct NetworkServiceFactoryImpl: NetworkServiceFactoryProtocol {
   public init() {}
 
   /// Creates a default network service
-  public func createDefaultService() -> any NetworkServiceProtocol {
+  public func createDefault() -> any NetworkServiceProtocol {
     NetworkServiceImpl(
       timeoutInterval: 60.0,
       cachePolicy: .useProtocolCachePolicy,

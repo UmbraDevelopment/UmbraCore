@@ -78,7 +78,7 @@ public enum SecureLoggerFactory {
     includeTimestamps: Bool=true
   ) async -> SecureLoggerActor {
     // Create a logging service actor
-    let loggingServiceActor=await LoggingServiceFactory.shared.createDefaultService()
+    let loggingServiceActor=await LoggingServiceFactory.shared.createDefault()
 
     // Create a secure logger that integrates with the logging service
     return SecureLoggerActor(

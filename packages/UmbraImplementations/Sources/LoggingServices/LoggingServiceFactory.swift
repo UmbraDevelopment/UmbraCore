@@ -26,7 +26,7 @@ public actor LoggingServiceFactory {
   ///   - formatter: Optional custom formatter to use
   ///   - useCache: Whether to cache and reuse the created logger
   /// - Returns: A configured logging service actor
-  public func createStandardLogger(
+  public func createService(
     minimumLevel: LoggingTypes.UmbraLogLevel = .info,
     formatter: LoggingInterfaces.LogFormatterProtocol?=nil,
     useCache: Bool=true
@@ -93,9 +93,9 @@ public actor LoggingServiceFactory {
   /// Create a default logging service with standard configuration
   /// - Parameter useCache: Whether to cache and reuse the created logger
   /// - Returns: A configured logging service actor with default settings
-  public func createDefaultService(useCache: Bool=true) async -> LoggingServiceActor {
+  public func createDefault(useCache: Bool=true) async -> LoggingServiceActor {
     // Create a standard logger with info level and default formatter
-    await createStandardLogger(
+    await createService(
       minimumLevel: .info,
       formatter: StandardLogFormatter(),
       useCache: useCache

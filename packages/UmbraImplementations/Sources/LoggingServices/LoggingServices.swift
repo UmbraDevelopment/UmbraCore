@@ -66,7 +66,7 @@ public enum LoggingServices {
    - Returns: A new logging service actor
    */
   public static func createLogger() async -> LoggingServiceActor {
-    await LoggingServiceFactory.shared.createDefaultService()
+    await LoggingServiceFactory.shared.createDefault()
   }
 
   /**
@@ -96,7 +96,7 @@ public enum LoggingServices {
     category: String,
     includeTimestamps: Bool=true
   ) async -> SecureLoggerActor {
-    await SecureLoggerFactory.createIntegratedSecureLogger(
+    await LoggerFactory.createIntegratedSecureLogger(
       subsystem: subsystem,
       category: category,
       includeTimestamps: includeTimestamps

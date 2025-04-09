@@ -70,7 +70,7 @@ public enum SecurityServiceFactory {
     configuration: SecurityImplementation.SecurityConfigurationDTO? = nil
   ) async -> SecurityProviderProtocol {
     // Create dependencies
-    let cryptoService = await CryptoServiceFactory().createDefaultService()
+    let cryptoService = await CryptoServiceFactory.shared.createDefault()
     
     // Create a secure logger if one wasn't provided
     let secureLoggerInstance: SecureLoggerActor
