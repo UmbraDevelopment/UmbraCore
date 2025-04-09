@@ -112,30 +112,6 @@ public actor CryptoLogger: PrivacyAwareLoggingProtocol {
   }
 
   /**
-   Log sensitive information with explicit privacy metadata.
-   
-   - Parameters:
-     - level: The log level
-     - message: The message to log
-     - sensitiveValues: The sensitive values to include
-     - context: The log context
-   */
-  @available(*, deprecated, message: "Use logWithMetadata(_:_:metadata:context:) with LogMetadataDTOCollection instead")
-  public func logSensitive(
-    _ level: LogLevel,
-    _ message: String,
-    sensitiveValues: LogMetadata,
-    context: LogContextDTO
-  ) async {
-    await baseLogger.logSensitive(
-      level,
-      message,
-      sensitiveValues: sensitiveValues,
-      context: context
-    )
-  }
-
-  /**
    Log an error with context.
    
    - Parameters:
@@ -224,33 +200,36 @@ public actor CryptoLogger: PrivacyAwareLoggingProtocol {
 
    - Parameters:
      - message: The log message
-     - dataIdentifier: Optional identifier for the data
-     - keyIdentifier: Optional identifier for the key
-     - status: The operation status
+     - dataIdentifier: The identifier for the data being encrypted
+     - keyIdentifier: The identifier for the encryption key
+     - algorithm: Optional encryption algorithm
      - metadata: Optional additional metadata
    */
   public func logEncryption(
     _ message: String,
-    dataIdentifier: String? = nil,
-    keyIdentifier: String? = nil,
-    status: String,
+    dataIdentifier: String,
+    keyIdentifier: String,
+    algorithm: String? = nil,
     metadata: LogMetadataDTOCollection? = nil
   ) async {
     var contextMetadata = metadata ?? LogMetadataDTOCollection()
     
-    // Add key identifier as private data if provided
-    if let keyIdentifier {
-      contextMetadata = contextMetadata.withPrivate(key: "keyIdentifier", value: keyIdentifier)
+    // Add standard encryption metadata
+    contextMetadata = contextMetadata
+      .withPublic(key: "dataIdentifier", value: dataIdentifier)
+      .withPrivate(key: "keyIdentifier", value: keyIdentifier)
+    
+    if let algorithm {
+      contextMetadata = contextMetadata.withPublic(key: "algorithm", value: algorithm)
     }
     
     let context = CryptoLogContext(
       operation: "encrypt",
       identifier: dataIdentifier,
-      status: status,
       metadata: contextMetadata
     )
-
-    await log(.info, message, context: context)
+    
+    await info(message, context: context)
   }
 
   /**
@@ -258,33 +237,36 @@ public actor CryptoLogger: PrivacyAwareLoggingProtocol {
 
    - Parameters:
      - message: The log message
-     - dataIdentifier: Optional identifier for the encrypted data
-     - keyIdentifier: Optional identifier for the key
-     - status: The operation status
+     - dataIdentifier: The identifier for the encrypted data
+     - keyIdentifier: The identifier for the decryption key
+     - algorithm: Optional decryption algorithm
      - metadata: Optional additional metadata
    */
   public func logDecryption(
     _ message: String,
-    dataIdentifier: String? = nil,
-    keyIdentifier: String? = nil,
-    status: String,
+    dataIdentifier: String,
+    keyIdentifier: String,
+    algorithm: String? = nil,
     metadata: LogMetadataDTOCollection? = nil
   ) async {
     var contextMetadata = metadata ?? LogMetadataDTOCollection()
     
-    // Add key identifier as private data if provided
-    if let keyIdentifier {
-      contextMetadata = contextMetadata.withPrivate(key: "keyIdentifier", value: keyIdentifier)
+    // Add standard decryption metadata
+    contextMetadata = contextMetadata
+      .withPublic(key: "dataIdentifier", value: dataIdentifier)
+      .withPrivate(key: "keyIdentifier", value: keyIdentifier)
+    
+    if let algorithm {
+      contextMetadata = contextMetadata.withPublic(key: "algorithm", value: algorithm)
     }
     
     let context = CryptoLogContext(
       operation: "decrypt",
       identifier: dataIdentifier,
-      status: status,
       metadata: contextMetadata
     )
-
-    await log(.info, message, context: context)
+    
+    await info(message, context: context)
   }
 
   /**
@@ -292,37 +274,30 @@ public actor CryptoLogger: PrivacyAwareLoggingProtocol {
 
    - Parameters:
      - message: The log message
-     - keyIdentifier: Optional identifier for the generated key
-     - algorithm: Optional algorithm used
-     - status: The operation status
+     - keyIdentifier: The identifier for the generated key
+     - keyType: The type of key generated
      - metadata: Optional additional metadata
    */
   public func logKeyGeneration(
     _ message: String,
-    keyIdentifier: String? = nil,
-    algorithm: String? = nil,
-    status: String,
+    keyIdentifier: String,
+    keyType: String,
     metadata: LogMetadataDTOCollection? = nil
   ) async {
     var contextMetadata = metadata ?? LogMetadataDTOCollection()
-
-    if let algorithm {
-      contextMetadata = contextMetadata.withPublic(key: "algorithm", value: algorithm)
-    }
     
-    // Add key identifier as sensitive data if provided
-    if let keyIdentifier {
-      contextMetadata = contextMetadata.withSensitive(key: "keyIdentifier", value: keyIdentifier)
-    }
-
+    // Add standard key generation metadata
+    contextMetadata = contextMetadata
+      .withSensitive(key: "keyIdentifier", value: keyIdentifier)
+      .withPublic(key: "keyType", value: keyType)
+    
     let context = CryptoLogContext(
       operation: "generateKey",
       identifier: keyIdentifier,
-      status: status,
       metadata: contextMetadata
     )
-
-    await log(.info, message, context: context)
+    
+    await info(message, context: context)
   }
 
   /**
@@ -330,32 +305,30 @@ public actor CryptoLogger: PrivacyAwareLoggingProtocol {
 
    - Parameters:
      - message: The log message
-     - dataIdentifier: Optional identifier for the stored data
-     - storageType: Optional type of storage
-     - status: The operation status
+     - dataIdentifier: The identifier for the stored data
+     - storageType: The type of storage
      - metadata: Optional additional metadata
    */
   public func logDataStorage(
     _ message: String,
-    dataIdentifier: String? = nil,
-    storageType: String? = nil,
-    status: String,
+    dataIdentifier: String,
+    storageType: String,
     metadata: LogMetadataDTOCollection? = nil
   ) async {
     var contextMetadata = metadata ?? LogMetadataDTOCollection()
-
-    if let storageType {
-      contextMetadata = contextMetadata.withPublic(key: "storageType", value: storageType)
-    }
-
+    
+    // Add standard data storage metadata
+    contextMetadata = contextMetadata
+      .withPublic(key: "dataIdentifier", value: dataIdentifier)
+      .withPublic(key: "storageType", value: storageType)
+    
     let context = CryptoLogContext(
       operation: "storeData",
       identifier: dataIdentifier,
-      status: status,
       metadata: contextMetadata
     )
-
-    await log(.info, message, context: context)
+    
+    await info(message, context: context)
   }
 
   /**
@@ -363,109 +336,103 @@ public actor CryptoLogger: PrivacyAwareLoggingProtocol {
 
    - Parameters:
      - message: The log message
-     - dataIdentifier: Optional identifier for the data
+     - dataIdentifier: The identifier for the data being hashed
      - algorithm: Optional hashing algorithm
-     - status: The operation status
      - metadata: Optional additional metadata
    */
   public func logHashing(
     _ message: String,
-    dataIdentifier: String? = nil,
+    dataIdentifier: String,
     algorithm: String? = nil,
-    status: String,
     metadata: LogMetadataDTOCollection? = nil
   ) async {
     var contextMetadata = metadata ?? LogMetadataDTOCollection()
-
+    
+    // Add standard hashing metadata
+    contextMetadata = contextMetadata
+      .withPublic(key: "dataIdentifier", value: dataIdentifier)
+    
     if let algorithm {
       contextMetadata = contextMetadata.withPublic(key: "algorithm", value: algorithm)
     }
-
+    
     let context = CryptoLogContext(
       operation: "hash",
       identifier: dataIdentifier,
-      status: status,
       metadata: contextMetadata
     )
-
-    await log(.info, message, context: context)
+    
+    await info(message, context: context)
   }
-  
+
   /**
    Log a signature verification operation.
 
    - Parameters:
      - message: The log message
-     - dataIdentifier: Optional identifier for the data
-     - signatureIdentifier: Optional identifier for the signature
-     - keyIdentifier: Optional identifier for the verification key
-     - status: The operation status
+     - dataIdentifier: The identifier for the data being verified
+     - signatureIdentifier: The identifier for the signature
+     - keyIdentifier: The identifier for the verification key
      - metadata: Optional additional metadata
    */
   public func logSignatureVerification(
     _ message: String,
-    dataIdentifier: String? = nil,
-    signatureIdentifier: String? = nil,
-    keyIdentifier: String? = nil,
-    status: String,
+    dataIdentifier: String,
+    signatureIdentifier: String,
+    keyIdentifier: String,
     metadata: LogMetadataDTOCollection? = nil
   ) async {
     var contextMetadata = metadata ?? LogMetadataDTOCollection()
-
-    if let signatureIdentifier {
-      contextMetadata = contextMetadata.withPublic(key: "signatureIdentifier", value: signatureIdentifier)
-    }
     
-    if let keyIdentifier {
-      contextMetadata = contextMetadata.withPrivate(key: "keyIdentifier", value: keyIdentifier)
-    }
-
+    // Add standard signature verification metadata
+    contextMetadata = contextMetadata
+      .withPublic(key: "dataIdentifier", value: dataIdentifier)
+      .withPublic(key: "signatureIdentifier", value: signatureIdentifier)
+      .withPrivate(key: "keyIdentifier", value: keyIdentifier)
+    
     let context = CryptoLogContext(
       operation: "verifySignature",
       identifier: dataIdentifier,
-      status: status,
       metadata: contextMetadata
     )
-
-    await log(.info, message, context: context)
+    
+    await info(message, context: context)
   }
-  
+
   /**
    Log a data signing operation.
 
    - Parameters:
      - message: The log message
-     - dataIdentifier: Optional identifier for the data
-     - keyIdentifier: Optional identifier for the signing key
+     - dataIdentifier: The identifier for the data being signed
+     - keyIdentifier: The identifier for the signing key
      - algorithm: Optional signing algorithm
-     - status: The operation status
      - metadata: Optional additional metadata
    */
   public func logSigning(
     _ message: String,
-    dataIdentifier: String? = nil,
-    keyIdentifier: String? = nil,
+    dataIdentifier: String,
+    keyIdentifier: String,
     algorithm: String? = nil,
-    status: String,
     metadata: LogMetadataDTOCollection? = nil
   ) async {
     var contextMetadata = metadata ?? LogMetadataDTOCollection()
-
+    
+    // Add standard signing metadata
+    contextMetadata = contextMetadata
+      .withPublic(key: "dataIdentifier", value: dataIdentifier)
+      .withPrivate(key: "keyIdentifier", value: keyIdentifier)
+    
     if let algorithm {
       contextMetadata = contextMetadata.withPublic(key: "algorithm", value: algorithm)
     }
     
-    if let keyIdentifier {
-      contextMetadata = contextMetadata.withPrivate(key: "keyIdentifier", value: keyIdentifier)
-    }
-
     let context = CryptoLogContext(
       operation: "sign",
       identifier: dataIdentifier,
-      status: status,
       metadata: contextMetadata
     )
-
-    await log(.info, message, context: context)
+    
+    await info(message, context: context)
   }
 }
