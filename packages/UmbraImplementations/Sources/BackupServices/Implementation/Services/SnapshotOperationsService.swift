@@ -59,10 +59,30 @@ public actor SnapshotOperationsService {
     progressReporter: BackupProgressReporter?,
     cancellationToken: BackupCancellationToken?
   ) async throws -> [BackupSnapshot] {
+    // Create a log context for privacy-aware logging
+    let logContext = SnapshotLogContext(
+      operation: "listSnapshots",
+      source: "SnapshotOperationsService"
+    )
+    .withPublic(key: "operationType", value: "listSnapshots")
+    
+    if let repositoryID = parameters.repositoryID {
+      logContext.withPublic(key: "repositoryID", value: repositoryID)
+    }
+    
+    if let tags = parameters.tags, !tags.isEmpty {
+      logContext.withPublic(key: "tagsCount", value: String(tags.count))
+    }
+    
+    if let path = parameters.path {
+      logContext.withPrivate(key: "path", value: path.path)
+    }
+    
     try await operationExecutor.execute(
       parameters: parameters,
       progressReporter: progressReporter,
       cancellationToken: cancellationToken,
+      logContext: logContext,
       operation: { params, reporter, _ in
         // Create command
         let command=try self.commandFactory.createListCommand(
@@ -186,11 +206,13 @@ public actor SnapshotOperationsService {
       }
 
       // Create log context
-      func createLogContext() -> SnapshotLogContextAdapter {
-        SnapshotLogContextAdapter(
-          snapshotID: snapshotID,
-          operation: "getSnapshotDetails"
+      func createLogContext() -> SnapshotLogContext {
+        SnapshotLogContext(
+          operation: "getSnapshotDetails",
+          source: "SnapshotOperationsService"
         )
+        .withPublic(key: "snapshotID", value: snapshotID)
+        .withPublic(key: "includeFileStatistics", value: String(includeFileStatistics))
       }
     }
 
@@ -332,19 +354,14 @@ public actor SnapshotOperationsService {
         }
       }
 
-      func createLogContext() -> SnapshotLogContextAdapter {
-        let context=SnapshotLogContextAdapter(
-          snapshotID: snapshotID,
-          operation: operationType.rawValue
+      func createLogContext() -> SnapshotLogContext {
+        SnapshotLogContext(
+          operation: operationType.rawValue,
+          source: "SnapshotOperationsService"
         )
-
-        return context
-          .with(key: "pattern", value: pattern, privacy: LoggingTypes.PrivacyClassification.public)
-          .with(
-            key: "caseSensitive",
-            value: String(caseSensitive),
-            privacy: LoggingTypes.PrivacyClassification.public
-          )
+        .withPublic(key: "snapshotID", value: snapshotID)
+        .withPublic(key: "pattern", value: pattern)
+        .withPublic(key: "caseSensitive", value: String(caseSensitive))
       }
     }
 

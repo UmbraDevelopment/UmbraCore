@@ -374,8 +374,27 @@ public actor BackupLogger: DomainLoggerProtocol {
 
 extension BackupLogContext {
   func getMetadata() -> MetadataCollection {
-    // Implement the getMetadata method
-    // This is a placeholder, you should implement the actual logic to get the metadata
-    MetadataCollection()
+    // Convert the BackupLogContext to a LogMetadataDTOCollection
+    // This ensures all privacy annotations are properly maintained
+    let metadataCollection = toMetadataCollection()
+    
+    // Convert to the legacy MetadataCollection format
+    // This is needed for compatibility with the existing logging system
+    var legacyMetadata = MetadataCollection()
+    
+    // Transfer all metadata with their privacy levels preserved
+    for item in metadataCollection.items {
+      switch item.privacyLevel {
+      case .public:
+        legacyMetadata.add(key: item.key, value: item.value, isPrivate: false)
+      case .private, .sensitive, .hash:
+        legacyMetadata.add(key: item.key, value: item.value, isPrivate: true)
+      case .auto:
+        // For auto privacy level, use the system's automatic detection
+        legacyMetadata.add(key: item.key, value: item.value, isPrivate: false)
+      }
+    }
+    
+    return legacyMetadata
   }
 }

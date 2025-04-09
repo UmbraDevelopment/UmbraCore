@@ -50,10 +50,12 @@ public actor SnapshotServiceImpl: SnapshotServiceProtocol {
     includeFileStatistics: Bool
   ) async throws -> BackupInterfaces.BackupSnapshot? {
     // Create a log context
-    let context=BackupLogContextImpl()
-      .withOperation("getSnapshotDetails")
-      .withPublic(key: "snapshotID", value: snapshotID)
-      .withPublic(key: "includeFileStatistics", value: String(includeFileStatistics))
+    let context = SnapshotLogContext(
+      operation: "getSnapshotDetails",
+      source: "SnapshotServiceImpl"
+    )
+    .withPublic(key: "snapshotID", value: snapshotID)
+    .withPublic(key: "includeFileStatistics", value: String(includeFileStatistics))
 
     await logger.info("Getting snapshot details", context: context)
 
@@ -102,9 +104,11 @@ public actor SnapshotServiceImpl: SnapshotServiceProtocol {
     includeFileStatistics: Bool=false
   ) async throws -> BackupInterfaces.BackupSnapshot? {
     // Create a log context
-    let context=BackupLogContextImpl()
-      .withOperation("getLatestSnapshot")
-      .withPublic(key: "includeFileStatistics", value: String(includeFileStatistics))
+    let context = SnapshotLogContext(
+      operation: "getLatestSnapshot",
+      source: "SnapshotServiceImpl"
+    )
+    .withPublic(key: "includeFileStatistics", value: String(includeFileStatistics))
 
     await logger.info("Getting latest snapshot", context: context)
 
@@ -153,9 +157,11 @@ public actor SnapshotServiceImpl: SnapshotServiceProtocol {
     includeFileStatistics: Bool=false
   ) async throws -> [BackupInterfaces.BackupSnapshot] {
     // Create a log context
-    let context=BackupLogContextImpl()
-      .withOperation("listSnapshots")
-      .withPublic(key: "includeFileStatistics", value: String(includeFileStatistics))
+    let context = SnapshotLogContext(
+      operation: "listSnapshots",
+      source: "SnapshotServiceImpl"
+    )
+    .withPublic(key: "includeFileStatistics", value: String(includeFileStatistics))
 
     await logger.info("Listing snapshots", context: context)
 
@@ -201,10 +207,12 @@ public actor SnapshotServiceImpl: SnapshotServiceProtocol {
     secondSnapshotID: String
   ) async throws -> BackupInterfaces.BackupSnapshotComparisonResult {
     // Create a log context
-    let context=BackupLogContextImpl()
-      .withOperation("compareSnapshots")
-      .withPublic(key: "firstSnapshotID", value: firstSnapshotID)
-      .withPublic(key: "secondSnapshotID", value: secondSnapshotID)
+    let context = SnapshotLogContext(
+      operation: "compareSnapshots",
+      source: "SnapshotServiceImpl"
+    )
+    .withPublic(key: "firstSnapshotID", value: firstSnapshotID)
+    .withPublic(key: "secondSnapshotID", value: secondSnapshotID)
 
     await logger.info("Comparing snapshots", context: context)
 
@@ -254,10 +262,12 @@ public actor SnapshotServiceImpl: SnapshotServiceProtocol {
     fullVerification: Bool=false
   ) async throws -> BackupInterfaces.BackupVerificationResult {
     // Create a log context
-    let context=BackupLogContextImpl()
-      .withOperation("verifySnapshot")
-      .withPublic(key: "snapshotID", value: snapshotID)
-      .withPublic(key: "fullVerification", value: String(fullVerification))
+    let context = SnapshotLogContext(
+      operation: "verifySnapshot",
+      source: "SnapshotServiceImpl"
+    )
+    .withPublic(key: "snapshotID", value: snapshotID)
+    .withPublic(key: "fullVerification", value: String(fullVerification))
 
     await logger.info("Verifying snapshot", context: context)
 

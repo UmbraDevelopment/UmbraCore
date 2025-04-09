@@ -40,8 +40,8 @@ public protocol SnapshotOperationParameters {
   func validate() throws
 
   /// Creates a log context for the operation
-  /// - Returns: A SnapshotLogContextAdapter for logging
-  func createLogContext() -> SnapshotLogContextAdapter
+  /// - Returns: A SnapshotLogContext for logging
+  func createLogContext() -> SnapshotLogContext
 }
 
 /**
@@ -80,43 +80,19 @@ public struct SnapshotListParameters: SnapshotOperationParameters {
     }
   }
 
-  public func createLogContext() -> SnapshotLogContextAdapter {
-    let context=SnapshotLogContextAdapter(
-      snapshotID: "multiple",
-      operation: operationType.rawValue
+  public func createLogContext() -> SnapshotLogContext {
+    let context=SnapshotLogContext(
+      operation: operationType.rawValue,
+      source: "SnapshotOperationsService"
     )
 
     return context
-      .with(
-        key: "repositoryID",
-        value: repositoryID ?? "default",
-        privacy: LoggingTypes.PrivacyClassification.public
-      )
-      .with(
-        key: "tags",
-        value: tags?.joined(separator: ", ") ?? "",
-        privacy: LoggingTypes.PrivacyClassification.public
-      )
-      .with(
-        key: "beforeDate",
-        value: before?.ISO8601Format() ?? "none",
-        privacy: LoggingTypes.PrivacyClassification.public
-      )
-      .with(
-        key: "afterDate",
-        value: after?.ISO8601Format() ?? "none",
-        privacy: LoggingTypes.PrivacyClassification.public
-      )
-      .with(
-        key: "sources",
-        value: path?.path != nil ? [path!.path].joined(separator: ", ") : "none",
-        privacy: LoggingTypes.PrivacyClassification.sensitive
-      )
-      .with(
-        key: "limit",
-        value: limit != nil ? "\(limit!)" : "none",
-        privacy: LoggingTypes.PrivacyClassification.public
-      )
+      .withPublic(key: "repositoryID", value: repositoryID ?? "default")
+      .withPublic(key: "tags", value: tags?.joined(separator: ", ") ?? "")
+      .withPublic(key: "beforeDate", value: before?.ISO8601Format() ?? "none")
+      .withPublic(key: "afterDate", value: after?.ISO8601Format() ?? "none")
+      .withSensitive(key: "sources", value: path?.path != nil ? [path!.path].joined(separator: ", ") : "none")
+      .withPublic(key: "limit", value: limit != nil ? "\(limit!)" : "none")
   }
 }
 
@@ -143,17 +119,14 @@ public struct SnapshotGetParameters: SnapshotOperationParameters {
     }
   }
 
-  public func createLogContext() -> SnapshotLogContextAdapter {
-    let context=SnapshotLogContextAdapter(
-      snapshotID: snapshotID,
-      operation: operationType.rawValue
+  public func createLogContext() -> SnapshotLogContext {
+    let context=SnapshotLogContext(
+      operation: operationType.rawValue,
+      source: "SnapshotOperationsService"
     )
 
-    return context.with(
-      key: "includeFileStatistics",
-      value: String(includeFileStatistics),
-      privacy: LoggingTypes.PrivacyClassification.public
-    )
+    return context.withPublic(key: "snapshotID", value: snapshotID)
+      .withPublic(key: "includeFileStatistics", value: String(includeFileStatistics))
   }
 }
 
@@ -187,28 +160,16 @@ public struct SnapshotCompareParameters: SnapshotOperationParameters {
     }
   }
 
-  public func createLogContext() -> SnapshotLogContextAdapter {
-    let context=SnapshotLogContextAdapter(
-      snapshotID: "compare", // Special case for compare operation
-      operation: operationType.rawValue
+  public func createLogContext() -> SnapshotLogContext {
+    let context=SnapshotLogContext(
+      operation: operationType.rawValue,
+      source: "SnapshotOperationsService"
     )
 
     return context
-      .with(
-        key: "snapshotID1",
-        value: snapshotID1,
-        privacy: LoggingTypes.PrivacyClassification.public
-      )
-      .with(
-        key: "snapshotID2",
-        value: snapshotID2,
-        privacy: LoggingTypes.PrivacyClassification.public
-      )
-      .with(
-        key: "sources",
-        value: path?.path != nil ? [path!.path].joined(separator: ", ") : "none",
-        privacy: LoggingTypes.PrivacyClassification.sensitive
-      )
+      .withPublic(key: "snapshotID1", value: snapshotID1)
+      .withPublic(key: "snapshotID2", value: snapshotID2)
+      .withSensitive(key: "sources", value: path?.path != nil ? [path!.path].joined(separator: ", ") : "none")
   }
 }
 
@@ -242,23 +203,16 @@ public struct SnapshotUpdateTagsParameters: SnapshotOperationParameters {
     }
   }
 
-  public func createLogContext() -> SnapshotLogContextAdapter {
-    let context=SnapshotLogContextAdapter(
-      snapshotID: snapshotID,
-      operation: operationType.rawValue
+  public func createLogContext() -> SnapshotLogContext {
+    let context=SnapshotLogContext(
+      operation: operationType.rawValue,
+      source: "SnapshotOperationsService"
     )
 
     return context
-      .with(
-        key: "addTags",
-        value: addTags.isEmpty ? "none" : addTags.joined(separator: ", "),
-        privacy: LoggingTypes.PrivacyClassification.public
-      )
-      .with(
-        key: "removeTags",
-        value: removeTags.joined(separator: ", "),
-        privacy: LoggingTypes.PrivacyClassification.public
-      )
+      .withPublic(key: "snapshotID", value: snapshotID)
+      .withPublic(key: "addTags", value: addTags.isEmpty ? "none" : addTags.joined(separator: ", "))
+      .withPublic(key: "removeTags", value: removeTags.joined(separator: ", "))
   }
 }
 
@@ -285,18 +239,14 @@ public struct SnapshotUpdateDescriptionParameters: SnapshotOperationParameters {
     }
   }
 
-  public func createLogContext() -> SnapshotLogContextAdapter {
-    let context=SnapshotLogContextAdapter(
-      snapshotID: snapshotID,
-      operation: operationType.rawValue
+  public func createLogContext() -> SnapshotLogContext {
+    let context=SnapshotLogContext(
+      operation: operationType.rawValue,
+      source: "SnapshotOperationsService"
     )
 
     // Description might contain sensitive information, so mark as private
-    return context.with(
-      key: "description",
-      value: description.count > 30 ? "\(description.prefix(30))..." : description,
-      privacy: LoggingTypes.PrivacyClassification.private
-    )
+    return context.withPrivate(key: "description", value: description.count > 30 ? "\(description.prefix(30))..." : description)
   }
 }
 
@@ -329,17 +279,15 @@ public struct SnapshotDeleteParameters: SnapshotOperationParameters, HasSnapshot
     }
   }
 
-  public func createLogContext() -> SnapshotLogContextAdapter {
-    let context=SnapshotLogContextAdapter(
-      snapshotID: snapshotID,
-      operation: operationType.rawValue
+  public func createLogContext() -> SnapshotLogContext {
+    let context=SnapshotLogContext(
+      operation: operationType.rawValue,
+      source: "SnapshotOperationsService"
     )
 
-    return context.with(
-      key: "pruneAfterDelete",
-      value: String(pruneAfterDelete),
-      privacy: LoggingTypes.PrivacyClassification.public
-    )
+    return context
+      .withPublic(key: "snapshotID", value: snapshotID)
+      .withPublic(key: "pruneAfterDelete", value: String(pruneAfterDelete))
   }
 }
 
@@ -375,17 +323,15 @@ public struct SnapshotCopyParameters: SnapshotOperationParameters, HasSnapshotID
     }
   }
 
-  public func createLogContext() -> SnapshotLogContextAdapter {
-    let context=SnapshotLogContextAdapter(
-      snapshotID: snapshotID,
-      operation: operationType.rawValue
+  public func createLogContext() -> SnapshotLogContext {
+    let context=SnapshotLogContext(
+      operation: operationType.rawValue,
+      source: "SnapshotOperationsService"
     )
 
-    return context.with(
-      key: "targetRepositoryID",
-      value: targetRepositoryID,
-      privacy: LoggingTypes.PrivacyClassification.public
-    )
+    return context
+      .withPublic(key: "snapshotID", value: snapshotID)
+      .withPublic(key: "targetRepositoryID", value: targetRepositoryID)
   }
 }
 
@@ -411,11 +357,12 @@ public struct SnapshotLockParameters: SnapshotOperationParameters, HasSnapshotID
     }
   }
 
-  public func createLogContext() -> SnapshotLogContextAdapter {
-    SnapshotLogContextAdapter(
-      snapshotID: snapshotID,
-      operation: operationType.rawValue
+  public func createLogContext() -> SnapshotLogContext {
+    SnapshotLogContext(
+      operation: operationType.rawValue,
+      source: "SnapshotOperationsService"
     )
+    .withPublic(key: "snapshotID", value: snapshotID)
   }
 }
 
@@ -441,11 +388,12 @@ public struct SnapshotUnlockParameters: SnapshotOperationParameters, HasSnapshot
     }
   }
 
-  public func createLogContext() -> SnapshotLogContextAdapter {
-    SnapshotLogContextAdapter(
-      snapshotID: snapshotID,
-      operation: operationType.rawValue
+  public func createLogContext() -> SnapshotLogContext {
+    SnapshotLogContext(
+      operation: operationType.rawValue,
+      source: "SnapshotOperationsService"
     )
+    .withPublic(key: "snapshotID", value: snapshotID)
   }
 }
 
@@ -478,33 +426,20 @@ public struct SnapshotRestoreParameters: SnapshotOperationParameters, HasSnapsho
     }
   }
 
-  public func createLogContext() -> SnapshotLogContextAdapter {
-    let context=SnapshotLogContextAdapter(
-      snapshotID: snapshotID,
-      operation: operationType.rawValue
+  public func createLogContext() -> SnapshotLogContext {
+    let context=SnapshotLogContext(
+      operation: operationType.rawValue,
+      source: "SnapshotOperationsService"
     )
 
-    var enrichedContext=context.with(
-      key: "sources",
-      value: targetPath.path,
-      privacy: LoggingTypes.PrivacyClassification
-        .sensitive // Target path may contain user-specific information
-    )
+    var enrichedContext=context.withSensitive(key: "sources", value: targetPath.path)
 
     if let includePattern {
-      enrichedContext=enrichedContext.with(
-        key: "includePattern",
-        value: includePattern,
-        privacy: LoggingTypes.PrivacyClassification.public
-      )
+      enrichedContext=enrichedContext.withPublic(key: "includePattern", value: includePattern)
     }
 
     if let excludePattern {
-      enrichedContext=enrichedContext.with(
-        key: "excludePattern",
-        value: excludePattern,
-        privacy: LoggingTypes.PrivacyClassification.public
-      )
+      enrichedContext=enrichedContext.withPublic(key: "excludePattern", value: excludePattern)
     }
 
     return enrichedContext
@@ -540,17 +475,13 @@ public struct SnapshotVerifyParameters: SnapshotOperationParameters, HasSnapshot
     }
   }
 
-  public func createLogContext() -> SnapshotLogContextAdapter {
-    let context=SnapshotLogContextAdapter(
-      snapshotID: snapshotID,
-      operation: operationType.rawValue
+  public func createLogContext() -> SnapshotLogContext {
+    SnapshotLogContext(
+      operation: operationType.rawValue,
+      source: "SnapshotOperationsService"
     )
-
-    return context.with(
-      key: "verificationLevel",
-      value: level.rawValue,
-      privacy: LoggingTypes.PrivacyClassification.public
-    )
+    .withPublic(key: "snapshotID", value: snapshotID)
+    .withPublic(key: "verificationLevel", value: level.rawValue)
   }
 }
 

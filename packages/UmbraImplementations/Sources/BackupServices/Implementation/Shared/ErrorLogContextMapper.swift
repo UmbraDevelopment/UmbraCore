@@ -23,21 +23,20 @@ public struct ErrorLogContextMapper {
   public func createContext(
     from error: Error,
     baseContext: BackupLogContext?=nil
-  ) -> BackupLogContextImpl {
+  ) -> BackupLogContext {
     // Start with the base context or create a new one
-    let context=baseContext ?? BackupLogContextImpl(
-      domainName: "BackupServices",
-      source: "ErrorMapper"
+    let context = baseContext ?? BackupLogContext(
+      source: "BackupServices.ErrorMapper"
     )
 
     // Add error type with public classification
-    let errorContext=context.withPublic(
+    let errorContext = context.withPublic(
       key: "errorType",
       value: String(describing: type(of: error))
     )
 
     // Add error code if available
-    if let nsError=error as? NSError {
+    if let nsError = error as? NSError {
       return errorContext
         .withPublic(key: "errorCode", value: String(nsError.code))
         .withPublic(key: "errorDomain", value: nsError.domain)

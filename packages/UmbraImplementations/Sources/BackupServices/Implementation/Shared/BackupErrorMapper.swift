@@ -21,7 +21,7 @@ public struct BackupErrorMapper {
    *   - context: Log context for the operation
    * - Returns: An appropriate BackupOperationError
    */
-  public func mapError(_ error: Error, context _: LogContextDTO?=nil) -> BackupOperationError {
+  public func mapError(_ error: Error, context: BackupLogContext?=nil) -> BackupOperationError {
     // If it's already a BackupOperationError, just return it
     if let backupError=error as? BackupOperationError {
       return backupError
