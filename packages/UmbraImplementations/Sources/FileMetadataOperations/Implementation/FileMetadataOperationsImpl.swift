@@ -1,6 +1,7 @@
 import Foundation
 import FileSystemInterfaces
 import LoggingInterfaces
+import LoggingTypes
 
 /**
  # File Metadata Operations Implementation
@@ -20,6 +21,24 @@ import LoggingInterfaces
  - Follows British spelling in documentation
  - Returns standardised operation results
  */
+
+/**
+ Extended Attribute DTO for storing extended attribute information
+ */
+public struct ExtendedAttributeDTO: Sendable, Equatable {
+    /// The name of the extended attribute
+    public let name: String
+    
+    /// The data value of the extended attribute
+    public let data: Data
+    
+    /// Initializes a new extended attribute DTO
+    public init(name: String, data: Data) {
+        self.name = name
+        self.data = data
+    }
+}
+
 public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
     /// The underlying file manager isolated within this actor
     private let fileManager: FileManager
@@ -47,13 +66,19 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
      - Throws: If the attributes cannot be retrieved
      */
     public func getAttributes(at path: String) async throws -> (FileMetadataDTO, FileOperationResultDTO) {
-        await logger.debug("Getting attributes for \(path)", metadata: ["path": path])
+        let logContext = BaseLogContextDTO(
+            domainName: "FileSystem",
+            source: "FileMetadataOperationsImpl",
+            metadata: LogMetadataDTOCollection().withPublic("path", path)
+        )
+        
+        await logger.debug("Getting attributes for \(path)", context: logContext)
         
         do {
             // Check if the file exists
             guard fileManager.fileExists(atPath: path) else {
                 let error = FileSystemError.pathNotFound(path: path)
-                await logger.error("File not found: \(path)", metadata: ["path": path])
+                await logger.error("File not found: \(path)", context: logContext)
                 throw error
             }
             
@@ -61,11 +86,10 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
             let attributes = try fileManager.attributesOfItem(atPath: path)
             
             // Create metadata DTO
-            guard let metadata = FileMetadataDTO.from(attributes: attributes) else {
-                let error = FileSystemError.genericError(reason: "Failed to create metadata from file attributes")
-                await logger.error("Failed to create metadata from attributes", metadata: ["path": path])
-                throw error
-            }
+            let metadata = FileMetadataDTO.from(
+                attributes: attributes,
+                path: path
+            )
             
             // Create extended attributes if possible
             var extendedAttributes: [String: ExtendedAttributeDTO]? = nil
@@ -82,22 +106,37 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
                 }
             } catch {
                 // Just log the error but don't fail the whole operation
-                await logger.warning("Could not retrieve extended attributes: \(error.localizedDescription)", metadata: ["path": path])
+                let warningContext = BaseLogContextDTO(
+                    domainName: "FileSystem",
+                    source: "FileMetadataOperationsImpl",
+                    metadata: LogMetadataDTOCollection()
+                        .withPublic("path", path)
+                        .withPublic("error", error.localizedDescription)
+                )
+                await logger.warning("Could not retrieve extended attributes: \(error.localizedDescription)", context: warningContext)
             }
             
             let result = FileOperationResultDTO.success(
                 path: path,
-                metadata: metadata,
-                context: ["operation": "getAttributes"]
+                metadata: metadata
             )
             
-            await logger.debug("Successfully retrieved attributes for \(path)", metadata: ["path": path])
+            await logger.debug("Successfully retrieved attributes for \(path)", context: logContext)
             return (metadata, result)
         } catch let error as FileSystemError {
             throw error
         } catch {
-            let fileError = FileSystemError.genericError(reason: "Failed to get attributes: \(error.localizedDescription)")
-            await logger.error("Failed to get attributes: \(error.localizedDescription)", metadata: ["path": path, "error": "\(error)"])
+            let fileError = FileSystemError.other(path: path, reason: "Failed to get attributes: \(error.localizedDescription)")
+            
+            let errorContext = BaseLogContextDTO(
+                domainName: "FileSystem", 
+                source: "FileMetadataOperationsImpl",
+                metadata: LogMetadataDTOCollection()
+                    .withPublic("path", path)
+                    .withPublic("error", error.localizedDescription)
+            )
+            
+            await logger.error("Failed to get attributes: \(error.localizedDescription)", context: errorContext)
             throw fileError
         }
     }
@@ -112,13 +151,21 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
      - Throws: If the attributes cannot be set
      */
     public func setAttributes(_ attributes: [FileAttributeKey: Any], at path: String) async throws -> FileOperationResultDTO {
-        await logger.debug("Setting attributes for \(path)", metadata: ["path": path, "attributes": "\(attributes)"])
+        let logContext = BaseLogContextDTO(
+            domainName: "FileSystem",
+            source: "FileMetadataOperationsImpl",
+            metadata: LogMetadataDTOCollection()
+                .withPublic("path", path)
+                .withPublic("attributes", "\(attributes)")
+        )
+        
+        await logger.debug("Setting attributes for \(path)", context: logContext)
         
         do {
             // Check if the file exists
             guard fileManager.fileExists(atPath: path) else {
                 let error = FileSystemError.pathNotFound(path: path)
-                await logger.error("File not found: \(path)", metadata: ["path": path])
+                await logger.error("File not found: \(path)", context: logContext)
                 throw error
             }
             
@@ -127,21 +174,32 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
             
             // Get the updated file attributes for the result metadata
             let updatedAttributes = try fileManager.attributesOfItem(atPath: path)
-            let metadata = FileMetadataDTO.from(attributes: updatedAttributes)
+            let metadata = FileMetadataDTO.from(
+                attributes: updatedAttributes,
+                path: path
+            )
             
             let result = FileOperationResultDTO.success(
                 path: path,
-                metadata: metadata,
-                context: ["operation": "setAttributes"]
+                metadata: metadata
             )
             
-            await logger.debug("Successfully set attributes for \(path)", metadata: ["path": path])
+            await logger.debug("Successfully set attributes for \(path)", context: logContext)
             return result
         } catch let error as FileSystemError {
             throw error
         } catch {
             let fileError = FileSystemError.permissionError(path: path, reason: "Failed to set attributes: \(error.localizedDescription)")
-            await logger.error("Failed to set attributes: \(error.localizedDescription)", metadata: ["path": path, "error": "\(error)"])
+            
+            let errorContext = BaseLogContextDTO(
+                domainName: "FileSystem", 
+                source: "FileMetadataOperationsImpl",
+                metadata: LogMetadataDTOCollection()
+                    .withPublic("path", path)
+                    .withPublic("error", error.localizedDescription)
+            )
+            
+            await logger.error("Failed to set attributes: \(error.localizedDescription)", context: errorContext)
             throw fileError
         }
     }
@@ -154,13 +212,19 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
      - Throws: If the file size cannot be retrieved
      */
     public func getFileSize(at path: String) async throws -> (UInt64, FileOperationResultDTO) {
-        await logger.debug("Getting file size for \(path)", metadata: ["path": path])
+        let logContext = BaseLogContextDTO(
+            domainName: "FileSystem",
+            source: "FileMetadataOperationsImpl",
+            metadata: LogMetadataDTOCollection().withPublic("path", path)
+        )
+        
+        await logger.debug("Getting file size for \(path)", context: logContext)
         
         do {
             // Check if the file exists
             guard fileManager.fileExists(atPath: path) else {
                 let error = FileSystemError.pathNotFound(path: path)
-                await logger.error("File not found: \(path)", metadata: ["path": path])
+                await logger.error("File not found: \(path)", context: logContext)
                 throw error
             }
             
@@ -169,26 +233,45 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
             
             // Extract the file size
             guard let fileSize = attributes[.size] as? UInt64 else {
-                let error = FileSystemError.genericError(reason: "Failed to get file size from attributes")
-                await logger.error("Failed to get file size from attributes", metadata: ["path": path])
+                let error = FileSystemError.other(path: path, reason: "Failed to get file size from attributes")
+                await logger.error("Failed to get file size from attributes", context: logContext)
                 throw error
             }
             
-            let metadata = FileMetadataDTO.from(attributes: attributes)
+            let metadata = FileMetadataDTO.from(
+                attributes: attributes,
+                path: path
+            )
             
             let result = FileOperationResultDTO.success(
                 path: path,
-                metadata: metadata,
-                context: ["operation": "getFileSize", "size": "\(fileSize)"]
+                metadata: metadata
             )
             
-            await logger.debug("Successfully retrieved file size for \(path): \(fileSize) bytes", metadata: ["path": path, "size": "\(fileSize)"])
+            let successContext = BaseLogContextDTO(
+                domainName: "FileSystem",
+                source: "FileMetadataOperationsImpl",
+                metadata: LogMetadataDTOCollection()
+                    .withPublic("path", path)
+                    .withPublic("size", "\(fileSize)")
+            )
+            
+            await logger.debug("Successfully retrieved file size for \(path): \(fileSize) bytes", context: successContext)
             return (fileSize, result)
         } catch let error as FileSystemError {
             throw error
         } catch {
-            let fileError = FileSystemError.genericError(reason: "Failed to get file size: \(error.localizedDescription)")
-            await logger.error("Failed to get file size: \(error.localizedDescription)", metadata: ["path": path, "error": "\(error)"])
+            let fileError = FileSystemError.other(path: path, reason: "Failed to get file size: \(error.localizedDescription)")
+            
+            let errorContext = BaseLogContextDTO(
+                domainName: "FileSystem", 
+                source: "FileMetadataOperationsImpl",
+                metadata: LogMetadataDTOCollection()
+                    .withPublic("path", path)
+                    .withPublic("error", error.localizedDescription)
+            )
+            
+            await logger.error("Failed to get file size: \(error.localizedDescription)", context: errorContext)
             throw fileError
         }
     }
@@ -201,13 +284,19 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
      - Throws: If the creation date cannot be retrieved
      */
     public func getCreationDate(at path: String) async throws -> (Date, FileOperationResultDTO) {
-        await logger.debug("Getting creation date for \(path)", metadata: ["path": path])
+        let logContext = BaseLogContextDTO(
+            domainName: "FileSystem",
+            source: "FileMetadataOperationsImpl",
+            metadata: LogMetadataDTOCollection().withPublic("path", path)
+        )
+        
+        await logger.debug("Getting creation date for \(path)", context: logContext)
         
         do {
             // Check if the file exists
             guard fileManager.fileExists(atPath: path) else {
                 let error = FileSystemError.pathNotFound(path: path)
-                await logger.error("File not found: \(path)", metadata: ["path": path])
+                await logger.error("File not found: \(path)", context: logContext)
                 throw error
             }
             
@@ -216,26 +305,45 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
             
             // Extract the creation date
             guard let creationDate = attributes[.creationDate] as? Date else {
-                let error = FileSystemError.genericError(reason: "Failed to get creation date from attributes")
-                await logger.error("Failed to get creation date from attributes", metadata: ["path": path])
+                let error = FileSystemError.other(path: path, reason: "Failed to get creation date from attributes")
+                await logger.error("Failed to get creation date from attributes", context: logContext)
                 throw error
             }
             
-            let metadata = FileMetadataDTO.from(attributes: attributes)
+            let metadata = FileMetadataDTO.from(
+                attributes: attributes,
+                path: path
+            )
             
             let result = FileOperationResultDTO.success(
                 path: path,
-                metadata: metadata,
-                context: ["operation": "getCreationDate", "creationDate": "\(creationDate)"]
+                metadata: metadata
             )
             
-            await logger.debug("Successfully retrieved creation date for \(path): \(creationDate)", metadata: ["path": path, "creationDate": "\(creationDate)"])
+            let successContext = BaseLogContextDTO(
+                domainName: "FileSystem",
+                source: "FileMetadataOperationsImpl",
+                metadata: LogMetadataDTOCollection()
+                    .withPublic("path", path)
+                    .withPublic("creationDate", "\(creationDate)")
+            )
+            
+            await logger.debug("Successfully retrieved creation date for \(path): \(creationDate)", context: successContext)
             return (creationDate, result)
         } catch let error as FileSystemError {
             throw error
         } catch {
-            let fileError = FileSystemError.genericError(reason: "Failed to get creation date: \(error.localizedDescription)")
-            await logger.error("Failed to get creation date: \(error.localizedDescription)", metadata: ["path": path, "error": "\(error)"])
+            let fileError = FileSystemError.other(path: path, reason: "Failed to get creation date: \(error.localizedDescription)")
+            
+            let errorContext = BaseLogContextDTO(
+                domainName: "FileSystem", 
+                source: "FileMetadataOperationsImpl",
+                metadata: LogMetadataDTOCollection()
+                    .withPublic("path", path)
+                    .withPublic("error", error.localizedDescription)
+            )
+            
+            await logger.error("Failed to get creation date: \(error.localizedDescription)", context: errorContext)
             throw fileError
         }
     }
@@ -248,13 +356,19 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
      - Throws: If the modification date cannot be retrieved
      */
     public func getModificationDate(at path: String) async throws -> (Date, FileOperationResultDTO) {
-        await logger.debug("Getting modification date for \(path)", metadata: ["path": path])
+        let logContext = BaseLogContextDTO(
+            domainName: "FileSystem",
+            source: "FileMetadataOperationsImpl",
+            metadata: LogMetadataDTOCollection().withPublic("path", path)
+        )
+        
+        await logger.debug("Getting modification date for \(path)", context: logContext)
         
         do {
             // Check if the file exists
             guard fileManager.fileExists(atPath: path) else {
                 let error = FileSystemError.pathNotFound(path: path)
-                await logger.error("File not found: \(path)", metadata: ["path": path])
+                await logger.error("File not found: \(path)", context: logContext)
                 throw error
             }
             
@@ -263,26 +377,45 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
             
             // Extract the modification date
             guard let modificationDate = attributes[.modificationDate] as? Date else {
-                let error = FileSystemError.genericError(reason: "Failed to get modification date from attributes")
-                await logger.error("Failed to get modification date from attributes", metadata: ["path": path])
+                let error = FileSystemError.other(path: path, reason: "Failed to get modification date from attributes")
+                await logger.error("Failed to get modification date from attributes", context: logContext)
                 throw error
             }
             
-            let metadata = FileMetadataDTO.from(attributes: attributes)
+            let metadata = FileMetadataDTO.from(
+                attributes: attributes,
+                path: path
+            )
             
             let result = FileOperationResultDTO.success(
                 path: path,
-                metadata: metadata,
-                context: ["operation": "getModificationDate", "modificationDate": "\(modificationDate)"]
+                metadata: metadata
             )
             
-            await logger.debug("Successfully retrieved modification date for \(path): \(modificationDate)", metadata: ["path": path, "modificationDate": "\(modificationDate)"])
+            let successContext = BaseLogContextDTO(
+                domainName: "FileSystem",
+                source: "FileMetadataOperationsImpl",
+                metadata: LogMetadataDTOCollection()
+                    .withPublic("path", path)
+                    .withPublic("modificationDate", "\(modificationDate)")
+            )
+            
+            await logger.debug("Successfully retrieved modification date for \(path): \(modificationDate)", context: successContext)
             return (modificationDate, result)
         } catch let error as FileSystemError {
             throw error
         } catch {
-            let fileError = FileSystemError.genericError(reason: "Failed to get modification date: \(error.localizedDescription)")
-            await logger.error("Failed to get modification date: \(error.localizedDescription)", metadata: ["path": path, "error": "\(error)"])
+            let fileError = FileSystemError.other(path: path, reason: "Failed to get modification date: \(error.localizedDescription)")
+            
+            let errorContext = BaseLogContextDTO(
+                domainName: "FileSystem", 
+                source: "FileMetadataOperationsImpl",
+                metadata: LogMetadataDTOCollection()
+                    .withPublic("path", path)
+                    .withPublic("error", error.localizedDescription)
+            )
+            
+            await logger.error("Failed to get modification date: \(error.localizedDescription)", context: errorContext)
             throw fileError
         }
     }
@@ -293,17 +426,25 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
      - Parameters:
         - name: The name of the extended attribute
         - path: The path to the file or directory
-     - Returns: The extended attribute DTO and operation result
+     - Returns: The extended attribute and operation result
      - Throws: If the extended attribute cannot be retrieved
      */
     public func getExtendedAttribute(withName name: String, fromItemAtPath path: String) async throws -> (ExtendedAttributeDTO, FileOperationResultDTO) {
-        await logger.debug("Getting extended attribute \(name) for \(path)", metadata: ["path": path, "attribute": name])
+        let logContext = BaseLogContextDTO(
+            domainName: "FileSystem",
+            source: "FileMetadataOperationsImpl",
+            metadata: LogMetadataDTOCollection()
+                .withPublic("path", path)
+                .withPublic("attribute", name)
+        )
+        
+        await logger.debug("Getting extended attribute \(name) for \(path)", context: logContext)
         
         do {
             // Check if the file exists
             guard fileManager.fileExists(atPath: path) else {
                 let error = FileSystemError.pathNotFound(path: path)
-                await logger.error("File not found: \(path)", metadata: ["path": path])
+                await logger.error("File not found: \(path)", context: logContext)
                 throw error
             }
             
@@ -313,25 +454,36 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
             
             // Get the file attributes for the result metadata
             let attributes = try fileManager.attributesOfItem(atPath: path)
-            let metadata = FileMetadataDTO.from(attributes: attributes)
+            let metadata = FileMetadataDTO.from(
+                attributes: attributes,
+                path: path
+            )
             
             let result = FileOperationResultDTO.success(
                 path: path,
-                metadata: metadata,
-                context: ["operation": "getExtendedAttribute", "attribute": name]
+                metadata: metadata
             )
             
-            await logger.debug("Successfully retrieved extended attribute \(name) for \(path)", metadata: ["path": path, "attribute": name])
+            await logger.debug("Successfully retrieved extended attribute \(name) for \(path)", context: logContext)
             return (attribute, result)
         } catch let error as FileSystemError {
             throw error
         } catch {
-            let fileError = FileSystemError.extendedAttributeError(
+            let fileError = FileSystemError.other(
                 path: path,
-                attribute: name,
                 reason: "Failed to get extended attribute: \(error.localizedDescription)"
             )
-            await logger.error("Failed to get extended attribute: \(error.localizedDescription)", metadata: ["path": path, "attribute": name, "error": "\(error)"])
+            
+            let errorContext = BaseLogContextDTO(
+                domainName: "FileSystem", 
+                source: "FileMetadataOperationsImpl",
+                metadata: LogMetadataDTOCollection()
+                    .withPublic("path", path)
+                    .withPublic("attribute", name)
+                    .withPublic("error", error.localizedDescription)
+            )
+            
+            await logger.error("Failed to get extended attribute: \(error.localizedDescription)", context: errorContext)
             throw fileError
         }
     }
@@ -346,13 +498,21 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
      - Throws: If the extended attribute cannot be set
      */
     public func setExtendedAttribute(_ attribute: ExtendedAttributeDTO, onItemAtPath path: String) async throws -> FileOperationResultDTO {
-        await logger.debug("Setting extended attribute \(attribute.name) for \(path)", metadata: ["path": path, "attribute": attribute.name])
+        let logContext = BaseLogContextDTO(
+            domainName: "FileSystem",
+            source: "FileMetadataOperationsImpl",
+            metadata: LogMetadataDTOCollection()
+                .withPublic("path", path)
+                .withPublic("attribute", attribute.name)
+        )
+        
+        await logger.debug("Setting extended attribute \(attribute.name) for \(path)", context: logContext)
         
         do {
             // Check if the file exists
             guard fileManager.fileExists(atPath: path) else {
                 let error = FileSystemError.pathNotFound(path: path)
-                await logger.error("File not found: \(path)", metadata: ["path": path])
+                await logger.error("File not found: \(path)", context: logContext)
                 throw error
             }
             
@@ -361,74 +521,106 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
             
             // Get the file attributes for the result metadata
             let attributes = try fileManager.attributesOfItem(atPath: path)
-            let metadata = FileMetadataDTO.from(attributes: attributes)
+            let metadata = FileMetadataDTO.from(
+                attributes: attributes,
+                path: path
+            )
             
             let result = FileOperationResultDTO.success(
                 path: path,
-                metadata: metadata,
-                context: ["operation": "setExtendedAttribute", "attribute": attribute.name]
+                metadata: metadata
             )
             
-            await logger.debug("Successfully set extended attribute \(attribute.name) for \(path)", metadata: ["path": path, "attribute": attribute.name])
+            await logger.debug("Successfully set extended attribute \(attribute.name) for \(path)", context: logContext)
             return result
         } catch let error as FileSystemError {
             throw error
         } catch {
-            let fileError = FileSystemError.extendedAttributeError(
+            let fileError = FileSystemError.other(
                 path: path,
-                attribute: attribute.name,
                 reason: "Failed to set extended attribute: \(error.localizedDescription)"
             )
-            await logger.error("Failed to set extended attribute: \(error.localizedDescription)", metadata: ["path": path, "attribute": attribute.name, "error": "\(error)"])
+            
+            let errorContext = BaseLogContextDTO(
+                domainName: "FileSystem", 
+                source: "FileMetadataOperationsImpl",
+                metadata: LogMetadataDTOCollection()
+                    .withPublic("path", path)
+                    .withPublic("attribute", attribute.name)
+                    .withPublic("error", error.localizedDescription)
+            )
+            
+            await logger.error("Failed to set extended attribute: \(error.localizedDescription)", context: errorContext)
             throw fileError
         }
     }
     
     /**
-     Lists all extended attributes on a file or directory.
+     Lists all extended attributes of a file or directory.
      
      - Parameter path: The path to the file or directory
-     - Returns: An array of extended attribute names and operation result
+     - Returns: The list of extended attribute names and operation result
      - Throws: If the extended attributes cannot be listed
      */
     public func listExtendedAttributes(atPath path: String) async throws -> ([String], FileOperationResultDTO) {
-        await logger.debug("Listing extended attributes for \(path)", metadata: ["path": path])
+        let logContext = BaseLogContextDTO(
+            domainName: "FileSystem",
+            source: "FileMetadataOperationsImpl",
+            metadata: LogMetadataDTOCollection().withPublic("path", path)
+        )
+        
+        await logger.debug("Listing extended attributes for \(path)", context: logContext)
         
         do {
             // Check if the file exists
             guard fileManager.fileExists(atPath: path) else {
                 let error = FileSystemError.pathNotFound(path: path)
-                await logger.error("File not found: \(path)", metadata: ["path": path])
+                await logger.error("File not found: \(path)", context: logContext)
                 throw error
             }
             
-            // List the extended attributes
+            // Get the extended attribute names
             let attributeNames = try fileManager.extendedAttributeNames(atPath: path)
             
             // Get the file attributes for the result metadata
             let attributes = try fileManager.attributesOfItem(atPath: path)
-            let metadata = FileMetadataDTO.from(attributes: attributes)
+            let metadata = FileMetadataDTO.from(
+                attributes: attributes,
+                path: path
+            )
             
             let result = FileOperationResultDTO.success(
                 path: path,
-                metadata: metadata,
-                context: [
-                    "operation": "listExtendedAttributes",
-                    "attributeCount": "\(attributeNames.count)"
-                ]
+                metadata: metadata
             )
             
-            await logger.debug("Successfully listed \(attributeNames.count) extended attributes for \(path)", metadata: ["path": path, "count": "\(attributeNames.count)"])
+            let successContext = BaseLogContextDTO(
+                domainName: "FileSystem",
+                source: "FileMetadataOperationsImpl",
+                metadata: LogMetadataDTOCollection()
+                    .withPublic("path", path)
+                    .withPublic("count", "\(attributeNames.count)")
+            )
+            
+            await logger.debug("Successfully listed \(attributeNames.count) extended attributes for \(path)", context: successContext)
             return (attributeNames, result)
         } catch let error as FileSystemError {
             throw error
         } catch {
-            let fileError = FileSystemError.extendedAttributeError(
+            let fileError = FileSystemError.other(
                 path: path,
-                attribute: "all",
                 reason: "Failed to list extended attributes: \(error.localizedDescription)"
             )
-            await logger.error("Failed to list extended attributes: \(error.localizedDescription)", metadata: ["path": path, "error": "\(error)"])
+            
+            let errorContext = BaseLogContextDTO(
+                domainName: "FileSystem", 
+                source: "FileMetadataOperationsImpl",
+                metadata: LogMetadataDTOCollection()
+                    .withPublic("path", path)
+                    .withPublic("error", error.localizedDescription)
+            )
+            
+            await logger.error("Failed to list extended attributes: \(error.localizedDescription)", context: errorContext)
             throw fileError
         }
     }
@@ -437,19 +629,27 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
      Removes an extended attribute from a file or directory.
      
      - Parameters:
-        - name: The name of the extended attribute
+        - name: The name of the extended attribute to remove
         - path: The path to the file or directory
      - Returns: Operation result
      - Throws: If the extended attribute cannot be removed
      */
     public func removeExtendedAttribute(withName name: String, fromItemAtPath path: String) async throws -> FileOperationResultDTO {
-        await logger.debug("Removing extended attribute \(name) from \(path)", metadata: ["path": path, "attribute": name])
+        let logContext = BaseLogContextDTO(
+            domainName: "FileSystem",
+            source: "FileMetadataOperationsImpl",
+            metadata: LogMetadataDTOCollection()
+                .withPublic("path", path)
+                .withPublic("attribute", name)
+        )
+        
+        await logger.debug("Removing extended attribute \(name) from \(path)", context: logContext)
         
         do {
             // Check if the file exists
             guard fileManager.fileExists(atPath: path) else {
                 let error = FileSystemError.pathNotFound(path: path)
-                await logger.error("File not found: \(path)", metadata: ["path": path])
+                await logger.error("File not found: \(path)", context: logContext)
                 throw error
             }
             
@@ -458,25 +658,36 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
             
             // Get the file attributes for the result metadata
             let attributes = try fileManager.attributesOfItem(atPath: path)
-            let metadata = FileMetadataDTO.from(attributes: attributes)
+            let metadata = FileMetadataDTO.from(
+                attributes: attributes,
+                path: path
+            )
             
             let result = FileOperationResultDTO.success(
                 path: path,
-                metadata: metadata,
-                context: ["operation": "removeExtendedAttribute", "attribute": name]
+                metadata: metadata
             )
             
-            await logger.debug("Successfully removed extended attribute \(name) from \(path)", metadata: ["path": path, "attribute": name])
+            await logger.debug("Successfully removed extended attribute \(name) from \(path)", context: logContext)
             return result
         } catch let error as FileSystemError {
             throw error
         } catch {
-            let fileError = FileSystemError.extendedAttributeError(
+            let fileError = FileSystemError.other(
                 path: path,
-                attribute: name,
                 reason: "Failed to remove extended attribute: \(error.localizedDescription)"
             )
-            await logger.error("Failed to remove extended attribute: \(error.localizedDescription)", metadata: ["path": path, "attribute": name, "error": "\(error)"])
+            
+            let errorContext = BaseLogContextDTO(
+                domainName: "FileSystem", 
+                source: "FileMetadataOperationsImpl",
+                metadata: LogMetadataDTOCollection()
+                    .withPublic("path", path)
+                    .withPublic("attribute", name)
+                    .withPublic("error", error.localizedDescription)
+            )
+            
+            await logger.error("Failed to remove extended attribute: \(error.localizedDescription)", context: errorContext)
             throw fileError
         }
     }
