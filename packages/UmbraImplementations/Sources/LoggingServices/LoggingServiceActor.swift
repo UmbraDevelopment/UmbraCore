@@ -475,16 +475,10 @@ public struct DefaultLogFormatter: LoggingInterfaces.LogFormatterProtocol, Senda
   /// Configuration for this formatter
   private let configuration: Configuration
 
-  /// DateFormatter for timestamp formatting
-  private let dateFormatter: DateFormatter
-
   /// Initialise a new formatter with the given configuration
   /// - Parameter configuration: Formatter configuration
   public init(configuration: Configuration=Configuration()) {
     self.configuration=configuration
-
-    dateFormatter=DateFormatter()
-    dateFormatter.dateFormat=configuration.dateFormat
   }
 
   /// Format a log level to a string representation
@@ -515,42 +509,37 @@ public struct DefaultLogFormatter: LoggingInterfaces.LogFormatterProtocol, Senda
     }
   }
 
-  /// Format a log entry to a string
-  /// - Parameter entry: The log entry to format
-  /// - Returns: A string representation of the log entry
-  public func format(_ entry: LoggingTypes.LogEntry) -> String {
-    var components: [String]=[]
-
-    // Add level if configured
-    if configuration.includeLevel {
-      components.append("[\(formatLogLevel(entry.level))]")
+  /// Format a timestamp to a string
+  /// - Parameter timestamp: The timestamp to format
+  /// - Returns: Formatted string representation of the timestamp
+  public func formatTimestamp(_ timestamp: LoggingTypes.TimePointAdapter) -> String {
+    // Extract components directly from the timeIntervalSince1970
+    let seconds = Int(timestamp.timeIntervalSince1970)
+    let milliseconds = Int((timestamp.timeIntervalSince1970 - Double(seconds)) * 1000)
+    
+    // Format date components manually
+    let year = seconds / 31536000 + 1970
+    let month = (seconds % 31536000) / 2592000 + 1
+    let day = ((seconds % 31536000) % 2592000) / 86400 + 1
+    
+    // Format time components
+    let hour = (seconds % 86400) / 3600
+    let minute = (seconds % 3600) / 60
+    let second = seconds % 60
+    
+    // Create formatted timestamp string based on configuration format
+    // Default to standard format if not specified
+    let format = configuration.dateFormat.isEmpty ? "yyyy-MM-dd HH:mm:ss.SSS" : configuration.dateFormat
+    
+    // Simple format handling - this could be expanded for more complex format strings
+    if format == "yyyy-MM-dd HH:mm:ss.SSS" {
+      return String(format: "%04d-%02d-%02d %02d:%02d:%02d.%03d", 
+                   year, month, day, hour, minute, second, milliseconds)
+    } else {
+      // Basic fallback for other formats
+      return String(format: "%04d-%02d-%02d %02d:%02d:%02d", 
+                   year, month, day, hour, minute, second)
     }
-
-    // Add timestamp if configured
-    if configuration.includeTimestamp {
-      // Create TimePointAdapter from LogTimestamp's secondsSinceEpoch
-      let timePointAdapter=TimePointAdapter(
-        timeIntervalSince1970: Double(entry.timestamp.secondsSinceEpoch)
-      )
-      components.append(formatTimestamp(timePointAdapter))
-    }
-
-    // Add message
-    components.append(entry.message)
-
-    // Add source if configured
-    if configuration.includeSource && !entry.source.isEmpty {
-      components.append("[\(entry.source)]")
-    }
-
-    // Add metadata if configured and available
-    if configuration.includeMetadata, let metadataDTO = entry.metadata, !metadataDTO.isEmpty {
-      if let metadataString = formatMetadata(metadataDTO) {
-        components.append(metadataString)
-      }
-    }
-
-    return components.joined(separator: " ")
   }
 
   /// Format metadata to a string
@@ -568,11 +557,53 @@ public struct DefaultLogFormatter: LoggingInterfaces.LogFormatterProtocol, Senda
     return "{ \(metadataItems) }"
   }
 
-  /// Format a timestamp to a string
-  /// - Parameter timestamp: The timestamp to format
-  /// - Returns: Formatted string representation of the timestamp
-  public func formatTimestamp(_ timestamp: LoggingTypes.TimePointAdapter) -> String {
-    dateFormatter.string(from: Date(timeIntervalSince1970: timestamp.timeIntervalSince1970))
+  /// Format a log entry to a string
+  /// - Parameter entry: The log entry to format
+  /// - Returns: A string representation of the log entry
+  public func formatEntry(_ entry: LoggingTypes.LogEntry) -> String {
+    var components: [String]=[]
+
+    // Add level if configured
+    if configuration.includeLevel {
+      components.append(formatLogLevel(entry.level))
+    }
+
+    // Add timestamp if configured
+    if configuration.includeTimestamp {
+      // Format the timestamp directly
+      let seconds = Int(entry.timestamp.secondsSinceEpoch)
+      let milliseconds = Int((entry.timestamp.secondsSinceEpoch - Double(seconds)) * 1000)
+      
+      // Format date components manually
+      let year = seconds / 31536000 + 1970
+      let month = (seconds % 31536000) / 2592000 + 1
+      let day = ((seconds % 31536000) % 2592000) / 86400 + 1
+      
+      // Format time components
+      let hour = (seconds % 86400) / 3600
+      let minute = (seconds % 3600) / 60
+      let second = seconds % 60
+      
+      // Create formatted timestamp string
+      let timestamp = String(format: "%04d-%02d-%02d %02d:%02d:%02d.%03d", 
+                           year, month, day, hour, minute, second, milliseconds)
+      components.append(timestamp)
+    }
+
+    // Add message
+    components.append(entry.message)
+
+    // Add source if configured
+    if configuration.includeSource, let source=entry.source, !source.isEmpty {
+      components.append("[\(source)]")
+    }
+
+    // Add metadata if configured
+    if configuration.includeMetadata, let metadataString=formatMetadata(entry.metadata) {
+      components.append(metadataString)
+    }
+
+    return components.joined(separator: " ")
   }
 
   /// Customise the format based on configuration

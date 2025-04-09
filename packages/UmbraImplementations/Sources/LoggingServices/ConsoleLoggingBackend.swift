@@ -54,16 +54,29 @@ public struct ConsoleLoggingBackend: LoggingBackend {
   }
 
   /**
-   Formats a timestamp for display.
+   Formats a timestamp into a human-readable string.
    
    - Parameter timestamp: The timestamp to format
    - Returns: A formatted timestamp string
    */
   private func formatTimestamp(_ timestamp: LogTimestamp) -> String {
-    let date=Date(timeIntervalSince1970: timestamp.secondsSinceEpoch)
-    let formatter=DateFormatter()
-    formatter.dateFormat="yyyy-MM-dd HH:mm:ss.SSS"
-    return formatter.string(from: date)
+    // Extract components directly from the secondsSinceEpoch
+    let seconds = Int(timestamp.secondsSinceEpoch)
+    let milliseconds = Int((timestamp.secondsSinceEpoch - Double(seconds)) * 1000)
+    
+    // Format date components manually
+    let year = seconds / 31536000 + 1970
+    let month = (seconds % 31536000) / 2592000 + 1
+    let day = ((seconds % 31536000) % 2592000) / 86400 + 1
+    
+    // Format time components
+    let hour = (seconds % 86400) / 3600
+    let minute = (seconds % 3600) / 60
+    let second = seconds % 60
+    
+    // Create formatted timestamp string
+    return String(format: "%04d-%02d-%02d %02d:%02d:%02d.%03d", 
+                 year, month, day, hour, minute, second, milliseconds)
   }
 
   /**

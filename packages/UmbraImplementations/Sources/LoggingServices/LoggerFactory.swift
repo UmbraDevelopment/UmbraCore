@@ -87,6 +87,42 @@ public enum LoggerFactory {
   }
 
   /**
+   Creates a domain logger for key management operations
+
+   - Parameter source: The source component creating the logger
+   - Returns: A privacy-aware domain logger for key management
+   */
+  public static func createKeyManagementLogger(source: String) -> DomainLogger {
+    let metadata = LogMetadataDTOCollection()
+      .withPublic(key: "source", value: source)
+      .withPublic(key: "component", value: "KeyManagement")
+
+    return createDomainLoggerInternal(
+      domainName: "KeyManagement",
+      metadata: metadata,
+      source: source
+    )
+  }
+  
+  /**
+   Creates a domain logger for network operations
+   
+   - Parameter source: The source component creating the logger
+   - Returns: A privacy-aware domain logger for network operations
+   */
+  public static func createNetworkLogger(source: String) -> DomainLogger {
+    let metadata = LogMetadataDTOCollection()
+      .withPublic(key: "source", value: source)
+      .withPublic(key: "component", value: "Network")
+    
+    return createDomainLoggerInternal(
+      domainName: "Network",
+      metadata: metadata,
+      source: source
+    )
+  }
+
+  /**
    Creates a domain logger for file system operations
 
    - Parameter source: The source component creating the logger
@@ -97,24 +133,6 @@ public enum LoggerFactory {
       .withPublic(key: "source", value: source)
 
     return createDomainLoggerInternal(domainName: "FileSystem", metadata: metadata, source: source)
-  }
-
-  /**
-   Creates a domain logger for key management operations
-
-   - Parameter source: The source component creating the logger
-   - Returns: A privacy-aware domain logger for key management operations
-   */
-  public static func createKeyManagementLogger(source: String) -> DomainLogger {
-    let metadata = LogMetadataDTOCollection()
-      .withPublic(key: "source", value: source)
-      .withPublic(key: "securityLevel", value: "CRITICAL")
-
-    return createDomainLoggerInternal(
-      domainName: "KeyManagement",
-      metadata: metadata,
-      source: source
-    )
   }
 
   /**

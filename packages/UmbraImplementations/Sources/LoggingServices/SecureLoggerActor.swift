@@ -176,10 +176,18 @@ public actor SecureLoggerActor: SecureLoggingProtocol {
     // Prepare log message with timestamp if needed
     var logMessage=message
     if includeTimestamps {
-      let dateFormatter=DateFormatter()
-      dateFormatter.dateFormat="yyyy-MM-dd HH:mm:ss.SSS"
-      let timestamp=dateFormatter.string(from: Date())
-      logMessage="[\(timestamp)] \(message)"
+      // Use the architecture's LogTimestamp instead of Foundation's Date
+      let timestamp = await LogTimestamp.now()
+      
+      // Format the timestamp using secondsSinceEpoch
+      let seconds = Int(timestamp.secondsSinceEpoch)
+      let milliseconds = Int((timestamp.secondsSinceEpoch - Double(seconds)) * 1000)
+      
+      // Create formatted timestamp string
+      let date = "\(seconds / 31536000 + 1970)-\(String(format: "%02d", (seconds % 31536000) / 2592000 + 1))-\(String(format: "%02d", ((seconds % 31536000) % 2592000) / 86400 + 1))"
+      let time = "\(String(format: "%02d", (seconds % 86400) / 3600)):\(String(format: "%02d", (seconds % 3600) / 60)):\(String(format: "%02d", seconds % 60)).\(String(format: "%03d", milliseconds))"
+      
+      logMessage="[\(date) \(time)] \(message)"
     }
 
     // Log to system logger with appropriate privacy tags

@@ -295,11 +295,15 @@ public actor NetworkServiceImpl: NetworkServiceProtocol {
   }
 
   public func cancelAllRequests() async {
-    let metadata = LogMetadataDTOCollection()
-      .withPublic(key: "action", value: "cancelAll")
-      .withPublic(key: "requestCount", value: String(activeTasks.count))
+    let context = NetworkLogContext(
+      operation: "cancelAllRequests",
+      source: "NetworkService",
+      metadata: LogMetadataDTOCollection()
+        .withPublic(key: "action", value: "cancelAll")
+        .withPublic(key: "requestCount", value: String(activeTasks.count))
+    )
     
-    await logger.info("Cancelling all network requests", metadata: metadata)
+    await logger.info("Cancelling all network requests", context: context)
     for (id, task) in activeTasks {
       task.cancel()
       activeTasks.removeValue(forKey: id)
@@ -307,17 +311,21 @@ public actor NetworkServiceImpl: NetworkServiceProtocol {
   }
 
   public func cancelRequest(_ request: NetworkRequestProtocol) async {
-    let metadata = LogMetadataDTOCollection()
-      .withPublic(key: "url", value: request.urlString)
-      .withPublic(key: "action", value: "cancelRequest")
+    let context = NetworkLogContext(
+      operation: "cancelRequest",
+      source: "NetworkService",
+      metadata: LogMetadataDTOCollection()
+        .withPublic(key: "url", value: request.urlString)
+        .withPublic(key: "action", value: "cancelRequest")
+    )
     
-    await logger.debug("Attempting to cancel request to \(request.urlString)", metadata: metadata)
+    await logger.debug("Attempting to cancel request to \(request.urlString)", context: context)
     // Find the task associated with this request and cancel it
     for (id, task) in activeTasks {
       // Cancel just the first matching request we find
       // A more sophisticated implementation would track exact request matches
       if task.originalRequest?.url?.absoluteString == request.urlString {
-        await logger.info("Cancelling request to \(request.urlString)", metadata: metadata)
+        await logger.info("Cancelling request to \(request.urlString)", context: context)
         task.cancel()
         activeTasks.removeValue(forKey: id)
         break

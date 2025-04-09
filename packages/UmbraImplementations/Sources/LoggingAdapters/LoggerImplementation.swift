@@ -115,7 +115,7 @@ public actor LoggerImplementation: LoggingProtocol, CoreLoggingProtocol {
       metadata: context.metadata as? LoggingTypes.LogMetadataDTOCollection,
       source: context.source ?? "Unknown",
       entryID: nil,
-      timestamp: LogTimestamp.now()
+      timestamp: await LogTimestamp.now()
     ))
 
     // Also log to the actor (actor expects proper underscore-prefixed parameters)
@@ -134,7 +134,7 @@ public actor LoggerImplementation: LoggingProtocol, CoreLoggingProtocol {
       message: message,
       metadata: context?.metadata as? LoggingTypes.LogMetadataDTOCollection,
       source: context?.source ?? "",
-      timestamp: LoggingTypes.LogTimestamp(secondsSinceEpoch: UInt64(Date().timeIntervalSince1970))
+      timestamp: await LogTimestamp.now()
     ))
   }
 
@@ -148,7 +148,7 @@ public actor LoggerImplementation: LoggingProtocol, CoreLoggingProtocol {
       message: message,
       metadata: context?.metadata as? LoggingTypes.LogMetadataDTOCollection,
       source: context?.source ?? "",
-      timestamp: LoggingTypes.LogTimestamp(secondsSinceEpoch: UInt64(Date().timeIntervalSince1970))
+      timestamp: await LogTimestamp.now()
     ))
   }
 
@@ -162,7 +162,7 @@ public actor LoggerImplementation: LoggingProtocol, CoreLoggingProtocol {
       message: message,
       metadata: context?.metadata as? LoggingTypes.LogMetadataDTOCollection,
       source: context?.source ?? "",
-      timestamp: LoggingTypes.LogTimestamp(secondsSinceEpoch: UInt64(Date().timeIntervalSince1970))
+      timestamp: await LogTimestamp.now()
     ))
   }
 
@@ -176,7 +176,7 @@ public actor LoggerImplementation: LoggingProtocol, CoreLoggingProtocol {
       message: message,
       metadata: context?.metadata as? LoggingTypes.LogMetadataDTOCollection,
       source: context?.source ?? "",
-      timestamp: LoggingTypes.LogTimestamp(secondsSinceEpoch: UInt64(Date().timeIntervalSince1970))
+      timestamp: await LogTimestamp.now()
     ))
   }
 
@@ -190,7 +190,7 @@ public actor LoggerImplementation: LoggingProtocol, CoreLoggingProtocol {
       message: message,
       metadata: context?.metadata as? LoggingTypes.LogMetadataDTOCollection,
       source: context?.source ?? "",
-      timestamp: LoggingTypes.LogTimestamp(secondsSinceEpoch: UInt64(Date().timeIntervalSince1970))
+      timestamp: await LogTimestamp.now()
     ))
   }
 
@@ -204,7 +204,7 @@ public actor LoggerImplementation: LoggingProtocol, CoreLoggingProtocol {
       message: message,
       metadata: context?.metadata as? LoggingTypes.LogMetadataDTOCollection,
       source: context?.source ?? "",
-      timestamp: LoggingTypes.LogTimestamp(secondsSinceEpoch: UInt64(Date().timeIntervalSince1970))
+      timestamp: await LogTimestamp.now()
     ))
   }
 

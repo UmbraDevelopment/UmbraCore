@@ -18,7 +18,7 @@ public struct NetworkServiceFactoryImpl: NetworkServiceFactoryProtocol {
       timeoutInterval: 60.0,
       cachePolicy: .useProtocolCachePolicy,
       enableMetrics: true,
-      logger: LoggingServices.PrivacyAwareLoggingFactory.createLogger()
+      logger: LoggingServices.LoggerFactory.createNetworkLogger(source: "NetworkService")
     )
   }
 
@@ -32,7 +32,7 @@ public struct NetworkServiceFactoryImpl: NetworkServiceFactoryProtocol {
       timeoutInterval: timeoutInterval,
       cachePolicy: cachePolicy,
       enableMetrics: enableMetrics,
-      logger: LoggingServices.PrivacyAwareLoggingFactory.createLogger()
+      logger: LoggingServices.LoggerFactory.createNetworkLogger(source: "NetworkService")
     )
   }
 
@@ -90,7 +90,7 @@ public struct NetworkServiceFactoryImpl: NetworkServiceFactoryProtocol {
       session: session,
       defaultTimeoutInterval: timeoutInterval,
       defaultCachePolicy: .useProtocolCachePolicy,
-      logger: LoggingServices.PrivacyAwareLoggingFactory.createLogger()
+      logger: LoggingServices.LoggerFactory.createNetworkLogger(source: "NetworkService")
     )
   }
 }

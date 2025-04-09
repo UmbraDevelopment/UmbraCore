@@ -18,11 +18,17 @@ import NetworkInterfaces
  - HTTP methods, status codes, and timing information are considered public
  */
 public struct NetworkLogContext: LogContextDTO {
+    /// The domain name for this context
+    public let domainName: String = "Network"
+    
     /// The operation being performed
     public let operation: String
     
     /// The source of the log entry
-    public let source: String
+    public let source: String?
+    
+    /// Optional correlation ID for tracing related log events
+    public let correlationID: String?
     
     /// The metadata collection with privacy annotations
     public let metadata: LogMetadataDTOCollection
@@ -33,15 +39,18 @@ public struct NetworkLogContext: LogContextDTO {
      - Parameters:
         - operation: The network operation being performed
         - source: The source component (defaults to "NetworkService")
+        - correlationID: Optional correlation ID for tracing related events
         - metadata: Privacy-aware metadata collection
      */
     public init(
         operation: String,
-        source: String = "NetworkService",
+        source: String? = "NetworkService",
+        correlationID: String? = nil,
         metadata: LogMetadataDTOCollection = LogMetadataDTOCollection()
     ) {
         self.operation = operation
         self.source = source
+        self.correlationID = correlationID
         self.metadata = metadata
     }
     
@@ -55,6 +64,7 @@ public struct NetworkLogContext: LogContextDTO {
         return NetworkLogContext(
             operation: operation,
             source: source,
+            correlationID: correlationID,
             metadata: metadata.withPrivate(key: "url", value: url.absoluteString)
         )
     }
@@ -69,6 +79,7 @@ public struct NetworkLogContext: LogContextDTO {
         return NetworkLogContext(
             operation: operation,
             source: source,
+            correlationID: correlationID,
             metadata: metadata.withPublic(key: "method", value: method)
         )
     }
@@ -83,6 +94,7 @@ public struct NetworkLogContext: LogContextDTO {
         return NetworkLogContext(
             operation: operation,
             source: source,
+            correlationID: correlationID,
             metadata: metadata.withPublic(key: "statusCode", value: "\(statusCode)")
         )
     }
@@ -97,6 +109,7 @@ public struct NetworkLogContext: LogContextDTO {
         return NetworkLogContext(
             operation: operation,
             source: source,
+            correlationID: correlationID,
             metadata: metadata.withPublic(key: "requestId", value: requestId)
         )
     }
@@ -111,6 +124,7 @@ public struct NetworkLogContext: LogContextDTO {
         return NetworkLogContext(
             operation: operation,
             source: source,
+            correlationID: correlationID,
             metadata: metadata.withPublic(key: "durationMs", value: String(format: "%.2f", durationMs))
         )
     }
@@ -127,6 +141,7 @@ public struct NetworkLogContext: LogContextDTO {
         return NetworkLogContext(
             operation: operation,
             source: source,
+            correlationID: correlationID,
             metadata: metadata
                 .withPublic(key: "requestSizeBytes", value: "\(requestSize)")
                 .withPublic(key: "responseSizeBytes", value: "\(responseSize)")
@@ -143,6 +158,7 @@ public struct NetworkLogContext: LogContextDTO {
         return NetworkLogContext(
             operation: operation,
             source: source,
+            correlationID: correlationID,
             metadata: metadata
                 .withPublic(key: "errorType", value: "\(type(of: error))")
                 .withPrivate(key: "errorMessage", value: error.localizedDescription)
@@ -171,6 +187,7 @@ public struct NetworkLogContext: LogContextDTO {
             context = NetworkLogContext(
                 operation: operation,
                 source: source,
+                correlationID: correlationID,
                 metadata: context.metadata.withPublic(key: "headers", value: publicHeaders.description)
             )
         }
@@ -181,6 +198,7 @@ public struct NetworkLogContext: LogContextDTO {
             context = NetworkLogContext(
                 operation: operation,
                 source: source,
+                correlationID: correlationID,
                 metadata: context.metadata.withSensitive(key: "sensitiveHeadersCount", value: "\(sensitiveHeadersCount)")
             )
         }

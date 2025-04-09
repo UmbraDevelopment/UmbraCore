@@ -120,7 +120,7 @@ public actor SecurityLogger: DomainLoggerProtocol {
       await loggingService.log(level, formattedMessage, context: context)
     } else {
       // Legacy fallback for older LoggingServiceProtocol
-      let metadata=context.asLogMetadata()
+      let metadata=context.metadata
 
       // Use the appropriate level-specific method
       switch level {
@@ -321,7 +321,7 @@ public actor SecurityLogger: DomainLoggerProtocol {
     // Log with standard error method
     await loggingService.error(
       "[\(domainName)] Error: \(error.localizedDescription)",
-      metadata: context.asLogMetadata(),
+      metadata: context.metadata,
       source: context.getSource()
     )
 
@@ -356,15 +356,8 @@ public actor SecurityLogger: DomainLoggerProtocol {
       let formattedMessage="[\(domainName)] \(loggableError.getLogMessage())"
       let source="\(loggableError.getSource()) via \(domainName)"
 
-      // Convert DTO collection to LogMetadata using the subscript operator
-      var logMetadata=LogMetadata()
-      for entry in metadataCollection.entries {
-        // Use the subscript operator to set values directly
-        logMetadata[entry.key]=entry.value
-      }
-
-      // The logging service expects LogMetadata
-      await loggingService.error(formattedMessage, metadata: logMetadata, source: source)
+      // The logging service now expects LogMetadataDTOCollection
+      await loggingService.error(formattedMessage, metadata: metadataCollection, source: source)
     } else {
       // Handle standard errors
       let formattedMessage="[\(domainName)] \(error.localizedDescription)"

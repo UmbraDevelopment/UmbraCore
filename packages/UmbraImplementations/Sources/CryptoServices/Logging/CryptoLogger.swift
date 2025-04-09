@@ -102,8 +102,8 @@ public actor CryptoLogger: PrivacyAwareLoggingProtocol {
       // Otherwise, create a new CryptoLogContext with the metadata
       updatedContext = CryptoLogContext(
         operation: "generic",
-        source: context.getSource(),
-        correlationID: context.getCorrelationID(),
+        source: context.source,
+        correlationID: context.correlationID,
         metadata: metadata
       )
     }
@@ -191,6 +191,42 @@ public actor CryptoLogger: PrivacyAwareLoggingProtocol {
    */
   public func critical(_ message: String, context: LogContextDTO) async {
     await log(.critical, message, context: context)
+  }
+
+  /**
+   Log sensitive information with appropriate redaction using context.
+   
+   This method ensures that sensitive cryptographic values are properly handled
+   with appropriate privacy controls.
+   
+   - Parameters:
+     - level: The severity level of the log
+     - message: The basic message without sensitive content
+     - sensitiveValues: Sensitive values that should be handled with privacy controls
+     - context: The logging context DTO containing metadata, source, etc.
+   */
+  public func logSensitive(
+    _ level: LogLevel,
+    _ message: String,
+    sensitiveValues: LoggingTypes.LogMetadata,
+    context: LogContextDTO
+  ) async {
+    // Create a crypto-specific context with the sensitive values
+    let cryptoContext = CryptoLogContext(
+      operation: "sensitive_operation",
+      source: context.source,
+      correlationID: context.correlationID,
+      metadata: context.metadata
+    )
+    
+    // Add sensitive values with proper privacy classification
+    var enhancedContext = cryptoContext
+    for (key, value) in sensitiveValues.asDictionary {
+      enhancedContext = enhancedContext.withMetadata(key: key, value: value, privacy: .sensitive)
+    }
+    
+    // Delegate to the base logger
+    await baseLogger.log(level, message, context: enhancedContext)
   }
 
   // MARK: - Crypto-Specific Logging Methods

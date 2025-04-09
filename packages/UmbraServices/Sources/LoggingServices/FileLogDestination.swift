@@ -162,8 +162,8 @@ public actor FileLogDestination: ActorLogDestination {
   /// - Parameter metadata: The metadata to format
   /// - Returns: A formatted metadata string
   private func formatMetadata(_ metadata: LogMetadataDTOCollection) -> String {
-    let pairs = metadata.asDictionary.map { key, value in
-      "\(key): \(value)"
+    let pairs = metadata.entries.map { entry in
+      "\(entry.key): \(entry.value)"
     }
     return "{" + pairs.joined(separator: ", ") + "}"
   }

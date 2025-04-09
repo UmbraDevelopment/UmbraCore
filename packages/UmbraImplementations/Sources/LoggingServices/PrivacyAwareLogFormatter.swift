@@ -233,23 +233,29 @@ public final class PrivacyAwareLogFormatter: LogFormatterProtocol {
   }
 
   /**
-   Formats a timestamp into a string representation.
+   Formats a timestamp into a human-readable string.
 
    - Parameter timestamp: The timestamp to format
-   - Returns: A formatted string representation of the timestamp
-
-   ## Example Output
-
-   ```
-   2025-04-08 11:45:23.456
-   ```
+   - Returns: A formatted timestamp string
    */
   public func formatTimestamp(_ timestamp: LoggingTypes.TimePointAdapter) -> String {
-    let dateFormatter=DateFormatter()
-    dateFormatter.dateFormat="yyyy-MM-dd HH:mm:ss.SSS"
-    // Create a Date from the timeIntervalSince1970
-    let date=Date(timeIntervalSince1970: timestamp.timeIntervalSince1970)
-    return dateFormatter.string(from: date)
+    // Extract components directly from the timeIntervalSince1970
+    let seconds = Int(timestamp.timeIntervalSince1970)
+    let milliseconds = Int((timestamp.timeIntervalSince1970 - Double(seconds)) * 1000)
+    
+    // Format date components manually
+    let year = seconds / 31536000 + 1970
+    let month = (seconds % 31536000) / 2592000 + 1
+    let day = ((seconds % 31536000) % 2592000) / 86400 + 1
+    
+    // Format time components
+    let hour = (seconds % 86400) / 3600
+    let minute = (seconds % 3600) / 60
+    let second = seconds % 60
+    
+    // Create formatted timestamp string
+    return String(format: "%04d-%02d-%02d %02d:%02d:%02d.%03d", 
+                 year, month, day, hour, minute, second, milliseconds)
   }
 
   /**
@@ -329,13 +335,9 @@ public final class PrivacyAwareLogFormatter: LogFormatterProtocol {
   /// Create a TimePointAdapter from a LogTimestamp
   /// - Parameter timestamp: The LogTimestamp to convert
   /// - Returns: A TimePointAdapter
-  private func createTimePointAdapter(from _: LogTimestamp) -> LoggingTypes.TimePointAdapter {
-    // Create a new TimePointAdapter
-    // In a real implementation, you would extract the timestamp value properly
-
-    // For now, we'll use a simple conversion
-    // Assuming LogTimestamp has a property that can be converted to seconds
-    let timeInterval=Date().timeIntervalSince1970 // Default to current time
+  private func createTimePointAdapter(from timestamp: LogTimestamp) -> LoggingTypes.TimePointAdapter {
+    // Extract the timestamp value from the LogTimestamp
+    let timeInterval = timestamp.secondsSinceEpoch
 
     return LoggingTypes.TimePointAdapter(timeIntervalSince1970: timeInterval)
   }

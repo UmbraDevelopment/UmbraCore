@@ -210,7 +210,7 @@ public enum ErrorLoggerFactory {
     let errorLogger = await createErrorLogger(configuration: config)
     
     // Set domain-specific filter
-    await errorLogger.addDomainFilter(domain: domain, level: minimumLevel)
+    await errorLogger.setLogLevel(minimumLevel, forDomain: domain)
     
     return errorLogger
   }

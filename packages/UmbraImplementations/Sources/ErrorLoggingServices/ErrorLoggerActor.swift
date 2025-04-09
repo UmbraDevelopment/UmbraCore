@@ -221,6 +221,27 @@ public actor ErrorLoggerActor: ErrorLoggingProtocol {
     domainFilters.removeValue(forKey: domain)
   }
 
+  /**
+   Set the minimum logging level for a specific error domain.
+   
+   - Parameters:
+     - level: The minimum logging level for the domain
+     - domain: The error domain to filter
+   */
+  public func setLogLevel(_ level: ErrorLoggingLevel, forDomain domain: String) async {
+    domainFilters[domain] = level
+  }
+  
+  /**
+   Clear all domain-specific filters.
+   
+   Removes all domain-specific log level filters, returning to
+   global minimum level filtering only.
+   */
+  public func clearDomainFilters() async {
+    domainFilters.removeAll()
+  }
+
   // MARK: - Helper Methods
 
   /**
@@ -289,6 +310,8 @@ public actor ErrorLoggerActor: ErrorLoggingProtocol {
    */
   private func mapSeverityToLevel(_ severity: ErrorSeverity) -> ErrorLoggingLevel {
     switch severity {
+      case .trace:
+        return .debug  // Map trace to debug since ErrorLoggingLevel doesn't have trace
       case .debug:
         return .debug
       case .info:

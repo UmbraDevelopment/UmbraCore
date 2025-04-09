@@ -135,18 +135,15 @@ public actor LoggingServiceAdapter: LoggingServiceProtocol {
 
   /// Add a log destination
   /// - Parameter destination: The destination to add
-  /// - Returns: The identifier for the destination
-  public func addDestination(_ destination: LoggingTypes.LogDestination) async throws -> String {
+  public func addDestination(_ destination: LoggingTypes.LogDestination) async throws {
     let id = UUID().uuidString
     destinations[id] = destination
     
     await info(
-      "Added log destination: \(destination.name)",
+      "Added log destination: \(destination.identifier)",
       metadata: LogMetadataDTOCollection().withPublic(key: "id", value: id),
       source: defaultSource
     )
-    
-    return id
   }
 
   /// Remove a log destination
@@ -192,13 +189,13 @@ public actor LoggingServiceAdapter: LoggingServiceProtocol {
         do {
           try await flushable.flush()
           await debug(
-            "Flushed log destination: \(destination.name)",
+            "Flushed log destination: \(destination.identifier)",
             metadata: LogMetadataDTOCollection().withPublic(key: "id", value: id),
             source: defaultSource
           )
         } catch {
           await self.error(
-            "Failed to flush log destination: \(destination.name)",
+            "Failed to flush log destination: \(destination.identifier)",
             metadata: LogMetadataDTOCollection()
               .withPublic(key: "id", value: id)
               .withPrivate(key: "error", value: error.localizedDescription),

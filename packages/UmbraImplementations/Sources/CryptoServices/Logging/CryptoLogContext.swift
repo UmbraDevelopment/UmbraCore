@@ -260,8 +260,8 @@ public struct CryptoLogContext: LogContextDTO, Sendable {
         newMetadata = metadata.withSensitive(key: key, value: value)
       case .hash:
         newMetadata = metadata.withHashed(key: key, value: value)
-      @unknown default:
-        newMetadata = metadata.withPublic(key: key, value: value)
+      case .auto:
+        newMetadata = metadata.withAuto(key: key, value: value)
     }
     
     return CryptoLogContext(
@@ -294,6 +294,8 @@ public struct CryptoLogContext: LogContextDTO, Sendable {
           mergedMetadata = mergedMetadata.withSensitive(key: entry.key, value: entry.value)
         case .hash:
           mergedMetadata = mergedMetadata.withHashed(key: entry.key, value: entry.value)
+        case .auto:
+          mergedMetadata = mergedMetadata.withAuto(key: entry.key, value: entry.value)
       }
     }
     

@@ -136,9 +136,23 @@ public struct StandardLogFormatter: LogFormatterProtocol, Sendable {
   /// - Parameter timestamp: The timestamp to format
   /// - Returns: Formatted string representation of the timestamp
   public func formatTimestamp(_ timestamp: LoggingTypes.TimePointAdapter) -> String {
-    let dateFormatter=DateFormatter()
-    dateFormatter.dateFormat="yyyy-MM-dd HH:mm:ss.SSS"
-    return dateFormatter.string(from: Date(timeIntervalSince1970: timestamp.timeIntervalSince1970))
+    // Extract components directly from the timeIntervalSince1970
+    let seconds = Int(timestamp.timeIntervalSince1970)
+    let milliseconds = Int((timestamp.timeIntervalSince1970 - Double(seconds)) * 1000)
+    
+    // Format date components manually
+    let year = seconds / 31536000 + 1970
+    let month = (seconds % 31536000) / 2592000 + 1
+    let day = ((seconds % 31536000) % 2592000) / 86400 + 1
+    
+    // Format time components
+    let hour = (seconds % 86400) / 3600
+    let minute = (seconds % 3600) / 60
+    let second = seconds % 60
+    
+    // Create formatted timestamp string
+    return String(format: "%04d-%02d-%02d %02d:%02d:%02d.%03d", 
+                 year, month, day, hour, minute, second, milliseconds)
   }
 
   /// Format a log level to a string
