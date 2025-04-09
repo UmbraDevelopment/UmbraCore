@@ -15,6 +15,7 @@
 /// - Uses types defined in KeychainTypes
 /// - Uses actor-based concurrency for thread safety
 /// - Follows the Swift Concurrency model
+/// - Implements privacy-aware logging with proper metadata classification
 ///
 /// ## Main Components
 ///
@@ -140,7 +141,30 @@ public struct SimpleKeyManager: KeyManagementProtocol {
 
   // MARK: - Helper Methods
 
-  /// Convert a dictionary to PrivacyMetadata
+  /**
+   Create a metadata collection with privacy controls.
+   
+   - Parameter dict: Dictionary of string key-value pairs to convert to metadata
+   - Returns: A privacy-aware metadata collection
+   */
+  private func createMetadataCollection(from dict: [String: String]) -> LogMetadataDTOCollection {
+    let collection = LogMetadataDTOCollection()
+    
+    for (key, value) in dict {
+      // In KeychainServices, we treat all metadata as private by default
+      collection.withPrivate(key: key, value: value)
+    }
+    
+    return collection
+  }
+
+  /**
+   Convert a dictionary to PrivacyMetadata (deprecated method).
+   
+   - Parameter dict: Dictionary of string key-value pairs to convert
+   - Returns: Legacy privacy metadata object
+   */
+  @available(*, deprecated, message: "Use createMetadataCollection instead")
   private func createPrivacyMetadata(from dict: [String: String]) -> PrivacyMetadata? {
     guard !dict.isEmpty else {
       return nil
@@ -165,9 +189,7 @@ public struct SimpleKeyManager: KeyManagementProtocol {
       context: KeychainLogContext(
         account: "key_generation",
         operation: "generateKey",
-        additionalContext: LogMetadataDTOCollection()
-          .withPrivate(key: "keyType", value: "\(type.rawValue)")
-          .withPrivate(key: "size", value: "\(size)")
+        additionalContext: createMetadataCollection(from: ["keyType": "\(type.rawValue)", "size": "\(size)"])
       )
     )
 

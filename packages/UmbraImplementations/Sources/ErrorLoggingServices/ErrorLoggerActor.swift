@@ -115,7 +115,7 @@ public actor ErrorLoggerActor: ErrorLoggingProtocol {
     }
 
     // Create metadata from error and context
-    let metadata=constructMetadata(from: error, context: context)
+    let metadata=constructMetadataCollection(from: error, context: context)
 
     // Format the message
     let message=formatErrorMessage(error: error, context: context)
@@ -203,21 +203,22 @@ public actor ErrorLoggerActor: ErrorLoggingProtocol {
    Sets the minimum logging level for a specific error domain.
 
    - Parameters:
-     - level: The minimum logging level for the domain
      - domain: The error domain to filter
+     - level: The minimum level to log for this domain
    */
-  public func setLogLevel(_ level: ErrorLoggingLevel, forDomain domain: String) async {
+  public func addDomainFilter(domain: String, level: ErrorLoggingLevel) async {
     domainFilters[domain]=level
   }
 
   /**
-   Clear all domain-specific filters.
+   Remove a domain filter.
 
-   Removes all domain-specific log level filters, returning to
-   global minimum level filtering only.
+   Removes any specific logging level filter for the given domain.
+
+   - Parameter domain: The domain to remove filtering for
    */
-  public func clearDomainFilters() async {
-    domainFilters.removeAll()
+  public func removeDomainFilter(domain: String) async {
+    domainFilters.removeValue(forKey: domain)
   }
 
   // MARK: - Helper Methods
@@ -227,73 +228,93 @@ public actor ErrorLoggerActor: ErrorLoggingProtocol {
 
    - Parameters:
      - level: The level the error would be logged at
-     - domain: The domain of the error
+     - domain: The domain the error belongs to
    - Returns: True if the error should be logged, false otherwise
    */
-  private func shouldLog(level: ErrorLoggingLevel, forDomain domain: String?) -> Bool {
-    // First check against global minimum
-    guard level.rawValue >= configuration.globalMinimumLevel.rawValue else {
-      return false
+  private func shouldLog(level: ErrorLoggingLevel, forDomain domain: String) -> Bool {
+    // Check if there's a domain-specific filter
+    if let domainLevel=domainFilters[domain] {
+      return level.rawValue >= domainLevel.rawValue
     }
 
-    // Then check domain-specific filters if applicable
-    if let domain, let minLevel=domainFilters[domain] {
-      return level.rawValue >= minLevel.rawValue
-    }
-
-    // If we get here, we passed all filters
-    return true
+    // Check if there's a global minimum level
+    return level.rawValue >= configuration.minimumLevel.rawValue
   }
 
   /**
-   Extract the domain from an error if possible.
+   Extract the domain from an error.
 
-   - Parameter error: The error to extract domain from
-   - Returns: The domain string, or nil if none could be determined
+   - Parameter error: The error to extract the domain from
+   - Returns: The domain string
    */
-  private func extractErrorDomain(from error: Error) -> String? {
-    // NSError domains
-    if let nsError=error as NSError? {
-      return nsError.domain
-    }
-
-    // Context metadata (from ErrorContext)
+  private func extractErrorDomain(from error: Error) -> String {
+    // Check if the error provides its own domain
     if let contextualError=error as? ContextualError {
       return contextualError.domain
     }
 
-    // No domain info found
-    return nil
+    // Fall back to NSError domain
+    let nsError=error as NSError
+    return nsError.domain
   }
 
   /**
-   Extract or create an ErrorContext from an error.
+   Determine the appropriate severity level for an error.
 
-   - Parameter error: The error to extract context from
-   - Returns: An ErrorContext with available information
+   - Parameters:
+     - error: The error to determine severity for
+     - context: Additional context for the error
+   - Returns: The appropriate logging level
    */
-  private func extractContext(from error: Error) -> ErrorContext {
-    var domain: String?
-    var operation: String?
-    var details: String?
-    var metadata: [String: Any]=[:]
-
-    // Extract from NSError if available
-    if let nsError=error as NSError? {
-      domain=nsError.domain
-      details=nsError.localizedDescription
-
-      // Extract user info dictionary
-      for (key, value) in nsError.userInfo where key != NSLocalizedDescriptionKey {
-        if let stringValue=value as? String {
-          metadata[key]=stringValue
-        } else {
-          metadata[key]=String(describing: value)
-        }
-      }
+  private func determineSeverity(for error: Error, context: ErrorContext) -> ErrorLoggingLevel {
+    // Check if the error provides its own severity
+    if let contextualError=error as? ContextualError, let severity=contextualError.severity {
+      return mapSeverityToLevel(severity)
     }
 
-    // Extract from ContextualError if available
+    // Check if the context specifies a severity
+    if let severity=context.value(for: "severity") as? ErrorSeverity {
+      return mapSeverityToLevel(severity)
+    }
+
+    // Default to error level
+    return .error
+  }
+
+  /**
+   Map error severity to logging level.
+
+   - Parameter severity: The error severity
+   - Returns: The corresponding logging level
+   */
+  private func mapSeverityToLevel(_ severity: ErrorSeverity) -> ErrorLoggingLevel {
+    switch severity {
+      case .debug:
+        return .debug
+      case .info:
+        return .info
+      case .warning:
+        return .warning
+      case .error:
+        return .error
+      case .critical:
+        return .critical
+    }
+  }
+
+  /**
+   Extract context information from an error.
+
+   - Parameter error: The error to extract context from
+   - Returns: Error context with extracted information
+   */
+  private func extractContext(from error: Error) -> ErrorContext {
+    var metadata: [String: Any]=[:]
+    var domain="unknown"
+    var operation: String?
+    var details: String?
+
+    // Extract information from contextual error
     if let contextualError=error as? ContextualError {
       domain=contextualError.domain
       operation=contextualError.operation
@@ -320,15 +341,92 @@ public actor ErrorLoggerActor: ErrorLoggingProtocol {
   }
 
   /**
-   Construct metadata dictionary from error and context.
+   Construct metadata collection from error and context with privacy controls.
+
+   - Parameters:
+     - error: The error to extract metadata from
+     - context: Additional context for the error
+   - Returns: LogMetadataDTOCollection with privacy-aware metadata for logging
+   */
+  private func constructMetadataCollection(from error: Error, context: ErrorContext) -> LogMetadataDTOCollection {
+    let collection = LogMetadataDTOCollection()
+
+    // Add basic error type information - public information
+    collection.withPublic(key: "errorType", value: String(describing: type(of: error)))
+
+    // Add domain and other context info if available - public information
+    if let source=context.source {
+      collection.withPublic(key: "domain", value: source)
+    }
+
+    if let operation=context.operation {
+      collection.withPublic(key: "operation", value: operation)
+    }
+
+    // Add source information if configured - public information
+    if configuration.includeSourceInfo {
+      collection.withPublic(key: "file", value: context.file)
+      collection.withPublic(key: "function", value: context.function)
+      collection.withPublic(key: "line", value: String(context.line))
+    }
+
+    // Add contextual information from the error - public information
+    let nsError=error as NSError
+    collection.withPublic(key: "errorCode", value: String(nsError.code))
+
+    // Add user info keys that might be relevant - private information
+    if let failureReason=nsError.localizedFailureReason {
+      collection.withPrivate(key: "failureReason", value: failureReason)
+    }
+    if let recoverySuggestion=nsError.localizedRecoverySuggestion {
+      collection.withPrivate(key: "recoverySuggestion", value: recoverySuggestion)
+    }
+
+    // Add additional metadata from the context using value(for:)
+    // Document ID is sensitive information
+    if let documentId = context.value(for: "documentId") as? String {
+      collection.withSensitive(key: "documentId", value: documentId)
+    }
+    
+    // User ID is sensitive information
+    if let userId = context.value(for: "userId") as? String {
+      collection.withSensitive(key: "userId", value: userId)
+    }
+    
+    // Error code is public information
+    if let errorCode = context.value(for: "errorCode") as? String {
+      collection.withPublic(key: "errorCode", value: errorCode)
+    } else if let errorCode = context.value(for: "errorCode") {
+      collection.withPublic(key: "errorCode", value: String(describing: errorCode))
+    }
+    
+    // Attempt count is public information
+    if let attemptCount = context.value(for: "attemptCount") as? String {
+      collection.withPublic(key: "attemptCount", value: attemptCount)
+    } else if let attemptCount = context.value(for: "attemptCount") {
+      collection.withPublic(key: "attemptCount", value: String(describing: attemptCount))
+    }
+    
+    // Session ID is private information
+    if let sessionId = context.value(for: "sessionId") as? String {
+      collection.withPrivate(key: "sessionId", value: sessionId)
+    } else if let sessionId = context.value(for: "sessionId") {
+      collection.withPrivate(key: "sessionId", value: String(describing: sessionId))
+    }
+
+    return collection
+  }
+
+  /**
+   Construct metadata dictionary from error and context (deprecated method).
 
    - Parameters:
      - error: The error to extract metadata from
      - context: Additional context for the error
    - Returns: Dictionary of metadata for logging
    */
-  private func constructMetadata(from error: Error, context: ErrorContext) -> LoggingTypes
-  .LogMetadata {
+  @available(*, deprecated, message: "Use constructMetadataCollection instead")
+  private func constructMetadata(from error: Error, context: ErrorContext) -> LoggingTypes.LogMetadata {
     var metadata=LoggingTypes.LogMetadata()
 
     // Add basic error type information
@@ -399,72 +497,10 @@ public actor ErrorLoggerActor: ErrorLoggingProtocol {
     // Add error message
     if let details=context.details {
       components.append(details)
-    } else if let nsError=error as NSError? {
-      components.append(nsError.localizedDescription)
     } else {
-      components.append(String(describing: error))
+      components.append(error.localizedDescription)
     }
 
     return components.joined(separator: " ")
-  }
-
-  /**
-   Determine severity level for an error based on its type and context.
-
-   - Parameters:
-     - error: The error to determine severity for
-     - context: Additional context for the error
-   - Returns: Appropriate logging level for the error
-   */
-  private func determineSeverity(for error: Error, context _: ErrorContext) -> ErrorLoggingLevel {
-    // Use explicit severity if available
-    if let contextualError=error as? ContextualError, let severity=contextualError.severity {
-      return mapSeverityToLevel(severity)
-    }
-
-    // Check for HTTP-like status codes
-    if let nsError=error as NSError? {
-      let code=nsError.code
-
-      // HTTP-like severity mapping
-      if code >= 500 {
-        return .error
-      } else if code >= 400 {
-        return .warning
-      } else if code >= 300 {
-        return .info
-      }
-
-      // Fall back to configuration default
-      return configuration.defaultErrorLevel
-    }
-
-    // If all else fails, use the configured default level
-    return configuration.defaultErrorLevel
-  }
-
-  /**
-   Map error severity enum to logging level.
-
-   - Parameter severity: The severity enum value
-   - Returns: Corresponding logging level
-   */
-  private func mapSeverityToLevel(_ severity: ErrorSeverity) -> ErrorLoggingLevel {
-    switch severity {
-      case .debug:
-        return .debug
-      case .info:
-        return .info
-      case .warning:
-        return .warning
-      case .error:
-        return .error
-      case .critical:
-        return .error
-      case .trace:
-        return .debug
-      @unknown default:
-        return .error
-    }
   }
 }

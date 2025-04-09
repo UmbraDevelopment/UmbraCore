@@ -2,6 +2,8 @@ import Foundation
 import LoggingTypes
 
 /**
+ # Crypto Log Context
+ 
  Structured logging context for cryptographic operations.
 
  This context provides relevant metadata for cryptographic operations:
@@ -9,12 +11,26 @@ import LoggingTypes
  - Identifiers (for keys, data, etc.)
  - Status information
  - Separation of context from log implementation
+ 
+ ## Privacy Controls
+ 
+ This context implements comprehensive privacy controls for sensitive information:
+ - Public information is logged normally
+ - Private information is redacted in production builds
+ - Sensitive information is always redacted
+ - Hash values are specially marked
+ 
+ ## Functional Updates
+ 
+ Following the Alpha Dot Five architecture, this context uses functional methods
+ that return new instances rather than mutating existing ones, ensuring thread
+ safety and immutability.
  */
 public struct CryptoLogContext: LogContextDTO, Sendable {
   // MARK: - Properties
 
   /// The domain name for this context
-  public let domainName: String="CryptoServices"
+  public let domainName: String = "CryptoServices"
 
   /// Optional source information (class, file, etc.)
   public let source: String?
@@ -49,18 +65,18 @@ public struct CryptoLogContext: LogContextDTO, Sendable {
    */
   public init(
     operation: String,
-    identifier: String?=nil,
-    status: String?=nil,
-    source: String?="CryptoServices",
-    correlationID: String?=nil,
-    metadata: LogMetadataDTOCollection=LogMetadataDTOCollection()
+    identifier: String? = nil,
+    status: String? = nil,
+    source: String? = "CryptoServices",
+    correlationID: String? = nil,
+    metadata: LogMetadataDTOCollection = LogMetadataDTOCollection()
   ) {
-    self.operation=operation
-    self.identifier=identifier
-    self.status=status
-    self.source=source
-    self.correlationID=correlationID
-    self.metadata=metadata
+    self.operation = operation
+    self.identifier = identifier
+    self.status = status
+    self.source = source
+    self.correlationID = correlationID
+    self.metadata = metadata
   }
 
   // MARK: - LogContextDTO Protocol
@@ -71,8 +87,8 @@ public struct CryptoLogContext: LogContextDTO, Sendable {
   }
 
   /// Get the source for the log entry
-  public func getSource() -> String? {
-    source
+  public func getSource() -> String {
+    source ?? "CryptoServices"
   }
 
   /// Get the correlation ID for the log entry
@@ -90,24 +106,163 @@ public struct CryptoLogContext: LogContextDTO, Sendable {
     self
   }
   
+  // MARK: - Functional Update Methods
+  
+  /**
+   Creates a new context with the specified status.
+   
+   - Parameter status: The new status value
+   - Returns: A new context with the updated status
+   */
+  public func withStatus(_ status: String) -> CryptoLogContext {
+    CryptoLogContext(
+      operation: operation,
+      identifier: identifier,
+      status: status,
+      source: source,
+      correlationID: correlationID,
+      metadata: metadata
+    )
+  }
+  
+  /**
+   Creates a new context with the specified identifier.
+   
+   - Parameter identifier: The new identifier value
+   - Returns: A new context with the updated identifier
+   */
+  public func withIdentifier(_ identifier: String) -> CryptoLogContext {
+    CryptoLogContext(
+      operation: operation,
+      identifier: identifier,
+      status: status,
+      source: source,
+      correlationID: correlationID,
+      metadata: metadata
+    )
+  }
+  
+  /**
+   Creates a new context with the specified correlation ID.
+   
+   - Parameter correlationID: The new correlation ID value
+   - Returns: A new context with the updated correlation ID
+   */
+  public func withCorrelationID(_ correlationID: String) -> CryptoLogContext {
+    CryptoLogContext(
+      operation: operation,
+      identifier: identifier,
+      status: status,
+      source: source,
+      correlationID: correlationID,
+      metadata: metadata
+    )
+  }
+  
+  /**
+   Creates a new context with additional public metadata.
+   
+   - Parameters:
+     - key: The metadata key
+     - value: The metadata value
+   - Returns: A new context with the added public metadata
+   */
+  public func withPublicMetadata(key: String, value: String) -> CryptoLogContext {
+    CryptoLogContext(
+      operation: operation,
+      identifier: identifier,
+      status: status,
+      source: source,
+      correlationID: correlationID,
+      metadata: metadata.withPublic(key: key, value: value)
+    )
+  }
+  
+  /**
+   Creates a new context with additional private metadata.
+   
+   - Parameters:
+     - key: The metadata key
+     - value: The metadata value
+   - Returns: A new context with the added private metadata
+   */
+  public func withPrivateMetadata(key: String, value: String) -> CryptoLogContext {
+    CryptoLogContext(
+      operation: operation,
+      identifier: identifier,
+      status: status,
+      source: source,
+      correlationID: correlationID,
+      metadata: metadata.withPrivate(key: key, value: value)
+    )
+  }
+  
+  /**
+   Creates a new context with additional sensitive metadata.
+   
+   - Parameters:
+     - key: The metadata key
+     - value: The metadata value
+   - Returns: A new context with the added sensitive metadata
+   */
+  public func withSensitiveMetadata(key: String, value: String) -> CryptoLogContext {
+    CryptoLogContext(
+      operation: operation,
+      identifier: identifier,
+      status: status,
+      source: source,
+      correlationID: correlationID,
+      metadata: metadata.withSensitive(key: key, value: value)
+    )
+  }
+  
+  /**
+   Creates a new context with additional hashed metadata.
+   
+   - Parameters:
+     - key: The metadata key
+     - value: The metadata value
+   - Returns: A new context with the added hashed metadata
+   */
+  public func withHashedMetadata(key: String, value: String) -> CryptoLogContext {
+    CryptoLogContext(
+      operation: operation,
+      identifier: identifier,
+      status: status,
+      source: source,
+      correlationID: correlationID,
+      metadata: metadata.withHashed(key: key, value: value)
+    )
+  }
+  
   /**
    Creates a new context with additional metadata.
    
    - Parameters:
      - key: The metadata key
      - value: The metadata value
-     - privacy: Whether the metadata is private (true) or public (false)
+     - privacy: The privacy level for the metadata
    - Returns: A new context with the added metadata
    */
   public func withMetadata(
     key: String,
     value: String,
-    privacy: Bool = false
+    privacy: LogPrivacyLevel = .public
   ) -> CryptoLogContext {
-    // Use the appropriate method based on privacy
-    let newMetadata = privacy 
-      ? metadata.withPrivate(key: key, value: value)
-      : metadata.withPublic(key: key, value: value)
+    let newMetadata: LogMetadataDTOCollection
+    
+    switch privacy {
+      case .public:
+        newMetadata = metadata.withPublic(key: key, value: value)
+      case .private:
+        newMetadata = metadata.withPrivate(key: key, value: value)
+      case .sensitive:
+        newMetadata = metadata.withSensitive(key: key, value: value)
+      case .hash:
+        newMetadata = metadata.withHashed(key: key, value: value)
+      @unknown default:
+        newMetadata = metadata.withPublic(key: key, value: value)
+    }
     
     return CryptoLogContext(
       operation: operation,
@@ -116,6 +271,39 @@ public struct CryptoLogContext: LogContextDTO, Sendable {
       source: source,
       correlationID: correlationID,
       metadata: newMetadata
+    )
+  }
+  
+  /**
+   Creates a new context with merged metadata.
+   
+   - Parameter newMetadata: The metadata collection to merge
+   - Returns: A new context with the merged metadata
+   */
+  public func withMergedMetadata(_ newMetadata: LogMetadataDTOCollection) -> CryptoLogContext {
+    // Create a new metadata collection with all entries from both collections
+    var mergedMetadata = metadata
+    
+    for entry in newMetadata.entries {
+      switch entry.privacyLevel {
+        case .public:
+          mergedMetadata = mergedMetadata.withPublic(key: entry.key, value: entry.value)
+        case .private:
+          mergedMetadata = mergedMetadata.withPrivate(key: entry.key, value: entry.value)
+        case .sensitive:
+          mergedMetadata = mergedMetadata.withSensitive(key: entry.key, value: entry.value)
+        case .hash:
+          mergedMetadata = mergedMetadata.withHashed(key: entry.key, value: entry.value)
+      }
+    }
+    
+    return CryptoLogContext(
+      operation: operation,
+      identifier: identifier,
+      status: status,
+      source: source,
+      correlationID: correlationID,
+      metadata: mergedMetadata
     )
   }
 }

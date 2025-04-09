@@ -1,9 +1,16 @@
 import Foundation
 import NetworkInterfaces
 import UmbraLogging
+import LoggingTypes
 
 /// Implementation of NetworkServiceProtocol that provides actual network functionality
 /// using URLSession while maintaining protocol boundaries.
+/// 
+/// This implementation follows the Alpha Dot Five architecture principles by:
+/// 1. Using actor isolation for thread safety
+/// 2. Implementing privacy-aware logging with appropriate data classification
+/// 3. Using proper British spelling in documentation
+/// 4. Providing comprehensive error handling with privacy controls
 public actor NetworkServiceImpl: NetworkServiceProtocol {
   // MARK: - Private Properties
 
@@ -79,6 +86,10 @@ public actor NetworkServiceImpl: NetworkServiceProtocol {
     var responseSizeBytes: Int64=0
 
     guard let url=await constructURL(from: request) else {
+      let errorMetadata = LogMetadataDTOCollection()
+        .withPublic(key: "urlString", value: request.urlString)
+      
+      await logger.error("Failed to create URLComponents from \(request.urlString)", metadata: errorMetadata, source: "NetworkService")
       return NetworkResponseDTO.failure(
         error: .invalidURL(request.urlString)
       )
@@ -87,7 +98,12 @@ public actor NetworkServiceImpl: NetworkServiceProtocol {
     let urlRequest=try await constructURLRequest(from: request, url: url)
     requestSizeBytes=Int64(estimateRequestSize(urlRequest))
 
-    await logger.debug("Starting network request to \(url.absoluteString)", metadata: nil)
+    let requestMetadata = LogMetadataDTOCollection()
+      .withPublic(key: "url", value: url.absoluteString)
+      .withPublic(key: "method", value: request.method.rawValue)
+      .withPublic(key: "requestId", value: UUID().uuidString)
+
+    await logger.debug("Starting network request to \(url.absoluteString)", metadata: requestMetadata, source: "NetworkService")
 
     do {
       let (data, response)=try await session.data(for: urlRequest)
@@ -102,7 +118,12 @@ public actor NetworkServiceImpl: NetworkServiceProtocol {
 
       // Process the response based on status code
       if 200...299 ~= statusCode {
-        await logger.debug("Request succeeded with status code \(statusCode)", metadata: nil)
+        let successMetadata = LogMetadataDTOCollection()
+          .withPublic(key: "statusCode", value: String(statusCode))
+          .withPublic(key: "durationMs", value: String(format: "%.2f", durationMs))
+          .withPublic(key: "responseSize", value: String(responseSizeBytes))
+
+        await logger.debug("Request succeeded with status code \(statusCode)", metadata: successMetadata, source: "NetworkService")
 
         let responseDTO=NetworkResponseDTO.success(
           statusCode: statusCode,
@@ -119,7 +140,13 @@ public actor NetworkServiceImpl: NetworkServiceProtocol {
 
         return responseDTO
       } else {
-        await logger.warning("Request failed with status code \(statusCode)", metadata: nil)
+        let errorMetadata = LogMetadataDTOCollection()
+          .withPublic(key: "statusCode", value: String(statusCode))
+          .withPublic(key: "durationMs", value: String(format: "%.2f", durationMs))
+          .withPublic(key: "url", value: url.absoluteString)
+          .withPrivate(key: "responseSize", value: String(responseSizeBytes))
+        
+        await logger.warning("Request failed with status code \(statusCode)", metadata: errorMetadata, source: "NetworkService")
 
         let errorMessage=String(data: data, encoding: .utf8) ?? "No error details available"
         let error=NetworkError.serverError(
@@ -144,7 +171,16 @@ public actor NetworkServiceImpl: NetworkServiceProtocol {
         return responseDTO
       }
     } catch let error as URLError {
-      await logger.error("URLError occurred: \(error.localizedDescription)", metadata: nil)
+      let endTime=Date().timeIntervalSince1970 * 1000
+      let durationMs=endTime - startTime
+      
+      let errorMetadata = LogMetadataDTOCollection()
+        .withPublic(key: "url", value: url.absoluteString)
+        .withPublic(key: "method", value: request.method.rawValue)
+        .withPublic(key: "durationMs", value: String(format: "%.2f", durationMs))
+        .withPrivate(key: "error", value: error.localizedDescription)
+      
+      await logger.error("URLError occurred: \(error.localizedDescription)", metadata: errorMetadata, source: "NetworkService")
 
       let networkError=mapURLErrorToNetworkError(error)
       let responseDTO=NetworkResponseDTO.failure(error: networkError)
@@ -153,12 +189,21 @@ public actor NetworkServiceImpl: NetworkServiceProtocol {
         response: responseDTO,
         requestSizeBytes: requestSizeBytes,
         responseSizeBytes: 0,
-        durationMs: Date().timeIntervalSince1970 * 1000 - startTime
+        durationMs: durationMs
       )
 
       return responseDTO
     } catch {
-      await logger.error("Unexpected error: \(error.localizedDescription)", metadata: nil)
+      let endTime=Date().timeIntervalSince1970 * 1000
+      let durationMs=endTime - startTime
+      
+      let errorMetadata = LogMetadataDTOCollection()
+        .withPublic(key: "url", value: url.absoluteString)
+        .withPublic(key: "method", value: request.method.rawValue)
+        .withPublic(key: "durationMs", value: String(format: "%.2f", durationMs))
+        .withPrivate(key: "error", value: error.localizedDescription)
+      
+      await logger.error("Unexpected error: \(error.localizedDescription)", metadata: errorMetadata, source: "NetworkService")
 
       let networkError=NetworkError.unknown(message: error.localizedDescription)
       let responseDTO=NetworkResponseDTO.failure(error: networkError)
@@ -167,7 +212,7 @@ public actor NetworkServiceImpl: NetworkServiceProtocol {
         response: responseDTO,
         requestSizeBytes: requestSizeBytes,
         responseSizeBytes: 0,
-        durationMs: Date().timeIntervalSince1970 * 1000 - startTime
+        durationMs: durationMs
       )
 
       return responseDTO
@@ -210,7 +255,11 @@ public actor NetworkServiceImpl: NetworkServiceProtocol {
   }
 
   public func cancelAllRequests() async {
-    await logger.info("Cancelling all network requests", metadata: nil)
+    let metadata = LogMetadataDTOCollection()
+      .withPublic(key: "action", value: "cancelAll")
+      .withPublic(key: "requestCount", value: String(activeTasks.count))
+    
+    await logger.info("Cancelling all network requests", metadata: metadata, source: "NetworkService")
     for (id, task) in activeTasks {
       task.cancel()
       activeTasks.removeValue(forKey: id)
@@ -218,13 +267,17 @@ public actor NetworkServiceImpl: NetworkServiceProtocol {
   }
 
   public func cancelRequest(_ request: NetworkRequestProtocol) async {
-    await logger.debug("Attempting to cancel request to \(request.urlString)", metadata: nil)
+    let metadata = LogMetadataDTOCollection()
+      .withPublic(key: "url", value: request.urlString)
+      .withPublic(key: "action", value: "cancelRequest")
+    
+    await logger.debug("Attempting to cancel request to \(request.urlString)", metadata: metadata, source: "NetworkService")
     // Find the task associated with this request and cancel it
     for (id, task) in activeTasks {
       // Cancel just the first matching request we find
       // A more sophisticated implementation would track exact request matches
       if task.originalRequest?.url?.absoluteString == request.urlString {
-        await logger.info("Cancelling request to \(request.urlString)", metadata: nil)
+        await logger.info("Cancelling request to \(request.urlString)", metadata: metadata, source: "NetworkService")
         task.cancel()
         activeTasks.removeValue(forKey: id)
         break
@@ -237,7 +290,10 @@ public actor NetworkServiceImpl: NetworkServiceProtocol {
   /// Construct a URL from a NetworkRequestProtocol
   private func constructURL(from request: NetworkRequestProtocol) async -> URL? {
     guard var urlComponents=URLComponents(string: request.urlString) else {
-      await logger.error("Failed to create URLComponents from \(request.urlString)", metadata: nil)
+      let errorMetadata = LogMetadataDTOCollection()
+        .withPublic(key: "urlString", value: request.urlString)
+      
+      await logger.error("Failed to create URLComponents from \(request.urlString)", metadata: errorMetadata, source: "NetworkService")
       return nil
     }
 

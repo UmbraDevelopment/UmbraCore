@@ -12,10 +12,22 @@ import LoggingTypes
  This logger ensures that sensitive information related to keychain operations
  is properly classified with appropriate privacy levels, with British spelling
  in documentation and comments.
+ 
+ ## Privacy Controls
+ 
+ This logger implements comprehensive privacy controls for sensitive information:
+ - Public information (like operation status) is logged normally
+ - Private information (like operation types) is redacted in production builds
+ - Sensitive information (like account identifiers) is always redacted
+ 
+ ## Thread Safety
+ 
+ As an actor, this implementation guarantees thread safety when used from multiple
+ concurrent contexts, preventing data races in logging operations.
  */
 public actor KeychainLogger: DomainLoggerProtocol {
   /// The domain name for this logger
-  public let domainName: String="Keychain"
+  public let domainName: String = "Keychain"
 
   /// The underlying logging service
   private let loggingService: LoggingProtocol
@@ -26,7 +38,7 @@ public actor KeychainLogger: DomainLoggerProtocol {
    - Parameter logger: The core logger to wrap
    */
   public init(logger: LoggingProtocol) {
-    loggingService=logger
+    loggingService = logger
   }
 
   /**
@@ -38,7 +50,7 @@ public actor KeychainLogger: DomainLoggerProtocol {
      - context: The context for the log entry
    */
   public func logWithContext(_ level: LogLevel, _ message: String, context: LogContextDTO) async {
-    let formattedMessage="[\(domainName)] \(message)"
+    let formattedMessage = "[\(domainName)] \(message)"
     await loggingService.log(level, formattedMessage, context: context)
   }
 
@@ -51,9 +63,9 @@ public actor KeychainLogger: DomainLoggerProtocol {
    */
   public func log(_ level: LogLevel, _ message: String) async {
     // For backward compatibility, create a basic keychain context
-    let context=KeychainLogContext(
-      operation: "generic",
+    let context = KeychainLogContext(
       account: "unknown",
+      operation: "generic",
       status: "info"
     )
 
@@ -80,29 +92,29 @@ public actor KeychainLogger: DomainLoggerProtocol {
      - context: The context for the log entry
    */
   public func logError(_ error: Error, context: LogContextDTO) async {
-    if let loggableError=error as? LoggableErrorProtocol {
+    if let loggableError = error as? LoggableErrorProtocol {
       // Create a new context for the error
-      var errorContext=BaseLogContextDTO(
+      var errorContext = BaseLogContextDTO(
         domainName: domainName,
         source: context.getSource()
       )
 
-      // Add error-specific metadata
-      errorContext=errorContext.withUpdatedMetadata(
+      // Add error-specific metadata with privacy controls
+      errorContext = errorContext.withUpdatedMetadata(
         LogMetadataDTOCollection()
-          .withPrivate(key: "errorType", value: String(describing: type(of: loggableError)))
+          .withPublic(key: "errorType", value: String(describing: type(of: loggableError)))
           .withPrivate(key: "errorMessage", value: loggableError.getLogMessage())
       )
 
-      let formattedMessage="[\(domainName)] \(loggableError.getLogMessage())"
+      let formattedMessage = "[\(domainName)] \(loggableError.getLogMessage())"
       await loggingService.error(formattedMessage, context: errorContext)
     } else {
       // Handle standard errors
-      let formattedMessage="[\(domainName)] \(error.localizedDescription)"
+      let formattedMessage = "[\(domainName)] \(error.localizedDescription)"
 
-      if let keychainContext=context as? KeychainLogContext {
+      if let keychainContext = context as? KeychainLogContext {
         // Update the context with error information
-        let updatedContext=keychainContext.withUpdatedMetadata(
+        let updatedContext = keychainContext.withUpdatedMetadata(
           keychainContext.metadata.withPrivate(key: "error", value: error.localizedDescription)
         )
         await log(.error, formattedMessage, context: updatedContext)
@@ -115,64 +127,124 @@ public actor KeychainLogger: DomainLoggerProtocol {
 
   // MARK: - Standard logging levels with context
 
-  /// Log a message with trace level and context
+  /**
+   Log a message with trace level and context.
+   
+   - Parameters:
+     - message: The message to log
+     - context: The context for the log entry
+   */
   public func trace(_ message: String, context: LogContextDTO) async {
     await log(.trace, message, context: context)
   }
 
-  /// Log a message with debug level and context
+  /**
+   Log a message with debug level and context.
+   
+   - Parameters:
+     - message: The message to log
+     - context: The context for the log entry
+   */
   public func debug(_ message: String, context: LogContextDTO) async {
     await log(.debug, message, context: context)
   }
 
-  /// Log a message with info level and context
+  /**
+   Log a message with info level and context.
+   
+   - Parameters:
+     - message: The message to log
+     - context: The context for the log entry
+   */
   public func info(_ message: String, context: LogContextDTO) async {
     await log(.info, message, context: context)
   }
 
-  /// Log a message with warning level and context
+  /**
+   Log a message with warning level and context.
+   
+   - Parameters:
+     - message: The message to log
+     - context: The context for the log entry
+   */
   public func warning(_ message: String, context: LogContextDTO) async {
     await log(.warning, message, context: context)
   }
 
-  /// Log a message with error level and context
+  /**
+   Log a message with error level and context.
+   
+   - Parameters:
+     - message: The message to log
+     - context: The context for the log entry
+   */
   public func error(_ message: String, context: LogContextDTO) async {
     await log(.error, message, context: context)
   }
 
-  /// Log a message with critical level and context
+  /**
+   Log a message with critical level and context.
+   
+   - Parameters:
+     - message: The message to log
+     - context: The context for the log entry
+   */
   public func critical(_ message: String, context: LogContextDTO) async {
     await log(.critical, message, context: context)
   }
 
   // MARK: - Legacy logging methods
 
-  /// Log a message with trace level
+  /**
+   Log a message with trace level.
+   
+   - Parameter message: The message to log
+   */
   public func trace(_ message: String) async {
     await log(.trace, message)
   }
 
-  /// Log a message with debug level
+  /**
+   Log a message with debug level.
+   
+   - Parameter message: The message to log
+   */
   public func debug(_ message: String) async {
     await log(.debug, message)
   }
 
-  /// Log a message with info level
+  /**
+   Log a message with info level.
+   
+   - Parameter message: The message to log
+   */
   public func info(_ message: String) async {
     await log(.info, message)
   }
 
-  /// Log a message with warning level
+  /**
+   Log a message with warning level.
+   
+   - Parameter message: The message to log
+   */
   public func warning(_ message: String) async {
     await log(.warning, message)
   }
 
-  /// Log a message with error level
+  /**
+   Log a message with error level.
+   
+   - Parameter message: The message to log
+   */
   public func error(_ message: String) async {
     await log(.error, message)
   }
 
-  /// Log a message with critical level
+  /**
+   Log a message with critical level.
+   
+   - Parameter message: The message to log
+   */
   public func critical(_ message: String) async {
     await log(.critical, message)
   }
@@ -183,22 +255,22 @@ public actor KeychainLogger: DomainLoggerProtocol {
    Logs the start of a keychain operation.
 
    - Parameters:
+     - account: The account identifier (sensitive information)
      - operation: The operation being performed
-     - account: The account identifier (private metadata)
      - message: Optional custom message
    */
   public func logOperationStart(
-    operation: String,
     account: String,
-    message: String?=nil
+    operation: String,
+    message: String? = nil
   ) async {
-    let context=KeychainLogContext(
-      operation: operation,
+    let context = KeychainLogContext(
       account: account,
+      operation: operation,
       status: "started"
     )
 
-    let defaultMessage="Starting keychain operation: \(operation)"
+    let defaultMessage = "Starting keychain operation: \(operation)"
     await info(message ?? defaultMessage, context: context)
   }
 
@@ -206,22 +278,22 @@ public actor KeychainLogger: DomainLoggerProtocol {
    Logs the successful completion of a keychain operation.
 
    - Parameters:
+     - account: The account identifier (sensitive information)
      - operation: The operation that succeeded
-     - account: The account identifier (private metadata)
      - message: Optional custom message
    */
   public func logOperationSuccess(
-    operation: String,
     account: String,
-    message: String?=nil
+    operation: String,
+    message: String? = nil
   ) async {
-    let context=KeychainLogContext(
-      operation: operation,
+    let context = KeychainLogContext(
       account: account,
+      operation: operation,
       status: "success"
     )
 
-    let defaultMessage="Successfully completed keychain operation: \(operation)"
+    let defaultMessage = "Successfully completed keychain operation: \(operation)"
     await info(message ?? defaultMessage, context: context)
   }
 
@@ -229,20 +301,20 @@ public actor KeychainLogger: DomainLoggerProtocol {
    Logs the failure of a keychain operation.
 
    - Parameters:
+     - account: The account identifier (sensitive information)
      - operation: The operation that failed
-     - account: The account identifier (private metadata)
      - error: The error that occurred
      - message: Optional custom message
    */
   public func logOperationError(
-    operation: String,
     account: String,
+    operation: String,
     error: Error,
-    message: String?=nil
+    message: String? = nil
   ) async {
-    let context=KeychainLogContext(
-      operation: operation,
+    let context = KeychainLogContext(
       account: account,
+      operation: operation,
       status: "error"
     )
 
@@ -253,5 +325,36 @@ public actor KeychainLogger: DomainLoggerProtocol {
     if let message {
       await self.error(message, context: context)
     }
+  }
+}
+
+/**
+ A basic implementation of LogContextDTO for use with the KeychainLogger.
+ */
+private struct BaseLogContextDTO: LogContextDTO {
+  let domainName: String
+  let source: String?
+  let metadataCollection: LogMetadataDTOCollection
+  
+  init(domainName: String, source: String?, metadataCollection: LogMetadataDTOCollection = LogMetadataDTOCollection()) {
+    self.domainName = domainName
+    self.source = source
+    self.metadataCollection = metadataCollection
+  }
+  
+  func getSource() -> String {
+    source ?? "KeychainServices"
+  }
+  
+  func getDomain() -> String {
+    domainName
+  }
+  
+  var metadata: LogMetadataDTOCollection {
+    metadataCollection
+  }
+  
+  func withUpdatedMetadata(_ metadata: LogMetadataDTOCollection) -> BaseLogContextDTO {
+    BaseLogContextDTO(domainName: domainName, source: source, metadataCollection: metadata)
   }
 }

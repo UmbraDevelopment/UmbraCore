@@ -3,10 +3,27 @@ import LoggingInterfaces
 import LoggingTypes
 
 /**
- * A keychain-specific log context for structured logging of keychain operations.
- *
- * This provides metadata tailored for keychain operations including operation type,
- * account information, and status with appropriate privacy controls.
+ # Keychain Log Context
+ 
+ A keychain-specific log context for structured logging of keychain operations.
+ 
+ This provides metadata tailored for keychain operations including operation type,
+ account information, and status with appropriate privacy controls.
+ 
+ ## Privacy Controls
+ 
+ This context implements comprehensive privacy controls for sensitive information:
+ - Public information (like status) is logged normally
+ - Private information (like operation type) is redacted in production builds
+ - Sensitive information (like account identifiers) is always redacted
+ 
+ ## Alpha Dot Five Compliance
+ 
+ This implementation follows the Alpha Dot Five architecture principles by:
+ 1. Using proper British spelling in documentation
+ 2. Providing comprehensive privacy controls for sensitive data
+ 3. Supporting modern metadata handling with functional approach
+ 4. Using immutable data structures for thread safety
  */
 public struct KeychainLogContext: LogContextDTO {
   /// The domain name for the log
@@ -31,91 +48,133 @@ public struct KeychainLogContext: LogContextDTO {
   public let status: String
 
   /**
-   * Creates a new keychain log context.
-   *
-   * - Parameters:
-   *   - operation: The type of keychain operation
-   *   - account: The account identifier
-   *   - status: The status of the operation
-   *   - source: The source of the log (optional)
-   *   - domainName: The domain name for the log
-   *   - correlationID: Optional correlation ID for tracking related logs
-   *   - metadata: Additional metadata for the log entry
+   Creates a new keychain log context.
+   
+   - Parameters:
+     - account: The account identifier (will be treated as sensitive)
+     - operation: The type of keychain operation
+     - status: The status of the operation (defaults to "started")
+     - source: The source of the log (defaults to "KeychainServices")
+     - domainName: The domain name for the log (defaults to "Keychain")
+     - correlationID: Optional correlation ID for tracking related logs
+     - additionalContext: Additional metadata for the log entry
    */
   public init(
-    operation: String,
     account: String,
-    status: String,
-    source: String?="KeychainServices",
-    domainName: String="Keychain",
-    correlationID: String?=nil,
-    metadata: LogMetadataDTOCollection=LogMetadataDTOCollection()
+    operation: String,
+    status: String = "started",
+    source: String? = "KeychainServices",
+    domainName: String = "Keychain",
+    correlationID: String? = nil,
+    additionalContext: LogMetadataDTOCollection = LogMetadataDTOCollection()
   ) {
-    self.operation=operation
-    self.account=account
-    self.status=status
-    self.source=source
-    self.domainName=domainName
-    self.correlationID=correlationID
+    self.operation = operation
+    self.account = account
+    self.status = status
+    self.source = source
+    self.domainName = domainName
+    self.correlationID = correlationID
 
     // Create a new metadata collection with keychain-specific fields
-    var enhancedMetadata=metadata
-    enhancedMetadata=enhancedMetadata.withPrivate(key: "operation", value: operation)
-    enhancedMetadata=enhancedMetadata.withPrivate(key: "account", value: account)
-    enhancedMetadata=enhancedMetadata.withPublic(key: "status", value: status)
+    // Account is sensitive information
+    var enhancedMetadata = additionalContext
+    enhancedMetadata = enhancedMetadata.withSensitive(key: "account", value: account)
+    // Operation is private information
+    enhancedMetadata = enhancedMetadata.withPrivate(key: "operation", value: operation)
+    // Status is public information
+    enhancedMetadata = enhancedMetadata.withPublic(key: "status", value: status)
 
-    self.metadata=enhancedMetadata
+    self.metadata = enhancedMetadata
   }
 
   /**
-   * Creates an updated copy of this context with new metadata.
-   *
-   * - Parameter metadata: The new metadata collection
-   * - Returns: A new context with updated metadata
+   Creates an updated copy of this context with new metadata.
+   
+   - Parameter metadata: The new metadata collection
+   - Returns: A new context with updated metadata
    */
   public func withUpdatedMetadata(_ metadata: LogMetadataDTOCollection) -> KeychainLogContext {
     KeychainLogContext(
-      operation: operation,
       account: account,
+      operation: operation,
       status: status,
       source: source,
       domainName: domainName,
       correlationID: correlationID,
-      metadata: metadata
+      additionalContext: metadata
     )
   }
 
   /**
-   * Returns the source of the log entry.
-   *
-   * - Returns: The source string or nil if not available
+   Creates an updated copy of this context with a new status.
+   
+   - Parameter status: The new status
+   - Returns: A new context with updated status
    */
-  public func getSource() -> String? {
-    source
+  public func withStatus(_ status: String) -> KeychainLogContext {
+    KeychainLogContext(
+      account: account,
+      operation: operation,
+      status: status,
+      source: source,
+      domainName: domainName,
+      correlationID: correlationID,
+      additionalContext: metadata
+    )
   }
 
   /**
-   * Converts the context to standard log metadata.
-   *
-   * - Returns: The log metadata representation of this context
+   Returns the source of the log entry.
+   
+   - Returns: The source string
    */
+  public func getSource() -> String {
+    source ?? "KeychainServices"
+  }
+  
+  /**
+   Returns the domain name for the log.
+   
+   - Returns: The domain name
+   */
+  public func getDomain() -> String {
+    domainName
+  }
+
+  /**
+   Creates a metadata collection for this context.
+   
+   - Returns: A LogMetadataDTOCollection with privacy-aware metadata
+   */
+  public func createMetadataCollection() -> LogMetadataDTOCollection {
+    // The metadata property already contains all the necessary information
+    // with proper privacy annotations
+    return metadata
+  }
+
+  /**
+   Converts the context to standard log metadata (deprecated method).
+   
+   - Returns: The log metadata representation of this context
+   */
+  @available(*, deprecated, message: "Use createMetadataCollection() instead")
   public func asLogMetadata() -> LogMetadata {
     // Create a standard LogMetadata dictionary
-    var logMetadata=LogMetadata()
+    var logMetadata = LogMetadata()
 
     // Add standard context fields
-    logMetadata["domain"]=domainName
+    logMetadata["domain"] = domainName
     if let source {
-      logMetadata["source"]=source
+      logMetadata["source"] = source
     }
     if let correlationID {
-      logMetadata["correlationID"]=correlationID
+      logMetadata["correlationID"] = correlationID
     }
 
     // Add operation-specific fields
-    logMetadata["operation"]=operation
-    logMetadata["account"]=account
-    logMetadata["status"]=status
+    logMetadata["operation"] = operation
+    logMetadata["account"] = account
+    logMetadata["status"] = status
 
     return logMetadata
   }

@@ -1,8 +1,18 @@
 import LoggingInterfaces
 import LoggingTypes
 
-/// An actor that implements the PrivacyAwareLoggingProtocol with support for
-/// privacy controls and proper isolation for concurrent logging.
+/**
+ # Privacy-Aware Logger
+ 
+ An actor that implements the PrivacyAwareLoggingProtocol with support for
+ privacy controls and proper isolation for concurrent logging.
+ 
+ This implementation follows the Alpha Dot Five architecture principles by:
+ 1. Using actor isolation for thread safety
+ 2. Providing comprehensive privacy controls for sensitive data
+ 3. Using proper British spelling in documentation
+ 4. Supporting modern metadata handling with functional approach
+ */
 public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
   /// The minimum log level to process
   private let minimumLevel: LogLevel
@@ -16,12 +26,15 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
   /// The logging actor required by LoggingProtocol
   public let loggingActor: LoggingActor
 
-  /// Creates a new privacy-aware logger
-  /// - Parameters:
-  ///   - minimumLevel: The minimum log level to process
-  ///   - identifier: The identifier for this logger instance
-  ///   - backend: The backend that will actually write the logs
-  ///   - loggingActor: Optional custom logging actor, will create a default one if not provided
+  /**
+   Creates a new privacy-aware logger.
+   
+   - Parameters:
+     - minimumLevel: The minimum log level to process
+     - identifier: The identifier for this logger instance
+     - backend: The backend that will actually write the logs
+     - loggingActor: Optional custom logging actor, will create a default one if not provided
+   */
   public init(
     minimumLevel: LogLevel,
     identifier: String,
@@ -38,11 +51,14 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
 
   // MARK: - CoreLoggingProtocol Implementation
 
-  /// Implements the core logging functionality with LogContextDTO
-  /// - Parameters:
-  ///   - level: The severity level of the log
-  ///   - message: The message to log
-  ///   - context: Contextual information about the log as DTO
+  /**
+   Implements the core logging functionality with LogContextDTO.
+   
+   - Parameters:
+     - level: The severity level of the log
+     - message: The message to log
+     - context: Contextual information about the log as DTO
+   */
   public func log(_ level: LogLevel, _ message: String, context: LogContextDTO) async {
     // Check if this log level should be processed
     guard backend.shouldLog(level: level, minimumLevel: minimumLevel) else {
@@ -52,7 +68,7 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
     // Create LogContext from LogContextDTO
     let logContext=LogContext(
       source: context.getSource(),
-      metadata: convertToPrivacyMetadata(context.metadata)
+      metadata: context.metadata
     )
 
     // Write to the backend
@@ -69,16 +85,25 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
 
   // MARK: - Helper Methods
 
-  /// Helper method to convert from metadata to LogMetadataDTOCollection
-  /// - Parameter metadata: The metadata to use directly
-  /// - Returns: A metadata collection
+  /**
+   Helper method to create or use an existing metadata collection.
+   
+   - Parameter metadata: The metadata to use directly
+   - Returns: A metadata collection
+   */
   private func createMetadataCollection(from metadata: LogMetadataDTOCollection?)
   -> LogMetadataDTOCollection {
     metadata ?? LogMetadataDTOCollection()
   }
 
-  /// Helper function to convert LogMetadataDTOCollection to PrivacyMetadata until we can fully
-  /// remove PrivacyMetadata
+  /**
+   Deprecated helper function to convert LogMetadataDTOCollection to PrivacyMetadata.
+   This method is kept for backward compatibility but should not be used in new code.
+   
+   - Parameter metadata: The metadata collection to convert
+   - Returns: A PrivacyMetadata instance
+   */
+  @available(*, deprecated, message: "Use LogMetadataDTOCollection directly instead")
   private func convertToPrivacyMetadata(_ metadata: LogMetadataDTOCollection) -> PrivacyMetadata {
     // Use the built-in conversion method from LogMetadataDTOCollection
     metadata.toPrivacyMetadata()
@@ -154,6 +179,36 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
     await critical(message, context: context)
   }
 
+  /// Log a trace message
+  public func trace(_ message: String, context: LogContextDTO) async {
+    await log(.trace, message, context: context)
+  }
+
+  /// Log a debug message
+  public func debug(_ message: String, context: LogContextDTO) async {
+    await log(.debug, message, context: context)
+  }
+
+  /// Log an info message
+  public func info(_ message: String, context: LogContextDTO) async {
+    await log(.info, message, context: context)
+  }
+
+  /// Log a warning message
+  public func warning(_ message: String, context: LogContextDTO) async {
+    await log(.warning, message, context: context)
+  }
+
+  /// Log an error message
+  public func error(_ message: String, context: LogContextDTO) async {
+    await log(.error, message, context: context)
+  }
+
+  /// Log a critical message
+  public func critical(_ message: String, context: LogContextDTO) async {
+    await log(.critical, message, context: context)
+  }
+
   // MARK: - PrivacyAwareLoggingProtocol Methods
 
   /// Log a message with explicit privacy controls using DTO context
@@ -177,7 +232,7 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
     // Create LogContext from LogContextDTO
     let logContext=LogContext(
       source: context.getSource(),
-      metadata: convertToPrivacyMetadata(context.metadata)
+      metadata: context.metadata
     )
 
     // Write to the backend
