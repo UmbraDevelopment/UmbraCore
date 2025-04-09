@@ -1,6 +1,0 @@
-{
-  "original_path": "/Users/mpy/CascadeProjects/UmbraCore/Sources/FileSystemTypes",
-  "migrated_to": "/Users/mpy/CascadeProjects/UmbraCore/packages/UmbraCoreTypes/Sources/FileSystemTypes",
-  "archived_at": "2025-03-27T17:07:33.053840",
-  "moved_by": "migrate_to_archive.py"
-}

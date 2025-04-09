@@ -148,11 +148,11 @@ public struct SimpleKeyManager: KeyManagementProtocol {
    - Returns: A privacy-aware metadata collection
    */
   private func createMetadataCollection(from dict: [String: String]) -> LogMetadataDTOCollection {
-    let collection = LogMetadataDTOCollection()
+    var collection = LogMetadataDTOCollection()
     
     for (key, value) in dict {
       // In KeychainServices, we treat all metadata as private by default
-      collection.withPrivate(key: key, value: value)
+      collection = collection.withPrivate(key: key, value: value)
     }
     
     return collection

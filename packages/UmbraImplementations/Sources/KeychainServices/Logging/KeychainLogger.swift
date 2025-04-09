@@ -334,7 +334,7 @@ public actor KeychainLogger: DomainLoggerProtocol {
 private struct BaseLogContextDTO: LogContextDTO {
   let domainName: String
   let source: String?
-  let metadataCollection: LogMetadataDTOCollection
+  private let metadataCollection: LogMetadataDTOCollection
   
   init(domainName: String, source: String?, metadataCollection: LogMetadataDTOCollection = LogMetadataDTOCollection()) {
     self.domainName = domainName
@@ -350,11 +350,17 @@ private struct BaseLogContextDTO: LogContextDTO {
     domainName
   }
   
+  // Required by LogContextDTO protocol
   var metadata: LogMetadataDTOCollection {
     metadataCollection
   }
   
-  func withUpdatedMetadata(_ metadata: LogMetadataDTOCollection) -> BaseLogContextDTO {
-    BaseLogContextDTO(domainName: domainName, source: source, metadataCollection: metadata)
+  // Required by LogContextDTO protocol
+  func createMetadataCollection() -> LogMetadataDTOCollection {
+    metadataCollection
+  }
+  
+  func withUpdatedMetadata(_ updatedMetadata: LogMetadataDTOCollection) -> BaseLogContextDTO {
+    BaseLogContextDTO(domainName: domainName, source: source, metadataCollection: updatedMetadata)
   }
 }

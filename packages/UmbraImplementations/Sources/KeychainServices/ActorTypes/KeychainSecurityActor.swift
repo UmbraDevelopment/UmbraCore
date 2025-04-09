@@ -124,14 +124,15 @@ public actor KeychainSecurityActor {
     secret: String,
     forAccount account: String,
     keyIdentifier: String?=nil,
-    additionalContext _: LogMetadataDTOCollection?=nil
+    additionalContext: LogMetadataDTOCollection?=nil
   ) async throws -> String {
-    _=keyIdentifier ?? deriveKeyIdentifier(forAccount: account)
+    let derivedKeyIdentifier = keyIdentifier ?? deriveKeyIdentifier(forAccount: account)
 
     // Create proper structured logging
     await keychainLogger.logOperationStart(
       operation: "storeEncryptedSecret",
-      account: account
+      account: account,
+      additionalContext: additionalContext
     )
 
     do {
@@ -188,7 +189,7 @@ public actor KeychainSecurityActor {
         account: account
       )
 
-      return deriveKeyIdentifier(forAccount: account)
+      return derivedKeyIdentifier
     } catch {
       // Log the error with proper metadata
       await keychainLogger.logOperationError(

@@ -106,6 +106,36 @@ public struct CryptoLogContext: LogContextDTO, Sendable {
     self
   }
   
+  /**
+   Creates a metadata collection with all the context information.
+   
+   - Returns: A LogMetadataDTOCollection with all metadata entries
+   */
+  public func createMetadataCollection() -> LogMetadataDTOCollection {
+    var collection = metadata
+    
+    // Add standard context information
+    collection = collection.withPublic(key: "operation", value: operation)
+    
+    if let source = source {
+      collection = collection.withPublic(key: "source", value: source)
+    }
+    
+    if let correlationID = correlationID {
+      collection = collection.withPublic(key: "correlationID", value: correlationID)
+    }
+    
+    if let identifier = identifier {
+      collection = collection.withPrivate(key: "identifier", value: identifier)
+    }
+    
+    if let status = status {
+      collection = collection.withPublic(key: "status", value: status)
+    }
+    
+    return collection
+  }
+  
   // MARK: - Functional Update Methods
   
   /**

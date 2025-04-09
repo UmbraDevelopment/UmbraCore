@@ -26,6 +26,12 @@ public struct FileSystemLogContext: LogContextDTO {
     /// The metadata collection with privacy annotations
     public let metadata: LogMetadataDTOCollection
     
+    /// Optional correlation ID for tracing related log events
+    public let correlationID: String?
+    
+    /// The domain name for this context
+    public let domainName: String = "FileSystem"
+    
     /**
      Initialises a new FileSystemLogContext.
      
@@ -33,15 +39,38 @@ public struct FileSystemLogContext: LogContextDTO {
         - operation: The file system operation being performed
         - source: The source component (defaults to "FileSystemService")
         - metadata: Privacy-aware metadata collection
+        - correlationID: Optional correlation ID for tracing related events
      */
     public init(
         operation: String,
         source: String = "FileSystemService",
-        metadata: LogMetadataDTOCollection = LogMetadataDTOCollection()
+        metadata: LogMetadataDTOCollection = LogMetadataDTOCollection(),
+        correlationID: String? = nil
     ) {
         self.operation = operation
         self.source = source
         self.metadata = metadata
+        self.correlationID = correlationID
+    }
+    
+    /**
+     Creates a metadata collection with all the context information.
+     
+     - Returns: A LogMetadataDTOCollection with all metadata entries
+     */
+    public func createMetadataCollection() -> LogMetadataDTOCollection {
+        var collection = metadata
+        
+        // Add standard context information
+        collection = collection.withPublic(key: "operation", value: operation)
+        collection = collection.withPublic(key: "source", value: source)
+        
+        // Add correlation ID if available
+        if let correlationID = correlationID {
+            collection = collection.withPublic(key: "correlationID", value: correlationID)
+        }
+        
+        return collection
     }
     
     /**
@@ -54,7 +83,8 @@ public struct FileSystemLogContext: LogContextDTO {
         return FileSystemLogContext(
             operation: operation,
             source: source,
-            metadata: metadata.withPrivate(key: "path", value: path)
+            metadata: metadata.withPrivate(key: "path", value: path),
+            correlationID: correlationID
         )
     }
     
@@ -68,7 +98,8 @@ public struct FileSystemLogContext: LogContextDTO {
         return FileSystemLogContext(
             operation: operation,
             source: source,
-            metadata: metadata.withPrivate(key: "destinationPath", value: path)
+            metadata: metadata.withPrivate(key: "destinationPath", value: path),
+            correlationID: correlationID
         )
     }
     
@@ -82,7 +113,8 @@ public struct FileSystemLogContext: LogContextDTO {
         return FileSystemLogContext(
             operation: operation,
             source: source,
-            metadata: metadata.withPublic(key: "fileSize", value: "\(size)")
+            metadata: metadata.withPublic(key: "fileSize", value: "\(size)"),
+            correlationID: correlationID
         )
     }
     
@@ -98,7 +130,8 @@ public struct FileSystemLogContext: LogContextDTO {
             source: source,
             metadata: metadata
                 .withPublic(key: "errorType", value: "\(type(of: error))")
-                .withPrivate(key: "errorMessage", value: error.localizedDescription)
+                .withPrivate(key: "errorMessage", value: error.localizedDescription),
+            correlationID: correlationID
         )
     }
     
@@ -112,7 +145,8 @@ public struct FileSystemLogContext: LogContextDTO {
         return FileSystemLogContext(
             operation: operation,
             source: source,
-            metadata: metadata.withPublic(key: "success", value: "\(success)")
+            metadata: metadata.withPublic(key: "success", value: "\(success)"),
+            correlationID: correlationID
         )
     }
 }

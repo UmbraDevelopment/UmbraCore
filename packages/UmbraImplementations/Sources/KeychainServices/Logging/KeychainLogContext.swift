@@ -159,12 +159,8 @@ public struct KeychainLogContext: LogContextDTO {
    - Returns: A new context with combined metadata
    */
   public func withAdditionalMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> KeychainLogContext {
-    var combinedMetadata = createMetadataCollection()
-    
-    // Add all entries from the additional metadata
-    for entry in additionalMetadata.entries {
-      combinedMetadata.entries.append(entry)
-    }
+    // Use the merging method to combine metadata collections
+    let combinedMetadata = createMetadataCollection().merging(with: additionalMetadata)
     
     return KeychainLogContext(
       operation: operation,

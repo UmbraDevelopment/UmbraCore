@@ -1,6 +1,0 @@
-{
-  "originalPath": "Sources/NetworkService",
-  "migratedTo": "packages/UmbraImplementations/Sources/NetworkServices",
-  "migrationDate": "2025-03-28",
-  "migrationNote": "Migrated as part of Alpha Dot Five architecture upgrade. Improved error handling and concurrency model."
-}

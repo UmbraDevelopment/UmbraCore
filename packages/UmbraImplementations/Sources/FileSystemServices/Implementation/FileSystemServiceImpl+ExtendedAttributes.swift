@@ -167,7 +167,8 @@ extension FileSystemServiceImpl {
       context: FileSystemLogContext(
         operation: "setExtendedAttribute",
         source: "FileSystemService",
-        metadata: metadata
+        metadata: metadata,
+        correlationID: nil
       )
     )
 
@@ -199,7 +200,8 @@ extension FileSystemServiceImpl {
         context: FileSystemLogContext(
           operation: "setExtendedAttribute",
           source: "FileSystemService",
-          metadata: LogMetadataDTOCollection().withPrivate(key: "path", value: path.path)
+          metadata: LogMetadataDTOCollection().withPrivate(key: "path", value: path.path),
+          correlationID: nil
         )
       )
     } catch {
@@ -213,7 +215,8 @@ extension FileSystemServiceImpl {
         context: FileSystemLogContext(
           operation: "setExtendedAttribute",
           source: "FileSystemService",
-          metadata: errorMetadata
+          metadata: errorMetadata,
+          correlationID: nil
         )
       )
       
@@ -249,7 +252,8 @@ extension FileSystemServiceImpl {
       context: FileSystemLogContext(
         operation: "getExtendedAttribute",
         source: "FileSystemService",
-        metadata: metadata
+        metadata: metadata,
+        correlationID: nil
       )
     )
 
@@ -280,7 +284,8 @@ extension FileSystemServiceImpl {
         context: FileSystemLogContext(
           operation: "getExtendedAttribute",
           source: "FileSystemService",
-          metadata: LogMetadataDTOCollection().withPrivate(key: "path", value: path.path)
+          metadata: LogMetadataDTOCollection().withPrivate(key: "path", value: path.path),
+          correlationID: nil
         )
       )
       
@@ -299,7 +304,8 @@ extension FileSystemServiceImpl {
         context: FileSystemLogContext(
           operation: "getExtendedAttribute",
           source: "FileSystemService",
-          metadata: errorMetadata
+          metadata: errorMetadata,
+          correlationID: nil
         )
       )
       
@@ -330,7 +336,8 @@ extension FileSystemServiceImpl {
       context: FileSystemLogContext(
         operation: "listExtendedAttributes",
         source: "FileSystemService",
-        metadata: metadata
+        metadata: metadata,
+        correlationID: nil
       )
     )
 
@@ -358,7 +365,8 @@ extension FileSystemServiceImpl {
         context: FileSystemLogContext(
           operation: "listExtendedAttributes",
           source: "FileSystemService",
-          metadata: resultMetadata
+          metadata: resultMetadata,
+          correlationID: nil
         )
       )
 
@@ -377,7 +385,8 @@ extension FileSystemServiceImpl {
         context: FileSystemLogContext(
           operation: "listExtendedAttributes",
           source: "FileSystemService",
-          metadata: errorMetadata
+          metadata: errorMetadata,
+          correlationID: nil
         )
       )
       
