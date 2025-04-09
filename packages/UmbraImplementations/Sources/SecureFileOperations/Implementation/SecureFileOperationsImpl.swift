@@ -106,8 +106,6 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
             ])
             await logger.debug("Successfully created security bookmark", context: successContext)
             return (bookmarkData, result)
-        } catch let error as FileSystemError {
-            throw error
         } catch {
             let securityError = FileSystemError.securityError(
                 path: path,
@@ -133,11 +131,18 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
         let context = createSecureFileLogContext(["bookmarkSize": "\(bookmark.count)"])
         await logger.debug("Resolving security bookmark", context: context)
         
+        var isStale = false
+        var path: String
+        
         do {
-            var isStale = false
-            let url = try URL(resolvingBookmarkData: bookmark, options: .withSecurityScope, relativeTo: nil, bookmarkDataIsStale: &isStale)
+            // Resolve bookmark to URL
+            var bookmarkDataIsStale = false
+            let url = try URL(resolvingBookmarkData: bookmark, options: .withSecurityScope, relativeTo: nil, bookmarkDataIsStale: &bookmarkDataIsStale)
             
-            // Get the file attributes for the result metadata if file exists
+            path = url.path
+            isStale = bookmarkDataIsStale
+            
+            // Get the file attributes for metadata
             var metadata: FileMetadataDTO? = nil
             if fileManager.fileExists(atPath: url.path) {
                 if let attributes = try? fileManager.attributesOfItem(atPath: url.path) {
@@ -146,24 +151,30 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
             }
             
             let result = FileOperationResultDTO.success(
-                path: url.path,
+                path: path,
                 metadata: metadata
             )
             
             let successContext = createSecureFileLogContext([
-                "path": url.path, 
-                "isStale": "\(isStale)"
+                "path": path,
+                "isStale": String(isStale)
             ])
             await logger.debug("Successfully resolved security bookmark", context: successContext)
-            return (url.path, isStale, result)
+            
+            return (path, isStale, result)
         } catch {
-            let securityError = FileSystemError.securityError(
-                path: "unknown",
+            let resolveError = FileSystemError.securityError(
+                path: "<bookmark>",
                 reason: "Failed to resolve security bookmark: \(error.localizedDescription)"
             )
-            let errorContext = createSecureFileLogContext(["error": "\(error.localizedDescription)"])
+            
+            let errorContext = createSecureFileLogContext([
+                "error": "\(error)",
+                "bookmarkSize": "\(bookmark.count)"
+            ])
             await logger.error("Failed to resolve security bookmark", context: errorContext)
-            throw securityError
+            
+            throw resolveError
         }
     }
     
@@ -213,6 +224,37 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
             await logger.error("Failed to start accessing security-scoped resource", context: errorContext)
             throw securityError
         }
+    }
+    
+    /**
+     Accesses a security-scoped resource.
+     
+     - Parameter path: The path to access
+     - Returns: True if access was granted, false otherwise, and operation result
+     */
+    public func accessSecurityScopedResource(at path: String) async -> (Bool, FileOperationResultDTO) {
+        let context = createSecureFileLogContext([
+            "path": path
+        ])
+        await logger.debug("Accessing security-scoped resource", context: context)
+        
+        // Create a URL from the path
+        let securityScopedURL = URL(fileURLWithPath: path)
+        
+        // Attempt to acquire security-scoped resource access
+        let accessGranted = securityScopedURL.startAccessingSecurityScopedResource()
+        
+        // Create the result DTO
+        let result = FileOperationResultDTO.success(
+            path: path
+        )
+        
+        let successContext = createSecureFileLogContext([
+            "path": path,
+            "securityScopedAccess": String(accessGranted)
+        ])
+        await logger.debug("Access to security-scoped resource status", context: successContext)
+        return (accessGranted, result)
     }
     
     /**
@@ -279,8 +321,6 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
             let successContext = createSecureFileLogContext(["path": tempPath])
             await logger.debug("Successfully created secure temporary file", context: successContext)
             return tempPath
-        } catch let error as FileSystemError {
-            throw error
         } catch {
             let securityError = FileSystemError.writeError(
                 path: "temporary file",
@@ -328,8 +368,6 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
             let successContext = createSecureFileLogContext(["path": tempPath])
             await logger.debug("Successfully created secure temporary directory", context: successContext)
             return tempPath
-        } catch let error as FileSystemError {
-            throw error
         } catch {
             let securityError = FileSystemError.writeError(
                 path: "temporary directory",
@@ -359,7 +397,6 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
         
         do {
             var dataToWrite = data
-            var checksumData: Data? = nil
             
             // Get the default options if not provided
             let secureOptions = options?.secureOptions ?? SecureFileOptions()
@@ -389,7 +426,7 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
                     dataToWrite = sealedBox.combined ?? Data()
                 case .chaChaPoly:
                     let sealedBox = try ChaChaPoly.seal(data, using: key)
-                    dataToWrite = sealedBox.combined ?? Data()
+                    dataToWrite = sealedBox.combined
                 }
             }
             
@@ -412,8 +449,6 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
                 "size": "\(dataToWrite.count)"
             ])
             await logger.debug("Successfully wrote secure file", context: successContext)
-        } catch let error as FileSystemError {
-            throw error
         } catch {
             let securityError = FileSystemError.writeError(
                 path: path,
@@ -482,7 +517,7 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
             
             // Get the default options if not provided
             let secureOptions = options?.secureOptions ?? SecureFileOptions()
-            let verifyIntegrity = options?.verifyIntegrity ?? true
+            _ = options?.verifyIntegrity ?? true
             
             var dataToReturn = fileData
             
@@ -521,8 +556,6 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
             await logger.debug("Successfully read secure file", context: successContext)
             
             return dataToReturn
-        } catch let error as FileSystemError {
-            throw error
         } catch {
             let securityError = FileSystemError.readError(
                 path: path,
@@ -580,7 +613,7 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
             
             // Get original file attributes for context
             let originalAttributes = try fileManager.attributesOfItem(atPath: path)
-            let originalSize = (originalAttributes[.size] as? UInt64) ?? 0
+            _ = (originalAttributes[.size] as? UInt64) ?? 0
             
             // Get file size to determine buffer size
             let url = URL(fileURLWithPath: path)
@@ -654,8 +687,6 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
                 "useRandomData": "\(useRandomData)"
             ])
             await logger.debug("Successfully securely deleted file", context: successContext)
-        } catch let error as FileSystemError {
-            throw error
         } catch {
             let securityError = FileSystemError.deleteError(
                 path: path,
@@ -715,8 +746,6 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
             await logger.debug("File integrity verification result: \(isVerified)", context: resultContext)
             
             return isVerified
-        } catch let error as FileSystemError {
-            throw error
         } catch {
             let securityError = FileSystemError.readError(
                 path: path,
@@ -779,8 +808,6 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
                 "ownerReadOnly": "\(permissions.ownerReadOnly)"
             ])
             await logger.debug("Successfully set secure permissions", context: successContext)
-        } catch let error as FileSystemError {
-            throw error
         } catch {
             let securityError = FileSystemError.writeError(
                 path: path,

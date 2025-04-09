@@ -67,7 +67,8 @@ public actor FilePathServiceFactory {
   public func createWithFileManager(
     _ fileManager: FileManager
   ) -> FilePathServiceProtocol {
-    FilePathServiceImpl(fileManager: fileManager)
+    let isolatedFileManager = FileManager()
+    return FilePathServiceImpl(fileManager: isolatedFileManager)
   }
 
   /**
@@ -252,7 +253,7 @@ actor FilePathServiceImpl: FilePathServiceProtocol {
    - Returns: The parent directory path
    */
   func parentDirectory(of path: SecurePath) async -> SecurePath? {
-    let filePath = path.path
+    let filePath = path.toString()
     let url = URL(fileURLWithPath: filePath)
     let parentPath = url.deletingLastPathComponent().path
     return SecurePath(path: parentPath, isDirectory: true, securityLevel: path.securityLevel)
@@ -265,7 +266,7 @@ actor FilePathServiceImpl: FilePathServiceProtocol {
    - Returns: The last path component
    */
   func lastComponent(of path: SecurePath) async -> String {
-    let filePath = path.path
+    let filePath = path.toString()
     let url = URL(fileURLWithPath: filePath)
     return url.lastPathComponent
   }
@@ -277,7 +278,7 @@ actor FilePathServiceImpl: FilePathServiceProtocol {
    - Returns: The file extension, or nil if there is none
    */
   func fileExtension(of path: SecurePath) async -> String? {
-    let filePath = path.path
+    let filePath = path.toString()
     let url = URL(fileURLWithPath: filePath)
     let ext = url.pathExtension
     return ext.isEmpty ? nil : ext
@@ -527,6 +528,12 @@ actor SecureFilePathService: FilePathServiceProtocol {
 
   /// Logger for recording operations
   private let logger: any LoggingProtocol
+  
+  /// File manager to use for operations
+  private let fileManager: FileManager
+  
+  /// Root directory for path operations
+  private let rootDirectory: String
 
   /**
    Initialises a new secure file path service.
@@ -534,10 +541,19 @@ actor SecureFilePathService: FilePathServiceProtocol {
    - Parameters:
       - securityLevel: The security level to enforce
       - logger: Logger for recording operations
+      - fileManager: The file manager to use
+      - rootDirectory: Root directory for path operations
    */
-  init(securityLevel: SecurityLevel, logger: any LoggingProtocol) {
-    self.securityLevel=securityLevel
-    self.logger=logger
+  init(
+    securityLevel: SecurityLevel,
+    logger: any LoggingProtocol,
+    fileManager: FileManager = .default,
+    rootDirectory: String = "/"
+  ) {
+    self.securityLevel = securityLevel
+    self.logger = logger
+    self.fileManager = fileManager
+    self.rootDirectory = rootDirectory
   }
 
   /**
@@ -598,7 +614,7 @@ actor SecureFilePathService: FilePathServiceProtocol {
    */
   func exists(_ path: SecurePath) async -> Bool {
     validateSecurityLevel(path)
-    return FileManager.default.fileExists(atPath: path.toString())
+    return fileManager.fileExists(atPath: path.toString())
   }
   
   /**
@@ -610,7 +626,7 @@ actor SecureFilePathService: FilePathServiceProtocol {
   func isDirectory(_ path: SecurePath) async -> Bool {
     validateSecurityLevel(path)
     var isDir: ObjCBool = false
-    let exists = FileManager.default.fileExists(atPath: path.toString(), isDirectory: &isDir)
+    let exists = fileManager.fileExists(atPath: path.toString(), isDirectory: &isDir)
     return exists && isDir.boolValue
   }
   
@@ -623,7 +639,7 @@ actor SecureFilePathService: FilePathServiceProtocol {
   func isFile(_ path: SecurePath) async -> Bool {
     validateSecurityLevel(path)
     var isDir: ObjCBool = false
-    let exists = FileManager.default.fileExists(atPath: path.toString(), isDirectory: &isDir)
+    let exists = fileManager.fileExists(atPath: path.toString(), isDirectory: &isDir)
     return exists && !isDir.boolValue
   }
   
@@ -879,7 +895,7 @@ actor SecureFilePathService: FilePathServiceProtocol {
    - Returns: The path to the system directory
    */
   func systemDirectory(_ directory: SystemDirectory) async -> SecurePath {
-    let fileManager=FileManager.default
+    let fileManager=fileManager
     let searchPathDirectory: FileManager.SearchPathDirectory
 
     switch directory {
@@ -995,17 +1011,26 @@ actor SandboxedFilePathService: FilePathServiceProtocol {
 
   /// Logger for recording operations
   private let logger: any LoggingProtocol
-
+  
+  /// File manager instance for file operations
+  private let fileManager: FileManager
+  
   /**
    Initialises a new sandboxed file path service.
-
+   
    - Parameters:
-      - rootDirectory: The directory to restrict operations to
+      - rootDirectory: The root directory to restrict operations to
       - logger: Logger for recording operations
+      - fileManager: File manager to use for operations
    */
-  init(rootDirectory: String, logger: any LoggingProtocol) {
-    self.rootDirectory=rootDirectory
-    self.logger=logger
+  init(
+    rootDirectory: String,
+    logger: any LoggingProtocol,
+    fileManager: FileManager = .default
+  ) {
+    self.rootDirectory = rootDirectory
+    self.logger = logger
+    self.fileManager = fileManager
   }
 
   /**
@@ -1063,15 +1088,12 @@ actor SandboxedFilePathService: FilePathServiceProtocol {
   func exists(_ path: SecurePath) async -> Bool {
     // Verify the path is within the sandbox
     guard isPathWithinSandbox(path) else {
-      logger.warning(
-        "Sandbox violation detected: Path existence check outside sandbox",
-        metadata: ["path": "\(path.path)"]
-      )
+      await logSandboxViolation(operation: "exists", path: path)
       return false
     }
     
     let filePath = path.toString()
-    return FileManager.default.fileExists(atPath: filePath)
+    return fileManager.fileExists(atPath: filePath)
   }
   
   /**
@@ -1083,16 +1105,13 @@ actor SandboxedFilePathService: FilePathServiceProtocol {
   func isDirectory(_ path: SecurePath) async -> Bool {
     // Verify the path is within the sandbox
     guard isPathWithinSandbox(path) else {
-      logger.warning(
-        "Sandbox violation detected: Directory check outside sandbox",
-        metadata: ["path": "\(path.path)"]
-      )
+      await logSandboxViolation(operation: "isDirectory", path: path)
       return false
     }
     
     let filePath = path.toString()
     var isDir: ObjCBool = false
-    let exists = FileManager.default.fileExists(atPath: filePath, isDirectory: &isDir)
+    let exists = fileManager.fileExists(atPath: filePath, isDirectory: &isDir)
     return exists && isDir.boolValue
   }
   
@@ -1105,16 +1124,13 @@ actor SandboxedFilePathService: FilePathServiceProtocol {
   func isFile(_ path: SecurePath) async -> Bool {
     // Verify the path is within the sandbox
     guard isPathWithinSandbox(path) else {
-      logger.warning(
-        "Sandbox violation detected: File check outside sandbox",
-        metadata: ["path": "\(path.path)"]
-      )
+      await logSandboxViolation(operation: "isFile", path: path)
       return false
     }
     
     let filePath = path.toString()
     var isDir: ObjCBool = false
-    let exists = FileManager.default.fileExists(atPath: filePath, isDirectory: &isDir)
+    let exists = fileManager.fileExists(atPath: filePath, isDirectory: &isDir)
     return exists && !isDir.boolValue
   }
   
@@ -1127,10 +1143,7 @@ actor SandboxedFilePathService: FilePathServiceProtocol {
   func parentDirectory(of path: SecurePath) async -> SecurePath? {
     // Verify the path is within the sandbox
     guard isPathWithinSandbox(path) else {
-      logger.warning(
-        "Sandbox violation detected: Parent directory check outside sandbox",
-        metadata: ["path": "\(path.path)"]
-      )
+      await logSandboxViolation(operation: "parentDirectory", path: path)
       return nil
     }
     
@@ -1286,6 +1299,39 @@ actor SandboxedFilePathService: FilePathServiceProtocol {
   }
 
   /**
+   Logs a sandbox violation with the given operation details.
+   
+   - Parameters:
+     - operation: The operation being performed
+     - path: The path that was outside the sandbox
+   */
+  private func logSandboxViolation(operation: String, path: SecurePath) async {
+    let logContext = FileSystemLogContext(
+      operation: operation,
+      path: path.toString(),
+      metadata: LogMetadataDTOCollection()
+        .withPrivate(key: "path", value: path.toString())
+        .withPublic(key: "sandboxRoot", value: rootDirectory)
+    )
+    
+    await logger.warning(
+      "Sandbox violation detected: \(operation) operation attempted outside sandbox",
+      context: logContext
+    )
+  }
+
+  /**
+   Checks if a path is within the sandbox root directory.
+   
+   - Parameter path: The path to check
+   - Returns: Whether the path is within the sandbox
+   */
+  private func isPathWithinSandbox(_ path: SecurePath) -> Bool {
+    let filePath = path.toString()
+    return filePath.hasPrefix(rootDirectory)
+  }
+
+  /**
    Joins multiple path components together.
    
    - Parameters:
@@ -1341,17 +1387,6 @@ actor SandboxedFilePathService: FilePathServiceProtocol {
     // Check if the normalized path starts with the normalized root
     // This ensures that "/root/path" is contained within "/root" but "/root-other" is not
     return normalizedPath.hasPrefix(rootWithSeparator) || normalizedPath == normalizedRoot
-  }
-
-  /**
-   Checks if a path is within the sandbox.
-
-   - Parameter path: The path to check
-   - Returns: Whether the path is within the sandbox
-   */
-  private func isPathWithinSandbox(_ path: SecurePath) -> Bool {
-    let pathString=path.toString()
-    return pathString.hasPrefix(rootDirectory)
   }
 }
 

@@ -29,7 +29,7 @@ public struct FileSystemLogContext: LogContextDTO {
     public let operation: String
     
     /// The source of the log entry
-    public let source: String
+    public let source: String?
     
     /// The metadata collection with privacy annotations
     public let metadata: LogMetadataDTOCollection
@@ -54,7 +54,7 @@ public struct FileSystemLogContext: LogContextDTO {
     public init(
         operation: String,
         path: String? = nil,
-        source: String = "FileSystemService",
+        source: String? = "FileSystemService",
         metadata: LogMetadataDTOCollection = LogMetadataDTOCollection(),
         correlationID: String? = nil,
         isSecureOperation: Bool = false

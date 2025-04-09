@@ -170,6 +170,417 @@ public actor FileSandboxingImpl: FileSandboxingProtocol {
     }
     
     /**
+     Creates a file within the sandbox.
+     
+     - Parameters:
+        - path: Path where the file should be created, relative to the sandbox root.
+        - options: Optional file creation options.
+     - Returns: A tuple containing the created file path and the operation result.
+     - Throws: FileSystemError if the file creation fails or is outside the sandbox.
+     */
+    public func createSandboxedFile(at path: String, options: FileCreationOptions?) async throws -> (String, FileOperationResultDTO) {
+        let context = createLogContext([
+            "path": path,
+            "rootDirectory": rootDirectoryPath
+        ])
+        await logger.debug("Creating sandboxed file", context: context)
+        
+        // Check if the path is trying to escape the sandbox
+        guard isSafePath(path) else {
+            let error = FileSystemError.securityViolation(
+                path: path, 
+                constraint: "Path attempts to escape sandbox"
+            )
+            let errorContext = createLogContext([
+                "path": path,
+                "rootDirectory": rootDirectoryPath
+            ])
+            await logger.error("Security violation: Path attempts to escape sandbox", context: errorContext)
+            throw error
+        }
+        
+        // Create the absolute path
+        let absolutePath = resolvePath(path)
+        
+        // Create the file
+        do {
+            // The createFile method doesn't throw, but we can check its return value
+            let success = FileManager.default.createFile(
+                atPath: absolutePath,
+                contents: nil,
+                attributes: options?.attributes
+            )
+            
+            if !success {
+                throw FileSystemError.writeError(
+                    path: absolutePath,
+                    reason: "Failed to create file: System denied operation"
+                )
+            }
+            
+            // Get file attributes for the result
+            let attributes = try FileManager.default.attributesOfItem(atPath: absolutePath)
+            let metadata = FileMetadataDTO.from(attributes: attributes, path: absolutePath)
+            
+            let result = FileOperationResultDTO.success(
+                path: absolutePath,
+                metadata: metadata
+            )
+            
+            let successContext = createLogContext([
+                "path": path,
+                "absolutePath": absolutePath
+            ])
+            await logger.debug("Successfully created sandboxed file", context: successContext)
+            
+            return (absolutePath, result)
+        } catch {
+            let fileError = FileSystemError.writeError(
+                path: absolutePath,
+                reason: "Failed to create file: \(error.localizedDescription)"
+            )
+            let errorContext = createLogContext([
+                "path": path,
+                "absolutePath": absolutePath,
+                "error": "\(error)"
+            ])
+            await logger.error("Failed to create sandboxed file", context: errorContext)
+            throw fileError
+        }
+    }
+    
+    /**
+     Writes data to a file within the sandbox.
+     
+     - Parameters:
+        - data: The data to write.
+        - path: Path where the data should be written, relative to the sandbox root.
+        - options: Optional file write options.
+     - Returns: The operation result.
+     - Throws: FileSystemError if the write operation fails or is outside the sandbox.
+     */
+    public func writeSandboxedFile(data: Data, to path: String, options: FileWriteOptions?) async throws -> FileOperationResultDTO {
+        let context = createLogContext([
+            "path": path,
+            "size": "\(data.count)",
+            "rootDirectory": rootDirectoryPath
+        ])
+        await logger.debug("Writing to sandboxed file", context: context)
+        
+        // Check if the path is trying to escape the sandbox
+        guard isSafePath(path) else {
+            let error = FileSystemError.securityViolation(
+                path: path, 
+                constraint: "Path attempts to escape sandbox"
+            )
+            let errorContext = createLogContext([
+                "path": path,
+                "rootDirectory": rootDirectoryPath
+            ])
+            await logger.error("Security violation: Path attempts to escape sandbox", context: errorContext)
+            throw error
+        }
+        
+        // Create the absolute path
+        let absolutePath = resolvePath(path)
+        
+        do {
+            // Create directory if needed
+            if options?.createIntermediateDirectories ?? false {
+                let directory = (absolutePath as NSString).deletingLastPathComponent
+                try FileManager.default.createDirectory(
+                    atPath: directory,
+                    withIntermediateDirectories: true,
+                    attributes: nil
+                )
+            }
+            
+            // Write the file
+            var writeOptions: Data.WritingOptions = []
+            if options?.atomicWrite ?? false {
+                writeOptions.insert(.atomic)
+            }
+            // Handle append by manually implementing it if needed
+            if options?.append ?? false {
+                // If append is requested, read existing data and combine
+                if FileManager.default.fileExists(atPath: absolutePath) {
+                    do {
+                        let existingData = try Data(contentsOf: URL(fileURLWithPath: absolutePath))
+                        var combinedData = existingData
+                        combinedData.append(data)
+                        try combinedData.write(to: URL(fileURLWithPath: absolutePath), options: writeOptions)
+                        
+                        // Get file attributes for the result
+                        let attributes = try FileManager.default.attributesOfItem(atPath: absolutePath)
+                        let metadata = FileMetadataDTO.from(attributes: attributes, path: absolutePath)
+                        
+                        let result = FileOperationResultDTO.success(
+                            path: absolutePath,
+                            metadata: metadata
+                        )
+                        
+                        let successContext = createLogContext([
+                            "path": path,
+                            "absolutePath": absolutePath,
+                            "size": "\(combinedData.count)",
+                            "append": "true"
+                        ])
+                        await logger.debug("Successfully appended to sandboxed file", context: successContext)
+                        
+                        return result
+                    } catch {
+                        // If reading fails, proceed with normal write
+                        let errorContext = createLogContext([
+                            "path": path,
+                            "absolutePath": absolutePath,
+                            "error": "\(error)"
+                        ])
+                        await logger.warning("Failed to append to file, proceeding with overwrite", context: errorContext)
+                    }
+                }
+            }
+            try data.write(to: URL(fileURLWithPath: absolutePath), options: writeOptions)
+            
+            // Get file attributes for the result
+            let attributes = try FileManager.default.attributesOfItem(atPath: absolutePath)
+            let metadata = FileMetadataDTO.from(attributes: attributes, path: absolutePath)
+            
+            let result = FileOperationResultDTO.success(
+                path: absolutePath,
+                metadata: metadata
+            )
+            
+            let successContext = createLogContext([
+                "path": path,
+                "absolutePath": absolutePath,
+                "size": "\(data.count)"
+            ])
+            await logger.debug("Successfully wrote to sandboxed file", context: successContext)
+            
+            return result
+        } catch {
+            let fileError = FileSystemError.writeError(
+                path: absolutePath,
+                reason: "Failed to write file: \(error.localizedDescription)"
+            )
+            let errorContext = createLogContext([
+                "path": path,
+                "absolutePath": absolutePath,
+                "error": "\(error)"
+            ])
+            await logger.error("Failed to write to sandboxed file", context: errorContext)
+            throw fileError
+        }
+    }
+    
+    /**
+     Reads a file within the sandbox.
+     
+     - Parameter path: Path to the file to read, relative to the sandbox root.
+     - Returns: A tuple containing the file data and the operation result.
+     - Throws: FileSystemError if the read operation fails or is outside the sandbox.
+     */
+    public func readSandboxedFile(at path: String) async throws -> (Data, FileOperationResultDTO) {
+        let context = createLogContext([
+            "path": path,
+            "rootDirectory": rootDirectoryPath
+        ])
+        await logger.debug("Reading sandboxed file", context: context)
+        
+        // Check if the path is trying to escape the sandbox
+        guard isSafePath(path) else {
+            let error = FileSystemError.securityViolation(
+                path: path, 
+                constraint: "Path attempts to escape sandbox"
+            )
+            let errorContext = createLogContext([
+                "path": path,
+                "rootDirectory": rootDirectoryPath
+            ])
+            await logger.error("Security violation: Path attempts to escape sandbox", context: errorContext)
+            throw error
+        }
+        
+        // Create the absolute path
+        let absolutePath = resolvePath(path)
+        
+        do {
+            // Check if file exists
+            guard FileManager.default.fileExists(atPath: absolutePath) else {
+                let fileError = FileSystemError.readError(
+                    path: absolutePath,
+                    reason: "File does not exist"
+                )
+                let errorContext = createLogContext([
+                    "path": path,
+                    "absolutePath": absolutePath
+                ])
+                await logger.error("File does not exist", context: errorContext)
+                throw fileError
+            }
+            
+            // Read the file
+            let data = try Data(contentsOf: URL(fileURLWithPath: absolutePath))
+            
+            // Get file attributes for the result
+            let attributes = try FileManager.default.attributesOfItem(atPath: absolutePath)
+            let metadata = FileMetadataDTO.from(attributes: attributes, path: absolutePath)
+            
+            let result = FileOperationResultDTO.success(
+                path: absolutePath,
+                metadata: metadata
+            )
+            
+            let successContext = createLogContext([
+                "path": path,
+                "absolutePath": absolutePath,
+                "size": "\(data.count)"
+            ])
+            await logger.debug("Successfully read sandboxed file", context: successContext)
+            
+            return (data, result)
+        } catch {
+            let fileError = FileSystemError.readError(
+                path: absolutePath,
+                reason: "Failed to read file: \(error.localizedDescription)"
+            )
+            let errorContext = createLogContext([
+                "path": path,
+                "absolutePath": absolutePath,
+                "error": "\(error)"
+            ])
+            await logger.error("Failed to read sandboxed file", context: errorContext)
+            throw fileError
+        }
+    }
+    
+    /**
+     Checks if a path is within the sandbox.
+     
+     - Parameter path: Path to check.
+     - Returns: A tuple containing a boolean indicating if the path is within the sandbox and the operation result.
+     */
+    public func isPathWithinSandbox(_ path: String) async -> (Bool, FileOperationResultDTO) {
+        let context = createLogContext([
+            "path": path,
+            "rootDirectory": rootDirectoryPath
+        ])
+        await logger.debug("Checking if path is within sandbox", context: context)
+        
+        // Make sure the path is safe (doesn't use .. to escape)
+        let isSafe = isSafePath(path)
+        
+        let result: FileOperationResultDTO
+        if isSafe {
+            let absolutePath = resolvePath(path)
+            
+            // Check file metadata if it exists
+            var metadata: FileMetadataDTO? = nil
+            if FileManager.default.fileExists(atPath: absolutePath) {
+                do {
+                    let attributes = try FileManager.default.attributesOfItem(atPath: absolutePath)
+                    metadata = FileMetadataDTO.from(attributes: attributes, path: absolutePath)
+                } catch {
+                    await logger.warning("Failed to get file attributes", context: context)
+                }
+            }
+            
+            result = FileOperationResultDTO.success(
+                path: absolutePath,
+                metadata: metadata
+            )
+            
+            let successContext = createLogContext([
+                "path": path,
+                "absolutePath": absolutePath,
+                "isWithinSandbox": "true"
+            ])
+            await logger.debug("Path is within sandbox", context: successContext)
+        } else {
+            result = FileOperationResultDTO.failure(
+                path: path,
+                context: [
+                    "error": "Path attempts to escape sandbox",
+                    "constraint": "Security violation"
+                ]
+            )
+            
+            let failureContext = createLogContext([
+                "path": path,
+                "isWithinSandbox": "false"
+            ])
+            await logger.warning("Path is not within sandbox", context: failureContext)
+        }
+        
+        return (isSafe, result)
+    }
+    
+    /**
+     Gets the absolute path within the sandbox for a given relative path.
+     
+     - Parameter relativePath: Relative path within the sandbox.
+     - Returns: A tuple containing the absolute path and the operation result.
+     - Throws: FileSystemError if the path resolution fails or is outside the sandbox.
+     */
+    public func getAbsolutePath(for relativePath: String) async throws -> (String, FileOperationResultDTO) {
+        let context = createLogContext([
+            "relativePath": relativePath,
+            "rootDirectory": rootDirectoryPath
+        ])
+        await logger.debug("Getting absolute path for relative path", context: context)
+        
+        // Check if the path is trying to escape the sandbox
+        guard isSafePath(relativePath) else {
+            let error = FileSystemError.securityViolation(
+                path: relativePath, 
+                constraint: "Path attempts to escape sandbox"
+            )
+            let errorContext = createLogContext([
+                "relativePath": relativePath,
+                "rootDirectory": rootDirectoryPath
+            ])
+            await logger.error("Security violation: Path attempts to escape sandbox", context: errorContext)
+            throw error
+        }
+        
+        // Create the absolute path
+        let absolutePath = resolvePath(relativePath)
+        
+        // Get file metadata if it exists
+        var metadata: FileMetadataDTO? = nil
+        if FileManager.default.fileExists(atPath: absolutePath) {
+            do {
+                let attributes = try FileManager.default.attributesOfItem(atPath: absolutePath)
+                metadata = FileMetadataDTO.from(attributes: attributes, path: absolutePath)
+            } catch {
+                await logger.warning("Failed to get file attributes", context: context)
+            }
+        }
+        
+        let result = FileOperationResultDTO.success(
+            path: absolutePath,
+            metadata: metadata
+        )
+        
+        let successContext = createLogContext([
+            "relativePath": relativePath,
+            "absolutePath": absolutePath
+        ])
+        await logger.debug("Successfully resolved absolute path", context: successContext)
+        
+        return (absolutePath, result)
+    }
+    
+    /**
+     Gets the sandbox root directory.
+     
+     - Returns: The root directory path of the sandbox.
+     */
+    public func getSandboxRoot() async -> String {
+        return rootDirectoryPath
+    }
+    
+    /**
      Gets the absolute path for a relative path within the sandbox.
      
      - Parameter path: Relative path within the sandbox
@@ -564,7 +975,9 @@ private actor SandboxedFileOperations: CoreFileOperationsProtocol {
             // If path resolution fails, the file definitely doesn't exist (safely)
             let result = FileOperationResultDTO.failure(
                 path: path,
-                errorMessage: "Invalid path: \(error.localizedDescription)"
+                context: [
+                    "error": "Invalid path: \(error.localizedDescription)"
+                ]
             )
             return (false, result)
         }
@@ -576,12 +989,45 @@ private actor SandboxedFileOperations: CoreFileOperationsProtocol {
             await logger.debug("Checking if path is file in sandbox", context: context)
             
             let resolvedPath = try resolvePath(path)
-            return await fileService.isFile(at: resolvedPath)
+            
+            // Check if it's a file by examining attributes
+            if FileManager.default.fileExists(atPath: resolvedPath) {
+                do {
+                    let attributes = try FileManager.default.attributesOfItem(atPath: resolvedPath)
+                    let fileType = attributes[.type] as? String
+                    let isFile = fileType == FileAttributeType.typeRegular.rawValue
+                    
+                    let metadata = FileMetadataDTO.from(attributes: attributes, path: resolvedPath)
+                    let result = FileOperationResultDTO.success(path: resolvedPath, metadata: metadata)
+                    
+                    return (isFile, result)
+                } catch {
+                    let context = createLogContext([
+                        "path": path,
+                        "resolvedPath": resolvedPath,
+                        "error": "\(error)"
+                    ])
+                    await logger.warning("Failed to get file attributes", context: context)
+                    
+                    // Default to false if attributes can't be read
+                    let result = FileOperationResultDTO.failure(
+                        path: path,
+                        context: ["error": "Failed to get file attributes: \(error.localizedDescription)"]
+                    )
+                    return (false, result)
+                }
+            } else {
+                // File doesn't exist
+                let result = FileOperationResultDTO.success(path: resolvedPath)
+                return (false, result)
+            }
         } catch {
             // If path resolution fails, it's not a file (safely)
             let result = FileOperationResultDTO.failure(
                 path: path,
-                errorMessage: "Invalid path: \(error.localizedDescription)"
+                context: [
+                    "error": "Invalid path: \(error.localizedDescription)"
+                ]
             )
             return (false, result)
         }
@@ -593,12 +1039,45 @@ private actor SandboxedFileOperations: CoreFileOperationsProtocol {
             await logger.debug("Checking if path is directory in sandbox", context: context)
             
             let resolvedPath = try resolvePath(path)
-            return await fileService.isDirectory(at: resolvedPath)
+            
+            // Check if it's a directory by examining attributes
+            if FileManager.default.fileExists(atPath: resolvedPath) {
+                do {
+                    let attributes = try FileManager.default.attributesOfItem(atPath: resolvedPath)
+                    let fileType = attributes[.type] as? String
+                    let isDirectory = fileType == FileAttributeType.typeDirectory.rawValue
+                    
+                    let metadata = FileMetadataDTO.from(attributes: attributes, path: resolvedPath)
+                    let result = FileOperationResultDTO.success(path: resolvedPath, metadata: metadata)
+                    
+                    return (isDirectory, result)
+                } catch {
+                    let context = createLogContext([
+                        "path": path,
+                        "resolvedPath": resolvedPath,
+                        "error": "\(error)"
+                    ])
+                    await logger.warning("Failed to get directory attributes", context: context)
+                    
+                    // Default to false if attributes can't be read
+                    let result = FileOperationResultDTO.failure(
+                        path: path,
+                        context: ["error": "Failed to get directory attributes: \(error.localizedDescription)"]
+                    )
+                    return (false, result)
+                }
+            } else {
+                // Directory doesn't exist
+                let result = FileOperationResultDTO.success(path: resolvedPath)
+                return (false, result)
+            }
         } catch {
             // If path resolution fails, it's not a directory (safely)
             let result = FileOperationResultDTO.failure(
                 path: path,
-                errorMessage: "Invalid path: \(error.localizedDescription)"
+                context: [
+                    "error": "Invalid path: \(error.localizedDescription)"
+                ]
             )
             return (false, result)
         }
