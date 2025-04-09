@@ -42,7 +42,7 @@ public struct BackupLoggingAdapter {
 
     await logger.info(
       message ?? defaultMessage,
-      metadata: logContext.createMetadataCollection(),
+      context: logContext,
       source: "BackupService"
     )
   }
@@ -61,12 +61,11 @@ public struct BackupLoggingAdapter {
     let operation=logContext.operation ?? "unknown"
     let defaultMessage="Completed backup operation: \(operation)"
 
-    let metadataCollection = logContext.createMetadataCollection()
-      .withPublic(key: "status", value: "success")
+    let updatedContext = logContext.withPublic(key: "status", value: "success")
 
     await logger.info(
       message ?? defaultMessage,
-      metadata: metadataCollection,
+      context: updatedContext,
       source: "BackupService"
     )
   }
@@ -85,12 +84,11 @@ public struct BackupLoggingAdapter {
     let operation=logContext.operation ?? "unknown"
     let defaultMessage="Cancelled backup operation: \(operation)"
 
-    let metadataCollection = logContext.createMetadataCollection()
-      .withPublic(key: "status", value: "cancelled")
+    let updatedContext = logContext.withPublic(key: "status", value: "cancelled")
 
     await logger.info(
       message ?? defaultMessage,
-      metadata: metadataCollection,
+      context: updatedContext,
       source: "BackupService"
     )
   }
@@ -111,31 +109,30 @@ public struct BackupLoggingAdapter {
     let operation=logContext.operation ?? "unknown"
     let defaultMessage="Error during backup operation: \(operation)"
 
-    var metadataCollection = logContext.createMetadataCollection()
-      .withPublic(key: "status", value: "error")
+    var updatedContext = logContext.withPublic(key: "status", value: "error")
 
     // Add error details with appropriate privacy levels
     if let backupError=error as? BackupError {
-      metadataCollection = metadataCollection
+      updatedContext = updatedContext
         .withPublic(key: "errorCode", value: String(describing: backupError.code))
         .withPrivate(key: "errorMessage", value: backupError.localizedDescription)
 
       // Add structured error context if available
       if let errorContext=backupError.context {
         for (key, value) in errorContext {
-          metadataCollection = metadataCollection
+          updatedContext = updatedContext
             .withPrivate(key: "error_\(key)", value: value)
         }
       }
     } else {
-      metadataCollection = metadataCollection
+      updatedContext = updatedContext
         .withPublic(key: "errorType", value: String(describing: type(of: error)))
         .withPrivate(key: "errorMessage", value: error.localizedDescription)
     }
 
     await logger.error(
       message ?? defaultMessage,
-      metadata: metadataCollection,
+      context: updatedContext,
       source: "BackupService"
     )
   }
@@ -153,71 +150,63 @@ public struct BackupLoggingAdapter {
     for operation: BackupOperation,
     logContext: BackupLogContext?=nil
   ) async {
-    var metadataCollection=logContext?.createMetadataCollection() ?? LogMetadataDTOCollection()
-    metadataCollection = metadataCollection.withPublic(key: "operation", value: String(describing: operation))
+    let baseContext = logContext ?? BackupLogContext()
+    var updatedContext = baseContext.withPublic(key: "operation", value: String(describing: operation))
 
     // Add appropriate metadata based on the progress state
     switch progress {
       case let .initialising(description):
-        metadataCollection = metadataCollection
+        updatedContext = updatedContext
           .withPublic(key: "progressPhase", value: "initialising")
           .withPublic(key: "description", value: description)
 
         await logger.info(
           "Initialising backup operation: \(operation)",
-          metadata: metadataCollection,
+          context: updatedContext,
           source: "BackupService"
         )
 
       case let .processing(phase, percentComplete):
-        metadataCollection = metadataCollection
+        updatedContext = updatedContext
           .withPublic(key: "progressPhase", value: "processing")
           .withPublic(key: "description", value: phase)
           .withPublic(key: "percentComplete", value: String(format: "%.1f%%", percentComplete * 100))
 
         await logger.info(
           "Processing backup operation: \(operation) - \(phase) (\(String(format: "%.1f%%", percentComplete * 100)))",
-          metadata: metadataCollection,
+          context: updatedContext,
           source: "BackupService"
         )
 
       case .completed:
-        metadataCollection = metadataCollection
+        updatedContext = updatedContext
           .withPublic(key: "progressPhase", value: "completed")
 
         await logger.info(
           "Completed backup operation: \(operation)",
-          metadata: metadataCollection,
+          context: updatedContext,
           source: "BackupService"
         )
 
       case .cancelled:
-        metadataCollection = metadataCollection
+        updatedContext = updatedContext
           .withPublic(key: "progressPhase", value: "cancelled")
 
         await logger.info(
           "Cancelled backup operation: \(operation)",
-          metadata: metadataCollection,
+          context: updatedContext,
           source: "BackupService"
         )
 
       case let .failed(error):
-        metadataCollection = metadataCollection
-          .withPublic(key: "progressPhase", value: "failed")
-
-        if let backupError=error as? BackupError {
-          metadataCollection = metadataCollection
-            .withPublic(key: "errorCode", value: String(describing: backupError.code))
-            .withPrivate(key: "errorMessage", value: backupError.localizedDescription)
-        } else {
-          metadataCollection = metadataCollection
-            .withPublic(key: "errorType", value: String(describing: type(of: error)))
-            .withPrivate(key: "errorMessage", value: error.localizedDescription)
-        }
+        updatedContext = updatedContext
+          .withPublic(key: "progressPhase", value: "error")
+          .withPublic(key: "errorType", value: String(describing: type(of: error)))
+          .withPrivate(key: "errorMessage", value: error.localizedDescription)
 
         await logger.error(
-          "Failed backup operation: \(operation)",
-          metadata: metadataCollection,
+          "Error during backup operation: \(operation) - \(error.localizedDescription)",
+          context: updatedContext,
           source: "BackupService"
         )
     }

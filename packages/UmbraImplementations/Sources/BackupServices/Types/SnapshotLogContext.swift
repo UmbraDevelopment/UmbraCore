@@ -72,16 +72,6 @@ public struct SnapshotLogContext: LogContextDTO {
   }
 
   /**
-   * Convert to privacy metadata for logging.
-   *
-   * - Returns: Privacy metadata with appropriate annotations
-   */
-  @available(*, deprecated, message: "Use createMetadataCollection() instead for Swift 6 compatibility")
-  public func toPrivacyMetadata() -> PrivacyMetadata {
-    metadata.toPrivacyMetadata()
-  }
-  
-  /**
    * Creates a metadata collection for privacy-aware logging.
    *
    * - Returns: A LogMetadataDTOCollection with appropriate privacy annotations

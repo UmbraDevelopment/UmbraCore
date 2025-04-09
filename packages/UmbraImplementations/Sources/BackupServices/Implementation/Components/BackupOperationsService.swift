@@ -91,6 +91,18 @@ public actor BackupOperationsService {
         progressContinuation!.finish()
       }
     }
+    
+    // Create log context
+    let logger = LoggingServiceFactory.shared.createLogger(domain: "BackupServices")
+    let logContext = BackupLogContext(
+      source: "BackupOperationsService.createBackup"
+    )
+    .withPublic(key: "operationID", value: parameters.operationID)
+    .withPublic(key: "operation", value: "createBackup")
+    .withPublic(key: "sourceCount", value: String(parameters.sourcePaths.count))
+    
+    // Log operation start
+    await logger.info("Starting backup creation", context: logContext)
 
     // Create the backup command
     var command=ResticCommandImpl(arguments: [
@@ -122,6 +134,15 @@ public actor BackupOperationsService {
     let backupResult=try resultParser.parseBackupResult(
       output: output,
       sources: parameters.sourcePaths
+    )
+    
+    // Log completion
+    await logger.info(
+      "Backup creation completed successfully",
+      context: logContext
+        .withPublic(key: "snapshotID", value: backupResult.snapshotID)
+        .withPublic(key: "filesBackedUp", value: String(backupResult.filesBackedUp))
+        .withPublic(key: "bytesBackedUp", value: String(backupResult.bytesBackedUp))
     )
 
     // Return the result and the progress stream
@@ -163,6 +184,19 @@ public actor BackupOperationsService {
         progressContinuation!.finish()
       }
     }
+    
+    // Create log context
+    let logger = LoggingServiceFactory.shared.createLogger(domain: "BackupServices")
+    let logContext = BackupLogContext(
+      source: "BackupOperationsService.restoreBackup"
+    )
+    .withPublic(key: "operationID", value: parameters.operationID)
+    .withPublic(key: "snapshotID", value: parameters.snapshotID)
+    .withPublic(key: "operation", value: "restoreBackup")
+    .withPrivate(key: "targetPath", value: parameters.targetPath.path)
+    
+    // Log operation start
+    await logger.info("Starting backup restoration", context: logContext)
 
     // Create the restore command
     var command=ResticCommandImpl(arguments: [
@@ -194,6 +228,14 @@ public actor BackupOperationsService {
     let restoreResult=try resultParser.parseRestoreResult(
       output: output,
       targetPath: parameters.targetPath
+    )
+    
+    // Log completion
+    await logger.info(
+      "Backup restoration completed successfully",
+      context: logContext
+        .withPublic(key: "filesRestored", value: String(restoreResult.filesRestored))
+        .withPublic(key: "bytesRestored", value: String(restoreResult.bytesRestored))
     )
 
     // Return the result and the progress stream
@@ -269,6 +311,19 @@ public actor BackupOperationsService {
     parameters: BackupDeleteParameters,
     cancellationToken _: CancellationToken?
   ) async throws -> DeleteResult {
+    // Create log context
+    let logger = LoggingServiceFactory.shared.createLogger(domain: "BackupServices")
+    let logContext = BackupLogContext(
+      source: "BackupOperationsService.deleteBackup"
+    )
+    .withPublic(key: "operationID", value: parameters.operationID)
+    .withPublic(key: "snapshotID", value: parameters.snapshotID)
+    .withPublic(key: "operation", value: "deleteBackup")
+    .withPublic(key: "pruneAfterDelete", value: String(parameters.pruneAfterDelete))
+    
+    // Log operation start
+    await logger.info("Starting backup deletion", context: logContext)
+    
     // Create the delete command
     var command=ResticCommandImpl(arguments: [
       "forget",
@@ -284,6 +339,9 @@ public actor BackupOperationsService {
 
     // If pruning is requested, run that too
     if parameters.pruneAfterDelete {
+      // Log pruning start
+      await logger.info("Starting repository pruning after deletion", context: logContext)
+      
       // Create the prune command
       var pruneCommand=ResticCommandImpl(arguments: [
         "prune",
@@ -292,7 +350,17 @@ public actor BackupOperationsService {
 
       // Run the command
       _=try await resticService.execute(pruneCommand)
+      
+      // Log pruning completion
+      await logger.info("Repository pruning completed", context: logContext)
     }
+    
+    // Log completion
+    await logger.info(
+      "Backup deletion completed successfully",
+      context: logContext
+        .withPublic(key: "removedSnapshots", value: String(deleteResult.removedSnapshots.count))
+    )
 
     return deleteResult
   }
@@ -397,9 +465,10 @@ public actor BackupOperationsService {
       let logger=LoggingServiceFactory.shared.createLogger(domain: "BackupServices")
 
       // Create a log context
-      let backupLogContext=BackupLogContext()
-        .withOperation("verifyBackup")
-        .withPublic(key: "snapshotID", value: snapshotID ?? "latest")
+      let backupLogContext=BackupLogContext(
+        source: "BackupOperationsService.verifyBackup"
+      )
+      .withPublic(key: "snapshotID", value: snapshotID ?? "latest")
 
       // Log the start of verification
       await logger.info("Starting backup verification", context: backupLogContext)
@@ -561,14 +630,13 @@ public actor BackupOperationsService {
     cancellationToken: BackupCancellationToken?
   ) async throws -> BackupSnapshotComparisonResult {
     // Create log context
-    let context=BackupLogContextImpl(
-      domainName: "BackupOperationsService",
-      source: "compareSnapshots",
-      metadata: LogMetadataDTOCollection()
-        .withPublic(key: "operationID", value: parameters.operationID)
-        .withPublic(key: "firstSnapshotID", value: parameters.firstSnapshotID)
-        .withPublic(key: "secondSnapshotID", value: parameters.secondSnapshotID)
+    let context = BackupLogContext(
+      source: "BackupOperationsService.compareSnapshots"
     )
+    .withPublic(key: "operationID", value: parameters.operationID)
+    .withPublic(key: "firstSnapshotID", value: parameters.firstSnapshotID)
+    .withPublic(key: "secondSnapshotID", value: parameters.secondSnapshotID)
+    .withPublic(key: "operation", value: "compareSnapshots")
 
     // Log operation start
     await logger.info("Starting snapshot comparison", context: context)
@@ -978,6 +1046,18 @@ public actor BackupOperationsService {
       }
       progressContinuation!.yield(progress)
     }
+    
+    // Create log context
+    let logger = LoggingServiceFactory.shared.createLogger(domain: "BackupServices")
+    let logContext = BackupLogContext(
+      source: "BackupOperationsService.performMaintenance"
+    )
+    .withPublic(key: "operationID", value: parameters.operationID)
+    .withPublic(key: "maintenanceType", value: parameters.maintenanceType.rawValue)
+    .withPublic(key: "operation", value: "performMaintenance")
+    
+    // Log operation start
+    await logger.info("Starting repository maintenance", context: logContext)
 
     // Create the maintenance command
     var command=ResticCommandImpl(arguments: [
@@ -1069,6 +1149,14 @@ public actor BackupOperationsService {
 
     // Parse the result
     let maintenanceResult=try parseMaintenanceResult(from: output, type: parameters.maintenanceType)
+    
+    // Log completion
+    await logger.info(
+      "Repository maintenance completed successfully",
+      context: logContext
+        .withPublic(key: "removedItems", value: String(maintenanceResult.removedItems.count))
+        .withPublic(key: "errors", value: String(maintenanceResult.errors.count))
+    )
 
     // Return the result and the progress stream
     return (maintenanceResult, progressStream)

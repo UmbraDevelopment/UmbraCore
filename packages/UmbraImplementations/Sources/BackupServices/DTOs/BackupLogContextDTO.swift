@@ -76,32 +76,62 @@ public struct BackupLogContextDTO: Sendable, Equatable {
   }
 
   /**
-   * Converts this DTO to a LogContext for use with the privacy-aware logging system.
+   * Converts this DTO to a metadata collection for use with the privacy-aware logging system.
+   * 
+   * @returns A LogMetadataDTOCollection with appropriate privacy annotations
    */
-  public func toLogContext() -> LogContext {
-    var context=LogContext()
+  public func toMetadataCollection() -> LogMetadataDTOCollection {
+    var collection = LogMetadataDTOCollection()
+      .withPublic(key: "operation_id", value: operationID)
+      .withPublic(key: "operation_type", value: operationType.rawValue)
 
-    context.add("operation_id", operationID, privacy: .public)
-    context.add("operation_type", operationType.rawValue, privacy: .public)
-
-    if let paths=sourcePaths {
-      context.add("source_paths", paths, privacy: .private)
-    }
-
-    if let id=snapshotID {
-      context.add("snapshot_id", id, privacy: .public)
-    }
-
-    if let id=repositoryID {
-      context.add("repository_id", id, privacy: .public)
-    }
-
-    if let additional=additionalContext {
-      for (key, value) in additional {
-        context.add(key, value, privacy: .auto)
+    if let paths = sourcePaths {
+      // Paths may contain sensitive information, so mark as private
+      for (index, path) in paths.enumerated() {
+        collection = collection.withPrivate(key: "source_path_\(index)", value: path)
       }
     }
 
-    return context
+    if let id = snapshotID {
+      collection = collection.withPublic(key: "snapshot_id", value: id)
+    }
+
+    if let id = repositoryID {
+      collection = collection.withPublic(key: "repository_id", value: id)
+    }
+
+    if let additional = additionalContext {
+      for (key, value) in additional {
+        // Apply appropriate privacy level based on the key
+        if key.contains("path") || key.contains("file") || key.contains("directory") {
+          // Paths may contain sensitive information
+          collection = collection.withPrivate(key: key, value: value)
+        } else if key.contains("password") || key.contains("key") || key.contains("secret") || key.contains("token") {
+          // Credentials are sensitive
+          collection = collection.withSensitive(key: key, value: value)
+        } else if key.contains("id") || key.contains("type") || key.contains("count") || key.contains("size") {
+          // IDs, types, and metrics are generally public
+          collection = collection.withPublic(key: key, value: value)
+        } else {
+          // Default to private for unknown keys
+          collection = collection.withPrivate(key: key, value: value)
+        }
+      }
+    }
+
+    return collection
+  }
+
+  /**
+   * Creates a LogContextDTO for use with the privacy-aware logging system.
+   * 
+   * @returns A LogContextDTO with appropriate privacy annotations
+   */
+  public func toLogContextDTO() -> LogContextDTO {
+    return BackupLogContext(
+      operation: operationType.rawValue,
+      source: "BackupService",
+      metadata: toMetadataCollection()
+    )
   }
 }

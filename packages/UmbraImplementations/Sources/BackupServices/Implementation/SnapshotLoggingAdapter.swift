@@ -93,27 +93,84 @@ public struct SnapshotLoggingAdapter {
     error: Error,
     logContext: LogContextDTO
   ) async {
-    let errorDescription=error.localizedDescription
-    let message="Operation failed: \(errorDescription)"
+    let errorDescription = error.localizedDescription
+    let message = "Operation failed: \(errorDescription)"
 
-    // Create a new metadata collection with error information
-    var metadataCollection=logContext.metadata
-    metadataCollection=metadataCollection.withPrivate(key: "error", value: errorDescription)
-    metadataCollection=metadataCollection.withPublic(
-      key: "errorType",
-      value: String(describing: type(of: error))
-    )
+    // For type safety, create a proper SnapshotLogContext if needed
+    let snapshotContext: SnapshotLogContext
+    if let context = logContext as? SnapshotLogContext {
+      snapshotContext = context
+    } else {
+      // Create a new context with the existing metadata
+      snapshotContext = SnapshotLogContext(
+        operation: "unknown",
+        metadata: logContext.metadata
+      )
+    }
+    
+    // Add error information with proper privacy annotations
+    let updatedContext = snapshotContext
+      .withPublic(key: "status", value: "error")
+      .withPublic(key: "errorType", value: String(describing: type(of: error)))
+      .withPrivate(key: "errorMessage", value: errorDescription)
 
-    // Create a base context for this log message
-    let context=BaseLogContextDTO(
-      domainName: "SnapshotLoggingAdapter", // Or infer from logContext if available
-      source: #function, // Or infer from logContext if available
-      metadata: metadataCollection.createMetadataCollection() // Use the collected metadata
-    )
     await logger.error(
       message,
-      context: context
+      context: updatedContext
     )
+  }
+
+  /**
+   Logs a snapshot operation with detailed progress information.
+
+   - Parameters:
+      - operation: The operation being performed
+      - phase: The current phase of the operation
+      - progress: Optional progress percentage (0.0-1.0)
+      - details: Optional additional details about the operation
+   */
+  public func logSnapshotOperation(
+    operation: String,
+    phase: String,
+    progress: Double? = nil,
+    details: [String: String]? = nil
+  ) async {
+    // Create a context with all the information using proper privacy annotations
+    var context = SnapshotLogContext(operation: operation)
+      .withPublic(key: "phase", value: phase)
+    
+    if let progress = progress {
+      context = context.withPublic(
+        key: "progress", 
+        value: String(format: "%.1f%%", progress * 100)
+      )
+    }
+    
+    // Add any additional details with appropriate privacy levels
+    if let details = details {
+      for (key, value) in details {
+        // Determine privacy level based on the key
+        if key.contains("path") || key.contains("file") || key.contains("directory") {
+          // Paths may contain sensitive information
+          context = context.withPrivate(key: key, value: value)
+        } else if key.contains("id") || key.contains("hash") {
+          // IDs and hashes are generally public
+          context = context.withPublic(key: key, value: value)
+        } else if key.contains("user") || key.contains("password") || key.contains("key") {
+          // User data and credentials are sensitive
+          context = context.withSensitive(key: key, value: value)
+        } else {
+          // Default to private for unknown keys
+          context = context.withPrivate(key: key, value: value)
+        }
+      }
+    }
+    
+    let message = progress != nil
+      ? "Snapshot operation: \(operation) - \(phase) (\(String(format: "%.1f%%", progress! * 100)))"
+      : "Snapshot operation: \(operation) - \(phase)"
+    
+    await logger.info(message, context: context)
   }
 
   /**
@@ -180,8 +237,7 @@ public struct SnapshotLoggingAdapter {
 
     await logger.info(
       "Starting snapshot operation: \(operation)",
-      metadata: metadataCollection,
-      source: "SnapshotService"
+      context: context
     )
   }
 
@@ -224,10 +280,16 @@ public struct SnapshotLoggingAdapter {
       }
     }
 
+    // Create a context for this log message
+    let context=BaseLogContextDTO(
+      domainName: "SnapshotService",
+      source: "SnapshotService.\(operation)",
+      metadata: metadataCollection
+    )
+
     await logger.info(
       "Completed snapshot operation: \(operation)",
-      metadata: metadataCollection,
-      source: "SnapshotService"
+      context: context
     )
   }
 
@@ -274,10 +336,16 @@ public struct SnapshotLoggingAdapter {
       }
     }
 
+    // Create a context for this log message
+    let context=BaseLogContextDTO(
+      domainName: "SnapshotService",
+      source: "SnapshotService.\(operation)",
+      metadata: metadataCollection
+    )
+
     await logger.error(
       "Error during snapshot operation: \(operation) - \(error.localizedDescription)",
-      metadata: metadataCollection,
-      source: "SnapshotService"
+      context: context
     )
   }
 }
