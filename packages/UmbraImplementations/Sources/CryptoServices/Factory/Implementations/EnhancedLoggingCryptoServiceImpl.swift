@@ -337,47 +337,41 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
    
    - Parameters:
      - data: The data to store
-     - options: Optional storage options
-   - Returns: Result containing void on success or an error
+     - identifier: The identifier to use for the data
+   - Returns: Success or an error
    */
   public func storeData(
     data: Data,
-    options: CoreSecurityTypes.StorageOptions? = nil
+    identifier: String
   ) async -> Result<Void, SecurityStorageError> {
     let context = EnhancedLogContext(
       domainName: "CryptoService",
       operationName: "storeData",
       source: "EnhancedLoggingCryptoServiceImpl.storeData",
       metadata: LogMetadataDTOCollection()
+        .withPublic(key: "dataIdentifier", value: identifier)
         .withPublic(key: "dataSize", value: "\(data.count)")
     )
     
-    // Add storage type if available
-    let contextWithOptions: EnhancedLogContext
-    if let storageType = options?.storageType {
-      contextWithOptions = EnhancedLogContext(
-        domainName: context.domainName,
-        operationName: context.operationName,
-        source: context.source,
-        correlationID: context.correlationID,
-        metadata: context.metadata.withPublic(key: "storageType", value: "\(storageType)")
-      )
-    } else {
-      contextWithOptions = context
-    }
-    
-    await logger.log(.debug, "Store data operation started", context: contextWithOptions)
+    await logger.log(.debug, "Store data operation started", context: context)
 
     // Perform the operation
     let result = await wrapped.storeData(
       data: data,
-      options: options
+      identifier: identifier
     )
 
     // Log the result
     switch result {
       case .success:
-        await logger.log(.info, "Store data operation successful", context: contextWithOptions)
+        let successContext = EnhancedLogContext(
+          domainName: context.domainName,
+          operationName: "storeData",
+          source: context.source,
+          correlationID: context.correlationID,
+          metadata: context.metadata
+        )
+        await logger.log(.info, "Store data operation successful", context: successContext)
       case let .failure(error):
         let errorContext = EnhancedLogContext(
           domainName: context.domainName,
@@ -396,45 +390,27 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
   }
 
   /**
-   Retrieves data from secure storage.
+   Retrieves data from the secure storage.
    
-   - Parameters:
-     - dataIdentifier: Identifier for the data to retrieve
-     - options: Optional retrieval options
-   - Returns: Result containing the retrieved data or an error
+   - Parameter identifier: Identifier for the data to retrieve
+   - Returns: The retrieved data or an error
    */
   public func retrieveData(
-    dataIdentifier: String,
-    options: CoreSecurityTypes.StorageOptions? = nil
+    identifier: String
   ) async -> Result<Data, SecurityStorageError> {
     let context = EnhancedLogContext(
       domainName: "CryptoService",
       operationName: "retrieveData",
       source: "EnhancedLoggingCryptoServiceImpl.retrieveData",
       metadata: LogMetadataDTOCollection()
-        .withPublic(key: "dataIdentifier", value: dataIdentifier)
+        .withPublic(key: "dataIdentifier", value: identifier)
     )
     
-    // Add storage type if available
-    let contextWithOptions: EnhancedLogContext
-    if let storageType = options?.storageType {
-      contextWithOptions = EnhancedLogContext(
-        domainName: context.domainName,
-        operationName: context.operationName,
-        source: context.source,
-        correlationID: context.correlationID,
-        metadata: context.metadata.withPublic(key: "storageType", value: "\(storageType)")
-      )
-    } else {
-      contextWithOptions = context
-    }
-    
-    await logger.log(.debug, "Retrieve data operation started", context: contextWithOptions)
+    await logger.log(.debug, "Retrieve data operation started", context: context)
 
     // Perform the operation
     let result = await wrapped.retrieveData(
-      dataIdentifier: dataIdentifier,
-      options: options
+      identifier: identifier
     )
 
     // Log the result
@@ -469,16 +445,16 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
   }
 
   /**
-   Imports data from an external source.
+   Imports raw bytes into the secure storage.
    
    - Parameters:
-     - data: The data to import
-     - options: Optional import options
-   - Returns: Result containing the imported data identifier or an error
+     - data: The raw bytes to import
+     - customIdentifier: Optional custom identifier for the data
+   - Returns: Identifier for the imported data or an error
    */
   public func importData(
-    data: Data,
-    options: CoreSecurityTypes.ImportOptions? = nil
+    _ data: [UInt8],
+    customIdentifier: String?
   ) async -> Result<String, SecurityStorageError> {
     // Create an enhanced log context with proper privacy tags
     let context = EnhancedLogContext(
@@ -489,39 +465,100 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
         .withPublic(key: "dataSize", value: "\(data.count)")
     )
     
-    // Add import type if available
-    let contextWithOptions: EnhancedLogContext
-    if let importType = options?.importType {
-      contextWithOptions = EnhancedLogContext(
+    // Add custom identifier if provided
+    let contextWithId: EnhancedLogContext
+    if let customIdentifier = customIdentifier {
+      contextWithId = EnhancedLogContext(
         domainName: context.domainName,
         operationName: context.operationName,
         source: context.source,
         correlationID: context.correlationID,
-        metadata: context.metadata.withPublic(key: "importType", value: "\(importType)")
+        metadata: context.metadata.withPublic(key: "customIdentifier", value: customIdentifier)
       )
     } else {
-      contextWithOptions = context
+      contextWithId = context
     }
     
-    await logger.log(.debug, "Import data operation started", context: contextWithOptions)
+    await logger.log(.debug, "Import data operation started", context: contextWithId)
 
     // Perform the operation
     let result = await wrapped.importData(
-      data: data,
-      options: options
+      data,
+      customIdentifier: customIdentifier
     )
 
     // Log the result
     switch result {
-      case let .success(importedIdentifier):
+      case let .success(identifier):
         let successContext = EnhancedLogContext(
           domainName: context.domainName,
           operationName: "importData",
           source: context.source,
           correlationID: context.correlationID,
+          metadata: context.metadata.withPrivate(
+            key: "identifier",
+            value: identifier
+          )
+        )
+        await logger.log(.info, "Import data operation successful", context: successContext)
+      case let .failure(error):
+        let errorContext = EnhancedLogContext(
+          domainName: context.domainName,
+          operationName: "importData",
+          source: context.source,
+          correlationID: context.correlationID,
           metadata: context.metadata.withPublic(
-            key: "importedIdentifier",
-            value: importedIdentifier
+            key: "errorDescription",
+            value: error.localizedDescription
+          )
+        )
+        await logger.error("Import data operation failed", context: errorContext)
+    }
+
+    return result
+  }
+
+  /**
+   Imports data into the secure storage with a specific identifier.
+   
+   - Parameters:
+     - data: The data to import
+     - customIdentifier: The identifier to use for the data
+   - Returns: Identifier for the imported data or an error
+   */
+  public func importData(
+    _ data: Data,
+    customIdentifier: String
+  ) async -> Result<String, SecurityStorageError> {
+    // Create an enhanced log context with proper privacy tags
+    let context = EnhancedLogContext(
+      domainName: "CryptoService",
+      operationName: "importData",
+      source: "EnhancedLoggingCryptoServiceImpl.importData",
+      metadata: LogMetadataDTOCollection()
+        .withPublic(key: "dataSize", value: "\(data.count)")
+        .withPublic(key: "customIdentifier", value: customIdentifier)
+    )
+    
+    await logger.log(.debug, "Import data operation started", context: context)
+
+    // Perform the operation
+    let result = await wrapped.importData(
+      data,
+      customIdentifier: customIdentifier
+    )
+
+    // Log the result
+    switch result {
+      case let .success(identifier):
+        let successContext = EnhancedLogContext(
+          domainName: context.domainName,
+          operationName: "importData",
+          source: context.source,
+          correlationID: context.correlationID,
+          metadata: context.metadata.withPrivate(
+            key: "identifier",
+            value: identifier
           )
         )
         await logger.log(.info, "Import data operation successful", context: successContext)
@@ -773,6 +810,198 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
           )
         )
         await logger.error("Generate key operation failed", context: errorContext)
+    }
+
+    return result
+  }
+
+  /**
+   Generates a cryptographic key with specific length.
+
+   - Parameters:
+     - length: The length of the key in bits
+     - options: Optional key generation options
+   - Returns: Identifier for the generated key or an error
+   */
+  public func generateKey(
+    length: Int,
+    options: CoreSecurityTypes.KeyGenerationOptions? = nil
+  ) async -> Result<String, SecurityStorageError> {
+    // Create context for logging
+    let context = EnhancedLogContext(
+      domainName: "CryptoService",
+      operationName: "generateKey",
+      source: "EnhancedLoggingCryptoServiceImpl.generateKey",
+      metadata: LogMetadataDTOCollection()
+        .withPublic(key: "keyLength", value: "\(length)")
+    )
+    
+    // Add key type and algorithm information if available
+    let contextWithOptions: EnhancedLogContext
+    if let keyType = options?.keyType {
+      contextWithOptions = EnhancedLogContext(
+        domainName: context.domainName,
+        operationName: context.operationName,
+        source: context.source,
+        correlationID: context.correlationID,
+        metadata: context.metadata.withPublic(key: "keyType", value: "\(keyType)")
+      )
+    } else {
+      contextWithOptions = context
+    }
+    
+    await logger.log(.debug, "Generating key with length \(length) bits", context: contextWithOptions)
+
+    // Perform the operation
+    let result = await wrapped.generateKey(length: length, options: options)
+
+    // Log the result
+    switch result {
+      case let .success(keyIdentifier):
+        let successContext = EnhancedLogContext(
+          domainName: context.domainName,
+          operationName: "generateKey",
+          source: context.source,
+          correlationID: context.correlationID,
+          metadata: context.metadata.withSensitive(
+            key: "keyIdentifier",
+            value: keyIdentifier
+          )
+        )
+        await logger.log(.info, "Key generation successful", context: successContext)
+      case let .failure(error):
+        let errorContext = EnhancedLogContext(
+          domainName: context.domainName,
+          operationName: "generateKey",
+          source: context.source,
+          correlationID: context.correlationID,
+          metadata: context.metadata.withPublic(
+            key: "errorDescription",
+            value: error.localizedDescription
+          )
+        )
+        await logger.error("Key generation failed", context: errorContext)
+    }
+
+    return result
+  }
+
+  /**
+   Exports data from secure storage.
+   
+   - Parameter identifier: Identifier for the data to export
+   - Returns: The exported data as raw bytes or an error
+   */
+  public func exportData(
+    identifier: String
+  ) async -> Result<[UInt8], SecurityStorageError> {
+    // Create context for logging
+    let context = EnhancedLogContext(
+      domainName: "CryptoService",
+      operationName: "exportData",
+      source: "EnhancedLoggingCryptoServiceImpl.exportData",
+      metadata: LogMetadataDTOCollection()
+        .withPublic(key: "dataIdentifier", value: identifier)
+    )
+    
+    await logger.log(.debug, "Exporting data with identifier \(identifier)", context: context)
+
+    // Perform the operation
+    let result = await wrapped.exportData(identifier: identifier)
+
+    // Log the result
+    switch result {
+      case let .success(data):
+        let successContext = EnhancedLogContext(
+          domainName: context.domainName,
+          operationName: "exportData",
+          source: context.source,
+          correlationID: context.correlationID,
+          metadata: context.metadata.withPublic(
+            key: "dataSize",
+            value: "\(data.count)"
+          )
+        )
+        await logger.log(.info, "Data export successful (\(data.count) bytes)", context: successContext)
+      case let .failure(error):
+        let errorContext = EnhancedLogContext(
+          domainName: context.domainName,
+          operationName: "exportData",
+          source: context.source,
+          correlationID: context.correlationID,
+          metadata: context.metadata.withPublic(
+            key: "errorDescription",
+            value: error.localizedDescription
+          )
+        )
+        await logger.error("Data export failed", context: errorContext)
+    }
+
+    return result
+  }
+
+  /**
+   Generates a hash for the given data.
+   
+   - Parameters:
+     - dataIdentifier: Identifier for the data to hash
+     - options: Optional hashing options
+   - Returns: The hash identifier or an error
+   */
+  public func generateHash(
+    dataIdentifier: String,
+    options: CoreSecurityTypes.HashingOptions? = nil
+  ) async -> Result<String, SecurityStorageError> {
+    // This is just a proxy to the hash method to match the protocol
+    return await hash(dataIdentifier: dataIdentifier, options: options)
+  }
+
+  /**
+   Deletes data from secure storage.
+   
+   - Parameter identifier: Identifier for the data to delete
+   - Returns: Success or an error
+   */
+  public func deleteData(
+    identifier: String
+  ) async -> Result<Void, SecurityStorageError> {
+    // Create context for logging
+    let context = EnhancedLogContext(
+      domainName: "CryptoService",
+      operationName: "deleteData",
+      source: "EnhancedLoggingCryptoServiceImpl.deleteData",
+      metadata: LogMetadataDTOCollection()
+        .withPublic(key: "dataIdentifier", value: identifier)
+    )
+    
+    await logger.log(.debug, "Deleting data with identifier \(identifier)", context: context)
+
+    // Perform the operation
+    let result = await wrapped.deleteData(identifier: identifier)
+
+    // Log the result
+    switch result {
+      case .success:
+        let successContext = EnhancedLogContext(
+          domainName: context.domainName,
+          operationName: "deleteData",
+          source: context.source,
+          correlationID: context.correlationID,
+          metadata: context.metadata
+        )
+        await logger.log(.info, "Data deletion successful", context: successContext)
+      case let .failure(error):
+        let errorContext = EnhancedLogContext(
+          domainName: context.domainName,
+          operationName: "deleteData",
+          source: context.source,
+          correlationID: context.correlationID,
+          metadata: context.metadata.withPublic(
+            key: "errorDescription",
+            value: error.localizedDescription
+          )
+        )
+        await logger.error("Data deletion failed", context: errorContext)
     }
 
     return result

@@ -27,7 +27,7 @@ import UmbraErrors
  As an actor, this implementation guarantees thread safety when used from multiple
  concurrent contexts, preventing data races in cryptographic operations.
  */
-public actor HighSecurityCryptoServiceImpl: CryptoServiceProtocol {
+public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
     /// The secure storage to use
     public let secureStorage: SecureStorageProtocol
     
@@ -126,15 +126,23 @@ public actor HighSecurityCryptoServiceImpl: CryptoServiceProtocol {
         
         // Check rate limiting
         if await rateLimiter.isRateLimited("encrypt") {
-            let errorContext = context.withStatus("rate_limited")
-                .withPublicMetadata(key: "reason", value: "Rate limit exceeded for encryption operations")
+            let errorContext = createLogContext(
+                operation: "encrypt",
+                identifier: dataIdentifier,
+                status: "rate_limited",
+                details: [
+                    "keyIdentifier": keyIdentifier,
+                    "algorithm": options?.algorithm?.rawValue ?? "default",
+                    "reason": "Rate limit exceeded for encryption operations"
+                ]
+            )
             
             await logger.error(
                 "Encryption operation rate limited",
                 context: errorContext
             )
             
-            return .failure(.rateLimited)
+            return .failure(.operationRateLimited)
         }
         
         // Log the operation
@@ -144,12 +152,19 @@ public actor HighSecurityCryptoServiceImpl: CryptoServiceProtocol {
         )
         
         // Retrieve the data to encrypt
-        let dataResult = await secureStorage.retrieveData(dataIdentifier)
+        let dataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
         guard case let .success(data) = dataResult else {
             if case let .failure(error) = dataResult {
-                let errorContext = context.withStatus("failed")
-                    .withPublicMetadata(key: "errorDescription", value: error.localizedDescription)
-                    .withPublicMetadata(key: "errorCode", value: "\(error)")
+                let errorContext = createLogContext(
+                    operation: "encrypt",
+                    identifier: dataIdentifier,
+                    status: "failed",
+                    details: [
+                        "keyIdentifier": keyIdentifier,
+                        "algorithm": options?.algorithm?.rawValue ?? "default",
+                        "errorDescription": error.localizedDescription
+                    ]
+                )
                 
                 await logger.error(
                     "Failed to retrieve data for encryption: \(error.localizedDescription)",
@@ -159,8 +174,16 @@ public actor HighSecurityCryptoServiceImpl: CryptoServiceProtocol {
                 return .failure(error)
             }
             
-            let errorContext = context.withStatus("failed")
-                .withPublicMetadata(key: "errorDescription", value: "Data not found")
+            let errorContext = createLogContext(
+                operation: "encrypt",
+                identifier: dataIdentifier,
+                status: "failed",
+                details: [
+                    "keyIdentifier": keyIdentifier,
+                    "algorithm": options?.algorithm?.rawValue ?? "default",
+                    "errorDescription": "Data not found"
+                ]
+            )
             
             await logger.error(
                 "Failed to retrieve data for encryption: data not found",
@@ -171,12 +194,19 @@ public actor HighSecurityCryptoServiceImpl: CryptoServiceProtocol {
         }
         
         // Retrieve the key
-        let keyResult = await secureStorage.retrieveData(keyIdentifier)
+        let keyResult = await secureStorage.retrieveData(withIdentifier: keyIdentifier)
         guard case let .success(key) = keyResult else {
             if case let .failure(error) = keyResult {
-                let errorContext = context.withStatus("failed")
-                    .withPublicMetadata(key: "errorDescription", value: error.localizedDescription)
-                    .withPublicMetadata(key: "errorCode", value: "\(error)")
+                let errorContext = createLogContext(
+                    operation: "encrypt",
+                    identifier: dataIdentifier,
+                    status: "failed",
+                    details: [
+                        "keyIdentifier": keyIdentifier,
+                        "algorithm": options?.algorithm?.rawValue ?? "default",
+                        "errorDescription": error.localizedDescription
+                    ]
+                )
                 
                 await logger.error(
                     "Failed to retrieve key for encryption: \(error.localizedDescription)",
@@ -186,8 +216,16 @@ public actor HighSecurityCryptoServiceImpl: CryptoServiceProtocol {
                 return .failure(error)
             }
             
-            let errorContext = context.withStatus("failed")
-                .withPublicMetadata(key: "errorDescription", value: "Key not found")
+            let errorContext = createLogContext(
+                operation: "encrypt",
+                identifier: dataIdentifier,
+                status: "failed",
+                details: [
+                    "keyIdentifier": keyIdentifier,
+                    "algorithm": options?.algorithm?.rawValue ?? "default",
+                    "errorDescription": "Key not found"
+                ]
+            )
             
             await logger.error(
                 "Failed to retrieve key for encryption: key not found",
@@ -209,9 +247,16 @@ public actor HighSecurityCryptoServiceImpl: CryptoServiceProtocol {
         
         guard case .success = storeResult else {
             if case let .failure(error) = storeResult {
-                let errorContext = context.withStatus("failed")
-                    .withPublicMetadata(key: "errorDescription", value: error.localizedDescription)
-                    .withPublicMetadata(key: "errorCode", value: "\(error)")
+                let errorContext = createLogContext(
+                    operation: "encrypt",
+                    identifier: dataIdentifier,
+                    status: "failed",
+                    details: [
+                        "keyIdentifier": keyIdentifier,
+                        "algorithm": options?.algorithm?.rawValue ?? "default",
+                        "errorDescription": error.localizedDescription
+                    ]
+                )
                 
                 await logger.error(
                     "Failed to store encrypted data: \(error.localizedDescription)",
@@ -221,8 +266,16 @@ public actor HighSecurityCryptoServiceImpl: CryptoServiceProtocol {
                 return .failure(error)
             }
             
-            let errorContext = context.withStatus("failed")
-                .withPublicMetadata(key: "errorDescription", value: "Unknown error storing encrypted data")
+            let errorContext = createLogContext(
+                operation: "encrypt",
+                identifier: dataIdentifier,
+                status: "failed",
+                details: [
+                    "keyIdentifier": keyIdentifier,
+                    "algorithm": options?.algorithm?.rawValue ?? "default",
+                    "errorDescription": "Unknown error storing encrypted data"
+                ]
+            )
             
             await logger.error(
                 "Failed to store encrypted data: unknown error",
@@ -232,9 +285,17 @@ public actor HighSecurityCryptoServiceImpl: CryptoServiceProtocol {
             return .failure(.storageError)
         }
         
-        let successContext = context.withStatus("success")
-            .withPublicMetadata(key: "encryptedIdentifier", value: encryptedId)
-            .withPublicMetadata(key: "dataSize", value: "\(data.count)")
+        let successContext = createLogContext(
+            operation: "encrypt",
+            identifier: dataIdentifier,
+            status: "success",
+            details: [
+                "keyIdentifier": keyIdentifier,
+                "algorithm": options?.algorithm?.rawValue ?? "default",
+                "encryptedIdentifier": encryptedId,
+                "dataSize": "\(data.count)"
+            ]
+        )
         
         await logger.info(
             "Encryption operation completed successfully",
@@ -270,15 +331,23 @@ public actor HighSecurityCryptoServiceImpl: CryptoServiceProtocol {
         
         // Check rate limiting
         if await rateLimiter.isRateLimited("decrypt") {
-            let errorContext = context.withStatus("rate_limited")
-                .withPublicMetadata(key: "reason", value: "Rate limit exceeded for decryption operations")
+            let errorContext = createLogContext(
+                operation: "decrypt",
+                identifier: encryptedDataIdentifier,
+                status: "rate_limited",
+                details: [
+                    "keyIdentifier": keyIdentifier,
+                    "algorithm": options?.algorithm?.rawValue ?? "default",
+                    "reason": "Rate limit exceeded for decryption operations"
+                ]
+            )
             
             await logger.error(
                 "Decryption operation rate limited",
                 context: errorContext
             )
             
-            return .failure(.rateLimited)
+            return .failure(.operationRateLimited)
         }
         
         // Log the operation
@@ -288,12 +357,19 @@ public actor HighSecurityCryptoServiceImpl: CryptoServiceProtocol {
         )
         
         // Retrieve the encrypted data
-        let encryptedDataResult = await secureStorage.retrieveData(encryptedDataIdentifier)
+        let encryptedDataResult = await secureStorage.retrieveData(withIdentifier: encryptedDataIdentifier)
         guard case let .success(encryptedData) = encryptedDataResult else {
             if case let .failure(error) = encryptedDataResult {
-                let errorContext = context.withStatus("failed")
-                    .withPublicMetadata(key: "errorDescription", value: error.localizedDescription)
-                    .withPublicMetadata(key: "errorCode", value: "\(error)")
+                let errorContext = createLogContext(
+                    operation: "decrypt",
+                    identifier: encryptedDataIdentifier,
+                    status: "failed",
+                    details: [
+                        "keyIdentifier": keyIdentifier,
+                        "algorithm": options?.algorithm?.rawValue ?? "default",
+                        "errorDescription": error.localizedDescription
+                    ]
+                )
                 
                 await logger.error(
                     "Failed to retrieve encrypted data: \(error.localizedDescription)",
@@ -303,8 +379,16 @@ public actor HighSecurityCryptoServiceImpl: CryptoServiceProtocol {
                 return .failure(error)
             }
             
-            let errorContext = context.withStatus("failed")
-                .withPublicMetadata(key: "errorDescription", value: "Encrypted data not found")
+            let errorContext = createLogContext(
+                operation: "decrypt",
+                identifier: encryptedDataIdentifier,
+                status: "failed",
+                details: [
+                    "keyIdentifier": keyIdentifier,
+                    "algorithm": options?.algorithm?.rawValue ?? "default",
+                    "errorDescription": "Encrypted data not found"
+                ]
+            )
             
             await logger.error(
                 "Failed to retrieve encrypted data: data not found",
@@ -315,12 +399,19 @@ public actor HighSecurityCryptoServiceImpl: CryptoServiceProtocol {
         }
         
         // Retrieve the key
-        let keyResult = await secureStorage.retrieveData(keyIdentifier)
+        let keyResult = await secureStorage.retrieveData(withIdentifier: keyIdentifier)
         guard case let .success(key) = keyResult else {
             if case let .failure(error) = keyResult {
-                let errorContext = context.withStatus("failed")
-                    .withPublicMetadata(key: "errorDescription", value: error.localizedDescription)
-                    .withPublicMetadata(key: "errorCode", value: "\(error)")
+                let errorContext = createLogContext(
+                    operation: "decrypt",
+                    identifier: encryptedDataIdentifier,
+                    status: "failed",
+                    details: [
+                        "keyIdentifier": keyIdentifier,
+                        "algorithm": options?.algorithm?.rawValue ?? "default",
+                        "errorDescription": error.localizedDescription
+                    ]
+                )
                 
                 await logger.error(
                     "Failed to retrieve key for decryption: \(error.localizedDescription)",
@@ -330,8 +421,16 @@ public actor HighSecurityCryptoServiceImpl: CryptoServiceProtocol {
                 return .failure(error)
             }
             
-            let errorContext = context.withStatus("failed")
-                .withPublicMetadata(key: "errorDescription", value: "Key not found")
+            let errorContext = createLogContext(
+                operation: "decrypt",
+                identifier: encryptedDataIdentifier,
+                status: "failed",
+                details: [
+                    "keyIdentifier": keyIdentifier,
+                    "algorithm": options?.algorithm?.rawValue ?? "default",
+                    "errorDescription": "Key not found"
+                ]
+            )
             
             await logger.error(
                 "Failed to retrieve key for decryption: key not found",
@@ -353,9 +452,16 @@ public actor HighSecurityCryptoServiceImpl: CryptoServiceProtocol {
         
         guard case .success = storeResult else {
             if case let .failure(error) = storeResult {
-                let errorContext = context.withStatus("failed")
-                    .withPublicMetadata(key: "errorDescription", value: error.localizedDescription)
-                    .withPublicMetadata(key: "errorCode", value: "\(error)")
+                let errorContext = createLogContext(
+                    operation: "decrypt",
+                    identifier: encryptedDataIdentifier,
+                    status: "failed",
+                    details: [
+                        "keyIdentifier": keyIdentifier,
+                        "algorithm": options?.algorithm?.rawValue ?? "default",
+                        "errorDescription": error.localizedDescription
+                    ]
+                )
                 
                 await logger.error(
                     "Failed to store decrypted data: \(error.localizedDescription)",
@@ -365,8 +471,16 @@ public actor HighSecurityCryptoServiceImpl: CryptoServiceProtocol {
                 return .failure(error)
             }
             
-            let errorContext = context.withStatus("failed")
-                .withPublicMetadata(key: "errorDescription", value: "Unknown error storing decrypted data")
+            let errorContext = createLogContext(
+                operation: "decrypt",
+                identifier: encryptedDataIdentifier,
+                status: "failed",
+                details: [
+                    "keyIdentifier": keyIdentifier,
+                    "algorithm": options?.algorithm?.rawValue ?? "default",
+                    "errorDescription": "Unknown error storing decrypted data"
+                ]
+            )
             
             await logger.error(
                 "Failed to store decrypted data: unknown error",
@@ -376,9 +490,17 @@ public actor HighSecurityCryptoServiceImpl: CryptoServiceProtocol {
             return .failure(.storageError)
         }
         
-        let successContext = context.withStatus("success")
-            .withPublicMetadata(key: "decryptedIdentifier", value: decryptedId)
-            .withPublicMetadata(key: "dataSize", value: "\(decryptedData.count)")
+        let successContext = createLogContext(
+            operation: "decrypt",
+            identifier: encryptedDataIdentifier,
+            status: "success",
+            details: [
+                "keyIdentifier": keyIdentifier,
+                "algorithm": options?.algorithm?.rawValue ?? "default",
+                "decryptedIdentifier": decryptedId,
+                "dataSize": "\(decryptedData.count)"
+            ]
+        )
         
         await logger.info(
             "Decryption operation completed successfully",
@@ -412,15 +534,22 @@ public actor HighSecurityCryptoServiceImpl: CryptoServiceProtocol {
         
         // Check rate limiting
         if await rateLimiter.isRateLimited("hash") {
-            let errorContext = context.withStatus("rate_limited")
-                .withPublicMetadata(key: "reason", value: "Rate limit exceeded for hash operations")
+            let errorContext = createLogContext(
+                operation: "hash",
+                identifier: dataIdentifier,
+                status: "rate_limited",
+                details: [
+                    "algorithm": algorithm,
+                    "reason": "Rate limit exceeded for hash operations"
+                ]
+            )
             
             await logger.error(
                 "Hash operation rate limited",
                 context: errorContext
             )
             
-            return .failure(.rateLimited)
+            return .failure(.operationRateLimited)
         }
         
         // Log the operation
@@ -430,12 +559,18 @@ public actor HighSecurityCryptoServiceImpl: CryptoServiceProtocol {
         )
         
         // Retrieve the data to hash
-        let dataResult = await secureStorage.retrieveData(dataIdentifier)
+        let dataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
         guard case let .success(data) = dataResult else {
             if case let .failure(error) = dataResult {
-                let errorContext = context.withStatus("failed")
-                    .withPublicMetadata(key: "errorDescription", value: error.localizedDescription)
-                    .withPublicMetadata(key: "errorCode", value: "\(error)")
+                let errorContext = createLogContext(
+                    operation: "hash",
+                    identifier: dataIdentifier,
+                    status: "failed",
+                    details: [
+                        "algorithm": algorithm,
+                        "errorDescription": error.localizedDescription
+                    ]
+                )
                 
                 await logger.error(
                     "Failed to retrieve data for hashing: \(error.localizedDescription)",
@@ -445,8 +580,15 @@ public actor HighSecurityCryptoServiceImpl: CryptoServiceProtocol {
                 return .failure(error)
             }
             
-            let errorContext = context.withStatus("failed")
-                .withPublicMetadata(key: "errorDescription", value: "Data not found")
+            let errorContext = createLogContext(
+                operation: "hash",
+                identifier: dataIdentifier,
+                status: "failed",
+                details: [
+                    "algorithm": algorithm,
+                    "errorDescription": "Data not found"
+                ]
+            )
             
             await logger.error(
                 "Failed to retrieve data for hashing: data not found",
@@ -466,9 +608,15 @@ public actor HighSecurityCryptoServiceImpl: CryptoServiceProtocol {
         
         guard case .success = storeResult else {
             if case let .failure(error) = storeResult {
-                let errorContext = context.withStatus("failed")
-                    .withPublicMetadata(key: "errorDescription", value: error.localizedDescription)
-                    .withPublicMetadata(key: "errorCode", value: "\(error)")
+                let errorContext = createLogContext(
+                    operation: "hash",
+                    identifier: dataIdentifier,
+                    status: "failed",
+                    details: [
+                        "algorithm": algorithm,
+                        "errorDescription": error.localizedDescription
+                    ]
+                )
                 
                 await logger.error(
                     "Failed to store hash: \(error.localizedDescription)",
@@ -478,8 +626,15 @@ public actor HighSecurityCryptoServiceImpl: CryptoServiceProtocol {
                 return .failure(error)
             }
             
-            let errorContext = context.withStatus("failed")
-                .withPublicMetadata(key: "errorDescription", value: "Unknown error storing hash")
+            let errorContext = createLogContext(
+                operation: "hash",
+                identifier: dataIdentifier,
+                status: "failed",
+                details: [
+                    "algorithm": algorithm,
+                    "errorDescription": "Unknown error storing hash"
+                ]
+            )
             
             await logger.error(
                 "Failed to store hash: unknown error",
@@ -489,9 +644,16 @@ public actor HighSecurityCryptoServiceImpl: CryptoServiceProtocol {
             return .failure(.storageError)
         }
         
-        let successContext = context.withStatus("success")
-            .withPublicMetadata(key: "hashIdentifier", value: hashId)
-            .withHashedMetadata(key: "hashValue", value: hashData.base64EncodedString())
+        let successContext = createLogContext(
+            operation: "hash",
+            identifier: dataIdentifier,
+            status: "success",
+            details: [
+                "algorithm": algorithm,
+                "hashIdentifier": hashId,
+                "hashValue": hashData.base64EncodedString()
+            ]
+        )
         
         await logger.info(
             "Hash operation completed successfully",
@@ -502,17 +664,17 @@ public actor HighSecurityCryptoServiceImpl: CryptoServiceProtocol {
     }
     
     /**
-     Verifies a hash against the expected value.
+     Verifies a hash for data against an expected hash value.
      
      - Parameters:
        - dataIdentifier: Identifier for the data to verify
-       - expectedHashIdentifier: Identifier for the expected hash
-       - options: Optional hashing options
+       - hashIdentifier: Identifier for the expected hash value
+       - options: Optional hashing configuration
      - Returns: Result indicating whether the hash is valid or an error
      */
     public func verifyHash(
         dataIdentifier: String,
-        expectedHashIdentifier: String,
+        hashIdentifier: String,
         options: CoreSecurityTypes.HashingOptions? = nil
     ) async -> Result<Bool, SecurityStorageError> {
         let algorithm = options?.algorithm?.rawValue ?? "SHA256"
@@ -521,29 +683,83 @@ public actor HighSecurityCryptoServiceImpl: CryptoServiceProtocol {
             identifier: dataIdentifier,
             status: "started",
             details: [
-                "expectedHashIdentifier": expectedHashIdentifier,
+                "hashIdentifier": hashIdentifier,
                 "algorithm": algorithm
             ]
         )
         
         // Check rate limiting
         if await rateLimiter.isRateLimited("verifyHash") {
-            let errorContext = context.withStatus("rate_limited")
-                .withPublicMetadata(key: "reason", value: "Rate limit exceeded for hash verification operations")
+            let errorContext = createLogContext(
+                operation: "verifyHash",
+                identifier: dataIdentifier,
+                status: "rate_limited",
+                details: [
+                    "hashIdentifier": hashIdentifier,
+                    "algorithm": algorithm,
+                    "reason": "Rate limit exceeded for hash verification operations"
+                ]
+            )
             
-            await logger.error(
+            await logger.warning(
                 "Hash verification operation rate limited",
                 context: errorContext
             )
             
-            return .failure(.rateLimited)
+            return .failure(.operationRateLimited)
         }
         
         // Log the operation
         await logger.debug(
-            "Starting hash verification using \(algorithm)",
+            "Starting hash verification for data ID \(dataIdentifier) against hash ID \(hashIdentifier)",
             context: context
         )
+        
+        // Retrieve the data to hash
+        let dataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
+        guard case let .success(data) = dataResult else {
+            if case let .failure(error) = dataResult {
+                let errorContext = createLogContext(
+                    operation: "verifyHash",
+                    identifier: dataIdentifier,
+                    status: "failed",
+                    details: [
+                        "hashIdentifier": hashIdentifier,
+                        "algorithm": algorithm,
+                        "errorDescription": error.localizedDescription
+                    ]
+                )
+                
+                await logger.error(
+                    "Failed to retrieve data for hash verification: \(error.localizedDescription)",
+                    context: errorContext
+                )
+            }
+            return .failure(.dataNotFound)
+        }
+        
+        // Retrieve the expected hash
+        let expectedHashResult = await secureStorage.retrieveData(withIdentifier: hashIdentifier)
+        guard case let .success(expectedHashData) = expectedHashResult else {
+            if case let .failure(error) = expectedHashResult {
+                let errorContext = createLogContext(
+                    operation: "verifyHash",
+                    identifier: dataIdentifier,
+                    status: "failed",
+                    details: [
+                        "hashIdentifier": hashIdentifier,
+                        "algorithm": algorithm,
+                        "errorDescription": error.localizedDescription
+                    ]
+                )
+                
+                await logger.error(
+                    "Failed to retrieve expected hash: \(error.localizedDescription)",
+                    context: errorContext
+                )
+            }
+            return .failure(.dataNotFound)
+        }
         
         // In a real implementation, we would:
         // 1. Retrieve the data
@@ -554,8 +770,16 @@ public actor HighSecurityCryptoServiceImpl: CryptoServiceProtocol {
         // For this mock implementation, we'll just return a success result
         let isValid = true
         
-        let successContext = context.withStatus("success")
-            .withPublicMetadata(key: "isValid", value: isValid ? "true" : "false")
+        let successContext = createLogContext(
+            operation: "verifyHash",
+            identifier: dataIdentifier,
+            status: "success",
+            details: [
+                "hashIdentifier": hashIdentifier,
+                "algorithm": algorithm,
+                "isValid": isValid ? "true" : "false"
+            ]
+        )
         
         await logger.info(
             "Hash verification completed: \(isValid ? "valid" : "invalid")",
@@ -570,33 +794,40 @@ public actor HighSecurityCryptoServiceImpl: CryptoServiceProtocol {
      
      - Parameters:
        - data: The data to store
-       - options: Optional storage options
+       - identifier: The identifier for the data
      - Returns: Result containing the data identifier or an error
      */
     public func storeData(
-        _ data: Data,
-        options: CoreSecurityTypes.StorageOptions? = nil
+        data: Data,
+        identifier: String
     ) async -> Result<String, SecurityStorageError> {
         let context = createLogContext(
             operation: "storeData",
+            identifier: identifier,
             status: "started",
             details: [
-                "dataSize": "\(data.count)",
-                "storageType": options?.storageType?.rawValue ?? "default"
+                "dataSize": "\(data.count)"
             ]
         )
         
         // Check rate limiting
         if await rateLimiter.isRateLimited("storeData") {
-            let errorContext = context.withStatus("rate_limited")
-                .withPublicMetadata(key: "reason", value: "Rate limit exceeded for data storage operations")
+            let errorContext = createLogContext(
+                operation: "storeData",
+                identifier: identifier,
+                status: "rate_limited",
+                details: [
+                    "dataSize": "\(data.count)",
+                    "reason": "Rate limit exceeded for data storage operations"
+                ]
+            )
             
             await logger.error(
                 "Data storage operation rate limited",
                 context: errorContext
             )
             
-            return .failure(.rateLimited)
+            return .failure(.operationRateLimited)
         }
         
         // Log the operation
@@ -605,17 +836,20 @@ public actor HighSecurityCryptoServiceImpl: CryptoServiceProtocol {
             context: context
         )
         
-        // Generate a unique identifier for the data
-        let dataId = "data_\(UUID().uuidString)"
-        
         // Store the data
-        let storeResult = await secureStorage.storeData(data, withIdentifier: dataId)
+        let storeResult = await secureStorage.storeData(data, withIdentifier: identifier)
         
         guard case .success = storeResult else {
             if case let .failure(error) = storeResult {
-                let errorContext = context.withStatus("failed")
-                    .withPublicMetadata(key: "errorDescription", value: error.localizedDescription)
-                    .withPublicMetadata(key: "errorCode", value: "\(error)")
+                let errorContext = createLogContext(
+                    operation: "storeData",
+                    identifier: identifier,
+                    status: "failed",
+                    details: [
+                        "dataSize": "\(data.count)",
+                        "errorDescription": error.localizedDescription
+                    ]
+                )
                 
                 await logger.error(
                     "Failed to store data: \(error.localizedDescription)",
@@ -625,8 +859,15 @@ public actor HighSecurityCryptoServiceImpl: CryptoServiceProtocol {
                 return .failure(error)
             }
             
-            let errorContext = context.withStatus("failed")
-                .withPublicMetadata(key: "errorDescription", value: "Unknown error storing data")
+            let errorContext = createLogContext(
+                operation: "storeData",
+                identifier: identifier,
+                status: "failed",
+                details: [
+                    "dataSize": "\(data.count)",
+                    "errorDescription": "Unknown error storing data"
+                ]
+            )
             
             await logger.error(
                 "Failed to store data: unknown error",
@@ -636,50 +877,56 @@ public actor HighSecurityCryptoServiceImpl: CryptoServiceProtocol {
             return .failure(.storageError)
         }
         
-        let successContext = context.withStatus("success")
-            .withPublicMetadata(key: "dataIdentifier", value: dataId)
-            .withPublicMetadata(key: "dataSize", value: "\(data.count)")
+        let successContext = createLogContext(
+            operation: "storeData",
+            identifier: identifier,
+            status: "success",
+            details: [
+                "dataSize": "\(data.count)"
+            ]
+        )
         
         await logger.info(
             "Data storage operation completed successfully",
             context: successContext
         )
         
-        return .success(dataId)
+        return .success(identifier)
     }
     
     /**
      Retrieves data securely.
      
      - Parameters:
-       - dataIdentifier: Identifier for the data to retrieve
-       - options: Optional retrieval options
+       - identifier: Identifier for the data to retrieve
      - Returns: Result containing the retrieved data or an error
      */
     public func retrieveData(
-        _ dataIdentifier: String,
-        options: CoreSecurityTypes.StorageOptions? = nil
+        identifier: String
     ) async -> Result<Data, SecurityStorageError> {
         let context = createLogContext(
             operation: "retrieveData",
-            identifier: dataIdentifier,
-            status: "started",
-            details: [
-                "storageType": options?.storageType?.rawValue ?? "default"
-            ]
+            identifier: identifier,
+            status: "started"
         )
         
         // Check rate limiting
         if await rateLimiter.isRateLimited("retrieveData") {
-            let errorContext = context.withStatus("rate_limited")
-                .withPublicMetadata(key: "reason", value: "Rate limit exceeded for data retrieval operations")
+            let errorContext = createLogContext(
+                operation: "retrieveData",
+                identifier: identifier,
+                status: "rate_limited",
+                details: [
+                    "reason": "Rate limit exceeded for data retrieval operations"
+                ]
+            )
             
             await logger.error(
                 "Data retrieval operation rate limited",
                 context: errorContext
             )
             
-            return .failure(.rateLimited)
+            return .failure(.operationRateLimited)
         }
         
         // Log the operation
@@ -689,13 +936,18 @@ public actor HighSecurityCryptoServiceImpl: CryptoServiceProtocol {
         )
         
         // Retrieve the data
-        let dataResult = await secureStorage.retrieveData(dataIdentifier)
+        let dataResult = await secureStorage.retrieveData(withIdentifier: identifier)
         
         guard case let .success(data) = dataResult else {
             if case let .failure(error) = dataResult {
-                let errorContext = context.withStatus("failed")
-                    .withPublicMetadata(key: "errorDescription", value: error.localizedDescription)
-                    .withPublicMetadata(key: "errorCode", value: "\(error)")
+                let errorContext = createLogContext(
+                    operation: "retrieveData",
+                    identifier: identifier,
+                    status: "failed",
+                    details: [
+                        "errorDescription": error.localizedDescription
+                    ]
+                )
                 
                 await logger.error(
                     "Failed to retrieve data: \(error.localizedDescription)",
@@ -705,8 +957,14 @@ public actor HighSecurityCryptoServiceImpl: CryptoServiceProtocol {
                 return .failure(error)
             }
             
-            let errorContext = context.withStatus("failed")
-                .withPublicMetadata(key: "errorDescription", value: "Data not found")
+            let errorContext = createLogContext(
+                operation: "retrieveData",
+                identifier: identifier,
+                status: "failed",
+                details: [
+                    "errorDescription": "Data not found"
+                ]
+            )
             
             await logger.error(
                 "Failed to retrieve data: data not found",
@@ -716,8 +974,14 @@ public actor HighSecurityCryptoServiceImpl: CryptoServiceProtocol {
             return .failure(.dataNotFound)
         }
         
-        let successContext = context.withStatus("success")
-            .withPublicMetadata(key: "dataSize", value: "\(data.count)")
+        let successContext = createLogContext(
+            operation: "retrieveData",
+            identifier: identifier,
+            status: "success",
+            details: [
+                "dataSize": "\(data.count)"
+            ]
+        )
         
         await logger.info(
             "Data retrieval operation completed successfully",
@@ -731,34 +995,35 @@ public actor HighSecurityCryptoServiceImpl: CryptoServiceProtocol {
      Deletes data securely.
      
      - Parameters:
-       - dataIdentifier: Identifier for the data to delete
-       - options: Optional deletion options
+       - identifier: Identifier for the data to delete
      - Returns: Result indicating success or an error
      */
     public func deleteData(
-        _ dataIdentifier: String,
-        options: CoreSecurityTypes.StorageOptions? = nil
+        identifier: String
     ) async -> Result<Void, SecurityStorageError> {
         let context = createLogContext(
             operation: "deleteData",
-            identifier: dataIdentifier,
-            status: "started",
-            details: [
-                "storageType": options?.storageType?.rawValue ?? "default"
-            ]
+            identifier: identifier,
+            status: "started"
         )
         
         // Check rate limiting
         if await rateLimiter.isRateLimited("deleteData") {
-            let errorContext = context.withStatus("rate_limited")
-                .withPublicMetadata(key: "reason", value: "Rate limit exceeded for data deletion operations")
+            let errorContext = createLogContext(
+                operation: "deleteData",
+                identifier: identifier,
+                status: "rate_limited",
+                details: [
+                    "reason": "Rate limit exceeded for data deletion operations"
+                ]
+            )
             
             await logger.error(
                 "Data deletion operation rate limited",
                 context: errorContext
             )
             
-            return .failure(.rateLimited)
+            return .failure(.operationRateLimited)
         }
         
         // Log the operation
@@ -768,13 +1033,18 @@ public actor HighSecurityCryptoServiceImpl: CryptoServiceProtocol {
         )
         
         // Delete the data
-        let deleteResult = await secureStorage.deleteData(withIdentifier: dataIdentifier)
+        let deleteResult = await secureStorage.deleteData(withIdentifier: identifier)
         
         guard case .success = deleteResult else {
             if case let .failure(error) = deleteResult {
-                let errorContext = context.withStatus("failed")
-                    .withPublicMetadata(key: "errorDescription", value: error.localizedDescription)
-                    .withPublicMetadata(key: "errorCode", value: "\(error)")
+                let errorContext = createLogContext(
+                    operation: "deleteData",
+                    identifier: identifier,
+                    status: "failed",
+                    details: [
+                        "errorDescription": error.localizedDescription
+                    ]
+                )
                 
                 await logger.error(
                     "Failed to delete data: \(error.localizedDescription)",
@@ -784,8 +1054,14 @@ public actor HighSecurityCryptoServiceImpl: CryptoServiceProtocol {
                 return .failure(error)
             }
             
-            let errorContext = context.withStatus("failed")
-                .withPublicMetadata(key: "errorDescription", value: "Unknown error deleting data")
+            let errorContext = createLogContext(
+                operation: "deleteData",
+                identifier: identifier,
+                status: "failed",
+                details: [
+                    "errorDescription": "Unknown error deleting data"
+                ]
+            )
             
             await logger.error(
                 "Failed to delete data: unknown error",
@@ -795,10 +1071,283 @@ public actor HighSecurityCryptoServiceImpl: CryptoServiceProtocol {
             return .failure(.storageError)
         }
         
-        let successContext = context.withStatus("success")
+        let successContext = createLogContext(
+            operation: "deleteData",
+            identifier: identifier,
+            status: "success"
+        )
         
         await logger.info(
             "Data deletion operation completed successfully",
+            context: successContext
+        )
+        
+        return .success(())
+    }
+    
+    /**
+     Generates a new cryptographic key with the specified length and options.
+     
+     - Parameters:
+       - length: Length of the key in bits
+       - options: Optional key generation configuration
+     - Returns: Success with key identifier or error
+     */
+    public func generateKey(
+        length: Int,
+        options: CoreSecurityTypes.KeyGenerationOptions? = nil
+    ) async -> Result<String, SecurityStorageError> {
+        let context = createLogContext(
+            operation: "generateKey",
+            status: "started",
+            details: [
+                "keyLength": String(length)
+            ]
+        )
+        
+        // Check rate limiting
+        if await rateLimiter.isRateLimited("generateKey") {
+            let errorContext = createLogContext(
+                operation: "generateKey",
+                status: "rate_limited",
+                details: [
+                    "keyLength": String(length),
+                    "reason": "Rate limit exceeded for key generation operations"
+                ]
+            )
+            
+            await logger.warning(
+                "Key generation operation rate limited",
+                context: errorContext
+            )
+            
+            return .failure(.operationRateLimited)
+        }
+        
+        // Log the operation
+        await logger.debug(
+            "Generating cryptographic key with length \(length)",
+            context: context
+        )
+        
+        // In a real implementation, we would generate a key with the specified parameters
+        // For this implementation, we'll create a placeholder key
+        let keyId = "key_\(UUID().uuidString)"
+        let keyData = Data((0..<length/8).map { _ in UInt8.random(in: 0...255) })
+        
+        // Store the key
+        let storeResult = await secureStorage.storeData(keyData, withIdentifier: keyId)
+        
+        guard case .success = storeResult else {
+            if case let .failure(error) = storeResult {
+                let errorContext = createLogContext(
+                    operation: "generateKey",
+                    identifier: keyId,
+                    status: "failed",
+                    details: [
+                        "keyLength": String(length),
+                        "errorDescription": error.localizedDescription
+                    ]
+                )
+                
+                await logger.error(
+                    "Failed to store generated key: \(error.localizedDescription)",
+                    context: errorContext
+                )
+            }
+            return .failure(.invalidOperation)
+        }
+        
+        let successContext = createLogContext(
+            operation: "generateKey",
+            identifier: keyId,
+            status: "success",
+            details: [
+                "keyLength": String(length)
+            ]
+        )
+        
+        await logger.info(
+            "Successfully generated and stored key with identifier \(keyId)",
+            context: successContext
+        )
+        
+        return .success(keyId)
+    }
+
+    /**
+     Imports raw data into secure storage with custom identifier.
+     
+     - Parameters:
+       - data: Raw data bytes to import
+       - customIdentifier: Optional custom identifier to use
+     - Returns: Success with data identifier or error
+     */
+    public func importData(
+        _ data: [UInt8],
+        customIdentifier: String?
+    ) async -> Result<String, SecurityStorageError> {
+        // Convert to Data for internal usage
+        let dataObj = Data(data)
+        let effectiveIdentifier = customIdentifier ?? "data_\(UUID().uuidString)"
+        
+        let context = createLogContext(
+            operation: "importData",
+            identifier: effectiveIdentifier,
+            status: "started",
+            details: [
+                "dataSize": String(data.count),
+                "hasCustomIdentifier": customIdentifier != nil ? "true" : "false"
+            ]
+        )
+        
+        // Check rate limiting
+        if await rateLimiter.isRateLimited("importData") {
+            let errorContext = createLogContext(
+                operation: "importData",
+                identifier: effectiveIdentifier,
+                status: "rate_limited",
+                details: [
+                    "dataSize": String(data.count),
+                    "reason": "Rate limit exceeded for data import operations"
+                ]
+            )
+            
+            await logger.warning(
+                "Data import operation rate limited",
+                context: errorContext
+            )
+            
+            return .failure(.operationRateLimited)
+        }
+        
+        // Log the operation
+        await logger.debug(
+            "Importing data (\(data.count) bytes)",
+            context: context
+        )
+        
+        // Store the data with the provided identifier
+        let storeResult = await secureStorage.storeData(dataObj, withIdentifier: effectiveIdentifier)
+        
+        guard case .success = storeResult else {
+            if case let .failure(error) = storeResult {
+                let errorContext = createLogContext(
+                    operation: "importData",
+                    identifier: effectiveIdentifier,
+                    status: "failed",
+                    details: [
+                        "dataSize": String(data.count),
+                        "errorDescription": error.localizedDescription
+                    ]
+                )
+                
+                await logger.error(
+                    "Failed to store imported data: \(error.localizedDescription)",
+                    context: errorContext
+                )
+            }
+            return .failure(.invalidOperation)
+        }
+        
+        let successContext = createLogContext(
+            operation: "importData",
+            identifier: effectiveIdentifier,
+            status: "success",
+            details: [
+                "dataSize": String(data.count)
+            ]
+        )
+        
+        await logger.info(
+            "Successfully imported data with identifier \(effectiveIdentifier)",
+            context: successContext
+        )
+        
+        return .success(effectiveIdentifier)
+    }
+    
+    /**
+     Stores data securely with the provided identifier.
+     
+     - Parameters:
+       - data: The data to store
+       - identifier: The identifier for the data
+     - Returns: Success or an error
+     */
+    public func storeData(
+        data: Data,
+        identifier: String
+    ) async -> Result<Void, SecurityStorageError> {
+        let context = createLogContext(
+            operation: "storeData",
+            identifier: identifier,
+            status: "started",
+            details: [
+                "dataSize": "\(data.count)"
+            ]
+        )
+        
+        // Check rate limiting
+        if await rateLimiter.isRateLimited("storeData") {
+            let errorContext = createLogContext(
+                operation: "storeData",
+                identifier: identifier,
+                status: "rate_limited",
+                details: [
+                    "dataSize": "\(data.count)",
+                    "reason": "Rate limit exceeded for data storage operations"
+                ]
+            )
+            
+            await logger.warning(
+                "Data store operation rate limited",
+                context: errorContext
+            )
+            
+            return .failure(.operationRateLimited)
+        }
+        
+        // Log the operation
+        await logger.debug(
+            "Storing data (\(data.count) bytes) with identifier \(identifier)",
+            context: context
+        )
+        
+        // Store the data
+        let storeResult = await secureStorage.storeData(data, withIdentifier: identifier)
+        
+        guard case .success = storeResult else {
+            if case let .failure(error) = storeResult {
+                let errorContext = createLogContext(
+                    operation: "storeData",
+                    identifier: identifier,
+                    status: "failed",
+                    details: [
+                        "dataSize": "\(data.count)",
+                        "errorDescription": error.localizedDescription
+                    ]
+                )
+                
+                await logger.error(
+                    "Failed to store data: \(error.localizedDescription)",
+                    context: errorContext
+                )
+            }
+            return .failure(.invalidOperation)
+        }
+        
+        let successContext = createLogContext(
+            operation: "storeData",
+            identifier: identifier,
+            status: "success",
+            details: [
+                "dataSize": "\(data.count)"
+            ]
+        )
+        
+        await logger.info(
+            "Successfully stored data with identifier \(identifier)",
             context: successContext
         )
         

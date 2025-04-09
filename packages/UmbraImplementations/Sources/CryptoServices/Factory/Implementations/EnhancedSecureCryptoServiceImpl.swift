@@ -29,7 +29,7 @@ import SecurityCoreInterfaces
  As an actor, this implementation guarantees thread safety when used from multiple
  concurrent contexts, preventing data races in cryptographic operations.
  */
-public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
+public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
 
   /// The wrapped implementation that does the actual cryptographic work
   private let wrapped: CryptoServiceProtocol
@@ -69,6 +69,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
    - Parameters:
      - operation: The type of operation (encrypt, decrypt, etc.)
      - identifier: Optional identifier for the data or key
+     - algorithm: Optional algorithm used for the operation
      - status: Optional status of the operation
      - details: Optional additional details about the operation
    - Returns: A log context for the operation
@@ -76,13 +77,22 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
   private func createLogContext(
     operation: String,
     identifier: String? = nil,
+    algorithm: EncryptionAlgorithm? = nil,
     status: String? = nil,
     details: [String: String] = [:]
-  ) -> CryptoLogContext {
+  ) -> LoggingTypes.CryptoLogContext {
     var metadata = LogMetadataDTOCollection()
     
     if let identifier = identifier {
       metadata = metadata.withPublic(key: "identifier", value: identifier)
+    }
+    
+    if let algorithm = algorithm {
+      metadata = metadata.withPublic(key: "algorithm", value: algorithm.rawValue)
+    }
+    
+    if let status = status {
+      metadata = metadata.withPublic(key: "status", value: status)
     }
     
     // Add all details with appropriate privacy levels
@@ -98,7 +108,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
       }
     }
     
-    return CryptoLogContext(
+    return LoggingTypes.CryptoLogContext(
       operation: operation,
       identifier: identifier,
       status: status,
@@ -139,7 +149,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
         context: context
       )
       
-      return .failure(.rateLimited)
+      return .failure(.operationRateLimited)
     }
     
     // Input validation
@@ -158,7 +168,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
         context: context
       )
       
-      return .failure(.invalidIdentifier)
+      return .failure(.dataNotFound)
     }
     
     guard !keyIdentifier.isEmpty else {
@@ -176,7 +186,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
         context: context
       )
       
-      return .failure(.invalidIdentifier)
+      return .failure(.dataNotFound)
     }
     
     // Log the operation
@@ -186,7 +196,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
       status: "started",
       details: [
         "keyIdentifier": keyIdentifier,
-        "algorithm": options?.algorithm?.rawValue ?? "default"
+        "algorithm": options?.algorithm.rawValue ?? "default"
       ]
     )
     
@@ -212,7 +222,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
           details: [
             "keyIdentifier": keyIdentifier,
             "encryptedIdentifier": encryptedIdentifier,
-            "algorithm": options?.algorithm?.rawValue ?? "default"
+            "algorithm": options?.algorithm.rawValue ?? "default"
           ]
         )
         
@@ -273,7 +283,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
         context: context
       )
       
-      return .failure(.rateLimited)
+      return .failure(.operationRateLimited)
     }
     
     // Input validation
@@ -292,7 +302,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
         context: context
       )
       
-      return .failure(.invalidIdentifier)
+      return .failure(.dataNotFound)
     }
     
     guard !keyIdentifier.isEmpty else {
@@ -310,7 +320,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
         context: context
       )
       
-      return .failure(.invalidIdentifier)
+      return .failure(.dataNotFound)
     }
     
     // Log the operation
@@ -320,7 +330,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
       status: "started",
       details: [
         "keyIdentifier": keyIdentifier,
-        "algorithm": options?.algorithm?.rawValue ?? "default"
+        "algorithm": options?.algorithm.rawValue ?? "default"
       ]
     )
     
@@ -346,7 +356,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
           details: [
             "keyIdentifier": keyIdentifier,
             "decryptedIdentifier": decryptedIdentifier,
-            "algorithm": options?.algorithm?.rawValue ?? "default"
+            "algorithm": options?.algorithm.rawValue ?? "default"
           ]
         )
         
@@ -404,7 +414,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
         context: context
       )
       
-      return .failure(.rateLimited)
+      return .failure(.operationRateLimited)
     }
     
     // Input validation
@@ -422,11 +432,11 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
         context: context
       )
       
-      return .failure(.invalidIdentifier)
+      return .failure(.dataNotFound)
     }
     
     // Log the operation
-    let algorithm = options?.algorithm?.rawValue ?? "SHA256"
+    let algorithm = options?.algorithm.rawValue ?? "SHA256"
     let startContext = createLogContext(
       operation: "hash",
       identifier: dataIdentifier,
@@ -491,13 +501,13 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
 
    - Parameters:
      - dataIdentifier: Identifier for the data to verify
-     - expectedHashIdentifier: Identifier for the expected hash
+     - hashIdentifier: Identifier for the expected hash
      - options: Optional hashing options
    - Returns: True if the hash matches, false otherwise, or an error
    */
   public func verifyHash(
     dataIdentifier: String,
-    expectedHashIdentifier: String,
+    hashIdentifier: String,
     options: CoreSecurityTypes.HashingOptions? = nil
   ) async -> Result<Bool, SecurityStorageError> {
     // Check rate limiter
@@ -507,7 +517,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
         identifier: dataIdentifier,
         status: "rate_limited",
         details: [
-          "expectedHashIdentifier": expectedHashIdentifier,
+          "hashIdentifier": hashIdentifier,
           "reason": "Rate limit exceeded for hash verification operations"
         ]
       )
@@ -517,7 +527,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
         context: context
       )
       
-      return .failure(.rateLimited)
+      return .failure(.operationRateLimited)
     }
     
     // Input validation
@@ -526,7 +536,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
         operation: "verifyHash",
         status: "validation_failed",
         details: [
-          "expectedHashIdentifier": expectedHashIdentifier,
+          "hashIdentifier": hashIdentifier,
           "reason": "Empty data identifier"
         ]
       )
@@ -536,10 +546,10 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
         context: context
       )
       
-      return .failure(.invalidIdentifier)
+      return .failure(.dataNotFound)
     }
     
-    guard !expectedHashIdentifier.isEmpty else {
+    guard !hashIdentifier.isEmpty else {
       let context = createLogContext(
         operation: "verifyHash",
         identifier: dataIdentifier,
@@ -554,17 +564,17 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
         context: context
       )
       
-      return .failure(.invalidIdentifier)
+      return .failure(.dataNotFound)
     }
     
     // Log the operation
-    let algorithm = options?.algorithm?.rawValue ?? "SHA256"
+    let algorithm = options?.algorithm.rawValue ?? "SHA256"
     let startContext = createLogContext(
       operation: "verifyHash",
       identifier: dataIdentifier,
       status: "started",
       details: [
-        "expectedHashIdentifier": expectedHashIdentifier,
+        "hashIdentifier": hashIdentifier,
         "algorithm": algorithm
       ]
     )
@@ -577,7 +587,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
     // Delegate to wrapped implementation
     let result = await wrapped.verifyHash(
       dataIdentifier: dataIdentifier,
-      expectedHashIdentifier: expectedHashIdentifier,
+      hashIdentifier: hashIdentifier,
       options: options
     )
     
@@ -589,7 +599,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
           identifier: dataIdentifier,
           status: "success",
           details: [
-            "expectedHashIdentifier": expectedHashIdentifier,
+            "hashIdentifier": hashIdentifier,
             "isValid": isValid ? "true" : "false",
             "algorithm": algorithm
           ]
@@ -606,7 +616,7 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
           identifier: dataIdentifier,
           status: "failed",
           details: [
-            "expectedHashIdentifier": expectedHashIdentifier,
+            "hashIdentifier": hashIdentifier,
             "errorDescription": error.localizedDescription,
             "errorCode": "\(error)",
             "algorithm": algorithm
@@ -622,55 +632,62 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
     return result
   }
 
-  // MARK: - Data Storage Operations
-
   /**
-   Stores data securely.
-
+   Stores data in secure storage.
+   
    - Parameters:
      - data: The data to store
-     - options: Optional storage options
-   - Returns: Identifier for the stored data or an error
+     - identifier: The identifier to use
+   - Returns: Success or an error
    */
   public func storeData(
-    _ data: Data,
-    options: CoreSecurityTypes.StorageOptions? = nil
-  ) async -> Result<String, SecurityStorageError> {
+    data: Data,
+    identifier: String
+  ) async -> Result<Void, SecurityStorageError> {
     // Check rate limiter
     if await rateLimiter.isRateLimited("storeData") {
       let context = createLogContext(
         operation: "storeData",
-        status: "rate_limited",
-        details: [
-          "dataSize": "\(data.count)",
-          "reason": "Rate limit exceeded for data storage operations"
-        ]
+        status: "rateLimited"
       )
       
-      await logger.warning(
-        "Data storage operation rate limited",
+      await logger.warn(
+        "Store data operation was rate limited",
         context: context
       )
       
-      return .failure(.rateLimited)
+      return .failure(.operationRateLimited)
     }
     
     // Input validation
     guard !data.isEmpty else {
       let context = createLogContext(
         operation: "storeData",
-        status: "validation_failed",
-        details: [
-          "reason": "Empty data"
-        ]
+        status: "failed",
+        details: ["error": "Data is empty"]
       )
       
       await logger.error(
-        "Data storage failed: empty data",
+        "Store data operation failed: data is empty",
         context: context
       )
       
-      return .failure(.invalidData)
+      return .failure(.invalidInput("Data is empty"))
+    }
+    
+    guard !identifier.isEmpty else {
+      let context = createLogContext(
+        operation: "storeData",
+        status: "failed",
+        details: ["error": "Identifier is empty"]
+      )
+      
+      await logger.error(
+        "Store data operation failed: identifier is empty",
+        context: context
+      )
+      
+      return .failure(.invalidInput("Identifier is empty"))
     }
     
     // Log the operation
@@ -678,51 +695,47 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
       operation: "storeData",
       status: "started",
       details: [
-        "dataSize": "\(data.count)",
-        "storageType": options?.storageType?.rawValue ?? "default"
+        "identifier": identifier,
+        "dataSize": "\(data.count)"
       ]
     )
     
     await logger.debug(
-      "Starting data storage operation",
+      "Storing data with size \(data.count) bytes",
       context: startContext
     )
     
     // Delegate to wrapped implementation
-    let result = await wrapped.storeData(data, options: options)
+    let result = await wrapped.storeData(data: data, identifier: identifier)
     
     // Log the result
     switch result {
-      case .success(let dataIdentifier):
+      case .success:
         let successContext = createLogContext(
           operation: "storeData",
-          identifier: dataIdentifier,
           status: "success",
           details: [
-            "dataSize": "\(data.count)",
-            "storageType": options?.storageType?.rawValue ?? "default"
+            "identifier": identifier,
+            "dataSize": "\(data.count)"
           ]
         )
         
         await logger.info(
-          "Data storage operation completed successfully",
+          "Successfully stored data with identifier \(identifier)",
           context: successContext
         )
-        
-      case .failure(let error):
+      case let .failure(error):
         let errorContext = createLogContext(
           operation: "storeData",
           status: "failed",
           details: [
-            "dataSize": "\(data.count)",
-            "errorDescription": error.localizedDescription,
-            "errorCode": "\(error)",
-            "storageType": options?.storageType?.rawValue ?? "default"
+            "error": error.localizedDescription,
+            "identifier": identifier
           ]
         )
         
         await logger.error(
-          "Data storage operation failed: \(error.localizedDescription)",
+          "Failed to store data: \(error.localizedDescription)",
           context: errorContext
         )
     }
@@ -731,104 +744,88 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
   }
 
   /**
-   Retrieves data securely.
-
-   - Parameters:
-     - dataIdentifier: Identifier for the data to retrieve
-     - options: Optional retrieval options
-   - Returns: The retrieved data or an error
+   Retrieves data from secure storage.
+   
+   - Parameter identifier: Identifier for the data to retrieve
+   - Returns: The data or an error
    */
   public func retrieveData(
-    _ dataIdentifier: String,
-    options: CoreSecurityTypes.StorageOptions? = nil
+    identifier: String
   ) async -> Result<Data, SecurityStorageError> {
     // Check rate limiter
     if await rateLimiter.isRateLimited("retrieveData") {
       let context = createLogContext(
         operation: "retrieveData",
-        identifier: dataIdentifier,
-        status: "rate_limited",
-        details: [
-          "reason": "Rate limit exceeded for data retrieval operations"
-        ]
+        status: "rateLimited"
       )
       
-      await logger.warning(
-        "Data retrieval operation rate limited",
+      await logger.warn(
+        "Retrieve data operation was rate limited",
         context: context
       )
       
-      return .failure(.rateLimited)
+      return .failure(.operationRateLimited)
     }
     
     // Input validation
-    guard !dataIdentifier.isEmpty else {
+    guard !identifier.isEmpty else {
       let context = createLogContext(
         operation: "retrieveData",
-        status: "validation_failed",
-        details: [
-          "reason": "Empty data identifier"
-        ]
+        status: "failed",
+        details: ["error": "Identifier is empty"]
       )
       
       await logger.error(
-        "Data retrieval failed: empty data identifier",
+        "Retrieve data operation failed: identifier is empty",
         context: context
       )
       
-      return .failure(.invalidIdentifier)
+      return .failure(.dataNotFound)
     }
     
     // Log the operation
     let startContext = createLogContext(
       operation: "retrieveData",
-      identifier: dataIdentifier,
       status: "started",
-      details: [
-        "storageType": options?.storageType?.rawValue ?? "default"
-      ]
+      details: ["identifier": identifier]
     )
     
     await logger.debug(
-      "Starting data retrieval operation",
+      "Retrieving data with identifier \(identifier)",
       context: startContext
     )
     
     // Delegate to wrapped implementation
-    let result = await wrapped.retrieveData(dataIdentifier, options: options)
+    let result = await wrapped.retrieveData(identifier: identifier)
     
     // Log the result
     switch result {
-      case .success(let data):
+      case let .success(data):
         let successContext = createLogContext(
           operation: "retrieveData",
-          identifier: dataIdentifier,
           status: "success",
           details: [
-            "dataSize": "\(data.count)",
-            "storageType": options?.storageType?.rawValue ?? "default"
+            "identifier": identifier,
+            "dataSize": "\(data.count)"
           ]
         )
         
         await logger.info(
-          "Data retrieval operation completed successfully",
+          "Successfully retrieved data (\(data.count) bytes)",
           context: successContext
         )
-        
-      case .failure(let error):
+      case let .failure(error):
         let errorContext = createLogContext(
           operation: "retrieveData",
-          identifier: dataIdentifier,
           status: "failed",
           details: [
-            "errorDescription": error.localizedDescription,
-            "errorCode": "\(error)",
-            "storageType": options?.storageType?.rawValue ?? "default"
+            "error": error.localizedDescription,
+            "identifier": identifier
           ]
         )
         
         await logger.error(
-          "Data retrieval operation failed: \(error.localizedDescription)",
+          "Failed to retrieve data: \(error.localizedDescription)",
           context: errorContext
         )
     }
@@ -837,103 +834,465 @@ public actor EnhancedSecureCryptoServiceImpl: CryptoServiceProtocol {
   }
 
   /**
-   Deletes data securely.
-
-   - Parameters:
-     - dataIdentifier: Identifier for the data to delete
-     - options: Optional deletion options
+   Deletes data from secure storage.
+   
+   - Parameter identifier: Identifier for the data to delete
    - Returns: Success or an error
    */
   public func deleteData(
-    _ dataIdentifier: String,
-    options: CoreSecurityTypes.StorageOptions? = nil
+    identifier: String
   ) async -> Result<Void, SecurityStorageError> {
     // Check rate limiter
     if await rateLimiter.isRateLimited("deleteData") {
       let context = createLogContext(
         operation: "deleteData",
-        identifier: dataIdentifier,
-        status: "rate_limited",
-        details: [
-          "reason": "Rate limit exceeded for data deletion operations"
-        ]
+        status: "rateLimited"
       )
       
-      await logger.warning(
-        "Data deletion operation rate limited",
+      await logger.warn(
+        "Delete data operation was rate limited",
         context: context
       )
       
-      return .failure(.rateLimited)
+      return .failure(.operationRateLimited)
     }
     
     // Input validation
-    guard !dataIdentifier.isEmpty else {
+    guard !identifier.isEmpty else {
       let context = createLogContext(
         operation: "deleteData",
-        status: "validation_failed",
-        details: [
-          "reason": "Empty data identifier"
-        ]
+        status: "failed",
+        details: ["error": "Identifier is empty"]
       )
       
       await logger.error(
-        "Data deletion failed: empty data identifier",
+        "Delete data operation failed: identifier is empty",
         context: context
       )
       
-      return .failure(.invalidIdentifier)
+      return .failure(.dataNotFound)
     }
     
     // Log the operation
     let startContext = createLogContext(
       operation: "deleteData",
-      identifier: dataIdentifier,
       status: "started",
-      details: [
-        "storageType": options?.storageType?.rawValue ?? "default"
-      ]
+      details: ["identifier": identifier]
     )
     
     await logger.debug(
-      "Starting data deletion operation",
+      "Deleting data with identifier \(identifier)",
       context: startContext
     )
     
     // Delegate to wrapped implementation
-    let result = await wrapped.deleteData(dataIdentifier, options: options)
+    let result = await wrapped.deleteData(identifier: identifier)
     
     // Log the result
     switch result {
       case .success:
         let successContext = createLogContext(
           operation: "deleteData",
-          identifier: dataIdentifier,
           status: "success",
-          details: [
-            "storageType": options?.storageType?.rawValue ?? "default"
-          ]
+          details: ["identifier": identifier]
         )
         
         await logger.info(
-          "Data deletion operation completed successfully",
+          "Successfully deleted data with identifier \(identifier)",
           context: successContext
         )
-        
-      case .failure(let error):
+      case let .failure(error):
         let errorContext = createLogContext(
           operation: "deleteData",
-          identifier: dataIdentifier,
           status: "failed",
           details: [
-            "errorDescription": error.localizedDescription,
-            "errorCode": "\(error)",
-            "storageType": options?.storageType?.rawValue ?? "default"
+            "error": error.localizedDescription,
+            "identifier": identifier
           ]
         )
         
         await logger.error(
-          "Data deletion operation failed: \(error.localizedDescription)",
+          "Failed to delete data: \(error.localizedDescription)",
+          context: errorContext
+        )
+    }
+    
+    return result
+  }
+
+  /**
+   Generates a new cryptographic key with the specified length and options.
+   
+   - Parameters:
+     - length: Length of the key in bits
+     - options: Optional key generation configuration
+   - Returns: Success with key identifier or error
+   */
+  public func generateKey(
+    length: Int,
+    options: CoreSecurityTypes.KeyGenerationOptions? = nil
+  ) async -> Result<String, SecurityStorageError> {
+    // Check rate limiter
+    if await rateLimiter.isRateLimited("generateKey") {
+      let context = createLogContext(
+        operation: "generateKey",
+        status: "rateLimited"
+      )
+      
+      await logger.warn(
+        "Generate key operation was rate limited",
+        context: context
+      )
+      
+      return .failure(.operationRateLimited)
+    }
+    
+    // Input validation
+    guard length > 0 else {
+      let context = createLogContext(
+        operation: "generateKey",
+        status: "failed",
+        details: ["error": "Invalid key length"]
+      )
+      
+      await logger.error(
+        "Generate key operation failed: invalid key length",
+        context: context
+      )
+      
+      return .failure(.invalidInput)
+    }
+    
+    // Log the operation
+    let startContext = createLogContext(
+      operation: "generateKey",
+      status: "started",
+      details: ["keyLength": String(length)]
+    )
+    
+    await logger.debug(
+      "Generating cryptographic key with length \(length)",
+      context: startContext
+    )
+    
+    // Delegate to wrapped implementation
+    let result = await wrapped.generateKey(length: length, options: options)
+    
+    // Log the result
+    switch result {
+      case let .success(keyIdentifier):
+        let successContext = createLogContext(
+          operation: "generateKey",
+          status: "success",
+          details: [
+            "keyLength": String(length),
+            "keyIdentifier": keyIdentifier
+          ]
+        )
+        
+        await logger.info(
+          "Successfully generated key with identifier \(keyIdentifier)",
+          context: successContext
+        )
+      case let .failure(error):
+        let errorContext = createLogContext(
+          operation: "generateKey",
+          status: "failed",
+          details: [
+            "error": error.localizedDescription,
+            "keyLength": String(length)
+          ]
+        )
+        
+        await logger.error(
+          "Failed to generate key: \(error.localizedDescription)",
+          context: errorContext
+        )
+    }
+    
+    return result
+  }
+  
+  /**
+   Imports data into secure storage with custom identifier.
+   
+   - Parameters:
+     - data: Raw data to import
+     - customIdentifier: Optional identifier to use for the data
+   - Returns: Success with data identifier or error
+   */
+  public func importData(
+    _ data: [UInt8],
+    customIdentifier: String?
+  ) async -> Result<String, SecurityStorageError> {
+    // Check rate limiter
+    if await rateLimiter.isRateLimited("importData") {
+      let context = createLogContext(
+        operation: "importData",
+        status: "rateLimited"
+      )
+      
+      await logger.warn(
+        "Import data operation was rate limited",
+        context: context
+      )
+      
+      return .failure(.operationRateLimited)
+    }
+    
+    // Input validation
+    guard !data.isEmpty else {
+      let context = createLogContext(
+        operation: "importData",
+        status: "failed",
+        details: ["error": "Empty data"]
+      )
+      
+      await logger.error(
+        "Import data operation failed: empty data",
+        context: context
+      )
+      
+      return .failure(.invalidInput)
+    }
+    
+    // Convert byte array to Data
+    let dataObj = Data(data)
+    
+    // Log the operation
+    let startContext = createLogContext(
+      operation: "importData",
+      status: "started",
+      details: [
+        "dataSize": String(data.count),
+        "hasCustomIdentifier": customIdentifier != nil ? "true" : "false"
+      ]
+    )
+    
+    await logger.debug(
+      "Importing data (\(data.count) bytes)",
+      context: startContext
+    )
+    
+    // Delegate to wrapped implementation with appropriate conversion
+    let effectiveIdentifier = customIdentifier ?? ""
+    let result = await wrapped.importData(dataObj, customIdentifier: effectiveIdentifier)
+    
+    // Log the result
+    switch result {
+      case let .success(identifier):
+        let successContext = createLogContext(
+          operation: "importData",
+          status: "success",
+          details: [
+            "dataSize": String(data.count),
+            "dataIdentifier": identifier
+          ]
+        )
+        
+        await logger.info(
+          "Successfully imported data with identifier \(identifier)",
+          context: successContext
+        )
+      case let .failure(error):
+        let errorContext = createLogContext(
+          operation: "importData",
+          status: "failed",
+          details: [
+            "error": error.localizedDescription,
+            "dataSize": String(data.count)
+          ]
+        )
+        
+        await logger.error(
+          "Failed to import data: \(error.localizedDescription)",
+          context: errorContext
+        )
+    }
+    
+    return result
+  }
+  
+  /**
+   Exports data from secure storage.
+   
+   - Parameter identifier: Identifier for the data to export
+   - Returns: Success with data or error
+   */
+  public func exportData(
+    identifier: String
+  ) async -> Result<[UInt8], SecurityStorageError> {
+    // Check rate limiter
+    if await rateLimiter.isRateLimited("exportData") {
+      let context = createLogContext(
+        operation: "exportData",
+        status: "rateLimited"
+      )
+      
+      await logger.warn(
+        "Export data operation was rate limited",
+        context: context
+      )
+      
+      return .failure(.operationRateLimited)
+    }
+    
+    // Input validation
+    guard !identifier.isEmpty else {
+      let context = createLogContext(
+        operation: "exportData",
+        status: "failed",
+        details: ["error": "Empty identifier"]
+      )
+      
+      await logger.error(
+        "Export data operation failed: empty identifier",
+        context: context
+      )
+      
+      return .failure(.invalidInput)
+    }
+    
+    // Log the operation
+    let startContext = createLogContext(
+      operation: "exportData",
+      status: "started",
+      details: ["identifier": identifier]
+    )
+    
+    await logger.debug(
+      "Exporting data with identifier \(identifier)",
+      context: startContext
+    )
+    
+    // Delegate to wrapped implementation
+    let result = await wrapped.exportData(identifier: identifier)
+    
+    // Log the result and convert Data to [UInt8] if needed
+    switch result {
+      case let .success(data):
+        let successContext = createLogContext(
+          operation: "exportData",
+          status: "success",
+          details: [
+            "dataSize": String(data.count),
+            "dataIdentifier": identifier
+          ]
+        )
+        
+        await logger.info(
+          "Successfully exported data (\(data.count) bytes)",
+          context: successContext
+        )
+        
+        // Convert Data to [UInt8]
+        return .success([UInt8](data))
+        
+      case let .failure(error):
+        let errorContext = createLogContext(
+          operation: "exportData",
+          status: "failed",
+          details: [
+            "error": error.localizedDescription,
+            "dataIdentifier": identifier
+          ]
+        )
+        
+        await logger.error(
+          "Failed to export data: \(error.localizedDescription)",
+          context: errorContext
+        )
+        
+        return .failure(error)
+    }
+  }
+  
+  /**
+   Generates a hash for the data identified by the provided identifier.
+   
+   - Parameters:
+     - dataIdentifier: Identifier for the data to hash
+     - options: Optional hashing configuration
+   - Returns: Success with hash identifier or error
+   */
+  public func generateHash(
+    dataIdentifier: String,
+    options: CoreSecurityTypes.HashingOptions? = nil
+  ) async -> Result<String, SecurityStorageError> {
+    // Check rate limiter
+    if await rateLimiter.isRateLimited("generateHash") {
+      let context = createLogContext(
+        operation: "generateHash",
+        status: "rateLimited"
+      )
+      
+      await logger.warn(
+        "Generate hash operation was rate limited",
+        context: context
+      )
+      
+      return .failure(.operationRateLimited)
+    }
+    
+    // Input validation
+    guard !dataIdentifier.isEmpty else {
+      let context = createLogContext(
+        operation: "generateHash",
+        status: "failed",
+        details: ["error": "Empty data identifier"]
+      )
+      
+      await logger.error(
+        "Generate hash operation failed: empty data identifier",
+        context: context
+      )
+      
+      return .failure(.dataNotFound)
+    }
+    
+    // Log the operation
+    let startContext = createLogContext(
+      operation: "generateHash",
+      status: "started",
+      details: ["dataIdentifier": dataIdentifier]
+    )
+    
+    await logger.debug(
+      "Generating hash for data with identifier \(dataIdentifier)",
+      context: startContext
+    )
+    
+    // Delegate to wrapped implementation
+    let result = await wrapped.generateHash(dataIdentifier: dataIdentifier, options: options)
+    
+    // Log the result
+    switch result {
+      case let .success(hashIdentifier):
+        let successContext = createLogContext(
+          operation: "generateHash",
+          status: "success",
+          details: [
+            "dataIdentifier": dataIdentifier,
+            "hashIdentifier": hashIdentifier
+          ]
+        )
+        
+        await logger.info(
+          "Successfully generated hash with identifier \(hashIdentifier)",
+          context: successContext
+        )
+      case let .failure(error):
+        let errorContext = createLogContext(
+          operation: "generateHash",
+          status: "failed",
+          details: [
+            "error": error.localizedDescription,
+            "dataIdentifier": dataIdentifier
+          ]
+        )
+        
+        await logger.error(
+          "Failed to generate hash: \(error.localizedDescription)",
           context: errorContext
         )
     }

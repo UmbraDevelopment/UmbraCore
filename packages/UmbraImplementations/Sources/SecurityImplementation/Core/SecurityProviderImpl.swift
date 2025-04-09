@@ -1,21 +1,44 @@
 import CoreSecurityTypes
 import DomainSecurityTypes
 import Foundation
-
-/// Helper function to create LogMetadataDTOCollection from dictionary
-private func createMetadataCollection(_ dict: [String: String]) -> LogMetadataDTOCollection {
-  var collection = LogMetadataDTOCollection()
-  for (key, value) in dict {
-    collection = collection.withPublic(key: key, value: value)
-  }
-  return collection
-}
-
 import LoggingInterfaces
 import LoggingServices
 import LoggingTypes
 import SecurityCoreInterfaces
 import UmbraErrors
+
+/**
+ Creates a log context from a metadata dictionary.
+ 
+ - Parameter metadata: Dictionary of metadata values
+ - Parameter domain: Domain name for the log context
+ - Parameter source: Source identifier for the log context
+ - Returns: A BaseLogContextDTO with proper privacy tagging
+ */
+private func createLogContext(
+  _ metadata: [String: (value: String, privacy: LogPrivacyLevel)],
+  domain: String = "SecurityServices",
+  source: String = "SecurityProviderService"
+) -> BaseLogContextDTO {
+  var collection = LogMetadataDTOCollection()
+  
+  for (key, data) in metadata {
+    switch data.privacy {
+    case .public:
+      collection = collection.withPublic(key: key, value: data.value)
+    case .private:
+      collection = collection.withPrivate(key: key, value: data.value)
+    case .sensitive:
+      collection = collection.withSensitive(key: key, value: data.value)
+    }
+  }
+  
+  return BaseLogContextDTO(
+    domainName: domain,
+    source: source,
+    metadata: collection
+  )
+}
 
 /**
  # Security Provider Service (Canonical Implementation)
@@ -36,9 +59,8 @@ import UmbraErrors
 
  ## Privacy-Aware Logging
 
- Implements privacy-aware logging through SecureLoggerActor, ensuring that
- sensitive information is properly tagged with privacy levels according to the
- Alpha Dot Five architecture principles.
+ Implements privacy-aware logging to ensure that sensitive information is properly tagged 
+ with privacy levels according to the Alpha Dot Five architecture principles.
  */
 // Using @preconcurrency to resolve protocol conformance issues with isolated methods
 @preconcurrency
@@ -63,14 +85,6 @@ public actor SecurityProviderService: SecurityProviderProtocol, AsyncServiceInit
    The standard logger instance for recording general operation details
    */
   let logger: LoggingInterfaces.LoggingProtocol
-
-  /**
-   The secure logger for privacy-aware logging of sensitive security operations
-
-   This logger ensures proper privacy tagging for all security-sensitive information
-   in accordance with the Alpha Dot Five architecture principles.
-   */
-  private let secureLogger: SecureLoggerActor
 
   // MARK: - Service Components
 
@@ -97,548 +111,114 @@ public actor SecurityProviderService: SecurityProviderProtocol, AsyncServiceInit
   /**
    Temporary data storage for operations
    */
-  private var operationData: [String: [UInt8]]=[:]
+  private var operationData: [String: [UInt8]] = [:]
 
   /**
-   Initialises the security provider with all required services.
+   Service initialisation state
+   */
+  private var isInitialized = false
+
+  /**
+   Initialises the security provider with the specified dependencies
 
    - Parameters:
      - cryptoService: Service for cryptographic operations
-     - keyManager: Service for key management operations
-     - logger: Logger for general operations
-     - secureLogger: Secure logger for privacy-aware logging (will be created if nil)
+     - keyManager: Service for key management
+     - logger: Logger for general operation details
    */
   public init(
     cryptoService: SecurityCoreInterfaces.CryptoServiceProtocol,
     keyManager: KeyManagementProtocol,
-    logger: LoggingInterfaces.LoggingProtocol,
-    secureLogger: SecureLoggerActor?=nil
+    logger: LoggingInterfaces.LoggingProtocol
   ) {
-    self.cryptoService=cryptoService
-    self.keyManager=keyManager
-    self.logger=logger
-    self.secureLogger=secureLogger ?? SecureLoggerActor(
-      subsystem: "com.umbra.security",
-      category: "SecurityProvider",
-      includeTimestamps: true
-    )
+    self.cryptoService = cryptoService
+    self.keyManager = keyManager
+    self.logger = logger
 
-    // Initialize component services
-    encryptionService=EncryptionService(
+    // Create service components
+    encryptionService = EncryptionService(
       cryptoService: cryptoService,
       logger: logger
     )
 
-    hashingService=HashingService(
+    signatureService = SignatureService(
       cryptoService: cryptoService,
       logger: logger
     )
 
-    signatureService=SignatureService(
-      cryptoService: cryptoService,
-      keyManagementService: keyManager,
+    storageService = SecureStorageService(
       logger: logger
     )
 
-    // Initialise the secure storage service
-    storageService=SecureStorageService(
+    hashingService = HashingService(
       cryptoService: cryptoService,
       logger: logger
     )
+
+    // Log initialisation
+    Task {
+      let context = createLogContext([
+        "operation": (value: "start", privacy: .public),
+        "provider": (value: "SecurityProviderService", privacy: .public)
+      ])
+      
+      await logger.debug(
+        "Initialising Security Provider Service",
+        context: context
+      )
+    }
   }
 
   /**
-   Initializes the security provider service.
+   Asynchronous initialisation method required by AsyncServiceInitializable protocol
 
-   This method performs any necessary setup that must occur before the service
-   is ready for use, including initializing dependencies and verifying security configuration.
-
-   - Throws: Error if initialization fails
+   - Throws: SecurityError if initialisation fails
    */
   public func initialize() async throws {
-    await logger.info("Initializing security provider service")
-
-    // Log with secure logger for enhanced privacy awareness
-    await secureLogger.securityEvent(
-      action: "SecurityProviderInitialisation",
-      status: .success,
-      subject: nil,
-      resource: nil,
-      additionalMetadata: [
-        "operation": PrivacyTaggedValue(value: PrivacyMetadataValue.string("start"), privacyLevel: .public),
-        "provider": PrivacyTaggedValue(value: PrivacyMetadataValue.string("SecurityProviderService"), privacyLevel: .public)
-      ]
+    // Perform any async initialisation steps here
+    // In this case, we don't need any additional async init
+    
+    let context = createLogContext([
+      "operation": (value: "complete", privacy: .public),
+      "provider": (value: "SecurityProviderService", privacy: .public)
+    ])
+    
+    await logger.debug(
+      "Security Provider Service initialisation complete",
+      context: context
     )
-
-    // Initialize dependencies
-    if let initialisable=cryptoService as? AsyncServiceInitializable {
-      try await initialisable.initialize()
-    }
-
-    if let initialisable=keyManager as? AsyncServiceInitializable {
-      try await initialisable.initialize()
-    }
-
-    await logger.info("Security provider service initialized successfully")
-
-    // Log successful initialisation with secure logger
-    await secureLogger.securityEvent(
-      action: "SecurityProviderInitialisation",
-      status: .success,
-      subject: nil,
-      resource: nil,
-      additionalMetadata: [
-        "operation": PrivacyTaggedValue(value: PrivacyMetadataValue.string("complete"), privacyLevel: .public),
-        "provider": PrivacyTaggedValue(value: PrivacyMetadataValue.string("SecurityProviderService"), privacyLevel: .public)
-      ]
-    )
-  }
-
-  // MARK: - SecurityProviderProtocol Implementation
-
-  /**
-   Provides access to the cryptographic service.
-
-   - Returns: The cryptographic service instance
-   */
-  public func cryptoService() async -> SecurityCoreInterfaces.CryptoServiceProtocol {
-    cryptoService
+    
+    isInitialized = true
   }
 
   /**
-   Provides access to the key management service.
-
-   - Returns: The key management service instance
-   */
-  public func keyManager() async -> KeyManagementProtocol {
-    keyManager
-  }
-
-  // MARK: - Core Encryption/Decryption Operations
-
-  /**
-   Encrypts binary data with the provided key.
-
-   - Parameters:
-     - data: Data to encrypt
-     - key: Encryption key
-   - Returns: Encrypted data
-   - Throws: Security protocol errors if encryption fails
-   */
-  public func encrypt(_ data: [UInt8], key: [UInt8]) async throws -> [UInt8] {
-    let dataIdentifier=await storeDataForOperation(data)
-    let keyIdentifier=await storeDataForOperation(key)
-
-    let result=await cryptoService.encrypt(
-      dataIdentifier: dataIdentifier,
-      keyIdentifier: keyIdentifier,
-      options: EncryptionOptions(algorithm: .aes256CBC)
-    )
-
-    switch result {
-      case let .success(encryptedDataIdentifier):
-        // Retrieve the encrypted data using the identifier
-        if
-          let encryptedData=await retrieveDataForOperation(
-            withIdentifier: encryptedDataIdentifier
-          )
-        {
-          return encryptedData
-        } else {
-          throw SecurityProtocolError.inputError("Failed to retrieve encrypted data")
-        }
-      case let .failure(error):
-        throw error
-    }
-  }
-
-  /**
-   Decrypts binary data with the provided key.
-
-   - Parameters:
-     - data: Encrypted data to decrypt
-     - key: Decryption key
-   - Returns: Decrypted data
-   - Throws: Security protocol errors if decryption fails
-   */
-  public func decrypt(_ data: [UInt8], key: [UInt8]) async throws -> [UInt8] {
-    let encryptedDataIdentifier=await storeDataForOperation(data)
-    let keyIdentifier=await storeDataForOperation(key)
-
-    let result=await cryptoService.decrypt(
-      encryptedDataIdentifier: encryptedDataIdentifier,
-      keyIdentifier: keyIdentifier,
-      options: DecryptionOptions(algorithm: .aes256CBC)
-    )
-
-    switch result {
-      case let .success(decryptedDataIdentifier):
-        // Retrieve the decrypted data using the identifier
-        if
-          let decryptedData=await retrieveDataForOperation(
-            withIdentifier: decryptedDataIdentifier
-          )
-        {
-          return decryptedData
-        } else {
-          throw SecurityProtocolError.inputError("Failed to retrieve decrypted data")
-        }
-      case let .failure(error):
-        throw error
-    }
-  }
-
-  /**
-   Signs data with the provided key.
-
-   - Parameters:
-     - data: Data to sign
-     - key: Signing key
-   - Returns: Signature
-   - Throws: Security protocol errors if signing fails
-   */
-  public func sign(_ data: [UInt8], key: [UInt8]) async throws -> [UInt8] {
-    let dataIdentifier=await storeDataForOperation(data + key)
-
-    let result=await cryptoService.hash(
-      dataIdentifier: dataIdentifier,
-      options: HashingOptions(algorithm: .sha256)
-    )
-
-    switch result {
-      case let .success(signatureIdentifier):
-        // Retrieve the signature using the identifier
-        if let signatureData=await retrieveDataForOperation(withIdentifier: signatureIdentifier) {
-          return signatureData
-        } else {
-          throw SecurityProtocolError.inputError("Failed to retrieve signature data")
-        }
-      case let .failure(error):
-        throw error
-    }
-  }
-
-  // MARK: - Data Management for Operations
-
-  /**
-   Stores data for a security operation.
-
-   - Parameter data: The data to store
-   - Returns: A unique identifier for the stored data
-   */
-  private func storeDataForOperation(_ data: [UInt8]) async -> String {
-    let identifier=UUID().uuidString
-    operationData[identifier]=data
-    return identifier
-  }
-
-  /**
-   Retrieves data for a security operation.
-
-   - Parameter identifier: The identifier for the stored data
-   - Returns: The retrieved data, or nil if not found
-   */
-  private func retrieveDataForOperation(withIdentifier identifier: String) async -> [UInt8]? {
-    let result=operationData[identifier]
-    // Clean up after retrieval
-    operationData[identifier]=nil
-    return result
-  }
-
-  /**
-   Helper to get or create a key for the current operation.
-
-   - Parameters:
-     - config: The security configuration
-     - operation: The security operation requiring a key
-   - Returns: Byte array key if available
-   - Throws: Error if key retrieval fails
-   */
-  private func getKeyForOperation(
-    config: SecurityConfigDTO,
-    operation: SecurityOperation
-  ) async throws -> [UInt8]? {
-    // Check if the key is directly provided in the options
-    if let keyB64=config.options?.metadata?["key"], let keyData=Data(base64Encoded: keyB64) {
-      return [UInt8](keyData)
-    }
-
-    // Check if a key identifier is provided to load from key manager
-    if let keyID=config.options?.metadata?["keyIdentifier"] {
-      await logger.debug("Retrieving key for operation", metadata: createPrivacyMetadata(["operation": "\(operation.rawValue, source: "SecurityImplementation", source: "SecurityImplementation")",
-        "keyIdentifier": keyID
-      ]))
-
-      let result=await keyManager.retrieveKey(withIdentifier: keyID)
-      switch result {
-        case let .success(key):
-          return key
-        case let .failure(error):
-          throw SecurityProtocolError.inputError(
-            "Failed to retrieve key with identifier \(keyID): \(error.localizedDescription)"
-          )
-      }
-    }
-
-    return nil
-  }
-
-  /**
-   Encrypts data with the specified configuration.
-
-   Delegates to the encryption service for implementation.
+   Encrypts data with the specified configuration
 
    - Parameter config: Configuration for the encryption operation
-   - Returns: Result containing encrypted data or error
+   - Returns: Result containing encrypted data or error information
+   - Throws: SecurityError if encryption fails
    */
   public func encrypt(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
-    // Create operation ID for tracing
-    let operationID=UUID().uuidString
-    let startTime=Date()
-
-    // Log with secure logger for enhanced privacy awareness
-    await secureLogger.securityEvent(
-      action: "Encryption",
-      status: .success,
-      subject: nil,
-      resource: nil,
-      additionalMetadata: [
-        "operationId": PrivacyTaggedValue(value: PrivacyMetadataValue.string(operationID), privacyLevel: .public),
-        "operation": PrivacyTaggedValue(value: PrivacyMetadataValue.string("start"), privacyLevel: .public),
-        "operationType": PrivacyTaggedValue(value: PrivacyMetadataValue.string(config.operationType.rawValue), privacyLevel: .public),
-        "dataSize": PrivacyTaggedValue(value: PrivacyMetadataValue.string(config.inputData?.count ?? 0), privacyLevel: .public),
-        "hasKey": PrivacyTaggedValue(value: PrivacyMetadataValue.string(config.keyIdentifier != nil), privacyLevel: .public)
-      ]
-    )
-
-    do {
-      // Delegate to encryption service
-      let result=try await encryptionService.encrypt(config: config)
-
-      // Calculate operation duration
-      let duration=Date().timeIntervalSince(startTime)
-
-      // Log success with secure logger
-      await secureLogger.securityEvent(
-        action: "Encryption",
-        status: .success,
-        subject: nil,
-        resource: nil,
-        additionalMetadata: [
-          "operationId": PrivacyTaggedValue(value: PrivacyMetadataValue.string(operationID), privacyLevel: .public),
-          "operation": PrivacyTaggedValue(value: PrivacyMetadataValue.string("complete"), privacyLevel: .public),
-          "durationMs": PrivacyTaggedValue(value: PrivacyMetadataValue.int(Int(duration * 1000)), privacyLevel: .public),
-          "resultSize": PrivacyTaggedValue(value: PrivacyMetadataValue.string(result.data?.count ?? 0), privacyLevel: .public)
-        ]
-      )
-
-      return result
-    } catch {
-      // Calculate operation duration
-      let duration=Date().timeIntervalSince(startTime)
-
-      // Log failure with secure logger
-      await secureLogger.securityEvent(
-        action: "Encryption",
-        status: .failed,
-        subject: nil,
-        resource: nil,
-        additionalMetadata: [
-          "operationId": PrivacyTaggedValue(value: PrivacyMetadataValue.string(operationID), privacyLevel: .public),
-          "operation": PrivacyTaggedValue(value: PrivacyMetadataValue.string("error"), privacyLevel: .public),
-          "durationMs": PrivacyTaggedValue(value: PrivacyMetadataValue.int(Int(duration * 1000)), privacyLevel: .public),
-          "errorType": PrivacyTaggedValue(value: PrivacyMetadataValue.string(String(describing: type(of: error))), privacyLevel: .public),
-          "errorDescription": PrivacyTaggedValue(value: PrivacyMetadataValue.string(error.localizedDescription), privacyLevel: .public)
-        ]
-      )
-
-      throw error
-    }
+    try await encryptionService.encrypt(config: config)
   }
 
   /**
-   Decrypts data with the specified configuration.
-
-   Delegates to the encryption service for implementation.
+   Decrypts data with the specified configuration
 
    - Parameter config: Configuration for the decryption operation
-   - Returns: Result containing decrypted data or error
+   - Returns: Result containing decrypted data or error information
+   - Throws: SecurityError if decryption fails
    */
   public func decrypt(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
-    // Create operation ID for tracing
-    let operationID=UUID().uuidString
-    let startTime=Date()
-
-    // Log with secure logger for enhanced privacy awareness
-    await secureLogger.securityEvent(
-      action: "Decryption",
-      status: .success,
-      subject: nil,
-      resource: nil,
-      additionalMetadata: [
-        "operationId": PrivacyTaggedValue(value: PrivacyMetadataValue.string(operationID), privacyLevel: .public),
-        "operation": PrivacyTaggedValue(value: PrivacyMetadataValue.string("start"), privacyLevel: .public),
-        "operationType": PrivacyTaggedValue(value: PrivacyMetadataValue.string(config.operationType.rawValue), privacyLevel: .public),
-        "dataSize": PrivacyTaggedValue(value: PrivacyMetadataValue.string(config.inputData?.count ?? 0), privacyLevel: .public),
-        "hasKey": PrivacyTaggedValue(value: PrivacyMetadataValue.string(config.keyIdentifier != nil), privacyLevel: .public)
-      ]
-    )
-
-    do {
-      // Delegate to encryption service
-      let result=try await encryptionService.decrypt(config: config)
-
-      // Calculate operation duration
-      let duration=Date().timeIntervalSince(startTime)
-
-      // Log success with secure logger
-      await secureLogger.securityEvent(
-        action: "Decryption",
-        status: .success,
-        subject: nil,
-        resource: nil,
-        additionalMetadata: [
-          "operationId": PrivacyTaggedValue(value: PrivacyMetadataValue.string(operationID), privacyLevel: .public),
-          "operation": PrivacyTaggedValue(value: PrivacyMetadataValue.string("complete"), privacyLevel: .public),
-          "durationMs": PrivacyTaggedValue(value: PrivacyMetadataValue.int(Int(duration * 1000)), privacyLevel: .public),
-          "resultSize": PrivacyTaggedValue(value: PrivacyMetadataValue.string(result.data?.count ?? 0), privacyLevel: .public)
-        ]
-      )
-
-      return result
-    } catch {
-      // Calculate operation duration
-      let duration=Date().timeIntervalSince(startTime)
-
-      // Log failure with secure logger
-      await secureLogger.securityEvent(
-        action: "Decryption",
-        status: .failed,
-        subject: nil,
-        resource: nil,
-        additionalMetadata: [
-          "operationId": PrivacyTaggedValue(value: PrivacyMetadataValue.string(operationID), privacyLevel: .public),
-          "operation": PrivacyTaggedValue(value: PrivacyMetadataValue.string("error"), privacyLevel: .public),
-          "durationMs": PrivacyTaggedValue(value: PrivacyMetadataValue.int(Int(duration * 1000)), privacyLevel: .public),
-          "errorType": PrivacyTaggedValue(value: PrivacyMetadataValue.string(String(describing: type(of: error))), privacyLevel: .public),
-          "errorDescription": PrivacyTaggedValue(value: PrivacyMetadataValue.string(error.localizedDescription), privacyLevel: .public)
-        ]
-      )
-
-      throw error
-    }
-  }
-
-  /**
-   Generates a cryptographic key with the specified configuration.
-
-   Delegates to the key management service for implementation.
-
-   - Parameter config: Configuration for the key generation operation
-   - Returns: Result containing key identifier or error
-   */
-  public func generateKey(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
-    // Create operation ID for tracing
-    let operationID=UUID().uuidString
-    let startTime=Date()
-
-    // Log operation with standard logger
-    await logger.info(
-      "Generating cryptographic key", metadata: createPrivacyMetadata(["keyType": config.keyType.rawValue], source: "SecurityImplementation"),
-      source: "CoreSecurityProvider"
-    , source: "SecurityImplementation")
-
-    // Log with secure logger for enhanced privacy awareness
-    await secureLogger.securityEvent(
-      action: "KeyGeneration",
-      status: .success,
-      subject: nil,
-      resource: nil,
-      additionalMetadata: [
-        "operationId": PrivacyTaggedValue(value: PrivacyMetadataValue.string(operationID), privacyLevel: .public),
-        "operation": PrivacyTaggedValue(value: PrivacyMetadataValue.string("start"), privacyLevel: .public),
-        "keyType": PrivacyTaggedValue(value: PrivacyMetadataValue.string(config.keyType.rawValue), privacyLevel: .public),
-        "keySize": PrivacyTaggedValue(value: PrivacyMetadataValue.string(config.keySize), privacyLevel: .public)
-      ]
-    )
-
-    do {
-      // Process the request through the key management service
-      let result=try await keyManager.generateKey(
-        type: config.keyType,
-        size: config.keySize,
-        metadata: config.metadata
-      )
-
-      // Calculate operation duration
-      let duration=Date().timeIntervalSince(startTime)
-
-      // Create result data
-      let resultDTO=SecurityResultDTO(
-        status: .success,
-        data: Data(result.identifier.utf8),
-        metadata: createPrivacyMetadata(["keyType": config.keyType.rawValue, "keySize": String(config.keySize)])
-      )
-
-      // Log success with secure logger
-      await secureLogger.securityEvent(
-        action: "KeyGeneration",
-        status: .success,
-        subject: nil,
-        resource: result.identifier,
-        additionalMetadata: [
-          "operationId": PrivacyTaggedValue(value: PrivacyMetadataValue.string(operationID), privacyLevel: .public),
-          "operation": PrivacyTaggedValue(value: PrivacyMetadataValue.string("complete"), privacyLevel: .public),
-          "durationMs": PrivacyTaggedValue(value: PrivacyMetadataValue.int(Int(duration * 1000)), privacyLevel: .public),
-          "keyType": PrivacyTaggedValue(value: PrivacyMetadataValue.string(config.keyType.rawValue), privacyLevel: .public)
-        ]
-      )
-
-      // Log completion
-      await logger.info(
-        "Key generation completed successfully", metadata: createPrivacyMetadata(["keyType": config.keyType.rawValue, "keyId": result.identifier], source: "SecurityImplementation"),
-        source: "CoreSecurityProvider"
-      , source: "SecurityImplementation")
-
-      return resultDTO
-    } catch {
-      // Calculate operation duration
-      let duration=Date().timeIntervalSince(startTime)
-
-      // Log failure with secure logger
-      await secureLogger.securityEvent(
-        action: "KeyGeneration",
-        status: .failed,
-        subject: nil,
-        resource: nil,
-        additionalMetadata: [
-          "operationId": PrivacyTaggedValue(value: PrivacyMetadataValue.string(operationID), privacyLevel: .public),
-          "operation": PrivacyTaggedValue(value: PrivacyMetadataValue.string("error"), privacyLevel: .public),
-          "durationMs": PrivacyTaggedValue(value: PrivacyMetadataValue.int(Int(duration * 1000)), privacyLevel: .public),
-          "errorType": PrivacyTaggedValue(value: PrivacyMetadataValue.string(String(describing: type(of: error))), privacyLevel: .public),
-          "errorDescription": PrivacyTaggedValue(value: PrivacyMetadataValue.string(error.localizedDescription), privacyLevel: .public),
-          "keyType": PrivacyTaggedValue(value: PrivacyMetadataValue.string(config.keyType.rawValue), privacyLevel: .public)
-        ]
-      )
-
-      // Log error
-      await logger.error(
-        "Key generation failed: \(error.localizedDescription)",
-        metadata: createPrivacyMetadata(["keyType": config.keyType.rawValue, "error": error.localizedDescription]),
-        source: "CoreSecurityProvider"
-      )
-
-      throw error
-    }
+    try await encryptionService.decrypt(config: config)
   }
 
   /**
    Signs data with the specified configuration
 
-   Delegates to the signature service for implementation.
-
    - Parameter config: Configuration for the signing operation
-   - Returns: Result containing signature or error
+   - Returns: Result containing signature data or error information
+   - Throws: SecurityError if signing fails
    */
   public func sign(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
     try await signatureService.sign(config: config)
@@ -647,512 +227,316 @@ public actor SecurityProviderService: SecurityProviderProtocol, AsyncServiceInit
   /**
    Verifies a signature with the specified configuration
 
-   Delegates to the signature service for implementation.
-
    - Parameter config: Configuration for the verification operation
-   - Returns: Result containing verification status or error
+   - Returns: Result containing verification status or error information
+   - Throws: SecurityError if verification fails
    */
   public func verify(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
     try await signatureService.verify(config: config)
   }
 
   /**
+   Hashes data with the specified configuration
+
+   - Parameter config: Configuration for the hashing operation
+   - Returns: Result containing hash data or error information
+   - Throws: SecurityError if hashing fails
+   */
+  public func hash(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+    try await hashingService.hash(config: config)
+  }
+
+  /**
+   Gets the key manager service instance
+
+   - Returns: The key manager service
+   */
+  public func getKeyManager() -> KeyManagementProtocol {
+    keyManager
+  }
+
+  /**
+   Retrieves a key for a specific operation
+
+   - Parameters:
+     - identifier: Key identifier
+     - operation: Security operation requiring the key
+   - Returns: Key data as byte array
+   - Throws: SecurityError if key retrieval fails
+   */
+  public func getKey(
+    identifier: String,
+    operation: SecurityOperation
+  ) async throws -> [UInt8]? {
+    let context = createLogContext([
+      "operation": (value: operation.rawValue, privacy: .public),
+      "keyIdentifier": (value: identifier, privacy: .private)
+    ])
+    
+    await logger.debug(
+      "Retrieving key for operation",
+      context: context
+    )
+
+    // Delegate to key manager
+    return try await keyManager.getKey(identifier: identifier)
+  }
+
+  /**
+   Performs a secure operation with the specified configuration
+
+   This is a higher-level method that selects the appropriate operation based on the
+   configuration operationType field, providing a unified interface for security operations.
+
+   - Parameter config: Configuration for the security operation
+   - Returns: Result containing operation output or error information
+   - Throws: SecurityError if the operation fails
+   */
+  public func performSecureOperation(
+    config: SecurityConfigDTO
+  ) async throws -> SecurityResultDTO {
+    let operationID = UUID().uuidString
+    let startTime = Date()
+
+    // Create operating context
+    let context = createLogContext([
+      "operationId": (value: operationID, privacy: .public),
+      "operation": (value: "start", privacy: .public),
+      "operationType": (value: config.operationType.rawValue, privacy: .public),
+      "dataSize": (value: String(config.inputData?.count ?? 0), privacy: .public),
+      "hasKey": (value: String(config.keyIdentifier != nil), privacy: .public)
+    ])
+    
+    await logger.debug(
+      "Starting secure operation: \(config.operationType.rawValue)",
+      context: context
+    )
+
+    do {
+      // Select operation based on type
+      let result: SecurityResultDTO
+      switch config.operationType {
+      case .encrypt:
+        result = try await encrypt(config: config)
+      case .decrypt:
+        result = try await decrypt(config: config)
+      case .sign:
+        result = try await sign(config: config)
+      case .verify:
+        result = try await verify(config: config)
+      case .hash:
+        result = try await hash(config: config)
+      case .generate:
+        result = try await generateKey(config: config)
+      case .store:
+        result = try await secureStore(config: config)
+      case .retrieve:
+        result = try await secureRetrieve(config: config)
+      }
+
+      // Calculate duration for metrics
+      let duration = Date().timeIntervalSince(startTime)
+
+      // Log success
+      let successContext = createLogContext([
+        "operationId": (value: operationID, privacy: .public),
+        "operation": (value: "complete", privacy: .public),
+        "durationMs": (value: String(Int(duration * 1000)), privacy: .public),
+        "resultSize": (value: String(result.data?.count ?? 0), privacy: .public)
+      ])
+      
+      await logger.debug(
+        "Secure operation completed successfully",
+        context: successContext
+      )
+
+      return result
+    } catch {
+      // Calculate duration for metrics
+      let duration = Date().timeIntervalSince(startTime)
+
+      // Log failure
+      let errorContext = createLogContext([
+        "operationId": (value: operationID, privacy: .public),
+        "operation": (value: "error", privacy: .public),
+        "durationMs": (value: String(Int(duration * 1000)), privacy: .public),
+        "errorType": (value: String(describing: type(of: error)), privacy: .public),
+        "errorDescription": (value: error.localizedDescription, privacy: .private)
+      ])
+      
+      await logger.error(
+        "Secure operation failed: \(config.operationType.rawValue)",
+        context: errorContext
+      )
+
+      // Map to security error and re-throw
+      if let secError = error as? SecurityError {
+        throw secError
+      } else {
+        throw SecurityError.operationError(
+          "Operation failed: \(error.localizedDescription)"
+        )
+      }
+    }
+  }
+
+  /**
+   Generates a cryptographic key with the specified configuration
+
+   - Parameter config: Configuration for the key generation operation
+   - Returns: Result containing key data or error information
+   - Throws: SecurityError if key generation fails
+   */
+  public func generateKey(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+    // Create operation ID for tracing
+    let operationID = UUID().uuidString
+    let startTime = Date()
+
+    // Log start of operation
+    let context = createLogContext([
+      "operationId": (value: operationID, privacy: .public),
+      "operation": (value: "start", privacy: .public),
+      "operationType": (value: config.operationType.rawValue, privacy: .public),
+      "dataSize": (value: String(config.inputData?.count ?? 0), privacy: .public),
+      "hasKey": (value: String(config.keyIdentifier != nil), privacy: .public)
+    ])
+    
+    await logger.debug(
+      "Starting key generation operation",
+      context: context
+    )
+
+    do {
+      // Extract key size if provided
+      let keySize: Int
+      if let keySizeStr = config.options?.metadata?["keySize"], let size = Int(keySizeStr) {
+        keySize = size
+      } else {
+        // Default to 256-bit key
+        keySize = 256
+      }
+
+      // Generate key using the key manager
+      let keyData = try await keyManager.generateKey(size: keySize)
+
+      // Store the key if an identifier is provided
+      if let keyIdentifier = config.keyIdentifier {
+        try await keyManager.storeKey(keyData, withIdentifier: keyIdentifier)
+      }
+
+      // Calculate duration for metrics
+      let duration = Date().timeIntervalSince(startTime)
+
+      // Log success
+      let successContext = createLogContext([
+        "operationId": (value: operationID, privacy: .public),
+        "operation": (value: "complete", privacy: .public),
+        "durationMs": (value: String(Int(duration * 1000)), privacy: .public),
+        "keySize": (value: String(keySize), privacy: .public)
+      ])
+      
+      await logger.debug(
+        "Key generation completed successfully",
+        context: successContext
+      )
+
+      // Return result
+      return SecurityResultDTO(
+        operationID: operationID,
+        data: Data(keyData),
+        status: .success,
+        metadata: nil
+      )
+    } catch {
+      // Calculate duration for metrics
+      let duration = Date().timeIntervalSince(startTime)
+
+      // Log failure
+      let errorContext = createLogContext([
+        "operationId": (value: operationID, privacy: .public),
+        "operation": (value: "error", privacy: .public),
+        "durationMs": (value: String(Int(duration * 1000)), privacy: .public),
+        "errorType": (value: String(describing: type(of: error)), privacy: .public),
+        "errorDescription": (value: error.localizedDescription, privacy: .private)
+      ])
+      
+      await logger.error(
+        "Key generation failed",
+        context: errorContext
+      )
+
+      // Rethrow as security error
+      if let secError = error as? SecurityError {
+        throw secError
+      } else {
+        throw SecurityError.keyGenerationError(
+          "Key generation failed: \(error.localizedDescription)"
+        )
+      }
+    }
+  }
+
+  /**
    Stores data securely with the specified configuration
 
-   Delegates to the secure storage service for implementation.
-
    - Parameter config: Configuration for the storage operation
-   - Returns: Result containing operation status or error
+   - Returns: Result containing operation status or error information
+   - Throws: SecurityError if storage fails
    */
-  public func store(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+  public func secureStore(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
     try await storageService.store(config: config)
   }
 
   /**
    Retrieves data securely with the specified configuration
 
-   Delegates to the secure storage service for implementation.
-
    - Parameter config: Configuration for the retrieval operation
-   - Returns: Result containing retrieved data or error
+   - Returns: Result containing retrieved data or error information
+   - Throws: SecurityError if retrieval fails
    */
-  public func retrieve(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+  public func secureRetrieve(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
     try await storageService.retrieve(config: config)
   }
 
   /**
-   Securely stores data with the specified configuration.
+   Processes a security operation asynchronously
 
-   - Parameter config: Configuration for the secure storage operation
-   - Returns: Result containing storage confirmation or error
-   */
-  public func secureStore(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
-    let startTime=Date()
-    let operationID=UUID().uuidString
-
-    await logger.debug("Starting secure store operation", metadata: createPrivacyMetadata(["operation_id": operationID,
-      "algorithm": config.encryptionAlgorithm.rawValue
-    ], source: "SecurityImplementation"), source: "SecurityImplementation")
-
-    // Extract required parameters from configuration
-    guard
-      let dataString=config.options?.metadata?["data"],
-      let inputData=Data(base64Encoded: dataString)
-    else {
-      throw SecurityError.invalidInput("Missing or invalid input data for secure storage")
-    }
-
-    // First encrypt the data
-    let encryptionResult=try await encrypt(config: config)
-
-    if !encryptionResult.successful {
-      return encryptionResult
-    }
-
-    // Then store the encrypted data using the key manager
-    guard let encryptedData=encryptionResult.resultData else {
-      throw SecurityError.internalError("Encryption successful but no encrypted data returned")
-    }
-
-    let keyIdentifier=UUID().uuidString
-    let storeResult=try await keyManager.storeKey(
-      identifier: keyIdentifier,
-      keyData: encryptedData,
-      metadata: config.options?.metadata ?? [:]
-    )
-
-    let executionTime=Date().timeIntervalSince(startTime) * 1000
-
-    return SecurityResultDTO(
-      successful: storeResult.successful,
-      resultData: keyIdentifier.data(using: .utf8),
-      errorDetails: storeResult.errorDetails,
-      executionTimeMs: executionTime,
-      metadata: storeResult.metadata
-    )
-  }
-
-  /**
-   Retrieves securely stored data with the specified configuration.
-
-   - Parameter config: Configuration for the secure retrieval operation
-   - Returns: Result containing retrieved data or error
-   */
-  public func secureRetrieve(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
-    let startTime=Date()
-    let operationID=UUID().uuidString
-
-    await logger.debug("Starting secure retrieve operation", metadata: createPrivacyMetadata(["operation_id": operationID,
-      "algorithm": config.encryptionAlgorithm.rawValue
-    ], source: "SecurityImplementation"), source: "SecurityImplementation")
-
-    // Extract required parameters from configuration
-    guard let keyIdentifier=config.options?.metadata?["key_identifier"] else {
-      throw SecurityError.invalidInput("Missing key identifier for secure retrieval")
-    }
-
-    // Retrieve the encrypted data using the key manager
-    let retrieveResult=try await keyManager.getKey(
-      identifier: keyIdentifier,
-      metadata: config.options?.metadata ?? [:]
-    )
-
-    if !retrieveResult.successful || retrieveResult.keyData == nil {
-      let errorDetails=retrieveResult.errorDetails ?? "Failed to retrieve data"
-      return SecurityResultDTO(
-        successful: false,
-        resultData: nil,
-        errorDetails: errorDetails,
-        executionTimeMs: Date().timeIntervalSince(startTime) * 1000,
-        metadata: retrieveResult.metadata
-      )
-    }
-
-    // Decrypt the retrieved data
-    let decryptConfig=SecurityConfigDTO(
-      encryptionAlgorithm: config.encryptionAlgorithm,
-      hashAlgorithm: config.hashAlgorithm,
-      providerType: config.providerType,
-      options: config.options
-    )
-
-    guard let keyData=retrieveResult.keyData else {
-      throw SecurityError.internalError("Key data missing after successful retrieval")
-    }
-
-    // Modify the config to include the encrypted data
-    var decryptMetadata=config.options?.metadata ?? [:]
-    decryptMetadata["data"]=keyData.base64EncodedString()
-
-    let decryptOptions=SecurityConfigOptions(
-      enableDetailedLogging: config.options?.enableDetailedLogging ?? false,
-      keyDerivationIterations: config.options?.keyDerivationIterations ?? 100_000,
-      memoryLimitBytes: config.options?.memoryLimitBytes ?? 65536,
-      useHardwareAcceleration: config.options?.useHardwareAcceleration ?? true,
-      operationTimeoutSeconds: config.options?.operationTimeoutSeconds ?? 30.0,
-      verifyOperations: config.options?.verifyOperations ?? true,
-      metadata: decryptMetadata
-    )
-
-    let decryptResult=try await decrypt(
-      config: SecurityConfigDTO(
-        encryptionAlgorithm: config.encryptionAlgorithm,
-        hashAlgorithm: config.hashAlgorithm,
-        providerType: config.providerType,
-        options: decryptOptions
-      )
-    )
-
-    let executionTime=Date().timeIntervalSince(startTime) * 1000
-
-    return SecurityResultDTO(
-      successful: decryptResult.successful,
-      resultData: decryptResult.resultData,
-      errorDetails: decryptResult.errorDetails,
-      executionTimeMs: executionTime,
-      metadata: decryptResult.metadata
-    )
-  }
-
-  /**
-   Securely deletes stored data with the specified configuration.
-
-   - Parameter config: Configuration for the secure deletion operation
-   - Returns: Result containing deletion confirmation or error
-   */
-  public func secureDelete(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
-    let startTime=Date()
-    let operationID=UUID().uuidString
-
-    await logger.debug("Starting secure delete operation", metadata: createPrivacyMetadata(["operation_id": operationID
-    ], source: "SecurityImplementation"), source: "SecurityImplementation")
-
-    // Extract required parameters from configuration
-    guard let keyIdentifier=config.options?.metadata?["key_identifier"] else {
-      throw SecurityError.invalidInput("Missing key identifier for secure deletion")
-    }
-
-    // Delete the key using the key manager
-    let deleteResult=try await keyManager.deleteKey(
-      identifier: keyIdentifier,
-      metadata: config.options?.metadata ?? [:]
-    )
-
-    let executionTime=Date().timeIntervalSince(startTime) * 1000
-
-    return SecurityResultDTO(
-      successful: deleteResult.successful,
-      resultData: nil,
-      errorDetails: deleteResult.errorDetails,
-      executionTimeMs: executionTime,
-      metadata: deleteResult.metadata
-    )
-  }
-
-  /**
-   Performs a security operation based on the provided configuration.
+   This nonisolated method provides an external API for handling security operations
+   without requiring the caller to be aware of the actor-based implementation.
 
    - Parameters:
-     - operation: The security operation to perform
-     - config: Configuration for the operation
-   - Returns: The result of the operation
+     - operation: The type of security operation to perform
+     - data: Input data for the operation
+     - key: Optional key identifier for cryptographic operations
+     - options: Additional options for the operation
+   - Returns: Result containing output data or error information
    */
-  public func performSecureOperation(
-    operation: CoreSecurityTypes.SecurityOperation,
-    config: CoreSecurityTypes.SecurityConfigDTO
-  ) async throws -> CoreSecurityTypes.SecurityResultDTO {
-    let startTime=Date()
-    let operationID=UUID().uuidString
-
-    await logger.debug("Starting secure operation: \(operation.rawValue)", metadata: createPrivacyMetadata(["operation_id": operationID,
-      "algorithm": config.encryptionAlgorithm.rawValue
-    ]))
-
-    let result: CoreSecurityTypes.SecurityResultDTO=switch operation {
-      case .encryption:
-        try await encrypt(config: config)
-      case .decryption:
-        try await decrypt(config: config)
-      case .hashing:
-        try await hash(config: config)
-      case .keyGeneration:
-        try await generateKey(config: config)
-      case .keyRotation:
-        try await rotateKey(config: config)
-      case .keyDeletion:
-        try await secureDelete(config: config)
-      case .secureStorage:
-        try await secureStore(config: config)
-      case .secureRetrieval:
-        try await secureRetrieve(config: config)
-    }
-
-    let executionTime=Date().timeIntervalSince(startTime) * 1000
-
-    // Add execution time to the result metadata
-    var updatedMetadata=result.metadata ?? [:]
-    updatedMetadata["execution_time_ms"]="\(executionTime)"
-    updatedMetadata["operation_id"]=operationID
-
-    return CoreSecurityTypes.SecurityResultDTO(
-      successful: result.successful,
-      resultData: result.resultData,
-      errorDetails: result.errorDetails,
-      executionTimeMs: executionTime,
-      metadata: updatedMetadata
-    )
-  }
-
-  /**
-   Creates a security configuration with appropriate settings.
-
-   - Parameter options: The options to include in the configuration
-   - Returns: A properly configured SecurityConfigDTO
-   */
-  public func createSecureConfig(options: SecurityConfigOptions) async -> SecurityConfigDTO {
-    // Determine the encryption algorithm based on the hardware acceleration setting
-    let encryption: CoreSecurityTypes.EncryptionAlgorithm=if options.useHardwareAcceleration {
-      .aes256GCM // Hardware accelerated where available
-    } else {
-      .aes256CBC // Software implementation
-    }
-
-    // Determine the signing algorithm based on options
-    let signing: CoreSecurityTypes.SigningAlgorithm=if options.useHardwareAcceleration {
-      .ed25519 // Hardware accelerated where available
-    } else {
-      .hmacSHA256 // Software implementation
-    }
-
-    // Determine the hashing algorithm
-    let hashing: CoreSecurityTypes.HashingAlgorithm=if options.useStrongerHashing {
-      .sha512 // Stronger but slower
-    } else {
-      .sha256 // Good balance of security and performance
-    }
-
-    // Create the security options with selected algorithms
-    let securityOptions=SecurityOptions(
-      encryption: encryption,
-      decryption: encryption,
-      signing: signing,
-      hashing: hashing,
-      metadata: options.metadata
-    )
-
-    // Create the configuration DTO with the options
-    return SecurityConfigDTO(
-      options: securityOptions,
-      data: options.data,
-      outputFormat: options.outputFormat ?? .binary
-    )
-  }
-
-  /**
-   Maps a standard error to a SecurityProtocolError for consistent error handling.
-
-   - Parameter error: The error to map
-   - Returns: A properly typed SecurityProtocolError
-   */
-  private func mapToSecurityError(_ error: Error) -> SecurityProtocolError {
-    if let securityError=error as? SecurityProtocolError {
-      return securityError
-    }
-
-    // Map known error types to appropriate security errors
-    if let nsError=error as? NSError {
-      switch nsError.domain {
-        case NSURLErrorDomain:
-          return .networkError(
-            "Network error during security operation: \(nsError.localizedDescription)"
-          )
-        case NSOSStatusErrorDomain:
-          return .systemError(
-            "System error during security operation: \(nsError.localizedDescription)"
-          )
-        default:
-          break
-      }
-    }
-
-    // Default error mapping
-    return .generalError("Security operation failed: \(error.localizedDescription)")
-  }
-
-  /**
-   Creates a security result DTO with error information.
-
-   - Parameter error: The error that occurred
-   - Returns: A SecurityResultDTO with error details
-   */
-  private func createErrorResult(_ error: Error) -> SecurityResultDTO {
-    let securityError=mapToSecurityError(error)
-    return SecurityResultDTO.failure(
-      errorCode: securityError.code,
-      errorDetails: securityError.localizedDescription
-    )
-  }
-
-  /**
-   Processes a security operation based on the provided configuration.
-
-   This is a unified entry point for all security operations, handling common
-   aspects like logging, error mapping, and result formatting.
-
-   - Parameters:
-     - operation: The security operation to perform
-     - metadata: Additional metadata for the operation
-   - Returns: The result of the operation
-   */
-  public func processSecurityOperation(
+  public nonisolated func processSecurityOperation(
     operation: SecurityOperation,
-    metadata: createPrivacyMetadata([String: String])
-  ) async -> CoreSecurityTypes.SecurityResultDTO {
-    // Process the operation using actor-isolated state
-    let operationID=UUID().uuidString
-    let startTime=Date()
-
-    // Create base metadata
-    var operationMetadata=metadata
-    operationMetadata["operationID"]=operationID
-    operationMetadata["operation"]=String(describing: operation)
-
-    // Log operation start
-    await logger.info(
-      "Starting security operation: \(operation)",
-      metadata: operationMetadata,
-      source: "CoreSecurityProvider"
+    data: Data?,
+    key: String?,
+    options: SecurityOptionsDTO?
+  ) async -> SecurityResultDTO {
+    // Create configuration from parameters
+    let config = SecurityConfigDTO(
+      operationType: operation,
+      inputData: data,
+      keyIdentifier: key,
+      options: options
     )
 
     do {
-      // Process the operation based on type
-      let result: SecurityResultDTO=try await {
-        switch operation {
-          case let .encrypt(data, key, algorithm):
-            let config=SecurityConfigDTO(
-              operationType: .encrypt,
-              data: data,
-              key: key,
-              algorithm: algorithm,
-              metadata: metadata
-            )
-            return try await encrypt(config: config)
-
-          case let .decrypt(data, key, algorithm):
-            let config=SecurityConfigDTO(
-              operationType: .decrypt,
-              data: data,
-              key: key,
-              algorithm: algorithm,
-              metadata: metadata
-            )
-            return try await decrypt(config: config)
-
-          case let .generateKey(type, size):
-            let config=SecurityConfigDTO(
-              operationType: .generateKey,
-              keyType: type,
-              keySize: size,
-              metadata: metadata
-            )
-            return try await generateKey(config: config)
-
-          case let .sign(data, key, algorithm):
-            let config=SecurityConfigDTO(
-              operationType: .sign,
-              data: data,
-              key: key,
-              algorithm: algorithm,
-              metadata: metadata
-            )
-            return try await sign(config: config)
-
-          case let .verify(data, signature, key, algorithm):
-            let config=SecurityConfigDTO(
-              operationType: .verify,
-              data: data,
-              signature: signature,
-              key: key,
-              algorithm: algorithm,
-              metadata: metadata
-            )
-            return try await verify(config: config)
-
-          case let .store(data, identifier):
-            let config=SecurityConfigDTO(
-              operationType: .store,
-              data: data,
-              identifier: identifier,
-              metadata: metadata
-            )
-            return try await store(config: config)
-
-          case let .retrieve(identifier):
-            let config=SecurityConfigDTO(
-              operationType: .retrieve,
-              identifier: identifier,
-              metadata: metadata
-            )
-            return try await retrieve(config: config)
-        }
-      }()
-
-      // Calculate operation duration
-      let duration=Date().timeIntervalSince(startTime)
-
-      // Log operation completion
-      var resultMetadata=operationMetadata
-      resultMetadata["duration"]=String(format: "%.3f", duration)
-      resultMetadata["status"]="success"
-
-      await logger.info(
-        "Completed security operation: \(operation)",
-        metadata: resultMetadata,
-        source: "CoreSecurityProvider"
-      )
-
-      return result
+      // Delegate to isolated actor method
+      return try await self.performSecureOperation(config: config)
     } catch {
-      // Calculate operation duration
-      let duration=Date().timeIntervalSince(startTime)
-
-      // Log operation failure
-      var errorMetadata=operationMetadata
-      errorMetadata["duration"]=String(format: "%.3f", duration)
-      errorMetadata["status"]="error"
-      errorMetadata["error"]=error.localizedDescription
-
-      await logger.error(
-        "Failed security operation: \(operation)",
-        metadata: errorMetadata,
-        source: "CoreSecurityProvider"
-      )
-
-      // Return failure result
-      return CoreSecurityTypes.SecurityResultDTO(
+      // Handle errors and convert to result
+      return SecurityResultDTO(
+        operationID: UUID().uuidString,
+        data: nil,
         status: .failure,
-        error: error.localizedDescription,
-        metadata: errorMetadata
+        metadata: nil,
+        error: error
       )
     }
   }
 }
-
-
-
-  
-  static func invalidVerificationMethod(reason: String) -> CoreSecurityError {
-    return .general(code: "INVALID_VERIFICATION_METHOD", message: reason)
-  }
-  
-  static func verificationFailed(reason: String) -> CoreSecurityError {
-    return .general(code: "VERIFICATION_FAILED", message: reason)
-  }
-  
-  static func notImplemented(reason: String) -> CoreSecurityError {
-    return .general(code: "NOT_IMPLEMENTED", message: reason)
-  }
-}
-
-
-

@@ -1,55 +1,73 @@
 import Foundation
 import FileSystemInterfaces
 import LoggingInterfaces
+import LoggingTypes
 
 /**
  # File Sandboxing Factory
  
- A factory class for creating FileSandboxingProtocol instances.
+ Factory for creating file sandboxing instances that handle secure sandboxed
+ file system operations.
  
- This factory provides a clean way to instantiate file sandboxing
- implementations with proper security constraints.
+ This factory provides methods for creating sandboxed file system services with
+ different configurations, ensuring all file operations are restricted to specific
+ directories for enhanced security.
  
  ## Alpha Dot Five Architecture
  
  This factory follows the Alpha Dot Five architecture principles:
  - Provides dependency injection
- - Supports creation of both standard and testing instances
- - Follows British spelling in documentation
+ - Follows factory pattern for service creation
+ - Uses British spelling in documentation
+ - Creates properly configured services with appropriate logging
  */
 public enum FileSandboxingFactory {
     /**
-     Creates a standard implementation of FileSandboxingProtocol.
+     Creates a standard file sandboxing service that restricts operations
+     to the specified root directory.
      
-     - Parameters:
-        - rootDirectory: The directory to sandbox operations to
-        - logger: Optional logger for recording operations
-     - Returns: A new FileSandboxingProtocol instance
+     - Parameter rootDirectory: The directory to restrict operations to
+     - Parameter logger: Optional logger for recording operations
+     - Returns: A sandboxed file system service
      */
     public static func createStandardSandbox(
         rootDirectory: String,
         logger: (any LoggingProtocol)? = nil
     ) -> any FileSandboxingProtocol {
-        let (sandbox, _) = FileSandboxingImpl.createSandboxed(rootDirectory: rootDirectory)
+        let sandbox = FileSandboxingImpl(rootDirectoryPath: rootDirectory, logger: logger)
         return sandbox
     }
     
     /**
-     Creates a test-friendly implementation of FileSandboxingProtocol.
-     
-     This method can be used in tests to create an implementation with
-     a test sandbox directory and logger.
+     Creates a test file sandboxing service that restricts operations
+     to the specified test directory, with optional test-specific logging.
      
      - Parameters:
-        - testRootDirectory: The test directory to sandbox operations to
-        - logger: The test logger to use
-     - Returns: A new FileSandboxingProtocol instance for testing
+        - testRootDirectory: The directory to restrict operations to for testing
+        - logger: Optional logger for test-specific logging
+     - Returns: A sandboxed file system service for testing
      */
     public static func createTestSandbox(
         testRootDirectory: String,
+        logger: (any LoggingProtocol)? = nil
+    ) -> any FileSandboxingProtocol {
+        let sandbox = FileSandboxingImpl(rootDirectoryPath: testRootDirectory, logger: logger)
+        return sandbox
+    }
+    
+    /**
+     Creates a privacy-aware file sandboxing service with comprehensive logging.
+     
+     - Parameters:
+        - rootDirectory: The directory to restrict operations to
+        - logger: The privacy-aware logger to use for recording operations
+     - Returns: A sandboxed file system service with privacy-aware logging
+     */
+    public static func createPrivacyAwareSandbox(
+        rootDirectory: String,
         logger: any LoggingProtocol
     ) -> any FileSandboxingProtocol {
-        let (sandbox, _) = FileSandboxingImpl.createSandboxed(rootDirectory: testRootDirectory)
+        let sandbox = FileSandboxingImpl(rootDirectoryPath: rootDirectory, logger: logger)
         return sandbox
     }
 }

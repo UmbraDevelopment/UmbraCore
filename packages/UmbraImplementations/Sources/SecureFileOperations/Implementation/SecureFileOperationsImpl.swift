@@ -1,6 +1,7 @@
 import Foundation
 import FileSystemInterfaces
 import LoggingInterfaces
+import LoggingTypes
 import CryptoKit
 
 /**
@@ -37,7 +38,26 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
      */
     public init(fileManager: FileManager = .default, logger: (any LoggingProtocol)? = nil) {
         self.fileManager = fileManager
-        self.logger = logger ?? NullLogger()
+        self.logger = logger ?? LoggingProtocol_NoOp()
+    }
+    
+    /**
+     Creates a log context from a metadata dictionary.
+     
+     - Parameter metadata: The metadata dictionary
+     - Returns: A BaseLogContextDTO
+     */
+    private func createLogContext(_ metadata: [String: String]) -> BaseLogContextDTO {
+        var collection = LogMetadataDTOCollection()
+        for (key, value) in metadata {
+            collection = collection.withPublic(key: key, value: value)
+        }
+        
+        return BaseLogContextDTO(
+            domainName: "SecureFileOperations",
+            source: "SecureFileOperationsImpl",
+            metadata: collection
+        )
     }
     
     /**
@@ -50,13 +70,18 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
      - Throws: If the bookmark cannot be created
      */
     public func createSecurityBookmark(for path: String, readOnly: Bool) async throws -> (Data, FileOperationResultDTO) {
-        await logger.debug("Creating security bookmark for \(path)", metadata: ["path": path, "readOnly": "\(readOnly)"])
+        let context = createLogContext([
+            "path": path, 
+            "readOnly": "\(readOnly)"
+        ])
+        await logger.debug("Creating security bookmark", context: context)
         
         do {
             // Check if the file exists
             guard fileManager.fileExists(atPath: path) else {
                 let error = FileSystemError.pathNotFound(path: path)
-                await logger.error("File not found: \(path)", metadata: ["path": path])
+                let errorContext = createLogContext(["path": path])
+                await logger.error("File not found", context: errorContext)
                 throw error
             }
             
@@ -67,27 +92,32 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
             
             // Get the file attributes for the result metadata
             let attributes = try fileManager.attributesOfItem(atPath: path)
-            let metadata = FileMetadataDTO.from(attributes: attributes)
+            let metadata = FileMetadataDTO.from(attributes: attributes, path: path)
             
             let result = FileOperationResultDTO.success(
                 path: path,
-                metadata: metadata,
-                context: [
-                    "operation": "createSecurityBookmark",
-                    "readOnly": "\(readOnly)",
-                    "bookmarkSize": "\(bookmarkData.count)"
-                ]
+                metadata: metadata
             )
             
-            await logger.debug("Successfully created security bookmark for \(path)", metadata: ["path": path, "readOnly": "\(readOnly)"])
+            let successContext = createLogContext([
+                "path": path, 
+                "readOnly": "\(readOnly)",
+                "bookmarkSize": "\(bookmarkData.count)"
+            ])
+            await logger.debug("Successfully created security bookmark", context: successContext)
             return (bookmarkData, result)
         } catch let error as FileSystemError {
             throw error
         } catch {
-            let securityError = FileSystemError.securityBookmarkError(
+            let securityError = FileSystemError.securityError(
+                path: path,
                 reason: "Failed to create security bookmark: \(error.localizedDescription)"
             )
-            await logger.error("Failed to create security bookmark: \(error.localizedDescription)", metadata: ["path": path, "error": "\(error)"])
+            let errorContext = createLogContext([
+                "path": path, 
+                "error": "\(error.localizedDescription)"
+            ])
+            await logger.error("Failed to create security bookmark", context: errorContext)
             throw securityError
         }
     }
@@ -100,7 +130,8 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
      - Throws: If the bookmark cannot be resolved
      */
     public func resolveSecurityBookmark(_ bookmark: Data) async throws -> (String, Bool, FileOperationResultDTO) {
-        await logger.debug("Resolving security bookmark", metadata: ["bookmarkSize": "\(bookmark.count)"])
+        let context = createLogContext(["bookmarkSize": "\(bookmark.count)"])
+        await logger.debug("Resolving security bookmark", context: context)
         
         do {
             var isStale = false
@@ -110,26 +141,28 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
             var metadata: FileMetadataDTO? = nil
             if fileManager.fileExists(atPath: url.path) {
                 if let attributes = try? fileManager.attributesOfItem(atPath: url.path) {
-                    metadata = FileMetadataDTO.from(attributes: attributes)
+                    metadata = FileMetadataDTO.from(attributes: attributes, path: url.path)
                 }
             }
             
             let result = FileOperationResultDTO.success(
                 path: url.path,
-                metadata: metadata,
-                context: [
-                    "operation": "resolveSecurityBookmark",
-                    "isStale": "\(isStale)"
-                ]
+                metadata: metadata
             )
             
-            await logger.debug("Successfully resolved security bookmark to \(url.path)", metadata: ["path": url.path, "isStale": "\(isStale)"])
+            let successContext = createLogContext([
+                "path": url.path, 
+                "isStale": "\(isStale)"
+            ])
+            await logger.debug("Successfully resolved security bookmark", context: successContext)
             return (url.path, isStale, result)
         } catch {
-            let securityError = FileSystemError.securityBookmarkError(
+            let securityError = FileSystemError.securityError(
+                path: "unknown",
                 reason: "Failed to resolve security bookmark: \(error.localizedDescription)"
             )
-            await logger.error("Failed to resolve security bookmark: \(error.localizedDescription)", metadata: ["error": "\(error)"])
+            let errorContext = createLogContext(["error": "\(error.localizedDescription)"])
+            await logger.error("Failed to resolve security bookmark", context: errorContext)
             throw securityError
         }
     }
@@ -142,7 +175,8 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
      - Throws: If access cannot be started
      */
     public func startAccessingSecurityScopedResource(at path: String) async throws -> (Bool, FileOperationResultDTO) {
-        await logger.debug("Starting access to security-scoped resource at \(path)", metadata: ["path": path])
+        let context = createLogContext(["path": path])
+        await logger.debug("Starting access to security-scoped resource", context: context)
         
         do {
             let url = URL(fileURLWithPath: path)
@@ -152,27 +186,31 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
             var metadata: FileMetadataDTO? = nil
             if fileManager.fileExists(atPath: path) {
                 if let attributes = try? fileManager.attributesOfItem(atPath: path) {
-                    metadata = FileMetadataDTO.from(attributes: attributes)
+                    metadata = FileMetadataDTO.from(attributes: attributes, path: path)
                 }
             }
             
             let result = FileOperationResultDTO.success(
                 path: path,
-                metadata: metadata,
-                context: [
-                    "operation": "startAccessingSecurityScopedResource",
-                    "accessGranted": "\(accessGranted)"
-                ]
+                metadata: metadata
             )
             
-            await logger.debug("Access to security-scoped resource at \(path): \(accessGranted)", metadata: ["path": path, "accessGranted": "\(accessGranted)"])
+            let successContext = createLogContext([
+                "path": path, 
+                "accessGranted": "\(accessGranted)"
+            ])
+            await logger.debug("Access to security-scoped resource status", context: successContext)
             return (accessGranted, result)
         } catch {
-            let securityError = FileSystemError.securityScopedResourceError(
+            let securityError = FileSystemError.securityError(
                 path: path,
                 reason: "Failed to start accessing security-scoped resource: \(error.localizedDescription)"
             )
-            await logger.error("Failed to start accessing security-scoped resource: \(error.localizedDescription)", metadata: ["path": path, "error": "\(error)"])
+            let errorContext = createLogContext([
+                "path": path, 
+                "error": "\(error.localizedDescription)"
+            ])
+            await logger.error("Failed to start accessing security-scoped resource", context: errorContext)
             throw securityError
         }
     }
@@ -184,17 +222,16 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
      - Returns: Operation result
      */
     public func stopAccessingSecurityScopedResource(at path: String) async -> FileOperationResultDTO {
-        await logger.debug("Stopping access to security-scoped resource at \(path)", metadata: ["path": path])
+        let context = createLogContext(["path": path])
+        await logger.debug("Stopping access to security-scoped resource", context: context)
         
         let url = URL(fileURLWithPath: path)
         url.stopAccessingSecurityScopedResource()
         
-        let result = FileOperationResultDTO.success(
-            path: path,
-            context: ["operation": "stopAccessingSecurityScopedResource"]
-        )
+        let result = FileOperationResultDTO.success(path: path)
         
-        await logger.debug("Stopped access to security-scoped resource at \(path)", metadata: ["path": path])
+        let successContext = createLogContext(["path": path])
+        await logger.debug("Stopped access to security-scoped resource", context: successContext)
         return result
     }
     
@@ -209,10 +246,11 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
         let prefix = options?.prefix ?? "secure_tmp_"
         let extension = options?.extension
         
-        await logger.debug("Creating secure temporary file", metadata: [
+        let context = createLogContext([
             "prefix": prefix,
             "extension": extension ?? "nil"
         ])
+        await logger.debug("Creating secure temporary file", context: context)
         
         do {
             // Create a unique filename in the temporary directory
@@ -239,15 +277,15 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
             
             // Get the file attributes for the result metadata
             let attributes = try fileManager.attributesOfItem(atPath: tempPath)
-            let metadata = FileMetadataDTO.from(attributes: attributes)
+            let metadata = FileMetadataDTO.from(attributes: attributes, path: tempPath)
             
             let result = FileOperationResultDTO.success(
                 path: tempPath,
-                metadata: metadata,
-                context: ["operation": "createSecureTemporaryFile"]
+                metadata: metadata
             )
             
-            await logger.debug("Successfully created secure temporary file at \(tempPath)", metadata: ["path": tempPath])
+            let successContext = createLogContext(["path": tempPath])
+            await logger.debug("Successfully created secure temporary file", context: successContext)
             return (tempPath, result)
         } catch let error as FileSystemError {
             throw error
@@ -256,7 +294,8 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
                 path: "temporary file",
                 reason: "Failed to create secure temporary file: \(error.localizedDescription)"
             )
-            await logger.error("Failed to create secure temporary file: \(error.localizedDescription)", metadata: ["error": "\(error)"])
+            let errorContext = createLogContext(["error": "\(error)"])
+            await logger.error("Failed to create secure temporary file", context: errorContext)
             throw securityError
         }
     }
@@ -271,7 +310,8 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
     public func createSecureTemporaryDirectory(options: TemporaryFileOptions?) async throws -> (String, FileOperationResultDTO) {
         let prefix = options?.prefix ?? "secure_tmp_dir_"
         
-        await logger.debug("Creating secure temporary directory", metadata: ["prefix": prefix])
+        let context = createLogContext(["prefix": prefix])
+        await logger.debug("Creating secure temporary directory", context: context)
         
         do {
             // Create a unique directory name in the temporary directory
@@ -293,15 +333,15 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
             
             // Get the directory attributes for the result metadata
             let attributes = try fileManager.attributesOfItem(atPath: tempPath)
-            let metadata = FileMetadataDTO.from(attributes: attributes)
+            let metadata = FileMetadataDTO.from(attributes: attributes, path: tempPath)
             
             let result = FileOperationResultDTO.success(
                 path: tempPath,
-                metadata: metadata,
-                context: ["operation": "createSecureTemporaryDirectory"]
+                metadata: metadata
             )
             
-            await logger.debug("Successfully created secure temporary directory at \(tempPath)", metadata: ["path": tempPath])
+            let successContext = createLogContext(["path": tempPath])
+            await logger.debug("Successfully created secure temporary directory", context: successContext)
             return (tempPath, result)
         } catch let error as FileSystemError {
             throw error
@@ -310,7 +350,8 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
                 path: "temporary directory",
                 reason: "Failed to create secure temporary directory: \(error.localizedDescription)"
             )
-            await logger.error("Failed to create secure temporary directory: \(error.localizedDescription)", metadata: ["error": "\(error)"])
+            let errorContext = createLogContext(["error": "\(error)"])
+            await logger.error("Failed to create secure temporary directory", context: errorContext)
             throw securityError
         }
     }
@@ -328,12 +369,13 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
     public func writeSecureFile(data: Data, to path: String, options: SecureFileOptions?) async throws -> FileOperationResultDTO {
         let secureOptions = options ?? SecureFileOptions.default
         
-        await logger.debug("Writing secure file to \(path)", metadata: [
+        let context = createLogContext([
             "path": path,
             "size": "\(data.count)",
             "encrypted": "\(secureOptions.encryptData)",
             "verifyIntegrity": "\(secureOptions.verifyIntegrity)"
         ])
+        await logger.debug("Writing secure file", context: context)
         
         do {
             var dataToWrite = data
@@ -381,15 +423,18 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
             
             // Get the file attributes for the result metadata
             let attributes = try fileManager.attributesOfItem(atPath: path)
-            let metadata = FileMetadataDTO.from(attributes: attributes)
+            let metadata = FileMetadataDTO.from(attributes: attributes, path: path)
             
             let result = FileOperationResultDTO.success(
                 path: path,
-                metadata: metadata,
-                context: context
+                metadata: metadata
             )
             
-            await logger.debug("Successfully wrote secure file to \(path)", metadata: ["path": path, "size": "\(dataToWrite.count)"])
+            let successContext = createLogContext([
+                "path": path,
+                "size": "\(dataToWrite.count)"
+            ])
+            await logger.debug("Successfully wrote secure file", context: successContext)
             return result
         } catch let error as FileSystemError {
             throw error
@@ -398,7 +443,11 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
                 path: path,
                 reason: "Failed to write secure file: \(error.localizedDescription)"
             )
-            await logger.error("Failed to write secure file: \(error.localizedDescription)", metadata: ["path": path, "error": "\(error)"])
+            let errorContext = createLogContext([
+                "path": path,
+                "error": "\(error)"
+            ])
+            await logger.error("Failed to write secure file", context: errorContext)
             throw securityError
         }
     }
@@ -413,13 +462,18 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
      - Throws: If the secure delete operation fails
      */
     public func secureDelete(at path: String, passes: Int = 3) async throws -> FileOperationResultDTO {
-        await logger.debug("Securely deleting file at \(path)", metadata: ["path": path, "passes": "\(passes)"])
+        let context = createLogContext([
+            "path": path,
+            "passes": "\(passes)"
+        ])
+        await logger.debug("Securely deleting file", context: context)
         
         do {
             // Check if the file exists
             guard fileManager.fileExists(atPath: path) else {
                 let error = FileSystemError.pathNotFound(path: path)
-                await logger.error("File not found: \(path)", metadata: ["path": path])
+                let errorContext = createLogContext(["path": path])
+                await logger.error("File not found", context: errorContext)
                 throw error
             }
             
@@ -444,7 +498,8 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
                     ]
                 )
                 
-                await logger.debug("Deleted empty file at \(path)", metadata: ["path": path])
+                let successContext = createLogContext(["path": path])
+                await logger.debug("Deleted empty file", context: successContext)
                 return result
             }
             
@@ -454,13 +509,18 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
                     path: path,
                     reason: "Could not open file for secure deletion"
                 )
-                await logger.error("Could not open file for secure deletion", metadata: ["path": path])
+                let errorContext = createLogContext(["path": path])
+                await logger.error("Could not open file for secure deletion", context: errorContext)
                 throw error
             }
             
             // Perform multiple passes of overwriting
             for pass in 1...passes {
-                await logger.debug("Secure delete pass \(pass) of \(passes)", metadata: ["path": path, "pass": "\(pass)"])
+                let passContext = createLogContext([
+                    "path": path,
+                    "pass": "\(pass)"
+                ])
+                await logger.debug("Secure delete pass \(pass) of \(passes)", context: passContext)
                 
                 // Create a pattern based on the pass number
                 // Pass 1: all zeros, Pass 2: all ones, Pass 3+: random data
@@ -509,7 +569,8 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
                 ]
             )
             
-            await logger.debug("Successfully securely deleted file at \(path)", metadata: ["path": path, "passes": "\(passes)"])
+            let successContext = createLogContext(["path": path, "passes": "\(passes)"])
+            await logger.debug("Successfully securely deleted file", context: successContext)
             return result
         } catch let error as FileSystemError {
             throw error
@@ -518,7 +579,11 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
                 path: path,
                 reason: "Failed to securely delete file: \(error.localizedDescription)"
             )
-            await logger.error("Failed to securely delete file: \(error.localizedDescription)", metadata: ["path": path, "error": "\(error)"])
+            let errorContext = createLogContext([
+                "path": path,
+                "error": "\(error)"
+            ])
+            await logger.error("Failed to securely delete file", context: errorContext)
             throw securityError
         }
     }
@@ -534,16 +599,18 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
      - Throws: If the verification fails
      */
     public func verifyFileIntegrity(at path: String, expectedChecksum: Data, algorithm: ChecksumAlgorithm) async throws -> (Bool, FileOperationResultDTO) {
-        await logger.debug("Verifying file integrity at \(path)", metadata: [
+        let context = createLogContext([
             "path": path,
             "algorithm": algorithm.name
         ])
+        await logger.debug("Verifying file integrity", context: context)
         
         do {
             // Check if the file exists
             guard fileManager.fileExists(atPath: path) else {
                 let error = FileSystemError.pathNotFound(path: path)
-                await logger.error("File not found: \(path)", metadata: ["path": path])
+                let errorContext = createLogContext(["path": path])
+                await logger.error("File not found", context: errorContext)
                 throw error
             }
             
@@ -558,7 +625,7 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
             
             // Get the file attributes for the result metadata
             let attributes = try fileManager.attributesOfItem(atPath: path)
-            let metadata = FileMetadataDTO.from(attributes: attributes)
+            let metadata = FileMetadataDTO.from(attributes: attributes, path: path)
             
             let result = FileOperationResultDTO.success(
                 path: path,
@@ -571,10 +638,11 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
                 ]
             )
             
-            await logger.debug("File integrity verification result: \(isVerified)", metadata: [
+            let successContext = createLogContext([
                 "path": path,
                 "verified": "\(isVerified)"
             ])
+            await logger.debug("File integrity verification result", context: successContext)
             
             return (isVerified, result)
         } catch let error as FileSystemError {
@@ -584,7 +652,11 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
                 path: path,
                 reason: "Failed to verify file integrity: \(error.localizedDescription)"
             )
-            await logger.error("Failed to verify file integrity: \(error.localizedDescription)", metadata: ["path": path, "error": "\(error)"])
+            let errorContext = createLogContext([
+                "path": path,
+                "error": "\(error)"
+            ])
+            await logger.error("Failed to verify file integrity", context: errorContext)
             throw integrityError
         }
     }
@@ -674,4 +746,21 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
             return Data(digest)
         }
     }
+}
+
+/// A simple no-op implementation of LoggingProtocol for default initialization
+private actor LoggingProtocol_NoOp: LoggingProtocol {
+    private let _loggingActor = LoggingActor(destinations: [])
+    
+    nonisolated var loggingActor: LoggingActor {
+        return _loggingActor
+    }
+    
+    func log(_ level: LogLevel, _ message: String, context: LogContextDTO) async {}
+    func debug(_ message: String, context: LogContextDTO) async {}
+    func info(_ message: String, context: LogContextDTO) async {}
+    func notice(_ message: String, context: LogContextDTO) async {}
+    func warning(_ message: String, context: LogContextDTO) async {}
+    func error(_ message: String, context: LogContextDTO) async {}
+    func critical(_ message: String, context: LogContextDTO) async {}
 }
