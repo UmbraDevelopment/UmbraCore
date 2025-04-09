@@ -92,10 +92,14 @@ public actor NetworkServiceImpl: NetworkServiceProtocol {
     var responseSizeBytes: Int64=0
 
     guard let url=await constructURL(from: request) else {
-      let errorMetadata = LogMetadataDTOCollection()
-        .withPublic(key: "urlString", value: request.urlString)
+      let errorContext = NetworkLogContext(
+        operation: "constructURL",
+        source: "NetworkService",
+        metadata: LogMetadataDTOCollection()
+          .withPublic(key: "urlString", value: request.urlString)
+      )
       
-      await logger.error("Failed to create URLComponents from \(request.urlString)", metadata: errorMetadata)
+      await logger.error("Failed to create URLComponents from \(request.urlString)", context: errorContext)
       return NetworkResponseDTO.failure(
         error: .invalidURL(request.urlString)
       )
@@ -104,12 +108,17 @@ public actor NetworkServiceImpl: NetworkServiceProtocol {
     let urlRequest=try await constructURLRequest(from: request, url: url)
     requestSizeBytes=Int64(estimateRequestSize(urlRequest))
 
-    let requestMetadata = LogMetadataDTOCollection()
-      .withPublic(key: "url", value: url.absoluteString)
-      .withPublic(key: "method", value: request.method.rawValue)
-      .withPublic(key: "requestId", value: UUID().uuidString)
+    let requestContext = NetworkLogContext(
+      operation: "performRequest",
+      source: "NetworkService",
+      metadata: LogMetadataDTOCollection()
+        .withPrivate(key: "url", value: url.absoluteString)
+        .withPublic(key: "method", value: request.method.rawValue)
+        .withPublic(key: "requestId", value: UUID().uuidString)
+        .withPublic(key: "requestSizeBytes", value: "\(requestSizeBytes)")
+    )
 
-    await logger.debug("Starting network request to \(url.absoluteString)", metadata: requestMetadata)
+    await logger.debug("Starting network request to \(url.absoluteString)", context: requestContext)
 
     do {
       let (data, response)=try await session.data(for: urlRequest)
@@ -124,12 +133,19 @@ public actor NetworkServiceImpl: NetworkServiceProtocol {
 
       // Process the response based on status code
       if 200...299 ~= statusCode {
-        let successMetadata = LogMetadataDTOCollection()
-          .withPublic(key: "statusCode", value: String(statusCode))
-          .withPublic(key: "durationMs", value: String(format: "%.2f", durationMs))
-          .withPublic(key: "responseSize", value: String(responseSizeBytes))
-
-        await logger.debug("Request succeeded with status code \(statusCode)", metadata: successMetadata)
+        let successContext = NetworkLogContext(
+          operation: "performRequest",
+          source: "NetworkService",
+          metadata: LogMetadataDTOCollection()
+            .withPublic(key: "statusCode", value: "\(statusCode)")
+            .withPublic(key: "durationMs", value: String(format: "%.2f", durationMs))
+            .withPublic(key: "responseSizeBytes", value: "\(responseSizeBytes)")
+            .withPublic(key: "requestSizeBytes", value: "\(requestSizeBytes)")
+            .withPrivate(key: "url", value: url.absoluteString)
+            .withPublic(key: "method", value: request.method.rawValue)
+        )
+        
+        await logger.debug("Request succeeded with status code \(statusCode)", context: successContext)
 
         let responseDTO=NetworkResponseDTO.success(
           statusCode: statusCode,
@@ -146,13 +162,19 @@ public actor NetworkServiceImpl: NetworkServiceProtocol {
 
         return responseDTO
       } else {
-        let errorMetadata = LogMetadataDTOCollection()
-          .withPublic(key: "statusCode", value: String(statusCode))
-          .withPublic(key: "durationMs", value: String(format: "%.2f", durationMs))
-          .withPublic(key: "url", value: url.absoluteString)
-          .withPrivate(key: "responseSize", value: String(responseSizeBytes))
+        let errorContext = NetworkLogContext(
+          operation: "performRequest",
+          source: "NetworkService",
+          metadata: LogMetadataDTOCollection()
+            .withPublic(key: "method", value: request.method.rawValue)
+            .withPublic(key: "statusCode", value: "\(statusCode)")
+            .withPublic(key: "durationMs", value: String(format: "%.2f", durationMs))
+            .withPrivate(key: "url", value: url.absoluteString)
+            .withPublic(key: "responseSizeBytes", value: "\(responseSizeBytes)")
+            .withPublic(key: "requestSizeBytes", value: "\(requestSizeBytes)")
+        )
         
-        await logger.warning("Request failed with status code \(statusCode)", metadata: errorMetadata)
+        await logger.warning("Request failed with status code \(statusCode)", context: errorContext)
 
         let errorMessage=String(data: data, encoding: .utf8) ?? "No error details available"
         let error=NetworkError.serverError(
@@ -180,13 +202,19 @@ public actor NetworkServiceImpl: NetworkServiceProtocol {
       let endTime=Date().timeIntervalSince1970 * 1000
       let durationMs=endTime - startTime
       
-      let errorMetadata = LogMetadataDTOCollection()
-        .withPublic(key: "url", value: url.absoluteString)
-        .withPublic(key: "method", value: request.method.rawValue)
-        .withPublic(key: "durationMs", value: String(format: "%.2f", durationMs))
-        .withPrivate(key: "error", value: error.localizedDescription)
+      let errorContext = NetworkLogContext(
+        operation: "performRequest",
+        source: "NetworkService",
+        metadata: LogMetadataDTOCollection()
+          .withPrivate(key: "url", value: url.absoluteString)
+          .withPublic(key: "method", value: request.method.rawValue)
+          .withPublic(key: "durationMs", value: String(format: "%.2f", durationMs))
+          .withPublic(key: "errorType", value: "\(type(of: error))")
+          .withPrivate(key: "errorMessage", value: error.localizedDescription)
+          .withPublic(key: "requestSizeBytes", value: "\(requestSizeBytes)")
+      )
       
-      await logger.error("URLError occurred: \(error.localizedDescription)", metadata: errorMetadata)
+      await logger.error("URLError occurred: \(error.localizedDescription)", context: errorContext)
 
       let networkError=mapURLErrorToNetworkError(error)
       let responseDTO=NetworkResponseDTO.failure(error: networkError)
@@ -203,17 +231,23 @@ public actor NetworkServiceImpl: NetworkServiceProtocol {
       let endTime=Date().timeIntervalSince1970 * 1000
       let durationMs=endTime - startTime
       
-      let errorMetadata = LogMetadataDTOCollection()
-        .withPublic(key: "url", value: url.absoluteString)
-        .withPublic(key: "method", value: request.method.rawValue)
-        .withPublic(key: "durationMs", value: String(format: "%.2f", durationMs))
-        .withPrivate(key: "error", value: error.localizedDescription)
+      let errorContext = NetworkLogContext(
+        operation: "performRequest",
+        source: "NetworkService",
+        metadata: LogMetadataDTOCollection()
+          .withPrivate(key: "url", value: url.absoluteString)
+          .withPublic(key: "method", value: request.method.rawValue)
+          .withPublic(key: "durationMs", value: String(format: "%.2f", durationMs))
+          .withPublic(key: "errorType", value: "\(type(of: error))")
+          .withPrivate(key: "errorMessage", value: error.localizedDescription)
+          .withPublic(key: "requestSizeBytes", value: "\(requestSizeBytes)")
+      )
       
-      await logger.error("Unexpected error: \(error.localizedDescription)", metadata: errorMetadata)
+      await logger.error("Unexpected error: \(error.localizedDescription)", context: errorContext)
 
       let networkError=NetworkError.unknown(message: error.localizedDescription)
       let responseDTO=NetworkResponseDTO.failure(error: networkError)
-
+      
       await recordStatistics(
         response: responseDTO,
         requestSizeBytes: requestSizeBytes,
@@ -296,10 +330,14 @@ public actor NetworkServiceImpl: NetworkServiceProtocol {
   /// Construct a URL from a NetworkRequestProtocol
   private func constructURL(from request: NetworkRequestProtocol) async -> URL? {
     guard var urlComponents=URLComponents(string: request.urlString) else {
-      let errorMetadata = LogMetadataDTOCollection()
-        .withPublic(key: "urlString", value: request.urlString)
+      let errorContext = NetworkLogContext(
+        operation: "constructURL",
+        source: "NetworkService",
+        metadata: LogMetadataDTOCollection()
+          .withPublic(key: "urlString", value: request.urlString)
+      )
       
-      await logger.error("Failed to create URLComponents from \(request.urlString)", metadata: errorMetadata)
+      await logger.error("Failed to create URLComponents from \(request.urlString)", context: errorContext)
       return nil
     }
 

@@ -98,31 +98,55 @@ public struct BookmarkLogContext: LogContextDTO {
   }
 
   /**
-   * Converts the context to standard log metadata.
+   * Creates a new context with additional metadata entries.
    *
-   * - Returns: The log metadata representation of this context
+   * - Parameter additionalMetadata: The additional metadata to add
+   * - Returns: A new context with combined metadata
    */
-  public func asLogMetadata() -> LogMetadata {
-    // Create a standard LogMetadata dictionary
-    var logMetadata=LogMetadata()
-
-    // Add standard context fields
-    logMetadata["domain"]=domainName
-    if let source {
-      logMetadata["source"]=source
+  public func withAdditionalMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> BookmarkLogContext {
+    var combinedMetadata = metadata
+    
+    // Add all entries from the additional metadata
+    for entry in additionalMetadata.entries {
+      combinedMetadata.entries.append(entry)
     }
-    if let correlationID {
-      logMetadata["correlationID"]=correlationID
-    }
-
-    // Add operation-specific fields
-    logMetadata["operation"]=operation
-    logMetadata["status"]=status
-
-    if let identifier {
-      logMetadata["identifier"]=identifier
-    }
-
-    return logMetadata
+    
+    return withUpdatedMetadata(combinedMetadata)
+  }
+  
+  /**
+   * Adds a public metadata entry to the context.
+   *
+   * - Parameters:
+   *   - key: The metadata key
+   *   - value: The metadata value
+   * - Returns: A new context with the added metadata
+   */
+  public func withPublicMetadata(key: String, value: String) -> BookmarkLogContext {
+    withUpdatedMetadata(metadata.withPublic(key: key, value: value))
+  }
+  
+  /**
+   * Adds a private metadata entry to the context.
+   *
+   * - Parameters:
+   *   - key: The metadata key
+   *   - value: The metadata value
+   * - Returns: A new context with the added metadata
+   */
+  public func withPrivateMetadata(key: String, value: String) -> BookmarkLogContext {
+    withUpdatedMetadata(metadata.withPrivate(key: key, value: value))
+  }
+  
+  /**
+   * Adds a sensitive metadata entry to the context.
+   *
+   * - Parameters:
+   *   - key: The metadata key
+   *   - value: The metadata value
+   * - Returns: A new context with the added metadata
+   */
+  public func withSensitiveMetadata(key: String, value: String) -> BookmarkLogContext {
+    withUpdatedMetadata(metadata.withSensitive(key: key, value: value))
   }
 }

@@ -227,7 +227,7 @@ public actor Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked Sendabl
   public static func log(
     _ level: LoggingTypes.LogLevel,
     _ message: @autoclosure () -> Any,
-    metadata: LoggingTypes.LogMetadata?,
+    metadata: LoggingTypes.LogMetadataDTOCollection?,
     file: String=#file,
     function: String=#function,
     line: Int=#line
@@ -256,7 +256,7 @@ public actor Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked Sendabl
   public func log(
     level: LoggingTypes.LogLevel,
     message: String,
-    metadata: LoggingTypes.LogMetadata?,
+    metadata: LoggingTypes.LogMetadataDTOCollection?,
     privacy: LoggingWrapperInterfaces.LogPrivacyLevel,
     file: String,
     function: String,
@@ -268,8 +268,32 @@ public actor Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked Sendabl
     // Convert metadata to string dictionary
     var context: [String: Any]=[:]
     if let metadata {
-      for (key, value) in metadata.asDictionary {
-        context[key]=value
+      for entry in metadata.entries {
+        // Apply privacy controls based on the entry's privacy level
+        let value = switch entry.privacyLevel {
+          case .public:
+            entry.value
+          case .private:
+            #if DEBUG
+              entry.value
+            #else
+              "<private>"
+            #endif
+          case .sensitive:
+            #if DEBUG
+              "<sensitive: \(entry.value)>"
+            #else
+              "<sensitive>"
+            #endif
+          case .hash:
+            // In a real implementation, this would be hashed
+            "<hashed>"
+          case .auto:
+            // In a real implementation, this would be automatically classified
+            "<auto-redacted>"
+        }
+        
+        context[entry.key] = value
       }
     }
 
@@ -288,10 +312,10 @@ public actor Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked Sendabl
   public static func logPrivacy(
     _ level: LoggingTypes.LogLevel,
     _ message: @autoclosure () -> Any,
-    metadata: LoggingTypes.LogMetadata?,
-    file: String=#file,
-    function: String=#function,
-    line: Int=#line
+    metadata: LoggingTypes.LogMetadataDTOCollection?,
+    file: String = #file,
+    function: String = #function,
+    line: Int = #line
   ) {
     // Immediately evaluate the autoclosure to capture the value
     let messageValue=message()
@@ -317,10 +341,10 @@ public actor Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked Sendabl
   public static func logSensitive(
     _ level: LoggingTypes.LogLevel,
     _ message: String,
-    sensitiveValues: LoggingTypes.LogMetadata,
-    file: String=#file,
-    function: String=#function,
-    line: Int=#line
+    sensitiveValues: LoggingTypes.LogMetadataDTOCollection,
+    file: String = #file,
+    function: String = #function,
+    line: Int = #line
   ) {
     // Delegate to actor instance with sensitive privacy level
     Task {
@@ -341,7 +365,7 @@ public actor Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked Sendabl
   /// Log a debug message
   public static func debug(
     _ message: @autoclosure () -> Any,
-    metadata: LoggingTypes.LogMetadata?=nil,
+    metadata: LoggingTypes.LogMetadataDTOCollection?=nil,
     file: String=#file,
     function: String=#function,
     line: Int=#line
@@ -352,7 +376,7 @@ public actor Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked Sendabl
   /// Log an info message
   public static func info(
     _ message: @autoclosure () -> Any,
-    metadata: LoggingTypes.LogMetadata?=nil,
+    metadata: LoggingTypes.LogMetadataDTOCollection?=nil,
     file: String=#file,
     function: String=#function,
     line: Int=#line
@@ -363,7 +387,7 @@ public actor Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked Sendabl
   /// Log a warning message
   public static func warning(
     _ message: @autoclosure () -> Any,
-    metadata: LoggingTypes.LogMetadata?=nil,
+    metadata: LoggingTypes.LogMetadataDTOCollection?=nil,
     file: String=#file,
     function: String=#function,
     line: Int=#line
@@ -374,7 +398,7 @@ public actor Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked Sendabl
   /// Log an error message
   public static func error(
     _ message: @autoclosure () -> Any,
-    metadata: LoggingTypes.LogMetadata?=nil,
+    metadata: LoggingTypes.LogMetadataDTOCollection?=nil,
     file: String=#file,
     function: String=#function,
     line: Int=#line
@@ -385,7 +409,7 @@ public actor Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked Sendabl
   /// Log a trace message
   public static func trace(
     _ message: @autoclosure () -> Any,
-    metadata: LoggingTypes.LogMetadata?=nil,
+    metadata: LoggingTypes.LogMetadataDTOCollection?=nil,
     file: String=#file,
     function: String=#function,
     line: Int=#line
@@ -396,12 +420,156 @@ public actor Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked Sendabl
   /// Log a critical message
   public static func critical(
     _ message: @autoclosure () -> Any,
-    metadata: LoggingTypes.LogMetadata?=nil,
-    file: String=#file,
-    function: String=#function,
-    line: Int=#line
+    metadata: LoggingTypes.LogMetadataDTOCollection?=nil,
+    file: String = #file,
+    function: String = #function,
+    line: Int = #line
   ) {
-    log(.critical, message(), metadata: metadata, file: file, function: function, line: line)
+    // Delegate to actor instance
+    Task {
+      await shared.log(
+        level: .critical,
+        message: String(describing: message()),
+        metadata: metadata,
+        privacy: .public,
+        file: file,
+        function: function,
+        line: line
+      )
+    }
+  }
+
+  /// Implementation of the error log level
+  public static func error(
+    _ message: @autoclosure () -> Any,
+    metadata: LoggingTypes.LogMetadataDTOCollection?,
+    file: String = #file,
+    function: String = #function,
+    line: Int = #line
+  ) {
+    // Delegate to actor instance
+    Task {
+      await shared.log(
+        level: .error,
+        message: String(describing: message()),
+        metadata: metadata,
+        privacy: .public,
+        file: file,
+        function: function,
+        line: line
+      )
+    }
+  }
+
+  /// Implementation of the warning log level
+  public static func warning(
+    _ message: @autoclosure () -> Any,
+    metadata: LoggingTypes.LogMetadataDTOCollection?,
+    file: String = #file,
+    function: String = #function,
+    line: Int = #line
+  ) {
+    // Delegate to actor instance
+    Task {
+      await shared.log(
+        level: .warning,
+        message: String(describing: message()),
+        metadata: metadata,
+        privacy: .public,
+        file: file,
+        function: function,
+        line: line
+      )
+    }
+  }
+
+  /// Implementation of the info log level
+  public static func info(
+    _ message: @autoclosure () -> Any,
+    metadata: LoggingTypes.LogMetadataDTOCollection?,
+    file: String = #file,
+    function: String = #function,
+    line: Int = #line
+  ) {
+    // Delegate to actor instance
+    Task {
+      await shared.log(
+        level: .info,
+        message: String(describing: message()),
+        metadata: metadata,
+        privacy: .public,
+        file: file,
+        function: function,
+        line: line
+      )
+    }
+  }
+
+  /// Implementation of the debug log level
+  public static func debug(
+    _ message: @autoclosure () -> Any,
+    metadata: LoggingTypes.LogMetadataDTOCollection?,
+    file: String = #file,
+    function: String = #function,
+    line: Int = #line
+  ) {
+    // Delegate to actor instance
+    Task {
+      await shared.log(
+        level: .debug,
+        message: String(describing: message()),
+        metadata: metadata,
+        privacy: .public,
+        file: file,
+        function: function,
+        line: line
+      )
+    }
+  }
+
+  /// Implementation of the trace log level
+  public static func trace(
+    _ message: @autoclosure () -> Any,
+    metadata: LoggingTypes.LogMetadataDTOCollection?,
+    file: String = #file,
+    function: String = #function,
+    line: Int = #line
+  ) {
+    // Delegate to actor instance
+    Task {
+      await shared.log(
+        level: .trace,
+        message: String(describing: message()),
+        metadata: metadata,
+        privacy: .public,
+        file: file,
+        function: function,
+        line: line
+      )
+    }
+  }
+
+  /// Implementation of the generic log method
+  public static func log(
+    _ level: LoggingTypes.LogLevel,
+    _ message: @autoclosure () -> Any,
+    metadata: LoggingTypes.LogMetadataDTOCollection?,
+    file: String = #file,
+    function: String = #function,
+    line: Int = #line
+  ) {
+    // Delegate to actor instance
+    Task {
+      await shared.log(
+        level: level,
+        message: String(describing: message()),
+        metadata: metadata,
+        privacy: .public,
+        file: file,
+        function: function,
+        line: line
+      )
+    }
   }
 
   // MARK: - PrivacyAwareLoggerImplementation
@@ -444,7 +612,7 @@ public actor Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked Sendabl
     public func logSensitive(
       _ level: LoggingTypes.LogLevel,
       _ message: String,
-      sensitiveValues _: LoggingTypes.LogMetadata,
+      sensitiveValues _: LoggingTypes.LogMetadataDTOCollection,
       context: LoggingTypes.LogContextDTO
     ) async {
       // Create a modified context with sensitive values properly handled
@@ -488,9 +656,10 @@ public actor Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked Sendabl
           case .sensitive:
             metadata=metadata.withSensitive(key: "errorMessage", value: error.localizedDescription)
           case .hash:
+            // In a real implementation, this would be hashed
             metadata=metadata.withHashed(key: "errorMessage", value: error.localizedDescription)
           case .auto:
-            // Default to private for error messages with auto privacy
+            // In a real implementation, this would be automatically classified
             metadata=metadata.withPrivate(key: "errorMessage", value: error.localizedDescription)
         }
 

@@ -48,7 +48,7 @@ public actor KeychainDefaultLogger: LoggingProtocol {
      - source: The source of the log message
    */
   public func trace(_ message: String, metadata: LogMetadataDTOCollection?, source: String) async {
-    await printLog(level: .trace, message: message, metadata: metadata, source: source)
+    await printLog(level: .debug, message: message, metadata: metadata, source: source)
   }
 
   /**
@@ -84,7 +84,7 @@ public actor KeychainDefaultLogger: LoggingProtocol {
      - source: The source of the log message
    */
   public func warning(_ message: String, metadata: LogMetadataDTOCollection?, source: String) async {
-    await printLog(level: .warning, message: message, metadata: metadata, source: source)
+    await printLog(level: .error, message: message, metadata: metadata, source: source)
   }
 
   /**
@@ -108,87 +108,86 @@ public actor KeychainDefaultLogger: LoggingProtocol {
      - source: The source of the log message
    */
   public func critical(_ message: String, metadata: LogMetadataDTOCollection?, source: String) async {
-    await printLog(level: .critical, message: message, metadata: metadata, source: source)
+    await printLog(level: .fault, message: message, metadata: metadata, source: source)
   }
 
-  // MARK: - Legacy LoggingProtocol Methods
-
+  // MARK: - Private Helper Methods
+  
   /**
-   Log a trace message (deprecated method).
+   Print a log message with the specified level and metadata.
    
    - Parameters:
+     - level: The log level
      - message: The message to log
-     - metadata: Legacy metadata dictionary
+     - metadata: The privacy-aware metadata collection
      - source: The source of the log message
    */
-  @available(*, deprecated, message: "Use trace(_:metadata:source:) with LogMetadataDTOCollection instead")
-  public func trace(_ message: String, metadata _: LogMetadata? = nil, source: String) async {
-    await printLog(level: .trace, message: message, metadata: nil, source: source)
+  private func printLog(
+    level: OSLogType,
+    message: String,
+    metadata: LogMetadataDTOCollection?,
+    source: String
+  ) async {
+    let logger = Logger(subsystem: "com.umbra.keychainservices", category: source)
+    
+    // Format metadata if available
+    var metadataString = ""
+    if let metadata = metadata, !metadata.entries.isEmpty {
+      metadataString = " " + formatMetadata(metadata)
+    }
+    
+    // Log with appropriate level
+    let formattedMessage = "[\(source)] \(message)\(metadataString)"
+    switch level {
+    case .debug:
+      logger.debug("\(formattedMessage, privacy: .public)")
+    case .info:
+      logger.info("\(formattedMessage, privacy: .public)")
+    case .error:
+      logger.error("\(formattedMessage, privacy: .public)")
+    case .fault:
+      logger.critical("\(formattedMessage, privacy: .public)")
+    default:
+      logger.log("\(formattedMessage, privacy: .public)")
+    }
   }
-
+  
   /**
-   Log a debug message (deprecated method).
+   Format metadata as a string with privacy controls.
    
-   - Parameters:
-     - message: The message to log
-     - metadata: Legacy metadata dictionary
-     - source: The source of the log message
+   - Parameter metadata: The privacy-aware metadata collection
+   - Returns: A formatted string representation of the metadata
    */
-  @available(*, deprecated, message: "Use debug(_:metadata:source:) with LogMetadataDTOCollection instead")
-  public func debug(_ message: String, metadata _: LogMetadata? = nil, source: String) async {
-    await printLog(level: .debug, message: message, metadata: nil, source: source)
-  }
-
-  /**
-   Log an info message (deprecated method).
-   
-   - Parameters:
-     - message: The message to log
-     - metadata: Legacy metadata dictionary
-     - source: The source of the log message
-   */
-  @available(*, deprecated, message: "Use info(_:metadata:source:) with LogMetadataDTOCollection instead")
-  public func info(_ message: String, metadata _: LogMetadata? = nil, source: String) async {
-    await printLog(level: .info, message: message, metadata: nil, source: source)
-  }
-
-  /**
-   Log a warning message (deprecated method).
-   
-   - Parameters:
-     - message: The message to log
-     - metadata: Legacy metadata dictionary
-     - source: The source of the log message
-   */
-  @available(*, deprecated, message: "Use warning(_:metadata:source:) with LogMetadataDTOCollection instead")
-  public func warning(_ message: String, metadata _: LogMetadata? = nil, source: String) async {
-    await printLog(level: .warning, message: message, metadata: nil, source: source)
-  }
-
-  /**
-   Log an error message (deprecated method).
-   
-   - Parameters:
-     - message: The message to log
-     - metadata: Legacy metadata dictionary
-     - source: The source of the log message
-   */
-  @available(*, deprecated, message: "Use error(_:metadata:source:) with LogMetadataDTOCollection instead")
-  public func error(_ message: String, metadata _: LogMetadata? = nil, source: String) async {
-    await printLog(level: .error, message: message, metadata: nil, source: source)
-  }
-
-  /**
-   Log a critical message (deprecated method).
-   
-   - Parameters:
-     - message: The message to log
-     - metadata: Legacy metadata dictionary
-     - source: The source of the log message
-   */
-  @available(*, deprecated, message: "Use critical(_:metadata:source:) with LogMetadataDTOCollection instead")
-  public func critical(_ message: String, metadata _: LogMetadata? = nil, source: String) async {
-    await printLog(level: .critical, message: message, metadata: nil, source: source)
+  private func formatMetadata(_ metadata: LogMetadataDTOCollection) -> String {
+    var parts: [String] = []
+    
+    for entry in metadata.entries {
+      // Format based on privacy level
+      let value = switch entry.privacyLevel {
+        case .public:
+          entry.value
+        case .private:
+          #if DEBUG
+            entry.value
+          #else
+            "<private>"
+          #endif
+        case .sensitive:
+          #if DEBUG
+            "<sensitive: \(entry.value)>"
+          #else
+            "<sensitive>"
+          #endif
+        case .hash:
+          "<hashed>"
+        case .auto:
+          "<auto-redacted>"
+      }
+      
+      parts.append("\(entry.key)=\(value)")
+    }
+    
+    return "{\(parts.joined(separator: ", "))}"
   }
 
   /**
@@ -201,93 +200,24 @@ public actor KeychainDefaultLogger: LoggingProtocol {
    */
   public func log(_ level: LoggingTypes.LogLevel, _ message: String, context: LogContextDTO) async {
     // Using context.source and context.metadata
-    await printLog(level: level, message: message, metadata: context.metadata, source: context.getSource())
-  }
-
-  // MARK: - Private Helper Methods
-
-  /**
-   Helper to print a log message to the console with privacy-aware metadata.
-   
-   - Parameters:
-     - level: The log level
-     - message: The message to log
-     - metadata: Privacy-aware metadata collection
-     - source: The source of the log message
-   */
-  private func printLog(level: LoggingTypes.LogLevel, message: String, metadata: LogMetadataDTOCollection?, source: String) async {
-    let timestamp = ISO8601DateFormatter().string(from: Date())
-    let levelString = levelToString(level).uppercased()
-    
-    // Format metadata with privacy controls if present
-    var metadataString = ""
-    if let metadata = metadata, !metadata.entries.isEmpty {
-      metadataString = " " + formatMetadataCollection(metadata)
-    }
-    
-    print("\(timestamp) [\(source)] [\(levelString)]: \(message)\(metadataString)")
+    await printLog(level: levelToOSLogType(level), message: message, metadata: context.metadata, source: context.getSource())
   }
 
   /**
-   Format metadata collection with privacy controls.
-   
-   - Parameter metadata: The metadata collection to format
-   - Returns: A formatted string representation of the metadata
-   */
-  private func formatMetadataCollection(_ metadata: LogMetadataDTOCollection) -> String {
-    var parts: [String] = []
-
-    for entry in metadata.entries {
-      let key = entry.key
-      let value = entry.value
-      let privacyLevel = entry.privacyLevel
-
-      // Format based on privacy level
-      let formattedValue: String
-
-      switch privacyLevel {
-        case .public:
-          // Public data can be shown as-is
-          formattedValue = "\(key): \(value)"
-
-        case .private:
-          // In debug builds, show private data with a marker
-          #if DEBUG
-            formattedValue = "\(key): 🔒[\(value)]"
-          #else
-            formattedValue = "\(key): 🔒[REDACTED]"
-          #endif
-
-        case .sensitive:
-          // Sensitive data is always redacted, even in debug builds
-          formattedValue = "\(key): 🔐[REDACTED]"
-
-        case .hash:
-          // Hash values are shown with a special marker
-          formattedValue = "\(key): 🔢[\(value)]"
-      }
-
-      parts.append(formattedValue)
-    }
-
-    return "{" + parts.joined(separator: ", ") + "}"
-  }
-
-  /**
-   Convert LogLevel to string representation.
+   Convert LogLevel to OSLogType.
    
    - Parameter level: The log level to convert
-   - Returns: A string representation of the log level
+   - Returns: An OSLogType representation of the log level
    */
-  private func levelToString(_ level: LoggingTypes.LogLevel) -> String {
+  private func levelToOSLogType(_ level: LoggingTypes.LogLevel) -> OSLogType {
     switch level {
-      case .trace: return "TRACE"
-      case .debug: return "DEBUG"
-      case .info: return "INFO"
-      case .warning: return "WARNING"
-      case .error: return "ERROR"
-      case .critical: return "CRITICAL"
-      @unknown default: return "UNKNOWN"
+      case .trace: return .debug
+      case .debug: return .debug
+      case .info: return .info
+      case .warning: return .error
+      case .error: return .error
+      case .critical: return .fault
+      @unknown default: return .default
     }
   }
 }

@@ -153,29 +153,93 @@ public struct KeychainLogContext: LogContextDTO {
   }
 
   /**
-   Converts the context to standard log metadata (deprecated method).
+   Creates a new context with additional metadata entries.
    
-   - Returns: The log metadata representation of this context
+   - Parameter additionalMetadata: The additional metadata to add
+   - Returns: A new context with combined metadata
    */
-  @available(*, deprecated, message: "Use createMetadataCollection() instead")
-  public func asLogMetadata() -> LogMetadata {
-    // Create a standard LogMetadata dictionary
-    var logMetadata = LogMetadata()
-
-    // Add standard context fields
-    logMetadata["domain"] = domainName
-    if let source {
-      logMetadata["source"] = source
+  public func withAdditionalMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> KeychainLogContext {
+    var combinedMetadata = createMetadataCollection()
+    
+    // Add all entries from the additional metadata
+    for entry in additionalMetadata.entries {
+      combinedMetadata.entries.append(entry)
     }
-    if let correlationID {
-      logMetadata["correlationID"] = correlationID
-    }
-
-    // Add operation-specific fields
-    logMetadata["operation"] = operation
-    logMetadata["account"] = account
-    logMetadata["status"] = status
-
-    return logMetadata
+    
+    return KeychainLogContext(
+      operation: operation,
+      account: account,
+      status: status,
+      source: source,
+      domainName: domainName,
+      correlationID: correlationID,
+      metadata: combinedMetadata
+    )
+  }
+  
+  /**
+   Adds a public metadata entry to the context.
+   
+   - Parameters:
+     - key: The metadata key
+     - value: The metadata value
+   - Returns: A new context with the added metadata
+   */
+  public func withPublicMetadata(key: String, value: String) -> KeychainLogContext {
+    let updatedMetadata = createMetadataCollection().withPublic(key: key, value: value)
+    
+    return KeychainLogContext(
+      operation: operation,
+      account: account,
+      status: status,
+      source: source,
+      domainName: domainName,
+      correlationID: correlationID,
+      metadata: updatedMetadata
+    )
+  }
+  
+  /**
+   Adds a private metadata entry to the context.
+   
+   - Parameters:
+     - key: The metadata key
+     - value: The metadata value
+   - Returns: A new context with the added metadata
+   */
+  public func withPrivateMetadata(key: String, value: String) -> KeychainLogContext {
+    let updatedMetadata = createMetadataCollection().withPrivate(key: key, value: value)
+    
+    return KeychainLogContext(
+      operation: operation,
+      account: account,
+      status: status,
+      source: source,
+      domainName: domainName,
+      correlationID: correlationID,
+      metadata: updatedMetadata
+    )
+  }
+  
+  /**
+   Adds a sensitive metadata entry to the context.
+   
+   - Parameters:
+     - key: The metadata key
+     - value: The metadata value
+   - Returns: A new context with the added metadata
+   */
+  public func withSensitiveMetadata(key: String, value: String) -> KeychainLogContext {
+    let updatedMetadata = createMetadataCollection().withSensitive(key: key, value: value)
+    
+    return KeychainLogContext(
+      operation: operation,
+      account: account,
+      status: status,
+      source: source,
+      domainName: domainName,
+      correlationID: correlationID,
+      metadata: updatedMetadata
+    )
   }
 }

@@ -4,42 +4,41 @@ import LoggingTypes
 
 /// Adapter that converts a LoggingProtocol to a LoggingServiceProtocol
 ///
-/// This adapter allows legacy logging implementations to be used with the
-/// new actor-based logging system without requiring changes to their implementation.
+/// This adapter allows modern privacy-aware logging implementations to be used with
+/// the LoggingServiceProtocol interface.
 public actor LoggingServiceAdapter: LoggingServiceProtocol {
   /// The underlying logger implementation
   private let logger: LoggingProtocol
 
   /// Default source when none is provided
-  private let defaultSource="LoggingServiceAdapter"
+  private let defaultSource = "LoggingServiceAdapter"
 
   /// Default minimum log level when not specified
   private var minimumLogLevel: UmbraLogLevel = .info
 
   /// Tracking for destinations since the underlying logger may not support them
-  private var destinations: [String: LogDestination]=[:]
+  private var destinations: [String: LogDestination] = [:]
 
-  /// Initialises a new adapter with the specified logger
-  ///
+  /// Initialise a new logging service adapter
   /// - Parameter logger: The logger to adapt
   public init(logger: LoggingProtocol) {
-    self.logger=logger
+    self.logger = logger
   }
 
-  /// Log a verbose message
+  /// Log a trace message
   /// - Parameters:
   ///   - message: The message to log
-  ///   - metadata: Optional metadata
-  ///   - source: Optional source component identifier
-  public func verbose(_ message: String, metadata: LogMetadata?, source: String?) async {
-    // Convert LogMetadata to PrivacyMetadata
-    let privacyMetadata=convertToPrivacyMetadata(metadata)
-
-    // Use non-optional source
-    let actualSource=source ?? defaultSource
+  ///   - metadata: Optional metadata with privacy annotations
+  ///   - source: The source of the log message
+  public func verbose(_ message: String, metadata: LogMetadataDTOCollection?, source: String?) async {
+    let actualSource = source ?? defaultSource
 
     // Create a LogContext object for context-based logging
-    let context=LogContext(source: actualSource, metadata: privacyMetadata)
+    let context = BaseLogContextDTO(
+      domainName: "LoggingService",
+      source: actualSource,
+      metadata: metadata ?? LogMetadataDTOCollection()
+    )
 
     await logger.trace(message, context: context)
   }
@@ -47,14 +46,17 @@ public actor LoggingServiceAdapter: LoggingServiceProtocol {
   /// Log a debug message
   /// - Parameters:
   ///   - message: The message to log
-  ///   - metadata: Optional metadata
-  ///   - source: Optional source component identifier
-  public func debug(_ message: String, metadata: LogMetadata?, source: String?) async {
-    let privacyMetadata=convertToPrivacyMetadata(metadata)
-    let actualSource=source ?? defaultSource
+  ///   - metadata: Optional metadata with privacy annotations
+  ///   - source: The source of the log message
+  public func debug(_ message: String, metadata: LogMetadataDTOCollection?, source: String?) async {
+    let actualSource = source ?? defaultSource
 
     // Create a LogContext object for context-based logging
-    let context=LogContext(source: actualSource, metadata: privacyMetadata)
+    let context = BaseLogContextDTO(
+      domainName: "LoggingService",
+      source: actualSource,
+      metadata: metadata ?? LogMetadataDTOCollection()
+    )
 
     await logger.debug(message, context: context)
   }
@@ -62,14 +64,17 @@ public actor LoggingServiceAdapter: LoggingServiceProtocol {
   /// Log an info message
   /// - Parameters:
   ///   - message: The message to log
-  ///   - metadata: Optional metadata
-  ///   - source: Optional source component identifier
-  public func info(_ message: String, metadata: LogMetadata?, source: String?) async {
-    let privacyMetadata=convertToPrivacyMetadata(metadata)
-    let actualSource=source ?? defaultSource
+  ///   - metadata: Optional metadata with privacy annotations
+  ///   - source: The source of the log message
+  public func info(_ message: String, metadata: LogMetadataDTOCollection?, source: String?) async {
+    let actualSource = source ?? defaultSource
 
     // Create a LogContext object for context-based logging
-    let context=LogContext(source: actualSource, metadata: privacyMetadata)
+    let context = BaseLogContextDTO(
+      domainName: "LoggingService",
+      source: actualSource,
+      metadata: metadata ?? LogMetadataDTOCollection()
+    )
 
     await logger.info(message, context: context)
   }
@@ -77,14 +82,17 @@ public actor LoggingServiceAdapter: LoggingServiceProtocol {
   /// Log a warning message
   /// - Parameters:
   ///   - message: The message to log
-  ///   - metadata: Optional metadata
-  ///   - source: Optional source component identifier
-  public func warning(_ message: String, metadata: LogMetadata?, source: String?) async {
-    let privacyMetadata=convertToPrivacyMetadata(metadata)
-    let actualSource=source ?? defaultSource
+  ///   - metadata: Optional metadata with privacy annotations
+  ///   - source: The source of the log message
+  public func warning(_ message: String, metadata: LogMetadataDTOCollection?, source: String?) async {
+    let actualSource = source ?? defaultSource
 
     // Create a LogContext object for context-based logging
-    let context=LogContext(source: actualSource, metadata: privacyMetadata)
+    let context = BaseLogContextDTO(
+      domainName: "LoggingService",
+      source: actualSource,
+      metadata: metadata ?? LogMetadataDTOCollection()
+    )
 
     await logger.warning(message, context: context)
   }
@@ -92,14 +100,17 @@ public actor LoggingServiceAdapter: LoggingServiceProtocol {
   /// Log an error message
   /// - Parameters:
   ///   - message: The message to log
-  ///   - metadata: Optional metadata
-  ///   - source: Optional source component identifier
-  public func error(_ message: String, metadata: LogMetadata?, source: String?) async {
-    let privacyMetadata=convertToPrivacyMetadata(metadata)
-    let actualSource=source ?? defaultSource
+  ///   - metadata: Optional metadata with privacy annotations
+  ///   - source: The source of the log message
+  public func error(_ message: String, metadata: LogMetadataDTOCollection?, source: String?) async {
+    let actualSource = source ?? defaultSource
 
     // Create a LogContext object for context-based logging
-    let context=LogContext(source: actualSource, metadata: privacyMetadata)
+    let context = BaseLogContextDTO(
+      domainName: "LoggingService",
+      source: actualSource,
+      metadata: metadata ?? LogMetadataDTOCollection()
+    )
 
     await logger.error(message, context: context)
   }
@@ -107,146 +118,101 @@ public actor LoggingServiceAdapter: LoggingServiceProtocol {
   /// Log a critical message
   /// - Parameters:
   ///   - message: The message to log
-  ///   - metadata: Optional metadata
-  ///   - source: Optional source component identifier
-  public func critical(_ message: String, metadata: LogMetadata?, source: String?) async {
-    let privacyMetadata=convertToPrivacyMetadata(metadata)
-    let actualSource=source ?? defaultSource
+  ///   - metadata: Optional metadata with privacy annotations
+  ///   - source: The source of the log message
+  public func critical(_ message: String, metadata: LogMetadataDTOCollection?, source: String?) async {
+    let actualSource = source ?? defaultSource
 
     // Create a LogContext object for context-based logging
-    let context=LogContext(source: actualSource, metadata: privacyMetadata)
+    let context = BaseLogContextDTO(
+      domainName: "LoggingService",
+      source: actualSource,
+      metadata: metadata ?? LogMetadataDTOCollection()
+    )
 
     await logger.critical(message, context: context)
   }
 
   /// Add a log destination
   /// - Parameter destination: The destination to add
-  /// - Throws: LoggingError if the destination cannot be added
-  public func addDestination(_ destination: LogDestination) async throws {
-    // Store destination in our local tracking
-    destinations[destination.identifier]=destination
-
-    // Log the addition for debugging
-    await debug(
-      "Added log destination: \(destination.identifier)",
-      metadata: nil,
-      source: "LoggingServiceAdapter"
+  /// - Returns: The identifier for the destination
+  public func addDestination(_ destination: LoggingTypes.LogDestination) async throws -> String {
+    let id = UUID().uuidString
+    destinations[id] = destination
+    
+    await info(
+      "Added log destination: \(destination.name)",
+      metadata: LogMetadataDTOCollection().withPublic(key: "id", value: id),
+      source: defaultSource
     )
+    
+    return id
   }
 
-  /// Remove a log destination by identifier
-  /// - Parameter identifier: Unique identifier of the destination to remove
-  /// - Returns: true if the destination was removed, false if not found
+  /// Remove a log destination
+  /// - Parameter identifier: The identifier of the destination to remove
+  /// - Returns: True if the destination was removed, false otherwise
   public func removeDestination(withIdentifier identifier: String) async -> Bool {
-    // Try to remove from our local tracking
+    // Try to remove from our tracking
     if destinations.removeValue(forKey: identifier) != nil {
       await debug(
         "Removed log destination: \(identifier)",
         metadata: nil,
-        source: "LoggingServiceAdapter"
+        source: defaultSource
       )
       return true
     }
+    
     return false
   }
 
-  /// Set the global minimum log level
-  /// - Parameter level: The minimum log level to record
+  /// Set the minimum log level
+  /// - Parameter level: The minimum log level
   public func setMinimumLogLevel(_ level: UmbraLogLevel) async {
-    // Keep track of the level locally
-    minimumLogLevel=level
-
-    // Log the change
+    minimumLogLevel = level
+    
     await debug(
-      "Set minimum log level to: \(level.rawValue)",
+      "Set minimum log level to \(level)",
       metadata: nil,
-      source: "LoggingServiceAdapter"
+      source: defaultSource
     )
   }
 
-  /// Get the current global minimum log level
-  /// - Returns: The current minimum log level
+  /// Get the minimum log level
+  /// - Returns: The minimum log level
   public func getMinimumLogLevel() async -> UmbraLogLevel {
-    minimumLogLevel
+    return minimumLogLevel
   }
 
-  /// Flush all destinations, ensuring pending logs are written
-  /// - Throws: LoggingError if any destination fails to flush
+  /// Flush all destinations
+  /// - Throws: An error if flushing fails
   public func flushAllDestinations() async throws {
-    // Attempt to flush compatible destinations
-    for (_, destination) in destinations {
-      if let flushable=destination as? FlushableLogDestination {
-        try await flushable.flush()
+    for (id, destination) in destinations {
+      if let flushable = destination as? FlushableLogDestination {
+        do {
+          try await flushable.flush()
+          await debug(
+            "Flushed log destination: \(destination.name)",
+            metadata: LogMetadataDTOCollection().withPublic(key: "id", value: id),
+            source: defaultSource
+          )
+        } catch {
+          await self.error(
+            "Failed to flush log destination: \(destination.name)",
+            metadata: LogMetadataDTOCollection()
+              .withPublic(key: "id", value: id)
+              .withPrivate(key: "error", value: error.localizedDescription),
+            source: defaultSource
+          )
+          throw error
+        }
       }
     }
-
-    // Log the action
-    let privacyMetadata=convertToPrivacyMetadata(nil)
-    let context=LogContext(source: "LoggingServiceAdapter", metadata: privacyMetadata)
-    await logger.debug("Flushed all log destinations", context: context)
-  }
-
-  /// Log a message with the specified level and context
-  public func logMessage(_ level: LogLevel, _ message: String, context: LogContextDTO) async {
-    // Pass the context directly to the logger
-    await logger.log(level, message, context: context)
-  }
-
-  /// Log a message with explicit privacy controls
-  public func log(_ level: LogLevel, _ message: PrivacyString, context: LogContextDTO) async {
-    // Convert PrivacyString to a plain String
-    let stringMessage=message.processForLogging()
-
-    // If the underlying logger supports privacy-aware logging, use it
-    if let privacyAwareLogger=logger as? PrivacyAwareLoggingProtocol {
-      // Use the privacy-aware logger with the proper context
-      await privacyAwareLogger.log(
-        level,
-        message,
-        context: context
-      )
-    } else {
-      // Fall back to regular string logging
-      await logMessage(level, stringMessage, context: context)
-    }
-  }
-
-  /// Log a message with explicit privacy controls
-  public func logPrivacyString(
-    _ level: LogLevel,
-    _ message: PrivacyString,
-    context: LogContextDTO
-  ) async {
-    // For PrivacyString, we need to use the string value
-    let stringMessage=String(describing: message)
-
-    // Use the underlying logger directly with the context
-    await logger.log(level, stringMessage, context: context)
-  }
-
-  // MARK: - Private Helpers
-
-  /// Convert LogMetadata to PrivacyMetadata
-  ///
-  /// - Parameter metadata: The metadata to convert
-  /// - Returns: PrivacyMetadata equivalent
-  private func convertToPrivacyMetadata(_ metadata: LogMetadata?) -> PrivacyMetadata? {
-    guard let metadata else { return nil }
-
-    var result=PrivacyMetadata()
-
-    for (key, value) in metadata.asDictionary {
-      // Use auto privacy level by default
-      result[key]=PrivacyMetadataValue(value: value, privacy: .auto)
-    }
-
-    return result
   }
 }
 
 /// Protocol for log destinations that can be flushed
 protocol FlushableLogDestination: LogDestination {
   /// Flush any pending log messages
-  /// - Throws: LoggingError if the flush operation fails
   func flush() async throws
 }

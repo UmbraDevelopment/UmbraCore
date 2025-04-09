@@ -260,27 +260,27 @@ public final class DefaultLoggingService: LoggingServiceProtocol {
 
   // Implementing required protocol methods from LoggingServiceProtocol
 
-  public func verbose(_ message: String, metadata: LogMetadata?, source: String?) async {
+  public func verbose(_ message: String, metadata: LogMetadataDTOCollection?, source: String?) async {
     await logWithLevel(.verbose, message: message, metadata: metadata, source: source)
   }
 
-  public func debug(_ message: String, metadata: LogMetadata?, source: String?) async {
+  public func debug(_ message: String, metadata: LogMetadataDTOCollection?, source: String?) async {
     await logWithLevel(.debug, message: message, metadata: metadata, source: source)
   }
 
-  public func info(_ message: String, metadata: LogMetadata?, source: String?) async {
+  public func info(_ message: String, metadata: LogMetadataDTOCollection?, source: String?) async {
     await logWithLevel(.info, message: message, metadata: metadata, source: source)
   }
 
-  public func warning(_ message: String, metadata: LogMetadata?, source: String?) async {
+  public func warning(_ message: String, metadata: LogMetadataDTOCollection?, source: String?) async {
     await logWithLevel(.warning, message: message, metadata: metadata, source: source)
   }
 
-  public func error(_ message: String, metadata: LogMetadata?, source: String?) async {
+  public func error(_ message: String, metadata: LogMetadataDTOCollection?, source: String?) async {
     await logWithLevel(.error, message: message, metadata: metadata, source: source)
   }
 
-  public func critical(_ message: String, metadata: LogMetadata?, source: String?) async {
+  public func critical(_ message: String, metadata: LogMetadataDTOCollection?, source: String?) async {
     await logWithLevel(.critical, message: message, metadata: metadata, source: source)
   }
 
@@ -315,25 +315,65 @@ public final class DefaultLoggingService: LoggingServiceProtocol {
   private func logWithLevel(
     _ level: UmbraLogLevel,
     message: String,
-    metadata: LogMetadata?,
+    metadata: LogMetadataDTOCollection?,
     source: String?
   ) async {
-    // In a real implementation, this would format the log entry and send it to destinations
-    let sourceInfo = source != nil ? "[\(source!)]" : ""
-    let metadataInfo = formatMetadata(metadata)
-    print("[\(level.rawValue.uppercased())] \(sourceInfo) \(message) \(metadataInfo)")
+    // Only log if the level is at or above the minimum level
+    guard level.rawValue >= minimumLogLevel.rawValue else {
+      return
+    }
+
+    // Format the message with metadata
+    let formattedMessage = formatMessage(message, metadata: metadata, source: source)
+    
+    // Print to console (in a real implementation, this would go to the configured destinations)
+    print("[\(level)] \(formattedMessage)")
   }
-
-  private func formatMetadata(_ metadata: LogMetadata?) -> String {
-    guard let metadata = metadata, !metadata.isEmpty else {
-      return ""
+  
+  /// Format a log message with metadata
+  private func formatMessage(
+    _ message: String,
+    metadata: LogMetadataDTOCollection?,
+    source: String?
+  ) -> String {
+    var result = message
+    
+    // Add source if available
+    if let source = source, !source.isEmpty {
+      result = "[\(source)] \(result)"
     }
-
-    let formattedPairs = metadata.map { key, value in
-      "\(key): \(value)"
+    
+    // Add metadata if available
+    if let metadata = metadata, !metadata.entries.isEmpty {
+      result = "\(result) \(formatMetadata(metadata))"
     }
-
-    return "{\(formattedPairs.joined(separator: ", "))}"
+    
+    return result
+  }
+  
+  /// Format metadata as a string
+  private func formatMetadata(_ metadata: LogMetadataDTOCollection) -> String {
+    var parts: [String] = []
+    
+    for entry in metadata.entries {
+      // Format based on privacy level
+      let value = switch entry.privacyLevel {
+        case .public:
+          entry.value
+        case .private:
+          "<private>"
+        case .sensitive:
+          "<sensitive>"
+        case .hash:
+          "<hash>"
+        case .auto:
+          "<auto-redacted>"
+      }
+      
+      parts.append("\(entry.key)=\(value)")
+    }
+    
+    return "{\(parts.joined(separator: ", "))}"
   }
 }
 
@@ -390,19 +430,15 @@ public actor BasicLoggingProtocol: LoggingProtocol {
     await service.verbose(message, metadata: metadata, source: context?.source ?? domainName)
   }
 
-  private func createMetadata(_ context: LogContextDTO?) -> LogMetadata {
-    var metadata: LogMetadata = [:]
-
-    // Add base metadata
-    for (key, value) in baseMetadata.publicKeyValues {
-      metadata[key] = value
-    }
+  private func createMetadata(_ context: LogContextDTO?) -> LogMetadataDTOCollection {
+    var metadata: LogMetadataDTOCollection = baseMetadata
 
     // Add context metadata if available
     if let context = context {
-      metadata["domain"] = domainName
+      metadata = metadata
+        .withPublic(key: "domain", value: domainName)
       if let correlationID = context.correlationID {
-        metadata["correlationID"] = correlationID
+        metadata = metadata.withPublic(key: "correlationID", value: correlationID)
       }
     }
 

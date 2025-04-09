@@ -94,14 +94,20 @@ final class KeyManagementService: SecurityServiceBase {
     let startTime=Date()
     let operation="generateKey"
 
-    // Create metadata for logging
-    let logMetadata=createOperationMetadata(
-      operationID: operationID,
+    // Create metadata for logging with privacy annotations
+    let logMetadata = LogMetadataDTOCollection()
+      .withPublic(key: "operationId", value: operationID)
+      .withPublic(key: "operation", value: operation)
+      .withPublic(key: "config", value: "\(config)")
+
+    // Create a proper context with privacy-aware metadata
+    let context = SecurityLogContext(
       operation: operation,
-      config: config
+      source: "SecurityImplementation",
+      metadata: logMetadata
     )
 
-    await logger.info("Starting key generation operation", metadata: logMetadata, source: "SecurityImplementation", source: "SecurityImplementation")
+    await logger.info("Starting key generation operation", context: context)
 
     do {
       // Extract key parameters from configuration
@@ -137,10 +143,16 @@ final class KeyManagementService: SecurityServiceBase {
         "algorithm": algorithm
       ])
 
+      // Create a proper context with privacy-aware metadata
+      let successContext = SecurityLogContext(
+        operation: operation,
+        source: "KeyManagementService.generateKey",
+        metadata: successMetadata
+      )
+
       await logger.info(
         "Key generation completed successfully",
-        metadata: successMetadata,
-        source: "KeyManagementService.generateKey"
+        context: successContext
       )
 
       // Return successful result with the generated key metadata
@@ -159,10 +171,16 @@ final class KeyManagementService: SecurityServiceBase {
         "errorMessage": error.localizedDescription
       ])
 
+      // Create a proper context with privacy-aware metadata
+      let errorContext = SecurityLogContext(
+        operation: operation,
+        source: "KeyManagementService.generateKey",
+        metadata: errorMetadata
+      )
+
       await logger.error(
         "Key generation failed: \(error.localizedDescription)",
-        metadata: errorMetadata,
-        source: "KeyManagementService.generateKey"
+        context: errorContext
       )
 
       // Return failure result
@@ -183,18 +201,24 @@ final class KeyManagementService: SecurityServiceBase {
    - Returns: Result containing the generated random data or error information
    */
   func generateRandomData(length: Int, config _: SecurityConfigDTO) async -> SecurityResultDTO {
-    let operationID=UUID().uuidString
-    let startTime=Date()
+    let operationID = UUID().uuidString
+    let startTime = Date()
 
-    // Create metadata for logging
-    let logMetadata: LoggingInterfaces.LogMetadata=[
-      "operationId": operationID,
-      "operation": "generateRandomData",
-      "length": "\(length)",
-      "timestamp": "\(Date())"
-    ]
+    // Create metadata for logging with privacy annotations
+    let logMetadata = LogMetadataDTOCollection()
+      .withPublic(key: "operationId", value: operationID)
+      .withPublic(key: "operation", value: "generateRandomData")
+      .withPublic(key: "length", value: "\(length)")
+      .withPublic(key: "timestamp", value: "\(Date())")
 
-    await logger.info("Starting random data generation operation", metadata: logMetadata, source: "SecurityImplementation", source: "SecurityImplementation")
+    // Create a proper context with privacy-aware metadata
+    let context = SecurityLogContext(
+      operation: "generateRandomData",
+      source: "SecurityImplementation",
+      metadata: logMetadata
+    )
+
+    await logger.info("Starting random data generation operation", context: context)
 
     do {
       // Validate parameters
@@ -215,10 +239,16 @@ final class KeyManagementService: SecurityServiceBase {
         "length": "\(length)"
       ])
 
+      // Create a proper context with privacy-aware metadata
+      let successContext = SecurityLogContext(
+        operation: "generateRandomData",
+        source: "KeyManagementService.generateRandomData",
+        metadata: successMetadata
+      )
+
       await logger.info(
         "Random data generation completed successfully",
-        metadata: successMetadata,
-        source: "KeyManagementService.generateRandomData"
+        context: successContext
       )
 
       // Return successful result with the generated random data
@@ -237,10 +267,16 @@ final class KeyManagementService: SecurityServiceBase {
         "errorMessage": error.localizedDescription
       ])
 
+      // Create a proper context with privacy-aware metadata
+      let errorContext = SecurityLogContext(
+        operation: "generateRandomData",
+        source: "KeyManagementService.generateRandomData",
+        metadata: errorMetadata
+      )
+
       await logger.error(
         "Random data generation failed: \(error.localizedDescription)",
-        metadata: errorMetadata,
-        source: "KeyManagementService.generateRandomData"
+        context: errorContext
       )
 
       // Return failure result

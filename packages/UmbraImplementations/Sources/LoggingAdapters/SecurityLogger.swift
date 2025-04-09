@@ -207,20 +207,27 @@ public actor SecurityLogger: DomainLoggerProtocol {
 
    - Parameters:
      - message: The audit message
-     - metadata: Additional metadata for the audit event
+     - metadata: Additional metadata for the audit event with privacy annotations
      - source: The source of the event
    */
   public func auditLog(
     _ message: String,
-    metadata: LogMetadata?=nil,
-    source: String?=nil
+    metadata: LogMetadataDTOCollection? = nil,
+    source: String? = nil
   ) async {
     // Add domain tagging
-    let formattedMessage="[\(domainName)] [AUDIT] \(message)"
-    let auditSource=source ?? domainName
+    let formattedMessage = "[\(domainName)] [AUDIT] \(message)"
+    let auditSource = source ?? domainName
+
+    // Create a proper context with privacy-aware metadata
+    let context = SecurityLogContext(
+      operation: "audit",
+      source: auditSource,
+      metadata: metadata ?? LogMetadataDTOCollection()
+    )
 
     // Log with high visibility as both info (for monitoring) and security event
-    await loggingService.info(formattedMessage, metadata: metadata, source: auditSource)
+    await info(formattedMessage, context: context)
 
     // Also record as a security event for security monitoring
     await secureLogger.securityEvent(
@@ -245,29 +252,53 @@ public actor SecurityLogger: DomainLoggerProtocol {
      - status: The access status (success, denied)
      - subject: The subject requesting access
      - resource: The resource being accessed
-     - metadata: Additional metadata about the access
+     - metadata: Additional metadata about the access with privacy annotations
    */
   public func accessLog(
     status: AccessStatus,
     subject: String,
     resource: String,
-    metadata: LogMetadata?=nil
+    metadata: LogMetadataDTOCollection? = nil
   ) async {
-    let statusString=switch status {
+    let statusString = switch status {
       case .granted: "granted"
       case .denied: "denied"
     }
 
+    // Create a base metadata collection with privacy annotations
+    var metadataCollection = LogMetadataDTOCollection()
+      .withPublic(key: "status", value: statusString)
+      .withPublic(key: "subject", value: subject)
+      .withPublic(key: "resource", value: resource)
+    
+    // Add any additional metadata if provided
+    if let metadata = metadata {
+      for entry in metadata.entries {
+        metadataCollection.entries.append(entry)
+      }
+    }
+
+    // Create a proper context with privacy-aware metadata
+    let context = SecurityLogContext(
+      operation: "access_control",
+      source: domainName,
+      metadata: metadataCollection
+    )
+
     // Constructed message with key details
-    let message="Access \(statusString) for \(subject) to \(resource)"
+    let message = "Access \(statusString) for subject '\(subject)' to resource '\(resource)'"
+    
+    // Log at appropriate level based on status
+    if status == .granted {
+      await info("[\(domainName)] \(message)", context: context)
+    } else {
+      await warning("[\(domainName)] \(message)", context: context)
+    }
 
-    // Create standard structured log
-    await loggingService.info("[\(domainName)] \(message)", metadata: metadata, source: domainName)
-
-    // Create security event with proper tagging
+    // Also record as a security event for security monitoring
     await secureLogger.securityEvent(
-      action: "access_logged",
-      status: status == .granted ? .success : .denied,
+      action: "access_\(statusString)",
+      status: status == .granted ? .success : .failure,
       subject: subject,
       resource: resource,
       additionalMetadata: nil

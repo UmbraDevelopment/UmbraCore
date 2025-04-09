@@ -184,12 +184,7 @@ public final class PrivacyAwareLogFormatter: LogFormatterProtocol {
 
     // Add metadata if enabled and available
     if includeMetadata {
-      if
-        let metadata=entry.metadata, let metadataStr=formatMetadata(
-          convertToLogMetadata(metadata)
-        ),
-        !metadataStr.isEmpty
-      {
+      if let metadata=entry.metadata, let metadataStr=formatMetadataCollection(metadata), !metadataStr.isEmpty {
         components.append(metadataStr)
       }
     }
@@ -198,12 +193,12 @@ public final class PrivacyAwareLogFormatter: LogFormatterProtocol {
   }
 
   /**
-   Formats metadata into a string representation with privacy controls applied.
+   Formats metadata collection into a string representation with privacy controls applied.
 
    This method formats metadata key-value pairs into a string, applying privacy
    controls based on the privacy level of each value and the formatter's configuration.
 
-   - Parameter metadata: The metadata to format
+   - Parameter metadata: The metadata collection to format
    - Returns: A formatted string representation of the metadata, or nil if empty
 
    ## Example Output
@@ -212,19 +207,13 @@ public final class PrivacyAwareLogFormatter: LogFormatterProtocol {
    { user_id: [REDACTED:PRIVATE], request_id: abc-123, card_number: [REDACTED:SENSITIVE] }
    ```
    */
-  public func formatMetadata(_ metadata: LoggingTypes.LogMetadata?) -> String? {
-    guard let metadata else {
+  public func formatMetadataCollection(_ metadata: LogMetadataDTOCollection?) -> String? {
+    guard let metadata=metadata, !metadata.entries.isEmpty else {
       return nil
     }
 
-    // Create a dictionary representation
-    let metadataDict=convertToMetadataDict(metadata)
-    if metadataDict.isEmpty {
-      return nil
-    }
-
-    let formattedPairs=metadataDict.map { key, value in
-      "\(key): \(formatValue(value.value, privacyLevel: value.privacy))"
+    let formattedPairs=metadata.entries.map { entry in
+      "\(entry.key): \(formatValue(entry.value, privacyLevel: entry.privacyLevel))"
     }
 
     return "{ \(formattedPairs.joined(separator: ", ")) }"
@@ -356,22 +345,6 @@ public final class PrivacyAwareLogFormatter: LogFormatterProtocol {
       case .critical:
         .critical
     }
-  }
-
-  /// Convert LogMetadata to a dictionary with privacy levels
-  /// - Parameter metadata: The LogMetadata to convert
-  /// - Returns: A dictionary representation with privacy levels
-  private func convertToMetadataDict(_: LogMetadata) -> [String: (
-    value: Any,
-    privacy: LogPrivacyLevel
-  )] {
-    let result: [String: (value: Any, privacy: LogPrivacyLevel)]=[:]
-
-    // This is a simplified approach - in a real implementation, you would
-    // properly extract the values from the LogMetadata type and determine
-    // their privacy levels
-
-    return result
   }
 
   /**

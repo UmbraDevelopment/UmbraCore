@@ -341,135 +341,70 @@ public actor ErrorLoggerActor: ErrorLoggingProtocol {
   }
 
   /**
-   Construct metadata collection from error and context with privacy controls.
+   Construct metadata collection from error and context.
 
    - Parameters:
      - error: The error to extract metadata from
      - context: Additional context for the error
-   - Returns: LogMetadataDTOCollection with privacy-aware metadata for logging
+   - Returns: Privacy-aware metadata collection for logging
    */
   private func constructMetadataCollection(from error: Error, context: ErrorContext) -> LogMetadataDTOCollection {
-    let collection = LogMetadataDTOCollection()
+    var collection = LogMetadataDTOCollection()
 
     // Add basic error type information - public information
-    collection.withPublic(key: "errorType", value: String(describing: type(of: error)))
-
-    // Add domain and other context info if available - public information
-    if let source=context.source {
-      collection.withPublic(key: "domain", value: source)
-    }
-
-    if let operation=context.operation {
-      collection.withPublic(key: "operation", value: operation)
-    }
-
-    // Add source information if configured - public information
-    if configuration.includeSourceInfo {
-      collection.withPublic(key: "file", value: context.file)
-      collection.withPublic(key: "function", value: context.function)
-      collection.withPublic(key: "line", value: String(context.line))
-    }
-
-    // Add contextual information from the error - public information
-    let nsError=error as NSError
-    collection.withPublic(key: "errorCode", value: String(nsError.code))
-
-    // Add user info keys that might be relevant - private information
-    if let failureReason=nsError.localizedFailureReason {
-      collection.withPrivate(key: "failureReason", value: failureReason)
-    }
-    if let recoverySuggestion=nsError.localizedRecoverySuggestion {
-      collection.withPrivate(key: "recoverySuggestion", value: recoverySuggestion)
-    }
-
-    // Add additional metadata from the context using value(for:)
-    // Document ID is sensitive information
-    if let documentId = context.value(for: "documentId") as? String {
-      collection.withSensitive(key: "documentId", value: documentId)
-    }
-    
-    // User ID is sensitive information
-    if let userId = context.value(for: "userId") as? String {
-      collection.withSensitive(key: "userId", value: userId)
-    }
-    
-    // Error code is public information
-    if let errorCode = context.value(for: "errorCode") as? String {
-      collection.withPublic(key: "errorCode", value: errorCode)
-    } else if let errorCode = context.value(for: "errorCode") {
-      collection.withPublic(key: "errorCode", value: String(describing: errorCode))
-    }
-    
-    // Attempt count is public information
-    if let attemptCount = context.value(for: "attemptCount") as? String {
-      collection.withPublic(key: "attemptCount", value: attemptCount)
-    } else if let attemptCount = context.value(for: "attemptCount") {
-      collection.withPublic(key: "attemptCount", value: String(describing: attemptCount))
-    }
-    
-    // Session ID is private information
-    if let sessionId = context.value(for: "sessionId") as? String {
-      collection.withPrivate(key: "sessionId", value: sessionId)
-    } else if let sessionId = context.value(for: "sessionId") {
-      collection.withPrivate(key: "sessionId", value: String(describing: sessionId))
-    }
-
-    return collection
-  }
-
-  /**
-   Construct metadata dictionary from error and context (deprecated method).
-
-   - Parameters:
-     - error: The error to extract metadata from
-     - context: Additional context for the error
-   - Returns: Dictionary of metadata for logging
-   */
-  @available(*, deprecated, message: "Use constructMetadataCollection instead")
-  private func constructMetadata(from error: Error, context: ErrorContext) -> LoggingTypes.LogMetadata {
-    var metadata=LoggingTypes.LogMetadata()
-
-    // Add basic error type information
-    metadata["errorType"]=String(describing: type(of: error))
+    collection = collection.withPublic(key: "errorType", value: String(describing: type(of: error)))
 
     // Add domain and other context info if available
-    if let source=context.source {
-      metadata["domain"]=source
+    if let source = context.source {
+      collection = collection.withPublic(key: "domain", value: source)
     }
 
-    if let operation=context.operation {
-      metadata["operation"]=operation
+    if let operation = context.operation {
+      collection = collection.withPublic(key: "operation", value: operation)
     }
 
     // Add source information if configured
     if configuration.includeSourceInfo {
-      metadata["file"]=context.file
-      metadata["function"]=context.function
-      metadata["line"]=String(context.line)
+      collection = collection.withPublic(key: "file", value: context.file)
+      collection = collection.withPublic(key: "function", value: context.function)
+      collection = collection.withPublic(key: "line", value: String(context.line))
     }
 
-    // Add contextual information from the error
-    let nsError=error as NSError
-    metadata["errorCode"]=String(nsError.code)
+    // Add contextual information from the error - some as private
+    let nsError = error as NSError
+    collection = collection.withPublic(key: "errorCode", value: String(nsError.code))
 
-    // Add user info keys that might be relevant
-    if let failureReason=nsError.localizedFailureReason {
-      metadata["failureReason"]=failureReason
+    // Add user info keys that might be relevant - as private since they may contain sensitive details
+    if let failureReason = nsError.localizedFailureReason {
+      collection = collection.withPrivate(key: "failureReason", value: failureReason)
     }
-    if let recoverySuggestion=nsError.localizedRecoverySuggestion {
-      metadata["recoverySuggestion"]=recoverySuggestion
+    if let recoverySuggestion = nsError.localizedRecoverySuggestion {
+      collection = collection.withPrivate(key: "recoverySuggestion", value: recoverySuggestion)
     }
 
     // Add additional metadata from the context using value(for:)
-    for key in ["documentId", "userId", "errorCode", "attemptCount", "sessionId"] {
-      if let value=context.value(for: key) as? String {
-        metadata[key]=value
-      } else if let value=context.value(for: key) {
-        metadata[key]=String(describing: value)
-      }
+    // Use appropriate privacy levels based on the type of information
+    if let userId = context.value(for: "userId") {
+      collection = collection.withSensitive(key: "userId", value: String(describing: userId))
+    }
+    
+    if let sessionId = context.value(for: "sessionId") {
+      collection = collection.withPrivate(key: "sessionId", value: String(describing: sessionId))
+    }
+    
+    if let documentId = context.value(for: "documentId") {
+      collection = collection.withPrivate(key: "documentId", value: String(describing: documentId))
+    }
+    
+    if let errorCode = context.value(for: "errorCode") {
+      collection = collection.withPublic(key: "contextErrorCode", value: String(describing: errorCode))
+    }
+    
+    if let attemptCount = context.value(for: "attemptCount") {
+      collection = collection.withPublic(key: "attemptCount", value: String(describing: attemptCount))
     }
 
-    return metadata
+    return collection
   }
 
   /**

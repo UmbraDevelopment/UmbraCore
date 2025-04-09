@@ -125,17 +125,24 @@ final class SecureStorageService: SecurityServiceBase {
           // Calculate duration for performance metrics
           let duration=Date().timeIntervalSince(startTime) * 1000
 
-          // Create success metadata for logging
-          let successMetadata=LoggingTypes.LogMetadata()
-          successMetadata["operationId"] = .string(operationID)
-          successMetadata["operation"] = .string(String(describing: operation))
-          successMetadata["storageIdentifier"] = .string(identifier)
-          successMetadata["durationMs"] = .string(String(format: "%.2f", duration))
+          // Create success metadata for logging with privacy annotations
+          let successMetadata = LogMetadataDTOCollection()
+            .withPublic(key: "operationId", value: operationID)
+            .withPublic(key: "operation", value: String(describing: operation))
+            .withPrivate(key: "storageIdentifier", value: identifier)
+            .withPublic(key: "durationMs", value: String(format: "%.2f", duration))
+
+          // Create a proper context with privacy-aware metadata
+          let successContext = SecurityLogContext(
+            operation: String(describing: operation),
+            source: "SecureStorageService",
+            metadata: successMetadata
+          )
 
           await logger.info(
-            "Secure storage operation completed successfully", metadata: successMetadata,
-            source: "SecureStorageService"
-          , source: "SecurityImplementation", source: "SecurityImplementation")
+            "Secure storage operation completed successfully", 
+            context: successContext
+          )
 
           // Return successful result with identifier
           return SecurityResultDTO(
@@ -153,17 +160,24 @@ final class SecureStorageService: SecurityServiceBase {
       // Calculate duration before failure
       let duration=Date().timeIntervalSince(startTime) * 1000
 
-      // Create failure metadata for logging
-      let errorMetadata=LoggingTypes.LogMetadata()
-      errorMetadata["operationId"] = .string(operationID)
-      errorMetadata["operation"] = .string(String(describing: operation))
-      errorMetadata["durationMs"] = .string(String(format: "%.2f", duration))
-      errorMetadata["errorType"] = .string("\(type(of: error))")
+      // Create failure metadata for logging with privacy annotations
+      let errorMetadata = LogMetadataDTOCollection()
+        .withPublic(key: "operationId", value: operationID)
+        .withPublic(key: "operation", value: String(describing: operation))
+        .withPublic(key: "durationMs", value: String(format: "%.2f", duration))
+        .withPublic(key: "errorType", value: "\(type(of: error))")
+        .withPrivate(key: "errorMessage", value: error.localizedDescription)
+
+      // Create a proper context with privacy-aware metadata
+      let errorContext = SecurityLogContext(
+        operation: String(describing: operation),
+        source: "SecureStorageService",
+        metadata: errorMetadata
+      )
 
       await logger.error(
         "Secure storage operation failed: \(error.localizedDescription)",
-        metadata: errorMetadata,
-        source: "SecureStorageService"
+        context: errorContext
       )
 
       // Return failure result
@@ -239,17 +253,24 @@ final class SecureStorageService: SecurityServiceBase {
           // Calculate duration for performance metrics
           let duration=Date().timeIntervalSince(startTime) * 1000
 
-          // Create success metadata for logging
-          let successMetadata=LoggingTypes.LogMetadata()
-          successMetadata["operationId"] = .string(operationID)
-          successMetadata["operation"] = .string(String(describing: operation))
-          successMetadata["storageIdentifier"] = .string(identifier)
-          successMetadata["durationMs"] = .string(String(format: "%.2f", duration))
+          // Create success metadata for logging with privacy annotations
+          let successMetadata = LogMetadataDTOCollection()
+            .withPublic(key: "operationId", value: operationID)
+            .withPublic(key: "operation", value: String(describing: operation))
+            .withPrivate(key: "storageIdentifier", value: identifier)
+            .withPublic(key: "durationMs", value: String(format: "%.2f", duration))
+
+          // Create a proper context with privacy-aware metadata
+          let successContext = SecurityLogContext(
+            operation: String(describing: operation),
+            source: "SecureStorageService",
+            metadata: successMetadata
+          )
 
           await logger.info(
-            "Secure retrieval operation completed successfully", metadata: successMetadata,
-            source: "SecureStorageService"
-          , source: "SecurityImplementation", source: "SecurityImplementation")
+            "Secure retrieval operation completed successfully", 
+            context: successContext
+          )
 
           // Return successful result with retrieved data
           return SecurityResultDTO(
@@ -268,18 +289,24 @@ final class SecureStorageService: SecurityServiceBase {
       // Calculate duration before failure
       let duration=Date().timeIntervalSince(startTime) * 1000
 
-      // Create failure metadata for logging
-      let errorMetadata=LoggingTypes.LogMetadata()
-      errorMetadata["operationId"] = .string(operationID)
-      errorMetadata["operation"] = .string(String(describing: operation))
-      errorMetadata["durationMs"] = .string(String(format: "%.2f", duration))
-      errorMetadata["errorType"] = .string("\(type(of: error))")
-      errorMetadata["errorMessage"] = .string(error.localizedDescription)
+      // Create failure metadata for logging with privacy annotations
+      let errorMetadata = LogMetadataDTOCollection()
+        .withPublic(key: "operationId", value: operationID)
+        .withPublic(key: "operation", value: String(describing: operation))
+        .withPublic(key: "durationMs", value: String(format: "%.2f", duration))
+        .withPublic(key: "errorType", value: "\(type(of: error))")
+        .withPrivate(key: "errorMessage", value: error.localizedDescription)
+
+      // Create a proper context with privacy-aware metadata
+      let errorContext = SecurityLogContext(
+        operation: String(describing: operation),
+        source: "SecureStorageService",
+        metadata: errorMetadata
+      )
 
       await logger.error(
         "Secure retrieval operation failed: \(error.localizedDescription)",
-        metadata: errorMetadata,
-        source: "SecureStorageService"
+        context: errorContext
       )
 
       // Return failure result
@@ -334,17 +361,24 @@ final class SecureStorageService: SecurityServiceBase {
       // Calculate duration for performance metrics
       let duration=Date().timeIntervalSince(startTime) * 1000
 
-      // Create success metadata for logging
-      let successMetadata=LoggingTypes.LogMetadata()
-      successMetadata["operationId"] = .string(operationID)
-      successMetadata["operation"] = .string(String(describing: operation))
-      successMetadata["storageIdentifier"] = .string(identifier)
-      successMetadata["durationMs"] = .string(String(format: "%.2f", duration))
+      // Create success metadata for logging with privacy annotations
+      let successMetadata = LogMetadataDTOCollection()
+        .withPublic(key: "operationId", value: operationID)
+        .withPublic(key: "operation", value: String(describing: operation))
+        .withPrivate(key: "storageIdentifier", value: identifier)
+        .withPublic(key: "durationMs", value: String(format: "%.2f", duration))
+
+      // Create a proper context with privacy-aware metadata
+      let successContext = SecurityLogContext(
+        operation: String(describing: operation),
+        source: "SecureStorageService",
+        metadata: successMetadata
+      )
 
       await logger.info(
-        "Secure deletion operation completed successfully", metadata: successMetadata,
-        source: "SecureStorageService"
-      , source: "SecurityImplementation", source: "SecurityImplementation")
+        "Secure deletion operation completed successfully", 
+        context: successContext
+      )
 
       // Return successful result
       return SecurityResultDTO(
@@ -357,18 +391,24 @@ final class SecureStorageService: SecurityServiceBase {
       // Calculate duration before failure
       let duration=Date().timeIntervalSince(startTime) * 1000
 
-      // Create failure metadata for logging
-      let errorMetadata=LoggingTypes.LogMetadata()
-      errorMetadata["operationId"] = .string(operationID)
-      errorMetadata["operation"] = .string(String(describing: operation))
-      errorMetadata["durationMs"] = .string(String(format: "%.2f", duration))
-      errorMetadata["errorType"] = .string("\(type(of: error))")
-      errorMetadata["errorMessage"] = .string(error.localizedDescription)
+      // Create failure metadata for logging with privacy annotations
+      let errorMetadata = LogMetadataDTOCollection()
+        .withPublic(key: "operationId", value: operationID)
+        .withPublic(key: "operation", value: String(describing: operation))
+        .withPublic(key: "durationMs", value: String(format: "%.2f", duration))
+        .withPublic(key: "errorType", value: "\(type(of: error))")
+        .withPrivate(key: "errorMessage", value: error.localizedDescription)
+
+      // Create a proper context with privacy-aware metadata
+      let errorContext = SecurityLogContext(
+        operation: String(describing: operation),
+        source: "SecureStorageService",
+        metadata: errorMetadata
+      )
 
       await logger.error(
         "Secure deletion operation failed: \(error.localizedDescription)",
-        metadata: errorMetadata,
-        source: "SecureStorageService"
+        context: errorContext
       )
 
       // Return failure result

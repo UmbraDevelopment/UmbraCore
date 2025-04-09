@@ -19,7 +19,7 @@
      private var backend: LoggingBackend
 
      // Methods for async logging operations
-     func logMessage(_ message: String, level: LogLevel, metadata: LogMetadata) async {
+     func logMessage(_ message: String, level: LogLevel, metadata: LogMetadataDTOCollection) async {
          // Thread-safe logging implementation
      }
  }
@@ -28,9 +28,9 @@
  public class Logger: LoggerProtocol {
      private static let actor = LoggerActor()
 
-     public static func info(_ message: @autoclosure () -> Any, metadata: LogMetadata? = nil) {
+     public static func info(_ message: @autoclosure () -> Any, metadata: LogMetadataDTOCollection? = nil) {
          Task {
-             await actor.logMessage(String(describing: message()), level: .info, metadata: metadata ?? [:])
+             await actor.logMessage(String(describing: message()), level: .info, metadata: metadata ?? LogMetadataDTOCollection())
          }
      }
  }
@@ -82,14 +82,14 @@ public protocol LoggerProtocol {
 
    - Parameters:
      - message: The message to log
-     - metadata: Additional context information for the log
+     - metadata: Additional context information for the log with privacy annotations
      - file: The file from which the log is sent
      - function: The function from which the log is sent
      - line: The line from which the log is sent
    */
   static func critical(
     _ message: @autoclosure () -> Any,
-    metadata: LoggingTypes.LogMetadata?,
+    metadata: LoggingTypes.LogMetadataDTOCollection?,
     file: String,
     function: String,
     line: Int
@@ -100,14 +100,14 @@ public protocol LoggerProtocol {
 
    - Parameters:
      - message: The message to log
-     - metadata: Additional context information for the log
+     - metadata: Additional context information for the log with privacy annotations
      - file: The file from which the log is sent
      - function: The function from which the log is sent
      - line: The line from which the log is sent
    */
   static func error(
     _ message: @autoclosure () -> Any,
-    metadata: LoggingTypes.LogMetadata?,
+    metadata: LoggingTypes.LogMetadataDTOCollection?,
     file: String,
     function: String,
     line: Int
@@ -118,14 +118,14 @@ public protocol LoggerProtocol {
 
    - Parameters:
      - message: The message to log
-     - metadata: Additional context information for the log
+     - metadata: Additional context information for the log with privacy annotations
      - file: The file from which the log is sent
      - function: The function from which the log is sent
      - line: The line from which the log is sent
    */
   static func warning(
     _ message: @autoclosure () -> Any,
-    metadata: LoggingTypes.LogMetadata?,
+    metadata: LoggingTypes.LogMetadataDTOCollection?,
     file: String,
     function: String,
     line: Int
@@ -136,14 +136,14 @@ public protocol LoggerProtocol {
 
    - Parameters:
      - message: The message to log
-     - metadata: Additional context information for the log
+     - metadata: Additional context information for the log with privacy annotations
      - file: The file from which the log is sent
      - function: The function from which the log is sent
      - line: The line from which the log is sent
    */
   static func info(
     _ message: @autoclosure () -> Any,
-    metadata: LoggingTypes.LogMetadata?,
+    metadata: LoggingTypes.LogMetadataDTOCollection?,
     file: String,
     function: String,
     line: Int
@@ -154,14 +154,14 @@ public protocol LoggerProtocol {
 
    - Parameters:
      - message: The message to log
-     - metadata: Additional context information for the log
+     - metadata: Additional context information for the log with privacy annotations
      - file: The file from which the log is sent
      - function: The function from which the log is sent
      - line: The line from which the log is sent
    */
   static func debug(
     _ message: @autoclosure () -> Any,
-    metadata: LoggingTypes.LogMetadata?,
+    metadata: LoggingTypes.LogMetadataDTOCollection?,
     file: String,
     function: String,
     line: Int
@@ -172,14 +172,14 @@ public protocol LoggerProtocol {
 
    - Parameters:
      - message: The message to log
-     - metadata: Additional context information for the log
+     - metadata: Additional context information for the log with privacy annotations
      - file: The file from which the log is sent
      - function: The function from which the log is sent
      - line: The line from which the log is sent
    */
   static func trace(
     _ message: @autoclosure () -> Any,
-    metadata: LoggingTypes.LogMetadata?,
+    metadata: LoggingTypes.LogMetadataDTOCollection?,
     file: String,
     function: String,
     line: Int
@@ -191,7 +191,7 @@ public protocol LoggerProtocol {
    - Parameters:
      - level: The log level
      - message: The message to log
-     - metadata: Additional context information for the log
+     - metadata: Additional context information for the log with privacy annotations
      - file: The file from which the log is sent
      - function: The function from which the log is sent
      - line: The line from which the log is sent
@@ -199,7 +199,7 @@ public protocol LoggerProtocol {
   static func log(
     _ level: LogLevel,
     _ message: @autoclosure () -> Any,
-    metadata: LoggingTypes.LogMetadata?,
+    metadata: LoggingTypes.LogMetadataDTOCollection?,
     file: String,
     function: String,
     line: Int
@@ -211,7 +211,7 @@ public protocol LoggerProtocol {
    - Parameters:
      - level: The log level
      - message: The interpolated string containing privacy annotations
-     - metadata: Additional context information for the log
+     - metadata: Additional context information for the log with privacy annotations
      - file: The file from which the log is sent
      - function: The function from which the log is sent
      - line: The line from which the log is sent
@@ -219,7 +219,7 @@ public protocol LoggerProtocol {
   static func logPrivacy(
     _ level: LogLevel,
     _ message: @autoclosure () -> Any,
-    metadata: LoggingTypes.LogMetadata?,
+    metadata: LoggingTypes.LogMetadataDTOCollection?,
     file: String,
     function: String,
     line: Int

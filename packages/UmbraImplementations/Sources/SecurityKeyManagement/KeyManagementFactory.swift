@@ -84,16 +84,33 @@ public enum KeyManagementFactory {
 
 /**
  Default implementation of logging service for use when none is provided.
+ This implementation follows the privacy-aware logging system design.
  */
-private struct DefaultLoggingService: LoggingServiceProtocol {
-  func verbose(_: String, metadata _: LogMetadata?, source _: String?) async {}
-  func debug(_: String, metadata _: LogMetadata?, source _: String?) async {}
-  func info(_: String, metadata _: LogMetadata?, source _: String?) async {}
-  func warning(_: String, metadata _: LogMetadata?, source _: String?) async {}
-  func error(_: String, metadata _: LogMetadata?, source _: String?) async {}
-  func critical(_: String, metadata _: LogMetadata?, source _: String?) async {}
+private struct DefaultLoggingService: LoggingServiceProtocol, PrivacyAwareLoggingProtocol {
+  // MARK: - LoggingProtocol Methods
+  
+  func trace(_: String, metadata _: LogMetadataDTOCollection?, source _: String) async {}
+  func debug(_: String, metadata _: LogMetadataDTOCollection?, source _: String) async {}
+  func info(_: String, metadata _: LogMetadataDTOCollection?, source _: String) async {}
+  func warning(_: String, metadata _: LogMetadataDTOCollection?, source _: String) async {}
+  func error(_: String, metadata _: LogMetadataDTOCollection?, source _: String) async {}
+  func critical(_: String, metadata _: LogMetadataDTOCollection?, source _: String) async {}
 
-  // Implementation of required LoggingServiceProtocol methods
+  // MARK: - PrivacyAwareLoggingProtocol Methods
+  
+  func log(_: LogLevel, _: PrivacyString, context _: LogContextDTO) async {}
+  
+  func logSensitive(
+    _: LogLevel,
+    _: String,
+    sensitiveValues _: LoggingTypes.LogMetadataDTOCollection,
+    context _: LogContextDTO
+  ) async {}
+  
+  func logError(_: Error, privacyLevel _: LogPrivacyLevel, context _: LogContextDTO) async {}
+
+  // MARK: - LoggingServiceProtocol Methods
+  
   func addDestination(_: any LoggingTypes.LogDestination) async throws {}
   func removeDestination(withIdentifier _: String) async -> Bool { false }
   func setMinimumLogLevel(_: LoggingTypes.UmbraLogLevel) async {}
