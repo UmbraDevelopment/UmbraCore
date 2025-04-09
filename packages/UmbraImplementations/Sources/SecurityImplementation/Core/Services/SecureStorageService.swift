@@ -140,7 +140,7 @@ final class SecureStorageService: SecurityServiceBase {
           // Return successful result with identifier
           return SecurityResultDTO(
             status: .success,
-            metadata: createPrivacyMetadata(["durationMs": String(format: "%.2f", duration),
+            metadata: createMetadataCollection(["durationMs": String(format: "%.2f", duration),
               "storageIdentifier": identifier,
               "storedBytes": "\(storedBytes)"
             ])
@@ -170,7 +170,7 @@ final class SecureStorageService: SecurityServiceBase {
       return SecurityResultDTO(
         status: .failure,
         error: error,
-        metadata: createPrivacyMetadata(["durationMs": String(format: "%.2f", duration),
+        metadata: createMetadataCollection(["durationMs": String(format: "%.2f", duration),
           "errorMessage": error.localizedDescription
         ])
       )
@@ -255,10 +255,10 @@ final class SecureStorageService: SecurityServiceBase {
           return SecurityResultDTO(
             status: .success,
             data: decryptedData,
-            metadata: createPrivacyMetadata(["durationMs": String(format: "%.2f", duration),
+            metadata: createMetadataCollection(["durationMs": String(format: "%.2f", duration),
               "storageIdentifier": identifier,
-              "algorithm": retrievalResult.metadata["algorithm"]) ?? "unknown"
-            ]
+              "algorithm": retrievalResult.metadata["algorithm"] ?? "unknown"
+            ])
           )
 
         case let .failure(error):
@@ -286,7 +286,7 @@ final class SecureStorageService: SecurityServiceBase {
       return SecurityResultDTO(
         status: .failure,
         error: error,
-        metadata: createPrivacyMetadata(["durationMs": String(format: "%.2f", duration),
+        metadata: createMetadataCollection(["durationMs": String(format: "%.2f", duration),
           "errorMessage": error.localizedDescription
         ])
       )
@@ -349,7 +349,7 @@ final class SecureStorageService: SecurityServiceBase {
       // Return successful result
       return SecurityResultDTO(
         status: .success,
-        metadata: createPrivacyMetadata(["durationMs": String(format: "%.2f", duration),
+        metadata: createMetadataCollection(["durationMs": String(format: "%.2f", duration),
           "storageIdentifier": identifier
         ])
       )
@@ -375,7 +375,7 @@ final class SecureStorageService: SecurityServiceBase {
       return SecurityResultDTO(
         status: .failure,
         error: error,
-        metadata: createPrivacyMetadata(["durationMs": String(format: "%.2f", duration),
+        metadata: createMetadataCollection(["durationMs": String(format: "%.2f", duration),
           "errorMessage": error.localizedDescription
         ])
       )
@@ -414,7 +414,7 @@ final class SecureStorageService: SecurityServiceBase {
    - Returns: Retrieved data and metadata, or nil if not found
    */
   private func simulateSecureRetrieval(identifier _: String)
-  -> (data: Data, metadata: createPrivacyMetadata([String: String]))? {
+  -> (data: Data, metadata: [String: String])? {
     // In a real implementation, this would retrieve data from secure storage
     // For simulation purposes, we'll create dummy data
 
@@ -460,9 +460,9 @@ enum SecureStorageError: Error {
   case encryptionError(String)
 }
 
+// MARK: - CoreSecurityError Extensions
 
-
-  
+extension CoreSecurityError {
   static func invalidVerificationMethod(reason: String) -> CoreSecurityError {
     return .general(code: "INVALID_VERIFICATION_METHOD", message: reason)
   }
@@ -475,6 +475,3 @@ enum SecureStorageError: Error {
     return .general(code: "NOT_IMPLEMENTED", message: reason)
   }
 }
-
-
-

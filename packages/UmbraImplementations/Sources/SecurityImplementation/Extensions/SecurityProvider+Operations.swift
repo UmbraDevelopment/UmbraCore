@@ -67,10 +67,10 @@ extension CoreSecurityProviderService {
         useHardwareAcceleration: config.options?.useHardwareAcceleration ?? true,
         operationTimeoutSeconds: config.options?.operationTimeoutSeconds ?? 30.0,
         verifyOperations: config.options?.verifyOperations ?? true,
-        metadata: createPrivacyMetadata(["location": config.options?.metadata?["storeLocation"]) ?? "default",
+        metadata: createMetadataCollection(["location": config.options?.metadata?["storeLocation"] ?? "default",
           "identifier": config.options?.metadata?["storeIdentifier"] ?? UUID().uuidString,
           "data": encryptResult.resultData?.base64EncodedString() ?? ""
-        ]
+        ])
       )
     )
 
@@ -78,6 +78,12 @@ extension CoreSecurityProviderService {
       operation: .storeKey,
       config: storeConfig
     )
+
+    await logger.info(
+      "Storing encrypted data in secure storage",
+      metadata: createMetadataCollection(["location": config.options?.metadata?["storeLocation"] ?? "default"]),
+      source: "SecurityProvider+Operations.encryptAndStore"
+    , source: "SecurityImplementation", source: "SecurityImplementation")
 
     return storeResult
   }
@@ -109,9 +115,9 @@ extension CoreSecurityProviderService {
         useHardwareAcceleration: config.options?.useHardwareAcceleration ?? true,
         operationTimeoutSeconds: config.options?.operationTimeoutSeconds ?? 30.0,
         verifyOperations: config.options?.verifyOperations ?? true,
-        metadata: createPrivacyMetadata(["location": config.options?.metadata?["storeLocation"]) ?? "default",
+        metadata: createMetadataCollection(["location": config.options?.metadata?["storeLocation"] ?? "default",
           "identifier": identifier
-        ]
+        ])
       )
     )
 
@@ -120,6 +126,12 @@ extension CoreSecurityProviderService {
       operation: .retrieveKey,
       config: retrieveConfig
     )
+
+    await logger.info(
+      "Retrieving encrypted data from secure storage",
+      metadata: createMetadataCollection(["location": config.options?.metadata?["storeLocation"] ?? "default"]),
+      source: "SecurityProvider+Operations.retrieveAndDecrypt"
+    , source: "SecurityImplementation", source: "SecurityImplementation")
 
     // If retrieval failed, return that error immediately
     if !retrieveResult.successful {
@@ -139,7 +151,7 @@ extension CoreSecurityProviderService {
       return SecurityResultDTO.failure(
         errorDetails: "Retrieved data was nil",
         executionTimeMs: 0,
-        metadata: createPrivacyMetadata(["identifier": identifier
+        metadata: createMetadataCollection(["identifier": identifier
         ])
       )
     }
@@ -235,10 +247,16 @@ extension CoreSecurityProviderService {
           SecurityResultDTO.failure(
             errorDetails: "Encryption operation failed: \(error.localizedDescription)",
             executionTimeMs: 0,
-            metadata: createPrivacyMetadata(["itemIndex": String(index)])
+            metadata: createMetadataCollection(["itemIndex": String(index)])
           )
         )
       }
+
+      await logger.debug(
+        "Processing batch encryption item",
+        metadata: createMetadataCollection(["itemIndex": String(index)]),
+        source: "SecurityProvider+Operations.batchEncrypt"
+      , source: "SecurityImplementation", source: "SecurityImplementation")
     }
 
     await logger.info(
@@ -265,13 +283,13 @@ extension CoreSecurityProviderService {
     config: SecurityConfigDTO
   ) async -> [SecurityResultDTO] {
     let operationID=UUID().uuidString
-    let privacyMetadata=PrivacyMetadata([
-      "itemCount": (value: String(dataItems.count), privacy: .public),
-      "operationId": (value: operationID, privacy: .public)
-    ])
+    let metadataCollection = LogMetadataDTOCollection()
+      .withPublic(key: "itemCount", value: String(dataItems.count))
+      .withPublic(key: "operationId", value: operationID)
 
     await logger.info(
-      "Starting batch decryption operation", metadata: privacyMetadata,
+      "Starting batch decryption operation", 
+      metadata: metadataCollection,
       source: "SecurityProvider+Operations.batchDecrypt"
     , source: "SecurityImplementation", source: "SecurityImplementation")
 
@@ -315,14 +333,20 @@ extension CoreSecurityProviderService {
           SecurityResultDTO.failure(
             errorDetails: "Decryption operation failed: \(error.localizedDescription)",
             executionTimeMs: 0,
-            metadata: createPrivacyMetadata(["itemIndex": String(index)])
+            metadata: createMetadataCollection(["itemIndex": String(index)])
           )
         )
       }
+
+      await logger.debug(
+        "Processing batch decryption item",
+        metadata: createMetadataCollection(["itemIndex": String(index)]),
+        source: "SecurityProvider+Operations.batchDecrypt"
+      , source: "SecurityImplementation", source: "SecurityImplementation")
     }
 
     await logger.info(
-      "Completed batch decryption operation", metadata: privacyMetadata,
+      "Completed batch decryption operation", metadata: metadataCollection,
       source: "SecurityProvider+Operations.batchDecrypt"
     , source: "SecurityImplementation", source: "SecurityImplementation")
 

@@ -1473,8 +1473,14 @@ extension FileAttributes {
 // MARK: - Support for null logger when none is provided
 
 /// A simple no-op logger implementation for when no logger is provided
+/// 
+/// This implementation follows the Alpha Dot Five architecture principles by:
+/// 1. Using actor isolation for thread safety
+/// 2. Providing a complete implementation of the required protocol
+/// 3. Using proper British spelling in documentation
+/// 4. Supporting privacy-aware logging with appropriate data classification
 @preconcurrency
-private actor NoLogLogger: LoggingInterfaces.LoggingProtocol {
+private actor NoLogLogger: PrivacyAwareLoggingProtocol {
   // Add loggingActor property required by LoggingProtocol
   nonisolated let loggingActor: LoggingInterfaces.LoggingActor = .init(destinations: [])
 
@@ -1505,6 +1511,36 @@ private actor NoLogLogger: LoggingInterfaces.LoggingProtocol {
   }
 
   func critical(_: String, context _: LoggingTypes.LogContextDTO) async {
+    // Empty implementation
+  }
+  
+  // Privacy-aware logging methods
+  func trace(_: String, metadata _: LogMetadataDTOCollection?, source _: String) async {
+    // Empty implementation
+  }
+  
+  func debug(_: String, metadata _: LogMetadataDTOCollection?, source _: String) async {
+    // Empty implementation
+  }
+  
+  func info(_: String, metadata _: LogMetadataDTOCollection?, source _: String) async {
+    // Empty implementation
+  }
+  
+  func warning(_: String, metadata _: LogMetadataDTOCollection?, source _: String) async {
+    // Empty implementation
+  }
+  
+  func error(_: String, metadata _: LogMetadataDTOCollection?, source _: String) async {
+    // Empty implementation
+  }
+  
+  func critical(_: String, metadata _: LogMetadataDTOCollection?, source _: String) async {
+    // Empty implementation
+  }
+  
+  // Error logging with privacy controls
+  func logError(_: Error, context _: LogContextDTO) async {
     // Empty implementation
   }
 }

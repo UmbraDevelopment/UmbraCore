@@ -95,12 +95,12 @@ final class SignatureService: SecurityServiceBase {
     let operation=SecurityOperation.sign
 
     // Create metadata for logging
-    var logMetadata=PrivacyMetadata()
-    logMetadata.setPublic(key: "operationID", value: operationID)
-    logMetadata.setPublic(key: "operation", value: String(describing: operation))
-    logMetadata.setPublic(key: "algorithm", value: config.algorithm)
+    let logMetadataCollection = LogMetadataDTOCollection()
+      .withPublic(key: "operationId", value: operationID)
+      .withPublic(key: "operation", value: operation.rawValue)
+      .withPublic(key: "algorithm", value: config.algorithm)
 
-    await logger.info("Starting signing operation", metadata: logMetadata, source: "SecurityImplementation", source: "SecurityImplementation")
+    await logger.info("Starting signing operation", metadata: logMetadataCollection, source: "SecurityImplementation", source: "SecurityImplementation")
 
     do {
       // Extract required parameters from configuration
@@ -150,20 +150,22 @@ final class SignatureService: SecurityServiceBase {
         let duration=Date().timeIntervalSince(startTime)
 
         // Create success metadata for logging
-        var successMetadata=logMetadata
-        successMetadata.setPublic(key: "duration", value: String(format: "%.3f s", duration))
-        successMetadata.setPublic(key: "signatureSize", value: String(signature.count))
+        let successMetadataCollection = LogMetadataDTOCollection()
+          .withPublic(key: "duration", value: String(format: "%.3f s", duration))
+          .withPublic(key: "signatureSize", value: String(signature.count))
 
         await logger.info(
-          "Signing operation completed successfully", metadata: successMetadata
+          "Signing operation completed successfully", metadata: successMetadataCollection
         , source: "SecurityImplementation", source: "SecurityImplementation")
 
         // Return successful result with signature
         return SecurityResultDTO(
           status: .success,
           data: signature.toBase64(),
-          metadata: createPrivacyMetadata(["durationMs": String(format: "%.2f", duration * 1000),
-            "algorithm": config.algorithm
+          metadata: createMetadataCollection([
+            "durationMs": String(format: "%.2f", duration * 1000),
+            "algorithm": config.algorithm,
+            "signatureSize": "\(signature.count)"
           ])
         )
       } catch {
@@ -171,18 +173,19 @@ final class SignatureService: SecurityServiceBase {
         let duration=Date().timeIntervalSince(startTime)
 
         // Create failure metadata for logging
-        var errorMetadata=logMetadata
-        errorMetadata.setPrivate(key: "error", value: error.localizedDescription)
-        errorMetadata.setPublic(key: "duration", value: String(format: "%.3f s", duration))
+        let errorMetadataCollection = LogMetadataDTOCollection()
+          .withPrivate(key: "error", value: error.localizedDescription)
+          .withPublic(key: "duration", value: String(format: "%.3f s", duration))
 
-        await logger.error("Signing operation failed: \(error.localizedDescription)", metadata: errorMetadata
-        , source: \"SecurityImplementation\")
+        await logger.error("Signing operation failed: \(error.localizedDescription)", metadata: errorMetadataCollection
+        , source: "SecurityImplementation")
 
         // Return failure result
         return SecurityResultDTO(
           status: .failure,
           error: error,
-          metadata: createPrivacyMetadata(["durationMs": String(format: "%.2f", duration * 1000),
+          metadata: createMetadataCollection([
+            "durationMs": String(format: "%.2f", duration * 1000),
             "errorMessage": error.localizedDescription
           ])
         )
@@ -192,18 +195,19 @@ final class SignatureService: SecurityServiceBase {
       let duration=Date().timeIntervalSince(startTime)
 
       // Create failure metadata for logging
-      var errorMetadata=logMetadata
-      errorMetadata.setPrivate(key: "error", value: error.localizedDescription)
-      errorMetadata.setPublic(key: "duration", value: String(format: "%.3f s", duration))
+      let errorMetadataCollection = LogMetadataDTOCollection()
+        .withPrivate(key: "error", value: error.localizedDescription)
+        .withPublic(key: "duration", value: String(format: "%.3f s", duration))
 
-      await logger.error("Signing operation failed: \(error.localizedDescription)", metadata: errorMetadata
-      , source: \"SecurityImplementation\")
+      await logger.error("Signing operation failed: \(error.localizedDescription)", metadata: errorMetadataCollection
+      , source: "SecurityImplementation")
 
       // Return failure result
       return SecurityResultDTO(
         status: .failure,
         error: error,
-        metadata: createPrivacyMetadata(["durationMs": String(format: "%.2f", duration * 1000),
+        metadata: createMetadataCollection([
+          "durationMs": String(format: "%.2f", duration * 1000),
           "errorMessage": error.localizedDescription
         ])
       )
@@ -222,12 +226,12 @@ final class SignatureService: SecurityServiceBase {
     let operation=SecurityOperation.verify
 
     // Create metadata for logging
-    var logMetadata=PrivacyMetadata()
-    logMetadata.setPublic(key: "operationID", value: operationID)
-    logMetadata.setPublic(key: "operation", value: String(describing: operation))
-    logMetadata.setPublic(key: "algorithm", value: config.algorithm)
+    let logMetadataCollection = LogMetadataDTOCollection()
+      .withPublic(key: "operationId", value: operationID)
+      .withPublic(key: "operation", value: operation.rawValue)
+      .withPublic(key: "algorithm", value: config.algorithm)
 
-    await logger.info("Starting signature verification operation", metadata: logMetadata, source: "SecurityImplementation", source: "SecurityImplementation")
+    await logger.info("Starting signature verification operation", metadata: logMetadataCollection, source: "SecurityImplementation", source: "SecurityImplementation")
 
     do {
       // Extract required parameters from configuration
@@ -254,24 +258,25 @@ final class SignatureService: SecurityServiceBase {
         let duration=Date().timeIntervalSince(startTime)
 
         // Create result metadata
-        var verificationMetadata=logMetadata
-        verificationMetadata.setPublic(key: "duration", value: String(format: "%.3f s", duration))
-        verificationMetadata.setPublic(key: "isValid", value: String(isValid))
+        let verificationMetadataCollection = LogMetadataDTOCollection()
+          .withPublic(key: "duration", value: String(format: "%.3f s", duration))
+          .withPublic(key: "isValid", value: String(isValid))
 
         if isValid {
           await logger.info(
-            "Signature verification completed: Valid signature", metadata: verificationMetadata
+            "Signature verification completed: Valid signature", metadata: verificationMetadataCollection
           , source: "SecurityImplementation", source: "SecurityImplementation")
         } else {
           await logger.warning(
-            "Signature verification completed: Invalid signature", metadata: verificationMetadata
+            "Signature verification completed: Invalid signature", metadata: verificationMetadataCollection
           , source: "SecurityImplementation", source: "SecurityImplementation")
         }
 
         // Return verification result
         return SecurityResultDTO(
           status: .success,
-          metadata: createPrivacyMetadata(["verified": "\(isValid)",
+          metadata: createMetadataCollection([
+            "verified": "\(isValid)",
             "algorithm": config.algorithm
           ])
         )
@@ -301,27 +306,25 @@ final class SignatureService: SecurityServiceBase {
             let duration=Date().timeIntervalSince(startTime)
 
             // Create result metadata
-            var verificationMetadata=logMetadata
-            verificationMetadata.setPublic(
-              key: "duration",
-              value: String(format: "%.3f s", duration)
-            )
-            verificationMetadata.setPublic(key: "isValid", value: String(isValid))
+            let verificationMetadataCollection = LogMetadataDTOCollection()
+              .withPublic(key: "duration", value: String(format: "%.3f s", duration))
+              .withPublic(key: "isValid", value: String(isValid))
 
             if isValid {
               await logger.info(
-                "Signature verification completed: Valid signature", metadata: verificationMetadata
+                "Signature verification completed: Valid signature", metadata: verificationMetadataCollection
               , source: "SecurityImplementation", source: "SecurityImplementation")
             } else {
               await logger.warning(
-                "Signature verification completed: Invalid signature", metadata: verificationMetadata
+                "Signature verification completed: Invalid signature", metadata: verificationMetadataCollection
               , source: "SecurityImplementation", source: "SecurityImplementation")
             }
 
             // Return verification result
             return SecurityResultDTO(
               status: .success,
-              metadata: createPrivacyMetadata(["verified": "\(isValid)",
+              metadata: createMetadataCollection([
+                "verified": "\(isValid)",
                 "algorithm": config.algorithm
               ])
             )
@@ -335,18 +338,19 @@ final class SignatureService: SecurityServiceBase {
       let duration=Date().timeIntervalSince(startTime)
 
       // Create failure metadata for logging
-      var errorMetadata=logMetadata
-      errorMetadata.setPrivate(key: "error", value: error.localizedDescription)
-      errorMetadata.setPublic(key: "duration", value: String(format: "%.3f s", duration))
+      let errorMetadataCollection = LogMetadataDTOCollection()
+        .withPrivate(key: "error", value: error.localizedDescription)
+        .withPublic(key: "duration", value: String(format: "%.3f s", duration))
 
-      await logger.error("Signature verification operation failed: \(error.localizedDescription)", metadata: errorMetadata
-      , source: \"SecurityImplementation\")
+      await logger.error("Signature verification operation failed: \(error.localizedDescription)", metadata: errorMetadataCollection
+      , source: "SecurityImplementation")
 
       // Return failure result
       return SecurityResultDTO(
         status: .failure,
         error: error,
-        metadata: createPrivacyMetadata(["durationMs": String(format: "%.2f", duration * 1000),
+        metadata: createMetadataCollection([
+          "durationMs": String(format: "%.2f", duration * 1000),
           "errorMessage": error.localizedDescription
         ])
       )
@@ -411,9 +415,7 @@ enum SignatureError: Error {
   case cryptoError(String)
 }
 
-
-
-  
+extension CoreSecurityError {
   static func invalidVerificationMethod(reason: String) -> CoreSecurityError {
     return .general(code: "INVALID_VERIFICATION_METHOD", message: reason)
   }
@@ -426,6 +428,3 @@ enum SignatureError: Error {
     return .general(code: "NOT_IMPLEMENTED", message: reason)
   }
 }
-
-
-

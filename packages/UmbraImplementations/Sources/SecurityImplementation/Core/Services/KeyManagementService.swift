@@ -131,47 +131,45 @@ final class KeyManagementService: SecurityServiceBase {
       let duration=Date().timeIntervalSince(startTime) * 1000
 
       // Create success metadata for logging
-      let successMetadata: LoggingInterfaces.LogMetadata=[
-        "operationId": operationID,
-        "operation": operation,
-        "durationMs": String(format: "%.2f", duration)
-      ]
+      let successMetadata=createMetadataCollection([
+        "durationMs": String(format: "%.2f", duration),
+        "keySize": "\(keySize)",
+        "algorithm": algorithm
+      ])
 
       await logger.info(
-        "Key generation completed successfully", metadata: successMetadata
-      , source: "SecurityImplementation", source: "SecurityImplementation")
+        "Key generation completed successfully",
+        metadata: successMetadata,
+        source: "KeyManagementService.generateKey"
+      )
 
       // Return successful result with the generated key metadata
       return SecurityResultDTO(
         status: .success,
         data: keyMaterial,
-        metadata: createPrivacyMetadata(["durationMs": String(format: "%.2f", duration),
-          "keySize": "\(keySize)",
-          "algorithm": algorithm
-        ])
+        metadata: successMetadata
       )
     } catch {
       // Calculate duration before failure
       let duration=Date().timeIntervalSince(startTime) * 1000
 
       // Create failure metadata for logging
-      let errorMetadata: LoggingInterfaces.LogMetadata=[
-        "operationId": operationID,
-        "operation": operation,
+      let errorMetadata=createMetadataCollection([
         "durationMs": String(format: "%.2f", duration),
-        "errorType": "\(type(of: error))"
-      ]
+        "errorMessage": error.localizedDescription
+      ])
 
-      await logger.error("Key generation failed: \(error.localizedDescription)", metadata: errorMetadata
-      , source: \"SecurityImplementation\")
+      await logger.error(
+        "Key generation failed: \(error.localizedDescription)",
+        metadata: errorMetadata,
+        source: "KeyManagementService.generateKey"
+      )
 
       // Return failure result
       return SecurityResultDTO(
         status: .failure,
         error: error,
-        metadata: createPrivacyMetadata(["durationMs": String(format: "%.2f", duration),
-          "errorMessage": error.localizedDescription
-        ])
+        metadata: errorMetadata
       )
     }
   }
@@ -212,55 +210,49 @@ final class KeyManagementService: SecurityServiceBase {
       let duration=Date().timeIntervalSince(startTime) * 1000
 
       // Create success metadata for logging
-      let successMetadata: LoggingInterfaces.LogMetadata=[
-        "operationId": operationID,
-        "operation": "generateRandomData",
-        "length": "\(length)",
-        "durationMs": String(format: "%.2f", duration)
-      ]
+      let successMetadata=createMetadataCollection([
+        "durationMs": String(format: "%.2f", duration),
+        "length": "\(length)"
+      ])
 
       await logger.info(
-        "Random data generation completed successfully", metadata: successMetadata
-      , source: "SecurityImplementation", source: "SecurityImplementation")
+        "Random data generation completed successfully",
+        metadata: successMetadata,
+        source: "KeyManagementService.generateRandomData"
+      )
 
       // Return successful result with the generated random data
       return SecurityResultDTO(
         status: .success,
         data: randomMaterial,
-        metadata: createPrivacyMetadata(["durationMs": String(format: "%.2f", duration),
-          "length": "\(length)"
-        ])
+        metadata: successMetadata
       )
     } catch {
       // Calculate duration before failure
       let duration=Date().timeIntervalSince(startTime) * 1000
 
       // Create failure metadata for logging
-      let errorMetadata: LoggingInterfaces.LogMetadata=[
-        "operationId": operationID,
-        "operation": "generateRandomData",
+      let errorMetadata=createMetadataCollection([
         "durationMs": String(format: "%.2f", duration),
-        "errorType": "\(type(of: error))"
-      ]
+        "errorMessage": error.localizedDescription
+      ])
 
-      await logger.error("Random data generation failed: \(error.localizedDescription)", metadata: errorMetadata
-      , source: \"SecurityImplementation\")
+      await logger.error(
+        "Random data generation failed: \(error.localizedDescription)",
+        metadata: errorMetadata,
+        source: "KeyManagementService.generateRandomData"
+      )
 
       // Return failure result
       return SecurityResultDTO(
         status: .failure,
         error: error,
-        metadata: createPrivacyMetadata(["durationMs": String(format: "%.2f", duration),
-          "errorMessage": error.localizedDescription
-        ])
+        metadata: errorMetadata
       )
     }
   }
 }
 
-
-
-  
   static func invalidVerificationMethod(reason: String) -> CoreSecurityError {
     return .general(code: "INVALID_VERIFICATION_METHOD", message: reason)
   }
@@ -273,6 +265,3 @@ final class KeyManagementService: SecurityServiceBase {
     return .general(code: "NOT_IMPLEMENTED", message: reason)
   }
 }
-
-
-

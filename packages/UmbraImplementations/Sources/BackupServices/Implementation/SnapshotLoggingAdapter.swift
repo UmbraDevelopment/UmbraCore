@@ -108,7 +108,7 @@ public struct SnapshotLoggingAdapter {
     let context=BaseLogContextDTO(
       domainName: "SnapshotLoggingAdapter", // Or infer from logContext if available
       source: #function, // Or infer from logContext if available
-      metadata: metadataCollection.toPrivacyMetadata() // Use the collected metadata
+      metadata: metadataCollection.createMetadataCollection() // Use the collected metadata
     )
     await logger.error(
       message,
@@ -150,7 +150,9 @@ public struct SnapshotLoggingAdapter {
     operation: String,
     additionalMetadata: [String: Any]=[:]
   ) async {
+    // Create a metadata collection with all the information
     var metadataCollection=LogMetadataDTOCollection()
+      .withPublic(key: "operation", value: operation)
 
     if let snapshotID {
       metadataCollection=metadataCollection.withPublic(key: "snapshotID", value: snapshotID)
@@ -160,23 +162,26 @@ public struct SnapshotLoggingAdapter {
       metadataCollection=metadataCollection.withPublic(key: "repositoryID", value: repositoryID)
     }
 
-    metadataCollection=metadataCollection.withPublic(key: "operation", value: operation)
-
-    // Add any additional metadata
+    // Add any additional metadata with appropriate privacy levels
     for (key, value) in additionalMetadata {
-      let stringValue=String(describing: value)
-      metadataCollection=metadataCollection.withAuto(key: key, value: stringValue)
+      if let stringValue=value as? String {
+        metadataCollection=metadataCollection.withPrivate(key: key, value: stringValue)
+      } else {
+        metadataCollection=metadataCollection.withPrivate(key: key, value: String(describing: value))
+      }
     }
 
-    // Create a base context for this log message
+    // Create a context for this log message
     let context=BaseLogContextDTO(
-      domainName: "SnapshotLoggingAdapter", // Or infer from logContext if available
-      source: #function, // Or infer from logContext if available
-      metadata: metadataCollection.toPrivacyMetadata() // Use the collected metadata
+      domainName: "SnapshotService",
+      source: "SnapshotService.\(operation)",
+      metadata: metadataCollection
     )
+
     await logger.info(
       "Starting snapshot operation: \(operation)",
-      context: context
+      metadata: metadataCollection,
+      source: "SnapshotService"
     )
   }
 
@@ -197,7 +202,10 @@ public struct SnapshotLoggingAdapter {
     result: [String: Any]=[:],
     additionalMetadata: [String: Any]=[:]
   ) async {
+    // Create a metadata collection with all the information
     var metadataCollection=LogMetadataDTOCollection()
+      .withPublic(key: "operation", value: operation)
+      .withPublic(key: "status", value: "success")
 
     if let snapshotID {
       metadataCollection=metadataCollection.withPublic(key: "snapshotID", value: snapshotID)
@@ -207,30 +215,19 @@ public struct SnapshotLoggingAdapter {
       metadataCollection=metadataCollection.withPublic(key: "repositoryID", value: repositoryID)
     }
 
-    metadataCollection=metadataCollection.withPublic(key: "operation", value: operation)
-    metadataCollection=metadataCollection.withPublic(key: "status", value: "success")
-
-    // Add any additional metadata
+    // Add any additional metadata with appropriate privacy levels
     for (key, value) in additionalMetadata {
-      let stringValue=String(describing: value)
-      metadataCollection=metadataCollection.withAuto(key: key, value: stringValue)
+      if let stringValue=value as? String {
+        metadataCollection=metadataCollection.withPrivate(key: key, value: stringValue)
+      } else {
+        metadataCollection=metadataCollection.withPrivate(key: key, value: String(describing: value))
+      }
     }
 
-    // Add result information
-    for (key, value) in result {
-      let stringValue=String(describing: value)
-      metadataCollection=metadataCollection.withAuto(key: key, value: stringValue)
-    }
-
-    // Create a base context for this log message
-    let context=BaseLogContextDTO(
-      domainName: "SnapshotLoggingAdapter", // Or infer from logContext if available
-      source: #function, // Or infer from logContext if available
-      metadata: metadataCollection.toPrivacyMetadata() // Use the collected metadata
-    )
     await logger.info(
-      "Snapshot operation completed: \(operation)",
-      context: context
+      "Completed snapshot operation: \(operation)",
+      metadata: metadataCollection,
+      source: "SnapshotService"
     )
   }
 
@@ -251,7 +248,10 @@ public struct SnapshotLoggingAdapter {
     operation: String,
     additionalMetadata: [String: Any]=[:]
   ) async {
+    // Create a metadata collection with all the information
     var metadataCollection=LogMetadataDTOCollection()
+      .withPublic(key: "operation", value: operation)
+      .withPublic(key: "status", value: "error")
 
     if let snapshotID {
       metadataCollection=metadataCollection.withPublic(key: "snapshotID", value: snapshotID)
@@ -261,31 +261,23 @@ public struct SnapshotLoggingAdapter {
       metadataCollection=metadataCollection.withPublic(key: "repositoryID", value: repositoryID)
     }
 
-    metadataCollection=metadataCollection.withPublic(key: "operation", value: operation)
-    metadataCollection=metadataCollection.withPrivate(
-      key: "error",
-      value: error.localizedDescription
-    )
-    metadataCollection=metadataCollection.withPublic(
-      key: "errorType",
-      value: String(describing: type(of: error))
-    )
+    // Add error information with appropriate privacy levels
+    metadataCollection=metadataCollection.withPrivate(key: "errorMessage", value: error.localizedDescription)
+    metadataCollection=metadataCollection.withPublic(key: "errorType", value: String(describing: type(of: error)))
 
-    // Add any additional metadata
+    // Add any additional metadata with appropriate privacy levels
     for (key, value) in additionalMetadata {
-      let stringValue=String(describing: value)
-      metadataCollection=metadataCollection.withAuto(key: key, value: stringValue)
+      if let stringValue=value as? String {
+        metadataCollection=metadataCollection.withPrivate(key: key, value: stringValue)
+      } else {
+        metadataCollection=metadataCollection.withPrivate(key: key, value: String(describing: value))
+      }
     }
 
-    // Create a base context for this log message
-    let context=BaseLogContextDTO(
-      domainName: "SnapshotLoggingAdapter", // Or infer from logContext if available
-      source: #function, // Or infer from logContext if available
-      metadata: metadataCollection.toPrivacyMetadata() // Use the collected metadata
-    )
     await logger.error(
-      "Error during snapshot operation: \(operation)",
-      context: context
+      "Error during snapshot operation: \(operation) - \(error.localizedDescription)",
+      metadata: metadataCollection,
+      source: "SnapshotService"
     )
   }
 }

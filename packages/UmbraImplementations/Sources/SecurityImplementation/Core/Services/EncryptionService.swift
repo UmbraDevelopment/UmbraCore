@@ -11,6 +11,20 @@ private func createMetadataCollection(_ dict: [String: String]) -> LogMetadataDT
   return collection
 }
 
+/// Helper function to convert LogMetadataDTOCollection to privacy-tagged values for security events
+private func createSecurityEventMetadata(_ metadata: [String: (value: String, privacyLevel: LogPrivacyLevel)]) -> [String: PrivacyTaggedValue] {
+  var result: [String: PrivacyTaggedValue] = [:]
+  
+  for (key, entry) in metadata {
+    result[key] = PrivacyTaggedValue(
+      value: PrivacyMetadataValue.string(entry.value),
+      privacyLevel: entry.privacyLevel
+    )
+  }
+  
+  return result
+}
+
 import LoggingInterfaces
 import LoggingServices
 import LoggingTypes
@@ -128,12 +142,12 @@ final class EncryptionService: SecurityServiceBase {
       status: .success,
       subject: nil,
       resource: nil,
-      additionalMetadata: [
-        "operationId": PrivacyTaggedValue(value: PrivacyMetadataValue.string(operationID), privacyLevel: .public),
-        "operation": PrivacyTaggedValue(value: PrivacyMetadataValue.string("start"), privacyLevel: .public),
-        "operationType": PrivacyTaggedValue(value: PrivacyMetadataValue.string(config.operationType.rawValue), privacyLevel: .public),
-        "algorithm": PrivacyTaggedValue(value: PrivacyMetadataValue.string(config.options["algorithm"] ?? "unknown"), privacyLevel: .public)
-      ]
+      additionalMetadata: createSecurityEventMetadata([
+        "operationId": (value: operationID, privacyLevel: .public),
+        "operation": (value: "start", privacyLevel: .public),
+        "operationType": (value: config.operationType.rawValue, privacyLevel: .public),
+        "algorithm": (value: config.options["algorithm"] ?? "unknown", privacyLevel: .public)
+      ])
     )
 
     do {
@@ -151,12 +165,12 @@ final class EncryptionService: SecurityServiceBase {
           status: .failed,
           subject: nil,
           resource: nil,
-          additionalMetadata: [
-            "operationId": PrivacyTaggedValue(value: PrivacyMetadataValue.string(operationID), privacyLevel: .public),
-            "operation": PrivacyTaggedValue(value: PrivacyMetadataValue.string("error"), privacyLevel: .public),
-            "errorType": PrivacyTaggedValue(value: PrivacyMetadataValue.string(String(describing: type(of: error))), privacyLevel: .public),
-            "errorDescription": PrivacyTaggedValue(value: PrivacyMetadataValue.string(error.localizedDescription), privacyLevel: .public)
-          ]
+          additionalMetadata: createSecurityEventMetadata([
+            "operationId": (value: operationID, privacyLevel: .public),
+            "operation": (value: "error", privacyLevel: .public),
+            "errorType": (value: String(describing: type(of: error)), privacyLevel: .public),
+            "errorDescription": (value: error.localizedDescription, privacyLevel: .public)
+          ])
         )
 
         throw error
@@ -179,12 +193,12 @@ final class EncryptionService: SecurityServiceBase {
           status: .failed,
           subject: nil,
           resource: nil,
-          additionalMetadata: [
-            "operationId": PrivacyTaggedValue(value: PrivacyMetadataValue.string(operationID), privacyLevel: .public),
-            "operation": PrivacyTaggedValue(value: PrivacyMetadataValue.string("error"), privacyLevel: .public),
-            "errorType": PrivacyTaggedValue(value: PrivacyMetadataValue.string(String(describing: type(of: error))), privacyLevel: .public),
-            "errorDescription": PrivacyTaggedValue(value: PrivacyMetadataValue.string(error.localizedDescription), privacyLevel: .public)
-          ]
+          additionalMetadata: createSecurityEventMetadata([
+            "operationId": (value: operationID, privacyLevel: .public),
+            "operation": (value: "error", privacyLevel: .public),
+            "errorType": (value: String(describing: type(of: error)), privacyLevel: .public),
+            "errorDescription": (value: error.localizedDescription, privacyLevel: .public)
+          ])
         )
 
         throw error
@@ -219,12 +233,12 @@ final class EncryptionService: SecurityServiceBase {
         status: .success,
         subject: nil,
         resource: nil,
-        additionalMetadata: [
-          "operationId": PrivacyTaggedValue(value: PrivacyMetadataValue.string(operationID), privacyLevel: .public),
-          "operation": PrivacyTaggedValue(value: PrivacyMetadataValue.string("complete"), privacyLevel: .public),
-          "durationMs": PrivacyTaggedValue(value: PrivacyMetadataValue.int(Int(duration * 1000)), privacyLevel: .public),
-          "resultSize": PrivacyTaggedValue(value: PrivacyMetadataValue.int(encryptedData.count), privacyLevel: .public)
-        ]
+        additionalMetadata: createSecurityEventMetadata([
+          "operationId": (value: operationID, privacyLevel: .public),
+          "operation": (value: "complete", privacyLevel: .public),
+          "durationMs": (value: String(Int(duration * 1000)), privacyLevel: .public),
+          "resultSize": (value: String(encryptedData.count), privacyLevel: .public)
+        ])
       )
 
       // Log success
@@ -249,13 +263,13 @@ final class EncryptionService: SecurityServiceBase {
         status: .failed,
         subject: nil,
         resource: nil,
-        additionalMetadata: [
-          "operationId": PrivacyTaggedValue(value: PrivacyMetadataValue.string(operationID), privacyLevel: .public),
-          "operation": PrivacyTaggedValue(value: PrivacyMetadataValue.string("error"), privacyLevel: .public),
-          "durationMs": PrivacyTaggedValue(value: PrivacyMetadataValue.int(Int(duration * 1000)), privacyLevel: .public),
-          "errorType": PrivacyTaggedValue(value: PrivacyMetadataValue.string(String(describing: type(of: error))), privacyLevel: .public),
-          "errorDescription": PrivacyTaggedValue(value: PrivacyMetadataValue.string(error.localizedDescription), privacyLevel: .public)
-        ]
+        additionalMetadata: createSecurityEventMetadata([
+          "operationId": (value: operationID, privacyLevel: .public),
+          "operation": (value: "error", privacyLevel: .public),
+          "durationMs": (value: String(Int(duration * 1000)), privacyLevel: .public),
+          "errorType": (value: String(describing: type(of: error)), privacyLevel: .public),
+          "errorDescription": (value: error.localizedDescription, privacyLevel: .public)
+        ])
       )
 
       // Log error
@@ -308,12 +322,12 @@ final class EncryptionService: SecurityServiceBase {
       status: .success,
       subject: nil,
       resource: nil,
-      additionalMetadata: [
-        "operationId": PrivacyTaggedValue(value: PrivacyMetadataValue.string(operationID), privacyLevel: .public),
-        "operation": PrivacyTaggedValue(value: PrivacyMetadataValue.string("start"), privacyLevel: .public),
-        "operationType": PrivacyTaggedValue(value: PrivacyMetadataValue.string(config.operationType.rawValue), privacyLevel: .public),
-        "algorithm": PrivacyTaggedValue(value: PrivacyMetadataValue.string(config.options["algorithm"] ?? "unknown"), privacyLevel: .public)
-      ]
+      additionalMetadata: createSecurityEventMetadata([
+        "operationId": (value: operationID, privacyLevel: .public),
+        "operation": (value: "start", privacyLevel: .public),
+        "operationType": (value: config.operationType.rawValue, privacyLevel: .public),
+        "algorithm": (value: config.options["algorithm"] ?? "unknown", privacyLevel: .public)
+      ])
     )
 
     do {
@@ -331,12 +345,12 @@ final class EncryptionService: SecurityServiceBase {
           status: .failed,
           subject: nil,
           resource: nil,
-          additionalMetadata: [
-            "operationId": PrivacyTaggedValue(value: PrivacyMetadataValue.string(operationID), privacyLevel: .public),
-            "operation": PrivacyTaggedValue(value: PrivacyMetadataValue.string("error"), privacyLevel: .public),
-            "errorType": PrivacyTaggedValue(value: PrivacyMetadataValue.string(String(describing: type(of: error))), privacyLevel: .public),
-            "errorDescription": PrivacyTaggedValue(value: PrivacyMetadataValue.string(error.localizedDescription), privacyLevel: .public)
-          ]
+          additionalMetadata: createSecurityEventMetadata([
+            "operationId": (value: operationID, privacyLevel: .public),
+            "operation": (value: "error", privacyLevel: .public),
+            "errorType": (value: String(describing: type(of: error)), privacyLevel: .public),
+            "errorDescription": (value: error.localizedDescription, privacyLevel: .public)
+          ])
         )
 
         throw error
@@ -359,12 +373,12 @@ final class EncryptionService: SecurityServiceBase {
           status: .failed,
           subject: nil,
           resource: nil,
-          additionalMetadata: [
-            "operationId": PrivacyTaggedValue(value: PrivacyMetadataValue.string(operationID), privacyLevel: .public),
-            "operation": PrivacyTaggedValue(value: PrivacyMetadataValue.string("error"), privacyLevel: .public),
-            "errorType": PrivacyTaggedValue(value: PrivacyMetadataValue.string(String(describing: type(of: error))), privacyLevel: .public),
-            "errorDescription": PrivacyTaggedValue(value: PrivacyMetadataValue.string(error.localizedDescription), privacyLevel: .public)
-          ]
+          additionalMetadata: createSecurityEventMetadata([
+            "operationId": (value: operationID, privacyLevel: .public),
+            "operation": (value: "error", privacyLevel: .public),
+            "errorType": (value: String(describing: type(of: error)), privacyLevel: .public),
+            "errorDescription": (value: error.localizedDescription, privacyLevel: .public)
+          ])
         )
 
         throw error
@@ -399,12 +413,12 @@ final class EncryptionService: SecurityServiceBase {
         status: .success,
         subject: nil,
         resource: nil,
-        additionalMetadata: [
-          "operationId": PrivacyTaggedValue(value: PrivacyMetadataValue.string(operationID), privacyLevel: .public),
-          "operation": PrivacyTaggedValue(value: PrivacyMetadataValue.string("complete"), privacyLevel: .public),
-          "durationMs": PrivacyTaggedValue(value: PrivacyMetadataValue.int(Int(duration * 1000)), privacyLevel: .public),
-          "resultSize": PrivacyTaggedValue(value: PrivacyMetadataValue.int(decryptedData.count), privacyLevel: .public)
-        ]
+        additionalMetadata: createSecurityEventMetadata([
+          "operationId": (value: operationID, privacyLevel: .public),
+          "operation": (value: "complete", privacyLevel: .public),
+          "durationMs": (value: String(Int(duration * 1000)), privacyLevel: .public),
+          "resultSize": (value: String(decryptedData.count), privacyLevel: .public)
+        ])
       )
 
       // Log success
@@ -429,13 +443,13 @@ final class EncryptionService: SecurityServiceBase {
         status: .failed,
         subject: nil,
         resource: nil,
-        additionalMetadata: [
-          "operationId": PrivacyTaggedValue(value: PrivacyMetadataValue.string(operationID), privacyLevel: .public),
-          "operation": PrivacyTaggedValue(value: PrivacyMetadataValue.string("error"), privacyLevel: .public),
-          "durationMs": PrivacyTaggedValue(value: PrivacyMetadataValue.int(Int(duration * 1000)), privacyLevel: .public),
-          "errorType": PrivacyTaggedValue(value: PrivacyMetadataValue.string(String(describing: type(of: error))), privacyLevel: .public),
-          "errorDescription": PrivacyTaggedValue(value: PrivacyMetadataValue.string(error.localizedDescription), privacyLevel: .public)
-        ]
+        additionalMetadata: createSecurityEventMetadata([
+          "operationId": (value: operationID, privacyLevel: .public),
+          "operation": (value: "error", privacyLevel: .public),
+          "durationMs": (value: String(Int(duration * 1000)), privacyLevel: .public),
+          "errorType": (value: String(describing: type(of: error)), privacyLevel: .public),
+          "errorDescription": (value: error.localizedDescription, privacyLevel: .public)
+        ])
       )
 
       // Log error
@@ -598,22 +612,3 @@ actor SecureStorage {
     storage.removeValue(forKey: identifier)
   }
 }
-
-
-
-  
-  static func invalidVerificationMethod(reason: String) -> CoreSecurityError {
-    return .general(code: "INVALID_VERIFICATION_METHOD", message: reason)
-  }
-  
-  static func verificationFailed(reason: String) -> CoreSecurityError {
-    return .general(code: "VERIFICATION_FAILED", message: reason)
-  }
-  
-  static func notImplemented(reason: String) -> CoreSecurityError {
-    return .general(code: "NOT_IMPLEMENTED", message: reason)
-  }
-}
-
-
-

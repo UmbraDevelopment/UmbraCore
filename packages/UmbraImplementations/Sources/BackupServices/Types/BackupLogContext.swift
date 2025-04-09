@@ -54,9 +54,16 @@ public struct BackupLogContext: LogContextDTO {
 
   /// Converts the context to privacy metadata for logging
   /// - Returns: Privacy metadata with appropriate annotations
+  @available(*, deprecated, message: "Use createMetadataCollection() instead for Swift 6 compatibility")
   public func toPrivacyMetadata() -> PrivacyMetadata {
     // Use the built-in conversion from LogMetadataDTOCollection
     metadata.toPrivacyMetadata()
+  }
+
+  /// Creates a metadata collection for privacy-aware logging
+  /// - Returns: A LogMetadataDTOCollection with appropriate privacy annotations
+  public func createMetadataCollection() -> LogMetadataDTOCollection {
+    metadata
   }
 
   /// Gets the metadata for this log context
